@@ -974,7 +974,6 @@ export class DataDrivenPrologueScene extends BaseGameScene {
     this.terrain = null;
     this._terrains = [];
     this._worldRegion = null;
-    this._teleportFade = null;
     this._minimapBackgroundActivation = null;
 
     // 每次 enter 都创建独立 session；地形与放置点只共享这一份世界加载 Promise。

@@ -112,8 +112,13 @@
     },
     "time": {
       "enabled": true,
-      "startPeriod": "dusk",
-      "startTime": 120
+      "startTime": 300,
+      "periods": {
+        "dawn": { "darknessOpacity": 0.25 },
+        "dusk": { "darknessOpacity": 0.25 },
+        "night": { "darknessOpacity": 0.65 },
+        "lateNight": { "darknessOpacity": 0.65 }
+      }
     },
     "weather": {
       "default": "clear",
