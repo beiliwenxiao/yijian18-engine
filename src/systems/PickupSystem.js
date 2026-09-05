@@ -59,29 +59,48 @@ export class PickupSystem {
       if (!item || item.picked) continue;
       const itemPosition = item.getComponent?.('transform')?.position || item;
       if (!Number.isFinite(itemPosition?.x) || !Number.isFinite(itemPosition?.y)) continue;
-      if (Math.hypot(itemPosition.x - position.x, itemPosition.y - position.y) <= this.pickupRadius) {
-        candidates.push(item);
-      }
+      const playerDistance = Math.hypot(itemPosition.x - position.x, itemPosition.y - position.y);
+      if (playerDistance > this.pickupRadius) continue;
+      candidates.push({
+        item,
+        playerDistance,
+        stableId: String(item.placementId || item.entityId || item.id || ''),
+        sequence: candidates.length
+      });
     }
+    candidates.sort((left, right) => {
+      const distanceDifference = left.playerDistance - right.playerDistance;
+      if (distanceDifference !== 0) return distanceDifference;
+      const idDifference = left.stableId.localeCompare(right.stableId);
+      return idDifference !== 0 ? idDifference : left.sequence - right.sequence;
+    });
 
     let scheduled = 0;
+    let executionQueue = Promise.resolve();
     const baseOperationId = request.operationId
       || `pickup:${this.resolveActorId(playerEntity)}:${++this._requestSequence}`;
-    for (const item of candidates) {
+    for (const { item } of candidates) {
       const groundId = item.placementId || item.entityId || item.id;
       if (!groundId) continue;
       const operationId = `${baseOperationId}:${groundId}`;
       const quantity = Math.max(1, Math.floor(Number(item.quantity
         ?? item.getComponent?.('itemProjection')?.quantity) || 1));
-      scheduled += 1;
-      Promise.resolve(this.commandGateway.execute({
+      const command = {
         intentType: 'item.pickup',
         actorRef: this.resolveActorId(playerEntity),
         operationId,
         payload: { groundId, quantity, checkpointId: request.checkpointId || null }
-      })).then(result => this.onResult(result, item, playerEntity)).catch(error => {
-        this.onResult({ ok: false, code: 'pickupCommandFailed', error }, item, playerEntity);
-      });
+      };
+      scheduled += 1;
+      executionQueue = executionQueue
+        .then(() => this.commandGateway.execute(command))
+        .then(result => this.onResult(result, item, playerEntity))
+        .catch(error => this.onResult(
+          { ok: false, code: 'pickupCommandFailed', error },
+          item,
+          playerEntity
+        ))
+        .catch(() => undefined);
     }
     if (scheduled > 0) this.lastPickupTime = now;
     return { scheduled, pickedItems: [], removedEntities: [] };

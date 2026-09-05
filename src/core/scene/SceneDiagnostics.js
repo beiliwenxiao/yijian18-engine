@@ -44,7 +44,11 @@ export class SceneDiagnostics {
     this.runtimeConfig = runtimeConfig;
     const enabled = normalizeRuntimeDebugMode(runtimeConfig?.debug);
     this.scene.debugMode = enabled;
-    if (!enabled) this.scene.debugPanel?.hide?.();
+    if (!enabled) {
+      const panel = this.scene.debugPanel;
+      if (typeof panel?.dispose === 'function') panel.dispose();
+      else panel?.hide?.();
+    }
     return enabled;
   }
 
@@ -491,7 +495,8 @@ export class SceneDiagnostics {
       visible: scene.debugPanel.visible,
       elementConnected: scene.debugPanel._el?.isConnected || false
     });
-    scene.debugPanel.hide();
+    if (typeof scene.debugPanel.dispose === 'function') scene.debugPanel.dispose();
+    else scene.debugPanel.hide?.();
     scene.debugPanel = null;
   }
 }

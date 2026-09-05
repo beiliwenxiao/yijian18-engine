@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+<title>S01 干旱荒原背景</title><desc>干裂荒原，中央冷灰营火地，西侧枯木与草药带，东侧盗匪警戒坡，北侧出口。</desc>
+<defs><pattern id="cracks" width="92" height="70" patternUnits="userSpaceOnUse"><path d="M8 8l22 20-9 25m9-25 31-8 22 16m-7 19 12-19" fill="none" stroke="#5c4d39" stroke-width="2" opacity=".42"/></pattern><linearGradient id="soil" x2="0" y2="1"><stop stop-color="#77664c"/><stop offset="1" stop-color="#5d503e"/></linearGradient></defs>
+<rect width="1280" height="720" fill="url(#soil)"/><rect width="1280" height="720" fill="url(#cracks)"/>
+<path d="M520 720C535 615 500 535 550 440S630 250 620 0h170c-5 155-65 312-82 435S760 620 790 720z" fill="#8b7553" opacity=".72" stroke="#aa9062" stroke-width="6"/>
+<ellipse cx="610" cy="510" rx="170" ry="102" fill="#625a50" opacity=".82"/><g fill="#3f3a32" stroke="#8e6f43" stroke-width="5"><path d="M92 490l38-170 34 118 51-146 28 198z"/><path d="M255 410l28-130 29 84 43-103 19 149z"/></g>
+<g fill="#68704b" opacity=".8"><ellipse cx="205" cy="570" rx="42" ry="14"/><ellipse cx="305" cy="535" rx="35" ry="12"/><ellipse cx="380" cy="610" rx="48" ry="15"/></g>
+<path d="M830 185l350-55 72 270-350 62z" fill="#6e4438" opacity=".5" stroke="#8e5745" stroke-width="7"/><g fill="#46392f"><circle cx="980" cy="230" r="24"/><circle cx="1090" cy="285" r="19"/><path d="M930 330l85-34 62 49-105 43z"/></g>
+<path d="M540 18h210l-30 84-148 8z" fill="#9a855c" opacity=".6"/><g fill="#4b4438"><circle cx="450" cy="170" r="12"/><circle cx="790" cy="580" r="16"/><circle cx="330" cy="200" r="10"/></g>
+</svg>

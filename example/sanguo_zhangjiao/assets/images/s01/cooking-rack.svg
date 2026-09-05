@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="88" height="78" viewBox="0 0 88 78">
+  <defs><linearGradient id="iron" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#9b8870"/><stop offset="1" stop-color="#443d36"/></linearGradient><linearGradient id="meat" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#bd6d42"/><stop offset="1" stop-color="#613320"/></linearGradient></defs>
+  <ellipse cx="44" cy="72" rx="34" ry="5" fill="#352c25" opacity=".36"/>
+  <path d="M18 68 29 29M70 68 59 29" fill="none" stroke="#5a4230" stroke-width="7" stroke-linecap="round"/>
+  <path d="M20 66 30 30M68 66 58 30" fill="none" stroke="#9b7650" stroke-width="2" stroke-linecap="round"/>
+  <path d="M25 34h38" fill="none" stroke="url(#iron)" stroke-width="5" stroke-linecap="round"/>
+  <path d="M29 40h30" fill="none" stroke="#4a4138" stroke-width="4" stroke-linecap="round"/>
+  <path d="M35 37c5-7 12 1 17-4 4 4 0 12-7 13-8 1-14-3-10-9Z" fill="url(#meat)" stroke="#3f261d" stroke-width="2"/>
+  <path d="M39 38c4 1 8 1 12-1M38 42c4 2 8 2 12 0" fill="none" stroke="#e5a06a" stroke-width="1.5" opacity=".7"/>
+  <path d="M42 26c-3-5 1-8 3-12 1 5 5 8 1 12" fill="#e38a32" opacity=".8"/>
+</svg>

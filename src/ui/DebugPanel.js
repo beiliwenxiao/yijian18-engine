@@ -23,6 +23,16 @@
 import { InputHints } from '../core/input/InputHints.js';
 import { getWorldMapCellSceneId } from '../core/WorldMapCell.js';
 
+const DEBUG_PANEL_DEFAULT_LAYOUT = Object.freeze({
+  left: 10,
+  top: 10,
+  width: 280,
+  height: null
+});
+const DEBUG_PANEL_MIN_WIDTH = 240;
+const DEBUG_PANEL_MIN_HEIGHT = 160;
+const DEBUG_PANEL_VIEWPORT_MARGIN = 8;
+
 export class DebugPanel {
   /**
    * @param {Object} opts
@@ -42,6 +52,14 @@ export class DebugPanel {
     this._lastFpsTime = performance.now();
     this._lastInfoUpdateAt = -Infinity;
     this._infoRefreshInterval = 250;
+    this._layout = { ...DEBUG_PANEL_DEFAULT_LAYOUT };
+    this._pointerOperation = null;
+    this._layoutEventsBound = false;
+    this._onHeaderPointerDown = event => this._beginPanelPointerOperation(event, 'drag');
+    this._onResizeHandlePointerDown = event => this._beginPanelPointerOperation(event, 'resize');
+    this._onPointerMove = event => this._handlePanelPointerMove(event);
+    this._onPointerEnd = event => this._endPanelPointerOperation(event);
+    this._onViewportResize = () => this._applyPanelLayout();
   }
 
   /** 切换显示/隐藏；暂停时保留面板作为唯一恢复入口。 */
@@ -107,6 +125,12 @@ export class DebugPanel {
   hide() {
     if (this.visible) this.toggle();
     return !this.visible;
+  }
+
+  /** 场景退出或关闭调试模式时强制释放 DOM、RAF 与 Pointer 监听。 */
+  dispose() {
+    this.visible = false;
+    this._destroy();
   }
 
   _getActiveScene() {
@@ -305,10 +329,13 @@ export class DebugPanel {
           </div>
         </div>
       </div>
+      <div class="dp-resize-handle" title="拖动以调整调试面板大小" aria-hidden="true"></div>
     `;
     this._injectStyles();
     document.body.appendChild(el);
     this._el = el;
+    this._applyPanelLayout();
+    this._bindPanelLayoutEvents();
     this._bindEvents();
     this._syncPauseButton();
     this._renderDiagnosticRecords();
@@ -320,11 +347,13 @@ export class DebugPanel {
     const s = document.createElement('style');
     s.id = 'dp-styles';
     s.textContent = `
-      #debug-panel { position:fixed; top:10px; left:10px; width:280px; max-height:90vh; overflow-y:auto;
+      #debug-panel { position:fixed; top:10px; left:10px; width:280px; max-width:calc(100vw - 16px);
+        max-height:calc(100vh - 16px); overflow-x:hidden; overflow-y:auto; box-sizing:border-box;
         display:block; pointer-events:auto; background:rgba(0,0,0,0.88); color:#ddd; font:12px/1.5 monospace; border:1px solid #4CAF50;
         border-radius:6px; z-index:99999; user-select:text; }
       #debug-panel .dp-header { display:flex; justify-content:space-between; align-items:center;
-        padding:6px 10px; background:#1a3a1a; border-bottom:1px solid #4CAF50; font-weight:bold; color:#4CAF50; }
+        padding:6px 10px; background:#1a3a1a; border-bottom:1px solid #4CAF50; font-weight:bold; color:#4CAF50;
+        cursor:move; touch-action:none; user-select:none; }
       #debug-panel .dp-close { background:none; border:none; color:#f88; cursor:pointer; font-size:14px; }
       #debug-panel .dp-body { padding:8px 10px; }
       #debug-panel .dp-section { margin-bottom:8px; padding-bottom:6px; border-bottom:1px solid #333; }
@@ -342,8 +371,156 @@ export class DebugPanel {
       #debug-panel .dp-actions select { flex:1; min-width:0; }
       #debug-panel .dp-check-row { display:flex; align-items:center; gap:7px; color:#fff; cursor:pointer; }
       #debug-panel .dp-check-row input { margin:0; accent-color:#ff9800; cursor:pointer; }
+      #debug-panel .dp-resize-handle { position:absolute; right:1px; bottom:1px; width:16px; height:16px;
+        cursor:nwse-resize; touch-action:none; z-index:2; }
+      #debug-panel .dp-resize-handle::before { content:''; position:absolute; right:3px; bottom:3px; width:8px; height:8px;
+        border-right:2px solid #4CAF50; border-bottom:2px solid #4CAF50; opacity:0.9; }
+      #debug-panel.is-manipulating { user-select:none; }
     `;
     document.head.appendChild(s);
+  }
+
+  _getViewportSize() {
+    const documentElement = typeof document !== 'undefined' ? document.documentElement : null;
+    const width = typeof window !== 'undefined' ? Number(window.innerWidth) : Number(documentElement?.clientWidth);
+    const height = typeof window !== 'undefined' ? Number(window.innerHeight) : Number(documentElement?.clientHeight);
+    return {
+      width: Math.max(1, Number.isFinite(width) ? width : 1),
+      height: Math.max(1, Number.isFinite(height) ? height : 1)
+    };
+  }
+
+  _clampPanelValue(value, min, max, fallback) {
+    const resolved = Number(value);
+    const next = Number.isFinite(resolved) ? resolved : fallback;
+    return Math.max(min, Math.min(max, next));
+  }
+
+  _applyPanelLayout() {
+    const el = this._el;
+    if (!el) return false;
+    const viewport = this._getViewportSize();
+    const maxWidth = Math.max(1, viewport.width - DEBUG_PANEL_VIEWPORT_MARGIN * 2);
+    const maxHeight = Math.max(1, viewport.height - DEBUG_PANEL_VIEWPORT_MARGIN * 2);
+    const minWidth = Math.min(DEBUG_PANEL_MIN_WIDTH, maxWidth);
+    const minHeight = Math.min(DEBUG_PANEL_MIN_HEIGHT, maxHeight);
+    const width = this._clampPanelValue(
+      this._layout.width,
+      minWidth,
+      maxWidth,
+      DEBUG_PANEL_DEFAULT_LAYOUT.width
+    );
+    this._layout.width = width;
+    el.style.width = `${width}px`;
+
+    const requestedHeight = Number(this._layout.height);
+    if (Number.isFinite(requestedHeight)) {
+      const height = this._clampPanelValue(requestedHeight, minHeight, maxHeight, minHeight);
+      this._layout.height = height;
+      el.style.height = `${height}px`;
+    } else {
+      this._layout.height = null;
+      el.style.removeProperty('height');
+    }
+
+    const rect = el.getBoundingClientRect();
+    const maxLeft = Math.max(DEBUG_PANEL_VIEWPORT_MARGIN, viewport.width - rect.width - DEBUG_PANEL_VIEWPORT_MARGIN);
+    const maxTop = Math.max(DEBUG_PANEL_VIEWPORT_MARGIN, viewport.height - rect.height - DEBUG_PANEL_VIEWPORT_MARGIN);
+    this._layout.left = this._clampPanelValue(
+      this._layout.left,
+      DEBUG_PANEL_VIEWPORT_MARGIN,
+      maxLeft,
+      DEBUG_PANEL_DEFAULT_LAYOUT.left
+    );
+    this._layout.top = this._clampPanelValue(
+      this._layout.top,
+      DEBUG_PANEL_VIEWPORT_MARGIN,
+      maxTop,
+      DEBUG_PANEL_DEFAULT_LAYOUT.top
+    );
+    el.style.left = `${this._layout.left}px`;
+    el.style.top = `${this._layout.top}px`;
+    return true;
+  }
+
+  _bindPanelLayoutEvents() {
+    if (!this._el || this._layoutEventsBound) return;
+    this._el.querySelector('.dp-header')?.addEventListener('pointerdown', this._onHeaderPointerDown);
+    this._el.querySelector('.dp-resize-handle')?.addEventListener('pointerdown', this._onResizeHandlePointerDown);
+    if (typeof window !== 'undefined') window.addEventListener('resize', this._onViewportResize);
+    this._layoutEventsBound = true;
+  }
+
+  _unbindPanelLayoutEvents() {
+    this._endPanelPointerOperation();
+    if (!this._el || !this._layoutEventsBound) return;
+    this._el.querySelector('.dp-header')?.removeEventListener('pointerdown', this._onHeaderPointerDown);
+    this._el.querySelector('.dp-resize-handle')?.removeEventListener('pointerdown', this._onResizeHandlePointerDown);
+    if (typeof window !== 'undefined') window.removeEventListener('resize', this._onViewportResize);
+    this._layoutEventsBound = false;
+  }
+
+  _beginPanelPointerOperation(event, mode) {
+    if (!this._el || !event || event.isPrimary === false) return false;
+    if (event.pointerType === 'mouse' && event.button !== 0) return false;
+    if (mode === 'drag' && event.target?.closest?.('button, input, select, textarea, a, label')) return false;
+    const target = event.currentTarget;
+    if (!target) return false;
+
+    event.preventDefault();
+    event.stopPropagation();
+    this._endPanelPointerOperation();
+    const rect = this._el.getBoundingClientRect();
+    this._pointerOperation = {
+      mode,
+      pointerId: event.pointerId,
+      target,
+      startClientX: event.clientX,
+      startClientY: event.clientY,
+      startLeft: rect.left,
+      startTop: rect.top,
+      startWidth: rect.width,
+      startHeight: rect.height
+    };
+    target.setPointerCapture?.(event.pointerId);
+    target.addEventListener('pointermove', this._onPointerMove);
+    target.addEventListener('pointerup', this._onPointerEnd);
+    target.addEventListener('pointercancel', this._onPointerEnd);
+    this._el.classList.add('is-manipulating');
+    return true;
+  }
+
+  _handlePanelPointerMove(event) {
+    const operation = this._pointerOperation;
+    if (!operation || event.pointerId !== operation.pointerId) return false;
+    event.preventDefault();
+    const deltaX = event.clientX - operation.startClientX;
+    const deltaY = event.clientY - operation.startClientY;
+    if (operation.mode === 'drag') {
+      this._layout.left = operation.startLeft + deltaX;
+      this._layout.top = operation.startTop + deltaY;
+    } else {
+      this._layout.width = operation.startWidth + deltaX;
+      this._layout.height = operation.startHeight + deltaY;
+    }
+    this._applyPanelLayout();
+    return true;
+  }
+
+  _endPanelPointerOperation(event = null) {
+    const operation = this._pointerOperation;
+    if (!operation) return false;
+    if (event && event.pointerId !== operation.pointerId) return false;
+    const { target, pointerId } = operation;
+    target.removeEventListener('pointermove', this._onPointerMove);
+    target.removeEventListener('pointerup', this._onPointerEnd);
+    target.removeEventListener('pointercancel', this._onPointerEnd);
+    try {
+      if (target.hasPointerCapture?.(pointerId)) target.releasePointerCapture(pointerId);
+    } catch (_) { /* 目标已卸载时无需额外处理 */ }
+    this._pointerOperation = null;
+    this._el?.classList.remove('is-manipulating');
+    return true;
   }
 
   /** 绑定按钮事件 */
@@ -491,8 +668,15 @@ export class DebugPanel {
 
   /** 销毁 DOM */
   _destroy() {
-    if (this._rafId) { cancelAnimationFrame(this._rafId); this._rafId = null; }
-    if (this._el) { this._el.remove(); this._el = null; }
+    this._unbindPanelLayoutEvents();
+    if (this._rafId !== null) {
+      cancelAnimationFrame(this._rafId);
+      this._rafId = null;
+    }
+    if (this._el) {
+      this._el.remove();
+      this._el = null;
+    }
   }
 
   /** 启动刷新循环 */
