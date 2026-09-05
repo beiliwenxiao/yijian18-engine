@@ -383,15 +383,19 @@ export class DebugPanel {
       scene.gamepadPanel.toggle();
       console.log('[DebugPanel] 手柄按键图:', scene.gamepadPanel.visible ? '显示' : '隐藏');
     });
-    el.querySelector('#dp-weather-apply').addEventListener('click', () => {
+    const applyDebugWeather = () => {
       const scene = this._getActiveScene();
-      if (!scene || !scene.weatherSystem) return;
+      if (!scene?.weatherSystem) return false;
       const type = el.querySelector('#dp-weather-select').value;
       const applied = scene.weatherSystem.setDebugWeatherOverride?.(type)
         ?? scene.weatherSystem.setWeather?.(type);
-      if (applied === false) return;
+      if (applied === false) return false;
       console.log('[DebugPanel] 调试天气覆盖:', type);
-    });
+      return true;
+    };
+    // 选择即应用，避免信息面板刷新先把未提交的下拉选择回写为剧情天气。
+    el.querySelector('#dp-weather-select').addEventListener('change', applyDebugWeather);
+    el.querySelector('#dp-weather-apply').addEventListener('click', applyDebugWeather);
 
     el.querySelector('#dp-weather-restore').addEventListener('click', () => {
       const scene = this._getActiveScene();
