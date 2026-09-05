@@ -3690,6 +3690,21 @@
       "assetId": "s01.prop.tanningRack", "imageId": "s01.prop.tanningRack", "category": "world-prop", "usage": ["S01", "survival", "tanning-rack"],
       "sourceFile": "assets/images/s01/tanning-rack.svg", "runtime2D": { "path": "assets/images/s01/tanning-rack.svg", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s01.prop.tanningRack" },
       "pivot": { "x": 0.5, "y": 1 }, "bounds": { "width": 92, "height": 92 }, "animations": [], "targetPhase": "P1", "status": "ai-generated", "revision": 1
+    },
+    {
+      "assetId": "weather.fog.cloudA",
+      "imageId": "weather.fog.cloudA",
+      "category": "weather-vfx",
+      "usage": ["weather", "fog", "atmosphere"],
+      "sourceFile": "assets/images/weather/fog-cloud-a.png",
+      "runtime2D": { "path": "assets/images/weather/fog-cloud-a.png", "mode": "image" },
+      "runtime3D": { "mode": "billboard", "sourceAssetId": "weather.fog.cloudA" },
+      "pivot": { "x": 0.5, "y": 0.5 },
+      "bounds": { "width": 512, "height": 192 },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
     }
   ]
 }

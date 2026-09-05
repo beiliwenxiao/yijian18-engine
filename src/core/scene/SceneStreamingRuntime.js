@@ -441,8 +441,9 @@ export class SceneStreamingRuntime {
     const terrain = currentChunk
       ? this.terrainsByChunk.get(currentChunk.key)
       : (terrains[0] || null);
-    this.onProjection?.({ manager, chunks, terrains, terrain, currentSceneId });
-    return { manager, chunks, terrains, terrain };
+    const loadedCoverage = manager.getActiveNineGridCoverage?.() || null;
+    this.onProjection?.({ manager, chunks, terrains, terrain, currentSceneId, loadedCoverage });
+    return { manager, chunks, terrains, terrain, loadedCoverage };
   }
 
   dispose() {

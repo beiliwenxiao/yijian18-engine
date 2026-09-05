@@ -1,5 +1,5 @@
 /************************************************************
- * 场景火堆、局部迷雾、粒子、深度绘制与碰撞服务。
+ * 场景火堆、时间氛围、天气粒子、深度绘制与碰撞服务。
  * 只消费调用方传入的世界坐标，不读取或应用 worldOffset。
  ************************************************************/
 
@@ -121,10 +121,6 @@ const campfireFeatureMethods = {
   _restoreCampfireState(lit) {
     if (lit) {
       if (!this.campfire.lit) this.lightCampfire({ emitEvent: false });
-      // 点燃只通过火堆的径向遮罩透光，不能清除整张全屏迷雾。
-      this.fog.opacity = this.initialFogOpacity;
-      this.fog.targetOpacity = this.initialFogOpacity;
-      this.fog.active = true;
       return;
     }
     for (const emitter of this.campfire.emitters || []) emitter.active = false;
@@ -132,9 +128,6 @@ const campfireFeatureMethods = {
     if (this.campfire.emitterSmoke) this.campfire.emitterSmoke.active = false;
     this.campfire.emitterSmoke = null;
     this.campfire.lit = false;
-    this.fog.opacity = this.initialFogOpacity;
-    this.fog.targetOpacity = this.initialFogOpacity;
-    this.fog.active = true;
     campfireFeatureMethods._startEmberParticles.call(this);
   },
 
@@ -167,28 +160,11 @@ const campfireFeatureMethods = {
     }
 
     this.logger?.debug?.('SceneCampfireService: campfire particle emitters created');
-    // 雾保持存在，由 renderFogLayer 的 campfire mask 仅在火堆周围开洞。
-    this.fog.opacity = this.initialFogOpacity;
-    this.fog.targetOpacity = this.initialFogOpacity;
-    this.fog.active = true;
     if (this.fuel.enabled === true && this.fuel.remainingSeconds > 0
       && (this.fuel.startOnIgnite === true || relighting)) {
       this.fuel.active = true;
     }
     if (emitEvent) this.onIgnited?.();
-  },
-
-  updateFog(deltaTime) {
-    if (!this.fog.active) return;
-    if (Math.abs(this.fog.opacity - this.fog.targetOpacity) > 0.01) {
-      if (this.fog.opacity > this.fog.targetOpacity) {
-        this.fog.opacity -= this.fog.fadeSpeed * deltaTime;
-        if (this.fog.opacity < this.fog.targetOpacity) this.fog.opacity = this.fog.targetOpacity;
-      }
-    } else if (this.fog.targetOpacity === 0) {
-      this.fog.opacity = 0;
-      this.fog.active = false;
-    }
   },
 
   updateCampfireAnimation(deltaTime) {
@@ -224,49 +200,40 @@ const campfireFeatureMethods = {
       this.particleSystem.updateEmitter(emitter, deltaTime);
     });
   },
-  /** 时间色调 → 迷雾遮罩/透光 → 天气粒子的固定表现顺序。 */
-  renderFogLayer(ctx) {
+  /** TimeSystem 黑暗/色调 → 玩家与火堆透光 → WeatherSystem 粒子的固定表现顺序。 */
+  renderAtmosphere(ctx) {
     const width = this.logicalWidth;
     const height = this.logicalHeight;
     const campfireConfigured = this.isConfigured();
-    const timeFogAdd = this.timeSystem?.enabled ? this.timeSystem.getFogOpacity() : 0;
-    const weatherFogAdd = this.weatherSystem ? this.weatherSystem.getFogAdd() : 0;
-    const baseFogOpacity = campfireConfigured && this.fog.active ? this.fog.opacity : 0;
-    const totalFogOpacity = Math.min(1, baseFogOpacity + timeFogAdd * 0.3 + weatherFogAdd);
-    const hasTimeOverlay = this.timeSystem?.hasAtmosphereOverlay?.()
-      ?? this.timeSystem?.enabled === true;
-    const shouldCompositeAtmosphere = hasTimeOverlay || totalFogOpacity > 0.01;
+    const hasTimeOverlay = this.timeSystem?.hasAtmosphereOverlay?.() === true;
     const viewBounds = this.viewBounds || this.camera?.getViewBounds?.() || { left: 0, top: 0 };
 
-    if (shouldCompositeAtmosphere) {
-      // 时间层与雾必须在同一离屏层合成，随后统一挖出玩家/火堆透光区；
+    if (hasTimeOverlay) {
+      // 时间层必须在独立 atmosphere Canvas 合成后统一挖出玩家/火堆透光区；
       // 若先画到主 Canvas，再 destination-out 会连世界内容一起擦除。
       const renderScale = 0.5;
-      const fogWidth = Math.max(1, Math.ceil(width * renderScale));
-      const fogHeight = Math.max(1, Math.ceil(height * renderScale));
-      if (!this._fogCanvas) {
-        this._fogCanvas = this.createCanvas();
-        this._fogContext = this._fogCanvas.getContext('2d');
+      const atmosphereWidth = Math.max(1, Math.ceil(width * renderScale));
+      const atmosphereHeight = Math.max(1, Math.ceil(height * renderScale));
+      if (!this._atmosphereCanvas) {
+        this._atmosphereCanvas = this.createCanvas();
+        this._atmosphereContext = this._atmosphereCanvas.getContext('2d');
       }
-      if (this._fogCanvas.width !== fogWidth || this._fogCanvas.height !== fogHeight) {
-        this._fogCanvas.width = fogWidth;
-        this._fogCanvas.height = fogHeight;
+      if (this._atmosphereCanvas.width !== atmosphereWidth
+        || this._atmosphereCanvas.height !== atmosphereHeight) {
+        this._atmosphereCanvas.width = atmosphereWidth;
+        this._atmosphereCanvas.height = atmosphereHeight;
       }
-      const fogCtx = this._fogContext || (this._fogContext = this._fogCanvas.getContext('2d'));
-      fogCtx.setTransform?.(1, 0, 0, 1, 0, 0);
-      fogCtx.globalAlpha = 1;
-      fogCtx.globalCompositeOperation = 'copy';
-      fogCtx.fillStyle = 'rgba(0, 0, 0, 0)';
-      fogCtx.fillRect(0, 0, fogWidth, fogHeight);
-      fogCtx.globalCompositeOperation = 'source-over';
-      this.timeSystem?.render?.(fogCtx, fogWidth, fogHeight);
-      if (totalFogOpacity > 0.01) {
-        const fogColor = this.fog.color || 'rgba(18, 24, 34,';
-        fogCtx.fillStyle = `${fogColor} ${totalFogOpacity})`;
-        fogCtx.fillRect(0, 0, fogWidth, fogHeight);
-      }
+      const atmosphereCtx = this._atmosphereContext
+        || (this._atmosphereContext = this._atmosphereCanvas.getContext('2d'));
+      atmosphereCtx.setTransform?.(1, 0, 0, 1, 0, 0);
+      atmosphereCtx.globalAlpha = 1;
+      atmosphereCtx.globalCompositeOperation = 'copy';
+      atmosphereCtx.fillStyle = 'rgba(0, 0, 0, 0)';
+      atmosphereCtx.fillRect(0, 0, atmosphereWidth, atmosphereHeight);
+      atmosphereCtx.globalCompositeOperation = 'source-over';
+      this.timeSystem.render(atmosphereCtx, atmosphereWidth, atmosphereHeight);
 
-      fogCtx.globalCompositeOperation = 'destination-out';
+      atmosphereCtx.globalCompositeOperation = 'destination-out';
       const yScale = 0.6;
       const playerTransform = this.playerEntity?.getComponent?.('transform');
       if (playerTransform) {
@@ -276,8 +243,8 @@ const campfireFeatureMethods = {
           ? Math.max(0, Number(this.campfire.respawnApproachRadius) || 0)
           : 0;
         const playerLightRadius = Math.max(150, respawnRadius) * renderScale;
-        const playerMask = this._getFogMask('player', playerLightRadius, yScale);
-        fogCtx.drawImage(
+        const playerMask = this._getAtmosphereMask('player', playerLightRadius, yScale);
+        atmosphereCtx.drawImage(
           playerMask,
           playerScreenX - playerMask.width / 2,
           playerScreenY - playerMask.height / 2
@@ -294,16 +261,20 @@ const campfireFeatureMethods = {
           Number(this.campfire.respawnApproachRadius) || 0,
           1
         ) * renderScale;
-        const campMask = this._getFogMask('campfire', campLightRadius, yScale);
-        fogCtx.drawImage(
+        const campMask = this._getAtmosphereMask('campfire', campLightRadius, yScale);
+        atmosphereCtx.drawImage(
           campMask,
           campScreenX - campMask.width / 2,
           campScreenY - campMask.height / 2
         );
       }
 
-      fogCtx.globalCompositeOperation = 'source-over';
-      ctx.drawImage(this._fogCanvas, 0, 0, fogWidth, fogHeight, 0, 0, width, height);
+      atmosphereCtx.globalCompositeOperation = 'source-over';
+      ctx.drawImage(
+        this._atmosphereCanvas,
+        0, 0, atmosphereWidth, atmosphereHeight,
+        0, 0, width, height
+      );
     }
 
     // 火堆点燃时在透光洞上叠加柔和光晕，使周围一圈仍有暖色层次。
@@ -323,7 +294,10 @@ const campfireFeatureMethods = {
       ctx.fill();
       ctx.restore();
     }
-    this.weatherSystem?.render?.(ctx, width, height);
+    this.weatherSystem?.render?.(ctx, width, height, {
+      viewBounds,
+      loadedCoverage: this.loadedCoverage
+    });
   },
 
   renderCampfireBottom(ctx) {
@@ -681,7 +655,6 @@ const campfireFeatureMethods = {
 
 export class SceneCampfireService {
   constructor(config = {}) {
-    this.initialFogOpacity = 0;
     this.campfire = {
       x: Number(config.position?.x) || 0,
       y: Number(config.position?.y) || 0,
@@ -705,7 +678,6 @@ export class SceneCampfireService {
       respawnApproachRadius: 0,
       respawnRemainingSeconds: null
     };
-    this.fog = { opacity: 0, targetOpacity: 0, fadeSpeed: 0, color: '', active: false };
     this.fuel = {
       enabled: false, itemId: null, secondsPerUnit: 0, initialUnits: 0, maxUnits: 0,
       startOnIgnite: false, remainingSeconds: 0, active: false
@@ -717,6 +689,7 @@ export class SceneCampfireService {
     this.layerImages = Object.create(null);
     this.embers = Object.freeze({ color: '#ffb04a', radius: 1, frequency: 1, minAlpha: 0, maxAlpha: 1, offsetX: 0, offsetY: 0, offsets: [] });
     this.configView = null;
+    this.loadedCoverage = null;
     this.formatHint = config.formatHint || (text => InputHints.format(text));
     this.createCanvas = config.createCanvas || (() => {
       if (typeof document !== 'undefined') return document.createElement('canvas');
@@ -728,9 +701,9 @@ export class SceneCampfireService {
     this.onIgnited = config.onIgnited || null;
     this.onExtinguished = config.onExtinguished || null;
     this.logger = config.logger || console;
-    this._fogCanvas = null;
-    this._fogContext = null;
-    this._fogMasks = new Map();
+    this._atmosphereCanvas = null;
+    this._atmosphereContext = null;
+    this._atmosphereMasks = new Map();
     this._renderContext = null;
     this._campfireRenderItems = [
       {
@@ -758,10 +731,9 @@ export class SceneCampfireService {
     if (!source || typeof source !== 'object') throw new TypeError('campfire config view is required');
     const flame = source.flame || {};
     const sprite = flame.sprite || source.sprite;
-    const fog = source.fog;
     const presentation = source.presentation;
     const fuelConfiguration = createFuelConfiguration(source.fuel);
-    if (!sprite || !fog || !presentation || !Array.isArray(source.particlePresets)) {
+    if (!sprite || !presentation || !Array.isArray(source.particlePresets)) {
       throw new TypeError('campfire config view is incomplete');
     }
 
@@ -787,10 +759,6 @@ export class SceneCampfireService {
       })
     });
     if (emberState.minAlpha > emberState.maxAlpha) throw new RangeError('campfire.embers minAlpha cannot exceed maxAlpha');
-    const initialFogOpacity = Number(next.initialFogOpacity);
-    if (!Number.isFinite(initialFogOpacity) || initialFogOpacity < 0 || initialFogOpacity > 1) {
-      throw new TypeError('campfire.initialFogOpacity must be between 0 and 1');
-    }
     const spriteState = {
       frameWidth: requirePositive(sprite.frameWidth, 'campfire.sprite.frameWidth'),
       frameHeight: requirePositive(sprite.frameHeight, 'campfire.sprite.frameHeight'),
@@ -802,13 +770,6 @@ export class SceneCampfireService {
     if (spriteState.frameCols * spriteState.frameRows < spriteState.frameCount) {
       throw new RangeError('campfire.sprite frame grid cannot cover frameCount');
     }
-    const fogState = {
-      opacity: this.campfire.lit ? 0 : initialFogOpacity,
-      targetOpacity: this.campfire.lit ? 0 : initialFogOpacity,
-      fadeSpeed: requirePositive(fog.fadeSpeed, 'campfire.fog.fadeSpeed'),
-      color: String(fog.color),
-      active: fog.active !== false
-    };
     next.particlePresets.forEach((preset, index) => {
       const path = `campfire.particlePresets[${index}]`;
       requirePositive(preset.rate, `${path}.rate`);
@@ -835,7 +796,6 @@ export class SceneCampfireService {
       this._validateFireImageDimensions(this.campfire.fireImage, spriteState);
     }
 
-    this.initialFogOpacity = initialFogOpacity;
     Object.assign(this.campfire, spriteState, {
       currentFrame: this.campfire.currentFrame % spriteState.frameCount,
       frameTime: 0
@@ -844,7 +804,6 @@ export class SceneCampfireService {
       this.campfire.fireImage = null;
       this.campfire.imageLoaded = false;
     }
-    this.fog = fogState;
     const previousFuel = this.fuel;
     const preserveFuel = previousFuel.enabled === true
       && fuelConfiguration.enabled === true
@@ -874,17 +833,17 @@ export class SceneCampfireService {
       previousImages?.[key] && previousLayers?.[key]?.imageId === layer.imageId ? previousImages[key] : null
     ]));
     this.configView = next;
-    this._fogCanvas = null;
-    this._fogContext = null;
-    this._fogMasks.clear();
+    this._atmosphereCanvas = null;
+    this._atmosphereContext = null;
+    this._atmosphereMasks.clear();
     return this.configView;
   }
 
-  _getFogMask(kind, radius, yScale) {
+  _getAtmosphereMask(kind, radius, yScale) {
     const safeRadius = Math.max(1, Number(radius) || 1);
     const safeYScale = Math.max(0.01, Number(yScale) || 1);
     const key = `${kind}:${safeRadius}:${safeYScale}`;
-    const cached = this._fogMasks.get(key);
+    const cached = this._atmosphereMasks.get(key);
     if (cached) return cached;
 
     const canvas = this.createCanvas();
@@ -905,7 +864,7 @@ export class SceneCampfireService {
     maskCtx.beginPath();
     maskCtx.arc(0, 0, safeRadius, 0, Math.PI * 2);
     maskCtx.fill();
-    this._fogMasks.set(key, canvas);
+    this._atmosphereMasks.set(key, canvas);
     return canvas;
   }
 
@@ -918,6 +877,7 @@ export class SceneCampfireService {
     this.playerEntity = runtime.playerEntity || null;
     this.camera = runtime.camera || null;
     this.viewBounds = runtime.viewBounds || null;
+    this.loadedCoverage = runtime.loadedCoverage || null;
     this.flightSystem = runtime.flightSystem || null;
     this.jumpSystem = runtime.jumpSystem || null;
     this.logicalWidth = Number(runtime.width) || this.logicalWidth || 1280;
@@ -1074,12 +1034,11 @@ export class SceneCampfireService {
         this.extinguish({ runtime });
       }
     }
-    campfireFeatureMethods.updateFog.call(this, deltaTime);
   }
 
   renderAtmosphere(ctx, runtime = {}) {
     this._bindRuntime(runtime);
-    return campfireFeatureMethods.renderFogLayer.call(this, ctx);
+    return campfireFeatureMethods.renderAtmosphere.call(this, ctx);
   }
 
   appendRenderItems(queue, ctx, runtime = {}) {
@@ -1130,10 +1089,11 @@ export class SceneCampfireService {
     this.configView = null;
     this.visualLayers = Object.freeze({});
     this.layerImages = Object.create(null);
-    this._fogCanvas = null;
-    this._fogContext = null;
+    this._atmosphereCanvas = null;
+    this._atmosphereContext = null;
     this._renderContext = null;
-    this._fogMasks.clear();
+    this.loadedCoverage = null;
+    this._atmosphereMasks.clear();
   }
 }
 

@@ -109,9 +109,9 @@ export class S01S02Coordinator {
     const overnightCompleted = survival.overnightCompleted === true;
     let applied = false;
     if (applyTime && this.scene.timeSystem?.setTimePeriod) {
-      const periodApplied = this.scene.timeSystem.setTimePeriod(overnightCompleted ? 'morning' : 'dusk');
+      const periodApplied = this.scene.timeSystem.setTimePeriod(overnightCompleted ? 'morning' : 'lateNight');
       if (periodApplied !== false) {
-        // S01 拥有这次暂停：默认黄昏（过夜后为上午）不会自然漂移，
+        // S01 拥有这次暂停：默认深夜（过夜后为上午）不会自然漂移，
         // setTimePeriod 仍可由代码或 Trigger 显式改期；离开 S01 时释放暂停。
         this.scene.timeSystem.setPaused?.(true);
         this.s01TimePauseOwned = true;

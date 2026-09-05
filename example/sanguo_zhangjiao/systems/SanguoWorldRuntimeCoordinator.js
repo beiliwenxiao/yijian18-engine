@@ -156,6 +156,11 @@ async function configureWorldRuntimeFromLoad() {
   const weatherConfig = weatherView?.get('system.weather');
   if (!weatherConfig) throw new Error('runtime weather consumer missing');
   const nextWeatherSystem = new WeatherSystem(weatherConfig);
+  const fogImageIds = nextWeatherSystem.getFogImageIds();
+  const fogImages = await Promise.all(fogImageIds.map(imageId =>
+    this.assetManager.loadAsset(imageId, { mode: '2d', required: true })
+  ));
+  nextWeatherSystem.setFogImages(fogImages);
   const nextTimeSystem = new TimeSystem(this.gameLoader?.runtimeConfigSnapshot?.system?.time || {});
   const sceneData = this._worldLoadSession?.getSceneData?.(this.currentSceneId);
   const campfireDefinition = findSceneCampfireDefinition(sceneData, this.gameLoader?.registries);

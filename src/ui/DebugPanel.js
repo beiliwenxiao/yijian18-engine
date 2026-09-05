@@ -401,13 +401,18 @@ export class DebugPanel {
     });
 
     // ── 时间控制 ──
-    el.querySelector('#dp-time-apply').addEventListener('click', () => {
+    const applyDebugTimePeriod = () => {
       const scene = this._getActiveScene();
-      if (!scene?.timeSystem) return;
+      if (!scene?.timeSystem) return false;
       const period = el.querySelector('#dp-time-select').value;
-      scene.timeSystem.setTimePeriod?.(period);
+      const applied = scene.timeSystem.setTimePeriod?.(period);
+      if (applied === false) return false;
       console.log('[DebugPanel] 跳转时间段:', period);
-    });
+      return true;
+    };
+    // 选择即应用，避免信息面板刷新先把未提交的下拉选择回写为当前时段。
+    el.querySelector('#dp-time-select').addEventListener('change', applyDebugTimePeriod);
+    el.querySelector('#dp-time-apply').addEventListener('click', applyDebugTimePeriod);
     el.querySelector('#dp-time-pause').addEventListener('click', () => {
       const scene = this._getActiveScene();
       if (!scene?.timeSystem) return;
@@ -603,13 +608,11 @@ export class DebugPanel {
     // 天气系统
     const ws = scene.weatherSystem;
     if (ws) {
-      const fogAdd = ws.getFogAdd().toFixed(2);
       const debugWeather = ws.debugOverrideWeather || null;
       const storyWeather = `剧情: ${ws.currentWeather}`
         + (ws.currentWeather !== ws.targetWeather ? ` → ${ws.targetWeather}` : '');
       this._el.querySelector('#dp-weather').innerHTML =
-        (debugWeather ? `调试覆盖: ${debugWeather}<br>${storyWeather}` : storyWeather)
-        + `<br>雾叠加: ${fogAdd}`;
+        debugWeather ? `调试覆盖: ${debugWeather}<br>${storyWeather}` : storyWeather;
       // 有调试覆盖时保持其选择；未覆盖时跟随剧情目标天气。
       const sel = this._el.querySelector('#dp-weather-select');
       const selectedWeather = debugWeather || ws.targetWeather;
@@ -623,12 +626,11 @@ export class DebugPanel {
     if (ts && ts.enabled) {
       const period = ts.getCurrentPeriod();
       const progress = (ts.getProgress() * 100).toFixed(0);
-      const brightness = ts.getBrightness().toFixed(2);
-      const fogOp = ts.getFogOpacity().toFixed(2);
+      const darknessOpacity = ts.getDarknessOpacity().toFixed(2);
       const paused = ts.paused === true ? '（已暂停）' : '';
       this._el.querySelector('#dp-time').innerHTML =
         `${period}${paused} (${progress}%)<br>` +
-        `明暗: ${brightness} | 雾: ${fogOp}`;
+        `黑暗蒙版: ${darknessOpacity}`;
       // 时间控制下拉跟随当前时间段
       const timeSel = this._el.querySelector('#dp-time-select');
       if (timeSel && timeSel.value !== period) timeSel.value = period;

@@ -224,8 +224,6 @@ export class BaseGameScenePresentation extends BaseGameSceneGameplayHooks {
     return this._ensureRenderPipeline().renderCombatStateUI(ctx);
   }
 
-  renderFogLayer(_ctx) {}
-
   renderSpeechBubbles(_ctx) {}
 
   renderBackground(ctx) {

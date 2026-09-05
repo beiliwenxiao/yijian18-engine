@@ -112,7 +112,7 @@
     },
     "time": {
       "enabled": true,
-      "startTime": 300,
+      "startTime": 420,
       "periods": {
         "dawn": { "darknessOpacity": 0.25 },
         "dusk": { "darknessOpacity": 0.25 },
@@ -122,6 +122,12 @@
     },
     "weather": {
       "default": "clear",
+      "fog": {
+        "imageIds": [
+          "weather.fog.cloudA"
+        ],
+        "maxClouds": 10
+      },
       "particles": {},
       "transitionSpeed": 0.5
     }
@@ -6571,11 +6577,6 @@
             },
             "width": 40
           },
-          "fog": {
-            "active": true,
-            "color": "rgba(30, 30, 40,",
-            "fadeSpeed": 0.4
-          },
           "fuel": {
             "enabled": true,
             "initialUnits": 1,
@@ -6584,7 +6585,6 @@
             "secondsPerUnit": 100,
             "startOnIgnite": false
           },
-          "initialFogOpacity": 0.85,
           "labels": {
             "ignite": "{interact}点燃",
             "unlit": "熄灭的火堆"

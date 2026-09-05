@@ -3,12 +3,10 @@
  *
  * 时间段：dawn(凌晨), earlyMorning(清晨), morning(上午), noon(中午),
  *         afternoon(下午), dusk(黄昏), night(夜晚), lateNight(深夜)
- * 每个时间段有 brightness、fogOpacity、tintColor。
+ * 每个时间段有 darknessOpacity、tintColor。
  * 时间自动推进，段与段之间平滑过渡。
  * 可通过触发器 setTime 跳转到指定时间段。
  */
-const DARKNESS_PERIODS = new Set(['dawn', 'dusk', 'night', 'lateNight']);
-
 export class TimeSystem {
   static PERIODS = ['dawn', 'earlyMorning', 'morning', 'noon', 'afternoon', 'dusk', 'night', 'lateNight'];
 
@@ -18,15 +16,15 @@ export class TimeSystem {
   };
 
   static DEFAULTS = {
-    // darknessOpacity 仅属于 Canvas atmosphere 表现：黄昏/凌晨轻微，夜晚/深夜很深。
-    dawn:         { duration: 60, brightness: 0.4,  darknessOpacity: 0.25, fogOpacity: 0.6,  tintColor: 'rgba(80,60,120,0.2)' },
-    earlyMorning: { duration: 60, brightness: 0.6,  darknessOpacity: 0,    fogOpacity: 0.3,  tintColor: 'rgba(255,200,100,0.1)' },
-    morning:      { duration: 60, brightness: 0.9,  darknessOpacity: 0,    fogOpacity: 0.1,  tintColor: 'rgba(0,0,0,0)' },
-    noon:         { duration: 60, brightness: 1.0,  darknessOpacity: 0,    fogOpacity: 0.0,  tintColor: 'rgba(0,0,0,0)' },
-    afternoon:    { duration: 60, brightness: 0.85, darknessOpacity: 0,    fogOpacity: 0.1,  tintColor: 'rgba(255,180,50,0.05)' },
-    dusk:         { duration: 60, brightness: 0.5,  darknessOpacity: 0.25, fogOpacity: 0.4,  tintColor: 'rgba(255,100,50,0.15)' },
-    night:        { duration: 60, brightness: 0.25, darknessOpacity: 0.65, fogOpacity: 0.7,  tintColor: 'rgba(20,20,80,0.3)' },
-    lateNight:    { duration: 60, brightness: 0.15, darknessOpacity: 0.65, fogOpacity: 0.8,  tintColor: 'rgba(10,10,40,0.4)' }
+    // darknessOpacity 是唯一全屏黑暗强度：黄昏/凌晨轻微，夜晚/深夜很深。
+    dawn:         { duration: 60, darknessOpacity: 0.25, tintColor: 'rgba(80,60,120,0.2)' },
+    earlyMorning: { duration: 60, darknessOpacity: 0,    tintColor: 'rgba(255,200,100,0.1)' },
+    morning:      { duration: 60, darknessOpacity: 0,    tintColor: 'rgba(0,0,0,0)' },
+    noon:         { duration: 60, darknessOpacity: 0,    tintColor: 'rgba(0,0,0,0)' },
+    afternoon:    { duration: 60, darknessOpacity: 0,    tintColor: 'rgba(255,180,50,0.05)' },
+    dusk:         { duration: 60, darknessOpacity: 0.25, tintColor: 'rgba(255,100,50,0.15)' },
+    night:        { duration: 60, darknessOpacity: 0.65, tintColor: 'rgba(20,20,80,0.3)' },
+    lateNight:    { duration: 60, darknessOpacity: 0.65, tintColor: 'rgba(10,10,40,0.4)' }
   };
 
   constructor(config = {}) {
@@ -48,9 +46,7 @@ export class TimeSystem {
     this.currentDay = Math.max(1, Math.floor(Number(config.currentDay) || 1));
 
     // 过渡缓存
-    this._currentBrightness = 1;
     this._currentDarknessOpacity = 0;
-    this._currentFogOpacity = 0;
     this._currentTintColor = 'rgba(0,0,0,0)';
     this._update(0); // 初始化
   }
@@ -66,15 +62,11 @@ export class TimeSystem {
     return info.progress;
   }
 
-  /** 获取当前明暗度 0~1 */
-  getBrightness() { return this._currentBrightness; }
-
   /**
-   * 获取当前黑暗蒙版透明度。黑幕只在凌晨、黄昏、夜晚和深夜启用，
-   * 强度完全由当前时间段的表现配置决定，不保留开场专用黑幕状态。
+   * 获取当前黑暗蒙版透明度；表现配置与时间段插值是唯一事实源。
    */
   getDarknessOpacity() {
-    if (!this.enabled || !DARKNESS_PERIODS.has(this.getCurrentPeriod())) return 0;
+    if (!this.enabled) return 0;
     return Math.max(0, Math.min(1, this._currentDarknessOpacity));
   }
 
@@ -83,9 +75,6 @@ export class TimeSystem {
     if (!this.enabled) return false;
     return this.getDarknessOpacity() > 0.01 || this._parseRgba(this._currentTintColor)[3] > 0.001;
   }
-
-  /** 获取当前雾透明度 0~1 */
-  getFogOpacity() { return this._currentFogOpacity; }
 
   /** 获取当前色调 */
   getTintColor() { return this._currentTintColor; }
@@ -151,9 +140,7 @@ export class TimeSystem {
       t = (info.progress - transStart) / (1 - transStart);
     }
 
-    this._currentBrightness = this._lerp(curDef.brightness, nextDef.brightness, t);
     this._currentDarknessOpacity = this._lerp(curDef.darknessOpacity, nextDef.darknessOpacity, t);
-    this._currentFogOpacity = this._lerp(curDef.fogOpacity, nextDef.fogOpacity, t);
     this._currentTintColor = this._lerpColor(curDef.tintColor, nextDef.tintColor, t);
   }
 
@@ -224,7 +211,7 @@ export class TimeSystem {
       rendered = true;
     }
 
-    // 色调与黑暗门禁分离：白天不画黑幕，但仍保留清晨/下午的环境色。
+    // 色调与黑暗透明度独立：无黑幕的时间段仍可保留环境色。
     if (this._currentTintColor && this._currentTintColor !== 'rgba(0,0,0,0)') {
       ctx.save();
       ctx.fillStyle = this._currentTintColor;

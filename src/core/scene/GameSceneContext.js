@@ -57,7 +57,8 @@ const GROUP_DEFAULTS = Object.freeze({
     terrains: null,
     terrainBinding: null,
     region: null,
-    worldIndex: null
+    worldIndex: null,
+    loadedCoverage: null
   }),
   presentation: Object.freeze({
     renderer: null,

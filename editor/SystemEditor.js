@@ -5,6 +5,28 @@
  * 标签顺序与运行时一致：登录界面 → 加载页面 → 天气/时间系统。
  */
 
+const TIME_PERIOD_DEFAULTS = Object.freeze({
+  dawn:         Object.freeze({ duration: 60, darknessOpacity: 0.25, tintColor: 'rgba(80,60,120,0.2)' }),
+  earlyMorning: Object.freeze({ duration: 60, darknessOpacity: 0,    tintColor: 'rgba(255,200,100,0.1)' }),
+  morning:      Object.freeze({ duration: 60, darknessOpacity: 0,    tintColor: 'rgba(0,0,0,0)' }),
+  noon:         Object.freeze({ duration: 60, darknessOpacity: 0,    tintColor: 'rgba(0,0,0,0)' }),
+  afternoon:    Object.freeze({ duration: 60, darknessOpacity: 0,    tintColor: 'rgba(255,180,50,0.05)' }),
+  dusk:         Object.freeze({ duration: 60, darknessOpacity: 0.25, tintColor: 'rgba(255,100,50,0.15)' }),
+  night:        Object.freeze({ duration: 60, darknessOpacity: 0.65, tintColor: 'rgba(20,20,80,0.3)' }),
+  lateNight:    Object.freeze({ duration: 60, darknessOpacity: 0.65, tintColor: 'rgba(10,10,40,0.4)' })
+});
+
+const WEATHER_PARTICLE_DEFAULTS = Object.freeze({
+  clear:     Object.freeze({ count: 0, windX: 0, windY: 0 }),
+  breeze:    Object.freeze({ count: 12, windX: 40, windY: 3 }),
+  wind:      Object.freeze({ count: 35, windX: 120, windY: 8 }),
+  lightRain: Object.freeze({ count: 80, windX: 8, windY: 350 }),
+  heavyRain: Object.freeze({ count: 180, windX: 30, windY: 520 }),
+  lightFog:  Object.freeze({ count: 8, windX: 0, windY: 0 }),
+  heavyFog:  Object.freeze({ count: 14, windX: 0, windY: 0 }),
+  storm:     Object.freeze({ count: 140, windX: 55, windY: 480 })
+});
+
 export class SystemEditor {
   constructor(container, opts = {}) {
     this.container = container;
@@ -81,18 +103,10 @@ export class SystemEditor {
       this._data.time = {
         enabled: false,
         startPeriod: 'noon',
-        periods: {
-          dawn:         { duration: 60, brightness: 0.4,  fogOpacity: 0.6,  tintColor: 'rgba(80,60,120,0.2)' },
-          earlyMorning: { duration: 60, brightness: 0.6,  fogOpacity: 0.3,  tintColor: 'rgba(255,200,100,0.1)' },
-          morning:      { duration: 60, brightness: 0.9,  fogOpacity: 0.1,  tintColor: 'rgba(0,0,0,0)' },
-          noon:         { duration: 60, brightness: 1.0,  fogOpacity: 0.0,  tintColor: 'rgba(0,0,0,0)' },
-          afternoon:    { duration: 60, brightness: 0.85, fogOpacity: 0.1,  tintColor: 'rgba(255,180,50,0.05)' },
-          dusk:         { duration: 60, brightness: 0.5,  fogOpacity: 0.4,  tintColor: 'rgba(255,100,50,0.15)' },
-          night:        { duration: 60, brightness: 0.25, fogOpacity: 0.7,  tintColor: 'rgba(20,20,80,0.3)' },
-          lateNight:    { duration: 60, brightness: 0.15, fogOpacity: 0.8,  tintColor: 'rgba(10,10,40,0.4)' }
-        }
+        periods: structuredClone(TIME_PERIOD_DEFAULTS)
       };
     }
+    if (!this._data.time.periods) this._data.time.periods = {};
   }
 
   _persistenceError(result, fallback = 'canonical 提交失败') {
@@ -296,13 +310,13 @@ export class SystemEditor {
     if (wtSave) wtSave.addEventListener('click', async () => {
       this._data.weather.default = this.container.querySelector('#sys-wt-default').value;
       this._data.weather.transitionSpeed = parseFloat(this.container.querySelector('#sys-wt-speed').value);
-      // 收集各天气粒子参数
+      // 收集各天气粒子参数。
       this.container.querySelectorAll('.sys-wt-row').forEach(row => {
         const key = row.dataset.weather;
         if (!key) return;
+        const current = this._data.weather.particles[key] || {};
         this._data.weather.particles[key] = {
-          ...(this._data.weather.particles[key] || {}),
-          fogAdd: parseFloat(row.querySelector('.wt-fog').value) || 0,
+          ...current,
           count: parseInt(row.querySelector('.wt-count').value) || 0,
           windX: parseFloat(row.querySelector('.wt-wx').value) || 0,
           windY: parseFloat(row.querySelector('.wt-wy').value) || 0
@@ -315,14 +329,16 @@ export class SystemEditor {
     if (tmSave) tmSave.addEventListener('click', async () => {
       this._data.time.enabled = this.container.querySelector('#sys-tm-enabled').checked;
       this._data.time.startPeriod = this.container.querySelector('#sys-tm-start').value;
-      // 收集各时间段参数
+      // 收集各时间段参数；darknessOpacity 是唯一全屏黑暗强度。
       this.container.querySelectorAll('.sys-period-row').forEach(row => {
-        const p = row.dataset.period;
-        if (!this._data.time?.periods?.[p]) return;
-        this._data.time.periods[p].duration = parseFloat(row.querySelector('.p-dur').value);
-        this._data.time.periods[p].brightness = parseFloat(row.querySelector('.p-bright').value);
-        this._data.time.periods[p].fogOpacity = parseFloat(row.querySelector('.p-fog').value);
-        this._data.time.periods[p].tintColor = row.querySelector('.p-tint').value;
+        const periodId = row.dataset.period;
+        if (!periodId) return;
+        this._data.time.periods[periodId] = {
+          ...(this._data.time.periods[periodId] || {}),
+          duration: parseFloat(row.querySelector('.p-dur').value) || 60,
+          darknessOpacity: parseFloat(row.querySelector('.p-darkness').value) || 0,
+          tintColor: row.querySelector('.p-tint').value || 'rgba(0,0,0,0)'
+        };
       });
       await this._save();
     });
@@ -441,12 +457,11 @@ export class SystemEditor {
     const NAMES = { dawn:'凌晨', earlyMorning:'清晨', morning:'上午', noon:'中午', afternoon:'下午', dusk:'黄昏', night:'夜晚', lateNight:'深夜' };
     const periods = this._data.time?.periods || {};
     container.innerHTML = Object.entries(NAMES).map(([key, name]) => {
-      const p = periods[key] || { duration: 60, brightness: 1, fogOpacity: 0, tintColor: 'rgba(0,0,0,0)' };
+      const p = { ...TIME_PERIOD_DEFAULTS[key], ...(periods[key] || {}) };
       return `<div class="sys-period-row" data-period="${key}" style="display:flex;align-items:center;gap:4px;margin-bottom:4px;background:#0a1020;padding:4px 6px;border-radius:3px;">
         <span style="width:50px;color:#aaa;font-size:11px;">${name}</span>
         <input class="p-dur" type="number" value="${p.duration}" min="10" max="600" style="width:45px;" title="持续秒数">
-        <input class="p-bright" type="number" value="${p.brightness}" min="0" max="1" step="0.05" style="width:45px;" title="明暗度0~1">
-        <input class="p-fog" type="number" value="${p.fogOpacity}" min="0" max="1" step="0.05" style="width:45px;" title="雾透明度0~1">
+        <input class="p-darkness" type="number" value="${p.darknessOpacity}" min="0" max="1" step="0.05" style="width:52px;" title="黑暗蒙版透明度 0~1">
         <input class="p-tint" type="text" value="${p.tintColor}" style="flex:1;font-size:10px;" title="色调rgba">
       </div>`;
     }).join('');
@@ -460,24 +475,13 @@ export class SystemEditor {
 
     // 渲染各天气参数编辑
     const NAMES = { clear:'晴天', breeze:'微风', wind:'大风', lightRain:'小雨', heavyRain:'大雨', lightFog:'小雾', heavyFog:'大雾', storm:'雷暴' };
-    const DEFAULTS = {
-      clear: { fogAdd: 0, count: 0, windX: 0, windY: 0 },
-      breeze: { fogAdd: 0, count: 15, windX: 30, windY: 5 },
-      wind: { fogAdd: 0.05, count: 30, windX: 80, windY: 10 },
-      lightRain: { fogAdd: 0.1, count: 60, windX: 10, windY: 300 },
-      heavyRain: { fogAdd: 0.2, count: 150, windX: 30, windY: 500 },
-      lightFog: { fogAdd: 0.25, count: 0, windX: 0, windY: 0 },
-      heavyFog: { fogAdd: 0.5, count: 0, windX: 0, windY: 0 },
-      storm: { fogAdd: 0.3, count: 120, windX: 60, windY: 450 }
-    };
     const defsContainer = this.container.querySelector('#sys-wt-defs');
     if (!defsContainer) return;
     const particles = this._data.weather.particles;
     defsContainer.innerHTML = Object.entries(NAMES).map(([key, name]) => {
-      const d = { ...DEFAULTS[key], ...(particles[key] || {}) };
+      const d = { ...WEATHER_PARTICLE_DEFAULTS[key], ...(particles[key] || {}) };
       return `<div class="sys-wt-row" data-weather="${key}" style="display:flex;align-items:center;gap:4px;margin-bottom:4px;background:#0a1020;padding:4px 6px;border-radius:3px;">
         <span style="width:40px;color:#aaa;font-size:11px;">${name}</span>
-        <input class="wt-fog" type="number" value="${d.fogAdd}" min="0" max="1" step="0.05" style="width:42px;" title="雾叠加">
         <input class="wt-count" type="number" value="${d.count}" min="0" max="300" style="width:42px;" title="粒子数">
         <input class="wt-wx" type="number" value="${d.windX}" min="-200" max="200" style="width:42px;" title="风力X">
         <input class="wt-wy" type="number" value="${d.windY}" min="0" max="800" style="width:42px;" title="风力Y">

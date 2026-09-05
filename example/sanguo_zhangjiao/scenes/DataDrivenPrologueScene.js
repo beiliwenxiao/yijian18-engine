@@ -42,8 +42,6 @@ import { ScenarioCommandService, SCENARIO_COMMANDS } from '../../../src/systems/
 import { DomainCommandService } from '../../../src/systems/DomainCommandService.js';
 import { CanonicalStateTransactionService } from '../../../src/systems/CanonicalStateTransactionService.js';
 import { SanguoDomainCommandFacade } from '../systems/SanguoDomainCommandFacade.js';
-import { WeatherSystem } from '../../../src/systems/WeatherSystem.js';
-import { TimeSystem } from '../../../src/systems/TimeSystem.js';
 import { CargoTransferView } from '../../../src/ui/CargoTransferView.js';
 import { RecipeSelectionView } from '../../../src/ui/RecipeSelectionView.js';
 import { SanguoProgressionPresentationCoordinator } from '../systems/SanguoProgressionPresentationCoordinator.js';
@@ -228,12 +226,13 @@ export class DataDrivenPrologueScene extends BaseGameScene {
       getCurrentSceneId: () => this.currentSceneId,
       getRuntime: () => this.sceneRuntime,
       onChunkUnload: ({ chunk }) => this.sanguoWorldRuntimeCoordinator.releaseStreamedChunkRuntime(chunk),
-      onProjection: ({ manager, chunks, terrains, terrain }) => {
+      onProjection: ({ manager, chunks, terrains, terrain, loadedCoverage }) => {
         this.worldStreamingManager = manager;
         this._terrains = terrains;
         this.terrain = terrain;
         this.context.world.terrain = terrain;
         this.context.world.terrains = terrains;
+        this.context.world.loadedCoverage = loadedCoverage || null;
         if (this.minimap) {
           if (this._worldIndex &&
               (this.minimap._worldIndex !== this._worldIndex || this.minimap._regionRef !== manager.regionId)) {
@@ -412,9 +411,9 @@ export class DataDrivenPrologueScene extends BaseGameScene {
     });
     this.context.services.cityWarState = this.cityWarStateBridge;
 
-    // 天气/时间只在 canonical runtime config 发布成功后创建。
-    this.weatherSystem = new WeatherSystem(null);
-    this.timeSystem = new TimeSystem({ enabled: false, currentDay: 1 });
+    // 天气/时间只在 canonical runtime config 发布成功后创建，禁止调试面板修改临时假实例。
+    this.weatherSystem = null;
+    this.timeSystem = null;
   }
 
   /** 由宿主在 enter() 前标记本次启动意图；读档与继承玩家不得消费场景出生点。 */

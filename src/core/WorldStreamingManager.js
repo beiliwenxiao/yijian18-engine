@@ -149,6 +149,66 @@ export class WorldStreamingManager {
     return needed;
   }
 
+  /**
+   * 返回当前中心九宫格中已实际提交的 physical chunk coverage。
+   * 这是从 current center 的 loadable specs 与 loaded 交集派生的只读表现快照；
+   * 不暴露 loaded Map，也不写入流式状态、业务状态或存档。
+   */
+  getActiveNineGridCoverage() {
+    const empty = Object.freeze({
+      regionId: this.regionId || null,
+      rects: Object.freeze([]),
+      envelope: null
+    });
+    if (!Number.isInteger(this._currentCol) || !Number.isInteger(this._currentRow)
+      || this._currentCol < 0 || this._currentRow < 0
+      || !Number.isFinite(this.chunkWidth) || this.chunkWidth <= 0
+      || !Number.isFinite(this.chunkHeight) || this.chunkHeight <= 0) return empty;
+
+    const rects = [];
+    let envelope = null;
+    for (const spec of this._getNeededChunks(this._currentCol, this._currentRow)) {
+      const key = this._chunkKey(spec.col, spec.row);
+      const chunk = this.loaded.get(key);
+      if (!chunk
+        || chunk.key !== key
+        || chunk.regionId !== this.regionId
+        || Number(chunk.col) !== spec.col
+        || Number(chunk.row) !== spec.row
+        || chunk.sceneId !== spec.sceneId) continue;
+      const left = Number(chunk.origin?.x);
+      const top = Number(chunk.origin?.y);
+      if (!Number.isFinite(left) || !Number.isFinite(top)) continue;
+      const right = left + this.chunkWidth;
+      const bottom = top + this.chunkHeight;
+      const rect = Object.freeze({
+        key,
+        sceneId: spec.sceneId,
+        sceneNamespace: chunk.sceneNamespace || this.getSceneNamespace(spec.sceneId),
+        col: spec.col,
+        row: spec.row,
+        left,
+        top,
+        right,
+        bottom
+      });
+      rects.push(rect);
+      if (!envelope) {
+        envelope = { left, top, right, bottom };
+      } else {
+        envelope.left = Math.min(envelope.left, left);
+        envelope.top = Math.min(envelope.top, top);
+        envelope.right = Math.max(envelope.right, right);
+        envelope.bottom = Math.max(envelope.bottom, bottom);
+      }
+    }
+    return Object.freeze({
+      regionId: this.regionId,
+      rects: Object.freeze(rects),
+      envelope: envelope ? Object.freeze(envelope) : null
+    });
+  }
+
   _manhattan(col, row, centerCol, centerRow) {
     return Math.abs(col - centerCol) + Math.abs(row - centerRow);
   }

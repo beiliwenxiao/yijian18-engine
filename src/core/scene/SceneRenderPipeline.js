@@ -18,7 +18,7 @@ const TIME_WEATHER_LABELS = Object.freeze({
  * SceneRenderPipeline - Canvas 2D 场景渲染编排（框架级）
  *
  * 场景持有内容与 UI 实例，本类固定世界、屏幕 UI 与最高层弹窗的绘制顺序。
- * 子场景仍可覆盖 renderBackground、renderWorldObjects、renderFogLayer 等内容钩子。
+ * atmosphere 统一由 context.services.campfire.renderAtmosphere 提供。
  */
 export class SceneRenderPipeline {
   /** @param {{scene:Object, context?:Object, worldLayers?:Function[], screenLayers?:Function[], modalLayers?:Function[]}|Object} config */
@@ -33,17 +33,20 @@ export class SceneRenderPipeline {
     ];
     this.screenLayers = config?.screenLayers || [
       (scene, ctx) => {
-        const campfire = this.context?.services?.campfire;
-        if (!campfire) return scene.renderFogLayer(ctx);
+        const atmosphere = this.context?.services?.campfire;
+        if (typeof atmosphere?.renderAtmosphere !== 'function') {
+          throw new Error('SceneRenderPipeline requires context.services.campfire.renderAtmosphere');
+        }
         const runtime = this._atmosphereRuntime;
         runtime.timeSystem = scene.timeSystem;
         runtime.weatherSystem = scene.weatherSystem;
         runtime.playerEntity = this.context?.player?.entity || null;
         runtime.camera = this.context?.camera?.instance || null;
         runtime.viewBounds = this._viewBounds || null;
+        runtime.loadedCoverage = this.context?.world?.loadedCoverage || null;
         runtime.width = scene.logicalWidth;
         runtime.height = scene.logicalHeight;
-        return campfire.renderAtmosphere(ctx, runtime);
+        return atmosphere.renderAtmosphere(ctx, runtime);
       },
       (scene, ctx) => this.context?.presentation?.skillEffects
         ?.render?.(ctx, this.context?.camera?.instance || null),
@@ -105,7 +108,7 @@ export class SceneRenderPipeline {
     this._terrainBuffer = [];
     this._atmosphereRuntime = {
       timeSystem: null, weatherSystem: null, playerEntity: null,
-      camera: null, viewBounds: null, width: 0, height: 0
+      camera: null, viewBounds: null, loadedCoverage: null, width: 0, height: 0
     };
     this._campfireRenderRuntime = { particleSystem: null, width: 0, height: 0 };
   }

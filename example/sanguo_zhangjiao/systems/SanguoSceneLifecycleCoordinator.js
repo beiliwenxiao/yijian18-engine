@@ -67,7 +67,6 @@ function updateBeforeBase(deltaTime) {
     phaseStartedAt = now;
   }
 
-  if (this.weatherSystem) this.weatherSystem.update(deltaTime);
   if (this.timeSystem) {
     const previousDay = this.timeSystem.getCurrentDay();
     this.timeSystem.update(deltaTime);
@@ -115,6 +114,14 @@ function updateAfterBase(deltaTime) {
   } else if (this.currentSceneId === 'S06' || this.currentSceneId === 'S10') {
     this.s10ConstructionCoordinator._updateConstructionRuntime(deltaTime);
   }
+
+  // WeatherSystem 只消费相机最终世界视野和 core 已提交九宫格 coverage；粒子不读取玩家，也不累加相机位移。
+  const weatherCamera = this.context?.camera?.instance || this.camera;
+  this.weatherSystem?.update?.(deltaTime, {
+    viewBounds: weatherCamera?.getViewBounds?.() || null,
+    loadedCoverage: this.context?.world?.loadedCoverage || null
+  });
+
   if (this.currentSceneId === 'S10') {
     this.s10ConstructionCoordinator._ensureS10StructureEntities();
   }
@@ -255,6 +262,7 @@ function disposeEnteredRuntime() {
   this._worldIndex = null;
   this.context.world.terrain = null;
   this.context.world.terrains = null;
+  this.context.world.loadedCoverage = null;
   this.context.world.region = null;
   this.context.world.worldIndex = null;
   this.context.services.placements?.reset?.({ clearProjection: true, clearPending: true, clearSpawned: true });
