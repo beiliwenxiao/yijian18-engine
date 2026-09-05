@@ -333,6 +333,7 @@ localStorage                 →  仅作提交后的编辑器缓存，不参与�
 - 左侧列表显示名唯一读取 `_scene_order.json -> scenes[sceneId].name`，并应与对应场景 JSON 顶层 `name` 保持一致；不得在 `renderSceneList()` 临时读取场景正文补名。`SceneEditor` 必须保留宿主注入的 `onSceneMetaChange`，名称变更通过 `EditorSceneCommandService.update({ scene, orderEntry:{name} })` 在同一 canonical 事务中同步正文与列表条目，严格提交成功后再从磁盘重建列表缓存；提交期间禁止并发 whole-scene 保存。
 - `renderSceneList()` 直接保持 `getGameScenes()` 的磁盘顺序，禁止再读取 `yijian18-engine_scene_order_*` 等独立排序键；筛选视图拖拽时只重排可见 ID，并把它们合并回完整 order，不能删除隐藏场景。
 - 场景正文与相邻预览只接受磁盘、当前 canonical committed snapshot 或已登记 preset 中带完整 `layers` 的文档，列表 localStorage 元数据不得冒充场景正文。异步切换使用 generation latest-wins，较旧请求不得覆盖新场景、邻居投影、当前 sceneId 或模板编辑态。
+- `scene-workflow.html` 初始进入时，先保留仍在 canonical 场景目录内的 URL `sceneId`；无效、缺失或加载失败时，必须按磁盘 `_scene_order.json` 的顺序继续尝试，首个 `loadSceneEditor() === true` 的场景立即成为当前场景、写回 URL 并由既有 `SceneEditor.loadScene()` 渲染到工作区。`null` 只表示 generation 已被较新请求取代，不得清空或回退覆盖该较新选择。
 - 触发器中引用已删除场景时可单独标记为“旧引用”，但不得为显示旧引用而把该 ID 重新写入场景列表。
 
 ## 世界地图网格与规划单元

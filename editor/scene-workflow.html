@@ -741,21 +741,35 @@
             );
         });
 
+        async function loadInitialScene() {
+            const scenes = ctx.dataManager.getGameScenes(gameId);
+            const requestedScene = scenes.find(scene => scene.id === sceneId) || null;
+            const candidates = requestedScene
+                ? [requestedScene, ...scenes.filter(scene => scene.id !== requestedScene.id)]
+                : scenes;
+
+            for (const scene of candidates) {
+                ctx.currentSceneId = scene.id;
+                const loaded = await loadSceneEditor(scene.id);
+                if (loaded === true) {
+                    const url = new URL(window.location);
+                    url.searchParams.set('sceneId', scene.id);
+                    window.history.replaceState({}, '', url);
+                    renderSceneList();
+                    return true;
+                }
+                // latest-wins：已有较新的场景加载请求时，不得覆盖它的当前选择。
+                if (loaded === null) return null;
+            }
+
+            ctx.currentSceneId = null;
+            renderSceneList();
+            return false;
+        }
+
         // 初始化
         renderSceneList();
-        if (sceneId) {
-            const loaded = await loadSceneEditor(sceneId);
-            if (loaded === false) ctx.currentSceneId = null;
-            renderSceneList();
-        } else {
-            const scenes = ctx.dataManager.getGameScenes(gameId);
-            if (scenes.length > 0) {
-                ctx.currentSceneId = scenes[0].id;
-                const loaded = await loadSceneEditor(scenes[0].id);
-                if (loaded === false) ctx.currentSceneId = null;
-                renderSceneList();
-            }
-        }
+        await loadInitialScene();
 
         // 场景模板筛选
         document.getElementById('new-template-btn').addEventListener('click', async () => {
