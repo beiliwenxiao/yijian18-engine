@@ -26,6 +26,8 @@ export class S01S02Coordinator {
     this.pendingWolfDiscovery = false;
     this.pendingClimb = false;
     this.pendingPlacementReveals = new Map();
+    // 当前 S01 会话中已确认的放置后续，避免健康对象被每帧重新加入补偿队列。
+    this.resolvedPlacementContinuations = new Set();
     this.pendingRevealRetryElapsed = 0;
     this.pendingRevealRetryInFlight = false;
     this.s01TimePhaseInitialized = false;
@@ -233,6 +235,15 @@ export class S01S02Coordinator {
       return { ok: false, code: 'placementRuntimeUnavailable', result: null, target: null };
     }
 
+    // 已登记但实体异常丢失时，才释放幂等登记后重建；正常 live 对象不会重生。
+    const beforeSpawn = placements.inspectPlacement?.(placementId) || null;
+    if (beforeSpawn?.placement
+      && beforeSpawn.spawned === true
+      && beforeSpawn.live !== true
+      && beforeSpawn.tombstoned !== true) {
+      placements.forgetSpawnedPlacements?.([placementId]);
+    }
+
     let result;
     try {
       result = await this._spawnGroup(group);
@@ -280,6 +291,7 @@ export class S01S02Coordinator {
       };
     }
 
+    this.resolvedPlacementContinuations.add(placementId);
     return {
       ok: true,
       created: outcome.status === 'spawned',
@@ -345,6 +357,7 @@ export class S01S02Coordinator {
   }
 
   _rememberPendingReveal(request) {
+    this.resolvedPlacementContinuations.delete(request.placementId);
     const previous = this.pendingPlacementReveals.get(request.placementId);
     this.pendingPlacementReveals.set(request.placementId, {
       ...request,
@@ -1320,6 +1333,7 @@ export class S01S02Coordinator {
 
   update(deltaTime) {
     if (this.scene.currentSceneId !== 'S01') {
+      this.resolvedPlacementContinuations.clear();
       if (this.s01TimePhaseInitialized || this.s01WeatherPhaseInitialized || this.s01TimePauseOwned) {
         this._resetS01AtmosphereProjection();
       }
@@ -1373,13 +1387,23 @@ export class S01S02Coordinator {
     }
     const gatherPlacementNeedsRecovery = survival.initialToolsPicked === true
       && survival.berriesGathered !== true;
-    if (gatherPlacementNeedsRecovery && !this.pendingPlacementReveals.has('S01-node-berry-1')) {
-      this._rememberPendingReveal(this._createCampfireContinuation());
+    if (gatherPlacementNeedsRecovery) {
+      if (!this.resolvedPlacementContinuations.has('S01-node-berry-1')
+        && !this.pendingPlacementReveals.has('S01-node-berry-1')) {
+        this._rememberPendingReveal(this._createCampfireContinuation());
+      }
+    } else {
+      this.resolvedPlacementContinuations.delete('S01-node-berry-1');
     }
     const woodPlacementNeedsRecovery = survival.berriesGathered === true
       && survival.woodGathered !== true;
-    if (woodPlacementNeedsRecovery && !this.pendingPlacementReveals.has('S01-node-wood-1')) {
-      this._rememberPendingReveal(this._createWoodGatherContinuation());
+    if (woodPlacementNeedsRecovery) {
+      if (!this.resolvedPlacementContinuations.has('S01-node-wood-1')
+        && !this.pendingPlacementReveals.has('S01-node-wood-1')) {
+        this._rememberPendingReveal(this._createWoodGatherContinuation());
+      }
+    } else {
+      this.resolvedPlacementContinuations.delete('S01-node-wood-1');
     }
     if (this.pendingPlacementReveals.size > 0 && !this.pendingRevealRetryInFlight) {
       const pending = this.pendingPlacementReveals.values().next().value;

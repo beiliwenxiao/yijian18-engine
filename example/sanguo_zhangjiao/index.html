@@ -2401,7 +2401,11 @@
                     scene.setSystemMenuCallback?.(() => openSystemMenu());
 
                     // 启动必须等待世界和 GameLoader 成功；任何失败都不能进入可运行或可写档状态。
-                    const readyTasks = [scene._worldLoadPromise, scene._gameLoaderReady].filter(Boolean);
+                    const readyTasks = [
+                        scene._worldLoadPromise,
+                        scene._gameLoaderReady,
+                        scene._worldRuntimeReadyPromise
+                    ].filter(Boolean);
                     if (readyTasks.length) await Promise.all(readyTasks);
                     saveGames.setStateProvider({
                         capture: () => scene.captureSaveState(),

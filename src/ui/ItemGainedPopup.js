@@ -189,8 +189,8 @@ export class ItemGainedPopup extends UIElement {
   }
 
   /**
-   * 设备无关弹窗输入入口。PC/触屏只在实际指针点击时消费输入；
-   * 手柄持续接管焦点导航与物理 A 确认，避免其输入穿透到世界。
+   * 设备无关弹窗输入入口。鼠标只在命中弹窗时消费；触屏与手柄保持模态操作，
+   * 避免触摸或手柄输入穿透到世界。
    */
   handleInput({ inputManager = null, gamepad = null } = {}) {
     if (!this.visible) return false;
@@ -199,10 +199,15 @@ export class ItemGainedPopup extends UIElement {
     if (inputManager?.isMouseClicked?.() && !inputManager.isMouseClickHandled?.()) {
       const point = inputManager.getMousePosition?.() || { x: 0, y: 0 };
       const button = inputManager.getMouseButton?.() === 2 ? 'right' : 'left';
-      this.handleMouseClick(point.x, point.y, button);
-      // 弹窗显示期间，框外点击同样属于弹窗输入，不能落到世界层。
-      inputManager.markMouseClickHandled?.();
-      pointerConsumed = true;
+      const isTouchInput = inputManager?.mouse?.isTouch === true;
+      pointerConsumed = this.handleMouseClick(point.x, point.y, button) === true;
+      if (pointerConsumed || isTouchInput) {
+        // 触屏保持原有模态；鼠标仅在命中弹窗时阻止传播到世界。
+        inputManager.markMouseClickHandled?.();
+        pointerConsumed = true;
+      }
+      // 鼠标事件不能因提示方案残留为 gamepad 而被弹窗整帧接管。
+      if (!isTouchInput) return pointerConsumed;
     }
 
     if (InputHints.scheme !== 'gamepad') return pointerConsumed;
@@ -392,7 +397,7 @@ export class ItemGainedPopup extends UIElement {
         }
       }
     }
-    // 点击弹窗范围内一律拦截，避免穿透到游戏世界
+    // 弹窗范围内的任意鼠标键都由 UI 拦截，框外则继续交给世界输入。
     return this.isPointInside(x, y);
   }
 

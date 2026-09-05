@@ -48,8 +48,6 @@ export class SceneFramePipeline {
     const services = context?.services || {};
     const systems = context?.systems || {};
     const presentation = context?.presentation || {};
-    const world = context?.world || {};
-    const terrainBinding = world.terrainBinding || null;
     const entities = context?.entities?.all || [];
     const player = context?.player?.entity || null;
     const inputManager = context?.input?.manager || null;
@@ -315,28 +313,13 @@ export class SceneFramePipeline {
       // 避免障碍消失（怪物移开等）后玩家仍被“卡住”直到松开方向键。
       movementSystem._clearBlockedAccumulator?.(player);
     }
-    let rerouted = false;
-    // 已被阻挡达到自动停止阈值时，不再重规划，也不启动新接触锁，直接停下。
-    const autoStopEngaged = movementSystem._releaseRequiredToMove?.(player) === true;
-    if (movementContact && player && !autoStopEngaged && combatSystem?.isInCombat?.() !== true) {
-      const dynamicEntityBlocked = collisionSystem.createPositionBlocker?.(entities, {
-        ignoreEntity: player
-      }) || (() => false);
-      const isBlocked = (x, y) => movementSystem.canMoveTo?.(x, y, player) === false
-        || terrainBinding?.isPositionBlocked?.(x, y, { radius: 12 }) === true
-        || dynamicEntityBlocked(x, y);
-      rerouted = movementSystem.tryRerouteAfterContact?.(player, {
-        inCombat: false,
-        isBlocked
-      }) === true;
-    }
-    // 非战斗 A* 不可达（以及战斗状态）才回退短时接触锁，避免每帧重复重规划；
+    // 非战斗碰撞只走既有的接触停顿和自动停止，不再执行自动 A* 重规划。
     // 战斗状态不启动碰撞停顿，移动保持即时响应，战斗结束后恢复。
     // 仅地形/静态障碍顶撞才触发碰撞停顿；实体（怪物/NPC）顶撞不算，避免怪物一出现就卡住玩家。
     const obstacleContact = movementResult?.playerBlocked === true || pushedByTerrain;
     movementSystem.setMovementContact?.(
       player,
-      obstacleContact && !rerouted && combatSystem?.isInCombat?.() !== true
+      obstacleContact && combatSystem?.isInCombat?.() !== true
     );
 
     // 玩家与实体位置已完成本帧移动和碰撞修正后再更新相机，

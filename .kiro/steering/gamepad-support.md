@@ -49,7 +49,7 @@ RT holding 的扇形方向锁由 `SceneCombatActions` 临时拥有：按住时�
 ### 6. 移动优先用 getMoveAxis()
 `MovementSystem.handleKeyboardInput` 先取 `inputManager.getMoveAxis()`（返回归一化方向 + magnitude 推杆量，手柄摇杆可轻推慢走），拿不到再退回逐键判断。`getMoveAxis` 不存在时（旧 InputManager / 测试替身）走兜底分支，测试不受影响。摇杆同时补出数字方向键（`up/left` 等），让只读 `isKeyDown('up')` 的朝向/动画代码也能跟随。
 
-驾驶席不得另建输入旁路：`MovementSystem.setMoveIntentRouter()` 将同一个 axis/右键移动 intent 交给 `VehicleSystem.routeIntent()`；driver 路由到载具 MovementComponent，未乘载具或非 driver 仍路由到玩家。这样键盘、Android 虚拟摇杆、手柄左摇杆和 PC 右键寻路共享同一移动提交链。
+驾驶席不得另建输入旁路：`MovementSystem.setMoveIntentRouter()` 将同一个 axis/右键移动 intent 交给 `VehicleSystem.routeIntent()`；driver 路由到载具 MovementComponent，未乘载具或非 driver 仍路由到玩家。这样键盘、Android 虚拟摇杆、手柄左摇杆和 PC 右键点位移动共享同一移动提交链；右键只提交原始点位，不因碰撞自动执行 A* 绕障。
 
 ### 7. 组合键热键用 registerHotkey 的修饰键选项
 `registerHotkey(id, keys, cb, { ctrl, shift, alt })`。需要组合键时用这个选项，不要另写 keydown 监听。

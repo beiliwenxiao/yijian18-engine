@@ -183,17 +183,68 @@ export class TimeSystem {
     };
   }
 
-  deserialize(data = {}) {
-    if (!data || typeof data !== 'object') return false;
-    if (typeof data.enabled === 'boolean') this.enabled = data.enabled;
-    if (typeof data.paused === 'boolean') this.paused = data.paused;
-    if (Number.isFinite(data.currentDay)) this.setCurrentDay(data.currentDay);
-    if (Number.isFinite(data.elapsed)) {
-      const duration = Math.max(0.001, this.cycleDuration);
-      this.elapsed = ((Number(data.elapsed) % duration) + duration) % duration;
+  /** 纯校验并构造昼夜恢复草稿，不修改当前运行态。 */
+  validateSerialized(data = {}) {
+    const errors = [];
+    if (!data || typeof data !== 'object' || Array.isArray(data)) {
+      errors.push({ code: 'invalidTimeState', path: '', message: '昼夜状态必须是对象' });
+    } else {
+      if (typeof data.enabled !== 'boolean') {
+        errors.push({ code: 'invalidTimeEnabled', path: 'enabled', message: '昼夜启用状态必须是布尔值' });
+      }
+      if (typeof data.paused !== 'boolean') {
+        errors.push({ code: 'invalidTimePaused', path: 'paused', message: '昼夜暂停状态必须是布尔值' });
+      }
+      if (!Number.isInteger(data.currentDay) || data.currentDay < 1) {
+        errors.push({ code: 'invalidTimeDay', path: 'currentDay', message: '昼夜日期必须是从 1 开始的整数' });
+      }
+      const duration = Number.isFinite(this.cycleDuration) && this.cycleDuration > 0
+        ? this.cycleDuration
+        : 0.001;
+      if (!Number.isFinite(data.elapsed) || data.elapsed < 0 || data.elapsed >= duration) {
+        errors.push({ code: 'invalidTimeElapsed', path: 'elapsed', message: '昼夜经过时间超出当前周期范围' });
+      }
     }
-    this._update(0);
-    return true;
+    if (errors.length > 0) return { ok: false, errors };
+    return {
+      ok: true,
+      errors: [],
+      draft: {
+        enabled: data.enabled,
+        paused: data.paused,
+        currentDay: data.currentDay,
+        elapsed: data.elapsed
+      }
+    };
+  }
+
+  deserialize(data = {}) {
+    const prepared = this.validateSerialized(data);
+    if (!prepared.ok) return false;
+    const before = {
+      enabled: this.enabled,
+      paused: this.paused,
+      currentDay: this.currentDay,
+      elapsed: this.elapsed,
+      darknessOpacity: this._currentDarknessOpacity,
+      tintColor: this._currentTintColor
+    };
+    try {
+      this.enabled = prepared.draft.enabled;
+      this.paused = prepared.draft.paused;
+      this.currentDay = prepared.draft.currentDay;
+      this.elapsed = prepared.draft.elapsed;
+      this._update(0);
+      return true;
+    } catch (_) {
+      this.enabled = before.enabled;
+      this.paused = before.paused;
+      this.currentDay = before.currentDay;
+      this.elapsed = before.elapsed;
+      this._currentDarknessOpacity = before.darknessOpacity;
+      this._currentTintColor = before.tintColor;
+      return false;
+    }
   }
 
   /** 渲染时间系统的明暗/色调层（屏幕坐标，可绘制到独立 atmosphere Canvas）。 */

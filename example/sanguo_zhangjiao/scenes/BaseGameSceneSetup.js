@@ -441,6 +441,23 @@ export class BaseGameSceneSetup extends Scene {
     const legacyPath = findLegacySavePath(data);
     if (legacyPath) incompatible(legacyPath);
 
+    if (data.scene?.timeState != null) {
+      const timeSystem = this.timeSystem;
+      if (typeof timeSystem?.validateSerialized !== 'function') {
+        errors.push({
+          code: 'timeRuntimeUnavailable',
+          path: 'scene.timeState',
+          message: '昼夜运行时尚未就绪'
+        });
+      } else {
+        const timeCheck = timeSystem.validateSerialized(data.scene.timeState);
+        errors.push(...(timeCheck.errors || []).map(error => ({
+          ...error,
+          path: error.path ? `scene.timeState.${error.path}` : 'scene.timeState'
+        })));
+      }
+    }
+
     if (!data.content || typeof data.content !== 'object' || Array.isArray(data.content)) {
       errors.push({ code: 'missingField', path: 'content', message: '缺少游戏内容状态' });
     } else if (typeof this.gameLoader?.validateSerialized === 'function') {

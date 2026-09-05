@@ -144,8 +144,14 @@ export class WeatherSystem {
 
     this._fogImageIds = normalizeFogImageIds(config?.fog?.imageIds);
     this.maxFogClouds = normalizeFogCloudLimit(config?.fog?.maxClouds);
+    this._fogFadeDurationRange = this._normalizeFogFadeDuration(config?.fog?.fadeDurationSeconds);
     this._fogImages = [];
     this._fogCoverageSignature = '';
+    this._fogAlpha = 0;
+    this._fogFadeStartAlpha = 0;
+    this._fogFadeTargetAlpha = 0;
+    this._fogFadeElapsed = 0;
+    this._fogFadeDuration = 0;
     this._particles = [];
     this._fogClouds = [];
     this._lightningTimer = 0;
@@ -158,9 +164,76 @@ export class WeatherSystem {
     this.regions = [];
   }
 
-  _clearSpatialEffects({ resetSunbeamTimer = false } = {}) {
+  _clampUnit(value, fallback = 0) {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) return fallback;
+    return Math.max(0, Math.min(1, numeric));
+  }
+
+  _smoothstep(value) {
+    const t = this._clampUnit(value);
+    return t * t * (3 - 2 * t);
+  }
+
+  _isFogWeather(weather) {
+    return weather === 'lightFog' || weather === 'heavyFog';
+  }
+
+  _normalizeFogFadeDuration(value) {
+    const requestedMin = Number(value?.min);
+    const requestedMax = Number(value?.max);
+    const min = Number.isFinite(requestedMin)
+      ? Math.min(30, Math.max(10, requestedMin))
+      : 10;
+    const max = Number.isFinite(requestedMax)
+      ? Math.min(30, Math.max(min, requestedMax))
+      : 30;
+    return Object.freeze({ min, max });
+  }
+
+  _getFogFadeDuration() {
+    return randomBetween(this._fogFadeDurationRange.min, this._fogFadeDurationRange.max);
+  }
+
+  _setFogPresentationTarget(weather) {
+    const targetAlpha = this._isFogWeather(weather) ? 1 : 0;
+    if (targetAlpha === this._fogFadeTargetAlpha) return false;
+    this._fogFadeStartAlpha = this._fogAlpha;
+    this._fogFadeTargetAlpha = targetAlpha;
+    this._fogFadeElapsed = 0;
+    this._fogFadeDuration = this._getFogFadeDuration();
+    return true;
+  }
+
+  _updateFogPresentation(deltaTime, weather) {
+    this._setFogPresentationTarget(weather);
+    if (this._fogFadeDuration <= 0 || this._fogFadeStartAlpha === this._fogFadeTargetAlpha) {
+      this._fogAlpha = this._fogFadeTargetAlpha;
+      return;
+    }
+
+    this._fogFadeElapsed = Math.min(
+      this._fogFadeDuration,
+      this._fogFadeElapsed + deltaTime
+    );
+    const progress = this._smoothstep(this._fogFadeElapsed / this._fogFadeDuration);
+    this._fogAlpha = this._clampUnit(
+      this._fogFadeStartAlpha
+        + (this._fogFadeTargetAlpha - this._fogFadeStartAlpha) * progress
+    );
+  }
+
+  _resetFogPresentation() {
+    this._fogAlpha = 0;
+    this._fogFadeStartAlpha = 0;
+    this._fogFadeTargetAlpha = 0;
+    this._fogFadeElapsed = 0;
+    this._fogFadeDuration = 0;
+  }
+
+  _clearSpatialEffects({ resetSunbeamTimer = false, clearFog = false } = {}) {
     this._particles.length = 0;
-    this._fogClouds.length = 0;
+    if (clearFog) this._fogClouds.length = 0;
     this._sunbeams.length = 0;
     if (resetSunbeamTimer) this._sunbeamTimer = 0;
   }
@@ -176,7 +249,16 @@ export class WeatherSystem {
    */
   setFogImages(images = []) {
     this._fogImages = normalizeFogImages(images);
-    this._fogClouds.length = 0;
+    if (this._fogImages.length === 0) {
+      this._fogClouds.length = 0;
+    } else {
+      for (const cloud of this._fogClouds) {
+        const imageIndex = Number(cloud?.imageIndex);
+        cloud.imageIndex = Number.isFinite(imageIndex)
+          ? Math.abs(Math.floor(imageIndex)) % this._fogImages.length
+          : 0;
+      }
+    }
     return this._fogImages.length;
   }
 
@@ -189,6 +271,7 @@ export class WeatherSystem {
       this.currentWeather = type;
       this.transitionProgress = 1;
     }
+    this._setFogPresentationTarget(this.getVisualWeather());
     return true;
   }
 
@@ -198,6 +281,7 @@ export class WeatherSystem {
     this._clearSpatialEffects({ resetSunbeamTimer: true });
     this._lightningTimer = 0;
     this._lightningFlash = 0;
+    this._setFogPresentationTarget(this.getVisualWeather());
     return true;
   }
 
@@ -207,6 +291,7 @@ export class WeatherSystem {
     this._clearSpatialEffects({ resetSunbeamTimer: true });
     this._lightningTimer = 0;
     this._lightningFlash = 0;
+    this._setFogPresentationTarget(this.getVisualWeather());
     return true;
   }
 
@@ -253,7 +338,8 @@ export class WeatherSystem {
     this.targetWeather = targetWeather;
     this.transitionProgress = transitionProgress;
     this.regions = restoredRegions;
-    this._clearSpatialEffects({ resetSunbeamTimer: true });
+    this._clearSpatialEffects({ resetSunbeamTimer: true, clearFog: true });
+    this._resetFogPresentation();
     this._fogCoverageSignature = '';
     this._lightningTimer = 0;
     this._lightningFlash = 0;
@@ -281,7 +367,15 @@ export class WeatherSystem {
     const normalized = normalizeFogCoverage(coverage);
     if (normalized.signature !== this._fogCoverageSignature) {
       this._fogCoverageSignature = normalized.signature;
-      this._fogClouds.length = 0;
+      let writeIndex = 0;
+      for (let readIndex = 0, length = this._fogClouds.length; readIndex < length; readIndex++) {
+        const cloud = this._fogClouds[readIndex];
+        const rect = normalized.byKey.get(cloud?.coverageKey);
+        if (!fogCloudFitsRect(cloud, rect)) continue;
+        if (writeIndex !== readIndex) this._fogClouds[writeIndex] = cloud;
+        writeIndex++;
+      }
+      this._fogClouds.length = writeIndex;
     }
     return normalized;
   }
@@ -300,6 +394,7 @@ export class WeatherSystem {
 
     const weather = this.getVisualWeather();
     const def = this.weatherDefs[weather];
+    this._updateFogPresentation(dt, weather);
 
     if (weather === 'clear') this._updateSunbeams(dt, bounds);
     else this._sunbeams.length = 0;
@@ -311,7 +406,9 @@ export class WeatherSystem {
       this._particles.length = 0;
     }
 
-    if (weather === 'lightFog' || weather === 'heavyFog') {
+    if (this._isFogWeather(weather)
+      || this._fogAlpha > 0
+      || this._fogFadeTargetAlpha > 0) {
       this._updateFogClouds(dt, def, weather, fogCoverage);
     } else {
       this._fogClouds.length = 0;
@@ -441,36 +538,147 @@ export class WeatherSystem {
 
   /**
    * 雾团严格锚定在当前中心九宫格中已经提交的 physical chunk 内。
-   * coverage 不变时只按天气速度漂移；越界后仅在当前 coverage 的合法 rect 中重生。
+   * coverage 变化时只保留仍位于当前合法 rect 的云团；云团在 rect 边界内反向漂移，
+   * 避免为了重生而突然消失或出现。
    */
+  _ensureFogCloudLocalFade(cloud) {
+    if (!cloud || typeof cloud !== 'object') return false;
+    const alpha = Number(cloud.localAlpha);
+    if (!Number.isFinite(alpha)) {
+      cloud.localAlpha = 1;
+      cloud.localFadeStartAlpha = 1;
+      cloud.localFadeTargetAlpha = 1;
+      cloud.localFadeElapsed = 0;
+      cloud.localFadeDuration = 0;
+      return true;
+    }
+
+    cloud.localAlpha = this._clampUnit(alpha, 1);
+    const targetAlpha = Number(cloud.localFadeTargetAlpha);
+    cloud.localFadeTargetAlpha = Number.isFinite(targetAlpha)
+      ? this._clampUnit(targetAlpha, 1)
+      : 1;
+    const startAlpha = Number(cloud.localFadeStartAlpha);
+    cloud.localFadeStartAlpha = Number.isFinite(startAlpha)
+      ? this._clampUnit(startAlpha, cloud.localAlpha)
+      : cloud.localAlpha;
+    cloud.localFadeElapsed = Math.max(0, Number(cloud.localFadeElapsed) || 0);
+    cloud.localFadeDuration = Math.max(0, Number(cloud.localFadeDuration) || 0);
+    return true;
+  }
+
+  _setFogCloudLocalTarget(cloud, targetAlpha) {
+    if (!this._ensureFogCloudLocalFade(cloud)) return false;
+    const nextTarget = this._clampUnit(targetAlpha);
+    if (nextTarget === cloud.localFadeTargetAlpha) return false;
+    cloud.localFadeStartAlpha = cloud.localAlpha;
+    cloud.localFadeTargetAlpha = nextTarget;
+    cloud.localFadeElapsed = 0;
+    cloud.localFadeDuration = this._getFogFadeDuration();
+    return true;
+  }
+
+  _updateFogCloudLocalAlpha(cloud, deltaTime) {
+    if (!this._ensureFogCloudLocalFade(cloud)) return false;
+    if (cloud.localFadeDuration <= 0
+      || cloud.localFadeStartAlpha === cloud.localFadeTargetAlpha) {
+      cloud.localAlpha = cloud.localFadeTargetAlpha;
+      return cloud.localAlpha > 0;
+    }
+
+    cloud.localFadeElapsed = Math.min(
+      cloud.localFadeDuration,
+      cloud.localFadeElapsed + deltaTime
+    );
+    const progress = this._smoothstep(cloud.localFadeElapsed / cloud.localFadeDuration);
+    cloud.localAlpha = this._clampUnit(
+      cloud.localFadeStartAlpha
+        + (cloud.localFadeTargetAlpha - cloud.localFadeStartAlpha) * progress
+    );
+    return cloud.localFadeTargetAlpha > 0 || cloud.localAlpha > 0;
+  }
+
+  _advanceFogCloud(cloud, deltaTime, rect) {
+    const minX = rect.left;
+    const maxX = Math.max(minX, rect.right - cloud.width);
+    const minY = rect.top;
+    const maxY = Math.max(minY, rect.bottom - cloud.height);
+    const speedX = Number(cloud.speedX) || 0;
+    const speedY = Number(cloud.speedY) || 0;
+    const nextX = cloud.x + speedX * deltaTime;
+    const nextY = cloud.y + speedY * deltaTime;
+
+    if (nextX < minX || nextX > maxX) {
+      cloud.x = Math.max(minX, Math.min(maxX, nextX));
+      cloud.speedX = -speedX;
+    } else {
+      cloud.x = nextX;
+    }
+    if (nextY < minY || nextY > maxY) {
+      cloud.y = Math.max(minY, Math.min(maxY, nextY));
+      cloud.speedY = -speedY;
+    } else {
+      cloud.y = nextY;
+    }
+    cloud.phase = (Number(cloud.phase) || 0) + deltaTime * 0.5;
+  }
+
+  _countActiveFogClouds() {
+    let count = 0;
+    for (const cloud of this._fogClouds) {
+      if (this._ensureFogCloudLocalFade(cloud) && cloud.localFadeTargetAlpha > 0) count++;
+    }
+    return count;
+  }
+
   _updateFogClouds(deltaTime, def, weather, coverage) {
     if (!coverage?.rects?.length || this._fogImages.length === 0) {
       this._fogClouds.length = 0;
       return;
     }
 
-    const target = this._getFogTargetCount(def);
+    const isFogWeather = this._isFogWeather(weather);
+    const target = isFogWeather ? this._getFogTargetCount(def) : 0;
     let writeIndex = 0;
     for (let readIndex = 0, length = this._fogClouds.length; readIndex < length; readIndex++) {
-      let cloud = this._fogClouds[readIndex];
-      let rect = coverage.byKey.get(cloud?.coverageKey);
-      if (!fogCloudFitsRect(cloud, rect)) {
-        cloud = this._spawnFogCloud(weather, coverage);
-      } else {
-        cloud.x += cloud.speedX * deltaTime;
-        cloud.y += cloud.speedY * deltaTime;
-        cloud.phase += deltaTime * 0.5;
-        if (!fogCloudFitsRect(cloud, rect)) cloud = this._spawnFogCloud(weather, coverage);
-      }
-      if (!cloud) continue;
-      this._fogClouds[writeIndex++] = cloud;
+      const cloud = this._fogClouds[readIndex];
+      const rect = coverage.byKey.get(cloud?.coverageKey);
+      if (!fogCloudFitsRect(cloud, rect)) continue;
+      this._advanceFogCloud(cloud, deltaTime, rect);
+      if (!this._updateFogCloudLocalAlpha(cloud, deltaTime)) continue;
+      const imageIndex = Number(cloud.imageIndex);
+      cloud.imageIndex = Number.isFinite(imageIndex)
+        ? Math.abs(Math.floor(imageIndex)) % this._fogImages.length
+        : 0;
+      if (writeIndex !== readIndex) this._fogClouds[writeIndex] = cloud;
+      writeIndex++;
     }
-    this._fogClouds.length = Math.min(writeIndex, target);
+    this._fogClouds.length = writeIndex;
 
-    while (this._fogClouds.length < target) {
+    if (!isFogWeather) return;
+
+    let activeCount = this._countActiveFogClouds();
+    if (activeCount > target) {
+      for (let index = this._fogClouds.length - 1; index >= 0 && activeCount > target; index--) {
+        const cloud = this._fogClouds[index];
+        if (cloud.localFadeTargetAlpha <= 0) continue;
+        this._setFogCloudLocalTarget(cloud, 0);
+        activeCount--;
+      }
+      return;
+    }
+
+    for (const cloud of this._fogClouds) {
+      if (activeCount >= target) break;
+      if (cloud.localFadeTargetAlpha > 0) continue;
+      this._setFogCloudLocalTarget(cloud, 1);
+      activeCount++;
+    }
+    while (activeCount < target && this._fogClouds.length < MAX_FOG_CLOUDS) {
       const cloud = this._spawnFogCloud(weather, coverage);
       if (!cloud) break;
       this._fogClouds.push(cloud);
+      activeCount++;
     }
   }
 
@@ -499,7 +707,12 @@ export class WeatherSystem {
       speedY: (Math.random() - 0.5) * 2.5,
       phase: Math.random() * Math.PI * 2,
       imageIndex: Math.floor(Math.random() * this._fogImages.length),
-      flipX: Math.random() < 0.5
+      flipX: Math.random() < 0.5,
+      localAlpha: 0,
+      localFadeStartAlpha: 0,
+      localFadeTargetAlpha: 1,
+      localFadeElapsed: 0,
+      localFadeDuration: this._getFogFadeDuration()
     };
   }
 
@@ -539,7 +752,7 @@ export class WeatherSystem {
       rendered = true;
     }
 
-    if ((weather === 'lightFog' || weather === 'heavyFog')
+    if (this._fogAlpha > 0
       && this._fogClouds.length > 0
       && fogCoverage.rects.length > 0
       && this._fogImages.length > 0) {
@@ -553,7 +766,9 @@ export class WeatherSystem {
         const rect = fogCoverage.byKey.get(cloud.coverageKey);
         const image = this._fogImages[cloud.imageIndex];
         if (!isDrawableImage(image) || !fogCloudFitsRect(cloud, rect)) continue;
-        const cloudAlpha = alpha * cloud.opacity * (0.88 + Math.sin(cloud.phase) * 0.12);
+        const localAlpha = this._clampUnit(cloud.localAlpha, 1);
+        const cloudAlpha = this._fogAlpha * localAlpha * cloud.opacity
+          * (0.88 + Math.sin(cloud.phase) * 0.12);
         if (cloudAlpha <= 0) continue;
         ctx.save();
         ctx.globalAlpha = cloudAlpha;

@@ -42,15 +42,12 @@ SceneEditorUI.js 中 `_buildShapeProperties` 末尾：
 ```
 
 互斥逻辑在 `data-prop` change 处理器中：勾选 collide 时 `obj.walkable = false`，反之亦然。取消勾选则两个都为 false（普通装饰形状）。
-## 非战斗碰撞自动绕障
+## 非战斗碰撞停顿（不自动绕障）
 
-玩家移动被地图/瓦片阻挡，或实体碰撞、地形碰撞把玩家推出时，由 `SceneFramePipeline` 在全部碰撞解算完成后统一处理：
+玩家移动被地图/瓦片阻挡，或实体碰撞、地形碰撞把玩家推出时，`SceneFramePipeline` 在全部碰撞解算完成后只维护既有接触停顿和自动停止：
 
-- 非战斗状态优先调用 `MovementSystem.tryRerouteAfterContact()`，使用框架级 `PathfindingSystem` 做有界 A*；战斗状态不自动寻路，保持即时移动语义
-- A* 固定使用 32px 网格、8 邻接与 octile heuristic；对角移动必须同时确认两个正交格可通行，路径简化也不得切墙角
-- blocker 必须组合 `MovementSystem.canMoveTo()`、`SceneTerrainBinding.isPositionBlocked()` 和活动可碰撞实体快照；terrain 查询复用 `SceneTerrainCollision` 的水池、树、shape 与 walkable 优先规则，不得复制第二套几何，也不得再次应用 worldOffset
-- 右键移动保留原始点击终点；键盘、触屏摇杆和手柄轴输入保留方向 intent，并只规划约 4–6 格的局部前视目标。三端继续共用 `getMoveAxis()` 和 `moveIntentRouter`，驾驶席不得错误套用玩家 A*
-- 自动绕行路径仍由 `MovementComponent.path` 执行；相同方向的持续轴输入不得在下一帧调用 `startKeyboardMovement()` 清空路径。明显换向、松开方向或新右键输入会取消旧自动路径
-- 搜索必须有局部 bounds、`maxVisited` 和重算冷却；目标格被阻挡时只在有限半径选择离原目标最近的合法格
-- 非战斗 A* 不可达、搜索超限或战斗碰撞时，回退现有 0.5 秒 contact lock。锁只影响移动，不修改全局暂停，也不禁用攻击、交互或 UI
-- 锁期间以首次合法落点为锚点；相机只能在移动、实体碰撞、地形修正和绕行提交后跟随最终位置，避免持续推挤抖动
+- 禁止调用 `MovementSystem.tryRerouteAfterContact()` 或以 `PathfindingSystem` 对碰撞后的输入执行 A*；玩家必须自行改变方向或重新右键指定点位。
+- 右键保留原始点击终点的单点移动，键盘、触屏摇杆和手柄轴输入保留直接方向 intent；三端继续共用 `getMoveAxis()` 和 `moveIntentRouter`，驾驶席不得另建旁路。
+- 仅地图/静态地形阻挡触发既有 0.5 秒 contact lock；实体（怪物/NPC）顶撞不算静态阻挡，战斗状态不启动接触停顿。
+- 持续被静态障碍阻挡仍按既有阈值自动停止并要求松开方向输入后恢复；锁只影响移动，不修改全局暂停，不禁用攻击、交互或 UI。
+- 相机只能在移动、实体碰撞和地形修正完成后跟随最终位置，避免推挤抖动。

@@ -106,7 +106,7 @@ export class BaseGameScenePresentation extends BaseGameSceneGameplayHooks {
     const loadPromise = this._worldLoadPromise;
     if (!loadPromise) return null;
     const guard = this.resourceScope?.guard?.bind(this.resourceScope) || (callback => callback);
-    return Promise.resolve(loadPromise)
+    const worldRuntimeReady = Promise.resolve(loadPromise)
       .then(guard(async result => {
         const world = this.context?.world;
         if (world) {
@@ -126,15 +126,16 @@ export class BaseGameScenePresentation extends BaseGameSceneGameplayHooks {
         gate?.resolve?.('terrains', terrains);
         this._syncWorldReadyProjection();
         return result;
-      }))
-      .catch(guard(error => {
-        // 保留可运行降级：加载失败后由 WorldReadyGate 超时/已完成规则开放稳定背景。
-        console.warn('[SceneWorldLoad] 加载 worldMap 地形失败:', error);
-        const gate = this.context?.services?.worldReadyGate || this._worldReadyGate;
-        gate?.resolve?.('terrains', []);
-        this._syncWorldReadyProjection();
-        return null;
       }));
+    // WorldReadyGate 可以降级显示稳定背景，但存档恢复必须等待真实运行时配置成功。
+    this._worldRuntimeReadyPromise = worldRuntimeReady;
+    return worldRuntimeReady.catch(guard(error => {
+      console.warn('[SceneWorldLoad] 加载 worldMap 地形失败:', error);
+      const gate = this.context?.services?.worldReadyGate || this._worldReadyGate;
+      gate?.resolve?.('terrains', []);
+      this._syncWorldReadyProjection();
+      return null;
+    }));
   }
 
   /** 子游戏在世界数据已经校验和投影后安装自己的运行时配置消费者。 */

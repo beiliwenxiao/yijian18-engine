@@ -418,6 +418,46 @@ export class CandidateRuleValidator {
         if (typeof weather.transitionSpeed !== 'number' || !Number.isFinite(weather.transitionSpeed) || weather.transitionSpeed <= 0) {
           errors.push(makeError(ValidationCode.OUT_OF_RANGE, 'system.weather.transitionSpeed', 'transitionSpeed 必须为正数'));
         }
+        if (own(weather, 'fog')) {
+          if (!isObject(weather.fog)) {
+            errors.push(makeError(ValidationCode.TYPE_MISMATCH, 'system.weather.fog', 'fog 必须为对象'));
+          } else if (own(weather.fog, 'fadeDurationSeconds')) {
+            const fadeDurationSeconds = weather.fog.fadeDurationSeconds;
+            if (!isObject(fadeDurationSeconds)) {
+              errors.push(makeError(
+                ValidationCode.TYPE_MISMATCH,
+                'system.weather.fog.fadeDurationSeconds',
+                'fadeDurationSeconds 必须为对象'
+              ));
+            } else {
+              const min = fadeDurationSeconds.min;
+              const max = fadeDurationSeconds.max;
+              const validMin = typeof min === 'number' && Number.isFinite(min) && min >= 10 && min <= 30;
+              const validMax = typeof max === 'number' && Number.isFinite(max) && max >= 10 && max <= 30;
+              if (!validMin) {
+                errors.push(makeError(
+                  ValidationCode.OUT_OF_RANGE,
+                  'system.weather.fog.fadeDurationSeconds.min',
+                  'min 必须是 10–30 秒的有限数字'
+                ));
+              }
+              if (!validMax) {
+                errors.push(makeError(
+                  ValidationCode.OUT_OF_RANGE,
+                  'system.weather.fog.fadeDurationSeconds.max',
+                  'max 必须是 10–30 秒的有限数字'
+                ));
+              }
+              if (validMin && validMax && min > max) {
+                errors.push(makeError(
+                  ValidationCode.OUT_OF_RANGE,
+                  'system.weather.fog.fadeDurationSeconds',
+                  'min 不能大于 max'
+                ));
+              }
+            }
+          }
+        }
         if (own(weather, 'particles') && !isObject(weather.particles)) {
           errors.push(makeError(ValidationCode.TYPE_MISMATCH, 'system.weather.particles', 'particles 必须为对象'));
         }

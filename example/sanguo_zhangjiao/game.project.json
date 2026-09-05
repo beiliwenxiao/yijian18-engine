@@ -123,6 +123,10 @@
     "weather": {
       "default": "clear",
       "fog": {
+        "fadeDurationSeconds": {
+          "min": 10,
+          "max": 30
+        },
         "imageIds": [
           "weather.fog.cloudA"
         ],

@@ -240,6 +240,20 @@ function handleEquipmentChanged(info = null) {
 }
 
 function validateSceneSaveState(data) {
+  if (data?.timeState != null) {
+    if (typeof this.timeSystem?.validateSerialized !== 'function') {
+      return failure('timeState', '昼夜运行时尚未就绪', 'timeRuntimeUnavailable');
+    }
+    const timeCheck = this.timeSystem.validateSerialized(data.timeState);
+    if (!timeCheck.ok) {
+      const error = timeCheck.errors?.[0] || {};
+      return failure(
+        error.path ? `timeState.${error.path}` : 'timeState',
+        error.message || '昼夜状态校验失败',
+        error.code || 'invalidTimeState'
+      );
+    }
+  }
   const battleValidation = this.s03s14BattleCoordinator.validateSnapshot(data);
   if (!battleValidation.ok) {
     const detail = battleValidation.code === 'unknownBattleId'
@@ -300,7 +314,7 @@ function applySceneSaveState(data) {
     const restoredStoryDay = Math.max(1, Math.floor(Number(
       this.gameLoader?.blackboard?.get?.('storyState')?.currentDay
     ) || 1));
-    if (data.timeState && this.timeSystem?.deserialize?.(data.timeState) !== true) {
+    if (data.timeState != null && this.timeSystem?.deserialize?.(data.timeState) !== true) {
       return failure('timeState', '昼夜状态恢复失败', 'timeStateRestoreFailed');
     }
     if (data.weatherState && this.weatherSystem?.deserialize?.(data.weatherState) !== true) {

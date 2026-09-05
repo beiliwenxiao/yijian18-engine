@@ -613,8 +613,9 @@ async function commitRegionTarget({ request, result, shadowSession, draft, valid
     consumePlayerSpawn: false
   });
   if (projection?.ok === false) return projection;
-  await this._worldLoadPromise;
-  await Promise.resolve();
+  const worldRuntimeReady = this._worldRuntimeReadyPromise;
+  if (worldRuntimeReady) await worldRuntimeReady;
+  else await this._worldLoadPromise;
 
   const targetChunkLoaded = [...(this.worldStreamingManager?.getLoadedChunks?.().values?.() || [])]
     .some(chunk => chunk?.sceneId === request.sceneId);
@@ -671,8 +672,9 @@ async function restoreRegionDraft({ draft, oldSession }) {
     consumePlayerSpawn: false
   });
   if (projection?.ok === false) return projection;
-  await this._worldLoadPromise;
-  await Promise.resolve();
+  const worldRuntimeReady = this._worldRuntimeReadyPromise;
+  if (worldRuntimeReady) await worldRuntimeReady;
+  else await this._worldLoadPromise;
   return this.restoreSaveState(draft.saveState);
 }
 
