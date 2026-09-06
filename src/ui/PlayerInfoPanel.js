@@ -317,9 +317,12 @@ export class PlayerInfoPanel extends UIElement {
       get: (target, property, receiver) => {
         if (property !== 'getComponent') return Reflect.get(target, property, receiver);
         return type => {
-          const projection = this.getProjection()?.value || this.getProjection();
+          const projectionSnapshot = this.getProjection();
+          const projection = projectionSnapshot?.value || projectionSnapshot;
           if (!projection) return target.getComponent?.(type);
-          if (type === 'stats') return projection.stats || null;
+          if (type === 'stats') {
+            return target.getComponent?.('stats') || projection.stats || null;
+          }
           if (type === 'equipment') {
             const liveEquipment = target.getComponent?.('equipment');
             if (liveEquipment) return liveEquipment;

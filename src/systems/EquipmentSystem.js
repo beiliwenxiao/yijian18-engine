@@ -50,6 +50,44 @@ export class EquipmentSystem {
     // 比如装备耐久度损耗、特殊装备的持续效果等
   }
 
+  _normalizeBonusStats(bonusStats = {}) {
+    const toFiniteNumber = value => {
+      const number = Number(value);
+      return Number.isFinite(number) ? number : 0;
+    };
+    const normalizeElementStats = values => Object.fromEntries(
+      Object.entries(values || {}).map(([elementType, value]) => [elementType, toFiniteNumber(value)])
+    );
+    return {
+      attack: toFiniteNumber(bonusStats.attack),
+      defense: toFiniteNumber(bonusStats.defense),
+      maxHp: toFiniteNumber(bonusStats.maxHp),
+      maxMp: toFiniteNumber(bonusStats.maxMp),
+      speed: toFiniteNumber(bonusStats.speed),
+      elementAttack: normalizeElementStats(bonusStats.elementAttack),
+      elementDefense: normalizeElementStats(bonusStats.elementDefense)
+    };
+  }
+
+  _getEquipmentBonusSnapshot(equipmentComponent) {
+    return this._normalizeBonusStats(equipmentComponent?.getBonusStats?.());
+  }
+
+  _applyElementBonusDelta(currentValues, previousValues, nextValues) {
+    const result = currentValues && typeof currentValues === 'object' ? currentValues : {};
+    const elementTypes = new Set([
+      ...Object.keys(previousValues || {}),
+      ...Object.keys(nextValues || {})
+    ]);
+    for (const elementType of elementTypes) {
+      const current = Number(result[elementType]);
+      result[elementType] = (Number.isFinite(current) ? current : 0)
+        - (previousValues[elementType] || 0)
+        + (nextValues[elementType] || 0);
+    }
+    return result;
+  }
+
   /**
    * 装备物品
    * @param {Entity} entity - 实体
@@ -64,12 +102,9 @@ export class EquipmentSystem {
       return null;
     }
 
-    // 装备物品
+    const previousBonusStats = this._getEquipmentBonusSnapshot(equipmentComponent);
     const oldEquipment = equipmentComponent.equip(slotType, equipment);
-    
-    // 更新实体属性
-    this.updateEntityStats(entity);
-    
+    this.updateEntityStats(entity, previousBonusStats);
     return oldEquipment;
   }
 
@@ -86,54 +121,50 @@ export class EquipmentSystem {
       return null;
     }
 
-    // 卸下装备
+    const previousBonusStats = this._getEquipmentBonusSnapshot(equipmentComponent);
     const equipment = equipmentComponent.unequip(slotType);
-    
-    // 更新实体属性
-    this.updateEntityStats(entity);
-    
+    this.updateEntityStats(entity, previousBonusStats);
     return equipment;
   }
+
   /**
-   * 更新实体属性（应用装备加成）
+   * 以装备变更前后的加成差量更新 live StatsComponent。
+   * 这样不会清除职业、成长、区域等已经提交的非装备效果。
    * @param {Entity} entity - 实体
+   * @param {Object|null} previousBonusStats - 装备槽变更前的总加成；省略时仅规范当前值
    */
-  updateEntityStats(entity) {
+  updateEntityStats(entity, previousBonusStats = null) {
     const statsComponent = entity.getComponent('stats');
     const equipmentComponent = entity.getComponent('equipment');
-    
     if (!statsComponent || !equipmentComponent) return;
 
-    // 上限不变的装备操作必须原样保留当前值；只有上限实际变化时才按既有比例策略调整。
     const oldHp = statsComponent.hp;
     const oldMaxHp = statsComponent.maxHp;
     const oldMp = statsComponent.mp;
     const oldMaxMp = statsComponent.maxMp;
     const hpRatio = oldMaxHp > 0 ? oldHp / oldMaxHp : 1;
     const mpRatio = oldMaxMp > 0 ? oldMp / oldMaxMp : 1;
+    const nextBonusStats = this._getEquipmentBonusSnapshot(equipmentComponent);
+    const previous = previousBonusStats == null
+      ? nextBonusStats
+      : this._normalizeBonusStats(previousBonusStats);
 
-    // 先重置到基础属性
-    statsComponent.resetToBaseStats();
-
-    // 获取装备属性加成
-    const bonusStats = equipmentComponent.getBonusStats();
-    
-    // 应用装备加成
-    if (bonusStats.attack) {
-      statsComponent.attack += bonusStats.attack;
+    for (const statName of ['attack', 'defense', 'maxHp', 'maxMp', 'speed']) {
+      const current = Number(statsComponent[statName]);
+      statsComponent[statName] = (Number.isFinite(current) ? current : 0)
+        - previous[statName]
+        + nextBonusStats[statName];
     }
-    if (bonusStats.defense) {
-      statsComponent.defense += bonusStats.defense;
-    }
-    if (bonusStats.maxHp) {
-      statsComponent.maxHp += bonusStats.maxHp;
-    }
-    if (bonusStats.maxMp) {
-      statsComponent.maxMp += bonusStats.maxMp;
-    }
-    if (bonusStats.speed) {
-      statsComponent.speed += bonusStats.speed;
-    }
+    statsComponent.elementAttack = this._applyElementBonusDelta(
+      statsComponent.elementAttack,
+      previous.elementAttack,
+      nextBonusStats.elementAttack
+    );
+    statsComponent.elementDefense = this._applyElementBonusDelta(
+      statsComponent.elementDefense,
+      previous.elementDefense,
+      nextBonusStats.elementDefense
+    );
 
     const nextHp = statsComponent.maxHp !== oldMaxHp
       ? Math.floor(statsComponent.maxHp * hpRatio)
@@ -143,21 +174,7 @@ export class EquipmentSystem {
       : oldMp;
     statsComponent.hp = Math.min(statsComponent.maxHp, Math.max(0, nextHp));
     statsComponent.mp = Math.min(statsComponent.maxMp, Math.max(0, nextMp));
-    
-    // 应用元素攻击加成
-    if (bonusStats.elementAttack) {
-      for (const elementType in bonusStats.elementAttack) {
-        statsComponent.addElementAttack(elementType, bonusStats.elementAttack[elementType]);
-      }
-    }
-    
-    // 应用元素防御加成
-    if (bonusStats.elementDefense) {
-      for (const elementType in bonusStats.elementDefense) {
-        statsComponent.addElementDefense(elementType, bonusStats.elementDefense[elementType]);
-      }
-    }
-    
+
     console.log('EquipmentSystem: 更新实体属性', {
       attack: statsComponent.attack,
       defense: statsComponent.defense,

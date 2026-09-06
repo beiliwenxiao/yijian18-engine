@@ -560,9 +560,15 @@ export class MovementSystem {
         }
       }
       let speed = movement.speed;
-      if (!routedToVehicle && this.statusEffectSystem) {
-        speed = this.statusEffectSystem.getModifiedStats(playerEntity).speed;
+      if (!routedToVehicle) {
+        const statsSpeed = Number(playerEntity.getComponent?.('stats')?.speed);
+        if (Number.isFinite(statsSpeed)) speed = statsSpeed;
+        if (this.statusEffectSystem) {
+          const modifiedSpeed = Number(this.statusEffectSystem.getModifiedStats(playerEntity)?.speed);
+          if (Number.isFinite(modifiedSpeed)) speed = modifiedSpeed;
+        }
       }
+      speed = Math.max(0, Number(speed) || 0);
       movement.startKeyboardMovement(vx * speed * magnitude, vy * speed * magnitude);
       if (sprite && sprite.currentAnimation !== 'walk') sprite.playAnimation('walk');
       return;
@@ -677,12 +683,17 @@ export class MovementSystem {
     
     // 如果实体正在移动
     if (movement.isCurrentlyMoving()) {
-      // 获取修改后的移动速度（考虑状态效果）
+      // 非载具实体以 live StatsComponent 为速度事实；状态系统只叠加临时修正。
       let currentSpeed = movement.speed;
-      if (this.statusEffectSystem) {
-        const modifiedStats = this.statusEffectSystem.getModifiedStats(entity);
-        currentSpeed = modifiedStats.speed;
+      if (!entity.getComponent?.('vehicle')) {
+        const statsSpeed = Number(entity.getComponent?.('stats')?.speed);
+        if (Number.isFinite(statsSpeed)) currentSpeed = statsSpeed;
+        if (this.statusEffectSystem) {
+          const modifiedSpeed = Number(this.statusEffectSystem.getModifiedStats(entity)?.speed);
+          if (Number.isFinite(modifiedSpeed)) currentSpeed = modifiedSpeed;
+        }
       }
+      currentSpeed = Math.max(0, Number(currentSpeed) || 0);
 
       // 路径移动模式
       if (movement.movementType === 'path' && movement.targetPosition) {

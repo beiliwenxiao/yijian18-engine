@@ -24,6 +24,13 @@ fileMatchPattern: '{**/BaseGameScene*,**/SceneInventoryFlow*,**/SceneEquipmentFl
 
 `SceneInventoryFlow` 只负责 UI 输入准入、命令提交后的面板重绑和容量失败反馈；不得在 `PlayerInfoPanel`、`InventoryPanel` 或 Demo 场景中直接调用 `EquipmentComponent` / `InventoryComponent` 改写业务状态。
 
+## 真实属性与只读投影
+
+- `StatsComponent` 与 `EquipmentComponent` 是角色当前属性和装备的实时事实源。`PlayerInfoPanel`、组合面板中的 `InventoryPanel` 必须优先读取 live 组件；`itemLifecycle` projection 只在实体缺少对应组件时作只读回退，不能用命令时刻的旧投影覆盖伤害、成长、读档或装备提交后的新状态。
+- `EquipmentSystem` 在改变槽位前捕获旧装备总加成，槽位提交后以“新加成 - 旧加成”差量更新 live Stats。禁止通过 `resetToBaseStats()` 重建装备属性，因为该方法会清除职业/成长 `attributeEffects`；元素攻防同样必须按差量更新，避免重复装卸累积。
+- 非载具移动以 live `StatsComponent.speed` 为速度事实，并在其上应用可选状态效果；载具继续使用自己的 `MovementComponent.speed`。不得为了同步面板再复制一份角色属性到 UI 或 MovementComponent。
+- 属性差量必须留在装备领域 commit 内，与槽位和库存一起被 `ItemLifecycleService` 的 actor/equipment 快照回滚；`onEquipmentChanged` 仍仅作提交后的事件与表现出口。
+
 ## 原子装备与卸下边界
 
 `ItemLifecycleService` 是 `item.equip` 与 `item.unequip` 的唯一领域入口：
