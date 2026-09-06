@@ -777,21 +777,32 @@ export class S01S02Coordinator {
   }
 
   async startShelterConstruction() {
-    if (this.scene.currentSceneId !== 'S01' || !this.scene.constructionSystem) return false;
+    if (this.scene.currentSceneId !== 'S01') {
+      return { ok: false, code: 'shelterSceneMismatch' };
+    }
+    if (!this.scene.constructionSystem) {
+      return { ok: false, code: 'constructionUnavailable' };
+    }
     const survival = this._story().s01Survival || {};
     if (!survival.meatCooked || !survival.wolfGearCrafted) {
       this.scene._showScreenTip('先烤制狼肉，再制作狼皮背心和狼皮护腕，之后才能搭建庇护所。', { title: '准备不足' });
-      return false;
+      return { ok: true, status: 'blocked', code: 'shelterPrerequisitesMissing' };
     }
     const siteId = 'site.s01.small_shelter';
     if (this.scene.constructionSystem.getStructure(siteId)) {
       this.scene._showScreenTip('小庇护所已经搭好，可以在这里过夜。');
-      return true;
+      return { ok: true, status: 'blocked', code: 'shelterAlreadyCompleted', siteId };
     }
     const pending = this.scene.constructionSystem.getPending(siteId);
     if (pending) {
       this.scene._showScreenTip(`庇护所施工进度 ${Math.floor(pending.progress * 100)}%。`, { title: '正在施工' });
-      return true;
+      return {
+        ok: true,
+        status: 'blocked',
+        code: 'shelterConstructionActive',
+        siteId,
+        progress: pending.progress
+      };
     }
     const inventory = this.scene.playerEntity?.getComponent?.('inventory');
     const operationId = 'construction:S01:smallShelter';
@@ -805,28 +816,49 @@ export class S01S02Coordinator {
       context: { sceneId: 'S01' }
     });
     if (!result.ok) {
+      const ownedMaterial = result.itemId && inventory?.getItemCount
+        ? inventory.getItemCount(result.itemId)
+        : 0;
+      const missingMaterial = Math.max(1, (Number(result.quantity) || 0) - ownedMaterial);
       const messages = {
-        materialsRequired: `木材不足：还需要 ${result.quantity || 1} 份。`,
+        materialsRequired: `木材不足：还需要 ${missingMaterial} 份。`,
+        proficiencyRequired: `营建熟练度不足：需要 ${result.required || 0} 级。`,
+        toolRequired: '缺少搭建庇护所所需的有效工具。',
+        toolReserved: '所需工具正在用于其他施工。',
+        siteBusy: '小庇护所正在施工。',
+        siteOccupied: '小庇护所已经搭好。',
         invalidSite: '只能在篝火旁的平地搭建小庇护所。',
         constructionSiteLocked: '小庇护所施工点尚未开放。'
       };
       this.scene._showScreenTip(messages[result.code] || `无法施工：${result.code || 'unknown'}`, { title: '施工未开始' });
-      return false;
+      const playerCorrectableCodes = new Set([
+        'materialsRequired', 'proficiencyRequired', 'toolRequired', 'toolReserved',
+        'siteBusy', 'siteOccupied', 'invalidSite', 'constructionSiteLocked'
+      ]);
+      return playerCorrectableCodes.has(result.code)
+        ? { ...result, ok: true, status: 'blocked', blocked: true }
+        : result;
     }
+    const checkpointId = 'checkpoint.S01.shelterStarted';
     const saved = await this.scene.requestAutoSave?.({
-      reason: 'checkpoint', checkpointId: 'checkpoint.S01.shelterStarted', sceneId: 'S01'
+      reason: 'checkpoint', checkpointId, sceneId: 'S01'
     });
     if (saved?.ok === false) {
       this.scene.s10ConstructionCoordinator?._restoreConstructionRollback?.(
         rollback, [`${operationId}:materials`]
       );
       this.scene._showScreenTip('施工检查点保存失败，材料和施工状态已经回滚。', { title: '施工回滚' });
-      return false;
+      return {
+        ok: false,
+        code: saved.code || 'shelterCheckpointFailed',
+        checkpointId,
+        message: saved.message || 'shelter checkpoint failed'
+      };
     }
     this.scene._showScreenTip(`开始搭建小庇护所，预计 ${Math.ceil(result.duration)} 秒完成。`, {
       title: '搭建庇护所'
     });
-    return true;
+    return result;
   }
 
   _canShowRefuelProgress() {
