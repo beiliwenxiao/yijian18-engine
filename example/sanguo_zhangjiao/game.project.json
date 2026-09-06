@@ -112,20 +112,28 @@
     },
     "time": {
       "enabled": true,
-      "startTime": 420,
       "periods": {
-        "dawn": { "darknessOpacity": 0.25 },
-        "dusk": { "darknessOpacity": 0.25 },
-        "night": { "darknessOpacity": 0.65 },
-        "lateNight": { "darknessOpacity": 0.65 }
-      }
+        "dawn": {
+          "darknessOpacity": 0.25
+        },
+        "dusk": {
+          "darknessOpacity": 0.25
+        },
+        "lateNight": {
+          "darknessOpacity": 0.65
+        },
+        "night": {
+          "darknessOpacity": 0.65
+        }
+      },
+      "startTime": 420
     },
     "weather": {
       "default": "clear",
       "fog": {
         "fadeDurationSeconds": {
-          "min": 10,
-          "max": 30
+          "max": 30,
+          "min": 10
         },
         "imageIds": [
           "weather.fog.cloudA"
@@ -2744,7 +2752,13 @@
   "triggerCatalog": {
     "actions": [
       {
-        "label": "spawnPlacements",
+        "label": "生成放置点",
+        "paramsSchema": {
+          "additionalProperties": true,
+          "properties": {},
+          "type": "object"
+        },
+        "v": "spawnPlacements",
         "value": "spawnPlacements"
       },
       {
@@ -3234,10 +3248,22 @@
             "value": "climbVine"
           }
         ],
+        "paramsSchema": {
+          "additionalProperties": true,
+          "properties": {},
+          "type": "object"
+        },
+        "v": "s01Survival",
         "value": "s01Survival"
       },
       {
         "label": "startDialogue",
+        "paramsSchema": {
+          "additionalProperties": true,
+          "properties": {},
+          "type": "object"
+        },
+        "v": "startDialogue",
         "value": "startDialogue"
       },
       {
@@ -3250,6 +3276,12 @@
       },
       {
         "label": "switchScene",
+        "paramsSchema": {
+          "additionalProperties": true,
+          "properties": {},
+          "type": "object"
+        },
+        "v": "switchScene",
         "value": "switchScene"
       },
       {
@@ -3378,6 +3410,12 @@
             "value": "complete"
           }
         ],
+        "paramsSchema": {
+          "additionalProperties": true,
+          "properties": {},
+          "type": "object"
+        },
+        "v": "tutorial.command",
         "value": "tutorial.command"
       },
       {
@@ -3393,7 +3431,13 @@
         "value": "rescue.command"
       },
       {
-        "label": "construction.command",
+        "label": "建设命令",
+        "paramsSchema": {
+          "additionalProperties": true,
+          "properties": {},
+          "type": "object"
+        },
+        "v": "construction.command",
         "value": "construction.command"
       },
       {
@@ -3407,6 +3451,56 @@
       {
         "label": "状态事务 state.transaction",
         "value": "state.transaction"
+      },
+      {
+        "label": "设置变量",
+        "paramsSchema": {
+          "additionalProperties": true,
+          "properties": {},
+          "type": "object"
+        },
+        "v": "setVar",
+        "value": "setVar"
+      },
+      {
+        "label": "变量累加",
+        "paramsSchema": {
+          "additionalProperties": true,
+          "properties": {},
+          "type": "object"
+        },
+        "v": "addVar",
+        "value": "addVar"
+      },
+      {
+        "label": "设置标记",
+        "paramsSchema": {
+          "additionalProperties": true,
+          "properties": {},
+          "type": "object"
+        },
+        "v": "setFlag",
+        "value": "setFlag"
+      },
+      {
+        "label": "切换标记",
+        "paramsSchema": {
+          "additionalProperties": true,
+          "properties": {},
+          "type": "object"
+        },
+        "v": "toggleFlag",
+        "value": "toggleFlag"
+      },
+      {
+        "label": "新行为",
+        "paramsSchema": {
+          "additionalProperties": true,
+          "properties": {},
+          "type": "object"
+        },
+        "v": "behavior-001",
+        "value": "behavior-001"
       }
     ],
     "events": [
@@ -6490,9 +6584,9 @@
         "maxStack": 1,
         "showName": false,
         "sprite": {
-          "width": 88,
           "height": 78,
-          "isStatic": true
+          "isStatic": true,
+          "width": 88
         },
         "subType": "worldProp",
         "worldProp": true
@@ -6506,9 +6600,9 @@
         "maxStack": 1,
         "showName": false,
         "sprite": {
-          "width": 92,
           "height": 92,
-          "isStatic": true
+          "isStatic": true,
+          "width": 92
         },
         "subType": "worldProp",
         "worldProp": true

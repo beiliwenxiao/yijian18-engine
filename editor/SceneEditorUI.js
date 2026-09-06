@@ -1,14 +1,24 @@
-/**
+/************************************************************
+
  * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
+
  * 
- * @project   YiJian18-Engine - 跨平台2D/3D ECS游戏引擎
+
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+
  * @author    刘枭 (beiliwenxiao)
+
  * @email     beiliwenxiao@qq.com
+
  * @date      2026-01-14
+
  * @blog      https://blog.csdn.net/beiliwenxiao
+
  * @repo      https://github.com/beiliwenxiao/yijian18-engine
+
  *            https://gitee.com/coderaaa/yijian18-engine
- */
+
+ ************************************************************/
 
 import {
   SCENE_BATTLE_FLOW_STRING_FIELDS
@@ -690,7 +700,11 @@ export class SceneEditorUI {
 
         // triggerId 是场景空间 binding 到项目行为定义的唯一连接。
         if (prop === 'triggerId' && obj.type === 'trigger') {
-          obj.triggerId = String(value || '').trim();
+          const nextTriggerId = String(value || '').trim();
+          if (nextTriggerId !== String(obj.triggerId || '').trim()) {
+            editor.history?.saveHistory?.();
+          }
+          obj.triggerId = nextTriggerId;
           const definition = editor.getProjectTrigger?.(obj.triggerId);
           if (definition) {
             obj.event = definition.when?.type || obj.event || 'interact';
@@ -1151,12 +1165,14 @@ export class SceneEditorUI {
       : (obj.triggerId ? `${obj.triggerId}（未找到定义）` : '未绑定 Trigger');
     const dangling = !!obj.triggerId && !definition;
     const invalidSpatialEvent = !!definition && !spatialEvents.includes(definition.when?.type);
-    let options = '<option value="">-- 选择项目触发器 --</option>';
+    let triggerOptions = '';
     for (const trigger of triggers) {
-      const selected = trigger.id === obj.triggerId ? 'selected' : '';
-      options += `<option value="${escapeHtml(trigger.id)}" ${selected}>${escapeHtml(trigger.id)} · ${escapeHtml(this.editor.getTriggerSummary?.(trigger.id) || '')}</option>`;
+      const summary = this.editor.getTriggerSummary?.(trigger.id) || '';
+      triggerOptions += `<option value="${escapeHtml(trigger.id)}" label="${escapeHtml(summary)}">${escapeHtml(trigger.id)} · ${escapeHtml(summary)}</option>`;
     }
-    if (dangling) options += `<option value="${escapeHtml(obj.triggerId)}" selected>${escapeHtml(obj.triggerId)}（悬空引用）</option>`;
+    if (dangling) {
+      triggerOptions += `<option value="${escapeHtml(obj.triggerId)}" label="悬空引用">${escapeHtml(obj.triggerId)}（悬空引用）</option>`;
+    }
 
     const selectorModeLabels = {
       id: '对象 ID',
@@ -1207,7 +1223,7 @@ export class SceneEditorUI {
     return `
       <div class="property-row"><label>名称:</label><input type="text" value="${escapeHtml(obj.name || '')}" data-prop="name"></div>
       <div class="property-row"><label>是否显示:</label><input type="checkbox" data-prop="enabled" ${obj.enabled !== false ? 'checked' : ''} title="关闭后运行时不显示提示，也不执行该事件"></div>
-      <div class="property-row"><label>项目行为:</label><select data-prop="triggerId">${options}</select></div>
+      <div class="property-row"><label>项目行为:</label><input type="text" value="${escapeHtml(obj.triggerId || '')}" data-prop="triggerId" list="editor-trigger-id-options" autocomplete="off" placeholder="输入项目 Trigger ID"><datalist id="editor-trigger-id-options">${triggerOptions}</datalist></div>
       <div class="property-row"><label>绑定 Trigger:</label><input type="text" value="${escapeHtml(triggerLabel)}" disabled title="此空间 binding 触发时调用的项目行为"></div>
       <div class="property-row"><label>行为摘要:</label><textarea rows="2" disabled style="width:100%;color:${dangling ? '#ef5350' : '#c9d4ef'}">${escapeHtml(summary)}</textarea></div>
       ${dangling ? '<div class="property-row"><small style="color:#ef5350;">⚠ triggerId 在 game.project.json 中不存在，运行时不会执行。</small></div>' : ''}

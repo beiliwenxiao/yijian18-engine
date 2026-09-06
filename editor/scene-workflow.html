@@ -1,3 +1,24 @@
+<!--
+
+ * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
+
+ * 
+
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+
+ * @author    刘枭 (beiliwenxiao)
+
+ * @email     beiliwenxiao@qq.com
+
+ * @date      2026-01-14
+
+ * @blog      https://blog.csdn.net/beiliwenxiao
+
+ * @repo      https://github.com/beiliwenxiao/yijian18-engine
+
+ *            https://gitee.com/coderaaa/yijian18-engine
+
+ -->
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -78,6 +99,7 @@
                 <div class="editor-tabs">
                     <button class="active" data-tab="scene">🗺️ 场景编辑</button>
                     <button data-tab="trigger">⚡ 事件/触发器</button>
+                    <button data-tab="behavior">🧩 行为编辑器</button>
                     <button type="button" class="tab-extra" data-action="button-help" style="margin-left:auto;">⌨ 按钮写法</button>
                     <button type="button" class="tab-extra" data-action="item-reference">📦 物体写法</button>
                 </div>
@@ -88,6 +110,10 @@
 
                 <div class="editor-panel" id="trigger-panel">
                     <div class="panel-container" id="trigger-editor-container"></div>
+                </div>
+
+                <div class="editor-panel" id="behavior-panel">
+                    <div class="panel-container" id="behavior-editor-container"></div>
                 </div>
             </div>
         </div>
@@ -102,6 +128,7 @@
             loadGlobalAtlasesConfig
         } from './SceneDataLoader.js';
         import { TriggerEditor } from './TriggerEditor.js';
+        import { BehaviorEditor } from './BehaviorEditor.js';
 
         (async () => {
             renderEditorNav('scene-workflow');
@@ -638,7 +665,7 @@
             }
         }
 
-        // 触发器编辑器
+        // 事件/触发器编辑器
         let triggerEditor = null;
         let triggerEditorInitPromise = null;
         async function loadTriggerEditor() {
@@ -664,12 +691,42 @@
             return triggerEditorInitPromise;
         }
 
+        // 行为编辑器：管理 project.triggerCatalog.actions[]，与事件/触发器共用 canonical session。
+        let behaviorEditor = null;
+        let behaviorEditorInitPromise = null;
+        async function loadBehaviorEditor() {
+            if (behaviorEditorInitPromise) return behaviorEditorInitPromise;
+            behaviorEditor = new BehaviorEditor(
+                document.getElementById('behavior-editor-container'),
+                {
+                    canonicalSession: ctx._canonicalEditorSession('project'),
+                    getSceneList: () => ctx.dataManager.getGameScenes(gameId),
+                    getSceneDocuments: () => ctx.getSceneDocuments(),
+                    projectPath: ctx._canonicalProjectPath(),
+                    onSaved: async project => {
+                        ctx._refreshProjectTriggers(project);
+                        await triggerEditor?.refresh?.();
+                        sceneEditor?.refreshTriggerReferences?.();
+                    }
+                }
+            );
+            behaviorEditorInitPromise = behaviorEditor.init()
+                .then(() => behaviorEditor)
+                .catch(error => {
+                    behaviorEditor = null;
+                    behaviorEditorInitPromise = null;
+                    throw error;
+                });
+            return behaviorEditorInitPromise;
+        }
+
         // 标签切换
         async function switchTab(tab) {
-            document.querySelectorAll('.editor-tabs button').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
-            document.getElementById('scene-panel').classList.toggle('active', tab === 'scene');
-            document.getElementById('trigger-panel').classList.toggle('active', tab === 'trigger');
+            const panels = ['scene', 'trigger', 'behavior'];
+            document.querySelectorAll('.editor-tabs button[data-tab]').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+            for (const panel of panels) document.getElementById(`${panel}-panel`).classList.toggle('active', tab === panel);
             if (tab === 'trigger') await loadTriggerEditor();
+            if (tab === 'behavior') await loadBehaviorEditor();
             if (tab === 'scene') setTimeout(() => window.dispatchEvent(new Event('resize')), 50);
         }
 
