@@ -1,6 +1,23 @@
 /************************************************************
+
  * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
- * @project YiJian18-Engine - 跨平台2D/3D ECS游戏引擎
+
+ * 
+
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+
+ * @author    刘枭 (beiliwenxiao)
+
+ * @email     beiliwenxiao@qq.com
+
+ * @date      2026-01-14
+
+ * @blog      https://blog.csdn.net/beiliwenxiao
+
+ * @repo      https://github.com/beiliwenxiao/yijian18-engine
+
+ *            https://gitee.com/coderaaa/yijian18-engine
+
  ************************************************************/
 
 import {
@@ -224,11 +241,14 @@ export class SceneEditorEventFilter {
       ? new Set(this._allObjects().filter(object => object?.type !== 'trigger'))
       : new Set();
     for (const event of selectedEvents) visible.add(event.binding);
-    // 任一三层聚焦视图都保留地貌上下文；只投影视觉层对象，不扩大其他逻辑层。
+    // 聚焦流程时仍保留完整场景对象上下文；筛选只作用于空间 Trigger 标记。
+    // 这样玩家出生点、火堆等 ref 放置物及其余逻辑对象可与当前流程一起编辑和校验。
     if (this.state.mode !== 'all') {
       for (const layer of this.sceneData?.layers || []) {
-        if (!isPersistentVisualLayer(layer)) continue;
-        for (const object of layer.objects || []) visible.add(object);
+        const persistentVisualLayer = isPersistentVisualLayer(layer);
+        for (const object of layer.objects || []) {
+          if (persistentVisualLayer || object?.type !== 'trigger') visible.add(object);
+        }
       }
     }
     if (this.state.includeRelated) this._resolveRelatedObjects(selectedEvents, visible);
