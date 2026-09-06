@@ -1,15 +1,24 @@
-/**
-/**
+/************************************************************
+
  * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
+
  * 
- * @project   YiJian18-Engine - 跨平台2D/3D ECS游戏引擎
+
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+
  * @author    刘枭 (beiliwenxiao)
+
  * @email     beiliwenxiao@qq.com
+
  * @date      2026-01-14
+
  * @blog      https://blog.csdn.net/beiliwenxiao
+
  * @repo      https://github.com/beiliwenxiao/yijian18-engine
+
  *            https://gitee.com/coderaaa/yijian18-engine
- */
+
+ ************************************************************/
 
 import {
   getGlobalAtlasImageUrl,
@@ -709,8 +718,8 @@ export class SceneEditorAssets {
           editor.selectedObjects = [obj];
           editor.ui.updateObjectProperties();
         }
-      } else if (id === 'region' || id === 'spawn' || id === 'portal' || id === 'npc' || id === 'trigger' || id === 'buffZone' || id === 'buffRect' || id === 'buffEllipse' || id === 'playerSpawn' || id === 'campfire') {
-        // 逻辑对象：放入逻辑层
+      } else if (id === 'region' || id === 'spawn' || id === 'portal' || id === 'npc' || id === 'trigger' || id === 'buffZone' || id === 'buffRect' || id === 'buffEllipse' || id === 'playerSpawn') {
+        // 逻辑对象：放入逻辑层。火堆属于内容库 worldProp，不在此创建第二份 spawn。
         this._addLogicObject(id, pos.x, pos.y);
       } else if (id === 'terrain-rect') {
         // 地形四边形：放入背景填充层（矩形，非椭圆）
@@ -874,14 +883,6 @@ export class SceneEditorAssets {
         id: 'spawn_' + rnd, type: 'spawn', name: '玩家出生点',
         spawnId: 'spawn_player_' + Math.floor(Math.random() * 10000),
         ref: 'player',
-        x: Math.round(x), y: Math.round(y),
-        enemyRef: '', count: 1, wave: 0, radius: 0
-      };
-    } else if (kind === 'campfire') {
-      obj = {
-        id: 'spawn_' + rnd, type: 'spawn', name: '火堆',
-        spawnId: 'spawn_campfire_' + Math.floor(Math.random() * 10000),
-        ref: 'campfire',
         x: Math.round(x), y: Math.round(y),
         enemyRef: '', count: 1, wave: 0, radius: 0
       };
@@ -1683,10 +1684,6 @@ export class SceneEditorAssets {
       <div class="asset-item placeholder" draggable="true" data-type="playerSpawn">
         <div class="asset-preview" style="width:30px;height:30px;border-radius:50%;background:rgba(80,180,255,0.3);border:2px solid #50b4ff;display:flex;align-items:center;justify-content:center;font-size:14px;">🧑</div>
         <span>玩家出生点</span>
-      </div>
-      <div class="asset-item placeholder" draggable="true" data-type="campfire">
-        <div class="asset-preview" style="width:30px;height:30px;border-radius:50%;background:rgba(255,160,50,0.3);border:2px solid #ffa030;display:flex;align-items:center;justify-content:center;font-size:14px;">🔥</div>
-        <span>火堆</span>
       </div>
       <div class="asset-item placeholder" draggable="true" data-type="buffZone">
         <div class="asset-preview" style="width:30px;height:30px;background:rgba(100,0,200,0.2);border:2px dashed #8040c0;clip-path:polygon(50% 0%,100% 38%,82% 100%,18% 100%,0% 38%);"></div>

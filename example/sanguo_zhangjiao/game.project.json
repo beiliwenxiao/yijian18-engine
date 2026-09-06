@@ -4279,6 +4279,7 @@
         }
       ],
       "id": "trg_s01_light_campfire",
+      "name": "点燃篝火",
       "once": true,
       "when": {
         "params": {},
@@ -4297,6 +4298,7 @@
         }
       ],
       "id": "trg_s01_craft_wolf_gear",
+      "name": "使用制皮木支架",
       "once": false,
       "when": {
         "params": {},
@@ -4315,6 +4317,7 @@
         }
       ],
       "id": "trg_s01_cook_meat",
+      "name": "使用烤肉架",
       "once": false,
       "when": {
         "params": {},
@@ -4333,6 +4336,7 @@
         }
       ],
       "id": "trg_s01_refuel_campfire",
+      "name": "给篝火添柴",
       "once": false,
       "when": {
         "params": {},
@@ -4353,6 +4357,7 @@
         }
       ],
       "id": "trg_s01_build_shelter",
+      "name": "搭建小庇护所",
       "once": false,
       "when": {
         "params": {},

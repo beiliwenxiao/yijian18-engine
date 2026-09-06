@@ -1,14 +1,24 @@
-/**
+/************************************************************
+
  * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
+
  * 
- * @project   YiJian18-Engine - 跨平台2D/3D ECS游戏引擎
+
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+
  * @author    刘枭 (beiliwenxiao)
+
  * @email     beiliwenxiao@qq.com
+
  * @date      2026-01-14
+
  * @blog      https://blog.csdn.net/beiliwenxiao
+
  * @repo      https://github.com/beiliwenxiao/yijian18-engine
+
  *            https://gitee.com/coderaaa/yijian18-engine
- */
+
+ ************************************************************/
 
 import { ShapeRenderer } from '../src/rendering/ShapeRenderer.js';
 
@@ -460,11 +470,9 @@ export class SceneEditorCanvas {
         npc: { fill: 'rgba(80,200,140,0.25)', stroke: '#50c88c', icon: '☺' }
       };
       let c = colors[obj.type] || colors.spawn;
-      // 特殊 spawn 点用特殊样式
+      // 玩家出生点使用 Presentation Profile 的脚底锚点样式。
       if (obj.type === 'spawn' && obj.ref === 'player') {
         c = { fill: 'rgba(80,180,255,0.3)', stroke: '#50b4ff', icon: '🧑' };
-      } else if (obj.type === 'spawn' && obj.ref === 'campfire') {
-        c = { fill: 'rgba(255,160,50,0.3)', stroke: '#ffa030', icon: '🔥' };
       }
       const isPlayerSpawn = obj.type === 'spawn' && obj.ref === 'player';
       // 玩家 Transform 使用脚底中心锚点；预览尺寸直接消费游戏级 Presentation Profile。

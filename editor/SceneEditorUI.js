@@ -27,6 +27,7 @@ import {
   SCENE_OBJECT_SELECTOR_MODES,
   sceneObjectSelectorValues
 } from '../src/core/scene/SceneObjectSelector.js';
+import { isSpatialTriggerEvent } from '../src/systems/TriggerCatalog.js';
 
 const BATTLE_FLOW_FIELD_LABELS = Object.freeze({
   locationName: '地点名称',
@@ -759,21 +760,7 @@ export class SceneEditorUI {
 
         // triggerId 是场景空间 binding 到项目行为定义的唯一连接。
         if (prop === 'triggerId' && obj.type === 'trigger') {
-          const nextTriggerId = String(value || '').trim();
-          if (nextTriggerId !== String(obj.triggerId || '').trim()) {
-            editor.history?.saveHistory?.();
-          }
-          obj.triggerId = nextTriggerId;
-          const definition = editor.getProjectTrigger?.(obj.triggerId);
-          if (definition) {
-            obj.event = definition.when?.type || obj.event || 'interact';
-            obj.name = obj.name || definition.id;
-          }
-          // 全 Trigger 化：不再写 flowGroupId / sceneEventId 死字段
-          delete obj.flowGroupId;
-          delete obj.sceneEventId;
-          this.updateObjectProperties();
-          editor.eventFilter?.rebuild({ preserveSelection: true, notify: true });
+          this._commitTriggerId(obj, value);
           return;
         }
 
@@ -923,6 +910,13 @@ export class SceneEditorUI {
         editor.render();
       });
     });
+
+    const triggerPicker = document.getElementById('editor-trigger-picker');
+    if (triggerPicker && obj.type === 'trigger') {
+      triggerPicker.addEventListener('change', () => {
+        this._commitTriggerId(obj, triggerPicker.value);
+      });
+    }
 
     // 图片对象：切换稳定 imageId，或替换当前 ID 对应的文件。
     const imageSrcInput = document.getElementById('editor-image-src');
@@ -1212,25 +1206,47 @@ export class SceneEditorUI {
     };
   }
 
+  _commitTriggerId(obj, value) {
+    const editor = this.editor;
+    const nextTriggerId = String(value || '').trim();
+    if (nextTriggerId === String(obj.triggerId || '').trim()) return false;
+
+    editor.history?.saveHistory?.();
+    obj.triggerId = nextTriggerId;
+    const definition = editor.getProjectTrigger?.(nextTriggerId);
+    if (definition) {
+      obj.event = definition.when?.type || obj.event || 'interact';
+      obj.name = obj.name || definition.id;
+    }
+    // 全 Trigger 化：不再写 flowGroupId / sceneEventId 死字段。
+    delete obj.flowGroupId;
+    delete obj.sceneEventId;
+    this.updateObjectProperties();
+    editor.eventFilter?.rebuild({ preserveSelection: true, notify: true });
+    return true;
+  }
+
   _buildUnifiedTriggerProperties(obj) {
     const escapeHtml = value => String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;')
       .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-    const spatialEvents = ['interact', 'approach', 'enter', 'leave'];
+    const project = this.editor.getProjectDefinitions?.() || null;
     const triggers = (this.editor.getProjectTriggers?.() || [])
-      .filter(trigger => spatialEvents.includes(trigger?.when?.type) || trigger?.id === obj.triggerId);
+      .filter(trigger => isSpatialTriggerEvent(trigger?.when?.type, project) || trigger?.id === obj.triggerId);
     const definition = this.editor.getProjectTrigger?.(obj.triggerId);
     const triggerLabel = definition
-      ? definition.id
-      : (obj.triggerId ? `${obj.triggerId}（未找到定义）` : '未绑定 Trigger');
+      ? (definition.name || definition.id)
+      : (obj.triggerId ? '未找到定义' : '未绑定 Trigger');
     const dangling = !!obj.triggerId && !definition;
-    const invalidSpatialEvent = !!definition && !spatialEvents.includes(definition.when?.type);
-    let triggerOptions = '';
+    const invalidSpatialEvent = !!definition && !isSpatialTriggerEvent(definition.when?.type, project);
+    let triggerOptions = `<option value="" ${obj.triggerId ? '' : 'selected'}>-- 未绑定项目行为 --</option>`;
     for (const trigger of triggers) {
       const summary = this.editor.getTriggerSummary?.(trigger.id) || '';
-      triggerOptions += `<option value="${escapeHtml(trigger.id)}" label="${escapeHtml(summary)}">${escapeHtml(trigger.id)} · ${escapeHtml(summary)}</option>`;
+      const selected = trigger.id === obj.triggerId ? 'selected' : '';
+      const displayName = trigger.name || trigger.id;
+      triggerOptions += `<option value="${escapeHtml(trigger.id)}" ${selected} title="${escapeHtml(summary)}">${escapeHtml(displayName)} · ${escapeHtml(trigger.id)}</option>`;
     }
     if (dangling) {
-      triggerOptions += `<option value="${escapeHtml(obj.triggerId)}" label="悬空引用">${escapeHtml(obj.triggerId)}（悬空引用）</option>`;
+      triggerOptions += `<option value="${escapeHtml(obj.triggerId)}" selected>${escapeHtml(obj.triggerId)}（悬空引用）</option>`;
     }
 
     const selectorModeLabels = {
@@ -1282,8 +1298,9 @@ export class SceneEditorUI {
     return `
       <div class="property-row"><label>名称:</label><input type="text" value="${escapeHtml(obj.name || '')}" data-prop="name"></div>
       <div class="property-row"><label>是否显示:</label><input type="checkbox" data-prop="enabled" ${obj.enabled !== false ? 'checked' : ''} title="关闭后运行时不显示提示，也不执行该事件"></div>
-      <div class="property-row"><label>项目行为:</label><input type="text" value="${escapeHtml(obj.triggerId || '')}" data-prop="triggerId" list="editor-trigger-id-options" autocomplete="off" placeholder="输入项目 Trigger ID"><datalist id="editor-trigger-id-options">${triggerOptions}</datalist></div>
-      <div class="property-row"><label>绑定 Trigger:</label><input type="text" value="${escapeHtml(triggerLabel)}" disabled title="此空间 binding 触发时调用的项目行为"></div>
+      <div class="property-row"><label>项目行为:</label><select id="editor-trigger-picker" style="min-width:0;flex:1;" title="界面显示中文名称，保存和运行时使用稳定英文 Trigger ID">${triggerOptions}</select></div>
+      <div class="property-row"><label>英文 Trigger ID:</label><input type="text" value="${escapeHtml(obj.triggerId || '')}" data-prop="triggerId" autocomplete="off" placeholder="可直接输入或清空稳定英文 ID" title="canonical binding.triggerId 与运行时执行使用此稳定英文 ID"></div>
+      <div class="property-row"><label>绑定 Trigger:</label><input type="text" value="${escapeHtml(triggerLabel)}" disabled title="项目 Trigger 的中文名称；英文 ID 见上一项"></div>
       <div class="property-row"><label>行为摘要:</label><textarea rows="2" disabled style="width:100%;color:${dangling ? '#ef5350' : '#c9d4ef'}">${escapeHtml(summary)}</textarea></div>
       ${dangling ? '<div class="property-row"><small style="color:#ef5350;">⚠ triggerId 在 game.project.json 中不存在，运行时不会执行。</small></div>' : ''}
       ${invalidSpatialEvent ? `<div class="property-row"><small style="color:#ef5350;">⚠ ${escapeHtml(eventType)} 不是空间事件，请在 TriggerEditor 中改为 interact/approach/enter/leave，或删除此场景 binding。</small></div>` : ''}
