@@ -53,6 +53,10 @@ export class SceneEditorUI {
    */
   constructor(editor) {
     this.editor = editor;
+    this._canvasResizeObserver = null;
+    this._canvasResizeFrame = 0;
+    this._canvasContainer = null;
+    this._canvasSize = { width: 0, height: 0 };
   }
 
   /**
@@ -247,11 +251,12 @@ export class SceneEditorUI {
     `;
 
     this._addStyles();
-    this._initCanvas();
     editor.layers.updateLayerList();
     this._initAssetTabs();
     this._initResizers();
+    // 事件条会占用画布区域高度，必须先完成其 DOM 投影，再读取 Canvas 容器尺寸。
     editor.eventFilter?.bindUI();
+    this._initCanvas();
     this.refreshBattleFlowFields();
   }
 
@@ -436,52 +441,106 @@ export class SceneEditorUI {
     const container = document.getElementById('editor-canvas-container');
 
     if (!canvas || !overlay || !container) {
-      setTimeout(() => this._initCanvas(), 100);
-      return;
+      throw new Error('SceneEditorUI: Canvas 容器尚未创建');
     }
 
-    if (container.clientWidth === 0 || container.clientHeight === 0) {
-      setTimeout(() => this._initCanvas(), 100);
-      return;
-    }
+    this._observeCanvasContainer(container);
+    if (!this._syncCanvasViewport(container, { force: true })) return;
 
-    canvas.width = container.clientWidth;
-    canvas.height = container.clientHeight;
-    overlay.width = container.clientWidth;
-    overlay.height = container.clientHeight;
-
-    this.fitToContainer();
     editor.render();
     editor.initialized = true;
+  }
+
+  /**
+   * 监听 Canvas 容器自身的最终布局尺寸。
+   * 外部样式、事件筛选条和 flex 布局都可能在首页首帧后改变该元素尺寸，
+   * 仅监听 window.resize 无法覆盖这些变化。
+   * @private
+   */
+  _observeCanvasContainer(container) {
+    if (this._canvasContainer === container && this._canvasResizeObserver) return;
+
+    this._canvasResizeObserver?.disconnect();
+    if (this._canvasResizeFrame) {
+      cancelAnimationFrame(this._canvasResizeFrame);
+      this._canvasResizeFrame = 0;
+    }
+    this._canvasContainer = container;
+
+    if (typeof ResizeObserver !== 'function') return;
+    this._canvasResizeObserver = new ResizeObserver(() => {
+      if (this._canvasResizeFrame) return;
+      this._canvasResizeFrame = requestAnimationFrame(() => {
+        this._canvasResizeFrame = 0;
+        if (!this._canvasContainer?.isConnected) return;
+        if (!this._syncCanvasViewport(this._canvasContainer)) return;
+        this.editor.initialized = true;
+        this.editor.render();
+      });
+    });
+    this._canvasResizeObserver.observe(container);
+  }
+
+  _getCanvasViewportSize(container) {
+    const containerRect = container.getBoundingClientRect();
+    const hostRect = this.editor.container.getBoundingClientRect();
+    const viewportWidth = document.documentElement.clientWidth;
+    const viewportHeight = document.documentElement.clientHeight;
+    const visibleRight = Math.min(containerRect.right, hostRect.right, viewportWidth);
+    const visibleBottom = Math.min(containerRect.bottom, hostRect.bottom, viewportHeight);
+    return {
+      width: Math.round(Math.max(0, visibleRight - containerRect.left)),
+      height: Math.round(Math.max(0, visibleBottom - containerRect.top))
+    };
+  }
+
+  /**
+   * 将 Canvas backing 与工作台实际可见尺寸同步，并按场景矩形中心重建视口。
+   * @private
+   */
+  _syncCanvasViewport(container, { force = false } = {}) {
+    const editor = this.editor;
+    const canvas = document.getElementById('editor-canvas');
+    const overlay = document.getElementById('editor-overlay');
+    if (!canvas || !overlay || !container) return false;
+
+    // flex 子项在外部样式首次应用前可能高于宿主并被 overflow 裁剪；
+    // 居中必须以用户实际可见的工作台交集为准，不能把裁剪区计入中心。
+    const { width, height } = this._getCanvasViewportSize(container);
+    if (width <= 0 || height <= 0) return false;
+
+    const sizeChanged = width !== this._canvasSize.width || height !== this._canvasSize.height;
+    if (!force && !sizeChanged) return false;
+
+    if (canvas.width !== width) canvas.width = width;
+    if (canvas.height !== height) canvas.height = height;
+    if (overlay.width !== width) overlay.width = width;
+    if (overlay.height !== height) overlay.height = height;
+    this._canvasSize = { width, height };
+
+    const sceneWidth = Number(editor.sceneData.width);
+    const sceneHeight = Number(editor.sceneData.height);
+    if (!Number.isFinite(sceneWidth) || sceneWidth <= 0 ||
+        !Number.isFinite(sceneHeight) || sceneHeight <= 0) {
+      throw new Error('SceneEditorUI: 场景尺寸必须是正数');
+    }
+
+    const scaleX = width / sceneWidth;
+    const scaleY = height / sceneHeight;
+    editor.viewport.scale = Math.min(scaleX, scaleY, 2) * 0.9;
+    editor.viewport.offsetX = (width - sceneWidth * editor.viewport.scale) / 2;
+    editor.viewport.offsetY = (height - sceneHeight * editor.viewport.scale) / 2;
+    this._updateZoomDisplay();
+    return true;
   }
 
   /**
    * 适应容器
    */
   fitToContainer() {
-    const editor = this.editor;
     const container = document.getElementById('editor-canvas-container');
-    const canvas = document.getElementById('editor-canvas');
-    const overlay = document.getElementById('editor-overlay');
-
-    const containerWidth = container.clientWidth || 800;
-    const containerHeight = container.clientHeight || 600;
-
-    if (canvas) { canvas.width = containerWidth; canvas.height = containerHeight; }
-    if (overlay) { overlay.width = containerWidth; overlay.height = containerHeight; }
-
-    const scaleX = containerWidth / editor.sceneData.width;
-    const scaleY = containerHeight / editor.sceneData.height;
-    editor.viewport.scale = Math.min(scaleX, scaleY, 2) * 0.9;
-
-    // 视口对准场景方框正中心（width/2, height/2）
-    const sceneCenterX = editor.sceneData.width / 2;
-    const sceneCenterY = editor.sceneData.height / 2;
-
-    editor.viewport.offsetX = containerWidth / 2 - sceneCenterX * editor.viewport.scale;
-    editor.viewport.offsetY = containerHeight / 2 - sceneCenterY * editor.viewport.scale;
-
-    this._updateZoomDisplay();
+    if (!container) throw new Error('SceneEditorUI: Canvas 容器尚未创建');
+    return this._syncCanvasViewport(container, { force: true });
   }
 
   /**
