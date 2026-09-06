@@ -113,3 +113,39 @@ inclusion: always
 - 当缺少工具时，直接告诉我需要安装什么
 
 
+
+
+## 版权信息
+
+所有新增或修改的源文件、框架文件、主要入口文件和 Demo 业务文件必须包含以下版权头；已有完整版权头不得重复添加，已有简化版权头应在该文件被修改时统一为完整模板：
+
+```text
+/************************************************************
+
+ * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
+
+ * 
+
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+
+ * @author    刘枭 (beiliwenxiao)
+
+ * @email     beiliwenxiao@qq.com
+
+ * @date      2026-01-14
+
+ * @blog      https://blog.csdn.net/beiliwenxiao
+
+ * @repo      https://github.com/beiliwenxiao/yijian18-engine
+
+ *            https://gitee.com/coderaaa/yijian18-engine
+
+ ************************************************************/
+```
+
+适用约定：
+
+- JavaScript/TypeScript 等支持块注释的源文件直接使用上述块注释；HTML 使用等价的 `<!-- ... -->` 注释包裹；CSS 使用块注释；Markdown 使用 HTML 注释，不能破坏 YAML front matter。
+- JSON、纯数据配置和其他不允许注释的格式不得插入非法注释；保持其合法语法，并由文件所属模块或相邻可注释入口承载版权信息，不得为版权头破坏配置解析。
+- 版权头必须位于源文件最前方（带 BOM 的文件保留 BOM 后紧接版权头）；不得删除、缩写或改写版权归属、作者、邮箱、日期、博客和仓库地址。
+- 新建文件和每次修改文件时都要检查版权头；本规则适用于引擎 `src/`、编辑器、Demo 入口/场景/系统以及其他项目源代码，`desktop/` 打包产物不参与功能修改，但新增或修改时仍不得产生无版权头源文件。
