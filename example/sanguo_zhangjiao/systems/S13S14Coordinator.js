@@ -1,4 +1,24 @@
 /************************************************************
+
+ * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
+
+ * 
+
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+
+ * @author    刘枭 (beiliwenxiao)
+
+ * @email     beiliwenxiao@qq.com
+
+ * @date      2026-01-14
+
+ * @blog      https://blog.csdn.net/beiliwenxiao
+
+ * @repo      https://github.com/beiliwenxiao/yijian18-engine
+
+ *            https://gitee.com/coderaaa/yijian18-engine
+
+ ************************************************************
  * 三国张角传 - S13/S14 内容协调器
  * 仅编排精山可选战场、终局资源分歧和 Demo 结局配置；不是通用 EndingSystem。
  ************************************************************/
