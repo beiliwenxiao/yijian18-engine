@@ -30,6 +30,12 @@ UI 编辑器（`editor/UIEditor.js`）用于可视化编辑移动端/PC端的 UI
 
 纯 Canvas 面板不进入 `index.html` 或 `domIds`。运行时统一由 `ScenePanelLayout.applyUILayout()` 使用 `UILayoutLoader.applyToCanvasPanel()` 或 `getRect()` 应用布局；`ScenePanelLayout` 通过 `context.ui.layout` 暴露给 `SceneRenderPipeline`，渲染器不得另存第二份布局状态。
 
+### 组合 Canvas 面板内部布局
+
+`UILayout.desktop/mobile.json` 只保存 `backpackPanel` 外框；属性、装备和物品栏内部部件的唯一事实源是两端共用的 `config/PanelLayout.json`，不得把 `bagTitle`、`bagSeparator` 等内部部件复制成 UILayout 顶层组件。`UIEditor` 加载时必须保留完整 PanelLayout 文档，并让索引映射继续引用 `panels[]` 原对象，保存时序列化完整文档，避免编辑白名单导致其他部件丢失。
+
+UI 编辑器预览、虚线交互框和拖动反算必须共用 `BackpackPanel._applyScaledLayout()` 的变换：`contentScale = min(outerWidth / designWidth, outerHeight / designHeight)`，设计画布等比缩放后在外框中居中；拖动增量除以 `editorScale * contentScale` 才能写回 PanelLayout 内部坐标。目前 PC/Android 都投影 inventory 的 `bagTitle` 与 `bagSeparator`，修改任一视图都会影响同一对象。`line` 可以扩大编辑器命中框，但真实 `height` 只能在用户明确改值或缩放时变化。
+
 ### 双端 Canvas 屏幕 HUD
 
 小地图、时间天气和战斗/灵魂状态徽章在 Android 与 PC 运行时都属于 Canvas，不因 mobile 平台改成 DOM：
@@ -49,7 +55,7 @@ UI 编辑器（`editor/UIEditor.js`）用于可视化编辑移动端/PC端的 UI
 
 `UIEditor._mergeLayout()` 只遍历当前平台的 `DEFAULT_COMPONENTS`；只改 JSON 会让额外 ID 在加载合并时被丢弃。三项 HUD 不需要修改 `index.html` 或 `applyUILayoutToDom()`。天气与战斗徽章必须各自保存独立矩形，拖动其中一项不得再通过“小地图相对位置”隐式带动另一项；旧配置缺失时才允许使用相对小地图的 fallback。两类徽章的文字布局统一使用可选 `fontSize/textOffsetX/textOffsetY`：`fontSize:0` 或缺字段表示沿用自动字号，偏移只移动框内文字。字段必须沿 `UIEditor → UILayout JSON → UILayoutLoader.getRect() → ScenePanelLayout._screenHudRects → SceneRenderPipeline` 投影，渲染器禁止直接读取布局 JSON。
 
-UI 编辑器的“保存到文件”同时写布局、手柄绑定和提示文案；每个写入必须把失败抛给 `save()` 聚合，任一子项失败都只能显示“部分保存失败”，不得被后续成功状态覆盖。成功/失败同时保留底部状态并显示自动消失的非阻塞反馈，禁止用 `alert()` 阻塞编辑流程。
+UI 编辑器的“保存到文件”同时写 UILayout/LoginLayout、共用 PanelLayout、手柄绑定和提示文案；每个写入必须把失败抛给 `save()` 聚合，任一子项失败都只能显示“部分保存失败”，不得被后续成功状态覆盖。成功/失败同时保留底部状态并显示自动消失的非阻塞反馈，禁止用 `alert()` 阻塞编辑流程。
 
 `Minimap` 被 `UILayoutLoader` 命中时必须调用 `setLayoutManaged(true)`，使 `_tryBuildCache()` 只建立地图内容缓存而不按世界宽高比重写编辑器保存的 `width/height`。窗口 resize 只复用已经加载的 `scene.uiLayoutLoader` 重新计算百分比矩形，不得重新 fetch 配置，也不得无条件把小地图重置到右上角。
 

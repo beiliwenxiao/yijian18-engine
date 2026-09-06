@@ -218,6 +218,7 @@ export class LocalAuthorityAdapter extends AuthorityPort {
 
     try {
       const normalized = normalizeHandlerOutput(rawOutput);
+      const postCommit = typeof rawOutput?.postCommit === 'function' ? rawOutput.postCommit : null;
       const result = cloneCommandValue(normalized.result);
       const committedEvents = cloneCommandValue(normalized.committedEvents);
       const applicationEvents = cloneCommandValue(normalized.applicationEvents);
@@ -245,6 +246,13 @@ export class LocalAuthorityAdapter extends AuthorityPort {
       };
       assertCommandContract(CommandContractKind.COMMAND_RESULT, finalResult);
       this._finalizeLedger(claim, finalResult);
+
+      // 领域事务、authority revision 与幂等账本完成后，才允许 UI/内容侧的可重入收尾。
+      try {
+        await postCommit?.(finalResult);
+      } catch (error) {
+        console.warn('LocalAuthorityAdapter post-commit handler failed', error);
+      }
       return Object.freeze(cloneCommandValue(finalResult));
     } catch (error) {
       rngTransaction.rollback();

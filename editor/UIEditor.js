@@ -103,6 +103,20 @@ const EDITABLE_LAYOUT_PLATFORMS = ['desktop', 'mobile', 'loginDesktop', 'loginMo
 const LOGIN_LAYOUT_PLATFORMS = new Set(['loginDesktop', 'loginMobile']);
 const BADGE_TEXT_LAYOUT_IDS = new Set(['timeWeatherBadge', 'combatStateBadge']);
 const BADGE_TEXT_LAYOUT_FIELDS = ['fontSize', 'textOffsetX', 'textOffsetY'];
+const PANEL_LAYOUT_PLATFORMS = new Set(['desktop', 'mobile']);
+const EDITABLE_PANEL_PART_IDS = new Set(['bagTitle', 'bagSeparator']);
+const PANEL_PART_MIN_SIZE = 16;
+const PANEL_LINE_HIT_HEIGHT = 8;
+
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, character => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  })[character]);
+}
 
 function layoutFileName(platform) {
   if (platform === 'desktop') return 'UILayout.desktop.json';
@@ -130,11 +144,14 @@ export class UIEditor {
       loginMobile: this._cloneDefault('loginMobile')
     };
     this.selectedId = null;
+    this.selectedPanelPart = null;
     this.scale = 1; // 预览缩放
 
     this._dragState = null;
     this._initialized = false;
     this._loginBackgroundImage = '';
+    this._panelLayoutDocument = null;
+    this._panelLayouts = {};
 
     // 手柄绑定编辑器数据（与 Xbox360Profile.DEFAULT_BINDINGS 同构）
     this._defaultGamepadBindings = null; // 异步加载
@@ -282,8 +299,9 @@ export class UIEditor {
     }
   }
 
-  /** 加载面板编辑器的布局数据（用于真实面板预览） */
+  /** 加载并保留完整面板布局文档，映射项与 panels[] 共用同一对象引用。 */
   async _loadPanelLayout() {
+    this._panelLayoutDocument = null;
     this._panelLayouts = {};
     try {
       const file = this.configBase + 'PanelLayout.json';
@@ -293,13 +311,14 @@ export class UIEditor {
       if (data && data.ok && data.content) {
         const parsed = JSON.parse(data.content);
         if (parsed && Array.isArray(parsed.panels)) {
-          for (const p of parsed.panels) {
-            this._panelLayouts[p.id] = p;
+          this._panelLayoutDocument = parsed;
+          for (const panel of parsed.panels) {
+            this._panelLayouts[panel.id] = panel;
           }
         }
       }
     } catch (e) {
-      // 没有面板布局文件，不影响
+      console.warn('UIEditor: PanelLayout 加载失败，面板子部件编辑不可用', e);
     }
   }
 
@@ -396,6 +415,7 @@ export class UIEditor {
         this.container.querySelectorAll('.uie-platform-switch button')
           .forEach(b => b.classList.toggle('active', b === btn));
         this.selectedId = null;
+        this.selectedPanelPart = null;
         this._render();
       });
     });
@@ -429,6 +449,7 @@ export class UIEditor {
       if (confirm('恢复当前平台为默认布局？(未保存)')) {
         this.layouts[this.platform] = this._cloneDefault(this.platform);
         this.selectedId = null;
+        this.selectedPanelPart = null;
         this._render();
       }
     });
@@ -459,7 +480,15 @@ export class UIEditor {
       .uie-comp.login-actions { display:grid; grid-template-rows:repeat(3, 1fr); gap:10px; padding:0; border:0; background:transparent; overflow:visible; }
       .uie-login-preview-action { display:flex; align-items:center; justify-content:center; border:1px solid rgba(255,255,255,0.18); border-radius:6px; background:#4b6728; color:#fff; font-size:12px; pointer-events:none; }
       .uie-comp.selected { border-color:#ff5; background:rgba(255,255,100,0.25); z-index:10; }
-      .uie-comp .uie-handle { position:absolute; right:-5px; bottom:-5px; width:12px; height:12px; background:#ff5; border:1px solid #000; cursor:nwse-resize; }
+      .uie-comp .uie-handle { position:absolute; z-index:12; right:-5px; bottom:-5px; width:12px; height:12px; background:#ff5; border:1px solid #000; cursor:nwse-resize; }
+      .uie-panel-part-frame { position:absolute; z-index:6; box-sizing:border-box; border:1px dashed rgba(255,220,80,0.95); background:rgba(255,220,80,0.08); cursor:move; pointer-events:auto; overflow:visible; }
+      .uie-panel-part-frame.line { background:rgba(255,145,70,0.1); border-color:rgba(255,160,80,0.98); }
+      .uie-panel-part-frame.selected { z-index:11; border-color:#7dffad; background:rgba(80,255,145,0.16); box-shadow:0 0 0 1px rgba(0,0,0,0.65), 0 0 8px rgba(80,255,145,0.7); }
+      .uie-panel-part-handle { position:absolute; right:-5px; bottom:-5px; width:10px; height:10px; box-sizing:border-box; border:1px solid #06150c; background:#7dffad; cursor:nwse-resize; opacity:0; pointer-events:none; }
+      .uie-panel-part-frame.selected .uie-panel-part-handle { opacity:1; pointer-events:auto; }
+      .uie-panel-part-meta { margin:0 0 12px; padding:8px; border:1px solid #2a3a5e; border-radius:4px; background:#0a1020; color:#8fa7bf; font-size:11px; line-height:1.6; }
+      .uie-prop-row select { flex:1; background:#0a1020; border:1px solid #2a3a5e; color:#fff; padding:5px; border-radius:3px; min-width:0; }
+      .uie-prop-row input[type="text"] { min-width:0; }
       .uie-props { width:240px; background:#111a30; border-left:1px solid #2a3a5e; padding:14px; overflow-y:auto; }
       .uie-props h4 { color:#4CAF50; margin-bottom:10px; }
       .uie-prop-empty { color:#778; font-size:13px; }
@@ -473,6 +502,87 @@ export class UIEditor {
       .uie-save-feedback.error { border-color:#ff7777; background:rgba(105,28,35,0.97); color:#fff1f1; }
     `;
     document.head.appendChild(style);
+  }
+
+  /**
+   * 复刻 BackpackPanel 的内容缩放与居中规则。
+   * UILayout 只定义外框，PanelLayout 始终保留自己的设计坐标。
+   */
+  _getPanelContentTransform(comp, panelDef) {
+    const panelWidth = Number(panelDef?.width);
+    const panelHeight = Number(panelDef?.height);
+    const componentWidth = Number(comp?.width);
+    const componentHeight = Number(comp?.height);
+    if (!(panelWidth > 0) || !(panelHeight > 0) || !(componentWidth > 0) || !(componentHeight > 0)) {
+      return {
+        contentScale: 1,
+        frameWidth: Math.max(0, componentWidth || 0),
+        frameHeight: Math.max(0, componentHeight || 0),
+        offsetX: 0,
+        offsetY: 0
+      };
+    }
+
+    const contentScale = Math.min(componentWidth / panelWidth, componentHeight / panelHeight);
+    const frameWidth = Math.round(panelWidth * contentScale);
+    const frameHeight = Math.round(panelHeight * contentScale);
+    return {
+      contentScale,
+      frameWidth,
+      frameHeight,
+      offsetX: Math.round((componentWidth - frameWidth) / 2),
+      offsetY: Math.round((componentHeight - frameHeight) / 2)
+    };
+  }
+
+  _getSelectedPanelPart() {
+    const selection = this.selectedPanelPart;
+    if (!selection) return null;
+    const panelDef = this._panelLayouts?.[selection.panelId];
+    const part = panelDef?.parts?.find(candidate => candidate.id === selection.partId);
+    return panelDef && part ? { panelDef, part } : null;
+  }
+
+  /** 把共用 PanelLayout 子部件投影成当前平台可交互的虚线框。 */
+  _appendEditablePanelParts(element, comp, panelDef) {
+    if (!PANEL_LAYOUT_PLATFORMS.has(this.platform) || !Array.isArray(panelDef?.parts)) return;
+    const transform = this._getPanelContentTransform(comp, panelDef);
+
+    for (const part of panelDef.parts) {
+      if (part.section !== 'inventory' || !EDITABLE_PANEL_PART_IDS.has(part.id)) continue;
+      const actualLeft = (transform.offsetX + part.x * transform.contentScale) * this.scale;
+      const actualTop = (transform.offsetY + part.y * transform.contentScale) * this.scale;
+      const actualWidth = Math.max(1, part.width * transform.contentScale * this.scale);
+      const actualHeight = Math.max(1, part.height * transform.contentScale * this.scale);
+      const frameHeight = part.type === 'line'
+        ? Math.max(PANEL_LINE_HIT_HEIGHT, actualHeight)
+        : actualHeight;
+
+      const frame = document.createElement('div');
+      frame.className = `uie-panel-part-frame ${part.type || ''}`;
+      if (this.selectedPanelPart?.panelId === comp.id && this.selectedPanelPart?.partId === part.id) {
+        frame.classList.add('selected');
+      }
+      frame.style.left = `${actualLeft}px`;
+      frame.style.top = `${actualTop - (frameHeight - actualHeight) / 2}px`;
+      frame.style.width = `${actualWidth}px`;
+      frame.style.height = `${frameHeight}px`;
+      frame.dataset.panelId = comp.id;
+      frame.dataset.partId = part.id;
+      frame.title = `${part.label || part.id}（${part.id}，PC/Android 共用）`;
+      frame.addEventListener('mousedown', event => {
+        this._startPanelPartDrag(event, comp, panelDef, part, 'move');
+      });
+
+      const handle = document.createElement('div');
+      handle.className = 'uie-panel-part-handle';
+      handle.title = '缩放 PanelLayout 子部件';
+      handle.addEventListener('mousedown', event => {
+        this._startPanelPartDrag(event, comp, panelDef, part, 'resize');
+      });
+      frame.appendChild(handle);
+      element.appendChild(frame);
+    }
   }
 
   /** 渲染当前平台的舞台和组件 */
@@ -528,15 +638,16 @@ export class UIEditor {
         el.style.border = comp.id === this.selectedId ? '2px solid #ff5' : '1px solid rgba(76,175,80,0.4)';
         el.style.overflow = 'hidden';
         const cvs = document.createElement('canvas');
-        const cw = Math.round(comp.width * this.scale);
-        const ch = Math.round(comp.height * this.scale);
-        cvs.width = cw;
-        cvs.height = ch;
+        const canvasWidth = Math.round(comp.width * this.scale);
+        const canvasHeight = Math.round(comp.height * this.scale);
+        cvs.width = canvasWidth;
+        cvs.height = canvasHeight;
         cvs.style.width = '100%';
         cvs.style.height = '100%';
         cvs.style.pointerEvents = 'none';
-        this._drawPanelPreview(cvs, panelDef, cw, ch);
+        this._drawPanelPreview(cvs, panelDef, comp);
         el.appendChild(cvs);
+        this._appendEditablePanelParts(el, comp, panelDef);
       } else if (LOGIN_LAYOUT_PLATFORMS.has(this.platform) && comp.kind === 'login-actions') {
         el.textContent = '';
         for (const label of ['开始游戏', '读取存档', '退出游戏']) {
@@ -567,14 +678,19 @@ export class UIEditor {
   _startDrag(e, comp, mode) {
     e.preventDefault();
     this.selectedId = comp.id;
+    this.selectedPanelPart = null;
     this._dragState = {
-      mode, comp,
+      target: 'component',
+      mode,
+      comp,
       startMouseX: e.clientX,
       startMouseY: e.clientY,
-      startX: comp.x, startY: comp.y,
-      startW: comp.width, startH: comp.height
+      startX: comp.x,
+      startY: comp.y,
+      startW: comp.width,
+      startH: comp.height
     };
-    const onMove = (ev) => this._onDragMove(ev);
+    const onMove = event => this._onDragMove(event);
     const onUp = () => {
       window.removeEventListener('mousemove', onMove);
       window.removeEventListener('mouseup', onUp);
@@ -585,9 +701,75 @@ export class UIEditor {
     this._render();
   }
 
+  _startPanelPartDrag(e, comp, panelDef, part, mode) {
+    e.preventDefault();
+    e.stopPropagation();
+    const transform = this._getPanelContentTransform(comp, panelDef);
+    this.selectedId = null;
+    this.selectedPanelPart = { panelId: comp.id, partId: part.id };
+    this._dragState = {
+      target: 'panelPart',
+      mode,
+      comp,
+      panelDef,
+      part,
+      editorScale: this.scale,
+      contentScale: transform.contentScale,
+      startMouseX: e.clientX,
+      startMouseY: e.clientY,
+      startX: part.x,
+      startY: part.y,
+      startW: part.width,
+      startH: part.height
+    };
+    const onMove = event => this._onDragMove(event);
+    const onUp = () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+      this._dragState = null;
+      this._setStatus(`PanelLayout.${part.id} 已修改，PC/Android 将共用此内部坐标（未保存）`);
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    this._render();
+  }
+
   _onDragMove(e) {
     if (!this._dragState) return;
     const ds = this._dragState;
+
+    if (ds.target === 'panelPart') {
+      const interactionScale = Math.max(0.0001, ds.editorScale * ds.contentScale);
+      const dx = (e.clientX - ds.startMouseX) / interactionScale;
+      const dy = (e.clientY - ds.startMouseY) / interactionScale;
+      const panelWidth = Number(ds.panelDef.width) || 0;
+      const panelHeight = Number(ds.panelDef.height) || 0;
+
+      if (ds.mode === 'move') {
+        const maxX = Math.max(0, panelWidth - ds.startW);
+        const maxY = Math.max(0, panelHeight - ds.startH);
+        ds.part.x = Math.min(maxX, Math.max(0, Math.round(ds.startX + dx)));
+        ds.part.y = Math.min(maxY, Math.max(0, Math.round(ds.startY + dy)));
+      } else {
+        const availableWidth = Math.max(1, panelWidth - ds.startX);
+        const availableHeight = Math.max(1, panelHeight - ds.startY);
+        const requestedMinWidth = ds.part.type === 'line' ? 1 : PANEL_PART_MIN_SIZE;
+        const requestedMinHeight = ds.part.type === 'line' ? 1 : PANEL_PART_MIN_SIZE;
+        const minWidth = Math.min(requestedMinWidth, availableWidth);
+        const minHeight = Math.min(requestedMinHeight, availableHeight);
+        ds.part.width = Math.min(
+          availableWidth,
+          Math.max(minWidth, Math.round(ds.startW + dx))
+        );
+        ds.part.height = Math.min(
+          availableHeight,
+          Math.max(minHeight, Math.round(ds.startH + dy))
+        );
+      }
+      this._render();
+      return;
+    }
+
     const dx = (e.clientX - ds.startMouseX) / this.scale;
     const dy = (e.clientY - ds.startMouseY) / this.scale;
     if (ds.mode === 'move') {
@@ -609,12 +791,121 @@ export class UIEditor {
     this._render();
   }
 
+  _updatePanelPartNumber(panelDef, part, key, rawValue) {
+    if (!Number.isFinite(rawValue)) return;
+    const value = Math.round(rawValue);
+    const panelWidth = Number(panelDef.width) || 0;
+    const panelHeight = Number(panelDef.height) || 0;
+    const minSize = part.type === 'line' ? 1 : PANEL_PART_MIN_SIZE;
+
+    if (key === 'x') {
+      part.x = Math.min(Math.max(0, panelWidth - part.width), Math.max(0, value));
+    } else if (key === 'y') {
+      part.y = Math.min(Math.max(0, panelHeight - part.height), Math.max(0, value));
+    } else if (key === 'width') {
+      const available = Math.max(1, panelWidth - part.x);
+      part.width = Math.min(available, Math.max(Math.min(minSize, available), value));
+    } else if (key === 'height') {
+      const available = Math.max(1, panelHeight - part.y);
+      part.height = Math.min(available, Math.max(Math.min(minSize, available), value));
+    } else if (key === 'fontSize') {
+      part.fontSize = Math.max(1, value);
+    }
+  }
+
+  _renderPanelPartProps(props, panelDef, part) {
+    const numberFields = [
+      { key: 'x', label: 'x' },
+      { key: 'y', label: 'y' },
+      { key: 'width', label: 'width' },
+      { key: 'height', label: 'height' }
+    ];
+    if (part.type === 'text') numberFields.push({ key: 'fontSize', label: '字号' });
+    const alignOptions = ['left', 'center', 'right']
+      .map(value => `<option value="${value}"${part.align === value ? ' selected' : ''}>${value}</option>`)
+      .join('');
+
+    props.innerHTML = `
+      <h4>PanelLayout 属性</h4>
+      <div class="uie-prop-name">${escapeHtml(part.label || part.id)} <span style="color:#778;font-size:11px">(${escapeHtml(part.id)})</span></div>
+      <div class="uie-panel-part-meta">
+        面板：${escapeHtml(panelDef.id)}<br>
+        section：${escapeHtml(part.section)}<br>
+        type：${escapeHtml(part.type)}
+      </div>
+      <div class="uie-prop-row">
+        <label>名称</label>
+        <input type="text" data-part-text="label" value="${escapeHtml(part.label || '')}">
+      </div>
+      ${numberFields.map(({ key, label }) => `
+        <div class="uie-prop-row">
+          <label>${label}</label>
+          <input type="number" data-part-number="${key}" value="${Number.isFinite(part[key]) ? part[key] : 0}" min="${key === 'fontSize' || key === 'width' || key === 'height' ? 1 : 0}">
+        </div>
+      `).join('')}
+      ${part.type === 'text' ? `
+        <div class="uie-prop-row">
+          <label>文本</label>
+          <input type="text" data-part-text="text" value="${escapeHtml(part.text || '')}">
+        </div>
+        <div class="uie-prop-row">
+          <label>字重</label>
+          <input type="text" data-part-text="fontWeight" value="${escapeHtml(part.fontWeight || 'normal')}">
+        </div>
+        <div class="uie-prop-row">
+          <label>颜色</label>
+          <input type="text" data-part-text="color" value="${escapeHtml(part.color || '#ffffff')}">
+        </div>
+        <div class="uie-prop-row">
+          <label>对齐</label>
+          <select data-part-select="align">${alignOptions}</select>
+        </div>
+      ` : `
+        <div class="uie-prop-row">
+          <label>颜色</label>
+          <input type="text" data-part-text="color" value="${escapeHtml(part.color || '#4a9eff')}">
+        </div>
+      `}
+      <div class="uie-prop-empty" style="margin-top:10px;line-height:1.6">
+        此部件使用 PanelLayout 的 ${panelDef.width}×${panelDef.height} 内部坐标；PC 与 Android 只投影不同外框，保存后两端共用本次修改。分隔线虚线框会扩大命中高度，但不会改写真实 height。
+      </div>
+    `;
+
+    props.querySelectorAll('input[data-part-number]').forEach(input => {
+      input.addEventListener('change', () => {
+        this._updatePanelPartNumber(panelDef, part, input.dataset.partNumber, Number(input.value));
+        this._setStatus(`PanelLayout.${part.id} 属性已修改（未保存）`);
+        this._render();
+      });
+    });
+    props.querySelectorAll('input[data-part-text]').forEach(input => {
+      input.addEventListener('change', () => {
+        part[input.dataset.partText] = input.value;
+        this._setStatus(`PanelLayout.${part.id} 属性已修改（未保存）`);
+        this._render();
+      });
+    });
+    props.querySelectorAll('select[data-part-select]').forEach(select => {
+      select.addEventListener('change', () => {
+        part[select.dataset.partSelect] = select.value;
+        this._setStatus(`PanelLayout.${part.id} 属性已修改（未保存）`);
+        this._render();
+      });
+    });
+  }
+
   _renderProps() {
     const props = this.container.querySelector('#uie-props');
     const layout = this.layouts[this.platform];
+    const selectedPanelPart = this._getSelectedPanelPart();
+    if (selectedPanelPart && PANEL_LAYOUT_PLATFORMS.has(this.platform)) {
+      this._renderPanelPartProps(props, selectedPanelPart.panelDef, selectedPanelPart.part);
+      return;
+    }
+
     const comp = layout.components.find(c => c.id === this.selectedId);
     if (!comp) {
-      props.innerHTML = '<h4>属性</h4><div class="uie-prop-empty">选择一个组件</div>';
+      props.innerHTML = '<h4>属性</h4><div class="uie-prop-empty">选择一个组件或背包内部虚线框</div>';
       return;
     }
     const propertyDefinitions = [
@@ -688,7 +979,22 @@ export class UIEditor {
     }, isError ? 5000 : 2800);
   }
 
-  /** 保存 PC、Android 游戏 UI 与两套登录页面布局到 JSON 文件（坐标转为百分比，自适配分辨率） */
+  /** 保存当前完整 PanelLayout 文档，避免只写回可编辑白名单而丢失其他部件。 */
+  async _savePanelLayout() {
+    if (!this._panelLayoutDocument) throw new Error('PanelLayout 配置尚未加载');
+    const file = this.configBase + 'PanelLayout.json';
+    const content = JSON.stringify(this._panelLayoutDocument, null, 2);
+    const res = await fetch('/api/save-file', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path: file, content })
+    });
+    const data = await res.json().catch(() => null);
+    if (!res.ok || data?.ok !== true) throw new Error(data?.error || `HTTP ${res.status}`);
+    return true;
+  }
+
+  /** 保存 PC、Android 游戏 UI、共用 PanelLayout 与两套登录页面布局。 */
   async save() {
     if (this._saveInFlight) return;
     this._saveInFlight = true;
@@ -698,7 +1004,7 @@ export class UIEditor {
       saveButton.disabled = true;
       saveButton.textContent = '保存中…';
     }
-    this._setStatus('正在保存布局、手柄绑定和提示文案…');
+    this._setStatus('正在保存布局、PanelLayout、手柄绑定和提示文案…');
 
     const saved = [];
     const failures = [];
@@ -714,6 +1020,9 @@ export class UIEditor {
     try {
       await savePart('手柄绑定', () => this._saveGamepadConfig());
       await savePart('提示文案', () => this._saveHintsConfig());
+      if (this._panelLayoutDocument) {
+        await savePart('PanelLayout.json', () => this._savePanelLayout());
+      }
 
       for (const platform of EDITABLE_LAYOUT_PLATFORMS) {
         const fileName = layoutFileName(platform);
@@ -777,35 +1086,29 @@ export class UIEditor {
   }
 
   /**
-   * 在 canvas 上绘制面板真实预览
-   * 内部部件保持 1:1 原始坐标，不随外框拉伸缩放。
-   * 外框大小只决定可见区域（裁剪）。
+   * 在 Canvas 上绘制面板真实预览。
+   * 变换与 BackpackPanel._applyScaledLayout() 一致：等比缩放后在 UILayout 外框中居中。
    * @param {HTMLCanvasElement} cvs
    * @param {Object} panelDef - 面板定义（来自 PanelLayout.json）
-   * @param {number} cw - canvas 像素宽（= comp.width * editorScale）
-   * @param {number} ch - canvas 像素高（= comp.height * editorScale）
+   * @param {Object} comp - 当前平台 UILayout 外框
    */
-  _drawPanelPreview(cvs, panelDef, cw, ch) {
+  _drawPanelPreview(cvs, panelDef, comp) {
     const ctx = cvs.getContext('2d');
-    ctx.clearRect(0, 0, cw, ch);
+    ctx.clearRect(0, 0, cvs.width, cvs.height);
 
-    // editorScale = 外框像素 / 外框逻辑尺寸（即 UI 编辑器的整体缩放）
-    // 但面板内容按面板自身坐标 1:1 绘制，只需要同样的 editorScale
-    const editorScale = this.scale;
+    const transform = this._getPanelContentTransform(comp, panelDef);
     ctx.save();
-    ctx.scale(editorScale, editorScale);
+    ctx.scale(this.scale, this.scale);
+    ctx.translate(transform.offsetX, transform.offsetY);
+    ctx.scale(transform.contentScale, transform.contentScale);
 
-    // 面板背景填满外框（comp 当前大小），内部部件按原始坐标 1:1 绘制
-    const compW = cw / editorScale;
-    const compH = ch / editorScale;
     ctx.fillStyle = panelDef.backgroundColor || 'rgba(0,0,0,0.85)';
-    ctx.fillRect(0, 0, compW, compH);
+    ctx.fillRect(0, 0, panelDef.width, panelDef.height);
     ctx.strokeStyle = panelDef.borderColor || '#4a9eff';
     ctx.lineWidth = panelDef.borderWidth || 2;
-    ctx.strokeRect(0, 0, compW, compH);
+    ctx.strokeRect(0, 0, panelDef.width, panelDef.height);
 
-    // 渲染部件（按面板自身坐标，不随外框拉伸）
-    for (const part of panelDef.parts) {
+    for (const part of panelDef.parts || []) {
       const { x, y, width, height } = part;
       switch (part.type) {
         case 'text':

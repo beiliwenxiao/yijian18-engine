@@ -246,6 +246,9 @@ function handleModalInput({ inputManager, gamepad } = {}) {
       viewHeight: this.logicalHeight
     });
   }
+  if (this.backpackPanel?.visible) {
+    return this.backpackPanel.handleInput({ inputManager, gamepad }) === true;
+  }
   return this.s09ClassSelectionCoordinator.handleConfirmationInput({ inputManager, gamepad });
 }
 

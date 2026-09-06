@@ -74,6 +74,8 @@ export class PlayerInfoPanel extends UIElement {
     
     // 装备槽悬停状态
     this.hoveredEquipSlot = null;
+    // 手柄焦点独立于鼠标悬停，渲染与导航都依赖稳定槽位定义而不是上一帧命中矩形。
+    this.focusedEquipSlot = null;
     this.equipSlots = {};
     
     // 职业颜色映射
@@ -220,8 +222,12 @@ export class PlayerInfoPanel extends UIElement {
           } else {
             this._drawEmptySlotLabel(ctx, part.slotLabel, px, py, pw, ph);
           }
-          // 悬停高亮
-          if (this.hoveredEquipSlot === slotType) {
+          // 鼠标悬停和手柄焦点分别用白/金色描边，手柄焦点不依赖鼠标坐标。
+          if (this.focusedEquipSlot === slotType) {
+            ctx.strokeStyle = '#ffe785';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(px, py, pw, ph);
+          } else if (this.hoveredEquipSlot === slotType) {
             ctx.strokeStyle = '#ffffff';
             ctx.lineWidth = 2;
             ctx.strokeRect(px, py, pw, ph);
@@ -315,6 +321,8 @@ export class PlayerInfoPanel extends UIElement {
           if (!projection) return target.getComponent?.(type);
           if (type === 'stats') return projection.stats || null;
           if (type === 'equipment') {
+            const liveEquipment = target.getComponent?.('equipment');
+            if (liveEquipment) return liveEquipment;
             const slots = projection.equipment || {};
             return { slots, getEquipment: slot => slots[slot] || null };
           }
@@ -426,7 +434,14 @@ export class PlayerInfoPanel extends UIElement {
       // 装备图标
       const equippedItem = equipment && equipment.slots ? equipment.slots[slotType] : null;
       if (equippedItem) {
-        ItemIconRenderer.drawIcon(ctx, equippedItem, sx + slotSize / 2, sy + slotSize / 2, slotSize * 0.8);
+        this.drawEquipIcon(
+          ctx,
+          equippedItem,
+          sx + slotSize * 0.1,
+          sy + slotSize * 0.1,
+          slotSize * 0.8,
+          slotSize * 0.8
+        );
         if (equippedItem.quantity > 1) {
           ctx.fillStyle = '#fff';
           ctx.font = 'bold 10px Arial';
@@ -647,15 +662,18 @@ export class PlayerInfoPanel extends UIElement {
       };
       
       const isHovered = this.hoveredEquipSlot === slotType;
+      const isFocused = this.focusedEquipSlot === slotType;
       const equippedItem = equipment?.slots[slotType] || null;
       
       // 绘制槽背景
-      ctx.fillStyle = isHovered ? 'rgba(74, 158, 255, 0.3)' : 'rgba(50, 50, 50, 0.8)';
+      ctx.fillStyle = isFocused
+        ? 'rgba(255, 231, 133, 0.24)'
+        : (isHovered ? 'rgba(74, 158, 255, 0.3)' : 'rgba(50, 50, 50, 0.8)');
       ctx.fillRect(slotX, slotY, slotWidth, slotHeight);
       
       // 绘制槽边框
-      ctx.strokeStyle = isHovered ? '#4a9eff' : '#666666';
-      ctx.lineWidth = 2;
+      ctx.strokeStyle = isFocused ? '#ffe785' : (isHovered ? '#4a9eff' : '#666666');
+      ctx.lineWidth = isFocused ? 3 : 2;
       ctx.strokeRect(slotX, slotY, slotWidth, slotHeight);
       
       if (equippedItem) {
@@ -671,17 +689,7 @@ export class PlayerInfoPanel extends UIElement {
         ctx.fillStyle = rarityColors[equippedItem.rarity] || '#888888';
         ctx.fillRect(slotX + 5, slotY + 5, slotWidth - 10, slotHeight - 10);
         
-        // 尝试绘制装备图标
-        const iconDrawn = this.drawEquipIcon(ctx, equippedItem, slotX, slotY, slotWidth, slotHeight);
-        
-        if (!iconDrawn) {
-          // 没有专用图标，绘制装备名称首字
-          ctx.fillStyle = '#ffffff';
-          ctx.font = 'bold 16px Arial';
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText(equippedItem.name.charAt(0), slotX + slotWidth / 2, slotY + slotHeight / 2);
-        }
+        this.drawEquipIcon(ctx, equippedItem, slotX, slotY, slotWidth, slotHeight);
         
         // 数量显示（箭矢等可堆叠装备）
         if (equippedItem.quantity != null && equippedItem.quantity > 0) {
@@ -708,7 +716,60 @@ export class PlayerInfoPanel extends UIElement {
   drawEquipIcon(ctx, equipment, slotX, slotY, slotWidth, slotHeight) {
     const cx = slotX + slotWidth / 2;
     const cy = slotY + slotHeight / 2;
-    return ItemIconRenderer.drawIcon(ctx, equipment, cx, cy, slotWidth);
+    const iconSize = Math.min(slotWidth, slotHeight);
+    if (ItemIconRenderer.drawIcon(ctx, equipment, cx, cy, iconSize)) return true;
+
+    const label = String(
+      equipment?.name || equipment?.displayName || equipment?.definitionId || equipment?.id || '?'
+    ).trim() || '?';
+    const rarityColors = {
+      0: '#888888',
+      1: '#00ff00',
+      2: '#0088ff',
+      3: '#aa00ff',
+      4: '#ff8800'
+    };
+    const inset = Math.max(3, Math.round(iconSize * 0.1));
+    ctx.save();
+    ctx.fillStyle = rarityColors[equipment?.rarity] || '#888888';
+    ctx.fillRect(
+      slotX + inset,
+      slotY + inset,
+      Math.max(0, slotWidth - inset * 2),
+      Math.max(0, slotHeight - inset * 2)
+    );
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `bold ${Math.max(10, Math.round(iconSize * 0.36))}px Arial`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label.charAt(0), cx, cy);
+    ctx.restore();
+    return true;
+  }
+
+  /** 返回稳定装备槽类型，供手柄导航使用。 */
+  getEquipmentSlotTypes() {
+    return Object.keys(this.equipSlotPositions);
+  }
+
+  /** 按 3×4 逻辑网格查询槽位，不依赖上一帧绘制命中矩形。 */
+  getEquipmentSlotAt(row, col) {
+    return Object.entries(this.equipSlotPositions)
+      .find(([, position]) => position.row === row && position.col === col)?.[0] || null;
+  }
+
+  getEquipmentSlotPosition(slotType) {
+    return this.equipSlotPositions[slotType] || null;
+  }
+
+  getEquipmentItem(slotType) {
+    const equipment = this.player?.getComponent?.('equipment');
+    return equipment?.getEquipment?.(slotType) || equipment?.slots?.[slotType] || null;
+  }
+
+  setFocusedEquipSlot(slotType) {
+    this.focusedEquipSlot = slotType && this.equipSlotPositions[slotType] ? slotType : null;
+    return this.focusedEquipSlot;
   }
 
   /**

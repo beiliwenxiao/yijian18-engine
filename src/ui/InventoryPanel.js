@@ -44,6 +44,14 @@ export class InventoryPanel extends UIElement {
     this._entitySource = null;
     this.getProjection = typeof options.getProjection === 'function' ? options.getProjection : () => null;
     this.onIntent = typeof options.onIntent === 'function' ? options.onIntent : null;
+    // 卸下仍经 SceneInventoryFlow 提交，保留背包容量失败反馈与面板重绑。
+    this.onEquipmentUnequip = typeof options.onEquipmentUnequip === 'function'
+      ? options.onEquipmentUnequip
+      : null;
+    // 由组合 BackpackPanel 渲染唯一详情/操作菜单；本面板只上报稳定物品身份。
+    this.onItemActionMenu = typeof options.onItemActionMenu === 'function'
+      ? options.onItemActionMenu
+      : null;
     this.currentFilter = 'all';
     this.slotSize = options.slotSize || 50;
     this.slotPadding = options.slotPadding || 5;
@@ -86,6 +94,8 @@ export class InventoryPanel extends UIElement {
     // 交互状态
     this.hoveredSlot = -1;
     this.selectedSlot = -1;
+    // 手柄焦点独立于鼠标选中：空格子也可被聚焦，确认时不产生物品命令。
+    this.focusedSlot = -1;
     this.draggedItem = null;
     this.dragOffset = { x: 0, y: 0 };
     this.mouseX = 0;
@@ -122,9 +132,13 @@ export class InventoryPanel extends UIElement {
     // 是否显示悬停提示框（移动端可关闭）
     this.showTooltip = options.showTooltip !== false;
     
-    // 选中物品详情面板（移动端：点击道具后显示属性 + 装备/丢弃按钮）
-    this.itemDetailSlot = -1; // 当前显示详情的槽位，-1=不显示
-    this.itemDetailButtons = []; // [{label, action, x, y, width, height}]
+    // 统一物品详情/操作菜单。descriptor 只保存稳定身份，避免异步命令返回后误操作新物品。
+    this.itemDetail = null; // { kind, itemId, instanceId, slotIndex?, slotType? }
+    this.itemDetailSlot = -1; // 兼容旧调用方，仅背包来源时写入实际槽位。
+    this.itemDetailButtons = [];
+    this.itemDetailActions = [];
+    this.itemDetailSelectedActionId = null;
+    this.itemDetailPending = false;
   }
 
   /**
@@ -297,8 +311,8 @@ export class InventoryPanel extends UIElement {
           // 长按释放：关闭 tooltip，不使用道具
           this.longPressShowTooltip = false;
         } else {
-          // 短按释放：执行正常的使用/装备
-          this.handleSlotLeftClick(this.longPressSlot);
+          // 移动端短按只打开统一详情/操作菜单，不直接装备、使用或丢弃。
+          this.requestItemActionMenu(this.longPressSlot);
         }
         this.longPressSlot = -1;
         this.longPressActive = false;
@@ -635,7 +649,7 @@ export class InventoryPanel extends UIElement {
   renderFilteredSlot(ctx, filteredItem, x, y, displayIndex) {
     const { slot, index: originalIndex } = filteredItem;
     const isHovered = this.hoveredSlot === originalIndex;
-    const isSelected = this.selectedSlot === originalIndex;
+    const isSelected = this.selectedSlot === originalIndex || this.focusedSlot === originalIndex;
     this._renderSlotFrame(ctx, x, y, isHovered, isSelected);
     
     // 渲染物品
@@ -656,7 +670,7 @@ export class InventoryPanel extends UIElement {
     // 否则它会与 hoveredSlot/selectedSlot 的初始值 -1 相等而被误判为选中（黄框）。
     const isRealSlot = slotIndex >= 0;
     const isHovered = isRealSlot && this.hoveredSlot === slotIndex;
-    const isSelected = isRealSlot && this.selectedSlot === slotIndex;
+    const isSelected = isRealSlot && (this.selectedSlot === slotIndex || this.focusedSlot === slotIndex);
     this._renderSlotFrame(ctx, x, y, isHovered, isSelected);
   }
 
@@ -671,7 +685,7 @@ export class InventoryPanel extends UIElement {
   renderSlot(ctx, slotIndex, x, y, inventoryComponent) {
     const slot = inventoryComponent.getSlot(slotIndex);
     const isHovered = this.hoveredSlot === slotIndex;
-    const isSelected = this.selectedSlot === slotIndex;
+    const isSelected = this.selectedSlot === slotIndex || this.focusedSlot === slotIndex;
     this._renderSlotFrame(ctx, x, y, isHovered, isSelected);
     
     // 渲染物品
@@ -1298,23 +1312,12 @@ export class InventoryPanel extends UIElement {
   }
 
   /**
-   * 打开物品详情面板（移动端点击道具后显示属性 + 装备/丢弃按钮）
+   * 兼容旧调用：详情展示统一交给组合 BackpackPanel 的操作菜单。
    * @param {number} slotIndex
+   * @returns {boolean}
    */
   openItemDetail(slotIndex) {
-    if (!this.entity) return;
-    const inv = this.entity.getComponent('inventory');
-    if (!inv) return;
-    const slot = inv.getSlot(slotIndex);
-    if (!slot || !slot.item) {
-      this.itemDetailSlot = -1;
-      this.itemDetailButtons = [];
-      return;
-    }
-    this.itemDetailSlot = slotIndex;
-    this.selectedSlot = slotIndex;
-    // 按钮坐标在 renderItemDetailPanel 时计算
-    this.itemDetailButtons = [];
+    return this.requestItemActionMenu(slotIndex);
   }
 
   /**
@@ -1469,45 +1472,30 @@ export class InventoryPanel extends UIElement {
   }
 
   /**
-   * 处理槽位右键点击
-   * @param {number} slotIndex - 槽位索引
-   * @param {number} x - 鼠标X坐标
-   * @param {number} y - 鼠标Y坐标
+   * 桌面右键打开与移动端/手柄共用的详情操作菜单。
+   * @param {number} slotIndex - 背包真实槽位索引
+   * @returns {boolean}
    */
-  handleSlotRightClick(slotIndex, x, y) {
-    if (!this.entity) return;
-    
-    const inventoryComponent = this.entity.getComponent('inventory');
-    if (!inventoryComponent) return;
-    
-    const slot = inventoryComponent.getSlot(slotIndex);
-    if (!slot) return;
-    
-    // 显示右键菜单
-    this.contextMenu = {
-      visible: true,
-      x: x,
-      y: y,
-      slotIndex: slotIndex,
-      options: []
-    };
-    
-    // 添加菜单选项
-    if (slot.item.usable) {
-      this.contextMenu.options.push({
-        label: '使用',
-        action: 'use'
-      });
-    }
-    if (slot.item.instanceId && Number(slot.item.maxDurability) > 0
-      && Number(slot.item.durability) < Number(slot.item.maxDurability)) {
-      this.contextMenu.options.push({ label: '锻造修复', action: 'repair' });
-    }
-    
-    this.contextMenu.options.push({
-      label: '丢弃',
-      action: 'drop'
-    });
+  handleSlotRightClick(slotIndex) {
+    return this.requestItemActionMenu(slotIndex);
+  }
+
+  /**
+   * 只向外层菜单发送稳定身份，避免异步命令完成后对变更后的槽位误操作。
+   * @param {number} slotIndex - 背包真实槽位索引
+   * @returns {boolean}
+   */
+  requestItemActionMenu(slotIndex) {
+    const inventory = this.entity?.getComponent?.('inventory');
+    const item = inventory?.getSlot?.(slotIndex)?.item || null;
+    if (!item || !this.onItemActionMenu) return false;
+    this.selectedSlot = slotIndex;
+    return this.onItemActionMenu({
+      kind: 'inventory',
+      slotIndex,
+      itemId: item.id,
+      instanceId: item.instanceId ?? null
+    }) === true;
   }
 
   /**

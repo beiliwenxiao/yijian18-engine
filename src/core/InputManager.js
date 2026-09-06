@@ -49,6 +49,7 @@ export class InputManager {
             button: -1,
             buttons: new Set(),  // 当前按住的所有按键（支持同时按住左右键）
             clicked: false,
+            clickedButton: -1,    // 本次按下沿的按钮；mouseup 先于游戏帧时仍可正确识别右键
             handled: false,  // 标记点击事件是否已被处理（用于 UI 点击阻止）
             isTouch: false   // 最近一次指针按下是否来自触屏（供 InputActionRouter 标记设备）
         };
@@ -227,6 +228,7 @@ export class InputManager {
         this.mouse.isTouch = false;
         this.mouse.isDown = true;
         this.mouse.button = event.button;
+        this.mouse.clickedButton = event.button;
         this.mouse.buttons.add(event.button);
         this.mouse.clicked = true;
         this.mouse.ctrlKey = event.ctrlKey;
@@ -571,7 +573,7 @@ export class InputManager {
      * @returns {boolean}
      */
     isCtrlClick() {
-        return this.mouse.clicked && this.mouse.ctrlKey && this.mouse.button === 0;
+        return this.mouse.clicked && this.mouse.ctrlKey && this.getMouseButton() === 0;
     }
 
     /**
@@ -596,7 +598,8 @@ export class InputManager {
      * @returns {number} 0=左键, 1=中键, 2=右键
      */
     getMouseButton() {
-        return this.mouse.button;
+        // 点击沿在 mouseup 后仍保留它最初的按钮，避免右键被下一帧误判为左键。
+        return this.mouse.clicked ? this.mouse.clickedButton : this.mouse.button;
     }
 
     /**
@@ -757,6 +760,7 @@ export class InputManager {
         
         // 清除鼠标点击状态
         this.mouse.clicked = false;
+        this.mouse.clickedButton = -1;
         this.mouse.handled = false;  // 重置处理标记
         
         // 重置手柄帧守卫：下一帧允许再次真正轮询
@@ -771,6 +775,7 @@ export class InputManager {
         this.keysPressed.clear();
         this.keysReleased.clear();
         this.mouse.clicked = false;
+        this.mouse.clickedButton = -1;
         this.mouse.isDown = false;
         this.mouse.button = -1;
         this.mouse.buttons.clear();

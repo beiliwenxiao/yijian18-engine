@@ -1,6 +1,6 @@
 ---
 inclusion: fileMatch
-fileMatchPattern: '{**/BaseGameScene*,**/InventoryPanel*,**/EquipmentSystem*,**/DataDrivenPrologueScene*}'
+fileMatchPattern: '{**/BaseGameScene*,**/SceneInventoryFlow*,**/SceneEquipmentFlow*,**/ItemLifecycleService*,**/PlayerInfoPanel*,**/BackpackPanel*,**/InventoryPanel*,**/EquipmentSystem*,**/DataDrivenPrologueScene*}'
 ---
 
 # 装备变更事件流
@@ -9,34 +9,45 @@ fileMatchPattern: '{**/BaseGameScene*,**/InventoryPanel*,**/EquipmentSystem*,**/
 
 所有装备/卸下操作最终必须走 `BaseGameScene.onEquipmentChanged(messages, info)` 出口，否则数据驱动事件源 `equipItem`/`unequipItem` 不会发出。
 
-## 两条装备路径
+## 面板交互与命令路径
 
-| 路径 | 调用链 | 注意 |
+| 路径 | 调用链 | 交互约定 |
 |---|---|---|
-| 背包面板点装备 | `InventoryPanel.equipItem → showEquipmentNotification(…, info) → onEquipmentChange(messages, info)` | `info` 包含 `{ slot, item, oldItem, action:'equip' }` |
-| 拾取弹窗点"装备" | `BaseGameScene._onGainedPopupPrimary → equipmentSystem.equipItem → onEquipmentChanged(messages, info)` | 必须手动调 |
+| 背包快捷装备 | `InventoryPanel.handleSlotLeftClick → onIntent('item.equip') → BaseGameScene.submitItemIntent → CommandGateway` | 仅桌面左键保持直接装备的快捷行为；UI 不直接改库存或装备组件。 |
+| 统一物品操作菜单 | `InventoryPanel.requestItemActionMenu` / `PlayerInfoPanel.handleMouseClick → BackpackPanel.openItemActionMenu → BackpackPanel._activateMenuAction` | 桌面右键、移动端短按、手柄焦点上的 A/X 均打开同一菜单；背包装备显示“装备、丢弃”，已装备物品显示“卸下”。 |
+| 装备槽快捷卸下 | `PlayerInfoPanel.handleMouseClick → BaseGameScene._handleEquipmentSlotClick → SceneInventoryFlow.unequip → onIntent('item.unequip')` | 仅桌面左键保持直接卸下；菜单中的“卸下”仍走同一权威命令。背包满时命令零修改并显示容量反馈。 |
+| 拾取弹窗点“装备” | `SceneItemGainedFlow → item.equip → CommandGateway` | 与背包菜单的“装备”共用同一权威事务与装备变化出口。 |
 
-## 卸下路径
+`BackpackPanel` 是背包、装备槽、菜单与手柄焦点的唯一 UI 所有者。菜单只保存 `{ kind, itemId, instanceId, slotIndex?|slotType? }` 稳定身份，异步命令完成前不得保留渲染坐标或物品对象引用。其 `handleInput()` 必须从 `SceneInputFlow.onModalInput()` 进入，以优先消费键鼠、触屏和手柄输入，禁止另建设备旁路。
 
-`BaseGameScene._handleEquipmentSlotClick`（右键/移动端点击装备槽）：
-1. `equipmentSystem.unequipItem(entity, slotType)` — 注意方法名是 `unequipItem` 不是 `unequip`
-2. `inv.addItem(removed, quantity)` — 放回背包，返回 0 时撤销卸下
-3. `onEquipmentChanged([...], { slot, item:null, oldItem, action:'unequip' })`
+无 `PanelLayout` 的回退状态下，`PlayerInfoPanel` 与 `InventoryPanel` 必须分别使用组合 `BackpackPanel` 的 character/inventory 命中分区；有各自 section 部件时才共享组合面板设计坐标。section 包围盒由全部部件并集生成，inventory 的标题或横向分隔线可能与 character 装备槽区域重叠，因此鼠标点击必须先路由 character，再路由 inventory；否则 `InventoryPanel` 会在空白处返回已消费，使装备槽收不到右键。真实背包格应位于 character bounds 之外。`PanelLayout` 的加载不得被 `UILayout` 失败或缺失短路。`InputManager.getMouseButton()` 在 `mouse.clicked` 生命周期内必须保留按下时的按钮值，避免 `mouseup` 把右键误判为左键。
+
+`SceneInventoryFlow` 只负责 UI 输入准入、命令提交后的面板重绑和容量失败反馈；不得在 `PlayerInfoPanel`、`InventoryPanel` 或 Demo 场景中直接调用 `EquipmentComponent` / `InventoryComponent` 改写业务状态。
+
+## 原子装备与卸下边界
+
+`ItemLifecycleService` 是 `item.equip` 与 `item.unequip` 的唯一领域入口：
+
+- 装备按 `(itemId, instanceId)` 从库存定位，使用 `SceneEquipmentFlow.resolveSlot()` 和 `EquipmentComponent` 最终校验确定真实槽位；替换旧装备、自动卸下冲突弹药、checkpoint 或 revision 任一步失败均必须回滚。
+- 卸下先预检背包完整容量，再移出真实槽位并加入背包；容量不足时必须保留原装备，不能产生半完成状态。
+- 成功时 `ItemLifecycleService` 必须提交 `preparedStateRevision` 并返回相同的 `stateId/stateRevision`。其 UI、trigger 与表现 `finalize` 必须作为 `postCommit` 交给 `LocalAuthorityAdapter`，仅在 revision 校验、提交后事件发布和 operation ledger 封账后 best-effort 执行；不得在 handler 返回前同步调用 `BaseGameScene.onEquipmentChanged()`，否则内容回调若恢复 authority 快照会使已提交 revision 在校验窗口被覆盖。`postCommit` 抛错只记录诊断，不得把已经提交的命令改为失败。`info` 形态固定为 `{ slot, item, oldItem, action:'equip'|'unequip' }`。
 
 ## DataDrivenPrologueScene.onEquipmentChanged
 
-- 装备时 fire `'equipItem'`，卸下时 fire `'unequipItem'`（分开事件，避免卸下武器误触发刷怪）
-- 真实槽位 `mainhand` 归一化为内容侧逻辑名 `weapon`（触发器配置用 `weapon`）
-- 优先用 `info.slot`/`info.item`，没有则兜底推断
+- 装备时 fire `'equipItem'`，卸下时 fire `'unequipItem'`（分开事件，避免卸下武器误触发刷怪）。
+- 真实槽位 `mainhand` 归一化为内容侧逻辑名 `weapon`（触发器配置用 `weapon`）。
+- 优先用 `info.slot`/`info.item`，没有时才兜底推断。
 
 ## EquipmentSystem API
 
+`EquipmentSystem` 仅由 `ItemLifecycleService` 等领域流程调用：
+
 ```js
-equipmentSystem.equipItem(entity, slotType, equipment)  → 被替换的旧装备 | null
-equipmentSystem.unequipItem(entity, slotType)           → 被卸下的装备 | null
+equipmentSystem.equipItem(entity, slotType, equipment)  // → 被替换的旧装备 | null
+equipmentSystem.unequipItem(entity, slotType)           // → 被卸下的装备 | null
 ```
 
-**不要**用 `equipmentSystem.unequip`（不存在，会报 TypeError）。
+UI 不得调用不存在的 `equipmentSystem.unequip`，也不得以该 API 绕过库存预检、checkpoint、state revision 或事件出口。
 
 ## 槽位名映射
 
@@ -49,4 +60,4 @@ equipmentSystem.unequipItem(entity, slotType)           → 被卸下的装备 |
 | necklace | `necklace` |
 | accessory | `accessory` |
 
-`InventoryPanel` 的 `slotMap = { weapon:'mainhand', shield:'offhand', ammo:'offhand' }` 做转换。
+槽位映射唯一由 `SceneEquipmentFlow.resolveSlot()` 维护；`InventoryPanel` 只提交物品身份，不得复制 `slotMap`。

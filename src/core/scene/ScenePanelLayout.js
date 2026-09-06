@@ -90,6 +90,7 @@ export class ScenePanelLayout {
       height: 520,
       visible: false,
       inventoryOptions: invOpts,
+      isMobileLayout: scene.isMobileLayout === true || invOpts?.showTooltip === false,
       onAttributeAllocate: () => {
         console.log('BaseGameScene: 属性加点按钮被点击');
       },
@@ -330,30 +331,33 @@ export class ScenePanelLayout {
     try {
       await InputHints.load('config/');
       scene.uiLayoutLoader = new UILayoutLoader({ basePath: 'config/' });
-      if (!await scene.uiLayoutLoader.load()) return;
-      const width = scene.logicalWidth;
-      const height = scene.logicalHeight;
-      const loader = scene.uiLayoutLoader;
+      const loaded = await scene.uiLayoutLoader.load();
+      if (loaded) {
+        const width = scene.logicalWidth;
+        const height = scene.logicalHeight;
+        const loader = scene.uiLayoutLoader;
 
-      if (scene.backpackPanel) loader.applyToCanvasPanel('backpackPanel', scene.backpackPanel, width, height);
+        if (scene.backpackPanel) loader.applyToCanvasPanel('backpackPanel', scene.backpackPanel, width, height);
 
-      const buttons = this._pcFunctionButtons();
-      scene._pcFnFromEditor = Object.keys(buttons).some(id => loader.getPct(id));
-      if (scene._pcFnFromEditor) {
-        for (const [id, button] of Object.entries(buttons)) {
-          if (button) loader.applyToCanvasPanel(id, button, width, height);
+        const buttons = this._pcFunctionButtons();
+        scene._pcFnFromEditor = Object.keys(buttons).some(id => loader.getPct(id));
+        if (scene._pcFnFromEditor) {
+          for (const [id, button] of Object.entries(buttons)) {
+            if (button) loader.applyToCanvasPanel(id, button, width, height);
+          }
         }
-      }
 
-      this._applyBottomControlLayout(loader, width, height);
-      this._applyHudLayout(loader, width, height);
-      this._applyScreenHudLayout(loader, width, height);
-      scene.backpackPanel?.layout();
-      if (!scene._pcFnFromEditor) this.layoutPCFunctionButtons(width, height);
-      await this.applyPanelLayout();
+        this._applyBottomControlLayout(loader, width, height);
+        this._applyHudLayout(loader, width, height);
+        this._applyScreenHudLayout(loader, width, height);
+      }
     } catch (error) {
       console.warn('BaseGameScene: 应用 UI 布局失败', error);
     }
+
+    scene.backpackPanel?.layout();
+    if (!scene._pcFnFromEditor) this.layoutPCFunctionButtons(scene.logicalWidth, scene.logicalHeight);
+    await this.applyPanelLayout();
   }
 
   async applyPanelLayout() {

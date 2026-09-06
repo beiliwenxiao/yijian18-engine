@@ -131,7 +131,11 @@ export class ItemLifecycleService {
       this._forget(prepared.transactionIds);
       return rejected(command, revision.code);
     }
-    try { committed.finalize?.(); } catch (error) { console.warn('ItemLifecycleService finalize failed', error); }
+
+    // 装备反馈可能同步触发内容逻辑；只能在 authority 校验、事件发布和账本封账后执行。
+    const postCommit = typeof committed.finalize === 'function'
+      ? () => committed.finalize()
+      : null;
 
     const stateId = context.preparedStateRevision.stateId;
     const value = { ...clone(committed.value), projection: this._project(actor) };
@@ -144,7 +148,8 @@ export class ItemLifecycleService {
     return {
       result,
       committedEvents: [{ ...eventBase, type: `${command.commandType}.committed`, payload: value }],
-      applicationEvents: (committed.applicationEvents || []).map(event => ({ ...eventBase, ...event }))
+      applicationEvents: (committed.applicationEvents || []).map(event => ({ ...eventBase, ...event })),
+      postCommit
     };
   }
 

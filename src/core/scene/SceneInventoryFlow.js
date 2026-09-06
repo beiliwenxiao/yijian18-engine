@@ -37,7 +37,7 @@ export class SceneInventoryFlow {
   }
 
   unequip(slot, button, { mobile = false } = {}) {
-    if (button !== 'right' && !mobile) return { ok: false, reason: 'ignored' };
+    if (!mobile && button !== 'left' && button !== 'right') return { ok: false, reason: 'ignored' };
     if (!this.executeIntent) return { ok: false, reason: 'unavailable' };
     return Promise.resolve(this.executeIntent('item.unequip', { slot }))
       .then(result => {
