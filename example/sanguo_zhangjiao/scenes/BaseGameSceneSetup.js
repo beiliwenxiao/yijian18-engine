@@ -1,14 +1,14 @@
-/**
+/************************************************************
  * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
  * 
- * @project   YiJian18-Engine - 跨平台2D/3D ECS游戏引擎
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
  * @author    刘枭 (beiliwenxiao)
  * @email     beiliwenxiao@qq.com
  * @date      2026-01-14
  * @blog      https://blog.csdn.net/beiliwenxiao
  * @repo      https://github.com/beiliwenxiao/yijian18-engine
  *            https://gitee.com/coderaaa/yijian18-engine
- */
+ ************************************************************/
 
 /**
  * BaseGameScene - 游戏场景基类
@@ -507,6 +507,7 @@ export class BaseGameSceneSetup extends Scene {
     this._hintPresenter?.clearForRestore?.();
     this._itemGainedFlow?.cancel?.();
     this.itemGainedPopup?.hide?.();
+    this.interactionChoiceView?.close?.();
   }
 
   /** 恢复通用状态；调用前应等待世界与 GameLoader 初始化完成。 */
@@ -902,6 +903,24 @@ export class BaseGameSceneSetup extends Scene {
       onPromptChange: prompt => {
         if (prompt) this._hintPresenter?.showHint(prompt, '交互');
         else this._hintPresenter?.hideHint();
+      },
+      onInteractChoices: candidates => {
+        const view = this.interactionChoiceView;
+        if (!view || !Array.isArray(candidates) || candidates.length < 2) return false;
+        return view.open({
+          title: '选择交互',
+          description: '此处有多个可用操作，请选择',
+          defaultActionId: candidates[0].bindingId,
+          allowCancel: true,
+          actions: candidates.map(candidate => ({
+            id: candidate.bindingId,
+            label: candidate.choiceLabel || candidate.prompt || candidate.triggerId,
+            onClick: () => {
+              view.close();
+              return this._sceneTriggerBindings?.executeInteractBinding(candidate.bindingId);
+            }
+          }))
+        });
       }
     });
 

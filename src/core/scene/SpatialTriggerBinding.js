@@ -1,3 +1,25 @@
+/************************************************************
+
+ * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
+
+ * 
+
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+
+ * @author    刘枭 (beiliwenxiao)
+
+ * @email     beiliwenxiao@qq.com
+
+ * @date      2026-01-14
+
+ * @blog      https://blog.csdn.net/beiliwenxiao
+
+ * @repo      https://github.com/beiliwenxiao/yijian18-engine
+
+ *            https://gitee.com/coderaaa/yijian18-engine
+
+ ************************************************************/
+
 import { cloneCanonicalValue, deepFreeze } from '../CanonicalSnapshot.js';
 import { normalizeSceneObjectSelector } from './SceneObjectSelector.js';
 
@@ -11,6 +33,13 @@ export function createSpatialTriggerBinding(source = {}) {
     value: source.target,
     sceneId: source.sceneId
   });
+  if (source.choiceLabel !== undefined
+    && (typeof source.choiceLabel !== 'string' || !source.choiceLabel.trim())) {
+    throw new TypeError('Spatial trigger binding choiceLabel must be a non-empty string');
+  }
+  if (source.interactionPriority !== undefined && !finite(source.interactionPriority)) {
+    throw new TypeError('Spatial trigger binding interactionPriority must be a finite number');
+  }
   // flowGroupId（新名）+ sceneEventId（旧名）双字段同值写入，保证旧代码双读
   const fgId = (typeof source.flowGroupId === 'string' && source.flowGroupId.trim())
     ? String(source.flowGroupId).trim()
@@ -33,6 +62,10 @@ export function createSpatialTriggerBinding(source = {}) {
     ...(finite(source.anchorOffsetX) ? { anchorOffsetX: Number(source.anchorOffsetX) } : {}),
     ...(finite(source.anchorOffsetY) ? { anchorOffsetY: Number(source.anchorOffsetY) } : {}),
     ...(typeof source.prompt === 'string' ? { prompt: source.prompt } : {}),
+    ...(typeof source.choiceLabel === 'string' ? { choiceLabel: source.choiceLabel.trim() } : {}),
+    ...(finite(source.interactionPriority)
+      ? { interactionPriority: Number(source.interactionPriority) }
+      : {}),
     ...(source.activeWhen && typeof source.activeWhen === 'object'
       ? { activeWhen: cloneCanonicalValue(source.activeWhen) }
       : {})

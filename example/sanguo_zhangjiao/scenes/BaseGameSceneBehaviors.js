@@ -1,14 +1,14 @@
-/**
+/************************************************************
  * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
  * 
- * @project   YiJian18-Engine - 跨平台2D/3D ECS游戏引擎
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
  * @author    刘枭 (beiliwenxiao)
  * @email     beiliwenxiao@qq.com
  * @date      2026-01-14
  * @blog      https://blog.csdn.net/beiliwenxiao
  * @repo      https://github.com/beiliwenxiao/yijian18-engine
  *            https://gitee.com/coderaaa/yijian18-engine
- */
+ ************************************************************/
 
 /**
  * BaseGameScene - 游戏场景基类
@@ -696,16 +696,23 @@ export class BaseGameSceneBehaviors extends BaseGameSceneSetup {  /**
   }
 
   /**
-   * 获得物品弹窗的设备无关模态输入入口。
-   * 焦点和 action 选择由 ItemGainedPopup 拥有，场景层只负责接入统一输入流。
+   * 底部小型弹窗的设备无关模态输入入口。
+   * 空间交互选择优先于物品获得弹窗，两者都由 SceneInputFlow 阻断世界输入。
    * @returns {boolean} 弹窗是否接管本帧输入
    * @private
    */
   _handleGainedPopupInput(context = {}) {
-    return this.itemGainedPopup?.handleInput?.({
-      inputManager: context.inputManager || this.inputManager,
-      gamepad: context.gamepad || this.inputManager?.gamepad
-    }) === true;
+    const inputManager = context.inputManager || this.inputManager;
+    const gamepad = context.gamepad || this.inputManager?.gamepad;
+    if (this.interactionChoiceView?.visible) {
+      return this.interactionChoiceView.handleInput({
+        inputManager,
+        gamepad,
+        viewWidth: this.logicalWidth,
+        viewHeight: this.logicalHeight
+      }) === true;
+    }
+    return this.itemGainedPopup?.handleInput?.({ inputManager, gamepad }) === true;
   }
 
   /** 手柄战斗控制器每帧驱动：产出意图并执行对应操作。 */

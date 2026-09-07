@@ -1,12 +1,29 @@
 /************************************************************
+
  * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
- *
- * @project YiJian18-Engine - 跨平台2D/3D ECS游戏引擎
+
+ * 
+
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+
+ * @author    刘枭 (beiliwenxiao)
+
+ * @email     beiliwenxiao@qq.com
+
+ * @date      2026-01-14
+
+ * @blog      https://blog.csdn.net/beiliwenxiao
+
+ * @repo      https://github.com/beiliwenxiao/yijian18-engine
+
+ *            https://gitee.com/coderaaa/yijian18-engine
+
  ************************************************************/
 
 import { UILayoutLoader } from '../../ui/UILayoutLoader.js';
 import { PanelLayoutLoader } from '../../ui/PanelLayoutLoader.js';
 import { ItemIconRenderer } from '../../ui/ItemIconRenderer.js';
+import { InteractionChoiceView } from '../../ui/InteractionChoiceView.js';
 import { InputHints } from '../input/InputHints.js';
 
 /**
@@ -233,6 +250,13 @@ export class ScenePanelLayout {
       anchorBottom: scene.logicalHeight - 100
     });
 
+    // 同一位置存在多个空间交互时使用独立的底部选择窗，不复用物品弹窗业务状态。
+    scene.interactionChoiceView = new InteractionChoiceView({
+      x: Math.round((scene.logicalWidth - 420) / 2),
+      width: 420,
+      anchorBottom: scene.logicalHeight - 100
+    });
+
     // 手柄面板（Xbox 360）：HUD 常驻指示 + 完整映射图（调试面板的手柄按钮打开）
     scene.gamepadPanel = new GamepadPanel({
       inputManager: scene.inputManager,
@@ -253,6 +277,7 @@ export class ScenePanelLayout {
 
     // 注册 UI 元素到 UIClickHandler
     scene.uiClickHandler.registerElement(scene.skillWheelOverlay);
+    scene.uiClickHandler.registerElement(scene.interactionChoiceView);
     scene.uiClickHandler.registerElement(scene.itemGainedPopup);
     scene.uiClickHandler.registerElement(scene.gamepadPanel);
     scene.uiClickHandler.registerElement(scene.backpackPanel);
@@ -264,6 +289,12 @@ export class ScenePanelLayout {
     if (scene.flightButton) scene.uiClickHandler.registerElement(scene.flightButton);
     if (scene.throwButton) scene.uiClickHandler.registerElement(scene.throwButton);
     if (scene.blockButton) scene.uiClickHandler.registerElement(scene.blockButton);
+    const interactionChoiceView = scene.interactionChoiceView;
+    scene.resourceScope?.track(() => {
+      interactionChoiceView.close();
+      scene.uiClickHandler?.unregisterElement?.(interactionChoiceView);
+      if (scene.interactionChoiceView === interactionChoiceView) scene.interactionChoiceView = null;
+    });
 
     // 注册面板到 UISystem（统一管理悬停；倒计时由 SceneHudUpdater 逐帧驱动）
     scene.uiSystem.registerPanel('itemGainedPopup', scene.itemGainedPopup);
@@ -406,6 +437,8 @@ export class ScenePanelLayout {
       scene.camera.height = height;
     }
     this._resizeBottomControl(width, height);
+    if (scene.itemGainedPopup) scene.itemGainedPopup.anchorBottom = height - 100;
+    if (scene.interactionChoiceView) scene.interactionChoiceView.anchorBottom = height - 100;
     this._resizePCButtons(width, height);
     this._resizeBackpack(width, height);
     if (scene.playerStatusHUD && scene.uiStrategy?.layoutPlayerStatusHUD) {

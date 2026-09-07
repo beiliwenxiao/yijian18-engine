@@ -114,6 +114,7 @@ export class SceneRenderPipeline {
       (_scene, ctx) => this.context?.ui?.progression?.render?.(ctx),
       (scene, ctx) => scene.notificationSystem?.render(ctx),
       (scene, ctx) => scene.itemGainedPopup?.render(ctx),
+      (scene, ctx) => scene.interactionChoiceView?.render(ctx),
       (scene, ctx) => scene.gamepadPanel?.render(ctx),
       (scene, ctx) => scene.skillWheelOverlay?.render(ctx)
     ];

@@ -1,6 +1,23 @@
 /************************************************************
+
  * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
- * @project YiJian18-Engine - 跨平台2D/3D ECS游戏引擎
+
+ * 
+
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+
+ * @author    刘枭 (beiliwenxiao)
+
+ * @email     beiliwenxiao@qq.com
+
+ * @date      2026-01-14
+
+ * @blog      https://blog.csdn.net/beiliwenxiao
+
+ * @repo      https://github.com/beiliwenxiao/yijian18-engine
+
+ *            https://gitee.com/coderaaa/yijian18-engine
+
  ************************************************************/
 
 import { InputEventType, PointerButton } from '../input/InputEvent.js';
@@ -21,7 +38,8 @@ export class SceneTriggerBindingSystem {
     isTutorialCompleted = null,
     resolveDynamicTarget = null,
     logger = null,
-    onPromptChange = null
+    onPromptChange = null,
+    onInteractChoices = null
   } = {}) {
     this.triggerSystem = triggerSystem;
     this.getPlayer = typeof getPlayer === 'function' ? getPlayer : () => null;
@@ -32,6 +50,7 @@ export class SceneTriggerBindingSystem {
     this.resolveDynamicTarget = typeof resolveDynamicTarget === 'function' ? resolveDynamicTarget : null;
     this.logger = typeof logger === 'function' ? logger : null;
     this.onPromptChange = typeof onPromptChange === 'function' ? onPromptChange : null;
+    this.onInteractChoices = typeof onInteractChoices === 'function' ? onInteractChoices : null;
     this.bindings = [];
     this.sceneObjects = [];
     this._inside = new Map();
@@ -153,18 +172,14 @@ export class SceneTriggerBindingSystem {
     this.onPromptChange?.(binding?.prompt || '', binding || null);
   }
 
-  /** 处理统一交互事件；存在有效候选时返回 true 并消费输入，不代表后续业务动作已提交成功。 */
-  handleInteract(event) {
-    if (this._disposed || !this.triggerSystem) return false;
-    const isKey = event?.type === InputEventType.KEY_PRESS && event.key === 'e';
-    const isPointer = event?.type === InputEventType.POINTER_DOWN && event.button === PointerButton.LEFT;
-    if (!isKey && !isPointer) return false;
-
+  _collectInteractCandidates(event = null) {
+    if (this._disposed || !this.triggerSystem) return [];
     const player = this._playerPosition();
-    if (!player) return false;
-    // 一次交互使用同一批空间快照，避免提示与执行在动态/静态目标间切换。
+    if (!player) return [];
+    const isPointer = event?.type === InputEventType.POINTER_DOWN
+      && event.button === PointerButton.LEFT;
     this._spatialContexts.clear();
-    const candidates = this.bindings
+    return this.bindings
       .filter(binding => this._eventType(binding) === 'interact')
       .map(binding => ({ binding, spatial: this._resolveSpatialCached(binding) }))
       .filter(candidate => this._contains(candidate.binding, player.x, player.y, false, candidate.spatial))
@@ -175,13 +190,78 @@ export class SceneTriggerBindingSystem {
         return !definition?.once || !this.triggerSystem.hasFiredOnce?.(candidate.binding.triggerId);
       })
       .filter(candidate => !isPointer || !event.world
-        || this._contains(candidate.binding, event.world.x, event.world.y, true, candidate.spatial));
-    if (candidates.length === 0) return false;
+        || this._contains(candidate.binding, event.world.x, event.world.y, true, candidate.spatial))
+      .map(candidate => ({
+        ...candidate,
+        distanceSq: this._distanceSq(candidate.binding, player, candidate.spatial)
+      }))
+      .sort((left, right) => {
+        const priority = (Number(right.binding.interactionPriority) || 0)
+          - (Number(left.binding.interactionPriority) || 0);
+        if (priority !== 0) return priority;
+        const activePrompt = Number(right.binding.id === this._activePromptBindingId)
+          - Number(left.binding.id === this._activePromptBindingId);
+        if (activePrompt !== 0) return activePrompt;
+        if (left.distanceSq !== right.distanceSq) return left.distanceSq - right.distanceSq;
+        return left.binding.id.localeCompare(right.binding.id);
+      });
+  }
 
-    const candidate = candidates.find(item => item.binding.id === this._activePromptBindingId)
-      || candidates.sort((a, b) => this._distanceSq(a.binding, player, a.spatial)
-        - this._distanceSq(b.binding, player, b.spatial))[0];
-    this._fire(candidate.binding, 'interact', candidate.spatial);
+  _projectInteractCandidates(candidates) {
+    return Object.freeze(candidates.map(({ binding, distanceSq }) => Object.freeze({
+      bindingId: binding.id,
+      triggerId: binding.triggerId,
+      choiceLabel: binding.choiceLabel || '',
+      interactionPriority: Number(binding.interactionPriority) || 0,
+      prompt: binding.prompt || '',
+      distanceSq,
+      isActivePrompt: binding.id === this._activePromptBindingId
+    })));
+  }
+
+  /** 返回当前玩家可执行的只读空间交互候选，并使用稳定的产品优先级排序。 */
+  listInteractCandidates(event = null) {
+    return this._projectInteractCandidates(this._collectInteractCandidates(event));
+  }
+
+  /** 按稳定 binding ID 重新校验空间和条件后执行，业务拒绝也保持本次交互已处理。 */
+  executeInteractBinding(bindingId, event = null) {
+    const id = String(bindingId || '').trim();
+    const candidate = this._collectInteractCandidates(event)
+      .find(item => item.binding.id === id);
+    if (!candidate) {
+      return Object.freeze({ handled: false, accepted: false, bindingId: id, triggerId: '' });
+    }
+    const accepted = this._fire(candidate.binding, 'interact', candidate.spatial) === true;
+    return Object.freeze({
+      handled: true,
+      accepted,
+      bindingId: candidate.binding.id,
+      triggerId: candidate.binding.triggerId
+    });
+  }
+
+  /** 处理统一交互事件；存在有效候选时返回 true 并消费输入，不代表后续业务动作已提交成功。 */
+  handleInteract(event) {
+    if (this._disposed || !this.triggerSystem) return false;
+    const isKey = event?.type === InputEventType.KEY_PRESS && event.key === 'e';
+    const isPointer = event?.type === InputEventType.POINTER_DOWN && event.button === PointerButton.LEFT;
+    if (!isKey && !isPointer) return false;
+
+    const candidates = this._collectInteractCandidates(event);
+    if (candidates.length === 0) return false;
+    if (candidates.length > 1 && this.onInteractChoices) {
+      try {
+        const handled = this.onInteractChoices(this._projectInteractCandidates(candidates), event) === true;
+        if (handled) return true;
+      } catch (error) {
+        this.logger?.('interactionChoiceError', null, error);
+        console.error('SceneTriggerBindingSystem: 打开交互选择失败', error);
+        return true;
+      }
+    }
+
+    this._fire(candidates[0].binding, 'interact', candidates[0].spatial);
     return true;
   }
 

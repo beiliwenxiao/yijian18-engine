@@ -343,20 +343,6 @@
           "y": 515
         },
         {
-          "group": "S01-cooking-rack",
-          "id": "S01-prop-cooking-rack",
-          "kind": "item",
-          "ref": "story.s01.cooking_rack",
-          "spawnWhen": {
-            "blackboardKey": "storyState",
-            "equals": true,
-            "path": "s01Survival.wolfSkinned"
-          },
-          "type": "ref",
-          "x": 566.6101798325936,
-          "y": 475.96304842536756
-        },
-        {
           "group": "S01-tanning-rack",
           "id": "S01-prop-tanning-rack",
           "kind": "item",
@@ -367,8 +353,8 @@
             "path": "s01Survival.meatCooked"
           },
           "type": "ref",
-          "x": 476.62626086830784,
-          "y": 502.3916343806775
+          "x": 483.6510955210918,
+          "y": 489.1225022587522
         },
         {
           "group": "S01-berries",
@@ -861,6 +847,20 @@
           "type": "ref",
           "x": 240,
           "y": 305
+        },
+        {
+          "group": "S01-cooking-rack",
+          "id": "S01-prop-cooking-rack",
+          "kind": "item",
+          "ref": "story.s01.cooking_rack",
+          "spawnWhen": {
+            "blackboardKey": "storyState",
+            "equals": true,
+            "path": "s01Survival.wolfSkinned"
+          },
+          "type": "ref",
+          "x": 598.9206577239671,
+          "y": 523.9939573709447
         }
       ],
       "visible": true
@@ -943,9 +943,11 @@
               }
             ]
           },
+          "choiceLabel": "放入柴火",
           "event": "interact",
           "height": 60,
           "id": "S01-binding-refuel-campfire",
+          "interactionPriority": 100,
           "name": "给篝火添柴",
           "pointerRadius": 24,
           "prompt": "{interact}添柴",
@@ -972,9 +974,11 @@
               }
             ]
           },
+          "choiceLabel": "烤制狼肉",
           "event": "interact",
           "height": 60,
           "id": "S01-binding-cook-meat",
+          "interactionPriority": 0,
           "name": "使用烤肉架",
           "pointerRadius": 24,
           "prompt": "{interact}使用烤肉架",
