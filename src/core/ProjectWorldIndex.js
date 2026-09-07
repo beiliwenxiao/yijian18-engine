@@ -11,10 +11,13 @@
  ************************************************************/
 
 import {
+  DEFAULT_WORLD_MAP_REGION_TYPE,
   getWorldMapCellSceneId,
   getWorldMapCellTerrain,
   isReservedWorldMapCell,
-  isWorldMapTerrain
+  isWorldMapRegionType,
+  isWorldMapTerrain,
+  WORLD_MAP_REGION_TYPES
 } from './WorldMapCell.js';
 
 function freeze(value) {
@@ -68,7 +71,7 @@ function createOffset(col, row, chunkWidth, chunkHeight) {
   return freeze({ x: col * chunkWidth, y: row * chunkHeight });
 }
 
-function isValidRawCell(raw) {
+function isValidRawCell(raw, mapType) {
   if (raw == null) return true;
   if (typeof raw === 'string') return raw.length > 0;
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return false;
@@ -76,6 +79,12 @@ function isValidRawCell(raw) {
   const hasTerrain = hasOwn(raw, 'terrain');
   const terrainValid = !hasTerrain || isWorldMapTerrain(raw.terrain);
   const reservedValid = !hasOwn(raw, 'reserved') || typeof raw.reserved === 'boolean';
+  if (mapType === 'sceneGrid') {
+    return reservedValid
+      && !hasTerrain
+      && hasScene
+      && (!raw.reserved || hasScene);
+  }
   return terrainValid
     && reservedValid
     && (hasScene || hasTerrain)
@@ -171,6 +180,11 @@ export class ProjectWorldIndex {
       const source = regions[regionIndex];
       const base = `worldMap.regions[${regionIndex}]`;
       const id = typeof source?.id === 'string' && source.id.length > 0 ? source.id : null;
+      const requestedMapType = hasOwn(source, 'mapType')
+        ? source.mapType
+        : DEFAULT_WORLD_MAP_REGION_TYPE;
+      const validMapType = isWorldMapRegionType(requestedMapType);
+      const mapType = validMapType ? requestedMapType : DEFAULT_WORLD_MAP_REGION_TYPE;
       const rows = source?.rows;
       const cols = source?.cols;
       const chunkWidth = source?.chunkWidth;
@@ -182,6 +196,14 @@ export class ProjectWorldIndex {
       if (!id) issue(errors, 'invalidRegionId', `${base}.id`, 'Region id 必须是非空字符串');
       else if (regionIds.has(id)) issue(errors, 'duplicateRegionId', `${base}.id`, `Region id 重复: ${id}`);
       else regionIds.add(id);
+      if (!validMapType) {
+        issue(
+          errors,
+          'invalidMapType',
+          `${base}.mapType`,
+          `mapType 必须是 ${WORLD_MAP_REGION_TYPES.join('/')} 之一`
+        );
+      }
       if (!validRows) issue(errors, 'invalidRows', `${base}.rows`, 'rows 必须是正整数');
       if (!validCols) issue(errors, 'invalidCols', `${base}.cols`, 'cols 必须是正整数');
       if (!validChunkWidth) issue(errors, 'invalidChunkWidth', `${base}.chunkWidth`, 'chunkWidth 必须是正数');
@@ -209,8 +231,11 @@ export class ProjectWorldIndex {
           const path = `${base}.grid[${row}][${col}]`;
           const terrain = getWorldMapCellTerrain(raw);
           baseCells[row][col] = { row, col, terrain, raw };
-          if (!isValidRawCell(raw)) {
-            issue(errors, 'invalidWorldCell', path, '单元必须为 null、sceneId 字符串或包含合法 terrain/sceneId/reserved 的对象');
+          if (!isValidRawCell(raw, mapType)) {
+            const message = mapType === 'sceneGrid'
+              ? 'sceneGrid 单元必须为 null、sceneId 字符串或不含 terrain 的 sceneId/reserved 对象'
+              : 'terrainGrid 单元必须为 null、sceneId 字符串或包含合法 terrain/sceneId/reserved 的对象';
+            issue(errors, 'invalidWorldCell', path, message);
             continue;
           }
           const sceneId = getWorldMapCellSceneId(raw, { includeReserved: true });
@@ -314,6 +339,7 @@ export class ProjectWorldIndex {
         id,
         regionIndex,
         name: typeof source?.name === 'string' ? source.name : '',
+        mapType,
         previewOnly: source?.previewOnly === true,
         rows,
         cols,

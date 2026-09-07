@@ -1,8 +1,23 @@
 /************************************************************
+
  * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
- *
- * @project   YiJian18-Engine - 跨平台2D/3D ECS游戏引擎
+
+ * 
+
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+
  * @author    刘枭 (beiliwenxiao)
+
+ * @email     beiliwenxiao@qq.com
+
+ * @date      2026-01-14
+
+ * @blog      https://blog.csdn.net/beiliwenxiao
+
+ * @repo      https://github.com/beiliwenxiao/yijian18-engine
+
+ *            https://gitee.com/coderaaa/yijian18-engine
+
  ************************************************************/
 
 /**
@@ -12,6 +27,10 @@
 
 import { FieldType } from '../../core/validation/ContentValidator.js';
 import { ValidationCode, makeError } from '../../core/validation/ValidationError.js';
+import {
+  DEFAULT_WORLD_MAP_REGION_TYPE,
+  WORLD_MAP_REGION_TYPES
+} from '../../core/WorldMapCell.js';
 
 export const CANONICAL_SCHEMA_VERSION = 2;
 
@@ -723,6 +742,39 @@ export const GAME_PROJECT_LIBRARY_SCHEMA = {
   }
 };
 
+/** Region 级地图契约；几何、footprint 与跨 Region 唯一性仍由 ProjectWorldIndex 校验。 */
+export const GAME_PROJECT_WORLD_MAP_REGION_SCHEMA = {
+  id: 'gameProjectWorldMapRegion',
+  fields: {
+    id: idField(),
+    name: { type: FieldType.STRING },
+    mapType: {
+      type: FieldType.STRING,
+      enum: WORLD_MAP_REGION_TYPES,
+      default: DEFAULT_WORLD_MAP_REGION_TYPE
+    },
+    previewOnly: { type: FieldType.BOOLEAN },
+    rows: { type: FieldType.INTEGER, required: true, min: 1 },
+    cols: { type: FieldType.INTEGER, required: true, min: 1 },
+    chunkWidth: { type: FieldType.NUMBER, required: true, min: Number.MIN_VALUE },
+    chunkHeight: { type: FieldType.NUMBER, required: true, min: Number.MIN_VALUE },
+    grid: { type: FieldType.ARRAY, required: true, minItems: 1, itemType: FieldType.ARRAY }
+  }
+};
+
+export const GAME_PROJECT_WORLD_MAP_SCHEMA = {
+  id: 'gameProjectWorldMap',
+  fields: {
+    entrySceneId: { type: FieldType.STRING, required: true, minLength: 1 },
+    regions: {
+      type: FieldType.ARRAY,
+      required: true,
+      minItems: 1,
+      itemSchema: 'gameProjectWorldMapRegion'
+    }
+  }
+};
+
 export const GAME_PROJECT_SCHEMA = {
   id: 'gameProject',
   fields: {
@@ -743,7 +795,7 @@ export const GAME_PROJECT_SCHEMA = {
     capabilityCatalog: { type: FieldType.ARRAY },
     strategyCatalog: { type: FieldType.ARRAY },
     variables: { type: FieldType.OBJECT, required: true },
-    worldMap: { type: FieldType.OBJECT, required: true },
+    worldMap: { type: FieldType.OBJECT, required: true, schema: 'gameProjectWorldMap' },
     scenes: { type: FieldType.ARRAY, required: true },
     dialogues: { type: FieldType.ARRAY, required: true },
     quests: { type: FieldType.ARRAY, required: true },
@@ -798,6 +850,8 @@ export const CANONICAL_SCHEMAS = [
   BATTLE_INTEGRATION_SCHEMA,
   GAME_PROJECT_INTEGRATION_SCHEMA,
   GAME_PROJECT_LIBRARY_SCHEMA,
+  GAME_PROJECT_WORLD_MAP_REGION_SCHEMA,
+  GAME_PROJECT_WORLD_MAP_SCHEMA,
   GAME_PROJECT_SCHEMA
 ];
 

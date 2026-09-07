@@ -10,6 +10,19 @@
  *            https://gitee.com/coderaaa/yijian18-engine
  ************************************************************/
 
+/** Region 地图类型：地形网格保存 terrain；场景网格只保存场景拓扑。 */
+export const WORLD_MAP_REGION_TYPES = Object.freeze([
+  'terrainGrid',
+  'sceneGrid'
+]);
+
+export const DEFAULT_WORLD_MAP_REGION_TYPE = 'terrainGrid';
+
+/** 判断 Region mapType 是否属于 canonical 枚举。 */
+export function isWorldMapRegionType(mapType) {
+  return typeof mapType === 'string' && WORLD_MAP_REGION_TYPES.includes(mapType);
+}
+
 /** 世界地图可声明的地形语义；业务通行规则由上层路线/场景系统消费。 */
 export const WORLD_MAP_TERRAINS = Object.freeze([
   'mountain',

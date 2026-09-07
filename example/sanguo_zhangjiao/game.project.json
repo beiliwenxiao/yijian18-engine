@@ -710,9 +710,13 @@
     "entrySceneId": "S01",
     "regions": [
       {
-        "chunkHeight": 720,
-        "chunkWidth": 1280,
+        "id": "mainland",
+        "name": "中原大陆",
+        "mapType": "terrainGrid",
+        "rows": 20,
         "cols": 20,
+        "chunkWidth": 1280,
+        "chunkHeight": 720,
         "grid": [
           [
             {
@@ -778,7 +782,7 @@
           ],
           [
             {
-              "terrain": "forest"
+              "terrain": "mountain"
             },
             {
               "terrain": "forest"
@@ -1968,10 +1972,7 @@
               "terrain": "mountain"
             }
           ]
-        ],
-        "id": "mainland",
-        "name": "中原大陆",
-        "rows": 20
+        ]
       }
     ]
   },

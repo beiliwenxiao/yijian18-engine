@@ -1,3 +1,25 @@
+/************************************************************
+
+ * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
+
+ * 
+
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+
+ * @author    刘枭 (beiliwenxiao)
+
+ * @email     beiliwenxiao@qq.com
+
+ * @date      2026-01-14
+
+ * @blog      https://blog.csdn.net/beiliwenxiao
+
+ * @repo      https://github.com/beiliwenxiao/yijian18-engine
+
+ *            https://gitee.com/coderaaa/yijian18-engine
+
+ ************************************************************/
+
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
@@ -22,8 +44,16 @@ function writeJsonDurable(filePath, value) {
   fs.renameSync(temp, filePath);
 }
 
-function removeIfExists(filePath) {
-  try { fs.rmSync(filePath, { recursive: true, force: true }); } catch (_error) { /* best effort */ }
+function removePath(filePath) {
+  fs.rmSync(filePath, { recursive: true, force: true });
+}
+
+function sameFileContent(left, right) {
+  if (!fs.existsSync(left) || !fs.existsSync(right)) return false;
+  const leftStat = fs.statSync(left);
+  const rightStat = fs.statSync(right);
+  if (!leftStat.isFile() || !rightStat.isFile() || leftStat.size !== rightStat.size) return false;
+  return fs.readFileSync(left).equals(fs.readFileSync(right));
 }
 
 function removeEmptyDirectory(directory) {
@@ -182,8 +212,8 @@ export class AtomicDiskAdapter {
 
       for (let index = 0; index < changes.length; index++) {
         const change = changes[index];
-        if (change.operation === 'rename') removeIfExists(change.from);
-        removeIfExists(change.path);
+        if (change.operation === 'rename') removePath(change.from);
+        removePath(change.path);
         if (change.operation !== 'delete') {
           const temp = prepared.find(item => item.index === index).temp;
           fs.renameSync(temp, change.path);
@@ -209,10 +239,27 @@ export class AtomicDiskAdapter {
       return { ok: true, committed: true, transactionId, degraded: false, warnings: [] };
     } catch (error) {
       if (!committed) {
-        this._restoreOriginals(originals);
-        for (const item of prepared) removeIfExists(item.temp);
-        removeIfExists(transactionRoot);
-        removeEmptyDirectory(this.journalRoot);
+        try {
+          this._restoreOriginals(originals);
+          for (const item of prepared) removePath(item.temp);
+          removePath(transactionRoot);
+          removeEmptyDirectory(this.journalRoot);
+        } catch (rollbackError) {
+          const failure = new Error(
+            `磁盘提交失败且回滚未完成：${error.message}；回滚错误：${rollbackError.message}`
+          );
+          return {
+            ok: false,
+            committed: false,
+            category: 'diskCommitRollbackFailed',
+            error: failure,
+            errors: [{
+              path: '',
+              category: 'rollbackFailed',
+              reason: failure.message
+            }]
+          };
+        }
         return { ok: false, committed: false, category: 'diskCommitFailed', error };
       }
       return {
@@ -221,15 +268,32 @@ export class AtomicDiskAdapter {
       };
     }
   }
+
   _restoreOriginals(originals) {
-    for (const original of originals) removeIfExists(original.path);
+    const directories = new Set();
     for (const original of originals) {
-      if (!original.exists) continue;
-      fs.mkdirSync(path.dirname(original.path), { recursive: true });
-      const restoreTemp = `${original.path}.${crypto.randomBytes(6).toString('hex')}.restore`;
-      fs.copyFileSync(original.backup, restoreTemp);
-      fs.renameSync(restoreTemp, original.path);
+      const relativePath = path.relative(this.repositoryRoot, original.path);
+      try {
+        directories.add(path.dirname(original.path));
+        if (!original.exists) {
+          removePath(original.path);
+          continue;
+        }
+        if (!original.backup || !fs.existsSync(original.backup)) {
+          throw new Error('恢复备份不存在');
+        }
+        fs.mkdirSync(path.dirname(original.path), { recursive: true });
+        if (!sameFileContent(original.path, original.backup)) {
+          removePath(original.path);
+          fs.copyFileSync(original.backup, original.path);
+        }
+        const handle = fs.openSync(original.path, 'r+');
+        try { fs.fsyncSync(handle); } finally { fs.closeSync(handle); }
+      } catch (error) {
+        throw new Error(`恢复原文件失败 ${relativePath}: ${error.message}`, { cause: error });
+      }
     }
+    for (const directory of directories) fsyncDirectory(directory);
   }
 
   _recoverUnlocked() {
@@ -239,18 +303,22 @@ export class AtomicDiskAdapter {
       const transactionRoot = path.join(this.journalRoot, name);
       const journalPath = path.join(transactionRoot, 'journal.json');
       if (!fs.existsSync(journalPath)) {
-        removeIfExists(transactionRoot);
+        removePath(transactionRoot);
         continue;
       }
       let journal;
       try { journal = JSON.parse(fs.readFileSync(journalPath, 'utf8')); }
-      catch (error) { throw new Error(`无法读取恢复 journal ${name}: ${error.message}`); }
+      catch (error) { throw new Error(`无法读取恢复 journal ${name}: ${error.message}`, { cause: error }); }
       if (journal.version !== JOURNAL_VERSION || path.resolve(journal.repositoryRoot) !== this.repositoryRoot) {
         throw new Error(`拒绝不匹配的恢复 journal: ${name}`);
       }
-      if (journal.status !== 'committed') this._restoreOriginals(journal.originals || []);
-      for (const temp of journal.tempFiles || []) removeIfExists(temp);
-      removeIfExists(transactionRoot);
+      try {
+        if (journal.status !== 'committed') this._restoreOriginals(journal.originals || []);
+        for (const temp of journal.tempFiles || []) removePath(temp);
+        removePath(transactionRoot);
+      } catch (error) {
+        throw new Error(`恢复 canonical 事务 ${name} 失败: ${error.message}`, { cause: error });
+      }
       recovered++;
     }
     try {
