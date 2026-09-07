@@ -18,7 +18,7 @@
 
  *            https://gitee.com/coderaaa/yijian18-engine
 
- ************************************************************
+ ************************************************************/
 
 import { SceneFlowCoordinator } from '../../../src/core/scene/SceneFlowCoordinator.js';
 

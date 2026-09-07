@@ -282,9 +282,9 @@ export class SceneEditorCanvas {
 
     ctx.save();
     if (visual?.image && visual.bounds) {
-      const { x, y, width, height, right } = visual.bounds;
+      const { x, y, width, height } = visual.bounds;
       ctx.drawImage(visual.image, x, y, width, height);
-      this._drawLogicLabel(ctx, label, right + 3, y + 14, color);
+      this._drawLogicLabel(ctx, label, x, y - 4, color);
 
       // placement 坐标是业务脚点；小十字仅辅助精确拖放，不覆盖主体图片。
       ctx.strokeStyle = color;

@@ -1226,6 +1226,42 @@ export class SceneEditorUI {
     return true;
   }
 
+  _getSceneObjectDisplayName(object) {
+    if (!object) return '未命名对象';
+    const definitionName = object.type === 'ref'
+      ? this.editor.assets?.resolvePlacementVisual?.(object)?.definition?.name
+      : '';
+    const explicitName = String(object.name || '').trim();
+    const preferredName = String(definitionName || '').trim() || explicitName;
+    if (preferredName) return preferredName;
+
+    if (object.type === 'spawn' && object.ref === 'player') return '玩家出生点';
+    const kindLabels = {
+      item: '物品',
+      equipment: '装备',
+      npc: 'NPC',
+      enemy: '敌人',
+      resourceNode: '资源节点',
+      shop: '商店',
+      vehicle: '载具',
+      building: '建筑'
+    };
+    const typeLabels = {
+      region: '区域',
+      spawn: '刷怪点',
+      portal: '传送门',
+      npc: 'NPC',
+      trigger: '触发器',
+      buffZone: '效果区域',
+      effectZone: '特效区域',
+      image: '图片',
+      slice: '切片',
+      shape: '形状',
+      ellipse: '椭圆'
+    };
+    return kindLabels[object.kind] || typeLabels[object.type] || '未命名对象';
+  }
+
   _buildUnifiedTriggerProperties(obj) {
     const escapeHtml = value => String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;')
       .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
@@ -1271,8 +1307,12 @@ export class SceneEditorUI {
         if (!candidate || candidate === obj) continue;
         for (const value of sceneObjectSelectorValues(candidate, targetMode)) {
           const existing = candidates.get(value);
-          if (existing) existing.count++;
-          else candidates.set(value, { object: candidate, count: 1 });
+          if (existing) {
+            existing.count++;
+            existing.objects.push(candidate);
+          } else {
+            candidates.set(value, { object: candidate, objects: [candidate], count: 1 });
+          }
         }
       }
     }
@@ -1281,10 +1321,15 @@ export class SceneEditorUI {
     const sortedCandidates = [...candidates.entries()].sort(([a], [b]) => a.localeCompare(b, 'zh-CN'));
     for (const [value, entry] of sortedCandidates) {
       const candidate = entry.object;
-      const identity = [...new Set([candidate.name, candidate.ref, candidate.id]
-        .map(item => String(item || '').trim()).filter(item => item && item !== value))].join(' / ') || '未命名对象';
+      const displayNames = [...new Set(entry.objects
+        .map(item => this._getSceneObjectDisplayName(item))
+        .map(item => String(item || '').trim())
+        .filter(Boolean))];
+      const displayName = displayNames.slice(0, 3).join(' / ') || '未命名对象';
+      const remainingNames = displayNames.length > 3 ? ` 等${displayNames.length}种` : '';
       const count = entry.count > 1 ? ` · ${entry.count}个对象` : '';
-      const label = `${value} · ${identity} [${candidate.type || 'unknown'}]${count}`;
+      const stableValue = displayName === value ? '' : ` · ${value}`;
+      const label = `${displayName}${remainingNames}${stableValue} [${candidate.type || 'unknown'}]${count}`;
       targetOptions += `<option value="${escapeHtml(value)}" ${value === currentTarget ? 'selected' : ''}>${escapeHtml(label)}</option>`;
     }
     const targetMissing = !!currentTarget && !candidates.has(currentTarget);
@@ -1308,7 +1353,7 @@ export class SceneEditorUI {
       ${targetMissing ? `<div class="property-row"><small style="color:#ef5350;">⚠ 当前 ${escapeHtml(selectorModeLabels[targetMode] || '自动')} 值“${escapeHtml(currentTarget)}”在场景中不存在，运行时会拒绝执行。</small></div>` : ''}
       <div class="property-row"><label>空间事件:</label><input type="text" value="${escapeHtml(eventType)}" disabled title="由项目行为 when.type 决定"></div>
       <div class="property-row"><label>目标方式:</label><select data-prop="targetMode">${targetModeOptions}</select></div>
-      <div class="property-row"><label>目标对象:</label><select data-prop="target" style="min-width:0;flex:1;">${targetOptions}</select><button id="editor-pick-target" title="按当前目标方式点击场景对象拾取">🎯</button></div>
+      <div class="property-row"><label>目标对象:</label><select data-prop="target" style="min-width:0;flex:1;" title="界面优先显示中文名称，保存和运行时使用目标方式对应的稳定值">${targetOptions}</select><button id="editor-pick-target" title="按当前目标方式点击场景对象拾取">🎯</button></div>
       <div class="property-row"><label>交互范围:</label><input type="number" value="${obj.pointerRadius != null ? obj.pointerRadius : (obj.radius != null ? obj.radius : 60)}" min="0" data-prop="radius" title="运行时交互检测范围；修改会同步写入 pointerRadius，确保实际生效"></div>
       ${obj.pointerRadius != null && obj.pointerRadius !== obj.radius ? '<div class="property-row"><small style="color:#e8a24a;">该对象存在独立的 pointerRadius 值，已显示为当前实际范围；修改将同步两者。</small></div>' : ''}
       <div class="property-row"><label>操作提示:</label><input type="text" value="${escapeHtml(obj.prompt || '')}" data-prop="prompt" placeholder="如 {interact}点燃"></div>
