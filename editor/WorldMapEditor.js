@@ -555,6 +555,7 @@ export class WorldMapEditor {
           <select class="wme-region-select" style="min-width:150px;"></select>
         </label>
         <button type="button" class="wme-add-region">新建地图</button>
+        <button type="button" class="wme-save">保存地图</button>
         <span style="margin:0 4px;color:#555;">|</span>
         <label>ID: <input type="text" class="wme-region-id" readonly style="width:110px;" title="Region ID 创建后只读，避免产生跨文件悬空引用" /></label>
         <label>名称: <input type="text" class="wme-region-name" style="width:120px;" /></label>
@@ -571,25 +572,40 @@ export class WorldMapEditor {
         </label>
         <button type="button" class="wme-apply-size">应用结构</button>
         <button type="button" class="wme-focus-used">定位场景</button>
-        <button type="button" class="wme-save">保存</button>
       </div>
-      <form class="wme-new-region-form" hidden
-            style="margin:0 0 8px;padding:8px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;border:1px solid #66583f;background:#18150f;">
-        <strong style="color:#d9c28d;">新建地图</strong>
-        <label>ID: <input name="regionId" required pattern="[A-Za-z][A-Za-z0-9._-]*" style="width:120px;" /></label>
-        <label>名称: <input name="regionName" required style="width:120px;" /></label>
-        <label>类型: <select name="mapType">${mapTypeOptions}</select></label>
-        <label>Chunk:
-          <input name="chunkWidth" type="number" min="0.000001" step="any" required value="1280" style="width:74px;" /> ×
-          <input name="chunkHeight" type="number" min="0.000001" step="any" required value="720" style="width:74px;" />
-        </label>
-        <label>尺寸:
-          <input name="cols" type="number" min="1" max="100" step="1" required value="20" style="width:55px;" /> ×
-          <input name="rows" type="number" min="1" max="100" step="1" required value="20" style="width:55px;" />
-        </label>
-        <button type="submit">创建</button>
-        <button type="button" class="wme-cancel-new-region">取消</button>
-      </form>
+      <div class="wme-new-region-overlay" hidden
+           style="position:fixed;inset:0;z-index:10000;align-items:center;justify-content:center;padding:20px;background:rgba(5,10,25,.72);">
+        <form class="wme-new-region-form" role="dialog" aria-modal="true" aria-labelledby="wme-new-region-title"
+              style="box-sizing:border-box;width:min(760px,calc(100vw - 40px));max-height:calc(100vh - 40px);overflow:auto;padding:16px;border:1px solid #66583f;border-radius:8px;background:#18150f;color:#e6ecf7;box-shadow:0 12px 40px rgba(0,0,0,.55);">
+          <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid #66583f;">
+            <strong id="wme-new-region-title" style="color:#d9c28d;font-size:16px;">新建地图</strong>
+            <span style="color:#9c927c;font-size:12px;">设定新地图参数</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;align-items:center;">
+            <label style="display:flex;align-items:center;gap:6px;">ID:
+              <input name="regionId" required pattern="[A-Za-z][A-Za-z0-9._-]*" style="box-sizing:border-box;min-width:0;flex:1;" />
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;">名称:
+              <input name="regionName" required style="box-sizing:border-box;min-width:0;flex:1;" />
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;">类型:
+              <select name="mapType" style="min-width:0;flex:1;">${mapTypeOptions}</select>
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;">Chunk:
+              <input name="chunkWidth" type="number" min="0.000001" step="any" required value="1280" style="width:82px;" /> ×
+              <input name="chunkHeight" type="number" min="0.000001" step="any" required value="720" style="width:82px;" />
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;">尺寸:
+              <input name="cols" type="number" min="1" max="100" step="1" required value="20" style="width:64px;" /> ×
+              <input name="rows" type="number" min="1" max="100" step="1" required value="20" style="width:64px;" />
+            </label>
+          </div>
+          <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px;padding-top:12px;border-top:1px solid #66583f;">
+            <button type="button" class="wme-cancel-new-region">取消</button>
+            <button type="submit">创建</button>
+          </div>
+        </form>
+      </div>
       <div class="wme-grid-container" style="position:relative;"></div>
       <div class="wme-toast" style="display:none;"></div>
     `;
@@ -605,6 +621,15 @@ export class WorldMapEditor {
     this._el.querySelector('.wme-add-region').onclick = () => this._addNewRegion();
     this._el.querySelector('.wme-cancel-new-region').onclick = () => this._cancelNewRegion();
     this._el.querySelector('.wme-new-region-form').onsubmit = event => this._submitNewRegion(event);
+    const newRegionOverlay = this._el.querySelector('.wme-new-region-overlay');
+    newRegionOverlay.onclick = event => {
+      if (event.target === newRegionOverlay) this._cancelNewRegion();
+    };
+    newRegionOverlay.onkeydown = event => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      this._cancelNewRegion();
+    };
     this._el.querySelector('.wme-region-name').oninput = event => {
       const region = this._getDraftRegion();
       if (!region) return;
@@ -806,25 +831,30 @@ export class WorldMapEditor {
   }
 
   _addNewRegion() {
-    const form = this._el.querySelector('.wme-new-region-form');
-    if (!form) return false;
-    form.hidden = false;
+    const overlay = this._el.querySelector('.wme-new-region-overlay');
+    const form = overlay?.querySelector('.wme-new-region-form');
+    if (!overlay || !form) return false;
     const current = this.region;
+    form.reset();
     form.elements.mapType.value = current?.mapType || DEFAULT_WORLD_MAP_REGION_TYPE;
     form.elements.chunkWidth.value = current?.chunkWidth || 1280;
     form.elements.chunkHeight.value = current?.chunkHeight || 720;
     form.elements.cols.value = current?.cols || 20;
     form.elements.rows.value = current?.rows || 20;
-    form.elements.regionId.focus();
+    overlay.hidden = false;
+    overlay.style.display = 'flex';
+    form.elements.regionId.focus({ preventScroll: true });
     return true;
   }
 
   _cancelNewRegion() {
-    const form = this._el.querySelector('.wme-new-region-form');
-    if (!form) return false;
-    form.hidden = true;
-    form.elements.regionId.value = '';
-    form.elements.regionName.value = '';
+    const overlay = this._el.querySelector('.wme-new-region-overlay');
+    const form = overlay?.querySelector('.wme-new-region-form');
+    if (!overlay || !form) return false;
+    overlay.style.display = 'none';
+    overlay.hidden = true;
+    form.reset();
+    this._el.querySelector('.wme-add-region')?.focus({ preventScroll: true });
     return true;
   }
 
