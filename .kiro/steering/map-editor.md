@@ -342,6 +342,7 @@ localStorage                 →  仅作提交后的编辑器缓存，不参与�
 - 普通字符串单元表示可加载场景；`{ sceneId, reserved: true }` 只表示尚未完成场景的规划位置。reserved 单元必须在世界地图编辑器中可见，但不得进入加载、九宫格流式、传送、调试跳转或存档恢复目标。
 - 所有调用方通过 `src/core/WorldMapCell.js` 解析单元，禁止直接把 `grid[row][col]` 当 sceneId。编辑器需要展示规划位置时显式使用 `includeReserved:true`。
 - 大地图网格和场景缩略图都必须磁盘优先：网格读取当前游戏 `game.project.json`，缩略图读取同项目 `assets/scenes/<sceneId>.json`。localStorage 只允许作为编辑器缩略图/编辑会话缓存，缓存缺少完整 `layers/imageAssets` 时不得覆盖磁盘数据；《三国张角传》正式运行时不读取该缓存，磁盘读取或解析失败直接拒绝。切换游戏时必须同时更新 `gameId/projectPath`，不能复用旧实例路径。20×20 稀疏网格渲染后应自动定位当前 Region 的有效单元包围盒。
+- `WorldMapEditor` 的完整网格构建只用于首次加载或项目整体切换；单格 terrain/anchor 修改必须先用候选 Region 构建并校验 `ProjectWorldIndex`，再只替换编辑格与旧/新 footprint 并集中的 DOM/canvas，禁止重新写整个网格 `innerHTML`、重绑全部单元或自动重定位滚动位置。右侧小地图底图与视口选框分层：单格修改只重画对应小地图单元；主滚动容器的 scroll/resize 只更新选框。选框坐标和点击/拖拽反向定位统一按主网格、滚动容器与小地图 canvas 的实时矩形换算并钳制，不能按固定像素猜测；重载时必须释放旧 scroll、resize、pointer 与 ResizeObserver 监听。
 - 场景实现完成后，先确保磁盘场景文件与 `game.project.json.scenes[]` 元数据可加载，再把 reserved 对象替换为同 ID 字符串；不得用空场景文件冒充内容完成。
 
 ## 游戏级表现规格

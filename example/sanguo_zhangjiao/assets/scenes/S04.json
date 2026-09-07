@@ -6,7 +6,7 @@
   "backgroundColor": "#4d4338",
   "type": "terrain",
   "sceneType": "worldChunk",
-  "worldMap": "region-c",
+  "worldMap": "mainland",
   "productionState": "playable",
   "previewOnly": false,
   "presentationProfile": "sanguo-zhangjiao-presentation-v1",

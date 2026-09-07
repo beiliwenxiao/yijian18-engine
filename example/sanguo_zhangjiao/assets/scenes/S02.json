@@ -394,7 +394,7 @@
   "colliders": [],
   "type": "terrain",
   "sceneType": "worldChunk",
-  "worldMap": "region-a",
+  "worldMap": "mainland",
   "imageAssets": {
     "s02.environment.abandonedCampGround": {
       "src": "../example/sanguo_zhangjiao/assets/images/s02/abandoned-camp-ground.svg",

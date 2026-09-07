@@ -1,3 +1,15 @@
+/************************************************************
+ * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
+ *
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+ * @author    刘枭 (beiliwenxiao)
+ * @email     beiliwenxiao@qq.com
+ * @date      2026-01-14
+ * @blog      https://blog.csdn.net/beiliwenxiao
+ * @repo      https://github.com/beiliwenxiao/yijian18-engine
+ *            https://gitee.com/coderaaa/yijian18-engine
+ ************************************************************/
+
 import { ProjectWorldIndex } from '../src/core/ProjectWorldIndex.js';
 import { CanonicalSceneValidator } from '../src/core/scene/CanonicalSceneValidation.js';
 import { CanonicalCandidatePipeline } from '../src/core/validation/CanonicalCandidatePipeline.js';
@@ -75,7 +87,17 @@ function findReferences(value, sceneId, path = '', parentKey = '', errors = []) 
 }
 
 function makeProjectEntry(scene, supplied = {}) {
-  return { id: scene.id, name: scene.name || scene.id, ...clone(supplied), id: scene.id };
+  const entry = { id: scene.id, name: scene.name || scene.id, ...clone(supplied), id: scene.id };
+  if (Number.isInteger(scene.width) && scene.width > 0) entry.width = scene.width;
+  if (Number.isInteger(scene.height) && scene.height > 0) entry.height = scene.height;
+  return entry;
+}
+
+function candidateSceneDimensions(scenes = {}) {
+  return new Map(Object.entries(scenes).map(([sceneId, scene]) => [sceneId, {
+    width: scene?.width,
+    height: scene?.height
+  }]));
 }
 
 function makeOrderEntry(scene, supplied = {}) {
@@ -99,10 +121,6 @@ export class EditorCanonicalCandidateValidator {
     const projectResult = this.projectPipeline.process(candidate?.project, { schemaId: 'gameProject', source });
     if (!projectResult.ok) errors.push(...projectResult.errors);
     const project = projectResult.ok ? projectResult.value : candidate?.project;
-    if (project?.worldMap) {
-      try { ProjectWorldIndex.build(project); }
-      catch (error) { errors.push(...(error.errors || [validationError('worldMap', error.message, 'businessRuleFailed', 'invalidProjectWorld')])); }
-    }
 
     const orderResult = this.sceneValidator.validateSceneOrder(candidate?.sceneOrder, {
       source: `${source}#sceneOrder`, project
@@ -128,6 +146,16 @@ export class EditorCanonicalCandidateValidator {
       });
       if (!result.ok) errors.push(...result.errors);
       else scenes[sceneId] = result.value;
+    }
+    if (project?.worldMap) {
+      try {
+        ProjectWorldIndex.build(project, {
+          sceneDimensions: candidateSceneDimensions(scenes),
+          requireSceneDimensions: true
+        });
+      } catch (error) {
+        errors.push(...(error.errors || [validationError('worldMap', error.message, 'businessRuleFailed', 'invalidProjectWorld')]));
+      }
     }
     if (errors.length === 0) {
       try {
@@ -219,6 +247,9 @@ export class EditorSceneCommandService {
         }
         candidate.scenes[sceneId] = clone(payload.scene || candidate.scenes[sceneId]);
         candidate.scenes[sceneId].id = sceneId;
+        candidate.project.scenes = candidate.project.scenes.map(entry => (
+          entry?.id === sceneId ? makeProjectEntry(candidate.scenes[sceneId], entry) : entry
+        ));
         if (payload.orderEntry) {
           candidate.sceneOrder.scenes[sceneId] = {
             ...candidate.sceneOrder.scenes[sceneId],
@@ -305,6 +336,7 @@ export class EditorSceneCommandService {
         changes.push({ operation: 'replace', path: info.orderPath, content: json(canonical.sceneOrder) });
       }
       if (sceneId) {
+        changes.push({ operation: 'replace', path: info.projectPath, content: json(canonical.project) });
         changes.push({
           operation: 'replace',
           path: normalizePath(payload.sourceUri || `${info.sceneRoot}${sceneId}.json`),

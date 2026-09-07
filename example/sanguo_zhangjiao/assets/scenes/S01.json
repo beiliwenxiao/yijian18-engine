@@ -1220,5 +1220,6 @@
   "type": "terrain",
   "updatedAt": "2026-08-19T00:00:00.000Z",
   "width": 1280,
-  "worldMap": "region-a"
+  "height": 720,
+  "worldMap": "mainland"
 }

@@ -1,3 +1,25 @@
+/************************************************************
+
+ * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
+
+ *
+
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+
+ * @author    刘枭 (beiliwenxiao)
+
+ * @email     beiliwenxiao@qq.com
+
+ * @date      2026-01-14
+
+ * @blog      https://blog.csdn.net/beiliwenxiao
+
+ * @repo      https://github.com/beiliwenxiao/yijian18-engine
+
+ *            https://gitee.com/coderaaa/yijian18-engine
+
+ ************************************************************/
+
 import { AuthorityPort } from './AuthorityPort.js';
 import {
   CommandContractKind,
@@ -132,17 +154,26 @@ export class LocalAuthorityAdapter extends AuthorityPort {
     });
   }
 
-  _validateCommittedRevision(result, context) {
+  _validateCommittedRevision(result, context, command) {
     const prepared = context.preparedStateRevision;
+    const diagnostic = JSON.stringify({
+      commandType: command.commandType,
+      operationId: command.operationId,
+      resultStateId: result.stateId,
+      resultStateRevision: result.stateRevision,
+      preparedStateId: prepared?.stateId ?? null,
+      preparedNextRevision: prepared?.next ?? null,
+      actualStateRevision: prepared ? this.stateRevisions.current(prepared.stateId) : null
+    });
     if (result.committed && result.stateId && !prepared) {
-      throw new Error('Committed state-changing handler must declare a stable stateId');
+      throw new Error(`Committed state-changing handler must declare a stable stateId: ${diagnostic}`);
     }
     if (!prepared || !result.committed) return;
     if (result.stateId !== prepared.stateId || result.stateRevision !== prepared.next) {
-      throw new Error('Committed handler result must match the prepared state revision');
+      throw new Error(`Committed handler result must match the prepared state revision: ${diagnostic}`);
     }
     if (this.stateRevisions.current(prepared.stateId) !== prepared.next) {
-      throw new Error('Committed handler must commit the prepared state revision');
+      throw new Error(`Committed handler must commit the prepared state revision: ${diagnostic}`);
     }
   }
 
@@ -229,7 +260,7 @@ export class LocalAuthorityAdapter extends AuthorityPort {
       if (!result.committed && (committedEvents.length > 0 || applicationEvents.length > 0)) {
         throw new Error('Uncommitted command result cannot publish post-commit notifications');
       }
-      this._validateCommittedRevision(result, context);
+      this._validateCommittedRevision(result, context, serializedCommand);
 
       if (result.committed) rngTransaction.commit();
       else rngTransaction.rollback();

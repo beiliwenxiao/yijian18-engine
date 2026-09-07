@@ -1,10 +1,10 @@
 /************************************************************
  * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
- * 
- * @project   YiJian18-Engine - 跨平台2D/3D ECS游戏引擎
+ *
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
  * @author    刘枭 (beiliwenxiao)
  * @email     beiliwenxiao@qq.com
- * @date      2026-07-14
+ * @date      2026-01-14
  * @blog      https://blog.csdn.net/beiliwenxiao
  * @repo      https://github.com/beiliwenxiao/yijian18-engine
  *            https://gitee.com/coderaaa/yijian18-engine
@@ -16,7 +16,13 @@ import { ProjectWorldIndex } from '../src/core/ProjectWorldIndex.js';
 import { AtlasRegistry } from '../src/core/scene/AtlasRegistry.js';
 import { CanonicalSceneRepository } from '../src/core/scene/CanonicalSceneRepository.js';
 import { FetchDiskSceneAdapter, LocalStorageSceneCacheAdapter } from '../src/core/scene/CanonicalSceneAdapters.js';
-import { getWorldMapCellSceneId, isReservedWorldMapCell } from '../src/core/WorldMapCell.js';
+import {
+  getWorldMapCellSceneId,
+  getWorldMapCellTerrain,
+  isReservedWorldMapCell,
+  isWorldMapTerrain,
+  WORLD_MAP_TERRAINS
+} from '../src/core/WorldMapCell.js';
 
 export function validateWorldMapRepositoryClosure(project, repositorySceneIds) {
   const closure = repositorySceneIds instanceof Set
@@ -44,13 +50,11 @@ export function validateWorldMapRepositoryClosure(project, repositorySceneIds) {
  * WorldMapEditor - 大地图块编辑器 Tab（P5-5）
  *
  * 功能：
- *   - 网格视图（cols×rows）编辑 worldMap.regions[].grid
- *   - 支持切换多个 Region，并显示 reserved 规划单元
- *   - 每格可分配一个已有 scene（下拉选择）或置空
- *   - 设置 chunkWidth/chunkHeight、region id
- *   - 增减行列
- *   - 全局拼接预览（缩略图）
- *   - 读写 game.project.json 的 worldMap 字段
+ *   - 唯一 mainland 20×20 terrain 网格编辑
+ *   - 每格分配已有 scene anchor 或移除 anchor
+ *   - 场景根 width/height 自动派生只读 footprint coverage
+ *   - 磁盘 canonical 场景缩略图与全局缩略预览
+ *   - 通过共享 CanonicalEditorSession 提交 game.project.json 的 worldMap 字段
  *
  * 通过共享 CanonicalEditorSession 编辑 project.worldMap；场景缩略图仍从磁盘 repository 读取。
  */
@@ -137,9 +141,7 @@ export class WorldMapEditor {
     await this.loadFromProject();
   }
 
-  /**
-   * 从 game.project.json 加载 worldMap 数据
-   */
+  /** 从 game.project.json 与磁盘 canonical 场景加载唯一 mainland 地图。 */
   async loadFromProject() {
     try {
       this.project = structuredClone(this.canonicalSession.getValue() || {});
@@ -149,49 +151,73 @@ export class WorldMapEditor {
       return;
     }
 
+    this.availableScenes = Array.isArray(this.project.scenes)
+      ? this.project.scenes.map(scene => scene?.id).filter(Boolean)
+      : [];
+    await Promise.all([
+      this._loadSceneDataFromDisk(),
+      this._loadSharedAtlasCatalog()
+    ]);
     try {
-      this.worldIndex = ProjectWorldIndex.build(this.project);
+      this.worldIndex = this._buildWorldIndex(this.project);
     } catch (error) {
       console.warn('[WorldMapEditor] 世界索引校验失败', error?.errors || error);
       this._showToast?.(error?.errors?.[0]?.message || error.message, 'error');
       return;
     }
 
-    // 可选场景只来自 canonical project closure；localStorage 不得扩展 ID 集合。
-    this.availableScenes = Array.isArray(this.project.scenes)
-      ? this.project.scenes.map(scene => scene?.id).filter(Boolean)
-      : [];
-
+    const mainland = this.worldIndex.getRegion(0);
+    if (this.worldIndex.regions.length !== 1 || !this._isMainlandLayout(mainland)) {
+      this._showToast?.('《三国张角传》世界地图必须且只能包含一个 20×20 mainland Region', 'error');
+      return;
+    }
     this._currentRegionIndex = 0;
-    const indexedRegion = this.worldIndex.getRegion(0);
-    if (indexedRegion) this.region = this._createRegionDraft(indexedRegion);
-
-    await Promise.all([
-      this._loadSceneDataFromDisk(),
-      this._loadSharedAtlasCatalog()
-    ]);
+    this.region = this._createRegionDraft(mainland);
+    try {
+      this._normalizeGrid();
+      this.worldIndex = this._buildDraftIndex();
+    } catch (error) {
+      this._showToast?.(error?.errors?.[0]?.message || error.message, 'error');
+      return;
+    }
     this._populateRegionSelect();
-    // 更新输入框
     this._el.querySelector('.wme-region-name').value = this.region.name || '';
     this._render();
   }
 
   _createRegionDraft(indexedRegion) {
-    const grid = Array.from({ length: indexedRegion.rows }, () => Array(indexedRegion.cols).fill(null));
-    for (const cell of this.worldIndex.getCells(indexedRegion.id, { includeReserved: true })) {
-      grid[cell.row][cell.col] = cell.reserved
-        ? { sceneId: cell.sceneId, reserved: true }
-        : cell.sceneId;
-    }
-    return {
-      id: indexedRegion.id,
-      name: indexedRegion.name,
-      chunkWidth: indexedRegion.chunkWidth,
-      chunkHeight: indexedRegion.chunkHeight,
-      cols: indexedRegion.cols,
-      rows: indexedRegion.rows,
-      grid
-    };
+    const source = this.project?.worldMap?.regions?.[indexedRegion.regionIndex];
+    if (!source) throw new Error(`无法找到 Region 草稿: ${indexedRegion.id}`);
+    return structuredClone(source);
+  }
+
+  _isMainlandLayout(region) {
+    return region?.id === 'mainland'
+      && region.rows === 20
+      && region.cols === 20;
+  }
+
+  _buildWorldIndex(project) {
+    return ProjectWorldIndex.build(project, {
+      requireSceneDimensions: true
+    });
+  }
+
+  _buildDraftIndex() {
+    const candidate = structuredClone(this.project);
+    candidate.worldMap.regions = [structuredClone(this.region)];
+    return this._buildWorldIndex(candidate);
+  }
+
+  _terrainCell(terrain, sceneId = null, reserved = false) {
+    const cell = { terrain: isWorldMapTerrain(terrain) ? terrain : 'plain' };
+    if (sceneId) cell.sceneId = sceneId;
+    if (reserved) cell.reserved = true;
+    return cell;
+  }
+
+  _cellTerrain(cell) {
+    return getWorldMapCellTerrain(cell) || 'plain';
   }
 
   _collectLoadableSceneIds() {
@@ -236,10 +262,29 @@ export class WorldMapEditor {
       return;
     }
     this._repositorySceneIds = new Set(result.snapshot.ids);
-    this.availableScenes = result.snapshot.ids.slice();
-    for (const sceneId of this._collectLoadableSceneIds()) {
-      const scene = result.snapshot.getScene(sceneId);
-      if (scene) this._sceneDataById.set(sceneId, scene);
+    const projectSceneIds = Array.isArray(this.project?.scenes)
+      ? this.project.scenes.map(scene => scene?.id).filter(Boolean)
+      : [];
+    this.availableScenes = projectSceneIds;
+    const sceneLoadResults = await Promise.allSettled(
+      projectSceneIds.map(sceneId => repository.loadScene(sceneId, { snapshot: result.snapshot }))
+    );
+    const unavailableSceneIds = [];
+    for (const [index, sceneLoad] of sceneLoadResults.entries()) {
+      const sceneId = projectSceneIds[index];
+      const outcome = sceneLoad.status === 'fulfilled' ? sceneLoad.value : null;
+      if (outcome?.ok === true && outcome.record?.data) {
+        this._sceneDataById.set(sceneId, outcome.record.data);
+      } else {
+        unavailableSceneIds.push(sceneId);
+      }
+    }
+    if (unavailableSceneIds.length > 0) {
+      console.warn('[WorldMapEditor] canonical 场景缩略图读取失败', {
+        sceneIds: unavailableSceneIds,
+        results: sceneLoadResults
+      });
+      this._showToast?.(`部分场景缩略图读取失败：${unavailableSceneIds.join(', ')}`, 'warn');
     }
   }
 
@@ -319,20 +364,30 @@ export class WorldMapEditor {
       return { ok: false, committed: false, status: 'rejected', code: 'missingProject' };
     }
 
-    const idx = this._currentRegionIndex || 0;
     const candidate = structuredClone(this.project);
     if (!candidate.worldMap || !Array.isArray(candidate.worldMap.regions)) {
       this._showToast('项目缺少 canonical worldMap.regions', 'error');
       return { ok: false, committed: false, status: 'rejected', code: 'missingWorldMap' };
     }
-    candidate.worldMap.regions[idx] = structuredClone(this.region);
+    if (candidate.worldMap.regions.length !== 1 || !this._isMainlandLayout(this.region)) {
+      this._showToast('《三国张角传》只允许一个 20×20 mainland 世界地图', 'error');
+      return { ok: false, committed: false, status: 'rejected', code: 'invalidMainlandLayout' };
+    }
+    let normalizedRegion;
+    try {
+      normalizedRegion = this._normalizeGrid(structuredClone(this.region));
+    } catch (error) {
+      this._showToast(error.message, 'error');
+      return { ok: false, committed: false, status: 'rejected', code: 'invalidMainlandLayout', error };
+    }
+    candidate.worldMap.regions = [normalizedRegion];
     const closureResult = validateWorldMapRepositoryClosure(candidate, this._repositorySceneIds);
     if (!closureResult.ok) {
       this._showToast(closureResult.errors[0].message, 'error');
       return { ok: false, committed: false, status: 'rejected', errors: closureResult.errors };
     }
     try {
-      ProjectWorldIndex.build(candidate);
+      this._buildWorldIndex(candidate);
     } catch (error) {
       const message = error?.errors?.[0]?.message || error.message;
       this._showToast(message, 'error');
@@ -351,7 +406,8 @@ export class WorldMapEditor {
         return result;
       }
       this.project = structuredClone(this.canonicalSession.getValue() || candidate);
-      this.worldIndex = ProjectWorldIndex.build(this.project);
+      this.region = structuredClone(this.project.worldMap.regions[0]);
+      this.worldIndex = this._buildWorldIndex(this.project);
       this._showToast(
         result.degraded ? '大地图已提交，但缓存/通知同步降级' : '大地图已保存 ✓',
         result.degraded ? 'warn' : 'success'
@@ -365,32 +421,56 @@ export class WorldMapEditor {
 
   // ================ 内部方法 ================
 
-  /** 确保 grid 尺寸与 cols/rows 一致 */
-  _normalizeGrid() {
-    while (this.region.grid.length < this.region.rows) {
-      this.region.grid.push(new Array(this.region.cols).fill(null));
+  /** 将唯一 mainland 草稿补齐为显式 terrain 单元，不推断或裁剪非法布局。 */
+  _normalizeGrid(region = this.region) {
+    if (!this._isMainlandLayout(region)) {
+      throw new TypeError('《三国张角传》只允许编辑一个 20×20 mainland 世界地图');
     }
-    for (let r = 0; r < this.region.rows; r++) {
-      if (!this.region.grid[r]) this.region.grid[r] = [];
-      while (this.region.grid[r].length < this.region.cols) this.region.grid[r].push(null);
+    if (!Array.isArray(region.grid)) {
+      throw new TypeError('mainland.grid 必须是数组');
     }
+    if (region.grid.length > region.rows) return region;
+
+    while (region.grid.length < region.rows) region.grid.push([]);
+    for (let row = 0; row < region.rows; row++) {
+      const sourceRow = region.grid[row];
+      if (sourceRow == null) {
+        region.grid[row] = [];
+      } else if (!Array.isArray(sourceRow)) {
+        throw new TypeError(`mainland.grid[${row}] 必须是数组`);
+      }
+      const cells = region.grid[row];
+      if (cells.length > region.cols) continue;
+      while (cells.length < region.cols) cells.push(this._terrainCell('plain'));
+      for (let col = 0; col < region.cols; col++) {
+        const raw = cells[col];
+        if (raw == null) {
+          cells[col] = this._terrainCell('plain');
+          continue;
+        }
+        if (typeof raw === 'string') {
+          cells[col] = this._terrainCell('plain', raw);
+          continue;
+        }
+        if (typeof raw === 'object' && !Array.isArray(raw)
+          && !Object.hasOwn(raw, 'terrain')
+          && getWorldMapCellSceneId(raw, { includeReserved: true })) {
+          cells[col] = { ...raw, terrain: 'plain' };
+        }
+      }
+    }
+    return region;
   }
 
   _buildHTML() {
     return `
       <div class="wme-toolbar" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:6px 0;">
-        <label>地图: <select class="wme-region-select"></select></label>
-        <button class="wme-add-region">+ 新建地图</button>
+        <strong style="color:#d9c28d;">世界地图：mainland（20×20）</strong>
+        <span style="color:#777;">场景 anchor 由左上角定位，尺寸自动派生 footprint</span>
         <span style="margin:0 8px;color:#555;">|</span>
-        <label>Region ID: <input type="text" class="wme-region-id" value="${this.region.id}" /></label>
         <label>名称: <input type="text" class="wme-region-name" value="${this.region.name || ''}" /></label>
-        <label>Chunk宽: <input type="number" class="wme-chunk-w" value="${this.region.chunkWidth}" min="320" step="64" /></label>
-        <label>Chunk高: <input type="number" class="wme-chunk-h" value="${this.region.chunkHeight}" min="320" step="64" /></label>
-        <span style="margin:0 8px;color:#555;">|</span>
-        <label>列数: <input type="number" class="wme-cols" value="${this.region.cols}" min="1" max="100" style="width:50px;" /></label>
-        <label>行数: <input type="number" class="wme-rows" value="${this.region.rows}" min="1" max="100" style="width:50px;" /></label>
-        <button class="wme-apply-size">应用尺寸</button>
-        <button class="wme-focus-used">◎ 定位已配置场景</button>
+        <label>Chunk: <input type="number" class="wme-chunk-w" value="${this.region.chunkWidth}" readonly style="width:74px;" /> × <input type="number" class="wme-chunk-h" value="${this.region.chunkHeight}" readonly style="width:64px;" /></label>
+        <button class="wme-focus-used">◎ 定位场景</button>
         <button class="wme-save">💾 保存</button>
       </div>
       <div class="wme-grid-container" style="position:relative;"></div>
@@ -402,148 +482,455 @@ export class WorldMapEditor {
     this._el.querySelector('.wme-save').onclick = async () => {
       await this.save();
     };
-    this._el.querySelector('.wme-apply-size').onclick = () => this._applySize();
     this._el.querySelector('.wme-focus-used').onclick = () => this._focusUsedArea({ smooth: true });
-
-    this._el.querySelector('.wme-region-id').oninput = (e) => { this.region.id = e.target.value; };
-    this._el.querySelector('.wme-region-name').oninput = (e) => { this.region.name = e.target.value; };
-    this._el.querySelector('.wme-chunk-w').oninput = (e) => {
-      const value = Number(e.target.value);
-      if (Number.isFinite(value) && value > 0) this.region.chunkWidth = value;
+    this._el.querySelector('.wme-region-name').oninput = event => {
+      this.region.name = event.target.value;
     };
-    this._el.querySelector('.wme-chunk-h').oninput = (e) => {
-      const value = Number(e.target.value);
-      if (Number.isFinite(value) && value > 0) this.region.chunkHeight = value;
-    };
-
-    // 地图选择器
-    this._el.querySelector('.wme-region-select').onchange = (e) => {
-      const idx = parseInt(e.target.value);
-      if (!isNaN(idx)) this._switchRegion(idx);
-    };
-    this._el.querySelector('.wme-add-region').onclick = () => this._addNewRegion();
   }
 
-  /**
-   * 应用用户输入的行列数
-   * 缩小时不能小于已有地图块的范围，扩大时最大 100
-   */
+  /** mainland 尺寸固定为 20×20，旧尺寸编辑入口不再改变草稿。 */
   _applySize() {
-    const colsInput = this._el.querySelector('.wme-cols');
-    const rowsInput = this._el.querySelector('.wme-rows');
-    let newCols = parseInt(colsInput.value) || this.region.cols;
-    let newRows = parseInt(rowsInput.value) || this.region.rows;
-
-    // 限制最大 100
-    newCols = Math.min(100, Math.max(1, newCols));
-    newRows = Math.min(100, Math.max(1, newRows));
-
-    // 计算已有地图块的最大行列（不能缩小到比这个更小）
-    let maxUsedCol = 0;
-    let maxUsedRow = 0;
-    for (let r = 0; r < this.region.grid.length; r++) {
-      if (!this.region.grid[r]) continue;
-      for (let c = 0; c < this.region.grid[r].length; c++) {
-        if (this.region.grid[r][c]) {
-          if (c + 1 > maxUsedCol) maxUsedCol = c + 1;
-          if (r + 1 > maxUsedRow) maxUsedRow = r + 1;
-        }
-      }
-    }
-
-    if (newCols < maxUsedCol) {
-      newCols = maxUsedCol;
-      this._showToast(`列数不能小于 ${maxUsedCol}（已有地图块占用）`, 'warn');
-    }
-    if (newRows < maxUsedRow) {
-      newRows = maxUsedRow;
-      this._showToast(`行数不能小于 ${maxUsedRow}（已有地图块占用）`, 'warn');
-    }
-
-    // 更新输入框显示
-    colsInput.value = newCols;
-    rowsInput.value = newRows;
-
-    // 调整 grid 尺寸
-    this.region.cols = newCols;
-    this.region.rows = newRows;
-
-    // 裁剪多余的列
-    for (let r = 0; r < this.region.grid.length; r++) {
-      if (this.region.grid[r] && this.region.grid[r].length > newCols) {
-        this.region.grid[r].length = newCols;
-      }
-    }
-    // 裁剪多余的行
-    if (this.region.grid.length > newRows) {
-      this.region.grid.length = newRows;
-    }
-
-    this._normalizeGrid();
-    this._render();
-    this._showToast(`尺寸已设为 ${newCols}×${newRows}`);
+    return this._rejectMainlandMutation('mainland 尺寸固定为 20×20，不能修改', 'fixedMainlandSize');
   }
 
-  /** 切换当前编辑的 region */
+  /** mainland 是唯一 Region；仅允许保留当前选择的 no-op。 */
   _switchRegion(index) {
-    const indexedRegion = this.worldIndex?.getRegion?.(index);
-    if (!indexedRegion) return;
-    this._currentRegionIndex = index;
-    this.region = this._createRegionDraft(indexedRegion);
-    // 更新输入框
-    this._el.querySelector('.wme-region-id').value = this.region.id;
-    this._el.querySelector('.wme-region-name').value = this.region.name || '';
-    this._el.querySelector('.wme-chunk-w').value = this.region.chunkWidth;
-    this._el.querySelector('.wme-chunk-h').value = this.region.chunkHeight;
-    this._el.querySelector('.wme-cols').value = this.region.cols;
-    this._el.querySelector('.wme-rows').value = this.region.rows;
-    this._render();
+    if (index === 0 && this._isMainlandLayout(this.region)) {
+      this._currentRegionIndex = 0;
+      return { ok: true, status: 'noop', code: 'mainlandAlreadySelected' };
+    }
+    return this._rejectMainlandMutation('《三国张角传》只允许 mainland Region，不能切换其他 Region', 'singleMainlandOnly');
   }
 
-  /** 新建地图 region */
+  /** mainland-only 编辑器禁止创建第二个 Region。 */
   _addNewRegion() {
-    const name = prompt('新地图名称:', '新地图');
-    if (!name || !this.worldIndex) return;
-    const sourceRegion = this.worldIndex.getRegion(this._currentRegionIndex || 0);
-    if (!sourceRegion) return;
-    const id = 'region_' + Date.now();
-    const newRegion = {
-      id, name,
-      chunkWidth: sourceRegion.chunkWidth,
-      chunkHeight: sourceRegion.chunkHeight,
-      cols: sourceRegion.cols,
-      rows: sourceRegion.rows,
-      grid: Array.from({ length: sourceRegion.rows }, () => Array(sourceRegion.cols).fill(null))
-    };
-    const candidate = JSON.parse(JSON.stringify(this.project));
-    candidate.worldMap.regions.push(newRegion);
+    return this._rejectMainlandMutation('《三国张角传》只允许一个 mainland Region，不能新增 Region', 'singleMainlandOnly');
+  }
+
+  /** 已移除 Region 下拉；保留私有兼容入口以避免旧宿主调用时报错。 */
+  _populateRegionSelect() {
+    return { ok: true, status: 'noop', code: 'mainlandSelectorRemoved' };
+  }
+
+  _rejectMainlandMutation(message, code) {
+    this._showToast(message, 'warn');
+    return { ok: false, committed: false, status: 'rejected', code };
+  }
+
+  /** 渲染唯一 mainland 的 terrain 格、scene anchor 与只读 footprint coverage。 */
+  _render() {
+    return this._renderMainland();
+  }
+
+  _renderMainland() {
+    const gc = this._el.querySelector('.wme-grid-container');
+    if (!gc) return;
+    let draftIndex;
     try {
-      this.worldIndex = ProjectWorldIndex.build(candidate);
-      this.project = candidate;
+      draftIndex = this._buildDraftIndex();
     } catch (error) {
       this._showToast(error?.errors?.[0]?.message || error.message, 'error');
       return;
     }
-    this._populateRegionSelect();
-    // 切换到新建的
-    const idx = this.project.worldMap.regions.length - 1;
-    this._el.querySelector('.wme-region-select').value = idx;
-    this._switchRegion(idx);
-    this._showToast(`已创建地图: ${name}`);
+
+    const thumbW = 256;
+    const thumbH = Math.round(thumbW * (this.region.chunkHeight / this.region.chunkWidth));
+    const metrics = { thumbW, thumbH, labelH: 20, cellH: thumbH + 20 };
+    const terrainOptions = WORLD_MAP_TERRAINS.map(terrain => (
+      `<option value="${terrain}">${terrain}</option>`
+    )).join('');
+    const sceneOptions = ['<option value="">（无场景 anchor）</option>']
+      .concat(this.availableScenes.map(sceneId => `<option value="${sceneId}">${sceneId}</option>`))
+      .join('');
+
+    let html = '<style>.wme-grid>.wme-cell:hover>.wme-cell-overlay{display:flex!important}</style>';
+    html += `<div class="wme-grid" style="display:grid;grid-template-columns:repeat(${this.region.cols},${thumbW}px);gap:2px;width:max-content;">`;
+    for (let row = 0; row < this.region.rows; row++) {
+      for (let col = 0; col < this.region.cols; col++) {
+        html += this._buildMainlandCellHtml({
+          row,
+          col,
+          worldIndex: draftIndex,
+          region: this.region,
+          metrics,
+          terrainOptions,
+          sceneOptions
+        });
+      }
+    }
+    html += '</div>';
+    html += `<div style="margin-top:8px;color:#aaa;font-size:12px;">mainland · 20×20 格 · 基准块 ${this.region.chunkWidth}×${this.region.chunkHeight}px · 大场景 footprint 由 canonical width/height 自动计算</div>`;
+    html += `
+      <div class="wme-minimap" title="点击定位，拖动选框移动主地图"
+           style="position:fixed;top:60px;right:24px;width:220px;height:220px;background:rgba(20,15,10,.94);border:2px solid #8b7355;border-radius:4px;overflow:hidden;pointer-events:auto;touch-action:none;user-select:none;cursor:crosshair;z-index:10;">
+        <canvas class="wme-minimap-canvas" width="220" height="220" style="width:100%;height:100%;pointer-events:none;"></canvas>
+        <div class="wme-minimap-viewport" style="display:none;position:absolute;box-sizing:border-box;border:2px solid #f6e7a8;background:rgba(246,231,168,.10);box-shadow:0 0 0 1px rgba(0,0,0,.85),0 0 8px rgba(246,231,168,.75);pointer-events:none;z-index:1;"></div>
+      </div>`;
+
+    this._teardownMainlandNavigation();
+    gc.innerHTML = html;
+    this._draftIndex = draftIndex;
+    this._mainlandMetrics = metrics;
+    this._mainlandTerrainOptions = terrainOptions;
+    this._mainlandSceneOptions = sceneOptions;
+
+    const grid = gc.querySelector('.wme-grid');
+    if (grid) grid.onchange = event => this._handleMainlandCellChange(event);
+    gc.querySelectorAll('.wme-cell').forEach(cell => {
+      const row = Number(cell.dataset.r);
+      const col = Number(cell.dataset.c);
+      this._renderFootprintThumbnail(cell, row, col, thumbW, thumbH, draftIndex);
+    });
+
+    this._minimapParams = { gc, thumbW, thumbH, draftIndex };
+    this._bindMainlandMinimapNavigation(gc);
+    requestAnimationFrame(() => {
+      if (this._minimapParams?.gc !== gc) return;
+      this._renderMainlandMinimap(gc, draftIndex);
+      this._focusUsedArea();
+      this._requestMainlandViewportSync();
+    });
   }
 
-  /** 填充 region 下拉选择器 */
-  _populateRegionSelect() {
-    const select = this._el.querySelector('.wme-region-select');
-    if (!select) return;
-    const regions = (this.project && this.project.worldMap && this.project.worldMap.regions) || [];
-    select.innerHTML = regions.map((r, i) =>
-      `<option value="${i}"${i === (this._currentRegionIndex || 0) ? ' selected' : ''}>${r.name || r.id}</option>`
-    ).join('');
+  _buildMainlandCellHtml({ row, col, worldIndex, region, metrics, terrainOptions, sceneOptions }) {
+    const { thumbW, thumbH, labelH, cellH } = metrics;
+    const raw = region.grid[row]?.[col] ?? null;
+    const coverage = worldIndex.getCell(region.id, row, col);
+    const sceneId = coverage?.sceneId || getWorldMapCellSceneId(raw, { includeReserved: true });
+    const anchor = sceneId ? worldIndex.findScene(sceneId) : null;
+    const isCoverage = Boolean(sceneId && coverage && !coverage.isAnchor);
+    const isAnchor = Boolean(sceneId && coverage?.isAnchor);
+    const terrain = this._cellTerrain(raw);
+    const reserved = isReservedWorldMapCell(raw);
+    const label = isCoverage && anchor
+      ? `${sceneId} · 覆盖 ← (${anchor.row},${anchor.col})`
+      : (isAnchor ? `${sceneId}${reserved ? ' · 预留' : ' · anchor'}` : terrain);
+    const control = isCoverage
+      ? '<div style="font-size:10px;color:#b7a778;text-align:center;line-height:1.4;">footprint 覆盖格<br>由 anchor 管理</div>'
+      : `<label style="font-size:10px;color:#ddd;display:grid;gap:2px;width:94%;">地形
+          <select class="wme-terrain-select" data-r="${row}" data-c="${col}" style="font-size:10px;background:#222;color:#eee;">${terrainOptions.replace(`value="${terrain}"`, `value="${terrain}" selected`)}</select>
+        </label>
+        <label style="font-size:10px;color:#ddd;display:grid;gap:2px;width:94%;">场景 anchor
+          <select class="wme-scene-select" data-r="${row}" data-c="${col}" style="font-size:10px;background:#222;color:#eee;">${sceneOptions.replace(`value="${sceneId || ''}"`, `value="${sceneId || ''}" selected`)}</select>
+        </label>`;
+
+    return `
+      <div class="wme-cell${isCoverage ? ' wme-footprint-coverage' : ''}" data-r="${row}" data-c="${col}"
+           style="width:${thumbW}px;height:${cellH}px;border:1px solid ${isCoverage ? '#c4a64e' : '#444'};position:relative;overflow:hidden;background:#111;">
+        <canvas class="wme-cell-canvas" width="${thumbW}" height="${thumbH}" style="position:absolute;top:0;left:0;width:${thumbW}px;height:${thumbH}px;"></canvas>
+        <span class="wme-cell-label" title="${label}" style="position:absolute;top:${thumbH}px;left:0;right:0;height:${labelH}px;box-sizing:border-box;border-top:1px solid rgba(255,255,255,.16);font-size:10px;line-height:${labelH - 1}px;color:#ddd;background:rgba(0,0,0,.82);text-align:center;pointer-events:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${label}</span>
+        <div class="wme-cell-overlay" style="display:none;position:absolute;top:0;left:0;right:0;height:${thumbH}px;box-sizing:border-box;background:rgba(0,0,0,.78);flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:4px;">
+          <div style="font-size:10px;color:#8cf;font-weight:bold;">(${row}, ${col})</div>
+          ${control}
+        </div>
+      </div>`;
   }
 
-  /** 渲染网格视图 */
-  _render() {
+  _handleMainlandCellChange(event) {
+    const target = event.target.closest?.('.wme-terrain-select, .wme-scene-select');
+    if (!target || !this._draftIndex) return;
+    const row = Number(target.dataset.r);
+    const col = Number(target.dataset.c);
+    const previousCoverage = this._draftIndex.getCell(this.region.id, row, col);
+    if (previousCoverage?.sceneId && !previousCoverage.isAnchor) return;
+
+    const previous = this.region.grid[row]?.[col] ?? null;
+    const previousSceneId = getWorldMapCellSceneId(previous, { includeReserved: true });
+    const terrain = target.classList.contains('wme-terrain-select')
+      ? target.value
+      : this._cellTerrain(previous);
+    const selectedSceneId = target.classList.contains('wme-scene-select')
+      ? (target.value || null)
+      : previousSceneId;
+    const reserved = isReservedWorldMapCell(previous) && Boolean(selectedSceneId);
+    const candidateRegion = structuredClone(this.region);
+    candidateRegion.grid[row][col] = this._terrainCell(terrain, selectedSceneId, reserved);
+    const candidateProject = structuredClone(this.project);
+    candidateProject.worldMap.regions = [structuredClone(candidateRegion)];
+
+    let nextIndex;
+    try {
+      nextIndex = this._buildWorldIndex(candidateProject);
+    } catch (error) {
+      target.value = target.classList.contains('wme-terrain-select')
+        ? this._cellTerrain(previous)
+        : (previousSceneId || '');
+      this._showToast(error?.errors?.[0]?.message || error.message, 'error');
+      return;
+    }
+
+    const affected = new Set([`${row},${col}`]);
+    if (previousSceneId !== selectedSceneId) {
+      this._collectMainlandFootprintKeys(this._draftIndex, previousSceneId, affected);
+      this._collectMainlandFootprintKeys(nextIndex, selectedSceneId, affected);
+    }
+
+    let replacements;
+    try {
+      replacements = this._prepareMainlandCellReplacements(affected, nextIndex, candidateRegion);
+    } catch (error) {
+      target.value = target.classList.contains('wme-terrain-select')
+        ? this._cellTerrain(previous)
+        : (previousSceneId || '');
+      this._showToast(`局部更新准备失败: ${error.message}`, 'error');
+      return;
+    }
+
+    this.region = candidateRegion;
+    this._draftIndex = nextIndex;
+    if (this._minimapParams) this._minimapParams.draftIndex = nextIndex;
+    this._commitMainlandCellReplacements(replacements, nextIndex);
+    this._paintMainlandMinimapCells(affected, nextIndex);
+    this._requestMainlandViewportSync();
+  }
+
+  _collectMainlandFootprintKeys(worldIndex, sceneId, target) {
+    const footprint = sceneId ? worldIndex?.getFootprint(sceneId) : null;
+    if (!footprint) return target;
+    for (let row = footprint.top; row < footprint.bottom; row++) {
+      for (let col = footprint.left; col < footprint.right; col++) {
+        target.add(`${row},${col}`);
+      }
+    }
+    return target;
+  }
+
+  _prepareMainlandCellReplacements(affected, worldIndex, region) {
+    const grid = this._el.querySelector('.wme-grid');
+    if (!grid || !this._mainlandMetrics) throw new Error('mainland 网格尚未初始化');
+    return [...affected]
+      .map(key => key.split(',').map(Number))
+      .sort(([rowA, colA], [rowB, colB]) => rowA - rowB || colA - colB)
+      .map(([row, col]) => {
+        const oldCell = grid.querySelector(`.wme-cell[data-r="${row}"][data-c="${col}"]`);
+        if (!oldCell) throw new Error(`找不到待更新单元 (${row}, ${col})`);
+        const template = document.createElement('template');
+        template.innerHTML = this._buildMainlandCellHtml({
+          row,
+          col,
+          worldIndex,
+          region,
+          metrics: this._mainlandMetrics,
+          terrainOptions: this._mainlandTerrainOptions,
+          sceneOptions: this._mainlandSceneOptions
+        }).trim();
+        const newCell = template.content.firstElementChild;
+        if (!newCell) throw new Error(`无法创建单元 (${row}, ${col})`);
+        return { row, col, oldCell, newCell };
+      });
+  }
+
+  _commitMainlandCellReplacements(replacements, worldIndex) {
+    const { thumbW, thumbH } = this._mainlandMetrics;
+    for (const replacement of replacements) replacement.oldCell.replaceWith(replacement.newCell);
+    for (const { row, col, newCell } of replacements) {
+      this._renderFootprintThumbnail(newCell, row, col, thumbW, thumbH, worldIndex);
+    }
+  }
+
+  _paintMainlandMinimapCells(affected, worldIndex) {
+    const gc = this._minimapParams?.gc;
+    const canvas = gc?.querySelector('.wme-minimap-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const cellW = canvas.width / this.region.cols;
+    const cellH = canvas.height / this.region.rows;
+    for (const key of affected) {
+      const [row, col] = key.split(',').map(Number);
+      const x = col * cellW;
+      const y = row * cellH;
+      ctx.fillStyle = this._terrainColor(this._cellTerrain(this.region.grid[row]?.[col]));
+      ctx.fillRect(x, y, cellW, cellH);
+      const coverage = worldIndex.getCell(this.region.id, row, col);
+      const cell = gc.querySelector(`.wme-cell[data-r="${row}"][data-c="${col}"]`);
+      const thumbnail = cell?.querySelector('.wme-cell-canvas');
+      if (coverage?.sceneId && thumbnail) {
+        try { ctx.drawImage(thumbnail, x, y, cellW, cellH); } catch (_error) { /* 保留地形底色 */ }
+      }
+      ctx.strokeStyle = 'rgba(255,255,255,.16)';
+      ctx.lineWidth = .5;
+      ctx.strokeRect(x, y, cellW, cellH);
+    }
+  }
+
+  _mainlandScrollContainer() {
+    return this.container.closest('#world-map-editor-page, .editor-main');
+  }
+
+  _teardownMainlandNavigation() {
+    if (typeof this._mainlandNavigationCleanup === 'function') {
+      this._mainlandNavigationCleanup();
+    }
+    this._mainlandNavigationCleanup = null;
+    if (this._mainlandViewportFrameId != null) {
+      cancelAnimationFrame(this._mainlandViewportFrameId);
+      this._mainlandViewportFrameId = null;
+    }
+  }
+
+  _bindMainlandMinimapNavigation(gc) {
+    const minimap = gc.querySelector('.wme-minimap');
+    const canvas = minimap?.querySelector('.wme-minimap-canvas');
+    const viewport = minimap?.querySelector('.wme-minimap-viewport');
+    const grid = gc.querySelector('.wme-grid');
+    const scrollContainer = this._mainlandScrollContainer();
+    if (!minimap || !canvas || !viewport || !grid || !scrollContainer) return false;
+
+    let drag = null;
+    const requestSync = () => this._requestMainlandViewportSync();
+    const onPointerDown = event => {
+      if (event.button !== 0) return;
+      this._updateMainlandMinimapViewport();
+      const frameRect = viewport.getBoundingClientRect();
+      const inFrame = viewport.style.display !== 'none'
+        && event.clientX >= frameRect.left
+        && event.clientX <= frameRect.right
+        && event.clientY >= frameRect.top
+        && event.clientY <= frameRect.bottom;
+      drag = {
+        pointerId: event.pointerId,
+        grabX: inFrame ? event.clientX - frameRect.left : frameRect.width / 2,
+        grabY: inFrame ? event.clientY - frameRect.top : frameRect.height / 2
+      };
+      event.preventDefault();
+      event.stopPropagation();
+      minimap.style.cursor = 'grabbing';
+      try { minimap.setPointerCapture?.(event.pointerId); } catch (_error) { /* pointer 已失效 */ }
+      this._scrollMainlandFromMinimapPointer(event, drag);
+    };
+    const onPointerMove = event => {
+      if (!drag || event.pointerId !== drag.pointerId) return;
+      event.preventDefault();
+      this._scrollMainlandFromMinimapPointer(event, drag);
+    };
+    const finishDrag = event => {
+      if (!drag || (event?.pointerId != null && event.pointerId !== drag.pointerId)) return;
+      const pointerId = drag.pointerId;
+      drag = null;
+      minimap.style.cursor = 'crosshair';
+      try {
+        if (minimap.hasPointerCapture?.(pointerId)) minimap.releasePointerCapture(pointerId);
+      } catch (_error) { /* pointer 已自动释放 */ }
+      requestSync();
+    };
+
+    scrollContainer.addEventListener('scroll', requestSync, { passive: true });
+    minimap.addEventListener('pointerdown', onPointerDown);
+    minimap.addEventListener('pointermove', onPointerMove);
+    minimap.addEventListener('pointerup', finishDrag);
+    minimap.addEventListener('pointercancel', finishDrag);
+    minimap.addEventListener('lostpointercapture', finishDrag);
+    window.addEventListener('resize', requestSync, { passive: true });
+    const resizeObserver = typeof ResizeObserver === 'function'
+      ? new ResizeObserver(requestSync)
+      : null;
+    resizeObserver?.observe(scrollContainer);
+    resizeObserver?.observe(grid);
+    resizeObserver?.observe(minimap);
+
+    this._mainlandNavigationCleanup = () => {
+      scrollContainer.removeEventListener('scroll', requestSync);
+      minimap.removeEventListener('pointerdown', onPointerDown);
+      minimap.removeEventListener('pointermove', onPointerMove);
+      minimap.removeEventListener('pointerup', finishDrag);
+      minimap.removeEventListener('pointercancel', finishDrag);
+      minimap.removeEventListener('lostpointercapture', finishDrag);
+      window.removeEventListener('resize', requestSync);
+      resizeObserver?.disconnect();
+      if (drag) {
+        try {
+          if (minimap.hasPointerCapture?.(drag.pointerId)) minimap.releasePointerCapture(drag.pointerId);
+        } catch (_error) { /* pointer 已自动释放 */ }
+        drag = null;
+      }
+    };
+    this._updateMainlandMinimapViewport();
+    return true;
+  }
+
+  _requestMainlandViewportSync() {
+    if (this._mainlandViewportFrameId != null) return;
+    this._mainlandViewportFrameId = requestAnimationFrame(() => {
+      this._mainlandViewportFrameId = null;
+      this._updateMainlandMinimapViewport();
+    });
+  }
+
+  _updateMainlandMinimapViewport() {
+    const gc = this._minimapParams?.gc;
+    const minimap = gc?.querySelector('.wme-minimap');
+    const canvas = minimap?.querySelector('.wme-minimap-canvas');
+    const viewport = minimap?.querySelector('.wme-minimap-viewport');
+    const grid = gc?.querySelector('.wme-grid');
+    const scrollContainer = this._mainlandScrollContainer();
+    if (!canvas || !viewport || !grid || !scrollContainer) return false;
+
+    const gridRect = grid.getBoundingClientRect();
+    const canvasRect = canvas.getBoundingClientRect();
+    const scrollRect = scrollContainer.getBoundingClientRect();
+    if (gridRect.width <= 0 || gridRect.height <= 0 || canvasRect.width <= 0 || canvasRect.height <= 0) {
+      viewport.style.display = 'none';
+      return false;
+    }
+    const viewLeft = scrollRect.left + scrollContainer.clientLeft;
+    const viewTop = scrollRect.top + scrollContainer.clientTop;
+    const viewRight = viewLeft + scrollContainer.clientWidth;
+    const viewBottom = viewTop + scrollContainer.clientHeight;
+    const visibleLeft = Math.max(gridRect.left, viewLeft);
+    const visibleTop = Math.max(gridRect.top, viewTop);
+    const visibleRight = Math.min(gridRect.right, viewRight);
+    const visibleBottom = Math.min(gridRect.bottom, viewBottom);
+    if (visibleRight <= visibleLeft || visibleBottom <= visibleTop) {
+      viewport.style.display = 'none';
+      return false;
+    }
+
+    viewport.style.display = 'block';
+    viewport.style.left = `${((visibleLeft - gridRect.left) / gridRect.width) * canvasRect.width}px`;
+    viewport.style.top = `${((visibleTop - gridRect.top) / gridRect.height) * canvasRect.height}px`;
+    viewport.style.width = `${((visibleRight - visibleLeft) / gridRect.width) * canvasRect.width}px`;
+    viewport.style.height = `${((visibleBottom - visibleTop) / gridRect.height) * canvasRect.height}px`;
+    return true;
+  }
+
+  _scrollMainlandFromMinimapPointer(event, drag) {
+    const gc = this._minimapParams?.gc;
+    const canvas = gc?.querySelector('.wme-minimap-canvas');
+    const viewport = gc?.querySelector('.wme-minimap-viewport');
+    const grid = gc?.querySelector('.wme-grid');
+    const scrollContainer = this._mainlandScrollContainer();
+    if (!canvas || !viewport || !grid || !scrollContainer) return false;
+
+    const canvasRect = canvas.getBoundingClientRect();
+    const frameRect = viewport.getBoundingClientRect();
+    const gridRect = grid.getBoundingClientRect();
+    const scrollRect = scrollContainer.getBoundingClientRect();
+    if (canvasRect.width <= 0 || canvasRect.height <= 0 || gridRect.width <= 0 || gridRect.height <= 0) return false;
+
+    const frameWidth = Math.min(canvasRect.width, Math.max(1, frameRect.width));
+    const frameHeight = Math.min(canvasRect.height, Math.max(1, frameRect.height));
+    const frameLeft = Math.max(0, Math.min(canvasRect.width - frameWidth, event.clientX - canvasRect.left - drag.grabX));
+    const frameTop = Math.max(0, Math.min(canvasRect.height - frameHeight, event.clientY - canvasRect.top - drag.grabY));
+    const normalizedLeft = frameLeft / canvasRect.width;
+    const normalizedTop = frameTop / canvasRect.height;
+    const viewLeft = scrollRect.left + scrollContainer.clientLeft;
+    const viewTop = scrollRect.top + scrollContainer.clientTop;
+    const gridContentLeft = scrollContainer.scrollLeft + gridRect.left - viewLeft;
+    const gridContentTop = scrollContainer.scrollTop + gridRect.top - viewTop;
+    const targetLeft = gridContentLeft + normalizedLeft * gridRect.width;
+    const targetTop = gridContentTop + normalizedTop * gridRect.height;
+    const maxLeft = Math.max(0, scrollContainer.scrollWidth - scrollContainer.clientWidth);
+    const maxTop = Math.max(0, scrollContainer.scrollHeight - scrollContainer.clientHeight);
+    scrollContainer.scrollTo({
+      left: Math.max(0, Math.min(maxLeft, targetLeft)),
+      top: Math.max(0, Math.min(maxTop, targetTop)),
+      behavior: 'auto'
+    });
+    this._requestMainlandViewportSync();
+    return true;
+  }
+
+  _renderLegacy() {
     const gc = this._el.querySelector('.wme-grid-container');
     if (!gc) return;
 
@@ -658,26 +1045,26 @@ export class WorldMapEditor {
     requestAnimationFrame(() => this._focusUsedArea());
   }
 
-  /** 将滚动视口定位到当前 Region 已配置单元的包围盒中心。 */
+  /** 将滚动视口定位到所有 scene anchor/footprint coverage 的包围盒中心。 */
   _focusUsedArea({ smooth = false } = {}) {
-    const page = this.container.closest('#world-map-editor-page');
-    if (!page) return false;
+    const scrollContainer = this.container.closest('#world-map-editor-page, .editor-main');
+    if (!scrollContainer || typeof scrollContainer.scrollTo !== 'function') return false;
     const cells = [...this._el.querySelectorAll('.wme-cell')].filter(cell => {
       const row = Number(cell.dataset.r);
       const col = Number(cell.dataset.c);
-      return Boolean(this.region.grid[row]?.[col]);
+      return Boolean(this._draftIndex?.getCell(this.region.id, row, col)?.sceneId);
     });
     if (cells.length === 0) return false;
 
-    const pageRect = page.getBoundingClientRect();
+    const containerRect = scrollContainer.getBoundingClientRect();
     const rects = cells.map(cell => cell.getBoundingClientRect());
     const left = Math.min(...rects.map(rect => rect.left));
     const right = Math.max(...rects.map(rect => rect.right));
     const top = Math.min(...rects.map(rect => rect.top));
     const bottom = Math.max(...rects.map(rect => rect.bottom));
-    page.scrollTo({
-      left: Math.max(0, page.scrollLeft + (left + right) / 2 - pageRect.left - page.clientWidth / 2),
-      top: Math.max(0, page.scrollTop + (top + bottom) / 2 - pageRect.top - page.clientHeight / 2),
+    scrollContainer.scrollTo({
+      left: Math.max(0, scrollContainer.scrollLeft + (left + right) / 2 - containerRect.left - scrollContainer.clientWidth / 2),
+      top: Math.max(0, scrollContainer.scrollTop + (top + bottom) / 2 - containerRect.top - scrollContainer.clientHeight / 2),
       behavior: smooth ? 'smooth' : 'auto'
     });
     return true;
@@ -783,6 +1170,95 @@ export class WorldMapEditor {
     }
   }
 
+  _terrainColor(terrain) {
+    return ({
+      mountain: '#554b42',
+      yellowRiver: '#8c7650',
+      forest: '#31523a',
+      plain: '#6c6546'
+    })[terrain] || '#2b2b2b';
+  }
+
+  _renderFootprintThumbnail(cell, row, col, thumbW, thumbH, worldIndex) {
+    const canvas = cell.querySelector('.wme-cell-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const raw = this.region.grid[row]?.[col] ?? null;
+    const terrain = this._cellTerrain(raw);
+    ctx.clearRect(0, 0, thumbW, thumbH);
+    ctx.fillStyle = this._terrainColor(terrain);
+    ctx.fillRect(0, 0, thumbW, thumbH);
+    const coverage = worldIndex.getCell(this.region.id, row, col);
+    if (!coverage?.sceneId) return;
+    const anchor = worldIndex.findScene(coverage.sceneId);
+    if (!anchor || (coverage.reserved && !coverage.isAnchor)) return;
+    if (coverage.reserved) {
+      ctx.fillStyle = 'rgba(0,0,0,.45)';
+      ctx.fillRect(0, 0, thumbW, thumbH);
+      ctx.strokeStyle = '#c9ad7a';
+      ctx.setLineDash([6, 4]);
+      ctx.strokeRect(3, 3, thumbW - 6, thumbH - 6);
+      ctx.setLineDash([]);
+      return;
+    }
+    const scene = this._getSceneData(anchor.sceneId);
+    if (!scene) return;
+    const footprint = anchor.footprint;
+    const totalW = thumbW * footprint.cols;
+    const totalH = thumbH * footprint.rows;
+    const offsetX = (col - anchor.col) * thumbW;
+    const offsetY = (row - anchor.row) * thumbH;
+    this._ensureImagesLoaded(scene, () => {
+      this._renderFootprintThumbnail(cell, row, col, thumbW, thumbH, worldIndex);
+      this._refreshMainlandMinimap();
+    });
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, 0, thumbW, thumbH);
+    ctx.clip();
+    ctx.translate(-offsetX, -offsetY);
+    this._drawSceneToCanvas(ctx, scene, totalW, totalH);
+    ctx.restore();
+    if (!coverage.isAnchor) {
+      ctx.fillStyle = 'rgba(196,166,78,.12)';
+      ctx.fillRect(0, 0, thumbW, thumbH);
+    }
+  }
+
+  _renderMainlandMinimap(gc, worldIndex) {
+    const canvas = gc.querySelector('.wme-minimap-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const cellW = canvas.width / this.region.cols;
+    const cellH = canvas.height / this.region.rows;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (let row = 0; row < this.region.rows; row++) {
+      for (let col = 0; col < this.region.cols; col++) {
+        const x = col * cellW;
+        const y = row * cellH;
+        const terrain = this._cellTerrain(this.region.grid[row]?.[col]);
+        ctx.fillStyle = this._terrainColor(terrain);
+        ctx.fillRect(x, y, cellW, cellH);
+        const coverage = worldIndex.getCell(this.region.id, row, col);
+        const cell = gc.querySelector(`.wme-cell[data-r="${row}"][data-c="${col}"]`);
+        const thumbnail = cell?.querySelector('.wme-cell-canvas');
+        if (coverage?.sceneId && thumbnail) {
+          try { ctx.drawImage(thumbnail, x, y, cellW, cellH); } catch (_error) { /* 保留地形底色 */ }
+        }
+        ctx.strokeStyle = 'rgba(255,255,255,.16)';
+        ctx.lineWidth = .5;
+        ctx.strokeRect(x, y, cellW, cellH);
+      }
+    }
+  }
+
+  _refreshMainlandMinimap() {
+    const params = this._minimapParams;
+    if (params?.gc && params?.draftIndex) {
+      requestAnimationFrame(() => this._renderMainlandMinimap(params.gc, params.draftIndex));
+    }
+  }
+
   /**
    * 绘制单格缩略图：直接当真实游戏场景来画（缩小 20%），复用场景编辑器渲染
    * @private
@@ -850,7 +1326,7 @@ export class WorldMapEditor {
   _drawSceneToCanvas(ctx, scene, thumbW, thumbH) {
     const sceneW = scene.width || this.region.chunkWidth;
     const sceneH = scene.height || this.region.chunkHeight;
-    const scale = thumbW / sceneW;
+    const scale = Math.min(thumbW / sceneW, thumbH / sceneH);
 
     ctx.clearRect(0, 0, thumbW, thumbH);
 

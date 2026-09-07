@@ -1,5 +1,23 @@
 /************************************************************
+
  * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
+
+ *
+
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+
+ * @author    刘枭 (beiliwenxiao)
+
+ * @email     beiliwenxiao@qq.com
+
+ * @date      2026-01-14
+
+ * @blog      https://blog.csdn.net/beiliwenxiao
+
+ * @repo      https://github.com/beiliwenxiao/yijian18-engine
+
+ *            https://gitee.com/coderaaa/yijian18-engine
+
  ************************************************************/
 
 import { ExpressionEngine } from './ExpressionEngine.js';
@@ -42,6 +60,10 @@ function errorResult(operationId, triggerId, error, code = null) {
   };
 }
 
+/**
+ * Legacy action 可以编排已提交命令后的表现，但本身不是 authority handler。
+ * 只有回传真实稳定 stateId 和已提交 stateRevision 的 CommandResult 才可记录为 committed。
+ */
 function normalizeLegacyResult(value, operationId, triggerId) {
   if (value === false || value?.ok === false) {
     const rejection = value === false
@@ -49,17 +71,24 @@ function normalizeLegacyResult(value, operationId, triggerId) {
       : value;
     return {
       ...errorResult(operationId, triggerId, rejection.error || rejection, rejection.code || 'actionRejected'),
-      status: rejection.status || 'failed', committed: rejection.committed === true,
-      stateId: rejection.stateId || `trigger:${triggerId}`,
-      stateRevision: Number.isInteger(rejection.stateRevision) ? rejection.stateRevision : null
+      status: rejection.status || 'failed'
     };
   }
+  const hasCommittedRevision = value?.committed === true
+    && hasText(value?.stateId)
+    && Number.isInteger(value.stateRevision);
   return {
-    ok: true, operationId, status: value?.status || 'succeeded',
-    committed: value?.committed !== false, code: null,
-    stateId: value?.stateId || `trigger:${triggerId}`,
-    stateRevision: Number.isInteger(value?.stateRevision) ? value.stateRevision : null,
-    eventFrom: null, eventTo: null, value: null, error: null
+    ok: true,
+    operationId,
+    status: value?.status || (hasCommittedRevision ? 'committed' : 'succeeded'),
+    committed: hasCommittedRevision,
+    code: null,
+    stateId: hasCommittedRevision ? value.stateId : `trigger:${triggerId}`,
+    stateRevision: hasCommittedRevision ? value.stateRevision : null,
+    eventFrom: null,
+    eventTo: null,
+    value: null,
+    error: null
   };
 }
 

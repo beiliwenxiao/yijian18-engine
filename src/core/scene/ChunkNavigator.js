@@ -1,6 +1,13 @@
 /************************************************************
  * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
- * @project YiJian18-Engine - 跨平台2D/3D ECS游戏引擎
+ *
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+ * @author    刘枭 (beiliwenxiao)
+ * @email     beiliwenxiao@qq.com
+ * @date      2026-01-14
+ * @blog      https://blog.csdn.net/beiliwenxiao
+ * @repo      https://github.com/beiliwenxiao/yijian18-engine
+ *            https://gitee.com/coderaaa/yijian18-engine
  ************************************************************/
 
 import { SceneObjectProjector } from './SceneObjectProjector.js';
@@ -34,6 +41,15 @@ function readPosition(target) {
   if (Number.isFinite(position?.x) && Number.isFinite(position?.y)) return { x: position.x, y: position.y };
   if (Number.isFinite(target?.x) && Number.isFinite(target?.y)) return { x: target.x, y: target.y };
   return null;
+}
+
+function getSceneExtent(chunk, cell, region) {
+  const worldWidth = Number(chunk?.worldWidth ?? cell?.worldWidth);
+  const worldHeight = Number(chunk?.worldHeight ?? cell?.worldHeight);
+  return {
+    width: Number.isFinite(worldWidth) && worldWidth > 0 ? worldWidth : region.chunkWidth,
+    height: Number.isFinite(worldHeight) && worldHeight > 0 ? worldHeight : region.chunkHeight
+  };
 }
 
 /** 大地图区块传送器；所有状态访问和副作用均由构造参数注入。 */
@@ -100,8 +116,9 @@ export class ChunkNavigator {
       worldX = Number(spawn.x) || 0;
       worldY = Number(spawn.y) || 0;
     } else {
-      const localX = x == null ? region.chunkWidth / 2 : Number(x) || 0;
-      const localY = y == null ? region.chunkHeight / 2 : Number(y) || 0;
+      const extent = getSceneExtent(chunk, cell, region);
+      const localX = x == null ? extent.width / 2 : Number(x) || 0;
+      const localY = y == null ? extent.height / 2 : Number(y) || 0;
       const projected = this.projector.project({ x: localX, y: localY }, offset);
       worldX = projected.x;
       worldY = projected.y;

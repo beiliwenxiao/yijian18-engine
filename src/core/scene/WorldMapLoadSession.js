@@ -1,6 +1,13 @@
 /************************************************************
  * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
- * @project YiJian18-Engine - 跨平台2D/3D ECS游戏引擎
+ *
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+ * @author    刘枭 (beiliwenxiao)
+ * @email     beiliwenxiao@qq.com
+ * @date      2026-01-14
+ * @blog      https://blog.csdn.net/beiliwenxiao
+ * @repo      https://github.com/beiliwenxiao/yijian18-engine
+ *            https://gitee.com/coderaaa/yijian18-engine
  ************************************************************/
 
 import { ProjectWorldIndex } from '../ProjectWorldIndex.js';
@@ -43,6 +50,30 @@ function errorRecord(stage, error, extra = {}) {
     error,
     message: formatErrorMessage(error)
   };
+}
+
+function projectSceneDimensions(project) {
+  return new Map((project?.scenes || []).map(scene => [scene?.id, {
+    width: scene?.width,
+    height: scene?.height
+  }]).filter(([sceneId]) => typeof sceneId === 'string' && sceneId.length > 0));
+}
+
+function assertSceneDataDimensions(sceneId, sceneData, worldIndex) {
+  const anchor = worldIndex?.findScene?.(sceneId);
+  if (!anchor) return;
+  const width = Number(sceneData?.width);
+  const height = Number(sceneData?.height);
+  if (!Number.isInteger(width) || !Number.isInteger(height)) {
+    const error = new TypeError(`场景 ${sceneId} 缺少 canonical width/height`);
+    error.code = 'missingSceneDimensions';
+    throw error;
+  }
+  if (width !== anchor.worldWidth || height !== anchor.worldHeight) {
+    const error = new RangeError(`场景 ${sceneId} 尺寸 ${width}×${height} 与世界索引 ${anchor.worldWidth}×${anchor.worldHeight} 不一致`);
+    error.code = 'sceneDimensionsMismatch';
+    throw error;
+  }
 }
 
 /** 加载项目世界地图，并缓存项目及每个场景的唯一加载 Promise。 */
@@ -93,7 +124,10 @@ export class WorldMapLoadSession {
       } else {
         project = await this._getProjectPromise(projectUrl);
       }
-      worldIndex = ProjectWorldIndex.build(project);
+      worldIndex = ProjectWorldIndex.build(project, {
+        sceneDimensions: projectSceneDimensions(project),
+        requireSceneDimensions: true
+      });
     } catch (error) {
       errors.push(errorRecord('projectWorldIndex', error, {
         projectUrl,
@@ -135,7 +169,14 @@ export class WorldMapLoadSession {
     for (const [sceneId, outcome] of loaded) {
       errors.push(...outcome.errors.map(entry => ({ ...entry, sceneId })));
       warnings.push(...(outcome.warnings || []));
-      if (outcome.data) this._sceneData.set(sceneId, outcome.data);
+      if (!outcome.data) continue;
+      try {
+        assertSceneDataDimensions(sceneId, outcome.data, worldIndex);
+        this._sceneData.set(sceneId, outcome.data);
+      } catch (error) {
+        errors.push(errorRecord('sceneDimensions', error, { sceneId }));
+        outcome.data = null;
+      }
     }
 
     const chunks = chunkSpecs.map(spec => ({
@@ -191,6 +232,11 @@ export class WorldMapLoadSession {
   replaceSceneData(sceneId, data) {
     if (this._disposed) return { ok: false, errors: [abortError()] };
     if (!sceneId || !data || !Array.isArray(data.layers)) return { ok: false, errors: [new TypeError('replaceSceneData requires valid scene data')] };
+    try {
+      assertSceneDataDimensions(sceneId, data, this._lastResult?.worldIndex);
+    } catch (error) {
+      return { ok: false, errors: [error] };
+    }
     const chunk = this._lastResult?.chunks?.find(entry => entry.sceneId === sceneId);
     if (!chunk) return { ok: false, errors: [new Error(`场景 ${sceneId} 不在当前世界加载结果中`)] };
     this.repository?.forgetScene?.(sceneId);
@@ -233,6 +279,7 @@ export class WorldMapLoadSession {
       error.errors = outcome?.errors || [];
       throw error;
     }
+    assertSceneDataDimensions(sceneId, outcome.data, this._lastResult?.worldIndex);
     this._sceneData.set(sceneId, outcome.data);
     if (this._lastResult) {
       this._lastResult.sceneProvenance[sceneId] = this._generationSnapshot?.getProvenance?.(sceneId) || null;
@@ -361,7 +408,11 @@ export class WorldMapLoadSession {
       sceneId: cell.sceneId,
       row: cell.row,
       col: cell.col,
-      offset: cell.offset
+      offset: { ...cell.offset },
+      origin: { ...cell.offset },
+      worldWidth: cell.worldWidth,
+      worldHeight: cell.worldHeight,
+      footprint: cell.footprint
     }));
   }
 

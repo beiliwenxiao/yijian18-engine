@@ -1,3 +1,15 @@
+/************************************************************
+ * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
+ *
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+ * @author    刘枭 (beiliwenxiao)
+ * @email     beiliwenxiao@qq.com
+ * @date      2026-01-14
+ * @blog      https://blog.csdn.net/beiliwenxiao
+ * @repo      https://github.com/beiliwenxiao/yijian18-engine
+ *            https://gitee.com/coderaaa/yijian18-engine
+ ************************************************************/
+
 /**
  * SceneStreamingRuntime owns the generic lifecycle around one WorldStreamingManager.
  * Host scenes inject terrain construction and projection hooks; content state remains outside core.
@@ -71,8 +83,8 @@ export class SceneStreamingRuntime {
 
     const initialChunk = worldResult.chunks?.find(chunk => chunk.sceneId === targetSceneId);
     if (!initialChunk) throw new Error('流式 Region 中没有可加载 chunk');
-    const centerX = initialChunk.offset.x + region.chunkWidth / 2;
-    const centerY = initialChunk.offset.y + region.chunkHeight / 2;
+    const centerX = initialChunk.offset.x + initialChunk.worldWidth / 2;
+    const centerY = initialChunk.offset.y + initialChunk.worldHeight / 2;
     const loaded = await manager.update(centerX, centerY);
     if (!loaded.ok) {
       manager.unloadAll({ preserveState: false });
@@ -93,8 +105,8 @@ export class SceneStreamingRuntime {
     return this.createTerrain?.({
       chunk,
       manager,
-      chunkWidth: manager.chunkWidth,
-      chunkHeight: manager.chunkHeight,
+      chunkWidth: chunk.worldWidth,
+      chunkHeight: chunk.worldHeight,
       sceneData: cloneSceneData(chunk.sceneData)
     }) || null;
   }
@@ -281,8 +293,8 @@ export class SceneStreamingRuntime {
       detachedTerrain = this.createTerrain?.({
         chunk,
         manager,
-        chunkWidth: manager.chunkWidth,
-        chunkHeight: manager.chunkHeight,
+        chunkWidth: chunk.worldWidth,
+        chunkHeight: chunk.worldHeight,
         sceneData: cloneSceneData(prepared.sceneData)
       }) || null;
       await detachedTerrain?.prepareStaticCaches?.({ signal });

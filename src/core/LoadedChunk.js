@@ -1,6 +1,13 @@
 /************************************************************
  * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
- * @project YiJian18-Engine - 跨平台2D/3D ECS游戏引擎
+ *
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+ * @author    刘枭 (beiliwenxiao)
+ * @email     beiliwenxiao@qq.com
+ * @date      2026-01-14
+ * @blog      https://blog.csdn.net/beiliwenxiao
+ * @repo      https://github.com/beiliwenxiao/yijian18-engine
+ *            https://gitee.com/coderaaa/yijian18-engine
  ************************************************************/
 
 import { SceneObjectProjector } from './scene/SceneObjectProjector.js';
@@ -30,6 +37,13 @@ export class LoadedChunk {
     this.col = Number(options.col) || 0;
     this.row = Number(options.row) || 0;
     this.origin = options.origin || { x: 0, y: 0 };
+    this.worldWidth = Number.isFinite(Number(options.worldWidth)) && Number(options.worldWidth) > 0
+      ? Number(options.worldWidth)
+      : null;
+    this.worldHeight = Number.isFinite(Number(options.worldHeight)) && Number(options.worldHeight) > 0
+      ? Number(options.worldHeight)
+      : null;
+    this.footprint = options.footprint ? cloneValue(options.footprint) : null;
     this.sceneData = options.sceneData || null;
     this.placementAdapter = options.placementAdapter || null;
     this.projector = options.projector || new SceneObjectProjector();
@@ -70,6 +84,9 @@ export class LoadedChunk {
       col: this.col,
       row: this.row,
       origin: { ...this.origin },
+      worldWidth: this.worldWidth,
+      worldHeight: this.worldHeight,
+      footprint: cloneValue(this.footprint),
       sceneData: this.sceneData,
       state: cloneValue(this._state),
       ...extra

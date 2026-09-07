@@ -1,6 +1,6 @@
 {
   "id": "S13", "name": "S13·精山战场", "width": 1280, "height": 720, "backgroundColor": "#30383a",
-  "type": "terrain", "sceneType": "worldChunk", "worldMap": "region-d", "productionState": "playable", "previewOnly": false,
+  "type": "terrain", "sceneType": "worldChunk", "worldMap": "mainland", "productionState": "playable", "previewOnly": false,
   "presentationProfile": "sanguo-zhangjiao-presentation-v1",
   "availability": { "optional": true, "afterSceneId": "S12", "all": [{ "path": "storyState.nanyangIntervened", "equals": true }, { "path": "storyState.s12Resolved", "equals": true }], "visitedAny": ["S05", "S06"], "otherwiseSceneId": "S14" },
   "gameplay": {

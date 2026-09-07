@@ -1,6 +1,6 @@
 {
   "id": "S14", "name": "S14·结局之地", "width": 1280, "height": 720, "backgroundColor": "#24282a",
-  "type": "terrain", "sceneType": "worldChunk", "worldMap": "region-d", "productionState": "playable", "previewOnly": false,
+  "type": "terrain", "sceneType": "worldChunk", "worldMap": "mainland", "productionState": "playable", "previewOnly": false,
   "presentationProfile": "sanguo-zhangjiao-presentation-v1",
   "gameplay": {
     "endingConfigId": "sanguo-zhangjiao-endings-v1", "resourceDivergenceId": "final-retreat-resources",

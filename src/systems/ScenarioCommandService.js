@@ -1,3 +1,15 @@
+/************************************************************
+ * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
+ *
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+ * @author    刘枭 (beiliwenxiao)
+ * @email     beiliwenxiao@qq.com
+ * @date      2026-01-14
+ * @blog      https://blog.csdn.net/beiliwenxiao
+ * @repo      https://github.com/beiliwenxiao/yijian18-engine
+ *            https://gitee.com/coderaaa/yijian18-engine
+ ************************************************************/
+
 export const SCENARIO_COMMANDS = Object.freeze({
   WORLD_TELEPORT: 'world.teleport',
   CHECKPOINT_REQUEST: 'checkpoint.request',
@@ -96,9 +108,11 @@ export class ScenarioCommandService {
 
   _teleport(payload) {
     const sceneId = payload.sceneId;
-    const target = this.getWorldIndex()?.findScene?.(sceneId);
+    const worldIndex = this.getWorldIndex();
+    const target = worldIndex?.findScene?.(sceneId);
     if (!target) return { ok: false, code: 'targetSceneMissing' };
-    if (target.regionIndex !== this.getCurrentRegionIndex()) {
+    const hasSingleRegion = worldIndex?.regions?.length === 1;
+    if (!hasSingleRegion && target.regionIndex !== this.getCurrentRegionIndex()) {
       const coordinator = this.getRegionCoordinator();
       if (!coordinator?.switchTo) return { ok: false, code: 'regionCoordinatorUnavailable' };
       return coordinator.switchTo({

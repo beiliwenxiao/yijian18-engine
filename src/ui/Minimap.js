@@ -1,10 +1,10 @@
 /************************************************************
  * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
- * 
- * @project   YiJian18-Engine - 跨平台2D/3D ECS游戏引擎
+ *
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
  * @author    刘枭 (beiliwenxiao)
  * @email     beiliwenxiao@qq.com
- * @date      2026-02-10
+ * @date      2026-01-14
  * @blog      https://blog.csdn.net/beiliwenxiao
  * @repo      https://github.com/beiliwenxiao/yijian18-engine
  *            https://gitee.com/coderaaa/yijian18-engine
@@ -198,16 +198,19 @@ export class Minimap extends UIElement {
 
     const region = this._worldIndex?.getRegion?.(this._regionRef);
     if (!region) return;
-    const chunkW = region.chunkWidth;
-    const chunkH = region.chunkHeight;
+    const getTerrainExtent = terrain => ({
+      width: Number(terrain?.basinWidth ?? terrain?.worldWidth) || region.chunkWidth,
+      height: Number(terrain?.basinHeight ?? terrain?.worldHeight) || region.chunkHeight
+    });
     let fullMinX = Infinity, fullMinY = Infinity, fullMaxX = -Infinity, fullMaxY = -Infinity;
     for (const terrain of this._terrains) {
       const ox = terrain.worldOffset?.x || 0;
       const oy = terrain.worldOffset?.y || 0;
+      const { width, height } = getTerrainExtent(terrain);
       fullMinX = Math.min(fullMinX, ox);
       fullMinY = Math.min(fullMinY, oy);
-      fullMaxX = Math.max(fullMaxX, ox + chunkW);
-      fullMaxY = Math.max(fullMaxY, oy + chunkH);
+      fullMaxX = Math.max(fullMaxX, ox + width);
+      fullMaxY = Math.max(fullMaxY, oy + height);
     }
     const fullW = fullMaxX - fullMinX;
     const fullH = fullMaxY - fullMinY;
@@ -233,8 +236,8 @@ export class Minimap extends UIElement {
     const innerH = Math.max(1, this.height - this.padding * 2);
     let cacheScale = Math.max(
       this.mapScale,
-      innerW / Math.max(1, chunkW),
-      innerH / Math.max(1, chunkH)
+      innerW / Math.max(1, fullW),
+      innerH / Math.max(1, fullH)
     );
     const maxCacheDimension = 2048;
     cacheScale = Math.min(
@@ -254,8 +257,9 @@ export class Minimap extends UIElement {
     for (const terrain of this._terrains) {
       const ox = terrain.worldOffset?.x || 0;
       const oy = terrain.worldOffset?.y || 0;
+      const { width, height } = getTerrainExtent(terrain);
       ctx.fillStyle = terrain.sceneBackgroundColor || '#1f1a14';
-      ctx.fillRect(ox, oy, chunkW, chunkH);
+      ctx.fillRect(ox, oy, width, height);
       if (terrain._combinedGroundCache) {
         ctx.drawImage(
           terrain._combinedGroundCache,

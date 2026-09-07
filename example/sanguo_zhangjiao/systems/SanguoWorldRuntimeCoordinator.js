@@ -1,6 +1,6 @@
 /************************************************************
  * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
- * 
+ *
  * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
  * @author    刘枭 (beiliwenxiao)
  * @email     beiliwenxiao@qq.com
@@ -73,7 +73,10 @@ async function prepareRestoreRegion(saveState = {}) {
   if (regionIndex < 0) {
     return { ok: false, errors: [{ code: 'missingTargetScene', path: 'currentSceneId', message: `存档场景 ${sceneId} 不在世界地图中` }] };
   }
-  if (regionIndex === this._currentRegionIndex) return { ok: true, errors: [] };
+  const worldIndex = this._worldLoadResult?.worldIndex;
+  if (worldIndex?.regions?.length === 1 || regionIndex === this._currentRegionIndex) {
+    return { ok: true, errors: [] };
+  }
   return this._regionCoordinator.switchTo({
     projectUrl: 'game.project.json', regionIndex, sceneId, spawnRef: 'player'
   });
@@ -91,7 +94,10 @@ function validateWorldLoadResult(result) {
     && worldIndex?.isLoadable?.(entry.sceneId) === true
     && chunk?.row === entry.row
     && chunk?.col === entry.col
-    && chunk?.offset === entry.offset
+    && chunk?.offset?.x === entry.offset?.x
+    && chunk?.offset?.y === entry.offset?.y
+    && chunk?.worldWidth === entry.worldWidth
+    && chunk?.worldHeight === entry.worldHeight
     && Array.isArray(chunk?.sceneData?.layers);
   if (!valid) {
     const detail = errors[0]?.message || '显式入口必须是唯一、非 reserved 且具有有效场景 layers';
@@ -353,8 +359,8 @@ function captureStreamedChunkState(chunk) {
     || null;
   const left = chunk.origin.x;
   const top = chunk.origin.y;
-  const right = left + this.worldStreamingManager.chunkWidth;
-  const bottom = top + this.worldStreamingManager.chunkHeight;
+  const right = left + (Number(chunk.worldWidth) || this.worldStreamingManager.chunkWidth);
+  const bottom = top + (Number(chunk.worldHeight) || this.worldStreamingManager.chunkHeight);
   const deathDropById = new Map((pendingDomain?.deathDrops || [])
     .filter(entry => entry?.id)
     .map(entry => [entry.id, cloneData(entry)]));
@@ -388,8 +394,8 @@ function releaseStreamedChunkRuntime(chunk) {
   const placementIds = new Set((chunk?.placements || []).map(placement => placement?.id).filter(Boolean));
   const left = chunk?.origin?.x || 0;
   const top = chunk?.origin?.y || 0;
-  const right = left + this.worldStreamingManager.chunkWidth;
-  const bottom = top + this.worldStreamingManager.chunkHeight;
+  const right = left + (Number(chunk.worldWidth) || this.worldStreamingManager.chunkWidth);
+  const bottom = top + (Number(chunk.worldHeight) || this.worldStreamingManager.chunkHeight);
   const values = new Set([
     ...(this.entities || []),
     ...(this.pickupItems || []),
@@ -453,8 +459,8 @@ function restoreStreamedDomainState(sceneId) {
       return position && chunks.some(chunk => {
         const left = Number(chunk.origin?.x) || 0;
         const top = Number(chunk.origin?.y) || 0;
-        const width = this.worldStreamingManager.chunkWidth;
-        const height = this.worldStreamingManager.chunkHeight;
+        const width = Number(chunk.worldWidth) || this.worldStreamingManager.chunkWidth;
+        const height = Number(chunk.worldHeight) || this.worldStreamingManager.chunkHeight;
         return position.x >= left && position.x <= left + width
           && position.y >= top && position.y <= top + height;
       });

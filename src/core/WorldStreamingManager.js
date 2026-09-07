@@ -1,12 +1,19 @@
 /************************************************************
  * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
- * @project YiJian18-Engine - 跨平台2D/3D ECS游戏引擎
+ *
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+ * @author    刘枭 (beiliwenxiao)
+ * @email     beiliwenxiao@qq.com
+ * @date      2026-01-14
+ * @blog      https://blog.csdn.net/beiliwenxiao
+ * @repo      https://github.com/beiliwenxiao/yijian18-engine
+ *            https://gitee.com/coderaaa/yijian18-engine
  ************************************************************/
 
 import { ProjectWorldIndex } from './ProjectWorldIndex.js';
 import { LoadedChunk } from './LoadedChunk.js';
 
-const STREAMING_SCHEMA_VERSION = 1;
+const STREAMING_SCHEMA_VERSION = 2;
 const CANONICAL_CHUNK_ID = /^S\d{2}(?:-C\d{2})?$/;
 
 function cloneValue(value) {
@@ -37,9 +44,22 @@ function createExplicitRegionIndex(options) {
   });
 }
 
+function hasSameOffset(first, second) {
+  return Number(first?.x) === Number(second?.x) && Number(first?.y) === Number(second?.y);
+}
+
+function hasSameFootprint(first, second) {
+  return first?.row === second?.row
+    && first?.col === second?.col
+    && first?.rows === second?.rows
+    && first?.cols === second?.cols
+    && first?.width === second?.width
+    && first?.height === second?.height;
+}
+
 /**
  * Region 内唯一九宫格流式状态权威。
- * 所有世界参数只通过 ProjectWorldIndex API 读取。
+ * 一个 logical scene 只可拥有一份 loaded/saved state；footprint 覆盖格只用于空间查询。
  */
 export class WorldStreamingManager {
   constructor(options = {}) {
@@ -70,8 +90,8 @@ export class WorldStreamingManager {
   configureRegion(worldIndex, options = {}) {
     const regionRef = options.regionRef ?? worldIndex?.getEntry?.()?.regionId ?? 0;
     const region = worldIndex?.getRegion?.(regionRef) || null;
-    if (!region || typeof worldIndex?.getCell !== 'function' || typeof worldIndex?.getOffset !== 'function' ||
-        typeof worldIndex?.isLoadable !== 'function') {
+    if (!region || typeof worldIndex?.getCell !== 'function' || typeof worldIndex?.findScene !== 'function'
+      || typeof worldIndex?.getOffset !== 'function' || typeof worldIndex?.isLoadable !== 'function') {
       return { ok: false, errors: [{ code: 'invalidWorldIndex', path: 'worldIndex', message: '需要有效的 ProjectWorldIndex 与 Region' }] };
     }
     this._cancelPending();
@@ -120,15 +140,25 @@ export class WorldStreamingManager {
     };
   }
 
-  chunkOrigin(col, row) {
-    const offset = this.worldIndex?.getOffset?.(this.regionId, row, col);
-    if (!offset) throw streamingError('invalidChunkCoordinate', `Chunk 坐标无效: ${col},${row}`);
-    return offset;
+  _sceneAt(col, row) {
+    const cell = this.worldIndex?.getCell?.(this.regionId, row, col);
+    if (cell?.loadable !== true || !cell.sceneId) return null;
+    const anchor = this.worldIndex?.findScene?.(cell.sceneId) || null;
+    return anchor?.regionId === this.regionId && anchor.loadable === true ? anchor : null;
+  }
+
+  chunkOrigin(sceneOrCol, row) {
+    const anchor = typeof sceneOrCol === 'string'
+      ? this.worldIndex?.findScene?.(sceneOrCol)
+      : this._sceneAt(sceneOrCol, row);
+    if (!anchor || anchor.regionId !== this.regionId) {
+      throw streamingError('invalidChunkCoordinate', `Chunk 坐标或场景无效: ${sceneOrCol},${row}`);
+    }
+    return { ...anchor.offset };
   }
 
   getSceneId(col, row) {
-    const cell = this.worldIndex?.getCell?.(this.regionId, row, col);
-    return cell?.loadable === true ? cell.sceneId : null;
+    return this._sceneAt(col, row)?.sceneId || null;
   }
 
   getSceneNamespace(sceneId) {
@@ -136,24 +166,33 @@ export class WorldStreamingManager {
     return sceneId.replace(/-C\d{2}$/, '');
   }
 
-  _getNeededChunks(centerCol, centerRow) {
-    const needed = [];
-    for (let dr = -1; dr <= 1; dr++) {
-      for (let dc = -1; dc <= 1; dc++) {
-        const col = centerCol + dc;
-        const row = centerRow + dr;
-        const sceneId = this.getSceneId(col, row);
-        if (sceneId) needed.push({ col, row, sceneId });
-      }
-    }
-    return needed;
+  _chunkKey(sceneId) {
+    if (!sceneId) throw streamingError('invalidChunkId', 'logical sceneId 不能为空');
+    return `${this.regionId}:${sceneId}`;
   }
 
-  /**
-   * 返回当前中心九宫格中已实际提交的 physical chunk coverage。
-   * 这是从 current center 的 loadable specs 与 loaded 交集派生的只读表现快照；
-   * 不暴露 loaded Map，也不写入流式状态、业务状态或存档。
-   */
+  _getNeededChunks(centerCol, centerRow) {
+    const specs = new Map();
+    for (let dr = -1; dr <= 1; dr++) {
+      for (let dc = -1; dc <= 1; dc++) {
+        const anchor = this._sceneAt(centerCol + dc, centerRow + dr);
+        if (!anchor || specs.has(anchor.sceneId)) continue;
+        specs.set(anchor.sceneId, {
+          sceneId: anchor.sceneId,
+          col: anchor.col,
+          row: anchor.row,
+          origin: { ...anchor.offset },
+          offset: { ...anchor.offset },
+          worldWidth: anchor.worldWidth,
+          worldHeight: anchor.worldHeight,
+          footprint: cloneValue(anchor.footprint)
+        });
+      }
+    }
+    return [...specs.values()];
+  }
+
+  /** 返回当前中心九宫格实际提交的 logical scene extent，用于表现层而非业务状态。 */
   getActiveNineGridCoverage() {
     const empty = Object.freeze({
       regionId: this.regionId || null,
@@ -161,26 +200,22 @@ export class WorldStreamingManager {
       envelope: null
     });
     if (!Number.isInteger(this._currentCol) || !Number.isInteger(this._currentRow)
-      || this._currentCol < 0 || this._currentRow < 0
-      || !Number.isFinite(this.chunkWidth) || this.chunkWidth <= 0
-      || !Number.isFinite(this.chunkHeight) || this.chunkHeight <= 0) return empty;
+      || this._currentCol < 0 || this._currentRow < 0) return empty;
 
     const rects = [];
     let envelope = null;
     for (const spec of this._getNeededChunks(this._currentCol, this._currentRow)) {
-      const key = this._chunkKey(spec.col, spec.row);
+      const key = this._chunkKey(spec.sceneId);
       const chunk = this.loaded.get(key);
-      if (!chunk
-        || chunk.key !== key
-        || chunk.regionId !== this.regionId
-        || Number(chunk.col) !== spec.col
-        || Number(chunk.row) !== spec.row
-        || chunk.sceneId !== spec.sceneId) continue;
+      if (!chunk || chunk.key !== key || chunk.regionId !== this.regionId
+        || chunk.sceneId !== spec.sceneId || Number(chunk.col) !== spec.col || Number(chunk.row) !== spec.row) continue;
       const left = Number(chunk.origin?.x);
       const top = Number(chunk.origin?.y);
-      if (!Number.isFinite(left) || !Number.isFinite(top)) continue;
-      const right = left + this.chunkWidth;
-      const bottom = top + this.chunkHeight;
+      const width = Number(chunk.worldWidth);
+      const height = Number(chunk.worldHeight);
+      if (!Number.isFinite(left) || !Number.isFinite(top) || !Number.isFinite(width) || !Number.isFinite(height)) continue;
+      const right = left + width;
+      const bottom = top + height;
       const rect = Object.freeze({
         key,
         sceneId: spec.sceneId,
@@ -190,12 +225,14 @@ export class WorldStreamingManager {
         left,
         top,
         right,
-        bottom
+        bottom,
+        width,
+        height,
+        footprint: cloneValue(chunk.footprint)
       });
       rects.push(rect);
-      if (!envelope) {
-        envelope = { left, top, right, bottom };
-      } else {
+      if (!envelope) envelope = { left, top, right, bottom };
+      else {
         envelope.left = Math.min(envelope.left, left);
         envelope.top = Math.min(envelope.top, top);
         envelope.right = Math.max(envelope.right, right);
@@ -209,12 +246,19 @@ export class WorldStreamingManager {
     });
   }
 
-  _manhattan(col, row, centerCol, centerRow) {
-    return Math.abs(col - centerCol) + Math.abs(row - centerRow);
-  }
-
-  _chunkKey(col, row) {
-    return `${this.regionId}:${col},${row}`;
+  _distanceFromFootprint(chunk, centerCol, centerRow) {
+    const footprint = chunk.footprint || {};
+    const left = Number.isInteger(footprint.left) ? footprint.left : Number(chunk.col);
+    const top = Number.isInteger(footprint.top) ? footprint.top : Number(chunk.row);
+    const right = Number.isInteger(footprint.right)
+      ? footprint.right
+      : left + Math.max(1, Math.ceil(Number(chunk.worldWidth) / this.chunkWidth));
+    const bottom = Number.isInteger(footprint.bottom)
+      ? footprint.bottom
+      : top + Math.max(1, Math.ceil(Number(chunk.worldHeight) / this.chunkHeight));
+    const deltaX = centerCol < left ? left - centerCol : (centerCol >= right ? centerCol - right + 1 : 0);
+    const deltaY = centerRow < top ? top - centerRow : (centerRow >= bottom ? centerRow - bottom + 1 : 0);
+    return deltaX + deltaY;
   }
 
   async update(playerWorldX, playerWorldY, options = {}) {
@@ -272,7 +316,7 @@ export class WorldStreamingManager {
     if (!Number.isInteger(col) || !Number.isInteger(row)) throw streamingError('invalidCenter', '流式中心坐标无效');
     if (signal?.aborted || externalSignal?.aborted) throw streamingError('aborted', '流式加载已取消');
     const needed = this._getNeededChunks(col, row);
-    const loadSpecs = needed.filter(spec => !this.loaded.has(this._chunkKey(spec.col, spec.row)));
+    const loadSpecs = needed.filter(spec => !this.loaded.has(this._chunkKey(spec.sceneId)));
     const outcomes = await Promise.allSettled(loadSpecs.map(spec => this._prepareChunk(spec, { signal, generation })));
     const loads = outcomes.filter(outcome => outcome.status === 'fulfilled').map(outcome => outcome.value);
     const failed = outcomes.find(outcome => outcome.status === 'rejected');
@@ -283,9 +327,7 @@ export class WorldStreamingManager {
     const unloads = [];
     try {
       for (const [key, chunk] of this.loaded) {
-        const chunkCol = Number(chunk?.col);
-        const chunkRow = Number(chunk?.row);
-        if (this._manhattan(chunkCol, chunkRow, col, row) <= 2) continue;
+        if (this._distanceFromFootprint(chunk, col, row) <= 2) continue;
         unloads.push({ key, chunk, state: await this._captureChunkState(chunk, { async: true }) });
       }
     } catch (error) {
@@ -304,11 +346,11 @@ export class WorldStreamingManager {
 
   async _prepareChunk(spec, { signal, generation } = {}) {
     if (signal?.aborted || generation !== this._generation) throw streamingError('aborted', '流式加载已取消');
-    const key = this._chunkKey(spec.col, spec.row);
+    const key = this._chunkKey(spec.sceneId);
     const sceneNamespace = this.getSceneNamespace(spec.sceneId);
     if (!sceneNamespace) throw streamingError('invalidChunkId', `非法 chunk ID: ${spec.sceneId}`);
     const savedState = this.savedStates.get(key) || null;
-    const origin = this.chunkOrigin(spec.col, spec.row);
+    const origin = { ...spec.origin };
     const sceneData = typeof this.sceneResolver === 'function'
       ? await this.sceneResolver(spec.sceneId, { ...spec, key, origin, signal })
       : null;
@@ -322,7 +364,17 @@ export class WorldStreamingManager {
         spec.sceneId,
         origin,
         cloneValue(savedState?.chunkState ?? null),
-        { key, regionId: this.regionId, sceneNamespace, sceneData, savedState, signal }
+        {
+          key,
+          regionId: this.regionId,
+          sceneNamespace,
+          sceneData,
+          savedState,
+          signal,
+          worldWidth: spec.worldWidth,
+          worldHeight: spec.worldHeight,
+          footprint: cloneValue(spec.footprint)
+        }
       );
     }
     if (!chunk) {
@@ -335,19 +387,15 @@ export class WorldStreamingManager {
         col: spec.col,
         row: spec.row,
         origin,
+        worldWidth: spec.worldWidth,
+        worldHeight: spec.worldHeight,
+        footprint: spec.footprint,
         sceneData,
         savedState: savedState?.chunkState || null,
         placementAdapter: this.placementAdapter
       });
     }
-    if (chunk.col == null) chunk.col = spec.col;
-    if (chunk.row == null) chunk.row = spec.row;
-    if (!chunk.sceneId) chunk.sceneId = spec.sceneId;
-    if (!chunk.chunkId) chunk.chunkId = spec.sceneId;
-    if (!chunk.sceneNamespace) chunk.sceneNamespace = sceneNamespace;
-    if (!chunk.regionId) chunk.regionId = this.regionId;
-    if (!chunk.key) chunk.key = key;
-    if (!chunk.origin) chunk.origin = origin;
+    this._normalizePreparedChunk(chunk, { key, spec, origin, sceneNamespace });
 
     const chunkDraft = typeof chunk.prepare === 'function'
       ? await chunk.prepare({ signal, savedState: savedState?.chunkState || null })
@@ -387,6 +435,37 @@ export class WorldStreamingManager {
     return { key, spec, chunk, chunkDraft, providerRestores };
   }
 
+  _normalizePreparedChunk(chunk, { key, spec, origin, sceneNamespace }) {
+    const fields = [
+      ['key', key],
+      ['regionId', this.regionId],
+      ['chunkId', spec.sceneId],
+      ['sceneId', spec.sceneId],
+      ['sceneNamespace', sceneNamespace],
+      ['col', spec.col],
+      ['row', spec.row],
+      ['worldWidth', spec.worldWidth],
+      ['worldHeight', spec.worldHeight]
+    ];
+    for (const [field, expected] of fields) {
+      if (chunk[field] == null || chunk[field] === '') {
+        chunk[field] = expected;
+        continue;
+      }
+      if (Number.isFinite(expected) ? Number(chunk[field]) !== Number(expected) : chunk[field] !== expected) {
+        throw streamingError('chunkIdentityMismatch', `Chunk ${spec.sceneId} 返回了错误的 ${field}`);
+      }
+    }
+    if (!chunk.origin) chunk.origin = origin;
+    else if (!hasSameOffset(chunk.origin, origin)) {
+      throw streamingError('chunkOriginMismatch', `Chunk ${spec.sceneId} 的 worldOffset 必须只应用一次`);
+    }
+    if (!chunk.footprint) chunk.footprint = cloneValue(spec.footprint);
+    else if (!hasSameFootprint(chunk.footprint, spec.footprint)) {
+      throw streamingError('chunkFootprintMismatch', `Chunk ${spec.sceneId} 的 footprint 与世界索引不一致`);
+    }
+  }
+
   validatePrepared(prepared) {
     const errors = [];
     if (!prepared || prepared.schemaVersion !== STREAMING_SCHEMA_VERSION) {
@@ -398,14 +477,19 @@ export class WorldStreamingManager {
     }
     const keys = new Set();
     for (const entry of prepared.loads || []) {
-      const expectedKey = this._chunkKey(entry.spec?.col, entry.spec?.row);
-      if (!entry.chunk || entry.key !== expectedKey || keys.has(entry.key)) {
+      const expectedKey = this._chunkKey(entry.spec?.sceneId);
+      const anchor = this.worldIndex?.findScene?.(entry.spec?.sceneId);
+      if (!entry.chunk || entry.key !== expectedKey || keys.has(entry.key) || !anchor) {
         errors.push({ code: 'invalidPreparedChunk', path: `loads.${entry?.key || '?'}`, message: '待加载 chunk 身份无效或重复' });
         continue;
       }
       keys.add(entry.key);
-      if (entry.chunk.sceneId !== entry.spec.sceneId || entry.chunk.sceneNamespace !== this.getSceneNamespace(entry.spec.sceneId)) {
-        errors.push({ code: 'chunkIdentityMismatch', path: `loads.${entry.key}`, message: '待加载 chunk 的 scene namespace 不一致' });
+      if (entry.chunk.sceneId !== entry.spec.sceneId || entry.chunk.chunkId !== entry.spec.sceneId
+        || entry.chunk.sceneNamespace !== this.getSceneNamespace(entry.spec.sceneId)
+        || Number(entry.chunk.col) !== anchor.col || Number(entry.chunk.row) !== anchor.row
+        || Number(entry.chunk.worldWidth) !== anchor.worldWidth || Number(entry.chunk.worldHeight) !== anchor.worldHeight
+        || !hasSameFootprint(entry.chunk.footprint, anchor.footprint)) {
+        errors.push({ code: 'chunkIdentityMismatch', path: `loads.${entry.key}`, message: '待加载 logical scene 的身份、尺寸或 footprint 不一致' });
       }
     }
     return { ok: errors.length === 0, errors };
@@ -458,9 +542,7 @@ export class WorldStreamingManager {
           console.warn('WorldStreamingManager: chunk 回滚失败', item.entry.key, rollbackError);
         }
       }
-      await this._releasePrepared({
-        loads: prepared.loads.filter(entry => !committedChunkKeys.has(entry.key))
-      });
+      await this._releasePrepared({ loads: prepared.loads.filter(entry => !committedChunkKeys.has(entry.key)) });
       return {
         ok: false,
         superseded: error.code === 'superseded',
@@ -529,12 +611,33 @@ export class WorldStreamingManager {
       sceneId: chunk?.sceneId,
       sceneNamespace: chunk?.sceneNamespace || this.getSceneNamespace(chunk?.sceneId),
       col: chunk?.col,
-      row: chunk?.row
+      row: chunk?.row,
+      origin: chunk?.origin ? { ...chunk.origin } : null,
+      worldWidth: chunk?.worldWidth,
+      worldHeight: chunk?.worldHeight,
+      footprint: cloneValue(chunk?.footprint)
+    };
+  }
+
+  _stateEnvelope(chunk, chunkState, providers) {
+    return {
+      schemaVersion: STREAMING_SCHEMA_VERSION,
+      regionId: this.regionId,
+      chunkId: chunk.chunkId || chunk.sceneId,
+      sceneId: chunk.sceneId,
+      sceneNamespace: chunk.sceneNamespace || this.getSceneNamespace(chunk.sceneId),
+      col: chunk.col,
+      row: chunk.row,
+      worldWidth: chunk.worldWidth,
+      worldHeight: chunk.worldHeight,
+      footprint: cloneValue(chunk.footprint),
+      chunkState: cloneValue(chunkState),
+      providers
     };
   }
 
   async _captureChunkState(chunk, { async = false } = {}) {
-    const key = chunk.key || this._chunkKey(chunk.col, chunk.row);
+    const key = chunk.key || this._chunkKey(chunk.sceneId);
     let chunkState = typeof chunk.serialize === 'function' ? chunk.serialize() : chunk.state ?? null;
     if (isPromise(chunkState)) {
       if (!async) throw streamingError('asyncSnapshotUnsupported', `Chunk ${key} 不能在同步快照中异步序列化`);
@@ -549,17 +652,20 @@ export class WorldStreamingManager {
       }
       if (value !== undefined) providers[id] = cloneValue(value);
     }
-    return {
-      schemaVersion: STREAMING_SCHEMA_VERSION,
-      regionId: this.regionId,
-      chunkId: chunk.chunkId || chunk.sceneId,
-      sceneId: chunk.sceneId,
-      sceneNamespace: chunk.sceneNamespace || this.getSceneNamespace(chunk.sceneId),
-      col: chunk.col,
-      row: chunk.row,
-      chunkState: cloneValue(chunkState),
-      providers
-    };
+    return this._stateEnvelope(chunk, chunkState, providers);
+  }
+
+  _captureChunkStateSync(chunk) {
+    const key = chunk.key || this._chunkKey(chunk.sceneId);
+    const chunkState = typeof chunk.serialize === 'function' ? chunk.serialize() : chunk.state ?? null;
+    if (isPromise(chunkState)) throw streamingError('asyncSnapshotUnsupported', `Chunk ${key} 不能异步序列化`);
+    const providers = {};
+    for (const [id, provider] of this._stateProviders) {
+      const value = provider.capture(this._providerContext(chunk, key));
+      if (isPromise(value)) throw streamingError('asyncSnapshotUnsupported', `Provider ${id} 不能异步采集`);
+      if (value !== undefined) providers[id] = cloneValue(value);
+    }
+    return this._stateEnvelope(chunk, chunkState, providers);
   }
 
   getLoadedChunks() {
@@ -577,14 +683,16 @@ export class WorldStreamingManager {
 
   getChunkAt(worldX, worldY) {
     const { col, row } = this.worldToChunk(worldX, worldY);
-    return this.loaded.get(this._chunkKey(col, row)) || null;
+    const sceneId = this.getSceneId(col, row);
+    return sceneId ? this.loaded.get(this._chunkKey(sceneId)) || null : null;
   }
 
   _chunkIntersects(chunk, bounds) {
     const left = Number(chunk.origin?.x) || 0;
     const top = Number(chunk.origin?.y) || 0;
-    return !(left + this.chunkWidth < bounds.left || left > bounds.right ||
-      top + this.chunkHeight < bounds.top || top > bounds.bottom);
+    const width = Number(chunk.worldWidth) || this.chunkWidth;
+    const height = Number(chunk.worldHeight) || this.chunkHeight;
+    return !(left + width < bounds.left || left > bounds.right || top + height < bounds.top || top > bounds.bottom);
   }
 
   unloadAll({ preserveState = true } = {}) {
@@ -612,37 +720,6 @@ export class WorldStreamingManager {
     this._needsRefresh = true;
   }
 
-  _captureChunkStateSync(chunk) {
-    let result;
-    let failure;
-    try {
-      const key = chunk.key || this._chunkKey(chunk.col, chunk.row);
-      const chunkState = typeof chunk.serialize === 'function' ? chunk.serialize() : chunk.state ?? null;
-      if (isPromise(chunkState)) throw streamingError('asyncSnapshotUnsupported', `Chunk ${key} 不能异步序列化`);
-      const providers = {};
-      for (const [id, provider] of this._stateProviders) {
-        const value = provider.capture(this._providerContext(chunk, key));
-        if (isPromise(value)) throw streamingError('asyncSnapshotUnsupported', `Provider ${id} 不能异步采集`);
-        if (value !== undefined) providers[id] = cloneValue(value);
-      }
-      result = {
-        schemaVersion: STREAMING_SCHEMA_VERSION,
-        regionId: this.regionId,
-        chunkId: chunk.chunkId || chunk.sceneId,
-        sceneId: chunk.sceneId,
-        sceneNamespace: chunk.sceneNamespace || this.getSceneNamespace(chunk.sceneId),
-        col: chunk.col,
-        row: chunk.row,
-        chunkState: cloneValue(chunkState),
-        providers
-      };
-    } catch (error) {
-      failure = error;
-    }
-    if (failure) throw failure;
-    return result;
-  }
-
   serialize() {
     const chunks = new Map(this.savedStates);
     for (const [key, chunk] of this.loaded) chunks.set(key, this._captureChunkStateSync(chunk));
@@ -654,6 +731,19 @@ export class WorldStreamingManager {
     };
   }
 
+  _validateSnapshotIdentity(entry, path, errors) {
+    const anchor = this.worldIndex?.findScene?.(entry?.sceneId) || null;
+    if (!anchor || anchor.regionId !== this.regionId || anchor.loadable !== true
+      || entry.chunkId !== entry.sceneId || entry.sceneNamespace !== this.getSceneNamespace(entry.sceneId)
+      || entry.col !== anchor.col || entry.row !== anchor.row
+      || entry.worldWidth !== anchor.worldWidth || entry.worldHeight !== anchor.worldHeight
+      || !hasSameFootprint(entry.footprint, anchor.footprint)) {
+      errors.push({ code: 'chunkIdentityMismatch', path, message: 'chunk 锚点、尺寸、footprint 或命名空间不属于当前世界索引' });
+      return null;
+    }
+    return anchor;
+  }
+
   validateSerialized(data) {
     const errors = [];
     if (!data || data.schemaVersion !== STREAMING_SCHEMA_VERSION) {
@@ -663,14 +753,15 @@ export class WorldStreamingManager {
       errors.push({ code: 'regionMismatch', path: 'regionId', message: '流式存档不属于当前 Region' });
     }
     if (!data.current || !Number.isInteger(data.current.col) || !Number.isInteger(data.current.row)) {
-      errors.push({ code: 'invalidCurrentChunk', path: 'current', message: '当前 chunk 坐标无效' });
+      errors.push({ code: 'invalidCurrentChunk', path: 'current', message: '当前世界格坐标无效' });
     } else if (!this.getSceneId(data.current.col, data.current.row)) {
-      errors.push({ code: 'missingCurrentChunk', path: 'current', message: '当前 chunk 在目标 Region 中不存在' });
+      errors.push({ code: 'missingCurrentChunk', path: 'current', message: '当前世界格没有可加载场景' });
     }
     if (!Array.isArray(data.chunks)) {
       errors.push({ code: 'invalidChunks', path: 'chunks', message: '缺少 chunk 状态数组' });
       return { ok: false, errors };
     }
+
     const keys = new Set();
     for (let index = 0; index < data.chunks.length; index++) {
       const entry = data.chunks[index];
@@ -679,14 +770,13 @@ export class WorldStreamingManager {
         errors.push({ code: 'invalidChunkState', path, message: 'chunk 状态身份或版本无效' });
         continue;
       }
-      const expectedSceneId = this.getSceneId(entry.col, entry.row);
-      const key = this._chunkKey(entry.col, entry.row);
-      if (!Number.isInteger(entry.col) || !Number.isInteger(entry.row) || !expectedSceneId ||
-          entry.sceneId !== expectedSceneId || entry.chunkId !== expectedSceneId ||
-          entry.sceneNamespace !== this.getSceneNamespace(expectedSceneId) || keys.has(key)) {
-        errors.push({ code: 'chunkIdentityMismatch', path, message: 'chunk 坐标、ID 或命名空间不一致' });
+      const anchor = this._validateSnapshotIdentity(entry, path, errors);
+      const key = entry.sceneId ? this._chunkKey(entry.sceneId) : null;
+      if (!anchor || !key || keys.has(key)) {
+        if (key && keys.has(key)) errors.push({ code: 'duplicateChunkState', path, message: '同一 logical scene 只能保存一份状态' });
         continue;
       }
+      keys.add(key);
       if (!entry.chunkState || entry.chunkState.schemaVersion !== 1) {
         errors.push({ code: 'chunkStateVersionMismatch', path: `${path}.chunkState`, message: 'chunk 动态状态版本不兼容' });
         continue;
@@ -699,7 +789,10 @@ export class WorldStreamingManager {
         sceneNamespace: entry.sceneNamespace,
         col: entry.col,
         row: entry.row,
-        origin: this.chunkOrigin(entry.col, entry.row),
+        origin: this.chunkOrigin(entry.sceneId),
+        worldWidth: entry.worldWidth,
+        worldHeight: entry.worldHeight,
+        footprint: entry.footprint,
         placementAdapter: this.placementAdapter
       });
       if (typeof validationChunk.validateState === 'function') {
@@ -715,31 +808,19 @@ export class WorldStreamingManager {
         errors.push({ code: 'invalidStateProviders', path: `${path}.providers`, message: 'chunk provider 状态集合无效' });
         continue;
       }
-      keys.add(key);
       for (const [id, value] of Object.entries(entry.providers)) {
         const provider = this._stateProviders.get(id);
         if (!provider) {
           errors.push({ code: 'unknownStateProvider', path: `${path}.providers.${id}`, message: '动态状态 provider 不存在' });
           continue;
         }
-        if (typeof provider.validate === 'function') {
-          const result = provider.validate(value, {
-            manager: this,
-            chunk: validationChunk,
-            key,
-            regionId: this.regionId,
-            chunkId: entry.chunkId,
-            sceneId: entry.sceneId,
-            sceneNamespace: entry.sceneNamespace,
-            col: entry.col,
-            row: entry.row
-          });
-          if (isPromise(result)) {
-            errors.push({ code: 'asyncValidationUnsupported', path: `${path}.providers.${id}`, message: '同步快照不支持异步 provider 校验' });
-          } else if (result?.ok === false) {
-            errors.push(...(result.errors || [{ code: 'providerValidationFailed', path: '', message: '动态状态校验失败' }])
-              .map(error => ({ ...error, path: `${path}.providers.${id}${error.path ? `.${error.path}` : ''}` })));
-          }
+        if (typeof provider.validate !== 'function') continue;
+        const result = provider.validate(value, this._providerContext(validationChunk, key));
+        if (isPromise(result)) {
+          errors.push({ code: 'asyncValidationUnsupported', path: `${path}.providers.${id}`, message: '同步快照不支持异步 provider 校验' });
+        } else if (result?.ok === false) {
+          errors.push(...(result.errors || [{ code: 'providerValidationFailed', path: '', message: '动态状态校验失败' }])
+            .map(error => ({ ...error, path: `${path}.providers.${id}${error.path ? `.${error.path}` : ''}` })));
         }
       }
     }
@@ -751,16 +832,13 @@ export class WorldStreamingManager {
     if (!check.ok) return check;
 
     const nextStates = new Map();
-    for (const entry of data.chunks) {
-      nextStates.set(this._chunkKey(entry.col, entry.row), cloneValue(entry));
-    }
+    for (const entry of data.chunks) nextStates.set(this._chunkKey(entry.sceneId), cloneValue(entry));
 
     const restores = [];
     try {
       for (const [key, chunk] of this.loaded) {
         const entry = nextStates.get(key);
         if (!entry) continue;
-
         const context = this._providerContext(chunk, key);
         const chunkCheck = typeof chunk.validateState === 'function'
           ? chunk.validateState(entry.chunkState)
@@ -776,7 +854,6 @@ export class WorldStreamingManager {
           error.errors = chunkCheck.errors || [];
           throw error;
         }
-
         const chunkRollback = typeof chunk.serialize === 'function'
           ? chunk.serialize()
           : cloneValue(chunk.state ?? null);
@@ -785,7 +862,6 @@ export class WorldStreamingManager {
           error.path = `chunks.${key}.chunkState`;
           throw error;
         }
-
         const providers = [];
         for (const [id, value] of Object.entries(entry.providers || {})) {
           const provider = this._stateProviders.get(id);
@@ -818,10 +894,7 @@ export class WorldStreamingManager {
       }
     } catch (error) {
       const nested = Array.isArray(error.errors) && error.errors.length
-        ? error.errors.map(item => ({
-          ...item,
-          path: `${error.path || ''}${item.path ? `.${item.path}` : ''}`
-        }))
+        ? error.errors.map(item => ({ ...item, path: `${error.path || ''}${item.path ? `.${item.path}` : ''}` }))
         : [{ code: error.code || 'streamingRestorePrepareFailed', path: error.path || '', message: error.message }];
       return { ok: false, errors: nested };
     }
@@ -846,12 +919,11 @@ export class WorldStreamingManager {
           throw error;
         }
       }
-
       for (const restore of restores) {
         for (const prepared of restore.providers) {
           if (typeof prepared.provider.commitRestore !== 'function') continue;
           const result = prepared.provider.commitRestore(prepared.draft, prepared.context);
-          committedProviders.push(prepared);
+          committedProviders.push({ ...prepared, result });
           if (isPromise(result)) {
             const error = streamingError('asyncRestoreUnsupported', `Provider ${prepared.id} 不能异步提交同步快照`);
             error.path = prepared.path;
@@ -872,49 +944,29 @@ export class WorldStreamingManager {
       const rollbackErrors = [];
       for (const prepared of committedProviders.reverse()) {
         try {
-          const result = prepared.provider.rollbackRestore(prepared.rollback, prepared.context);
+          const result = prepared.provider.rollbackRestore(prepared.rollback ?? prepared.result?.rollback ?? null, prepared.context);
           if (isPromise(result)) {
-            rollbackErrors.push({
-              code: 'asyncRollbackUnsupported',
-              path: prepared.path,
-              message: `Provider ${prepared.id} 不能异步回滚同步快照`
-            });
+            rollbackErrors.push({ code: 'asyncRollbackUnsupported', path: prepared.path, message: `Provider ${prepared.id} 不能异步回滚同步快照` });
           } else if (result?.ok === false) {
-            rollbackErrors.push(...(result.errors || [{
-              code: 'providerRollbackFailed', path: prepared.path, message: `动态状态 ${prepared.id} 回滚失败`
-            }]));
+            rollbackErrors.push(...(result.errors || [{ code: 'providerRollbackFailed', path: prepared.path, message: `动态状态 ${prepared.id} 回滚失败` }]));
           }
-        } catch (error) {
-          rollbackErrors.push({
-            code: 'providerRollbackFailed', path: prepared.path, message: error?.message || String(error)
-          });
+        } catch (rollbackError) {
+          rollbackErrors.push({ code: 'providerRollbackFailed', path: prepared.path, message: rollbackError?.message || String(rollbackError) });
         }
       }
       for (const restore of committedChunks.reverse()) {
         try {
           const result = restore.chunk.restoreState(cloneValue(restore.chunkRollback));
           if (isPromise(result) || result?.ok === false) {
-            rollbackErrors.push({
-              code: 'chunkRollbackFailed',
-              path: `chunks.${restore.key}.chunkState`,
-              message: `Chunk ${restore.key} 回滚失败`
-            });
+            rollbackErrors.push({ code: 'chunkRollbackFailed', path: `chunks.${restore.key}.chunkState`, message: `Chunk ${restore.key} 回滚失败` });
           }
-        } catch (error) {
-          rollbackErrors.push({
-            code: 'chunkRollbackFailed',
-            path: `chunks.${restore.key}.chunkState`,
-            message: error?.message || String(error)
-          });
+        } catch (rollbackError) {
+          rollbackErrors.push({ code: 'chunkRollbackFailed', path: `chunks.${restore.key}.chunkState`, message: rollbackError?.message || String(rollbackError) });
         }
       }
       return {
         ok: false,
-        errors: [{
-          code: failure.code || 'streamingRestoreFailed',
-          path: failure.path || '',
-          message: failure.message || String(failure)
-        }, ...rollbackErrors]
+        errors: [{ code: failure.code || 'streamingRestoreFailed', path: failure.path || '', message: failure.message || String(failure) }, ...rollbackErrors]
       };
     }
 

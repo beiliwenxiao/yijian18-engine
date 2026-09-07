@@ -1,5 +1,23 @@
 /************************************************************
- * 场景通用 Trigger action provider：只做依赖适配，不解释具体游戏剧情。
+
+ * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
+
+ *
+
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+
+ * @author    刘枭 (beiliwenxiao)
+
+ * @email     beiliwenxiao@qq.com
+
+ * @date      2026-01-14
+
+ * @blog      https://blog.csdn.net/beiliwenxiao
+
+ * @repo      https://github.com/beiliwenxiao/yijian18-engine
+
+ *            https://gitee.com/coderaaa/yijian18-engine
+
  ************************************************************/
 
 /**
@@ -57,7 +75,7 @@ export function registerSceneTriggerActions(triggerSystem, {
     }
     const result = await triggerSystem.fireAndWait('sceneComplete', { sceneId });
     return result.ok
-      ? { ok: true, committed: true }
+      ? { ok: true, status: 'succeeded', committed: false }
       : { ok: false, code: 'sceneCompleteRejected', committed: false };
   });
   return registered;
