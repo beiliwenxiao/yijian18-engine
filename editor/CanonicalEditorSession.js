@@ -1,3 +1,25 @@
+/************************************************************
+
+ * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
+
+ * 
+
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+
+ * @author    刘枭 (beiliwenxiao)
+
+ * @email     beiliwenxiao@qq.com
+
+ * @date      2026-01-14
+
+ * @blog      https://blog.csdn.net/beiliwenxiao
+
+ * @repo      https://github.com/beiliwenxiao/yijian18-engine
+
+ *            https://gitee.com/coderaaa/yijian18-engine
+
+ ************************************************************/
+
 import { SchemaFieldEditor } from './SchemaFieldEditor.js';
 
 /**
@@ -45,6 +67,22 @@ export class CanonicalEditorSession {
   }
   undo() { return this.documentService.undo(this.sourceUri); }
   redo() { return this.documentService.redo(this.sourceUri); }
+
+  /**
+   * 接收已由专用原子事务提交的完整工程快照，避免随后普通保存覆写其 Manifest 关联改动。
+   */
+  acceptExternalProjectCommit(project, { snapshotRevision = null } = {}) {
+    if (!project || typeof project !== 'object' || Array.isArray(project)) {
+      throw new TypeError('acceptExternalProjectCommit requires a project object');
+    }
+    const candidate = this.model.getCandidate();
+    const canonical = { ...candidate, project: structuredClone(project) };
+    this.documentService.commit(this.sourceUri, canonical, {
+      snapshotRevision: snapshotRevision ?? this.model.snapshotRevision + 1
+    });
+    this.dirtyRootPaths.clear();
+    return canonical;
+  }
 
   async save(extra = {}) {
     const rootPaths = this.dirtyRootPaths.size > 0 ? [...this.dirtyRootPaths] : [this.rootPath];

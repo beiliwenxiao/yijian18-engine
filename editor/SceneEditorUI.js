@@ -44,6 +44,14 @@ const BATTLE_FLOW_FIELD_LABELS = Object.freeze({
   checkpointId: '检查点 ID'
 });
 
+const STABLE_CONTENT_ID_PATTERN = /^[A-Za-z][A-Za-z0-9._-]*$/;
+const escapeHtml = value => String(value ?? '')
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&#39;');
+
 /**
  * SceneEditorUI - 场景编辑器 UI 模块
  * 负责 UI 面板初始化、属性面板更新、基础工具操作
@@ -58,6 +66,7 @@ export class SceneEditorUI {
     this._canvasResizeFrame = 0;
     this._canvasContainer = null;
     this._canvasSize = { width: 0, height: 0 };
+    this._contentDefinitionModalGeneration = 0;
   }
 
   /**
@@ -1225,27 +1234,53 @@ export class SceneEditorUI {
   }
 
   /**
-   * 内容库定义编辑器（浮层）：编辑某条 library 定义的 name + 专属属性 JSON。
-   * 应用后写回 assets._contentLib，用户再点「💾 保存库」持久化到 game.project.json。
+   * 内容库定义编辑器：物品使用字段化类型和 Manifest 图片选择，其余扩展属性仍以 JSON 编辑。
+   * 应用只修改内存草稿，用户再点「💾 保存库」经共享 CanonicalEditorSession 持久化。
    */
-  showContentDefinitionEditor(catKey, def) {
+  showContentDefinitionEditor(catKey, def, { isNew = false } = {}) {
     let modal = document.getElementById('content-def-editor');
     if (!modal) {
       modal = document.createElement('div');
       modal.id = 'content-def-editor';
       modal.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);' +
-        'width:420px;max-height:70vh;overflow:auto;background:#0d1326;border:1px solid #2a3a5e;' +
+        'width:460px;max-height:70vh;overflow:auto;background:#0d1326;border:1px solid #2a3a5e;' +
         'border-radius:8px;padding:16px;z-index:100001;box-shadow:0 8px 32px rgba(0,0,0,0.6);color:#fff;';
       document.body.appendChild(modal);
     }
+
+    const isItem = catKey === 'items';
+    const managedKeys = new Set(isItem
+      ? ['id', 'name', 'type', 'imageId', 'assetId']
+      : ['id', 'name']);
     const rest = {};
-    for (const k of Object.keys(def)) { if (k !== 'id' && k !== 'name') rest[k] = def[k]; }
+    for (const key of Object.keys(def)) {
+      if (!managedKeys.has(key)) rest[key] = def[key];
+    }
+    const modalGeneration = String(++this._contentDefinitionModalGeneration);
+    modal.dataset.contentDefinitionGeneration = modalGeneration;
+    const idControl = isNew
+      ? `<div style="margin-bottom:8px;"><label style="font-size:12px;color:#9ab;">稳定 ID</label>
+          <input id="cde-id" type="text" value="${escapeHtml(def.id || '')}" placeholder="如 resource.wood" style="width:100%;box-sizing:border-box;background:#0a1020;color:#fff;border:1px solid #2a3a5e;border-radius:3px;padding:6px;"></div>`
+      : `<div style="margin-bottom:8px;color:#9ab;font-size:12px;">稳定 ID：<code>${escapeHtml(def.id)}</code></div>`;
+    const itemControls = isItem ? `
+      <div style="margin-bottom:8px;"><label style="font-size:12px;color:#9ab;">物品类型</label>
+        <select id="cde-item-type" style="width:100%;box-sizing:border-box;background:#0a1020;color:#fff;border:1px solid #2a3a5e;border-radius:3px;padding:6px;"></select></div>
+      <div style="margin-bottom:8px;"><label style="font-size:12px;color:#9ab;">图片资源 ID</label>
+        <select id="cde-image-id" disabled style="width:100%;box-sizing:border-box;background:#0a1020;color:#fff;border:1px solid #2a3a5e;border-radius:3px;padding:6px;"><option>正在读取 Manifest…</option></select></div>
+      <div style="margin-bottom:8px;"><label style="font-size:12px;color:#9ab;">图片路径（Manifest，读取专用）</label>
+        <input id="cde-image-path" type="text" readonly value="正在读取 Manifest…" style="width:100%;box-sizing:border-box;background:#11182d;color:#b9c7e6;border:1px solid #2a3a5e;border-radius:3px;padding:6px;"></div>
+      <div style="margin-bottom:10px;display:flex;gap:10px;align-items:center;">
+        <div style="width:72px;height:72px;border:1px solid #2a3a5e;border-radius:4px;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#080d1a;flex:none;"><img id="cde-image-preview" alt="物品图片预览" style="display:none;width:100%;height:100%;object-fit:contain;"><span id="cde-image-empty" style="padding:6px;text-align:center;color:#ff9a9a;font-size:11px;">未选择图片资源</span></div>
+        <small id="cde-image-status" style="color:#9ab;font-size:11px;line-height:1.45;">物品只保存稳定 imageId/assetId；路径由 Manifest 派生。</small>
+      </div>` : '';
     modal.innerHTML = `
-      <div style="font-weight:bold;margin-bottom:10px;color:#7cf;">编辑定义（${catKey}） · ${def.id}</div>
+      <div style="font-weight:bold;margin-bottom:10px;color:#7cf;">编辑定义（${escapeHtml(catKey)}）</div>
+      ${idControl}
       <div style="margin-bottom:8px;"><label style="font-size:12px;color:#9ab;">名称</label>
-        <input id="cde-name" type="text" value="${(def.name||'').replace(/"/g,'&quot;')}" style="width:100%;box-sizing:border-box;background:#0a1020;color:#fff;border:1px solid #2a3a5e;border-radius:3px;padding:6px;"></div>
+        <input id="cde-name" type="text" value="${escapeHtml(def.name || '')}" style="width:100%;box-sizing:border-box;background:#0a1020;color:#fff;border:1px solid #2a3a5e;border-radius:3px;padding:6px;"></div>
+      ${itemControls}
       <div style="margin-bottom:8px;"><label style="font-size:12px;color:#9ab;">专属属性(JSON)</label>
-        <textarea id="cde-props" style="width:100%;box-sizing:border-box;min-height:180px;background:#0a1020;color:#fff;border:1px solid #2a3a5e;border-radius:3px;padding:6px;font-family:monospace;font-size:12px;">${JSON.stringify(rest, null, 2)}</textarea></div>
+        <textarea id="cde-props" style="width:100%;box-sizing:border-box;min-height:180px;background:#0a1020;color:#fff;border:1px solid #2a3a5e;border-radius:3px;padding:6px;font-family:monospace;font-size:12px;">${escapeHtml(JSON.stringify(rest, null, 2))}</textarea></div>
       <div style="display:flex;gap:8px;justify-content:flex-end;">
         <button id="cde-cancel" style="padding:6px 14px;background:#3a4a7e;border:none;border-radius:4px;color:#fff;cursor:pointer;">取消</button>
         <button id="cde-apply" style="padding:6px 14px;background:#4CAF50;border:none;border-radius:4px;color:#000;font-weight:bold;cursor:pointer;">应用</button>
@@ -1253,14 +1288,128 @@ export class SceneEditorUI {
       <div style="margin-top:6px;color:#89a;font-size:11px;">应用后点资源库「💾 保存库」持久化到工程</div>
     `;
     modal.style.display = 'block';
-    modal.querySelector('#cde-cancel').onclick = () => { modal.style.display = 'none'; };
+
+    const idInput = modal.querySelector('#cde-id');
+    const nameInput = modal.querySelector('#cde-name');
+    const propsInput = modal.querySelector('#cde-props');
+    const typeSelect = modal.querySelector('#cde-item-type');
+    const imageSelect = modal.querySelector('#cde-image-id');
+    const imagePathInput = modal.querySelector('#cde-image-path');
+    const imagePreview = modal.querySelector('#cde-image-preview');
+    const imageEmpty = modal.querySelector('#cde-image-empty');
+    const imageStatus = modal.querySelector('#cde-image-status');
+    let imageOptions = [];
+
+    if (isItem && typeSelect) {
+      const itemTypes = this.editor.assets.getItemTypeOptions?.() || ['material'];
+      const selectedType = String(def.type || 'material').trim() || 'material';
+      if (!itemTypes.includes(selectedType)) itemTypes.push(selectedType);
+      typeSelect.innerHTML = itemTypes
+        .sort((left, right) => left.localeCompare(right, 'en'))
+        .map(type => `<option value="${escapeHtml(type)}" ${type === selectedType ? 'selected' : ''}>${escapeHtml(type)}</option>`)
+        .join('');
+    }
+
+    const updateImagePreview = () => {
+      if (!isItem || !imageSelect || !imagePathInput || !imagePreview || !imageEmpty || !imageStatus) return;
+      const selected = imageOptions.find(option => option.imageId === imageSelect.value) || null;
+      imagePathInput.value = selected?.path || (imageOptions.length ? '请选择图片资源' : '没有可用的 Manifest 图片资源');
+      if (selected?.url) {
+        imagePreview.src = selected.url;
+        imagePreview.style.display = 'block';
+        imageEmpty.style.display = 'none';
+        imageStatus.textContent = `稳定 ID：${selected.imageId}${selected.status ? ` · ${selected.status}` : ''}`;
+      } else {
+        imagePreview.removeAttribute('src');
+        imagePreview.style.display = 'none';
+        imageEmpty.style.display = '';
+        imageStatus.textContent = selected
+          ? '该 Manifest 条目缺少可预览的运行时 PNG 路径。'
+          : '物品只保存稳定 imageId/assetId；路径由 Manifest 派生。';
+      }
+    };
+
+    if (isItem && imageSelect) {
+      const requestedImageId = String(def.imageId || def.assetId || '').trim();
+      imageSelect.addEventListener('change', updateImagePreview);
+      void this.editor.assets.getManifestImageOptions()
+        .then(options => {
+          if (modal.dataset.contentDefinitionGeneration !== modalGeneration) return;
+          imageOptions = options.filter(option => option.path && option.url);
+          imageSelect.innerHTML = `<option value="">选择 Manifest 图片资源</option>${imageOptions
+            .map(option => `<option value="${escapeHtml(option.imageId)}">${escapeHtml(option.imageId)} · ${escapeHtml(option.path)}</option>`)
+            .join('')}`;
+          imageSelect.disabled = imageOptions.length === 0;
+          if (imageOptions.some(option => option.imageId === requestedImageId)) imageSelect.value = requestedImageId;
+          updateImagePreview();
+        })
+        .catch(error => {
+          if (modal.dataset.contentDefinitionGeneration !== modalGeneration) return;
+          imageSelect.innerHTML = '<option value="">Manifest 读取失败</option>';
+          imageSelect.disabled = true;
+          imagePathInput.value = '无法读取 Manifest';
+          imageStatus.textContent = `图片资源读取失败：${error.message}`;
+          updateImagePreview();
+        });
+    }
+
+    modal.querySelector('#cde-cancel').onclick = () => {
+      if (isNew) this.editor.assets.discardContentDefinition?.(catKey, def);
+      modal.style.display = 'none';
+    };
     modal.querySelector('#cde-apply').onclick = () => {
-      def.name = modal.querySelector('#cde-name').value.trim() || def.name;
+      const nextId = isNew ? String(idInput?.value || '').trim() : def.id;
+      if (isNew && !STABLE_CONTENT_ID_PATTERN.test(nextId)) {
+        this.showToast('稳定 ID 必须以字母开头，且只能使用字母、数字、点、下划线或短横线', 'error');
+        return;
+      }
+      if (isNew && !this.editor.assets.isContentDefinitionIdAvailable?.(catKey, nextId, def)) {
+        this.showToast(`稳定 ID 已存在：${nextId}`, 'error');
+        return;
+      }
+      const nextName = String(nameInput?.value || '').trim();
+      if (!nextName) {
+        this.showToast('名称不能为空', 'error');
+        return;
+      }
       let parsed = {};
-      try { parsed = JSON.parse(modal.querySelector('#cde-props').value || '{}'); }
-      catch (e) { this.showToast('JSON 格式错误: ' + e.message, 'error'); return; }
-      for (const k of Object.keys(def)) { if (k !== 'id' && k !== 'name') delete def[k]; }
+      try {
+        parsed = JSON.parse(propsInput?.value || '{}');
+        if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+          throw new TypeError('专属属性必须是 JSON 对象');
+        }
+      } catch (error) {
+        this.showToast('JSON 格式错误: ' + error.message, 'error');
+        return;
+      }
+      for (const key of managedKeys) delete parsed[key];
+
+      let nextType = '';
+      let nextImage = '';
+      if (isItem) {
+        nextType = String(typeSelect?.value || '').trim();
+        nextImage = String(imageSelect?.value || '').trim();
+        if (!nextType) {
+          this.showToast('请选择物品类型', 'error');
+          return;
+        }
+        if (!imageOptions.some(option => option.imageId === nextImage)) {
+          this.showToast('请选择有效的 Manifest 图片资源', 'error');
+          return;
+        }
+      }
+
+      for (const key of Object.keys(def)) {
+        if (!managedKeys.has(key)) delete def[key];
+      }
       Object.assign(def, parsed);
+      def.id = nextId;
+      def.name = nextName;
+      if (isItem) {
+        def.type = nextType;
+        def.imageId = nextImage;
+        def.assetId = nextImage;
+      }
       modal.style.display = 'none';
       this.editor.assets.updateContentList?.();
       void this.editor.assets.refreshPlacementVisuals?.();

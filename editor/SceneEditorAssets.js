@@ -27,6 +27,11 @@ import {
   addGlobalImage
 } from './SceneDataLoader.js';
 import { mergeOverrides } from '../src/core/scene/PlacementSpawner.js';
+import {
+  buildManifestImageOptions,
+  indexManifestEntries,
+  resolveManifestImageUrl
+} from './ManifestImageCatalog.js';
 
 const ATLAS_SLICE_MIME = 'application/x-yijian18-atlas-slice+json';
 const STABLE_ID_PATTERN = /^[A-Za-z][A-Za-z0-9._-]*$/;
@@ -58,6 +63,7 @@ export class SceneEditorAssets {
     this._manifestPromise = null;
     this._manifestPromiseEpoch = -1;
     this._manifestEntriesById = new Map();
+    this._contentDraftSequence = 0;
   }
 
   _currentProjectPath() {
@@ -138,14 +144,7 @@ export class SceneEditorAssets {
   }
 
   _indexManifest(manifest) {
-    const index = new Map();
-    for (const entry of Array.isArray(manifest?.assets) ? manifest.assets : []) {
-      if (!entry || typeof entry !== 'object') continue;
-      for (const id of [entry.assetId, entry.imageId]) {
-        if (typeof id === 'string' && id.trim()) index.set(id.trim(), entry);
-      }
-    }
-    return index;
+    return indexManifestEntries(manifest);
   }
 
   async _ensureAssetManifest() {
@@ -173,6 +172,48 @@ export class SceneEditorAssets {
     }
   }
 
+  /** 返回当前物品库已经使用的类型；新建物品只可选择既有契约值。 */
+  getItemTypeOptions() {
+    const types = new Set(['material']);
+    for (const definition of this._contentLib?.items || []) {
+      const type = typeof definition?.type === 'string' ? definition.type.trim() : '';
+      if (type) types.add(type);
+    }
+    return [...types].sort((left, right) => left.localeCompare(right, 'en'));
+  }
+
+  /** 将当前项目 Manifest 投影为内容编辑器的稳定图片资源选项。 */
+  async getManifestImageOptions() {
+    return buildManifestImageOptions(await this._ensureAssetManifest(), this._placementProjectPath);
+  }
+
+  _createContentDraftId(category) {
+    const definitions = this._contentLib?.[category] || [];
+    let id;
+    do {
+      this._contentDraftSequence += 1;
+      id = `draft.${category}.${this._contentDraftSequence}`;
+    } while (definitions.some(definition => definition?.id === id));
+    return id;
+  }
+
+  isContentDefinitionIdAvailable(category, id, currentDefinition = null) {
+    const normalizedId = String(id || '').trim();
+    return !this._contentLib?.[category]?.some(definition => (
+      definition !== currentDefinition && definition?.id === normalizedId
+    ));
+  }
+
+  discardContentDefinition(category, definition) {
+    const definitions = this._contentLib?.[category];
+    if (!Array.isArray(definitions)) return false;
+    const index = definitions.indexOf(definition);
+    if (index < 0) return false;
+    definitions.splice(index, 1);
+    this.updateContentList();
+    return true;
+  }
+
   _findPlacementDefinition(placement) {
     if (!placement || placement.type !== 'ref' || !this._contentLib) return null;
     const categoryByKind = {
@@ -196,16 +237,7 @@ export class SceneEditorAssets {
   }
 
   _resolveManifestImageUrl(entry, projectPath = this._placementProjectPath) {
-    const rawPath = entry?.runtime2D?.path || entry?.sourceFile;
-    if (typeof rawPath !== 'string' || !rawPath.trim()) return '';
-    const normalizedPath = rawPath.trim()
-      .replace(/\\/g, '/')
-      .replace(/^\.\//, '')
-      .replace(/^\/+/, '');
-    const projectRoot = this._projectRoot(projectPath);
-    if (normalizedPath.startsWith('example/')) return `/${normalizedPath}`;
-    if (projectRoot && normalizedPath.startsWith(`${projectRoot}/`)) return `/${normalizedPath}`;
-    return projectRoot ? `/${projectRoot}/${normalizedPath}` : `/${normalizedPath}`;
+    return resolveManifestImageUrl(entry, projectPath);
   }
 
   _positiveNumber(...values) {
@@ -1746,7 +1778,7 @@ export class SceneEditorAssets {
   /** 加载内容库定义（来自页面共享的 canonical project candidate），填充分类下拉并渲染列表。 */
   async updateContentLibrary() {
     try {
-      await this._ensureContentLibrary();
+      await Promise.all([this._ensureContentLibrary(), this._ensureAssetManifest()]);
     } catch (error) {
       console.warn('内容库加载失败', error);
       this.editor.ui.showToast?.('内容库加载失败: ' + error.message, 'error');
@@ -1777,15 +1809,24 @@ export class SceneEditorAssets {
     }
     list.innerHTML = entries.map(definition => {
       const visual = this.resolvePlacementVisual({ type: 'ref', kind: cat.kind, ref: definition.id, x: 0, y: 0 });
+      const imageId = visual?.imageId || String(definition.imageId || definition.assetId || '').trim();
+      const runtimePath = typeof visual?.manifestEntry?.runtime2D?.path === 'string'
+        ? visual.manifestEntry.runtime2D.path.trim()
+        : '';
       const preview = visual?.url
         ? `<img src="${escapeHtml(visual.url)}" alt="${escapeHtml(definition.name || definition.id)}" style="width:100%;height:100%;object-fit:contain;">`
-        : escapeHtml(cat.label.slice(0, 1));
+        : `<span title="${escapeHtml(visual?.status || 'missingImageId')}" style="color:#ff9a9a;font-size:10px;">缺图</span>`;
+      const itemMetadata = catKey === 'items'
+        ? `<small style="display:block;width:100%;color:#b9c7e6;font-size:9px;line-height:1.3;word-break:break-all;">类型: ${escapeHtml(definition.type || '未设置')}</small>
+           <small title="${escapeHtml(runtimePath || 'Manifest 缺少运行时图片路径')}" style="display:block;width:100%;color:${runtimePath ? '#8fe' : '#ff9a9a'};font-size:9px;line-height:1.3;word-break:break-all;">${escapeHtml(imageId || '未选择图片资源')}<br>${escapeHtml(runtimePath || 'Manifest 路径缺失')}</small>`
+        : '';
       return `
       <div class="asset-item content-item" draggable="true"
            data-id="content:${cat.kind}:${escapeHtml(definition.id)}" data-cat="${catKey}" data-ref="${escapeHtml(definition.id)}"
            title="拖入场景放置；点击编辑定义">
-        <div class="asset-preview" style="width:30px;height:30px;background:rgba(80,200,140,0.2);border:1px solid #50c88c;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#8fe;overflow:hidden;">${preview}</div>
-        <span>${escapeHtml(definition.name || definition.id)}</span>
+        <div class="asset-preview" style="width:30px;height:30px;background:${visual?.url ? 'rgba(80,200,140,0.2)' : 'transparent'};border:1px solid ${visual?.url ? '#50c88c' : '#d86b6b'};border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#8fe;overflow:hidden;">${preview}</div>
+        <span style="width:100%;word-break:break-all;">${escapeHtml(definition.name || definition.id)}</span>
+        ${itemMetadata}
       </div>`;
     }).join('');
     this._bindAssetDrag(list);
@@ -1804,11 +1845,18 @@ export class SceneEditorAssets {
     if (!this._contentLib) return;
     const filter = document.getElementById('editor-content-filter');
     const catKey = (filter && filter.value) || 'items';
-    const id = catKey.replace(/s$/, '') + '_' + Date.now().toString(36);
-    const tpl = { id, name: '新' + (this._contentCategories().find(c => c.key === catKey) || {}).label };
+    const category = this._contentCategories().find(entry => entry.key === catKey);
+    const tpl = {
+      id: this._createContentDraftId(catKey),
+      name: '新' + (category?.label || '定义')
+    };
+    if (catKey === 'items') {
+      tpl.type = 'material';
+      tpl.imageId = '';
+    }
     this._contentLib[catKey].push(tpl);
     this.updateContentList();
-    this.editor.ui.showContentDefinitionEditor?.(catKey, tpl);
+    this.editor.ui.showContentDefinitionEditor?.(catKey, tpl, { isNew: true });
   }
 
   _persistenceError(result, fallback = '未知错误') {

@@ -77,6 +77,18 @@ function runExclusive(key, operation) {
   });
 }
 
+function decodeStrictBase64(value) {
+  const content = String(value ?? '');
+  if (!content || content.length % 4 !== 0 || !/^[A-Za-z0-9+/]*={0,2}$/.test(content)) {
+    throw new Error('base64 二进制内容无效');
+  }
+  const buffer = Buffer.from(content, 'base64');
+  if (buffer.length === 0 || buffer.toString('base64') !== content) {
+    throw new Error('base64 二进制内容无效');
+  }
+  return buffer;
+}
+
 /**
  * Node/Vite 开发宿主的 canonical 磁盘事务适配器。
  * journal durable 标记从 prepared 线性化为 committed 的时刻是唯一 commit point。
@@ -127,7 +139,14 @@ export class AtomicDiskAdapter {
       if (!['replace', 'create', 'rename', 'delete'].includes(operation)) {
         throw new Error(`changeSet[${index}] operation 无效`);
       }
-      const item = { operation };
+      const encoding = change?.encoding ?? 'utf8';
+      if (!['utf8', 'base64'].includes(encoding)) {
+        throw new Error(`changeSet[${index}] encoding 无效`);
+      }
+      if (encoding === 'base64' && !['replace', 'create'].includes(operation)) {
+        throw new Error(`changeSet[${index}] base64 仅支持 create 或 replace`);
+      }
+      const item = { operation, encoding };
       if (operation === 'rename') {
         item.from = ensureInside(this.repositoryRoot, path.resolve(this.repositoryRoot, change.from || ''));
         item.path = ensureInside(this.repositoryRoot, path.resolve(this.repositoryRoot, change.path || change.to || ''));
@@ -188,9 +207,10 @@ export class AtomicDiskAdapter {
         const content = change.operation === 'rename' && change.content === undefined
           ? fs.readFileSync(change.from, 'utf8')
           : change.content;
-        JSON.parse(content);
+        const binaryContent = change.encoding === 'base64' ? decodeStrictBase64(content) : null;
+        if (change.encoding === 'utf8') JSON.parse(content);
         const temp = path.join(path.dirname(change.path), `.${path.basename(change.path)}.${transactionId}.${index}.tmp`);
-        fs.writeFileSync(temp, content, 'utf8');
+        fs.writeFileSync(temp, binaryContent || content, binaryContent ? undefined : 'utf8');
         const handle = fs.openSync(temp, 'r+');
         try { fs.fsyncSync(handle); } finally { fs.closeSync(handle); }
         prepared.push({ index, temp });

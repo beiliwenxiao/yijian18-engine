@@ -5888,6 +5888,7 @@
         "name": "木材",
         "type": "material",
         "imageId": "inventory.resource.wood",
+        "assetId": "inventory.resource.wood",
         "maxStack": 99,
         "sprite": {
           "height": 40,
@@ -5900,6 +5901,7 @@
         "name": "草药",
         "type": "material",
         "imageId": "inventory.resource.herb",
+        "assetId": "inventory.resource.herb",
         "maxStack": 99,
         "sprite": {
           "height": 40,
@@ -6751,6 +6753,7 @@
         "subType": "accessory"
       }
     ],
+    "equipment": [],
     "enemies": [
       {
         "aiType": "aggressive",
@@ -7151,6 +7154,10 @@
         "title": "持饼饥民"
       }
     ],
+    "shops": [],
+    "classes": [],
+    "vehicles": [],
+    "buildings": [],
     "resourceNodes": [
       {
         "schemaVersion": 1,
@@ -7320,7 +7327,12 @@
           "width": 64
         }
       }
-    ]
+    ],
+    "combatSkills": [],
+    "craftSkills": [],
+    "gatherSkills": [],
+    "players": [],
+    "talents": []
   },
   "integration": {
     "battle": {

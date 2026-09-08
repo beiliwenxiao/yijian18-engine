@@ -1,3 +1,25 @@
+/************************************************************
+
+ * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
+
+ * 
+
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+
+ * @author    刘枭 (beiliwenxiao)
+
+ * @email     beiliwenxiao@qq.com
+
+ * @date      2026-01-14
+
+ * @blog      https://blog.csdn.net/beiliwenxiao
+
+ * @repo      https://github.com/beiliwenxiao/yijian18-engine
+
+ *            https://gitee.com/coderaaa/yijian18-engine
+
+ ************************************************************/
+
 import fs from 'fs';
 import path from 'path';
 import { AtomicDiskAdapter } from './AtomicDiskAdapter.js';
@@ -6,6 +28,7 @@ import { CandidateRuleValidator } from '../core/validation/CandidateRuleValidato
 import { createContentValidator } from '../core/validation/ContentSchemas.js';
 import { CanonicalSceneValidator } from '../core/scene/CanonicalSceneValidation.js';
 import { prepareSharedAtlasTransaction } from './sharedAtlasTransaction.js';
+import { prepareLibraryItemImageTransaction } from './LibraryItemImageTransaction.js';
 
 const JSON_HEADERS = { 'Content-Type': 'application/json; charset=utf-8' };
 
@@ -33,7 +56,7 @@ function parseBody(req) {
     let body = '';
     req.on('data', chunk => {
       body += chunk;
-      if (body.length > 20 * 1024 * 1024) reject(Object.assign(new Error('请求体过大'), { statusCode: 413 }));
+      if (body.length > 22 * 1024 * 1024) reject(Object.assign(new Error('请求体过大'), { statusCode: 413 }));
     });
     req.on('end', () => {
       try { resolve(JSON.parse(body || '{}')); } catch (error) { reject(Object.assign(error, { statusCode: 400 })); }
@@ -283,6 +306,39 @@ export function editorFileAPIPlugin({ repoRoot, allowedProjectPaths = [] } = {})
               catalog: prepared.catalog,
               manifest: prepared.manifest
             });
+          }
+
+          if (req.method === 'POST' && req.url === '/api/library-item-image-transaction') {
+            await recovery;
+            const body = await parseBody(req);
+            const projectPath = normalizeRelative(body.projectPath);
+            if (!projects.includes(projectPath)) {
+              return reply(res, 403, { ok: false, committed: false, error: '非当前项目' });
+            }
+            const info = canonicalInfo(projectPath);
+            let prepared;
+            const result = await adapter.commitPrepared(() => {
+              prepared = prepareLibraryItemImageTransaction({
+                repoRoot: root,
+                projectPath,
+                projectRoot: info.projectRoot,
+                library: body.library,
+                imageUpdates: body.imageUpdates,
+                canonicalizeProject: candidateProject => {
+                  const validated = validateCanonicalChangeSet(root, projectPath, [{
+                    operation: 'replace',
+                    path: projectPath,
+                    content: `${JSON.stringify(candidateProject, null, 2)}\n`
+                  }]);
+                  return validated.project;
+                }
+              });
+              return prepared.changes;
+            });
+            if (!result.ok) {
+              return reply(res, 500, { ...result, error: result.error?.message || '内容库图片磁盘提交失败' });
+            }
+            return reply(res, 200, { ...result, project: prepared.project, manifest: prepared.manifest });
           }
 
           if (req.method === 'POST' && req.url === '/api/canonical-transaction') {

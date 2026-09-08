@@ -1462,12 +1462,28 @@
       "assetId": "s01.prop.campfireBase",
       "imageId": "s01.prop.campfireBase",
       "category": "world-prop",
-      "usage": ["S01", "campfire", "base"],
+      "usage": [
+        "S01",
+        "campfire",
+        "base"
+      ],
       "sourceFile": "assets/images/s01/campfire-base.png",
-      "runtime2D": { "path": "assets/images/s01/campfire-base.png", "mode": "image" },
-      "runtime3D": { "mode": "billboard", "sourceAssetId": "s01.prop.campfireBase" },
-      "pivot": { "x": 0.5, "y": 1 },
-      "bounds": { "width": 72, "height": 36 },
+      "runtime2D": {
+        "path": "assets/images/s01/campfire-base.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "s01.prop.campfireBase"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      },
+      "bounds": {
+        "width": 72,
+        "height": 36
+      },
       "animations": [],
       "targetPhase": "P1",
       "status": "ai-generated",
@@ -1477,12 +1493,28 @@
       "assetId": "s01.prop.campfireLogs",
       "imageId": "s01.prop.campfireLogs",
       "category": "world-prop",
-      "usage": ["S01", "campfire", "logs"],
+      "usage": [
+        "S01",
+        "campfire",
+        "logs"
+      ],
       "sourceFile": "assets/images/s01/campfire-logs.png",
-      "runtime2D": { "path": "assets/images/s01/campfire-logs.png", "mode": "image" },
-      "runtime3D": { "mode": "billboard", "sourceAssetId": "s01.prop.campfireLogs" },
-      "pivot": { "x": 0.5, "y": 1 },
-      "bounds": { "width": 68, "height": 38 },
+      "runtime2D": {
+        "path": "assets/images/s01/campfire-logs.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "s01.prop.campfireLogs"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      },
+      "bounds": {
+        "width": 68,
+        "height": 38
+      },
       "animations": [],
       "targetPhase": "P1",
       "status": "ai-generated",
@@ -1492,12 +1524,28 @@
       "assetId": "s01.prop.campfireStoneRing",
       "imageId": "s01.prop.campfireStoneRing",
       "category": "world-prop",
-      "usage": ["S01", "campfire", "stone-ring"],
+      "usage": [
+        "S01",
+        "campfire",
+        "stone-ring"
+      ],
       "sourceFile": "assets/images/s01/campfire-stone-ring.png",
-      "runtime2D": { "path": "assets/images/s01/campfire-stone-ring.png", "mode": "image" },
-      "runtime3D": { "mode": "billboard", "sourceAssetId": "s01.prop.campfireStoneRing" },
-      "pivot": { "x": 0.5, "y": 1 },
-      "bounds": { "width": 92, "height": 38 },
+      "runtime2D": {
+        "path": "assets/images/s01/campfire-stone-ring.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "s01.prop.campfireStoneRing"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      },
+      "bounds": {
+        "width": 92,
+        "height": 38
+      },
       "animations": [],
       "targetPhase": "P1",
       "status": "ai-generated",
@@ -3458,249 +3506,1551 @@
       "replacesPlaceholderId": "graybox.naturalTerrain"
     },
     {
-      "assetId": "s13.environment.jingshanBattlefieldGround", "imageId": "s13.environment.jingshanBattlefieldGround", "category": "environment-background",
-      "usage": ["S13", "scene-background", "terminal-battlefield"], "sourceFile": "assets/images/s13/jingshan-battlefield-ground.png",
-      "runtime2D": { "path": "assets/images/s13/jingshan-battlefield-ground.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s13.environment.jingshanBattlefieldGround" },
-      "pivot": { "x": 0, "y": 0 }, "bounds": { "width": 1280, "height": 720 }, "animations": [], "targetPhase": "P5", "status": "ai-generated", "revision": 1,
-      "displayName": "S13 精山终局战场", "replacesPlaceholderId": "graybox.naturalTerrain",
-      "replacementBrief": { "sceneIds": ["S13"], "subject": "暮雨精山狭长终局战场", "mustShow": ["西南入口", "中央军令台", "东北撤离山口", "暮雨与山雾"], "mustPreserve": ["1280×720 坐标对齐", "主路线和交互锚点", "碰撞由场景定义"], "camera": "top-down-oblique-2d", "palette": ["#30383a", "#6b6760", "#d8aa32", "#7d3030"], "textPolicy": "no-baked-text" }
+      "assetId": "s13.environment.jingshanBattlefieldGround",
+      "imageId": "s13.environment.jingshanBattlefieldGround",
+      "category": "environment-background",
+      "usage": [
+        "S13",
+        "scene-background",
+        "terminal-battlefield"
+      ],
+      "sourceFile": "assets/images/s13/jingshan-battlefield-ground.png",
+      "runtime2D": {
+        "path": "assets/images/s13/jingshan-battlefield-ground.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "s13.environment.jingshanBattlefieldGround"
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0
+      },
+      "bounds": {
+        "width": 1280,
+        "height": 720
+      },
+      "animations": [],
+      "targetPhase": "P5",
+      "status": "ai-generated",
+      "revision": 1,
+      "displayName": "S13 精山终局战场",
+      "replacesPlaceholderId": "graybox.naturalTerrain",
+      "replacementBrief": {
+        "sceneIds": [
+          "S13"
+        ],
+        "subject": "暮雨精山狭长终局战场",
+        "mustShow": [
+          "西南入口",
+          "中央军令台",
+          "东北撤离山口",
+          "暮雨与山雾"
+        ],
+        "mustPreserve": [
+          "1280×720 坐标对齐",
+          "主路线和交互锚点",
+          "碰撞由场景定义"
+        ],
+        "camera": "top-down-oblique-2d",
+        "palette": [
+          "#30383a",
+          "#6b6760",
+          "#d8aa32",
+          "#7d3030"
+        ],
+        "textPolicy": "no-baked-text"
+      }
     },
     {
-      "assetId": "s13.story.finalCommandBanner", "imageId": "s13.story.finalCommandBanner", "category": "story-prop", "usage": ["S13", "S14", "battle-choice", "ending-review"],
-      "sourceFile": "assets/images/s13/final-command-banner.png", "runtime2D": { "path": "assets/images/s13/final-command-banner.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s13.story.finalCommandBanner" },
-      "pivot": { "x": 0.5, "y": 1 }, "bounds": { "width": 96, "height": 128 }, "animations": [], "targetPhase": "P5", "status": "ai-generated", "revision": 1
+      "assetId": "s13.story.finalCommandBanner",
+      "imageId": "s13.story.finalCommandBanner",
+      "category": "story-prop",
+      "usage": [
+        "S13",
+        "S14",
+        "battle-choice",
+        "ending-review"
+      ],
+      "sourceFile": "assets/images/s13/final-command-banner.png",
+      "runtime2D": {
+        "path": "assets/images/s13/final-command-banner.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "s13.story.finalCommandBanner"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      },
+      "bounds": {
+        "width": 96,
+        "height": 128
+      },
+      "animations": [],
+      "targetPhase": "P5",
+      "status": "ai-generated",
+      "revision": 1
     },
     {
-      "assetId": "world.loot.deathDrop", "imageId": "world.loot.deathDrop", "category": "loot-container", "usage": ["world", "player-death", "cargo-destruction"],
-      "sourceFile": "assets/images/items/death-drop.png", "runtime2D": { "path": "assets/images/items/death-drop.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "world.loot.deathDrop" },
-      "pivot": { "x": 0.5, "y": 1 }, "bounds": { "width": 48, "height": 40 }, "animations": [], "targetPhase": "P4", "status": "ai-generated", "revision": 1
+      "assetId": "world.loot.deathDrop",
+      "imageId": "world.loot.deathDrop",
+      "category": "loot-container",
+      "usage": [
+        "world",
+        "player-death",
+        "cargo-destruction"
+      ],
+      "sourceFile": "assets/images/items/death-drop.png",
+      "runtime2D": {
+        "path": "assets/images/items/death-drop.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "world.loot.deathDrop"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      },
+      "bounds": {
+        "width": 48,
+        "height": 40
+      },
+      "animations": [],
+      "targetPhase": "P4",
+      "status": "ai-generated",
+      "revision": 1
     },
     {
-      "assetId": "s14.environment.endingGround", "imageId": "s14.environment.endingGround", "category": "environment-background", "usage": ["S14", "scene-background", "ending-stage"],
-      "sourceFile": "assets/images/s14/ending-ground.png", "runtime2D": { "path": "assets/images/s14/ending-ground.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s14.environment.endingGround" },
-      "pivot": { "x": 0, "y": 0 }, "bounds": { "width": 1280, "height": 720 }, "animations": [], "targetPhase": "P5", "status": "ai-generated", "revision": 1,
-      "displayName": "S14 结局之地", "replacesPlaceholderId": "graybox.naturalTerrain",
-      "replacementBrief": { "sceneIds": ["S14"], "subject": "雪后将明的终局山口", "mustShow": ["前景残营", "最后马车", "缺梁投石车", "远景退路"], "mustPreserve": ["1280×720 坐标对齐", "终局交互锚点", "碰撞由场景定义"], "camera": "top-down-oblique-2d", "palette": ["#24282a", "#6b6760", "#c8d0d8", "#d8aa32"], "textPolicy": "no-baked-text" }
+      "assetId": "s14.environment.endingGround",
+      "imageId": "s14.environment.endingGround",
+      "category": "environment-background",
+      "usage": [
+        "S14",
+        "scene-background",
+        "ending-stage"
+      ],
+      "sourceFile": "assets/images/s14/ending-ground.png",
+      "runtime2D": {
+        "path": "assets/images/s14/ending-ground.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "s14.environment.endingGround"
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0
+      },
+      "bounds": {
+        "width": 1280,
+        "height": 720
+      },
+      "animations": [],
+      "targetPhase": "P5",
+      "status": "ai-generated",
+      "revision": 1,
+      "displayName": "S14 结局之地",
+      "replacesPlaceholderId": "graybox.naturalTerrain",
+      "replacementBrief": {
+        "sceneIds": [
+          "S14"
+        ],
+        "subject": "雪后将明的终局山口",
+        "mustShow": [
+          "前景残营",
+          "最后马车",
+          "缺梁投石车",
+          "远景退路"
+        ],
+        "mustPreserve": [
+          "1280×720 坐标对齐",
+          "终局交互锚点",
+          "碰撞由场景定义"
+        ],
+        "camera": "top-down-oblique-2d",
+        "palette": [
+          "#24282a",
+          "#6b6760",
+          "#c8d0d8",
+          "#d8aa32"
+        ],
+        "textPolicy": "no-baked-text"
+      }
     },
     {
-      "assetId": "s11.vehicle.breakoutHorse", "imageId": "s11.vehicle.breakoutHorse", "category": "vehicle", "usage": ["S11", "horse", "breakout"],
-      "sourceFile": "assets/images/s11/breakout-horse.png", "runtime2D": { "path": "assets/images/s11/breakout-horse.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s11.vehicle.breakoutHorse" },
-      "pivot": { "x": 0.5, "y": 1 }, "bounds": { "width": 150, "height": 100 }, "animations": [], "targetPhase": "P4", "status": "ai-generated", "revision": 1
+      "assetId": "s11.vehicle.breakoutHorse",
+      "imageId": "s11.vehicle.breakoutHorse",
+      "category": "vehicle",
+      "usage": [
+        "S11",
+        "horse",
+        "breakout"
+      ],
+      "sourceFile": "assets/images/s11/breakout-horse.png",
+      "runtime2D": {
+        "path": "assets/images/s11/breakout-horse.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "s11.vehicle.breakoutHorse"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      },
+      "bounds": {
+        "width": 150,
+        "height": 100
+      },
+      "animations": [],
+      "targetPhase": "P4",
+      "status": "ai-generated",
+      "revision": 1
     },
     {
-      "assetId": "s12.vehicle.siegeLadder", "imageId": "s12.vehicle.siegeLadder", "category": "vehicle", "usage": ["S12", "ladder", "siege-entry"],
-      "sourceFile": "assets/images/s12/siege-ladder.png", "runtime2D": { "path": "assets/images/s12/siege-ladder.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s12.vehicle.siegeLadder" },
-      "pivot": { "x": 0.5, "y": 1 }, "bounds": { "width": 100, "height": 220 }, "animations": [], "targetPhase": "P4", "status": "ai-generated", "revision": 1
+      "assetId": "s12.vehicle.siegeLadder",
+      "imageId": "s12.vehicle.siegeLadder",
+      "category": "vehicle",
+      "usage": [
+        "S12",
+        "ladder",
+        "siege-entry"
+      ],
+      "sourceFile": "assets/images/s12/siege-ladder.png",
+      "runtime2D": {
+        "path": "assets/images/s12/siege-ladder.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "s12.vehicle.siegeLadder"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      },
+      "bounds": {
+        "width": 100,
+        "height": 220
+      },
+      "animations": [],
+      "targetPhase": "P4",
+      "status": "ai-generated",
+      "revision": 1
     },
     {
-      "assetId": "s14.vehicle.lastRetreatCart", "imageId": "s14.vehicle.lastRetreatCart", "category": "vehicle", "usage": ["S14", "final-retreat", "cart-breakout"],
-      "sourceFile": "assets/images/s14/last-retreat-cart.png", "runtime2D": { "path": "assets/images/s14/last-retreat-cart.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s14.vehicle.lastRetreatCart" },
-      "pivot": { "x": 0.5, "y": 1 }, "bounds": { "width": 220, "height": 128 }, "animations": [], "targetPhase": "P5", "status": "ai-generated", "revision": 1
+      "assetId": "s14.vehicle.lastRetreatCart",
+      "imageId": "s14.vehicle.lastRetreatCart",
+      "category": "vehicle",
+      "usage": [
+        "S14",
+        "final-retreat",
+        "cart-breakout"
+      ],
+      "sourceFile": "assets/images/s14/last-retreat-cart.png",
+      "runtime2D": {
+        "path": "assets/images/s14/last-retreat-cart.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "s14.vehicle.lastRetreatCart"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      },
+      "bounds": {
+        "width": 220,
+        "height": 128
+      },
+      "animations": [],
+      "targetPhase": "P5",
+      "status": "ai-generated",
+      "revision": 1
     },
     {
-      "assetId": "s14.vehicle.unassembledCatapult", "imageId": "s14.vehicle.unassembledCatapult", "category": "vehicle", "usage": ["S14", "siege", "missing-wood"],
-      "sourceFile": "assets/images/s14/unassembled-catapult.png", "runtime2D": { "path": "assets/images/s14/unassembled-catapult.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s14.vehicle.unassembledCatapult" },
-      "pivot": { "x": 0.5, "y": 1 }, "bounds": { "width": 220, "height": 150 }, "animations": [], "targetPhase": "P5", "status": "ai-generated", "revision": 1
+      "assetId": "s14.vehicle.unassembledCatapult",
+      "imageId": "s14.vehicle.unassembledCatapult",
+      "category": "vehicle",
+      "usage": [
+        "S14",
+        "siege",
+        "missing-wood"
+      ],
+      "sourceFile": "assets/images/s14/unassembled-catapult.png",
+      "runtime2D": {
+        "path": "assets/images/s14/unassembled-catapult.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "s14.vehicle.unassembledCatapult"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      },
+      "bounds": {
+        "width": 220,
+        "height": 150
+      },
+      "animations": [],
+      "targetPhase": "P5",
+      "status": "ai-generated",
+      "revision": 1
     },
     {
-      "assetId": "ending.art.scorchedEarth", "imageId": "ending.art.scorchedEarth", "category": "narrative-key-art", "usage": ["S14", "ending", "scorched-earth"],
-      "sourceFile": "assets/images/endings/scorched-earth.png", "runtime2D": { "path": "assets/images/endings/scorched-earth.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "ending.art.scorchedEarth" }, "pivot": { "x": 0.5, "y": 0.5 }, "bounds": { "width": 1280, "height": 720 }, "animations": [], "targetPhase": "P5", "status": "ai-generated", "revision": 1
+      "assetId": "ending.art.scorchedEarth",
+      "imageId": "ending.art.scorchedEarth",
+      "category": "narrative-key-art",
+      "usage": [
+        "S14",
+        "ending",
+        "scorched-earth"
+      ],
+      "sourceFile": "assets/images/endings/scorched-earth.png",
+      "runtime2D": {
+        "path": "assets/images/endings/scorched-earth.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "ending.art.scorchedEarth"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 1280,
+        "height": 720
+      },
+      "animations": [],
+      "targetPhase": "P5",
+      "status": "ai-generated",
+      "revision": 1
     },
     {
-      "assetId": "ending.art.observer", "imageId": "ending.art.observer", "category": "narrative-key-art", "usage": ["S14", "ending", "observer"],
-      "sourceFile": "assets/images/endings/observer.png", "runtime2D": { "path": "assets/images/endings/observer.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "ending.art.observer" }, "pivot": { "x": 0.5, "y": 0.5 }, "bounds": { "width": 1280, "height": 720 }, "animations": [], "targetPhase": "P5", "status": "ai-generated", "revision": 1
+      "assetId": "ending.art.observer",
+      "imageId": "ending.art.observer",
+      "category": "narrative-key-art",
+      "usage": [
+        "S14",
+        "ending",
+        "observer"
+      ],
+      "sourceFile": "assets/images/endings/observer.png",
+      "runtime2D": {
+        "path": "assets/images/endings/observer.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "ending.art.observer"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 1280,
+        "height": 720
+      },
+      "animations": [],
+      "targetPhase": "P5",
+      "status": "ai-generated",
+      "revision": 1
     },
     {
-      "assetId": "ending.art.spark", "imageId": "ending.art.spark", "category": "narrative-key-art", "usage": ["S14", "ending", "spark"],
-      "sourceFile": "assets/images/endings/spark.png", "runtime2D": { "path": "assets/images/endings/spark.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "ending.art.spark" }, "pivot": { "x": 0.5, "y": 0.5 }, "bounds": { "width": 1280, "height": 720 }, "animations": [], "targetPhase": "P5", "status": "ai-generated", "revision": 1
+      "assetId": "ending.art.spark",
+      "imageId": "ending.art.spark",
+      "category": "narrative-key-art",
+      "usage": [
+        "S14",
+        "ending",
+        "spark"
+      ],
+      "sourceFile": "assets/images/endings/spark.png",
+      "runtime2D": {
+        "path": "assets/images/endings/spark.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "ending.art.spark"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 1280,
+        "height": 720
+      },
+      "animations": [],
+      "targetPhase": "P5",
+      "status": "ai-generated",
+      "revision": 1
     },
     {
-      "assetId": "ending.art.embers", "imageId": "ending.art.embers", "category": "narrative-key-art", "usage": ["S14", "ending", "embers"],
-      "sourceFile": "assets/images/endings/embers.png", "runtime2D": { "path": "assets/images/endings/embers.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "ending.art.embers" }, "pivot": { "x": 0.5, "y": 0.5 }, "bounds": { "width": 1280, "height": 720 }, "animations": [], "targetPhase": "P5", "status": "ai-generated", "revision": 1
+      "assetId": "ending.art.embers",
+      "imageId": "ending.art.embers",
+      "category": "narrative-key-art",
+      "usage": [
+        "S14",
+        "ending",
+        "embers"
+      ],
+      "sourceFile": "assets/images/endings/embers.png",
+      "runtime2D": {
+        "path": "assets/images/endings/embers.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "ending.art.embers"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 1280,
+        "height": 720
+      },
+      "animations": [],
+      "targetPhase": "P5",
+      "status": "ai-generated",
+      "revision": 1
     },
     {
-      "assetId": "ending.art.meteor", "imageId": "ending.art.meteor", "category": "narrative-key-art", "usage": ["S14", "ending", "meteor"],
-      "sourceFile": "assets/images/endings/meteor.png", "runtime2D": { "path": "assets/images/endings/meteor.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "ending.art.meteor" }, "pivot": { "x": 0.5, "y": 0.5 }, "bounds": { "width": 1280, "height": 720 }, "animations": [], "targetPhase": "P5", "status": "ai-generated", "revision": 1
+      "assetId": "ending.art.meteor",
+      "imageId": "ending.art.meteor",
+      "category": "narrative-key-art",
+      "usage": [
+        "S14",
+        "ending",
+        "meteor"
+      ],
+      "sourceFile": "assets/images/endings/meteor.png",
+      "runtime2D": {
+        "path": "assets/images/endings/meteor.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "ending.art.meteor"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 1280,
+        "height": 720
+      },
+      "animations": [],
+      "targetPhase": "P5",
+      "status": "ai-generated",
+      "revision": 1
     },
     {
-      "assetId": "ending.art.dust", "imageId": "ending.art.dust", "category": "narrative-key-art", "usage": ["S14", "ending", "dust"],
-      "sourceFile": "assets/images/endings/dust.png", "runtime2D": { "path": "assets/images/endings/dust.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "ending.art.dust" }, "pivot": { "x": 0.5, "y": 0.5 }, "bounds": { "width": 1280, "height": 720 }, "animations": [], "targetPhase": "P5", "status": "ai-generated", "revision": 1
+      "assetId": "ending.art.dust",
+      "imageId": "ending.art.dust",
+      "category": "narrative-key-art",
+      "usage": [
+        "S14",
+        "ending",
+        "dust"
+      ],
+      "sourceFile": "assets/images/endings/dust.png",
+      "runtime2D": {
+        "path": "assets/images/endings/dust.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "ending.art.dust"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 1280,
+        "height": 720
+      },
+      "animations": [],
+      "targetPhase": "P5",
+      "status": "ai-generated",
+      "revision": 1
     },
     {
-      "assetId": "s11.prop.beaconTower", "imageId": "s11.prop.beaconTower", "category": "battle-prop", "usage": ["S11", "rescue", "beacon"],
-      "sourceFile": "assets/images/s11/beacon-tower.png", "runtime2D": { "path": "assets/images/s11/beacon-tower.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s11.prop.beaconTower" },
-      "pivot": { "x": 0.5, "y": 1 }, "bounds": { "width": 72, "height": 96 }, "animations": [], "targetPhase": "P4", "status": "ai-generated", "revision": 1
+      "assetId": "s11.prop.beaconTower",
+      "imageId": "s11.prop.beaconTower",
+      "category": "battle-prop",
+      "usage": [
+        "S11",
+        "rescue",
+        "beacon"
+      ],
+      "sourceFile": "assets/images/s11/beacon-tower.png",
+      "runtime2D": {
+        "path": "assets/images/s11/beacon-tower.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "s11.prop.beaconTower"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      },
+      "bounds": {
+        "width": 72,
+        "height": 96
+      },
+      "animations": [],
+      "targetPhase": "P4",
+      "status": "ai-generated",
+      "revision": 1
     },
     {
-      "assetId": "s11.unit.assassin", "imageId": "s11.unit.assassin", "category": "character-static", "usage": ["S11", "enemy", "assassin-wave"],
-      "sourceFile": "assets/images/s11/assassin.png", "runtime2D": { "path": "assets/images/s11/assassin.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s11.unit.assassin" },
-      "pivot": { "x": 0.5, "y": 1 }, "bounds": { "width": 48, "height": 64 }, "animations": [], "targetPhase": "P4", "status": "ai-generated", "revision": 1
+      "assetId": "s11.unit.assassin",
+      "imageId": "s11.unit.assassin",
+      "category": "character-static",
+      "usage": [
+        "S11",
+        "enemy",
+        "assassin-wave"
+      ],
+      "sourceFile": "assets/images/s11/assassin.png",
+      "runtime2D": {
+        "path": "assets/images/s11/assassin.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "s11.unit.assassin"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      },
+      "bounds": {
+        "width": 48,
+        "height": 64
+      },
+      "animations": [],
+      "targetPhase": "P4",
+      "status": "ai-generated",
+      "revision": 1
     },
     {
-      "assetId": "s12.environment.xiaquyangYamenGround", "imageId": "s12.environment.xiaquyangYamenGround", "category": "environment-background", "usage": ["S12", "scene-background", "city-defense"],
-      "sourceFile": "assets/images/s12/xiaquyang-yamen-ground.png", "runtime2D": { "path": "assets/images/s12/xiaquyang-yamen-ground.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s12.environment.xiaquyangYamenGround" },
-      "pivot": { "x": 0, "y": 0 }, "bounds": { "width": 1280, "height": 720 }, "animations": [], "targetPhase": "P4", "status": "ai-generated", "revision": 1
+      "assetId": "s12.environment.xiaquyangYamenGround",
+      "imageId": "s12.environment.xiaquyangYamenGround",
+      "category": "environment-background",
+      "usage": [
+        "S12",
+        "scene-background",
+        "city-defense"
+      ],
+      "sourceFile": "assets/images/s12/xiaquyang-yamen-ground.png",
+      "runtime2D": {
+        "path": "assets/images/s12/xiaquyang-yamen-ground.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "s12.environment.xiaquyangYamenGround"
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0
+      },
+      "bounds": {
+        "width": 1280,
+        "height": 720
+      },
+      "animations": [],
+      "targetPhase": "P4",
+      "status": "ai-generated",
+      "revision": 1
     },
     {
-      "assetId": "s12.structure.yamenGate", "imageId": "s12.structure.yamenGate", "category": "city-structure", "usage": ["S12", "gate-defense", "destructible"],
-      "sourceFile": "assets/images/s12/yamen-gate.png", "runtime2D": { "path": "assets/images/s12/yamen-gate.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s12.structure.yamenGate" },
-      "pivot": { "x": 0.5, "y": 1 }, "bounds": { "width": 180, "height": 110 }, "animations": [], "targetPhase": "P4", "status": "ai-generated", "revision": 1
+      "assetId": "s12.structure.yamenGate",
+      "imageId": "s12.structure.yamenGate",
+      "category": "city-structure",
+      "usage": [
+        "S12",
+        "gate-defense",
+        "destructible"
+      ],
+      "sourceFile": "assets/images/s12/yamen-gate.png",
+      "runtime2D": {
+        "path": "assets/images/s12/yamen-gate.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "s12.structure.yamenGate"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      },
+      "bounds": {
+        "width": 180,
+        "height": 110
+      },
+      "animations": [],
+      "targetPhase": "P4",
+      "status": "ai-generated",
+      "revision": 1
     },
     {
-      "assetId": "s12.structure.secretPassage", "imageId": "s12.structure.secretPassage", "category": "city-structure", "usage": ["S12", "rescue", "secret-passage"],
-      "sourceFile": "assets/images/s12/secret-passage.png", "runtime2D": { "path": "assets/images/s12/secret-passage.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s12.structure.secretPassage" },
-      "pivot": { "x": 0.5, "y": 1 }, "bounds": { "width": 120, "height": 80 }, "animations": [], "targetPhase": "P4", "status": "ai-generated", "revision": 1
+      "assetId": "s12.structure.secretPassage",
+      "imageId": "s12.structure.secretPassage",
+      "category": "city-structure",
+      "usage": [
+        "S12",
+        "rescue",
+        "secret-passage"
+      ],
+      "sourceFile": "assets/images/s12/secret-passage.png",
+      "runtime2D": {
+        "path": "assets/images/s12/secret-passage.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "s12.structure.secretPassage"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      },
+      "bounds": {
+        "width": 120,
+        "height": 80
+      },
+      "animations": [],
+      "targetPhase": "P4",
+      "status": "ai-generated",
+      "revision": 1
     },
     {
-      "assetId": "s01.resource.wildBerryNode", "imageId": "s01.resource.wildBerryNode", "category": "resource-node", "usage": ["S01", "berry", "food"],
-      "sourceFile": "assets/images/s01/wild-berry-node.png", "runtime2D": { "path": "assets/images/s01/wild-berry-node.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s01.resource.wildBerryNode" },
-      "pivot": { "x": 0.5, "y": 1 }, "bounds": { "width": 68, "height": 58 }, "animations": [], "targetPhase": "P1", "status": "ai-generated", "revision": 1
+      "assetId": "s01.resource.wildBerryNode",
+      "imageId": "s01.resource.wildBerryNode",
+      "category": "resource-node",
+      "usage": [
+        "S01",
+        "berry",
+        "food"
+      ],
+      "sourceFile": "assets/images/s01/wild-berry-node.png",
+      "runtime2D": {
+        "path": "assets/images/s01/wild-berry-node.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "s01.resource.wildBerryNode"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      },
+      "bounds": {
+        "width": 68,
+        "height": 58
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
     },
     {
-      "assetId": "s01.tool.skinningKnife", "imageId": "s01.tool.skinningKnife", "category": "tool", "usage": ["S01", "skinning", "pickup"],
-      "sourceFile": "assets/images/s01/skinning-knife.png", "runtime2D": { "path": "assets/images/s01/skinning-knife.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s01.tool.skinningKnife" },
-      "pivot": { "x": 0.5, "y": 1 }, "bounds": { "width": 42, "height": 42 }, "animations": [], "targetPhase": "P1", "status": "ai-generated", "revision": 1
+      "assetId": "s01.tool.skinningKnife",
+      "imageId": "s01.tool.skinningKnife",
+      "category": "tool",
+      "usage": [
+        "S01",
+        "skinning",
+        "pickup"
+      ],
+      "sourceFile": "assets/images/s01/skinning-knife.png",
+      "runtime2D": {
+        "path": "assets/images/s01/skinning-knife.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "s01.tool.skinningKnife"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      },
+      "bounds": {
+        "width": 42,
+        "height": 42
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
     },
     {
-      "assetId": "s01.enemy.wolf", "imageId": "s01.enemy.wolf", "category": "character-static", "usage": ["S01", "enemy", "tutorial-wolf", "corpse-harvest", "wolf-pursuit"],
-      "sourceFile": "assets/images/s01/wild-wolf.png", "runtime2D": { "path": "assets/images/s01/wild-wolf.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s01.enemy.wolf" },
-      "pivot": { "x": 0.5, "y": 1 }, "bounds": { "width": 68, "height": 48 }, "animations": [], "targetPhase": "P1", "status": "ai-generated", "revision": 1
+      "assetId": "s01.enemy.wolf",
+      "imageId": "s01.enemy.wolf",
+      "category": "character-static",
+      "usage": [
+        "S01",
+        "enemy",
+        "tutorial-wolf",
+        "corpse-harvest",
+        "wolf-pursuit"
+      ],
+      "sourceFile": "assets/images/s01/wild-wolf.png",
+      "runtime2D": {
+        "path": "assets/images/s01/wild-wolf.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "s01.enemy.wolf"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      },
+      "bounds": {
+        "width": 68,
+        "height": 48
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
     },
     {
-      "assetId": "s01.item.rawWolfMeat", "imageId": "s01.item.rawWolfMeat", "category": "item", "usage": ["S01", "loot", "raw-food"],
-      "sourceFile": "assets/images/s01/raw-wolf-meat.png", "runtime2D": { "path": "assets/images/s01/raw-wolf-meat.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s01.item.rawWolfMeat" },
-      "pivot": { "x": 0.5, "y": 1 }, "bounds": { "width": 42, "height": 34 }, "animations": [], "targetPhase": "P1", "status": "ai-generated", "revision": 1
+      "assetId": "s01.item.rawWolfMeat",
+      "imageId": "s01.item.rawWolfMeat",
+      "category": "item",
+      "usage": [
+        "S01",
+        "loot",
+        "raw-food"
+      ],
+      "sourceFile": "assets/images/s01/raw-wolf-meat.png",
+      "runtime2D": {
+        "path": "assets/images/s01/raw-wolf-meat.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "s01.item.rawWolfMeat"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      },
+      "bounds": {
+        "width": 42,
+        "height": 34
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
     },
     {
-      "assetId": "s01.item.wolfHide", "imageId": "s01.item.wolfHide", "category": "item", "usage": ["S01", "hide", "crafting"],
-      "sourceFile": "assets/images/s01/wolf-hide.png", "runtime2D": { "path": "assets/images/s01/wolf-hide.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s01.item.wolfHide" },
-      "pivot": { "x": 0.5, "y": 1 }, "bounds": { "width": 48, "height": 38 }, "animations": [], "targetPhase": "P1", "status": "ai-generated", "revision": 1
+      "assetId": "s01.item.wolfHide",
+      "imageId": "s01.item.wolfHide",
+      "category": "item",
+      "usage": [
+        "S01",
+        "hide",
+        "crafting"
+      ],
+      "sourceFile": "assets/images/s01/wolf-hide.png",
+      "runtime2D": {
+        "path": "assets/images/s01/wolf-hide.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "s01.item.wolfHide"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      },
+      "bounds": {
+        "width": 48,
+        "height": 38
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
     },
     {
-      "assetId": "s01.equipment.wolfHideVest", "imageId": "s01.equipment.wolfHideVest", "category": "equipment", "usage": ["S01", "armor", "crafting"],
-      "sourceFile": "assets/images/s01/wolf-hide-vest.png", "runtime2D": { "path": "assets/images/s01/wolf-hide-vest.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s01.equipment.wolfHideVest" },
-      "pivot": { "x": 0.5, "y": 0.5 }, "bounds": { "width": 46, "height": 52 }, "animations": [], "targetPhase": "P1", "status": "ai-generated", "revision": 1
+      "assetId": "s01.equipment.wolfHideVest",
+      "imageId": "s01.equipment.wolfHideVest",
+      "category": "equipment",
+      "usage": [
+        "S01",
+        "armor",
+        "crafting"
+      ],
+      "sourceFile": "assets/images/s01/wolf-hide-vest.png",
+      "runtime2D": {
+        "path": "assets/images/s01/wolf-hide-vest.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "s01.equipment.wolfHideVest"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 46,
+        "height": 52
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
     },
     {
-      "assetId": "s01.equipment.wolfHideBracers", "imageId": "s01.equipment.wolfHideBracers", "category": "equipment", "usage": ["S01", "accessory", "crafting"],
-      "sourceFile": "assets/images/s01/wolf-hide-bracers.png", "runtime2D": { "path": "assets/images/s01/wolf-hide-bracers.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s01.equipment.wolfHideBracers" },
-      "pivot": { "x": 0.5, "y": 0.5 }, "bounds": { "width": 48, "height": 40 }, "animations": [], "targetPhase": "P1", "status": "ai-generated", "revision": 1
+      "assetId": "s01.equipment.wolfHideBracers",
+      "imageId": "s01.equipment.wolfHideBracers",
+      "category": "equipment",
+      "usage": [
+        "S01",
+        "accessory",
+        "crafting"
+      ],
+      "sourceFile": "assets/images/s01/wolf-hide-bracers.png",
+      "runtime2D": {
+        "path": "assets/images/s01/wolf-hide-bracers.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "s01.equipment.wolfHideBracers"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 48,
+        "height": 40
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
     },
     {
-      "assetId": "s01.food.roastedWolfMeat", "imageId": "s01.food.roastedWolfMeat", "category": "item", "usage": ["S01", "food", "healing"],
-      "sourceFile": "assets/images/s01/roasted-wolf-meat.png", "runtime2D": { "path": "assets/images/s01/roasted-wolf-meat.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s01.food.roastedWolfMeat" },
-      "pivot": { "x": 0.5, "y": 1 }, "bounds": { "width": 44, "height": 36 }, "animations": [], "targetPhase": "P1", "status": "ai-generated", "revision": 1
+      "assetId": "s01.food.roastedWolfMeat",
+      "imageId": "s01.food.roastedWolfMeat",
+      "category": "item",
+      "usage": [
+        "S01",
+        "food",
+        "healing"
+      ],
+      "sourceFile": "assets/images/s01/roasted-wolf-meat.png",
+      "runtime2D": {
+        "path": "assets/images/s01/roasted-wolf-meat.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "s01.food.roastedWolfMeat"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      },
+      "bounds": {
+        "width": 44,
+        "height": 36
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
     },
     {
-      "assetId": "s01.environment.smallShelter", "imageId": "s01.environment.smallShelter", "category": "environment-building", "usage": ["S01", "shelter", "construction"],
-      "sourceFile": "assets/images/s01/small-shelter.png", "runtime2D": { "path": "assets/images/s01/small-shelter.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s01.environment.smallShelter" },
-      "pivot": { "x": 0.5, "y": 1 }, "bounds": { "width": 154, "height": 112 }, "animations": [], "targetPhase": "P1", "status": "ai-generated", "revision": 1
+      "assetId": "s01.environment.smallShelter",
+      "imageId": "s01.environment.smallShelter",
+      "category": "environment-building",
+      "usage": [
+        "S01",
+        "shelter",
+        "construction"
+      ],
+      "sourceFile": "assets/images/s01/small-shelter.png",
+      "runtime2D": {
+        "path": "assets/images/s01/small-shelter.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "s01.environment.smallShelter"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      },
+      "bounds": {
+        "width": 154,
+        "height": 112
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
     },
     {
-      "assetId": "s01.story.firestarter", "imageId": "s01.story.firestarter", "category": "story-item", "usage": ["S01", "firestarter", "second-day"],
-      "sourceFile": "assets/images/s01/firestarter.png", "runtime2D": { "path": "assets/images/s01/firestarter.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s01.story.firestarter" },
-      "pivot": { "x": 0.5, "y": 1 }, "bounds": { "width": 40, "height": 42 }, "animations": [], "targetPhase": "P1", "status": "ai-generated", "revision": 1
+      "assetId": "s01.story.firestarter",
+      "imageId": "s01.story.firestarter",
+      "category": "story-item",
+      "usage": [
+        "S01",
+        "firestarter",
+        "second-day"
+      ],
+      "sourceFile": "assets/images/s01/firestarter.png",
+      "runtime2D": {
+        "path": "assets/images/s01/firestarter.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "s01.story.firestarter"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      },
+      "bounds": {
+        "width": 40,
+        "height": 42
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
     },
     {
-      "assetId": "s01.environment.cliffVine", "imageId": "s01.environment.cliffVine", "category": "environment-module", "usage": ["S01", "climb", "exit"],
-      "sourceFile": "assets/images/s01/cliff-vine.png", "runtime2D": { "path": "assets/images/s01/cliff-vine.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s01.environment.cliffVine" },
-      "pivot": { "x": 0.5, "y": 1 }, "bounds": { "width": 92, "height": 170 }, "animations": [], "targetPhase": "P1", "status": "ai-generated", "revision": 1
+      "assetId": "s01.environment.cliffVine",
+      "imageId": "s01.environment.cliffVine",
+      "category": "environment-module",
+      "usage": [
+        "S01",
+        "climb",
+        "exit"
+      ],
+      "sourceFile": "assets/images/s01/cliff-vine.png",
+      "runtime2D": {
+        "path": "assets/images/s01/cliff-vine.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "s01.environment.cliffVine"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      },
+      "bounds": {
+        "width": 92,
+        "height": 170
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
     },
     {
-      "assetId": "inventory.resource.wood", "imageId": "inventory.resource.wood", "category": "inventory-icon", "usage": ["inventory", "resource", "wood"],
-      "sourceFile": "assets/images/items/resource-wood.png", "runtime2D": { "path": "assets/images/items/resource-wood.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "inventory.resource.wood" },
-      "pivot": { "x": 0.5, "y": 0.5 }, "bounds": { "width": 64, "height": 64 }, "animations": [], "targetPhase": "P1", "status": "ai-generated", "revision": 1
+      "assetId": "inventory.resource.wood",
+      "imageId": "inventory.resource.wood",
+      "category": "inventory-icon",
+      "usage": [
+        "inventory",
+        "resource",
+        "wood"
+      ],
+      "sourceFile": "assets/images/items/resource-wood.png",
+      "runtime2D": {
+        "path": "assets/images/items/resource-wood.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "inventory.resource.wood"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
     },
     {
-      "assetId": "inventory.resource.herb", "imageId": "inventory.resource.herb", "category": "inventory-icon", "usage": ["inventory", "resource", "herb"],
-      "sourceFile": "assets/images/items/resource-herb.png", "runtime2D": { "path": "assets/images/items/resource-herb.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "inventory.resource.herb" },
-      "pivot": { "x": 0.5, "y": 0.5 }, "bounds": { "width": 64, "height": 64 }, "animations": [], "targetPhase": "P1", "status": "ai-generated", "revision": 1
+      "assetId": "inventory.resource.herb",
+      "imageId": "inventory.resource.herb",
+      "category": "inventory-icon",
+      "usage": [
+        "inventory",
+        "resource",
+        "herb"
+      ],
+      "sourceFile": "assets/images/items/resource-herb.png",
+      "runtime2D": {
+        "path": "assets/images/items/resource-herb.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "inventory.resource.herb"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 2
     },
     {
-      "assetId": "inventory.resource.food", "imageId": "inventory.resource.food", "category": "inventory-icon", "usage": ["inventory", "resource", "food"],
-      "sourceFile": "assets/images/items/resource-food.png", "runtime2D": { "path": "assets/images/items/resource-food.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "inventory.resource.food" },
-      "pivot": { "x": 0.5, "y": 0.5 }, "bounds": { "width": 64, "height": 64 }, "animations": [], "targetPhase": "P1", "status": "ai-generated", "revision": 1
+      "assetId": "inventory.resource.food",
+      "imageId": "inventory.resource.food",
+      "category": "inventory-icon",
+      "usage": [
+        "inventory",
+        "resource",
+        "food"
+      ],
+      "sourceFile": "assets/images/items/resource-food.png",
+      "runtime2D": {
+        "path": "assets/images/items/resource-food.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "inventory.resource.food"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
     },
     {
-      "assetId": "inventory.resource.iron", "imageId": "inventory.resource.iron", "category": "inventory-icon", "usage": ["inventory", "resource", "iron"],
-      "sourceFile": "assets/images/items/resource-iron.png", "runtime2D": { "path": "assets/images/items/resource-iron.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "inventory.resource.iron" },
-      "pivot": { "x": 0.5, "y": 0.5 }, "bounds": { "width": 64, "height": 64 }, "animations": [], "targetPhase": "P1", "status": "ai-generated", "revision": 1
+      "assetId": "inventory.resource.iron",
+      "imageId": "inventory.resource.iron",
+      "category": "inventory-icon",
+      "usage": [
+        "inventory",
+        "resource",
+        "iron"
+      ],
+      "sourceFile": "assets/images/items/resource-iron.png",
+      "runtime2D": {
+        "path": "assets/images/items/resource-iron.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "inventory.resource.iron"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
     },
     {
-      "assetId": "inventory.salvage.tornCloth", "imageId": "inventory.salvage.tornCloth", "category": "inventory-icon", "usage": ["inventory", "salvage", "cloth"],
-      "sourceFile": "assets/images/items/salvage-torn-cloth.png", "runtime2D": { "path": "assets/images/items/salvage-torn-cloth.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "inventory.salvage.tornCloth" },
-      "pivot": { "x": 0.5, "y": 0.5 }, "bounds": { "width": 64, "height": 64 }, "animations": [], "targetPhase": "P1", "status": "ai-generated", "revision": 1
+      "assetId": "inventory.salvage.tornCloth",
+      "imageId": "inventory.salvage.tornCloth",
+      "category": "inventory-icon",
+      "usage": [
+        "inventory",
+        "salvage",
+        "cloth"
+      ],
+      "sourceFile": "assets/images/items/salvage-torn-cloth.png",
+      "runtime2D": {
+        "path": "assets/images/items/salvage-torn-cloth.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "inventory.salvage.tornCloth"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
     },
     {
-      "assetId": "inventory.salvage.brokenUtensil", "imageId": "inventory.salvage.brokenUtensil", "category": "inventory-icon", "usage": ["inventory", "salvage", "utensil"],
-      "sourceFile": "assets/images/items/salvage-broken-utensil.png", "runtime2D": { "path": "assets/images/items/salvage-broken-utensil.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "inventory.salvage.brokenUtensil" },
-      "pivot": { "x": 0.5, "y": 0.5 }, "bounds": { "width": 64, "height": 64 }, "animations": [], "targetPhase": "P1", "status": "ai-generated", "revision": 1
+      "assetId": "inventory.salvage.brokenUtensil",
+      "imageId": "inventory.salvage.brokenUtensil",
+      "category": "inventory-icon",
+      "usage": [
+        "inventory",
+        "salvage",
+        "utensil"
+      ],
+      "sourceFile": "assets/images/items/salvage-broken-utensil.png",
+      "runtime2D": {
+        "path": "assets/images/items/salvage-broken-utensil.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "inventory.salvage.brokenUtensil"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
     },
     {
-      "assetId": "inventory.equipment.ironSword", "imageId": "inventory.equipment.ironSword", "category": "inventory-icon", "usage": ["inventory", "equipment", "weapon"],
-      "sourceFile": "assets/images/items/equipment-iron-sword.png", "runtime2D": { "path": "assets/images/items/equipment-iron-sword.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "inventory.equipment.ironSword" },
-      "pivot": { "x": 0.5, "y": 0.5 }, "bounds": { "width": 64, "height": 64 }, "animations": [], "targetPhase": "P2", "status": "ai-generated", "revision": 1
+      "assetId": "inventory.equipment.ironSword",
+      "imageId": "inventory.equipment.ironSword",
+      "category": "inventory-icon",
+      "usage": [
+        "inventory",
+        "equipment",
+        "weapon"
+      ],
+      "sourceFile": "assets/images/items/equipment-iron-sword.png",
+      "runtime2D": {
+        "path": "assets/images/items/equipment-iron-sword.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "inventory.equipment.ironSword"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "animations": [],
+      "targetPhase": "P2",
+      "status": "ai-generated",
+      "revision": 1
     },
     {
-      "assetId": "inventory.equipment.leatherArmor", "imageId": "inventory.equipment.leatherArmor", "category": "inventory-icon", "usage": ["inventory", "equipment", "armor"],
-      "sourceFile": "assets/images/items/equipment-leather-armor.png", "runtime2D": { "path": "assets/images/items/equipment-leather-armor.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "inventory.equipment.leatherArmor" },
-      "pivot": { "x": 0.5, "y": 0.5 }, "bounds": { "width": 64, "height": 64 }, "animations": [], "targetPhase": "P2", "status": "ai-generated", "revision": 1
+      "assetId": "inventory.equipment.leatherArmor",
+      "imageId": "inventory.equipment.leatherArmor",
+      "category": "inventory-icon",
+      "usage": [
+        "inventory",
+        "equipment",
+        "armor"
+      ],
+      "sourceFile": "assets/images/items/equipment-leather-armor.png",
+      "runtime2D": {
+        "path": "assets/images/items/equipment-leather-armor.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "inventory.equipment.leatherArmor"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "animations": [],
+      "targetPhase": "P2",
+      "status": "ai-generated",
+      "revision": 1
     },
     {
-      "assetId": "inventory.equipment.woodenShield", "imageId": "inventory.equipment.woodenShield", "category": "inventory-icon", "usage": ["inventory", "equipment", "shield"],
-      "sourceFile": "assets/images/items/equipment-wooden-shield.png", "runtime2D": { "path": "assets/images/items/equipment-wooden-shield.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "inventory.equipment.woodenShield" },
-      "pivot": { "x": 0.5, "y": 0.5 }, "bounds": { "width": 64, "height": 64 }, "animations": [], "targetPhase": "P2", "status": "ai-generated", "revision": 1
+      "assetId": "inventory.equipment.woodenShield",
+      "imageId": "inventory.equipment.woodenShield",
+      "category": "inventory-icon",
+      "usage": [
+        "inventory",
+        "equipment",
+        "shield"
+      ],
+      "sourceFile": "assets/images/items/equipment-wooden-shield.png",
+      "runtime2D": {
+        "path": "assets/images/items/equipment-wooden-shield.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "inventory.equipment.woodenShield"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "animations": [],
+      "targetPhase": "P2",
+      "status": "ai-generated",
+      "revision": 1
     },
     {
-      "assetId": "inventory.equipment.shortBow", "imageId": "inventory.equipment.shortBow", "category": "inventory-icon", "usage": ["inventory", "equipment", "weapon", "archer"],
-      "sourceFile": "assets/images/items/equipment-short-bow.png", "runtime2D": { "path": "assets/images/items/equipment-short-bow.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "inventory.equipment.shortBow" },
-      "pivot": { "x": 0.5, "y": 0.5 }, "bounds": { "width": 64, "height": 64 }, "animations": [], "targetPhase": "P2", "status": "ai-generated", "revision": 1
+      "assetId": "inventory.equipment.shortBow",
+      "imageId": "inventory.equipment.shortBow",
+      "category": "inventory-icon",
+      "usage": [
+        "inventory",
+        "equipment",
+        "weapon",
+        "archer"
+      ],
+      "sourceFile": "assets/images/items/equipment-short-bow.png",
+      "runtime2D": {
+        "path": "assets/images/items/equipment-short-bow.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "inventory.equipment.shortBow"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "animations": [],
+      "targetPhase": "P2",
+      "status": "ai-generated",
+      "revision": 1
     },
     {
-      "assetId": "inventory.equipment.leatherVest", "imageId": "inventory.equipment.leatherVest", "category": "inventory-icon", "usage": ["inventory", "equipment", "armor", "archer"],
-      "sourceFile": "assets/images/items/equipment-leather-vest.png", "runtime2D": { "path": "assets/images/items/equipment-leather-vest.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "inventory.equipment.leatherVest" },
-      "pivot": { "x": 0.5, "y": 0.5 }, "bounds": { "width": 64, "height": 64 }, "animations": [], "targetPhase": "P2", "status": "ai-generated", "revision": 1
+      "assetId": "inventory.equipment.leatherVest",
+      "imageId": "inventory.equipment.leatherVest",
+      "category": "inventory-icon",
+      "usage": [
+        "inventory",
+        "equipment",
+        "armor",
+        "archer"
+      ],
+      "sourceFile": "assets/images/items/equipment-leather-vest.png",
+      "runtime2D": {
+        "path": "assets/images/items/equipment-leather-vest.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "inventory.equipment.leatherVest"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "animations": [],
+      "targetPhase": "P2",
+      "status": "ai-generated",
+      "revision": 1
     },
     {
-      "assetId": "inventory.equipment.woodenArrow", "imageId": "inventory.equipment.woodenArrow", "category": "inventory-icon", "usage": ["inventory", "equipment", "ammo", "archer"],
-      "sourceFile": "assets/images/items/equipment-wooden-arrow.png", "runtime2D": { "path": "assets/images/items/equipment-wooden-arrow.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "inventory.equipment.woodenArrow" },
-      "pivot": { "x": 0.5, "y": 0.5 }, "bounds": { "width": 64, "height": 64 }, "animations": [], "targetPhase": "P2", "status": "ai-generated", "revision": 1
+      "assetId": "inventory.equipment.woodenArrow",
+      "imageId": "inventory.equipment.woodenArrow",
+      "category": "inventory-icon",
+      "usage": [
+        "inventory",
+        "equipment",
+        "ammo",
+        "archer"
+      ],
+      "sourceFile": "assets/images/items/equipment-wooden-arrow.png",
+      "runtime2D": {
+        "path": "assets/images/items/equipment-wooden-arrow.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "inventory.equipment.woodenArrow"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "animations": [],
+      "targetPhase": "P2",
+      "status": "ai-generated",
+      "revision": 1
     },
     {
-      "assetId": "inventory.equipment.talismanStaff", "imageId": "inventory.equipment.talismanStaff", "category": "inventory-icon", "usage": ["inventory", "equipment", "weapon", "strategist"],
-      "sourceFile": "assets/images/items/equipment-talisman-staff.png", "runtime2D": { "path": "assets/images/items/equipment-talisman-staff.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "inventory.equipment.talismanStaff" },
-      "pivot": { "x": 0.5, "y": 0.5 }, "bounds": { "width": 64, "height": 64 }, "animations": [], "targetPhase": "P2", "status": "ai-generated", "revision": 1
+      "assetId": "inventory.equipment.talismanStaff",
+      "imageId": "inventory.equipment.talismanStaff",
+      "category": "inventory-icon",
+      "usage": [
+        "inventory",
+        "equipment",
+        "weapon",
+        "strategist"
+      ],
+      "sourceFile": "assets/images/items/equipment-talisman-staff.png",
+      "runtime2D": {
+        "path": "assets/images/items/equipment-talisman-staff.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "inventory.equipment.talismanStaff"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "animations": [],
+      "targetPhase": "P2",
+      "status": "ai-generated",
+      "revision": 1
     },
     {
-      "assetId": "inventory.equipment.strategistRobe", "imageId": "inventory.equipment.strategistRobe", "category": "inventory-icon", "usage": ["inventory", "equipment", "armor", "strategist"],
-      "sourceFile": "assets/images/items/equipment-strategist-robe.png", "runtime2D": { "path": "assets/images/items/equipment-strategist-robe.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "inventory.equipment.strategistRobe" },
-      "pivot": { "x": 0.5, "y": 0.5 }, "bounds": { "width": 64, "height": 64 }, "animations": [], "targetPhase": "P2", "status": "ai-generated", "revision": 1
+      "assetId": "inventory.equipment.strategistRobe",
+      "imageId": "inventory.equipment.strategistRobe",
+      "category": "inventory-icon",
+      "usage": [
+        "inventory",
+        "equipment",
+        "armor",
+        "strategist"
+      ],
+      "sourceFile": "assets/images/items/equipment-strategist-robe.png",
+      "runtime2D": {
+        "path": "assets/images/items/equipment-strategist-robe.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "inventory.equipment.strategistRobe"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "animations": [],
+      "targetPhase": "P2",
+      "status": "ai-generated",
+      "revision": 1
     },
     {
-      "assetId": "inventory.equipment.talisman", "imageId": "inventory.equipment.talisman", "category": "inventory-icon", "usage": ["inventory", "equipment", "accessory", "strategist"],
-      "sourceFile": "assets/images/items/equipment-talisman.png", "runtime2D": { "path": "assets/images/items/equipment-talisman.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "inventory.equipment.talisman" },
-      "pivot": { "x": 0.5, "y": 0.5 }, "bounds": { "width": 64, "height": 64 }, "animations": [], "targetPhase": "P2", "status": "ai-generated", "revision": 1
+      "assetId": "inventory.equipment.talisman",
+      "imageId": "inventory.equipment.talisman",
+      "category": "inventory-icon",
+      "usage": [
+        "inventory",
+        "equipment",
+        "accessory",
+        "strategist"
+      ],
+      "sourceFile": "assets/images/items/equipment-talisman.png",
+      "runtime2D": {
+        "path": "assets/images/items/equipment-talisman.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "inventory.equipment.talisman"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "animations": [],
+      "targetPhase": "P2",
+      "status": "ai-generated",
+      "revision": 1
     },
     {
-      "assetId": "s01.prop.cookingRack", "imageId": "s01.prop.cookingRack", "category": "world-prop", "usage": ["S01", "survival", "cooking-rack"],
-      "sourceFile": "assets/images/s01/cooking-rack.png", "runtime2D": { "path": "assets/images/s01/cooking-rack.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s01.prop.cookingRack" },
-      "pivot": { "x": 0.5, "y": 1 }, "bounds": { "width": 88, "height": 78 }, "animations": [], "targetPhase": "P1", "status": "ai-generated", "revision": 1
+      "assetId": "s01.prop.cookingRack",
+      "imageId": "s01.prop.cookingRack",
+      "category": "world-prop",
+      "usage": [
+        "S01",
+        "survival",
+        "cooking-rack"
+      ],
+      "sourceFile": "assets/images/s01/cooking-rack.png",
+      "runtime2D": {
+        "path": "assets/images/s01/cooking-rack.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "s01.prop.cookingRack"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      },
+      "bounds": {
+        "width": 88,
+        "height": 78
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
     },
     {
-      "assetId": "s01.prop.tanningRack", "imageId": "s01.prop.tanningRack", "category": "world-prop", "usage": ["S01", "survival", "tanning-rack"],
-      "sourceFile": "assets/images/s01/tanning-rack.png", "runtime2D": { "path": "assets/images/s01/tanning-rack.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s01.prop.tanningRack" },
-      "pivot": { "x": 0.5, "y": 1 }, "bounds": { "width": 92, "height": 92 }, "animations": [], "targetPhase": "P1", "status": "ai-generated", "revision": 1
+      "assetId": "s01.prop.tanningRack",
+      "imageId": "s01.prop.tanningRack",
+      "category": "world-prop",
+      "usage": [
+        "S01",
+        "survival",
+        "tanning-rack"
+      ],
+      "sourceFile": "assets/images/s01/tanning-rack.png",
+      "runtime2D": {
+        "path": "assets/images/s01/tanning-rack.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "s01.prop.tanningRack"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      },
+      "bounds": {
+        "width": 92,
+        "height": 92
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
     },
     {
       "assetId": "weather.fog.cloudA",
       "imageId": "weather.fog.cloudA",
       "category": "weather-vfx",
-      "usage": ["weather", "fog", "atmosphere"],
+      "usage": [
+        "weather",
+        "fog",
+        "atmosphere"
+      ],
       "sourceFile": "assets/images/weather/fog-cloud-a.png",
-      "runtime2D": { "path": "assets/images/weather/fog-cloud-a.png", "mode": "image" },
-      "runtime3D": { "mode": "billboard", "sourceAssetId": "weather.fog.cloudA" },
-      "pivot": { "x": 0.5, "y": 0.5 },
-      "bounds": { "width": 512, "height": 192 },
+      "runtime2D": {
+        "path": "assets/images/weather/fog-cloud-a.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "weather.fog.cloudA"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 512,
+        "height": 192
+      },
       "animations": [],
       "targetPhase": "P1",
       "status": "ai-generated",
