@@ -1284,19 +1284,19 @@
           ],
           [
             {
-              "terrain": "forest"
+              "terrain": "plain"
             },
             {
-              "terrain": "forest"
+              "terrain": "plain"
             },
             {
-              "terrain": "forest"
+              "terrain": "plain"
             },
             {
-              "terrain": "forest"
+              "terrain": "plain"
             },
             {
-              "terrain": "forest"
+              "terrain": "plain"
             },
             {
               "terrain": "forest"
@@ -1971,6 +1971,20 @@
             {
               "terrain": "mountain"
             }
+          ]
+        ]
+      },
+      {
+        "id": "test_001",
+        "name": "庇护所内",
+        "mapType": "sceneGrid",
+        "rows": 1,
+        "cols": 1,
+        "chunkWidth": 1280,
+        "chunkHeight": 720,
+        "grid": [
+          [
+            null
           ]
         ]
       }

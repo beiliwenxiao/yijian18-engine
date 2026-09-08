@@ -345,6 +345,7 @@ localStorage                 →  仅作提交后的编辑器缓存，不参与�
 - 场景编辑器实际宿主必须在每次 canonical 场景加载后，用同一 `ProjectWorldIndex` candidate 同时提交只读 `worldMapLocation` 与完整 `neighborScenes`；`scene-workflow.html` 和 `EditorInteractionScene` 都不得只接按钮而漏掉准备流程。按钮只控制显隐，右侧 Region/0-based `(row,col)` 只作瞬态诊断投影，不得写入 `sceneData`、history 或保存。开启相邻参考时，视口必须适配中心场景与已加载邻居矩形的联合范围；邻居 `imageAssets` 和项目 Manifest ref 图片只预载到编辑器图片缓存，不得合并写回当前 canonical `sceneData`。相同稳定 imageId 在九宫格内映射到不同文件必须明确报错，异步图片回调必须由场景 generation 拒绝迟到结果。
 - 大地图网格和场景缩略图都必须磁盘优先：网格读取当前游戏 `game.project.json`，缩略图读取同项目 `assets/scenes/<sceneId>.json`。localStorage 只允许作为编辑器缩略图/编辑会话缓存，缓存缺少完整 `layers/imageAssets` 时不得覆盖磁盘数据；《三国张角传》正式运行时不读取该缓存，磁盘读取或解析失败直接拒绝。切换游戏时必须同时更新 `gameId/projectPath`，不能复用旧实例路径。20×20 稀疏网格渲染后应自动定位当前 Region 的有效单元包围盒。
 - `WorldMapEditor` 的完整网格构建只用于首次加载或项目整体切换；单格 terrain/anchor 修改必须先用候选 Region 构建并校验 `ProjectWorldIndex`，再只替换编辑格与旧/新 footprint 并集中的 DOM/canvas，禁止重新写整个网格 `innerHTML`、重绑全部单元或自动重定位滚动位置。右侧小地图底图与视口选框分层：单格修改只重画对应小地图单元；主滚动容器的 scroll/resize 只更新选框。选框坐标和点击/拖拽反向定位统一按主网格、滚动容器与小地图 canvas 的实时矩形换算并钳制，不能按固定像素猜测；重载时必须释放旧 scroll、resize、pointer 与 ResizeObserver 监听。
+- `WorldMapEditor` 的场景下拉必须保持 `sceneId` 为 option value，显示名优先读取同一 canonical aggregate 的 `_scene_order.json -> scenes[sceneId].name`，再回退场景正文、project entry 和稳定 ID；禁止用名称替代身份。地形下拉同样保持 `WORLD_MAP_TERRAINS` token 为 value，只在编辑器表现层映射“山地／黄河／森林／平原”等中文标签，禁止把中文写回 `worldMap`。
 - 场景实现完成后，先确保磁盘场景文件与 `game.project.json.scenes[]` 元数据可加载，再把 reserved 对象替换为同 ID 字符串；不得用空场景文件冒充内容完成。
 
 ## 游戏级表现规格

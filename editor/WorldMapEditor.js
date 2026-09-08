@@ -27,6 +27,13 @@ import {
   WORLD_MAP_TERRAINS
 } from '../src/core/WorldMapCell.js';
 
+const WORLD_MAP_TERRAIN_LABELS = Object.freeze({
+  mountain: '山地',
+  yellowRiver: '黄河',
+  forest: '森林',
+  plain: '平原'
+});
+
 export function validateWorldMapRepositoryClosure(project, repositorySceneIds) {
   const closure = repositorySceneIds instanceof Set
     ? repositorySceneIds
@@ -103,8 +110,9 @@ export class WorldMapEditor {
       grid: []
     };
 
-    // 可选场景列表（从 GameProject.scenes 读取）
+    // 可选场景列表（从 GameProject.scenes 读取）；名称只作下拉显示，不参与稳定身份。
     this.availableScenes = [];
+    this._sceneNameById = new Map();
 
     this._el = null;
   }
@@ -143,6 +151,7 @@ export class WorldMapEditor {
         chunkWidth: '', chunkHeight: '', cols: 0, rows: 0, grid: []
       };
       this._sceneDataById.clear();
+      this._sceneNameById.clear();
       this._repositorySceneIds = null;
       this._loadedImages.clear();
       this._sharedAtlases = [];
@@ -185,6 +194,7 @@ export class WorldMapEditor {
       this._loadSceneDataFromDisk(),
       this._loadSharedAtlasCatalog()
     ]);
+    this._rebuildSceneNameIndex();
 
     let draftIndex;
     let draftWorldMap;
@@ -905,6 +915,44 @@ export class WorldMapEditor {
     return result;
   }
 
+  /** 从同一 canonical aggregate 与已加载磁盘正文建立场景显示名称投影。 */
+  _rebuildSceneNameIndex() {
+    let candidate = null;
+    try {
+      candidate = this.canonicalSession.model.getCandidate();
+    } catch (error) {
+      console.warn('[WorldMapEditor] 无法读取 canonical 场景名称 candidate', error);
+    }
+
+    const orderEntries = candidate?.sceneOrder?.scenes || {};
+    const candidateScenes = candidate?.scenes || {};
+    const projectEntries = new Map((this.project?.scenes || [])
+      .filter(entry => entry?.id)
+      .map(entry => [entry.id, entry]));
+    this._sceneNameById = new Map(this.availableScenes.map(sceneId => {
+      const names = [
+        orderEntries[sceneId]?.name,
+        candidateScenes[sceneId]?.name,
+        this._sceneDataById.get(sceneId)?.name,
+        projectEntries.get(sceneId)?.name
+      ];
+      const name = names.find(value => typeof value === 'string' && value.trim())?.trim() || sceneId;
+      return [sceneId, name];
+    }));
+    return this._sceneNameById;
+  }
+
+  _sceneOptionLabel(sceneId) {
+    const id = String(sceneId || '').trim();
+    const name = this._sceneNameById.get(id) || id;
+    if (!name || name === id || name.startsWith(id)) return name || id;
+    return `${id} · ${name}`;
+  }
+
+  _terrainOptionLabel(terrain) {
+    return WORLD_MAP_TERRAIN_LABELS[terrain] || terrain;
+  }
+
   _regionOptionLabel(region) {
     return `${region.name || region.id} (${region.id})`;
   }
@@ -952,11 +1000,11 @@ export class WorldMapEditor {
     const thumbH = Math.max(1, Math.round(thumbW * (region.chunkHeight / region.chunkWidth)));
     const metrics = { thumbW, thumbH, labelH: 20, cellH: thumbH + 20 };
     const terrainOptions = WORLD_MAP_TERRAINS.map(terrain => (
-      `<option value="${this._escapeHtml(terrain)}">${this._escapeHtml(terrain)}</option>`
+      `<option value="${this._escapeHtml(terrain)}">${this._escapeHtml(this._terrainOptionLabel(terrain))}</option>`
     )).join('');
     const sceneOptions = ['<option value="">（无场景 anchor）</option>']
       .concat(this.availableScenes.map(sceneId => (
-        `<option value="${this._escapeHtml(sceneId)}">${this._escapeHtml(sceneId)}</option>`
+        `<option value="${this._escapeHtml(sceneId)}">${this._escapeHtml(this._sceneOptionLabel(sceneId))}</option>`
       )))
       .join('');
     const minimapSize = this._calculateMinimapSize(region);
@@ -1048,7 +1096,8 @@ export class WorldMapEditor {
     let cellSceneOptions = sceneOptions;
     if (sceneId && !this.availableScenes.includes(sceneId)) {
       const escapedId = this._escapeHtml(sceneId);
-      cellSceneOptions += `<option value="${escapedId}">${escapedId}（预留/未登记）</option>`;
+      const escapedLabel = this._escapeHtml(this._sceneOptionLabel(sceneId));
+      cellSceneOptions += `<option value="${escapedId}">${escapedLabel}（预留/未登记）</option>`;
     }
     const selectedSceneOptions = cellSceneOptions.replace(
       `value="${this._escapeHtml(sceneId || '')}"`,
