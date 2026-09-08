@@ -1262,6 +1262,26 @@ export class WorldMapEditor {
     return this.container.closest('#world-map-editor-page, .editor-main');
   }
 
+  /**
+   * 小地图横向仍表示地图网格，纵向则覆盖工具栏顶部到网格底部，
+   * 使选框拖到最上方时能够回到“世界地图 / 保存地图”工具栏。
+   */
+  _mainlandNavigationRect(grid) {
+    const gridRect = grid.getBoundingClientRect();
+    const toolbarRect = this._el?.querySelector('.wme-toolbar')?.getBoundingClientRect();
+    const top = toolbarRect && toolbarRect.height > 0
+      ? Math.min(toolbarRect.top, gridRect.top)
+      : gridRect.top;
+    return {
+      left: gridRect.left,
+      right: gridRect.right,
+      top,
+      bottom: gridRect.bottom,
+      width: gridRect.width,
+      height: Math.max(0, gridRect.bottom - top)
+    };
+  }
+
   _teardownMainlandNavigation() {
     if (typeof this._mainlandNavigationCleanup === 'function') {
       this._mainlandNavigationCleanup();
@@ -1332,6 +1352,8 @@ export class WorldMapEditor {
       : null;
     resizeObserver?.observe(scrollContainer);
     resizeObserver?.observe(grid);
+    const toolbar = this._el?.querySelector('.wme-toolbar');
+    if (toolbar) resizeObserver?.observe(toolbar);
     resizeObserver?.observe(minimap);
 
     this._mainlandNavigationCleanup = () => {
@@ -1372,9 +1394,10 @@ export class WorldMapEditor {
     if (!canvas || !viewport || !grid || !scrollContainer) return false;
 
     const gridRect = grid.getBoundingClientRect();
+    const navigationRect = this._mainlandNavigationRect(grid);
     const canvasRect = canvas.getBoundingClientRect();
     const scrollRect = scrollContainer.getBoundingClientRect();
-    if (gridRect.width <= 0 || gridRect.height <= 0 || canvasRect.width <= 0 || canvasRect.height <= 0) {
+    if (gridRect.width <= 0 || navigationRect.height <= 0 || canvasRect.width <= 0 || canvasRect.height <= 0) {
       viewport.style.display = 'none';
       return false;
     }
@@ -1383,9 +1406,9 @@ export class WorldMapEditor {
     const viewRight = viewLeft + scrollContainer.clientWidth;
     const viewBottom = viewTop + scrollContainer.clientHeight;
     const visibleLeft = Math.max(gridRect.left, viewLeft);
-    const visibleTop = Math.max(gridRect.top, viewTop);
+    const visibleTop = Math.max(navigationRect.top, viewTop);
     const visibleRight = Math.min(gridRect.right, viewRight);
-    const visibleBottom = Math.min(gridRect.bottom, viewBottom);
+    const visibleBottom = Math.min(navigationRect.bottom, viewBottom);
     if (visibleRight <= visibleLeft || visibleBottom <= visibleTop) {
       viewport.style.display = 'none';
       return false;
@@ -1393,9 +1416,9 @@ export class WorldMapEditor {
 
     viewport.style.display = 'block';
     viewport.style.left = `${((visibleLeft - gridRect.left) / gridRect.width) * canvasRect.width}px`;
-    viewport.style.top = `${((visibleTop - gridRect.top) / gridRect.height) * canvasRect.height}px`;
+    viewport.style.top = `${((visibleTop - navigationRect.top) / navigationRect.height) * canvasRect.height}px`;
     viewport.style.width = `${((visibleRight - visibleLeft) / gridRect.width) * canvasRect.width}px`;
-    viewport.style.height = `${((visibleBottom - visibleTop) / gridRect.height) * canvasRect.height}px`;
+    viewport.style.height = `${((visibleBottom - visibleTop) / navigationRect.height) * canvasRect.height}px`;
     return true;
   }
 
@@ -1410,8 +1433,9 @@ export class WorldMapEditor {
     const canvasRect = canvas.getBoundingClientRect();
     const frameRect = viewport.getBoundingClientRect();
     const gridRect = grid.getBoundingClientRect();
+    const navigationRect = this._mainlandNavigationRect(grid);
     const scrollRect = scrollContainer.getBoundingClientRect();
-    if (canvasRect.width <= 0 || canvasRect.height <= 0 || gridRect.width <= 0 || gridRect.height <= 0) return false;
+    if (canvasRect.width <= 0 || canvasRect.height <= 0 || gridRect.width <= 0 || navigationRect.height <= 0) return false;
 
     const frameWidth = Math.min(canvasRect.width, Math.max(1, frameRect.width));
     const frameHeight = Math.min(canvasRect.height, Math.max(1, frameRect.height));
@@ -1422,9 +1446,9 @@ export class WorldMapEditor {
     const viewLeft = scrollRect.left + scrollContainer.clientLeft;
     const viewTop = scrollRect.top + scrollContainer.clientTop;
     const gridContentLeft = scrollContainer.scrollLeft + gridRect.left - viewLeft;
-    const gridContentTop = scrollContainer.scrollTop + gridRect.top - viewTop;
+    const navigationContentTop = scrollContainer.scrollTop + navigationRect.top - viewTop;
     const targetLeft = gridContentLeft + normalizedLeft * gridRect.width;
-    const targetTop = gridContentTop + normalizedTop * gridRect.height;
+    const targetTop = navigationContentTop + normalizedTop * navigationRect.height;
     const maxLeft = Math.max(0, scrollContainer.scrollWidth - scrollContainer.clientWidth);
     const maxTop = Math.max(0, scrollContainer.scrollHeight - scrollContainer.clientHeight);
     scrollContainer.scrollTo({
