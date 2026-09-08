@@ -155,6 +155,8 @@ export class SceneEditor {
     // 格式: [{ sceneData, offsetX, offsetY }]
     this.neighborScenes = [];
     this.showNeighbors = false;
+    // canonical 世界位置只作编辑器只读投影，不进入 sceneData/history/save。
+    this.worldMapLocation = null;
 
     // 视口控制
     this.viewport = {
@@ -315,6 +317,59 @@ export class SceneEditor {
   }
 
   /**
+   * 设置当前场景的 canonical 世界位置只读投影。
+   * 该状态只服务编辑器诊断，不进入 sceneData、历史或持久化。
+   */
+  setWorldMapLocation(location = null) {
+    if (location === null) {
+      this.worldMapLocation = null;
+      this.ui?.refreshWorldMapLocation?.();
+      return null;
+    }
+    if (!location || typeof location !== 'object') {
+      throw new TypeError('SceneEditor: worldMapLocation 必须是对象或 null');
+    }
+
+    const regionId = typeof location.regionId === 'string' ? location.regionId.trim() : '';
+    const regionName = typeof location.regionName === 'string' ? location.regionName.trim() : '';
+    const { row, col } = location;
+    if (!regionId) throw new TypeError('SceneEditor: worldMapLocation.regionId 必须是非空字符串');
+    if (!Number.isInteger(row) || row < 0 || !Number.isInteger(col) || col < 0) {
+      throw new TypeError('SceneEditor: worldMapLocation row/col 必须是非负整数');
+    }
+
+    this.worldMapLocation = Object.freeze({ regionId, regionName, row, col });
+    this.ui?.refreshWorldMapLocation?.();
+    return this.worldMapLocation;
+  }
+
+  /**
+   * 原子替换当前九宫格邻居投影，并准备其只读预览资源。
+   * 邻居资源只进入编辑器图片缓存，不合并回当前 canonical sceneData。
+   */
+  setNeighborScenes(neighbors = []) {
+    if (!Array.isArray(neighbors)) throw new TypeError('SceneEditor: neighborScenes 必须是数组');
+    this.neighborScenes = neighbors.slice();
+    const previewScenes = [this.sceneData, ...this.neighborScenes.map(neighbor => neighbor?.sceneData)]
+      .filter(Boolean);
+
+    try {
+      this.assets.loadImageAssets(previewScenes);
+    } catch (error) {
+      console.error('[SceneEditor] 九宫格图片资源准备失败:', error);
+      this.ui?.showToast?.(`九宫格图片资源准备失败: ${error.message}`, 'error');
+    }
+    void this.assets.loadPlacementVisualImages(previewScenes).catch(error => {
+      console.error('[SceneEditor] 九宫格放置物资源准备失败:', error);
+      this.ui?.showToast?.(`九宫格放置物资源准备失败: ${error.message}`, 'error');
+    });
+
+    if (this.showNeighbors) this.ui.fitToContainer();
+    this.render();
+    return this.neighborScenes;
+  }
+
+  /**
    * 绑定事件
    * @private
    */
@@ -447,6 +502,7 @@ export class SceneEditor {
       this.showNeighbors = !this.showNeighbors;
       const btn = document.getElementById('editor-toggle-neighbors');
       btn.style.background = this.showNeighbors ? '#4CAF50' : '';
+      this.ui.fitToContainer();
       this.render();
     });
 
@@ -508,6 +564,9 @@ export class SceneEditor {
     const incoming = sceneData ? structuredClone(sceneData) : null;
     // Canonical load/import is lossless: defaults and migrations are only for a brand-new blank draft.
     this.sceneData = incoming ?? base;
+    // 旧场景的邻居投影与世界位置不得参与新场景首次 fit；新九宫格由宿主 latest-wins 加载后一次提交。
+    this.neighborScenes = [];
+    this.setWorldMapLocation(null);
 
     if (!incoming) {
       this.sceneData.layers = this.layers.normalizeLayers(this.sceneData.layers);

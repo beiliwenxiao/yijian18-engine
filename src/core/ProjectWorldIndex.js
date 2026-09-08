@@ -381,6 +381,18 @@ export class ProjectWorldIndex {
       region.id,
       new Map(region.coverage.map(cell => [`${cell.row},${cell.col}`, cell]))
     ]));
+    const globalCoverageByCoordinate = new Map();
+    for (const region of regions) {
+      for (const cell of region.coverage) {
+        const key = `${cell.row},${cell.col}`;
+        const cells = globalCoverageByCoordinate.get(key) || [];
+        cells.push(cell);
+        globalCoverageByCoordinate.set(key, cells);
+      }
+    }
+    this._coverageByGlobalCoordinate = new Map(
+      [...globalCoverageByCoordinate].map(([key, cells]) => [key, freeze(cells.slice())])
+    );
     this._sceneLocations = new Map(sceneLocations);
     this._entry = entry;
     Object.freeze(this);
@@ -392,11 +404,52 @@ export class ProjectWorldIndex {
     return typeof regionRef === 'number' ? this._regions[regionRef] || null : this._regionById.get(regionRef) || null;
   }
 
-  /** 返回任意世界格的派生 coverage；大场景覆盖格会指向同一个 anchor。 */
+  /** 返回指定 Region 世界格的派生 coverage；大场景覆盖格会指向同一个 anchor。 */
   getCell(regionRef, row, col) {
     const region = this.getRegion(regionRef);
     if (!region || !Number.isInteger(row) || !Number.isInteger(col) || row < 0 || col < 0 || row >= region.rows || col >= region.cols) return null;
     return this._coverageByRegion.get(region.id)?.get(`${row},${col}`) || null;
+  }
+
+  /**
+   * 按共享的全局 (row,col) 查询全部 Region 的派生 coverage。
+   * 默认只返回可加载场景；规划预览可显式包含 reserved 或空单元。
+   */
+  getGlobalCells(row, col, { includeReserved = false, includeEmpty = false } = {}) {
+    if (!Number.isInteger(row) || !Number.isInteger(col) || row < 0 || col < 0) return freeze([]);
+    const cells = this._coverageByGlobalCoordinate.get(`${row},${col}`) || freeze([]);
+    if (includeEmpty) return cells;
+    return freeze(cells.filter(cell => includeReserved ? cell.sceneId !== null : cell.loadable));
+  }
+
+  /**
+   * 返回指定场景 anchor 周围八个全局坐标内的唯一 logical scene anchors。
+   * 跨 Region coverage 全部参与，默认排除 reserved 与当前场景自身。
+   */
+  getAdjacentSceneAnchors(sceneId, { includeReserved = false } = {}) {
+    const center = this.findScene(sceneId);
+    if (!center) return freeze([]);
+
+    const anchors = [];
+    const seenSceneIds = new Set([sceneId]);
+    for (let rowDelta = -1; rowDelta <= 1; rowDelta++) {
+      for (let colDelta = -1; colDelta <= 1; colDelta++) {
+        if (rowDelta === 0 && colDelta === 0) continue;
+        const cells = this.getGlobalCells(
+          center.row + rowDelta,
+          center.col + colDelta,
+          { includeReserved }
+        );
+        for (const cell of cells) {
+          if (!cell.sceneId || seenSceneIds.has(cell.sceneId)) continue;
+          const anchor = this.findScene(cell.sceneId);
+          if (!anchor || (!includeReserved && !anchor.loadable)) continue;
+          seenSceneIds.add(anchor.sceneId);
+          anchors.push(anchor);
+        }
+      }
+    }
+    return freeze(anchors);
   }
 
   findScene(sceneId) { return this._sceneLocations.get(sceneId) || null; }

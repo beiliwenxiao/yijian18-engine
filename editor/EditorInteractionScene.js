@@ -1,3 +1,25 @@
+/************************************************************
+
+ * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
+
+ * 
+
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+
+ * @author    刘枭 (beiliwenxiao)
+
+ * @email     beiliwenxiao@qq.com
+
+ * @date      2026-01-14
+
+ * @blog      https://blog.csdn.net/beiliwenxiao
+
+ * @repo      https://github.com/beiliwenxiao/yijian18-engine
+
+ *            https://gitee.com/coderaaa/yijian18-engine
+
+ ************************************************************/
+
 import { EditorDataManager, loadBuiltinGamesConfig, loadScenePresetsConfig, loadSceneTemplatesConfig } from './EditorDataManager.js';
         import { SceneEditor, loadEditorDefaults } from './SceneEditor.js';
         import { ImageSlicer } from './ImageSlicer.js';
@@ -13,7 +35,7 @@ import { EditorDataManager, loadBuiltinGamesConfig, loadScenePresetsConfig, load
         import { CanonicalEditorSession } from './CanonicalEditorSession.js';
         import { EditorSceneCommandService } from './EditorSceneCommandService.js';
         import { LocalStorageSceneCacheAdapter } from '../src/core/scene/CanonicalSceneAdapters.js';
-import { getWorldMapCellSceneId } from '../src/core/WorldMapCell.js';
+import { ProjectWorldIndex } from '../src/core/ProjectWorldIndex.js';
         
         
 import { EditorInteractionBase } from './EditorInteractionBase.js';
@@ -385,88 +407,85 @@ export class EditorInteractionScene extends EditorInteractionBase {            /
             async _setupNeighborScenes(currentSceneId, loadGeneration = this._sceneLoadGeneration) {
                 if (!this.sceneEditor) return;
                 if (loadGeneration !== this._sceneLoadGeneration || this.currentSceneId !== currentSceneId) return;
-                this.sceneEditor.neighborScenes = [];
+                this.sceneEditor.setNeighborScenes([]);
+                this.sceneEditor.setWorldMapLocation(null);
 
-                // 从 game.project.json 的 worldMap 读取 grid
-                const gameId = this.currentGameId || 'sanguo_zhangjiao';
-                let worldMap = null;
+                // 从当前页面共享的 canonical candidate 构建唯一世界索引，不再直接解释 Region raw grid。
+                let worldIndex = null;
                 try {
-                    const res = await fetch(`../example/${gameId}/game.project.json`);
-                    const proj = await res.json();
-                    worldMap = proj && proj.worldMap;
-                } catch (e) { return; }
-                if (loadGeneration !== this._sceneLoadGeneration || this.currentSceneId !== currentSceneId) return;
-                if (!Array.isArray(worldMap?.regions) || worldMap.regions.length === 0) return;
-
-                // 所有 Region 共用全局网格坐标；找到当前场景所属 Region 后再计算九宫格。
-                let region = null;
-                let myCol = -1;
-                let myRow = -1;
-                for (const candidate of worldMap.regions) {
-                    const { cols, rows, grid } = candidate;
-                    if (!Array.isArray(grid)) continue;
-                    for (let r = 0; r < rows; r++) {
-                        for (let c = 0; c < cols; c++) {
-                            if (getWorldMapCellSceneId(grid[r]?.[c]) === currentSceneId) {
-                                region = candidate;
-                                myCol = c;
-                                myRow = r;
-                                break;
-                            }
-                        }
-                        if (region) break;
-                    }
-                    if (region) break;
+                    const projectPath = this._canonicalProjectPath();
+                    const candidate = this.documentService.requireProject(projectPath).getCandidate();
+                    worldIndex = ProjectWorldIndex.build(candidate?.project, {
+                        requireSceneDimensions: true
+                    });
+                } catch (error) {
+                    if (loadGeneration !== this._sceneLoadGeneration || this.currentSceneId !== currentSceneId) return;
+                    const detail = error?.errors?.[0]?.message || error.message;
+                    const message = `无法读取场景 ${currentSceneId} 的 canonical 世界索引，不能计算相邻场景`;
+                    console.error(`[Editor] ${message}:`, error);
+                    this.sceneEditor.ui?.showToast?.(`${message}: ${detail}`, 'error');
+                    return;
                 }
-                if (!region) return;
+                if (loadGeneration !== this._sceneLoadGeneration || this.currentSceneId !== currentSceneId) return;
 
-                const { chunkWidth, chunkHeight, cols, rows, grid } = region;
+                const currentAnchor = worldIndex.findScene(currentSceneId);
+                if (!currentAnchor?.loadable) {
+                    const message = `场景 ${currentSceneId} 未定位到可加载的 canonical 世界格`;
+                    console.error(`[Editor] ${message}`);
+                    this.sceneEditor.ui?.showToast?.(message, 'error');
+                    return;
+                }
 
-                // 收集九宫格内的相邻场景
+                const currentRegion = worldIndex.getRegion(currentAnchor.regionId);
+                this.sceneEditor.setWorldMapLocation({
+                    regionId: currentAnchor.regionId,
+                    regionName: currentRegion?.name || '',
+                    row: currentAnchor.row,
+                    col: currentAnchor.col
+                });
+
+                // 共享索引统一收集全局八邻域；所有正文准备成功后才一次提交，禁止部分九宫格。
                 const neighbors = [];
-                for (let dr = -1; dr <= 1; dr++) {
-                    for (let dc = -1; dc <= 1; dc++) {
-                        if (dr === 0 && dc === 0) continue;
-                        const r = myRow + dr, c = myCol + dc;
-                        if (r < 0 || r >= rows || c < 0 || c >= cols) continue;
-                        const nId = getWorldMapCellSceneId(grid[r]?.[c]);
-                        if (!nId) continue;
+                for (const neighborAnchor of worldIndex.getAdjacentSceneAnchors(currentSceneId)) {
+                    const nId = neighborAnchor.sceneId;
 
-                        // 邻居预览同样磁盘优先；列表 localStorage 只含缓存元数据，不能冒充场景文档。
-                        let nScene = await this._loadSceneFromFile(nId, null);
-                        if (loadGeneration !== this._sceneLoadGeneration || this.currentSceneId !== currentSceneId) return;
-                        if (!nScene) {
-                            try {
-                                const committed = this.documentService
-                                    .requireProject(this._canonicalProjectPath())
-                                    .getCommittedSnapshot().scenes[nId];
-                                nScene = Array.isArray(committed?.layers) ? committed : null;
-                            } catch (error) {
-                                nScene = null;
-                            }
-                        }
-                        if (!nScene) {
-                            try {
-                                const preset = await this.sceneLoader.loadScene(nId);
-                                if (loadGeneration !== this._sceneLoadGeneration || this.currentSceneId !== currentSceneId) return;
-                                nScene = Array.isArray(preset?.layers) ? preset : null;
-                            } catch (error) {
-                                nScene = null;
-                            }
-                        }
-                        if (nScene) {
-                            neighbors.push({
-                                sceneData: nScene,
-                                offsetX: dc * chunkWidth,
-                                offsetY: dr * chunkHeight
-                            });
+                    // 邻居预览同样磁盘优先；列表 localStorage 只含缓存元数据，不能冒充场景文档。
+                    let nScene = await this._loadSceneFromFile(nId, null);
+                    if (loadGeneration !== this._sceneLoadGeneration || this.currentSceneId !== currentSceneId) return;
+                    if (!nScene) {
+                        try {
+                            const committed = this.documentService
+                                .requireProject(this._canonicalProjectPath())
+                                .getCommittedSnapshot().scenes[nId];
+                            nScene = Array.isArray(committed?.layers) ? committed : null;
+                        } catch (error) {
+                            nScene = null;
                         }
                     }
+                    if (!nScene) {
+                        try {
+                            const preset = await this.sceneLoader.loadScene(nId);
+                            if (loadGeneration !== this._sceneLoadGeneration || this.currentSceneId !== currentSceneId) return;
+                            nScene = Array.isArray(preset?.layers) ? preset : null;
+                        } catch (error) {
+                            nScene = null;
+                        }
+                    }
+                    if (!nScene) {
+                        const message = `九宫格邻居 ${nId} 缺少可渲染的 canonical 场景文档`;
+                        console.error(`[Editor] ${message}`);
+                        this.sceneEditor.ui?.showToast?.(message, 'error');
+                        return;
+                    }
+                    neighbors.push({
+                        sceneData: nScene,
+                        offsetX: neighborAnchor.offset.x - currentAnchor.offset.x,
+                        offsetY: neighborAnchor.offset.y - currentAnchor.offset.y
+                    });
                 }
 
                 if (loadGeneration !== this._sceneLoadGeneration || this.currentSceneId !== currentSceneId) return;
-                this.sceneEditor.neighborScenes = neighbors;
-                if (this.sceneEditor.showNeighbors) this.sceneEditor.render();
+                this.sceneEditor.setNeighborScenes(neighbors);
             }
 
             // 从当前游戏磁盘 canonical JSON 加载完整场景；localStorage 不参与文档回退。

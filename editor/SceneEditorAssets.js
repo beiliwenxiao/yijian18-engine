@@ -49,6 +49,7 @@ export class SceneEditorAssets {
     this.editor = editor;
     this._atlasSavePromises = new Map();
     this._atlasImageLoadGeneration = 0;
+    this._sceneImageLoadGeneration = 0;
     this._placementVisualGeneration = 0;
     this._placementProjectEpoch = 0;
     this._placementProjectPath = '';
@@ -274,9 +275,10 @@ export class SceneEditorAssets {
     return { status, definition: merged, imageId, manifestEntry, image, width, height, pivot: { x: pivotX, y: pivotY }, bounds, url };
   }
 
-  /** 异步加载当前场景全部 ref 放置物使用的 Manifest 图片。 */
-  async loadPlacementVisualImages() {
+  /** 异步加载显式场景集合中全部 ref 放置物使用的 Manifest 图片。 */
+  async loadPlacementVisualImages(sceneDatas = [this.editor.sceneData]) {
     const editor = this.editor;
+    const scenes = (Array.isArray(sceneDatas) ? sceneDatas : [sceneDatas]).filter(Boolean);
     const { projectPath, epoch } = this._activatePlacementProject();
     const generation = ++this._placementVisualGeneration;
 
@@ -292,7 +294,8 @@ export class SceneEditorAssets {
     if (!this._isPlacementProjectCurrent(projectPath, epoch) || generation !== this._placementVisualGeneration) return;
     this.updateContentList();
 
-    const placements = (editor.sceneData.layers || [])
+    const placements = scenes
+      .flatMap(scene => Array.isArray(scene?.layers) ? scene.layers : [])
       .flatMap(layer => Array.isArray(layer?.objects) ? layer.objects : [])
       .filter(object => object?.type === 'ref');
     const requests = new Map();
@@ -3183,20 +3186,45 @@ export class SceneEditorAssets {
   /**
    * 恢复保存的图片资源
    */
-  loadImageAssets() {
+  loadImageAssets(sceneDatas = [this.editor.sceneData]) {
     const editor = this.editor;
-    const assets = editor.sceneData.imageAssets;
-    if (!assets) return;
+    const scenes = (Array.isArray(sceneDatas) ? sceneDatas : [sceneDatas]).filter(Boolean);
+    const generation = ++this._sceneImageLoadGeneration;
+    const activeScene = editor.sceneData;
+    const sources = new Map();
 
-    for (const [id, data] of Object.entries(assets)) {
+    for (const sceneData of scenes) {
+      for (const [id, data] of Object.entries(sceneData.imageAssets || {})) {
+        const src = typeof data?.src === 'string' ? data.src.trim() : '';
+        if (!src) throw new TypeError(`场景 ${sceneData.id || sceneData.name || '<unknown>'} 的 imageAssets.${id}.src 无效`);
+        const previous = sources.get(id);
+        if (previous && previous.src !== src) {
+          throw new Error(
+            `稳定 imageId ${id} 在九宫格中映射到不同文件: ${previous.sceneId} -> ${previous.src}, ` +
+            `${sceneData.id || sceneData.name || '<unknown>'} -> ${src}`
+          );
+        }
+        sources.set(id, {
+          src,
+          sceneId: sceneData.id || sceneData.name || '<unknown>'
+        });
+      }
+    }
+
+    for (const [id, { src }] of sources) {
       if (editor.loadedImages.has(id)) continue;
       const img = new Image();
       img.onload = () => {
+        if (generation !== this._sceneImageLoadGeneration || editor.sceneData !== activeScene) return;
         editor.loadedImages.set(id, img);
         editor.render();
       };
-      // src 可能是相对路径或旧的 dataURL，都能直接作为 img.src
-      img.src = data.src;
+      img.onerror = () => {
+        if (generation === this._sceneImageLoadGeneration && editor.sceneData === activeScene) {
+          console.error(`[SceneEditorAssets] 场景图片加载失败: ${id} (${src})`);
+        }
+      };
+      img.src = src;
     }
   }
 

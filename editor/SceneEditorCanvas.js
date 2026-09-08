@@ -60,7 +60,7 @@ export class SceneEditorCanvas {
     }
 
     // === 相邻场景参考层（半透明，不可交互）===
-    if (!editor.eventFilter?.isFiltering() && editor.showNeighbors && editor.neighborScenes.length > 0) {
+    if (editor.showNeighbors && editor.neighborScenes.length > 0) {
       this._renderNeighborScenes(ctx);
     }
 

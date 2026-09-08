@@ -125,8 +125,10 @@
         import {
             activateGlobalAtlasesProject,
             getGlobalAtlasesConfig,
-            loadGlobalAtlasesConfig
+            loadGlobalAtlasesConfig,
+            sceneDataLoader
         } from './SceneDataLoader.js';
+        import { ProjectWorldIndex } from '../src/core/ProjectWorldIndex.js';
         import { TriggerEditor } from './TriggerEditor.js';
         import { BehaviorEditor } from './BehaviorEditor.js';
 
@@ -571,6 +573,146 @@
             return sceneEditor;
         }
 
+        function isSceneLoadCurrent(ownerSceneId, loadGeneration) {
+            return loadGeneration === sceneLoadGeneration && ctx.currentSceneId === ownerSceneId;
+        }
+
+        function getCanonicalScenePath(sceneIdToLoad) {
+            const projectPath = ctx._canonicalProjectPath();
+            const rootEnd = projectPath.lastIndexOf('/') + 1;
+            return `${projectPath.slice(0, rootEnd)}assets/scenes/${sceneIdToLoad}.json`;
+        }
+
+        function mergeRenderableSceneDocuments(presetScene, savedScene) {
+            if (presetScene && savedScene) {
+                const merged = {
+                    ...presetScene,
+                    ...savedScene,
+                    terrain: savedScene.terrain || presetScene.terrain,
+                    decoSprites: savedScene.decoSprites || presetScene.decoSprites,
+                    decorations: (savedScene.decorations && savedScene.decorations.length)
+                        ? savedScene.decorations
+                        : presetScene.decorations,
+                    centerX: savedScene.centerX ?? presetScene.centerX,
+                    centerY: savedScene.centerY ?? presetScene.centerY,
+                    basinRadius: savedScene.basinRadius ?? presetScene.basinRadius,
+                    basinAspectY: savedScene.basinAspectY ?? presetScene.basinAspectY
+                };
+                if (!Object.prototype.hasOwnProperty.call(savedScene, 'atlases')) delete merged.atlases;
+                return merged;
+            }
+            return savedScene || presetScene || null;
+        }
+
+        // 当前场景和九宫格邻居共用同一正文读取链：磁盘 canonical → committed snapshot → preset。
+        async function loadRenderableSceneDocument(documentSceneId, ownerSceneId, loadGeneration) {
+            let presetScene = null;
+            try {
+                presetScene = await sceneDataLoader.loadScene(documentSceneId);
+            } catch (error) {
+                if (!isSceneLoadCurrent(ownerSceneId, loadGeneration)) return { status: 'stale', sceneData: null };
+                console.warn(`[SceneWorkflow] 加载场景 ${documentSceneId} 的 preset 失败:`, error);
+            }
+            if (!isSceneLoadCurrent(ownerSceneId, loadGeneration)) return { status: 'stale', sceneData: null };
+
+            let fileScene = null;
+            try {
+                const parsed = await ctx._readCanonicalJson(getCanonicalScenePath(documentSceneId));
+                if (!isSceneLoadCurrent(ownerSceneId, loadGeneration)) return { status: 'stale', sceneData: null };
+                fileScene = Array.isArray(parsed?.layers) ? parsed : null;
+                if (parsed && !fileScene) {
+                    console.warn(`[SceneWorkflow] 场景 ${documentSceneId} 的磁盘文档缺少有效 layers`);
+                }
+            } catch (error) {
+                if (!isSceneLoadCurrent(ownerSceneId, loadGeneration)) return { status: 'stale', sceneData: null };
+                console.warn(`[SceneWorkflow] 加载场景 ${documentSceneId} 的磁盘文档失败:`, error);
+            }
+
+            let savedScene = fileScene;
+            if (!savedScene) {
+                try {
+                    const committed = ctx.documentService
+                        .requireProject(ctx._canonicalProjectPath())
+                        .getCommittedSnapshot().scenes[documentSceneId];
+                    savedScene = Array.isArray(committed?.layers) ? committed : null;
+                } catch (error) {
+                    savedScene = null;
+                }
+            }
+
+            const sceneData = mergeRenderableSceneDocuments(presetScene, savedScene);
+            return Array.isArray(sceneData?.layers)
+                ? { status: 'ready', sceneData }
+                : { status: 'missing', sceneData: null };
+        }
+
+        async function prepareSceneWorldProjection(sid, loadGeneration, editor) {
+            if (!isSceneLoadCurrent(sid, loadGeneration)) return null;
+            editor.setNeighborScenes([]);
+            editor.setWorldMapLocation(null);
+
+            let worldIndex;
+            try {
+                const candidate = ctx.documentService
+                    .requireProject(ctx._canonicalProjectPath())
+                    .getCandidate();
+                worldIndex = ProjectWorldIndex.build(candidate?.project, {
+                    requireSceneDimensions: true
+                });
+            } catch (error) {
+                if (!isSceneLoadCurrent(sid, loadGeneration)) return null;
+                const detail = error?.errors?.[0]?.message || error.message;
+                const message = `无法读取场景 ${sid} 的 canonical 世界索引，不能计算大地图位置和相邻场景`;
+                console.error(`[SceneWorkflow] ${message}:`, error);
+                showSceneEditorToast(`${message}：${detail}`, 'error');
+                return false;
+            }
+            if (!isSceneLoadCurrent(sid, loadGeneration)) return null;
+
+            const currentAnchor = worldIndex.findScene(sid);
+            if (!currentAnchor?.loadable) {
+                const message = `场景 ${sid} 未定位到可加载的 canonical 世界格`;
+                console.warn(`[SceneWorkflow] ${message}`);
+                showSceneEditorToast(message, 'warn');
+                return false;
+            }
+
+            const region = worldIndex.getRegion(currentAnchor.regionId);
+            editor.setWorldMapLocation({
+                regionId: currentAnchor.regionId,
+                regionName: region?.name || '',
+                row: currentAnchor.row,
+                col: currentAnchor.col
+            });
+
+            const adjacentAnchors = worldIndex.getAdjacentSceneAnchors(sid);
+            const preparedNeighbors = await Promise.all(adjacentAnchors.map(async neighborAnchor => ({
+                neighborAnchor,
+                document: await loadRenderableSceneDocument(neighborAnchor.sceneId, sid, loadGeneration)
+            })));
+            if (!isSceneLoadCurrent(sid, loadGeneration)
+                || preparedNeighbors.some(entry => entry.document.status === 'stale')) {
+                return null;
+            }
+
+            const missingSceneIds = preparedNeighbors
+                .filter(entry => entry.document.status !== 'ready')
+                .map(entry => entry.neighborAnchor.sceneId);
+            if (missingSceneIds.length > 0) {
+                const message = `九宫格邻居 ${missingSceneIds.join(', ')} 缺少可渲染的 canonical 场景文档`;
+                console.error(`[SceneWorkflow] ${message}`);
+                showSceneEditorToast(message, 'error');
+                return false;
+            }
+
+            editor.setNeighborScenes(preparedNeighbors.map(({ neighborAnchor, document }) => ({
+                sceneData: document.sceneData,
+                offsetX: neighborAnchor.offset.x - currentAnchor.offset.x,
+                offsetY: neighborAnchor.offset.y - currentAnchor.offset.y
+            })));
+            return true;
+        }
+
         async function loadSceneEditor(sid) {
             const loadGeneration = ++sceneLoadGeneration;
             const atlasProjectPath = ctx._canonicalProjectPath();
@@ -579,90 +721,43 @@
             try {
                 await loadGlobalAtlasesConfig(atlasProjectPath);
             } catch (error) {
-                if (loadGeneration !== sceneLoadGeneration) return null;
+                if (!isSceneLoadCurrent(sid, loadGeneration)) return null;
                 console.error('[SceneWorkflow] 加载共享图集 catalog 失败:', error);
                 showSceneEditorToast(`加载共享图集失败：${error.message}`, 'error');
                 return false;
             }
-            if (loadGeneration !== sceneLoadGeneration) return null;
-            // 先尝试加载预设场景作为基底（提供 terrain / atlases / decoSprites 等完整字段）
-            let presetScene = null;
-            try {
-                const { sceneDataLoader } = await import('./SceneDataLoader.js');
-                presetScene = await sceneDataLoader.loadScene(sid);
-            } catch (e) {
-                console.warn('加载预设场景失败:', e);
-            }
-            if (loadGeneration !== sceneLoadGeneration) return null;
+            if (!isSceneLoadCurrent(sid, loadGeneration)) return null;
 
-            // 从磁盘文件加载
-            let fileScene = null;
-            try {
-                const gamePath = ctx.dataManager.getCurrentGame()?.path || '../example/sanguo_zhangjiao/';
-                const scenePath = `${gamePath}assets/scenes/${sid}.json`.replace(/^\.\.\//g, '');
-                const response = await fetch('/api/read-file?path=' + encodeURIComponent(scenePath));
-                const data = response.ok ? await response.json() : null;
-                const parsed = data?.ok === true && data.content ? JSON.parse(data.content) : null;
-                fileScene = Array.isArray(parsed?.layers) ? parsed : null;
-            } catch (e) {
-                console.warn('加载场景文件失败:', e);
-            }
-            if (loadGeneration !== sceneLoadGeneration) return null;
-
-            // 从 canonical 服务获取已提交快照
-            let saved = fileScene;
-            if (!saved) {
-                try {
-                    const committed = ctx.documentService
-                        .requireProject(ctx._canonicalProjectPath())
-                        .getCommittedSnapshot().scenes[sid];
-                    saved = Array.isArray(committed?.layers) ? committed : null;
-                } catch (e) {
-                    saved = null;
-                }
-            }
-
-            // 合并预设和保存数据
-            let sceneToLoad;
-            if (presetScene && saved) {
-                sceneToLoad = {
-                    ...presetScene,
-                    ...saved,
-                    terrain: saved.terrain || presetScene.terrain,
-                    decoSprites: saved.decoSprites || presetScene.decoSprites,
-                    decorations: (saved.decorations && saved.decorations.length) ? saved.decorations : presetScene.decorations,
-                    centerX: saved.centerX ?? presetScene.centerX,
-                    centerY: saved.centerY ?? presetScene.centerY,
-                    basinRadius: saved.basinRadius ?? presetScene.basinRadius,
-                    basinAspectY: saved.basinAspectY ?? presetScene.basinAspectY
-                };
-                if (!Object.prototype.hasOwnProperty.call(saved, 'atlases')) delete sceneToLoad.atlases;
-            } else if (saved) {
-                sceneToLoad = saved;
-            } else if (presetScene) {
-                sceneToLoad = presetScene;
-            } else {
-                sceneToLoad = null;
-            }
-
-            if (!sceneToLoad || !Array.isArray(sceneToLoad.layers)) {
+            const loadedDocument = await loadRenderableSceneDocument(sid, sid, loadGeneration);
+            if (loadedDocument.status === 'stale') return null;
+            if (loadedDocument.status !== 'ready') {
                 const message = `无法加载场景 ${sid}：磁盘 canonical 文档、已提交快照与已登记 preset 均不存在有效 layers`;
                 console.error('[SceneWorkflow]', message);
                 showSceneEditorToast(message, 'error');
                 return false;
             }
 
+            let editor;
             try {
                 editingTemplateId = null;
-                const editor = getSceneEditor();
-                editor.loadScene(sceneToLoad);
+                editor = getSceneEditor();
+                editor.loadScene(loadedDocument.sceneData);
                 editor.refreshTriggerReferences?.();
-                return true;
             } catch (error) {
                 console.error(`[SceneWorkflow] 加载场景 ${sid} 失败:`, error);
                 showSceneEditorToast(`加载场景 ${sid} 失败：${error.message}`, 'error');
                 return false;
             }
+
+            try {
+                const projectionResult = await prepareSceneWorldProjection(sid, loadGeneration, editor);
+                if (projectionResult === null) return null;
+            } catch (error) {
+                if (!isSceneLoadCurrent(sid, loadGeneration)) return null;
+                console.error(`[SceneWorkflow] 准备场景 ${sid} 的九宫格参考失败:`, error);
+                showSceneEditorToast(`场景已加载，但九宫格参考准备失败：${error.message}`, 'error');
+            }
+            return true;
         }
 
         // 事件/触发器编辑器

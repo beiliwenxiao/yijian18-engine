@@ -223,6 +223,14 @@ export class SceneEditorUI {
                   <label>对象数:</label>
                   <span id="editor-object-count">0</span>
                 </div>
+                <div class="info-row">
+                  <label title="来自 game.project.json worldMap 的 canonical Region">Region:</label>
+                  <input type="text" id="editor-world-region" value="未定位" readonly style="flex:1;min-width:0;" title="只读，不写入场景 JSON">
+                </div>
+                <div class="info-row">
+                  <label title="全局 20×20 大地图中的 0-based (row,col)">坐标:</label>
+                  <input type="text" id="editor-world-coordinate" value="未定位" readonly style="flex:1;min-width:0;" title="0-based (row,col)，只读">
+                </div>
                 <details id="editor-battle-flow-panel" style="margin-top:8px;">
                   <summary style="cursor:pointer;color:#e8c46a;">战役流程参数</summary>
                   <div style="margin-top:8px;">
@@ -258,7 +266,27 @@ export class SceneEditorUI {
     // 事件条会占用画布区域高度，必须先完成其 DOM 投影，再读取 Canvas 容器尺寸。
     editor.eventFilter?.bindUI();
     this._initCanvas();
+    this.refreshWorldMapLocation();
     this.refreshBattleFlowFields();
+  }
+
+  /** 将 canonical 世界位置瞬态投影到只读场景信息字段。 */
+  refreshWorldMapLocation() {
+    const regionInput = document.getElementById('editor-world-region');
+    const coordinateInput = document.getElementById('editor-world-coordinate');
+    if (!regionInput || !coordinateInput) return;
+
+    const location = this.editor.worldMapLocation;
+    if (!location) {
+      regionInput.value = '未定位';
+      coordinateInput.value = '未定位';
+      return;
+    }
+
+    regionInput.value = location.regionName && location.regionName !== location.regionId
+      ? `${location.regionName} (${location.regionId})`
+      : location.regionId;
+    coordinateInput.value = `(${location.row},${location.col})`;
   }
 
   /** 将 canonical gameplay.battleId/battleFlow 投影到场景信息面板。 */
@@ -496,7 +524,45 @@ export class SceneEditorUI {
   }
 
   /**
-   * 将 Canvas backing 与工作台实际可见尺寸同步，并按场景矩形中心重建视口。
+   * 返回当前画布应完整容纳的世界矩形；邻居开启时使用中心场景与全部邻居的联合范围。
+   * @private
+   */
+  _getViewportContentBounds() {
+    const editor = this.editor;
+    const readRect = (sceneData, offsetX, offsetY, label) => {
+      const width = Number(sceneData?.width);
+      const height = Number(sceneData?.height);
+      const x = Number(offsetX);
+      const y = Number(offsetY);
+      if (!Number.isFinite(width) || width <= 0 || !Number.isFinite(height) || height <= 0) {
+        throw new Error(`SceneEditorUI: ${label}尺寸必须是正数`);
+      }
+      if (!Number.isFinite(x) || !Number.isFinite(y)) {
+        throw new Error(`SceneEditorUI: ${label}偏移必须是有限数值`);
+      }
+      return { left: x, top: y, right: x + width, bottom: y + height };
+    };
+
+    const center = readRect(editor.sceneData, 0, 0, '当前场景');
+    let left = center.left;
+    let top = center.top;
+    let right = center.right;
+    let bottom = center.bottom;
+    if (editor.showNeighbors) {
+      for (const neighbor of editor.neighborScenes || []) {
+        const id = neighbor?.sceneData?.id || neighbor?.sceneData?.name || '未命名邻居场景';
+        const rect = readRect(neighbor?.sceneData, neighbor?.offsetX, neighbor?.offsetY, `邻居场景 ${id} `);
+        left = Math.min(left, rect.left);
+        top = Math.min(top, rect.top);
+        right = Math.max(right, rect.right);
+        bottom = Math.max(bottom, rect.bottom);
+      }
+    }
+    return { left, top, right, bottom, width: right - left, height: bottom - top };
+  }
+
+  /**
+   * 将 Canvas backing 与工作台实际可见尺寸同步，并按当前显示内容的联合矩形重建视口。
    * @private
    */
   _syncCanvasViewport(container, { force = false } = {}) {
@@ -519,18 +585,14 @@ export class SceneEditorUI {
     if (overlay.height !== height) overlay.height = height;
     this._canvasSize = { width, height };
 
-    const sceneWidth = Number(editor.sceneData.width);
-    const sceneHeight = Number(editor.sceneData.height);
-    if (!Number.isFinite(sceneWidth) || sceneWidth <= 0 ||
-        !Number.isFinite(sceneHeight) || sceneHeight <= 0) {
-      throw new Error('SceneEditorUI: 场景尺寸必须是正数');
-    }
-
-    const scaleX = width / sceneWidth;
-    const scaleY = height / sceneHeight;
+    const bounds = this._getViewportContentBounds();
+    const scaleX = width / bounds.width;
+    const scaleY = height / bounds.height;
     editor.viewport.scale = Math.min(scaleX, scaleY, 2) * 0.9;
-    editor.viewport.offsetX = (width - sceneWidth * editor.viewport.scale) / 2;
-    editor.viewport.offsetY = (height - sceneHeight * editor.viewport.scale) / 2;
+    editor.viewport.offsetX = (width - bounds.width * editor.viewport.scale) / 2
+      - bounds.left * editor.viewport.scale;
+    editor.viewport.offsetY = (height - bounds.height * editor.viewport.scale) / 2
+      - bounds.top * editor.viewport.scale;
     this._updateZoomDisplay();
     return true;
   }

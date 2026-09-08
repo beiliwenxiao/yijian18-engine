@@ -930,8 +930,7 @@
               "terrain": "yellowRiver"
             },
             {
-              "sceneId": "S02",
-              "terrain": "plain"
+              "terrain": "forest"
             },
             {
               "terrain": "forest"
@@ -990,7 +989,8 @@
               "terrain": "mountain"
             },
             {
-              "terrain": "yellowRiver"
+              "sceneId": "S02",
+              "terrain": "plain"
             },
             {
               "terrain": "yellowRiver"
@@ -1980,6 +1980,7 @@
     {
       "height": 720,
       "id": "S01",
+      "name": "S01 寒风荒野求生",
       "previewOnly": false,
       "productionState": "playable",
       "width": 1280,
