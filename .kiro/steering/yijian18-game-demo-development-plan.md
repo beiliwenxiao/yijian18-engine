@@ -29,7 +29,7 @@ fileMatchPattern: "{.kiro/specs/yijian18-game-demo,example/sanguo_zhangjiao,src/
 - **职业（5C）**：删除 `mage`，第三职业 canonical ID 只使用 `strategist`，显示名“军师”，不提供旧职业兼容。
 - **流式加载（6A）**：`src/core/WorldStreamingManager.js` 为唯一管理器；`WorldMapLoadSession`、`ChunkNavigator`、`PlacementSpawner` 作为现有加载/传送适配器接入，`src/systems/WorldStreamingManager.js` 完成调用方迁移后淘汰，禁止机械替换 API。
 - **Android（7A）**：根 `capacitor.config.json` 和根 `android/` 是唯一发布权威，目标为 `appId: com.sanguo.zhangjiao`、`appName: 三国张角传`、`webDir: dist/sanguo_zhangjiao`；Demo 内 mobile 工程仅作 legacy，禁止长期双写。
-- **美术与资源（8A，最新决定）**：现有及后续使用的图片、音频、模型和其他资源均按“项目原创或已获授权”处理，当前开发不执行逐项授权、版权、作者或来源核验，也不把这些字段作为阶段或发布阻断项；本计划其他章节中关于授权/版权/来源审计的旧文字均由本条覆盖。资源工作只检查稳定 `imageId/assetId`、文件与引用完整性、替换能力、状态、尺寸、pivot、动画及 2D/3D 映射。缺图时**默认自动生成**图片并登记接入，不询问、不保留代码色块或兜底圆点，具体流程见第 15.1 节。除图片切割后生成的 slice 对象外，所有图片必须具有稳定 `imageId/assetId`，并在编辑器提供“更换资源 ID”和“替换图片文件且保留 ID”两种方式；slice 使用稳定源图片/图集 ID 加裁剪区域、索引或 `sliceKey`，不强制独立 ID。
+- **美术与资源（8A，最新决定）**：现有及后续使用的图片、音频、模型和其他资源均按“项目原创或已获授权”处理，当前开发不执行逐项授权、版权、作者或来源核验，也不把这些字段作为阶段或发布阻断项；本计划其他章节中关于授权/版权/来源审计的旧文字均由本条覆盖。所有 2D 图片的运行时与可替换文件统一使用 PNG：现有 SVG 与 WebP 必须完整迁移为同效果 PNG，普通静态背景也不得保留 SVG 或 WebP；后续新增图片一律使用 PNG，禁止创建 SVG 或 WebP 图片文件。PSD 仅允许作为仓库外或独立美术源目录的制作文件，禁止放入运行时资源路径、作为 Manifest 的 `sourceFile`／`runtime2D`／`runtime3D`，或由 AssetManager 加载。资源工作只检查稳定 `imageId/assetId`、文件与引用完整性、替换能力、状态、尺寸、pivot、动画及 2D/3D 映射。缺图时**默认自动生成 PNG**并登记接入，不询问、不保留代码色块或兜底圆点，具体流程见第 15.1 节。除图片切割后生成的 slice 对象外，所有图片必须具有稳定 `imageId/assetId`，并在编辑器提供“更换资源 ID”和“替换图片文件且保留 ID”两种方式；slice 使用稳定源图片/图集 ID 加裁剪区域、索引或 `sliceKey`，不强制独立 ID。
 - **3D（9A）**：2D 是正式发布主表现；3D 前期使用相同 2D 图片的 billboard/sprite，并直接复用 2D 编辑器位置、尺寸、pivot 和 elevation，业务状态完全一致；后续替换 3D 模型不得改变业务 ID 或场景坐标。
 - **测试（10B）**：允许在每个 P 阶段出口运行相关的针对性 Vitest 和必要 diagnostics；不自动运行全量测试或生产构建，除非用户另行要求。
 - **成长系统**：传统职业树 + 暗黑式分支 + 30–60 节点小型 Passive Board；复用 ProgressionGraphSystem、EffectResolver 和旧 API 适配层。
@@ -166,7 +166,7 @@ example/sanguo_zhangjiao/
 - `S04RouteCoordinator` 领域 one-off 已覆盖：南阳只解锁 S05、同路线不重复 checkpoint、异路线返回 `routeLocked`、checkpoint 失败完整恢复 StoryState、active 救援阻断、目标缺失拒绝、checkpoint 后事件异常不回滚已持久化路线。
 - 真实 `GameLoader.load()` 已完成全部 `$ref` 解析、内容策略和注册表预检；初始解锁仍只有 S01，S05/S07 只通过路线事务动态解锁。
 - `WorldMapLoadSession` 与 core `WorldStreamingManager` 使用用户确认的全局 20×20 坐标和按需磁盘加载：S05 offset `{16640,11520}`、S07 offset `{19200,12240}`；场景局部坐标保持不变，`worldOffset` 只投影一次。S01–S14 均为可加载 canonical 字符串单元，SXX-CNN 附属 chunk 归入 SXX 业务命名空间。
-- 当前相关 JS/JSON diagnostics 均通过；ConstructionSystem、S06/S10 场景、GameProject、Manifest 与新增 SVG 最近一次 diagnostics 无问题。尚无浏览器 playthrough 证据，因此 P0–P4 均不得整体标记 `done`。
+- 当前相关 JS/JSON diagnostics 均通过；ConstructionSystem、S06/S10 场景、GameProject 与 Manifest 最近一次 diagnostics 无问题。尚无浏览器 playthrough 证据，因此 P0–P4 均不得整体标记 `done`。
 
 每阶段同时推进四条轨道：A 引擎与领域系统、B 场景和叙事内容、C 美术音频和 UI、D 集成与质量。任何阶段不能只关闭 A 轨道。
 
@@ -487,8 +487,8 @@ example/sanguo_zhangjiao/
 1. **Brief**：明确 assetId、场景用途、镜头距离、状态、动作、尺寸、pivot、bounds、阵营色、目标阶段和复用范围。
 2. **灰盒**：用批准的灰盒验证动线、碰撞、交互距离和镜头，不在灰盒上烘焙业务状态。
 3. **概念/样板**：先完成 S01、S09、S11 样板；通过轮廓、色彩、信息层级和生产成本评审后再批量复制规则。
-4. **制作与临时替代**：源文件与运行文件分离；角色/载具按统一动作语义，环境按模块化套件，UI 图标遵循同一网格和描边。正式图片缺失时可使用通用图标或 AI 生成图，但必须立即分配稳定 imageId/assetId 并标记状态。
-5. **导出**：2D 使用项目选定 PNG/WebP/Atlas；3D 初期直接从 runtime2D 创建 billboard/sprite，后期正式模型使用 glTF/共享材质；音频使用项目统一格式。禁止把编辑源文件当运行资源。
+4. **制作与临时替代**：角色/载具按统一动作语义，环境按模块化套件，UI 图标遵循同一网格和描边。PSD 仅可作为仓库外或独立美术源目录的制作文件，不得进入运行时资源目录、Manifest 或 AssetManager；所有接入项目的图片必须导出为 PNG。正式图片缺失时可使用通用图标或 AI 生成图，但必须立即分配稳定 imageId/assetId 并标记状态。
+5. **导出**：2D 图片统一使用 PNG；如需图集，图集页面同样必须为 PNG。3D 初期直接从 runtime2D 创建 billboard/sprite，后期正式模型使用 glTF/共享材质；音频使用项目统一格式。禁止把编辑源文件当运行资源。
 6. **编辑器替换**：所有非 slice 图片字段显示当前 imageId、预览和来源，并同时支持“选择其他 ID”和“替换当前 ID 对应文件”。替换文件必须保留场景引用；修改 ID 必须同步磁盘 JSON、全局图片配置、内存缓存和所有场景 localStorage 缓存。图片切割后的 slice 对象显示源图片/图集 ID、裁剪区域和切片索引/名称，通过替换源资源统一更新，不强制分配独立 ID。
 7. **自动检查**：检查非 slice 图片的缺文件、重复 assetId/imageId，以及 slice 的源资源、裁剪区域和索引/名称有效性；同时检查尺寸、透明边、pivot、bounds、动画名、材质、文件大小、授权/生成来源和 placeholder 状态。
 8. **接入**：AssetManager/Registry 对非 slice 图片引用 assetId/imageId；slice 对象通过稳定源图片/图集 ID 加裁剪数据解析。2D/3D adapter 负责映射；表现资源不得成为 Story/战果/存档事实源。
@@ -502,7 +502,7 @@ example/sanguo_zhangjiao/
 发现任何内容缺少图片时，默认立即生成并接入，不停下询问、不保留代码色块或兜底圆点、不以“美术待补”为由跳过：
 
 1. **先复用**：查 `assets/manifests/assets.json` 和 `assets/images/`，已有可用资源直接引用其稳定 ID，禁止为同一内容重复建 ID 或重复生成图片。
-2. **生成格式**：优先手写 SVG 放入 `assets/images/<场景或分类>/`，文件名用 kebab-case。位图仅在 SVG 明显不合适时使用，且不得放大低分辨率图冒充高清。
+2. **生成格式**：统一生成 PNG 并放入 `assets/images/<场景或分类>/`，文件名用 kebab-case。现有 SVG 与 WebP 必须完整替换为同效果 PNG，普通静态背景也在迁移范围内；后续新增图片一律使用 PNG，禁止创建 SVG 或 WebP 图片文件。PNG 必须按目标展示尺寸或更高的合理分辨率导出，不得放大低分辨率图冒充高清。
 3. **规格**：世界物件（资源节点、道具、建筑、角色）pivot 为脚底中心 `{x:0.5,y:1}`，UI 图标为居中 `{x:0.5,y:0.5}`；尺寸与同类已有资源对齐（资源节点约 64×56，角色 54–82 高，掉落道具 32–48）；配色取 `config/presentation.json` 的 `palette`，保持低饱和土黄灰褐主调与阵营色区分。
 4. **登记**：在 Manifest 追加条目，`assetId` 与 `imageId` 同值，命名 `<场景或域>.<类别>.<名称>`（如 `s01.resource.dryWoodNode`）；填写 `category/usage/sourceFile/runtime2D/runtime3D/pivot/bounds/animations/targetPhase/revision`，生成图 `status` 记 `ai-generated`，复用第三方图记 `third-party-approved`。
 5. **接线**：把稳定 `imageId` 和 sprite 尺寸写进内容定义（`library.items`、`resourceNodes`、`enemies`、`npcs` 等）；场景 JSON 只引用 ID。禁止在场景、实体或 UI 中硬编码图片路径。

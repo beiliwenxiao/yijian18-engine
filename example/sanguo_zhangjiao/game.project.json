@@ -100,7 +100,7 @@
     "login": {
       "backgroundAssetId": "ui.login.mainBackground",
       "backgroundColor": "#111111",
-      "backgroundImage": "assets/images/main_bg.jpg",
+      "backgroundImage": "assets/images/main_bg.png",
       "buttonColor": "#4b6728",
       "description": "乱世将起，你的选择将改变众人的命运。",
       "panelColor": "",

@@ -11,9 +11,9 @@
         "title-screen",
         "background"
       ],
-      "sourceFile": "assets/images/main_bg.jpg",
+      "sourceFile": "assets/images/main_bg.png",
       "runtime2D": {
-        "path": "assets/images/main_bg.jpg",
+        "path": "assets/images/main_bg.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -25,13 +25,13 @@
         "y": 0.5
       },
       "bounds": {
-        "width": 13393,
-        "height": 7288
+        "width": 2000,
+        "height": 1152
       },
       "animations": [],
       "targetPhase": "P0",
       "status": "final",
-      "revision": 1
+      "revision": 2
     },
     {
       "assetId": "mountain_landscape",
@@ -933,9 +933,9 @@
         "natural-terrain",
         "graybox"
       ],
-      "sourceFile": "assets/images/graybox/natural-terrain.svg",
+      "sourceFile": "assets/images/graybox/natural-terrain.png",
       "runtime2D": {
-        "path": "assets/images/graybox/natural-terrain.svg",
+        "path": "assets/images/graybox/natural-terrain.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -964,9 +964,9 @@
         "city-ground",
         "graybox"
       ],
-      "sourceFile": "assets/images/graybox/city-ground.svg",
+      "sourceFile": "assets/images/graybox/city-ground.png",
       "runtime2D": {
-        "path": "assets/images/graybox/city-ground.svg",
+        "path": "assets/images/graybox/city-ground.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -1000,9 +1000,9 @@
         "battle-choice",
         "command-banner"
       ],
-      "sourceFile": "assets/images/graybox/battlefield-unit.svg",
+      "sourceFile": "assets/images/graybox/battlefield-unit.png",
       "runtime2D": {
-        "path": "assets/images/graybox/battlefield-unit.svg",
+        "path": "assets/images/graybox/battlefield-unit.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -1031,9 +1031,9 @@
         "yellow_turban",
         "battlefield-unit"
       ],
-      "sourceFile": "assets/images/s03/yellow-turban-soldier.svg",
+      "sourceFile": "assets/images/s03/yellow-turban-soldier.png",
       "runtime2D": {
-        "path": "assets/images/s03/yellow-turban-soldier.svg",
+        "path": "assets/images/s03/yellow-turban-soldier.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -1062,9 +1062,9 @@
         "han_government",
         "battlefield-unit"
       ],
-      "sourceFile": "assets/images/s03/han-soldier.svg",
+      "sourceFile": "assets/images/s03/han-soldier.png",
       "runtime2D": {
-        "path": "assets/images/s03/han-soldier.svg",
+        "path": "assets/images/s03/han-soldier.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -1093,9 +1093,9 @@
         "camp",
         "ground"
       ],
-      "sourceFile": "assets/images/s09/camp-ground.svg",
+      "sourceFile": "assets/images/s09/camp-ground.png",
       "runtime2D": {
-        "path": "assets/images/s09/camp-ground.svg",
+        "path": "assets/images/s09/camp-ground.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -1155,9 +1155,9 @@
         "granary",
         "damaged"
       ],
-      "sourceFile": "assets/images/s09/damaged-granary.svg",
+      "sourceFile": "assets/images/s09/damaged-granary.png",
       "runtime2D": {
-        "path": "assets/images/s09/damaged-granary.svg",
+        "path": "assets/images/s09/damaged-granary.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -1186,9 +1186,9 @@
         "porridge",
         "shelter"
       ],
-      "sourceFile": "assets/images/s09/porridge-shelter.svg",
+      "sourceFile": "assets/images/s09/porridge-shelter.png",
       "runtime2D": {
-        "path": "assets/images/s09/porridge-shelter.svg",
+        "path": "assets/images/s09/porridge-shelter.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -1217,9 +1217,9 @@
         "class",
         "warrior"
       ],
-      "sourceFile": "assets/images/s09/flag-warrior.svg",
+      "sourceFile": "assets/images/s09/flag-warrior.png",
       "runtime2D": {
-        "path": "assets/images/s09/flag-warrior.svg",
+        "path": "assets/images/s09/flag-warrior.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -1248,9 +1248,9 @@
         "class",
         "archer"
       ],
-      "sourceFile": "assets/images/s09/flag-archer.svg",
+      "sourceFile": "assets/images/s09/flag-archer.png",
       "runtime2D": {
-        "path": "assets/images/s09/flag-archer.svg",
+        "path": "assets/images/s09/flag-archer.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -1279,9 +1279,9 @@
         "class",
         "strategist"
       ],
-      "sourceFile": "assets/images/s09/flag-strategist.svg",
+      "sourceFile": "assets/images/s09/flag-strategist.png",
       "runtime2D": {
-        "path": "assets/images/s09/flag-strategist.svg",
+        "path": "assets/images/s09/flag-strategist.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -1310,9 +1310,9 @@
         "story",
         "zhangjiao"
       ],
-      "sourceFile": "assets/images/s09/zhangjiao.svg",
+      "sourceFile": "assets/images/s09/zhangjiao.png",
       "runtime2D": {
-        "path": "assets/images/s09/zhangjiao.svg",
+        "path": "assets/images/s09/zhangjiao.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -1341,9 +1341,9 @@
         "story",
         "refugee"
       ],
-      "sourceFile": "assets/images/s09/one-armed-refugee.svg",
+      "sourceFile": "assets/images/s09/one-armed-refugee.png",
       "runtime2D": {
-        "path": "assets/images/s09/one-armed-refugee.svg",
+        "path": "assets/images/s09/one-armed-refugee.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -1372,9 +1372,9 @@
         "enemy",
         "guard"
       ],
-      "sourceFile": "assets/images/s09/granary-guard.svg",
+      "sourceFile": "assets/images/s09/granary-guard.png",
       "runtime2D": {
-        "path": "assets/images/s09/granary-guard.svg",
+        "path": "assets/images/s09/granary-guard.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -1403,9 +1403,9 @@
         "wood",
         "gathering"
       ],
-      "sourceFile": "assets/images/s01/dry-wood-node.svg",
+      "sourceFile": "assets/images/s01/dry-wood-node.png",
       "runtime2D": {
-        "path": "assets/images/s01/dry-wood-node.svg",
+        "path": "assets/images/s01/dry-wood-node.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -1434,9 +1434,9 @@
         "campfire",
         "flame"
       ],
-      "sourceFile": "assets/images/fire.webp",
+      "sourceFile": "assets/images/fire.png",
       "runtime2D": {
-        "path": "assets/images/fire.webp",
+        "path": "assets/images/fire.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -1463,8 +1463,8 @@
       "imageId": "s01.prop.campfireBase",
       "category": "world-prop",
       "usage": ["S01", "campfire", "base"],
-      "sourceFile": "assets/images/s01/campfire-base.svg",
-      "runtime2D": { "path": "assets/images/s01/campfire-base.svg", "mode": "image" },
+      "sourceFile": "assets/images/s01/campfire-base.png",
+      "runtime2D": { "path": "assets/images/s01/campfire-base.png", "mode": "image" },
       "runtime3D": { "mode": "billboard", "sourceAssetId": "s01.prop.campfireBase" },
       "pivot": { "x": 0.5, "y": 1 },
       "bounds": { "width": 72, "height": 36 },
@@ -1478,8 +1478,8 @@
       "imageId": "s01.prop.campfireLogs",
       "category": "world-prop",
       "usage": ["S01", "campfire", "logs"],
-      "sourceFile": "assets/images/s01/campfire-logs.svg",
-      "runtime2D": { "path": "assets/images/s01/campfire-logs.svg", "mode": "image" },
+      "sourceFile": "assets/images/s01/campfire-logs.png",
+      "runtime2D": { "path": "assets/images/s01/campfire-logs.png", "mode": "image" },
       "runtime3D": { "mode": "billboard", "sourceAssetId": "s01.prop.campfireLogs" },
       "pivot": { "x": 0.5, "y": 1 },
       "bounds": { "width": 68, "height": 38 },
@@ -1493,8 +1493,8 @@
       "imageId": "s01.prop.campfireStoneRing",
       "category": "world-prop",
       "usage": ["S01", "campfire", "stone-ring"],
-      "sourceFile": "assets/images/s01/campfire-stone-ring.svg",
-      "runtime2D": { "path": "assets/images/s01/campfire-stone-ring.svg", "mode": "image" },
+      "sourceFile": "assets/images/s01/campfire-stone-ring.png",
+      "runtime2D": { "path": "assets/images/s01/campfire-stone-ring.png", "mode": "image" },
       "runtime3D": { "mode": "billboard", "sourceAssetId": "s01.prop.campfireStoneRing" },
       "pivot": { "x": 0.5, "y": 1 },
       "bounds": { "width": 92, "height": 38 },
@@ -1543,9 +1543,9 @@
         "herb",
         "poison-zone"
       ],
-      "sourceFile": "assets/images/s04/herb-node.svg",
+      "sourceFile": "assets/images/s04/herb-node.png",
       "runtime2D": {
-        "path": "assets/images/s04/herb-node.svg",
+        "path": "assets/images/s04/herb-node.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -1574,9 +1574,9 @@
         "food",
         "granary"
       ],
-      "sourceFile": "assets/images/s09/food-node.svg",
+      "sourceFile": "assets/images/s09/food-node.png",
       "runtime2D": {
-        "path": "assets/images/s09/food-node.svg",
+        "path": "assets/images/s09/food-node.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -1605,9 +1605,9 @@
         "instructor",
         "warrior"
       ],
-      "sourceFile": "assets/images/s09/zhangliang.svg",
+      "sourceFile": "assets/images/s09/zhangliang.png",
       "runtime2D": {
-        "path": "assets/images/s09/zhangliang.svg",
+        "path": "assets/images/s09/zhangliang.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -1636,9 +1636,9 @@
         "instructor",
         "archer"
       ],
-      "sourceFile": "assets/images/s09/zhangbao.svg",
+      "sourceFile": "assets/images/s09/zhangbao.png",
       "runtime2D": {
-        "path": "assets/images/s09/zhangbao.svg",
+        "path": "assets/images/s09/zhangbao.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -1667,9 +1667,9 @@
         "refugee",
         "wounded"
       ],
-      "sourceFile": "assets/images/s09/wounded-soldier.svg",
+      "sourceFile": "assets/images/s09/wounded-soldier.png",
       "runtime2D": {
-        "path": "assets/images/s09/wounded-soldier.svg",
+        "path": "assets/images/s09/wounded-soldier.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -1698,9 +1698,9 @@
         "refugee",
         "civilian"
       ],
-      "sourceFile": "assets/images/s09/refugee-woman.svg",
+      "sourceFile": "assets/images/s09/refugee-woman.png",
       "runtime2D": {
-        "path": "assets/images/s09/refugee-woman.svg",
+        "path": "assets/images/s09/refugee-woman.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -1729,9 +1729,9 @@
         "refugee",
         "child"
       ],
-      "sourceFile": "assets/images/s09/refugee-child.svg",
+      "sourceFile": "assets/images/s09/refugee-child.png",
       "runtime2D": {
-        "path": "assets/images/s09/refugee-child.svg",
+        "path": "assets/images/s09/refugee-child.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -1760,9 +1760,9 @@
         "refugee",
         "dead"
       ],
-      "sourceFile": "assets/images/s09/refugee-dead.svg",
+      "sourceFile": "assets/images/s09/refugee-dead.png",
       "runtime2D": {
-        "path": "assets/images/s09/refugee-dead.svg",
+        "path": "assets/images/s09/refugee-dead.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -1791,9 +1791,9 @@
         "enemy",
         "scout"
       ],
-      "sourceFile": "assets/images/s09/government-scout.svg",
+      "sourceFile": "assets/images/s09/government-scout.png",
       "runtime2D": {
-        "path": "assets/images/s09/government-scout.svg",
+        "path": "assets/images/s09/government-scout.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -1822,9 +1822,9 @@
         "strategist",
         "gathering"
       ],
-      "sourceFile": "assets/images/s09/gathering-puppet.svg",
+      "sourceFile": "assets/images/s09/gathering-puppet.png",
       "runtime2D": {
-        "path": "assets/images/s09/gathering-puppet.svg",
+        "path": "assets/images/s09/gathering-puppet.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -1853,9 +1853,9 @@
         "class",
         "warrior"
       ],
-      "sourceFile": "assets/images/player/class-warrior-overlay.svg",
+      "sourceFile": "assets/images/player/class-warrior-overlay.png",
       "runtime2D": {
-        "path": "assets/images/player/class-warrior-overlay.svg",
+        "path": "assets/images/player/class-warrior-overlay.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -1884,9 +1884,9 @@
         "class",
         "archer"
       ],
-      "sourceFile": "assets/images/player/class-archer-overlay.svg",
+      "sourceFile": "assets/images/player/class-archer-overlay.png",
       "runtime2D": {
-        "path": "assets/images/player/class-archer-overlay.svg",
+        "path": "assets/images/player/class-archer-overlay.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -1915,9 +1915,9 @@
         "class",
         "strategist"
       ],
-      "sourceFile": "assets/images/player/class-strategist-overlay.svg",
+      "sourceFile": "assets/images/player/class-strategist-overlay.png",
       "runtime2D": {
-        "path": "assets/images/player/class-strategist-overlay.svg",
+        "path": "assets/images/player/class-strategist-overlay.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -1946,9 +1946,9 @@
         "class",
         "warrior"
       ],
-      "sourceFile": "assets/images/s09/icon-class-warrior.svg",
+      "sourceFile": "assets/images/s09/icon-class-warrior.png",
       "runtime2D": {
-        "path": "assets/images/s09/icon-class-warrior.svg",
+        "path": "assets/images/s09/icon-class-warrior.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -1977,9 +1977,9 @@
         "class",
         "archer"
       ],
-      "sourceFile": "assets/images/s09/icon-class-archer.svg",
+      "sourceFile": "assets/images/s09/icon-class-archer.png",
       "runtime2D": {
-        "path": "assets/images/s09/icon-class-archer.svg",
+        "path": "assets/images/s09/icon-class-archer.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -2008,9 +2008,9 @@
         "class",
         "strategist"
       ],
-      "sourceFile": "assets/images/s09/icon-class-strategist.svg",
+      "sourceFile": "assets/images/s09/icon-class-strategist.png",
       "runtime2D": {
-        "path": "assets/images/s09/icon-class-strategist.svg",
+        "path": "assets/images/s09/icon-class-strategist.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -2039,9 +2039,9 @@
         "city-state",
         "morale"
       ],
-      "sourceFile": "assets/images/s09/icon-morale.svg",
+      "sourceFile": "assets/images/s09/icon-morale.png",
       "runtime2D": {
-        "path": "assets/images/s09/icon-morale.svg",
+        "path": "assets/images/s09/icon-morale.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -2070,9 +2070,9 @@
         "city-state",
         "reputation"
       ],
-      "sourceFile": "assets/images/s09/icon-reputation.svg",
+      "sourceFile": "assets/images/s09/icon-reputation.png",
       "runtime2D": {
-        "path": "assets/images/s09/icon-reputation.svg",
+        "path": "assets/images/s09/icon-reputation.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -2101,9 +2101,9 @@
         "story",
         "choice"
       ],
-      "sourceFile": "assets/images/s09/icon-story-choice.svg",
+      "sourceFile": "assets/images/s09/icon-story-choice.png",
       "runtime2D": {
-        "path": "assets/images/s09/icon-story-choice.svg",
+        "path": "assets/images/s09/icon-story-choice.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -2132,9 +2132,9 @@
         "refugee",
         "bread"
       ],
-      "sourceFile": "assets/images/s09/bread.svg",
+      "sourceFile": "assets/images/s09/bread.png",
       "runtime2D": {
-        "path": "assets/images/s09/bread.svg",
+        "path": "assets/images/s09/bread.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -2163,9 +2163,9 @@
         "yellow-turban",
         "tent"
       ],
-      "sourceFile": "assets/images/s09/yellow-turban-tent.svg",
+      "sourceFile": "assets/images/s09/yellow-turban-tent.png",
       "runtime2D": {
-        "path": "assets/images/s09/yellow-turban-tent.svg",
+        "path": "assets/images/s09/yellow-turban-tent.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -2194,9 +2194,9 @@
         "wounded",
         "shelter"
       ],
-      "sourceFile": "assets/images/s09/wounded-shelter.svg",
+      "sourceFile": "assets/images/s09/wounded-shelter.png",
       "runtime2D": {
-        "path": "assets/images/s09/wounded-shelter.svg",
+        "path": "assets/images/s09/wounded-shelter.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -2225,9 +2225,9 @@
         "refugee",
         "shelter"
       ],
-      "sourceFile": "assets/images/s09/refugee-shelter.svg",
+      "sourceFile": "assets/images/s09/refugee-shelter.png",
       "runtime2D": {
-        "path": "assets/images/s09/refugee-shelter.svg",
+        "path": "assets/images/s09/refugee-shelter.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -2256,9 +2256,9 @@
         "supply",
         "damaged"
       ],
-      "sourceFile": "assets/images/s09/broken-supply-cart.svg",
+      "sourceFile": "assets/images/s09/broken-supply-cart.png",
       "runtime2D": {
-        "path": "assets/images/s09/broken-supply-cart.svg",
+        "path": "assets/images/s09/broken-supply-cart.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -2287,9 +2287,9 @@
         "iron",
         "mine"
       ],
-      "sourceFile": "assets/images/s05/iron-ore.svg",
+      "sourceFile": "assets/images/s05/iron-ore.png",
       "runtime2D": {
-        "path": "assets/images/s05/iron-ore.svg",
+        "path": "assets/images/s05/iron-ore.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -2319,9 +2319,9 @@
         "pickaxe",
         "pickup"
       ],
-      "sourceFile": "assets/images/s05/worn-pickaxe.svg",
+      "sourceFile": "assets/images/s05/worn-pickaxe.png",
       "runtime2D": {
-        "path": "assets/images/s05/worn-pickaxe.svg",
+        "path": "assets/images/s05/worn-pickaxe.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -2351,9 +2351,9 @@
         "collapse",
         "blocked-route"
       ],
-      "sourceFile": "assets/images/s05/mine-collapse.svg",
+      "sourceFile": "assets/images/s05/mine-collapse.png",
       "runtime2D": {
-        "path": "assets/images/s05/mine-collapse.svg",
+        "path": "assets/images/s05/mine-collapse.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -2382,9 +2382,9 @@
         "rescue-target",
         "yellow_turban"
       ],
-      "sourceFile": "assets/images/s05/zhang-mancheng.svg",
+      "sourceFile": "assets/images/s05/zhang-mancheng.png",
       "runtime2D": {
-        "path": "assets/images/s05/zhang-mancheng.svg",
+        "path": "assets/images/s05/zhang-mancheng.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -2413,9 +2413,9 @@
         "enemy",
         "han_government"
       ],
-      "sourceFile": "assets/images/s05/qin-jie.svg",
+      "sourceFile": "assets/images/s05/qin-jie.png",
       "runtime2D": {
-        "path": "assets/images/s05/qin-jie.svg",
+        "path": "assets/images/s05/qin-jie.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -2444,9 +2444,9 @@
         "wancheng",
         "city-wall"
       ],
-      "sourceFile": "assets/images/s06/wancheng-wall.svg",
+      "sourceFile": "assets/images/s06/wancheng-wall.png",
       "runtime2D": {
-        "path": "assets/images/s06/wancheng-wall.svg",
+        "path": "assets/images/s06/wancheng-wall.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -2475,9 +2475,9 @@
         "delay-line",
         "barricade"
       ],
-      "sourceFile": "assets/images/s07/delay-barricade.svg",
+      "sourceFile": "assets/images/s07/delay-barricade.png",
       "runtime2D": {
-        "path": "assets/images/s07/delay-barricade.svg",
+        "path": "assets/images/s07/delay-barricade.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -2507,9 +2507,9 @@
         "cart",
         "mud"
       ],
-      "sourceFile": "assets/images/s08/retreat-cart.svg",
+      "sourceFile": "assets/images/s08/retreat-cart.png",
       "runtime2D": {
-        "path": "assets/images/s08/retreat-cart.svg",
+        "path": "assets/images/s08/retreat-cart.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -2538,9 +2538,9 @@
         "creek",
         "temporary-camp"
       ],
-      "sourceFile": "assets/images/s10/creek-camp-ground.svg",
+      "sourceFile": "assets/images/s10/creek-camp-ground.png",
       "runtime2D": {
-        "path": "assets/images/s10/creek-camp-ground.svg",
+        "path": "assets/images/s10/creek-camp-ground.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -2599,9 +2599,9 @@
         "zhangjiao",
         "historical-death"
       ],
-      "sourceFile": "assets/images/s10/zhangjiao-deathbed.svg",
+      "sourceFile": "assets/images/s10/zhangjiao-deathbed.png",
       "runtime2D": {
-        "path": "assets/images/s10/zhangjiao-deathbed.svg",
+        "path": "assets/images/s10/zhangjiao-deathbed.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -2630,9 +2630,9 @@
         "creek",
         "relocation"
       ],
-      "sourceFile": "assets/images/s10/relocation-sign.svg",
+      "sourceFile": "assets/images/s10/relocation-sign.png",
       "runtime2D": {
-        "path": "assets/images/s10/relocation-sign.svg",
+        "path": "assets/images/s10/relocation-sign.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -2663,9 +2663,9 @@
         "shovel",
         "worn"
       ],
-      "sourceFile": "assets/images/tools/worn-shovel.svg",
+      "sourceFile": "assets/images/tools/worn-shovel.png",
       "runtime2D": {
-        "path": "assets/images/tools/worn-shovel.svg",
+        "path": "assets/images/tools/worn-shovel.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -2695,9 +2695,9 @@
         "construction",
         "shovel"
       ],
-      "sourceFile": "assets/images/tools/shovel.svg",
+      "sourceFile": "assets/images/tools/shovel.png",
       "runtime2D": {
-        "path": "assets/images/tools/shovel.svg",
+        "path": "assets/images/tools/shovel.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -2727,9 +2727,9 @@
         "construction",
         "site"
       ],
-      "sourceFile": "assets/images/s10/construction-site-marker.svg",
+      "sourceFile": "assets/images/s10/construction-site-marker.png",
       "runtime2D": {
-        "path": "assets/images/s10/construction-site-marker.svg",
+        "path": "assets/images/s10/construction-site-marker.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -2758,9 +2758,9 @@
         "construction",
         "campfire"
       ],
-      "sourceFile": "assets/images/s10/campfire-structure.svg",
+      "sourceFile": "assets/images/s10/campfire-structure.png",
       "runtime2D": {
-        "path": "assets/images/s10/campfire-structure.svg",
+        "path": "assets/images/s10/campfire-structure.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -2790,9 +2790,9 @@
         "construction",
         "barricade"
       ],
-      "sourceFile": "assets/images/s10/barricade-structure.svg",
+      "sourceFile": "assets/images/s10/barricade-structure.png",
       "runtime2D": {
-        "path": "assets/images/s10/barricade-structure.svg",
+        "path": "assets/images/s10/barricade-structure.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -2821,9 +2821,9 @@
         "construction",
         "simple-wall"
       ],
-      "sourceFile": "assets/images/s10/simple-wall-structure.svg",
+      "sourceFile": "assets/images/s10/simple-wall-structure.png",
       "runtime2D": {
-        "path": "assets/images/s10/simple-wall-structure.svg",
+        "path": "assets/images/s10/simple-wall-structure.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -2853,9 +2853,9 @@
         "arrow-tower",
         "manned"
       ],
-      "sourceFile": "assets/images/s10/arrow-tower-structure.svg",
+      "sourceFile": "assets/images/s10/arrow-tower-structure.png",
       "runtime2D": {
-        "path": "assets/images/s10/arrow-tower-structure.svg",
+        "path": "assets/images/s10/arrow-tower-structure.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -2885,9 +2885,9 @@
         "messenger",
         "recall"
       ],
-      "sourceFile": "assets/images/story/messenger-recall-banner.svg",
+      "sourceFile": "assets/images/story/messenger-recall-banner.png",
       "runtime2D": {
-        "path": "assets/images/story/messenger-recall-banner.svg",
+        "path": "assets/images/story/messenger-recall-banner.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -2916,9 +2916,9 @@
         "scene-background",
         "terrain"
       ],
-      "sourceFile": "assets/images/s01/drought-wilderness-ground.svg",
+      "sourceFile": "assets/images/s01/drought-wilderness-ground.png",
       "runtime2D": {
-        "path": "assets/images/s01/drought-wilderness-ground.svg",
+        "path": "assets/images/s01/drought-wilderness-ground.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -2977,9 +2977,9 @@
         "scene-background",
         "terrain"
       ],
-      "sourceFile": "assets/images/s02/abandoned-camp-ground.svg",
+      "sourceFile": "assets/images/s02/abandoned-camp-ground.png",
       "runtime2D": {
-        "path": "assets/images/s02/abandoned-camp-ground.svg",
+        "path": "assets/images/s02/abandoned-camp-ground.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -3038,9 +3038,9 @@
         "scene-background",
         "terrain"
       ],
-      "sourceFile": "assets/images/s03/yingchuan-battlefield-ground.svg",
+      "sourceFile": "assets/images/s03/yingchuan-battlefield-ground.png",
       "runtime2D": {
-        "path": "assets/images/s03/yingchuan-battlefield-ground.svg",
+        "path": "assets/images/s03/yingchuan-battlefield-ground.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -3100,9 +3100,9 @@
         "scene-background",
         "terrain"
       ],
-      "sourceFile": "assets/images/s04/changshe-burned-ground.svg",
+      "sourceFile": "assets/images/s04/changshe-burned-ground.png",
       "runtime2D": {
-        "path": "assets/images/s04/changshe-burned-ground.svg",
+        "path": "assets/images/s04/changshe-burned-ground.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -3161,9 +3161,9 @@
         "scene-background",
         "terrain"
       ],
-      "sourceFile": "assets/images/s05/wancheng-outskirts-ground.svg",
+      "sourceFile": "assets/images/s05/wancheng-outskirts-ground.png",
       "runtime2D": {
-        "path": "assets/images/s05/wancheng-outskirts-ground.svg",
+        "path": "assets/images/s05/wancheng-outskirts-ground.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -3222,9 +3222,9 @@
         "scene-background",
         "terrain"
       ],
-      "sourceFile": "assets/images/s06/wancheng-siege-ground.svg",
+      "sourceFile": "assets/images/s06/wancheng-siege-ground.png",
       "runtime2D": {
-        "path": "assets/images/s06/wancheng-siege-ground.svg",
+        "path": "assets/images/s06/wancheng-siege-ground.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -3283,9 +3283,9 @@
         "scene-background",
         "terrain"
       ],
-      "sourceFile": "assets/images/s07/xihua-delay-ground.svg",
+      "sourceFile": "assets/images/s07/xihua-delay-ground.png",
       "runtime2D": {
-        "path": "assets/images/s07/xihua-delay-ground.svg",
+        "path": "assets/images/s07/xihua-delay-ground.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -3344,9 +3344,9 @@
         "scene-background",
         "terrain"
       ],
-      "sourceFile": "assets/images/s08/remnant-camp-ground.svg",
+      "sourceFile": "assets/images/s08/remnant-camp-ground.png",
       "runtime2D": {
-        "path": "assets/images/s08/remnant-camp-ground.svg",
+        "path": "assets/images/s08/remnant-camp-ground.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -3405,9 +3405,9 @@
         "scene-background",
         "terrain"
       ],
-      "sourceFile": "assets/images/s11/guangzong-battlefield-ground.svg",
+      "sourceFile": "assets/images/s11/guangzong-battlefield-ground.png",
       "runtime2D": {
-        "path": "assets/images/s11/guangzong-battlefield-ground.svg",
+        "path": "assets/images/s11/guangzong-battlefield-ground.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -3459,236 +3459,236 @@
     },
     {
       "assetId": "s13.environment.jingshanBattlefieldGround", "imageId": "s13.environment.jingshanBattlefieldGround", "category": "environment-background",
-      "usage": ["S13", "scene-background", "terminal-battlefield"], "sourceFile": "assets/images/s13/jingshan-battlefield-ground.svg",
-      "runtime2D": { "path": "assets/images/s13/jingshan-battlefield-ground.svg", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s13.environment.jingshanBattlefieldGround" },
+      "usage": ["S13", "scene-background", "terminal-battlefield"], "sourceFile": "assets/images/s13/jingshan-battlefield-ground.png",
+      "runtime2D": { "path": "assets/images/s13/jingshan-battlefield-ground.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s13.environment.jingshanBattlefieldGround" },
       "pivot": { "x": 0, "y": 0 }, "bounds": { "width": 1280, "height": 720 }, "animations": [], "targetPhase": "P5", "status": "ai-generated", "revision": 1,
       "displayName": "S13 精山终局战场", "replacesPlaceholderId": "graybox.naturalTerrain",
       "replacementBrief": { "sceneIds": ["S13"], "subject": "暮雨精山狭长终局战场", "mustShow": ["西南入口", "中央军令台", "东北撤离山口", "暮雨与山雾"], "mustPreserve": ["1280×720 坐标对齐", "主路线和交互锚点", "碰撞由场景定义"], "camera": "top-down-oblique-2d", "palette": ["#30383a", "#6b6760", "#d8aa32", "#7d3030"], "textPolicy": "no-baked-text" }
     },
     {
       "assetId": "s13.story.finalCommandBanner", "imageId": "s13.story.finalCommandBanner", "category": "story-prop", "usage": ["S13", "S14", "battle-choice", "ending-review"],
-      "sourceFile": "assets/images/s13/final-command-banner.svg", "runtime2D": { "path": "assets/images/s13/final-command-banner.svg", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s13.story.finalCommandBanner" },
+      "sourceFile": "assets/images/s13/final-command-banner.png", "runtime2D": { "path": "assets/images/s13/final-command-banner.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s13.story.finalCommandBanner" },
       "pivot": { "x": 0.5, "y": 1 }, "bounds": { "width": 96, "height": 128 }, "animations": [], "targetPhase": "P5", "status": "ai-generated", "revision": 1
     },
     {
       "assetId": "world.loot.deathDrop", "imageId": "world.loot.deathDrop", "category": "loot-container", "usage": ["world", "player-death", "cargo-destruction"],
-      "sourceFile": "assets/images/items/death-drop.svg", "runtime2D": { "path": "assets/images/items/death-drop.svg", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "world.loot.deathDrop" },
+      "sourceFile": "assets/images/items/death-drop.png", "runtime2D": { "path": "assets/images/items/death-drop.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "world.loot.deathDrop" },
       "pivot": { "x": 0.5, "y": 1 }, "bounds": { "width": 48, "height": 40 }, "animations": [], "targetPhase": "P4", "status": "ai-generated", "revision": 1
     },
     {
       "assetId": "s14.environment.endingGround", "imageId": "s14.environment.endingGround", "category": "environment-background", "usage": ["S14", "scene-background", "ending-stage"],
-      "sourceFile": "assets/images/s14/ending-ground.svg", "runtime2D": { "path": "assets/images/s14/ending-ground.svg", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s14.environment.endingGround" },
+      "sourceFile": "assets/images/s14/ending-ground.png", "runtime2D": { "path": "assets/images/s14/ending-ground.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s14.environment.endingGround" },
       "pivot": { "x": 0, "y": 0 }, "bounds": { "width": 1280, "height": 720 }, "animations": [], "targetPhase": "P5", "status": "ai-generated", "revision": 1,
       "displayName": "S14 结局之地", "replacesPlaceholderId": "graybox.naturalTerrain",
       "replacementBrief": { "sceneIds": ["S14"], "subject": "雪后将明的终局山口", "mustShow": ["前景残营", "最后马车", "缺梁投石车", "远景退路"], "mustPreserve": ["1280×720 坐标对齐", "终局交互锚点", "碰撞由场景定义"], "camera": "top-down-oblique-2d", "palette": ["#24282a", "#6b6760", "#c8d0d8", "#d8aa32"], "textPolicy": "no-baked-text" }
     },
     {
       "assetId": "s11.vehicle.breakoutHorse", "imageId": "s11.vehicle.breakoutHorse", "category": "vehicle", "usage": ["S11", "horse", "breakout"],
-      "sourceFile": "assets/images/s11/breakout-horse.svg", "runtime2D": { "path": "assets/images/s11/breakout-horse.svg", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s11.vehicle.breakoutHorse" },
+      "sourceFile": "assets/images/s11/breakout-horse.png", "runtime2D": { "path": "assets/images/s11/breakout-horse.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s11.vehicle.breakoutHorse" },
       "pivot": { "x": 0.5, "y": 1 }, "bounds": { "width": 150, "height": 100 }, "animations": [], "targetPhase": "P4", "status": "ai-generated", "revision": 1
     },
     {
       "assetId": "s12.vehicle.siegeLadder", "imageId": "s12.vehicle.siegeLadder", "category": "vehicle", "usage": ["S12", "ladder", "siege-entry"],
-      "sourceFile": "assets/images/s12/siege-ladder.svg", "runtime2D": { "path": "assets/images/s12/siege-ladder.svg", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s12.vehicle.siegeLadder" },
+      "sourceFile": "assets/images/s12/siege-ladder.png", "runtime2D": { "path": "assets/images/s12/siege-ladder.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s12.vehicle.siegeLadder" },
       "pivot": { "x": 0.5, "y": 1 }, "bounds": { "width": 100, "height": 220 }, "animations": [], "targetPhase": "P4", "status": "ai-generated", "revision": 1
     },
     {
       "assetId": "s14.vehicle.lastRetreatCart", "imageId": "s14.vehicle.lastRetreatCart", "category": "vehicle", "usage": ["S14", "final-retreat", "cart-breakout"],
-      "sourceFile": "assets/images/s14/last-retreat-cart.svg", "runtime2D": { "path": "assets/images/s14/last-retreat-cart.svg", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s14.vehicle.lastRetreatCart" },
+      "sourceFile": "assets/images/s14/last-retreat-cart.png", "runtime2D": { "path": "assets/images/s14/last-retreat-cart.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s14.vehicle.lastRetreatCart" },
       "pivot": { "x": 0.5, "y": 1 }, "bounds": { "width": 220, "height": 128 }, "animations": [], "targetPhase": "P5", "status": "ai-generated", "revision": 1
     },
     {
       "assetId": "s14.vehicle.unassembledCatapult", "imageId": "s14.vehicle.unassembledCatapult", "category": "vehicle", "usage": ["S14", "siege", "missing-wood"],
-      "sourceFile": "assets/images/s14/unassembled-catapult.svg", "runtime2D": { "path": "assets/images/s14/unassembled-catapult.svg", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s14.vehicle.unassembledCatapult" },
+      "sourceFile": "assets/images/s14/unassembled-catapult.png", "runtime2D": { "path": "assets/images/s14/unassembled-catapult.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s14.vehicle.unassembledCatapult" },
       "pivot": { "x": 0.5, "y": 1 }, "bounds": { "width": 220, "height": 150 }, "animations": [], "targetPhase": "P5", "status": "ai-generated", "revision": 1
     },
     {
       "assetId": "ending.art.scorchedEarth", "imageId": "ending.art.scorchedEarth", "category": "narrative-key-art", "usage": ["S14", "ending", "scorched-earth"],
-      "sourceFile": "assets/images/endings/scorched-earth.svg", "runtime2D": { "path": "assets/images/endings/scorched-earth.svg", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "ending.art.scorchedEarth" }, "pivot": { "x": 0.5, "y": 0.5 }, "bounds": { "width": 1280, "height": 720 }, "animations": [], "targetPhase": "P5", "status": "ai-generated", "revision": 1
+      "sourceFile": "assets/images/endings/scorched-earth.png", "runtime2D": { "path": "assets/images/endings/scorched-earth.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "ending.art.scorchedEarth" }, "pivot": { "x": 0.5, "y": 0.5 }, "bounds": { "width": 1280, "height": 720 }, "animations": [], "targetPhase": "P5", "status": "ai-generated", "revision": 1
     },
     {
       "assetId": "ending.art.observer", "imageId": "ending.art.observer", "category": "narrative-key-art", "usage": ["S14", "ending", "observer"],
-      "sourceFile": "assets/images/endings/observer.svg", "runtime2D": { "path": "assets/images/endings/observer.svg", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "ending.art.observer" }, "pivot": { "x": 0.5, "y": 0.5 }, "bounds": { "width": 1280, "height": 720 }, "animations": [], "targetPhase": "P5", "status": "ai-generated", "revision": 1
+      "sourceFile": "assets/images/endings/observer.png", "runtime2D": { "path": "assets/images/endings/observer.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "ending.art.observer" }, "pivot": { "x": 0.5, "y": 0.5 }, "bounds": { "width": 1280, "height": 720 }, "animations": [], "targetPhase": "P5", "status": "ai-generated", "revision": 1
     },
     {
       "assetId": "ending.art.spark", "imageId": "ending.art.spark", "category": "narrative-key-art", "usage": ["S14", "ending", "spark"],
-      "sourceFile": "assets/images/endings/spark.svg", "runtime2D": { "path": "assets/images/endings/spark.svg", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "ending.art.spark" }, "pivot": { "x": 0.5, "y": 0.5 }, "bounds": { "width": 1280, "height": 720 }, "animations": [], "targetPhase": "P5", "status": "ai-generated", "revision": 1
+      "sourceFile": "assets/images/endings/spark.png", "runtime2D": { "path": "assets/images/endings/spark.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "ending.art.spark" }, "pivot": { "x": 0.5, "y": 0.5 }, "bounds": { "width": 1280, "height": 720 }, "animations": [], "targetPhase": "P5", "status": "ai-generated", "revision": 1
     },
     {
       "assetId": "ending.art.embers", "imageId": "ending.art.embers", "category": "narrative-key-art", "usage": ["S14", "ending", "embers"],
-      "sourceFile": "assets/images/endings/embers.svg", "runtime2D": { "path": "assets/images/endings/embers.svg", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "ending.art.embers" }, "pivot": { "x": 0.5, "y": 0.5 }, "bounds": { "width": 1280, "height": 720 }, "animations": [], "targetPhase": "P5", "status": "ai-generated", "revision": 1
+      "sourceFile": "assets/images/endings/embers.png", "runtime2D": { "path": "assets/images/endings/embers.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "ending.art.embers" }, "pivot": { "x": 0.5, "y": 0.5 }, "bounds": { "width": 1280, "height": 720 }, "animations": [], "targetPhase": "P5", "status": "ai-generated", "revision": 1
     },
     {
       "assetId": "ending.art.meteor", "imageId": "ending.art.meteor", "category": "narrative-key-art", "usage": ["S14", "ending", "meteor"],
-      "sourceFile": "assets/images/endings/meteor.svg", "runtime2D": { "path": "assets/images/endings/meteor.svg", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "ending.art.meteor" }, "pivot": { "x": 0.5, "y": 0.5 }, "bounds": { "width": 1280, "height": 720 }, "animations": [], "targetPhase": "P5", "status": "ai-generated", "revision": 1
+      "sourceFile": "assets/images/endings/meteor.png", "runtime2D": { "path": "assets/images/endings/meteor.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "ending.art.meteor" }, "pivot": { "x": 0.5, "y": 0.5 }, "bounds": { "width": 1280, "height": 720 }, "animations": [], "targetPhase": "P5", "status": "ai-generated", "revision": 1
     },
     {
       "assetId": "ending.art.dust", "imageId": "ending.art.dust", "category": "narrative-key-art", "usage": ["S14", "ending", "dust"],
-      "sourceFile": "assets/images/endings/dust.svg", "runtime2D": { "path": "assets/images/endings/dust.svg", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "ending.art.dust" }, "pivot": { "x": 0.5, "y": 0.5 }, "bounds": { "width": 1280, "height": 720 }, "animations": [], "targetPhase": "P5", "status": "ai-generated", "revision": 1
+      "sourceFile": "assets/images/endings/dust.png", "runtime2D": { "path": "assets/images/endings/dust.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "ending.art.dust" }, "pivot": { "x": 0.5, "y": 0.5 }, "bounds": { "width": 1280, "height": 720 }, "animations": [], "targetPhase": "P5", "status": "ai-generated", "revision": 1
     },
     {
       "assetId": "s11.prop.beaconTower", "imageId": "s11.prop.beaconTower", "category": "battle-prop", "usage": ["S11", "rescue", "beacon"],
-      "sourceFile": "assets/images/s11/beacon-tower.svg", "runtime2D": { "path": "assets/images/s11/beacon-tower.svg", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s11.prop.beaconTower" },
+      "sourceFile": "assets/images/s11/beacon-tower.png", "runtime2D": { "path": "assets/images/s11/beacon-tower.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s11.prop.beaconTower" },
       "pivot": { "x": 0.5, "y": 1 }, "bounds": { "width": 72, "height": 96 }, "animations": [], "targetPhase": "P4", "status": "ai-generated", "revision": 1
     },
     {
       "assetId": "s11.unit.assassin", "imageId": "s11.unit.assassin", "category": "character-static", "usage": ["S11", "enemy", "assassin-wave"],
-      "sourceFile": "assets/images/s11/assassin.svg", "runtime2D": { "path": "assets/images/s11/assassin.svg", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s11.unit.assassin" },
+      "sourceFile": "assets/images/s11/assassin.png", "runtime2D": { "path": "assets/images/s11/assassin.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s11.unit.assassin" },
       "pivot": { "x": 0.5, "y": 1 }, "bounds": { "width": 48, "height": 64 }, "animations": [], "targetPhase": "P4", "status": "ai-generated", "revision": 1
     },
     {
       "assetId": "s12.environment.xiaquyangYamenGround", "imageId": "s12.environment.xiaquyangYamenGround", "category": "environment-background", "usage": ["S12", "scene-background", "city-defense"],
-      "sourceFile": "assets/images/s12/xiaquyang-yamen-ground.svg", "runtime2D": { "path": "assets/images/s12/xiaquyang-yamen-ground.svg", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s12.environment.xiaquyangYamenGround" },
+      "sourceFile": "assets/images/s12/xiaquyang-yamen-ground.png", "runtime2D": { "path": "assets/images/s12/xiaquyang-yamen-ground.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s12.environment.xiaquyangYamenGround" },
       "pivot": { "x": 0, "y": 0 }, "bounds": { "width": 1280, "height": 720 }, "animations": [], "targetPhase": "P4", "status": "ai-generated", "revision": 1
     },
     {
       "assetId": "s12.structure.yamenGate", "imageId": "s12.structure.yamenGate", "category": "city-structure", "usage": ["S12", "gate-defense", "destructible"],
-      "sourceFile": "assets/images/s12/yamen-gate.svg", "runtime2D": { "path": "assets/images/s12/yamen-gate.svg", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s12.structure.yamenGate" },
+      "sourceFile": "assets/images/s12/yamen-gate.png", "runtime2D": { "path": "assets/images/s12/yamen-gate.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s12.structure.yamenGate" },
       "pivot": { "x": 0.5, "y": 1 }, "bounds": { "width": 180, "height": 110 }, "animations": [], "targetPhase": "P4", "status": "ai-generated", "revision": 1
     },
     {
       "assetId": "s12.structure.secretPassage", "imageId": "s12.structure.secretPassage", "category": "city-structure", "usage": ["S12", "rescue", "secret-passage"],
-      "sourceFile": "assets/images/s12/secret-passage.svg", "runtime2D": { "path": "assets/images/s12/secret-passage.svg", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s12.structure.secretPassage" },
+      "sourceFile": "assets/images/s12/secret-passage.png", "runtime2D": { "path": "assets/images/s12/secret-passage.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s12.structure.secretPassage" },
       "pivot": { "x": 0.5, "y": 1 }, "bounds": { "width": 120, "height": 80 }, "animations": [], "targetPhase": "P4", "status": "ai-generated", "revision": 1
     },
     {
       "assetId": "s01.resource.wildBerryNode", "imageId": "s01.resource.wildBerryNode", "category": "resource-node", "usage": ["S01", "berry", "food"],
-      "sourceFile": "assets/images/s01/wild-berry-node.svg", "runtime2D": { "path": "assets/images/s01/wild-berry-node.svg", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s01.resource.wildBerryNode" },
+      "sourceFile": "assets/images/s01/wild-berry-node.png", "runtime2D": { "path": "assets/images/s01/wild-berry-node.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s01.resource.wildBerryNode" },
       "pivot": { "x": 0.5, "y": 1 }, "bounds": { "width": 68, "height": 58 }, "animations": [], "targetPhase": "P1", "status": "ai-generated", "revision": 1
     },
     {
       "assetId": "s01.tool.skinningKnife", "imageId": "s01.tool.skinningKnife", "category": "tool", "usage": ["S01", "skinning", "pickup"],
-      "sourceFile": "assets/images/s01/skinning-knife.svg", "runtime2D": { "path": "assets/images/s01/skinning-knife.svg", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s01.tool.skinningKnife" },
+      "sourceFile": "assets/images/s01/skinning-knife.png", "runtime2D": { "path": "assets/images/s01/skinning-knife.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s01.tool.skinningKnife" },
       "pivot": { "x": 0.5, "y": 1 }, "bounds": { "width": 42, "height": 42 }, "animations": [], "targetPhase": "P1", "status": "ai-generated", "revision": 1
     },
     {
       "assetId": "s01.enemy.wolf", "imageId": "s01.enemy.wolf", "category": "character-static", "usage": ["S01", "enemy", "tutorial-wolf", "corpse-harvest", "wolf-pursuit"],
-      "sourceFile": "assets/images/s01/wild-wolf.svg", "runtime2D": { "path": "assets/images/s01/wild-wolf.svg", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s01.enemy.wolf" },
+      "sourceFile": "assets/images/s01/wild-wolf.png", "runtime2D": { "path": "assets/images/s01/wild-wolf.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s01.enemy.wolf" },
       "pivot": { "x": 0.5, "y": 1 }, "bounds": { "width": 68, "height": 48 }, "animations": [], "targetPhase": "P1", "status": "ai-generated", "revision": 1
     },
     {
       "assetId": "s01.item.rawWolfMeat", "imageId": "s01.item.rawWolfMeat", "category": "item", "usage": ["S01", "loot", "raw-food"],
-      "sourceFile": "assets/images/s01/raw-wolf-meat.svg", "runtime2D": { "path": "assets/images/s01/raw-wolf-meat.svg", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s01.item.rawWolfMeat" },
+      "sourceFile": "assets/images/s01/raw-wolf-meat.png", "runtime2D": { "path": "assets/images/s01/raw-wolf-meat.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s01.item.rawWolfMeat" },
       "pivot": { "x": 0.5, "y": 1 }, "bounds": { "width": 42, "height": 34 }, "animations": [], "targetPhase": "P1", "status": "ai-generated", "revision": 1
     },
     {
       "assetId": "s01.item.wolfHide", "imageId": "s01.item.wolfHide", "category": "item", "usage": ["S01", "hide", "crafting"],
-      "sourceFile": "assets/images/s01/wolf-hide.svg", "runtime2D": { "path": "assets/images/s01/wolf-hide.svg", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s01.item.wolfHide" },
+      "sourceFile": "assets/images/s01/wolf-hide.png", "runtime2D": { "path": "assets/images/s01/wolf-hide.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s01.item.wolfHide" },
       "pivot": { "x": 0.5, "y": 1 }, "bounds": { "width": 48, "height": 38 }, "animations": [], "targetPhase": "P1", "status": "ai-generated", "revision": 1
     },
     {
       "assetId": "s01.equipment.wolfHideVest", "imageId": "s01.equipment.wolfHideVest", "category": "equipment", "usage": ["S01", "armor", "crafting"],
-      "sourceFile": "assets/images/s01/wolf-hide-vest.svg", "runtime2D": { "path": "assets/images/s01/wolf-hide-vest.svg", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s01.equipment.wolfHideVest" },
+      "sourceFile": "assets/images/s01/wolf-hide-vest.png", "runtime2D": { "path": "assets/images/s01/wolf-hide-vest.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s01.equipment.wolfHideVest" },
       "pivot": { "x": 0.5, "y": 0.5 }, "bounds": { "width": 46, "height": 52 }, "animations": [], "targetPhase": "P1", "status": "ai-generated", "revision": 1
     },
     {
       "assetId": "s01.equipment.wolfHideBracers", "imageId": "s01.equipment.wolfHideBracers", "category": "equipment", "usage": ["S01", "accessory", "crafting"],
-      "sourceFile": "assets/images/s01/wolf-hide-bracers.svg", "runtime2D": { "path": "assets/images/s01/wolf-hide-bracers.svg", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s01.equipment.wolfHideBracers" },
+      "sourceFile": "assets/images/s01/wolf-hide-bracers.png", "runtime2D": { "path": "assets/images/s01/wolf-hide-bracers.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s01.equipment.wolfHideBracers" },
       "pivot": { "x": 0.5, "y": 0.5 }, "bounds": { "width": 48, "height": 40 }, "animations": [], "targetPhase": "P1", "status": "ai-generated", "revision": 1
     },
     {
       "assetId": "s01.food.roastedWolfMeat", "imageId": "s01.food.roastedWolfMeat", "category": "item", "usage": ["S01", "food", "healing"],
-      "sourceFile": "assets/images/s01/roasted-wolf-meat.svg", "runtime2D": { "path": "assets/images/s01/roasted-wolf-meat.svg", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s01.food.roastedWolfMeat" },
+      "sourceFile": "assets/images/s01/roasted-wolf-meat.png", "runtime2D": { "path": "assets/images/s01/roasted-wolf-meat.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s01.food.roastedWolfMeat" },
       "pivot": { "x": 0.5, "y": 1 }, "bounds": { "width": 44, "height": 36 }, "animations": [], "targetPhase": "P1", "status": "ai-generated", "revision": 1
     },
     {
       "assetId": "s01.environment.smallShelter", "imageId": "s01.environment.smallShelter", "category": "environment-building", "usage": ["S01", "shelter", "construction"],
-      "sourceFile": "assets/images/s01/small-shelter.svg", "runtime2D": { "path": "assets/images/s01/small-shelter.svg", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s01.environment.smallShelter" },
+      "sourceFile": "assets/images/s01/small-shelter.png", "runtime2D": { "path": "assets/images/s01/small-shelter.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s01.environment.smallShelter" },
       "pivot": { "x": 0.5, "y": 1 }, "bounds": { "width": 154, "height": 112 }, "animations": [], "targetPhase": "P1", "status": "ai-generated", "revision": 1
     },
     {
       "assetId": "s01.story.firestarter", "imageId": "s01.story.firestarter", "category": "story-item", "usage": ["S01", "firestarter", "second-day"],
-      "sourceFile": "assets/images/s01/firestarter.svg", "runtime2D": { "path": "assets/images/s01/firestarter.svg", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s01.story.firestarter" },
+      "sourceFile": "assets/images/s01/firestarter.png", "runtime2D": { "path": "assets/images/s01/firestarter.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s01.story.firestarter" },
       "pivot": { "x": 0.5, "y": 1 }, "bounds": { "width": 40, "height": 42 }, "animations": [], "targetPhase": "P1", "status": "ai-generated", "revision": 1
     },
     {
       "assetId": "s01.environment.cliffVine", "imageId": "s01.environment.cliffVine", "category": "environment-module", "usage": ["S01", "climb", "exit"],
-      "sourceFile": "assets/images/s01/cliff-vine.svg", "runtime2D": { "path": "assets/images/s01/cliff-vine.svg", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s01.environment.cliffVine" },
+      "sourceFile": "assets/images/s01/cliff-vine.png", "runtime2D": { "path": "assets/images/s01/cliff-vine.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s01.environment.cliffVine" },
       "pivot": { "x": 0.5, "y": 1 }, "bounds": { "width": 92, "height": 170 }, "animations": [], "targetPhase": "P1", "status": "ai-generated", "revision": 1
     },
     {
       "assetId": "inventory.resource.wood", "imageId": "inventory.resource.wood", "category": "inventory-icon", "usage": ["inventory", "resource", "wood"],
-      "sourceFile": "assets/images/items/resource-wood.svg", "runtime2D": { "path": "assets/images/items/resource-wood.svg", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "inventory.resource.wood" },
+      "sourceFile": "assets/images/items/resource-wood.png", "runtime2D": { "path": "assets/images/items/resource-wood.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "inventory.resource.wood" },
       "pivot": { "x": 0.5, "y": 0.5 }, "bounds": { "width": 64, "height": 64 }, "animations": [], "targetPhase": "P1", "status": "ai-generated", "revision": 1
     },
     {
       "assetId": "inventory.resource.herb", "imageId": "inventory.resource.herb", "category": "inventory-icon", "usage": ["inventory", "resource", "herb"],
-      "sourceFile": "assets/images/items/resource-herb.svg", "runtime2D": { "path": "assets/images/items/resource-herb.svg", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "inventory.resource.herb" },
+      "sourceFile": "assets/images/items/resource-herb.png", "runtime2D": { "path": "assets/images/items/resource-herb.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "inventory.resource.herb" },
       "pivot": { "x": 0.5, "y": 0.5 }, "bounds": { "width": 64, "height": 64 }, "animations": [], "targetPhase": "P1", "status": "ai-generated", "revision": 1
     },
     {
       "assetId": "inventory.resource.food", "imageId": "inventory.resource.food", "category": "inventory-icon", "usage": ["inventory", "resource", "food"],
-      "sourceFile": "assets/images/items/resource-food.svg", "runtime2D": { "path": "assets/images/items/resource-food.svg", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "inventory.resource.food" },
+      "sourceFile": "assets/images/items/resource-food.png", "runtime2D": { "path": "assets/images/items/resource-food.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "inventory.resource.food" },
       "pivot": { "x": 0.5, "y": 0.5 }, "bounds": { "width": 64, "height": 64 }, "animations": [], "targetPhase": "P1", "status": "ai-generated", "revision": 1
     },
     {
       "assetId": "inventory.resource.iron", "imageId": "inventory.resource.iron", "category": "inventory-icon", "usage": ["inventory", "resource", "iron"],
-      "sourceFile": "assets/images/items/resource-iron.svg", "runtime2D": { "path": "assets/images/items/resource-iron.svg", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "inventory.resource.iron" },
+      "sourceFile": "assets/images/items/resource-iron.png", "runtime2D": { "path": "assets/images/items/resource-iron.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "inventory.resource.iron" },
       "pivot": { "x": 0.5, "y": 0.5 }, "bounds": { "width": 64, "height": 64 }, "animations": [], "targetPhase": "P1", "status": "ai-generated", "revision": 1
     },
     {
       "assetId": "inventory.salvage.tornCloth", "imageId": "inventory.salvage.tornCloth", "category": "inventory-icon", "usage": ["inventory", "salvage", "cloth"],
-      "sourceFile": "assets/images/items/salvage-torn-cloth.svg", "runtime2D": { "path": "assets/images/items/salvage-torn-cloth.svg", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "inventory.salvage.tornCloth" },
+      "sourceFile": "assets/images/items/salvage-torn-cloth.png", "runtime2D": { "path": "assets/images/items/salvage-torn-cloth.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "inventory.salvage.tornCloth" },
       "pivot": { "x": 0.5, "y": 0.5 }, "bounds": { "width": 64, "height": 64 }, "animations": [], "targetPhase": "P1", "status": "ai-generated", "revision": 1
     },
     {
       "assetId": "inventory.salvage.brokenUtensil", "imageId": "inventory.salvage.brokenUtensil", "category": "inventory-icon", "usage": ["inventory", "salvage", "utensil"],
-      "sourceFile": "assets/images/items/salvage-broken-utensil.svg", "runtime2D": { "path": "assets/images/items/salvage-broken-utensil.svg", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "inventory.salvage.brokenUtensil" },
+      "sourceFile": "assets/images/items/salvage-broken-utensil.png", "runtime2D": { "path": "assets/images/items/salvage-broken-utensil.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "inventory.salvage.brokenUtensil" },
       "pivot": { "x": 0.5, "y": 0.5 }, "bounds": { "width": 64, "height": 64 }, "animations": [], "targetPhase": "P1", "status": "ai-generated", "revision": 1
     },
     {
       "assetId": "inventory.equipment.ironSword", "imageId": "inventory.equipment.ironSword", "category": "inventory-icon", "usage": ["inventory", "equipment", "weapon"],
-      "sourceFile": "assets/images/items/equipment-iron-sword.svg", "runtime2D": { "path": "assets/images/items/equipment-iron-sword.svg", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "inventory.equipment.ironSword" },
+      "sourceFile": "assets/images/items/equipment-iron-sword.png", "runtime2D": { "path": "assets/images/items/equipment-iron-sword.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "inventory.equipment.ironSword" },
       "pivot": { "x": 0.5, "y": 0.5 }, "bounds": { "width": 64, "height": 64 }, "animations": [], "targetPhase": "P2", "status": "ai-generated", "revision": 1
     },
     {
       "assetId": "inventory.equipment.leatherArmor", "imageId": "inventory.equipment.leatherArmor", "category": "inventory-icon", "usage": ["inventory", "equipment", "armor"],
-      "sourceFile": "assets/images/items/equipment-leather-armor.svg", "runtime2D": { "path": "assets/images/items/equipment-leather-armor.svg", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "inventory.equipment.leatherArmor" },
+      "sourceFile": "assets/images/items/equipment-leather-armor.png", "runtime2D": { "path": "assets/images/items/equipment-leather-armor.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "inventory.equipment.leatherArmor" },
       "pivot": { "x": 0.5, "y": 0.5 }, "bounds": { "width": 64, "height": 64 }, "animations": [], "targetPhase": "P2", "status": "ai-generated", "revision": 1
     },
     {
       "assetId": "inventory.equipment.woodenShield", "imageId": "inventory.equipment.woodenShield", "category": "inventory-icon", "usage": ["inventory", "equipment", "shield"],
-      "sourceFile": "assets/images/items/equipment-wooden-shield.svg", "runtime2D": { "path": "assets/images/items/equipment-wooden-shield.svg", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "inventory.equipment.woodenShield" },
+      "sourceFile": "assets/images/items/equipment-wooden-shield.png", "runtime2D": { "path": "assets/images/items/equipment-wooden-shield.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "inventory.equipment.woodenShield" },
       "pivot": { "x": 0.5, "y": 0.5 }, "bounds": { "width": 64, "height": 64 }, "animations": [], "targetPhase": "P2", "status": "ai-generated", "revision": 1
     },
     {
       "assetId": "inventory.equipment.shortBow", "imageId": "inventory.equipment.shortBow", "category": "inventory-icon", "usage": ["inventory", "equipment", "weapon", "archer"],
-      "sourceFile": "assets/images/items/equipment-short-bow.svg", "runtime2D": { "path": "assets/images/items/equipment-short-bow.svg", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "inventory.equipment.shortBow" },
+      "sourceFile": "assets/images/items/equipment-short-bow.png", "runtime2D": { "path": "assets/images/items/equipment-short-bow.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "inventory.equipment.shortBow" },
       "pivot": { "x": 0.5, "y": 0.5 }, "bounds": { "width": 64, "height": 64 }, "animations": [], "targetPhase": "P2", "status": "ai-generated", "revision": 1
     },
     {
       "assetId": "inventory.equipment.leatherVest", "imageId": "inventory.equipment.leatherVest", "category": "inventory-icon", "usage": ["inventory", "equipment", "armor", "archer"],
-      "sourceFile": "assets/images/items/equipment-leather-vest.svg", "runtime2D": { "path": "assets/images/items/equipment-leather-vest.svg", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "inventory.equipment.leatherVest" },
+      "sourceFile": "assets/images/items/equipment-leather-vest.png", "runtime2D": { "path": "assets/images/items/equipment-leather-vest.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "inventory.equipment.leatherVest" },
       "pivot": { "x": 0.5, "y": 0.5 }, "bounds": { "width": 64, "height": 64 }, "animations": [], "targetPhase": "P2", "status": "ai-generated", "revision": 1
     },
     {
       "assetId": "inventory.equipment.woodenArrow", "imageId": "inventory.equipment.woodenArrow", "category": "inventory-icon", "usage": ["inventory", "equipment", "ammo", "archer"],
-      "sourceFile": "assets/images/items/equipment-wooden-arrow.svg", "runtime2D": { "path": "assets/images/items/equipment-wooden-arrow.svg", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "inventory.equipment.woodenArrow" },
+      "sourceFile": "assets/images/items/equipment-wooden-arrow.png", "runtime2D": { "path": "assets/images/items/equipment-wooden-arrow.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "inventory.equipment.woodenArrow" },
       "pivot": { "x": 0.5, "y": 0.5 }, "bounds": { "width": 64, "height": 64 }, "animations": [], "targetPhase": "P2", "status": "ai-generated", "revision": 1
     },
     {
       "assetId": "inventory.equipment.talismanStaff", "imageId": "inventory.equipment.talismanStaff", "category": "inventory-icon", "usage": ["inventory", "equipment", "weapon", "strategist"],
-      "sourceFile": "assets/images/items/equipment-talisman-staff.svg", "runtime2D": { "path": "assets/images/items/equipment-talisman-staff.svg", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "inventory.equipment.talismanStaff" },
+      "sourceFile": "assets/images/items/equipment-talisman-staff.png", "runtime2D": { "path": "assets/images/items/equipment-talisman-staff.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "inventory.equipment.talismanStaff" },
       "pivot": { "x": 0.5, "y": 0.5 }, "bounds": { "width": 64, "height": 64 }, "animations": [], "targetPhase": "P2", "status": "ai-generated", "revision": 1
     },
     {
       "assetId": "inventory.equipment.strategistRobe", "imageId": "inventory.equipment.strategistRobe", "category": "inventory-icon", "usage": ["inventory", "equipment", "armor", "strategist"],
-      "sourceFile": "assets/images/items/equipment-strategist-robe.svg", "runtime2D": { "path": "assets/images/items/equipment-strategist-robe.svg", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "inventory.equipment.strategistRobe" },
+      "sourceFile": "assets/images/items/equipment-strategist-robe.png", "runtime2D": { "path": "assets/images/items/equipment-strategist-robe.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "inventory.equipment.strategistRobe" },
       "pivot": { "x": 0.5, "y": 0.5 }, "bounds": { "width": 64, "height": 64 }, "animations": [], "targetPhase": "P2", "status": "ai-generated", "revision": 1
     },
     {
       "assetId": "inventory.equipment.talisman", "imageId": "inventory.equipment.talisman", "category": "inventory-icon", "usage": ["inventory", "equipment", "accessory", "strategist"],
-      "sourceFile": "assets/images/items/equipment-talisman.svg", "runtime2D": { "path": "assets/images/items/equipment-talisman.svg", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "inventory.equipment.talisman" },
+      "sourceFile": "assets/images/items/equipment-talisman.png", "runtime2D": { "path": "assets/images/items/equipment-talisman.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "inventory.equipment.talisman" },
       "pivot": { "x": 0.5, "y": 0.5 }, "bounds": { "width": 64, "height": 64 }, "animations": [], "targetPhase": "P2", "status": "ai-generated", "revision": 1
     },
     {
       "assetId": "s01.prop.cookingRack", "imageId": "s01.prop.cookingRack", "category": "world-prop", "usage": ["S01", "survival", "cooking-rack"],
-      "sourceFile": "assets/images/s01/cooking-rack.svg", "runtime2D": { "path": "assets/images/s01/cooking-rack.svg", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s01.prop.cookingRack" },
+      "sourceFile": "assets/images/s01/cooking-rack.png", "runtime2D": { "path": "assets/images/s01/cooking-rack.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s01.prop.cookingRack" },
       "pivot": { "x": 0.5, "y": 1 }, "bounds": { "width": 88, "height": 78 }, "animations": [], "targetPhase": "P1", "status": "ai-generated", "revision": 1
     },
     {
       "assetId": "s01.prop.tanningRack", "imageId": "s01.prop.tanningRack", "category": "world-prop", "usage": ["S01", "survival", "tanning-rack"],
-      "sourceFile": "assets/images/s01/tanning-rack.svg", "runtime2D": { "path": "assets/images/s01/tanning-rack.svg", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s01.prop.tanningRack" },
+      "sourceFile": "assets/images/s01/tanning-rack.png", "runtime2D": { "path": "assets/images/s01/tanning-rack.png", "mode": "image" }, "runtime3D": { "mode": "billboard", "sourceAssetId": "s01.prop.tanningRack" },
       "pivot": { "x": 0.5, "y": 1 }, "bounds": { "width": 92, "height": 92 }, "animations": [], "targetPhase": "P1", "status": "ai-generated", "revision": 1
     },
     {

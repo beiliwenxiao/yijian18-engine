@@ -161,7 +161,7 @@ npx vite build --config example/sanguo_zhangjiao/vite.config.js
 npx vitest --run <目标测试文件>
 ```
 
-根 `npm run build` 构建根入口，不等同于《三国张角传》Android Web 产物。日常代码修改只运行 diagnostics；除非用户明确要求，不自动运行 Vitest、build、dev server 或 cap sync，也不创建功能验证 HTML。
+根 `npm run build` 构建根入口，不等同于《三国张角传》Android Web 产物。Windows 开发终端统一使用 Windows PowerShell 5.1（`C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe`；已核验实际版本为 `5.1.19041.6456`），以避免 Git Bash 对 Windows npm 包装程序、嵌套引号及长 Node 命令的兼容问题；Node/Sharp 脚本应拆为单一用途的短命令执行。日常代码修改只运行 diagnostics；除非用户明确要求，不自动运行 Vitest、build、dev server 或 cap sync，也不创建功能验证 HTML。
 
 ## 13. 当前状态与明确阻断
 
