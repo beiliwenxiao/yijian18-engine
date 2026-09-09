@@ -1352,7 +1352,6 @@
             const selected = getSavePickerEntry(value);
             if (!selected || selected.disabled) return false;
             selectedSaveValue = value;
-            saveSlotSelected.textContent = selected.label;
             for (const entry of savePickerEntries) {
                 const isSelected = entry.value === value;
                 entry.element.classList.toggle('selected', isSelected);
@@ -1368,8 +1367,15 @@
             const selection = parseSaveSelection(selectedSaveValue);
             const selected = getSavePickerEntry();
             if (!selection || !selected) return;
+            const isManualSave = savePickerMode === 'manualSave';
+            saveSlotSelected.textContent = isManualSave
+                ? `当前选中：存档 ${selection.index}`
+                : selected.label;
             saveSlotInfo.textContent = describeSaveEntry(selected.entry, selected.shortLabel);
             saveSlotConfirm.disabled = savePickerMode === 'continue' && !selected.entry.exists;
+            saveSlotConfirm.textContent = savePickerMode === 'continue'
+                ? '读取所选存档'
+                : (isManualSave ? `保存到存档 ${selection.index}` : '开始新游戏');
         }
 
         function buildSavePreview(entry, typeLabel) {
@@ -1437,12 +1443,12 @@
                 details.append(title, location, cardMeta);
                 option.append(buildSavePreview(entry, shortLabel), details);
                 option.addEventListener('click', () => {
-                    if (selectSaveEntry(value) && mode !== 'manualSave') void confirmSavePicker();
+                    if (selectSaveEntry(value)) handleSavePickerConfirm();
                 });
                 option.addEventListener('keydown', event => {
                     if (event.key === 'Enter' || event.key === ' ') {
                         event.preventDefault();
-                        if (selectSaveEntry(value) && mode !== 'manualSave') void confirmSavePicker();
+                        if (selectSaveEntry(value)) handleSavePickerConfirm();
                     } else if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
                         event.preventDefault();
                         moveSaveSelection(event.key === 'ArrowDown' ? 1 : -1);
@@ -1471,9 +1477,8 @@
                 saveSlotSelected.textContent = '没有可读取的存档';
                 saveSlotInfo.textContent = '存档为空，请选择 开始游戏。';
                 saveSlotConfirm.disabled = true;
+                saveSlotConfirm.textContent = '读取所选存档';
             }
-            saveSlotConfirm.textContent = mode === 'continue' ? '读取所选存档'
-                : (mode === 'manualSave' ? '保存到所选手动栏位' : '开始新游戏');
             if (!isSavePickerOpen()) {
                 savePickerOpener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
             }
@@ -1525,6 +1530,30 @@
                 acceptLabel: startGame ? '开始游戏' : '确认覆盖',
                 danger: true
             });
+        }
+
+        /** 手动存档必须先由玩家确认目标栏位，避免直接写入错误的存档。 */
+        function requestManualSaveConfirmation() {
+            if (savePickerMode !== 'manualSave' || savePickerConfirmInFlight || pendingOverwriteConfirmation) return false;
+            const selection = parseSaveSelection(selectedSaveValue);
+            if (!selection || selection.kind !== 'manual') return false;
+
+            void requestSaveActionConfirmation({
+                title: `当前选中：存档 ${selection.index}`,
+                message: `确认将当前游戏进度保存到存档 ${selection.index} 吗？`,
+                acceptLabel: `保存到存档 ${selection.index}`
+            }).then(confirmed => {
+                if (confirmed && savePickerMode === 'manualSave') void confirmSavePicker();
+            });
+            return true;
+        }
+
+        function handleSavePickerConfirm() {
+            if (savePickerMode === 'manualSave') {
+                requestManualSaveConfirmation();
+                return;
+            }
+            void confirmSavePicker();
         }
 
         function requestStartGameConfirmation(mode, selection, entry = null) {
@@ -2011,7 +2040,7 @@
                 confirmNewGameProfile();
             }
         });
-        saveSlotConfirm.addEventListener('click', confirmSavePicker);
+        saveSlotConfirm.addEventListener('click', handleSavePickerConfirm);
         savePickerClose.addEventListener('click', () => closeSavePicker());
         savePickerCancel.addEventListener('click', () => closeSavePicker());
         savePickerModal.addEventListener('click', event => {
@@ -2145,7 +2174,7 @@
 
                     if (isAnyMenuButtonPressed(loginGamepadActionButtons.confirm)) {
                         if (isConfirmingOverwrite) active[menuPadIndex]?.click();
-                        else if (isPickingSave) void confirmSavePicker();
+                        else if (isPickingSave) handleSavePickerConfirm();
                         else active[menuPadIndex]?.click();
                     }
 
