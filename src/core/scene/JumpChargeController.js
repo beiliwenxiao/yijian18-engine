@@ -28,6 +28,7 @@
  * - PC 以鼠标移动落点，左键确认起跳；
  * - 触屏以触点选择落点并确认起跳。
  *
+ * 按住前 0.2 秒是朝向短跳预备阶段，不显示瞄准表现也不接收落点输入。
  * 本控制器不持有业务准入或位移实现，只经回调提交已冻结的方向与距离。
  */
 import { AimPreviewRenderer } from '../../rendering/AimPreviewRenderer.js';
@@ -35,8 +36,8 @@ import { AimPreviewRenderer } from '../../rendering/AimPreviewRenderer.js';
 export class JumpChargeController {
   constructor(config = {}) {
     this.config = {
-      tapMaxMs: 100,
-      chargeMaxMs: 3000,
+      tapMaxMs: 200,
+      chargeMaxMs: 1000,
       tapDistance: 30,
       maxDistance: 120,
       targetRadius: 24,
@@ -99,8 +100,10 @@ export class JumpChargeController {
     if (!this.active) return null;
 
     this.holdMs = Math.max(0, this._now() - this.startMs);
-    if (direction) this.setAimFromAxis(direction);
-    if (targetPosition) this.setTargetPosition(targetPosition);
+    if (this.isChargeActive()) {
+      if (direction) this.setAimFromAxis(direction);
+      if (targetPosition) this.setTargetPosition(targetPosition);
+    }
 
     if (!held && !this._manualTargeting) return this.release();
     return {
@@ -113,7 +116,7 @@ export class JumpChargeController {
 
   /** 是否应在 AIMING 优先级消费该左键/触点。 */
   canSelectTarget(event) {
-    return this.active
+    return this.isChargeActive()
       && event?.isLeftDown?.() === true
       && Number.isFinite(event?.world?.x)
       && Number.isFinite(event?.world?.y);
@@ -121,7 +124,7 @@ export class JumpChargeController {
 
   /** 点击/触点确认当前世界落点，并且本次蓄力只释放一次。 */
   selectTarget(targetPosition) {
-    if (!this.active || !this.setTargetPosition(targetPosition)) return null;
+    if (!this.isChargeActive() || !this.setTargetPosition(targetPosition)) return null;
     return this.release({ ignoreHeldUntilReleased: true, selectedByPointer: true });
   }
 
@@ -163,9 +166,12 @@ export class JumpChargeController {
   release({ ignoreHeldUntilReleased = false, selectedByPointer = false } = {}) {
     if (!this.active) return null;
     const holdMs = Math.max(0, this._now() - this.startMs);
-    const aim = this.getAimTarget(holdMs);
+    const chargeActive = this.isChargeActive(holdMs);
+    const aim = chargeActive ? this.getAimTarget(holdMs) : null;
     const distance = aim?.distance ?? this._distanceForHold(holdMs);
-    const direction = aim?.direction || { ...this.aimDirection };
+    const direction = chargeActive
+      ? aim?.direction || { ...this.aimDirection }
+      : { x: 0, y: 0 };
     const actor = this.actor;
     const result = this._jumpFn?.({ distance, holdMs, actor, direction, selectedByPointer }) || null;
     this.active = false;
@@ -199,6 +205,14 @@ export class JumpChargeController {
     return this.active;
   }
 
+  /** 是否已越过短跳预备阶段，并允许进行瞄准和正式蓄力。 */
+  isChargeActive(holdMs = null) {
+    const elapsedMs = Number.isFinite(holdMs)
+      ? holdMs
+      : this.active ? Math.max(0, this._now() - this.startMs) : 0;
+    return this.active && elapsedMs > this.config.tapMaxMs;
+  }
+
   /** 蓄力条进度 0~1；点按区间保持 0。 */
   getProgress() {
     if (!this.active) return 0;
@@ -214,6 +228,7 @@ export class JumpChargeController {
 
   /** 返回当前可见、可提交的落点；PC/触点目标会裁剪到当前蓄力距离。 */
   getAimTarget(holdMs = this.holdMs) {
+    if (!this.isChargeActive(holdMs)) return null;
     const origin = this._getActorPosition();
     if (!origin) return null;
     const availableDistance = this.getAvailableDistance(holdMs);
@@ -252,6 +267,8 @@ export class JumpChargeController {
       this.cancel();
       return false;
     }
+    if (!this.isChargeActive()) return true;
+
     const playerX = transform.position.x;
     const playerY = transform.position.y;
     AimPreviewRenderer.renderRange(ctx, playerX, playerY, this.config.maxDistance, this.config.rangeColor);
@@ -267,7 +284,6 @@ export class JumpChargeController {
       );
     }
 
-    if (this.holdMs <= this.config.tapMaxMs) return true;
     const sprite = this.actor.getComponent?.('sprite');
     const spriteHeight = (Number(sprite?.height) || 48) * (Number(sprite?.scale) || 1);
     const x = playerX;

@@ -33,7 +33,7 @@ fileMatchPattern: '{**/input/**,**/InputManager.js,**/GamepadPanel.js,**/Movemen
 ### 4. 专用战斗动作与普通虚拟动作分流
 攻击、格挡、技能轮盘与释放由 `GamepadCombatController` 解释，不注入普通虚拟键；跳跃是例外，`JUMP_ACTION ('jump')` 作为虚拟键与键盘空格共用 `SceneFramePipeline → JumpChargeController → jumpByDirection()` 的蓄力跳链路。
 
-默认 Y 绑定 `JUMP_ACTION`：按住开始蓄力、松开时按蓄力距离起跳。蓄力一开始就以玩家为中心显示最大可达的虚线范围；左摇杆在当前蓄力允许距离内移动已有的落点小圈，推杆幅度决定落点远近。`MovementSystem.isMoveInputSuppressed` 仅在 `JumpChargeController.isCharging()` 为真时消费玩家移动意图并停止残余移动；松手后立即恢复左摇杆的普通移动语义。轻功与投掷是手柄技能轮盘的固定选项：LB 选择，RB 按住时由右摇杆瞄准、松开释放。轮盘选项由 `SceneCombatActions.getGamepadSkillOptions()` 在普通 `combat.skills` 后追加，仍复用 `FlightSystem` / `WeaponRenderer` 的既有动作入口，不把它们伪装为 Demo 的战斗技能定义。
+默认 Y 绑定 `JUMP_ACTION`：按住的前 0.2 秒为短跳预备阶段，松开时按角色当前朝向执行短跳；超过 0.2 秒才进入正式蓄力，并在总按住 1 秒时蓄满。只有正式蓄力阶段才以玩家为中心显示最大可达的虚线范围，左摇杆在当前蓄力允许距离内移动已有的落点小圈，推杆幅度决定落点远近。`MovementSystem.isMoveInputSuppressed` 仅在 `JumpChargeController.isCharging()` 为真时消费玩家移动意图并停止残余移动；松手后立即恢复左摇杆的普通移动语义。轻功与投掷是手柄技能轮盘的固定选项：LB 选择，RB 按住时由右摇杆瞄准、松开释放。轮盘选项由 `SceneCombatActions.getGamepadSkillOptions()` 在普通 `combat.skills` 后追加，仍复用 `FlightSystem` / `WeaponRenderer` 的既有动作入口，不把它们伪装为 Demo 的战斗技能定义。
 
 RT 攻击 intent 必须沿 `GamepadCombatController → SceneCombatActions._performGamepadAttack() → attackByDirection()` 进入键鼠/触屏共用的基础攻击准入和执行链；`GamepadCombatController` 只在本次 RT holding 内缓存最后一个越过 `GamepadManager` 径向死区的 RS **单位方向**，归中不得把缓存覆盖为零。快按时若本次 holding 已有有效 RS 也使用该方向；没有有效 RS（含长按后归中）才回退 `getPlayerFacingVector()`，禁止把零向量默认成固定向右。释放只产出一次 intent 并立即清缓存；断连、模态/弹窗接管、玩家硬锁和场景退出统一调用 `cancelTransientState()`，清除 RT/RB/LT/LB 瞬态且不得补发陈旧攻击。禁止硬编码物理按钮索引、在按下沿另建直攻旁路，或绕过可改绑的 `ATTACK_ACTION`。
 
