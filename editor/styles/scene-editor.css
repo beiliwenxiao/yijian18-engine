@@ -1,3 +1,25 @@
+/************************************************************
+
+ * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
+
+ * 
+
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+
+ * @author    刘枭 (beiliwenxiao)
+
+ * @email     beiliwenxiao@qq.com
+
+ * @date      2026-01-14
+
+ * @blog      https://blog.csdn.net/beiliwenxiao
+
+ * @repo      https://github.com/beiliwenxiao/yijian18-engine
+
+ *            https://gitee.com/coderaaa/yijian18-engine
+
+ ************************************************************/
+
 .scene-editor { display: flex; flex-direction: column; height: 100%; width: 100%; background: #1a1a2e; color: #fff; font-family: 'Microsoft YaHei', sans-serif; box-sizing: border-box; }
 .editor-toolbar { display: flex; flex-wrap: wrap; gap: 10px; padding: 8px 12px; background: #16213e; border-bottom: 1px solid #2a3a5e; flex-shrink: 0; }
 .toolbar-group { display: flex; align-items: center; gap: 5px; }
@@ -12,8 +34,12 @@
 .editor-main { display: flex; flex: 1; overflow: hidden; min-height: 0; }
 .editor-sidebar { width: 280px; min-width: 280px; background: #16213e; padding: 10px; overflow-y: auto; }
 .editor-sidebar.left { width: 280px; min-width: 280px; border-right: 1px solid #2a3a5e; }
-.editor-sidebar.right { border-left: 1px solid #2a3a5e; }
+.editor-sidebar.right { border-left: 1px solid #2a3a5e; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
 .sidebar-section { margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #2a3a5e; }
+.editor-right-panel { display: flex; flex-direction: column; min-height: 0; margin-bottom: 0; padding-bottom: 8px; overflow-y: auto; }
+.editor-layer-section { flex: 0 0 42%; min-height: 130px; }
+.editor-object-section { flex: 1 1 auto; min-height: 150px; }
+.editor-scene-info-section { flex: 0 1 auto; max-height: 35%; overflow-y: auto; }
 .sidebar-section h3 { font-size: 14px; margin: 0 0 10px 0; color: #4CAF50; }
 .asset-library { display: flex; flex-direction: column; gap: 10px; }
 .asset-tabs { display: flex; gap: 2px; margin-bottom: 5px; }
@@ -40,6 +66,7 @@
 .zoom-controls button { min-width: 28px; height: 28px; padding: 0 6px; background: #3a4a7e; border: none; border-radius: 4px; color: #fff; cursor: pointer; font-size: 12px; white-space: nowrap; }
 .zoom-controls span { font-size: 12px; min-width: 50px; text-align: center; }
 .layer-list { max-height: 200px; overflow-y: auto; }
+#editor-layers-section .layer-list { flex: 1 1 auto; min-height: 0; max-height: none; }
 .layer-item { display: flex; align-items: center; padding: 5px 6px; margin-bottom: 2px; background: #2a3a5e; border-radius: 4px; cursor: pointer; font-size: 11px; gap: 2px; }
 .layer-item:hover { background: #3a4a7e; }
 .layer-item.active { background: #4CAF50; color: #000; }
@@ -124,6 +151,33 @@
   height: 30px;
   border-left: 1px solid rgba(255,255,255,0.3);
   border-right: 1px solid rgba(255,255,255,0.3);
+}
+
+/* 右侧图层/选中对象面板之间的横向分隔条。 */
+.editor-horizontal-resizer {
+  height: 5px;
+  margin: 2px 0;
+  cursor: row-resize;
+  background: #2a3a5e;
+  border-radius: 3px;
+  flex: 0 0 5px;
+  position: relative;
+  z-index: 10;
+}
+.editor-horizontal-resizer:hover,
+.editor-horizontal-resizer.active {
+  background: #4CAF50;
+}
+.editor-horizontal-resizer::after {
+  content: '';
+  position: absolute;
+  top: 1px;
+  left: 50%;
+  width: 30px;
+  height: 3px;
+  transform: translateX(-50%);
+  border-top: 1px solid rgba(255,255,255,0.35);
+  border-bottom: 1px solid rgba(255,255,255,0.35);
 }
 
 /* 当前场景事件视图：仅投影编辑器可见对象，不修改 canonical 场景数据 */

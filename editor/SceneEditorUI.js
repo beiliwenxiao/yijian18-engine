@@ -191,7 +191,7 @@ export class SceneEditorUI {
           <div class="editor-resizer" id="editor-resizer-right"></div>
           
           <div class="editor-sidebar right" id="editor-sidebar-right">
-            <div class="sidebar-section">
+            <div class="sidebar-section editor-right-panel editor-layer-section" id="editor-layers-section">
               <h3>图层</h3>
               <div class="layer-list" id="editor-layer-list"></div>
               <div class="layer-actions">
@@ -207,15 +207,17 @@ export class SceneEditorUI {
                 <button id="editor-batch-offset" title="批量偏移当前图层所有对象">↕ 批量偏移</button>
               </div>
             </div>
-            
-            <div class="sidebar-section">
+
+            <div class="editor-horizontal-resizer" id="editor-resizer-right-panels" title="上下拖动以调整图层和选中对象面板的高度"></div>
+
+            <div class="sidebar-section editor-right-panel editor-object-section" id="editor-object-section">
               <h3>选中对象</h3>
               <div id="editor-object-properties">
                 <div class="no-selection">未选中任何对象</div>
               </div>
             </div>
             
-            <div class="sidebar-section">
+            <div class="sidebar-section editor-scene-info-section">
               <h3>场景信息</h3>
               <div class="scene-info">
                 <div class="info-row">
@@ -410,11 +412,18 @@ export class SceneEditorUI {
     const rightSidebar = document.getElementById('editor-sidebar-right');
     const resizerLeft = document.getElementById('editor-resizer-left');
     const resizerRight = document.getElementById('editor-resizer-right');
+    const panelResizer = document.getElementById('editor-resizer-right-panels');
+    const layerPanel = document.getElementById('editor-layers-section');
+    const objectPanel = document.getElementById('editor-object-section');
+    const sceneInfoPanel = rightSidebar?.querySelector('.editor-scene-info-section');
 
-    if (!resizerLeft || !resizerRight) return;
-
-    this._setupResizer(resizerLeft, leftSidebar, 'left');
-    this._setupResizer(resizerRight, rightSidebar, 'right');
+    if (resizerLeft && resizerRight) {
+      this._setupResizer(resizerLeft, leftSidebar, 'left');
+      this._setupResizer(resizerRight, rightSidebar, 'right');
+    }
+    if (panelResizer && layerPanel && objectPanel && sceneInfoPanel) {
+      this._setupHorizontalPanelResizer(panelResizer, layerPanel, objectPanel, sceneInfoPanel, rightSidebar);
+    }
   }
 
   /**
@@ -455,6 +464,54 @@ export class SceneEditorUI {
         this.fitToContainer();
         editor.render();
       }
+    };
+
+    const onMouseUp = () => {
+      resizer.classList.remove('active');
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    };
+
+    resizer.addEventListener('mousedown', onMouseDown);
+  }
+
+  /**
+   * 设置右侧图层与选中对象之间的横向分隔条。
+   * @private
+   */
+  _setupHorizontalPanelResizer(resizer, layerPanel, objectPanel, sceneInfoPanel, sidebar) {
+    const MIN_LAYER_HEIGHT = 130;
+    const MIN_OBJECT_HEIGHT = 150;
+    let startY = 0;
+    let startHeight = 0;
+
+    const onMouseDown = (event) => {
+      event.preventDefault();
+      startY = event.clientY;
+      startHeight = layerPanel.getBoundingClientRect().height;
+      resizer.classList.add('active');
+      document.body.style.cursor = 'row-resize';
+      document.body.style.userSelect = 'none';
+      document.addEventListener('mousemove', onMouseMove);
+      document.addEventListener('mouseup', onMouseUp);
+    };
+
+    const onMouseMove = (event) => {
+      const minObjectHeight = Math.max(
+        MIN_OBJECT_HEIGHT,
+        parseFloat(window.getComputedStyle(objectPanel).minHeight) || 0
+      );
+      const availableHeight = sidebar.clientHeight
+        - sceneInfoPanel.getBoundingClientRect().height
+        - resizer.getBoundingClientRect().height;
+      const maxLayerHeight = Math.max(MIN_LAYER_HEIGHT, availableHeight - minObjectHeight);
+      const nextHeight = Math.max(
+        MIN_LAYER_HEIGHT,
+        Math.min(maxLayerHeight, startHeight + event.clientY - startY)
+      );
+      layerPanel.style.flexBasis = `${Math.round(nextHeight)}px`;
     };
 
     const onMouseUp = () => {
@@ -725,6 +782,13 @@ export class SceneEditorUI {
     const panel = document.getElementById('editor-object-properties');
     if (!panel) return;
 
+    if (editor.selectedObjects.length === 1) {
+      const selectedLayer = editor.layers.getObjectLayer(editor.selectedObjects[0]);
+      const selectedLayerIndex = selectedLayer ? editor.sceneData.layers.indexOf(selectedLayer) : -1;
+      if (selectedLayerIndex >= 0) editor.activeLayerIndex = selectedLayerIndex;
+      editor.layers.updateLayerList();
+    }
+
     if (editor.selectedObjects.length === 0) {
       panel.innerHTML = '<div class="no-selection">未选中任何对象</div>';
       return;
@@ -810,7 +874,7 @@ export class SceneEditorUI {
       const notice = document.createElement('div');
       notice.className = 'no-selection';
       notice.style.cssText = 'color:#f0a8a8;margin-bottom:6px;';
-      notice.textContent = '此对象或所属图层已锁定，仅可查看属性。';
+      notice.textContent = '此对象或所属图层已隐藏或锁定，仅可查看属性。';
       panel.prepend(notice);
       panel.querySelectorAll('input[data-prop], select[data-prop], textarea[data-prop], button, #editor-trigger-picker, #editor-image-id, #editor-image-src').forEach(control => {
         control.disabled = true;
