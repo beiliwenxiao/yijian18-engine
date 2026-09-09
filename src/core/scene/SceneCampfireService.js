@@ -17,7 +17,7 @@ function createFuelConfiguration(config = {}) {
   if (!enabled) {
     return {
       enabled: false, itemId: null, secondsPerUnit: 0, initialUnits: 0, maxUnits: 0,
-      startOnIgnite: false
+      startOnIgnite: false, statusDisplayRadius: 0
     };
   }
   if (typeof config.itemId !== 'string' || !config.itemId.trim()) {
@@ -26,13 +26,15 @@ function createFuelConfiguration(config = {}) {
   const secondsPerUnit = requirePositive(config.secondsPerUnit, 'campfire.fuel.secondsPerUnit');
   const maxUnits = Math.max(1, Math.floor(requirePositive(config.maxUnits, 'campfire.fuel.maxUnits')));
   const initialUnits = Math.min(maxUnits, Math.max(0, Math.floor(Number(config.initialUnits) || 0)));
+  const statusDisplayRadius = requirePositive(config.statusDisplayRadius, 'campfire.fuel.statusDisplayRadius');
   return {
     enabled: true,
     itemId: config.itemId,
     secondsPerUnit,
     initialUnits,
     maxUnits,
-    startOnIgnite: config.startOnIgnite === true
+    startOnIgnite: config.startOnIgnite === true,
+    statusDisplayRadius
   };
 }
 
@@ -549,6 +551,11 @@ const campfireFeatureMethods = {
 
   renderFuelStatus(ctx) {
     if (this.fuel.enabled !== true || this.fuel.active !== true) return;
+    const playerPosition = this.playerEntity?.getComponent?.('transform')?.position;
+    const radius = this.fuel.statusDisplayRadius;
+    if (!Number.isFinite(playerPosition?.x) || !Number.isFinite(playerPosition?.y)
+      || !Number.isFinite(radius)
+      || Math.hypot(playerPosition.x - this.campfire.x, playerPosition.y - this.campfire.y) > radius) return;
     const fuel = this.getFuelSnapshot();
     const seconds = Math.ceil(fuel.remainingSeconds);
     const x = this.campfire.x;
@@ -680,7 +687,7 @@ export class SceneCampfireService {
     };
     this.fuel = {
       enabled: false, itemId: null, secondsPerUnit: 0, initialUnits: 0, maxUnits: 0,
-      startOnIgnite: false, remainingSeconds: 0, active: false
+      startOnIgnite: false, statusDisplayRadius: 0, remainingSeconds: 0, active: false
     };
     this.particlePresets = Object.freeze([]);
     this.labels = Object.freeze({});

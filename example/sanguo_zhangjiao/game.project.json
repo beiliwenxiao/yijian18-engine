@@ -6196,7 +6196,8 @@
             "itemId": "resource.wood",
             "maxUnits": 10,
             "secondsPerUnit": 100,
-            "startOnIgnite": false
+            "startOnIgnite": false,
+            "statusDisplayRadius": 54
           },
           "labels": {
             "ignite": "{interact}点燃",

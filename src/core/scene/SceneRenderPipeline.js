@@ -233,6 +233,7 @@ export class SceneRenderPipeline {
     const campfire = context?.services?.campfire || null;
     const campfireRuntime = this._campfireRenderRuntime;
     campfireRuntime.particleSystem = particleSystem;
+    campfireRuntime.playerEntity = context?.player?.entity || null;
     campfireRuntime.width = scene.logicalWidth;
     campfireRuntime.height = scene.logicalHeight;
     campfire?.appendRenderItems?.(queue, ctx, campfireRuntime);
