@@ -92,10 +92,9 @@ export class SceneGameplaySystemAssembler {
     });
     // 蓄力跳跃：松手时按蓄力时间决定落点距离并起跳（30~120px）。
     scene.jumpChargeController = new JumpChargeController({ now });
-    scene.jumpChargeController.setJumpCallback(({ distance, holdMs }) => {
-      const axis = scene.inputManager?.getMoveAxis?.() || { x: 0, y: 0, magnitude: 0 };
-      const started = scene.jumpByDirection?.(axis.x || 0, axis.y || 0, distance) === true;
-      return { started, distance, holdMs };
+    scene.jumpChargeController.setJumpCallback(({ distance, holdMs, direction }) => {
+      const started = scene.jumpByDirection?.(direction?.x || 0, direction?.y || 0, distance) === true;
+      return { started, distance, holdMs, direction };
     });
 
     scene.combatSystem = new CombatSystem({
@@ -152,6 +151,9 @@ export class SceneGameplaySystemAssembler {
       pathfindingSystem: scene.pathfindingSystem,
       pathfindingCellSize: 32,
       isMovementLocked: entity => scene.locomotionSystem?.isBusy?.(entity) === true,
+      // 蓄力跳期间左摇杆只更新 JumpChargeController 的落点方向，不得移动玩家。
+      isMoveInputSuppressed: entity => entity === scene.playerEntity
+        && scene.jumpChargeController?.isCharging?.() === true,
       // 战斗状态不进行移动碰撞停顿/阻挡自动停止，保证战斗手感；战斗结束后恢复。
       combatLock: () => scene.combatSystem?.isInCombat?.() === true
     });

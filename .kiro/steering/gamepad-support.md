@@ -31,9 +31,9 @@ fileMatchPattern: '{**/input/**,**/InputManager.js,**/GamepadPanel.js,**/Movemen
 绑定表的值是项目已用的虚拟键名（`up/down/left/right`、`skill1..skill7`、`e/c/b/v/q/escape/space`），不是原始物理键。改绑定时对照 `keyMap` 与各系统实际读取的键名（如 CombatSystem 的 `skillKeyMap`/`potionKeyMap` 用 `skill1..skill7`）。
 
 ### 4. 专用战斗动作与普通虚拟动作分流
-攻击、格挡、技能轮盘与释放由 `GamepadCombatController` 解释，不注入普通虚拟键；跳跃是例外，`JUMP_ACTION ('jump')` 作为虚拟键与键盘空格共用 `SceneFramePipeline → jumpByInput()`，必须在按下沿立即起跳。
+攻击、格挡、技能轮盘与释放由 `GamepadCombatController` 解释，不注入普通虚拟键；跳跃是例外，`JUMP_ACTION ('jump')` 作为虚拟键与键盘空格共用 `SceneFramePipeline → JumpChargeController → jumpByDirection()` 的蓄力跳链路。
 
-默认 Y 绑定 `JUMP_ACTION`，不再承担轻功长按判定。轻功与投掷是手柄技能轮盘的固定选项：LB 选择，RB 按住时由右摇杆瞄准、松开释放。轮盘选项由 `SceneCombatActions.getGamepadSkillOptions()` 在普通 `combat.skills` 后追加，仍复用 `FlightSystem` / `WeaponRenderer` 的既有动作入口，不把它们伪装为 Demo 的战斗技能定义。
+默认 Y 绑定 `JUMP_ACTION`：按住开始蓄力、松开时按蓄力距离起跳。蓄力一开始就以玩家为中心显示最大可达的虚线范围；左摇杆在当前蓄力允许距离内移动已有的落点小圈，推杆幅度决定落点远近。`MovementSystem.isMoveInputSuppressed` 仅在 `JumpChargeController.isCharging()` 为真时消费玩家移动意图并停止残余移动；松手后立即恢复左摇杆的普通移动语义。轻功与投掷是手柄技能轮盘的固定选项：LB 选择，RB 按住时由右摇杆瞄准、松开释放。轮盘选项由 `SceneCombatActions.getGamepadSkillOptions()` 在普通 `combat.skills` 后追加，仍复用 `FlightSystem` / `WeaponRenderer` 的既有动作入口，不把它们伪装为 Demo 的战斗技能定义。
 
 RT 攻击 intent 必须沿 `GamepadCombatController → SceneCombatActions._performGamepadAttack() → attackByDirection()` 进入键鼠/触屏共用的基础攻击准入和执行链；`GamepadCombatController` 只在本次 RT holding 内缓存最后一个越过 `GamepadManager` 径向死区的 RS **单位方向**，归中不得把缓存覆盖为零。快按时若本次 holding 已有有效 RS 也使用该方向；没有有效 RS（含长按后归中）才回退 `getPlayerFacingVector()`，禁止把零向量默认成固定向右。释放只产出一次 intent 并立即清缓存；断连、模态/弹窗接管、玩家硬锁和场景退出统一调用 `cancelTransientState()`，清除 RT/RB/LT/LB 瞬态且不得补发陈旧攻击。禁止硬编码物理按钮索引、在按下沿另建直攻旁路，或绕过可改绑的 `ATTACK_ACTION`。
 
@@ -84,11 +84,11 @@ RT holding 的扇形方向锁由 `SceneCombatActions` 临时拥有：按住时�
 ## 默认按键映射
 
 ```
-左摇杆/十字键  移动          右摇杆  瞄准方向
+左摇杆/十字键  移动；Y 蓄力期间仅控制跳跃落点方向
 RT 按住  攻击（快按=面向攻击；长按+右摇杆=精确朝向，松开释放）
 RB 按住  释放当前所选技能（右摇杆瞄准，松开释放）
 LB       切换技能（按住弹出环形轮盘；轻功、投掷也在轮盘中）
-Y        按下即跳跃（不参与轻功判定）
+Y 按住  蓄力跳跃；松开起跳，蓄力时左摇杆控制落点
 B        默认未绑定
 LT 按住  格挡（按住期间生效，有时效/冷却）
 A        拾取/交互/采集/确认对话
@@ -106,7 +106,7 @@ RS 取消选中
 |---|---|---|---|
 | 普通攻击 | 鼠标左键（方向=鼠标位置） | 攻击按钮按住→拖拽方向→释放 | RT 按住→右摇杆方向→释放 |
 | 技能 | 数字键进入瞄准→鼠标指向→左键确认 | 技能按钮按住→拖拽→释放 | LB 选择轮盘项，RB 按住→右摇杆指向→释放 |
-| 跳跃 | 空格（方向键同时按下则短跳） | 跳跃按钮（虚拟摇杆决定方向） | Y 按下即跳跃（左摇杆决定方向） |
+| 跳跃 | 空格按住蓄力，松开起跳 | 跳跃按钮按住蓄力，虚拟摇杆控制落点 | Y 按住蓄力，松开起跳；仅蓄力期间左摇杆控制落点 |
 | 轻功 | Ctrl 进入瞄准→鼠标指向→左键确认 | 轻功按钮按住→拖拽位置→释放 | LB 选择“轻功”，RB 按住→右摇杆控制→释放 |
 | 投掷 | Shift 进入瞄准→鼠标指向→左键确认 | 投掷按钮按住→拖拽方向→释放 | LB 选择“投掷”，RB 按住→右摇杆指向→释放 |
 | 格挡 | Q 按住 | 格挡按钮按住 | LT 按住 |

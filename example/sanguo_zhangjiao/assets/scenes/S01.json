@@ -301,8 +301,8 @@
           "semanticRole": "travelCheckpoint",
           "type": "region",
           "width": 130,
-          "x": 760,
-          "y": 165
+          "x": 809.9042417440937,
+          "y": 129.56075586288998
         },
         {
           "height": 120,
@@ -1106,8 +1106,8 @@
           "triggerId": "trg_s01_river_crossed",
           "type": "trigger",
           "width": 130,
-          "x": 760,
-          "y": 165
+          "x": 813.5204911458396,
+          "y": 121.60500717904895
         },
         {
           "activeWhen": {
@@ -1195,6 +1195,50 @@
           "width": 96,
           "x": 113.06306306306305,
           "y": 352.7807807807808
+        },
+        {
+          "atlasId": "mountain_landscape",
+          "height": 32,
+          "id": "obj_1788990182747_176",
+          "name": "灌木1",
+          "sliceKey": "bush2",
+          "type": "slice",
+          "width": 32,
+          "x": 585.2582522733655,
+          "y": 272.27675011965084
+        },
+        {
+          "atlasId": "mountain_landscape",
+          "height": 32,
+          "id": "obj_1788990187169_740",
+          "name": "灌木1",
+          "sliceKey": "bush2",
+          "type": "slice",
+          "width": 32,
+          "x": 662,
+          "y": 236
+        },
+        {
+          "atlasId": "mountain_landscape",
+          "height": 32,
+          "id": "obj_1788990189787_791",
+          "name": "灌木1",
+          "sliceKey": "bush2",
+          "type": "slice",
+          "width": 32,
+          "x": 754,
+          "y": 203
+        },
+        {
+          "atlasId": "mountain_landscape",
+          "height": 32,
+          "id": "obj_1788990200465_999",
+          "name": "灌木1",
+          "sliceKey": "bush2",
+          "type": "slice",
+          "width": 32,
+          "x": 815,
+          "y": 173
         }
       ],
       "visible": true

@@ -1,10 +1,10 @@
 /************************************************************
  * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
- *
- * @project   YiJian18-Engine - 跨平台2D/3D ECS游戏引擎
+ * 
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
  * @author    刘枭 (beiliwenxiao)
  * @email     beiliwenxiao@qq.com
- * @date      2026-08-02
+ * @date      2026-01-14
  * @blog      https://blog.csdn.net/beiliwenxiao
  * @repo      https://github.com/beiliwenxiao/yijian18-engine
  *            https://gitee.com/coderaaa/yijian18-engine
@@ -95,14 +95,14 @@ export const BLOCK_ACTION = 'block';                  // LT 按住：格挡
 export const SETTINGS_ACTION = 'settings';            // 系统设置/标题菜单
 
 /**
- * 默认绑定：RT攻击 / RB释放所选技能 / LB选择技能 / Y立即跳跃 / LT格挡。
+ * 默认绑定：RT攻击 / RB释放所选技能 / LB选择技能 / Y按住蓄力、松开起跳 / LT格挡。
  * 轻功与投掷作为技能轮盘选项，由 LB 选择、RB 瞄准并释放。
  */
 export const DEFAULT_BINDINGS = {
   [PadButton.A]: 'e',                   // 拾取/交互/确认对话
   [PadButton.B]: NONE_ACTION,           // 不再直连投掷
   [PadButton.X]: 'e',                   // 拾取/交互/确认对话（与A一致）
-  [PadButton.Y]: JUMP_ACTION,           // 按下沿立即跳跃
+  [PadButton.Y]: JUMP_ACTION,           // 按住蓄力，松开起跳
   [PadButton.LB]: SKILL_SWITCH_ACTION,  // 切换技能（按住弹环形轮盘）
   [PadButton.RB]: SKILL_RELEASE_ACTION, // 释放当前选中技能
   [PadButton.LT]: BLOCK_ACTION,         // 格挡（按住生效）
@@ -128,7 +128,7 @@ export const BINDABLE_ACTIONS = [
   { value: ATTACK_ACTION, label: '攻击（按住瞄准）', group: '战斗' },
   { value: SKILL_RELEASE_ACTION, label: '释放技能', group: '战斗' },
   { value: SKILL_SWITCH_ACTION, label: '切换技能（轮盘）', group: '战斗' },
-  { value: JUMP_ACTION, label: '跳跃（Y，按下即触发）', group: '移动' },
+  { value: JUMP_ACTION, label: '跳跃（Y，按住蓄力，松开起跳）', group: '移动' },
   { value: BLOCK_ACTION, label: '格挡（按住生效）', group: '战斗' },
   { value: 'e', label: '拾取/交互/确认', group: '交互' },
   { value: 'skill1', label: '红药水', group: '快捷' },
@@ -146,7 +146,7 @@ export const BINDING_DESCRIPTIONS = {
   [PadButton.A]: '拾取/交互/确认',
   [PadButton.B]: '—',
   [PadButton.X]: '拾取/交互/确认',
-  [PadButton.Y]: '跳跃（按下即触发）',
+  [PadButton.Y]: '跳跃（按住蓄力，松开起跳）',
   [PadButton.LB]: '切换技能（环形轮盘）',
   [PadButton.RB]: '释放技能',
   [PadButton.LT]: '格挡（按住生效）',

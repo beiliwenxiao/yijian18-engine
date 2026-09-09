@@ -45,6 +45,7 @@ export class SceneInputFlow {
     onLocomotionInput = NOOP,
     dialogue = null,
     aiming = null,
+    chargedJump = null,
     triggerBindings = null,
     npcInteraction = null,
     getNpcInteraction = null,
@@ -64,6 +65,7 @@ export class SceneInputFlow {
     this.onLocomotionInput = typeof onLocomotionInput === 'function' ? onLocomotionInput : NOOP;
     this.dialogue = dialogue;
     this.aiming = aiming;
+    this.chargedJump = chargedJump;
     this.triggerBindings = triggerBindings;
     this.npcInteraction = npcInteraction;
     this.getNpcInteraction = typeof getNpcInteraction === 'function' ? getNpcInteraction : null;
@@ -97,6 +99,12 @@ export class SceneInputFlow {
         ['handlePanelInput', 'handleUIInput', 'handleUIClick'],
         event
       )
+    }));
+    this._disposers.push(register(InputHandler.AIMING, {
+      id: 'scene-input-charged-jump',
+      constraint: null,
+      canHandle: event => this.chargedJump?.canHandle?.(event) === true,
+      handle: event => wasHandled(this.chargedJump?.handleInput?.(event), this.inputManager)
     }));
     this._disposers.push(register(InputHandler.AIMING, {
       id: 'scene-input-aiming',

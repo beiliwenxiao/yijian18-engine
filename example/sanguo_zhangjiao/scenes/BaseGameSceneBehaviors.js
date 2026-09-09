@@ -324,6 +324,10 @@ export class BaseGameSceneBehaviors extends BaseGameSceneSetup {  /**
           this._ensureCombatActions().cancelGamepadCombatInput(reason)
         ),
         onLocomotionInput: event => this.jumpByInput({ event }),
+        chargedJump: {
+          canHandle: event => this.jumpChargeController?.canSelectTarget?.(event) === true,
+          handleInput: event => this.jumpChargeController?.selectTarget?.(event.world) !== null
+        },
         dialogue: this._ensureDialogueFlow(),
         aiming: this._ensureSkillActions(),
         triggerBindings: this._sceneTriggerBindings,
@@ -596,11 +600,16 @@ export class BaseGameSceneBehaviors extends BaseGameSceneSetup {  /**
     return null;
   }
 
-  /** PC/触屏/手柄：按当前移动输入跳跃。space / 触屏 / 手柄 Y 统一走蓄力，松手起跳。 */
+  /**
+   * 键盘/手柄保持键由帧管线开始蓄力；虚拟跳跃按钮进入持续点选模式。
+   * @param {{event?:Object}} options
+   * @returns {boolean}
+   */
   jumpByInput({ event } = {}) {
     if (this.isPlayerActionLocked()) return false;
-    // 键盘 space / 触屏跳跃按钮 / 手柄 Y：返回 true 消费输入；蓄力由 JumpChargeController
-    // 每帧轮询驱动，松手时才真正起跳（距离按蓄力时间 30~120px，表现与空格键一致）。
+    if (event?.device === 'virtual') {
+      return this.jumpChargeController?.beginTargeting?.(this.playerEntity) === true;
+    }
     return true;
   }
 

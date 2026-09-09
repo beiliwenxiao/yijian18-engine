@@ -249,18 +249,23 @@ export class SceneFramePipeline {
     // 更新攀爬等统一位移执行器；Jump/Flight 保持各自既有更新顺序。
     locomotionSystem?.update?.(deltaTime);
 
-    // 蓄力跳跃：按跳跃键保持状态驱动蓄力/松手起跳
-    // （键盘 space / 触屏 _jumpHeld 标志 / 手柄 Y 虚拟键 'jump' 三路统一）。
-    // 松手触发的起跳要在本帧跳跃更新之前生效，保证落点位移立即推进。
-    const jumpAxis = worldInputBlocked ? null : (scene.inputManager?.getMoveAxis?.() || null);
+    // 蓄力跳跃：空格/Y 保持时由对应设备连续更新目标；虚拟跳跃按钮进入点选模式。
+    // 手柄用左摇杆更新相对落点，PC 用鼠标位置更新落点；触屏点选由 AIMING 优先级确认。
+    const keyboardJumpHeld = scene.inputManager?.isKeyDown?.('space') === true;
+    const gamepadJumpHeld = scene.inputManager?.isKeyDown?.('jump') === true;
+    const touchJumpHeld = scene._jumpHeld === true;
+    const jumpHeld = !worldInputBlocked && (keyboardJumpHeld || touchJumpHeld || gamepadJumpHeld);
+    const jumpAxis = worldInputBlocked || !gamepadJumpHeld
+      ? null
+      : (scene.inputManager?.getMoveAxis?.() || null);
+    const jumpTargetPosition = worldInputBlocked || gamepadJumpHeld || (!keyboardJumpHeld && !touchJumpHeld)
+      ? null
+      : scene.inputManager?.getMouseWorldPosition?.(camera) || null;
     scene.jumpChargeController?.update?.({
-      held: !worldInputBlocked && (
-        scene.inputManager?.isKeyDown?.('space') === true
-        || scene._jumpHeld === true
-        || scene.inputManager?.isKeyDown?.('jump') === true
-      ),
+      held: jumpHeld,
       actor: player,
       direction: jumpAxis,
+      targetPosition: jumpTargetPosition,
       blocked: worldInputBlocked
         || scene.playerEntity?.isDead === true
         || scene.dialogueSystem?.isDialogueActive?.() === true

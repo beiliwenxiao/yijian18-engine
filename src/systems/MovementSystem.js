@@ -37,6 +37,9 @@ export class MovementSystem {
     this.isMovementLocked = typeof config.isMovementLocked === 'function'
       ? config.isMovementLocked
       : entity => this.jumpSystem?.isJumping?.(entity) === true;
+    this.isMoveInputSuppressed = typeof config.isMoveInputSuppressed === 'function'
+      ? config.isMoveInputSuppressed
+      : () => false;
     this.moveIntentRouter = typeof config.moveIntentRouter === 'function'
       ? config.moveIntentRouter
       : null;
@@ -504,6 +507,11 @@ export class MovementSystem {
 
     const playerEntity = this.playerEntity || entities.find(e => e.type === 'player');
     if (!playerEntity) return;
+    if (this.isMoveInputSuppressed(playerEntity)) {
+      this._cancelNavigationIntent(playerEntity);
+      this._stopEntityMovement(playerEntity);
+      return;
+    }
     if (this.isContactMovementLocked(playerEntity)) {
       this._stopEntityMovement(playerEntity);
       this._accumulateBlockedTime(playerEntity, deltaTime);
@@ -600,6 +608,12 @@ export class MovementSystem {
 
     const playerEntity = this.playerEntity || entities.find(e => e.type === 'player');
     if (!playerEntity) return;
+    if (this.isMoveInputSuppressed(playerEntity)) {
+      this._cancelNavigationIntent(playerEntity);
+      this._stopEntityMovement(playerEntity);
+      this.inputManager.markMouseClickHandled();
+      return;
+    }
     if (this.isContactMovementLocked(playerEntity)) {
       this._stopEntityMovement(playerEntity);
       this.inputManager.markMouseClickHandled();

@@ -1,11 +1,23 @@
 /************************************************************
+
  * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
+
  * 
- * @project   YiJian18-Engine - 跨平台2D/3D ECS游戏引擎
+
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+
  * @author    刘枭 (beiliwenxiao)
+
  * @email     beiliwenxiao@qq.com
+
+ * @date      2026-01-14
+
  * @blog      https://blog.csdn.net/beiliwenxiao
+
  * @repo      https://github.com/beiliwenxiao/yijian18-engine
+
+ *            https://gitee.com/coderaaa/yijian18-engine
+
  ************************************************************/
 
 /**
@@ -40,7 +52,6 @@ export class AimPreviewRenderer {
   static render(ctx, preview, startPos, dirX, dirY, distRatio) {
     if (!preview || !preview.skill || !startPos) return null;
     const { skill, color } = preview;
-
     const range = skill.range || 300;
     const actualDist = distRatio * range;
     const startX = startPos.x;
@@ -64,8 +75,27 @@ export class AimPreviewRenderer {
 
     this._renderCrosshair(ctx, dispX, dispY);
     ctx.restore();
-
     return { x: dispX, y: dispY };
+  }
+
+  /**
+   * 渲染以指定世界坐标为中心的可达范围虚线椭圆。
+   * @param {CanvasRenderingContext2D} ctx
+   * @param {number} x - 范围中心世界坐标 X
+   * @param {number} y - 范围中心世界坐标 Y
+   * @param {number} radius - 世界半径
+   * @param {string} [color] - 线条颜色
+   */
+  static renderRange(ctx, x, y, radius, color = '#ffc46b') {
+    if (!Number.isFinite(x) || !Number.isFinite(y) || !(radius > 0)) return false;
+    ctx.save();
+    ctx.globalAlpha = 0.75;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = DASH_LINE_WIDTH;
+    ctx.setLineDash(DASH_PATTERN);
+    this._renderEllipse(ctx, x, y, radius);
+    ctx.restore();
+    return true;
   }
 
   /**
@@ -95,9 +125,7 @@ export class AimPreviewRenderer {
     const dx = endX - startX;
     const dy = endY - startY;
     const dist = Math.hypot(dx, dy);
-
     if (dist > 1) {
-      // 法线方向偏移出路径宽度，Y 分量压扁 0.5 匹配 2.5D
       const nx = -dy / dist * 15;
       const ny = dx / dist * 15;
       ctx.beginPath();
@@ -108,7 +136,6 @@ export class AimPreviewRenderer {
       ctx.closePath();
       ctx.stroke();
     }
-
     ctx.beginPath();
     ctx.ellipse(endX, endY, 50, 25, 0, 0, Math.PI * 2);
     ctx.stroke();
