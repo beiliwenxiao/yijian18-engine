@@ -25,6 +25,7 @@ import {
 } from '../src/core/scene/SceneBattleFlowRegistry.js';
 import {
   SCENE_OBJECT_SELECTOR_MODES,
+  sceneObjectMatchesSelector,
   sceneObjectSelectorValues
 } from '../src/core/scene/SceneObjectSelector.js';
 import { isSpatialTriggerEvent } from '../src/systems/TriggerCatalog.js';
@@ -867,6 +868,7 @@ export class SceneEditorUI {
       }
     }
 
+    html += this._buildObjectRelationshipProperties(obj);
     html += `<div class="property-row"><button id="editor-delete-obj">删除对象</button></div>`;
     panel.innerHTML = html;
 
@@ -876,8 +878,12 @@ export class SceneEditorUI {
       notice.style.cssText = 'color:#f0a8a8;margin-bottom:6px;';
       notice.textContent = '此对象或所属图层已隐藏或锁定，仅可查看属性。';
       panel.prepend(notice);
-      panel.querySelectorAll('input[data-prop], select[data-prop], textarea[data-prop], button, #editor-trigger-picker, #editor-image-id, #editor-image-src').forEach(control => {
+      panel.querySelectorAll('input[data-prop], select[data-prop], textarea[data-prop], button, #editor-trigger-picker, #editor-image-id, #editor-image-src, #editor-related-object-ids').forEach(control => {
         control.disabled = true;
+      });
+      // 关联跳转只改变编辑器选中态，不修改受锁对象，保留只读查看链路。
+      panel.querySelectorAll('button[data-editor-select-object-id]').forEach(control => {
+        control.disabled = false;
       });
     }
 
@@ -1091,6 +1097,7 @@ export class SceneEditorUI {
     const imageIdSelect = document.getElementById('editor-image-id');
     if (imageSrcInput && editor.selectedObjects.length === 1 && editor.selectedObjects[0].type === 'image') {
       const imgObj = editor.selectedObjects[0];
+      void this._hydrateImageObjectManifestPreview(panel, imgObj);
       if (imageIdSelect) {
         imageIdSelect.addEventListener('change', () => {
           if (!isObjectEditable()) {
@@ -1185,6 +1192,8 @@ export class SceneEditorUI {
         this.showToast('已应用切片: ' + obj.sliceKey);
       });
     }
+
+    this._bindObjectRelationshipControls(panel, obj, isObjectEditable);
 
     document.getElementById('editor-delete-obj').addEventListener('click', () => this.deleteSelectedObjects());
 
@@ -1557,6 +1566,271 @@ export class SceneEditorUI {
     return true;
   }
 
+  /**
+   * 返回场景中每个对象及其所属图层，供编辑器关联面板复用。
+   * @private
+   */
+  _getSceneObjectEntries() {
+    return (this.editor.sceneData.layers || []).flatMap((layer, layerIndex) =>
+      (layer.objects || []).filter(Boolean).map(object => ({ object, layerIndex }))
+    );
+  }
+
+  /**
+   * 解析当前对象被哪些空间 Trigger selector 命中。
+   * 这里与画布连线、拾取目标和运行时共享 SceneObjectSelector 规则。
+   * @private
+   */
+  _getReverseTriggerBindings(obj) {
+    if (!obj?.id) return [];
+    return this._getSceneObjectEntries().filter(({ object: trigger }) =>
+      trigger.type === 'trigger'
+      && sceneObjectMatchesSelector(obj, {
+        mode: trigger.targetMode || 'auto',
+        value: trigger.target
+      })
+    );
+  }
+
+  /**
+   * 读取编辑器专用的关联对象 ID；该字段不参与运行时业务状态。
+   * @private
+   */
+  _getEditorRelatedObjectIds(obj) {
+    const ids = obj?.editor?.relatedObjectIds;
+    return Array.isArray(ids)
+      ? [...new Set(ids.map(id => String(id || '').trim()).filter(Boolean))]
+      : [];
+  }
+
+  /**
+   * 汇总关联对象可直接替换的稳定表现 ID。
+   * @private
+   */
+  _describeRelatedObject(object) {
+    const visual = object?.type === 'ref'
+      ? this.editor.assets?.resolvePlacementVisual?.(object)
+      : null;
+    const definition = visual?.definition || visual || null;
+    const imageId = String(
+      object?.imageId
+      || object?.assetId
+      || definition?.imageId
+      || definition?.assetId
+      || ''
+    ).trim();
+    const reference = object?.type === 'ref' ? String(object.ref || '').trim() : '';
+    return { imageId, reference };
+  }
+
+  /**
+   * 构建任意场景对象的反向 Trigger 与表现对象关联区块。
+   * @private
+   */
+  _buildObjectRelationshipProperties(obj) {
+    if (!obj?.id) return '';
+
+    const reverseTriggers = this._getReverseTriggerBindings(obj);
+    const objectEntries = this._getSceneObjectEntries();
+    const objectsById = new Map(objectEntries.map(entry => [entry.object.id, entry]));
+    const relatedIds = this._getEditorRelatedObjectIds(obj);
+    const relatedObjects = relatedIds.map(id => ({ id, entry: objectsById.get(id) }));
+    const triggerRows = reverseTriggers.length
+      ? reverseTriggers.map(({ object: trigger }) => {
+        const triggerName = this._getSceneObjectDisplayName(trigger);
+        const triggerId = String(trigger.triggerId || '').trim() || '未绑定项目行为';
+        const prompt = String(trigger.prompt || '').trim();
+        const status = trigger.enabled === false ? ' · 已禁用' : ' · 已启用';
+        const title = [triggerId, prompt, trigger.target ? `${trigger.targetMode || 'auto'}:${trigger.target}` : '未设目标']
+          .filter(Boolean).join('\n');
+        return `<button type="button" data-editor-select-object-id="${escapeHtml(trigger.id)}" title="${escapeHtml(title)}" style="width:100%;margin:2px 0;padding:4px 6px;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">↗ ${escapeHtml(triggerName)} · ${escapeHtml(triggerId)}${escapeHtml(status)}</button>`;
+      }).join('')
+      : '<small style="color:#8ea4c9;">没有场景 Trigger 以当前 selector 规则指向此对象。</small>';
+    const relatedRows = relatedObjects.length
+      ? relatedObjects.map(({ id, entry }) => {
+        if (!entry) {
+          return `<div style="margin:2px 0;color:#ef8f8f;">⚠ ${escapeHtml(id)}（当前场景未找到）</div>`;
+        }
+        const related = entry.object;
+        const { imageId, reference } = this._describeRelatedObject(related);
+        const details = [
+          related.id,
+          reference ? `内容库：${reference}` : '',
+          imageId ? `图片 ID：${imageId}` : ''
+        ].filter(Boolean).join(' · ');
+        const imagePreview = imageId
+          ? `<div data-related-image-card data-related-image-id="${escapeHtml(imageId)}" style="display:flex;align-items:center;gap:6px;margin:3px 0;padding:4px;background:#172440;border:1px solid #344d7f;border-radius:4px;">
+              <img data-related-image-preview alt="${escapeHtml(this._getSceneObjectDisplayName(related))}" style="display:none;width:56px;height:44px;object-fit:contain;flex:0 0 auto;background:#0b1224;border-radius:3px;">
+              <small data-related-image-details style="color:#aebddd;line-height:1.35;word-break:break-all;">正在读取图片资源…</small>
+            </div>`
+          : '';
+        return `<div style="margin:3px 0;">${imagePreview}<button type="button" data-editor-select-object-id="${escapeHtml(related.id)}" title="${escapeHtml(details)}" style="width:100%;padding:4px 6px;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">↗ ${escapeHtml(this._getSceneObjectDisplayName(related))}<small style="display:block;color:#aebddd;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(details)}</small></button></div>`;
+      }).join('')
+      : '<small style="color:#8ea4c9;">未登记关联对象。逻辑区域可在这里关联施工前视觉与完成后的放置点。</small>';
+
+    return `
+      <div class="property-row" style="border-top:1px solid #4a5a8e;margin-top:8px;padding-top:7px;"><label style="width:auto;color:#e8c46a;font-weight:bold;">编辑器关联</label></div>
+      <div class="property-row" style="display:block;"><label style="display:block;width:auto;margin-bottom:3px;">哪些 Trigger 指向我（${reverseTriggers.length}）</label>${triggerRows}</div>
+      <div class="property-row"><label style="width:72px;">关联对象 ID:</label><input id="editor-related-object-ids" value="${escapeHtml(relatedIds.join(', '))}" placeholder="以逗号分隔场景对象 ID" title="关联施工前视觉、完成后放置点或其他编排对象；仅保存到 editor.relatedObjectIds"></div>
+      <div class="property-row"><small style="color:#8ea4c9;">保存时会校验对象存在、去重且不允许关联自身；点击条目可定位到对象所在图层。</small></div>
+      <div class="property-row" style="display:block;"><label style="display:block;width:auto;margin-bottom:3px;">关联表现对象（${relatedObjects.length}）</label>${relatedRows}</div>`;
+  }
+
+  /**
+   * 绑定关联对象编辑与只读跳转操作。
+   * @private
+   */
+  _bindObjectRelationshipControls(panel, obj, isObjectEditable) {
+    panel.querySelectorAll('button[data-editor-select-object-id]').forEach(button => {
+      button.addEventListener('click', () => {
+        this._selectSceneObjectById(button.dataset.editorSelectObjectId);
+      });
+    });
+
+    void this._hydrateRelatedImageCards(panel);
+
+    const relatedIdsInput = panel.querySelector('#editor-related-object-ids');
+    if (!relatedIdsInput) return;
+    relatedIdsInput.addEventListener('change', () => {
+      if (!isObjectEditable()) {
+        this.showToast('此对象已隐藏或锁定，无法修改', 'warn');
+        this.updateObjectProperties();
+        return;
+      }
+      const relatedIds = [...new Set(String(relatedIdsInput.value || '').split(',')
+        .map(id => id.trim()).filter(Boolean))];
+      if (relatedIds.includes(obj.id)) {
+        this.showToast('关联对象不能包含自身', 'error');
+        relatedIdsInput.value = this._getEditorRelatedObjectIds(obj).join(', ');
+        return;
+      }
+      const objectsById = new Map(this._getSceneObjectEntries().map(entry => [entry.object.id, entry.object]));
+      const missingIds = relatedIds.filter(id => !objectsById.has(id));
+      if (missingIds.length) {
+        this.showToast(`当前场景找不到关联对象：${missingIds.join(', ')}`, 'error');
+        relatedIdsInput.value = this._getEditorRelatedObjectIds(obj).join(', ');
+        return;
+      }
+      const currentIds = this._getEditorRelatedObjectIds(obj);
+      if (relatedIds.length === currentIds.length && relatedIds.every((id, index) => id === currentIds[index])) return;
+
+      this.editor.history?.saveHistory?.();
+      const nextEditorState = obj.editor && typeof obj.editor === 'object' && !Array.isArray(obj.editor)
+        ? { ...obj.editor }
+        : {};
+      if (relatedIds.length) nextEditorState.relatedObjectIds = relatedIds;
+      else delete nextEditorState.relatedObjectIds;
+      if (Object.keys(nextEditorState).length) obj.editor = nextEditorState;
+      else delete obj.editor;
+
+      this.editor.layers.updateLayerList();
+      this.editor.render();
+      this.updateObjectProperties();
+      this.showToast('已更新关联对象', 'success');
+    });
+  }
+
+  /**
+   * 用 SceneEditorAssets 的 Manifest 投影填充关联表现对象的预览和路径。
+   * @private
+   */
+  async _hydrateRelatedImageCards(panel) {
+    const cards = [...panel.querySelectorAll('[data-related-image-card]')];
+    if (!cards.length) return;
+
+    let imageOptions;
+    try {
+      imageOptions = await this.editor.assets?.getManifestImageOptions?.();
+    } catch {
+      imageOptions = null;
+    }
+    const optionsById = new Map((imageOptions || []).map(option => [option.imageId, option]));
+    for (const card of cards) {
+      if (!card.isConnected) continue;
+      const imageId = String(card.dataset.relatedImageId || '').trim();
+      const image = card.querySelector('[data-related-image-preview]');
+      const details = card.querySelector('[data-related-image-details]');
+      const option = optionsById.get(imageId);
+      if (!option?.url) {
+        if (details) {
+          details.textContent = option
+            ? `图片 ID：${imageId}；Manifest 未提供可预览路径`
+            : `图片 ID：${imageId}；当前 Manifest 未找到该资源`;
+        }
+        continue;
+      }
+      if (details) {
+        details.textContent = `图片 ID：${imageId}\n资源路径：${option.path || '未提供'}${option.status ? `\n资源状态：${option.status}` : ''}`;
+        details.style.whiteSpace = 'pre-line';
+      }
+      if (image) {
+        image.onload = () => {
+          if (image.isConnected) image.style.display = 'block';
+        };
+        image.onerror = () => {
+          if (image.isConnected && details) details.textContent = `图片 ID：${imageId}\n资源路径：${option.path || '未提供'}\n图片加载失败`;
+        };
+        image.src = option.url;
+      }
+    }
+  }
+
+  /**
+   * 为图片对象属性面板展示稳定图片 ID 对应的 Manifest 路径与缩略图。
+   * @private
+   */
+  async _hydrateImageObjectManifestPreview(panel, imgObj) {
+    const pathInput = panel.querySelector('#editor-image-manifest-path');
+    const preview = panel.querySelector('#editor-image-manifest-preview');
+    const status = panel.querySelector('#editor-image-manifest-status');
+    if (!pathInput || !preview || !status || !imgObj?.imageId) return;
+
+    let imageOptions;
+    try {
+      imageOptions = await this.editor.assets?.getManifestImageOptions?.();
+    } catch {
+      imageOptions = null;
+    }
+    if (!panel.isConnected || this.editor.selectedObjects[0] !== imgObj) return;
+
+    const option = (imageOptions || []).find(candidate => candidate.imageId === imgObj.imageId);
+    if (!option?.url) {
+      pathInput.value = option?.path || '当前 Manifest 未找到该资源';
+      status.textContent = option
+        ? 'Manifest 未提供可预览路径'
+        : `未找到稳定图片 ID：${imgObj.imageId}`;
+      return;
+    }
+    pathInput.value = option.path || '未提供';
+    status.textContent = option.status ? `资源状态：${option.status}` : '正在加载图片…';
+    preview.onload = () => {
+      if (!preview.isConnected) return;
+      preview.style.display = 'block';
+      status.style.display = 'none';
+    };
+    preview.onerror = () => {
+      if (preview.isConnected) status.textContent = '图片加载失败，请检查 Manifest 路径';
+    };
+    preview.src = option.url;
+  }
+
+  /**
+   * 将关联条目定位到其对象及所属图层。
+   * @private
+   */
+  _selectSceneObjectById(objectId) {
+    const entry = this._getSceneObjectEntries().find(candidate => candidate.object.id === objectId);
+    if (!entry) {
+      this.showToast(`当前场景找不到对象：${objectId}`, 'error');
+      return;
+    }
+    this.editor.activeLayerIndex = entry.layerIndex;
+    this.editor.selectedObjects = [entry.object];
+    this.editor.layers.updateLayerList();
+    this.updateObjectProperties();
+    this.editor.render();
+  }
+
   _getSceneObjectDisplayName(object) {
     if (!object) return '未命名对象';
     const definitionName = object.type === 'ref'
@@ -1866,6 +2140,8 @@ export class SceneEditorUI {
     html += `<div class="property-row"><label>表现状态:</label><input type="text" value="${escapeHtml(obj.state || '')}" data-prop="state" placeholder="如 intact / damaged / burning"></div>`;
     html += `<div class="property-row"><label>视觉说明:</label><textarea data-prop="visualDescription" rows="3" placeholder="说明地貌、建筑、朝向和替换时必须保留的构图">${escapeHtml(obj.visualDescription || '')}</textarea></div>`;
     html += `<div class="property-row"><label title="切换到另一个已登记的稳定图片资源">图片ID:</label><select id="editor-image-id" style="flex:1;">${imageOptions}</select></div>`;
+    html += `<div class="property-row"><label>Manifest路径:</label><input id="editor-image-manifest-path" value="读取中…" disabled style="flex:1;color:#88ccff;" title="由稳定图片 ID 从 Manifest 解析；不写入场景 JSON"></div>`;
+    html += `<div class="property-row" style="align-items:flex-start;"><label>图片预览:</label><div style="width:96px;height:64px;padding:2px;background:#0b1224;border:1px solid #344d7f;border-radius:4px;"><img id="editor-image-manifest-preview" alt="${escapeHtml(obj.name || obj.imageId || '图片预览')}" style="display:none;width:100%;height:100%;object-fit:contain;"><small id="editor-image-manifest-status" style="display:block;padding:5px;color:#8ea4c9;line-height:1.3;">正在读取 Manifest…</small></div></div>`;
     html += `<div class="property-row"><label title="替换当前 ID 对应的图片文件，所有引用保持不变">替换文件:</label><input type="text" id="editor-image-src" value="${escapeHtml(src)}" style="flex:1;"></div>`;
     html += `<div class="property-row"><label>图片尺寸:</label><input id="editor-image-dim" value="${dim}" disabled style="color:#88ccff;"></div>`;
     html += `<div class="property-row"><label>文件大小:</label><input id="editor-image-filesize" value="计算中…" disabled style="color:#88ccff;"></div>`;

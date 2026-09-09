@@ -42,7 +42,7 @@
           "type": "shape",
           "walkable": true,
           "width": 320,
-          "x": 420.4000000000001,
+          "x": 420.782549092625,
           "y": 390.19999999999993
         },
         {
@@ -196,7 +196,7 @@
           "walkable": true
         },
         {
-          "fill": "#81796b",
+          "fill": "#f3f736",
           "fillMode": "color",
           "height": 34,
           "id": "S01-stepping-stone-1",
@@ -213,7 +213,7 @@
           "y": 268
         },
         {
-          "fill": "#81796b",
+          "fill": "#fff700",
           "fillMode": "color",
           "height": 32,
           "id": "S01-stepping-stone-2",
@@ -230,7 +230,7 @@
           "y": 238
         },
         {
-          "fill": "#81796b",
+          "fill": "#ffd500",
           "fillMode": "color",
           "height": 34,
           "id": "S01-stepping-stone-3",
@@ -248,41 +248,43 @@
         },
         {
           "depthSort": true,
-          "height": 112,
-          "id": "S01-shelter-site-marker",
-          "imageId": "s10.construction.siteMarker",
-          "name": "小庇护所施工基座",
-          "semanticRole": "constructionSiteMarker",
-          "sortY": 440.8560038288261,
-          "type": "image",
-          "width": 144,
-          "x": 474.51946645974056,
-          "y": 328.93269356207884
-        },
-        {
-          "depthSort": true,
+          "editor": {
+            "locked": false,
+            "visible": true
+          },
           "height": 56,
           "id": "S01-shelter-site-firewood",
           "imageId": "s01.resource.dryWoodNode",
           "name": "小庇护所预备木柴",
           "semanticRole": "constructionMaterial",
-          "sortY": 459,
+          "sortY": 424.2080909595875,
           "type": "image",
           "width": 64,
-          "x": 566.4164525802458,
-          "y": 403.07668973325275
+          "x": 524.950232759357,
+          "y": 368.28478069284023
         },
         {
+          "editor": {
+            "relatedObjectIds": [
+              "S01-shelter-site-firewood",
+              "S01-small-shelter-1"
+            ],
+            "visible": false
+          },
           "height": 115,
           "id": "S01-shelter-site",
           "name": "小庇护所施工点",
           "semanticRole": "constructionSite",
           "type": "region",
           "width": 150,
-          "x": 475.4124659811373,
-          "y": 327.93269356207884
+          "x": 469.96059914823866,
+          "y": 312.3315647389365
         },
         {
+          "editor": {
+            "locked": false,
+            "visible": false
+          },
           "height": 75,
           "id": "S01-shelter-rest",
           "name": "庇护所休息处",
@@ -339,6 +341,9 @@
       "name": "出生与动态放置",
       "objects": [
         {
+          "editor": {
+            "visible": false
+          },
           "group": "S01-small-shelter",
           "id": "S01-small-shelter-1",
           "kind": "item",
@@ -875,6 +880,9 @@
           "y": 305
         },
         {
+          "editor": {
+            "locked": true
+          },
           "group": "S01-cooking-rack",
           "id": "S01-prop-cooking-rack",
           "kind": "item",
@@ -886,7 +894,7 @@
           },
           "type": "ref",
           "x": 597.5734139061408,
-          "y": 521.2994697352918
+          "y": 521.6820188279167
         }
       ],
       "visible": true
@@ -924,8 +932,8 @@
           "triggerId": "trg_s01_light_campfire",
           "type": "trigger",
           "width": 42,
-          "x": 554.6672355958835,
-          "y": 339.9876082890972
+          "x": 607.8230987209599,
+          "y": 351.5137073324208
         },
         {
           "activeWhen": {
