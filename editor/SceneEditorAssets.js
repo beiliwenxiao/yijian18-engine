@@ -35,6 +35,22 @@ import {
 
 const ATLAS_SLICE_MIME = 'application/x-yijian18-atlas-slice+json';
 const STABLE_ID_PATTERN = /^[A-Za-z][A-Za-z0-9._-]*$/;
+const ITEM_TYPE_LABELS = Object.freeze({
+  material: '材料',
+  consumable: '消耗品',
+  equipment: '装备',
+  tool: '工具',
+  quest: '任务物品',
+  resource: '资源',
+  currency: '货币',
+  key: '钥匙',
+  miscellaneous: '杂项'
+});
+
+function itemTypeLabel(type) {
+  return ITEM_TYPE_LABELS[type] || `自定义类型（${type}）`;
+}
+
 const escapeHtml = value => String(value ?? '')
   .replace(/&/g, '&amp;')
   .replace(/</g, '&lt;')
@@ -1809,16 +1825,11 @@ export class SceneEditorAssets {
     }
     list.innerHTML = entries.map(definition => {
       const visual = this.resolvePlacementVisual({ type: 'ref', kind: cat.kind, ref: definition.id, x: 0, y: 0 });
-      const imageId = visual?.imageId || String(definition.imageId || definition.assetId || '').trim();
-      const runtimePath = typeof visual?.manifestEntry?.runtime2D?.path === 'string'
-        ? visual.manifestEntry.runtime2D.path.trim()
-        : '';
       const preview = visual?.url
         ? `<img src="${escapeHtml(visual.url)}" alt="${escapeHtml(definition.name || definition.id)}" style="width:100%;height:100%;object-fit:contain;">`
         : `<span title="${escapeHtml(visual?.status || 'missingImageId')}" style="color:#ff9a9a;font-size:10px;">缺图</span>`;
       const itemMetadata = catKey === 'items'
-        ? `<small style="display:block;width:100%;color:#b9c7e6;font-size:9px;line-height:1.3;word-break:break-all;">类型: ${escapeHtml(definition.type || '未设置')}</small>
-           <small title="${escapeHtml(runtimePath || 'Manifest 缺少运行时图片路径')}" style="display:block;width:100%;color:${runtimePath ? '#8fe' : '#ff9a9a'};font-size:9px;line-height:1.3;word-break:break-all;">${escapeHtml(imageId || '未选择图片资源')}<br>${escapeHtml(runtimePath || 'Manifest 路径缺失')}</small>`
+        ? `<small style="display:block;width:100%;color:#b9c7e6;font-size:9px;line-height:1.3;word-break:break-all;">类型: ${escapeHtml(definition.type ? itemTypeLabel(definition.type) : '未设置')}</small>`
         : '';
       return `
       <div class="asset-item content-item" draggable="true"

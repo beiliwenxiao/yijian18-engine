@@ -7158,121 +7158,121 @@
     "classes": [],
     "vehicles": [
       {
-        "id": "vehicle.s11.breakoutHorse",
-        "name": "广宗突围战马",
-        "vehicleType": "horse",
-        "imageId": "s11.vehicle.breakoutHorse",
-        "width": 150,
-        "height": 100,
-        "maxHp": 280,
-        "speed": 210,
-        "turnRate": 4,
-        "seats": [
-          {
-            "id": "driver",
-            "role": "driver",
-            "offset": [
-              0,
-              -34
-            ]
-          }
-        ],
-        "logistics": {
-          "travelBatchProgress": 0
-        },
         "consumption": {
           "distancePerFood": 360,
           "foodItemId": "resource.food",
           "onMissingFood": "stop"
-        }
+        },
+        "height": 100,
+        "id": "vehicle.s11.breakoutHorse",
+        "imageId": "s11.vehicle.breakoutHorse",
+        "logistics": {
+          "travelBatchProgress": 0
+        },
+        "maxHp": 280,
+        "name": "广宗突围战马",
+        "seats": [
+          {
+            "id": "driver",
+            "offset": [
+              0,
+              -34
+            ],
+            "role": "driver"
+          }
+        ],
+        "speed": 210,
+        "turnRate": 4,
+        "vehicleType": "horse",
+        "width": 150
       },
       {
-        "id": "vehicle.s12.siegeLadder",
-        "name": "下曲阳攻城云梯",
-        "vehicleType": "ladder",
-        "imageId": "s12.vehicle.siegeLadder",
-        "width": 100,
         "height": 220,
-        "maxHp": 360,
-        "speed": 0,
-        "seats": [],
+        "id": "vehicle.s12.siegeLadder",
+        "imageId": "s12.vehicle.siegeLadder",
         "logistics": {
           "ladderEntryDisabled": false
         },
-        "siegeEntranceRef": "siege-ladder-top"
+        "maxHp": 360,
+        "name": "下曲阳攻城云梯",
+        "seats": [],
+        "siegeEntranceRef": "siege-ladder-top",
+        "speed": 0,
+        "vehicleType": "ladder",
+        "width": 100
       },
       {
-        "id": "vehicle.s14.lastCart",
-        "name": "最后的伤员马车",
-        "vehicleType": "cart",
-        "imageId": "s14.vehicle.lastRetreatCart",
-        "width": 220,
+        "cargo": {
+          "capacity": 80,
+          "items": [],
+          "maxSlots": 12
+        },
         "height": 128,
+        "id": "vehicle.s14.lastCart",
+        "imageId": "s14.vehicle.lastRetreatCart",
         "maxHp": 420,
-        "speed": 72,
+        "name": "最后的伤员马车",
         "seats": [
           {
             "id": "driver",
-            "role": "driver",
             "offset": [
               0,
               -30
-            ]
+            ],
+            "role": "driver"
           }
         ],
-        "cargo": {
-          "capacity": 80,
-          "maxSlots": 12,
-          "items": []
-        }
+        "speed": 72,
+        "vehicleType": "cart",
+        "width": 220
       },
       {
-        "id": "vehicle.s14.catapult",
-        "name": "缺少主梁的投石车",
-        "vehicleType": "catapult",
-        "imageId": "s14.vehicle.unassembledCatapult",
-        "width": 220,
-        "height": 150,
-        "maxHp": 600,
-        "speed": 32,
-        "seats": [
-          {
-            "id": "driver",
-            "role": "driver",
-            "offset": [
-              -28,
-              -34
-            ]
-          },
-          {
-            "id": "gunner",
-            "role": "gunner",
-            "weapon": "weapon.s14.catapult",
-            "offset": [
-              34,
-              -48
-            ]
-          }
-        ],
-        "logistics": {
-          "catapultAssembled": false
-        },
         "assemblyRequirements": {
           "resource.wood": 40
         },
         "fireCosts": {
-          "resource.stone": 2,
-          "resource.manpower": 1
+          "resource.manpower": 1,
+          "resource.stone": 2
         },
+        "height": 150,
+        "id": "vehicle.s14.catapult",
+        "imageId": "s14.vehicle.unassembledCatapult",
+        "logistics": {
+          "catapultAssembled": false
+        },
+        "maxHp": 600,
+        "name": "缺少主梁的投石车",
+        "seats": [
+          {
+            "id": "driver",
+            "offset": [
+              -28,
+              -34
+            ],
+            "role": "driver"
+          },
+          {
+            "id": "gunner",
+            "offset": [
+              34,
+              -48
+            ],
+            "role": "gunner",
+            "weapon": "weapon.s14.catapult"
+          }
+        ],
+        "speed": 32,
+        "vehicleType": "catapult",
         "weapon": {
-          "id": "weapon.s14.catapult",
-          "range": 520,
-          "damage": 100,
-          "splashRadius": 75,
-          "projectileSpeed": 260,
           "arcHeight": 120,
-          "cooldownMs": 1100
-        }
+          "cooldownMs": 1100,
+          "damage": 100,
+          "id": "weapon.s14.catapult",
+          "projectileSpeed": 260,
+          "range": 520,
+          "splashRadius": 75
+        },
+        "width": 220
       }
     ],
     "buildings": [],

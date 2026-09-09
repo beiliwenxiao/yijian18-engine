@@ -102,6 +102,22 @@ const CATEGORIES = [
 const COMMON_FIELDS = ['id', 'name'];
 const ITEM_MANAGED_FIELDS = ['id', 'name', 'type', 'imageId', 'assetId'];
 const STABLE_ID_PATTERN = /^[A-Za-z][A-Za-z0-9._-]*$/;
+const ITEM_TYPE_LABELS = Object.freeze({
+  material: '材料',
+  consumable: '消耗品',
+  equipment: '装备',
+  tool: '工具',
+  quest: '任务物品',
+  resource: '资源',
+  currency: '货币',
+  key: '钥匙',
+  miscellaneous: '杂项'
+});
+
+function itemTypeLabel(type) {
+  return ITEM_TYPE_LABELS[type] || `自定义类型（${type}）`;
+}
+
 const escapeHtml = value => String(value ?? '')
   .replace(/&/g, '&amp;')
   .replace(/</g, '&lt;')
@@ -412,8 +428,7 @@ export class LibraryEditor {
         const preview = image?.url
           ? `<img class="li-preview" src="${escapeHtml(image.url)}" alt="${escapeHtml(e.name || e.id || '物品图片')}">`
           : `<div class="li-preview" style="display:flex;align-items:center;justify-content:center;color:#ff9a9a;font-size:10px;">缺图</div>`;
-        const path = image?.path || (this._manifestError ? 'Manifest 读取失败' : 'Manifest 路径缺失');
-        item.innerHTML = `<div class="li-item-row">${preview}<div style="min-width:0;flex:1;"><div class="li-name">${escapeHtml(e.name || '(未命名)')}</div><div class="li-id">${escapeHtml(e.id || '')}</div><div class="li-meta">类型: ${escapeHtml(e.type || '未设置')}</div><div class="li-meta" title="${escapeHtml(path)}">${escapeHtml(imageId || '未选择图片资源')}<br>${escapeHtml(path)}</div></div></div>`;
+        item.innerHTML = `<div class="li-item-row">${preview}<div style="min-width:0;flex:1;"><div class="li-name">${escapeHtml(e.name || '(未命名)')}</div><div class="li-id">${escapeHtml(e.id || '')}</div><div class="li-meta">类型: ${escapeHtml(e.type ? itemTypeLabel(e.type) : '未设置')}</div></div></div>`;
       } else {
         item.innerHTML = `<div class="li-name">${escapeHtml(e.name || '(未命名)')}</div><div class="li-id">${escapeHtml(e.id || '')}</div>`;
       }
@@ -478,11 +493,11 @@ export class LibraryEditor {
       <div class="row"><label>名称 name</label><input type="text" id="l-name" value="${escapeHtml(entry.name || '')}"></div>
       <div class="row"><label>物品类型</label><select id="l-item-type">${itemTypes
         .sort((left, right) => left.localeCompare(right, 'en'))
-        .map(type => `<option value="${escapeHtml(type)}" ${type === selectedType ? 'selected' : ''}>${escapeHtml(type)}</option>`)
+        .map(type => `<option value="${escapeHtml(type)}" ${type === selectedType ? 'selected' : ''}>${escapeHtml(itemTypeLabel(type))}</option>`)
         .join('')}</select></div>
-      <div class="row"><label>图片资源 ID</label><select id="l-image-id" ${imageOptions.length ? '' : 'disabled'}><option value="">选择 Manifest 图片资源</option>${!hasCurrentImage && selectedImageId ? `<option value="${escapeHtml(selectedImageId)}" selected>当前 ID 无效：${escapeHtml(selectedImageId)}</option>` : ''}${imageOptions
+      <div class="row"><label>图片资源 ID（稳定 ID）</label><select id="l-image-id" ${imageOptions.length ? '' : 'disabled'}><option value="">选择 Manifest 图片资源</option>${!hasCurrentImage && selectedImageId ? `<option value="${escapeHtml(selectedImageId)}" selected>当前 ID 无效：${escapeHtml(selectedImageId)}</option>` : ''}${imageOptions
         .map(option => `<option value="${escapeHtml(option.imageId)}" ${option.imageId === selectedImageId ? 'selected' : ''}>${escapeHtml(option.imageId)} · ${escapeHtml(option.path)}</option>`)
-        .join('')}</select></div>
+        .join('')}</select><small style="display:block;margin-top:4px;color:#9ab;font-size:11px;line-height:1.45;">选择其他稳定 ID 会更换本物品的图片引用；不会修改资源本身的稳定 ID。</small></div>
       <div class="row"><label>图片路径（Manifest）</label><input type="text" id="l-image-path" value="${escapeHtml(selectedDisplay.path)}" placeholder="assets/images/...png"><small style="display:block;margin-top:4px;color:#9ab;font-size:11px;line-height:1.45;">仅修改当前稳定 ID 对应的 Manifest 映射；路径必须是 assets/images/ 下的 .png。</small></div>
       <div class="row"><label>从本机导入 PNG（替换当前稳定 ID 的图片文件）</label><input type="file" id="l-image-file" accept=".png,image/png"><small style="display:block;margin-top:4px;color:#9ab;font-size:11px;line-height:1.45;">文件会先作为草稿预览，点击保存后才与 library、Manifest 一次性提交。</small></div>
       <div class="row" style="display:flex;gap:10px;align-items:center;"><div style="width:72px;height:72px;border:1px solid #2a3a5e;border-radius:4px;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#080d1a;flex:none;"><img id="l-image-preview" alt="物品图片预览" src="${escapeHtml(selectedDisplay.url)}" style="display:${selectedDisplay.url ? 'block' : 'none'};width:100%;height:100%;object-fit:contain;"><span id="l-image-empty" style="display:${selectedDisplay.url ? 'none' : ''};padding:6px;text-align:center;color:#ff9a9a;font-size:11px;">${this._manifestError ? '图片目录加载失败' : '未选择有效图片资源'}</span></div><small id="l-image-status" style="color:#9ab;font-size:11px;line-height:1.45;">${escapeHtml(selectedDisplay.status)}</small></div>
