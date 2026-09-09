@@ -70,11 +70,11 @@ export class SceneEditorInteraction {
     const editor = this.editor;
     for (let li = editor.sceneData.layers.length - 1; li >= 0; li--) {
       const layer = editor.sceneData.layers[li];
-      if (!layer || layer.locked || !layer.visible) continue;
+      if (!layer?.objects) continue;
 
       for (let i = layer.objects.length - 1; i >= 0; i--) {
         const obj = layer.objects[i];
-        if (editor.eventFilter?.isObjectVisible(obj) === false) continue;
+        if (!editor.layers.isObjectEditable(layer, obj)) continue;
 
         if (obj.type === 'rect' || obj.type === 'image' || obj.type === 'slice' || obj.type === 'fill' || obj.type === 'deco') {
           if (x >= obj.x && x <= obj.x + obj.width && y >= obj.y && y <= obj.y + obj.height) {
@@ -282,6 +282,7 @@ export class SceneEditorInteraction {
     const handleSize = 12 / editor.viewport.scale;
 
     for (const obj of editor.selectedObjects) {
+      if (!editor.layers.isObjectEditableFor(obj)) continue;
       let hx, hy;
       if (obj.type === 'rect' || obj.type === 'image' || obj.type === 'slice' || obj.type === 'fill' || obj.type === 'deco' || obj.type === 'ellipse' || obj.type === 'trigger' || obj.type === 'region' || (obj.type === 'buffZone' && (obj.shapeType === 'rect' || obj.shapeType === 'ellipse'))) {
         hx = obj.x + obj.width + 2;
@@ -316,7 +317,8 @@ export class SceneEditorInteraction {
       // 选中单个多边形/路径/buffZone时，优先检测顶点拖拽
       if (editor.selectedObjects.length === 1) {
         const sel = editor.selectedObjects[0];
-        if ((sel.type === 'shape' && (sel.shapeType === 'polygon' || sel.shapeType === 'path')) || sel.type === 'buffZone' || sel.type === 'effectZone') {
+        if (editor.layers.isObjectEditableFor(sel)
+          && ((sel.type === 'shape' && (sel.shapeType === 'polygon' || sel.shapeType === 'path')) || sel.type === 'buffZone' || sel.type === 'effectZone')) {
           const vi = this.getVertexAt(sel, pos.x, pos.y);
           if (vi !== -1) {
             editor.interaction.isDragging = true;
@@ -490,6 +492,7 @@ export class SceneEditorInteraction {
       const starts = editor.interaction.allObjectStarts || [];
       for (let i = 0; i < editor.selectedObjects.length; i++) {
         const obj = editor.selectedObjects[i];
+        if (!editor.layers.isObjectEditableFor(obj)) continue;
         const start = starts[i];
         if (!start) continue;
         // 多边形/路径：整体偏移所有顶点
@@ -602,6 +605,11 @@ export class SceneEditorInteraction {
     }
 
     const menu = document.createElement('div');
+    const ensureClickedObjectEditable = () => {
+      if (isDecoration || editor.layers.isObjectEditableFor(clicked)) return true;
+      editor.ui.showToast('对象或图层已隐藏或锁定，无法修改', 'warn');
+      return false;
+    };
     menu.id = 'editor-context-menu';
     menu.style.cssText = `position:fixed;left:${e.clientX}px;top:${e.clientY}px;background:#16213e;border:1px solid #3a4a7e;border-radius:4px;padding:4px 0;z-index:99999;box-shadow:0 4px 12px rgba(0,0,0,0.4);font-size:13px;min-width:140px;`;
 
@@ -657,7 +665,7 @@ export class SceneEditorInteraction {
           label: `🔴 删除顶点 #${hitVertex}`,
           disabled: clicked.points.length <= 3, // 三角形不能再删
           action: () => {
-            if (clicked.points.length <= 3) return;
+            if (!ensureClickedObjectEditable() || clicked.points.length <= 3) return;
             clicked.points.splice(hitVertex, 1);
             this._syncBoundingBox(clicked);
             editor.history.saveHistory();
@@ -669,6 +677,7 @@ export class SceneEditorInteraction {
         items.push({
           label: `➕ 在顶点 #${hitVertex} 后插入`,
           action: () => {
+            if (!ensureClickedObjectEditable()) return;
             const cur = clicked.points[hitVertex];
             const next = clicked.points[(hitVertex + 1) % clicked.points.length];
             const mid = [Math.round((cur[0] + next[0]) / 2), Math.round((cur[1] + next[1]) / 2)];
@@ -685,6 +694,7 @@ export class SceneEditorInteraction {
         items.push({
           label: `➕ 在边 #${hitEdge}→#${(hitEdge + 1) % clicked.points.length} 中间插入顶点`,
           action: () => {
+            if (!ensureClickedObjectEditable()) return;
             const a = clicked.points[hitEdge];
             const b = clicked.points[(hitEdge + 1) % clicked.points.length];
             const mid = [Math.round((a[0] + b[0]) / 2), Math.round((a[1] + b[1]) / 2)];
@@ -703,6 +713,7 @@ export class SceneEditorInteraction {
     if (clicked.type === 'trigger' && clicked.target) {
       items.push({ separator: true });
       items.push({ label: '断开触发器关联', action: () => {
+        if (!ensureClickedObjectEditable()) return;
         clicked.target = '';
         editor.history.saveHistory();
         editor.ui.updateObjectProperties();
@@ -715,9 +726,9 @@ export class SceneEditorInteraction {
       const linkedTriggers = [];
       for (const layer of editor.sceneData.layers) {
         for (const obj of (layer.objects || [])) {
-          if (obj.type === 'trigger' && obj.target &&
-              editor.eventFilter?.isObjectVisible(obj) !== false &&
-              this.matchesLinkTarget(clicked, obj.target, obj.targetMode)) {
+          if (obj.type === 'trigger' && obj.target
+              && editor.layers.isObjectEditable(layer, obj)
+              && this.matchesLinkTarget(clicked, obj.target, obj.targetMode)) {
             linkedTriggers.push(obj);
           }
         }
@@ -725,10 +736,15 @@ export class SceneEditorInteraction {
       if (linkedTriggers.length > 0) {
         items.push({ separator: true });
         items.push({ label: `断开触发器 (${linkedTriggers.length}个)`, action: () => {
-          for (const trg of linkedTriggers) trg.target = '';
+          const editableTriggers = linkedTriggers.filter(trigger => editor.layers.isObjectEditableFor(trigger));
+          if (editableTriggers.length === 0) {
+            editor.ui.showToast('关联触发器已隐藏或锁定，无法断开', 'warn');
+            return;
+          }
+          for (const trg of editableTriggers) trg.target = '';
           editor.history.saveHistory();
           editor.render();
-          editor.ui.showToast(`已断开 ${linkedTriggers.length} 个触发器关联`);
+          editor.ui.showToast(`已断开 ${editableTriggers.length} 个触发器关联`);
         }});
       }
     }
@@ -799,8 +815,11 @@ export class SceneEditorInteraction {
    */
   _alignObjects(direction) {
     const editor = this.editor;
-    const objs = editor.selectedObjects;
-    if (objs.length === 0) return;
+    const objs = editor.selectedObjects.filter(object => editor.layers.isObjectEditableFor(object));
+    if (objs.length === 0) {
+      editor.ui.showToast('选中对象已隐藏或锁定，无法对齐', 'warn');
+      return;
+    }
 
     editor.history.saveHistory();
 
@@ -950,20 +969,27 @@ export class SceneEditorInteraction {
     }
     if (curLi === -1) return;
 
+    const sourceLayer = layers[curLi];
+    if (!editor.layers.isObjectEditable(sourceLayer, obj)) {
+      editor.ui.showToast('源对象或图层已隐藏或锁定，无法移动', 'warn');
+      return;
+    }
+
     const targetLi = curLi + delta;
     if (targetLi < 0 || targetLi >= layers.length) {
       editor.ui.showToast(delta > 0 ? '已在最上图层' : '已在最下图层', 'error');
       return;
     }
-    if (layers[targetLi].locked) {
-      editor.ui.showToast(`目标图层「${layers[targetLi].name}」已锁定`, 'error');
+    const targetLayer = layers[targetLi];
+    if (targetLayer.locked) {
+      editor.ui.showToast(`目标图层「${targetLayer.name}」已锁定`, 'error');
       return;
     }
 
     // 从当前层移除，加入目标层
-    const idx = layers[curLi].objects.indexOf(obj);
-    layers[curLi].objects.splice(idx, 1);
-    layers[targetLi].objects.push(obj);
+    const idx = sourceLayer.objects.indexOf(obj);
+    sourceLayer.objects.splice(idx, 1);
+    targetLayer.objects.push(obj);
     editor.activeLayerIndex = targetLi;
 
     editor.history.saveHistory();
@@ -971,7 +997,7 @@ export class SceneEditorInteraction {
     editor.ui.updateObjectCount();
     editor.ui.updateObjectProperties();
     editor.render();
-    editor.ui.showToast(`已移到图层：${layers[targetLi].name}`);
+    editor.ui.showToast(`已移到图层：${targetLayer.name}`);
   }
 
   /**
@@ -980,24 +1006,35 @@ export class SceneEditorInteraction {
    */
   _moveObjectInLayer(obj, layer, position) {
     const editor = this.editor;
-    const idx = layer.objects.indexOf(obj);
-    if (idx === -1) return;
+    if (!editor.layers.isObjectEditable(layer, obj)) {
+      editor.ui.showToast('对象或图层已隐藏或锁定，无法调整深度', 'warn');
+      return;
+    }
 
-    layer.objects.splice(idx, 1);
+    const editableIndexes = [];
+    for (let index = 0; index < layer.objects.length; index++) {
+      if (editor.layers.isObjectEditable(layer, layer.objects[index])) editableIndexes.push(index);
+    }
+    const editableIndex = editableIndexes.findIndex(index => layer.objects[index] === obj);
+    if (editableIndex === -1) return;
 
-    if (position === 'up') {
-      const insertAt = Math.min(idx + 1, layer.objects.length);
-      layer.objects.splice(insertAt, 0, obj);
-    } else if (position === 'down') {
-      const insertAt = Math.max(idx - 1, 0);
-      layer.objects.splice(insertAt, 0, obj);
-    } else if (position === 'top') {
-      layer.objects.push(obj);
-    } else if (position === 'bottom') {
-      layer.objects.unshift(obj);
+    let targetEditableIndex = editableIndex;
+    if (position === 'up') targetEditableIndex = Math.min(editableIndex + 1, editableIndexes.length - 1);
+    else if (position === 'down') targetEditableIndex = Math.max(editableIndex - 1, 0);
+    else if (position === 'top') targetEditableIndex = editableIndexes.length - 1;
+    else if (position === 'bottom') targetEditableIndex = 0;
+    if (targetEditableIndex === editableIndex) return;
+
+    const reorderedObjects = editableIndexes.map(index => layer.objects[index]);
+    reorderedObjects.splice(editableIndex, 1);
+    reorderedObjects.splice(targetEditableIndex, 0, obj);
+    for (let index = 0; index < editableIndexes.length; index++) {
+      layer.objects[editableIndexes[index]] = reorderedObjects[index];
     }
 
     editor.history.saveHistory();
+    editor.layers.updateLayerList();
+    editor.ui.updateObjectProperties();
     editor.render();
   }
 
@@ -1109,6 +1146,7 @@ export class SceneEditorInteraction {
   _moveSelectedObjects(dx, dy) {
     const editor = this.editor;
     for (const obj of editor.selectedObjects) {
+      if (!editor.layers.isObjectEditableFor(obj)) continue;
       if ((obj.type === 'shape' || obj.type === 'buffZone' || obj.type === 'effectZone') && Array.isArray(obj.points)) {
         obj.points = obj.points.map(p => [p[0] + dx, p[1] + dy]);
         if (obj.type === 'buffZone' || obj.type === 'effectZone') {
@@ -1134,8 +1172,10 @@ export class SceneEditorInteraction {
     if (!layers || layers.length === 0) return;
     const allObjects = [];
     for (const layer of layers) {
-      if (!layer || !layer.objects || layer.locked || !layer.visible) continue;
-      allObjects.push(...(editor.eventFilter?.filterObjects(layer.objects) || layer.objects));
+      if (!layer?.objects) continue;
+      for (const object of layer.objects) {
+        if (editor.layers.isObjectEditable(layer, object)) allObjects.push(object);
+      }
     }
     editor.selectedObjects = allObjects;
     editor.canvas.render();
@@ -1372,11 +1412,11 @@ export class SceneEditorInteraction {
 
     const selected = addToSelection ? [...editor.selectedObjects] : [];
 
-    // 遍历所有可见未锁定图层
+    // 遍历所有可编辑对象
     for (const layer of editor.sceneData.layers) {
-      if (!layer || layer.locked || !layer.visible || !layer.objects) continue;
+      if (!layer?.objects) continue;
       for (const obj of layer.objects) {
-        if (editor.eventFilter?.isObjectVisible(obj) === false) continue;
+        if (!editor.layers.isObjectEditable(layer, obj)) continue;
         if (selected.includes(obj)) continue;
         if (this._isObjectInRect(obj, left, top, right, bottom)) {
           selected.push(obj);

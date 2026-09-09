@@ -20,6 +20,83 @@ export class SceneEditorLayers {
    */
   constructor(editor) {
     this.editor = editor;
+    this.expandedLayerIds = new Set();
+  }
+
+  /** 返回对象所属图层；对象不在当前场景图层时返回 null。 */
+  getObjectLayer(object) {
+    if (!object) return null;
+    return this.editor.sceneData?.layers?.find(layer => layer?.objects?.includes(object)) || null;
+  }
+
+  /** 编辑器专用对象状态，缺失字段按可见且未锁定处理。 */
+  getObjectEditorState(object) {
+    const state = object?.editor;
+    return state && typeof state === 'object' && !Array.isArray(state) ? state : {};
+  }
+
+  isObjectEditorVisible(object) {
+    return this.getObjectEditorState(object).visible !== false;
+  }
+
+  isObjectEditorLocked(object) {
+    return this.getObjectEditorState(object).locked === true;
+  }
+
+  isObjectVisible(layer, object) {
+    return layer?.visible !== false
+      && this.isObjectEditorVisible(object)
+      && this.editor.eventFilter?.isObjectVisible(object) !== false;
+  }
+
+  isObjectVisibleFor(object) {
+    const layer = this.getObjectLayer(object);
+    return !!layer && this.isObjectVisible(layer, object);
+  }
+
+  isObjectEditable(layer, object) {
+    return this.isObjectVisible(layer, object)
+      && layer?.locked !== true
+      && !this.isObjectEditorLocked(object);
+  }
+
+  isObjectEditableFor(object) {
+    const layer = this.getObjectLayer(object);
+    return !!layer && this.isObjectEditable(layer, object);
+  }
+
+  /**
+   * 记录编辑器专用对象状态；该命名空间不参与游戏运行时的对象语义。
+   */
+  setObjectEditorState(object, key, value) {
+    if (!object || !['visible', 'locked'].includes(key)) return false;
+    const current = this.getObjectEditorState(object);
+    if (current[key] === value) return false;
+    object.editor = { ...current, [key]: value };
+    return true;
+  }
+
+  /** 隐藏对象时同步取消当前编辑器交互，防止残留选择框或拖拽继续改动它。 */
+  sanitizeObjectInteractionState() {
+    const editor = this.editor;
+    editor.selectedObjects = (editor.selectedObjects || []).filter(object => this.isObjectVisibleFor(object));
+    Object.assign(editor.interaction, {
+      isDragging: false,
+      isResizing: false,
+      isLinking: false,
+      isPickingTarget: false,
+      isBoxSelecting: false,
+      draggingVertex: null,
+      resizeTarget: null,
+      resizeStart: null,
+      linkSource: null,
+      linkEnd: null,
+      pickSource: null,
+      boxSelectStart: null,
+      boxSelectEnd: null,
+      allObjectStarts: null
+    });
+    editor.interactionModule?._clearArrowKeyState?.();
   }
 
   /**
@@ -146,10 +223,18 @@ export class SceneEditorLayers {
 
     const targetLayer = editor.sceneData.layers[editor.activeLayerIndex];
     if (!targetLayer) return;
+    if (targetLayer.locked) {
+      editor.ui.showToast(`目标图层「${targetLayer.name}」已锁定`, 'error');
+      return;
+    }
 
     let movedCount = 0;
 
     for (const obj of editor.selectedObjects) {
+      if (!this.isObjectEditableFor(obj)) {
+        editor.ui.showToast('已跳过锁定或隐藏的对象', 'warn');
+        continue;
+      }
       if (obj.type === 'decoration') {
         editor.ui.showToast('装饰物暂不支持跨层移动', 'error');
         continue;
@@ -193,8 +278,14 @@ export class SceneEditorLayers {
       return;
     }
 
+    const editableObjects = layer.objects.filter(object => this.isObjectEditable(layer, object));
+    if (editableObjects.length === 0) {
+      editor.ui.showToast(`图层"${layer.name}"中没有可编辑对象`, 'warn');
+      return;
+    }
+
     const keys = new Set();
-    for (const obj of layer.objects) {
+    for (const obj of editableObjects) {
       if (obj.decoKey) keys.add(obj.decoKey);
       if (obj.sliceKey) keys.add(obj.sliceKey);
       if (obj.name) keys.add(obj.name);
@@ -202,10 +293,10 @@ export class SceneEditorLayers {
     }
 
     const keyList = [...keys].sort().join(', ');
-    const filter = prompt(`当前图层"${layer.name}"中的对象标识:\n${keyList}\n\n输入要筛选的名称（如 grass1）：`);
+    const filter = prompt(`当前图层"${layer.name}"中的可编辑对象标识:\n${keyList}\n\n输入要筛选的名称（如 grass1）：`);
     if (!filter || !filter.trim()) return;
 
-    const depthStr = prompt(`将所有"${filter}"对象设置到深度（索引位置，0=最底）：`, '20');
+    const depthStr = prompt(`将所有"${filter}"对象设置到可编辑深度（0=最底）：`, '20');
     if (depthStr === null) return;
     const targetDepth = parseInt(depthStr);
     if (isNaN(targetDepth) || targetDepth < 0) {
@@ -214,25 +305,30 @@ export class SceneEditorLayers {
     }
 
     const filterKey = filter.trim();
-    const matchObj = (obj) => obj.decoKey === filterKey || obj.sliceKey === filterKey || obj.name === filterKey;
-
-    const matched = [];
-    const remaining = [];
-    for (const obj of layer.objects) {
-      if (matchObj(obj)) matched.push(obj);
-      else remaining.push(obj);
-    }
+    const matchObj = (obj) => (
+      obj.decoKey === filterKey
+      || obj.sliceKey === filterKey
+      || obj.name === filterKey
+      || (!obj.decoKey && !obj.sliceKey && !obj.name && obj.type === filterKey)
+    );
+    const matched = editableObjects.filter(matchObj);
 
     if (matched.length === 0) {
-      editor.ui.showToast(`未找到名称为"${filterKey}"的对象`, 'error');
+      editor.ui.showToast(`未找到名称为"${filterKey}"的可编辑对象`, 'error');
       return;
     }
 
+    const remaining = editableObjects.filter(object => !matchObj(object));
     const insertAt = Math.min(targetDepth, remaining.length);
     remaining.splice(insertAt, 0, ...matched);
-    layer.objects = remaining;
+    const reorderedEditable = remaining[Symbol.iterator]();
 
-    editor.ui.showToast(`已将 ${matched.length} 个"${filterKey}"对象设置到深度 ${insertAt}`);
+    // 隐藏或锁定对象作为固定深度锚点，批量排序绝不跨越或改写它们。
+    layer.objects = layer.objects.map(object => (
+      this.isObjectEditable(layer, object) ? reorderedEditable.next().value : object
+    ));
+
+    editor.ui.showToast(`已将 ${matched.length} 个"${filterKey}"对象设置到可编辑深度 ${insertAt}`);
     this.updateLayerList();
     editor.ui.updateObjectProperties();
     editor.history.saveHistory();
@@ -247,9 +343,10 @@ export class SceneEditorLayers {
     const layer = editor.sceneData.layers[editor.activeLayerIndex];
     if (!layer) return;
 
-    const candidates = editor.eventFilter?.filterObjects(layer.objects) || layer.objects;
+    const filteredObjects = editor.eventFilter?.filterObjects(layer.objects) || layer.objects;
+    const candidates = filteredObjects.filter(object => this.isObjectEditable(layer, object));
     if (candidates.length === 0) {
-      editor.ui.showToast(`图层"${layer.name}"中没有当前可见对象`, 'error');
+      editor.ui.showToast(`图层"${layer.name}"中没有当前可编辑对象`, 'warn');
       return;
     }
     const candidateSet = new Set(candidates);
@@ -296,9 +393,10 @@ export class SceneEditorLayers {
     const layer = editor.sceneData.layers[editor.activeLayerIndex];
     if (!layer) return;
 
-    const candidates = editor.eventFilter?.filterObjects(layer.objects) || layer.objects;
+    const filteredObjects = editor.eventFilter?.filterObjects(layer.objects) || layer.objects;
+    const candidates = filteredObjects.filter(object => this.isObjectEditable(layer, object));
     if (candidates.length === 0) {
-      editor.ui.showToast(`图层"${layer.name}"中没有当前可见对象`, 'error');
+      editor.ui.showToast(`图层"${layer.name}"中没有当前可编辑对象`, 'warn');
       return;
     }
 
@@ -324,7 +422,7 @@ export class SceneEditorLayers {
       if (Number.isFinite(obj.sortY)) obj.sortY += offsetY;
     }
 
-    editor.ui.showToast(`已偏移"${layer.name}"中 ${candidates.length} 个当前可见对象 (${offsetX}, ${offsetY})`);
+    editor.ui.showToast(`已偏移"${layer.name}"中 ${candidates.length} 个可编辑对象 (${offsetX}, ${offsetY})`);
     editor.ui.updateObjectProperties();
     editor.render();
   }
@@ -337,77 +435,157 @@ export class SceneEditorLayers {
     const list = document.getElementById('editor-layer-list');
     if (!list) return;
 
-    list.innerHTML = '';
+    list.replaceChildren();
+    const selectedObject = editor.selectedObjects.length === 1 ? editor.selectedObjects[0] : null;
 
-    // 找出当前选中对象所在图层索引
-    let selectedObjLayerIndex = -1;
-    if (editor.selectedObjects.length === 1 && editor.selectedObjects[0].type !== 'decoration') {
-      const obj = editor.selectedObjects[0];
-      for (let i = 0; i < editor.sceneData.layers.length; i++) {
-        if (editor.sceneData.layers[i].objects.includes(obj)) {
-          selectedObjLayerIndex = i;
-          break;
-        }
-      }
-    }
+    const createControl = ({ action, title, text, style }) => {
+      const control = document.createElement('button');
+      control.type = 'button';
+      control.dataset.action = action;
+      control.title = title;
+      control.textContent = text;
+      control.style.cssText = style;
+      return control;
+    };
+    const btnBase = 'display:inline-flex;align-items:center;justify-content:center;width:26px;height:22px;padding:0;border-radius:3px;cursor:pointer;margin-right:3px;font-size:13px;border:1px solid;flex-shrink:0;';
 
-    // 从后往前显示（最上面的图层在列表顶部）
-    for (let displayIndex = editor.sceneData.layers.length - 1; displayIndex >= 0; displayIndex--) {
-      const actualIndex = displayIndex;
-      const layer = editor.sceneData.layers[actualIndex];
+    // 从后往前显示：列表顶部与实际绘制最前景一致。
+    for (let layerIndex = editor.sceneData.layers.length - 1; layerIndex >= 0; layerIndex--) {
+      const layer = editor.sceneData.layers[layerIndex];
+      const expanded = this.expandedLayerIds.has(layer.id);
       const item = document.createElement('div');
-      const isActive = actualIndex === editor.activeLayerIndex;
-      const hasSelectedObj = actualIndex === selectedObjLayerIndex;
-      item.className = 'layer-item' + (isActive ? ' active' : '') + (hasSelectedObj ? ' has-selected' : '');
-      item.dataset.index = actualIndex;
+      const selectedInLayer = selectedObject && layer.objects.includes(selectedObject);
+      item.className = 'layer-item'
+        + (layerIndex === editor.activeLayerIndex ? ' active' : '')
+        + (selectedInLayer ? ' has-selected' : '');
+      item.dataset.index = String(layerIndex);
 
       const totalCount = layer.objects.length;
-      const visibleCount = editor.eventFilter?.filterObjects(layer.objects).length ?? totalCount;
-      const objCount = editor.eventFilter?.isFiltering() ? `${visibleCount}/${totalCount}` : String(totalCount);
-      const btnBase = 'display:inline-flex;align-items:center;justify-content:center;width:26px;height:22px;border-radius:3px;cursor:pointer;margin-right:3px;font-size:13px;border:1px solid;';
-      const visStyle = layer.visible
-        ? `${btnBase}background:#2a4a2a;border-color:#4a8a4a;`
-        : `${btnBase}background:#3a3a3a;border-color:#666;opacity:0.7;`;
-      const lockStyle = layer.locked
-        ? `${btnBase}background:#5a2a2a;border-color:#c0504a;`
-        : `${btnBase}background:#2a3a5e;border-color:#4a8a4a;`;
-      item.innerHTML = `
-        <span class="layer-btn layer-visibility" data-action="visibility" title="${layer.visible ? '点击隐藏' : '点击显示'}" style="${visStyle}">${layer.visible ? '👁' : '🚫'}</span>
-        <span class="layer-btn layer-lock" data-action="lock" title="${layer.locked ? '已锁定，点击解锁' : '未锁定，点击锁定'}" style="${lockStyle}">${layer.locked ? '🔒' : '🔓'}</span>
-        <span class="layer-name" data-action="select" style="flex:1;">${layer.name}</span>
-        <span class="layer-count">${objCount}</span>
-        ${hasSelectedObj ? '<span class="layer-obj-marker" title="选中对象在此层">◆</span>' : ''}
-      `;
+      const visibleCount = layer.objects.filter(object => this.isObjectVisible(layer, object)).length;
+      const objCount = visibleCount === totalCount ? String(totalCount) : `${visibleCount}/${totalCount}`;
+      const expandButton = createControl({
+        action: 'toggle-objects',
+        title: expanded ? '收起物品列表' : '展开物品列表',
+        text: expanded ? '▾' : '▸',
+        style: `${btnBase}background:#26365f;border-color:#5574ad;`
+      });
+      const visibilityButton = createControl({
+        action: 'visibility',
+        title: layer.visible ? '点击隐藏图层' : '点击显示图层',
+        text: layer.visible ? '👁' : '🚫',
+        style: layer.visible
+          ? `${btnBase}background:#2a4a2a;border-color:#4a8a4a;`
+          : `${btnBase}background:#3a3a3a;border-color:#666;opacity:.7;`
+      });
+      const lockButton = createControl({
+        action: 'lock',
+        title: layer.locked ? '已锁定，点击解锁图层' : '未锁定，点击锁定图层',
+        text: layer.locked ? '🔒' : '🔓',
+        style: layer.locked
+          ? `${btnBase}background:#5a2a2a;border-color:#c0504a;`
+          : `${btnBase}background:#2a3a5e;border-color:#4a8a4a;`
+      });
+      const name = document.createElement('span');
+      name.className = 'layer-name';
+      name.dataset.action = 'select';
+      name.textContent = layer.name;
+      const count = document.createElement('span');
+      count.className = 'layer-count';
+      count.textContent = objCount;
+      item.append(expandButton, visibilityButton, lockButton, name, count);
+      if (selectedInLayer) {
+        const marker = document.createElement('span');
+        marker.className = 'layer-obj-marker';
+        marker.title = '选中对象在此层';
+        marker.textContent = '◆';
+        item.appendChild(marker);
+      }
 
-      // 双击可重命名
-      const nameEl = item.querySelector('.layer-name');
-      nameEl.addEventListener('dblclick', (e) => {
-        e.stopPropagation();
-        const idx = parseInt(item.dataset.index);
-        const newName = prompt('图层名称:', editor.sceneData.layers[idx].name);
-        if (newName && newName.trim()) {
-          editor.sceneData.layers[idx].name = newName.trim();
-          this.updateLayerList();
+      name.addEventListener('dblclick', event => {
+        event.stopPropagation();
+        const newName = prompt('图层名称:', layer.name);
+        if (newName?.trim()) {
+          layer.name = newName.trim();
           editor.history.saveHistory();
+          this.updateLayerList();
         }
       });
-
-      item.addEventListener('click', (e) => {
-        const idx = parseInt(item.dataset.index);
-        const action = e.target.dataset.action;
-        if (action === 'visibility') {
-          editor.sceneData.layers[idx].visible = !editor.sceneData.layers[idx].visible;
-          editor.render();
-        } else if (action === 'lock') {
-          editor.sceneData.layers[idx].locked = !editor.sceneData.layers[idx].locked;
+      item.addEventListener('click', event => {
+        const action = event.target.closest('[data-action]')?.dataset.action || 'select';
+        if (action === 'toggle-objects') {
+          if (expanded) this.expandedLayerIds.delete(layer.id);
+          else this.expandedLayerIds.add(layer.id);
+        } else if (action === 'visibility') {
+          layer.visible = !layer.visible;
           editor.history.saveHistory();
+          this.sanitizeObjectInteractionState();
+          editor.render();
+          editor.ui.updateObjectProperties();
+        } else if (action === 'lock') {
+          layer.locked = !layer.locked;
+          editor.history.saveHistory();
+          this.sanitizeObjectInteractionState();
+          editor.render();
+          editor.ui.updateObjectProperties();
         } else {
-          editor.activeLayerIndex = idx;
+          editor.activeLayerIndex = layerIndex;
         }
         this.updateLayerList();
       });
-
       list.appendChild(item);
+
+      if (!expanded) continue;
+      const objectList = document.createElement('div');
+      objectList.style.cssText = 'margin:0 0 4px 18px;padding:3px 0 2px;border-left:1px solid #40517f;';
+      // 与绘制顺序一致：数组末尾（最前景）排在子列表最上方。
+      for (let objectIndex = layer.objects.length - 1; objectIndex >= 0; objectIndex--) {
+        const object = layer.objects[objectIndex];
+        const objectVisible = this.isObjectEditorVisible(object);
+        const objectLocked = this.isObjectEditorLocked(object);
+        const objectItem = document.createElement('div');
+        objectItem.style.cssText = `display:flex;align-items:center;gap:2px;margin:1px 0 1px 5px;padding:3px 4px;border-radius:3px;cursor:${objectVisible ? 'pointer' : 'default'};font-size:10px;background:${selectedObject === object ? '#42683c' : '#1d2a49'};opacity:${objectVisible ? '1' : '.52'};`;
+        objectItem.title = `${object.id || object.type || '未命名对象'} · 深度 ${objectIndex}`;
+
+        const objectVisibility = createControl({
+          action: 'object-visibility',
+          title: objectVisible ? '仅在编辑器中隐藏此物品' : '仅在编辑器中显示此物品',
+          text: objectVisible ? '👁' : '🚫',
+          style: `${btnBase}width:22px;height:19px;margin-right:0;font-size:11px;${objectVisible ? 'background:#254830;border-color:#4a8a4a;' : 'background:#3a3a3a;border-color:#666;'}`
+        });
+        const objectLock = createControl({
+          action: 'object-lock',
+          title: objectLocked ? '已锁定，点击解锁物品' : '未锁定，点击锁定物品',
+          text: objectLocked ? '🔒' : '🔓',
+          style: `${btnBase}width:22px;height:19px;margin-right:0;font-size:11px;${objectLocked ? 'background:#5a2a2a;border-color:#c0504a;' : 'background:#26365f;border-color:#5574ad;'}`
+        });
+        const objectName = document.createElement('span');
+        objectName.style.cssText = 'flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px;';
+        objectName.textContent = object.name || object.ref || object.imageId || object.id || object.type || '未命名对象';
+        const depth = document.createElement('span');
+        depth.style.cssText = 'color:#8fa3ca;font-size:9px;flex-shrink:0;';
+        depth.textContent = `#${objectIndex}`;
+        objectItem.append(objectVisibility, objectLock, objectName, depth);
+        objectItem.addEventListener('click', event => {
+          const action = event.target.closest('[data-action]')?.dataset.action;
+          if (action === 'object-visibility') {
+            this.setObjectEditorState(object, 'visible', !objectVisible);
+            editor.history.saveHistory();
+            this.sanitizeObjectInteractionState();
+          } else if (action === 'object-lock') {
+            this.setObjectEditorState(object, 'locked', !objectLocked);
+            editor.history.saveHistory();
+            this.sanitizeObjectInteractionState();
+          } else if (objectVisible) {
+            editor.activeLayerIndex = layerIndex;
+            editor.selectedObjects = [object];
+          }
+          editor.ui.updateObjectProperties();
+          editor.render();
+          this.updateLayerList();
+        });
+        objectList.appendChild(objectItem);
+      }
+      list.appendChild(objectList);
     }
   }
 

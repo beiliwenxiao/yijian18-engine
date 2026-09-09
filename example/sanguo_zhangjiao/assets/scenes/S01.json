@@ -247,14 +247,40 @@
           "y": 210
         },
         {
+          "depthSort": true,
+          "height": 112,
+          "id": "S01-shelter-site-marker",
+          "imageId": "s10.construction.siteMarker",
+          "name": "小庇护所施工基座",
+          "semanticRole": "constructionSiteMarker",
+          "sortY": 440.8560038288261,
+          "type": "image",
+          "width": 144,
+          "x": 474.51946645974056,
+          "y": 328.93269356207884
+        },
+        {
+          "depthSort": true,
+          "height": 56,
+          "id": "S01-shelter-site-firewood",
+          "imageId": "s01.resource.dryWoodNode",
+          "name": "小庇护所预备木柴",
+          "semanticRole": "constructionMaterial",
+          "sortY": 459,
+          "type": "image",
+          "width": 64,
+          "x": 566.4164525802458,
+          "y": 403.07668973325275
+        },
+        {
           "height": 115,
           "id": "S01-shelter-site",
           "name": "小庇护所施工点",
           "semanticRole": "constructionSite",
           "type": "region",
           "width": 150,
-          "x": 556.4164525802458,
-          "y": 351.07668973325275
+          "x": 475.4124659811373,
+          "y": 327.93269356207884
         },
         {
           "height": 75,
@@ -263,8 +289,8 @@
           "semanticRole": "restPoint",
           "type": "region",
           "width": 75,
-          "x": 643.285148238708,
-          "y": 404.9632806407001
+          "x": 507.31417073306136,
+          "y": 361.568287819749
         },
         {
           "height": 90,
@@ -323,8 +349,8 @@
             "path": "s01Survival.shelterCompleted"
           },
           "type": "ref",
-          "x": 643.3572884621749,
-          "y": 464.7103449032338
+          "x": 549.3348040167809,
+          "y": 437.95009933031395
         },
         {
           "id": "S01-spawn-player",
@@ -485,8 +511,8 @@
             "tutorial-wolf"
           ],
           "type": "ref",
-          "x": 835,
-          "y": 410
+          "x": 391.64782334595037,
+          "y": 324.6565141187963
         },
         {
           "group": "S01-chase-wolves",

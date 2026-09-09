@@ -675,7 +675,15 @@ export class SceneEditorUI {
    */
   deleteSelectedObjects() {
     const editor = this.editor;
-    for (const obj of editor.selectedObjects) {
+    const editableObjects = editor.selectedObjects.filter(obj => (
+      obj.type === 'decoration' && obj._decoRef
+    ) || editor.layers.isObjectEditableFor(obj));
+    if (editableObjects.length === 0) {
+      this.showToast('选中对象已锁定或隐藏，无法删除', 'warn');
+      return;
+    }
+
+    for (const obj of editableObjects) {
       if (obj.type === 'decoration' && obj._decoRef) {
         const index = editor.sceneData.decorations.indexOf(obj._decoRef);
         if (index !== -1) editor.sceneData.decorations.splice(index, 1);
@@ -687,8 +695,9 @@ export class SceneEditorUI {
       }
     }
 
-    editor.selectedObjects = [];
+    editor.selectedObjects = editor.selectedObjects.filter(obj => !editableObjects.includes(obj));
     editor.eventFilter?.rebuild({ preserveSelection: true });
+    editor.layers.updateLayerList();
     this.updateObjectProperties();
     this.updateObjectCount();
     editor.history.saveHistory();
@@ -727,6 +736,9 @@ export class SceneEditorUI {
     }
 
     const obj = editor.selectedObjects[0];
+    const isObjectEditable = () => (obj.type === 'decoration' && obj._decoRef)
+      || editor.layers.isObjectEditableFor(obj);
+    const objectEditable = isObjectEditable();
     let html = '';
 
     if (obj.type === 'decoration') {
@@ -794,9 +806,25 @@ export class SceneEditorUI {
     html += `<div class="property-row"><button id="editor-delete-obj">删除对象</button></div>`;
     panel.innerHTML = html;
 
+    if (!objectEditable) {
+      const notice = document.createElement('div');
+      notice.className = 'no-selection';
+      notice.style.cssText = 'color:#f0a8a8;margin-bottom:6px;';
+      notice.textContent = '此对象或所属图层已锁定，仅可查看属性。';
+      panel.prepend(notice);
+      panel.querySelectorAll('input[data-prop], select[data-prop], textarea[data-prop], button, #editor-trigger-picker, #editor-image-id, #editor-image-src').forEach(control => {
+        control.disabled = true;
+      });
+    }
+
     // 绑定属性修改事件
     panel.querySelectorAll('input[data-prop], select[data-prop], textarea[data-prop]').forEach(input => {
       input.addEventListener('change', (e) => {
+        if (!isObjectEditable()) {
+          this.showToast('此对象已隐藏或锁定，无法修改', 'warn');
+          this.updateObjectProperties();
+          return;
+        }
         const prop = e.target.dataset.prop;
         let value;
         if (e.target.type === 'checkbox') value = e.target.checked;
@@ -985,6 +1013,11 @@ export class SceneEditorUI {
     const triggerPicker = document.getElementById('editor-trigger-picker');
     if (triggerPicker && obj.type === 'trigger') {
       triggerPicker.addEventListener('change', () => {
+        if (!isObjectEditable()) {
+          this.showToast('此对象已隐藏或锁定，无法修改', 'warn');
+          this.updateObjectProperties();
+          return;
+        }
         this._commitTriggerId(obj, triggerPicker.value);
       });
     }
@@ -996,10 +1029,16 @@ export class SceneEditorUI {
       const imgObj = editor.selectedObjects[0];
       if (imageIdSelect) {
         imageIdSelect.addEventListener('change', () => {
+          if (!isObjectEditable()) {
+            this.showToast('此对象已隐藏或锁定，无法修改', 'warn');
+            this.updateObjectProperties();
+            return;
+          }
           const nextId = imageIdSelect.value;
           if (!nextId || nextId === imgObj.imageId) return;
           editor.history?.saveHistory?.();
           imgObj.imageId = nextId;
+          editor.layers.updateLayerList();
           editor.render();
           this.updateObjectProperties();
           this.showToast(`已切换图片资源：${nextId}`);
@@ -1008,6 +1047,11 @@ export class SceneEditorUI {
       // 初次显示时异步查询文件大小
       this._fetchImageFileSize(imageSrcInput.value);
       imageSrcInput.addEventListener('change', () => {
+        if (!isObjectEditable()) {
+          this.showToast('此对象已隐藏或锁定，无法修改', 'warn');
+          this.updateObjectProperties();
+          return;
+        }
         const newSrc = imageSrcInput.value.trim();
         if (!editor.sceneData.imageAssets) editor.sceneData.imageAssets = {};
         if (!editor.sceneData.imageAssets[imgObj.imageId]) {
@@ -1061,6 +1105,10 @@ export class SceneEditorUI {
     const applySliceBtn = document.getElementById('editor-ellipse-apply-slice');
     if (applySliceBtn) {
       applySliceBtn.addEventListener('click', () => {
+        if (!isObjectEditable()) {
+          this.showToast('此对象已隐藏或锁定，无法修改', 'warn');
+          return;
+        }
         if (!editor.selectedSlice) {
           this.showToast('请先在左侧资源库选中一个切片', 'error');
           return;
@@ -1080,6 +1128,10 @@ export class SceneEditorUI {
     const pickBtn = document.getElementById('editor-pick-target');
     if (pickBtn && editor.selectedObjects.length === 1 && editor.selectedObjects[0].type === 'trigger') {
       pickBtn.addEventListener('click', () => {
+        if (!isObjectEditable()) {
+          this.showToast('此对象已隐藏或锁定，无法修改', 'warn');
+          return;
+        }
         editor.interactionModule.startPickTarget(editor.selectedObjects[0]);
       });
     }
@@ -1419,6 +1471,10 @@ export class SceneEditorUI {
 
   _commitTriggerId(obj, value) {
     const editor = this.editor;
+    if (!editor.layers.isObjectEditableFor(obj)) {
+      this.showToast('此对象已隐藏或锁定，无法修改', 'warn');
+      return false;
+    }
     const nextTriggerId = String(value || '').trim();
     if (nextTriggerId === String(obj.triggerId || '').trim()) return false;
 
@@ -1789,6 +1845,10 @@ export class SceneEditorUI {
    */
   _openImageEditorModal(imgObj) {
     const editor = this.editor;
+    if (!editor.layers.isObjectEditableFor(imgObj)) {
+      this.showToast('此对象已隐藏或锁定，无法编辑图片', 'warn');
+      return;
+    }
     const asset = editor.sceneData.imageAssets?.[imgObj.imageId];
     const src = asset?.src || '';
     const img = editor.loadedImages.get(imgObj.imageId);
@@ -1873,6 +1933,11 @@ export class SceneEditorUI {
 
     // 确定
     document.getElementById('imp-confirm').addEventListener('click', () => {
+      if (!editor.layers.isObjectEditableFor(imgObj)) {
+        this.showToast('此对象已隐藏或锁定，无法修改', 'warn');
+        close();
+        return;
+      }
       const newPath = document.getElementById('imp-path').value.trim();
       if (newPath && newPath !== src) {
         if (!editor.sceneData.imageAssets) editor.sceneData.imageAssets = {};

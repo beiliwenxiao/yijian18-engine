@@ -3245,11 +3245,16 @@ export class SceneEditorAssets {
   /**
    * 恢复保存的图片资源
    */
-  loadImageAssets(sceneDatas = [this.editor.sceneData]) {
+  /**
+   * 预载场景普通图片。场景自己的 imageAssets 保持兼容；未在场景内重复路径的
+   * type:'image' 对象则从项目 Manifest 解析稳定 imageId，避免编辑器预览与运行时脱节。
+   */
+  async loadImageAssets(sceneDatas = [this.editor.sceneData]) {
     const editor = this.editor;
     const scenes = (Array.isArray(sceneDatas) ? sceneDatas : [sceneDatas]).filter(Boolean);
     const generation = ++this._sceneImageLoadGeneration;
     const activeScene = editor.sceneData;
+    const { projectPath, epoch } = this._activatePlacementProject();
     const sources = new Map();
 
     for (const sceneData of scenes) {
@@ -3264,22 +3269,65 @@ export class SceneEditorAssets {
           );
         }
         sources.set(id, {
-          src,
-          sceneId: sceneData.id || sceneData.name || '<unknown>'
+          aliases: [id],
+          sceneId: sceneData.id || sceneData.name || '<unknown>',
+          src
         });
       }
     }
 
-    for (const [id, { src }] of sources) {
-      if (editor.loadedImages.has(id)) continue;
+    try {
+      const manifestEntries = await this._ensureAssetManifest();
+      if (!this._isPlacementProjectCurrent(projectPath, epoch) || generation !== this._sceneImageLoadGeneration || editor.sceneData !== activeScene) return;
+
+      for (const sceneData of scenes) {
+        for (const layer of sceneData.layers || []) {
+          for (const object of layer?.objects || []) {
+            if (object?.type !== 'image' || typeof object.imageId !== 'string') continue;
+            const imageId = object.imageId.trim();
+            if (!imageId || sources.has(imageId)) continue;
+            const entry = manifestEntries.get(imageId);
+            const src = entry ? this._resolveManifestImageUrl(entry, projectPath) : '';
+            if (!src) {
+              console.warn(`[SceneEditorAssets] 场景图片缺少可加载 Manifest 资源: ${imageId}`);
+              continue;
+            }
+            sources.set(imageId, {
+              aliases: [imageId, entry.imageId, entry.assetId].filter(Boolean),
+              sceneId: sceneData.id || sceneData.name || '<unknown>',
+              src
+            });
+          }
+        }
+      }
+    } catch (error) {
+      if (this._isPlacementProjectCurrent(projectPath, epoch) && generation === this._sceneImageLoadGeneration && editor.sceneData === activeScene) {
+        console.warn('[SceneEditorAssets] Manifest 场景图片资源准备失败:', error);
+      }
+    }
+
+    for (const [id, { aliases, src }] of sources) {
+      const loadedImage = aliases.map(alias => editor.loadedImages.get(alias)).find(Boolean);
+      if (loadedImage) {
+        for (const alias of aliases) editor.loadedImages.set(alias, loadedImage);
+        continue;
+      }
       const img = new Image();
       img.onload = () => {
-        if (generation !== this._sceneImageLoadGeneration || editor.sceneData !== activeScene) return;
-        editor.loadedImages.set(id, img);
+        if (
+          generation !== this._sceneImageLoadGeneration
+          || editor.sceneData !== activeScene
+          || !this._isPlacementProjectCurrent(projectPath, epoch)
+        ) return;
+        for (const alias of aliases) editor.loadedImages.set(alias, img);
         editor.render();
       };
       img.onerror = () => {
-        if (generation === this._sceneImageLoadGeneration && editor.sceneData === activeScene) {
+        if (
+          generation === this._sceneImageLoadGeneration
+          && editor.sceneData === activeScene
+          && this._isPlacementProjectCurrent(projectPath, epoch)
+        ) {
           console.error(`[SceneEditorAssets] 场景图片加载失败: ${id} (${src})`);
         }
       };

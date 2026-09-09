@@ -80,7 +80,7 @@ export class SceneEditorCanvas {
 
       // 渲染该图层的当前视图对象
       for (const obj of layer.objects) {
-        if (editor.eventFilter?.isObjectVisible(obj) !== false) this._renderObject(ctx, obj);
+        if (editor.layers.isObjectVisible(layer, obj)) this._renderObject(ctx, obj);
       }
     }
 
@@ -152,7 +152,7 @@ export class SceneEditorCanvas {
       for (const layer of sceneData.layers) {
         if (!layer.visible || !layer.objects) continue;
         for (const obj of layer.objects) {
-          this._renderObject(ctx, obj);
+          if (editor.layers.isObjectEditorVisible(obj)) this._renderObject(ctx, obj);
         }
       }
 
@@ -1028,7 +1028,7 @@ export class SceneEditorCanvas {
     for (const layer of editor.sceneData.layers) {
       if (!layer.visible) continue;
       for (const obj of (layer.objects || [])) {
-        if (editor.eventFilter?.isObjectVisible(obj) !== false) allObjects.push(obj);
+        if (editor.layers.isObjectVisible(layer, obj)) allObjects.push(obj);
       }
     }
 
@@ -1108,7 +1108,7 @@ export class SceneEditorCanvas {
     const handleSize = 8 / editor.viewport.scale;
 
     for (const obj of editor.selectedObjects) {
-      if (editor.eventFilter?.isObjectVisible(obj) === false) continue;
+      if (!editor.layers.isObjectVisibleFor(obj)) continue;
       let x, y, w, h;
 
       if (obj.type === 'decoration') {

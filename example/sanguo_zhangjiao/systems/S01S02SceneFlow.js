@@ -1275,6 +1275,7 @@ export class S01S02Coordinator {
     if (result.ok !== true) return result;
 
     const survival = this._story().s01Survival || {};
+    let shelterConstructionUnlocked = false;
     if (firstStoryCraft
       && survival.wolfVestCrafted === true
       && survival.wolfBracersCrafted === true
@@ -1285,10 +1286,15 @@ export class S01S02Coordinator {
         `${session.operationId}:story-wolf-gear-crafted`
       );
       if (aggregate.ok !== true) return { ...aggregate, crafted: true };
+      shelterConstructionUnlocked = true;
     }
-    this.scene._showScreenTip(craftingVest
-      ? '狼皮背心制作完成，已放入背包。'
-      : '狼皮护腕制作完成，已放入背包。', { title: '制作完成' });
+    this.scene._showScreenTip(shelterConstructionUnlocked
+      ? `${craftingVest ? '狼皮背心' : '狼皮护腕'}制作完成，已放入背包。天气寒冷，需要建立一个庇护所，才能度过寒冷的夜晚。`
+      : craftingVest
+        ? '狼皮背心制作完成，已放入背包。'
+        : '狼皮护腕制作完成，已放入背包。', {
+      title: shelterConstructionUnlocked ? '寒夜将至' : '制作完成'
+    });
     return { ...result, crafted: true };
   }
 
