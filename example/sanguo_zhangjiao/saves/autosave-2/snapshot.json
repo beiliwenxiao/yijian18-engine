@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "createdAt": 1788925560790,
+  "createdAt": 1788940348856,
   "meta": {
     "gameId": "sanguo_zhangjiao",
     "kind": "auto",
@@ -9,7 +9,7 @@
     "level": 1,
     "currentSceneId": "S01",
     "location": "S01 区域",
-    "reason": "system-menu",
+    "reason": "interval",
     "previewFile": "thumbnail.jpg"
   },
   "data": {
@@ -21,8 +21,8 @@
         "id": "refugee",
         "name": null,
         "transform": {
-          "x": 8200.65,
-          "y": 4105.164585924582,
+          "x": 8297.273335819915,
+          "y": 4142.5,
           "elevation": 0,
           "rotation": 0,
           "scale": {
@@ -78,10 +78,6 @@
             "quantity": 4
           },
           {
-            "definitionId": "resource.wood",
-            "quantity": 2
-          },
-          {
             "definitionId": "resource.raw_wolf_meat",
             "quantity": 4
           },
@@ -115,12 +111,7 @@
           "s01.attack:attackPerformed": 1,
           "s01.durability:gatheringCompleted": 1
         },
-        "movementOrigins": {
-          "s01.move": {
-            "x": 8276.559230181467,
-            "y": 4165.023414159508
-          }
-        }
+        "movementOrigins": {}
       },
       "dialogue": {
         "currentDialogueId": null,
@@ -340,7 +331,7 @@
               "berryGatherCount": 3,
               "campfireExtinguished": false,
               "campfireLit": true,
-              "campfireRefuelCount": 3,
+              "campfireRefuelCount": 5,
               "cliffReached": false,
               "firestarterAcquired": false,
               "firstWolfKilled": true,
@@ -396,19 +387,19 @@
             "trg_s01_spawn_initial": {
               "definitionRevision": 1,
               "remaining": 0,
-              "nextDue": 1000,
+              "nextDue": 0,
               "duration": 1000
             },
             "trg_s01_refuel_campfire": {
               "definitionRevision": 1,
               "remaining": 0,
-              "nextDue": 42656.799999999814,
+              "nextDue": 53249.099999999846,
               "duration": 1000
             },
             "trg_s01_cook_meat": {
               "definitionRevision": 1,
               "remaining": 0,
-              "nextDue": 78112.3999999999,
+              "nextDue": 0,
               "duration": 1000
             }
           },
@@ -895,22 +886,22 @@
               {
                 "triggerId": "trg_s01_refuel_campfire",
                 "definitionRevision": 1,
-                "operationId": "trigger:1:trg_s01_refuel_campfire:25",
-                "fingerprint": "sha256-77f3df3dca82c7566852bd9504f19285d251b3543e5b5f764ffa206906bd41ea",
+                "operationId": "trigger:1:trg_s01_refuel_campfire:7",
+                "fingerprint": "sha256-2bd19c9c1700d9ae07255a07d30b52ae87b682befb73cec64684f411d076393c",
                 "status": "succeeded",
                 "actionIndex": 0,
                 "result": {
                   "ok": true,
-                  "operationId": "trigger:1:trg_s01_refuel_campfire:25:trigger:trg_s01_refuel_campfire:step:refuel-campfire",
-                  "status": "refueled",
+                  "operationId": "trigger:1:trg_s01_refuel_campfire:7:trigger:trg_s01_refuel_campfire:step:refuel-campfire",
+                  "status": "blocked",
                   "committed": false,
                   "code": null,
                   "stateId": "trigger:trg_s01_refuel_campfire",
                   "stateRevision": null
                 },
-                "startedAt": 40656.59999999963,
-                "finishedAt": 41656.799999999814,
-                "ledgerRevision": 10
+                "startedAt": 52215.69999999988,
+                "finishedAt": 52249.099999999846,
+                "ledgerRevision": 28
               },
               {
                 "triggerId": "trg_s01_build_shelter",
@@ -2314,6 +2305,18 @@
                       }
                     },
                     {
+                      "id": "S01-prop-tanning-rack",
+                      "state": {
+                        "kind": "item",
+                        "removed": false,
+                        "position": {
+                          "x": 8163.6510955210915,
+                          "y": 4089.1225022587523
+                        },
+                        "placementSignature": "{\"group\":\"S01-tanning-rack\",\"id\":\"S01-prop-tanning-rack\",\"kind\":\"item\",\"overrides\":null,\"ref\":\"story.s01.tanning_rack\",\"sceneId\":\"S01\",\"spawnWhen\":{\"blackboardKey\":\"storyState\",\"equals\":true,\"path\":\"s01Survival.meatCooked\"},\"type\":\"ref\",\"version\":1,\"x\":483.6510955210918,\"y\":489.1225022587522}"
+                      }
+                    },
+                    {
                       "id": "S01-node-berry-1",
                       "state": {
                         "kind": "resourceNode",
@@ -2398,22 +2401,10 @@
                         "kind": "item",
                         "removed": false,
                         "position": {
-                          "x": 8278.920657723967,
-                          "y": 4123.993957370944
+                          "x": 8277.57341390614,
+                          "y": 4121.2994697352915
                         },
-                        "placementSignature": "{\"group\":\"S01-cooking-rack\",\"id\":\"S01-prop-cooking-rack\",\"kind\":\"item\",\"overrides\":null,\"ref\":\"story.s01.cooking_rack\",\"sceneId\":\"S01\",\"spawnWhen\":{\"blackboardKey\":\"storyState\",\"equals\":true,\"path\":\"s01Survival.wolfSkinned\"},\"type\":\"ref\",\"version\":1,\"x\":598.9206577239671,\"y\":523.9939573709447}"
-                      }
-                    },
-                    {
-                      "id": "S01-prop-tanning-rack",
-                      "state": {
-                        "kind": "item",
-                        "removed": false,
-                        "position": {
-                          "x": 8163.6510955210915,
-                          "y": 4089.1225022587523
-                        },
-                        "placementSignature": "{\"group\":\"S01-tanning-rack\",\"id\":\"S01-prop-tanning-rack\",\"kind\":\"item\",\"overrides\":null,\"ref\":\"story.s01.tanning_rack\",\"sceneId\":\"S01\",\"spawnWhen\":{\"blackboardKey\":\"storyState\",\"equals\":true,\"path\":\"s01Survival.meatCooked\"},\"type\":\"ref\",\"version\":1,\"x\":483.6510955210918,\"y\":489.1225022587522}"
+                        "placementSignature": "{\"group\":\"S01-cooking-rack\",\"id\":\"S01-prop-cooking-rack\",\"kind\":\"item\",\"overrides\":null,\"ref\":\"story.s01.cooking_rack\",\"sceneId\":\"S01\",\"spawnWhen\":{\"blackboardKey\":\"storyState\",\"equals\":true,\"path\":\"s01Survival.wolfSkinned\"},\"type\":\"ref\",\"version\":1,\"x\":597.5734139061408,\"y\":521.2994697352918}"
                       }
                     },
                     {
@@ -2453,8 +2444,8 @@
             "itemId": "resource.wood",
             "secondsPerUnit": 100,
             "maxUnits": 10,
-            "units": 4,
-            "remainingSeconds": 386.31439999998315,
+            "units": 6,
+            "remainingSeconds": 512.2141000000144,
             "active": true
           }
         },
@@ -2595,7 +2586,7 @@
         },
         "puppetState": {
           "schemaVersion": 1,
-          "chargesRemaining": null,
+          "chargesRemaining": 0,
           "nextSequence": 1,
           "active": null
         },

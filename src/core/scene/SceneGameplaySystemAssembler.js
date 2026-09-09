@@ -62,6 +62,7 @@ import { SkillEffects } from '../../rendering/SkillEffects.js';
 import { WeaponRenderer } from '../../rendering/WeaponRenderer.js';
 import { EnemyWeaponRenderer } from '../../rendering/EnemyWeaponRenderer.js';
 import { GatheringProgressPresenter } from '../../ui/GatheringProgressPresenter.js';
+import { WorldActionPresentation } from './WorldActionPresentation.js';
 
 export class SceneGameplaySystemAssembler {
   constructor(scene) {
@@ -193,6 +194,7 @@ export class SceneGameplaySystemAssembler {
       commandGateway: scene.sceneRuntime?.commandGateway
     });
     scene.gatheringProgressPresenter = new GatheringProgressPresenter();
+    scene.worldActionPresenter = new WorldActionPresentation({ assetManager: scene.assetManager || null });
     scene.gatheringSystem = new GatheringSystem({
       inventoryTransactions: scene.inventoryTransactions,
       itemResolver: (itemId, resourceType) => scene.gameLoader?.registries?.items?.get?.(itemId) || {
@@ -235,8 +237,9 @@ export class SceneGameplaySystemAssembler {
     scene.combatSystem.setOnDamageCallback?.(({ target, appliedDamage, isDead }) => {
       if (appliedDamage <= 0) return;
       if (scene.gatheringPuppetSystem?.handleDamage?.(target, { isDead })) return;
-      if (target === scene.playerEntity && scene.gatheringSystem.isActiveFor(target)) {
-        scene.gatheringSystem.interruptByDamage();
+      if (target === scene.playerEntity) {
+        if (scene.gatheringSystem.isActiveFor(target)) scene.gatheringSystem.interruptByDamage();
+        scene._s01s02Coordinator?.interruptRecipeAction?.('damaged');
       }
     });
     scene.playerDefeatService = new PlayerDefeatService({
@@ -507,6 +510,7 @@ export class SceneGameplaySystemAssembler {
       ['gameplay.inventoryTransactions', scene.inventoryTransactions],
       ['gameplay.pickup', scene.pickupSystem],
       ['gameplay.gatheringProgress', scene.gatheringProgressPresenter, 'dispose'],
+      ['presentation.worldAction', scene.worldActionPresenter, 'dispose', 'update'],
       ['gameplay.jumpCharge', scene.jumpChargeController, 'dispose'],
       ['gameplay.gathering', scene.gatheringSystem],
       ['gameplay.gatheringPuppet', scene.gatheringPuppetSystem, 'dispose'],
@@ -516,12 +520,12 @@ export class SceneGameplaySystemAssembler {
       ['gameplay.meditation', scene.meditationSystem],
       ['gameplay.zoneEffect', scene.zoneEffectSystem],
       ['gameplay.meleeAttack', scene.meleeAttackSystem, 'cleanup']
-    ].map(([name, instance, disposeHook], order) => ({
+    ].map(([name, instance, disposeHook, updateHook], order) => ({
       name,
       instance,
       options: {
         order: 100 + order,
-        updateHook: false,
+        updateHook: updateHook || false,
         disposeHook: disposeHook || false,
         ownership: name === 'gameplay.inventoryTransactions' && !inventoryTransactionsOwned
           ? 'BORROWED'
@@ -543,7 +547,7 @@ export class SceneGameplaySystemAssembler {
       combatEffects: 'combatEffects', skillEffects: 'skillEffects', weaponRenderer: 'weaponRenderer',
       enemyWeaponRenderer: 'enemyWeaponRenderer', particleSystem: 'particleSystem',
       floatingTextManager: 'floatingTextManager', effectZoneRenderer: 'effectZoneRenderer',
-      gatheringProgress: 'gatheringProgressPresenter'
+      gatheringProgress: 'gatheringProgressPresenter', worldAction: 'worldActionPresenter'
     };
     const projections = [];
     for (const [key, field] of Object.entries(systemFields)) {

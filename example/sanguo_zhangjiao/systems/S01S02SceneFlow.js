@@ -26,6 +26,25 @@ const SPECIAL_FAINT_LABELS = Object.freeze({
 
 const REFUEL_PROGRESS_OWNER = 'campfireRefuel';
 const REFUEL_DURATION_SECONDS = 1;
+const RECIPE_ACTION_PROGRESS_OWNER = 's01RecipeAction';
+const RECIPE_ACTION_RANGE = 96;
+const RECIPE_ACTIONS = Object.freeze({
+  's01.roastedWolfMeat': Object.freeze({
+    workstationId: 's01.cookingRack', placementId: 'S01-prop-cooking-rack', duration: 2,
+    kind: 'cooking', inputImageId: 's01.item.rawWolfMeat', outputImageId: 's01.food.roastedWolfMeat',
+    inputSize: Object.freeze({ width: 42, height: 34 }), outputSize: Object.freeze({ width: 44, height: 36 })
+  }),
+  's01.wolfHideVest': Object.freeze({
+    workstationId: 's01.tanningRack', placementId: 'S01-prop-tanning-rack', duration: 3,
+    kind: 'tanning', inputImageId: 's01.item.wolfHide', outputImageId: 's01.equipment.wolfHideVest',
+    inputSize: Object.freeze({ width: 48, height: 38 }), outputSize: Object.freeze({ width: 46, height: 52 })
+  }),
+  's01.wolfHideBracers': Object.freeze({
+    workstationId: 's01.tanningRack', placementId: 'S01-prop-tanning-rack', duration: 2,
+    kind: 'tanning', inputImageId: 's01.item.wolfHide', outputImageId: 's01.equipment.wolfHideBracers',
+    inputSize: Object.freeze({ width: 48, height: 38 }), outputSize: Object.freeze({ width: 48, height: 40 })
+  })
+});
 const CHASE_WOLF_PREFIX = 'S01-chase-wolf-';
 const MAX_CHASE_WOLVES = 20;
 const PURSUIT_RECONCILE_INTERVAL_SECONDS = 0.75;
@@ -40,6 +59,8 @@ export class S01S02Coordinator {
     this.sequence = 0;
     this.refuelCampfireInFlight = null;
     this.refuelCampfireProgress = null;
+    this.recipeActionInFlight = null;
+    this.recipeActionProgress = null;
     this.pursuitReconcileElapsed = 0;
     this.pursuitReconcileInFlight = false;
     this.pendingAxeDiscovery = false;
@@ -1056,9 +1077,8 @@ export class S01S02Coordinator {
         name: '烤狼肉',
         description: '恢复生命 50 点。',
         summary: '狼肉 ×1，木柴 ×1',
-        enabled: survival.wolfSkinned === true && survival.meatCooked !== true
-          && count('resource.raw_wolf_meat') >= 1 && count('resource.wood') >= 1,
-        disabledReason: survival.meatCooked === true ? '狼肉已经烤熟。' : '需要生狼肉 1 块与木柴 1 根。',
+        enabled: count('resource.raw_wolf_meat') >= 1 && count('resource.wood') >= 1,
+        disabledReason: '需要生狼肉 1 块与木柴 1 根。',
         materials: [
           { name: '生狼肉', available: count('resource.raw_wolf_meat'), quantity: 1 },
           { name: '木柴', available: count('resource.wood'), quantity: 1 }
@@ -1070,9 +1090,8 @@ export class S01S02Coordinator {
           name: '狼皮背心',
           description: '防御 +10，生命 +5。',
           summary: '狼皮 ×2',
-          enabled: survival.meatCooked === true && survival.wolfVestCrafted !== true
-            && count('resource.wolf_hide') >= 2,
-          disabledReason: survival.wolfVestCrafted === true ? '狼皮背心已经制作完成。' : '需要狼皮 2 张。',
+          enabled: count('resource.wolf_hide') >= 2,
+          disabledReason: '需要狼皮 2 张。',
           materials: [{ name: '狼皮', available: count('resource.wolf_hide'), quantity: 2 }]
         },
         {
@@ -1080,9 +1099,8 @@ export class S01S02Coordinator {
           name: '狼皮护腕',
           description: '防御 +3，攻击 +1。',
           summary: '狼皮 ×1',
-          enabled: survival.meatCooked === true && survival.wolfBracersCrafted !== true
-            && count('resource.wolf_hide') >= 1,
-          disabledReason: survival.wolfBracersCrafted === true ? '狼皮护腕已经制作完成。' : '需要狼皮 1 张。',
+          enabled: count('resource.wolf_hide') >= 1,
+          disabledReason: '需要狼皮 1 张。',
           materials: [{ name: '狼皮', available: count('resource.wolf_hide'), quantity: 1 }]
         }
       ];
@@ -1100,6 +1118,7 @@ export class S01S02Coordinator {
   }
 
   openRecipeSelection(workstationId) {
+    if (this.recipeActionInFlight) return { ok: true, status: 'blocked', code: 'recipeActionActive' };
     const view = this.scene.recipeSelectionView;
     if (!view) return { ok: false, code: 'recipeViewUnavailable' };
     view.open(this._createRecipeSnapshot(workstationId));
@@ -1122,6 +1141,192 @@ export class S01S02Coordinator {
     if (view?.visible) view.setSnapshot(this._createRecipeSnapshot(workstationId, options));
   }
 
+  isRecipeActionActiveFor(actor = null) {
+    const session = this.recipeActionProgress;
+    return Boolean(session && (!actor || session.actor === actor));
+  }
+
+  _resolveRecipeWorkstation(placementId) {
+    return this.scene.context?.services?.placements?.inspectPlacement?.(placementId)?.value || null;
+  }
+
+  _validateRecipeAction(session) {
+    if (this.scene.currentSceneId !== 'S01') return 'sceneChanged';
+    if (!session.actor || session.actor.isDead === true || session.actor.isSoulState === true) return 'actorUnavailable';
+    if (this._resolveRecipeWorkstation(session.action.placementId) !== session.workstation) return 'workstationUnavailable';
+    const actorPosition = session.actor.getComponent?.('transform')?.position;
+    const workstationPosition = session.workstation.getComponent?.('transform')?.position;
+    if (!actorPosition || !workstationPosition) return 'workstationUnavailable';
+    return Math.hypot(actorPosition.x - workstationPosition.x, actorPosition.y - workstationPosition.y) > RECIPE_ACTION_RANGE
+      ? 'outOfRange'
+      : null;
+  }
+
+  _showRecipeActionProgress(event, session, progress = 0) {
+    return this.scene.context?.presentation?.gatheringProgress?.handleEvent?.(
+      event,
+      { progress },
+      session?.actor || null,
+      RECIPE_ACTION_PROGRESS_OWNER
+    ) === true;
+  }
+
+  _showRecipeActionVisual(event, session, progress = 0) {
+    const action = session?.action;
+    return this.scene.context?.presentation?.worldAction?.handleEvent?.(
+      event,
+      event === 'started'
+        ? {
+          progress,
+          anchorEntity: session.workstation,
+          kind: action.kind,
+          inputImageId: action.inputImageId,
+          outputImageId: action.outputImageId,
+          inputSize: action.inputSize,
+          outputSize: action.outputSize
+        }
+        : { progress },
+      RECIPE_ACTION_PROGRESS_OWNER
+    ) === true;
+  }
+
+  interruptRecipeAction(reason = 'interrupted') {
+    const session = this.recipeActionProgress;
+    if (!session || session.committing) return false;
+    this.recipeActionProgress = null;
+    this._showRecipeActionProgress('interrupted', session);
+    this._showRecipeActionVisual('interrupted', session);
+    session.resolve({ ok: false, code: 'recipeActionInterrupted', reason });
+    if (reason === 'damaged') {
+      this.scene._showScreenTip('受到攻击，制作已中断，材料没有被消耗。', { title: '制作中断' });
+    }
+    return true;
+  }
+
+  _startRecipeAction(workstationId, recipeId) {
+    if (this.recipeActionInFlight) return this.recipeActionInFlight;
+    const action = RECIPE_ACTIONS[recipeId];
+    const actor = this.scene.playerEntity;
+    const workstation = action && this._resolveRecipeWorkstation(action.placementId);
+    if (!action || action.workstationId !== workstationId) return Promise.resolve({ ok: false, code: 'recipeUnknown' });
+    if (!actor || !workstation) return Promise.resolve({ ok: false, code: 'workstationUnavailable' });
+    if (this.scene.gatheringSystem?.isActiveFor?.(actor)) return Promise.resolve({ ok: false, code: 'playerBusy' });
+
+    let resolveAction;
+    const completion = new Promise(resolve => { resolveAction = resolve; });
+    const session = {
+      actor,
+      workstation,
+      workstationId,
+      recipeId,
+      action,
+      operationId: `s01:recipe:${recipeId}:${++this.sequence}`,
+      elapsed: 0,
+      duration: action.duration,
+      committing: false,
+      resolve: resolveAction
+    };
+    const validationError = this._validateRecipeAction(session);
+    if (validationError) return Promise.resolve({ ok: false, code: validationError });
+
+    this.recipeActionProgress = session;
+    this._showRecipeActionProgress('started', session, 0);
+    this._showRecipeActionVisual('started', session, 0);
+    this.scene.recipeSelectionView?.close?.();
+    const pending = completion.finally(() => {
+      if (this.recipeActionProgress === session) this.recipeActionProgress = null;
+      if (this.recipeActionInFlight === pending) this.recipeActionInFlight = null;
+    });
+    this.recipeActionInFlight = pending;
+    return pending;
+  }
+
+  async _commitRecipeAction(session) {
+    if (this.scene.currentSceneId !== 'S01') return { ok: false, code: 'sceneChanged' };
+    const beforeCraft = this._story().s01Survival || {};
+    if (session.recipeId === 's01.roastedWolfMeat') {
+      const firstCook = beforeCraft.meatCooked !== true;
+      const result = await this._submit(
+        firstCook ? 'story.s01.cookMeat' : 'craft.s01.roastedWolfMeat',
+        {},
+        `${session.operationId}:cook`
+      );
+      if (result.ok !== true) return result;
+      const campfire = this.scene._campfireService;
+      if (campfire?.canAddFuelUnits?.(1) === true) campfire.addFuelUnits(1);
+      campfire?.ignite?.({ runtime: { particleSystem: this.scene.particleSystem } });
+      if (firstCook) await this._spawnWorkstation('S01-tanning-rack');
+      this.scene._showScreenTip('烤狼肉完成，已放入背包。', { title: '烤制完成' });
+      return { ...result, crafted: true };
+    }
+
+    const craftingVest = session.recipeId === 's01.wolfHideVest';
+    const firstStoryCraft = craftingVest
+      ? beforeCraft.wolfVestCrafted !== true
+      : beforeCraft.wolfBracersCrafted !== true;
+    const definitionId = craftingVest
+      ? (firstStoryCraft ? 'story.s01.craftWolfVest' : 'craft.s01.wolfHideVest')
+      : session.recipeId === 's01.wolfHideBracers'
+        ? (firstStoryCraft ? 'story.s01.craftWolfBracers' : 'craft.s01.wolfHideBracers')
+        : null;
+    const result = definitionId
+      ? await this._submit(definitionId, {}, `${session.operationId}:craft`)
+      : { ok: false, code: 'recipeUnknown' };
+    if (result.ok !== true) return result;
+
+    const survival = this._story().s01Survival || {};
+    if (firstStoryCraft
+      && survival.wolfVestCrafted === true
+      && survival.wolfBracersCrafted === true
+      && survival.wolfGearCrafted !== true) {
+      const aggregate = await this._submit(
+        'story.s01.wolfGearCrafted',
+        {},
+        `${session.operationId}:story-wolf-gear-crafted`
+      );
+      if (aggregate.ok !== true) return { ...aggregate, crafted: true };
+    }
+    this.scene._showScreenTip(craftingVest
+      ? '狼皮背心制作完成，已放入背包。'
+      : '狼皮护腕制作完成，已放入背包。', { title: '制作完成' });
+    return { ...result, crafted: true };
+  }
+
+  _updateRecipeActionProgress(deltaTime) {
+    const session = this.recipeActionProgress;
+    if (!session || session.committing) return;
+    const validationError = this._validateRecipeAction(session);
+    if (validationError) {
+      this.interruptRecipeAction(validationError);
+      return;
+    }
+    session.elapsed = Math.min(session.duration, session.elapsed + Math.max(0, Number(deltaTime) || 0));
+    const progress = session.duration > 0 ? session.elapsed / session.duration : 1;
+    this._showRecipeActionProgress('progress', session, progress);
+    this._showRecipeActionVisual('progress', session, progress);
+    if (progress < 1) return;
+
+    session.committing = true;
+    void this._commitRecipeAction(session).then(result => {
+      const crafted = result?.ok === true || result?.crafted === true;
+      if (crafted) {
+        this._showRecipeActionProgress('completed', session, 1);
+        this._showRecipeActionVisual('completed', session, 1);
+      } else {
+        this._showRecipeActionProgress('interrupted', session);
+        this._showRecipeActionVisual('interrupted', session);
+        this.scene._showScreenTip(`制作结算失败：${result?.code || 'unknown'}。材料和剧情状态未改变。`, { title: '制作失败' });
+      }
+      if (this.recipeActionProgress === session) this.recipeActionProgress = null;
+      session.resolve(result);
+    }).catch(error => {
+      this._showRecipeActionProgress('interrupted', session);
+      this._showRecipeActionVisual('interrupted', session);
+      if (this.recipeActionProgress === session) this.recipeActionProgress = null;
+      session.resolve({ ok: false, code: 'recipeCommitFailed', error });
+    });
+  }
+
   async handleRecipeCommand(command = {}) {
     const view = this.scene.recipeSelectionView;
     if (!view?.visible) return { ok: false, code: 'recipeViewClosed' };
@@ -1139,43 +1344,12 @@ export class S01S02Coordinator {
       this._refreshRecipeView(workstationId, { statusMessage: recipe?.disabledReason || '当前不能制作该物品。', statusType: 'error' });
       return { ok: true, status: 'blocked' };
     }
-    view.setBusy(true);
-    let result;
-    if (recipeId === 's01.roastedWolfMeat') {
-      result = await this._submit('story.s01.cookMeat', {}, 'story:s01:cook-meat');
-      if (result.ok === true) {
-        const campfire = this.scene._campfireService;
-        if (campfire?.canAddFuelUnits?.(1) === true) campfire.addFuelUnits(1);
-        campfire?.ignite?.({ runtime: { particleSystem: this.scene.particleSystem } });
-        await this._spawnWorkstation('S01-tanning-rack');
-        view.close();
-        this.scene._showScreenTip('狼肉已经烤熟。到制皮木支架制作狼皮装备。', { title: '烤狼肉' });
-      }
-    } else {
-      const definitionId = recipeId === 's01.wolfHideVest'
-        ? 'story.s01.craftWolfVest'
-        : recipeId === 's01.wolfHideBracers' ? 'story.s01.craftWolfBracers' : null;
-      const operationId = recipeId === 's01.wolfHideVest'
-        ? 'story:s01:craft-wolf-vest'
-        : 'story:s01:craft-wolf-bracers';
-      result = definitionId ? await this._submit(definitionId, {}, operationId) : { ok: false, code: 'recipeUnknown' };
-      if (result.ok === true) {
-        const survival = this._story().s01Survival || {};
-        if (survival.wolfVestCrafted === true && survival.wolfBracersCrafted === true) {
-          const aggregate = await this._submit('story.s01.wolfGearCrafted', {}, 'story:s01:craft-wolf-gear-complete');
-          if (aggregate.ok === true) {
-            view.close();
-            this.scene._showScreenTip('狼皮背心和狼皮护腕已经做好。接下来搭建小庇护所。', { title: '狼皮装备完成' });
-            return aggregate;
-          }
-          result = aggregate;
-        }
-      }
+    const pending = this._startRecipeAction(workstationId, recipeId);
+    const actionStarted = this.recipeActionInFlight === pending;
+    const result = await pending;
+    if (!actionStarted && result?.ok === false) {
+      this.scene._showScreenTip(`无法开始制作：${result.code || 'unknown'}。`, { title: '制作未开始' });
     }
-    view.setBusy(false);
-    this._refreshRecipeView(workstationId, result?.ok === true
-      ? { statusMessage: '制作完成。', statusType: 'success' }
-      : { statusMessage: `结算失败：${result?.code || 'unknown'}。材料和剧情状态未改变。`, statusType: 'error' });
     return result;
   }
 
@@ -1397,10 +1571,12 @@ export class S01S02Coordinator {
         this.refuelCampfireProgress = null;
         session.resolve({ ok: false, code: 'refuelInterrupted' });
       }
+      this.interruptRecipeAction('sceneChanged');
       return;
     }
     const dt = Math.max(0, Number(deltaTime) || 0);
     this._updateRefuelProgress(dt);
+    this._updateRecipeActionProgress(dt);
     const survival = this._story().s01Survival || {};
     this._applyS01WeatherPhase(survival);
     this._updateFirstWolfCorpseCommit(dt);

@@ -907,10 +907,6 @@
               {
                 "equals": true,
                 "path": "s01Survival.meatCooked"
-              },
-              {
-                "equals": false,
-                "path": "s01Survival.wolfGearCrafted"
               }
             ]
           },
@@ -967,10 +963,6 @@
               {
                 "equals": true,
                 "path": "s01Survival.wolfSkinned"
-              },
-              {
-                "equals": false,
-                "path": "s01Survival.meatCooked"
               }
             ]
           },

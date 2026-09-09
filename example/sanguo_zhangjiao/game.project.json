@@ -8089,6 +8089,73 @@
     },
     {
       "commandType": "state.transaction",
+      "id": "craft.s01.roastedWolfMeat",
+      "transaction": {
+        "inventory": {
+          "addEntries": [
+            {
+              "itemId": "food.roasted_wolf_meat",
+              "quantity": 1
+            }
+          ],
+          "removeEntries": [
+            {
+              "itemId": "resource.raw_wolf_meat",
+              "quantity": 1
+            },
+            {
+              "itemId": "resource.wood",
+              "quantity": 1
+            }
+          ],
+          "type": "batchExchange"
+        }
+      }
+    },
+    {
+      "commandType": "state.transaction",
+      "id": "craft.s01.wolfHideVest",
+      "transaction": {
+        "inventory": {
+          "addEntries": [
+            {
+              "itemId": "equipment.s01.wolf_hide_vest",
+              "quantity": 1
+            }
+          ],
+          "removeEntries": [
+            {
+              "itemId": "resource.wolf_hide",
+              "quantity": 2
+            }
+          ],
+          "type": "batchExchange"
+        }
+      }
+    },
+    {
+      "commandType": "state.transaction",
+      "id": "craft.s01.wolfHideBracers",
+      "transaction": {
+        "inventory": {
+          "addEntries": [
+            {
+              "itemId": "equipment.s01.wolf_hide_bracers",
+              "quantity": 1
+            }
+          ],
+          "removeEntries": [
+            {
+              "itemId": "resource.wolf_hide",
+              "quantity": 1
+            }
+          ],
+          "type": "batchExchange"
+        }
+      }
+    },
+    {
+      "commandType": "state.transaction",
       "id": "story.s01.wolfGearCrafted",
       "transaction": {
         "when": {

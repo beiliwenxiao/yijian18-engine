@@ -82,7 +82,8 @@ export class BaseGameSceneGameplayHooks extends BaseGameSceneBehaviors {
       || player?.isSoulState === true
       || Boolean(this.playerSoulRespawn?.pending)
       || Boolean(this.playerDeathCountdown?.pending)
-      || this.gatheringSystem?.isActiveFor?.(player) === true;
+      || this.gatheringSystem?.isActiveFor?.(player) === true
+      || this._s01s02Coordinator?.isRecipeActionActiveFor?.(player) === true;
   }
 
   /**
