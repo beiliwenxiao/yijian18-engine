@@ -1,3 +1,25 @@
+/************************************************************
+
+ * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
+
+ * 
+
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+
+ * @author    刘枭 (beiliwenxiao)
+
+ * @email     beiliwenxiao@qq.com
+
+ * @date      2026-01-14
+
+ * @blog      https://blog.csdn.net/beiliwenxiao
+
+ * @repo      https://github.com/beiliwenxiao/yijian18-engine
+
+ *            https://gitee.com/coderaaa/yijian18-engine
+
+ ************************************************************/
+
 function normalizePath(value) {
   return String(value || '').replace(/\\/g, '/').replace(/^(?:\.\.\/)+/, '').replace(/^\//, '');
 }
@@ -11,9 +33,10 @@ export function projectPathForCanonicalFile(filePath) {
   return `${normalized.slice(0, index)}/game.project.json`;
 }
 
-export async function commitCanonicalChanges(projectPath, changes, { fetchImpl = globalThis.fetch } = {}) {
-  if (typeof fetchImpl !== 'function') throw new TypeError('canonical transaction requires fetch');
-  const response = await fetchImpl('/api/canonical-transaction', {
+export async function commitCanonicalChanges(projectPath, changes, { fetchImpl = null } = {}) {
+  if (fetchImpl != null && typeof fetchImpl !== 'function') throw new TypeError('canonical transaction requires fetch');
+  if (fetchImpl == null && typeof globalThis.fetch !== 'function') throw new TypeError('canonical transaction requires fetch');
+  const requestOptions = {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -24,7 +47,10 @@ export async function commitCanonicalChanges(projectPath, changes, { fetchImpl =
         ...(change.from ? { from: normalizePath(change.from) } : {})
       }))
     })
-  });
+  };
+  const response = fetchImpl
+    ? await fetchImpl('/api/canonical-transaction', requestOptions)
+    : await globalThis.fetch('/api/canonical-transaction', requestOptions);
   const result = await response.json().catch(() => ({}));
   if (!response.ok || !result.ok || result.committed !== true) {
     const error = new Error(result.error || `canonical transaction HTTP ${response.status}`);

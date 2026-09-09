@@ -1,14 +1,24 @@
-/**
+/************************************************************
+
  * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
+
  * 
- * @project   YiJian18-Engine - 跨平台2D/3D ECS游戏引擎
+
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+
  * @author    刘枭 (beiliwenxiao)
+
  * @email     beiliwenxiao@qq.com
+
  * @date      2026-01-14
+
  * @blog      https://blog.csdn.net/beiliwenxiao
+
  * @repo      https://github.com/beiliwenxiao/yijian18-engine
+
  *            https://gitee.com/coderaaa/yijian18-engine
- */
+
+ ************************************************************/
 
 /**
  * UIEditor - 界面 UI 编辑器
@@ -104,6 +114,11 @@ const LOGIN_LAYOUT_PLATFORMS = new Set(['loginDesktop', 'loginMobile']);
 const BADGE_TEXT_LAYOUT_IDS = new Set(['timeWeatherBadge', 'combatStateBadge']);
 const BADGE_TEXT_LAYOUT_FIELDS = ['fontSize', 'textOffsetX', 'textOffsetY'];
 const PANEL_LAYOUT_PLATFORMS = new Set(['desktop', 'mobile']);
+const MOBILE_TOUCH_BUTTON_IDS = new Set([
+  'act-attack', 'act-block', 'act-skill3', 'act-skill4', 'act-skill5',
+  'act-flight', 'act-jump', 'act-interact', 'act-throw', 'act-axe',
+  'hb-hp', 'hb-mp', 'hb-bag', 'hb-settings', 'hb-skill6', 'hb-skill7'
+]);
 const EDITABLE_PANEL_PART_IDS = new Set(['bagTitle', 'bagSeparator']);
 const PANEL_PART_MIN_SIZE = 16;
 const PANEL_LINE_HIT_HEIGHT = 8;
@@ -336,7 +351,9 @@ export class UIEditor {
           if (!data?.ok || !data.content) continue;
           const parsed = JSON.parse(data.content);
           // 合并：以文件为准，但保留默认组件中文件缺失的项
-          this.layouts[platform] = this._mergeLayout(this._cloneDefault(platform), parsed);
+          this.layouts[platform] = this._mergeLayout(this._cloneDefault(platform), parsed, {
+            preserveExactComponents: platform === 'mobile'
+          });
           break;
         } catch (e) {
           console.warn('UIEditor: 加载布局失败', platform, e);
@@ -346,31 +363,48 @@ export class UIEditor {
   }
 
   /** 合并已存布局到默认结构（优先用百分比还原到当前编辑器画布像素） */
-  _mergeLayout(base, saved) {
+  _mergeLayout(base, saved, { preserveExactComponents = false } = {}) {
     if (!saved || !Array.isArray(saved.components)) return base;
     if (saved.canvas) base.canvas = saved.canvas;
     const cw = base.canvas.width;
     const ch = base.canvas.height;
-    const savedMap = {};
-    for (const c of saved.components) savedMap[c.id] = c;
-    for (const comp of base.components) {
-      const s = savedMap[comp.id];
-      if (!s) continue;
-      // 优先用百分比(分辨率无关)，缺失则退回绝对像素
-      if (s.xPct !== undefined) {
-        comp.x = Math.round(s.xPct * cw);
-        comp.y = Math.round(s.yPct * ch);
-        comp.width = Math.round(s.wPct * cw);
-        comp.height = Math.round(s.hPct * ch);
+    const savedMap = new Map(saved.components
+      .filter(component => component && typeof component.id === 'string' && component.id)
+      .map(component => [component.id, component]));
+    const restoreComponent = (template, source) => {
+      const component = { ...template, ...source };
+      if (source.xPct !== undefined) {
+        component.x = Math.round(source.xPct * cw);
+        component.y = Math.round(source.yPct * ch);
+        component.width = Math.round(source.wPct * cw);
+        component.height = Math.round(source.hPct * ch);
       } else {
-        comp.x = s.x; comp.y = s.y;
-        comp.width = s.width; comp.height = s.height;
+        component.x = source.x;
+        component.y = source.y;
+        component.width = source.width;
+        component.height = source.height;
       }
       for (const field of BADGE_TEXT_LAYOUT_FIELDS) {
-        if (!Object.prototype.hasOwnProperty.call(s, field)) continue;
-        const value = Number(s[field]);
-        if (Number.isFinite(value)) comp[field] = value;
+        if (!Object.prototype.hasOwnProperty.call(source, field)) continue;
+        const value = Number(source[field]);
+        if (Number.isFinite(value)) component[field] = value;
       }
+      return component;
+    };
+
+    if (preserveExactComponents) {
+      const defaultsById = new Map(base.components.map(component => [component.id, component]));
+      base.components = [...savedMap.values()].map(component => restoreComponent(
+        defaultsById.get(component.id) || {},
+        component
+      ));
+      return base;
+    }
+
+    for (const comp of base.components) {
+      const savedComponent = savedMap.get(comp.id);
+      if (!savedComponent) continue;
+      Object.assign(comp, restoreComponent(comp, savedComponent));
     }
     return base;
   }
@@ -389,6 +423,11 @@ export class UIEditor {
             <button data-platform="hints">💬 提示文案</button>
           </div>
           <div class="uie-actions">
+            <div class="uie-mobile-button-actions" id="uie-mobile-button-actions" hidden>
+              <select id="uie-mobile-button-template" aria-label="选择要添加的 Android 按钮"></select>
+              <button id="uie-mobile-button-add" type="button">＋ 添加按钮</button>
+              <button id="uie-mobile-button-delete" type="button">🗑 删除选中</button>
+            </div>
             <button id="uie-reset">恢复默认</button>
             <button id="uie-save" class="primary">💾 保存到文件</button>
           </div>
@@ -419,6 +458,9 @@ export class UIEditor {
         this._render();
       });
     });
+
+    this.container.querySelector('#uie-mobile-button-add').addEventListener('click', () => this._addMobileTouchButton());
+    this.container.querySelector('#uie-mobile-button-delete').addEventListener('click', () => this._deleteSelectedMobileTouchButton());
 
     this.container.querySelector('#uie-save').addEventListener('click', async () => {
       try {
@@ -455,6 +497,70 @@ export class UIEditor {
     });
   }
 
+  _mobileButtonTemplates() {
+    return DEFAULT_COMPONENTS.mobile.components
+      .filter(component => component.kind === 'button' && MOBILE_TOUCH_BUTTON_IDS.has(component.id));
+  }
+
+  _updateMobileButtonControls() {
+    const controls = this.container.querySelector('#uie-mobile-button-actions');
+    const selector = this.container.querySelector('#uie-mobile-button-template');
+    const deleteButton = this.container.querySelector('#uie-mobile-button-delete');
+    if (!controls || !selector || !deleteButton) return;
+
+    const isMobile = this.platform === 'mobile';
+    controls.hidden = !isMobile;
+    if (!isMobile) return;
+
+    const layout = this.layouts.mobile;
+    const existingIds = new Set(layout?.components?.map(component => component.id) || []);
+    const missing = this._mobileButtonTemplates().filter(component => !existingIds.has(component.id));
+    selector.innerHTML = missing.length
+      ? missing.map(component => `<option value="${escapeHtml(component.id)}">${escapeHtml(component.label)}（${escapeHtml(component.id)}）</option>`).join('')
+      : '<option value="">没有可添加的 Android 按钮</option>';
+    const addButton = this.container.querySelector('#uie-mobile-button-add');
+    if (addButton) addButton.disabled = missing.length === 0;
+    const selected = layout?.components?.find(component => component.id === this.selectedId);
+    deleteButton.disabled = !selected || selected.kind !== 'button' || !MOBILE_TOUCH_BUTTON_IDS.has(selected.id);
+  }
+
+  _addMobileTouchButton() {
+    if (this.platform !== 'mobile') return;
+    const selector = this.container.querySelector('#uie-mobile-button-template');
+    const componentId = String(selector?.value || '');
+    const template = this._mobileButtonTemplates().find(component => component.id === componentId);
+    if (!template) {
+      this._setStatus('没有可添加的 Android 按钮', true);
+      return;
+    }
+    const layout = this.layouts.mobile;
+    if (layout.components.some(component => component.id === componentId)) {
+      this._setStatus(`Android 按钮已存在：${componentId}`, true);
+      return;
+    }
+    layout.components.push(structuredClone(template));
+    this.selectedId = componentId;
+    this.selectedPanelPart = null;
+    this._setStatus(`已添加 Android 按钮：${template.label}（未保存）`);
+    this._render();
+  }
+
+  _deleteSelectedMobileTouchButton() {
+    if (this.platform !== 'mobile') return;
+    const layout = this.layouts.mobile;
+    const index = layout.components.findIndex(component => component.id === this.selectedId);
+    const component = index >= 0 ? layout.components[index] : null;
+    if (!component || component.kind !== 'button' || !MOBILE_TOUCH_BUTTON_IDS.has(component.id)) {
+      this._setStatus('请选择要删除的 Android 触屏按钮', true);
+      return;
+    }
+    if (!confirm(`删除 Android 按钮“${component.label}”？保存后运行时将不再显示它。`)) return;
+    layout.components.splice(index, 1);
+    this.selectedId = null;
+    this._setStatus(`已删除 Android 按钮：${component.label}（未保存）`);
+    this._render();
+  }
+
   _injectStyles() {
     if (document.getElementById('uie-styles')) return;
     const style = document.createElement('style');
@@ -464,8 +570,12 @@ export class UIEditor {
       .uie-toolbar { display:flex; justify-content:space-between; align-items:center; padding:10px 16px; background:#16213e; border-bottom:1px solid #2a3a5e; }
       .uie-platform-switch button { padding:8px 14px; margin-right:8px; background:#3a4a7e; border:none; border-radius:4px; color:#fff; cursor:pointer; }
       .uie-platform-switch button.active { background:#4CAF50; color:#000; }
-      .uie-actions button { padding:8px 14px; margin-left:8px; background:#3a4a7e; border:none; border-radius:4px; color:#fff; cursor:pointer; }
+      .uie-actions { display:flex; align-items:center; gap:8px; }
+      .uie-actions button { padding:8px 14px; margin-left:0; background:#3a4a7e; border:none; border-radius:4px; color:#fff; cursor:pointer; }
+      .uie-actions button:disabled { opacity:0.45; cursor:not-allowed; }
       .uie-actions button.primary { background:#4CAF50; color:#000; font-weight:bold; }
+      .uie-mobile-button-actions { display:flex; align-items:center; gap:6px; padding-right:8px; border-right:1px solid #41547e; }
+      .uie-mobile-button-actions select { max-width:180px; background:#0a1020; border:1px solid #2a3a5e; border-radius:4px; color:#fff; padding:7px; }
       .uie-main { flex:1; display:flex; overflow:hidden; }
       .uie-stage-wrap { flex:1; display:flex; align-items:center; justify-content:center; overflow:auto; padding:20px; background:#070b18; }
       .uie-stage { position:relative; background:#1a2238; border:2px solid #4CAF50; box-shadow:0 0 30px rgba(0,0,0,0.6); }
@@ -587,6 +697,7 @@ export class UIEditor {
 
   /** 渲染当前平台的舞台和组件 */
   _render() {
+    this._updateMobileButtonControls();
     if (this.platform === 'hints') {
       this._renderHintsEditor();
       return;

@@ -139,10 +139,10 @@ export class InputManager {
         this.canvas.addEventListener('mouseup', this._eventHandlers.mouseup);
         this.canvas.addEventListener('mousemove', this._eventHandlers.mousemove);
         this.canvas.addEventListener('contextmenu', this._eventHandlers.contextmenu);
-        // 触摸事件标记为 passive 以提升滚动性能
-        this.canvas.addEventListener('touchstart', this._eventHandlers.touchstart, { passive: true });
-        this.canvas.addEventListener('touchend', this._eventHandlers.touchend, { passive: true });
-        this.canvas.addEventListener('touchmove', this._eventHandlers.touchmove, { passive: true });
+        // 世界触摸必须拦截浏览器滚动、缩放与合成鼠标事件；处理器会调用 preventDefault()，因此不能注册为 passive。
+        this.canvas.addEventListener('touchstart', this._eventHandlers.touchstart, { passive: false });
+        this.canvas.addEventListener('touchend', this._eventHandlers.touchend, { passive: false });
+        this.canvas.addEventListener('touchmove', this._eventHandlers.touchmove, { passive: false });
         
         console.log('InputManager: Event listeners initialized');
     }

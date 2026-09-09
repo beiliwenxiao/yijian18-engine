@@ -102,6 +102,9 @@ export class LocalAuthorityAdapter extends AuthorityPort {
     this._ownsOperationLedger = !config.operationLedger;
     this._ownsNotificationBus = !config.notificationBus;
     this._unsubscribeSink = null;
+    // 每个 authority state 的 prepare → commit → revision 校验必须串行；
+    // handler 内的 await 不能让后续命令在前一命令校验前推进相同 revision。
+    this._stateExecutionTails = new Map();
     this.disposed = false;
 
     if (config.notificationSink) {
@@ -134,6 +137,30 @@ export class LocalAuthorityAdapter extends AuthorityPort {
   _resolveStateId(registration, command) {
     if (typeof registration.stateId === 'function') return registration.stateId.call(registration.receiver, command);
     return registration.stateId || null;
+  }
+
+  /**
+   * 串行化同一状态的临界提交区，而不包裹提交后事件消费。
+   * 后者允许内容桥再提交命令，若持续持锁会造成同 stateId 的异步重入死锁。
+   */
+  async _acquireStateExecution(stateId) {
+    if (!stateId) return () => false;
+    const previous = this._stateExecutionTails.get(stateId) || Promise.resolve();
+    let releaseCurrent;
+    const current = new Promise(resolve => { releaseCurrent = resolve; });
+    this._stateExecutionTails.set(stateId, current);
+    await previous.catch(() => {});
+
+    let released = false;
+    return () => {
+      if (released) return false;
+      released = true;
+      releaseCurrent();
+      if (this._stateExecutionTails.get(stateId) === current) {
+        this._stateExecutionTails.delete(stateId);
+      }
+      return true;
+    };
   }
 
   _createContext(command, operationFingerprint, stateId, rngTransaction) {
@@ -218,6 +245,8 @@ export class LocalAuthorityAdapter extends AuthorityPort {
       return Object.freeze(result);
     }
 
+    const releaseStateExecution = await this._acquireStateExecution(stateId);
+    let stateExecutionReleased = false;
     const rngTransaction = this.authorityRng.begin(serializedCommand.commandType, serializedCommand.operationId);
     const context = this._createContext(serializedCommand, operationFingerprint, stateId, rngTransaction);
     if (context.preparedStateRevision?.ok === false) {
@@ -235,6 +264,8 @@ export class LocalAuthorityAdapter extends AuthorityPort {
         revisionError
       );
       this._finalizeLedger(claim, result);
+      releaseStateExecution();
+      stateExecutionReleased = true;
       return Object.freeze(result);
     }
 
@@ -265,6 +296,10 @@ export class LocalAuthorityAdapter extends AuthorityPort {
       if (result.committed) rngTransaction.commit();
       else rngTransaction.rollback();
 
+      // revision 已完成严格校验；随后事件消费可重入 authority，不能继续占用同一 state 的提交锁。
+      releaseStateExecution();
+      stateExecutionReleased = true;
+
       const published = await this.notificationBus.publishAfterCommit({
         result,
         committedEvents,
@@ -294,6 +329,7 @@ export class LocalAuthorityAdapter extends AuthorityPort {
       throw error;
     } finally {
       this.stateRevisions.release(context.preparedStateRevision);
+      if (!stateExecutionReleased) releaseStateExecution();
     }
   }
 
@@ -313,6 +349,7 @@ export class LocalAuthorityAdapter extends AuthorityPort {
     this._unsubscribeSink?.();
     this._unsubscribeSink = null;
     this._handlers.clear();
+    this._stateExecutionTails.clear();
     if (this._ownsOperationLedger) this.operationLedger.clear();
     if (this._ownsNotificationBus) this.notificationBus.dispose();
     return true;

@@ -4084,11 +4084,22 @@
                 'hb-skill7': 'hb-skill7'
             };
             
-            for (const comp of layout.components) {
-                const elId = domIds[comp.id];
-                if (!elId || comp.xPct === undefined) continue;
+            const componentsById = new Map(layout.components
+                .filter(comp => comp && typeof comp.id === 'string')
+                .map(comp => [comp.id, comp]));
+            for (const [componentId, elId] of Object.entries(domIds)) {
                 const el = document.getElementById(elId);
                 if (!el) continue;
+                const comp = componentsById.get(componentId);
+                // UILayout.mobile.json 是 Android 触屏按钮的精确清单：
+                // 缺失表示该按钮已在 UI 编辑器删除，不能回退显示 HTML 默认按钮。
+                if (!comp || comp.xPct === undefined) {
+                    el.style.display = 'none';
+                    el.setAttribute('aria-hidden', 'true');
+                    continue;
+                }
+                el.style.display = '';
+                el.removeAttribute('aria-hidden');
                 // 重挂到 touch-controls，使百分比相对全屏容器
                 if (el.parentElement !== touchControls) {
                     touchControls.appendChild(el);

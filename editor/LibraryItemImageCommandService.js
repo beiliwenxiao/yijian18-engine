@@ -25,13 +25,35 @@ const normalizeProjectPath = value => String(value || '')
   .replace(/^(?:\.\.\/)+/, '')
   .replace(/^\/+/, '');
 
+function postJsonWithXhr(endpoint, body) {
+  return new Promise((resolve, reject) => {
+    const request = new globalThis.XMLHttpRequest();
+    request.open('POST', endpoint, true);
+    request.setRequestHeader('Content-Type', 'application/json');
+    request.onload = () => {
+      let payload = {};
+      try { payload = JSON.parse(request.responseText || '{}'); } catch (_error) { /* 保持空响应，交给统一失败分支 */ }
+      resolve({
+        response: { ok: request.status >= 200 && request.status < 300, status: request.status },
+        payload
+      });
+    };
+    request.onerror = () => reject(new Error('内容库图片请求失败'));
+    request.onabort = () => reject(new Error('内容库图片请求已取消'));
+    request.send(JSON.stringify(body));
+  });
+}
+
 /**
  * 内容库物品图片的唯一浏览器提交服务。
- * 服务端在一次原子事务中写入 library、Asset Manifest 与可选 PNG 文件。
+ * 服务端负责校验并在一次原子事务中写入 library、Asset Manifest 与可选 PNG 文件。
  */
 export class LibraryItemImageCommandService {
-  constructor({ endpoint = '/api/library-item-image-transaction', fetchImpl = globalThis.fetch } = {}) {
-    if (typeof fetchImpl !== 'function') throw new TypeError('LibraryItemImageCommandService requires fetch');
+  constructor({ endpoint = '/api/library-item-image-transaction', fetchImpl = null } = {}) {
+    if (fetchImpl != null && typeof fetchImpl !== 'function') throw new TypeError('LibraryItemImageCommandService requires fetch');
+    if (fetchImpl == null && typeof globalThis.XMLHttpRequest !== 'function') {
+      throw new TypeError('LibraryItemImageCommandService requires XMLHttpRequest or fetch');
+    }
     this.endpoint = endpoint;
     this.fetchImpl = fetchImpl;
     this._queues = new Map();
@@ -57,17 +79,24 @@ export class LibraryItemImageCommandService {
       return { ok: false, committed: false, status: 'rejected', code: 'invalidImageTransaction', error: 'library 或 imageUpdates 无效' };
     }
 
+    const body = {
+      projectPath,
+      library: structuredClone(library),
+      imageUpdates: structuredClone(imageUpdates)
+    };
     try {
-      const response = await this.fetchImpl.call(globalThis, this.endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          projectPath,
-          library: structuredClone(library),
-          imageUpdates: structuredClone(imageUpdates)
-        })
-      });
-      const payload = await response.json().catch(() => ({}));
+      let response;
+      let payload;
+      if (this.fetchImpl) {
+        response = await this.fetchImpl(this.endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        payload = await response.json().catch(() => ({}));
+      } else {
+        ({ response, payload } = await postJsonWithXhr(this.endpoint, body));
+      }
       if (!response.ok || payload?.ok !== true || payload.committed !== true) {
         return {
           ...payload,
