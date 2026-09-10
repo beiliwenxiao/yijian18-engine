@@ -81,8 +81,10 @@ export class SceneRenderPipeline {
       (scene, ctx) => scene.settingsButton?.render(ctx),
       (_scene, ctx) => this.context?.ui?.playerStatusHUD?.render?.(ctx),
       (scene, ctx) => scene.minimap?.render(ctx),
-      (_scene, ctx) => this.renderTimeWeatherBadge(ctx),
-      (scene, ctx) => scene.renderCombatStateUI(ctx),
+      (_scene, ctx) => this.context?.ui?.layout?.isOnboardingComponentVisible?.('timeWeatherBadge') !== false
+        && this.renderTimeWeatherBadge(ctx),
+      (scene, ctx) => this.context?.ui?.layout?.isOnboardingComponentVisible?.('combatStateBadge') !== false
+        && scene.renderCombatStateUI(ctx),
       (scene, ctx) => { if (scene.isTransitioning) scene.renderTransition(ctx); },
       (scene, ctx) => { if (scene.performanceMonitor?.enabled) scene.performanceMonitor.render(ctx); }
     ];

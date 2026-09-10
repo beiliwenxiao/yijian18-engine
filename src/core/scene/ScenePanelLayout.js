@@ -45,6 +45,7 @@ export class ScenePanelLayout {
       timeWeatherBadge: null,
       combatStateBadge: null
     };
+    this._onboardingComponentStates = new Map();
   }
 
   /**
@@ -325,6 +326,9 @@ export class ScenePanelLayout {
 
     // 应用 UI 编辑器保存的布局（百分比 → 逻辑坐标），覆盖默认位置/大小
     scene._applyUILayout();
+    // HUD 组合是异步布局加载前的首个稳定表现出口；重放已派生投影，
+    // 避免配置先加载完成时新建控件短暂以默认状态闪现。
+    this.applyOnboardingUiProjection(scene._lastOnboardingUiProjection);
   }
 
   /** 将相机、核心系统和 HUD 面板绑定到当前玩家实体。 */
@@ -422,6 +426,65 @@ export class ScenePanelLayout {
   /** 返回只读使用的屏幕 HUD 像素矩形；矩形只在布局加载或 resize 时更新。 */
   getScreenHudRect(id) {
     return this._screenHudRects[id] || null;
+  }
+
+  /** 渐进 UI 状态仅控制表现与 UI 点击，不保存任何任务或剧情事实。 */
+  applyOnboardingUiProjection(projection = {}) {
+    const scene = this.scene;
+    const states = projection?.states || {};
+    this._onboardingComponentStates.clear();
+    for (const [componentId, state] of Object.entries(states)) {
+      this._onboardingComponentStates.set(componentId, {
+        visible: state?.visible !== false,
+        enabled: state?.enabled !== false,
+        highlighted: state?.highlighted === true,
+        hintAction: state?.hintAction || null
+      });
+    }
+
+    const getState = componentId => this._onboardingComponentStates.get(componentId) || {
+      visible: true, enabled: true, highlighted: false, hintAction: null
+    };
+    const canvasButtons = {
+      'pc-block': scene.blockButton,
+      'pc-jump': scene.jumpButton,
+      'pc-flight': scene.flightButton,
+      'pc-throw': scene.throwButton,
+      'pc-bag': scene.bagButton,
+      'pc-settings': scene.settingsButton
+    };
+    for (const [componentId, button] of Object.entries(canvasButtons)) {
+      if (!button) continue;
+      const state = getState(componentId);
+      button.visible = state.visible;
+      button.onboardingEnabled = state.enabled;
+      button.onboardingHighlighted = state.highlighted;
+      button.onboardingHintAction = state.hintAction || null;
+    }
+
+    const hudComponentIds = ['hud-avatar', 'hud-name', 'hud-hp', 'hud-mp'];
+    for (const componentId of hudComponentIds) {
+      scene.playerStatusHUD?.setOnboardingComponentState?.(componentId, getState(componentId));
+    }
+    if (scene.playerStatusHUD && !scene.playerStatusHUD.setOnboardingComponentState) {
+      scene.playerStatusHUD.visible = hudComponentIds.some(componentId => getState(componentId).visible);
+    }
+    if (scene.minimap) scene.minimap.visible = getState('minimap').visible;
+    for (const componentId of [
+      'pc-hp-orb', 'pc-mp-orb', 'pc-potion1', 'pc-potion2', 'pc-skill1', 'pc-skill2', 'pc-skill3', 'pc-skill4', 'pc-skill5'
+    ]) {
+      scene.bottomControlBar?.setOnboardingComponentState?.(componentId, getState(componentId));
+    }
+
+    // Android Web 使用 DOM 事件接收同一投影；微信小游戏没有 DOM 时只保留 Canvas 路径。
+    if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function' && typeof CustomEvent === 'function') {
+      window.dispatchEvent(new CustomEvent('yijian18:onboarding-ui', { detail: { states } }));
+    }
+    return true;
+  }
+
+  isOnboardingComponentVisible(componentId) {
+    return this._onboardingComponentStates.get(componentId)?.visible !== false;
   }
 
   onResize(width, height) {

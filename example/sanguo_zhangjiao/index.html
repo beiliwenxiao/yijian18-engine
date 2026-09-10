@@ -137,6 +137,25 @@
         .hidden {
             display: none !important;
         }
+
+        .onboarding-hidden {
+            display: none !important;
+        }
+
+        .onboarding-disabled {
+            opacity: 0.35 !important;
+            filter: grayscale(1);
+            pointer-events: none !important;
+        }
+
+        .onboarding-highlight {
+            animation: onboarding-pulse 1.2s ease-in-out infinite;
+            box-shadow: 0 0 0 3px rgba(255, 212, 121, 0.9), 0 0 18px rgba(255, 212, 121, 0.75);
+        }
+
+        @keyframes onboarding-pulse {
+            50% { transform: scale(1.08); }
+        }
         
         #loading-screen {
             position: absolute;
@@ -3639,6 +3658,36 @@
             window.addEventListener('mouseup', () => { if (active) end(); });
         }
         
+        const onboardingDomStates = new Map();
+
+        function applyOnboardingDomState(componentId, element) {
+            if (!element) return;
+            const state = onboardingDomStates.get(componentId) || {};
+            const visible = state.visible !== false;
+            const enabled = state.enabled !== false;
+            element.classList.toggle('onboarding-hidden', !visible);
+            element.classList.toggle('onboarding-disabled', visible && !enabled);
+            element.classList.toggle('onboarding-highlight', visible && state.highlighted === true);
+            element.dataset.onboardingEnabled = enabled ? 'true' : 'false';
+            if (!visible) element.setAttribute('aria-hidden', 'true');
+            else element.removeAttribute('aria-hidden');
+            element.setAttribute('aria-disabled', enabled ? 'false' : 'true');
+        }
+
+        function isOnboardingDomEnabled(element) {
+            return element?.dataset?.onboardingEnabled !== 'false';
+        }
+
+        // Android Web 接收与 Canvas/微信相同的 componentId 投影；微信小游戏没有 DOM，自动跳过该 adapter。
+        window.addEventListener('yijian18:onboarding-ui', event => {
+            const states = event?.detail?.states || {};
+            onboardingDomStates.clear();
+            for (const [componentId, state] of Object.entries(states)) onboardingDomStates.set(componentId, state || {});
+            for (const [componentId] of onboardingDomStates) {
+                applyOnboardingDomState(componentId, document.getElementById(componentId === 'joystick' ? 'joystick-zone' : componentId));
+            }
+        });
+
         function setupTouchControls() {
             const touchControls = document.getElementById('touch-controls');
             if (!touchControls) return;
@@ -3665,6 +3714,7 @@
             
             // 功能按钮（技能 / 攻击 / 轻功 / 投掷 / 药品 / 背包 / 装备）
             function triggerAction(btn) {
+                if (!isOnboardingDomEnabled(btn)) return;
                 const currentScene = sceneManager ? sceneManager.getCurrentScene() : scene;
                 if (!currentScene) return;
                 if (btn.dataset.skill !== undefined) {
@@ -4011,6 +4061,7 @@
                 const isAimBtn = isAimSkill || isAttackBtn || isThrowBtn || isFlightBtn;
                 
                 const doPress = (clientX, clientY, touchId) => {
+                    if (!isOnboardingDomEnabled(btn)) return;
                     btn.classList.add('pressed');
                     if (isAimSkill) {
                         // 进入技能瞄准模式
@@ -4151,6 +4202,7 @@
                 el.style.right = 'auto';
                 el.style.bottom = 'auto';
                 el.style.maxWidth = 'none';
+                applyOnboardingDomState(componentId, el);
             }
         }
         applyUILayoutToDom();

@@ -1,13 +1,23 @@
 /************************************************************
+
  * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
+
  * 
- * @project   YiJian18-Engine - 跨平台2D/3D ECS游戏引擎
+
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+
  * @author    刘枭 (beiliwenxiao)
+
  * @email     beiliwenxiao@qq.com
- * @date      2026-02-10
+
+ * @date      2026-01-14
+
  * @blog      https://blog.csdn.net/beiliwenxiao
+
  * @repo      https://github.com/beiliwenxiao/yijian18-engine
+
  *            https://gitee.com/coderaaa/yijian18-engine
+
  ************************************************************/
 
 import { UIElement } from './UIElement.js';
@@ -47,6 +57,13 @@ export class PlayerStatusHUD extends UIElement {
     this._hasSubLayout = false;
     this._avatarRect = null;
     this._nameRect = null;
+    this._onboardingBaseVisible = this.visible;
+    this._onboardingComponentVisibility = {
+      'hud-avatar': true,
+      'hud-name': true,
+      'hud-hp': true,
+      'hud-mp': true
+    };
 
     // 头像图片（自加载，加载完成前画占位圆）
     this.avatarImage = null;
@@ -112,6 +129,20 @@ export class PlayerStatusHUD extends UIElement {
    */
   setPlayer(entity) {
     this.player = entity;
+  }
+
+  /**
+   * 应用渐进 UI 投影的 HUD 子组件可见性。
+   * 组件状态只影响 Canvas 表现；玩家数值仍由 ECS 状态更新。
+   */
+  setOnboardingComponentState(componentId, state = {}) {
+    if (!Object.prototype.hasOwnProperty.call(this._onboardingComponentVisibility, componentId)) {
+      return false;
+    }
+    this._onboardingComponentVisibility[componentId] = state.visible !== false;
+    this.visible = this._onboardingBaseVisible
+      && Object.values(this._onboardingComponentVisibility).some(Boolean);
+    return true;
   }
 
   /**
@@ -197,10 +228,10 @@ export class PlayerStatusHUD extends UIElement {
 
     if (this._hasSubLayout) {
       // 独立子布局模式：不画背景面板，各子元素自由定位
-      this._renderAvatar(ctx);
-      this._renderName(ctx);
-      this.healthBar.render(ctx);
-      this.manaBar.render(ctx);
+      if (this._onboardingComponentVisibility['hud-avatar']) this._renderAvatar(ctx);
+      if (this._onboardingComponentVisibility['hud-name']) this._renderName(ctx);
+      if (this._onboardingComponentVisibility['hud-hp']) this.healthBar.render(ctx);
+      if (this._onboardingComponentVisibility['hud-mp']) this.manaBar.render(ctx);
     } else {
       // 经典模式：整体面板
       // 背景面板（半透明圆角）
@@ -211,10 +242,10 @@ export class PlayerStatusHUD extends UIElement {
       ctx.lineWidth = 1;
       ctx.stroke();
 
-      this._renderAvatar(ctx);
-      this._renderName(ctx);
-      this.healthBar.render(ctx);
-      this.manaBar.render(ctx);
+      if (this._onboardingComponentVisibility['hud-avatar']) this._renderAvatar(ctx);
+      if (this._onboardingComponentVisibility['hud-name']) this._renderName(ctx);
+      if (this._onboardingComponentVisibility['hud-hp']) this.healthBar.render(ctx);
+      if (this._onboardingComponentVisibility['hud-mp']) this.manaBar.render(ctx);
     }
 
     ctx.restore();

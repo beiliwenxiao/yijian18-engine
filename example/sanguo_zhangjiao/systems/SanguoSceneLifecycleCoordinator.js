@@ -1,13 +1,23 @@
 /************************************************************
+
  * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
- *
+
+ * 
+
  * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+
  * @author    刘枭 (beiliwenxiao)
+
  * @email     beiliwenxiao@qq.com
+
  * @date      2026-01-14
+
  * @blog      https://blog.csdn.net/beiliwenxiao
+
  * @repo      https://github.com/beiliwenxiao/yijian18-engine
+
  *            https://gitee.com/coderaaa/yijian18-engine
+
  ************************************************************/
 
 import { SceneFlowCoordinator } from '../../../src/core/scene/SceneFlowCoordinator.js';
@@ -46,6 +56,9 @@ function initializeEnteredRuntime() {
   this._initialPlayerSpawnPending = this._playerStartMode === 'newGame';
   this._tutorialFlow.bindPresentation();
   this.resourceScope?.track(() => this._tutorialFlow.dispose());
+  const refreshOnboardingUi = this.resourceScope?.guard?.(() => this._onboardingUi?.refresh(true))
+    || (() => this._onboardingUi?.refresh(true));
+  void Promise.resolve(this._onboardingUiReadyPromise).then(refreshOnboardingUi);
 
   this._s09AudioDirector?.dispose?.();
   const audioDirector = new S09AudioDirector({ audioManager: this.audioManager });
@@ -149,6 +162,7 @@ function updateAfterBase(deltaTime) {
   this.endingPresentationView?.update?.(deltaTime * 1000);
   this.observeWaveEvents();
   this.observeTutorialEventSources();
+  this._onboardingUi?.refresh();
   this._campfireService.resolvePlayerCollision({
     playerEntity: this.playerEntity,
     flightSystem: this.flightSystem,

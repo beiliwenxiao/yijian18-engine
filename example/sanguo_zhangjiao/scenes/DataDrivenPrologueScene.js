@@ -1,13 +1,23 @@
 /************************************************************
+
  * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
+
  * 
- * @project   YiJian18-Engine - 跨平台2D/3D ECS游戏引擎
+
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+
  * @author    刘枭 (beiliwenxiao)
+
  * @email     beiliwenxiao@qq.com
+
  * @date      2026-01-14
+
  * @blog      https://blog.csdn.net/beiliwenxiao
+
  * @repo      https://github.com/beiliwenxiao/yijian18-engine
+
  *            https://gitee.com/coderaaa/yijian18-engine
+
  ************************************************************/
 
 /**
@@ -49,6 +59,7 @@ import { SanguoSceneLifecycleCoordinator } from '../systems/SanguoSceneLifecycle
 import { SanguoPlacementCoordinator } from '../systems/SanguoPlacementCoordinator.js';
 import { S01S02Coordinator } from '../systems/S01S02SceneFlow.js';
 import { SceneTutorialFlow } from '../../../src/core/scene/SceneTutorialFlow.js';
+import { OnboardingUiProjection } from '../../../src/core/scene/OnboardingUiProjection.js';
 import { SceneCampfireService } from '../../../src/core/scene/SceneCampfireService.js';
 import { SceneNpcInteractionFlow } from '../../../src/core/scene/SceneNpcInteractionFlow.js';
 import {
@@ -136,6 +147,17 @@ export class DataDrivenPrologueScene extends BaseGameScene {
       scheduler: callback => this.resourceScope?.setTimeout(callback, 0)
     });
     this.context.services.tutorialFlow = this._tutorialFlow;
+    this._onboardingUi = new OnboardingUiProjection({
+      getSceneId: () => this.currentSceneId,
+      getStoryState: () => this.gameLoader?.blackboard?.get?.('storyState') || {},
+      tutorialFlow: this._tutorialFlow,
+      onProjection: projection => this._applyOnboardingUiProjection(projection)
+    });
+    this.context.services.onboardingUi = this._onboardingUi;
+    this._onboardingUiReadyPromise = this._onboardingUi.load().catch(error => {
+      console.error('[DDScene] 渐进 UI 配置加载失败', error);
+      return null;
+    });
     this._s01s02Coordinator = new S01S02Coordinator(this);
     Object.assign(this.context.services, {
       s01s02: this._s01s02Coordinator,
@@ -958,6 +980,12 @@ export class DataDrivenPrologueScene extends BaseGameScene {
 
   async _enterStreamedScene(sceneId) {
     return this.sanguoWorldRuntimeCoordinator.enterStreamedScene(sceneId);
+  }
+
+  /** 由 OnboardingUiProjection 投影到 Canvas 与 Android DOM；不修改任务或教程事实。 */
+  _applyOnboardingUiProjection(projection) {
+    this._lastOnboardingUiProjection = projection || null;
+    return this._panelLayout?.applyOnboardingUiProjection?.(projection) === true;
   }
 
   enter(data = null) {

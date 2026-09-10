@@ -167,6 +167,7 @@ export class UIEditor {
     this._loginBackgroundImage = '';
     this._panelLayoutDocument = null;
     this._panelLayouts = {};
+    this._onboardingUiDocument = null;
 
     // 手柄绑定编辑器数据（与 Xbox360Profile.DEFAULT_BINDINGS 同构）
     this._defaultGamepadBindings = null; // 异步加载
@@ -193,6 +194,7 @@ export class UIEditor {
     this._normalizePanelAspects();
     await this._loadGamepadConfig();
     await this._loadHintsConfig();
+    await this._loadOnboardingUiConfig();
     this._render();
   }
 
@@ -421,6 +423,7 @@ export class UIEditor {
             <button data-platform="loginMobile">📱 Android UI 登录页面</button>
             <button data-platform="gamepad">🎮 手柄</button>
             <button data-platform="hints">💬 提示文案</button>
+            <button data-platform="onboarding">🪜 引导显示</button>
           </div>
           <div class="uie-actions">
             <div class="uie-mobile-button-actions" id="uie-mobile-button-actions" hidden>
@@ -472,6 +475,12 @@ export class UIEditor {
       }
     });
     this.container.querySelector('#uie-reset').addEventListener('click', () => {
+      if (this.platform === 'onboarding') {
+        if (this._onboardingUiDocument && confirm('恢复 S01 引导显示规则为当前文件重载前状态？(未保存)')) {
+          void this._loadOnboardingUiConfig().then(() => this._render());
+        }
+        return;
+      }
       if (this.platform === 'hints') {
         if (this._hintDefaults && confirm('恢复提示文案为默认？(未保存)')) {
           this._hintActions = JSON.parse(JSON.stringify(this._hintDefaults));
@@ -704,6 +713,10 @@ export class UIEditor {
     }
     if (this.platform === 'gamepad') {
       this._renderGamepadEditor();
+      return;
+    }
+    if (this.platform === 'onboarding') {
+      this._renderOnboardingEditor();
       return;
     }
     const layout = this.layouts[this.platform];
@@ -1090,6 +1103,173 @@ export class UIEditor {
     }, isError ? 5000 : 2800);
   }
 
+  /** 读取独立的渐进 UI 规则；布局文件只描述位置，本文件只描述何时显示。 */
+  async _loadOnboardingUiConfig() {
+    const file = this.configBase + 'OnboardingUI.json';
+    const res = await fetch('/api/read-file?path=' + encodeURIComponent(file));
+    if (!res.ok) throw new Error(`无法读取 ${file}: HTTP ${res.status}`);
+    const data = await res.json();
+    if (data?.ok !== true || !data.content) throw new Error(data?.error || `${file} 没有可编辑内容`);
+    const document = JSON.parse(data.content);
+    if (!Array.isArray(document?.controlledComponentIds) || !Array.isArray(document?.rules)) {
+      throw new TypeError('OnboardingUI.json 必须包含 controlledComponentIds 和 rules 数组');
+    }
+    this._onboardingUiDocument = document;
+    return document;
+  }
+
+  async _saveOnboardingUiConfig() {
+    if (!this._onboardingUiDocument) throw new Error('OnboardingUI 配置尚未加载');
+    const file = this.configBase + 'OnboardingUI.json';
+    const content = JSON.stringify(this._onboardingUiDocument, null, 2);
+    const res = await fetch('/api/save-file', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path: file, content })
+    });
+    const data = await res.json().catch(() => null);
+    if (!res.ok || data?.ok !== true) throw new Error(data?.error || `HTTP ${res.status}`);
+    return true;
+  }
+
+  _getOnboardingComponentOptions() {
+    const components = [
+      ...DEFAULT_COMPONENTS.desktop.components,
+      ...DEFAULT_COMPONENTS.mobile.components
+    ];
+    const labels = new Map(components.map(component => [component.id, component.label]));
+    for (const componentId of this._onboardingUiDocument?.controlledComponentIds || []) {
+      if (!labels.has(componentId)) labels.set(componentId, '配置中的稳定组件');
+    }
+    return [...labels.entries()].map(([id, label]) => ({ id, label }));
+  }
+
+  /** 渲染独立 OnboardingUI 规则表，不把教程条件复制进 PC/Android 布局。 */
+  _renderOnboardingEditor() {
+    const stage = this.container.querySelector('#uie-stage');
+    const props = this.container.querySelector('#uie-props');
+    if (!stage || !props) return;
+    const wrap = this.container.querySelector('.uie-stage-wrap');
+    if (wrap) wrap.style.alignItems = 'flex-start';
+    stage.style.width = '1120px';
+    stage.style.height = 'auto';
+    stage.style.minHeight = '400px';
+    stage.style.overflow = 'auto';
+    stage.style.padding = '16px 20px 24px';
+    stage.style.display = 'block';
+    stage.classList.remove('login-stage', 'no-bg');
+    stage.style.backgroundImage = '';
+
+    const document = this._onboardingUiDocument;
+    if (!document) {
+      stage.innerHTML = '<div style="padding:40px;color:#ff8888;text-align:center;">OnboardingUI.json 加载失败，无法编辑引导显示规则</div>';
+      props.innerHTML = '';
+      return;
+    }
+
+    const options = this._getOnboardingComponentOptions();
+    const componentSelect = (field, selectedIds = []) => `
+      <select data-onboarding-components="${field}" multiple size="5" style="width:100%;min-width:190px;background:#0a1020;color:#fff;border:1px solid #2a3a5e;padding:4px;border-radius:3px;">
+        ${options.map(option => `<option value="${escapeHtml(option.id)}"${selectedIds.includes(option.id) ? ' selected' : ''}>${escapeHtml(option.label)} (${escapeHtml(option.id)})</option>`).join('')}
+      </select>`;
+    const inputStyle = 'width:100%;min-width:120px;background:#0a1020;color:#fff;border:1px solid #2a3a5e;padding:6px 8px;border-radius:3px;font-size:12px;';
+    const componentIds = document.controlledComponentIds || [];
+    let html = `
+      <h3 style="color:#8fc7ff;margin:0 0 10px">S01 渐进 UI 显示与按钮提示</h3>
+      <p style="color:#9ab;font-size:12px;line-height:1.7;margin:0 0 14px;">
+        规则由已提交的教程/剧情事实只读投影到 Canvas、Android DOM 与微信 Canvas。布局仍在 PC/Android 标签维护；本页不创建第二份任务进度。
+      </p>
+      <p style="color:#778;font-size:11px;margin:0 0 14px;">受控稳定组件：${componentIds.map(id => `<code style="color:#8fc">${escapeHtml(id)}</code>`).join('、')}</p>
+      <div style="overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:12px;line-height:1.45;">
+        <thead><tr style="border-bottom:1px solid #2a3a5e;color:#4CAF50;vertical-align:bottom;">
+          <th style="text-align:left;padding:8px;width:135px;">规则 ID / 场景</th>
+          <th style="text-align:left;padding:8px;width:145px;">触发条件</th>
+          <th style="text-align:left;padding:8px;min-width:190px;">显示组件</th>
+          <th style="text-align:left;padding:8px;min-width:190px;">可用组件</th>
+          <th style="text-align:left;padding:8px;min-width:190px;">高亮组件 / 提示动作</th>
+          <th style="padding:8px;"></th>
+        </tr></thead><tbody>`;
+    document.rules.forEach((rule, index) => {
+      const when = rule.when || { type: 'always' };
+      const conditionValue = when.type === 'storyPath' ? (when.path || '') : (when.tutorialId || '');
+      const highlights = rule.highlightComponentIds || (rule.highlightComponentId ? [rule.highlightComponentId] : []);
+      html += `<tr data-onboarding-rule="${index}" style="border-bottom:1px solid #1a2540;vertical-align:top;">
+        <td style="padding:8px;"><input data-onboarding-text="id" value="${escapeHtml(rule.id || '')}" style="${inputStyle}"><input data-onboarding-text="sceneIds" value="${escapeHtml((rule.scope?.sceneIds || []).join(', '))}" placeholder="S01, S02" style="${inputStyle};margin-top:6px"></td>
+        <td style="padding:8px;"><select data-onboarding-when style="${inputStyle}">${['always', 'tutorialCurrent', 'tutorialCompleted', 'storyPath'].map(type => `<option value="${type}"${when.type === type ? ' selected' : ''}>${type}</option>`).join('')}</select><input data-onboarding-text="conditionValue" value="${escapeHtml(conditionValue)}" placeholder="教程 ID / Story 路径" style="${inputStyle};margin-top:6px"><input data-onboarding-text="conditionEquals" value="${escapeHtml(Object.prototype.hasOwnProperty.call(when, 'equals') ? String(when.equals) : '')}" placeholder="storyPath equals（可选）" style="${inputStyle};margin-top:6px"></td>
+        <td style="padding:8px;">${componentSelect('revealComponentIds', rule.revealComponentIds || [])}</td>
+        <td style="padding:8px;">${componentSelect('enabledComponentIds', rule.enabledComponentIds || [])}</td>
+        <td style="padding:8px;">${componentSelect('highlightComponentIds', highlights)}<input data-onboarding-text="hintAction" value="${escapeHtml(rule.hintAction || '')}" placeholder="InputHints action，例如 interact" style="${inputStyle};margin-top:6px"></td>
+        <td style="padding:8px;"><button type="button" data-onboarding-delete style="background:#713540;color:#fff;border:0;border-radius:3px;padding:6px 8px;cursor:pointer;">删除</button></td>
+      </tr>`;
+    });
+    html += '</tbody></table></div><button id="uie-onboarding-add" type="button" style="margin-top:14px;background:#3a4a7e;color:#fff;border:0;border-radius:4px;padding:8px 12px;cursor:pointer;">＋ 添加规则</button>';
+    stage.innerHTML = html;
+
+    const readSelectedIds = element => [...element.selectedOptions].map(option => option.value);
+    const updateRule = element => {
+      const row = element.closest('[data-onboarding-rule]');
+      const index = Number(row?.dataset.onboardingRule);
+      const rule = document.rules[index];
+      if (!rule) return;
+      if (element.dataset.onboardingComponents) {
+        rule[element.dataset.onboardingComponents] = readSelectedIds(element);
+        if (element.dataset.onboardingComponents === 'highlightComponentIds') delete rule.highlightComponentId;
+      } else if (element.dataset.onboardingWhen) {
+        rule.when ||= {};
+        rule.when.type = element.value;
+      } else {
+        const field = element.dataset.onboardingText;
+        if (field === 'id' || field === 'hintAction') rule[field] = element.value.trim();
+        if (field === 'sceneIds') rule.scope = { ...(rule.scope || {}), sceneIds: element.value.split(',').map(value => value.trim()).filter(Boolean) };
+        if (field === 'conditionValue') {
+          rule.when ||= { type: 'always' };
+          if (rule.when.type === 'storyPath') rule.when.path = element.value.trim();
+          else if (rule.when.type !== 'always') rule.when.tutorialId = element.value.trim();
+        }
+        if (field === 'conditionEquals') {
+          rule.when ||= { type: 'always' };
+          const rawValue = element.value.trim();
+          if (!rawValue) {
+            delete rule.when.equals;
+          } else {
+            try {
+              rule.when.equals = JSON.parse(rawValue);
+            } catch {
+              rule.when.equals = rawValue;
+            }
+          }
+        }
+      }
+      this._setStatus('OnboardingUI 规则已修改，记得点「💾 保存到文件」');
+      this._renderOnboardingEditor();
+    };
+    stage.querySelectorAll('[data-onboarding-text], [data-onboarding-when], [data-onboarding-components]').forEach(element => {
+      element.addEventListener('change', () => updateRule(element));
+    });
+    stage.querySelectorAll('[data-onboarding-delete]').forEach(button => {
+      button.addEventListener('click', () => {
+        const index = Number(button.closest('[data-onboarding-rule]')?.dataset.onboardingRule);
+        document.rules.splice(index, 1);
+        this._setStatus('已删除 OnboardingUI 规则（未保存）');
+        this._renderOnboardingEditor();
+      });
+    });
+    stage.querySelector('#uie-onboarding-add')?.addEventListener('click', () => {
+      document.rules.push({
+        id: `s01-ui-rule-${document.rules.length + 1}`,
+        scope: { sceneIds: ['S01'] },
+        when: { type: 'always' },
+        revealComponentIds: [],
+        enabledComponentIds: [],
+        highlightComponentIds: [],
+        hintAction: ''
+      });
+      this._setStatus('已添加 OnboardingUI 规则（未保存）');
+      this._renderOnboardingEditor();
+    });
+    props.innerHTML = `<h4>引导规则</h4><div class="uie-prop-empty" style="line-height:1.7">多选组件时按住 Ctrl 或 Shift。<br><br>条件只读取 SceneTutorialFlow 与已提交 StoryState；<code style="color:#8fc">hintAction</code> 必须使用 InputHints 中的动作 ID。<br><br>保存位置：<br><code style="color:#8aa">${this.configBase}OnboardingUI.json</code></div>`;
+  }
+
   /** 保存当前完整 PanelLayout 文档，避免只写回可编辑白名单而丢失其他部件。 */
   async _savePanelLayout() {
     if (!this._panelLayoutDocument) throw new Error('PanelLayout 配置尚未加载');
@@ -1115,7 +1295,7 @@ export class UIEditor {
       saveButton.disabled = true;
       saveButton.textContent = '保存中…';
     }
-    this._setStatus('正在保存布局、PanelLayout、手柄绑定和提示文案…');
+    this._setStatus('正在保存布局、PanelLayout、手柄绑定、提示文案和引导规则…');
 
     const saved = [];
     const failures = [];
@@ -1131,6 +1311,9 @@ export class UIEditor {
     try {
       await savePart('手柄绑定', () => this._saveGamepadConfig());
       await savePart('提示文案', () => this._saveHintsConfig());
+      if (this._onboardingUiDocument) {
+        await savePart('OnboardingUI.json', () => this._saveOnboardingUiConfig());
+      }
       if (this._panelLayoutDocument) {
         await savePart('PanelLayout.json', () => this._savePanelLayout());
       }

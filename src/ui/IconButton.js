@@ -1,13 +1,23 @@
 /************************************************************
+
  * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
+
  * 
- * @project   YiJian18-Engine - 跨平台2D/3D ECS游戏引擎
+
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+
  * @author    刘枭 (beiliwenxiao)
+
  * @email     beiliwenxiao@qq.com
+
  * @date      2026-01-14
+
  * @blog      https://blog.csdn.net/beiliwenxiao
+
  * @repo      https://github.com/beiliwenxiao/yijian18-engine
+
  *            https://gitee.com/coderaaa/yijian18-engine
+
  ************************************************************/
 
 import { UIElement } from './UIElement.js';
@@ -45,6 +55,9 @@ export class IconButton extends UIElement {
     this.bgColor = options.bgColor || 'rgba(40, 40, 40, 0.85)';
     this.borderColor = options.borderColor || '#888';
     this.hovered = false;
+    this.onboardingEnabled = true;
+    this.onboardingHighlighted = false;
+    this.onboardingHintAction = null;
     // 冷却显示（毫秒）
     this.cdRemaining = 0;
     this.cdTotal = 0;
@@ -73,9 +86,14 @@ export class IconButton extends UIElement {
     ctx.fillStyle = this.hovered ? 'rgba(90, 90, 90, 0.9)' : this.bgColor;
     ctx.fillRect(x, y, w, h);
     // 边框
-    ctx.strokeStyle = this.hovered ? '#ffffff' : this.borderColor;
-    ctx.lineWidth = 2;
+    ctx.strokeStyle = this.onboardingHighlighted ? '#ffd479' : (this.hovered ? '#ffffff' : this.borderColor);
+    ctx.lineWidth = this.onboardingHighlighted ? 3 : 2;
+    if (this.onboardingHighlighted) {
+      ctx.shadowColor = 'rgba(255, 212, 121, 0.9)';
+      ctx.shadowBlur = 10;
+    }
     ctx.strokeRect(x, y, w, h);
+    ctx.shadowBlur = 0;
 
     const cx = x + w / 2;
     const cy = y + h / 2;
@@ -97,7 +115,9 @@ export class IconButton extends UIElement {
       ctx.fillText(this.label, cx, cy + h * 0.3);
     }
     // 快捷键（右上角）—— 手柄插上时自动显示手柄按钮名
-    const hotkeyText = this.hintAction ? InputHints.key(this.hintAction) : this.hotkey;
+    const hotkeyText = this.onboardingHintAction || this.hintAction
+      ? InputHints.key(this.onboardingHintAction || this.hintAction)
+      : this.hotkey;
     if (hotkeyText) {
       ctx.fillStyle = '#ffd479';
       ctx.textAlign = 'right';
@@ -153,7 +173,7 @@ export class IconButton extends UIElement {
    * @returns {boolean} 是否处理了点击
    */
   handleMouseClick(x, y, button = 'left') {
-    if (!this.visible || button !== 'left' || !this.containsPoint(x, y)) return false;
+    if (!this.visible || this.onboardingEnabled === false || button !== 'left' || !this.containsPoint(x, y)) return false;
     if (this.onClick) this.onClick();
     return true;
   }

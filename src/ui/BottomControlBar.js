@@ -1,13 +1,23 @@
 /************************************************************
+
  * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
+
  * 
- * @project   YiJian18-Engine - 跨平台2D/3D ECS游戏引擎
+
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+
  * @author    刘枭 (beiliwenxiao)
+
  * @email     beiliwenxiao@qq.com
+
  * @date      2026-01-14
+
  * @blog      https://blog.csdn.net/beiliwenxiao
+
  * @repo      https://github.com/beiliwenxiao/yijian18-engine
+
  *            https://gitee.com/coderaaa/yijian18-engine
+
  ************************************************************/
 
 /**
@@ -66,7 +76,8 @@ export class BottomControlBar extends UIElement {
       y: 50,
       radius: orbRadius,
       color: '#ff0000',
-      glowColor: '#ff6666'
+      glowColor: '#ff6666',
+      visible: true
     };
     
     // 蓝球配置（紧贴技能槽右侧）
@@ -75,11 +86,13 @@ export class BottomControlBar extends UIElement {
       y: 50,
       radius: orbRadius,
       color: '#0066ff',
-      glowColor: '#6699ff'
+      glowColor: '#6699ff',
+      visible: true
     };
     
     this.skillSlots = [];
-    // hintAction 映射：让每个槽位按当前输入方案取快捷键名
+    // hintAction 映射：让每个槽位按当前输入方案取快捷键名。
+    // visible/enabled 由渐进 UI 投影按稳定 componentId 控制。
     const slotHintActions = ['potionHp', 'potionMp', 'skill1', 'skill2', 'skill3', 'heal', 'meditation'];
     for (let i = 0; i < totalSlots; i++) {
       this.skillSlots.push({
@@ -89,7 +102,11 @@ export class BottomControlBar extends UIElement {
         hotkey: `${i + 1}`,
         hintAction: slotHintActions[i] || '',
         skillIndex: i < 2 ? -1 : i - 2, // 前2个是药水，后5个是技能(0-4)
-        isPotion: i < 2 // 1、2号槽是药水槽
+        isPotion: i < 2, // 1、2号槽是药水槽
+        visible: true,
+        enabled: true,
+        onboardingHighlighted: false,
+        onboardingHintAction: null
       });
     }
     
@@ -172,6 +189,32 @@ export class BottomControlBar extends UIElement {
   }
 
   /**
+   * 由 OnboardingUiProjection 对底栏原子组件应用表现与点击状态。
+   * 键盘/手柄能力准入仍由既有输入和领域系统负责，避免 UI 投影变成业务事实源。
+   */
+  setOnboardingComponentState(componentId, state = {}) {
+    const slots = {
+      'pc-potion1': this.skillSlots[0],
+      'pc-potion2': this.skillSlots[1],
+      'pc-skill1': this.skillSlots[2],
+      'pc-skill2': this.skillSlots[3],
+      'pc-skill3': this.skillSlots[4],
+      'pc-skill4': this.skillSlots[5],
+      'pc-skill5': this.skillSlots[6]
+    };
+    const target = componentId === 'pc-hp-orb' ? this.hpOrb
+      : componentId === 'pc-mp-orb' ? this.mpOrb
+        : slots[componentId];
+    if (!target) return false;
+    target.visible = state.visible !== false;
+    target.enabled = state.enabled !== false;
+    target.onboardingHighlighted = state.highlighted === true;
+    target.onboardingHintAction = state.hintAction || null;
+    this._hotkeyScheme = null;
+    return true;
+  }
+
+  /**
    * 更新控制栏
    * @param {number} deltaTime - 帧间隔时间
    */
@@ -202,8 +245,8 @@ export class BottomControlBar extends UIElement {
     // 渲染血球与蓝球，同帧只解析一次 StatsComponent
     if (this.showOrbs) {
       const stats = this.entity.getComponent('stats');
-      this.renderHpOrb(ctx, stats);
-      this.renderMpOrb(ctx, stats);
+      if (this.hpOrb.visible !== false) this.renderHpOrb(ctx, stats);
+      if (this.mpOrb.visible !== false) this.renderMpOrb(ctx, stats);
     }
     
     // 渲染技能槽
@@ -445,6 +488,7 @@ export class BottomControlBar extends UIElement {
     
     for (let i = 0; i < this.skillSlots.length; i++) {
       const slot = this.skillSlots[i];
+      if (slot.visible === false) continue;
       const slotX = this.x + slot.x;
       const slotY = this.y + slot.y;
       const halfSize = slot.size / 2;
@@ -464,6 +508,15 @@ export class BottomControlBar extends UIElement {
       }
       ctx.lineWidth = 1.5;
       ctx.strokeRect(slotX - halfSize, slotY - halfSize, slot.size, slot.size);
+      if (slot.onboardingHighlighted) {
+        ctx.save();
+        ctx.strokeStyle = '#ffd479';
+        ctx.lineWidth = 3;
+        ctx.shadowColor = 'rgba(255, 212, 121, 0.9)';
+        ctx.shadowBlur = 10;
+        ctx.strokeRect(slotX - halfSize - 2, slotY - halfSize - 2, slot.size + 4, slot.size + 4);
+        ctx.restore();
+      }
       
       // 渲染内容
       if (slot.isPotion) {
@@ -477,7 +530,9 @@ export class BottomControlBar extends UIElement {
       
       // 快捷键提示（槽下方）—— 当前输入方案变化时才重新解析
       if (this.showHotkeyNumbers) {
-        const hotkeyText = this._hotkeyLabels[i] || slot.hotkey;
+        const hotkeyText = slot.onboardingHintAction || slot.hintAction
+          ? InputHints.key(slot.onboardingHintAction || slot.hintAction)
+          : slot.hotkey;
         ctx.fillStyle = '#ffd479';
         ctx.font = 'bold 11px Arial';
         ctx.textAlign = 'center';
@@ -661,9 +716,9 @@ export class BottomControlBar extends UIElement {
     this.mouseY = y;
     this.hoveredSlot = -1;
 
-    // 检查是否悬停在技能槽上
     for (let i = 0; i < this.skillSlots.length; i++) {
       const slot = this.skillSlots[i];
+      if (slot.visible === false || slot.enabled === false) continue;
       const slotX = this.x + slot.x;
       const slotY = this.y + slot.y;
       const halfSize = slot.size / 2;
@@ -688,6 +743,7 @@ export class BottomControlBar extends UIElement {
     // 检查技能槽点击
     for (let i = 0; i < this.skillSlots.length; i++) {
       const slot = this.skillSlots[i];
+      if (slot.visible === false || slot.enabled === false) continue;
       const slotX = this.x + slot.x;
       const slotY = this.y + slot.y;
       const halfSize = slot.size / 2;

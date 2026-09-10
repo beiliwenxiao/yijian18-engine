@@ -46,6 +46,7 @@ weapp/
 
 ## 关键约定
 
+- 所有实现都要考虑微信小程序的兼容。
 - 小游戏**无 DOM**：`document.getElementById` 返回 null，DOM UI（教程面板、触屏按钮）需迁移到 Canvas 绘制
 - 小游戏**无键盘**：`window.addEventListener('keydown')` 空跑不报错，依靠触屏虚拟摇杆
 - `PlatformProfile.detectHost()` 识别 `weapp`，`BackendConfig` 强制 2D，`pickBackend` 不加载 three.js
