@@ -498,7 +498,7 @@ export class WeatherSystem {
     return Math.min(MAX_FOG_CLOUDS, this.maxFogClouds, Math.max(0, baseCount));
   }
 
-  // ─── 晴天光束：每束都由透明 PNG 承载椭圆柔边，位置与尺寸保存在世界坐标。 ───
+  // ─── 晴天光束：顶边中心锚点沿曲线横移，三档速度均由透明 PNG 承载。 ───
   _updateSunbeams(deltaTime, bounds) {
     if (this._sunbeamImages.length === 0 || this.maxSunbeams <= 0) {
       this._sunbeams.length = 0;
@@ -511,19 +511,54 @@ export class WeatherSystem {
       || (this._sunbeamTimer <= 0 && this._sunbeams.length < this.maxSunbeams);
     if (shouldSpawn) {
       this._sunbeamTimer = 4 + Math.random() * 5;
-      const life = 10 + Math.random() * 8;
+      const motionRoll = Math.random();
+      const motion = motionRoll < 2 / 3
+        ? {
+            kind: 'slow', life: 22 + Math.random() * 10,
+            horizontalSwayRatio: 0.004 + Math.random() * 0.004,
+            curveFrequency: 0.28 + Math.random() * 0.2,
+            curveSwing: 0.025 + Math.random() * 0.04
+          }
+        : motionRoll < 5 / 6
+          ? {
+              kind: 'fast', life: 7 + Math.random() * 5,
+              horizontalSwayRatio: 0.008 + Math.random() * 0.006,
+              curveFrequency: 0.65 + Math.random() * 0.3,
+              curveSwing: 0.06 + Math.random() * 0.06
+            }
+          : {
+              kind: 'flash', life: 1.4 + Math.random() * 1.1,
+              horizontalSwayRatio: 0.015 + Math.random() * 0.007,
+              curveFrequency: 2 + Math.random() * 1.2,
+              curveSwing: 0.11 + Math.random() * 0.1
+            };
       const viewWidth = bounds.right - bounds.left;
       const viewHeight = bounds.bottom - bounds.top;
+      const width = 290 + Math.random() * 180;
+      const topAnchorRatio = 0.5;
+      const topInsetRatio = 0.04 + Math.random() * 0.16;
+      const curvePhase = Math.random() * Math.PI * 2;
+      const worldAnchorX = bounds.left + viewWidth * topAnchorRatio;
+      const worldAnchorY = bounds.top - viewHeight * topInsetRatio;
+      const horizontalSway = viewWidth * motion.horizontalSwayRatio;
       this._sunbeams.push({
-        x: randomBetween(bounds.left - viewWidth * 0.14, bounds.right - viewWidth * 0.24),
-        y: randomBetween(bounds.top - viewHeight * 0.2, bounds.top + viewHeight * 0.18),
-        width: 290 + Math.random() * 180,
-        height: 460 + Math.random() * 240,
-        life,
-        maxLife: life,
+        // x/y 是场景世界坐标中的图片顶边中心锚点；生成后不再跟随相机重置。
+        x: worldAnchorX + Math.sin(curvePhase) * horizontalSway,
+        y: worldAnchorY,
+        worldAnchorX,
+        worldAnchorY,
+        horizontalSway,
+        width,
+        height: viewHeight * (1.06 + Math.random() * 0.16),
+        life: motion.life,
+        maxLife: motion.life,
+        motionKind: motion.kind,
         opacity: 0.28 + Math.random() * 0.16,
-        rotation: (-0.18 + Math.random() * 0.36),
-        speed: 3 + Math.random() * 5,
+        baseRotation: -0.18 + Math.random() * 0.36,
+        rotation: 0,
+        curveFrequency: motion.curveFrequency,
+        curveSwing: motion.curveSwing,
+        curvePhase,
         imageIndex: Math.floor(Math.random() * this._sunbeamImages.length),
         flipX: Math.random() < 0.5
       });
@@ -532,7 +567,12 @@ export class WeatherSystem {
     let writeIndex = 0;
     for (let readIndex = 0, len = this._sunbeams.length; readIndex < len; readIndex++) {
       const beam = this._sunbeams[readIndex];
-      beam.x += beam.speed * deltaTime;
+      beam.curvePhase += beam.curveFrequency * deltaTime;
+      const curve = Math.sin(beam.curvePhase);
+      // 光束保持生成时的场景坐标，只在该世界锚点附近作局部曲线摆动。
+      beam.x = beam.worldAnchorX + curve * beam.horizontalSway;
+      beam.y = beam.worldAnchorY;
+      beam.rotation = beam.baseRotation + curve * beam.curveSwing;
       beam.life -= deltaTime;
       const imageIndex = Number(beam.imageIndex);
       beam.imageIndex = Number.isFinite(imageIndex)
@@ -807,14 +847,13 @@ export class WeatherSystem {
         const lifeRatio = Math.max(0, Math.min(1, beam.life / beam.maxLife));
         const beamAlpha = Math.sin(lifeRatio * Math.PI) * beam.opacity * alpha;
         if (beamAlpha <= 0) continue;
-        const centerX = beam.x + beam.width / 2;
-        const centerY = beam.y + beam.height / 2;
+        // beam.x/y 是图片顶边中心锚点，旋转与曲线摆动均围绕该点进行。
         ctx.save();
         ctx.globalAlpha = beamAlpha;
-        ctx.translate(centerX, centerY);
+        ctx.translate(beam.x, beam.y);
         ctx.rotate(Number(beam.rotation) || 0);
         if (beam.flipX) ctx.scale(-1, 1);
-        ctx.drawImage(image, -beam.width / 2, -beam.height / 2, beam.width, beam.height);
+        ctx.drawImage(image, -beam.width / 2, 0, beam.width, beam.height);
         ctx.restore();
         rendered = true;
       }
