@@ -1,11 +1,40 @@
+/************************************************************
+
+ * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
+
+ * 
+
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+
+ * @author    刘枭 (beiliwenxiao)
+
+ * @email     beiliwenxiao@qq.com
+
+ * @date      2026-01-14
+
+ * @blog      https://blog.csdn.net/beiliwenxiao
+
+ * @repo      https://github.com/beiliwenxiao/yijian18-engine
+
+ *            https://gitee.com/coderaaa/yijian18-engine
+
+ ************************************************************/
+
 const BASE_VIEWPORT_WIDTH = 1280;
 const BASE_VIEWPORT_HEIGHT = 720;
 const BASE_VIEWPORT_AREA = BASE_VIEWPORT_WIDTH * BASE_VIEWPORT_HEIGHT;
 const MAX_COUNT_SCALE = 4;
 const MAX_FOG_CLOUDS = 10;
+const MAX_SUNBEAMS = 3;
 const PARTICLE_SPAWN_PADDING = 80;
 const PARTICLE_CULL_PADDING = 140;
 const SUNBEAM_PADDING = 120;
+
+function normalizeSunbeamLimit(value) {
+  const count = Number(value);
+  if (!Number.isFinite(count)) return MAX_SUNBEAMS;
+  return Math.min(MAX_SUNBEAMS, Math.max(0, Math.floor(count)));
+}
 
 function normalizeBounds(value) {
   if (!value || typeof value !== 'object') return null;
@@ -146,6 +175,9 @@ export class WeatherSystem {
     this.maxFogClouds = normalizeFogCloudLimit(config?.fog?.maxClouds);
     this._fogFadeDurationRange = this._normalizeFogFadeDuration(config?.fog?.fadeDurationSeconds);
     this._fogImages = [];
+    this._sunbeamImageIds = normalizeFogImageIds(config?.sunbeams?.imageIds);
+    this.maxSunbeams = normalizeSunbeamLimit(config?.sunbeams?.maxBeams);
+    this._sunbeamImages = [];
     this._fogCoverageSignature = '';
     this._fogAlpha = 0;
     this._fogFadeStartAlpha = 0;
@@ -243,6 +275,11 @@ export class WeatherSystem {
     return Object.freeze([...this._fogImageIds]);
   }
 
+  /** 返回晴天光束配置引用的稳定图片 ID；调用方负责通过既有 AssetManager 预载。 */
+  getSunbeamImageIds() {
+    return Object.freeze([...this._sunbeamImageIds]);
+  }
+
   /**
    * 注入已由 AssetManager 成功加载的可绘制图片。
    * 不接收路径、不创建 AssetManager，也不为缺图构造程序化雾后备。
@@ -260,6 +297,22 @@ export class WeatherSystem {
       }
     }
     return this._fogImages.length;
+  }
+
+  /** 注入已由 AssetManager 成功加载的透明光束 PNG；缺图时不绘制几何替代物。 */
+  setSunbeamImages(images = []) {
+    this._sunbeamImages = normalizeFogImages(images);
+    if (this._sunbeamImages.length === 0) {
+      this._sunbeams.length = 0;
+    } else {
+      for (const beam of this._sunbeams) {
+        const imageIndex = Number(beam?.imageIndex);
+        beam.imageIndex = Number.isFinite(imageIndex)
+          ? Math.abs(Math.floor(imageIndex)) % this._sunbeamImages.length
+          : 0;
+      }
+    }
+    return this._sunbeamImages.length;
   }
 
   setWeather(type, options = {}) {
@@ -396,7 +449,7 @@ export class WeatherSystem {
     const def = this.weatherDefs[weather];
     this._updateFogPresentation(dt, weather);
 
-    if (weather === 'clear') this._updateSunbeams(dt, bounds);
+    if (weather === 'clear' && this._sunbeamImages.length > 0) this._updateSunbeams(dt, bounds);
     else this._sunbeams.length = 0;
 
     if (weather === 'breeze' || weather === 'wind'
@@ -445,21 +498,34 @@ export class WeatherSystem {
     return Math.min(MAX_FOG_CLOUDS, this.maxFogClouds, Math.max(0, baseCount));
   }
 
-  // ─── 晴天光束：位置与尺寸均保存在世界坐标。 ───
+  // ─── 晴天光束：每束都由透明 PNG 承载椭圆柔边，位置与尺寸保存在世界坐标。 ───
   _updateSunbeams(deltaTime, bounds) {
+    if (this._sunbeamImages.length === 0 || this.maxSunbeams <= 0) {
+      this._sunbeams.length = 0;
+      return;
+    }
+
+    const minimumBeams = Math.min(2, this.maxSunbeams);
     this._sunbeamTimer -= deltaTime;
-    if (this._sunbeamTimer <= 0) {
-      this._sunbeamTimer = 4 + Math.random() * 6;
-      const life = 2 + Math.random() * 1.5;
+    const shouldSpawn = this._sunbeams.length < minimumBeams
+      || (this._sunbeamTimer <= 0 && this._sunbeams.length < this.maxSunbeams);
+    if (shouldSpawn) {
+      this._sunbeamTimer = 4 + Math.random() * 5;
+      const life = 10 + Math.random() * 8;
       const viewWidth = bounds.right - bounds.left;
+      const viewHeight = bounds.bottom - bounds.top;
       this._sunbeams.push({
-        x: randomBetween(bounds.left - viewWidth * 0.1, bounds.right + viewWidth * 0.1),
-        y: bounds.top - SUNBEAM_PADDING,
-        width: 60 + Math.random() * 80,
-        height: bounds.bottom - bounds.top + SUNBEAM_PADDING * 2,
+        x: randomBetween(bounds.left - viewWidth * 0.14, bounds.right - viewWidth * 0.24),
+        y: randomBetween(bounds.top - viewHeight * 0.2, bounds.top + viewHeight * 0.18),
+        width: 290 + Math.random() * 180,
+        height: 460 + Math.random() * 240,
         life,
         maxLife: life,
-        speed: 30 + Math.random() * 20
+        opacity: 0.28 + Math.random() * 0.16,
+        rotation: (-0.18 + Math.random() * 0.36),
+        speed: 3 + Math.random() * 5,
+        imageIndex: Math.floor(Math.random() * this._sunbeamImages.length),
+        flipX: Math.random() < 0.5
       });
     }
 
@@ -468,6 +534,10 @@ export class WeatherSystem {
       const beam = this._sunbeams[readIndex];
       beam.x += beam.speed * deltaTime;
       beam.life -= deltaTime;
+      const imageIndex = Number(beam.imageIndex);
+      beam.imageIndex = Number.isFinite(imageIndex)
+        ? Math.abs(Math.floor(imageIndex)) % this._sunbeamImages.length
+        : 0;
       if (beam.life > 0) {
         if (writeIndex !== readIndex) this._sunbeams[writeIndex] = beam;
         writeIndex++;
@@ -729,27 +799,26 @@ export class WeatherSystem {
     ctx.save();
     ctx.translate(-viewBounds.left, -viewBounds.top);
 
-    if (weather === 'clear' && this._sunbeams.length > 0) {
+    if (weather === 'clear' && this._sunbeams.length > 0 && this._sunbeamImages.length > 0) {
       ctx.save();
       for (const beam of this._sunbeams) {
+        const image = this._sunbeamImages[beam.imageIndex];
+        if (!isDrawableImage(image)) continue;
         const lifeRatio = Math.max(0, Math.min(1, beam.life / beam.maxLife));
-        const beamAlpha = Math.sin(lifeRatio * Math.PI) * 0.15 * alpha;
-        const bottom = beam.y + beam.height;
-        const gradient = ctx.createLinearGradient(beam.x, beam.y, beam.x + beam.width, bottom);
-        gradient.addColorStop(0, `rgba(255,240,180,${beamAlpha})`);
-        gradient.addColorStop(0.5, `rgba(255,255,200,${beamAlpha * 0.6})`);
-        gradient.addColorStop(1, 'rgba(255,240,180,0)');
-        ctx.fillStyle = gradient;
-        ctx.beginPath();
-        ctx.moveTo(beam.x, beam.y);
-        ctx.lineTo(beam.x + beam.width * 0.3, beam.y);
-        ctx.lineTo(beam.x + beam.width, bottom);
-        ctx.lineTo(beam.x + beam.width * 0.7, bottom);
-        ctx.closePath();
-        ctx.fill();
+        const beamAlpha = Math.sin(lifeRatio * Math.PI) * beam.opacity * alpha;
+        if (beamAlpha <= 0) continue;
+        const centerX = beam.x + beam.width / 2;
+        const centerY = beam.y + beam.height / 2;
+        ctx.save();
+        ctx.globalAlpha = beamAlpha;
+        ctx.translate(centerX, centerY);
+        ctx.rotate(Number(beam.rotation) || 0);
+        if (beam.flipX) ctx.scale(-1, 1);
+        ctx.drawImage(image, -beam.width / 2, -beam.height / 2, beam.width, beam.height);
+        ctx.restore();
+        rendered = true;
       }
       ctx.restore();
-      rendered = true;
     }
 
     if (this._fogAlpha > 0

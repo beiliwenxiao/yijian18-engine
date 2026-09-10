@@ -1,3 +1,25 @@
+/************************************************************
+
+ * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
+
+ * 
+
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+
+ * @author    刘枭 (beiliwenxiao)
+
+ * @email     beiliwenxiao@qq.com
+
+ * @date      2026-01-14
+
+ * @blog      https://blog.csdn.net/beiliwenxiao
+
+ * @repo      https://github.com/beiliwenxiao/yijian18-engine
+
+ *            https://gitee.com/coderaaa/yijian18-engine
+
+ ************************************************************/
+
 import { DEFAULT_TRIGGER_ACTION_IDS } from '../../systems/TriggerActions.js';
 import { createStandardCapabilityStrategyRegistry } from '../../systems/items/CapabilityStrategyRegistry.js';
 import { ValidationCode, makeError } from './ValidationError.js';
@@ -6,6 +28,31 @@ const own = (value, key) => Object.prototype.hasOwnProperty.call(value || {}, ke
 const isObject = value => value !== null && typeof value === 'object' && !Array.isArray(value);
 const isReferenceStub = value => isObject(value) && typeof value.$ref === 'string';
 const list = value => Array.isArray(value) ? value : [];
+
+function validateSunbeamConfig(value, errors) {
+  const path = 'system.weather.sunbeams';
+  if (!isObject(value)) {
+    errors.push(makeError(ValidationCode.TYPE_MISMATCH, path, 'sunbeams 必须为对象'));
+    return;
+  }
+  if (!Array.isArray(value.imageIds) || value.imageIds.length !== 3) {
+    errors.push(makeError(ValidationCode.OUT_OF_RANGE, `${path}.imageIds`, 'imageIds 必须恰好包含三张光束图片'));
+  } else {
+    const seen = new Set();
+    value.imageIds.forEach((imageId, index) => {
+      if (typeof imageId !== 'string' || !imageId.trim()) {
+        errors.push(makeError(ValidationCode.TYPE_MISMATCH, `${path}.imageIds[${index}]`, '图片 ID 必须为非空字符串'));
+      } else if (seen.has(imageId)) {
+        errors.push(makeError(ValidationCode.DUPLICATE_ID, `${path}.imageIds[${index}]`, '光束图片 ID 不可重复'));
+      } else {
+        seen.add(imageId);
+      }
+    });
+  }
+  if (!Number.isInteger(value.maxBeams) || value.maxBeams < 0 || value.maxBeams > 3) {
+    errors.push(makeError(ValidationCode.OUT_OF_RANGE, `${path}.maxBeams`, 'maxBeams 必须是 0–3 的整数'));
+  }
+}
 
 function stableIds(values, path, errors, seen = new Set()) {
   list(values).forEach((value, index) => {
@@ -457,6 +504,9 @@ export class CandidateRuleValidator {
               }
             }
           }
+        }
+        if (own(weather, 'sunbeams')) {
+          validateSunbeamConfig(weather.sunbeams, errors);
         }
         if (own(weather, 'particles') && !isObject(weather.particles)) {
           errors.push(makeError(ValidationCode.TYPE_MISMATCH, 'system.weather.particles', 'particles 必须为对象'));

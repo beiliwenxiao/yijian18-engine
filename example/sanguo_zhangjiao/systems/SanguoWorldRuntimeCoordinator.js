@@ -1,13 +1,23 @@
 /************************************************************
+
  * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
- *
+
+ * 
+
  * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+
  * @author    刘枭 (beiliwenxiao)
+
  * @email     beiliwenxiao@qq.com
+
  * @date      2026-01-14
+
  * @blog      https://blog.csdn.net/beiliwenxiao
+
  * @repo      https://github.com/beiliwenxiao/yijian18-engine
+
  *            https://gitee.com/coderaaa/yijian18-engine
+
  ************************************************************/
 
 import { SceneFlowCoordinator } from '../../../src/core/scene/SceneFlowCoordinator.js';
@@ -175,10 +185,17 @@ async function configureWorldRuntimeFromLoad() {
   if (!weatherConfig) throw new Error('runtime weather consumer missing');
   const nextWeatherSystem = new WeatherSystem(weatherConfig);
   const fogImageIds = nextWeatherSystem.getFogImageIds();
-  const fogImages = await Promise.all(fogImageIds.map(imageId =>
-    this.assetManager.loadAsset(imageId, { mode: '2d', required: true })
-  ));
+  const sunbeamImageIds = nextWeatherSystem.getSunbeamImageIds();
+  const [fogImages, sunbeamImages] = await Promise.all([
+    Promise.all(fogImageIds.map(imageId =>
+      this.assetManager.loadAsset(imageId, { mode: '2d', required: true })
+    )),
+    Promise.all(sunbeamImageIds.map(imageId =>
+      this.assetManager.loadAsset(imageId, { mode: '2d', required: true })
+    ))
+  ]);
   nextWeatherSystem.setFogImages(fogImages);
+  nextWeatherSystem.setSunbeamImages(sunbeamImages);
   const nextTimeSystem = new TimeSystem(this.gameLoader?.runtimeConfigSnapshot?.system?.time || {});
   const sceneData = this._worldLoadSession?.getSceneData?.(this.currentSceneId);
   const campfireDefinition = findSceneCampfireDefinition(sceneData, this.gameLoader?.registries);

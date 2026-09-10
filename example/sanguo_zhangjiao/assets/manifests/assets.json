@@ -5048,11 +5048,169 @@
         "y": 0.5
       },
       "bounds": {
-        "width": 512,
-        "height": 192
+        "width": 640,
+        "height": 256
       },
       "animations": [],
-      "targetPhase": "P1",
+      "targetPhase": "P6",
+      "status": "ai-generated",
+      "revision": 2
+    },
+    {
+      "assetId": "weather.fog.cloudB",
+      "imageId": "weather.fog.cloudB",
+      "category": "weather-vfx",
+      "usage": [
+        "weather",
+        "fog",
+        "atmosphere"
+      ],
+      "sourceFile": "assets/images/weather/fog-cloud-b.png",
+      "runtime2D": {
+        "path": "assets/images/weather/fog-cloud-b.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "weather.fog.cloudB"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 640,
+        "height": 256
+      },
+      "animations": [],
+      "targetPhase": "P6",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "weather.fog.cloudC",
+      "imageId": "weather.fog.cloudC",
+      "category": "weather-vfx",
+      "usage": [
+        "weather",
+        "fog",
+        "atmosphere"
+      ],
+      "sourceFile": "assets/images/weather/fog-cloud-c.png",
+      "runtime2D": {
+        "path": "assets/images/weather/fog-cloud-c.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "weather.fog.cloudC"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 640,
+        "height": 256
+      },
+      "animations": [],
+      "targetPhase": "P6",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "weather.sunbeam.rayA",
+      "imageId": "weather.sunbeam.rayA",
+      "category": "weather-vfx",
+      "usage": [
+        "weather",
+        "clear",
+        "sunbeam",
+        "atmosphere"
+      ],
+      "sourceFile": "assets/images/weather/sunbeam-a.png",
+      "runtime2D": {
+        "path": "assets/images/weather/sunbeam-a.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "weather.sunbeam.rayA"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 768,
+        "height": 960
+      },
+      "animations": [],
+      "targetPhase": "P6",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "weather.sunbeam.rayB",
+      "imageId": "weather.sunbeam.rayB",
+      "category": "weather-vfx",
+      "usage": [
+        "weather",
+        "clear",
+        "sunbeam",
+        "atmosphere"
+      ],
+      "sourceFile": "assets/images/weather/sunbeam-b.png",
+      "runtime2D": {
+        "path": "assets/images/weather/sunbeam-b.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "weather.sunbeam.rayB"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 768,
+        "height": 960
+      },
+      "animations": [],
+      "targetPhase": "P6",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "weather.sunbeam.rayC",
+      "imageId": "weather.sunbeam.rayC",
+      "category": "weather-vfx",
+      "usage": [
+        "weather",
+        "clear",
+        "sunbeam",
+        "atmosphere"
+      ],
+      "sourceFile": "assets/images/weather/sunbeam-c.png",
+      "runtime2D": {
+        "path": "assets/images/weather/sunbeam-c.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "weather.sunbeam.rayC"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 768,
+        "height": 960
+      },
+      "animations": [],
+      "targetPhase": "P6",
       "status": "ai-generated",
       "revision": 1
     }

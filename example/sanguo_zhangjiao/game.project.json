@@ -136,9 +136,19 @@
           "min": 10
         },
         "imageIds": [
-          "weather.fog.cloudA"
+          "weather.fog.cloudA",
+          "weather.fog.cloudB",
+          "weather.fog.cloudC"
         ],
         "maxClouds": 10
+      },
+      "sunbeams": {
+        "imageIds": [
+          "weather.sunbeam.rayA",
+          "weather.sunbeam.rayB",
+          "weather.sunbeam.rayC"
+        ],
+        "maxBeams": 3
       },
       "particles": {},
       "transitionSpeed": 0.5
