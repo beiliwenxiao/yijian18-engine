@@ -26,6 +26,7 @@ const SPECIAL_FAINT_LABELS = Object.freeze({
 
 const REFUEL_PROGRESS_OWNER = 'campfireRefuel';
 const REFUEL_DURATION_SECONDS = 1;
+const SHELTER_CONSTRUCTION_PROGRESS_OWNER = 's01ShelterConstruction';
 const RECIPE_ACTION_PROGRESS_OWNER = 's01RecipeAction';
 const RECIPE_ACTION_RANGE = 96;
 const RECIPE_ACTIONS = Object.freeze({
@@ -59,6 +60,7 @@ export class S01S02Coordinator {
     this.sequence = 0;
     this.refuelCampfireInFlight = null;
     this.refuelCampfireProgress = null;
+    this.shelterConstructionProgressActive = false;
     this.recipeActionInFlight = null;
     this.recipeActionProgress = null;
     this.pursuitReconcileElapsed = 0;
@@ -79,6 +81,7 @@ export class S01S02Coordinator {
     this.firstWolfCorpsePending = null;
     this.firstWolfCorpseRetryElapsed = 0;
     this.firstWolfCorpseRetryInFlight = false;
+    this.backpackOpenedInFlight = null;
   }
 
   _story() {
@@ -94,6 +97,29 @@ export class S01S02Coordinator {
       operationId: operationId || `story:${definitionId}:${++this.sequence}`,
       payload: { definitionId, ...payload }
     });
+  }
+
+  markBackpackOpened() {
+    if (this.scene.currentSceneId !== 'S01') return Promise.resolve({ ok: true, status: 'notApplicable' });
+    if (this._story().s01Survival?.backpackOpened === true) {
+      return Promise.resolve({ ok: true, status: 'alreadyCommitted' });
+    }
+    if (this.backpackOpenedInFlight) return this.backpackOpenedInFlight;
+
+    const operationId = `story:s01:backpack-opened:${++this.sequence}`;
+    const request = this._submit('story.s01.backpackOpened', {}, operationId)
+      .then(result => {
+        if (result?.ok === false && result.code === 'preconditionFailed'
+          && this._story().s01Survival?.backpackOpened === true) {
+          return { ok: true, status: 'alreadyCommitted' };
+        }
+        return result;
+      })
+      .finally(() => {
+        if (this.backpackOpenedInFlight === request) this.backpackOpenedInFlight = null;
+      });
+    this.backpackOpenedInFlight = request;
+    return request;
   }
 
   _spawnGroup(group) {
@@ -901,7 +927,21 @@ export class S01S02Coordinator {
     this.scene._showScreenTip(`开始搭建小庇护所，预计 ${Math.ceil(result.duration)} 秒完成。`, {
       title: '搭建庇护所'
     });
+    const startedPending = this.scene.constructionSystem.getPending(siteId);
+    this.shelterConstructionProgressActive = true;
+    this._showShelterConstructionProgress('started', startedPending);
     return result;
+  }
+
+  /** 只读投影 ConstructionSystem 的实际施工进度，不拥有施工计时或结算。 */
+  _showShelterConstructionProgress(event, pending = null) {
+    const progress = event === 'completed' ? 1 : Number(pending?.progress) || 0;
+    return this.scene.context?.presentation?.gatheringProgress?.handleEvent?.(
+      event,
+      { progress },
+      this.scene.playerEntity,
+      SHELTER_CONSTRUCTION_PROGRESS_OWNER
+    ) === true;
   }
 
   _canShowRefuelProgress() {
@@ -1578,6 +1618,10 @@ export class S01S02Coordinator {
         session.resolve({ ok: false, code: 'refuelInterrupted' });
       }
       this.interruptRecipeAction('sceneChanged');
+      if (this.shelterConstructionProgressActive) {
+        this._showShelterConstructionProgress('interrupted');
+        this.shelterConstructionProgressActive = false;
+      }
       return;
     }
     const dt = Math.max(0, Number(deltaTime) || 0);
@@ -1656,12 +1700,29 @@ export class S01S02Coordinator {
     }
     if (this.scene.constructionSystem && !this.scene._constructionCheckpointBusy) {
       const pending = this.scene.constructionSystem.getPending('site.s01.small_shelter');
+      if (pending?.status === 'active') {
+        if (!this.shelterConstructionProgressActive) {
+          this.shelterConstructionProgressActive = true;
+          this._showShelterConstructionProgress('started', pending);
+        }
+        this._showShelterConstructionProgress('progress', pending);
+      } else if (this.shelterConstructionProgressActive) {
+        this._showShelterConstructionProgress('interrupted');
+        this.shelterConstructionProgressActive = false;
+      }
       const willComplete = pending?.status === 'active'
         && pending.elapsed + dt >= pending.duration;
       if (willComplete) {
         this.pendingConstructionRollback = this.scene.s10ConstructionCoordinator?._captureConstructionRollback?.();
       }
-      this.scene.constructionSystem.update(deltaTime);
+      const terminal = this.scene.constructionSystem.update(dt);
+      const shelterTerminal = terminal.find(result => (
+        (result?.siteId || result?.structure?.siteId) === 'site.s01.small_shelter'
+      ));
+      if (shelterTerminal && this.shelterConstructionProgressActive) {
+        this._showShelterConstructionProgress(shelterTerminal.ok === true ? 'completed' : 'interrupted');
+        this.shelterConstructionProgressActive = false;
+      }
     }
     if (!this.pendingClimb) return;
     const climbing = this.scene.locomotionSystem?.climbSystem?.isClimbing?.(this.scene.playerEntity) === true;

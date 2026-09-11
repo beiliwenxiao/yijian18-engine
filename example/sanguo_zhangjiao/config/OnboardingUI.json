@@ -75,7 +75,12 @@
       "scope": { "sceneIds": ["S01"] },
       "when": { "type": "tutorialCompleted", "tutorialId": "s01.pickup" },
       "revealComponentIds": ["pc-bag", "hb-bag"],
-      "enabledComponentIds": ["pc-bag", "hb-bag"],
+      "enabledComponentIds": ["pc-bag", "hb-bag"]
+    },
+    {
+      "id": "s01-tools-highlight-inventory-until-opened",
+      "scope": { "sceneIds": ["S01"] },
+      "when": { "type": "storyPath", "path": "s01Survival.backpackOpened", "equals": false },
       "highlightComponentIds": ["pc-bag", "hb-bag"],
       "hintAction": "bag"
     },

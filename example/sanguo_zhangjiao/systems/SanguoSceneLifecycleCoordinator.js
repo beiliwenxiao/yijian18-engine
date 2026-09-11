@@ -221,7 +221,14 @@ function observeTutorialEventSources() {
       stats: this.playerInfoPanel
     },
     onMovementComplete: () => triggerSystem.fire('playerMoved', {}),
-    onPanelVisible: ({ id }) => triggerSystem.fire('panelOpen', { panel: id })
+    onPanelVisible: ({ id }) => {
+      triggerSystem.fire('panelOpen', { panel: id });
+      if (id === 'inventory') {
+        void this._s01s02Coordinator?.markBackpackOpened?.().catch(error => {
+          console.error('[SanguoSceneLifecycleCoordinator] 背包首次打开状态提交失败:', error);
+        });
+      }
+    }
   });
   return true;
 }

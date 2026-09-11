@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "createdAt": 1789069716260,
+  "createdAt": 1789144560150,
   "meta": {
     "gameId": "sanguo_zhangjiao",
     "kind": "auto",
@@ -9,7 +9,8 @@
     "level": 1,
     "currentSceneId": "S01",
     "location": "S01 区域",
-    "reason": "system-menu",
+    "reason": "checkpoint",
+    "checkpointId": "checkpoint.S01.shelterCompleted",
     "previewFile": "thumbnail.jpg"
   },
   "data": {
@@ -21,8 +22,8 @@
         "id": "refugee",
         "name": null,
         "transform": {
-          "x": 8302.060040448068,
-          "y": 4178.359025315772,
+          "x": 8219.116765362782,
+          "y": 4040.812225052963,
           "elevation": 0,
           "rotation": 0,
           "scale": {
@@ -39,15 +40,15 @@
           "baseAttack": 10,
           "baseDefense": 5,
           "baseSpeed": 100,
-          "maxHp": 100,
-          "hp": 47,
+          "maxHp": 105,
+          "hp": 52,
           "maxMp": 100,
           "mp": 10,
           "maxStamina": 100,
           "stamina": 100,
           "staminaRegen": 12,
-          "attack": 10,
-          "defense": 5,
+          "attack": 11,
+          "defense": 18,
           "speed": 100,
           "level": 1,
           "exp": 0,
@@ -70,23 +71,40 @@
             "definitionId": "tool.worn_axe",
             "instanceId": "S01-tool-axe-1",
             "mutable": {
-              "durability": 6
+              "durability": 5
             }
           },
           {
+            "definitionId": "resource.wild_berry",
+            "quantity": 4
+          },
+          {
             "definitionId": "resource.wood",
-            "quantity": 3
+            "quantity": 2
           },
           {
             "definitionId": "resource.raw_wolf_meat",
-            "quantity": 5
+            "quantity": 4
           },
           {
             "definitionId": "resource.wolf_hide",
-            "quantity": 5
+            "quantity": 2
+          },
+          {
+            "definitionId": "food.roasted_wolf_meat",
+            "quantity": 1
           }
         ],
-        "equipment": {}
+        "equipment": {
+          "accessory": {
+            "definitionId": "equipment.s01.wolf_hide_bracers",
+            "quantity": 1
+          },
+          "armor": {
+            "definitionId": "equipment.s01.wolf_hide_vest",
+            "quantity": 1
+          }
+        }
       },
       "tutorial": {
         "completedTutorials": [
@@ -107,12 +125,7 @@
           "s01.attack:attackPerformed": 1,
           "s01.durability:gatheringCompleted": 1
         },
-        "movementOrigins": {
-          "s01.move": {
-            "x": 8276.559230181467,
-            "y": 4165.023414159508
-          }
-        }
+        "movementOrigins": {}
       },
       "dialogue": {
         "currentDialogueId": null,
@@ -124,17 +137,17 @@
             "nodeId": "start",
             "speaker": "旁白",
             "text": "寒风卷过龟裂的荒原。你从熄灭的火堆旁醒来，四肢冻得僵硬，远处只有枯草与河水的声响。",
-            "timestamp": 1789069618108
+            "timestamp": 1788925397277
           },
           {
             "type": "start",
             "dialogueId": "dialogue.s01.wake",
-            "timestamp": 1789069618108
+            "timestamp": 1788925397277
           },
           {
             "type": "end",
             "dialogueId": "dialogue.s01.wake",
-            "timestamp": 1789069621486
+            "timestamp": 1788925399287
           }
         ],
         "completedDialogues": [
@@ -314,11 +327,12 @@
                 "food": 0,
                 "herb": 0,
                 "iron": 0,
-                "wood": 6
+                "wood": 9
               },
               "gatheringOperations": [
-                "gather-2",
-                "gather-3"
+                "gather-4",
+                "gather-6",
+                "gather-8"
               ],
               "resourceConstructionScore": 0
             },
@@ -329,7 +343,7 @@
               "axeFound": true,
               "berriesGathered": true,
               "berryEaten": true,
-              "berryGatherCount": 1,
+              "berryGatherCount": 3,
               "campfireExtinguished": false,
               "campfireLit": true,
               "campfireRefuelCount": 3,
@@ -338,7 +352,7 @@
               "firstWolfKilled": true,
               "firstWolfSpotted": true,
               "initialToolsPicked": true,
-              "meatCooked": false,
+              "meatCooked": true,
               "overnightCompleted": false,
               "pursuit": {
                 "active": false,
@@ -346,12 +360,12 @@
                 "spawned": 0
               },
               "riverCrossed": false,
-              "shelterCompleted": false,
+              "shelterCompleted": true,
               "skinningKnifeFound": true,
-              "wolfBracersCrafted": false,
-              "wolfGearCrafted": false,
+              "wolfBracersCrafted": true,
+              "wolfGearCrafted": true,
               "wolfSkinned": true,
-              "wolfVestCrafted": false,
+              "wolfVestCrafted": true,
               "wolfWeatherCleared": false,
               "wolfWeatherCountdownStarted": false,
               "woodGathered": true
@@ -388,13 +402,31 @@
             "trg_s01_spawn_initial": {
               "definitionRevision": 1,
               "remaining": 0,
-              "nextDue": 1000,
+              "nextDue": 0,
               "duration": 1000
             },
             "trg_s01_refuel_campfire": {
               "definitionRevision": 1,
               "remaining": 0,
-              "nextDue": 68586.86399999405,
+              "nextDue": 0,
+              "duration": 1000
+            },
+            "trg_s01_cook_meat": {
+              "definitionRevision": 1,
+              "remaining": 0,
+              "nextDue": 0,
+              "duration": 1000
+            },
+            "trg_s01_craft_wolf_gear": {
+              "definitionRevision": 1,
+              "remaining": 0,
+              "nextDue": 14017.199999999997,
+              "duration": 1000
+            },
+            "trg_s01_build_shelter": {
+              "definitionRevision": 1,
+              "remaining": 0,
+              "nextDue": 31334.600000000013,
               "duration": 1000
             }
           },
@@ -425,122 +457,122 @@
               {
                 "triggerId": "trg_s01_pickup_worn_axe",
                 "definitionRevision": 1,
-                "operationId": "input-19:S01-pickup-worn-axe:trigger:trg_s01_pickup_worn_axe",
-                "fingerprint": "sha256-c044f3665c665f12a04ffea1cfc34ac0705c36f70a36fc2aa3eaa641d16df793",
+                "operationId": "input-6:S01-pickup-worn-axe:trigger:trg_s01_pickup_worn_axe",
+                "fingerprint": "sha256-aafe79fe0e582bb02068e7943221f782198c2b53803f1ed0268a7ca63159dce3",
                 "status": "succeeded",
                 "actionIndex": 0,
                 "result": {
                   "ok": true,
-                  "operationId": "input-19:S01-pickup-worn-axe:trigger:trg_s01_pickup_worn_axe:trigger:trg_s01_pickup_worn_axe:step:commit-axe-found",
+                  "operationId": "input-6:S01-pickup-worn-axe:trigger:trg_s01_pickup_worn_axe:trigger:trg_s01_pickup_worn_axe:step:commit-axe-found",
                   "status": "committed",
                   "committed": true,
                   "code": null,
                   "stateId": "canonical:state",
                   "stateRevision": 4
                 },
-                "startedAt": 16296.563999994036,
-                "finishedAt": 16296.563999994036,
+                "startedAt": 5767.699999999721,
+                "finishedAt": 5767.699999999721,
                 "ledgerRevision": 4
               },
               {
                 "triggerId": "trg_s01_pickup_skinning_knife",
                 "definitionRevision": 1,
-                "operationId": "input-15:S01-pickup-skinning-knife:trigger:trg_s01_pickup_skinning_knife",
-                "fingerprint": "sha256-3369ec85f20d06d2a5227934f747659af4ff3696cc73bddd4278020e65d150eb",
+                "operationId": "input-6:S01-pickup-skinning-knife:trigger:trg_s01_pickup_skinning_knife",
+                "fingerprint": "sha256-3db40ce0170e7e7bcad477d1e42f38fe45bac451705bcfa67d27c95a49d35fef",
                 "status": "succeeded",
                 "actionIndex": 0,
                 "result": {
                   "ok": true,
-                  "operationId": "input-15:S01-pickup-skinning-knife:trigger:trg_s01_pickup_skinning_knife:trigger:trg_s01_pickup_skinning_knife:step:commit-skinning-knife-found",
+                  "operationId": "input-6:S01-pickup-skinning-knife:trigger:trg_s01_pickup_skinning_knife:trigger:trg_s01_pickup_skinning_knife:step:commit-skinning-knife-found",
                   "status": "committed",
                   "committed": true,
                   "code": null,
                   "stateId": "canonical:state",
                   "stateRevision": 3
                 },
-                "startedAt": 13412.563999994036,
-                "finishedAt": 13412.563999994036,
+                "startedAt": 5767.699999999721,
+                "finishedAt": 5767.699999999721,
                 "ledgerRevision": 4
               },
               {
                 "triggerId": "trg_s01_axe_found_check_tools",
                 "definitionRevision": 1,
-                "operationId": "input-19:S01-pickup-worn-axe:trigger:trg_s01_pickup_worn_axe:state:story.s01.axeFound:trigger:trg_s01_axe_found_check_tools",
-                "fingerprint": "sha256-f599573d5b9d8a803259b39aa40dd7f4e4867087032078d2862e6ed91a8ec7eb",
+                "operationId": "input-6:S01-pickup-worn-axe:trigger:trg_s01_pickup_worn_axe:state:story.s01.axeFound:trigger:trg_s01_axe_found_check_tools",
+                "fingerprint": "sha256-75d17501a2b588c0f365fdfff0f36fe34acfca08773f62d693c1c0c14a13156d",
                 "status": "succeeded",
                 "actionIndex": 0,
                 "result": {
                   "ok": true,
-                  "operationId": "input-19:S01-pickup-worn-axe:trigger:trg_s01_pickup_worn_axe:state:story.s01.axeFound:trigger:trg_s01_axe_found_check_tools:trigger:trg_s01_axe_found_check_tools:step:commit-initial-tools-picked",
+                  "operationId": "input-6:S01-pickup-worn-axe:trigger:trg_s01_pickup_worn_axe:state:story.s01.axeFound:trigger:trg_s01_axe_found_check_tools:trigger:trg_s01_axe_found_check_tools:step:commit-initial-tools-picked",
                   "status": "committed",
                   "committed": true,
                   "code": null,
                   "stateId": "canonical:state",
                   "stateRevision": 5
                 },
-                "startedAt": 16296.563999994036,
-                "finishedAt": 16296.563999994036,
+                "startedAt": 5767.699999999721,
+                "finishedAt": 5767.699999999721,
                 "ledgerRevision": 4
               },
               {
                 "triggerId": "trg_s01_skinning_knife_found_check_tools",
                 "definitionRevision": 1,
-                "operationId": "input-15:S01-pickup-skinning-knife:trigger:trg_s01_pickup_skinning_knife:state:story.s01.skinningKnifeFound:trigger:trg_s01_skinning_knife_found_check_tools",
-                "fingerprint": "sha256-0567e1e4ba13a921f39fb01c485d74c4d9a41f15a5f6c521dd2da51e23487e42",
+                "operationId": "input-6:S01-pickup-skinning-knife:trigger:trg_s01_pickup_skinning_knife:state:story.s01.skinningKnifeFound:trigger:trg_s01_skinning_knife_found_check_tools",
+                "fingerprint": "sha256-f11bea8b4094ea4e579a9aed71f0f1a7fb95f8305250b1c93c221decd5521895",
                 "status": "succeeded",
                 "actionIndex": 0,
                 "result": {
                   "ok": true,
-                  "operationId": "input-15:S01-pickup-skinning-knife:trigger:trg_s01_pickup_skinning_knife:state:story.s01.skinningKnifeFound:trigger:trg_s01_skinning_knife_found_check_tools:trigger:trg_s01_skinning_knife_found_check_tools:step:commit-initial-tools-picked",
+                  "operationId": "input-6:S01-pickup-skinning-knife:trigger:trg_s01_pickup_skinning_knife:state:story.s01.skinningKnifeFound:trigger:trg_s01_skinning_knife_found_check_tools:trigger:trg_s01_skinning_knife_found_check_tools:step:commit-initial-tools-picked",
                   "status": "notReady",
                   "committed": false,
                   "code": null,
                   "stateId": "trigger:trg_s01_skinning_knife_found_check_tools",
                   "stateRevision": null
                 },
-                "startedAt": 13412.563999994036,
-                "finishedAt": 13412.563999994036,
+                "startedAt": 5767.699999999721,
+                "finishedAt": 5767.699999999721,
                 "ledgerRevision": 4
               },
               {
                 "triggerId": "trg_s01_initial_tools_picked",
                 "definitionRevision": 1,
-                "operationId": "input-19:S01-pickup-worn-axe:trigger:trg_s01_pickup_worn_axe:state:story.s01.axeFound:trigger:trg_s01_axe_found_check_tools:state:story.s01.initialToolsPicked:trigger:trg_s01_initial_tools_picked",
-                "fingerprint": "sha256-2990d9b309ff904bcf917431bc2e74513dcd8eb886bc661fa6a6556e5dfcb0d5",
+                "operationId": "input-6:S01-pickup-worn-axe:trigger:trg_s01_pickup_worn_axe:state:story.s01.axeFound:trigger:trg_s01_axe_found_check_tools:state:story.s01.initialToolsPicked:trigger:trg_s01_initial_tools_picked",
+                "fingerprint": "sha256-f89ce358367e8b9ac75c8cbbb8bf4adb661e1d021d35bce06808652796d090d4",
                 "status": "succeeded",
                 "actionIndex": 1,
                 "result": {
                   "ok": true,
-                  "operationId": "input-19:S01-pickup-worn-axe:trigger:trg_s01_pickup_worn_axe:state:story.s01.axeFound:trigger:trg_s01_axe_found_check_tools:state:story.s01.initialToolsPicked:trigger:trg_s01_initial_tools_picked:trigger:trg_s01_initial_tools_picked:step:show-tutorial-s01-gather",
+                  "operationId": "input-6:S01-pickup-worn-axe:trigger:trg_s01_pickup_worn_axe:state:story.s01.axeFound:trigger:trg_s01_axe_found_check_tools:state:story.s01.initialToolsPicked:trigger:trg_s01_initial_tools_picked:trigger:trg_s01_initial_tools_picked:step:show-tutorial-s01-gather",
                   "status": "committed",
                   "committed": true,
                   "code": null,
                   "stateId": "tutorial:s01.gather",
                   "stateRevision": 1
                 },
-                "startedAt": 16296.563999994036,
-                "finishedAt": 16296.563999994036,
+                "startedAt": 5767.699999999721,
+                "finishedAt": 5767.699999999721,
                 "ledgerRevision": 5
               },
               {
                 "triggerId": "trg_s01_gather_berry_completed",
                 "definitionRevision": 1,
-                "operationId": "application:gathering.completed:gather-1:trigger:trg_s01_gather_berry_completed",
-                "fingerprint": "sha256-16303794a549a414599ceeefc1b57f98f7c93abb04c73f2cfaed45aa92d5e657",
+                "operationId": "application:gathering.completed:gather-3:trigger:trg_s01_gather_berry_completed",
+                "fingerprint": "sha256-72d3a6ac9e853145f699eefe280faf9dca6f00c967c443a402d03d607d662389",
                 "status": "succeeded",
                 "actionIndex": 0,
                 "result": {
                   "ok": true,
-                  "operationId": "application:gathering.completed:gather-1:trigger:trg_s01_gather_berry_completed:trigger:trg_s01_gather_berry_completed:step:commit-berry-gathered",
+                  "operationId": "application:gathering.completed:gather-3:trigger:trg_s01_gather_berry_completed:trigger:trg_s01_gather_berry_completed:step:commit-berry-gathered",
                   "status": "committed",
                   "committed": true,
                   "code": null,
                   "stateId": "canonical:state",
-                  "stateRevision": 6
+                  "stateRevision": 10
                 },
-                "startedAt": 24214.36399999404,
-                "finishedAt": 24214.36399999404,
-                "ledgerRevision": 4
+                "startedAt": 17219.5,
+                "finishedAt": 17219.5,
+                "ledgerRevision": 10
               },
               {
                 "triggerId": "trg_s01_first_berry_gathered_tutorial_step",
@@ -558,29 +590,29 @@
                   "stateId": "tutorial:s01.gather",
                   "stateRevision": 2
                 },
-                "startedAt": 24214.36399999404,
-                "finishedAt": 24214.36399999404,
+                "startedAt": 11268.599999999627,
+                "finishedAt": 11268.599999999627,
                 "ledgerRevision": 4
               },
               {
                 "triggerId": "trg_s01_berry_count_updated",
                 "definitionRevision": 1,
-                "operationId": "application:gathering.completed:gather-1:trigger:trg_s01_gather_berry_completed:state:story.s01.berryGathered:trigger:trg_s01_berry_count_updated",
-                "fingerprint": "sha256-616e9ab870fd3e81981723e2df51597d805030c26d244f23b0658e4d6c3048d0",
+                "operationId": "application:gathering.completed:gather-3:trigger:trg_s01_gather_berry_completed:state:story.s01.berryGathered:trigger:trg_s01_berry_count_updated",
+                "fingerprint": "sha256-8e4b7f17221310e2dfba12e07ebb7e7d7e705e24eeb453626ada352055531f1f",
                 "status": "succeeded",
                 "actionIndex": 0,
                 "result": {
                   "ok": true,
-                  "operationId": "application:gathering.completed:gather-1:trigger:trg_s01_gather_berry_completed:state:story.s01.berryGathered:trigger:trg_s01_berry_count_updated:trigger:trg_s01_berry_count_updated:step:commit-berries-gathered",
-                  "status": "committed",
-                  "committed": true,
+                  "operationId": "application:gathering.completed:gather-3:trigger:trg_s01_gather_berry_completed:state:story.s01.berryGathered:trigger:trg_s01_berry_count_updated:trigger:trg_s01_berry_count_updated:step:commit-berries-gathered",
+                  "status": "alreadyCommitted",
+                  "committed": false,
                   "code": null,
-                  "stateId": "canonical:state",
-                  "stateRevision": 7
+                  "stateId": "trigger:trg_s01_berry_count_updated",
+                  "stateRevision": null
                 },
-                "startedAt": 24214.36399999404,
-                "finishedAt": 24214.36399999404,
-                "ledgerRevision": 4
+                "startedAt": 17219.5,
+                "finishedAt": 17219.5,
+                "ledgerRevision": 10
               },
               {
                 "triggerId": "trg_s01_berries_gathered",
@@ -598,8 +630,8 @@
                   "stateId": "tutorial:tutorial-001",
                   "stateRevision": 1
                 },
-                "startedAt": 24214.36399999404,
-                "finishedAt": 24214.36399999404,
+                "startedAt": 11268.599999999627,
+                "finishedAt": 11268.599999999627,
                 "ledgerRevision": 6
               },
               {
@@ -618,88 +650,88 @@
                   "stateId": "tutorial:s01.chopWood",
                   "stateRevision": 1
                 },
-                "startedAt": 28165.063999994036,
-                "finishedAt": 28165.063999994036,
+                "startedAt": 14219,
+                "finishedAt": 14219,
                 "ledgerRevision": 5
               },
               {
                 "triggerId": "trg_s01_gather_wood_completed",
                 "definitionRevision": 1,
-                "operationId": "application:gathering.completed:gather-3:trigger:trg_s01_gather_wood_completed",
-                "fingerprint": "sha256-206ad9843c1856ccbc05d58b322db7d6dae388a7f73c0000d3ada3a09fd9f7be",
+                "operationId": "application:gathering.completed:gather-8:trigger:trg_s01_gather_wood_completed",
+                "fingerprint": "sha256-d2b97bfabd3a95150990dcaef700abf36f92717a4ed0d1d160312254e0d8333f",
                 "status": "succeeded",
                 "actionIndex": 0,
                 "result": {
                   "ok": true,
-                  "operationId": "application:gathering.completed:gather-3:trigger:trg_s01_gather_wood_completed:trigger:trg_s01_gather_wood_completed:step:commit-wood-gathered",
+                  "operationId": "application:gathering.completed:gather-8:trigger:trg_s01_gather_wood_completed:trigger:trg_s01_gather_wood_completed:step:commit-wood-gathered",
                   "status": "alreadyCommitted",
                   "committed": false,
                   "code": null,
                   "stateId": "trigger:trg_s01_gather_wood_completed",
                   "stateRevision": null
                 },
-                "startedAt": 38483.26399999404,
-                "finishedAt": 38483.26399999404,
-                "ledgerRevision": 7
+                "startedAt": 24901.200000000004,
+                "finishedAt": 24901.200000000004,
+                "ledgerRevision": 10
               },
               {
                 "triggerId": "trg_s01_wood_gathered",
                 "definitionRevision": 1,
-                "operationId": "application:gathering.completed:gather-2:trigger:trg_s01_gather_wood_completed:state:story.s01.woodGathered:trigger:trg_s01_wood_gathered",
-                "fingerprint": "sha256-d2b7abbc36b71d95a6a6dcb4746316967da386cc2c8df7e28095ea08eb713d03",
+                "operationId": "application:gathering.completed:gather-4:trigger:trg_s01_gather_wood_completed:state:story.s01.woodGathered:trigger:trg_s01_wood_gathered",
+                "fingerprint": "sha256-b43a9a25e2d75e077ba24e15e7a42da5c6c38d02eccc13885cfd076129e0c249",
                 "status": "succeeded",
                 "actionIndex": 0,
                 "result": {
                   "ok": true,
-                  "operationId": "application:gathering.completed:gather-2:trigger:trg_s01_gather_wood_completed:state:story.s01.woodGathered:trigger:trg_s01_wood_gathered:trigger:trg_s01_wood_gathered:step:after-wood-gathered",
+                  "operationId": "application:gathering.completed:gather-4:trigger:trg_s01_gather_wood_completed:state:story.s01.woodGathered:trigger:trg_s01_wood_gathered:trigger:trg_s01_wood_gathered:step:after-wood-gathered",
                   "status": "succeeded",
                   "committed": false,
                   "code": null,
                   "stateId": "trigger:trg_s01_wood_gathered",
                   "stateRevision": null
                 },
-                "startedAt": 34115.863999994035,
-                "finishedAt": 34115.863999994035,
+                "startedAt": 22170.299999999814,
+                "finishedAt": 22170.299999999814,
                 "ledgerRevision": 4
               },
               {
                 "triggerId": "trg_s01_gather_wolf_hide_completed",
                 "definitionRevision": 1,
-                "operationId": "application:gathering.completed:gather-4:trigger:trg_s01_gather_wolf_hide_completed",
-                "fingerprint": "sha256-fe8c2e57bd11bef779f4b0aa0903e2ba6947ca30c47aff8abfca6fc8cbc0c0fb",
+                "operationId": "application:gathering.completed:gather-7:trigger:trg_s01_gather_wolf_hide_completed",
+                "fingerprint": "sha256-bd90a8eec7cfab36f22f44b15ce5e5933e6d70a72173e6baf2447288d6bdf825",
                 "status": "succeeded",
                 "actionIndex": 0,
                 "result": {
                   "ok": true,
-                  "operationId": "application:gathering.completed:gather-4:trigger:trg_s01_gather_wolf_hide_completed:trigger:trg_s01_gather_wolf_hide_completed:step:commit-wolf-skinned",
+                  "operationId": "application:gathering.completed:gather-7:trigger:trg_s01_gather_wolf_hide_completed:trigger:trg_s01_gather_wolf_hide_completed:step:commit-wolf-skinned",
                   "status": "committed",
                   "committed": true,
                   "code": null,
                   "stateId": "canonical:state",
-                  "stateRevision": 15
+                  "stateRevision": 17
                 },
-                "startedAt": 92190.16399999405,
-                "finishedAt": 92190.16399999405,
+                "startedAt": 67110.79999999981,
+                "finishedAt": 67110.79999999981,
                 "ledgerRevision": 4
               },
               {
                 "triggerId": "trg_s01_wolf_skinned",
                 "definitionRevision": 1,
-                "operationId": "application:gathering.completed:gather-4:trigger:trg_s01_gather_wolf_hide_completed:state:story.s01.wolfSkinned:trigger:trg_s01_wolf_skinned",
-                "fingerprint": "sha256-bff8ad0e07e521d43c3e25643c2ceaee38d5c51a16604417eb2ab5564526eed1",
+                "operationId": "application:gathering.completed:gather-7:trigger:trg_s01_gather_wolf_hide_completed:state:story.s01.wolfSkinned:trigger:trg_s01_wolf_skinned",
+                "fingerprint": "sha256-ea1bd313e0d00e96145d8b08b0e5973c613f10840ddf63995c87049faacb1743",
                 "status": "succeeded",
                 "actionIndex": 0,
                 "result": {
                   "ok": true,
-                  "operationId": "application:gathering.completed:gather-4:trigger:trg_s01_gather_wolf_hide_completed:state:story.s01.wolfSkinned:trigger:trg_s01_wolf_skinned:trigger:trg_s01_wolf_skinned:step:after-wolf-skinned",
+                  "operationId": "application:gathering.completed:gather-7:trigger:trg_s01_gather_wolf_hide_completed:state:story.s01.wolfSkinned:trigger:trg_s01_wolf_skinned:trigger:trg_s01_wolf_skinned:step:after-wolf-skinned",
                   "status": "succeeded",
                   "committed": false,
                   "code": null,
                   "stateId": "trigger:trg_s01_wolf_skinned",
                   "stateRevision": null
                 },
-                "startedAt": 92190.16399999405,
-                "finishedAt": 92190.16399999405,
+                "startedAt": 67110.79999999981,
+                "finishedAt": 67110.79999999981,
                 "ledgerRevision": 4
               },
               {
@@ -716,10 +748,10 @@
                   "committed": true,
                   "code": null,
                   "stateId": "canonical:state",
-                  "stateRevision": 13
+                  "stateRevision": 15
                 },
-                "startedAt": 67586.86399999405,
-                "finishedAt": 67586.86399999405,
+                "startedAt": 41656.799999999814,
+                "finishedAt": 41656.799999999814,
                 "ledgerRevision": 10
               },
               {
@@ -750,8 +782,8 @@
                   "stateId": "tutorial:s01.attack",
                   "stateRevision": 1
                 },
-                "startedAt": 67586.86399999405,
-                "finishedAt": 67586.86399999405,
+                "startedAt": 41656.799999999814,
+                "finishedAt": 41656.799999999814,
                 "ledgerRevision": 5
               },
               {
@@ -768,10 +800,10 @@
                   "committed": true,
                   "code": null,
                   "stateId": "canonical:state",
-                  "stateRevision": 14
+                  "stateRevision": 16
                 },
-                "startedAt": 85455.86399999405,
-                "finishedAt": 85455.86399999405,
+                "startedAt": 57892.59999999963,
+                "finishedAt": 57892.59999999963,
                 "ledgerRevision": 4
               },
               {
@@ -790,8 +822,8 @@
                   "stateId": "tutorial:s01.durability",
                   "stateRevision": 1
                 },
-                "startedAt": 85455.86399999405,
-                "finishedAt": 85455.86399999405,
+                "startedAt": 57892.59999999963,
+                "finishedAt": 57892.59999999963,
                 "ledgerRevision": 4
               },
               {
@@ -822,8 +854,8 @@
                   "stateId": "tutorial:s01.move",
                   "stateRevision": 1
                 },
-                "startedAt": 3255.0639999955274,
-                "finishedAt": 3288.3639999955285,
+                "startedAt": 1900.3999999999069,
+                "finishedAt": 1917.0999999996275,
                 "ledgerRevision": 4
               },
               {
@@ -842,77 +874,101 @@
                   "stateId": "tutorial:s01.pickup",
                   "stateRevision": 1
                 },
-                "startedAt": 11112.263999994037,
-                "finishedAt": 11145.563999994036,
+                "startedAt": 4150.799999999814,
+                "finishedAt": 4167.399999999907,
                 "ledgerRevision": 6
               },
               {
                 "triggerId": "trg_s01_craft_wolf_gear",
                 "definitionRevision": 1,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s01_cook_meat",
-                "definitionRevision": 1,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s01_refuel_campfire",
-                "definitionRevision": 1,
-                "operationId": "trigger:1:trg_s01_refuel_campfire:21",
-                "fingerprint": "sha256-4253fba60ed6216c2fa1bb352f50ac43358d63b61d056a73cd2eff0abbddabea",
+                "operationId": "trigger:1:trg_s01_craft_wolf_gear:3",
+                "fingerprint": "sha256-6732023df80b14d236fcb1fe916ed9b6720ef2ab5fdf0117c426d83f8c357526",
                 "status": "succeeded",
                 "actionIndex": 0,
                 "result": {
                   "ok": true,
-                  "operationId": "trigger:1:trg_s01_refuel_campfire:21:trigger:trg_s01_refuel_campfire:step:refuel-campfire",
+                  "operationId": "trigger:1:trg_s01_craft_wolf_gear:3:trigger:trg_s01_craft_wolf_gear:step:craft-wolf-gear",
+                  "status": "succeeded",
+                  "committed": false,
+                  "code": null,
+                  "stateId": "trigger:trg_s01_craft_wolf_gear",
+                  "stateRevision": null
+                },
+                "startedAt": 12983.899999999998,
+                "finishedAt": 13017.199999999997,
+                "ledgerRevision": 7
+              },
+              {
+                "triggerId": "trg_s01_cook_meat",
+                "definitionRevision": 1,
+                "operationId": "trigger:1:trg_s01_cook_meat:32",
+                "fingerprint": "sha256-f8dbb86c5a1ff441589f5ce7554a5a21f0e66d00df8f77f3c43151088d0ef89b",
+                "status": "succeeded",
+                "actionIndex": 0,
+                "result": {
+                  "ok": true,
+                  "operationId": "trigger:1:trg_s01_cook_meat:32:trigger:trg_s01_cook_meat:step:cook-meat",
+                  "status": "succeeded",
+                  "committed": false,
+                  "code": null,
+                  "stateId": "trigger:trg_s01_cook_meat",
+                  "stateRevision": null
+                },
+                "startedAt": 77095.69999999972,
+                "finishedAt": 77112.3999999999,
+                "ledgerRevision": 4
+              },
+              {
+                "triggerId": "trg_s01_refuel_campfire",
+                "definitionRevision": 1,
+                "operationId": "trigger:1:trg_s01_refuel_campfire:25",
+                "fingerprint": "sha256-77f3df3dca82c7566852bd9504f19285d251b3543e5b5f764ffa206906bd41ea",
+                "status": "succeeded",
+                "actionIndex": 0,
+                "result": {
+                  "ok": true,
+                  "operationId": "trigger:1:trg_s01_refuel_campfire:25:trigger:trg_s01_refuel_campfire:step:refuel-campfire",
                   "status": "refueled",
                   "committed": false,
                   "code": null,
                   "stateId": "trigger:trg_s01_refuel_campfire",
                   "stateRevision": null
                 },
-                "startedAt": 66569.96399999406,
-                "finishedAt": 67586.86399999405,
+                "startedAt": 40656.59999999963,
+                "finishedAt": 41656.799999999814,
                 "ledgerRevision": 10
               },
               {
                 "triggerId": "trg_s01_build_shelter",
                 "definitionRevision": 1,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
+                "operationId": "trigger:1:trg_s01_build_shelter:6",
+                "fingerprint": "sha256-8b93385ef6c7cfa67e8106ea26ade147087e1131a5c22ec0f3239907513c773d",
+                "status": "succeeded",
+                "actionIndex": 0,
+                "result": {
+                  "ok": true,
+                  "operationId": "trigger:1:trg_s01_build_shelter:6:trigger:trg_s01_build_shelter:step:start-shelter-construction",
+                  "status": "committed",
+                  "committed": true,
+                  "code": null,
+                  "stateId": "sanguo:command:construction.command",
+                  "stateRevision": 2
+                },
+                "startedAt": 28184.600000000013,
+                "finishedAt": 30334.600000000013,
+                "ledgerRevision": 7
               },
               {
                 "triggerId": "trg_s01_shelter_completed",
                 "definitionRevision": 1,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
+                "operationId": "construction:S01:smallShelter",
+                "fingerprint": "sha256-adf95e92b094a3fd7f4c7a19a94b6855882f67226c01dbd63d71a82d737785d4",
+                "status": "running",
+                "actionIndex": 0,
                 "result": null,
-                "startedAt": null,
+                "startedAt": 34251.100000000006,
                 "finishedAt": null,
-                "ledgerRevision": 1
+                "ledgerRevision": 2
               },
               {
                 "triggerId": "trg_s01_overnight",
@@ -2143,7 +2199,7 @@
                         "schemaVersion": 1,
                         "resourceType": "food",
                         "itemId": "resource.wild_berry",
-                        "remaining": 8,
+                        "remaining": 4,
                         "maxRemaining": 10,
                         "yieldPerGather": 2,
                         "gatherDuration": 1.6,
@@ -2229,7 +2285,7 @@
                         "schemaVersion": 1,
                         "resourceType": "wood",
                         "itemId": "resource.wood",
-                        "remaining": 12,
+                        "remaining": 9,
                         "maxRemaining": 12,
                         "yieldPerGather": 3,
                         "gatherDuration": 1.8,
@@ -2292,6 +2348,18 @@
                       }
                     },
                     {
+                      "id": "S01-prop-tanning-rack",
+                      "state": {
+                        "kind": "item",
+                        "removed": false,
+                        "position": {
+                          "x": 8163.6510955210915,
+                          "y": 4089.1225022587523
+                        },
+                        "placementSignature": "{\"group\":\"S01-tanning-rack\",\"id\":\"S01-prop-tanning-rack\",\"kind\":\"item\",\"overrides\":null,\"ref\":\"story.s01.tanning_rack\",\"sceneId\":\"S01\",\"spawnWhen\":{\"blackboardKey\":\"storyState\",\"equals\":true,\"path\":\"s01Survival.meatCooked\"},\"type\":\"ref\",\"version\":1,\"x\":483.6510955210918,\"y\":489.1225022587522}"
+                      }
+                    },
+                    {
                       "id": "S01-node-berry-1",
                       "state": {
                         "kind": "resourceNode",
@@ -2345,8 +2413,8 @@
                         "kind": "corpse",
                         "removed": false,
                         "position": {
-                          "x": 8302.874723555267,
-                          "y": 4193.541902889913
+                          "x": 8368.555327658978,
+                          "y": 4061.5157572848584
                         },
                         "resourceNode": {
                           "schemaVersion": 1,
@@ -2420,15 +2488,15 @@
             "secondsPerUnit": 100,
             "maxUnits": 10,
             "units": 4,
-            "remainingSeconds": 321.1226000000032,
+            "remainingSeconds": 349.9297999999795,
             "active": true
           }
         },
         "firedPickups": [
-          "input-15:S01-pickup-skinning-knife:tool.skinning_knife:S01-tool-skinning-knife-1",
-          "input-19:S01-pickup-worn-axe:tool.worn_axe:S01-tool-axe-1",
-          "input-80:combat-drop-resource.raw_wolf_meat-2:resource.raw_wolf_meat:combat-drop-resource.raw_wolf_meat-2",
-          "input-80:combat-drop-resource.wolf_hide-1:resource.wolf_hide:combat-drop-resource.wolf_hide-1"
+          "input-6:S01-pickup-skinning-knife:tool.skinning_knife:S01-tool-skinning-knife-1",
+          "input-6:S01-pickup-worn-axe:tool.worn_axe:S01-tool-axe-1",
+          "input-19:combat-drop-resource.raw_wolf_meat-2:resource.raw_wolf_meat:combat-drop-resource.raw_wolf_meat-2",
+          "input-19:combat-drop-resource.wolf_hide-1:resource.wolf_hide:combat-drop-resource.wolf_hide-1"
         ],
         "clearedGroups": [
           "S01-first-wolf"
@@ -2440,7 +2508,7 @@
         },
         "gatheringState": {
           "schemaVersion": 1,
-          "nextOperationSequence": 5,
+          "nextOperationSequence": 9,
           "completedOperations": [
             {
               "operationId": "gather-1",
@@ -2469,12 +2537,12 @@
                 "reason": "completed",
                 "terminalEvent": "completed",
                 "operationId": "gather-2",
-                "accepted": 3,
-                "itemName": "木材",
+                "accepted": 2,
+                "itemName": "荒野酸果",
                 "remainder": 0,
-                "nodeRemaining": 9,
+                "nodeRemaining": 6,
                 "toolBroken": false,
-                "toolInstanceId": "S01-tool-axe-1",
+                "toolInstanceId": null,
                 "risk": null
               }
             },
@@ -2487,12 +2555,12 @@
                 "reason": "completed",
                 "terminalEvent": "completed",
                 "operationId": "gather-3",
-                "accepted": 3,
-                "itemName": "木材",
+                "accepted": 2,
+                "itemName": "荒野酸果",
                 "remainder": 0,
-                "nodeRemaining": 6,
+                "nodeRemaining": 4,
                 "toolBroken": false,
-                "toolInstanceId": "S01-tool-axe-1",
+                "toolInstanceId": null,
                 "risk": null
               }
             },
@@ -2505,6 +2573,42 @@
                 "reason": "completed",
                 "terminalEvent": "completed",
                 "operationId": "gather-4",
+                "accepted": 3,
+                "itemName": "木材",
+                "remainder": 0,
+                "nodeRemaining": 9,
+                "toolBroken": false,
+                "toolInstanceId": "S01-tool-axe-1",
+                "risk": null
+              }
+            },
+            {
+              "operationId": "gather-6",
+              "result": {
+                "ok": true,
+                "committed": true,
+                "code": null,
+                "reason": "completed",
+                "terminalEvent": "completed",
+                "operationId": "gather-6",
+                "accepted": 3,
+                "itemName": "木材",
+                "remainder": 0,
+                "nodeRemaining": 6,
+                "toolBroken": false,
+                "toolInstanceId": "S01-tool-axe-1",
+                "risk": null
+              }
+            },
+            {
+              "operationId": "gather-7",
+              "result": {
+                "ok": true,
+                "committed": true,
+                "code": null,
+                "reason": "completed",
+                "terminalEvent": "completed",
+                "operationId": "gather-7",
                 "accepted": 2,
                 "itemName": "狼皮",
                 "remainder": 0,
@@ -2512,6 +2616,34 @@
                 "toolBroken": false,
                 "toolInstanceId": "S01-tool-skinning-knife-1",
                 "risk": null
+              }
+            },
+            {
+              "operationId": "gather-8",
+              "result": {
+                "ok": true,
+                "committed": true,
+                "code": null,
+                "reason": "completed",
+                "terminalEvent": "completed",
+                "operationId": "gather-8",
+                "accepted": 3,
+                "itemName": "木材",
+                "remainder": 0,
+                "nodeRemaining": 9,
+                "toolBroken": false,
+                "toolInstanceId": "S01-tool-axe-1",
+                "risk": {
+                  "triggered": true,
+                  "id": "risk.dry_wood_noise",
+                  "type": "noise",
+                  "message": "枯木断裂的巨响传向荒野，附近可能有敌人注意到这里。",
+                  "payload": {
+                    "alert": 1
+                  },
+                  "nodeId": "S01-node-wood-3",
+                  "operationId": "gather-8"
+                }
               }
             }
           ]
@@ -2525,7 +2657,7 @@
         },
         "puppetState": {
           "schemaVersion": 1,
-          "chargesRemaining": null,
+          "chargesRemaining": 0,
           "nextSequence": 1,
           "active": null
         },
@@ -2537,7 +2669,11 @@
               "proficiencies": {
                 "gathering": {
                   "level": 2,
-                  "experience": 20
+                  "experience": 34
+                },
+                "construction": {
+                  "level": 1,
+                  "experience": 5
                 }
               }
             }
@@ -2562,52 +2698,120 @@
             },
             {
               "operationId": "gathering:gather-2",
-              "fingerprint": "[\"refugee\",\"gathering\",6]",
+              "fingerprint": "[\"refugee\",\"gathering\",4]",
               "result": {
                 "ok": true,
                 "characterId": "refugee",
                 "type": "gathering",
                 "operationId": "gathering:gather-2",
-                "amountRequested": 6,
-                "amountApplied": 6,
+                "amountRequested": 4,
+                "amountApplied": 4,
                 "previousLevel": 1,
                 "level": 1,
-                "experience": 10,
+                "experience": 8,
                 "leveledUp": false,
                 "idempotent": false
               }
             },
             {
               "operationId": "gathering:gather-3",
-              "fingerprint": "[\"refugee\",\"gathering\",6]",
+              "fingerprint": "[\"refugee\",\"gathering\",4]",
               "result": {
                 "ok": true,
                 "characterId": "refugee",
                 "type": "gathering",
                 "operationId": "gathering:gather-3",
-                "amountRequested": 6,
-                "amountApplied": 6,
+                "amountRequested": 4,
+                "amountApplied": 4,
                 "previousLevel": 1,
                 "level": 1,
-                "experience": 16,
+                "experience": 12,
                 "leveledUp": false,
                 "idempotent": false
               }
             },
             {
               "operationId": "gathering:gather-4",
-              "fingerprint": "[\"refugee\",\"gathering\",4]",
+              "fingerprint": "[\"refugee\",\"gathering\",6]",
               "result": {
                 "ok": true,
                 "characterId": "refugee",
                 "type": "gathering",
                 "operationId": "gathering:gather-4",
-                "amountRequested": 4,
-                "amountApplied": 4,
+                "amountRequested": 6,
+                "amountApplied": 6,
+                "previousLevel": 1,
+                "level": 1,
+                "experience": 18,
+                "leveledUp": false,
+                "idempotent": false
+              }
+            },
+            {
+              "operationId": "gathering:gather-6",
+              "fingerprint": "[\"refugee\",\"gathering\",6]",
+              "result": {
+                "ok": true,
+                "characterId": "refugee",
+                "type": "gathering",
+                "operationId": "gathering:gather-6",
+                "amountRequested": 6,
+                "amountApplied": 6,
                 "previousLevel": 1,
                 "level": 2,
-                "experience": 20,
+                "experience": 24,
                 "leveledUp": true,
+                "idempotent": false
+              }
+            },
+            {
+              "operationId": "gathering:gather-7",
+              "fingerprint": "[\"refugee\",\"gathering\",4]",
+              "result": {
+                "ok": true,
+                "characterId": "refugee",
+                "type": "gathering",
+                "operationId": "gathering:gather-7",
+                "amountRequested": 4,
+                "amountApplied": 4,
+                "previousLevel": 2,
+                "level": 2,
+                "experience": 28,
+                "leveledUp": false,
+                "idempotent": false
+              }
+            },
+            {
+              "operationId": "gathering:gather-8",
+              "fingerprint": "[\"refugee\",\"gathering\",6]",
+              "result": {
+                "ok": true,
+                "characterId": "refugee",
+                "type": "gathering",
+                "operationId": "gathering:gather-8",
+                "amountRequested": 6,
+                "amountApplied": 6,
+                "previousLevel": 2,
+                "level": 2,
+                "experience": 34,
+                "leveledUp": false,
+                "idempotent": false
+              }
+            },
+            {
+              "operationId": "construction:S01:smallShelter:proficiency",
+              "fingerprint": "[\"refugee\",\"construction\",5]",
+              "result": {
+                "ok": true,
+                "characterId": "refugee",
+                "type": "construction",
+                "operationId": "construction:S01:smallShelter:proficiency",
+                "amountRequested": 5,
+                "amountApplied": 5,
+                "previousLevel": 1,
+                "level": 1,
+                "experience": 5,
+                "leveledUp": false,
                 "idempotent": false
               }
             }
@@ -2615,9 +2819,55 @@
         },
         "constructionState": {
           "schemaVersion": 1,
-          "structures": [],
+          "structures": [
+            {
+              "schemaVersion": 1,
+              "id": "construction.s01.small_shelter:site.s01.small_shelter",
+              "siteId": "site.s01.small_shelter",
+              "definitionId": "construction.s01.small_shelter",
+              "status": "completed",
+              "maxDurability": 60,
+              "durability": 60,
+              "manned": false,
+              "operationId": "construction:S01:smallShelter"
+            }
+          ],
           "pending": [],
-          "operations": []
+          "operations": [
+            {
+              "operationId": "construction:S01:smallShelter",
+              "fingerprint": "[\"refugee\",\"construction.s01.small_shelter\",\"site.s01.small_shelter\",false]",
+              "result": {
+                "ok": true,
+                "status": "completed",
+                "operationId": "construction:S01:smallShelter",
+                "structure": {
+                  "schemaVersion": 1,
+                  "id": "construction.s01.small_shelter:site.s01.small_shelter",
+                  "siteId": "site.s01.small_shelter",
+                  "definitionId": "construction.s01.small_shelter",
+                  "status": "completed",
+                  "maxDurability": 60,
+                  "durability": 60,
+                  "manned": false,
+                  "operationId": "construction:S01:smallShelter"
+                },
+                "experienceResult": {
+                  "ok": true,
+                  "characterId": "refugee",
+                  "type": "construction",
+                  "operationId": "construction:S01:smallShelter:proficiency",
+                  "amountRequested": 5,
+                  "amountApplied": 5,
+                  "previousLevel": 1,
+                  "level": 1,
+                  "experience": 5,
+                  "leveledUp": false,
+                  "idempotent": false
+                }
+              }
+            }
+          ]
         },
         "battleState": {
           "schemaVersion": 1,

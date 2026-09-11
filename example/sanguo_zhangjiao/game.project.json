@@ -676,6 +676,7 @@
       "s01Survival": {
         "axeDropped": false,
         "axeFound": false,
+        "backpackOpened": false,
         "berriesGathered": false,
         "berryEaten": false,
         "berryGatherCount": 0,
@@ -7698,6 +7699,31 @@
         "writes": [
           {
             "path": "s01Survival.initialToolsPicked",
+            "target": "story",
+            "value": true
+          }
+        ]
+      }
+    },
+    {
+      "commandType": "state.transaction",
+      "id": "story.s01.backpackOpened",
+      "transaction": {
+        "when": {
+          "all": [
+            {
+              "equals": "S01",
+              "path": "story.currentSceneId"
+            },
+            {
+              "equals": false,
+              "path": "story.s01Survival.backpackOpened"
+            }
+          ]
+        },
+        "writes": [
+          {
+            "path": "s01Survival.backpackOpened",
             "target": "story",
             "value": true
           }
