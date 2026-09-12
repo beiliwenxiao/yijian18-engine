@@ -1138,6 +1138,31 @@ export class SceneEditorCanvas {
           ctx.arc(obj.x, obj.y, 18, 0, Math.PI * 2);
           ctx.stroke();
         }
+        const collision = obj.collision;
+        if ((collision?.mode === 'block' || collision?.mode === 'walkable')
+          && collision.shapeType === 'polygon' && Array.isArray(collision.points) && collision.points.length >= 3) {
+          const points = collision.points.map(point => [obj.x + point[0], obj.y + point[1]]);
+          const color = collision.mode === 'walkable' ? '#37d8cf' : '#ff8a4c';
+          ctx.setLineDash([]);
+          ctx.beginPath();
+          ctx.moveTo(points[0][0], points[0][1]);
+          for (let index = 1; index < points.length; index++) ctx.lineTo(points[index][0], points[index][1]);
+          ctx.closePath();
+          ctx.fillStyle = collision.mode === 'walkable' ? 'rgba(55,216,207,0.18)' : 'rgba(255,138,76,0.18)';
+          ctx.fill();
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 1.5 / editor.viewport.scale;
+          ctx.stroke();
+          ctx.fillStyle = '#ffffff';
+          ctx.strokeStyle = color;
+          for (const point of points) {
+            ctx.fillRect(point[0] - handleSize / 2, point[1] - handleSize / 2, handleSize, handleSize);
+            ctx.strokeRect(point[0] - handleSize / 2, point[1] - handleSize / 2, handleSize, handleSize);
+          }
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 2 / editor.viewport.scale;
+          ctx.setLineDash([6 / editor.viewport.scale, 4 / editor.viewport.scale]);
+        }
         continue;
       } else if (obj.type === 'spawn' || obj.type === 'portal' || obj.type === 'npc') {
         // 点状逻辑对象：圆形选中框，无缩放手柄

@@ -1080,6 +1080,51 @@ export class SceneEditorUI {
       });
     });
 
+    const refCollisionMode = document.getElementById('editor-ref-collision-mode');
+    if (refCollisionMode && obj.type === 'ref') {
+      refCollisionMode.addEventListener('change', () => {
+        if (!isObjectEditable()) {
+          this.showToast('此对象已隐藏或锁定，无法修改', 'warn');
+          this.updateObjectProperties();
+          return;
+        }
+        const mode = refCollisionMode.value;
+        if (mode === 'none') {
+          if (!obj.collision) return;
+          editor.history?.saveHistory?.();
+          delete obj.collision;
+          this.updateObjectProperties();
+          editor.render();
+          return;
+        }
+        if (!obj.collision) {
+          const visual = editor.assets.resolvePlacementVisual?.(obj);
+          const width = Math.max(48, Math.round(visual?.bounds?.width || 96));
+          const height = Math.max(36, Math.round(visual?.bounds?.height || 64));
+          const halfWidth = Math.max(16, Math.round(width * 0.42));
+          const shoulderY = Math.max(12, Math.round(height * 0.18));
+          const peakY = Math.max(20, Math.round(height * 0.3));
+          obj.collision = {
+            mode,
+            shapeType: 'polygon',
+            points: [
+              [-halfWidth, 0],
+              [halfWidth, 0],
+              [halfWidth, -shoulderY],
+              [0, -peakY],
+              [-halfWidth, -shoulderY]
+            ]
+          };
+        } else {
+          obj.collision.mode = mode;
+          obj.collision.shapeType = 'polygon';
+        }
+        editor.history?.saveHistory?.();
+        this.updateObjectProperties();
+        editor.render();
+      });
+    }
+
     const triggerPicker = document.getElementById('editor-trigger-picker');
     if (triggerPicker && obj.type === 'trigger') {
       triggerPicker.addEventListener('change', () => {
@@ -1305,6 +1350,14 @@ export class SceneEditorUI {
     html += `<div class="property-row"><label>引用定义ID:</label><input value="${obj.ref || ''}" disabled title="明细在内容库中编辑"></div>`;
     if (obj.kind === 'item') {
       html += '<div class="property-row"><label>物品属性:</label><span style="color:#9ab;font-size:11px;">在左侧「物品」列表点击此定义，可编辑图片、尺寸和世界物件表现</span></div>';
+    }
+    const collision = obj.collision && typeof obj.collision === 'object' ? obj.collision : null;
+    const collisionMode = collision?.mode === 'walkable' ? 'walkable' : (collision?.mode === 'block' ? 'block' : 'none');
+    html += '<div class="property-row" style="border-top:1px solid #333;margin-top:6px;padding-top:6px;"><label style="color:#ffb36b;font-weight:bold;" title="碰撞多边形相对物体脚底锚点保存，移动物体时会自动跟随">地形属性</label></div>';
+    html += `<div class="property-row"><label>碰撞:</label><select id="editor-ref-collision-mode" title="可碰撞阻挡移动；可落脚优先放行重叠阻挡区域"><option value="none" ${collisionMode === 'none' ? 'selected' : ''}>无</option><option value="block" ${collisionMode === 'block' ? 'selected' : ''}>可碰撞</option><option value="walkable" ${collisionMode === 'walkable' ? 'selected' : ''}>可落脚</option></select></div>`;
+    if (collisionMode !== 'none') {
+      html += `<div class="property-row"><label>形状:</label><input value="五点多边形（${Array.isArray(collision?.points) ? collision.points.length : 0} 点）" disabled title="拖动画布上的方形手柄可调整顶点；右键顶点或边可插入、删除顶点"></div>`;
+      html += '<div class="property-row"><label>编辑:</label><span style="color:#9ab;font-size:11px;">顶点相对脚底锚点；拖动手柄调整，右键可增删（至少 3 点）</span></div>';
     }
     html += `<div class="property-row"><label>名称:</label><input value="${obj.name || ''}" disabled></div>`;
     html += `<div class="property-row"><label title="触发器可按组名批量放置同组物品">组名:</label><input type="text" value="${obj.group || ''}" data-prop="group" placeholder="如 act1_pickups"></div>`;

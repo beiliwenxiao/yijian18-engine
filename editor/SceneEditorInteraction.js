@@ -142,13 +142,15 @@ export class SceneEditorInteraction {
             return obj;
           }
         } else if (obj.type === 'ref') {
+          const collisionPoints = this.getPolygonWorldPoints(obj);
+          const hitCollision = collisionPoints.length >= 3 && this._pointInPolygon(collisionPoints, x, y);
           const visual = editor.assets.resolvePlacementVisual?.(obj);
           const bounds = visual?.image ? visual.bounds : null;
           const hitVisual = bounds
             && x >= bounds.x && x <= bounds.right
             && y >= bounds.y && y <= bounds.bottom;
-          // 图片主体可直接命中，同时保留脚点附近的小范围精确拖放入口。
-          if (hitVisual || Math.hypot(x - obj.x, y - obj.y) <= 8) {
+          // 图片主体和碰撞多边形均可直接命中，同时保留脚点附近的小范围精确拖放入口。
+          if (hitCollision || hitVisual || Math.hypot(x - obj.x, y - obj.y) <= 8) {
             editor.activeLayerIndex = li;
             return obj;
           }
@@ -223,14 +225,46 @@ export class SceneEditorInteraction {
   }
 
   /**
+   * 读取可编辑多边形的画布世界坐标。ref 碰撞点永远相对脚底锚点存储，
+   * 只在编辑器适配层临时转换，禁止把世界坐标写回 canonical 场景数据。
+   */
+  getPolygonWorldPoints(obj) {
+    if (obj?.type === 'ref') {
+      const collision = obj.collision;
+      if ((collision?.mode !== 'block' && collision?.mode !== 'walkable')
+        || collision.shapeType !== 'polygon' || !Array.isArray(collision.points)) return [];
+      return collision.points
+        .filter(point => Array.isArray(point) && Number.isFinite(point[0]) && Number.isFinite(point[1]))
+        .map(point => [obj.x + point[0], obj.y + point[1]]);
+    }
+    return Array.isArray(obj?.points) ? obj.points : [];
+  }
+
+  /** 将画布世界坐标写回可编辑多边形；ref 转回脚底锚点相对坐标。 */
+  setPolygonWorldPoints(obj, points) {
+    if (!Array.isArray(points)) return false;
+    if (obj?.type === 'ref') {
+      if (!obj.collision) return false;
+      obj.collision.points = points.map(point => [
+        Math.round(point[0] - obj.x),
+        Math.round(point[1] - obj.y)
+      ]);
+      return true;
+    }
+    obj.points = points.map(point => [Math.round(point[0]), Math.round(point[1])]);
+    return true;
+  }
+
+  /**
    * 检测点是否命中 polygon/path 的某个顶点，返回顶点索引或 -1
    * @private
    */
   getVertexAt(shape, x, y) {
-    if (!shape.points) return -1;
+    const points = this.getPolygonWorldPoints(shape);
+    if (points.length === 0) return -1;
     const r = 8 / this.editor.viewport.scale;
-    for (let i = 0; i < shape.points.length; i++) {
-      const p = shape.points[i];
+    for (let i = 0; i < points.length; i++) {
+      const p = points[i];
       if (Math.hypot(x - p[0], y - p[1]) <= r) return i;
     }
     return -1;
@@ -242,9 +276,9 @@ export class SceneEditorInteraction {
    * @private
    */
   _getEdgeAt(shape, x, y) {
-    if (!shape.points || shape.points.length < 2) return -1;
+    const pts = this.getPolygonWorldPoints(shape);
+    if (pts.length < 2) return -1;
     const threshold = 6 / this.editor.viewport.scale;
-    const pts = shape.points;
     for (let i = 0; i < pts.length; i++) {
       const j = (i + 1) % pts.length;
       if (this._distToSegment(x, y, pts[i][0], pts[i][1], pts[j][0], pts[j][1]) <= threshold) {
@@ -328,7 +362,10 @@ export class SceneEditorInteraction {
       if (editor.selectedObjects.length === 1) {
         const sel = editor.selectedObjects[0];
         if (editor.layers.isObjectEditableFor(sel)
-          && ((sel.type === 'shape' && (sel.shapeType === 'polygon' || sel.shapeType === 'path')) || sel.type === 'buffZone' || sel.type === 'effectZone')) {
+          && ((sel.type === 'shape' && (sel.shapeType === 'polygon' || sel.shapeType === 'path'))
+            || sel.type === 'buffZone'
+            || sel.type === 'effectZone'
+            || (sel.type === 'ref' && this.getPolygonWorldPoints(sel).length >= 3))) {
           const vi = this.getVertexAt(sel, pos.x, pos.y);
           if (vi !== -1) {
             editor.interaction.isDragging = true;
@@ -446,9 +483,11 @@ export class SceneEditorInteraction {
     if (editor.interaction.draggingVertex) {
       const pos = this.screenToScene(e.offsetX, e.offsetY);
       const { obj, index } = editor.interaction.draggingVertex;
-      if (obj.points && obj.points[index]) {
-        obj.points[index] = [Math.round(pos.x), Math.round(pos.y)];
-        // buffZone: 同步 x/y/width/height 包围盒
+      const points = this.getPolygonWorldPoints(obj);
+      if (points[index]) {
+        points[index] = [Math.round(pos.x), Math.round(pos.y)];
+        this.setPolygonWorldPoints(obj, points);
+        // buffZone/effectZone: 同步 x/y/width/height 包围盒
         if (obj.type === 'buffZone' || obj.type === 'effectZone') {
           this._syncBuffZoneBBox(obj);
         }
@@ -659,61 +698,64 @@ export class SceneEditorInteraction {
 
     items.push({ label: '删除对象', action: () => editor.ui.deleteSelectedObjects() });
 
-    // ─── 多边形/Buff多边形 顶点编辑 ────────────────────────
+    // ─── 多边形/Buff 多边形/ref 碰撞顶点编辑 ─────────────────
     const isVertexShape = (clicked.type === 'shape' && (clicked.shapeType === 'polygon' || clicked.shapeType === 'path'))
       || (clicked.type === 'buffZone' && Array.isArray(clicked.points))
-      || (clicked.type === 'effectZone' && Array.isArray(clicked.points));
+      || (clicked.type === 'effectZone' && Array.isArray(clicked.points))
+      || (clicked.type === 'ref' && this.getPolygonWorldPoints(clicked).length >= 3);
+    const vertexPoints = this.getPolygonWorldPoints(clicked);
 
-    if (isVertexShape && Array.isArray(clicked.points) && clicked.points.length >= 3) {
+    if (isVertexShape && vertexPoints.length >= 3) {
       // 判断右键命中的是某个顶点还是某条边
       const hitVertex = this.getVertexAt(clicked, pos.x, pos.y);
       const hitEdge = hitVertex === -1 ? this._getEdgeAt(clicked, pos.x, pos.y) : -1;
+      const commitPoints = (points, message) => {
+        if (!ensureClickedObjectEditable()) return;
+        this.setPolygonWorldPoints(clicked, points);
+        this._syncBoundingBox(clicked);
+        editor.history.saveHistory();
+        editor.ui.updateObjectProperties();
+        editor.render();
+        editor.ui.showToast(message);
+      };
 
       if (hitVertex !== -1) {
         items.push({ separator: true });
         items.push({
           label: `🔴 删除顶点 #${hitVertex}`,
-          disabled: clicked.points.length <= 3, // 三角形不能再删
+          disabled: vertexPoints.length <= 3, // 三角形不能再删
           action: () => {
-            if (!ensureClickedObjectEditable() || clicked.points.length <= 3) return;
-            clicked.points.splice(hitVertex, 1);
-            this._syncBoundingBox(clicked);
-            editor.history.saveHistory();
-            editor.ui.updateObjectProperties();
-            editor.render();
-            editor.ui.showToast(`已删除顶点 #${hitVertex}，剩余 ${clicked.points.length} 个`);
+            if (vertexPoints.length <= 3) return;
+            const nextPoints = vertexPoints.filter((_point, index) => index !== hitVertex);
+            commitPoints(nextPoints, `已删除顶点 #${hitVertex}，剩余 ${nextPoints.length} 个`);
           }
         });
         items.push({
           label: `➕ 在顶点 #${hitVertex} 后插入`,
           action: () => {
-            if (!ensureClickedObjectEditable()) return;
-            const cur = clicked.points[hitVertex];
-            const next = clicked.points[(hitVertex + 1) % clicked.points.length];
-            const mid = [Math.round((cur[0] + next[0]) / 2), Math.round((cur[1] + next[1]) / 2)];
-            clicked.points.splice(hitVertex + 1, 0, mid);
-            this._syncBoundingBox(clicked);
-            editor.history.saveHistory();
-            editor.ui.updateObjectProperties();
-            editor.render();
-            editor.ui.showToast(`已在 #${hitVertex} 后插入顶点，共 ${clicked.points.length} 个`);
+            const nextPoints = vertexPoints.map(point => [...point]);
+            const current = nextPoints[hitVertex];
+            const next = nextPoints[(hitVertex + 1) % nextPoints.length];
+            nextPoints.splice(hitVertex + 1, 0, [
+              Math.round((current[0] + next[0]) / 2),
+              Math.round((current[1] + next[1]) / 2)
+            ]);
+            commitPoints(nextPoints, `已在 #${hitVertex} 后插入顶点，共 ${nextPoints.length} 个`);
           }
         });
       } else if (hitEdge !== -1) {
         items.push({ separator: true });
         items.push({
-          label: `➕ 在边 #${hitEdge}→#${(hitEdge + 1) % clicked.points.length} 中间插入顶点`,
+          label: `➕ 在边 #${hitEdge}→#${(hitEdge + 1) % vertexPoints.length} 中间插入顶点`,
           action: () => {
-            if (!ensureClickedObjectEditable()) return;
-            const a = clicked.points[hitEdge];
-            const b = clicked.points[(hitEdge + 1) % clicked.points.length];
-            const mid = [Math.round((a[0] + b[0]) / 2), Math.round((a[1] + b[1]) / 2)];
-            clicked.points.splice(hitEdge + 1, 0, mid);
-            this._syncBoundingBox(clicked);
-            editor.history.saveHistory();
-            editor.ui.updateObjectProperties();
-            editor.render();
-            editor.ui.showToast(`已在边上插入顶点，共 ${clicked.points.length} 个`);
+            const nextPoints = vertexPoints.map(point => [...point]);
+            const a = nextPoints[hitEdge];
+            const b = nextPoints[(hitEdge + 1) % nextPoints.length];
+            nextPoints.splice(hitEdge + 1, 0, [
+              Math.round((a[0] + b[0]) / 2),
+              Math.round((a[1] + b[1]) / 2)
+            ]);
+            commitPoints(nextPoints, `已在边上插入顶点，共 ${nextPoints.length} 个`);
           }
         });
       }

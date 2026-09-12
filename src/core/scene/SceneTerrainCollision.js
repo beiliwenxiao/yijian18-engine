@@ -1,11 +1,23 @@
 /************************************************************
+
  * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
+
  * 
- * @project   YiJian18-Engine - 跨平台2D/3D ECS游戏引擎
+
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+
  * @author    刘枭 (beiliwenxiao)
+
  * @email     beiliwenxiao@qq.com
+
+ * @date      2026-01-14
+
  * @blog      https://blog.csdn.net/beiliwenxiao
+
  * @repo      https://github.com/beiliwenxiao/yijian18-engine
+
+ *            https://gitee.com/coderaaa/yijian18-engine
+
  ************************************************************/
 
 import { SceneObjectProjector } from './SceneObjectProjector.js';
@@ -48,6 +60,8 @@ export class SceneTerrainCollision {
     this.spatialCellSize = Math.max(32, options.spatialCellSize || 128);
     /** terrain -> 静态碰撞数据空间索引；terrain 生命周期结束后可自动回收。 */
     this._spatialCache = new WeakMap();
+    /** entity -> 上次地形解算后的地面坐标，用于防止单帧跨越窄碰撞体。 */
+    this._lastResolvedPositions = new WeakMap();
     /** 跳跃系统（可选）；注入后跳跃（滞空）中的实体跳过地形碰撞。 */
     this.jumpSystem = options.jumpSystem || null;
   }
@@ -67,6 +81,7 @@ export class SceneTerrainCollision {
   resolveEntities(terrain, entities, options = {}) {
     if (!terrain || !entities || entities.length === 0) return;
     const radius = options.entityRadius != null ? options.entityRadius : this.entityRadius;
+    const previousPositions = options.previousPositions || null;
 
     const trees = terrain.getTreeColliders ? terrain.getTreeColliders() : [];
     const shapes = terrain._collisionShapes || [];
@@ -81,6 +96,7 @@ export class SceneTerrainCollision {
       // 跳跃（滞空）期间不做地形碰撞（可跳过水池、树、火堆等）；由场景注入 jumpSystem。
       if (this.jumpSystem?.isJumping?.(entity)) continue;
       const p = transform.position;
+      const previous = previousPositions?.get(entity) || this._lastResolvedPositions.get(entity) || null;
 
       // 可落脚区域优先于编辑器 collide shape 和盆地边界，与 Scene1Terrain.isBlocked 一致。
       const nearbyWalkables = this._querySpatial(spatial.walkables, p.x, p.y);
@@ -103,14 +119,17 @@ export class SceneTerrainCollision {
       for (let i = 0; i < nearbyPonds.length; i++) this.resolvePond(p, nearbyPonds[i]);
       const nearbyTrees = this._querySpatial(spatial.trees, p.x, p.y);
       for (let i = 0; i < nearbyTrees.length; i++) this.resolveTree(p, nearbyTrees[i], radius);
-      const nearbyShapes = isWalkable ? EMPTY_SPATIAL_ITEMS : this._querySpatial(spatial.shapes, p.x, p.y);
-      for (let i = 0; i < nearbyShapes.length; i++) this.resolveShape(p, nearbyShapes[i], radius);
+      const nearbyShapes = isWalkable
+        ? EMPTY_SPATIAL_ITEMS
+        : this._querySpatialRange(spatial.shapes, p, previous, radius);
+      for (let i = 0; i < nearbyShapes.length; i++) this.resolveShape(p, nearbyShapes[i], radius, previous);
       // 缺少可计算包围盒的自定义 shape 始终走兜底列表（walkable 内除外）。
       if (!isWalkable) {
         for (let i = 0; i < spatial.unboundedShapes.length; i++) {
-          this.resolveShape(p, spatial.unboundedShapes[i], radius);
+          this.resolveShape(p, spatial.unboundedShapes[i], radius, previous);
         }
       }
+      if (!previousPositions) this._rememberResolvedPosition(entity, p);
     }
   }
 
@@ -120,11 +139,26 @@ export class SceneTerrainCollision {
    */
   resolveTerrains(terrains, entities, { entityRadius = null } = {}) {
     if (!terrains || terrains.length === 0) return;
-    const options = entityRadius == null ? EMPTY_OPTIONS : { entityRadius };
+    const previousPositions = new Map();
+    for (const entity of entities || []) {
+      const transform = entity?.getComponent?.('transform');
+      if (!transform) continue;
+      previousPositions.set(entity, this._lastResolvedPositions.get(entity) || {
+        x: transform.position.x,
+        y: transform.position.y
+      });
+    }
+    const options = entityRadius == null
+      ? { previousPositions }
+      : { entityRadius, previousPositions };
     for (let index = 0; index < terrains.length; index++) {
       const terrain = terrains[index];
       if (!terrain) continue;
       this.resolveEntities(terrain, entities, options);
+    }
+    for (const [entity] of previousPositions) {
+      const transform = entity?.getComponent?.('transform');
+      if (transform) this._rememberResolvedPosition(entity, transform.position);
     }
   }
 
@@ -182,7 +216,7 @@ export class SceneTerrainCollision {
 
     const nearbyShapes = this._querySpatial(spatial.shapes, x, y);
     for (let index = 0; index < nearbyShapes.length; index++) {
-      if (this._pointInShape(nearbyShapes[index], x, y)) return true;
+      if (this._isShapeBlocked(nearbyShapes[index], x, y, radius)) return true;
     }
     for (let index = 0; index < spatial.unboundedShapes.length; index++) {
       if (this._pointInShape(spatial.unboundedShapes[index], x, y)) return true;
@@ -250,7 +284,7 @@ export class SceneTerrainCollision {
     }
     for (let i = 0; i < shapes.length; i++) {
       const shape = shapes[i];
-      const bounds = this._shapeBounds(shape);
+      const bounds = this._shapeBounds(shape, radius + this.pushEpsilon);
       if (!bounds) cache.unboundedShapes.push(shape);
       else this._insertSpatial(cache.shapes, shape, bounds.left, bounds.top, bounds.right, bounds.bottom);
     }
@@ -266,7 +300,7 @@ export class SceneTerrainCollision {
   }
 
   /** @private */
-  _shapeBounds(shape) {
+  _shapeBounds(shape, padding = 0) {
     if (Array.isArray(shape.points) && shape.points.length > 0) {
       let left = Infinity, top = Infinity, right = -Infinity, bottom = -Infinity;
       for (let i = 0; i < shape.points.length; i++) {
@@ -277,15 +311,22 @@ export class SceneTerrainCollision {
         if (point[1] < top) top = point[1];
         if (point[1] > bottom) bottom = point[1];
       }
-      if (Number.isFinite(left)) return { left, top, right, bottom };
+      if (Number.isFinite(left)) {
+        return {
+          left: left - padding,
+          top: top - padding,
+          right: right + padding,
+          bottom: bottom + padding
+        };
+      }
     }
     if (Number.isFinite(shape.x) && Number.isFinite(shape.y) &&
         Number.isFinite(shape.width) && Number.isFinite(shape.height)) {
       return {
-        left: Math.min(shape.x, shape.x + shape.width),
-        top: Math.min(shape.y, shape.y + shape.height),
-        right: Math.max(shape.x, shape.x + shape.width),
-        bottom: Math.max(shape.y, shape.y + shape.height)
+        left: Math.min(shape.x, shape.x + shape.width) - padding,
+        top: Math.min(shape.y, shape.y + shape.height) - padding,
+        right: Math.max(shape.x, shape.x + shape.width) + padding,
+        bottom: Math.max(shape.y, shape.y + shape.height) + padding
       };
     }
     return null;
@@ -311,6 +352,39 @@ export class SceneTerrainCollision {
   _querySpatial(grid, x, y) {
     const size = this.spatialCellSize;
     return grid.get(Math.floor(x / size))?.get(Math.floor(y / size)) || EMPTY_SPATIAL_ITEMS;
+  }
+
+  /** @private 查询移动线段及实体半径覆盖的格子，并去除跨格重复的 shape。 */
+  _querySpatialRange(grid, position, previous, radius) {
+    const from = previous || position;
+    const padding = Math.max(0, radius || 0) + this.pushEpsilon;
+    const left = Math.min(from.x, position.x) - padding;
+    const top = Math.min(from.y, position.y) - padding;
+    const right = Math.max(from.x, position.x) + padding;
+    const bottom = Math.max(from.y, position.y) + padding;
+    const size = this.spatialCellSize;
+    const result = [];
+    const seen = new Set();
+    for (let cellX = Math.floor(left / size); cellX <= Math.floor(right / size); cellX++) {
+      const column = grid.get(cellX);
+      if (!column) continue;
+      for (let cellY = Math.floor(top / size); cellY <= Math.floor(bottom / size); cellY++) {
+        const items = column.get(cellY);
+        if (!items) continue;
+        for (let index = 0; index < items.length; index++) {
+          const item = items[index];
+          if (seen.has(item)) continue;
+          seen.add(item);
+          result.push(item);
+        }
+      }
+    }
+    return result;
+  }
+
+  /** @private */
+  _rememberResolvedPosition(entity, position) {
+    this._lastResolvedPositions.set(entity, { x: position.x, y: position.y });
   }
 
   /** 水池：在椭圆内部则推到边缘外 */
@@ -350,15 +424,31 @@ export class SceneTerrainCollision {
 
   /**
    * 编辑器 collide shape：按形状类型推出。
+   * polygon/path 使用实体半径形成阻挡外沿，并检测上一次解算位置到当前帧的穿越，
+   * 防止低帧率或高移动速度将角色中心直接越过狭窄物件。
    * @param {Object} p - position（就地修改）
    * @param {Object} s - shape 定义
-   * @param {number} radius - 实体半径（预留，当前按点判定）
+   * @param {number} radius - 实体碰撞半径
+   * @param {{x:number,y:number}|null} [previous] - 上一次地形解算后的坐标
    */
-  resolveShape(p, s, radius) {
-    if (!this._pointInShape(s, p.x, p.y)) return;
-
-    const EPS = this.pushEpsilon;
+  resolveShape(p, s, radius, previous = null) {
     const st = s.shapeType;
+    const EPS = this.pushEpsilon;
+
+    if (st === 'polygon' || st === 'path') {
+      const contact = this._getPolygonContact(s.points, p.x, p.y);
+      if (contact && (contact.inside || contact.distance <= radius)) {
+        this._pushOutOfPolygon(p, s.points, radius + EPS, contact);
+        return;
+      }
+      if (this._crossedPolygon(previous, p, s.points)) {
+        p.x = previous.x;
+        p.y = previous.y;
+      }
+      return;
+    }
+
+    if (!this._pointInShape(s, p.x, p.y)) return;
 
     if (st === 'circle' || st === 'ellipse') {
       const scx = (s.x || 0) + (s.width || 0) / 2;
@@ -371,11 +461,6 @@ export class SceneTerrainCollision {
       const d = Math.hypot(ux, uy) || 1;
       p.x = scx + dirx / d + dirx / dl * EPS;
       p.y = scy + diry / d + diry / dl * EPS;
-      return;
-    }
-
-    if (st === 'polygon' || st === 'path') {
-      this._pushOutOfPolygon(p, s.points, EPS);
       return;
     }
 
@@ -410,6 +495,15 @@ export class SceneTerrainCollision {
     return x >= bx && x <= bx + bw && y >= by && y <= by + bh;
   }
 
+  /** @private 用于路径与碰撞规划的只读阻挡判定。 */
+  _isShapeBlocked(shape, x, y, radius) {
+    if (shape?.shapeType !== 'polygon' && shape?.shapeType !== 'path') {
+      return this._pointInShape(shape, x, y);
+    }
+    const contact = this._getPolygonContact(shape.points, x, y);
+    return Boolean(contact && (contact.inside || contact.distance <= radius));
+  }
+
   /** @private 射线法判断点是否在闭合多边形内。 */
   _pointInPolygon(points, x, y) {
     if (!Array.isArray(points) || points.length < 3) return false;
@@ -426,28 +520,29 @@ export class SceneTerrainCollision {
     return inside;
   }
 
-  /** @private 将多边形内部点推出到最近边界外侧。 */
-  _pushOutOfPolygon(position, points, epsilon) {
-    if (!Array.isArray(points) || points.length < 3) return;
-    let nearestX = position.x, nearestY = position.y;
+  /** @private 返回点相对多边形的最近边接触信息。 */
+  _getPolygonContact(points, x, y) {
+    if (!Array.isArray(points) || points.length < 3) return null;
+    let nearestX = x, nearestY = y;
     let nearestEdgeX = 0, nearestEdgeY = 0;
     let bestDistanceSq = Infinity;
 
     for (let i = 0; i < points.length; i++) {
       const start = points[i], end = points[(i + 1) % points.length];
-      const ax = Array.isArray(start) ? start[0] : start.x;
-      const ay = Array.isArray(start) ? start[1] : start.y;
-      const bx = Array.isArray(end) ? end[0] : end.x;
-      const by = Array.isArray(end) ? end[1] : end.y;
+      const ax = Array.isArray(start) ? start[0] : start?.x;
+      const ay = Array.isArray(start) ? start[1] : start?.y;
+      const bx = Array.isArray(end) ? end[0] : end?.x;
+      const by = Array.isArray(end) ? end[1] : end?.y;
+      if (![ax, ay, bx, by].every(Number.isFinite)) continue;
       const edgeX = bx - ax, edgeY = by - ay;
       const edgeLengthSq = edgeX * edgeX + edgeY * edgeY;
       if (edgeLengthSq <= 0) continue;
       const projection = Math.max(0, Math.min(1,
-        ((position.x - ax) * edgeX + (position.y - ay) * edgeY) / edgeLengthSq
+        ((x - ax) * edgeX + (y - ay) * edgeY) / edgeLengthSq
       ));
       const candidateX = ax + edgeX * projection;
       const candidateY = ay + edgeY * projection;
-      const dx = candidateX - position.x, dy = candidateY - position.y;
+      const dx = candidateX - x, dy = candidateY - y;
       const distanceSq = dx * dx + dy * dy;
       if (distanceSq < bestDistanceSq) {
         bestDistanceSq = distanceSq;
@@ -458,27 +553,80 @@ export class SceneTerrainCollision {
       }
     }
 
-    if (!Number.isFinite(bestDistanceSq)) return;
-    const distance = Math.sqrt(bestDistanceSq);
-    const offset = Math.max(epsilon || 0, 0.001);
+    if (!Number.isFinite(bestDistanceSq)) return null;
+    return {
+      inside: this._pointInPolygon(points, x, y),
+      distance: Math.sqrt(bestDistanceSq),
+      nearestX,
+      nearestY,
+      nearestEdgeX,
+      nearestEdgeY
+    };
+  }
+
+  /** @private 判断一个移动线段是否从多边形外部完全穿越。 */
+  _crossedPolygon(previous, position, points) {
+    if (!previous || !Array.isArray(points) || points.length < 3) return false;
+    if (this._pointInPolygon(points, previous.x, previous.y)) return false;
+    if (previous.x === position.x && previous.y === position.y) return false;
+    for (let i = 0; i < points.length; i++) {
+      const start = points[i], end = points[(i + 1) % points.length];
+      const ax = Array.isArray(start) ? start[0] : start?.x;
+      const ay = Array.isArray(start) ? start[1] : start?.y;
+      const bx = Array.isArray(end) ? end[0] : end?.x;
+      const by = Array.isArray(end) ? end[1] : end?.y;
+      if (![ax, ay, bx, by].every(Number.isFinite)) continue;
+      if (this._segmentsIntersect(previous.x, previous.y, position.x, position.y, ax, ay, bx, by)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /** @private 含边界的线段相交判定。 */
+  _segmentsIntersect(ax, ay, bx, by, cx, cy, dx, dy) {
+    const cross = (px, py, qx, qy, rx, ry) => (qx - px) * (ry - py) - (qy - py) * (rx - px);
+    const onSegment = (px, py, qx, qy, rx, ry) => (
+      rx >= Math.min(px, qx) && rx <= Math.max(px, qx) &&
+      ry >= Math.min(py, qy) && ry <= Math.max(py, qy)
+    );
+    const abC = cross(ax, ay, bx, by, cx, cy);
+    const abD = cross(ax, ay, bx, by, dx, dy);
+    const cdA = cross(cx, cy, dx, dy, ax, ay);
+    const cdB = cross(cx, cy, dx, dy, bx, by);
+    if (((abC > 0 && abD < 0) || (abC < 0 && abD > 0)) &&
+        ((cdA > 0 && cdB < 0) || (cdA < 0 && cdB > 0))) return true;
+    return (abC === 0 && onSegment(ax, ay, bx, by, cx, cy)) ||
+      (abD === 0 && onSegment(ax, ay, bx, by, dx, dy)) ||
+      (cdA === 0 && onSegment(cx, cy, dx, dy, ax, ay)) ||
+      (cdB === 0 && onSegment(cx, cy, dx, dy, bx, by));
+  }
+
+  /** @private 将多边形内部或边缘重叠点推出到最近边界外侧。 */
+  _pushOutOfPolygon(position, points, offset, contact = null) {
+    const resolved = contact || this._getPolygonContact(points, position.x, position.y);
+    if (!resolved) return;
+    const distance = resolved.distance;
+    const clearance = Math.max(offset || 0, 0.001);
     if (distance > 1e-7) {
-      position.x = nearestX + (nearestX - position.x) / distance * offset;
-      position.y = nearestY + (nearestY - position.y) / distance * offset;
+      const direction = resolved.inside ? -1 : 1;
+      position.x = resolved.nearestX + (position.x - resolved.nearestX) / distance * clearance * direction;
+      position.y = resolved.nearestY + (position.y - resolved.nearestY) / distance * clearance * direction;
       return;
     }
 
     // 点恰好位于边界时，测试边法线两侧，选择多边形外的一侧。
-    const edgeLength = Math.hypot(nearestEdgeX, nearestEdgeY) || 1;
-    const normalX = -nearestEdgeY / edgeLength;
-    const normalY = nearestEdgeX / edgeLength;
-    const firstX = nearestX + normalX * offset;
-    const firstY = nearestY + normalY * offset;
+    const edgeLength = Math.hypot(resolved.nearestEdgeX, resolved.nearestEdgeY) || 1;
+    const normalX = -resolved.nearestEdgeY / edgeLength;
+    const normalY = resolved.nearestEdgeX / edgeLength;
+    const firstX = resolved.nearestX + normalX * clearance;
+    const firstY = resolved.nearestY + normalY * clearance;
     if (!this._pointInPolygon(points, firstX, firstY)) {
       position.x = firstX;
       position.y = firstY;
     } else {
-      position.x = nearestX - normalX * offset;
-      position.y = nearestY - normalY * offset;
+      position.x = resolved.nearestX - normalX * clearance;
+      position.y = resolved.nearestY - normalY * clearance;
     }
   }
 

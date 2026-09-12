@@ -1082,6 +1082,7 @@ export class DataDrivenPrologueScene extends BaseGameScene {
       }),
       onSpawn: detail => this._placementCoordinator.handleSpawn(detail),
       onRemove: values => this._placementCoordinator.removeValues(values),
+      setDynamicCollider: options => this._terrainBinding.setDynamicCollider(options),
       logger: console
     });
     this.context.services.placements = placements;

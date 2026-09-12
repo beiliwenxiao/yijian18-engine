@@ -1,7 +1,23 @@
 /************************************************************
+
  * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
+
  *
- * @project YiJian18-Engine - 跨平台2D/3D ECS游戏引擎
+
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+
+ * @author    刘枭 (beiliwenxiao)
+
+ * @email     beiliwenxiao@qq.com
+
+ * @date      2026-01-14
+
+ * @blog      https://blog.csdn.net/beiliwenxiao
+
+ * @repo      https://github.com/beiliwenxiao/yijian18-engine
+
+ *            https://gitee.com/coderaaa/yijian18-engine
+
  ************************************************************/
 
 import { SceneObjectProjector } from './SceneObjectProjector.js';
@@ -110,19 +126,22 @@ export class SceneTerrainBinding {
 
   /**
    * 按场景局部坐标安装或移除运行时碰撞体。
-   * 动态工事、塌方等表现可以与静态场景共用同一碰撞解算器，且 worldOffset 只应用一次。
+   * 动态工事、ref 世界物件等表现可以与静态场景共用同一碰撞解算器，且 worldOffset 只应用一次。
+   * block 与 walkable 互斥；可落脚形状按 SceneTerrainCollision 既有优先级先于阻挡形状判定。
    */
-  setDynamicCollider({ sceneId = null, id, shape = null, enabled = true } = {}) {
+  setDynamicCollider({ sceneId = null, id, shape = null, enabled = true, mode = 'block' } = {}) {
     if (!id) return false;
+    if (mode !== 'block' && mode !== 'walkable') return false;
     const scene = this.scene;
     const terrains = scene._terrains?.length ? scene._terrains : (scene.terrain ? [scene.terrain] : []);
     const terrain = terrains.find(candidate => !sceneId || candidate?._editorSceneId === sceneId);
     if (!terrain) return false;
     terrain._collisionShapes = Array.isArray(terrain._collisionShapes) ? terrain._collisionShapes : [];
+    terrain._walkableShapes = Array.isArray(terrain._walkableShapes) ? terrain._walkableShapes : [];
     const marker = `dynamic:${id}`;
-    for (let index = terrain._collisionShapes.length - 1; index >= 0; index--) {
-      if (terrain._collisionShapes[index]?.__dynamicColliderId === marker) {
-        terrain._collisionShapes.splice(index, 1);
+    for (const collection of [terrain._collisionShapes, terrain._walkableShapes]) {
+      for (let index = collection.length - 1; index >= 0; index--) {
+        if (collection[index]?.__dynamicColliderId === marker) collection.splice(index, 1);
       }
     }
     scene._terrainCollision?.invalidate?.(terrain);
@@ -133,10 +152,14 @@ export class SceneTerrainBinding {
     const projected = this.projector.project({
       ...shape,
       id: shape.id || id,
+      type: shape.type || 'shape',
       __dynamicColliderId: marker,
-      collide: true
+      collide: mode === 'block',
+      walkable: mode === 'walkable'
     }, offset);
-    terrain._collisionShapes.push(projected);
+    const target = mode === 'walkable' ? terrain._walkableShapes : terrain._collisionShapes;
+    target.push(projected);
+    scene._terrainCollision?.invalidate?.(terrain);
     return true;
   }
 

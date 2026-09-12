@@ -1,6 +1,23 @@
 /************************************************************
+
  * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
- * @project YiJian18-Engine - 跨平台2D/3D ECS游戏引擎
+
+ *
+
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+
+ * @author    刘枭 (beiliwenxiao)
+
+ * @email     beiliwenxiao@qq.com
+
+ * @date      2026-01-14
+
+ * @blog      https://blog.csdn.net/beiliwenxiao
+
+ * @repo      https://github.com/beiliwenxiao/yijian18-engine
+
+ *            https://gitee.com/coderaaa/yijian18-engine
+
  ************************************************************/
 
 import { PlacementSpawner } from './PlacementSpawner.js';
@@ -67,6 +84,7 @@ export function getPlacementSignature(placement = {}) {
     ref: placement.ref || null,
     group: placement.group || null,
     overrides: placement.overrides || null,
+    collision: placement.collision || null,
     spawnWhen: placement.spawnWhen || null,
     x: Number.isFinite(localX) ? localX : null,
     y: Number.isFinite(localY) ? localY : null
@@ -102,6 +120,8 @@ export class ScenePlacementRuntime {
     this.onProjectionReady = config.onProjectionReady || (() => {});
     this.onSpawn = config.onSpawn || null;
     this.onRemove = config.onRemove || null;
+    this.setDynamicCollider = config.setDynamicCollider || null;
+    this.activeDynamicColliders = new Map();
     this.logger = config.logger || console;
 
 
@@ -240,6 +260,7 @@ export class ScenePlacementRuntime {
   }
 
   shouldSpawn(placement = {}) {
+    if (this._isPlacementTombstoned(placement) || this._playerHoldsPlacementInstance(placement)) return false;
     const condition = placement.spawnWhen;
     if (!condition || typeof condition !== 'object') return true;
     let value = this.getConditionRoot(condition.blackboardKey || 'storyState');
@@ -253,6 +274,28 @@ export class ScenePlacementRuntime {
     if (Object.prototype.hasOwnProperty.call(condition, 'lte') && !(Number(value) <= Number(condition.lte))) return false;
     if (Array.isArray(condition.in) && !condition.in.includes(value)) return false;
     return true;
+  }
+
+  /** @private 已拾取或已销毁的 placement 不得被流式恢复再次实例化。 */
+  _isPlacementTombstoned(placement = {}) {
+    if (!placement?.id) return false;
+    const state = this.pendingPlacementStates.get(placement.id);
+    if (state?.removed !== true || typeof state.placementSignature !== 'string') return false;
+    const currentSignature = getPlacementSignature(placement);
+    return state.placementSignature === currentSignature
+      || signaturesDifferOnlyByCoordinates(state.placementSignature, currentSignature);
+  }
+
+  /** @private 稳定实例已进入玩家背包或装备栏时，拒绝重建其原始世界 placement。 */
+  _playerHoldsPlacementInstance(placement = {}) {
+    const instanceId = placement?.overrides?.instanceId;
+    if (typeof instanceId !== 'string' || !instanceId.trim()) return false;
+    const player = this.getPlayer();
+    const inventory = player?.getComponent?.('inventory');
+    if ((inventory?.slots || []).some(stack => stack?.item?.instanceId === instanceId)) return true;
+    const equipment = player?.getComponent?.('equipment');
+    const equipped = equipment?.getAllEquipment?.() || equipment?.slots || {};
+    return Object.values(equipped).some(item => item?.instanceId === instanceId);
   }
 
   validateProjection() {
@@ -286,6 +329,12 @@ export class ScenePlacementRuntime {
       if (entry.reason === 'definitionNotFound') {
         this.logger.warn('[ScenePlacementRuntime] 未找到放置定义', entry.kind, entry.ref);
       }
+    }
+    const colliderSync = this._syncDynamicColliders(result.entities);
+    if (!colliderSync.ok) {
+      this._destroyValues(result.entities, { removeDynamicColliders: false });
+      this.spawner.forgetPlacements(result.entities.map(entity => entity?.placementId || entity?.id).filter(Boolean));
+      return { ok: false, ...result, errors: [...result.errors, ...colliderSync.errors] };
     }
     this.logger.log('[ScenePlacementRuntime] spawn', {
       selector: result.selector,
@@ -501,7 +550,7 @@ export class ScenePlacementRuntime {
 
     const acceptedStateById = new Map();
     const restoreOldState = (newEntities = []) => {
-      this._destroyValues(newEntities);
+      this._destroyValues(newEntities, { removeDynamicColliders: false });
       const aiRestore = this._restoreAIStates(oldAiStates);
       this.restorePendingStateSnapshot(pendingBefore);
       this.spawner.forgetPlacements(placementIds);
@@ -635,6 +684,16 @@ export class ScenePlacementRuntime {
       };
     }
 
+    const dynamicColliderPreparation = this._prepareDynamicColliderOperations(result.entities);
+    if (!dynamicColliderPreparation.ok) {
+      const rollback = restoreOldState(result.entities);
+      return {
+        ok: false,
+        outcomes: result.outcomes || [],
+        errors: withRollbackErrors(dynamicColliderPreparation.errors, rollback)
+      };
+    }
+
     const buildOutcomes = () => {
       const outcomes = (result.outcomes || []).map(outcome => {
         const inspection = this.inspectPlacement(outcome.placementId);
@@ -704,6 +763,10 @@ export class ScenePlacementRuntime {
       try {
         // 新旧实体使用同一稳定 ID；旧 AI 已在 prepare 时注销，不能在此误删新 AI controller。
         this._destroyValues(oldValues, { unregisterAI: false });
+        const colliderCommit = this._commitDynamicColliderOperations(dynamicColliderPreparation.operations);
+        if (!colliderCommit.ok) {
+          throw new Error(colliderCommit.errors.map(entry => entry.message).join('; ') || '动态碰撞体提交失败');
+        }
         for (const id of retiredIds) {
           this.pendingPlacementStates.delete(id);
           this.pendingResourceNodeStates.delete(id);
@@ -839,9 +902,128 @@ export class ScenePlacementRuntime {
 
   dispose() {
     if (this.disposed) return false;
+    this._clearDynamicColliders();
     this.disposed = true;
     this.reset({ clearProjection: true, clearPending: true, clearSpawned: true });
     return true;
+  }
+
+  _prepareDynamicColliderOperations(entities = []) {
+    const operations = [];
+    const errors = [];
+    for (const entity of entities) {
+      if (!this._containsValue(entity)) continue;
+      const placementId = entity?.placementId || entity?.id;
+      const placement = this._findPlacement(placementId);
+      const collision = placement?.collision;
+      if (!collision) continue;
+      if (collision.mode !== 'block' && collision.mode !== 'walkable') {
+        errors.push({
+          code: 'placementColliderModeInvalid',
+          path: `placements.${placementId}.collision.mode`,
+          message: `放置碰撞模式必须为 block 或 walkable: ${placementId}`
+        });
+        continue;
+      }
+      if (collision.shapeType !== 'polygon' || !Array.isArray(collision.points) || collision.points.length < 3) {
+        errors.push({
+          code: 'placementColliderShapeInvalid',
+          path: `placements.${placementId}.collision`,
+          message: `放置碰撞必须是至少三个顶点的 polygon: ${placementId}`
+        });
+        continue;
+      }
+      const localX = Number.isFinite(placement._localX) ? placement._localX : placement.x;
+      const localY = Number.isFinite(placement._localY) ? placement._localY : placement.y;
+      if (!Number.isFinite(localX) || !Number.isFinite(localY)
+        || collision.points.some(point => !Array.isArray(point) || !Number.isFinite(point[0]) || !Number.isFinite(point[1]))) {
+        errors.push({
+          code: 'placementColliderCoordinatesInvalid',
+          path: `placements.${placementId}.collision.points`,
+          message: `放置碰撞顶点和锚点必须是有限数值: ${placementId}`
+        });
+        continue;
+      }
+      operations.push({
+        id: placementId,
+        sceneId: placement.sceneId,
+        mode: collision.mode,
+        shape: {
+          id: placementId,
+          type: 'shape',
+          shapeType: 'polygon',
+          points: collision.points.map(point => [localX + point[0], localY + point[1]])
+        }
+      });
+    }
+    return { ok: errors.length === 0, operations, errors };
+  }
+
+  _syncDynamicColliders(entities = []) {
+    const prepared = this._prepareDynamicColliderOperations(entities);
+    if (!prepared.ok) return prepared;
+    return this._commitDynamicColliderOperations(prepared.operations);
+  }
+
+  _commitDynamicColliderOperations(operations = []) {
+    if (operations.length === 0) return { ok: true, errors: [] };
+    if (typeof this.setDynamicCollider !== 'function') {
+      return {
+        ok: false,
+        errors: [{
+          code: 'placementColliderBindingUnavailable',
+          path: 'placements',
+          message: '放置碰撞已配置，但 TerrainBinding 未提供动态碰撞注册器'
+        }]
+      };
+    }
+    const committed = [];
+    for (const operation of operations) {
+      try {
+        if (this.setDynamicCollider({ ...operation, enabled: true }) !== true) {
+          throw new Error(`未找到已加载 terrain: ${operation.sceneId || operation.id}`);
+        }
+        this.activeDynamicColliders.set(operation.id, { sceneId: operation.sceneId });
+        committed.push(operation);
+      } catch (error) {
+        for (const rollback of committed.reverse()) {
+          try {
+            this.setDynamicCollider({ sceneId: rollback.sceneId, id: rollback.id, enabled: false });
+          } catch (rollbackError) {
+            this.logger.warn('[ScenePlacementRuntime] 回滚动态碰撞体失败', rollbackError);
+          }
+          this.activeDynamicColliders.delete(rollback.id);
+        }
+        return {
+          ok: false,
+          errors: [{
+            code: 'placementColliderCommitFailed',
+            path: `placements.${operation.id}.collision`,
+            message: error?.message || `注册放置碰撞失败: ${operation.id}`
+          }]
+        };
+      }
+    }
+    return { ok: true, errors: [] };
+  }
+
+  _removeDynamicCollider(placementId) {
+    const active = this.activeDynamicColliders.get(placementId);
+    if (!active) return true;
+    try {
+      if (this.setDynamicCollider?.({ sceneId: active.sceneId, id: placementId, enabled: false }) !== true) return false;
+      this.activeDynamicColliders.delete(placementId);
+      return true;
+    } catch (error) {
+      this.logger.warn('[ScenePlacementRuntime] 移除动态碰撞体失败', error);
+      return false;
+    }
+  }
+
+  _clearDynamicColliders() {
+    for (const placementId of [...this.activeDynamicColliders.keys()]) {
+      this._removeDynamicCollider(placementId);
+    }
   }
 
   _handleSpawn(detail) {
@@ -851,9 +1033,15 @@ export class ScenePlacementRuntime {
     this.onSpawn?.(detail);
   }
 
-  _destroyValues(values = [], { unregisterAI = true } = {}) {
+  _destroyValues(values = [], { unregisterAI = true, removeDynamicColliders = true } = {}) {
     const unique = new Set(values || []);
     if (unique.size === 0) return [];
+    if (removeDynamicColliders) {
+      for (const value of unique) {
+        const placementId = value?.placementId || value?.id;
+        if (placementId) this._removeDynamicCollider(placementId);
+      }
+    }
     if (unregisterAI) {
       for (const value of unique) {
         try { this.aiSystem?.unregisterAI?.(value); } catch (error) {
