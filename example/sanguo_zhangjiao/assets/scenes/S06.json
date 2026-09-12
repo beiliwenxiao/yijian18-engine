@@ -409,27 +409,21 @@
   ],
   "imageAssets": {
     "graybox.cityGround": {
-      "src": "../example/sanguo_zhangjiao/assets/images/graybox/city-ground.svg",
       "name": "城市场地灰盒"
     },
     "graybox.battlefieldUnit": {
-      "src": "../example/sanguo_zhangjiao/assets/images/graybox/battlefield-unit.svg",
       "name": "战场军令旗灰盒"
     },
     "s06.landmark.wanchengWall": {
-      "src": "../example/sanguo_zhangjiao/assets/images/s06/wancheng-wall.svg",
       "name": "宛城外墙地标"
     },
     "story.messengerRecallBanner": {
-      "src": "../example/sanguo_zhangjiao/assets/images/story/messenger-recall-banner.svg",
       "name": "冀州召回信使旗"
     },
     "s10.construction.siteMarker": {
-      "src": "../example/sanguo_zhangjiao/assets/images/s10/construction-site-marker.svg",
       "name": "施工规划标记"
     },
     "s06.environment.wanchengSiegeGround": {
-      "src": "../example/sanguo_zhangjiao/assets/images/s06/wancheng-siege-ground.svg",
       "name": "S06 宛城围攻地貌"
     }
   },

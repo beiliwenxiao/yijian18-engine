@@ -54,8 +54,8 @@
   ],
   "decorations": [], "colliders": [],
   "imageAssets": {
-    "s13.environment.jingshanBattlefieldGround": { "src": "../example/sanguo_zhangjiao/assets/images/s13/jingshan-battlefield-ground.svg", "name": "精山终局战场" },
-    "s13.story.finalCommandBanner": { "src": "../example/sanguo_zhangjiao/assets/images/s13/final-command-banner.svg", "name": "精山最后军令旗" },
-    "story.messengerRecallBanner": { "src": "../example/sanguo_zhangjiao/assets/images/story/messenger-recall-banner.svg", "name": "终局撤离旗" }
+    "s13.environment.jingshanBattlefieldGround": { "name": "精山终局战场" },
+    "s13.story.finalCommandBanner": { "name": "精山最后军令旗" },
+    "story.messengerRecallBanner": { "name": "终局撤离旗" }
   }, "updatedAt": "2026-08-13T00:00:00.000Z"
 }

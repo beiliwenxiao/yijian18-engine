@@ -62,10 +62,10 @@
   ],
   "decorations": [], "colliders": [],
   "imageAssets": {
-    "s14.environment.endingGround": { "src": "../example/sanguo_zhangjiao/assets/images/s14/ending-ground.svg", "name": "结局之地山口" },
-    "s14.vehicle.lastRetreatCart": { "src": "../example/sanguo_zhangjiao/assets/images/s14/last-retreat-cart.svg", "name": "最后的伤员马车" },
-    "s14.vehicle.unassembledCatapult": { "src": "../example/sanguo_zhangjiao/assets/images/s14/unassembled-catapult.svg", "name": "缺梁投石车" },
-    "s13.story.finalCommandBanner": { "src": "../example/sanguo_zhangjiao/assets/images/s13/final-command-banner.svg", "name": "旅程回顾旗" }
+    "s14.environment.endingGround": { "name": "结局之地山口" },
+    "s14.vehicle.lastRetreatCart": { "name": "最后的伤员马车" },
+    "s14.vehicle.unassembledCatapult": { "name": "缺梁投石车" },
+    "s13.story.finalCommandBanner": { "name": "旅程回顾旗" }
   },
   "updatedAt": "2026-08-14T00:00:00.000Z"
 }

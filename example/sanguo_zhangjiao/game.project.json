@@ -5842,7 +5842,7 @@
     },
     {
       "id": "s01.capacity",
-      "title": "容量规划与攀藤",
+      "title": "攀藤",
       "category": "s01-survival",
       "scope": {
         "sceneIds": [
@@ -5852,7 +5852,8 @@
       "steps": [
         {
           "id": "s01.capacity.step.capacity",
-          "text": "背包满时，多余物资会留在原地。到达山崖后，{climb}沿藤蔓逃往 S02。"
+          "text": "到达山崖后，{climb}沿藤蔓上去看看。",
+          "highlightTarget": false
         }
       ],
       "signalRules": [
@@ -5862,9 +5863,11 @@
         }
       ],
       "completionPolicy": "signal",
+      "pauseGame": false,
       "canSkip": false,
       "autoTrigger": false,
-      "autoAdvance": false
+      "autoAdvance": false,
+      "priority": 0
     },
     {
       "id": "tutorial-001",

@@ -126,14 +126,14 @@
   "decorations": [],
   "colliders": [],
   "imageAssets": {
-    "s12.environment.xiaquyangYamenGround": { "src": "../example/sanguo_zhangjiao/assets/images/s12/xiaquyang-yamen-ground.svg", "name": "下曲阳府衙战场" },
-    "s12.structure.yamenGate": { "src": "../example/sanguo_zhangjiao/assets/images/s12/yamen-gate.svg", "name": "府衙大门" },
-    "s12.structure.secretPassage": { "src": "../example/sanguo_zhangjiao/assets/images/s12/secret-passage.svg", "name": "府衙密道" },
-    "s12.vehicle.siegeLadder": { "src": "../example/sanguo_zhangjiao/assets/images/s12/siege-ladder.svg", "name": "下曲阳攻城云梯" },
-    "s09.character.zhangbao": { "src": "../example/sanguo_zhangjiao/assets/images/s09/zhangbao.svg", "name": "张宝" },
-    "s05.resource.ironOre": { "src": "../example/sanguo_zhangjiao/assets/images/s05/iron-ore.svg", "name": "铁矿" },
-    "s13.story.finalCommandBanner": { "src": "../example/sanguo_zhangjiao/assets/images/s13/final-command-banner.svg", "name": "军令旗" },
-    "story.messengerRecallBanner": { "src": "../example/sanguo_zhangjiao/assets/images/story/messenger-recall-banner.svg", "name": "终局路线军令旗" }
+    "s12.environment.xiaquyangYamenGround": { "name": "下曲阳府衙战场" },
+    "s12.structure.yamenGate": { "name": "府衙大门" },
+    "s12.structure.secretPassage": { "name": "府衙密道" },
+    "s12.vehicle.siegeLadder": { "name": "下曲阳攻城云梯" },
+    "s09.character.zhangbao": { "name": "张宝" },
+    "s05.resource.ironOre": { "name": "铁矿" },
+    "s13.story.finalCommandBanner": { "name": "军令旗" },
+    "story.messengerRecallBanner": { "name": "终局路线军令旗" }
   },
   "updatedAt": "2026-08-12T00:00:00.000Z"
 }

@@ -671,35 +671,27 @@
   "colliders": [],
   "imageAssets": {
     "graybox.naturalTerrain": {
-      "src": "../example/sanguo_zhangjiao/assets/images/graybox/natural-terrain.svg",
       "name": "自然地形灰盒"
     },
     "graybox.battlefieldUnit": {
-      "src": "../example/sanguo_zhangjiao/assets/images/graybox/battlefield-unit.svg",
       "name": "战场军令旗灰盒"
     },
     "s05.resource.ironOre": {
-      "src": "../example/sanguo_zhangjiao/assets/images/s05/iron-ore.svg",
       "name": "宛城铁矿节点"
     },
     "s05.tool.wornPickaxe": {
-      "src": "../example/sanguo_zhangjiao/assets/images/s05/worn-pickaxe.svg",
       "name": "破旧铁镐"
     },
     "s05.environment.mineCollapse": {
-      "src": "../example/sanguo_zhangjiao/assets/images/s05/mine-collapse.svg",
       "name": "矿坑封路塌方"
     },
     "s05.character.zhangMancheng": {
-      "src": "../example/sanguo_zhangjiao/assets/images/s05/zhang-mancheng.svg",
       "name": "张曼成"
     },
     "s05.character.qinJie": {
-      "src": "../example/sanguo_zhangjiao/assets/images/s05/qin-jie.svg",
       "name": "秦颉"
     },
     "s05.environment.wanchengOutskirtsGround": {
-      "src": "../example/sanguo_zhangjiao/assets/images/s05/wancheng-outskirts-ground.svg",
       "name": "S05 宛城外郭地貌"
     }
   },

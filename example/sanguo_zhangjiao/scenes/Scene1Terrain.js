@@ -385,13 +385,14 @@ export class Scene1Terrain {
             // 其它 shape 使用与碰撞相同的世界投影结果。
             this._editorShapes.push(projectedObj);
           } else if (obj.type === 'image' && obj.imageId) {
-            // 场景局部 imageAssets 用于编辑器预览；运行时缺项时回退同一稳定 ID 的 Manifest。
+            // 运行时图片只认 Manifest 的稳定 ID；场景本地 src 仅为未迁移编辑器数据的兼容后备。
             const sceneAsset = scene.imageAssets && scene.imageAssets[obj.imageId];
             const manifestAsset = this.resolveImageAsset(obj.imageId);
-            let src = sceneAsset?.src || manifestAsset?.url || null;
+            const manifestSrc = manifestAsset?.url || null;
+            let src = manifestSrc || sceneAsset?.src || null;
             if (src) {
-              // 编辑器保存路径相对 editor 页面；Manifest URL 已由 AssetManager 解析。
-              if (sceneAsset?.src) {
+              // 仅旧场景后备路径需从编辑器相对地址归一化，Manifest URL 已可直接加载。
+              if (!manifestSrc && sceneAsset?.src) {
                 const assetsIdx = src.indexOf('assets/');
                 if (assetsIdx !== -1) src = src.substring(assetsIdx);
               }

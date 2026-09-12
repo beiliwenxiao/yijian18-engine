@@ -443,15 +443,12 @@
   "colliders": [],
   "imageAssets": {
     "graybox.naturalTerrain": {
-      "src": "../example/sanguo_zhangjiao/assets/images/graybox/natural-terrain.svg",
       "name": "自然地形灰盒"
     },
     "graybox.battlefieldUnit": {
-      "src": "../example/sanguo_zhangjiao/assets/images/graybox/battlefield-unit.svg",
       "name": "战场单位灰盒"
     },
     "s03.environment.yingchuanBattlefieldGround": {
-      "src": "../example/sanguo_zhangjiao/assets/images/s03/yingchuan-battlefield-ground.svg",
       "name": "S03 颍川战场地貌"
     }
   },

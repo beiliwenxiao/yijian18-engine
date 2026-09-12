@@ -961,43 +961,33 @@
   "colliders": [],
   "imageAssets": {
     "s09.environment.campGround": {
-      "src": "../example/sanguo_zhangjiao/assets/images/s09/camp-ground.svg",
       "name": "S09 粥棚营地地貌"
     },
     "s09.environment.damagedGranary": {
-      "src": "../example/sanguo_zhangjiao/assets/images/s09/damaged-granary.svg",
       "name": "受损粮仓"
     },
     "s09.environment.porridgeShelter": {
-      "src": "../example/sanguo_zhangjiao/assets/images/s09/porridge-shelter.svg",
       "name": "粥棚"
     },
     "s09.flag.warrior": {
-      "src": "../example/sanguo_zhangjiao/assets/images/s09/flag-warrior.svg",
       "name": "战士军旗"
     },
     "s09.flag.archer": {
-      "src": "../example/sanguo_zhangjiao/assets/images/s09/flag-archer.svg",
       "name": "弓手军旗"
     },
     "s09.flag.strategist": {
-      "src": "../example/sanguo_zhangjiao/assets/images/s09/flag-strategist.svg",
       "name": "军师军旗"
     },
     "s09.environment.yellowTurbanTent": {
-      "src": "../example/sanguo_zhangjiao/assets/images/s09/yellow-turban-tent.svg",
       "name": "黄巾营帐"
     },
     "s09.environment.woundedShelter": {
-      "src": "../example/sanguo_zhangjiao/assets/images/s09/wounded-shelter.svg",
       "name": "伤兵棚"
     },
     "s09.environment.refugeeShelter": {
-      "src": "../example/sanguo_zhangjiao/assets/images/s09/refugee-shelter.svg",
       "name": "难民棚"
     },
     "s09.environment.brokenSupplyCart": {
-      "src": "../example/sanguo_zhangjiao/assets/images/s09/broken-supply-cart.svg",
       "name": "破损军需车"
     }
   },

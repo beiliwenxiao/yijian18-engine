@@ -415,27 +415,21 @@
   "colliders": [],
   "imageAssets": {
     "s10.environment.creekCampGround": {
-      "src": "../example/sanguo_zhangjiao/assets/images/s10/creek-camp-ground.svg",
       "name": "S10 溪畔迁营地貌"
     },
     "s10.story.zhangjiaoDeathbed": {
-      "src": "../example/sanguo_zhangjiao/assets/images/s10/zhangjiao-deathbed.svg",
       "name": "张角病榻"
     },
     "s09.environment.yellowTurbanTent": {
-      "src": "../example/sanguo_zhangjiao/assets/images/s09/yellow-turban-tent.svg",
       "name": "黄巾临时营帐"
     },
     "s10.environment.relocationSign": {
-      "src": "../example/sanguo_zhangjiao/assets/images/s10/relocation-sign.svg",
       "name": "沿溪迁营路标"
     },
     "s10.construction.siteMarker": {
-      "src": "../example/sanguo_zhangjiao/assets/images/s10/construction-site-marker.svg",
       "name": "施工规划标记"
     },
     "story.messengerRecallBanner": {
-      "src": "../example/sanguo_zhangjiao/assets/images/story/messenger-recall-banner.svg",
       "name": "广宗军令旗"
     }
   },

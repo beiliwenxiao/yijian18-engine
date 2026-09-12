@@ -500,19 +500,15 @@
   "colliders": [],
   "imageAssets": {
     "graybox.naturalTerrain": {
-      "src": "../example/sanguo_zhangjiao/assets/images/graybox/natural-terrain.svg",
       "name": "自然地形稳定资源"
     },
     "graybox.battlefieldUnit": {
-      "src": "../example/sanguo_zhangjiao/assets/images/graybox/battlefield-unit.svg",
       "name": "战役军令旗稳定资源"
     },
     "s07.environment.delayBarricade": {
-      "src": "../example/sanguo_zhangjiao/assets/images/s07/delay-barricade.svg",
       "name": "西华阻滞拒障"
     },
     "s07.environment.xihuaDelayGround": {
-      "src": "../example/sanguo_zhangjiao/assets/images/s07/xihua-delay-ground.svg",
       "name": "S07 西华阻滞战地貌"
     }
   },

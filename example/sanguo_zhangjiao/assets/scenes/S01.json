@@ -245,12 +245,16 @@
             "y": 86
           },
           "depthSort": true,
+          "editor": {
+            "visible": true
+          },
           "height": 170,
           "id": "S01-cliff-vine",
           "imageId": "s01.environment.cliffVine",
           "name": "逃生藤蔓",
           "prompt": "{climb}攀上藤蔓逃离狼群",
           "radius": 100,
+          "rotation": 0,
           "semanticRole": "climbSurface",
           "sortY": 190,
           "type": "image",
@@ -333,7 +337,7 @@
       "objects": [
         {
           "editor": {
-            "visible": false
+            "visible": true
           },
           "group": "S01-small-shelter",
           "id": "S01-small-shelter-1",
@@ -1025,6 +1029,9 @@
                 "path": "s01Survival.shelterCompleted"
               }
             ]
+          },
+          "editor": {
+            "visible": true
           },
           "event": "interact",
           "height": 115,

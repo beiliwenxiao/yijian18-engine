@@ -397,7 +397,6 @@
   "worldMap": "mainland",
   "imageAssets": {
     "s02.environment.abandonedCampGround": {
-      "src": "../example/sanguo_zhangjiao/assets/images/s02/abandoned-camp-ground.svg",
       "name": "S02 废弃营地地貌"
     }
   },

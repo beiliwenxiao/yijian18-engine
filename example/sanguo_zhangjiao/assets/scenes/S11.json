@@ -219,13 +219,13 @@
   "decorations": [],
   "colliders": [],
   "imageAssets": {
-    "s11.environment.guangzongBattlefieldGround": { "src": "../example/sanguo_zhangjiao/assets/images/s11/guangzong-battlefield-ground.svg", "name": "广宗百人战地貌" },
-    "s11.prop.beaconTower": { "src": "../example/sanguo_zhangjiao/assets/images/s11/beacon-tower.svg", "name": "广宗烽火台" },
-    "s11.vehicle.breakoutHorse": { "src": "../example/sanguo_zhangjiao/assets/images/s11/breakout-horse.svg", "name": "广宗突围战马" },
-    "s11.unit.assassin": { "src": "../example/sanguo_zhangjiao/assets/images/s11/assassin.svg", "name": "广宗刺客" },
-    "s09.character.zhangliang": { "src": "../example/sanguo_zhangjiao/assets/images/s09/zhangliang.svg", "name": "张梁" },
-    "s13.story.finalCommandBanner": { "src": "../example/sanguo_zhangjiao/assets/images/s13/final-command-banner.svg", "name": "军令旗" },
-    "story.messengerRecallBanner": { "src": "../example/sanguo_zhangjiao/assets/images/story/messenger-recall-banner.svg", "name": "下曲阳军令旗" }
+    "s11.environment.guangzongBattlefieldGround": { "name": "广宗百人战地貌" },
+    "s11.prop.beaconTower": { "name": "广宗烽火台" },
+    "s11.vehicle.breakoutHorse": { "name": "广宗突围战马" },
+    "s11.unit.assassin": { "name": "广宗刺客" },
+    "s09.character.zhangliang": { "name": "张梁" },
+    "s13.story.finalCommandBanner": { "name": "军令旗" },
+    "story.messengerRecallBanner": { "name": "下曲阳军令旗" }
   },
   "updatedAt": "2026-08-12T00:00:00.000Z"
 }

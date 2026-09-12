@@ -642,23 +642,18 @@
   "colliders": [],
   "imageAssets": {
     "graybox.naturalTerrain": {
-      "src": "../example/sanguo_zhangjiao/assets/images/graybox/natural-terrain.svg",
       "name": "自然地形灰盒"
     },
     "graybox.battlefieldUnit": {
-      "src": "../example/sanguo_zhangjiao/assets/images/graybox/battlefield-unit.svg",
       "name": "战场单位灰盒"
     },
     "s03.unit.yellowTurbanSoldier": {
-      "src": "../example/sanguo_zhangjiao/assets/images/s03/yellow-turban-soldier.svg",
       "name": "黄巾单位"
     },
     "s04.resource.herbNode": {
-      "src": "../example/sanguo_zhangjiao/assets/images/s04/herb-node.svg",
       "name": "长社草药节点"
     },
     "s04.environment.changsheBurnedGround": {
-      "src": "../example/sanguo_zhangjiao/assets/images/s04/changshe-burned-ground.svg",
       "name": "S04 长社焦土地貌"
     }
   },

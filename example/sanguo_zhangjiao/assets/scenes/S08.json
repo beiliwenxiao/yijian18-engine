@@ -308,27 +308,21 @@
   "colliders": [],
   "imageAssets": {
     "graybox.naturalTerrain": {
-      "src": "../example/sanguo_zhangjiao/assets/images/graybox/natural-terrain.svg",
       "name": "自然地形稳定资源"
     },
     "graybox.battlefieldUnit": {
-      "src": "../example/sanguo_zhangjiao/assets/images/graybox/battlefield-unit.svg",
       "name": "军令旗稳定资源"
     },
     "s09.environment.yellowTurbanTent": {
-      "src": "../example/sanguo_zhangjiao/assets/images/s09/yellow-turban-tent.svg",
       "name": "黄巾营帐稳定资源"
     },
     "s08.vehicle.retreatCart": {
-      "src": "../example/sanguo_zhangjiao/assets/images/s08/retreat-cart.svg",
       "name": "西华撤退马车"
     },
     "story.messengerRecallBanner": {
-      "src": "../example/sanguo_zhangjiao/assets/images/story/messenger-recall-banner.svg",
       "name": "冀州召回信使旗"
     },
     "s08.environment.remnantCampGround": {
-      "src": "../example/sanguo_zhangjiao/assets/images/s08/remnant-camp-ground.svg",
       "name": "S08 西华残部营地地貌"
     }
   },
