@@ -1588,21 +1588,24 @@ export class S01S02Coordinator {
   }
 
   _startVineClimb() {
-    if (this.pendingClimb || this._story().s01Survival?.cliffReached !== true) return false;
+    if (this.pendingClimb) return { ok: true, status: 'alreadyClimbing' };
+    if (this._story().s01Survival?.cliffReached !== true) {
+      return { ok: false, code: 'cliffNotReached' };
+    }
     const climbTarget = this.scene.resolveClimbTarget?.({ entity: this.scene.playerEntity });
     if (!climbTarget?.targetPosition) {
       this.scene._showScreenTip('没有找到当前山崖藤蔓的有效攀爬目标，请重新靠近藤蔓。', { title: '无法攀爬' });
-      return false;
+      return { ok: false, code: 'climbTargetUnavailable' };
     }
     const started = this.scene.locomotionSystem?.climbSystem?.startClimb?.(
       this.scene.playerEntity,
       climbTarget.targetPosition,
       { duration: 1.8, peakHeight: 38 }
     );
-    if (!started) return false;
+    if (!started) return { ok: false, code: 'climbStartRejected' };
     this.pendingClimb = true;
     this.climbObservedActive = true;
-    return true;
+    return { ok: true };
   }
 
   update(deltaTime) {

@@ -39,6 +39,11 @@ fileMatchPattern: '{**/DataDrivenPrologueScene*,**/BaseGameScene*,**/TriggerActi
 
 以上事件表示**已成立事实**，不是输入尝试：物品事件只能在库存、地面对象、checkpoint 与 state revision 全部提交成功后发布；位置事件只能在玩家实际 Transform 进入目标范围后发布；NPC `interact` 只能在对话或商店成功启动后发布。`TriggerSystem.fire()/fireById()` 返回的是 accepted/consumed，不是业务成功；需要成功结果时必须使用 `fireAndWait()`、`triggerSucceeded` 或 ledger。
 
+## 攀爬 surface 与空间 trigger
+
+- `semanticRole:'climbSurface'` 的 `radius` 必须覆盖引用该对象的空间 binding `radius`；交互 binding 已命中时，攀爬目标二次解析不得因更小的默认半径拒绝。
+- 具体场景攀爬动作要将“已在攀爬”作为幂等成功返回；目标缺失、剧情前置不足或 ClimbSystem 拒绝必须返回稳定 `code`，不得以裸 `false` 退化成通用动作拒绝。
+
 ## 运行时约束
 
 - 默认入口和微信小游戏入口只注册 `DataDrivenPrologueScene`。

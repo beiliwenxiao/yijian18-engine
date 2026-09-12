@@ -250,6 +250,7 @@
           "imageId": "s01.environment.cliffVine",
           "name": "逃生藤蔓",
           "prompt": "{climb}攀上藤蔓逃离狼群",
+          "radius": 100,
           "semanticRole": "climbSurface",
           "sortY": 190,
           "type": "image",
@@ -302,8 +303,8 @@
           "type": "shape",
           "walkable": true,
           "width": 72,
-          "x": 575.1251251251251,
-          "y": 247.4994994994995
+          "x": 612.9811794684708,
+          "y": 250.82020602084555
         },
         {
           "fill": "#fff700",
@@ -319,25 +320,8 @@
           "type": "shape",
           "walkable": true,
           "width": 68,
-          "x": 707.6576576576576,
-          "y": 282.84484484484483
-        },
-        {
-          "fill": "#ffd500",
-          "fillMode": "color",
-          "height": 48,
-          "id": "S01-stepping-stone-3",
-          "name": "跳石三",
-          "opacity": 0,
-          "semanticRole": "steppingStone",
-          "shapeType": "ellipse",
-          "stroke": "#aaa08e",
-          "strokeWidth": 2,
-          "type": "shape",
-          "walkable": true,
-          "width": 72,
-          "x": 849.1591591591591,
-          "y": 272.78278278278276
+          "x": 714.2990707003498,
+          "y": 208.46101876669184
         }
       ],
       "visible": true
@@ -1211,8 +1195,8 @@
           "sliceKey": "bush2",
           "type": "slice",
           "width": 32,
-          "x": 591.664658679772,
-          "y": 244.08856193146266
+          "x": 630.8489956316561,
+          "y": 254.05068149550095
         },
         {
           "atlasId": "mountain_landscape",
@@ -1222,8 +1206,8 @@
           "sliceKey": "bush2",
           "type": "slice",
           "width": 32,
-          "x": 723.5015015015015,
-          "y": 294.9389389389389
+          "x": 731.4711971527321,
+          "y": 217.23440633943983
         },
         {
           "atlasId": "mountain_landscape",
@@ -1233,19 +1217,8 @@
           "sliceKey": "bush2",
           "type": "slice",
           "width": 32,
-          "x": 864.1901901901902,
-          "y": 281.15815815815813
-        },
-        {
-          "atlasId": "mountain_landscape",
-          "height": 32,
-          "id": "obj_1788990200465_999",
-          "name": "灌木1",
-          "sliceKey": "bush2",
-          "type": "slice",
-          "width": 32,
-          "x": 815,
-          "y": 173
+          "x": 815.0437336742676,
+          "y": 171.57484295373632
         }
       ],
       "visible": true

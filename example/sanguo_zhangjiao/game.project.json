@@ -6850,9 +6850,15 @@
       {
         "aiType": "aggressive",
         "id": "enemy.s01_bandit",
+        "imageId": "s09.character.governmentScout",
         "level": 1,
         "lootTable": [],
         "name": "荒野盗匪",
+        "sprite": {
+          "height": 76,
+          "isStatic": true,
+          "width": 58
+        },
         "stats": {
           "attack": 6,
           "defense": 1,
@@ -6864,9 +6870,15 @@
       {
         "aiType": "aggressive",
         "id": "enemy.s02_scavenger",
+        "imageId": "s09.character.woundedSoldier",
         "level": 1,
         "lootTable": [],
         "name": "营地拾荒者",
+        "sprite": {
+          "height": 70,
+          "isStatic": true,
+          "width": 58
+        },
         "stats": {
           "attack": 5,
           "defense": 1,

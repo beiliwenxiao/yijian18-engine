@@ -1,28 +1,29 @@
 {
   "version": 1,
-  "createdAt": 1789198969022,
+  "createdAt": 1789202481000,
   "meta": {
     "gameId": "sanguo_zhangjiao",
     "kind": "auto",
     "autoSlot": 2,
     "characterName": "柔弱女子",
     "level": 1,
-    "currentSceneId": "S01",
-    "location": "S01 区域",
-    "reason": "interval",
+    "currentSceneId": "S02",
+    "location": "S02 区域",
+    "reason": "checkpoint",
+    "checkpointId": "checkpoint.player-death-1",
     "previewFile": "thumbnail.jpg"
   },
   "data": {
     "game": {
       "campaignId": "sanguo-zhangjiao-s01-s14",
       "schemaVersion": 3,
-      "currentSceneId": "S01",
+      "currentSceneId": "S02",
       "player": {
         "id": "refugee",
         "name": null,
         "transform": {
-          "x": 8296.237639133524,
-          "y": 4142.5,
+          "x": 9488.72809951862,
+          "y": 3434.3550016842505,
           "elevation": 0,
           "rotation": 0,
           "scale": {
@@ -39,15 +40,15 @@
           "baseAttack": 10,
           "baseDefense": 5,
           "baseSpeed": 100,
-          "maxHp": 105,
-          "hp": 16,
+          "maxHp": 100,
+          "hp": 0,
           "maxMp": 100,
-          "mp": 15,
+          "mp": 10,
           "maxStamina": 100,
           "stamina": 100,
           "staminaRegen": 12,
-          "attack": 11,
-          "defense": 18,
+          "attack": 10,
+          "defense": 5,
           "speed": 100,
           "level": 1,
           "exp": 0,
@@ -100,18 +101,17 @@
           {
             "definitionId": "resource.wolf_hide",
             "quantity": 3
-          }
-        ],
-        "equipment": {
-          "accessory": {
+          },
+          {
             "definitionId": "equipment.s01.wolf_hide_bracers",
             "quantity": 1
           },
-          "armor": {
+          {
             "definitionId": "equipment.s01.wolf_hide_vest",
             "quantity": 1
           }
-        }
+        ],
+        "equipment": {}
       },
       "tutorial": {
         "completedTutorials": [
@@ -157,10 +157,35 @@
             "type": "end",
             "dialogueId": "dialogue.s01.wake",
             "timestamp": 1788925399287
+          },
+          {
+            "type": "node",
+            "nodeId": "start",
+            "speaker": "黄巾信使",
+            "text": "你终于到了。张角正在粥棚营地召集仍愿救民的人。",
+            "timestamp": 1789202463681
+          },
+          {
+            "type": "start",
+            "dialogueId": "dialogue.s02.zhangjiaoSummons",
+            "timestamp": 1789202463681
+          },
+          {
+            "type": "node",
+            "nodeId": "accept",
+            "speaker": "你",
+            "text": "我会前去赴约。先把这里能用的物资收拾妥当。",
+            "timestamp": 1789202465027
+          },
+          {
+            "type": "end",
+            "dialogueId": "dialogue.s02.zhangjiaoSummons",
+            "timestamp": 1789202466680
           }
         ],
         "completedDialogues": [
-          "dialogue.s01.wake"
+          "dialogue.s01.wake",
+          "dialogue.s02.zhangjiaoSummons"
         ]
       },
       "quests": {
@@ -327,7 +352,7 @@
           },
           "storyState": {
             "currentDay": 2,
-            "currentSceneId": "S01",
+            "currentSceneId": "S02",
             "delayedConsequences": [],
             "endingInputs": {
               "allowedCityDestruction": false,
@@ -415,13 +440,15 @@
             "trg_s01_first_wolf_spotted",
             "trg_s01_first_wolf_killed_committed",
             "trg_s01_wolf_skinned",
-            "trg_s01_shelter_completed"
+            "trg_s01_shelter_completed",
+            "trg_s02_zhangjiao_summons",
+            "trg_s02_accept_summons"
           ],
           "cooldowns": {
             "trg_s01_spawn_initial": {
               "definitionRevision": 1,
               "remaining": 0,
-              "nextDue": 95939.89999999944,
+              "nextDue": 0,
               "duration": 1000
             },
             "trg_s01_refuel_campfire": {
@@ -457,19 +484,25 @@
             "trg_s01_river_crossed": {
               "definitionRevision": 1,
               "remaining": 0,
-              "nextDue": 62307.79999999842,
+              "nextDue": 33296.80000000028,
               "duration": 1000
             },
             "trg_s01_cliff_reached": {
               "definitionRevision": 1,
               "remaining": 0,
-              "nextDue": 69056.4999999993,
+              "nextDue": 38363.90000000014,
               "duration": 1000
             },
             "trg_s01_climb_vine": {
               "definitionRevision": 1,
               "remaining": 0,
-              "nextDue": 72789.19999999925,
+              "nextDue": 45946.200000000186,
+              "duration": 1000
+            },
+            "trg_s02_zhangjiao_summons": {
+              "definitionRevision": 1,
+              "remaining": 0,
+              "nextDue": 68947.69999999972,
               "duration": 1000
             }
           },
@@ -480,22 +513,22 @@
               {
                 "triggerId": "trg_s01_spawn_initial",
                 "definitionRevision": 1,
-                "operationId": "trigger:1:trg_s01_spawn_initial:5",
-                "fingerprint": "sha256-a9b370981b17d9326449205c028bc6e19bd49d02343db5256d089e958a8c979b",
+                "operationId": "trigger:1:trg_s01_spawn_initial:1",
+                "fingerprint": "sha256-f637b740e9bb44430e4c2cdc1c665ea44371e0c8985e2f9d2742604a9006bf92",
                 "status": "succeeded",
                 "actionIndex": 2,
                 "result": {
                   "ok": true,
-                  "operationId": "trigger:1:trg_s01_spawn_initial:5:trigger:trg_s01_spawn_initial:step:present-entry",
+                  "operationId": "trigger:1:trg_s01_spawn_initial:1:trigger:trg_s01_spawn_initial:step:present-entry",
                   "status": "succeeded",
                   "committed": false,
                   "code": null,
                   "stateId": "trigger:trg_s01_spawn_initial",
                   "stateRevision": null
                 },
-                "startedAt": 94939.89999999944,
-                "finishedAt": 94939.89999999944,
-                "ledgerRevision": 11
+                "startedAt": 0,
+                "finishedAt": 0,
+                "ledgerRevision": 6
               },
               {
                 "triggerId": "trg_s01_pickup_worn_axe",
@@ -1057,8 +1090,8 @@
                   "stateId": "trigger:trg_s01_river_crossed",
                   "stateRevision": null
                 },
-                "startedAt": 61257.79999999842,
-                "finishedAt": 61307.79999999842,
+                "startedAt": 32246.80000000028,
+                "finishedAt": 32296.80000000028,
                 "ledgerRevision": 4
               },
               {
@@ -1077,8 +1110,8 @@
                   "stateId": "tutorial:s01.capacity",
                   "stateRevision": 1
                 },
-                "startedAt": 68006.4999999993,
-                "finishedAt": 68056.4999999993,
+                "startedAt": 37330.50000000012,
+                "finishedAt": 37363.90000000014,
                 "ledgerRevision": 5
               },
               {
@@ -1097,8 +1130,8 @@
                   "stateId": "trigger:trg_s01_climb_vine",
                   "stateRevision": null
                 },
-                "startedAt": 71739.19999999925,
-                "finishedAt": 71789.19999999925,
+                "startedAt": 44896.30000000016,
+                "finishedAt": 44946.200000000186,
                 "ledgerRevision": 4
               },
               {
@@ -1116,26 +1149,42 @@
               {
                 "triggerId": "trg_s02_zhangjiao_summons",
                 "definitionRevision": 1,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
+                "operationId": "trigger:1:trg_s02_zhangjiao_summons:5",
+                "fingerprint": "sha256-dbbb99daf4e1e45041c9a77f1c983c4e03c12f6a1384e59aff46bbe4ef524d8f",
+                "status": "succeeded",
+                "actionIndex": 0,
+                "result": {
+                  "ok": true,
+                  "operationId": "trigger:1:trg_s02_zhangjiao_summons:5",
+                  "status": "succeeded",
+                  "committed": false,
+                  "code": null,
+                  "stateId": "trigger:trg_s02_zhangjiao_summons",
+                  "stateRevision": null
+                },
+                "startedAt": 64980.70000000007,
+                "finishedAt": 67947.69999999972,
+                "ledgerRevision": 4
               },
               {
                 "triggerId": "trg_s02_accept_summons",
                 "definitionRevision": 1,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
+                "operationId": "trigger:1:trg_s02_accept_summons:8",
+                "fingerprint": "sha256-5d35476b12661059173383a653a45fba49831e021e02b86fd1f9558d0028d83e",
+                "status": "succeeded",
+                "actionIndex": 1,
+                "result": {
+                  "ok": true,
+                  "operationId": "trigger:1:trg_s02_accept_summons:8",
+                  "status": "skipped",
+                  "committed": false,
+                  "code": "preconditionFailed",
+                  "stateId": "trigger:trg_s02_accept_summons",
+                  "stateRevision": null
+                },
+                "startedAt": 67947.69999999972,
+                "finishedAt": 67947.69999999972,
+                "ledgerRevision": 5
               },
               {
                 "triggerId": "trg_s02_travel_s09",
@@ -2074,8 +2123,8 @@
           "schemaVersion": 2,
           "regionId": "mainland",
           "current": {
-            "col": 6,
-            "row": 5
+            "col": 7,
+            "row": 4
           },
           "chunks": [
             {
@@ -2123,10 +2172,10 @@
                       "state": {
                         "kind": "enemy",
                         "removed": false,
-                        "hp": 30,
+                        "hp": 26,
                         "position": {
-                          "x": 9650.2066986218,
-                          "y": 3395.559243620034
+                          "x": 9477.350476292431,
+                          "y": 3494.982597171476
                         },
                         "ai": {
                           "active": true,
@@ -2143,8 +2192,8 @@
                         "removed": false,
                         "hp": 38,
                         "position": {
-                          "x": 9637.658450414507,
-                          "y": 3341.1347719173827
+                          "x": 9514.813838441729,
+                          "y": 3377.515225602464
                         },
                         "ai": {
                           "active": true,
@@ -2235,9 +2284,9 @@
                     {
                       "id": "death-drop-player-death-1",
                       "position": {
-                        "x": 9631.495294546066,
-                        "y": 3329.4999382170763,
-                        "z": 3329.4999382170763,
+                        "x": 9481.704132520681,
+                        "y": 3439.5927828776807,
+                        "z": 3439.5927828776807,
                         "elevation": 0
                       },
                       "state": {
@@ -2777,8 +2826,8 @@
             "itemId": "resource.wood",
             "secondsPerUnit": 100,
             "maxUnits": 10,
-            "units": 7,
-            "remainingSeconds": 688.0225999999578,
+            "units": 8,
+            "remainingSeconds": 727.9854999999316,
             "active": true
           }
         },
