@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "createdAt": 1789144562426,
+  "createdAt": 1789147451385,
   "meta": {
     "gameId": "sanguo_zhangjiao",
     "kind": "auto",
@@ -22,8 +22,8 @@
         "id": "refugee",
         "name": null,
         "transform": {
-          "x": 8241.857310911239,
-          "y": 4028.92564486711,
+          "x": 8234.700769696949,
+          "y": 4035.9605504893298,
           "elevation": 0,
           "rotation": 0,
           "scale": {
@@ -425,13 +425,13 @@
             "trg_s01_craft_wolf_gear": {
               "definitionRevision": 1,
               "remaining": 0,
-              "nextDue": 14017.199999999997,
+              "nextDue": 7682.9000000017695,
               "duration": 1000
             },
             "trg_s01_build_shelter": {
               "definitionRevision": 1,
               "remaining": 0,
-              "nextDue": 31334.600000000013,
+              "nextDue": 26665.700000001118,
               "duration": 1000
             }
           },
@@ -675,8 +675,8 @@
                   "stateId": "trigger:trg_s01_gather_wood_completed",
                   "stateRevision": null
                 },
-                "startedAt": 24901.200000000004,
-                "finishedAt": 24901.200000000004,
+                "startedAt": 19816.000000001397,
+                "finishedAt": 19816.000000001397,
                 "ledgerRevision": 10
               },
               {
@@ -886,22 +886,22 @@
               {
                 "triggerId": "trg_s01_craft_wolf_gear",
                 "definitionRevision": 1,
-                "operationId": "trigger:1:trg_s01_craft_wolf_gear:3",
-                "fingerprint": "sha256-6732023df80b14d236fcb1fe916ed9b6720ef2ab5fdf0117c426d83f8c357526",
+                "operationId": "trigger:1:trg_s01_craft_wolf_gear:4",
+                "fingerprint": "sha256-9a0e710647d2def0e52b69e0b84eb3a4a6dfa87016b3c945124a7d2c66a5ae7d",
                 "status": "succeeded",
                 "actionIndex": 0,
                 "result": {
                   "ok": true,
-                  "operationId": "trigger:1:trg_s01_craft_wolf_gear:3:trigger:trg_s01_craft_wolf_gear:step:craft-wolf-gear",
+                  "operationId": "trigger:1:trg_s01_craft_wolf_gear:4:trigger:trg_s01_craft_wolf_gear:step:craft-wolf-gear",
                   "status": "succeeded",
                   "committed": false,
                   "code": null,
                   "stateId": "trigger:trg_s01_craft_wolf_gear",
                   "stateRevision": null
                 },
-                "startedAt": 12983.899999999998,
-                "finishedAt": 13017.199999999997,
-                "ledgerRevision": 7
+                "startedAt": 6649.600000001956,
+                "finishedAt": 6682.9000000017695,
+                "ledgerRevision": 10
               },
               {
                 "triggerId": "trg_s01_cook_meat",
@@ -946,21 +946,21 @@
               {
                 "triggerId": "trg_s01_build_shelter",
                 "definitionRevision": 1,
-                "operationId": "trigger:1:trg_s01_build_shelter:6",
-                "fingerprint": "sha256-8b93385ef6c7cfa67e8106ea26ade147087e1131a5c22ec0f3239907513c773d",
+                "operationId": "trigger:1:trg_s01_build_shelter:7",
+                "fingerprint": "sha256-2ccfda894910ac22a185543cb322130fd5fd76133f26957b109d7f98c77d21f6",
                 "status": "succeeded",
                 "actionIndex": 0,
                 "result": {
                   "ok": true,
-                  "operationId": "trigger:1:trg_s01_build_shelter:6:trigger:trg_s01_build_shelter:step:start-shelter-construction",
+                  "operationId": "trigger:1:trg_s01_build_shelter:7:trigger:trg_s01_build_shelter:step:start-shelter-construction",
                   "status": "committed",
                   "committed": true,
                   "code": null,
                   "stateId": "sanguo:command:construction.command",
                   "stateRevision": 2
                 },
-                "startedAt": 28184.600000000013,
-                "finishedAt": 30334.600000000013,
+                "startedAt": 23416.00000000233,
+                "finishedAt": 25665.700000001118,
                 "ledgerRevision": 7
               },
               {
@@ -979,19 +979,19 @@
                   "stateId": "trigger:trg_s01_shelter_completed",
                   "stateRevision": null
                 },
-                "startedAt": 34251.100000000006,
-                "finishedAt": 36451.3,
+                "startedAt": 29481.60000000056,
+                "finishedAt": 31715.100000001024,
                 "ledgerRevision": 4
               },
               {
                 "triggerId": "trg_s01_overnight",
                 "definitionRevision": 1,
-                "operationId": "trigger:1:trg_s01_overnight:8",
-                "fingerprint": "sha256-f9f2e10f37dc7b8d9070adcc4b87a089acf0314c21ebcd0217e8791ff08bf273",
+                "operationId": "trigger:1:trg_s01_overnight:10",
+                "fingerprint": "sha256-0b1d67545fd93d4cb91157c392a496e9207de38cf47a367bea851408f4eb4608",
                 "status": "running",
                 "actionIndex": 0,
                 "result": null,
-                "startedAt": 36417.9,
+                "startedAt": 36381.60000000149,
                 "finishedAt": null,
                 "ledgerRevision": 2
               },
@@ -2234,7 +2234,7 @@
                         "schemaVersion": 1,
                         "resourceType": "wood",
                         "itemId": "resource.wood",
-                        "remaining": 6,
+                        "remaining": 3,
                         "maxRemaining": 12,
                         "yieldPerGather": 3,
                         "gatherDuration": 1.8,
@@ -2298,7 +2298,7 @@
                         "schemaVersion": 1,
                         "resourceType": "wood",
                         "itemId": "resource.wood",
-                        "remaining": 9,
+                        "remaining": 12,
                         "maxRemaining": 12,
                         "yieldPerGather": 3,
                         "gatherDuration": 1.8,
@@ -2482,8 +2482,8 @@
                         "removed": false,
                         "hp": 32,
                         "position": {
-                          "x": 8054.701105931026,
-                          "y": 4189.221393878699
+                          "x": 8047.867114394233,
+                          "y": 4194.809130136052
                         },
                         "ai": {
                           "active": true,
@@ -2500,8 +2500,8 @@
                         "removed": false,
                         "hp": 32,
                         "position": {
-                          "x": 8148.2579981057115,
-                          "y": 4220.5700731773095
+                          "x": 8144.902475394205,
+                          "y": 4228.741183356847
                         },
                         "ai": {
                           "active": true,
@@ -2518,8 +2518,8 @@
                         "removed": false,
                         "hp": 32,
                         "position": {
-                          "x": 8242.006965732133,
-                          "y": 4192.860665028174
+                          "x": 8243.724182331242,
+                          "y": 4201.582728739751
                         },
                         "ai": {
                           "active": true,
@@ -2567,7 +2567,7 @@
             "secondsPerUnit": 100,
             "maxUnits": 10,
             "units": 4,
-            "remainingSeconds": 347.696199999979,
+            "remainingSeconds": 347.74989999997297,
             "active": true
           }
         },
@@ -2709,20 +2709,10 @@
                 "accepted": 3,
                 "itemName": "木材",
                 "remainder": 0,
-                "nodeRemaining": 9,
+                "nodeRemaining": 3,
                 "toolBroken": false,
                 "toolInstanceId": "S01-tool-axe-1",
-                "risk": {
-                  "triggered": true,
-                  "id": "risk.dry_wood_noise",
-                  "type": "noise",
-                  "message": "枯木断裂的巨响传向荒野，附近可能有敌人注意到这里。",
-                  "payload": {
-                    "alert": 1
-                  },
-                  "nodeId": "S01-node-wood-3",
-                  "operationId": "gather-8"
-                }
+                "risk": null
               }
             }
           ]

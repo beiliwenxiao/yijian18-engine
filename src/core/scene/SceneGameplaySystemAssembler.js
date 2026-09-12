@@ -248,7 +248,8 @@ export class SceneGameplaySystemAssembler {
       inventoryTransactions: scene.inventoryTransactions,
       entityFactory: scene.entityFactory,
       entityStore: scene.entityStore,
-      revivePlayer: player => scene.combatSystem.revivePlayer(player),
+      revivePlayer: (player, reviveOptions) => scene.combatSystem.revivePlayer(player, reviveOptions),
+      reviveOptions: { hpRatio: 0.15, mpRatio: 0.15 },
       respawnResolver: ({ player, resolution } = {}) => {
         if (resolution?.type !== 'specialFaint') {
           const position = player?.getComponent?.('transform')?.position;
@@ -315,20 +316,40 @@ export class SceneGameplaySystemAssembler {
       'player-death-countdown'
     );
 
-    // 灵魂状态复活流程：普通死亡后保持可移动的灵魂状态，走到篝火复活圈内等待 20 秒。
+    // 普通死亡在权威掉落结算成功后，传送到最近已点燃火堆并开始 10 秒复活倒计时。
     scene.playerSoulRespawn = new PlayerSoulRespawn({
-      durationSeconds: 20,
-      approachRadius: 150,
+      durationSeconds: 10,
       reviveOffsetY: 46,
       getCampfirePosition: () => {
         const campfire = scene.context?.services?.campfire;
-        return campfire?.isConfigured?.() === true ? campfire.getPosition() : null;
+        if (campfire?.isConfigured?.() !== true || campfire?.isLit?.() !== true) return null;
+        const position = campfire.getPosition?.();
+        return Number.isFinite(position?.x) && Number.isFinite(position?.y)
+          ? { ...position, label: '已点燃的火堆旁' }
+          : null;
       },
       getSpawnPosition: () => scene.resolvePlayerRespawnPosition?.({}) || null,
       showTip: (text, options) => scene._showScreenTip?.(text, options),
       hideTip: () => scene._hintPresenter?.hideScreen?.('playerSoul'),
       onCountdown: (seconds, presentation) => scene.context?.services?.campfire
         ?.setRespawnCountdown?.(seconds, presentation),
+      onAwaitConfirmation: pending => {
+        const view = scene.irreversibleChoiceView;
+        if (!view) return false;
+        const location = pending.respawnPosition?.label || '安全地点';
+        view.open({
+          title: '确认复活',
+          description: `倒计时结束。是否在${location}复活？`,
+          warning: '取消会保持死亡状态，并重新开始 10 秒倒计时。',
+          allowCancel: true,
+          selectedId: 'revive',
+          choices: [
+            { id: 'cancel', label: '取消', immediate: true, consequences: ['保持死亡状态', '重新开始复活倒计时'] },
+            { id: 'revive', label: '复活', immediate: true, consequences: ['在火堆旁复活', '恢复 15% 生命与法力'] }
+          ]
+        });
+        return true;
+      },
       onSoulStateChange: active => {
         scene.playerSoulActive = active === true;
         if (active === true && scene.combatSystem?.isInCombat?.() === true) {
@@ -442,22 +463,35 @@ export class SceneGameplaySystemAssembler {
       if (scene.playerSoulRespawn?.pending || scene.playerDeathCountdown?.pending) {
         return { ok: true, pending: true, idempotent: true };
       }
-      // 普通死亡优先进入灵魂状态流程：立即结算掉落（deferRespawn），玩家走到篝火倒计时复活。
-      const soulStarted = scene.playerSoulRespawn?.start({ player, deathId, resolution, deathEvent });
-      if (soulStarted) {
-        void Promise.resolve(executePlayerDeath({ player, deathId, resolution, deferRespawn: true })).catch(error => {
-          console.warn('SceneGameplaySystemAssembler: 灵魂状态死亡结算失败', error);
+
+      // 掉落和资源损失必须在真实死亡位置先提交；成功后才允许移动到火堆开始复活。
+      void Promise.resolve(executePlayerDeath({ player, deathId, resolution, deferRespawn: true }))
+        .then(result => {
+          if (result?.ok) {
+            const started = scene.playerSoulRespawn?.start({ player, deathId, resolution, deathEvent }) === true;
+            if (started) return result;
+            scene._showScreenTip?.('死亡结算已完成，但复活流程无法启动。', {
+              title: '死亡',
+              owner: 'playerSoul',
+              persist: true
+            });
+            return { ok: false, code: 'soulRespawnUnavailable' };
+          }
+          scene._showScreenTip?.('死亡结算失败，无法开始复活。', {
+            title: '死亡',
+            owner: 'playerSoul',
+            persist: true
+          });
+          return result || { ok: false, code: 'deathSettlementFailed' };
+        })
+        .catch(error => {
+          console.warn('SceneGameplaySystemAssembler: 延期死亡结算失败', error);
+          scene._showScreenTip?.('死亡结算失败，无法开始复活。', {
+            title: '死亡',
+            owner: 'playerSoul',
+            persist: true
+          });
         });
-        return { ok: true, pending: true };
-      }
-      // 兜底：灵魂流程不可用时沿用原「倒计时 + 确认复活」
-      const countdownStarted = scene.playerDeathCountdown?.start({
-        player, deathId, resolution, deathEvent
-      });
-      if (countdownStarted) return { ok: true, pending: true };
-      void Promise.resolve(executePlayerDeath({ player, deathId, resolution })).catch(error => {
-        console.warn('SceneGameplaySystemAssembler: 普通死亡直接结算失败', error);
-      });
       return { ok: true, pending: true };
     });
 

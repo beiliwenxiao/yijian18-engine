@@ -1,5 +1,23 @@
 /************************************************************
- * YiJian18-Engine - read-only irreversible choice modal
+
+ * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
+
+ * 
+
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+
+ * @author    刘枭 (beiliwenxiao)
+
+ * @email     beiliwenxiao@qq.com
+
+ * @date      2026-01-14
+
+ * @blog      https://blog.csdn.net/beiliwenxiao
+
+ * @repo      https://github.com/beiliwenxiao/yijian18-engine
+
+ *            https://gitee.com/coderaaa/yijian18-engine
+
  ************************************************************/
 
 import { UIElement } from './UIElement.js';
@@ -80,8 +98,10 @@ export class IrreversibleChoiceView extends UIElement {
       ));
       inputManager.markMouseClickHandled?.();
       if (card) {
-        if (this.selectedId === card.id) this._confirm();
-        else this.selectedId = card.id;
+        const choice = choices.find(item => item.id === card.id);
+        const alreadySelected = this.selectedId === card.id;
+        this.selectedId = card.id;
+        if (choice?.immediate === true || alreadySelected) this._confirm();
       }
     }
 

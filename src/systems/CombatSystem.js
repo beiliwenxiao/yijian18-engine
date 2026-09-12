@@ -2362,21 +2362,31 @@ export class CombatSystem {
    * 复活玩家
    * @param {Entity} player - 玩家实体
    */
-  revivePlayer(player, { hp = null, mp = null } = {}) {
+  revivePlayer(player, { hp = null, mp = null, hpRatio = null, mpRatio = null } = {}) {
     const stats = player.getComponent('stats');
     if (!stats) return;
-    
+
     console.log('玩家复活');
-    
-    // 默认维持旧 API 的满状态复活；普通死亡由统一失败结算明确传入 1/1。
+
+    // 显式绝对值优先，比例用于权威死亡/复活结算，避免 UI 或表现层直接修改属性。
     stats.fullRestore();
-    if (Number.isFinite(hp)) stats.hp = Math.max(0, Math.min(stats.maxHp, Math.floor(hp)));
-    if (Number.isFinite(mp)) stats.mp = Math.max(0, Math.min(stats.maxMp, Math.floor(mp)));
-    
+    if (Number.isFinite(hp)) {
+      stats.hp = Math.max(0, Math.min(stats.maxHp, Math.floor(hp)));
+    } else if (Number.isFinite(hpRatio)) {
+      const ratio = Math.max(0, Math.min(1, hpRatio));
+      stats.hp = Math.max(1, Math.min(stats.maxHp, Math.ceil(stats.maxHp * ratio)));
+    }
+    if (Number.isFinite(mp)) {
+      stats.mp = Math.max(0, Math.min(stats.maxMp, Math.floor(mp)));
+    } else if (Number.isFinite(mpRatio)) {
+      const ratio = Math.max(0, Math.min(1, mpRatio));
+      stats.mp = Math.max(0, Math.min(stats.maxMp, Math.ceil(stats.maxMp * ratio)));
+    }
+
     // 清除死亡标记
     player.isDying = false;
     player.isDead = false;
-    
+
     // 恢复待机动画
     const sprite = player.getComponent('sprite');
     if (sprite) {

@@ -21,9 +21,19 @@
 
 const hasTag = (entity, tag) => Array.isArray(entity?.tags) && entity.tags.includes(tag);
 
+/** 跨客户端以稳定实体 ID 推导游荡相位，避免 Math.random 破坏回放与服务端权威。 */
+function stableEntityHash(entityId) {
+  let hash = 2166136261;
+  for (const character of String(entityId || '')) {
+    hash ^= character.charCodeAt(0);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+}
+
 /** canonical 战役单位只攻击其他参战阵营；普通敌人继续使用 legacy faction/type 规则。 */
 function isHostileTarget(entity, candidate) {
-  if (candidate === entity || candidate?.isDead || candidate?.isDying) return false;
+  if (candidate === entity || candidate?.isDead || candidate?.isDying || candidate?.isSoulState) return false;
   if (hasTag(entity, 'battleParticipant')) {
     const candidateParticipates = hasTag(candidate, 'battleParticipant')
       || hasTag(candidate, 'battleIntervenor');
@@ -45,6 +55,7 @@ class AIController {
   constructor() {
     this.updateInterval = 0.5; // AI更新间隔（秒）
     this.timeSinceLastUpdate = 0;
+    this.idleWander = null;
   }
 
   /**
@@ -115,32 +126,65 @@ class AIController {
    * @param {Entity} target - 目标
    */
   moveTowardsTarget(entity, target) {
+    const targetPosition = target?.getComponent?.('transform')?.position;
+    if (targetPosition) this.moveTowardsPosition(entity, targetPosition);
+  }
+
+  /** 将实体移动到明确坐标，供追击与确定性待机徘徊复用。 */
+  moveTowardsPosition(entity, position) {
     const transform = entity.getComponent('transform');
-    const targetTransform = target.getComponent('transform');
     const movement = entity.getComponent('movement');
+    if (!transform || !movement || !Number.isFinite(position?.x) || !Number.isFinite(position?.y)) return;
 
-    if (!transform || !targetTransform || !movement) return;
+    const dx = position.x - transform.position.x;
+    const dy = position.y - transform.position.y;
+    const distance = Math.hypot(dx, dy);
+    if (distance <= 0) return;
 
-    // 计算方向
-    const dx = targetTransform.position.x - transform.position.x;
-    const dy = targetTransform.position.y - transform.position.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
+    movement.velocity.x = (dx / distance) * movement.speed;
+    movement.velocity.y = (dy / distance) * movement.speed;
+    const sprite = entity.getComponent('sprite');
+    if (sprite && sprite.currentAnimation !== 'walk') sprite.playAnimation('walk');
+  }
 
-    if (distance > 0) {
-      // 归一化方向
-      const dirX = dx / distance;
-      const dirY = dy / distance;
+  /** 获得攻击目标时丢弃纯运行态的待机徘徊草稿。 */
+  clearIdleWander() {
+    this.idleWander = null;
+  }
 
-      // 设置移动速度
-      movement.velocity.x = dirX * movement.speed;
-      movement.velocity.y = dirY * movement.speed;
-      
-      // 播放移动动画
-      const sprite = entity.getComponent('sprite');
-      if (sprite && sprite.currentAnimation !== 'walk') {
-        sprite.playAnimation('walk');
-      }
+  /**
+   * 无目标时在首次失去目标的位置附近确定性徘徊。
+   * 状态仅保存在 AI controller 内存中；稳定实体 ID 与步进共同决定路线，便于回放复现。
+   */
+  wanderNear(entity) {
+    const transform = entity.getComponent('transform');
+    if (!transform?.position) return;
+    if (!this.idleWander) {
+      this.idleWander = {
+        anchor: { x: transform.position.x, y: transform.position.y },
+        hash: stableEntityHash(entity.id),
+        step: 0,
+        target: null,
+        remaining: 0
+      };
     }
+
+    const state = this.idleWander;
+    const reachedTarget = state.target
+      && Math.hypot(state.target.x - transform.position.x, state.target.y - transform.position.y) <= 8;
+    state.remaining -= this.updateInterval;
+    if (!state.target || state.remaining <= 0 || reachedTarget) {
+      const direction = (state.hash + state.step) % 8;
+      const angle = direction * (Math.PI / 4);
+      const radius = 24 + ((state.hash >>> 3) % 25);
+      state.target = {
+        x: state.anchor.x + Math.cos(angle) * radius,
+        y: state.anchor.y + Math.sin(angle) * radius
+      };
+      state.step += 1;
+      state.remaining = 1.8;
+    }
+    this.moveTowardsPosition(entity, state.target);
   }
 
   /**
@@ -212,6 +256,7 @@ class AggressiveAI extends AIController {
 
     // 如果有目标，尝试攻击或移动
     if (combat.hasTarget()) {
+      this.clearIdleWander();
       const target = combat.target;
 
       // 检查是否在攻击范围内
@@ -229,8 +274,8 @@ class AggressiveAI extends AIController {
         this.moveTowardsTarget(entity, target);
       }
     } else {
-      // 没有目标，停止移动
-      this.stopMovement(entity);
+      // 没有目标时保持在最后一次战斗附近确定性徘徊。
+      this.wanderNear(entity);
     }
   }
 
@@ -242,7 +287,7 @@ class AggressiveAI extends AIController {
   isTargetDead(target) {
     if (!target) return true;
     const stats = target.getComponent('stats');
-    return !stats || stats.hp <= 0 || target.isDead;
+    return !stats || stats.hp <= 0 || target.isDead || target.isDying || target.isSoulState;
   }
 }
 
@@ -265,6 +310,7 @@ class DefensiveAI extends AIController {
     const nearestEnemy = this.findNearestEnemy(entity, allEntities, 300, hostileCache);
 
     if (nearestEnemy) {
+      this.clearIdleWander();
       const enemyTransform = nearestEnemy.getComponent('transform');
       if (!enemyTransform) return;
 
@@ -291,9 +337,9 @@ class DefensiveAI extends AIController {
         combat.setTarget(nearestEnemy);
       }
     } else {
-      // 没有敌人，停止移动
-      this.stopMovement(entity);
+      // 没有敌人时清除旧目标并在附近徘徊。
       combat.clearTarget();
+      this.wanderNear(entity);
     }
   }
 
@@ -349,6 +395,7 @@ class SupportAI extends AIController {
     const weakEnemy = this.findWeakestEnemy(entity, allEntities, 350, hostileCache);
 
     if (weakEnemy) {
+      this.clearIdleWander();
       combat.setTarget(weakEnemy);
 
       // 检查是否在攻击范围内
@@ -370,6 +417,7 @@ class SupportAI extends AIController {
       const nearestEnemy = this.findNearestEnemy(entity, allEntities, 300, hostileCache);
       
       if (nearestEnemy) {
+        this.clearIdleWander();
         combat.setTarget(nearestEnemy);
         
         if (this.isInRange(entity, nearestEnemy, combat.attackRange)) {
@@ -384,9 +432,9 @@ class SupportAI extends AIController {
           this.moveTowardsTarget(entity, nearestEnemy);
         }
       } else {
-        // 没有敌人，停止移动
-        this.stopMovement(entity);
+        // 没有敌人时清除旧目标并在附近徘徊。
         combat.clearTarget();
+        this.wanderNear(entity);
       }
     }
   }
@@ -578,7 +626,7 @@ export class AISystem {
     // 按阵营粗分组；canonical 战斗单位使用 factionId，普通单位使用 faction
     const byFaction = new Map();
     for (const entity of entities) {
-      if (!entity || entity.isDead || entity.isDying) continue;
+      if (!entity || entity.isDead || entity.isDying || entity.isSoulState) continue;
       const key = entity.factionId || entity.faction || 'neutral';
       if (!byFaction.has(key)) byFaction.set(key, []);
       byFaction.get(key).push(entity);
@@ -586,7 +634,7 @@ export class AISystem {
 
     // 为每个实体计算敌对列表（利用阵营索引，避免全量 filter）
     for (const entity of entities) {
-      if (!entity || entity.isDead || entity.isDying) continue;
+      if (!entity || entity.isDead || entity.isDying || entity.isSoulState) continue;
       const entityKey = entity.factionId || entity.faction;
       const hostiles = [];
       for (const [key, members] of byFaction) {

@@ -196,6 +196,92 @@
           "walkable": true
         },
         {
+          "depthSort": true,
+          "editor": {
+            "locked": false,
+            "visible": true
+          },
+          "height": 56,
+          "id": "S01-shelter-site-firewood",
+          "imageId": "s01.resource.dryWoodNode",
+          "name": "小庇护所预备木柴",
+          "semanticRole": "constructionMaterial",
+          "sortY": 424.2080909595875,
+          "type": "image",
+          "width": 64,
+          "x": 524.950232759357,
+          "y": 368.28478069284023
+        },
+        {
+          "height": 90,
+          "id": "S01-river-far-bank",
+          "name": "河道对岸",
+          "semanticRole": "travelCheckpoint",
+          "type": "region",
+          "width": 130,
+          "x": 809.9042417440937,
+          "y": 129.56075586288998
+        },
+        {
+          "height": 120,
+          "id": "S01-cliff-base",
+          "name": "山崖脚",
+          "semanticRole": "travelCheckpoint",
+          "type": "region",
+          "width": 130,
+          "x": 1010,
+          "y": 80
+        },
+        {
+          "climbTarget": {
+            "x": 1135,
+            "y": 86
+          },
+          "depthSort": true,
+          "height": 170,
+          "id": "S01-cliff-vine",
+          "imageId": "s01.environment.cliffVine",
+          "name": "逃生藤蔓",
+          "prompt": "{climb}攀上藤蔓逃离狼群",
+          "semanticRole": "climbSurface",
+          "sortY": 190,
+          "type": "image",
+          "width": 92,
+          "x": 1090,
+          "y": 20
+        },
+        {
+          "editor": {
+            "relatedObjectIds": [
+              "S01-shelter-site-firewood",
+              "S01-small-shelter-1"
+            ],
+            "visible": false
+          },
+          "height": 115,
+          "id": "S01-shelter-site",
+          "name": "小庇护所施工点",
+          "semanticRole": "constructionSite",
+          "type": "region",
+          "width": 150,
+          "x": 469.96059914823866,
+          "y": 312.3315647389365
+        },
+        {
+          "editor": {
+            "locked": false,
+            "visible": false
+          },
+          "height": 75,
+          "id": "S01-shelter-rest",
+          "name": "庇护所休息处",
+          "semanticRole": "restPoint",
+          "type": "region",
+          "width": 75,
+          "x": 507.31417073306136,
+          "y": 361.568287819749
+        },
+        {
           "fill": "#f3f736",
           "fillMode": "color",
           "height": 34,
@@ -245,92 +331,6 @@
           "width": 72,
           "x": 730,
           "y": 210
-        },
-        {
-          "depthSort": true,
-          "editor": {
-            "locked": false,
-            "visible": true
-          },
-          "height": 56,
-          "id": "S01-shelter-site-firewood",
-          "imageId": "s01.resource.dryWoodNode",
-          "name": "小庇护所预备木柴",
-          "semanticRole": "constructionMaterial",
-          "sortY": 424.2080909595875,
-          "type": "image",
-          "width": 64,
-          "x": 524.950232759357,
-          "y": 368.28478069284023
-        },
-        {
-          "editor": {
-            "relatedObjectIds": [
-              "S01-shelter-site-firewood",
-              "S01-small-shelter-1"
-            ],
-            "visible": false
-          },
-          "height": 115,
-          "id": "S01-shelter-site",
-          "name": "小庇护所施工点",
-          "semanticRole": "constructionSite",
-          "type": "region",
-          "width": 150,
-          "x": 469.96059914823866,
-          "y": 312.3315647389365
-        },
-        {
-          "editor": {
-            "locked": false,
-            "visible": false
-          },
-          "height": 75,
-          "id": "S01-shelter-rest",
-          "name": "庇护所休息处",
-          "semanticRole": "restPoint",
-          "type": "region",
-          "width": 75,
-          "x": 507.31417073306136,
-          "y": 361.568287819749
-        },
-        {
-          "height": 90,
-          "id": "S01-river-far-bank",
-          "name": "河道对岸",
-          "semanticRole": "travelCheckpoint",
-          "type": "region",
-          "width": 130,
-          "x": 809.9042417440937,
-          "y": 129.56075586288998
-        },
-        {
-          "height": 120,
-          "id": "S01-cliff-base",
-          "name": "山崖脚",
-          "semanticRole": "travelCheckpoint",
-          "type": "region",
-          "width": 130,
-          "x": 1010,
-          "y": 80
-        },
-        {
-          "climbTarget": {
-            "x": 1135,
-            "y": 86
-          },
-          "depthSort": true,
-          "height": 170,
-          "id": "S01-cliff-vine",
-          "imageId": "s01.environment.cliffVine",
-          "name": "逃生藤蔓",
-          "prompt": "{climb}攀上藤蔓逃离狼群",
-          "semanticRole": "climbSurface",
-          "sortY": 190,
-          "type": "image",
-          "width": 92,
-          "x": 1090,
-          "y": 20
         }
       ],
       "visible": true

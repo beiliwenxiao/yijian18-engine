@@ -165,6 +165,31 @@ const commandMethods = {
   },
 
   handleIrreversibleChoice(command = {}) {
+    const soulRespawn = this.playerSoulRespawn;
+    if (soulRespawn?.awaitingConfirmation === true) {
+      const isCancel = command.type === 'cancel'
+        || (command.type === 'selectChoice' && command.choiceId === 'cancel');
+      if (isCancel) {
+        const cancelled = soulRespawn.cancelConfirmation() === true;
+        if (cancelled) {
+          this.irreversibleChoiceView?.close?.();
+          this._showScreenTip('已取消复活，10 秒后可再次确认。', { title: '复活已取消', owner: 'playerSoul', persist: true });
+        }
+        return cancelled;
+      }
+      if (command.type !== 'selectChoice' || command.choiceId !== 'revive') return true;
+      const view = this.irreversibleChoiceView;
+      view?.setBusy?.(true);
+      return soulRespawn.confirm().then(result => {
+        if (result?.ok) view?.close?.();
+        else {
+          view?.setBusy?.(false);
+          this._showScreenTip('复活结算失败，资源和死亡状态未改变，请再次确认。', { title: '复活失败' });
+        }
+        return result?.ok === true;
+      });
+    }
+
     const deathCountdown = this.playerDeathCountdown;
     if (deathCountdown?.awaitingConfirmation === true) {
       if (command.type !== 'selectChoice' || command.choiceId !== 'revive') return true;

@@ -1,3 +1,25 @@
+/************************************************************
+
+ * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
+
+ * 
+
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+
+ * @author    刘枭 (beiliwenxiao)
+
+ * @email     beiliwenxiao@qq.com
+
+ * @date      2026-01-14
+
+ * @blog      https://blog.csdn.net/beiliwenxiao
+
+ * @repo      https://github.com/beiliwenxiao/yijian18-engine
+
+ *            https://gitee.com/coderaaa/yijian18-engine
+
+ ************************************************************/
+
 function isDroppableResource(item) {
   return item?.type === 'material' || String(item?.id || '').startsWith('resource.');
 }
@@ -22,12 +44,13 @@ function buildLossDraft(inventory) {
 /** 玩家失败结算：普通死亡与特殊昏迷共用同一互斥、幂等入口。 */
 export class PlayerDefeatService {
   constructor({ inventoryTransactions, entityFactory, entityStore, revivePlayer,
-    respawnResolver = null, onResolved = null, getDeathDropPresentation = null } = {}) {
+    reviveOptions = {}, respawnResolver = null, onResolved = null, getDeathDropPresentation = null } = {}) {
     if (!inventoryTransactions) throw new TypeError('PlayerDefeatService requires inventoryTransactions');
     this.inventoryTransactions = inventoryTransactions;
     this.entityFactory = entityFactory;
     this.entityStore = entityStore;
     this.revivePlayer = typeof revivePlayer === 'function' ? revivePlayer : () => {};
+    this.reviveOptions = { ...reviveOptions };
     this.respawnResolver = typeof respawnResolver === 'function' ? respawnResolver : () => null;
     this.onResolved = typeof onResolved === 'function' ? onResolved : () => {};
     this.getDeathDropPresentation = typeof getDeathDropPresentation === 'function'
@@ -52,8 +75,6 @@ export class PlayerDefeatService {
     this.resolvedDeathIds.add(deathId);
     const sequenceMatch = /^player-death-(\d+)$/.exec(deathId);
     if (sequenceMatch) this.nextDeathSequence = Math.max(this.nextDeathSequence, Number(sequenceMatch[1]) + 1);
-    // deferRespawn：死亡结算（掉落/扣资源）立即生效，但复活与位置写回延迟到
-    // completeDeferredRespawn（灵魂状态走到篝火复活等流程）时执行。
     result.deferredRespawn = deferRespawn === true;
     result.respawnPosition = deferRespawn === true ? null : this._respawn(player, resolution);
     const finalize = () => {
@@ -76,12 +97,15 @@ export class PlayerDefeatService {
       const presentation = this.getDeathDropPresentation({ player, deathId, stacks }) || {};
       drop = this.entityFactory?.createDeathDrop?.({
         ...presentation,
-        id: `death-drop-${deathId}`, deathId, stacks,
+        id: `death-drop-${deathId}`,
+        deathId,
+        stacks,
         position: { x: transform.position.x, y: transform.position.y }
       });
       if (!drop) return { ok: false, code: 'dropCreationFailed' };
       const removal = this.inventoryTransactions.commit({
-        type: 'batchRemove', inventory,
+        type: 'batchRemove',
+        inventory,
         entries: stacks.map(stack => ({ itemId: stack.definitionId, quantity: stack.quantity })),
         operationId: `death:${deathId}:remove`
       });
@@ -94,13 +118,17 @@ export class PlayerDefeatService {
 
   _resolveSpecialFaint(_player, deathId, resolution) {
     return {
-      ok: true, type: 'specialFaint', deathId,
-      rescueType: resolution.rescueType || 'passerby', stacks: [], drop: null
+      ok: true,
+      type: 'specialFaint',
+      deathId,
+      rescueType: resolution.rescueType || 'passerby',
+      stacks: [],
+      drop: null
     };
   }
 
   _respawn(player, resolution) {
-    this.revivePlayer(player);
+    this.revivePlayer(player, this.reviveOptions);
     const position = this.respawnResolver({ player, resolution });
     const transform = player.getComponent?.('transform');
     if (transform && Number.isFinite(position?.x) && Number.isFinite(position?.y)) {
@@ -111,7 +139,7 @@ export class PlayerDefeatService {
     return null;
   }
 
-  /** 完成延迟复活（deferRespawn）：写回复活位置并恢复玩家状态；幂等要求 deathId 已结算。 */
+  /** 完成延迟复活：写回复活位置并恢复玩家状态；幂等要求 deathId 已结算。 */
   completeDeferredRespawn(player, deathId, position = null, resolution = { type: 'normalDeath' }) {
     if (!player || !deathId) return { ok: false, code: 'invalidInput' };
     if (!this.resolvedDeathIds.has(deathId)) return { ok: false, code: 'unknownDeath' };
@@ -123,7 +151,7 @@ export class PlayerDefeatService {
       transform.position.x = target.x;
       transform.position.y = target.y;
     }
-    this.revivePlayer(player);
+    this.revivePlayer(player, this.reviveOptions);
     return { ok: true, deathId, respawnPosition: target ? { ...target } : null };
   }
 

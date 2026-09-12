@@ -142,6 +142,7 @@
         ],
         "maxClouds": 10
       },
+      "particles": {},
       "sunbeams": {
         "imageIds": [
           "weather.sunbeam.rayA",
@@ -150,7 +151,6 @@
         ],
         "maxBeams": 3
       },
-      "particles": {},
       "transitionSpeed": 0.5
     }
   },

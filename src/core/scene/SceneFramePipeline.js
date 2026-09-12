@@ -282,12 +282,11 @@ export class SceneFramePipeline {
       flightSystem.update(deltaTime, player);
     }
 
-    // 更新移动系统：模态 UI、打坐或采集只锁玩家，AI/其他实体继续移动。
-    // 灵魂状态只绕过领域硬锁；模态 UI 仍必须阻止方向键/摇杆穿透。
-    const soulMovementAllowed = player?.isSoulState === true;
+    // 更新移动系统：模态 UI、打坐、采集和死亡倒计时只锁玩家，AI/其他实体继续移动。
+    // 自动火堆复活期间不得允许灵魂状态离开已确定的复活锚点。
     let movementResult;
     if ((worldInputBlocked || meditationSystem.isActive()
-      || (playerActionLocked && !soulMovementAllowed)) && player) {
+      || playerActionLocked) && player) {
       // 锁定期间复用非玩家实体列表；实体数组或玩家变化时才重建，避免每帧 filter 分配。
       if (scene._meditationEntitySource !== entities ||
           scene._meditationEntityCount !== entities.length ||
