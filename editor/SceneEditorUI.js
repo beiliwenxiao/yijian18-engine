@@ -1785,13 +1785,22 @@ export class SceneEditorUI {
     const status = panel.querySelector('#editor-image-manifest-status');
     if (!pathInput || !preview || !status || !imgObj?.imageId) return;
 
+    const isCurrentImageObject = () => {
+      const selected = this.editor.selectedObjects[0];
+      return selected === imgObj || (
+        selected?.type === 'image'
+        && selected?.id === imgObj.id
+        && selected?.imageId === imgObj.imageId
+      );
+    };
+
     let imageOptions;
     try {
       imageOptions = await this.editor.assets?.getManifestImageOptions?.();
     } catch {
       imageOptions = null;
     }
-    if (!panel.isConnected || this.editor.selectedObjects[0] !== imgObj) return;
+    if (!panel.isConnected || !isCurrentImageObject()) return;
 
     const option = (imageOptions || []).find(candidate => candidate.imageId === imgObj.imageId);
     if (!option?.url) {
@@ -1803,15 +1812,25 @@ export class SceneEditorUI {
     }
     pathInput.value = option.path || '未提供';
     status.textContent = option.status ? `资源状态：${option.status}` : '正在加载图片…';
-    preview.onload = () => {
+    const commitPreview = () => {
       if (!preview.isConnected) return;
-      preview.style.display = 'block';
-      status.style.display = 'none';
+      this.editor.loadedImages.set(imgObj.imageId, preview);
+      if (isCurrentImageObject()) {
+        const dimensions = panel.querySelector('#editor-image-dim');
+        if (dimensions) {
+          dimensions.value = `${preview.naturalWidth || preview.width}×${preview.naturalHeight || preview.height}`;
+        }
+        preview.style.display = 'block';
+        status.style.display = 'none';
+      }
+      this.editor.render();
     };
+    preview.onload = commitPreview;
     preview.onerror = () => {
       if (preview.isConnected) status.textContent = '图片加载失败，请检查 Manifest 路径';
     };
     preview.src = option.url;
+    if (preview.complete && preview.naturalWidth > 0) commitPreview();
   }
 
   /**

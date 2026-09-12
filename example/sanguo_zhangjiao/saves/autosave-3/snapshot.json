@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "createdAt": 1789231647606,
+  "createdAt": 1789235981141,
   "meta": {
     "gameId": "sanguo_zhangjiao",
     "kind": "auto",
@@ -9,8 +9,7 @@
     "level": 1,
     "currentSceneId": "S01",
     "location": "S01 区域",
-    "reason": "checkpoint",
-    "checkpointId": "checkpoint.S01.shelterCompleted",
+    "reason": "interval",
     "previewFile": "thumbnail.jpg"
   },
   "data": {
@@ -22,8 +21,8 @@
         "id": "refugee",
         "name": null,
         "transform": {
-          "x": 8239.809217524495,
-          "y": 4031.584242748587,
+          "x": 8104.408616784597,
+          "y": 4025.35699537439,
           "elevation": 0,
           "rotation": 0,
           "scale": {
@@ -125,12 +124,7 @@
           "s01.attack:attackPerformed": 1,
           "s01.durability:gatheringCompleted": 1
         },
-        "movementOrigins": {
-          "s01.move": {
-            "x": 8276.559230181467,
-            "y": 4165.023414159508
-          }
-        }
+        "movementOrigins": {}
       },
       "dialogue": {
         "currentDialogueId": null,
@@ -404,37 +398,38 @@
             "trg_s01_wood_gathered",
             "trg_s01_first_wolf_spotted",
             "trg_s01_first_wolf_killed_committed",
-            "trg_s01_wolf_skinned"
+            "trg_s01_wolf_skinned",
+            "trg_s01_shelter_completed"
           ],
           "cooldowns": {
             "trg_s01_spawn_initial": {
               "definitionRevision": 1,
               "remaining": 0,
-              "nextDue": 1000,
+              "nextDue": 0,
               "duration": 1000
             },
             "trg_s01_refuel_campfire": {
               "definitionRevision": 1,
               "remaining": 0,
-              "nextDue": 54826.53200000596,
+              "nextDue": 0,
               "duration": 1000
             },
             "trg_s01_cook_meat": {
               "definitionRevision": 1,
               "remaining": 0,
-              "nextDue": 95715.43200000595,
+              "nextDue": 0,
               "duration": 1000
             },
             "trg_s01_craft_wolf_gear": {
               "definitionRevision": 1,
               "remaining": 0,
-              "nextDue": 107533.13200000595,
+              "nextDue": 0,
               "duration": 1000
             },
             "trg_s01_build_shelter": {
               "definitionRevision": 1,
               "remaining": 0,
-              "nextDue": 132570.13200000592,
+              "nextDue": 0,
               "duration": 1000
             }
           },
@@ -971,12 +966,20 @@
                 "definitionRevision": 1,
                 "operationId": "construction:S01:smallShelter",
                 "fingerprint": "sha256-adf95e92b094a3fd7f4c7a19a94b6855882f67226c01dbd63d71a82d737785d4",
-                "status": "running",
+                "status": "succeeded",
                 "actionIndex": 0,
-                "result": null,
+                "result": {
+                  "ok": true,
+                  "operationId": "construction:S01:smallShelter:trigger:trg_s01_shelter_completed:step:shelter-completed",
+                  "status": "succeeded",
+                  "committed": false,
+                  "code": null,
+                  "stateId": "trigger:trg_s01_shelter_completed",
+                  "stateRevision": null
+                },
                 "startedAt": 135387.33200000593,
-                "finishedAt": null,
-                "ledgerRevision": 2
+                "finishedAt": 137504.3320000059,
+                "ledgerRevision": 4
               },
               {
                 "triggerId": "trg_s01_overnight",
@@ -2038,8 +2041,8 @@
                         "removed": false,
                         "hp": 38,
                         "position": {
-                          "x": 9828.3851318718,
-                          "y": 3219.37409178879
+                          "x": 9808.456939626927,
+                          "y": 3182.7377866508905
                         },
                         "ai": {
                           "active": true,
@@ -2056,8 +2059,8 @@
                         "removed": false,
                         "hp": 38,
                         "position": {
-                          "x": 9960.500793413921,
-                          "y": 3255.910600012488
+                          "x": 9925.23715999728,
+                          "y": 3334.0731302568875
                         },
                         "ai": {
                           "active": true,
@@ -2332,6 +2335,18 @@
                   ],
                   "placementStates": [
                     {
+                      "id": "S01-small-shelter-1",
+                      "state": {
+                        "kind": "item",
+                        "removed": false,
+                        "position": {
+                          "x": 8229.33480401678,
+                          "y": 4037.950099330314
+                        },
+                        "placementSignature": "{\"group\":\"S01-small-shelter\",\"id\":\"S01-small-shelter-1\",\"kind\":\"item\",\"overrides\":null,\"ref\":\"story.s01.small_shelter\",\"sceneId\":\"S01\",\"spawnWhen\":{\"blackboardKey\":\"storyState\",\"equals\":true,\"path\":\"s01Survival.shelterCompleted\"},\"type\":\"ref\",\"version\":1,\"x\":549.3348040167809,\"y\":437.95009933031395}"
+                      }
+                    },
+                    {
                       "id": "S01-spawn-campfire",
                       "state": {
                         "kind": "item",
@@ -2341,6 +2356,18 @@
                           "y": 4115
                         },
                         "placementSignature": "{\"group\":\"S01-initial\",\"id\":\"S01-spawn-campfire\",\"kind\":\"item\",\"overrides\":null,\"ref\":\"story.s01.campfire\",\"sceneId\":\"S01\",\"spawnWhen\":null,\"type\":\"ref\",\"version\":1,\"x\":599,\"y\":515}"
+                      }
+                    },
+                    {
+                      "id": "S01-prop-tanning-rack",
+                      "state": {
+                        "kind": "item",
+                        "removed": false,
+                        "position": {
+                          "x": 8163.6510955210915,
+                          "y": 4089.1225022587523
+                        },
+                        "placementSignature": "{\"group\":\"S01-tanning-rack\",\"id\":\"S01-prop-tanning-rack\",\"kind\":\"item\",\"overrides\":null,\"ref\":\"story.s01.tanning_rack\",\"sceneId\":\"S01\",\"spawnWhen\":{\"blackboardKey\":\"storyState\",\"equals\":true,\"path\":\"s01Survival.meatCooked\"},\"type\":\"ref\",\"version\":1,\"x\":483.6510955210918,\"y\":489.1225022587522}"
                       }
                     },
                     {
@@ -2435,18 +2462,6 @@
                       }
                     },
                     {
-                      "id": "S01-prop-tanning-rack",
-                      "state": {
-                        "kind": "item",
-                        "removed": false,
-                        "position": {
-                          "x": 8163.6510955210915,
-                          "y": 4089.1225022587523
-                        },
-                        "placementSignature": "{\"group\":\"S01-tanning-rack\",\"id\":\"S01-prop-tanning-rack\",\"kind\":\"item\",\"overrides\":null,\"ref\":\"story.s01.tanning_rack\",\"sceneId\":\"S01\",\"spawnWhen\":{\"blackboardKey\":\"storyState\",\"equals\":true,\"path\":\"s01Survival.meatCooked\"},\"type\":\"ref\",\"version\":1,\"x\":483.6510955210918,\"y\":489.1225022587522}"
-                      }
-                    },
-                    {
                       "id": "S01-pickup-skinning-knife",
                       "state": {
                         "kind": "item",
@@ -2484,7 +2499,7 @@
             "secondsPerUnit": 100,
             "maxUnits": 10,
             "units": 5,
-            "remainingSeconds": 470.3653000000057,
+            "remainingSeconds": 436.36150000000185,
             "active": true
           }
         },
@@ -2671,7 +2686,7 @@
         },
         "puppetState": {
           "schemaVersion": 1,
-          "chargesRemaining": null,
+          "chargesRemaining": 0,
           "nextSequence": 1,
           "active": null
         },

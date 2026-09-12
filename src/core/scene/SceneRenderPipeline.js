@@ -310,13 +310,6 @@ export class SceneRenderPipeline {
     ctx.strokeRect(bounds.minX, bounds.minY, width, height);
     ctx.setLineDash([]);
 
-    const exit = presentation.exitPosition;
-    if (exit && Number.isFinite(Number(exit.x)) && Number.isFinite(Number(exit.y))) {
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.arc(exit.x, exit.y, Math.max(6, Number(presentation.exitRadius) || 0), 0, Math.PI * 2);
-      ctx.stroke();
-    }
     ctx.restore();
   }
 

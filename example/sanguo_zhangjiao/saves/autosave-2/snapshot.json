@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "createdAt": 1789231675463,
+  "createdAt": 1789237781134,
   "meta": {
     "gameId": "sanguo_zhangjiao",
     "kind": "auto",
@@ -9,8 +9,7 @@
     "level": 1,
     "currentSceneId": "S01",
     "location": "S01 区域",
-    "reason": "checkpoint",
-    "checkpointId": "checkpoint.S01.secondDay",
+    "reason": "interval",
     "previewFile": "thumbnail.jpg"
   },
   "data": {
@@ -22,8 +21,8 @@
         "id": "refugee",
         "name": null,
         "transform": {
-          "x": 8238.539795133338,
-          "y": 4049.040045543297,
+          "x": 8104.408616784597,
+          "y": 4025.35699537439,
           "elevation": 0,
           "rotation": 0,
           "scale": {
@@ -93,10 +92,6 @@
           {
             "definitionId": "food.roasted_wolf_meat",
             "quantity": 1
-          },
-          {
-            "definitionId": "story.s01.firestarter",
-            "quantity": 1
           }
         ],
         "equipment": {
@@ -129,12 +124,7 @@
           "s01.attack:attackPerformed": 1,
           "s01.durability:gatheringCompleted": 1
         },
-        "movementOrigins": {
-          "s01.move": {
-            "x": 8276.559230181467,
-            "y": 4165.023414159508
-          }
-        }
+        "movementOrigins": {}
       },
       "dialogue": {
         "currentDialogueId": null,
@@ -326,7 +316,7 @@
             }
           },
           "storyState": {
-            "currentDay": 2,
+            "currentDay": 1,
             "currentSceneId": "S01",
             "delayedConsequences": [],
             "endingInputs": {
@@ -360,16 +350,16 @@
               "campfireLit": true,
               "campfireRefuelCount": 3,
               "cliffReached": false,
-              "firestarterAcquired": true,
+              "firestarterAcquired": false,
               "firstWolfKilled": true,
               "firstWolfSpotted": true,
               "initialToolsPicked": true,
               "meatCooked": true,
-              "overnightCompleted": true,
+              "overnightCompleted": false,
               "pursuit": {
-                "active": true,
+                "active": false,
                 "killed": 0,
-                "spawned": 3
+                "spawned": 0
               },
               "riverCrossed": false,
               "shelterCompleted": true,
@@ -415,31 +405,31 @@
             "trg_s01_spawn_initial": {
               "definitionRevision": 1,
               "remaining": 0,
-              "nextDue": 1000,
+              "nextDue": 0,
               "duration": 1000
             },
             "trg_s01_refuel_campfire": {
               "definitionRevision": 1,
               "remaining": 0,
-              "nextDue": 54826.53200000596,
+              "nextDue": 0,
               "duration": 1000
             },
             "trg_s01_cook_meat": {
               "definitionRevision": 1,
               "remaining": 0,
-              "nextDue": 95715.43200000595,
+              "nextDue": 0,
               "duration": 1000
             },
             "trg_s01_craft_wolf_gear": {
               "definitionRevision": 1,
               "remaining": 0,
-              "nextDue": 107533.13200000595,
+              "nextDue": 0,
               "duration": 1000
             },
             "trg_s01_build_shelter": {
               "definitionRevision": 1,
               "remaining": 0,
-              "nextDue": 132570.13200000592,
+              "nextDue": 0,
               "duration": 1000
             }
           },
@@ -994,14 +984,14 @@
               {
                 "triggerId": "trg_s01_overnight",
                 "definitionRevision": 1,
-                "operationId": "trigger:1:trg_s01_overnight:42",
-                "fingerprint": "sha256-6b87b75cb55be58276087ed8eb1091461d2442286998ecc3b2f5ba8799b6304d",
-                "status": "running",
-                "actionIndex": 0,
+                "operationId": null,
+                "fingerprint": null,
+                "status": "idle",
+                "actionIndex": -1,
                 "result": null,
-                "startedAt": 147470.03200001182,
+                "startedAt": null,
                 "finishedAt": null,
-                "ledgerRevision": 2
+                "ledgerRevision": 1
               },
               {
                 "triggerId": "trg_s01_river_crossed",
@@ -2051,8 +2041,8 @@
                         "removed": false,
                         "hp": 38,
                         "position": {
-                          "x": 9796.68641836036,
-                          "y": 3207.766639016323
+                          "x": 9808.456939626927,
+                          "y": 3182.7377866508905
                         },
                         "ai": {
                           "active": true,
@@ -2069,8 +2059,8 @@
                         "removed": false,
                         "hp": 38,
                         "position": {
-                          "x": 9925.757506037278,
-                          "y": 3295.37823213192
+                          "x": 9925.23715999728,
+                          "y": 3334.0731302568875
                         },
                         "ai": {
                           "active": true,
@@ -2345,6 +2335,18 @@
                   ],
                   "placementStates": [
                     {
+                      "id": "S01-small-shelter-1",
+                      "state": {
+                        "kind": "item",
+                        "removed": false,
+                        "position": {
+                          "x": 8229.33480401678,
+                          "y": 4037.950099330314
+                        },
+                        "placementSignature": "{\"group\":\"S01-small-shelter\",\"id\":\"S01-small-shelter-1\",\"kind\":\"item\",\"overrides\":null,\"ref\":\"story.s01.small_shelter\",\"sceneId\":\"S01\",\"spawnWhen\":{\"blackboardKey\":\"storyState\",\"equals\":true,\"path\":\"s01Survival.shelterCompleted\"},\"type\":\"ref\",\"version\":1,\"x\":549.3348040167809,\"y\":437.95009933031395}"
+                      }
+                    },
+                    {
                       "id": "S01-spawn-campfire",
                       "state": {
                         "kind": "item",
@@ -2354,6 +2356,18 @@
                           "y": 4115
                         },
                         "placementSignature": "{\"group\":\"S01-initial\",\"id\":\"S01-spawn-campfire\",\"kind\":\"item\",\"overrides\":null,\"ref\":\"story.s01.campfire\",\"sceneId\":\"S01\",\"spawnWhen\":null,\"type\":\"ref\",\"version\":1,\"x\":599,\"y\":515}"
+                      }
+                    },
+                    {
+                      "id": "S01-prop-tanning-rack",
+                      "state": {
+                        "kind": "item",
+                        "removed": false,
+                        "position": {
+                          "x": 8163.6510955210915,
+                          "y": 4089.1225022587523
+                        },
+                        "placementSignature": "{\"group\":\"S01-tanning-rack\",\"id\":\"S01-prop-tanning-rack\",\"kind\":\"item\",\"overrides\":null,\"ref\":\"story.s01.tanning_rack\",\"sceneId\":\"S01\",\"spawnWhen\":{\"blackboardKey\":\"storyState\",\"equals\":true,\"path\":\"s01Survival.meatCooked\"},\"type\":\"ref\",\"version\":1,\"x\":483.6510955210918,\"y\":489.1225022587522}"
                       }
                     },
                     {
@@ -2448,84 +2462,6 @@
                       }
                     },
                     {
-                      "id": "S01-prop-tanning-rack",
-                      "state": {
-                        "kind": "item",
-                        "removed": false,
-                        "position": {
-                          "x": 8163.6510955210915,
-                          "y": 4089.1225022587523
-                        },
-                        "placementSignature": "{\"group\":\"S01-tanning-rack\",\"id\":\"S01-prop-tanning-rack\",\"kind\":\"item\",\"overrides\":null,\"ref\":\"story.s01.tanning_rack\",\"sceneId\":\"S01\",\"spawnWhen\":{\"blackboardKey\":\"storyState\",\"equals\":true,\"path\":\"s01Survival.meatCooked\"},\"type\":\"ref\",\"version\":1,\"x\":483.6510955210918,\"y\":489.1225022587522}"
-                      }
-                    },
-                    {
-                      "id": "S01-small-shelter-1",
-                      "state": {
-                        "kind": "item",
-                        "removed": false,
-                        "position": {
-                          "x": 8229.33480401678,
-                          "y": 4037.950099330314
-                        },
-                        "placementSignature": "{\"group\":\"S01-small-shelter\",\"id\":\"S01-small-shelter-1\",\"kind\":\"item\",\"overrides\":null,\"ref\":\"story.s01.small_shelter\",\"sceneId\":\"S01\",\"spawnWhen\":{\"blackboardKey\":\"storyState\",\"equals\":true,\"path\":\"s01Survival.shelterCompleted\"},\"type\":\"ref\",\"version\":1,\"x\":549.3348040167809,\"y\":437.95009933031395}"
-                      }
-                    },
-                    {
-                      "id": "S01-chase-wolf-1",
-                      "state": {
-                        "kind": "enemy",
-                        "removed": false,
-                        "hp": 32,
-                        "position": {
-                          "x": 8042.769205555597,
-                          "y": 4200.14417970746
-                        },
-                        "ai": {
-                          "active": true,
-                          "aiType": "aggressive",
-                          "lure": null
-                        },
-                        "placementSignature": "{\"group\":\"S01-chase-wolves\",\"id\":\"S01-chase-wolf-1\",\"kind\":\"enemy\",\"overrides\":null,\"ref\":\"enemy.s01_chase_wolf\",\"sceneId\":\"S01\",\"spawnWhen\":{\"blackboardKey\":\"storyState\",\"gte\":1,\"path\":\"s01Survival.pursuit.spawned\"},\"type\":\"ref\",\"version\":1,\"x\":350,\"y\":610}"
-                      }
-                    },
-                    {
-                      "id": "S01-chase-wolf-2",
-                      "state": {
-                        "kind": "enemy",
-                        "removed": false,
-                        "hp": 32,
-                        "position": {
-                          "x": 8142.387867103134,
-                          "y": 4235.6609197008165
-                        },
-                        "ai": {
-                          "active": true,
-                          "aiType": "aggressive",
-                          "lure": null
-                        },
-                        "placementSignature": "{\"group\":\"S01-chase-wolves\",\"id\":\"S01-chase-wolf-2\",\"kind\":\"enemy\",\"overrides\":null,\"ref\":\"enemy.s01_chase_wolf\",\"sceneId\":\"S01\",\"spawnWhen\":{\"blackboardKey\":\"storyState\",\"gte\":2,\"path\":\"s01Survival.pursuit.spawned\"},\"type\":\"ref\",\"version\":1,\"x\":455,\"y\":650}"
-                      }
-                    },
-                    {
-                      "id": "S01-chase-wolf-3",
-                      "state": {
-                        "kind": "enemy",
-                        "removed": false,
-                        "hp": 32,
-                        "position": {
-                          "x": 8244.4081862022,
-                          "y": 4208.880460286076
-                        },
-                        "ai": {
-                          "active": true,
-                          "aiType": "aggressive",
-                          "lure": null
-                        },
-                        "placementSignature": "{\"group\":\"S01-chase-wolves\",\"id\":\"S01-chase-wolf-3\",\"kind\":\"enemy\",\"overrides\":null,\"ref\":\"enemy.s01_chase_wolf\",\"sceneId\":\"S01\",\"spawnWhen\":{\"blackboardKey\":\"storyState\",\"gte\":3,\"path\":\"s01Survival.pursuit.spawned\"},\"type\":\"ref\",\"version\":1,\"x\":565,\"y\":625}"
-                      }
-                    },
-                    {
                       "id": "S01-pickup-skinning-knife",
                       "state": {
                         "kind": "item",
@@ -2563,7 +2499,7 @@
             "secondsPerUnit": 100,
             "maxUnits": 10,
             "units": 5,
-            "remainingSeconds": 458.2492000000027,
+            "remainingSeconds": 436.36150000000185,
             "active": true
           }
         },
@@ -2750,7 +2686,7 @@
         },
         "puppetState": {
           "schemaVersion": 1,
-          "chargesRemaining": null,
+          "chargesRemaining": 0,
           "nextSequence": 1,
           "active": null
         },

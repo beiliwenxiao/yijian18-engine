@@ -3257,6 +3257,14 @@ export class SceneEditorAssets {
     const { projectPath, epoch } = this._activatePlacementProject();
     const sources = new Map();
 
+    // 九宫格会为同一场景连续准备空邻居和完整邻居。只要 imageId 的源路径未变，
+    // 前一批已开始的图片请求仍应可提交缓存；切换场景时必须丢弃其请求记录。
+    if (this._sceneImageRequestScene !== activeScene) {
+      this._sceneImageRequestScene = activeScene;
+      this._sceneImageRequestSources = new Map();
+    }
+    const requestedSources = this._sceneImageRequestSources;
+
     for (const sceneData of scenes) {
       for (const [id, data] of Object.entries(sceneData.imageAssets || {})) {
         const src = typeof data?.src === 'string' ? data.src.trim() : '';
@@ -3307,27 +3315,34 @@ export class SceneEditorAssets {
     }
 
     for (const [id, { aliases, src }] of sources) {
-      const loadedImage = aliases.map(alias => editor.loadedImages.get(alias)).find(Boolean);
+      const stableAliases = [...new Set(aliases
+        .filter(alias => typeof alias === 'string' && alias.trim())
+        .map(alias => alias.trim()))];
+      for (const alias of stableAliases) requestedSources.set(alias, src);
+
+      const loadedImage = stableAliases.map(alias => editor.loadedImages.get(alias)).find(Boolean);
       if (loadedImage) {
-        for (const alias of aliases) editor.loadedImages.set(alias, loadedImage);
+        for (const alias of stableAliases) editor.loadedImages.set(alias, loadedImage);
         continue;
       }
+      const isCurrentSource = () => (
+        editor.sceneData === activeScene
+        && this._isPlacementProjectCurrent(projectPath, epoch)
+        && stableAliases.every(alias => requestedSources.get(alias) === src)
+      );
       const img = new Image();
       img.onload = () => {
-        if (
-          generation !== this._sceneImageLoadGeneration
-          || editor.sceneData !== activeScene
-          || !this._isPlacementProjectCurrent(projectPath, epoch)
-        ) return;
-        for (const alias of aliases) editor.loadedImages.set(alias, img);
+        if (!isCurrentSource()) return;
+        for (const alias of stableAliases) editor.loadedImages.set(alias, img);
         editor.render();
+        if (editor.selectedObjects?.some(object => (
+          object?.type === 'image' && stableAliases.includes(object.imageId)
+        ))) {
+          editor.ui?.updateObjectProperties?.();
+        }
       };
       img.onerror = () => {
-        if (
-          generation === this._sceneImageLoadGeneration
-          && editor.sceneData === activeScene
-          && this._isPlacementProjectCurrent(projectPath, epoch)
-        ) {
+        if (isCurrentSource()) {
           console.error(`[SceneEditorAssets] 场景图片加载失败: ${id} (${src})`);
         }
       };
