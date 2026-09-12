@@ -41,6 +41,8 @@ RT holding 的扇形方向锁由 `SceneCombatActions` 临时拥有：按住时�
 
 `BaseGameScene.isPlayerActionLocked()` 只表示死亡、灵魂、死亡/复活 pending、采集会话等所有世界动作共同拒绝的硬锁，不得包含 `CombatSystem.isInCombat()`；否则 RT intent 与 canonical `jump` 会同时被提前吞掉。基础攻击资格由 `canPerformBasicAttack()` 单独判断，普通跳跃在战斗中保持可用，灵魂/死亡状态仍同时拒绝攻击和跳跃。
 
+`SceneInputFlow.onModalInput()` 可返回 `{ handled:true, allowMovement:true }`：路由仍在 `MODAL_UI` 层消费攻击、拾取、技能、跳跃与交互，并取消手柄战斗瞬态；只有 `MovementSystem` 继续读取键盘、触屏摇杆、手柄左摇杆和未消费的右键移动。该例外只适用于明确声明的紧凑灵魂复活确认，其他 modal 保持完整世界输入阻断。
+
 ### 5. 摇杆死区用径向死区 + 重标定
 `_applyDeadzone` 把 `[deadzone,1]` 重映射到 `[0,1]`，避免死区边缘速度突跳。默认死区 0.22。扳机（LT/RT）是模拟量，按 `triggerThreshold`（默认 0.5）离散成按下/松开。
 

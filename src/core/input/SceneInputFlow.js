@@ -75,6 +75,7 @@ export class SceneInputFlow {
     this._frameStarted = false;
     this._disposed = false;
     this._modalConsumed = false;
+    this._modalAllowsMovement = false;
     this._popupConsumed = false;
   }
 
@@ -150,6 +151,7 @@ export class SceneInputFlow {
     if (this._disposed || this._frameStarted) return [];
     this._frameStarted = true;
     this._modalConsumed = false;
+    this._modalAllowsMovement = false;
     this._popupConsumed = false;
 
     if (typeof this.inputManager?.pollGamepads === 'function') {
@@ -158,10 +160,13 @@ export class SceneInputFlow {
       this.gamepadManager?.poll?.();
     }
 
-    this._modalConsumed = wasHandled(
-      this.onModalInput({ dt, inputManager: this.inputManager, gamepad: this.gamepadManager }),
-      this.inputManager
-    );
+    const modalResult = this.onModalInput({
+      dt,
+      inputManager: this.inputManager,
+      gamepad: this.gamepadManager
+    });
+    this._modalConsumed = wasHandled(modalResult, this.inputManager);
+    this._modalAllowsMovement = this._modalConsumed && modalResult?.allowMovement === true;
     if (!this._modalConsumed) {
       this._popupConsumed = wasHandled(
         this.onPopupConfirm({ dt, inputManager: this.inputManager, gamepad: this.gamepadManager }),
@@ -185,9 +190,17 @@ export class SceneInputFlow {
     return this.router.update(DEFAULT_KEYS);
   }
 
-  /** 当前帧是否由模态 UI 或物品弹窗接管，供持续轴/按住态输入停止驱动玩家。 */
+  /** 当前帧是否由模态 UI 或物品弹窗接管，供世界动作停止驱动玩家。 */
   isWorldInputBlocked() {
     return !this._disposed && (this._modalConsumed || this._popupConsumed);
+  }
+
+  /**
+   * 当前帧是否应停止持续移动输入。
+   * 已消费的 modal 可以显式允许移动；此时输入路由仍会吞掉攻击、技能、拾取与交互。
+   */
+  isMovementInputBlocked() {
+    return !this._disposed && (this._popupConsumed || (this._modalConsumed && !this._modalAllowsMovement));
   }
 
   afterSystems() {
@@ -211,6 +224,7 @@ export class SceneInputFlow {
   releaseFrame() {
     this._frameStarted = false;
     this._modalConsumed = false;
+    this._modalAllowsMovement = false;
     this._popupConsumed = false;
   }
 

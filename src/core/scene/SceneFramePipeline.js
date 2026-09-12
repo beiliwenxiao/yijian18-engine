@@ -111,10 +111,13 @@ export class SceneFramePipeline {
     // DataDriven 子场景若已在 super.update 前开始本帧，内部守卫会跳过重复编排。
     inputFlow?.beforeFrame(deltaTime);
     const worldInputBlocked = inputFlow?.isWorldInputBlocked?.() === true;
-    // isPlayerActionLocked 含战斗状态（用于禁用采集等动作），但战斗只锁定动作、不能冻结移动，
-    // 否则怪物一出现进入战斗后玩家会被排除在移动更新外而直接卡住。打坐/采集中仍冻结移动。
+    const movementInputBlocked = inputFlow?.isMovementInputBlocked?.() ?? worldInputBlocked;
+    // isPlayerActionLocked 用于拒绝灵魂、死亡、采集等世界动作；战斗与灵魂状态都不能冻结移动。
     const inCombat = scene.combatSystem?.isInCombat?.() === true;
+    const soulMovementAllowed = player?.isSoulState === true
+      && scene.playerSoulRespawn?.pending != null;
     const playerActionLocked = scene.isPlayerActionLocked?.() === true && !inCombat;
+    const playerMovementLocked = playerActionLocked && !soulMovementAllowed;
 
     // 技能轮盘只冻结世界模拟，不能使用 isPaused，否则下一帧无法读取 LB 松开沿。
     if (scene.isSkillWheelWorldPaused) {
@@ -282,11 +285,10 @@ export class SceneFramePipeline {
       flightSystem.update(deltaTime, player);
     }
 
-    // 更新移动系统：模态 UI、打坐、采集和死亡倒计时只锁玩家，AI/其他实体继续移动。
-    // 自动火堆复活期间不得允许灵魂状态离开已确定的复活锚点。
+    // 更新移动系统：普通模态、打坐、采集和死亡倒计时锁定玩家；灵魂状态仅允许移动。
     let movementResult;
-    if ((worldInputBlocked || meditationSystem.isActive()
-      || playerActionLocked) && player) {
+    if ((movementInputBlocked || meditationSystem.isActive()
+      || playerMovementLocked) && player) {
       // 锁定期间复用非玩家实体列表；实体数组或玩家变化时才重建，避免每帧 filter 分配。
       if (scene._meditationEntitySource !== entities ||
           scene._meditationEntityCount !== entities.length ||

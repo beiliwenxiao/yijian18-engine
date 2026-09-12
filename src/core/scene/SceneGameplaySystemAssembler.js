@@ -341,6 +341,7 @@ export class SceneGameplaySystemAssembler {
           title: '确认复活',
           description: `倒计时结束。是否在${location}复活？`,
           warning: '取消会保持死亡状态，并重新开始 10 秒倒计时。',
+          presentation: { variant: 'compact', allowMovement: true },
           allowCancel: true,
           selectedId: 'revive',
           choices: [

@@ -7,6 +7,10 @@
       "name": "寒风荒野背景",
       "objects": [
         {
+          "editor": {
+            "locked": true,
+            "visible": true
+          },
           "height": 720,
           "id": "S01-bg-environment",
           "imageId": "s01.environment.droughtWildernessGround",
@@ -47,6 +51,9 @@
         },
         {
           "collide": true,
+          "editor": {
+            "locked": true
+          },
           "fill": "#405b62",
           "fillMode": "color",
           "id": "S01-river",
@@ -160,8 +167,8 @@
           "opacity": 0.55,
           "points": [
             [
-              766,
-              239
+              805,
+              213
             ],
             [
               866,
@@ -184,8 +191,8 @@
               214
             ],
             [
-              906,
-              279
+              933,
+              256
             ]
           ],
           "semanticRole": "travelRoute",
@@ -256,7 +263,7 @@
               "S01-shelter-site-firewood",
               "S01-small-shelter-1"
             ],
-            "visible": false
+            "visible": true
           },
           "height": 115,
           "id": "S01-shelter-site",
@@ -270,7 +277,7 @@
         {
           "editor": {
             "locked": false,
-            "visible": false
+            "visible": true
           },
           "height": 75,
           "id": "S01-shelter-rest",
@@ -284,10 +291,10 @@
         {
           "fill": "#f3f736",
           "fillMode": "color",
-          "height": 34,
+          "height": 47,
           "id": "S01-stepping-stone-1",
           "name": "跳石一",
-          "opacity": 1,
+          "opacity": 0,
           "semanticRole": "steppingStone",
           "shapeType": "ellipse",
           "stroke": "#aaa08e",
@@ -295,16 +302,16 @@
           "type": "shape",
           "walkable": true,
           "width": 72,
-          "x": 570,
-          "y": 268
+          "x": 575.1251251251251,
+          "y": 247.4994994994995
         },
         {
           "fill": "#fff700",
           "fillMode": "color",
-          "height": 32,
+          "height": 50,
           "id": "S01-stepping-stone-2",
           "name": "跳石二",
-          "opacity": 1,
+          "opacity": 0,
           "semanticRole": "steppingStone",
           "shapeType": "ellipse",
           "stroke": "#aaa08e",
@@ -312,16 +319,16 @@
           "type": "shape",
           "walkable": true,
           "width": 68,
-          "x": 650,
-          "y": 238
+          "x": 707.6576576576576,
+          "y": 282.84484484484483
         },
         {
           "fill": "#ffd500",
           "fillMode": "color",
-          "height": 34,
+          "height": 48,
           "id": "S01-stepping-stone-3",
           "name": "跳石三",
-          "opacity": 1,
+          "opacity": 0,
           "semanticRole": "steppingStone",
           "shapeType": "ellipse",
           "stroke": "#aaa08e",
@@ -329,8 +336,8 @@
           "type": "shape",
           "walkable": true,
           "width": 72,
-          "x": 730,
-          "y": 210
+          "x": 849.1591591591591,
+          "y": 272.78278278278276
         }
       ],
       "visible": true
@@ -1204,8 +1211,8 @@
           "sliceKey": "bush2",
           "type": "slice",
           "width": 32,
-          "x": 585.2582522733655,
-          "y": 272.27675011965084
+          "x": 591.664658679772,
+          "y": 244.08856193146266
         },
         {
           "atlasId": "mountain_landscape",
@@ -1215,8 +1222,8 @@
           "sliceKey": "bush2",
           "type": "slice",
           "width": 32,
-          "x": 662,
-          "y": 236
+          "x": 723.5015015015015,
+          "y": 294.9389389389389
         },
         {
           "atlasId": "mountain_landscape",
@@ -1226,8 +1233,8 @@
           "sliceKey": "bush2",
           "type": "slice",
           "width": 32,
-          "x": 754,
-          "y": 203
+          "x": 864.1901901901902,
+          "y": 281.15815815815813
         },
         {
           "atlasId": "mountain_landscape",

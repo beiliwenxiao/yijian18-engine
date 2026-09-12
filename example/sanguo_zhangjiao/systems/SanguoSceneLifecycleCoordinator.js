@@ -264,12 +264,15 @@ function handleModalInput({ inputManager, gamepad } = {}) {
     });
   }
   if (this.irreversibleChoiceView?.visible) {
-    return this.irreversibleChoiceView.handleInput({
+    const handled = this.irreversibleChoiceView.handleInput({
       inputManager,
       gamepad,
       viewWidth: this.logicalWidth,
       viewHeight: this.logicalHeight
     });
+    return this.irreversibleChoiceView.allowsWorldMovement
+      ? { handled, allowMovement: true }
+      : handled;
   }
   if (this.s03s14BattleCoordinator.isInputLayerVisible('mode')) {
     return this.s03s14BattleCoordinator.handleInputLayer('mode', {
