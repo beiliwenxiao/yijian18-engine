@@ -1,8 +1,24 @@
-/**
- * SceneDiagnostics - 场景调试面板与性能观测生命周期。
+/************************************************************
+
+ * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
+
  *
- * 性能采样状态继续投影到 scene，保持现有帧/渲染管线契约；具体实现集中在此。
- */
+
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+
+ * @author    刘枭 (beiliwenxiao)
+
+ * @email     beiliwenxiao@qq.com
+
+ * @date      2026-01-14
+
+ * @blog      https://blog.csdn.net/beiliwenxiao
+
+ * @repo      https://github.com/beiliwenxiao/yijian18-engine
+
+ *            https://gitee.com/coderaaa/yijian18-engine
+
+ ************************************************************/
 import { DebugPanel } from '../../ui/DebugPanel.js';
 import { normalizeRuntimeDebugMode } from '../CanonicalSnapshot.js';
 import { PerformanceOptimizer } from '../../systems/PerformanceOptimizer.js';
@@ -285,8 +301,10 @@ export class SceneDiagnostics {
     this._collisionDebugRenderCount++;
     if (this._collisionDebugRenderCount % 120 === 1) {
       const shapeInfo = terrains.map((terrain, index) => {
-        const first = terrain?._collisionShapes?.[0];
-        return `[${index}] ${terrain?._editorSceneId}: ${terrain?._collisionShapes?.length || 0} shapes`
+        const collisionShapes = terrain?._collisionShapes || [];
+        const walkableShapes = terrain?._walkableShapes || [];
+        const first = collisionShapes[0] || walkableShapes[0];
+        return `[${index}] ${terrain?._editorSceneId}: collision=${collisionShapes.length}, walkable=${walkableShapes.length}`
           + (first ? `, first.points[0..1]=${JSON.stringify(first.points?.slice(0, 2))}` : '');
       });
       const bounds = camera.getViewBounds();
@@ -298,6 +316,10 @@ export class SceneDiagnostics {
     const viewBounds = camera.getViewBounds();
     ctx.translate(-viewBounds.left, -viewBounds.top);
     for (const terrain of terrains) {
+      if (typeof terrain?.renderCollisionShapesDebug === 'function') {
+        terrain.renderCollisionShapesDebug(ctx, 0.7);
+        continue;
+      }
       const shapes = terrain?._collisionShapes;
       if (!shapes || shapes.length === 0) continue;
       for (const shape of shapes) {

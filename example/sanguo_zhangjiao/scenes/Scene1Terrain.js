@@ -1,14 +1,24 @@
-/**
+/************************************************************
+
  * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
- * 
- * @project   YiJian18-Engine - 跨平台2D/3D ECS游戏引擎
+
+ *
+
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+
  * @author    刘枭 (beiliwenxiao)
+
  * @email     beiliwenxiao@qq.com
+
  * @date      2026-01-14
+
  * @blog      https://blog.csdn.net/beiliwenxiao
+
  * @repo      https://github.com/beiliwenxiao/yijian18-engine
+
  *            https://gitee.com/coderaaa/yijian18-engine
- */
+
+ ************************************************************/
 
 import { ShapeRenderer } from '../../../src/rendering/ShapeRenderer.js';
 import { SceneObjectProjector } from '../../../src/core/scene/SceneObjectProjector.js';
@@ -446,9 +456,10 @@ export class Scene1Terrain {
         img.src = sceneImage.src;
       }
 
-      // 预加载 shape 的图片填充
-      for (const sh of this._editorShapes) {
-        if (sh.fillMode === 'image' && sh.imageSrc && !this._shapeImages.has(sh.imageSrc)) {
+      // 预加载需要图片填充的可视 shape；walkable 与碰撞逻辑共享投影，不能再作坐标换算。
+      for (const shapes of [this._editorShapes, this._walkableShapes]) {
+        for (const sh of shapes) {
+          if (sh.fillMode !== 'image' || !sh.imageSrc || this._shapeImages.has(sh.imageSrc)) continue;
           let src = sh.imageSrc;
           const idx = src.indexOf('assets/');
           if (idx !== -1) src = src.substring(idx);
@@ -1326,37 +1337,49 @@ export class Scene1Terrain {
   }
 
   /**
-   * 渲染编辑器中的可渲染 shape（多边形/矩形/圆等），用统一 ShapeRenderer
+   * 渲染编辑器中具有表现的 shape，并复用已投影的可落脚区域。
    * @param {CanvasRenderingContext2D} ctx
    */
   _renderEditorShapes(ctx) {
-    if (!this._editorShapes || this._editorShapes.length === 0) return;
+    const editorShapes = this._editorShapes || [];
+    const walkableShapes = this._walkableShapes || [];
+    if (editorShapes.length === 0 && walkableShapes.length === 0) return;
     const resolver = this._editorShapeResolver();
-    for (const shape of this._editorShapes) {
+    for (const shape of editorShapes) {
+      ShapeRenderer.render(ctx, shape, resolver);
+    }
+    for (const shape of walkableShapes) {
       ShapeRenderer.render(ctx, shape, resolver);
     }
   }
 
   /**
-   * 调试显示编辑器碰撞区域。只渲染临时副本，不修改场景 shape 数据。
+   * 调试显示编辑器碰撞与可落脚区域。只渲染临时副本，不修改场景 shape 数据。
+   * 碰撞使用橙红色；walkable 使用青绿色，便于确认优先放行区域。
    * @param {CanvasRenderingContext2D} ctx 已应用世界坐标相机变换
    * @param {number} opacity 调试层透明度
    */
   renderCollisionShapesDebug(ctx, opacity = 0.7) {
-    if (!this._collisionShapes || this._collisionShapes.length === 0) return;
+    const collisionShapes = this._collisionShapes || [];
+    const walkableShapes = this._walkableShapes || [];
+    if (collisionShapes.length === 0 && walkableShapes.length === 0) return;
     const resolver = this._editorShapeResolver();
-    for (const shape of this._collisionShapes) {
-      const debugShape = {
-        ...shape,
-        fillMode: 'color',
-        fill: '#ff9800',
-        opacity,
-        edgeFade: 0,
-        stroke: '#ff3b30',
-        strokeWidth: Math.max(2, Number(shape.strokeWidth) || 0)
-      };
-      ShapeRenderer.render(ctx, debugShape, resolver);
-    }
+    const renderDebugShapes = (shapes, fill, stroke) => {
+      for (const shape of shapes) {
+        const debugShape = {
+          ...shape,
+          fillMode: 'color',
+          fill,
+          opacity,
+          edgeFade: 0,
+          stroke,
+          strokeWidth: Math.max(2, Number(shape.strokeWidth) || 0)
+        };
+        ShapeRenderer.render(ctx, debugShape, resolver);
+      }
+    };
+    renderDebugShapes(collisionShapes, '#ff9800', '#ff3b30');
+    renderDebugShapes(walkableShapes, '#00bfa5', '#00e5ff');
   }
 
   /**

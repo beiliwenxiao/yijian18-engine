@@ -1275,11 +1275,11 @@
   "imageAssets": {
     "s01.environment.cliffVine": {
       "name": "逃生藤蔓",
-      "src": "../example/sanguo_zhangjiao/assets/images/s01/cliff-vine.svg"
+      "src": "../example/sanguo_zhangjiao/assets/images/s01/cliff-vine.png"
     },
     "s01.environment.droughtWildernessGround": {
       "name": "S01 干旱荒原地貌",
-      "src": "../example/sanguo_zhangjiao/assets/images/s01/drought-wilderness-ground.svg"
+      "src": "../example/sanguo_zhangjiao/assets/images/s01/drought-wilderness-ground.png"
     }
   },
   "name": "S01 寒风荒野求生",

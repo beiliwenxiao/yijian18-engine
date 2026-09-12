@@ -33,6 +33,11 @@ this._walkableShapes = [];   // obj.type === 'shape' && obj.walkable
 - 两者都不放入 `_editorShapes`（避免 worldOffset 双重偏移）
 - worldOffset 阶段对两者都做坐标偏移
 
+## 表现与调试
+
+- `walkable` 虽然不进入 `_editorShapes`，仍必须由 `Scene1Terrain._renderEditorShapes()` 直接绘制同一份已投影 `_walkableShapes`；不得为表现再次投影或重新偏移坐标。
+- `SceneDiagnostics.renderCollisionShapes()` 必须委托 Terrain 的 `renderCollisionShapesDebug()`，同时绘制 `collision`（橙红）和 `walkable`（青绿）区域；调试层只读，不得改变物理判定或场景数据。
+
 ## 编辑器属性面板
 
 SceneEditorUI.js 中 `_buildShapeProperties` 末尾：
