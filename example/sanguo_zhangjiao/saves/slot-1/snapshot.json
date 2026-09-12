@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "createdAt": 1789069620184,
+  "createdAt": 1789231511833,
   "meta": {
     "gameId": "sanguo_zhangjiao",
     "kind": "manual",
@@ -78,12 +78,12 @@
             "nodeId": "start",
             "speaker": "旁白",
             "text": "寒风卷过龟裂的荒原。你从熄灭的火堆旁醒来，四肢冻得僵硬，远处只有枯草与河水的声响。",
-            "timestamp": 1789069618108
+            "timestamp": 1789231509747
           },
           {
             "type": "start",
             "dialogueId": "dialogue.s01.wake",
-            "timestamp": 1789069618108
+            "timestamp": 1789231509747
           }
         ],
         "completedDialogues": []
@@ -271,6 +271,7 @@
             "s01Survival": {
               "axeDropped": false,
               "axeFound": false,
+              "backpackOpened": false,
               "berriesGathered": false,
               "berryEaten": false,
               "berryGatherCount": 0,
@@ -315,7 +316,7 @@
         "triggers": {
           "snapshotSchemaVersion": 3,
           "definitionRevision": 1,
-          "definitionDigest": "sha256-5838a4f4e09b44e9f5a1ed637fb0aeb529579c0ae0a5bb396a7aca13af61e5b3",
+          "definitionDigest": "sha256-c89d7e429590a7f4e328174fa9a80fd179f837d515152bfcde813d7b6628f212",
           "firedOnce": [],
           "cooldowns": {
             "trg_s01_spawn_initial": {
@@ -699,18 +700,6 @@
               },
               {
                 "triggerId": "trg_s01_cliff_reached",
-                "definitionRevision": 1,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s01_climb_vine",
                 "definitionRevision": 1,
                 "operationId": null,
                 "fingerprint": null,
@@ -1745,8 +1734,8 @@
                         "removed": false,
                         "hp": 38,
                         "position": {
-                          "x": 9810,
-                          "y": 3220
+                          "x": 9771.03021391797,
+                          "y": 3258.9697860820424
                         },
                         "ai": {
                           "active": true,
@@ -1764,7 +1753,7 @@
                         "hp": 38,
                         "position": {
                           "x": 9930,
-                          "y": 3270
+                          "y": 3214.8883999999975
                         },
                         "ai": {
                           "active": true,

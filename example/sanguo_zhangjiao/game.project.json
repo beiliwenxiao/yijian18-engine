@@ -2744,27 +2744,6 @@
             },
             "resultSemantics": "越河后首次抵达山崖时提交事实并展示攀藤提示；事务拒绝或失败时返回失败。",
             "value": "cliffReached"
-          },
-          {
-            "id": "climbVine",
-            "label": "攀藤完成荒原流程",
-            "paramsSchema": {
-              "additionalProperties": false,
-              "properties": {
-                "operation": {
-                  "enum": [
-                    "climbVine"
-                  ],
-                  "type": "string"
-                }
-              },
-              "required": [
-                "operation"
-              ],
-              "type": "object"
-            },
-            "resultSemantics": "复用攀爬系统启动藤蔓攀爬；完成后由既有旅行事务关闭追逐并前往 S02，准入失败时不推进。",
-            "value": "climbVine"
           }
         ],
         "paramsSchema": {
@@ -3972,24 +3951,6 @@
         }
       ],
       "id": "trg_s01_cliff_reached",
-      "once": false,
-      "when": {
-        "params": {},
-        "type": "interact"
-      }
-    },
-    {
-      "cooldown": 1,
-      "do": [
-        {
-          "action": "s01Survival",
-          "params": {
-            "operation": "climbVine"
-          },
-          "stepId": "climb-vine"
-        }
-      ],
-      "id": "trg_s01_climb_vine",
       "once": false,
       "when": {
         "params": {},

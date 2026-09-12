@@ -398,7 +398,7 @@
         "triggers": {
           "snapshotSchemaVersion": 3,
           "definitionRevision": 1,
-          "definitionDigest": "sha256-5838a4f4e09b44e9f5a1ed637fb0aeb529579c0ae0a5bb396a7aca13af61e5b3",
+          "definitionDigest": "sha256-c89d7e429590a7f4e328174fa9a80fd179f837d515152bfcde813d7b6628f212",
           "firedOnce": [
             "trg_s01_begin_tutorial_after_wake",
             "trg_s01_light_campfire",
@@ -1032,18 +1032,6 @@
               },
               {
                 "triggerId": "trg_s01_cliff_reached",
-                "definitionRevision": 1,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s01_climb_vine",
                 "definitionRevision": 1,
                 "operationId": null,
                 "fingerprint": null,

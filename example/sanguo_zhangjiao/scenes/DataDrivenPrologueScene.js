@@ -1508,7 +1508,10 @@ export class DataDrivenPrologueScene extends BaseGameScene {
   }
 
   resolveClimbTarget({ entity } = {}) {
-    return this._worldQuery.resolveClimbTarget({ entity });
+    const target = this._worldQuery.resolveClimbTarget({ entity });
+    return this.s01s02Coordinator
+      ? this.s01s02Coordinator.filterClimbTarget(target)
+      : target;
   }
 
   /** SceneVehicleRuntime 的 Demo 世界编排归属 SanguoWorldRuntimeCoordinator；保留兼容入口。 */

@@ -1,6 +1,23 @@
 /************************************************************
+
  * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
- * @project YiJian18-Engine - 跨平台2D/3D ECS游戏引擎
+
+ *
+
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+
+ * @author    刘枭 (beiliwenxiao)
+
+ * @email     beiliwenxiao@qq.com
+
+ * @date      2026-01-14
+
+ * @blog      https://blog.csdn.net/beiliwenxiao
+
+ * @repo      https://github.com/beiliwenxiao/yijian18-engine
+
+ *            https://gitee.com/coderaaa/yijian18-engine
+
  ************************************************************/
 
 import { ClimbSystem } from './ClimbSystem.js';
@@ -27,8 +44,6 @@ export class LocomotionSystem {
       const dy = Number(targetPosition?.y) - transform.position.y;
       const magnitude = Math.hypot(dx, dy);
       const direction = magnitude > 0 ? { x: dx / magnitude, y: dy / magnitude } : { x: 0, y: 0 };
-      // 基础跳跃已由 SceneCombatActions 直接走 JumpSystem（距离按蓄力 60~180px），
-      // 此分支仅保留 power_jump/其他能力路径；不再把距离钳制到技能 range。
       return this.jumpSystem.startJump(caster, direction, {
         mode: skillId === 'power_jump' ? 'power' : 'normal',
         distance: magnitude > 0 ? Math.min(magnitude, Number(params.range) || magnitude) : 0,
@@ -45,7 +60,17 @@ export class LocomotionSystem {
     }
     if (skillId === 'climb') {
       const target = abilityContext?.climbTarget || this.resolveClimbTarget({ entity: caster, context: abilityContext });
-      return !!target && this.climbSystem.startClimb(caster, target.targetPosition || target, {
+      if (!target) return false;
+      if (target.mode === 'controlled') {
+        return this.climbSystem.startControlledClimb(caster, target.bounds, {
+          exitPosition: target.exitPosition || target.targetPosition,
+          exitRadius: Number(target.exitRadius) || undefined,
+          speed: Number(target.speed) || undefined,
+          elevation: Number(target.elevation) || undefined,
+          surfaceId: target.id
+        });
+      }
+      return this.climbSystem.startClimb(caster, target.targetPosition || target, {
         duration: Number(params.duration) || undefined,
         peakHeight: Number(params.peakHeight) || undefined
       });
@@ -59,8 +84,20 @@ export class LocomotionSystem {
       || this.climbSystem?.isClimbing?.(entity) === true;
   }
 
-  update(deltaTime) {
-    this.climbSystem.update(deltaTime);
+  update(deltaTime, { inputAxis = null } = {}) {
+    this.climbSystem.update(deltaTime, { inputAxis });
+  }
+
+  getClimbPresentation(entity) {
+    return this.climbSystem.getControlledClimbPresentation(entity);
+  }
+
+  isAtControlledClimbExit(entity) {
+    return this.climbSystem.isAtControlledExit(entity);
+  }
+
+  finishControlledClimb(entity) {
+    return this.climbSystem.finishControlledClimb(entity);
   }
 
   serialize(entity) {

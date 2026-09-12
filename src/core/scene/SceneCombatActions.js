@@ -1,7 +1,14 @@
 /************************************************************
  * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
  *
- * @project   YiJian18-Engine - 跨平台2D/3D ECS游戏引擎
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+ *
+ * @author    刘枭 (beiliwenxiao)
+ * @email     beiliwenxiao@qq.com
+ * @date      2026-01-14
+ * @blog      https://blog.csdn.net/beiliwenxiao
+ * @repo      https://github.com/beiliwenxiao/yijian18-engine
+ *            https://gitee.com/coderaaa/yijian18-engine
  ************************************************************/
 
 import { IntentType } from '../input/GamepadCombatController.js';
@@ -156,6 +163,15 @@ export class SceneCombatActions {
     if (scene.meditationSystem?.isActive?.() || scene.locomotionSystem?.isBusy?.(player)) return false;
 
     const climbTarget = scene.resolveClimbTarget?.({ entity: player, direction: { x: dirX, y: dirY } }) || null;
+    if (climbTarget?.requiresClimbAbility === false) {
+      // 场景教学可声明 baseline 攀爬：仍由 canonical jump 动作进入同一 LocomotionSystem，
+      // 但不错误要求尚未解锁的成长型 climb 能力。
+      return scene.locomotionSystem?.execute?.({
+        caster: player,
+        skillId: 'climb',
+        context: { climbTarget }
+      }) === true;
+    }
     if (climbTarget && scene.abilitySystem?.isUnlocked?.(player, 'climb')) {
       return this._useLocomotion('climb', { context: { climbTarget } });
     }

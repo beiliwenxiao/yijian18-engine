@@ -249,15 +249,18 @@ export class SceneFramePipeline {
     // HUD 冷却集中由 SceneHudUpdater 读取显式 UI/System 依赖。
     hudUpdater?.updateCooldowns();
 
-    // 更新攀爬等统一位移执行器；Jump/Flight 保持各自既有更新顺序。
-    locomotionSystem?.update?.(deltaTime);
+    // 更新攀爬等统一位移执行器；受控攀爬读取与普通移动相同的设备无关移动轴。
+    // 模态/面板接管时不再向攀爬器传递世界输入，避免 UI 操作推动角色。
+    const locomotionAxis = worldInputBlocked ? null : inputManager?.getMoveAxis?.() || null;
+    locomotionSystem?.update?.(deltaTime, { inputAxis: locomotionAxis });
 
     // 蓄力跳跃：空格/Y 保持时由对应设备连续更新目标；虚拟跳跃按钮进入点选模式。
     // 手柄用左摇杆更新相对落点，PC 用鼠标位置更新落点；触屏点选由 AIMING 优先级确认。
+    const controlledClimbActive = locomotionSystem?.getClimbPresentation?.(player) != null;
     const keyboardJumpHeld = scene.inputManager?.isKeyDown?.('space') === true;
     const gamepadJumpHeld = scene.inputManager?.isKeyDown?.('jump') === true;
     const touchJumpHeld = scene._jumpHeld === true;
-    const jumpHeld = !worldInputBlocked && (keyboardJumpHeld || touchJumpHeld || gamepadJumpHeld);
+    const jumpHeld = !worldInputBlocked && !controlledClimbActive && (keyboardJumpHeld || touchJumpHeld || gamepadJumpHeld);
     const jumpAxis = worldInputBlocked || !gamepadJumpHeld
       ? null
       : (scene.inputManager?.getMoveAxis?.() || null);

@@ -1,6 +1,28 @@
+/************************************************************
+
+ * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
+
+ *
+
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+
+ * @author    刘枭 (beiliwenxiao)
+
+ * @email     beiliwenxiao@qq.com
+
+ * @date      2026-01-14
+
+ * @blog      https://blog.csdn.net/beiliwenxiao
+
+ * @repo      https://github.com/beiliwenxiao/yijian18-engine
+
+ *            https://gitee.com/coderaaa/yijian18-engine
+
+ ************************************************************/
+
 /**
- * Resolves the nearest semantic climb surface from an already projected world view.
- * It does not own ability checks, UI hints, or scene-specific content.
+ * 从已投影的世界对象解析最近攀爬面。它不拥有能力判定、UI 提示或具体剧情；
+ * controlled 模式仅投影场景配置，实际移动由 LocomotionSystem/ClimbSystem 执行。
  */
 export class SceneClimbTargetResolver {
   static resolve({
@@ -39,14 +61,37 @@ export class SceneClimbTargetResolver {
       const targetX = Number(target.x);
       const targetY = Number(target.y);
       if (!Number.isFinite(targetX) || !Number.isFinite(targetY)) continue;
+      const controlled = surface.climbMode === 'controlled';
+      const localBounds = surface.climbBounds || {};
+      const exit = surface.climbExit || target;
+      const exitX = Number(exit.x);
+      const exitY = Number(exit.y);
+      if (controlled && (!Number.isFinite(exitX) || !Number.isFinite(exitY))) continue;
       best = {
         id: surface.id,
         distance,
         promptTemplate: surface.prompt || '{climb}攀爬',
+        requiresClimbAbility: surface.requiresClimbAbility !== false,
         targetPosition: {
           x: targetX + (surface.climbTargetWorld === true ? 0 : offsetX),
           y: targetY + (surface.climbTargetWorld === true ? 0 : offsetY)
-        }
+        },
+        ...(controlled ? {
+          mode: 'controlled',
+          bounds: {
+            x: Number(localBounds.x ?? surface.x) + offsetX,
+            y: Number(localBounds.y ?? surface.y) + offsetY,
+            width: Number(localBounds.width ?? surface.width),
+            height: Number(localBounds.height ?? surface.height)
+          },
+          exitPosition: {
+            x: exitX + (surface.climbExitWorld === true ? 0 : offsetX),
+            y: exitY + (surface.climbExitWorld === true ? 0 : offsetY)
+          },
+          exitRadius: Math.max(0, Number(surface.climbExitRadius) || 18),
+          speed: Math.max(1, Number(surface.climbSpeed) || 84),
+          elevation: Math.max(0, Number(surface.climbElevation) || 14)
+        } : {})
       };
     }
     return best;

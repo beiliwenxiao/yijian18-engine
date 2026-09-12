@@ -70,6 +70,7 @@ export class S01S02Coordinator {
     this.initialToolRevealRetryElapsed = 0;
     this.pendingWolfDiscovery = false;
     this.pendingClimb = false;
+    this.climbCompletionInFlight = false;
     this.pendingPlacementReveals = new Map();
     // 当前 S01 会话中已确认的放置后续，避免健康对象被每帧重新加入补偿队列。
     this.resolvedPlacementContinuations = new Set();
@@ -1583,29 +1584,15 @@ export class S01S02Coordinator {
       const result = await this._submit('story.s01.cliffReached', {}, 'story:s01:cliff-reached');
       return result.ok === true;
     }
-    if (operation === 'climbVine') return this._startVineClimb();
     return false;
   }
 
-  _startVineClimb() {
-    if (this.pendingClimb) return { ok: true, status: 'alreadyClimbing' };
-    if (this._story().s01Survival?.cliffReached !== true) {
-      return { ok: false, code: 'cliffNotReached' };
-    }
-    const climbTarget = this.scene.resolveClimbTarget?.({ entity: this.scene.playerEntity });
-    if (!climbTarget?.targetPosition) {
-      this.scene._showScreenTip('没有找到当前山崖藤蔓的有效攀爬目标，请重新靠近藤蔓。', { title: '无法攀爬' });
-      return { ok: false, code: 'climbTargetUnavailable' };
-    }
-    const started = this.scene.locomotionSystem?.climbSystem?.startClimb?.(
-      this.scene.playerEntity,
-      climbTarget.targetPosition,
-      { duration: 1.8, peakHeight: 38 }
-    );
-    if (!started) return { ok: false, code: 'climbStartRejected' };
-    this.pendingClimb = true;
-    this.climbObservedActive = true;
-    return { ok: true };
+  /** S01 藤蔓只有抵达山崖后才作为 baseline jump 攀爬面开放。 */
+  filterClimbTarget(target) {
+    if (target?.id !== 'S01-cliff-vine') return target;
+    return this.scene.currentSceneId === 'S01' && this._story().s01Survival?.cliffReached === true
+      ? target
+      : null;
   }
 
   update(deltaTime) {
@@ -1727,14 +1714,31 @@ export class S01S02Coordinator {
         this.shelterConstructionProgressActive = false;
       }
     }
-    if (!this.pendingClimb) return;
-    const climbing = this.scene.locomotionSystem?.climbSystem?.isClimbing?.(this.scene.playerEntity) === true;
-    if (climbing) this.climbObservedActive = true;
-    if (!climbing && this.climbObservedActive) {
+    this._updateControlledVineClimb();
+  }
+
+  _updateControlledVineClimb() {
+    const player = this.scene.playerEntity;
+    const locomotion = this.scene.locomotionSystem;
+    const presentation = locomotion?.getClimbPresentation?.(player);
+    if (presentation?.surfaceId !== 'S01-cliff-vine') {
       this.pendingClimb = false;
-      this.climbObservedActive = false;
-      void this.completeS01AndTravel();
+      this.climbCompletionInFlight = false;
+      return;
     }
+    this.pendingClimb = true;
+    if (!presentation.isAtExit || this.climbCompletionInFlight) return;
+
+    this.climbCompletionInFlight = true;
+    void this.completeS01AndTravel().then(completed => {
+      if (completed === true) locomotion?.finishControlledClimb?.(player);
+      else this.scene._showScreenTip('离开荒原的旅行事务未完成，藤蔓状态保持不变，请稍后重试。', { title: '暂时无法离开' });
+    }).catch(error => {
+      console.warn('[S01S02Coordinator] 藤蔓出口旅行异常', error);
+      this.scene._showScreenTip('离开荒原时发生异常，当前进度未推进。', { title: '暂时无法离开' });
+    }).finally(() => {
+      this.climbCompletionInFlight = false;
+    });
   }
 
   async prepareSpecialFaint(params = {}) {

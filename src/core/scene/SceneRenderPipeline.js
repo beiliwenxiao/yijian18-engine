@@ -287,8 +287,37 @@ export class SceneRenderPipeline {
 
     if (terrains.length === 0) return;
     for (const terrain of terrains) terrain.renderCliffs?.(ctx);
+    this.renderControlledClimbBounds(ctx, context?.systems?.locomotion, context?.player?.entity);
     scene._renderBuffZones?.(ctx);
     scene.renderSpeechBubbles?.(ctx);
+  }
+
+  /** 受控攀爬的世界空间活动范围；只读取 LocomotionSystem 的表现投影。 */
+  renderControlledClimbBounds(ctx, locomotionSystem, player) {
+    const presentation = locomotionSystem?.getClimbPresentation?.(player);
+    const bounds = presentation?.bounds;
+    if (!bounds) return;
+    const width = Number(bounds.maxX) - Number(bounds.minX);
+    const height = Number(bounds.maxY) - Number(bounds.minY);
+    if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) return;
+
+    ctx.save();
+    ctx.lineWidth = 2.5;
+    ctx.strokeStyle = presentation.isAtExit ? 'rgba(155, 255, 166, 0.98)' : 'rgba(255, 218, 110, 0.96)';
+    ctx.shadowColor = presentation.isAtExit ? 'rgba(84, 224, 119, 0.8)' : 'rgba(255, 183, 58, 0.8)';
+    ctx.shadowBlur = 8;
+    ctx.setLineDash([7, 5]);
+    ctx.strokeRect(bounds.minX, bounds.minY, width, height);
+    ctx.setLineDash([]);
+
+    const exit = presentation.exitPosition;
+    if (exit && Number.isFinite(Number(exit.x)) && Number.isFinite(Number(exit.y))) {
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(exit.x, exit.y, Math.max(6, Number(presentation.exitRadius) || 0), 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.restore();
   }
 
   /** 入队前的无分配视野检测；边距覆盖名称、血条和高精灵。 @private */

@@ -240,6 +240,19 @@
           "y": 80
         },
         {
+          "climbBounds": {
+            "height": 170,
+            "width": 92,
+            "x": 1090,
+            "y": 20
+          },
+          "climbExit": {
+            "x": 1135,
+            "y": 86
+          },
+          "climbExitRadius": 20,
+          "climbMode": "controlled",
+          "climbSpeed": 84,
           "climbTarget": {
             "x": 1135,
             "y": 86
@@ -252,8 +265,9 @@
           "id": "S01-cliff-vine",
           "imageId": "s01.environment.cliffVine",
           "name": "逃生藤蔓",
-          "prompt": "{climb}攀上藤蔓逃离狼群",
+          "prompt": "{jump}攀上藤蔓，在藤蔓上移动至出口",
           "radius": 100,
+          "requiresClimbAbility": false,
           "rotation": 0,
           "semanticRole": "climbSurface",
           "sortY": 190,
@@ -1135,27 +1149,6 @@
           "width": 130,
           "x": 1010,
           "y": 80
-        },
-        {
-          "activeWhen": {
-            "equals": true,
-            "path": "s01Survival.cliffReached"
-          },
-          "event": "interact",
-          "height": 170,
-          "id": "S01-binding-climb-vine",
-          "name": "攀藤逃往 S02",
-          "pointerRadius": 54,
-          "prompt": "{climb}攀上藤蔓逃离狼群",
-          "radius": 100,
-          "sceneEventId": "s01.event.cliffEscape",
-          "target": "S01-cliff-vine",
-          "targetMode": "id",
-          "triggerId": "trg_s01_climb_vine",
-          "type": "trigger",
-          "width": 92,
-          "x": 1090,
-          "y": 20
         }
       ],
       "visible": true

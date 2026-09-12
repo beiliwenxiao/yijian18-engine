@@ -204,11 +204,14 @@ function presentNpcIdleText(npc, text) {
 function updateClimbPrompt() {
   if (this._sceneTriggerBindings?.hasActivePrompt?.()) return false;
   const player = this.playerEntity;
-  const canClimb = !!player && this.abilitySystem?.isUnlocked?.(player, 'climb') === true;
-  const target = canClimb ? this.resolveClimbTarget({ entity: player }) : null;
-  if (target?.promptTemplate) this.showHint(target.promptTemplate, '攀爬');
+  const target = player ? this.resolveClimbTarget({ entity: player }) : null;
+  const canClimb = !!target && (
+    target.requiresClimbAbility === false
+    || this.abilitySystem?.isUnlocked?.(player, 'climb') === true
+  );
+  if (canClimb && target?.promptTemplate) this.showHint(target.promptTemplate, '攀爬');
   else this.hideHint();
-  return !!target;
+  return canClimb;
 }
 
 function observeTutorialEventSources() {
