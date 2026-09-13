@@ -360,7 +360,13 @@ export class DataDrivenPrologueScene extends BaseGameScene {
     this.irreversibleChoiceView = null;
     this.cargoTransferView = new CargoTransferView({
       width: 680,
-      onCommand: command => { void this.s11s14SceneCoordinator?._handleCargoTransferCommand(command); }
+      onCommand: command => {
+        if (this._s01s02Coordinator?._isInShelterInterior?.()) {
+          void this._s01s02Coordinator.handleShelterChestCommand(command);
+        } else {
+          void this.s11s14SceneCoordinator?._handleCargoTransferCommand(command);
+        }
+      }
     });
     this.recipeSelectionView = new RecipeSelectionView({
       width: 700,

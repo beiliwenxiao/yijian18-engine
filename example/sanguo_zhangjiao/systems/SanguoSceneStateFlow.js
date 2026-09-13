@@ -1,13 +1,23 @@
 /************************************************************
+
  * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
- * 
+
+ *
+
  * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+
  * @author    刘枭 (beiliwenxiao)
+
  * @email     beiliwenxiao@qq.com
+
  * @date      2026-01-14
+
  * @blog      https://blog.csdn.net/beiliwenxiao
+
  * @repo      https://github.com/beiliwenxiao/yijian18-engine
+
  *            https://gitee.com/coderaaa/yijian18-engine
+
  ************************************************************/
 
 import { SceneFlowCoordinator } from '../../../src/core/scene/SceneFlowCoordinator.js';
@@ -87,6 +97,7 @@ function captureSceneSaveState() {
     })),
     campfireLit: this._campfireService.snapshot().lit,
     campfireState: this._campfireService.snapshot(),
+    containerInventories: this.context.services.containerInventories?.serialize?.() || null,
     firedPickups: [...(this._firedPickups || [])],
     clearedGroups: [...(this._clearedGroups || [])],
     ...(hasWorldStreaming ? {} : {
@@ -282,6 +293,10 @@ function validateSceneSaveState(data) {
       return failure('rescueState.definition.id', `未知救援配置: ${rescueId}`, 'unknownRescueId');
     }
   }
+  const containerCheck = this.context.services.containerInventories?.validateSerialized?.(data.containerInventories);
+  if (containerCheck && !containerCheck.ok) return { ok: false, errors: containerCheck.errors.map(error => ({
+    ...error, path: error.path ? `containerInventories.${error.path}` : 'containerInventories'
+  })) };
   if (data.worldStreamingState) {
     if (!this.worldStreamingManager) return failure('worldStreamingState', '世界流式运行时尚未就绪', 'worldStreamingUnavailable');
     const check = this.worldStreamingManager.validateSerialized(data.worldStreamingState);
@@ -320,6 +335,8 @@ function applySceneSaveState(data) {
     this._regionDynamicStates = new Map((data.regionStates || [])
       .filter(entry => typeof entry?.regionId === 'string' && entry.state && typeof entry.state === 'object')
       .map(entry => [entry.regionId, cloneData(entry.state)]));
+    const containerRestore = this.context.services.containerInventories?.restore?.(data.containerInventories);
+    if (containerRestore && !containerRestore.ok) return { ok: false, errors: containerRestore.errors };
     this._firedPickups = new Set(data.firedPickups || []);
     this._clearedGroups = new Set(data.clearedGroups || []);
     this.s09RefugeeCoordinator.restoreUnauthorizedHarvestOperations(data.gatheringPolicyOperations);

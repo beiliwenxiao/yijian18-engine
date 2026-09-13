@@ -1,13 +1,23 @@
 /************************************************************
+
  * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
+
  * 
- * @project   YiJian18-Engine - 跨平台2D/3D ECS游戏引擎
+
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+
  * @author    刘枭 (beiliwenxiao)
+
  * @email     beiliwenxiao@qq.com
- * @date      2026-07-16
+
+ * @date      2026-01-14
+
  * @blog      https://blog.csdn.net/beiliwenxiao
+
  * @repo      https://github.com/beiliwenxiao/yijian18-engine
+
  *            https://gitee.com/coderaaa/yijian18-engine
+
  ************************************************************/
 
 /**
@@ -24,14 +34,14 @@ import { InputHints } from '../core/input/InputHints.js';
 import { getWorldMapCellSceneId } from '../core/WorldMapCell.js';
 
 const DEBUG_PANEL_DEFAULT_LAYOUT = Object.freeze({
-  left: 10,
-  top: 10,
-  width: 280,
+  left: 0,
+  top: 0,
+  width: 350,
   height: null
 });
 const DEBUG_PANEL_MIN_WIDTH = 240;
 const DEBUG_PANEL_MIN_HEIGHT = 160;
-const DEBUG_PANEL_VIEWPORT_MARGIN = 8;
+const DEBUG_PANEL_VIEWPORT_MARGIN = 0;
 
 export class DebugPanel {
   /**
@@ -253,6 +263,10 @@ export class DebugPanel {
         <div class="dp-section dp-actions">
           <div class="dp-title">调试显示</div>
           <label class="dp-check-row">
+            <input type="checkbox" id="dp-show-actor-collision-edge" ${this.getScene()?.debugShowActorCollisionEdge ? 'checked' : ''}>
+            显示角色碰撞边缘
+          </label>
+          <label class="dp-check-row">
             <input type="checkbox" id="dp-show-collision" ${this.getScene()?.debugShowCollisionPolygons ? 'checked' : ''}>
             显示地形碰撞多边形（70%）
           </label>
@@ -347,8 +361,8 @@ export class DebugPanel {
     const s = document.createElement('style');
     s.id = 'dp-styles';
     s.textContent = `
-      #debug-panel { position:fixed; top:10px; left:10px; width:280px; max-width:calc(100vw - 16px);
-        max-height:calc(100vh - 16px); overflow-x:hidden; overflow-y:auto; box-sizing:border-box;
+      #debug-panel { position:fixed; top:0; left:0; width:350px; height:100vh; max-width:100vw;
+        max-height:100vh; overflow-x:hidden; overflow-y:auto; box-sizing:border-box;
         display:block; pointer-events:auto; background:rgba(0,0,0,0.88); color:#ddd; font:12px/1.5 monospace; border:1px solid #4CAF50;
         border-radius:6px; z-index:99999; user-select:text; }
       #debug-panel .dp-header { display:flex; justify-content:space-between; align-items:center;
@@ -533,6 +547,12 @@ export class DebugPanel {
     el.querySelector('#dp-fire-event').addEventListener('click', () => this._fireEvent());
     el.querySelector('#dp-skip-event').addEventListener('click', () => this._skipEvent());
     el.querySelector('#dp-goto-btn').addEventListener('click', () => this._gotoAct());
+    el.querySelector('#dp-show-actor-collision-edge').addEventListener('change', (event) => {
+      const scene = this.getScene();
+      if (!scene) return;
+      scene.debugShowActorCollisionEdge = event.target.checked;
+      console.log('[DebugPanel] 角色碰撞边缘显示:', event.target.checked ? '开启' : '关闭');
+    });
     el.querySelector('#dp-show-collision').addEventListener('change', (event) => {
       const scene = this.getScene();
       if (!scene) return;
@@ -774,6 +794,8 @@ export class DebugPanel {
       `存活: ${aliveEnemies.length} / 总数: ${enemyEntities.length}`;
 
     // 场景状态可能由外部代码改变，保持复选框显示同步
+    const actorCollisionEdgeToggle = this._el.querySelector('#dp-show-actor-collision-edge');
+    if (actorCollisionEdgeToggle) actorCollisionEdgeToggle.checked = scene.debugShowActorCollisionEdge === true;
     const collisionToggle = this._el.querySelector('#dp-show-collision');
     if (collisionToggle) collisionToggle.checked = scene.debugShowCollisionPolygons === true;
     const buffZoneToggle = this._el.querySelector('#dp-show-buffzones');

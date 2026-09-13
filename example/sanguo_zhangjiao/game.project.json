@@ -697,6 +697,7 @@
         },
         "riverCrossed": false,
         "shelterCompleted": false,
+        "shelterExitedAfterOvernight": false,
         "skinningKnifeFound": false,
         "wolfBracersCrafted": false,
         "wolfGearCrafted": false,
@@ -1986,8 +1987,8 @@
         ]
       },
       {
-        "id": "test_001",
-        "name": "庇护所内",
+        "id": "s01-shelter",
+        "name": "S01·小庇护所内",
         "mapType": "sceneGrid",
         "rows": 1,
         "cols": 1,
@@ -1995,7 +1996,7 @@
         "chunkHeight": 720,
         "grid": [
           [
-            null
+            "S01-C01"
           ]
         ]
       }
@@ -2010,6 +2011,15 @@
       "productionState": "playable",
       "width": 1280,
       "worldMap": "mainland"
+    },
+    {
+      "height": 720,
+      "id": "S01-C01",
+      "name": "S01·小庇护所内",
+      "previewOnly": false,
+      "productionState": "playable",
+      "width": 1280,
+      "worldMap": "s01-shelter"
     },
     {
       "height": 720,
@@ -2702,6 +2712,27 @@
             },
             "resultSemantics": "原子提交次日、火种与追逐事实并创建检查点；成功后恢复天气和狼群，事务失败时短路。",
             "value": "overnight"
+          },
+          {
+            "id": "enterShelter",
+            "label": "进入小庇护所",
+            "paramsSchema": { "additionalProperties": false, "properties": { "operation": { "enum": ["enterShelter"], "type": "string" } }, "required": ["operation"], "type": "object" },
+            "resultSemantics": "切换到独立的 S01-C01 庇护所室内场景。",
+            "value": "enterShelter"
+          },
+          {
+            "id": "openShelterChest",
+            "label": "打开储物箱",
+            "paramsSchema": { "additionalProperties": false, "properties": { "operation": { "enum": ["openShelterChest"], "type": "string" } }, "required": ["operation"], "type": "object" },
+            "resultSemantics": "打开背包与储物箱之间的原子双向转移面板。",
+            "value": "openShelterChest"
+          },
+          {
+            "id": "leaveShelter",
+            "label": "离开小庇护所",
+            "paramsSchema": { "additionalProperties": false, "properties": { "operation": { "enum": ["leaveShelter"], "type": "string" } }, "required": ["operation"], "type": "object" },
+            "resultSemantics": "首次过夜后离开时提交狼群追逐事实；其后仅返回荒野。",
+            "value": "leaveShelter"
           },
           {
             "id": "riverCrossed",
@@ -3890,28 +3921,42 @@
     {
       "cooldown": 1,
       "do": [
-        {
-          "action": "s01Survival",
-          "params": {
-            "operation": "overnight"
-          },
-          "stepId": "overnight"
-        },
-        {
-          "action": "tutorial.command",
-          "params": {
-            "operation": "show",
-            "tutorialId": "s01.jump"
-          },
-          "stepId": "show-tutorial-s01-jump"
-        }
+        { "action": "s01Survival", "params": { "operation": "enterShelter" }, "stepId": "enter-shelter" }
+      ],
+      "id": "trg_s01_enter_shelter",
+      "name": "进入小庇护所",
+      "once": false,
+      "when": { "params": {}, "type": "interact" }
+    },
+    {
+      "cooldown": 1,
+      "do": [
+        { "action": "s01Survival", "params": { "operation": "overnight" }, "stepId": "overnight" }
       ],
       "id": "trg_s01_overnight",
+      "name": "在床上过夜",
       "once": false,
-      "when": {
-        "params": {},
-        "type": "interact"
-      }
+      "when": { "params": {}, "type": "interact" }
+    },
+    {
+      "cooldown": 1,
+      "do": [
+        { "action": "s01Survival", "params": { "operation": "openShelterChest" }, "stepId": "open-shelter-chest" }
+      ],
+      "id": "trg_s01_open_shelter_chest",
+      "name": "打开庇护所储物箱",
+      "once": false,
+      "when": { "params": {}, "type": "interact" }
+    },
+    {
+      "cooldown": 1,
+      "do": [
+        { "action": "s01Survival", "params": { "operation": "leaveShelter" }, "stepId": "leave-shelter" }
+      ],
+      "id": "trg_s01_leave_shelter",
+      "name": "离开小庇护所",
+      "once": false,
+      "when": { "params": {}, "type": "interact" }
     },
     {
       "cooldown": 1,
@@ -8275,16 +8320,22 @@
             "path": "s01Survival.firestarterAcquired",
             "target": "story",
             "value": true
-          },
-          {
-            "path": "s01Survival.pursuit",
-            "target": "story",
-            "value": {
-              "active": true,
-              "killed": 0,
-              "spawned": 3
-            }
           }
+        ]
+      }
+    },
+    {
+      "commandType": "state.transaction",
+      "id": "story.s01.leaveShelter",
+      "transaction": {
+        "checkpoint": { "checkpointId": "checkpoint.S01.wolfPursuit", "reason": "checkpoint", "sceneId": "S01" },
+        "when": { "all": [
+          { "equals": true, "path": "story.s01Survival.overnightCompleted" },
+          { "equals": false, "path": "story.s01Survival.shelterExitedAfterOvernight" }
+        ] },
+        "writes": [
+          { "path": "s01Survival.shelterExitedAfterOvernight", "target": "story", "value": true },
+          { "path": "s01Survival.pursuit", "target": "story", "value": { "active": true, "killed": 0, "spawned": 3 } }
         ]
       }
     },

@@ -4431,6 +4431,70 @@
       "revision": 1
     },
     {
+      "assetId": "s01.prop.shelterChest",
+      "imageId": "s01.prop.shelterChest",
+      "category": "world-prop",
+      "usage": [
+        "S01",
+        "shelter",
+        "chest",
+        "storage"
+      ],
+      "sourceFile": "assets/images/s01/shelter-chest.png",
+      "runtime2D": {
+        "path": "assets/images/s01/shelter-chest.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "s01.prop.shelterChest"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      },
+      "bounds": {
+        "width": 192,
+        "height": 144
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "s01.environment.shelterWindow",
+      "imageId": "s01.environment.shelterWindow",
+      "category": "environment-module",
+      "usage": [
+        "S01",
+        "shelter",
+        "window",
+        "interior"
+      ],
+      "sourceFile": "assets/images/s01/shelter-window.png",
+      "runtime2D": {
+        "path": "assets/images/s01/shelter-window.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "s01.environment.shelterWindow"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      },
+      "bounds": {
+        "width": 160,
+        "height": 160
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
       "assetId": "s01.story.firestarter",
       "imageId": "s01.story.firestarter",
       "category": "story-item",

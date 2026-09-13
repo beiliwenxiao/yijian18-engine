@@ -373,6 +373,8 @@ export class SceneGameplaySystemAssembler {
       || (scene.playerEntity?.id === id ? scene.playerEntity : null);
     const resolveInventory = id => {
       if (!id) return null;
+      const containerInventory = scene.context?.services?.containerInventories?.resolve?.(id);
+      if (containerInventory) return containerInventory;
       if (id === `${scene.playerEntity?.id}:inventory` || id === scene.playerEntity?.id) {
         return scene.playerEntity?.getComponent?.('inventory') || null;
       }

@@ -1,5 +1,23 @@
 /************************************************************
- * YiJian18-Engine - read-only cargo transfer modal
+
+ * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
+
+ *
+
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+
+ * @author    刘枭 (beiliwenxiao)
+
+ * @email     beiliwenxiao@qq.com
+
+ * @date      2026-01-14
+
+ * @blog      https://blog.csdn.net/beiliwenxiao
+
+ * @repo      https://github.com/beiliwenxiao/yijian18-engine
+
+ *            https://gitee.com/coderaaa/yijian18-engine
+
  ************************************************************/
 
 import { UIElement } from './UIElement.js';
@@ -10,7 +28,7 @@ const clone = value => value == null ? null : JSON.parse(JSON.stringify(value));
 const inside = (point, box) => point.x >= box.x && point.x <= box.x + box.width
   && point.y >= box.y && point.y <= box.y + box.height;
 
-/** 只消费库存/货舱快照并发出命令；领域事务由场景与 VehicleLogisticsSystem 拥有。 */
+/** 只消费库存/容器快照并发出命令；领域事务由场景和注入的库存服务拥有。 */
 export class CargoTransferView extends UIElement {
   constructor(options = {}) {
     super({
@@ -187,15 +205,16 @@ export class CargoTransferView extends UIElement {
     ctx.textBaseline = 'middle';
     ctx.fillStyle = '#f0d080';
     ctx.font = 'bold 22px Arial';
-    ctx.fillText(this.snapshot.title || '载具货舱', layout.x + layout.width / 2, layout.y + 30);
-    this._renderTab(ctx, layout.toCargo, '背包 → 货舱', this.direction === 'toCargo');
-    this._renderTab(ctx, layout.toInventory, '货舱 → 背包', this.direction === 'toInventory');
+    const storageLabel = this.snapshot.storageLabel || '货舱';
+    ctx.fillText(this.snapshot.title || storageLabel, layout.x + layout.width / 2, layout.y + 30);
+    this._renderTab(ctx, layout.toCargo, `背包 → ${storageLabel}`, this.direction === 'toCargo');
+    this._renderTab(ctx, layout.toInventory, `${storageLabel} → 背包`, this.direction === 'toInventory');
 
     const source = this.direction === 'toCargo' ? this.snapshot.inventory : this.snapshot.cargo;
     ctx.textAlign = 'left';
     ctx.font = '13px Arial';
     ctx.fillStyle = '#c9c9c9';
-    ctx.fillText(this.direction === 'toCargo' ? '背包物品' : '货舱物品', layout.x + 24, layout.y + 106);
+    ctx.fillText(this.direction === 'toCargo' ? '背包物品' : `${storageLabel}物品`, layout.x + 24, layout.y + 106);
     layout.rows.forEach((box, index) => this._renderRow(ctx, box, this._sourceItems()[index]));
     if (!layout.rows.length) {
       ctx.fillStyle = '#969696';
@@ -206,7 +225,7 @@ export class CargoTransferView extends UIElement {
     ctx.fillStyle = '#e8e0cf';
     ctx.font = '13px Arial';
     ctx.fillText(`背包槽位 ${this.snapshot.inventory.usedSlots}/${this.snapshot.inventory.maxSlots}　` +
-      `货舱容量 ${this.snapshot.cargo.total}/${this.snapshot.cargo.capacity}`,
+      `${storageLabel}容量 ${this.snapshot.cargo.total}/${this.snapshot.cargo.capacity}`,
     layout.x + layout.width / 2, layout.y + layout.height - 126);
     this._renderButton(ctx, layout.decrease, '−', false);
     this._renderButton(ctx, layout.increase, '+', false);

@@ -343,6 +343,12 @@ function renderPostPipeline(ctx) {
     terrains: this._terrains,
     label: 'DDScene'
   });
+  this.context.services.diagnostics?.renderActorCollisionEdge(ctx, {
+    enabled: this.debugShowActorCollisionEdge,
+    camera: this.camera,
+    actor: this.playerEntity,
+    terrainCollision: this._terrainCollision
+  });
   const triggerBindings = this.context.services.triggerBindings;
   this.context.services.diagnostics?.renderTriggerHotspots(ctx, {
     enabled: this.debugShowTriggerHotspots === true,

@@ -44,7 +44,7 @@
           "stroke": "#d99b50",
           "strokeWidth": 2,
           "type": "shape",
-          "walkable": true,
+          "walkable": false,
           "width": 320,
           "x": 448.4953544253134,
           "y": 394.54710671885306
@@ -354,24 +354,24 @@
             "mode": "block",
             "points": [
               [
-                -50,
-                -5
+                -43,
+                -3
               ],
               [
                 52,
-                -6
+                -5
               ],
               [
-                35,
-                -49
+                37,
+                -37
               ],
               [
                 0,
-                -82
+                -44
               ],
               [
-                -32,
-                -47
+                -30,
+                -33
               ]
             ],
             "shapeType": "polygon"
@@ -413,24 +413,24 @@
             "mode": "block",
             "points": [
               [
-                -29,
-                -7
+                -27,
+                4
               ],
               [
-                30,
-                -8
+                31,
+                1
               ],
               [
-                17,
-                -77
+                25,
+                -19
               ],
               [
-                0,
-                -74
+                4,
+                -23
               ],
               [
-                -17,
-                -77
+                -18,
+                -18
               ]
             ],
             "shapeType": "polygon"
@@ -445,8 +445,8 @@
             "path": "s01Survival.meatCooked"
           },
           "type": "ref",
-          "x": 483.6510955210918,
-          "y": 489.1225022587522
+          "x": 482.8583027095395,
+          "y": 489.9152950703045
         },
         {
           "group": "S01-berries",
@@ -1121,24 +1121,20 @@
               {
                 "equals": true,
                 "path": "s01Survival.shelterCompleted"
-              },
-              {
-                "equals": false,
-                "path": "s01Survival.overnightCompleted"
               }
             ]
           },
           "event": "interact",
           "height": 70,
-          "id": "S01-binding-overnight",
-          "name": "在庇护所过夜",
+          "id": "S01-binding-enter-shelter",
+          "name": "进入小庇护所",
           "pointerRadius": 40,
-          "prompt": "{interact}进入小庇护所过夜",
+          "prompt": "{interact}进入小庇护所",
           "radius": 72,
           "sceneEventId": "s01.event.overnight",
           "target": "S01-shelter-rest",
           "targetMode": "id",
-          "triggerId": "trg_s01_overnight",
+          "triggerId": "trg_s01_enter_shelter",
           "type": "trigger",
           "width": 70,
           "x": 795,

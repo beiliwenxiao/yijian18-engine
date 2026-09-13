@@ -20,6 +20,9 @@
 
  ************************************************************/
 
+import { InventoryComponent } from '../../../src/ecs/components/InventoryComponent.js';
+import { SceneContainerInventoryRegistry } from '../../../src/core/scene/SceneContainerInventoryRegistry.js';
+
 const SPECIAL_FAINT_LABELS = Object.freeze({
   passerby: '路人救援', patrol: '小股官兵救援', temporaryCamp: '临时扎营'
 });
@@ -51,12 +54,21 @@ const MAX_CHASE_WOLVES = 20;
 const PURSUIT_RECONCILE_INTERVAL_SECONDS = 0.75;
 const FIRST_WOLF_CORPSE_RETRY_INTERVAL_SECONDS = 0.1;
 const FIRST_WOLF_CORPSE_MAX_ATTEMPTS = 30;
+const SHELTER_REGION_ID = 's01-shelter';
+const SHELTER_CHEST_INVENTORY_ID = 's01-shelter-chest:inventory';
 
 /** P1.1/P1.3 S01 生存流程协调器；领域写入统一提交 canonical command。 */
 export class S01S02Coordinator {
   constructor(scene) {
     if (!scene) throw new TypeError('S01S02Coordinator requires scene');
     this.scene = scene;
+    this.shelterChestInventories = new SceneContainerInventoryRegistry();
+    this.shelterChestInventory = this.shelterChestInventories.register(
+      SHELTER_CHEST_INVENTORY_ID,
+      new InventoryComponent({ maxSlots: 12 })
+    );
+    this.scene.context.services.containerInventories = this.shelterChestInventories;
+    this.shelterChestTransferBusy = false;
     this.sequence = 0;
     this.refuelCampfireInFlight = null;
     this.refuelCampfireProgress = null;
@@ -87,6 +99,84 @@ export class S01S02Coordinator {
 
   _story() {
     return this.scene.gameLoader?.blackboard?.get?.('storyState') || {};
+  }
+
+  _isInShelterInterior() {
+    return this.scene.worldStreamingManager?.regionId === SHELTER_REGION_ID;
+  }
+
+  _buildShelterChestSnapshot({ direction = null, statusMessage = '', statusType = 'info' } = {}) {
+    const summarize = inventory => (inventory?.exportItems?.() || []).map(stack => ({
+      itemId: stack?.item?.id || '', name: stack?.item?.name || stack?.item?.id || '未知物品',
+      quantity: Math.max(0, Math.floor(Number(stack?.quantity) || 0))
+    })).filter(entry => entry.itemId && entry.quantity > 0);
+    const inventory = this.scene.playerEntity?.getComponent?.('inventory');
+    return {
+      title: '小庇护所 · 储物箱', storageLabel: '箱子',
+      direction: direction || this.scene.cargoTransferView?.direction || 'toCargo',
+      inventory: { items: summarize(inventory), usedSlots: inventory?.getUsedSlotCount?.() || 0, maxSlots: inventory?.maxSlots || 0 },
+      cargo: { items: summarize(this.shelterChestInventory), total: this.shelterChestInventory.getUsedSlotCount?.() || 0, capacity: this.shelterChestInventory.maxSlots || 0 },
+      statusMessage, statusType
+    };
+  }
+
+  openShelterChest() {
+    if (!this._isInShelterInterior() || !this.scene.cargoTransferView) return false;
+    this.scene.cargoTransferView.open(this._buildShelterChestSnapshot());
+    return true;
+  }
+
+  async handleShelterChestCommand(command = {}) {
+    if (!this.scene.cargoTransferView?.visible || !this._isInShelterInterior()) return false;
+    if (command.type === 'close') {
+      if (!this.shelterChestTransferBusy) this.scene.cargoTransferView.close();
+      return true;
+    }
+    if (command.type !== 'transfer' || this.shelterChestTransferBusy) return true;
+    const inventory = this.scene.playerEntity?.getComponent?.('inventory');
+    const direction = command.direction === 'toInventory' ? 'toInventory' : 'toCargo';
+    const quantity = Math.max(1, Math.floor(Number(command.quantity) || 1));
+    const sourceId = direction === 'toCargo' ? `${this.scene.playerEntity?.id}:inventory` : SHELTER_CHEST_INVENTORY_ID;
+    const targetId = direction === 'toCargo' ? SHELTER_CHEST_INVENTORY_ID : `${this.scene.playerEntity?.id}:inventory`;
+    if (!inventory) return false;
+    this.shelterChestTransferBusy = true;
+    this.scene.cargoTransferView.setBusy(true);
+    let result;
+    try {
+      result = await this.scene.submitItemIntent('item.transfer', { sourceId, targetId, itemId: command.itemId, quantity,
+        checkpointId: 'checkpoint.S01.shelterChest', context: { sceneId: 'S01', containerId: SHELTER_CHEST_INVENTORY_ID, direction } },
+      { operationId: this.shelterChestInventories.nextOperationId(SHELTER_CHEST_INVENTORY_ID) });
+    } finally {
+      this.shelterChestTransferBusy = false;
+      this.scene.cargoTransferView.setBusy(false);
+    }
+    this.scene.cargoTransferView.setSnapshot(this._buildShelterChestSnapshot({ direction,
+      statusMessage: result?.ok ? `已转移 ${result.value?.accepted || 0} 件物品。` : (result?.code || '转移失败，状态未改变。'),
+      statusType: result?.ok ? 'success' : 'error' }));
+    return true;
+  }
+
+  async enterShelter() {
+    if (this.scene.currentSceneId !== 'S01') return false;
+    return (await this.scene.travelToRegion({ sceneId: 'S01-C01', spawnRef: 'S01-C01-spawn-door' })).ok === true;
+  }
+
+  async leaveShelter() {
+    if (!this._isInShelterInterior()) return false;
+    const survival = this._story().s01Survival || {};
+    if (survival.overnightCompleted !== true) {
+      this.scene._showScreenTip('先靠近床睡觉。', { title: '仍需过夜' });
+      return false;
+    }
+    const returned = await this.scene.travelToRegion({ sceneId: 'S01', spawnRef: 'S01-shelter-rest' });
+    if (!returned?.ok) return false;
+    if (survival.shelterExitedAfterOvernight === true) return true;
+    const committed = await this._submit('story.s01.leaveShelter', {}, 'story:s01:leave-shelter');
+    if (!committed?.ok) return false;
+    this.scene._campfireService?.extinguish?.();
+    this.scene._showScreenTip('天亮了，篝火熄灭了。但篝火旁却有三只狼在取暖休息。\n当你出现时，三只狼都向你冲了过来。', { title: '狼群来袭' });
+    await this._reconcileWolfPursuit();
+    return true;
   }
 
   _submit(definitionId, payload = {}, operationId = null) {
@@ -1564,15 +1654,16 @@ export class S01S02Coordinator {
     }
     if (operation === 'buildShelter') return this.startShelterConstruction(params);
     if (operation === 'shelterCompleted') return this.handleConstructionEvent('constructionCompleted', eventData);
+    if (operation === 'enterShelter') return this.enterShelter();
+    if (operation === 'leaveShelter') return this.leaveShelter();
+    if (operation === 'openShelterChest') return this.openShelterChest();
     if (operation === 'overnight') {
+      if (!this._isInShelterInterior()) return false;
       const result = await this._submit('story.s01.overnight', {}, 'story:s01:overnight');
       if (!result.ok) return false;
       this.scene.timeSystem?.setCurrentDay?.(2);
       this._applyS01WeatherPhase(this._story().s01Survival || {}, { force: true });
-      const reconciled = await this._reconcileWolfPursuit();
-      if (!reconciled) {
-        console.warn('[S01S02Coordinator] 过夜追杀事实已提交，追逐狼将在后续帧补偿');
-      }
+      this.scene._showScreenTip('你在床上沉沉睡去。天亮后，先从门口离开庇护所。', { title: '安稳的一夜' });
       return true;
     }
     if (operation === 'riverCrossed') {

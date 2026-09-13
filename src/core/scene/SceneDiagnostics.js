@@ -112,6 +112,8 @@ export class SceneDiagnostics {
 
   _ensureDebugPanel() {
     const scene = this.scene;
+    if (scene.debugShowCollisionPolygons == null) scene.debugShowCollisionPolygons = true;
+    if (scene.debugShowActorCollisionEdge == null) scene.debugShowActorCollisionEdge = true;
     if (!scene.debugPanel) {
       scene.debugPanel = new DebugPanel({
         getScene: () => scene,
@@ -360,6 +362,60 @@ export class SceneDiagnostics {
       }
     }
     ctx.globalAlpha = 1;
+    ctx.restore();
+    return true;
+  }
+
+  /** 绘制角色脚点的实体半径和实际阻挡边缘，只读取已提交的碰撞参数。 */
+  renderActorCollisionEdge(ctx, {
+    enabled = false,
+    camera = null,
+    actor = null,
+    terrainCollision = null
+  } = {}) {
+    const position = actor?.getComponent?.('transform')?.position;
+    if (!enabled || !camera || !Number.isFinite(position?.x) || !Number.isFinite(position?.y)) return false;
+
+    const entityRadius = Math.max(0, Number(terrainCollision?.entityRadius) || 12);
+    const pushEpsilon = Math.max(0, Number(terrainCollision?.pushEpsilon) || 2);
+    const blockingRadius = entityRadius + pushEpsilon;
+    const viewBounds = camera.getViewBounds();
+
+    ctx.save();
+    ctx.translate(-viewBounds.left, -viewBounds.top);
+    ctx.lineWidth = 2;
+
+    ctx.beginPath();
+    ctx.arc(position.x, position.y, entityRadius, 0, Math.PI * 2);
+    ctx.globalAlpha = 0.95;
+    ctx.strokeStyle = '#00e5ff';
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(position.x, position.y, blockingRadius, 0, Math.PI * 2);
+    ctx.globalAlpha = 0.95;
+    ctx.strokeStyle = '#ffeb3b';
+    ctx.setLineDash([4, 3]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.strokeStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.moveTo(position.x - 4, position.y);
+    ctx.lineTo(position.x + 4, position.y);
+    ctx.moveTo(position.x, position.y - 4);
+    ctx.lineTo(position.x, position.y + 4);
+    ctx.stroke();
+
+    const label = `实体半径 ${entityRadius}px / 阻挡边缘 ${blockingRadius}px`;
+    ctx.font = '12px sans-serif';
+    ctx.textBaseline = 'bottom';
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.85)';
+    ctx.strokeText(label, position.x + blockingRadius + 6, position.y - blockingRadius - 4);
+    ctx.lineWidth = 1;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(label, position.x + blockingRadius + 6, position.y - blockingRadius - 4);
     ctx.restore();
     return true;
   }
