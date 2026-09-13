@@ -31,6 +31,9 @@ function serialize(value, state, key = '', depth = 0) {
     if (value.cause !== undefined) {
       result.cause = serialize(value.cause, { ...state, path: `${path}.cause` }, 'cause', depth + 1);
     }
+    if (value.result !== undefined) {
+      result.result = serialize(value.result, { ...state, path: `${path}.result` }, 'result', depth + 1);
+    }
     for (const property of Object.keys(value).sort()) {
       if (['name', 'message', 'code', 'stack', 'cause', 'result'].includes(property)) continue;
       result[property] = serialize(value[property], { ...state, path: `${path}.${property}` }, property, depth + 1);

@@ -56,11 +56,17 @@ export class ScenarioCommandService {
     try {
       outcome = await this._dispatch(command);
     } catch (error) {
-      return rejected(command, error.code || 'scenarioCommandFailed', { message: error.message });
+      const details = Array.isArray(error?.errors) ? clone(error.errors) : [];
+      return rejected(command, error.code || 'scenarioCommandFailed', {
+        message: error.message,
+        ...(details.length > 0 ? { details } : {})
+      });
     }
     if (outcome === false || outcome == null || outcome?.ok === false || outcome?.cancelled) {
+      const details = Array.isArray(outcome?.errors) ? clone(outcome.errors) : [];
       return rejected(command, outcome?.code || outcome?.reason || 'scenarioCommandRejected', {
-        message: outcome?.errors?.[0]?.message || outcome?.message || 'scenario command rejected'
+        message: outcome?.errors?.[0]?.message || outcome?.message || 'scenario command rejected',
+        ...(details.length > 0 ? { details } : {})
       });
     }
     // 幂等：教程 show 命令本身不等待教程离槽（等待由 TriggerSystem 步骤层负责），

@@ -72,6 +72,16 @@ export class DebugPanel {
     this._onViewportResize = () => this._applyPanelLayout();
   }
 
+  /** 让碰撞调试绘制严格跟随 DebugPanel 的可见状态，不作为场景默认表现。 */
+  _syncCollisionDebugVisibility(visible = this.visible) {
+    const scene = this._getActiveScene();
+    if (!scene) return false;
+    const enabled = visible === true;
+    scene.debugShowActorCollisionEdge = enabled;
+    scene.debugShowCollisionPolygons = enabled;
+    return enabled;
+  }
+
   /** 切换显示/隐藏；暂停时保留面板作为唯一恢复入口。 */
   toggle() {
     if (this.visible && this._getActiveScene()?.isPaused === true) {
@@ -89,6 +99,7 @@ export class DebugPanel {
     console.log('[DebugPanel] toggle 开始', before);
 
     this.visible = !this.visible;
+    this._syncCollisionDebugVisibility(this.visible);
     if (this.visible) {
       this._create();
       this._startLoop();
@@ -140,6 +151,7 @@ export class DebugPanel {
   /** 场景退出或关闭调试模式时强制释放 DOM、RAF 与 Pointer 监听。 */
   dispose() {
     this.visible = false;
+    this._syncCollisionDebugVisibility(false);
     this._destroy();
   }
 
@@ -184,29 +196,71 @@ export class DebugPanel {
     this._renderDiagnosticRecords();
   }
 
+  _diagnosticLine(value) {
+    if (typeof value === 'string') return value.replace(/[\r\n]+/g, ' ↵ ').trim();
+    if (value === undefined || value === null) return '';
+    try {
+      return JSON.stringify(value).replace(/[\r\n]+/g, ' ↵ ').trim();
+    } catch (_error) {
+      return String(value).replace(/[\r\n]+/g, ' ↵ ').trim();
+    }
+  }
+
+  _diagnosticDetails(record) {
+    const result = record?.error?.result;
+    const candidates = [
+      ...(Array.isArray(result?.error?.details) ? result.error.details : []),
+      ...(Array.isArray(result?.errors) ? result.errors : []),
+      ...(Array.isArray(record?.error?.details) ? record.error.details : []),
+      ...(Array.isArray(record?.error?.errors) ? record.error.errors : [])
+    ];
+    const seen = new Set();
+    return candidates.flatMap(detail => {
+      const code = this._diagnosticLine(detail?.code || 'unknown');
+      const path = this._diagnosticLine(detail?.path || '');
+      const message = this._diagnosticLine(detail?.message || detail);
+      const extra = detail?.details === undefined ? '' : ` · 详情: ${this._diagnosticLine(detail.details)}`;
+      const line = `  └ [${code}]${path ? ` ${path}` : ''}: ${message || '-'}${extra}`;
+      if (seen.has(line)) return [];
+      seen.add(line);
+      return [line];
+    });
+  }
+
+  _formatDiagnosticRecord(record) {
+    if (record.type === 'triggerFailure') {
+      const reason = record.reason || record.code || 'unknown';
+      const result = record.error?.result;
+      const message = result?.error?.message || record.error?.message || '';
+      const lines = [
+        `[触发失败] ${record.triggerId} #${record.action?.index ?? '-'} ${reason}`,
+        `  动作: ${record.action?.id || '-'} · 操作: ${record.actionOperationId || record.operationId || '-'}`
+      ];
+      if (message) lines.push(`  原因: ${this._diagnosticLine(message)}`);
+      if (result?.code && result.code !== reason) lines.push(`  命令结果: ${this._diagnosticLine(result.code)}`);
+      return [...lines, ...this._diagnosticDetails(record)];
+    }
+    if (record.type === 'eventConflict') {
+      const winners = record.winnerTriggerIds?.join(',') || '-';
+      const failed = record.failedTriggerIds?.join(',') || '-';
+      return [`[事件仲裁] ${record.eventType || '?'} ${record.status || '?'} 胜出:${winners} 失败:${failed}`];
+    }
+    const retry = record.consumer === 'content'
+      ? ` ${record.exhausted ? '重试耗尽' : `重试 ${record.attempt}/${record.maxRetries}`}`
+      : '';
+    const lines = [`[事件消费] ${record.eventType || '?'} ${record.consumer || '?'} ${record.code || 'failed'}${retry}`];
+    if (record.message) lines.push(`  原因: ${this._diagnosticLine(record.message)}`);
+    return [...lines, ...this._diagnosticDetails(record)];
+  }
+
   _renderDiagnosticRecords() {
     const target = this._el?.querySelector?.('#dp-trigger-failures');
     if (!target) return;
     const records = this.diagnosticRecords.filter(record => [
       'triggerFailure', 'eventConflict', 'applicationEventConsumerFailure'
     ].includes(record?.type));
-    const format = record => {
-      if (record.type === 'triggerFailure') {
-        return `[触发失败] ${record.triggerId} #${record.action?.index ?? '-'} ${record.reason || record.code || 'unknown'}`;
-      }
-      if (record.type === 'eventConflict') {
-        const winners = record.winnerTriggerIds?.join(',') || '-';
-        const failed = record.failedTriggerIds?.join(',') || '-';
-        return `[事件仲裁] ${record.eventType || '?'} ${record.status || '?'} 胜出:${winners} 失败:${failed}`;
-      }
-      const retry = record.consumer === 'content'
-        ? ` ${record.exhausted ? '重试耗尽' : `重试 ${record.attempt}/${record.maxRetries}`}`
-        : '';
-      return `[事件消费] ${record.eventType || '?'} ${record.consumer || '?'} ${record.code || 'failed'}${retry}`;
-    };
-    target.textContent = records.length
-      ? records.slice(-8).map(format).join('\n')
-      : '--';
+    const lines = records.flatMap(record => this._formatDiagnosticRecord(record));
+    target.textContent = lines.length ? lines.slice(-100).join('\n') : '--';
   }
 
   /** 创建 DOM */

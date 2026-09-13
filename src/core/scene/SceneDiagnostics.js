@@ -96,7 +96,8 @@ export class SceneDiagnostics {
     const debugEnabled = this.isDebugEnabled();
     if (!debugEnabled && !retainWithoutDebug) return false;
     this.records.push(record);
-    const limit = debugEnabled ? 128 : 16;
+    // DebugPanel 按行显示最近 100 条诊断，记录层同样限制为 100 条以保持投影一致。
+    const limit = debugEnabled ? 100 : 16;
     if (this.records.length > limit) this.records.splice(0, this.records.length - limit);
     if (!debugEnabled) return true;
     const panel = this._ensureDebugPanel();
@@ -112,8 +113,11 @@ export class SceneDiagnostics {
 
   _ensureDebugPanel() {
     const scene = this.scene;
-    if (scene.debugShowCollisionPolygons == null) scene.debugShowCollisionPolygons = true;
-    if (scene.debugShowActorCollisionEdge == null) scene.debugShowActorCollisionEdge = true;
+    // 面板尚未显示时，碰撞调试不得残留在正式场景画面中。
+    if (scene.debugPanel?.visible !== true) {
+      scene.debugShowCollisionPolygons = false;
+      scene.debugShowActorCollisionEdge = false;
+    }
     if (!scene.debugPanel) {
       scene.debugPanel = new DebugPanel({
         getScene: () => scene,

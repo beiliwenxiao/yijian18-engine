@@ -1385,11 +1385,14 @@ export class DataDrivenPrologueScene extends BaseGameScene {
       p.operationId || null
     );
     if (!result?.ok) {
+      const details = Array.isArray(result?.error?.details) ? result.error.details : [];
       return {
         ok: false,
         cancelled: true,
         code: result?.code || 'worldTeleportRejected',
-        errors: result?.error ? [{ code: result.code || 'worldTeleportRejected', message: result.error.message }] : []
+        errors: details.length > 0
+          ? details
+          : (result?.error ? [{ code: result.code || 'worldTeleportRejected', message: result.error.message }] : [])
       };
     }
     return result.value || { ok: true };

@@ -156,9 +156,15 @@ export class S01S02Coordinator {
     return true;
   }
 
+  /** 进入独立庇护所 Region；保留跨区加载的稳定错误码供 Trigger 诊断。 */
   async enterShelter() {
-    if (this.scene.currentSceneId !== 'S01') return false;
-    return (await this.scene.travelToRegion({ sceneId: 'S01-C01', spawnRef: 'S01-C01-spawn-door' })).ok === true;
+    if (this.scene.currentSceneId !== 'S01') {
+      return { ok: false, code: 'shelterEntryOutsideS01' };
+    }
+    return this.scene.travelToRegion({
+      sceneId: 'S01-C01',
+      spawnRef: 'S01-C01-spawn-door'
+    });
   }
 
   async leaveShelter() {

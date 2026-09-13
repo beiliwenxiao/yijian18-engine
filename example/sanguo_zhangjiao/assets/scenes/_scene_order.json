@@ -3,6 +3,7 @@
   "order": ["S01", "S02", "S09", "S03", "S04", "S05", "S06", "S07", "S08", "S10", "S11", "S12", "S13", "S14"],
   "scenes": {
     "S01": { "name": "S01 寒风荒野求生", "type": "terrain", "sceneType": "worldChunk", "worldMap": "mainland" },
+    "S01-C01": { "name": "S01·小庇护所内", "type": "terrain", "sceneType": "worldChunk", "worldMap": "s01-shelter", "productionState": "playable", "previewOnly": false },
     "S02": { "name": "S02·废弃营地", "type": "terrain", "sceneType": "worldChunk", "worldMap": "mainland", "productionState": "playable" },
     "S09": { "name": "S09·粥棚营地", "type": "terrain", "sceneType": "worldChunk", "worldMap": "mainland", "productionState": "playable", "previewOnly": false },
     "S03": { "name": "S03·颍川首战", "type": "terrain", "sceneType": "worldChunk", "worldMap": "mainland", "productionState": "playable", "previewOnly": false },

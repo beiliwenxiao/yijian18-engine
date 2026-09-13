@@ -5,10 +5,13 @@
 
 function normalizeFailure(error, fallbackCode = 'regionSwitchFailed') {
   if (Array.isArray(error?.errors) && error.errors.length) return error.errors;
+  const rawMessage = error?.message;
+  const objectDetail = rawMessage && typeof rawMessage === 'object' ? rawMessage : null;
   return [{
     code: error?.code || fallbackCode,
     path: error?.path || 'region',
-    message: String(error?.message || error || '大区切换失败')
+    message: typeof rawMessage === 'string' ? rawMessage : '大区切换失败（详见诊断详情）',
+    ...(objectDetail ? { details: objectDetail } : {})
   }];
 }
 

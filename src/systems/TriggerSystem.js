@@ -51,12 +51,18 @@ const coordinationOf = trigger => {
 };
 
 function errorResult(operationId, triggerId, error, code = null) {
+  const details = Array.isArray(error?.details)
+    ? clone(error.details)
+    : (Array.isArray(error?.errors) ? clone(error.errors) : []);
   return {
     ok: false, operationId, status: 'failed', committed: false,
     code: code || error?.code || 'triggerActionFailed',
     stateId: `trigger:${triggerId}`, stateRevision: null,
     eventFrom: null, eventTo: null, value: null,
-    error: { message: error?.message || String(error || 'trigger action failed') }
+    error: {
+      message: error?.message || String(error || 'trigger action failed'),
+      ...(details.length > 0 ? { details } : {})
+    }
   };
 }
 
