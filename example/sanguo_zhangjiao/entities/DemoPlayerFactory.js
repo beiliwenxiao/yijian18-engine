@@ -2,7 +2,7 @@
 
  * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
 
- * 
+ *
 
  * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
 
@@ -20,6 +20,7 @@
 
  ************************************************************/
 
+import { CollisionComponent } from '../../../src/ecs/components/CollisionComponent.js';
 import { SelectedCharacterStore } from '../data/SelectedCharacterStore.js';
 
 function createDefaultSkills() {
@@ -80,6 +81,7 @@ export class DemoPlayerFactory {
       inventorySlots: 24,
       inventory: []
     });
+    this.configurePlayer(scene, player);
 
     const sprite = player.getComponent('sprite');
     console.log('BaseGameScene: 玩家精灵组件', {
@@ -91,6 +93,21 @@ export class DemoPlayerFactory {
     });
 
     console.log('BaseGameScene: 创建玩家实体', player);
+    return player;
+  }
+
+  /** 将表现规格投影到新建或跨场景继承的玩家，不改变 Transform 世界锚点。 */
+  configurePlayer(scene, player) {
+    const offset = scene.presentationProfile?.actors?.player?.collisionOffset;
+    const offsetX = Number(offset?.offsetX) || 0;
+    const offsetY = Number(offset?.offsetY) || 0;
+    const collision = player?.getComponent?.('collision');
+    if (collision) {
+      collision.offsetX = offsetX;
+      collision.offsetY = offsetY;
+      return player;
+    }
+    player.addComponent(new CollisionComponent({ offsetX, offsetY }));
     return player;
   }
 

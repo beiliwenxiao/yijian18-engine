@@ -379,6 +379,9 @@ export class SceneDiagnostics {
   } = {}) {
     const position = actor?.getComponent?.('transform')?.position;
     if (!enabled || !camera || !Number.isFinite(position?.x) || !Number.isFinite(position?.y)) return false;
+    const collision = actor.getComponent?.('collision');
+    const centerX = position.x + (Number(collision?.offsetX) || 0);
+    const centerY = position.y + (Number(collision?.offsetY) || 0);
 
     const entityRadius = Math.max(0, Number(terrainCollision?.entityRadius) || 12);
     const pushEpsilon = Math.max(0, Number(terrainCollision?.pushEpsilon) || 2);
@@ -390,13 +393,13 @@ export class SceneDiagnostics {
     ctx.lineWidth = 2;
 
     ctx.beginPath();
-    ctx.arc(position.x, position.y, entityRadius, 0, Math.PI * 2);
+    ctx.arc(centerX, centerY, entityRadius, 0, Math.PI * 2);
     ctx.globalAlpha = 0.95;
     ctx.strokeStyle = '#00e5ff';
     ctx.stroke();
 
     ctx.beginPath();
-    ctx.arc(position.x, position.y, blockingRadius, 0, Math.PI * 2);
+    ctx.arc(centerX, centerY, blockingRadius, 0, Math.PI * 2);
     ctx.globalAlpha = 0.95;
     ctx.strokeStyle = '#ffeb3b';
     ctx.setLineDash([4, 3]);
@@ -405,10 +408,10 @@ export class SceneDiagnostics {
 
     ctx.strokeStyle = '#ffffff';
     ctx.beginPath();
-    ctx.moveTo(position.x - 4, position.y);
-    ctx.lineTo(position.x + 4, position.y);
-    ctx.moveTo(position.x, position.y - 4);
-    ctx.lineTo(position.x, position.y + 4);
+    ctx.moveTo(centerX - 4, centerY);
+    ctx.lineTo(centerX + 4, centerY);
+    ctx.moveTo(centerX, centerY - 4);
+    ctx.lineTo(centerX, centerY + 4);
     ctx.stroke();
 
     const label = `实体半径 ${entityRadius}px / 阻挡边缘 ${blockingRadius}px`;
@@ -416,10 +419,10 @@ export class SceneDiagnostics {
     ctx.textBaseline = 'bottom';
     ctx.lineWidth = 3;
     ctx.strokeStyle = 'rgba(0, 0, 0, 0.85)';
-    ctx.strokeText(label, position.x + blockingRadius + 6, position.y - blockingRadius - 4);
+    ctx.strokeText(label, centerX + blockingRadius + 6, centerY - blockingRadius - 4);
     ctx.lineWidth = 1;
     ctx.fillStyle = '#ffffff';
-    ctx.fillText(label, position.x + blockingRadius + 6, position.y - blockingRadius - 4);
+    ctx.fillText(label, centerX + blockingRadius + 6, centerY - blockingRadius - 4);
     ctx.restore();
     return true;
   }

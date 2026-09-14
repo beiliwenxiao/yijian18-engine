@@ -1,3 +1,25 @@
+/************************************************************
+
+ * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
+
+ *
+
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+
+ * @author    刘枭 (beiliwenxiao)
+
+ * @email     beiliwenxiao@qq.com
+
+ * @date      2026-01-14
+
+ * @blog      https://blog.csdn.net/beiliwenxiao
+
+ * @repo      https://github.com/beiliwenxiao/yijian18-engine
+
+ *            https://gitee.com/coderaaa/yijian18-engine
+
+ ************************************************************/
+
 import { FieldType } from '../../core/validation/ContentValidator.js';
 import { ValidationCode, makeError } from '../../core/validation/ValidationError.js';
 
@@ -7,6 +29,14 @@ const positive = (required = true) => ({ type: FieldType.NUMBER, required, min: 
 export const PRESENTATION_DIMENSION_SCHEMA = {
   id: 'presentationDimension', allowUnknown: false,
   fields: { width: positive(), height: positive() }
+};
+
+export const PRESENTATION_COLLISION_OFFSET_SCHEMA = {
+  id: 'presentationCollisionOffset', allowUnknown: false,
+  fields: {
+    offsetX: { type: FieldType.NUMBER, required: true },
+    offsetY: { type: FieldType.NUMBER, required: true }
+  }
 };
 
 export const PRESENTATION_LOGICAL_RESOLUTION_SCHEMA = {
@@ -47,7 +77,8 @@ export const PRESENTATION_ACTOR_SCHEMA = {
   fields: {
     visual: { type: FieldType.OBJECT, required: true, schema: 'presentationDimension' },
     footprint: { type: FieldType.OBJECT, required: true, schema: 'presentationDimension' },
-    colliderRadius: positive()
+    colliderRadius: positive(),
+    collisionOffset: { type: FieldType.OBJECT, required: false, schema: 'presentationCollisionOffset' }
   }
 };
 
@@ -97,8 +128,9 @@ export const PRESENTATION_PROFILE_SCHEMA = {
 };
 
 export const PRESENTATION_PROFILE_SCHEMAS = [
-  PRESENTATION_DIMENSION_SCHEMA, PRESENTATION_LOGICAL_RESOLUTION_SCHEMA,
-  PRESENTATION_WORLD_SCHEMA, PRESENTATION_DEADZONE_SCHEMA, PRESENTATION_CAMERA_SCHEMA,
+  PRESENTATION_DIMENSION_SCHEMA, PRESENTATION_COLLISION_OFFSET_SCHEMA,
+  PRESENTATION_LOGICAL_RESOLUTION_SCHEMA, PRESENTATION_WORLD_SCHEMA,
+  PRESENTATION_DEADZONE_SCHEMA, PRESENTATION_CAMERA_SCHEMA,
   PRESENTATION_ACTOR_SCHEMA, PRESENTATION_ACTORS_SCHEMA, PRESENTATION_UI_SCHEMA,
   PRESENTATION_PROFILE_SCHEMA
 ];

@@ -95,7 +95,13 @@ export class SceneTerrainCollision {
       if (!transform) continue;
       // 跳跃（滞空）期间不做地形碰撞（可跳过水池、树、火堆等）；由场景注入 jumpSystem。
       if (this.jumpSystem?.isJumping?.(entity)) continue;
-      const p = transform.position;
+      const collision = entity.getComponent?.('collision');
+      const offsetX = Number(collision?.offsetX) || 0;
+      const offsetY = Number(collision?.offsetY) || 0;
+      const hasCollisionOffset = offsetX !== 0 || offsetY !== 0;
+      const p = hasCollisionOffset
+        ? { x: transform.position.x + offsetX, y: transform.position.y + offsetY }
+        : transform.position;
       const previous = previousPositions?.get(entity) || this._lastResolvedPositions.get(entity) || null;
 
       // 可落脚区域优先于编辑器 collide shape 和盆地边界，与 Scene1Terrain.isBlocked 一致。
@@ -129,6 +135,10 @@ export class SceneTerrainCollision {
           this.resolveShape(p, spatial.unboundedShapes[i], radius, previous);
         }
       }
+      if (hasCollisionOffset) {
+        transform.position.x = p.x - offsetX;
+        transform.position.y = p.y - offsetY;
+      }
       if (!previousPositions) this._rememberResolvedPosition(entity, p);
     }
   }
@@ -143,9 +153,10 @@ export class SceneTerrainCollision {
     for (const entity of entities || []) {
       const transform = entity?.getComponent?.('transform');
       if (!transform) continue;
+      const collision = entity.getComponent?.('collision');
       previousPositions.set(entity, this._lastResolvedPositions.get(entity) || {
-        x: transform.position.x,
-        y: transform.position.y
+        x: transform.position.x + (Number(collision?.offsetX) || 0),
+        y: transform.position.y + (Number(collision?.offsetY) || 0)
       });
     }
     const options = entityRadius == null
@@ -158,7 +169,12 @@ export class SceneTerrainCollision {
     }
     for (const [entity] of previousPositions) {
       const transform = entity?.getComponent?.('transform');
-      if (transform) this._rememberResolvedPosition(entity, transform.position);
+      if (!transform) continue;
+      const collision = entity.getComponent?.('collision');
+      this._rememberResolvedPosition(entity, {
+        x: transform.position.x + (Number(collision?.offsetX) || 0),
+        y: transform.position.y + (Number(collision?.offsetY) || 0)
+      });
     }
   }
 

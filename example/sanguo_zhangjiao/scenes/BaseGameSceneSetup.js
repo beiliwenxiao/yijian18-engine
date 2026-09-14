@@ -1,13 +1,23 @@
 /************************************************************
+
  * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
- * 
+
+ *
+
  * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+
  * @author    刘枭 (beiliwenxiao)
+
  * @email     beiliwenxiao@qq.com
+
  * @date      2026-01-14
+
  * @blog      https://blog.csdn.net/beiliwenxiao
+
  * @repo      https://github.com/beiliwenxiao/yijian18-engine
+
  *            https://gitee.com/coderaaa/yijian18-engine
+
  ************************************************************/
 
 /**
@@ -161,8 +171,14 @@ export class BaseGameSceneSetup extends Scene {
     this._hudUpdater = null;
     this._hintPresenter = null;
     
-    // 游戏级表现规格是相机、渲染、角色尺寸和编辑器预览的唯一事实源。
-    this.presentationProfile = normalizePresentationProfile(sceneData.presentationProfile || presentationProfileData);
+    // canonical 场景只保存 presentationProfile ID；只有内联对象才可覆盖正式配置。
+    // 把字符串 ID 直接传给规范化器会退回默认值并丢失当前表现配置。
+    const inlinePresentationProfile = sceneData.presentationProfile;
+    this.presentationProfile = normalizePresentationProfile(
+      inlinePresentationProfile && typeof inlinePresentationProfile === 'object' && !Array.isArray(inlinePresentationProfile)
+        ? inlinePresentationProfile
+        : presentationProfileData
+    );
     this.logicalWidth = this.presentationProfile.logicalResolution.width;
     this.logicalHeight = this.presentationProfile.logicalResolution.height;
     

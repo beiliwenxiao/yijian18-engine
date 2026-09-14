@@ -1,6 +1,23 @@
 /************************************************************
+
  * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
- * @project YiJian18-Engine - 跨平台2D/3D ECS游戏引擎
+
+ *
+
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+
+ * @author    刘枭 (beiliwenxiao)
+
+ * @email     beiliwenxiao@qq.com
+
+ * @date      2026-01-14
+
+ * @blog      https://blog.csdn.net/beiliwenxiao
+
+ * @repo      https://github.com/beiliwenxiao/yijian18-engine
+
+ *            https://gitee.com/coderaaa/yijian18-engine
+
  ************************************************************/
 
 /** 统一拥有玩家创建/继承、绑定和 EntityLifecycleSystem 接线。 */
@@ -20,6 +37,9 @@ export class ScenePlayerLifecycle {
     this.lifecycleSystem = lifecycleSystem;
     this.minimumInventorySlots = Math.max(0, Math.floor(Number(minimumInventorySlots) || 0));
     this._createPlayer = createPlayer.bind(playerFactory);
+    this._configurePlayer = typeof playerFactory?.configurePlayer === 'function'
+      ? playerFactory.configurePlayer.bind(playerFactory)
+      : null;
     this._protectedPlayer = null;
     this._previousBeforeRemove = null;
     this._ownsBeforeRemove = false;
@@ -30,6 +50,7 @@ export class ScenePlayerLifecycle {
     const inherited = data?.playerEntity || null;
     const player = inherited || this._createPlayer(this.scene, data || {});
     if (!player) throw new Error('playerFactory did not return an entity');
+    this._configurePlayer?.(this.scene, player);
     this._ensureMinimumInventorySlots(player);
 
     this.context.entities.add(player);

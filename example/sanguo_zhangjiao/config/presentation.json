@@ -26,7 +26,8 @@
     "player": {
       "visual": { "width": 64, "height": 64 },
       "footprint": { "width": 28, "height": 18 },
-      "colliderRadius": 14
+      "colliderRadius": 14,
+      "collisionOffset": { "offsetX": 0, "offsetY": -18 }
     },
     "unit": {
       "visual": { "width": 48, "height": 48 },

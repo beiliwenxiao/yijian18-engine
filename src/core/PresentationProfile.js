@@ -1,12 +1,34 @@
 /************************************************************
+
  * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
- * @project YiJian18-Engine - 跨平台2D/3D ECS游戏引擎
+
+ *
+
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+
+ * @author    刘枭 (beiliwenxiao)
+
+ * @email     beiliwenxiao@qq.com
+
+ * @date      2026-01-14
+
+ * @blog      https://blog.csdn.net/beiliwenxiao
+
+ * @repo      https://github.com/beiliwenxiao/yijian18-engine
+
+ *            https://gitee.com/coderaaa/yijian18-engine
+
  ************************************************************/
 
 const positive = (value, fallback) => Number.isFinite(Number(value)) && Number(value) > 0 ? Number(value) : fallback;
+const finite = (value, fallback) => Number.isFinite(Number(value)) ? Number(value) : fallback;
 const dimension = (source, fallback) => ({
   width: positive(source?.width ?? source?.w, fallback.width),
   height: positive(source?.height ?? source?.h, fallback.height)
+});
+const collisionOffset = (source, fallback) => ({
+  offsetX: finite(source?.offsetX, fallback.offsetX),
+  offsetY: finite(source?.offsetY, fallback.offsetY)
 });
 
 export const DEFAULT_PRESENTATION_PROFILE = Object.freeze({
@@ -17,8 +39,18 @@ export const DEFAULT_PRESENTATION_PROFILE = Object.freeze({
   camera: { followSpeed: 0.15, deadzone: { x: 50, y: 50 } },
   actors: {
     directionMode: 8,
-    player: { visual: { width: 64, height: 64 }, footprint: { width: 28, height: 18 }, colliderRadius: 14 },
-    unit: { visual: { width: 48, height: 48 }, footprint: { width: 24, height: 16 }, colliderRadius: 12 }
+    player: {
+      visual: { width: 64, height: 64 },
+      footprint: { width: 28, height: 18 },
+      colliderRadius: 14,
+      collisionOffset: { offsetX: 0, offsetY: 0 }
+    },
+    unit: {
+      visual: { width: 48, height: 48 },
+      footprint: { width: 24, height: 16 },
+      colliderRadius: 12,
+      collisionOffset: { offsetX: 0, offsetY: 0 }
+    }
   },
   ui: { mobileMinFontPx: 16 },
   palette: {}
@@ -26,12 +58,13 @@ export const DEFAULT_PRESENTATION_PROFILE = Object.freeze({
 
 export function normalizePresentationProfile(profile = {}) {
   const base = DEFAULT_PRESENTATION_PROFILE;
-  const logical = dimension(profile.logicalResolution, base.logicalResolution);
   const actor = (key) => ({
     visual: dimension(profile.actors?.[key]?.visual, base.actors[key].visual),
     footprint: dimension(profile.actors?.[key]?.footprint, base.actors[key].footprint),
-    colliderRadius: positive(profile.actors?.[key]?.colliderRadius, base.actors[key].colliderRadius)
+    colliderRadius: positive(profile.actors?.[key]?.colliderRadius, base.actors[key].colliderRadius),
+    collisionOffset: collisionOffset(profile.actors?.[key]?.collisionOffset, base.actors[key].collisionOffset)
   });
+  const logical = dimension(profile.logicalResolution, base.logicalResolution);
   return {
     schemaVersion: positive(profile.schemaVersion, base.schemaVersion), id: String(profile.id || base.id),
     visualStyle: { ...(profile.visualStyle || {}) },
