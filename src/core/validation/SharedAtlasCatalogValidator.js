@@ -1,5 +1,27 @@
 import { ValidationCode, makeError } from './ValidationError.js';
 
+/************************************************************
+
+ * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
+
+ *
+
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+
+ * @author    刘枭 (beiliwenxiao)
+
+ * @email     beiliwenxiao@qq.com
+
+ * @date      2026-01-14
+
+ * @blog      https://blog.csdn.net/beiliwenxiao
+
+ * @repo      https://github.com/beiliwenxiao/yijian18-engine
+
+ *            https://gitee.com/coderaaa/yijian18-engine
+
+ ************************************************************/
+
 const STABLE_ID_PATTERN = /^[A-Za-z][A-Za-z0-9._-]*$/;
 const isObject = value => value !== null && typeof value === 'object' && !Array.isArray(value);
 const isPositiveInteger = value => Number.isInteger(value) && value > 0;
@@ -115,17 +137,30 @@ export function validateSharedAtlasCatalog(catalog) {
         errors.push(makeError(ValidationCode.TYPE_MISMATCH, `${slicePath}.collide`, 'collide 必须是布尔值'));
       }
       if (slice.colliderRadius !== undefined) {
-        if (typeof slice.colliderRadius !== 'number' || !Number.isFinite(slice.colliderRadius)) {
+        errors.push(makeError(
+          ValidationCode.INVALID_REFERENCE,
+          `${slicePath}.colliderRadius`,
+          'colliderRadius 已废弃，请使用 colliderRadiusX 和 colliderRadiusY'
+        ));
+      }
+      const ellipseRadii = [
+        ['colliderRadiusX', '碰撞椭圆 X 半径'],
+        ['colliderRadiusY', '碰撞椭圆 Y 半径']
+      ];
+      for (const [field, label] of ellipseRadii) {
+        const value = slice[field];
+        if (value === undefined && slice.collide !== true) continue;
+        if (typeof value !== 'number' || !Number.isFinite(value)) {
           errors.push(makeError(
             ValidationCode.TYPE_MISMATCH,
-            `${slicePath}.colliderRadius`,
-            '碰撞半径必须是有限数字'
+            `${slicePath}.${field}`,
+            `${label}必须是有限数字`
           ));
-        } else if (slice.colliderRadius <= 0) {
+        } else if (value <= 0) {
           errors.push(makeError(
             ValidationCode.OUT_OF_RANGE,
-            `${slicePath}.colliderRadius`,
-            '碰撞半径必须大于 0'
+            `${slicePath}.${field}`,
+            `${label}必须大于 0`
           ));
         }
       }

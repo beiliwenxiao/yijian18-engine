@@ -69,8 +69,7 @@
           "sy": 319,
           "sw": 32,
           "sh": 32,
-          "collide": false,
-          "colliderRadius": 16
+          "collide": false
         },
         "bush4": {
           "name": "灌木2",
@@ -86,8 +85,7 @@
           "sy": 0,
           "sw": 64,
           "sh": 64,
-          "collide": false,
-          "colliderRadius": 16
+          "collide": false
         }
       }
     }

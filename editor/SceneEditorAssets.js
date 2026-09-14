@@ -554,10 +554,19 @@ export class SceneEditorAssets {
       return '切片范围必须完整位于图集图片内';
     }
     if (candidate.colliderRadius !== undefined) {
-      if (typeof candidate.colliderRadius !== 'number' || !Number.isFinite(candidate.colliderRadius)) {
-        return '碰撞半径必须是有限数字';
+      return 'colliderRadius 已废弃，请使用碰撞椭圆 X/Y 半径';
+    }
+    const ellipseRadii = [
+      ['colliderRadiusX', '碰撞椭圆 X 半径'],
+      ['colliderRadiusY', '碰撞椭圆 Y 半径']
+    ];
+    for (const [field, label] of ellipseRadii) {
+      const value = candidate[field];
+      if (value === undefined && candidate.collide !== true) continue;
+      if (typeof value !== 'number' || !Number.isFinite(value)) {
+        return `${label}必须是有限数字`;
       }
-      if (candidate.colliderRadius <= 0) return '碰撞半径必须大于 0';
+      if (value <= 0) return `${label}必须大于 0`;
     }
     return '';
   }
@@ -2337,7 +2346,8 @@ export class SceneEditorAssets {
             <div class="smp-row"><label>宽:</label><input type="number" id="smp-sw" value="${state.sw}"></div>
             <div class="smp-row"><label>高:</label><input type="number" id="smp-sh" value="${state.sh}"></div>
             <div class="smp-row"><label>碰撞:</label><input type="checkbox" id="smp-collide"></div>
-            <div class="smp-row"><label>碰撞半径:</label><input type="number" id="smp-radius" value="16"></div>
+            <div class="smp-row"><label>碰撞椭圆 X:</label><input type="number" step="any" id="smp-radius-x" value="16"></div>
+            <div class="smp-row"><label>碰撞椭圆 Y:</label><input type="number" step="any" id="smp-radius-y" value="10"></div>
             <div class="smp-info">拖动选框选择切片区域</div>
             <div class="smp-row" style="margin-top:12px;">
               <button id="smp-confirm" style="flex:1;">创建</button>
@@ -2485,15 +2495,25 @@ export class SceneEditorAssets {
         close();
         return;
       }
-      atlas.slices[key] = {
+      const collide = document.getElementById('smp-collide').checked;
+      const candidate = {
         name,
         sx,
         sy,
         sw,
         sh,
-        collide: document.getElementById('smp-collide').checked,
-        colliderRadius: parseInt(document.getElementById('smp-radius').value) || 16
+        collide
       };
+      if (collide) {
+        candidate.colliderRadiusX = Number(document.getElementById('smp-radius-x').value);
+        candidate.colliderRadiusY = Number(document.getElementById('smp-radius-y').value);
+      }
+      const validationError = this._validateSliceCandidate(candidate, atlas, img);
+      if (validationError) {
+        editor.ui.showToast?.(validationError, 'error');
+        return;
+      }
+      atlas.slices[key] = candidate;
       this._markSharedAtlasDraftDirty(editDraft, editEpoch);
       this._updateAtlasList();
       this._updateSlicePreviews();
@@ -2899,8 +2919,12 @@ export class SceneEditorAssets {
           <input type="checkbox" id="slice-collide" ${slice.collide ? 'checked' : ''}>
         </div>
         <div class="slice-prop-row">
-          <label>碰撞半径:</label>
-          <input type="number" id="slice-radius" value="${slice.colliderRadius ?? 16}">
+          <label>碰撞椭圆 X:</label>
+          <input type="number" step="any" id="slice-radius-x" value="${slice.colliderRadiusX ?? 16}">
+        </div>
+        <div class="slice-prop-row">
+          <label>碰撞椭圆 Y:</label>
+          <input type="number" step="any" id="slice-radius-y" value="${slice.colliderRadiusY ?? 10}">
         </div>
         <div class="slice-prop-row" style="margin-top:8px;">
           <button id="slice-edit-btn" style="flex:1;padding:5px;cursor:pointer;">编辑</button>
@@ -2917,11 +2941,15 @@ export class SceneEditorAssets {
       `;
 
       const geometryProps = new Set(['sx', 'sy', 'sw', 'sh']);
-      ['name', 'sx', 'sy', 'sw', 'sh', 'collide', 'radius'].forEach(prop => {
+      const propertyNames = {
+        'radius-x': 'colliderRadiusX',
+        'radius-y': 'colliderRadiusY'
+      };
+      ['name', 'sx', 'sy', 'sw', 'sh', 'collide', 'radius-x', 'radius-y'].forEach(prop => {
         const el = document.getElementById(`slice-${prop}`);
         if (!el) return;
         el.addEventListener('change', () => {
-          const actualProp = prop === 'radius' ? 'colliderRadius' : prop;
+          const actualProp = propertyNames[prop] || prop;
           let value;
           if (el.type === 'checkbox') {
             value = el.checked;
@@ -2933,6 +2961,14 @@ export class SceneEditorAssets {
           }
 
           const candidate = { ...slice, [actualProp]: value };
+          delete candidate.colliderRadius;
+          if (actualProp === 'collide' && value === true) {
+            candidate.colliderRadiusX = Number(document.getElementById('slice-radius-x').value);
+            candidate.colliderRadiusY = Number(document.getElementById('slice-radius-y').value);
+          } else if (actualProp === 'collide') {
+            delete candidate.colliderRadiusX;
+            delete candidate.colliderRadiusY;
+          }
           const validationError = this._validateSliceCandidate(
             candidate,
             atlas,
@@ -2953,10 +2989,20 @@ export class SceneEditorAssets {
           }
 
           Object.assign(slice, candidate);
+          delete slice.colliderRadius;
+          if (slice.collide !== true) {
+            delete slice.colliderRadiusX;
+            delete slice.colliderRadiusY;
+          }
           if (shared) {
             this._markSharedAtlasDraftDirty(sharedDraft, sharedEpoch);
           } else if (editor.sceneData.decoSprites?.[sliceKey]) {
-            editor.sceneData.decoSprites[sliceKey][actualProp] = value;
+            Object.assign(editor.sceneData.decoSprites[sliceKey], {
+              collide: slice.collide,
+              colliderRadiusX: slice.colliderRadiusX,
+              colliderRadiusY: slice.colliderRadiusY
+            });
+            delete editor.sceneData.decoSprites[sliceKey].colliderRadius;
           }
 
           if (actualProp === 'name') this._updateAtlasList();
@@ -3056,7 +3102,8 @@ export class SceneEditorAssets {
             <div class="smp-row"><label>宽:</label><input type="number" id="smp-sw" value="${slice.sw}"></div>
             <div class="smp-row"><label>高:</label><input type="number" id="smp-sh" value="${slice.sh}"></div>
             <div class="smp-row"><label>碰撞:</label><input type="checkbox" id="smp-collide" ${slice.collide ? 'checked' : ''}></div>
-            <div class="smp-row"><label>碰撞半径:</label><input type="number" id="smp-radius" value="${slice.colliderRadius ?? 16}"></div>
+            <div class="smp-row"><label>碰撞椭圆 X:</label><input type="number" step="any" id="smp-radius-x" value="${slice.colliderRadiusX ?? 16}"></div>
+            <div class="smp-row"><label>碰撞椭圆 Y:</label><input type="number" step="any" id="smp-radius-y" value="${slice.colliderRadiusY ?? 10}"></div>
             <div class="smp-info" id="smp-info">图集: ${img.naturalWidth}×${img.naturalHeight}</div>
             <div class="smp-row" style="margin-top:12px;">
               <button id="smp-confirm" style="flex:1;">确定</button>
@@ -3198,16 +3245,23 @@ export class SceneEditorAssets {
       close();
     });
     document.getElementById('smp-confirm').addEventListener('click', () => {
-      const radiusValue = document.getElementById('smp-radius').value.trim();
+      const collide = document.getElementById('smp-collide').checked;
       const candidate = {
         ...slice,
         sx: Math.round(state.sx),
         sy: Math.round(state.sy),
         sw: Math.round(state.sw),
         sh: Math.round(state.sh),
-        collide: document.getElementById('smp-collide').checked,
-        colliderRadius: radiusValue === '' ? Number.NaN : Number(radiusValue)
+        collide
       };
+      delete candidate.colliderRadius;
+      if (collide) {
+        candidate.colliderRadiusX = Number(document.getElementById('smp-radius-x').value);
+        candidate.colliderRadiusY = Number(document.getElementById('smp-radius-y').value);
+      } else {
+        delete candidate.colliderRadiusX;
+        delete candidate.colliderRadiusY;
+      }
       const validationError = this._validateSliceCandidate(candidate, atlas, img);
       if (validationError) {
         editor.ui.showToast?.(validationError, 'error');
@@ -3220,6 +3274,11 @@ export class SceneEditorAssets {
       }
 
       Object.assign(slice, candidate);
+      delete slice.colliderRadius;
+      if (!collide) {
+        delete slice.colliderRadiusX;
+        delete slice.colliderRadiusY;
+      }
       if (shared) {
         this._markSharedAtlasDraftDirty(editDraft, editEpoch);
       } else if (editor.sceneData.decoSprites?.[sliceKey]) {
@@ -3229,8 +3288,10 @@ export class SceneEditorAssets {
           sw: slice.sw,
           sh: slice.sh,
           collide: slice.collide,
-          colliderRadius: slice.colliderRadius
+          colliderRadiusX: slice.colliderRadiusX,
+          colliderRadiusY: slice.colliderRadiusY
         });
+        delete editor.sceneData.decoSprites[sliceKey].colliderRadius;
       }
       this._selectSlice(atlas.id, sliceKey);
       this._updateSlicePreviews();
