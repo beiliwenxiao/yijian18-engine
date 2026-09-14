@@ -80,14 +80,12 @@ export class SceneTerrainCollision {
    */
   resolveEntities(terrain, entities, options = {}) {
     if (!terrain || !entities || entities.length === 0) return;
-    const radius = options.entityRadius != null ? options.entityRadius : this.entityRadius;
+    const defaultRadius = options.entityRadius != null ? options.entityRadius : this.entityRadius;
     const previousPositions = options.previousPositions || null;
-
     const trees = terrain.getTreeColliders ? terrain.getTreeColliders() : [];
     const shapes = terrain._collisionShapes || [];
     const walkables = terrain._walkableShapes || [];
     const ponds = terrain.waterPatches || [];
-    const spatial = this._getSpatialIndex(terrain, trees, shapes, walkables, ponds, radius);
 
     for (const entity of entities) {
       if (entity.isDead || entity.isDying) continue;
@@ -98,6 +96,10 @@ export class SceneTerrainCollision {
       const collision = entity.getComponent?.('collision');
       const offsetX = Number(collision?.offsetX) || 0;
       const offsetY = Number(collision?.offsetY) || 0;
+      const radiusX = Number(collision?.radiusX) > 0 ? Number(collision.radiusX) : defaultRadius;
+      const radiusY = Number(collision?.radiusY) > 0 ? Number(collision.radiusY) : defaultRadius;
+      const broadRadius = Math.max(radiusX, radiusY);
+      const spatial = this._getSpatialIndex(terrain, trees, shapes, walkables, ponds, broadRadius);
       const hasCollisionOffset = offsetX !== 0 || offsetY !== 0;
       const p = hasCollisionOffset
         ? { x: transform.position.x + offsetX, y: transform.position.y + offsetY }
@@ -122,17 +124,17 @@ export class SceneTerrainCollision {
         }
       }
       const nearbyPonds = this._querySpatial(spatial.ponds, p.x, p.y);
-      for (let i = 0; i < nearbyPonds.length; i++) this.resolvePond(p, nearbyPonds[i]);
+      for (let i = 0; i < nearbyPonds.length; i++) this.resolvePond(p, nearbyPonds[i], radiusX, radiusY);
       const nearbyTrees = this._querySpatial(spatial.trees, p.x, p.y);
-      for (let i = 0; i < nearbyTrees.length; i++) this.resolveTree(p, nearbyTrees[i], radius);
+      for (let i = 0; i < nearbyTrees.length; i++) this.resolveTree(p, nearbyTrees[i], radiusX, radiusY);
       const nearbyShapes = isWalkable
         ? EMPTY_SPATIAL_ITEMS
-        : this._querySpatialRange(spatial.shapes, p, previous, radius);
-      for (let i = 0; i < nearbyShapes.length; i++) this.resolveShape(p, nearbyShapes[i], radius, previous);
+        : this._querySpatialRange(spatial.shapes, p, previous, broadRadius);
+      for (let i = 0; i < nearbyShapes.length; i++) this.resolveShape(p, nearbyShapes[i], radiusX, radiusY, previous);
       // 缺少可计算包围盒的自定义 shape 始终走兜底列表（walkable 内除外）。
       if (!isWalkable) {
         for (let i = 0; i < spatial.unboundedShapes.length; i++) {
-          this.resolveShape(p, spatial.unboundedShapes[i], radius, previous);
+          this.resolveShape(p, spatial.unboundedShapes[i], radiusX, radiusY, previous);
         }
       }
       if (hasCollisionOffset) {
@@ -195,8 +197,8 @@ export class SceneTerrainCollision {
     const nearbyPonds = this._querySpatial(spatial.ponds, x, y);
     for (let index = 0; index < nearbyPonds.length; index++) {
       const pond = nearbyPonds[index];
-      const rx = Number(pond?.rx) || 0;
-      const ry = Number(pond?.ry) || 0;
+      const rx = (Number(pond?.rx) || 0) + radius;
+      const ry = (Number(pond?.ry) || 0) + radius;
       if (rx <= 0 || ry <= 0) continue;
       const nx = (x - pond.x) / rx;
       const ny = (y - pond.y) / ry;
@@ -295,8 +297,8 @@ export class SceneTerrainCollision {
     }
     for (let i = 0; i < ponds.length; i++) {
       const pond = ponds[i];
-      this._insertSpatial(cache.ponds, pond, pond.x - pond.rx, pond.y - pond.ry,
-        pond.x + pond.rx, pond.y + pond.ry);
+      this._insertSpatial(cache.ponds, pond, pond.x - pond.rx - radius, pond.y - pond.ry - radius,
+        pond.x + pond.rx + radius, pond.y + pond.ry + radius);
     }
     for (let i = 0; i < shapes.length; i++) {
       const shape = shapes[i];
@@ -403,39 +405,43 @@ export class SceneTerrainCollision {
     this._lastResolvedPositions.set(entity, { x: position.x, y: position.y });
   }
 
-  /** 水池：在椭圆内部则推到边缘外 */
-  resolvePond(p, pond) {
+  /** 水池：以实体椭圆扩张水面后，将中心推出边缘外。 */
+  resolvePond(p, pond, radiusX = 0, radiusY = 0) {
+    const rx = (Number(pond?.rx) || 0) + Math.max(0, radiusX);
+    const ry = (Number(pond?.ry) || 0) + Math.max(0, radiusY);
+    if (rx <= 0 || ry <= 0) return;
     const pdx = p.x - pond.x;
     const pdy = p.y - pond.y;
-    const nx = pdx / pond.rx;
-    const ny = pdy / pond.ry;
+    const nx = pdx / rx;
+    const ny = pdy / ry;
     const d2 = nx * nx + ny * ny;
     if (d2 < 1 && d2 > 0) {
       const k = 1 / Math.sqrt(d2);
       p.x = pond.x + pdx * k * 1.04;
       p.y = pond.y + pdy * k * 1.04;
     } else if (d2 === 0) {
-      // 正好在圆心：垂直推出，避免除零
-      p.y = pond.y - pond.ry - 2;
+      // 正好在水面中心：沿短轴推出，避免除零。
+      p.y = pond.y - ry - this.pushEpsilon;
     }
   }
 
-  /** 树木：圆形碰撞体，重叠则沿连线推开 */
-  resolveTree(p, tree, entityRadius) {
+  /** 树木：以椭圆在树心连线方向的支撑半径计算重叠并推出。 */
+  resolveTree(p, tree, radiusX = 0, radiusY = 0) {
     const tdx = p.x - tree.x;
     const tdy = p.y - tree.y;
-    const minDist = tree.r + entityRadius;
-    const d2 = tdx * tdx + tdy * tdy;
-    if (d2 >= minDist * minDist) return;
-
-    const td = Math.sqrt(d2);
-    if (td > 0.001) {
-      const k = (minDist + 1) / td;
-      p.x = tree.x + tdx * k;
-      p.y = tree.y + tdy * k;
-    } else {
-      p.y = tree.y + minDist + 1;
+    const distance = Math.hypot(tdx, tdy);
+    if (distance <= 0.001) {
+      p.y = tree.y + (Number(tree?.r) || 0) + Math.max(0, radiusY) + 1;
+      return;
     }
+    const normalX = tdx / distance;
+    const normalY = tdy / distance;
+    const supportRadius = Math.hypot(radiusX * normalX, radiusY * normalY);
+    const minimumDistance = (Number(tree?.r) || 0) + supportRadius;
+    if (distance >= minimumDistance) return;
+    const k = (minimumDistance + 1) / distance;
+    p.x = tree.x + tdx * k;
+    p.y = tree.y + tdy * k;
   }
 
   /**
@@ -444,18 +450,27 @@ export class SceneTerrainCollision {
    * 防止低帧率或高移动速度将角色中心直接越过狭窄物件。
    * @param {Object} p - position（就地修改）
    * @param {Object} s - shape 定义
-   * @param {number} radius - 实体碰撞半径
+   * @param {number} radiusX - 实体椭圆横轴半径
+   * @param {number} radiusY - 实体椭圆纵轴半径
    * @param {{x:number,y:number}|null} [previous] - 上一次地形解算后的坐标
    */
-  resolveShape(p, s, radius, previous = null) {
+  resolveShape(p, s, radiusX, radiusY, previous = null) {
     const st = s.shapeType;
     const EPS = this.pushEpsilon;
 
     if (st === 'polygon' || st === 'path') {
       const contact = this._getPolygonContact(s.points, p.x, p.y);
-      if (contact && (contact.inside || contact.distance <= radius)) {
-        this._pushOutOfPolygon(p, s.points, radius + EPS, contact);
-        return;
+      if (contact) {
+        const distance = contact.distance;
+        const normalX = distance > 1e-7 ? (p.x - contact.nearestX) / distance :
+          -contact.nearestEdgeY / (Math.hypot(contact.nearestEdgeX, contact.nearestEdgeY) || 1);
+        const normalY = distance > 1e-7 ? (p.y - contact.nearestY) / distance :
+          contact.nearestEdgeX / (Math.hypot(contact.nearestEdgeX, contact.nearestEdgeY) || 1);
+        const supportRadius = Math.hypot(radiusX * normalX, radiusY * normalY);
+        if (contact.inside || distance <= supportRadius) {
+          this._pushOutOfPolygon(p, s.points, supportRadius + EPS, contact);
+          return;
+        }
       }
       if (this._crossedPolygon(previous, p, s.points)) {
         p.x = previous.x;
@@ -464,31 +479,52 @@ export class SceneTerrainCollision {
       return;
     }
 
-    if (!this._pointInShape(s, p.x, p.y)) return;
-
     if (st === 'circle' || st === 'ellipse') {
       const scx = (s.x || 0) + (s.width || 0) / 2;
       const scy = (s.y || 0) + (s.height || 0) / 2;
-      const dirx = p.x - scx, diry = p.y - scy;
-      const dl = Math.hypot(dirx, diry) || 1;
-      const rx = (st === 'circle' ? Math.min(s.width, s.height) : s.width) / 2 || 1;
-      const ry = (st === 'circle' ? Math.min(s.width, s.height) : s.height) / 2 || 1;
-      const ux = dirx / rx, uy = diry / ry;
-      const d = Math.hypot(ux, uy) || 1;
-      p.x = scx + dirx / d + dirx / dl * EPS;
-      p.y = scy + diry / d + diry / dl * EPS;
+      const baseRadiusX = (st === 'circle' ? Math.min(s.width, s.height) : s.width) / 2 || 1;
+      const baseRadiusY = (st === 'circle' ? Math.min(s.width, s.height) : s.height) / 2 || 1;
+      const expandedRadiusX = baseRadiusX + radiusX;
+      const expandedRadiusY = baseRadiusY + radiusY;
+      const dirX = p.x - scx;
+      const dirY = p.y - scy;
+      const normalizedDistance = Math.hypot(dirX / expandedRadiusX, dirY / expandedRadiusY);
+      if (normalizedDistance >= 1) return;
+      if (normalizedDistance > 1e-7) {
+        const worldDistance = Math.hypot(dirX, dirY) || 1;
+        p.x = scx + dirX / normalizedDistance + dirX / worldDistance * EPS;
+        p.y = scy + dirY / normalizedDistance + dirY / worldDistance * EPS;
+      } else {
+        p.y = scy - expandedRadiusY - EPS;
+      }
       return;
     }
 
-    // rect：推到最近边外侧
-    const left = s.x || 0, top = s.y || 0;
-    const right = left + (s.width || 0), bottom = top + (s.height || 0);
+    // rect：以椭圆在最近接触法线上的支撑半径推出，角落保留真实的圆角外沿。
+    const left = s.x || 0;
+    const top = s.y || 0;
+    const right = left + (s.width || 0);
+    const bottom = top + (s.height || 0);
+    const nearestX = Math.max(left, Math.min(p.x, right));
+    const nearestY = Math.max(top, Math.min(p.y, bottom));
+    const dirX = p.x - nearestX;
+    const dirY = p.y - nearestY;
+    const distance = Math.hypot(dirX, dirY);
+    if (distance > 1e-7) {
+      const normalX = dirX / distance;
+      const normalY = dirY / distance;
+      const supportRadius = Math.hypot(radiusX * normalX, radiusY * normalY);
+      if (distance >= supportRadius) return;
+      p.x = nearestX + normalX * (supportRadius + EPS);
+      p.y = nearestY + normalY * (supportRadius + EPS);
+      return;
+    }
     const dL = p.x - left, dR = right - p.x, dT = p.y - top, dB = bottom - p.y;
     const minD = Math.min(dL, dR, dT, dB);
-    if (minD === dL) p.x = left - EPS;
-    else if (minD === dR) p.x = right + EPS;
-    else if (minD === dT) p.y = top - EPS;
-    else p.y = bottom + EPS;
+    if (minD === dL) p.x = left - radiusX - EPS;
+    else if (minD === dR) p.x = right + radiusX + EPS;
+    else if (minD === dT) p.y = top - radiusY - EPS;
+    else p.y = bottom + radiusY + EPS;
   }
 
   /** @private 与 terrain 实现无关的 shape 点命中。 */

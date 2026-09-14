@@ -23,13 +23,15 @@
 import { Component } from '../Component.js';
 
 /**
- * 实体物理碰撞中心相对 Transform 脚点的偏移。
+ * 实体物理碰撞中心相对 Transform 脚点的偏移和可选椭圆占地。
  * Transform 保持视觉、交互和存档的世界锚点；碰撞系统只使用本组件派生物理中心。
  */
 export class CollisionComponent extends Component {
-  constructor({ offsetX = 0, offsetY = 0 } = {}) {
+  constructor({ offsetX = 0, offsetY = 0, radiusX = null, radiusY = null } = {}) {
     super('collision');
     this.offsetX = Number.isFinite(offsetX) ? offsetX : 0;
     this.offsetY = Number.isFinite(offsetY) ? offsetY : 0;
+    this.radiusX = Number.isFinite(radiusX) && radiusX > 0 ? radiusX : null;
+    this.radiusY = Number.isFinite(radiusY) && radiusY > 0 ? radiusY : null;
   }
 }

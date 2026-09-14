@@ -370,7 +370,7 @@ export class SceneDiagnostics {
     return true;
   }
 
-  /** 绘制角色脚点的实体半径和实际阻挡边缘，只读取已提交的碰撞参数。 */
+  /** 绘制角色脚点的实体椭圆和实际阻挡边缘，只读取已提交的碰撞参数。 */
   renderActorCollisionEdge(ctx, {
     enabled = false,
     camera = null,
@@ -384,8 +384,11 @@ export class SceneDiagnostics {
     const centerY = position.y + (Number(collision?.offsetY) || 0);
 
     const entityRadius = Math.max(0, Number(terrainCollision?.entityRadius) || 12);
+    const radiusX = Math.max(0, Number(collision?.radiusX) || entityRadius);
+    const radiusY = Math.max(0, Number(collision?.radiusY) || entityRadius);
     const pushEpsilon = Math.max(0, Number(terrainCollision?.pushEpsilon) || 2);
-    const blockingRadius = entityRadius + pushEpsilon;
+    const blockingRadiusX = radiusX + pushEpsilon;
+    const blockingRadiusY = radiusY + pushEpsilon;
     const viewBounds = camera.getViewBounds();
 
     ctx.save();
@@ -393,13 +396,13 @@ export class SceneDiagnostics {
     ctx.lineWidth = 2;
 
     ctx.beginPath();
-    ctx.arc(centerX, centerY, entityRadius, 0, Math.PI * 2);
+    ctx.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, Math.PI * 2);
     ctx.globalAlpha = 0.95;
     ctx.strokeStyle = '#00e5ff';
     ctx.stroke();
 
     ctx.beginPath();
-    ctx.arc(centerX, centerY, blockingRadius, 0, Math.PI * 2);
+    ctx.ellipse(centerX, centerY, blockingRadiusX, blockingRadiusY, 0, 0, Math.PI * 2);
     ctx.globalAlpha = 0.95;
     ctx.strokeStyle = '#ffeb3b';
     ctx.setLineDash([4, 3]);
@@ -414,15 +417,15 @@ export class SceneDiagnostics {
     ctx.lineTo(centerX, centerY + 4);
     ctx.stroke();
 
-    const label = `实体半径 ${entityRadius}px / 阻挡边缘 ${blockingRadius}px`;
+    const label = `实体椭圆 ${radiusX}×${radiusY}px / 阻挡边缘 ${blockingRadiusX}×${blockingRadiusY}px`;
     ctx.font = '12px sans-serif';
     ctx.textBaseline = 'bottom';
     ctx.lineWidth = 3;
     ctx.strokeStyle = 'rgba(0, 0, 0, 0.85)';
-    ctx.strokeText(label, centerX + blockingRadius + 6, centerY - blockingRadius - 4);
+    ctx.strokeText(label, centerX + blockingRadiusX + 6, centerY - blockingRadiusY - 4);
     ctx.lineWidth = 1;
     ctx.fillStyle = '#ffffff';
-    ctx.fillText(label, centerX + blockingRadius + 6, centerY - blockingRadius - 4);
+    ctx.fillText(label, centerX + blockingRadiusX + 6, centerY - blockingRadiusY - 4);
     ctx.restore();
     return true;
   }

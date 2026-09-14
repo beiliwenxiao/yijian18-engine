@@ -98,16 +98,20 @@ export class DemoPlayerFactory {
 
   /** 将表现规格投影到新建或跨场景继承的玩家，不改变 Transform 世界锚点。 */
   configurePlayer(scene, player) {
-    const offset = scene.presentationProfile?.actors?.player?.collisionOffset;
-    const offsetX = Number(offset?.offsetX) || 0;
-    const offsetY = Number(offset?.offsetY) || 0;
+    const actor = scene.presentationProfile?.actors?.player;
+    const offsetX = Number(actor?.collisionOffset?.offsetX) || 0;
+    const offsetY = Number(actor?.collisionOffset?.offsetY) || 0;
+    const radiusX = Number(actor?.collisionEllipse?.radiusX) || null;
+    const radiusY = Number(actor?.collisionEllipse?.radiusY) || null;
     const collision = player?.getComponent?.('collision');
     if (collision) {
       collision.offsetX = offsetX;
       collision.offsetY = offsetY;
+      collision.radiusX = radiusX;
+      collision.radiusY = radiusY;
       return player;
     }
-    player.addComponent(new CollisionComponent({ offsetX, offsetY }));
+    player.addComponent(new CollisionComponent({ offsetX, offsetY, radiusX, radiusY }));
     return player;
   }
 

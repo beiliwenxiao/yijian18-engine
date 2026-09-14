@@ -39,6 +39,11 @@ export const PRESENTATION_COLLISION_OFFSET_SCHEMA = {
   }
 };
 
+export const PRESENTATION_COLLISION_ELLIPSE_SCHEMA = {
+  id: 'presentationCollisionEllipse', allowUnknown: false,
+  fields: { radiusX: positive(), radiusY: positive() }
+};
+
 export const PRESENTATION_LOGICAL_RESOLUTION_SCHEMA = {
   id: 'presentationLogicalResolution', allowUnknown: false,
   fields: {
@@ -78,7 +83,8 @@ export const PRESENTATION_ACTOR_SCHEMA = {
     visual: { type: FieldType.OBJECT, required: true, schema: 'presentationDimension' },
     footprint: { type: FieldType.OBJECT, required: true, schema: 'presentationDimension' },
     colliderRadius: positive(),
-    collisionOffset: { type: FieldType.OBJECT, required: false, schema: 'presentationCollisionOffset' }
+    collisionOffset: { type: FieldType.OBJECT, required: false, schema: 'presentationCollisionOffset' },
+    collisionEllipse: { type: FieldType.OBJECT, required: false, schema: 'presentationCollisionEllipse' }
   }
 };
 
@@ -128,7 +134,7 @@ export const PRESENTATION_PROFILE_SCHEMA = {
 };
 
 export const PRESENTATION_PROFILE_SCHEMAS = [
-  PRESENTATION_DIMENSION_SCHEMA, PRESENTATION_COLLISION_OFFSET_SCHEMA,
+  PRESENTATION_DIMENSION_SCHEMA, PRESENTATION_COLLISION_OFFSET_SCHEMA, PRESENTATION_COLLISION_ELLIPSE_SCHEMA,
   PRESENTATION_LOGICAL_RESOLUTION_SCHEMA, PRESENTATION_WORLD_SCHEMA,
   PRESENTATION_DEADZONE_SCHEMA, PRESENTATION_CAMERA_SCHEMA,
   PRESENTATION_ACTOR_SCHEMA, PRESENTATION_ACTORS_SCHEMA, PRESENTATION_UI_SCHEMA,

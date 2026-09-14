@@ -27,7 +27,8 @@
       "visual": { "width": 64, "height": 64 },
       "footprint": { "width": 28, "height": 18 },
       "colliderRadius": 14,
-      "collisionOffset": { "offsetX": 0, "offsetY": -18 }
+      "collisionOffset": { "offsetX": 0, "offsetY": -18 },
+      "collisionEllipse": { "radiusX": 12, "radiusY": 8 }
     },
     "unit": {
       "visual": { "width": 48, "height": 48 },

@@ -30,6 +30,10 @@ const collisionOffset = (source, fallback) => ({
   offsetX: finite(source?.offsetX, fallback.offsetX),
   offsetY: finite(source?.offsetY, fallback.offsetY)
 });
+const collisionEllipse = (source, fallback) => ({
+  radiusX: positive(source?.radiusX, fallback.radiusX),
+  radiusY: positive(source?.radiusY, fallback.radiusY)
+});
 
 export const DEFAULT_PRESENTATION_PROFILE = Object.freeze({
   schemaVersion: 1,
@@ -43,13 +47,15 @@ export const DEFAULT_PRESENTATION_PROFILE = Object.freeze({
       visual: { width: 64, height: 64 },
       footprint: { width: 28, height: 18 },
       colliderRadius: 14,
-      collisionOffset: { offsetX: 0, offsetY: 0 }
+      collisionOffset: { offsetX: 0, offsetY: 0 },
+      collisionEllipse: { radiusX: 14, radiusY: 14 }
     },
     unit: {
       visual: { width: 48, height: 48 },
       footprint: { width: 24, height: 16 },
       colliderRadius: 12,
-      collisionOffset: { offsetX: 0, offsetY: 0 }
+      collisionOffset: { offsetX: 0, offsetY: 0 },
+      collisionEllipse: { radiusX: 12, radiusY: 12 }
     }
   },
   ui: { mobileMinFontPx: 16 },
@@ -62,7 +68,8 @@ export function normalizePresentationProfile(profile = {}) {
     visual: dimension(profile.actors?.[key]?.visual, base.actors[key].visual),
     footprint: dimension(profile.actors?.[key]?.footprint, base.actors[key].footprint),
     colliderRadius: positive(profile.actors?.[key]?.colliderRadius, base.actors[key].colliderRadius),
-    collisionOffset: collisionOffset(profile.actors?.[key]?.collisionOffset, base.actors[key].collisionOffset)
+    collisionOffset: collisionOffset(profile.actors?.[key]?.collisionOffset, base.actors[key].collisionOffset),
+    collisionEllipse: collisionEllipse(profile.actors?.[key]?.collisionEllipse, base.actors[key].collisionEllipse)
   });
   const logical = dimension(profile.logicalResolution, base.logicalResolution);
   return {
