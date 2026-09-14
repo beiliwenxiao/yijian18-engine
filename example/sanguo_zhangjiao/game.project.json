@@ -6372,8 +6372,8 @@
             }
           ],
           "presentation": {
-            "collisionHeight": 22.5,
-            "collisionWidth": 40,
+            "collisionHeight": 28,
+            "collisionWidth": 60,
             "fireHeight": 60,
             "fireWidth": 40,
             "lightRadius": 300

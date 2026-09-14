@@ -512,9 +512,63 @@
                         return structuredClone(model.getCandidate().project?.library || {});
                     },
                     saveContentLibrary: async (library) => {
+                        const projectPath = ctx._canonicalProjectPath();
                         const session = ctx._canonicalEditorSession('project');
+                        /* 火堆内容库提交排障日志：
+                        const expectedCampfirePresentation = structuredClone(
+                            library?.items?.find(item => item?.id === 'story.s01.campfire')?.campfirePresentation?.presentation || null
+                        );
+                        console.info('[SceneWorkflow][ContentLibrarySave] patch-before', {
+                            projectPath,
+                            expectedCampfirePresentation,
+                            candidateBefore: ctx.documentService.requireProject(projectPath)
+                                .getCandidate().project?.library?.items
+                                ?.find(item => item?.id === 'story.s01.campfire')?.campfirePresentation?.presentation || null
+                        });
+                        */
                         session.patch('library', structuredClone(library));
-                        return session.save();
+                        /* 火堆内容库提交排障日志：
+                        console.info('[SceneWorkflow][ContentLibrarySave] patch-after', {
+                            projectPath,
+                            candidateAfter: session.model.getCandidate().project?.library?.items
+                                ?.find(item => item?.id === 'story.s01.campfire')?.campfirePresentation?.presentation || null
+                        });
+                        */
+                        const result = await session.save();
+                        /* 火堆内容库提交排障日志：
+                        console.info('[SceneWorkflow][ContentLibrarySave] session-save-result', {
+                            projectPath,
+                            ok: result?.ok,
+                            committed: result?.committed,
+                            code: result?.code,
+                            transactionId: result?.transactionId,
+                            changes: result?.changes?.map(change => ({ operation: change.operation, path: change.path }))
+                        });
+                        */
+                        if (result?.ok !== true || result.committed !== true) return result;
+                        try {
+                            const project = await ctx._readCanonicalJson(projectPath);
+                            /* 火堆内容库提交排障日志：
+                            console.info('[SceneWorkflow][ContentLibrarySave] disk-readback', {
+                                projectPath,
+                                expectedCampfirePresentation,
+                                committedCampfirePresentation: project.library?.items
+                                    ?.find(item => item?.id === 'story.s01.campfire')?.campfirePresentation?.presentation || null
+                            });
+                            */
+                            session.acceptExternalProjectCommit(project, {
+                                snapshotRevision: result.snapshotRevision
+                            });
+                            return { ...result, project, library: structuredClone(project.library || {}) };
+                        } catch (error) {
+                            console.error('[SceneWorkflow] 内容库提交后磁盘回读失败', error);
+                            return {
+                                ...result,
+                                ok: false,
+                                code: 'contentLibraryReadbackFailed',
+                                error
+                            };
+                        }
                     },
                     presentationProfile: ctx._presentationProfile,
                     onSceneMetaChange: handleSceneMetaChange,

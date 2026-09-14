@@ -264,8 +264,60 @@ export class SceneEditorAssets {
     return 0;
   }
 
+  _resolveManifestVisualImage(imageId) {
+    const normalizedImageId = typeof imageId === 'string' ? imageId.trim() : '';
+    const manifestEntry = this._manifestEntriesById.get(normalizedImageId) || null;
+    const image = this.editor.loadedImages.get(normalizedImageId)
+      || (manifestEntry?.imageId ? this.editor.loadedImages.get(manifestEntry.imageId) : null)
+      || (manifestEntry?.assetId ? this.editor.loadedImages.get(manifestEntry.assetId) : null)
+      || null;
+    return {
+      imageId: normalizedImageId,
+      manifestEntry,
+      image,
+      url: manifestEntry ? this._resolveManifestImageUrl(manifestEntry) : ''
+    };
+  }
+
+  _resolveCampfirePreviewLayers(definition, anchorX, anchorY) {
+    const presentation = definition?.campfirePresentation;
+    if (!presentation || typeof presentation !== 'object') return [];
+
+    return ['stoneRing', 'base', 'logs'].flatMap(key => {
+      const source = presentation[key];
+      if (!source || typeof source !== 'object') return [];
+      const resource = this._resolveManifestVisualImage(source.imageId);
+      const width = this._positiveNumber(source.width, resource.manifestEntry?.bounds?.width, resource.image?.naturalWidth, resource.image?.width);
+      const height = this._positiveNumber(source.height, resource.manifestEntry?.bounds?.height, resource.image?.naturalHeight, resource.image?.height);
+      if (!resource.imageId || !(width > 0) || !(height > 0)) return [];
+      const pivot = source.pivot || {};
+      const pivotX = Number.isFinite(Number(pivot.x)) ? Number(pivot.x) : 0.5;
+      const pivotY = Number.isFinite(Number(pivot.y)) ? Number(pivot.y) : 1;
+      const offsetX = Number.isFinite(Number(source.offsetX)) ? Number(source.offsetX) : 0;
+      const offsetY = Number.isFinite(Number(source.offsetY)) ? Number(source.offsetY) : 0;
+      const x = anchorX - width * pivotX + offsetX;
+      const y = anchorY - height * pivotY + offsetY;
+      return [{
+        key,
+        ...resource,
+        bounds: { x, y, width, height, right: x + width, bottom: y + height }
+      }];
+    });
+  }
+
+  _mergeVisualBounds(boundsList) {
+    const validBounds = boundsList.filter(bounds => bounds?.width > 0 && bounds?.height > 0);
+    if (validBounds.length === 0) return null;
+    const left = Math.min(...validBounds.map(bounds => bounds.x));
+    const top = Math.min(...validBounds.map(bounds => bounds.y));
+    const right = Math.max(...validBounds.map(bounds => bounds.right));
+    const bottom = Math.max(...validBounds.map(bounds => bounds.bottom));
+    return { x: left, y: top, width: right - left, height: bottom - top, right, bottom };
+  }
+
   /**
    * 同步解析 ref 放置物的内容定义、Manifest 映射、图片及画布视觉边界。
+   * 火堆在编辑器中复用同一 campfirePresentation，静态预览其熄灭态的石圈、底座和木柴。
    * 场景正文继续只保存 kind/ref/overrides，表现字段不复制进 placement。
    */
   resolvePlacementVisual(placement) {
@@ -280,31 +332,15 @@ export class SceneEditorAssets {
       return { status: 'missingAssetId', definition: merged, imageId: '', image: null, bounds: null };
     }
 
-    const manifestEntry = this._manifestEntriesById.get(imageId) || null;
-    const image = this.editor.loadedImages.get(imageId)
-      || (manifestEntry?.imageId ? this.editor.loadedImages.get(manifestEntry.imageId) : null)
-      || (manifestEntry?.assetId ? this.editor.loadedImages.get(manifestEntry.assetId) : null)
-      || null;
-    const width = this._positiveNumber(
-      merged.sprite?.width,
-      merged.width,
-      manifestEntry?.bounds?.width,
-      image?.naturalWidth,
-      image?.width
-    );
-    const height = this._positiveNumber(
-      merged.sprite?.height,
-      merged.height,
-      manifestEntry?.bounds?.height,
-      image?.naturalHeight,
-      image?.height
-    );
-    const pivotSource = merged.pivot || merged.sprite?.pivot || manifestEntry?.pivot || {};
+    const primaryImage = this._resolveManifestVisualImage(imageId);
+    const width = this._positiveNumber(merged.sprite?.width, merged.width, primaryImage.manifestEntry?.bounds?.width, primaryImage.image?.naturalWidth, primaryImage.image?.width);
+    const height = this._positiveNumber(merged.sprite?.height, merged.height, primaryImage.manifestEntry?.bounds?.height, primaryImage.image?.naturalHeight, primaryImage.image?.height);
+    const pivotSource = merged.pivot || merged.sprite?.pivot || primaryImage.manifestEntry?.pivot || {};
     const pivotX = Number.isFinite(Number(pivotSource.x)) ? Number(pivotSource.x) : 0.5;
     const pivotY = Number.isFinite(Number(pivotSource.y)) ? Number(pivotSource.y) : 1;
     const anchorX = Number.isFinite(Number(placement.x)) ? Number(placement.x) : 0;
     const anchorY = Number.isFinite(Number(placement.y)) ? Number(placement.y) : 0;
-    const bounds = width > 0 && height > 0 ? {
+    const primaryBounds = width > 0 && height > 0 ? {
       x: anchorX - width * pivotX,
       y: anchorY - height * pivotY,
       width,
@@ -312,15 +348,44 @@ export class SceneEditorAssets {
       right: anchorX + width * (1 - pivotX),
       bottom: anchorY + height * (1 - pivotY)
     } : null;
-    const url = manifestEntry ? this._resolveManifestImageUrl(manifestEntry) : '';
-    const status = !manifestEntry
+    const layers = this._resolveCampfirePreviewLayers(merged, anchorX, anchorY);
+    const campfirePresentation = merged.campfirePresentation;
+    const collisionWidth = Number(campfirePresentation?.presentation?.collisionWidth);
+    const collisionHeight = Number(campfirePresentation?.presentation?.collisionHeight);
+    const collisionEllipse = campfirePresentation
+      && collisionWidth > 0
+      && collisionHeight > 0
+      ? {
+        x: anchorX,
+        y: anchorY - 28 + collisionHeight / 2,
+        radiusX: collisionWidth / 2,
+        radiusY: collisionHeight / 2
+      }
+      : null;
+    const imageRequests = layers.length > 0 ? layers : [primaryImage];
+    const bounds = this._mergeVisualBounds(layers.map(layer => layer.bounds)) || primaryBounds;
+    const status = !primaryImage.manifestEntry
       ? 'missingManifestEntry'
-      : !url
+      : imageRequests.some(request => !request.url)
         ? 'missingRuntimePath'
-        : image && bounds
+        : imageRequests.every(request => request.image) && bounds
           ? 'ready'
           : 'loading';
-    return { status, definition: merged, imageId, manifestEntry, image, width, height, pivot: { x: pivotX, y: pivotY }, bounds, url };
+    return {
+      status,
+      definition: merged,
+      imageId,
+      manifestEntry: primaryImage.manifestEntry,
+      image: primaryImage.image,
+      width,
+      height,
+      pivot: { x: pivotX, y: pivotY },
+      bounds,
+      url: primaryImage.url,
+      layers,
+      collisionEllipse,
+      imageRequests
+    };
   }
 
   /** 异步加载显式场景集合中全部 ref 放置物使用的 Manifest 图片。 */
@@ -349,16 +414,18 @@ export class SceneEditorAssets {
     const requests = new Map();
     for (const placement of placements) {
       const visual = this.resolvePlacementVisual(placement);
-      if (!visual?.url || !visual.imageId || visual.image) continue;
-      if (!requests.has(visual.imageId)) requests.set(visual.imageId, visual);
+      for (const request of visual?.imageRequests || []) {
+        if (!request?.url || !request.imageId || request.image || requests.has(request.imageId)) continue;
+        requests.set(request.imageId, request);
+      }
     }
 
-    for (const [imageId, visual] of requests) {
+    for (const [imageId, request] of requests) {
       const image = new Image();
       image.onload = () => {
         if (!this._isPlacementProjectCurrent(projectPath, epoch) || generation !== this._placementVisualGeneration) return;
         const currentEntry = this._manifestEntriesById.get(imageId);
-        if (!currentEntry || this._resolveManifestImageUrl(currentEntry, projectPath) !== visual.url) return;
+        if (!currentEntry || this._resolveManifestImageUrl(currentEntry, projectPath) !== request.url) return;
         for (const alias of [imageId, currentEntry.imageId, currentEntry.assetId]) {
           if (typeof alias === 'string' && alias.trim()) editor.loadedImages.set(alias.trim(), image);
         }
@@ -367,10 +434,10 @@ export class SceneEditorAssets {
       };
       image.onerror = () => {
         if (this._isPlacementProjectCurrent(projectPath, epoch) && generation === this._placementVisualGeneration) {
-          console.warn(`[SceneEditorAssets] ref 图片加载失败: ${imageId} (${visual.url})`);
+          console.warn(`[SceneEditorAssets] ref 图片加载失败: ${imageId} (${request.url})`);
         }
       };
-      image.src = visual.url;
+      image.src = request.url;
     }
     editor.render();
   }
@@ -1890,7 +1957,7 @@ export class SceneEditorAssets {
     return fallback;
   }
 
-  /** 通过页面共享 CanonicalEditorSession 保存 project.library。 */
+  /** 通过页面共享 CanonicalEditorSession 保存 project.library，并只接受磁盘回读确认的定义。 */
   async saveContentLibrary() {
     if (!this._contentLib) {
       const result = { ok: false, committed: false, code: 'contentLibraryNotLoaded' };
@@ -1903,16 +1970,76 @@ export class SceneEditorAssets {
       this.editor.ui.showToast?.('保存失败: 未配置 canonical 内容库写入器', 'error');
       return result;
     }
+
+    const expectedLibrary = structuredClone(this._contentLib);
+    /* 火堆内容库保存排障日志：
+    const summarizeCampfire = library => {
+      const definition = Array.isArray(library?.items)
+        ? library.items.find(item => item?.id === 'story.s01.campfire')
+        : null;
+      return structuredClone(definition?.campfirePresentation?.presentation || null);
+    };
+    const expectedCampfirePresentation = summarizeCampfire(expectedLibrary);
+    console.info('[SceneEditorAssets][ContentLibrarySave] start', {
+      projectPath: this._currentProjectPath(),
+      expectedCampfirePresentation,
+      itemCount: expectedLibrary.items?.length || 0
+    });
+    */
     try {
-      const result = await saveLibrary(structuredClone(this._contentLib));
+      const result = await saveLibrary(expectedLibrary);
+      /* 火堆内容库保存排障日志：
+      console.info('[SceneEditorAssets][ContentLibrarySave] transaction-result', {
+        ok: result?.ok,
+        committed: result?.committed,
+        code: result?.code,
+        transactionId: result?.transactionId,
+        snapshotRevision: result?.snapshotRevision,
+        changes: result?.changes?.map(change => ({ operation: change.operation, path: change.path }))
+      });
+      */
       if (result?.ok !== true || result.committed !== true) {
         this.editor.ui.showToast?.('保存失败: ' + this._persistenceError(result, '磁盘未提交'), 'error');
         return result;
       }
+
+      const committedLibrary = result.library;
+      if (!committedLibrary || typeof committedLibrary !== 'object' || Array.isArray(committedLibrary)) {
+        const verificationError = new Error('canonical 项目提交后未返回可验证的磁盘内容库');
+        console.error('[SceneEditorAssets] 内容库磁盘回读缺失', { result });
+        this.editor.ui.showToast?.('保存未确认: 无法从磁盘回读内容库', 'error');
+        return { ...result, ok: false, code: 'contentLibraryReadbackMissing', error: verificationError };
+      }
+
+      /* 火堆内容库保存排障日志：
+      const committedCampfirePresentation = summarizeCampfire(committedLibrary);
+      */
+      /* 火堆内容库保存排障日志：
+      console.info('[SceneEditorAssets][ContentLibrarySave] disk-readback', {
+        projectPath: this._currentProjectPath(),
+        expectedCampfirePresentation,
+        committedCampfirePresentation,
+        matches: JSON.stringify(expectedLibrary) === JSON.stringify(committedLibrary)
+      });
+      */
+      this._contentLib = structuredClone(committedLibrary);
+      this.updateContentList();
+      if (JSON.stringify(expectedLibrary) !== JSON.stringify(committedLibrary)) {
+        const verificationError = new Error('提交后的磁盘内容库与本次保存草稿不一致');
+        console.error('[SceneEditorAssets] 内容库保存回读不一致', {
+          expectedLibrary,
+          committedLibrary,
+          result
+        });
+        this.editor.ui.showToast?.('保存未确认: 磁盘回读与当前内容库不一致', 'error');
+        void this.refreshPlacementVisuals();
+        return { ...result, ok: false, code: 'contentLibraryReadbackMismatch', error: verificationError };
+      }
+
       if (result.degraded) {
         this.editor.ui.showToast?.('内容库已写入磁盘，但缓存/通知同步降级', 'warn');
       } else {
-        this.editor.ui.showToast?.('内容库已保存', 'success');
+        this.editor.ui.showToast?.('内容库已保存并已由磁盘确认', 'success');
       }
       void this.refreshPlacementVisuals();
       return result;
@@ -3329,7 +3456,19 @@ export class SceneEditorAssets {
     for (const sceneData of scenes) {
       for (const [id, data] of Object.entries(sceneData.imageAssets || {})) {
         const src = typeof data?.src === 'string' ? data.src.trim() : '';
-        if (!src) throw new TypeError(`场景 ${sceneData.id || sceneData.name || '<unknown>'} 的 imageAssets.${id}.src 无效`);
+        if (!src) {
+          /* S02 Manifest 元数据条目排障日志：
+          console.info('[SceneEditorAssets][ImageAssets] manifest-metadata-entry', {
+            activeSceneId: activeScene?.id || activeScene?.name || '<unknown>',
+            sceneId: sceneData.id || sceneData.name || '<unknown>',
+            imageId: id,
+            imageAsset: structuredClone(data ?? null)
+          });
+          */
+          // canonical scene 的 imageAssets 只可保存稳定 ID 元数据；实际路径由下方
+          // type:image 的 imageId 经项目 Manifest 解析，不能在场景内复制第二份 src。
+          continue;
+        }
         const previous = sources.get(id);
         if (previous && previous.src !== src) {
           throw new Error(

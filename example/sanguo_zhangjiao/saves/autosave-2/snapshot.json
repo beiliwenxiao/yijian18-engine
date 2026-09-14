@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "createdAt": 1789406109581,
+  "createdAt": 1789423582501,
   "meta": {
     "gameId": "sanguo_zhangjiao",
     "kind": "auto",
@@ -9,7 +9,8 @@
     "level": 1,
     "currentSceneId": "S01",
     "location": "S01 区域",
-    "reason": "system-menu",
+    "reason": "checkpoint",
+    "checkpointId": "checkpoint.S01.shelterStarted",
     "previewFile": "thumbnail.jpg"
   },
   "data": {
@@ -21,8 +22,8 @@
         "id": "refugee",
         "name": null,
         "transform": {
-          "x": 8210.877662314304,
-          "y": 4144.881167456563,
+          "x": 8246.408740277835,
+          "y": 4031.395720438672,
           "elevation": 0,
           "rotation": 0,
           "scale": {
@@ -39,15 +40,15 @@
           "baseAttack": 10,
           "baseDefense": 5,
           "baseSpeed": 100,
-          "maxHp": 100,
-          "hp": 86,
+          "maxHp": 105,
+          "hp": 90,
           "maxMp": 100,
           "mp": 10,
           "maxStamina": 100,
           "stamina": 100,
           "staminaRegen": 12,
-          "attack": 10,
-          "defense": 5,
+          "attack": 11,
+          "defense": 18,
           "speed": 100,
           "level": 1,
           "exp": 0,
@@ -79,18 +80,31 @@
           },
           {
             "definitionId": "resource.wood",
-            "quantity": 9
+            "quantity": 5
           },
           {
             "definitionId": "resource.raw_wolf_meat",
-            "quantity": 5
+            "quantity": 4
           },
           {
             "definitionId": "resource.wolf_hide",
-            "quantity": 5
+            "quantity": 2
+          },
+          {
+            "definitionId": "food.roasted_wolf_meat",
+            "quantity": 1
           }
         ],
-        "equipment": {}
+        "equipment": {
+          "accessory": {
+            "definitionId": "equipment.s01.wolf_hide_bracers",
+            "quantity": 1
+          },
+          "armor": {
+            "definitionId": "equipment.s01.wolf_hide_vest",
+            "quantity": 1
+          }
+        }
       },
       "tutorial": {
         "completedTutorials": [
@@ -111,12 +125,7 @@
           "s01.attack:attackPerformed": 1,
           "s01.durability:gatheringCompleted": 1
         },
-        "movementOrigins": {
-          "s01.move": {
-            "x": 8276.559230181467,
-            "y": 4165.023414159508
-          }
-        }
+        "movementOrigins": {}
       },
       "dialogue": {
         "currentDialogueId": null,
@@ -352,7 +361,7 @@
               "firstWolfKilled": true,
               "firstWolfSpotted": true,
               "initialToolsPicked": true,
-              "meatCooked": false,
+              "meatCooked": true,
               "overnightCompleted": false,
               "pursuit": {
                 "active": false,
@@ -363,10 +372,10 @@
               "shelterCompleted": false,
               "shelterExitedAfterOvernight": false,
               "skinningKnifeFound": true,
-              "wolfBracersCrafted": false,
-              "wolfGearCrafted": false,
+              "wolfBracersCrafted": true,
+              "wolfGearCrafted": true,
               "wolfSkinned": true,
-              "wolfVestCrafted": false,
+              "wolfVestCrafted": true,
               "wolfWeatherCleared": false,
               "wolfWeatherCountdownStarted": false,
               "woodGathered": true
@@ -409,7 +418,19 @@
             "trg_s01_refuel_campfire": {
               "definitionRevision": 1,
               "remaining": 0,
-              "nextDue": 48924,
+              "nextDue": 0,
+              "duration": 1000
+            },
+            "trg_s01_cook_meat": {
+              "definitionRevision": 1,
+              "remaining": 0,
+              "nextDue": 54354.60000000079,
+              "duration": 1000
+            },
+            "trg_s01_craft_wolf_gear": {
+              "definitionRevision": 1,
+              "remaining": 0,
+              "nextDue": 69855.69999999995,
               "duration": 1000
             }
           },
@@ -864,26 +885,42 @@
               {
                 "triggerId": "trg_s01_craft_wolf_gear",
                 "definitionRevision": 1,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
+                "operationId": "trigger:1:trg_s01_craft_wolf_gear:4",
+                "fingerprint": "sha256-9a0e710647d2def0e52b69e0b84eb3a4a6dfa87016b3c945124a7d2c66a5ae7d",
+                "status": "succeeded",
+                "actionIndex": 0,
+                "result": {
+                  "ok": true,
+                  "operationId": "trigger:1:trg_s01_craft_wolf_gear:4:trigger:trg_s01_craft_wolf_gear:step:craft-wolf-gear",
+                  "status": "succeeded",
+                  "committed": false,
+                  "code": null,
+                  "stateId": "trigger:trg_s01_craft_wolf_gear",
+                  "stateRevision": null
+                },
+                "startedAt": 68822.39999999967,
+                "finishedAt": 68855.69999999995,
+                "ledgerRevision": 7
               },
               {
                 "triggerId": "trg_s01_cook_meat",
                 "definitionRevision": 1,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
+                "operationId": "trigger:1:trg_s01_cook_meat:2",
+                "fingerprint": "sha256-54362ae68201b54a2a2217b0e71bbf865f3cb8a38bce9ad462ea00940d716efa",
+                "status": "succeeded",
+                "actionIndex": 0,
+                "result": {
+                  "ok": true,
+                  "operationId": "trigger:1:trg_s01_cook_meat:2:trigger:trg_s01_cook_meat:step:cook-meat",
+                  "status": "succeeded",
+                  "committed": false,
+                  "code": null,
+                  "stateId": "trigger:trg_s01_cook_meat",
+                  "stateRevision": null
+                },
+                "startedAt": 53304.60000000079,
+                "finishedAt": 53354.60000000079,
+                "ledgerRevision": 4
               },
               {
                 "triggerId": "trg_s01_refuel_campfire",
@@ -908,14 +945,14 @@
               {
                 "triggerId": "trg_s01_build_shelter",
                 "definitionRevision": 1,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
+                "operationId": "trigger:1:trg_s01_build_shelter:5",
+                "fingerprint": "sha256-5b5e86283989534a3d179f03ff8d1762b029c1025acbec8796af99169e04ed0b",
+                "status": "running",
+                "actionIndex": 0,
                 "result": null,
-                "startedAt": null,
+                "startedAt": 79756.69999999902,
                 "finishedAt": null,
-                "ledgerRevision": 1
+                "ledgerRevision": 2
               },
               {
                 "triggerId": "trg_s01_shelter_completed",
@@ -2025,8 +2062,8 @@
                         "removed": false,
                         "hp": 38,
                         "position": {
-                          "x": 9743.14699397184,
-                          "y": 3224.236824846304
+                          "x": 9745.425522704623,
+                          "y": 3209.5114506745226
                         },
                         "ai": {
                           "active": true,
@@ -2043,8 +2080,8 @@
                         "removed": false,
                         "hp": 38,
                         "position": {
-                          "x": 9950.417615581608,
-                          "y": 3250.11289265777
+                          "x": 9969.351766247964,
+                          "y": 3258.5435425972373
                         },
                         "ai": {
                           "active": true,
@@ -2324,10 +2361,10 @@
                         "kind": "item",
                         "removed": false,
                         "position": {
-                          "x": 8279,
+                          "x": 8278.550918727391,
                           "y": 4115
                         },
-                        "placementSignature": "{\"collision\":null,\"group\":\"S01-initial\",\"id\":\"S01-spawn-campfire\",\"kind\":\"item\",\"overrides\":null,\"ref\":\"story.s01.campfire\",\"sceneId\":\"S01\",\"spawnWhen\":null,\"type\":\"ref\",\"version\":1,\"x\":599,\"y\":515}"
+                        "placementSignature": "{\"collision\":null,\"group\":\"S01-initial\",\"id\":\"S01-spawn-campfire\",\"kind\":\"item\",\"overrides\":null,\"ref\":\"story.s01.campfire\",\"sceneId\":\"S01\",\"spawnWhen\":null,\"type\":\"ref\",\"version\":1,\"x\":598.5509187273913,\"y\":515}"
                       }
                     },
                     {
@@ -2416,9 +2453,21 @@
                         "removed": false,
                         "position": {
                           "x": 8277.57341390614,
-                          "y": 4121.682018827917
+                          "y": 4122.131100100525
                         },
-                        "placementSignature": "{\"collision\":null,\"group\":\"S01-cooking-rack\",\"id\":\"S01-prop-cooking-rack\",\"kind\":\"item\",\"overrides\":null,\"ref\":\"story.s01.cooking_rack\",\"sceneId\":\"S01\",\"spawnWhen\":{\"blackboardKey\":\"storyState\",\"equals\":true,\"path\":\"s01Survival.wolfSkinned\"},\"type\":\"ref\",\"version\":1,\"x\":597.5734139061408,\"y\":521.6820188279167}"
+                        "placementSignature": "{\"collision\":null,\"group\":\"S01-cooking-rack\",\"id\":\"S01-prop-cooking-rack\",\"kind\":\"item\",\"overrides\":null,\"ref\":\"story.s01.cooking_rack\",\"sceneId\":\"S01\",\"spawnWhen\":{\"blackboardKey\":\"storyState\",\"equals\":true,\"path\":\"s01Survival.wolfSkinned\"},\"type\":\"ref\",\"version\":1,\"x\":597.5734139061408,\"y\":522.1311001005256}"
+                      }
+                    },
+                    {
+                      "id": "S01-prop-tanning-rack",
+                      "state": {
+                        "kind": "item",
+                        "removed": false,
+                        "position": {
+                          "x": 8162.858302709539,
+                          "y": 4101.915295070305
+                        },
+                        "placementSignature": "{\"collision\":{\"mode\":\"block\",\"points\":[[-23,-6],[0,-2],[24,-6],[24,-12],[0,-8],[-23,-13]],\"shapeType\":\"polygon\"},\"group\":\"S01-tanning-rack\",\"id\":\"S01-prop-tanning-rack\",\"kind\":\"item\",\"overrides\":null,\"ref\":\"story.s01.tanning_rack\",\"sceneId\":\"S01\",\"spawnWhen\":{\"blackboardKey\":\"storyState\",\"equals\":true,\"path\":\"s01Survival.meatCooked\"},\"type\":\"ref\",\"version\":1,\"x\":482.8583027095395,\"y\":489.9152950703045}"
                       }
                     },
                     {
@@ -2459,7 +2508,7 @@
             "secondsPerUnit": 100,
             "maxUnits": 10,
             "units": 4,
-            "remainingSeconds": 327.98909999999967,
+            "remainingSeconds": 346.11529999998226,
             "active": true
           }
         },
@@ -2870,8 +2919,63 @@
         "constructionState": {
           "schemaVersion": 1,
           "structures": [],
-          "pending": [],
-          "operations": []
+          "pending": [
+            {
+              "definitionId": "construction.s01.small_shelter",
+              "siteId": "site.s01.small_shelter",
+              "operationId": "construction:S01:smallShelter",
+              "status": "active",
+              "elapsed": 1.917000000000001,
+              "duration": 6,
+              "progress": 0.3195000000000002,
+              "emergency": false,
+              "toolInstanceId": null,
+              "toolId": null,
+              "characterId": "refugee",
+              "materialOperationId": "construction:S01:smallShelter:materials",
+              "operationFingerprint": "[\"refugee\",\"construction.s01.small_shelter\",\"site.s01.small_shelter\",false]",
+              "reservedCosts": [
+                {
+                  "itemId": "resource.wood",
+                  "quantity": 3
+                }
+              ],
+              "reservedItems": [
+                {
+                  "item": {
+                    "id": "resource.wood",
+                    "name": "木材",
+                    "type": "material",
+                    "imageId": "inventory.resource.wood",
+                    "assetId": "inventory.resource.wood",
+                    "maxStack": 99,
+                    "sprite": {
+                      "height": 40,
+                      "width": 40
+                    },
+                    "subType": "wood"
+                  },
+                  "quantity": 3
+                }
+              ],
+              "cancelReason": null
+            }
+          ],
+          "operations": [
+            {
+              "operationId": "construction:S01:smallShelter",
+              "fingerprint": "[\"refugee\",\"construction.s01.small_shelter\",\"site.s01.small_shelter\",false]",
+              "result": {
+                "ok": true,
+                "status": "active",
+                "operationId": "construction:S01:smallShelter",
+                "siteId": "site.s01.small_shelter",
+                "definitionId": "construction.s01.small_shelter",
+                "duration": 6,
+                "emergency": false
+              }
+            }
+          ]
         },
         "battleState": {
           "schemaVersion": 1,

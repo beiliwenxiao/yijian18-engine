@@ -405,7 +405,7 @@
           "kind": "item",
           "ref": "story.s01.campfire",
           "type": "ref",
-          "x": 599,
+          "x": 598.5509187273913,
           "y": 515
         },
         {
@@ -947,7 +947,7 @@
         {
           "editor": {
             "locked": false,
-            "visible": true
+            "visible": false
           },
           "group": "S01-cooking-rack",
           "id": "S01-prop-cooking-rack",
@@ -960,7 +960,7 @@
           },
           "type": "ref",
           "x": 597.5734139061408,
-          "y": 521.6820188279167
+          "y": 522.1311001005256
         }
       ],
       "visible": true

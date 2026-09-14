@@ -226,9 +226,55 @@ export class EditorInteractionBase {
                         return structuredClone(model.getCandidate().project?.library || {});
                     },
                     saveContentLibrary: async (library) => {
+                        const projectPath = this._canonicalProjectPath();
                         const session = this._canonicalEditorSession('project');
+                        const expectedCampfirePresentation = structuredClone(
+                            library?.items?.find(item => item?.id === 'story.s01.campfire')?.campfirePresentation?.presentation || null
+                        );
+                        console.info('[EditorInteraction][ContentLibrarySave] patch-before', {
+                            projectPath,
+                            expectedCampfirePresentation,
+                            candidateBefore: this.documentService.requireProject(projectPath)
+                                .getCandidate().project?.library?.items
+                                ?.find(item => item?.id === 'story.s01.campfire')?.campfirePresentation?.presentation || null
+                        });
                         session.patch('library', structuredClone(library));
-                        return session.save();
+                        console.info('[EditorInteraction][ContentLibrarySave] patch-after', {
+                            projectPath,
+                            candidateAfter: session.model.getCandidate().project?.library?.items
+                                ?.find(item => item?.id === 'story.s01.campfire')?.campfirePresentation?.presentation || null
+                        });
+                        const result = await session.save();
+                        console.info('[EditorInteraction][ContentLibrarySave] session-save-result', {
+                            projectPath,
+                            ok: result?.ok,
+                            committed: result?.committed,
+                            code: result?.code,
+                            transactionId: result?.transactionId,
+                            changes: result?.changes?.map(change => ({ operation: change.operation, path: change.path }))
+                        });
+                        if (result?.ok !== true || result.committed !== true) return result;
+                        try {
+                            const project = await this._readCanonicalJson(projectPath);
+                            console.info('[EditorInteraction][ContentLibrarySave] disk-readback', {
+                                projectPath,
+                                expectedCampfirePresentation,
+                                committedCampfirePresentation: project.library?.items
+                                    ?.find(item => item?.id === 'story.s01.campfire')?.campfirePresentation?.presentation || null
+                            });
+                            session.acceptExternalProjectCommit(project, {
+                                snapshotRevision: result.snapshotRevision
+                            });
+                            return { ...result, project, library: structuredClone(project.library || {}) };
+                        } catch (error) {
+                            console.error('[EditorInteraction] 内容库提交后磁盘回读失败', error);
+                            return {
+                                ...result,
+                                ok: false,
+                                code: 'contentLibraryReadbackFailed',
+                                error
+                            };
+                        }
                     },
                     presentationProfile: this._presentationProfile,
                     openTriggerEditor: (definitionId, target = 'triggers') => this._openTriggerEditor(definitionId, target),

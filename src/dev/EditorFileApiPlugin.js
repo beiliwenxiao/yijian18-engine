@@ -192,8 +192,24 @@ export function editorFileAPIPlugin({ repoRoot, allowedProjectPaths = [] } = {})
       recovery = recovery || adapter.initialize();
       const notifiedRevisions = new Map();
       const sceneCommitEvent = 'yijian18:canonical-scene-commit';
+      const projectCommitEvent = 'yijian18:canonical-project-commit';
       const canonicalSceneId = /^S(?:0[1-9]|1[0-4])(?:-C\d{2})?$/;
       const logger = server.config?.logger || console;
+      const resolveProjectCommit = filePath => {
+        const absolutePath = path.resolve(String(filePath || ''));
+        const relativePath = normalizeRelative(path.relative(root, absolutePath));
+        for (const projectPath of projects) {
+          const info = canonicalInfo(projectPath);
+          if (relativePath !== info.projectPath) continue;
+          return {
+            absolutePath,
+            relativePath,
+            projectPath: info.projectPath,
+            gameId: path.posix.basename(info.projectRoot)
+          };
+        }
+        return null;
+      };
       const resolveSceneCommit = filePath => {
         const absolutePath = path.resolve(String(filePath || ''));
         const relativePath = normalizeRelative(path.relative(root, absolutePath));
@@ -227,7 +243,47 @@ export function editorFileAPIPlugin({ repoRoot, allowedProjectPaths = [] } = {})
           logger.warn(`[EditorFileApiPlugin][CanonicalHotSync] baselineFailed=${error?.message || error}`);
         }
       }
+      const notifyProjectCommit = (filePath, source = 'transaction') => {
+        const commit = resolveProjectCommit(filePath);
+        if (!commit) return false;
+        let stat;
+        try {
+          stat = fs.statSync(commit.absolutePath);
+          if (!stat.isFile()) return false;
+        } catch (error) {
+          logger.warn(`[EditorFileApiPlugin][CanonicalHotSync] source=${source} projectPath=${commit.projectPath} statFailed=${error?.message || error}`);
+          return false;
+        }
+        const revision = `${stat.mtimeMs}:${stat.size}`;
+        if (notifiedRevisions.get(commit.relativePath) === revision) {
+          /* 火堆项目 HMR 排障日志：
+          logger.info(`[EditorFileApiPlugin][CanonicalHotSync] source=${source} projectPath=${commit.projectPath} revision=${revision} wsSent=false duplicate=true`);
+          */
+          return false;
+        }
+        try {
+          server.ws.send({
+            type: 'custom',
+            event: projectCommitEvent,
+            data: {
+              gameId: commit.gameId,
+              projectPath: commit.projectPath,
+              revision,
+              ts: Date.now()
+            }
+          });
+          notifiedRevisions.set(commit.relativePath, revision);
+          /* 火堆项目 HMR 排障日志：
+          logger.info(`[EditorFileApiPlugin][CanonicalHotSync] source=${source} projectPath=${commit.projectPath} revision=${revision} wsSent=true`);
+          */
+          return true;
+        } catch (error) {
+          logger.warn(`[EditorFileApiPlugin][CanonicalHotSync] source=${source} projectPath=${commit.projectPath} revision=${revision} wsSent=false error=${error?.message || error}`);
+          return false;
+        }
+      };
       const notifySceneCommit = (filePath, source = 'transaction') => {
+        if (resolveProjectCommit(filePath)) return notifyProjectCommit(filePath, source);
         const commit = resolveSceneCommit(filePath);
         if (!commit) return false;
         let stat;
@@ -349,12 +405,40 @@ export function editorFileAPIPlugin({ repoRoot, allowedProjectPaths = [] } = {})
             if (!Array.isArray(body.changes) || body.changes.length === 0) {
               return reply(res, 400, { ok: false, committed: false, error: 'changes 不能为空' });
             }
+            /* 火堆内容库提交排障日志：
+            logger.info('[EditorFileApiPlugin][CanonicalTransaction] received', {
+              projectPath,
+              repositoryRoot: root,
+              changes: body.changes.map(change => ({
+                operation: change.operation,
+                path: normalizeRelative(change.path || change.to),
+                from: change.from ? normalizeRelative(change.from) : undefined
+              }))
+            });
+            */
             let validated;
             const result = await adapter.commitPrepared(() => {
               validated = validateCanonicalChangeSet(root, projectPath, body.changes);
+              /* 火堆内容库提交排障日志：
+              const campfirePresentation = validated.project.library?.items
+                ?.find(item => item?.id === 'story.s01.campfire')?.campfirePresentation?.presentation || null;
+              logger.info('[EditorFileApiPlugin][CanonicalTransaction] validated', {
+                projectPath,
+                canonicalChanges: validated.changes.map(change => ({ operation: change.operation, path: change.path })),
+                campfirePresentation
+              });
+              */
               return validated.changes;
             });
             if (!result.ok) return reply(res, 500, { ...result, error: result.error?.message || '磁盘提交失败' });
+            /* 火堆内容库提交排障日志：
+            logger.info('[EditorFileApiPlugin][CanonicalTransaction] committed', {
+              projectPath,
+              repositoryRoot: root,
+              transactionId: result.transactionId,
+              committed: result.committed
+            });
+            */
             for (const change of validated.changes) {
               if (change.operation === 'delete') continue;
               const target = normalizeRelative(change.path || change.to);

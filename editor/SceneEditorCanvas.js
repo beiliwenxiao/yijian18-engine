@@ -84,6 +84,9 @@ export class SceneEditorCanvas {
       }
     }
 
+    // 火堆碰撞是编辑期辅助几何，必须在所有对象后绘制，避免被出生点等预览覆盖。
+    this._renderCampfireCollisionOverlays(ctx, data.layers);
+
     // 绘制网格和辅助方框（在所有图层之上）
     if (editor.options.showGrid) this._renderGrid(ctx, sceneX, sceneY, sceneW, sceneH);
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
@@ -93,6 +96,37 @@ export class SceneEditorCanvas {
     ctx.restore();
     this._renderTriggerLinks();
     this._renderSelection();
+  }
+
+  _renderCampfireCollisionOverlays(ctx, layers) {
+    for (const layer of layers) {
+      if (!layer?.visible) continue;
+      for (const object of layer.objects || []) {
+        if (!this.editor.layers.isObjectVisible(layer, object) || object?.type !== 'ref') continue;
+        const ellipse = this.editor.assets.resolvePlacementVisual?.(object)?.collisionEllipse;
+        if (!ellipse || !(ellipse.radiusX > 0) || !(ellipse.radiusY > 0)) continue;
+        ctx.save();
+        ctx.beginPath();
+        ctx.ellipse(ellipse.x, ellipse.y, ellipse.radiusX, ellipse.radiusY, 0, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255, 112, 67, 0.32)';
+        ctx.fill();
+        ctx.strokeStyle = '#ff5722';
+        ctx.lineWidth = 2.5;
+        ctx.setLineDash([5, 3]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = '#ff8a65';
+        ctx.font = 'bold 10px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        ctx.fillText(
+          `碰撞 ${ellipse.radiusX * 2}×${ellipse.radiusY * 2}`,
+          ellipse.x,
+          ellipse.y - ellipse.radiusY - 3
+        );
+        ctx.restore();
+      }
+    }
   }
 
   /**
@@ -281,9 +315,39 @@ export class SceneEditorCanvas {
     const label = (obj.name || visual?.definition?.name || obj.ref) + (obj.group ? ` [${obj.group}]` : '');
 
     ctx.save();
-    if (visual?.image && visual.bounds) {
-      const { x, y, width, height } = visual.bounds;
-      ctx.drawImage(visual.image, x, y, width, height);
+    const layers = Array.isArray(visual?.layers) ? visual.layers : [];
+    const hasCompositeLayer = layers.some(layer => layer?.image && layer?.bounds);
+    if ((visual?.image && visual.bounds) || hasCompositeLayer) {
+      const { x, y } = visual.bounds;
+      if (hasCompositeLayer) {
+        for (const layer of layers) {
+          if (!layer?.image || !layer.bounds) continue;
+          ctx.drawImage(layer.image, layer.bounds.x, layer.bounds.y, layer.bounds.width, layer.bounds.height);
+        }
+      } else {
+        const { width, height } = visual.bounds;
+        ctx.drawImage(visual.image, x, y, width, height);
+      }
+      const collisionEllipse = visual?.collisionEllipse;
+      if (collisionEllipse?.radiusX > 0 && collisionEllipse?.radiusY > 0) {
+        ctx.beginPath();
+        ctx.ellipse(
+          collisionEllipse.x,
+          collisionEllipse.y,
+          collisionEllipse.radiusX,
+          collisionEllipse.radiusY,
+          0,
+          0,
+          Math.PI * 2
+        );
+        ctx.fillStyle = 'rgba(255, 112, 67, 0.20)';
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255, 112, 67, 0.95)';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([4, 3]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
       this._drawLogicLabel(ctx, label, x, y - 4, color);
 
       // placement 坐标是业务脚点；小十字仅辅助精确拖放，不覆盖主体图片。

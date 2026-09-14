@@ -1461,9 +1461,9 @@ export class SceneEditorUI {
         <textarea id="cde-props" style="width:100%;box-sizing:border-box;min-height:180px;background:#0a1020;color:#fff;border:1px solid #2a3a5e;border-radius:3px;padding:6px;font-family:monospace;font-size:12px;">${escapeHtml(JSON.stringify(rest, null, 2))}</textarea></div>
       <div style="display:flex;gap:8px;justify-content:flex-end;">
         <button id="cde-cancel" style="padding:6px 14px;background:#3a4a7e;border:none;border-radius:4px;color:#fff;cursor:pointer;">取消</button>
-        <button id="cde-apply" style="padding:6px 14px;background:#4CAF50;border:none;border-radius:4px;color:#000;font-weight:bold;cursor:pointer;">应用</button>
+        <button id="cde-apply" style="padding:6px 14px;background:#4CAF50;border:none;border-radius:4px;color:#000;font-weight:bold;cursor:pointer;">应用并保存</button>
       </div>
-      <div style="margin-top:6px;color:#89a;font-size:11px;">应用后点资源库「💾 保存库」持久化到工程</div>
+      <div style="margin-top:6px;color:#89a;font-size:11px;">应用会立即保存到工程；资源库「💾 保存库」可用于重新提交当前内容库。</div>
     `;
     modal.style.display = 'block';
 
@@ -1535,7 +1535,7 @@ export class SceneEditorUI {
       if (isNew) this.editor.assets.discardContentDefinition?.(catKey, def);
       modal.style.display = 'none';
     };
-    modal.querySelector('#cde-apply').onclick = () => {
+    modal.querySelector('#cde-apply').onclick = async () => {
       const nextId = isNew ? String(idInput?.value || '').trim() : def.id;
       if (isNew && !STABLE_CONTENT_ID_PATTERN.test(nextId)) {
         this.showToast('稳定 ID 必须以字母开头，且只能使用字母、数字、点、下划线或短横线', 'error');
@@ -1583,6 +1583,15 @@ export class SceneEditorUI {
       Object.assign(def, parsed);
       def.id = nextId;
       def.name = nextName;
+      /* 火堆内容定义保存链路排障日志：
+      if (def.id === 'story.s01.campfire') {
+        console.info('[SceneEditorUI][ContentDefinitionApply] campfire-draft-applied', {
+          id: def.id,
+          campfirePresentation: structuredClone(def.campfirePresentation?.presentation || null)
+        });
+      }
+      */
+
       if (isItem) {
         def.type = nextType;
         def.imageId = nextImage;
@@ -1591,7 +1600,18 @@ export class SceneEditorUI {
       modal.style.display = 'none';
       this.editor.assets.updateContentList?.();
       void this.editor.assets.refreshPlacementVisuals?.();
-      this.showToast('已应用（记得点"保存库"）', 'success');
+      /* 火堆内容定义保存链路排障日志：
+      console.info('[SceneEditorUI][ContentDefinitionApply] canonical-save-request', {
+        id: def.id,
+        campfirePresentation: def.id === 'story.s01.campfire'
+          ? structuredClone(def.campfirePresentation?.presentation || null)
+          : null
+      });
+      */
+      const saveResult = await this.editor.assets.saveContentLibrary?.();
+      if (saveResult?.ok === true && saveResult.committed === true) {
+        this.showToast('定义已应用并保存到工程', 'success');
+      }
     };
   }
 

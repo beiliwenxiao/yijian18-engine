@@ -496,74 +496,199 @@ export class DataDrivenPrologueScene extends BaseGameScene {
     }
   }
 
-  /** 仅监听带 provenance 与 revision 的 Vite custom HMR canonical 场景提交。 */
+  /** 监听带 provenance/revision 的 Vite custom HMR canonical 场景和项目内容提交。 */
   _watchEditorSceneCommits() {
-    const HMR_EVENT = 'yijian18:canonical-scene-commit';
+    const SCENE_HMR_EVENT = 'yijian18:canonical-scene-commit';
+    const PROJECT_HMR_EVENT = 'yijian18:canonical-project-commit';
     const GAME_ID = 'sanguo_zhangjiao';
     const PROJECT_PATH = 'example/sanguo_zhangjiao/game.project.json';
     const CANONICAL_SCENE_ID = /^S(?:0[1-9]|1[0-4])(?:-C\d{2})?$/;
     const generations = new Map();
     const controllers = new Map();
     const seenRevisions = new Map();
+    const seenProjectRevisions = new Set();
     let disposed = false;
     this._editorSceneCommitGenerations = generations;
     this._editorSceneCommitControllers = controllers;
+    this._editorProjectCommitGeneration = 0;
+    this._editorProjectCommitController = null;
 
-    const accept = payload => {
+    const normalizeProjectPayload = payload => {
       const projectPath = typeof payload?.projectPath === 'string'
         ? payload.projectPath.replace(/\\/g, '/')
         : null;
       const revision = typeof payload?.revision === 'string' && payload.revision.length > 0
         ? payload.revision
         : null;
-      if (disposed
-        || payload?.gameId !== GAME_ID
-        || projectPath !== PROJECT_PATH
-        || !CANONICAL_SCENE_ID.test(payload?.sceneId || '')
-        || !revision) return false;
+      if (disposed || payload?.gameId !== GAME_ID || projectPath !== PROJECT_PATH || !revision) return null;
+      return { revision, ts: Number.isFinite(payload?.ts) ? payload.ts : null };
+    };
+    const acceptScene = payload => {
+      const project = normalizeProjectPayload(payload);
+      if (!project || !CANONICAL_SCENE_ID.test(payload?.sceneId || '')) return false;
 
       let revisions = seenRevisions.get(payload.sceneId);
       if (!revisions) {
         revisions = new Set();
         seenRevisions.set(payload.sceneId, revisions);
       }
-      if (revisions.has(revision)) {
+      if (revisions.has(project.revision)) {
         this._debugCanonicalHotSync('notification-duplicate', {
-          source: 'hmr', sceneId: payload.sceneId, revision
+          source: 'hmr', sceneId: payload.sceneId, revision: project.revision
         });
         return false;
       }
-      revisions.add(revision);
+      revisions.add(project.revision);
       while (revisions.size > 8) revisions.delete(revisions.values().next().value);
 
       this._debugCanonicalHotSync('notification', {
-        source: 'hmr', sceneId: payload.sceneId, revision, ts: null
+        source: 'hmr', sceneId: payload.sceneId, revision: project.revision, ts: project.ts
       });
       void this._handleEditorSceneCommit({
         sceneId: payload.sceneId,
-        revision,
-        ts: null,
+        revision: project.revision,
+        ts: project.ts,
         source: 'hmr'
       });
       return true;
     };
-    const hmrHandler = payload => { accept(payload); };
+    const acceptProject = payload => {
+      const project = normalizeProjectPayload(payload);
+      if (!project) return false;
+      if (seenProjectRevisions.has(project.revision)) {
+        this._debugCanonicalHotSync('project-notification-duplicate', {
+          source: 'hmr', revision: project.revision
+        });
+        return false;
+      }
+      seenProjectRevisions.add(project.revision);
+      while (seenProjectRevisions.size > 8) seenProjectRevisions.delete(seenProjectRevisions.values().next().value);
+      this._debugCanonicalHotSync('project-notification', {
+        source: 'hmr', revision: project.revision, ts: project.ts
+      });
+      /* 火堆项目 HMR 排障日志：
+      console.info('[DDScene][CampfireProjectHotSync] notification-received', {
+        revision: project.revision,
+        projectPath: PROJECT_PATH,
+        currentSceneId: this.currentSceneId
+      });
+      */
+      void this._handleEditorProjectCommit({ revision: project.revision, ts: project.ts, source: 'hmr' });
+      return true;
+    };
+    const sceneHmrHandler = payload => { acceptScene(payload); };
+    const projectHmrHandler = payload => { acceptProject(payload); };
     const hot = import.meta.hot || null;
-    hot?.on?.(HMR_EVENT, hmrHandler);
+    hot?.on?.(SCENE_HMR_EVENT, sceneHmrHandler);
+    hot?.on?.(PROJECT_HMR_EVENT, projectHmrHandler);
 
     const dispose = () => {
       if (disposed) return;
       disposed = true;
-      hot?.off?.(HMR_EVENT, hmrHandler);
+      hot?.off?.(SCENE_HMR_EVENT, sceneHmrHandler);
+      hot?.off?.(PROJECT_HMR_EVENT, projectHmrHandler);
       for (const controller of controllers.values()) controller.abort();
       controllers.clear();
       generations.clear();
       seenRevisions.clear();
+      seenProjectRevisions.clear();
+      this._editorProjectCommitGeneration += 1;
+      this._editorProjectCommitController?.abort?.();
+      this._editorProjectCommitController = null;
       if (this._editorSceneCommitControllers === controllers) this._editorSceneCommitControllers = null;
       if (this._editorSceneCommitGenerations === generations) this._editorSceneCommitGenerations = null;
       if (this._editorSceneSyncUnwatch === dispose) this._editorSceneSyncUnwatch = null;
     };
     return dispose;
+  }
+
+  /** 项目内容库提交只重配当前火堆；不替换启动时 GameLoader registry、不重建场景或领域状态。 */
+  async _handleEditorProjectCommit({ revision = null, ts = null, source = 'unknown' } = {}) {
+    const session = this._worldLoadSession;
+    const expectedSceneId = this.currentSceneId;
+    if (!session || !expectedSceneId) {
+      this._debugCanonicalHotSync('project-runtime-unavailable', { source, revision, ts });
+      return;
+    }
+    const generation = (this._editorProjectCommitGeneration || 0) + 1;
+    this._editorProjectCommitGeneration = generation;
+    this._editorProjectCommitController?.abort?.();
+    const controller = typeof AbortController === 'function' ? new AbortController() : null;
+    this._editorProjectCommitController = controller;
+    const isCurrent = () => (
+      this._editorProjectCommitGeneration === generation
+      && this._editorProjectCommitController === controller
+      && this._worldLoadSession === session
+      && this.currentSceneId === expectedSceneId
+      && (!controller || !controller.signal.aborted)
+    );
+
+    try {
+      const response = await fetch('game.project.json', {
+        cache: 'no-store',
+        signal: controller?.signal
+      });
+      if (!response.ok) throw new Error(`读取项目内容失败: HTTP ${response.status}`);
+      const project = await response.json();
+      /* 火堆项目 HMR 排障日志：
+      console.info('[DDScene][CampfireProjectHotSync] project-readback', {
+        revision,
+        campfirePresentation: project?.library?.items
+          ?.find(item => item?.id === 'story.s01.campfire')?.campfirePresentation?.presentation || null
+      });
+      */
+      if (!isCurrent()) {
+        this._debugCanonicalHotSync('project-superseded-after-fetch', { source, revision, generation });
+        return;
+      }
+      const result = await this.sanguoWorldRuntimeCoordinator.configureWorldRuntimeFromLoad({
+        projectCommit: project,
+        expectedSceneId,
+        shouldApply: isCurrent
+      });
+      if (result?.code === 'superseded' || !isCurrent()) {
+        this._debugCanonicalHotSync('project-superseded', { source, revision, generation });
+        return;
+      }
+      if (result?.ok === false) throw new Error(result.message || result.code || '火堆配置同步失败');
+      /* 火堆项目 HMR 排障日志：
+      console.info('[DDScene][CampfireProjectHotSync] configure-result', {
+        revision,
+        sceneId: expectedSceneId,
+        result
+      });
+      */
+      this._debugCanonicalHotSync('project-commit', {
+        source,
+        revision,
+        generation,
+        sceneId: expectedSceneId,
+        applied: result?.applied === true,
+        cleared: result?.cleared === true,
+        collisionEllipse: result?.collisionEllipse || null
+      });
+      if (result?.applied === true) {
+        const ellipse = result.collisionEllipse;
+        const width = Math.round((ellipse?.radiusX || 0) * 2 * 100) / 100;
+        const height = Math.round((ellipse?.radiusY || 0) * 2 * 100) / 100;
+        this._showScreenTip?.(`碰撞椭圆已更新为 ${width} × ${height}`, { title: '火堆配置已同步' });
+      }
+    } catch (error) {
+      if (error?.name === 'AbortError' || !isCurrent()) {
+        this._debugCanonicalHotSync(error?.name === 'AbortError' ? 'project-aborted' : 'project-superseded', {
+          source,
+          revision,
+          generation,
+          reason: error?.message || null
+        });
+        return;
+      }
+      const message = error?.message || '编辑器火堆配置同步失败';
+      console.warn('[DDScene] 应用编辑器火堆配置失败', error);
+      this._showScreenTip?.(message, { title: '火堆配置同步失败' });
+    } finally {
+      if (this._editorProjectCommitController === controller) this._editorProjectCommitController = null;
+    }
   }
 
   /**

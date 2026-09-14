@@ -36,7 +36,7 @@ import { getWorldMapCellSceneId } from '../core/WorldMapCell.js';
 const DEBUG_PANEL_DEFAULT_LAYOUT = Object.freeze({
   left: 0,
   top: 0,
-  width: 368,
+  width: 218,
   height: 888
 });
 const DEBUG_PANEL_MIN_WIDTH = 240;

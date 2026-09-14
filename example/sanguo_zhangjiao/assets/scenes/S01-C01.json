@@ -1,145 +1,159 @@
 {
   "id": "S01-C01",
-  "name": "S01·小庇护所内",
+  "layers": [
+    {
+      "id": "S01-C01-background",
+      "locked": false,
+      "name": "庇护所内景",
+      "objects": [
+        {
+          "depthSort": false,
+          "height": 560,
+          "id": "S01-C01-shelter-shell",
+          "imageId": "s01.environment.smallShelter",
+          "name": "小庇护所木墙",
+          "type": "image",
+          "width": 720,
+          "x": 270,
+          "y": 72
+        },
+        {
+          "depthSort": true,
+          "height": 150,
+          "id": "S01-C01-bed",
+          "imageId": "s10.story.zhangjiaoDeathbed",
+          "name": "草铺木床",
+          "type": "image",
+          "width": 250,
+          "x": 704,
+          "y": 382
+        },
+        {
+          "depthSort": true,
+          "height": 84,
+          "id": "S01-C01-chest",
+          "imageId": "s01.prop.shelterChest",
+          "name": "木制储物箱",
+          "type": "image",
+          "width": 112,
+          "x": 382,
+          "y": 440
+        },
+        {
+          "depthSort": false,
+          "height": 120,
+          "id": "S01-C01-window",
+          "imageId": "s01.environment.shelterWindow",
+          "name": "庇护所窗户",
+          "type": "image",
+          "width": 120,
+          "x": 575.001001001001,
+          "y": 235.47047047047045
+        },
+        {
+          "height": 70,
+          "id": "S01-C01-door",
+          "name": "庇护所门口",
+          "semanticRole": "exit",
+          "type": "region",
+          "width": 142,
+          "x": 568,
+          "y": 548
+        }
+      ],
+      "visible": true
+    },
+    {
+      "id": "S01-C01-spawns",
+      "locked": false,
+      "name": "出生点",
+      "objects": [
+        {
+          "id": "S01-C01-spawn-door",
+          "ref": "player",
+          "type": "spawn",
+          "x": 640,
+          "y": 550
+        }
+      ],
+      "visible": true
+    },
+    {
+      "id": "S01-C01-triggers",
+      "locked": false,
+      "name": "交互绑定",
+      "objects": [
+        {
+          "activeWhen": {
+            "all": [
+              {
+                "equals": true,
+                "path": "s01Survival.shelterCompleted"
+              },
+              {
+                "equals": false,
+                "path": "s01Survival.overnightCompleted"
+              }
+            ]
+          },
+          "event": "interact",
+          "height": 150,
+          "id": "S01-C01-binding-bed",
+          "name": "在床上睡觉",
+          "pointerRadius": 40,
+          "prompt": "{interact}在床上睡觉",
+          "radius": 72,
+          "target": "S01-C01-bed",
+          "targetMode": "id",
+          "triggerId": "trg_s01_overnight",
+          "type": "trigger",
+          "width": 250,
+          "x": 704,
+          "y": 382
+        },
+        {
+          "event": "interact",
+          "height": 84,
+          "id": "S01-C01-binding-chest",
+          "name": "打开储物箱",
+          "pointerRadius": 40,
+          "prompt": "{interact}打开储物箱",
+          "radius": 72,
+          "target": "S01-C01-chest",
+          "targetMode": "id",
+          "triggerId": "trg_s01_open_shelter_chest",
+          "type": "trigger",
+          "width": 112,
+          "x": 382,
+          "y": 440
+        },
+        {
+          "event": "interact",
+          "height": 70,
+          "id": "S01-C01-binding-door",
+          "name": "离开小庇护所",
+          "pointerRadius": 44,
+          "prompt": "{interact}离开小庇护所",
+          "radius": 84,
+          "target": "S01-C01-door",
+          "targetMode": "id",
+          "triggerId": "trg_s01_leave_shelter",
+          "type": "trigger",
+          "width": 142,
+          "x": 568,
+          "y": 548
+        }
+      ],
+      "visible": true
+    }
+  ],
   "backgroundColor": "#392f24",
+  "height": 720,
+  "name": "S01·小庇护所内",
   "previewOnly": false,
   "productionState": "playable",
   "sceneType": "worldChunk",
   "type": "terrain",
-  "worldMap": "s01-shelter",
   "width": 1280,
-  "height": 720,
-  "layers": [
-    {
-      "id": "S01-C01-background",
-      "name": "庇护所内景",
-      "visible": true,
-      "locked": false,
-      "objects": [
-        {
-          "id": "S01-C01-shelter-shell",
-          "type": "image",
-          "name": "小庇护所木墙",
-          "imageId": "s01.environment.smallShelter",
-          "x": 270,
-          "y": 72,
-          "width": 720,
-          "height": 560,
-          "depthSort": false
-        },
-        {
-          "id": "S01-C01-bed",
-          "type": "image",
-          "name": "草铺木床",
-          "imageId": "s10.story.zhangjiaoDeathbed",
-          "x": 704,
-          "y": 382,
-          "width": 250,
-          "height": 150,
-          "depthSort": true
-        },
-        {
-          "id": "S01-C01-chest",
-          "type": "image",
-          "name": "木制储物箱",
-          "imageId": "s01.prop.shelterChest",
-          "x": 382,
-          "y": 440,
-          "width": 112,
-          "height": 84,
-          "depthSort": true
-        },
-        {
-          "id": "S01-C01-window",
-          "type": "image",
-          "name": "庇护所窗户",
-          "imageId": "s01.environment.shelterWindow",
-          "x": 534,
-          "y": 165,
-          "width": 120,
-          "height": 120,
-          "depthSort": false
-        },
-        {
-          "id": "S01-C01-door",
-          "type": "region",
-          "name": "庇护所门口",
-          "semanticRole": "exit",
-          "x": 568,
-          "y": 548,
-          "width": 142,
-          "height": 70
-        }
-      ]
-    },
-    {
-      "id": "S01-C01-spawns",
-      "name": "出生点",
-      "visible": true,
-      "locked": false,
-      "objects": [
-        { "id": "S01-C01-spawn-door", "type": "spawn", "ref": "player", "x": 640, "y": 550 }
-      ]
-    },
-    {
-      "id": "S01-C01-triggers",
-      "name": "交互绑定",
-      "visible": true,
-      "locked": false,
-      "objects": [
-        {
-          "id": "S01-C01-binding-bed",
-          "type": "trigger",
-          "name": "在床上睡觉",
-          "event": "interact",
-          "target": "S01-C01-bed",
-          "targetMode": "id",
-          "triggerId": "trg_s01_overnight",
-          "prompt": "{interact}在床上睡觉",
-          "radius": 72,
-          "pointerRadius": 40,
-          "x": 704,
-          "y": 382,
-          "width": 250,
-          "height": 150,
-          "activeWhen": { "all": [
-            { "equals": true, "path": "s01Survival.shelterCompleted" },
-            { "equals": false, "path": "s01Survival.overnightCompleted" }
-          ] }
-        },
-        {
-          "id": "S01-C01-binding-chest",
-          "type": "trigger",
-          "name": "打开储物箱",
-          "event": "interact",
-          "target": "S01-C01-chest",
-          "targetMode": "id",
-          "triggerId": "trg_s01_open_shelter_chest",
-          "prompt": "{interact}打开储物箱",
-          "radius": 72,
-          "pointerRadius": 40,
-          "x": 382,
-          "y": 440,
-          "width": 112,
-          "height": 84
-        },
-        {
-          "id": "S01-C01-binding-door",
-          "type": "trigger",
-          "name": "离开小庇护所",
-          "event": "interact",
-          "target": "S01-C01-door",
-          "targetMode": "id",
-          "triggerId": "trg_s01_leave_shelter",
-          "prompt": "{interact}离开小庇护所",
-          "radius": 84,
-          "pointerRadius": 44,
-          "x": 568,
-          "y": 548,
-          "width": 142,
-          "height": 70
-        }
-      ]
-    }
-  ]
+  "worldMap": "s01-shelter"
 }

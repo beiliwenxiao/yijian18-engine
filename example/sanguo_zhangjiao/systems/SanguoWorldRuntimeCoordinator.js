@@ -174,8 +174,78 @@ function findSceneCampfireDefinition(sceneData = {}, registries = {}) {
   return null;
 }
 
-/** 世界投影完成后的历史配置消费者；仅替换已完整解析并验证的运行时实例。 */
-async function configureWorldRuntimeFromLoad() {
+/** 世界投影完成后的历史配置消费者；项目内容提交仅原子重配当前火堆，不替换 GameLoader 注册表。 */
+async function configureWorldRuntimeFromLoad(options = {}) {
+  const projectCommit = options?.projectCommit || null;
+  if (projectCommit) {
+    const expectedSceneId = options.expectedSceneId || this.currentSceneId;
+    const shouldApply = typeof options.shouldApply === 'function' ? options.shouldApply : () => true;
+    const isCurrent = () => expectedSceneId === this.currentSceneId && shouldApply();
+    if (!isCurrent()) return { ok: false, code: 'superseded' };
+
+    const sceneData = this._worldLoadSession?.getSceneData?.(expectedSceneId);
+    if (!Array.isArray(sceneData?.layers)) {
+      return {
+        ok: false,
+        code: 'activeSceneUnavailable',
+        message: `当前场景 ${expectedSceneId || 'unknown'} 的 canonical 数据尚未就绪`
+      };
+    }
+    const itemDefinitions = projectCommit?.library?.items;
+    if (!Array.isArray(itemDefinitions)) {
+      return { ok: false, code: 'invalidProjectLibrary', message: '项目内容库缺少 library.items' };
+    }
+    const campfireRefs = new Set();
+    for (const layer of sceneData.layers) {
+      for (const placement of layer?.objects || []) {
+        if (placement?.type === 'ref' && placement.kind === 'item' && placement.ref) {
+          campfireRefs.add(placement.ref);
+        }
+      }
+    }
+    const campfireDefinition = itemDefinitions.find(definition => (
+      campfireRefs.has(definition?.id)
+      && definition?.worldProp === true
+      && definition?.semanticRole === 'campfire'
+    )) || null;
+    if (!campfireDefinition) {
+      if (!isCurrent()) return { ok: false, code: 'superseded' };
+      this._campfireService.dispose();
+      return { ok: true, applied: false, cleared: true };
+    }
+    const campfireConfig = campfireDefinition.campfirePresentation;
+    if (!campfireConfig || typeof campfireConfig !== 'object') {
+      return {
+        ok: false,
+        code: 'invalidCampfirePresentation',
+        message: `火堆 ${campfireDefinition.id} 缺少 campfirePresentation`
+      };
+    }
+
+    // 先在独立服务中校验配置并绑定所有图片；任何失败都不会触碰当前火堆的燃料、点燃状态或碰撞。
+    const validationService = new SceneCampfireService({ configView: campfireConfig });
+    try {
+      const imageIds = validationService.getPresentationImageIds();
+      const layerImages = Object.fromEntries(await Promise.all(Object.entries(imageIds).map(async ([layer, imageId]) => [
+        layer,
+        await this.assetManager.loadAsset(imageId, { required: true })
+      ])));
+      validationService.setPresentationImages(layerImages);
+      if (!isCurrent()) return { ok: false, code: 'superseded' };
+
+      this._campfireService.configure(campfireConfig);
+      this._campfireService.setPresentationImages(layerImages);
+      return {
+        ok: true,
+        applied: true,
+        sceneId: expectedSceneId,
+        collisionEllipse: this._campfireService.getCollisionEllipse()
+      };
+    } finally {
+      validationService.dispose();
+    }
+  }
+
   // 必须等待 GameLoader 完全就绪后才能访问配置消费者
   if (this._gameLoaderReady) {
     await this._gameLoaderReady;
