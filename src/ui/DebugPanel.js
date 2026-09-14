@@ -36,8 +36,8 @@ import { getWorldMapCellSceneId } from '../core/WorldMapCell.js';
 const DEBUG_PANEL_DEFAULT_LAYOUT = Object.freeze({
   left: 0,
   top: 0,
-  width: 350,
-  height: null
+  width: 368,
+  height: 888
 });
 const DEBUG_PANEL_MIN_WIDTH = 240;
 const DEBUG_PANEL_MIN_HEIGHT = 160;
@@ -415,7 +415,7 @@ export class DebugPanel {
     const s = document.createElement('style');
     s.id = 'dp-styles';
     s.textContent = `
-      #debug-panel { position:fixed; top:0; left:0; width:350px; height:100vh; max-width:100vw;
+      #debug-panel { position:fixed; top:0; left:0; width:358px; height:888px; max-width:100vw;
         max-height:100vh; overflow-x:hidden; overflow-y:auto; box-sizing:border-box;
         display:block; pointer-events:auto; background:rgba(0,0,0,0.88); color:#ddd; font:12px/1.5 monospace; border:1px solid #4CAF50;
         border-radius:6px; z-index:99999; user-select:text; }

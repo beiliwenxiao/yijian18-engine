@@ -354,24 +354,24 @@
             "mode": "block",
             "points": [
               [
-                -43,
-                -3
+                -49,
+                -7
               ],
               [
-                52,
-                -5
+                56,
+                -8
               ],
               [
-                37,
-                -37
-              ],
-              [
-                0,
-                -44
-              ],
-              [
-                -30,
+                42,
                 -33
+              ],
+              [
+                1,
+                -38
+              ],
+              [
+                -37,
+                -32
               ]
             ],
             "shapeType": "polygon"
@@ -946,7 +946,8 @@
         },
         {
           "editor": {
-            "locked": false
+            "locked": false,
+            "visible": true
           },
           "group": "S01-cooking-rack",
           "id": "S01-prop-cooking-rack",
@@ -1236,7 +1237,7 @@
           "sliceKey": "tree1",
           "type": "slice",
           "width": 96,
-          "x": 113.06306306306305,
+          "x": 112.08087186752715,
           "y": 352.7807807807808
         },
         {
