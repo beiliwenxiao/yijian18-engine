@@ -1,6 +1,23 @@
 /************************************************************
- * 场景火堆、时间氛围、天气粒子、深度绘制与碰撞服务。
- * 只消费调用方传入的世界坐标，不读取或应用 worldOffset。
+
+ * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
+
+ *
+
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+
+ * @author    刘枭 (beiliwenxiao)
+
+ * @email     beiliwenxiao@qq.com
+
+ * @date      2026-01-14
+
+ * @blog      https://blog.csdn.net/beiliwenxiao
+
+ * @repo      https://github.com/beiliwenxiao/yijian18-engine
+
+ *            https://gitee.com/coderaaa/yijian18-engine
+
  ************************************************************/
 
 import { InputHints } from '../input/InputHints.js';
@@ -633,30 +650,32 @@ const campfireFeatureMethods = {
     // 跳跃（滞空）期间不检查火堆碰撞，允许跳过火堆。
     if (this.jumpSystem?.isJumping?.(this.playerEntity)) return;
     const transform = this.playerEntity?.getComponent?.('transform');
-    if (!transform) return;
+    const campfireEllipse = this.getCollisionEllipse();
+    if (!transform || !campfireEllipse) return;
 
-    const playerX = transform.position.x;
-    const playerY = transform.position.y;
-    const playerRadius = 20;
-    const collisionWidth = this.presentation.collisionWidth;
-    const collisionHeight = this.presentation.collisionHeight;
-    const campfireLeft = this.campfire.x - collisionWidth / 2;
-    const campfireRight = this.campfire.x + collisionWidth / 2;
-    const campfireTop = this.campfire.y - 15;
-    const campfireBottom = campfireTop + collisionHeight;
-    const playerLeft = playerX - playerRadius;
-    const playerRight = playerX + playerRadius;
-    const playerTop = playerY - playerRadius;
-    const playerBottom = playerY + playerRadius;
+    const collision = this.playerEntity?.getComponent?.('collision');
+    const offsetX = Number(collision?.offsetX) || 0;
+    const offsetY = Number(collision?.offsetY) || 0;
+    const playerRadiusX = Number(collision?.radiusX) > 0 ? Number(collision.radiusX) : 20;
+    const playerRadiusY = Number(collision?.radiusY) > 0 ? Number(collision.radiusY) : 20;
+    const playerX = transform.position.x + offsetX;
+    const playerY = transform.position.y + offsetY;
+    const expandedRadiusX = campfireEllipse.radiusX + playerRadiusX;
+    const expandedRadiusY = campfireEllipse.radiusY + playerRadiusY;
+    const dx = playerX - campfireEllipse.x;
+    const dy = playerY - campfireEllipse.y;
+    const normalizedDistance = Math.hypot(dx / expandedRadiusX, dy / expandedRadiusY);
+    if (normalizedDistance >= 1) return;
 
-    if (playerRight <= campfireLeft || playerLeft >= campfireRight
-      || playerBottom <= campfireTop || playerTop >= campfireBottom) return;
-    const dx = playerX - this.campfire.x;
-    const dy = playerY - this.campfire.y;
-    const overlapX = dx > 0 ? campfireRight - playerLeft : campfireLeft - playerRight;
-    const overlapY = dy > 0 ? campfireBottom - playerTop : campfireTop - playerBottom;
-    if (Math.abs(overlapX) < Math.abs(overlapY)) transform.position.x += overlapX;
-    else transform.position.y += overlapY;
+    if (normalizedDistance > 1e-7) {
+      const worldDistance = Math.hypot(dx, dy) || 1;
+      const resolvedX = campfireEllipse.x + dx / normalizedDistance + dx / worldDistance;
+      const resolvedY = campfireEllipse.y + dy / normalizedDistance + dy / worldDistance;
+      transform.position.x = resolvedX - offsetX;
+      transform.position.y = resolvedY - offsetY;
+    } else {
+      transform.position.y = campfireEllipse.y + expandedRadiusY + 1 - offsetY;
+    }
   }
 };
 
@@ -899,6 +918,20 @@ export class SceneCampfireService {
 
   getPosition() {
     return { x: this.campfire.x, y: this.campfire.y };
+  }
+
+  /** 返回火堆当前使用的只读世界碰撞椭圆，供物理与诊断层复用。 */
+  getCollisionEllipse() {
+    if (!this.isConfigured()) return null;
+    const width = Number(this.presentation?.collisionWidth);
+    const height = Number(this.presentation?.collisionHeight);
+    if (!(width > 0) || !(height > 0)) return null;
+    return {
+      x: this.campfire.x,
+      y: this.campfire.y - 28 + height / 2,
+      radiusX: width / 2,
+      radiusY: height / 2
+    };
   }
 
   getPresentationImageIds() {

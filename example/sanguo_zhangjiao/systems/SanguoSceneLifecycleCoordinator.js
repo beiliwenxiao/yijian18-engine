@@ -341,6 +341,7 @@ function renderPostPipeline(ctx) {
     enabled: this.debugShowCollisionPolygons,
     camera: this.camera,
     terrains: this._terrains,
+    campfire: this.context.services.campfire,
     label: 'DDScene'
   });
   this.context.services.diagnostics?.renderActorCollisionEdge(ctx, {

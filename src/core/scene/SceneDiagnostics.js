@@ -300,6 +300,7 @@ export class SceneDiagnostics {
     enabled = false,
     camera = null,
     terrains = [],
+    campfire = null,
     label = 'Scene'
   } = {}) {
     if (!enabled || !camera || !Array.isArray(terrains)) return false;
@@ -309,8 +310,9 @@ export class SceneDiagnostics {
       const shapeInfo = terrains.map((terrain, index) => {
         const collisionShapes = terrain?._collisionShapes || [];
         const walkableShapes = terrain?._walkableShapes || [];
+        const treeCount = terrain?.getTreeColliders?.()?.length || 0;
         const first = collisionShapes[0] || walkableShapes[0];
-        return `[${index}] ${terrain?._editorSceneId}: collision=${collisionShapes.length}, walkable=${walkableShapes.length}`
+        return `[${index}] ${terrain?._editorSceneId}: collision=${collisionShapes.length}, walkable=${walkableShapes.length}, trees=${treeCount}`
           + (first ? `, first.points[0..1]=${JSON.stringify(first.points?.slice(0, 2))}` : '');
       });
       const bounds = camera.getViewBounds();
@@ -324,47 +326,85 @@ export class SceneDiagnostics {
     for (const terrain of terrains) {
       if (typeof terrain?.renderCollisionShapesDebug === 'function') {
         terrain.renderCollisionShapesDebug(ctx, 0.7);
-        continue;
-      }
-      const shapes = terrain?._collisionShapes;
-      if (!shapes || shapes.length === 0) continue;
-      for (const shape of shapes) {
-        if (shape.shapeType === 'polygon' && Array.isArray(shape.points) && shape.points.length > 2) {
-          ctx.beginPath();
-          ctx.moveTo(shape.points[0][0], shape.points[0][1]);
-          for (let index = 1; index < shape.points.length; index++) {
-            ctx.lineTo(shape.points[index][0], shape.points[index][1]);
+      } else {
+        const shapes = terrain?._collisionShapes || [];
+        for (const shape of shapes) {
+          if (shape.shapeType === 'polygon' && Array.isArray(shape.points) && shape.points.length > 2) {
+            ctx.beginPath();
+            ctx.moveTo(shape.points[0][0], shape.points[0][1]);
+            for (let index = 1; index < shape.points.length; index++) {
+              ctx.lineTo(shape.points[index][0], shape.points[index][1]);
+            }
+            ctx.closePath();
+            ctx.globalAlpha = 0.7;
+            ctx.fillStyle = '#ff9800';
+            ctx.fill();
+            ctx.strokeStyle = '#ff3b30';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+          } else if (shape.shapeType === 'ellipse' || shape.shapeType === 'circle') {
+            const cx = (shape.x || 0) + (shape.width || 0) / 2;
+            const cy = (shape.y || 0) + (shape.height || 0) / 2;
+            const radius = shape.shapeType === 'circle'
+              ? Math.min(shape.width || 0, shape.height || 0) / 2
+              : null;
+            ctx.beginPath();
+            ctx.ellipse(cx, cy, radius ?? (shape.width || 0) / 2, radius ?? (shape.height || 0) / 2, 0, 0, Math.PI * 2);
+            ctx.globalAlpha = 0.7;
+            ctx.fillStyle = '#ff9800';
+            ctx.fill();
+            ctx.strokeStyle = '#ff3b30';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+          } else if (shape.shapeType === 'rect' || (shape.x !== undefined && shape.width)) {
+            ctx.globalAlpha = 0.7;
+            ctx.fillStyle = '#ff9800';
+            ctx.fillRect(shape.x, shape.y, shape.width, shape.height);
+            ctx.strokeStyle = '#ff3b30';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(shape.x, shape.y, shape.width, shape.height);
           }
-          ctx.closePath();
-          ctx.globalAlpha = 0.7;
-          ctx.fillStyle = '#ff9800';
-          ctx.fill();
-          ctx.strokeStyle = '#ff3b30';
-          ctx.lineWidth = 2;
-          ctx.stroke();
-        } else if (shape.shapeType === 'rect' || (shape.x !== undefined && shape.width)) {
-          ctx.globalAlpha = 0.7;
-          ctx.fillStyle = '#ff9800';
-          ctx.fillRect(shape.x, shape.y, shape.width, shape.height);
-          ctx.strokeStyle = '#ff3b30';
-          ctx.lineWidth = 2;
-          ctx.strokeRect(shape.x, shape.y, shape.width, shape.height);
-        } else if (shape.shapeType === 'ellipse' || shape.shapeType === 'circle') {
-          const cx = (shape.x || 0) + (shape.width || 0) / 2;
-          const cy = (shape.y || 0) + (shape.height || 0) / 2;
-          const rx = (shape.width || 0) / 2;
-          const ry = (shape.height || 0) / 2;
-          ctx.beginPath();
-          ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
-          ctx.globalAlpha = 0.7;
-          ctx.fillStyle = '#ff9800';
-          ctx.fill();
-          ctx.strokeStyle = '#ff3b30';
-          ctx.lineWidth = 2;
-          ctx.stroke();
         }
       }
+
+      const trees = terrain?.getTreeColliders?.() || [];
+      for (let index = 0; index < trees.length; index++) {
+        const tree = trees[index];
+        const radiusX = Number(tree?.radiusX);
+        const radiusY = Number(tree?.radiusY);
+        if (!Number.isFinite(tree?.x) || !Number.isFinite(tree?.y)
+          || !(radiusX > 0) || !(radiusY > 0)) continue;
+        ctx.beginPath();
+        ctx.ellipse(tree.x, tree.y, radiusX, radiusY, 0, 0, Math.PI * 2);
+        ctx.globalAlpha = 0.2;
+        ctx.fillStyle = '#5ee16d';
+        ctx.fill();
+        ctx.globalAlpha = 0.95;
+        ctx.strokeStyle = '#39d353';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([4, 3]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
     }
+
+    const campfireEllipse = campfire?.getCollisionEllipse?.();
+    if (campfireEllipse && Number.isFinite(campfireEllipse.x) && Number.isFinite(campfireEllipse.y)
+      && campfireEllipse.radiusX > 0 && campfireEllipse.radiusY > 0) {
+      ctx.beginPath();
+      ctx.ellipse(campfireEllipse.x, campfireEllipse.y,
+        campfireEllipse.radiusX, campfireEllipse.radiusY, 0, 0, Math.PI * 2);
+      ctx.globalAlpha = 0.2;
+      ctx.fillStyle = '#ff7043';
+      ctx.fill();
+      ctx.globalAlpha = 0.95;
+      ctx.strokeStyle = '#ff5722';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 3]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
     ctx.globalAlpha = 1;
     ctx.restore();
     return true;

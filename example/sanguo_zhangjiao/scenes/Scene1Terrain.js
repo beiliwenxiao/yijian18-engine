@@ -946,8 +946,8 @@ export class Scene1Terrain {
   }
 
   /**
-   * 获取所有树木的碰撞圆（仅盆地内的，外圈树不参与碰撞因为本来就在悬崖外）
-   * @returns {Array<{x:number, y:number, r:number}>}
+   * 获取所有树木的碰撞椭圆（仅盆地内的，外圈树不参与碰撞因为本来就在悬崖外）。
+   * @returns {Array<{x:number, y:number, radiusX:number, radiusY:number}>}
    */
   getTreeColliders() {
     if (!this._treeColliders) {
@@ -955,10 +955,16 @@ export class Scene1Terrain {
       for (const deco of this.decorations) {
         const sprite = this.decoSprites[deco.key];
         if (!sprite || !sprite.collide) continue;
+        const radiusX = Number(sprite.colliderRadiusX);
+        const radiusY = Number(sprite.colliderRadiusY);
+        if (!(radiusX > 0) || !(radiusY > 0)) {
+          throw new TypeError(`Scene1Terrain requires ellipse collider radii for ${deco.key}`);
+        }
         this._treeColliders.push({
           x: deco.x,
-          y: deco.y - 4, // 树根中心略上一点
-          r: sprite.colliderRadius || 16
+          y: deco.y - 18, // 树根中心略上一点
+          radiusX,
+          radiusY
         });
       }
     }

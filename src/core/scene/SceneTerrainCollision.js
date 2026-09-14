@@ -30,7 +30,7 @@ const SCENE_OBJECT_PROJECTOR = new SceneObjectProjector();
  * 承担四类地形约束的统一解算：
  *   1. 椭圆盆地边界（可留入口扇形缺口）
  *   2. 水池（椭圆，从内部推出）
- *   3. 树木（圆形碰撞体）
+ *   3. 树木（椭圆碰撞体）
  *   4. 编辑器 collide shape（rect / circle / ellipse / polygon / path）
  *
  * 以及从场景数据收集 buffZone 多边形并转世界坐标。
@@ -208,10 +208,12 @@ export class SceneTerrainCollision {
     const nearbyTrees = this._querySpatial(spatial.trees, x, y);
     for (let index = 0; index < nearbyTrees.length; index++) {
       const tree = nearbyTrees[index];
-      const minimumDistance = (Number(tree?.r) || 0) + radius;
-      const dx = x - tree.x;
-      const dy = y - tree.y;
-      if (dx * dx + dy * dy < minimumDistance * minimumDistance) return true;
+      const expandedRadiusX = (Number(tree?.radiusX) || 0) + radius;
+      const expandedRadiusY = (Number(tree?.radiusY) || 0) + radius;
+      if (expandedRadiusX <= 0 || expandedRadiusY <= 0) continue;
+      const dx = (x - tree.x) / expandedRadiusX;
+      const dy = (y - tree.y) / expandedRadiusY;
+      if (dx * dx + dy * dy < 1) return true;
     }
 
     let isWalkable = false;
@@ -291,9 +293,10 @@ export class SceneTerrainCollision {
 
     for (let i = 0; i < trees.length; i++) {
       const tree = trees[i];
-      const extent = (tree.r || 0) + radius + 1;
-      this._insertSpatial(cache.trees, tree, tree.x - extent, tree.y - extent,
-        tree.x + extent, tree.y + extent);
+      const extentX = (Number(tree?.radiusX) || 0) + radius + 1;
+      const extentY = (Number(tree?.radiusY) || 0) + radius + 1;
+      this._insertSpatial(cache.trees, tree, tree.x - extentX, tree.y - extentY,
+        tree.x + extentX, tree.y + extentY);
     }
     for (let i = 0; i < ponds.length; i++) {
       const pond = ponds[i];
@@ -425,23 +428,24 @@ export class SceneTerrainCollision {
     }
   }
 
-  /** 树木：以椭圆在树心连线方向的支撑半径计算重叠并推出。 */
+  /** 树木：以玩家椭圆扩张树根椭圆后，将中心推出边缘外。 */
   resolveTree(p, tree, radiusX = 0, radiusY = 0) {
+    const treeRadiusX = Number(tree?.radiusX) || 0;
+    const treeRadiusY = Number(tree?.radiusY) || 0;
+    const expandedRadiusX = treeRadiusX + Math.max(0, radiusX);
+    const expandedRadiusY = treeRadiusY + Math.max(0, radiusY);
+    if (expandedRadiusX <= 0 || expandedRadiusY <= 0) return;
     const tdx = p.x - tree.x;
     const tdy = p.y - tree.y;
-    const distance = Math.hypot(tdx, tdy);
-    if (distance <= 0.001) {
-      p.y = tree.y + (Number(tree?.r) || 0) + Math.max(0, radiusY) + 1;
-      return;
+    const normalizedDistance = Math.hypot(tdx / expandedRadiusX, tdy / expandedRadiusY);
+    if (normalizedDistance >= 1) return;
+    if (normalizedDistance > 1e-7) {
+      const worldDistance = Math.hypot(tdx, tdy) || 1;
+      p.x = tree.x + tdx / normalizedDistance + tdx / worldDistance * this.pushEpsilon;
+      p.y = tree.y + tdy / normalizedDistance + tdy / worldDistance * this.pushEpsilon;
+    } else {
+      p.y = tree.y + expandedRadiusY + this.pushEpsilon;
     }
-    const normalX = tdx / distance;
-    const normalY = tdy / distance;
-    const supportRadius = Math.hypot(radiusX * normalX, radiusY * normalY);
-    const minimumDistance = (Number(tree?.r) || 0) + supportRadius;
-    if (distance >= minimumDistance) return;
-    const k = (minimumDistance + 1) / distance;
-    p.x = tree.x + tdx * k;
-    p.y = tree.y + tdy * k;
   }
 
   /**

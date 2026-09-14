@@ -24,7 +24,8 @@
           "sw": 96,
           "sh": 128,
           "collide": true,
-          "colliderRadius": 22
+          "colliderRadiusX": 28,
+          "colliderRadiusY": 18
         },
         "tree2": {
           "name": "中树",
@@ -33,7 +34,8 @@
           "sw": 64,
           "sh": 96,
           "collide": true,
-          "colliderRadius": 14
+          "colliderRadiusX": 14,
+          "colliderRadiusY": 12
         },
         "tree3": {
           "name": "小树",
@@ -42,7 +44,8 @@
           "sw": 64,
           "sh": 128,
           "collide": true,
-          "colliderRadius": 16
+          "colliderRadiusX": 16,
+          "colliderRadiusY": 14
         },
         "grass1": {
           "name": "草地装饰",
