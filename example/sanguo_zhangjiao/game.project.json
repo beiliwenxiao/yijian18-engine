@@ -5691,7 +5691,8 @@
             "checkpointId": "checkpoint.S14.preEnding",
             "endingId": "sanguo-zhangjiao-endings-v1",
             "operation": "resolve"
-          }
+          },
+          "stepId": "trg_s14_commit_ending.step.001"
         }
       ],
       "id": "trg_s14_commit_ending",

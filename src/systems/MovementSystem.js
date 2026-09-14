@@ -46,7 +46,7 @@ export class MovementSystem {
     const contactLockDuration = Number(config.contactLockDuration);
     this.contactLockDuration = Number.isFinite(contactLockDuration)
       ? Math.max(0.01, contactLockDuration)
-      : 0.5;
+      : 0.1;
     // 被障碍持续阻挡达到该时长（秒）后自动停止运动，需松开方向键才恢复。
     const blockedAutoStopDuration = Number(config.blockedAutoStopDuration);
     this.blockedAutoStopDuration = Number.isFinite(blockedAutoStopDuration)
