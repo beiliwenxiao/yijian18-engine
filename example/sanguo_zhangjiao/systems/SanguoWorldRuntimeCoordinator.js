@@ -707,6 +707,8 @@ async function commitRegionTarget({ request, result, shadowSession, draft, valid
   this._worldLoadResult = result;
   this._worldIndex = result.worldIndex;
   this._currentRegionIndex = request.regionIndex;
+  // shadow session 仅预载目标场景；必须先投影目标身份，避免世界运行时按旧场景读取空数据。
+  this._navigationProjection.apply({ sceneId: request.sceneId, projectStory: false });
   await this.initializeWorldStreaming(result, request.sceneId, {
     preparedManager: preparedStreamingManager,
     session: shadowSession
@@ -727,7 +729,6 @@ async function commitRegionTarget({ request, result, shadowSession, draft, valid
   if (this._worldRegion !== result.region || !targetChunkLoaded) {
     return { ok: false, errors: [{ code: 'regionProjectionFailed', path: 'region', message: '目标大区九宫格投影未完成' }] };
   }
-  this._navigationProjection.apply({ sceneId: request.sceneId, projectStory: false });
   if (!this.getBattleFlowByScene(request.sceneId)) {
     this.s03s14BattleCoordinator.leaveBattleScene({ preserveSnapshot: true });
   }
@@ -769,6 +770,8 @@ async function restoreRegionDraft({ draft, oldSession }) {
   this._worldLoadSession = oldSession || this._worldLoadSession;
   this._worldLoadResult = draft.worldResult;
   this._currentRegionIndex = draft.regionIndex;
+  // 回滚 session 同样只持有旧目标场景，先恢复导航身份再装配旧世界运行时。
+  this._navigationProjection.apply({ sceneId: draft.saveState?.currentSceneId, projectStory: false });
   await this.initializeWorldStreaming(draft.worldResult, draft.saveState?.currentSceneId);
   this._worldLoadPromise = Promise.resolve(draft.worldResult);
   this._loadWorldTerrains();

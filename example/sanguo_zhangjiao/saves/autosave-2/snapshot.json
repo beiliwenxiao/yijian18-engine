@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "createdAt": 1789423582501,
+  "createdAt": 1789449129696,
   "meta": {
     "gameId": "sanguo_zhangjiao",
     "kind": "auto",
@@ -9,8 +9,7 @@
     "level": 1,
     "currentSceneId": "S01",
     "location": "S01 区域",
-    "reason": "checkpoint",
-    "checkpointId": "checkpoint.S01.shelterStarted",
+    "reason": "exit",
     "previewFile": "thumbnail.jpg"
   },
   "data": {
@@ -22,8 +21,8 @@
         "id": "refugee",
         "name": null,
         "transform": {
-          "x": 8246.408740277835,
-          "y": 4031.395720438672,
+          "x": 8235.30331120722,
+          "y": 4061.9802011406423,
           "elevation": 0,
           "rotation": 0,
           "scale": {
@@ -369,7 +368,7 @@
                 "spawned": 0
               },
               "riverCrossed": false,
-              "shelterCompleted": false,
+              "shelterCompleted": true,
               "shelterExitedAfterOvernight": false,
               "skinningKnifeFound": true,
               "wolfBracersCrafted": true,
@@ -406,7 +405,8 @@
             "trg_s01_wood_gathered",
             "trg_s01_first_wolf_spotted",
             "trg_s01_first_wolf_killed_committed",
-            "trg_s01_wolf_skinned"
+            "trg_s01_wolf_skinned",
+            "trg_s01_shelter_completed"
           ],
           "cooldowns": {
             "trg_s01_spawn_initial": {
@@ -424,13 +424,19 @@
             "trg_s01_cook_meat": {
               "definitionRevision": 1,
               "remaining": 0,
-              "nextDue": 54354.60000000079,
+              "nextDue": 6217.4000000000015,
               "duration": 1000
             },
             "trg_s01_craft_wolf_gear": {
               "definitionRevision": 1,
               "remaining": 0,
-              "nextDue": 69855.69999999995,
+              "nextDue": 16585.199999999997,
+              "duration": 1000
+            },
+            "trg_s01_build_shelter": {
+              "definitionRevision": 1,
+              "remaining": 0,
+              "nextDue": 25736.699999999997,
               "duration": 1000
             }
           },
@@ -898,8 +904,8 @@
                   "stateId": "trigger:trg_s01_craft_wolf_gear",
                   "stateRevision": null
                 },
-                "startedAt": 68822.39999999967,
-                "finishedAt": 68855.69999999995,
+                "startedAt": 15535.300000000003,
+                "finishedAt": 15585.199999999997,
                 "ledgerRevision": 7
               },
               {
@@ -918,8 +924,8 @@
                   "stateId": "trigger:trg_s01_cook_meat",
                   "stateRevision": null
                 },
-                "startedAt": 53304.60000000079,
-                "finishedAt": 53354.60000000079,
+                "startedAt": 5184.0999999999985,
+                "finishedAt": 5217.4000000000015,
                 "ledgerRevision": 4
               },
               {
@@ -947,24 +953,40 @@
                 "definitionRevision": 1,
                 "operationId": "trigger:1:trg_s01_build_shelter:5",
                 "fingerprint": "sha256-5b5e86283989534a3d179f03ff8d1762b029c1025acbec8796af99169e04ed0b",
-                "status": "running",
+                "status": "succeeded",
                 "actionIndex": 0,
-                "result": null,
-                "startedAt": 79756.69999999902,
-                "finishedAt": null,
-                "ledgerRevision": 2
+                "result": {
+                  "ok": true,
+                  "operationId": "trigger:1:trg_s01_build_shelter:5:trigger:trg_s01_build_shelter:step:start-shelter-construction",
+                  "status": "committed",
+                  "committed": true,
+                  "code": null,
+                  "stateId": "sanguo:command:construction.command",
+                  "stateRevision": 1
+                },
+                "startedAt": 22653.100000000006,
+                "finishedAt": 24736.699999999997,
+                "ledgerRevision": 4
               },
               {
                 "triggerId": "trg_s01_shelter_completed",
                 "definitionRevision": 1,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
+                "operationId": "construction:S01:smallShelter",
+                "fingerprint": "sha256-adf95e92b094a3fd7f4c7a19a94b6855882f67226c01dbd63d71a82d737785d4",
+                "status": "succeeded",
+                "actionIndex": 0,
+                "result": {
+                  "ok": true,
+                  "operationId": "construction:S01:smallShelter:trigger:trg_s01_shelter_completed:step:shelter-completed",
+                  "status": "succeeded",
+                  "committed": false,
+                  "code": null,
+                  "stateId": "trigger:trg_s01_shelter_completed",
+                  "stateRevision": null
+                },
+                "startedAt": 28687.300000000003,
+                "finishedAt": 30870.99999999997,
+                "ledgerRevision": 4
               },
               {
                 "triggerId": "trg_s01_enter_shelter",
@@ -2062,8 +2084,8 @@
                         "removed": false,
                         "hp": 38,
                         "position": {
-                          "x": 9745.425522704623,
-                          "y": 3209.5114506745226
+                          "x": 9752.983659014488,
+                          "y": 3264.0618183521465
                         },
                         "ai": {
                           "active": true,
@@ -2080,8 +2102,8 @@
                         "removed": false,
                         "hp": 38,
                         "position": {
-                          "x": 9969.351766247964,
-                          "y": 3258.5435425972373
+                          "x": 9922.908253834266,
+                          "y": 3226.716509803669
                         },
                         "ai": {
                           "active": true,
@@ -2471,6 +2493,18 @@
                       }
                     },
                     {
+                      "id": "S01-small-shelter-1",
+                      "state": {
+                        "kind": "item",
+                        "removed": false,
+                        "position": {
+                          "x": 8230.843526402652,
+                          "y": 4036.5277262896143
+                        },
+                        "placementSignature": "{\"collision\":{\"mode\":\"block\",\"points\":[[-49,-7],[56,-8],[42,-33],[1,-38],[-37,-32]],\"shapeType\":\"polygon\"},\"group\":\"S01-small-shelter\",\"id\":\"S01-small-shelter-1\",\"kind\":\"item\",\"overrides\":null,\"ref\":\"story.s01.small_shelter\",\"sceneId\":\"S01\",\"spawnWhen\":{\"blackboardKey\":\"storyState\",\"equals\":true,\"path\":\"s01Survival.shelterCompleted\"},\"type\":\"ref\",\"version\":1,\"x\":550.7813037774793,\"y\":429.9943506464729}"
+                      }
+                    },
+                    {
                       "id": "S01-pickup-skinning-knife",
                       "state": {
                         "kind": "item",
@@ -2508,7 +2542,7 @@
             "secondsPerUnit": 100,
             "maxUnits": 10,
             "units": 4,
-            "remainingSeconds": 346.11529999998226,
+            "remainingSeconds": 393.71769999999617,
             "active": true
           }
         },
@@ -2756,6 +2790,10 @@
                 "gathering": {
                   "level": 2,
                   "experience": 44
+                },
+                "construction": {
+                  "level": 1,
+                  "experience": 5
                 }
               }
             }
@@ -2913,66 +2951,74 @@
                 "leveledUp": false,
                 "idempotent": false
               }
+            },
+            {
+              "operationId": "construction:S01:smallShelter:proficiency",
+              "fingerprint": "[\"refugee\",\"construction\",5]",
+              "result": {
+                "ok": true,
+                "characterId": "refugee",
+                "type": "construction",
+                "operationId": "construction:S01:smallShelter:proficiency",
+                "amountRequested": 5,
+                "amountApplied": 5,
+                "previousLevel": 1,
+                "level": 1,
+                "experience": 5,
+                "leveledUp": false,
+                "idempotent": false
+              }
             }
           ]
         },
         "constructionState": {
           "schemaVersion": 1,
-          "structures": [],
-          "pending": [
+          "structures": [
             {
-              "definitionId": "construction.s01.small_shelter",
+              "schemaVersion": 1,
+              "id": "construction.s01.small_shelter:site.s01.small_shelter",
               "siteId": "site.s01.small_shelter",
-              "operationId": "construction:S01:smallShelter",
-              "status": "active",
-              "elapsed": 1.917000000000001,
-              "duration": 6,
-              "progress": 0.3195000000000002,
-              "emergency": false,
-              "toolInstanceId": null,
-              "toolId": null,
-              "characterId": "refugee",
-              "materialOperationId": "construction:S01:smallShelter:materials",
-              "operationFingerprint": "[\"refugee\",\"construction.s01.small_shelter\",\"site.s01.small_shelter\",false]",
-              "reservedCosts": [
-                {
-                  "itemId": "resource.wood",
-                  "quantity": 3
-                }
-              ],
-              "reservedItems": [
-                {
-                  "item": {
-                    "id": "resource.wood",
-                    "name": "木材",
-                    "type": "material",
-                    "imageId": "inventory.resource.wood",
-                    "assetId": "inventory.resource.wood",
-                    "maxStack": 99,
-                    "sprite": {
-                      "height": 40,
-                      "width": 40
-                    },
-                    "subType": "wood"
-                  },
-                  "quantity": 3
-                }
-              ],
-              "cancelReason": null
+              "definitionId": "construction.s01.small_shelter",
+              "status": "completed",
+              "maxDurability": 60,
+              "durability": 60,
+              "manned": false,
+              "operationId": "construction:S01:smallShelter"
             }
           ],
+          "pending": [],
           "operations": [
             {
               "operationId": "construction:S01:smallShelter",
               "fingerprint": "[\"refugee\",\"construction.s01.small_shelter\",\"site.s01.small_shelter\",false]",
               "result": {
                 "ok": true,
-                "status": "active",
+                "status": "completed",
                 "operationId": "construction:S01:smallShelter",
-                "siteId": "site.s01.small_shelter",
-                "definitionId": "construction.s01.small_shelter",
-                "duration": 6,
-                "emergency": false
+                "structure": {
+                  "schemaVersion": 1,
+                  "id": "construction.s01.small_shelter:site.s01.small_shelter",
+                  "siteId": "site.s01.small_shelter",
+                  "definitionId": "construction.s01.small_shelter",
+                  "status": "completed",
+                  "maxDurability": 60,
+                  "durability": 60,
+                  "manned": false,
+                  "operationId": "construction:S01:smallShelter"
+                },
+                "experienceResult": {
+                  "ok": true,
+                  "characterId": "refugee",
+                  "type": "construction",
+                  "operationId": "construction:S01:smallShelter:proficiency",
+                  "amountRequested": 5,
+                  "amountApplied": 5,
+                  "previousLevel": 1,
+                  "level": 1,
+                  "experience": 5,
+                  "leveledUp": false,
+                  "idempotent": false
+                }
               }
             }
           ]

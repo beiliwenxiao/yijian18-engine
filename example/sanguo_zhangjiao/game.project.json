@@ -142,7 +142,11 @@
         ],
         "maxClouds": 10
       },
-      "particles": {},
+      "particles": {
+        "heavyFog": {
+          "count": 6
+        }
+      },
       "sunbeams": {
         "imageIds": [
           "weather.sunbeam.rayA",

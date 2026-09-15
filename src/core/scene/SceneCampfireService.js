@@ -23,6 +23,24 @@
 import { InputHints } from '../input/InputHints.js';
 import { cloneCanonicalValue, deepFreeze } from '../CanonicalSnapshot.js';
 
+const MAX_ATMOSPHERE_PIXEL_COUNT = 640 * 360;
+const BASE_ATMOSPHERE_RENDER_SCALE = 0.5;
+
+function resolveAtmosphereCanvasSize(width, height) {
+  const sourceWidth = Math.max(1, Number(width) || 1);
+  const sourceHeight = Math.max(1, Number(height) || 1);
+  const pixelCount = sourceWidth * sourceHeight;
+  const renderScale = Math.min(
+    BASE_ATMOSPHERE_RENDER_SCALE,
+    Math.sqrt(MAX_ATMOSPHERE_PIXEL_COUNT / pixelCount)
+  );
+  return {
+    renderScale,
+    width: Math.max(1, Math.ceil(sourceWidth * renderScale)),
+    height: Math.max(1, Math.ceil(sourceHeight * renderScale))
+  };
+}
+
 function requirePositive(value, path) {
   const number = Number(value);
   if (!Number.isFinite(number) || number <= 0) throw new TypeError(`${path} must be a positive number`);
@@ -230,9 +248,10 @@ const campfireFeatureMethods = {
     if (hasTimeOverlay) {
       // 时间层必须在独立 atmosphere Canvas 合成后统一挖出玩家/火堆透光区；
       // 若先画到主 Canvas，再 destination-out 会连世界内容一起擦除。
-      const renderScale = 0.5;
-      const atmosphereWidth = Math.max(1, Math.ceil(width * renderScale));
-      const atmosphereHeight = Math.max(1, Math.ceil(height * renderScale));
+      // 合成层保持最多 640×360 像素；窗口放大时自适应降采样，避免全屏
+      // destination-out 与放大合成随物理窗口面积线性失控。
+      const atmosphereSize = resolveAtmosphereCanvasSize(width, height);
+      const { renderScale, width: atmosphereWidth, height: atmosphereHeight } = atmosphereSize;
       if (!this._atmosphereCanvas) {
         this._atmosphereCanvas = this.createCanvas();
         this._atmosphereContext = this._atmosphereCanvas.getContext('2d');

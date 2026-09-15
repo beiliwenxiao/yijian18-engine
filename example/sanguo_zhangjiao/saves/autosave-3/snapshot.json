@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "createdAt": 1789423588578,
+  "createdAt": 1789449117522,
   "meta": {
     "gameId": "sanguo_zhangjiao",
     "kind": "auto",
@@ -22,8 +22,8 @@
         "id": "refugee",
         "name": null,
         "transform": {
-          "x": 8246.532386565594,
-          "y": 4044.3785806533156,
+          "x": 8235.30331120722,
+          "y": 4061.9802011406423,
           "elevation": 0,
           "rotation": 0,
           "scale": {
@@ -412,31 +412,31 @@
             "trg_s01_spawn_initial": {
               "definitionRevision": 1,
               "remaining": 0,
-              "nextDue": 87007.69999999856,
+              "nextDue": 0,
               "duration": 1000
             },
             "trg_s01_refuel_campfire": {
               "definitionRevision": 1,
               "remaining": 0,
-              "nextDue": 87007.69999999856,
+              "nextDue": 0,
               "duration": 1000
             },
             "trg_s01_cook_meat": {
               "definitionRevision": 1,
               "remaining": 0,
-              "nextDue": 87007.69999999856,
+              "nextDue": 6217.4000000000015,
               "duration": 1000
             },
             "trg_s01_craft_wolf_gear": {
               "definitionRevision": 1,
               "remaining": 0,
-              "nextDue": 87007.69999999856,
+              "nextDue": 16585.199999999997,
               "duration": 1000
             },
             "trg_s01_build_shelter": {
               "definitionRevision": 1,
               "remaining": 0,
-              "nextDue": 87007.69999999856,
+              "nextDue": 25736.699999999997,
               "duration": 1000
             }
           },
@@ -904,8 +904,8 @@
                   "stateId": "trigger:trg_s01_craft_wolf_gear",
                   "stateRevision": null
                 },
-                "startedAt": 68822.39999999967,
-                "finishedAt": 68855.69999999995,
+                "startedAt": 15535.300000000003,
+                "finishedAt": 15585.199999999997,
                 "ledgerRevision": 7
               },
               {
@@ -924,8 +924,8 @@
                   "stateId": "trigger:trg_s01_cook_meat",
                   "stateRevision": null
                 },
-                "startedAt": 53304.60000000079,
-                "finishedAt": 53354.60000000079,
+                "startedAt": 5184.0999999999985,
+                "finishedAt": 5217.4000000000015,
                 "ledgerRevision": 4
               },
               {
@@ -964,8 +964,8 @@
                   "stateId": "sanguo:command:construction.command",
                   "stateRevision": 1
                 },
-                "startedAt": 79756.69999999902,
-                "finishedAt": 81923.79999999865,
+                "startedAt": 22653.100000000006,
+                "finishedAt": 24736.699999999997,
                 "ledgerRevision": 4
               },
               {
@@ -973,40 +973,24 @@
                 "definitionRevision": 1,
                 "operationId": "construction:S01:smallShelter",
                 "fingerprint": "sha256-adf95e92b094a3fd7f4c7a19a94b6855882f67226c01dbd63d71a82d737785d4",
-                "status": "failed",
+                "status": "running",
                 "actionIndex": 0,
-                "result": {
-                  "ok": false,
-                  "operationId": "construction:S01:smallShelter",
-                  "status": "failed",
-                  "committed": false,
-                  "code": "triggerInterrupted",
-                  "stateId": "trigger:trg_s01_shelter_completed",
-                  "stateRevision": null
-                },
-                "startedAt": 85790.89999999874,
-                "finishedAt": 85790.89999999874,
+                "result": null,
+                "startedAt": 28687.300000000003,
+                "finishedAt": null,
                 "ledgerRevision": 2
               },
               {
                 "triggerId": "trg_s01_enter_shelter",
                 "definitionRevision": 1,
-                "operationId": "trigger:1:trg_s01_enter_shelter:7",
-                "fingerprint": "sha256-53e7d4263e0032ed2916d0e2fda9fa718d41b0819403bcb3f52917764f808687",
-                "status": "failed",
-                "actionIndex": 0,
-                "result": {
-                  "ok": false,
-                  "operationId": "trigger:1:trg_s01_enter_shelter:7",
-                  "status": "failed",
-                  "committed": false,
-                  "code": "triggerInterrupted",
-                  "stateId": "trigger:trg_s01_enter_shelter",
-                  "stateRevision": null
-                },
-                "startedAt": 86424.39999999874,
-                "finishedAt": 86424.39999999874,
-                "ledgerRevision": 2
+                "operationId": null,
+                "fingerprint": null,
+                "status": "idle",
+                "actionIndex": -1,
+                "result": null,
+                "startedAt": null,
+                "finishedAt": null,
+                "ledgerRevision": 1
               },
               {
                 "triggerId": "trg_s01_overnight",
@@ -2092,8 +2076,8 @@
                         "removed": false,
                         "hp": 38,
                         "position": {
-                          "x": 9782.211463108293,
-                          "y": 3240.4056581879527
+                          "x": 9773.786577177058,
+                          "y": 3232.3273184783807
                         },
                         "ai": {
                           "active": true,
@@ -2110,8 +2094,8 @@
                         "removed": false,
                         "hp": 38,
                         "position": {
-                          "x": 9921.704770511942,
-                          "y": 3264.6090699616693
+                          "x": 9933.228788804165,
+                          "y": 3264.6928310165213
                         },
                         "ai": {
                           "active": true,
@@ -2386,18 +2370,6 @@
                   ],
                   "placementStates": [
                     {
-                      "id": "S01-small-shelter-1",
-                      "state": {
-                        "kind": "item",
-                        "removed": false,
-                        "position": {
-                          "x": 8230.843526402652,
-                          "y": 4036.5277262896143
-                        },
-                        "placementSignature": "{\"collision\":{\"mode\":\"block\",\"points\":[[-49,-7],[56,-8],[42,-33],[1,-38],[-37,-32]],\"shapeType\":\"polygon\"},\"group\":\"S01-small-shelter\",\"id\":\"S01-small-shelter-1\",\"kind\":\"item\",\"overrides\":null,\"ref\":\"story.s01.small_shelter\",\"sceneId\":\"S01\",\"spawnWhen\":{\"blackboardKey\":\"storyState\",\"equals\":true,\"path\":\"s01Survival.shelterCompleted\"},\"type\":\"ref\",\"version\":1,\"x\":550.7813037774793,\"y\":429.9943506464729}"
-                      }
-                    },
-                    {
                       "id": "S01-spawn-campfire",
                       "state": {
                         "kind": "item",
@@ -2407,18 +2379,6 @@
                           "y": 4115
                         },
                         "placementSignature": "{\"collision\":null,\"group\":\"S01-initial\",\"id\":\"S01-spawn-campfire\",\"kind\":\"item\",\"overrides\":null,\"ref\":\"story.s01.campfire\",\"sceneId\":\"S01\",\"spawnWhen\":null,\"type\":\"ref\",\"version\":1,\"x\":598.5509187273913,\"y\":515}"
-                      }
-                    },
-                    {
-                      "id": "S01-prop-tanning-rack",
-                      "state": {
-                        "kind": "item",
-                        "removed": false,
-                        "position": {
-                          "x": 8162.858302709539,
-                          "y": 4101.915295070305
-                        },
-                        "placementSignature": "{\"collision\":{\"mode\":\"block\",\"points\":[[-23,-6],[0,-2],[24,-6],[24,-12],[0,-8],[-23,-13]],\"shapeType\":\"polygon\"},\"group\":\"S01-tanning-rack\",\"id\":\"S01-prop-tanning-rack\",\"kind\":\"item\",\"overrides\":null,\"ref\":\"story.s01.tanning_rack\",\"sceneId\":\"S01\",\"spawnWhen\":{\"blackboardKey\":\"storyState\",\"equals\":true,\"path\":\"s01Survival.meatCooked\"},\"type\":\"ref\",\"version\":1,\"x\":482.8583027095395,\"y\":489.9152950703045}"
                       }
                     },
                     {
@@ -2513,6 +2473,18 @@
                       }
                     },
                     {
+                      "id": "S01-prop-tanning-rack",
+                      "state": {
+                        "kind": "item",
+                        "removed": false,
+                        "position": {
+                          "x": 8162.858302709539,
+                          "y": 4101.915295070305
+                        },
+                        "placementSignature": "{\"collision\":{\"mode\":\"block\",\"points\":[[-23,-6],[0,-2],[24,-6],[24,-12],[0,-8],[-23,-13]],\"shapeType\":\"polygon\"},\"group\":\"S01-tanning-rack\",\"id\":\"S01-prop-tanning-rack\",\"kind\":\"item\",\"overrides\":null,\"ref\":\"story.s01.tanning_rack\",\"sceneId\":\"S01\",\"spawnWhen\":{\"blackboardKey\":\"storyState\",\"equals\":true,\"path\":\"s01Survival.meatCooked\"},\"type\":\"ref\",\"version\":1,\"x\":482.8583027095395,\"y\":489.9152950703045}"
+                      }
+                    },
+                    {
                       "id": "S01-pickup-skinning-knife",
                       "state": {
                         "kind": "item",
@@ -2550,7 +2522,7 @@
             "secondsPerUnit": 100,
             "maxUnits": 10,
             "units": 4,
-            "remainingSeconds": 340.96479999998155,
+            "remainingSeconds": 397.21799999999615,
             "active": true
           }
         },
