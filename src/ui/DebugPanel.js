@@ -196,14 +196,32 @@ export class DebugPanel {
     this._renderDiagnosticRecords();
   }
 
+  _diagnosticJson(value) {
+    const seen = new WeakSet();
+    const replacer = (_key, entry) => {
+      if (typeof entry === 'function') return `[Function ${entry.name || 'anonymous'}]`;
+      if (entry instanceof Error) return {
+        name: entry.name,
+        message: entry.message,
+        ...(entry.code ? { code: entry.code } : {})
+      };
+      if (entry && typeof entry === 'object') {
+        if (seen.has(entry)) return '[Circular]';
+        seen.add(entry);
+      }
+      return entry;
+    };
+    try {
+      return JSON.stringify(value, replacer, 2);
+    } catch (error) {
+      return JSON.stringify({ serializationError: error?.message || String(error) });
+    }
+  }
+
   _diagnosticLine(value) {
     if (typeof value === 'string') return value.replace(/[\r\n]+/g, ' ↵ ').trim();
     if (value === undefined || value === null) return '';
-    try {
-      return JSON.stringify(value).replace(/[\r\n]+/g, ' ↵ ').trim();
-    } catch (_error) {
-      return String(value).replace(/[\r\n]+/g, ' ↵ ').trim();
-    }
+    return this._diagnosticJson(value).replace(/[\r\n]+/g, ' ↵ ').trim();
   }
 
   _diagnosticDetails(record) {
@@ -231,12 +249,22 @@ export class DebugPanel {
     if (record.type === 'triggerFailure') {
       const reason = record.reason || record.code || 'unknown';
       const result = record.error?.result;
-      const message = result?.error?.message || record.error?.message || '';
+      const rawMessage = result?.error?.message || record.error?.message || '';
+      const message = rawMessage === '[object Object]'
+        ? (result?.error?.details || result?.errors || record.error?.details || record.error?.errors || rawMessage)
+        : rawMessage;
       const lines = [
         `[触发失败] ${record.triggerId} #${record.action?.index ?? '-'} ${reason}`,
         `  动作: ${record.action?.id || '-'} · 操作: ${record.actionOperationId || record.operationId || '-'}`
       ];
       if (message) lines.push(`  原因: ${this._diagnosticLine(message)}`);
+      const reasonData = rawMessage === '[object Object]'
+        ? {
+          ...(result?.error || record.error || {}),
+          message
+        }
+        : (result?.error || record.error || { reason, code: record.code || null });
+      lines.push(`  原因JSON:\n${this._diagnosticJson(reasonData)}`);
       if (result?.code && result.code !== reason) lines.push(`  命令结果: ${this._diagnosticLine(result.code)}`);
       return [...lines, ...this._diagnosticDetails(record)];
     }

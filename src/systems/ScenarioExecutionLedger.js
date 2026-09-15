@@ -20,16 +20,17 @@ export class ScenarioExecutionLedger {
   registerIdle(triggerId, definitionRevision) {
     if (this._records.has(triggerId)) return this.get(triggerId);
     return this._replace(triggerId, {
-      triggerId, definitionRevision, operationId: null, fingerprint: null,
+      triggerId, definitionRevision, eventId: null, operationId: null, fingerprint: null,
       status: 'idle', actionIndex: -1, result: null,
       startedAt: null, finishedAt: null
     });
   }
 
-  begin({ triggerId, definitionRevision, operationId, fingerprint, startedAt }) {
+  begin({ triggerId, definitionRevision, eventId = null, operationId, fingerprint, startedAt }) {
     if (!hasText(operationId) || !hasText(fingerprint)) throw new TypeError('Scenario execution requires operationId/fingerprint');
+    if (eventId !== null && !hasText(eventId)) throw new TypeError('Scenario execution eventId must be a non-empty string or null');
     return this._replace(triggerId, {
-      triggerId, definitionRevision, operationId, fingerprint,
+      triggerId, definitionRevision, eventId, operationId, fingerprint,
       status: 'running', actionIndex: 0, result: null,
       startedAt, finishedAt: null
     });
@@ -78,6 +79,9 @@ export class ScenarioExecutionLedger {
       else ids.add(record.triggerId);
       if (!STATUSES.has(record?.status)) errors.push({ code: 'invalidState', path: `${path}.status`, message: 'ledger status 非法' });
       if (!Number.isInteger(record?.actionIndex) || record.actionIndex < -1) errors.push({ code: 'invalidState', path: `${path}.actionIndex`, message: 'actionIndex 非法' });
+      if (record?.eventId !== null && record?.eventId !== undefined && !hasText(record.eventId)) {
+        errors.push({ code: 'invalidEventId', path: `${path}.eventId`, message: 'eventId 必须是非空字符串或 null' });
+      }
       if (record?.status !== 'idle' && (!hasText(record.operationId) || !hasText(record.fingerprint))) {
         errors.push({ code: 'invalidFingerprint', path, message: '非 idle ledger 必须包含 operationId/fingerprint' });
       }

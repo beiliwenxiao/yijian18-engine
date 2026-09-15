@@ -193,7 +193,9 @@ export class S01S02Coordinator {
     }
     const returned = await this.scene.travelToRegion({ sceneId: 'S01', spawnRef: 'S01-shelter-rest' });
     this._syncShelterWeatherPause();
-    if (!returned?.ok) return false;
+    if (!returned?.ok) {
+      return returned || { ok: false, code: 'shelterReturnFailed' };
+    }
     if (survival.shelterExitedAfterOvernight === true) return true;
     const committed = await this._submit('story.s01.leaveShelter', {}, 'story:s01:leave-shelter');
     if (!committed?.ok) return false;

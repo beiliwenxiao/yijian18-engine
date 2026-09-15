@@ -41,6 +41,15 @@ const DEFAULT_BENIGN_RESULT_CODES = new Set([
 const hasText = value => typeof value === 'string' && value.trim().length > 0;
 const clone = value => value === undefined ? undefined : JSON.parse(JSON.stringify(value));
 
+function getRestoredOperationSequence(ledger = null) {
+  let sequence = 0;
+  for (const record of ledger?.records || []) {
+    const match = String(record?.operationId || '').match(/^trigger:[^:]+:[^:]+:(?:(\d+):)?(\d+)(?::|$)/);
+    if (match) sequence = Math.max(sequence, Number(match[2] || match[1]) || 0);
+  }
+  return sequence;
+}
+
 const coordinationOf = trigger => {
   const value = trigger?.coordination || {};
   return {
@@ -109,8 +118,10 @@ export class TriggerSystem {
     this.monotonicClock = config.monotonicClock || new MonotonicClock();
     this.logicalClock = config.logicalClock || null;
     this._advanceClockOnUpdate = config.advanceClockOnUpdate ?? !config.monotonicClock;
-    this.operationIdFactory = config.operationIdFactory || (({ triggerId, definitionRevision, sequence }) => (
-      `trigger:${definitionRevision}:${triggerId}:${sequence}`
+    this.operationIdFactory = config.operationIdFactory || (({
+      triggerId, definitionRevision, sequence, monotonicTime = 0
+    }) => (
+      `trigger:${definitionRevision}:${triggerId}:${Math.max(0, Math.floor(monotonicTime * 1000))}:${sequence}`
     ));
     this.applicationEventPublisher = config.applicationEventPublisher || null;
     this.definitionRevision = config.definitionRevision ?? 0;
@@ -519,16 +530,19 @@ export class TriggerSystem {
   }
 
   _createRequest(trigger, event) {
-    const explicit = event?.params?.operationId;
+    const params = event?.params || {};
     const sequence = ++this._operationSequence;
-    const operationId = hasText(explicit) ? explicit : this.operationIdFactory({
-      triggerId: trigger.id, definitionRevision: this.definitionRevision, sequence, eventType: event?.type
-    });
-    if (!hasText(operationId)) throw new TypeError('Trigger operationIdFactory must return a stable non-empty ID');
+    const inheritedEventId = hasText(params.eventId) ? params.eventId.trim() : null;
+    const inheritedOperationId = hasText(params.operationId) ? params.operationId.trim() : null;
+    const eventId = inheritedEventId
+      || (inheritedOperationId ? `event:operation:${inheritedOperationId}`
+        : `event:trigger:${this.definitionRevision}:${Math.max(0, Math.floor(this.monotonicClock.now() * 1000))}:${++this._eventSequence}`);
+    const operationId = eventId;
     let resolveCompletion;
     const completion = new Promise(resolve => { resolveCompletion = resolve; });
     return {
       event,
+      eventId,
       operationId,
       fingerprint: this._operationFingerprint(trigger, operationId),
       completion,
@@ -578,8 +592,12 @@ export class TriggerSystem {
   async _execute(trigger, request, token) {
     const startedAt = this.monotonicClock.now();
     this.ledger.begin({
-      triggerId: trigger.id, definitionRevision: this.definitionRevision,
-      operationId: request.operationId, fingerprint: request.fingerprint, startedAt
+      triggerId: trigger.id,
+      definitionRevision: this.definitionRevision,
+      eventId: request.eventId,
+      operationId: request.operationId,
+      fingerprint: request.fingerprint,
+      startedAt
     });
     this._lastFiredId = trigger.id;
     this._emit('triggerStart', trigger, { operationId: request.operationId, status: 'running' });
@@ -936,6 +954,8 @@ export class TriggerSystem {
       snapshotSchemaVersion: TRIGGER_SNAPSHOT_SCHEMA_VERSION,
       definitionRevision: this.definitionRevision,
       definitionDigest: this.getDefinitionDigest(),
+      operationSequence: this._operationSequence,
+      eventSequence: this._eventSequence,
       firedOnce: [...this._firedOnce], cooldowns, timers,
       ledger: this.ledger.snapshot()
     };
@@ -962,6 +982,14 @@ export class TriggerSystem {
     }
     if (!Array.isArray(data.firedOnce) || !data.cooldowns || typeof data.cooldowns !== 'object' || !Array.isArray(data.timers)) {
       errors.push({ code: 'invalidTriggerSnapshot', path: 'triggers', message: 'once/cooldown/timer snapshot 非法' });
+    }
+    if (data.operationSequence !== undefined
+      && (!Number.isInteger(data.operationSequence) || data.operationSequence < 0)) {
+      errors.push({ code: 'invalidTriggerOperationSequence', path: 'triggers.operationSequence', message: 'operationSequence 必须是非负整数' });
+    }
+    if (data.eventSequence !== undefined
+      && (!Number.isInteger(data.eventSequence) || data.eventSequence < 0)) {
+      errors.push({ code: 'invalidTriggerEventSequence', path: 'triggers.eventSequence', message: 'eventSequence 必须是非负整数' });
     }
     const ledgerValidation = this.ledger.validateSnapshot(data.ledger);
     errors.push(...ledgerValidation.errors.map(error => ({ ...error, path: `triggers.${error.path}` })));
@@ -1025,6 +1053,9 @@ export class TriggerSystem {
       }))
     };
     const nextLedger = new ScenarioExecutionLedger().restore(normalizedLedger);
+    const restoredOperationSequence = Number.isInteger(data.operationSequence) && data.operationSequence >= 0
+      ? data.operationSequence
+      : getRestoredOperationSequence(data.ledger);
     const nextOnce = new Set(data.firedOnce);
     const nextCooldowns = Object.create(null);
     for (const [id, saved] of Object.entries(data.cooldowns)) {
@@ -1051,6 +1082,8 @@ export class TriggerSystem {
     this._coordinationGeneration += 1;
     this._coordinationTails.clear();
     this.ledger = nextLedger;
+    this._operationSequence = Math.max(this._operationSequence, restoredOperationSequence);
+    this._eventSequence = Math.max(this._eventSequence, Number.isInteger(data.eventSequence) ? data.eventSequence : 0);
     this._firedOnce = nextOnce;
     this._cooldowns = nextCooldowns;
     this._timers = nextTimers;

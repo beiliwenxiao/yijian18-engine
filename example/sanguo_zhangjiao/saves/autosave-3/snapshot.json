@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "createdAt": 1789454766295,
+  "createdAt": 1789466740597,
   "meta": {
     "gameId": "sanguo_zhangjiao",
     "kind": "auto",
@@ -9,8 +9,7 @@
     "level": 1,
     "currentSceneId": "S01-C01",
     "location": "S01-C01 区域",
-    "reason": "checkpoint",
-    "checkpointId": "checkpoint.S01.shelterChest",
+    "reason": "interval",
     "previewFile": "thumbnail.jpg"
   },
   "data": {
@@ -22,8 +21,8 @@
         "id": "refugee",
         "name": null,
         "transform": {
-          "x": 470.91885717188256,
-          "y": 508.1660527110339,
+          "x": 638.6459328804989,
+          "y": 545.7827294449036,
           "elevation": 0,
           "rotation": 0,
           "scale": {
@@ -88,10 +87,14 @@
           },
           {
             "definitionId": "resource.wolf_hide",
-            "quantity": 1
+            "quantity": 2
           },
           {
             "definitionId": "food.roasted_wolf_meat",
+            "quantity": 1
+          },
+          {
+            "definitionId": "story.s01.firestarter",
             "quantity": 1
           }
         ],
@@ -324,7 +327,7 @@
             }
           },
           "storyState": {
-            "currentDay": 1,
+            "currentDay": 2,
             "currentSceneId": "S01-C01",
             "delayedConsequences": [],
             "endingInputs": {
@@ -357,12 +360,12 @@
               "campfireLit": true,
               "campfireRefuelCount": 3,
               "cliffReached": false,
-              "firestarterAcquired": false,
+              "firestarterAcquired": true,
               "firstWolfKilled": true,
               "firstWolfSpotted": true,
               "initialToolsPicked": true,
               "meatCooked": true,
-              "overnightCompleted": false,
+              "overnightCompleted": true,
               "pursuit": {
                 "active": false,
                 "killed": 0,
@@ -397,6 +400,8 @@
           "snapshotSchemaVersion": 3,
           "definitionRevision": 1,
           "definitionDigest": "sha256-6c3f792e884bc44f8eb489ff5af4f4da780146fe6d66c11061c236e353f07678",
+          "operationSequence": 32,
+          "eventSequence": 10,
           "firedOnce": [
             "trg_s01_begin_tutorial_after_wake",
             "trg_s01_light_campfire",
@@ -444,13 +449,19 @@
             "trg_s01_enter_shelter": {
               "definitionRevision": 1,
               "remaining": 0,
-              "nextDue": 3833.5,
+              "nextDue": 2233.5999999999767,
               "duration": 1000
             },
-            "trg_s01_open_shelter_chest": {
+            "trg_s01_leave_shelter": {
               "definitionRevision": 1,
               "remaining": 0,
-              "nextDue": 7167.4000000003725,
+              "nextDue": 2483.6999999999825,
+              "duration": 1000
+            },
+            "trg_s01_overnight": {
+              "definitionRevision": 1,
+              "remaining": 0,
+              "nextDue": 14252.099999999977,
               "duration": 1000
             }
           },
@@ -1005,57 +1016,47 @@
               {
                 "triggerId": "trg_s01_enter_shelter",
                 "definitionRevision": 1,
-                "operationId": "trigger:1:trg_s01_enter_shelter:2",
-                "fingerprint": "sha256-b7ae534abf41be21434eb33af0bd6d4232ceb2f3b1543b10c7cbec54d580ae11",
+                "eventId": "event:trigger:1:733599:3",
+                "operationId": "event:trigger:1:733599:3",
+                "fingerprint": "sha256-e629113a1075f3198316317028fe9ee48e43ac14b3a8f0d05c8e0a12f118f4a9",
                 "status": "succeeded",
                 "actionIndex": 0,
                 "result": {
                   "ok": true,
-                  "operationId": "trigger:1:trg_s01_enter_shelter:2:trigger:trg_s01_enter_shelter:step:enter-shelter",
+                  "operationId": "event:trigger:1:733599:3:trigger:trg_s01_enter_shelter:step:enter-shelter",
                   "status": "succeeded",
                   "committed": false,
                   "code": null,
                   "stateId": "trigger:trg_s01_enter_shelter",
                   "stateRevision": null
                 },
-                "startedAt": 2450.300000000745,
-                "finishedAt": 2833.5,
+                "startedAt": 733.5999999999767,
+                "finishedAt": 1233.5999999999767,
                 "ledgerRevision": 4
               },
               {
                 "triggerId": "trg_s01_overnight",
                 "definitionRevision": 1,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s01_open_shelter_chest",
-                "definitionRevision": 1,
-                "operationId": "trigger:1:trg_s01_open_shelter_chest:3",
-                "fingerprint": "sha256-b7def6f2f4ff4218026a46484d006df7c8eb7f85a2401cb8db966f5ad9ecfc9b",
+                "eventId": "event:trigger:1:11201699:7",
+                "operationId": "event:trigger:1:11201699:7",
+                "fingerprint": "sha256-b7cead18e9c60227f5aa16a5ab3c712a160c68715b5c9eb600cecd393d11650f",
                 "status": "succeeded",
                 "actionIndex": 0,
                 "result": {
                   "ok": true,
-                  "operationId": "trigger:1:trg_s01_open_shelter_chest:3:trigger:trg_s01_open_shelter_chest:step:open-shelter-chest",
+                  "operationId": "event:trigger:1:11201699:7:trigger:trg_s01_overnight:step:overnight",
                   "status": "succeeded",
                   "committed": false,
                   "code": null,
-                  "stateId": "trigger:trg_s01_open_shelter_chest",
+                  "stateId": "trigger:trg_s01_overnight",
                   "stateRevision": null
                 },
-                "startedAt": 6134.0999999996275,
-                "finishedAt": 6167.4000000003725,
+                "startedAt": 11201.699999999983,
+                "finishedAt": 13252.099999999977,
                 "ledgerRevision": 4
               },
               {
-                "triggerId": "trg_s01_leave_shelter",
+                "triggerId": "trg_s01_open_shelter_chest",
                 "definitionRevision": 1,
                 "operationId": null,
                 "fingerprint": null,
@@ -1065,6 +1066,27 @@
                 "startedAt": null,
                 "finishedAt": null,
                 "ledgerRevision": 1
+              },
+              {
+                "triggerId": "trg_s01_leave_shelter",
+                "definitionRevision": 1,
+                "eventId": "event:trigger:1:16169199:9",
+                "operationId": "event:trigger:1:16169199:9",
+                "fingerprint": "sha256-af524a25ade84573ba81f116dce0a367d7e34937355f5e4b5734e4422de30a46",
+                "status": "failed",
+                "actionIndex": 0,
+                "result": {
+                  "ok": false,
+                  "operationId": "event:trigger:1:16169199:9",
+                  "status": "failed",
+                  "committed": false,
+                  "code": "operationConflict",
+                  "stateId": "trigger:trg_s01_leave_shelter",
+                  "stateRevision": null
+                },
+                "startedAt": 16169.199999999953,
+                "finishedAt": 16185.79999999996,
+                "ledgerRevision": 8
               },
               {
                 "triggerId": "trg_s01_river_crossed",
@@ -2174,8 +2196,8 @@
                               "removed": false,
                               "hp": 38,
                               "position": {
-                                "x": 9750.252246940128,
-                                "y": 3266.7932304264896
+                                "x": 9752.983659014488,
+                                "y": 3264.0618183521465
                               },
                               "ai": {
                                 "active": true,
@@ -2193,7 +2215,7 @@
                               "hp": 38,
                               "position": {
                                 "x": 9922.908253834266,
-                                "y": 3222.853709803692
+                                "y": 3226.716509803669
                               },
                               "ai": {
                                 "active": true,
@@ -2631,7 +2653,7 @@
                   "secondsPerUnit": 100,
                   "maxUnits": 10,
                   "units": 4,
-                  "remainingSeconds": 391.25079999999525,
+                  "remainingSeconds": 392.95079999999643,
                   "active": true
                 }
               },
@@ -2871,24 +2893,8 @@
           "entries": [
             {
               "id": "s01-shelter-chest:inventory",
-              "items": [
-                {
-                  "item": {
-                    "id": "resource.wolf_hide",
-                    "name": "狼皮",
-                    "type": "material",
-                    "imageId": "s01.item.wolfHide",
-                    "maxStack": 10,
-                    "sprite": {
-                      "height": 38,
-                      "width": 48
-                    },
-                    "subType": "hide"
-                  },
-                  "quantity": 1
-                }
-              ],
-              "operationSequence": 1
+              "items": [],
+              "operationSequence": 0
             }
           ]
         },
@@ -3424,8 +3430,8 @@
         "timeState": {
           "enabled": true,
           "paused": false,
-          "currentDay": 1,
-          "elapsed": 432.7020999999986
+          "currentDay": 2,
+          "elapsed": 448.3363999999917
         },
         "weatherState": {
           "currentWeather": "clear",
