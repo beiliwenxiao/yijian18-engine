@@ -93,6 +93,7 @@ import { DemoPlayerFactory } from '../entities/DemoPlayerFactory.js';
 import { getNpcRenderStyle } from '../../../src/rendering/NpcRenderStyles.js';
 import { EntityRenderer2D } from '../../../src/rendering/EntityRenderer2D.js';
 import { TaskGraphProjectionView } from '../../../src/ui/TaskGraphProjectionView.js';
+import { CommandContractKind } from '../../../src/core/command/CommandContracts.js';
 import { BaseGameSceneSetup } from './BaseGameSceneSetup.js';
 
 const ZONE_STAT_NAMES = Object.freeze({ hp: '生命', mp: '法力', attack: '攻击', defense: '防御', speed: '速度' });
@@ -288,12 +289,14 @@ export class BaseGameSceneBehaviors extends BaseGameSceneSetup {  /**
     this.context.services.eventJournal = this.sceneRuntime.eventJournal;
     this.context.services.taskGraph = this.sceneRuntime.taskGraphSystem;
     this.taskGraphProjectionView = new TaskGraphProjectionView({
-      getTaskGraph: () => this.context.services.taskGraph
+      getTaskGraph: () => this.context.services.taskGraph,
+      getActorId: () => this.playerEntity?.id || null
     });
     this.context.ui.taskGraph = this.taskGraphProjectionView;
     this.applicationEventService = new SceneApplicationEventService();
     this.sceneRuntime.registerCommandHandler('scene.applicationEvent', this.applicationEventService);
     this.questSystem.setCommandGateway(this.sceneRuntime.commandGateway);
+    this.questSystem.setTaskGraphSystem(this.sceneRuntime.taskGraphSystem);
     for (const commandType of Object.values(QUEST_COMMANDS)) {
       this.sceneRuntime.registerCommandHandler(commandType, this.questSystem);
     }
@@ -303,6 +306,13 @@ export class BaseGameSceneBehaviors extends BaseGameSceneSetup {  /**
       restore: snapshot => this.questSystem.restore(snapshot),
       required: true
     });
+    const stopTaskEventConsumption = this.sceneRuntime.notificationBus.subscribe(envelope => {
+      if (envelope?.kind !== CommandContractKind.APPLICATION_EVENT || !envelope.value?.eventId) return;
+      return this.questSystem.consumeTaskEvent(envelope.value, {
+        actorId: this.playerEntity?.id || null
+      });
+    });
+    this.resourceScope?.track?.(stopTaskEventConsumption);
     this.sceneRuntime.provide({ scene: this });
     this.sceneRuntime.enter();
     return this.sceneRuntime;
@@ -401,6 +411,7 @@ export class BaseGameSceneBehaviors extends BaseGameSceneSetup {  /**
           region: this._worldRegion,
           camera: this.camera
         }),
+        getContext: () => this.context,
         getPlayer: () => this.playerEntity,
         getEntities: () => this.entities,
         performanceOptimizer: this.performanceOptimizer

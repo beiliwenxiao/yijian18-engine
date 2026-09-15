@@ -3,6 +3,18 @@ inclusion: auto
 description: UI 编辑器组件、布局配置与移动端和桌面端 UI 接线约定。
 ---
 
+<!--
+Copyright (c) 2026 Liu Xiao (beiliwenxiao)
+
+@project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+@author    刘枭 (beiliwenxiao)
+@email     beiliwenxiao@qq.com
+@date      2026-01-14
+@blog      https://blog.csdn.net/beiliwenxiao
+@repo      https://github.com/beiliwenxiao/yijian18-engine
+           https://gitee.com/coderaaa/yijian18-engine
+-->
+
 # UI 编辑器组件管理指南
 
 ## 概述
@@ -45,6 +57,7 @@ UI 编辑器预览、虚线交互框和拖动反算必须共用 `BackpackPanel._
 | `minimap` | 小地图 | `Minimap`，由 `ScenePanelLayout` 直接应用矩形 |
 | `timeWeatherBadge` | 时间/天气 | `SceneRenderPipeline` 读取 `context.ui.layout.getScreenHudRect()` |
 | `combatStateBadge` | 战斗/灵魂状态 | `SceneRenderPipeline` 读取 `context.ui.layout.getScreenHudRect()` |
+| `taskTracker` | 任务追踪 | `TaskGraphProjectionView` 只读当前玩家投影，`SceneRenderPipeline` 传入 `getScreenHudRect('taskTracker')` |
 
 新增或调整这类双端 Canvas HUD 必须同步四处：
 
@@ -53,11 +66,11 @@ UI 编辑器预览、虚线交互框和拖动反算必须共用 `BackpackPanel._
 3. `UILayout.desktop.json`
 4. `UILayout.mobile.json`
 
-`UIEditor._mergeLayout()` 只遍历当前平台的 `DEFAULT_COMPONENTS`；只改 JSON 会让额外 ID 在加载合并时被丢弃。三项 HUD 不需要修改 `index.html` 或 `applyUILayoutToDom()`。天气与战斗徽章必须各自保存独立矩形，拖动其中一项不得再通过“小地图相对位置”隐式带动另一项；旧配置缺失时才允许使用相对小地图的 fallback。两类徽章的文字布局统一使用可选 `fontSize/textOffsetX/textOffsetY`：`fontSize:0` 或缺字段表示沿用自动字号，偏移只移动框内文字。字段必须沿 `UIEditor → UILayout JSON → UILayoutLoader.getRect() → ScenePanelLayout._screenHudRects → SceneRenderPipeline` 投影，渲染器禁止直接读取布局 JSON。
+`UIEditor._mergeLayout()` 只遍历当前平台的 `DEFAULT_COMPONENTS`；只改 JSON 会让额外 ID 在加载合并时被丢弃。四项 HUD 不需要修改 `index.html` 或 `applyUILayoutToDom()`。天气与战斗徽章必须各自保存独立矩形，拖动其中一项不得再通过“小地图相对位置”隐式带动另一项；旧配置缺失时才允许使用相对小地图的 fallback。任务追踪不允许固定位置 fallback：`TaskGraphProjectionView` 只在 `ScenePanelLayout._screenHudRects.taskTracker` 存在时由渲染管线绘制，并且只读取当前玩家的 `TaskGraphSystem.getProjection()`。两类徽章的文字布局统一使用可选 `fontSize/textOffsetX/textOffsetY`：`fontSize:0` 或缺字段表示沿用自动字号，偏移只移动框内文字。字段必须沿 `UIEditor → UILayout JSON → UILayoutLoader.getRect() → ScenePanelLayout._screenHudRects → SceneRenderPipeline` 投影，渲染器禁止直接读取布局 JSON。
 
 UI 编辑器的“保存到文件”同时写 UILayout/LoginLayout、共用 PanelLayout、手柄绑定和提示文案；每个写入必须把失败抛给 `save()` 聚合，任一子项失败都只能显示“部分保存失败”，不得被后续成功状态覆盖。成功/失败同时保留底部状态并显示自动消失的非阻塞反馈，禁止用 `alert()` 阻塞编辑流程。
 
-`Minimap` 被 `UILayoutLoader` 命中时必须调用 `setLayoutManaged(true)`，使 `_tryBuildCache()` 只建立地图内容缓存而不按世界宽高比重写编辑器保存的 `width/height`。窗口 resize 只复用已经加载的 `scene.uiLayoutLoader` 重新计算百分比矩形，不得重新 fetch 配置，也不得无条件把小地图重置到右上角。
+`Minimap` 被 `UILayoutLoader` 命中时必须调用 `setLayoutManaged(true)`，使 `_tryBuildCache()` 只建立地图内容缓存而不按世界宽高比重写编辑器保存的 `width/height`。窗口 resize 只复用已经加载的 `scene.uiLayoutLoader` 重新计算百分比矩形，不得重新 fetch 配置，也不得无条件把小地图重置到右上角。任务 marker 每帧只读 `context.services.taskGraph` 的当前玩家投影：显式 `x/y` 按世界坐标使用；只有 `sceneId+targetId` 时依次从 `context.services.placements.inspectPlacement()` 和已投影场景对象解析统一空间锚点，无法解析必须省略 marker，不得猜测或伪造坐标。`Minimap.setTaskMarkers()` 只接收表现投影，不修改 TaskGraph、placement 或场景对象。
 
 ### 平台差异：mobile 交互按钮以 DOM 为主，desktop 控件以 Canvas 为主
 

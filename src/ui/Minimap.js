@@ -86,10 +86,12 @@ export class Minimap extends UIElement {
     this._drawW = 0;
     this._drawH = 0;
 
-    // 玩家、敌人、NPC 位置（世界坐标）
+    // 玩家、敌人、NPC 与任务位置（世界坐标）
     this.playerPosition = null;
     this.enemyPositions = [];
     this.npcPositions = [];
+    this.taskMarkers = [];
+    this.taskMarkerColor = options.taskMarkerColor || '#ffd54f';
     // 相机视野范围
     this.viewBounds = null;
     this._renderTransform = {
@@ -158,6 +160,12 @@ export class Minimap extends UIElement {
   setPlayerPosition(position) { this.playerPosition = position; }
   setEnemyPositions(positions) { this.enemyPositions = positions || []; }
   setNPCPositions(positions) { this.npcPositions = positions || []; }
+  /** 只读接收任务投影 marker；不修改任务、场景对象或调用方数组。 */
+  setTaskMarkers(markers) {
+    this.taskMarkers = Array.isArray(markers)
+      ? markers.map(marker => ({ ...marker }))
+      : [];
+  }
   setViewBounds(bounds) { this.viewBounds = bounds; }
 
   /** 放大小地图（显示更小范围，更多细节） */
@@ -430,6 +438,8 @@ export class Minimap extends UIElement {
       this._renderEnemyMarkers(ctx);
       // NPC
       this._renderNPCMarkers(ctx);
+      // 当前玩家追踪的任务目标
+      this._renderTaskMarkers(ctx);
       // 玩家（最上层）
       this._renderPlayerMarker(ctx);
 
@@ -504,6 +514,28 @@ export class Minimap extends UIElement {
       ctx.beginPath();
       ctx.arc(x, y, this.markerSize - 1, 0, Math.PI * 2);
       ctx.fill();
+    }
+  }
+
+  _renderTaskMarkers(ctx) {
+    const radius = Math.max(5, this.markerSize + 2);
+    for (let index = 0; index < this.taskMarkers.length; index++) {
+      const point = this._worldToMinimap(this.taskMarkers[index]);
+      if (!point || !this._isMarkerVisible(point.x, point.y)) continue;
+      ctx.save();
+      ctx.translate(point.x, point.y);
+      ctx.rotate(Math.PI / 4);
+      ctx.fillStyle = this.taskMarkerColor;
+      ctx.fillRect(-radius, -radius, radius * 2, radius * 2);
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(-radius, -radius, radius * 2, radius * 2);
+      ctx.restore();
+      ctx.strokeStyle = 'rgba(255, 213, 79, 0.9)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(point.x, point.y, radius + 4, 0, Math.PI * 2);
+      ctx.stroke();
     }
   }
 

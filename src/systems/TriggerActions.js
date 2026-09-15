@@ -31,7 +31,7 @@ export const DEFAULT_TRIGGER_ACTION_IDS = Object.freeze([
   'completeQuest', 'showTip', 'playSound', 'playBgm', 'spawnEnemy', 'wait',
   'parallel', 'battleWin', 'battleLose', 'mount',
   'rescue.command', 'battle.command', 'construction.command', 'vehicle.command',
-  'quest.command', 'world.teleport', 'checkpoint.request', 'ending.command',
+  'quest.command', 'task.command', 'world.teleport', 'checkpoint.request', 'ending.command',
   'dialogue.command', 'tutorial.command', 'state.transaction', 'scenario.command'
 ]);
 

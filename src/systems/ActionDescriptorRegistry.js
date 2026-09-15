@@ -1,3 +1,25 @@
+/************************************************************
+
+ * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
+
+ * 
+
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+
+ * @author    刘枭 (beiliwenxiao)
+
+ * @email     beiliwenxiao@qq.com
+
+ * @date      2026-01-14
+
+ * @blog      https://blog.csdn.net/beiliwenxiao
+
+ * @repo      https://github.com/beiliwenxiao/yijian18-engine
+
+ *            https://gitee.com/coderaaa/yijian18-engine
+
+ ************************************************************/
+
 import { cloneCanonicalValue, deepFreeze } from '../core/CanonicalSnapshot.js';
 
 const isObject = value => value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -136,6 +158,7 @@ export const STANDARD_ACTION_DESCRIPTORS = deepFreeze([
   descriptor('construction.command', 'construction.command', 'definitionId', 'constructions'),
   descriptor('vehicle.command', 'vehicle.command', 'vehicleId', 'vehicles'),
   descriptor('quest.command', 'quest.command', 'questId', 'quests'),
+  descriptor('task.command', 'quest.command', 'definitionId', null),
   descriptor('world.teleport', 'world.teleport', 'sceneId', 'scenes', ActionSideEffect.WORLD, ActionCheckpointPolicy.REQUIRED),
   descriptor('checkpoint.request', 'checkpoint.request', 'checkpointId', null, ActionSideEffect.DOMAIN, ActionCheckpointPolicy.REQUIRED),
   descriptor('ending.command', 'ending.command', 'endingId', 'endings', ActionSideEffect.DOMAIN, ActionCheckpointPolicy.REQUIRED),

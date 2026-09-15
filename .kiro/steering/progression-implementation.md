@@ -1,6 +1,6 @@
 ---
 inclusion: fileMatch
-fileMatchPattern: "src/{systems/{effects,ability,progression},core/{input,snapshot,validation,scene}}/**/*.js"
+fileMatchPattern: "{src/{systems,core,ui}/**/*.js,editor/TaskGraphEditor.js}"
 ---
 
 # 成长与引擎基础设施实施现状
@@ -380,3 +380,32 @@ S11 为 Demo 迁移验证：旧张角 Demo 通过新架构运行、逐个切换 
 - 火堆必须是 `library.items` 中 `worldProp:true` 的物品定义；场景只用 `type:'ref' / kind:'item'` 放置该物品，并以 `semanticRole:'campfire'` 让具体 Demo 适配器绑定既有 `SceneCampfireService`。禁止再用 `type:'spawn', ref:'campfire'` 把它作为场景逻辑特例。
 - 基础灰烬、木头、石圈、火焰的稳定 `imageId`、尺寸、pivot、偏移、火焰帧参数、余烬、燃料、碰撞和光照都归入物品的 `campfirePresentation`。`SceneCampfireService` 只消费这份已验证表现定义和已投影一次的世界坐标，不读取场景 `gameplay.campfire`，也不得硬编码木头或石圈几何。
 - 火堆 worldProp 的实体可保留为交互/场景锚点，但 `sprite.visible:false`，避免它与服务绘制的分层表现重复渲染。进入场景时必须按 Manifest 稳定 ID 预载所有表现层；切换到没有火堆定义的场景必须释放服务配置，避免旧火堆残留。
+
+## EventJournal 与任务图存档边界
+
+事件与任务能力的首要目标是可靠存档、原子恢复和幂等重放，不是单纯增加任务 UI。职责固定分为三层：
+
+```text
+EventInstance        一次真实发生；由全局唯一 eventId 标识
+EventExecutionGraph  同一事件下多个 Trigger、step 与 operation 的执行证据
+TaskInstance         玩家长期任务的节点、并行、分支、奖励与追踪状态
+```
+
+身份规则：
+
+- `eventDefinitionId` 是静态内容定义；`eventId = evt:<runId>:<sequence>` 是一次真实事件实例；两者不得混用。
+- 每次新的空间交互产生新 `eventId`；已提交领域事件沿用 `PostCommitNotificationBus` 已分配的 `eventId`。
+- 同一事件可命中多个 Trigger；步骤身份是 `eventId + triggerId + stepId`，领域 `operationId` 由该身份稳定派生。一个步骤含多个领域事务时再追加稳定 `operationKey`。
+- 同 `eventId` 同 canonical 载荷只返回原执行结果；同 ID 不同载荷必须以 `eventPayloadConflict/eventExecutionConflict` 拒绝。`expectedStateRevision/requestId/clientSequence` 是并发或传输元数据，不进入业务 operation fingerprint。
+- Trigger 只消费事件和编排步骤，不生成或拥有业务事件事实；UI、HUD、地图和调试面板均只读投影。
+
+EventJournal 存档必须包含稳定 `runId`、下一事件序号、全部未结束事件、关键已结束事件，以及每个 `eventId + triggerId + stepId` 的 `operationId/payloadFingerprint/status/result/logicalTime`。运行中恢复不得默认为成功；应保存可续跑位置或明确转为 interrupted，禁止以新 ID 静默重放。事件、执行和 OperationLedger 必须在同一 AuthoritySnapshot 原子恢复边界内。
+
+TaskGraph 不是 EventJournal 的替代品：任务定义只声明事件 matcher、节点和边；任务存档保存 `TaskInstance`、节点状态、完成证据 eventId、并行汇合和已选分支。任务推进、奖励与 Checkpoint 必须进入现有 `QuestTransactionService → CommandGateway → LocalAuthorityAdapter` 权威事务，禁止 `notificationBus` 监听器直接修改独立 TaskGraph 状态。任务节点可使用 `all/any/n-of-m` 并行汇合；分支按稳定优先级选择首个满足规则，选择结果只提交一次并进入存档。
+
+实施顺序固定：
+
+1. 完成 EventJournal 的全局 eventId、执行状态、事件/operation 幂等边界和 AuthoritySnapshot 恢复。
+2. 扩展现有 QuestTransactionService/QuestSystem 承载 TaskGraph 的 TaskInstance、节点、并行、分支、奖励和 Checkpoint；不得保留第二份独立任务权威。
+3. TaskGraph Canonical Schema、ContentValidator 和 TaskGraphEditor 共用同一图校验器；保存只能通过共享 CanonicalEditorSession patch `taskGraphs` 后提交。校验覆盖重复 ID、入口/终点、引用、不可达节点、无界循环、并行参数、分支目标/组合冲突和事件 matcher。
+4. 最后接正式任务 HUD、地图追踪和 EventJournal/TaskGraph 存档调试视图；三者只读同一任务投影，不保存第二份任务状态。

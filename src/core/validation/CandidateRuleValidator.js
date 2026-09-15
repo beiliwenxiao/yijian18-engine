@@ -21,6 +21,7 @@
  ************************************************************/
 
 import { DEFAULT_TRIGGER_ACTION_IDS } from '../../systems/TriggerActions.js';
+import { validateTaskGraphDefinitions } from '../../systems/TaskGraphSystem.js';
 import { createStandardCapabilityStrategyRegistry } from '../../systems/items/CapabilityStrategyRegistry.js';
 import { ValidationCode, makeError } from './ValidationError.js';
 
@@ -183,6 +184,7 @@ export class CandidateRuleValidator {
     const dialogueIds = stableIds(candidate?.dialogues, 'dialogues', errors);
     const tutorialIds = stableIds(candidate?.tutorials, 'tutorials', errors);
     const questIds = stableIds(candidate?.quests, 'quests', errors);
+    const taskGraphIds = stableIds(candidate?.taskGraphs, 'taskGraphs', errors);
     const triggerIds = stableIds(candidate?.triggers, 'triggers', errors);
 
     // ★ FlowGroup 双读兼容：flowGroups 优先，缺失时回退 sceneEvents（旧名）
@@ -298,6 +300,18 @@ export class CandidateRuleValidator {
       referenceArray(quest, 'dialogueRefs', dialogueIds, path, '对话', errors);
       referenceArray(quest, 'sceneRefs', sceneIds, path, '场景', errors);
     });
+    list(candidate?.taskGraphs).forEach((task, taskIndex) => {
+      list(task?.nodes).forEach((node, nodeIndex) => {
+        const sceneId = node?.mapTarget?.sceneId;
+        if (sceneId && !sceneIds.has(sceneId)) {
+          errors.push(makeError(
+            ValidationCode.INVALID_REFERENCE,
+            `taskGraphs[${taskIndex}].nodes[${nodeIndex}].mapTarget.sceneId`,
+            `任务地图目标引用了不存在的场景: ${sceneId}`
+          ));
+        }
+      });
+    });
 
     const commandDefinitions = Array.isArray(candidate?.commands)
       ? candidate.commands
@@ -344,6 +358,7 @@ export class CandidateRuleValidator {
       // a non-empty stable reference here; a populated global library remains strictly closed.
       'vehicle.command': ['vehicleId', vehicleIds, '载具', { allowSceneOwned: true }],
       'quest.command': ['questId', questIds, '任务'],
+      'task.command': ['definitionId', taskGraphIds, '任务图'],
       'world.teleport': ['sceneId', sceneIds, '场景'],
       'ending.command': ['endingId', stableIds(candidate?.endings || extensionEndings, candidate?.endings ? 'endings' : 'extensions.endings', errors), '结局'],
       'dialogue.command': ['dialogueId', dialogueIds, '对话'],
@@ -453,6 +468,12 @@ export class CandidateRuleValidator {
 
   validateBusinessRules(candidate, context = {}) {
     const errors = [];
+    if (candidate?.taskGraphs !== undefined) {
+      const taskGraphValidation = validateTaskGraphDefinitions(candidate.taskGraphs);
+      taskGraphValidation.errors.forEach(error => {
+        errors.push(makeError(error.code, error.path, error.message));
+      });
+    }
     const weather = candidate?.system?.weather;
     if (weather !== undefined) {
       const weatherTypes = new Set(['clear', 'breeze', 'wind', 'lightRain', 'heavyRain', 'lightFog', 'heavyFog', 'storm']);

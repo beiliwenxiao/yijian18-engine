@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "createdAt": 1789500358258,
+  "createdAt": 1789515548103,
   "meta": {
     "gameId": "sanguo_zhangjiao",
     "kind": "auto",
@@ -22,8 +22,8 @@
         "id": "refugee",
         "name": null,
         "transform": {
-          "x": 8214.970750541095,
-          "y": 4044.6791676630723,
+          "x": 8224.89051745566,
+          "y": 4044.5846936924577,
           "elevation": 0,
           "rotation": 0,
           "scale": {
@@ -166,8 +166,13 @@
         ]
       },
       "quests": {
-        "schemaVersion": 1,
+        "schemaVersion": 2,
         "definitionRevision": 1,
+        "taskGraph": {
+          "schemaVersion": 1,
+          "nextInstanceSequence": 0,
+          "instances": []
+        },
         "actors": []
       },
       "content": {
@@ -420,7 +425,7 @@
             "trg_s01_spawn_initial": {
               "definitionRevision": 1,
               "remaining": 0,
-              "nextDue": 2550.199999999997,
+              "nextDue": 2817,
               "duration": 1000
             },
             "trg_s01_refuel_campfire": {
@@ -473,22 +478,22 @@
               {
                 "triggerId": "trg_s01_spawn_initial",
                 "definitionRevision": 1,
-                "eventId": "evt:run-unknown:0000000006",
-                "operationId": "evt:run-unknown:0000000006",
-                "fingerprint": "sha256-3d29c078762cb145b19e794b9bd4bd335a3c85c86ec0bde2be3eb49789fe9d47",
+                "eventId": "evt:run-9fa35d3b-72b8-4b47-9c19-eb1be2427bb2:0000000006",
+                "operationId": "evt:run-9fa35d3b-72b8-4b47-9c19-eb1be2427bb2:0000000006",
+                "fingerprint": "sha256-63a9855235b8594586977fe0dd33fa6120253ebe3376bda65866b6b5acf1ea9f",
                 "status": "succeeded",
                 "actionIndex": 2,
                 "result": {
                   "ok": true,
-                  "operationId": "evt:run-unknown:0000000006:trigger:trg_s01_spawn_initial:step:present-entry",
+                  "operationId": "evt:run-9fa35d3b-72b8-4b47-9c19-eb1be2427bb2:0000000006:trigger:trg_s01_spawn_initial:step:present-entry",
                   "status": "succeeded",
                   "committed": false,
                   "code": null,
                   "stateId": "trigger:trg_s01_spawn_initial",
                   "stateRevision": null
                 },
-                "startedAt": 1550.199999999997,
-                "finishedAt": 1550.199999999997,
+                "startedAt": 1817,
+                "finishedAt": 1817,
                 "ledgerRevision": 16
               },
               {
@@ -1072,13 +1077,13 @@
               {
                 "triggerId": "trg_s01_leave_shelter",
                 "definitionRevision": 1,
-                "eventId": "evt:run-unknown:0000000003",
-                "operationId": "evt:run-unknown:0000000003",
-                "fingerprint": "sha256-79169df8b394c92669631dc1ac667f78c3c514cd6ce775de8de5cf343b37ff0c",
+                "eventId": "evt:run-9fa35d3b-72b8-4b47-9c19-eb1be2427bb2:0000000003",
+                "operationId": "evt:run-9fa35d3b-72b8-4b47-9c19-eb1be2427bb2:0000000003",
+                "fingerprint": "sha256-bd1fcf1a6e08d009c5a844e6c35874f31302a78b3271e98eb0c16d008a698d1e",
                 "status": "running",
                 "actionIndex": 0,
                 "result": null,
-                "startedAt": 1366.8999999999942,
+                "startedAt": 1667,
                 "finishedAt": null,
                 "ledgerRevision": 8
               },
@@ -2130,8 +2135,8 @@
                         "removed": false,
                         "hp": 38,
                         "position": {
-                          "x": 9708.555150003043,
-                          "y": 3308.4903273635887
+                          "x": 9718.131497140652,
+                          "y": 3298.91398022598
                         },
                         "ai": {
                           "active": true,
@@ -2149,7 +2154,7 @@
                         "hp": 38,
                         "position": {
                           "x": 9922.908253834266,
-                          "y": 3163.885109803668
+                          "y": 3177.428109803669
                         },
                         "ai": {
                           "active": true,
@@ -2557,8 +2562,8 @@
                         "removed": false,
                         "hp": 32,
                         "position": {
-                          "x": 8101.559997458525,
-                          "y": 4149.262725280306
+                          "x": 8100.432857052276,
+                          "y": 4150.219397149133
                         },
                         "ai": {
                           "active": true,
@@ -2575,8 +2580,8 @@
                         "removed": false,
                         "hp": 32,
                         "position": {
-                          "x": 8172.628667476251,
-                          "y": 4164.012017347758
+                          "x": 8172.035978920464,
+                          "y": 4165.366412724247
                         },
                         "ai": {
                           "active": true,
@@ -2593,8 +2598,8 @@
                         "removed": false,
                         "hp": 32,
                         "position": {
-                          "x": 8234.602460223714,
-                          "y": 4131.716877500584
+                          "x": 8234.766231710906,
+                          "y": 4133.186178511262
                         },
                         "ai": {
                           "active": true,
@@ -2932,7 +2937,7 @@
             "secondsPerUnit": 100,
             "maxUnits": 10,
             "units": 4,
-            "remainingSeconds": 390.56769999999585,
+            "remainingSeconds": 390.6678999999957,
             "active": true
           }
         },

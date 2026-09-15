@@ -1,3 +1,25 @@
+/************************************************************
+
+ * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
+
+ * 
+
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+
+ * @author    刘枭 (beiliwenxiao)
+
+ * @email     beiliwenxiao@qq.com
+
+ * @date      2026-01-14
+
+ * @blog      https://blog.csdn.net/beiliwenxiao
+
+ * @repo      https://github.com/beiliwenxiao/yijian18-engine
+
+ *            https://gitee.com/coderaaa/yijian18-engine
+
+ ************************************************************/
+
 import { STANDARD_ACTION_DESCRIPTORS } from './ActionDescriptorRegistry.js';
 
 const isObject = value => value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -70,6 +92,7 @@ const STANDARD_ACTION_LABELS = Object.freeze({
   'construction.command': '营建命令',
   'vehicle.command': '载具命令',
   'quest.command': '任务命令',
+  'task.command': '任务图命令',
   'world.teleport': '世界传送',
   'checkpoint.request': '检查点请求',
   'ending.command': '结局命令',

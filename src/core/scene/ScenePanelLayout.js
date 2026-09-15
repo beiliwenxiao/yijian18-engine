@@ -43,7 +43,8 @@ export class ScenePanelLayout {
     this._requestedIconKeys = new Set();
     this._screenHudRects = {
       timeWeatherBadge: null,
-      combatStateBadge: null
+      combatStateBadge: null,
+      taskTracker: null
     };
     this._onboardingComponentStates = new Map();
   }
@@ -616,6 +617,8 @@ export class ScenePanelLayout {
       width: 80,
       height: 30
     };
+    // 正式任务 HUD 只接受 UIEditor 布局，不在运行时维护固定位置事实。
+    this._screenHudRects.taskTracker = loader?.getRect?.('taskTracker', width, height) || null;
   }
 
   _resizeScreenHud(width, height) {

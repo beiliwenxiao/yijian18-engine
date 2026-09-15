@@ -169,7 +169,7 @@ export class GameSceneRuntime {
     );
     this.eventJournal = registerAuthorityDependency(
       '$eventJournal',
-      config.eventJournal || new EventJournal({ runId: config.getCommandSessionId?.() || 'run-unknown' }),
+      config.eventJournal || new EventJournal({ runId: config.getCommandSessionId?.() || null }),
       Boolean(config.eventJournal),
       770_500
     );
@@ -208,21 +208,12 @@ export class GameSceneRuntime {
       eventJournal: this.eventJournal
     });
     this.authoritySnapshotService.registerService('eventJournal', this.eventJournal.asSnapshotProvider());
-    this.authoritySnapshotService.registerService('taskGraph', {
-      snapshot: () => this.taskGraphSystem.snapshot(),
-      validate: snapshot => this.taskGraphSystem.validate(snapshot),
-      restore: snapshot => this.taskGraphSystem.restore(snapshot),
-      required: true
-    });
     registerAuthorityDependency(
       '$authoritySnapshotService',
       this.authoritySnapshotService,
       Boolean(config.authoritySnapshotService),
       769_000
     );
-    this.notificationBus.subscribe(event => {
-      if (event?.value?.eventId) this.taskGraphSystem.consumeEvent(event.value);
-    });
     this.registerSnapshotProvider('authority', this.authoritySnapshotService.asSnapshotProvider());
 
     const suppliedGateway = config.commandGateway || null;

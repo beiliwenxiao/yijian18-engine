@@ -10,7 +10,8 @@
  *            https://gitee.com/coderaaa/yijian18-engine
  ************************************************************/
 
-const NODE_TYPES = Object.freeze(['start', 'objective', 'sequence', 'parallel', 'branch', 'complete', 'fail']);
+import { TASK_NODE_TYPES, validateTaskGraphDefinitions } from '../src/systems/TaskGraphSystem.js';
+
 const JOIN_POLICIES = Object.freeze(['all', 'any', 'count']);
 const clone = value => structuredClone(value);
 const list = value => Array.isArray(value) ? value : [];
@@ -143,6 +144,7 @@ export class TaskGraphEditor {
     }
     const nodeIds = list(task.nodes).map(node => node?.id).filter(Boolean);
     target.innerHTML = `
+      <div class="tge-graph" data-role="task-graph">${this._graphSvg(task)}</div>
       <div class="tge-header-grid">
         <div class="tge-field"><label>任务 ID</label><input data-task-field="id" value="${this._escape(task.id || '')}" placeholder="task.main.example"></div>
         <div class="tge-field"><label>标题</label><input data-task-field="title" value="${this._escape(task.title || '')}" placeholder="任务标题"></div>
@@ -160,7 +162,49 @@ export class TaskGraphEditor {
       this._updateTaskField(input.dataset.taskField, input.value);
     }));
     target.querySelector('[data-action="add-node"]')?.addEventListener('click', () => this._addNode());
+    target.querySelectorAll('[data-graph-node-index]').forEach(node => node.addEventListener('click', () => {
+      target.querySelector(`[data-node-index="${node.dataset.graphNodeIndex}"]`)?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
+    }));
     target.querySelectorAll('[data-node-index]').forEach(card => this._bindNodeCard(card));
+  }
+
+  _graphSvg(task) {
+    const nodes = list(task.nodes);
+    if (nodes.length === 0) return '<div class="tge-empty compact">暂无任务节点图</div>';
+    const columns = Math.min(4, Math.max(1, nodes.length));
+    const cellWidth = 190;
+    const cellHeight = 92;
+    const width = columns * cellWidth + 40;
+    const height = Math.ceil(nodes.length / columns) * cellHeight + 40;
+    const positions = new Map(nodes.map((node, index) => [node.id, {
+      index,
+      x: 20 + (index % columns) * cellWidth,
+      y: 20 + Math.floor(index / columns) * cellHeight
+    }]));
+    const targets = node => [
+      ...list(node.next),
+      ...(node.type === 'parallel' ? list(node.children) : []),
+      ...(node.type === 'branch' ? list(node.branches).map(branch => branch?.targetNodeId).filter(Boolean) : [])
+    ];
+    const edges = nodes.flatMap(node => {
+      const from = positions.get(node.id);
+      return targets(node).flatMap(targetId => {
+        const to = positions.get(targetId);
+        if (!from || !to) return [];
+        return [`<path d="M ${from.x + 150} ${from.y + 25} C ${from.x + 170} ${from.y + 25}, ${to.x - 20} ${to.y + 25}, ${to.x} ${to.y + 25}"/>`];
+      });
+    }).join('');
+    const nodeSvg = nodes.map((node, index) => {
+      const position = positions.get(node.id);
+      return `<g class="tge-graph-node" data-graph-node-index="${index}" transform="translate(${position.x},${position.y})">
+        <rect width="150" height="50" rx="6"/>
+        <text x="10" y="20">${this._escape(node.title || node.id)}</text>
+        <text class="type" x="10" y="39">${this._escape(node.type)}</text>
+      </g>`;
+    }).join('');
+    return `<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="任务节点图">
+      <g class="tge-graph-edges">${edges}</g>${nodeSvg}
+    </svg>`;
   }
 
   _nodeCard(node, index, nodeIds) {
@@ -175,8 +219,12 @@ export class TaskGraphEditor {
         </div>
         <div class="tge-node-grid">
           <div class="tge-field"><label>节点 ID</label><input data-node-field="id" value="${this._escape(node.id || '')}" placeholder="node.start"></div>
-          <div class="tge-field"><label>类型</label><select data-node-field="type">${NODE_TYPES.map(type => `<option value="${type}" ${node.type === type ? 'selected' : ''}>${type}</option>`).join('')}</select></div>
+          <div class="tge-field"><label>类型</label><select data-node-field="type">${TASK_NODE_TYPES.map(type => `<option value="${type}" ${node.type === type ? 'selected' : ''}>${type}</option>`).join('')}</select></div>
           <div class="tge-field full"><label>next 边（逗号分隔节点 ID）</label><input data-node-list="next" value="${this._escape(list(node.next).join(', '))}" placeholder="node.next, node.complete"><small>可直接输入目标节点 ID；保存前会校验引用。</small></div>
+        </div>
+        <div class="tge-json-field">
+          <label>mapTarget（JSON 对象，可留空）</label>
+          <textarea data-node-json="mapTarget" rows="4" placeholder='{"sceneId":"S01","targetId":"target.example","x":640,"y":360}'>${node.mapTarget === undefined ? '' : this._escape(this._json(node.mapTarget))}</textarea>
         </div>
         ${isObjective ? `
           <div class="tge-json-field">
@@ -285,7 +333,7 @@ export class TaskGraphEditor {
       if (task.nodes.some(item => item !== node && item?.id === value)) return this._toast(`节点 ID 已存在：${value}`, 'error');
       this._replaceNodeReferences(task, node.id, value);
     }
-    if (field === 'type' && !NODE_TYPES.includes(value)) return;
+    if (field === 'type' && !TASK_NODE_TYPES.includes(value)) return;
     if (field === 'joinPolicy' && !JOIN_POLICIES.includes(value)) return;
     if (field === 'requiredCount' && value !== undefined && (!Number.isInteger(value) || value < 1)) return;
     if (value === undefined) delete node[field];
@@ -299,10 +347,16 @@ export class TaskGraphEditor {
     if (!node) return;
     const key = `${index}:${field}`;
     try {
-      const value = JSON.parse(input.value);
-      if (field === 'eventMatcher' && (!value || typeof value !== 'object' || Array.isArray(value))) throw new TypeError('eventMatcher 必须是 JSON 对象');
-      if (field === 'branches' && !Array.isArray(value)) throw new TypeError('branches 必须是 JSON 数组');
-      node[field] = value;
+      const text = input.value.trim();
+      if (field === 'mapTarget' && text === '') {
+        delete node.mapTarget;
+      } else {
+        const value = JSON.parse(text);
+        if (field === 'eventMatcher' && (!value || typeof value !== 'object' || Array.isArray(value))) throw new TypeError('eventMatcher 必须是 JSON 对象');
+        if (field === 'mapTarget' && (!value || typeof value !== 'object' || Array.isArray(value))) throw new TypeError('mapTarget 必须是 JSON 对象或留空');
+        if (field === 'branches' && !Array.isArray(value)) throw new TypeError('branches 必须是 JSON 数组');
+        node[field] = value;
+      }
       this.invalidJsonFields.delete(key);
       input.classList.remove('invalid');
       input.title = '';
@@ -349,31 +403,14 @@ export class TaskGraphEditor {
   }
 
   _validateDefinitions() {
-    const ids = new Set();
-    for (const task of this.taskGraphs) {
-      if (!stableId(task?.id) || ids.has(task.id)) return { ok: false, code: 'invalidTaskId', message: '任务 ID 缺失、格式无效或重复' };
-      ids.add(task.id);
-      const nodes = list(task.nodes);
-      const nodeIds = new Set();
-      for (const node of nodes) {
-        if (!stableId(node?.id) || nodeIds.has(node.id)) return { ok: false, code: 'invalidTaskNodeId', message: `任务 ${task.id} 存在缺失、无效或重复的节点 ID` };
-        if (!NODE_TYPES.includes(node.type)) return { ok: false, code: 'invalidTaskNodeType', message: `节点 ${node.id} 的类型无效` };
-        nodeIds.add(node.id);
-      }
-      if (!nodeIds.has(task.entryNodeId)) return { ok: false, code: 'invalidTaskEntry', message: `任务 ${task.id} 的入口节点不存在` };
-      for (const node of nodes) {
-        if (list(node.next).some(targetId => !nodeIds.has(targetId))) return { ok: false, code: 'invalidTaskEdge', message: `节点 ${node.id} 的 next 引用了不存在的节点` };
-        if (node.type === 'parallel') {
-          const children = list(node.children);
-          if (children.length === 0 || children.some(id => !nodeIds.has(id))) return { ok: false, code: 'invalidParallelChildren', message: `并行节点 ${node.id} 的 children 不能为空且必须存在` };
-          const policy = node.joinPolicy || 'all';
-          if (!JOIN_POLICIES.includes(policy)) return { ok: false, code: 'invalidParallelJoin', message: `并行节点 ${node.id} 的 joinPolicy 无效` };
-          if (policy === 'count' && (!Number.isInteger(node.requiredCount) || node.requiredCount < 1 || node.requiredCount > children.length)) return { ok: false, code: 'invalidParallelCount', message: `并行节点 ${node.id} 的 requiredCount 必须在 children 数量范围内` };
-        }
-        if (node.type === 'branch' && list(node.branches).length === 0) return { ok: false, code: 'invalidBranchRules', message: `分支节点 ${node.id} 至少需要一条 branches 规则` };
-      }
-    }
-    return { ok: true };
+    const validation = validateTaskGraphDefinitions(this.taskGraphs);
+    if (validation.ok) return { ok: true };
+    const first = validation.errors[0];
+    return {
+      ok: false,
+      code: first?.code || 'invalidTaskGraph',
+      message: [first?.path, first?.message].filter(Boolean).join(': ') || '任务图校验失败'
+    };
   }
 
   _task() { return this.taskGraphs[this.selectedIndex] || null; }
@@ -415,7 +452,7 @@ export class TaskGraphEditor {
     const style = document.createElement('style');
     style.id = 'tge-styles';
     style.textContent = `
-      .tge-root{height:100%;display:flex;flex-direction:column;background:#0d1326;color:#fff;font-size:13px}.tge-toolbar{display:flex;align-items:center;gap:8px;padding:10px 16px;background:#16213e;border-bottom:1px solid #2a3a5e}.tge-toolbar button,.tge-node-toolbar button{padding:7px 12px;border:0;border-radius:4px;background:#3a4a7e;color:#fff;cursor:pointer}.tge-toolbar .primary{background:#4caf50;color:#102010;font-weight:bold}.tge-toolbar .danger,.tge-node .danger{background:#7e3a3a}.tge-hint{margin-left:auto;color:#8aa;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tge-main{min-height:0;flex:1;display:flex;overflow:hidden}.tge-list{width:240px;flex:none;overflow:auto;background:#111a30;border-right:1px solid #2a3a5e}.tge-task{display:flex;width:100%;flex-direction:column;gap:3px;padding:10px 13px;text-align:left;color:#fff;background:transparent;border:0;border-bottom:1px solid #1e2b47;cursor:pointer}.tge-task:hover{background:#1a2540}.tge-task.active{background:#2a3a6e}.tge-task small{color:#9ab}.tge-detail{min-width:0;flex:1;overflow:auto;padding:16px}.tge-header-grid,.tge-node-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.tge-field{min-width:0}.tge-field.full{grid-column:1/-1}.tge-field label,.tge-json-field label{display:block;margin-bottom:4px;color:#9ab;font-size:12px}.tge-field input,.tge-field select,.tge-json-field textarea{width:100%;padding:7px;border:1px solid #2a3a5e;border-radius:3px;background:#0a1020;color:#fff;font:inherit}.tge-field small,.tge-json-field small{display:block;margin-top:4px;color:#789;font-size:11px}.tge-node-toolbar{display:flex;align-items:center;justify-content:space-between;margin:18px 0 10px}.tge-node-toolbar h3{font-size:14px}.tge-node{margin-bottom:12px;padding:12px;border:1px solid #2a3a5e;border-radius:6px;background:#0f1830}.tge-node-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}.tge-node-head button{padding:4px 8px;border:0;border-radius:3px;color:#fff;cursor:pointer}.tge-json-field{margin-top:10px}.tge-json-field textarea{resize:vertical;font-family:Consolas,monospace;font-size:12px}.tge-json-field textarea.invalid{border-color:#e66;box-shadow:0 0 0 1px #e66}.tge-status{min-height:30px;padding:7px 16px;background:#0a1020;color:#9ab}.tge-status.ok{color:#6c6}.tge-status.warn{color:#e6bd5d}.tge-status.error{color:#e66}.tge-empty{padding:38px 16px;color:#789;text-align:center;line-height:1.7}.tge-empty.compact{padding:18px}.tge-toast{position:fixed;top:58px;left:50%;z-index:100000;max-width:min(600px,90vw);padding:10px 18px;border-radius:6px;background:#2e7d32;color:#fff;box-shadow:0 4px 16px #0008;opacity:0;pointer-events:none;transform:translate(-50%,-8px);transition:opacity .2s,transform .2s}.tge-toast[data-type="error"]{background:#c62828}.tge-toast[data-type="warn"]{background:#9a6700}.tge-toast.visible{opacity:1;transform:translate(-50%,0)}@media (max-width:800px){.tge-list{width:180px}.tge-header-grid,.tge-node-grid{grid-template-columns:1fr}.tge-field.full{grid-column:auto}.tge-hint{display:none}}
+      .tge-root{height:100%;display:flex;flex-direction:column;background:#0d1326;color:#fff;font-size:13px}.tge-toolbar{display:flex;align-items:center;gap:8px;padding:10px 16px;background:#16213e;border-bottom:1px solid #2a3a5e}.tge-toolbar button,.tge-node-toolbar button{padding:7px 12px;border:0;border-radius:4px;background:#3a4a7e;color:#fff;cursor:pointer}.tge-toolbar .primary{background:#4caf50;color:#102010;font-weight:bold}.tge-toolbar .danger,.tge-node .danger{background:#7e3a3a}.tge-hint{margin-left:auto;color:#8aa;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tge-main{min-height:0;flex:1;display:flex;overflow:hidden}.tge-list{width:240px;flex:none;overflow:auto;background:#111a30;border-right:1px solid #2a3a5e}.tge-task{display:flex;width:100%;flex-direction:column;gap:3px;padding:10px 13px;text-align:left;color:#fff;background:transparent;border:0;border-bottom:1px solid #1e2b47;cursor:pointer}.tge-task:hover{background:#1a2540}.tge-task.active{background:#2a3a6e}.tge-task small{color:#9ab}.tge-detail{min-width:0;flex:1;overflow:auto;padding:16px}.tge-graph{margin-bottom:16px;overflow:auto;border:1px solid #2a3a5e;border-radius:6px;background:#091020}.tge-graph svg{display:block;min-width:100%;height:auto;max-height:330px}.tge-graph-edges path{fill:none;stroke:#6d84c7;stroke-width:2}.tge-graph-node{cursor:pointer}.tge-graph-node rect{fill:#17264a;stroke:#7d98db;stroke-width:1.5}.tge-graph-node:hover rect{fill:#294078;stroke:#b9ceff}.tge-graph-node text{fill:#fff;font-size:11px;pointer-events:none}.tge-graph-node text.type{fill:#8fa7d8;font-size:10px}.tge-header-grid,.tge-node-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.tge-field{min-width:0}.tge-field.full{grid-column:1/-1}.tge-field label,.tge-json-field label{display:block;margin-bottom:4px;color:#9ab;font-size:12px}.tge-field input,.tge-field select,.tge-json-field textarea{width:100%;padding:7px;border:1px solid #2a3a5e;border-radius:3px;background:#0a1020;color:#fff;font:inherit}.tge-field small,.tge-json-field small{display:block;margin-top:4px;color:#789;font-size:11px}.tge-node-toolbar{display:flex;align-items:center;justify-content:space-between;margin:18px 0 10px}.tge-node-toolbar h3{font-size:14px}.tge-node{margin-bottom:12px;padding:12px;border:1px solid #2a3a5e;border-radius:6px;background:#0f1830}.tge-node-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}.tge-node-head button{padding:4px 8px;border:0;border-radius:3px;color:#fff;cursor:pointer}.tge-json-field{margin-top:10px}.tge-json-field textarea{resize:vertical;font-family:Consolas,monospace;font-size:12px}.tge-json-field textarea.invalid{border-color:#e66;box-shadow:0 0 0 1px #e66}.tge-status{min-height:30px;padding:7px 16px;background:#0a1020;color:#9ab}.tge-status.ok{color:#6c6}.tge-status.warn{color:#e6bd5d}.tge-status.error{color:#e66}.tge-empty{padding:38px 16px;color:#789;text-align:center;line-height:1.7}.tge-empty.compact{padding:18px}.tge-toast{position:fixed;top:58px;left:50%;z-index:100000;max-width:min(600px,90vw);padding:10px 18px;border-radius:6px;background:#2e7d32;color:#fff;box-shadow:0 4px 16px #0008;opacity:0;pointer-events:none;transform:translate(-50%,-8px);transition:opacity .2s,transform .2s}.tge-toast[data-type="error"]{background:#c62828}.tge-toast[data-type="warn"]{background:#9a6700}.tge-toast.visible{opacity:1;transform:translate(-50%,0)}@media (max-width:800px){.tge-list{width:180px}.tge-header-grid,.tge-node-grid{grid-template-columns:1fr}.tge-field.full{grid-column:auto}.tge-hint{display:none}}
     `;
     document.head.appendChild(style);
   }

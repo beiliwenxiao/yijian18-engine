@@ -1,6 +1,28 @@
+/************************************************************
+
+ * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
+
+ * 
+
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+
+ * @author    刘枭 (beiliwenxiao)
+
+ * @email     beiliwenxiao@qq.com
+
+ * @date      2026-01-14
+
+ * @blog      https://blog.csdn.net/beiliwenxiao
+
+ * @repo      https://github.com/beiliwenxiao/yijian18-engine
+
+ *            https://gitee.com/coderaaa/yijian18-engine
+
+ ************************************************************/
+
 const clone = value => value == null ? value : JSON.parse(JSON.stringify(value));
 
-export const QUEST_RUNTIME_SCHEMA_VERSION = 1;
+export const QUEST_RUNTIME_SCHEMA_VERSION = 2;
 
 const STATE_VALUES = new Set(['available', 'active', 'completed', 'turned_in', 'failed', 'locked']);
 const RUNTIME_FIELDS = new Set([

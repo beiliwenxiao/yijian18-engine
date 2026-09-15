@@ -681,6 +681,87 @@ export const TUTORIAL_DEFINITION_SCHEMA = {
   }
 };
 
+export const TASK_EVENT_MATCHER_SCHEMA = {
+  id: 'taskEventMatcher',
+  fields: {
+    type: { type: FieldType.STRING, required: true, minLength: 1 },
+    payload: { type: FieldType.OBJECT }
+  }
+};
+
+export const TASK_MAP_TARGET_SCHEMA = {
+  id: 'taskMapTarget',
+  fields: {
+    sceneId: { type: FieldType.STRING, minLength: 1 },
+    targetId: { type: FieldType.STRING, minLength: 1 },
+    label: { type: FieldType.STRING },
+    x: { type: FieldType.NUMBER },
+    y: { type: FieldType.NUMBER }
+  }
+};
+
+export const TASK_BRANCH_COUNT_SCHEMA = {
+  id: 'taskBranchCount',
+  fields: {
+    nodes: { type: FieldType.ARRAY, required: true, minItems: 1, itemType: FieldType.STRING },
+    gte: { type: FieldType.INTEGER, required: true, min: 1 }
+  }
+};
+
+export const TASK_BRANCH_SCHEMA = {
+  id: 'taskBranch',
+  fields: {
+    id: idField(),
+    allCompleted: { type: FieldType.ARRAY, itemType: FieldType.STRING },
+    countCompleted: { type: FieldType.OBJECT, schema: 'taskBranchCount' },
+    targetNodeId: idField()
+  }
+};
+
+const TASK_PARALLEL_FIELDS = {
+  children: { type: FieldType.ARRAY, minItems: 1, itemType: FieldType.STRING },
+  joinPolicy: { type: FieldType.STRING, enum: ['all', 'any', 'count'] },
+  requiredCount: { type: FieldType.INTEGER, min: 1 }
+};
+
+export const TASK_PARALLEL_SCHEMA = {
+  id: 'taskParallel',
+  fields: TASK_PARALLEL_FIELDS
+};
+
+export const TASK_NODE_SCHEMA = {
+  id: 'taskNode',
+  fields: {
+    id: idField(),
+    type: {
+      type: FieldType.STRING,
+      required: true,
+      enum: ['start', 'objective', 'sequence', 'parallel', 'branch', 'complete', 'fail']
+    },
+    title: { type: FieldType.STRING },
+    description: { type: FieldType.STRING },
+    next: { type: FieldType.ARRAY, itemType: FieldType.STRING },
+    eventMatcher: { type: FieldType.OBJECT, schema: 'taskEventMatcher' },
+    mapTarget: { type: FieldType.OBJECT, schema: 'taskMapTarget' },
+    ...TASK_PARALLEL_FIELDS,
+    branches: { type: FieldType.ARRAY, itemSchema: 'taskBranch' }
+  }
+};
+
+export const TASK_DEFINITION_SCHEMA = {
+  id: 'taskDefinition',
+  fields: {
+    id: idField(),
+    title: { type: FieldType.STRING, required: true, minLength: 1 },
+    description: { type: FieldType.STRING },
+    category: { type: FieldType.STRING, required: true, minLength: 1 },
+    entryNodeId: idField(),
+    reward: { type: FieldType.OBJECT },
+    checkpoint: { type: FieldType.OBJECT, nullable: true },
+    nodes: { type: FieldType.ARRAY, required: true, minItems: 1, itemSchema: 'taskNode' }
+  }
+};
+
 export const GAME_PROJECT_META_SCHEMA = {
   id: 'gameProjectMeta',
   fields: {
@@ -799,6 +880,7 @@ export const GAME_PROJECT_SCHEMA = {
     scenes: { type: FieldType.ARRAY, required: true },
     dialogues: { type: FieldType.ARRAY, required: true },
     quests: { type: FieldType.ARRAY, required: true },
+    taskGraphs: { type: FieldType.ARRAY, itemSchema: 'taskDefinition' },
     // 剧情流程分组（新名）：作为统一宏观流程身份标识；未迁移场景仍可暂不声明。
     flowGroups: { type: FieldType.ARRAY, itemSchema: 'flowGroupDefinition' },
     // 增量接入（旧名，已弃用）：保留一个版本兼容，内部 normalizeProjectForRuntime 自动迁移为 flowGroups
@@ -846,6 +928,13 @@ export const CANONICAL_SCHEMAS = [
   FLOW_GROUP_DEFINITION_SCHEMA,
   TUTORIAL_SCOPE_SCHEMA,
   TUTORIAL_DEFINITION_SCHEMA,
+  TASK_EVENT_MATCHER_SCHEMA,
+  TASK_MAP_TARGET_SCHEMA,
+  TASK_BRANCH_COUNT_SCHEMA,
+  TASK_BRANCH_SCHEMA,
+  TASK_PARALLEL_SCHEMA,
+  TASK_NODE_SCHEMA,
+  TASK_DEFINITION_SCHEMA,
   GAME_PROJECT_META_SCHEMA,
   BATTLE_INTEGRATION_SCHEMA,
   GAME_PROJECT_INTEGRATION_SCHEMA,

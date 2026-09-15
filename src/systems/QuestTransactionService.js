@@ -1,3 +1,25 @@
+/************************************************************
+
+ * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
+
+ * 
+
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+
+ * @author    刘枭 (beiliwenxiao)
+
+ * @email     beiliwenxiao@qq.com
+
+ * @date      2026-01-14
+
+ * @blog      https://blog.csdn.net/beiliwenxiao
+
+ * @repo      https://github.com/beiliwenxiao/yijian18-engine
+
+ *            https://gitee.com/coderaaa/yijian18-engine
+
+ ************************************************************/
+
 import { QuestRuntimeState, QUEST_RUNTIME_SCHEMA_VERSION } from './QuestRuntimeState.js';
 import { QuestResolver } from './resolvers/QuestResolver.js';
 
@@ -17,7 +39,10 @@ export const QUEST_COMMANDS = Object.freeze({
   ABANDON: 'quest.abandon',
   TURN_IN: 'quest.turnIn',
   TRACK: 'quest.track',
-  EXPIRE: 'quest.expire'
+  EXPIRE: 'quest.expire',
+  TASK_START: 'task.start',
+  TASK_EVENT: 'task.event',
+  TASK_TRACK: 'task.track'
 });
 
 const OPERATION_BY_COMMAND = Object.freeze({
@@ -26,7 +51,10 @@ const OPERATION_BY_COMMAND = Object.freeze({
   [QUEST_COMMANDS.ABANDON]: 'abandon',
   [QUEST_COMMANDS.TURN_IN]: 'turnIn',
   [QUEST_COMMANDS.TRACK]: 'track',
-  [QUEST_COMMANDS.EXPIRE]: 'expire'
+  [QUEST_COMMANDS.EXPIRE]: 'expire',
+  [QUEST_COMMANDS.TASK_START]: 'task.start',
+  [QUEST_COMMANDS.TASK_EVENT]: 'task.event',
+  [QUEST_COMMANDS.TASK_TRACK]: 'task.track'
 });
 
 /**
@@ -39,6 +67,7 @@ export class QuestTransactionService {
     this.rewardParticipants = Array.isArray(config.rewardParticipants) ? config.rewardParticipants : [];
     this.createCheckpoint = typeof config.createCheckpoint === 'function' ? config.createCheckpoint : null;
     this.commandGateway = config.commandGateway || null;
+    this.taskGraphSystem = config.taskGraphSystem || null;
     this.getDefaultActorId = typeof config.getDefaultActorId === 'function' ? config.getDefaultActorId : (() => config.actorId || null);
     this.stateType = 'questRuntime';
     this.stateId = command => `quest:${command.actorId}`;
@@ -55,6 +84,15 @@ export class QuestTransactionService {
   setCommandGateway(commandGateway) {
     if (commandGateway && typeof commandGateway.execute !== 'function') throw new TypeError('Quest command gateway must implement execute');
     this.commandGateway = commandGateway;
+    return this;
+  }
+
+  setTaskGraphSystem(taskGraphSystem) {
+    if (taskGraphSystem && (typeof taskGraphSystem.prepareStart !== 'function'
+      || typeof taskGraphSystem.prepareConsumeEvent !== 'function')) {
+      throw new TypeError('QuestTransactionService requires a transactional TaskGraphSystem');
+    }
+    this.taskGraphSystem = taskGraphSystem || null;
     return this;
   }
 
@@ -102,9 +140,49 @@ export class QuestTransactionService {
     return this.setTracking(questId, !runtime?.tracking, options);
   }
 
+  startTaskGraph(definitionId, options = {}) {
+    return this._submitTaskCommand(QUEST_COMMANDS.TASK_START, {
+      definitionId,
+      instanceId: options.instanceId || null,
+      startedByEventId: options.startedByEventId || null,
+      tracking: options.tracking !== false
+    }, options);
+  }
+
+  consumeTaskEvent(event, options = {}) {
+    const actorId = options.actorId || this.getDefaultActorId();
+    if (!this.taskGraphSystem?.canConsumeEvent?.(event, actorId)) {
+      return Promise.resolve({ ok: true, committed: false, skipped: true, code: 'taskEventNotMatched' });
+    }
+    return this._submitTaskCommand(QUEST_COMMANDS.TASK_EVENT, { event: clone(event) }, {
+      ...options,
+      actorId,
+      operationId: options.operationId || `task-event:${actorId}:${event.eventId}`
+    });
+  }
+
+  setTaskTracking(instanceId, tracking, options = {}) {
+    return this._submitTaskCommand(QUEST_COMMANDS.TASK_TRACK, { instanceId, tracking: tracking === true }, options);
+  }
+
+  _submitTaskCommand(intentType, payload, options = {}) {
+    const actorRef = options.actorId || this.getDefaultActorId();
+    if (!this.commandGateway || !hasText(actorRef)) return Promise.resolve({ ok: false, code: 'taskCommandUnavailable' });
+    return this.commandGateway.execute({
+      intentType,
+      actorRef,
+      ...(options.operationId === undefined ? {} : { operationId: options.operationId }),
+      ...(options.expectedStateRevision === undefined ? {} : { expectedStateRevision: options.expectedStateRevision }),
+      payload: clone(payload)
+    }, options);
+  }
+
   async execute(command, context) {
     if (command.definitionRevision !== this.definitionRepository?.definitionRevision) return reject(command, 'definitionRevisionConflict');
     const operation = OPERATION_BY_COMMAND[command.commandType] || command.payload?.operation;
+    if (hasText(operation) && operation.startsWith('task.')) {
+      return this._executeTaskGraph({ operation, command, context, actorId: command.actorId });
+    }
     const definitionId = command.payload?.questId;
     const definition = this._definition(definitionId);
     if (!definition || !hasText(operation)) return reject(command, definition ? 'questOperationMissing' : 'unknownQuest');
@@ -126,6 +204,100 @@ export class QuestTransactionService {
     const rewards = operation === 'turnIn' ? await this._prepareRewards(definition, resolution.runtime, command) : { ok: true, participants: [] };
     if (!rewards.ok) return reject(command, rewards.code, rewards.error);
     return this._commit({ command, context, actorId, previous, draft, definition, resolution, rewards });
+  }
+
+  async _executeTaskGraph({ operation, command, context, actorId }) {
+    const system = this.taskGraphSystem;
+    if (!system) return reject(command, 'taskGraphUnavailable');
+    let prepared;
+    if (operation === 'task.start') {
+      const definitionId = command.payload?.definitionId || command.payload?.questId;
+      prepared = system.prepareStart(definitionId, {
+        instanceId: command.payload?.instanceId || null,
+        startedByEventId: command.payload?.startedByEventId || null,
+        actorId,
+        tracking: command.payload?.tracking !== false
+      });
+    } else if (operation === 'task.event') {
+      prepared = system.prepareConsumeEvent(command.payload?.event, { actorId });
+    } else if (operation === 'task.track') {
+      prepared = system.prepareTracking(command.payload?.instanceId, command.payload?.tracking === true);
+    } else {
+      return reject(command, 'unsupportedTaskGraphOperation');
+    }
+    if (prepared?.ok !== true) return reject(command, prepared?.code || 'taskGraphPrepareFailed');
+    if (prepared.changed !== true) return reject(command, prepared.code || 'taskGraphUnchanged');
+
+    const completedInstances = operation === 'task.event'
+      ? prepared.completedInstances || []
+      : (prepared.completed && prepared.instance ? [prepared.instance] : []);
+    const rewardParticipants = [];
+    for (const instance of completedInstances) {
+      const definition = this._definition(instance.definitionId) || system.getDefinition(instance.definitionId);
+      const rewards = await this._prepareRewards(definition || {}, instance, command);
+      if (!rewards.ok) return reject(command, rewards.code, rewards.error);
+      rewardParticipants.push(...rewards.participants);
+    }
+
+    const committedRewards = [];
+    let graphCommitted = false;
+    const rollback = async () => {
+      if (graphCommitted) prepared.rollback?.();
+      for (const participant of [...committedRewards].reverse()) {
+        try { await participant.rollback?.(); } catch { /* 保留原始失败 */ }
+      }
+    };
+    try {
+      const graphCommit = prepared.commit?.();
+      if (graphCommit?.ok === false) throw Object.assign(new Error(graphCommit.errors?.[0]?.message || graphCommit.code), { code: graphCommit.code || 'taskGraphCommitFailed' });
+      graphCommitted = true;
+      for (const participant of rewardParticipants) {
+        committedRewards.push(participant);
+        const outcome = await participant.commit?.();
+        if (outcome?.ok === false) throw Object.assign(new Error(outcome.message || outcome.code || 'task reward commit rejected'), { code: outcome.code || 'taskRewardCommitRejected' });
+      }
+      const checkpoint = await this._checkpoint(command, context, command.payload?.definitionId || command.payload?.instanceId || 'taskGraph');
+      if (!checkpoint.ok) throw Object.assign(new Error(checkpoint.message || checkpoint.code), { code: checkpoint.code });
+      const stateRevision = context.commitStateRevision(context.preparedStateRevision);
+      if (!stateRevision?.ok) throw Object.assign(new Error(stateRevision?.code || 'stateRevisionCommitFailed'), { code: stateRevision?.code || 'stateRevisionCommitFailed' });
+
+      const value = {
+        operation,
+        actorId,
+        instance: clone(prepared.instance || null),
+        changes: clone(prepared.changes || []),
+        completedInstances: clone(completedInstances),
+        checkpoint: checkpoint.value || null
+      };
+      const result = {
+        ok: true, operationId: command.operationId, status: 'committed', committed: true,
+        code: null, stateId: context.preparedStateRevision.stateId,
+        stateRevision: stateRevision.stateRevision,
+        eventFrom: null, eventTo: null, value, error: null
+      };
+      for (const participant of committedRewards) {
+        try { await participant.finalize?.(); } catch { /* 表现失败不回滚事实 */ }
+      }
+      const eventBase = { stateId: result.stateId, stateType: this.stateType, stateRevision: result.stateRevision };
+      const applicationEvents = [{
+        ...eventBase,
+        type: operation === 'task.start' ? 'task.started'
+          : operation === 'task.track' ? 'task.trackingChanged'
+            : 'task.advanced',
+        payload: value
+      }];
+      for (const instance of completedInstances) {
+        applicationEvents.push({ ...eventBase, type: 'task.completed', payload: { instance: clone(instance) } });
+      }
+      return {
+        result,
+        committedEvents: [{ ...eventBase, type: `${operation}.committed`, payload: value }],
+        applicationEvents
+      };
+    } catch (error) {
+      await rollback();
+      return reject(command, error.code || 'taskGraphCommitFailed', { message: error.message || String(error) });
+    }
   }
 
   _resolve({ operation, definition, existing, command, now, actorId }) {
@@ -375,6 +547,7 @@ export class QuestTransactionService {
     return {
       schemaVersion: QUEST_RUNTIME_SCHEMA_VERSION,
       definitionRevision: this.definitionRepository?.definitionRevision ?? 0,
+      taskGraph: this.taskGraphSystem?.snapshot?.() || null,
       actors: [...this._states.entries()].map(([actorId, states]) => ({
         actorId, runtimes: [...states.values()].map(runtime => clone(runtime))
       }))
@@ -386,6 +559,15 @@ export class QuestTransactionService {
     const errors = [];
     if (data?.schemaVersion !== QUEST_RUNTIME_SCHEMA_VERSION) errors.push({ code: 'versionMismatch', path: 'schemaVersion', message: 'QuestRuntimeState 存档版本不兼容' });
     if (data?.definitionRevision !== (this.definitionRepository?.definitionRevision ?? 0)) errors.push({ code: 'definitionRevisionConflict', path: 'definitionRevision', message: '任务定义 revision 不匹配' });
+    let taskGraph = null;
+    if (this.taskGraphSystem) {
+      if (!data?.taskGraph) errors.push({ code: 'missingTaskGraphState', path: 'taskGraph', message: '缺少任务图运行态' });
+      else {
+        const checked = this.taskGraphSystem.validate(data.taskGraph);
+        if (!checked.ok) errors.push(...checked.errors.map(item => ({ ...item, path: `taskGraph.${item.path || ''}`.replace(/\.$/, '') })));
+        else taskGraph = clone(data.taskGraph);
+      }
+    }
     const actors = new Map();
     for (const [index, actor] of (Array.isArray(data?.actors) ? data.actors : []).entries()) {
       if (!hasText(actor?.actorId) || actors.has(actor.actorId)) { errors.push({ code: 'invalidActorId', path: `actors[${index}].actorId`, message: '角色 ID 缺失或重复' }); continue; }
@@ -398,18 +580,35 @@ export class QuestTransactionService {
       }
       actors.set(actor.actorId, states);
     }
-    return { ok: errors.length === 0, errors, actors };
+    return { ok: errors.length === 0, errors, actors, taskGraph };
   }
 
   restore(data = {}) { return this.deserialize(data); }
   deserialize(data = {}) {
     const prepared = this.validateSerialized(data);
     if (!prepared.ok) return { ok: false, errors: prepared.errors };
-    this._states = prepared.actors;
-    return { ok: true, errors: [] };
+    const previousStates = this._states;
+    const previousTaskGraph = this.taskGraphSystem?.snapshot?.() || null;
+    if (this.taskGraphSystem && prepared.taskGraph) {
+      const restored = this.taskGraphSystem.restore(prepared.taskGraph);
+      if (!restored.ok) return restored;
+    }
+    try {
+      this._states = prepared.actors;
+      return { ok: true, errors: [] };
+    } catch (error) {
+      this._states = previousStates;
+      if (previousTaskGraph) this.taskGraphSystem?.restore?.(previousTaskGraph);
+      return { ok: false, errors: [{ code: 'questRestoreFailed', path: '', message: error?.message || String(error) }] };
+    }
   }
 
-  reset() { this._states.clear(); }
+  reset() {
+    this._states.clear();
+    if (this.taskGraphSystem) {
+      this.taskGraphSystem.restore({ schemaVersion: 1, nextInstanceSequence: 0, instances: [] });
+    }
+  }
   cleanup() { this._listeners.clear(); }
 }
 

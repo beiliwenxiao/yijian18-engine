@@ -62,6 +62,8 @@ export class DebugPanel {
     this._lastFpsTime = performance.now();
     this._lastInfoUpdateAt = -Infinity;
     this._infoRefreshInterval = 250;
+    this._lastSaveInfoUpdateAt = -Infinity;
+    this._saveInfoRefreshInterval = 1000;
     this._layout = { ...DEBUG_PANEL_DEFAULT_LAYOUT };
     this._pointerOperation = null;
     this._layoutEventsBound = false;
@@ -335,6 +337,10 @@ export class DebugPanel {
           <pre id="dp-trigger-failures">--</pre>
         </div>
         <div class="dp-section">
+          <div class="dp-title">事件/任务存档</div>
+          <pre id="dp-event-task-save">--</pre>
+        </div>
+        <div class="dp-section">
           <div class="dp-title">天气</div>
           <div id="dp-weather">--</div>
         </div>
@@ -453,6 +459,7 @@ export class DebugPanel {
       #debug-panel .dp-close { background:none; border:none; color:#f88; cursor:pointer; font-size:14px; }
       #debug-panel .dp-body { padding:8px 10px; }
       #debug-panel .dp-section { margin-bottom:8px; padding-bottom:6px; border-bottom:1px solid #333; }
+      #debug-panel .dp-section pre { margin:0; white-space:pre-wrap; overflow-wrap:anywhere; color:#ddd; }
       #debug-panel .dp-title { color:#8cf; font-weight:bold; margin-bottom:4px; }
       #debug-panel .dp-row { display:flex; justify-content:space-between; margin-bottom:2px; }
       #debug-panel .dp-row span:first-child { color:#999; }
@@ -788,11 +795,12 @@ export class DebugPanel {
       this._updateFps();
       if (now - this._lastInfoUpdateAt >= this._infoRefreshInterval) {
         this._lastInfoUpdateAt = now;
-        this._updateInfo();
+        this._updateInfo(now);
       }
       this._rafId = requestAnimationFrame(tick);
     };
     this._lastInfoUpdateAt = -Infinity;
+    this._lastSaveInfoUpdateAt = -Infinity;
     this._rafId = requestAnimationFrame(tick);
   }
 
@@ -807,7 +815,7 @@ export class DebugPanel {
   }
 
   /** 刷新信息显示 */
-  _updateInfo() {
+  _updateInfo(now = performance.now()) {
     if (!this._el) return;
     this._syncPauseButton();
     const scene = this._getActiveScene();
@@ -929,6 +937,54 @@ export class DebugPanel {
     } else {
       this._el.querySelector('#dp-time').textContent = ts ? '已禁用' : '未加载';
     }
+
+    this._updateEventTaskSaveInfo(scene, now);
+  }
+
+  /** 节流读取 AuthoritySnapshot 内同源 EventJournal/TaskGraph，只投影调试文本。 */
+  _updateEventTaskSaveInfo(scene, now) {
+    if (now - this._lastSaveInfoUpdateAt < this._saveInfoRefreshInterval) return;
+    this._lastSaveInfoUpdateAt = now;
+    const target = this._el?.querySelector?.('#dp-event-task-save');
+    if (!target) return;
+
+    const services = scene?.context?.services || {};
+    const eventSnapshot = services.eventJournal?.snapshot?.() || null;
+    const taskSnapshot = services.taskGraph?.snapshot?.() || null;
+    const lines = [];
+
+    if (eventSnapshot) {
+      const events = Array.isArray(eventSnapshot.events) ? eventSnapshot.events : [];
+      const keyEvents = events.filter(event => (
+        event?.persistent !== false || ['pending', 'running', 'failed', 'blocked'].includes(event?.status)
+      )).slice(-8);
+      lines.push(`EventJournal runId=${eventSnapshot.runId || '--'} nextSequence=${eventSnapshot.nextSequence ?? '--'}`);
+      lines.push(`events=${events.length} recentKey=${keyEvents.length}`);
+      for (const event of keyEvents) {
+        const executions = Object.values(event?.executions || {});
+        const executionSummary = executions.length > 0
+          ? executions.map(entry => `${entry.triggerId}/${entry.stepId}:${entry.status}`).join(', ')
+          : 'none';
+        lines.push(`- ${event.eventId} | ${event.type} | ${event.status} | executions=${executionSummary}`);
+      }
+    } else {
+      lines.push('EventJournal --');
+    }
+
+    if (taskSnapshot) {
+      const instances = Array.isArray(taskSnapshot.instances) ? taskSnapshot.instances : [];
+      lines.push(`TaskGraph nextInstanceSequence=${taskSnapshot.nextInstanceSequence ?? '--'} instances=${instances.length}`);
+      for (const instance of instances) {
+        const nodeSummary = Object.entries(instance?.nodeStates || {})
+          .map(([nodeId, state]) => `${nodeId}:${state?.status || '--'}`)
+          .join(', ') || 'none';
+        lines.push(`- ${instance.instanceId} | ${instance.definitionId} | ${instance.status} | nodeStates=${nodeSummary}`);
+      }
+    } else {
+      lines.push('TaskGraph --');
+    }
+
+    target.textContent = lines.join('\n');
   }
 
   // ─── 操作 ─────────────────────────────

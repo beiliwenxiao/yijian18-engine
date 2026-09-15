@@ -12,36 +12,55 @@
 
 /** TaskGraphSystem 的只读玩家任务投影；不持有任务状态、不发命令。 */
 export class TaskGraphProjectionView {
-  constructor({ getTaskGraph = () => null } = {}) {
+  constructor({ getTaskGraph = () => null, getActorId = () => null } = {}) {
     this.getTaskGraph = getTaskGraph;
+    this.getActorId = getActorId;
     this.visible = true;
   }
 
-  render(ctx, width = 1280, _height = 720) {
-    if (!this.visible || !ctx) return false;
-    const tasks = this.getTaskGraph?.()?.getProjection?.() || [];
+  /**
+   * 在 ScenePanelLayout 提供的正式屏幕 HUD 矩形内绘制当前玩家任务。
+   * @param {CanvasRenderingContext2D} ctx
+   * @param {{x:number,y:number,width:number,height:number}} rect
+   */
+  render(ctx, rect) {
+    if (!this.visible || !ctx || !rect) return false;
+    const { x, y, width, height } = rect;
+    if (![x, y, width, height].every(Number.isFinite) || width <= 0 || height <= 0) return false;
+
+    const tasks = this.getTaskGraph?.()?.getProjection?.(this.getActorId?.() || null) || [];
     if (tasks.length === 0) return false;
-    const lines = tasks.slice(0, 3).flatMap(task => [
-      { text: task.title, accent: true },
-      ...task.nodes.slice(0, 3).map(node => ({ text: `• ${node.nodeId}`, accent: false }))
-    ]);
-    const x = 18;
-    const y = 86;
-    const lineHeight = 20;
-    const boxWidth = Math.min(340, Math.max(190, ...lines.map(line => ctx.measureText(line.text).width + 34)));
-    const boxHeight = lines.length * lineHeight + 20;
+
+    const lines = [{ text: '任务追踪', accent: true, strong: true }];
+    for (const task of tasks.slice(0, 3)) {
+      lines.push({ text: task.title, accent: true, strong: false });
+      for (const node of task.nodes.slice(0, 3)) {
+        lines.push({ text: `• ${node.label || node.nodeId}`, accent: false, strong: false });
+      }
+    }
+
+    const paddingX = Math.max(8, Math.min(14, Math.round(width * 0.04)));
+    const paddingY = Math.max(6, Math.min(12, Math.round(height * 0.06)));
+    const lineHeight = Math.max(16, Math.min(22, Math.round(height / 7)));
+    const visibleLines = lines.slice(0, Math.max(1, Math.floor((height - paddingY * 2) / lineHeight)));
+    const fontSize = Math.max(11, Math.min(15, Math.round(lineHeight * 0.68)));
+    const maxTextWidth = Math.max(1, width - paddingX * 2);
+
     ctx.save();
+    ctx.beginPath();
+    ctx.rect(x, y, width, height);
+    ctx.clip();
     ctx.fillStyle = 'rgba(10, 16, 30, 0.82)';
-    ctx.fillRect(x, y, boxWidth, boxHeight);
+    ctx.fillRect(x, y, width, height);
     ctx.strokeStyle = '#c49a52';
     ctx.lineWidth = 1;
-    ctx.strokeRect(x, y, boxWidth, boxHeight);
-    ctx.font = '14px Microsoft YaHei, Arial';
+    ctx.strokeRect(x + 0.5, y + 0.5, Math.max(0, width - 1), Math.max(0, height - 1));
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
-    lines.forEach((line, index) => {
+    visibleLines.forEach((line, index) => {
       ctx.fillStyle = line.accent ? '#f0d080' : '#d6dbe8';
-      ctx.fillText(line.text, x + 12, y + 14 + index * lineHeight);
+      ctx.font = `${line.strong ? 'bold ' : ''}${fontSize}px Microsoft YaHei, Arial`;
+      ctx.fillText(line.text, x + paddingX, y + paddingY + lineHeight * (index + 0.5), maxTextWidth);
     });
     ctx.restore();
     return true;

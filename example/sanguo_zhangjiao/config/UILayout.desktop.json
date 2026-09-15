@@ -53,6 +53,20 @@
       "hPct": 0.04167
     },
     {
+      "id": "taskTracker",
+      "label": "任务追踪",
+      "kind": "panel",
+      "anchor": "topleft",
+      "x": 18,
+      "y": 86,
+      "width": 340,
+      "height": 150,
+      "xPct": 0.01406,
+      "yPct": 0.11944,
+      "wPct": 0.26563,
+      "hPct": 0.20833
+    },
+    {
       "id": "backpackPanel",
       "label": "背包",
       "kind": "panel",

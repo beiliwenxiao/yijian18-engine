@@ -72,7 +72,10 @@ export class SceneRenderPipeline {
       (scene, ctx) => scene.tutorialSystem?.render(ctx),
       (_scene, ctx) => this.context?.ui?.dialogueBox?.render?.(ctx),
       (_scene, ctx) => this.context?.systems?.combat?.render?.(ctx),
-      (scene, ctx) => this.context?.ui?.taskGraph?.render?.(ctx, scene.logicalWidth, scene.logicalHeight),
+      (_scene, ctx) => {
+        const rect = this.context?.ui?.layout?.getScreenHudRect?.('taskTracker') || null;
+        if (rect) this.context?.ui?.taskGraph?.render?.(ctx, rect);
+      },
       (_scene, ctx) => this.context?.ui?.bottomControlBar?.render?.(ctx),
       (scene, ctx) => scene.blockButton?.render(ctx),
       (scene, ctx) => scene.jumpButton?.render(ctx),

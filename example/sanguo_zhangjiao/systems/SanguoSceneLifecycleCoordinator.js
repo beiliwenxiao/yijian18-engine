@@ -124,7 +124,7 @@ function updateBeforeBase(deltaTime) {
   const runtime = this.sceneRuntime;
   let bindingJournal = runtime?.eventJournal || null;
   if (!bindingJournal && runtime) {
-    bindingJournal = new EventJournal({ runId: 'run-unknown' });
+    bindingJournal = new EventJournal();
     runtime.eventJournal = bindingJournal;
     runtime.authoritySnapshotService?.registerService?.('eventJournal', bindingJournal.asSnapshotProvider());
     this.context.services.eventJournal = bindingJournal;

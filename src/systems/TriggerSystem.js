@@ -539,7 +539,7 @@ export class TriggerSystem {
     const runtime = this.ctx?.scene?.sceneRuntime || null;
     let journal = this.eventJournal || this.ctx?.eventJournal || this.ctx?.services?.eventJournal || runtime?.eventJournal || null;
     if (!journal && runtime) {
-      journal = new EventJournal({ runId: 'run-unknown' });
+      journal = new EventJournal();
       runtime.eventJournal = journal;
       runtime.authoritySnapshotService?.registerService?.('eventJournal', journal.asSnapshotProvider());
       if (this.ctx?.services) this.ctx.services.eventJournal = journal;
@@ -553,7 +553,8 @@ export class TriggerSystem {
     const sequence = ++this._operationSequence;
     const inheritedEventId = hasText(params.eventId) ? params.eventId.trim() : null;
     const eventJournal = this._ensureEventJournal();
-    const journalEvent = eventJournal?.create?.({
+    const existingEvent = inheritedEventId ? eventJournal?.get?.(inheritedEventId) : null;
+    const journalEvent = existingEvent || eventJournal?.create?.({
       eventId: inheritedEventId,
       eventDefinitionId: event?.definitionId || null,
       type: event?.type || 'trigger',
@@ -786,6 +787,66 @@ export class TriggerSystem {
     return normalized;
   }
 
+  _eventStepId(step, index) {
+    return hasText(step?.stepId) ? step.stepId.trim() : `action:${index}`;
+  }
+
+  _beginEventStep(trigger, step, index, request) {
+    const journal = this._ensureEventJournal();
+    if (!journal || !request.eventId) return { ok: true, tracked: false, replay: false };
+    const stepId = this._eventStepId(step, index);
+    const operationId = this._actionOperationId(trigger, step, index, request);
+    const payloadFingerprint = stableDigest({
+      eventId: request.eventId,
+      triggerId: trigger.id,
+      stepId,
+      action: step
+    });
+    const started = journal.beginExecution({
+      eventId: request.eventId,
+      triggerId: trigger.id,
+      stepId,
+      operationId,
+      payloadFingerprint,
+      logicalTime: this.logicalClock?.now?.() || 0
+    });
+    if (started?.ok !== true) {
+      throw Object.assign(new Error(started?.code || 'Event execution begin failed'), {
+        code: started?.code || 'eventExecutionBeginFailed',
+        triggerPhase: 'eventJournal',
+        actionOperationId: operationId,
+        details: started
+      });
+    }
+    return { ...started, tracked: true, stepId, operationId };
+  }
+
+  _completeEventStep(trigger, request, tracking, status, result) {
+    if (!tracking?.tracked) return { ok: true };
+    const completed = this.eventJournal?.completeExecution?.({
+      eventId: request.eventId,
+      triggerId: trigger.id,
+      stepId: tracking.stepId,
+      status,
+      result,
+      logicalTime: this.logicalClock?.now?.() || 0
+    });
+    if (completed?.ok !== true) {
+      throw Object.assign(new Error(completed?.code || 'Event execution completion failed'), {
+        code: completed?.code || 'eventExecutionCompleteFailed',
+        triggerPhase: 'eventJournal',
+        actionOperationId: tracking.operationId,
+        details: completed
+      });
+    }
+    return completed;
+  }
+
+  _eventResultStatus(result) {
+    if (result?.ok === true) return result?.status === 'skipped' ? 'skipped' : 'succeeded';
+    return this._isBenignResult(result) ? 'blocked' : 'failed';
+  }
+
   /**
    * 多路径步骤执行内核（递归）。do[] 内每一步可以是：
    *   - 带 if 前置守卫的动作：条件不满足则跳过该步（幂等护栏，不中断流程）
@@ -806,18 +867,38 @@ export class TriggerSystem {
           triggerAction: step, actionOperationId: this._actionOperationId(trigger, step, index, request)
         });
       }
+      const eventTracking = this._beginEventStep(trigger, step, index, request);
+      let replayed = eventTracking.replay === true;
+      if (replayed) {
+        lastResult = eventTracking.execution?.result;
+        if (!lastResult || typeof lastResult.ok !== 'boolean') {
+          throw Object.assign(new Error('EventJournal replay result is unavailable'), {
+            code: 'eventExecutionReplayUnavailable',
+            triggerPhase: 'eventJournal',
+            triggerActionIndex: index,
+            triggerAction: step,
+            actionOperationId: eventTracking.operationId
+          });
+        }
+      }
       // 步骤级前置守卫：条件不满足则跳过（结果标记 skipped，仍推进账本）
-      if (step?.if && !this.expr.eval(step.if)) {
+      if (!replayed && step?.if && !this.expr.eval(step.if)) {
         lastResult = this._skippedResult(request, trigger);
+        this._completeEventStep(trigger, request, eventTracking, 'skipped', lastResult);
         this.ledger.advance(trigger.id, request.operationId, index, lastResult);
         continue;
       }
-      if (Array.isArray(step?.branch)) {
+      if (!replayed && Array.isArray(step?.branch)) {
         const branch = this._selectBranch(step.branch);
         if (branch) {
           try {
             lastResult = (await this._runSteps(trigger, request, token, branch.do || [], cursor)).lastResult;
           } catch (error) {
+            this._completeEventStep(trigger, request, eventTracking, 'failed', {
+              ok: false,
+              code: error?.code || 'branchExecutionFailed',
+              message: error?.message || String(error)
+            });
             error.triggerActionIndex = index;
             error.triggerAction = step;
             error.actionOperationId ||= this._actionOperationId(trigger, step, index, request);
@@ -826,10 +907,15 @@ export class TriggerSystem {
         } else {
           lastResult = this._skippedResult(request, trigger);
         }
-      } else {
+      } else if (!replayed) {
         try {
           lastResult = await this._executeAction(trigger, step, index, request);
         } catch (error) {
+          this._completeEventStep(trigger, request, eventTracking, 'failed', {
+            ok: false,
+            code: error?.code || 'actionExecutionFailed',
+            message: error?.message || String(error)
+          });
           error.triggerActionIndex = index;
           error.triggerAction = step;
           error.actionOperationId ||= this._actionOperationId(trigger, step, index, request);
@@ -838,7 +924,9 @@ export class TriggerSystem {
       }
       // 幂等护栏：良性结果码（条件未就绪/已被他路完成）等同步骤级 if 跳过，
       // 不中断整链、不刷红 DebugPanel、不触发事件重试。
+      let eventCompletionStatus = null;
       if (lastResult.ok !== true && this._isBenignResult(lastResult)) {
+        eventCompletionStatus = 'blocked';
         lastResult = this._benignSkipResult(request, trigger, lastResult);
       }
       // 单 Trigger 多教程串行：tutorial.command show 成功后，若 params.await=true，
@@ -848,6 +936,15 @@ export class TriggerSystem {
         && step?.params?.operation === 'show'
         && step?.params?.await === true) {
         await this._awaitTutorialHide(step.params.tutorialId);
+      }
+      if (!replayed) {
+        this._completeEventStep(
+          trigger,
+          request,
+          eventTracking,
+          eventCompletionStatus || this._eventResultStatus(lastResult),
+          lastResult
+        );
       }
       this.ledger.advance(trigger.id, request.operationId, index, lastResult);
       if (lastResult.ok !== true) {
