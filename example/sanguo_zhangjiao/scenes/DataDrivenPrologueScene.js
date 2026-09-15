@@ -359,7 +359,13 @@ export class DataDrivenPrologueScene extends BaseGameScene {
     this.rescueObjectiveView = null;
     this.irreversibleChoiceView = null;
     this.cargoTransferView = new CargoTransferView({
-      width: 680,
+      width: 900,
+      height: 560,
+      resolveItemImage: imageId => (
+        imageId && this.assetManager?.hasImage?.(imageId)
+          ? this.assetManager.getAsset(imageId, '2d')
+          : null
+      ),
       onCommand: command => {
         if (this._s01s02Coordinator?._isInShelterInterior?.()) {
           void this._s01s02Coordinator.handleShelterChestCommand(command);

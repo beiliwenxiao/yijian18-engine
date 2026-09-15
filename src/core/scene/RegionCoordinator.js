@@ -91,7 +91,19 @@ export class RegionCoordinator {
       }
 
       if (oldSession && oldSession !== shadowSession) this.releaseSession(oldSession);
-      return { ok: true, code: null, request, result, session: shadowSession };
+      // Region 切换的运行时 session/result 仅限协调器内部使用，不能穿过可序列化命令边界。
+      return {
+        ok: true,
+        code: null,
+        request: {
+          projectUrl: request.projectUrl || 'game.project.json',
+          regionIndex: request.regionIndex,
+          sceneId: request.sceneId || null,
+          spawnRef: request.spawnRef || null
+        },
+        sceneId: request.sceneId || null,
+        regionIndex: request.regionIndex
+      };
     } catch (error) {
       let rollbackFailure = null;
       if (commitStarted) {

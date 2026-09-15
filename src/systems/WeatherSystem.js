@@ -192,6 +192,8 @@ export class WeatherSystem {
     this._sunbeams = [];
     this._time = 0;
     this._viewBounds = null;
+    // 室内等封闭空间只暂停天气表现；该状态不进入存档，离开后继续原天气状态。
+    this.paused = false;
 
     this.regions = [];
   }
@@ -352,6 +354,14 @@ export class WeatherSystem {
     return this.debugOverrideWeather || this.targetWeather;
   }
 
+  /** 暂停天气的更新与绘制，不改变当前业务天气、过渡进度或可恢复状态。 */
+  setPaused(value) {
+    const next = value === true;
+    const changed = this.paused !== next;
+    this.paused = next;
+    return changed;
+  }
+
   setRegionWeather(regionId, weather) {
     const r = this.regions.find(region => region.id === regionId);
     if (r) r.weather = weather;
@@ -434,7 +444,7 @@ export class WeatherSystem {
   }
 
   update(deltaTime, runtime = {}) {
-    if (!this.targetWeather || !this.weatherDefs[this.targetWeather]) return;
+    if (this.paused || !this.targetWeather || !this.weatherDefs[this.targetWeather]) return;
     const dt = Math.max(0, Number(deltaTime) || 0);
     const { bounds, cameraDelta } = this._syncViewBounds(runtime);
     const fogCoverage = this._syncFogCoverage(runtime?.loadedCoverage);
@@ -828,6 +838,7 @@ export class WeatherSystem {
 
   // ─── 渲染：空间天气统一按世界坐标绘制；全屏闪电仍是无位置的屏幕照明。 ───
   render(ctx, width, height, runtime = {}) {
+    if (this.paused) return false;
     const logicalWidth = Math.max(1, Number(width) || BASE_VIEWPORT_WIDTH);
     const logicalHeight = Math.max(1, Number(height) || BASE_VIEWPORT_HEIGHT);
     const viewBounds = resolveViewBounds(runtime, logicalWidth, logicalHeight, this._viewBounds);

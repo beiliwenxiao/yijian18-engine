@@ -24,6 +24,7 @@ import { UIElement } from './UIElement.js';
 import { InputHints } from '../core/input/InputHints.js';
 import { PadButton } from '../core/input/Xbox360Profile.js';
 
+const GRID_COLUMNS = 6;
 const clone = value => value == null ? null : JSON.parse(JSON.stringify(value));
 const inside = (point, box) => point.x >= box.x && point.x <= box.x + box.width
   && point.y >= box.y && point.y <= box.y + box.height;
@@ -33,12 +34,13 @@ export class CargoTransferView extends UIElement {
   constructor(options = {}) {
     super({
       x: 0, y: 0,
-      width: options.width || 680,
-      height: options.height || 470,
+      width: options.width || 900,
+      height: options.height || 560,
       visible: false,
       zIndex: options.zIndex || 132
     });
     this.onCommand = options.onCommand || (() => {});
+    this.resolveItemImage = options.resolveItemImage || (() => null);
     this.snapshot = null;
     this.direction = 'toCargo';
     this.selectedItemId = null;
@@ -73,9 +75,17 @@ export class CargoTransferView extends UIElement {
 
   setBusy(value) { this.busy = value === true; }
 
+  _panelKeyForDirection(direction = this.direction) {
+    return direction === 'toInventory' ? 'cargo' : 'inventory';
+  }
+
+  _itemsForDirection(direction = this.direction) {
+    const panel = this.snapshot?.[this._panelKeyForDirection(direction)] || null;
+    return Array.isArray(panel?.items) ? panel.items : [];
+  }
+
   _sourceItems() {
-    const key = this.direction === 'toCargo' ? 'inventory' : 'cargo';
-    return Array.isArray(this.snapshot?.[key]?.items) ? this.snapshot[key].items : [];
+    return this._itemsForDirection(this.direction);
   }
 
   _selectedItem() {
@@ -89,7 +99,7 @@ export class CargoTransferView extends UIElement {
 
   _setDirection(direction) {
     if (this.busy || direction === this.direction) return;
-    this.direction = direction;
+    this.direction = direction === 'toInventory' ? 'toInventory' : 'toCargo';
     this.selectedItemId = this._sourceItems()[0]?.itemId || null;
     this.quantity = 1;
   }
@@ -107,23 +117,51 @@ export class CargoTransferView extends UIElement {
     this._clampQuantity();
   }
 
+  _createSlots(panel, direction, box) {
+    const items = this._itemsForDirection(direction);
+    const requestedCapacity = direction === 'toCargo'
+      ? Number(panel?.maxSlots)
+      : Number(panel?.capacity);
+    const capacity = Math.max(items.length, Number.isFinite(requestedCapacity) ? requestedCapacity : 0, 1);
+    const rows = Math.max(2, Math.ceil(capacity / GRID_COLUMNS));
+    const gap = 5;
+    const horizontalSpace = Math.max(1, box.width - 28 - gap * (GRID_COLUMNS - 1));
+    const verticalSpace = Math.max(1, box.height - 70 - gap * (rows - 1));
+    const size = Math.max(30, Math.floor(Math.min(horizontalSpace / GRID_COLUMNS, verticalSpace / rows, 58)));
+    const gridWidth = size * GRID_COLUMNS + gap * (GRID_COLUMNS - 1);
+    const gridHeight = size * rows + gap * (rows - 1);
+    const gridX = box.x + (box.width - gridWidth) / 2;
+    const gridY = box.y + 54 + Math.max(0, (box.height - 70 - gridHeight) / 2);
+    return Array.from({ length: capacity }, (_value, index) => ({
+      direction,
+      index,
+      entry: items[index] || null,
+      x: gridX + (index % GRID_COLUMNS) * (size + gap),
+      y: gridY + Math.floor(index / GRID_COLUMNS) * (size + gap),
+      width: size,
+      height: size
+    }));
+  }
+
   _layout(viewWidth, viewHeight) {
-    const width = Math.min(this.width, viewWidth - 24);
-    const height = Math.min(this.height, viewHeight - 24);
+    const width = Math.max(520, Math.min(this.width, viewWidth - 24));
+    const height = Math.max(390, Math.min(this.height, viewHeight - 24));
     const x = (viewWidth - width) / 2;
     const y = (viewHeight - height) / 2;
-    const tabWidth = (width - 48) / 2;
-    const sourceItems = this._sourceItems().slice(0, 8);
+    const panelGap = 18;
+    const panelWidth = (width - 48 - panelGap) / 2;
+    const panelHeight = height - 188;
+    const inventory = { x: x + 16, y: y + 58, width: panelWidth, height: panelHeight };
+    const cargo = { x: inventory.x + panelWidth + panelGap, y: inventory.y, width: panelWidth, height: panelHeight };
     return {
       x, y, width, height,
-      toCargo: { x: x + 16, y: y + 58, width: tabWidth, height: 36 },
-      toInventory: { x: x + 32 + tabWidth, y: y + 58, width: tabWidth, height: 36 },
-      rows: sourceItems.map((entry, index) => ({
-        itemId: entry.itemId, x: x + 24, y: y + 116 + index * 32, width: width - 48, height: 28
-      })),
-      decrease: { x: x + width / 2 - 112, y: y + height - 102, width: 46, height: 34 },
-      increase: { x: x + width / 2 + 66, y: y + height - 102, width: 46, height: 34 },
-      transfer: { x: x + width / 2 - 92, y: y + height - 58, width: 184, height: 38 },
+      inventory,
+      cargo,
+      inventorySlots: this._createSlots(this.snapshot?.inventory, 'toCargo', inventory),
+      cargoSlots: this._createSlots(this.snapshot?.cargo, 'toInventory', cargo),
+      decrease: { x: x + width / 2 - 112, y: y + height - 104, width: 46, height: 34 },
+      increase: { x: x + width / 2 + 66, y: y + height - 104, width: 46, height: 34 },
+      transfer: { x: x + width / 2 - 112, y: y + height - 62, width: 224, height: 38 },
       close: { x: x + width - 48, y: y + 12, width: 32, height: 28 }
     };
   }
@@ -139,10 +177,10 @@ export class CargoTransferView extends UIElement {
     if (left) this._setDirection('toCargo');
     if (right) this._setDirection('toInventory');
     if (inputManager.isKeyPressed?.('arrowup') || gamepad?.isButtonPressed?.(PadButton.DPAD_UP)) {
-      this._moveSelection(-1);
+      this._moveSelection(-GRID_COLUMNS);
     }
     if (inputManager.isKeyPressed?.('arrowdown') || gamepad?.isButtonPressed?.(PadButton.DPAD_DOWN)) {
-      this._moveSelection(1);
+      this._moveSelection(GRID_COLUMNS);
     }
     if (inputManager.isKeyPressed?.('-') || gamepad?.isButtonPressed?.(PadButton.LB)) this._adjustQuantity(-1);
     if (inputManager.isKeyPressed?.('=') || inputManager.isKeyPressed?.('+')
@@ -164,15 +202,15 @@ export class CargoTransferView extends UIElement {
     const point = inputManager.getMousePosition?.() || { x: -1, y: -1 };
     inputManager.markMouseClickHandled?.();
     if (inside(point, layout.close)) this.onCommand({ type: 'close' });
-    else if (inside(point, layout.toCargo)) this._setDirection('toCargo');
-    else if (inside(point, layout.toInventory)) this._setDirection('toInventory');
     else if (inside(point, layout.decrease)) this._adjustQuantity(-1);
     else if (inside(point, layout.increase)) this._adjustQuantity(1);
     else if (inside(point, layout.transfer)) this._confirm();
     else {
-      const row = layout.rows.find(box => inside(point, box));
-      if (row) {
-        this.selectedItemId = row.itemId;
+      const slot = [...layout.inventorySlots, ...layout.cargoSlots].find(box => inside(point, box));
+      if (!slot) return;
+      this._setDirection(slot.direction);
+      if (slot.entry?.itemId) {
+        this.selectedItemId = slot.entry.itemId;
         this.quantity = 1;
       }
     }
@@ -191,6 +229,7 @@ export class CargoTransferView extends UIElement {
   render(ctx, viewWidth = ctx?.canvas?.width || 1280, viewHeight = ctx?.canvas?.height || 720) {
     if (!this.visible || !ctx || !this.snapshot) return;
     const layout = this._layout(viewWidth, viewHeight);
+    const storageLabel = this.snapshot.storageLabel || '货舱';
     ctx.save();
     ctx.fillStyle = 'rgba(0,0,0,0.72)';
     ctx.fillRect(0, 0, viewWidth, viewHeight);
@@ -205,75 +244,99 @@ export class CargoTransferView extends UIElement {
     ctx.textBaseline = 'middle';
     ctx.fillStyle = '#f0d080';
     ctx.font = 'bold 22px Arial';
-    const storageLabel = this.snapshot.storageLabel || '货舱';
     ctx.fillText(this.snapshot.title || storageLabel, layout.x + layout.width / 2, layout.y + 30);
-    this._renderTab(ctx, layout.toCargo, `背包 → ${storageLabel}`, this.direction === 'toCargo');
-    this._renderTab(ctx, layout.toInventory, `${storageLabel} → 背包`, this.direction === 'toInventory');
-
-    const source = this.direction === 'toCargo' ? this.snapshot.inventory : this.snapshot.cargo;
-    ctx.textAlign = 'left';
-    ctx.font = '13px Arial';
-    ctx.fillStyle = '#c9c9c9';
-    ctx.fillText(this.direction === 'toCargo' ? '背包物品' : `${storageLabel}物品`, layout.x + 24, layout.y + 106);
-    layout.rows.forEach((box, index) => this._renderRow(ctx, box, this._sourceItems()[index]));
-    if (!layout.rows.length) {
-      ctx.fillStyle = '#969696';
-      ctx.fillText('当前来源没有可转移物品', layout.x + 24, layout.y + 142);
-    }
+    this._renderStoragePanel(ctx, layout.inventory, layout.inventorySlots, {
+      title: '背包',
+      used: this.snapshot.inventory?.usedSlots || 0,
+      capacity: this.snapshot.inventory?.maxSlots || 0,
+      active: this.direction === 'toCargo'
+    });
+    this._renderStoragePanel(ctx, layout.cargo, layout.cargoSlots, {
+      title: storageLabel,
+      used: this.snapshot.cargo?.total || 0,
+      capacity: this.snapshot.cargo?.capacity || 0,
+      active: this.direction === 'toInventory'
+    });
 
     ctx.textAlign = 'center';
-    ctx.fillStyle = '#e8e0cf';
-    ctx.font = '13px Arial';
-    ctx.fillText(`背包槽位 ${this.snapshot.inventory.usedSlots}/${this.snapshot.inventory.maxSlots}　` +
-      `${storageLabel}容量 ${this.snapshot.cargo.total}/${this.snapshot.cargo.capacity}`,
-    layout.x + layout.width / 2, layout.y + layout.height - 126);
-    this._renderButton(ctx, layout.decrease, '−', false);
-    this._renderButton(ctx, layout.increase, '+', false);
     ctx.font = 'bold 18px Arial';
     ctx.fillStyle = '#ffffff';
     ctx.fillText(`数量 ${this.quantity}`, layout.x + layout.width / 2, layout.decrease.y + 17);
-    this._renderButton(ctx, layout.transfer, this.busy ? '正在转移……' : '确认转移', this.busy);
+    this._renderButton(ctx, layout.decrease, '−', false);
+    this._renderButton(ctx, layout.increase, '+', false);
+    this._renderButton(ctx, layout.transfer, this.busy
+      ? '正在转移……'
+      : (this.direction === 'toCargo' ? `存入${storageLabel}` : '取回背包'), this.busy);
     this._renderButton(ctx, layout.close, '×', false);
     ctx.fillStyle = this.snapshot.statusType === 'error' ? '#ef766d' : '#8fd18f';
     ctx.font = '12px Arial';
-    ctx.fillText(this.snapshot.statusMessage || `${InputHints.phrase('modalNavigate')}选择，` +
+    ctx.fillText(this.snapshot.statusMessage || `${InputHints.phrase('modalNavigate')}切换栏位，` +
       `${InputHints.phrase('modalDecrease')}/${InputHints.phrase('modalIncrease')}调整数量，` +
       `${InputHints.phrase('confirm')}转移，${InputHints.phrase('modalCancel')}关闭`,
-    layout.x + layout.width / 2, layout.y + layout.height - 8);
+    layout.x + layout.width / 2, layout.y + layout.height - 10);
     ctx.restore();
   }
 
-  _renderTab(ctx, box, text, selected) {
-    ctx.fillStyle = selected ? 'rgba(196,154,82,0.28)' : 'rgba(255,255,255,0.05)';
-    ctx.strokeStyle = selected ? '#e7c06e' : '#666666';
+  _renderStoragePanel(ctx, box, slots, { title, used, capacity, active }) {
+    ctx.fillStyle = active ? 'rgba(196,154,82,0.13)' : 'rgba(255,255,255,0.035)';
+    ctx.strokeStyle = active ? '#e7c06e' : '#6b6b6b';
+    ctx.lineWidth = active ? 2 : 1;
     ctx.fillRect(box.x, box.y, box.width, box.height);
     ctx.strokeRect(box.x, box.y, box.width, box.height);
-    ctx.fillStyle = selected ? '#f0d080' : '#c8c8c8';
-    ctx.font = 'bold 14px Arial';
-    ctx.fillText(text, box.x + box.width / 2, box.y + box.height / 2);
+    ctx.fillStyle = active ? '#f0d080' : '#d0d0d0';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.font = 'bold 16px Arial';
+    ctx.fillText(title, box.x + 14, box.y + 24);
+    ctx.textAlign = 'right';
+    ctx.font = '12px Arial';
+    ctx.fillStyle = '#b9b9b9';
+    ctx.fillText(`${used}/${capacity}`, box.x + box.width - 14, box.y + 24);
+    for (const slot of slots) this._renderSlot(ctx, slot);
   }
 
-  _renderRow(ctx, box, entry = {}) {
-    const selected = entry.itemId === this.selectedItemId;
-    ctx.fillStyle = selected ? 'rgba(196,154,82,0.24)' : 'rgba(255,255,255,0.04)';
-    ctx.strokeStyle = selected ? '#dcb565' : '#555555';
-    ctx.fillRect(box.x, box.y, box.width, box.height);
-    ctx.strokeRect(box.x, box.y, box.width, box.height);
-    ctx.fillStyle = selected ? '#f1d48c' : '#dedede';
-    ctx.font = '13px Arial';
-    ctx.textAlign = 'left';
-    ctx.fillText(entry.name || entry.itemId || '未知物品', box.x + 10, box.y + box.height / 2);
+  _renderSlot(ctx, slot) {
+    const entry = slot.entry;
+    const selected = entry?.itemId === this.selectedItemId && slot.direction === this.direction;
+    ctx.fillStyle = selected ? 'rgba(207,165,77,0.32)' : 'rgba(0,0,0,0.3)';
+    ctx.strokeStyle = selected ? '#f2cf70' : '#505050';
+    ctx.lineWidth = selected ? 2 : 1;
+    ctx.fillRect(slot.x, slot.y, slot.width, slot.height);
+    ctx.strokeRect(slot.x, slot.y, slot.width, slot.height);
+    if (!entry) return;
+
+    const image = entry.imageId ? this.resolveItemImage(entry.imageId) : null;
+    if (image) {
+      const padding = Math.max(5, Math.floor(slot.width * 0.12));
+      const drawableWidth = Math.max(1, Number(image.naturalWidth || image.width) || 1);
+      const drawableHeight = Math.max(1, Number(image.naturalHeight || image.height) || 1);
+      const scale = Math.min((slot.width - padding * 2) / drawableWidth, (slot.height - padding * 2) / drawableHeight);
+      const width = drawableWidth * scale;
+      const height = drawableHeight * scale;
+      ctx.drawImage(image, slot.x + (slot.width - width) / 2, slot.y + (slot.height - height) / 2, width, height);
+    } else {
+      ctx.fillStyle = '#d6d0c5';
+      ctx.font = '11px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(entry.name || entry.itemId, slot.x + slot.width / 2, slot.y + slot.height / 2, slot.width - 8);
+    }
+    ctx.fillStyle = '#f5ead4';
+    ctx.font = 'bold 11px Arial';
     ctx.textAlign = 'right';
-    ctx.fillText(`×${entry.quantity || 0}`, box.x + box.width - 10, box.y + box.height / 2);
+    ctx.textBaseline = 'bottom';
+    ctx.fillText(`×${entry.quantity || 0}`, slot.x + slot.width - 4, slot.y + slot.height - 3);
   }
 
   _renderButton(ctx, box, text, disabled) {
     ctx.fillStyle = disabled ? '#4b4b4b' : '#72572f';
     ctx.strokeStyle = disabled ? '#686868' : '#d3a85b';
+    ctx.lineWidth = 1;
     ctx.fillRect(box.x, box.y, box.width, box.height);
     ctx.strokeRect(box.x, box.y, box.width, box.height);
     ctx.fillStyle = disabled ? '#a0a0a0' : '#ffffff';
     ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
     ctx.font = 'bold 14px Arial';
     ctx.fillText(text, box.x + box.width / 2, box.y + box.height / 2);
   }

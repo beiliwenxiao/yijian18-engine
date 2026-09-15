@@ -91,6 +91,8 @@ export class S01S02Coordinator {
     this.s01TimePhaseInitialized = false;
     this.s01WeatherPhaseInitialized = false;
     this.s01TimePauseOwned = false;
+    this.shelterWeatherSystem = null;
+    this.shelterWeatherPaused = false;
     this.firstWolfCorpsePending = null;
     this.firstWolfCorpseRetryElapsed = 0;
     this.firstWolfCorpseRetryInFlight = false;
@@ -105,9 +107,21 @@ export class S01S02Coordinator {
     return this.scene.worldStreamingManager?.regionId === SHELTER_REGION_ID;
   }
 
+  /** 室内不绘制也不推进天气；Region 切换重建 WeatherSystem 时按实例重新应用。 */
+  _syncShelterWeatherPause() {
+    const weatherSystem = this.scene.weatherSystem || null;
+    const shouldPause = this._isInShelterInterior();
+    if (this.shelterWeatherSystem === weatherSystem && this.shelterWeatherPaused === shouldPause) return false;
+    this.shelterWeatherSystem = weatherSystem;
+    this.shelterWeatherPaused = shouldPause;
+    weatherSystem?.setPaused?.(shouldPause);
+    return true;
+  }
+
   _buildShelterChestSnapshot({ direction = null, statusMessage = '', statusType = 'info' } = {}) {
     const summarize = inventory => (inventory?.exportItems?.() || []).map(stack => ({
       itemId: stack?.item?.id || '', name: stack?.item?.name || stack?.item?.id || '未知物品',
+      imageId: stack?.item?.imageId || stack?.item?.assetId || null,
       quantity: Math.max(0, Math.floor(Number(stack?.quantity) || 0))
     })).filter(entry => entry.itemId && entry.quantity > 0);
     const inventory = this.scene.playerEntity?.getComponent?.('inventory');
@@ -161,10 +175,12 @@ export class S01S02Coordinator {
     if (this.scene.currentSceneId !== 'S01') {
       return { ok: false, code: 'shelterEntryOutsideS01' };
     }
-    return this.scene.travelToRegion({
+    const entered = await this.scene.travelToRegion({
       sceneId: 'S01-C01',
       spawnRef: 'S01-C01-spawn-door'
     });
+    this._syncShelterWeatherPause();
+    return entered;
   }
 
   async leaveShelter() {
@@ -172,9 +188,11 @@ export class S01S02Coordinator {
     const survival = this._story().s01Survival || {};
     if (survival.overnightCompleted !== true) {
       this.scene._showScreenTip('先靠近床睡觉。', { title: '仍需过夜' });
-      return false;
+      // 这是被明确提示的流程前置，不是触发器执行错误；保持交互被消费但不写失败诊断。
+      return { ok: true, status: 'blockedUntilOvernight' };
     }
     const returned = await this.scene.travelToRegion({ sceneId: 'S01', spawnRef: 'S01-shelter-rest' });
+    this._syncShelterWeatherPause();
     if (!returned?.ok) return false;
     if (survival.shelterExitedAfterOvernight === true) return true;
     const committed = await this._submit('story.s01.leaveShelter', {}, 'story:s01:leave-shelter');
@@ -1693,6 +1711,7 @@ export class S01S02Coordinator {
   }
 
   update(deltaTime) {
+    this._syncShelterWeatherPause();
     if (this.scene.currentSceneId !== 'S01') {
       this.resolvedPlacementContinuations.clear();
       if (this.s01TimePhaseInitialized || this.s01WeatherPhaseInitialized || this.s01TimePauseOwned) {
