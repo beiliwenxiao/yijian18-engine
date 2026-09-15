@@ -2483,7 +2483,7 @@
               ],
               "type": "object"
             },
-            "resultSemantics": "按已提交首狼事实恢复放置与攻击状态；辅助对象暂缺时由既有补偿链继续处理。",
+            "resultSemantics": "按已提交首狼事实恢复放置与攻击状态；辅助对��暂缺时由既有补偿链继续处理。",
             "value": "ensureFirstWolf"
           },
           {

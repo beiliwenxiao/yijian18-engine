@@ -226,6 +226,7 @@ export class PlacementSpawner {
           recordOutcome(placement, 'failed', 'factoryUnavailable');
           continue;
         }
+        if (!entity.placementId && placement.id) entity.placementId = placement.id;
         // 地面可拾取物与装备同样可以声明稳定 imageId，需要一起预载图片。
         if (['npc', 'enemy', 'resourceNode', 'item', 'equipment'].includes(kind)) {
           this._preloadEntityImage(kind, data, entity, placement);

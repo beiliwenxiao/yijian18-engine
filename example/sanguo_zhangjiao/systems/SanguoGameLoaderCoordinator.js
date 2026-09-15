@@ -120,6 +120,10 @@ function initializeGameLoader() {
       const storyDay = gameLoader.blackboard?.get?.('storyState')?.currentDay;
       this.timeSystem?.setCurrentDay?.(storyDay);
       this._sceneTriggerBindings?.setTriggerSystem(gameLoader.triggerSystem);
+      this._sceneTriggerBindings?.setEventJournal(
+        this.sceneRuntime?.eventJournal || null,
+        () => this.sceneRuntime?.authorityClocks?.logical?.now?.() || 0
+      );
       const sceneEnterResult = await gameLoader.triggerSystem.fireAndWait('sceneEnter', {
         sceneId: this.currentSceneId
       });

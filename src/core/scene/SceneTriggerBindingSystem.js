@@ -71,6 +71,12 @@ export class SceneTriggerBindingSystem {
     return this;
   }
 
+  setEventJournal(eventJournal, getLogicalTime = this.getLogicalTime) {
+    this.eventJournal = eventJournal || null;
+    this.getLogicalTime = typeof getLogicalTime === 'function' ? getLogicalTime : () => 0;
+    return this;
+  }
+
   setBindings(bindings = [], sceneObjects = []) {
     if (this._disposed) return this;
     const ids = new Set();

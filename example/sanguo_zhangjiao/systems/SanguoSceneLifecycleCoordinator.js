@@ -21,6 +21,7 @@
  ************************************************************/
 
 import { SceneFlowCoordinator } from '../../../src/core/scene/SceneFlowCoordinator.js';
+import { EventJournal } from '../../../src/core/events/EventJournal.js';
 import { S09AudioDirector } from './S09AudioDirector.js';
 
 /**
@@ -120,6 +121,20 @@ function updateBeforeBase(deltaTime) {
     phaseStartedAt = now;
   }
 
+  const runtime = this.sceneRuntime;
+  let bindingJournal = runtime?.eventJournal || null;
+  if (!bindingJournal && runtime) {
+    bindingJournal = new EventJournal({ runId: 'run-unknown' });
+    runtime.eventJournal = bindingJournal;
+    runtime.authoritySnapshotService?.registerService?.('eventJournal', bindingJournal.asSnapshotProvider());
+    this.context.services.eventJournal = bindingJournal;
+  }
+  if (bindingJournal && this._sceneTriggerBindings?.eventJournal !== bindingJournal) {
+    this._sceneTriggerBindings.setEventJournal(
+      bindingJournal,
+      () => runtime?.authorityClocks?.logical?.now?.() || 0
+    );
+  }
   this._sceneTriggerBindings?.update();
   if (frameProfile) {
     const now = performance.now();

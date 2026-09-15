@@ -469,6 +469,8 @@ export class GameLoader {
       dialogue: deps.dialogueSystem,
       questSystem: deps.questSystem,
       sceneManager: deps.sceneManager,
+      scene: deps.scene || null,
+      eventJournal: deps.eventJournal || deps.services?.eventJournal || null,
       world: deps.world,
       player: deps.player,
       audioManager: deps.audioManager,

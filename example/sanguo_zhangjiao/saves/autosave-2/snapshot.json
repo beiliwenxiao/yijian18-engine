@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "createdAt": 1789498265847,
+  "createdAt": 1789500562019,
   "meta": {
     "gameId": "sanguo_zhangjiao",
     "kind": "auto",
@@ -23,7 +23,7 @@
         "name": null,
         "transform": {
           "x": 8224.89051745566,
-          "y": 4044.5846936924577,
+          "y": 4067.924693692458,
           "elevation": 0,
           "rotation": 0,
           "scale": {
@@ -420,7 +420,7 @@
             "trg_s01_spawn_initial": {
               "definitionRevision": 1,
               "remaining": 0,
-              "nextDue": 2366.899999999994,
+              "nextDue": 2850.300000000001,
               "duration": 1000
             },
             "trg_s01_refuel_campfire": {
@@ -487,8 +487,8 @@
                   "stateId": "trigger:trg_s01_spawn_initial",
                   "stateRevision": null
                 },
-                "startedAt": 1366.8999999999942,
-                "finishedAt": 1366.8999999999942,
+                "startedAt": 1850.300000000001,
+                "finishedAt": 1850.300000000001,
                 "ledgerRevision": 16
               },
               {
@@ -1078,7 +1078,7 @@
                 "status": "running",
                 "actionIndex": 0,
                 "result": null,
-                "startedAt": 1183.5,
+                "startedAt": 1717,
                 "finishedAt": null,
                 "ledgerRevision": 8
               },
@@ -2130,8 +2130,8 @@
                         "removed": false,
                         "hp": 38,
                         "position": {
-                          "x": 9716.757588664814,
-                          "y": 3300.287888701826
+                          "x": 9718.799995891586,
+                          "y": 3298.245481475048
                         },
                         "ai": {
                           "active": true,
@@ -2149,7 +2149,7 @@
                         "hp": 38,
                         "position": {
                           "x": 9922.908253834266,
-                          "y": 3175.4851098036697
+                          "y": 3178.3735098036686
                         },
                         "ai": {
                           "active": true,
@@ -2557,8 +2557,8 @@
                         "removed": false,
                         "hp": 32,
                         "position": {
-                          "x": 8107.162153644333,
-                          "y": 4144.507838313217
+                          "x": 8096.895918487099,
+                          "y": 4157.476129392391
                         },
                         "ai": {
                           "active": true,
@@ -2575,8 +2575,8 @@
                         "removed": false,
                         "hp": 32,
                         "position": {
-                          "x": 8175.574470714823,
-                          "y": 4157.2803498515495
+                          "x": 8170.951916322108,
+                          "y": 4172.910140531699
                         },
                         "ai": {
                           "active": true,
@@ -2593,8 +2593,8 @@
                         "removed": false,
                         "hp": 32,
                         "position": {
-                          "x": 8233.788476939148,
-                          "y": 4124.414101643942
+                          "x": 8234.840274007021,
+                          "y": 4140.540849614626
                         },
                         "ai": {
                           "active": true,
@@ -2932,7 +2932,7 @@
             "secondsPerUnit": 100,
             "maxUnits": 10,
             "units": 4,
-            "remainingSeconds": 390.6007999999964,
+            "remainingSeconds": 390.633999999996,
             "active": true
           }
         },

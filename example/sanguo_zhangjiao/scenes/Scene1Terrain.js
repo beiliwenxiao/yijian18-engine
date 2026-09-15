@@ -1488,18 +1488,30 @@ export class Scene1Terrain {
       if (!this._editorBackgroundImages.every(bg => bg._loaded)) return;
     }
 
-    // 缓存范围基于椭圆包围盒外扩
-    const rx = e.rx + 120;
-    const ry = e.ry + 120;
-    const cx = e.cx;
-    const cy = e.cy;
+    // 合并缓存必须覆盖地形椭圆与全部普通背景图片的联合世界范围。
+    // 旧实现只按中央椭圆创建较小 Canvas，整张 1280×720 背景绘入后外围被裁切，
+    // 看起来像游戏背景缩小；这里仅扩大缓存边界，不拉伸图片、不改变 canonical 坐标。
+    let minX = e.cx - e.rx - 140;
+    let minY = e.cy - e.ry - 140;
+    let maxX = e.cx + e.rx + 140;
+    let maxY = e.cy + e.ry + 140;
+    for (const background of this._editorBackgroundImages || []) {
+      const width = Math.max(0, Number(background?.width) || 0);
+      const height = Math.max(0, Number(background?.height) || 0);
+      const x = Number(background?.x);
+      const y = Number(background?.y);
+      if (!Number.isFinite(x) || !Number.isFinite(y) || width <= 0 || height <= 0) continue;
+      minX = Math.min(minX, x);
+      minY = Math.min(minY, y);
+      maxX = Math.max(maxX, x + width);
+      maxY = Math.max(maxY, y + height);
+    }
 
-    const cacheW = Math.ceil(rx * 2 + 40);
-    const cacheH = Math.ceil(ry * 2 + 40);
+    const offsetX = Math.floor(minX) - 1;
+    const offsetY = Math.floor(minY) - 1;
+    const cacheW = Math.ceil(maxX - offsetX) + 1;
+    const cacheH = Math.ceil(maxY - offsetY) + 1;
     if (cacheW > 4096 || cacheH > 4096) return;
-
-    const offsetX = cx - cacheW / 2;
-    const offsetY = cy - cacheH / 2;
 
     const canvas = document.createElement('canvas');
     canvas.width = cacheW;

@@ -517,13 +517,19 @@ export class S01S02Coordinator {
       }
 
       const missing = [];
+      const placements = this.scene.context.services.placements;
       for (let index = 1; index <= spawned; index += 1) {
         const entityId = `${CHASE_WOLF_PREFIX}${index}`;
         const wolf = this.scene.entityStore?.getById?.(entityId);
         if (!wolf) {
+          const inspection = placements?.inspectPlacement?.(entityId) || null;
+          // 已进入生成账本但当前无 live 实体，可能是尸体衰减/terminal tombstone；
+          // 追逐击杀不是流程前置，禁止把终态狼重新补生成或每帧反复报警。
+          if (inspection?.spawned === true || inspection?.tombstoned === true) continue;
           missing.push(entityId);
           continue;
         }
+        if (!wolf.placementId) wolf.placementId = entityId;
         if (wolf.isDead || wolf.isDying || !wolf.getComponent?.('combat')) continue;
         this._activateWolf(wolf);
       }

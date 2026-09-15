@@ -955,7 +955,7 @@
         {
           "editor": {
             "locked": false,
-            "visible": false
+            "visible": true
           },
           "group": "S01-cooking-rack",
           "id": "S01-prop-cooking-rack",

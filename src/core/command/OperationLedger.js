@@ -16,9 +16,15 @@ function stableValue(value) {
   return Object.fromEntries(Object.keys(value).sort().map(key => [key, stableValue(value[key])]));
 }
 
-/** requestId/clientSequence 不属于业务 operation fingerprint。 */
+/** requestId/clientSequence/expectedStateRevision 不属于业务 operation fingerprint。 */
 export function fingerprintOperation(command) {
-  const { operationId: _operationId, clientSequence: _clientSequence, requestId: _requestId, ...semantic } = command || {};
+  const {
+    operationId: _operationId,
+    clientSequence: _clientSequence,
+    requestId: _requestId,
+    expectedStateRevision: _expectedStateRevision,
+    ...semantic
+  } = command || {};
   return JSON.stringify(stableValue(semantic));
 }
 

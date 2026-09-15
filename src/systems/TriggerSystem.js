@@ -22,6 +22,7 @@
 
 import { ExpressionEngine } from './ExpressionEngine.js';
 import { MonotonicClock } from '../core/command/AuthorityClocks.js';
+import { EventJournal } from '../core/events/EventJournal.js';
 import { normalizeRuntimeDebugMode } from '../core/CanonicalSnapshot.js';
 import { stableDigest } from '../core/StableDigest.js';
 import { assertCommandContract, CommandContractKind } from '../core/command/CommandContracts.js';
@@ -534,11 +535,25 @@ export class TriggerSystem {
     return true;
   }
 
+  _ensureEventJournal() {
+    const runtime = this.ctx?.scene?.sceneRuntime || null;
+    let journal = this.eventJournal || this.ctx?.eventJournal || this.ctx?.services?.eventJournal || runtime?.eventJournal || null;
+    if (!journal && runtime) {
+      journal = new EventJournal({ runId: 'run-unknown' });
+      runtime.eventJournal = journal;
+      runtime.authoritySnapshotService?.registerService?.('eventJournal', journal.asSnapshotProvider());
+      if (this.ctx?.services) this.ctx.services.eventJournal = journal;
+    }
+    if (journal) this.eventJournal = journal;
+    return journal;
+  }
+
   _createRequest(trigger, event) {
     const params = event?.params || {};
     const sequence = ++this._operationSequence;
     const inheritedEventId = hasText(params.eventId) ? params.eventId.trim() : null;
-    const journalEvent = this.eventJournal?.create?.({
+    const eventJournal = this._ensureEventJournal();
+    const journalEvent = eventJournal?.create?.({
       eventId: inheritedEventId,
       eventDefinitionId: event?.definitionId || null,
       type: event?.type || 'trigger',
@@ -738,8 +753,15 @@ export class TriggerSystem {
       }
       return result;
     }
+    const legacyEvent = {
+      ...request.event,
+      params: {
+        ...(request.event?.params || {}),
+        eventId: request.eventId
+      }
+    };
     try {
-      pending = legacy(action.params || {}, this.ctx, request.event);
+      pending = legacy(action.params || {}, this.ctx, legacyEvent);
     } catch (error) {
       error.triggerPhase = 'executeSync';
       error.actionOperationId = operationId;

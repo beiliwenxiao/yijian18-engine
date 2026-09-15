@@ -1,28 +1,29 @@
 {
   "version": 1,
-  "createdAt": 1789495797689,
+  "createdAt": 1789500358258,
   "meta": {
     "gameId": "sanguo_zhangjiao",
     "kind": "auto",
     "autoSlot": 1,
     "characterName": "柔弱女子",
     "level": 1,
-    "currentSceneId": "S01-C01",
-    "location": "S01-C01 区域",
-    "reason": "system-menu",
+    "currentSceneId": "S01",
+    "location": "S01 区域",
+    "reason": "checkpoint",
+    "checkpointId": "checkpoint.S01.wolfPursuit",
     "previewFile": "thumbnail.jpg"
   },
   "data": {
     "game": {
       "campaignId": "sanguo-zhangjiao-s01-s14",
       "schemaVersion": 3,
-      "currentSceneId": "S01-C01",
+      "currentSceneId": "S01",
       "player": {
         "id": "refugee",
         "name": null,
         "transform": {
-          "x": 627.9776503688438,
-          "y": 549.9695791218036,
+          "x": 8214.970750541095,
+          "y": 4044.6791676630723,
           "elevation": 0,
           "rotation": 0,
           "scale": {
@@ -328,7 +329,7 @@
           },
           "storyState": {
             "currentDay": 2,
-            "currentSceneId": "S01-C01",
+            "currentSceneId": "S01",
             "delayedConsequences": [],
             "endingInputs": {
               "allowedCityDestruction": false,
@@ -367,13 +368,13 @@
               "meatCooked": true,
               "overnightCompleted": true,
               "pursuit": {
-                "active": false,
+                "active": true,
                 "killed": 0,
-                "spawned": 0
+                "spawned": 3
               },
               "riverCrossed": false,
               "shelterCompleted": true,
-              "shelterExitedAfterOvernight": false,
+              "shelterExitedAfterOvernight": true,
               "skinningKnifeFound": true,
               "wolfBracersCrafted": true,
               "wolfGearCrafted": true,
@@ -400,8 +401,8 @@
           "snapshotSchemaVersion": 3,
           "definitionRevision": 1,
           "definitionDigest": "sha256-6c3f792e884bc44f8eb489ff5af4f4da780146fe6d66c11061c236e353f07678",
-          "operationSequence": 32,
-          "eventSequence": 5,
+          "operationSequence": 35,
+          "eventSequence": 7,
           "firedOnce": [
             "trg_s01_begin_tutorial_after_wake",
             "trg_s01_light_campfire",
@@ -419,7 +420,7 @@
             "trg_s01_spawn_initial": {
               "definitionRevision": 1,
               "remaining": 0,
-              "nextDue": 0,
+              "nextDue": 2550.199999999997,
               "duration": 1000
             },
             "trg_s01_refuel_campfire": {
@@ -449,19 +450,19 @@
             "trg_s01_enter_shelter": {
               "definitionRevision": 1,
               "remaining": 0,
-              "nextDue": 2550,
+              "nextDue": 0,
               "duration": 1000
             },
             "trg_s01_leave_shelter": {
               "definitionRevision": 1,
               "remaining": 0,
-              "nextDue": 20919.19999999972,
+              "nextDue": 0,
               "duration": 1000
             },
             "trg_s01_overnight": {
               "definitionRevision": 1,
               "remaining": 0,
-              "nextDue": 25286.599999999627,
+              "nextDue": 0,
               "duration": 1000
             }
           },
@@ -472,22 +473,23 @@
               {
                 "triggerId": "trg_s01_spawn_initial",
                 "definitionRevision": 1,
-                "operationId": "trigger:1:trg_s01_spawn_initial:1",
-                "fingerprint": "sha256-f637b740e9bb44430e4c2cdc1c665ea44371e0c8985e2f9d2742604a9006bf92",
+                "eventId": "evt:run-unknown:0000000006",
+                "operationId": "evt:run-unknown:0000000006",
+                "fingerprint": "sha256-3d29c078762cb145b19e794b9bd4bd335a3c85c86ec0bde2be3eb49789fe9d47",
                 "status": "succeeded",
                 "actionIndex": 2,
                 "result": {
                   "ok": true,
-                  "operationId": "trigger:1:trg_s01_spawn_initial:1:trigger:trg_s01_spawn_initial:step:present-entry",
+                  "operationId": "evt:run-unknown:0000000006:trigger:trg_s01_spawn_initial:step:present-entry",
                   "status": "succeeded",
                   "committed": false,
                   "code": null,
                   "stateId": "trigger:trg_s01_spawn_initial",
                   "stateRevision": null
                 },
-                "startedAt": 0,
-                "finishedAt": 0,
-                "ledgerRevision": 6
+                "startedAt": 1550.199999999997,
+                "finishedAt": 1550.199999999997,
+                "ledgerRevision": 16
               },
               {
                 "triggerId": "trg_s01_pickup_worn_axe",
@@ -1070,23 +1072,15 @@
               {
                 "triggerId": "trg_s01_leave_shelter",
                 "definitionRevision": 1,
-                "eventId": "evt:run-unknown:0000000006",
-                "operationId": "evt:run-unknown:0000000006",
-                "fingerprint": "sha256-6959e21db94d9483f03924a00786f414f187a99c96def89d63e4579204227d32",
-                "status": "succeeded",
+                "eventId": "evt:run-unknown:0000000003",
+                "operationId": "evt:run-unknown:0000000003",
+                "fingerprint": "sha256-79169df8b394c92669631dc1ac667f78c3c514cd6ce775de8de5cf343b37ff0c",
+                "status": "running",
                 "actionIndex": 0,
-                "result": {
-                  "ok": true,
-                  "operationId": "evt:run-unknown:0000000006:trigger:trg_s01_leave_shelter:step:leave-shelter",
-                  "status": "blockedUntilOvernight",
-                  "committed": false,
-                  "code": null,
-                  "stateId": "trigger:trg_s01_leave_shelter",
-                  "stateRevision": null
-                },
-                "startedAt": 19902.69999999972,
-                "finishedAt": 19919.19999999972,
-                "ledgerRevision": 7
+                "result": null,
+                "startedAt": 1366.8999999999942,
+                "finishedAt": null,
+                "ledgerRevision": 8
               },
               {
                 "triggerId": "trg_s01_river_crossed",
@@ -2083,37 +2077,196 @@
       "scene": {
         "worldStreamingState": {
           "schemaVersion": 2,
-          "regionId": "s01-shelter",
+          "regionId": "mainland",
           "current": {
-            "col": 0,
-            "row": 0
+            "col": 6,
+            "row": 5
           },
           "chunks": [
             {
               "schemaVersion": 2,
-              "regionId": "s01-shelter",
-              "chunkId": "S01-C01",
-              "sceneId": "S01-C01",
-              "sceneNamespace": "S01",
-              "col": 0,
-              "row": 0,
+              "regionId": "mainland",
+              "chunkId": "S02",
+              "sceneId": "S02",
+              "sceneNamespace": "S02",
+              "col": 7,
+              "row": 4,
               "worldWidth": 1280,
               "worldHeight": 720,
               "footprint": {
-                "row": 0,
-                "col": 0,
+                "row": 4,
+                "col": 7,
                 "rows": 1,
                 "cols": 1,
-                "left": 0,
-                "top": 0,
-                "right": 1,
-                "bottom": 1,
+                "left": 7,
+                "top": 4,
+                "right": 8,
+                "bottom": 5,
                 "width": 1280,
                 "height": 720,
-                "worldLeft": 0,
-                "worldTop": 0,
-                "worldRight": 1280,
-                "worldBottom": 720
+                "worldLeft": 8960,
+                "worldTop": 2880,
+                "worldRight": 10240,
+                "worldBottom": 3600
+              },
+              "chunkState": {
+                "schemaVersion": 1,
+                "pickedItems": [],
+                "killedEnemies": [],
+                "switches": {},
+                "npcPositions": {},
+                "placementState": null
+              },
+              "providers": {
+                "demoDynamic": {
+                  "schemaVersion": 2,
+                  "sceneNamespace": "S02",
+                  "resourceNodes": [],
+                  "placementStates": [
+                    {
+                      "id": "S02-scavenger-1",
+                      "state": {
+                        "kind": "enemy",
+                        "removed": false,
+                        "hp": 38,
+                        "position": {
+                          "x": 9708.555150003043,
+                          "y": 3308.4903273635887
+                        },
+                        "ai": {
+                          "active": true,
+                          "aiType": "aggressive",
+                          "lure": null
+                        },
+                        "placementSignature": "{\"collision\":null,\"group\":\"S02-initial\",\"id\":\"S02-scavenger-1\",\"kind\":\"enemy\",\"overrides\":null,\"ref\":\"enemy.s02_scavenger\",\"sceneId\":\"S02\",\"spawnWhen\":null,\"type\":\"ref\",\"version\":1,\"x\":850,\"y\":340}"
+                      }
+                    },
+                    {
+                      "id": "S02-scavenger-2",
+                      "state": {
+                        "kind": "enemy",
+                        "removed": false,
+                        "hp": 38,
+                        "position": {
+                          "x": 9922.908253834266,
+                          "y": 3163.885109803668
+                        },
+                        "ai": {
+                          "active": true,
+                          "aiType": "aggressive",
+                          "lure": null
+                        },
+                        "placementSignature": "{\"collision\":null,\"group\":\"S02-initial\",\"id\":\"S02-scavenger-2\",\"kind\":\"enemy\",\"overrides\":null,\"ref\":\"enemy.s02_scavenger\",\"sceneId\":\"S02\",\"spawnWhen\":null,\"type\":\"ref\",\"version\":1,\"x\":970,\"y\":390}"
+                      }
+                    },
+                    {
+                      "id": "S02-npc-messenger",
+                      "state": {
+                        "kind": "npc",
+                        "removed": false,
+                        "position": {
+                          "x": 9670,
+                          "y": 3115
+                        },
+                        "placementSignature": "{\"collision\":null,\"group\":\"S02-initial\",\"id\":\"S02-npc-messenger\",\"kind\":\"npc\",\"overrides\":null,\"ref\":\"npc.s02_messenger\",\"sceneId\":\"S02\",\"spawnWhen\":null,\"type\":\"ref\",\"version\":1,\"x\":710,\"y\":235}"
+                      }
+                    },
+                    {
+                      "id": "S02-supply-wood",
+                      "state": {
+                        "kind": "item",
+                        "removed": true,
+                        "quantity": 18,
+                        "position": {
+                          "x": 9365,
+                          "y": 3260
+                        },
+                        "placementSignature": "{\"collision\":null,\"group\":\"S02-initial\",\"id\":\"S02-supply-wood\",\"kind\":\"item\",\"overrides\":{\"quantity\":18},\"ref\":\"resource.wood\",\"sceneId\":\"S02\",\"spawnWhen\":null,\"type\":\"ref\",\"version\":1,\"x\":405,\"y\":380}"
+                      }
+                    },
+                    {
+                      "id": "S02-supply-herb",
+                      "state": {
+                        "kind": "item",
+                        "removed": true,
+                        "quantity": 12,
+                        "position": {
+                          "x": 9445,
+                          "y": 3230
+                        },
+                        "placementSignature": "{\"collision\":null,\"group\":\"S02-initial\",\"id\":\"S02-supply-herb\",\"kind\":\"item\",\"overrides\":{\"quantity\":12},\"ref\":\"resource.herb\",\"sceneId\":\"S02\",\"spawnWhen\":null,\"type\":\"ref\",\"version\":1,\"x\":485,\"y\":350}"
+                      }
+                    },
+                    {
+                      "id": "S02-salvage-cloth",
+                      "state": {
+                        "kind": "item",
+                        "removed": true,
+                        "quantity": 8,
+                        "position": {
+                          "x": 9405,
+                          "y": 3295
+                        },
+                        "placementSignature": "{\"collision\":null,\"group\":\"S02-initial\",\"id\":\"S02-salvage-cloth\",\"kind\":\"item\",\"overrides\":{\"quantity\":8},\"ref\":\"salvage.torn_cloth\",\"sceneId\":\"S02\",\"spawnWhen\":null,\"type\":\"ref\",\"version\":1,\"x\":445,\"y\":415}"
+                      }
+                    },
+                    {
+                      "id": "S02-salvage-utensil",
+                      "state": {
+                        "kind": "item",
+                        "removed": true,
+                        "quantity": 8,
+                        "position": {
+                          "x": 9480,
+                          "y": 3310
+                        },
+                        "placementSignature": "{\"collision\":null,\"group\":\"S02-initial\",\"id\":\"S02-salvage-utensil\",\"kind\":\"item\",\"overrides\":{\"quantity\":8},\"ref\":\"salvage.broken_utensil\",\"sceneId\":\"S02\",\"spawnWhen\":null,\"type\":\"ref\",\"version\":1,\"x\":520,\"y\":430}"
+                      }
+                    },
+                    {
+                      "id": "S02-tool-axe",
+                      "state": {
+                        "kind": "item",
+                        "removed": true,
+                        "position": {
+                          "x": 9515,
+                          "y": 3275
+                        },
+                        "placementSignature": "{\"collision\":null,\"group\":\"S02-initial\",\"id\":\"S02-tool-axe\",\"kind\":\"item\",\"overrides\":{\"durability\":5,\"instanceId\":\"S02-tool-axe-1\",\"maxDurability\":8},\"ref\":\"tool.worn_axe\",\"sceneId\":\"S02\",\"spawnWhen\":null,\"type\":\"ref\",\"version\":1,\"x\":555,\"y\":395}"
+                      }
+                    }
+                  ],
+                  "deathDrops": [],
+                  "s10StructureStates": [],
+                  "vehicleStates": []
+                }
+              }
+            },
+            {
+              "schemaVersion": 2,
+              "regionId": "mainland",
+              "chunkId": "S01",
+              "sceneId": "S01",
+              "sceneNamespace": "S01",
+              "col": 6,
+              "row": 5,
+              "worldWidth": 1280,
+              "worldHeight": 720,
+              "footprint": {
+                "row": 5,
+                "col": 6,
+                "rows": 1,
+                "cols": 1,
+                "left": 6,
+                "top": 5,
+                "right": 7,
+                "bottom": 6,
+                "width": 1280,
+                "height": 720,
+                "worldLeft": 7680,
+                "worldTop": 3600,
+                "worldRight": 8960,
+                "worldBottom": 4320
               },
               "chunkState": {
                 "schemaVersion": 1,
@@ -2127,8 +2280,349 @@
                 "demoDynamic": {
                   "schemaVersion": 2,
                   "sceneNamespace": "S01",
-                  "resourceNodes": [],
-                  "placementStates": [],
+                  "resourceNodes": [
+                    {
+                      "id": "S01-node-berry-1",
+                      "state": {
+                        "schemaVersion": 1,
+                        "resourceType": "food",
+                        "itemId": "resource.wild_berry",
+                        "remaining": 2,
+                        "maxRemaining": 10,
+                        "yieldPerGather": 2,
+                        "gatherDuration": 1.6,
+                        "requiredToolType": null,
+                        "refreshDays": 0,
+                        "refreshProgressDays": 0,
+                        "refreshMode": "none",
+                        "refreshIntervalSeconds": 0,
+                        "refreshElapsedSeconds": 0,
+                        "guardUnitIds": [],
+                        "riskEvents": [],
+                        "damageRatio": 0,
+                        "depleted": false
+                      }
+                    },
+                    {
+                      "id": "S01-node-wood-1",
+                      "state": {
+                        "schemaVersion": 1,
+                        "resourceType": "wood",
+                        "itemId": "resource.wood",
+                        "remaining": 0,
+                        "maxRemaining": 12,
+                        "yieldPerGather": 3,
+                        "gatherDuration": 1.8,
+                        "requiredToolType": "axe",
+                        "refreshDays": 0,
+                        "refreshProgressDays": 0,
+                        "refreshMode": "none",
+                        "refreshIntervalSeconds": 0,
+                        "refreshElapsedSeconds": 0,
+                        "guardUnitIds": [],
+                        "riskEvents": [
+                          {
+                            "id": "risk.dry_wood_noise",
+                            "type": "noise",
+                            "chance": 0.3,
+                            "message": "枯木断裂的巨响传向荒野，附近可能有敌人注意到这里。",
+                            "payload": {
+                              "alert": 1
+                            }
+                          }
+                        ],
+                        "damageRatio": 0,
+                        "depleted": true
+                      }
+                    },
+                    {
+                      "id": "S01-node-wood-2",
+                      "state": {
+                        "schemaVersion": 1,
+                        "resourceType": "wood",
+                        "itemId": "resource.wood",
+                        "remaining": 12,
+                        "maxRemaining": 12,
+                        "yieldPerGather": 3,
+                        "gatherDuration": 1.8,
+                        "requiredToolType": "axe",
+                        "refreshDays": 0,
+                        "refreshProgressDays": 0,
+                        "refreshMode": "none",
+                        "refreshIntervalSeconds": 0,
+                        "refreshElapsedSeconds": 0,
+                        "guardUnitIds": [],
+                        "riskEvents": [
+                          {
+                            "id": "risk.dry_wood_noise",
+                            "type": "noise",
+                            "chance": 0.3,
+                            "message": "枯木断裂的巨响传向荒野，附近可能有敌人注意到这里。",
+                            "payload": {
+                              "alert": 1
+                            }
+                          }
+                        ],
+                        "damageRatio": 0,
+                        "depleted": false
+                      }
+                    },
+                    {
+                      "id": "S01-node-wood-3",
+                      "state": {
+                        "schemaVersion": 1,
+                        "resourceType": "wood",
+                        "itemId": "resource.wood",
+                        "remaining": 12,
+                        "maxRemaining": 12,
+                        "yieldPerGather": 3,
+                        "gatherDuration": 1.8,
+                        "requiredToolType": "axe",
+                        "refreshDays": 0,
+                        "refreshProgressDays": 0,
+                        "refreshMode": "none",
+                        "refreshIntervalSeconds": 0,
+                        "refreshElapsedSeconds": 0,
+                        "guardUnitIds": [],
+                        "riskEvents": [
+                          {
+                            "id": "risk.dry_wood_noise",
+                            "type": "noise",
+                            "chance": 0.3,
+                            "message": "枯木断裂的巨响传向荒野，附近可能有敌人注意到这里。",
+                            "payload": {
+                              "alert": 1
+                            }
+                          }
+                        ],
+                        "damageRatio": 0,
+                        "depleted": false
+                      }
+                    },
+                    {
+                      "id": "S01-first-wolf-1",
+                      "state": {
+                        "schemaVersion": 1,
+                        "resourceType": "food",
+                        "itemId": "resource.wolf_hide",
+                        "remaining": 0,
+                        "maxRemaining": 2,
+                        "yieldPerGather": 2,
+                        "gatherDuration": 1.8,
+                        "requiredToolType": "skinningKnife",
+                        "refreshDays": 0,
+                        "refreshProgressDays": 0,
+                        "refreshMode": "none",
+                        "refreshIntervalSeconds": 0,
+                        "refreshElapsedSeconds": 0,
+                        "guardUnitIds": [],
+                        "riskEvents": [],
+                        "damageRatio": 0,
+                        "depleted": true
+                      }
+                    }
+                  ],
+                  "placementStates": [
+                    {
+                      "id": "S01-small-shelter-1",
+                      "state": {
+                        "kind": "item",
+                        "removed": false,
+                        "position": {
+                          "x": 8230.843526402652,
+                          "y": 4036.5277262896143
+                        },
+                        "placementSignature": "{\"collision\":{\"mode\":\"block\",\"points\":[[-49,-7],[56,-8],[42,-33],[1,-38],[-37,-32]],\"shapeType\":\"polygon\"},\"group\":\"S01-small-shelter\",\"id\":\"S01-small-shelter-1\",\"kind\":\"item\",\"overrides\":null,\"ref\":\"story.s01.small_shelter\",\"sceneId\":\"S01\",\"spawnWhen\":{\"blackboardKey\":\"storyState\",\"equals\":true,\"path\":\"s01Survival.shelterCompleted\"},\"type\":\"ref\",\"version\":1,\"x\":550.7813037774793,\"y\":429.9943506464729}"
+                      }
+                    },
+                    {
+                      "id": "S01-spawn-campfire",
+                      "state": {
+                        "kind": "item",
+                        "removed": false,
+                        "position": {
+                          "x": 8278.550918727391,
+                          "y": 4115
+                        },
+                        "placementSignature": "{\"collision\":null,\"group\":\"S01-initial\",\"id\":\"S01-spawn-campfire\",\"kind\":\"item\",\"overrides\":null,\"ref\":\"story.s01.campfire\",\"sceneId\":\"S01\",\"spawnWhen\":null,\"type\":\"ref\",\"version\":1,\"x\":598.5509187273913,\"y\":515}"
+                      }
+                    },
+                    {
+                      "id": "S01-prop-tanning-rack",
+                      "state": {
+                        "kind": "item",
+                        "removed": false,
+                        "position": {
+                          "x": 8162.858302709539,
+                          "y": 4101.915295070305
+                        },
+                        "placementSignature": "{\"collision\":{\"mode\":\"block\",\"points\":[[-23,-6],[0,-2],[24,-6],[24,-12],[0,-8],[-23,-13]],\"shapeType\":\"polygon\"},\"group\":\"S01-tanning-rack\",\"id\":\"S01-prop-tanning-rack\",\"kind\":\"item\",\"overrides\":null,\"ref\":\"story.s01.tanning_rack\",\"sceneId\":\"S01\",\"spawnWhen\":{\"blackboardKey\":\"storyState\",\"equals\":true,\"path\":\"s01Survival.meatCooked\"},\"type\":\"ref\",\"version\":1,\"x\":482.8583027095395,\"y\":489.9152950703045}"
+                      }
+                    },
+                    {
+                      "id": "S01-node-berry-1",
+                      "state": {
+                        "kind": "resourceNode",
+                        "removed": false,
+                        "position": {
+                          "x": 8111.1323167971495,
+                          "y": 4181.709465042264
+                        },
+                        "placementSignature": "{\"collision\":null,\"group\":\"S01-berries\",\"id\":\"S01-node-berry-1\",\"kind\":\"resourceNode\",\"overrides\":null,\"ref\":\"node.wild_berry\",\"sceneId\":\"S01\",\"spawnWhen\":{\"blackboardKey\":\"storyState\",\"equals\":true,\"path\":\"s01Survival.initialToolsPicked\"},\"type\":\"ref\",\"version\":1,\"x\":431.1323167971492,\"y\":581.709465042264}"
+                      }
+                    },
+                    {
+                      "id": "S01-node-wood-1",
+                      "state": {
+                        "kind": "resourceNode",
+                        "removed": false,
+                        "position": {
+                          "x": 8046.46916106702,
+                          "y": 4105.160447613645
+                        },
+                        "placementSignature": "{\"collision\":null,\"group\":\"S01-wood\",\"id\":\"S01-node-wood-1\",\"kind\":\"resourceNode\",\"overrides\":null,\"ref\":\"node.dry_wood\",\"sceneId\":\"S01\",\"spawnWhen\":{\"blackboardKey\":\"storyState\",\"equals\":true,\"path\":\"s01Survival.berriesGathered\"},\"type\":\"ref\",\"version\":1,\"x\":366.4691610670198,\"y\":505.1604476136454}"
+                      }
+                    },
+                    {
+                      "id": "S01-node-wood-2",
+                      "state": {
+                        "kind": "resourceNode",
+                        "removed": false,
+                        "position": {
+                          "x": 7930.591429049326,
+                          "y": 4049.142541711955
+                        },
+                        "placementSignature": "{\"collision\":null,\"group\":\"S01-wood\",\"id\":\"S01-node-wood-2\",\"kind\":\"resourceNode\",\"overrides\":null,\"ref\":\"node.dry_wood\",\"sceneId\":\"S01\",\"spawnWhen\":{\"blackboardKey\":\"storyState\",\"equals\":true,\"path\":\"s01Survival.berriesGathered\"},\"type\":\"ref\",\"version\":1,\"x\":250.59142904932588,\"y\":449.1425417119548}"
+                      }
+                    },
+                    {
+                      "id": "S01-node-wood-3",
+                      "state": {
+                        "kind": "resourceNode",
+                        "removed": false,
+                        "position": {
+                          "x": 8035.422458257955,
+                          "y": 4013.2217007037734
+                        },
+                        "placementSignature": "{\"collision\":null,\"group\":\"S01-wood\",\"id\":\"S01-node-wood-3\",\"kind\":\"resourceNode\",\"overrides\":null,\"ref\":\"node.dry_wood\",\"sceneId\":\"S01\",\"spawnWhen\":{\"blackboardKey\":\"storyState\",\"equals\":true,\"path\":\"s01Survival.berriesGathered\"},\"type\":\"ref\",\"version\":1,\"x\":355.42245825795516,\"y\":413.22170070377337}"
+                      }
+                    },
+                    {
+                      "id": "S01-first-wolf-1",
+                      "state": {
+                        "kind": "corpse",
+                        "removed": false,
+                        "position": {
+                          "x": 8205.02892759598,
+                          "y": 4149.68602380323
+                        },
+                        "resourceNode": {
+                          "schemaVersion": 1,
+                          "resourceType": "food",
+                          "itemId": "resource.wolf_hide",
+                          "remaining": 0,
+                          "maxRemaining": 2,
+                          "yieldPerGather": 2,
+                          "gatherDuration": 1.8,
+                          "requiredToolType": "skinningKnife",
+                          "refreshDays": 0,
+                          "refreshProgressDays": 0,
+                          "refreshMode": "none",
+                          "refreshIntervalSeconds": 0,
+                          "refreshElapsedSeconds": 0,
+                          "guardUnitIds": [],
+                          "riskEvents": [],
+                          "damageRatio": 0,
+                          "depleted": true
+                        },
+                        "placementSignature": "{\"collision\":null,\"group\":\"S01-first-wolf\",\"id\":\"S01-first-wolf-1\",\"kind\":\"enemy\",\"overrides\":{\"stats\":{\"attack\":5,\"defense\":1,\"maxHp\":28,\"speed\":88}},\"ref\":\"enemy.s01_first_wolf\",\"sceneId\":\"S01\",\"spawnWhen\":{\"blackboardKey\":\"storyState\",\"equals\":true,\"path\":\"s01Survival.firstWolfSpotted\"},\"type\":\"ref\",\"version\":1,\"x\":391.64782334595037,\"y\":324.6565141187963}"
+                      }
+                    },
+                    {
+                      "id": "S01-prop-cooking-rack",
+                      "state": {
+                        "kind": "item",
+                        "removed": false,
+                        "position": {
+                          "x": 8277.57341390614,
+                          "y": 4122.131100100525
+                        },
+                        "placementSignature": "{\"collision\":null,\"group\":\"S01-cooking-rack\",\"id\":\"S01-prop-cooking-rack\",\"kind\":\"item\",\"overrides\":null,\"ref\":\"story.s01.cooking_rack\",\"sceneId\":\"S01\",\"spawnWhen\":{\"blackboardKey\":\"storyState\",\"equals\":true,\"path\":\"s01Survival.wolfSkinned\"},\"type\":\"ref\",\"version\":1,\"x\":597.5734139061408,\"y\":522.1311001005256}"
+                      }
+                    },
+                    {
+                      "id": "S01-chase-wolf-1",
+                      "state": {
+                        "kind": "enemy",
+                        "removed": false,
+                        "hp": 32,
+                        "position": {
+                          "x": 8101.559997458525,
+                          "y": 4149.262725280306
+                        },
+                        "ai": {
+                          "active": true,
+                          "aiType": "aggressive",
+                          "lure": null
+                        },
+                        "placementSignature": "{\"collision\":null,\"group\":\"S01-chase-wolves\",\"id\":\"S01-chase-wolf-1\",\"kind\":\"enemy\",\"overrides\":null,\"ref\":\"enemy.s01_chase_wolf\",\"sceneId\":\"S01\",\"spawnWhen\":{\"blackboardKey\":\"storyState\",\"gte\":1,\"path\":\"s01Survival.pursuit.spawned\"},\"type\":\"ref\",\"version\":1,\"x\":350,\"y\":610}"
+                      }
+                    },
+                    {
+                      "id": "S01-chase-wolf-2",
+                      "state": {
+                        "kind": "enemy",
+                        "removed": false,
+                        "hp": 32,
+                        "position": {
+                          "x": 8172.628667476251,
+                          "y": 4164.012017347758
+                        },
+                        "ai": {
+                          "active": true,
+                          "aiType": "aggressive",
+                          "lure": null
+                        },
+                        "placementSignature": "{\"collision\":null,\"group\":\"S01-chase-wolves\",\"id\":\"S01-chase-wolf-2\",\"kind\":\"enemy\",\"overrides\":null,\"ref\":\"enemy.s01_chase_wolf\",\"sceneId\":\"S01\",\"spawnWhen\":{\"blackboardKey\":\"storyState\",\"gte\":2,\"path\":\"s01Survival.pursuit.spawned\"},\"type\":\"ref\",\"version\":1,\"x\":455,\"y\":650}"
+                      }
+                    },
+                    {
+                      "id": "S01-chase-wolf-3",
+                      "state": {
+                        "kind": "enemy",
+                        "removed": false,
+                        "hp": 32,
+                        "position": {
+                          "x": 8234.602460223714,
+                          "y": 4131.716877500584
+                        },
+                        "ai": {
+                          "active": true,
+                          "aiType": "aggressive",
+                          "lure": null
+                        },
+                        "placementSignature": "{\"collision\":null,\"group\":\"S01-chase-wolves\",\"id\":\"S01-chase-wolf-3\",\"kind\":\"enemy\",\"overrides\":null,\"ref\":\"enemy.s01_chase_wolf\",\"sceneId\":\"S01\",\"spawnWhen\":{\"blackboardKey\":\"storyState\",\"gte\":3,\"path\":\"s01Survival.pursuit.spawned\"},\"type\":\"ref\",\"version\":1,\"x\":565,\"y\":625}"
+                      }
+                    },
+                    {
+                      "id": "S01-pickup-skinning-knife",
+                      "state": {
+                        "kind": "item",
+                        "removed": true,
+                        "quantity": 0,
+                        "placementSignature": "{\"collision\":null,\"group\":\"S01-skinning-knife\",\"id\":\"S01-pickup-skinning-knife\",\"kind\":\"item\",\"overrides\":{\"instanceId\":\"S01-tool-skinning-knife-1\"},\"ref\":\"tool.skinning_knife\",\"sceneId\":\"S01\",\"spawnWhen\":{\"blackboardKey\":\"storyState\",\"equals\":true,\"path\":\"s01Survival.axeDropped\"},\"type\":\"ref\",\"version\":1,\"x\":628.9987699533783,\"y\":595.6107254885911}"
+                      }
+                    },
+                    {
+                      "id": "S01-pickup-worn-axe",
+                      "state": {
+                        "kind": "item",
+                        "removed": true,
+                        "quantity": 0,
+                        "placementSignature": "{\"collision\":null,\"group\":\"S01-worn-axe\",\"id\":\"S01-pickup-worn-axe\",\"kind\":\"item\",\"overrides\":{\"instanceId\":\"S01-tool-axe-1\"},\"ref\":\"tool.worn_axe\",\"sceneId\":\"S01\",\"spawnWhen\":{\"blackboardKey\":\"storyState\",\"equals\":true,\"path\":\"s01Survival.axeDropped\"},\"type\":\"ref\",\"version\":1,\"x\":671.8730446387601,\"y\":595.2346966695305}"
+                      }
+                    }
+                  ],
                   "deathDrops": [],
                   "s10StructureStates": [],
                   "vehicleStates": []
@@ -2139,200 +2633,41 @@
         },
         "regionStates": [
           {
-            "regionId": "mainland",
+            "regionId": "s01-shelter",
             "state": {
               "worldStreamingState": {
                 "schemaVersion": 2,
-                "regionId": "mainland",
+                "regionId": "s01-shelter",
                 "current": {
-                  "col": 6,
-                  "row": 5
+                  "col": 0,
+                  "row": 0
                 },
                 "chunks": [
                   {
                     "schemaVersion": 2,
-                    "regionId": "mainland",
-                    "chunkId": "S02",
-                    "sceneId": "S02",
-                    "sceneNamespace": "S02",
-                    "col": 7,
-                    "row": 4,
-                    "worldWidth": 1280,
-                    "worldHeight": 720,
-                    "footprint": {
-                      "row": 4,
-                      "col": 7,
-                      "rows": 1,
-                      "cols": 1,
-                      "left": 7,
-                      "top": 4,
-                      "right": 8,
-                      "bottom": 5,
-                      "width": 1280,
-                      "height": 720,
-                      "worldLeft": 8960,
-                      "worldTop": 2880,
-                      "worldRight": 10240,
-                      "worldBottom": 3600
-                    },
-                    "chunkState": {
-                      "schemaVersion": 1,
-                      "pickedItems": [],
-                      "killedEnemies": [],
-                      "switches": {},
-                      "npcPositions": {},
-                      "placementState": null
-                    },
-                    "providers": {
-                      "demoDynamic": {
-                        "schemaVersion": 2,
-                        "sceneNamespace": "S02",
-                        "resourceNodes": [],
-                        "placementStates": [
-                          {
-                            "id": "S02-scavenger-1",
-                            "state": {
-                              "kind": "enemy",
-                              "removed": false,
-                              "hp": 38,
-                              "position": {
-                                "x": 9748.882439683606,
-                                "y": 3268.163037683028
-                              },
-                              "ai": {
-                                "active": true,
-                                "aiType": "aggressive",
-                                "lure": null
-                              },
-                              "placementSignature": "{\"collision\":null,\"group\":\"S02-initial\",\"id\":\"S02-scavenger-1\",\"kind\":\"enemy\",\"overrides\":null,\"ref\":\"enemy.s02_scavenger\",\"sceneId\":\"S02\",\"spawnWhen\":null,\"type\":\"ref\",\"version\":1,\"x\":850,\"y\":340}"
-                            }
-                          },
-                          {
-                            "id": "S02-scavenger-2",
-                            "state": {
-                              "kind": "enemy",
-                              "removed": false,
-                              "hp": 38,
-                              "position": {
-                                "x": 9922.908253834266,
-                                "y": 3220.9165098036697
-                              },
-                              "ai": {
-                                "active": true,
-                                "aiType": "aggressive",
-                                "lure": null
-                              },
-                              "placementSignature": "{\"collision\":null,\"group\":\"S02-initial\",\"id\":\"S02-scavenger-2\",\"kind\":\"enemy\",\"overrides\":null,\"ref\":\"enemy.s02_scavenger\",\"sceneId\":\"S02\",\"spawnWhen\":null,\"type\":\"ref\",\"version\":1,\"x\":970,\"y\":390}"
-                            }
-                          },
-                          {
-                            "id": "S02-npc-messenger",
-                            "state": {
-                              "kind": "npc",
-                              "removed": false,
-                              "position": {
-                                "x": 9670,
-                                "y": 3115
-                              },
-                              "placementSignature": "{\"collision\":null,\"group\":\"S02-initial\",\"id\":\"S02-npc-messenger\",\"kind\":\"npc\",\"overrides\":null,\"ref\":\"npc.s02_messenger\",\"sceneId\":\"S02\",\"spawnWhen\":null,\"type\":\"ref\",\"version\":1,\"x\":710,\"y\":235}"
-                            }
-                          },
-                          {
-                            "id": "S02-supply-wood",
-                            "state": {
-                              "kind": "item",
-                              "removed": true,
-                              "quantity": 18,
-                              "position": {
-                                "x": 9365,
-                                "y": 3260
-                              },
-                              "placementSignature": "{\"collision\":null,\"group\":\"S02-initial\",\"id\":\"S02-supply-wood\",\"kind\":\"item\",\"overrides\":{\"quantity\":18},\"ref\":\"resource.wood\",\"sceneId\":\"S02\",\"spawnWhen\":null,\"type\":\"ref\",\"version\":1,\"x\":405,\"y\":380}"
-                            }
-                          },
-                          {
-                            "id": "S02-supply-herb",
-                            "state": {
-                              "kind": "item",
-                              "removed": true,
-                              "quantity": 12,
-                              "position": {
-                                "x": 9445,
-                                "y": 3230
-                              },
-                              "placementSignature": "{\"collision\":null,\"group\":\"S02-initial\",\"id\":\"S02-supply-herb\",\"kind\":\"item\",\"overrides\":{\"quantity\":12},\"ref\":\"resource.herb\",\"sceneId\":\"S02\",\"spawnWhen\":null,\"type\":\"ref\",\"version\":1,\"x\":485,\"y\":350}"
-                            }
-                          },
-                          {
-                            "id": "S02-salvage-cloth",
-                            "state": {
-                              "kind": "item",
-                              "removed": true,
-                              "quantity": 8,
-                              "position": {
-                                "x": 9405,
-                                "y": 3295
-                              },
-                              "placementSignature": "{\"collision\":null,\"group\":\"S02-initial\",\"id\":\"S02-salvage-cloth\",\"kind\":\"item\",\"overrides\":{\"quantity\":8},\"ref\":\"salvage.torn_cloth\",\"sceneId\":\"S02\",\"spawnWhen\":null,\"type\":\"ref\",\"version\":1,\"x\":445,\"y\":415}"
-                            }
-                          },
-                          {
-                            "id": "S02-salvage-utensil",
-                            "state": {
-                              "kind": "item",
-                              "removed": true,
-                              "quantity": 8,
-                              "position": {
-                                "x": 9480,
-                                "y": 3310
-                              },
-                              "placementSignature": "{\"collision\":null,\"group\":\"S02-initial\",\"id\":\"S02-salvage-utensil\",\"kind\":\"item\",\"overrides\":{\"quantity\":8},\"ref\":\"salvage.broken_utensil\",\"sceneId\":\"S02\",\"spawnWhen\":null,\"type\":\"ref\",\"version\":1,\"x\":520,\"y\":430}"
-                            }
-                          },
-                          {
-                            "id": "S02-tool-axe",
-                            "state": {
-                              "kind": "item",
-                              "removed": true,
-                              "position": {
-                                "x": 9515,
-                                "y": 3275
-                              },
-                              "placementSignature": "{\"collision\":null,\"group\":\"S02-initial\",\"id\":\"S02-tool-axe\",\"kind\":\"item\",\"overrides\":{\"durability\":5,\"instanceId\":\"S02-tool-axe-1\",\"maxDurability\":8},\"ref\":\"tool.worn_axe\",\"sceneId\":\"S02\",\"spawnWhen\":null,\"type\":\"ref\",\"version\":1,\"x\":555,\"y\":395}"
-                            }
-                          }
-                        ],
-                        "deathDrops": [],
-                        "s10StructureStates": [],
-                        "vehicleStates": []
-                      }
-                    }
-                  },
-                  {
-                    "schemaVersion": 2,
-                    "regionId": "mainland",
-                    "chunkId": "S01",
-                    "sceneId": "S01",
+                    "regionId": "s01-shelter",
+                    "chunkId": "S01-C01",
+                    "sceneId": "S01-C01",
                     "sceneNamespace": "S01",
-                    "col": 6,
-                    "row": 5,
+                    "col": 0,
+                    "row": 0,
                     "worldWidth": 1280,
                     "worldHeight": 720,
                     "footprint": {
-                      "row": 5,
-                      "col": 6,
+                      "row": 0,
+                      "col": 0,
                       "rows": 1,
                       "cols": 1,
-                      "left": 6,
-                      "top": 5,
-                      "right": 7,
-                      "bottom": 6,
+                      "left": 0,
+                      "top": 0,
+                      "right": 1,
+                      "bottom": 1,
                       "width": 1280,
                       "height": 720,
-                      "worldLeft": 7680,
-                      "worldTop": 3600,
-                      "worldRight": 8960,
-                      "worldBottom": 4320
+                      "worldLeft": 0,
+                      "worldTop": 0,
+                      "worldRight": 1280,
+                      "worldBottom": 720
                     },
                     "chunkState": {
                       "schemaVersion": 1,
@@ -2346,295 +2681,8 @@
                       "demoDynamic": {
                         "schemaVersion": 2,
                         "sceneNamespace": "S01",
-                        "resourceNodes": [
-                          {
-                            "id": "S01-node-berry-1",
-                            "state": {
-                              "schemaVersion": 1,
-                              "resourceType": "food",
-                              "itemId": "resource.wild_berry",
-                              "remaining": 2,
-                              "maxRemaining": 10,
-                              "yieldPerGather": 2,
-                              "gatherDuration": 1.6,
-                              "requiredToolType": null,
-                              "refreshDays": 0,
-                              "refreshProgressDays": 0,
-                              "refreshMode": "none",
-                              "refreshIntervalSeconds": 0,
-                              "refreshElapsedSeconds": 0,
-                              "guardUnitIds": [],
-                              "riskEvents": [],
-                              "damageRatio": 0,
-                              "depleted": false
-                            }
-                          },
-                          {
-                            "id": "S01-node-wood-1",
-                            "state": {
-                              "schemaVersion": 1,
-                              "resourceType": "wood",
-                              "itemId": "resource.wood",
-                              "remaining": 0,
-                              "maxRemaining": 12,
-                              "yieldPerGather": 3,
-                              "gatherDuration": 1.8,
-                              "requiredToolType": "axe",
-                              "refreshDays": 0,
-                              "refreshProgressDays": 0,
-                              "refreshMode": "none",
-                              "refreshIntervalSeconds": 0,
-                              "refreshElapsedSeconds": 0,
-                              "guardUnitIds": [],
-                              "riskEvents": [
-                                {
-                                  "id": "risk.dry_wood_noise",
-                                  "type": "noise",
-                                  "chance": 0.3,
-                                  "message": "枯木断裂的巨响传向荒野，附近可能有敌人注意到这里。",
-                                  "payload": {
-                                    "alert": 1
-                                  }
-                                }
-                              ],
-                              "damageRatio": 0,
-                              "depleted": true
-                            }
-                          },
-                          {
-                            "id": "S01-node-wood-2",
-                            "state": {
-                              "schemaVersion": 1,
-                              "resourceType": "wood",
-                              "itemId": "resource.wood",
-                              "remaining": 12,
-                              "maxRemaining": 12,
-                              "yieldPerGather": 3,
-                              "gatherDuration": 1.8,
-                              "requiredToolType": "axe",
-                              "refreshDays": 0,
-                              "refreshProgressDays": 0,
-                              "refreshMode": "none",
-                              "refreshIntervalSeconds": 0,
-                              "refreshElapsedSeconds": 0,
-                              "guardUnitIds": [],
-                              "riskEvents": [
-                                {
-                                  "id": "risk.dry_wood_noise",
-                                  "type": "noise",
-                                  "chance": 0.3,
-                                  "message": "枯木断裂的巨响传向荒野，附近可能有敌人注意到这里。",
-                                  "payload": {
-                                    "alert": 1
-                                  }
-                                }
-                              ],
-                              "damageRatio": 0,
-                              "depleted": false
-                            }
-                          },
-                          {
-                            "id": "S01-node-wood-3",
-                            "state": {
-                              "schemaVersion": 1,
-                              "resourceType": "wood",
-                              "itemId": "resource.wood",
-                              "remaining": 12,
-                              "maxRemaining": 12,
-                              "yieldPerGather": 3,
-                              "gatherDuration": 1.8,
-                              "requiredToolType": "axe",
-                              "refreshDays": 0,
-                              "refreshProgressDays": 0,
-                              "refreshMode": "none",
-                              "refreshIntervalSeconds": 0,
-                              "refreshElapsedSeconds": 0,
-                              "guardUnitIds": [],
-                              "riskEvents": [
-                                {
-                                  "id": "risk.dry_wood_noise",
-                                  "type": "noise",
-                                  "chance": 0.3,
-                                  "message": "枯木断裂的巨响传向荒野，附近可能有敌人注意到这里。",
-                                  "payload": {
-                                    "alert": 1
-                                  }
-                                }
-                              ],
-                              "damageRatio": 0,
-                              "depleted": false
-                            }
-                          },
-                          {
-                            "id": "S01-first-wolf-1",
-                            "state": {
-                              "schemaVersion": 1,
-                              "resourceType": "food",
-                              "itemId": "resource.wolf_hide",
-                              "remaining": 0,
-                              "maxRemaining": 2,
-                              "yieldPerGather": 2,
-                              "gatherDuration": 1.8,
-                              "requiredToolType": "skinningKnife",
-                              "refreshDays": 0,
-                              "refreshProgressDays": 0,
-                              "refreshMode": "none",
-                              "refreshIntervalSeconds": 0,
-                              "refreshElapsedSeconds": 0,
-                              "guardUnitIds": [],
-                              "riskEvents": [],
-                              "damageRatio": 0,
-                              "depleted": true
-                            }
-                          }
-                        ],
-                        "placementStates": [
-                          {
-                            "id": "S01-small-shelter-1",
-                            "state": {
-                              "kind": "item",
-                              "removed": false,
-                              "position": {
-                                "x": 8230.843526402652,
-                                "y": 4036.5277262896143
-                              },
-                              "placementSignature": "{\"collision\":{\"mode\":\"block\",\"points\":[[-49,-7],[56,-8],[42,-33],[1,-38],[-37,-32]],\"shapeType\":\"polygon\"},\"group\":\"S01-small-shelter\",\"id\":\"S01-small-shelter-1\",\"kind\":\"item\",\"overrides\":null,\"ref\":\"story.s01.small_shelter\",\"sceneId\":\"S01\",\"spawnWhen\":{\"blackboardKey\":\"storyState\",\"equals\":true,\"path\":\"s01Survival.shelterCompleted\"},\"type\":\"ref\",\"version\":1,\"x\":550.7813037774793,\"y\":429.9943506464729}"
-                            }
-                          },
-                          {
-                            "id": "S01-spawn-campfire",
-                            "state": {
-                              "kind": "item",
-                              "removed": false,
-                              "position": {
-                                "x": 8278.550918727391,
-                                "y": 4115
-                              },
-                              "placementSignature": "{\"collision\":null,\"group\":\"S01-initial\",\"id\":\"S01-spawn-campfire\",\"kind\":\"item\",\"overrides\":null,\"ref\":\"story.s01.campfire\",\"sceneId\":\"S01\",\"spawnWhen\":null,\"type\":\"ref\",\"version\":1,\"x\":598.5509187273913,\"y\":515}"
-                            }
-                          },
-                          {
-                            "id": "S01-prop-tanning-rack",
-                            "state": {
-                              "kind": "item",
-                              "removed": false,
-                              "position": {
-                                "x": 8162.858302709539,
-                                "y": 4101.915295070305
-                              },
-                              "placementSignature": "{\"collision\":{\"mode\":\"block\",\"points\":[[-23,-6],[0,-2],[24,-6],[24,-12],[0,-8],[-23,-13]],\"shapeType\":\"polygon\"},\"group\":\"S01-tanning-rack\",\"id\":\"S01-prop-tanning-rack\",\"kind\":\"item\",\"overrides\":null,\"ref\":\"story.s01.tanning_rack\",\"sceneId\":\"S01\",\"spawnWhen\":{\"blackboardKey\":\"storyState\",\"equals\":true,\"path\":\"s01Survival.meatCooked\"},\"type\":\"ref\",\"version\":1,\"x\":482.8583027095395,\"y\":489.9152950703045}"
-                            }
-                          },
-                          {
-                            "id": "S01-node-berry-1",
-                            "state": {
-                              "kind": "resourceNode",
-                              "removed": false,
-                              "position": {
-                                "x": 8111.1323167971495,
-                                "y": 4181.709465042264
-                              },
-                              "placementSignature": "{\"collision\":null,\"group\":\"S01-berries\",\"id\":\"S01-node-berry-1\",\"kind\":\"resourceNode\",\"overrides\":null,\"ref\":\"node.wild_berry\",\"sceneId\":\"S01\",\"spawnWhen\":{\"blackboardKey\":\"storyState\",\"equals\":true,\"path\":\"s01Survival.initialToolsPicked\"},\"type\":\"ref\",\"version\":1,\"x\":431.1323167971492,\"y\":581.709465042264}"
-                            }
-                          },
-                          {
-                            "id": "S01-node-wood-1",
-                            "state": {
-                              "kind": "resourceNode",
-                              "removed": false,
-                              "position": {
-                                "x": 8046.46916106702,
-                                "y": 4105.160447613645
-                              },
-                              "placementSignature": "{\"collision\":null,\"group\":\"S01-wood\",\"id\":\"S01-node-wood-1\",\"kind\":\"resourceNode\",\"overrides\":null,\"ref\":\"node.dry_wood\",\"sceneId\":\"S01\",\"spawnWhen\":{\"blackboardKey\":\"storyState\",\"equals\":true,\"path\":\"s01Survival.berriesGathered\"},\"type\":\"ref\",\"version\":1,\"x\":366.4691610670198,\"y\":505.1604476136454}"
-                            }
-                          },
-                          {
-                            "id": "S01-node-wood-2",
-                            "state": {
-                              "kind": "resourceNode",
-                              "removed": false,
-                              "position": {
-                                "x": 7930.591429049326,
-                                "y": 4049.142541711955
-                              },
-                              "placementSignature": "{\"collision\":null,\"group\":\"S01-wood\",\"id\":\"S01-node-wood-2\",\"kind\":\"resourceNode\",\"overrides\":null,\"ref\":\"node.dry_wood\",\"sceneId\":\"S01\",\"spawnWhen\":{\"blackboardKey\":\"storyState\",\"equals\":true,\"path\":\"s01Survival.berriesGathered\"},\"type\":\"ref\",\"version\":1,\"x\":250.59142904932588,\"y\":449.1425417119548}"
-                            }
-                          },
-                          {
-                            "id": "S01-node-wood-3",
-                            "state": {
-                              "kind": "resourceNode",
-                              "removed": false,
-                              "position": {
-                                "x": 8035.422458257955,
-                                "y": 4013.2217007037734
-                              },
-                              "placementSignature": "{\"collision\":null,\"group\":\"S01-wood\",\"id\":\"S01-node-wood-3\",\"kind\":\"resourceNode\",\"overrides\":null,\"ref\":\"node.dry_wood\",\"sceneId\":\"S01\",\"spawnWhen\":{\"blackboardKey\":\"storyState\",\"equals\":true,\"path\":\"s01Survival.berriesGathered\"},\"type\":\"ref\",\"version\":1,\"x\":355.42245825795516,\"y\":413.22170070377337}"
-                            }
-                          },
-                          {
-                            "id": "S01-first-wolf-1",
-                            "state": {
-                              "kind": "corpse",
-                              "removed": false,
-                              "position": {
-                                "x": 8205.02892759598,
-                                "y": 4149.68602380323
-                              },
-                              "resourceNode": {
-                                "schemaVersion": 1,
-                                "resourceType": "food",
-                                "itemId": "resource.wolf_hide",
-                                "remaining": 0,
-                                "maxRemaining": 2,
-                                "yieldPerGather": 2,
-                                "gatherDuration": 1.8,
-                                "requiredToolType": "skinningKnife",
-                                "refreshDays": 0,
-                                "refreshProgressDays": 0,
-                                "refreshMode": "none",
-                                "refreshIntervalSeconds": 0,
-                                "refreshElapsedSeconds": 0,
-                                "guardUnitIds": [],
-                                "riskEvents": [],
-                                "damageRatio": 0,
-                                "depleted": true
-                              },
-                              "placementSignature": "{\"collision\":null,\"group\":\"S01-first-wolf\",\"id\":\"S01-first-wolf-1\",\"kind\":\"enemy\",\"overrides\":{\"stats\":{\"attack\":5,\"defense\":1,\"maxHp\":28,\"speed\":88}},\"ref\":\"enemy.s01_first_wolf\",\"sceneId\":\"S01\",\"spawnWhen\":{\"blackboardKey\":\"storyState\",\"equals\":true,\"path\":\"s01Survival.firstWolfSpotted\"},\"type\":\"ref\",\"version\":1,\"x\":391.64782334595037,\"y\":324.6565141187963}"
-                            }
-                          },
-                          {
-                            "id": "S01-prop-cooking-rack",
-                            "state": {
-                              "kind": "item",
-                              "removed": false,
-                              "position": {
-                                "x": 8277.57341390614,
-                                "y": 4122.131100100525
-                              },
-                              "placementSignature": "{\"collision\":null,\"group\":\"S01-cooking-rack\",\"id\":\"S01-prop-cooking-rack\",\"kind\":\"item\",\"overrides\":null,\"ref\":\"story.s01.cooking_rack\",\"sceneId\":\"S01\",\"spawnWhen\":{\"blackboardKey\":\"storyState\",\"equals\":true,\"path\":\"s01Survival.wolfSkinned\"},\"type\":\"ref\",\"version\":1,\"x\":597.5734139061408,\"y\":522.1311001005256}"
-                            }
-                          },
-                          {
-                            "id": "S01-pickup-skinning-knife",
-                            "state": {
-                              "kind": "item",
-                              "removed": true,
-                              "quantity": 0,
-                              "placementSignature": "{\"collision\":null,\"group\":\"S01-skinning-knife\",\"id\":\"S01-pickup-skinning-knife\",\"kind\":\"item\",\"overrides\":{\"instanceId\":\"S01-tool-skinning-knife-1\"},\"ref\":\"tool.skinning_knife\",\"sceneId\":\"S01\",\"spawnWhen\":{\"blackboardKey\":\"storyState\",\"equals\":true,\"path\":\"s01Survival.axeDropped\"},\"type\":\"ref\",\"version\":1,\"x\":628.9987699533783,\"y\":595.6107254885911}"
-                            }
-                          },
-                          {
-                            "id": "S01-pickup-worn-axe",
-                            "state": {
-                              "kind": "item",
-                              "removed": true,
-                              "quantity": 0,
-                              "placementSignature": "{\"collision\":null,\"group\":\"S01-worn-axe\",\"id\":\"S01-pickup-worn-axe\",\"kind\":\"item\",\"overrides\":{\"instanceId\":\"S01-tool-axe-1\"},\"ref\":\"tool.worn_axe\",\"sceneId\":\"S01\",\"spawnWhen\":{\"blackboardKey\":\"storyState\",\"equals\":true,\"path\":\"s01Survival.axeDropped\"},\"type\":\"ref\",\"version\":1,\"x\":671.8730446387601,\"y\":595.2346966695305}"
-                            }
-                          }
-                        ],
+                        "resourceNodes": [],
+                        "placementStates": [],
                         "deathDrops": [],
                         "s10StructureStates": [],
                         "vehicleStates": []
@@ -2643,18 +2691,18 @@
                   }
                 ]
               },
-              "campfireLit": true,
+              "campfireLit": false,
               "campfireState": {
-                "lit": true,
-                "hasBeenIgnited": true,
+                "lit": false,
+                "hasBeenIgnited": false,
                 "fuel": {
                   "enabled": true,
                   "itemId": "resource.wood",
                   "secondsPerUnit": 100,
                   "maxUnits": 10,
-                  "units": 4,
-                  "remainingSeconds": 392.5675999999958,
-                  "active": true
+                  "units": 1,
+                  "remainingSeconds": 100,
+                  "active": false
                 }
               },
               "firedPickups": [
@@ -2874,18 +2922,18 @@
             }
           }
         ],
-        "campfireLit": false,
+        "campfireLit": true,
         "campfireState": {
-          "lit": false,
-          "hasBeenIgnited": false,
+          "lit": true,
+          "hasBeenIgnited": true,
           "fuel": {
             "enabled": true,
             "itemId": "resource.wood",
             "secondsPerUnit": 100,
             "maxUnits": 10,
-            "units": 1,
-            "remainingSeconds": 100,
-            "active": false
+            "units": 4,
+            "remainingSeconds": 390.56769999999585,
+            "active": true
           }
         },
         "containerInventories": {
@@ -3125,193 +3173,8 @@
         },
         "proficiencyState": {
           "schemaVersion": 1,
-          "characters": [
-            {
-              "characterId": "refugee",
-              "proficiencies": {
-                "gathering": {
-                  "level": 2,
-                  "experience": 44
-                },
-                "construction": {
-                  "level": 1,
-                  "experience": 5
-                }
-              }
-            }
-          ],
-          "completedOperations": [
-            {
-              "operationId": "gathering:gather-3",
-              "fingerprint": "[\"refugee\",\"gathering\",4]",
-              "result": {
-                "ok": true,
-                "characterId": "refugee",
-                "type": "gathering",
-                "operationId": "gathering:gather-3",
-                "amountRequested": 4,
-                "amountApplied": 4,
-                "previousLevel": 1,
-                "level": 1,
-                "experience": 4,
-                "leveledUp": false,
-                "idempotent": false
-              }
-            },
-            {
-              "operationId": "gathering:gather-4",
-              "fingerprint": "[\"refugee\",\"gathering\",4]",
-              "result": {
-                "ok": true,
-                "characterId": "refugee",
-                "type": "gathering",
-                "operationId": "gathering:gather-4",
-                "amountRequested": 4,
-                "amountApplied": 4,
-                "previousLevel": 1,
-                "level": 1,
-                "experience": 8,
-                "leveledUp": false,
-                "idempotent": false
-              }
-            },
-            {
-              "operationId": "gathering:gather-5",
-              "fingerprint": "[\"refugee\",\"gathering\",4]",
-              "result": {
-                "ok": true,
-                "characterId": "refugee",
-                "type": "gathering",
-                "operationId": "gathering:gather-5",
-                "amountRequested": 4,
-                "amountApplied": 4,
-                "previousLevel": 1,
-                "level": 1,
-                "experience": 12,
-                "leveledUp": false,
-                "idempotent": false
-              }
-            },
-            {
-              "operationId": "gathering:gather-6",
-              "fingerprint": "[\"refugee\",\"gathering\",4]",
-              "result": {
-                "ok": true,
-                "characterId": "refugee",
-                "type": "gathering",
-                "operationId": "gathering:gather-6",
-                "amountRequested": 4,
-                "amountApplied": 4,
-                "previousLevel": 1,
-                "level": 1,
-                "experience": 16,
-                "leveledUp": false,
-                "idempotent": false
-              }
-            },
-            {
-              "operationId": "gathering:gather-7",
-              "fingerprint": "[\"refugee\",\"gathering\",6]",
-              "result": {
-                "ok": true,
-                "characterId": "refugee",
-                "type": "gathering",
-                "operationId": "gathering:gather-7",
-                "amountRequested": 6,
-                "amountApplied": 6,
-                "previousLevel": 1,
-                "level": 2,
-                "experience": 22,
-                "leveledUp": true,
-                "idempotent": false
-              }
-            },
-            {
-              "operationId": "gathering:gather-8",
-              "fingerprint": "[\"refugee\",\"gathering\",6]",
-              "result": {
-                "ok": true,
-                "characterId": "refugee",
-                "type": "gathering",
-                "operationId": "gathering:gather-8",
-                "amountRequested": 6,
-                "amountApplied": 6,
-                "previousLevel": 2,
-                "level": 2,
-                "experience": 28,
-                "leveledUp": false,
-                "idempotent": false
-              }
-            },
-            {
-              "operationId": "gathering:gather-9",
-              "fingerprint": "[\"refugee\",\"gathering\",6]",
-              "result": {
-                "ok": true,
-                "characterId": "refugee",
-                "type": "gathering",
-                "operationId": "gathering:gather-9",
-                "amountRequested": 6,
-                "amountApplied": 6,
-                "previousLevel": 2,
-                "level": 2,
-                "experience": 34,
-                "leveledUp": false,
-                "idempotent": false
-              }
-            },
-            {
-              "operationId": "gathering:gather-10",
-              "fingerprint": "[\"refugee\",\"gathering\",6]",
-              "result": {
-                "ok": true,
-                "characterId": "refugee",
-                "type": "gathering",
-                "operationId": "gathering:gather-10",
-                "amountRequested": 6,
-                "amountApplied": 6,
-                "previousLevel": 2,
-                "level": 2,
-                "experience": 40,
-                "leveledUp": false,
-                "idempotent": false
-              }
-            },
-            {
-              "operationId": "gathering:gather-11",
-              "fingerprint": "[\"refugee\",\"gathering\",4]",
-              "result": {
-                "ok": true,
-                "characterId": "refugee",
-                "type": "gathering",
-                "operationId": "gathering:gather-11",
-                "amountRequested": 4,
-                "amountApplied": 4,
-                "previousLevel": 2,
-                "level": 2,
-                "experience": 44,
-                "leveledUp": false,
-                "idempotent": false
-              }
-            },
-            {
-              "operationId": "construction:S01:smallShelter:proficiency",
-              "fingerprint": "[\"refugee\",\"construction\",5]",
-              "result": {
-                "ok": true,
-                "characterId": "refugee",
-                "type": "construction",
-                "operationId": "construction:S01:smallShelter:proficiency",
-                "amountRequested": 5,
-                "amountApplied": 5,
-                "previousLevel": 1,
-                "level": 1,
-                "experience": 5,
-                "leveledUp": false,
-                "idempotent": false
-              }
-            }
-          ]
+          "characters": [],
+          "completedOperations": []
         },
         "constructionState": {
           "schemaVersion": 1,
@@ -3425,13 +3288,12 @@
           "operations": []
         },
         "vehicleStates": [],
-        "s13PendingSettlement": null,
         "gatheringPolicyOperations": [],
         "timeState": {
           "enabled": true,
-          "paused": false,
+          "paused": true,
           "currentDay": 2,
-          "elapsed": 452.1211999999898
+          "elapsed": 120
         },
         "weatherState": {
           "currentWeather": "clear",

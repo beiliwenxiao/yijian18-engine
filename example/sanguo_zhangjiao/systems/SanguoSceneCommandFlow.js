@@ -92,6 +92,11 @@ const commandMethods = {
       if (this.currentSceneId === 'S01'
         && data.itemId === 'resource.wolf_hide'
         && depletedCorpse?.isCorpse === true) {
+        const placements = this.context?.services?.placements;
+        const placement = !depletedCorpse.placementId && data.nodeId
+          ? placements?.inspectPlacement?.(data.nodeId)?.placement || null
+          : null;
+        if (placement?.id) depletedCorpse.placementId = placement.id;
         const corpses = this.context?.services?.corpses || this.corpseRuntime;
         const decay = corpses?.startDecay?.(depletedCorpse, {
           durationSeconds: 20,
