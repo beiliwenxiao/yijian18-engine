@@ -33,6 +33,7 @@ export { DungeonSystem, DungeonTemplate, DungeonInstance, DungeonWave, DungeonRe
 export { EventSystem, EventType, EventState, EventReward, WorldEvent, EventTemplate } from './EventSystem.js';
 export { NPCSystem, NPC, NPCType, NPCState, DialogOption, DialogNode, DialogTree } from './NPCSystem.js';
 export { QuestSystem, Quest, QuestType, QuestState, ObjectiveType, QuestObjective, QuestReward } from './QuestSystem.js';
+export { TaskGraphSystem, TASK_GRAPH_SCHEMA_VERSION } from './TaskGraphSystem.js';
 export { QuestRuntimeState, QUEST_RUNTIME_SCHEMA_VERSION } from './QuestRuntimeState.js';
 export { QuestTransactionService, QUEST_COMMANDS } from './QuestTransactionService.js';
 export { QuestResolver } from './resolvers/QuestResolver.js';

@@ -455,6 +455,7 @@ export class GameLoader {
       logicalClock: deps.authorityClocks?.logical || deps.logicalClock,
       advanceClockOnUpdate: deps.advanceTriggerClockOnUpdate,
       operationIdFactory: deps.triggerOperationIdFactory,
+      eventJournal: deps.eventJournal || deps.services?.eventJournal || null,
       applicationEventPublisher: deps.triggerApplicationEventPublisher,
       serviceReferenceResolver: deps.triggerServiceReferenceResolver,
       bindingReferenceResolver: deps.triggerBindingReferenceResolver,

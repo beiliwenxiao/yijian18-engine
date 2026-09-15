@@ -134,6 +134,7 @@ export class SceneGameLoaderBridge {
       player: this.getPlayer(),
       scene: scope,
       sceneDiagnostics: scope?.services?.diagnostics || null,
+      eventJournal: scope?.sceneRuntime?.eventJournal || scope?.services?.eventJournal || null,
       commandGateway: scope?.sceneRuntime?.commandGateway || null
     };
     if (typeof this.onShowTip === 'function') {

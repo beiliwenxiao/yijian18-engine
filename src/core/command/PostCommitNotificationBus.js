@@ -11,6 +11,7 @@ export class PostCommitNotificationBus {
   constructor(config = {}) {
     if (!config.logicalClock || typeof config.logicalClock.tick !== 'function') throw new TypeError('logicalClock is required');
     this.logicalClock = config.logicalClock;
+    this.eventJournal = config.eventJournal || null;
     this.lastEventSequence = Number.isInteger(config.lastEventSequence) ? config.lastEventSequence : 0;
     this.listeners = new Set();
     if (config.projectionStore) this.subscribe(event => {
@@ -26,9 +27,20 @@ export class PostCommitNotificationBus {
   }
 
   _prepare(kind, draft, operationId, logicalTime, eventSequence) {
+    const journalEvent = this.eventJournal?.recordCommitted?.({
+      eventId: draft.eventId || null,
+      type: draft.type,
+      operationId,
+      logicalTime,
+      payload: draft.payload,
+      stateId: draft.stateId,
+      stateType: draft.stateType,
+      stateRevision: draft.stateRevision,
+      eventSequence
+    }) || null;
     const value = {
       ...cloneCommandValue(draft),
-      eventId: draft.eventId || `event:${eventSequence}`,
+      eventId: journalEvent?.eventId || draft.eventId || `event:${eventSequence}`,
       eventSequence,
       operationId,
       logicalTime

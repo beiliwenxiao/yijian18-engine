@@ -92,6 +92,7 @@ import { SelectedCharacterStore } from '../data/SelectedCharacterStore.js';
 import { DemoPlayerFactory } from '../entities/DemoPlayerFactory.js';
 import { getNpcRenderStyle } from '../../../src/rendering/NpcRenderStyles.js';
 import { EntityRenderer2D } from '../../../src/rendering/EntityRenderer2D.js';
+import { TaskGraphProjectionView } from '../../../src/ui/TaskGraphProjectionView.js';
 import { BaseGameSceneSetup } from './BaseGameSceneSetup.js';
 
 const ZONE_STAT_NAMES = Object.freeze({ hp: '生命', mp: '法力', attack: '攻击', defense: '防御', speed: '速度' });
@@ -284,6 +285,12 @@ export class BaseGameSceneBehaviors extends BaseGameSceneSetup {  /**
     this.sceneRuntime = new GameSceneRuntime({
       onError: (phase, name, error) => console.warn(`BaseGameScene runtime ${phase} [${name}]`, error)
     });
+    this.context.services.eventJournal = this.sceneRuntime.eventJournal;
+    this.context.services.taskGraph = this.sceneRuntime.taskGraphSystem;
+    this.taskGraphProjectionView = new TaskGraphProjectionView({
+      getTaskGraph: () => this.context.services.taskGraph
+    });
+    this.context.ui.taskGraph = this.taskGraphProjectionView;
     this.applicationEventService = new SceneApplicationEventService();
     this.sceneRuntime.registerCommandHandler('scene.applicationEvent', this.applicationEventService);
     this.questSystem.setCommandGateway(this.sceneRuntime.commandGateway);

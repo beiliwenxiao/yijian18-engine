@@ -1667,7 +1667,8 @@ const s13s14Methods = {
   },
 
   _validateS11S14SceneState(data = {}) {
-    if (Object.prototype.hasOwnProperty.call(data, 's14VehicleStates') || !Array.isArray(data.vehicleStates)) {
+    const requiresVehicleState = ['S11', 'S12', 'S13', 'S14'].includes(this.currentSceneId);
+    if (requiresVehicleState && (Object.prototype.hasOwnProperty.call(data, 's14VehicleStates') || !Array.isArray(data.vehicleStates))) {
       return { ok: false, errors: [{ code: 'legacyVehicleSnapshotRejected', path: 'vehicleStates' }] };
     }
     if (data.s11s12CoordinatorState) {
@@ -1686,9 +1687,9 @@ const s13s14Methods = {
         return { ok: false, errors: [{ code: 'invalidGateState', path: 's12GateState' }] };
       }
     }
-    const vehicleCheck = this._validateSceneVehicleStates?.(
-      this.currentSceneId, data.vehicleStates, data.vehicleLogisticsState || null
-    );
+    const vehicleCheck = requiresVehicleState
+      ? this._validateSceneVehicleStates?.(this.currentSceneId, data.vehicleStates, data.vehicleLogisticsState || null)
+      : { ok: true };
     if (vehicleCheck?.ok === false) {
       return { ok: false, errors: [{ code: vehicleCheck.code, path: 'vehicleStates' }] };
     }

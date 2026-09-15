@@ -400,6 +400,14 @@
           "y": 565.0234141595082
         },
         {
+          "id": "S01-spawn-shelter-rest",
+          "name": "庇护所返回出生点",
+          "ref": "player",
+          "type": "spawn",
+          "x": 544.8141707330614,
+          "y": 436.568287819749
+        },
+        {
           "group": "S01-initial",
           "id": "S01-spawn-campfire",
           "kind": "item",

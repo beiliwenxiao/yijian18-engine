@@ -1,24 +1,16 @@
 <!--
-
+/************************************************************
  * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
-
  * 
-
  * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
-
  * @author    刘枭 (beiliwenxiao)
-
  * @email     beiliwenxiao@qq.com
-
  * @date      2026-01-14
-
  * @blog      https://blog.csdn.net/beiliwenxiao
-
  * @repo      https://github.com/beiliwenxiao/yijian18-engine
-
  *            https://gitee.com/coderaaa/yijian18-engine
-
- -->
+ ************************************************************/
+-->
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -100,6 +92,7 @@
                     <button class="active" data-tab="scene">🗺️ 场景编辑</button>
                     <button data-tab="trigger">⚡ 事件/触发器</button>
                     <button data-tab="behavior">🧩 行为编辑器</button>
+                    <button data-tab="task">📋 任务图</button>
                     <button type="button" class="tab-extra" data-action="button-help" style="margin-left:auto;">⌨ 按钮写法</button>
                     <button type="button" class="tab-extra" data-action="item-reference">📦 物体写法</button>
                 </div>
@@ -114,6 +107,10 @@
 
                 <div class="editor-panel" id="behavior-panel">
                     <div class="panel-container" id="behavior-editor-container"></div>
+                </div>
+
+                <div class="editor-panel" id="task-panel">
+                    <div class="panel-container" id="task-graph-editor-container"></div>
                 </div>
             </div>
         </div>
@@ -131,6 +128,7 @@
         import { ProjectWorldIndex } from '../src/core/ProjectWorldIndex.js';
         import { TriggerEditor } from './TriggerEditor.js';
         import { BehaviorEditor } from './BehaviorEditor.js';
+        import { TaskGraphEditor } from './TaskGraphEditor.js';
 
         (async () => {
             renderEditorNav('scene-workflow');
@@ -869,13 +867,36 @@
             return behaviorEditorInitPromise;
         }
 
+        // 任务图编辑器：管理 project.taskGraphs，与其他项目定义编辑器共用 canonical session。
+        let taskGraphEditor = null;
+        let taskGraphEditorInitPromise = null;
+        async function loadTaskGraphEditor() {
+            if (taskGraphEditorInitPromise) return taskGraphEditorInitPromise;
+            taskGraphEditor = new TaskGraphEditor(
+                document.getElementById('task-graph-editor-container'),
+                {
+                    canonicalSession: ctx._canonicalEditorSession('project'),
+                    projectPath: ctx._canonicalProjectPath()
+                }
+            );
+            taskGraphEditorInitPromise = taskGraphEditor.init()
+                .then(() => taskGraphEditor)
+                .catch(error => {
+                    taskGraphEditor = null;
+                    taskGraphEditorInitPromise = null;
+                    throw error;
+                });
+            return taskGraphEditorInitPromise;
+        }
+
         // 标签切换
         async function switchTab(tab) {
-            const panels = ['scene', 'trigger', 'behavior'];
+            const panels = ['scene', 'trigger', 'behavior', 'task'];
             document.querySelectorAll('.editor-tabs button[data-tab]').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
             for (const panel of panels) document.getElementById(`${panel}-panel`).classList.toggle('active', tab === panel);
             if (tab === 'trigger') await loadTriggerEditor();
             if (tab === 'behavior') await loadBehaviorEditor();
+            if (tab === 'task') await loadTaskGraphEditor();
             if (tab === 'scene') setTimeout(() => window.dispatchEvent(new Event('resize')), 50);
         }
 

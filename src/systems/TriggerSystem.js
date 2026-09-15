@@ -123,6 +123,7 @@ export class TriggerSystem {
     }) => (
       `trigger:${definitionRevision}:${triggerId}:${Math.max(0, Math.floor(monotonicTime * 1000))}:${sequence}`
     ));
+    this.eventJournal = config.eventJournal || null;
     this.applicationEventPublisher = config.applicationEventPublisher || null;
     this.definitionRevision = config.definitionRevision ?? 0;
     this.serviceReferenceResolver = config.serviceReferenceResolver || null;
@@ -154,6 +155,10 @@ export class TriggerSystem {
     this.runtimeConfig = ctx.runtimeConfig || this.runtimeConfig;
     this.debugMode = normalizeRuntimeDebugMode(this.runtimeConfig?.debug);
     this.sceneDiagnostics = ctx.sceneDiagnostics || ctx.services?.diagnostics || this.sceneDiagnostics;
+    this.eventJournal = ctx.eventJournal
+      || ctx.services?.eventJournal
+      || ctx.scene?.sceneRuntime?.eventJournal
+      || this.eventJournal;
     this.definitionRevision = ctx.runtimeConfig?.definitionRevision
       ?? ctx.definitionRepository?.definitionRevision
       ?? this.definitionRevision;
@@ -533,10 +538,20 @@ export class TriggerSystem {
     const params = event?.params || {};
     const sequence = ++this._operationSequence;
     const inheritedEventId = hasText(params.eventId) ? params.eventId.trim() : null;
-    const inheritedOperationId = hasText(params.operationId) ? params.operationId.trim() : null;
-    const eventId = inheritedEventId
-      || (inheritedOperationId ? `event:operation:${inheritedOperationId}`
-        : `event:trigger:${this.definitionRevision}:${Math.max(0, Math.floor(this.monotonicClock.now() * 1000))}:${++this._eventSequence}`);
+    const journalEvent = this.eventJournal?.create?.({
+      eventId: inheritedEventId,
+      eventDefinitionId: event?.definitionId || null,
+      type: event?.type || 'trigger',
+      source: params.source || null,
+      actorRef: params.actorRef || params.actorId || this.ctx.player?.id || null,
+      sceneId: params.sceneId || null,
+      payload: params,
+      logicalTime: this.logicalClock?.now?.() || 0,
+      persistent: event?.type !== 'pointerMove'
+    }) || null;
+    const eventId = journalEvent?.eventId
+      || inheritedEventId
+      || `event:trigger:${this.definitionRevision}:${Math.max(0, Math.floor(this.monotonicClock.now() * 1000))}:${++this._eventSequence}`;
     const operationId = eventId;
     let resolveCompletion;
     const completion = new Promise(resolve => { resolveCompletion = resolve; });

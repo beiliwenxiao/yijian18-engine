@@ -170,20 +170,28 @@ export class S01S02Coordinator {
     return true;
   }
 
+  _eventOperationId(eventData = {}, suffix) {
+    const eventId = typeof eventData?.eventId === 'string' ? eventData.eventId.trim() : '';
+    return eventId
+      ? `${eventId}:s01:${suffix}`
+      : `s01:${suffix}:${++this.sequence}`;
+  }
+
   /** 进入独立庇护所 Region；保留跨区加载的稳定错误码供 Trigger 诊断。 */
-  async enterShelter() {
+  async enterShelter(eventData = {}) {
     if (this.scene.currentSceneId !== 'S01') {
       return { ok: false, code: 'shelterEntryOutsideS01' };
     }
     const entered = await this.scene.travelToRegion({
       sceneId: 'S01-C01',
-      spawnRef: 'S01-C01-spawn-door'
+      spawnRef: 'S01-C01-spawn-door',
+      operationId: this._eventOperationId(eventData, 'enterShelter.teleport')
     });
     this._syncShelterWeatherPause();
     return entered;
   }
 
-  async leaveShelter() {
+  async leaveShelter(eventData = {}) {
     if (!this._isInShelterInterior()) return false;
     const survival = this._story().s01Survival || {};
     if (survival.overnightCompleted !== true) {
@@ -191,14 +199,22 @@ export class S01S02Coordinator {
       // 这是被明确提示的流程前置，不是触发器执行错误；保持交互被消费但不写失败诊断。
       return { ok: true, status: 'blockedUntilOvernight' };
     }
-    const returned = await this.scene.travelToRegion({ sceneId: 'S01', spawnRef: 'S01-shelter-rest' });
+    const returned = await this.scene.travelToRegion({
+      sceneId: 'S01',
+      spawnRef: 'S01-spawn-shelter-rest',
+      operationId: this._eventOperationId(eventData, 'leaveShelter.teleport')
+    });
     this._syncShelterWeatherPause();
     if (!returned?.ok) {
       return returned || { ok: false, code: 'shelterReturnFailed' };
     }
     if (survival.shelterExitedAfterOvernight === true) return true;
-    const committed = await this._submit('story.s01.leaveShelter', {}, 'story:s01:leave-shelter');
-    if (!committed?.ok) return false;
+    const committed = await this._submit(
+      'story.s01.leaveShelter',
+      {},
+      this._eventOperationId(eventData, 'leaveShelter.story')
+    );
+    if (!committed?.ok) return committed;
     this.scene._campfireService?.extinguish?.();
     this.scene._showScreenTip('天亮了，篝火熄灭了。但篝火旁却有三只狼在取暖休息。\n当你出现时，三只狼都向你冲了过来。', { title: '狼群来袭' });
     await this._reconcileWolfPursuit();
@@ -1680,8 +1696,8 @@ export class S01S02Coordinator {
     }
     if (operation === 'buildShelter') return this.startShelterConstruction(params);
     if (operation === 'shelterCompleted') return this.handleConstructionEvent('constructionCompleted', eventData);
-    if (operation === 'enterShelter') return this.enterShelter();
-    if (operation === 'leaveShelter') return this.leaveShelter();
+    if (operation === 'enterShelter') return this.enterShelter(eventData);
+    if (operation === 'leaveShelter') return this.leaveShelter(eventData);
     if (operation === 'openShelterChest') return this.openShelterChest();
     if (operation === 'overnight') {
       if (!this._isInShelterInterior()) return false;

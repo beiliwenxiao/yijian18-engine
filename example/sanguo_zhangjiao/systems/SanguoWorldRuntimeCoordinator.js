@@ -626,8 +626,9 @@ async function validateRegionTarget({ request, result, shadowSession }) {
   if (!region) errors.push({ code: 'missingRegion', path: 'region', message: `未找到大区索引 ${request.regionIndex}` });
   if (region?.previewOnly === true) errors.push({ code: 'previewRegion', path: 'region.previewOnly', message: '预览大区不能进入主流程' });
   const chunk = result?.chunks?.find(entry => entry.sceneId === request.sceneId);
+  const sceneMeta = result?.project?.scenes?.find(entry => entry?.id === request.sceneId) || null;
   if (!chunk) errors.push({ code: 'missingTargetScene', path: 'region.chunks', message: `目标大区不包含 ${request.sceneId}` });
-  if (chunk?.sceneData?.previewOnly === true || chunk?.sceneData?.productionState === 'greybox') {
+  if (sceneMeta?.previewOnly === true || sceneMeta?.productionState === 'greybox') {
     errors.push({ code: 'previewScene', path: `scenes.${request.sceneId}`, message: `${request.sceneId} 尚未达到可玩状态` });
   }
   if (!shadowSession?.findSpawn?.(request.sceneId, request.spawnRef || 'player')) {
@@ -763,20 +764,21 @@ async function commitRegionTarget({ request, result, shadowSession, draft, valid
 }
 
 async function restoreRegionDraft({ draft, oldSession }) {
-  if (!draft?.worldResult) {
-    return { ok: false, errors: [{ code: 'missingRegionDraft', path: 'region', message: '缺少旧大区回滚草稿' }] };
+  const restoreSceneId = draft?.restoreSceneId;
+  if (!draft?.worldResult || !restoreSceneId) {
+    return { ok: false, errors: [{ code: 'missingRegionDraft', path: 'region', message: '缺少旧大区回滚草稿或恢复入口' }] };
   }
   this.clearRegionRuntime(this._worldLoadResult);
   this._worldLoadSession = oldSession || this._worldLoadSession;
   this._worldLoadResult = draft.worldResult;
   this._currentRegionIndex = draft.regionIndex;
-  // 回滚 session 同样只持有旧目标场景，先恢复导航身份再装配旧世界运行时。
-  this._navigationProjection.apply({ sceneId: draft.saveState?.currentSceneId, projectStory: false });
-  await this.initializeWorldStreaming(draft.worldResult, draft.saveState?.currentSceneId);
+  // 回滚 session 同样只持有旧目标场景，先恢复草稿入口再装配旧世界运行时。
+  this._navigationProjection.apply({ sceneId: restoreSceneId, projectStory: false });
+  await this.initializeWorldStreaming(draft.worldResult, restoreSceneId);
   this._worldLoadPromise = Promise.resolve(draft.worldResult);
   this._loadWorldTerrains();
   const projection = await this.context.services.placements?.loadProjection({
-    sceneId: draft.saveState?.currentSceneId,
+    sceneId: restoreSceneId,
     consumePlayerSpawn: false
   });
   if (projection?.ok === false) return projection;

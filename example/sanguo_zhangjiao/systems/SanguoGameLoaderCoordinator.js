@@ -56,6 +56,7 @@ function initializeGameLoader() {
         tutorialSystem: this.tutorialSystem,
         questSystem: this.questSystem,
         commandGateway: this.sceneRuntime?.commandGateway || null,
+        eventJournal: this.sceneRuntime?.eventJournal || null,
         combatSystem: this.combatSystem,
         sceneManager: engine ? engine.sceneManager : (this.sceneManager || null),
         audioManager: this.audioManager || (engine && engine.audioManager) || null,
@@ -76,6 +77,13 @@ function initializeGameLoader() {
       registerActions: triggerSystem => this.registerGameLoaderActions(triggerSystem),
       onReady: async (gameLoader, triggerSystem) => {
         this.gameLoader = gameLoader;
+        const taskDefinitions = gameLoader.project?.taskGraphs || [];
+        const preparedTaskGraphs = this.sceneRuntime?.taskGraphSystem?.prepareDefinitions?.(taskDefinitions);
+        if (preparedTaskGraphs?.ok === false) {
+          throw gameLoader.createValidationError(preparedTaskGraphs.errors || []);
+        }
+        preparedTaskGraphs?.commit?.();
+        this.context.services.taskGraph = this.sceneRuntime?.taskGraphSystem || null;
         this.applyRuntimeConfig(gameLoader.runtimeConfigSnapshot);
         const offTriggerLog = triggerSystem.on((event, trigger) => {
           if (event === 'triggerStart') console.log('[DDScene][Trigger] 执行:', trigger.id, trigger.do);

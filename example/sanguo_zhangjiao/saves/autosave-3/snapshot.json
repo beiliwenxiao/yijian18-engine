@@ -1,15 +1,16 @@
 {
   "version": 1,
-  "createdAt": 1789466740597,
+  "createdAt": 1789495788116,
   "meta": {
     "gameId": "sanguo_zhangjiao",
     "kind": "auto",
     "autoSlot": 3,
     "characterName": "柔弱女子",
     "level": 1,
-    "currentSceneId": "S01-C01",
+    "currentSceneId": "S01",
     "location": "S01-C01 区域",
-    "reason": "interval",
+    "reason": "checkpoint",
+    "checkpointId": "checkpoint.S01.secondDay",
     "previewFile": "thumbnail.jpg"
   },
   "data": {
@@ -21,8 +22,8 @@
         "id": "refugee",
         "name": null,
         "transform": {
-          "x": 638.6459328804989,
-          "y": 545.7827294449036,
+          "x": 807.9976503688159,
+          "y": 506.61957912175706,
           "elevation": 0,
           "rotation": 0,
           "scale": {
@@ -401,7 +402,7 @@
           "definitionRevision": 1,
           "definitionDigest": "sha256-6c3f792e884bc44f8eb489ff5af4f4da780146fe6d66c11061c236e353f07678",
           "operationSequence": 32,
-          "eventSequence": 10,
+          "eventSequence": 4,
           "firedOnce": [
             "trg_s01_begin_tutorial_after_wake",
             "trg_s01_light_campfire",
@@ -449,19 +450,13 @@
             "trg_s01_enter_shelter": {
               "definitionRevision": 1,
               "remaining": 0,
-              "nextDue": 2233.5999999999767,
+              "nextDue": 2550,
               "duration": 1000
             },
             "trg_s01_leave_shelter": {
               "definitionRevision": 1,
               "remaining": 0,
-              "nextDue": 2483.6999999999825,
-              "duration": 1000
-            },
-            "trg_s01_overnight": {
-              "definitionRevision": 1,
-              "remaining": 0,
-              "nextDue": 14252.099999999977,
+              "nextDue": 20919.19999999972,
               "duration": 1000
             }
           },
@@ -1016,44 +1011,36 @@
               {
                 "triggerId": "trg_s01_enter_shelter",
                 "definitionRevision": 1,
-                "eventId": "event:trigger:1:733599:3",
-                "operationId": "event:trigger:1:733599:3",
-                "fingerprint": "sha256-e629113a1075f3198316317028fe9ee48e43ac14b3a8f0d05c8e0a12f118f4a9",
+                "eventId": "evt:run-unknown:0000000002",
+                "operationId": "evt:run-unknown:0000000002",
+                "fingerprint": "sha256-a1a41059fb0fe73d6cdc9e115905c4ccc0c1139d8477ea25315bb19019d167d3",
                 "status": "succeeded",
                 "actionIndex": 0,
                 "result": {
                   "ok": true,
-                  "operationId": "event:trigger:1:733599:3:trigger:trg_s01_enter_shelter:step:enter-shelter",
+                  "operationId": "evt:run-unknown:0000000002:trigger:trg_s01_enter_shelter:step:enter-shelter",
                   "status": "succeeded",
                   "committed": false,
                   "code": null,
                   "stateId": "trigger:trg_s01_enter_shelter",
                   "stateRevision": null
                 },
-                "startedAt": 733.5999999999767,
-                "finishedAt": 1233.5999999999767,
+                "startedAt": 1116.7000000001863,
+                "finishedAt": 1550,
                 "ledgerRevision": 4
               },
               {
                 "triggerId": "trg_s01_overnight",
                 "definitionRevision": 1,
-                "eventId": "event:trigger:1:11201699:7",
-                "operationId": "event:trigger:1:11201699:7",
-                "fingerprint": "sha256-b7cead18e9c60227f5aa16a5ab3c712a160c68715b5c9eb600cecd393d11650f",
-                "status": "succeeded",
+                "eventId": "evt:run-unknown:0000000007",
+                "operationId": "evt:run-unknown:0000000007",
+                "fingerprint": "sha256-d94e375d0f2c882fe46c3baa3e0250950c9494c03a9ed0f2a17d9fc3dd9deb75",
+                "status": "running",
                 "actionIndex": 0,
-                "result": {
-                  "ok": true,
-                  "operationId": "event:trigger:1:11201699:7:trigger:trg_s01_overnight:step:overnight",
-                  "status": "succeeded",
-                  "committed": false,
-                  "code": null,
-                  "stateId": "trigger:trg_s01_overnight",
-                  "stateRevision": null
-                },
-                "startedAt": 11201.699999999983,
-                "finishedAt": 13252.099999999977,
-                "ledgerRevision": 4
+                "result": null,
+                "startedAt": 22252.999999999534,
+                "finishedAt": null,
+                "ledgerRevision": 2
               },
               {
                 "triggerId": "trg_s01_open_shelter_chest",
@@ -1070,23 +1057,23 @@
               {
                 "triggerId": "trg_s01_leave_shelter",
                 "definitionRevision": 1,
-                "eventId": "event:trigger:1:16169199:9",
-                "operationId": "event:trigger:1:16169199:9",
-                "fingerprint": "sha256-af524a25ade84573ba81f116dce0a367d7e34937355f5e4b5734e4422de30a46",
-                "status": "failed",
+                "eventId": "evt:run-unknown:0000000006",
+                "operationId": "evt:run-unknown:0000000006",
+                "fingerprint": "sha256-6959e21db94d9483f03924a00786f414f187a99c96def89d63e4579204227d32",
+                "status": "succeeded",
                 "actionIndex": 0,
                 "result": {
-                  "ok": false,
-                  "operationId": "event:trigger:1:16169199:9",
-                  "status": "failed",
+                  "ok": true,
+                  "operationId": "evt:run-unknown:0000000006:trigger:trg_s01_leave_shelter:step:leave-shelter",
+                  "status": "blockedUntilOvernight",
                   "committed": false,
-                  "code": "operationConflict",
+                  "code": null,
                   "stateId": "trigger:trg_s01_leave_shelter",
                   "stateRevision": null
                 },
-                "startedAt": 16169.199999999953,
-                "finishedAt": 16185.79999999996,
-                "ledgerRevision": 8
+                "startedAt": 19902.69999999972,
+                "finishedAt": 19919.19999999972,
+                "ledgerRevision": 7
               },
               {
                 "triggerId": "trg_s01_river_crossed",
@@ -2196,8 +2183,8 @@
                               "removed": false,
                               "hp": 38,
                               "position": {
-                                "x": 9752.983659014488,
-                                "y": 3264.0618183521465
+                                "x": 9748.882439683606,
+                                "y": 3268.163037683028
                               },
                               "ai": {
                                 "active": true,
@@ -2215,7 +2202,7 @@
                               "hp": 38,
                               "position": {
                                 "x": 9922.908253834266,
-                                "y": 3226.716509803669
+                                "y": 3220.9165098036697
                               },
                               "ai": {
                                 "active": true,
@@ -2653,7 +2640,7 @@
                   "secondsPerUnit": 100,
                   "maxUnits": 10,
                   "units": 4,
-                  "remainingSeconds": 392.95079999999643,
+                  "remainingSeconds": 392.5675999999958,
                   "active": true
                 }
               },
@@ -3430,8 +3417,8 @@
         "timeState": {
           "enabled": true,
           "paused": false,
-          "currentDay": 2,
-          "elapsed": 448.3363999999917
+          "currentDay": 1,
+          "elapsed": 442.569999999994
         },
         "weatherState": {
           "currentWeather": "clear",

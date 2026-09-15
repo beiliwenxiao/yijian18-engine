@@ -218,8 +218,23 @@ export class LocalAuthorityAdapter extends AuthorityPort {
     const claim = this.operationLedger.claim(serializedCommand.operationId, operationFingerprint);
 
     if (claim.status === 'conflict') {
+      const existing = this.operationLedger.get(serializedCommand.operationId);
       return Object.freeze(rejectedResult(serializedCommand.operationId, claim.code, {
-        message: 'operationId already belongs to a different command payload'
+        message: 'operationId already belongs to a different command payload',
+        details: [{
+          code: claim.code,
+          operationId: serializedCommand.operationId,
+          current: {
+            commandType: serializedCommand.commandType,
+            fingerprint: operationFingerprint,
+            expectedStateRevision: serializedCommand.expectedStateRevision ?? null
+          },
+          existing: {
+            status: existing?.status || null,
+            fingerprint: existing?.fingerprint || null,
+            resultCode: existing?.result?.code || null
+          }
+        }]
       }));
     }
     if (claim.status === OperationLedgerState.IN_FLIGHT) {

@@ -915,6 +915,8 @@ export class BaseGameSceneSetup extends Scene {
         if (binding?.sceneId && sceneId && binding.sceneId !== sceneId) return null;
         return createEntitySpatialTarget(entity, { sceneId });
       },
+      eventJournal: this.sceneRuntime?.eventJournal || null,
+      getLogicalTime: () => this.sceneRuntime?.authorityClocks?.logical?.now?.() || 0,
       logger: (reason, binding) => console.warn(`BaseGameScene: 场景触发器绑定 ${reason}`, binding?.id),
       onPromptChange: prompt => {
         if (prompt) this._hintPresenter?.showHint(prompt, '交互');

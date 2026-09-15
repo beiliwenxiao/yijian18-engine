@@ -1175,11 +1175,24 @@ export class DataDrivenPrologueScene extends BaseGameScene {
     this._regionCoordinator = new RegionCoordinator({
       createSession: () => this._createWorldLoadSession(this.resourceScope),
       getCurrentSession: () => this._worldLoadSession,
-      captureDraft: () => ({
-        saveState: this.captureSaveState(),
-        worldResult: this._worldLoadResult,
-        regionIndex: this._currentRegionIndex
-      }),
+      captureDraft: () => {
+        const worldResult = this._worldLoadResult;
+        const currentSceneId = this.currentSceneId;
+        const currentInOldRegion = worldResult?.chunks?.some(chunk => (
+          chunk?.sceneId === currentSceneId && chunk?.sceneData
+        ));
+        const loadedSceneId = [...(this.worldStreamingManager?.getLoadedChunks?.().values?.() || [])]
+          .find(chunk => chunk?.sceneData)?.sceneId || null;
+        const restoreSceneId = currentInOldRegion
+          ? currentSceneId
+          : (loadedSceneId || worldResult?.chunks?.find(chunk => chunk?.sceneData)?.sceneId || null);
+        return {
+          saveState: this.captureSaveState(),
+          worldResult,
+          regionIndex: this._currentRegionIndex,
+          restoreSceneId
+        };
+      },
       validateTarget: context => this.sanguoWorldRuntimeCoordinator.validateRegionTarget(context),
       commitTarget: context => this.sanguoWorldRuntimeCoordinator.commitRegionTarget(context),
       restoreDraft: context => this.sanguoWorldRuntimeCoordinator.restoreRegionDraft(context)
@@ -1538,8 +1551,8 @@ export class DataDrivenPrologueScene extends BaseGameScene {
     return this.sanguoWorldRuntimeCoordinator.prepareRestoreRegion(saveState);
   }
 
-  async travelToRegion({ sceneId, spawnRef = 'player' } = {}) {
-    const result = await this.teleportToChunk({ scene: sceneId, spawnRef });
+  async travelToRegion({ sceneId, spawnRef = 'player', operationId = null } = {}) {
+    const result = await this.teleportToChunk({ scene: sceneId, spawnRef, operationId });
     if (!result?.ok) {
       const message = result?.errors?.[0]?.message || `无法进入 ${sceneId || '目标区域'}`;
       this._showScreenTip(message, { title: '大区切换失败' });

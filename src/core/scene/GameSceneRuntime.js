@@ -33,6 +33,8 @@ import { StateRevisionStore } from '../command/StateRevisionStore.js';
 import { ProjectionStore } from '../command/ProjectionStore.js';
 import { PostCommitNotificationBus } from '../command/PostCommitNotificationBus.js';
 import { AuthoritySnapshotService } from '../command/AuthoritySnapshotService.js';
+import { EventJournal } from '../events/EventJournal.js';
+import { TaskGraphSystem } from '../../systems/TaskGraphSystem.js';
 
 export const UpdateOrder = Object.freeze({
   INPUT: 0,
@@ -165,9 +167,26 @@ export class GameSceneRuntime {
       771_000,
       'clear'
     );
+    this.eventJournal = registerAuthorityDependency(
+      '$eventJournal',
+      config.eventJournal || new EventJournal({ runId: config.getCommandSessionId?.() || 'run-unknown' }),
+      Boolean(config.eventJournal),
+      770_500
+    );
+    this.taskGraphSystem = registerAuthorityDependency(
+      '$taskGraphSystem',
+      config.taskGraphSystem || new TaskGraphSystem({
+        definitions: config.taskDefinitions || [],
+        eventJournal: this.eventJournal,
+        now: () => this.authorityClocks.logical.now()
+      }),
+      Boolean(config.taskGraphSystem),
+      770_400
+    );
     this.notificationBus = config.notificationBus || new PostCommitNotificationBus({
       logicalClock: this.authorityClocks.logical,
-      projectionStore: this.projectionStore
+      projectionStore: this.projectionStore,
+      eventJournal: this.eventJournal
     });
     if (this.notificationBus.logicalClock !== this.authorityClocks.logical) {
       throw new Error('GameSceneRuntime: notificationBus must use injected logical clock');
@@ -185,7 +204,15 @@ export class GameSceneRuntime {
       logicalClock: this.authorityClocks.logical,
       rng: this.authorityRng,
       operationLedger: this.operationLedger,
-      notificationBus: this.notificationBus
+      notificationBus: this.notificationBus,
+      eventJournal: this.eventJournal
+    });
+    this.authoritySnapshotService.registerService('eventJournal', this.eventJournal.asSnapshotProvider());
+    this.authoritySnapshotService.registerService('taskGraph', {
+      snapshot: () => this.taskGraphSystem.snapshot(),
+      validate: snapshot => this.taskGraphSystem.validate(snapshot),
+      restore: snapshot => this.taskGraphSystem.restore(snapshot),
+      required: true
     });
     registerAuthorityDependency(
       '$authoritySnapshotService',
@@ -193,6 +220,9 @@ export class GameSceneRuntime {
       Boolean(config.authoritySnapshotService),
       769_000
     );
+    this.notificationBus.subscribe(event => {
+      if (event?.value?.eventId) this.taskGraphSystem.consumeEvent(event.value);
+    });
     this.registerSnapshotProvider('authority', this.authoritySnapshotService.asSnapshotProvider());
 
     const suppliedGateway = config.commandGateway || null;

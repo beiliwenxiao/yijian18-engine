@@ -37,6 +37,8 @@ export class SceneTriggerBindingSystem {
     getConditionRoot = null,
     isTutorialCompleted = null,
     resolveDynamicTarget = null,
+    eventJournal = null,
+    getLogicalTime = () => 0,
     logger = null,
     onPromptChange = null,
     onInteractChoices = null
@@ -48,6 +50,8 @@ export class SceneTriggerBindingSystem {
       ? isTutorialCompleted
       : () => false;
     this.resolveDynamicTarget = typeof resolveDynamicTarget === 'function' ? resolveDynamicTarget : null;
+    this.eventJournal = eventJournal || null;
+    this.getLogicalTime = typeof getLogicalTime === 'function' ? getLogicalTime : () => 0;
     this.logger = typeof logger === 'function' ? logger : null;
     this.onPromptChange = typeof onPromptChange === 'function' ? onPromptChange : null;
     this.onInteractChoices = typeof onInteractChoices === 'function' ? onInteractChoices : null;
@@ -431,6 +435,31 @@ export class SceneTriggerBindingSystem {
       bindingId: binding.id,
       sceneId: binding.sceneId
     };
+    const eventJournal = this.eventJournal
+      || this.triggerSystem?.eventJournal
+      || this.triggerSystem?.ctx?.scene?.sceneRuntime?.eventJournal
+      || null;
+    const journalEvent = eventJournal?.create?.({
+      eventDefinitionId: binding.sceneEventId || binding.flowGroupId || binding.triggerId,
+      type: eventType,
+      source: {
+        kind: 'spatialTriggerBinding',
+        bindingId: binding.id,
+        triggerId: binding.triggerId,
+        sceneId: binding.sceneId || null
+      },
+      sceneId: binding.sceneId || null,
+      payload: {
+        target: params.target,
+        targetIds: params.targetIds,
+        triggerId: params.triggerId,
+        bindingId: params.bindingId,
+        sceneId: params.sceneId
+      },
+      logicalTime: this.getLogicalTime(),
+      persistent: true
+    }) || null;
+    if (journalEvent?.eventId) params.eventId = journalEvent.eventId;
     const fired = this.triggerSystem.fireById(binding.triggerId, eventType, params);
     if (!fired && !definition) this.logger?.('missingTrigger', binding);
     return fired;
