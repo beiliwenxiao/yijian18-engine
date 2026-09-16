@@ -1047,23 +1047,9 @@ export class S01S02Coordinator {
         ? { ...result, ok: true, status: 'blocked', blocked: true }
         : result;
     }
-    const checkpointId = 'checkpoint.S01.shelterStarted';
-    const saved = await this.scene.requestAutoSave?.({
-      reason: 'checkpoint', checkpointId, sceneId: 'S01'
-    });
-    // saved 为 null/undefined 或 saved.ok 不为 false 时，都视为成功继续
-    if (saved && saved.ok === false) {
-      this.scene.s10ConstructionCoordinator?._restoreConstructionRollback?.(
-        rollback, [`${operationId}:materials`]
-      );
-      this.scene._showScreenTip('施工检查点保存失败，材料和施工状态已经回滚。', { title: '施工回滚' });
-      return {
-        ok: false,
-        code: saved.code || 'shelterCheckpointFailed',
-        checkpointId,
-        message: saved.message || 'shelter checkpoint failed'
-      };
-    }
+    // 注意：不在触发器动作中调用 requestAutoSave
+    // 触发器框架会在动作完成后自动创建 checkpoint
+    // 如果动作返回 ok: true，框架会记录并继续执行后续步骤
     this.scene._showScreenTip(`开始搭建小庇护所，预计 ${Math.ceil(result.duration)} 秒完成。`, {
       title: '搭建庇护所'
     });
