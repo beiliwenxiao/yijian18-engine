@@ -109,7 +109,7 @@ import { EntityRenderer2D } from '../../../src/rendering/EntityRenderer2D.js';
 const ZONE_STAT_NAMES = Object.freeze({ hp: '生命', mp: '法力', attack: '攻击', defense: '防御', speed: '速度' });
 
 export const CAMPAIGN_ID = 'sanguo-zhangjiao-s01-s14';
-export const SAVE_SCHEMA_VERSION = 3;
+export const SAVE_SCHEMA_VERSION = 4;
 const CANONICAL_SCENE_ID = /^S(?:0[1-9]|1[0-4])(?:-C\d{2})?$/;
 const LEGACY_SCENE_ID = /^(?:s\d+-\d+|scene_Prologue)$/;
 
@@ -239,9 +239,7 @@ export class BaseGameSceneSetup extends Scene {
     this.dialogueSystem = new DialogueSystem();
     this.questSystem = new QuestTransactionService({
       getDefaultActorId: () => this.playerEntity?.id || null,
-      createCheckpoint: ({ operationId, questId }) => this.requestAutoSave({
-        reason: 'questTransaction', operationId, questId
-      })
+      scheduleCheckpoint: details => this._scheduleQuestCheckpoint(details)
     });
     
     // UI 面板
@@ -377,8 +375,58 @@ export class BaseGameSceneSetup extends Scene {
       || Promise.resolve({ ok: false, code: 'saveGameServiceUnavailable' });
   }
 
+  /** 在 command/event/Trigger 账本封账后的下一宏任务执行有界自动存档。 */
+  _scheduleQuestCheckpoint({ operationId, questId } = {}) {
+    if (!operationId) return { ok: false, code: 'checkpointOperationIdMissing' };
+    if (!this._scheduledQuestCheckpoints) this._scheduledQuestCheckpoints = new Set();
+    if (this._scheduledQuestCheckpoints.has(operationId)) return { ok: true, idempotent: true };
+    this._scheduledQuestCheckpoints.add(operationId);
+    const delays = [0, 500, 1000, 2000];
+    let cancelled = false;
+    let timer = null;
+    const dispose = () => {
+      cancelled = true;
+      if (timer !== null) clearTimeout(timer);
+      this._scheduledQuestCheckpoints?.delete(operationId);
+    };
+    this.resourceScope?.track?.(dispose);
+    const attempt = index => {
+      timer = setTimeout(async () => {
+        timer = null;
+        if (cancelled) return;
+        let result;
+        try {
+          result = await this.requestAutoSave({
+            reason: 'questTransaction', operationId, questId
+          });
+        } catch (error) {
+          result = {
+            ok: false,
+            code: error?.code || 'questCheckpointSaveRejected',
+            errors: [{ message: error?.message || String(error) }]
+          };
+        }
+        if (result?.ok === true) {
+          dispose();
+          return;
+        }
+        if (index + 1 < delays.length) {
+          attempt(index + 1);
+          return;
+        }
+        this.notificationSystem?.addError?.('任务已提交，但检查点保存失败；请尽快手动保存。');
+        console.warn('[BaseGameScene] 任务检查点有界重试耗尽', {
+          operationId, questId, result
+        });
+        dispose();
+      }, delays[index]);
+    };
+    attempt(0);
+    return { ok: true, scheduled: true };
+  }
+
   /** 采集可序列化的通用游戏状态，供 SnapshotManager 原子存档。 */
-  captureSaveState() {
+  captureSaveState({ includeAuthority = true } = {}) {
     const player = this.playerEntity;
     const transform = player?.getComponent?.('transform');
     const stats = player?.getComponent?.('stats');
@@ -396,6 +444,27 @@ export class BaseGameSceneSetup extends Scene {
       if (stats && stats[key] !== undefined) statsData[key] = stats[key];
     }
 
+    const checkpointMetadata = {
+      kind: 'saveGame',
+      ...(this._authorityCheckpointProjection || {})
+    };
+    const operationSnapshot = this.sceneRuntime?.operationLedger?.snapshot?.(checkpointMetadata);
+    checkpointMetadata.committedOperations = Object.fromEntries((operationSnapshot?.entries || [])
+      .filter(entry => entry.status === 'committed' && entry.result)
+      .map(entry => [entry.operationId, entry.result]));
+
+    const liveRunningTriggers = this.gameLoader?.triggerSystem?.ledger?.all?.()
+      ?.filter(record => record?.status === 'running') || [];
+    if (includeAuthority && liveRunningTriggers.length > 0) {
+      const error = new Error('存档拒绝捕获仍在执行的 Trigger');
+      error.code = 'scenarioExecutionBusy';
+      error.triggerIds = liveRunningTriggers.map(record => record.triggerId);
+      throw error;
+    }
+    const contentState = this.gameLoader?.serialize?.(
+      player?.id || null,
+      checkpointMetadata
+    ) || null;
     const snapshot = JSON.parse(JSON.stringify({
       campaignId: CAMPAIGN_ID,
       schemaVersion: SAVE_SCHEMA_VERSION,
@@ -425,11 +494,13 @@ export class BaseGameSceneSetup extends Scene {
       },
       tutorial: this.tutorialSystem?.saveProgress?.() || null,
       dialogue: this.dialogueSystem?.saveState?.() || null,
-      quests: this.questSystem?.serialize?.() || null,
-      content: this.gameLoader?.serialize?.(player?.id || null) || null,
+      authority: includeAuthority
+        ? this.sceneRuntime?.authoritySnapshotService?.capture?.(checkpointMetadata) || null
+        : undefined,
+      content: contentState,
       scene: this.captureSceneSaveState()
     }));
-    const validation = this.validateSaveState(snapshot);
+    const validation = this.validateSaveState(snapshot, { requireAuthority: includeAuthority });
     if (!validation.ok) {
       const error = new Error('拒绝生成包含旧剧情或非法 canonical 状态的新存档');
       error.name = 'InvalidSaveStateError';
@@ -439,7 +510,7 @@ export class BaseGameSceneSetup extends Scene {
     return snapshot;
   }
 
-  validateSaveState(data) {
+  validateSaveState(data, { requireAuthority = true } = {}) {
     const errors = [];
     const incompatible = (path) => errors.push({
       code: 'incompatibleSave',
@@ -472,6 +543,16 @@ export class BaseGameSceneSetup extends Scene {
           path: error.path ? `scene.timeState.${error.path}` : 'scene.timeState'
         })));
       }
+    }
+
+    if (requireAuthority && (!data.authority || typeof data.authority !== 'object' || Array.isArray(data.authority))) {
+      incompatible('authority');
+    } else if (requireAuthority && typeof this.sceneRuntime?.authoritySnapshotService?.validate === 'function') {
+      const authorityCheck = this.sceneRuntime.authoritySnapshotService.validate(data.authority);
+      errors.push(...(authorityCheck.errors || []).map(error => ({
+        ...error,
+        path: `authority.${error.path || ''}`.replace(/\.$/, '')
+      })));
     }
 
     if (!data.content || typeof data.content !== 'object' || Array.isArray(data.content)) {
@@ -527,15 +608,15 @@ export class BaseGameSceneSetup extends Scene {
   }
 
   /** 恢复通用状态；调用前应等待世界与 GameLoader 初始化完成。 */
-  restoreSaveState(data) {
-    const check = this.validateSaveState(data);
+  restoreSaveState(data, { restoreAuthority = true } = {}) {
+    const check = this.validateSaveState(data, { requireAuthority: restoreAuthority });
     if (!check.ok) return check;
     const player = this.playerEntity;
     if (!player) return { ok: false, errors: [{ code: 'missingPlayer', path: 'player', message: '玩家尚未创建' }] };
 
     let rollbackSnapshot;
     try {
-      rollbackSnapshot = this.captureSaveState();
+      rollbackSnapshot = this.captureSaveState({ includeAuthority: restoreAuthority });
     } catch (error) {
       return {
         ok: false,
@@ -550,7 +631,7 @@ export class BaseGameSceneSetup extends Scene {
     const apply = snapshot => {
       try {
         this._clearTransientPresentationForRestore();
-        const result = this._applyValidatedSaveState(snapshot);
+        const result = this._applyValidatedSaveState(snapshot, { restoreAuthority });
         return result?.ok === false ? result : { ok: true, errors: [] };
       } catch (error) {
         return {
@@ -584,7 +665,7 @@ export class BaseGameSceneSetup extends Scene {
     return result;
   }
 
-  _applyValidatedSaveState(data) {
+  _applyValidatedSaveState(data, { restoreAuthority = true } = {}) {
     const player = this.playerEntity;
     const transform = player.getComponent('transform');
     const stats = player.getComponent('stats');
@@ -627,9 +708,23 @@ export class BaseGameSceneSetup extends Scene {
     }
 
     this.tutorialSystem?.loadProgress?.(data.tutorial);
-    this.questSystem?.reset?.();
-    this.questSystem?.deserialize?.(data.quests || {});
-    const contentResult = this.gameLoader?.deserialize?.(data.content, player.id);
+    const authorityResult = restoreAuthority
+      ? this.sceneRuntime?.authoritySnapshotService?.restore?.(data.authority)
+      : { ok: true };
+    if (!authorityResult || authorityResult.ok === false) {
+      return {
+        ok: false,
+        errors: (authorityResult?.errors || [{ code: 'authorityRestoreUnavailable', path: '', message: 'AuthoritySnapshot 恢复不可用' }]).map(error => ({
+          ...error,
+          path: `authority.${error.path || ''}`.replace(/\.$/, '')
+        }))
+      };
+    }
+    const contentResult = this.gameLoader?.deserialize?.(
+      data.content,
+      player.id,
+      { restoreTriggers: restoreAuthority }
+    );
     if (contentResult && contentResult.ok === false) {
       return {
         ok: false,

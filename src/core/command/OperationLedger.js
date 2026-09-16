@@ -134,6 +134,12 @@ export class OperationLedger {
     return entry ? Object.freeze({ operationId, fingerprint: entry.fingerprint, status: entry.status, result: clone(entry.result) }) : null;
   }
 
+  getInFlightIds(excludeOperationId = null) {
+    return [...this.entries.values()]
+      .filter(entry => entry.status === OperationLedgerState.IN_FLIGHT && entry.operationId !== excludeOperationId)
+      .map(entry => entry.operationId);
+  }
+
   prune(now = this.now()) {
     if (this.ttlMs === 0) return 0;
     let removed = 0;
@@ -154,17 +160,26 @@ export class OperationLedger {
     while (this.entries.size > this.capacity && terminal.length) this.entries.delete(terminal.shift().operationId);
   }
 
-  snapshot() {
+  snapshot(metadata = {}) {
+    const projected = metadata?.projectedOperation || null;
     return {
       version: 1,
-      entries: [...this.entries.values()].map(entry => ({
-        operationId: entry.operationId,
-        fingerprint: entry.fingerprint,
-        status: entry.status,
-        createdAt: entry.createdAt,
-        updatedAt: entry.updatedAt,
-        ...(TERMINAL_STATES.has(entry.status) ? { result: clone(entry.result) } : {})
-      }))
+      entries: [...this.entries.values()].map(entry => {
+        const projectCurrent = projected?.operationId === entry.operationId
+          && entry.status === OperationLedgerState.IN_FLIGHT
+          && projected.result;
+        const status = projectCurrent ? OperationLedgerState.COMMITTED : entry.status;
+        return {
+          operationId: entry.operationId,
+          fingerprint: entry.fingerprint,
+          status,
+          createdAt: entry.createdAt,
+          updatedAt: entry.updatedAt,
+          ...(TERMINAL_STATES.has(status)
+            ? { result: clone(projectCurrent ? projected.result : entry.result) }
+            : {})
+        };
+      })
     };
   }
 

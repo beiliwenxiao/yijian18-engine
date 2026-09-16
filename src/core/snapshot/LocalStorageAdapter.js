@@ -1,12 +1,23 @@
 /************************************************************
+
  * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
+
  *
- * @project   YiJian18-Engine - 跨平台2D/3D ECS游戏引擎
+
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+
  * @author    刘枭 (beiliwenxiao)
+
  * @email     beiliwenxiao@qq.com
+
+ * @date      2026-01-14
+
  * @blog      https://blog.csdn.net/beiliwenxiao
+
  * @repo      https://github.com/beiliwenxiao/yijian18-engine
+
  *            https://gitee.com/coderaaa/yijian18-engine
+
  ************************************************************/
 
 /**
@@ -33,6 +44,29 @@ export class LocalStorageAdapter {
   /** @private */
   _key(slot) {
     return `${this.prefix}:${slot}`;
+  }
+
+  /** 读取槽位原始文本；用于事务覆盖前保留损坏 JSON 的原始字节。 */
+  readRaw(slot) {
+    if (!this.storage) return { ok: false, exists: false, raw: null, errors: [{ code: 'noStorage', path: slot, message: '存储不可用' }] };
+    try {
+      const raw = this.storage.getItem(this._key(slot));
+      return { ok: true, exists: raw !== null, raw, errors: [] };
+    } catch (error) {
+      return { ok: false, exists: false, raw: null, errors: [{ code: 'loadFailed', path: slot, message: error?.message || String(error) }] };
+    }
+  }
+
+  /** 原样恢复槽位文本；不解析、不规范化损坏 JSON。 */
+  writeRaw(slot, raw) {
+    if (!this.storage) return { ok: false, errors: [{ code: 'noStorage', path: slot, message: '存储不可用' }] };
+    try {
+      if (raw === null || raw === undefined) this.storage.removeItem(this._key(slot));
+      else this.storage.setItem(this._key(slot), String(raw));
+      return { ok: true, errors: [] };
+    } catch (error) {
+      return { ok: false, errors: [{ code: 'saveFailed', path: slot, message: error?.message || String(error) }] };
+    }
   }
 
   /**

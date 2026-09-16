@@ -84,8 +84,21 @@ export class ScenarioExecutionLedger {
     return Object.freeze([...this._records.values()].map(freezeRecord));
   }
 
-  snapshot() {
-    return { version: 1, records: this.all().map(clone) };
+  snapshot(metadata = {}) {
+    const projected = metadata?.projectedOperation || null;
+    const committedOperations = metadata?.committedOperations || {};
+    const records = this.all().map(record => {
+      const copy = clone(record);
+      const committedResult = committedOperations[copy.operationId]
+        || (projected?.operationId === copy.operationId ? projected.result : null);
+      if (copy.status === 'running' && committedResult) {
+        copy.status = 'succeeded';
+        copy.result = technicalResult(committedResult);
+        copy.finishedAt = copy.finishedAt ?? copy.startedAt;
+      }
+      return copy;
+    });
+    return { version: 1, records };
   }
 
   validateSnapshot(snapshot) {

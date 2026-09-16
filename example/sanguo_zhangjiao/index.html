@@ -1846,6 +1846,12 @@
             meta.reason = reason;
             if (checkpointId) meta.checkpointId = checkpointId;
             if (sceneId) meta.currentSceneId = sceneId;
+            const nextSlot = saveGames.getNextAutoSlot();
+            const previousSlot = saveGames.storage.readRaw(nextSlot.id);
+            if (!previousSlot.ok) {
+                showAutoSaveStatus('自动存档保存失败', 'error');
+                return { ok: false, code: 'autoSaveBaselineUnavailable', errors: previousSlot.errors };
+            }
             const result = saveGames.saveAuto(meta);
             if (!result.ok) {
                 showAutoSaveStatus('自动存档保存失败', 'error');
@@ -1861,8 +1867,23 @@
             };
             if (fileResult.ok) showAutoSaveStatus('自动存档保存成功', 'success');
             else {
+                const rollback = saveGames.storage.writeRaw(
+                    result.autoSlotId,
+                    previousSlot.exists ? previousSlot.raw : null
+                );
+                completed.cacheRolledBack = rollback?.ok === true;
+                if (rollback?.ok !== true) {
+                    completed.errors.push(...(rollback?.errors || [{
+                        code: 'autoSaveCacheRollbackFailed',
+                        path: result.autoSlotId,
+                        message: '文件镜像失败后无法恢复浏览器自动槽'
+                    }]));
+                }
                 showAutoSaveStatus('自动存档保存失败', 'error');
-                console.warn('自动存档文件保存失败', { reason, checkpointId, errors: fileResult.errors });
+                console.warn('自动存档文件保存失败', {
+                    reason, checkpointId, errors: fileResult.errors,
+                    cacheRolledBack: completed.cacheRolledBack
+                });
             }
             return completed;
         }

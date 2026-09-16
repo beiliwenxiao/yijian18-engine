@@ -315,18 +315,20 @@ export class LocalAuthorityAdapter extends AuthorityPort {
       releaseStateExecution();
       stateExecutionReleased = true;
 
-      const published = await this.notificationBus.publishAfterCommit({
+      const publication = this.notificationBus.prepareAfterCommit({
         result,
         committedEvents,
         applicationEvents
       });
       const finalResult = {
         ...result,
-        eventFrom: published.events.length ? published.events[0].eventSequence : null,
-        eventTo: published.events.length ? published.events[published.events.length - 1].eventSequence : null
+        eventFrom: publication.events.length ? publication.events[0].eventSequence : null,
+        eventTo: publication.events.length ? publication.events[publication.events.length - 1].eventSequence : null
       };
       assertCommandContract(CommandContractKind.COMMAND_RESULT, finalResult);
+      // 先封账 operation，再分派可重入的 application event；下游 checkpoint 不会捕获父命令 in-flight。
       this._finalizeLedger(claim, finalResult);
+      const published = await this.notificationBus.dispatchPrepared(publication);
 
       // 领域事务、authority revision 与幂等账本完成后，才允许 UI/内容侧的可重入收尾。
       try {

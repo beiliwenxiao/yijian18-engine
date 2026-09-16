@@ -1187,7 +1187,7 @@ export class DataDrivenPrologueScene extends BaseGameScene {
           ? currentSceneId
           : (loadedSceneId || worldResult?.chunks?.find(chunk => chunk?.sceneData)?.sceneId || null);
         return {
-          saveState: this.captureSaveState(),
+          saveState: this.captureSaveState({ includeAuthority: false }),
           worldResult,
           regionIndex: this._currentRegionIndex,
           restoreSceneId

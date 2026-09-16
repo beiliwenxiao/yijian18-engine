@@ -223,8 +223,8 @@ export class TaskGraphSystem {
     return this._prepareMutation(system => system.consumeEvent(event, options));
   }
 
-  prepareTracking(instanceId, tracking) {
-    return this._prepareMutation(system => system.setTracking(instanceId, tracking));
+  prepareTracking(instanceId, tracking, actorId = null) {
+    return this._prepareMutation(system => system.setTracking(instanceId, tracking, actorId));
   }
 
   canConsumeEvent(event, actorId = null) {
@@ -292,9 +292,10 @@ export class TaskGraphSystem {
     return { ok: true, changed: changed.length > 0, changes: changed, completedInstances };
   }
 
-  setTracking(instanceId, tracking) {
+  setTracking(instanceId, tracking, actorId = null) {
     const instance = this.instances.get(instanceId);
     if (!instance || instance.status !== 'active') return { ok: false, changed: false, code: 'taskInstanceUnavailable' };
+    if (actorId && instance.actorId !== actorId) return { ok: false, changed: false, code: 'taskInstanceOwnerMismatch' };
     const next = tracking === true;
     if (instance.tracking === next) return { ok: true, changed: false, idempotent: true, instance: clone(instance) };
     instance.tracking = next;

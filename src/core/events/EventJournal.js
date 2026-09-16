@@ -120,6 +120,36 @@ export class EventJournal {
     return execution ? clone(execution) : null;
   }
 
+  assertCompatible(eventId, {
+    eventDefinitionId = null, type, source = null,
+    actorRef = null, sceneId = null, payload = {}
+  } = {}) {
+    const record = this.events.get(eventId);
+    if (!record) return { ok: false, code: 'unknownEventId' };
+    const expectedPayload = record.payload || {};
+    const incomingPayload = payload || {};
+    const compatible = record.type === type
+      && record.eventDefinitionId === eventDefinitionId
+      && fingerprint(record.source) === fingerprint(source)
+      && record.actorRef === actorRef
+      && record.sceneId === sceneId
+      && fingerprint(expectedPayload) === fingerprint(incomingPayload);
+    if (compatible) return { ok: true, event: clone(record) };
+    return {
+      ok: false,
+      code: 'eventPayloadConflict',
+      details: {
+        eventId,
+        existingPayloadFingerprint: fingerprint(expectedPayload),
+        incomingPayloadFingerprint: fingerprint(incomingPayload),
+        incomingType: type,
+        existingType: record.type,
+        incomingEventDefinitionId: eventDefinitionId,
+        existingEventDefinitionId: record.eventDefinitionId
+      }
+    };
+  }
+
   beginExecution({ eventId, triggerId, stepId, operationId, payloadFingerprint, logicalTime = 0 } = {}) {
     const record = this.events.get(eventId);
     if (!record) return { ok: false, code: 'unknownEventId' };
@@ -172,16 +202,26 @@ export class EventJournal {
     return { ok: true, event: clone(record) };
   }
 
-  recordCommitted({ eventId = null, type, operationId, logicalTime, payload = {}, stateId = null, stateType = null, stateRevision = null, eventSequence = null } = {}) {
+  recordCommitted({
+    eventId = null, eventDefinitionId = null, type, source = null,
+    actorRef = null, sceneId = null, operationId, logicalTime, payload = {},
+    stateId = null, stateType = null, stateRevision = null, eventSequence = null
+  } = {}) {
     const record = this.create({
       eventId,
-      eventDefinitionId: type,
+      eventDefinitionId: eventDefinitionId || type,
       type,
-      source: { kind: 'postCommitNotification', operationId },
-      payload: { ...clone(payload || {}), stateId, stateType, stateRevision, eventSequence },
+      source: source || { kind: 'postCommitNotification', operationId },
+      actorRef,
+      sceneId,
+      payload: clone(payload || {}),
       logicalTime,
       persistent: true
     });
+    const stored = this.events.get(record.eventId);
+    stored.commitMetadata = {
+      stateId, stateType, stateRevision, eventSequence, operationId
+    };
     if (!this.getExecution(record.eventId, 'postCommit', 'published')) {
       this.beginExecution({
         eventId: record.eventId,
@@ -203,12 +243,27 @@ export class EventJournal {
     return this.get(record.eventId);
   }
 
-  snapshot() {
+  snapshot(metadata = {}) {
+    const projected = metadata?.projectedOperation || null;
+    const committedOperations = metadata?.committedOperations || {};
+    const events = this.order.map(eventId => this.events.get(eventId)).filter(Boolean).map(record => {
+      const copy = clone(record);
+      for (const execution of Object.values(copy.executions || {})) {
+        const committedResult = committedOperations[execution.operationId]
+          || (projected?.operationId === execution.operationId ? projected.result : null);
+        if (!committedResult || execution.status !== 'running') continue;
+        execution.status = 'succeeded';
+        execution.finishedLogicalTime = Math.max(copy.logicalTime, execution.startedLogicalTime);
+        execution.result = clone(committedResult);
+      }
+      this._refreshEventStatus(copy);
+      return copy;
+    });
     return {
       schemaVersion: EVENT_JOURNAL_SCHEMA_VERSION,
       runId: this.runId,
       nextSequence: this.nextSequence,
-      events: this.order.map(eventId => this.events.get(eventId)).filter(Boolean).map(clone)
+      events
     };
   }
 
@@ -281,7 +336,7 @@ export class EventJournal {
 
   asSnapshotProvider() {
     return {
-      snapshot: () => this.snapshot(),
+      snapshot: metadata => this.snapshot(metadata),
       validate: snapshot => this.validate(snapshot),
       restore: snapshot => this.restore(snapshot),
       required: true

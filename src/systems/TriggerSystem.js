@@ -553,7 +553,32 @@ export class TriggerSystem {
     const sequence = ++this._operationSequence;
     const inheritedEventId = hasText(params.eventId) ? params.eventId.trim() : null;
     const eventJournal = this._ensureEventJournal();
-    const existingEvent = inheritedEventId ? eventJournal?.get?.(inheritedEventId) : null;
+    const incomingType = params.sourceEventType || event?.type || 'trigger';
+    const incomingPayload = params.sourceEventPayload || params;
+    const incomingActorRef = Object.prototype.hasOwnProperty.call(params, 'sourceEventActorRef')
+      ? params.sourceEventActorRef
+      : (Object.prototype.hasOwnProperty.call(params, 'eventActorRef') ? params.eventActorRef : null);
+    const incomingSceneId = Object.prototype.hasOwnProperty.call(params, 'sourceEventSceneId')
+      ? params.sourceEventSceneId
+      : (Object.prototype.hasOwnProperty.call(params, 'eventSceneId') ? params.eventSceneId : null);
+    let existingEvent = inheritedEventId ? eventJournal?.get?.(inheritedEventId) : null;
+    if (existingEvent) {
+      const compatible = eventJournal.assertCompatible(inheritedEventId, {
+        eventDefinitionId: params.sourceEventDefinitionId || params.eventDefinitionId || null,
+        type: incomingType,
+        source: params.sourceEventSource || params.eventSource || null,
+        actorRef: incomingActorRef,
+        sceneId: incomingSceneId,
+        payload: incomingPayload
+      });
+      if (!compatible.ok) {
+        throw Object.assign(new Error('Inherited eventId does not match its canonical event payload'), {
+          code: compatible.code || 'eventPayloadConflict',
+          details: compatible.details || null
+        });
+      }
+      existingEvent = compatible.event;
+    }
     const journalEvent = existingEvent || eventJournal?.create?.({
       eventId: inheritedEventId,
       eventDefinitionId: event?.definitionId || null,
@@ -1067,7 +1092,7 @@ export class TriggerSystem {
     }
   }
 
-  serialize() {
+  serialize(metadata = {}) {
     const now = this.monotonicClock.now();
     const cooldowns = Object.fromEntries(Object.entries(this._cooldowns).map(([triggerId, cooldown]) => [triggerId, {
       definitionRevision: this.definitionRevision,
@@ -1091,7 +1116,7 @@ export class TriggerSystem {
       operationSequence: this._operationSequence,
       eventSequence: this._eventSequence,
       firedOnce: [...this._firedOnce], cooldowns, timers,
-      ledger: this.ledger.snapshot()
+      ledger: this.ledger.snapshot(metadata)
     };
   }
 

@@ -698,10 +698,10 @@ export class GameLoader {
    * 序列化运行时状态（存档：黑板 + 触发器 once/cooldown + 角色成长）
    * @param {string} [characterId] - 提供时一并保存该角色的成长状态
    */
-  serialize(characterId = null) {
+  serialize(characterId = null, metadata = {}) {
     const data = {
       blackboard: this.blackboard.serialize(),
-      triggers: this.triggerSystem.serialize()
+      triggers: this.triggerSystem.serialize(metadata)
     };
 
     if (characterId && this.progressionSystem) {
@@ -749,13 +749,15 @@ export class GameLoader {
    * @param {string} [characterId]
    * @returns {{ok: boolean, errors: Array<Object>}}
    */
-  deserialize(data, characterId = null) {
+  deserialize(data, characterId = null, { restoreTriggers = true } = {}) {
     const validation = this.validateSerialized(data, characterId);
     if (!validation.ok) return validation;
 
     this.blackboard.deserialize(data.blackboard);
-    const triggerResult = this.triggerSystem.deserialize(data.triggers);
-    if (!triggerResult.ok) return triggerResult;
+    if (restoreTriggers) {
+      const triggerResult = this.triggerSystem.deserialize(data.triggers);
+      if (!triggerResult.ok) return triggerResult;
+    }
 
     if (characterId && data.progression && this.progressionSystem) {
       return this.progressionSystem.deserializeCharacter(characterId, data.progression);

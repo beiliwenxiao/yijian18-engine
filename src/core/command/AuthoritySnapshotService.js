@@ -1,3 +1,25 @@
+/************************************************************
+
+ * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
+
+ *
+
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+
+ * @author    刘枭 (beiliwenxiao)
+
+ * @email     beiliwenxiao@qq.com
+
+ * @date      2026-01-14
+
+ * @blog      https://blog.csdn.net/beiliwenxiao
+
+ * @repo      https://github.com/beiliwenxiao/yijian18-engine
+
+ *            https://gitee.com/coderaaa/yijian18-engine
+
+ ************************************************************/
+
 import { cloneCommandValue } from './CommandContracts.js';
 
 export const AUTHORITY_SNAPSHOT_SCHEMA_VERSION = 1;
@@ -23,6 +45,7 @@ export class AuthoritySnapshotService {
     this.rng = config.rng;
     this.operationLedger = config.operationLedger;
     this.notificationBus = config.notificationBus;
+    this.eventJournal = config.eventJournal || null;
     this.providers = new Map();
   }
 
@@ -35,8 +58,27 @@ export class AuthoritySnapshotService {
   }
 
   capture(providerMetadata = {}) {
+    const liveRunningEvents = this.eventJournal?.snapshot?.().events?.filter(event => event?.status === 'running') || [];
+    if (liveRunningEvents.length > 0) {
+      const error = new Error('AuthoritySnapshot 拒绝捕获仍在执行的 EventJournal 事件');
+      error.code = 'authorityEventJournalBusy';
+      error.eventIds = liveRunningEvents.map(event => event.eventId);
+      throw error;
+    }
+    const unrelatedInFlight = this.operationLedger.getInFlightIds?.() || [];
+    if (unrelatedInFlight.length > 0) {
+      const error = new Error('AuthoritySnapshot 拒绝捕获其他仍在执行的 operation');
+      error.code = 'authoritySnapshotBusy';
+      error.operationIds = unrelatedInFlight;
+      throw error;
+    }
+    const operationLedger = this.operationLedger.snapshot(providerMetadata);
+    const committedOperations = Object.fromEntries((operationLedger.entries || [])
+      .filter(entry => entry.status === 'committed' && entry.result)
+      .map(entry => [entry.operationId, entry.result]));
+    const snapshotMetadata = { ...providerMetadata, committedOperations };
     const serviceStates = {};
-    for (const [key, provider] of this.providers) serviceStates[key] = clone(provider.snapshot());
+    for (const [key, provider] of this.providers) serviceStates[key] = clone(provider.snapshot(snapshotMetadata));
     return {
       snapshotSchemaVersion: AUTHORITY_SNAPSHOT_SCHEMA_VERSION,
       definitionRevision: this.getDefinitionRevision(),
@@ -44,7 +86,7 @@ export class AuthoritySnapshotService {
       lastEventSequence: this.notificationBus.lastEventSequence,
       logicalClock: this.logicalClock.snapshot(),
       rngState: clone(this.rng.snapshot()),
-      operationLedger: clone(this.operationLedger.snapshot()),
+      operationLedger: clone(operationLedger),
       serviceStates,
       providerMetadata: clone(providerMetadata)
     };

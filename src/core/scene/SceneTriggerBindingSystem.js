@@ -441,6 +441,9 @@ export class SceneTriggerBindingSystem {
       bindingId: binding.id,
       sceneId: binding.sceneId
     };
+    const eventPayload = { ...params };
+    delete eventPayload.targetObject;
+    delete eventPayload.targetObjects;
     const eventJournal = this.eventJournal
       || this.triggerSystem?.eventJournal
       || this.triggerSystem?.ctx?.scene?.sceneRuntime?.eventJournal
@@ -455,17 +458,24 @@ export class SceneTriggerBindingSystem {
         sceneId: binding.sceneId || null
       },
       sceneId: binding.sceneId || null,
-      payload: {
-        target: params.target,
-        targetIds: params.targetIds,
-        triggerId: params.triggerId,
-        bindingId: params.bindingId,
-        sceneId: params.sceneId
-      },
+      payload: eventPayload,
       logicalTime: this.getLogicalTime(),
       persistent: true
     }) || null;
-    if (journalEvent?.eventId) params.eventId = journalEvent.eventId;
+    if (journalEvent?.eventId) {
+      params.eventId = journalEvent.eventId;
+      params.eventDefinitionId = journalEvent.eventDefinitionId;
+      params.eventSource = journalEvent.source;
+      params.eventActorRef = journalEvent.actorRef;
+      params.eventSceneId = journalEvent.sceneId;
+      params.eventPayloadFingerprint = journalEvent.payloadFingerprint;
+      params.sourceEventType = journalEvent.type;
+      params.sourceEventDefinitionId = journalEvent.eventDefinitionId;
+      params.sourceEventSource = journalEvent.source;
+      params.sourceEventActorRef = journalEvent.actorRef;
+      params.sourceEventSceneId = journalEvent.sceneId;
+      params.sourceEventPayload = journalEvent.payload;
+    }
     const fired = this.triggerSystem.fireById(binding.triggerId, eventType, params);
     if (!fired && !definition) this.logger?.('missingTrigger', binding);
     return fired;

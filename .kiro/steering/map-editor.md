@@ -422,6 +422,7 @@ localStorage                 →  仅作提交后的编辑器缓存，不参与�
 
 ### 合并地面缓存（`_buildCombinedGroundCache`）
 - 将森林环带、草地铺面、水池、背景图片全部渲染到一张离屏 Canvas
+- 缓存世界范围必须取“地形椭圆外扩 bounds 与全部普通背景图片 bounds”的并集；禁止只按中央椭圆建较小 Canvas 后把完整 1280×720 背景画入并裁掉外围。编辑器完整而游戏只剩中央矩形时，优先检查缓存 bounds，不得拉伸背景或修改相机/worldOffset 掩盖问题
 - 构建成功后 `renderGround()` 每帧只需 1 次 `drawImage`（之前需要 4-5 次大面积绘制）
 - 限制缓存 Canvas 尺寸不超过 4096×4096
 

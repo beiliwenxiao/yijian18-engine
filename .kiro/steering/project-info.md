@@ -109,6 +109,8 @@ android/                  # Android 发布权威工程
 
 - Snapshot 恢复分两段：先 migrate/validate 全部 provider；再 capture 回滚快照并依次 restore。任一 provider 失败都必须把当前失败 provider 纳入逆序回滚。
 - `BaseGameScene.restoreSaveState()` 直接调用也必须自身原子，不能只依赖 SnapshotManager 外层保护。
+- 当前产品存档 `schemaVersion: 4`，`authority` 是必填段；它原子保存 EventJournal、OperationLedger、StateRevisionStore 与 Quest/TaskGraph。Quest 顶层不再保存第二份 TaskGraph，旧 schema 直接拒绝。
+- 跨 Region 内存回滚草稿显式排除 Authority 与正在执行的 Trigger 技术账本，并单独保存旧 Region 的实际 loaded sceneId；它不是可落盘产品存档。
 - 损坏 JSON 返回 `invalidJson` 并原样保留；缺少迁移器返回 `missingMigration`。
 - 当前产品策略：旧 schema、旧 chunk、旧 Act、旧职业存档直接拒绝并提示新游戏，不迁移，也不删除用户存档。
 - 自动位固定为 `autosave-1..3`，手动位最多 `slot-1..100`，两类槽位不得互相覆盖。

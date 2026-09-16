@@ -166,6 +166,12 @@ async function handleApplicationEvent(event = {}) {
   if (event.type !== 'item.picked') {
     const dispatch = await this.gameLoader.triggerSystem.fireCoordinated(event.type, {
       ...(event.payload || {}),
+      sourceEventType: event.type,
+      sourceEventDefinitionId: event.eventDefinitionId || event.type,
+      sourceEventSource: event.source || { kind: 'postCommitNotification', operationId: event.operationId || null },
+      sourceEventActorRef: event.actorRef || event.payload?.actorRef || null,
+      sourceEventSceneId: event.sceneId || event.payload?.sceneId || null,
+      sourceEventPayload: event.payload || {},
       eventId: event.eventId || null,
       operationId: event.operationId || event.eventId || null,
       committed: true
@@ -198,8 +204,16 @@ async function handleApplicationEvent(event = {}) {
   }
 
   const dispatch = await this.gameLoader.triggerSystem.fireCoordinated('itemPickup', {
-    item: itemId,
+    ...payload,
+    itemId,
+    item: payload.item || itemId,
     id: itemId,
+    sourceEventType: event.type,
+    sourceEventDefinitionId: event.eventDefinitionId || event.type,
+    sourceEventSource: event.source || { kind: 'postCommitNotification', operationId: event.operationId || null },
+    sourceEventActorRef: event.actorRef || event.payload?.actorRef || null,
+    sourceEventSceneId: event.sceneId || event.payload?.sceneId || null,
+    sourceEventPayload: event.payload || {},
     operationId: event.operationId || null,
     eventId: event.eventId,
     groundId: payload.groundId || null,

@@ -28,7 +28,7 @@ import {
 
 const freezeClone = value => Object.freeze(cloneCommandValue(value));
 
-/** 仅接受已提交结果，并为通知分配唯一全局 sequence。 */
+/** 仅接受已提交结果；先准备全局事件序号，Authority 封账后再分派监听器。 */
 export class PostCommitNotificationBus {
   constructor(config = {}) {
     if (!config.logicalClock || typeof config.logicalClock.tick !== 'function') throw new TypeError('logicalClock is required');
@@ -49,9 +49,17 @@ export class PostCommitNotificationBus {
   }
 
   _prepare(kind, draft, operationId, logicalTime, eventSequence) {
+    const eventDefinitionId = draft.eventDefinitionId || draft.type;
+    const source = draft.source || { kind: 'postCommitNotification', operationId };
+    const actorRef = draft.actorRef || draft.payload?.actorRef || null;
+    const sceneId = draft.sceneId || draft.payload?.sceneId || null;
     const journalEvent = this.eventJournal?.recordCommitted?.({
       eventId: draft.eventId || null,
+      eventDefinitionId,
       type: draft.type,
+      source,
+      actorRef,
+      sceneId,
       operationId,
       logicalTime,
       payload: draft.payload,
@@ -62,45 +70,61 @@ export class PostCommitNotificationBus {
     }) || null;
     const value = {
       ...cloneCommandValue(draft),
+      eventDefinitionId,
+      source: cloneCommandValue(source),
+      actorRef,
+      sceneId,
       eventId: journalEvent?.eventId || draft.eventId || `event:${eventSequence}`,
       eventSequence,
       operationId,
       logicalTime
     };
     assertCommandContract(kind, value);
-    return freezeClone(value);
+    return Object.freeze({ kind, value: freezeClone(value) });
   }
 
-  async publishAfterCommit({ result, committedEvents = [], applicationEvents = [] }) {
+  prepareAfterCommit({ result, committedEvents = [], applicationEvents = [] }) {
     assertCommandContract(CommandContractKind.COMMAND_RESULT, result);
     if (!result.committed) {
       if (committedEvents.length || applicationEvents.length) throw new Error('notifications require a committed CommandResult');
-      return Object.freeze({ events: Object.freeze([]), degradation: Object.freeze([]) });
+      return Object.freeze({ entries: Object.freeze([]), events: Object.freeze([]) });
     }
     const logicalTime = this.logicalClock.now() + 1;
     let nextSequence = this.lastEventSequence;
-    const prepared = [];
+    const entries = [];
     for (const draft of committedEvents) {
-      prepared.push({ kind: CommandContractKind.COMMITTED_EVENT, value: this._prepare(CommandContractKind.COMMITTED_EVENT, draft, result.operationId, logicalTime, ++nextSequence) });
+      entries.push(this._prepare(CommandContractKind.COMMITTED_EVENT, draft, result.operationId, logicalTime, ++nextSequence));
     }
     for (const draft of applicationEvents) {
-      prepared.push({ kind: CommandContractKind.APPLICATION_EVENT, value: this._prepare(CommandContractKind.APPLICATION_EVENT, draft, result.operationId, logicalTime, ++nextSequence) });
+      entries.push(this._prepare(CommandContractKind.APPLICATION_EVENT, draft, result.operationId, logicalTime, ++nextSequence));
     }
     this.logicalClock.tick();
     this.lastEventSequence = nextSequence;
+    return Object.freeze({
+      entries: Object.freeze(entries),
+      events: Object.freeze(entries.map(entry => entry.value))
+    });
+  }
+
+  async dispatchPrepared(publication) {
+    const entries = Array.isArray(publication?.entries) ? publication.entries : [];
     const degradation = [];
-    for (const event of prepared) {
+    for (const event of entries) {
       for (const listener of [...this.listeners]) {
-        try { await listener(Object.freeze(event)); }
+        try { await listener(event); }
         catch (error) {
           degradation.push(Object.freeze({ eventId: event.value.eventId, message: error?.message || String(error) }));
         }
       }
     }
     return Object.freeze({
-      events: Object.freeze(prepared.map(entry => entry.value)),
+      events: Object.freeze(entries.map(entry => entry.value)),
       degradation: Object.freeze(degradation)
     });
+  }
+
+  async publishAfterCommit(input) {
+    return this.dispatchPrepared(this.prepareAfterCommit(input));
   }
 
   validateSequence(value) {

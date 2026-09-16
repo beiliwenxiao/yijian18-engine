@@ -785,7 +785,7 @@ async function restoreRegionDraft({ draft, oldSession }) {
   const worldRuntimeReady = this._worldRuntimeReadyPromise;
   if (worldRuntimeReady) await worldRuntimeReady;
   else await this._worldLoadPromise;
-  return this.restoreSaveState(draft.saveState);
+  return this.restoreSaveState(draft.saveState, { restoreAuthority: false });
 }
 
 export default SanguoWorldRuntimeCoordinator;

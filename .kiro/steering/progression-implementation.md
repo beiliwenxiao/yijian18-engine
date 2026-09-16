@@ -401,7 +401,15 @@ TaskInstance         玩家长期任务的节点、并行、分支、奖励与�
 
 EventJournal 存档必须包含稳定 `runId`、下一事件序号、全部未结束事件、关键已结束事件，以及每个 `eventId + triggerId + stepId` 的 `operationId/payloadFingerprint/status/result/logicalTime`。运行中恢复不得默认为成功；应保存可续跑位置或明确转为 interrupted，禁止以新 ID 静默重放。事件、执行和 OperationLedger 必须在同一 AuthoritySnapshot 原子恢复边界内。
 
+事件 envelope 与提交元数据必须分层：`EventJournal.payload` 原样保存完整业务 payload，`stateId/stateType/stateRevision/eventSequence/operationId` 只进入独立 `commitMetadata`，不得平铺覆盖业务同名字段。`PostCommitNotificationBus` 写 Journal 和分派给消费者时必须使用同一组 `eventDefinitionId/source/actorRef/sceneId/payload`；任何事件类型适配（如 `item.picked → itemPickup`）都要通过 `sourceEvent*` 保留原 envelope，并把完整原 payload 展开给 matcher/action，再追加兼容 alias。复用 inherited eventId 时，type、definition、source、actor、scene 和完整原 payload 必须稳定双向等值，任何字段缺失、追加或改写都返回 `eventPayloadConflict`。
+
+产品存档使用 schema 4，并把 `EventJournal + OperationLedger + StateRevisionStore + Quest/TaskGraph` 放入唯一 AuthoritySnapshot；Quest 顶层不得再保存第二份 TaskGraph。存档捕获前必须读取 live 状态，拒绝任意 OperationLedger `in-flight`、EventJournal `running` 或 ScenarioExecutionLedger `running`，不得先投影为成功再检查。Quest/Task checkpoint 只能在 command、PostCommit 事件、EventJournal step 和 Scenario ledger 全部封账后的下一宏任务请求；忙碌或 Promise rejection 按固定 0/500/1000/2000ms 有界重试，耗尽后明确提示手动保存。开发文件镜像失败必须逐字恢复覆盖前的 localStorage 原始字符串，损坏 JSON 也不得删除或规范化。
+
+跨 Region 的内存回滚草稿不是产品存档：`captureSaveState({includeAuthority:false})` / `restoreSaveState(...,{restoreAuthority:false})` 不捕获或恢复 Authority，也不恢复正在执行的 Trigger 技术账本；恢复入口单独保存旧 Region 实际 loaded sceneId，禁止使用可能已被目标提交污染的 currentSceneId。checkpoint 失败若需要补偿 state revision，只允许 `rollbackCommitted(prepared)` compare-and-restore 当前 stateId，禁止恢复整个 StateRevisionStore 快照或清除其他 reservation。
+
 TaskGraph 不是 EventJournal 的替代品：任务定义只声明事件 matcher、节点和边；任务存档保存 `TaskInstance`、节点状态、完成证据 eventId、并行汇合和已选分支。任务推进、奖励与 Checkpoint 必须进入现有 `QuestTransactionService → CommandGateway → LocalAuthorityAdapter` 权威事务，禁止 `notificationBus` 监听器直接修改独立 TaskGraph 状态。任务节点可使用 `all/any/n-of-m` 并行汇合；分支按稳定优先级选择首个满足规则，选择结果只提交一次并进入存档。
+
+`task.start/task.event/task.track` 是 TaskGraph 唯一写入命令，统一使用 `quest:<actorId>` state revision；`task.track` 必须校验 instance.actorId，禁止跨 actor 修改。TaskGraph 只嵌入 QuestTransactionService 的 `quests` Authority provider，不再注册第二个独立 snapshot provider。任务定义含非空 reward 时必须存在原子 `prepareReward/commit/rollback` 参与者，否则以 `rewardSettlementUnavailable` 拒绝，禁止“任务完成但奖励未发”。TaskGraph 定义运行时、CandidateRuleValidator 和 TaskGraphEditor 必须复用 `validateTaskGraphDefinitions()`，并通过标准 `task.command` 从数据驱动 Trigger 启动。
 
 实施顺序固定：
 

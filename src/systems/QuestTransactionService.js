@@ -65,7 +65,7 @@ export class QuestTransactionService {
   constructor(config = {}) {
     this.definitionRepository = config.definitionRepository || null;
     this.rewardParticipants = Array.isArray(config.rewardParticipants) ? config.rewardParticipants : [];
-    this.createCheckpoint = typeof config.createCheckpoint === 'function' ? config.createCheckpoint : null;
+    this.scheduleCheckpoint = typeof config.scheduleCheckpoint === 'function' ? config.scheduleCheckpoint : null;
     this.commandGateway = config.commandGateway || null;
     this.taskGraphSystem = config.taskGraphSystem || null;
     this.getDefaultActorId = typeof config.getDefaultActorId === 'function' ? config.getDefaultActorId : (() => config.actorId || null);
@@ -221,7 +221,7 @@ export class QuestTransactionService {
     } else if (operation === 'task.event') {
       prepared = system.prepareConsumeEvent(command.payload?.event, { actorId });
     } else if (operation === 'task.track') {
-      prepared = system.prepareTracking(command.payload?.instanceId, command.payload?.tracking === true);
+      prepared = system.prepareTracking(command.payload?.instanceId, command.payload?.tracking === true, actorId);
     } else {
       return reject(command, 'unsupportedTaskGraphOperation');
     }
@@ -241,11 +241,13 @@ export class QuestTransactionService {
 
     const committedRewards = [];
     let graphCommitted = false;
+    let revisionCommitted = false;
     const rollback = async () => {
       if (graphCommitted) prepared.rollback?.();
       for (const participant of [...committedRewards].reverse()) {
         try { await participant.rollback?.(); } catch { /* 保留原始失败 */ }
       }
+      if (revisionCommitted) context.stateRevisions?.rollbackCommitted?.(context.preparedStateRevision);
     };
     try {
       const graphCommit = prepared.commit?.();
@@ -256,18 +258,16 @@ export class QuestTransactionService {
         const outcome = await participant.commit?.();
         if (outcome?.ok === false) throw Object.assign(new Error(outcome.message || outcome.code || 'task reward commit rejected'), { code: outcome.code || 'taskRewardCommitRejected' });
       }
-      const checkpoint = await this._checkpoint(command, context, command.payload?.definitionId || command.payload?.instanceId || 'taskGraph');
-      if (!checkpoint.ok) throw Object.assign(new Error(checkpoint.message || checkpoint.code), { code: checkpoint.code });
       const stateRevision = context.commitStateRevision(context.preparedStateRevision);
       if (!stateRevision?.ok) throw Object.assign(new Error(stateRevision?.code || 'stateRevisionCommitFailed'), { code: stateRevision?.code || 'stateRevisionCommitFailed' });
-
+      revisionCommitted = true;
       const value = {
         operation,
         actorId,
         instance: clone(prepared.instance || null),
         changes: clone(prepared.changes || []),
         completedInstances: clone(completedInstances),
-        checkpoint: checkpoint.value || null
+        checkpoint: { scheduled: this.scheduleCheckpoint !== null }
       };
       const result = {
         ok: true, operationId: command.operationId, status: 'committed', committed: true,
@@ -275,6 +275,7 @@ export class QuestTransactionService {
         stateRevision: stateRevision.stateRevision,
         eventFrom: null, eventTo: null, value, error: null
       };
+      // 存档副本把本 operation/Trigger step 投影到即将提交的终态；live 状态保持真实 in-flight。
       for (const participant of committedRewards) {
         try { await participant.finalize?.(); } catch { /* 表现失败不回滚事实 */ }
       }
@@ -292,7 +293,8 @@ export class QuestTransactionService {
       return {
         result,
         committedEvents: [{ ...eventBase, type: `${operation}.committed`, payload: value }],
-        applicationEvents
+        applicationEvents,
+        postCommit: () => this._scheduleCheckpoint(command, command.payload?.definitionId || command.payload?.instanceId || 'taskGraph')
       };
     } catch (error) {
       await rollback();
@@ -339,8 +341,19 @@ export class QuestTransactionService {
 
   async _prepareRewards(definition, runtime, command) {
     const participants = [];
-    for (const participant of this.rewardParticipants) {
-      if (!participant?.prepareReward) continue;
+    const configuredParticipants = this.rewardParticipants.filter(participant => typeof participant?.prepareReward === 'function');
+    const reward = definition?.reward;
+    const hasReward = Array.isArray(reward)
+      ? reward.length > 0
+      : Boolean(reward && typeof reward === 'object' && Object.keys(reward).length > 0);
+    if (hasReward && configuredParticipants.length === 0) {
+      return {
+        ok: false,
+        code: 'rewardSettlementUnavailable',
+        error: { message: '任务定义包含奖励，但未配置原子奖励结算参与者' }
+      };
+    }
+    for (const participant of configuredParticipants) {
       let prepared;
       try { prepared = await participant.prepareReward({ definition: clone(definition), runtime: clone(runtime), reward: clone(definition.reward || {}), command }); }
       catch (error) { return { ok: false, code: 'rewardPrepareFailed', error: { message: error.message || String(error) } }; }
@@ -352,11 +365,13 @@ export class QuestTransactionService {
 
   async _commit({ command, context, actorId, previous, draft, definition, resolution, rewards }) {
     const committed = [];
+    let revisionCommitted = false;
     const rollback = async () => {
       this._states.set(actorId, previous);
       for (const participant of [...committed].reverse()) {
         try { await participant.rollback?.(); } catch { /* 保留原始失败，继续严格逆序回滚 */ }
       }
+      if (revisionCommitted) context.stateRevisions?.rollbackCommitted?.(context.preparedStateRevision);
     };
     try {
       for (const participant of rewards.participants) {
@@ -369,16 +384,19 @@ export class QuestTransactionService {
       if (runtime) draft.set(definition.id, new QuestRuntimeState({ ...runtime, stateRevision: revision ?? runtime.stateRevision }).toJSON());
       this._states.set(actorId, draft);
 
-      const checkpoint = await this._checkpoint(command, context, definition.id);
-      if (!checkpoint.ok) throw Object.assign(new Error(checkpoint.message || checkpoint.code), { code: checkpoint.code });
       const stateRevision = context.commitStateRevision(context.preparedStateRevision);
       if (!stateRevision?.ok) throw Object.assign(new Error(stateRevision?.code || 'stateRevisionCommitFailed'), { code: stateRevision?.code || 'stateRevisionCommitFailed' });
-
+      revisionCommitted = true;
       const stateId = context.preparedStateRevision.stateId;
       const runtimeState = this._runtime(actorId, definition.id);
       const quest = this._project(definition, runtimeState, actorId);
       const eventQuest = this._eventProjection(quest);
-      const value = { operation: command.payload?.operation || OPERATION_BY_COMMAND[command.commandType], quest: eventQuest, reward: clone(definition.reward || {}), checkpoint: checkpoint.value || null };
+      const value = {
+        operation: command.payload?.operation || OPERATION_BY_COMMAND[command.commandType],
+        quest: eventQuest,
+        reward: clone(definition.reward || {}),
+        checkpoint: { scheduled: this.scheduleCheckpoint !== null }
+      };
       const result = {
         ok: true, operationId: command.operationId, status: 'committed', committed: true,
         code: null, stateId, stateRevision: stateRevision.stateRevision,
@@ -393,7 +411,8 @@ export class QuestTransactionService {
       return {
         result,
         committedEvents: [{ ...eventBase, type: `${command.commandType}.committed`, payload: value }],
-        applicationEvents: applicationEvents.map(event => ({ ...eventBase, ...event }))
+        applicationEvents: applicationEvents.map(event => ({ ...eventBase, ...event })),
+        postCommit: () => this._scheduleCheckpoint(command, definition.id)
       };
     } catch (error) {
       await rollback();
@@ -401,18 +420,21 @@ export class QuestTransactionService {
     }
   }
 
-  async _checkpoint(command, context, definitionId) {
-    try {
-      if (this.createCheckpoint) {
-        const value = await this.createCheckpoint({ kind: 'quest', operationId: command.operationId, questId: definitionId, command, context });
-        if (value === false || value?.ok === false) return { ok: false, code: value?.code || 'questCheckpointRejected', message: value?.message };
-        return { ok: true, value: clone(value || null) };
-      }
-      context.authoritySnapshotService?.capture?.({ kind: 'quest', operationId: command.operationId, questId: definitionId });
-      return { ok: true, value: null };
-    } catch (error) {
-      return { ok: false, code: 'questCheckpointRejected', message: error.message || String(error) };
+  async _scheduleCheckpoint(command, definitionId) {
+    const scheduler = this.scheduleCheckpoint;
+    if (!scheduler) return { ok: true, skipped: true };
+    const value = await scheduler({
+      kind: 'quest',
+      operationId: command.operationId,
+      questId: definitionId,
+      command
+    });
+    if (value === false || value?.ok === false) {
+      throw Object.assign(new Error(value?.message || value?.code || 'quest checkpoint scheduling failed'), {
+        code: value?.code || 'questCheckpointRejected'
+      });
     }
+    return value || { ok: true };
   }
 
   _applicationEvents(events, quest, reward) {
