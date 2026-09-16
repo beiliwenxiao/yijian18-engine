@@ -686,7 +686,7 @@
         .new-game-gender legend { padding: 0; font-size: 13px; }
         .new-game-gender label { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; font-size: 13px; }
         #new-game-gender-note { min-height: 18px; margin: 0; color: #ffd166; font-size: 12px; line-height: 1.4; }
-        .login-actions { display: grid; gap: 12px; justify-items: center; }
+        .login-actions { display: none; gap: 12px; justify-items: center; opacity: 0; transition: opacity 0.3s ease-in; }
         .login-action {
             width: min(230px, 100%);
             white-space: nowrap;
@@ -868,7 +868,7 @@
                     </div>
                 </div>
                 <footer id="login-footer" aria-label="项目仓库与版权声明">
-                    <p>
+                    <p>三国之黄巾之乱的世界</br>闻箫工作室 官方QQ群:58607027</br>
                         <a href="https://gitee.com/coderaaa/yijian18-engine" target="_blank" rel="noopener noreferrer">Gitee</a> |
                         <a href="https://github.com/beiliwenxiao/yijian18-engine" target="_blank" rel="noopener noreferrer">GitHub</a>
                     </p>
@@ -1269,6 +1269,10 @@
                 if (id === 'login-actions') {
                     element.style.display = 'grid';
                     element.style.justifyItems = 'center';
+                    // 游戏内打开系统菜单时立即显示，首次加载时保持 opacity: 0 等待 bootGameMenu
+                    if (loginScreen.classList.contains('in-game')) {
+                        element.style.opacity = '1';
+                    }
                     element.querySelectorAll('.login-action').forEach(button => {
                         button.style.width = '100%';
                         button.style.height = '100%';
@@ -2317,6 +2321,17 @@
             }
             loadingScreen.style.display = 'none';
             openSystemMenu();
+            
+            // 页面加载完成后显示 login-actions
+            requestAnimationFrame(() => {
+                const loginActions = document.querySelector('.login-actions');
+                if (loginActions) {
+                    loginActions.style.display = 'grid';
+                    requestAnimationFrame(() => {
+                        loginActions.style.opacity = '1';
+                    });
+                }
+            });
         }
         
         // 为场景设置回调

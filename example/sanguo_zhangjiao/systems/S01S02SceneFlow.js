@@ -1051,7 +1051,8 @@ export class S01S02Coordinator {
     const saved = await this.scene.requestAutoSave?.({
       reason: 'checkpoint', checkpointId, sceneId: 'S01'
     });
-    if (saved?.ok === false) {
+    // saved 为 null/undefined 或 saved.ok 不为 false 时，都视为成功继续
+    if (saved && saved.ok === false) {
       this.scene.s10ConstructionCoordinator?._restoreConstructionRollback?.(
         rollback, [`${operationId}:materials`]
       );
