@@ -16,4 +16,5 @@
 
 export { SnapshotManager, SNAPSHOT_VERSION } from './SnapshotManager.js';
 export { LocalStorageAdapter } from './LocalStorageAdapter.js';
-export { SaveGameService } from './SaveGameService.js';
+export { IndexedDBAdapter } from './IndexedDBAdapter.js';
+export { SaveGameService, DEFAULT_VISIBLE_SLOTS, MAX_MANUAL_SAVE_SLOTS, AUTO_SAVE_SLOT_COUNT } from './SaveGameService.js';

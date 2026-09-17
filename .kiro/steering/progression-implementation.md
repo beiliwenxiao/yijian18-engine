@@ -199,12 +199,13 @@ MOVE     右键
 - 参与者错误自动加段落前缀，如 `data.progression.value`。
 - 缺少迁移器时返回 `missingMigration`，不静默失败；有 32 次循环保护。
 - 存档 JSON 损坏时返回 `invalidJson`，**原样保留存档**，不删不覆盖。
-- `SaveGameService` 基于 `SnapshotManager + LocalStorageAdapter` 提供命名空间化存档；业务场景只注入 `capture/validate/restore`，不得绕过原子恢复直接逐段写状态。`inspect(index)` / `inspectAuto(index)` 只执行读取、迁移与校验，不调用 restore，供跨 Region 存档在正式恢复前准备目标运行时。
+- `SaveGameService` 支持 `LocalStorageAdapter`（兼容）与 `IndexedDBAdapter`（推荐）两种存储后端；IndexedDB 配额更大（通常 50MB+），适合大型存档。业务场景只注入 `capture/validate/restore`，不得绕过原子恢复直接逐段写状态。`inspect(index)` / `inspectAuto(index)` 只执行读取、迁移与校验，不调用 restore，供跨 Region 存档在正式恢复前准备目标运行时。
+- `listExistingSlotsAsync()` 返回已存在的存档列表（动态显示用），`getNextAvailableSlotIndex()` 返回下一个可用槽位编号。默认显示 9 个槽位，满后可继续新建存档，最多 100 个。
 - Trigger 快照的跨会话内容身份只能使用归一化执行语义生成的 `definitionDigest`，不得使用 `GameLoader` 的会话装配 `definitionRevision` 代替；operation fingerprint 必须绑定稳定的单 Trigger 定义摘要。同定义跨会话 revision 变化允许恢复，定义摘要或 fingerprint 不匹配必须在 `GameLoader.validateSerialized()` / provider `validate` 阶段拒绝并保持零修改；旧 Trigger snapshot schema 不补写当前摘要、不静默迁移。
-- 存档位固定分为 `autosave-1`、`autosave-2`、`autosave-3` 三个轮换自动位与最多 100 个 `slot-1` 至 `slot-100` 手动位。自动保存只能调用 `saveAuto()`：优先填充空自动位，三个均存在时覆盖 `createdAt` 最早的一位；手动保存只能调用 `save(index)`，两者不得互相覆盖。
+- 存档位固定分为 `autosave-1`、`autosave-2`、`autosave-3` 三个轮换自动位与最多 100 个 `slot-1` 至 `slot-100` 手动位。自动保存只能调用 `saveAuto()`：优先填充空自动位，三个均存在时覆盖 `createdAt` 最早的一位；手动保存只能调用 `save(index)` 或 `saveAsync(index)`，两者不得互相覆盖。
 - 张角 Demo 每 15 分钟、完成地图区块传送、以及内容触发器的 `autoSave` 动作都会请求自动保存。保存开始/成功/失败均通过 `NotificationSystem` 与菜单状态栏反馈；场景层只经 `BaseGameScene.requestAutoSave()` 请求，由宿主注入实际服务并用单一 in-flight Promise 防止并发选中同一自动位。
-- 张角 Demo 在 Vite 开发服务器下还必须把成功快照镜像到 `example/sanguo_zhangjiao/saves/{autosave-1|autosave-2|autosave-3|slot-N}/snapshot.json`，并将画面缩略图以二进制 `thumbnail.jpg` 同目录保存；JSON 用 `meta.previewFile` 引用图片，不重复内嵌 base64。浏览器 localStorage 仍是运行时同步读档缓存，文件写入失败必须向用户明确提示。
-- `ProgressManager` 未废弃，可继续作为旧路径；新代码用 `SnapshotManager` + `LocalStorageAdapter`。
+- 张角 Demo 在 Vite 开发服务器下还必须把成功快照镜像到 `example/sanguo_zhangjiao/saves/{autosave-1|autosave-2|autosave-3|slot-N}/snapshot.json`，并将画面缩略图以二进制 `thumbnail.jpg` 同目录保存；JSON 用 `meta.previewFile` 引用图片，不重复内嵌 base64。IndexedDB 作为运行时主存储，开发文件镜像作为备份。
+- `ProgressManager` 未废弃，可继续作为旧路径；新代码用 `SnapshotManager` + `IndexedDBAdapter`（推荐）或 `LocalStorageAdapter`（兼容）。
 - `BaseGameScene.restoreSaveState()` 只有在输入快照校验通过且回滚快照捕获成功后，才允许用 `SceneHintPresenter.clearForRestore()` 与 `SceneItemGainedFlow.cancel()` 无回调清空旧表现；禁止触发陈旧 `onHidden` 推进剧情。`TutorialSystem.loadProgress()` 只替换完成/信号/移动事实并静默清空旧活动步骤，全部领域和场景状态恢复成功后再用 `restorePresentation()` 重投影合法的 `currentTutorialId/currentStepIndex`；S01 缺少合法活动教程时只能按已提交 `StoryState` 派生当前目标，不得重放 Trigger。场景快照同时保存 `TimeSystem` 与 `WeatherSystem` 状态；读档的 inspect、目标 Region 准备和 restore 必须先等待 `_worldRuntimeReadyPromise`，只有 `configureWorldRuntimeFromLoad()` 已成功创建两套运行时后该 promise 才能 resolve；时间快照必须先经 `validateSerialized()` 校验，再写入运行态。S01 恢复合法状态时保留 `elapsed` 和天气，只重建自身暂停所有权并阻止下一帧默认深夜覆盖，无对应快照时才按剧情阶段投影 lateNight/heavyFog 或 morning/clear。
 - 限时救援使用 `performance.now()` 一类会在页面重启后归零的单调时钟，active 快照不得只持久化绝对 `startedAt/deadline`。`RescueSystem.serialize()` 必须保存捕获时的 `remaining`，`deserialize()` 必须以新会话单调时钟重建 `startedAt/deadline`；这样读档继续消耗保存前已过去的时间，又不会因时钟纪元变化重置完整时限或立即误判超时。
 

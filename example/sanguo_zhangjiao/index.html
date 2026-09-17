@@ -880,7 +880,7 @@
                     <button id="save-picker-close" type="button" aria-label="取消">×</button>
                     <h2 id="save-picker-title">存档浏览</h2>
                     <aside id="save-slots" aria-label="存档浏览器">
-                        <label id="save-slot-browser-label">存档浏览（自动存档 3 位轮换，手动栏位 1–100）</label>
+                        <label id="save-slot-browser-label">存档浏览（自动存档 3 位轮换，手动存档按需新建）</label>
                         <div id="save-slot-dropdown" class="save-slot-browser" role="region" aria-labelledby="save-slot-browser-label">
                             <div class="save-slot-summary"><span id="save-slot-selected">请选择存档栏位</span></div>
                             <div id="save-slot-list" role="listbox" aria-label="存档栏位"></div>
@@ -995,8 +995,12 @@
         const saveGames = new SaveGameService({
             gameId: 'sanguo_zhangjiao',
             slotCount: 100,
-            migrateLegacyAutoSlot: false
+            migrateLegacyAutoSlot: false,
+            useIndexedDB: true  // 使用 IndexedDB 存储大型存档
         });
+        
+        // 清理 localStorage 中的旧存档（只保留 slot-1 到 slot-6）
+        saveGames.clearOldLocalStorageSaves({ keepFrom: 1, keepTo: 6 });
         saveGames.setAutoSaveExecutor(options => autoSaveCurrentGame(options));
         saveGames.setCheckpointLoadExecutor(options => loadCheckpointAutoSave(options));
         const SAVE_FILES_ROOT = 'example/sanguo_zhangjiao/saves';
@@ -1420,10 +1424,34 @@
         }
 
         /** 巫师式存档浏览：缩略图、分类、区域、等级与时间以固定卡片列表展示。 */
-        function renderSaveSlots(mode) {
+        async function renderSaveSlots(mode) {
             savePickerMode = mode;
-            const manualSlots = saveGames.listSlots();
+            
+            // 使用异步 API 获取存档列表
+            const manualSlots = saveGames.listExistingSlotsAsync 
+                ? await saveGames.listExistingSlotsAsync()
+                : saveGames.listSlots().filter(s => s.exists);
             const autoSlots = saveGames.getAutoSlots();
+            
+            // 计算下一个可用槽位
+            let nextAvailableSlotIndex = 1;
+            if (mode !== 'continue' && saveGames.getNextAvailableSlotIndex) {
+                try {
+                    nextAvailableSlotIndex = await saveGames.getNextAvailableSlotIndex();
+                } catch (e) {
+                    console.warn('[renderSaveSlots] 获取下一可用槽位失败:', e);
+                }
+            }
+            
+            // 确定要显示的槽位范围
+            const defaultVisibleCount = 9;
+            const usedIndices = new Set(manualSlots.map(s => s.index));
+            const maxVisibleIndex = Math.max(
+                defaultVisibleCount,
+                ...manualSlots.map(s => s.index),
+                nextAvailableSlotIndex
+            );
+            
             savePickerEntries = [];
             saveSlotList.replaceChildren();
 
@@ -1487,14 +1515,40 @@
                 for (const slot of autoSlots) addOption(autoSaveSelection(slot.index), slot, `自动 ${slot.index}`);
             }
 
-            addGroup('手动存档');
-            for (const slot of manualSlots) addOption(manualSaveSelection(slot.index), slot, `手动 ${slot.index}`);
+            // 动态显示手动存档：只显示已存在的 + 默认空位
+            addGroup(`手动存档（已存 ${manualSlots.length} 个）`);
+            
+            // 先显示已存在的存档
+            for (const slot of manualSlots) {
+                addOption(manualSaveSelection(slot.index), slot, `存档 ${slot.index}`);
+            }
+            
+            // 如果不是读取模式，显示下一个空位用于新建
+            if (mode !== 'continue') {
+                // 检查是否需要在默认范围内显示空位
+                for (let i = 1; i <= defaultVisibleCount; i++) {
+                    if (!usedIndices.has(i)) {
+                        const emptyEntry = { type: 'manual', index: i, id: `slot-${i}`, exists: false, info: null };
+                        addOption(manualSaveSelection(i), emptyEntry, `存档 ${i}`);
+                        break; // 只显示一个空位
+                    }
+                }
+                
+                // 如果默认范围内都已满，显示下一个新位置
+                if (usedIndices.size >= defaultVisibleCount) {
+                    const nextEmpty = nextAvailableSlotIndex;
+                    if (nextEmpty <= 100 && !usedIndices.has(nextEmpty)) {
+                        const emptyEntry = { type: 'manual', index: nextEmpty, id: `slot-${nextEmpty}`, exists: false, info: null };
+                        addOption(manualSaveSelection(nextEmpty), emptyEntry, `存档 ${nextEmpty} (新)`);
+                    }
+                }
+            }
 
             const firstManual = manualSlots.find(slot => slot.exists);
             const latestAuto = saveGames.getLatestAutoSlot();
             const preferred = mode === 'continue'
                 ? (latestAuto ? autoSaveSelection(latestAuto.index) : firstManual ? manualSaveSelection(firstManual.index) : '')
-                : manualSaveSelection(activeSaveSlot);
+                : manualSaveSelection(nextAvailableSlotIndex);
             if (preferred) selectSaveEntry(preferred);
             else {
                 selectedSaveValue = '';

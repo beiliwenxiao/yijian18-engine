@@ -5,7 +5,10 @@
 
 import { SnapshotManager } from './SnapshotManager.js';
 import { LocalStorageAdapter } from './LocalStorageAdapter.js';
+import { IndexedDBAdapter } from './IndexedDBAdapter.js';
 
+/** 默认显示的手动存档位数，满后仍可继续新建。 */
+export const DEFAULT_VISIBLE_SLOTS = 9;
 /** 最大手动存档位数，自动存档位不计入该上限。 */
 export const MAX_MANUAL_SAVE_SLOTS = 100;
 /** 自动存档固定保留最近三份。 */
@@ -14,7 +17,11 @@ export const AUTO_SAVE_SLOT_COUNT = 3;
 /**
  * 多栏位存档服务：三个轮换自动存档位 + 最多 100 个手动存档位。
  * 业务层只提供 capture / validate / restore；原子校验和回滚继续由
- * SnapshotManager 与 LocalStorageAdapter 负责。
+ * SnapshotManager 与存储适配器负责。
+ * 
+ * 支持两种存储后端：
+ * - IndexedDB（推荐）：配额大，适合大型存档
+ * - localStorage（兼容）：配额小，适合小型存档或降级场景
  */
 export class SaveGameService {
   constructor({
@@ -25,18 +32,46 @@ export class SaveGameService {
     autoSlotId = 'autosave',
     migrateLegacyAutoSlot = true,
     storage = null,
+    useIndexedDB = true,
     now = null
   } = {}) {
     this.gameId = gameId;
     this.slotCount = Math.min(MAX_MANUAL_SAVE_SLOTS, Math.max(1, slotCount | 0));
     this.autoSlotCount = Math.min(AUTO_SAVE_SLOT_COUNT, Math.max(1, autoSlotCount | 0));
     this.autoSlotPrefix = autoSlotPrefix || autoSlotId || 'autosave';
-    this.storage = storage || new LocalStorageAdapter({ prefix: `yijian18:${gameId}:save` });
+    
+    // 选择存储后端
+    if (storage) {
+      this.storage = storage;
+    } else if (useIndexedDB && typeof indexedDB !== 'undefined') {
+      this.storage = new IndexedDBAdapter({ prefix: `yijian18:${gameId}:save` });
+      this._isIndexedDB = true;
+    } else {
+      this.storage = new LocalStorageAdapter({ prefix: `yijian18:${gameId}:save` });
+      this._isIndexedDB = false;
+    }
+    
     this.manager = new SnapshotManager({ storage: this.storage, now: now || (() => Date.now()) });
     this._providerOff = null;
     this._autoSaveExecutor = null;
     this._checkpointLoadExecutor = null;
+    
+    // IndexedDB 需要异步初始化
+    if (this._isIndexedDB && this.storage.init) {
+      this._initPromise = this.storage.init();
+    }
+    
     if (migrateLegacyAutoSlot) this._migrateLegacyAutoSlot();
+  }
+
+  /** 等待存储后端初始化完成 */
+  async ready() {
+    if (this._initPromise) await this._initPromise;
+  }
+
+  /** 是否使用 IndexedDB */
+  isUsingIndexedDB() {
+    return this._isIndexedDB === true;
   }
 
   setAutoSaveExecutor(executor) {
@@ -141,6 +176,82 @@ export class SaveGameService {
     return slots;
   }
 
+  /**
+   * 异步列出全部手动栏位（推荐用于 IndexedDB）。
+   * @returns {Promise<Array<{type: string, index: number, id: string, exists: boolean, info: Object|null}>>}
+   */
+  async listSlotsAsync() {
+    const slots = [];
+    for (let index = 1; index <= this.slotCount; index++) {
+      const id = this.slotId(index);
+      const exists = this.storage.hasAsync ? await this.storage.hasAsync(id) : this.storage.has(id);
+      const info = this.storage.getInfoAsync ? await this.storage.getInfoAsync(id) : this.storage.getInfo(id);
+      slots.push({ type: 'manual', index, id, exists, info });
+    }
+    return slots;
+  }
+
+  /**
+   * 列出已存在的手动存档栏位（动态显示用）。
+   * @returns {Promise<Array<{type: string, index: number, id: string, exists: boolean, info: Object|null}>>}
+   */
+  async listExistingSlotsAsync() {
+    if (!this.storage.listAllSlots) {
+      // localStorage 后端，使用传统方式
+      return this.listSlots().filter(slot => slot.exists);
+    }
+
+    // IndexedDB 后端，直接查询所有存档
+    const allSlots = await this.storage.listAllSlots();
+    const manualSlots = allSlots
+      .filter(item => item.slot.startsWith('slot-'))
+      .map(item => {
+        const index = parseInt(item.slot.replace('slot-', ''), 10);
+        return {
+          type: 'manual',
+          index,
+          id: item.slot,
+          exists: true,
+          info: {
+            slot: item.slot,
+            version: item.snapshot?.version,
+            createdAt: item.snapshot?.createdAt,
+            meta: item.snapshot?.meta || {},
+            sections: item.snapshot?.data ? Object.keys(item.snapshot.data) : []
+          }
+        };
+      })
+      .sort((a, b) => a.index - b.index);
+
+    return manualSlots;
+  }
+
+  /**
+   * 获取下一个可用的存档槽位编号。
+   * 如果前 9 个槽位未满，返回最小的空位。
+   * 如果前 9 个已满，返回最大编号 + 1。
+   * @returns {Promise<number>}
+   */
+  async getNextAvailableSlotIndex() {
+    const existingSlots = await this.listExistingSlotsAsync();
+    const usedIndices = new Set(existingSlots.map(s => s.index));
+
+    // 先检查前 9 个位置
+    for (let i = 1; i <= DEFAULT_VISIBLE_SLOTS; i++) {
+      if (!usedIndices.has(i)) return i;
+    }
+
+    // 前 9 个已满，找最大编号 + 1
+    const maxIndex = existingSlots.length > 0 ? Math.max(...existingSlots.map(s => s.index)) : 0;
+    const nextIndex = maxIndex + 1;
+    
+    if (nextIndex > this.slotCount) {
+      throw new RangeError(`已达到最大存档数量 ${this.slotCount}`);
+    }
+
+    return nextIndex;
+  }
+
   hasAny() {
     return this.getAutoSlots().some(slot => slot.exists) || this.listSlots().some(slot => slot.exists);
   }
@@ -173,12 +284,113 @@ export class SaveGameService {
     return this.manager.save(this.slotId(index), { gameId: this.gameId, kind: 'manual', slot: Number(index), ...meta });
   }
 
+  /** 异步写入手动栏位（推荐用于 IndexedDB）。 */
+  async saveAsync(index, meta = {}) {
+    await this.ready();
+    const slotId = this.slotId(index);
+    const snapshot = await this.manager.capture({ gameId: this.gameId, kind: 'manual', slot: Number(index), ...meta });
+    if (!snapshot.ok) return snapshot;
+    
+    if (this.storage.save) {
+      // IndexedDB 同步保存会返回 pending
+      const result = this.storage.save(slotId, snapshot.snapshot);
+      if (result.pending) {
+        // 等待实际完成
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      return result;
+    }
+    return { ok: false, errors: [{ code: 'saveFailed', message: '存储不可用' }] };
+  }
+
   /** 读取手动栏位。 */
   load(index) {
     return this.manager.load(this.slotId(index));
   }
 
+  /** 异步读取手动栏位（推荐用于 IndexedDB）。 */
+  async loadAsync(index) {
+    await this.ready();
+    const slotId = this.slotId(index);
+    
+    if (this.storage.loadAsync) {
+      const loaded = await this.storage.loadAsync(slotId);
+      if (!loaded.ok) return loaded;
+      
+      const migrated = this.manager.migrate(loaded.snapshot);
+      if (!migrated.ok) return migrated;
+      
+      const validation = this.manager.validate(migrated.snapshot);
+      if (!validation.ok) return validation;
+      
+      return { ok: true, snapshot: migrated.snapshot, errors: [] };
+    }
+    
+    return this.manager.load(slotId);
+  }
+
+  /**
+   * 从 localStorage 清理旧存档，只保留指定范围的槽位。
+   * @param {Object} options
+   * @param {number} [options.keepFrom=1] - 保留起始槽位
+   * @param {number} [options.keepTo=6] - 保留结束槽位
+   * @returns {{removed: number, kept: number}}
+   */
+  clearOldLocalStorageSaves({ keepFrom = 1, keepTo = 6 } = {}) {
+    if (typeof localStorage === 'undefined') return { removed: 0, kept: 0 };
+
+    const prefix = `yijian18:${this.gameId}:save:`;
+    const keysToRemove = [];
+    let removed = 0;
+    let kept = 0;
+
+    // 收集所有存档键
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith(prefix)) {
+        const slotPart = key.replace(prefix, '');
+        
+        // 检查是否为手动存档槽位
+        const slotMatch = slotPart.match(/^slot-(\d+)$/);
+        if (slotMatch) {
+          const slotNum = parseInt(slotMatch[1], 10);
+          if (slotNum >= keepFrom && slotNum <= keepTo) {
+            kept++;
+          } else {
+            keysToRemove.push(key);
+          }
+        }
+        
+        // 检查是否为旧自动存档（不带数字后缀）
+        if (slotPart === 'autosave' || slotPart === this.autoSlotPrefix) {
+          keysToRemove.push(key);
+        }
+      }
+    }
+
+    // 执行删除
+    for (const key of keysToRemove) {
+      try {
+        localStorage.removeItem(key);
+        removed++;
+      } catch (e) {
+        console.warn(`[SaveGameService] 清理存档失败: ${key}`, e);
+      }
+    }
+
+    console.log(`[SaveGameService] 清理 localStorage 完成: 移除 ${removed} 个，保留 ${kept} 个`);
+    return { removed, kept };
+  }
+
   clear(index) {
+    return this.storage.remove(this.slotId(index));
+  }
+
+  /** 异步删除手动栏位（推荐用于 IndexedDB）。 */
+  async clearAsync(index) {
+    if (this.storage.removeAsync) {
+      return this.storage.removeAsync(this.slotId(index));
+    }
     return this.storage.remove(this.slotId(index));
   }
 
