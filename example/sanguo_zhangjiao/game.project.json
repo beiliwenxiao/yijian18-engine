@@ -8415,6 +8415,7 @@
       "transaction": {
         "checkpoint": {
           "checkpointId": "checkpoint.S01.wolfPursuit",
+          "checkpointMode": "bestEffort",
           "reason": "checkpoint",
           "sceneId": "S01"
         },
