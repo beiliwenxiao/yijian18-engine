@@ -159,9 +159,35 @@ function configureSharedClassEffects(gameLoader) {
   const constructionConfig = gameLoader?.project?.construction || {};
   const constructionSites = new Map((constructionConfig.sites || []).map(site => [site.id, site]));
   const itemRegistry = gameLoader?.getRegistry?.('items');
-  const trigger = (name, event, data) => (
-    this.gameLoader?.triggerSystem?.fire?.(`${name}.${event}`, cloneData(data))
-  );
+  const trigger = (name, event, data) => {
+    const triggerSystem = this.gameLoader?.triggerSystem;
+    const eventType = `${name}.${event}`;
+    const payload = cloneData(data) || {};
+    const journal = triggerSystem?.eventJournal || triggerSystem?._ensureEventJournal?.();
+    if (payload.eventId && journal?.get) {
+      const existing = journal.get(payload.eventId);
+      if (existing && !payload.sourceEventPayload) {
+        payload.sourceEventType = existing.type;
+        payload.sourceEventSource = cloneData(existing.source);
+        payload.sourceEventActorRef = existing.actorRef || null;
+        payload.sourceEventSceneId = existing.sceneId || null;
+        payload.sourceEventPayload = cloneData(existing.payload);
+      }
+    }
+    return triggerSystem?.fire?.(eventType, payload) || 0;
+  };
+  const createConstructionEventId = ({ eventType, payload }) => {
+    const triggerSystem = this.gameLoader?.triggerSystem;
+    const eventJournal = triggerSystem?.eventJournal || triggerSystem?._ensureEventJournal?.();
+    if (!eventJournal?.create) return null;
+    return eventJournal.create({
+      type: eventType,
+      source: { kind: 'construction', operationId: payload?.operationId || null },
+      actorRef: this.playerEntity?.id || null,
+      sceneId: this.currentSceneId || null,
+      payload: cloneData(payload)
+    }).eventId;
+  };
   const sharedPlan = this._gameplaySystemAssembler.configureSharedSystems({
     effectResolver,
     skillRegistry: gameLoader.skillRegistry,
@@ -189,6 +215,7 @@ function configureSharedClassEffects(gameLoader) {
       requiredProficiencyType: 'construction',
       itemResolver: itemId => cloneData(itemRegistry?.get?.(itemId) || null),
       createCheckpoint: checkpoint => this.s10ConstructionCoordinator._checkpointConstructionRepair(checkpoint),
+      createEventId: createConstructionEventId,
       onEvent: (event, data) => trigger('construction', event, {
         ...data,
         siteId: data?.structure?.siteId || data?.siteId || null
@@ -252,9 +279,15 @@ function registerGameLoaderActions(triggerSystem) {
   triggerSystem.registerAction('s01Survival', async (params = {}, _context = {}, event = {}) => {
     const handled = await this._s01s02Coordinator.handleAction(params, event.params || {});
     if (handled && typeof handled === 'object' && typeof handled.ok === 'boolean') return handled;
-    return handled === true
-      ? { ok: true }
-      : { ok: false, code: 's01SurvivalRejected' };
+    if (handled === true) return { ok: true };
+    return {
+      ok: false,
+      code: 's01SurvivalRejected',
+      error: {
+        message: 'S01 survival action returned false',
+        details: [{ operation: params.operation || params.type || null }]
+      }
+    };
   });
   registered.push('s01Survival');
   return registered;

@@ -1306,6 +1306,7 @@
         let savePickerEntries = [];
         let savePickerConfirmInFlight = false;
         let autoSaveInFlight = null;
+        let bestEffortAutoSaveTimer = null;
         const saveSlotSelected = document.getElementById('save-slot-selected');
         const saveSlotList = document.getElementById('save-slot-list');
         const saveSlotInfo = document.getElementById('save-slot-info');
@@ -1843,29 +1844,56 @@
             else notifier.addNotification(message, 'info', 4500);
         }
 
-        async function performAutoSave({ reason = 'unknown', checkpointId = null, sceneId = null } = {}) {
+        async function performAutoSave({ reason = 'unknown', checkpointId = null, sceneId = null, checkpointMode = 'bestEffort' } = {}) {
             showAutoSaveStatus('自动存档保存中...');
-            await captureFreshSavePreview();
+            try {
+                await captureFreshSavePreview();
+            } catch (error) {
+                // 缩略图只属于表现层；采集失败不能阻断业务事务或自动存档尝试。
+                console.warn('自动存档预览采集失败，将继续保存状态', { reason, checkpointId, error });
+            }
             const meta = currentSaveMeta();
             meta.reason = reason;
+            meta.checkpointMode = checkpointMode;
             if (checkpointId) meta.checkpointId = checkpointId;
             if (sceneId) meta.currentSceneId = sceneId;
             const nextSlot = saveGames.getNextAutoSlot();
             const previousSlot = saveGames.storage.readRaw(nextSlot.id);
             if (!previousSlot.ok) {
-                showAutoSaveStatus('自动存档保存失败', 'error');
-                return { ok: false, code: 'autoSaveBaselineUnavailable', errors: previousSlot.errors };
+                if (checkpointMode !== 'bestEffort') showAutoSaveStatus('自动存档保存失败', 'error');
+                console.warn('自动存档无法读取目标槽位，保留原槽位内容', {
+                    reason, checkpointId, errors: previousSlot.errors
+                });
+                return {
+                    ok: false,
+                    nonBlocking: checkpointMode === 'bestEffort',
+                    saved: false,
+                    checkpointSkipped: true,
+                    autoSaveFailed: true,
+                    code: 'autoSaveBaselineUnavailable',
+                    errors: previousSlot.errors || []
+                };
             }
             const result = saveGames.saveAuto(meta);
             if (!result.ok) {
-                showAutoSaveStatus('自动存档保存失败', 'error');
-                console.warn('自动保存失败', { reason, checkpointId, errors: result.errors });
-                return result;
+                // Snapshot 失败时 saveAuto 不会覆盖目标槽位；调用方决定该 checkpoint 是否可阻断流程。
+                if (checkpointMode !== 'bestEffort') showAutoSaveStatus('自动存档保存失败', 'error');
+                console.warn('自动保存失败，保留原自动槽位内容', { reason, checkpointId, errors: result.errors });
+                return {
+                    ...result,
+                    ok: false,
+                    nonBlocking: checkpointMode === 'bestEffort',
+                    saved: false,
+                    checkpointSkipped: true,
+                    autoSaveFailed: true,
+                    errors: result.errors || []
+                };
             }
             const fileResult = await persistSaveFiles(result.autoSlotId, result.snapshot);
             const completed = {
                 ...result,
                 ok: true, // 文件持久化失败不阻断游戏流程，localStorage 已成功保存
+                saved: true,
                 filePersisted: fileResult.ok,
                 errors: [...result.errors, ...fileResult.errors]
             };
@@ -1879,9 +1907,54 @@
             return completed;
         }
 
+        function scheduleBestEffortCheckpoint(options = {}) {
+            if (bestEffortAutoSaveTimer) {
+                return Promise.resolve({
+                    ok: true,
+                    saved: false,
+                    checkpointDeferred: true,
+                    nonBlocking: true,
+                    code: 'checkpointAlreadyDeferred'
+                });
+            }
+            bestEffortAutoSaveTimer = setTimeout(async () => {
+                bestEffortAutoSaveTimer = null;
+                if (autoSaveInFlight) {
+                    try {
+                        await autoSaveInFlight;
+                    } catch (error) {
+                        console.warn('已有自动存档失败，继续执行延迟 checkpoint', error);
+                    }
+                }
+                try {
+                    const result = await autoSaveCurrentGame({ ...options, deferUntilIdle: false });
+                    if (result?.ok === false) {
+                        console.warn('延迟 bestEffort 自动存档失败，流程已继续', {
+                            checkpointId: options.checkpointId,
+                            errors: result.errors || []
+                        });
+                    }
+                } catch (error) {
+                    console.warn('延迟 bestEffort 自动存档异常，流程已继续', error);
+                }
+            }, 0);
+            return Promise.resolve({
+                ok: true,
+                saved: false,
+                checkpointDeferred: true,
+                nonBlocking: true,
+                code: 'checkpointDeferred'
+            });
+        }
+
         /** 定时、剧情和地图切换共用同一把锁，避免并发覆盖同一自动栏位。 */
         function autoSaveCurrentGame(options = {}) {
             if (!gameStarted || !scene?.playerEntity) return Promise.resolve(null);
+            if (options.checkpointMode === 'bestEffort'
+                && options.reason === 'checkpoint'
+                && options.deferUntilIdle !== false) {
+                return scheduleBestEffortCheckpoint(options);
+            }
             if (autoSaveInFlight) return autoSaveInFlight;
             autoSaveInFlight = performAutoSave(options)
                 .finally(() => { autoSaveInFlight = null; });

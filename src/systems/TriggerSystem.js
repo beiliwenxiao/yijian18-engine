@@ -60,6 +60,19 @@ const coordinationOf = trigger => {
   };
 };
 
+function diagnosticMessage(error, details = []) {
+  if (typeof error === 'string' && error.length > 0) return error;
+  if (typeof error?.message === 'string' && error.message.length > 0) return error.message;
+  const detailMessage = details.find(detail => typeof detail?.message === 'string' && detail.message.length > 0)?.message;
+  if (detailMessage) return detailMessage;
+  try {
+    const serialized = JSON.stringify(error);
+    return serialized && serialized !== '{}' ? serialized : 'trigger action failed';
+  } catch {
+    return 'trigger action failed';
+  }
+}
+
 function errorResult(operationId, triggerId, error, code = null) {
   const details = Array.isArray(error?.details)
     ? clone(error.details)
@@ -70,7 +83,7 @@ function errorResult(operationId, triggerId, error, code = null) {
     stateId: `trigger:${triggerId}`, stateRevision: null,
     eventFrom: null, eventTo: null, value: null,
     error: {
-      message: error?.message || String(error || 'trigger action failed'),
+      message: diagnosticMessage(error, details),
       ...(details.length > 0 ? { details } : {})
     }
   };

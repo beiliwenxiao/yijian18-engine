@@ -139,18 +139,32 @@ export class ScenarioCommandService {
     });
   }
 
-  _checkpoint(payload) {
+  async _checkpoint(payload) {
+    const checkpointMode = payload.checkpointMode === 'bestEffort' ? 'bestEffort' : 'required';
     const meta = {
       reason: payload.reason || 'checkpoint',
       checkpointId: payload.checkpointId,
-      sceneId: payload.sceneId || null
+      sceneId: payload.sceneId || null,
+      checkpointMode
     };
     const saveGameService = this.getSaveGameService();
-    if (saveGameService?.requestAutoSave) return saveGameService.requestAutoSave(meta);
-    if (saveGameService?.saveAuto) return saveGameService.saveAuto(meta);
-    const snapshotManager = this.getSnapshotManager();
-    if (snapshotManager?.capture) return snapshotManager.capture(meta);
-    return { ok: false, code: 'checkpointServiceUnavailable' };
+    const saved = saveGameService?.requestAutoSave
+      ? await saveGameService.requestAutoSave(meta)
+      : saveGameService?.saveAuto
+        ? await saveGameService.saveAuto(meta)
+        : this.getSnapshotManager()?.capture?.(meta)
+          || { ok: false, code: 'checkpointServiceUnavailable' };
+    if (saved?.ok === false && checkpointMode === 'bestEffort') {
+      return {
+        ...saved,
+        ok: true,
+        committed: false,
+        saved: false,
+        checkpointSkipped: true,
+        nonBlocking: true
+      };
+    }
+    return saved;
   }
 
   _dialogue(payload) {

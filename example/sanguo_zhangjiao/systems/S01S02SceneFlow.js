@@ -54,7 +54,6 @@ const MAX_CHASE_WOLVES = 20;
 const PURSUIT_RECONCILE_INTERVAL_SECONDS = 0.75;
 const FIRST_WOLF_CORPSE_RETRY_INTERVAL_SECONDS = 0.1;
 const FIRST_WOLF_CORPSE_MAX_ATTEMPTS = 30;
-const SHELTER_REGION_ID = 's01-shelter';
 const SHELTER_CHEST_INVENTORY_ID = 's01-shelter-chest:inventory';
 
 /** P1.1/P1.3 S01 生存流程协调器；领域写入统一提交 canonical command。 */
@@ -104,7 +103,7 @@ export class S01S02Coordinator {
   }
 
   _isInShelterInterior() {
-    return this.scene.worldStreamingManager?.regionId === SHELTER_REGION_ID;
+    return this.scene.currentSceneId === 'S01-C01';
   }
 
   /** 室内不绘制也不推进天气；Region 切换重建 WeatherSystem 时按实例重新应用。 */
@@ -967,21 +966,64 @@ export class S01S02Coordinator {
 
   async handleConstructionEvent(event, data = {}) {
     const siteId = data?.siteId || data?.structure?.siteId;
+    const structure = data?.structure || null;
     if (this.scene.currentSceneId !== 'S01' || event !== 'constructionCompleted'
-      || siteId !== 'site.s01.small_shelter') return false;
-    const rollback = this.pendingConstructionRollback;
-    const result = await this._submit('story.s01.shelterCompleted', {}, 'story:s01:shelter-completed');
-    this.pendingConstructionRollback = null;
-    if (!result.ok) {
-      this.scene.s10ConstructionCoordinator?._restoreConstructionRollback?.(rollback);
-      this.scene._showScreenTip('庇护所结算失败，材料和施工状态已经回滚。', { title: '施工回滚' });
-      return false;
+      || siteId !== 'site.s01.small_shelter') {
+      return { ok: true, status: 'notApplicable' };
     }
-    await this._spawnGroup('S01-small-shelter');
+    if (data?.status !== 'completed'
+      || structure?.status !== 'completed'
+      || structure.siteId !== siteId
+      || structure.definitionId !== 'construction.s01.small_shelter') {
+      return {
+        ok: false,
+        code: 'notApplicable',
+        error: { message: '庇护所完成事件缺少一致的结构事实', details: [{ siteId }] }
+      };
+    }
+    const liveStructure = this.scene.constructionSystem?.getStructure?.(siteId);
+    if (!liveStructure
+      || liveStructure.status !== 'completed'
+      || liveStructure.operationId !== structure.operationId) {
+      return {
+        ok: false,
+        code: 'constructionStateUnavailable',
+        error: { message: '庇护所完成事件没有匹配的 ConstructionSystem 结构' }
+      };
+    }
+    const survival = this._story().s01Survival || {};
+    if (survival.shelterCompleted === true) {
+      this.pendingConstructionRollback = null;
+      return { ok: true, status: 'alreadyCommitted' };
+    }
+    const rollback = this.pendingConstructionRollback;
+    const operationId = data.eventId
+      ? `${data.eventId}:state:story.s01.shelterCompleted`
+      : 'story:s01:shelter-completed';
+    const result = await this._submit('story.s01.shelterCompleted', {}, operationId);
+    this.pendingConstructionRollback = null;
+    if (result?.ok !== true) {
+      this.scene.s10ConstructionCoordinator?._restoreConstructionRollback?.(rollback);
+      this.scene._showScreenTip(
+        `庇护所结算失败：${result?.code || result?.error?.message || 'unknown'}。材料和施工状态已经回滚。`,
+        { title: '施工回滚' }
+      );
+      // 保留 CommandResult，不能降级成裸 false，否则诊断会丢失 errors/details。
+      return result || { ok: false, code: 'shelterCompletionUnavailable' };
+    }
+    try {
+      const spawned = await this._spawnGroup('S01-small-shelter');
+      if (spawned?.ok === false) {
+        console.warn('[S01S02Coordinator] 庇护所表现放置失败，业务事实已提交', spawned);
+      }
+    } catch (error) {
+      // 庇护所剧情事实已经提交；表现放置失败进入后续恢复，不得让 Trigger 重复结算。
+      console.warn('[S01S02Coordinator] 庇护所表现放置失败，业务事实已提交', error);
+    }
     this.scene._showScreenTip('小庇护所搭好了。烤肉、木墙和余火让你终于可以熬过这一夜。', {
       title: '庇护所完成'
     });
-    return true;
+    return result;
   }
 
   async startShelterConstruction() {
@@ -1693,13 +1735,26 @@ export class S01S02Coordinator {
     if (operation === 'leaveShelter') return this.leaveShelter(eventData);
     if (operation === 'openShelterChest') return this.openShelterChest();
     if (operation === 'overnight') {
-      if (!this._isInShelterInterior()) return false;
-      const result = await this._submit('story.s01.overnight', {}, 'story:s01:overnight');
-      if (!result.ok) return false;
+      if (!this._isInShelterInterior()) {
+        return {
+          ok: false,
+          code: 'shelterInteriorRequired',
+          error: { message: '必须在 S01-C01 庇护所内的床边过夜' }
+        };
+      }
+      const survival = this._story().s01Survival || {};
+      if (survival.overnightCompleted === true) {
+        return { ok: true, status: 'alreadyCommitted' };
+      }
+      const operationId = eventData.eventId
+        ? `${eventData.eventId}:state:story.s01.overnight`
+        : 'story:s01:overnight';
+      const result = await this._submit('story.s01.overnight', {}, operationId);
+      if (result?.ok !== true) return result || { ok: false, code: 'overnightCommitUnavailable' };
       this.scene.timeSystem?.setCurrentDay?.(2);
       this._applyS01WeatherPhase(this._story().s01Survival || {}, { force: true });
       this.scene._showScreenTip('你在床上沉沉睡去。天亮后，先从门口离开庇护所。', { title: '安稳的一夜' });
-      return true;
+      return result;
     }
     if (operation === 'riverCrossed') {
       const result = await this._submit('story.s01.riverCrossed', {}, 'story:s01:river-crossed');

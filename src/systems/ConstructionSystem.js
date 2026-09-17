@@ -8,13 +8,14 @@ const normalizeId = value => typeof value === 'string' ? value.trim() : '';
 
 export class ConstructionSystem {
   constructor({ inventoryTransactions, proficiencySystem = null, itemResolver = null,
-    validateSite = null, createCheckpoint = null, onEvent = null, maxOperations = 256 } = {}) {
+    validateSite = null, createCheckpoint = null, createEventId = null, onEvent = null, maxOperations = 256 } = {}) {
     if (!inventoryTransactions) throw new TypeError('ConstructionSystem requires inventoryTransactions');
     this.inventoryTransactions = inventoryTransactions;
     this.proficiencySystem = proficiencySystem;
     this.itemResolver = typeof itemResolver === 'function' ? itemResolver : () => null;
     this.validateSite = typeof validateSite === 'function' ? validateSite : () => ({ ok: true });
     this.createCheckpoint = typeof createCheckpoint === 'function' ? createCheckpoint : null;
+    this.createEventId = typeof createEventId === 'function' ? createEventId : null;
     this.onEvent = typeof onEvent === 'function' ? onEvent : () => {};
     this.maxOperations = Math.max(16, Math.floor(Number(maxOperations) || 256));
     this.definitions = new Map();
@@ -350,6 +351,16 @@ export class ConstructionSystem {
     return { ok: true, errors: [] };
   }
 
+  _createEventId(eventType, payload) {
+    if (!this.createEventId) return null;
+    try {
+      return this.createEventId({ eventType, payload: clone(payload) }) || null;
+    } catch (error) {
+      console.warn('[ConstructionSystem] 创建事件 ID 失败', { eventType, error });
+      return null;
+    }
+  }
+
   _complete(siteId, pending) {
     const tool = this._findReservedTool(pending.inventory, pending);
     if (pending.definition.requiredToolType && !tool) return this._cancel(siteId, pending, 'toolMissing');
@@ -379,10 +390,18 @@ export class ConstructionSystem {
       amount: pending.definition.experience,
       operationId: `${pending.operationId}:proficiency`
     }) || { ok: true, skipped: true };
+    const resultPayload = {
+      siteId,
+      status: 'completed',
+      operationId: pending.operationId,
+      structure: clone(structure),
+      experienceResult: clone(experienceResult)
+    };
     const result = {
       ok: true,
       status: 'completed',
       operationId: pending.operationId,
+      eventId: this._createEventId('construction.constructionCompleted', resultPayload),
       structure: clone(structure),
       experienceResult: clone(experienceResult)
     };
@@ -412,12 +431,20 @@ export class ConstructionSystem {
     }
     this.pending.delete(siteId);
     this._releaseTool(pending);
+    const resultPayload = {
+      siteId,
+      status: 'cancelled',
+      operationId: pending.operationId,
+      definitionId: pending.definitionId,
+      reason
+    };
     const result = {
       ok: false,
       code: reason,
       status: 'cancelled',
       refunded: true,
       operationId: pending.operationId,
+      eventId: this._createEventId('construction.constructionCancelled', resultPayload),
       siteId,
       definitionId: pending.definitionId
     };

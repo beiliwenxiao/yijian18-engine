@@ -365,9 +365,29 @@ export class BaseGameSceneSetup extends Scene {
     this._saveGameService = service || null;
   }
 
-  requestAutoSave(context = {}) {
-    return this._saveGameService?.requestAutoSave?.(context)
-      || Promise.resolve({ ok: false, code: 'saveGameServiceUnavailable' });
+  async requestAutoSave(context = {}) {
+    try {
+      const result = await this._saveGameService?.requestAutoSave?.(context);
+      return result || {
+        ok: false,
+        saved: false,
+        code: 'saveGameServiceUnavailable',
+        errors: [{ code: 'saveGameServiceUnavailable', path: 'game', message: '存档服务不可用' }]
+      };
+    } catch (error) {
+      // checkpoint 是否阻断流程由调用方的 checkpointMode 决定，场景层不能吞掉失败。
+      console.warn('[BaseGameScene] 自动存档失败:', error);
+      return {
+        ok: false,
+        saved: false,
+        code: error?.code || 'autoSaveFailed',
+        errors: [{
+          code: error?.code || 'autoSaveFailed',
+          path: 'game',
+          message: error?.message || String(error)
+        }]
+      };
+    }
   }
 
   requestCheckpointLoad(checkpointId) {
@@ -453,13 +473,13 @@ export class BaseGameSceneSetup extends Scene {
       .filter(entry => entry.status === 'committed' && entry.result)
       .map(entry => [entry.operationId, entry.result]));
 
+    // 运行中的 Trigger 不再在场景快照层直接拒绝；Authority 仍可能因 EventJournal 正在执行而拒绝本次 capture。
+    // 自动存档入口会保留原自动槽位并把失败转换为 best-effort 结果，因此不影响已提交流程。
     const liveRunningTriggers = this.gameLoader?.triggerSystem?.ledger?.all?.()
       ?.filter(record => record?.status === 'running') || [];
-    if (includeAuthority && liveRunningTriggers.length > 0) {
-      const error = new Error('存档拒绝捕获仍在执行的 Trigger');
-      error.code = 'scenarioExecutionBusy';
-      error.triggerIds = liveRunningTriggers.map(record => record.triggerId);
-      throw error;
+    if (liveRunningTriggers.length > 0) {
+      console.warn('[BaseGameSceneSetup] 自动存档捕获时存在运行中的 Trigger；失败时保留原自动槽位:',
+        liveRunningTriggers.map(record => record.triggerId));
     }
     const contentState = this.gameLoader?.serialize?.(
       player?.id || null,

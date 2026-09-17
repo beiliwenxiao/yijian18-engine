@@ -670,6 +670,7 @@ export class SceneGameplaySystemAssembler {
       maxOperations: constructionConfig.maxOperations,
       itemResolver: constructionConfig.itemResolver,
       createCheckpoint: constructionConfig.createCheckpoint,
+      createEventId: constructionConfig.createEventId,
       validateSite: constructionConfig.validateSite,
       onEvent: constructionConfig.onEvent
     });
