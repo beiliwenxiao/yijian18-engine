@@ -89,6 +89,10 @@ export function validateTaskGraphDefinitions(definitions = []) {
           && (!node.eventMatcher.payload || typeof node.eventMatcher.payload !== 'object' || Array.isArray(node.eventMatcher.payload))) {
           issue(errors, 'invalidTaskEventMatcher', `${nodePath}.eventMatcher.payload`, '事件 payload matcher 必须是对象');
         }
+        if (node.requiredCount !== undefined
+          && (!Number.isInteger(node.requiredCount) || node.requiredCount < 1)) {
+          issue(errors, 'invalidTaskObjectiveCount', `${nodePath}.requiredCount`, '目标数量必须为正整数');
+        }
       }
       if (node.mapTarget !== undefined) {
         const target = node.mapTarget;
@@ -279,11 +283,23 @@ export class TaskGraphSystem {
         const state = instance.nodeStates[nodeId];
         if (node.type !== 'objective' || state.status !== 'active') continue;
         if (node.eventMatcher?.type !== event.type || !shallowMatch(node.eventMatcher?.payload, event.payload)) continue;
-        state.status = 'succeeded';
+        const requiredCount = Math.max(1, Math.floor(Number(node.requiredCount) || 1));
         state.eventIds.push(event.eventId);
         instance.eventIds.push(event.eventId);
-        this._advance(instance, node);
-        changed.push({ instanceId: instance.instanceId, nodeId, eventId: event.eventId });
+        const currentCount = Math.min(requiredCount, state.eventIds.length);
+        const completed = currentCount >= requiredCount;
+        if (completed) {
+          state.status = 'succeeded';
+          this._advance(instance, node);
+        }
+        changed.push({
+          instanceId: instance.instanceId,
+          nodeId,
+          eventId: event.eventId,
+          currentCount,
+          requiredCount,
+          completed
+        });
       }
       const beforeStatus = instance.status;
       this._stabilize(instance, definition);
@@ -409,14 +425,33 @@ export class TaskGraphSystem {
       .filter(instance => instance.status === 'active' && instance.tracking === true && (!actorId || instance.actorId === actorId))
       .map(instance => {
         const definition = this.definitions.get(instance.definitionId);
+        const objectiveProgress = [...(definition?.nodes?.values?.() || [])]
+          .filter(node => node.type === 'objective')
+          .map(node => {
+            const state = instance.nodeStates[node.id];
+            const requiredCount = Math.max(1, Math.floor(Number(node.requiredCount) || 1));
+            const currentCount = state?.status === 'succeeded'
+              ? requiredCount
+              : Math.min(requiredCount, state?.eventIds?.length || 0);
+            return { currentCount, requiredCount };
+          });
         const nodes = Object.entries(instance.nodeStates)
           .filter(([, state]) => state.status === 'active' || state.status === 'available')
           .map(([nodeId, state]) => {
             const node = definition?.nodes.get(nodeId);
+            const requiredCount = node?.type === 'objective'
+              ? Math.max(1, Math.floor(Number(node.requiredCount) || 1))
+              : 1;
+            const currentCount = state.status === 'succeeded'
+              ? requiredCount
+              : Math.min(requiredCount, state.eventIds.length);
             return Object.freeze({
               nodeId,
               label: node?.label || node?.title || nodeId,
               status: state.status,
+              isObjective: node?.type === 'objective',
+              currentCount,
+              requiredCount,
               eventIds: Object.freeze([...state.eventIds]),
               mapTarget: node?.mapTarget ? Object.freeze(clone(node.mapTarget)) : null
             });
@@ -427,6 +462,8 @@ export class TaskGraphSystem {
           title: definition?.title || instance.definitionId,
           description: definition?.description || '',
           category: definition?.category || 'main',
+          currentCount: objectiveProgress.reduce((sum, progress) => sum + progress.currentCount, 0),
+          requiredCount: objectiveProgress.reduce((sum, progress) => sum + progress.requiredCount, 0),
           nodes: Object.freeze(nodes),
           startedByEventId: instance.startedByEventId || null
         });

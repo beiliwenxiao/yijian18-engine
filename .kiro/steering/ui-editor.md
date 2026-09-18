@@ -68,6 +68,8 @@ UI 编辑器预览、虚线交互框和拖动反算必须共用 `BackpackPanel._
 
 `UIEditor._mergeLayout()` 只遍历当前平台的 `DEFAULT_COMPONENTS`；只改 JSON 会让额外 ID 在加载合并时被丢弃。四项 HUD 不需要修改 `index.html` 或 `applyUILayoutToDom()`。天气与战斗徽章必须各自保存独立矩形，拖动其中一项不得再通过“小地图相对位置”隐式带动另一项；旧配置缺失时才允许使用相对小地图的 fallback。任务追踪不允许固定位置 fallback：`TaskGraphProjectionView` 只在 `ScenePanelLayout._screenHudRects.taskTracker` 存在时由渲染管线绘制，并且只读取当前玩家的 `TaskGraphSystem.getProjection()`。两类徽章的文字布局统一使用可选 `fontSize/textOffsetX/textOffsetY`：`fontSize:0` 或缺字段表示沿用自动字号，偏移只移动框内文字。字段必须沿 `UIEditor → UILayout JSON → UILayoutLoader.getRect() → ScenePanelLayout._screenHudRects → SceneRenderPipeline` 投影，渲染器禁止直接读取布局 JSON。
 
+任务追踪的数量只由 `TaskGraphSystem.getProjection()` 提供：objective 节点统一投影 `currentCount/requiredCount`，未配置 `requiredCount` 时默认 `1`；任务同时投影全部 objective 的汇总进度。`TaskGraphProjectionView` 必须在任务标题右侧显示汇总 `current/required`，并在每条当前 objective 右侧显示节点 `current/required`（例如 `0/1`、`1/1`）；数量右对齐并为目标文本预留宽度。UI 不得根据文案、StoryState 或颜色自行猜测数量和完成状态。
+
 UI 编辑器的“保存到文件”同时写 UILayout/LoginLayout、共用 PanelLayout、手柄绑定和提示文案；每个写入必须把失败抛给 `save()` 聚合，任一子项失败都只能显示“部分保存失败”，不得被后续成功状态覆盖。成功/失败同时保留底部状态并显示自动消失的非阻塞反馈，禁止用 `alert()` 阻塞编辑流程。
 
 `Minimap` 被 `UILayoutLoader` 命中时必须调用 `setLayoutManaged(true)`，使 `_tryBuildCache()` 只建立地图内容缓存而不按世界宽高比重写编辑器保存的 `width/height`。窗口 resize 只复用已经加载的 `scene.uiLayoutLoader` 重新计算百分比矩形，不得重新 fetch 配置，也不得无条件把小地图重置到右上角。任务 marker 每帧只读 `context.services.taskGraph` 的当前玩家投影：显式 `x/y` 按世界坐标使用；只有 `sceneId+targetId` 时依次从 `context.services.placements.inspectPlacement()` 和已投影场景对象解析统一空间锚点，无法解析必须省略 marker，不得猜测或伪造坐标。`Minimap.setTaskMarkers()` 只接收表现投影，不修改 TaskGraph、placement 或场景对象。

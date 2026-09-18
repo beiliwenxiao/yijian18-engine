@@ -31,11 +31,27 @@ export class TaskGraphProjectionView {
     const tasks = this.getTaskGraph?.()?.getProjection?.(this.getActorId?.() || null) || [];
     if (tasks.length === 0) return false;
 
-    const lines = [{ text: '任务追踪', accent: true, strong: true }];
+    const lines = [{ text: '任务追踪', accent: true, strong: true, progress: null }];
     for (const task of tasks.slice(0, 3)) {
-      lines.push({ text: task.title, accent: true, strong: false });
+      const taskRequiredCount = Math.max(0, Math.floor(Number(task.requiredCount) || 0));
+      const taskCurrentCount = Math.min(taskRequiredCount, Math.max(0, Math.floor(Number(task.currentCount) || 0)));
+      lines.push({
+        text: task.title,
+        accent: true,
+        strong: false,
+        progress: taskRequiredCount > 0 ? `${taskCurrentCount}/${taskRequiredCount}` : null,
+        completed: taskRequiredCount > 0 && taskCurrentCount >= taskRequiredCount
+      });
       for (const node of task.nodes.slice(0, 3)) {
-        lines.push({ text: `• ${node.label || node.nodeId}`, accent: false, strong: false });
+        const requiredCount = Math.max(1, Math.floor(Number(node.requiredCount) || 1));
+        const currentCount = Math.min(requiredCount, Math.max(0, Math.floor(Number(node.currentCount) || 0)));
+        lines.push({
+          text: `• ${node.label || node.nodeId}`,
+          accent: false,
+          strong: false,
+          progress: node.isObjective === false ? null : `${currentCount}/${requiredCount}`,
+          completed: currentCount >= requiredCount
+        });
       }
     }
 
@@ -58,9 +74,17 @@ export class TaskGraphProjectionView {
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
     visibleLines.forEach((line, index) => {
+      const baselineY = y + paddingY + lineHeight * (index + 0.5);
+      const progressWidth = line.progress ? Math.max(34, fontSize * 3.2) : 0;
       ctx.fillStyle = line.accent ? '#f0d080' : '#d6dbe8';
       ctx.font = `${line.strong ? 'bold ' : ''}${fontSize}px Microsoft YaHei, Arial`;
-      ctx.fillText(line.text, x + paddingX, y + paddingY + lineHeight * (index + 0.5), maxTextWidth);
+      ctx.textAlign = 'left';
+      ctx.fillText(line.text, x + paddingX, baselineY, Math.max(1, maxTextWidth - progressWidth));
+      if (line.progress) {
+        ctx.fillStyle = line.completed ? '#8fd6a1' : '#f0d080';
+        ctx.textAlign = 'right';
+        ctx.fillText(line.progress, x + width - paddingX, baselineY, progressWidth);
+      }
     });
     ctx.restore();
     return true;
