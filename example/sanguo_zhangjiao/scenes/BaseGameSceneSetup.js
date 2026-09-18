@@ -109,7 +109,7 @@ import { EntityRenderer2D } from '../../../src/rendering/EntityRenderer2D.js';
 const ZONE_STAT_NAMES = Object.freeze({ hp: '生命', mp: '法力', attack: '攻击', defense: '防御', speed: '速度' });
 
 export const CAMPAIGN_ID = 'sanguo-zhangjiao-s01-s14';
-export const SAVE_SCHEMA_VERSION = 4;
+export const SAVE_SCHEMA_VERSION = 5;
 const CANONICAL_SCENE_ID = /^S(?:0[1-9]|1[0-4])(?:-C\d{2})?$/;
 const LEGACY_SCENE_ID = /^(?:s\d+-\d+|scene_Prologue)$/;
 
@@ -417,7 +417,11 @@ export class BaseGameSceneSetup extends Scene {
         let result;
         try {
           result = await this.requestAutoSave({
-            reason: 'questTransaction', operationId, questId
+            reason: 'questTransaction',
+            checkpointId: `checkpoint.quest.${questId || 'taskGraph'}`,
+            originOperationId: operationId,
+            operationId,
+            questId
           });
         } catch (error) {
           result = {
@@ -473,18 +477,18 @@ export class BaseGameSceneSetup extends Scene {
       .filter(entry => entry.status === 'committed' && entry.result)
       .map(entry => [entry.operationId, entry.result]));
 
-    // 运行中的 Trigger 不再在场景快照层直接拒绝；Authority 仍可能因 EventJournal 正在执行而拒绝本次 capture。
-    // 自动存档入口会保留原自动槽位并把失败转换为 best-effort 结果，因此不影响已提交流程。
+    // 产品存档绝不捕获运行中的 Trigger 技术账本；由 checkpoint 队列等待封账后重试。
     const liveRunningTriggers = this.gameLoader?.triggerSystem?.ledger?.all?.()
       ?.filter(record => record?.status === 'running') || [];
     if (liveRunningTriggers.length > 0) {
-      console.warn('[BaseGameSceneSetup] 自动存档捕获时存在运行中的 Trigger；失败时保留原自动槽位:',
-        liveRunningTriggers.map(record => record.triggerId));
+      const error = new Error('产品存档拒绝捕获仍在执行的 Trigger');
+      error.code = 'scenarioExecutionBusy';
+      error.triggerIds = liveRunningTriggers.map(record => record.triggerId);
+      throw error;
     }
-    const contentState = this.gameLoader?.serialize?.(
-      player?.id || null,
-      checkpointMetadata
-    ) || null;
+    const contentState = includeAuthority
+      ? null
+      : this.gameLoader?.serialize?.(player?.id || null, checkpointMetadata) || null;
     const snapshot = JSON.parse(JSON.stringify({
       campaignId: CAMPAIGN_ID,
       schemaVersion: SAVE_SCHEMA_VERSION,
@@ -517,7 +521,7 @@ export class BaseGameSceneSetup extends Scene {
       authority: includeAuthority
         ? this.sceneRuntime?.authoritySnapshotService?.capture?.(checkpointMetadata) || null
         : undefined,
-      content: contentState,
+      ...(includeAuthority ? {} : { content: contentState }),
       scene: this.captureSceneSaveState()
     }));
     const validation = this.validateSaveState(snapshot, { requireAuthority: includeAuthority });
@@ -575,9 +579,15 @@ export class BaseGameSceneSetup extends Scene {
       })));
     }
 
-    if (!data.content || typeof data.content !== 'object' || Array.isArray(data.content)) {
-      errors.push({ code: 'missingField', path: 'content', message: '缺少游戏内容状态' });
-    } else if (typeof this.gameLoader?.validateSerialized === 'function') {
+    if (requireAuthority && data.content !== undefined) {
+      errors.push({
+        code: 'duplicateAuthorityState',
+        path: 'content',
+        message: '产品存档不得在 AuthoritySnapshot 外重复保存 Blackboard/Trigger 状态'
+      });
+    } else if (!requireAuthority && (!data.content || typeof data.content !== 'object' || Array.isArray(data.content))) {
+      errors.push({ code: 'missingField', path: 'content', message: '跨 Region 回滚草稿缺少游戏内容状态' });
+    } else if (!requireAuthority && typeof this.gameLoader?.validateSerialized === 'function') {
       const contentCheck = this.gameLoader.validateSerialized(data.content, data.player?.id || null);
       const incompatibleTriggerCodes = new Set([
         'invalidSnapshotSchema',
@@ -621,6 +631,7 @@ export class BaseGameSceneSetup extends Scene {
 
   /** 读档替换表现前清空瞬态队列；不得触发旧提示的完成回调。 */
   _clearTransientPresentationForRestore() {
+    this.context.services.applicationEvents?.resetForRestore?.();
     this._hintPresenter?.clearForRestore?.();
     this._itemGainedFlow?.cancel?.();
     this.itemGainedPopup?.hide?.();
@@ -740,11 +751,13 @@ export class BaseGameSceneSetup extends Scene {
         }))
       };
     }
-    const contentResult = this.gameLoader?.deserialize?.(
-      data.content,
-      player.id,
-      { restoreTriggers: restoreAuthority }
-    );
+    const contentResult = restoreAuthority
+      ? { ok: true }
+      : this.gameLoader?.deserialize?.(
+        data.content,
+        player.id,
+        { restoreTriggers: false }
+      );
     if (contentResult && contentResult.ok === false) {
       return {
         ok: false,
@@ -776,6 +789,9 @@ export class BaseGameSceneSetup extends Scene {
       player.getComponent?.('transform')?.position || null
     );
     this.bindUIPanelsToPlayer(player, { syncCameraPosition: false, log: false });
+    queueMicrotask(() => {
+      void this.context.services.applicationEvents?.resumeBacklog?.();
+    });
     return { ok: true, errors: [] };
   }
 
@@ -976,8 +992,18 @@ export class BaseGameSceneSetup extends Scene {
     const applicationEventBridge = new SceneApplicationEventBridge({
       notificationBus: this.sceneRuntime.notificationBus,
       diagnostics: this._diagnostics,
+      eventJournal: this.sceneRuntime.eventJournal,
+      consumerId: 'sanguo-scene-content',
       presenter: worldItemEvents,
-      onContentEvent: event => this.onApplicationEvent?.(event),
+      onContentEvent: async event => {
+        const contentResult = await this.onApplicationEvent?.(event);
+        if (contentResult?.ok === false) return contentResult;
+        const taskResult = await this.questSystem.consumeTaskEvent(event, {
+          actorId: this.playerEntity?.id || null
+        });
+        if (taskResult?.ok === false) return taskResult;
+        return { ok: true, content: contentResult || null, task: taskResult || null };
+      },
       onAuxiliaryEvent: event => {
         if (event.type === 'item.gained') {
           const payload = event.payload || {};

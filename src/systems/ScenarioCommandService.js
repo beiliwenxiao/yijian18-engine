@@ -98,7 +98,7 @@ export class ScenarioCommandService {
 
   _dispatch(command) {
     if (command.commandType === SCENARIO_COMMANDS.WORLD_TELEPORT) return this._teleport(command.payload);
-    if (command.commandType === SCENARIO_COMMANDS.CHECKPOINT_REQUEST) return this._checkpoint(command.payload);
+    if (command.commandType === SCENARIO_COMMANDS.CHECKPOINT_REQUEST) return this._checkpoint(command.payload, command);
     if (command.commandType === SCENARIO_COMMANDS.DIALOGUE) return this._dialogue(command.payload);
     if (command.commandType === SCENARIO_COMMANDS.TUTORIAL) return this._tutorial(command.payload);
     return { ok: false, code: 'unsupportedScenarioCommand' };
@@ -139,21 +139,20 @@ export class ScenarioCommandService {
     });
   }
 
-  async _checkpoint(payload) {
+  async _checkpoint(payload, command = null) {
     const checkpointMode = payload.checkpointMode === 'bestEffort' ? 'bestEffort' : 'required';
     const meta = {
       reason: payload.reason || 'checkpoint',
       checkpointId: payload.checkpointId,
       sceneId: payload.sceneId || null,
-      checkpointMode
+      checkpointMode,
+      originOperationId: payload.originOperationId || command?.operationId || null
     };
     const saveGameService = this.getSaveGameService();
-    const saved = saveGameService?.requestAutoSave
-      ? await saveGameService.requestAutoSave(meta)
-      : saveGameService?.saveAuto
-        ? await saveGameService.saveAuto(meta)
-        : this.getSnapshotManager()?.capture?.(meta)
-          || { ok: false, code: 'checkpointServiceUnavailable' };
+    if (!saveGameService?.requestAutoSave) {
+      return { ok: false, code: 'checkpointSchedulerUnavailable' };
+    }
+    const saved = await saveGameService.requestAutoSave(meta);
     if (saved?.ok === false && checkpointMode === 'bestEffort') {
       return {
         ...saved,

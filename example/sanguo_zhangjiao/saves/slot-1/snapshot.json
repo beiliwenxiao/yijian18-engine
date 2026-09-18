@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "createdAt": 1789687950151,
+  "createdAt": 1789773679125,
   "meta": {
     "gameId": "sanguo_zhangjiao",
     "kind": "manual",
@@ -63,14 +63,19 @@
       "tutorial": {
         "completedTutorials": [],
         "enabled": true,
-        "currentTutorialId": null,
+        "currentTutorialId": "s01.move",
         "currentStepIndex": 0,
         "signalProgress": {},
-        "movementOrigins": {}
+        "movementOrigins": {
+          "s01.move": {
+            "x": 8276.559230181467,
+            "y": 4165.023414159508
+          }
+        }
       },
       "dialogue": {
-        "currentDialogueId": "dialogue.s01.wake",
-        "currentNodeId": "start",
+        "currentDialogueId": null,
+        "currentNodeId": null,
         "variables": {},
         "history": [
           {
@@ -78,38 +83,491 @@
             "nodeId": "start",
             "speaker": "旁白",
             "text": "寒风卷过龟裂的荒原。你从熄灭的火堆旁醒来，四肢冻得僵硬，远处只有枯草与河水的声响。",
-            "timestamp": 1789687947973
+            "timestamp": 1789773676837
           },
           {
             "type": "start",
             "dialogueId": "dialogue.s01.wake",
-            "timestamp": 1789687947973
+            "timestamp": 1789773676837
+          },
+          {
+            "type": "end",
+            "dialogueId": "dialogue.s01.wake",
+            "timestamp": 1789773678786
           }
         ],
-        "completedDialogues": []
+        "completedDialogues": [
+          "dialogue.s01.wake"
+        ]
       },
       "authority": {
         "snapshotSchemaVersion": 1,
         "definitionRevision": 0,
-        "stateRevisions": {},
-        "lastEventSequence": 0,
-        "logicalClock": 0,
+        "stateRevisions": {
+          "quest:refugee": 1,
+          "tutorial:s01.move": 1
+        },
+        "lastEventSequence": 4,
+        "logicalClock": 2,
         "rngState": {
           "seed": 0,
-          "streams": {}
+          "streams": {
+            "quest.command": {
+              "substreams": {
+                "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task": {
+                  "counter": 0
+                }
+              }
+            },
+            "tutorial.command": {
+              "substreams": {
+                "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000005:trigger:trg_s01_begin_tutorial_after_wake:step:show-tutorial-s01-move": {
+                  "counter": 0
+                }
+              }
+            }
+          }
         },
         "operationLedger": {
           "version": 1,
-          "entries": []
+          "entries": [
+            {
+              "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task",
+              "fingerprint": "{\"actorId\":\"refugee\",\"commandType\":\"quest.command\",\"definitionRevision\":1,\"payload\":{\"definitionId\":\"task.s01.survival\",\"event\":{\"sceneId\":\"S01\"},\"instanceId\":\"task.s01.survival.main\",\"operation\":\"task.start\",\"tracking\":true}}",
+              "status": "committed",
+              "createdAt": 0,
+              "updatedAt": 0,
+              "result": {
+                "ok": true,
+                "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task",
+                "status": "committed",
+                "committed": true,
+                "code": null,
+                "stateId": "quest:refugee",
+                "stateRevision": 1,
+                "eventFrom": 1,
+                "eventTo": 2,
+                "value": {
+                  "operation": "task.start",
+                  "actorId": "refugee",
+                  "instance": {
+                    "instanceId": "task.s01.survival.main",
+                    "definitionId": "task.s01.survival",
+                    "actorId": "refugee",
+                    "status": "active",
+                    "tracking": true,
+                    "startedByEventId": null,
+                    "startedLogicalTime": 0,
+                    "completedLogicalTime": null,
+                    "nodeStates": {
+                      "start": {
+                        "status": "succeeded",
+                        "eventIds": [],
+                        "selectedBranchId": null
+                      },
+                      "lightCampfire": {
+                        "status": "active",
+                        "eventIds": [],
+                        "selectedBranchId": null
+                      },
+                      "findTools": {
+                        "status": "locked",
+                        "eventIds": [],
+                        "selectedBranchId": null
+                      },
+                      "gatherBerries": {
+                        "status": "locked",
+                        "eventIds": [],
+                        "selectedBranchId": null
+                      },
+                      "eatBerry": {
+                        "status": "locked",
+                        "eventIds": [],
+                        "selectedBranchId": null
+                      },
+                      "gatherWood": {
+                        "status": "locked",
+                        "eventIds": [],
+                        "selectedBranchId": null
+                      },
+                      "spotWolf": {
+                        "status": "locked",
+                        "eventIds": [],
+                        "selectedBranchId": null
+                      },
+                      "killWolf": {
+                        "status": "locked",
+                        "eventIds": [],
+                        "selectedBranchId": null
+                      },
+                      "skinWolf": {
+                        "status": "locked",
+                        "eventIds": [],
+                        "selectedBranchId": null
+                      },
+                      "cookMeat": {
+                        "status": "locked",
+                        "eventIds": [],
+                        "selectedBranchId": null
+                      },
+                      "craftGear": {
+                        "status": "locked",
+                        "eventIds": [],
+                        "selectedBranchId": null
+                      },
+                      "buildShelter": {
+                        "status": "locked",
+                        "eventIds": [],
+                        "selectedBranchId": null
+                      },
+                      "stayOvernight": {
+                        "status": "locked",
+                        "eventIds": [],
+                        "selectedBranchId": null
+                      },
+                      "leaveShelter": {
+                        "status": "locked",
+                        "eventIds": [],
+                        "selectedBranchId": null
+                      },
+                      "crossRiver": {
+                        "status": "locked",
+                        "eventIds": [],
+                        "selectedBranchId": null
+                      },
+                      "reachCliff": {
+                        "status": "locked",
+                        "eventIds": [],
+                        "selectedBranchId": null
+                      },
+                      "escape": {
+                        "status": "locked",
+                        "eventIds": [],
+                        "selectedBranchId": null
+                      },
+                      "complete": {
+                        "status": "locked",
+                        "eventIds": [],
+                        "selectedBranchId": null
+                      }
+                    },
+                    "eventIds": []
+                  },
+                  "changes": [],
+                  "completedInstances": [],
+                  "checkpoint": {
+                    "scheduled": true
+                  }
+                },
+                "error": null
+              }
+            },
+            {
+              "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000005:trigger:trg_s01_begin_tutorial_after_wake:step:show-tutorial-s01-move",
+              "fingerprint": "{\"actorId\":\"refugee\",\"commandType\":\"tutorial.command\",\"definitionRevision\":1,\"payload\":{\"definitionRefs\":[{\"id\":\"s01.move\",\"kind\":\"tutorials\"}],\"event\":{\"id\":\"dialogue.s01.wake\"},\"operation\":\"show\",\"tutorialId\":\"s01.move\"}}",
+              "status": "committed",
+              "createdAt": 0,
+              "updatedAt": 0,
+              "result": {
+                "ok": true,
+                "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000005:trigger:trg_s01_begin_tutorial_after_wake:step:show-tutorial-s01-move",
+                "status": "committed",
+                "committed": true,
+                "code": null,
+                "stateId": "tutorial:s01.move",
+                "stateRevision": 1,
+                "eventFrom": 3,
+                "eventTo": 4,
+                "value": {
+                  "ok": true
+                },
+                "error": null
+              }
+            }
+          ]
         },
         "serviceStates": {
           "eventJournal": {
             "schemaVersion": 1,
-            "runId": "run-0ff660bc-2087-4783-95d6-4befb463c649",
-            "nextSequence": 1,
+            "runId": "run-39ebc565-f5dc-43f1-aa3d-f59f19392e58",
+            "nextSequence": 7,
             "events": [
               {
-                "eventId": "evt:run-0ff660bc-2087-4783-95d6-4befb463c649:0000000001",
+                "eventId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000001",
+                "eventDefinitionId": null,
+                "type": "sceneEnter",
+                "source": null,
+                "actorRef": "refugee",
+                "sceneId": "S01",
+                "payload": {
+                  "sceneId": "S01"
+                },
+                "payloadFingerprint": "{\"actorRef\":\"refugee\",\"eventDefinitionId\":null,\"payload\":{\"sceneId\":\"S01\"},\"sceneId\":\"S01\",\"source\":null,\"type\":\"sceneEnter\"}",
+                "logicalTime": 0,
+                "persistent": true,
+                "status": "succeeded",
+                "executions": {
+                  "trg_s01_start_survival_task:start-s01-survival-task": {
+                    "triggerId": "trg_s01_start_survival_task",
+                    "stepId": "start-s01-survival-task",
+                    "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task",
+                    "payloadFingerprint": "sha256-b38c6460b36dc5d077c951c41c59b8e1b9d444aaecfd3676861ec40de208fade",
+                    "status": "succeeded",
+                    "startedLogicalTime": 0,
+                    "finishedLogicalTime": 0,
+                    "result": {
+                      "ok": true,
+                      "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task",
+                      "status": "committed",
+                      "committed": true,
+                      "code": null,
+                      "stateId": "quest:refugee",
+                      "stateRevision": 1,
+                      "eventFrom": 1,
+                      "eventTo": 2,
+                      "value": {
+                        "operation": "task.start",
+                        "actorId": "refugee",
+                        "instance": {
+                          "instanceId": "task.s01.survival.main",
+                          "definitionId": "task.s01.survival",
+                          "actorId": "refugee",
+                          "status": "active",
+                          "tracking": true,
+                          "startedByEventId": null,
+                          "startedLogicalTime": 0,
+                          "completedLogicalTime": null,
+                          "nodeStates": {
+                            "start": {
+                              "status": "succeeded",
+                              "eventIds": [],
+                              "selectedBranchId": null
+                            },
+                            "lightCampfire": {
+                              "status": "active",
+                              "eventIds": [],
+                              "selectedBranchId": null
+                            },
+                            "findTools": {
+                              "status": "locked",
+                              "eventIds": [],
+                              "selectedBranchId": null
+                            },
+                            "gatherBerries": {
+                              "status": "locked",
+                              "eventIds": [],
+                              "selectedBranchId": null
+                            },
+                            "eatBerry": {
+                              "status": "locked",
+                              "eventIds": [],
+                              "selectedBranchId": null
+                            },
+                            "gatherWood": {
+                              "status": "locked",
+                              "eventIds": [],
+                              "selectedBranchId": null
+                            },
+                            "spotWolf": {
+                              "status": "locked",
+                              "eventIds": [],
+                              "selectedBranchId": null
+                            },
+                            "killWolf": {
+                              "status": "locked",
+                              "eventIds": [],
+                              "selectedBranchId": null
+                            },
+                            "skinWolf": {
+                              "status": "locked",
+                              "eventIds": [],
+                              "selectedBranchId": null
+                            },
+                            "cookMeat": {
+                              "status": "locked",
+                              "eventIds": [],
+                              "selectedBranchId": null
+                            },
+                            "craftGear": {
+                              "status": "locked",
+                              "eventIds": [],
+                              "selectedBranchId": null
+                            },
+                            "buildShelter": {
+                              "status": "locked",
+                              "eventIds": [],
+                              "selectedBranchId": null
+                            },
+                            "stayOvernight": {
+                              "status": "locked",
+                              "eventIds": [],
+                              "selectedBranchId": null
+                            },
+                            "leaveShelter": {
+                              "status": "locked",
+                              "eventIds": [],
+                              "selectedBranchId": null
+                            },
+                            "crossRiver": {
+                              "status": "locked",
+                              "eventIds": [],
+                              "selectedBranchId": null
+                            },
+                            "reachCliff": {
+                              "status": "locked",
+                              "eventIds": [],
+                              "selectedBranchId": null
+                            },
+                            "escape": {
+                              "status": "locked",
+                              "eventIds": [],
+                              "selectedBranchId": null
+                            },
+                            "complete": {
+                              "status": "locked",
+                              "eventIds": [],
+                              "selectedBranchId": null
+                            }
+                          },
+                          "eventIds": []
+                        },
+                        "changes": [],
+                        "completedInstances": [],
+                        "checkpoint": {
+                          "scheduled": true
+                        }
+                      },
+                      "error": null
+                    }
+                  }
+                },
+                "result": {
+                  "ok": true,
+                  "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task",
+                  "status": "committed",
+                  "committed": true,
+                  "code": null,
+                  "stateId": "quest:refugee",
+                  "stateRevision": 1,
+                  "eventFrom": 1,
+                  "eventTo": 2,
+                  "value": {
+                    "operation": "task.start",
+                    "actorId": "refugee",
+                    "instance": {
+                      "instanceId": "task.s01.survival.main",
+                      "definitionId": "task.s01.survival",
+                      "actorId": "refugee",
+                      "status": "active",
+                      "tracking": true,
+                      "startedByEventId": null,
+                      "startedLogicalTime": 0,
+                      "completedLogicalTime": null,
+                      "nodeStates": {
+                        "start": {
+                          "status": "succeeded",
+                          "eventIds": [],
+                          "selectedBranchId": null
+                        },
+                        "lightCampfire": {
+                          "status": "active",
+                          "eventIds": [],
+                          "selectedBranchId": null
+                        },
+                        "findTools": {
+                          "status": "locked",
+                          "eventIds": [],
+                          "selectedBranchId": null
+                        },
+                        "gatherBerries": {
+                          "status": "locked",
+                          "eventIds": [],
+                          "selectedBranchId": null
+                        },
+                        "eatBerry": {
+                          "status": "locked",
+                          "eventIds": [],
+                          "selectedBranchId": null
+                        },
+                        "gatherWood": {
+                          "status": "locked",
+                          "eventIds": [],
+                          "selectedBranchId": null
+                        },
+                        "spotWolf": {
+                          "status": "locked",
+                          "eventIds": [],
+                          "selectedBranchId": null
+                        },
+                        "killWolf": {
+                          "status": "locked",
+                          "eventIds": [],
+                          "selectedBranchId": null
+                        },
+                        "skinWolf": {
+                          "status": "locked",
+                          "eventIds": [],
+                          "selectedBranchId": null
+                        },
+                        "cookMeat": {
+                          "status": "locked",
+                          "eventIds": [],
+                          "selectedBranchId": null
+                        },
+                        "craftGear": {
+                          "status": "locked",
+                          "eventIds": [],
+                          "selectedBranchId": null
+                        },
+                        "buildShelter": {
+                          "status": "locked",
+                          "eventIds": [],
+                          "selectedBranchId": null
+                        },
+                        "stayOvernight": {
+                          "status": "locked",
+                          "eventIds": [],
+                          "selectedBranchId": null
+                        },
+                        "leaveShelter": {
+                          "status": "locked",
+                          "eventIds": [],
+                          "selectedBranchId": null
+                        },
+                        "crossRiver": {
+                          "status": "locked",
+                          "eventIds": [],
+                          "selectedBranchId": null
+                        },
+                        "reachCliff": {
+                          "status": "locked",
+                          "eventIds": [],
+                          "selectedBranchId": null
+                        },
+                        "escape": {
+                          "status": "locked",
+                          "eventIds": [],
+                          "selectedBranchId": null
+                        },
+                        "complete": {
+                          "status": "locked",
+                          "eventIds": [],
+                          "selectedBranchId": null
+                        }
+                      },
+                      "eventIds": []
+                    },
+                    "changes": [],
+                    "completedInstances": [],
+                    "checkpoint": {
+                      "scheduled": true
+                    }
+                  },
+                  "error": null
+                }
+              },
+              {
+                "eventId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000002",
                 "eventDefinitionId": null,
                 "type": "sceneEnter",
                 "source": null,
@@ -126,14 +584,14 @@
                   "trg_s01_spawn_initial:spawn-initial-placements": {
                     "triggerId": "trg_s01_spawn_initial",
                     "stepId": "spawn-initial-placements",
-                    "operationId": "evt:run-0ff660bc-2087-4783-95d6-4befb463c649:0000000001:trigger:trg_s01_spawn_initial:step:spawn-initial-placements",
-                    "payloadFingerprint": "sha256-cac745d228a8b816f47b70d3e26917836ec51b33f1734136a2e77d1b4f686821",
+                    "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000002:trigger:trg_s01_spawn_initial:step:spawn-initial-placements",
+                    "payloadFingerprint": "sha256-7937b17bbb37f688d9366e2dbfea237ddc2ae4b88f18e660a50affed536386d0",
                     "status": "succeeded",
                     "startedLogicalTime": 0,
                     "finishedLogicalTime": 0,
                     "result": {
                       "ok": true,
-                      "operationId": "evt:run-0ff660bc-2087-4783-95d6-4befb463c649:0000000001:trigger:trg_s01_spawn_initial:step:spawn-initial-placements",
+                      "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000002:trigger:trg_s01_spawn_initial:step:spawn-initial-placements",
                       "status": "succeeded",
                       "committed": false,
                       "code": null,
@@ -148,14 +606,14 @@
                   "trg_s01_spawn_initial:reconcile-pursuit": {
                     "triggerId": "trg_s01_spawn_initial",
                     "stepId": "reconcile-pursuit",
-                    "operationId": "evt:run-0ff660bc-2087-4783-95d6-4befb463c649:0000000001:trigger:trg_s01_spawn_initial:step:reconcile-pursuit",
-                    "payloadFingerprint": "sha256-d15c2736a470b353661f02f94357fe8f25f4f2193747de66cf3dc5efb8a53c3e",
+                    "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000002:trigger:trg_s01_spawn_initial:step:reconcile-pursuit",
+                    "payloadFingerprint": "sha256-74218f1f114be1460145a09f23ad7277605f3d69bcaf123a940003df4e7d41a9",
                     "status": "succeeded",
                     "startedLogicalTime": 0,
                     "finishedLogicalTime": 0,
                     "result": {
                       "ok": true,
-                      "operationId": "evt:run-0ff660bc-2087-4783-95d6-4befb463c649:0000000001:trigger:trg_s01_spawn_initial:step:reconcile-pursuit",
+                      "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000002:trigger:trg_s01_spawn_initial:step:reconcile-pursuit",
                       "status": "succeeded",
                       "committed": false,
                       "code": null,
@@ -170,14 +628,14 @@
                   "trg_s01_spawn_initial:present-entry": {
                     "triggerId": "trg_s01_spawn_initial",
                     "stepId": "present-entry",
-                    "operationId": "evt:run-0ff660bc-2087-4783-95d6-4befb463c649:0000000001:trigger:trg_s01_spawn_initial:step:present-entry",
-                    "payloadFingerprint": "sha256-04f2f31b052e9e1eeed8bcf55d98614ed28acb144fe71d93e3ce73caffe5e366",
+                    "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000002:trigger:trg_s01_spawn_initial:step:present-entry",
+                    "payloadFingerprint": "sha256-3b469736c7257df7a2e72f15d1eb5fb14d4cbfc7bfc9e5c816f9ea2a96ab3865",
                     "status": "succeeded",
                     "startedLogicalTime": 0,
                     "finishedLogicalTime": 0,
                     "result": {
                       "ok": true,
-                      "operationId": "evt:run-0ff660bc-2087-4783-95d6-4befb463c649:0000000001:trigger:trg_s01_spawn_initial:step:present-entry",
+                      "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000002:trigger:trg_s01_spawn_initial:step:present-entry",
                       "status": "succeeded",
                       "committed": false,
                       "code": null,
@@ -192,7 +650,7 @@
                 },
                 "result": {
                   "ok": true,
-                  "operationId": "evt:run-0ff660bc-2087-4783-95d6-4befb463c649:0000000001:trigger:trg_s01_spawn_initial:step:present-entry",
+                  "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000002:trigger:trg_s01_spawn_initial:step:present-entry",
                   "status": "succeeded",
                   "committed": false,
                   "code": null,
@@ -203,6 +661,454 @@
                   "value": null,
                   "error": null
                 }
+              },
+              {
+                "eventId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000003",
+                "eventDefinitionId": "task.start.committed",
+                "type": "task.start.committed",
+                "source": {
+                  "kind": "postCommitNotification",
+                  "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task"
+                },
+                "actorRef": null,
+                "sceneId": null,
+                "payload": {
+                  "operation": "task.start",
+                  "actorId": "refugee",
+                  "instance": {
+                    "instanceId": "task.s01.survival.main",
+                    "definitionId": "task.s01.survival",
+                    "actorId": "refugee",
+                    "status": "active",
+                    "tracking": true,
+                    "startedByEventId": null,
+                    "startedLogicalTime": 0,
+                    "completedLogicalTime": null,
+                    "nodeStates": {
+                      "start": {
+                        "status": "succeeded",
+                        "eventIds": [],
+                        "selectedBranchId": null
+                      },
+                      "lightCampfire": {
+                        "status": "active",
+                        "eventIds": [],
+                        "selectedBranchId": null
+                      },
+                      "findTools": {
+                        "status": "locked",
+                        "eventIds": [],
+                        "selectedBranchId": null
+                      },
+                      "gatherBerries": {
+                        "status": "locked",
+                        "eventIds": [],
+                        "selectedBranchId": null
+                      },
+                      "eatBerry": {
+                        "status": "locked",
+                        "eventIds": [],
+                        "selectedBranchId": null
+                      },
+                      "gatherWood": {
+                        "status": "locked",
+                        "eventIds": [],
+                        "selectedBranchId": null
+                      },
+                      "spotWolf": {
+                        "status": "locked",
+                        "eventIds": [],
+                        "selectedBranchId": null
+                      },
+                      "killWolf": {
+                        "status": "locked",
+                        "eventIds": [],
+                        "selectedBranchId": null
+                      },
+                      "skinWolf": {
+                        "status": "locked",
+                        "eventIds": [],
+                        "selectedBranchId": null
+                      },
+                      "cookMeat": {
+                        "status": "locked",
+                        "eventIds": [],
+                        "selectedBranchId": null
+                      },
+                      "craftGear": {
+                        "status": "locked",
+                        "eventIds": [],
+                        "selectedBranchId": null
+                      },
+                      "buildShelter": {
+                        "status": "locked",
+                        "eventIds": [],
+                        "selectedBranchId": null
+                      },
+                      "stayOvernight": {
+                        "status": "locked",
+                        "eventIds": [],
+                        "selectedBranchId": null
+                      },
+                      "leaveShelter": {
+                        "status": "locked",
+                        "eventIds": [],
+                        "selectedBranchId": null
+                      },
+                      "crossRiver": {
+                        "status": "locked",
+                        "eventIds": [],
+                        "selectedBranchId": null
+                      },
+                      "reachCliff": {
+                        "status": "locked",
+                        "eventIds": [],
+                        "selectedBranchId": null
+                      },
+                      "escape": {
+                        "status": "locked",
+                        "eventIds": [],
+                        "selectedBranchId": null
+                      },
+                      "complete": {
+                        "status": "locked",
+                        "eventIds": [],
+                        "selectedBranchId": null
+                      }
+                    },
+                    "eventIds": []
+                  },
+                  "changes": [],
+                  "completedInstances": [],
+                  "checkpoint": {
+                    "scheduled": true
+                  }
+                },
+                "payloadFingerprint": "{\"actorRef\":null,\"eventDefinitionId\":\"task.start.committed\",\"payload\":{\"actorId\":\"refugee\",\"changes\":[],\"checkpoint\":{\"scheduled\":true},\"completedInstances\":[],\"instance\":{\"actorId\":\"refugee\",\"completedLogicalTime\":null,\"definitionId\":\"task.s01.survival\",\"eventIds\":[],\"instanceId\":\"task.s01.survival.main\",\"nodeStates\":{\"buildShelter\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"complete\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"cookMeat\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"craftGear\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"crossRiver\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"eatBerry\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"escape\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"findTools\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"gatherBerries\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"gatherWood\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"killWolf\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"leaveShelter\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"lightCampfire\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"active\"},\"reachCliff\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"skinWolf\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"spotWolf\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"start\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"succeeded\"},\"stayOvernight\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"}},\"startedByEventId\":null,\"startedLogicalTime\":0,\"status\":\"active\",\"tracking\":true},\"operation\":\"task.start\"},\"sceneId\":null,\"source\":{\"kind\":\"postCommitNotification\",\"operationId\":\"evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task\"},\"type\":\"task.start.committed\"}",
+                "logicalTime": 1,
+                "persistent": true,
+                "status": "succeeded",
+                "executions": {
+                  "postCommit:published": {
+                    "triggerId": "postCommit",
+                    "stepId": "published",
+                    "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task",
+                    "payloadFingerprint": "{\"eventSequence\":1,\"operationId\":\"evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task\",\"type\":\"task.start.committed\"}",
+                    "status": "succeeded",
+                    "startedLogicalTime": 1,
+                    "finishedLogicalTime": 1,
+                    "result": {
+                      "eventSequence": 1
+                    }
+                  }
+                },
+                "result": {
+                  "eventSequence": 1
+                },
+                "commitMetadata": {
+                  "stateId": "quest:refugee",
+                  "stateType": "questRuntime",
+                  "stateRevision": 1,
+                  "eventSequence": 1,
+                  "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task"
+                }
+              },
+              {
+                "eventId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000004",
+                "eventDefinitionId": "task.started",
+                "type": "task.started",
+                "source": {
+                  "kind": "postCommitNotification",
+                  "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task"
+                },
+                "actorRef": null,
+                "sceneId": null,
+                "payload": {
+                  "operation": "task.start",
+                  "actorId": "refugee",
+                  "instance": {
+                    "instanceId": "task.s01.survival.main",
+                    "definitionId": "task.s01.survival",
+                    "actorId": "refugee",
+                    "status": "active",
+                    "tracking": true,
+                    "startedByEventId": null,
+                    "startedLogicalTime": 0,
+                    "completedLogicalTime": null,
+                    "nodeStates": {
+                      "start": {
+                        "status": "succeeded",
+                        "eventIds": [],
+                        "selectedBranchId": null
+                      },
+                      "lightCampfire": {
+                        "status": "active",
+                        "eventIds": [],
+                        "selectedBranchId": null
+                      },
+                      "findTools": {
+                        "status": "locked",
+                        "eventIds": [],
+                        "selectedBranchId": null
+                      },
+                      "gatherBerries": {
+                        "status": "locked",
+                        "eventIds": [],
+                        "selectedBranchId": null
+                      },
+                      "eatBerry": {
+                        "status": "locked",
+                        "eventIds": [],
+                        "selectedBranchId": null
+                      },
+                      "gatherWood": {
+                        "status": "locked",
+                        "eventIds": [],
+                        "selectedBranchId": null
+                      },
+                      "spotWolf": {
+                        "status": "locked",
+                        "eventIds": [],
+                        "selectedBranchId": null
+                      },
+                      "killWolf": {
+                        "status": "locked",
+                        "eventIds": [],
+                        "selectedBranchId": null
+                      },
+                      "skinWolf": {
+                        "status": "locked",
+                        "eventIds": [],
+                        "selectedBranchId": null
+                      },
+                      "cookMeat": {
+                        "status": "locked",
+                        "eventIds": [],
+                        "selectedBranchId": null
+                      },
+                      "craftGear": {
+                        "status": "locked",
+                        "eventIds": [],
+                        "selectedBranchId": null
+                      },
+                      "buildShelter": {
+                        "status": "locked",
+                        "eventIds": [],
+                        "selectedBranchId": null
+                      },
+                      "stayOvernight": {
+                        "status": "locked",
+                        "eventIds": [],
+                        "selectedBranchId": null
+                      },
+                      "leaveShelter": {
+                        "status": "locked",
+                        "eventIds": [],
+                        "selectedBranchId": null
+                      },
+                      "crossRiver": {
+                        "status": "locked",
+                        "eventIds": [],
+                        "selectedBranchId": null
+                      },
+                      "reachCliff": {
+                        "status": "locked",
+                        "eventIds": [],
+                        "selectedBranchId": null
+                      },
+                      "escape": {
+                        "status": "locked",
+                        "eventIds": [],
+                        "selectedBranchId": null
+                      },
+                      "complete": {
+                        "status": "locked",
+                        "eventIds": [],
+                        "selectedBranchId": null
+                      }
+                    },
+                    "eventIds": []
+                  },
+                  "changes": [],
+                  "completedInstances": [],
+                  "checkpoint": {
+                    "scheduled": true
+                  }
+                },
+                "payloadFingerprint": "{\"actorRef\":null,\"eventDefinitionId\":\"task.started\",\"payload\":{\"actorId\":\"refugee\",\"changes\":[],\"checkpoint\":{\"scheduled\":true},\"completedInstances\":[],\"instance\":{\"actorId\":\"refugee\",\"completedLogicalTime\":null,\"definitionId\":\"task.s01.survival\",\"eventIds\":[],\"instanceId\":\"task.s01.survival.main\",\"nodeStates\":{\"buildShelter\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"complete\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"cookMeat\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"craftGear\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"crossRiver\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"eatBerry\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"escape\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"findTools\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"gatherBerries\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"gatherWood\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"killWolf\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"leaveShelter\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"lightCampfire\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"active\"},\"reachCliff\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"skinWolf\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"spotWolf\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"start\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"succeeded\"},\"stayOvernight\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"}},\"startedByEventId\":null,\"startedLogicalTime\":0,\"status\":\"active\",\"tracking\":true},\"operation\":\"task.start\"},\"sceneId\":null,\"source\":{\"kind\":\"postCommitNotification\",\"operationId\":\"evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task\"},\"type\":\"task.started\"}",
+                "logicalTime": 1,
+                "persistent": true,
+                "status": "succeeded",
+                "executions": {
+                  "postCommit:published": {
+                    "triggerId": "postCommit",
+                    "stepId": "published",
+                    "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task",
+                    "payloadFingerprint": "{\"eventSequence\":2,\"operationId\":\"evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task\",\"type\":\"task.started\"}",
+                    "status": "succeeded",
+                    "startedLogicalTime": 1,
+                    "finishedLogicalTime": 1,
+                    "result": {
+                      "eventSequence": 2
+                    }
+                  }
+                },
+                "result": {
+                  "eventSequence": 2
+                },
+                "commitMetadata": {
+                  "stateId": "quest:refugee",
+                  "stateType": "questRuntime",
+                  "stateRevision": 1,
+                  "eventSequence": 2,
+                  "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task"
+                }
+              },
+              {
+                "eventId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000005",
+                "eventDefinitionId": null,
+                "type": "dialogueEnd",
+                "source": null,
+                "actorRef": "refugee",
+                "sceneId": null,
+                "payload": {
+                  "id": "dialogue.s01.wake"
+                },
+                "payloadFingerprint": "{\"actorRef\":\"refugee\",\"eventDefinitionId\":null,\"payload\":{\"id\":\"dialogue.s01.wake\"},\"sceneId\":null,\"source\":null,\"type\":\"dialogueEnd\"}",
+                "logicalTime": 0,
+                "persistent": true,
+                "status": "succeeded",
+                "executions": {
+                  "trg_s01_begin_tutorial_after_wake:show-tutorial-s01-move": {
+                    "triggerId": "trg_s01_begin_tutorial_after_wake",
+                    "stepId": "show-tutorial-s01-move",
+                    "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000005:trigger:trg_s01_begin_tutorial_after_wake:step:show-tutorial-s01-move",
+                    "payloadFingerprint": "sha256-2af87bcb79e3f0d4725e8d5e04210fcca18a9715ef617e2cc639f7dcc689c730",
+                    "status": "succeeded",
+                    "startedLogicalTime": 0,
+                    "finishedLogicalTime": 0,
+                    "result": {
+                      "ok": true,
+                      "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000005:trigger:trg_s01_begin_tutorial_after_wake:step:show-tutorial-s01-move",
+                      "status": "committed",
+                      "committed": true,
+                      "code": null,
+                      "stateId": "tutorial:s01.move",
+                      "stateRevision": 1,
+                      "eventFrom": 3,
+                      "eventTo": 4,
+                      "value": {
+                        "ok": true
+                      },
+                      "error": null
+                    }
+                  }
+                },
+                "result": {
+                  "ok": true,
+                  "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000005:trigger:trg_s01_begin_tutorial_after_wake:step:show-tutorial-s01-move",
+                  "status": "committed",
+                  "committed": true,
+                  "code": null,
+                  "stateId": "tutorial:s01.move",
+                  "stateRevision": 1,
+                  "eventFrom": 3,
+                  "eventTo": 4,
+                  "value": {
+                    "ok": true
+                  },
+                  "error": null
+                }
+              },
+              {
+                "eventId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000006",
+                "eventDefinitionId": "tutorial.command.committed",
+                "type": "tutorial.command.committed",
+                "source": {
+                  "kind": "postCommitNotification",
+                  "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000005:trigger:trg_s01_begin_tutorial_after_wake:step:show-tutorial-s01-move"
+                },
+                "actorRef": null,
+                "sceneId": null,
+                "payload": {
+                  "commandType": "tutorial.command",
+                  "value": {
+                    "ok": true
+                  }
+                },
+                "payloadFingerprint": "{\"actorRef\":null,\"eventDefinitionId\":\"tutorial.command.committed\",\"payload\":{\"commandType\":\"tutorial.command\",\"value\":{\"ok\":true}},\"sceneId\":null,\"source\":{\"kind\":\"postCommitNotification\",\"operationId\":\"evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000005:trigger:trg_s01_begin_tutorial_after_wake:step:show-tutorial-s01-move\"},\"type\":\"tutorial.command.committed\"}",
+                "logicalTime": 2,
+                "persistent": true,
+                "status": "succeeded",
+                "executions": {
+                  "postCommit:published": {
+                    "triggerId": "postCommit",
+                    "stepId": "published",
+                    "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000005:trigger:trg_s01_begin_tutorial_after_wake:step:show-tutorial-s01-move",
+                    "payloadFingerprint": "{\"eventSequence\":3,\"operationId\":\"evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000005:trigger:trg_s01_begin_tutorial_after_wake:step:show-tutorial-s01-move\",\"type\":\"tutorial.command.committed\"}",
+                    "status": "succeeded",
+                    "startedLogicalTime": 2,
+                    "finishedLogicalTime": 2,
+                    "result": {
+                      "eventSequence": 3
+                    }
+                  }
+                },
+                "result": {
+                  "eventSequence": 3
+                },
+                "commitMetadata": {
+                  "stateId": "tutorial:s01.move",
+                  "stateType": "scenarioCommand",
+                  "stateRevision": 1,
+                  "eventSequence": 3,
+                  "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000005:trigger:trg_s01_begin_tutorial_after_wake:step:show-tutorial-s01-move"
+                }
+              },
+              {
+                "eventId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000007",
+                "eventDefinitionId": "tutorial.command",
+                "type": "tutorial.command",
+                "source": {
+                  "kind": "postCommitNotification",
+                  "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000005:trigger:trg_s01_begin_tutorial_after_wake:step:show-tutorial-s01-move"
+                },
+                "actorRef": null,
+                "sceneId": null,
+                "payload": {
+                  "commandType": "tutorial.command",
+                  "value": {
+                    "ok": true
+                  }
+                },
+                "payloadFingerprint": "{\"actorRef\":null,\"eventDefinitionId\":\"tutorial.command\",\"payload\":{\"commandType\":\"tutorial.command\",\"value\":{\"ok\":true}},\"sceneId\":null,\"source\":{\"kind\":\"postCommitNotification\",\"operationId\":\"evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000005:trigger:trg_s01_begin_tutorial_after_wake:step:show-tutorial-s01-move\"},\"type\":\"tutorial.command\"}",
+                "logicalTime": 2,
+                "persistent": true,
+                "status": "succeeded",
+                "executions": {
+                  "postCommit:published": {
+                    "triggerId": "postCommit",
+                    "stepId": "published",
+                    "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000005:trigger:trg_s01_begin_tutorial_after_wake:step:show-tutorial-s01-move",
+                    "payloadFingerprint": "{\"eventSequence\":4,\"operationId\":\"evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000005:trigger:trg_s01_begin_tutorial_after_wake:step:show-tutorial-s01-move\",\"type\":\"tutorial.command\"}",
+                    "status": "succeeded",
+                    "startedLogicalTime": 2,
+                    "finishedLogicalTime": 2,
+                    "result": {
+                      "eventSequence": 4
+                    }
+                  }
+                },
+                "result": {
+                  "eventSequence": 4
+                },
+                "commitMetadata": {
+                  "stateId": "tutorial:s01.move",
+                  "stateType": "scenarioCommand",
+                  "stateRevision": 1,
+                  "eventSequence": 4,
+                  "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000005:trigger:trg_s01_begin_tutorial_after_wake:step:show-tutorial-s01-move"
+                }
               }
             ]
           },
@@ -212,14 +1118,258 @@
             "taskGraph": {
               "schemaVersion": 1,
               "nextInstanceSequence": 0,
-              "instances": []
+              "instances": [
+                {
+                  "instanceId": "task.s01.survival.main",
+                  "definitionId": "task.s01.survival",
+                  "actorId": "refugee",
+                  "status": "active",
+                  "tracking": true,
+                  "startedByEventId": null,
+                  "startedLogicalTime": 0,
+                  "completedLogicalTime": null,
+                  "nodeStates": {
+                    "start": {
+                      "status": "succeeded",
+                      "eventIds": [],
+                      "selectedBranchId": null
+                    },
+                    "lightCampfire": {
+                      "status": "active",
+                      "eventIds": [],
+                      "selectedBranchId": null
+                    },
+                    "findTools": {
+                      "status": "locked",
+                      "eventIds": [],
+                      "selectedBranchId": null
+                    },
+                    "gatherBerries": {
+                      "status": "locked",
+                      "eventIds": [],
+                      "selectedBranchId": null
+                    },
+                    "eatBerry": {
+                      "status": "locked",
+                      "eventIds": [],
+                      "selectedBranchId": null
+                    },
+                    "gatherWood": {
+                      "status": "locked",
+                      "eventIds": [],
+                      "selectedBranchId": null
+                    },
+                    "spotWolf": {
+                      "status": "locked",
+                      "eventIds": [],
+                      "selectedBranchId": null
+                    },
+                    "killWolf": {
+                      "status": "locked",
+                      "eventIds": [],
+                      "selectedBranchId": null
+                    },
+                    "skinWolf": {
+                      "status": "locked",
+                      "eventIds": [],
+                      "selectedBranchId": null
+                    },
+                    "cookMeat": {
+                      "status": "locked",
+                      "eventIds": [],
+                      "selectedBranchId": null
+                    },
+                    "craftGear": {
+                      "status": "locked",
+                      "eventIds": [],
+                      "selectedBranchId": null
+                    },
+                    "buildShelter": {
+                      "status": "locked",
+                      "eventIds": [],
+                      "selectedBranchId": null
+                    },
+                    "stayOvernight": {
+                      "status": "locked",
+                      "eventIds": [],
+                      "selectedBranchId": null
+                    },
+                    "leaveShelter": {
+                      "status": "locked",
+                      "eventIds": [],
+                      "selectedBranchId": null
+                    },
+                    "crossRiver": {
+                      "status": "locked",
+                      "eventIds": [],
+                      "selectedBranchId": null
+                    },
+                    "reachCliff": {
+                      "status": "locked",
+                      "eventIds": [],
+                      "selectedBranchId": null
+                    },
+                    "escape": {
+                      "status": "locked",
+                      "eventIds": [],
+                      "selectedBranchId": null
+                    },
+                    "complete": {
+                      "status": "locked",
+                      "eventIds": [],
+                      "selectedBranchId": null
+                    }
+                  },
+                  "eventIds": []
+                }
+              ]
             },
             "actors": []
           }
         },
         "providerMetadata": {
           "kind": "saveGame",
-          "committedOperations": {}
+          "committedOperations": {
+            "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task": {
+              "ok": true,
+              "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task",
+              "status": "committed",
+              "committed": true,
+              "code": null,
+              "stateId": "quest:refugee",
+              "stateRevision": 1,
+              "eventFrom": 1,
+              "eventTo": 2,
+              "value": {
+                "operation": "task.start",
+                "actorId": "refugee",
+                "instance": {
+                  "instanceId": "task.s01.survival.main",
+                  "definitionId": "task.s01.survival",
+                  "actorId": "refugee",
+                  "status": "active",
+                  "tracking": true,
+                  "startedByEventId": null,
+                  "startedLogicalTime": 0,
+                  "completedLogicalTime": null,
+                  "nodeStates": {
+                    "start": {
+                      "status": "succeeded",
+                      "eventIds": [],
+                      "selectedBranchId": null
+                    },
+                    "lightCampfire": {
+                      "status": "active",
+                      "eventIds": [],
+                      "selectedBranchId": null
+                    },
+                    "findTools": {
+                      "status": "locked",
+                      "eventIds": [],
+                      "selectedBranchId": null
+                    },
+                    "gatherBerries": {
+                      "status": "locked",
+                      "eventIds": [],
+                      "selectedBranchId": null
+                    },
+                    "eatBerry": {
+                      "status": "locked",
+                      "eventIds": [],
+                      "selectedBranchId": null
+                    },
+                    "gatherWood": {
+                      "status": "locked",
+                      "eventIds": [],
+                      "selectedBranchId": null
+                    },
+                    "spotWolf": {
+                      "status": "locked",
+                      "eventIds": [],
+                      "selectedBranchId": null
+                    },
+                    "killWolf": {
+                      "status": "locked",
+                      "eventIds": [],
+                      "selectedBranchId": null
+                    },
+                    "skinWolf": {
+                      "status": "locked",
+                      "eventIds": [],
+                      "selectedBranchId": null
+                    },
+                    "cookMeat": {
+                      "status": "locked",
+                      "eventIds": [],
+                      "selectedBranchId": null
+                    },
+                    "craftGear": {
+                      "status": "locked",
+                      "eventIds": [],
+                      "selectedBranchId": null
+                    },
+                    "buildShelter": {
+                      "status": "locked",
+                      "eventIds": [],
+                      "selectedBranchId": null
+                    },
+                    "stayOvernight": {
+                      "status": "locked",
+                      "eventIds": [],
+                      "selectedBranchId": null
+                    },
+                    "leaveShelter": {
+                      "status": "locked",
+                      "eventIds": [],
+                      "selectedBranchId": null
+                    },
+                    "crossRiver": {
+                      "status": "locked",
+                      "eventIds": [],
+                      "selectedBranchId": null
+                    },
+                    "reachCliff": {
+                      "status": "locked",
+                      "eventIds": [],
+                      "selectedBranchId": null
+                    },
+                    "escape": {
+                      "status": "locked",
+                      "eventIds": [],
+                      "selectedBranchId": null
+                    },
+                    "complete": {
+                      "status": "locked",
+                      "eventIds": [],
+                      "selectedBranchId": null
+                    }
+                  },
+                  "eventIds": []
+                },
+                "changes": [],
+                "completedInstances": [],
+                "checkpoint": {
+                  "scheduled": true
+                }
+              },
+              "error": null
+            },
+            "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000005:trigger:trg_s01_begin_tutorial_after_wake:step:show-tutorial-s01-move": {
+              "ok": true,
+              "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000005:trigger:trg_s01_begin_tutorial_after_wake:step:show-tutorial-s01-move",
+              "status": "committed",
+              "committed": true,
+              "code": null,
+              "stateId": "tutorial:s01.move",
+              "stateRevision": 1,
+              "eventFrom": 3,
+              "eventTo": 4,
+              "value": {
+                "ok": true
+              },
+              "error": null
+            }
+          }
         }
       },
       "content": {
@@ -446,10 +1596,13 @@
         "triggers": {
           "snapshotSchemaVersion": 3,
           "definitionRevision": 1,
-          "definitionDigest": "sha256-6c3f792e884bc44f8eb489ff5af4f4da780146fe6d66c11061c236e353f07678",
-          "operationSequence": 1,
-          "eventSequence": 1,
-          "firedOnce": [],
+          "definitionDigest": "sha256-9a14f4fc14ba7781fa7c3c4595f1322f281226fb9520fea2cd960b889d76eb3f",
+          "operationSequence": 3,
+          "eventSequence": 3,
+          "firedOnce": [
+            "trg_s01_start_survival_task",
+            "trg_s01_begin_tutorial_after_wake"
+          ],
           "cooldowns": {
             "trg_s01_spawn_initial": {
               "definitionRevision": 1,
@@ -463,16 +1616,37 @@
             "version": 1,
             "records": [
               {
+                "triggerId": "trg_s01_start_survival_task",
+                "definitionRevision": 1,
+                "eventId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000001",
+                "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000001",
+                "fingerprint": "sha256-567eafbd5cbe3f6c4968fa7f23c7fb7249da804e0f290807ee22e31fceb27d07",
+                "status": "succeeded",
+                "actionIndex": 0,
+                "result": {
+                  "ok": true,
+                  "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task",
+                  "status": "committed",
+                  "committed": true,
+                  "code": null,
+                  "stateId": "quest:refugee",
+                  "stateRevision": 1
+                },
+                "startedAt": 0,
+                "finishedAt": 0,
+                "ledgerRevision": 4
+              },
+              {
                 "triggerId": "trg_s01_spawn_initial",
                 "definitionRevision": 1,
-                "eventId": "evt:run-0ff660bc-2087-4783-95d6-4befb463c649:0000000001",
-                "operationId": "evt:run-0ff660bc-2087-4783-95d6-4befb463c649:0000000001",
-                "fingerprint": "sha256-d02a72f3c7869a2afa280d31b9a4aafbc23e7b9a7e5587cd06d20770d5b31365",
+                "eventId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000002",
+                "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000002",
+                "fingerprint": "sha256-4ce68ba41df46f50f6fe3f11e2161cf4f3965256288ebc0b2f4832367b840079",
                 "status": "succeeded",
                 "actionIndex": 2,
                 "result": {
                   "ok": true,
-                  "operationId": "evt:run-0ff660bc-2087-4783-95d6-4befb463c649:0000000001:trigger:trg_s01_spawn_initial:step:present-entry",
+                  "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000002:trigger:trg_s01_spawn_initial:step:present-entry",
                   "status": "succeeded",
                   "committed": false,
                   "code": null,
@@ -746,15 +1920,23 @@
               {
                 "triggerId": "trg_s01_begin_tutorial_after_wake",
                 "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
+                "eventId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000005",
+                "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000005",
+                "fingerprint": "sha256-0ec832298c3f028f8feb0f787ec453acee8056f03ea6edc447169bd9681b899a",
+                "status": "succeeded",
+                "actionIndex": 0,
+                "result": {
+                  "ok": true,
+                  "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000005:trigger:trg_s01_begin_tutorial_after_wake:step:show-tutorial-s01-move",
+                  "status": "committed",
+                  "committed": true,
+                  "code": null,
+                  "stateId": "tutorial:s01.move",
+                  "stateRevision": 1
+                },
+                "startedAt": 1699.6000000163913,
+                "finishedAt": 1699.6000000163913,
+                "ledgerRevision": 4
               },
               {
                 "triggerId": "trg_s01_light_campfire",
@@ -2014,8 +3196,8 @@
                         "removed": false,
                         "hp": 38,
                         "position": {
-                          "x": 9765.563288549896,
-                          "y": 3264.4367114501088
+                          "x": 9771.04251757572,
+                          "y": 3258.9574824242904
                         },
                         "ai": {
                           "active": true,
@@ -2033,7 +3215,7 @@
                         "hp": 38,
                         "position": {
                           "x": 9930,
-                          "y": 3207.1569999999983
+                          "y": 3214.905799999654
                         },
                         "ai": {
                           "active": true,

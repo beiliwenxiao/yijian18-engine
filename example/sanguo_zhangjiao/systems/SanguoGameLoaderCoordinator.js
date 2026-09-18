@@ -77,6 +77,10 @@ function initializeGameLoader() {
       registerActions: triggerSystem => this.registerGameLoaderActions(triggerSystem),
       onReady: async (gameLoader, triggerSystem) => {
         this.gameLoader = gameLoader;
+        this.sceneRuntime.commandGateway.definitionRepository = gameLoader.definitionRepository;
+        this.sceneRuntime.authoritySnapshotService.getDefinitionRevision = () => (
+          gameLoader.definitionRepository?.definitionRevision ?? 0
+        );
         const taskDefinitions = gameLoader.project?.taskGraphs || [];
         const preparedTaskGraphs = this.sceneRuntime?.taskGraphSystem?.prepareDefinitions?.(taskDefinitions);
         if (preparedTaskGraphs?.ok === false) {
@@ -84,6 +88,29 @@ function initializeGameLoader() {
         }
         preparedTaskGraphs?.commit?.();
         this.context.services.taskGraph = this.sceneRuntime?.taskGraphSystem || null;
+        this._campaignContentAuthorityOff?.();
+        const campaignContentAuthorityOff = this.sceneRuntime.authoritySnapshotService.registerService('campaignContent', {
+          snapshot: metadata => {
+            const running = gameLoader.triggerSystem?.ledger?.all?.()
+              ?.filter(record => record?.status === 'running') || [];
+            if (running.length > 0) {
+              const error = new Error('AuthoritySnapshot 拒绝捕获运行中的 ScenarioExecutionLedger');
+              error.code = 'scenarioExecutionBusy';
+              error.triggerIds = running.map(record => record.triggerId);
+              throw error;
+            }
+            return gameLoader.serialize(this.playerEntity?.id || null, metadata);
+          },
+          validate: snapshot => gameLoader.validateSerialized(snapshot, this.playerEntity?.id || null),
+          restore: snapshot => gameLoader.deserialize(snapshot, this.playerEntity?.id || null, { restoreTriggers: true }),
+          required: true
+        });
+        this._campaignContentAuthorityOff = campaignContentAuthorityOff;
+        this.resourceScope?.track(() => {
+          if (this._campaignContentAuthorityOff !== campaignContentAuthorityOff) return;
+          campaignContentAuthorityOff();
+          this._campaignContentAuthorityOff = null;
+        });
         this.applyRuntimeConfig(gameLoader.runtimeConfigSnapshot);
         const offTriggerLog = triggerSystem.on((event, trigger) => {
           if (event === 'triggerStart') console.log('[DDScene][Trigger] 执行:', trigger.id, trigger.do);

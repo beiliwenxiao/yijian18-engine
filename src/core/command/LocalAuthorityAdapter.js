@@ -326,11 +326,26 @@ export class LocalAuthorityAdapter extends AuthorityPort {
         eventTo: publication.events.length ? publication.events[publication.events.length - 1].eventSequence : null
       };
       assertCommandContract(CommandContractKind.COMMAND_RESULT, finalResult);
-      // 先封账 operation，再分派可重入的 application event；下游 checkpoint 不会捕获父命令 in-flight。
+      // 先封账 operation，再把事件加入非递归 FIFO。顶层命令保留“返回前已分派”契约；
+      // 只有从事件 listener 重入的命令提前返回，避免 listener 等待排在自身后面的批次形成死锁。
       this._finalizeLedger(claim, finalResult);
-      const published = await this.notificationBus.dispatchPrepared(publication);
+      const reentrantDispatch = this.notificationBus.isDispatching?.() === true;
+      const publicationPromise = this.notificationBus.dispatchPrepared(publication);
 
-      // 领域事务、authority revision 与幂等账本完成后，才允许 UI/内容侧的可重入收尾。
+      if (reentrantDispatch) {
+        void publicationPromise.then(async () => {
+          try {
+            await postCommit?.(finalResult);
+          } catch (error) {
+            console.warn('LocalAuthorityAdapter post-commit handler failed', error);
+          }
+        }).catch(error => {
+          console.warn('LocalAuthorityAdapter notification dispatch failed', error);
+        });
+        return Object.freeze(cloneCommandValue(finalResult));
+      }
+
+      await publicationPromise;
       try {
         await postCommit?.(finalResult);
       } catch (error) {

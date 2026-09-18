@@ -1,3 +1,15 @@
+/************************************************************
+ * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
+ *
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+ * @author    刘枭 (beiliwenxiao)
+ * @email     beiliwenxiao@qq.com
+ * @date      2026-01-14
+ * @blog      https://blog.csdn.net/beiliwenxiao
+ * @repo      https://github.com/beiliwenxiao/yijian18-engine
+ *            https://gitee.com/coderaaa/yijian18-engine
+ ************************************************************/
+
 import { CommandContractKind } from '../command/CommandContracts.js';
 
 const DEFAULT_RETRY_DELAYS = Object.freeze([0.5, 1, 2]);
@@ -9,6 +21,9 @@ export class SceneApplicationEventBridge {
       throw new TypeError('SceneApplicationEventBridge requires notificationBus');
     }
     this.notificationBus = config.notificationBus;
+    this.eventJournal = config.eventJournal || config.notificationBus.eventJournal || null;
+    this.consumerId = String(config.consumerId || 'scene-content').trim();
+    if (!this.consumerId) throw new TypeError('SceneApplicationEventBridge requires consumerId');
     this.onContentEvent = config.onContentEvent || null;
     this.presenter = config.presenter || null;
     this.onAuxiliaryEvent = config.onAuxiliaryEvent || null;
@@ -22,6 +37,7 @@ export class SceneApplicationEventBridge {
     this.pendingEvents = new Map();
     this.inFlightEventIds = new Set();
     this.retryInFlight = null;
+    this.recoveryInFlight = null;
     this.unsubscribe = null;
     this.disposed = false;
     this.generation = 0;
@@ -31,7 +47,84 @@ export class SceneApplicationEventBridge {
     if (this.unsubscribe) return this.unsubscribe;
     this.disposed = false;
     this.unsubscribe = this.notificationBus.subscribe(event => this._consume(event));
+    queueMicrotask(() => { void this.resumeBacklog(); });
     return this.unsubscribe;
+  }
+
+  resumeBacklog() {
+    if (this.disposed) return Promise.resolve(false);
+    if (this.recoveryInFlight) return this.recoveryInFlight;
+    const generation = this.generation;
+    this.recoveryInFlight = this._resumeBacklog(generation).finally(() => {
+      if (generation === this.generation) this.recoveryInFlight = null;
+    });
+    return this.recoveryInFlight;
+  }
+
+  resetForRestore() {
+    for (const eventId of this.inFlightEventIds) {
+      this.eventJournal?.interruptConsumer?.(eventId, this.consumerId, {
+        ok: false,
+        code: 'consumerResetForRestore'
+      });
+    }
+    this.generation += 1;
+    this.pendingEvents.clear();
+    this.inFlightEventIds.clear();
+    this.retryInFlight = null;
+    this.recoveryInFlight = null;
+    this.seenEventIds.clear();
+    this.eventOrder.length = 0;
+    return true;
+  }
+
+  async _resumeBacklog(generation) {
+    const backlog = this.eventJournal?.getConsumerBacklog?.(this.consumerId) || [];
+    for (const record of backlog) {
+      if (this.disposed || generation !== this.generation) return;
+      const metadata = record.commitMetadata || {};
+      await this._consume({
+        kind: CommandContractKind.APPLICATION_EVENT,
+        value: {
+          type: record.type,
+          eventId: record.eventId,
+          eventDefinitionId: record.eventDefinitionId,
+          source: record.source,
+          actorRef: record.actorRef,
+          sceneId: record.sceneId,
+          payload: record.payload,
+          logicalTime: record.logicalTime,
+          operationId: metadata.operationId || null,
+          stateId: metadata.stateId || null,
+          stateType: metadata.stateType || null,
+          stateRevision: metadata.stateRevision ?? null,
+          eventSequence: metadata.eventSequence ?? null
+        }
+      });
+    }
+  }
+
+  _beginReceipt(event) {
+    if (!this.eventJournal?.beginConsumer) return { ok: true, tracked: false };
+    return {
+      ...this.eventJournal.beginConsumer({
+        eventId: event.eventId,
+        consumerId: this.consumerId,
+        logicalTime: event.logicalTime || 0
+      }),
+      tracked: true
+    };
+  }
+
+  _finishReceipt(event, status, result = null) {
+    if (!this.eventJournal?.completeConsumer) return { ok: true };
+    return this.eventJournal.completeConsumer({
+      eventId: event.eventId,
+      consumerId: this.consumerId,
+      status,
+      result,
+      logicalTime: event.logicalTime || 0
+    });
   }
 
   async _consume(event) {
@@ -42,13 +135,44 @@ export class SceneApplicationEventBridge {
       || this.pendingEvents.has(eventId)
       || this.inFlightEventIds.has(eventId)) return false;
 
+    const receipt = this.eventJournal?.getConsumerReceipt?.(eventId, this.consumerId);
+    if (receipt?.status === 'succeeded' || receipt?.status === 'skipped') {
+      this._remember(eventId);
+      return false;
+    }
+
+    const started = this._beginReceipt(value);
+    if (started?.replay) {
+      this._remember(eventId);
+      return false;
+    }
+    if (started?.ok !== true || started?.inFlight) {
+      if (started?.ok === false) {
+        this._recordConsumerFailure(value, 'content', {
+          code: started.code || 'consumerReceiptRejected',
+          message: 'EventJournal 拒绝 application event consumer receipt'
+        }, { attempt: 0, willRetry: false, exhausted: true });
+      }
+      return false;
+    }
+
     const generation = this.generation;
     this.inFlightEventIds.add(eventId);
     const outcome = await this._consumeEssential(value);
     this.inFlightEventIds.delete(eventId);
     if (this.disposed || generation !== this.generation) return false;
     if (!outcome.ok) {
+      const willRetry = this.retryDelays.length > 0;
+      this._finishReceipt(value, willRetry ? 'pending' : 'failed', outcome);
       this._scheduleRetry(value, outcome);
+      return false;
+    }
+    const completed = this._finishReceipt(value, 'succeeded', outcome);
+    if (completed?.ok === false) {
+      this._recordConsumerFailure(value, 'content', {
+        code: completed.code || 'consumerReceiptCommitFailed',
+        message: 'application event consumer receipt 提交失败'
+      }, { attempt: 0, willRetry: false, exhausted: true });
       return false;
     }
     await this._completeEvent(value);
@@ -114,9 +238,13 @@ export class SceneApplicationEventBridge {
   async _retry(entry, generation) {
     const event = entry.event;
     const attempt = entry.retryIndex + 1;
+    const started = this._beginReceipt(event);
+    if (started?.ok !== true || started?.inFlight || started?.replay) return;
     const outcome = await this._consumeEssential(event);
     if (this.disposed || generation !== this.generation) return;
     if (outcome.ok) {
+      const completed = this._finishReceipt(event, 'succeeded', outcome);
+      if (completed?.ok === false) return;
       this.pendingEvents.delete(event.eventId);
       await this._completeEvent(event);
       return;
@@ -126,6 +254,7 @@ export class SceneApplicationEventBridge {
     entry.retryIndex += 1;
     entry.exhausted = entry.retryIndex >= this.retryDelays.length;
     entry.remaining = entry.exhausted ? Infinity : this.retryDelays[entry.retryIndex];
+    this._finishReceipt(event, entry.exhausted ? 'failed' : 'pending', outcome);
     this._recordConsumerFailure(event, 'content', outcome, {
       attempt,
       willRetry: !entry.exhausted,
@@ -194,9 +323,16 @@ export class SceneApplicationEventBridge {
     this.generation += 1;
     this.unsubscribe?.();
     this.unsubscribe = null;
+    for (const eventId of this.inFlightEventIds) {
+      this.eventJournal?.interruptConsumer?.(eventId, this.consumerId, {
+        ok: false,
+        code: 'sceneApplicationEventBridgeDisposed'
+      });
+    }
     this.pendingEvents.clear();
     this.inFlightEventIds.clear();
     this.retryInFlight = null;
+    this.recoveryInFlight = null;
     this.seenEventIds.clear();
     this.eventOrder.length = 0;
   }

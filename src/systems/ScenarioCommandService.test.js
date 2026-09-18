@@ -1,3 +1,15 @@
+/************************************************************
+ * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
+ *
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+ * @author    刘枭 (beiliwenxiao)
+ * @email     beiliwenxiao@qq.com
+ * @date      2026-01-14
+ * @blog      https://blog.csdn.net/beiliwenxiao
+ * @repo      https://github.com/beiliwenxiao/yijian18-engine
+ *            https://gitee.com/coderaaa/yijian18-engine
+ ************************************************************/
+
 import { describe, expect, it, vi } from 'vitest';
 import { ScenarioCommandService, SCENARIO_COMMANDS } from './ScenarioCommandService.js';
 
@@ -71,7 +83,7 @@ describe('ScenarioCommandService ownership boundaries', () => {
     expect(tutorialSystem.showTutorial).not.toHaveBeenCalled();
   });
 
-  it('checkpoint.request 只调用 SaveGameService，并在不可用时才回退 SnapshotManager', async () => {
+  it('checkpoint.request 只通过 SaveGameService 调度封账后保存', async () => {
     const requestAutoSave = vi.fn(async meta => ({ ok: true, slot: 'autosave-1', meta }));
     const capture = vi.fn(() => ({ ok: true, snapshot: {} }));
     const service = new ScenarioCommandService({
@@ -86,7 +98,8 @@ describe('ScenarioCommandService ownership boundaries', () => {
 
     expect(output.result).toMatchObject({ ok: true, committed: true, stateId: 'snapshot:checkpoint' });
     expect(requestAutoSave).toHaveBeenCalledWith({
-      reason: 'checkpoint', checkpointId: 'checkpoint.S01.complete', sceneId: 'S01'
+      reason: 'checkpoint', checkpointId: 'checkpoint.S01.complete', sceneId: 'S01',
+      checkpointMode: 'required', originOperationId: 'scenario-op-1'
     });
     expect(capture).not.toHaveBeenCalled();
   });

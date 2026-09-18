@@ -1308,13 +1308,6 @@ export class DataDrivenPrologueScene extends BaseGameScene {
       getSnapshotManager: () => this.sceneRuntime?.snapshotManager || null
     });
     this.context.services.scenarioCommands = this._scenarioCommandService;
-    const unsubscribeNavigationEvents = this.sceneRuntime?.notificationBus?.subscribe(async event => {
-      if (event?.value?.type !== SCENARIO_COMMANDS.WORLD_TELEPORT) return;
-      const outcome = event.value.payload?.value || {};
-      const sceneId = outcome.sceneId || outcome.request?.sceneId || null;
-      await this._forwardCommittedSceneEnter(sceneId);
-    });
-    if (unsubscribeNavigationEvents) this.resourceScope?.track(unsubscribeNavigationEvents);
     for (const commandType of Object.values(SCENARIO_COMMANDS)) {
       this.sceneRuntime.registerCommandHandler(commandType, this._scenarioCommandService);
     }
@@ -1331,13 +1324,15 @@ export class DataDrivenPrologueScene extends BaseGameScene {
         intentType,
         payload,
         `${command.operationId}:${intentType}`
-      )
+      ),
+      stateId: () => 'sanguo:campaign'
     });
     this.sceneRuntime.registerCommandHandler('state.transaction', this._canonicalStateTransactions);
     this.context.services.canonicalStateTransactions = this._canonicalStateTransactions;
     this._sanguoDomainFacade = new SanguoDomainCommandFacade(this);
     this._domainCommandService = new DomainCommandService({
       statePrefix: 'sanguo:command',
+      stateId: () => 'sanguo:campaign',
       ports: Object.fromEntries([
         'scenario.command', 'battle.command', 'rescue.command', 'construction.command',
         'vehicle.command', 'ending.command'

@@ -152,6 +152,18 @@ function restoreSceneSaveState(data = {}) {
 }
 
 async function handleApplicationEvent(event = {}) {
+  if (event.type === 'world.teleport') {
+    const outcome = event.payload?.value || {};
+    const sceneId = outcome.sceneId || outcome.request?.sceneId || null;
+    const forwarded = await this._forwardCommittedSceneEnter?.(sceneId);
+    if (forwarded !== true) {
+      return {
+        ok: false,
+        code: 'committedSceneEnterForwardFailed',
+        message: `已提交导航的 sceneEnter 接续失败: ${sceneId || 'unknown'}`
+      };
+    }
+  }
   if (event.type === 'item.repaired') {
     const payload = event.payload || {};
     this.notificationSystem?.addNotification?.(

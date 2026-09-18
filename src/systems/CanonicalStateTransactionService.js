@@ -1,3 +1,15 @@
+/************************************************************
+ * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
+ *
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+ * @author    刘枭 (beiliwenxiao)
+ * @email     beiliwenxiao@qq.com
+ * @date      2026-01-14
+ * @blog      https://blog.csdn.net/beiliwenxiao
+ * @repo      https://github.com/beiliwenxiao/yijian18-engine
+ *            https://gitee.com/coderaaa/yijian18-engine
+ ************************************************************/
+
 import { cloneCanonicalValue } from '../core/CanonicalSnapshot.js';
 
 const clone = value => value == null ? value : cloneCanonicalValue(value);
@@ -35,7 +47,7 @@ function rejected(command, code, message = code) {
 export class CanonicalStateTransactionService {
   constructor({ definitionRepository, getBlackboard, getInventory = () => null, inventoryTransactions = null,
     getItem = () => null, checkpoint = async () => ({ ok: true }), travel = async () => ({ ok: true }),
-    executeScenarioCommand = null, tutorialComplete = () => true } = {}) {
+    executeScenarioCommand = null, tutorialComplete = () => true, stateId = 'canonical:state' } = {}) {
     if (!definitionRepository?.get) throw new TypeError('CanonicalStateTransactionService requires DefinitionRepository');
     if (typeof getBlackboard !== 'function') throw new TypeError('CanonicalStateTransactionService requires getBlackboard');
     this.definitionRepository = definitionRepository;
@@ -48,7 +60,7 @@ export class CanonicalStateTransactionService {
     this.travel = travel;
     this.tutorialComplete = tutorialComplete;
     this.stateType = 'canonicalState';
-    this.stateId = () => 'canonical:state';
+    this.stateId = typeof stateId === 'function' ? stateId : () => stateId;
   }
 
   _definition(id) {

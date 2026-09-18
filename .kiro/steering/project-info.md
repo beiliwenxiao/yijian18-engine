@@ -71,6 +71,7 @@ android/                  # Android 发布权威工程
 - `EffectResolver`、`AbilitySystem`、`ProgressionGraphSystem` 与旧 Skill/Talent 适配层。
 - `InputActionRouter`、`InputHints`、设备无关交互与模态输入优先级。
 - `SnapshotManager`、`SaveGameService`、ContentValidator、Canonical Schema。
+- `EventJournal v2` essential consumer receipt、非递归 PostCommit FIFO、封账后 checkpoint 串行队列，以及 S01“荒原求生”/S02“废营召见”正式 TaskGraph。
 - 原子库存、采集、工具、死亡/DeathDrop、营建/维修、载具/Cargo/席位。
 - BattleClient/LocalMock、BattleSystem、BattlefieldRuntimeSystem、CityWarSystem、RescueSystem。
 - 职业、四成长图、熟练度、跳跃/用力跳/轻功/攀爬。
@@ -109,7 +110,7 @@ android/                  # Android 发布权威工程
 
 - Snapshot 恢复分两段：先 migrate/validate 全部 provider；再 capture 回滚快照并依次 restore。任一 provider 失败都必须把当前失败 provider 纳入逆序回滚。
 - `BaseGameScene.restoreSaveState()` 直接调用也必须自身原子，不能只依赖 SnapshotManager 外层保护。
-- 当前产品存档 `schemaVersion: 4`，`authority` 是必填段；它原子保存 EventJournal、OperationLedger、StateRevisionStore 与 Quest/TaskGraph。Quest 顶层不再保存第二份 TaskGraph，旧 schema 直接拒绝。
+- 当前产品存档 `schemaVersion: 5`，`authority` 是必填段；它原子保存 Story/City/War Blackboard、Trigger/ScenarioExecutionLedger、EventJournal v2（含 essential consumer receipt）、OperationLedger、StateRevisionStore 与 Quest/TaskGraph。产品顶层不再保存第二份 `content` 或 TaskGraph，旧 schema 直接拒绝。
 - 跨 Region 内存回滚草稿显式排除 Authority 与正在执行的 Trigger 技术账本，并单独保存旧 Region 的实际 loaded sceneId；它不是可落盘产品存档。
 - 损坏 JSON 返回 `invalidJson` 并原样保留；缺少迁移器返回 `missingMigration`。
 - 当前产品策略：旧 schema、旧 chunk、旧 Act、旧职业存档直接拒绝并提示新游戏，不迁移，也不删除用户存档。

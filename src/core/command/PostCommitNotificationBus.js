@@ -36,6 +36,11 @@ export class PostCommitNotificationBus {
     this.eventJournal = config.eventJournal || null;
     this.lastEventSequence = Number.isInteger(config.lastEventSequence) ? config.lastEventSequence : 0;
     this.listeners = new Set();
+    this._dispatchQueue = [];
+    this._dispatching = false;
+    this._dispatchScheduled = false;
+    this._idleWaiters = new Set();
+    this.disposed = false;
     if (config.projectionStore) this.subscribe(event => {
       if (event.kind === CommandContractKind.COMMITTED_EVENT) config.projectionStore.apply(event.value);
       else if (event.kind === CommandContractKind.APPLICATION_EVENT) config.projectionStore.observeApplication(event.value);
@@ -56,6 +61,7 @@ export class PostCommitNotificationBus {
     const journalEvent = this.eventJournal?.recordCommitted?.({
       eventId: draft.eventId || null,
       eventDefinitionId,
+      kind,
       type: draft.type,
       source,
       actorRef,
@@ -106,21 +112,85 @@ export class PostCommitNotificationBus {
     });
   }
 
-  async dispatchPrepared(publication) {
-    const entries = Array.isArray(publication?.entries) ? publication.entries : [];
-    const degradation = [];
-    for (const event of entries) {
-      for (const listener of [...this.listeners]) {
-        try { await listener(event); }
-        catch (error) {
-          degradation.push(Object.freeze({ eventId: event.value.eventId, message: error?.message || String(error) }));
-        }
-      }
+  dispatchPrepared(publication) {
+    const entries = Array.isArray(publication?.entries) ? [...publication.entries] : [];
+    if (entries.length === 0) {
+      return Promise.resolve(Object.freeze({ events: Object.freeze([]), degradation: Object.freeze([]) }));
     }
-    return Object.freeze({
-      events: Object.freeze(entries.map(entry => entry.value)),
-      degradation: Object.freeze(degradation)
+    if (this.disposed) {
+      return Promise.resolve(Object.freeze({
+        events: Object.freeze(entries.map(entry => entry.value)),
+        degradation: Object.freeze(entries.map(entry => Object.freeze({
+          eventId: entry.value.eventId,
+          code: 'notificationBusDisposed',
+          message: 'PostCommitNotificationBus is disposed'
+        })))
+      }));
+    }
+    let resolveBatch;
+    const promise = new Promise(resolve => { resolveBatch = resolve; });
+    this._dispatchQueue.push({ entries, resolve: resolveBatch });
+    this._scheduleDrain();
+    return promise;
+  }
+
+  _scheduleDrain() {
+    if (this._dispatchScheduled || this._dispatching || this.disposed) return;
+    this._dispatchScheduled = true;
+    queueMicrotask(() => {
+      this._dispatchScheduled = false;
+      void this._drain();
     });
+  }
+
+  async _drain() {
+    if (this._dispatching || this.disposed) return;
+    this._dispatching = true;
+    try {
+      while (this._dispatchQueue.length > 0 && !this.disposed) {
+        const batch = this._dispatchQueue.shift();
+        const degradation = [];
+        for (const event of batch.entries) {
+          for (const listener of [...this.listeners]) {
+            try { await listener(event); }
+            catch (error) {
+              degradation.push(Object.freeze({
+                eventId: event.value.eventId,
+                code: error?.code || 'notificationConsumerFailed',
+                message: error?.message || String(error)
+              }));
+            }
+          }
+        }
+        batch.resolve(Object.freeze({
+          events: Object.freeze(batch.entries.map(entry => entry.value)),
+          degradation: Object.freeze(degradation)
+        }));
+      }
+    } finally {
+      this._dispatching = false;
+      if (this._dispatchQueue.length > 0 && !this.disposed) this._scheduleDrain();
+      else this._resolveIdleWaiters();
+    }
+  }
+
+  isDispatching() {
+    return this._dispatching;
+  }
+
+  isIdle() {
+    return !this._dispatching && !this._dispatchScheduled && this._dispatchQueue.length === 0;
+  }
+
+  waitForIdle() {
+    if (this.isIdle()) return Promise.resolve(true);
+    return new Promise(resolve => this._idleWaiters.add(resolve));
+  }
+
+  _resolveIdleWaiters() {
+    if (!this.isIdle()) return;
+    for (const resolve of this._idleWaiters) resolve(true);
+    this._idleWaiters.clear();
   }
 
   async publishAfterCommit(input) {
@@ -136,5 +206,24 @@ export class PostCommitNotificationBus {
     this.lastEventSequence = value;
   }
 
-  dispose() { this.listeners.clear(); }
+  dispose() {
+    if (this.disposed) return false;
+    this.disposed = true;
+    this.listeners.clear();
+    const pending = this._dispatchQueue.splice(0);
+    for (const batch of pending) {
+      batch.resolve(Object.freeze({
+        events: Object.freeze(batch.entries.map(entry => entry.value)),
+        degradation: Object.freeze(batch.entries.map(entry => Object.freeze({
+          eventId: entry.value.eventId,
+          code: 'notificationBusDisposed',
+          message: 'PostCommitNotificationBus disposed before dispatch'
+        })))
+      }));
+    }
+    this._dispatchScheduled = false;
+    for (const resolve of this._idleWaiters) resolve(false);
+    this._idleWaiters.clear();
+    return true;
+  }
 }

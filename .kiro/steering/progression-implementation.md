@@ -404,13 +404,28 @@ EventJournal 存档必须包含稳定 `runId`、下一事件序号、全部未�
 
 事件 envelope 与提交元数据必须分层：`EventJournal.payload` 原样保存完整业务 payload，`stateId/stateType/stateRevision/eventSequence/operationId` 只进入独立 `commitMetadata`，不得平铺覆盖业务同名字段。`PostCommitNotificationBus` 写 Journal 和分派给消费者时必须使用同一组 `eventDefinitionId/source/actorRef/sceneId/payload`；任何事件类型适配（如 `item.picked → itemPickup`）都要通过 `sourceEvent*` 保留原 envelope，并把完整原 payload 展开给 matcher/action，再追加兼容 alias。复用 inherited eventId 时，type、definition、source、actor、scene 和完整原 payload 必须稳定双向等值，任何字段缺失、追加或改写都返回 `eventPayloadConflict`。
 
-产品存档使用 schema 4，并把 `EventJournal + OperationLedger + StateRevisionStore + Quest/TaskGraph` 放入唯一 AuthoritySnapshot；Quest 顶层不得再保存第二份 TaskGraph。存档捕获前必须读取 live 状态，拒绝任意 OperationLedger `in-flight`、EventJournal `running` 或 ScenarioExecutionLedger `running`，不得先投影为成功再检查。Quest/Task checkpoint 只能在 command、PostCommit 事件、EventJournal step 和 Scenario ledger 全部封账后的下一宏任务请求；忙碌或 Promise rejection 按固定 0/500/1000/2000ms 有界重试，耗尽后明确提示手动保存。开发文件镜像失败必须逐字恢复覆盖前的 localStorage 原始字符串，损坏 JSON 也不得删除或规范化。
+产品存档使用 schema 5，并把 `Story/City/War Blackboard + Trigger/ScenarioExecutionLedger + EventJournal v2 consumer receipts + OperationLedger + StateRevisionStore + Quest/TaskGraph` 放入唯一 AuthoritySnapshot；产品顶层不得再保存第二份 `content` 或 TaskGraph，只有 `includeAuthority:false` 的跨 Region 内存回滚草稿保留 `content`。存档捕获前必须读取 live 状态，拒绝任意 OperationLedger `in-flight`、EventJournal/consumer receipt `running`、PostCommitNotificationBus 非 idle 或 ScenarioExecutionLedger `running`，不得先投影为成功再检查。Quest/Task checkpoint 只能在 command、PostCommit 事件、EventJournal step、essential consumer receipt 和 Scenario ledger 全部封账后的下一宏任务请求；忙碌或 Promise rejection 按固定 0/500/1000/2000ms 有界重试，耗尽后明确提示手动保存。开发文件镜像失败必须逐字恢复覆盖前的 localStorage 原始字符串，损坏 JSON 也不得删除或规范化。
 
 跨 Region 的内存回滚草稿不是产品存档：`captureSaveState({includeAuthority:false})` / `restoreSaveState(...,{restoreAuthority:false})` 不捕获或恢复 Authority，也不恢复正在执行的 Trigger 技术账本；恢复入口单独保存旧 Region 实际 loaded sceneId，禁止使用可能已被目标提交污染的 currentSceneId。checkpoint 失败若需要补偿 state revision，只允许 `rollbackCommitted(prepared)` compare-and-restore 当前 stateId，禁止恢复整个 StateRevisionStore 快照或清除其他 reservation。
 
 TaskGraph 不是 EventJournal 的替代品：任务定义只声明事件 matcher、节点和边；任务存档保存 `TaskInstance`、节点状态、完成证据 eventId、并行汇合和已选分支。任务推进、奖励与 Checkpoint 必须进入现有 `QuestTransactionService → CommandGateway → LocalAuthorityAdapter` 权威事务，禁止 `notificationBus` 监听器直接修改独立 TaskGraph 状态。任务节点可使用 `all/any/n-of-m` 并行汇合；分支按稳定优先级选择首个满足规则，选择结果只提交一次并进入存档。
 
 `task.start/task.event/task.track` 是 TaskGraph 唯一写入命令，统一使用 `quest:<actorId>` state revision；`task.track` 必须校验 instance.actorId，禁止跨 actor 修改。TaskGraph 只嵌入 QuestTransactionService 的 `quests` Authority provider，不再注册第二个独立 snapshot provider。任务定义含非空 reward 时必须存在原子 `prepareReward/commit/rollback` 参与者，否则以 `rewardSettlementUnavailable` 拒绝，禁止“任务完成但奖励未发”。TaskGraph 定义运行时、CandidateRuleValidator 和 TaskGraphEditor 必须复用 `validateTaskGraphDefinitions()`，并通过标准 `task.command` 从数据驱动 Trigger 启动。
+
+### 已验证根因与强制收口约定
+
+当前代码已确认存在以下结构性风险，后续不得通过增加剧情布尔字段、局部 `_busy` 或重复重试掩盖：
+
+- 改造前 `game.project.json` 的 `quests` 为空且没有正式 `taskGraphs`，玩家主线目标由 StoryState、Trigger ledger、Tutorial 与场景私有状态多头表达；当前已先将 S01“荒原求生”和 S02“废营召见”迁入正式 TaskGraph，后续场景继续按纵向切片迁移。迁移后 StoryState 只保存不可逆历史事实、路线、人物结果、场景解锁和结局输入；TaskGraph 唯一保存玩家当前目标、节点、分支、并行汇合和完成 eventId；Tutorial 只保存教学完成；Checkpoint 只保存副本，不得成为业务条件。
+- `GameLoader.bridgeEventSources()` 的 Quest 本地 `on/emit → TriggerSystem.fire()` 与 canonical `PostCommitNotificationBus → SceneApplicationEventBridge` 不得并存。业务 Trigger 只消费具有稳定 `eventId/operationId` 的 committed application event；本地 listener 只能更新 UI 等只读投影。Combat kill 等领域事实同样不得从 callback 直接旁路 Trigger。
+- `PostCommitNotificationBus` 把事件写入 EventJournal 不代表内容消费者已经完成。application event 必须进入非递归 FIFO outbox；同一源事件的全部既定消费者完成后，才处理其派生事件，禁止依赖 listener 注册顺序或递归分派。每个 essential consumer 使用 `eventId + consumerId` 保存 `pending/running/succeeded/failed` receipt；读档后重排 pending/interrupted，不能只依赖 `SceneApplicationEventBridge.seenEventIds/pendingEvents` 的瞬态内存。
+- Authority command、Trigger action 或 EventJournal step 运行期间禁止同步调用全量产品存档。`checkpoint.request` 不能作为一个 in-flight Authority command 在自身 handler 内执行 `captureSaveState()`；领域事务也不能在 state revision、OperationLedger、EventJournal 与 Scenario ledger 封账前嵌套 required checkpoint。所有 checkpoint 都由封账后调度器在下一宏任务执行。
+- checkpoint 调度器必须等待 OperationLedger 无 `in-flight`、EventJournal 无 `running`、ScenarioExecutionLedger 无 `running` 且 application-event dispatcher idle。请求身份固定为 `originOperationId + checkpointId`；同身份幂等复用，不同身份严格串行。宿主不得用单个 `autoSaveInFlight` Promise 把不同 checkpoint 请求合并为同一成功结果；只有无 checkpointId 的定时 best-effort 自动保存允许显式合并。
+- Snapshot 保存失败发生在业务 commit 之后时，只允许有界重试并提示手动保存，不得用整份旧 StoryState 覆盖回滚其他已提交事务。若某业务确实要求“未持久化即不成立”，必须引入提交前 WAL/事务日志，不能在 Authority 命令内部用全量 Snapshot 模拟 durability。
+- Demo coordinator 禁止直接 `blackboard.set('storyState', draft)` 或 `writeStoryState(draft)` 后自行存档并整份回滚。所有 Story/City/War/Inventory 联动写入统一进入 Authority transaction，使用完整草稿、稳定 operationId、state revision 与显式事务参与者；局部 `_busy` 只可防 UI 重复提交，不能承担一致性。迁移期间 `CanonicalStateTransactionService` 与 `DomainCommandService` 在《三国张角传》中必须共用 `sanguo:campaign` stateId，使仍由受控 Facade 转发的历史 coordinator 写入先受同一 Authority 串行锁和 revision 保护；这只是过渡边界，不得作为长期保留直接 Blackboard 写入的理由。
+- 产品存档必须把 Story/City/War、Quest/TaskGraph、EventJournal consumer receipts、ScenarioExecutionLedger、OperationLedger 与 StateRevisionStore 放入同一原子验证/恢复边界。恢复除结构校验外还要检查：Task 完成 eventId 存在、路线与任务分支一致、`firedOnce` 有 succeeded 证据、consumer receipt 引用合法事件、committed operation revision 与 StateRevisionStore 一致。全部业务 provider 恢复成功后才能重建 Tutorial、Dialogue、HUD 和任务表现。
+
+实施时优先修复三条 Blocker 链：`checkpoint.request` 自捕获、不同 checkpoint 误共享 `autoSaveInFlight`、事件已记账但 essential consumer 未持久完成；然后按 S01–S02 → S09 → S03–S08 → S10–S12 → S13–S14 顺序迁移 TaskGraph 与直接 StoryState 写入。每条纵向切片必须覆盖“领域提交后/事件消费前、TaskGraph 消费中、Trigger step 中、checkpoint 排队中”四个切点的保存恢复。
 
 实施顺序固定：
 

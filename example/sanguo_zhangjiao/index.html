@@ -1311,7 +1311,11 @@
         let savePickerEntries = [];
         let savePickerConfirmInFlight = false;
         let autoSaveInFlight = null;
-        let bestEffortAutoSaveTimer = null;
+        let autoSaveRequestSequence = 0;
+        let autoSaveQueueDraining = false;
+        const autoSaveQueue = [];
+        const autoSaveRequests = new Map();
+        const scheduledCheckpointIds = new Set();
         const saveSlotSelected = document.getElementById('save-slot-selected');
         const saveSlotList = document.getElementById('save-slot-list');
         const saveSlotInfo = document.getElementById('save-slot-info');
@@ -1928,65 +1932,160 @@
             return completed;
         }
 
-        function scheduleBestEffortCheckpoint(options = {}) {
-            if (bestEffortAutoSaveTimer) {
+        function checkpointSaveIdentity(options = {}) {
+            const checkpointId = String(options.checkpointId || '').trim();
+            if (!checkpointId) return null;
+            const originOperationId = String(
+                options.originOperationId || options.operationId || `checkpoint:${checkpointId}`
+            ).trim();
+            return `${originOperationId}:${checkpointId}`;
+        }
+
+        function isAuthorityBusySaveResult(result) {
+            const busyCodes = new Set([
+                'authoritySnapshotBusy',
+                'authorityEventJournalBusy',
+                'authorityNotificationDispatchBusy',
+                'scenarioExecutionBusy',
+                'rollbackUnavailable'
+            ]);
+            return (result?.errors || []).some(error => busyCodes.has(error?.code));
+        }
+
+        async function waitForCheckpointConsumers() {
+            const runtime = scene?.sceneRuntime;
+            await runtime?.notificationBus?.waitForIdle?.();
+            await scene?.gameLoader?.triggerSystem?.waitForIdle?.();
+        }
+
+        async function performQueuedAutoSave(options = {}) {
+            const checkpointId = String(options.checkpointId || '').trim();
+            const retryDelays = checkpointId ? [0, 500, 1000, 2000] : [0];
+            let result = null;
+            for (const delay of retryDelays) {
+                if (delay > 0) await new Promise(resolve => setTimeout(resolve, delay));
+                if (checkpointId) await waitForCheckpointConsumers();
+                result = await performAutoSave(options);
+                if (result?.ok === true || !isAuthorityBusySaveResult(result)) return result;
+            }
+            return result;
+        }
+
+        async function drainAutoSaveQueue() {
+            if (autoSaveQueueDraining) return;
+            autoSaveQueueDraining = true;
+            try {
+                while (autoSaveQueue.length > 0) {
+                    const request = autoSaveQueue.shift();
+                    try {
+                        autoSaveInFlight = performQueuedAutoSave(request.options);
+                        const result = await autoSaveInFlight;
+                        request.resolve(result);
+                    } catch (error) {
+                        request.resolve({
+                            ok: false,
+                            saved: false,
+                            code: error?.code || 'autoSaveFailed',
+                            errors: [{
+                                code: error?.code || 'autoSaveFailed',
+                                path: 'game',
+                                message: error?.message || String(error)
+                            }]
+                        });
+                    } finally {
+                        autoSaveInFlight = null;
+                        if (request.identity && autoSaveRequests.get(request.identity) === request.promise) {
+                            autoSaveRequests.delete(request.identity);
+                        }
+                    }
+                }
+            } finally {
+                autoSaveQueueDraining = false;
+                if (autoSaveQueue.length > 0) queueMicrotask(() => { void drainAutoSaveQueue(); });
+            }
+        }
+
+        function enqueueAutoSave(options = {}) {
+            const checkpointIdentity = checkpointSaveIdentity(options);
+            const identity = checkpointIdentity || `auto-save:${++autoSaveRequestSequence}`;
+            if (checkpointIdentity && autoSaveRequests.has(identity)) {
+                return autoSaveRequests.get(identity);
+            }
+            let resolveRequest;
+            const promise = new Promise(resolve => { resolveRequest = resolve; });
+            const request = {
+                identity,
+                options: { ...options, deferUntilIdle: false },
+                promise,
+                resolve: resolveRequest
+            };
+            autoSaveRequests.set(identity, promise);
+            autoSaveQueue.push(request);
+            queueMicrotask(() => { void drainAutoSaveQueue(); });
+            return promise;
+        }
+
+        function scheduleCheckpointSave(options = {}) {
+            const identity = checkpointSaveIdentity(options);
+            if (!identity) return enqueueAutoSave(options);
+            if (scheduledCheckpointIds.has(identity) || autoSaveRequests.has(identity)) {
                 return Promise.resolve({
                     ok: true,
                     saved: false,
                     checkpointDeferred: true,
-                    nonBlocking: true,
-                    code: 'checkpointAlreadyDeferred'
+                    idempotent: true,
+                    checkpointRequestId: identity,
+                    code: 'checkpointAlreadyScheduled'
                 });
             }
-            bestEffortAutoSaveTimer = setTimeout(async () => {
-                bestEffortAutoSaveTimer = null;
-                if (autoSaveInFlight) {
-                    try {
-                        await autoSaveInFlight;
-                    } catch (error) {
-                        console.warn('已有自动存档失败，继续执行延迟 checkpoint', error);
-                    }
-                }
-                try {
-                    const result = await autoSaveCurrentGame({ ...options, deferUntilIdle: false });
+            scheduledCheckpointIds.add(identity);
+            setTimeout(() => {
+                void enqueueAutoSave({
+                    ...options,
+                    originOperationId: options.originOperationId || options.operationId || null,
+                    checkpointMode: options.checkpointMode === 'bestEffort' ? 'bestEffort' : 'required'
+                }).then(result => {
                     if (result?.ok === false) {
-                        console.warn('延迟 bestEffort 自动存档失败，流程已继续', {
-                            checkpointId: options.checkpointId,
+                        showAutoSaveStatus('检查点保存失败，请尽快手动保存。', 'error');
+                        console.warn('封账后 checkpoint 保存失败', {
+                            checkpointRequestId: identity,
                             errors: result.errors || []
                         });
                     }
-                } catch (error) {
-                    console.warn('延迟 bestEffort 自动存档异常，流程已继续', error);
-                }
+                }).finally(() => scheduledCheckpointIds.delete(identity));
             }, 0);
             return Promise.resolve({
                 ok: true,
                 saved: false,
                 checkpointDeferred: true,
                 nonBlocking: true,
-                code: 'checkpointDeferred'
+                checkpointRequestId: identity,
+                code: 'checkpointScheduledAfterCommit'
             });
         }
 
-        /** 定时、剧情和地图切换共用同一把锁，避免并发覆盖同一自动栏位。 */
+        /** 定时、剧情和地图切换共享串行队列；不同 checkpoint 绝不共享保存结果。 */
         function autoSaveCurrentGame(options = {}) {
             if (!gameStarted || !scene?.playerEntity) return Promise.resolve(null);
-            if (options.checkpointMode === 'bestEffort'
-                && options.reason === 'checkpoint'
-                && options.deferUntilIdle !== false) {
-                return scheduleBestEffortCheckpoint(options);
+            if (options.reason === 'checkpoint' && options.deferUntilIdle !== false) {
+                return scheduleCheckpointSave(options);
             }
-            if (autoSaveInFlight) return autoSaveInFlight;
-            autoSaveInFlight = performAutoSave(options)
-                .finally(() => { autoSaveInFlight = null; });
-            return autoSaveInFlight;
+            return enqueueAutoSave(options);
+        }
+
+        async function waitForAutoSaveQueueIdle() {
+            while (scheduledCheckpointIds.size > 0 || autoSaveQueue.length > 0 || autoSaveInFlight) {
+                const pending = [...autoSaveRequests.values()];
+                if (pending.length > 0) await Promise.allSettled(pending);
+                else await new Promise(resolve => setTimeout(resolve, 0));
+            }
         }
 
         /** 只恢复精确匹配 checkpointId 的最新自动存档，不猜测普通自动位。 */
         async function loadCheckpointAutoSave({ checkpointId } = {}) {
             const targetId = String(checkpointId || '');
             if (!targetId) return { ok: false, code: 'checkpointIdMissing' };
-            if (autoSaveInFlight) await autoSaveInFlight;
+            await waitForAutoSaveQueueIdle();
             await saveStorageReady;
             const candidate = (await saveGames.getAutoSlotsAsync())
                 .filter(slot => slot.exists && slot.info?.meta?.checkpointId === targetId)

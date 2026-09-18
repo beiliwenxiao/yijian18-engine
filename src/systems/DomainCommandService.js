@@ -1,3 +1,15 @@
+/************************************************************
+ * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
+ *
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+ * @author    刘枭 (beiliwenxiao)
+ * @email     beiliwenxiao@qq.com
+ * @date      2026-01-14
+ * @blog      https://blog.csdn.net/beiliwenxiao
+ * @repo      https://github.com/beiliwenxiao/yijian18-engine
+ *            https://gitee.com/coderaaa/yijian18-engine
+ ************************************************************/
+
 const clone = value => value == null ? value : (typeof structuredClone === 'function'
   ? structuredClone(value) : JSON.parse(JSON.stringify(value)));
 
@@ -15,11 +27,13 @@ function rejected(command, code, error = null) {
  * Authority 只在委托成功后提交统一 state revision 并发布有序提交通知。
  */
 export class DomainCommandService {
-  constructor({ ports = {}, statePrefix = 'domainCommand' } = {}) {
+  constructor({ ports = {}, statePrefix = 'domainCommand', stateId = null } = {}) {
     this.ports = { ...ports };
     this.statePrefix = statePrefix;
     this.stateType = 'domainCommand';
-    this.stateId = command => `${this.statePrefix}:${command.commandType}`;
+    this.stateId = typeof stateId === 'function'
+      ? stateId
+      : (stateId ? () => stateId : command => `${this.statePrefix}:${command.commandType}`);
   }
 
   async execute(command, context) {

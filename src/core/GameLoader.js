@@ -1,7 +1,7 @@
 /************************************************************
  * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
  * 
- * @project   YiJian18-Engine - 跨平台2D/3D ECS游戏引擎
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
  * @author    刘枭 (beiliwenxiao)
  * @email     beiliwenxiao@qq.com
  * @date      2026-01-14
@@ -612,56 +612,12 @@ export class GameLoader {
   }
 
   /**
-   * 事件源桥接（架构 §4.4）：把各系统发出的事件统一转成 TriggerSystem 的 fire。
-   * 集中在此处接入，避免散落到各场景；系统无侵入（只订阅已有 emit/回调）。
-   *
-   * 已接入：
-   *   - questSystem.on('questCompleted') → fire('questComplete', {quest})
-   *   - questSystem.on('questProgress')  → fire('questProgress', {quest, objectiveType, targetId})
-   *   - combatSystem.setOnKillCallback   → fire('kill', {enemyType, entityId, name})
-   *
-   * @param {Object} deps - { questSystem, combatSystem, ... }
+   * Canonical 内容事件只允许从 PostCommitNotificationBus 进入 EventJournal 与 Trigger。
+   * 旧 Quest local emit / Combat callback → Trigger 旁路已退出正式运行路径。
    */
-  bridgeEventSources(deps = {}) {
+  bridgeEventSources(_deps = {}) {
     this._disposed = false;
     this._releaseEventSources();
-    const trig = this.triggerSystem;
-
-    // 任务完成 / 进度（QuestSystem 已有 on/emit 机制）
-    const questSystem = deps.questSystem;
-    if (questSystem && typeof questSystem.on === 'function') {
-      const onQuestCompleted = (d) => {
-        const id = d && d.quest ? (d.quest.id || d.quest.questId) : undefined;
-        trig.fire('questComplete', { quest: id });
-      };
-      const onQuestProgress = (d) => {
-        trig.fire('questProgress', {
-          quest: d && d.quest ? (d.quest.id || d.quest.questId) : undefined,
-          objectiveType: d ? d.objectiveType : undefined,
-          targetId: d ? d.targetId : undefined
-        });
-      };
-      questSystem.on('questCompleted', onQuestCompleted);
-      this._eventSourceDisposers.push(() => questSystem.off?.('questCompleted', onQuestCompleted));
-      questSystem.on('questProgress', onQuestProgress);
-      this._eventSourceDisposers.push(() => questSystem.off?.('questProgress', onQuestProgress));
-    }
-
-    // 击杀（CombatSystem 击杀回调 → 通用 kill 事件源）
-    const combatSystem = deps.combatSystem;
-    if (combatSystem && typeof combatSystem.setOnKillCallback === 'function') {
-      const onKill = (entity) => {
-        trig.fire('kill', {
-          enemyType: entity ? (entity.templateId || entity.type) : undefined,
-          entityId: entity ? entity.id : undefined,
-          name: entity ? entity.name : undefined
-        });
-      };
-      combatSystem.setOnKillCallback(onKill);
-      this._eventSourceDisposers.push(() => {
-        if (combatSystem.onKillCallback === onKill) combatSystem.setOnKillCallback(null);
-      });
-    }
   }
 
   _releaseEventSources() {

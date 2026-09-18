@@ -10,10 +10,11 @@
  *            https://gitee.com/coderaaa/yijian18-engine
  ************************************************************/
 
-export const EVENT_JOURNAL_SCHEMA_VERSION = 1;
+export const EVENT_JOURNAL_SCHEMA_VERSION = 2;
 
 const EVENT_STATUS = new Set(['pending', 'running', 'succeeded', 'blocked', 'failed', 'cancelled']);
 const EXECUTION_STATUS = new Set(['running', 'succeeded', 'blocked', 'failed', 'cancelled', 'skipped']);
+const CONSUMER_STATUS = new Set(['pending', 'running', 'succeeded', 'failed', 'skipped']);
 const clone = value => value === undefined ? undefined : JSON.parse(JSON.stringify(value));
 const hasText = value => typeof value === 'string' && value.trim().length > 0;
 
@@ -46,6 +47,7 @@ function executionKey(triggerId, stepId) {
 
 function eventPayloadFingerprint(value = {}) {
   return fingerprint({
+    kind: value.kind || null,
     eventDefinitionId: value.eventDefinitionId || null,
     type: value.type,
     source: value.source ?? null,
@@ -65,9 +67,10 @@ export class EventJournal {
     this.order = [];
   }
 
-  create({ eventId = null, eventDefinitionId = null, type, source = null, actorRef = null, sceneId = null, payload = {}, logicalTime = 0, persistent = true } = {}) {
+  create({ eventId = null, eventDefinitionId = null, kind = null, type, source = null, actorRef = null, sceneId = null, payload = {}, logicalTime = 0, persistent = true } = {}) {
     if (!hasText(type)) throw new TypeError('EventJournal event type is required');
     const candidate = {
+      kind: hasText(kind) ? kind.trim() : null,
       eventDefinitionId: hasText(eventDefinitionId) ? eventDefinitionId.trim() : null,
       type: type.trim(),
       source: source == null ? null : clone(source),
@@ -103,6 +106,7 @@ export class EventJournal {
       persistent: persistent !== false,
       status: 'pending',
       executions: {},
+      consumerReceipts: {},
       result: null
     };
     this.events.set(resolvedEventId, record);
@@ -118,6 +122,85 @@ export class EventJournal {
   getExecution(eventId, triggerId, stepId) {
     const execution = this.events.get(eventId)?.executions?.[executionKey(triggerId, stepId)];
     return execution ? clone(execution) : null;
+  }
+
+  getConsumerReceipt(eventId, consumerId) {
+    const receipt = this.events.get(eventId)?.consumerReceipts?.[consumerId];
+    return receipt ? clone(receipt) : null;
+  }
+
+  beginConsumer({ eventId, consumerId, logicalTime = 0 } = {}) {
+    const record = this.events.get(eventId);
+    if (!record) return { ok: false, code: 'unknownEventId' };
+    if (!hasText(consumerId)) return { ok: false, code: 'invalidConsumerId' };
+    const id = consumerId.trim();
+    const existing = record.consumerReceipts[id];
+    if (existing?.status === 'succeeded' || existing?.status === 'skipped') {
+      return { ok: true, idempotent: true, replay: true, receipt: clone(existing) };
+    }
+    if (existing?.status === 'running') {
+      return { ok: true, idempotent: true, replay: false, inFlight: true, receipt: clone(existing) };
+    }
+    if (existing?.status === 'failed') {
+      return { ok: false, code: 'consumerRetryExhausted', receipt: clone(existing) };
+    }
+    const now = Math.max(0, Math.floor(Number(logicalTime) || 0));
+    const receipt = {
+      consumerId: id,
+      operationId: `consume:${eventId}:${id}`,
+      status: 'running',
+      attempts: Math.max(0, Number(existing?.attempts) || 0) + 1,
+      startedLogicalTime: now,
+      finishedLogicalTime: null,
+      result: existing?.result ? clone(existing.result) : null
+    };
+    record.consumerReceipts[id] = receipt;
+    this._refreshEventStatus(record);
+    return { ok: true, idempotent: false, replay: false, receipt: clone(receipt) };
+  }
+
+  completeConsumer({ eventId, consumerId, status, result = null, logicalTime = 0 } = {}) {
+    const record = this.events.get(eventId);
+    const receipt = record?.consumerReceipts?.[consumerId];
+    if (!record || !receipt) return { ok: false, code: 'unknownConsumerReceipt' };
+    if (!CONSUMER_STATUS.has(status) || status === 'running') return { ok: false, code: 'invalidConsumerStatus' };
+    if (receipt.status !== 'running') {
+      const sameResult = receipt.status === status && fingerprint(receipt.result) === fingerprint(result);
+      return sameResult
+        ? { ok: true, idempotent: true, receipt: clone(receipt) }
+        : { ok: false, code: 'consumerReceiptConflict', receipt: clone(receipt) };
+    }
+    receipt.status = status;
+    receipt.result = result == null ? null : clone(result);
+    receipt.finishedLogicalTime = status === 'pending'
+      ? null
+      : Math.max(receipt.startedLogicalTime, Math.floor(Number(logicalTime) || 0));
+    this._refreshEventStatus(record);
+    return { ok: true, receipt: clone(receipt) };
+  }
+
+  interruptConsumer(eventId, consumerId, result = null) {
+    const record = this.events.get(eventId);
+    const receipt = record?.consumerReceipts?.[consumerId];
+    if (!receipt || receipt.status !== 'running') return false;
+    receipt.status = 'pending';
+    receipt.finishedLogicalTime = null;
+    receipt.result = result == null ? { ok: false, code: 'consumerInterrupted' } : clone(result);
+    this._refreshEventStatus(record);
+    return true;
+  }
+
+  getConsumerBacklog(consumerId) {
+    if (!hasText(consumerId)) return [];
+    const id = consumerId.trim();
+    return this.order
+      .map(eventId => this.events.get(eventId))
+      .filter(record => record?.kind === 'ApplicationEvent')
+      .filter(record => {
+        const status = record.consumerReceipts?.[id]?.status;
+        return status === undefined || status === 'pending';
+      })
+      .map(record => clone(record));
   }
 
   assertCompatible(eventId, {
@@ -203,13 +286,14 @@ export class EventJournal {
   }
 
   recordCommitted({
-    eventId = null, eventDefinitionId = null, type, source = null,
+    eventId = null, eventDefinitionId = null, kind = null, type, source = null,
     actorRef = null, sceneId = null, operationId, logicalTime, payload = {},
     stateId = null, stateType = null, stateRevision = null, eventSequence = null
   } = {}) {
     const record = this.create({
       eventId,
       eventDefinitionId: eventDefinitionId || type,
+      kind,
       type,
       source: source || { kind: 'postCommitNotification', operationId },
       actorRef,
@@ -287,6 +371,31 @@ export class EventJournal {
       if (!EVENT_STATUS.has(record?.status)) errors.push(error('invalidEventStatus', `${path}.status`, '事件状态非法'));
       if (!Number.isInteger(record?.logicalTime) || record.logicalTime < 0) errors.push(error('invalidEventLogicalTime', `${path}.logicalTime`, '事件逻辑时间非法'));
       if (typeof record?.persistent !== 'boolean') errors.push(error('invalidEventPersistence', `${path}.persistent`, 'persistent 必须是布尔值'));
+      if (record?.kind !== null && record?.kind !== undefined && !hasText(record.kind)) {
+        errors.push(error('invalidEventKind', `${path}.kind`, '事件 kind 必须为非空字符串或 null'));
+      }
+      if (!record?.consumerReceipts || typeof record.consumerReceipts !== 'object' || Array.isArray(record.consumerReceipts)) {
+        errors.push(error('invalidConsumerReceipts', `${path}.consumerReceipts`, 'consumerReceipts 必须是对象'));
+      } else {
+        for (const [consumerId, receipt] of Object.entries(record.consumerReceipts)) {
+          const receiptPath = `${path}.consumerReceipts.${consumerId}`;
+          if (!hasText(consumerId) || receipt?.consumerId !== consumerId || !hasText(receipt?.operationId)) {
+            errors.push(error('invalidConsumerIdentity', receiptPath, 'consumer receipt 身份非法'));
+          }
+          if (!CONSUMER_STATUS.has(receipt?.status)) {
+            errors.push(error('invalidConsumerStatus', `${receiptPath}.status`, 'consumer receipt 状态非法'));
+          }
+          if (!Number.isInteger(receipt?.attempts) || receipt.attempts < 1
+            || !Number.isInteger(receipt?.startedLogicalTime) || receipt.startedLogicalTime < 0) {
+            errors.push(error('invalidConsumerAttempt', receiptPath, 'consumer receipt 尝试次数或时间非法'));
+          }
+          if (receipt.finishedLogicalTime !== null
+            && (!Number.isInteger(receipt.finishedLogicalTime)
+              || receipt.finishedLogicalTime < receipt.startedLogicalTime)) {
+            errors.push(error('invalidConsumerTime', `${receiptPath}.finishedLogicalTime`, 'consumer receipt 完成时间非法'));
+          }
+        }
+      }
       if (!record?.executions || typeof record.executions !== 'object' || Array.isArray(record.executions)) {
         errors.push(error('invalidEventExecutions', `${path}.executions`, 'executions 必须是对象'));
         continue;
@@ -324,6 +433,12 @@ export class EventJournal {
         execution.finishedLogicalTime = Math.max(record.logicalTime, execution.startedLogicalTime);
         execution.result = { ok: false, code: 'eventExecutionInterrupted' };
       }
+      for (const receipt of Object.values(record.consumerReceipts)) {
+        if (receipt.status !== 'running') continue;
+        receipt.status = 'pending';
+        receipt.finishedLogicalTime = null;
+        receipt.result = { ok: false, code: 'consumerInterrupted' };
+      }
       this._refreshEventStatus(record);
       return record;
     });
@@ -345,7 +460,9 @@ export class EventJournal {
 
   _refreshEventStatus(record) {
     const executions = Object.values(record.executions);
-    if (executions.some(entry => entry.status === 'running')) record.status = 'running';
+    const consumerReceipts = Object.values(record.consumerReceipts || {});
+    if (executions.some(entry => entry.status === 'running')
+      || consumerReceipts.some(entry => entry.status === 'running')) record.status = 'running';
     else if (executions.some(entry => entry.status === 'failed')) record.status = 'failed';
     else if (executions.some(entry => entry.status === 'blocked')) record.status = 'blocked';
     else if (executions.some(entry => entry.status === 'cancelled')) record.status = 'cancelled';

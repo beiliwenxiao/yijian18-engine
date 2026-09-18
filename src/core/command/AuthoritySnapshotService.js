@@ -65,6 +65,11 @@ export class AuthoritySnapshotService {
       error.eventIds = liveRunningEvents.map(event => event.eventId);
       throw error;
     }
+    if (this.notificationBus?.isIdle?.() === false) {
+      const error = new Error('AuthoritySnapshot 拒绝捕获尚未完成分派的 committed event');
+      error.code = 'authorityNotificationDispatchBusy';
+      throw error;
+    }
     const unrelatedInFlight = this.operationLedger.getInFlightIds?.() || [];
     if (unrelatedInFlight.length > 0) {
       const error = new Error('AuthoritySnapshot 拒绝捕获其他仍在执行的 operation');

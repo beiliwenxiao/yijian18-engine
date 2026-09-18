@@ -46,6 +46,7 @@ export class SaveGameService {
     this._providerOff = null;
     this._autoSaveExecutor = null;
     this._checkpointLoadExecutor = null;
+    this._scheduledCheckpointIds = new Set();
     this._readyPromise = this.storage.init ? Promise.resolve(this.storage.init()) : Promise.resolve(true);
   }
 
@@ -82,6 +83,42 @@ export class SaveGameService {
   }
 
   requestAutoSave(meta = {}) {
+    const checkpointId = typeof meta?.checkpointId === 'string' ? meta.checkpointId.trim() : '';
+    if (meta?.reason === 'checkpoint' && checkpointId && meta.deferUntilIdle !== false) {
+      const originOperationId = String(meta.originOperationId || meta.operationId || `checkpoint:${checkpointId}`);
+      const requestId = `${originOperationId}:${checkpointId}`;
+      if (this._scheduledCheckpointIds.has(requestId)) {
+        return Promise.resolve({
+          ok: true,
+          saved: false,
+          checkpointDeferred: true,
+          idempotent: true,
+          checkpointRequestId: requestId,
+          code: 'checkpointAlreadyScheduled'
+        });
+      }
+      this._scheduledCheckpointIds.add(requestId);
+      setTimeout(() => {
+        const request = { ...meta, originOperationId, deferUntilIdle: false };
+        const pending = this._autoSaveExecutor
+          ? Promise.resolve(this._autoSaveExecutor(request))
+          : this.saveAutoAsync(request);
+        pending.catch(error => {
+          console.warn('SaveGameService: 封账后 checkpoint 保存失败', {
+            checkpointRequestId: requestId,
+            message: error?.message || String(error)
+          });
+        }).finally(() => this._scheduledCheckpointIds.delete(requestId));
+      }, 0);
+      return Promise.resolve({
+        ok: true,
+        saved: false,
+        checkpointDeferred: true,
+        nonBlocking: true,
+        checkpointRequestId: requestId,
+        code: 'checkpointScheduledAfterCommit'
+      });
+    }
     return this._autoSaveExecutor
       ? Promise.resolve(this._autoSaveExecutor(meta))
       : this.saveAutoAsync(meta);

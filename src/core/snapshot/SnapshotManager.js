@@ -1,9 +1,10 @@
 /************************************************************
  * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
  *
- * @project   YiJian18-Engine - 跨平台2D/3D ECS游戏引擎
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
  * @author    刘枭 (beiliwenxiao)
  * @email     beiliwenxiao@qq.com
+ * @date      2026-01-14
  * @blog      https://blog.csdn.net/beiliwenxiao
  * @repo      https://github.com/beiliwenxiao/yijian18-engine
  *            https://gitee.com/coderaaa/yijian18-engine
@@ -96,7 +97,14 @@ export class SnapshotManager {
       try {
         data[key] = provider.snapshot();
       } catch (e) {
-        errors.push({ code: 'snapshotFailed', path: key, message: String(e && e.message ? e.message : e) });
+        errors.push({
+          code: e?.code || 'snapshotFailed',
+          path: key,
+          message: String(e && e.message ? e.message : e),
+          ...(Array.isArray(e?.operationIds) ? { operationIds: [...e.operationIds] } : {}),
+          ...(Array.isArray(e?.eventIds) ? { eventIds: [...e.eventIds] } : {}),
+          ...(Array.isArray(e?.triggerIds) ? { triggerIds: [...e.triggerIds] } : {})
+        });
       }
     }
 

@@ -2280,6 +2280,52 @@
     }
   ],
   "quests": [],
+  "taskGraphs": [
+    {
+      "id": "task.s01.survival",
+      "title": "荒原求生",
+      "description": "在干旱荒原活过第一夜，并逃往废弃营地。",
+      "category": "main",
+      "entryNodeId": "start",
+      "reward": {},
+      "checkpoint": null,
+      "nodes": [
+        { "id": "start", "type": "start", "next": ["lightCampfire"] },
+        { "id": "lightCampfire", "type": "objective", "title": "点燃火堆", "eventMatcher": { "type": "state.transaction", "payload": { "definitionId": "story.s01.campfireLit" } }, "next": ["findTools"] },
+        { "id": "findTools", "type": "objective", "title": "找齐斧头和剥皮刀", "eventMatcher": { "type": "state.transaction", "payload": { "definitionId": "story.s01.initialToolsPicked" } }, "next": ["gatherBerries"] },
+        { "id": "gatherBerries", "type": "objective", "title": "采集荒野酸果", "eventMatcher": { "type": "state.transaction", "payload": { "definitionId": "story.s01.berriesGathered" } }, "next": ["eatBerry"] },
+        { "id": "eatBerry", "type": "objective", "title": "食用酸果恢复体力", "eventMatcher": { "type": "state.transaction", "payload": { "definitionId": "story.s01.berryEaten" } }, "next": ["gatherWood"] },
+        { "id": "gatherWood", "type": "objective", "title": "采集至少三份木材", "eventMatcher": { "type": "state.transaction", "payload": { "definitionId": "story.s01.woodGathered" } }, "next": ["spotWolf"] },
+        { "id": "spotWolf", "type": "objective", "title": "为火堆添柴并应对野狼", "eventMatcher": { "type": "state.transaction", "payload": { "definitionId": "story.s01.firstWolfSpotted" } }, "next": ["killWolf"] },
+        { "id": "killWolf", "type": "objective", "title": "击杀教学野狼", "eventMatcher": { "type": "state.transaction", "payload": { "definitionId": "story.s01.firstWolfKilled" } }, "next": ["skinWolf"] },
+        { "id": "skinWolf", "type": "objective", "title": "剥取两份狼皮", "eventMatcher": { "type": "state.transaction", "payload": { "definitionId": "story.s01.wolfSkinned" } }, "next": ["cookMeat"] },
+        { "id": "cookMeat", "type": "objective", "title": "烤制狼肉", "eventMatcher": { "type": "state.transaction", "payload": { "definitionId": "story.s01.cookMeat" } }, "next": ["craftGear"] },
+        { "id": "craftGear", "type": "objective", "title": "制作狼皮背心和护腕", "eventMatcher": { "type": "state.transaction", "payload": { "definitionId": "story.s01.wolfGearCrafted" } }, "next": ["buildShelter"] },
+        { "id": "buildShelter", "type": "objective", "title": "搭建庇护所", "eventMatcher": { "type": "state.transaction", "payload": { "definitionId": "story.s01.shelterCompleted" } }, "next": ["stayOvernight"] },
+        { "id": "stayOvernight", "type": "objective", "title": "在庇护所过夜", "eventMatcher": { "type": "state.transaction", "payload": { "definitionId": "story.s01.overnight" } }, "next": ["leaveShelter"] },
+        { "id": "leaveShelter", "type": "objective", "title": "离开庇护所并躲避狼群", "eventMatcher": { "type": "state.transaction", "payload": { "definitionId": "story.s01.leaveShelter" } }, "next": ["crossRiver"] },
+        { "id": "crossRiver", "type": "objective", "title": "跳石过河", "eventMatcher": { "type": "state.transaction", "payload": { "definitionId": "story.s01.riverCrossed" } }, "next": ["reachCliff"] },
+        { "id": "reachCliff", "type": "objective", "title": "抵达山崖并攀藤撤离", "eventMatcher": { "type": "state.transaction", "payload": { "definitionId": "story.s01.cliffReached" } }, "next": ["escape"] },
+        { "id": "escape", "type": "objective", "title": "逃往废弃营地", "eventMatcher": { "type": "state.transaction", "payload": { "definitionId": "story.s01.complete" } }, "next": ["complete"] },
+        { "id": "complete", "type": "complete" }
+      ]
+    },
+    {
+      "id": "task.s02.summons",
+      "title": "废营召见",
+      "description": "清点废弃营地物资，接受张角召见并前往粥棚营地。",
+      "category": "main",
+      "entryNodeId": "start",
+      "reward": {},
+      "checkpoint": null,
+      "nodes": [
+        { "id": "start", "type": "start", "next": ["acceptSummons"] },
+        { "id": "acceptSummons", "type": "objective", "title": "接受张角召见", "eventMatcher": { "type": "state.transaction", "payload": { "definitionId": "story.s02.summons.accept" } }, "next": ["travel"] },
+        { "id": "travel", "type": "objective", "title": "前往粥棚营地", "eventMatcher": { "type": "state.transaction", "payload": { "definitionId": "story.s02.travel" } }, "next": ["complete"] },
+        { "id": "complete", "type": "complete" }
+      ]
+    }
+  ],
   "flowGroups": [],
   "sceneEvents": [],
   "triggerCatalog": {
@@ -3166,6 +3212,29 @@
     ]
   },
   "triggers": [
+    {
+      "do": [
+        {
+          "action": "task.command",
+          "params": {
+            "definitionId": "task.s01.survival",
+            "instanceId": "task.s01.survival.main",
+            "operation": "task.start",
+            "tracking": true
+          },
+          "stepId": "start-s01-survival-task"
+        }
+      ],
+      "id": "trg_s01_start_survival_task",
+      "name": "进入 S01：启动荒原求生主任务",
+      "once": true,
+      "when": {
+        "params": {
+          "sceneId": "S01"
+        },
+        "type": "sceneEnter"
+      }
+    },
     {
       "cooldown": 1,
       "do": [
@@ -4086,6 +4155,16 @@
     },
     {
       "do": [
+        {
+          "action": "task.command",
+          "params": {
+            "definitionId": "task.s02.summons",
+            "instanceId": "task.s02.summons.main",
+            "operation": "task.start",
+            "tracking": true
+          },
+          "stepId": "start-s02-summons-task"
+        },
         {
           "action": "spawnPlacements",
           "params": {
