@@ -1,24 +1,16 @@
 <!--
-
+/************************************************************
  * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
-
  * 
-
  * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
-
  * @author    刘枭 (beiliwenxiao)
-
  * @email     beiliwenxiao@qq.com
-
  * @date      2026-01-14
-
  * @blog      https://blog.csdn.net/beiliwenxiao
-
  * @repo      https://github.com/beiliwenxiao/yijian18-engine
-
  *            https://gitee.com/coderaaa/yijian18-engine
-
- -->
+ ************************************************************/
+-->
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -999,8 +991,17 @@
             useIndexedDB: true  // 使用 IndexedDB 存储大型存档
         });
         
-        // 清理 localStorage 中的旧存档（只保留 slot-1 到 slot-6）
-        saveGames.clearOldLocalStorageSaves({ keepFrom: 1, keepTo: 6 });
+        // 先将保留的旧 slot-1..6 迁入 IndexedDB，成功复制后才清理 localStorage。
+        const saveStorageReady = saveGames.migrateLegacyLocalStorage({ keepFrom: 1, keepTo: 6 })
+            .then(result => {
+                if (!result.ok) console.warn('旧存档迁移未完全完成', result.errors);
+                return result;
+            })
+            .catch(error => {
+                const result = { ok: false, errors: [{ code: 'legacyMigrationFailed', message: error?.message || String(error) }] };
+                console.warn('旧存档迁移失败', result.errors);
+                return result;
+            });
         saveGames.setAutoSaveExecutor(options => autoSaveCurrentGame(options));
         saveGames.setCheckpointLoadExecutor(options => loadCheckpointAutoSave(options));
         const SAVE_FILES_ROOT = 'example/sanguo_zhangjiao/saves';
@@ -1131,11 +1132,11 @@
             if (restoreFocus && opener?.isConnected && !loginScreen.classList.contains('hidden')) opener.focus();
         }
 
-        function confirmNewGameProfile() {
+        async function confirmNewGameProfile() {
             applyNewGameProfile();
             closeNewGameProfile({ restoreFocus: false });
-            setLoginMessage('请选择手动存档栏位（1–100）。');
-            renderSaveSlots('new');
+            setLoginMessage('请选择手动存档栏位。');
+            await renderSaveSlots('new');
         }
 
         async function loadProjectConfig() {
@@ -1338,8 +1339,13 @@
         }
 
         /** 自动档与手动档统一按保存时间挑选，继续游戏始终恢复最近有效进度。 */
-        function getLatestSaveSelection() {
-            const latest = [...saveGames.getAutoSlots(), ...saveGames.listSlots()]
+        async function getLatestSaveSelection() {
+            await saveStorageReady;
+            const [autoSlots, manualSlots] = await Promise.all([
+                saveGames.getAutoSlotsAsync(),
+                saveGames.listExistingSlotsAsync()
+            ]);
+            const latest = [...autoSlots, ...manualSlots]
                 .filter(entry => entry.exists && entry.info)
                 .sort((left, right) => {
                     const timeDelta = (Number(right.info.createdAt) || 0) - (Number(left.info.createdAt) || 0);
@@ -1350,9 +1356,9 @@
             return latest ? { kind: latest.type, index: latest.index } : null;
         }
 
-        function refreshContinueGameAction() {
+        async function refreshContinueGameAction() {
             const button = document.getElementById('login-continue');
-            const selection = getLatestSaveSelection();
+            const selection = await getLatestSaveSelection();
             button.disabled = !selection;
             button.title = selection ? '读取最近保存的游戏进度' : '没有可读取的有效存档';
             return selection;
@@ -1423,34 +1429,18 @@
             return preview;
         }
 
-        /** 巫师式存档浏览：缩略图、分类、区域、等级与时间以固定卡片列表展示。 */
+        /** 巫师式存档浏览：异步读取已提交的 IndexedDB 存档。 */
         async function renderSaveSlots(mode) {
             savePickerMode = mode;
-            
-            // 使用异步 API 获取存档列表
-            const manualSlots = saveGames.listExistingSlotsAsync 
-                ? await saveGames.listExistingSlotsAsync()
-                : saveGames.listSlots().filter(s => s.exists);
-            const autoSlots = saveGames.getAutoSlots();
-            
-            // 计算下一个可用槽位
-            let nextAvailableSlotIndex = 1;
-            if (mode !== 'continue' && saveGames.getNextAvailableSlotIndex) {
-                try {
-                    nextAvailableSlotIndex = await saveGames.getNextAvailableSlotIndex();
-                } catch (e) {
-                    console.warn('[renderSaveSlots] 获取下一可用槽位失败:', e);
-                }
-            }
-            
-            // 确定要显示的槽位范围
-            const defaultVisibleCount = 9;
-            const usedIndices = new Set(manualSlots.map(s => s.index));
-            const maxVisibleIndex = Math.max(
-                defaultVisibleCount,
-                ...manualSlots.map(s => s.index),
-                nextAvailableSlotIndex
-            );
+            await saveStorageReady;
+            const [manualSlots, autoSlots] = await Promise.all([
+                saveGames.listExistingSlotsAsync(),
+                saveGames.getAutoSlotsAsync()
+            ]);
+            const nextAvailableSlotIndex = mode === 'continue'
+                ? null
+                : await saveGames.getNextAvailableSlotIndex();
+            const usedIndices = new Set(manualSlots.map(slot => slot.index));
             
             savePickerEntries = [];
             saveSlotList.replaceChildren();
@@ -1511,41 +1501,33 @@
             }
 
             if (mode === 'continue') {
-                addGroup('自动存档（保留最近 3 份）');
-                for (const slot of autoSlots) addOption(autoSaveSelection(slot.index), slot, `自动 ${slot.index}`);
+                const existingAutoSlots = autoSlots.filter(slot => slot.exists);
+                if (existingAutoSlots.length > 0) {
+                    addGroup('自动存档（保留最近 3 份）');
+                    for (const slot of existingAutoSlots) addOption(autoSaveSelection(slot.index), slot, `自动 ${slot.index}`);
+                }
             }
 
-            // 动态显示手动存档：只显示已存在的 + 默认空位
             addGroup(`手动存档（已存 ${manualSlots.length} 个）`);
-            
-            // 先显示已存在的存档
             for (const slot of manualSlots) {
                 addOption(manualSaveSelection(slot.index), slot, `存档 ${slot.index}`);
             }
-            
-            // 如果不是读取模式，显示下一个空位用于新建
-            if (mode !== 'continue') {
-                // 检查是否需要在默认范围内显示空位
-                for (let i = 1; i <= defaultVisibleCount; i++) {
-                    if (!usedIndices.has(i)) {
-                        const emptyEntry = { type: 'manual', index: i, id: `slot-${i}`, exists: false, info: null };
-                        addOption(manualSaveSelection(i), emptyEntry, `存档 ${i}`);
-                        break; // 只显示一个空位
-                    }
-                }
-                
-                // 如果默认范围内都已满，显示下一个新位置
-                if (usedIndices.size >= defaultVisibleCount) {
-                    const nextEmpty = nextAvailableSlotIndex;
-                    if (nextEmpty <= 100 && !usedIndices.has(nextEmpty)) {
-                        const emptyEntry = { type: 'manual', index: nextEmpty, id: `slot-${nextEmpty}`, exists: false, info: null };
-                        addOption(manualSaveSelection(nextEmpty), emptyEntry, `存档 ${nextEmpty} (新)`);
-                    }
-                }
+
+            // 读取模式只显示真实存在的存档；新建/手动保存额外显示一个下一可用栏位。
+            if (mode !== 'continue' && nextAvailableSlotIndex != null && !usedIndices.has(nextAvailableSlotIndex)) {
+                addOption(manualSaveSelection(nextAvailableSlotIndex), {
+                    type: 'manual',
+                    index: nextAvailableSlotIndex,
+                    id: `slot-${nextAvailableSlotIndex}`,
+                    exists: false,
+                    info: null
+                }, `存档 ${nextAvailableSlotIndex}${nextAvailableSlotIndex > 9 ? '（新）' : ''}`);
             }
 
-            const firstManual = manualSlots.find(slot => slot.exists);
-            const latestAuto = saveGames.getLatestAutoSlot();
+            const firstManual = manualSlots[0] || null;
+            const latestAuto = autoSlots
+                .filter(slot => slot.exists)
+                .sort((left, right) => (Number(right.info?.createdAt) || 0) - (Number(left.info?.createdAt) || 0))[0] || null;
             const preferred = mode === 'continue'
                 ? (latestAuto ? autoSaveSelection(latestAuto.index) : firstManual ? manualSaveSelection(firstManual.index) : '')
                 : manualSaveSelection(nextAvailableSlotIndex);
@@ -1842,7 +1824,7 @@
             }
         }
 
-        /** 将完整快照和对应缩略图镜像到 Demo 存档目录；浏览器缓存仍用于同步读档。 */
+        /** 将完整快照和对应缩略图镜像到 Demo 存档目录；浏览器 IndexedDB 是运行时存档权威。 */
         async function persistSaveFiles(slotId, snapshot) {
             if (!snapshot) {
                 return { ok: false, errors: [{ code: 'missingSnapshot', path: slotId, message: '没有可写入文件的存档快照' }] };
@@ -1870,8 +1852,9 @@
 
         async function saveCurrentGame({ silent = false } = {}) {
             if (!gameStarted || !scene?.playerEntity) return null;
+            await saveStorageReady;
             await captureFreshSavePreview();
-            const result = saveGames.save(activeSaveSlot, currentSaveMeta());
+            const result = await saveGames.saveAsync(activeSaveSlot, currentSaveMeta());
             if (!result.ok) {
                 if (!silent) setLoginMessage('手动保存失败，请稍后重试。');
                 console.warn('手动保存失败', result.errors);
@@ -1882,7 +1865,7 @@
             if (!silent) {
                 setLoginMessage(fileResult.ok
                     ? `已手动保存到栏位 ${activeSaveSlot}`
-                    : '手动存档已写入浏览器缓存，但存档文件或缩略图保存失败。');
+                    : '手动存档已写入 IndexedDB，但存档文件或缩略图保存失败。');
             }
             if (!fileResult.ok) console.warn('手动存档文件保存失败', fileResult.errors);
             return completed;
@@ -1911,24 +1894,8 @@
             meta.checkpointMode = checkpointMode;
             if (checkpointId) meta.checkpointId = checkpointId;
             if (sceneId) meta.currentSceneId = sceneId;
-            const nextSlot = saveGames.getNextAutoSlot();
-            const previousSlot = saveGames.storage.readRaw(nextSlot.id);
-            if (!previousSlot.ok) {
-                if (checkpointMode !== 'bestEffort') showAutoSaveStatus('自动存档保存失败', 'error');
-                console.warn('自动存档无法读取目标槽位，保留原槽位内容', {
-                    reason, checkpointId, errors: previousSlot.errors
-                });
-                return {
-                    ok: false,
-                    nonBlocking: checkpointMode === 'bestEffort',
-                    saved: false,
-                    checkpointSkipped: true,
-                    autoSaveFailed: true,
-                    code: 'autoSaveBaselineUnavailable',
-                    errors: previousSlot.errors || []
-                };
-            }
-            const result = saveGames.saveAuto(meta);
+            await saveStorageReady;
+            const result = await saveGames.saveAutoAsync(meta);
             if (!result.ok) {
                 // Snapshot 失败时 saveAuto 不会覆盖目标槽位；调用方决定该 checkpoint 是否可阻断流程。
                 if (checkpointMode !== 'bestEffort') showAutoSaveStatus('自动存档保存失败', 'error');
@@ -1946,14 +1913,14 @@
             const fileResult = await persistSaveFiles(result.autoSlotId, result.snapshot);
             const completed = {
                 ...result,
-                ok: true, // 文件持久化失败不阻断游戏流程，localStorage 已成功保存
+                ok: true, // 文件镜像失败不阻断游戏流程，IndexedDB 已成功保存
                 saved: true,
                 filePersisted: fileResult.ok,
                 errors: [...result.errors, ...fileResult.errors]
             };
             if (fileResult.ok) showAutoSaveStatus('自动存档保存成功', 'success');
             else {
-                showAutoSaveStatus('自动存档已保存到浏览器缓存', 'info');
+                showAutoSaveStatus('自动存档已写入 IndexedDB', 'info');
                 console.warn('自动存档文件镜像失败，但浏览器缓存已成功', {
                     reason, checkpointId, errors: fileResult.errors
                 });
@@ -2020,12 +1987,13 @@
             const targetId = String(checkpointId || '');
             if (!targetId) return { ok: false, code: 'checkpointIdMissing' };
             if (autoSaveInFlight) await autoSaveInFlight;
-            const candidate = saveGames.getAutoSlots()
+            await saveStorageReady;
+            const candidate = (await saveGames.getAutoSlotsAsync())
                 .filter(slot => slot.exists && slot.info?.meta?.checkpointId === targetId)
                 .sort((a, b) => (Number(b.info?.createdAt) || 0) - (Number(a.info?.createdAt) || 0))[0];
             if (!candidate) return { ok: false, code: 'checkpointNotFound', checkpointId: targetId };
 
-            const inspected = saveGames.inspectAuto(candidate.index);
+            const inspected = await saveGames.inspectAutoAsync(candidate.index);
             if (!inspected.ok) return { ...inspected, code: 'checkpointInspectFailed' };
             const savedState = inspected.snapshot?.data?.game;
             const prepared = await scene?.prepareRestoreRegion?.(savedState);
@@ -2036,7 +2004,7 @@
                     errors: prepared.errors || []
                 };
             }
-            const loaded = saveGames.loadAuto(candidate.index);
+            const loaded = await saveGames.loadAutoAsync(candidate.index);
             return loaded.ok
                 ? { ...loaded, checkpointId: targetId, autoSlotIndex: candidate.index }
                 : { ...loaded, code: 'checkpointRestoreFailed' };
@@ -2077,10 +2045,10 @@
                     activeSaveSlot = selection.index;
                     const saved = await saveCurrentGame({ silent: true });
                     const message = saved?.ok ? `已手动保存到栏位 ${selection.index}`
-                        : saved?.snapshot ? '手动存档已写入浏览器缓存，但存档文件或缩略图保存失败。'
+                        : saved?.snapshot ? '手动存档已写入 IndexedDB，但存档文件或缩略图保存失败。'
                         : '手动保存失败，请稍后重试。';
                     setLoginMessage(message);
-                    if (isSavePickerOpen()) renderSaveSlots('manualSave');
+                    if (isSavePickerOpen()) await renderSaveSlots('manualSave');
                     return;
                 }
                 if (!entry.exists) {
@@ -2126,7 +2094,7 @@
             } else {
                 loginScreen.classList.remove('in-game');
             }
-            refreshContinueGameAction();
+            await refreshContinueGameAction();
             setLoginMessage('');
             menuPadArmed = false;
             menuPadIndex = 0;
@@ -2157,14 +2125,18 @@
         }
 
         document.getElementById('login-continue').addEventListener('click', async () => {
-            const selection = refreshContinueGameAction();
+            const selection = await refreshContinueGameAction();
             if (!selection) {
                 setLoginMessage('没有可读取的有效存档，请选择 开始游戏。');
                 return;
             }
+            const [autoSlots, manualSlots] = await Promise.all([
+                saveGames.getAutoSlotsAsync(),
+                saveGames.listExistingSlotsAsync()
+            ]);
             const entry = selection.kind === 'auto'
-                ? saveGames.getAutoSlots().find(slot => slot.index === selection.index)
-                : saveGames.listSlots().find(slot => slot.index === selection.index);
+                ? autoSlots.find(slot => slot.index === selection.index)
+                : manualSlots.find(slot => slot.index === selection.index);
             const confirmed = await requestStartGameConfirmation('continue', selection, entry);
             if (confirmed && !loginScreen.classList.contains('hidden')) startGameFromSelection('continue', selection);
         });
@@ -2172,18 +2144,18 @@
             setLoginMessage('请设置昵称与性别。');
             openNewGameProfile();
         });
-        document.getElementById('login-read-save').addEventListener('click', () => {
-            if (!saveGames.hasAny()) {
+        document.getElementById('login-read-save').addEventListener('click', async () => {
+            if (!await saveGames.hasAnyAsync()) {
                 closeSavePicker({ restoreFocus: false });
                 setLoginMessage('存档为空，请选择 开始游戏。');
                 return;
             }
             setLoginMessage('请选择自动存档或手动存档栏位。');
-            renderSaveSlots('continue');
+            await renderSaveSlots('continue');
         });
-        document.getElementById('login-manual-save').addEventListener('click', () => {
-            setLoginMessage('请选择要写入的手动存档栏位（1–100）。');
-            renderSaveSlots('manualSave');
+        document.getElementById('login-manual-save').addEventListener('click', async () => {
+            setLoginMessage('请选择要写入的手动存档栏位。');
+            await renderSaveSlots('manualSave');
         });
         document.getElementById('login-return-game').addEventListener('click', closeSystemMenu);
         newGameProfileConfirm.addEventListener('click', confirmNewGameProfile);
@@ -2636,10 +2608,11 @@
                     });
                     const selection = options.saveSelection || { kind: 'manual', index: activeSaveSlot };
                     if (selection.kind === 'manual') activeSaveSlot = selection.index;
+                    await saveStorageReady;
                     if (options.loadSave) {
                         const inspected = selection.kind === 'auto'
-                            ? saveGames.inspectAuto(selection.index)
-                            : saveGames.inspect(selection.index);
+                            ? await saveGames.inspectAutoAsync(selection.index)
+                            : await saveGames.inspectAsync(selection.index);
                         if (inspected.ok) {
                             const savedState = inspected.snapshot?.data?.game;
                             const prepared = await scene.prepareRestoreRegion?.(savedState);
@@ -2648,8 +2621,8 @@
                             }
                         }
                         const loaded = selection.kind === 'auto'
-                            ? saveGames.loadAuto(selection.index)
-                            : saveGames.load(selection.index);
+                            ? await saveGames.loadAutoAsync(selection.index)
+                            : await saveGames.loadAsync(selection.index);
                         if (!loaded.ok) {
                             console.warn('读取存档失败', loaded.errors);
                             const incompatible = loaded.errors?.some(error => error.code === 'incompatibleSave');
@@ -2660,7 +2633,7 @@
                         }
                     } else {
                         // 新游戏只清理所选手动栏位，绝不影响自动存档位。
-                        saveGames.clear(activeSaveSlot);
+                        await saveGames.clearAsync(activeSaveSlot);
                     }
                 }
                 
