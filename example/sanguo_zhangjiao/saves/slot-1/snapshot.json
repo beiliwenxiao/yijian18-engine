@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "createdAt": 1789773679125,
+  "createdAt": 1789822059547,
   "meta": {
     "gameId": "sanguo_zhangjiao",
     "kind": "manual",
@@ -14,7 +14,7 @@
   "data": {
     "game": {
       "campaignId": "sanguo-zhangjiao-s01-s14",
-      "schemaVersion": 4,
+      "schemaVersion": 5,
       "currentSceneId": "S01",
       "player": {
         "id": "refugee",
@@ -63,19 +63,14 @@
       "tutorial": {
         "completedTutorials": [],
         "enabled": true,
-        "currentTutorialId": "s01.move",
+        "currentTutorialId": null,
         "currentStepIndex": 0,
         "signalProgress": {},
-        "movementOrigins": {
-          "s01.move": {
-            "x": 8276.559230181467,
-            "y": 4165.023414159508
-          }
-        }
+        "movementOrigins": {}
       },
       "dialogue": {
-        "currentDialogueId": null,
-        "currentNodeId": null,
+        "currentDialogueId": "dialogue.s01.wake",
+        "currentNodeId": "start",
         "variables": {},
         "history": [
           {
@@ -83,45 +78,30 @@
             "nodeId": "start",
             "speaker": "旁白",
             "text": "寒风卷过龟裂的荒原。你从熄灭的火堆旁醒来，四肢冻得僵硬，远处只有枯草与河水的声响。",
-            "timestamp": 1789773676837
+            "timestamp": 1789822057384
           },
           {
             "type": "start",
             "dialogueId": "dialogue.s01.wake",
-            "timestamp": 1789773676837
-          },
-          {
-            "type": "end",
-            "dialogueId": "dialogue.s01.wake",
-            "timestamp": 1789773678786
+            "timestamp": 1789822057384
           }
         ],
-        "completedDialogues": [
-          "dialogue.s01.wake"
-        ]
+        "completedDialogues": []
       },
       "authority": {
         "snapshotSchemaVersion": 1,
-        "definitionRevision": 0,
+        "definitionRevision": 1,
         "stateRevisions": {
-          "quest:refugee": 1,
-          "tutorial:s01.move": 1
+          "quest:refugee": 1
         },
-        "lastEventSequence": 4,
-        "logicalClock": 2,
+        "lastEventSequence": 2,
+        "logicalClock": 1,
         "rngState": {
           "seed": 0,
           "streams": {
             "quest.command": {
               "substreams": {
-                "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task": {
-                  "counter": 0
-                }
-              }
-            },
-            "tutorial.command": {
-              "substreams": {
-                "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000005:trigger:trg_s01_begin_tutorial_after_wake:step:show-tutorial-s01-move": {
+                "evt:run-da1030fc-cafc-4993-831b-98c172b32326:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task": {
                   "counter": 0
                 }
               }
@@ -132,14 +112,14 @@
           "version": 1,
           "entries": [
             {
-              "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task",
+              "operationId": "evt:run-da1030fc-cafc-4993-831b-98c172b32326:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task",
               "fingerprint": "{\"actorId\":\"refugee\",\"commandType\":\"quest.command\",\"definitionRevision\":1,\"payload\":{\"definitionId\":\"task.s01.survival\",\"event\":{\"sceneId\":\"S01\"},\"instanceId\":\"task.s01.survival.main\",\"operation\":\"task.start\",\"tracking\":true}}",
               "status": "committed",
               "createdAt": 0,
               "updatedAt": 0,
               "result": {
                 "ok": true,
-                "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task",
+                "operationId": "evt:run-da1030fc-cafc-4993-831b-98c172b32326:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task",
                 "status": "committed",
                 "committed": true,
                 "code": null,
@@ -261,39 +241,18 @@
                 },
                 "error": null
               }
-            },
-            {
-              "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000005:trigger:trg_s01_begin_tutorial_after_wake:step:show-tutorial-s01-move",
-              "fingerprint": "{\"actorId\":\"refugee\",\"commandType\":\"tutorial.command\",\"definitionRevision\":1,\"payload\":{\"definitionRefs\":[{\"id\":\"s01.move\",\"kind\":\"tutorials\"}],\"event\":{\"id\":\"dialogue.s01.wake\"},\"operation\":\"show\",\"tutorialId\":\"s01.move\"}}",
-              "status": "committed",
-              "createdAt": 0,
-              "updatedAt": 0,
-              "result": {
-                "ok": true,
-                "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000005:trigger:trg_s01_begin_tutorial_after_wake:step:show-tutorial-s01-move",
-                "status": "committed",
-                "committed": true,
-                "code": null,
-                "stateId": "tutorial:s01.move",
-                "stateRevision": 1,
-                "eventFrom": 3,
-                "eventTo": 4,
-                "value": {
-                  "ok": true
-                },
-                "error": null
-              }
             }
           ]
         },
         "serviceStates": {
           "eventJournal": {
-            "schemaVersion": 1,
-            "runId": "run-39ebc565-f5dc-43f1-aa3d-f59f19392e58",
-            "nextSequence": 7,
+            "schemaVersion": 2,
+            "runId": "run-da1030fc-cafc-4993-831b-98c172b32326",
+            "nextSequence": 4,
             "events": [
               {
-                "eventId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000001",
+                "eventId": "evt:run-da1030fc-cafc-4993-831b-98c172b32326:0000000001",
+                "kind": null,
                 "eventDefinitionId": null,
                 "type": "sceneEnter",
                 "source": null,
@@ -302,7 +261,7 @@
                 "payload": {
                   "sceneId": "S01"
                 },
-                "payloadFingerprint": "{\"actorRef\":\"refugee\",\"eventDefinitionId\":null,\"payload\":{\"sceneId\":\"S01\"},\"sceneId\":\"S01\",\"source\":null,\"type\":\"sceneEnter\"}",
+                "payloadFingerprint": "{\"actorRef\":\"refugee\",\"eventDefinitionId\":null,\"kind\":null,\"payload\":{\"sceneId\":\"S01\"},\"sceneId\":\"S01\",\"source\":null,\"type\":\"sceneEnter\"}",
                 "logicalTime": 0,
                 "persistent": true,
                 "status": "succeeded",
@@ -310,14 +269,14 @@
                   "trg_s01_start_survival_task:start-s01-survival-task": {
                     "triggerId": "trg_s01_start_survival_task",
                     "stepId": "start-s01-survival-task",
-                    "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task",
-                    "payloadFingerprint": "sha256-b38c6460b36dc5d077c951c41c59b8e1b9d444aaecfd3676861ec40de208fade",
+                    "operationId": "evt:run-da1030fc-cafc-4993-831b-98c172b32326:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task",
+                    "payloadFingerprint": "sha256-0d70201901b437433757b4faefeeef6a7fb7184696990624a5ff7c12a2e5b453",
                     "status": "succeeded",
                     "startedLogicalTime": 0,
                     "finishedLogicalTime": 0,
                     "result": {
                       "ok": true,
-                      "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task",
+                      "operationId": "evt:run-da1030fc-cafc-4993-831b-98c172b32326:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task",
                       "status": "committed",
                       "committed": true,
                       "code": null,
@@ -441,9 +400,10 @@
                     }
                   }
                 },
+                "consumerReceipts": {},
                 "result": {
                   "ok": true,
-                  "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task",
+                  "operationId": "evt:run-da1030fc-cafc-4993-831b-98c172b32326:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task",
                   "status": "committed",
                   "committed": true,
                   "code": null,
@@ -567,7 +527,8 @@
                 }
               },
               {
-                "eventId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000002",
+                "eventId": "evt:run-da1030fc-cafc-4993-831b-98c172b32326:0000000002",
+                "kind": null,
                 "eventDefinitionId": null,
                 "type": "sceneEnter",
                 "source": null,
@@ -576,7 +537,7 @@
                 "payload": {
                   "sceneId": "S01"
                 },
-                "payloadFingerprint": "{\"actorRef\":\"refugee\",\"eventDefinitionId\":null,\"payload\":{\"sceneId\":\"S01\"},\"sceneId\":\"S01\",\"source\":null,\"type\":\"sceneEnter\"}",
+                "payloadFingerprint": "{\"actorRef\":\"refugee\",\"eventDefinitionId\":null,\"kind\":null,\"payload\":{\"sceneId\":\"S01\"},\"sceneId\":\"S01\",\"source\":null,\"type\":\"sceneEnter\"}",
                 "logicalTime": 0,
                 "persistent": true,
                 "status": "succeeded",
@@ -584,14 +545,14 @@
                   "trg_s01_spawn_initial:spawn-initial-placements": {
                     "triggerId": "trg_s01_spawn_initial",
                     "stepId": "spawn-initial-placements",
-                    "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000002:trigger:trg_s01_spawn_initial:step:spawn-initial-placements",
-                    "payloadFingerprint": "sha256-7937b17bbb37f688d9366e2dbfea237ddc2ae4b88f18e660a50affed536386d0",
+                    "operationId": "evt:run-da1030fc-cafc-4993-831b-98c172b32326:0000000002:trigger:trg_s01_spawn_initial:step:spawn-initial-placements",
+                    "payloadFingerprint": "sha256-1ed653df4c50a33903b400be744d0e963f953c7e031eeee241c322b0d623f65c",
                     "status": "succeeded",
                     "startedLogicalTime": 0,
                     "finishedLogicalTime": 0,
                     "result": {
                       "ok": true,
-                      "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000002:trigger:trg_s01_spawn_initial:step:spawn-initial-placements",
+                      "operationId": "evt:run-da1030fc-cafc-4993-831b-98c172b32326:0000000002:trigger:trg_s01_spawn_initial:step:spawn-initial-placements",
                       "status": "succeeded",
                       "committed": false,
                       "code": null,
@@ -606,14 +567,14 @@
                   "trg_s01_spawn_initial:reconcile-pursuit": {
                     "triggerId": "trg_s01_spawn_initial",
                     "stepId": "reconcile-pursuit",
-                    "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000002:trigger:trg_s01_spawn_initial:step:reconcile-pursuit",
-                    "payloadFingerprint": "sha256-74218f1f114be1460145a09f23ad7277605f3d69bcaf123a940003df4e7d41a9",
+                    "operationId": "evt:run-da1030fc-cafc-4993-831b-98c172b32326:0000000002:trigger:trg_s01_spawn_initial:step:reconcile-pursuit",
+                    "payloadFingerprint": "sha256-ef9fbf20e022f304b05e181e45b5a5644956e54f5ea6eb0b355147196f0698b4",
                     "status": "succeeded",
                     "startedLogicalTime": 0,
                     "finishedLogicalTime": 0,
                     "result": {
                       "ok": true,
-                      "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000002:trigger:trg_s01_spawn_initial:step:reconcile-pursuit",
+                      "operationId": "evt:run-da1030fc-cafc-4993-831b-98c172b32326:0000000002:trigger:trg_s01_spawn_initial:step:reconcile-pursuit",
                       "status": "succeeded",
                       "committed": false,
                       "code": null,
@@ -628,14 +589,14 @@
                   "trg_s01_spawn_initial:present-entry": {
                     "triggerId": "trg_s01_spawn_initial",
                     "stepId": "present-entry",
-                    "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000002:trigger:trg_s01_spawn_initial:step:present-entry",
-                    "payloadFingerprint": "sha256-3b469736c7257df7a2e72f15d1eb5fb14d4cbfc7bfc9e5c816f9ea2a96ab3865",
+                    "operationId": "evt:run-da1030fc-cafc-4993-831b-98c172b32326:0000000002:trigger:trg_s01_spawn_initial:step:present-entry",
+                    "payloadFingerprint": "sha256-cd975ac15eae03240da6f6ac40437a37d9d8017d1409e341152d43609dbb87db",
                     "status": "succeeded",
                     "startedLogicalTime": 0,
                     "finishedLogicalTime": 0,
                     "result": {
                       "ok": true,
-                      "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000002:trigger:trg_s01_spawn_initial:step:present-entry",
+                      "operationId": "evt:run-da1030fc-cafc-4993-831b-98c172b32326:0000000002:trigger:trg_s01_spawn_initial:step:present-entry",
                       "status": "succeeded",
                       "committed": false,
                       "code": null,
@@ -648,9 +609,10 @@
                     }
                   }
                 },
+                "consumerReceipts": {},
                 "result": {
                   "ok": true,
-                  "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000002:trigger:trg_s01_spawn_initial:step:present-entry",
+                  "operationId": "evt:run-da1030fc-cafc-4993-831b-98c172b32326:0000000002:trigger:trg_s01_spawn_initial:step:present-entry",
                   "status": "succeeded",
                   "committed": false,
                   "code": null,
@@ -663,12 +625,13 @@
                 }
               },
               {
-                "eventId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000003",
+                "eventId": "evt:run-da1030fc-cafc-4993-831b-98c172b32326:0000000003",
+                "kind": "CommittedEvent",
                 "eventDefinitionId": "task.start.committed",
                 "type": "task.start.committed",
                 "source": {
                   "kind": "postCommitNotification",
-                  "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task"
+                  "operationId": "evt:run-da1030fc-cafc-4993-831b-98c172b32326:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task"
                 },
                 "actorRef": null,
                 "sceneId": null,
@@ -784,7 +747,7 @@
                     "scheduled": true
                   }
                 },
-                "payloadFingerprint": "{\"actorRef\":null,\"eventDefinitionId\":\"task.start.committed\",\"payload\":{\"actorId\":\"refugee\",\"changes\":[],\"checkpoint\":{\"scheduled\":true},\"completedInstances\":[],\"instance\":{\"actorId\":\"refugee\",\"completedLogicalTime\":null,\"definitionId\":\"task.s01.survival\",\"eventIds\":[],\"instanceId\":\"task.s01.survival.main\",\"nodeStates\":{\"buildShelter\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"complete\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"cookMeat\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"craftGear\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"crossRiver\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"eatBerry\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"escape\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"findTools\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"gatherBerries\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"gatherWood\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"killWolf\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"leaveShelter\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"lightCampfire\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"active\"},\"reachCliff\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"skinWolf\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"spotWolf\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"start\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"succeeded\"},\"stayOvernight\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"}},\"startedByEventId\":null,\"startedLogicalTime\":0,\"status\":\"active\",\"tracking\":true},\"operation\":\"task.start\"},\"sceneId\":null,\"source\":{\"kind\":\"postCommitNotification\",\"operationId\":\"evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task\"},\"type\":\"task.start.committed\"}",
+                "payloadFingerprint": "{\"actorRef\":null,\"eventDefinitionId\":\"task.start.committed\",\"kind\":\"CommittedEvent\",\"payload\":{\"actorId\":\"refugee\",\"changes\":[],\"checkpoint\":{\"scheduled\":true},\"completedInstances\":[],\"instance\":{\"actorId\":\"refugee\",\"completedLogicalTime\":null,\"definitionId\":\"task.s01.survival\",\"eventIds\":[],\"instanceId\":\"task.s01.survival.main\",\"nodeStates\":{\"buildShelter\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"complete\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"cookMeat\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"craftGear\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"crossRiver\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"eatBerry\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"escape\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"findTools\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"gatherBerries\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"gatherWood\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"killWolf\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"leaveShelter\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"lightCampfire\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"active\"},\"reachCliff\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"skinWolf\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"spotWolf\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"start\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"succeeded\"},\"stayOvernight\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"}},\"startedByEventId\":null,\"startedLogicalTime\":0,\"status\":\"active\",\"tracking\":true},\"operation\":\"task.start\"},\"sceneId\":null,\"source\":{\"kind\":\"postCommitNotification\",\"operationId\":\"evt:run-da1030fc-cafc-4993-831b-98c172b32326:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task\"},\"type\":\"task.start.committed\"}",
                 "logicalTime": 1,
                 "persistent": true,
                 "status": "succeeded",
@@ -792,8 +755,8 @@
                   "postCommit:published": {
                     "triggerId": "postCommit",
                     "stepId": "published",
-                    "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task",
-                    "payloadFingerprint": "{\"eventSequence\":1,\"operationId\":\"evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task\",\"type\":\"task.start.committed\"}",
+                    "operationId": "evt:run-da1030fc-cafc-4993-831b-98c172b32326:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task",
+                    "payloadFingerprint": "{\"eventSequence\":1,\"operationId\":\"evt:run-da1030fc-cafc-4993-831b-98c172b32326:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task\",\"type\":\"task.start.committed\"}",
                     "status": "succeeded",
                     "startedLogicalTime": 1,
                     "finishedLogicalTime": 1,
@@ -802,6 +765,7 @@
                     }
                   }
                 },
+                "consumerReceipts": {},
                 "result": {
                   "eventSequence": 1
                 },
@@ -810,16 +774,17 @@
                   "stateType": "questRuntime",
                   "stateRevision": 1,
                   "eventSequence": 1,
-                  "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task"
+                  "operationId": "evt:run-da1030fc-cafc-4993-831b-98c172b32326:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task"
                 }
               },
               {
-                "eventId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000004",
+                "eventId": "evt:run-da1030fc-cafc-4993-831b-98c172b32326:0000000004",
+                "kind": "ApplicationEvent",
                 "eventDefinitionId": "task.started",
                 "type": "task.started",
                 "source": {
                   "kind": "postCommitNotification",
-                  "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task"
+                  "operationId": "evt:run-da1030fc-cafc-4993-831b-98c172b32326:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task"
                 },
                 "actorRef": null,
                 "sceneId": null,
@@ -935,7 +900,7 @@
                     "scheduled": true
                   }
                 },
-                "payloadFingerprint": "{\"actorRef\":null,\"eventDefinitionId\":\"task.started\",\"payload\":{\"actorId\":\"refugee\",\"changes\":[],\"checkpoint\":{\"scheduled\":true},\"completedInstances\":[],\"instance\":{\"actorId\":\"refugee\",\"completedLogicalTime\":null,\"definitionId\":\"task.s01.survival\",\"eventIds\":[],\"instanceId\":\"task.s01.survival.main\",\"nodeStates\":{\"buildShelter\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"complete\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"cookMeat\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"craftGear\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"crossRiver\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"eatBerry\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"escape\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"findTools\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"gatherBerries\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"gatherWood\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"killWolf\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"leaveShelter\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"lightCampfire\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"active\"},\"reachCliff\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"skinWolf\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"spotWolf\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"start\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"succeeded\"},\"stayOvernight\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"}},\"startedByEventId\":null,\"startedLogicalTime\":0,\"status\":\"active\",\"tracking\":true},\"operation\":\"task.start\"},\"sceneId\":null,\"source\":{\"kind\":\"postCommitNotification\",\"operationId\":\"evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task\"},\"type\":\"task.started\"}",
+                "payloadFingerprint": "{\"actorRef\":null,\"eventDefinitionId\":\"task.started\",\"kind\":\"ApplicationEvent\",\"payload\":{\"actorId\":\"refugee\",\"changes\":[],\"checkpoint\":{\"scheduled\":true},\"completedInstances\":[],\"instance\":{\"actorId\":\"refugee\",\"completedLogicalTime\":null,\"definitionId\":\"task.s01.survival\",\"eventIds\":[],\"instanceId\":\"task.s01.survival.main\",\"nodeStates\":{\"buildShelter\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"complete\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"cookMeat\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"craftGear\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"crossRiver\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"eatBerry\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"escape\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"findTools\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"gatherBerries\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"gatherWood\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"killWolf\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"leaveShelter\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"lightCampfire\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"active\"},\"reachCliff\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"skinWolf\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"spotWolf\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"},\"start\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"succeeded\"},\"stayOvernight\":{\"eventIds\":[],\"selectedBranchId\":null,\"status\":\"locked\"}},\"startedByEventId\":null,\"startedLogicalTime\":0,\"status\":\"active\",\"tracking\":true},\"operation\":\"task.start\"},\"sceneId\":null,\"source\":{\"kind\":\"postCommitNotification\",\"operationId\":\"evt:run-da1030fc-cafc-4993-831b-98c172b32326:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task\"},\"type\":\"task.started\"}",
                 "logicalTime": 1,
                 "persistent": true,
                 "status": "succeeded",
@@ -943,13 +908,26 @@
                   "postCommit:published": {
                     "triggerId": "postCommit",
                     "stepId": "published",
-                    "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task",
-                    "payloadFingerprint": "{\"eventSequence\":2,\"operationId\":\"evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task\",\"type\":\"task.started\"}",
+                    "operationId": "evt:run-da1030fc-cafc-4993-831b-98c172b32326:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task",
+                    "payloadFingerprint": "{\"eventSequence\":2,\"operationId\":\"evt:run-da1030fc-cafc-4993-831b-98c172b32326:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task\",\"type\":\"task.started\"}",
                     "status": "succeeded",
                     "startedLogicalTime": 1,
                     "finishedLogicalTime": 1,
                     "result": {
                       "eventSequence": 2
+                    }
+                  }
+                },
+                "consumerReceipts": {
+                  "sanguo-scene-content": {
+                    "consumerId": "sanguo-scene-content",
+                    "operationId": "consume:evt:run-da1030fc-cafc-4993-831b-98c172b32326:0000000004:sanguo-scene-content",
+                    "status": "succeeded",
+                    "attempts": 1,
+                    "startedLogicalTime": 1,
+                    "finishedLogicalTime": 1,
+                    "result": {
+                      "ok": true
                     }
                   }
                 },
@@ -961,153 +939,7 @@
                   "stateType": "questRuntime",
                   "stateRevision": 1,
                   "eventSequence": 2,
-                  "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task"
-                }
-              },
-              {
-                "eventId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000005",
-                "eventDefinitionId": null,
-                "type": "dialogueEnd",
-                "source": null,
-                "actorRef": "refugee",
-                "sceneId": null,
-                "payload": {
-                  "id": "dialogue.s01.wake"
-                },
-                "payloadFingerprint": "{\"actorRef\":\"refugee\",\"eventDefinitionId\":null,\"payload\":{\"id\":\"dialogue.s01.wake\"},\"sceneId\":null,\"source\":null,\"type\":\"dialogueEnd\"}",
-                "logicalTime": 0,
-                "persistent": true,
-                "status": "succeeded",
-                "executions": {
-                  "trg_s01_begin_tutorial_after_wake:show-tutorial-s01-move": {
-                    "triggerId": "trg_s01_begin_tutorial_after_wake",
-                    "stepId": "show-tutorial-s01-move",
-                    "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000005:trigger:trg_s01_begin_tutorial_after_wake:step:show-tutorial-s01-move",
-                    "payloadFingerprint": "sha256-2af87bcb79e3f0d4725e8d5e04210fcca18a9715ef617e2cc639f7dcc689c730",
-                    "status": "succeeded",
-                    "startedLogicalTime": 0,
-                    "finishedLogicalTime": 0,
-                    "result": {
-                      "ok": true,
-                      "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000005:trigger:trg_s01_begin_tutorial_after_wake:step:show-tutorial-s01-move",
-                      "status": "committed",
-                      "committed": true,
-                      "code": null,
-                      "stateId": "tutorial:s01.move",
-                      "stateRevision": 1,
-                      "eventFrom": 3,
-                      "eventTo": 4,
-                      "value": {
-                        "ok": true
-                      },
-                      "error": null
-                    }
-                  }
-                },
-                "result": {
-                  "ok": true,
-                  "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000005:trigger:trg_s01_begin_tutorial_after_wake:step:show-tutorial-s01-move",
-                  "status": "committed",
-                  "committed": true,
-                  "code": null,
-                  "stateId": "tutorial:s01.move",
-                  "stateRevision": 1,
-                  "eventFrom": 3,
-                  "eventTo": 4,
-                  "value": {
-                    "ok": true
-                  },
-                  "error": null
-                }
-              },
-              {
-                "eventId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000006",
-                "eventDefinitionId": "tutorial.command.committed",
-                "type": "tutorial.command.committed",
-                "source": {
-                  "kind": "postCommitNotification",
-                  "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000005:trigger:trg_s01_begin_tutorial_after_wake:step:show-tutorial-s01-move"
-                },
-                "actorRef": null,
-                "sceneId": null,
-                "payload": {
-                  "commandType": "tutorial.command",
-                  "value": {
-                    "ok": true
-                  }
-                },
-                "payloadFingerprint": "{\"actorRef\":null,\"eventDefinitionId\":\"tutorial.command.committed\",\"payload\":{\"commandType\":\"tutorial.command\",\"value\":{\"ok\":true}},\"sceneId\":null,\"source\":{\"kind\":\"postCommitNotification\",\"operationId\":\"evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000005:trigger:trg_s01_begin_tutorial_after_wake:step:show-tutorial-s01-move\"},\"type\":\"tutorial.command.committed\"}",
-                "logicalTime": 2,
-                "persistent": true,
-                "status": "succeeded",
-                "executions": {
-                  "postCommit:published": {
-                    "triggerId": "postCommit",
-                    "stepId": "published",
-                    "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000005:trigger:trg_s01_begin_tutorial_after_wake:step:show-tutorial-s01-move",
-                    "payloadFingerprint": "{\"eventSequence\":3,\"operationId\":\"evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000005:trigger:trg_s01_begin_tutorial_after_wake:step:show-tutorial-s01-move\",\"type\":\"tutorial.command.committed\"}",
-                    "status": "succeeded",
-                    "startedLogicalTime": 2,
-                    "finishedLogicalTime": 2,
-                    "result": {
-                      "eventSequence": 3
-                    }
-                  }
-                },
-                "result": {
-                  "eventSequence": 3
-                },
-                "commitMetadata": {
-                  "stateId": "tutorial:s01.move",
-                  "stateType": "scenarioCommand",
-                  "stateRevision": 1,
-                  "eventSequence": 3,
-                  "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000005:trigger:trg_s01_begin_tutorial_after_wake:step:show-tutorial-s01-move"
-                }
-              },
-              {
-                "eventId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000007",
-                "eventDefinitionId": "tutorial.command",
-                "type": "tutorial.command",
-                "source": {
-                  "kind": "postCommitNotification",
-                  "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000005:trigger:trg_s01_begin_tutorial_after_wake:step:show-tutorial-s01-move"
-                },
-                "actorRef": null,
-                "sceneId": null,
-                "payload": {
-                  "commandType": "tutorial.command",
-                  "value": {
-                    "ok": true
-                  }
-                },
-                "payloadFingerprint": "{\"actorRef\":null,\"eventDefinitionId\":\"tutorial.command\",\"payload\":{\"commandType\":\"tutorial.command\",\"value\":{\"ok\":true}},\"sceneId\":null,\"source\":{\"kind\":\"postCommitNotification\",\"operationId\":\"evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000005:trigger:trg_s01_begin_tutorial_after_wake:step:show-tutorial-s01-move\"},\"type\":\"tutorial.command\"}",
-                "logicalTime": 2,
-                "persistent": true,
-                "status": "succeeded",
-                "executions": {
-                  "postCommit:published": {
-                    "triggerId": "postCommit",
-                    "stepId": "published",
-                    "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000005:trigger:trg_s01_begin_tutorial_after_wake:step:show-tutorial-s01-move",
-                    "payloadFingerprint": "{\"eventSequence\":4,\"operationId\":\"evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000005:trigger:trg_s01_begin_tutorial_after_wake:step:show-tutorial-s01-move\",\"type\":\"tutorial.command\"}",
-                    "status": "succeeded",
-                    "startedLogicalTime": 2,
-                    "finishedLogicalTime": 2,
-                    "result": {
-                      "eventSequence": 4
-                    }
-                  }
-                },
-                "result": {
-                  "eventSequence": 4
-                },
-                "commitMetadata": {
-                  "stateId": "tutorial:s01.move",
-                  "stateType": "scenarioCommand",
-                  "stateRevision": 1,
-                  "eventSequence": 4,
-                  "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000005:trigger:trg_s01_begin_tutorial_after_wake:step:show-tutorial-s01-move"
+                  "operationId": "evt:run-da1030fc-cafc-4993-831b-98c172b32326:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task"
                 }
               }
             ]
@@ -1225,14 +1057,1773 @@
               ]
             },
             "actors": []
+          },
+          "campaignContent": {
+            "blackboard": {
+              "appliedBattleResultIds": [],
+              "cityStates": [
+                {
+                  "buildingDamage": {
+                    "granary.s09": 0.6
+                  },
+                  "buildingLevel": 1,
+                  "damagePausedUntilDay": 0,
+                  "damageRatio": 0.45,
+                  "factionId": "yellow_turban",
+                  "id": "city.s09_guangzong_camp",
+                  "morale": 35,
+                  "name": "广宗粥棚营地",
+                  "resources": {
+                    "food": 60,
+                    "herb": 10,
+                    "iron": 0,
+                    "wood": 20
+                  },
+                  "schemaVersion": 1
+                },
+                {
+                  "buildingDamage": {},
+                  "buildingLevel": 2,
+                  "damagePausedUntilDay": 0,
+                  "damageRatio": 0,
+                  "factionId": "han_government",
+                  "id": "city.s03_yingchuan",
+                  "morale": 40,
+                  "name": "颍川官军屯城",
+                  "resources": {
+                    "food": 80,
+                    "herb": 30,
+                    "iron": 40,
+                    "wood": 50
+                  },
+                  "schemaVersion": 2
+                },
+                {
+                  "buildingDamage": {
+                    "palisade.s04": 0.45
+                  },
+                  "buildingLevel": 2,
+                  "damagePausedUntilDay": 0,
+                  "damageRatio": 0.3,
+                  "factionId": "han_government",
+                  "id": "city.s04_changshe",
+                  "morale": 48,
+                  "name": "长社官军营垒",
+                  "resources": {
+                    "food": 45,
+                    "herb": 16,
+                    "iron": 18,
+                    "wood": 20
+                  },
+                  "schemaVersion": 2
+                },
+                {
+                  "buildingDamage": {},
+                  "buildingLevel": 2,
+                  "damagePausedUntilDay": 0,
+                  "damageRatio": 0.18,
+                  "factionId": "han_government",
+                  "id": "city.s05_wancheng",
+                  "morale": 52,
+                  "name": "宛城",
+                  "resources": {
+                    "food": 55,
+                    "herb": 12,
+                    "iron": 48,
+                    "wood": 24
+                  },
+                  "schemaVersion": 2
+                },
+                {
+                  "buildingDamage": {
+                    "palisade.s07": 0.2
+                  },
+                  "buildingLevel": 1,
+                  "damagePausedUntilDay": 0,
+                  "damageRatio": 0.12,
+                  "factionId": "han_government",
+                  "id": "city.s07_xihua",
+                  "morale": 58,
+                  "name": "西华",
+                  "resources": {
+                    "food": 38,
+                    "herb": 9,
+                    "iron": 16,
+                    "wood": 22
+                  },
+                  "schemaVersion": 2
+                },
+                {
+                  "buildingDamage": {},
+                  "buildingLevel": 1,
+                  "damagePausedUntilDay": 0,
+                  "damageRatio": 0.22,
+                  "factionId": "yellow_turban",
+                  "id": "city.s10_guangcheng_camp",
+                  "morale": 54,
+                  "name": "广城溪畔营地",
+                  "resources": {
+                    "food": 42,
+                    "herb": 16,
+                    "iron": 14,
+                    "wood": 46
+                  },
+                  "schemaVersion": 2
+                },
+                {
+                  "buildingDamage": {
+                    "gate.s11.west": 0.3
+                  },
+                  "buildingLevel": 2,
+                  "damagePausedUntilDay": 0,
+                  "damageRatio": 0.35,
+                  "factionId": "yellow_turban",
+                  "id": "city.s11_guangzong",
+                  "morale": 72,
+                  "name": "广宗",
+                  "resources": {
+                    "food": 48,
+                    "herb": 14,
+                    "iron": 8,
+                    "wood": 20
+                  },
+                  "schemaVersion": 2
+                },
+                {
+                  "buildingDamage": {
+                    "gate.s12.yamen": 0
+                  },
+                  "buildingLevel": 2,
+                  "damagePausedUntilDay": 0,
+                  "damageRatio": 0.28,
+                  "factionId": "yellow_turban",
+                  "id": "city.s12_xiaquyang",
+                  "morale": 55,
+                  "name": "下曲阳",
+                  "resources": {
+                    "food": 32,
+                    "herb": 10,
+                    "iron": 12,
+                    "wood": 18
+                  },
+                  "schemaVersion": 2
+                }
+              ],
+              "reputation": 50,
+              "resourcePermissions": {
+                "S09": {
+                  "food": false
+                }
+              },
+              "storyState": {
+                "currentDay": 1,
+                "currentSceneId": "S01",
+                "delayedConsequences": [],
+                "endingInputs": {
+                  "allowedCityDestruction": false,
+                  "cityMaintenanceLevel": 0,
+                  "cumulativeGathering": {
+                    "food": 0,
+                    "herb": 0,
+                    "iron": 0,
+                    "wood": 0
+                  },
+                  "gatheringOperations": [],
+                  "resourceConstructionScore": 0
+                },
+                "hiddenClues": [],
+                "month": 3,
+                "s01Survival": {
+                  "axeDropped": false,
+                  "axeFound": false,
+                  "backpackOpened": false,
+                  "berriesGathered": false,
+                  "berryEaten": false,
+                  "berryGatherCount": 0,
+                  "campfireExtinguished": false,
+                  "campfireLit": false,
+                  "campfireRefuelCount": 0,
+                  "cliffReached": false,
+                  "firestarterAcquired": false,
+                  "firstWolfKilled": false,
+                  "firstWolfSpotted": false,
+                  "initialToolsPicked": false,
+                  "meatCooked": false,
+                  "overnightCompleted": false,
+                  "pursuit": {
+                    "active": false,
+                    "killed": 0,
+                    "spawned": 0
+                  },
+                  "riverCrossed": false,
+                  "shelterCompleted": false,
+                  "shelterExitedAfterOvernight": false,
+                  "skinningKnifeFound": false,
+                  "wolfBracersCrafted": false,
+                  "wolfGearCrafted": false,
+                  "wolfSkinned": false,
+                  "wolfVestCrafted": false,
+                  "wolfWeatherCleared": false,
+                  "wolfWeatherCountdownStarted": false,
+                  "woodGathered": false
+                },
+                "storyTags": [],
+                "unlockedScenes": [
+                  "S01"
+                ]
+              },
+              "warResourceNodeStates": [],
+              "warState": {
+                "battles": {},
+                "casualties": {}
+              },
+              "ddScene": true
+            },
+            "triggers": {
+              "snapshotSchemaVersion": 3,
+              "definitionRevision": 1,
+              "definitionDigest": "sha256-9a14f4fc14ba7781fa7c3c4595f1322f281226fb9520fea2cd960b889d76eb3f",
+              "operationSequence": 2,
+              "eventSequence": 2,
+              "firedOnce": [
+                "trg_s01_start_survival_task"
+              ],
+              "cooldowns": {
+                "trg_s01_spawn_initial": {
+                  "definitionRevision": 1,
+                  "remaining": 0,
+                  "nextDue": 1000,
+                  "duration": 1000
+                }
+              },
+              "timers": [],
+              "ledger": {
+                "version": 1,
+                "records": [
+                  {
+                    "triggerId": "trg_s01_start_survival_task",
+                    "definitionRevision": 1,
+                    "eventId": "evt:run-da1030fc-cafc-4993-831b-98c172b32326:0000000001",
+                    "operationId": "evt:run-da1030fc-cafc-4993-831b-98c172b32326:0000000001",
+                    "fingerprint": "sha256-25b1a5fe1ea93726dab820a996bd7b4b3732b93fc2ea50e6280137ac38c31826",
+                    "status": "succeeded",
+                    "actionIndex": 0,
+                    "result": {
+                      "ok": true,
+                      "operationId": "evt:run-da1030fc-cafc-4993-831b-98c172b32326:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task",
+                      "status": "committed",
+                      "committed": true,
+                      "code": null,
+                      "stateId": "quest:refugee",
+                      "stateRevision": 1
+                    },
+                    "startedAt": 0,
+                    "finishedAt": 0,
+                    "ledgerRevision": 4
+                  },
+                  {
+                    "triggerId": "trg_s01_spawn_initial",
+                    "definitionRevision": 1,
+                    "eventId": "evt:run-da1030fc-cafc-4993-831b-98c172b32326:0000000002",
+                    "operationId": "evt:run-da1030fc-cafc-4993-831b-98c172b32326:0000000002",
+                    "fingerprint": "sha256-772581db97b0c8692e85b35709692969b572f09ba1e8e14d5810321c867d979d",
+                    "status": "succeeded",
+                    "actionIndex": 2,
+                    "result": {
+                      "ok": true,
+                      "operationId": "evt:run-da1030fc-cafc-4993-831b-98c172b32326:0000000002:trigger:trg_s01_spawn_initial:step:present-entry",
+                      "status": "succeeded",
+                      "committed": false,
+                      "code": null,
+                      "stateId": "trigger:trg_s01_spawn_initial",
+                      "stateRevision": null
+                    },
+                    "startedAt": 0,
+                    "finishedAt": 0,
+                    "ledgerRevision": 6
+                  },
+                  {
+                    "triggerId": "trg_s01_pickup_worn_axe",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s01_pickup_skinning_knife",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s01_axe_found_check_tools",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s01_skinning_knife_found_check_tools",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s01_initial_tools_picked",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s01_gather_berry_completed",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s01_first_berry_gathered_tutorial_step",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s01_berry_count_updated",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s01_berries_gathered",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s01_berry_eaten_advance",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s01_gather_wood_completed",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s01_wood_gathered",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s01_gather_wolf_hide_completed",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s01_wolf_skinned",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s01_refuel_committed",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s01_first_wolf_recovery_requested",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s01_first_wolf_spotted",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s01_first_wolf_killed",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s01_first_wolf_killed_committed",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s01_chase_wolf_killed",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s01_begin_tutorial_after_wake",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s01_light_campfire",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s01_craft_wolf_gear",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s01_cook_meat",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s01_refuel_campfire",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s01_build_shelter",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s01_shelter_completed",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s01_enter_shelter",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s01_overnight",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s01_open_shelter_chest",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s01_leave_shelter",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s01_river_crossed",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s01_cliff_reached",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s02_spawn_initial",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s02_zhangjiao_summons",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s02_accept_summons",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s02_travel_s09",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s09_spawn_initial",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s09_prepare_refugee_conflict",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s09_start_refugee_conflict",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s09_refugee_choice",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s09_zhangjiao_enlistment",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s09_accept_enlistment",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s09_class_warrior",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s09_class_archer",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s09_class_strategist",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s09_class_selected_feedback",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s09_travel_s03",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s03_spawn_initial",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s03_choose_battle_mode",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s03_exit_s04",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s04_spawn_initial",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s04_choose_battle_mode",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s04_start_bocai_rescue",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s04_bocai_evacuation",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s04_choose_yuzhou_route",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s05_claim_pickaxe",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s05_mine_status",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s05_mine_retreat",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s05_choose_battle_mode",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s05_start_zhang_mancheng_rescue",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s05_exit_s06",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s06_defense_choice",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s06_field_construction",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s06_complete_recall",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s07_spawn_initial",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s07_choose_battle_mode",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s07_commit_delay_north",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s07_commit_delay_center",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s07_commit_delay_south",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s07_exit_s08",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s08_enter",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s08_retreat_choice",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s08_complete_recall",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s10_enter",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s10_zhangjiao_death",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s10_acknowledge_temporary_camp",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s10_complete_relocation",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s10_build_campfire",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s10_build_barricade",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s10_build_simple_wall",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s10_build_arrow_tower",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s10_exit_s11",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s11_spawn_initial",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s11_choose_battle_mode",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s11_start_zhang_liang_rescue",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s11_light_beacon",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s11_rally_guards",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s11_assassin_wave_1_defeated",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s11_assassin_wave_2_defeated",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s11_assassin_wave_3_defeated",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s11_west_gate_breakout",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s11_interact_horse",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s11_exit_s12",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s12_spawn_initial",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s12_choose_battle_mode",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s12_start_zhang_bao_rescue",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s12_open_secret_passage",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s12_use_ladder",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s12_burn_ladder",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s12_zhang_bao_evacuation",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s12_exit_final_route",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s13_spawn_initial",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s13_choose_final_battle_mode",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s13_exit_s14",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s14_open_cargo_transfer",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s14_resolve_last_cart",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s14_resolve_catapult",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s14_operate_catapult",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s14_leave_catapult",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s14_commit_ending",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  }
+                ]
+              }
+            },
+            "progression": {
+              "state": {
+                "characterId": "refugee",
+                "graphs": {}
+              },
+              "ledger": {
+                "pools": {
+                  "skill": {
+                    "available": 1,
+                    "spent": 0
+                  },
+                  "talent": {
+                    "available": 1,
+                    "spent": 0
+                  },
+                  "unit": {
+                    "available": 1,
+                    "spent": 0
+                  },
+                  "passive": {
+                    "available": 1,
+                    "spent": 0
+                  }
+                },
+                "aliases": {}
+              },
+              "pointGrantOperations": []
+            }
           }
         },
         "providerMetadata": {
           "kind": "saveGame",
           "committedOperations": {
-            "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task": {
+            "evt:run-da1030fc-cafc-4993-831b-98c172b32326:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task": {
               "ok": true,
-              "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task",
+              "operationId": "evt:run-da1030fc-cafc-4993-831b-98c172b32326:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task",
               "status": "committed",
               "committed": true,
               "code": null,
@@ -1353,1791 +2944,8 @@
                 }
               },
               "error": null
-            },
-            "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000005:trigger:trg_s01_begin_tutorial_after_wake:step:show-tutorial-s01-move": {
-              "ok": true,
-              "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000005:trigger:trg_s01_begin_tutorial_after_wake:step:show-tutorial-s01-move",
-              "status": "committed",
-              "committed": true,
-              "code": null,
-              "stateId": "tutorial:s01.move",
-              "stateRevision": 1,
-              "eventFrom": 3,
-              "eventTo": 4,
-              "value": {
-                "ok": true
-              },
-              "error": null
             }
           }
-        }
-      },
-      "content": {
-        "blackboard": {
-          "appliedBattleResultIds": [],
-          "cityStates": [
-            {
-              "buildingDamage": {
-                "granary.s09": 0.6
-              },
-              "buildingLevel": 1,
-              "damagePausedUntilDay": 0,
-              "damageRatio": 0.45,
-              "factionId": "yellow_turban",
-              "id": "city.s09_guangzong_camp",
-              "morale": 35,
-              "name": "广宗粥棚营地",
-              "resources": {
-                "food": 60,
-                "herb": 10,
-                "iron": 0,
-                "wood": 20
-              },
-              "schemaVersion": 1
-            },
-            {
-              "buildingDamage": {},
-              "buildingLevel": 2,
-              "damagePausedUntilDay": 0,
-              "damageRatio": 0,
-              "factionId": "han_government",
-              "id": "city.s03_yingchuan",
-              "morale": 40,
-              "name": "颍川官军屯城",
-              "resources": {
-                "food": 80,
-                "herb": 30,
-                "iron": 40,
-                "wood": 50
-              },
-              "schemaVersion": 2
-            },
-            {
-              "buildingDamage": {
-                "palisade.s04": 0.45
-              },
-              "buildingLevel": 2,
-              "damagePausedUntilDay": 0,
-              "damageRatio": 0.3,
-              "factionId": "han_government",
-              "id": "city.s04_changshe",
-              "morale": 48,
-              "name": "长社官军营垒",
-              "resources": {
-                "food": 45,
-                "herb": 16,
-                "iron": 18,
-                "wood": 20
-              },
-              "schemaVersion": 2
-            },
-            {
-              "buildingDamage": {},
-              "buildingLevel": 2,
-              "damagePausedUntilDay": 0,
-              "damageRatio": 0.18,
-              "factionId": "han_government",
-              "id": "city.s05_wancheng",
-              "morale": 52,
-              "name": "宛城",
-              "resources": {
-                "food": 55,
-                "herb": 12,
-                "iron": 48,
-                "wood": 24
-              },
-              "schemaVersion": 2
-            },
-            {
-              "buildingDamage": {
-                "palisade.s07": 0.2
-              },
-              "buildingLevel": 1,
-              "damagePausedUntilDay": 0,
-              "damageRatio": 0.12,
-              "factionId": "han_government",
-              "id": "city.s07_xihua",
-              "morale": 58,
-              "name": "西华",
-              "resources": {
-                "food": 38,
-                "herb": 9,
-                "iron": 16,
-                "wood": 22
-              },
-              "schemaVersion": 2
-            },
-            {
-              "buildingDamage": {},
-              "buildingLevel": 1,
-              "damagePausedUntilDay": 0,
-              "damageRatio": 0.22,
-              "factionId": "yellow_turban",
-              "id": "city.s10_guangcheng_camp",
-              "morale": 54,
-              "name": "广城溪畔营地",
-              "resources": {
-                "food": 42,
-                "herb": 16,
-                "iron": 14,
-                "wood": 46
-              },
-              "schemaVersion": 2
-            },
-            {
-              "buildingDamage": {
-                "gate.s11.west": 0.3
-              },
-              "buildingLevel": 2,
-              "damagePausedUntilDay": 0,
-              "damageRatio": 0.35,
-              "factionId": "yellow_turban",
-              "id": "city.s11_guangzong",
-              "morale": 72,
-              "name": "广宗",
-              "resources": {
-                "food": 48,
-                "herb": 14,
-                "iron": 8,
-                "wood": 20
-              },
-              "schemaVersion": 2
-            },
-            {
-              "buildingDamage": {
-                "gate.s12.yamen": 0
-              },
-              "buildingLevel": 2,
-              "damagePausedUntilDay": 0,
-              "damageRatio": 0.28,
-              "factionId": "yellow_turban",
-              "id": "city.s12_xiaquyang",
-              "morale": 55,
-              "name": "下曲阳",
-              "resources": {
-                "food": 32,
-                "herb": 10,
-                "iron": 12,
-                "wood": 18
-              },
-              "schemaVersion": 2
-            }
-          ],
-          "reputation": 50,
-          "resourcePermissions": {
-            "S09": {
-              "food": false
-            }
-          },
-          "storyState": {
-            "currentDay": 1,
-            "currentSceneId": "S01",
-            "delayedConsequences": [],
-            "endingInputs": {
-              "allowedCityDestruction": false,
-              "cityMaintenanceLevel": 0,
-              "cumulativeGathering": {
-                "food": 0,
-                "herb": 0,
-                "iron": 0,
-                "wood": 0
-              },
-              "gatheringOperations": [],
-              "resourceConstructionScore": 0
-            },
-            "hiddenClues": [],
-            "month": 3,
-            "s01Survival": {
-              "axeDropped": false,
-              "axeFound": false,
-              "backpackOpened": false,
-              "berriesGathered": false,
-              "berryEaten": false,
-              "berryGatherCount": 0,
-              "campfireExtinguished": false,
-              "campfireLit": false,
-              "campfireRefuelCount": 0,
-              "cliffReached": false,
-              "firestarterAcquired": false,
-              "firstWolfKilled": false,
-              "firstWolfSpotted": false,
-              "initialToolsPicked": false,
-              "meatCooked": false,
-              "overnightCompleted": false,
-              "pursuit": {
-                "active": false,
-                "killed": 0,
-                "spawned": 0
-              },
-              "riverCrossed": false,
-              "shelterCompleted": false,
-              "shelterExitedAfterOvernight": false,
-              "skinningKnifeFound": false,
-              "wolfBracersCrafted": false,
-              "wolfGearCrafted": false,
-              "wolfSkinned": false,
-              "wolfVestCrafted": false,
-              "wolfWeatherCleared": false,
-              "wolfWeatherCountdownStarted": false,
-              "woodGathered": false
-            },
-            "storyTags": [],
-            "unlockedScenes": [
-              "S01"
-            ]
-          },
-          "warResourceNodeStates": [],
-          "warState": {
-            "battles": {},
-            "casualties": {}
-          },
-          "ddScene": true
-        },
-        "triggers": {
-          "snapshotSchemaVersion": 3,
-          "definitionRevision": 1,
-          "definitionDigest": "sha256-9a14f4fc14ba7781fa7c3c4595f1322f281226fb9520fea2cd960b889d76eb3f",
-          "operationSequence": 3,
-          "eventSequence": 3,
-          "firedOnce": [
-            "trg_s01_start_survival_task",
-            "trg_s01_begin_tutorial_after_wake"
-          ],
-          "cooldowns": {
-            "trg_s01_spawn_initial": {
-              "definitionRevision": 1,
-              "remaining": 0,
-              "nextDue": 1000,
-              "duration": 1000
-            }
-          },
-          "timers": [],
-          "ledger": {
-            "version": 1,
-            "records": [
-              {
-                "triggerId": "trg_s01_start_survival_task",
-                "definitionRevision": 1,
-                "eventId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000001",
-                "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000001",
-                "fingerprint": "sha256-567eafbd5cbe3f6c4968fa7f23c7fb7249da804e0f290807ee22e31fceb27d07",
-                "status": "succeeded",
-                "actionIndex": 0,
-                "result": {
-                  "ok": true,
-                  "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task",
-                  "status": "committed",
-                  "committed": true,
-                  "code": null,
-                  "stateId": "quest:refugee",
-                  "stateRevision": 1
-                },
-                "startedAt": 0,
-                "finishedAt": 0,
-                "ledgerRevision": 4
-              },
-              {
-                "triggerId": "trg_s01_spawn_initial",
-                "definitionRevision": 1,
-                "eventId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000002",
-                "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000002",
-                "fingerprint": "sha256-4ce68ba41df46f50f6fe3f11e2161cf4f3965256288ebc0b2f4832367b840079",
-                "status": "succeeded",
-                "actionIndex": 2,
-                "result": {
-                  "ok": true,
-                  "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000002:trigger:trg_s01_spawn_initial:step:present-entry",
-                  "status": "succeeded",
-                  "committed": false,
-                  "code": null,
-                  "stateId": "trigger:trg_s01_spawn_initial",
-                  "stateRevision": null
-                },
-                "startedAt": 0,
-                "finishedAt": 0,
-                "ledgerRevision": 6
-              },
-              {
-                "triggerId": "trg_s01_pickup_worn_axe",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s01_pickup_skinning_knife",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s01_axe_found_check_tools",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s01_skinning_knife_found_check_tools",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s01_initial_tools_picked",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s01_gather_berry_completed",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s01_first_berry_gathered_tutorial_step",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s01_berry_count_updated",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s01_berries_gathered",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s01_berry_eaten_advance",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s01_gather_wood_completed",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s01_wood_gathered",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s01_gather_wolf_hide_completed",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s01_wolf_skinned",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s01_refuel_committed",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s01_first_wolf_recovery_requested",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s01_first_wolf_spotted",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s01_first_wolf_killed",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s01_first_wolf_killed_committed",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s01_chase_wolf_killed",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s01_begin_tutorial_after_wake",
-                "definitionRevision": 1,
-                "eventId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000005",
-                "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000005",
-                "fingerprint": "sha256-0ec832298c3f028f8feb0f787ec453acee8056f03ea6edc447169bd9681b899a",
-                "status": "succeeded",
-                "actionIndex": 0,
-                "result": {
-                  "ok": true,
-                  "operationId": "evt:run-39ebc565-f5dc-43f1-aa3d-f59f19392e58:0000000005:trigger:trg_s01_begin_tutorial_after_wake:step:show-tutorial-s01-move",
-                  "status": "committed",
-                  "committed": true,
-                  "code": null,
-                  "stateId": "tutorial:s01.move",
-                  "stateRevision": 1
-                },
-                "startedAt": 1699.6000000163913,
-                "finishedAt": 1699.6000000163913,
-                "ledgerRevision": 4
-              },
-              {
-                "triggerId": "trg_s01_light_campfire",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s01_craft_wolf_gear",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s01_cook_meat",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s01_refuel_campfire",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s01_build_shelter",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s01_shelter_completed",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s01_enter_shelter",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s01_overnight",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s01_open_shelter_chest",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s01_leave_shelter",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s01_river_crossed",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s01_cliff_reached",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s02_spawn_initial",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s02_zhangjiao_summons",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s02_accept_summons",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s02_travel_s09",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s09_spawn_initial",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s09_prepare_refugee_conflict",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s09_start_refugee_conflict",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s09_refugee_choice",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s09_zhangjiao_enlistment",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s09_accept_enlistment",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s09_class_warrior",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s09_class_archer",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s09_class_strategist",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s09_class_selected_feedback",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s09_travel_s03",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s03_spawn_initial",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s03_choose_battle_mode",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s03_exit_s04",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s04_spawn_initial",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s04_choose_battle_mode",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s04_start_bocai_rescue",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s04_bocai_evacuation",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s04_choose_yuzhou_route",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s05_claim_pickaxe",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s05_mine_status",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s05_mine_retreat",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s05_choose_battle_mode",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s05_start_zhang_mancheng_rescue",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s05_exit_s06",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s06_defense_choice",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s06_field_construction",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s06_complete_recall",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s07_spawn_initial",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s07_choose_battle_mode",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s07_commit_delay_north",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s07_commit_delay_center",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s07_commit_delay_south",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s07_exit_s08",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s08_enter",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s08_retreat_choice",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s08_complete_recall",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s10_enter",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s10_zhangjiao_death",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s10_acknowledge_temporary_camp",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s10_complete_relocation",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s10_build_campfire",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s10_build_barricade",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s10_build_simple_wall",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s10_build_arrow_tower",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s10_exit_s11",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s11_spawn_initial",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s11_choose_battle_mode",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s11_start_zhang_liang_rescue",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s11_light_beacon",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s11_rally_guards",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s11_assassin_wave_1_defeated",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s11_assassin_wave_2_defeated",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s11_assassin_wave_3_defeated",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s11_west_gate_breakout",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s11_interact_horse",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s11_exit_s12",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s12_spawn_initial",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s12_choose_battle_mode",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s12_start_zhang_bao_rescue",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s12_open_secret_passage",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s12_use_ladder",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s12_burn_ladder",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s12_zhang_bao_evacuation",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s12_exit_final_route",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s13_spawn_initial",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s13_choose_final_battle_mode",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s13_exit_s14",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s14_open_cargo_transfer",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s14_resolve_last_cart",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s14_resolve_catapult",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s14_operate_catapult",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s14_leave_catapult",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              },
-              {
-                "triggerId": "trg_s14_commit_ending",
-                "definitionRevision": 1,
-                "eventId": null,
-                "operationId": null,
-                "fingerprint": null,
-                "status": "idle",
-                "actionIndex": -1,
-                "result": null,
-                "startedAt": null,
-                "finishedAt": null,
-                "ledgerRevision": 1
-              }
-            ]
-          }
-        },
-        "progression": {
-          "state": {
-            "characterId": "refugee",
-            "graphs": {}
-          },
-          "ledger": {
-            "pools": {
-              "skill": {
-                "available": 1,
-                "spent": 0
-              },
-              "talent": {
-                "available": 1,
-                "spent": 0
-              },
-              "unit": {
-                "available": 1,
-                "spent": 0
-              },
-              "passive": {
-                "available": 1,
-                "spent": 0
-              }
-            },
-            "aliases": {}
-          },
-          "pointGrantOperations": []
         }
       },
       "scene": {
@@ -3196,8 +3004,8 @@
                         "removed": false,
                         "hp": 38,
                         "position": {
-                          "x": 9771.04251757572,
-                          "y": 3258.9574824242904
+                          "x": 9771.719218765536,
+                          "y": 3258.280781234456
                         },
                         "ai": {
                           "active": true,
@@ -3215,7 +3023,7 @@
                         "hp": 38,
                         "position": {
                           "x": 9930,
-                          "y": 3214.905799999654
+                          "y": 3215.862799999998
                         },
                         "ai": {
                           "active": true,

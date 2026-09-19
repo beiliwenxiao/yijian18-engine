@@ -487,6 +487,7 @@ localStorage                 →  仅作提交后的编辑器缓存，不参与�
 
 ## Trigger-only 事件链职责
 
+- 事件编辑的策划入口固定为“选择开始事件 → 从上到下添加行为 → 选择完成条件”，不要求填写 `when.params`、action params、if/branch JSON。除规则 ID、名称以及标题/说明/提示正文等文案外，事件类型、事件身份、场景、对象、行为、operation、协调策略、优先级、时间、数量、条件变量和值都必须由 `triggerCatalog`、项目定义库、场景目录或有限预设生成 `<select>`；没有目录选项时明确提示先补目录，不允许回退自由文本掩盖。复杂对象与旧嵌套条件只读保留，必须由模板/专用可视化表单重新生成后才能修改。
 - 当前流程唯一事实是 `Trigger.when(type + params) → 顶层 if 准入 → 串行 do[]/step.if/branch.when → application event → 下游 Trigger`。不得再创建或恢复 SceneEvent、宏观阶段、`stage/next` 或其他第二份流程顺序。
 - `Trigger.name/id` 是规则名称和规则稳定 ID，不是输入事件名称或事件 ID。开始事件名称从 `triggerCatalog.events[].label` 派生，开始事件身份从该事件的 `identityFields` 对应 `when.params` 字段派生，不复制保存显示名称或通用 eventId。
 - `when.params` 是运行时事件 payload 的浅层过滤子集，字段省略表示通配；事件 `paramsSchema` 只校验已填写过滤字段的类型和范围，不得把 payload 本体必有的身份字段设为 Trigger 监听必填。编辑器对未填写 `identityFields` 显示“未设置/按类型监听”，不能擅自补值。

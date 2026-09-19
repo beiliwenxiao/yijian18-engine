@@ -1,7 +1,7 @@
 /************************************************************
  * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
  * 
- * @project   YiJian18-Engine - 跨平台2D/3D ECS游戏引擎
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
  * @author    刘枭 (beiliwenxiao)
  * @email     beiliwenxiao@qq.com
  * @date      2026-01-14
@@ -35,6 +35,7 @@ import { TriggerTracePanel } from './TriggerTracePanel.js';
 import { TriggerStorylinePanel } from './TriggerStorylinePanel.js';
 
 const text = v => String(v ?? '').trim();
+const list = value => Array.isArray(value) ? value : [];
 
 let WHEN_TYPES = getTriggerEvents();
 let ACTION_TYPES = getTriggerActions();
@@ -1116,6 +1117,57 @@ export class TriggerEditor {
       .join('；');
   }
 
+  _selectionOptionsForField(name, currentValue, property = {}) {
+    const values = [];
+    const add = (value, label = value) => {
+      const id = String(value ?? '').trim();
+      if (id && !values.some(item => item.value === id)) values.push({ value: id, label: String(label || id) });
+    };
+    for (const option of property.options || property.examples || []) {
+      if (option && typeof option === 'object') add(option.value ?? option.id, option.label ?? option.name);
+      else add(option);
+    }
+    const scenes = (() => { try { return this.getSceneList() || []; } catch { return []; } })();
+    const library = this.project?.library || {};
+    if (name === 'sceneId' || name === 'scene') scenes.forEach(scene => add(scene?.id, scene?.name));
+    else if (name === 'definitionId') list(this.project?.commands).forEach(command => add(command?.id, command?.name || command?.id));
+    else if (name === 'triggerId') list(this.project?.triggers).forEach(trigger => add(trigger?.id, trigger?.name));
+    else if (name === 'questId' || name === 'quest') list(this.project?.quests).forEach(quest => add(quest?.id, quest?.title || quest?.name));
+    else if (name === 'tutorialId') list(this.project?.tutorials).forEach(tutorial => add(tutorial?.id, tutorial?.title));
+    else if (name === 'dialogueId' || name === 'dialogue') list(this.project?.dialogues).forEach(dialogue => add(dialogue?.id, dialogue?.title));
+    else if (['itemId', 'item', 'outputItemId', 'inventoryItemId'].includes(name)) {
+      for (const item of [...list(library.items), ...list(library.equipment)]) add(item?.id, item?.name);
+    } else if (name === 'battleId') list(this.project?.battles).forEach(value => add(value?.id, value?.name));
+    else if (name === 'rescueId') list(this.project?.rescues).forEach(value => add(value?.id, value?.name));
+    else if (name === 'classId') [['warrior', '战士'], ['archer', '弓手'], ['strategist', '军师']].forEach(([value, label]) => add(value, label));
+    else if (name === 'resourceType') [['wood', '木材'], ['iron', '铁料'], ['food', '粮食'], ['herb', '草药'], ['stone', '石料']].forEach(([value, label]) => add(value, label));
+    else if (name === 'variable') {
+      const walk = (value, prefix = '', depth = 0) => {
+        if (!value || typeof value !== 'object' || Array.isArray(value) || depth > 4) return;
+        for (const [key, child] of Object.entries(value)) {
+          const path = prefix ? `${prefix}.${key}` : key;
+          add(path, path);
+          walk(child, path, depth + 1);
+        }
+      };
+      walk(this.project?.variables || {});
+      ['storyState', 'cityStates', 'reputation', 'battleModeStats'].forEach(value => add(value));
+    }
+    add(currentValue, currentValue ? `${currentValue}（当前值）` : '');
+    return values.map(item => `<option value="${this._escapeHtml(item.value)}"${item.value === String(currentValue ?? '') ? ' selected' : ''}>${this._escapeHtml(item.label)}</option>`).join('');
+  }
+
+  _numberSelectionOptions(currentValue, property = {}) {
+    const minimum = Number.isFinite(Number(property.minimum)) ? Number(property.minimum) : 0;
+    const maximum = Number.isFinite(Number(property.maximum)) ? Number(property.maximum) : 100;
+    const candidates = [minimum, 1, 2, 3, 5, 10, 15, 20, 30, 50, 60, 90, 100, 120, 180, 300]
+      .filter(value => value >= minimum && value <= maximum);
+    const current = Number(currentValue);
+    if (Number.isFinite(current) && !candidates.includes(current)) candidates.push(current);
+    return [...new Set(candidates)].sort((a, b) => a - b)
+      .map(value => `<option value="${value}"${value === current ? ' selected' : ''}>${value}</option>`).join('');
+  }
+
   _renderStructuredParams(schema, params = {}, { excludeOperation = false, excludeNames = [] } = {}) {
     if (!schema || typeof schema !== 'object' || Array.isArray(schema)) return '';
     const excluded = new Set(excludeNames);
@@ -1136,13 +1188,17 @@ export class TriggerEditor {
         ))].join('');
         control = `<select class="do-param-field" data-param-name="${this._escapeHtml(name)}" data-schema-type="${this._escapeHtml(type)}">${options}</select>`;
       } else if (type === 'boolean') {
-        control = `<select class="do-param-field" data-param-name="${this._escapeHtml(name)}" data-schema-type="boolean"><option value=""${value === undefined ? ' selected' : ''}>-- 未设置 --</option><option value="true"${value === true ? ' selected' : ''}>true</option><option value="false"${value === false ? ' selected' : ''}>false</option></select>`;
+        control = `<select class="do-param-field" data-param-name="${this._escapeHtml(name)}" data-schema-type="boolean"><option value=""${value === undefined ? ' selected' : ''}>-- 未设置 --</option><option value="true"${value === true ? ' selected' : ''}>是</option><option value="false"${value === false ? ' selected' : ''}>否</option></select>`;
       } else if (type === 'object' || type === 'array') {
-        control = `<textarea class="do-param-field do-param-json" data-param-name="${this._escapeHtml(name)}" data-schema-type="${type}">${value === undefined ? '' : this._escapeHtml(JSON.stringify(value))}</textarea>`;
+        const encoded = value === undefined ? '' : JSON.stringify(value);
+        control = `<select class="do-param-field" data-param-name="${this._escapeHtml(name)}" data-schema-type="${type}"><option value="">-- 不设置 --</option>${encoded ? `<option value="${this._escapeHtml(encoded)}" selected>使用模板生成的当前配置</option>` : ''}</select>`;
+      } else if (type === 'number' || type === 'integer') {
+        control = `<select class="do-param-field" data-param-name="${this._escapeHtml(name)}" data-schema-type="${this._escapeHtml(type)}"><option value="">-- 未设置 --</option>${this._numberSelectionOptions(value, property)}</select>`;
+      } else if (/(?:name|title|label|description|text|message|tip)$/i.test(name)) {
+        control = `<input type="text" class="do-param-field" data-param-name="${this._escapeHtml(name)}" data-schema-type="string" value="${this._escapeHtml(value ?? '')}">`;
       } else {
-        const inputType = type === 'number' || type === 'integer' ? 'number' : 'text';
-        const step = type === 'integer' ? ' step="1"' : type === 'number' ? ' step="any"' : '';
-        control = `<input type="${inputType}"${step} class="do-param-field" data-param-name="${this._escapeHtml(name)}" data-schema-type="${this._escapeHtml(type)}" value="${this._escapeHtml(value ?? '')}">`;
+        const options = this._selectionOptionsForField(name, value, property);
+        control = `<select class="do-param-field" data-param-name="${this._escapeHtml(name)}" data-schema-type="string"><option value="">-- 请选择 --</option>${options}</select>`;
       }
       return `<label${description}><span>${this._escapeHtml(label)}${requiredMark}</span>${control}</label>`;
     }).join('');
@@ -1170,11 +1226,17 @@ export class TriggerEditor {
   }
 
   _doActionOptions(act) {
-    let actOpts = ACTION_TYPES.map(actionType => (
-      `<option value="${this._escapeHtml(actionType.v)}" ${act.action === actionType.v ? 'selected' : ''}>${this._escapeHtml(actionType.label)} (${this._escapeHtml(actionType.v)})</option>`
+    const selectableActions = ACTION_TYPES.filter(actionType => {
+      const descriptor = getTriggerActionDescriptor(actionType.v, this.project);
+      return actionType.v === 'spawnPlacements'
+        || Boolean(descriptor?.paramsSchema)
+        || getTriggerActionOperations(actionType.v, this.project).length > 0;
+    });
+    let actOpts = selectableActions.map(actionType => (
+      `<option value="${this._escapeHtml(actionType.v)}" ${act.action === actionType.v ? 'selected' : ''}>${this._escapeHtml(actionType.label)}</option>`
     )).join('');
     // 保留下拉里没有的自定义 action，避免 unknown-but-allowed 字段在 round-trip 时丢失。
-    if (act.action && !ACTION_TYPES.some(actionType => actionType.v === act.action)) {
+    if (act.action && !selectableActions.some(actionType => actionType.v === act.action)) {
       actOpts = `<option value="${this._escapeHtml(act.action)}" selected>自定义: ${this._escapeHtml(act.action)}</option>` + actOpts;
     }
     return actOpts;
@@ -1230,13 +1292,13 @@ export class TriggerEditor {
     const operationId = String(act.params?.operation || '').trim();
     const operation = getTriggerActionOperation(act.action, operationId, this.project);
     let operationOptions = operations.map(candidate => (
-      `<option value="${this._escapeHtml(candidate.value)}"${candidate.value === operationId ? ' selected' : ''}>${this._escapeHtml(candidate.label)} (${this._escapeHtml(candidate.value)})</option>`
+      `<option value="${this._escapeHtml(candidate.value)}"${candidate.value === operationId ? ' selected' : ''}>${this._escapeHtml(candidate.label)}</option>`
     )).join('');
     if (operationId && !operations.some(candidate => candidate.value === operationId)) {
       operationOptions = `<option value="${this._escapeHtml(operationId)}" selected>未登记: ${this._escapeHtml(operationId)}</option>` + operationOptions;
     }
     const operationEditor = operations.length || operationId
-      ? `<label>Operation<select class="do-operation"><option value="">-- 选择 operation --</option>${operationOptions}</select></label>`
+      ? `<label>具体操作<select class="do-operation"><option value="">-- 请选择具体操作 --</option>${operationOptions}</select></label>`
       : '';
     const paramsSchema = operation?.paramsSchema || descriptor?.paramsSchema;
     const structuredParams = this._renderStructuredParams(
@@ -1248,8 +1310,8 @@ export class TriggerEditor {
       }
     );
     const rawParamsEditor = act.action === 'spawnPlacements'
-      ? `${this._renderSpawnPlacementControls(act.params)}<textarea class="do-params" style="display:none">${this._escapeHtml(this._json(act.params))}</textarea>`
-      : `${structuredParams}<details class="do-advanced"${structuredParams ? '' : ' open'}><summary>高级 JSON／未登记参数</summary><textarea class="do-params" placeholder='params JSON，如 {"id":"dlg1"}'>${this._escapeHtml(this._json(act.params))}</textarea></details>`;
+      ? `${this._renderSpawnPlacementControls(act.params)}<textarea class="do-params" hidden>${this._escapeHtml(this._json(act.params))}</textarea>`
+      : `${structuredParams}<textarea class="do-params" hidden>${this._escapeHtml(this._json(act.params))}</textarea>${structuredParams ? '' : '<div class="do-template-note">当前行为没有可选择参数；请先在行为目录中配置选项。</div>'}`;
     const semantics = this._formatResultSemantics(operation?.resultSemantics || descriptor?.resultSemantics);
     const ifEditor = this._renderStepIfEditor(act, path);
     const awaitEditor = act.action === 'tutorial.command' && operationId === 'show'
@@ -1278,15 +1340,17 @@ export class TriggerEditor {
     return false;
   }
 
-  /** 通用条件可视化编辑器：扁平条件用表单；嵌套/复合条件降级为只读 JSON（避免静默破坏结构）。 */
+  /** 通用条件可视化编辑器：策划只选择条件；复杂旧配置只读保留。 */
   _renderConditionForm(condition, opts = {}) {
     const escape = value => this._escapeHtml(value);
     const textareaClass = opts.textareaClass || 'do-step-if-input';
+    const textareaId = opts.textareaId ? ` id="${escape(opts.textareaId)}"` : '';
     if (this._isNestedCondition(condition)) {
       return `
         <div class="do-cond-form do-cond-nested">
-          <div class="do-cond-nested-note">🧩 嵌套条件（and/or/not 组合），请在下方 JSON 中编辑以避免破坏结构</div>
-          <textarea class="${textareaClass}" placeholder='条件 (JSON)'>${this._escapeHtml(this._json(condition))}</textarea>
+          <div class="do-cond-nested-note">这是旧的组合条件，当前只读保留。请使用单个选择条件或由流程模板重新生成。</div>
+          <pre>${this._escapeHtml(this._json(condition))}</pre>
+          <textarea${textareaId} class="${textareaClass}" hidden>${this._escapeHtml(this._json(condition))}</textarea>
         </div>`;
     }
     const ops = [
@@ -1307,27 +1371,23 @@ export class TriggerEditor {
     const currentItem = condition?.item || '';
     const currentCount = condition?.count ?? 1;
     const hasItem = currentOp === 'hasItem';
-    const emptyLabel = opts.emptyLabel || '（无条件，总是执行）';
+    const emptyLabel = opts.emptyLabel || '无条件，总是执行';
     const opOptions = `<option value="">${escape(emptyLabel)}</option>`
-      + ops.map(o => `<option value="${o.value}"${currentOp === o.value ? ' selected' : ''}>${o.label} (${o.value})</option>`).join('');
-    const summary = !condition
-      ? emptyLabel
-      : hasItem
-        ? `持有 ${escape(currentItem || '?')} ×${escape(currentCount)}`
-        : `${escape(currentOp)} ${escape(currentVar)} ${escape(currentValue)}`;
+      + ops.map(o => `<option value="${o.value}"${currentOp === o.value ? ' selected' : ''}>${o.label}</option>`).join('');
+    const valueOptions = ['', 'true', 'false', '0', '1']
+      .concat(currentValue !== '' ? [currentValue] : [])
+      .filter((value, index, values) => values.indexOf(value) === index)
+      .map(value => `<option value="${escape(value)}"${value === currentValue ? ' selected' : ''}>${value === '' ? '-- 请选择 --' : escape(value)}</option>`).join('');
     return `
       <div class="do-cond-form">
         <div class="do-step-if-row">
-          <label>操作 <select class="do-if-op">${opOptions}</select></label>
-          <label class="do-if-var-wrap${hasItem ? ' hidden' : ''}">变量 <input type="text" class="do-if-var" value="${escape(currentVar)}" placeholder="如 story.xxx 或 hp"></label>
-          <label class="do-if-value-wrap${hasItem ? ' hidden' : ''}">值 <input type="text" class="do-if-value" value="${escape(currentValue)}" placeholder="如 true / 0 / &quot;text&quot;"></label>
-          <label class="do-if-item-wrap${hasItem ? '' : ' hidden'}">物品 <input type="text" class="do-if-item" value="${escape(currentItem)}" placeholder="如 resource.wild_berry"></label>
-          <label class="do-if-count-wrap${hasItem ? '' : ' hidden'}">数量 <input type="number" min="1" step="1" class="do-if-count" value="${escape(currentCount)}"></label>
+          <label>判断方式 <select class="do-if-op">${opOptions}</select></label>
+          <label class="do-if-var-wrap${hasItem ? ' hidden' : ''}">判断内容 <select class="do-if-var"><option value="">-- 请选择 --</option>${this._selectionOptionsForField('variable', currentVar)}</select></label>
+          <label class="do-if-value-wrap${hasItem ? ' hidden' : ''}">目标值 <select class="do-if-value">${valueOptions}</select></label>
+          <label class="do-if-item-wrap${hasItem ? '' : ' hidden'}">物品 <select class="do-if-item"><option value="">-- 请选择物品 --</option>${this._selectionOptionsForField('item', currentItem)}</select></label>
+          <label class="do-if-count-wrap${hasItem ? '' : ' hidden'}">数量 <select class="do-if-count">${this._numberSelectionOptions(currentCount, { minimum: 1, maximum: 100 })}</select></label>
         </div>
-        <details class="do-step-if-raw">
-          <summary>高级 JSON</summary>
-          <textarea class="${textareaClass}" placeholder='条件 (JSON)'>${this._escapeHtml(this._json(condition))}</textarea>
-        </details>
+        <textarea${textareaId} class="${textareaClass}" hidden>${this._escapeHtml(this._json(condition))}</textarea>
       </div>`;
   }
 
@@ -1427,7 +1487,7 @@ export class TriggerEditor {
 
     const coordination = t.coordination && typeof t.coordination === 'object' ? t.coordination : {};
     let whenOpts = WHEN_TYPES.map(w =>
-      `<option value="${w.v}" ${t.when?.type === w.v ? 'selected' : ''}>${w.label} (${w.v})</option>`).join('');
+      `<option value="${w.v}" ${t.when?.type === w.v ? 'selected' : ''}>${w.label}</option>`).join('');
     // 保留下拉里没有的自定义 when.type（避免编辑保存时被重置丢失）
     if (t.when?.type && !WHEN_TYPES.some(w => w.v === t.when.type)) {
       whenOpts = `<option value="${this._escapeHtml(t.when.type)}" selected>自定义: ${this._escapeHtml(t.when.type)}</option>` + whenOpts;
@@ -1439,14 +1499,15 @@ export class TriggerEditor {
       ? '<span class="trg-flow-connected">已登记事件契约</span>'
       : '<span class="trg-flow-warning">自定义事件未登记：保留原值，但无法校验名称和身份字段</span>';
 
-    // timer 专用间隔输入框（每隔多少秒触发一次）
+    // timer 专用间隔选择器（每隔多少秒触发一次）
     const isTimer = t.when?.type === 'timer';
-    const timerSec = (t.when?.params && t.when.params.seconds != null) ? t.when.params.seconds : '';
+    const timerSec = (t.when?.params && t.when.params.seconds != null) ? Number(t.when.params.seconds) : 5;
+    const timerValues = [1, 2, 3, 5, 10, 15, 30, 60, 90, 120, 180, 300];
+    if (Number.isFinite(timerSec) && !timerValues.includes(timerSec)) timerValues.push(timerSec);
     const timerRow = isTimer
       ? `<div class="row" style="background:#132038;padding:8px;border-radius:4px;border:1px solid #2a4a7e;">
-           <label style="color:#7cf;">⏱ 间隔（秒）— 每隔多少秒触发一次</label>
-           <input type="text" id="d-timer-seconds" value="${timerSec}" placeholder="如 5 表示每 5 秒触发">
-           <div style="color:#89a;font-size:11px;margin-top:4px;">注意：这是循环间隔，不是冷却(cooldown)。会写入 when.params.seconds。</div>
+           <label style="color:#7cf;">⏱ 触发间隔</label>
+           <select id="d-timer-seconds">${timerValues.sort((a, b) => a - b).map(value => `<option value="${value}"${value === timerSec ? ' selected' : ''}>每 ${value} 秒</option>`).join('')}</select>
          </div>`
       : '';
 
@@ -1470,26 +1531,43 @@ export class TriggerEditor {
     const scopeOptions = [...scopeScenes].map(([sceneId, sceneName]) => (
       `<option value="${this._escapeHtml(sceneId)}"${scopeSceneIds.includes(sceneId) ? ' selected' : ''}>${this._escapeHtml(sceneName)}</option>`
     )).join('');
+    const coordinationGroups = [...new Set((this.project?.triggers || [])
+      .map(trigger => text(trigger?.coordination?.group)).filter(Boolean))];
+    if (coordination.group && !coordinationGroups.includes(coordination.group)) coordinationGroups.push(coordination.group);
+    const coordinationGroupOptions = coordinationGroups.map(group => (
+      `<option value="${this._escapeHtml(group)}"${coordination.group === group ? ' selected' : ''}>${this._escapeHtml(group)}</option>`
+    )).join('');
+    const priorityOptions = [-20, -10, -5, 0, 5, 10, 20, 50, 100]
+      .concat(Number.isInteger(coordination.priority) ? [coordination.priority] : [])
+      .filter((value, index, values) => values.indexOf(value) === index)
+      .sort((a, b) => a - b)
+      .map(value => `<option value="${value}"${(coordination.priority || 0) === value ? ' selected' : ''}>${value}</option>`).join('');
+    const cooldownValue = Number.isFinite(Number(t.cooldown)) ? Number(t.cooldown) : '';
+    const cooldownOptions = ['', 0, 0.5, 1, 2, 3, 5, 10, 30, 60]
+      .concat(cooldownValue !== '' ? [cooldownValue] : [])
+      .filter((value, index, values) => values.indexOf(value) === index)
+      .sort((a, b) => String(a).localeCompare(String(b), undefined, { numeric: true }))
+      .map(value => `<option value="${value}"${value === cooldownValue ? ' selected' : ''}>${value === '' ? '无冷却' : `${value} 秒`}</option>`).join('');
 
     panel.innerHTML = `
       <div class="trg-definition-heading">
-        <strong>Trigger 业务规则</strong>
-        <span>按 when、coordination.priority、定义顺序执行；do[] 严格串行</span>
+        <strong>事件规则</strong>
+        <span>发生指定事件后，按从上到下的顺序执行所选行为</span>
       </div>
       <div class="row"><label>ID</label><input type="text" id="d-id" value="${this._escapeHtml(t.id || '')}"></div>
       <div class="row"><label>名称</label><input type="text" id="d-name" value="${this._escapeHtml(t.name || '')}" placeholder="如：第三次添柴后出现首狼"></div>
-      <div class="row"><label>协调组 coordination.group（空值表示独立执行）</label><input type="text" id="d-coordination-group" value="${this._escapeHtml(coordination.group || '')}" placeholder="如 s01-survival"></div>
+      <div class="row"><label>协调组</label><select id="d-coordination-group"><option value="">独立执行</option>${coordinationGroupOptions}</select></div>
       <div class="row trg-coordination-grid">
         <label>组策略<select id="d-coordination-policy">
-          <option value="broadcast"${coordination.policy !== 'firstSuccess' ? ' selected' : ''}>全部执行 (broadcast)</option>
-          <option value="firstSuccess"${coordination.policy === 'firstSuccess' ? ' selected' : ''}>首个成功 (firstSuccess)</option>
+          <option value="broadcast"${coordination.policy !== 'firstSuccess' ? ' selected' : ''}>全部执行</option>
+          <option value="firstSuccess"${coordination.policy === 'firstSuccess' ? ' selected' : ''}>首个成功</option>
         </select></label>
-        <label>优先级（高值先执行）<input type="number" step="1" id="d-coordination-priority" value="${Number.isInteger(coordination.priority) ? coordination.priority : 0}"></label>
+        <label>执行优先级<select id="d-coordination-priority">${priorityOptions}</select></label>
       </div>
       <div class="row"><label>编辑器归属场景（可多选，不改变运行条件）</label><select id="d-editor-scope-scenes" multiple size="${Math.min(6, Math.max(3, scopeScenes.size))}">${scopeOptions}</select></div>
       <div class="row"><label style="display:flex;align-items:center;gap:5px;"><input type="checkbox" id="d-enabled" ${t.enabled !== false ? 'checked' : ''}> 启用</label></div>
       <section class="trg-flow-card trg-flow-start">
-        <div class="trg-flow-card-title"><span>①</span><div><strong>开始事件</strong><small>直接编辑运行时 when.type / when.params</small></div>${startRegistration}</div>
+        <div class="trg-flow-card-title"><span>①</span><div><strong>开始事件</strong><small>选择什么时候开始执行</small></div>${startRegistration}</div>
         <div class="trg-flow-event-grid">
           <label>事件类型<select id="d-when-type">${whenOpts}</select></label>
           <div class="trg-flow-readonly"><span>事件名称</span><strong>${this._escapeHtml(flow?.start?.name || t.when?.type || '未设置')}</strong></div>
@@ -1497,16 +1575,13 @@ export class TriggerEditor {
         <div class="trg-flow-meta"><span>事件 ID</span><div class="trg-flow-identities">${this._renderEventIdentities(flow?.start)}</div></div>
         <div id="d-when-structured" class="trg-start-params">${structuredWhenParams}</div>
         ${timerRow}
-        <details class="trg-flow-advanced"${structuredWhenParams ? '' : ' open'}>
-          <summary>高级 JSON／未登记参数</summary>
-          <textarea id="d-when-params" placeholder='如 {"sceneId":"S01"}'>${this._escapeHtml(this._json(t.when?.params))}</textarea>
-        </details>
+        <textarea id="d-when-params" hidden>${this._escapeHtml(this._json(t.when?.params))}</textarea>
       </section>
-      <div class="row"><label>执行准入条件 if (JSON，可空)</label><textarea id="d-if" placeholder='如 {"op":"==","left":{"var":"act"},"right":0}'>${t.if ? this._escapeHtml(this._json(t.if)) : ''}</textarea></div>
-      <div class="row"><label style="display:flex;align-items:center;gap:5px;"><input type="checkbox" id="d-once" ${t.once ? 'checked' : ''}> 只触发一次(once)</label></div>
-      <div class="row"><label>冷却 cooldown (秒，可空)</label><input type="text" id="d-cooldown" value="${t.cooldown != null ? t.cooldown : ''}"></div>
+      <div class="row"><label>执行条件</label>${this._renderConditionForm(t.if, { textareaClass: 'd-if-storage', textareaId: 'd-if' })}</div>
+      <div class="row"><label style="display:flex;align-items:center;gap:5px;"><input type="checkbox" id="d-once" ${t.once ? 'checked' : ''}> 只触发一次</label></div>
+      <div class="row"><label>冷却时间</label><select id="d-cooldown">${cooldownOptions}</select></div>
       <div class="row">
-        <label>动作序列 do</label>
+        <label>执行行为</label>
         <div id="d-do-list">${doHtml || '<div style="color:#778;font-size:12px;">暂无动作</div>'}</div>
         <button class="trg-mini" id="d-add-do" style="margin-top:6px;">+ 添加动作</button>
       </div>
@@ -1573,7 +1648,7 @@ export class TriggerEditor {
       if (!t.do) t.do = [];
       t.do.push({
         stepId: this._nextActionStepId(t),
-        action: 'setVar',
+        action: 'state.transaction',
         params: {}
       });
       this._renderDetail();
@@ -1608,7 +1683,7 @@ export class TriggerEditor {
         if (!branchDo) return;
         branchDo.push({
           stepId: this._nextActionStepId(t),
-          action: 'setVar',
+          action: 'state.transaction',
           params: {}
         });
         this._renderDetail();
@@ -1640,7 +1715,7 @@ export class TriggerEditor {
     });
     // 可视化条件编辑器（步骤 if + 分支 when 通用）：表单→隐藏 JSON textarea 即时同步 + hasItem 字段切换
     panel.querySelectorAll('.do-cond-form').forEach(form => {
-      const textarea = form.querySelector('.do-step-if-input, .do-branch-when');
+      const textarea = form.querySelector('.do-step-if-input, .do-branch-when, .d-if-storage');
       const itemWrap = form.querySelector('.do-if-item-wrap');
       const countWrap = form.querySelector('.do-if-count-wrap');
       const varWrap = form.querySelector('.do-if-var-wrap');
@@ -1701,15 +1776,13 @@ export class TriggerEditor {
     });
     // when 类型变化即时刷新列表标签 + 重渲染详情（显示/隐藏 timer 专用字段）
     panel.querySelector('#d-when-type').addEventListener('change', (e) => {
+      const previousType = t.when?.type || '';
       this._commitDetail();
-      // timer 类型时给个默认 seconds，避免用户忘填导致不触发
-      if (e.target.value === 'timer') {
-        const tt = this.triggers[this.selectedIndex];
-        if (tt) {
-          tt.when = tt.when || {};
-          tt.when.params = tt.when.params || {};
-          if (tt.when.params.seconds == null) tt.when.params.seconds = 5;
-        }
+      const tt = this.triggers[this.selectedIndex];
+      if (tt && previousType !== e.target.value) {
+        tt.when = tt.when || {};
+        tt.when.type = e.target.value;
+        tt.when.params = e.target.value === 'timer' ? { seconds: 5 } : {};
       }
       this._renderList();
       this._renderDetail();
@@ -1740,7 +1813,7 @@ export class TriggerEditor {
     // timer 专用「间隔(秒)」输入框（若存在），双向同步 when.params.seconds
     const secInput = panel.querySelector('#d-timer-seconds');
     if (secInput) {
-      secInput.addEventListener('input', () => {
+      secInput.addEventListener('change', () => {
         const wp = panel.querySelector('#d-when-params');
         let obj = {};
         try { obj = JSON.parse(wp.value || '{}'); } catch (err) { obj = {}; }

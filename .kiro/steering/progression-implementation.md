@@ -412,6 +412,8 @@ TaskGraph 不是 EventJournal 的替代品：任务定义只声明事件 matcher
 
 `task.start/task.event/task.track` 是 TaskGraph 唯一写入命令，统一使用 `quest:<actorId>` state revision；`task.track` 必须校验 instance.actorId，禁止跨 actor 修改。TaskGraph 只嵌入 QuestTransactionService 的 `quests` Authority provider，不再注册第二个独立 snapshot provider。任务定义含非空 reward 时必须存在原子 `prepareReward/commit/rollback` 参与者，否则以 `rewardSettlementUnavailable` 拒绝，禁止“任务完成但奖励未发”。TaskGraph 定义运行时、CandidateRuleValidator 和 TaskGraphEditor 必须复用 `validateTaskGraphDefinitions()`，并通过标准 `task.command` 从数据驱动 Trigger 启动。
 
+TaskGraphEditor 的策划入口只编辑一份从上到下的玩家步骤列表，再按“顺序逐项／全部完成／任意完成”生成方式自动派生 `start/objective/parallel/complete` 节点、入口、children、joinPolicy 和 next 边；不得让策划从多节点、多连线和 JSON 反向调试出单线流程。除任务 ID、任务/步骤名称和描述文案外，分类、事件类型、事件 identity、场景/binding/definition/物品等引用和目标数量全部使用项目目录下拉；节点 ID 与连线由编辑器稳定生成。已有 branch/fail 等旧复杂图必须先明确确认转换，禁止编辑任一字段时静默压平成单线。
+
 ### 已验证根因与强制收口约定
 
 当前代码已确认存在以下结构性风险，后续不得通过增加剧情布尔字段、局部 `_busy` 或重复重试掩盖：

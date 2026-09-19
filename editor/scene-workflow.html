@@ -876,7 +876,9 @@
                 document.getElementById('task-graph-editor-container'),
                 {
                     canonicalSession: ctx._canonicalEditorSession('project'),
-                    projectPath: ctx._canonicalProjectPath()
+                    projectPath: ctx._canonicalProjectPath(),
+                    getSceneList: () => ctx.dataManager.getGameScenes(gameId),
+                    getSceneDocuments: () => ctx.getSceneDocuments()
                 }
             );
             taskGraphEditorInitPromise = taskGraphEditor.init()
