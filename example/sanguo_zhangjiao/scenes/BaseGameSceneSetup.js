@@ -478,13 +478,18 @@ export class BaseGameSceneSetup extends Scene {
       .map(entry => [entry.operationId, entry.result]));
 
     // 产品存档绝不捕获运行中的 Trigger 技术账本；由 checkpoint 队列等待封账后重试。
-    const liveRunningTriggers = this.gameLoader?.triggerSystem?.ledger?.all?.()
-      ?.filter(record => record?.status === 'running') || [];
-    if (liveRunningTriggers.length > 0) {
-      const error = new Error('产品存档拒绝捕获仍在执行的 Trigger');
-      error.code = 'scenarioExecutionBusy';
-      error.triggerIds = liveRunningTriggers.map(record => record.triggerId);
-      throw error;
+    // 跨 Region 回滚草稿（includeAuthority=false）由发起切区的 Trigger 在自身动作内同步捕获，
+    // 发起 Trigger 必然处于 running；草稿仅在回滚时经 restoreTriggers:false 消费，
+    // 运行态账本不会回流 live TriggerSystem，因此该路径放行。
+    if (includeAuthority) {
+      const liveRunningTriggers = this.gameLoader?.triggerSystem?.ledger?.all?.()
+        ?.filter(record => record?.status === 'running') || [];
+      if (liveRunningTriggers.length > 0) {
+        const error = new Error('产品存档拒绝捕获仍在执行的 Trigger');
+        error.code = 'scenarioExecutionBusy';
+        error.triggerIds = liveRunningTriggers.map(record => record.triggerId);
+        throw error;
+      }
     }
     const contentState = includeAuthority
       ? null
