@@ -20,7 +20,7 @@
 
  ************************************************************/
 
-import { PlacementSpawner } from './PlacementSpawner.js';
+import { PlacementSpawner, expandPlacement, parseDerivedPlacementId, resolveInstanceCount } from './PlacementSpawner.js';
 
 function copyEntries(entries = []) {
   return entries.map(([id, state]) => [id, state == null ? state : JSON.parse(JSON.stringify(state))]);
@@ -137,7 +137,8 @@ export class ScenePlacementRuntime {
       onEntityImageError: config.onEntityImageError,
       onNpcImageError: config.onNpcImageError,
       shouldSpawn: ({ placement }) => this.shouldSpawn(placement),
-      onSpawn: detail => this._handleSpawn(detail)
+      onSpawn: detail => this._handleSpawn(detail),
+      getConditionRoot: key => this.getConditionRoot(key)
     });
   }
 
@@ -251,6 +252,9 @@ export class ScenePlacementRuntime {
       this.pendingPlacementStates.set(placementId, JSON.parse(JSON.stringify(tombstone)));
       const live = this.findLivePlacementValue(placementId);
       if (live) this._destroyValues([live]);
+      // 永久移除必须同时忘记生成登记：否则重生检查在 alreadySpawned 短路，
+      // 永远走不到 tombstone 拒绝分支。
+      this.spawner?.forgetPlacements?.([placementId]);
       return { ok: true, placementId, removed: !!live };
     } catch (error) {
       if (previous) this.pendingPlacementStates.set(placementId, previous);
@@ -875,7 +879,17 @@ export class ScenePlacementRuntime {
 
   _findPlacement(placementId) {
     if (!placementId) return null;
-    return this.placements.find(placement => placement?.id === placementId) || null;
+    const direct = this.placements.find(placement => placement?.id === placementId) || null;
+    if (direct) return direct;
+    // count 模板的派生实例（`base-N`）反查模板并重建同一虚拟 placement，
+    // 保证 tombstone/inspect 与 spawn 使用一致的实例 id 与坐标。
+    const derived = parseDerivedPlacementId(placementId);
+    if (!derived) return null;
+    const template = this.placements.find(placement => placement?.id === derived.baseId) || null;
+    if (!template) return null;
+    const instanceCount = resolveInstanceCount(template, this.getConditionRoot);
+    if (instanceCount <= 1) return null;
+    return expandPlacement(template, derived.index, { deriveFirst: true });
   }
 
   _containsValue(value) {

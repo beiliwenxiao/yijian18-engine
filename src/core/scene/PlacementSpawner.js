@@ -82,6 +82,51 @@ function placementMatches(placement, selector) {
   return true;
 }
 
+/**
+ * 把带 count 的模板 placement 展开为第 index 个实例（1 基）。
+ * `deriveFirst`（count>1 时为 true）：实例 1 使用派生 id `base-1` 且保持模板坐标，
+ * 保证旧档 placementStates/ledger 的 `base-1` 键继续命中；index>=2 按黄金角环形散布
+ * （2.5D y 压缩 0.6）。坐标只依赖 index 不依赖 count，保证实例位置跨数量变化与跨会话稳定。
+ * count<=1 时不展开（返回模板本身），行为与旧数据完全一致。count 不设上限。
+ */
+function expandPlacement(placement, index, { deriveFirst = false } = {}) {
+  if (!placement) return placement;
+  if (index <= 1) return deriveFirst ? { ...placement, id: `${placement.id}-1` } : placement;
+  const ringIndex = index - 2;
+  const angle = ringIndex * 137.508 * Math.PI / 180;
+  const radius = 70 + Math.floor(ringIndex / 10) * 55;
+  return {
+    ...placement,
+    id: `${placement.id}-${index}`,
+    x: Math.round(((Number(placement.x) || 0) + Math.cos(angle) * radius) * 100) / 100,
+    y: Math.round(((Number(placement.y) || 0) + Math.sin(angle) * radius * 0.6) * 100) / 100
+  };
+}
+
+/** 解析模板 count：数字直接钳制下限；对象经 getConditionRoot 动态读取；缺省/非法回退 1。 */
+function resolveInstanceCount(placement, getConditionRoot) {
+  const raw = placement?.count;
+  if (raw == null) return 1;
+  let value = raw;
+  if (typeof raw === 'object' && !Array.isArray(raw)) {
+    const root = getConditionRoot?.(raw.blackboardKey || 'storyState');
+    value = root;
+    for (const segment of String(raw.path || '').split('.').filter(Boolean)) {
+      value = value && typeof value === 'object' ? value[segment] : undefined;
+    }
+  }
+  const parsed = Math.floor(Number(value));
+  if (!Number.isFinite(parsed)) return 1;
+  return Math.max(1, parsed);
+}
+
+/** 派生实例 id 反查：`base-N` → { base, index }；无数字后缀返回 null。 */
+function parseDerivedPlacementId(placementId) {
+  const match = /^(.*)-(\d+)$/.exec(String(placementId || ''));
+  if (!match || !match[1]) return null;
+  return { baseId: match[1], index: Number(match[2]) };
+}
+
 /** 将分组放置点与内容注册表定义组合为运行时对象。 */
 export class PlacementSpawner {
   constructor({
@@ -92,7 +137,8 @@ export class PlacementSpawner {
     onEntityImageError = null,
     onNpcImageError = null,
     onSpawn = null,
-    shouldSpawn = null
+    shouldSpawn = null,
+    getConditionRoot = null
   } = {}) {
     this.entityFactory = entityFactory;
     this.entityStore = entityStore;
@@ -102,6 +148,7 @@ export class PlacementSpawner {
     this.onNpcImageError = onNpcImageError;
     this.onSpawn = onSpawn;
     this.shouldSpawn = typeof shouldSpawn === 'function' ? shouldSpawn : null;
+    this.getConditionRoot = typeof getConditionRoot === 'function' ? getConditionRoot : null;
     this.spawnedPlacementIds = new Set();
   }
 
@@ -182,75 +229,81 @@ export class PlacementSpawner {
         recordOutcome(placement, 'unsupportedKind', 'unsupportedKind');
         continue;
       }
-      if (placement.id && this.spawnedPlacementIds.has(placement.id)) {
-        recordOutcome(placement, 'alreadySpawned');
-        continue;
-      }
-      if (this.shouldSpawn) {
-        try {
-          if (this.shouldSpawn({ placement, selector: normalized }) === false) {
-            recordOutcome(placement, 'conditionFalse');
-            continue;
-          }
-        } catch (error) {
-          recordError(placement, 'spawnConditionFailed', error);
-          recordOutcome(placement, 'failed', 'spawnConditionFailed');
-          continue;
-        }
-      }
+      // count 展开：一个模板按数量派生 `id-N` 实例；幂等键/状态/tombstone 都绑定派生 id。
+      // count 缺省或为 1 时不展开，实例即模板本身，行为与旧数据完全一致。
+      const instanceCount = resolveInstanceCount(placement, this.getConditionRoot);
       const definition = registryGet(registries, kind, placement.ref);
       if (!definition) {
         recordError(placement, 'definitionNotFound');
         recordOutcome(placement, 'failed', 'definitionNotFound');
         continue;
       }
-
-      try {
-        const data = mergeOverrides(definition, placement.overrides);
-        if (kind === 'enemy' && data.corpse?.resourceNodeRef) {
-          const resourceNode = registryGet(registries, 'resourceNode', data.corpse.resourceNodeRef);
-          if (!resourceNode) {
-            recordError(placement, 'corpseResourceNodeNotFound');
-            recordOutcome(placement, 'failed', 'corpseResourceNodeNotFound');
-            continue;
-          }
-          data.corpse = {
-            ...data.corpse,
-            resourceNode: mergeOverrides(resourceNode, data.corpse.resourceNode)
-          };
-        }
-        data.position = { x: Number(placement.x) || 0, y: Number(placement.y) || 0 };
-        const entity = this._spawn(kind, data, placement);
-        if (!entity) {
-          recordError(placement, 'factoryUnavailable');
-          recordOutcome(placement, 'failed', 'factoryUnavailable');
+      for (let index = 1; index <= instanceCount; index += 1) {
+        const instance = expandPlacement(placement, index, { deriveFirst: instanceCount > 1 });
+        if (instance.id && this.spawnedPlacementIds.has(instance.id)) {
+          recordOutcome(instance, 'alreadySpawned');
           continue;
         }
-        if (!entity.placementId && placement.id) entity.placementId = placement.id;
-        // 地面可拾取物与装备同样可以声明稳定 imageId，需要一起预载图片。
-        if (['npc', 'enemy', 'resourceNode', 'item', 'equipment'].includes(kind)) {
-          this._preloadEntityImage(kind, data, entity, placement);
-        }
-        if (typeof this.onSpawn === 'function') {
+        if (this.shouldSpawn) {
           try {
-            this.onSpawn({ entity, kind, group: placement.group || normalized.group || null, placement, definition: data });
+            if (this.shouldSpawn({ placement: instance, selector: normalized }) === false) {
+              recordOutcome(instance, 'conditionFalse');
+              continue;
+            }
           } catch (error) {
-            this.aiSystem?.unregisterAI?.(entity);
-            this.entityStore?.remove?.(entity);
-            try { entity?.destroy?.(); } catch (destroyError) { /* best-effort rollback */ }
-            recordError(placement, 'onSpawnFailed', error);
-            recordOutcome(placement, 'failed', 'onSpawnFailed');
+            recordError(instance, 'spawnConditionFailed', error);
+            recordOutcome(instance, 'failed', 'spawnConditionFailed');
             continue;
           }
         }
-        entities.push(entity);
-        if (placement.id) this.spawnedPlacementIds.add(placement.id);
-        counts[kind]++;
-        counts.total++;
-        recordOutcome(placement, 'spawned');
-      } catch (error) {
-        recordError(placement, 'spawnFailed', error);
-        recordOutcome(placement, 'failed', 'spawnFailed');
+
+        try {
+          const data = mergeOverrides(definition, instance.overrides);
+          if (kind === 'enemy' && data.corpse?.resourceNodeRef) {
+            const resourceNode = registryGet(registries, 'resourceNode', data.corpse.resourceNodeRef);
+            if (!resourceNode) {
+              recordError(instance, 'corpseResourceNodeNotFound');
+              recordOutcome(instance, 'failed', 'corpseResourceNodeNotFound');
+              continue;
+            }
+            data.corpse = {
+              ...data.corpse,
+              resourceNode: mergeOverrides(resourceNode, data.corpse.resourceNode)
+            };
+          }
+          data.position = { x: Number(instance.x) || 0, y: Number(instance.y) || 0 };
+          const entity = this._spawn(kind, data, instance);
+          if (!entity) {
+            recordError(instance, 'factoryUnavailable');
+            recordOutcome(instance, 'failed', 'factoryUnavailable');
+            continue;
+          }
+          if (!entity.placementId && instance.id) entity.placementId = instance.id;
+          // 地面可拾取物与装备同样可以声明稳定 imageId，需要一起预载图片。
+          if (['npc', 'enemy', 'resourceNode', 'item', 'equipment'].includes(kind)) {
+            this._preloadEntityImage(kind, data, entity, instance);
+          }
+          if (typeof this.onSpawn === 'function') {
+            try {
+              this.onSpawn({ entity, kind, group: instance.group || normalized.group || null, placement: instance, definition: data });
+            } catch (error) {
+              this.aiSystem?.unregisterAI?.(entity);
+              this.entityStore?.remove?.(entity);
+              try { entity?.destroy?.(); } catch (destroyError) { /* best-effort rollback */ }
+              recordError(instance, 'onSpawnFailed', error);
+              recordOutcome(instance, 'failed', 'onSpawnFailed');
+              continue;
+            }
+          }
+          entities.push(entity);
+          if (instance.id) this.spawnedPlacementIds.add(instance.id);
+          counts[kind]++;
+          counts.total++;
+          recordOutcome(instance, 'spawned');
+        } catch (error) {
+          recordError(instance, 'spawnFailed', error);
+          recordOutcome(instance, 'failed', 'spawnFailed');
+        }
       }
     }
 
@@ -348,5 +401,5 @@ export class PlacementSpawner {
   }
 }
 
-export { mergeOverrides };
+export { mergeOverrides, expandPlacement, parseDerivedPlacementId, resolveInstanceCount };
 export default PlacementSpawner;

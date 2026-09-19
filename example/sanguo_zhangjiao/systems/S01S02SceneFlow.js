@@ -51,6 +51,7 @@ const RECIPE_ACTIONS = Object.freeze({
 });
 const CHASE_WOLF_PREFIX = 'S01-chase-wolf-';
 const MAX_CHASE_WOLVES = 20;
+const FIRST_WOLF_PREFIX = 'S01-first-wolf-';
 const PURSUIT_RECONCILE_INTERVAL_SECONDS = 0.75;
 const FIRST_WOLF_CORPSE_RETRY_INTERVAL_SECONDS = 0.1;
 const FIRST_WOLF_CORPSE_MAX_ATTEMPTS = 30;
@@ -80,6 +81,7 @@ export class S01S02Coordinator {
     this.initialToolRevealPending = false;
     this.initialToolRevealRetryElapsed = 0;
     this.pendingWolfDiscovery = false;
+    this.firstWolfRetreatDone = false;
     this.pendingClimb = false;
     this.climbCompletionInFlight = false;
     this.pendingPlacementReveals = new Map();
@@ -394,6 +396,12 @@ export class S01S02Coordinator {
     return this._activateWolf(wolf);
   }
 
+  /** 首狼数量：由触发器参数经 firstWolfSpotted 事务写入 StoryState；旧档缺省 1，不设上限。 */
+  _firstWolfCount() {
+    const value = Number(this._readStoryPath('s01Survival.firstWolfCount'));
+    return Math.max(1, Math.floor(Number.isFinite(value) ? value : 1));
+  }
+
   _createFirstWolfContinuation() {
     return {
       mode: 'spawnContinuation',
@@ -410,20 +418,47 @@ export class S01S02Coordinator {
     try {
       const survival = this._story().s01Survival || {};
       if (survival.firstWolfSpotted !== true) return false;
+      if (survival.firstWolfKilled === true) {
+        // 击杀事实已成立：清掉哨兵补偿，不再补生成（含已退散个体）。
+        this.pendingPlacementReveals.delete(`${FIRST_WOLF_PREFIX}1`);
+        return true;
+      }
 
-      const continuation = this._createFirstWolfContinuation();
-      const placement = await this._ensureSpawnedPlacement(continuation.group, continuation.placementId);
-      if (!placement.ok) {
-        this._rememberPendingReveal(continuation);
-        console.warn('[S01S02Coordinator] 首狼事实已提交，放置进入退避补偿', placement);
-        return true;
+      const count = this._firstWolfCount();
+      let allSettled = true;
+      for (let index = 1; index <= count; index += 1) {
+        const placementId = `${FIRST_WOLF_PREFIX}${index}`;
+        const existing = this.scene.entityStore?.getById?.(placementId);
+        if (existing) {
+          this._activateFirstWolf(existing);
+          this.pendingPlacementReveals.delete(placementId);
+          continue;
+        }
+        // 已退散个体的 tombstone 参与快照，视为已结算，不重试生成。
+        if (this.scene.context.services.placements?.inspectPlacement?.(placementId)?.tombstoned === true) {
+          continue;
+        }
+        const placement = await this._ensureSpawnedPlacement('S01-first-wolf', placementId);
+        const activated = placement.ok ? this._activateFirstWolf(placement.target) : false;
+        if (!placement.ok || !activated) {
+          allSettled = false;
+          console.warn('[S01S02Coordinator] 首狼放置进入退避补偿', {
+            placementId,
+            code: placement.ok ? 'firstWolfActivateFailed' : (placement.code || 'placementSpawnFailed')
+          });
+          continue;
+        }
+        this.pendingPlacementReveals.delete(placementId);
       }
-      if (!this._activateFirstWolf(placement.target)) {
-        this._rememberPendingReveal(continuation);
-        console.warn('[S01S02Coordinator] 首狼已生成但主动攻击未能激活，进入退避补偿');
-        return true;
+      if (!allSettled) {
+        // 哨兵 = 首狼个体；补偿重跑整体幂等，onRecovered 再走整群补齐。
+        this._rememberPendingReveal({
+          ...this._createFirstWolfContinuation(),
+          onRecovered: () => this._ensureFirstWolfFromCommittedState()
+        });
+      } else {
+        this.pendingPlacementReveals.delete(`${FIRST_WOLF_PREFIX}1`);
       }
-      this.pendingPlacementReveals.delete(continuation.placementId);
       return true;
     } finally {
       this.pendingWolfDiscovery = false;
@@ -752,9 +787,14 @@ export class S01S02Coordinator {
     }
     const sourceOperationId = eventData.operationId || eventData.eventId;
     if (!sourceOperationId) return { ok: false, code: 'sourceOperationIdMissing' };
+    // firstWolfCount 是策划在触发器参数里调节的首狼群数量；
+    // 触发器定义不入存档，因此必须随事务写入 StoryState 才能跨会话恢复。
+    const payload = params.firstWolfCount !== undefined
+      ? { firstWolfCount: params.firstWolfCount }
+      : {};
     const result = await this._submit(
       definitionId,
-      {},
+      payload,
       `${sourceOperationId}:state:${definitionId}`
     );
     // 幂等护栏：commitStoryWhenReady 的契约是「条件就绪才提交、未就绪则跳过」。
@@ -894,8 +934,36 @@ export class S01S02Coordinator {
     const corpse = this._captureFirstWolfCorpse(entity);
     if (!corpse) return false;
     const published = await this._publishEnemyKilled(entity, 'firstWolf', true);
-    if (published?.ok === true) this.firstWolfCorpsePending = null;
+    if (published?.ok === true) {
+      this.firstWolfCorpsePending = null;
+      // 击杀事实已发布：其余教学狼退散（tombstone + 销毁），只保留击杀个体的可采集尸体。
+      this._retreatRemainingFirstWolves(entity.id);
+    }
     return published?.ok === true;
+  }
+
+  /** 首杀事实发布后其余教学狼退散；tombstone 保证读档/重进不再复活。 */
+  _retreatRemainingFirstWolves(keepEntityId) {
+    this.firstWolfRetreatDone = true;
+    const placements = this.scene.context.services.placements;
+    const count = this._firstWolfCount();
+    for (let index = 1; index <= count; index += 1) {
+      const placementId = `${FIRST_WOLF_PREFIX}${index}`;
+      if (placementId === keepEntityId) continue;
+      const wolf = this.scene.entityStore?.getById?.(placementId);
+      if (!wolf) continue;
+      const result = placements?.tombstonePlacement?.(placementId, {
+        removed: true,
+        retreatedAfterFirstWolfKilled: true
+      });
+      if (result?.ok !== true) {
+        // tombstone 失败时兜底清理，避免退散狼残留攻击玩家。
+        this.scene.aiSystem?.unregisterAI?.(wolf);
+        this.scene.entityStore?.removeMany?.([wolf]);
+        try { wolf?.destroy?.(); } catch (error) { /* best-effort retreat */ }
+        console.warn('[S01S02Coordinator] 首狼退散 tombstone 失败，已兜底移除', { placementId, result });
+      }
+    }
   }
 
   _updateFirstWolfCorpseCommit(deltaTime) {
@@ -943,12 +1011,15 @@ export class S01S02Coordinator {
   async handleEnemyKilled(entity) {
     if (this.scene.currentSceneId !== 'S01' || !entity?.id) return false;
     const isChaseWolf = entity.id.startsWith(CHASE_WOLF_PREFIX);
-    const isFirstWolf = entity.id === 'S01-first-wolf-1';
+    // 首狼群：任意一只教学狼死亡即进入首杀管线；击杀事实提交后其余狼退散。
+    const isFirstWolf = entity.id.startsWith(FIRST_WOLF_PREFIX);
     if (!isChaseWolf && !isFirstWolf) return false;
     if (isChaseWolf) {
       const published = await this._publishEnemyKilled(entity, 'chaseWolf', false);
       return published?.ok === true;
     }
+    // 退散已执行：同帧双杀等竞态下不再重复进入首杀管线。
+    if (this.firstWolfRetreatDone) return true;
 
     if (this.firstWolfCorpseRetryInFlight) {
       this._queueFirstWolfCorpseCommit(entity);
@@ -1828,10 +1899,19 @@ export class S01S02Coordinator {
       this.initialToolRevealRetryElapsed = 0;
     }
     if (survival.firstWolfSpotted === true && survival.firstWolfKilled !== true) {
-      const firstWolf = this.scene.entityStore?.getById?.('S01-first-wolf-1');
-      if (firstWolf?.isCorpse === true) this._queueFirstWolfCorpseCommit(firstWolf);
-      else if (firstWolf) this._activateFirstWolf(firstWolf);
-      else if (!this.pendingWolfDiscovery && !this.pendingPlacementReveals.has('S01-first-wolf-1')) {
+      const placements = this.scene.context.services.placements;
+      let firstWolfPackMissing = false;
+      for (let index = 1; index <= this._firstWolfCount(); index += 1) {
+        const placementId = `${FIRST_WOLF_PREFIX}${index}`;
+        const wolf = this.scene.entityStore?.getById?.(placementId);
+        if (wolf?.isCorpse === true) this._queueFirstWolfCorpseCommit(wolf);
+        else if (wolf) this._activateFirstWolf(wolf);
+        else if (placements?.inspectPlacement?.(placementId)?.tombstoned !== true) {
+          firstWolfPackMissing = true;
+        }
+      }
+      if (firstWolfPackMissing && !this.pendingWolfDiscovery
+        && !this.pendingPlacementReveals.has(`${FIRST_WOLF_PREFIX}1`)) {
         void this._ensureFirstWolfFromCommittedState().catch(error => {
           console.warn('[S01S02Coordinator] 已提交首狼事实的表现恢复失败', error);
         });

@@ -567,8 +567,12 @@
           "y": 595.6107254885911
         },
         {
+          "count": {
+            "blackboardKey": "storyState",
+            "path": "s01Survival.firstWolfCount"
+          },
           "group": "S01-first-wolf",
-          "id": "S01-first-wolf-1",
+          "id": "S01-first-wolf",
           "kind": "enemy",
           "overrides": {
             "stats": {

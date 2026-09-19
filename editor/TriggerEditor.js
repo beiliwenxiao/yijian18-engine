@@ -1193,7 +1193,13 @@ export class TriggerEditor {
         const encoded = value === undefined ? '' : JSON.stringify(value);
         control = `<select class="do-param-field" data-param-name="${this._escapeHtml(name)}" data-schema-type="${type}"><option value="">-- 不设置 --</option>${encoded ? `<option value="${this._escapeHtml(encoded)}" selected>使用模板生成的当前配置</option>` : ''}</select>`;
       } else if (type === 'number' || type === 'integer') {
-        control = `<select class="do-param-field" data-param-name="${this._escapeHtml(name)}" data-schema-type="${this._escapeHtml(type)}"><option value="">-- 未设置 --</option>${this._numberSelectionOptions(value, property)}</select>`;
+        // 数字字段支持手动填写任意值；datalist 保留策划常用的预设候选（下拉行为不变）。
+        this._numberDatalistSeq = (this._numberDatalistSeq || 0) + 1;
+        const listId = `do-param-numbers-${this._numberDatalistSeq}`;
+        const minAttr = Number.isFinite(Number(property.minimum)) ? ` min="${Number(property.minimum)}"` : '';
+        const maxAttr = Number.isFinite(Number(property.maximum)) ? ` max="${Number(property.maximum)}"` : '';
+        const stepAttr = type === 'integer' ? ' step="1"' : ' step="any"';
+        control = `<input type="number" class="do-param-field" data-param-name="${this._escapeHtml(name)}" data-schema-type="${this._escapeHtml(type)}" list="${listId}"${minAttr}${maxAttr}${stepAttr} placeholder="-- 未设置 --" value="${this._escapeHtml(value ?? '')}"><datalist id="${listId}">${this._numberSelectionOptions(value, property)}</datalist>`;
       } else if (/(?:name|title|label|description|text|message|tip)$/i.test(name)) {
         control = `<input type="text" class="do-param-field" data-param-name="${this._escapeHtml(name)}" data-schema-type="string" value="${this._escapeHtml(value ?? '')}">`;
       } else {

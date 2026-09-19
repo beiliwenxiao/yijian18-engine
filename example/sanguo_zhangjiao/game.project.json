@@ -2290,24 +2290,243 @@
       "reward": {},
       "checkpoint": null,
       "nodes": [
-        { "id": "start", "type": "start", "next": ["lightCampfire"] },
-        { "id": "lightCampfire", "type": "objective", "title": "点燃火堆", "eventMatcher": { "type": "state.transaction", "payload": { "definitionId": "story.s01.campfireLit" } }, "next": ["findTools"] },
-        { "id": "findTools", "type": "objective", "title": "找齐斧头和剥皮刀", "eventMatcher": { "type": "state.transaction", "payload": { "definitionId": "story.s01.initialToolsPicked" } }, "next": ["gatherBerries"] },
-        { "id": "gatherBerries", "type": "objective", "title": "采集荒野酸果", "eventMatcher": { "type": "state.transaction", "payload": { "definitionId": "story.s01.berriesGathered" } }, "next": ["eatBerry"] },
-        { "id": "eatBerry", "type": "objective", "title": "食用酸果恢复体力", "eventMatcher": { "type": "state.transaction", "payload": { "definitionId": "story.s01.berryEaten" } }, "next": ["gatherWood"] },
-        { "id": "gatherWood", "type": "objective", "title": "采集至少三份木材", "eventMatcher": { "type": "state.transaction", "payload": { "definitionId": "story.s01.woodGathered" } }, "next": ["spotWolf"] },
-        { "id": "spotWolf", "type": "objective", "title": "为火堆添柴并应对野狼", "eventMatcher": { "type": "state.transaction", "payload": { "definitionId": "story.s01.firstWolfSpotted" } }, "next": ["killWolf"] },
-        { "id": "killWolf", "type": "objective", "title": "击杀教学野狼", "eventMatcher": { "type": "state.transaction", "payload": { "definitionId": "story.s01.firstWolfKilled" } }, "next": ["skinWolf"] },
-        { "id": "skinWolf", "type": "objective", "title": "剥取两份狼皮", "eventMatcher": { "type": "state.transaction", "payload": { "definitionId": "story.s01.wolfSkinned" } }, "next": ["cookMeat"] },
-        { "id": "cookMeat", "type": "objective", "title": "烤制狼肉", "eventMatcher": { "type": "state.transaction", "payload": { "definitionId": "story.s01.cookMeat" } }, "next": ["craftGear"] },
-        { "id": "craftGear", "type": "objective", "title": "制作狼皮背心和护腕", "eventMatcher": { "type": "state.transaction", "payload": { "definitionId": "story.s01.wolfGearCrafted" } }, "next": ["buildShelter"] },
-        { "id": "buildShelter", "type": "objective", "title": "搭建庇护所", "eventMatcher": { "type": "state.transaction", "payload": { "definitionId": "story.s01.shelterCompleted" } }, "next": ["stayOvernight"] },
-        { "id": "stayOvernight", "type": "objective", "title": "在庇护所过夜", "eventMatcher": { "type": "state.transaction", "payload": { "definitionId": "story.s01.overnight" } }, "next": ["leaveShelter"] },
-        { "id": "leaveShelter", "type": "objective", "title": "离开庇护所并躲避狼群", "eventMatcher": { "type": "state.transaction", "payload": { "definitionId": "story.s01.leaveShelter" } }, "next": ["crossRiver"] },
-        { "id": "crossRiver", "type": "objective", "title": "跳石过河", "eventMatcher": { "type": "state.transaction", "payload": { "definitionId": "story.s01.riverCrossed" } }, "next": ["reachCliff"] },
-        { "id": "reachCliff", "type": "objective", "title": "抵达山崖并攀藤撤离", "eventMatcher": { "type": "state.transaction", "payload": { "definitionId": "story.s01.cliffReached" } }, "next": ["escape"] },
-        { "id": "escape", "type": "objective", "title": "逃往废弃营地", "eventMatcher": { "type": "state.transaction", "payload": { "definitionId": "story.s01.complete" } }, "next": ["complete"] },
-        { "id": "complete", "type": "complete" }
+        {
+          "id": "start",
+          "type": "start",
+          "next": [
+            "lightCampfire"
+          ]
+        },
+        {
+          "id": "lightCampfire",
+          "type": "objective",
+          "title": "点燃火堆",
+          "next": [
+            "findTools"
+          ],
+          "eventMatcher": {
+            "type": "state.transaction",
+            "payload": {
+              "definitionId": "story.s01.campfireLit"
+            }
+          }
+        },
+        {
+          "id": "findTools",
+          "type": "objective",
+          "title": "找齐斧头和剥皮刀",
+          "next": [
+            "gatherBerries"
+          ],
+          "eventMatcher": {
+            "type": "state.transaction",
+            "payload": {
+              "definitionId": "story.s01.initialToolsPicked"
+            }
+          }
+        },
+        {
+          "id": "gatherBerries",
+          "type": "objective",
+          "title": "采集荒野酸果",
+          "next": [
+            "eatBerry"
+          ],
+          "eventMatcher": {
+            "type": "state.transaction",
+            "payload": {
+              "definitionId": "story.s01.berriesGathered"
+            }
+          }
+        },
+        {
+          "id": "eatBerry",
+          "type": "objective",
+          "title": "食用酸果恢复体力",
+          "next": [
+            "gatherWood"
+          ],
+          "eventMatcher": {
+            "type": "state.transaction",
+            "payload": {
+              "definitionId": "story.s01.berryEaten"
+            }
+          }
+        },
+        {
+          "id": "gatherWood",
+          "type": "objective",
+          "title": "采集至少三份木材",
+          "next": [
+            "spotWolf"
+          ],
+          "eventMatcher": {
+            "type": "gathering.completed",
+            "payload": {
+              "itemId": "resource.wood"
+            }
+          },
+          "progressBy": "accepted",
+          "requiredCount": 3
+        },
+        {
+          "id": "spotWolf",
+          "type": "objective",
+          "title": "为火堆添柴并应对野狼",
+          "next": [
+            "killWolf"
+          ],
+          "eventMatcher": {
+            "type": "state.transaction",
+            "payload": {
+              "definitionId": "story.s01.firstWolfSpotted"
+            }
+          }
+        },
+        {
+          "id": "killWolf",
+          "type": "objective",
+          "title": "击杀教学野狼",
+          "next": [
+            "skinWolf"
+          ],
+          "eventMatcher": {
+            "type": "state.transaction",
+            "payload": {
+              "definitionId": "story.s01.firstWolfKilled"
+            }
+          }
+        },
+        {
+          "id": "skinWolf",
+          "type": "objective",
+          "title": "剥取两份狼皮",
+          "next": [
+            "cookMeat"
+          ],
+          "eventMatcher": {
+            "type": "state.transaction",
+            "payload": {
+              "definitionId": "story.s01.wolfSkinned"
+            }
+          }
+        },
+        {
+          "id": "cookMeat",
+          "type": "objective",
+          "title": "烤制狼肉",
+          "next": [
+            "craftGear"
+          ],
+          "eventMatcher": {
+            "type": "state.transaction",
+            "payload": {
+              "definitionId": "story.s01.cookMeat"
+            }
+          }
+        },
+        {
+          "id": "craftGear",
+          "type": "objective",
+          "title": "制作狼皮背心和护腕",
+          "next": [
+            "buildShelter"
+          ],
+          "eventMatcher": {
+            "type": "state.transaction",
+            "payload": {
+              "definitionId": "story.s01.wolfGearCrafted"
+            }
+          }
+        },
+        {
+          "id": "buildShelter",
+          "type": "objective",
+          "title": "搭建庇护所",
+          "next": [
+            "stayOvernight"
+          ],
+          "eventMatcher": {
+            "type": "state.transaction",
+            "payload": {
+              "definitionId": "story.s01.shelterCompleted"
+            }
+          }
+        },
+        {
+          "id": "stayOvernight",
+          "type": "objective",
+          "title": "在庇护所过夜",
+          "next": [
+            "leaveShelter"
+          ],
+          "eventMatcher": {
+            "type": "state.transaction",
+            "payload": {
+              "definitionId": "story.s01.overnight"
+            }
+          }
+        },
+        {
+          "id": "leaveShelter",
+          "type": "objective",
+          "title": "离开庇护所并躲避狼群",
+          "next": [
+            "crossRiver"
+          ],
+          "eventMatcher": {
+            "type": "state.transaction",
+            "payload": {
+              "definitionId": "story.s01.leaveShelter"
+            }
+          }
+        },
+        {
+          "id": "crossRiver",
+          "type": "objective",
+          "title": "跳石过河",
+          "next": [
+            "reachCliff"
+          ],
+          "eventMatcher": {
+            "type": "state.transaction",
+            "payload": {
+              "definitionId": "story.s01.riverCrossed"
+            }
+          }
+        },
+        {
+          "id": "reachCliff",
+          "type": "objective",
+          "title": "抵达山崖并攀藤撤离",
+          "next": [
+            "escape"
+          ],
+          "eventMatcher": {
+            "type": "state.transaction",
+            "payload": {
+              "definitionId": "story.s01.cliffReached"
+            }
+          }
+        },
+        {
+          "id": "escape",
+          "type": "objective",
+          "title": "逃往废弃营地",
+          "next": [
+            "complete"
+          ],
+          "eventMatcher": {
+            "type": "state.transaction",
+            "payload": {
+              "definitionId": "story.s01.complete"
+            }
+          }
+        },
+        {
+          "id": "complete",
+          "type": "complete"
+        }
       ]
     },
     {
@@ -2319,10 +2538,45 @@
       "reward": {},
       "checkpoint": null,
       "nodes": [
-        { "id": "start", "type": "start", "next": ["acceptSummons"] },
-        { "id": "acceptSummons", "type": "objective", "title": "接受张角召见", "eventMatcher": { "type": "state.transaction", "payload": { "definitionId": "story.s02.summons.accept" } }, "next": ["travel"] },
-        { "id": "travel", "type": "objective", "title": "前往粥棚营地", "eventMatcher": { "type": "state.transaction", "payload": { "definitionId": "story.s02.travel" } }, "next": ["complete"] },
-        { "id": "complete", "type": "complete" }
+        {
+          "id": "start",
+          "type": "start",
+          "next": [
+            "acceptSummons"
+          ]
+        },
+        {
+          "id": "acceptSummons",
+          "type": "objective",
+          "title": "接受张角召见",
+          "next": [
+            "travel"
+          ],
+          "eventMatcher": {
+            "type": "state.transaction",
+            "payload": {
+              "definitionId": "story.s02.summons.accept"
+            }
+          }
+        },
+        {
+          "id": "travel",
+          "type": "objective",
+          "title": "前往粥棚营地",
+          "next": [
+            "complete"
+          ],
+          "eventMatcher": {
+            "type": "state.transaction",
+            "payload": {
+              "definitionId": "story.s02.travel"
+            }
+          }
+        },
+        {
+          "id": "complete",
+          "type": "complete"
+        }
       ]
     }
   ],
@@ -2380,6 +2634,12 @@
                 },
                 "equals": {
                   "title": "前置事实等于"
+                },
+                "firstWolfCount": {
+                  "description": "首狼任务出现的野狼数量；仅在提交 story.s01.firstWolfSpotted 时生效",
+                  "minimum": 1,
+                  "title": "首狼群数量",
+                  "type": "integer"
                 },
                 "gte": {
                   "title": "前置数值下限",
@@ -3605,6 +3865,7 @@
       "once": false,
       "when": {
         "params": {
+          "itemId": "resource.wood",
           "resourceType": "wood"
         },
         "type": "gathering.completed"
@@ -3710,6 +3971,7 @@
           "params": {
             "completedPath": "s01Survival.firstWolfSpotted",
             "definitionId": "story.s01.firstWolfSpotted",
+            "firstWolfCount": 1,
             "gte": 3,
             "operation": "commitStoryWhenReady",
             "storyPath": "s01Survival.campfireRefuelCount"
@@ -3739,6 +4001,7 @@
           "params": {
             "completedPath": "s01Survival.firstWolfSpotted",
             "definitionId": "story.s01.firstWolfSpotted",
+            "firstWolfCount": 1,
             "gte": 3,
             "operation": "commitStoryWhenReady",
             "storyPath": "s01Survival.campfireRefuelCount"
@@ -3799,6 +4062,7 @@
           "params": {
             "completedPath": "s01Survival.firstWolfKilled",
             "definitionId": "story.s01.firstWolfKilled",
+            "firstWolfCount": 189,
             "operation": "commitStoryWhenReady"
           },
           "stepId": "commit-first-wolf-killed"
@@ -4575,7 +4839,7 @@
         {
           "action": "showTip",
           "params": {
-            "text": "先在中央军令旗选择观战或介入；只有介入可在西侧残旗下启动波才救援。"
+            "text": "先在中央军令旗选择观战或介入；只有介入可在西侧残旗下启动波才救援���"
           }
         }
       ],
@@ -8102,6 +8366,19 @@
             "path": "s01Survival.firstWolfSpotted",
             "target": "story",
             "value": true
+          },
+          {
+            "path": "s01Survival.firstWolfCount",
+            "target": "story",
+            "value": {
+              "$max": [
+                1,
+                {
+                  "$get": "payload.firstWolfCount",
+                  "default": 1
+                }
+              ]
+            }
           }
         ]
       }

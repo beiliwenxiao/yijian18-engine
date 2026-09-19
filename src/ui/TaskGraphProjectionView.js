@@ -56,21 +56,25 @@ export class TaskGraphProjectionView {
     }
 
     const paddingX = Math.max(8, Math.min(14, Math.round(width * 0.04)));
-    const paddingY = Math.max(6, Math.min(12, Math.round(height * 0.06)));
+    const paddingY = Math.max(6, Math.min(12, Math.round(height / 14)));
     const lineHeight = Math.max(16, Math.min(22, Math.round(height / 7)));
-    const visibleLines = lines.slice(0, Math.max(1, Math.floor((height - paddingY * 2) / lineHeight)));
+    const maxLines = Math.max(1, Math.floor((height - paddingY * 2) / lineHeight));
+    const contentLines = Math.min(lines.length, maxLines);
+    const visibleLines = lines.slice(0, contentLines);
+    // 框高自适应内容：最后一句话再多留一行，不超过布局矩形高度。
+    const boxHeight = Math.min(height, paddingY * 2 + (contentLines + 1) * lineHeight);
     const fontSize = Math.max(11, Math.min(15, Math.round(lineHeight * 0.68)));
     const maxTextWidth = Math.max(1, width - paddingX * 2);
 
     ctx.save();
     ctx.beginPath();
-    ctx.rect(x, y, width, height);
+    ctx.rect(x, y, width, boxHeight);
     ctx.clip();
     ctx.fillStyle = 'rgba(10, 16, 30, 0.82)';
-    ctx.fillRect(x, y, width, height);
+    ctx.fillRect(x, y, width, boxHeight);
     ctx.strokeStyle = '#c49a52';
     ctx.lineWidth = 1;
-    ctx.strokeRect(x + 0.5, y + 0.5, Math.max(0, width - 1), Math.max(0, height - 1));
+    ctx.strokeRect(x + 0.5, y + 0.5, Math.max(0, width - 1), Math.max(0, boxHeight - 1));
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
     visibleLines.forEach((line, index) => {

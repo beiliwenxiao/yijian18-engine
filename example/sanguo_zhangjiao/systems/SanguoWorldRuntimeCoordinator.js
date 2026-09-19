@@ -396,6 +396,13 @@ function createStreamingStateProvider() {
   };
 }
 
+/** count 模板派生实体（`base-N`）在 chunk 物理放置点中回退匹配模板定义。 */
+function resolveChunkPlacement(placementById, id) {
+  if (placementById.has(id)) return placementById.get(id);
+  const match = /^(.*)-(\d+)$/.exec(String(id || ''));
+  return match ? (placementById.get(match[1]) || null) : null;
+}
+
 function captureStreamedChunkState(chunk) {
   const placementById = new Map((chunk?.placements || [])
     .filter(placement => placement?.id)
@@ -410,7 +417,7 @@ function captureStreamedChunkState(chunk) {
   for (const value of values) {
     if (value === this.playerEntity) continue;
     const id = value?.placementId || value?.id;
-    const placement = placementById.get(id);
+    const placement = resolveChunkPlacement(placementById, id);
     if (!placement) continue;
     const node = value?.getComponent?.('resourceNode');
     if (node?.serialize) resourceNodes.push({ id, state: node.serialize() });
@@ -491,7 +498,8 @@ function releaseStreamedChunkRuntime(chunk) {
   const removed = [...values].filter(value => {
     if (!value || value === this.playerEntity) return false;
     const id = value.placementId || value.id;
-    if (placementIds.has(id)) return true;
+    // count 模板派生实例按模板 id 归属 chunk；物理放置点仍按原 id 直接匹配。
+    if (placementIds.has(id) || placementIds.has(String(id || '').replace(/-(\d+)$/, ''))) return true;
     const position = value.getComponent?.('deathDrop') && value.getComponent?.('transform')?.position;
     return !!position && position.x >= left && position.x <= right && position.y >= top && position.y <= bottom;
   });

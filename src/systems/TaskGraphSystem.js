@@ -93,6 +93,9 @@ export function validateTaskGraphDefinitions(definitions = []) {
           && (!Number.isInteger(node.requiredCount) || node.requiredCount < 1)) {
           issue(errors, 'invalidTaskObjectiveCount', `${nodePath}.requiredCount`, '目标数量必须为正整数');
         }
+        if (node.progressBy !== undefined && !hasText(node.progressBy)) {
+          issue(errors, 'invalidTaskProgressBy', `${nodePath}.progressBy`, 'progressBy 必须为非空的事件数量字段名');
+        }
       }
       if (node.mapTarget !== undefined) {
         const target = node.mapTarget;
@@ -251,7 +254,7 @@ export class TaskGraphSystem {
     const id = instanceId || `task:${actorId}:${definitionId}:${++this.nextInstanceSequence}`;
     if (this.instances.has(id)) return { ok: true, changed: false, idempotent: true, instance: clone(this.instances.get(id)) };
     const nodeStates = Object.fromEntries([...definition.nodes.keys()].map(nodeId => [nodeId, {
-      status: 'locked', eventIds: [], selectedBranchId: null
+      status: 'locked', eventIds: [], selectedBranchId: null, progress: 0
     }]));
     nodeStates[definition.entryNodeId].status = 'available';
     const instance = {
@@ -286,7 +289,15 @@ export class TaskGraphSystem {
         const requiredCount = Math.max(1, Math.floor(Number(node.requiredCount) || 1));
         state.eventIds.push(event.eventId);
         instance.eventIds.push(event.eventId);
-        const currentCount = Math.min(requiredCount, state.eventIds.length);
+        // progressBy：按事件 payload 的数量字段累计（如 gathering.completed 的 accepted = 本次入包份数）；
+        // 未声明时保持逐事件 +1 的既有语义。旧档快照无 progress 字段时从 0 起算。
+        if (node.progressBy) {
+          const delta = Math.max(0, Math.floor(Number(event.payload?.[node.progressBy]) || 0));
+          state.progress = Math.min(requiredCount, (state.progress || 0) + delta);
+        } else {
+          state.progress = state.eventIds.length;
+        }
+        const currentCount = Math.min(requiredCount, state.progress || 0);
         const completed = currentCount >= requiredCount;
         if (completed) {
           state.status = 'succeeded';
@@ -430,9 +441,12 @@ export class TaskGraphSystem {
           .map(node => {
             const state = instance.nodeStates[node.id];
             const requiredCount = Math.max(1, Math.floor(Number(node.requiredCount) || 1));
+            const rawCount = node.progressBy
+              ? (state?.progress || 0)
+              : (state?.eventIds?.length || 0);
             const currentCount = state?.status === 'succeeded'
               ? requiredCount
-              : Math.min(requiredCount, state?.eventIds?.length || 0);
+              : Math.min(requiredCount, rawCount);
             return { currentCount, requiredCount };
           });
         const nodes = Object.entries(instance.nodeStates)
@@ -442,9 +456,12 @@ export class TaskGraphSystem {
             const requiredCount = node?.type === 'objective'
               ? Math.max(1, Math.floor(Number(node.requiredCount) || 1))
               : 1;
+            const rawCount = node?.progressBy
+              ? (state.progress || 0)
+              : state.eventIds.length;
             const currentCount = state.status === 'succeeded'
               ? requiredCount
-              : Math.min(requiredCount, state.eventIds.length);
+              : Math.min(requiredCount, rawCount);
             return Object.freeze({
               nodeId,
               label: node?.label || node?.title || nodeId,
