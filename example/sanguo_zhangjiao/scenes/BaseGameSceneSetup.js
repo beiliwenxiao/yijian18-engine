@@ -401,10 +401,15 @@ export class BaseGameSceneSetup extends Scene {
     const questSystem = this.questSystem;
     const project = this.gameLoader?.project;
     const actorId = this.playerEntity?.id || null;
-    if (!questSystem?.consumeTaskEvent || !project?.taskGraphs || !project?.commands) return;
+    // 任务中心制：taskGraph 定义可能来自 quests[] 编译产物（gameLoader.questTaskDefinitions）
+    const taskGraphs = [
+      ...(Array.isArray(project?.taskGraphs) ? project.taskGraphs : []),
+      ...(this.gameLoader?.questTaskDefinitions || [])
+    ];
+    if (!questSystem?.consumeTaskEvent || taskGraphs.length === 0 || !project?.commands) return;
     // 从任务图收集被监听的状态事务，再到 commands 定义推导其事实字段（第一条 story 写入路径）
     const factPaths = new Map();
-    for (const graph of project.taskGraphs) {
+    for (const graph of taskGraphs) {
       for (const node of graph.nodes || []) {
         const matcher = node?.eventMatcher;
         const definitionId = matcher?.type === 'state.transaction' ? matcher.payload?.definitionId : null;

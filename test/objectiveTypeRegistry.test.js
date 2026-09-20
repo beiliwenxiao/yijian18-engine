@@ -13,10 +13,13 @@ import {
   validateObjectiveTypeDefinition
 } from '../src/systems/quest/ObjectiveTypeRegistry.js';
 import { getTriggerEventDescriptor } from '../src/systems/TriggerCatalog.js';
+import { compileQuestProject } from '../src/systems/quest/QuestRuntime.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const readJson = relative => JSON.parse(fs.readFileSync(path.join(ROOT, relative), 'utf8'));
 const project = readJson('example/sanguo_zhangjiao/game.project.json');
+// 阶段③迁移：S01 任务图定义由 quests[] 编译产物提供
+const compiledTaskGraphs = compileQuestProject(project).taskGraphs;
 
 describe('ObjectiveTypeRegistry 目标类型注册目录', () => {
   it('内置目录首批登记四类：gather.item / kill.enemy / commit.fact / custom.event', () => {
@@ -41,7 +44,7 @@ describe('ObjectiveTypeRegistry 目标类型注册目录', () => {
   });
 
   it('matchObjectiveType：真实 S01 gatherWood 数据反推为 gather.item 并保留 resourceType 附加限定', () => {
-    const node = project.taskGraphs
+    const node = compiledTaskGraphs
       .find(entry => entry.id === 'task.s01.survival')
       .nodes.find(entry => entry.id === 'gatherWood');
     const resolved = matchObjectiveType(node.eventMatcher, project);
@@ -118,8 +121,8 @@ describe('ObjectiveTypeRegistry 目标类型注册目录', () => {
     expect(getTriggerEventDescriptor('state.transaction').source).toBe('CanonicalStateTransactionService');
   });
 
-  it('真实项目冒烟：task.s01.survival 全部 objective 节点均可由目录解析（无未登记事件）', () => {
-    const graph = project.taskGraphs.find(entry => entry.id === 'task.s01.survival');
+  it('真实项目冒烟：task.s01.survival（quests 编译产物）全部 objective 节点均可由目录解析（无未登记事件）', () => {
+    const graph = compiledTaskGraphs.find(entry => entry.id === 'task.s01.survival');
     const objectives = graph.nodes.filter(node => node.type === 'objective');
     expect(objectives.length).toBeGreaterThan(0);
     for (const node of objectives) {

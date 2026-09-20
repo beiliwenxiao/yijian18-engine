@@ -3,12 +3,17 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { TaskGraphSystem } from '../src/systems/TaskGraphSystem.js';
+import { compileQuestProject } from '../src/systems/quest/QuestRuntime.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const readJson = relative => JSON.parse(fs.readFileSync(path.join(ROOT, relative), 'utf8'));
 
 const project = readJson('example/sanguo_zhangjiao/game.project.json');
-const graph = project.taskGraphs.find(entry => entry.id === 'task.s01.survival');
+// 阶段③迁移：task.s01.survival 定义由 quests[] 编译产物提供（taskGraphs[] 已移除手写版本）
+const graph = [
+  ...(project.taskGraphs || []),
+  ...compileQuestProject(project).taskGraphs
+].find(entry => entry.id === 'task.s01.survival');
 
 function createSystem() {
   const system = new TaskGraphSystem({ definitions: [graph] });

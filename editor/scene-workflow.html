@@ -58,6 +58,11 @@
         .editor-panel { flex: 1; overflow: hidden; display: none; }
         .editor-panel.active { display: flex; flex-direction: column; }
         .panel-container { flex: 1; overflow: hidden; min-height: 0; }
+        .task-subtabs { display: flex; gap: 6px; padding: 8px 12px; background: #16213e; border-bottom: 1px solid #2a3a5e; }
+        .task-subtabs button { padding: 6px 14px; border: 1px solid #2a3a5e; border-radius: 4px; background: #0f1830; color: #9ab; cursor: pointer; }
+        .task-subtabs button.active { background: #2a3a6e; color: #fff; border-color: #4a5f9e; }
+        .task-subview[hidden] { display: none !important; }
+        #task-panel { display: flex; flex-direction: column; }
     </style>
 </head>
 <body>
@@ -110,7 +115,12 @@
                 </div>
 
                 <div class="editor-panel" id="task-panel">
-                    <div class="panel-container" id="task-graph-editor-container"></div>
+                    <div class="task-subtabs">
+                        <button type="button" class="active" data-task-subtab="wizard">📋 任务向导</button>
+                        <button type="button" data-task-subtab="graph">任务图（高级）</button>
+                    </div>
+                    <div class="panel-container task-subview" id="quest-wizard-container"></div>
+                    <div class="panel-container task-subview" id="task-graph-editor-container" hidden></div>
                 </div>
             </div>
         </div>
@@ -129,6 +139,7 @@
         import { TriggerEditor } from './TriggerEditor.js';
         import { BehaviorEditor } from './BehaviorEditor.js';
         import { TaskGraphEditor } from './TaskGraphEditor.js';
+        import { QuestWizardEditor } from './QuestWizardEditor.js';
 
         (async () => {
             renderEditorNav('scene-workflow');
@@ -867,7 +878,30 @@
             return behaviorEditorInitPromise;
         }
 
-        // 任务图编辑器：管理 project.taskGraphs，与其他项目定义编辑器共用 canonical session。
+        // 任务中心：任务向导（quests[]，Quest v2 五区块）+ 任务图高级视图（taskGraphs[]），共用 canonical session。
+        let questWizardEditor = null;
+        let questWizardEditorInitPromise = null;
+        async function loadQuestWizardEditor() {
+            if (questWizardEditorInitPromise) return questWizardEditorInitPromise;
+            questWizardEditor = new QuestWizardEditor(
+                document.getElementById('quest-wizard-container'),
+                {
+                    canonicalSession: ctx._canonicalEditorSession('project'),
+                    projectPath: ctx._canonicalProjectPath(),
+                    getSceneList: () => ctx.dataManager.getGameScenes(gameId),
+                    getSceneDocuments: () => ctx.getSceneDocuments()
+                }
+            );
+            questWizardEditorInitPromise = questWizardEditor.init()
+                .then(() => questWizardEditor)
+                .catch(error => {
+                    questWizardEditor = null;
+                    questWizardEditorInitPromise = null;
+                    throw error;
+                });
+            return questWizardEditorInitPromise;
+        }
+
         let taskGraphEditor = null;
         let taskGraphEditorInitPromise = null;
         async function loadTaskGraphEditor() {
@@ -891,6 +925,20 @@
             return taskGraphEditorInitPromise;
         }
 
+        // 任务子视图切换：向导（quests 编译运行时产物）为默认；任务图仅编辑未迁移的手写定义。
+        let activeTaskSubtab = 'wizard';
+        async function switchTaskSubtab(subtab) {
+            activeTaskSubtab = subtab;
+            document.querySelectorAll('.task-subtabs button[data-task-subtab]').forEach(b => b.classList.toggle('active', b.dataset.taskSubtab === subtab));
+            document.getElementById('quest-wizard-container').hidden = subtab !== 'wizard';
+            document.getElementById('task-graph-editor-container').hidden = subtab !== 'graph';
+            if (subtab === 'wizard') await loadQuestWizardEditor();
+            else await loadTaskGraphEditor();
+        }
+        document.querySelectorAll('.task-subtabs button[data-task-subtab]').forEach(btn => {
+            btn.addEventListener('click', () => { switchTaskSubtab(btn.dataset.taskSubtab).catch(console.error); });
+        });
+
         // 标签切换
         async function switchTab(tab) {
             const panels = ['scene', 'trigger', 'behavior', 'task'];
@@ -898,7 +946,7 @@
             for (const panel of panels) document.getElementById(`${panel}-panel`).classList.toggle('active', tab === panel);
             if (tab === 'trigger') await loadTriggerEditor();
             if (tab === 'behavior') await loadBehaviorEditor();
-            if (tab === 'task') await loadTaskGraphEditor();
+            if (tab === 'task') await switchTaskSubtab(activeTaskSubtab);
             if (tab === 'scene') setTimeout(() => window.dispatchEvent(new Event('resize')), 50);
         }
 

@@ -2279,257 +2279,139 @@
       "title": "饥民争斗"
     }
   ],
-  "quests": [],
-  "taskGraphs": [
+  "quests": [
     {
       "id": "task.s01.survival",
       "title": "荒原求生",
       "description": "在干旱荒原活过第一夜，并逃往废弃营地。",
       "category": "main",
-      "entryNodeId": "start",
-      "reward": {},
-      "checkpoint": null,
-      "nodes": [
-        {
-          "id": "start",
-          "type": "start",
-          "next": [
-            "lightCampfire"
-          ]
-        },
+      "scenes": [
+        "S01"
+      ],
+      "steps": [
         {
           "id": "lightCampfire",
           "type": "objective",
-          "title": "点燃火堆",
-          "next": [
-            "findTools"
-          ],
-          "eventMatcher": {
-            "type": "state.transaction",
-            "payload": {
-              "definitionId": "story.s01.campfireLit"
-            }
-          }
+          "objectiveType": "commit.fact",
+          "target": "story.s01.campfireLit",
+          "title": "点燃火堆"
         },
         {
           "id": "findTools",
           "type": "objective",
-          "title": "找齐斧头和剥皮刀",
-          "next": [
-            "gatherBerries"
-          ],
-          "eventMatcher": {
-            "type": "state.transaction",
-            "payload": {
-              "definitionId": "story.s01.initialToolsPicked"
-            }
-          }
+          "objectiveType": "commit.fact",
+          "target": "story.s01.initialToolsPicked",
+          "title": "找齐斧头和剥皮刀"
         },
         {
           "id": "gatherBerries",
           "type": "objective",
-          "title": "采集荒野酸果",
-          "next": [
-            "eatBerry"
-          ],
-          "eventMatcher": {
-            "type": "gathering.completed",
-            "payload": {
-              "itemId": "resource.wild_berry"
-            }
-          }
+          "objectiveType": "gather.item",
+          "target": "resource.wild_berry",
+          "progressBy": null,
+          "title": "采集荒野酸果"
         },
         {
           "id": "eatBerry",
           "type": "objective",
-          "title": "食用酸果恢复体力",
-          "next": [
-            "gatherWood"
-          ],
-          "eventMatcher": {
-            "type": "state.transaction",
-            "payload": {
-              "definitionId": "story.s01.berryEaten"
-            }
-          }
+          "objectiveType": "commit.fact",
+          "target": "story.s01.berryEaten",
+          "title": "食用酸果恢复体力"
         },
         {
           "id": "gatherWood",
           "type": "objective",
-          "title": "采集木材",
-          "next": [
-            "spotWolf"
-          ],
-          "eventMatcher": {
-            "type": "gathering.completed",
-            "payload": {
-              "itemId": "resource.wood",
-              "resourceType": "wood"
-            }
-          },
+          "objectiveType": "gather.item",
+          "target": "resource.wood",
           "progressBy": "accepted",
-          "requiredCount": 1
+          "requiredCount": 1,
+          "extraPayload": {
+            "resourceType": "wood"
+          },
+          "title": "采集木材"
         },
         {
           "id": "spotWolf",
           "type": "objective",
-          "title": "为火堆添柴并应对野狼",
-          "next": [
-            "killWolf"
-          ],
-          "eventMatcher": {
-            "type": "state.transaction",
-            "payload": {
-              "definitionId": "story.s01.refuelCampfire"
-            }
-          }
+          "objectiveType": "commit.fact",
+          "target": "story.s01.refuelCampfire",
+          "title": "为火堆添柴并应对野狼"
         },
         {
           "id": "killWolf",
           "type": "objective",
-          "title": "击杀教学野狼",
-          "next": [
-            "skinWolf"
-          ],
-          "eventMatcher": {
-            "type": "state.transaction",
-            "payload": {
-              "definitionId": "story.s01.firstWolfKilled"
-            }
-          }
+          "objectiveType": "kill.enemy",
+          "target": "story.s01.firstWolfKilled",
+          "title": "击杀教学野狼"
         },
         {
           "id": "skinWolf",
           "type": "objective",
-          "title": "剥取一次狼皮",
-          "next": [
-            "cookMeat"
-          ],
-          "eventMatcher": {
-            "type": "state.transaction",
-            "payload": {
-              "definitionId": "story.s01.wolfSkinned"
-            }
-          }
+          "objectiveType": "commit.fact",
+          "target": "story.s01.wolfSkinned",
+          "title": "剥取一次狼皮"
         },
         {
           "id": "cookMeat",
           "type": "objective",
-          "title": "烤制狼肉",
-          "next": [
-            "craftGear"
-          ],
-          "eventMatcher": {
-            "type": "state.transaction",
-            "payload": {
-              "definitionId": "story.s01.cookMeat"
-            }
-          }
+          "objectiveType": "commit.fact",
+          "target": "story.s01.cookMeat",
+          "title": "烤制狼肉"
         },
         {
           "id": "craftGear",
           "type": "objective",
-          "title": "制作狼皮背心和护腕",
-          "next": [
-            "buildShelter"
-          ],
-          "eventMatcher": {
-            "type": "state.transaction",
-            "payload": {
-              "definitionId": "story.s01.wolfGearCrafted"
-            }
-          }
+          "objectiveType": "commit.fact",
+          "target": "story.s01.wolfGearCrafted",
+          "title": "制作狼皮背心和护腕"
         },
         {
           "id": "buildShelter",
           "type": "objective",
-          "title": "搭建庇护所",
-          "next": [
-            "stayOvernight"
-          ],
-          "eventMatcher": {
-            "type": "state.transaction",
-            "payload": {
-              "definitionId": "story.s01.shelterCompleted"
-            }
-          }
+          "objectiveType": "commit.fact",
+          "target": "story.s01.shelterCompleted",
+          "title": "搭建庇护所"
         },
         {
           "id": "stayOvernight",
           "type": "objective",
-          "title": "在庇护所过夜",
-          "next": [
-            "leaveShelter"
-          ],
-          "eventMatcher": {
-            "type": "state.transaction",
-            "payload": {
-              "definitionId": "story.s01.overnight"
-            }
-          }
+          "objectiveType": "commit.fact",
+          "target": "story.s01.overnight",
+          "title": "在庇护所过夜"
         },
         {
           "id": "leaveShelter",
           "type": "objective",
-          "title": "离开庇护所并躲避狼群",
-          "next": [
-            "crossRiver"
-          ],
-          "eventMatcher": {
-            "type": "state.transaction",
-            "payload": {
-              "definitionId": "story.s01.leaveShelter"
-            }
-          }
+          "objectiveType": "commit.fact",
+          "target": "story.s01.leaveShelter",
+          "title": "离开庇护所并躲避狼群"
         },
         {
           "id": "crossRiver",
           "type": "objective",
-          "title": "跳石过河",
-          "next": [
-            "reachCliff"
-          ],
-          "eventMatcher": {
-            "type": "state.transaction",
-            "payload": {
-              "definitionId": "story.s01.riverCrossed"
-            }
-          }
+          "objectiveType": "commit.fact",
+          "target": "story.s01.riverCrossed",
+          "title": "跳石过河"
         },
         {
           "id": "reachCliff",
           "type": "objective",
-          "title": "抵达山崖并攀藤撤离",
-          "next": [
-            "escape"
-          ],
-          "eventMatcher": {
-            "type": "state.transaction",
-            "payload": {
-              "definitionId": "story.s01.cliffReached"
-            }
-          }
+          "objectiveType": "commit.fact",
+          "target": "story.s01.cliffReached",
+          "title": "抵达山崖并攀藤撤离"
         },
         {
           "id": "escape",
           "type": "objective",
-          "title": "逃往废弃营地",
-          "next": [
-            "complete"
-          ],
-          "eventMatcher": {
-            "type": "state.transaction",
-            "payload": {
-              "definitionId": "story.s01.complete"
-            }
-          }
-        },
-        {
-          "id": "complete",
-          "type": "complete"
+          "objectiveType": "commit.fact",
+          "target": "story.s01.complete",
+          "title": "逃往废弃营地"
         }
-      ]
-    },
+      ],
+      "rewards": []
+    }
+  ],
+  "taskGraphs": [
     {
       "id": "task.s02.summons",
       "title": "废营召见",

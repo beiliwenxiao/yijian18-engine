@@ -51,22 +51,22 @@ describe('QuestRuntime Quest v2 编译器', () => {
     expect(compileQuestProject(null)).toEqual({ taskGraphs: [], triggers: [] });
   });
 
-  it('taskGraph 编译：objective 直连成链，matcher 由目标类型目录生成，progressBy 继承目录默认', () => {
+  it('taskGraph 编译：objective 直连成链（裸 nodeId 与手写任务图寻址一致），matcher 由目标类型目录生成', () => {
     const { taskGraph } = compileQuest(SAMPLE_QUEST, project);
     expect(taskGraph.id).toBe('quest.test.survival');
-    expect(taskGraph.entryNodeId).toBe('quest.test.survival.start');
+    expect(taskGraph.entryNodeId).toBe('start');
     const types = taskGraph.nodes.map(node => node.type);
     expect(types).toEqual(['start', 'objective', 'objective', 'complete']);
-    const wood = taskGraph.nodes.find(node => node.id === 'quest.test.survival.wood');
+    const wood = taskGraph.nodes.find(node => node.id === 'wood');
     expect(wood.eventMatcher).toEqual({ type: 'gathering.completed', payload: { itemId: 'resource.wood' } });
     expect(wood.progressBy).toBe('accepted');
     expect(wood.requiredCount).toBe(3);
-    expect(wood.next).toEqual(['quest.test.survival.wolf']);
-    const wolf = taskGraph.nodes.find(node => node.id === 'quest.test.survival.wolf');
+    expect(wood.next).toEqual(['wolf']);
+    const wolf = taskGraph.nodes.find(node => node.id === 'wolf');
     expect(wolf.eventMatcher).toEqual({ type: 'state.transaction', payload: { definitionId: 'story.test.wolfKilled' } });
     expect(wolf.progressBy).toBeUndefined();
     // 非 objective 步骤不进节点链（藏进编排触发器 do 链）
-    expect(taskGraph.nodes.find(node => node.id === 'quest.test.survival.intro')).toBeUndefined();
+    expect(taskGraph.nodes.find(node => node.id === 'intro')).toBeUndefined();
   });
 
   it('触发器编译：accept/intro/目标后段/completion 四类产物齐全且语义正确', () => {
@@ -186,10 +186,70 @@ describe('QuestRuntime Quest v2 编译器', () => {
     expect(completed.payload.instanceId).toBe(startOutcome.result.value.instanceId);
   });
 
-  it('GameLoader：构造即暴露空 questTaskDefinitions；装配路径由既有集成测试覆盖零回归', () => {
+  it('GameLoader：构造即暴露 questTaskDefinitions；S01 迁移后编译产物提供 task.s01.survival', () => {
     const loader = new GameLoader();
     expect(loader.questTaskDefinitions).toEqual([]);
-    expect(compileQuestProject(project).taskGraphs).toEqual([]); // 现网项目 quests 为空
+    const compiled = compileQuestProject(project);
+    expect(compiled.taskGraphs.map(graph => graph.id)).toEqual(['task.s01.survival']);
+    expect(compiled.triggers).toEqual([]); // S01 quest 无 accept/rewards，不生成触发器（接取由现有触发器承担）
+  });
+});
+
+describe('阶段③ S01 迁移契约：quest 编译产物与手写任务图逐节点等价', () => {
+  const compiledGraph = compileQuestProject(project).taskGraphs.find(graph => graph.id === 'task.s01.survival');
+
+  it('任务图结构：16 objective 线性链 + 裸 start/complete 节点（存档 nodeStates 寻址兼容）', () => {
+    expect(compiledGraph, 'quests[] 迁移后应能编译出 task.s01.survival').toBeTruthy();
+    expect(compiledGraph.entryNodeId).toBe('start');
+    expect(compiledGraph.title).toBe('荒原求生');
+    expect(compiledGraph.category).toBe('main');
+    const objectives = compiledGraph.nodes.filter(node => node.type === 'objective');
+    expect(objectives.map(node => node.id)).toEqual([
+      'lightCampfire', 'findTools', 'gatherBerries', 'eatBerry', 'gatherWood',
+      'spotWolf', 'killWolf', 'skinWolf', 'cookMeat', 'craftGear',
+      'buildShelter', 'stayOvernight', 'leaveShelter', 'crossRiver', 'reachCliff', 'escape'
+    ]);
+    expect(compiledGraph.nodes.at(-1)).toEqual({ id: 'complete', type: 'complete' });
+    // 线性链：前一个 objective 的 next 恰好指向后一个
+    objectives.forEach((node, index) => {
+      expect(node.next).toEqual([objectives[index + 1]?.id || 'complete']);
+    });
+  });
+
+  it('事件 matcher 逐节点等价：state.transaction 事实 / gathering.completed 采集（含 resourceType 附加限定与 progressBy）', () => {
+    const matcherOf = id => compiledGraph.nodes.find(node => node.id === id)?.eventMatcher;
+    expect(matcherOf('lightCampfire')).toEqual({ type: 'state.transaction', payload: { definitionId: 'story.s01.campfireLit' } });
+    expect(matcherOf('findTools')).toEqual({ type: 'state.transaction', payload: { definitionId: 'story.s01.initialToolsPicked' } });
+    // gatherBerries 手写定义无 progressBy——迁移后保持逐事件 +1 语义（progressBy:null 显式覆盖目录默认）
+    expect(matcherOf('gatherBerries')).toEqual({ type: 'gathering.completed', payload: { itemId: 'resource.wild_berry' } });
+    expect(compiledGraph.nodes.find(node => node.id === 'gatherBerries').progressBy).toBeUndefined();
+    expect(matcherOf('eatBerry')).toEqual({ type: 'state.transaction', payload: { definitionId: 'story.s01.berryEaten' } });
+    // gatherWood：resourceType 附加限定保留 + 按入包份数累计
+    expect(matcherOf('gatherWood')).toEqual({
+      type: 'gathering.completed',
+      payload: { itemId: 'resource.wood', resourceType: 'wood' }
+    });
+    expect(compiledGraph.nodes.find(node => node.id === 'gatherWood').progressBy).toBe('accepted');
+    expect(matcherOf('spotWolf')).toEqual({ type: 'state.transaction', payload: { definitionId: 'story.s01.refuelCampfire' } });
+    expect(matcherOf('killWolf')).toEqual({ type: 'state.transaction', payload: { definitionId: 'story.s01.firstWolfKilled' } });
+    expect(matcherOf('skinWolf')).toEqual({ type: 'state.transaction', payload: { definitionId: 'story.s01.wolfSkinned' } });
+    expect(matcherOf('escape')).toEqual({ type: 'state.transaction', payload: { definitionId: 'story.s01.complete' } });
+    // 全部 objective requiredCount 语义等价（手写仅 gatherWood 显式 1，其余缺省按 1）
+    for (const node of compiledGraph.nodes.filter(entry => entry.type === 'objective')) {
+      expect(node.requiredCount).toBe(1);
+    }
+  });
+
+  it('迁移后触发器零删除：trg_s01_start_survival_task 等仍由 triggers[] 手写承担', () => {
+    const acceptTrigger = project.triggers.find(trigger => trigger.id === 'trg_s01_start_survival_task');
+    expect(acceptTrigger).toBeTruthy();
+    expect(acceptTrigger.do[0].params.definitionId).toBe('task.s01.survival');
+    // 编译产物不含任何触发器（无 accept/steps 编排段/rewards）
+    expect(compileQuestProject(project).triggers).toEqual([]);
+  });
+
+  it('编译产物通过唯一校验器', () => {
+    expect(validateQuestCompilation(compileQuestProject(project))).toEqual([]);
   });
 });
 

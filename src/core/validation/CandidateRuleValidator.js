@@ -22,6 +22,7 @@
 
 import { DEFAULT_TRIGGER_ACTION_IDS } from '../../systems/TriggerActions.js';
 import { validateTaskGraphDefinitions } from '../../systems/TaskGraphSystem.js';
+import { validateQuestDefinition } from '../../systems/quest/QuestRuntime.js';
 import { createStandardCapabilityStrategyRegistry } from '../../systems/items/CapabilityStrategyRegistry.js';
 import { ValidationCode, makeError } from './ValidationError.js';
 
@@ -184,7 +185,14 @@ export class CandidateRuleValidator {
     const dialogueIds = stableIds(candidate?.dialogues, 'dialogues', errors);
     const tutorialIds = stableIds(candidate?.tutorials, 'tutorials', errors);
     const questIds = stableIds(candidate?.quests, 'quests', errors);
-    const taskGraphIds = stableIds(candidate?.taskGraphs, 'taskGraphs', errors);
+    // 任务中心制：quests[] 的 Quest v2 定义编译为 taskGraph（quest.id 即 definitionId），
+    // task.command 引用校验必须同时认识手写 taskGraphs 与 quest 编译产物的定义 ID。
+    const taskGraphIds = new Set([
+      ...stableIds(candidate?.taskGraphs, 'taskGraphs', errors),
+      ...list(candidate?.quests)
+        .map(quest => (typeof quest?.id === 'string' && Array.isArray(quest.steps)) ? quest.id : null)
+        .filter(Boolean)
+    ]);
     const triggerIds = stableIds(candidate?.triggers, 'triggers', errors);
 
     // ★ FlowGroup 双读兼容：flowGroups 优先，缺失时回退 sceneEvents（旧名）
@@ -590,6 +598,13 @@ export class CandidateRuleValidator {
       const path = `quests[${questIndex}]`;
       if (!isObject(quest)) {
         errors.push(makeError(ValidationCode.TYPE_MISMATCH, path, 'QuestDefinition 必须为对象'));
+        return;
+      }
+      // 任务中心制：带 steps 的条目是 Quest v2 定义，结构校验委托 QuestRuntime 权威校验器
+      if (Array.isArray(quest.steps)) {
+        validateQuestDefinition(quest).forEach(message => {
+          errors.push(makeError('invalidQuestDefinition', path, message));
+        });
         return;
       }
       if (!Array.isArray(quest.objectives)) {

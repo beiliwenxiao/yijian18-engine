@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { TaskGraphEditor } from './TaskGraphEditor.js';
+import { compileQuestProject } from '../src/systems/quest/QuestRuntime.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const readJson = relative => JSON.parse(fs.readFileSync(path.join(ROOT, relative), 'utf8'));
@@ -20,7 +21,11 @@ function buildEditor() {
   };
   const editor = new TaskGraphEditor(container, { canonicalSession });
   editor.project = project;
-  editor.taskGraphs = structuredClone(project.taskGraphs);
+  // 阶段③迁移：运行时任务定义 = taskGraphs[] + quests[] 编译产物（S01 已迁移）
+  editor.taskGraphs = [
+    ...structuredClone(project.taskGraphs),
+    ...compileQuestProject(project).taskGraphs
+  ];
   editor.selectedIndex = editor.taskGraphs.findIndex(task => task?.id === 'task.s01.survival');
   editor._initialized = true;
   editor._buildUI();

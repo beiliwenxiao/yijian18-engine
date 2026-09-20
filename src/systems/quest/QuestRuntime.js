@@ -116,13 +116,15 @@ export function compileQuest(quest, project = null) {
   return { taskGraph: compileQuestTaskGraph(quest, project), triggers: compileQuestTriggers(quest, project) };
 }
 
-/** Quest → taskGraph 定义：仅 start + objective 节点 + complete（非 objective 步骤进触发器 do 链）。 */
+/** Quest → taskGraph 定义：仅 start + objective 节点 + complete（非 objective 步骤进触发器 do 链）。
+ * 节点 id 采用裸命名（'start'/'complete' + step.id，图内唯一）——与手写任务图及既有测试的
+ * nodeId 寻址约定一致，迁移时编译产物可逐节点等价替换手写定义（存档 nodeStates 兼容）。 */
 export function compileQuestTaskGraph(quest, project = null) {
   const questId = text(quest.id);
-  const startId = `${questId}.start`;
-  const completeId = `${questId}.complete`;
+  const startId = 'start';
+  const completeId = 'complete';
   const objectives = (quest.steps || []).filter(isObjectiveStep);
-  const nodeIds = objectives.map(step => `${questId}.${step.id}`);
+  const nodeIds = objectives.map(step => text(step.id));
   const nodes = [{
     id: startId,
     type: 'start',
