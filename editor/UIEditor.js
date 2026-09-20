@@ -1194,10 +1194,13 @@ export class UIEditor {
     document.rules.forEach((rule, index) => {
       const when = rule.when || { type: 'always' };
       const conditionValue = when.type === 'storyPath' ? (when.path || '') : (when.tutorialId || '');
+      const conditionPlaceholder = when.type === 'storyPath'
+        ? 'Story 路径，例如 s01Survival.xxx'
+        : (when.type === 'always' ? '可留空（始终显示）' : '教程 ID，例如 s01.attack');
       const highlights = rule.highlightComponentIds || (rule.highlightComponentId ? [rule.highlightComponentId] : []);
       html += `<tr data-onboarding-rule="${index}" style="border-bottom:1px solid #1a2540;vertical-align:top;">
         <td style="padding:8px;"><input data-onboarding-text="id" value="${escapeHtml(rule.id || '')}" style="${inputStyle}"><input data-onboarding-text="sceneIds" value="${escapeHtml((rule.scope?.sceneIds || []).join(', '))}" placeholder="S01, S02" style="${inputStyle};margin-top:6px"></td>
-        <td style="padding:8px;"><select data-onboarding-when style="${inputStyle}">${['always', 'tutorialCurrent', 'tutorialCompleted', 'storyPath'].map(type => `<option value="${type}"${when.type === type ? ' selected' : ''}>${type}</option>`).join('')}</select><input data-onboarding-text="conditionValue" value="${escapeHtml(conditionValue)}" placeholder="教程 ID / Story 路径" style="${inputStyle};margin-top:6px"><input data-onboarding-text="conditionEquals" value="${escapeHtml(Object.prototype.hasOwnProperty.call(when, 'equals') ? String(when.equals) : '')}" placeholder="storyPath equals（可选）" style="${inputStyle};margin-top:6px"></td>
+        <td style="padding:8px;"><select data-onboarding-when style="${inputStyle}">${['always', 'tutorialCurrent', 'tutorialCompleted', 'storyPath'].map(type => `<option value="${type}"${when.type === type ? ' selected' : ''}>${type}</option>`).join('')}</select><input data-onboarding-text="conditionValue" value="${escapeHtml(conditionValue)}" placeholder="${conditionPlaceholder}" style="${inputStyle};margin-top:6px;"><input data-onboarding-text="conditionEquals" value="${escapeHtml(Object.prototype.hasOwnProperty.call(when, 'equals') ? String(when.equals) : '')}" placeholder="storyPath equals（可选）" style="${inputStyle};margin-top:6px"></td>
         <td style="padding:8px;">${componentSelect('revealComponentIds', rule.revealComponentIds || [])}</td>
         <td style="padding:8px;">${componentSelect('enabledComponentIds', rule.enabledComponentIds || [])}</td>
         <td style="padding:8px;">${componentSelect('highlightComponentIds', highlights)}<input data-onboarding-text="hintAction" value="${escapeHtml(rule.hintAction || '')}" placeholder="InputHints action，例如 interact" style="${inputStyle};margin-top:6px"></td>
@@ -1225,6 +1228,13 @@ export class UIEditor {
         if (field === 'sceneIds') rule.scope = { ...(rule.scope || {}), sceneIds: element.value.split(',').map(value => value.trim()).filter(Boolean) };
         if (field === 'conditionValue') {
           rule.when ||= { type: 'always' };
+          // 引导式：在 always 下填写教程 ID/路径，自动升级为教程完成条件，避免填了被静默丢弃
+          if (rule.when.type === 'always' && element.value.trim()) {
+            rule.when.type = 'tutorialCompleted';
+            const whenSelect = row?.querySelector('[data-onboarding-when]');
+            if (whenSelect) whenSelect.value = 'tutorialCompleted';
+            this._setStatus('检测到教程 ID，条件已自动切换为 tutorialCompleted（教程完成后显示）；记得「💾 保存到文件」');
+          }
           if (rule.when.type === 'storyPath') rule.when.path = element.value.trim();
           else if (rule.when.type !== 'always') rule.when.tutorialId = element.value.trim();
         }
@@ -1242,8 +1252,15 @@ export class UIEditor {
           }
         }
       }
+      // 就地同步输入框提示文字，不整表重绘（避免滚动/焦点丢失被误认为页面刷新）
+      const whenType = rule.when?.type || 'always';
+      const conditionValueInput = row?.querySelector('[data-onboarding-text="conditionValue"]');
+      if (conditionValueInput) {
+        conditionValueInput.placeholder = whenType === 'storyPath'
+          ? 'Story 路径，例如 s01Survival.xxx'
+          : (whenType === 'always' ? '可留空（始终显示）' : '教程 ID，例如 s01.attack');
+      }
       this._setStatus('OnboardingUI 规则已修改，记得点「💾 保存到文件」');
-      this._renderOnboardingEditor();
     };
     stage.querySelectorAll('[data-onboarding-text], [data-onboarding-when], [data-onboarding-components]').forEach(element => {
       element.addEventListener('change', () => updateRule(element));

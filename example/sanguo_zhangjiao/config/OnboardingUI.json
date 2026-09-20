@@ -327,7 +327,9 @@
         ]
       },
       "when": {
-        "type": "always"
+        "type": "storyPath",
+        "path": "s01Survival.berriesGathered",
+        "equals": true
       },
       "revealComponentIds": [
         "pc-hp-orb",
