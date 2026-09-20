@@ -288,6 +288,8 @@ export class TaskGraphEditor {
     else if (field === 'dialogueId' || field === 'id') list(this.project?.dialogues).forEach(dialogue => add(dialogue?.id, dialogue?.title || dialogue?.name));
     else if (field === 'itemId' || field === 'item') {
       for (const item of [...list(this.project?.library?.items), ...list(this.project?.library?.equipment)]) add(item?.id, item?.name);
+    } else if (field === 'enemyRole') {
+      [['firstWolf', '教学狼'], ['chaseWolf', '追逐狼']].forEach(([value, label]) => add(value, label));
     } else if (field === 'resourceType') {
       [['wood', '木材'], ['iron', '铁料'], ['food', '粮食'], ['herb', '草药'], ['stone', '石料']].forEach(([value, label]) => add(value, label));
     } else if (field === 'classId') {

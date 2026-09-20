@@ -405,7 +405,13 @@ export class SceneRenderPipeline {
     const combatSystem = this.context?.systems?.combat || null;
     const player = this.context?.player?.entity || null;
     const soulState = player?.isSoulState === true;
-    if (!soulState && !combatSystem?.isInCombat()) return;
+    const inCombat = combatSystem?.isInCombat() === true;
+    // 状态位常显：平时显示「正常」，战斗/灵魂状态切换对应样式
+    const style = soulState
+      ? { background: 'rgba(36, 47, 96, 0.82)', border: '#8fc7ff', primary: '灵魂状态', secondary: null, secondaryColor: null }
+      : inCombat
+        ? { background: 'rgba(139, 0, 0, 0.7)', border: '#ff0000', primary: '战斗中', secondary: 'combat', secondaryColor: null }
+        : { background: 'rgba(40, 90, 45, 0.72)', border: '#8fd6a1', primary: '正常', secondary: null, secondaryColor: null };
 
     const minimap = scene?.minimap;
     const layoutRect = this.context?.ui?.layout?.getScreenHudRect?.('combatStateBadge') || null;
@@ -432,20 +438,17 @@ export class SceneRenderPipeline {
     ctx.beginPath();
     ctx.rect(x, y, width, height);
     ctx.clip();
-    ctx.fillStyle = soulState ? 'rgba(36, 47, 96, 0.82)' : 'rgba(139, 0, 0, 0.7)';
+    ctx.fillStyle = style.background;
     ctx.fillRect(x, y, width, height);
-    ctx.strokeStyle = soulState ? '#8fc7ff' : '#ff0000';
+    ctx.strokeStyle = style.border;
     ctx.lineWidth = 1;
     ctx.strokeRect(x, y, width, height);
     ctx.fillStyle = '#ffffff';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    if (soulState) {
-      ctx.font = `bold ${primaryFontSize}px Arial`;
-      ctx.fillText('灵魂状态', textX, y + height / 2 + textOffsetY, maxTextWidth);
-    } else {
-      ctx.font = `bold ${primaryFontSize}px Arial`;
-      ctx.fillText('战斗中', textX, y + height * 0.35 + textOffsetY, maxTextWidth);
+    ctx.font = `bold ${primaryFontSize}px Arial`;
+    if (style.secondary === 'combat') {
+      ctx.fillText(style.primary, textX, y + height * 0.35 + textOffsetY, maxTextWidth);
       const timer = Math.ceil(combatSystem.getCombatExitTimer());
       ctx.fillStyle = timer > 0 ? '#ffff00' : '#ff6666';
       const timerFontSize = configuredFontSize || (timer > 0
@@ -453,6 +456,9 @@ export class SceneRenderPipeline {
         : Math.max(7, Math.round(9 * scale)));
       ctx.font = `${timerFontSize}px Arial`;
       ctx.fillText(timer > 0 ? `${timer}秒` : '敌人附近', textX, y + height * 0.76 + textOffsetY, maxTextWidth);
+    } else {
+      // 灵魂状态单行居中；平时「正常」单行居中
+      ctx.fillText(style.primary, textX, y + height / 2 + textOffsetY, maxTextWidth);
     }
     ctx.restore();
   }

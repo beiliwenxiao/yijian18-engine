@@ -482,6 +482,16 @@ export class ScenePlacementRuntime {
     }
 
     const placementIds = new Set([...retiredIds, ...activeIds]);
+    // count 模板：把派生实例 id 一并纳入重建范围——旧实体按派生 id 登记（placementId），
+    // spawner 生成账本也记派生 id；漏掉会导致旧实体不回收、生成被 alreadySpawned 短路。
+    for (const id of [...activeIds, ...retiredIds]) {
+      const template = this.placements.find(placement => placement?.id === id);
+      if (!template || template.count == null) continue;
+      const instanceCount = resolveInstanceCount(template, this.getConditionRoot);
+      for (let index = 1; index <= instanceCount; index += 1) {
+        placementIds.add(expandPlacement(template, index, { deriveFirst: true }).id);
+      }
+    }
     if (placementIds.size === 0) {
       return {
         ok: true,
@@ -613,7 +623,19 @@ export class ScenePlacementRuntime {
       outcomesById.get(outcome.placementId).push(outcome);
     }
     const outcomeErrors = [];
+    // 校验目标按实例展开：count 模板的 outcomes/entities/pending 状态全部以派生实例 id 记录
+    const verifyTargets = [];
     for (const placement of activePlacements) {
+      if (placement.count == null) {
+        verifyTargets.push(placement);
+        continue;
+      }
+      const instanceCount = resolveInstanceCount(placement, this.getConditionRoot);
+      for (let index = 1; index <= instanceCount; index += 1) {
+        verifyTargets.push(expandPlacement(placement, index, { deriveFirst: true }));
+      }
+    }
+    for (const placement of verifyTargets) {
       const outcomes = outcomesById.get(placement.id) || [];
       const spawnedOutcome = outcomes.find(outcome => outcome.status === 'spawned');
       const conditionOutcome = outcomes.find(outcome => outcome.status === 'conditionFalse');

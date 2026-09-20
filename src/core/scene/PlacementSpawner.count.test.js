@@ -117,7 +117,12 @@ function createRuntime({ storyState = {} } = {}) {
   };
   const runtime = new ScenePlacementRuntime({
     entityStore: store,
-    entityFactory: { createEnemy: data => ({ ...data, isDead: false, isDying: false }) },
+    entityFactory: { createEnemy: data => ({
+      ...data,
+      isDead: false,
+      isDying: false,
+      getComponent: key => (key === 'transform' ? { position: { x: data.position?.x, y: data.position?.y } } : null)
+    }) },
     aiSystem: { registerAI: () => {}, deactivateAI: () => {}, unregisterAI: () => {} },
     getRegistries: () => registries,
     getConditionRoot: key => (key === 'storyState' ? storyState : undefined),
@@ -150,6 +155,21 @@ describe('ScenePlacementRuntime count 模板的 tombstone 与派生 id', () => {
     expect(grow.entities.map(entity => entity.id)).toEqual(['S01-first-wolf-4']);
     expect(runtime._store.enemies.map(entity => entity.id))
       .toEqual(['S01-first-wolf-1', 'S01-first-wolf-3', 'S01-first-wolf-4']);
+  });
+
+  it('rebuild 覆盖 count 模板派生实例：旧实例回收重建，不报 missingOutcome', async () => {
+    const storyState = { s01Survival: { firstWolfSpotted: true, firstWolfCount: 3 } };
+    const runtime = createRuntime({ storyState });
+    runtime.setProjection([TEMPLATE]);
+    await runtime.spawn({ group: 'S01-first-wolf' });
+    expect(runtime._store.enemies).toHaveLength(3);
+
+    // 读档重建：count 模板的派生实例必须纳入回收与校验范围（旧实现漏掉会报 missingOutcome）
+    const rebuilt = runtime.rebuild('S01');
+    expect(rebuilt.ok, JSON.stringify(rebuilt.errors || null)).toBe(true);
+    expect(runtime._store.enemies).toHaveLength(3);
+    expect(runtime._store.enemies.map(entity => entity.id).sort())
+      .toEqual(['S01-first-wolf-1', 'S01-first-wolf-2', 'S01-first-wolf-3']);
   });
 
   it('_findPlacement 解析派生 id 到虚拟 placement，签名与 tombstone 一致；count=1 模板同样可派生寻址', async () => {

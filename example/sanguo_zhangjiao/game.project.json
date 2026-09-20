@@ -2333,9 +2333,9 @@
             "eatBerry"
           ],
           "eventMatcher": {
-            "type": "state.transaction",
+            "type": "gathering.completed",
             "payload": {
-              "definitionId": "story.s01.berriesGathered"
+              "itemId": "resource.wild_berry"
             }
           }
         },
@@ -2363,7 +2363,8 @@
           "eventMatcher": {
             "type": "gathering.completed",
             "payload": {
-              "itemId": "resource.wood"
+              "itemId": "resource.wood",
+              "resourceType": "wood"
             }
           },
           "progressBy": "accepted",

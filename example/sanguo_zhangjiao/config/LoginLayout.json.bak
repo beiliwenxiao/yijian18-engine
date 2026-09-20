@@ -1,0 +1,79 @@
+{
+  "version": 1,
+  "canvas": {
+    "width": 1280,
+    "height": 720
+  },
+  "components": [
+    {
+      "id": "login-panel",
+      "label": "登录布局容器",
+      "kind": "login-panel",
+      "anchor": "topleft",
+      "x": 536,
+      "y": 416,
+      "width": 224,
+      "height": 117,
+      "xPct": 0.41875,
+      "yPct": 0.57778,
+      "wPct": 0.175,
+      "hPct": 0.1625
+    },
+    {
+      "id": "login-title",
+      "label": "标题",
+      "kind": "login-title",
+      "anchor": "topleft",
+      "x": 280,
+      "y": 80,
+      "width": 720,
+      "height": 56,
+      "xPct": 0.21875,
+      "yPct": 0.11111,
+      "wPct": 0.5625,
+      "hPct": 0.07778
+    },
+    {
+      "id": "login-subtitle",
+      "label": "副标题",
+      "kind": "login-subtitle",
+      "anchor": "topleft",
+      "x": 360,
+      "y": 155,
+      "width": 560,
+      "height": 32,
+      "xPct": 0.28125,
+      "yPct": 0.21528,
+      "wPct": 0.4375,
+      "hPct": 0.04444
+    },
+    {
+      "id": "login-description",
+      "label": "文字描述",
+      "kind": "login-description",
+      "anchor": "topleft",
+      "x": 400,
+      "y": 200,
+      "width": 480,
+      "height": 34,
+      "xPct": 0.3125,
+      "yPct": 0.27778,
+      "wPct": 0.375,
+      "hPct": 0.04722
+    },
+    {
+      "id": "login-actions",
+      "label": "主操作区",
+      "kind": "login-actions",
+      "anchor": "topleft",
+      "x": 552,
+      "y": 434,
+      "width": 192,
+      "height": 86,
+      "xPct": 0.43125,
+      "yPct": 0.60278,
+      "wPct": 0.15,
+      "hPct": 0.11944
+    }
+  ]
+}

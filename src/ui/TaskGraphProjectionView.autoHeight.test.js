@@ -51,15 +51,15 @@ describe('TaskGraphProjectionView 任务框自适应高度', () => {
   const contentLinesOf = ctx => ctx._calls.fillText
     .filter(([text]) => !/^\d+\/\d+$/.test(String(text))).length;
 
-  it('框高 = 内容行数 + 1 行留白，而不是占满布局矩形', () => {
+  it('框高贴合内容行数，不占满布局矩形、不留空行', () => {
     const view = createView(2); // 标题 + 任务 + 2 个节点 = 4 行内容
     const ctx = createCtx();
     const rect = { x: 20, y: 20, width: 260, height: 400 };
     expect(view.render(ctx, rect)).toBe(true);
     const [, , , paintedHeight] = ctx._calls.fillRect[0];
     // lineHeight = max(16, min(22, 400/7=57)) = 22；paddingY = max(6, min(12, 400/14=28)) = 12
-    // boxHeight = 12*2 + (4+1)*22 = 134，远小于矩形 400
-    expect(paintedHeight).toBe(134);
+    // boxHeight = 12*2 + 4*22 = 112，远小于矩形 400
+    expect(paintedHeight).toBe(112);
     expect(paintedHeight).toBeLessThan(rect.height);
     // 文本行数 = 内容 4 行（进度数字是每行的第二次 fillText，不计）
     expect(contentLinesOf(ctx)).toBe(4);
@@ -74,6 +74,6 @@ describe('TaskGraphProjectionView 任务框自适应高度', () => {
     expect(paintedHeight).toBeLessThanOrEqual(rect.height);
     // 内容行 = 标题 + 任务 + min(20, 3) 个节点 = 5 行，未超出 6 行的矩形容量
     expect(contentLinesOf(ctx)).toBe(5);
-    expect(paintedHeight).toBe(Math.min(rect.height, 18 + (5 + 1) * 17));
+    expect(paintedHeight).toBe(Math.min(rect.height, 18 + 5 * 17));
   });
 });

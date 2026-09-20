@@ -1002,7 +1002,7 @@
         let gameLoopStartCount = 0;
         let activeSaveSlot = 1; // 当前选择的手动栏位；自动存档使用三个独立轮换栏位。
         let autosaveTimer = null;
-        const AUTO_SAVE_INTERVAL_MS = 15 * 60 * 1000;
+        const AUTO_SAVE_INTERVAL_MS = 5 * 60 * 1000; // 自动存档：每 5 分钟一次（场景切换另有存档）
         const saveGames = new SaveGameService({
             gameId: 'sanguo_zhangjiao',
             slotCount: 100,

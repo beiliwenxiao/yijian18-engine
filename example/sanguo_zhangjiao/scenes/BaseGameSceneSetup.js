@@ -238,8 +238,7 @@ export class BaseGameSceneSetup extends Scene {
     this.tutorialSystem = new TutorialSystem();
     this.dialogueSystem = new DialogueSystem();
     this.questSystem = new QuestTransactionService({
-      getDefaultActorId: () => this.playerEntity?.id || null,
-      scheduleCheckpoint: details => this._scheduleQuestCheckpoint(details)
+      getDefaultActorId: () => this.playerEntity?.id || null
     });
     
     // UI 面板
@@ -461,74 +460,6 @@ export class BaseGameSceneSetup extends Scene {
   requestCheckpointLoad(checkpointId) {
     return this._saveGameService?.loadCheckpoint?.(checkpointId)
       || Promise.resolve({ ok: false, code: 'saveGameServiceUnavailable' });
-  }
-
-  /** 在 command/event/Trigger 账本封账后的下一宏任务执行有界自动存档。 */
-  _scheduleQuestCheckpoint({ operationId, questId } = {}) {
-    if (!operationId) return { ok: false, code: 'checkpointOperationIdMissing' };
-    if (!this._scheduledQuestCheckpoints) this._scheduledQuestCheckpoints = new Set();
-    if (this._scheduledQuestCheckpoints.has(operationId)) return { ok: true, idempotent: true };
-    this._scheduledQuestCheckpoints.add(operationId);
-    const delays = [0, 500, 1000, 2000];
-    let cancelled = false;
-    let timer = null;
-    const dispose = () => {
-      cancelled = true;
-      if (timer !== null) clearTimeout(timer);
-      this._scheduledQuestCheckpoints?.delete(operationId);
-    };
-    this.resourceScope?.track?.(dispose);
-    const attempt = index => {
-      timer = setTimeout(async () => {
-        timer = null;
-        if (cancelled) return;
-        // 忙碌预检：Trigger 仍在执行（如添柴长动作未结束）时属「封账中」，静默顺延到下一延迟，
-        // 不发起捕获、不留失败诊断；只有真正的捕获失败才计入重试预算与玩家提示。
-        const busyTriggers = this.gameLoader?.triggerSystem?.ledger?.all?.()
-          ?.filter(record => record?.status === 'running')
-          .map(record => record.triggerId) || [];
-        if (busyTriggers.length > 0 && index + 1 < delays.length) {
-          attempt(index + 1);
-          return;
-        }
-        let result;
-        try {
-          result = await this.requestAutoSave({
-            reason: 'questTransaction',
-            checkpointId: `checkpoint.quest.${questId || 'taskGraph'}`,
-            originOperationId: operationId,
-            operationId,
-            questId
-          });
-        } catch (error) {
-          result = {
-            ok: false,
-            code: error?.code || 'questCheckpointSaveRejected',
-            errors: [{ message: error?.message || String(error) }]
-          };
-        }
-        // 捕获阶段仍可能撞上 busy（预检后的窗口期）：与忙碌预检同语义，静默顺延
-        if (result?.ok === false && result?.code === 'scenarioExecutionBusy' && index + 1 < delays.length) {
-          attempt(index + 1);
-          return;
-        }
-        if (result?.ok === true) {
-          dispose();
-          return;
-        }
-        if (index + 1 < delays.length) {
-          attempt(index + 1);
-          return;
-        }
-        this.notificationSystem?.addError?.('任务已提交，但检查点保存失败；请尽快手动保存。');
-        console.warn('[BaseGameScene] 任务检查点有界重试耗尽', {
-          operationId, questId, result
-        });
-        dispose();
-      }, delays[index]);
-    };
-    attempt(0);
-    return { ok: true, scheduled: true };
   }
 
   /** 采集可序列化的通用游戏状态，供 SnapshotManager 原子存档。 */

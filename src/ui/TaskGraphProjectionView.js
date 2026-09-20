@@ -61,8 +61,8 @@ export class TaskGraphProjectionView {
     const maxLines = Math.max(1, Math.floor((height - paddingY * 2) / lineHeight));
     const contentLines = Math.min(lines.length, maxLines);
     const visibleLines = lines.slice(0, contentLines);
-    // 框高自适应内容：最后一句话再多留一行，不超过布局矩形高度。
-    const boxHeight = Math.min(height, paddingY * 2 + (contentLines + 1) * lineHeight);
+    // 框高贴合内容，不留空行；不超过布局矩形高度。
+    const boxHeight = Math.min(height, paddingY * 2 + contentLines * lineHeight);
     const fontSize = Math.max(11, Math.min(15, Math.round(lineHeight * 0.68)));
     const maxTextWidth = Math.max(1, width - paddingX * 2);
 

@@ -44,8 +44,14 @@
   "rules": [
     {
       "id": "s01-opening-essential-ui",
-      "scope": { "sceneIds": ["S01"] },
-      "when": { "type": "always" },
+      "scope": {
+        "sceneIds": [
+          "S01"
+        ]
+      },
+      "when": {
+        "type": "always"
+      },
       "revealComponentIds": [
         "joystick",
         "hud-avatar",
@@ -63,86 +69,279 @@
     },
     {
       "id": "s01-movement-reveal-navigation",
-      "scope": { "sceneIds": ["S01"] },
-      "when": { "type": "tutorialCompleted", "tutorialId": "s01.move" },
-      "revealComponentIds": ["minimap", "timeWeatherBadge", "act-interact"],
-      "enabledComponentIds": ["act-interact"],
+      "scope": {
+        "sceneIds": [
+          "S01"
+        ]
+      },
+      "when": {
+        "type": "tutorialCompleted",
+        "tutorialId": "s01.move"
+      },
+      "revealComponentIds": [
+        "minimap",
+        "timeWeatherBadge",
+        "act-interact"
+      ],
+      "enabledComponentIds": [
+        "act-interact"
+      ],
       "highlightComponentId": "act-interact",
       "hintAction": "interact"
     },
     {
       "id": "s01-tools-reveal-inventory",
-      "scope": { "sceneIds": ["S01"] },
-      "when": { "type": "tutorialCompleted", "tutorialId": "s01.pickup" },
-      "revealComponentIds": ["pc-bag", "hb-bag"],
-      "enabledComponentIds": ["pc-bag", "hb-bag"]
+      "scope": {
+        "sceneIds": [
+          "S01"
+        ]
+      },
+      "when": {
+        "type": "tutorialCompleted",
+        "tutorialId": "s01.pickup"
+      },
+      "revealComponentIds": [
+        "pc-bag",
+        "hb-bag"
+      ],
+      "enabledComponentIds": [
+        "pc-bag",
+        "hb-bag"
+      ]
     },
     {
       "id": "s01-tools-highlight-inventory-until-opened",
-      "scope": { "sceneIds": ["S01"] },
-      "when": { "type": "storyPath", "path": "s01Survival.backpackOpened", "equals": false },
-      "highlightComponentIds": ["pc-bag", "hb-bag"],
+      "scope": {
+        "sceneIds": [
+          "S01"
+        ]
+      },
+      "when": {
+        "type": "storyPath",
+        "path": "s01Survival.backpackOpened",
+        "equals": false
+      },
+      "highlightComponentIds": [
+        "pc-bag",
+        "hb-bag"
+      ],
       "hintAction": "bag"
     },
     {
       "id": "s01-wolf-reveal-combat",
-      "scope": { "sceneIds": ["S01"] },
-      "when": { "type": "tutorialCurrent", "tutorialId": "s01.attack" },
+      "scope": {
+        "sceneIds": [
+          "S01"
+        ]
+      },
+      "when": {
+        "type": "tutorialCurrent",
+        "tutorialId": "s01.attack"
+      },
       "revealComponentIds": [
-        "pc-hp-orb", "pc-mp-orb", "pc-potion1", "pc-potion2", "pc-skill1", "pc-skill2", "pc-skill3", "pc-skill4", "pc-skill5", "pc-block",
-        "act-attack", "act-block", "act-skill3", "act-skill4", "act-skill5", "hb-hp", "hb-mp", "hb-skill6", "hb-skill7"
+        "pc-hp-orb",
+        "pc-mp-orb",
+        "pc-potion1",
+        "pc-potion2",
+        "pc-skill1",
+        "pc-skill2",
+        "pc-skill3",
+        "pc-skill4",
+        "pc-skill5",
+        "pc-block",
+        "act-attack",
+        "act-block",
+        "act-skill3",
+        "act-skill4",
+        "act-skill5",
+        "hb-hp",
+        "hb-mp",
+        "hb-skill6",
+        "hb-skill7"
       ],
       "enabledComponentIds": [
-        "pc-potion1", "pc-potion2", "pc-skill1", "pc-skill2", "pc-skill3", "pc-skill4", "pc-skill5", "pc-block",
-        "act-attack", "act-block", "act-skill3", "act-skill4", "act-skill5", "hb-hp", "hb-mp", "hb-skill6", "hb-skill7"
+        "pc-potion1",
+        "pc-potion2",
+        "pc-skill1",
+        "pc-skill2",
+        "pc-skill3",
+        "pc-skill4",
+        "pc-skill5",
+        "pc-block",
+        "act-attack",
+        "act-block",
+        "act-skill3",
+        "act-skill4",
+        "act-skill5",
+        "hb-hp",
+        "hb-mp",
+        "hb-skill6",
+        "hb-skill7"
       ],
-      "highlightComponentIds": ["pc-skill1", "act-attack"],
+      "highlightComponentIds": [
+        "pc-skill1",
+        "act-attack"
+      ],
       "hintAction": "attack"
     },
     {
       "id": "s01-jump-reveal-mobility",
-      "scope": { "sceneIds": ["S01"] },
-      "when": { "type": "tutorialCurrent", "tutorialId": "s01.jump" },
-      "revealComponentIds": ["pc-jump", "act-jump"],
-      "enabledComponentIds": ["pc-jump", "act-jump"],
-      "highlightComponentIds": ["pc-jump", "act-jump"],
+      "scope": {
+        "sceneIds": [
+          "S01"
+        ]
+      },
+      "when": {
+        "type": "tutorialCurrent",
+        "tutorialId": "s01.jump"
+      },
+      "revealComponentIds": [
+        "pc-jump",
+        "act-jump"
+      ],
+      "enabledComponentIds": [
+        "pc-jump",
+        "act-jump"
+      ],
+      "highlightComponentIds": [
+        "pc-jump",
+        "act-jump"
+      ],
       "hintAction": "jump"
     },
     {
       "id": "s01-wood-reveal-gathering",
-      "scope": { "sceneIds": ["S01"] },
-      "when": { "type": "tutorialCurrent", "tutorialId": "s01.chopWood" },
-      "revealComponentIds": ["act-axe"],
-      "enabledComponentIds": ["act-axe"],
+      "scope": {
+        "sceneIds": [
+          "S01"
+        ]
+      },
+      "when": {
+        "type": "tutorialCurrent",
+        "tutorialId": "s01.chopWood"
+      },
+      "revealComponentIds": [
+        "act-axe"
+      ],
+      "enabledComponentIds": [
+        "act-axe"
+      ],
       "highlightComponentId": "act-axe",
       "hintAction": "interact"
     },
     {
       "id": "s01-wolf-keep-combat-ui",
-      "scope": { "sceneIds": ["S01"] },
-      "when": { "type": "tutorialCompleted", "tutorialId": "s01.attack" },
+      "scope": {
+        "sceneIds": [
+          "S01"
+        ]
+      },
+      "when": {
+        "type": "tutorialCompleted",
+        "tutorialId": "s01.attack"
+      },
       "revealComponentIds": [
-        "pc-hp-orb", "pc-mp-orb", "pc-potion1", "pc-potion2", "pc-skill1", "pc-skill2", "pc-skill3", "pc-skill4", "pc-skill5", "pc-block",
-        "act-attack", "act-block", "act-skill3", "act-skill4", "act-skill5", "hb-hp", "hb-mp", "hb-skill6", "hb-skill7"
+        "pc-hp-orb",
+        "pc-mp-orb",
+        "pc-potion1",
+        "pc-potion2",
+        "pc-skill1",
+        "pc-skill2",
+        "pc-skill3",
+        "pc-skill4",
+        "pc-skill5",
+        "pc-block",
+        "act-attack",
+        "act-block",
+        "act-skill3",
+        "act-skill4",
+        "act-skill5",
+        "hb-hp",
+        "hb-mp",
+        "hb-skill6",
+        "hb-skill7"
       ],
       "enabledComponentIds": [
-        "pc-potion1", "pc-potion2", "pc-skill1", "pc-skill2", "pc-skill3", "pc-skill4", "pc-skill5", "pc-block",
-        "act-attack", "act-block", "act-skill3", "act-skill4", "act-skill5", "hb-hp", "hb-mp", "hb-skill6", "hb-skill7"
+        "pc-potion1",
+        "pc-potion2",
+        "pc-skill1",
+        "pc-skill2",
+        "pc-skill3",
+        "pc-skill4",
+        "pc-skill5",
+        "pc-block",
+        "act-attack",
+        "act-block",
+        "act-skill3",
+        "act-skill4",
+        "act-skill5",
+        "hb-hp",
+        "hb-mp",
+        "hb-skill6",
+        "hb-skill7"
       ]
     },
     {
       "id": "s01-jump-keep-mobility-ui",
-      "scope": { "sceneIds": ["S01"] },
-      "when": { "type": "tutorialCompleted", "tutorialId": "s01.jump" },
-      "revealComponentIds": ["pc-jump", "act-jump"],
-      "enabledComponentIds": ["pc-jump", "act-jump"]
+      "scope": {
+        "sceneIds": [
+          "S01"
+        ]
+      },
+      "when": {
+        "type": "tutorialCompleted",
+        "tutorialId": "s01.jump"
+      },
+      "revealComponentIds": [
+        "pc-jump",
+        "act-jump"
+      ],
+      "enabledComponentIds": [
+        "pc-jump",
+        "act-jump"
+      ]
     },
     {
       "id": "s01-wood-keep-gathering-ui",
-      "scope": { "sceneIds": ["S01"] },
-      "when": { "type": "tutorialCompleted", "tutorialId": "s01.chopWood" },
-      "revealComponentIds": ["act-axe"],
-      "enabledComponentIds": ["act-axe"]
+      "scope": {
+        "sceneIds": [
+          "S01"
+        ]
+      },
+      "when": {
+        "type": "tutorialCompleted",
+        "tutorialId": "s01.chopWood"
+      },
+      "revealComponentIds": [
+        "act-axe"
+      ],
+      "enabledComponentIds": [
+        "act-axe"
+      ]
+    },
+    {
+      "id": "s01-gather",
+      "scope": {
+        "sceneIds": [
+          "S01"
+        ]
+      },
+      "when": {
+        "type": "always"
+      },
+      "revealComponentIds": [
+        "pc-hp-orb",
+        "pc-potion1"
+      ],
+      "enabledComponentIds": [
+        "pc-hp-orb",
+        "pc-potion1"
+      ],
+      "highlightComponentIds": [
+        "pc-hp-orb",
+        "pc-potion1"
+      ],
+      "hintAction": ""
     }
   ]
 }
