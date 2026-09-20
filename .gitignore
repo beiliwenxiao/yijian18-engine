@@ -76,3 +76,5 @@ weapp/node_modules/
 weapp/project.private.config.json
 
 /*.txt
+# 不需要保存存档
+example/sanguo_zhangjiao/saves/

@@ -643,6 +643,25 @@
             box-shadow: 0 20px 64px rgba(0,0,0,.72);
             color: #eee;
         }
+        .save-slot-option { position: relative; }
+        .save-slot-delete {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            padding: 3px 9px;
+            border: 1px solid rgba(255,120,120,.45);
+            border-radius: 4px;
+            background: rgba(60,16,16,.6);
+            color: #ffb3b3;
+            font: inherit;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .save-slot-delete:hover, .save-slot-delete:focus-visible {
+            background: rgba(120,26,26,.8);
+            color: #fff;
+            outline: none;
+        }
         .new-game-profile-panel { width: min(380px, 94vw); }
         .overwrite-confirm-panel { width: min(420px, 92vw); }
         #save-picker-title, #new-game-profile-title, #overwrite-confirm-title { margin: 0; padding-right: 28px; color: #e7c778; font-size: 21px; }
@@ -1433,9 +1452,54 @@
             return preview;
         }
 
-        /** 巫师式存档浏览：异步读取已提交的 IndexedDB 存档。 */
+        /** 删除单个存档（IndexedDB 权威存储）；文件镜像保留为备份，不阻塞列表刷新。 */
+        async function deleteSaveEntry(value, entry, shortLabel) {
+            if (!entry?.exists) return;
+            const confirmed = await requestSaveActionConfirmation({
+                title: `删除${shortLabel}？`,
+                message: `${shortLabel} 的存档删除后将无法恢复，确定删除吗？`,
+                acceptLabel: '确认删除',
+                danger: true
+            });
+            if (!confirmed) return;
+            const selection = parseSaveSelection(value);
+            if (!selection) return;
+            const cleared = selection.kind === 'auto'
+                ? await saveGames.clearAutoAsync(selection.index)
+                : await saveGames.clearAsync(selection.index);
+            if (cleared) {
+                if (selectedSaveValue === value) selectedSaveValue = '';
+                setLoginMessage(`已删除${shortLabel}。`);
+            } else {
+                setLoginMessage(`删除${shortLabel}失败，请重试。`);
+            }
+            if (isSavePickerOpen()) await renderSaveSlots(savePickerMode);
+        }
+
+        /** 巫师式存档浏览：异步读取已提交的 IndexedDB 存档。渲染异常时窗口内给出明确错误而非空白。 */
         async function renderSaveSlots(mode) {
             savePickerMode = mode;
+            try {
+                await renderSaveSlotsInner(mode);
+            } catch (error) {
+                console.error('存档浏览渲染失败', error);
+                savePickerEntries = [];
+                saveSlotList.replaceChildren();
+                saveSlotSelected.textContent = '存档列表读取失败';
+                saveSlotInfo.textContent = error?.message || '读取存档列表时发生错误，请重试。';
+                saveSlotConfirm.disabled = true;
+                savePickerTitle.textContent = mode === 'continue' ? '读取存档'
+                    : (mode === 'manualSave' ? '手动存档' : '开始新游戏');
+                saveSlotsElement.classList.add('visible');
+                savePickerModal.classList.remove('hidden');
+                savePickerModal.setAttribute('aria-hidden', 'false');
+                menuPadArmed = true;
+                menuPadDirection = 0;
+                menuPadIndex = 0;
+            }
+        }
+
+        async function renderSaveSlotsInner(mode) {
             await saveStorageReady;
             const [manualSlots, autoSlots] = await Promise.all([
                 saveGames.listExistingSlotsAsync(),
@@ -1488,6 +1552,19 @@
                 cardMeta.append(level, time);
                 details.append(title, location, cardMeta);
                 option.append(buildSavePreview(entry, shortLabel), details);
+                if (entry.exists) {
+                    // 已有存档支持就地删除；确认弹窗防误触，删除后刷新列表。
+                    const deleteButton = document.createElement('button');
+                    deleteButton.type = 'button';
+                    deleteButton.className = 'save-slot-delete';
+                    deleteButton.textContent = '删除';
+                    deleteButton.setAttribute('aria-label', `删除${shortLabel}`);
+                    deleteButton.addEventListener('click', event => {
+                        event.stopPropagation();
+                        void deleteSaveEntry(value, entry, shortLabel);
+                    });
+                    option.appendChild(deleteButton);
+                }
                 option.addEventListener('click', () => {
                     if (selectSaveEntry(value)) handleSavePickerConfirm();
                 });
@@ -1552,6 +1629,9 @@
             saveSlotsElement.classList.add('visible');
             savePickerModal.classList.remove('hidden');
             savePickerModal.setAttribute('aria-hidden', 'false');
+            // 预武装：打开存档窗口时摇杆可能仍偏转，不要求先归中即可导航（离散步进）。
+            menuPadArmed = true;
+            menuPadDirection = 0;
             menuPadIndex = 0;
             requestAnimationFrame(() => {
                 if (isSavePickerOpen()) getSavePickerEntry()?.element.focus();
@@ -1580,6 +1660,8 @@
             savePickerPanel.setAttribute('inert', '');
             overwriteConfirmModal.classList.remove('hidden');
             overwriteConfirmModal.setAttribute('aria-hidden', 'false');
+            menuPadArmed = true;
+            menuPadDirection = 0;
             menuPadIndex = 0;
             requestAnimationFrame(() => {
                 if (isOverwriteConfirmationOpen()) overwriteConfirmAccept.focus();
@@ -2186,16 +2268,26 @@
 
         async function openSystemMenu() {
             closeSavePicker({ restoreFocus: false });
+            let autoSaveWarning = '';
             if (gameStarted) {
-                await autoSaveCurrentGame({ reason: 'system-menu' });
+                // 系统菜单打开失败（如存档捕获异常）不得阻断菜单；自动存档失败仅提示。
+                try {
+                    await autoSaveCurrentGame({ reason: 'system-menu' });
+                } catch (error) {
+                    console.warn('系统菜单自动存档失败，菜单照常打开', error);
+                    autoSaveWarning = '打开菜单时自动存档失败，已保留原存档。';
+                }
                 scene?.pause?.();
                 loginScreen.classList.add('in-game');
             } else {
                 loginScreen.classList.remove('in-game');
             }
             await refreshContinueGameAction();
-            setLoginMessage('');
-            menuPadArmed = false;
+            setLoginMessage(autoSaveWarning);
+            // 预武装：打开菜单时摇杆可能仍偏转（如跑动中按 Start），
+            // 不要求先归中即可立即导航（仍按方向变化离散步进）。
+            menuPadArmed = true;
+            menuPadDirection = 0;
             menuPadIndex = 0;
             loginScreen.classList.remove('hidden');
             document.getElementById('login-start').focus();

@@ -429,6 +429,9 @@ export class DebugPanel {
             </select>
             <button id="dp-goto-btn">跳转</button>
           </div>
+          <div class="dp-btn-row">
+            <button id="dp-delete-all-saves" title="清空全部手动存档与自动存档（IndexedDB），不可恢复">🗑 删除所有存档</button>
+          </div>
         </div>
       </div>
       <div class="dp-resize-handle" title="拖动以调整调试面板大小" aria-hidden="true"></div>
@@ -636,6 +639,7 @@ export class DebugPanel {
     el.querySelector('#dp-fire-event').addEventListener('click', () => this._fireEvent());
     el.querySelector('#dp-skip-event').addEventListener('click', () => this._skipEvent());
     el.querySelector('#dp-goto-btn').addEventListener('click', () => this._gotoAct());
+    el.querySelector('#dp-delete-all-saves').addEventListener('click', () => this._deleteAllSaves());
     el.querySelector('#dp-show-actor-collision-edge').addEventListener('change', (event) => {
       const scene = this.getScene();
       if (!scene) return;
@@ -1058,6 +1062,40 @@ export class DebugPanel {
       sm.switchTo(sceneId);
     }
     select.value = '';
+  }
+
+  /** 删除全部存档：委托当前场景注入的存档服务，需二次确认。 */
+  async _deleteAllSaves() {
+    const scene = this._getActiveScene();
+    if (typeof scene?.deleteAllSaves !== 'function') {
+      console.warn('[DebugPanel] 当前场景不支持删除存档');
+      return;
+    }
+    const button = this._el.querySelector('#dp-delete-all-saves');
+    if (button.disabled) return;
+    const confirmed = globalThis.confirm?.('确定删除全部手动存档与自动存档？此操作不可恢复。');
+    if (!confirmed) return;
+    button.disabled = true;
+    const originalText = button.textContent;
+    button.textContent = '删除中...';
+    try {
+      const result = await scene.deleteAllSaves();
+      if (result?.ok === false) {
+        console.warn('[DebugPanel] 删除存档失败', result);
+        button.textContent = '删除失败';
+      } else {
+        console.log('[DebugPanel] 已删除全部存档', result);
+        button.textContent = '已删除';
+      }
+    } catch (error) {
+      console.error('[DebugPanel] 删除存档异常', error);
+      button.textContent = '删除失败';
+    } finally {
+      setTimeout(() => {
+        button.textContent = originalText;
+        button.disabled = false;
+      }, 1600);
+    }
   }
 }
 

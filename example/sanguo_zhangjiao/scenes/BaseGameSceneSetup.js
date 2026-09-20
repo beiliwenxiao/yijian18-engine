@@ -365,6 +365,33 @@ export class BaseGameSceneSetup extends Scene {
     this._saveGameService = service || null;
   }
 
+  /** DebugPanel「删除所有存档」：清空全部手动位与自动位（IndexedDB 权威存储），文件镜像保留为备份。 */
+  async deleteAllSaves() {
+    const service = this._saveGameService;
+    if (!service?.clearAsync || !service?.clearAutoAsync) {
+      return { ok: false, code: 'saveGameServiceUnavailable' };
+    }
+    let manualCleared = 0;
+    let manualFailed = 0;
+    for (let index = 1; index <= service.slotCount; index += 1) {
+      try {
+        if (await service.clearAsync(index)) manualCleared += 1;
+        else manualFailed += 1;
+      } catch (error) {
+        console.warn(`[BaseGameScene] 删除手动存档 slot-${index} 失败`, error);
+        manualFailed += 1;
+      }
+    }
+    let autoCleared = false;
+    try {
+      autoCleared = await service.clearAutoAsync();
+    } catch (error) {
+      console.warn('[BaseGameScene] 删除自动存档失败', error);
+    }
+    console.log('[BaseGameScene] 已清空存档', { manualCleared, manualFailed, autoCleared });
+    return { ok: manualFailed === 0 && autoCleared, manualCleared, manualFailed, autoCleared };
+  }
+
   async requestAutoSave(context = {}) {
     try {
       const result = await this._saveGameService?.requestAutoSave?.(context);
