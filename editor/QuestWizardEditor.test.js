@@ -86,9 +86,13 @@ describe('QuestWizardEditor 任务向导', () => {
         expect(detail(editor).querySelector('[data-step-index="0"] [data-step-field="tutorialId"]')).toBeTruthy();
     });
 
-    it('接取模式切换：manual 显示 giver 字段与 NPC 触发器指引，auto 显示条件来源下拉', () => {
+    it('接取模式三态：accept 缺省显示「由现有触发器接取」，manual 显示 giver 指引，auto 显示条件来源', () => {
         const { editor } = buildEditor();
         const modeSelect = detail(editor).querySelector('[data-accept-field="mode"]');
+        // S01 quest 无 accept 字段 → external 态
+        expect(modeSelect.value).toBe('external');
+        expect(detail(editor).innerHTML).toContain('由 triggers[] 中的现有触发器承担');
+
         modeSelect.value = 'manual';
         modeSelect.dispatchEvent(new Event('change'));
         let html = detail(editor).innerHTML;
@@ -100,6 +104,12 @@ describe('QuestWizardEditor 任务向导', () => {
         html = detail(editor).innerHTML;
         expect(html).toContain('data-when-field="type"');
         expect(html).toContain('事实提交（状态事务）');
+
+        // 切回 external：accept 字段整体移除
+        modeSelect.value = 'external';
+        modeSelect.dispatchEvent(new Event('change'));
+        const quest = editor.quests.find(item => item.id === 'task.s01.survival');
+        expect(quest.accept).toBeUndefined();
     });
 
     it('保存：定义非法（目标缺失）被阻止，合法定义写入 quests 并通过编译校验', async () => {

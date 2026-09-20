@@ -15,16 +15,29 @@
         .editor-header nav button.active { background: #4CAF50; color: #000; }
         .editor-main { height: calc(100vh - 52px); overflow: hidden; }
         .panel-container { height: 100%; overflow: hidden; }
+        .lib-subtabs { display: flex; gap: 6px; padding: 8px 12px; background: #16213e; border-bottom: 1px solid #2a3a5e; flex-shrink: 0; }
+        .lib-subtabs button { padding: 6px 14px; border: 1px solid #2a3a5e; border-radius: 4px; background: #0f1830; color: #9ab; cursor: pointer; font-size: 13px; }
+        .lib-subtabs button:hover { color: #fff; }
+        .lib-subtabs button.active { background: #2a3a6e; color: #fff; border-color: #4a5f9e; }
+        .lib-subview { flex: 1; min-height: 0; }
+        .lib-subview[hidden] { display: none !important; }
+        .editor-main { display: flex; flex-direction: column; }
     </style>
 </head>
 <body>
     <div id="editor-nav"></div>
     <div class="editor-main">
-        <div class="panel-container" id="library-editor-container"></div>
+        <div class="lib-subtabs">
+            <button type="button" class="active" data-lib-subtab="items">📚 物品与装备</button>
+            <button type="button" data-lib-subtab="behaviors">⚡ 动作目录</button>
+        </div>
+        <div class="panel-container lib-subview" id="library-editor-container"></div>
+        <div class="panel-container lib-subview" id="behavior-editor-container" hidden></div>
     </div>
     <script type="module">
         import { EditorPageContext, renderEditorNav } from './EditorShared.js';
         import { LibraryEditor } from './LibraryEditor.js';
+        import { BehaviorEditor } from './BehaviorEditor.js';
 
         (async () => {
             renderEditorNav('library-editor');
@@ -38,6 +51,27 @@
                 canonicalSession: ctx._canonicalEditorSession('project')
             });
             await editor.init();
+
+            // 动作目录（原行为编辑器）：triggerCatalog.actions 元数据登记
+            const behaviorEditor = new BehaviorEditor(document.getElementById('behavior-editor-container'), {
+                gameId,
+                canonicalSession: ctx._canonicalEditorSession('project'),
+                getSceneList: () => ctx.dataManager.getGameScenes(gameId),
+                getSceneDocuments: () => ctx.getSceneDocuments(),
+                projectPath: ctx._canonicalProjectPath()
+            });
+            await behaviorEditor.init();
+
+            let activeSubtab = 'items';
+            async function switchSubtab(subtab) {
+                activeSubtab = subtab;
+                document.querySelectorAll('.lib-subtabs button[data-lib-subtab]').forEach(b => b.classList.toggle('active', b.dataset.libSubtab === subtab));
+                document.getElementById('library-editor-container').hidden = subtab !== 'items';
+                document.getElementById('behavior-editor-container').hidden = subtab !== 'behaviors';
+            }
+            document.querySelectorAll('.lib-subtabs button[data-lib-subtab]').forEach(btn => {
+                btn.addEventListener('click', () => { switchSubtab(btn.dataset.libSubtab).catch(console.error); });
+            });
         })().catch(error => {
             console.error('[LibraryEditor] 初始化失败', error);
             const container = document.getElementById('library-editor-container');

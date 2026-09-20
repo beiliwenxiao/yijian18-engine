@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📋 任务 - 游戏编辑器</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Microsoft YaHei', Arial, sans-serif; background: #0a0a1e; color: #fff; min-height: 100vh; overflow: hidden; }
+        .editor-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 20px; background: #16213e; border-bottom: 1px solid #2a3a5e; }
+        .editor-header h1 { font-size: 18px; color: #4CAF50; }
+        .editor-header nav { display: flex; gap: 8px; }
+        .editor-header nav button { padding: 6px 12px; background: #3a4a7e; border: none; border-radius: 4px; color: #fff; cursor: pointer; font-size: 13px; }
+        .editor-header nav button:hover { background: #4a5a9e; }
+        .editor-header nav button.active { background: #4CAF50; color: #000; }
+        .editor-main { height: calc(100vh - 52px); display: flex; flex-direction: column; overflow: hidden; }
+        .quest-subtabs { display: flex; gap: 6px; padding: 8px 12px; background: #16213e; border-bottom: 1px solid #2a3a5e; flex-shrink: 0; }
+        .quest-subtabs button { padding: 6px 14px; border: 1px solid #2a3a5e; border-radius: 4px; background: #0f1830; color: #9ab; cursor: pointer; font-size: 13px; }
+        .quest-subtabs button:hover { color: #fff; }
+        .quest-subtabs button.active { background: #2a3a6e; color: #fff; border-color: #4a5f9e; }
+        .quest-subview { flex: 1; min-height: 0; overflow: hidden; }
+        .quest-subview[hidden] { display: none !important; }
+    </style>
+</head>
+<body>
+    <div id="editor-nav"></div>
+    <div class="editor-main">
+        <div class="quest-subtabs">
+            <button type="button" class="active" data-quest-subtab="wizard">📋 任务编辑器</button>
+            <button type="button" data-quest-subtab="graph">任务图（高级）</button>
+        </div>
+        <div class="panel-container quest-subview" id="quest-wizard-container"></div>
+        <div class="panel-container quest-subview" id="task-graph-container" hidden></div>
+    </div>
+    <script type="module">
+        import { EditorPageContext, renderEditorNav } from './EditorShared.js';
+        import { QuestWizardEditor } from './QuestWizardEditor.js';
+        import { TaskGraphEditor } from './TaskGraphEditor.js';
+
+        (async () => {
+            renderEditorNav('quest-editor');
+            const ctx = new EditorPageContext();
+            await ctx.init();
+            const gameId = new URLSearchParams(location.search).get('gameId');
+            if (!gameId) { alert('请先选择游戏'); window.location.href = 'index.html'; return; }
+
+            const editorConfig = {
+                canonicalSession: ctx._canonicalEditorSession('project'),
+                projectPath: ctx._canonicalProjectPath(),
+                getSceneList: () => ctx.dataManager.getGameScenes(gameId),
+                getSceneDocuments: () => ctx.getSceneDocuments()
+            };
+
+            // 子视图：任务编辑器（quests[] Quest v2 向导，默认）+ 任务图（taskGraphs[] 高级视图）
+            let questWizardEditor = null;
+            let questWizardInitPromise = null;
+            async function loadQuestWizardEditor() {
+                if (questWizardInitPromise) return questWizardInitPromise;
+                questWizardEditor = new QuestWizardEditor(document.getElementById('quest-wizard-container'), editorConfig);
+                questWizardInitPromise = questWizardEditor.init()
+                    .then(() => questWizardEditor)
+                    .catch(error => {
+                        questWizardEditor = null;
+                        questWizardInitPromise = null;
+                        throw error;
+                    });
+                return questWizardInitPromise;
+            }
+
+            let taskGraphEditor = null;
+            let taskGraphInitPromise = null;
+            async function loadTaskGraphEditor() {
+                if (taskGraphInitPromise) return taskGraphInitPromise;
+                taskGraphEditor = new TaskGraphEditor(document.getElementById('task-graph-container'), editorConfig);
+                taskGraphInitPromise = taskGraphEditor.init()
+                    .then(() => taskGraphEditor)
+                    .catch(error => {
+                        taskGraphEditor = null;
+                        taskGraphInitPromise = null;
+                        throw error;
+                    });
+                return taskGraphInitPromise;
+            }
+
+            let activeSubtab = 'wizard';
+            async function switchSubtab(subtab) {
+                activeSubtab = subtab;
+                document.querySelectorAll('.quest-subtabs button[data-quest-subtab]').forEach(b => b.classList.toggle('active', b.dataset.questSubtab === subtab));
+                document.getElementById('quest-wizard-container').hidden = subtab !== 'wizard';
+                document.getElementById('task-graph-container').hidden = subtab !== 'graph';
+                if (subtab === 'wizard') await loadQuestWizardEditor();
+                else await loadTaskGraphEditor();
+            }
+            document.querySelectorAll('.quest-subtabs button[data-quest-subtab]').forEach(btn => {
+                btn.addEventListener('click', () => { switchSubtab(btn.dataset.questSubtab).catch(console.error); });
+            });
+
+            await switchSubtab(activeSubtab);
+        })().catch(error => {
+            console.error('[QuestEditorPage] 初始化失败', error);
+            const container = document.getElementById('quest-wizard-container');
+            if (container) container.textContent = `任务图页面初始化失败：${error?.message || String(error)}`;
+        });
+    </script>
+</body>
+</html>

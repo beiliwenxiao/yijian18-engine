@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📖 教程 - 游戏编辑器</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Microsoft YaHei', Arial, sans-serif; background: #0a0a1e; color: #fff; min-height: 100vh; overflow: hidden; }
+        .editor-main { height: calc(100vh - 52px); overflow: hidden; }
+        .panel-container { height: 100%; overflow: hidden; }
+    </style>
+</head>
+<body>
+    <div id="editor-nav"></div>
+    <div class="editor-main">
+        <div class="panel-container" id="tutorial-editor-container"></div>
+    </div>
+    <script type="module">
+        import { EditorPageContext, renderEditorNav } from './EditorShared.js';
+        import { TriggerEditor } from './TriggerEditor.js';
+
+        (async () => {
+            renderEditorNav('tutorial-editor');
+            const ctx = new EditorPageContext();
+            await ctx.init();
+            const gameId = new URLSearchParams(location.search).get('gameId');
+            if (!gameId) { alert('请先选择游戏'); window.location.href = 'index.html'; return; }
+
+            // 教程页：仅教学步骤视图（复用 TriggerEditor 的 tutorials 目标，隐藏切换栏）
+            const editor = new TriggerEditor(document.getElementById('tutorial-editor-container'), {
+                gameId,
+                canonicalSession: ctx._canonicalEditorSession('project'),
+                getSceneList: () => ctx.dataManager.getGameScenes(gameId),
+                getSceneDocuments: () => ctx.getSceneDocuments(),
+                target: 'tutorials',
+                allowedTargets: ['tutorials']
+            });
+            await editor.init();
+        })().catch(error => {
+            console.error('[TutorialEditorPage] 初始化失败', error);
+            const container = document.getElementById('tutorial-editor-container');
+            if (container) container.textContent = `教程编辑器初始化失败：${error?.message || String(error)}`;
+        });
+    </script>
+</body>
+</html>

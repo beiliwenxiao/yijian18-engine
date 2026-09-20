@@ -58,11 +58,6 @@
         .editor-panel { flex: 1; overflow: hidden; display: none; }
         .editor-panel.active { display: flex; flex-direction: column; }
         .panel-container { flex: 1; overflow: hidden; min-height: 0; }
-        .task-subtabs { display: flex; gap: 6px; padding: 8px 12px; background: #16213e; border-bottom: 1px solid #2a3a5e; }
-        .task-subtabs button { padding: 6px 14px; border: 1px solid #2a3a5e; border-radius: 4px; background: #0f1830; color: #9ab; cursor: pointer; }
-        .task-subtabs button.active { background: #2a3a6e; color: #fff; border-color: #4a5f9e; }
-        .task-subview[hidden] { display: none !important; }
-        #task-panel { display: flex; flex-direction: column; }
     </style>
 </head>
 <body>
@@ -95,32 +90,12 @@
             <div class="editor-content">
                 <div class="editor-tabs">
                     <button class="active" data-tab="scene">🗺️ 场景编辑</button>
-                    <button data-tab="trigger">⚡ 事件/触发器</button>
-                    <button data-tab="behavior">🧩 行为编辑器</button>
-                    <button data-tab="task">📋 任务图</button>
                     <button type="button" class="tab-extra" data-action="button-help" style="margin-left:auto;">⌨ 按钮写法</button>
                     <button type="button" class="tab-extra" data-action="item-reference">📦 物体写法</button>
                 </div>
 
                 <div class="editor-panel active" id="scene-panel">
                     <div class="panel-container" id="scene-editor-container"></div>
-                </div>
-
-                <div class="editor-panel" id="trigger-panel">
-                    <div class="panel-container" id="trigger-editor-container"></div>
-                </div>
-
-                <div class="editor-panel" id="behavior-panel">
-                    <div class="panel-container" id="behavior-editor-container"></div>
-                </div>
-
-                <div class="editor-panel" id="task-panel">
-                    <div class="task-subtabs">
-                        <button type="button" class="active" data-task-subtab="wizard">📋 任务向导</button>
-                        <button type="button" data-task-subtab="graph">任务图（高级）</button>
-                    </div>
-                    <div class="panel-container task-subview" id="quest-wizard-container"></div>
-                    <div class="panel-container task-subview" id="task-graph-editor-container" hidden></div>
                 </div>
             </div>
         </div>
@@ -136,10 +111,6 @@
             sceneDataLoader
         } from './SceneDataLoader.js';
         import { ProjectWorldIndex } from '../src/core/ProjectWorldIndex.js';
-        import { TriggerEditor } from './TriggerEditor.js';
-        import { BehaviorEditor } from './BehaviorEditor.js';
-        import { TaskGraphEditor } from './TaskGraphEditor.js';
-        import { QuestWizardEditor } from './QuestWizardEditor.js';
 
         (async () => {
             renderEditorNav('scene-workflow');
@@ -626,10 +597,9 @@
                         return result;
                     },
                     openTriggerEditor: async (definitionId, target = 'triggers') => {
-                        await switchTab('trigger');
-                        if (triggerEditor && definitionId) {
-                            triggerEditor.selectById?.(definitionId, target);
-                        }
+                        // 触发器编辑已迁至独立「剧情」页；hash 携带触发器 ID 供页面加载后选中
+                        const hash = definitionId ? `#${encodeURIComponent(definitionId)}` : '';
+                        window.location.href = `storyline-editor.html?gameId=${encodeURIComponent(gameId)}${hash}`;
                     }
                 }
             );
@@ -823,130 +793,13 @@
             return true;
         }
 
-        // 事件/触发器编辑器
-        let triggerEditor = null;
-        let triggerEditorInitPromise = null;
-        async function loadTriggerEditor() {
-            if (triggerEditorInitPromise) return triggerEditorInitPromise;
-            triggerEditor = new TriggerEditor(
-                document.getElementById('trigger-editor-container'),
-                {
-                    gameId: gameId,
-                    canonicalSession: ctx._canonicalEditorSession('project'),
-                    getSceneList: () => ctx.dataManager.getGameScenes(gameId),
-                    getSceneDocuments: () => ctx.getSceneDocuments(),
-                    getPlacementOptions: () => ctx.getPlacementOptions(sceneEditor),
-                    onSaved: project => ctx._refreshProjectTriggers(project)
-                }
-            );
-            triggerEditorInitPromise = triggerEditor.init()
-                .then(() => triggerEditor)
-                .catch(error => {
-                    triggerEditor = null;
-                    triggerEditorInitPromise = null;
-                    throw error;
-                });
-            return triggerEditorInitPromise;
-        }
-
-        // 行为编辑器：管理 project.triggerCatalog.actions[]，与事件/触发器共用 canonical session。
-        let behaviorEditor = null;
-        let behaviorEditorInitPromise = null;
-        async function loadBehaviorEditor() {
-            if (behaviorEditorInitPromise) return behaviorEditorInitPromise;
-            behaviorEditor = new BehaviorEditor(
-                document.getElementById('behavior-editor-container'),
-                {
-                    canonicalSession: ctx._canonicalEditorSession('project'),
-                    getSceneList: () => ctx.dataManager.getGameScenes(gameId),
-                    getSceneDocuments: () => ctx.getSceneDocuments(),
-                    projectPath: ctx._canonicalProjectPath(),
-                    onSaved: async project => {
-                        ctx._refreshProjectTriggers(project);
-                        await triggerEditor?.refresh?.();
-                        sceneEditor?.refreshTriggerReferences?.();
-                    }
-                }
-            );
-            behaviorEditorInitPromise = behaviorEditor.init()
-                .then(() => behaviorEditor)
-                .catch(error => {
-                    behaviorEditor = null;
-                    behaviorEditorInitPromise = null;
-                    throw error;
-                });
-            return behaviorEditorInitPromise;
-        }
-
-        // 任务中心：任务向导（quests[]，Quest v2 五区块）+ 任务图高级视图（taskGraphs[]），共用 canonical session。
-        let questWizardEditor = null;
-        let questWizardEditorInitPromise = null;
-        async function loadQuestWizardEditor() {
-            if (questWizardEditorInitPromise) return questWizardEditorInitPromise;
-            questWizardEditor = new QuestWizardEditor(
-                document.getElementById('quest-wizard-container'),
-                {
-                    canonicalSession: ctx._canonicalEditorSession('project'),
-                    projectPath: ctx._canonicalProjectPath(),
-                    getSceneList: () => ctx.dataManager.getGameScenes(gameId),
-                    getSceneDocuments: () => ctx.getSceneDocuments()
-                }
-            );
-            questWizardEditorInitPromise = questWizardEditor.init()
-                .then(() => questWizardEditor)
-                .catch(error => {
-                    questWizardEditor = null;
-                    questWizardEditorInitPromise = null;
-                    throw error;
-                });
-            return questWizardEditorInitPromise;
-        }
-
-        let taskGraphEditor = null;
-        let taskGraphEditorInitPromise = null;
-        async function loadTaskGraphEditor() {
-            if (taskGraphEditorInitPromise) return taskGraphEditorInitPromise;
-            taskGraphEditor = new TaskGraphEditor(
-                document.getElementById('task-graph-editor-container'),
-                {
-                    canonicalSession: ctx._canonicalEditorSession('project'),
-                    projectPath: ctx._canonicalProjectPath(),
-                    getSceneList: () => ctx.dataManager.getGameScenes(gameId),
-                    getSceneDocuments: () => ctx.getSceneDocuments()
-                }
-            );
-            taskGraphEditorInitPromise = taskGraphEditor.init()
-                .then(() => taskGraphEditor)
-                .catch(error => {
-                    taskGraphEditor = null;
-                    taskGraphEditorInitPromise = null;
-                    throw error;
-                });
-            return taskGraphEditorInitPromise;
-        }
-
-        // 任务子视图切换：向导（quests 编译运行时产物）为默认；任务图仅编辑未迁移的手写定义。
-        let activeTaskSubtab = 'wizard';
-        async function switchTaskSubtab(subtab) {
-            activeTaskSubtab = subtab;
-            document.querySelectorAll('.task-subtabs button[data-task-subtab]').forEach(b => b.classList.toggle('active', b.dataset.taskSubtab === subtab));
-            document.getElementById('quest-wizard-container').hidden = subtab !== 'wizard';
-            document.getElementById('task-graph-editor-container').hidden = subtab !== 'graph';
-            if (subtab === 'wizard') await loadQuestWizardEditor();
-            else await loadTaskGraphEditor();
-        }
-        document.querySelectorAll('.task-subtabs button[data-task-subtab]').forEach(btn => {
-            btn.addEventListener('click', () => { switchTaskSubtab(btn.dataset.taskSubtab).catch(console.error); });
-        });
+        // 触发器/行为编辑已迁至独立页面（「剧情」页与「内容库 → 动作目录」）。
 
         // 标签切换
         async function switchTab(tab) {
-            const panels = ['scene', 'trigger', 'behavior', 'task'];
+            const panels = ['scene'];
             document.querySelectorAll('.editor-tabs button[data-tab]').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
             for (const panel of panels) document.getElementById(`${panel}-panel`).classList.toggle('active', tab === panel);
-            if (tab === 'trigger') await loadTriggerEditor();
-            if (tab === 'behavior') await loadBehaviorEditor();
-            if (tab === 'task') await switchTaskSubtab(activeTaskSubtab);
             if (tab === 'scene') setTimeout(() => window.dispatchEvent(new Event('resize')), 50);
         }
 

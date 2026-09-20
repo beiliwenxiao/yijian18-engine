@@ -15,6 +15,9 @@ import { InputHints } from '../src/core/input/InputHints.js';
 export const EDITOR_PAGES = Object.freeze({
   'game-list': 'index.html',
   'scene-workflow': 'scene-workflow.html',
+  'quest-editor': 'quest-editor.html',
+  'storyline-editor': 'storyline-editor.html',
+  'tutorial-editor': 'tutorial-editor.html',
   'ui-editor': 'ui-editor.html',
   'library-editor': 'library-editor.html',
   'item-reference': 'item-reference.html',
@@ -24,19 +27,33 @@ export const EDITOR_PAGES = Object.freeze({
   'system-editor': 'system-editor.html'
 });
 
-// 导航项定义（顺序即显示顺序）。
+// 导航项定义（分组即显示分组，组间渲染分隔线）。
 // 「⌨ 按钮写法」「📦 物体写法」是弹层入口（非页面），挂在场景编辑器的标签栏（scene-workflow.html）「⚡ 事件/触发器」之后，
 // 通过 openButtonHelp / openItemReferenceModal 打开，不在顶部导航出现。
-const NAV_ITEMS = Object.freeze([
-  { id: 'game-list', label: '🎮 游戏列表', file: 'index.html' },
-  { id: 'scene-workflow', label: '🗺️ 场景编辑器', file: 'scene-workflow.html' },
-  { id: 'ui-editor', label: '🎨 UI编辑器', file: 'ui-editor.html' },
-  { id: 'library-editor', label: '📚 内容库', file: 'library-editor.html' },
-  { id: 'dialogue-editor', label: '💬 对话', file: 'dialogue-editor.html' },
-  { id: 'world-map-editor', label: '🌍 大地图', file: 'world-map-editor.html' },
-  { id: 'panel-editor', label: '🧩 面板', file: 'panel-editor.html' },
-  { id: 'system-editor', label: '⚙️ 系统', file: 'system-editor.html' }
+const NAV_GROUPS = Object.freeze([
+  { label: '', items: [
+    { id: 'game-list', label: '🎮 游戏列表', file: 'index.html' }
+  ]},
+  { label: '剧情创作', items: [
+    { id: 'quest-editor', label: '📋 任务', file: 'quest-editor.html' },
+    { id: 'storyline-editor', label: '🎬 剧情', file: 'storyline-editor.html' },
+    { id: 'tutorial-editor', label: '📖 教程', file: 'tutorial-editor.html' },
+    { id: 'dialogue-editor', label: '💬 对话', file: 'dialogue-editor.html' }
+  ]},
+  { label: '场景世界', items: [
+    { id: 'scene-workflow', label: '🗺️ 场景', file: 'scene-workflow.html' },
+    { id: 'world-map-editor', label: '🌍 大地图', file: 'world-map-editor.html' }
+  ]},
+  { label: '资产系统', items: [
+    { id: 'ui-editor', label: '🎨 UI', file: 'ui-editor.html' },
+    { id: 'panel-editor', label: '🧩 面板', file: 'panel-editor.html' },
+    { id: 'library-editor', label: '📚 内容库', file: 'library-editor.html' },
+    { id: 'system-editor', label: '⚙️ 系统', file: 'system-editor.html' }
+  ]}
 ]);
+
+// 扁平视图（兼容既有引用）：分组导航的一维展开
+const NAV_ITEMS = Object.freeze(NAV_GROUPS.flatMap(group => group.items));
 
 /**
  * 渲染统一导航栏到指定容器
@@ -52,12 +69,14 @@ export function renderEditorNav(currentPageId, containerId = 'editor-nav') {
     const style = document.createElement('style');
     style.id = 'editor-shared-nav-styles';
     style.textContent = `
-      .editor-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 20px; background: #16213e; border-bottom: 1px solid #2a3a5e; flex-shrink: 0; }
-      .editor-header h1 { font-size: 18px; color: #4CAF50; margin: 0; }
-      .editor-nav { display: flex; gap: 8px; }
-      .editor-nav button { padding: 6px 12px; background: #3a4a7e; border: none; border-radius: 4px; color: #fff; cursor: pointer; font-size: 13px; }
+      .editor-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 20px; background: #16213e; border-bottom: 1px solid #2a3a5e; flex-shrink: 0; overflow-x: auto; }
+      .editor-header h1 { font-size: 18px; color: #4CAF50; margin: 0; white-space: nowrap; flex-shrink: 0; }
+      .editor-nav { display: flex; gap: 8px; align-items: center; }
+      .editor-nav button { padding: 6px 12px; background: #3a4a7e; border: none; border-radius: 4px; color: #fff; cursor: pointer; font-size: 13px; white-space: nowrap; flex-shrink: 0; }
       .editor-nav button:hover { background: #4a5a9e; }
       .editor-nav button.active { background: #4CAF50; color: #000; }
+      .editor-nav .nav-group-divider { width: 1px; height: 20px; background: #3a4a7e; margin: 0 6px; flex-shrink: 0; }
+      .editor-nav .nav-group-label { font-size: 11px; color: #6a7a9e; margin-right: -2px; align-self: center; white-space: nowrap; flex-shrink: 0; }
       .game-selector { padding: 6px 12px; background: #2a3a5e; border: 1px solid #4CAF50; border-radius: 4px; color: #fff; font-size: 13px; margin-left: 12px; }
       .game-selector-label { color: #aaa; font-size: 12px; margin-right: 4px; }
     `;
@@ -71,11 +90,16 @@ export function renderEditorNav(currentPageId, containerId = 'editor-nav') {
     <div class="editor-header">
       <h1>🎮 游戏编辑器</h1>
       <nav class="editor-nav">
-        ${NAV_ITEMS.map(item => `
-          <button class="${item.id === currentPageId ? 'active' : ''}"
-                  onclick="window.location.href='${item.file}${query}'">
-            ${item.label}
-          </button>`).join('')}
+        ${NAV_GROUPS.map((group, groupIndex) => {
+          const buttons = group.items.map(item => `
+            <button class="${item.id === currentPageId ? 'active' : ''}"
+                    onclick="window.location.href='${item.file}${query}'">
+              ${item.label}
+            </button>`).join('');
+          const divider = groupIndex > 0 ? '<span class="nav-group-divider" title="分组"></span>' : '';
+          const groupLabel = group.label ? `<span class="nav-group-label">${group.label}</span>` : '';
+          return `${divider}${groupLabel}${buttons}`;
+        }).join('')}
       </nav>
       <span class="game-selector-label">游戏:</span><select id="game-selector" class="game-selector"></select>
     </div>

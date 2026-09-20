@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎬 剧情 - 游戏编辑器</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Microsoft YaHei', Arial, sans-serif; background: #0a0a1e; color: #fff; min-height: 100vh; overflow: hidden; }
+        .editor-main { height: calc(100vh - 52px); overflow: hidden; }
+        .panel-container { height: 100%; overflow: hidden; }
+    </style>
+</head>
+<body>
+    <div id="editor-nav"></div>
+    <div class="editor-main">
+        <div class="panel-container" id="storyline-editor-container"></div>
+    </div>
+    <script type="module">
+        import { EditorPageContext, renderEditorNav } from './EditorShared.js';
+        import { TriggerEditor } from './TriggerEditor.js';
+
+        (async () => {
+            renderEditorNav('storyline-editor');
+            const ctx = new EditorPageContext();
+            await ctx.init();
+            const gameId = new URLSearchParams(location.search).get('gameId');
+            if (!gameId) { alert('请先选择游戏'); window.location.href = 'index.html'; return; }
+
+            // 剧情页：剧情线总览（默认）+ 规则编辑（高级）；教学步骤在独立教程页
+            const editor = new TriggerEditor(document.getElementById('storyline-editor-container'), {
+                gameId,
+                canonicalSession: ctx._canonicalEditorSession('project'),
+                getSceneList: () => ctx.dataManager.getGameScenes(gameId),
+                getSceneDocuments: () => ctx.getSceneDocuments(),
+                target: 'storyline',
+                allowedTargets: ['storyline', 'triggers']
+            });
+            await editor.init();
+
+            // 支持从场景编辑器跳转选中：storyline-editor.html?gameId=X#<triggerId>
+            const hashId = decodeURIComponent(window.location.hash.slice(1) || '');
+            if (hashId) editor.selectById?.(hashId, 'triggers');
+        })().catch(error => {
+            console.error('[StorylineEditor] 初始化失败', error);
+            const container = document.getElementById('storyline-editor-container');
+            if (container) container.textContent = `剧情编辑器初始化失败：${error?.message || String(error)}`;
+        });
+    </script>
+</body>
+</html>

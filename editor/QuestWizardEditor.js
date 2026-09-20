@@ -186,7 +186,8 @@ export class QuestWizardEditor {
     }
     const scenes = this._sceneOptions();
     const accept = quest.accept || {};
-    const acceptMode = text(accept.mode) || 'auto';
+    // 三态：external（accept 缺省，由现有触发器接取）/ auto（运行时自动）/ manual（NPC 触发器接取）
+    const acceptMode = quest.accept ? (text(accept.mode) || 'auto') : 'external';
     const acceptWhen = accept.when || {};
     target.innerHTML = `
       <div class="qwe-note">从上到下填写玩家的经历；保存后运行时自动编译为任务图与编排触发器，触发器/教程/对话都是这里的步骤。</div>
@@ -203,13 +204,15 @@ export class QuestWizardEditor {
       <fieldset class="qwe-block"><legend>② 接取</legend>
         <div class="qwe-grid">
           <div class="qwe-field"><label>接取方式</label><select data-accept-field="mode">
+            <option value="external" ${acceptMode === 'external' ? 'selected' : ''}>由现有触发器接取（未定义接取条件）</option>
             <option value="auto" ${acceptMode === 'auto' ? 'selected' : ''}>自动（满足条件即接取）</option>
             <option value="manual" ${acceptMode === 'manual' ? 'selected' : ''}>手动（由 NPC 触发器接取）</option>
           </select></div>
-          ${acceptMode === 'auto' ? this._acceptWhenFields(acceptWhen) : `
+          ${acceptMode === 'auto' ? this._acceptWhenFields(acceptWhen) : acceptMode === 'manual' ? `
           <div class="qwe-field"><label>发布 NPC（giver）</label><input data-giver-field="npcId" value="${this._escape(quest.giver?.npcId || '')}" placeholder="NPC 稳定 ID，如 S01-npc-elder"></div>
           <div class="qwe-field"><label>接取对话（可选）</label><select data-giver-field="dialogueId"><option value="">-- 不绑定 --</option>${this._dialogueOptions(quest.giver?.dialogueId)}</select></div>
-          <div class="qwe-field full"><small>手动接取指引：为该 NPC 的交互触发器编排「对话 → task.command（task.start，definitionId=${this._escape(quest.id || '')}）」；运行时不会自动接取。</small></div>`}
+          <div class="qwe-field full"><small>手动接取指引：为该 NPC 的交互触发器编排「对话 → task.command（task.start，definitionId=${this._escape(quest.id || '')}）」；运行时不会自动接取。</small></div>` : `
+          <div class="qwe-field full"><small>接取由 triggers[] 中的现有触发器承担（如场景进入触发 task.start）。切换为「自动」可在下方定义接取条件。</small></div>`}
         </div>
       </fieldset>
       <div class="qwe-node-toolbar">
@@ -400,12 +403,17 @@ export class QuestWizardEditor {
   }
 
   _updateAcceptField(quest, field, value) {
-    quest.accept ||= { mode: 'auto', when: { type: 'fact' } };
     if (field === 'mode') {
-      quest.accept.mode = value;
+      if (value === 'external') delete quest.accept;
+      else {
+        const previous = quest.accept || {};
+        quest.accept = { ...previous, mode: value };
+        if (value === 'auto' && !quest.accept.when) quest.accept.when = { type: 'fact' };
+      }
       this._renderDetail();
       return;
     }
+    quest.accept ||= { mode: 'auto', when: { type: 'fact' } };
     quest.accept.when ||= { type: 'fact' };
     const when = quest.accept.when;
     if (field === 'type') {

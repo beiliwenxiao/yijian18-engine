@@ -62,9 +62,13 @@ export class TriggerEditor {
     this.triggers = [];
     this.selectedIndex = -1;
     // 全 Trigger 化：可编辑目标收敛为 storyline / triggers / tutorials（flowGroups 已删除）
-    this.target = ['storyline', 'triggers', 'tutorials'].includes(options.target)
+    // allowedTargets 限制页内子标签（剧情页=总览+规则，教程页=仅教学步骤），缺省全量
+    this.allowedTargets = Array.isArray(options.allowedTargets) && options.allowedTargets.length
+      ? options.allowedTargets.filter(item => ['storyline', 'triggers', 'tutorials'].includes(item))
+      : ['storyline', 'triggers', 'tutorials'];
+    this.target = this.allowedTargets.includes(options.target)
       ? options.target
-      : 'triggers';
+      : this.allowedTargets[0];
     this.tutorialPanel = new TutorialEditorPanel(this);
     // Trigger 执行轨迹面板（运行时轨迹 + 事件探针，只读调试）
     this.triggerTracePanel = new TriggerTracePanel(this);
@@ -95,7 +99,7 @@ export class TriggerEditor {
     }
     if (!Array.isArray(this.project.triggers)) this.project.triggers = [];
     if (!Array.isArray(this.project.tutorials)) this.project.tutorials = [];
-    if (!['storyline', 'triggers', 'tutorials'].includes(this.target)) this.target = 'triggers';
+    if (!this.allowedTargets.includes(this.target)) this.target = this.allowedTargets[0];
     this.triggers = this.project[this.target] || [];
     this.projectIndex = new TriggerProjectIndex(this.project, { sceneDocuments: this._getSceneDocuments() });
     WHEN_TYPES = getTriggerEvents(this.project);
@@ -198,9 +202,13 @@ export class TriggerEditor {
   _renderTargetTabs() {
     const wrap = this.container.querySelector('#trg-target-tabs');
     if (!wrap) return;
+    // allowedTargets 过滤：只显示页面声明的子视图；单视图时隐藏切换栏
     wrap.querySelectorAll('button').forEach(b => {
-      b.classList.toggle('active', b.dataset.target === this.target);
+      const allowed = this.allowedTargets.includes(b.dataset.target);
+      b.hidden = !allowed;
+      b.classList.toggle('active', allowed && b.dataset.target === this.target);
     });
+    wrap.hidden = this.allowedTargets.length <= 1;
   }
 
   /** 保存回工程文件（保留其它字段） */
@@ -398,8 +406,8 @@ export class TriggerEditor {
       <div class="trg-root">
         <div class="trg-target-tabs" id="trg-target-tabs">
           <button data-target="storyline">📖 剧情线总览</button>
-          <button data-target="triggers">Trigger 业务规则</button>
-          <button data-target="tutorials">Tutorial 教学步骤</button>
+          <button data-target="triggers">⚙ 规则编辑</button>
+          <button data-target="tutorials">📖 教学步骤</button>
         </div>
         <div class="trg-toolbar">
           <select id="trg-filter-enabled" title="筛选启用/停用" style="padding:4px;background:#26304e;color:#fff;border:1px solid #3a4a7e;border-radius:3px;font-size:12px;">
