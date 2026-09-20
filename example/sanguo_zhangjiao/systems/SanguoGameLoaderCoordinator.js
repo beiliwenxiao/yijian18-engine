@@ -81,7 +81,10 @@ function initializeGameLoader() {
         this.sceneRuntime.authoritySnapshotService.getDefinitionRevision = () => (
           gameLoader.definitionRepository?.definitionRevision ?? 0
         );
-        const taskDefinitions = gameLoader.project?.taskGraphs || [];
+        const taskDefinitions = [
+          ...(gameLoader.project?.taskGraphs || []),
+          ...(gameLoader.questTaskDefinitions || [])
+        ];
         const preparedTaskGraphs = this.sceneRuntime?.taskGraphSystem?.prepareDefinitions?.(taskDefinitions);
         if (preparedTaskGraphs?.ok === false) {
           throw gameLoader.createValidationError(preparedTaskGraphs.errors || []);

@@ -29,6 +29,7 @@ import { ScenarioDefinitionIndex } from './scenario/ScenarioDefinitionIndex.js';
 import { TriggerGraph } from './scenario/TriggerGraph.js';
 import { createStandardRegistries } from './Registry.js';
 import { DefinitionRepository } from './DefinitionRepository.js';
+import { compileQuestProject } from '../systems/quest/QuestRuntime.js';
 import { createStandardCapabilityStrategyRegistry } from '../systems/items/CapabilityStrategyRegistry.js';
 import {
   ConfigConsumptionSnapshot,
@@ -81,6 +82,8 @@ export class GameLoader {
     this._definitionRevision = 0;
     this.blackboard = new Blackboard();
     this.triggerSystem = new TriggerSystem();
+    // 任务中心制：quests[] 编译产物（taskGraph 定义 + 触发器），装配时刷新
+    this.questCompilation = { taskGraphs: [], triggers: [] };
     // 兼容 Registry 只读委托当前 DefinitionRepository revision。
     this.registries = createStandardRegistries(this.definitionRepository);
 
@@ -119,6 +122,11 @@ export class GameLoader {
     this._disposed = false;
     this._eventSourceDisposers = [];
     this._lastAssemblyDeps = null;
+  }
+
+  /** 任务中心制：quests[] 编译出的 taskGraph 定义（与 project.taskGraphs 一并注入 TaskGraphSystem）。 */
+  get questTaskDefinitions() {
+    return this.questCompilation?.taskGraphs || [];
   }
 
   /**
@@ -488,7 +496,9 @@ export class GameLoader {
       sceneDiagnostics: deps.sceneDiagnostics
     });
     registerDefaultActions(triggerSystem);
-    triggerSystem.registerAll(project.triggers || []);
+    // 任务中心制：quests[] → 编译产物（taskGraph 定义 + 触发器）， quests 为空时产物为空（零回归）
+    const questCompilation = compileQuestProject(project);
+    triggerSystem.registerAll([...(project.triggers || []), ...questCompilation.triggers]);
     const progression = this._buildProgressionDraft(project, deps);
     const configConsumption = this.configConsumptionRegistry.build(snapshot);
     const context = {
@@ -497,7 +507,8 @@ export class GameLoader {
       scenarioDefinitionIndex, triggerGraph, commandAdapter,
       sceneEventDefinitionRepository,
       flowGroupDefinitionRepository,
-      blackboard, triggerSystem, registries
+      blackboard, triggerSystem, registries,
+      questCompilation
     };
     const consumerDrafts = this._buildExternalConsumerDrafts(project, deps, context);
     return { ...context, ...progression, battleIntegration, consumerDrafts, deps };
@@ -519,6 +530,7 @@ export class GameLoader {
       registries: this.registries,
       blackboard: this.blackboard,
       triggerSystem: this.triggerSystem,
+      questCompilation: this.questCompilation,
       battleTransport: this.battleTransport,
       battleClient: this.battleClient,
       progressionProfile: this.progressionProfile,
@@ -553,6 +565,7 @@ export class GameLoader {
         registries: draft.registries,
         blackboard: draft.blackboard,
         triggerSystem: draft.triggerSystem,
+        questCompilation: draft.questCompilation,
         battleTransport: draft.battleIntegration.transport,
         battleClient: draft.battleIntegration.client,
         progressionProfile: draft.profile,

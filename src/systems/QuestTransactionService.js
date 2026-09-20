@@ -265,6 +265,10 @@ export class QuestTransactionService {
         operation,
         actorId,
         instance: clone(prepared.instance || null),
+        // 顶层 definitionId/instanceId：触发器 when.params 为顶层浅匹配，
+        // 任务生命周期事件（task.started/completed）需要平铺身份字段才能被订阅
+        definitionId: prepared.instance?.definitionId || command.payload?.definitionId || null,
+        instanceId: prepared.instance?.instanceId || command.payload?.instanceId || null,
         changes: clone(prepared.changes || []),
         completedInstances: clone(completedInstances),
         checkpoint: { scheduled: this.scheduleCheckpoint !== null }
@@ -288,7 +292,15 @@ export class QuestTransactionService {
         payload: value
       }];
       for (const instance of completedInstances) {
-        applicationEvents.push({ ...eventBase, type: 'task.completed', payload: { instance: clone(instance) } });
+        applicationEvents.push({
+          ...eventBase,
+          type: 'task.completed',
+          payload: {
+            instance: clone(instance),
+            definitionId: instance.definitionId,
+            instanceId: instance.instanceId
+          }
+        });
       }
       return {
         result,
