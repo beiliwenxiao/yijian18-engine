@@ -12,6 +12,12 @@
 
 import { validateTaskGraphDefinitions } from '../src/systems/TaskGraphSystem.js';
 import { getTriggerEventDescriptor, getTriggerEvents } from '../src/systems/TriggerCatalog.js';
+import {
+  getObjectiveTypeDescriptor,
+  objectiveTypeOptions,
+  buildEventMatcher,
+  matchObjectiveType
+} from '../src/systems/quest/ObjectiveTypeRegistry.js';
 
 const clone = value => structuredClone(value);
 const list = value => Array.isArray(value) ? value : [];
@@ -209,15 +215,38 @@ export class TaskGraphEditor {
   }
 
   _linearStepCard(step, index, total) {
-    const eventType = step.eventMatcher?.type || '';
-    const events = getTriggerEvents(this.project);
-    const descriptor = getTriggerEventDescriptor(eventType, this.project);
-    const identityFields = Array.isArray(descriptor?.identityFields) ? descriptor.identityFields : [];
-    let eventOptions = events.map(event => `<option value="${this._escape(event.value)}" ${event.value === eventType ? 'selected' : ''}>${this._escape(event.label)}</option>`).join('');
-    if (eventType && !events.some(event => event.value === eventType)) {
-      eventOptions = `<option value="${this._escape(eventType)}" selected>当前事件（目录未登记）</option>${eventOptions}`;
+    const resolved = this._resolveStepObjectiveType(step);
+    const descriptor = resolved.descriptor;
+    const isCustom = descriptor?.type === 'custom.event';
+    let eventSelectHtml = '';
+    let identityControls = '';
+    if (isCustom) {
+      // 自定义事件：从事件目录自由选择完成事件 + 事件级身份字段
+      const eventType = step.eventMatcher?.type || '';
+      const events = getTriggerEvents(this.project);
+      const eventDescriptor = getTriggerEventDescriptor(eventType, this.project);
+      const fields = Array.isArray(eventDescriptor?.identityFields) ? eventDescriptor.identityFields : [];
+      let eventOptions = events.map(event => `<option value="${this._escape(event.value)}" ${event.value === eventType ? 'selected' : ''}>${this._escape(event.label)}</option>`).join('');
+      if (eventType && !events.some(event => event.value === eventType)) {
+        eventOptions = `<option value="${this._escape(eventType)}" selected>当前事件（目录未登记）</option>${eventOptions}`;
+      }
+      eventSelectHtml = `<div class="tge-field"><label>完成事件</label><select data-linear-field="eventType"><option value="">-- 请选择事件 --</option>${eventOptions}</select></div>`;
+      identityControls = fields.map(field => this._identitySelect(field, step.eventMatcher?.payload?.[field], eventDescriptor)).join('');
+    } else if (descriptor) {
+      // 目录类型：eventMatcher 由目录模板生成，身份字段按目录配置渲染
+      identityControls = descriptor.identityFields
+        .map(field => this._identityFieldSelect(field, resolved.identityValues[field.name] ?? '')).join('');
     }
     const requiredCount = Math.max(1, Math.floor(Number(step.requiredCount) || 1));
+    const progressBy = descriptor?.progressBy || step.progressBy || null;
+    const progressLabel = progressBy ? `按「${this._escape(progressBy)}」份数累计` : '按事件次数累计';
+    const typeOptions = objectiveTypeOptions(this.project);
+    const typeValue = descriptor?.type || '';
+    const typeOptionsHtml = typeOptions
+      .map(option => `<option value="${this._escape(option.value)}" ${option.value === typeValue ? 'selected' : ''}>${this._escape(option.label)}</option>`)
+      .join('');
+    const typeFallback = typeValue && !typeOptions.some(option => option.value === typeValue)
+      ? `<option value="${this._escape(typeValue)}" selected>当前类型（目录未登记）</option>` : '';
     return `
       <article class="tge-node tge-linear-step" data-linear-step="${index}" data-linear-node-id="${this._escape(step.id || '')}">
         <div class="tge-node-head">
@@ -230,11 +259,33 @@ export class TaskGraphEditor {
         </div>
         <div class="tge-node-grid">
           <div class="tge-field full"><label>步骤名称</label><input data-linear-field="title" value="${this._escape(step.title || '')}" placeholder="玩家看到的目标文字"></div>
-          <div class="tge-field"><label>完成事件</label><select data-linear-field="eventType"><option value="">-- 请选择事件 --</option>${eventOptions}</select></div>
+          <div class="tge-field"><label>目标类型</label><select data-linear-field="objectiveType">${typeFallback}${typeOptionsHtml}</select></div>
           <div class="tge-field"><label>目标数量</label><select data-linear-field="requiredCount">${this._countOptions(requiredCount)}</select></div>
-          ${identityFields.map(field => this._identitySelect(field, step.eventMatcher?.payload?.[field], descriptor)).join('')}
+          ${eventSelectHtml}
+          ${identityControls}
+          <div class="tge-field full"><small>数量累计：${progressLabel}${descriptor?.description ? ` · ${this._escape(descriptor.description)}` : ''}</small></div>
         </div>
       </article>`;
+  }
+
+  /** 解析步骤的目标类型：节点显式 objectiveType 优先，旧数据按 eventMatcher 反推（custom.event 兜底）。 */
+  _resolveStepObjectiveType(step) {
+    const explicit = step?.objectiveType ? getObjectiveTypeDescriptor(step.objectiveType, this.project) : null;
+    if (explicit) {
+      const payload = step?.eventMatcher?.payload || {};
+      const identityValues = {};
+      for (const field of explicit.identityFields) {
+        const value = payload[field.name];
+        identityValues[field.name] = value === undefined || value === null ? '' : String(value);
+      }
+      const identityNames = new Set(explicit.identityFields.map(field => field.name));
+      const extraPayload = {};
+      for (const [key, value] of Object.entries(payload)) {
+        if (!identityNames.has(key)) extraPayload[key] = value;
+      }
+      return { descriptor: explicit, identityValues, extraPayload };
+    }
+    return matchObjectiveType(step?.eventMatcher, this.project);
   }
 
   _bindLinearStep(card) {
@@ -253,17 +304,30 @@ export class TaskGraphEditor {
 
   _identitySelect(field, currentValue, descriptor = null) {
     const title = descriptor?.paramsSchema?.properties?.[field]?.title || field;
-    const options = this._selectionValues(field, currentValue);
+    const options = this._selectionValues('', field, currentValue);
     return `<div class="tge-field"><label>${this._escape(title)}</label><select data-identity-field="${this._escape(field)}"><option value="">-- 不限定 --</option>${options}</select></div>`;
   }
 
-  _selectionValues(field, currentValue) {
+  /** 目录目标类型的身份字段下拉：label 取自目录，候选按 source 标识分派。 */
+  _identityFieldSelect(field, currentValue) {
+    const options = this._selectionValues(field.source || '', field.name, currentValue);
+    return `<div class="tge-field"><label>${this._escape(field.label)}</label><select data-identity-field="${this._escape(field.name)}"><option value="">-- 不限定 --</option>${options}</select></div>`;
+  }
+
+  _selectionValues(source, field, currentValue) {
     const values = [];
     const add = (value, label = value) => {
       const id = String(value || '').trim();
       if (id && !values.some(item => item.value === id)) values.push({ value: id, label: String(label || id) });
     };
-    if (field === 'sceneId') {
+    if (source === 'libraryItems') {
+      for (const item of [...list(this.project?.library?.items), ...list(this.project?.library?.equipment)]) add(item?.id, item?.name);
+    }
+    else if (source === 'commands') list(this.project?.commands).forEach(command => add(command?.id, command?.name || command?.id));
+    else if (source === 'enemyRoles') {
+      [['firstWolf', '教学狼'], ['chaseWolf', '追逐狼']].forEach(([value, label]) => add(value, label));
+    }
+    else if (field === 'sceneId') {
       let scenes = list(this.project?.scenes);
       try { scenes = list(this.getSceneList()) || scenes; } catch { /* 保留项目场景目录 */ }
       scenes.forEach(scene => add(scene?.id, scene?.name));
@@ -311,7 +375,24 @@ export class TaskGraphEditor {
     const step = steps[index];
     if (!step) return;
     if (field === 'title') step.title = value;
-    else if (field === 'eventType') step.eventMatcher = { type: value, payload: {} };
+    else if (field === 'objectiveType') {
+      const descriptor = getObjectiveTypeDescriptor(value, this.project);
+      if (!descriptor) return;
+      const previous = this._resolveStepObjectiveType(step);
+      // matcherType 不变时保留非身份字段（如 gathering.completed 的 resourceType 限定）
+      const keepExtra = previous.descriptor && previous.descriptor.matcherType === descriptor.matcherType
+        ? (previous.extraPayload || {})
+        : {};
+      step.objectiveType = descriptor.type;
+      step.eventMatcher = clone(buildEventMatcher(descriptor, previous.identityValues || {}, keepExtra));
+      if (descriptor.progressBy) step.progressBy = descriptor.progressBy;
+      else delete step.progressBy;
+    }
+    else if (field === 'eventType') {
+      step.objectiveType = 'custom.event';
+      delete step.progressBy;
+      step.eventMatcher = { type: value, payload: {} };
+    }
     else if (field === 'requiredCount') step.requiredCount = Math.max(1, Number(value) || 1);
     else if (field.startsWith('identity:')) {
       const identity = field.slice('identity:'.length);

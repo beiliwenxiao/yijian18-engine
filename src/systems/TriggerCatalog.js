@@ -47,14 +47,25 @@ const CORE_EVENT_PARAMS = Object.freeze({
   unequipItem: eventSchema({ slot: { type: 'string', title: '装备槽位' }, item: { type: 'string', title: '物品 ID' } }),
   classSelected: eventSchema({ classId: { type: 'string', title: '职业 ID' } }),
   triggerSucceeded: eventSchema({ triggerId: { type: 'string', title: 'Trigger ID' } }),
-  triggerFailed: eventSchema({ triggerId: { type: 'string', title: 'Trigger ID' }, code: { type: 'string', title: '失败代码' } })
+  triggerFailed: eventSchema({ triggerId: { type: 'string', title: 'Trigger ID' }, code: { type: 'string', title: '失败代码' } }),
+  // 任务中心制阶段①：任务图高频事件补全（此前仅项目级 triggerCatalog 登记才可见）
+  'gathering.completed': eventSchema({ itemId: { type: 'string', title: '物品 ID' }, resourceType: { type: 'string', title: '资源类型' }, nodeId: { type: 'string', title: '资源节点 ID' }, accepted: { type: 'integer', title: '入包份数' } }),
+  'state.transaction': eventSchema({ definitionId: { type: 'string', title: '状态事务 ID', minLength: 1 } }),
+  'enemy.killed': eventSchema({ enemyRole: { type: 'string', title: '敌人角色 ID' }, entityId: { type: 'string', title: '实体 ID' }, corpseReady: { type: 'boolean', title: '尸体已成立' } })
 });
 
 const CORE_EVENT_IDENTITIES = Object.freeze({
   sceneEnter: ['sceneId'], enterRegion: ['regionId'], dialogueEnd: ['id'], dialogueChoice: ['id', 'choiceId'],
   itemPickup: ['placementId', 'itemId'], interact: ['bindingId', 'target'], questComplete: ['questId'],
   questProgress: ['questId'], chunkEnter: ['sceneId'], sceneComplete: ['sceneId'], equipItem: ['slot', 'item'],
-  unequipItem: ['slot', 'item'], classSelected: ['classId'], triggerSucceeded: ['triggerId'], triggerFailed: ['triggerId']
+  unequipItem: ['slot', 'item'], classSelected: ['classId'], triggerSucceeded: ['triggerId'], triggerFailed: ['triggerId'],
+  'gathering.completed': ['itemId'], 'state.transaction': ['definitionId'], 'enemy.killed': ['enemyRole']
+});
+
+const EVENT_SOURCES = Object.freeze({
+  'gathering.completed': 'GatheringSystem',
+  'state.transaction': 'CanonicalStateTransactionService',
+  'enemy.killed': 'CombatSystem'
 });
 
 const CORE_EVENTS = [
@@ -66,12 +77,14 @@ const CORE_EVENTS = [
   ['equipItem', '装备物品'], ['unequipItem', '卸下物品'], ['classSelected', '选择职业'],
   ['approach', '靠近', true], ['enter', '进入范围', true], ['leave', '离开范围', true],
   ['stand', '站立'], ['climb', '攀爬'], ['jump', '跳跃'], ['itemTransform', '物品转化'],
-  ['sceneComplete', '场景完成'], ['triggerSucceeded', 'Trigger 执行成功'], ['triggerFailed', 'Trigger 执行失败']
+  ['sceneComplete', '场景完成'], ['triggerSucceeded', 'Trigger 执行成功'], ['triggerFailed', 'Trigger 执行失败'],
+  ['gathering.completed', '采集完成'], ['state.transaction', '状态事务已提交'], ['enemy.killed', '敌人死亡已提交']
 ].map(([value, label, spatial = false]) => Object.freeze({
   value,
   v: value,
   label,
   spatial,
+  ...(EVENT_SOURCES[value] ? { source: EVENT_SOURCES[value] } : {}),
   identityFields: CORE_EVENT_IDENTITIES[value] || [],
   ...(CORE_EVENT_PARAMS[value] ? { paramsSchema: CORE_EVENT_PARAMS[value] } : {})
 }));

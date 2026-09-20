@@ -28,7 +28,8 @@ function gatherWood(system, sequence, accepted = 1) {
   return system.consumeEvent({
     eventId: `evt:gather:${sequence}`,
     type: 'gathering.completed',
-    payload: { itemId: 'resource.wood', accepted, nodeId: 'S01-node-wood-1' }
+    // matcher 已登记 resourceType 限定（策划编辑器写回），合成事件需携带完整身份
+    payload: { itemId: 'resource.wood', resourceType: 'wood', accepted, nodeId: 'S01-node-wood-1' }
   });
 }
 
@@ -39,7 +40,12 @@ function findNode(system, nodeId) {
 function runToWoodStage(system) {
   commitEvent(system, 1, 'story.s01.campfireLit');
   commitEvent(system, 2, 'story.s01.initialToolsPicked');
-  commitEvent(system, 3, 'story.s01.berriesGathered');
+  // gatherBerries 已改为真实采集事件驱动（gathering.completed + itemId）
+  system.consumeEvent({
+    eventId: 'evt:gather:berries:1',
+    type: 'gathering.completed',
+    payload: { itemId: 'resource.wild_berry', accepted: 1, nodeId: 'S01-node-berry-1' }
+  });
   commitEvent(system, 4, 'story.s01.berryEaten');
 }
 
@@ -50,7 +56,7 @@ describe('S01 采集木材任务进度（真实 task.s01.survival 定义）', ()
     expect(node.progressBy).toBe('accepted');
     expect(node.eventMatcher).toEqual({
       type: 'gathering.completed',
-      payload: { itemId: 'resource.wood' }
+      payload: { itemId: 'resource.wood', resourceType: 'wood' }
     });
   });
 
