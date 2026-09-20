@@ -392,6 +392,47 @@ export class BaseGameSceneSetup extends Scene {
     return { ok: manualFailed === 0 && autoCleared, manualCleared, manualFailed, autoCleared };
   }
 
+  /**
+   * 任务图事实对账：读档后对「StoryState 已成立但任务节点未计数」的 objective 补喂合成事件。
+   * 解决旧档中间态死锁：节点修复/顺序变化后，已提交过的幂等事务不会再发事件，
+   * 后继 locked 节点永远到不了 active。合成 eventId 固定（reconcile:<definitionId>），
+   * 重复喂入被任务实例 eventId 去重，天然幂等；已完成实例不消费。
+   */
+  async reconcileTaskFacts() {
+    const questSystem = this.questSystem;
+    const project = this.gameLoader?.project;
+    const actorId = this.playerEntity?.id || null;
+    if (!questSystem?.consumeTaskEvent || !project?.taskGraphs || !project?.commands) return;
+    // 从任务图收集被监听的状态事务，再到 commands 定义推导其事实字段（第一条 story 写入路径）
+    const factPaths = new Map();
+    for (const graph of project.taskGraphs) {
+      for (const node of graph.nodes || []) {
+        const matcher = node?.eventMatcher;
+        const definitionId = matcher?.type === 'state.transaction' ? matcher.payload?.definitionId : null;
+        if (!definitionId || factPaths.has(definitionId)) continue;
+        const command = project.commands?.find(entry => entry.id === definitionId);
+        const writePath = command?.transaction?.writes?.find(write => write.target === 'story')?.path || null;
+        if (writePath) factPaths.set(definitionId, writePath);
+      }
+    }
+    if (factPaths.size === 0) return;
+    const story = this.gameLoader?.blackboard?.get?.('storyState') || {};
+    const readFact = path => String(path || '').split('.').filter(Boolean)
+      .reduce((value, key) => (value == null ? value : value[key]), story);
+    for (const [definitionId, factPath] of factPaths) {
+      if (readFact(factPath) !== true) continue;
+      try {
+        await questSystem.consumeTaskEvent({
+          eventId: `reconcile:${definitionId}`,
+          type: 'state.transaction',
+          payload: { definitionId }
+        }, { actorId });
+      } catch (error) {
+        console.warn('[BaseGameScene] 任务事实对账失败', { definitionId, error });
+      }
+    }
+  }
+
   async requestAutoSave(context = {}) {
     try {
       const result = await this._saveGameService?.requestAutoSave?.(context);
@@ -441,6 +482,15 @@ export class BaseGameSceneSetup extends Scene {
       timer = setTimeout(async () => {
         timer = null;
         if (cancelled) return;
+        // 忙碌预检：Trigger 仍在执行（如添柴长动作未结束）时属「封账中」，静默顺延到下一延迟，
+        // 不发起捕获、不留失败诊断；只有真正的捕获失败才计入重试预算与玩家提示。
+        const busyTriggers = this.gameLoader?.triggerSystem?.ledger?.all?.()
+          ?.filter(record => record?.status === 'running')
+          .map(record => record.triggerId) || [];
+        if (busyTriggers.length > 0 && index + 1 < delays.length) {
+          attempt(index + 1);
+          return;
+        }
         let result;
         try {
           result = await this.requestAutoSave({
@@ -456,6 +506,11 @@ export class BaseGameSceneSetup extends Scene {
             code: error?.code || 'questCheckpointSaveRejected',
             errors: [{ message: error?.message || String(error) }]
           };
+        }
+        // 捕获阶段仍可能撞上 busy（预检后的窗口期）：与忙碌预检同语义，静默顺延
+        if (result?.ok === false && result?.code === 'scenarioExecutionBusy' && index + 1 < delays.length) {
+          attempt(index + 1);
+          return;
         }
         if (result?.ok === true) {
           dispose();

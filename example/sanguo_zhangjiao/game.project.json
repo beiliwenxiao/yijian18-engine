@@ -2356,7 +2356,7 @@
         {
           "id": "gatherWood",
           "type": "objective",
-          "title": "采集至少三份木材",
+          "title": "采集木材",
           "next": [
             "spotWolf"
           ],
@@ -2367,7 +2367,7 @@
             }
           },
           "progressBy": "accepted",
-          "requiredCount": 3
+          "requiredCount": 1
         },
         {
           "id": "spotWolf",
@@ -2379,7 +2379,7 @@
           "eventMatcher": {
             "type": "state.transaction",
             "payload": {
-              "definitionId": "story.s01.firstWolfSpotted"
+              "definitionId": "story.s01.refuelCampfire"
             }
           }
         },
@@ -2400,7 +2400,7 @@
         {
           "id": "skinWolf",
           "type": "objective",
-          "title": "剥取两份狼皮",
+          "title": "剥取一次狼皮",
           "next": [
             "cookMeat"
           ],
@@ -3020,7 +3020,7 @@
               ],
               "type": "object"
             },
-            "resultSemantics": "原子提交次日、火种与追逐事实并创建检查点；成功后恢复天气和狼群，事务失败时短路。",
+            "resultSemantics": "原子提交次日、火种与追逐事实并创建检查点；成功后恢复���气和狼群，事务失败时短路。",
             "value": "overnight"
           },
           {
@@ -3849,7 +3849,7 @@
             "completedPath": "s01Survival.woodGathered",
             "definitionId": "story.s01.woodGathered",
             "inventoryItemId": "resource.wood",
-            "minimumQuantity": 3,
+            "minimumQuantity": 1,
             "operation": "commitStoryWhenReady"
           },
           "stepId": "commit-wood-gathered"
@@ -3861,7 +3861,7 @@
         ]
       },
       "id": "trg_s01_gather_wood_completed",
-      "name": "砍伐树木：木材达到三份",
+      "name": "砍伐树木一次",
       "once": false,
       "when": {
         "params": {
@@ -3972,7 +3972,7 @@
             "completedPath": "s01Survival.firstWolfSpotted",
             "definitionId": "story.s01.firstWolfSpotted",
             "firstWolfCount": 1,
-            "gte": 3,
+            "gte": 1,
             "operation": "commitStoryWhenReady",
             "storyPath": "s01Survival.campfireRefuelCount"
           },
@@ -3985,7 +3985,7 @@
         ]
       },
       "id": "trg_s01_refuel_committed",
-      "name": "添柴计数达到三次：提交首狼出现事实",
+      "name": "添柴一次：提交首狼出现事实",
       "once": false,
       "when": {
         "params": {
@@ -4062,7 +4062,6 @@
           "params": {
             "completedPath": "s01Survival.firstWolfKilled",
             "definitionId": "story.s01.firstWolfKilled",
-            "firstWolfCount": 189,
             "operation": "commitStoryWhenReady"
           },
           "stepId": "commit-first-wolf-killed"

@@ -229,8 +229,10 @@ export class PlacementSpawner {
         recordOutcome(placement, 'unsupportedKind', 'unsupportedKind');
         continue;
       }
-      // count 展开：一个模板按数量派生 `id-N` 实例；幂等键/状态/tombstone 都绑定派生 id。
-      // count 缺省或为 1 时不展开，实例即模板本身，行为与旧数据完全一致。
+      // count 展开：声明了 count 的模板（含 count=1）一律派生 `id-N` 实例 id——
+      // 调用方（如首狼流程）以 `base-1` 寻址，count=1 时不派生会导致实体 id 与寻址不一致。
+      // 未声明 count 的旧数据不展开，行为与旧版完全一致。
+      const hasCount = placement.count != null;
       const instanceCount = resolveInstanceCount(placement, this.getConditionRoot);
       const definition = registryGet(registries, kind, placement.ref);
       if (!definition) {
@@ -239,7 +241,9 @@ export class PlacementSpawner {
         continue;
       }
       for (let index = 1; index <= instanceCount; index += 1) {
-        const instance = expandPlacement(placement, index, { deriveFirst: instanceCount > 1 });
+        const instance = hasCount
+          ? expandPlacement(placement, index, { deriveFirst: true })
+          : placement;
         if (instance.id && this.spawnedPlacementIds.has(instance.id)) {
           recordOutcome(instance, 'alreadySpawned');
           continue;

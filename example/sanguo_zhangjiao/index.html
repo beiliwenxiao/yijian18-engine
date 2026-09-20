@@ -2826,6 +2826,9 @@
                         // 新游戏只清理所选手动栏位，绝不影响自动存档位。
                         await saveGames.clearAsync(activeSaveSlot);
                     }
+                    // 读档后任务图事实对账：StoryState 已成立但任务节点未计数的事实补喂合成事件，
+                    // 消除旧档在任务节点修复/顺序变化后的中间态死锁。
+                    await scene.reconcileTaskFacts?.();
                 }
                 
                 await nextStep(); // 步骤 6（完成）

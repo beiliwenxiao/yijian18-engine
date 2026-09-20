@@ -116,14 +116,14 @@ export class SceneRenderPipeline {
       'renderPerformanceMonitor'
     ]);
     this.modalLayers = config?.modalLayers || [
-      (_scene, ctx) => this.context?.ui?.backpack?.render?.(ctx),
+      Object.assign((_scene, ctx) => this.context?.ui?.backpack?.render?.(ctx), { modalName: 'backpack' }),
       // 统一成长面板属于模态 UI，只从显式 SceneContext 读取。
-      (_scene, ctx) => this.context?.ui?.progression?.render?.(ctx),
-      (scene, ctx) => scene.notificationSystem?.render(ctx),
-      (scene, ctx) => scene.itemGainedPopup?.render(ctx),
-      (scene, ctx) => scene.interactionChoiceView?.render(ctx),
-      (scene, ctx) => scene.gamepadPanel?.render(ctx),
-      (scene, ctx) => scene.skillWheelOverlay?.render(ctx)
+      Object.assign((_scene, ctx) => this.context?.ui?.progression?.render?.(ctx), { modalName: 'progression' }),
+      Object.assign((scene, ctx) => scene.notificationSystem?.render(ctx), { modalName: 'notifications' }),
+      Object.assign((scene, ctx) => scene.itemGainedPopup?.render(ctx), { modalName: 'itemGainedPopup' }),
+      Object.assign((scene, ctx) => scene.interactionChoiceView?.render(ctx), { modalName: 'interactionChoice' }),
+      Object.assign((scene, ctx) => scene.gamepadPanel?.render(ctx), { modalName: 'gamepadPanel' }),
+      Object.assign((scene, ctx) => scene.skillWheelOverlay?.render(ctx), { modalName: 'skillWheel' })
     ];
     /** 每帧复用的世界 Y-sort 队列与实体包装项，容量只增不减。 */
     this._worldQueue = [];
@@ -206,7 +206,14 @@ export class SceneRenderPipeline {
 
     // 模态层固定高于常规 HUD，防止背包与获得物品弹窗被覆盖。
     const modalStartedAt = frameProfile ? performance.now() : 0;
-    for (const layer of this.modalLayers) layer(scene, ctx);
+    this.modalLayers.forEach((layer, index) => {
+      const layerStartedAt = frameProfile ? performance.now() : 0;
+      layer(scene, ctx);
+      if (frameProfile) {
+        // 逐层计时：renderModalUi 聚合值异常时可直接定位具体模态层
+        frameProfile[`renderModalLayer[${layer.modalName || index}]`] = performance.now() - layerStartedAt;
+      }
+    });
     if (frameProfile) frameProfile.renderModalUi = performance.now() - modalStartedAt;
 
     const postStartedAt = frameProfile ? performance.now() : 0;

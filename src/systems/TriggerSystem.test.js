@@ -64,6 +64,72 @@ describe('stable synchronous digest', () => {
   });
 });
 
+describe('TriggerSystem 定义变化的存档兼容策略', () => {
+  function buildSystem(amount) {
+    const system = new TriggerSystem({ definitionRevision: 18 });
+    system.registerAction('save', () => undefined);
+    system.register({
+      id: 'tuned-trigger', when: { type: 'signal' }, once: false,
+      do: [{ action: 'save', params: { amount } }]
+    });
+    system.register({
+      id: 'once-trigger', when: { type: 'signal', params: { topic: 'tutorial' } }, once: true,
+      do: [{ action: 'save', params: { amount: 0 } }]
+    });
+    return system;
+  }
+
+  it('仅调整已执行 Trigger 的参数值：读档成功，该 Trigger 执行痕迹重置且未变更历史保留', async () => {
+    const saved = buildSystem(1);
+    saved.fire('signal', { operationId: 'op-tuned' });
+    saved.fire('signal', { topic: 'tutorial', operationId: 'op-once' });
+    await saved.waitForIdle();
+    const snapshot = saved.serialize();
+    expect(saved.hasFiredOnce('once-trigger')).toBe(true);
+
+    // 参数 1 → 2：定义变化。读档必须成功（旧策略直接拒绝），变更 Trigger 痕迹重置。
+    const restored = buildSystem(2);
+    const validation = restored.validateSnapshot(snapshot);
+    expect(validation.ok).toBe(true);
+    expect(validation.changedTriggerIds.has('tuned-trigger')).toBe(true);
+    expect(restored.deserialize(snapshot).ok).toBe(true);
+    expect(restored.getExecution('tuned-trigger').status).toBe('idle');
+    // 未变更 Trigger 的 once 历史完整保留
+    expect(restored.hasFiredOnce('once-trigger')).toBe(true);
+  });
+
+  it('变更后的 once Trigger 可以在新定义下重新触发', async () => {
+    const buildOnce = amount => {
+      const system = new TriggerSystem({ definitionRevision: 18 });
+      system.registerAction('save', () => undefined);
+      system.register({
+        id: 'once-tuned', when: { type: 'signal' }, once: true,
+        do: [{ action: 'save', params: { amount } }]
+      });
+      return system;
+    };
+    const saved = buildOnce(1);
+    saved.fire('signal', { operationId: 'op-1' });
+    await saved.waitForIdle();
+    const snapshot = saved.serialize();
+
+    const restored = buildOnce(2);
+    expect(restored.deserialize(snapshot).ok).toBe(true);
+    expect(restored.hasFiredOnce('once-tuned')).toBe(false);
+    expect(restored.fire('signal', { operationId: 'op-2' })).toBe(1);
+    await restored.waitForIdle();
+    expect(restored.hasFiredOnce('once-tuned')).toBe(true);
+  });
+
+  it('快照缺少 definitionDigest 仍拒绝（结构性损坏不放行）', () => {
+    const saved = buildSystem(1);
+    const snapshot = saved.serialize();
+    delete snapshot.definitionDigest;
+    const restored = buildSystem(1);
+    expect(restored.validateSnapshot(snapshot).ok).toBe(false);
+  });
+});
+
 describe('TriggerSystem action-chain state machine', () => {
   it('成功链 ledger、snapshot 与恢复校验只保存稳定摘要，不保存 action 参数明文', async () => {
     const createCompleted = async amount => {

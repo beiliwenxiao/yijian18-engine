@@ -886,9 +886,10 @@ export class ScenePlacementRuntime {
     const derived = parseDerivedPlacementId(placementId);
     if (!derived) return null;
     const template = this.placements.find(placement => placement?.id === derived.baseId) || null;
-    if (!template) return null;
+    // 只要模板声明了 count（含 =1）就允许派生寻址：调用方以 base-1 寻址第一个实例
+    if (!template || template.count == null) return null;
     const instanceCount = resolveInstanceCount(template, this.getConditionRoot);
-    if (instanceCount <= 1) return null;
+    if (derived.index > Math.max(1, instanceCount)) return null;
     return expandPlacement(template, derived.index, { deriveFirst: true });
   }
 

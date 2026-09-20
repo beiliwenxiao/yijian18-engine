@@ -1145,11 +1145,19 @@ export class TriggerSystem {
         }]
       };
     }
-    if (!hasText(data.definitionDigest) || data.definitionDigest !== this.getDefinitionDigest()) {
+    // 顶层摘要只作诊断警告：内容参数调整（如数值旋钮）不再废档。
+    // 执行历史兼容性由逐记录 operation fingerprint 强制（见下方 ledger 校验：
+    // 定义已变化且有 ledger 执行痕迹的 Trigger 仍以 invalidFingerprint 拒绝恢复）。
+    if (!hasText(data.definitionDigest)) {
       errors.push({
         code: 'definitionDigestMismatch',
         path: 'triggers.definitionDigest',
         message: 'Trigger 执行定义与存档不兼容'
+      });
+    } else if (data.definitionDigest !== this.getDefinitionDigest()) {
+      console.warn('[TriggerSystem] Trigger 定义摘要与存档不一致；已执行 Trigger 的定义变化仍会在逐记录 fingerprint 校验中拒绝', {
+        savedDigest: data.definitionDigest,
+        currentDigest: this.getDefinitionDigest()
       });
     }
     if (!Array.isArray(data.firedOnce) || !data.cooldowns || typeof data.cooldowns !== 'object' || !Array.isArray(data.timers)) {
@@ -1196,58 +1204,85 @@ export class TriggerSystem {
         errors.push({ code: 'missingField', path: `triggers.timers.${currentTimer.trigger.id}`, message: 'timer snapshot 缺少当前 definition' });
       }
     }
+    // 逐记录 fingerprint：绑定单 Trigger 定义摘要。定义在存档后发生变化且有执行痕迹的
+    // Trigger 不再整体拒绝读档，而是收集为 changedTriggerIds，由 deserialize 按新定义
+    // 重置其执行痕迹（ledger 记录、firedOnce、cooldown/timer）——参数调整等内容改动
+    // 修改后读档即可生效，未改动的 Trigger 历史完整保留。结构性问题（Trigger 被删除）
+    // 仍拒绝。
+    const changedTriggerIds = this._collectChangedTriggerIds(data);
+    if (changedTriggerIds.size > 0) {
+      console.warn('[TriggerSystem] 以下 Trigger 的定义在存档后发生变化，其执行痕迹将按新定义重置：', [...changedTriggerIds]);
+    }
     for (const record of data.ledger?.records || []) {
       const trigger = this._triggersById.get(record.triggerId);
       if (!trigger) errors.push({ code: 'invalidReference', path: `triggers.ledger.${record.triggerId}`, message: 'ledger trigger 引用无效' });
       if (record.definitionRevision !== data.definitionRevision) {
         errors.push({ code: 'definitionRevisionMismatch', path: `triggers.ledger.${record.triggerId}.definitionRevision`, message: 'ledger definition revision 与快照不一致' });
       }
-      if (record.operationId && record.fingerprint !== this._operationFingerprint(trigger, record.operationId)) {
-        errors.push({ code: 'invalidFingerprint', path: `triggers.ledger.${record.triggerId}.fingerprint`, message: 'operation fingerprint 不匹配' });
-      }
-      if (this.operationFingerprintValidator && record.operationId
-        && this.operationFingerprintValidator(record, trigger) !== true) {
-        errors.push({ code: 'invalidFingerprint', path: `triggers.ledger.${record.triggerId}.fingerprint`, message: 'operation fingerprint validator 拒绝' });
-      }
     }
-    return { ok: errors.length === 0, errors };
+    return { ok: errors.length === 0, errors, changedTriggerIds };
+  }
+
+  /** 收集「定义在存档后发生变化且有执行痕迹」的 Trigger：fingerprint 与当前定义重算值不匹配。 */
+  _collectChangedTriggerIds(data) {
+    const changed = new Set();
+    for (const record of data.ledger?.records || []) {
+      if (!record?.operationId) continue; // idle 记录没有执行痕迹
+      const trigger = this._triggersById.get(record.triggerId);
+      if (!trigger) continue; // 结构性引用错误由 validateSnapshot 报错拒绝
+      const fingerprintValid = record.fingerprint === this._operationFingerprint(trigger, record.operationId)
+        && (!this.operationFingerprintValidator || this.operationFingerprintValidator(record, trigger) === true);
+      if (!fingerprintValid) changed.add(record.triggerId);
+    }
+    return changed;
   }
 
   deserialize(data) {
     const validation = this.validateSnapshot(data);
     if (!validation.ok) return validation;
+    const changedTriggerIds = validation.changedTriggerIds || new Set();
     const now = this.monotonicClock.now();
+    // 定义发生变化的 Trigger：执行痕迹（ledger/firedOnce/cooldown/timer）按新定义重置，
+    // 保留其余 Trigger 的历史不变。
     const normalizedLedger = {
       ...data.ledger,
-      records: data.ledger.records.map(record => ({
-        ...record,
-        definitionRevision: this.definitionRevision
-      }))
+      records: data.ledger.records
+        .filter(record => !changedTriggerIds.has(record.triggerId))
+        .map(record => ({
+          ...record,
+          definitionRevision: this.definitionRevision
+        }))
     };
     const nextLedger = new ScenarioExecutionLedger().restore(normalizedLedger);
+    for (const triggerId of changedTriggerIds) {
+      if (this._triggersById.has(triggerId)) nextLedger.registerIdle(triggerId, this.definitionRevision);
+    }
     const restoredOperationSequence = Number.isInteger(data.operationSequence) && data.operationSequence >= 0
       ? data.operationSequence
       : getRestoredOperationSequence(data.ledger);
-    const nextOnce = new Set(data.firedOnce);
+    const nextOnce = new Set([...data.firedOnce].filter(id => !changedTriggerIds.has(id)));
     const nextCooldowns = Object.create(null);
     for (const [id, saved] of Object.entries(data.cooldowns)) {
+      if (changedTriggerIds.has(id)) continue;
       nextCooldowns[id] = {
         duration: saved.duration,
         nextDue: this._restoreDue(saved, now, this._triggersById.get(id)?.catchUpPolicy || 'resume')
       };
     }
-    const nextTimers = data.timers.map(saved => {
-      const trigger = this._triggersById.get(saved.triggerId);
-      const definitionTimer = this._timers.find(entry => entry.trigger.id === saved.triggerId);
-      return {
-        trigger,
-        interval: definitionTimer.interval,
-        catchUpPolicy: definitionTimer.catchUpPolicy,
-        maxCatchUp: definitionTimer.maxCatchUp,
-        nextDue: this._restoreDue(saved, now, definitionTimer.catchUpPolicy),
-        remaining: saved.remaining
-      };
-    });
+    const nextTimers = data.timers
+      .filter(saved => !changedTriggerIds.has(saved.triggerId))
+      .map(saved => {
+        const trigger = this._triggersById.get(saved.triggerId);
+        const definitionTimer = this._timers.find(entry => entry.trigger.id === saved.triggerId);
+        return {
+          trigger,
+          interval: definitionTimer.interval,
+          catchUpPolicy: definitionTimer.catchUpPolicy,
+          maxCatchUp: definitionTimer.maxCatchUp,
+          nextDue: this._restoreDue(saved, now, definitionTimer.catchUpPolicy),
+          remaining: saved.remaining
+        };
+      });
     for (const active of this._active.values()) active.cancelled = true;
     this._active.clear();
     this._queues.clear();

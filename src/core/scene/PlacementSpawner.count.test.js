@@ -65,6 +65,16 @@ describe('PlacementSpawner count 展开', () => {
     expect(atCount2).toEqual(first.entities.map(entity => entity.position));
   });
 
+  it('count=1 也派生 base-1 实例 id（调用方以 base-1 寻址，兼容旧档状态键）', () => {
+    const spawner = createSpawner();
+    const result = spawner.spawnMatching({
+      placements: [{ ...TEMPLATE, count: 1 }], registries, selector: { group: 'S01-first-wolf' }
+    });
+    expect(result.counts.enemy).toBe(1);
+    expect(result.entities[0].id).toBe('S01-first-wolf-1');
+    expect(result.outcomes[0].placementId).toBe('S01-first-wolf-1');
+  });
+
   it('count 缺省时不展开：单实体沿用模板 id，兼容旧数据', () => {
     const spawner = createSpawner();
     const legacy = { ...TEMPLATE, count: undefined };
@@ -142,7 +152,7 @@ describe('ScenePlacementRuntime count 模板的 tombstone 与派生 id', () => {
       .toEqual(['S01-first-wolf-1', 'S01-first-wolf-3', 'S01-first-wolf-4']);
   });
 
-  it('_findPlacement 解析派生 id 到虚拟 placement，签名与 tombstone 一致', async () => {
+  it('_findPlacement 解析派生 id 到虚拟 placement，签名与 tombstone 一致；count=1 模板同样可派生寻址', async () => {
     const storyState = { s01Survival: { firstWolfSpotted: true, firstWolfCount: 3 } };
     const runtime = createRuntime({ storyState });
     runtime.setProjection([TEMPLATE]);
@@ -150,8 +160,11 @@ describe('ScenePlacementRuntime count 模板的 tombstone 与派生 id', () => {
 
     const virtual = runtime._findPlacement('S01-first-wolf-2');
     expect(virtual.id).toBe('S01-first-wolf-2');
-    expect(virtual.x).toBe(expandPlacement(TEMPLATE, 2).x);
-    expect(getPlacementSignature(virtual)).toBe(getPlacementSignature(expandPlacement(TEMPLATE, 2)));
+    expect(virtual.x).toBe(expandPlacement(TEMPLATE, 2, { deriveFirst: true }).x);
+    expect(getPlacementSignature(virtual)).toBe(getPlacementSignature(expandPlacement(TEMPLATE, 2, { deriveFirst: true })));
+    // count=1 的模板同样允许 base-1 派生寻址（旧档状态键兼容）
+    const single = runtime._findPlacement('S01-first-wolf-1');
+    expect(single?.id).toBe('S01-first-wolf-1');
 
     expect(runtime._findPlacement('S01-unknown-9')).toBeNull();
     runtime.setProjection([{ ...TEMPLATE, id: 'S01-single', count: undefined }]);
