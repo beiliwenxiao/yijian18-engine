@@ -45,7 +45,7 @@ describe('QuestWizardEditor 任务向导', () => {
 
     it('渲染迁移后的 S01 任务：五区块齐全，编译预览展示 16 目标链且校验通过', () => {
         const { editor } = buildEditor();
-        expect(editor.container.querySelectorAll('[data-quest-id]').length).toBe(1);
+        expect(editor.container.querySelectorAll('[data-quest-id]').length).toBe(2);
         const html = detail(editor).innerHTML;
         // 五区块
         for (const legend of ['① 元信息', '② 接取', '③ 奖励', '④ 后续任务', '⚙ 编译预览']) {
@@ -56,6 +56,10 @@ describe('QuestWizardEditor 任务向导', () => {
         expect(html).toContain('逃往废弃营地');
         expect(html).toContain('编译校验通过');
         expect(html).toContain('触发器产物</strong>：无');
+        // 示意图：start + 16 目标 + complete 节点（含连线容器）
+        expect(detail(editor).querySelectorAll('[data-graph-node-id]').length).toBe(18);
+        expect(detail(editor).querySelector('[data-graph-node-id="lightCampfire"]')).toBeTruthy();
+        expect(detail(editor).querySelector('.qwe-graph-edges path')).toBeTruthy();
     });
 
     it('目标步骤编辑：目标类型切换写回 objectiveType，身份与数量字段按目录渲染', () => {
@@ -122,7 +126,7 @@ describe('QuestWizardEditor 任务向导', () => {
         const { editor, patched } = buildEditor();
         const result = await editor.save();
         expect(result.ok).toBe(true);
-        expect(patched.quests.map(quest => quest.id)).toEqual(['task.s01.survival']);
+        expect(patched.quests.map(quest => quest.id)).toEqual(['task.s01.survival', 'task.s02.summons']);
     });
 
     it('新建与删除任务', () => {

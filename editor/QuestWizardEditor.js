@@ -191,6 +191,7 @@ export class QuestWizardEditor {
     const acceptWhen = accept.when || {};
     target.innerHTML = `
       <div class="qwe-note">从上到下填写玩家的经历；保存后运行时自动编译为任务图与编排触发器，触发器/教程/对话都是这里的步骤。</div>
+      <div class="qwe-graph" data-role="quest-graph">${this._graphSvg(quest)}</div>
       <fieldset class="qwe-block"><legend>① 元信息</legend>
         <div class="qwe-grid">
           <div class="qwe-field"><label>任务 ID</label><input data-quest-field="id" value="${this._escape(quest.id || '')}" placeholder="quest.s01.survival"></div>
@@ -230,6 +231,43 @@ export class QuestWizardEditor {
       </fieldset>
       <fieldset class="qwe-block"><legend>⚙ 编译预览（保存后运行时生成）</legend>${this._compilePreview(quest)}</fieldset>`;
     this._bindDetail(quest);
+  }
+
+  /** 任务节点示意图（编译产物 taskGraph 的 start → 目标链 → complete 可视化；点击目标节点定位步骤卡）。 */
+  _graphSvg(quest) {
+    const { taskGraph } = compileQuest(quest, this.project);
+    const nodes = list(taskGraph.nodes);
+    if (nodes.length === 0) return '<div class="qwe-empty compact">暂无任务节点图</div>';
+    const columns = Math.min(4, Math.max(1, nodes.length));
+    const cellWidth = 190;
+    const cellHeight = 92;
+    const width = columns * cellWidth + 40;
+    const height = Math.ceil(nodes.length / columns) * cellHeight + 40;
+    const positions = new Map(nodes.map((node, index) => [node.id, {
+      index,
+      x: 20 + (index % columns) * cellWidth,
+      y: 20 + Math.floor(index / columns) * cellHeight
+    }]));
+    const edges = nodes.flatMap(node => {
+      const from = positions.get(node.id);
+      return list(node.next).flatMap(targetId => {
+        const to = positions.get(targetId);
+        if (!from || !to) return [];
+        return [`<path d="M ${from.x + 150} ${from.y + 25} C ${from.x + 170} ${from.y + 25}, ${to.x - 20} ${to.y + 25}, ${to.x} ${to.y + 25}"/>`];
+      });
+    }).join('');
+    const typeLabel = { start: '开始', complete: '完成', objective: '目标' };
+    const nodeSvg = nodes.map(node => {
+      const position = positions.get(node.id);
+      return `<g class="qwe-graph-node ${node.type}" data-graph-node-id="${this._escape(node.id)}" transform="translate(${position.x},${position.y})">
+        <rect width="150" height="50" rx="6"/>
+        <text x="10" y="20">${this._escape(node.title || node.id)}</text>
+        <text class="type" x="10" y="39">${this._escape(typeLabel[node.type] || node.type)}${node.requiredCount && node.requiredCount > 1 ? ` ×${node.requiredCount}` : ''}</text>
+      </g>`;
+    }).join('');
+    return `<svg viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" role="img" aria-label="任务节点示意图">
+      <g class="qwe-graph-edges">${edges}</g>${nodeSvg}
+    </svg>`;
   }
 
   _acceptWhenFields(when) {
@@ -275,7 +313,7 @@ export class QuestWizardEditor {
           ${paramsErrors.length ? `<small class="qwe-error">${this._escape(paramsErrors[0])}</small>` : ''}</div>`;
     }
     return `
-      <article class="qwe-step" data-step-index="${index}">
+      <article class="qwe-step" data-step-index="${index}" data-step-id="${this._escape(step.id || '')}">
         <div class="qwe-step-head">
           <strong>第 ${index + 1} 步 · ${this._escape((STEP_TYPES.find(([value]) => value === type) || [type, type])[1])}</strong>
           <div class="qwe-step-actions">
@@ -350,6 +388,11 @@ export class QuestWizardEditor {
       quest.next = [...next];
     }));
     target.querySelectorAll('[data-step-index]').forEach(card => this._bindStep(quest, card));
+    // 示意图节点点击 → 滚动定位到对应步骤卡
+    target.querySelectorAll('[data-graph-node-id]').forEach(node => node.addEventListener('click', () => {
+      const stepId = node.dataset.graphNodeId;
+      target.querySelector(`[data-step-id="${window.CSS?.escape?.(stepId) ?? stepId}"]`)?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
+    }));
     target.querySelectorAll('[data-reward-index]').forEach(card => this._bindReward(quest, card));
     target.querySelector('[data-action="add-step"]')?.addEventListener('click', () => this._addStep(quest));
     target.querySelector('[data-action="add-reward"]')?.addEventListener('click', () => this._addReward(quest));
@@ -621,7 +664,7 @@ export class QuestWizardEditor {
     const style = document.createElement('style');
     style.id = 'qwe-styles';
     style.textContent = `
-      .qwe-root{height:100%;display:flex;flex-direction:column;background:#0d1326;color:#fff;font-size:13px}.qwe-toolbar{display:flex;align-items:center;gap:8px;padding:10px 16px;background:#16213e;border-bottom:1px solid #2a3a5e}.qwe-toolbar button,.qwe-node-toolbar button{padding:7px 12px;border:0;border-radius:4px;background:#3a4a7e;color:#fff;cursor:pointer}.qwe-toolbar .primary{background:#4caf50;color:#102010;font-weight:bold}.qwe-toolbar .danger,.qwe-step .danger{background:#7e3a3a}.qwe-hint{margin-left:auto;color:#8aa;font-size:12px}.qwe-main{min-height:0;flex:1;display:flex;overflow:hidden}.qwe-list{width:240px;flex:none;overflow:auto;background:#111a30;border-right:1px solid #2a3a5e}.qwe-quest{display:flex;width:100%;flex-direction:column;gap:3px;padding:10px 13px;text-align:left;color:#fff;background:transparent;border:0;border-bottom:1px solid #1e2b47;cursor:pointer}.qwe-quest:hover{background:#1a2540}.qwe-quest.active{background:#2a3a6e}.qwe-quest small{color:#9ab}.qwe-detail{min-width:0;flex:1;overflow:auto;padding:16px}.qwe-note{margin-bottom:12px;padding:10px 12px;border:1px solid #3b6b54;border-radius:5px;background:#10251e;color:#a9d8bc}.qwe-block{margin-bottom:14px;padding:10px 14px;border:1px solid #2a3a5e;border-radius:6px;background:#0f1830}.qwe-block legend{padding:0 8px;color:#8fa7d8;font-weight:bold}.qwe-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.qwe-field{min-width:0}.qwe-field.full{grid-column:1/-1}.qwe-field label{display:block;margin-bottom:4px;color:#9ab;font-size:12px}.qwe-field input,.qwe-field select,.qwe-field textarea{width:100%;padding:7px;border:1px solid #2a3a5e;border-radius:3px;background:#0a1020;color:#fff;font:inherit}.qwe-field textarea{resize:vertical;font-family:Consolas,monospace;font-size:12px}.qwe-field textarea.invalid{border-color:#e66;box-shadow:0 0 0 1px #e66}.qwe-field small{display:block;margin-top:4px;color:#789;font-size:11px}.qwe-checks{display:flex;flex-wrap:wrap;gap:10px}.qwe-check{display:inline-flex;align-items:center;gap:5px;color:#cdd;font-size:12px}.qwe-check input{width:auto}.qwe-check-row{display:flex;align-items:center}.qwe-node-toolbar{display:flex;align-items:center;justify-content:space-between;margin:16px 0 10px}.qwe-node-toolbar h3{font-size:14px}.qwe-step{margin-bottom:12px;padding:12px;border:1px solid #2a3a5e;border-radius:6px;background:#0f1830}.qwe-step-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}.qwe-step-actions{display:flex;gap:6px}.qwe-step-actions button{padding:4px 8px;border:0;border-radius:3px;background:#3a4a7e;color:#fff;cursor:pointer}.qwe-step-actions button:disabled{opacity:.35;cursor:default}.qwe-rewards{margin-bottom:8px}.qwe-reward{margin-bottom:8px;padding:8px;border:1px dashed #2a3a5e;border-radius:4px}.qwe-muted{color:#789}.qwe-error{color:#e66}.qwe-ok{color:#6c6}.qwe-preview{font-size:12px;color:#9ab}.qwe-preview ul{margin:6px 0 0 18px}.qwe-empty{padding:38px 16px;color:#789;text-align:center;line-height:1.7}.qwe-empty.compact{padding:18px}.qwe-status{min-height:30px;padding:7px 16px;background:#0a1020;color:#9ab}.qwe-status.ok{color:#6c6}.qwe-status.warn{color:#e6bd5d}.qwe-status.error{color:#e66}.qwe-toast{position:fixed;top:58px;left:50%;z-index:100000;max-width:min(600px,90vw);padding:10px 18px;border-radius:6px;background:#2e7d32;color:#fff;box-shadow:0 4px 16px #0008;opacity:0;pointer-events:none;transform:translate(-50%,-8px);transition:opacity .2s,transform .2s}.qwe-toast[data-type="error"]{background:#c62828}.qwe-toast[data-type="warn"]{background:#9a6700}.qwe-toast.visible{opacity:1;transform:translate(-50%,0)}@media (max-width:800px){.qwe-list{width:180px}.qwe-grid{grid-template-columns:1fr}.qwe-field.full{grid-column:auto}.qwe-hint{display:none}}
+      .qwe-root{height:100%;display:flex;flex-direction:column;background:#0d1326;color:#fff;font-size:13px}.qwe-toolbar{display:flex;align-items:center;gap:8px;padding:10px 16px;background:#16213e;border-bottom:1px solid #2a3a5e}.qwe-toolbar button,.qwe-node-toolbar button{padding:7px 12px;border:0;border-radius:4px;background:#3a4a7e;color:#fff;cursor:pointer}.qwe-toolbar .primary{background:#4caf50;color:#102010;font-weight:bold}.qwe-toolbar .danger,.qwe-step .danger{background:#7e3a3a}.qwe-hint{margin-left:auto;color:#8aa;font-size:12px}.qwe-main{min-height:0;flex:1;display:flex;overflow:hidden}.qwe-list{width:240px;flex:none;overflow:auto;background:#111a30;border-right:1px solid #2a3a5e}.qwe-quest{display:flex;width:100%;flex-direction:column;gap:3px;padding:10px 13px;text-align:left;color:#fff;background:transparent;border:0;border-bottom:1px solid #1e2b47;cursor:pointer}.qwe-quest:hover{background:#1a2540}.qwe-quest.active{background:#2a3a6e}.qwe-quest small{color:#9ab}.qwe-detail{min-width:0;flex:1;overflow:auto;padding:16px}.qwe-note{margin-bottom:12px;padding:10px 12px;border:1px solid #3b6b54;border-radius:5px;background:#10251e;color:#a9d8bc}.qwe-graph{margin-bottom:14px;overflow:auto;border:1px solid #2a3a5e;border-radius:6px;background:#091020;max-height:380px}.qwe-graph svg{display:block}.qwe-graph-edges path{fill:none;stroke:#6d84c7;stroke-width:2}.qwe-graph-node{cursor:pointer}.qwe-graph-node rect{fill:#17264a;stroke:#7d98db;stroke-width:1.5}.qwe-graph-node:hover rect{fill:#294078;stroke:#b9ceff}.qwe-graph-node text{fill:#fff;font-size:11px;pointer-events:none}.qwe-graph-node text.type{fill:#8fa7d8;font-size:10px}.qwe-graph-node.start rect{stroke:#4caf50}.qwe-graph-node.complete rect{stroke:#c9a227}.qwe-graph-node.objective rect{fill:#1a2f55}.qwe-block{margin-bottom:14px;padding:10px 14px;border:1px solid #2a3a5e;border-radius:6px;background:#0f1830}.qwe-block legend{padding:0 8px;color:#8fa7d8;font-weight:bold}.qwe-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.qwe-field{min-width:0}.qwe-field.full{grid-column:1/-1}.qwe-field label{display:block;margin-bottom:4px;color:#9ab;font-size:12px}.qwe-field input,.qwe-field select,.qwe-field textarea{width:100%;padding:7px;border:1px solid #2a3a5e;border-radius:3px;background:#0a1020;color:#fff;font:inherit}.qwe-field textarea{resize:vertical;font-family:Consolas,monospace;font-size:12px}.qwe-field textarea.invalid{border-color:#e66;box-shadow:0 0 0 1px #e66}.qwe-field small{display:block;margin-top:4px;color:#789;font-size:11px}.qwe-checks{display:flex;flex-wrap:wrap;gap:10px}.qwe-check{display:inline-flex;align-items:center;gap:5px;color:#cdd;font-size:12px}.qwe-check input{width:auto}.qwe-check-row{display:flex;align-items:center}.qwe-node-toolbar{display:flex;align-items:center;justify-content:space-between;margin:16px 0 10px}.qwe-node-toolbar h3{font-size:14px}.qwe-step{margin-bottom:12px;padding:12px;border:1px solid #2a3a5e;border-radius:6px;background:#0f1830}.qwe-step-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}.qwe-step-actions{display:flex;gap:6px}.qwe-step-actions button{padding:4px 8px;border:0;border-radius:3px;background:#3a4a7e;color:#fff;cursor:pointer}.qwe-step-actions button:disabled{opacity:.35;cursor:default}.qwe-rewards{margin-bottom:8px}.qwe-reward{margin-bottom:8px;padding:8px;border:1px dashed #2a3a5e;border-radius:4px}.qwe-muted{color:#789}.qwe-error{color:#e66}.qwe-ok{color:#6c6}.qwe-preview{font-size:12px;color:#9ab}.qwe-preview ul{margin:6px 0 0 18px}.qwe-empty{padding:38px 16px;color:#789;text-align:center;line-height:1.7}.qwe-empty.compact{padding:18px}.qwe-status{min-height:30px;padding:7px 16px;background:#0a1020;color:#9ab}.qwe-status.ok{color:#6c6}.qwe-status.warn{color:#e6bd5d}.qwe-status.error{color:#e66}.qwe-toast{position:fixed;top:58px;left:50%;z-index:100000;max-width:min(600px,90vw);padding:10px 18px;border-radius:6px;background:#2e7d32;color:#fff;box-shadow:0 4px 16px #0008;opacity:0;pointer-events:none;transform:translate(-50%,-8px);transition:opacity .2s,transform .2s}.qwe-toast[data-type="error"]{background:#c62828}.qwe-toast[data-type="warn"]{background:#9a6700}.qwe-toast.visible{opacity:1;transform:translate(-50%,0)}@media (max-width:800px){.qwe-list{width:180px}.qwe-grid{grid-template-columns:1fr}.qwe-field.full{grid-column:auto}.qwe-hint{display:none}}
     `;
     document.head.appendChild(style);
   }

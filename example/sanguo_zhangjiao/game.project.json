@@ -2409,60 +2409,35 @@
         }
       ],
       "rewards": []
-    }
-  ],
-  "taskGraphs": [
+    },
     {
       "id": "task.s02.summons",
       "title": "废营召见",
       "description": "清点废弃营地物资，接受张角召见并前往粥棚营地。",
       "category": "main",
-      "entryNodeId": "start",
-      "reward": {},
-      "checkpoint": null,
-      "nodes": [
-        {
-          "id": "start",
-          "type": "start",
-          "next": [
-            "acceptSummons"
-          ]
-        },
+      "scenes": [
+        "S02"
+      ],
+      "steps": [
         {
           "id": "acceptSummons",
           "type": "objective",
-          "title": "接受张角召见",
-          "next": [
-            "travel"
-          ],
-          "eventMatcher": {
-            "type": "state.transaction",
-            "payload": {
-              "definitionId": "story.s02.summons.accept"
-            }
-          }
+          "objectiveType": "commit.fact",
+          "target": "story.s02.summons.accept",
+          "title": "接受张角召见"
         },
         {
           "id": "travel",
           "type": "objective",
-          "title": "前往粥棚营地",
-          "next": [
-            "complete"
-          ],
-          "eventMatcher": {
-            "type": "state.transaction",
-            "payload": {
-              "definitionId": "story.s02.travel"
-            }
-          }
-        },
-        {
-          "id": "complete",
-          "type": "complete"
+          "objectiveType": "commit.fact",
+          "target": "story.s02.travel",
+          "title": "前往粥棚营地"
         }
-      ]
+      ],
+      "rewards": []
     }
   ],
+  "taskGraphs": [],
   "flowGroups": [],
   "sceneEvents": [],
   "triggerCatalog": {

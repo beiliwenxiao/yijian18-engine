@@ -34,15 +34,15 @@ const NAV_GROUPS = Object.freeze([
   { label: '', items: [
     { id: 'game-list', label: '🎮 游戏列表', file: 'index.html' }
   ]},
+   { label: '场景世界', items: [
+    { id: 'scene-workflow', label: '🗺️ 场景', file: 'scene-workflow.html' },
+    { id: 'world-map-editor', label: '🌍 大地图', file: 'world-map-editor.html' }
+  ]},
   { label: '剧情创作', items: [
     { id: 'quest-editor', label: '📋 任务', file: 'quest-editor.html' },
     { id: 'storyline-editor', label: '🎬 剧情', file: 'storyline-editor.html' },
     { id: 'tutorial-editor', label: '📖 教程', file: 'tutorial-editor.html' },
     { id: 'dialogue-editor', label: '💬 对话', file: 'dialogue-editor.html' }
-  ]},
-  { label: '场景世界', items: [
-    { id: 'scene-workflow', label: '🗺️ 场景', file: 'scene-workflow.html' },
-    { id: 'world-map-editor', label: '🌍 大地图', file: 'world-map-editor.html' }
   ]},
   { label: '资产系统', items: [
     { id: 'ui-editor', label: '🎨 UI', file: 'ui-editor.html' },

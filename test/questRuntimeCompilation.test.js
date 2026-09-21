@@ -186,17 +186,31 @@ describe('QuestRuntime Quest v2 编译器', () => {
     expect(completed.payload.instanceId).toBe(startOutcome.result.value.instanceId);
   });
 
-  it('GameLoader：构造即暴露 questTaskDefinitions；S01 迁移后编译产物提供 task.s01.survival', () => {
+  it('GameLoader：构造即暴露 questTaskDefinitions；s01/s02 全部由 quests[] 编译（taskGraphs[] 通道已清零）', () => {
     const loader = new GameLoader();
     expect(loader.questTaskDefinitions).toEqual([]);
     const compiled = compileQuestProject(project);
-    expect(compiled.taskGraphs.map(graph => graph.id)).toEqual(['task.s01.survival']);
-    expect(compiled.triggers).toEqual([]); // S01 quest 无 accept/rewards，不生成触发器（接取由现有触发器承担）
+    expect(compiled.taskGraphs.map(graph => graph.id)).toEqual(['task.s01.survival', 'task.s02.summons']);
+    expect(compiled.triggers).toEqual([]); // S01/S02 quest 均无 accept/rewards，不生成触发器（接取由现有触发器承担）
+    // 手写任务图通道已清零：taskGraphs[] 为空数组（保留数据通道，编辑入口收敛到任务编辑器）
+    expect(project.taskGraphs).toEqual([]);
   });
 });
 
 describe('阶段③ S01 迁移契约：quest 编译产物与手写任务图逐节点等价', () => {
   const compiledGraph = compileQuestProject(project).taskGraphs.find(graph => graph.id === 'task.s01.survival');
+
+  it('s02 迁移契约：接受召见 → 前往粥棚营地 线性链（state.transaction 事实驱动）', () => {
+    const s02Graph = compileQuestProject(project).taskGraphs.find(graph => graph.id === 'task.s02.summons');
+    expect(s02Graph.entryNodeId).toBe('start');
+    expect(s02Graph.nodes.filter(node => node.type === 'objective').map(node => node.id)).toEqual(['acceptSummons', 'travel']);
+    expect(s02Graph.nodes.find(node => node.id === 'acceptSummons').eventMatcher).toEqual({
+      type: 'state.transaction', payload: { definitionId: 'story.s02.summons.accept' }
+    });
+    expect(s02Graph.nodes.find(node => node.id === 'travel').eventMatcher).toEqual({
+      type: 'state.transaction', payload: { definitionId: 'story.s02.travel' }
+    });
+  });
 
   it('任务图结构：16 objective 线性链 + 裸 start/complete 节点（存档 nodeStates 寻址兼容）', () => {
     expect(compiledGraph, 'quests[] 迁移后应能编译出 task.s01.survival').toBeTruthy();
