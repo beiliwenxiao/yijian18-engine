@@ -74,6 +74,9 @@ export class QuestWizardEditor {
     this.tutorials = [];
     this._tutorialsDirty = false;
     this._expandedTutSteps = new Set(); // 展开就地编辑的教程 ID（tutorial 步骤卡）
+    this.dialogues = [];
+    this._dialoguesDirty = false;
+    this._expandedDlgSteps = new Set(); // 展开就地编辑的对话 ID（dialogue 步骤卡）
     this.selectedId = null;
     this._initialized = false;
   }
@@ -99,6 +102,9 @@ export class QuestWizardEditor {
     this.tutorials = list(project.tutorials).map(clone);
     this._tutorialsDirty = false;
     this._expandedTutSteps = new Set();
+    this.dialogues = list(project.dialogues).map(clone);
+    this._dialoguesDirty = false;
+    this._expandedDlgSteps = new Set();
     if (this.selectedId && !this.quests.some(quest => quest?.id === this.selectedId)) this.selectedId = null;
   }
 
@@ -121,12 +127,15 @@ export class QuestWizardEditor {
     try {
       this.canonicalSession.patch('quests', clone(this.quests));
       if (this._tutorialsDirty) this.canonicalSession.patch('tutorials', clone(this.tutorials));
+      if (this._dialoguesDirty) this.canonicalSession.patch('dialogues', clone(this.dialogues));
       const result = await this.canonicalSession.save();
       if (result?.ok === true && result.committed === true) {
+        const extras = [this._tutorialsDirty && '内嵌教程修改', this._dialoguesDirty && '内嵌对话修改'].filter(Boolean).join('与');
         const message = result.degraded
           ? '磁盘已提交，但缓存或通知同步降级'
-          : `已保存 ${this.quests.length} 个任务${this._tutorialsDirty ? '与内嵌教程修改' : ''}`;
+          : `已保存 ${this.quests.length} 个任务${extras ? `与${extras}` : ''}`;
         this._tutorialsDirty = false;
+        this._dialoguesDirty = false;
         this._status(`${result.degraded ? '⚠️' : '✅'} ${message}`, result.degraded ? 'warn' : 'ok');
         this._toast(message, result.degraded ? 'warn' : 'success');
         return result;
@@ -221,7 +230,7 @@ export class QuestWizardEditor {
           </select></div>
           ${acceptMode === 'auto' ? this._acceptWhenFields(acceptWhen) : acceptMode === 'manual' ? `
           <div class="qwe-field"><label>发布 NPC（giver）</label><input data-giver-field="npcId" value="${this._escape(quest.giver?.npcId || '')}" placeholder="NPC 稳定 ID，如 S01-npc-elder"></div>
-          <div class="qwe-field"><label>接取对话（可选）</label><select data-giver-field="dialogueId"><option value="">-- 不绑定 --</option>${this._dialogueOptions(quest.giver?.dialogueId)}</select></div>
+          <div class="qwe-field"><label>接取对话（可选）</label><select data-giver-field="dialogueId">${this._optionList(this._dialogueOptions(), quest.giver?.dialogueId, '-- 不绑定 --')}</select></div>
           <div class="qwe-field full"><small>手动接取指引：为该 NPC 的交互触发器编排「对话 → task.command（task.start，definitionId=${this._escape(quest.id || '')}）」；运行时不会自动接取。</small></div>` : `
           <div class="qwe-field full"><small>接取由 triggers[] 中的现有触发器承担（如场景进入触发 task.start）。切换为「自动」可在下方定义接取条件。</small></div>`}
         </div>
@@ -300,7 +309,14 @@ export class QuestWizardEditor {
     const type = text(step.type) || 'objective';
     let typeFields = '';
     if (type === 'dialogue') {
-      typeFields = `<div class="qwe-field"><label>对话</label><select data-step-field="dialogueId">${this._optionList(this._dialogueOptions(), step.dialogueId, '选择对话')}</select></div>`;
+      const expanded = this._expandedDlgSteps.has(text(step.dialogueId));
+      const dialogue = this._getDialogue(step.dialogueId);
+      typeFields = `
+        <div class="qwe-field"><label>对话</label><select data-step-field="dialogueId">${this._optionList(this._dialogueOptions(), step.dialogueId, '选择对话')}</select></div>
+        <div class="qwe-field full">
+          <button type="button" data-action="toggle-dlg-edit" data-dlg-id="${this._escape(step.dialogueId || '')}">${expanded ? '▲ 收起对话编辑' : '▼ 就地编辑对话内容'}</button>
+          ${expanded ? this._dialogueEditHtml(dialogue) : ''}
+        </div>`;
     } else if (type === 'tutorial') {
       const expanded = this._expandedTutSteps.has(text(step.tutorialId));
       const tutorial = this._getTutorial(step.tutorialId);
@@ -443,6 +459,16 @@ export class QuestWizardEditor {
     });
     const tutorial = this._getTutorial(step.tutorialId);
     if (tutorial) this._bindTutorialEdit(card, tutorial);
+    // 对话内嵌编辑：展开/收起 + 节点台词就地写回 dialogues[]（保存时随任务一并提交）
+    card.querySelector('[data-action="toggle-dlg-edit"]')?.addEventListener('click', event => {
+      const dlgId = event.currentTarget.dataset.dlgId;
+      if (!dlgId) return this._toast('请先选择对话', 'error');
+      if (this._expandedDlgSteps.has(dlgId)) this._expandedDlgSteps.delete(dlgId);
+      else this._expandedDlgSteps.add(dlgId);
+      this._renderDetail();
+    });
+    const dialogue = this._getDialogue(step.dialogueId);
+    if (dialogue) this._bindDialogueEdit(card, dialogue);
   }
 
   _getTutorial(tutorialId) {
@@ -494,6 +520,99 @@ export class QuestWizardEditor {
       tutorial.steps ||= [];
       tutorial.steps.push({ id, text: '' });
       this._tutorialsDirty = true;
+      this._renderDetail();
+    });
+  }
+
+  _getDialogue(dialogueId) {
+    const key = text(dialogueId);
+    return this.dialogues.find(dialogue => dialogue?.id === key) || null;
+  }
+
+  /** 从 startNode 沿 nextNode 走出线性主链（防环）；不在链上的节点（分支目标/孤立）排在链尾并标注。 */
+  _dialogueChain(dialogue) {
+    const nodes = dialogue?.nodes && typeof dialogue.nodes === 'object' ? dialogue.nodes : {};
+    const chain = [];
+    const visited = new Set();
+    let cursor = text(dialogue?.startNode) || Object.keys(nodes)[0] || '';
+    while (cursor && nodes[cursor] && !visited.has(cursor)) {
+      visited.add(cursor);
+      chain.push({ id: cursor, node: nodes[cursor] });
+      cursor = text(nodes[cursor].nextNode);
+    }
+    for (const [nodeId, node] of Object.entries(nodes)) {
+      if (!visited.has(nodeId)) chain.push({ id: nodeId, node, orphan: true });
+    }
+    return chain;
+  }
+
+  /** 对话内嵌编辑区：节点 speaker/text 就地编辑（写回 dialogues 草稿）；分支/条件等完整编辑在「💬 对话」页。 */
+  _dialogueEditHtml(dialogue) {
+    if (!dialogue) return '<small class="qwe-error">对话定义不存在（可能已被删除）</small>';
+    const chain = this._dialogueChain(dialogue);
+    const rows = chain.map(entry => `
+      <div class="qwe-dlg-node" data-dlg-node-id="${this._escape(entry.id)}">
+        <div class="qwe-tut-step-head">
+          <span>${entry.orphan ? '⚠ ' : ''}${this._escape(entry.id)}${entry.orphan ? '（分支/未接线）' : ''}</span>
+          <button type="button" class="danger" data-action="dlg-del-node">删除</button>
+        </div>
+        <input data-dlg-field="speaker" value="${this._escape(entry.node?.speaker || '')}" placeholder="说话人（如：旁白）">
+        <textarea data-dlg-field="text" rows="2" placeholder="台词内容">${this._escape(entry.node?.text || '')}</textarea>
+      </div>`).join('');
+    return `
+      <div class="qwe-dlg-edit" data-dlg-id="${this._escape(dialogue.id)}">
+        <small>对话「${this._escape(dialogue.title || dialogue.id)}」· ${chain.length} 节点 · 从「${this._escape(dialogue.startNode || '')}」按序推进（分支/条件见「💬 对话」页）</small>
+        ${rows || '<small class="qwe-muted">该对话暂无节点</small>'}
+        <button type="button" data-action="dlg-add-node">+ 添加节点</button>
+      </div>`;
+  }
+
+  _bindDialogueEdit(card, dialogue) {
+    const nodes = dialogue.nodes && typeof dialogue.nodes === 'object' ? dialogue.nodes : (dialogue.nodes = {});
+    card.querySelectorAll('[data-dlg-node-id]').forEach(nodeBlock => {
+      const nodeId = nodeBlock.dataset.dlgNodeId;
+      const node = nodes[nodeId];
+      if (!node) return;
+      nodeBlock.querySelector('[data-dlg-field="speaker"]')?.addEventListener('change', event => {
+        node.speaker = event.target.value;
+        this._dialoguesDirty = true;
+      });
+      nodeBlock.querySelector('[data-dlg-field="text"]')?.addEventListener('change', event => {
+        node.text = event.target.value;
+        this._dialoguesDirty = true;
+      });
+      // 删除节点：接线补偿——前驱 nextNode 越过被删节点直连其后继；startNode 被删则后移
+      nodeBlock.querySelector('[data-action="dlg-del-node"]')?.addEventListener('click', () => {
+        if (!confirm(`确定删除对话节点“${nodeId}”吗？`)) return;
+        const nextOfDeleted = text(node.nextNode);
+        delete nodes[nodeId];
+        for (const other of Object.values(nodes)) {
+          if (text(other?.nextNode) === nodeId) {
+            if (nextOfDeleted) other.nextNode = nextOfDeleted;
+            else delete other.nextNode;
+          }
+        }
+        if (text(dialogue.startNode) === nodeId) {
+          if (nextOfDeleted) dialogue.startNode = nextOfDeleted;
+          else dialogue.startNode = Object.keys(nodes)[0] || '';
+        }
+        this._dialoguesDirty = true;
+        this._renderDetail();
+      });
+    });
+    // 添加节点：接在主链末尾（前驱 nextNode 指向新节点）；无主链则作为 startNode
+    card.querySelector('[data-action="dlg-add-node"]')?.addEventListener('click', () => {
+      const ids = new Set(Object.keys(nodes));
+      let sequence = Object.keys(nodes).length + 1;
+      let id;
+      do id = `node-${String(sequence++).padStart(2, '0')}`;
+      while (ids.has(id));
+      nodes[id] = { speaker: '', text: '' };
+      const chain = this._dialogueChain(dialogue).filter(entry => !entry.orphan);
+      const tail = chain[chain.length - 1];
+      if (tail) nodes[tail.id].nextNode = id;
+      if (!text(dialogue.startNode) || !nodes[dialogue.startNode]) dialogue.startNode = id;
+      this._dialoguesDirty = true;
       this._renderDetail();
     });
   }
@@ -641,9 +760,11 @@ export class QuestWizardEditor {
     return scenes.map(scene => [scene?.id, scene?.name || scene?.id]).filter(([id]) => id);
   }
 
-  _dialogueOptions(current) {
-    const options = list(this.project?.dialogues).map(dialogue => ({ value: dialogue?.id, label: dialogue?.title || dialogue?.name || dialogue?.id }));
-    return this._optionList(options.filter(option => option.value), current);
+  _dialogueOptions() {
+    // 返回选项数组（对齐 _tutorialOptions），由调用方经 _optionList 渲染；读草稿与内嵌编辑同源
+    return list(this.dialogues)
+      .map(dialogue => ({ value: dialogue?.id, label: dialogue?.title || dialogue?.name || dialogue?.id }))
+      .filter(option => option.value);
   }
 
   _tutorialOptions() {
@@ -744,7 +865,7 @@ export class QuestWizardEditor {
     const style = document.createElement('style');
     style.id = 'qwe-styles';
     style.textContent = `
-      .qwe-root{height:100%;display:flex;flex-direction:column;background:#0d1326;color:#fff;font-size:13px}.qwe-toolbar{display:flex;align-items:center;gap:8px;padding:10px 16px;background:#16213e;border-bottom:1px solid #2a3a5e}.qwe-toolbar button,.qwe-node-toolbar button{padding:7px 12px;border:0;border-radius:4px;background:#3a4a7e;color:#fff;cursor:pointer}.qwe-toolbar .primary{background:#4caf50;color:#102010;font-weight:bold}.qwe-toolbar .danger,.qwe-step .danger{background:#7e3a3a}.qwe-hint{margin-left:auto;color:#8aa;font-size:12px}.qwe-main{min-height:0;flex:1;display:flex;overflow:hidden}.qwe-list{width:240px;flex:none;overflow:auto;background:#111a30;border-right:1px solid #2a3a5e}.qwe-quest{display:flex;width:100%;flex-direction:column;gap:3px;padding:10px 13px;text-align:left;color:#fff;background:transparent;border:0;border-bottom:1px solid #1e2b47;cursor:pointer}.qwe-quest:hover{background:#1a2540}.qwe-quest.active{background:#2a3a6e}.qwe-quest small{color:#9ab}.qwe-detail{min-width:0;flex:1;overflow:auto;padding:16px}.qwe-note{margin-bottom:12px;padding:10px 12px;border:1px solid #3b6b54;border-radius:5px;background:#10251e;color:#a9d8bc}.qwe-graph{margin-bottom:14px;overflow:auto;border:1px solid #2a3a5e;border-radius:6px;background:#091020;max-height:380px}.qwe-graph svg{display:block}.qwe-graph-edges path{fill:none;stroke:#6d84c7;stroke-width:2}.qwe-graph-node{cursor:pointer}.qwe-graph-node rect{fill:#17264a;stroke:#7d98db;stroke-width:1.5}.qwe-graph-node:hover rect{fill:#294078;stroke:#b9ceff}.qwe-graph-node text{fill:#fff;font-size:11px;pointer-events:none}.qwe-graph-node text.type{fill:#8fa7d8;font-size:10px}.qwe-graph-node.start rect{stroke:#4caf50}.qwe-graph-node.complete rect{stroke:#c9a227}.qwe-graph-node.objective rect{fill:#1a2f55}.qwe-block{margin-bottom:14px;padding:10px 14px;border:1px solid #2a3a5e;border-radius:6px;background:#0f1830}.qwe-block legend{padding:0 8px;color:#8fa7d8;font-weight:bold}.qwe-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.qwe-field{min-width:0}.qwe-field.full{grid-column:1/-1}.qwe-field label{display:block;margin-bottom:4px;color:#9ab;font-size:12px}.qwe-field input,.qwe-field select,.qwe-field textarea{width:100%;padding:7px;border:1px solid #2a3a5e;border-radius:3px;background:#0a1020;color:#fff;font:inherit}.qwe-field textarea{resize:vertical;font-family:Consolas,monospace;font-size:12px}.qwe-field textarea.invalid{border-color:#e66;box-shadow:0 0 0 1px #e66}.qwe-field small{display:block;margin-top:4px;color:#789;font-size:11px}.qwe-checks{display:flex;flex-wrap:wrap;gap:10px}.qwe-check{display:inline-flex;align-items:center;gap:5px;color:#cdd;font-size:12px}.qwe-check input{width:auto}.qwe-check-row{display:flex;align-items:center}.qwe-node-toolbar{display:flex;align-items:center;justify-content:space-between;margin:16px 0 10px}.qwe-node-toolbar h3{font-size:14px}.qwe-step{margin-bottom:12px;padding:12px;border:1px solid #2a3a5e;border-radius:6px;background:#0f1830}.qwe-step-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}.qwe-step-actions{display:flex;gap:6px}.qwe-step-actions button{padding:4px 8px;border:0;border-radius:3px;background:#3a4a7e;color:#fff;cursor:pointer}.qwe-step-actions button:disabled{opacity:.35;cursor:default}.qwe-rewards{margin-bottom:8px}.qwe-reward{margin-bottom:8px;padding:8px;border:1px dashed #2a3a5e;border-radius:4px}.qwe-tut-edit{margin-top:8px;padding:10px;border:1px solid #3a4a7e;border-radius:5px;background:#0a1020;display:flex;flex-direction:column;gap:8px}.qwe-tut-step{padding:8px;border:1px solid #223055;border-radius:4px}.qwe-tut-step-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;color:#8fa7d8;font-size:11px}.qwe-tut-step textarea{width:100%;padding:6px;border:1px solid #2a3a5e;border-radius:3px;background:#0a1020;color:#fff;font:inherit;resize:vertical}.qwe-muted{color:#789}.qwe-error{color:#e66}.qwe-ok{color:#6c6}.qwe-preview{font-size:12px;color:#9ab}.qwe-preview ul{margin:6px 0 0 18px}.qwe-empty{padding:38px 16px;color:#789;text-align:center;line-height:1.7}.qwe-empty.compact{padding:18px}.qwe-status{min-height:30px;padding:7px 16px;background:#0a1020;color:#9ab}.qwe-status.ok{color:#6c6}.qwe-status.warn{color:#e6bd5d}.qwe-status.error{color:#e66}.qwe-toast{position:fixed;top:58px;left:50%;z-index:100000;max-width:min(600px,90vw);padding:10px 18px;border-radius:6px;background:#2e7d32;color:#fff;box-shadow:0 4px 16px #0008;opacity:0;pointer-events:none;transform:translate(-50%,-8px);transition:opacity .2s,transform .2s}.qwe-toast[data-type="error"]{background:#c62828}.qwe-toast[data-type="warn"]{background:#9a6700}.qwe-toast.visible{opacity:1;transform:translate(-50%,0)}@media (max-width:800px){.qwe-list{width:180px}.qwe-grid{grid-template-columns:1fr}.qwe-field.full{grid-column:auto}.qwe-hint{display:none}}
+      .qwe-root{height:100%;display:flex;flex-direction:column;background:#0d1326;color:#fff;font-size:13px}.qwe-toolbar{display:flex;align-items:center;gap:8px;padding:10px 16px;background:#16213e;border-bottom:1px solid #2a3a5e}.qwe-toolbar button,.qwe-node-toolbar button{padding:7px 12px;border:0;border-radius:4px;background:#3a4a7e;color:#fff;cursor:pointer}.qwe-toolbar .primary{background:#4caf50;color:#102010;font-weight:bold}.qwe-toolbar .danger,.qwe-step .danger{background:#7e3a3a}.qwe-hint{margin-left:auto;color:#8aa;font-size:12px}.qwe-main{min-height:0;flex:1;display:flex;overflow:hidden}.qwe-list{width:240px;flex:none;overflow:auto;background:#111a30;border-right:1px solid #2a3a5e}.qwe-quest{display:flex;width:100%;flex-direction:column;gap:3px;padding:10px 13px;text-align:left;color:#fff;background:transparent;border:0;border-bottom:1px solid #1e2b47;cursor:pointer}.qwe-quest:hover{background:#1a2540}.qwe-quest.active{background:#2a3a6e}.qwe-quest small{color:#9ab}.qwe-detail{min-width:0;flex:1;overflow:auto;padding:16px}.qwe-note{margin-bottom:12px;padding:10px 12px;border:1px solid #3b6b54;border-radius:5px;background:#10251e;color:#a9d8bc}.qwe-graph{margin-bottom:14px;overflow:auto;border:1px solid #2a3a5e;border-radius:6px;background:#091020;max-height:380px}.qwe-graph svg{display:block}.qwe-graph-edges path{fill:none;stroke:#6d84c7;stroke-width:2}.qwe-graph-node{cursor:pointer}.qwe-graph-node rect{fill:#17264a;stroke:#7d98db;stroke-width:1.5}.qwe-graph-node:hover rect{fill:#294078;stroke:#b9ceff}.qwe-graph-node text{fill:#fff;font-size:11px;pointer-events:none}.qwe-graph-node text.type{fill:#8fa7d8;font-size:10px}.qwe-graph-node.start rect{stroke:#4caf50}.qwe-graph-node.complete rect{stroke:#c9a227}.qwe-graph-node.objective rect{fill:#1a2f55}.qwe-block{margin-bottom:14px;padding:10px 14px;border:1px solid #2a3a5e;border-radius:6px;background:#0f1830}.qwe-block legend{padding:0 8px;color:#8fa7d8;font-weight:bold}.qwe-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.qwe-field{min-width:0}.qwe-field.full{grid-column:1/-1}.qwe-field label{display:block;margin-bottom:4px;color:#9ab;font-size:12px}.qwe-field input,.qwe-field select,.qwe-field textarea{width:100%;padding:7px;border:1px solid #2a3a5e;border-radius:3px;background:#0a1020;color:#fff;font:inherit}.qwe-field textarea{resize:vertical;font-family:Consolas,monospace;font-size:12px}.qwe-field textarea.invalid{border-color:#e66;box-shadow:0 0 0 1px #e66}.qwe-field small{display:block;margin-top:4px;color:#789;font-size:11px}.qwe-checks{display:flex;flex-wrap:wrap;gap:10px}.qwe-check{display:inline-flex;align-items:center;gap:5px;color:#cdd;font-size:12px}.qwe-check input{width:auto}.qwe-check-row{display:flex;align-items:center}.qwe-node-toolbar{display:flex;align-items:center;justify-content:space-between;margin:16px 0 10px}.qwe-node-toolbar h3{font-size:14px}.qwe-step{margin-bottom:12px;padding:12px;border:1px solid #2a3a5e;border-radius:6px;background:#0f1830}.qwe-step-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}.qwe-step-actions{display:flex;gap:6px}.qwe-step-actions button{padding:4px 8px;border:0;border-radius:3px;background:#3a4a7e;color:#fff;cursor:pointer}.qwe-step-actions button:disabled{opacity:.35;cursor:default}.qwe-rewards{margin-bottom:8px}.qwe-reward{margin-bottom:8px;padding:8px;border:1px dashed #2a3a5e;border-radius:4px}.qwe-tut-edit{margin-top:8px;padding:10px;border:1px solid #3a4a7e;border-radius:5px;background:#0a1020;display:flex;flex-direction:column;gap:8px}.qwe-tut-step{padding:8px;border:1px solid #223055;border-radius:4px}.qwe-tut-step-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;color:#8fa7d8;font-size:11px}.qwe-tut-step textarea{width:100%;padding:6px;border:1px solid #2a3a5e;border-radius:3px;background:#0a1020;color:#fff;font:inherit;resize:vertical}.qwe-dlg-edit{margin-top:8px;padding:10px;border:1px solid #3a4a7e;border-radius:5px;background:#0a1020;display:flex;flex-direction:column;gap:8px}.qwe-dlg-node{padding:8px;border:1px solid #223055;border-radius:4px;display:flex;flex-direction:column;gap:6px}.qwe-dlg-node input,.qwe-dlg-node textarea{width:100%;padding:6px;border:1px solid #2a3a5e;border-radius:3px;background:#0a1020;color:#fff;font:inherit;resize:vertical}.qwe-dlg-node textarea{font-family:Consolas,monospace;font-size:12px}.qwe-muted{color:#789}.qwe-error{color:#e66}.qwe-ok{color:#6c6}.qwe-preview{font-size:12px;color:#9ab}.qwe-preview ul{margin:6px 0 0 18px}.qwe-empty{padding:38px 16px;color:#789;text-align:center;line-height:1.7}.qwe-empty.compact{padding:18px}.qwe-status{min-height:30px;padding:7px 16px;background:#0a1020;color:#9ab}.qwe-status.ok{color:#6c6}.qwe-status.warn{color:#e6bd5d}.qwe-status.error{color:#e66}.qwe-toast{position:fixed;top:58px;left:50%;z-index:100000;max-width:min(600px,90vw);padding:10px 18px;border-radius:6px;background:#2e7d32;color:#fff;box-shadow:0 4px 16px #0008;opacity:0;pointer-events:none;transform:translate(-50%,-8px);transition:opacity .2s,transform .2s}.qwe-toast[data-type="error"]{background:#c62828}.qwe-toast[data-type="warn"]{background:#9a6700}.qwe-toast.visible{opacity:1;transform:translate(-50%,0)}@media (max-width:800px){.qwe-list{width:180px}.qwe-grid{grid-template-columns:1fr}.qwe-field.full{grid-column:auto}.qwe-hint{display:none}}
     `;
     document.head.appendChild(style);
   }

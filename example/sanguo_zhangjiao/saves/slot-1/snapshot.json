@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "createdAt": 1790085177339,
+  "createdAt": 1790088530988,
   "meta": {
     "gameId": "sanguo_zhangjiao",
     "kind": "manual",
@@ -83,12 +83,12 @@
             "nodeId": "start",
             "speaker": "旁白",
             "text": "寒风卷过龟裂的荒原。你从熄灭的火堆旁醒来，四肢冻得僵硬，远处只有枯草与河水的声响。",
-            "timestamp": 1790085175300
+            "timestamp": 1790088528929
           },
           {
             "type": "start",
             "dialogueId": "dialogue.s01.wake",
-            "timestamp": 1790085175300
+            "timestamp": 1790088528929
           }
         ],
         "completedDialogues": []
@@ -107,14 +107,14 @@
           "streams": {
             "quest.command": {
               "substreams": {
-                "evt:run-e7827ca4-8385-46b0-aec8-af87ac327fc5:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task": {
+                "evt:run-96de4376-4e33-4df1-885f-4a9e38e84852:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task": {
                   "counter": 0
                 }
               }
             },
             "tutorial.command": {
               "substreams": {
-                "evt:run-e7827ca4-8385-46b0-aec8-af87ac327fc5:0000000004:trigger:trg_task.s01.survival_intro:step:step.step.1.1": {
+                "evt:run-96de4376-4e33-4df1-885f-4a9e38e84852:0000000004:trigger:trg_task.s01.survival_intro:step:step.step.1.1": {
                   "counter": 0
                 }
               }
@@ -125,14 +125,14 @@
           "version": 1,
           "entries": [
             {
-              "operationId": "evt:run-e7827ca4-8385-46b0-aec8-af87ac327fc5:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task",
+              "operationId": "evt:run-96de4376-4e33-4df1-885f-4a9e38e84852:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task",
               "fingerprint": "{\"actorId\":\"refugee\",\"commandType\":\"quest.command\",\"definitionRevision\":1,\"payload\":{\"definitionId\":\"task.s01.survival\",\"event\":{\"sceneId\":\"S01\"},\"instanceId\":\"task.s01.survival.main\",\"operation\":\"task.start\",\"tracking\":true}}",
               "status": "committed",
               "createdAt": 0,
               "updatedAt": 0,
               "result": {
                 "ok": true,
-                "operationId": "evt:run-e7827ca4-8385-46b0-aec8-af87ac327fc5:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task",
+                "operationId": "evt:run-96de4376-4e33-4df1-885f-4a9e38e84852:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task",
                 "status": "committed",
                 "committed": true,
                 "code": null,
@@ -276,14 +276,14 @@
               }
             },
             {
-              "operationId": "evt:run-e7827ca4-8385-46b0-aec8-af87ac327fc5:0000000004:trigger:trg_task.s01.survival_intro:step:step.step.1.1",
-              "fingerprint": "{\"actorId\":\"refugee\",\"commandType\":\"tutorial.command\",\"definitionRevision\":1,\"payload\":{\"definitionRefs\":[{\"id\":\"s01.move\",\"kind\":\"tutorials\"}],\"event\":{\"actorId\":\"refugee\",\"changes\":[],\"checkpoint\":{\"scheduled\":false},\"committed\":true,\"completedInstances\":[],\"definitionId\":\"task.s01.survival\",\"eventId\":\"evt:run-e7827ca4-8385-46b0-aec8-af87ac327fc5:0000000004\",\"instance\":{\"actorId\":\"refugee\",\"completedLogicalTime\":null,\"definitionId\":\"task.s01.survival\",\"eventIds\":[],\"instanceId\":\"task.s01.survival.main\",\"nodeStates\":{\"buildShelter\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"complete\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"cookMeat\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"craftGear\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"crossRiver\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"eatBerry\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"escape\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"findTools\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"gatherBerries\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"gatherWood\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"killWolf\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"leaveShelter\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"lightCampfire\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"active\"},\"reachCliff\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"skinWolf\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"spotWolf\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"start\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"succeeded\"},\"stayOvernight\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"}},\"startedByEventId\":null,\"startedLogicalTime\":0,\"status\":\"active\",\"tracking\":true},\"instanceId\":\"task.s01.survival.main\",\"operation\":\"task.start\",\"operationId\":\"evt:run-e7827ca4-8385-46b0-aec8-af87ac327fc5:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task:trigger:trg_task.s01.survival_intro\",\"sourceEventActorRef\":null,\"sourceEventDefinitionId\":\"task.started\",\"sourceEventPayload\":{\"actorId\":\"refugee\",\"changes\":[],\"checkpoint\":{\"scheduled\":false},\"completedInstances\":[],\"definitionId\":\"task.s01.survival\",\"instance\":{\"actorId\":\"refugee\",\"completedLogicalTime\":null,\"definitionId\":\"task.s01.survival\",\"eventIds\":[],\"instanceId\":\"task.s01.survival.main\",\"nodeStates\":{\"buildShelter\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"complete\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"cookMeat\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"craftGear\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"crossRiver\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"eatBerry\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"escape\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"findTools\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"gatherBerries\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"gatherWood\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"killWolf\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"leaveShelter\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"lightCampfire\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"active\"},\"reachCliff\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"skinWolf\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"spotWolf\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"start\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"succeeded\"},\"stayOvernight\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"}},\"startedByEventId\":null,\"startedLogicalTime\":0,\"status\":\"active\",\"tracking\":true},\"instanceId\":\"task.s01.survival.main\",\"operation\":\"task.start\"},\"sourceEventSceneId\":null,\"sourceEventSource\":{\"kind\":\"postCommitNotification\",\"operationId\":\"evt:run-e7827ca4-8385-46b0-aec8-af87ac327fc5:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task\"},\"sourceEventType\":\"task.started\"},\"operation\":\"show\",\"tutorialId\":\"s01.move\"}}",
+              "operationId": "evt:run-96de4376-4e33-4df1-885f-4a9e38e84852:0000000004:trigger:trg_task.s01.survival_intro:step:step.step.1.1",
+              "fingerprint": "{\"actorId\":\"refugee\",\"commandType\":\"tutorial.command\",\"definitionRevision\":1,\"payload\":{\"definitionRefs\":[{\"id\":\"s01.move\",\"kind\":\"tutorials\"}],\"event\":{\"actorId\":\"refugee\",\"changes\":[],\"checkpoint\":{\"scheduled\":false},\"committed\":true,\"completedInstances\":[],\"definitionId\":\"task.s01.survival\",\"eventId\":\"evt:run-96de4376-4e33-4df1-885f-4a9e38e84852:0000000004\",\"instance\":{\"actorId\":\"refugee\",\"completedLogicalTime\":null,\"definitionId\":\"task.s01.survival\",\"eventIds\":[],\"instanceId\":\"task.s01.survival.main\",\"nodeStates\":{\"buildShelter\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"complete\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"cookMeat\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"craftGear\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"crossRiver\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"eatBerry\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"escape\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"findTools\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"gatherBerries\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"gatherWood\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"killWolf\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"leaveShelter\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"lightCampfire\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"active\"},\"reachCliff\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"skinWolf\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"spotWolf\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"start\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"succeeded\"},\"stayOvernight\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"}},\"startedByEventId\":null,\"startedLogicalTime\":0,\"status\":\"active\",\"tracking\":true},\"instanceId\":\"task.s01.survival.main\",\"operation\":\"task.start\",\"operationId\":\"evt:run-96de4376-4e33-4df1-885f-4a9e38e84852:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task:trigger:trg_task.s01.survival_intro\",\"sourceEventActorRef\":null,\"sourceEventDefinitionId\":\"task.started\",\"sourceEventPayload\":{\"actorId\":\"refugee\",\"changes\":[],\"checkpoint\":{\"scheduled\":false},\"completedInstances\":[],\"definitionId\":\"task.s01.survival\",\"instance\":{\"actorId\":\"refugee\",\"completedLogicalTime\":null,\"definitionId\":\"task.s01.survival\",\"eventIds\":[],\"instanceId\":\"task.s01.survival.main\",\"nodeStates\":{\"buildShelter\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"complete\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"cookMeat\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"craftGear\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"crossRiver\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"eatBerry\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"escape\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"findTools\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"gatherBerries\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"gatherWood\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"killWolf\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"leaveShelter\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"lightCampfire\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"active\"},\"reachCliff\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"skinWolf\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"spotWolf\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"start\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"succeeded\"},\"stayOvernight\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"}},\"startedByEventId\":null,\"startedLogicalTime\":0,\"status\":\"active\",\"tracking\":true},\"instanceId\":\"task.s01.survival.main\",\"operation\":\"task.start\"},\"sourceEventSceneId\":null,\"sourceEventSource\":{\"kind\":\"postCommitNotification\",\"operationId\":\"evt:run-96de4376-4e33-4df1-885f-4a9e38e84852:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task\"},\"sourceEventType\":\"task.started\"},\"operation\":\"show\",\"tutorialId\":\"s01.move\"}}",
               "status": "committed",
               "createdAt": 0,
               "updatedAt": 0,
               "result": {
                 "ok": true,
-                "operationId": "evt:run-e7827ca4-8385-46b0-aec8-af87ac327fc5:0000000004:trigger:trg_task.s01.survival_intro:step:step.step.1.1",
+                "operationId": "evt:run-96de4376-4e33-4df1-885f-4a9e38e84852:0000000004:trigger:trg_task.s01.survival_intro:step:step.step.1.1",
                 "status": "committed",
                 "committed": true,
                 "code": null,
@@ -302,11 +302,11 @@
         "serviceStates": {
           "eventJournal": {
             "schemaVersion": 2,
-            "runId": "run-e7827ca4-8385-46b0-aec8-af87ac327fc5",
+            "runId": "run-96de4376-4e33-4df1-885f-4a9e38e84852",
             "nextSequence": 6,
             "events": [
               {
-                "eventId": "evt:run-e7827ca4-8385-46b0-aec8-af87ac327fc5:0000000001",
+                "eventId": "evt:run-96de4376-4e33-4df1-885f-4a9e38e84852:0000000001",
                 "kind": null,
                 "eventDefinitionId": null,
                 "type": "sceneEnter",
@@ -324,14 +324,14 @@
                   "trg_s01_start_survival_task:start-s01-survival-task": {
                     "triggerId": "trg_s01_start_survival_task",
                     "stepId": "start-s01-survival-task",
-                    "operationId": "evt:run-e7827ca4-8385-46b0-aec8-af87ac327fc5:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task",
-                    "payloadFingerprint": "sha256-feb05aa6ed17973d0ea6e2f14a656a6895432df4400dd148a3f6aeacda1c1012",
+                    "operationId": "evt:run-96de4376-4e33-4df1-885f-4a9e38e84852:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task",
+                    "payloadFingerprint": "sha256-5e2d1f4c1bc4a2914282cf1755a80c520ee8076a5f95776473dbe9e5cb709c73",
                     "status": "succeeded",
                     "startedLogicalTime": 0,
                     "finishedLogicalTime": 0,
                     "result": {
                       "ok": true,
-                      "operationId": "evt:run-e7827ca4-8385-46b0-aec8-af87ac327fc5:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task",
+                      "operationId": "evt:run-96de4376-4e33-4df1-885f-4a9e38e84852:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task",
                       "status": "committed",
                       "committed": true,
                       "code": null,
@@ -478,7 +478,7 @@
                 "consumerReceipts": {},
                 "result": {
                   "ok": true,
-                  "operationId": "evt:run-e7827ca4-8385-46b0-aec8-af87ac327fc5:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task",
+                  "operationId": "evt:run-96de4376-4e33-4df1-885f-4a9e38e84852:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task",
                   "status": "committed",
                   "committed": true,
                   "code": null,
@@ -622,7 +622,7 @@
                 }
               },
               {
-                "eventId": "evt:run-e7827ca4-8385-46b0-aec8-af87ac327fc5:0000000002",
+                "eventId": "evt:run-96de4376-4e33-4df1-885f-4a9e38e84852:0000000002",
                 "kind": null,
                 "eventDefinitionId": null,
                 "type": "sceneEnter",
@@ -640,14 +640,14 @@
                   "trg_s01_spawn_initial:spawn-initial-placements": {
                     "triggerId": "trg_s01_spawn_initial",
                     "stepId": "spawn-initial-placements",
-                    "operationId": "evt:run-e7827ca4-8385-46b0-aec8-af87ac327fc5:0000000002:trigger:trg_s01_spawn_initial:step:spawn-initial-placements",
-                    "payloadFingerprint": "sha256-2b04c59999184c7bb11a4a9cb02997e484c5872bd669b823941a30de62b1eedc",
+                    "operationId": "evt:run-96de4376-4e33-4df1-885f-4a9e38e84852:0000000002:trigger:trg_s01_spawn_initial:step:spawn-initial-placements",
+                    "payloadFingerprint": "sha256-39f12fbcbafa63d4bb75fd423cc3fc25221d217813ad9a8a6b32daf63d3f18eb",
                     "status": "succeeded",
                     "startedLogicalTime": 0,
                     "finishedLogicalTime": 0,
                     "result": {
                       "ok": true,
-                      "operationId": "evt:run-e7827ca4-8385-46b0-aec8-af87ac327fc5:0000000002:trigger:trg_s01_spawn_initial:step:spawn-initial-placements",
+                      "operationId": "evt:run-96de4376-4e33-4df1-885f-4a9e38e84852:0000000002:trigger:trg_s01_spawn_initial:step:spawn-initial-placements",
                       "status": "succeeded",
                       "committed": false,
                       "code": null,
@@ -662,14 +662,14 @@
                   "trg_s01_spawn_initial:reconcile-pursuit": {
                     "triggerId": "trg_s01_spawn_initial",
                     "stepId": "reconcile-pursuit",
-                    "operationId": "evt:run-e7827ca4-8385-46b0-aec8-af87ac327fc5:0000000002:trigger:trg_s01_spawn_initial:step:reconcile-pursuit",
-                    "payloadFingerprint": "sha256-337e258c8e4879432f6177360fb4b8ee52ace8440f6f2c12c605ccc9edfe3a5a",
+                    "operationId": "evt:run-96de4376-4e33-4df1-885f-4a9e38e84852:0000000002:trigger:trg_s01_spawn_initial:step:reconcile-pursuit",
+                    "payloadFingerprint": "sha256-4b48e0b84954f3bf7c8f719c38cbc330f8e69b9167652b11271c04186ddec57f",
                     "status": "succeeded",
                     "startedLogicalTime": 0,
                     "finishedLogicalTime": 0,
                     "result": {
                       "ok": true,
-                      "operationId": "evt:run-e7827ca4-8385-46b0-aec8-af87ac327fc5:0000000002:trigger:trg_s01_spawn_initial:step:reconcile-pursuit",
+                      "operationId": "evt:run-96de4376-4e33-4df1-885f-4a9e38e84852:0000000002:trigger:trg_s01_spawn_initial:step:reconcile-pursuit",
                       "status": "succeeded",
                       "committed": false,
                       "code": null,
@@ -684,14 +684,14 @@
                   "trg_s01_spawn_initial:present-entry": {
                     "triggerId": "trg_s01_spawn_initial",
                     "stepId": "present-entry",
-                    "operationId": "evt:run-e7827ca4-8385-46b0-aec8-af87ac327fc5:0000000002:trigger:trg_s01_spawn_initial:step:present-entry",
-                    "payloadFingerprint": "sha256-cd726b296bead7c4f03857be6e2949b90aeb03c894e0aa6fafe00c9a24ff10bb",
+                    "operationId": "evt:run-96de4376-4e33-4df1-885f-4a9e38e84852:0000000002:trigger:trg_s01_spawn_initial:step:present-entry",
+                    "payloadFingerprint": "sha256-3143f52811fd67c04f438d4236ca13b3f54f33917025503b803fd316a888f31b",
                     "status": "succeeded",
                     "startedLogicalTime": 0,
                     "finishedLogicalTime": 0,
                     "result": {
                       "ok": true,
-                      "operationId": "evt:run-e7827ca4-8385-46b0-aec8-af87ac327fc5:0000000002:trigger:trg_s01_spawn_initial:step:present-entry",
+                      "operationId": "evt:run-96de4376-4e33-4df1-885f-4a9e38e84852:0000000002:trigger:trg_s01_spawn_initial:step:present-entry",
                       "status": "succeeded",
                       "committed": false,
                       "code": null,
@@ -707,7 +707,7 @@
                 "consumerReceipts": {},
                 "result": {
                   "ok": true,
-                  "operationId": "evt:run-e7827ca4-8385-46b0-aec8-af87ac327fc5:0000000002:trigger:trg_s01_spawn_initial:step:present-entry",
+                  "operationId": "evt:run-96de4376-4e33-4df1-885f-4a9e38e84852:0000000002:trigger:trg_s01_spawn_initial:step:present-entry",
                   "status": "succeeded",
                   "committed": false,
                   "code": null,
@@ -720,13 +720,13 @@
                 }
               },
               {
-                "eventId": "evt:run-e7827ca4-8385-46b0-aec8-af87ac327fc5:0000000003",
+                "eventId": "evt:run-96de4376-4e33-4df1-885f-4a9e38e84852:0000000003",
                 "kind": "CommittedEvent",
                 "eventDefinitionId": "task.start.committed",
                 "type": "task.start.committed",
                 "source": {
                   "kind": "postCommitNotification",
-                  "operationId": "evt:run-e7827ca4-8385-46b0-aec8-af87ac327fc5:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task"
+                  "operationId": "evt:run-96de4376-4e33-4df1-885f-4a9e38e84852:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task"
                 },
                 "actorRef": null,
                 "sceneId": null,
@@ -862,7 +862,7 @@
                     "scheduled": false
                   }
                 },
-                "payloadFingerprint": "{\"actorRef\":null,\"eventDefinitionId\":\"task.start.committed\",\"kind\":\"CommittedEvent\",\"payload\":{\"actorId\":\"refugee\",\"changes\":[],\"checkpoint\":{\"scheduled\":false},\"completedInstances\":[],\"definitionId\":\"task.s01.survival\",\"instance\":{\"actorId\":\"refugee\",\"completedLogicalTime\":null,\"definitionId\":\"task.s01.survival\",\"eventIds\":[],\"instanceId\":\"task.s01.survival.main\",\"nodeStates\":{\"buildShelter\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"complete\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"cookMeat\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"craftGear\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"crossRiver\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"eatBerry\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"escape\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"findTools\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"gatherBerries\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"gatherWood\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"killWolf\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"leaveShelter\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"lightCampfire\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"active\"},\"reachCliff\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"skinWolf\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"spotWolf\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"start\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"succeeded\"},\"stayOvernight\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"}},\"startedByEventId\":null,\"startedLogicalTime\":0,\"status\":\"active\",\"tracking\":true},\"instanceId\":\"task.s01.survival.main\",\"operation\":\"task.start\"},\"sceneId\":null,\"source\":{\"kind\":\"postCommitNotification\",\"operationId\":\"evt:run-e7827ca4-8385-46b0-aec8-af87ac327fc5:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task\"},\"type\":\"task.start.committed\"}",
+                "payloadFingerprint": "{\"actorRef\":null,\"eventDefinitionId\":\"task.start.committed\",\"kind\":\"CommittedEvent\",\"payload\":{\"actorId\":\"refugee\",\"changes\":[],\"checkpoint\":{\"scheduled\":false},\"completedInstances\":[],\"definitionId\":\"task.s01.survival\",\"instance\":{\"actorId\":\"refugee\",\"completedLogicalTime\":null,\"definitionId\":\"task.s01.survival\",\"eventIds\":[],\"instanceId\":\"task.s01.survival.main\",\"nodeStates\":{\"buildShelter\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"complete\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"cookMeat\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"craftGear\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"crossRiver\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"eatBerry\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"escape\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"findTools\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"gatherBerries\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"gatherWood\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"killWolf\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"leaveShelter\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"lightCampfire\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"active\"},\"reachCliff\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"skinWolf\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"spotWolf\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"start\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"succeeded\"},\"stayOvernight\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"}},\"startedByEventId\":null,\"startedLogicalTime\":0,\"status\":\"active\",\"tracking\":true},\"instanceId\":\"task.s01.survival.main\",\"operation\":\"task.start\"},\"sceneId\":null,\"source\":{\"kind\":\"postCommitNotification\",\"operationId\":\"evt:run-96de4376-4e33-4df1-885f-4a9e38e84852:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task\"},\"type\":\"task.start.committed\"}",
                 "logicalTime": 1,
                 "persistent": true,
                 "status": "succeeded",
@@ -870,8 +870,8 @@
                   "postCommit:published": {
                     "triggerId": "postCommit",
                     "stepId": "published",
-                    "operationId": "evt:run-e7827ca4-8385-46b0-aec8-af87ac327fc5:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task",
-                    "payloadFingerprint": "{\"eventSequence\":1,\"operationId\":\"evt:run-e7827ca4-8385-46b0-aec8-af87ac327fc5:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task\",\"type\":\"task.start.committed\"}",
+                    "operationId": "evt:run-96de4376-4e33-4df1-885f-4a9e38e84852:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task",
+                    "payloadFingerprint": "{\"eventSequence\":1,\"operationId\":\"evt:run-96de4376-4e33-4df1-885f-4a9e38e84852:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task\",\"type\":\"task.start.committed\"}",
                     "status": "succeeded",
                     "startedLogicalTime": 1,
                     "finishedLogicalTime": 1,
@@ -889,17 +889,17 @@
                   "stateType": "questRuntime",
                   "stateRevision": 1,
                   "eventSequence": 1,
-                  "operationId": "evt:run-e7827ca4-8385-46b0-aec8-af87ac327fc5:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task"
+                  "operationId": "evt:run-96de4376-4e33-4df1-885f-4a9e38e84852:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task"
                 }
               },
               {
-                "eventId": "evt:run-e7827ca4-8385-46b0-aec8-af87ac327fc5:0000000004",
+                "eventId": "evt:run-96de4376-4e33-4df1-885f-4a9e38e84852:0000000004",
                 "kind": "ApplicationEvent",
                 "eventDefinitionId": "task.started",
                 "type": "task.started",
                 "source": {
                   "kind": "postCommitNotification",
-                  "operationId": "evt:run-e7827ca4-8385-46b0-aec8-af87ac327fc5:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task"
+                  "operationId": "evt:run-96de4376-4e33-4df1-885f-4a9e38e84852:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task"
                 },
                 "actorRef": null,
                 "sceneId": null,
@@ -1035,7 +1035,7 @@
                     "scheduled": false
                   }
                 },
-                "payloadFingerprint": "{\"actorRef\":null,\"eventDefinitionId\":\"task.started\",\"kind\":\"ApplicationEvent\",\"payload\":{\"actorId\":\"refugee\",\"changes\":[],\"checkpoint\":{\"scheduled\":false},\"completedInstances\":[],\"definitionId\":\"task.s01.survival\",\"instance\":{\"actorId\":\"refugee\",\"completedLogicalTime\":null,\"definitionId\":\"task.s01.survival\",\"eventIds\":[],\"instanceId\":\"task.s01.survival.main\",\"nodeStates\":{\"buildShelter\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"complete\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"cookMeat\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"craftGear\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"crossRiver\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"eatBerry\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"escape\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"findTools\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"gatherBerries\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"gatherWood\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"killWolf\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"leaveShelter\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"lightCampfire\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"active\"},\"reachCliff\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"skinWolf\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"spotWolf\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"start\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"succeeded\"},\"stayOvernight\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"}},\"startedByEventId\":null,\"startedLogicalTime\":0,\"status\":\"active\",\"tracking\":true},\"instanceId\":\"task.s01.survival.main\",\"operation\":\"task.start\"},\"sceneId\":null,\"source\":{\"kind\":\"postCommitNotification\",\"operationId\":\"evt:run-e7827ca4-8385-46b0-aec8-af87ac327fc5:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task\"},\"type\":\"task.started\"}",
+                "payloadFingerprint": "{\"actorRef\":null,\"eventDefinitionId\":\"task.started\",\"kind\":\"ApplicationEvent\",\"payload\":{\"actorId\":\"refugee\",\"changes\":[],\"checkpoint\":{\"scheduled\":false},\"completedInstances\":[],\"definitionId\":\"task.s01.survival\",\"instance\":{\"actorId\":\"refugee\",\"completedLogicalTime\":null,\"definitionId\":\"task.s01.survival\",\"eventIds\":[],\"instanceId\":\"task.s01.survival.main\",\"nodeStates\":{\"buildShelter\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"complete\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"cookMeat\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"craftGear\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"crossRiver\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"eatBerry\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"escape\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"findTools\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"gatherBerries\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"gatherWood\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"killWolf\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"leaveShelter\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"lightCampfire\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"active\"},\"reachCliff\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"skinWolf\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"spotWolf\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"},\"start\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"succeeded\"},\"stayOvernight\":{\"eventIds\":[],\"progress\":0,\"selectedBranchId\":null,\"status\":\"locked\"}},\"startedByEventId\":null,\"startedLogicalTime\":0,\"status\":\"active\",\"tracking\":true},\"instanceId\":\"task.s01.survival.main\",\"operation\":\"task.start\"},\"sceneId\":null,\"source\":{\"kind\":\"postCommitNotification\",\"operationId\":\"evt:run-96de4376-4e33-4df1-885f-4a9e38e84852:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task\"},\"type\":\"task.started\"}",
                 "logicalTime": 1,
                 "persistent": true,
                 "status": "succeeded",
@@ -1043,8 +1043,8 @@
                   "postCommit:published": {
                     "triggerId": "postCommit",
                     "stepId": "published",
-                    "operationId": "evt:run-e7827ca4-8385-46b0-aec8-af87ac327fc5:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task",
-                    "payloadFingerprint": "{\"eventSequence\":2,\"operationId\":\"evt:run-e7827ca4-8385-46b0-aec8-af87ac327fc5:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task\",\"type\":\"task.started\"}",
+                    "operationId": "evt:run-96de4376-4e33-4df1-885f-4a9e38e84852:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task",
+                    "payloadFingerprint": "{\"eventSequence\":2,\"operationId\":\"evt:run-96de4376-4e33-4df1-885f-4a9e38e84852:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task\",\"type\":\"task.started\"}",
                     "status": "succeeded",
                     "startedLogicalTime": 1,
                     "finishedLogicalTime": 1,
@@ -1055,14 +1055,14 @@
                   "trg_task.s01.survival_intro:step.step.1.1": {
                     "triggerId": "trg_task.s01.survival_intro",
                     "stepId": "step.step.1.1",
-                    "operationId": "evt:run-e7827ca4-8385-46b0-aec8-af87ac327fc5:0000000004:trigger:trg_task.s01.survival_intro:step:step.step.1.1",
-                    "payloadFingerprint": "sha256-100d9e28195e30402e32e2419ffccd990e7eee286e30b249f3138d01705672fb",
+                    "operationId": "evt:run-96de4376-4e33-4df1-885f-4a9e38e84852:0000000004:trigger:trg_task.s01.survival_intro:step:step.step.1.1",
+                    "payloadFingerprint": "sha256-8a9a3ac3e9b31ce808c20b15430324bf7b80da9bd2f7bfba7ee907a3376e77c8",
                     "status": "succeeded",
                     "startedLogicalTime": 0,
                     "finishedLogicalTime": 0,
                     "result": {
                       "ok": true,
-                      "operationId": "evt:run-e7827ca4-8385-46b0-aec8-af87ac327fc5:0000000004:trigger:trg_task.s01.survival_intro:step:step.step.1.1",
+                      "operationId": "evt:run-96de4376-4e33-4df1-885f-4a9e38e84852:0000000004:trigger:trg_task.s01.survival_intro:step:step.step.1.1",
                       "status": "committed",
                       "committed": true,
                       "code": null,
@@ -1080,7 +1080,7 @@
                 "consumerReceipts": {
                   "sanguo-scene-content": {
                     "consumerId": "sanguo-scene-content",
-                    "operationId": "consume:evt:run-e7827ca4-8385-46b0-aec8-af87ac327fc5:0000000004:sanguo-scene-content",
+                    "operationId": "consume:evt:run-96de4376-4e33-4df1-885f-4a9e38e84852:0000000004:sanguo-scene-content",
                     "status": "succeeded",
                     "attempts": 1,
                     "startedLogicalTime": 1,
@@ -1092,7 +1092,7 @@
                 },
                 "result": {
                   "ok": true,
-                  "operationId": "evt:run-e7827ca4-8385-46b0-aec8-af87ac327fc5:0000000004:trigger:trg_task.s01.survival_intro:step:step.step.1.1",
+                  "operationId": "evt:run-96de4376-4e33-4df1-885f-4a9e38e84852:0000000004:trigger:trg_task.s01.survival_intro:step:step.step.1.1",
                   "status": "committed",
                   "committed": true,
                   "code": null,
@@ -1110,17 +1110,17 @@
                   "stateType": "questRuntime",
                   "stateRevision": 1,
                   "eventSequence": 2,
-                  "operationId": "evt:run-e7827ca4-8385-46b0-aec8-af87ac327fc5:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task"
+                  "operationId": "evt:run-96de4376-4e33-4df1-885f-4a9e38e84852:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task"
                 }
               },
               {
-                "eventId": "evt:run-e7827ca4-8385-46b0-aec8-af87ac327fc5:0000000005",
+                "eventId": "evt:run-96de4376-4e33-4df1-885f-4a9e38e84852:0000000005",
                 "kind": "CommittedEvent",
                 "eventDefinitionId": "tutorial.command.committed",
                 "type": "tutorial.command.committed",
                 "source": {
                   "kind": "postCommitNotification",
-                  "operationId": "evt:run-e7827ca4-8385-46b0-aec8-af87ac327fc5:0000000004:trigger:trg_task.s01.survival_intro:step:step.step.1.1"
+                  "operationId": "evt:run-96de4376-4e33-4df1-885f-4a9e38e84852:0000000004:trigger:trg_task.s01.survival_intro:step:step.step.1.1"
                 },
                 "actorRef": null,
                 "sceneId": null,
@@ -1130,7 +1130,7 @@
                     "ok": true
                   }
                 },
-                "payloadFingerprint": "{\"actorRef\":null,\"eventDefinitionId\":\"tutorial.command.committed\",\"kind\":\"CommittedEvent\",\"payload\":{\"commandType\":\"tutorial.command\",\"value\":{\"ok\":true}},\"sceneId\":null,\"source\":{\"kind\":\"postCommitNotification\",\"operationId\":\"evt:run-e7827ca4-8385-46b0-aec8-af87ac327fc5:0000000004:trigger:trg_task.s01.survival_intro:step:step.step.1.1\"},\"type\":\"tutorial.command.committed\"}",
+                "payloadFingerprint": "{\"actorRef\":null,\"eventDefinitionId\":\"tutorial.command.committed\",\"kind\":\"CommittedEvent\",\"payload\":{\"commandType\":\"tutorial.command\",\"value\":{\"ok\":true}},\"sceneId\":null,\"source\":{\"kind\":\"postCommitNotification\",\"operationId\":\"evt:run-96de4376-4e33-4df1-885f-4a9e38e84852:0000000004:trigger:trg_task.s01.survival_intro:step:step.step.1.1\"},\"type\":\"tutorial.command.committed\"}",
                 "logicalTime": 2,
                 "persistent": true,
                 "status": "succeeded",
@@ -1138,8 +1138,8 @@
                   "postCommit:published": {
                     "triggerId": "postCommit",
                     "stepId": "published",
-                    "operationId": "evt:run-e7827ca4-8385-46b0-aec8-af87ac327fc5:0000000004:trigger:trg_task.s01.survival_intro:step:step.step.1.1",
-                    "payloadFingerprint": "{\"eventSequence\":3,\"operationId\":\"evt:run-e7827ca4-8385-46b0-aec8-af87ac327fc5:0000000004:trigger:trg_task.s01.survival_intro:step:step.step.1.1\",\"type\":\"tutorial.command.committed\"}",
+                    "operationId": "evt:run-96de4376-4e33-4df1-885f-4a9e38e84852:0000000004:trigger:trg_task.s01.survival_intro:step:step.step.1.1",
+                    "payloadFingerprint": "{\"eventSequence\":3,\"operationId\":\"evt:run-96de4376-4e33-4df1-885f-4a9e38e84852:0000000004:trigger:trg_task.s01.survival_intro:step:step.step.1.1\",\"type\":\"tutorial.command.committed\"}",
                     "status": "succeeded",
                     "startedLogicalTime": 2,
                     "finishedLogicalTime": 2,
@@ -1157,17 +1157,17 @@
                   "stateType": "scenarioCommand",
                   "stateRevision": 1,
                   "eventSequence": 3,
-                  "operationId": "evt:run-e7827ca4-8385-46b0-aec8-af87ac327fc5:0000000004:trigger:trg_task.s01.survival_intro:step:step.step.1.1"
+                  "operationId": "evt:run-96de4376-4e33-4df1-885f-4a9e38e84852:0000000004:trigger:trg_task.s01.survival_intro:step:step.step.1.1"
                 }
               },
               {
-                "eventId": "evt:run-e7827ca4-8385-46b0-aec8-af87ac327fc5:0000000006",
+                "eventId": "evt:run-96de4376-4e33-4df1-885f-4a9e38e84852:0000000006",
                 "kind": "ApplicationEvent",
                 "eventDefinitionId": "tutorial.command",
                 "type": "tutorial.command",
                 "source": {
                   "kind": "postCommitNotification",
-                  "operationId": "evt:run-e7827ca4-8385-46b0-aec8-af87ac327fc5:0000000004:trigger:trg_task.s01.survival_intro:step:step.step.1.1"
+                  "operationId": "evt:run-96de4376-4e33-4df1-885f-4a9e38e84852:0000000004:trigger:trg_task.s01.survival_intro:step:step.step.1.1"
                 },
                 "actorRef": null,
                 "sceneId": null,
@@ -1177,7 +1177,7 @@
                     "ok": true
                   }
                 },
-                "payloadFingerprint": "{\"actorRef\":null,\"eventDefinitionId\":\"tutorial.command\",\"kind\":\"ApplicationEvent\",\"payload\":{\"commandType\":\"tutorial.command\",\"value\":{\"ok\":true}},\"sceneId\":null,\"source\":{\"kind\":\"postCommitNotification\",\"operationId\":\"evt:run-e7827ca4-8385-46b0-aec8-af87ac327fc5:0000000004:trigger:trg_task.s01.survival_intro:step:step.step.1.1\"},\"type\":\"tutorial.command\"}",
+                "payloadFingerprint": "{\"actorRef\":null,\"eventDefinitionId\":\"tutorial.command\",\"kind\":\"ApplicationEvent\",\"payload\":{\"commandType\":\"tutorial.command\",\"value\":{\"ok\":true}},\"sceneId\":null,\"source\":{\"kind\":\"postCommitNotification\",\"operationId\":\"evt:run-96de4376-4e33-4df1-885f-4a9e38e84852:0000000004:trigger:trg_task.s01.survival_intro:step:step.step.1.1\"},\"type\":\"tutorial.command\"}",
                 "logicalTime": 2,
                 "persistent": true,
                 "status": "succeeded",
@@ -1185,8 +1185,8 @@
                   "postCommit:published": {
                     "triggerId": "postCommit",
                     "stepId": "published",
-                    "operationId": "evt:run-e7827ca4-8385-46b0-aec8-af87ac327fc5:0000000004:trigger:trg_task.s01.survival_intro:step:step.step.1.1",
-                    "payloadFingerprint": "{\"eventSequence\":4,\"operationId\":\"evt:run-e7827ca4-8385-46b0-aec8-af87ac327fc5:0000000004:trigger:trg_task.s01.survival_intro:step:step.step.1.1\",\"type\":\"tutorial.command\"}",
+                    "operationId": "evt:run-96de4376-4e33-4df1-885f-4a9e38e84852:0000000004:trigger:trg_task.s01.survival_intro:step:step.step.1.1",
+                    "payloadFingerprint": "{\"eventSequence\":4,\"operationId\":\"evt:run-96de4376-4e33-4df1-885f-4a9e38e84852:0000000004:trigger:trg_task.s01.survival_intro:step:step.step.1.1\",\"type\":\"tutorial.command\"}",
                     "status": "succeeded",
                     "startedLogicalTime": 2,
                     "finishedLogicalTime": 2,
@@ -1198,7 +1198,7 @@
                 "consumerReceipts": {
                   "sanguo-scene-content": {
                     "consumerId": "sanguo-scene-content",
-                    "operationId": "consume:evt:run-e7827ca4-8385-46b0-aec8-af87ac327fc5:0000000006:sanguo-scene-content",
+                    "operationId": "consume:evt:run-96de4376-4e33-4df1-885f-4a9e38e84852:0000000006:sanguo-scene-content",
                     "status": "succeeded",
                     "attempts": 1,
                     "startedLogicalTime": 2,
@@ -1216,7 +1216,7 @@
                   "stateType": "scenarioCommand",
                   "stateRevision": 1,
                   "eventSequence": 4,
-                  "operationId": "evt:run-e7827ca4-8385-46b0-aec8-af87ac327fc5:0000000004:trigger:trg_task.s01.survival_intro:step:step.step.1.1"
+                  "operationId": "evt:run-96de4376-4e33-4df1-885f-4a9e38e84852:0000000004:trigger:trg_task.s01.survival_intro:step:step.step.1.1"
                 }
               }
             ]
@@ -1599,14 +1599,14 @@
                   {
                     "triggerId": "trg_s01_start_survival_task",
                     "definitionRevision": 1,
-                    "eventId": "evt:run-e7827ca4-8385-46b0-aec8-af87ac327fc5:0000000001",
-                    "operationId": "evt:run-e7827ca4-8385-46b0-aec8-af87ac327fc5:0000000001",
-                    "fingerprint": "sha256-b09bfb67816e512b0ff6f057fe08fa8b10b4a9958faead2968d4777f3d42aba4",
+                    "eventId": "evt:run-96de4376-4e33-4df1-885f-4a9e38e84852:0000000001",
+                    "operationId": "evt:run-96de4376-4e33-4df1-885f-4a9e38e84852:0000000001",
+                    "fingerprint": "sha256-b860736f87e261152f58953c7ab0b6512eb238161495a5189658f1606ce5620a",
                     "status": "succeeded",
                     "actionIndex": 0,
                     "result": {
                       "ok": true,
-                      "operationId": "evt:run-e7827ca4-8385-46b0-aec8-af87ac327fc5:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task",
+                      "operationId": "evt:run-96de4376-4e33-4df1-885f-4a9e38e84852:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task",
                       "status": "committed",
                       "committed": true,
                       "code": null,
@@ -1620,14 +1620,14 @@
                   {
                     "triggerId": "trg_s01_spawn_initial",
                     "definitionRevision": 1,
-                    "eventId": "evt:run-e7827ca4-8385-46b0-aec8-af87ac327fc5:0000000002",
-                    "operationId": "evt:run-e7827ca4-8385-46b0-aec8-af87ac327fc5:0000000002",
-                    "fingerprint": "sha256-e8d16d875a855c2414409badcdd1f77cfc0f42c8eff4f435b178f9d147452095",
+                    "eventId": "evt:run-96de4376-4e33-4df1-885f-4a9e38e84852:0000000002",
+                    "operationId": "evt:run-96de4376-4e33-4df1-885f-4a9e38e84852:0000000002",
+                    "fingerprint": "sha256-7affab9499979df78c6c35cda3b96b7c7b7f610f76d248b520f33290d1f3c004",
                     "status": "succeeded",
                     "actionIndex": 2,
                     "result": {
                       "ok": true,
-                      "operationId": "evt:run-e7827ca4-8385-46b0-aec8-af87ac327fc5:0000000002:trigger:trg_s01_spawn_initial:step:present-entry",
+                      "operationId": "evt:run-96de4376-4e33-4df1-885f-4a9e38e84852:0000000002:trigger:trg_s01_spawn_initial:step:present-entry",
                       "status": "succeeded",
                       "committed": false,
                       "code": null,
@@ -3084,14 +3084,14 @@
                   {
                     "triggerId": "trg_task.s01.survival_intro",
                     "definitionRevision": 1,
-                    "eventId": "evt:run-e7827ca4-8385-46b0-aec8-af87ac327fc5:0000000004",
-                    "operationId": "evt:run-e7827ca4-8385-46b0-aec8-af87ac327fc5:0000000004",
-                    "fingerprint": "sha256-0a2603e180e658f4c4c14070dc8530df1ecf7a5c5e5a1f386d46da866cb4f1cd",
+                    "eventId": "evt:run-96de4376-4e33-4df1-885f-4a9e38e84852:0000000004",
+                    "operationId": "evt:run-96de4376-4e33-4df1-885f-4a9e38e84852:0000000004",
+                    "fingerprint": "sha256-8e0ab4300b4ece3489fabe5625ea03bc267aede9369e43477bc3f686de1455b3",
                     "status": "succeeded",
                     "actionIndex": 0,
                     "result": {
                       "ok": true,
-                      "operationId": "evt:run-e7827ca4-8385-46b0-aec8-af87ac327fc5:0000000004:trigger:trg_task.s01.survival_intro:step:step.step.1.1",
+                      "operationId": "evt:run-96de4376-4e33-4df1-885f-4a9e38e84852:0000000004:trigger:trg_task.s01.survival_intro:step:step.step.1.1",
                       "status": "committed",
                       "committed": true,
                       "code": null,
@@ -3138,9 +3138,9 @@
         "providerMetadata": {
           "kind": "saveGame",
           "committedOperations": {
-            "evt:run-e7827ca4-8385-46b0-aec8-af87ac327fc5:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task": {
+            "evt:run-96de4376-4e33-4df1-885f-4a9e38e84852:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task": {
               "ok": true,
-              "operationId": "evt:run-e7827ca4-8385-46b0-aec8-af87ac327fc5:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task",
+              "operationId": "evt:run-96de4376-4e33-4df1-885f-4a9e38e84852:0000000001:trigger:trg_s01_start_survival_task:step:start-s01-survival-task",
               "status": "committed",
               "committed": true,
               "code": null,
@@ -3282,9 +3282,9 @@
               },
               "error": null
             },
-            "evt:run-e7827ca4-8385-46b0-aec8-af87ac327fc5:0000000004:trigger:trg_task.s01.survival_intro:step:step.step.1.1": {
+            "evt:run-96de4376-4e33-4df1-885f-4a9e38e84852:0000000004:trigger:trg_task.s01.survival_intro:step:step.step.1.1": {
               "ok": true,
-              "operationId": "evt:run-e7827ca4-8385-46b0-aec8-af87ac327fc5:0000000004:trigger:trg_task.s01.survival_intro:step:step.step.1.1",
+              "operationId": "evt:run-96de4376-4e33-4df1-885f-4a9e38e84852:0000000004:trigger:trg_task.s01.survival_intro:step:step.step.1.1",
               "status": "committed",
               "committed": true,
               "code": null,
@@ -3356,8 +3356,8 @@
                         "removed": false,
                         "hp": 38,
                         "position": {
-                          "x": 9775.816336877104,
-                          "y": 3254.183663122902
+                          "x": 9773.765727211661,
+                          "y": 3256.2342727883442
                         },
                         "ai": {
                           "active": true,
@@ -3375,7 +3375,7 @@
                         "hp": 38,
                         "position": {
                           "x": 9930,
-                          "y": 3221.6569999999983
+                          "y": 3218.7569999999996
                         },
                         "ai": {
                           "active": true,

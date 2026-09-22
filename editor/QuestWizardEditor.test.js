@@ -157,6 +157,46 @@ describe('QuestWizardEditor 任务向导', () => {
         )).toBe(true);
     });
 
+    it('对话内嵌：展开就地编辑节点台词，保存时 quests+dialogues 双字段提交', async () => {
+        const { editor, patched } = buildEditor();
+        editor.dialogues = [{ id: 'dlg_test', title: '测试对话', startNode: 'start', nodes: { start: { speaker: '旁白', text: '开场词' } } }];
+        // 步骤 0（开场教程）切换为 dialogue 并选择对话
+        const card = detail(editor).querySelector('[data-step-index="0"]');
+        card.querySelector('[data-step-field="type"]').value = 'dialogue';
+        card.querySelector('[data-step-field="type"]').dispatchEvent(new Event('change'));
+        const dlgCard = detail(editor).querySelector('[data-step-index="0"]');
+        dlgCard.querySelector('[data-step-field="dialogueId"]').value = 'dlg_test';
+        dlgCard.querySelector('[data-step-field="dialogueId"]').dispatchEvent(new Event('change'));
+
+        detail(editor).querySelector('[data-step-index="0"] [data-action="toggle-dlg-edit"]').click();
+        const edit = detail(editor).querySelector('.qwe-dlg-edit');
+        expect(edit, '展开后应渲染对话内嵌编辑区').toBeTruthy();
+        expect(edit.querySelectorAll('[data-dlg-node-id]').length).toBe(1);
+
+        const speaker = edit.querySelector('[data-dlg-node-id="start"] [data-dlg-field="speaker"]');
+        speaker.value = '老者';
+        speaker.dispatchEvent(new Event('change'));
+        const textarea = edit.querySelector('[data-dlg-node-id="start"] [data-dlg-field="text"]');
+        textarea.value = '改后的台词';
+        textarea.dispatchEvent(new Event('change'));
+        expect(editor._dialoguesDirty).toBe(true);
+
+        // 添加节点：接在主链末尾（前驱 nextNode 接线）
+        edit.querySelector('[data-action="dlg-add-node"]').click();
+        expect(detail(editor).querySelectorAll('.qwe-dlg-edit [data-dlg-node-id]').length).toBe(2);
+        const dlg = editor.dialogues[0];
+        expect(dlg.nodes['node-02']).toBeTruthy();
+        expect(dlg.nodes.start.nextNode).toBe('node-02');
+        expect(dlg.startNode).toBe('start');
+
+        await editor.save();
+        expect(patched.quests).toBeTruthy();
+        expect(patched.dialogues).toBeTruthy();
+        expect(patched.dialogues[0].nodes.start.speaker).toBe('老者');
+        expect(patched.dialogues[0].nodes.start.text).toBe('改后的台词');
+        expect(patched.dialogues[0].nodes.start.nextNode).toBe('node-02');
+    });
+
     it('新建与删除任务', () => {
         const { editor } = buildEditor();
         const promptSpy = vi.spyOn(window, 'prompt').mockReturnValueOnce('quest.new.test').mockReturnValueOnce('新任务');
