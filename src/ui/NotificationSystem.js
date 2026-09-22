@@ -109,6 +109,8 @@ export class NotificationSystem extends UIElement {
     this.notificationHeight = options.notificationHeight || 30;
     this.notificationSpacing = options.notificationSpacing || 5;
     this.backgroundColor = options.backgroundColor || 'rgba(0, 0, 0, 0.8)';
+    // 底锚：设置后通知贴在该 y（底边）上方堆叠，最新一条最靠下；未设置时维持从 this.y 向下的旧行为
+    this.anchorBottom = options.anchorBottom ?? null;
     
     this.notifications = [];
     this.padding = 10;
@@ -204,11 +206,17 @@ export class NotificationSystem extends UIElement {
 
     ctx.save();
 
+    // 底锚模式：最新通知最靠近底边，向上生长；否则从 this.y 向下堆叠（旧行为）
+    const rowPitch = this.notificationHeight + this.notificationSpacing;
+    const firstY = this.anchorBottom != null
+      ? this.anchorBottom - this.notifications.length * rowPitch + this.notificationSpacing
+      : this.y;
+
     // 从上到下渲染通知
     for (let i = 0; i < this.notifications.length; i++) {
       const notification = this.notifications[i];
-      const y = this.y + i * (this.notificationHeight + this.notificationSpacing);
-      
+      const y = firstY + i * rowPitch;
+
       this.renderNotification(ctx, notification, this.x, y);
     }
 

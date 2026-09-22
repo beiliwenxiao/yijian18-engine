@@ -235,12 +235,12 @@ export class ScenePanelLayout {
       });
     }
 
-    // 左侧系统文字提示（拾取/装备等）
+    // 左下角系统文字提示（拾取/装备等）：底锚贴底部控制栏（栏顶 = logicalHeight - 100）上方
     scene.notificationSystem = new NotificationSystem({
       x: 10,
-      y: 96,
       width: 300,
-      height: 200
+      height: 200,
+      anchorBottom: scene.logicalHeight - 104
     });
 
     // 获得物品弹窗（食物/装备：图标 + 属性对比 + 装备/放入背包）
@@ -503,6 +503,7 @@ export class ScenePanelLayout {
     this._resizeBottomControl(width, height);
     if (scene.itemGainedPopup) scene.itemGainedPopup.anchorBottom = height - 100;
     if (scene.interactionChoiceView) scene.interactionChoiceView.anchorBottom = height - 100;
+    if (scene.notificationSystem) scene.notificationSystem.anchorBottom = height - 104;
     this._resizePCButtons(width, height);
     this._resizeBackpack(width, height);
     if (scene.playerStatusHUD && scene.uiStrategy?.layoutPlayerStatusHUD) {
