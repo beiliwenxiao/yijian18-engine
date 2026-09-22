@@ -98,6 +98,26 @@ describe('DialogueSystem', () => {
       const result = dialogueSystem.startDialogue('test2');
       expect(result).toBe(false);
     });
+
+    it('同一场对话重复启动应幂等成功且不重置播放进度（场景代码与任务触发器双路编排收敛）', () => {
+      dialogueSystem.registerDialogue('dup_dialogue', {
+        startNode: 'node1',
+        nodes: {
+          node1: { text: '第一段', nextNode: 'node2' },
+          node2: { text: '第二段' }
+        }
+      });
+      dialogueSystem.startDialogue('dup_dialogue');
+      // 推进到第二节点后，重复启动同一场对话
+      dialogueSystem.goToNode('node2');
+      expect(dialogueSystem.startDialogue('dup_dialogue')).toBe(true);
+      // 进度未被重置（仍在 node2），对话未被中断
+      expect(dialogueSystem.getCurrentNode().id).toBe('node2');
+      expect(dialogueSystem.isDialogueActive()).toBe(true);
+      // 幂等启动不重复写入历史
+      const starts = dialogueSystem.getHistory().filter(entry => entry.type === 'start' && entry.dialogueId === 'dup_dialogue');
+      expect(starts.length).toBe(1);
+    });
   });
 
   describe('节点跳转', () => {

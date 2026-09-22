@@ -121,8 +121,9 @@ export class DialogueSystem {
       return false;
     }
 
-    // 检查是否有对话正在进行
+    // 检查是否有对话正在进行（同一场对话重复启动幂等成功——场景代码与任务触发器双路编排收敛为单场播放）
     if (this.currentDialogue) {
+      if (this.currentDialogue.id === dialogueId) return true;
       console.warn('DialogueSystem: 已有对话正在进行');
       return false;
     }

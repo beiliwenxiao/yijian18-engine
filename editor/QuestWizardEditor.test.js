@@ -41,6 +41,7 @@ describe('QuestWizardEditor 任务向导', () => {
     beforeEach(() => {
         document.body.innerHTML = '';
         document.head.innerHTML = '';
+        localStorage.removeItem('qwe-col-widths');
     });
 
     it('渲染迁移后的 S01 任务：五区块齐全，编译预览展示 16 目标链且校验通过', () => {
@@ -64,8 +65,8 @@ describe('QuestWizardEditor 任务向导', () => {
 
     it('目标步骤编辑：目标类型切换写回 objectiveType，身份与数量字段按目录渲染', () => {
         const { editor } = buildEditor();
-        // S01 第 0 步为开场教程（step.1.1），首个目标是 index 1 的 lightCampfire = commit.fact
-        const card = detail(editor).querySelector('[data-step-index="1"]');
+        // S01 第 0/1 步为开场教程+对话（step.1.1/step.1.2），首个目标是 index 2 的 lightCampfire = commit.fact
+        const card = detail(editor).querySelector('[data-step-index="2"]');
         expect(card.querySelector('[data-step-field="objectiveType"]').value).toBe('commit.fact');
         const targetSelect = card.querySelector('[data-step-field="target"]');
         expect(targetSelect.value).toBe('story.s01.campfireLit');
@@ -73,7 +74,7 @@ describe('QuestWizardEditor 任务向导', () => {
         targetSelect.value = 'story.s01.berryEaten';
         targetSelect.dispatchEvent(new Event('change'));
         const quest = editor.quests.find(item => item.id === 'task.s01.survival');
-        expect(quest.steps[1].target).toBe('story.s01.berryEaten');
+        expect(quest.steps[2].target).toBe('story.s01.berryEaten');
         // 编译产物同步反映
         const { taskGraph } = compileQuest(quest, project);
         expect(taskGraph.nodes.find(node => node.id === 'lightCampfire').eventMatcher.payload.definitionId).toBe('story.s01.berryEaten');
@@ -195,6 +196,126 @@ describe('QuestWizardEditor 任务向导', () => {
         expect(patched.dialogues[0].nodes.start.speaker).toBe('老者');
         expect(patched.dialogues[0].nodes.start.text).toBe('改后的台词');
         expect(patched.dialogues[0].nodes.start.nextNode).toBe('node-02');
+    });
+
+    it('步骤次级导航：类型背景色区分，拖动 drop 重排写回 quest.steps，点击高亮定位', () => {
+        const { editor } = buildEditor();
+        const nav = editor.container.querySelector('[data-role="steps-nav"]');
+        // S01：18 步 = 开场教程 + 开场对话 + 16 目标
+        const items = nav.querySelectorAll('[data-snav-index]');
+        expect(items.length).toBe(18);
+        expect(items[0].classList.contains('type-tutorial')).toBe(true);
+        expect(items[1].classList.contains('type-dialogue')).toBe(true);
+        expect(items[2].classList.contains('type-objective')).toBe(true);
+        expect(items[0].textContent).toContain('1 · 教程');
+        expect(items[1].textContent).toContain('2 · 对话');
+        expect(items[2].textContent).toContain('3 · 目标');
+        expect(items[2].draggable).toBe(true);
+
+        // 拖动排序：把第 0 项拖到第 1 项位置（jsdom 无 DataTransfer，走 _dragFromIndex 兜底）
+        const orderBefore = editor.quests[0].steps.map(step => step.id);
+        items[0].dispatchEvent(new Event('dragstart'));
+        const dropEvent = new Event('drop', { bubbles: true, cancelable: true });
+        items[1].dispatchEvent(dropEvent);
+        expect(dropEvent.defaultPrevented).toBe(true); // drop handler 已处理（preventDefault）
+        const orderAfter = editor.quests[0].steps.map(step => step.id);
+        expect(orderAfter[0]).toBe(orderBefore[1]);
+        expect(orderAfter[1]).toBe(orderBefore[0]);
+        // 重排后次级导航序号同步刷新（导航项显示 title || id）
+        const navAfter = editor.container.querySelectorAll('[data-role="steps-nav"] [data-snav-index]');
+        const movedStep = editor.quests[0].steps[0];
+        expect(navAfter[0].textContent).toContain(movedStep.title || movedStep.id);
+
+        // 点击定位：设置 active 高亮
+        navAfter[2].click();
+        expect(navAfter[2].classList.contains('active')).toBe(true);
+        expect(editor._activeStepNavId).toBe(editor.quests[0].steps[2].id);
+    });
+
+    it('列宽拖动：竖线手柄 mousedown+mousemove 调整相邻列宽，mouseup 持久化且停止响应', () => {
+        const { editor } = buildEditor();
+        const listAside = editor.container.querySelector('[data-role="quest-list"]');
+        const navAside = editor.container.querySelector('[data-role="steps-nav"]');
+        expect(editor.container.querySelectorAll('.qwe-divider').length).toBe(2);
+
+        const divider = editor.container.querySelector('[data-divider="list"]');
+        // jsdom 中 getBoundingClientRect 宽为 0，故起始 clientX 用 0（width = 0 + delta）
+        divider.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, clientX: 0 }));
+        document.dispatchEvent(new MouseEvent('mousemove', { clientX: 380 }));
+        expect(listAside.style.width).toBe('380px');
+        document.dispatchEvent(new MouseEvent('mouseup'));
+        expect(JSON.parse(localStorage.getItem('qwe-col-widths')).list).toBe(380);
+        // 松开后 move 不再生效
+        document.dispatchEvent(new MouseEvent('mousemove', { clientX: 900 }));
+        expect(listAside.style.width).toBe('380px');
+
+        // 步骤导航列同理 + 宽度钳制（最小 120）
+        const navDivider = editor.container.querySelector('[data-divider="nav"]');
+        navDivider.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, clientX: 500 }));
+        document.dispatchEvent(new MouseEvent('mousemove', { clientX: 100 }));
+        expect(navAside.style.width).toBe('120px');
+        document.dispatchEvent(new MouseEvent('mouseup'));
+
+        // 刷新后恢复列宽
+        const restored = buildEditor();
+        expect(restored.editor.container.querySelector('[data-role="quest-list"]').style.width).toBe('380px');
+        expect(restored.editor.container.querySelector('[data-role="steps-nav"]').style.width).toBe('120px');
+    });
+
+    it('步骤右键菜单：六操作按钮按边界禁用，添加插入右键项之后，置顶/删除写回 steps', () => {
+        const { editor } = buildEditor();
+        const quest = editor.quests[0];
+        const nav = editor.container.querySelector('[data-role="steps-nav"]');
+        const items = nav.querySelectorAll('[data-snav-index]');
+
+        // 右键第 2 项（index 1，非边界）：六按钮全可用
+        items[1].dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
+        let menu = document.body.querySelector('.qwe-ctx-menu');
+        expect(menu, '右键后应弹出菜单').toBeTruthy();
+        const labels = Array.from(menu.querySelectorAll('button')).map(b => b.textContent.trim());
+        expect(labels).toEqual(['➕ 添加步骤', '🗑 删除步骤', '⤒ 置顶', '↑ 上移', '↓ 下移', '⤓ 置底']);
+        expect(Array.from(menu.querySelectorAll('button')).every(b => !b.disabled)).toBe(true);
+        expect(editor._activeStepNavId).toBe(quest.steps[1].id);
+
+        // 添加 → 插入右键项之后（index 2）
+        const orderBefore = quest.steps.map(s => s.id);
+        menu.querySelector('[data-ctx="add"]').click();
+        expect(document.body.querySelector('.qwe-ctx-menu'), '点击后菜单关闭').toBeNull();
+        expect(quest.steps.length).toBe(orderBefore.length + 1);
+        expect(quest.steps[2].type).toBe('objective');
+        expect(quest.steps[2].id).not.toBe(orderBefore[2]);
+        // 菜单操作后次级导航同步刷新且右键项仍高亮
+        const navAfterAdd = editor.container.querySelectorAll('[data-role="steps-nav"] [data-snav-index]');
+        expect(navAfterAdd.length).toBe(orderBefore.length + 1);
+        expect(navAfterAdd[1].classList.contains('active')).toBe(true);
+
+        // 置顶：右键 index 2（新添加的步骤）→ 移到首位
+        const addedId = quest.steps[2].id;
+        navAfterAdd[2].dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
+        menu = document.body.querySelector('.qwe-ctx-menu');
+        menu.querySelector('[data-ctx="top"]').click();
+        expect(quest.steps[0].id).toBe(addedId);
+
+        // 删除（confirm 确认）
+        const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+        const countBefore = quest.steps.length;
+        const navTop = editor.container.querySelectorAll('[data-role="steps-nav"] [data-snav-index]');
+        navTop[0].dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
+        menu = document.body.querySelector('.qwe-ctx-menu');
+        expect(menu.querySelector('[data-ctx="top"]').disabled).toBe(true); // 首项：置顶/上移禁用
+        expect(menu.querySelector('[data-ctx="up"]').disabled).toBe(true);
+        menu.querySelector('[data-ctx="delete"]').click();
+        expect(quest.steps.length).toBe(countBefore - 1);
+        expect(quest.steps.some(s => s.id === addedId)).toBe(false);
+        confirmSpy.mockRestore();
+
+        // 右键末项：下移/置底禁用
+        const navEnd = editor.container.querySelectorAll('[data-role="steps-nav"] [data-snav-index]');
+        navEnd[navEnd.length - 1].dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
+        menu = document.body.querySelector('.qwe-ctx-menu');
+        expect(menu.querySelector('[data-ctx="down"]').disabled).toBe(true);
+        expect(menu.querySelector('[data-ctx="bottom"]').disabled).toBe(true);
+        editor._hideStepContextMenu();
     });
 
     it('新建与删除任务', () => {
