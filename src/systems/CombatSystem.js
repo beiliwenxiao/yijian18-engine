@@ -3511,6 +3511,14 @@ export class CombatSystem {
     return this.combatState.combatExitTimer;
   }
 
+  /**
+   * 获取脱离战斗延迟满值（秒）：timer 等于该值表示敌人仍在附近（战斗持续），小于该值表示脱战倒数中
+   * @returns {number}
+   */
+  getCombatExitDelay() {
+    return this.combatState.combatExitDelay;
+  }
+
   /** 设置玩家主动输入锁；不会冻结 AI、环境或战斗结算。 */
   setPlayerInputLock(callback) {
     this.isPlayerInputLocked = typeof callback === 'function' ? callback : () => false;

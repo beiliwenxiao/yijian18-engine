@@ -1284,6 +1284,9 @@ export class DataDrivenPrologueScene extends BaseGameScene {
           throw new Error(domainRestore.errors?.[0]?.message || domainRestore.code || '区块领域状态恢复失败');
         }
         this._navigationProjection.apply({ sceneId });
+        // 用户裁定存档节奏：每 5 分钟定时 + 每切换一次场景；开/关菜单与完成任务不触发存档。
+        // fire-and-forget（经 requestAutoSave → 串行队列），失败仅告警不阻断导航。
+        void this.requestAutoSave?.({ reason: 'scene-switch', sceneId });
         console.log(`[DDScene] teleportToChunk → ${sceneId} (${x}, ${y})`);
       },
       onFallback: ({ reason, sceneId }) => {

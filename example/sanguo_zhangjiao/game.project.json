@@ -2290,16 +2290,17 @@
       ],
       "steps": [
         {
+          "dialogueId": "dialogue.s01.wake",
           "id": "step.1.1",
+          "title": "开场旁白",
+          "type": "dialogue"
+        },
+        {
+          "await": true,
+          "id": "step.1.2",
           "title": "寒风中醒来",
           "tutorialId": "s01.move",
           "type": "tutorial"
-        },
-        {
-          "dialogueId": "dialogue.s01.wake",
-          "id": "step.1.2",
-          "title": "任务步骤 2",
-          "type": "dialogue"
         },
         {
           "id": "lightCampfire",

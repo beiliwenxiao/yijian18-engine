@@ -447,14 +447,18 @@ export class SceneRenderPipeline {
     ctx.textBaseline = 'middle';
     ctx.font = `bold ${primaryFontSize}px Arial`;
     if (style.secondary === 'combat') {
-      ctx.fillText(style.primary, textX, y + height * 0.35 + textOffsetY, maxTextWidth);
-      const timer = Math.ceil(combatSystem.getCombatExitTimer());
-      ctx.fillStyle = timer > 0 ? '#ffff00' : '#ff6666';
-      const timerFontSize = configuredFontSize || (timer > 0
-        ? secondaryFontSize
-        : Math.max(7, Math.round(9 * scale)));
-      ctx.font = `${timerFontSize}px Arial`;
-      ctx.fillText(timer > 0 ? `${timer}秒` : '敌人附近', textX, y + height * 0.76 + textOffsetY, maxTextWidth);
+      // 敌人仍在附近（timer 恒为满值）只显示「战斗中」；敌人离开范围后（timer < 满值）才显示脱战倒数秒数
+      const exitTimer = combatSystem.getCombatExitTimer();
+      const exitDelay = combatSystem.getCombatExitDelay?.() ?? exitTimer;
+      const countingDown = exitTimer > 0 && exitTimer < exitDelay;
+      if (countingDown) {
+        ctx.fillText(style.primary, textX, y + height * 0.35 + textOffsetY, maxTextWidth);
+        ctx.fillStyle = '#ffff00';
+        ctx.font = `${secondaryFontSize}px Arial`;
+        ctx.fillText(`${Math.ceil(exitTimer)}秒`, textX, y + height * 0.76 + textOffsetY, maxTextWidth);
+      } else {
+        ctx.fillText(style.primary, textX, y + height / 2 + textOffsetY, maxTextWidth);
+      }
     } else {
       // 灵魂状态单行居中；平时「正常」单行居中
       ctx.fillText(style.primary, textX, y + height / 2 + textOffsetY, maxTextWidth);

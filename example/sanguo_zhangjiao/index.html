@@ -720,7 +720,9 @@
             filter: grayscale(1);
         }
         .login-action:not(:disabled):hover, .save-picker-confirm:not(:disabled):hover, .save-picker-cancel:not(:disabled):hover { filter: brightness(1.18); }
-        #login-manual-save, #login-return-game { display: none; }
+        /* 按场景分列（用户裁定）：登录=继续/开始/读取/退出；游戏内=回到游戏/手动存档/读取/退出 */
+        #login-manual-save, #login-return-game,
+        #login-screen.in-game #login-continue, #login-screen.in-game #login-start { display: none; }
         #login-screen.in-game #login-manual-save, #login-screen.in-game #login-return-game { display: block; }
         #save-slots { display: none; gap: 9px; min-width: 0; text-align: left; }
         #save-slots.visible { display: grid; }
@@ -2268,29 +2270,25 @@
 
         async function openSystemMenu() {
             closeSavePicker({ restoreFocus: false });
-            let autoSaveWarning = '';
+            // 用户裁定：开启/关闭系统菜单与存档列表不再触发自动存档（节奏=每 5 分钟定时 + 每次场景切换）
             if (gameStarted) {
-                // 系统菜单打开失败（如存档捕获异常）不得阻断菜单；自动存档失败仅提示。
-                try {
-                    await autoSaveCurrentGame({ reason: 'system-menu' });
-                } catch (error) {
-                    console.warn('系统菜单自动存档失败，菜单照常打开', error);
-                    autoSaveWarning = '打开菜单时自动存档失败，已保留原存档。';
-                }
                 scene?.pause?.();
                 loginScreen.classList.add('in-game');
             } else {
                 loginScreen.classList.remove('in-game');
             }
             await refreshContinueGameAction();
-            setLoginMessage(autoSaveWarning);
+            setLoginMessage('');
             // 预武装：打开菜单时摇杆可能仍偏转（如跑动中按 Start），
             // 不要求先归中即可立即导航（仍按方向变化离散步进）。
             menuPadArmed = true;
             menuPadDirection = 0;
             menuPadIndex = 0;
             loginScreen.classList.remove('hidden');
-            document.getElementById('login-start').focus();
+            // 游戏内「开始游戏/继续游戏」已按场景隐藏，焦点落到第一个可见可用选项
+            const focusTarget = Array.from(loginScreen.querySelectorAll('.login-action'))
+                .find(button => button.offsetParent !== null && !button.disabled);
+            (focusTarget || document.getElementById('login-start')).focus();
             resumeLoginGamepadPolling();
         }
 

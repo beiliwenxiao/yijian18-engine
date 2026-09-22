@@ -163,6 +163,7 @@ async function handleApplicationEvent(event = {}) {
         message: `已提交导航的 sceneEnter 接续失败: ${sceneId || 'unknown'}`
       };
     }
+    // 场景切换存档统一挂在 ChunkNavigator.onSceneEnter（DataDrivenPrologueScene），此处不重复触发
   }
   if (event.type === 'item.repaired') {
     const payload = event.payload || {};
