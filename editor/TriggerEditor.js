@@ -69,7 +69,16 @@ export class TriggerEditor {
     this.target = this.allowedTargets.includes(options.target)
       ? options.target
       : this.allowedTargets[0];
-    this.tutorialPanel = new TutorialEditorPanel(this);
+    // 教程详情面板：依赖注入（数据回调 + 宿主工具对齐），不再耦合 editor 实例
+    this.tutorialPanel = new TutorialEditorPanel({
+      getScenes: () => this._getScenes(),
+      getProject: () => this.project,
+      status: (message, kind) => this._status(message, kind),
+      nextStableId: (prefix, definitions) => this._nextStableId(prefix, definitions),
+      bindJsonValidation: (el, allowEmpty) => this._bindJsonValidation(el, allowEmpty),
+      escapeHtml: value => this._escapeHtml(value),
+      parseJson: (value, fallback) => this._parseJson(value, fallback)
+    });
     // Trigger 执行轨迹面板（运行时轨迹 + 事件探针，只读调试）
     this.triggerTracePanel = new TriggerTracePanel(this);
     // 剧情线总览视图（Trigger 链视角）

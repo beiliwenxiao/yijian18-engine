@@ -1,17 +1,27 @@
 const asList = value => Array.isArray(value) ? value : [];
 const text = value => String(value ?? '').trim();
 
-/** Tutorial 详情编辑器；只管理本定义与 steps[]（全 Trigger 化，不再有 FlowGroup 归属）。 */
+/**
+ * Tutorial 详情编辑器；只管理本定义与 steps[]（全 Trigger 化，不再有 FlowGroup 归属）。
+ *
+ * 依赖注入（不再耦合 TriggerEditor 实例）：constructor(deps) 接受
+ *   - getScenes(): 场景列表 [{id,name}]（场景 scope 下拉候选）
+ *   - getProject(): 项目数据（create() 时基于 project.tutorials 生成稳定 ID）
+ *   - status(message, kind): 状态栏消息（拖动排序提示等）
+ *   - nextStableId(prefix, definitions): 稳定 ID 生成（缺省内置 prefix-001 递增实现）
+ *   - bindJsonValidation(el, allowEmpty): JSON textarea 实时校验（缺省内置等价实现）
+ * 通用转义/解析为内置默认实现（escapeHtml/parseJson），宿主可经 deps 覆盖以完全对齐自身行为。
+ */
 export class TutorialEditorPanel {
-  constructor(editor) {
-    this.editor = editor;
+  constructor(deps = {}) {
+    this.deps = deps;
   }
 
   render(panel, tutorial) {
-    const escape = value => this.editor._escapeHtml(value);
+    const escape = value => this._escapeHtml(value);
     const scopedSceneIds = new Set(asList(tutorial.scope?.sceneIds));
     const scenes = new Map();
-    for (const scene of this.editor._getScenes()) {
+    for (const scene of (this.deps.getScenes?.() || [])) {
       if (scene?.id) scenes.set(scene.id, scene.name || scene.id);
     }
     for (const sceneId of scopedSceneIds) {
@@ -54,14 +64,14 @@ export class TutorialEditorPanel {
       </div>
     `;
 
-    this.editor._bindJsonValidation(panel.querySelector('#d-tutorial-signals'), true);
-    this.editor._bindJsonValidation(panel.querySelector('#d-tutorial-movement'), true);
+    this._bindJsonValidation(panel.querySelector('#d-tutorial-signals'), true);
+    this._bindJsonValidation(panel.querySelector('#d-tutorial-movement'), true);
     this._bindSteps(panel, tutorial);
     panel.querySelector('#d-add-tutorial-step')?.addEventListener('click', () => {
       this.commit(tutorial, panel);
       tutorial.steps = asList(tutorial.steps);
       tutorial.steps.push({
-        id: this.editor._nextStableId(`${tutorial.id || 'tutorial'}-step`, tutorial.steps),
+        id: this._nextStableId(`${tutorial.id || 'tutorial'}-step`, tutorial.steps),
         text: '新教学步骤'
       });
       this.render(panel, tutorial);
@@ -112,8 +122,8 @@ export class TutorialEditorPanel {
   }
 
   create(preferredSceneId = '') {
-    const tutorials = this.editor.project.tutorials || [];
-    const id = this.editor._nextStableId('tutorial', tutorials);
+    const tutorials = this.deps.getProject?.()?.tutorials || [];
+    const id = this._nextStableId('tutorial', tutorials);
     return {
       id,
       title: '新教学',
@@ -153,7 +163,7 @@ export class TutorialEditorPanel {
   }
 
   _renderStep(step, index) {
-    const escape = value => this.editor._escapeHtml(value);
+    const escape = value => this._escapeHtml(value);
     return `
       <div class="trg-tutorial-step" data-step-index="${index}">
         <div class="do-head">
@@ -225,7 +235,7 @@ export class TutorialEditorPanel {
     if (fromIndex < insertionIndex) insertionIndex -= 1;
     steps.splice(insertionIndex, 0, step);
     tutorial.steps = steps;
-    this.editor._status(`已调整 ${tutorial.title || tutorial.id} 的 steps[] 顺序，请保存到工程`, 'ok');
+    this.deps.status?.(`已调整 ${tutorial.title || tutorial.id} 的 steps[] 顺序，请保存到工程`, 'ok');
     return true;
   }
 
@@ -241,8 +251,56 @@ export class TutorialEditorPanel {
       delete owner[field];
       return;
     }
-    const parsed = this.editor._parseJson(value, owner[field] ?? emptyFallback);
+    const parsed = this._parseJson(value, owner[field] ?? emptyFallback);
     owner[field] = parsed;
+  }
+
+  // ── 内置默认工具（与宿主编辑器语义一致；deps 可覆盖）──
+
+  _escapeHtml(value) {
+    return String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  _parseJson(str, fallback) {
+    if (!str || !str.trim()) return fallback;
+    try { return JSON.parse(str); }
+    catch (e) { this.deps.status?.('JSON 解析错误: ' + e.message, 'err'); return fallback; }
+  }
+
+  _nextStableId(prefix, definitions = []) {
+    if (typeof this.deps.nextStableId === 'function') return this.deps.nextStableId(prefix, definitions);
+    const ids = new Set((definitions || []).map(definition => definition?.id).filter(Boolean));
+    let sequence = 1;
+    let candidate = '';
+    do candidate = `${prefix}-${String(sequence++).padStart(3, '0')}`;
+    while (ids.has(candidate));
+    return candidate;
+  }
+
+  _bindJsonValidation(el, allowEmpty) {
+    if (typeof this.deps.bindJsonValidation === 'function') return this.deps.bindJsonValidation(el, allowEmpty);
+    if (!el) return;
+    const check = () => {
+      const v = el.value.trim();
+      if (!v) {
+        el.style.borderColor = allowEmpty ? '#2a3a5e' : '#c62828';
+        el.title = allowEmpty ? '' : '不能为空';
+        return true;
+      }
+      try {
+        JSON.parse(v);
+        el.style.borderColor = '#4a8a4a';
+        el.title = 'JSON 格式正确';
+        return true;
+      } catch (e) {
+        el.style.borderColor = '#e05252';
+        el.title = 'JSON 格式错误: ' + e.message + '\n（注意用半角引号 " 和大括号 {}）';
+        return false;
+      }
+    };
+    el.addEventListener('input', check);
+    check();
   }
 }
 

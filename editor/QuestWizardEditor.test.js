@@ -51,12 +51,12 @@ describe('QuestWizardEditor 任务向导', () => {
         for (const legend of ['① 元信息', '② 接取', '③ 奖励', '④ 后续任务', '⚙ 编译预览']) {
             expect(html).toContain(legend);
         }
-        // 编译预览：目标链 + 无触发器（S01 无 accept/rewards）
+        // 编译预览：目标链 + intro 触发器（S01 开场教程步骤 s01.move 由 task.started 驱动展示）
         expect(html).toContain('点燃火堆');
         expect(html).toContain('逃往废弃营地');
         expect(html).toContain('编译校验通过');
-        expect(html).toContain('触发器产物</strong>：无');
-        // 示意图：start + 16 目标 + complete 节点（含连线容器）
+        expect(html).toContain('trg_task.s01.survival_intro');
+        // 示意图：start + 16 目标 + complete 节点（教程步骤不进图，含连线容器）
         expect(detail(editor).querySelectorAll('[data-graph-node-id]').length).toBe(18);
         expect(detail(editor).querySelector('[data-graph-node-id="lightCampfire"]')).toBeTruthy();
         expect(detail(editor).querySelector('.qwe-graph-edges path')).toBeTruthy();
@@ -64,8 +64,8 @@ describe('QuestWizardEditor 任务向导', () => {
 
     it('目标步骤编辑：目标类型切换写回 objectiveType，身份与数量字段按目录渲染', () => {
         const { editor } = buildEditor();
-        const card = detail(editor).querySelector('[data-step-index="0"]');
-        // S01 第一步 lightCampfire = commit.fact，身份下拉候选来自 commands
+        // S01 第 0 步为开场教程（step.1.1），首个目标是 index 1 的 lightCampfire = commit.fact
+        const card = detail(editor).querySelector('[data-step-index="1"]');
         expect(card.querySelector('[data-step-field="objectiveType"]').value).toBe('commit.fact');
         const targetSelect = card.querySelector('[data-step-field="target"]');
         expect(targetSelect.value).toBe('story.s01.campfireLit');
@@ -73,7 +73,7 @@ describe('QuestWizardEditor 任务向导', () => {
         targetSelect.value = 'story.s01.berryEaten';
         targetSelect.dispatchEvent(new Event('change'));
         const quest = editor.quests.find(item => item.id === 'task.s01.survival');
-        expect(quest.steps[0].target).toBe('story.s01.berryEaten');
+        expect(quest.steps[1].target).toBe('story.s01.berryEaten');
         // 编译产物同步反映
         const { taskGraph } = compileQuest(quest, project);
         expect(taskGraph.nodes.find(node => node.id === 'lightCampfire').eventMatcher.payload.definitionId).toBe('story.s01.berryEaten');
@@ -127,6 +127,34 @@ describe('QuestWizardEditor 任务向导', () => {
         const result = await editor.save();
         expect(result.ok).toBe(true);
         expect(patched.quests.map(quest => quest.id)).toEqual(['task.s01.survival', 'task.s02.summons']);
+    });
+
+    it('教程内嵌：展开就地编辑步骤文案，保存时 quests+tutorials 双字段提交', async () => {
+        const { editor, patched } = buildEditor();
+        editor.tutorials = [{ id: 's01.move', title: '移动教学', completionPolicy: 'signal', steps: [{ id: 's01.move-step-01', text: '摇杆移动' }] }];
+        // 步骤 0（objective）切换为 tutorial 并选择教程
+        const card = detail(editor).querySelector('[data-step-index="0"]');
+        card.querySelector('[data-step-field="type"]').value = 'tutorial';
+        card.querySelector('[data-step-field="type"]').dispatchEvent(new Event('change'));
+        const tutCard = detail(editor).querySelector('[data-step-index="0"]');
+        tutCard.querySelector('[data-step-field="tutorialId"]').value = 's01.move';
+        tutCard.querySelector('[data-step-field="tutorialId"]').dispatchEvent(new Event('change'));
+
+        detail(editor).querySelector('[data-step-index="0"] [data-action="toggle-tut-edit"]').click();
+        const edit = detail(editor).querySelector('.qwe-tut-edit');
+        expect(edit, '展开后应渲染教程内嵌编辑区').toBeTruthy();
+
+        const textarea = edit.querySelector('[data-tut-field="text"]');
+        textarea.value = '改后的教程文案';
+        textarea.dispatchEvent(new Event('change'));
+        expect(editor._tutorialsDirty).toBe(true);
+
+        await editor.save();
+        expect(patched.quests).toBeTruthy();
+        expect(patched.tutorials).toBeTruthy();
+        expect(patched.tutorials.some(tutorial =>
+            (tutorial.steps || []).some(step => step.text === '改后的教程文案')
+        )).toBe(true);
     });
 
     it('新建与删除任务', () => {

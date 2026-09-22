@@ -191,7 +191,14 @@ describe('QuestRuntime Quest v2 编译器', () => {
     expect(loader.questTaskDefinitions).toEqual([]);
     const compiled = compileQuestProject(project);
     expect(compiled.taskGraphs.map(graph => graph.id)).toEqual(['task.s01.survival', 'task.s02.summons']);
-    expect(compiled.triggers).toEqual([]); // S01/S02 quest 均无 accept/rewards，不生成触发器（接取由现有触发器承担）
+    // S01/S02 无 accept/rewards（接取由现有触发器承担）；S01 开场教程步骤（step.1.1 → s01.move）
+    // 编译为 intro 触发器：task.started 驱动 tutorial.command show——这是首个由 quest 步骤承接的编排段
+    const s01Intro = compiled.triggers.find(trigger => trigger.id === 'trg_task.s01.survival_intro');
+    expect(s01Intro).toBeTruthy();
+    expect(s01Intro.when).toEqual({ type: 'task.started', params: { definitionId: 'task.s01.survival' } });
+    expect(s01Intro.do[0].action).toBe('tutorial.command');
+    expect(s01Intro.do[0].params).toEqual({ tutorialId: 's01.move', operation: 'show' });
+    expect(compiled.triggers.filter(trigger => trigger !== s01Intro)).toEqual([]); // 除 intro 外无其余产物
     // 手写任务图通道已清零：taskGraphs[] 为空数组（保留数据通道，编辑入口收敛到任务编辑器）
     expect(project.taskGraphs).toEqual([]);
   });
@@ -258,8 +265,9 @@ describe('阶段③ S01 迁移契约：quest 编译产物与手写任务图逐�
     const acceptTrigger = project.triggers.find(trigger => trigger.id === 'trg_s01_start_survival_task');
     expect(acceptTrigger).toBeTruthy();
     expect(acceptTrigger.do[0].params.definitionId).toBe('task.s01.survival');
-    // 编译产物不含任何触发器（无 accept/steps 编排段/rewards）
-    expect(compileQuestProject(project).triggers).toEqual([]);
+    // 编译产物仅含 intro 触发器（开场教程步骤），无 accept/steps 后段/rewards 编排触发器
+    const triggers = compileQuestProject(project).triggers;
+    expect(triggers.map(trigger => trigger.id)).toEqual(['trg_task.s01.survival_intro']);
   });
 
   it('编译产物通过唯一校验器', () => {
