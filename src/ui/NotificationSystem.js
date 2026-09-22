@@ -141,7 +141,7 @@ export class NotificationSystem extends UIElement {
    * @param {number} exp - 获得的经验值
    */
   addExpNotification(exp) {
-    this.addNotification(`+${exp} EXP`, 'exp', 2000);
+    this.addNotification(`获得 ${exp} 点经验`, 'exp', 2000);
   }
 
   /**
@@ -149,7 +149,7 @@ export class NotificationSystem extends UIElement {
    * @param {number} level - 新等级
    */
   addLevelUpNotification(level) {
-    this.addNotification(`Level Up! 等级 ${level}`, 'levelup', 4000);
+    this.addNotification(`等级提升！当前 ${level} 级`, 'levelup', 4000);
   }
 
   /**

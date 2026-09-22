@@ -136,7 +136,9 @@ export class S01S02Coordinator {
   }
 
   openShelterChest() {
-    if (!this._isInShelterInterior() || !this.scene.cargoTransferView) return false;
+    // 不在室内是 interact 无差别监听的正常分支，不是执行错误（避免污染失败诊断）
+    if (!this._isInShelterInterior()) return { ok: true, status: 'notInShelterInterior' };
+    if (!this.scene.cargoTransferView) return false;
     this.scene.cargoTransferView.open(this._buildShelterChestSnapshot());
     return true;
   }
@@ -180,8 +182,9 @@ export class S01S02Coordinator {
 
   /** 进入独立庇护所 Region；保留跨区加载的稳定错误码供 Trigger 诊断。 */
   async enterShelter(eventData = {}) {
+    // interact 触发器无差别监听：不在主场景（如在室内交互）属于正常分支，良性消费不写失败诊断
     if (this.scene.currentSceneId !== 'S01') {
-      return { ok: false, code: 'shelterEntryOutsideS01' };
+      return { ok: true, status: 'notInMainScene' };
     }
     const entered = await this.scene.travelToRegion({
       sceneId: 'S01-C01',
@@ -193,7 +196,8 @@ export class S01S02Coordinator {
   }
 
   async leaveShelter(eventData = {}) {
-    if (!this._isInShelterInterior()) return false;
+    // interact 触发器无差别监听：不在室内属于正常分支，良性消费不写失败诊断（对齐下方 blockedUntilOvernight）
+    if (!this._isInShelterInterior()) return { ok: true, status: 'notInShelter' };
     const survival = this._story().s01Survival || {};
     if (survival.overnightCompleted !== true) {
       this.scene._showScreenTip('先靠近床睡觉。', { title: '仍需过夜' });
@@ -1806,12 +1810,9 @@ export class S01S02Coordinator {
     if (operation === 'leaveShelter') return this.leaveShelter(eventData);
     if (operation === 'openShelterChest') return this.openShelterChest();
     if (operation === 'overnight') {
+      // interact 触发器无差别监听：不在室内属于正常分支，良性消费不写失败诊断
       if (!this._isInShelterInterior()) {
-        return {
-          ok: false,
-          code: 'shelterInteriorRequired',
-          error: { message: '必须在 S01-C01 庇护所内的床边过夜' }
-        };
+        return { ok: true, status: 'notInShelterInterior' };
       }
       const survival = this._story().s01Survival || {};
       if (survival.overnightCompleted === true) {

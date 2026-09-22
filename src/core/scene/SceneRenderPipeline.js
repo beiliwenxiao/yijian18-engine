@@ -87,8 +87,7 @@ export class SceneRenderPipeline {
       (scene, ctx) => scene.minimap?.render(ctx),
       (_scene, ctx) => this.context?.ui?.layout?.isOnboardingComponentVisible?.('timeWeatherBadge') !== false
         && this.renderTimeWeatherBadge(ctx),
-      (scene, ctx) => this.context?.ui?.layout?.isOnboardingComponentVisible?.('combatStateBadge') !== false
-        && scene.renderCombatStateUI(ctx),
+      (scene, ctx) => scene.renderCombatStateUI(ctx),
       (scene, ctx) => { if (scene.isTransitioning) scene.renderTransition(ctx); },
       (scene, ctx) => { if (scene.performanceMonitor?.enabled) scene.performanceMonitor.render(ctx); }
     ];
@@ -411,7 +410,7 @@ export class SceneRenderPipeline {
       ? { background: 'rgba(36, 47, 96, 0.82)', border: '#8fc7ff', primary: '灵魂状态', secondary: null, secondaryColor: null }
       : inCombat
         ? { background: 'rgba(139, 0, 0, 0.7)', border: '#ff0000', primary: '战斗中', secondary: 'combat', secondaryColor: null }
-        : { background: 'rgba(40, 90, 45, 0.72)', border: '#8fd6a1', primary: '正常', secondary: null, secondaryColor: null };
+        : { background: 'rgba(40, 90, 45, 0.72)', border: '#8fd6a1', primary: '状态正常', secondary: null, secondaryColor: null };
 
     const minimap = scene?.minimap;
     const layoutRect = this.context?.ui?.layout?.getScreenHudRect?.('combatStateBadge') || null;

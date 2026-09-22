@@ -186,7 +186,7 @@ export class SceneGameplaySystemAssembler {
           insufficientCapacity: '背包容量不足，无法拾取'
         };
         scene.notificationSystem?.addWarning?.(
-          capacityMessages[result?.code] || result?.error?.message || result?.code || '拾取失败'
+          capacityMessages[result?.code] || `无法拾取（${result?.error?.message || result?.code || '未知原因'}）`
         );
       }
     });
