@@ -42,7 +42,8 @@ const NAV_GROUPS = Object.freeze([
     { id: 'quest-editor', label: '📋 任务', file: 'quest-editor.html' },
     { id: 'storyline-editor', label: '🎬 剧情', file: 'storyline-editor.html' },
     { id: 'tutorial-editor', label: '📖 教程', file: 'tutorial-editor.html' },
-    { id: 'dialogue-editor', label: '💬 对话', file: 'dialogue-editor.html' }
+    { id: 'dialogue-editor', label: '💬 对话', file: 'dialogue-editor.html' },
+    { id: 'transaction-editor', label: '⚡ 状态事务', file: 'transaction-editor.html' }
   ]},
   { label: '资产系统', items: [
     { id: 'ui-editor', label: '🎨 UI', file: 'ui-editor.html' },

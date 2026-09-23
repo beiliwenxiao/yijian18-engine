@@ -129,7 +129,7 @@ describe('QuestRuntime Quest v2 编译器', () => {
 
   it('编译产物通过 TaskGraphSystem 与 TriggerCatalog 的唯一校验器（与手写定义同规同矩）', () => {
     const compilation = compileQuest(SAMPLE_QUEST, project);
-    expect(validateQuestCompilation(compilation)).toEqual([]);
+    expect(validateQuestCompilation(compilation, project)).toEqual([]);
   });
 
   it('validateQuestDefinition：缺失字段 / 未知目标类型 / 重复步骤 id 报错', () => {
@@ -192,14 +192,22 @@ describe('QuestRuntime Quest v2 编译器', () => {
     const compiled = compileQuestProject(project);
     expect(compiled.taskGraphs.map(graph => graph.id)).toEqual(['task.s01.survival', 'task.s02.summons']);
     // S01/S02 无 accept/rewards（接取由现有触发器承担）；S01 开场教程步骤（step.1.1 → s01.move）
-    // S01 开场段已被用户重排：step.1.1 对话（无 await）→ step.1.2 教程（await）——intro do 链按步骤顺序编译
+    // S01 开场段：step.1.1 对话（await，用户勾选「等待对话完成后再继续」）→ step.1.2 教程（await）
     const s01Intro = compiled.triggers.find(trigger => trigger.id === 'trg_task.s01.survival_intro');
     expect(s01Intro).toBeTruthy();
     expect(s01Intro.when).toEqual({ type: 'task.started', params: { definitionId: 'task.s01.survival' } });
     expect(s01Intro.do.map(action => action.action)).toEqual(['dialogue.command', 'tutorial.command']);
-    expect(s01Intro.do[0].params).toEqual({ dialogueId: 'dialogue.s01.wake', operation: 'start' });
+    expect(s01Intro.do[0].params).toEqual({ dialogueId: 'dialogue.s01.wake', operation: 'start', await: true });
     expect(s01Intro.do[1].params).toEqual({ operation: 'show', tutorialId: 's01.move', await: true });
-    expect(compiled.triggers.filter(trigger => trigger !== s01Intro)).toEqual([]); // 除 intro 外无其余产物
+    // 方案 B 编排步骤化：S01 目标后段（5 个）由步骤编译（findTools/gatherBerries/eatBerry/spotWolf/skinWolf）
+    expect(compiled.triggers.map(trigger => trigger.id)).toEqual([
+      'trg_task.s01.survival_intro',
+      'trg_task.s01.survival_after_findTools',
+      'trg_task.s01.survival_after_gatherBerries',
+      'trg_task.s01.survival_after_eatBerry',
+      'trg_task.s01.survival_after_spotWolf',
+      'trg_task.s01.survival_after_skinWolf'
+    ]);
     // 手写任务图通道已清零：taskGraphs[] 为空数组（保留数据通道，编辑入口收敛到任务编辑器）
     expect(project.taskGraphs).toEqual([]);
   });
@@ -266,13 +274,29 @@ describe('阶段③ S01 迁移契约：quest 编译产物与手写任务图逐�
     const acceptTrigger = project.triggers.find(trigger => trigger.id === 'trg_s01_start_survival_task');
     expect(acceptTrigger).toBeTruthy();
     expect(acceptTrigger.do[0].params.definitionId).toBe('task.s01.survival');
-    // 编译产物仅含 intro 触发器（开场教程步骤），无 accept/steps 后段/rewards 编排触发器
+    // 方案 B 编排步骤化：开场段 + 5 个目标后段由步骤编译（findTools/gatherBerries/eatBerry/spotWolf/skinWolf）；
+    // 交互/机制类触发器（拾斧、添柴交互、sceneEnter 装配等）仍由 triggers[] 手写承担
     const triggers = compileQuestProject(project).triggers;
-    expect(triggers.map(trigger => trigger.id)).toEqual(['trg_task.s01.survival_intro']);
+    expect(triggers.map(trigger => trigger.id)).toEqual([
+      'trg_task.s01.survival_intro',
+      'trg_task.s01.survival_after_findTools',
+      'trg_task.s01.survival_after_gatherBerries',
+      'trg_task.s01.survival_after_eatBerry',
+      'trg_task.s01.survival_after_spotWolf',
+      'trg_task.s01.survival_after_skinWolf'
+    ]);
+    // 目标后段语义抽查：eatBerry 后段 = 完成吃教程 + 显示砍柴教程(await)；spotWolf 后段合并了首狼生成链
+    const eatBerryAfter = triggers.find(trigger => trigger.id === 'trg_task.s01.survival_after_eatBerry');
+    expect(eatBerryAfter.when).toEqual({ type: 'state.transaction', params: { definitionId: 'story.s01.berryEaten' } });
+    expect(eatBerryAfter.do.map(action => action.action)).toEqual(['tutorial.command', 'tutorial.command']);
+    expect(eatBerryAfter.do[0].params).toEqual({ operation: 'complete', tutorialId: 'tutorial-001' });
+    expect(eatBerryAfter.do[1].params).toEqual({ operation: 'show', tutorialId: 's01.chopWood', await: true });
+    const spotWolfAfter = triggers.find(trigger => trigger.id === 'trg_task.s01.survival_after_spotWolf');
+    expect(spotWolfAfter.do.map(action => action.params.operation)).toEqual(['commitStoryWhenReady', 'ensureFirstWolf', 'show']);
   });
 
   it('编译产物通过唯一校验器', () => {
-    expect(validateQuestCompilation(compileQuestProject(project))).toEqual([]);
+    expect(validateQuestCompilation(compileQuestProject(project), project)).toEqual([]);
   });
 });
 

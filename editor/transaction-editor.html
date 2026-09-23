@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⚡ 状态事务 - 游戏编辑器</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Microsoft YaHei', Arial, sans-serif; background: #0a0a1e; color: #fff; min-height: 100vh; overflow: hidden; }
+        .editor-main { height: calc(100vh - 52px); overflow: hidden; }
+        .panel-container { height: 100%; overflow: hidden; }
+    </style>
+</head>
+<body>
+    <div id="editor-nav"></div>
+    <div class="editor-main">
+        <div class="panel-container" id="transaction-editor-container"></div>
+    </div>
+    <script type="module">
+        import { EditorPageContext, renderEditorNav } from './EditorShared.js';
+        import { StateTransactionEditor } from './StateTransactionEditor.js';
+
+        (async () => {
+            renderEditorNav('transaction-editor');
+            const ctx = new EditorPageContext();
+            await ctx.init();
+            const gameId = new URLSearchParams(location.search).get('gameId');
+            if (!gameId) { alert('请先选择游戏'); window.location.href = 'index.html'; return; }
+
+            // 状态事务管理：commands[]（state.transaction）的唯一可视化编辑入口；
+            // 任务目标 / 接取条件 / 奖励 / 触发器 do 都引用这里的 ID。
+            const editor = new StateTransactionEditor(document.getElementById('transaction-editor-container'), {
+                canonicalSession: ctx._canonicalEditorSession('project'),
+                projectPath: ctx._canonicalProjectPath()
+            });
+            await editor.init();
+        })().catch(error => {
+            console.error('[TransactionEditorPage] 初始化失败', error);
+            const container = document.getElementById('transaction-editor-container');
+            if (container) container.textContent = `状态事务管理初始化失败：${error?.message || String(error)}`;
+        });
+    </script>
+</body>
+</html>

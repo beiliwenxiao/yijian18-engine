@@ -70,6 +70,9 @@ describe('QuestWizardEditor 任务向导', () => {
         expect(card.querySelector('[data-step-field="objectiveType"]').value).toBe('commit.fact');
         const targetSelect = card.querySelector('[data-step-field="target"]');
         expect(targetSelect.value).toBe('story.s01.campfireLit');
+        // 选项 label = 中文名（状态事务 ID），便于策划对照引用
+        const campfireOption = [...targetSelect.options].find(option => option.value === 'story.s01.campfireLit');
+        expect(campfireOption.textContent).toBe('点亮篝火（story.s01.campfireLit）');
 
         targetSelect.value = 'story.s01.berryEaten';
         targetSelect.dispatchEvent(new Event('change'));
@@ -201,15 +204,19 @@ describe('QuestWizardEditor 任务向导', () => {
     it('步骤次级导航：类型背景色区分，拖动 drop 重排写回 quest.steps，点击高亮定位', () => {
         const { editor } = buildEditor();
         const nav = editor.container.querySelector('[data-role="steps-nav"]');
-        // S01：18 步 = 开场对话 + 开场教程 + 16 目标（用户已用拖动功能把对话排到教程前）
+        // S01：27 步 = 开场对话 + 开场教程 + 16 目标 + 9 个编排段步骤（方案 B：目标后剧情链已步骤化）
         const items = nav.querySelectorAll('[data-snav-index]');
-        expect(items.length).toBe(18);
+        expect(items.length).toBe(27);
         expect(items[0].classList.contains('type-dialogue')).toBe(true);
         expect(items[1].classList.contains('type-tutorial')).toBe(true);
         expect(items[2].classList.contains('type-objective')).toBe(true);
         expect(items[0].textContent).toContain('1 · 对话');
         expect(items[1].textContent).toContain('2 · 教程');
         expect(items[2].textContent).toContain('3 · 目标');
+        // 名称后换行接步骤 ID（有 title 的步骤显示弱化 ID 行）
+        expect(items[0].textContent).toContain('step.1.1');
+        expect(items[0].querySelector('small.sid')).toBeTruthy();
+        expect(items[2].textContent).toContain('lightCampfire');
         expect(items[2].draggable).toBe(true);
 
         // 拖动排序：把第 0 项拖到第 1 项位置（jsdom 无 DataTransfer，走 _dragFromIndex 兜底）
@@ -329,5 +336,50 @@ describe('QuestWizardEditor 任务向导', () => {
         expect(editor.quests.some(quest => quest.id === 'quest.new.test')).toBe(false);
         promptSpy.mockRestore();
         confirmSpy.mockRestore();
+    });
+});
+
+describe('QuestWizardEditor 教程步骤操作（方案 B 编排步骤化）', () => {
+    beforeEach(() => {
+        document.body.innerHTML = '';
+        document.head.innerHTML = '';
+        localStorage.removeItem('qwe-col-widths');
+    });
+
+    it('教程步骤卡：操作下拉默认显示，complete 隐藏 await，showStep 显示教程步骤下拉', () => {
+        const { editor } = buildEditor();
+        // step.1.2 是教程步骤（index 1），默认操作=显示 且有 await 勾选
+        const card = detail(editor).querySelector('[data-step-index="1"]');
+        expect(card.querySelector('[data-step-field="operation"]').value).toBe('show');
+        expect(card.querySelector('[data-step-field="await"]')).toBeTruthy();
+        expect(card.querySelector('[data-step-field="tutorialStepId"]')).toBeNull();
+
+        // 切换为完成 → await 隐藏
+        card.querySelector('[data-step-field="operation"]').value = 'complete';
+        card.querySelector('[data-step-field="operation"]').dispatchEvent(new Event('change'));
+        const quest = editor.quests.find(item => item.id === 'task.s01.survival');
+        expect(quest.steps[1].operation).toBe('complete');
+        const refreshed = detail(editor).querySelector('[data-step-index="1"]');
+        expect(refreshed.querySelector('[data-step-field="await"]')).toBeNull();
+
+        // 切换为显示指定步 → 教程步骤下拉出现（s01.move 有步骤）
+        refreshed.querySelector('[data-step-field="operation"]').value = 'showStep';
+        refreshed.querySelector('[data-step-field="operation"]').dispatchEvent(new Event('change'));
+        expect(detail(editor).querySelector('[data-step-index="1"] [data-step-field="tutorialStepId"]')).toBeTruthy();
+    });
+
+    it('编译器：教程步骤按操作编译（complete/showStep+tutorialStepId），默认 show 零回归', () => {
+        const { taskGraph: _graph, triggers } = compileQuest({
+            id: 'quest.op.test',
+            steps: [
+                { id: 'a', type: 'tutorial', tutorialId: 'tut.a' },
+                { id: 'b', type: 'tutorial', tutorialId: 'tut.a', operation: 'complete' },
+                { id: 'c', type: 'tutorial', tutorialId: 'tut.a', operation: 'showStep', tutorialStepId: 'tut.a-step-01', await: true }
+            ]
+        }, null);
+        const intro = triggers.find(trigger => trigger.id === 'trg_quest.op.test_intro');
+        expect(intro.do[0].params).toEqual({ operation: 'show', tutorialId: 'tut.a' });
+        expect(intro.do[1].params).toEqual({ operation: 'complete', tutorialId: 'tut.a' });
+        expect(intro.do[2].params).toEqual({ operation: 'showStep', tutorialId: 'tut.a', tutorialStepId: 'tut.a-step-01', await: true });
     });
 });

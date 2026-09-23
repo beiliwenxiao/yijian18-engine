@@ -2318,6 +2318,21 @@
           "type": "objective"
         },
         {
+          "action": "s01Survival",
+          "id": "after.findTools.1",
+          "params": {
+            "operation": "afterInitialToolsPicked"
+          },
+          "title": "开放野果采集",
+          "type": "action"
+        },
+        {
+          "id": "after.findTools.2",
+          "title": "显示采集教程",
+          "tutorialId": "s01.gather",
+          "type": "tutorial"
+        },
+        {
           "id": "gatherBerries",
           "objectiveType": "gather.item",
           "progressBy": null,
@@ -2326,11 +2341,33 @@
           "type": "objective"
         },
         {
+          "id": "after.gatherBerries.1",
+          "operation": "showStep",
+          "title": "提示使用野果",
+          "tutorialId": "s01.gather",
+          "tutorialStepId": "s01.gather-step-001",
+          "type": "tutorial"
+        },
+        {
           "id": "eatBerry",
           "objectiveType": "commit.fact",
           "target": "story.s01.berryEaten",
           "title": "食用酸果恢复体力",
           "type": "objective"
+        },
+        {
+          "id": "after.eatBerry.1",
+          "operation": "complete",
+          "title": "完成吃野果教程",
+          "tutorialId": "tutorial-001",
+          "type": "tutorial"
+        },
+        {
+          "await": true,
+          "id": "after.eatBerry.2",
+          "title": "显示砍柴教程",
+          "tutorialId": "s01.chopWood",
+          "type": "tutorial"
         },
         {
           "extraPayload": {
@@ -2352,6 +2389,35 @@
           "type": "objective"
         },
         {
+          "action": "s01Survival",
+          "id": "after.spotWolf.1",
+          "params": {
+            "completedPath": "s01Survival.firstWolfSpotted",
+            "definitionId": "story.s01.firstWolfSpotted",
+            "firstWolfCount": 1,
+            "gte": 1,
+            "operation": "commitStoryWhenReady",
+            "storyPath": "s01Survival.campfireRefuelCount"
+          },
+          "title": "提交首狼出现事实",
+          "type": "action"
+        },
+        {
+          "action": "s01Survival",
+          "id": "after.spotWolf.2",
+          "params": {
+            "operation": "ensureFirstWolf"
+          },
+          "title": "生成并激活教学狼",
+          "type": "action"
+        },
+        {
+          "id": "after.spotWolf.3",
+          "title": "显示攻击教程",
+          "tutorialId": "s01.attack",
+          "type": "tutorial"
+        },
+        {
           "id": "killWolf",
           "objectiveType": "kill.enemy",
           "target": "story.s01.firstWolfKilled",
@@ -2364,6 +2430,15 @@
           "target": "story.s01.wolfSkinned",
           "title": "剥取一次狼皮",
           "type": "objective"
+        },
+        {
+          "action": "s01Survival",
+          "id": "after.skinWolf.1",
+          "params": {
+            "operation": "afterWolfSkinned"
+          },
+          "title": "提示烤制狼肉",
+          "type": "action"
         },
         {
           "id": "cookMeat",
@@ -3523,39 +3598,6 @@
         {
           "action": "s01Survival",
           "params": {
-            "operation": "afterInitialToolsPicked"
-          },
-          "stepId": "after-initial-tools-picked"
-        },
-        {
-          "action": "tutorial.command",
-          "params": {
-            "operation": "show",
-            "tutorialId": "s01.gather"
-          },
-          "stepId": "show-tutorial-s01-gather"
-        }
-      ],
-      "editorScope": {
-        "sceneIds": [
-          "S01"
-        ]
-      },
-      "id": "trg_s01_initial_tools_picked",
-      "name": "双工具齐全：开放野果采集",
-      "once": true,
-      "when": {
-        "params": {
-          "definitionId": "story.s01.initialToolsPicked"
-        },
-        "type": "state.transaction"
-      }
-    },
-    {
-      "do": [
-        {
-          "action": "s01Survival",
-          "params": {
             "definitionId": "story.s01.berryGathered",
             "operation": "commitStoryWhenReady",
             "successTip": "荒野酸果 ×{accepted} 已放入背包。",
@@ -3572,33 +3614,6 @@
       "id": "trg_s01_gather_berry_completed",
       "name": "采集野果：记录一次采集",
       "once": false,
-      "when": {
-        "params": {
-          "itemId": "resource.wild_berry"
-        },
-        "type": "gathering.completed"
-      }
-    },
-    {
-      "do": [
-        {
-          "action": "tutorial.command",
-          "params": {
-            "operation": "showStep",
-            "tutorialId": "s01.gather",
-            "tutorialStepId": "s01.gather-step-001"
-          },
-          "stepId": "show-tutorial-s01-gather-use-step"
-        }
-      ],
-      "editorScope": {
-        "sceneIds": [
-          "S01"
-        ]
-      },
-      "id": "trg_s01_first_berry_gathered_tutorial_step",
-      "name": "首次采集野果：提示使用野果",
-      "once": true,
       "when": {
         "params": {
           "itemId": "resource.wild_berry"
@@ -3674,41 +3689,6 @@
       "when": {
         "params": {
           "definitionId": "story.s01.berriesGathered"
-        },
-        "type": "state.transaction"
-      }
-    },
-    {
-      "do": [
-        {
-          "action": "tutorial.command",
-          "params": {
-            "operation": "complete",
-            "tutorialId": "tutorial-001"
-          },
-          "stepId": "complete-tutorial-eat-food"
-        },
-        {
-          "action": "tutorial.command",
-          "params": {
-            "await": true,
-            "operation": "show",
-            "tutorialId": "s01.chopWood"
-          },
-          "stepId": "show-tutorial-s01-chop-wood"
-        }
-      ],
-      "editorScope": {
-        "sceneIds": [
-          "S01"
-        ]
-      },
-      "id": "trg_s01_berry_eaten_advance",
-      "name": "吃掉野果后：完成吃教程并开启砍柴教程",
-      "once": true,
-      "when": {
-        "params": {
-          "definitionId": "story.s01.berryEaten"
         },
         "type": "state.transaction"
       }
@@ -3816,61 +3796,6 @@
         {
           "action": "s01Survival",
           "params": {
-            "operation": "afterWolfSkinned"
-          },
-          "stepId": "after-wolf-skinned"
-        }
-      ],
-      "editorScope": {
-        "sceneIds": [
-          "S01"
-        ]
-      },
-      "id": "trg_s01_wolf_skinned",
-      "name": "狼皮剥取完成：提示烤制狼肉",
-      "once": true,
-      "when": {
-        "params": {
-          "definitionId": "story.s01.wolfSkinned"
-        },
-        "type": "state.transaction"
-      }
-    },
-    {
-      "do": [
-        {
-          "action": "s01Survival",
-          "params": {
-            "completedPath": "s01Survival.firstWolfSpotted",
-            "definitionId": "story.s01.firstWolfSpotted",
-            "firstWolfCount": 1,
-            "gte": 1,
-            "operation": "commitStoryWhenReady",
-            "storyPath": "s01Survival.campfireRefuelCount"
-          },
-          "stepId": "commit-first-wolf-spotted"
-        }
-      ],
-      "editorScope": {
-        "sceneIds": [
-          "S01"
-        ]
-      },
-      "id": "trg_s01_refuel_committed",
-      "name": "添柴一次：提交首狼出现事实",
-      "once": false,
-      "when": {
-        "params": {
-          "definitionId": "story.s01.refuelCampfire"
-        },
-        "type": "state.transaction"
-      }
-    },
-    {
-      "do": [
-        {
-          "action": "s01Survival",
-          "params": {
             "completedPath": "s01Survival.firstWolfSpotted",
             "definitionId": "story.s01.firstWolfSpotted",
             "firstWolfCount": 1,
@@ -3892,39 +3817,6 @@
       "when": {
         "params": {},
         "type": "s01.firstWolfRecoveryRequested"
-      }
-    },
-    {
-      "do": [
-        {
-          "action": "s01Survival",
-          "params": {
-            "operation": "ensureFirstWolf"
-          },
-          "stepId": "ensure-first-wolf"
-        },
-        {
-          "action": "tutorial.command",
-          "params": {
-            "operation": "show",
-            "tutorialId": "s01.attack"
-          },
-          "stepId": "show-tutorial-s01-attack"
-        }
-      ],
-      "editorScope": {
-        "sceneIds": [
-          "S01"
-        ]
-      },
-      "id": "trg_s01_first_wolf_spotted",
-      "name": "首狼出现事实成立：生成并激活教学狼",
-      "once": true,
-      "when": {
-        "params": {
-          "definitionId": "story.s01.firstWolfSpotted"
-        },
-        "type": "state.transaction"
       }
     },
     {
@@ -4004,32 +3896,6 @@
           "enemyRole": "chaseWolf"
         },
         "type": "enemy.killed"
-      }
-    },
-    {
-      "do": [
-        {
-          "action": "tutorial.command",
-          "params": {
-            "operation": "show",
-            "tutorialId": "s01.move"
-          },
-          "stepId": "show-tutorial-s01-move"
-        }
-      ],
-      "editorScope": {
-        "sceneIds": [
-          "S01"
-        ]
-      },
-      "id": "trg_s01_begin_tutorial_after_wake",
-      "name": "苏醒对白结束：开始移动教学",
-      "once": true,
-      "when": {
-        "params": {
-          "id": "dialogue.s01.wake"
-        },
-        "type": "dialogueEnd"
       }
     },
     {
@@ -7794,6 +7660,7 @@
     {
       "commandType": "state.transaction",
       "id": "story.s01.specialFaint.prepare",
+      "name": "特殊昏迷·救援准备",
       "transaction": {
         "when": {
           "all": [
@@ -7823,6 +7690,7 @@
     {
       "commandType": "state.transaction",
       "id": "story.s01.specialFaint.clear",
+      "name": "特殊昏迷·状态清除",
       "transaction": {
         "when": {
           "equals": "specialFaint",
@@ -7845,6 +7713,7 @@
     {
       "commandType": "state.transaction",
       "id": "story.s01.campfireLit",
+      "name": "点亮篝火",
       "transaction": {
         "when": {
           "all": [
@@ -7870,6 +7739,7 @@
     {
       "commandType": "state.transaction",
       "id": "story.s01.berryGathered",
+      "name": "采摘一颗野果",
       "transaction": {
         "when": {
           "all": [
@@ -7906,6 +7776,7 @@
     {
       "commandType": "state.transaction",
       "id": "story.s01.findAxe",
+      "name": "斧头掉落",
       "transaction": {
         "when": {
           "all": [
@@ -7935,6 +7806,7 @@
     {
       "commandType": "state.transaction",
       "id": "story.s01.axeFound",
+      "name": "拾取斧头",
       "transaction": {
         "when": {
           "all": [
@@ -7964,6 +7836,7 @@
     {
       "commandType": "state.transaction",
       "id": "story.s01.skinningKnifeFound",
+      "name": "拾取剥皮刀",
       "transaction": {
         "when": {
           "all": [
@@ -7993,6 +7866,7 @@
     {
       "commandType": "state.transaction",
       "id": "story.s01.initialToolsPicked",
+      "name": "集齐初始工具",
       "transaction": {
         "when": {
           "all": [
@@ -8026,6 +7900,7 @@
     {
       "commandType": "state.transaction",
       "id": "story.s01.backpackOpened",
+      "name": "首次打开背包",
       "transaction": {
         "when": {
           "all": [
@@ -8051,6 +7926,7 @@
     {
       "commandType": "state.transaction",
       "id": "story.s01.berriesGathered",
+      "name": "野果采集完成",
       "transaction": {
         "when": {
           "all": [
@@ -8084,6 +7960,7 @@
     {
       "commandType": "state.transaction",
       "id": "story.s01.berryEaten",
+      "name": "吃下野果",
       "transaction": {
         "when": {
           "all": [
@@ -8109,6 +7986,7 @@
     {
       "commandType": "state.transaction",
       "id": "story.s01.refuelCampfire",
+      "name": "篝火添柴（遇狼前）",
       "transaction": {
         "inventory": {
           "entries": [
@@ -8162,6 +8040,7 @@
     {
       "commandType": "state.transaction",
       "id": "story.s01.refuelCampfireAfterWolf",
+      "name": "篝火添柴（杀狼后）",
       "transaction": {
         "inventory": {
           "entries": [
@@ -8211,6 +8090,7 @@
     {
       "commandType": "state.transaction",
       "id": "story.s01.firstWolfSpotted",
+      "name": "教学狼现身",
       "transaction": {
         "when": {
           "all": [
@@ -8257,6 +8137,7 @@
     {
       "commandType": "state.transaction",
       "id": "story.s01.woodGathered",
+      "name": "木柴收集完成",
       "transaction": {
         "when": {
           "all": [
@@ -8288,6 +8169,7 @@
     {
       "commandType": "state.transaction",
       "id": "story.s01.firstWolfKilled",
+      "name": "击杀教学狼",
       "transaction": {
         "when": {
           "all": [
@@ -8313,6 +8195,7 @@
     {
       "commandType": "state.transaction",
       "id": "story.s01.wolfSkinned",
+      "name": "剥取狼皮",
       "transaction": {
         "when": {
           "all": [
@@ -8334,6 +8217,7 @@
     {
       "commandType": "state.transaction",
       "id": "story.s01.cookMeat",
+      "name": "烤制狼肉",
       "transaction": {
         "inventory": {
           "addEntries": [
@@ -8378,6 +8262,7 @@
     {
       "commandType": "state.transaction",
       "id": "story.s01.craftWolfVest",
+      "name": "制作狼皮背心",
       "transaction": {
         "inventory": {
           "addEntries": [
@@ -8418,6 +8303,7 @@
     {
       "commandType": "state.transaction",
       "id": "story.s01.craftWolfBracers",
+      "name": "制作狼皮护腕",
       "transaction": {
         "inventory": {
           "addEntries": [
@@ -8458,6 +8344,7 @@
     {
       "commandType": "state.transaction",
       "id": "craft.s01.roastedWolfMeat",
+      "name": "兑换烤狼肉",
       "transaction": {
         "inventory": {
           "addEntries": [
@@ -8483,6 +8370,7 @@
     {
       "commandType": "state.transaction",
       "id": "craft.s01.wolfHideVest",
+      "name": "兑换狼皮背心",
       "transaction": {
         "inventory": {
           "addEntries": [
@@ -8504,6 +8392,7 @@
     {
       "commandType": "state.transaction",
       "id": "craft.s01.wolfHideBracers",
+      "name": "兑换狼皮护腕",
       "transaction": {
         "inventory": {
           "addEntries": [
@@ -8525,6 +8414,7 @@
     {
       "commandType": "state.transaction",
       "id": "story.s01.wolfGearCrafted",
+      "name": "狼皮套装集齐",
       "transaction": {
         "when": {
           "all": [
@@ -8554,6 +8444,7 @@
     {
       "commandType": "state.transaction",
       "id": "story.s01.shelterCompleted",
+      "name": "庇护所搭建完成",
       "transaction": {
         "checkpoint": {
           "checkpointId": "checkpoint.S01.shelterCompleted",
@@ -8589,6 +8480,7 @@
     {
       "commandType": "state.transaction",
       "id": "story.s01.overnight",
+      "name": "度过第一夜",
       "transaction": {
         "checkpoint": {
           "checkpointId": "checkpoint.S01.secondDay",
@@ -8639,6 +8531,7 @@
     {
       "commandType": "state.transaction",
       "id": "story.s01.leaveShelter",
+      "name": "离开庇护所",
       "transaction": {
         "checkpoint": {
           "checkpointId": "checkpoint.S01.wolfPursuit",
@@ -8679,6 +8572,7 @@
     {
       "commandType": "state.transaction",
       "id": "story.s01.chase.kill",
+      "name": "追击战击杀计数",
       "transaction": {
         "when": {
           "all": [
@@ -8728,6 +8622,7 @@
     {
       "commandType": "state.transaction",
       "id": "story.s01.riverCrossed",
+      "name": "渡过河流",
       "transaction": {
         "when": {
           "all": [
@@ -8757,6 +8652,7 @@
     {
       "commandType": "state.transaction",
       "id": "story.s01.cliffReached",
+      "name": "抵达悬崖",
       "transaction": {
         "when": {
           "all": [
@@ -8782,6 +8678,7 @@
     {
       "commandType": "state.transaction",
       "id": "story.s01.complete",
+      "name": "S01 剧情完成（转场 S02）",
       "transaction": {
         "travel": {
           "sceneId": "S02",
@@ -8847,6 +8744,7 @@
     {
       "commandType": "state.transaction",
       "id": "story.s02.summons.accept",
+      "name": "接受张角征召",
       "transaction": {
         "checkpoint": {
           "checkpointId": "checkpoint.S02.summonsAccepted",
@@ -8882,6 +8780,7 @@
     {
       "commandType": "state.transaction",
       "id": "story.s02.travel",
+      "name": "启程前往广宗（S09）",
       "transaction": {
         "travel": {
           "sceneId": "S09",
@@ -8904,6 +8803,7 @@
     {
       "commandType": "state.transaction",
       "id": "story.s09.enlist",
+      "name": "加入黄巾军",
       "transaction": {
         "checkpoint": {
           "checkpointId": "checkpoint.S09.enlisted",
@@ -8944,6 +8844,7 @@
     {
       "commandType": "state.transaction",
       "id": "story.s09.day.advance",
+      "name": "推进当前天数",
       "transaction": {
         "writes": [
           {
@@ -8959,6 +8860,7 @@
     {
       "commandType": "state.transaction",
       "id": "story.s09.delayed.resolve",
+      "name": "延迟后果结算",
       "transaction": {
         "delayed": {
           "currentDayPath": "story.currentDay",
@@ -9032,6 +8934,7 @@
     {
       "commandType": "state.transaction",
       "id": "story.s09.refugee.prepare",
+      "name": "难民冲突·预备",
       "transaction": {
         "when": {
           "all": [
@@ -9081,6 +8984,7 @@
     {
       "commandType": "state.transaction",
       "id": "story.s09.refugee.start",
+      "name": "难民冲突·开始",
       "transaction": {
         "when": {
           "all": [
@@ -9106,6 +9010,7 @@
     {
       "commandType": "state.transaction",
       "id": "story.s09.refugee.donate",
+      "name": "捐赠粮草安抚难民",
       "transaction": {
         "checkpoint": {
           "checkpointId": "checkpoint.S09.refugeeDonation",
@@ -9201,6 +9106,7 @@
     {
       "commandType": "state.transaction",
       "id": "story.s09.refugee.branch",
+      "name": "难民冲突·分支抉择",
       "transaction": {
         "selector": {
           "$get": "payload.event.choiceId"

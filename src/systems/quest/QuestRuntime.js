@@ -288,11 +288,13 @@ export function compileStepAction(step) {
     };
   }
   if (step.type === 'tutorial') {
+    const operation = text(step.operation) || 'show';
     return {
       action: 'tutorial.command',
       params: {
-        operation: 'show',
+        operation,
         tutorialId: text(step.tutorialId),
+        ...(operation === 'showStep' && text(step.tutorialStepId) ? { tutorialStepId: text(step.tutorialStepId) } : {}),
         ...(step.await === true ? { await: true } : {})
       },
       stepId
@@ -328,12 +330,13 @@ export function compileRewardActions(quest, questId) {
  * 编译产物完整校验：复用 TaskGraphSystem 与 TriggerCatalog 的唯一校验器，
  * 确保 QuestRuntime 产物与手写定义同规同矩。返回 errors 数组。
  */
-export function validateQuestCompilation(compilation) {
+export function validateQuestCompilation(compilation, project = null) {
   const errors = [];
   const taskGraphValidation = validateTaskGraphDefinitions(compilation?.taskGraphs || []);
   if (!taskGraphValidation.ok) errors.push(...taskGraphValidation.errors.map(error => `[taskGraph] ${error.path}: ${error.message}`));
   for (const trigger of compilation?.triggers || []) {
-    for (const message of validateTriggerDefinition(trigger)) {
+    // project 透传：编译产物可含项目级动作（triggerCatalog.actions 登记，如 s01Survival）
+    for (const message of validateTriggerDefinition(trigger, project)) {
       errors.push(`[trigger:${trigger.id}] ${message}`);
     }
   }

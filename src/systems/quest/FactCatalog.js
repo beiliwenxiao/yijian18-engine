@@ -92,9 +92,9 @@ export function normalizeFactDefinition(raw) {
   return fact;
 }
 
-/** 编辑器下拉选项 [{value,label}]。 */
+/** 编辑器下拉选项 [{value,label}]——label 为「中文名（ID）」，便于策划对照引用。 */
 export function getFactOptions(project = null) {
-  return buildFactCatalog(project).map(fact => ({ value: fact.id, label: fact.label }));
+  return buildFactCatalog(project).map(fact => ({ value: fact.id, label: `${fact.label}（${fact.id}）` }));
 }
 
 /**
