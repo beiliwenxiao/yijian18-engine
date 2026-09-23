@@ -46,7 +46,8 @@ export class SceneGameLoaderBridge {
       deps = {},
       onShowTip = null,
       onItemGained = null,
-      getPlayer = null
+      getPlayer = null,
+      fireSceneEnterOnInitialize = true
     } = normalized || {};
 
     this.GameLoaderClass = GameLoaderClass;
@@ -57,6 +58,7 @@ export class SceneGameLoaderBridge {
     this.onShowTip = onShowTip;
     this.onItemGained = onItemGained;
     this.getPlayer = typeof getPlayer === 'function' ? getPlayer : (() => null);
+    this.fireSceneEnterOnInitialize = fireSceneEnterOnInitialize;
     this.loader = null;
     this._dialogueEndOff = null;
     this._dialogueChoiceDispatchOff = null;
@@ -108,7 +110,10 @@ export class SceneGameLoaderBridge {
 
     const player = this.getPlayer();
     if (player) loader.updateContext({ player });
-    if (sceneId && this._isActive(token, loader)) {
+    // fireSceneEnterOnInitialize=false（数据驱动场景）：sceneEnter 触发器改由宿主在隐藏
+    // 加载屏后触发（fireSceneEnterTriggers），避免编排触发器含「等待对话/教程完成」步骤时
+    // 在加载页遮挡下等待玩家交互造成死锁。默认 true 保持其它宿主的既有行为。
+    if (sceneId && this.fireSceneEnterOnInitialize !== false && this._isActive(token, loader)) {
       // 全 Trigger 化后不再有 FlowGroup 状态机；sceneEnter 直接触发（顺序由 when/if 驱动）。
       const sceneEnterResult = await triggerSystem.fireAndWait('sceneEnter', { sceneId });
       if (!sceneEnterResult.ok) {

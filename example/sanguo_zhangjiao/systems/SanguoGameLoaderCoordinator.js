@@ -86,7 +86,9 @@ function initializeGameLoader() {
       },
       onShowTip: text => this._showScreenTip(text || ''),
       onItemGained: (item, player) => this.onItemGained(item, player || this.playerEntity),
-      getPlayer: () => this.playerEntity || null
+      getPlayer: () => this.playerEntity || null,
+      // sceneEnter 触发器由 fireSceneEnterTriggers() 在隐藏加载屏后触发（防加载死锁，见该函数注释）
+      fireSceneEnterOnInitialize: false
     });
     this._gameLoaderBridge = bridge;
     this.resourceScope?.track(() => bridge.dispose());
