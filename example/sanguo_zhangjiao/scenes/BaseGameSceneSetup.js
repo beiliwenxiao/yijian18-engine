@@ -391,6 +391,12 @@ export class BaseGameSceneSetup extends Scene {
     return { ok: manualFailed === 0 && autoCleared, manualCleared, manualFailed, autoCleared };
   }
 
+  /** 隐藏加载屏后由 initGame 调用：sceneEnter 触发器（任务启动/初始生成/intro 编排）在可见画面上运行。 */
+  fireSceneEnterTriggers() {
+    return this.sanguoGameLoaderCoordinator?.fireSceneEnterTriggers?.()
+      || Promise.resolve({ ok: false, code: 'coordinatorUnavailable' });
+  }
+
   /**
    * 任务图事实对账：读档后对「StoryState 已成立但任务节点未计数」的 objective 补喂合成事件。
    * 解决旧档中间态死锁：节点修复/顺序变化后，已提交过的幂等事务不会再发事件，

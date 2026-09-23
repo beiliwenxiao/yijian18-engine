@@ -273,13 +273,17 @@ export function compileAcceptWhen(when) {
   return { type: '', params: {} };
 }
 
-/** Quest 步骤 → 触发器 do 动作（dialogue/tutorial/action；await 仅 tutorial 支持）。 */
+/** Quest 步骤 → 触发器 do 动作（dialogue/tutorial/action；await 支持 dialogue/tutorial）。 */
 export function compileStepAction(step) {
   const stepId = `step.${text(step.id)}`;
   if (step.type === 'dialogue') {
     return {
       action: 'dialogue.command',
-      params: { dialogueId: text(step.dialogueId), operation: 'start' },
+      params: {
+        dialogueId: text(step.dialogueId),
+        operation: 'start',
+        ...(step.await === true ? { await: true } : {})
+      },
       stepId
     };
   }

@@ -930,3 +930,59 @@ describe('多路径进程：步骤级 if + branch[] 分支 + 多教程串行', (
     expect(system.ledger.get('trg.multi').status).toBe('succeeded');
   });
 });
+
+describe('TriggerSystem 对话等待（dialogue.command await）', () => {
+  function buildDialogueMock() {
+    const listeners = new Set();
+    const mock = {
+      currentDialogue: null,
+      onEnd: callback => { listeners.add(callback); return () => listeners.delete(callback); },
+      endCurrent() { mock.currentDialogue = null; listeners.forEach(callback => callback()); }
+    };
+    return mock;
+  }
+
+  function buildSystem(dialogue) {
+    const system = new TriggerSystem({ definitionRevision: 18 });
+    system.init({ dialogue });
+    return system;
+  }
+
+  it('同对话在播：等待 onEnd 后返回；已结束/其它对话在播/系统缺失 立即返回', async () => {
+    // 对话系统缺失 → 立即返回（不阻塞）
+    const bare = new TriggerSystem({ definitionRevision: 18 });
+    bare.init({});
+    await bare._awaitDialogueEnd('dlg.a');
+
+    // 对话未在播（已结束）→ 立即返回
+    const idle = buildDialogueMock();
+    await buildSystem(idle)._awaitDialogueEnd('dlg.a');
+
+    // 其它对话在播 → 立即返回（真实冲突不等待）
+    const other = buildDialogueMock();
+    other.currentDialogue = { id: 'dlg.b' };
+    await buildSystem(other)._awaitDialogueEnd('dlg.a');
+
+    // 同对话在播 → 挂起直到 endCurrent 触发 onEnd
+    const active = buildDialogueMock();
+    active.currentDialogue = { id: 'dlg.a' };
+    const system = buildSystem(active);
+    let settled = false;
+    const pending = system._awaitDialogueEnd('dlg.a').then(() => { settled = true; });
+    await new Promise(resolve => setTimeout(resolve, 0));
+    expect(settled, '同对话在播时应保持等待').toBe(false);
+    active.endCurrent();
+    await pending;
+    expect(settled).toBe(true);
+  });
+
+  it('onEnd 多次触发仍只解除一次等待（off 防重入）', async () => {
+    const active = buildDialogueMock();
+    active.currentDialogue = { id: 'dlg.a' };
+    const system = buildSystem(active);
+    const pending = system._awaitDialogueEnd('dlg.a');
+    active.endCurrent();
+    active.endCurrent(); // 二次触发不应抛错
+    await pending;
+  });
+});

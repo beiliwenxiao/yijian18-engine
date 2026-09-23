@@ -1150,7 +1150,29 @@
             newGameProfileModal.setAttribute('aria-hidden', 'true');
             newGameProfileOpener = null;
             menuPadIndex = 0;
+            // 焦点不得留在 aria-hidden 弹窗内（无障碍警告）：关闭后统一移回可见的安全位置
+            if (newGameProfileModal.contains(document.activeElement)) {
+                refocusAfterModalClose(opener, restoreFocus);
+                return;
+            }
             if (restoreFocus && opener?.isConnected && !loginScreen.classList.contains('hidden')) opener.focus();
+        }
+
+        /** 弹窗关闭兜底：优先还原触发者（可见时），否则落到当前场景第一个可见的菜单动作按钮。 */
+        function refocusAfterModalClose(opener, restoreFocus) {
+            if (restoreFocus && opener?.isConnected && !loginScreen.classList.contains('hidden')
+              && opener.offsetParent !== null) {
+                opener.focus();
+                return;
+            }
+            focusFirstMenuAction();
+        }
+
+        /** 把焦点落到当前可见的第一个菜单动作按钮（按场景分列后登录/游戏内各不相同）。 */
+        function focusFirstMenuAction() {
+            const fallback = Array.from(loginScreen.querySelectorAll('.login-action'))
+                .find(button => button.offsetParent !== null && !button.disabled);
+            (fallback || document.getElementById('login-start'))?.focus();
         }
 
         async function confirmNewGameProfile() {
@@ -1752,6 +1774,11 @@
             saveSlotConfirm.disabled = false;
             menuPadIndex = 0;
             savePickerOpener = null;
+            // 焦点不得留在 aria-hidden 弹窗内（无障碍警告）：关闭后统一移回可见的安全位置
+            if (savePickerModal.contains(document.activeElement)) {
+                refocusAfterModalClose(opener, restoreFocus);
+                return;
+            }
             if (restoreFocus && opener?.isConnected && !loginScreen.classList.contains('hidden')) opener.focus();
         }
 
@@ -2286,9 +2313,7 @@
             menuPadIndex = 0;
             loginScreen.classList.remove('hidden');
             // 游戏内「开始游戏/继续游戏」已按场景隐藏，焦点落到第一个可见可用选项
-            const focusTarget = Array.from(loginScreen.querySelectorAll('.login-action'))
-                .find(button => button.offsetParent !== null && !button.disabled);
-            (focusTarget || document.getElementById('login-start')).focus();
+            focusFirstMenuAction();
             resumeLoginGamepadPolling();
         }
 
@@ -2826,11 +2851,15 @@
                     }
                     // 读档后任务图事实对账：StoryState 已成立但任务节点未计数的事实补喂合成事件，
                     // 消除旧档在任务节点修复/顺序变化后的中间态死锁。
+                    console.log('[init-debug] before reconcileTaskFacts');
                     await scene.reconcileTaskFacts?.();
+                    console.log('[init-debug] after reconcileTaskFacts');
                 }
-                
+
                 await nextStep(); // 步骤 6（完成）
+                console.log('[init-debug] before gameStarted=true');
                 gameStarted = true;
+                console.log('[init-debug] gameStarted=true, starting loop');
 
                 // 先启动唯一游戏循环，等待首个完整渲染帧后才创建新游戏初始存档，避免透明 Canvas 被 JPEG 编码为黑图。
                 startGameLoop();
@@ -2846,7 +2875,11 @@
                 
                 // 隐藏加载屏幕
                 loadingScreen.style.display = 'none';
-                
+                // 用户裁定修复加载死锁：sceneEnter 触发器（任务启动/intro 编排，含「等待对话/教程
+                // 完成」步骤）必须在玩家可见画面之后运行，否则加载页遮挡交互 → 双向死锁。
+                // fire-and-forget：编排在后台推进，玩家正常看到并交互开场对话/教程。
+                void scene.fireSceneEnterTriggers?.();
+
                 console.log('游戏初始化完成，游戏循环已启动');
             } catch (error) {
                 console.error('游戏初始化失败:', error);

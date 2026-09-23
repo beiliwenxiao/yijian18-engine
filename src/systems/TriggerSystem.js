@@ -975,6 +975,14 @@ export class TriggerSystem {
         && step?.params?.await === true) {
         await this._awaitTutorialHide(step.params.tutorialId);
       }
+      // 对话串行：dialogue.command start 成功后，若 params.await=true，等待该对话结束
+      // （与教程 await 同款步骤层等待——命令已提交，等待不占用 state revision）。
+      if (lastResult.ok === true
+        && step?.action === 'dialogue.command'
+        && step?.params?.operation === 'start'
+        && step?.params?.await === true) {
+        await this._awaitDialogueEnd(step.params.dialogueId);
+      }
       if (!replayed) {
         this._completeEventStep(
           trigger,
@@ -1032,6 +1040,21 @@ export class TriggerSystem {
     if (resolve()) return;
     await new Promise(done => {
       const off = tutorial.onHide(() => { if (resolve()) { off?.(); done(); } });
+    });
+  }
+
+  /**
+   * 等待指定对话结束（start 已成功提交后的串行编排等待）。
+   * 纯等待不占用 state revision；已结束/从未开始/对话系统不可用 均视为就绪。
+   * 幂等启动场景（同对话已在播）下 currentDialogue 仍是该对话，会等到 onEnd 为止——正确。
+   */
+  async _awaitDialogueEnd(dialogueId) {
+    const dialogue = this.ctx.dialogue || this.ctx.dialogueSystem || null;
+    if (!dialogue || !dialogueId || typeof dialogue.onEnd !== 'function') return;
+    const resolve = () => dialogue.currentDialogue?.id !== dialogueId;
+    if (resolve()) return;
+    await new Promise(done => {
+      const off = dialogue.onEnd(() => { if (resolve()) { off?.(); done(); } });
     });
   }
 

@@ -201,14 +201,14 @@ describe('QuestWizardEditor 任务向导', () => {
     it('步骤次级导航：类型背景色区分，拖动 drop 重排写回 quest.steps，点击高亮定位', () => {
         const { editor } = buildEditor();
         const nav = editor.container.querySelector('[data-role="steps-nav"]');
-        // S01：18 步 = 开场教程 + 开场对话 + 16 目标
+        // S01：18 步 = 开场对话 + 开场教程 + 16 目标（用户已用拖动功能把对话排到教程前）
         const items = nav.querySelectorAll('[data-snav-index]');
         expect(items.length).toBe(18);
-        expect(items[0].classList.contains('type-tutorial')).toBe(true);
-        expect(items[1].classList.contains('type-dialogue')).toBe(true);
+        expect(items[0].classList.contains('type-dialogue')).toBe(true);
+        expect(items[1].classList.contains('type-tutorial')).toBe(true);
         expect(items[2].classList.contains('type-objective')).toBe(true);
-        expect(items[0].textContent).toContain('1 · 教程');
-        expect(items[1].textContent).toContain('2 · 对话');
+        expect(items[0].textContent).toContain('1 · 对话');
+        expect(items[1].textContent).toContain('2 · 教程');
         expect(items[2].textContent).toContain('3 · 目标');
         expect(items[2].draggable).toBe(true);
 

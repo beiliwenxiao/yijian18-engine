@@ -162,7 +162,9 @@ export const STANDARD_ACTION_DESCRIPTORS = deepFreeze([
   descriptor('world.teleport', 'world.teleport', 'sceneId', 'scenes', ActionSideEffect.WORLD, ActionCheckpointPolicy.REQUIRED),
   descriptor('checkpoint.request', 'checkpoint.request', 'checkpointId', null, ActionSideEffect.DOMAIN, ActionCheckpointPolicy.REQUIRED),
   descriptor('ending.command', 'ending.command', 'endingId', 'endings', ActionSideEffect.DOMAIN, ActionCheckpointPolicy.REQUIRED),
-  descriptor('dialogue.command', 'dialogue.command', 'dialogueId', 'dialogues'),
+  descriptor('dialogue.command', 'dialogue.command', 'dialogueId', 'dialogues', ActionSideEffect.DOMAIN, ActionCheckpointPolicy.ON_COMMIT, {
+    properties: { await: { type: 'boolean' } }
+  }),
   descriptor('tutorial.command', 'tutorial.command', 'tutorialId', 'tutorials', ActionSideEffect.DOMAIN, ActionCheckpointPolicy.ON_COMMIT, {
     properties: { await: { type: 'boolean' } }
   }),

@@ -348,8 +348,8 @@ export function validateTriggerDefinition(trigger, project = null) {
         if (requiresStableSteps && Object.prototype.hasOwnProperty.call(action || {}, 'await')) {
           errors.push(`${stepPath}.await 已废弃；TriggerSystem 始终严格串行等待并在失败时短路`);
         }
-        if (action?.params?.await === true && action.action !== 'tutorial.command') {
-          errors.push(`${stepPath}.params.await 仅允许用于 tutorial.command 步骤`);
+        if (action?.params?.await === true && action.action !== 'tutorial.command' && action.action !== 'dialogue.command') {
+          errors.push(`${stepPath}.params.await 仅允许用于 tutorial.command / dialogue.command 步骤`);
         }
         errors.push(...validateTriggerActionParams(action, project, stepPath));
       }

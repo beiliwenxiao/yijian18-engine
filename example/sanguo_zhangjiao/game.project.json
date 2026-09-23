@@ -2290,6 +2290,7 @@
       ],
       "steps": [
         {
+          "await": true,
           "dialogueId": "dialogue.s01.wake",
           "id": "step.1.1",
           "title": "开场旁白",
@@ -2518,7 +2519,7 @@
                 },
                 "inventoryItemId": {
                   "minLength": 1,
-                  "title": "背包物品 ID",
+                  "title": "背包物��� ID",
                   "type": "string"
                 },
                 "minimumQuantity": {

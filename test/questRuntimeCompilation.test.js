@@ -94,7 +94,7 @@ describe('QuestRuntime Quest v2 编译器', () => {
     const intro = triggers[1];
     expect(intro.when).toEqual({ type: 'task.started', params: { definitionId: 'quest.test.survival' } });
     expect(intro.do.map(action => action.action)).toEqual(['dialogue.command', 'tutorial.command']);
-    expect(intro.do[0].params).toEqual({ dialogueId: 'dlg_test_intro', operation: 'start' });
+    expect(intro.do[0].params).toEqual({ dialogueId: 'dlg_test_intro', operation: 'start', await: true });
     expect(intro.do[1].params).toEqual({ operation: 'show', tutorialId: 'tut_test_move', await: true });
 
     const afterWood = triggers[2];
@@ -192,12 +192,13 @@ describe('QuestRuntime Quest v2 编译器', () => {
     const compiled = compileQuestProject(project);
     expect(compiled.taskGraphs.map(graph => graph.id)).toEqual(['task.s01.survival', 'task.s02.summons']);
     // S01/S02 无 accept/rewards（接取由现有触发器承担）；S01 开场教程步骤（step.1.1 → s01.move）
-    // 编译为 intro 触发器：task.started 驱动 tutorial.command show——这是首个由 quest 步骤承接的编排段
+    // S01 开场段已被用户重排：step.1.1 对话（无 await）→ step.1.2 教程（await）——intro do 链按步骤顺序编译
     const s01Intro = compiled.triggers.find(trigger => trigger.id === 'trg_task.s01.survival_intro');
     expect(s01Intro).toBeTruthy();
     expect(s01Intro.when).toEqual({ type: 'task.started', params: { definitionId: 'task.s01.survival' } });
-    expect(s01Intro.do[0].action).toBe('tutorial.command');
-    expect(s01Intro.do[0].params).toEqual({ tutorialId: 's01.move', operation: 'show' });
+    expect(s01Intro.do.map(action => action.action)).toEqual(['dialogue.command', 'tutorial.command']);
+    expect(s01Intro.do[0].params).toEqual({ dialogueId: 'dialogue.s01.wake', operation: 'start' });
+    expect(s01Intro.do[1].params).toEqual({ operation: 'show', tutorialId: 's01.move', await: true });
     expect(compiled.triggers.filter(trigger => trigger !== s01Intro)).toEqual([]); // 除 intro 外无其余产物
     // 手写任务图通道已清零：taskGraphs[] 为空数组（保留数据通道，编辑入口收敛到任务编辑器）
     expect(project.taskGraphs).toEqual([]);

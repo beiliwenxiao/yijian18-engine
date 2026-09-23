@@ -520,6 +520,7 @@ export class QuestWizardEditor {
       const dialogue = this._getDialogue(step.dialogueId);
       typeFields = `
         <div class="qwe-field"><label>对话</label><select data-step-field="dialogueId">${this._optionList(this._dialogueOptions(), step.dialogueId, '选择对话')}</select></div>
+        <div class="qwe-field qwe-check-row"><label class="qwe-check"><input type="checkbox" data-step-field="await" ${step.await === true ? 'checked' : ''}>等待对话完成后再继续</label></div>
         <div class="qwe-field full">
           <button type="button" data-action="toggle-dlg-edit" data-dlg-id="${this._escape(step.dialogueId || '')}">${expanded ? '▲ 收起对话编辑' : '▼ 就地编辑对话内容'}</button>
           ${expanded ? this._dialogueEditHtml(dialogue) : ''}

@@ -39,9 +39,29 @@ export class SanguoGameLoaderCoordinator extends SceneFlowCoordinator {
     super(scene, {
       initializeGameLoader,
       configureSharedClassEffects,
-      registerGameLoaderActions
+      registerGameLoaderActions,
+      fireSceneEnterTriggers
     }, { name: 'SanguoGameLoaderCoordinator' });
   }
+}
+
+/**
+ * 隐藏加载屏后由 initGame 调用（fire-and-forget）：sceneEnter 触发器
+ * （任务启动/初始生成/intro 编排）在玩家可见画面上运行。
+ * 编排触发器含「等待对话/教程完成」步骤，必须等玩家看到画面并交互后才继续。
+ */
+async function fireSceneEnterTriggers() {
+  const gameLoader = this.gameLoader;
+  if (!gameLoader?.triggerSystem) return { ok: false, code: 'gameLoaderUnavailable' };
+  const sceneId = this.currentSceneId;
+  if (!sceneId) return { ok: false, code: 'sceneIdUnavailable' };
+  const sceneEnterResult = await gameLoader.triggerSystem.fireAndWait('sceneEnter', { sceneId });
+  if (!sceneEnterResult.ok) {
+    console.error('[DDScene][GameLoader] sceneEnter 触发器执行失败:', sceneId, sceneEnterResult.records);
+    return { ok: false, code: 'sceneEnterTriggerFailed', records: sceneEnterResult.records };
+  }
+  console.log('%c[DDScene][GameLoader] sceneEnter 触发器已执行:', 'color:#4CAF50', sceneId);
+  return { ok: true, ...sceneEnterResult };
 }
 
 function initializeGameLoader() {
@@ -154,16 +174,10 @@ function initializeGameLoader() {
         this.sceneRuntime?.eventJournal || null,
         () => this.sceneRuntime?.authorityClocks?.logical?.now?.() || 0
       );
-      const sceneEnterResult = await gameLoader.triggerSystem.fireAndWait('sceneEnter', {
-        sceneId: this.currentSceneId
-      });
-      if (!sceneEnterResult.ok) {
-        const error = new Error(`sceneEnter 触发器执行失败: ${this.currentSceneId}`);
-        error.code = 'sceneEnterTriggerFailed';
-        error.records = sceneEnterResult.records;
-        throw error;
-      }
-      console.log('%c[DDScene][GameLoader] 装配完成，触发器数量:', 'color:#4CAF50', gameLoader.triggerSystem.triggers.length);
+      // sceneEnter 触发器不再在装配 ready 阶段等待（修复加载死锁）：intro 等编排触发器
+      // 含「等待对话/教程完成」步骤，会等玩家交互——而加载页此时还盖着画面，玩家无法
+      // 交互 → 双向死锁。改由 initGame 在隐藏加载屏后调用 fireSceneEnterTriggers()。
+      console.log('%c[DDScene][GameLoader] 装配完成（sceneEnter 延后触发），触发器数量:', 'color:#4CAF50', gameLoader.triggerSystem.triggers.length);
       return gameLoader;
     })).catch(this.resourceScope.guard(error => {
       this._rejectAssetManifestReady?.(error);
