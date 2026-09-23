@@ -2,7 +2,8 @@
 
 一剑十八年引擎(YiJian18-Engine)-跨平台 2D/3D ECS 游戏引擎。
 采用 Entity-Component-System (ECS) 架构设计。
-采用Kiro开发，使用Claude opus 4.6、GPT 5.6 sol、GLM 5.2等模型。
+前期采用Kiro开发，使用Claude opus 4.6、GPT 5.6 sol、GLM 5.2等模型。
+现在开始采用TareCode CN开发，使用GLM 5.3 Flash,DeepSeek 4.1 Flash,Kimi K3等模型
 核心系统与游戏逻辑完全分离，支持 Canvas 2D 和 three.js 3D 双渲染后端，
 支持魂系动作RPG游戏，并留有多人在线游戏的后续可能。
 
