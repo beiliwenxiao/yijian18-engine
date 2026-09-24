@@ -19,14 +19,14 @@
         },
         {
           "depthSort": true,
-          "height": 150,
+          "height": 82,
           "id": "S01-C01-bed",
           "imageId": "s10.story.zhangjiaoDeathbed",
           "name": "草铺木床",
           "type": "image",
-          "width": 250,
-          "x": 704,
-          "y": 382
+          "width": 165,
+          "x": 657.8738738738739,
+          "y": 374.3123123123123
         },
         {
           "depthSort": true,
@@ -36,8 +36,8 @@
           "name": "木制储物箱",
           "type": "image",
           "width": 112,
-          "x": 382,
-          "y": 440
+          "x": 499.87787787787784,
+          "y": 375.93593593593596
         },
         {
           "depthSort": false,
@@ -57,8 +57,8 @@
           "semanticRole": "exit",
           "type": "region",
           "width": 142,
-          "x": 568,
-          "y": 548
+          "x": 571.8438438438438,
+          "y": 514.6866866866867
         }
       ],
       "visible": true
@@ -97,7 +97,7 @@
             ]
           },
           "event": "interact",
-          "height": 150,
+          "height": 73,
           "id": "S01-C01-binding-bed",
           "name": "在床上睡觉",
           "pointerRadius": 40,
@@ -107,9 +107,9 @@
           "targetMode": "id",
           "triggerId": "trg_s01_overnight",
           "type": "trigger",
-          "width": 250,
-          "x": 704,
-          "y": 382
+          "width": 164,
+          "x": 655.3113113113113,
+          "y": 380.7187187187187
         },
         {
           "event": "interact",
@@ -124,8 +124,8 @@
           "triggerId": "trg_s01_open_shelter_chest",
           "type": "trigger",
           "width": 112,
-          "x": 382,
-          "y": 440
+          "x": 502.44044044044034,
+          "y": 377.21721721721724
         },
         {
           "event": "interact",
@@ -140,8 +140,8 @@
           "triggerId": "trg_s01_leave_shelter",
           "type": "trigger",
           "width": 142,
-          "x": 568,
-          "y": 548
+          "x": 570.5625625625626,
+          "y": 513.4054054054054
         }
       ],
       "visible": true
