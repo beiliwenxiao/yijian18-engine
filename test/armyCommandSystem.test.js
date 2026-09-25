@@ -99,7 +99,7 @@ describe('ArmyCommandSystem 军团指挥（M1 编组与命令）', () => {
     expect(system.selectUnitAt({ x: 999, y: 999 })).toBe(false);
   });
 
-  it('移动下令：阵型目标点写入 commandState.goal + 命令达成倒计时', () => {
+  it('移动下令：阵型目标点写入 commandState.goal + 全部到位即达成（无倒计时延迟）', () => {
     const unitA = makeUnit('u1', { x: 0, y: 0 });
     const unitB = makeUnit('u2', { x: 10, y: 0 });
     system.registerUnit(unitA, { squadId: 'qian', formationIndex: 0 });
@@ -109,6 +109,7 @@ describe('ArmyCommandSystem 军团指挥（M1 编组与命令）', () => {
     const result = system.orderMove({ x: 500, y: 300 });
     expect(result.ok).toBe(true);
     expect(result.count).toBe(2);
+    expect(result.duration).toBeUndefined();
 
     // 阵型点：两单位水平并列，间距 44，围绕目标点分布（M2 由姿态机驱动移动）
     const goalA = unitA.getComponent('commandState').goal;
@@ -117,13 +118,11 @@ describe('ArmyCommandSystem 军团指挥（M1 编组与命令）', () => {
     expect(goalB.x).toBeCloseTo(500 + 22);
     expect(Math.abs(goalA.y - goalB.y)).toBeLessThan(0.01);
 
-    // 倒计时未归零且未到位 → 未达成
+    // 未到位 → 未达成（即使推进大量时间，用户裁定取消倒计时延迟）
     const order = system.getActiveOrder();
     expect(order.done).toBe(false);
-    expect(order.duration).toBeGreaterThan(0);
-    system.update(order.duration / 2);
+    system.update(10);
     expect(order.done).toBe(false);
-    expect(order.countdown).toBeCloseTo(order.duration / 2);
 
     // 全部到位 → 立即达成
     unitA.getComponent('transform').position = { x: goalA.x, y: goalA.y };
@@ -183,8 +182,10 @@ describe('ArmyCommandSystem 姿态机（M2）', () => {
     const miss = system.applyStance('assault');
     expect(miss).toEqual({ ok: true, count: 1, stance: 'assault' });
     expect(unit.getComponent('commandState').stance).toBe('assault');
+    expect(system.getSelectionSlot()).toBe('commander'); // M5：发完自动回武将
 
-    // hold 记录驻守点为当前位置
+    // hold 记录驻守点为当前位置（重新选择后再发）
+    system.setSelection('all');
     expect(system.applyStance('hold').ok).toBe(true);
     expect(unit.getComponent('commandState').stance).toBe('hold');
     expect(unit.getComponent('commandState').post).toEqual({ x: 120, y: 80 });
@@ -248,6 +249,7 @@ describe('ArmyCommandSystem 姿态机（M2）', () => {
     system.registerUnit(unitA, { squadId: 'qian' });
     system.setSelection('all');
     system.applyStance('advance');
+    system.setSelection('all'); // M5：applyStance 后选择已清空，重新选择再下令
 
     // 无敌情、有移动目标 → 0.6x 推进
     system.orderMove({ x: 300, y: 0 });
@@ -277,11 +279,11 @@ describe('ArmyCommandSystem 姿态机（M2）', () => {
     expect(system.getSelectedStance()).toBe('hold');
 
     system.applyStance('flee');
-    expect(system.getSelectedStance()).toBe('flee');
+    // M5：姿态指令后自动回武将（选择清空），姿态数据仍写在单位上
+    expect(system.getSelectionSlot()).toBe('commander');
+    expect(unitA.getComponent('commandState').stance).toBe('flee');
 
     // HUD 姿态按钮点击 → applyStance（按钮位置由 render 生成，此处直接注入模拟）
-    class HudpStub { }
-    void HudpStub;
     const hud = {
       _stanceButtons: ARMY_STANCES.map((stance, index) => ({
         stanceKey: stance.key,
@@ -299,9 +301,10 @@ describe('ArmyCommandSystem 姿态机（M2）', () => {
         return false;
       }
     };
+    system.setSelection('all');
     expect(hud.handleMouseClick(80 + 10, 14, 'left')).toBe(true); // 第 2 个按钮 = 原地防守
     expect(unitA.getComponent('commandState').stance).toBe('hold');
-    expect(system.pendingStance).toBe('hold');
+    expect(system.getSelectionSlot()).toBe('commander'); // 发完指令自动回武将
     expect(hud.handleMouseClick(0, 14, 'right')).toBe(false); // 非左键不消费
   });
 });
@@ -320,7 +323,9 @@ describe('ArmyCommandSystem 特殊命令收口（任务驱动建造）', () => {
 
   it('守城姿态：applyStance 接受 garrison（大脱离半径驻守）', () => {
     expect(system.applyStance('garrison').ok).toBe(true);
-    expect(system.getSelectedStance()).toBe('garrison');
+    // M5：applyStance 后自动回武将，但姿态数据写在单位上
+    expect(system.getSelectionSlot()).toBe('commander');
+    expect(system.units.get('u1').entity.getComponent('commandState').stance).toBe('garrison');
   });
 
   it('startConstruction：任务驱动建造流（士兵到位→施工倒计时→完成回调）', () => {
@@ -416,8 +421,8 @@ describe('ArmyCommandSystem 搬运玩法（M4 抢救伤员）', () => {
 
     // 两单位都远离伤员 → 接近（速度 0.9x 朝伤员）
     system.updateStances();
-    for (const unit of system.getSelectedUnits()) {
-      const velocity = unit.getComponent('movement').velocity;
+    for (const unit of system.units.values()) {
+      const velocity = unit.entity.getComponent('movement').velocity;
       expect(velocity.x).toBeGreaterThan(0); // 伤员在东侧
       expect(Math.hypot(velocity.x, velocity.y)).toBeCloseTo(81); // 90 × 0.9
     }
@@ -456,8 +461,8 @@ describe('ArmyCommandSystem 搬运玩法（M4 抢救伤员）', () => {
     expect(completions).toHaveLength(1);
     expect(completions[0].regionId).toBe('S02-camp-rescue');
     expect(system.getRescueTarget()).toBe(null);
-    for (const unit of system.getSelectedUnits()) {
-      const command = unit.getComponent('commandState');
+    for (const unit of system.units.values()) {
+      const command = unit.entity.getComponent('commandState');
       expect(command.stance).toBe('hold');
       expect(command.carryState).toBe(null);
       expect(command.post).toBeTruthy();
@@ -482,8 +487,8 @@ describe('ArmyCommandSystem 搬运玩法（M4 抢救伤员）', () => {
     expect(interrupts).toHaveLength(1);
     expect(system.getRescueTarget().carrying).toBe(false);
     expect(body.getComponent('transform').position.x).toBe(carryingX); // 伤员留在原地
-    for (const unit of system.getSelectedUnits()) {
-      const command = unit.getComponent('commandState');
+    for (const unit of system.units.values()) {
+      const command = unit.entity.getComponent('commandState');
       expect(command.stance).toBe('hold'); // 切原地防守自动战斗
       expect(command.carryState).toBe(null);
     }
@@ -491,7 +496,7 @@ describe('ArmyCommandSystem 搬运玩法（M4 抢救伤员）', () => {
     // 战后不自动恢复：敌人清空后仍保持 hold
     system.setEnemies([]);
     system.update(0.1);
-    expect(system.getSelectedUnits()[0].getComponent('commandState').stance).toBe('hold');
+    expect(system.units.get('u1').entity.getComponent('commandState').stance).toBe('hold');
     expect(system.getRescueTarget().carrying).toBe(false);
 
     // 重新下达抢救伤员 → 恢复接近/搬运
@@ -509,5 +514,190 @@ describe('ArmyCommandSystem 搬运玩法（M4 抢救伤员）', () => {
     body.isDead = true;
     system.update(0.016);
     expect(system.getRescueTarget()).toBe(null);
+  });
+});
+
+describe('ArmyCommandSystem M5 简化改造（预设+偶尔覆盖）', () => {
+  let system;
+  let combatSystem;
+
+  beforeEach(() => {
+    system = new ArmyCommandSystem({});
+    combatSystem = { performAttack: vi.fn() };
+    system.setCombatSystem(combatSystem);
+    const unitA = makeUnit('u1', { x: 0, y: 0 });
+    const unitB = makeUnit('u2', { x: 24, y: 0 });
+    system.registerUnit(unitA, { squadId: 'qian' });
+    system.registerUnit(unitB, { squadId: 'qian', formationIndex: 1 });
+  });
+
+  it('escort 默认跟随：无武将退化为驻守；有武将则回归武将周围阵型点', () => {
+    // 无武将：退化为驻守（post=当前位置）
+    system.setSelection('all');
+    system.applyStance('escort');
+    system.updateStances();
+    expect(system.units.get('u1').entity.getComponent('commandState').stance).toBe('escort');
+    expect(system.units.get('u1').entity.getComponent('movement').velocity.x).toBe(0);
+
+    // 有武将：远离跟随点 → 朝武将移动
+    const commander = makeBody('commander', { x: 300, y: 0 });
+    system.setCommanderProvider(() => commander);
+    system.units.get('u1').entity.getComponent('transform').position = { x: 0, y: 0 };
+    system.units.get('u2').entity.getComponent('transform').position = { x: 10, y: 0 };
+    system.updateStances();
+    const velocity = system.units.get('u1').entity.getComponent('movement').velocity;
+    expect(velocity.x).toBeGreaterThan(0); // 武将在东侧 → 向东跟随
+    expect(velocity.x).toBeCloseTo(94.5); // 90 × 1.05
+  });
+
+  it('escort 接战：敌进入攻击范围且未拉离武将 → 站定攻击', () => {
+    const commander = makeBody('commander', { x: 0, y: 0 });
+    system.setCommanderProvider(() => commander);
+    system.setSelection('all');
+    system.applyStance('escort');
+    const unit = system.units.get('u1').entity;
+    unit.getComponent('transform').position = { x: 30, y: 0 };
+    const enemy = makeEnemy('wolf', { x: 50, y: 0 });
+    system.setEnemies([enemy]);
+    system.updateStances();
+    expect(unit.getComponent('movement').velocity.x).toBe(0);
+    expect(combatSystem.performAttack).toHaveBeenCalled();
+  });
+
+  it('orderIntent 语义化：点敌=进攻、点地=驻守、点武将=集结，发完自动回武将', () => {
+    const commander = makeBody('commander', { x: 0, y: 0 });
+    system.setCommanderProvider(() => commander);
+    const enemy = makeEnemy('wolf', { x: 400, y: 0 });
+    system.setEnemies([enemy]);
+
+    // 点敌 → assault，goal=敌位置，自动回武将
+    system.setSelection('all');
+    const assault = system.orderIntent({ x: 395, y: 5 });
+    expect(assault).toMatchObject({ ok: true, intent: 'assault', count: 2 });
+    expect(system.units.get('u1').entity.getComponent('commandState').stance).toBe('assault');
+    expect(system.units.get('u1').entity.getComponent('commandState').goal).toEqual({ x: 400, y: 0 });
+    expect(system.getSelectionSlot()).toBe('commander'); // 发完回武将
+
+    // 点地 → hold，goal=post=点击点
+    system.setSelection('all');
+    const hold = system.orderIntent({ x: 500, y: 200 });
+    expect(hold.intent).toBe('hold');
+    const holdCommand = system.units.get('u1').entity.getComponent('commandState');
+    expect(holdCommand.stance).toBe('hold');
+    expect(holdCommand.post).toEqual({ x: 500, y: 200 });
+    expect(system.getSelectionSlot()).toBe('commander');
+
+    // 点武将附近 → 集结回归 escort
+    system.setSelection('all');
+    const regroup = system.orderIntent({ x: 30, y: 10 });
+    expect(regroup.intent).toBe('regroup');
+    const regroupCommand = system.units.get('u1').entity.getComponent('commandState');
+    expect(regroupCommand.stance).toBe('escort');
+    expect(regroupCommand.goal).toBe(null);
+    expect(system.getSelectionSlot()).toBe('commander');
+  });
+
+  it('orderIntent 跳过 rescue 姿态单位（搬运任务优先）', () => {
+    const commander = makeBody('commander', { x: 0, y: 0 });
+    system.setCommanderProvider(() => commander);
+    system.units.get('u1').entity.getComponent('commandState').stance = 'rescue';
+    system.setSelection('all');
+
+    const result = system.orderIntent({ x: 500, y: 300 });
+    expect(result.ok).toBe(true);
+    expect(result.count).toBe(1); // 只有 u2 受命
+    expect(system.units.get('u1').entity.getComponent('commandState').stance).toBe('rescue'); // 保持搬运
+  });
+
+  it('orderIntent 点倒地伤员 → 救援意图：受命单位切 rescue 接近，搬运编排接管', () => {
+    const body = makeBody('body', { x: 300, y: 0 });
+    system.setRescueTarget(body, { goal: { x: 600, y: 0 }, regionId: 'S02-camp-rescue' });
+    system.setSelection('all');
+
+    const result = system.orderIntent({ x: 295, y: 5 }); // 点击伤员附近
+    expect(result).toMatchObject({ ok: true, intent: 'rescue', count: 2 });
+    for (const unit of system.units.values()) {
+      const command = unit.entity.getComponent('commandState');
+      expect(command.stance).toBe('rescue');
+      expect(command.goal).toEqual({ x: 300, y: 0 });
+    }
+    expect(system.getSelectionSlot()).toBe('commander'); // 发完自动回武将
+
+    // ≥2 人贴身 → 搬运启动（现有编排接管）
+    system.units.get('u1').entity.getComponent('transform').position = { x: 280, y: 0 };
+    system.units.get('u2').entity.getComponent('transform').position = { x: 320, y: 0 };
+    system.update(0.2);
+    expect(system.getRescueTarget().carrying).toBe(true);
+  });
+
+  it('Tab 循环：cycleSquadSelection 全军→前→左→中→右→后 回绕，不含武将', () => {
+    expect(system.getSelectionSlot()).toBe('commander');
+    const sequence = [];
+    for (let i = 0; i < 7; i++) sequence.push(system.cycleSquadSelection());
+    expect(sequence).toEqual(['all', 'qian', 'zuo', 'zhong', 'you', 'hou', 'all']);
+  });
+});
+
+describe('ArmyCommandSystem 战前预设（M5-3 per 军默认战术姿态）', () => {
+  let system;
+
+  beforeEach(() => {
+    system = new ArmyCommandSystem({});
+  });
+
+  it('setSquadPreset 校验：未知军与非法姿态拒绝，合法写入', () => {
+    // 默认全部跟随
+    expect(system.getSquadPresets()).toEqual({ qian: 'escort', zuo: 'escort', zhong: 'escort', you: 'escort', hou: 'escort' });
+    expect(system.setSquadPreset('qian', 'assault')).toEqual({ ok: true });
+    expect(system.getSquadPreset('qian')).toBe('assault');
+    expect(system.setSquadPreset('wujang', 'assault').ok).toBe(false); // 未知军
+    expect(system.setSquadPreset('qian', 'flee').ok).toBe(false);     // flee 不入预设
+    expect(system.setSquadPreset('qian', 'rescue').ok).toBe(false);   // rescue 剧情专用
+  });
+
+  it('applySquadPresets：开战按预设切姿态（escort 跟随 / hold 就地驻守 / assault 索敌）', () => {
+    const qian = makeUnit('u1', { x: 0, y: 0, squadId: 'qian' });
+    const zhong = makeUnit('u2', { x: 20, y: 0, squadId: 'zhong' });
+    const hou = makeUnit('u3', { x: 40, y: 0, squadId: 'hou' });
+    system.registerUnit(qian, { squadId: 'qian', formationIndex: 0 });
+    system.registerUnit(zhong, { squadId: 'zhong', formationIndex: 0 });
+    system.registerUnit(hou, { squadId: 'hou', formationIndex: 0 });
+    system.setSquadPreset('qian', 'assault');
+    system.setSquadPreset('zhong', 'hold');
+    // hou 保持跟随
+
+    system.applySquadPresets();
+    expect(system.presetsActive).toBe(true);
+    const commandQian = qian.getComponent('commandState');
+    expect(commandQian.stance).toBe('assault');
+    expect(commandQian.goal).toBeNull(); // assault 无固定目标，全图索敌
+    const commandZhong = zhong.getComponent('commandState');
+    expect(commandZhong.stance).toBe('hold');
+    expect(commandZhong.post).toEqual({ x: 20, y: 0 }); // 开战位置即驻守点
+    const commandHou = hou.getComponent('commandState');
+    expect(commandHou.stance).toBe('escort');
+    expect(commandHou.post).toBeNull();
+  });
+
+  it('预设应用跳过搬运单位；战斗结束 resetSquadsToEscort 回跟随', () => {
+    const qian = makeUnit('u1', { x: 0, y: 0, squadId: 'qian' });
+    const hou = makeUnit('u2', { x: 40, y: 0, squadId: 'hou' });
+    system.registerUnit(qian, { squadId: 'qian', formationIndex: 0 });
+    system.registerUnit(hou, { squadId: 'hou', formationIndex: 0 });
+    system.setSquadPreset('qian', 'assault');
+    system.setSquadPreset('hou', 'assault');
+    // qian 正在搬运（rescue 姿态，任务优先 §11.2）
+    qian.getComponent('commandState').stance = 'rescue';
+
+    system.applySquadPresets();
+    expect(qian.getComponent('commandState').stance).toBe('rescue'); // 不扰动
+    expect(hou.getComponent('commandState').stance).toBe('assault');
+
+    system.resetSquadsToEscort();
+    expect(system.presetsActive).toBe(false);
+    expect(qian.getComponent('commandState').stance).toBe('rescue'); // 搬运仍不扰动
+    expect(hou.getComponent('commandState').stance).toBe('escort'); // 战后归队
+    // 预设本身不被清除（下次开战再应用）
+    expect(system.getSquadPreset('hou')).toBe('assault');
   });
 });

@@ -111,6 +111,18 @@ export class SceneTerrainBinding {
   }
 
   /**
+   * teleport 等位置事实变更后，同步碰撞解算的"已解算位置"记忆。
+   * 不同步的话，防穿越判定会把单帧大位移当作穿墙，把实体拉回旧 chunk 位置。
+   */
+  rememberEntityResolvedPosition(entity) {
+    const scene = this.scene;
+    if (!entity || !this.SceneTerrainCollision) return false;
+    if (!scene._terrainCollision) scene._terrainCollision = new this.SceneTerrainCollision({ entityRadius: 12 });
+    if (scene.jumpSystem) scene._terrainCollision.setJumpSystem?.(scene.jumpSystem);
+    return scene._terrainCollision.rememberEntityPosition(entity);
+  }
+
+  /**
    * 对当前全部 terrain 执行只读阻挡查询，供移动规划复用正式碰撞几何。
    * terrain 数据已经是世界坐标；此处不得再次应用 worldOffset。
    */

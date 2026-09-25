@@ -4251,7 +4251,20 @@
             "operation": "army.rescue.faint",
             "scenarioId": "scenario.command.army.rescue.faint"
           }
+        }
+      ],
+      "id": "trg_s02_spawn_initial",
+      "name": "进入S02：主角昏倒在营地外",
+      "once": true,
+      "when": {
+        "params": {
+          "sceneId": "S02"
         },
+        "type": "sceneEnter"
+      }
+    },
+    {
+      "do": [
         {
           "action": "startDialogue",
           "params": {
@@ -4259,9 +4272,12 @@
           }
         }
       ],
-      "id": "trg_s02_spawn_initial",
-      "name": "进入S02：山道昏倒开场",
+      "id": "trg_s02_prologue",
+      "name": "S01剧情完成后：山道昏倒·张角抉择",
       "once": true,
+      "if": {
+        "flag": "story.s01Completed"
+      },
       "when": {
         "params": {
           "sceneId": "S02"
@@ -8996,8 +9012,10 @@
               "path": "story.currentSceneId"
             },
             {
-              "equals": false,
-              "path": "story.s02ZhangjiaoChoice"
+              "not": {
+                "equals": "kill",
+                "path": "story.s02ZhangjiaoChoice"
+              }
             }
           ]
         },
@@ -9032,8 +9050,10 @@
               "path": "story.currentSceneId"
             },
             {
-              "equals": false,
-              "path": "story.s02ZhangjiaoChoice"
+              "not": {
+                "equals": "save",
+                "path": "story.s02ZhangjiaoChoice"
+              }
             }
           ]
         },

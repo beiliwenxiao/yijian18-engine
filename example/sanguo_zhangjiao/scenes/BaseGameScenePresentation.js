@@ -207,8 +207,15 @@ export class BaseGameScenePresentation extends BaseGameSceneGameplayHooks {
   /** 淡黑→执行→淡出的通用异步转场；取消、替换或退出时返回 false。 */
   _fadeTransition(callback) {
     const transition = this._ensureFadeOverlayTransition();
-    if (!transition) return Promise.resolve(false);
-    return transition.start(callback).then(result => !result?.cancelled);
+    // 无转场层：退化为直接执行（保留 callback 的完整结果，含 world.teleport 的 sceneId）。
+    if (!transition) return Promise.resolve(callback());
+    // 必须透传 callback 的完整结果——世界导航命令的结果（含 sceneId）是
+    // 提交后事件消费（sceneEnter 接续）的输入，吞掉会导致命令回滚。
+    // FadeOverlayTransition._complete 的 resolve 形态是 { cancelled, value }。
+    return transition.start(callback).then(result => {
+      if (result?.cancelled === true) return false;
+      return result && 'value' in result ? result.value : result;
+    });
   }
 
   /** 每帧推进当前淡黑覆盖层。 */

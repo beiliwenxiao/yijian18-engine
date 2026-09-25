@@ -1050,16 +1050,23 @@ export class DebugPanel {
     const sceneId = select.value;
     if (!sceneId) return;
 
-    // 调试特权：先写入剧情状态（当前场景 + 解锁列表），绕过剧情门禁，
-    // 否则 world.teleport 会因场景未解锁被拒（SanguoSceneStateFlow 门禁）。
+    // 调试特权：先写入剧情状态（当前场景 + 解锁列表 + 此前剧情进度标记），
+    // 绕过剧情门禁，否则 world.teleport 会因场景未解锁被拒（SanguoSceneStateFlow 门禁）。
     // storyState 可能被快照系统冻结（只读），必须经 blackboard.set 写入新对象。
+    // s01Completed=true：跳转即视为"此前剧情已完成"——目标场景的剧情触发器
+    // （如 S02 山道抉择 if flag story.s01Completed）可正常播出。
     const loader = this.getScene()?.gameLoader;
     const story = loader?.blackboard?.get?.('storyState') || null;
     if (story && typeof story === 'object') {
       const unlocked = Array.isArray(story.unlockedScenes) ? [...story.unlockedScenes] : [];
       if (!unlocked.includes(sceneId)) unlocked.push(sceneId);
       try {
-        loader.blackboard.set('storyState', { ...story, currentSceneId: sceneId, unlockedScenes: unlocked });
+        loader.blackboard.set('storyState', {
+          ...story,
+          currentSceneId: sceneId,
+          s01Completed: true,
+          unlockedScenes: unlocked
+        });
       } catch (error) {
         console.warn('[DebugPanel] storyState 跳转预写失败（继续尝试传送）', error?.message || error);
       }
@@ -1068,7 +1075,10 @@ export class DebugPanel {
     // 优先大地图内传送（当前场景支持 teleportToChunk 时）
     const scene = this.getScene();
     if (scene && scene.teleportToChunk) {
-      scene.teleportToChunk({ scene: sceneId, transition: 'fadeBlack' });
+      scene.teleportToChunk({ scene: sceneId, transition: 'fadeBlack' })
+        .catch(error => {
+          console.warn('[DebugPanel] teleportToChunk 失败', error?.message || error);
+        });
       select.value = '';
       return;
     }

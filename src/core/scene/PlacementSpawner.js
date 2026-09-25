@@ -377,7 +377,7 @@ export class PlacementSpawner {
         squadId: placement.squadId || data.squadId || 'zhong',
         formationIndex: placement.formationIndex ?? data.formationIndex
       }));
-      entity.addComponent?.(new CommandStateComponent({ stance: 'hold' }));
+      entity.addComponent?.(new CommandStateComponent({ stance: 'escort' }));
       if (typeof store?.addEnemy === 'function') store.addEnemy(entity);
       else store?.add?.(entity);
       return entity;

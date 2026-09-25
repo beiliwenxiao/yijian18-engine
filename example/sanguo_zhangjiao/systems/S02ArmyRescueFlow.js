@@ -41,13 +41,15 @@ export class S02ArmyRescueCoordinator {
     this._active = false;
   }
 
-  /** 主角昏倒：置位倒地状态（对话锁输入之外的长效操作禁用）。 */
+  /** 主角昏倒：置位倒地状态（对话锁输入之外的长效操作禁用）并开启剧情保护（敌人停止索敌）。 */
   faint() {
     const scene = this.scene;
     scene.playerDowned = true;
-    const movement = scene.playerEntity?.getComponent?.('movement');
+    const player = scene.playerEntity;
+    if (player) player.plotDowned = true;
+    const movement = player?.getComponent?.('movement');
     if (movement) movement.velocity = { x: 0, y: 0 };
-    scene.playerEntity?.getComponent?.('sprite')?.playAnimation?.('idle');
+    player?.getComponent?.('sprite')?.playAnimation?.('idle');
     return { ok: true };
   }
 
@@ -65,11 +67,16 @@ export class S02ArmyRescueCoordinator {
     this._active = true;
     this._regionId = regionId || null;
     scene.playerDowned = true;
+    if (player) player.plotDowned = true;
     const movement = player.getComponent?.('movement');
     if (movement) movement.velocity = { x: 0, y: 0 };
-    const goal = Number.isFinite(Number(goalX)) && Number.isFinite(Number(goalY))
-      ? { x: Number(goalX), y: Number(goalY) }
-      : null;
+    // goal 是场景本地坐标（触发器数据），必须先投影到世界坐标再交给搬运逻辑，
+    // 否则 _updateRescueMission 会以本地坐标对比世界坐标，拖动方向与距离全错。
+    let goal = null;
+    if (Number.isFinite(Number(goalX)) && Number.isFinite(Number(goalY))) {
+      const offset = scene._worldLoadResult?.worldIndex?.getOffset?.(scene.currentSceneId) || { x: 0, y: 0 };
+      goal = { x: Number(goalX) + (offset.x || 0), y: Number(goalY) + (offset.y || 0) };
+    }
     system.setRescueTarget(player, { goal, regionId: this._regionId });
     system.onRescueComplete = payload => this._handleRescueComplete(payload);
     system.onRescueInterrupt = payload => this._handleRescueInterrupt(payload);
@@ -80,10 +87,11 @@ export class S02ArmyRescueCoordinator {
     return { ok: true, regionId: this._regionId, goal };
   }
 
-  /** 苏醒：解除倒地状态并清理搬运任务（剧情链由触发器数据继续）。 */
+  /** 苏醒：解除倒地状态（含剧情保护）并清理搬运任务（剧情链由触发器数据继续）。 */
   awakenFromRescue() {
     const scene = this.scene;
     scene.playerDowned = false;
+    if (scene.playerEntity) scene.playerEntity.plotDowned = false;
     scene.armyCommandFlow?.system?.clearRescueTarget?.();
     this._active = false;
     return { ok: true };

@@ -56,9 +56,18 @@ const FORMATION_SPACING_X = 44;
 const FORMATION_SPACING_Y = 28;   // 2.5D y 压缩
 const ARRIVE_RADIUS = 26;
 const PICK_RADIUS = 30;
-const ORDER_MIN_DURATION = 0.6;
-const ORDER_MAX_DURATION = 5;
-const SOLDIER_BASE_SPEED = 90;    // 与士兵 stats.speed 对齐的倒计时估算基准
+const SOLDIER_BASE_SPEED = 90;    // 士兵 stats.speed 缺省回退基准（搬运/姿态机速度用）
+
+// ─── 战前预设（M5-3，设计文档 §11.1.6）─────────────────────
+/** 预设可选姿态：跟随武将 + 玩家可见 4 姿态（§11.1.5 姿态收敛；flee=紧急按钮、rescue=剧情专用，不入预设）。 */
+export const SQUAD_PRESET_OPTIONS = Object.freeze([
+  { key: 'escort', label: '跟随' },
+  { key: 'assault', label: '全速进攻' },
+  { key: 'hold', label: '原地防守' },
+  { key: 'advance', label: '缓慢推进' },
+  { key: 'retreat', label: '稳步撤退' }
+]);
+const PRESET_STANCE_KEYS = new Set(SQUAD_PRESET_OPTIONS.map(option => option.key));
 
 // ─── 搬运玩法（M4，设计文档 §2.3）─────────────────────────
 const CARRY_FORM_RADIUS = 34;     // 搬运者需贴近伤员的担架位半径
@@ -80,8 +89,15 @@ const STANCE_PROFILES = Object.freeze({
   retreat: { speedMultiplier: 0.8,  aggroRadius: 160,       leashRadius: Infinity,  engageWhileMove: true },
   rescue:  { speedMultiplier: 0.9,  aggroRadius: 160,       leashRadius: Infinity,  engageWhileMove: false },
   garrison: { speedMultiplier: 1.0, aggroRadius: 260,       leashRadius: 480,       engageWhileMove: false },
+  escort:  { speedMultiplier: 1.05, aggroRadius: 240,       leashRadius: 320,       engageWhileMove: false },
   flee:    { speedMultiplier: 1.5,  aggroRadius: 0,         leashRadius: 0,         engageWhileMove: false }
 });
+
+/** Tab 循环选择序列（M5：武将是默认态不在序列内）。 */
+const SQUAD_SELECTION_CYCLE = Object.freeze(['all', 'qian', 'zuo', 'zhong', 'you', 'hou']);
+
+/** 意图指令的"集结"判定半径：右键点武将附近 = 回归跟随。 */
+const INTENT_REGROUP_RADIUS = 80;
 
 /**
  * 特殊命令建造定义（收口后无玩家 HUD 入口）：
@@ -126,9 +142,26 @@ export class ArmyCommandSystem {
     /** 搬运完成/中断回调：(payload) => void，由场景注入（触发 enterRegion / 提示） */
     this.onRescueComplete = null;
     this.onRescueInterrupt = null;
+    /** 武将实体提供器（escort 跟随锚点；场景装配注入，M5） */
+    this._commanderProvider = null;
+    /** @type {Record<string, string>} 战前预设：per 军默认战术姿态（M5-3，开战自动应用） */
+    this.squadPresets = { qian: 'escort', zuo: 'escort', zhong: 'escort', you: 'escort', hou: 'escort' };
+    /** 战斗态中预设是否已应用（战斗结束回 escort 时清位） */
+    this.presetsActive = false;
   }
 
   setCombatSystem(combatSystem) { this.combatSystem = combatSystem || null; }
+
+  /** 注入武将实体提供器（escort 跟随锚点；由场景装配设置）。 */
+  setCommanderProvider(provider) { this._commanderProvider = typeof provider === 'function' ? provider : null; }
+
+  _getCommander() {
+    try {
+      return this._commanderProvider?.() || null;
+    } catch (error) {
+      return null;
+    }
+  }
 
   /** 每帧由场景同步敌对实体候选（SceneArmyCommandFlow）。 */
   setEnemies(enemies) { this.enemies = Array.isArray(enemies) ? enemies : []; }
@@ -143,7 +176,7 @@ export class ArmyCommandSystem {
       formationIndex: Math.max(0, Math.floor(Number(formationIndex) || 0))
     });
     if (entity.getComponent && !entity.getComponent('commandState')) {
-      entity.addComponent(new CommandStateComponent({ stance: 'hold' }));
+      entity.addComponent(new CommandStateComponent({ stance: 'escort' }));
     }
     return true;
   }
@@ -195,7 +228,7 @@ export class ArmyCommandSystem {
     return units.every(unit => (unit.getComponent?.('commandState')?.stance || 'hold') === first) ? first : null;
   }
 
-  /** 应用姿态命令到选中单位（hold 记录当前位置为驻守点）。返回受命单位数。 */
+  /** 应用姿态命令到选中单位（hold 记录当前位置为驻守点）。发完自动回武将（M5 瞬态选择）。返回受命单位数。 */
   applyStance(stanceKey) {
     if (!STANCE_PROFILES[stanceKey]) return { ok: false, code: 'unknownStance' };
     const units = this.getSelectedUnits();
@@ -208,8 +241,13 @@ export class ArmyCommandSystem {
         const transform = entity.getComponent?.('transform');
         command.post = transform ? { x: transform.position.x, y: transform.position.y } : null;
         command.goal = null;
+      } else if (stanceKey === 'escort') {
+        // 跟随武将：清残留目标/驻点，锚点由武将位置每帧驱动
+        command.goal = null;
+        command.post = null;
       }
     }
+    this.clearSelection();
     return { ok: true, count: units.length, stance: stanceKey };
   }
 
@@ -248,64 +286,224 @@ export class ArmyCommandSystem {
     return true;
   }
 
-  /** 清空选择回到武将。 */
+  /** 清空选择回到武将（默认态；含清除手柄待确认姿态）。 */
   clearSelection() {
     this.selectionSlot = 'commander';
     this.customSelection = null;
+    this.pendingStance = null;
   }
 
   /**
-   * 移动下令：为选中单位设置阵型偏移目标点（姿态机驱动移动），
-   * 并启动命令达成倒计时。不改姿态。
-   * @returns {{ok: boolean, code?: string, count?: number, duration?: number}}
+   * 移动下令：为选中单位设置阵型偏移目标点（姿态机驱动移动）。
+   * 不改姿态；命令达成=全部到位（用户裁定取消倒计时延迟）。
+   * @returns {{ok: boolean, code?: string, count?: number}}
    */
   orderMove(worldPos) {
     const units = this.getSelectedUnits();
     if (!units.length) return { ok: false, code: 'noSelection' };
     const goal = { x: Number(worldPos?.x) || 0, y: Number(worldPos?.y) || 0 };
     const points = this._formationPoints(goal, units);
-    let maxDist = 0;
     units.forEach((entity, index) => {
       const command = entity.getComponent?.('commandState');
       const transform = entity.getComponent?.('transform');
       if (!command || !transform) return;
       const point = points[index] || goal;
       command.goal = { x: point.x, y: point.y };
-      const dist = Math.hypot(point.x - transform.position.x, point.y - transform.position.y);
-      if (dist > maxDist) maxDist = dist;
     });
-    const duration = Math.min(
-      ORDER_MAX_DURATION,
-      Math.max(ORDER_MIN_DURATION, maxDist / SOLDIER_BASE_SPEED + 0.5)
-    );
     this.activeOrder = {
       goal,
-      duration,
-      countdown: duration,
       unitIds: units.map(entity => entity.id),
       done: false
     };
-    return { ok: true, count: units.length, duration };
+    return { ok: true, count: units.length };
   }
 
-  /** 帧更新：搬运编排 + 姿态机 + 命令倒计时 + 建造作业。 */
+  /** 帧更新：搬运编排 + 姿态机 + 命令达成判定 + 建造作业。 */
   update(deltaTime = 0, now = Date.now()) {
     this.updateStances(now, deltaTime);
-    this.updateOrderCountdown(deltaTime);
+    this.updateOrderProgress(deltaTime);
     this.updateConstruction(deltaTime);
   }
 
-  /** 命令倒计时推进 + 达成判定（全部到位或倒计时归零）。 */
-  updateOrderCountdown(deltaTime = 0) {
+  // ─── 语义化意图指令（M5：点敌=进攻 / 点地=移动驻守 / 点武将=集结回归跟随） ──
+
+  /** 点选敌人：点击世界坐标半径内最近的敌对实体（无则 null）。 */
+  pickEnemyAt(worldPos, radius = 60) {
+    let best = null;
+    let bestDist = Infinity;
+    for (const enemy of this.enemies) {
+      if (!enemy || enemy.isDead || enemy.isDying) continue;
+      if (enemy.faction === 'ally' || enemy.faction === 'friendly') continue;
+      const transform = enemy.getComponent?.('transform');
+      if (!transform) continue;
+      const dist = Math.hypot(transform.position.x - worldPos.x, transform.position.y - worldPos.y);
+      if (dist <= radius && dist < bestDist) { best = enemy; bestDist = dist; }
+    }
+    return best;
+  }
+
+  /**
+   * 语义化意图指令：右键目标决定行为（M5 §11.1-2 + M4 救援）。
+   * - 点倒地搬运目标（rescueTarget）→ 士兵切救援姿态去拖（≥2 贴身自动抬向营地）
+   * - 点敌人 → 全速进攻冲向该敌
+   * - 点武将附近（INTENT_REGROUP_RADIUS）→ 回归跟随（escort 集结）
+   * - 点空地 → 移动到该点并原地驻守
+   * 已处于 rescue 的单位不受影响（搬运任务优先，§11.2）。
+   * 指令成功后自动清除选择回到武将（§11.1-3）。
+   * @returns {{ok:boolean, code?:string, intent?:string, count?:number, duration?:number}}
+   */
+  orderIntent(worldPos) {
+    const units = this.getSelectedUnits()
+      .filter(entity => entity.getComponent?.('commandState')?.stance !== 'rescue');
+    if (!units.length) return { ok: false, code: 'noSelection' };
+    const goal = { x: Number(worldPos?.x) || 0, y: Number(worldPos?.y) || 0 };
+    const rescueBodyTransform = this.rescueTarget?.entity?.getComponent?.('transform') || null;
+    const rescueHit = rescueBodyTransform
+      && Math.hypot(rescueBodyTransform.position.x - goal.x, rescueBodyTransform.position.y - goal.y) <= 60;
+    const enemy = rescueHit ? null : this.pickEnemyAt(goal);
+    const commander = this._getCommander();
+    const commanderPos = commander?.getComponent?.('transform')?.position || null;
+    let intent;
+    let stance;
+    let targetPoint;
+    if (rescueHit) {
+      intent = 'rescue';
+      stance = 'rescue';
+      targetPoint = { x: rescueBodyTransform.position.x, y: rescueBodyTransform.position.y };
+    } else if (enemy) {
+      intent = 'assault';
+      stance = 'assault';
+      const enemyTransform = enemy.getComponent?.('transform');
+      targetPoint = enemyTransform ? { x: enemyTransform.position.x, y: enemyTransform.position.y } : { ...goal };
+    } else if (commanderPos && Math.hypot(commanderPos.x - goal.x, commanderPos.y - goal.y) <= INTENT_REGROUP_RADIUS) {
+      intent = 'regroup';
+      stance = 'escort';
+      targetPoint = null;
+    } else {
+      intent = 'hold';
+      stance = 'hold';
+      targetPoint = { ...goal };
+    }
+    units.forEach(entity => {
+      const command = entity.getComponent?.('commandState');
+      const transform = entity.getComponent?.('transform');
+      if (!command || !transform) return;
+      command.stance = stance;
+      command.carryState = null;
+      if (targetPoint) {
+        command.goal = { ...targetPoint };
+        if (stance === 'hold') command.post = { ...targetPoint };
+      } else {
+        command.goal = null;
+        command.post = null; // escort：跟随点由武将位置每帧驱动
+      }
+    });
+    if (intent !== 'regroup' && intent !== 'rescue') {
+      this.activeOrder = {
+        goal: { ...targetPoint },
+        unitIds: units.map(entity => entity.id),
+        done: false
+      };
+    }
+    // 发完指令自动回武将（瞬态选择）
+    this.clearSelection();
+    return { ok: true, intent, count: units.length };
+  }
+
+  /** Tab 循环选择：全军→前军→左军→中军→右军→后军（武将是默认态不在序列内）。 */
+  cycleSquadSelection() {
+    const index = SQUAD_SELECTION_CYCLE.indexOf(this.selectionSlot);
+    const next = SQUAD_SELECTION_CYCLE[(index + 1) % SQUAD_SELECTION_CYCLE.length];
+    this.selectionSlot = next;
+    this.customSelection = null;
+    this.pendingStance = null;
+    return next;
+  }
+
+  /** 命令达成判定（用户裁定取消倒计时延迟：仅以全部到位为达成）。 */
+  updateOrderProgress(_deltaTime = 0) {
     const order = this.activeOrder;
     if (!order || order.done) return;
-    order.countdown = Math.max(0, order.countdown - deltaTime);
-    if (order.countdown <= 0 || this._allArrived(order)) order.done = true;
+    if (this._allArrived(order)) order.done = true;
+  }
+
+  // ─── 战前预设（M5-3）：per 军默认战术姿态，开战自动应用 ──
+
+  /**
+   * 设置某军的战前预设姿态。
+   * @returns {{ok: boolean, code?: string}}
+   */
+  setSquadPreset(squadId, stanceKey) {
+    if (!(squadId in this.squadPresets)) return { ok: false, code: 'unknownSquad' };
+    if (!PRESET_STANCE_KEYS.has(stanceKey)) return { ok: false, code: 'invalidPresetStance' };
+    this.squadPresets[squadId] = stanceKey;
+    return { ok: true };
+  }
+
+  getSquadPreset(squadId) { return this.squadPresets[squadId] || 'escort'; }
+
+  getSquadPresets() { return { ...this.squadPresets }; }
+
+  /** 预设应用时跳过忙碌单位：搬运任务优先（§11.2）、建造作业中不扰动。 */
+  _isUnitBusyForPreset(unit) {
+    const command = unit.entity.getComponent?.('commandState');
+    if (!command) return true;
+    if (command.stance === 'rescue' || command.carryState) return true;
+    if (this.constructionJob && this.constructionJob.phase !== 'complete'
+      && this.constructionJob.builders?.includes(unit.entity.id)) return true;
+    return false;
+  }
+
+  /**
+   * 开战瞬间应用战前预设：各军按预设切姿态（玩家手动指令仍是更高优先级覆盖，
+   * 应用后玩家随时可下令改变个别单位行为）。
+   * @returns {{ok: boolean, applied: number}}
+   */
+  applySquadPresets() {
+    let applied = 0;
+    for (const unit of this.units.values()) {
+      if (this._isUnitBusyForPreset(unit)) continue;
+      const command = unit.entity.getComponent?.('commandState');
+      if (!command) continue;
+      const stance = this.squadPresets[unit.squadId] || 'escort';
+      command.stance = stance;
+      command.carryState = null;
+      if (stance === 'escort') {
+        // 跟随：锚点由武将位置每帧驱动
+        command.goal = null;
+        command.post = null;
+      } else if (stance === 'hold') {
+        // 原地防守：就地驻守（开战位置即驻守点）
+        const transform = unit.entity.getComponent?.('transform');
+        command.goal = null;
+        command.post = transform ? { x: transform.position.x, y: transform.position.y } : null;
+      } else {
+        // assault/advance/retreat：无固定目标，进入姿态机模式（assault 全图索敌自动迎敌）
+        command.goal = null;
+        command.post = null;
+      }
+      applied++;
+    }
+    this.presetsActive = true;
+    return { ok: true, applied };
+  }
+
+  /** 战斗结束：所有空闲单位回归跟随武将（预设待下次开战再应用）。 */
+  resetSquadsToEscort() {
+    for (const unit of this.units.values()) {
+      if (this._isUnitBusyForPreset(unit)) continue;
+      const command = unit.entity.getComponent?.('commandState');
+      if (!command) continue;
+      command.stance = 'escort';
+      command.goal = null;
+      command.post = null;
+    }
+    this.presetsActive = false;
   }
 
   getActiveOrder() { return this.activeOrder; }
 
-  /** MovementSystem 右键钩子：编组选择激活时右键=移动下令。 */
+  /** MovementSystem 右键钩子：编组选择激活时右键=语义化意图指令（M5 §11.1-2）。 */
   tryHandleMoveOrder(camera) {
     const input = this.inputManager;
     if (!this.hasSquadSelection()) return false;
@@ -314,7 +512,7 @@ export class ArmyCommandSystem {
     const worldPos = camera?.screenToWorld
       ? camera.screenToWorld(screen.x, screen.y)
       : (input.getMouseWorldPosition?.() || screen);
-    const result = this.orderMove(worldPos);
+    const result = this.orderIntent(worldPos);
     if (!result.ok) return false;
     input.markMouseClickHandled?.();
     return true;
@@ -606,6 +804,12 @@ export class ArmyCommandSystem {
       return;
     }
 
+    // 跟随武将（M5 默认态）：阵型偏移锚点=武将位置，敌进警戒范围接战，脱离回归
+    if (stance === 'escort') {
+      this._updateEscortBehaviour(entity, command, transform, movement, profile, now);
+      return;
+    }
+
     const target = this._nearestEnemy(transform.position, profile.aggroRadius);
 
     // 原地防守：敌超出驻守点脱离半径 → 无视威胁，回到驻守点
@@ -694,6 +898,57 @@ export class ArmyCommandSystem {
       return;
     }
     this._moveTowards(entity, bodyTransform.position, profile.speedMultiplier);
+  }
+
+  /**
+   * 跟随武将行为（M5 默认态）：武将位置为阵型锚点，敌入警戒范围且未脱离锚点 leash 时接战，
+   * 其余时间回到个人跟随点（武将位置 + 阵型偏移）；无武将时退化为驻守。
+   */
+  _updateEscortBehaviour(entity, command, transform, movement, profile, now) {
+    const commander = this._getCommander();
+    const commanderTransform = commander?.getComponent?.('transform');
+    if (!commanderTransform) {
+      this._holdBehaviour(entity, command, transform, movement, profile, now, false);
+      return;
+    }
+    const anchor = commanderTransform.position;
+    const target = this._nearestEnemy(transform.position, profile.aggroRadius);
+    if (target) {
+      const enemyTransform = target.getComponent?.('transform');
+      const attackRange = (entity.getComponent?.('combat')?.attackRange || 40) + ATTACK_RANGE_PADDING;
+      const enemyDist = enemyTransform
+        ? Math.hypot(enemyTransform.position.x - transform.position.x, enemyTransform.position.y - transform.position.y)
+        : Infinity;
+      const anchorLeash = enemyTransform
+        ? Math.hypot(enemyTransform.position.x - anchor.x, enemyTransform.position.y - anchor.y)
+        : Infinity;
+      // 敌已进入攻击范围且未把战线拉离武将 → 站定接战
+      if (enemyDist <= attackRange && anchorLeash <= profile.leashRadius) {
+        this._stop(entity);
+        this._performAttackIfReady(entity, target, now);
+        return;
+      }
+    }
+    const followPoint = this._escortFollowPoint(entity);
+    const dist = Math.hypot(followPoint.x - transform.position.x, followPoint.y - transform.position.y);
+    if (dist > ARRIVE_RADIUS) {
+      this._moveTowards(entity, followPoint, profile.speedMultiplier);
+      return;
+    }
+    this._stop(entity);
+  }
+
+  /** 个人跟随点：武将位置周围按 escort 单位注册序展开的阵型偏移。 */
+  _escortFollowPoint(entity) {
+    const commander = this._getCommander();
+    const anchor = commander?.getComponent?.('transform')?.position || { x: 0, y: 0 };
+    const escorts = [...this.units.values()]
+      .filter(unit => unit.entity?.getComponent?.('commandState')?.stance === 'escort'
+        && unit.entity.isDead !== true && unit.entity.isDying !== true)
+      .map(unit => unit.entity);
+    const index = Math.max(0, escorts.indexOf(entity));
+    const points = this._formationPoints(anchor, escorts);
+    return points[index] || anchor;
   }
 
   _moveTowards(entity, target, speedMultiplier = 1) {

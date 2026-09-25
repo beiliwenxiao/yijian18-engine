@@ -44,6 +44,7 @@ const DRAG_THRESHOLD_PX = 8;
 const GAMEPAD_CYCLE_FORWARD = 4;   // LB：循环切换选择槽位
 const GAMEPAD_CYCLE_BACKWARD = 5;  // RB：循环切换待确认姿态（M2）
 const GAMEPAD_CONFIRM = 0;         // A：应用待确认姿态（M2，仅编组选择激活时）
+const TAB_CYCLE_KEY = 'tab';       // Tab：循环选择 全军→五军（M5，不占武将热键；InputManager keyMap 将 Tab 归一化为小写 'tab'）
 
 export class SceneArmyCommandFlow {
   /**
@@ -60,6 +61,8 @@ export class SceneArmyCommandFlow {
     });
     this._prevLeftHeld = false;
     this._prevPadButtons = new Set();
+    this._prevTabDown = false;
+    this._prevInCombat = false;
     this._attached = false;
   }
 
@@ -70,6 +73,7 @@ export class SceneArmyCommandFlow {
     const scene = this.scene;
     this.system.setInputManager?.(scene.inputManager || null);
     this.system.setCombatSystem?.(scene.combatSystem || null);
+    this.system.setCommanderProvider?.(() => scene.playerEntity || null);
     this._enableBuildingCollision(scene);
     this.system.onConstructionComplete = (commandKey, pos, def) => this._spawnConstructionEntity(commandKey, pos, def);
     this.onResize(scene.logicalWidth || 1280, scene.logicalHeight || 720);
@@ -112,17 +116,44 @@ export class SceneArmyCommandFlow {
     }
   }
 
-  /** 布局同步（ScenePanelLayout.onResize 调用）。 */
+  /** 布局同步（ScenePanelLayout.onResize 调用）。HUD 宽度与底部快捷栏 7 槽对齐。 */
   onResize(width, height) {
-    this.hud.layout?.(width, height);
+    const bar = this.scene.bottomControlBar;
+    const slotSize = bar?.skillSlots?.[0]?.size || 40;
+    const count = bar?.skillSlots?.length || 7;
+    const barWidth = count * slotSize + (count - 1) * 6;
+    this.hud.layout?.(width, height, barWidth);
   }
 
   update(deltaTime = 0) {
     this.system.setEnemies(this.scene.enemyEntities || []);
+    this._handleCombatEdge();
+    this._handleTabCycle();
     this.system.update(deltaTime);
     this._syncUnits();
     this._handlePointer();
     this._handleGamepad();
+  }
+
+  /**
+   * 战斗态沿检测（M5-3 战前预设）：开战瞬间应用 per 军预设姿态，
+   * 战斗结束全员回归跟随武将。无预设（全跟随）时应用为幂等无感。
+   */
+  _handleCombatEdge() {
+    const inCombat = this.system.combatSystem?.isInCombat?.() === true;
+    if (inCombat === this._prevInCombat) return;
+    this._prevInCombat = inCombat;
+    if (inCombat) this.system.applySquadPresets();
+    else this.system.resetSquadsToEscort();
+  }
+
+  /** Tab 按下沿：循环选择 全军→前军→左军→中军→右军→后军（M5，不占武将热键）。 */
+  _handleTabCycle() {
+    const input = this.scene.inputManager;
+    if (!input?.isKeyPressed) return;
+    const pressed = input.isKeyPressed(TAB_CYCLE_KEY) === true;
+    if (pressed && !this._prevTabDown) this.system.cycleSquadSelection();
+    this._prevTabDown = pressed;
   }
 
   /** 渲染入口（SceneRenderPipeline overlay 回调）：工程物自绘 + HUD。 */
@@ -248,8 +279,8 @@ export class SceneArmyCommandFlow {
     // 点中单位 → 自定义单选
     if (this.system.selectUnitAt(worldPos)) return;
     if (isTouch) {
-      // 安卓无右键：选中编组时点空地 = 移动下令
-      if (this.system.hasSquadSelection()) this.system.orderMove(worldPos);
+      // 安卓无右键：选中编组时点地图 = 语义化意图指令（点敌进攻/点地驻守/点武将集结）
+      if (this.system.hasSquadSelection()) this.system.orderIntent(worldPos);
       return;
     }
     this.system.clearSelection();

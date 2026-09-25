@@ -34,6 +34,8 @@ function stableEntityHash(entityId) {
 /** canonical 战役单位只攻击其他参战阵营；普通敌人继续使用 legacy faction/type 规则。 */
 function isHostileTarget(entity, candidate) {
   if (candidate === entity || candidate?.isDead || candidate?.isDying || candidate?.isSoulState) return false;
+  // 剧情倒地（如 S02 救援昏倒）：敌人不再索敌，避免剧情演出被击杀流程打断。
+  if (candidate?.plotDowned) return false;
   if (hasTag(entity, 'battleParticipant')) {
     const candidateParticipates = hasTag(candidate, 'battleParticipant')
       || hasTag(candidate, 'battleIntervenor');
@@ -287,7 +289,9 @@ class AggressiveAI extends AIController {
   isTargetDead(target) {
     if (!target) return true;
     const stats = target.getComponent('stats');
-    return !stats || stats.hp <= 0 || target.isDead || target.isDying || target.isSoulState;
+    return !stats || stats.hp <= 0 || target.isDead || target.isDying || target.isSoulState
+      // 剧情倒地目标失效，防止 AI 在索敌前已锁定、随后持续攻击倒地者。
+      || target.plotDowned === true;
   }
 }
 

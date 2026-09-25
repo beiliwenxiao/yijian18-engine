@@ -408,6 +408,21 @@ export class SceneTerrainCollision {
     this._lastResolvedPositions.set(entity, { x: position.x, y: position.y });
   }
 
+  /**
+   * 显式同步实体的"已解算位置"记忆（teleport 等位置事实变更后调用）。
+   * 不同步的话，防穿越判定会把单帧大位移当作穿墙，把实体拉回旧位置。
+   */
+  rememberEntityPosition(entity) {
+    const transform = entity?.getComponent?.('transform');
+    if (!entity || !transform) return false;
+    const collision = entity.getComponent?.('collision');
+    this._rememberResolvedPosition(entity, {
+      x: transform.position.x + (Number(collision?.offsetX) || 0),
+      y: transform.position.y + (Number(collision?.offsetY) || 0)
+    });
+    return true;
+  }
+
   /** 水池：以实体椭圆扩张水面后，将中心推出边缘外。 */
   resolvePond(p, pond, radiusX = 0, radiusY = 0) {
     const rx = (Number(pond?.rx) || 0) + Math.max(0, radiusX);

@@ -1287,6 +1287,9 @@ export class DataDrivenPrologueScene extends BaseGameScene {
           throw new Error(domainRestore.errors?.[0]?.message || domainRestore.code || '区块领域状态恢复失败');
         }
         this._navigationProjection.apply({ sceneId });
+        // teleport 是位置事实变更：同步碰撞解算记忆，防止防穿越判定把单帧
+        // 大位移当穿墙，把玩家拉回旧 chunk 位置（SceneTerrainCollision 防穿越）。
+        this._terrainBinding?.rememberEntityResolvedPosition?.(this.playerEntity);
         // 用户裁定存档节奏：每 5 分钟定时 + 每切换一次场景；开/关菜单与完成任务不触发存档。
         // fire-and-forget（经 requestAutoSave → 串行队列），失败仅告警不阻断导航。
         void this.requestAutoSave?.({ reason: 'scene-switch', sceneId });
