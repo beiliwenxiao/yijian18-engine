@@ -1,0 +1,2523 @@
+[
+  {
+    "do": [
+      {
+        "action": "task.command",
+        "params": {
+          "definitionId": "task.s01.survival",
+          "instanceId": "task.s01.survival.main",
+          "operation": "task.start",
+          "tracking": true
+        },
+        "stepId": "start-s01-survival-task"
+      }
+    ],
+    "id": "trg_s01_start_survival_task",
+    "name": "进入 S01：启动荒原求生主任务",
+    "once": true,
+    "when": {
+      "params": {
+        "sceneId": "S01"
+      },
+      "type": "sceneEnter"
+    }
+  },
+  {
+    "cooldown": 1,
+    "do": [
+      {
+        "action": "spawnPlacements",
+        "params": {
+          "selector": {
+            "group": "S01-initial"
+          }
+        },
+        "stepId": "spawn-initial-placements"
+      },
+      {
+        "action": "s01Survival",
+        "params": {
+          "operation": "reconcilePursuit"
+        },
+        "stepId": "reconcile-pursuit"
+      },
+      {
+        "action": "s01Survival",
+        "params": {
+          "operation": "presentEntry"
+        },
+        "stepId": "present-entry"
+      }
+    ],
+    "id": "trg_s01_spawn_initial",
+    "name": "进入 S01：装配初始场景与恢复追逐",
+    "once": false,
+    "when": {
+      "params": {
+        "sceneId": "S01"
+      },
+      "type": "sceneEnter"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "s01Survival",
+        "params": {
+          "completedPath": "s01Survival.axeFound",
+          "definitionId": "story.s01.axeFound",
+          "operation": "commitStoryWhenReady"
+        },
+        "stepId": "commit-axe-found"
+      }
+    ],
+    "editorScope": {
+      "sceneIds": [
+        "S01"
+      ]
+    },
+    "id": "trg_s01_pickup_worn_axe",
+    "name": "拾取破旧斧头",
+    "once": false,
+    "when": {
+      "params": {
+        "complete": true,
+        "placementId": "S01-pickup-worn-axe"
+      },
+      "type": "itemPickup"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "s01Survival",
+        "params": {
+          "completedPath": "s01Survival.skinningKnifeFound",
+          "definitionId": "story.s01.skinningKnifeFound",
+          "operation": "commitStoryWhenReady"
+        },
+        "stepId": "commit-skinning-knife-found"
+      }
+    ],
+    "editorScope": {
+      "sceneIds": [
+        "S01"
+      ]
+    },
+    "id": "trg_s01_pickup_skinning_knife",
+    "name": "拾取旧剥皮刀",
+    "once": false,
+    "when": {
+      "params": {
+        "complete": true,
+        "placementId": "S01-pickup-skinning-knife"
+      },
+      "type": "itemPickup"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "s01Survival",
+        "params": {
+          "completedPath": "s01Survival.initialToolsPicked",
+          "definitionId": "story.s01.initialToolsPicked",
+          "equals": true,
+          "operation": "commitStoryWhenReady",
+          "storyPath": "s01Survival.skinningKnifeFound"
+        },
+        "stepId": "commit-initial-tools-picked"
+      }
+    ],
+    "editorScope": {
+      "sceneIds": [
+        "S01"
+      ]
+    },
+    "id": "trg_s01_axe_found_check_tools",
+    "name": "斧头已获得",
+    "once": false,
+    "when": {
+      "params": {
+        "definitionId": "story.s01.axeFound"
+      },
+      "type": "state.transaction"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "s01Survival",
+        "params": {
+          "completedPath": "s01Survival.initialToolsPicked",
+          "definitionId": "story.s01.initialToolsPicked",
+          "equals": true,
+          "operation": "commitStoryWhenReady",
+          "storyPath": "s01Survival.axeFound"
+        },
+        "stepId": "commit-initial-tools-picked"
+      }
+    ],
+    "editorScope": {
+      "sceneIds": [
+        "S01"
+      ]
+    },
+    "id": "trg_s01_skinning_knife_found_check_tools",
+    "name": "剥皮刀已获得",
+    "once": false,
+    "when": {
+      "params": {
+        "definitionId": "story.s01.skinningKnifeFound"
+      },
+      "type": "state.transaction"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "s01Survival",
+        "params": {
+          "definitionId": "story.s01.berryGathered",
+          "operation": "commitStoryWhenReady",
+          "successTip": "荒野酸果 ×{accepted} 已放入背包。",
+          "successTitle": "采集完成"
+        },
+        "stepId": "commit-berry-gathered"
+      }
+    ],
+    "editorScope": {
+      "sceneIds": [
+        "S01"
+      ]
+    },
+    "id": "trg_s01_gather_berry_completed",
+    "name": "采集野果：记录一次采集",
+    "once": false,
+    "when": {
+      "params": {
+        "itemId": "resource.wild_berry"
+      },
+      "type": "gathering.completed"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "s01Survival",
+        "params": {
+          "completedPath": "s01Survival.berriesGathered",
+          "definitionId": "story.s01.berriesGathered",
+          "gte": 1,
+          "operation": "commitStoryWhenReady",
+          "storyPath": "s01Survival.berryGatherCount",
+          "successTitle": "您已经采集了{s01Survival.berryGatherCount}个野果"
+        },
+        "stepId": "commit-berries-gathered"
+      }
+    ],
+    "editorScope": {
+      "sceneIds": [
+        "S01"
+      ]
+    },
+    "id": "trg_s01_berry_count_updated",
+    "name": "野果计数达到一次：完成觅食目标",
+    "once": false,
+    "when": {
+      "params": {
+        "definitionId": "story.s01.berryGathered"
+      },
+      "type": "state.transaction"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "s01Survival",
+        "params": {
+          "operation": "afterBerriesGathered"
+        },
+        "stepId": "after-berries-gathered"
+      },
+      {
+        "action": "tutorial.command",
+        "params": {
+          "operation": "complete",
+          "tutorialId": "s01.gather"
+        },
+        "stepId": "complete-tutorial-s01-gather"
+      },
+      {
+        "action": "tutorial.command",
+        "params": {
+          "await": true,
+          "operation": "show",
+          "tutorialId": "tutorial-001"
+        },
+        "stepId": "show-tutorial-eat-food"
+      }
+    ],
+    "editorScope": {
+      "sceneIds": [
+        "S01"
+      ]
+    },
+    "id": "trg_s01_berries_gathered",
+    "name": "野果目标完成：引导吃掉野果并准备砍柴",
+    "once": true,
+    "when": {
+      "params": {
+        "definitionId": "story.s01.berriesGathered"
+      },
+      "type": "state.transaction"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "s01Survival",
+        "params": {
+          "completedPath": "s01Survival.woodGathered",
+          "definitionId": "story.s01.woodGathered",
+          "inventoryItemId": "resource.wood",
+          "minimumQuantity": 1,
+          "operation": "commitStoryWhenReady"
+        },
+        "stepId": "commit-wood-gathered"
+      }
+    ],
+    "editorScope": {
+      "sceneIds": [
+        "S01"
+      ]
+    },
+    "id": "trg_s01_gather_wood_completed",
+    "name": "砍伐树木一次",
+    "once": false,
+    "when": {
+      "params": {
+        "itemId": "resource.wood",
+        "resourceType": "wood"
+      },
+      "type": "gathering.completed"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "s01Survival",
+        "params": {
+          "operation": "afterWoodGathered"
+        },
+        "stepId": "after-wood-gathered"
+      }
+    ],
+    "editorScope": {
+      "sceneIds": [
+        "S01"
+      ]
+    },
+    "id": "trg_s01_wood_gathered",
+    "name": "木材目标完成：提示返回篝火",
+    "once": true,
+    "when": {
+      "params": {
+        "definitionId": "story.s01.woodGathered"
+      },
+      "type": "state.transaction"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "s01Survival",
+        "if": {
+          "args": [
+            {
+              "op": "==",
+              "value": true,
+              "var": "story.s01Survival.firstWolfKilled"
+            },
+            {
+              "op": "==",
+              "value": false,
+              "var": "story.s01Survival.wolfSkinned"
+            }
+          ],
+          "op": "and"
+        },
+        "params": {
+          "completedPath": "s01Survival.wolfSkinned",
+          "definitionId": "story.s01.wolfSkinned",
+          "operation": "commitStoryWhenReady"
+        },
+        "stepId": "commit-wolf-skinned"
+      }
+    ],
+    "editorScope": {
+      "sceneIds": [
+        "S01"
+      ]
+    },
+    "id": "trg_s01_gather_wolf_hide_completed",
+    "name": "剥取狼皮：提交剥皮事实",
+    "once": false,
+    "when": {
+      "params": {
+        "itemId": "resource.wolf_hide",
+        "nodeId": "S01-first-wolf-1"
+      },
+      "type": "gathering.completed"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "s01Survival",
+        "params": {
+          "completedPath": "s01Survival.firstWolfSpotted",
+          "definitionId": "story.s01.firstWolfSpotted",
+          "firstWolfCount": 1,
+          "gte": 1,
+          "operation": "commitStoryWhenReady",
+          "storyPath": "s01Survival.campfireRefuelCount"
+        },
+        "stepId": "commit-first-wolf-spotted"
+      }
+    ],
+    "editorScope": {
+      "sceneIds": [
+        "S01"
+      ]
+    },
+    "id": "trg_s01_first_wolf_recovery_requested",
+    "name": "首狼故障恢复：不重复扣除木材",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "s01.firstWolfRecoveryRequested"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "s01Survival",
+        "params": {
+          "completedPath": "s01Survival.firstWolfKilled",
+          "definitionId": "story.s01.firstWolfKilled",
+          "operation": "commitStoryWhenReady"
+        },
+        "stepId": "commit-first-wolf-killed"
+      }
+    ],
+    "editorScope": {
+      "sceneIds": [
+        "S01"
+      ]
+    },
+    "id": "trg_s01_first_wolf_killed",
+    "name": "教学狼形成可采集尸体：提交首狼击杀事实",
+    "once": false,
+    "when": {
+      "params": {
+        "corpseReady": true,
+        "enemyRole": "firstWolf"
+      },
+      "type": "enemy.killed"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "tutorial.command",
+        "params": {
+          "operation": "show",
+          "tutorialId": "s01.durability"
+        },
+        "stepId": "show-tutorial-s01-durability"
+      }
+    ],
+    "editorScope": {
+      "sceneIds": [
+        "S01"
+      ]
+    },
+    "id": "trg_s01_first_wolf_killed_committed",
+    "name": "首狼击杀事实成立：提示剥皮",
+    "once": true,
+    "when": {
+      "params": {
+        "definitionId": "story.s01.firstWolfKilled"
+      },
+      "type": "state.transaction"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "s01Survival",
+        "params": {
+          "operation": "recordChaseWolfKilled"
+        },
+        "stepId": "record-chase-wolf-killed"
+      }
+    ],
+    "editorScope": {
+      "sceneIds": [
+        "S01"
+      ]
+    },
+    "id": "trg_s01_chase_wolf_killed",
+    "name": "追逐狼死亡：增加追逐压力并补充狼群",
+    "once": false,
+    "when": {
+      "params": {
+        "enemyRole": "chaseWolf"
+      },
+      "type": "enemy.killed"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "s01Survival",
+        "params": {
+          "operation": "ensureMovedAfterWake"
+        },
+        "stepId": "ensure-moved-after-wake"
+      },
+      {
+        "action": "s01Survival",
+        "params": {
+          "operation": "campfireLit"
+        },
+        "stepId": "light-campfire"
+      },
+      {
+        "action": "tutorial.command",
+        "params": {
+          "operation": "show",
+          "tutorialId": "s01.pickup"
+        },
+        "stepId": "show-tutorial-s01-pickup"
+      }
+    ],
+    "id": "trg_s01_light_campfire",
+    "name": "点燃篝火",
+    "once": true,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "cooldown": 1,
+    "do": [
+      {
+        "action": "s01Survival",
+        "params": {
+          "operation": "openTanningRecipes"
+        },
+        "stepId": "craft-wolf-gear"
+      }
+    ],
+    "id": "trg_s01_craft_wolf_gear",
+    "name": "使用制皮木支架",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "cooldown": 1,
+    "do": [
+      {
+        "action": "s01Survival",
+        "params": {
+          "operation": "openCookingRecipes"
+        },
+        "stepId": "cook-meat"
+      }
+    ],
+    "id": "trg_s01_cook_meat",
+    "name": "使用烤肉架",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "cooldown": 1,
+    "do": [
+      {
+        "action": "s01Survival",
+        "params": {
+          "operation": "refuelCampfire"
+        },
+        "stepId": "refuel-campfire"
+      }
+    ],
+    "id": "trg_s01_refuel_campfire",
+    "name": "给篝火添柴",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "cooldown": 1,
+    "do": [
+      {
+        "action": "construction.command",
+        "params": {
+          "definitionId": "construction.s01.small_shelter",
+          "operation": "construction.start.s01",
+          "siteId": "site.s01.small_shelter"
+        },
+        "stepId": "start-shelter-construction"
+      }
+    ],
+    "id": "trg_s01_build_shelter",
+    "name": "搭建小庇护所",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "s01Survival",
+        "params": {
+          "operation": "shelterCompleted"
+        },
+        "stepId": "shelter-completed"
+      }
+    ],
+    "editorScope": {
+      "sceneIds": [
+        "S01"
+      ]
+    },
+    "id": "trg_s01_shelter_completed",
+    "name": "庇护所建成：推进过夜目标",
+    "once": true,
+    "when": {
+      "params": {
+        "siteId": "site.s01.small_shelter"
+      },
+      "type": "construction.constructionCompleted"
+    }
+  },
+  {
+    "cooldown": 1,
+    "do": [
+      {
+        "action": "s01Survival",
+        "params": {
+          "operation": "enterShelter"
+        },
+        "stepId": "enter-shelter"
+      }
+    ],
+    "id": "trg_s01_enter_shelter",
+    "name": "进入小庇护所",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "cooldown": 1,
+    "do": [
+      {
+        "action": "s01Survival",
+        "params": {
+          "operation": "overnight"
+        },
+        "stepId": "overnight"
+      }
+    ],
+    "id": "trg_s01_overnight",
+    "name": "在床上过夜",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "cooldown": 1,
+    "do": [
+      {
+        "action": "s01Survival",
+        "params": {
+          "operation": "openShelterChest"
+        },
+        "stepId": "open-shelter-chest"
+      }
+    ],
+    "id": "trg_s01_open_shelter_chest",
+    "name": "打开庇护所储物箱",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "cooldown": 1,
+    "do": [
+      {
+        "action": "s01Survival",
+        "params": {
+          "operation": "leaveShelter"
+        },
+        "stepId": "leave-shelter"
+      }
+    ],
+    "id": "trg_s01_leave_shelter",
+    "name": "离开小庇护所",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "cooldown": 1,
+    "do": [
+      {
+        "action": "s01Survival",
+        "params": {
+          "operation": "riverCrossed"
+        },
+        "stepId": "river-crossed"
+      }
+    ],
+    "id": "trg_s01_river_crossed",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "cooldown": 1,
+    "do": [
+      {
+        "action": "s01Survival",
+        "params": {
+          "operation": "cliffReached"
+        },
+        "stepId": "cliff-reached"
+      },
+      {
+        "action": "tutorial.command",
+        "params": {
+          "operation": "show",
+          "tutorialId": "s01.capacity"
+        },
+        "stepId": "show-tutorial-s01-capacity"
+      }
+    ],
+    "id": "trg_s01_cliff_reached",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "spawnPlacements",
+        "params": {
+          "selector": {
+            "group": "S02-initial"
+          }
+        }
+      },
+      {
+        "action": "scenario.command",
+        "params": {
+          "operation": "army.rescue.faint",
+          "scenarioId": "scenario.command.army.rescue.faint"
+        }
+      }
+    ],
+    "id": "trg_s02_spawn_initial",
+    "name": "进入S02：主角昏倒在营地外",
+    "once": true,
+    "when": {
+      "params": {
+        "sceneId": "S02"
+      },
+      "type": "sceneEnter"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "startDialogue",
+        "params": {
+          "id": "dialogue.s02.prologue"
+        }
+      }
+    ],
+    "id": "trg_s02_prologue",
+    "if": {
+      "flag": "story.s01Completed"
+    },
+    "name": "S01剧情完成后：山道昏倒·张角抉择",
+    "once": true,
+    "when": {
+      "params": {
+        "sceneId": "S02"
+      },
+      "type": "sceneEnter"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "state.transaction",
+        "params": {
+          "definitionId": "story.s02.judgement.kill"
+        }
+      },
+      {
+        "action": "ending.command",
+        "params": {
+          "checkpointId": "checkpoint.S02.ending.chaosWeed",
+          "endingId": "sanguo-zhangjiao-endings-v1",
+          "endingKey": "chaos-weed",
+          "operation": "commit"
+        },
+        "stepId": "trg_s02_choice_kill.step.ending"
+      }
+    ],
+    "id": "trg_s02_choice_kill",
+    "name": "张角选择：杀了（乱世草芥结局）",
+    "once": true,
+    "when": {
+      "params": {
+        "choiceId": "kill",
+        "id": "dialogue.s02.prologue"
+      },
+      "type": "dialogueChoice"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "state.transaction",
+        "params": {
+          "definitionId": "story.s02.judgement.save"
+        }
+      },
+      {
+        "action": "task.command",
+        "params": {
+          "definitionId": "task.s02.rescue",
+          "instanceId": "task.s02.rescue.main",
+          "operation": "task.start",
+          "tracking": true
+        },
+        "stepId": "start-s02-rescue-task"
+      },
+      {
+        "action": "spawnPlacements",
+        "params": {
+          "selector": {
+            "group": "S02-army"
+          }
+        },
+        "stepId": "trg_s02_choice_save.step.spawn-army"
+      },
+      {
+        "action": "scenario.command",
+        "params": {
+          "goalX": 590,
+          "goalY": 345,
+          "operation": "army.rescue.begin",
+          "regionId": "S02-camp-rescue",
+          "scenarioId": "scenario.command.army.rescue.begin"
+        }
+      }
+    ],
+    "id": "trg_s02_choice_save",
+    "name": "张角选择：救他（开放搬运玩法）",
+    "once": true,
+    "when": {
+      "params": {
+        "choiceId": "save",
+        "id": "dialogue.s02.prologue"
+      },
+      "type": "dialogueChoice"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "state.transaction",
+        "params": {
+          "definitionId": "story.s02.rescue.done"
+        }
+      },
+      {
+        "action": "scenario.command",
+        "params": {
+          "operation": "army.rescue.awaken",
+          "scenarioId": "scenario.command.army.rescue.awaken"
+        }
+      },
+      {
+        "action": "startDialogue",
+        "params": {
+          "id": "dialogue.s02.awakening"
+        }
+      }
+    ],
+    "id": "trg_s02_camp_arrival",
+    "name": "伤者抵达营地：苏醒过场",
+    "once": true,
+    "when": {
+      "params": {
+        "regionId": "S02-camp-rescue"
+      },
+      "type": "enterRegion"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "task.command",
+        "params": {
+          "definitionId": "task.s02.summons",
+          "instanceId": "task.s02.summons.main",
+          "operation": "task.start",
+          "tracking": true
+        },
+        "stepId": "start-s02-summons-task"
+      },
+      {
+        "action": "showTip",
+        "params": {
+          "text": "张角就在营地中，上前交谈接受征召。"
+        }
+      }
+    ],
+    "id": "trg_s02_awakening_done",
+    "name": "苏醒完毕：开启征召线",
+    "once": true,
+    "when": {
+      "params": {
+        "id": "dialogue.s02.awakening"
+      },
+      "type": "dialogueEnd"
+    }
+  },
+  {
+    "cooldown": 1,
+    "do": [
+      {
+        "action": "startDialogue",
+        "params": {
+          "id": "dialogue.s02.zhangjiaoSummons"
+        }
+      }
+    ],
+    "id": "trg_s02_zhangjiao_summons",
+    "once": true,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "state.transaction",
+        "params": {
+          "definitionId": "story.s02.summons.accept"
+        }
+      },
+      {
+        "action": "state.transaction",
+        "params": {
+          "definitionId": "story.s02.travel"
+        }
+      }
+    ],
+    "id": "trg_s02_accept_summons",
+    "once": true,
+    "when": {
+      "params": {
+        "id": "dialogue.s02.zhangjiaoSummons"
+      },
+      "type": "dialogueEnd"
+    }
+  },
+  {
+    "cooldown": 1,
+    "do": [
+      {
+        "action": "state.transaction",
+        "params": {
+          "definitionId": "story.s02.travel"
+        }
+      }
+    ],
+    "id": "trg_s02_travel_s09",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "spawnPlacements",
+        "params": {
+          "selector": {
+            "group": "S09-initial"
+          }
+        }
+      },
+      {
+        "action": "showTip",
+        "params": {
+          "text": "先与张角交谈加入黄巾，再到三面军旗下确认职业。"
+        }
+      }
+    ],
+    "id": "trg_s09_spawn_initial",
+    "once": true,
+    "when": {
+      "params": {
+        "sceneId": "S09"
+      },
+      "type": "sceneEnter"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "state.transaction",
+        "params": {
+          "definitionId": "story.s09.refugee.prepare"
+        }
+      }
+    ],
+    "id": "trg_s09_prepare_refugee_conflict",
+    "once": false,
+    "when": {
+      "params": {
+        "sceneId": "S09"
+      },
+      "type": "sceneEnter"
+    }
+  },
+  {
+    "cooldown": 1,
+    "do": [
+      {
+        "action": "state.transaction",
+        "params": {
+          "definitionId": "story.s09.refugee.start"
+        }
+      },
+      {
+        "action": "dialogue.command",
+        "params": {
+          "dialogueId": "dialogue.s09.refugeeConflict",
+          "operation": "start"
+        }
+      }
+    ],
+    "id": "trg_s09_start_refugee_conflict",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "state.transaction",
+        "params": {
+          "definitionId": "story.s09.refugee.branch"
+        }
+      }
+    ],
+    "id": "trg_s09_refugee_choice",
+    "once": false,
+    "when": {
+      "params": {
+        "id": "dialogue.s09.refugeeConflict"
+      },
+      "type": "dialogueChoice"
+    }
+  },
+  {
+    "cooldown": 1,
+    "do": [
+      {
+        "action": "startDialogue",
+        "params": {
+          "id": "dialogue.s09.enlistment"
+        }
+      }
+    ],
+    "id": "trg_s09_zhangjiao_enlistment",
+    "once": true,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "state.transaction",
+        "params": {
+          "definitionId": "story.s09.enlist"
+        }
+      }
+    ],
+    "id": "trg_s09_accept_enlistment",
+    "once": true,
+    "when": {
+      "params": {
+        "id": "dialogue.s09.enlistment"
+      },
+      "type": "dialogueEnd"
+    }
+  },
+  {
+    "cooldown": 0.5,
+    "do": [
+      {
+        "action": "scenario.command",
+        "params": {
+          "classId": "warrior",
+          "operation": "class.confirm",
+          "scenarioId": "scenario.command.class.confirm"
+        }
+      }
+    ],
+    "id": "trg_s09_class_warrior",
+    "if": {
+      "flag": "joinedYellowTurban"
+    },
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "cooldown": 0.5,
+    "do": [
+      {
+        "action": "scenario.command",
+        "params": {
+          "classId": "archer",
+          "operation": "class.confirm",
+          "scenarioId": "scenario.command.class.confirm"
+        }
+      }
+    ],
+    "id": "trg_s09_class_archer",
+    "if": {
+      "flag": "joinedYellowTurban"
+    },
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "cooldown": 0.5,
+    "do": [
+      {
+        "action": "scenario.command",
+        "params": {
+          "classId": "strategist",
+          "operation": "class.confirm",
+          "scenarioId": "scenario.command.class.confirm"
+        }
+      }
+    ],
+    "id": "trg_s09_class_strategist",
+    "if": {
+      "flag": "joinedYellowTurban"
+    },
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "showTip",
+        "params": {
+          "text": "职业已固定，初始装备和能力已发放。北侧军令旗现可通往颍川首战。"
+        }
+      }
+    ],
+    "id": "trg_s09_class_selected_feedback",
+    "once": true,
+    "when": {
+      "params": {},
+      "type": "classSelected"
+    }
+  },
+  {
+    "cooldown": 1,
+    "do": [
+      {
+        "action": "scenario.command",
+        "params": {
+          "operation": "yuzhou.travel",
+          "scenarioId": "scenario.command.yuzhou.travel"
+        }
+      }
+    ],
+    "id": "trg_s09_travel_s03",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "spawnPlacements",
+        "params": {
+          "selector": {
+            "group": "S03-yellow-turban"
+          }
+        }
+      },
+      {
+        "action": "spawnPlacements",
+        "params": {
+          "selector": {
+            "group": "S03-han-army"
+          }
+        }
+      },
+      {
+        "action": "showTip",
+        "params": {
+          "text": "前往中央军令旗选择观战或介入；选择一经确认不可更改。"
+        }
+      }
+    ],
+    "id": "trg_s03_spawn_initial",
+    "once": true,
+    "when": {
+      "params": {
+        "sceneId": "S03"
+      },
+      "type": "sceneEnter"
+    }
+  },
+  {
+    "cooldown": 0.5,
+    "do": [
+      {
+        "action": "battle.command",
+        "params": {
+          "battleId": "battle.s03.yingchuan",
+          "operation": "battle.open.s03"
+        }
+      }
+    ],
+    "id": "trg_s03_choose_battle_mode",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "cooldown": 1,
+    "do": [
+      {
+        "action": "scenario.command",
+        "params": {
+          "operation": "exit.s03",
+          "scenarioId": "scenario.command.exit.s03"
+        }
+      }
+    ],
+    "id": "trg_s03_exit_s04",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "spawnPlacements",
+        "params": {
+          "selector": {
+            "group": "S04-yellow-turban"
+          }
+        }
+      },
+      {
+        "action": "spawnPlacements",
+        "params": {
+          "selector": {
+            "group": "S04-han-army"
+          }
+        }
+      },
+      {
+        "action": "spawnPlacements",
+        "params": {
+          "selector": {
+            "group": "S04-bocai-rescue"
+          }
+        }
+      },
+      {
+        "action": "spawnPlacements",
+        "params": {
+          "selector": {
+            "group": "S04-herbs"
+          }
+        }
+      },
+      {
+        "action": "showTip",
+        "params": {
+          "text": "先在中央军令旗选择观战或介入；只有介入可在西侧残旗下启动波才救援���"
+        }
+      }
+    ],
+    "id": "trg_s04_spawn_initial",
+    "once": true,
+    "when": {
+      "params": {
+        "sceneId": "S04"
+      },
+      "type": "sceneEnter"
+    }
+  },
+  {
+    "cooldown": 0.5,
+    "do": [
+      {
+        "action": "battle.command",
+        "params": {
+          "battleId": "battle.s04.changshe",
+          "operation": "battle.open.s04"
+        }
+      }
+    ],
+    "id": "trg_s04_choose_battle_mode",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "cooldown": 0.5,
+    "do": [
+      {
+        "action": "rescue.command",
+        "params": {
+          "operation": "rescue.start.s04",
+          "rescueId": "rescue.s04.bocai"
+        }
+      }
+    ],
+    "id": "trg_s04_start_bocai_rescue",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "cooldown": 0.5,
+    "do": [
+      {
+        "action": "rescue.command",
+        "params": {
+          "operation": "rescue.advance.s04",
+          "rescueId": "rescue.s04.bocai"
+        }
+      }
+    ],
+    "id": "trg_s04_bocai_evacuation",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "enter"
+    }
+  },
+  {
+    "cooldown": 0.5,
+    "do": [
+      {
+        "action": "scenario.command",
+        "params": {
+          "operation": "route.choose",
+          "scenarioId": "scenario.command.route.choose"
+        }
+      }
+    ],
+    "id": "trg_s04_choose_yuzhou_route",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "cooldown": 0.5,
+    "do": [
+      {
+        "action": "scenario.command",
+        "params": {
+          "operation": "mine.prepare",
+          "scenarioId": "scenario.command.mine.prepare"
+        }
+      }
+    ],
+    "id": "trg_s05_claim_pickaxe",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "cooldown": 0.5,
+    "do": [
+      {
+        "action": "scenario.command",
+        "params": {
+          "operation": "mine.status",
+          "scenarioId": "scenario.command.mine.status"
+        }
+      }
+    ],
+    "id": "trg_s05_mine_status",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "cooldown": 0.5,
+    "do": [
+      {
+        "action": "scenario.command",
+        "params": {
+          "operation": "mine.retreat",
+          "scenarioId": "scenario.command.mine.retreat"
+        }
+      }
+    ],
+    "id": "trg_s05_mine_retreat",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "cooldown": 0.5,
+    "do": [
+      {
+        "action": "battle.command",
+        "params": {
+          "battleId": "battle.s05_wancheng_outskirts",
+          "operation": "battle.open.s05"
+        }
+      }
+    ],
+    "id": "trg_s05_choose_battle_mode",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "cooldown": 0.5,
+    "do": [
+      {
+        "action": "rescue.command",
+        "params": {
+          "operation": "rescue.start.s05",
+          "rescueId": "rescue.s05.zhangMancheng"
+        }
+      }
+    ],
+    "id": "trg_s05_start_zhang_mancheng_rescue",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "cooldown": 0.5,
+    "do": [
+      {
+        "action": "scenario.command",
+        "params": {
+          "operation": "exit.s05",
+          "scenarioId": "scenario.command.exit.s05"
+        }
+      }
+    ],
+    "id": "trg_s05_exit_s06",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "cooldown": 0.5,
+    "do": [
+      {
+        "action": "scenario.command",
+        "params": {
+          "operation": "defense.choose",
+          "scenarioId": "scenario.command.defense.choose"
+        }
+      }
+    ],
+    "id": "trg_s06_defense_choice",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "cooldown": 0.5,
+    "do": [
+      {
+        "action": "construction.command",
+        "params": {
+          "definitionId": "construction.barricade",
+          "operation": "construction.start.s06"
+        }
+      }
+    ],
+    "id": "trg_s06_field_construction",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "cooldown": 0.5,
+    "do": [
+      {
+        "action": "scenario.command",
+        "params": {
+          "operation": "recall.s06",
+          "scenarioId": "scenario.command.recall.s06"
+        }
+      }
+    ],
+    "id": "trg_s06_complete_recall",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "spawnPlacements",
+        "params": {
+          "selector": {
+            "group": "S07-yellow-turban"
+          }
+        }
+      },
+      {
+        "action": "spawnPlacements",
+        "params": {
+          "selector": {
+            "group": "S07-han-army"
+          }
+        }
+      },
+      {
+        "action": "showTip",
+        "params": {
+          "text": "先在军令旗选择观战或介入；介入后依次提交 north、center、south 三线阻滞点并保存残部。"
+        }
+      }
+    ],
+    "id": "trg_s07_spawn_initial",
+    "once": true,
+    "when": {
+      "params": {
+        "sceneId": "S07"
+      },
+      "type": "sceneEnter"
+    }
+  },
+  {
+    "cooldown": 0.5,
+    "do": [
+      {
+        "action": "battle.command",
+        "params": {
+          "battleId": "battle.s07_xihua_delay",
+          "operation": "battle.open.s07"
+        }
+      }
+    ],
+    "id": "trg_s07_choose_battle_mode",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "cooldown": 0.5,
+    "do": [
+      {
+        "action": "scenario.command",
+        "params": {
+          "operation": "delay.commit",
+          "pointId": "north",
+          "scenarioId": "scenario.command.delay.commit"
+        }
+      }
+    ],
+    "id": "trg_s07_commit_delay_north",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "cooldown": 0.5,
+    "do": [
+      {
+        "action": "scenario.command",
+        "params": {
+          "operation": "delay.commit",
+          "pointId": "center",
+          "scenarioId": "scenario.command.delay.commit"
+        }
+      }
+    ],
+    "id": "trg_s07_commit_delay_center",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "cooldown": 0.5,
+    "do": [
+      {
+        "action": "scenario.command",
+        "params": {
+          "operation": "delay.commit",
+          "pointId": "south",
+          "scenarioId": "scenario.command.delay.commit"
+        }
+      }
+    ],
+    "id": "trg_s07_commit_delay_south",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "cooldown": 0.5,
+    "do": [
+      {
+        "action": "scenario.command",
+        "params": {
+          "operation": "exit.s07",
+          "scenarioId": "scenario.command.exit.s07",
+          "sceneId": "S08",
+          "spawnRef": "player",
+          "transition": "fadeBlack"
+        }
+      }
+    ],
+    "id": "trg_s07_exit_s08",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "showTip",
+        "params": {
+          "text": "检查泥泞马车，在决策军令旗下决定残部撤退方案，再前往召回出口。"
+        }
+      }
+    ],
+    "id": "trg_s08_enter",
+    "once": true,
+    "when": {
+      "params": {
+        "sceneId": "S08"
+      },
+      "type": "sceneEnter"
+    }
+  },
+  {
+    "cooldown": 0.5,
+    "do": [
+      {
+        "action": "scenario.command",
+        "params": {
+          "cartId": "S08-retreat-cart",
+          "operation": "retreat.choose",
+          "scenarioId": "scenario.command.retreat.choose",
+          "sceneId": "S08"
+        }
+      }
+    ],
+    "id": "trg_s08_retreat_choice",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "cooldown": 0.5,
+    "do": [
+      {
+        "action": "scenario.command",
+        "params": {
+          "exitId": "S08-recall-exit",
+          "operation": "recall.s08",
+          "scenarioId": "scenario.command.recall.s08",
+          "sceneId": "S08"
+        }
+      }
+    ],
+    "id": "trg_s08_complete_recall",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "showTip",
+        "params": {
+          "text": "先进入病帐确认张角病逝，再检查临时营地，最后沿溪拔营。"
+        }
+      }
+    ],
+    "id": "trg_s10_enter",
+    "once": true,
+    "when": {
+      "params": {
+        "sceneId": "S10"
+      },
+      "type": "sceneEnter"
+    }
+  },
+  {
+    "cooldown": 0.5,
+    "do": [
+      {
+        "action": "scenario.command",
+        "params": {
+          "operation": "story.death",
+          "scenarioId": "scenario.command.story.death"
+        }
+      }
+    ],
+    "id": "trg_s10_zhangjiao_death",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "cooldown": 0.5,
+    "do": [
+      {
+        "action": "scenario.command",
+        "params": {
+          "operation": "camp.inspect",
+          "scenarioId": "scenario.command.camp.inspect"
+        }
+      }
+    ],
+    "id": "trg_s10_acknowledge_temporary_camp",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "cooldown": 0.5,
+    "do": [
+      {
+        "action": "scenario.command",
+        "params": {
+          "operation": "camp.relocate",
+          "scenarioId": "scenario.command.camp.relocate"
+        }
+      }
+    ],
+    "id": "trg_s10_complete_relocation",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "cooldown": 0.5,
+    "do": [
+      {
+        "action": "construction.command",
+        "params": {
+          "definitionId": "construction.campfire",
+          "operation": "construction.start.s10",
+          "siteId": "site.s10.campfire",
+          "siteKey": "campfire"
+        }
+      }
+    ],
+    "id": "trg_s10_build_campfire",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "cooldown": 0.5,
+    "do": [
+      {
+        "action": "construction.command",
+        "params": {
+          "definitionId": "construction.barricade",
+          "operation": "construction.start.s10",
+          "siteId": "site.s10.barricade",
+          "siteKey": "barricade"
+        }
+      }
+    ],
+    "id": "trg_s10_build_barricade",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "cooldown": 0.5,
+    "do": [
+      {
+        "action": "construction.command",
+        "params": {
+          "definitionId": "construction.simple_wall",
+          "operation": "construction.start.s10",
+          "siteId": "site.s10.simple_wall",
+          "siteKey": "simpleWall"
+        }
+      }
+    ],
+    "id": "trg_s10_build_simple_wall",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "cooldown": 0.5,
+    "do": [
+      {
+        "action": "construction.command",
+        "params": {
+          "definitionId": "construction.arrow_tower",
+          "operation": "construction.start.s10",
+          "siteId": "site.s10.arrow_tower",
+          "siteKey": "arrowTower"
+        }
+      }
+    ],
+    "id": "trg_s10_build_arrow_tower",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "cooldown": 0.5,
+    "do": [
+      {
+        "action": "scenario.command",
+        "params": {
+          "operation": "exit.s10",
+          "scenarioId": "scenario.command.exit.s10"
+        }
+      }
+    ],
+    "id": "trg_s10_exit_s11",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "spawnPlacements",
+        "params": {
+          "selector": {
+            "group": "S11-yellow-turban"
+          }
+        }
+      },
+      {
+        "action": "spawnPlacements",
+        "params": {
+          "selector": {
+            "group": "S11-han-army"
+          }
+        }
+      },
+      {
+        "action": "spawnPlacements",
+        "params": {
+          "selector": {
+            "group": "S11-zhang-liang-rescue"
+          }
+        }
+      },
+      {
+        "action": "showTip",
+        "params": {
+          "text": "先在军令旗选择观战或介入；介入后按烽火、六名卫兵、三波刺客、西门突围的顺序救援张梁。"
+        }
+      }
+    ],
+    "id": "trg_s11_spawn_initial",
+    "once": true,
+    "when": {
+      "params": {
+        "sceneId": "S11"
+      },
+      "type": "sceneEnter"
+    }
+  },
+  {
+    "cooldown": 0.5,
+    "do": [
+      {
+        "action": "battle.command",
+        "params": {
+          "battleId": "battle.s11.guangzong",
+          "operation": "battle.open.s11"
+        }
+      }
+    ],
+    "id": "trg_s11_choose_battle_mode",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "cooldown": 0.5,
+    "do": [
+      {
+        "action": "rescue.command",
+        "params": {
+          "operation": "start",
+          "rescueId": "rescue.s11.zhangLiang"
+        }
+      }
+    ],
+    "id": "trg_s11_start_zhang_liang_rescue",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "cooldown": 0.5,
+    "do": [
+      {
+        "action": "rescue.command",
+        "params": {
+          "operation": "completeStage",
+          "rescueId": "rescue.s11.zhangLiang",
+          "stageId": "light-beacon"
+        }
+      }
+    ],
+    "id": "trg_s11_light_beacon",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "cooldown": 0.5,
+    "do": [
+      {
+        "action": "rescue.command",
+        "params": {
+          "operation": "completeStage",
+          "placementGroup": "S11-rescue-guards",
+          "rescueId": "rescue.s11.zhangLiang",
+          "stageId": "rally-guards"
+        }
+      }
+    ],
+    "id": "trg_s11_rally_guards",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "enter"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "rescue.command",
+        "params": {
+          "operation": "recordWave",
+          "rescueId": "rescue.s11.zhangLiang",
+          "waveNumber": 1
+        }
+      }
+    ],
+    "id": "trg_s11_assassin_wave_1_defeated",
+    "once": true,
+    "when": {
+      "params": {
+        "group": "S11-assassin-wave-1"
+      },
+      "type": "waveCleared"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "rescue.command",
+        "params": {
+          "operation": "recordWave",
+          "rescueId": "rescue.s11.zhangLiang",
+          "waveNumber": 2
+        }
+      }
+    ],
+    "id": "trg_s11_assassin_wave_2_defeated",
+    "once": true,
+    "when": {
+      "params": {
+        "group": "S11-assassin-wave-2"
+      },
+      "type": "waveCleared"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "rescue.command",
+        "params": {
+          "operation": "recordWave",
+          "rescueId": "rescue.s11.zhangLiang",
+          "waveNumber": 3
+        }
+      }
+    ],
+    "id": "trg_s11_assassin_wave_3_defeated",
+    "once": true,
+    "when": {
+      "params": {
+        "group": "S11-assassin-wave-3"
+      },
+      "type": "waveCleared"
+    }
+  },
+  {
+    "cooldown": 0.5,
+    "do": [
+      {
+        "action": "rescue.command",
+        "params": {
+          "operation": "completeStage",
+          "rescueId": "rescue.s11.zhangLiang",
+          "stageId": "breakout-west-gate"
+        }
+      }
+    ],
+    "id": "trg_s11_west_gate_breakout",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "enter"
+    }
+  },
+  {
+    "cooldown": 0.25,
+    "do": [
+      {
+        "action": "vehicle.command",
+        "params": {
+          "operation": "interact",
+          "vehicleId": "vehicle.s11.breakoutHorse"
+        }
+      }
+    ],
+    "id": "trg_s11_interact_horse",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "cooldown": 1,
+    "do": [
+      {
+        "action": "scenario.command",
+        "params": {
+          "operation": "exit.s11",
+          "scenarioId": "scenario.command.exit.s11",
+          "sceneId": "S12"
+        }
+      }
+    ],
+    "id": "trg_s11_exit_s12",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "spawnPlacements",
+        "params": {
+          "selector": {
+            "group": "S12-yellow-turban"
+          }
+        }
+      },
+      {
+        "action": "spawnPlacements",
+        "params": {
+          "selector": {
+            "group": "S12-han-army"
+          }
+        }
+      },
+      {
+        "action": "spawnPlacements",
+        "params": {
+          "selector": {
+            "group": "S12-zhang-bao-rescue"
+          }
+        }
+      },
+      {
+        "action": "spawnPlacements",
+        "params": {
+          "selector": {
+            "group": "S12-bocai-allies"
+          }
+        }
+      },
+      {
+        "action": "spawnPlacements",
+        "params": {
+          "selector": {
+            "group": "S12-zhang-liang-reinforcements"
+          }
+        }
+      },
+      {
+        "action": "showTip",
+        "params": {
+          "text": "先选择下曲阳战役模式；介入后确认救援路线，守门六十秒，再开启密道并护送张宝撤离。"
+        }
+      }
+    ],
+    "id": "trg_s12_spawn_initial",
+    "once": true,
+    "when": {
+      "params": {
+        "sceneId": "S12"
+      },
+      "type": "sceneEnter"
+    }
+  },
+  {
+    "cooldown": 0.5,
+    "do": [
+      {
+        "action": "battle.command",
+        "params": {
+          "battleId": "battle.s12.xiaquyang",
+          "operation": "battle.open.s12"
+        }
+      }
+    ],
+    "id": "trg_s12_choose_battle_mode",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "cooldown": 0.5,
+    "do": [
+      {
+        "action": "rescue.command",
+        "params": {
+          "operation": "start",
+          "rescueId": "rescue.s12.zhangBao"
+        }
+      }
+    ],
+    "id": "trg_s12_start_zhang_bao_rescue",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "cooldown": 0.5,
+    "do": [
+      {
+        "action": "rescue.command",
+        "params": {
+          "operation": "completeStage",
+          "rescueId": "rescue.s12.zhangBao",
+          "stageId": "open-secret-passage"
+        }
+      }
+    ],
+    "id": "trg_s12_open_secret_passage",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "cooldown": 0.5,
+    "do": [
+      {
+        "action": "vehicle.command",
+        "params": {
+          "operation": "useEntrance",
+          "vehicleId": "vehicle.s12.siegeLadder"
+        }
+      }
+    ],
+    "id": "trg_s12_use_ladder",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "cooldown": 0.5,
+    "do": [
+      {
+        "action": "vehicle.command",
+        "params": {
+          "damageType": "fire",
+          "operation": "destroy",
+          "vehicleId": "vehicle.s12.siegeLadder"
+        }
+      }
+    ],
+    "id": "trg_s12_burn_ladder",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "cooldown": 0.5,
+    "do": [
+      {
+        "action": "rescue.command",
+        "params": {
+          "operation": "completeStage",
+          "rescueId": "rescue.s12.zhangBao",
+          "stageId": "escort-zhang-bao"
+        }
+      }
+    ],
+    "id": "trg_s12_zhang_bao_evacuation",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "enter"
+    }
+  },
+  {
+    "cooldown": 1,
+    "do": [
+      {
+        "action": "scenario.command",
+        "params": {
+          "eligibleSceneId": "S13",
+          "fallbackSceneId": "S14",
+          "operation": "exit.s12",
+          "scenarioId": "scenario.command.exit.s12"
+        }
+      }
+    ],
+    "id": "trg_s12_exit_final_route",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "spawnPlacements",
+        "params": {
+          "selector": {
+            "group": "S13-yellow-turban"
+          }
+        }
+      },
+      {
+        "action": "spawnPlacements",
+        "params": {
+          "selector": {
+            "group": "S13-han-army"
+          }
+        }
+      },
+      {
+        "action": "showTip",
+        "params": {
+          "text": "在军令旗下选择观战或投入最后资源介入精山；战果冻结后从东北撤离旗进入结局之地。"
+        }
+      }
+    ],
+    "id": "trg_s13_spawn_initial",
+    "once": true,
+    "when": {
+      "params": {
+        "sceneId": "S13"
+      },
+      "type": "sceneEnter"
+    }
+  },
+  {
+    "cooldown": 0.5,
+    "do": [
+      {
+        "action": "battle.command",
+        "params": {
+          "battleId": "battle.s13.jingshan",
+          "operation": "battle.open.s13"
+        }
+      }
+    ],
+    "id": "trg_s13_choose_final_battle_mode",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "cooldown": 1,
+    "do": [
+      {
+        "action": "scenario.command",
+        "params": {
+          "operation": "exit.s13",
+          "scenarioId": "scenario.command.exit.s13",
+          "sceneId": "S14"
+        }
+      }
+    ],
+    "id": "trg_s13_exit_s14",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "cooldown": 0.2,
+    "do": [
+      {
+        "action": "vehicle.command",
+        "params": {
+          "operation": "openCargo",
+          "vehicleId": "vehicle.s14.lastCart"
+        }
+      }
+    ],
+    "id": "trg_s14_open_cargo_transfer",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "cooldown": 0.5,
+    "do": [
+      {
+        "action": "vehicle.command",
+        "params": {
+          "divergenceKind": "cart",
+          "operation": "resolveDivergence",
+          "vehicleId": "vehicle.s14.lastCart"
+        }
+      }
+    ],
+    "id": "trg_s14_resolve_last_cart",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "cooldown": 0.5,
+    "do": [
+      {
+        "action": "vehicle.command",
+        "params": {
+          "divergenceKind": "catapult",
+          "operation": "resolveDivergence",
+          "vehicleId": "vehicle.s14.catapult"
+        }
+      }
+    ],
+    "id": "trg_s14_resolve_catapult",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "cooldown": 0.35,
+    "do": [
+      {
+        "action": "vehicle.command",
+        "params": {
+          "operation": "operateWeapon",
+          "vehicleId": "vehicle.s14.catapult"
+        }
+      }
+    ],
+    "id": "trg_s14_operate_catapult",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "cooldown": 0.2,
+    "do": [
+      {
+        "action": "vehicle.command",
+        "params": {
+          "operation": "leaveSeat",
+          "vehicleId": "vehicle.s14.catapult"
+        }
+      }
+    ],
+    "id": "trg_s14_leave_catapult",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "cooldown": 1,
+    "do": [
+      {
+        "action": "ending.command",
+        "params": {
+          "checkpointId": "checkpoint.S14.preEnding",
+          "endingId": "sanguo-zhangjiao-endings-v1",
+          "operation": "resolve"
+        },
+        "stepId": "trg_s14_commit_ending.step.001"
+      }
+    ],
+    "id": "trg_s14_commit_ending",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  }
+]

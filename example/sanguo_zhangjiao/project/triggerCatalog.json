@@ -1,0 +1,889 @@
+{
+  "actions": [
+    {
+      "label": "生成放置点",
+      "paramsSchema": {
+        "additionalProperties": true,
+        "properties": {},
+        "type": "object"
+      },
+      "v": "spawnPlacements",
+      "value": "spawnPlacements"
+    },
+    {
+      "label": "spawnGroup",
+      "value": "spawnGroup"
+    },
+    {
+      "label": "teleportToChunk",
+      "value": "teleportToChunk"
+    },
+    {
+      "label": "showTip",
+      "value": "showTip"
+    },
+    {
+      "label": "荒原生存流程",
+      "operations": [
+        {
+          "emits": [
+            {
+              "condition": "committed",
+              "idParam": "definitionId",
+              "type": "state.transaction"
+            }
+          ],
+          "id": "commitStoryWhenReady",
+          "label": "条件满足时提交剧情事实",
+          "paramsSchema": {
+            "additionalProperties": false,
+            "properties": {
+              "completedPath": {
+                "minLength": 1,
+                "title": "已完成事实路径",
+                "type": "string"
+              },
+              "definitionId": {
+                "minLength": 1,
+                "title": "状态事务 ID",
+                "type": "string"
+              },
+              "equals": {
+                "title": "前置事实等于"
+              },
+              "firstWolfCount": {
+                "description": "首狼任务出现的野狼数量；仅在提交 story.s01.firstWolfSpotted 时生效",
+                "minimum": 1,
+                "title": "首狼群数量",
+                "type": "integer"
+              },
+              "gte": {
+                "title": "前置数值下限",
+                "type": "number"
+              },
+              "inventoryItemId": {
+                "minLength": 1,
+                "title": "背包物��� ID",
+                "type": "string"
+              },
+              "minimumQuantity": {
+                "minimum": 0,
+                "title": "背包最低数量",
+                "type": "integer"
+              },
+              "operation": {
+                "enum": [
+                  "commitStoryWhenReady"
+                ],
+                "title": "操作",
+                "type": "string"
+              },
+              "storyPath": {
+                "minLength": 1,
+                "title": "前置事实路径",
+                "type": "string"
+              },
+              "successTip": {
+                "minLength": 1,
+                "title": "成功提示正文",
+                "type": "string"
+              },
+              "successTitle": {
+                "minLength": 1,
+                "title": "成功提示标题",
+                "type": "string"
+              }
+            },
+            "required": [
+              "operation",
+              "definitionId"
+            ],
+            "type": "object"
+          },
+          "resultSemantics": "满足领域条件时提交指定状态事务；条件未满足、已提交或场景不适用时成功空操作；事务失败时短路后续步骤。",
+          "value": "commitStoryWhenReady"
+        },
+        {
+          "id": "afterBerriesGathered",
+          "label": "野果目标完成后接续",
+          "paramsSchema": {
+            "additionalProperties": false,
+            "properties": {
+              "operation": {
+                "enum": [
+                  "afterBerriesGathered"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "operation"
+            ],
+            "type": "object"
+          },
+          "resultSemantics": "开放木材流程并安排教学接续后成功；接续异常时失败并短路。",
+          "value": "afterBerriesGathered"
+        },
+        {
+          "id": "afterInitialToolsPicked",
+          "label": "双工具齐全后接续",
+          "paramsSchema": {
+            "additionalProperties": false,
+            "properties": {
+              "operation": {
+                "enum": [
+                  "afterInitialToolsPicked"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "operation"
+            ],
+            "type": "object"
+          },
+          "resultSemantics": "开放野果采集并接续教学后成功；放置或接续异常时失败并短路。",
+          "value": "afterInitialToolsPicked"
+        },
+        {
+          "id": "afterWoodGathered",
+          "label": "木材目标完成后提示",
+          "paramsSchema": {
+            "additionalProperties": false,
+            "properties": {
+              "operation": {
+                "enum": [
+                  "afterWoodGathered"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "operation"
+            ],
+            "type": "object"
+          },
+          "resultSemantics": "展示返回篝火添柴的已提交目标提示后成功。",
+          "value": "afterWoodGathered"
+        },
+        {
+          "id": "afterWolfSkinned",
+          "label": "剥皮完成后提示",
+          "paramsSchema": {
+            "additionalProperties": false,
+            "properties": {
+              "operation": {
+                "enum": [
+                  "afterWolfSkinned"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "operation"
+            ],
+            "type": "object"
+          },
+          "resultSemantics": "展示烤制狼肉的后续目标提示后成功。",
+          "value": "afterWolfSkinned"
+        },
+        {
+          "id": "ensureFirstWolf",
+          "label": "恢复或生成首只野狼",
+          "paramsSchema": {
+            "additionalProperties": false,
+            "properties": {
+              "operation": {
+                "enum": [
+                  "ensureFirstWolf"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "operation"
+            ],
+            "type": "object"
+          },
+          "resultSemantics": "按已提交首狼事实恢复放置与攻击状态；辅助对��暂缺时由既有补偿链继续处理。",
+          "value": "ensureFirstWolf"
+        },
+        {
+          "id": "recordChaseWolfKilled",
+          "label": "记录追逐狼击杀",
+          "paramsSchema": {
+            "additionalProperties": false,
+            "properties": {
+              "operation": {
+                "enum": [
+                  "recordChaseWolfKilled"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "operation"
+            ],
+            "type": "object"
+          },
+          "resultSemantics": "校验已提交敌人事件后原子增加追逐压力并恢复狼群；事件身份无效或事务失败时失败。",
+          "value": "recordChaseWolfKilled"
+        },
+        {
+          "id": "reconcilePursuit",
+          "label": "对齐追逐狼运行态",
+          "paramsSchema": {
+            "additionalProperties": false,
+            "properties": {
+              "operation": {
+                "enum": [
+                  "reconcilePursuit"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "operation"
+            ],
+            "type": "object"
+          },
+          "resultSemantics": "按已提交追逐事实补齐放置与人工智能状态；无活动追逐时成功空操作。",
+          "value": "reconcilePursuit"
+        },
+        {
+          "id": "presentEntry",
+          "label": "展示荒原入场流程",
+          "paramsSchema": {
+            "additionalProperties": false,
+            "properties": {
+              "operation": {
+                "enum": [
+                  "presentEntry"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "operation"
+            ],
+            "type": "object"
+          },
+          "resultSemantics": "恢复天气并按现有事实展示苏醒对白或目标提示，表现完成后成功。",
+          "value": "presentEntry"
+        },
+        {
+          "id": "ensureMovedAfterWake",
+          "label": "确认苏醒后已移动",
+          "paramsSchema": {
+            "additionalProperties": false,
+            "properties": {
+              "operation": {
+                "enum": [
+                  "ensureMovedAfterWake"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "operation"
+            ],
+            "type": "object"
+          },
+          "resultSemantics": "移动教学已完成时成功；未完成时展示阻断提示并失败，后续动作不执行。",
+          "value": "ensureMovedAfterWake"
+        },
+        {
+          "id": "campfireLit",
+          "label": "点燃篝火并显露工具",
+          "paramsSchema": {
+            "additionalProperties": false,
+            "properties": {
+              "operation": {
+                "enum": [
+                  "campfireLit"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "operation"
+            ],
+            "type": "object"
+          },
+          "resultSemantics": "提交点火与工具发现事实后启动表现并显露工具；任一必要领域事务失败时失败并短路。",
+          "value": "campfireLit"
+        },
+        {
+          "id": "refuelCampfire",
+          "label": "给篝火添柴",
+          "paramsSchema": {
+            "additionalProperties": false,
+            "properties": {
+              "operation": {
+                "enum": [
+                  "refuelCampfire"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "operation"
+            ],
+            "type": "object"
+          },
+          "resultSemantics": "复用添柴会话与原子事务；成功后更新燃料及计数，材料或前置不足时返回明确阻断或失败。",
+          "value": "refuelCampfire"
+        },
+        {
+          "id": "openTanningRecipes",
+          "label": "使用制皮木支架",
+          "paramsSchema": {
+            "additionalProperties": false,
+            "properties": {
+              "operation": {
+                "enum": [
+                  "openTanningRecipes"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "operation"
+            ],
+            "type": "object"
+          },
+          "resultSemantics": "打开配方选择；选中配方后才以独立原子事务扣除狼皮并制作对应装备。",
+          "value": "openTanningRecipes"
+        },
+        {
+          "id": "openCookingRecipes",
+          "label": "使用烤肉架",
+          "paramsSchema": {
+            "additionalProperties": false,
+            "properties": {
+              "operation": {
+                "enum": [
+                  "openCookingRecipes"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "operation"
+            ],
+            "type": "object"
+          },
+          "resultSemantics": "打开烹饪配方选择；选中后才以原子事务交换生狼肉、木柴与熟食。",
+          "value": "openCookingRecipes"
+        },
+        {
+          "id": "buildShelter",
+          "label": "开始搭建庇护所",
+          "paramsSchema": {
+            "additionalProperties": false,
+            "properties": {
+              "operation": {
+                "enum": [
+                  "buildShelter"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "operation"
+            ],
+            "type": "object"
+          },
+          "resultSemantics": "委托既有营建系统启动 S01 庇护所施工，并原样返回营建准入或失败结果。",
+          "value": "buildShelter"
+        },
+        {
+          "id": "shelterCompleted",
+          "label": "处理庇护所建成",
+          "paramsSchema": {
+            "additionalProperties": false,
+            "properties": {
+              "operation": {
+                "enum": [
+                  "shelterCompleted"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "operation"
+            ],
+            "type": "object"
+          },
+          "resultSemantics": "消费已提交的营建完成事件并提交庇护所剧情事实；不匹配或结算失败时返回失败。",
+          "value": "shelterCompleted"
+        },
+        {
+          "id": "overnight",
+          "label": "在庇护所过夜",
+          "paramsSchema": {
+            "additionalProperties": false,
+            "properties": {
+              "operation": {
+                "enum": [
+                  "overnight"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "operation"
+            ],
+            "type": "object"
+          },
+          "resultSemantics": "原子提交次日、火种与追逐事实并创建检查点；成功后恢复���气和狼群，事务失败时短路。",
+          "value": "overnight"
+        },
+        {
+          "id": "enterShelter",
+          "label": "进入小庇护所",
+          "paramsSchema": {
+            "additionalProperties": false,
+            "properties": {
+              "operation": {
+                "enum": [
+                  "enterShelter"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "operation"
+            ],
+            "type": "object"
+          },
+          "resultSemantics": "切换到独立的 S01-C01 庇护所室内场景。",
+          "value": "enterShelter"
+        },
+        {
+          "id": "openShelterChest",
+          "label": "打开储物箱",
+          "paramsSchema": {
+            "additionalProperties": false,
+            "properties": {
+              "operation": {
+                "enum": [
+                  "openShelterChest"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "operation"
+            ],
+            "type": "object"
+          },
+          "resultSemantics": "打开背包与储物箱之间的原子双向转移面板。",
+          "value": "openShelterChest"
+        },
+        {
+          "id": "leaveShelter",
+          "label": "离开小庇护所",
+          "paramsSchema": {
+            "additionalProperties": false,
+            "properties": {
+              "operation": {
+                "enum": [
+                  "leaveShelter"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "operation"
+            ],
+            "type": "object"
+          },
+          "resultSemantics": "首次过夜后离开时提交狼群追逐事实；其后仅返回荒野。",
+          "value": "leaveShelter"
+        },
+        {
+          "id": "riverCrossed",
+          "label": "提交越河事实",
+          "paramsSchema": {
+            "additionalProperties": false,
+            "properties": {
+              "operation": {
+                "enum": [
+                  "riverCrossed"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "operation"
+            ],
+            "type": "object"
+          },
+          "resultSemantics": "追逐期间首次到达对岸时提交越河事实并提示；事务拒绝或失败时返回失败。",
+          "value": "riverCrossed"
+        },
+        {
+          "id": "cliffReached",
+          "label": "提交抵达山崖事实",
+          "paramsSchema": {
+            "additionalProperties": false,
+            "properties": {
+              "operation": {
+                "enum": [
+                  "cliffReached"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "operation"
+            ],
+            "type": "object"
+          },
+          "resultSemantics": "越河后首次抵达山崖时提交事实并展示攀藤提示；事务拒绝或失败时返回失败。",
+          "value": "cliffReached"
+        }
+      ],
+      "paramsSchema": {
+        "additionalProperties": true,
+        "properties": {},
+        "type": "object"
+      },
+      "v": "s01Survival",
+      "value": "s01Survival"
+    },
+    {
+      "label": "startDialogue",
+      "paramsSchema": {
+        "additionalProperties": true,
+        "properties": {},
+        "type": "object"
+      },
+      "v": "startDialogue",
+      "value": "startDialogue"
+    },
+    {
+      "label": "advanceGameDay",
+      "value": "advanceGameDay"
+    },
+    {
+      "label": "autoSave",
+      "value": "autoSave"
+    },
+    {
+      "label": "switchScene",
+      "paramsSchema": {
+        "additionalProperties": true,
+        "properties": {},
+        "type": "object"
+      },
+      "v": "switchScene",
+      "value": "switchScene"
+    },
+    {
+      "label": "toggleDebug",
+      "value": "toggleDebug"
+    },
+    {
+      "label": "setWeather",
+      "value": "setWeather"
+    },
+    {
+      "label": "setTime",
+      "value": "setTime"
+    },
+    {
+      "label": "selectClass",
+      "value": "selectClass"
+    },
+    {
+      "label": "completeScene",
+      "value": "completeScene"
+    },
+    {
+      "label": "dismissPopup",
+      "value": "dismissPopup"
+    },
+    {
+      "label": "world.teleport",
+      "value": "world.teleport"
+    },
+    {
+      "label": "checkpoint.request",
+      "value": "checkpoint.request"
+    },
+    {
+      "label": "dialogue.command",
+      "value": "dialogue.command"
+    },
+    {
+      "label": "教学命令",
+      "operations": [
+        {
+          "id": "show",
+          "label": "展示 Tutorial 首步",
+          "paramsSchema": {
+            "additionalProperties": false,
+            "properties": {
+              "await": {
+                "type": "boolean"
+              },
+              "operation": {
+                "enum": [
+                  "show"
+                ],
+                "type": "string"
+              },
+              "tutorialId": {
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "required": [
+              "operation",
+              "tutorialId"
+            ],
+            "type": "object"
+          },
+          "resultSemantics": "由当前 Trigger 事件显式展示指定 Tutorial 的第一步；已完成或同一 Tutorial 已显示时幂等成功。",
+          "value": "show"
+        },
+        {
+          "id": "showStep",
+          "label": "展示 Tutorial 指定步骤",
+          "paramsSchema": {
+            "additionalProperties": false,
+            "properties": {
+              "operation": {
+                "enum": [
+                  "showStep"
+                ],
+                "type": "string"
+              },
+              "tutorialId": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "tutorialStepId": {
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "required": [
+              "operation",
+              "tutorialId",
+              "tutorialStepId"
+            ],
+            "type": "object"
+          },
+          "resultSemantics": "由当前 Trigger 事件按稳定 tutorialStepId 显式展示指定步骤；事件重放不得让教程步骤倒退。",
+          "value": "showStep"
+        },
+        {
+          "id": "complete",
+          "label": "完成指定 Tutorial",
+          "paramsSchema": {
+            "additionalProperties": false,
+            "properties": {
+              "operation": {
+                "enum": [
+                  "complete"
+                ],
+                "type": "string"
+              },
+              "tutorialId": {
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "required": [
+              "operation",
+              "tutorialId"
+            ],
+            "type": "object"
+          },
+          "resultSemantics": "由当前 Trigger 事件显式完成指定 Tutorial；不按定义顺序主动展示下一项。",
+          "value": "complete"
+        }
+      ],
+      "paramsSchema": {
+        "additionalProperties": true,
+        "properties": {},
+        "type": "object"
+      },
+      "v": "tutorial.command",
+      "value": "tutorial.command"
+    },
+    {
+      "label": "scenario.command",
+      "value": "scenario.command"
+    },
+    {
+      "label": "battle.command",
+      "value": "battle.command"
+    },
+    {
+      "label": "rescue.command",
+      "value": "rescue.command"
+    },
+    {
+      "label": "建设命令",
+      "paramsSchema": {
+        "additionalProperties": true,
+        "properties": {},
+        "type": "object"
+      },
+      "v": "construction.command",
+      "value": "construction.command"
+    },
+    {
+      "label": "vehicle.command",
+      "value": "vehicle.command"
+    },
+    {
+      "label": "ending.command",
+      "value": "ending.command"
+    },
+    {
+      "label": "状态事务 state.transaction",
+      "value": "state.transaction"
+    },
+    {
+      "label": "设置变量",
+      "paramsSchema": {
+        "additionalProperties": true,
+        "properties": {},
+        "type": "object"
+      },
+      "v": "setVar",
+      "value": "setVar"
+    },
+    {
+      "label": "变量累加",
+      "paramsSchema": {
+        "additionalProperties": true,
+        "properties": {},
+        "type": "object"
+      },
+      "v": "addVar",
+      "value": "addVar"
+    },
+    {
+      "label": "设置标记",
+      "paramsSchema": {
+        "additionalProperties": true,
+        "properties": {},
+        "type": "object"
+      },
+      "v": "setFlag",
+      "value": "setFlag"
+    },
+    {
+      "label": "切换标记",
+      "paramsSchema": {
+        "additionalProperties": true,
+        "properties": {},
+        "type": "object"
+      },
+      "v": "toggleFlag",
+      "value": "toggleFlag"
+    },
+    {
+      "label": "新行为",
+      "paramsSchema": {
+        "additionalProperties": true,
+        "properties": {},
+        "type": "object"
+      },
+      "v": "behavior-001",
+      "value": "behavior-001"
+    }
+  ],
+  "events": [
+    {
+      "identityFields": [
+        "itemId",
+        "resourceType"
+      ],
+      "label": "采集完成",
+      "paramsSchema": {
+        "additionalProperties": true,
+        "properties": {
+          "itemId": {
+            "title": "物品 ID",
+            "type": "string"
+          },
+          "nodeId": {
+            "title": "资源节点 ID",
+            "type": "string"
+          },
+          "resourceType": {
+            "title": "资源类型",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "value": "gathering.completed"
+    },
+    {
+      "identityFields": [
+        "definitionId"
+      ],
+      "label": "状态事务已提交",
+      "paramsSchema": {
+        "additionalProperties": true,
+        "properties": {
+          "definitionId": {
+            "minLength": 1,
+            "title": "状态事务 ID",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "value": "state.transaction"
+    },
+    {
+      "identityFields": [],
+      "label": "S01 首狼恢复请求",
+      "paramsSchema": {
+        "additionalProperties": true,
+        "properties": {
+          "reason": {
+            "title": "请求原因",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "value": "s01.firstWolfRecoveryRequested"
+    },
+    {
+      "identityFields": [
+        "enemyRole"
+      ],
+      "label": "敌人死亡已提交",
+      "paramsSchema": {
+        "additionalProperties": true,
+        "properties": {
+          "corpseReady": {
+            "title": "尸体已成立",
+            "type": "boolean"
+          },
+          "enemyRole": {
+            "title": "敌人角色 ID",
+            "type": "string"
+          },
+          "entityId": {
+            "title": "实体 ID",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "value": "enemy.killed"
+    }
+  ]
+}

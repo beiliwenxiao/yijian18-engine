@@ -1,0 +1,1603 @@
+{
+  "items": [
+    {
+      "id": "resource.wood",
+      "name": "木材",
+      "type": "material",
+      "imageId": "inventory.resource.wood",
+      "assetId": "inventory.resource.wood",
+      "maxStack": 99,
+      "sprite": {
+        "height": 40,
+        "width": 40
+      },
+      "subType": "wood"
+    },
+    {
+      "id": "resource.herb",
+      "name": "草药",
+      "type": "material",
+      "imageId": "inventory.resource.herb",
+      "assetId": "inventory.resource.herb",
+      "maxStack": 99,
+      "sprite": {
+        "height": 40,
+        "width": 40
+      },
+      "subType": "herb"
+    },
+    {
+      "id": "resource.food",
+      "name": "粮食",
+      "type": "material",
+      "imageId": "inventory.resource.food",
+      "maxStack": 99,
+      "sprite": {
+        "height": 40,
+        "width": 40
+      },
+      "subType": "food"
+    },
+    {
+      "id": "resource.iron",
+      "name": "铁料",
+      "type": "material",
+      "imageId": "inventory.resource.iron",
+      "maxStack": 99,
+      "sprite": {
+        "height": 40,
+        "width": 40
+      },
+      "subType": "iron"
+    },
+    {
+      "id": "resource.wild_berry",
+      "name": "荒野酸果",
+      "type": "consumable",
+      "imageId": "s01.resource.wildBerryNode",
+      "capabilities": [
+        {
+          "id": "consumable"
+        }
+      ],
+      "effect": {
+        "type": "heal",
+        "value": 20
+      },
+      "maxStack": 10,
+      "sprite": {
+        "height": 32,
+        "width": 36
+      },
+      "subType": "food",
+      "usable": true
+    },
+    {
+      "id": "tool.skinning_knife",
+      "name": "旧剥皮刀",
+      "description": "刃口磨损的旧剥皮刀。",
+      "type": "tool",
+      "imageId": "s01.tool.skinningKnife",
+      "capabilities": [
+        {
+          "id": "durable",
+          "strategyId": "item.durable.standard",
+          "parameters": {
+            "maxDurability": 8
+          }
+        },
+        {
+          "id": "tool",
+          "strategyId": "item.tool.gathering",
+          "parameters": {
+            "gatherSpeed": 1,
+            "toolType": "skinningKnife"
+          }
+        }
+      ],
+      "durability": 8,
+      "functionDescription": "用于剥取兽皮和处理猎物。",
+      "gatherSpeed": 1,
+      "maxDurability": 8,
+      "maxStack": 1,
+      "repairCosts": [
+        {
+          "itemId": "resource.iron",
+          "quantity": 1
+        }
+      ],
+      "sprite": {
+        "height": 42,
+        "width": 42
+      },
+      "toolType": "skinningKnife"
+    },
+    {
+      "id": "resource.raw_wolf_meat",
+      "name": "生狼肉",
+      "type": "material",
+      "imageId": "s01.item.rawWolfMeat",
+      "maxStack": 10,
+      "sprite": {
+        "height": 34,
+        "width": 42
+      },
+      "subType": "food"
+    },
+    {
+      "id": "resource.wolf_hide",
+      "name": "狼皮",
+      "type": "material",
+      "imageId": "s01.item.wolfHide",
+      "maxStack": 10,
+      "sprite": {
+        "height": 38,
+        "width": 48
+      },
+      "subType": "hide"
+    },
+    {
+      "id": "equipment.s01.wolf_hide_vest",
+      "name": "狼皮背心",
+      "type": "equipment",
+      "imageId": "s01.equipment.wolfHideVest",
+      "assetId": "s01.equipment.wolfHideVest",
+      "maxStack": 1,
+      "rarity": 1,
+      "sprite": {
+        "height": 52,
+        "width": 46
+      },
+      "stats": {
+        "defense": 10,
+        "maxHp": 5
+      },
+      "subType": "armor"
+    },
+    {
+      "id": "equipment.s01.wolf_hide_bracers",
+      "name": "狼皮护腕",
+      "type": "equipment",
+      "imageId": "s01.equipment.wolfHideBracers",
+      "assetId": "s01.equipment.wolfHideBracers",
+      "maxStack": 1,
+      "rarity": 1,
+      "sprite": {
+        "height": 40,
+        "width": 48
+      },
+      "stats": {
+        "attack": 1,
+        "defense": 3
+      },
+      "subType": "accessory"
+    },
+    {
+      "id": "food.roasted_wolf_meat",
+      "name": "烤狼肉",
+      "type": "consumable",
+      "imageId": "s01.food.roastedWolfMeat",
+      "capabilities": [
+        {
+          "id": "consumable"
+        }
+      ],
+      "effect": {
+        "type": "heal",
+        "value": 50
+      },
+      "maxStack": 5,
+      "sprite": {
+        "height": 36,
+        "width": 44
+      },
+      "subType": "food",
+      "usable": true
+    },
+    {
+      "id": "story.s01.firestarter",
+      "name": "保存好的火种",
+      "type": "story",
+      "imageId": "s01.story.firestarter",
+      "maxStack": 1,
+      "questBound": true,
+      "sprite": {
+        "height": 42,
+        "width": 40
+      },
+      "subType": "quest"
+    },
+    {
+      "id": "story.s01.cooking_rack",
+      "name": "烤肉架",
+      "type": "story",
+      "imageId": "s01.prop.cookingRack",
+      "assetId": "s01.prop.cookingRack",
+      "maxStack": 1,
+      "showName": false,
+      "sprite": {
+        "height": 78,
+        "isStatic": true,
+        "width": 88
+      },
+      "subType": "worldProp",
+      "worldProp": true
+    },
+    {
+      "id": "story.s01.tanning_rack",
+      "name": "制皮木支架",
+      "type": "story",
+      "imageId": "s01.prop.tanningRack",
+      "assetId": "s01.prop.tanningRack",
+      "maxStack": 1,
+      "showName": false,
+      "sprite": {
+        "height": 92,
+        "isStatic": true,
+        "width": 92
+      },
+      "subType": "worldProp",
+      "worldProp": true
+    },
+    {
+      "id": "story.s01.campfire",
+      "name": "熄灭的火堆",
+      "type": "story",
+      "imageId": "s01.prop.campfireBase",
+      "assetId": "s01.prop.campfireBase",
+      "campfirePresentation": {
+        "base": {
+          "height": 36,
+          "imageId": "s01.prop.campfireBase",
+          "offsetX": 0,
+          "offsetY": 0,
+          "pivot": {
+            "x": 0.5,
+            "y": 1
+          },
+          "width": 72
+        },
+        "embers": {
+          "color": "#ffb04a",
+          "frequency": 2.1,
+          "maxAlpha": 0.85,
+          "minAlpha": 0.18,
+          "offsetX": 0,
+          "offsetY": -18,
+          "offsets": [
+            [
+              -13,
+              -8,
+              0.8
+            ],
+            [
+              8,
+              -16,
+              1.1
+            ],
+            [
+              15,
+              -6,
+              1.5
+            ],
+            [
+              -4,
+              -23,
+              1.9
+            ]
+          ],
+          "radius": 1.8
+        },
+        "flame": {
+          "height": 60,
+          "imageId": "s01.vfx.campfireFlame",
+          "offsetX": 0,
+          "offsetY": -7,
+          "pivot": {
+            "x": 0.5,
+            "y": 1
+          },
+          "sprite": {
+            "frameCols": 4,
+            "frameCount": 12,
+            "frameDuration": 0.16,
+            "frameHeight": 237.33333333333334,
+            "frameRows": 3,
+            "frameWidth": 164.5
+          },
+          "width": 40
+        },
+        "fuel": {
+          "enabled": true,
+          "initialUnits": 1,
+          "itemId": "resource.wood",
+          "maxUnits": 10,
+          "secondsPerUnit": 100,
+          "startOnIgnite": false,
+          "statusDisplayRadius": 54
+        },
+        "labels": {
+          "ignite": "{interact}点燃",
+          "unlit": "熄灭的火堆"
+        },
+        "logs": {
+          "height": 38,
+          "imageId": "s01.prop.campfireLogs",
+          "offsetX": 0,
+          "offsetY": -2,
+          "pivot": {
+            "x": 0.5,
+            "y": 1
+          },
+          "width": 68
+        },
+        "particlePresets": [
+          {
+            "alpha": 0.85,
+            "color": "#ffaa22",
+            "life": 250,
+            "rate": 6,
+            "size": 8.5,
+            "vy": -50
+          },
+          {
+            "alpha": 0.8,
+            "color": "#ff8833",
+            "life": 200,
+            "rate": 8,
+            "size": 6,
+            "vy": -35
+          },
+          {
+            "alpha": 1,
+            "color": "#ffffee",
+            "life": 400,
+            "rate": 4,
+            "size": 4.5,
+            "vy": -120
+          },
+          {
+            "alpha": 0.9,
+            "color": "#ffee44",
+            "life": 350,
+            "rate": 10,
+            "size": 3.5,
+            "vy": -100
+          },
+          {
+            "alpha": 0.85,
+            "color": "#ff9933",
+            "life": 300,
+            "rate": 8,
+            "size": 2.5,
+            "vy": -80
+          },
+          {
+            "alpha": 0.8,
+            "color": "#ff5522",
+            "life": 250,
+            "rate": 6,
+            "size": 2,
+            "vy": -60
+          },
+          {
+            "alpha": 0.7,
+            "color": "#ff6633",
+            "life": 200,
+            "rate": 12,
+            "size": 2,
+            "vy": -40
+          }
+        ],
+        "presentation": {
+          "collisionHeight": 28,
+          "collisionWidth": 60,
+          "fireHeight": 60,
+          "fireWidth": 40,
+          "lightRadius": 300
+        },
+        "stoneRing": {
+          "height": 38,
+          "imageId": "s01.prop.campfireStoneRing",
+          "offsetX": 0,
+          "offsetY": 2,
+          "pivot": {
+            "x": 0.5,
+            "y": 1
+          },
+          "width": 92
+        }
+      },
+      "height": 36,
+      "maxStack": 1,
+      "semanticRole": "campfire",
+      "showName": false,
+      "sprite": {
+        "height": 36,
+        "isStatic": true,
+        "visible": false,
+        "width": 72
+      },
+      "subType": "worldProp",
+      "width": 72,
+      "worldProp": true
+    },
+    {
+      "id": "story.s01.small_shelter",
+      "name": "小庇护所",
+      "type": "story",
+      "imageId": "s01.environment.smallShelter",
+      "height": 112,
+      "maxStack": 1,
+      "showName": false,
+      "sprite": {
+        "height": 112,
+        "isStatic": true,
+        "width": 154
+      },
+      "subType": "worldProp",
+      "width": 154,
+      "worldProp": true
+    },
+    {
+      "id": "story.s09.bread",
+      "name": "断臂饥民的半块饼",
+      "type": "story",
+      "imageId": "s09.story.bread",
+      "height": 36,
+      "maxStack": 1,
+      "showName": false,
+      "sprite": {
+        "height": 36,
+        "isStatic": true,
+        "width": 48
+      },
+      "subType": "worldProp",
+      "width": 48,
+      "worldProp": true
+    },
+    {
+      "id": "salvage.torn_cloth",
+      "name": "破损帐布",
+      "type": "material",
+      "imageId": "inventory.salvage.tornCloth",
+      "maxStack": 1,
+      "sprite": {
+        "height": 44,
+        "width": 44
+      },
+      "subType": "salvage"
+    },
+    {
+      "id": "salvage.broken_utensil",
+      "name": "破损军需器具",
+      "type": "material",
+      "imageId": "inventory.salvage.brokenUtensil",
+      "maxStack": 1,
+      "sprite": {
+        "height": 44,
+        "width": 44
+      },
+      "subType": "salvage"
+    },
+    {
+      "id": "tool.worn_axe",
+      "name": "破旧斧头",
+      "description": "斧刃钝化、木柄裂纹遍布的旧斧。",
+      "type": "tool",
+      "imageId": "s01.tool.wornAxe",
+      "capabilities": [
+        {
+          "id": "durable",
+          "strategyId": "item.durable.standard",
+          "parameters": {
+            "maxDurability": 8
+          }
+        },
+        {
+          "id": "tool",
+          "strategyId": "item.tool.gathering",
+          "parameters": {
+            "gatherSpeed": 1,
+            "toolType": "axe"
+          }
+        }
+      ],
+      "durability": 8,
+      "functionDescription": "用于砍伐树木。",
+      "gatherSpeed": 1,
+      "maxDurability": 8,
+      "maxStack": 1,
+      "repairCosts": [
+        {
+          "itemId": "resource.iron",
+          "quantity": 1
+        }
+      ],
+      "sprite": {
+        "height": 40,
+        "width": 40
+      },
+      "toolType": "axe"
+    },
+    {
+      "id": "story.s05.mine_collapse",
+      "name": "矿坑封路塌方",
+      "type": "story",
+      "imageId": "s05.environment.mineCollapse",
+      "height": 95,
+      "maxStack": 1,
+      "showName": false,
+      "sprite": {
+        "height": 95,
+        "isStatic": true,
+        "width": 170
+      },
+      "subType": "worldProp",
+      "width": 170,
+      "worldProp": true
+    },
+    {
+      "id": "tool.worn_pickaxe",
+      "name": "破旧铁镐",
+      "description": "仅剩一次可用力道的破旧铁镐。",
+      "type": "tool",
+      "imageId": "s05.tool.wornPickaxe",
+      "capabilities": [
+        {
+          "id": "durable",
+          "strategyId": "item.durable.standard",
+          "parameters": {
+            "maxDurability": 1
+          }
+        },
+        {
+          "id": "tool",
+          "strategyId": "item.tool.gathering",
+          "parameters": {
+            "gatherSpeed": 1,
+            "toolType": "pickaxe"
+          }
+        }
+      ],
+      "durability": 1,
+      "functionDescription": "用于开采铁矿。",
+      "gatherSpeed": 1,
+      "maxDurability": 1,
+      "maxStack": 1,
+      "repairCosts": [
+        {
+          "itemId": "resource.iron",
+          "quantity": 1
+        }
+      ],
+      "sprite": {
+        "height": 48,
+        "width": 48
+      },
+      "toolType": "pickaxe"
+    },
+    {
+      "id": "tool.worn_shovel",
+      "name": "开裂的旧铲",
+      "description": "铲面开裂，仍可勉强完成一次施工。",
+      "type": "tool",
+      "imageId": "tool.wornShovel",
+      "capabilities": [
+        {
+          "id": "durable",
+          "strategyId": "item.durable.standard",
+          "parameters": {
+            "maxDurability": 1
+          }
+        },
+        {
+          "id": "tool",
+          "strategyId": "item.tool.gathering",
+          "parameters": {
+            "gatherSpeed": 1,
+            "toolType": "shovel"
+          }
+        }
+      ],
+      "durability": 1,
+      "functionDescription": "用于修筑临时工事。",
+      "gatherSpeed": 1,
+      "maxDurability": 1,
+      "maxStack": 1,
+      "repairCosts": [
+        {
+          "itemId": "resource.iron",
+          "quantity": 1
+        }
+      ],
+      "sprite": {
+        "height": 48,
+        "width": 48
+      },
+      "toolType": "shovel"
+    },
+    {
+      "id": "tool.shovel",
+      "name": "营建铁铲",
+      "description": "铲刃结实的营建铁铲。",
+      "type": "tool",
+      "imageId": "tool.shovel",
+      "capabilities": [
+        {
+          "id": "durable",
+          "strategyId": "item.durable.standard",
+          "parameters": {
+            "maxDurability": 12
+          }
+        },
+        {
+          "id": "tool",
+          "strategyId": "item.tool.gathering",
+          "parameters": {
+            "gatherSpeed": 1,
+            "toolType": "shovel"
+          }
+        }
+      ],
+      "durability": 12,
+      "functionDescription": "用于修筑和维修工事。",
+      "gatherSpeed": 1,
+      "maxDurability": 12,
+      "maxStack": 1,
+      "repairCosts": [
+        {
+          "itemId": "resource.iron",
+          "quantity": 1
+        }
+      ],
+      "sprite": {
+        "height": 48,
+        "width": 48
+      },
+      "toolType": "shovel"
+    },
+    {
+      "id": "construction.s10.campfire",
+      "name": "已建营地火堆",
+      "type": "story",
+      "imageId": "s10.construction.campfire",
+      "height": 72,
+      "maxStack": 1,
+      "showName": false,
+      "sprite": {
+        "height": 72,
+        "isStatic": true,
+        "width": 80
+      },
+      "subType": "worldProp",
+      "width": 80,
+      "worldProp": true
+    },
+    {
+      "id": "construction.s10.barricade",
+      "name": "已建拒马",
+      "type": "story",
+      "imageId": "s10.construction.barricade",
+      "height": 84,
+      "maxStack": 1,
+      "showName": false,
+      "sprite": {
+        "height": 84,
+        "isStatic": true,
+        "width": 128
+      },
+      "subType": "worldProp",
+      "width": 128,
+      "worldProp": true
+    },
+    {
+      "id": "construction.s10.simple_wall",
+      "name": "已建简易壁垒",
+      "type": "story",
+      "imageId": "s10.construction.simpleWall",
+      "height": 100,
+      "maxStack": 1,
+      "showName": false,
+      "sprite": {
+        "height": 100,
+        "isStatic": true,
+        "width": 150
+      },
+      "subType": "worldProp",
+      "width": 150,
+      "worldProp": true
+    },
+    {
+      "id": "construction.s10.arrow_tower",
+      "name": "已建箭楼",
+      "type": "story",
+      "imageId": "s10.construction.arrowTower",
+      "height": 180,
+      "maxStack": 1,
+      "showName": false,
+      "sprite": {
+        "height": 180,
+        "isStatic": true,
+        "width": 140
+      },
+      "subType": "worldProp",
+      "width": 140,
+      "worldProp": true
+    },
+    {
+      "id": "iron_sword",
+      "name": "黄巾铁剑",
+      "type": "equipment",
+      "imageId": "inventory.equipment.ironSword",
+      "maxStack": 1,
+      "rarity": 1,
+      "sprite": {
+        "height": 48,
+        "width": 48
+      },
+      "stats": {
+        "attack": 5
+      },
+      "subType": "weapon"
+    },
+    {
+      "id": "leather_armor",
+      "name": "黄巾皮甲",
+      "type": "equipment",
+      "imageId": "inventory.equipment.leatherArmor",
+      "maxStack": 1,
+      "rarity": 1,
+      "sprite": {
+        "height": 48,
+        "width": 48
+      },
+      "stats": {
+        "defense": 3
+      },
+      "subType": "armor"
+    },
+    {
+      "id": "wooden_shield",
+      "name": "木盾",
+      "type": "equipment",
+      "imageId": "inventory.equipment.woodenShield",
+      "maxStack": 1,
+      "rarity": 1,
+      "sprite": {
+        "height": 48,
+        "width": 48
+      },
+      "stats": {
+        "defense": 2
+      },
+      "subType": "shield"
+    },
+    {
+      "id": "short_bow",
+      "name": "短弓",
+      "type": "equipment",
+      "imageId": "inventory.equipment.shortBow",
+      "maxStack": 1,
+      "rarity": 1,
+      "sprite": {
+        "height": 48,
+        "width": 48
+      },
+      "stats": {
+        "attack": 4,
+        "range": 260
+      },
+      "subType": "weapon"
+    },
+    {
+      "id": "leather_vest",
+      "name": "轻便皮背心",
+      "type": "equipment",
+      "imageId": "inventory.equipment.leatherVest",
+      "maxStack": 1,
+      "rarity": 1,
+      "sprite": {
+        "height": 48,
+        "width": 48
+      },
+      "stats": {
+        "defense": 2,
+        "speed": 3
+      },
+      "subType": "armor"
+    },
+    {
+      "id": "wooden_arrow",
+      "name": "木箭",
+      "type": "equipment",
+      "imageId": "inventory.equipment.woodenArrow",
+      "maxStack": 99,
+      "rarity": 1,
+      "sprite": {
+        "height": 48,
+        "width": 48
+      },
+      "stats": {},
+      "subType": "ammo"
+    },
+    {
+      "id": "strategist_talisman_staff",
+      "name": "符杖",
+      "type": "equipment",
+      "imageId": "inventory.equipment.talismanStaff",
+      "maxStack": 1,
+      "rarity": 1,
+      "sprite": {
+        "height": 48,
+        "width": 48
+      },
+      "stats": {
+        "magicAttack": 5
+      },
+      "subType": "weapon"
+    },
+    {
+      "id": "strategist_robe",
+      "name": "军师道袍",
+      "type": "equipment",
+      "imageId": "inventory.equipment.strategistRobe",
+      "maxStack": 1,
+      "rarity": 1,
+      "sprite": {
+        "height": 48,
+        "width": 48
+      },
+      "stats": {
+        "maxMp": 20
+      },
+      "subType": "armor"
+    },
+    {
+      "id": "strategist_talisman",
+      "name": "护身符",
+      "type": "equipment",
+      "imageId": "inventory.equipment.talisman",
+      "maxStack": 1,
+      "rarity": 1,
+      "sprite": {
+        "height": 48,
+        "width": 48
+      },
+      "stats": {
+        "defense": 1,
+        "manaRegen": 1
+      },
+      "subType": "accessory"
+    }
+  ],
+  "equipment": [],
+  "enemies": [
+    {
+      "aiType": "aggressive",
+      "corpse": {
+        "name": "野狼尸体",
+        "presentation": {
+          "alpha": 0.86,
+          "offsetY": 0,
+          "rotationDegrees": 0,
+          "sortYOffset": -48
+        },
+        "resourceNodeRef": "node.wolf_carcass"
+      },
+      "id": "enemy.s01_first_wolf",
+      "imageId": "s01.enemy.wolf",
+      "level": 1,
+      "lootTable": [
+        {
+          "chance": 1,
+          "itemId": "resource.wolf_hide",
+          "maxQuantity": 3,
+          "minQuantity": 3
+        },
+        {
+          "chance": 1,
+          "itemId": "resource.raw_wolf_meat",
+          "maxQuantity": 5,
+          "minQuantity": 5
+        }
+      ],
+      "name": "饥饿野狼",
+      "sprite": {
+        "height": 48,
+        "isStatic": true,
+        "width": 68
+      },
+      "stats": {
+        "attack": 5,
+        "defense": 1,
+        "maxHp": 32,
+        "speed": 88
+      },
+      "templateId": "wild_wolf"
+    },
+    {
+      "aiType": "aggressive",
+      "corpse": {
+        "name": "野狼尸体",
+        "presentation": {
+          "alpha": 0.86,
+          "offsetY": 0,
+          "rotationDegrees": 0,
+          "sortYOffset": -48
+        },
+        "resourceNodeRef": "node.wolf_carcass"
+      },
+      "id": "enemy.s01_chase_wolf",
+      "imageId": "s01.enemy.wolf",
+      "level": 1,
+      "lootTable": [
+        {
+          "chance": 1,
+          "itemId": "resource.raw_wolf_meat",
+          "maxQuantity": 5,
+          "minQuantity": 0
+        }
+      ],
+      "name": "追逐野狼",
+      "sprite": {
+        "height": 48,
+        "isStatic": true,
+        "width": 68
+      },
+      "stats": {
+        "attack": 5,
+        "defense": 1,
+        "maxHp": 32,
+        "speed": 88
+      },
+      "templateId": "wild_wolf"
+    },
+    {
+      "aiType": "aggressive",
+      "id": "enemy.s01_bandit",
+      "imageId": "s09.character.governmentScout",
+      "level": 1,
+      "lootTable": [],
+      "name": "荒野盗匪",
+      "sprite": {
+        "height": 76,
+        "isStatic": true,
+        "width": 58
+      },
+      "stats": {
+        "attack": 6,
+        "defense": 1,
+        "maxHp": 45,
+        "speed": 65
+      },
+      "templateId": "bandit"
+    },
+    {
+      "aiType": "aggressive",
+      "id": "enemy.s02_scavenger",
+      "imageId": "s09.character.woundedSoldier",
+      "level": 1,
+      "lootTable": [],
+      "name": "营地拾荒者",
+      "sprite": {
+        "height": 70,
+        "isStatic": true,
+        "width": 58
+      },
+      "stats": {
+        "attack": 5,
+        "defense": 1,
+        "maxHp": 38,
+        "speed": 58
+      },
+      "templateId": "scavenger"
+    },
+    {
+      "aiActive": false,
+      "aiType": "aggressive",
+      "id": "enemy.s09_granary_guard",
+      "imageId": "s09.character.granaryGuard",
+      "level": 2,
+      "lootTable": [],
+      "name": "粮仓哨兵",
+      "sprite": {
+        "height": 76,
+        "isStatic": true,
+        "width": 56
+      },
+      "stats": {
+        "attack": 8,
+        "defense": 3,
+        "maxHp": 70,
+        "speed": 62
+      },
+      "templateId": "yellow_turban_guard"
+    },
+    {
+      "aiType": "aggressive",
+      "id": "enemy.s09_refugee_scout",
+      "imageId": "s09.character.governmentScout",
+      "level": 2,
+      "lootTable": [],
+      "name": "官军斥候",
+      "sprite": {
+        "height": 76,
+        "isStatic": true,
+        "width": 58
+      },
+      "stats": {
+        "attack": 9,
+        "defense": 2,
+        "maxHp": 58,
+        "speed": 82
+      },
+      "templateId": "government_scout"
+    },
+    {
+      "aiActive": false,
+      "aiType": "battleFormation",
+      "factionId": "yellow_turban",
+      "id": "enemy.s03_yellow_turban_soldier",
+      "imageId": "s03.unit.yellowTurbanSoldier",
+      "level": 2,
+      "lootTable": [],
+      "name": "颍川黄巾先军",
+      "sprite": {
+        "height": 64,
+        "isStatic": true,
+        "width": 48
+      },
+      "stats": {
+        "attack": 8,
+        "defense": 3,
+        "maxHp": 70,
+        "speed": 60
+      },
+      "templateId": "yellow_turban_soldier"
+    },
+    {
+      "aiActive": false,
+      "aiType": "battleFormation",
+      "factionId": "han_government",
+      "id": "enemy.s03_han_soldier",
+      "imageId": "s03.unit.hanSoldier",
+      "level": 2,
+      "lootTable": [],
+      "name": "颍川官军守军",
+      "sprite": {
+        "height": 64,
+        "isStatic": true,
+        "width": 48
+      },
+      "stats": {
+        "attack": 9,
+        "defense": 4,
+        "maxHp": 72,
+        "speed": 58
+      },
+      "templateId": "han_soldier"
+    },
+    {
+      "aiActive": false,
+      "aiType": "defensive",
+      "faction": "friendly",
+      "factionId": "yellow_turban",
+      "id": "enemy.s04_bocai",
+      "imageId": "s03.unit.yellowTurbanSoldier",
+      "level": 4,
+      "lootTable": [],
+      "name": "波才",
+      "sprite": {
+        "height": 74,
+        "isStatic": true,
+        "width": 56
+      },
+      "stats": {
+        "attack": 10,
+        "defense": 6,
+        "maxHp": 120,
+        "speed": 72
+      },
+      "templateId": "yellow_turban_commander"
+    },
+    {
+      "aiActive": false,
+      "aiType": "defensive",
+      "faction": "friendly",
+      "factionId": "yellow_turban",
+      "id": "enemy.s05_zhang_mancheng",
+      "imageId": "s05.character.zhangMancheng",
+      "level": 4,
+      "lootTable": [],
+      "name": "张曼成",
+      "sprite": {
+        "height": 82,
+        "isStatic": true,
+        "width": 60
+      },
+      "stats": {
+        "attack": 12,
+        "defense": 7,
+        "maxHp": 150,
+        "speed": 70
+      },
+      "templateId": "yellow_turban_commander"
+    },
+    {
+      "aiActive": false,
+      "aiType": "battleFormation",
+      "factionId": "han_government",
+      "id": "enemy.s05_qin_jie",
+      "imageId": "s05.character.qinJie",
+      "level": 4,
+      "lootTable": [],
+      "name": "秦颉",
+      "sprite": {
+        "height": 82,
+        "isStatic": true,
+        "width": 60
+      },
+      "stats": {
+        "attack": 13,
+        "defense": 8,
+        "maxHp": 170,
+        "speed": 68
+      },
+      "templateId": "han_commander"
+    },
+    {
+      "aiType": "aggressive",
+      "id": "enemy.s02_yellow_turban_soldier",
+      "imageId": "s02.enemy.soldier",
+      "level": 1,
+      "name": "黄巾兵",
+      "sprite": {
+        "height": 52,
+        "isStatic": true,
+        "width": 40
+      },
+      "stats": {
+        "attack": 4,
+        "defense": 2,
+        "maxHp": 40,
+        "speed": 90
+      },
+      "templateId": "yellow_turban_soldier"
+    }
+  ],
+  "npcs": [
+    {
+      "faction": "friendly",
+      "id": "npc.s02_messenger",
+      "idleText": "信使正在等待你整理行装。",
+      "interaction": {
+        "prompt": "{interact}接受张角召见",
+        "radius": 84,
+        "trigger": "interact"
+      },
+      "name": "黄巾信使",
+      "title": "张角使者"
+    },
+    {
+      "dialogueId": "dialogue.s09.enlistment",
+      "faction": "friendly",
+      "id": "npc.s09_zhangjiao",
+      "idleText": "张角正在粥棚旁查看伤民名册。",
+      "imageId": "s09.character.zhangjiao",
+      "interaction": {
+        "prompt": "{interact}与张角交谈并加入黄巾",
+        "radius": 100,
+        "trigger": "interact"
+      },
+      "name": "张角",
+      "renderStyle": "zhangjiao",
+      "sprite": {
+        "height": 88,
+        "isStatic": true,
+        "width": 64
+      },
+      "title": "大贤良师"
+    },
+    {
+      "faction": "friendly",
+      "id": "npc.s09_zhangliang",
+      "idleText": "张梁守在战士军旗旁，等待新兵确认道路。",
+      "imageId": "s09.character.zhangliang",
+      "interaction": {
+        "prompt": "{interact}了解战士职业",
+        "radius": 84,
+        "trigger": "interact"
+      },
+      "name": "张梁",
+      "renderStyle": "zhangliang",
+      "sprite": {
+        "height": 82,
+        "isStatic": true,
+        "width": 60
+      },
+      "title": "战士教官"
+    },
+    {
+      "faction": "friendly",
+      "id": "npc.s09_zhangbao",
+      "idleText": "张宝正在弓手军旗旁整理短弓与木箭。",
+      "imageId": "s09.character.zhangbao",
+      "interaction": {
+        "prompt": "{interact}了解弓手职业",
+        "radius": 84,
+        "trigger": "interact"
+      },
+      "name": "张宝",
+      "renderStyle": "zhangbao",
+      "sprite": {
+        "height": 82,
+        "isStatic": true,
+        "width": 60
+      },
+      "title": "弓手教官"
+    },
+    {
+      "faction": "friendly",
+      "id": "npc.s09_refugee_soldier",
+      "imageId": "s09.character.woundedSoldier",
+      "name": "黄巾残兵",
+      "renderStyle": "wounded_soldier",
+      "sprite": {
+        "height": 70,
+        "isStatic": true,
+        "width": 58
+      },
+      "title": "负伤残兵"
+    },
+    {
+      "faction": "friendly",
+      "id": "npc.s09_refugee_woman",
+      "imageId": "s09.character.refugeeWoman",
+      "name": "逃难妇人",
+      "renderStyle": "refugee_woman",
+      "sprite": {
+        "height": 70,
+        "isStatic": true,
+        "width": 54
+      },
+      "title": "饥民"
+    },
+    {
+      "faction": "friendly",
+      "id": "npc.s09_refugee_child",
+      "imageId": "s09.character.refugeeChild",
+      "name": "饥饿孩童",
+      "renderStyle": "refugee_child",
+      "sprite": {
+        "height": 54,
+        "isStatic": true,
+        "width": 42
+      },
+      "title": "饥民"
+    },
+    {
+      "faction": "neutral",
+      "id": "npc.s09_refugee_dead",
+      "imageId": "s09.character.refugeeDead",
+      "name": "死去的饥民",
+      "renderStyle": "refugee_dead",
+      "sprite": {
+        "height": 34,
+        "isStatic": true,
+        "width": 82
+      },
+      "title": "死者"
+    },
+    {
+      "faction": "friendly",
+      "id": "npc.s09_one_armed_refugee",
+      "imageId": "s09.character.oneArmedRefugee",
+      "name": "断臂饥民",
+      "renderStyle": "one_armed_refugee",
+      "sprite": {
+        "height": 72,
+        "isStatic": true,
+        "width": 56
+      },
+      "title": "持饼饥民"
+    }
+  ],
+  "shops": [],
+  "classes": [],
+  "vehicles": [
+    {
+      "consumption": {
+        "distancePerFood": 360,
+        "foodItemId": "resource.food",
+        "onMissingFood": "stop"
+      },
+      "height": 100,
+      "id": "vehicle.s11.breakoutHorse",
+      "imageId": "s11.vehicle.breakoutHorse",
+      "logistics": {
+        "travelBatchProgress": 0
+      },
+      "maxHp": 280,
+      "name": "广宗突围战马",
+      "seats": [
+        {
+          "id": "driver",
+          "offset": [
+            0,
+            -34
+          ],
+          "role": "driver"
+        }
+      ],
+      "speed": 210,
+      "turnRate": 4,
+      "vehicleType": "horse",
+      "width": 150
+    },
+    {
+      "height": 220,
+      "id": "vehicle.s12.siegeLadder",
+      "imageId": "s12.vehicle.siegeLadder",
+      "logistics": {
+        "ladderEntryDisabled": false
+      },
+      "maxHp": 360,
+      "name": "下曲阳攻城云梯",
+      "seats": [],
+      "siegeEntranceRef": "siege-ladder-top",
+      "speed": 0,
+      "vehicleType": "ladder",
+      "width": 100
+    },
+    {
+      "cargo": {
+        "capacity": 80,
+        "items": [],
+        "maxSlots": 12
+      },
+      "height": 128,
+      "id": "vehicle.s14.lastCart",
+      "imageId": "s14.vehicle.lastRetreatCart",
+      "maxHp": 420,
+      "name": "最后的伤员马车",
+      "seats": [
+        {
+          "id": "driver",
+          "offset": [
+            0,
+            -30
+          ],
+          "role": "driver"
+        }
+      ],
+      "speed": 72,
+      "vehicleType": "cart",
+      "width": 220
+    },
+    {
+      "assemblyRequirements": {
+        "resource.wood": 40
+      },
+      "fireCosts": {
+        "resource.manpower": 1,
+        "resource.stone": 2
+      },
+      "height": 150,
+      "id": "vehicle.s14.catapult",
+      "imageId": "s14.vehicle.unassembledCatapult",
+      "logistics": {
+        "catapultAssembled": false
+      },
+      "maxHp": 600,
+      "name": "缺少主梁的投石车",
+      "seats": [
+        {
+          "id": "driver",
+          "offset": [
+            -28,
+            -34
+          ],
+          "role": "driver"
+        },
+        {
+          "id": "gunner",
+          "offset": [
+            34,
+            -48
+          ],
+          "role": "gunner",
+          "weapon": "weapon.s14.catapult"
+        }
+      ],
+      "speed": 32,
+      "vehicleType": "catapult",
+      "weapon": {
+        "arcHeight": 120,
+        "cooldownMs": 1100,
+        "damage": 100,
+        "id": "weapon.s14.catapult",
+        "projectileSpeed": 260,
+        "range": 520,
+        "splashRadius": 75
+      },
+      "width": 220
+    }
+  ],
+  "buildings": [],
+  "resourceNodes": [
+    {
+      "schemaVersion": 1,
+      "id": "node.wild_berry",
+      "name": "野果丛",
+      "resourceType": "food",
+      "itemId": "resource.wild_berry",
+      "remaining": 10,
+      "maxRemaining": 10,
+      "yieldPerGather": 2,
+      "gatherDuration": 1.6,
+      "interactionRadius": 72,
+      "requiredToolType": null,
+      "refreshDays": 0,
+      "refreshMode": "none",
+      "guardUnitIds": [],
+      "riskEvents": [],
+      "damageRatio": 0,
+      "imageId": "s01.resource.wildBerryNode",
+      "sprite": {
+        "height": 58,
+        "isStatic": true,
+        "width": 68
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "node.wolf_carcass",
+      "name": "野狼尸体",
+      "resourceType": "food",
+      "itemId": "resource.wolf_hide",
+      "remaining": 2,
+      "maxRemaining": 2,
+      "yieldPerGather": 2,
+      "harvestYieldRange": {
+        "min": 1,
+        "max": 2
+      },
+      "gatherDuration": 1.8,
+      "interactionRadius": 70,
+      "requiredToolType": "skinningKnife",
+      "refreshDays": 0,
+      "refreshMode": "none",
+      "guardUnitIds": [],
+      "riskEvents": [],
+      "damageRatio": 0,
+      "imageId": "s01.enemy.wolf",
+      "sprite": {
+        "height": 42,
+        "isStatic": true,
+        "width": 66
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "node.dry_wood",
+      "name": "枯木",
+      "resourceType": "wood",
+      "itemId": "resource.wood",
+      "remaining": 12,
+      "maxRemaining": 12,
+      "yieldPerGather": 3,
+      "gatherDuration": 1.8,
+      "interactionRadius": 76,
+      "requiredToolType": "axe",
+      "refreshDays": 0,
+      "refreshMode": "none",
+      "guardUnitIds": [],
+      "riskEvents": [
+        {
+          "id": "risk.dry_wood_noise",
+          "type": "noise",
+          "chance": 0.3,
+          "message": "枯木断裂的巨响传向荒野，附近可能有敌人注意到这里。",
+          "payload": {
+            "alert": 1
+          }
+        }
+      ],
+      "damageRatio": 0,
+      "imageId": "s01.resource.dryWoodNode",
+      "sprite": {
+        "height": 56,
+        "isStatic": true,
+        "width": 64
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "node.wild_herb",
+      "name": "野生草药",
+      "resourceType": "herb",
+      "itemId": "resource.herb",
+      "remaining": 8,
+      "maxRemaining": 8,
+      "yieldPerGather": 2,
+      "gatherDuration": 1.2,
+      "interactionRadius": 72,
+      "requiredToolType": null,
+      "refreshDays": 0,
+      "guardUnitIds": [],
+      "riskEvents": [
+        {
+          "id": "risk.wild_herb_rustle",
+          "type": "wildlife",
+          "chance": 0.2,
+          "message": "草丛突然剧烈晃动，你听见不远处传来异响。",
+          "payload": {
+            "alert": 1
+          }
+        }
+      ],
+      "damageRatio": 0,
+      "imageId": "s04.resource.herbNode",
+      "sprite": {
+        "height": 56,
+        "isStatic": true,
+        "width": 64
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "node.s09_granary_food",
+      "name": "受损粮仓散粮",
+      "resourceType": "food",
+      "itemId": "resource.food",
+      "remaining": 36,
+      "maxRemaining": 36,
+      "yieldPerGather": 6,
+      "gatherDuration": 2.4,
+      "interactionRadius": 78,
+      "requiredToolType": null,
+      "refreshDays": 0,
+      "guardUnitIds": [
+        "S09-guard-granary-west",
+        "S09-guard-granary-east"
+      ],
+      "riskEvents": [],
+      "damageRatio": 0.6,
+      "imageId": "s09.resource.foodNode",
+      "sprite": {
+        "height": 58,
+        "isStatic": true,
+        "width": 72
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "node.s05_iron_ore",
+      "name": "宛城铁矿",
+      "resourceType": "iron",
+      "itemId": "resource.iron",
+      "remaining": 12,
+      "maxRemaining": 12,
+      "yieldPerGather": 4,
+      "gatherDuration": 2.2,
+      "interactionRadius": 76,
+      "requiredToolType": "pickaxe",
+      "refreshDays": 0,
+      "guardUnitIds": [],
+      "riskEvents": [],
+      "damageRatio": 0,
+      "imageId": "s05.resource.ironOre",
+      "sprite": {
+        "height": 56,
+        "isStatic": true,
+        "width": 64
+      }
+    }
+  ],
+  "combatSkills": [],
+  "craftSkills": [],
+  "gatherSkills": [],
+  "players": [],
+  "talents": []
+}

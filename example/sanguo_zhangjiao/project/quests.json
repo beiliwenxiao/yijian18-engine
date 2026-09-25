@@ -1,0 +1,266 @@
+[
+  {
+    "category": "main",
+    "description": "在干旱荒原活过第一夜，并逃往废弃营地。",
+    "id": "task.s01.survival",
+    "rewards": [],
+    "scenes": [
+      "S01"
+    ],
+    "steps": [
+      {
+        "await": true,
+        "dialogueId": "dialogue.s01.wake",
+        "id": "step.1.1",
+        "title": "开场旁白",
+        "type": "dialogue"
+      },
+      {
+        "await": true,
+        "id": "step.1.2",
+        "title": "寒风中醒来",
+        "tutorialId": "s01.move",
+        "type": "tutorial"
+      },
+      {
+        "id": "lightCampfire",
+        "objectiveType": "commit.fact",
+        "target": "story.s01.campfireLit",
+        "title": "点燃火堆",
+        "type": "objective"
+      },
+      {
+        "id": "findTools",
+        "objectiveType": "commit.fact",
+        "target": "story.s01.initialToolsPicked",
+        "title": "找齐斧头和剥皮刀",
+        "type": "objective"
+      },
+      {
+        "action": "s01Survival",
+        "id": "after.findTools.1",
+        "params": {
+          "operation": "afterInitialToolsPicked"
+        },
+        "title": "开放野果采集",
+        "type": "action"
+      },
+      {
+        "id": "after.findTools.2",
+        "title": "显示采集教程",
+        "tutorialId": "s01.gather",
+        "type": "tutorial"
+      },
+      {
+        "id": "gatherBerries",
+        "objectiveType": "gather.item",
+        "progressBy": null,
+        "target": "resource.wild_berry",
+        "title": "采集荒野酸果",
+        "type": "objective"
+      },
+      {
+        "id": "after.gatherBerries.1",
+        "operation": "showStep",
+        "title": "提示使用野果",
+        "tutorialId": "s01.gather",
+        "tutorialStepId": "s01.gather-step-001",
+        "type": "tutorial"
+      },
+      {
+        "id": "eatBerry",
+        "objectiveType": "commit.fact",
+        "target": "story.s01.berryEaten",
+        "title": "食用酸果恢复体力",
+        "type": "objective"
+      },
+      {
+        "id": "after.eatBerry.1",
+        "operation": "complete",
+        "title": "完成吃野果教程",
+        "tutorialId": "tutorial-001",
+        "type": "tutorial"
+      },
+      {
+        "await": true,
+        "id": "after.eatBerry.2",
+        "title": "显示砍柴教程",
+        "tutorialId": "s01.chopWood",
+        "type": "tutorial"
+      },
+      {
+        "extraPayload": {
+          "resourceType": "wood"
+        },
+        "id": "gatherWood",
+        "objectiveType": "gather.item",
+        "progressBy": "accepted",
+        "requiredCount": 1,
+        "target": "resource.wood",
+        "title": "采集木材",
+        "type": "objective"
+      },
+      {
+        "id": "spotWolf",
+        "objectiveType": "commit.fact",
+        "target": "story.s01.refuelCampfire",
+        "title": "为火堆添柴并应对野狼",
+        "type": "objective"
+      },
+      {
+        "action": "s01Survival",
+        "id": "after.spotWolf.1",
+        "params": {
+          "completedPath": "s01Survival.firstWolfSpotted",
+          "definitionId": "story.s01.firstWolfSpotted",
+          "firstWolfCount": 1,
+          "gte": 1,
+          "operation": "commitStoryWhenReady",
+          "storyPath": "s01Survival.campfireRefuelCount"
+        },
+        "title": "提交首狼出现事实",
+        "type": "action"
+      },
+      {
+        "action": "s01Survival",
+        "id": "after.spotWolf.2",
+        "params": {
+          "operation": "ensureFirstWolf"
+        },
+        "title": "生成并激活教学狼",
+        "type": "action"
+      },
+      {
+        "id": "after.spotWolf.3",
+        "title": "显示攻击教程",
+        "tutorialId": "s01.attack",
+        "type": "tutorial"
+      },
+      {
+        "id": "killWolf",
+        "objectiveType": "kill.enemy",
+        "target": "story.s01.firstWolfKilled",
+        "title": "击杀教学野狼",
+        "type": "objective"
+      },
+      {
+        "id": "skinWolf",
+        "objectiveType": "commit.fact",
+        "target": "story.s01.wolfSkinned",
+        "title": "剥取一次狼皮",
+        "type": "objective"
+      },
+      {
+        "action": "s01Survival",
+        "id": "after.skinWolf.1",
+        "params": {
+          "operation": "afterWolfSkinned"
+        },
+        "title": "提示烤制狼肉",
+        "type": "action"
+      },
+      {
+        "id": "cookMeat",
+        "objectiveType": "commit.fact",
+        "target": "story.s01.cookMeat",
+        "title": "烤制狼肉",
+        "type": "objective"
+      },
+      {
+        "id": "craftGear",
+        "objectiveType": "commit.fact",
+        "target": "story.s01.wolfGearCrafted",
+        "title": "制作狼皮背心和护腕",
+        "type": "objective"
+      },
+      {
+        "id": "buildShelter",
+        "objectiveType": "commit.fact",
+        "target": "story.s01.shelterCompleted",
+        "title": "搭建庇护所",
+        "type": "objective"
+      },
+      {
+        "id": "stayOvernight",
+        "objectiveType": "commit.fact",
+        "target": "story.s01.overnight",
+        "title": "在庇护所过夜",
+        "type": "objective"
+      },
+      {
+        "id": "leaveShelter",
+        "objectiveType": "commit.fact",
+        "target": "story.s01.leaveShelter",
+        "title": "离开庇护所并躲避狼群",
+        "type": "objective"
+      },
+      {
+        "id": "crossRiver",
+        "objectiveType": "commit.fact",
+        "target": "story.s01.riverCrossed",
+        "title": "跳石过河",
+        "type": "objective"
+      },
+      {
+        "id": "reachCliff",
+        "objectiveType": "commit.fact",
+        "target": "story.s01.cliffReached",
+        "title": "抵达山崖并攀藤撤离",
+        "type": "objective"
+      },
+      {
+        "id": "escape",
+        "objectiveType": "commit.fact",
+        "target": "story.s01.complete",
+        "title": "逃往废弃营地",
+        "type": "objective"
+      }
+    ],
+    "title": "荒原求生"
+  },
+  {
+    "category": "main",
+    "description": "清点废弃营地物资，接受张角召见并前往粥棚营地。",
+    "id": "task.s02.summons",
+    "rewards": [],
+    "scenes": [
+      "S02"
+    ],
+    "steps": [
+      {
+        "id": "acceptSummons",
+        "objectiveType": "commit.fact",
+        "target": "story.s02.summons.accept",
+        "title": "接受张角召见",
+        "type": "objective"
+      },
+      {
+        "id": "travel",
+        "objectiveType": "commit.fact",
+        "target": "story.s02.travel",
+        "title": "前往粥棚营地",
+        "type": "objective"
+      }
+    ],
+    "title": "废营召见"
+  },
+  {
+    "category": "main",
+    "description": "张角下令救人。指挥黄巾士兵把晕倒的主角抬回营地。",
+    "id": "task.s02.rescue",
+    "rewards": [],
+    "scenes": [
+      "S02"
+    ],
+    "steps": [
+      {
+        "id": "carryToCamp",
+        "objectiveType": "commit.fact",
+        "target": "story.s02.rescue.done",
+        "title": "把伤者抬回营地",
+        "type": "objective"
+      }
+    ],
+    "title": "山道救援"
+  }
+]

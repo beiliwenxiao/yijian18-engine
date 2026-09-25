@@ -1,0 +1,277 @@
+[
+  {
+    "id": "s01.move",
+    "title": "寒风中醒来",
+    "category": "s01-survival",
+    "scope": {
+      "sceneIds": [
+        "S01"
+      ]
+    },
+    "steps": [
+      {
+        "id": "s01.move.step.move",
+        "text": "寒风把你吹醒，有点冷，{move}起身活动一下。",
+        "highlightTarget": false
+      }
+    ],
+    "signalRules": [],
+    "movementRule": {
+      "mode": "anyMovement",
+      "threshold": 0
+    },
+    "completionPolicy": "signal",
+    "pauseGame": false,
+    "canSkip": false,
+    "autoTrigger": false,
+    "autoAdvance": false,
+    "priority": 0
+  },
+  {
+    "id": "s01.pickup",
+    "title": "拾取求生物资",
+    "category": "s01-survival",
+    "scope": {
+      "sceneIds": [
+        "S01"
+      ]
+    },
+    "steps": [
+      {
+        "id": "s01.pickup.step.pickup",
+        "text": "你发现了一些物品，{pickup}拾取。",
+        "highlightTarget": false
+      }
+    ],
+    "signalRules": [
+      {
+        "signal": "itemPicked",
+        "threshold": 1
+      }
+    ],
+    "completionPolicy": "signal",
+    "pauseGame": false,
+    "canSkip": false,
+    "autoTrigger": false,
+    "autoAdvance": false,
+    "priority": 0
+  },
+  {
+    "id": "s01.gather",
+    "title": "寻找食物",
+    "category": "s01-survival",
+    "scope": {
+      "sceneIds": [
+        "S01"
+      ]
+    },
+    "steps": [
+      {
+        "id": "s01.gather.step.harvest",
+        "text": "暖和了一些，一股饥饿感袭来，靠近野果丛，{harvest}采集野果充饥。",
+        "highlightTarget": false
+      },
+      {
+        "id": "s01.gather-step-001",
+        "text": "采集到野果后，按{harvest}使用。",
+        "highlightTarget": false
+      }
+    ],
+    "signalRules": [
+      {
+        "signal": "gatheringCompleted",
+        "threshold": 1
+      }
+    ],
+    "completionPolicy": "signal",
+    "pauseGame": false,
+    "canSkip": false,
+    "autoTrigger": false,
+    "autoAdvance": false,
+    "priority": 0
+  },
+  {
+    "id": "s01.chopWood",
+    "title": "篝火燃料",
+    "category": "s01-survival",
+    "scope": {
+      "sceneIds": [
+        "S01"
+      ]
+    },
+    "steps": [
+      {
+        "id": "s01.chopWood.step.firewood",
+        "text": "篝火快熄灭了。{harvest}砍取枯木，再回火堆添柴。",
+        "highlightTarget": false
+      }
+    ],
+    "signalRules": [
+      {
+        "signal": "gatheringCompleted",
+        "threshold": 1,
+        "conditions": [
+          {
+            "field": "resourceType",
+            "operator": "equals",
+            "value": "wood"
+          }
+        ]
+      }
+    ],
+    "completionPolicy": "signal",
+    "pauseGame": false,
+    "canSkip": false,
+    "autoTrigger": false,
+    "autoAdvance": false,
+    "priority": 0
+  },
+  {
+    "id": "s01.attack",
+    "title": "猎狼反击",
+    "category": "s01-survival",
+    "scope": {
+      "sceneIds": [
+        "S01"
+      ]
+    },
+    "steps": [
+      {
+        "id": "s01.attack.step.attack",
+        "text": "随着篝火的火光越来也亮，远处的一匹野狼出现后，按{attack}反击。",
+        "highlightTarget": false
+      }
+    ],
+    "signalRules": [
+      {
+        "signal": "attackPerformed",
+        "threshold": 1
+      }
+    ],
+    "completionPolicy": "signal",
+    "pauseGame": false,
+    "canSkip": false,
+    "autoTrigger": false,
+    "autoAdvance": false,
+    "priority": 0
+  },
+  {
+    "id": "s01.durability",
+    "title": "工具使用",
+    "category": "s01-survival",
+    "scope": {
+      "sceneIds": [
+        "S01"
+      ]
+    },
+    "steps": [
+      {
+        "id": "s01.durability.step.tools",
+        "text": "按{harvest}用剥皮刀剥取狼皮。",
+        "highlightTarget": false
+      }
+    ],
+    "signalRules": [
+      {
+        "signal": "gatheringCompleted",
+        "threshold": 1,
+        "conditions": [
+          {
+            "field": "toolInstanceId",
+            "operator": "exists",
+            "value": true
+          }
+        ]
+      }
+    ],
+    "completionPolicy": "signal",
+    "pauseGame": false,
+    "canSkip": false,
+    "autoTrigger": false,
+    "autoAdvance": false,
+    "priority": 0
+  },
+  {
+    "id": "s01.jump",
+    "title": "跳石过河",
+    "category": "s01-survival",
+    "scope": {
+      "sceneIds": [
+        "S01"
+      ]
+    },
+    "steps": [
+      {
+        "id": "s01.jump.step.river",
+        "text": "狼群追来后，使用 {jump} 跳过河中石块逃到对岸。",
+        "highlightTarget": false
+      }
+    ],
+    "signalRules": [
+      {
+        "signal": "jumpPerformed",
+        "threshold": 1
+      }
+    ],
+    "completionPolicy": "signal",
+    "pauseGame": false,
+    "canSkip": false,
+    "autoTrigger": false,
+    "autoAdvance": false,
+    "priority": 0
+  },
+  {
+    "id": "s01.capacity",
+    "title": "攀藤",
+    "category": "s01-survival",
+    "scope": {
+      "sceneIds": [
+        "S01"
+      ]
+    },
+    "steps": [
+      {
+        "id": "s01.capacity.step.capacity",
+        "text": "到达山崖后，{climb}沿藤蔓上去看看。",
+        "highlightTarget": false
+      }
+    ],
+    "signalRules": [
+      {
+        "signal": "gatheringCompleted",
+        "threshold": 1
+      }
+    ],
+    "completionPolicy": "signal",
+    "pauseGame": false,
+    "canSkip": false,
+    "autoTrigger": false,
+    "autoAdvance": false,
+    "priority": 0
+  },
+  {
+    "id": "tutorial-001",
+    "title": "吃掉食物",
+    "category": "general",
+    "scope": {
+      "sceneIds": [
+        "S01"
+      ]
+    },
+    "steps": [
+      {
+        "id": "tutorial-001-step-001",
+        "text": "采集到野果后，{potionHp}吃掉",
+        "highlightTarget": false
+      }
+    ],
+    "completionPolicy": "allSteps",
+    "pauseGame": false,
+    "canSkip": true,
+    "autoTrigger": false,
+    "autoAdvance": false,
+    "priority": 0,
+    "beginText": "采到了野果，肚子饿了。选中野果，按{eat}键吃掉充饥。",
+    "endText": "你吃掉了野果，体力恢复了。"
+  }
+]

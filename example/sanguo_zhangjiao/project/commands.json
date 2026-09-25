@@ -1,0 +1,1837 @@
+[
+  {
+    "commandType": "state.transaction",
+    "id": "story.s01.specialFaint.prepare",
+    "name": "特殊昏迷·救援准备",
+    "transaction": {
+      "when": {
+        "all": [
+          {
+            "equals": "S01",
+            "path": "story.currentSceneId"
+          }
+        ]
+      },
+      "writes": [
+        {
+          "path": "pendingDefeatResolution",
+          "target": "story",
+          "value": "specialFaint"
+        },
+        {
+          "path": "specialFaintRescueType",
+          "target": "story",
+          "value": {
+            "$get": "payload.rescueType",
+            "default": "passerby"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s01.specialFaint.clear",
+    "name": "特殊昏迷·状态清除",
+    "transaction": {
+      "when": {
+        "equals": "specialFaint",
+        "path": "story.pendingDefeatResolution"
+      },
+      "writes": [
+        {
+          "path": "pendingDefeatResolution",
+          "target": "story",
+          "value": null
+        },
+        {
+          "path": "specialFaintRescueType",
+          "target": "story",
+          "value": null
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s01.campfireLit",
+    "name": "点亮篝火",
+    "transaction": {
+      "when": {
+        "all": [
+          {
+            "equals": "S01",
+            "path": "story.currentSceneId"
+          },
+          {
+            "equals": false,
+            "path": "story.s01Survival.campfireLit"
+          }
+        ]
+      },
+      "writes": [
+        {
+          "path": "s01Survival.campfireLit",
+          "target": "story",
+          "value": true
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s01.berryGathered",
+    "name": "采摘一颗野果",
+    "transaction": {
+      "when": {
+        "all": [
+          {
+            "equals": "S01",
+            "path": "story.currentSceneId"
+          },
+          {
+            "equals": true,
+            "path": "story.s01Survival.campfireLit"
+          },
+          {
+            "equals": true,
+            "path": "story.s01Survival.initialToolsPicked"
+          }
+        ]
+      },
+      "writes": [
+        {
+          "path": "s01Survival.berryGatherCount",
+          "target": "story",
+          "value": {
+            "$add": [
+              {
+                "$get": "story.s01Survival.berryGatherCount"
+              },
+              1
+            ]
+          }
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s01.findAxe",
+    "name": "斧头掉落",
+    "transaction": {
+      "when": {
+        "all": [
+          {
+            "equals": "S01",
+            "path": "story.currentSceneId"
+          },
+          {
+            "equals": true,
+            "path": "story.s01Survival.campfireLit"
+          },
+          {
+            "equals": false,
+            "path": "story.s01Survival.axeDropped"
+          }
+        ]
+      },
+      "writes": [
+        {
+          "path": "s01Survival.axeDropped",
+          "target": "story",
+          "value": true
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s01.axeFound",
+    "name": "拾取斧头",
+    "transaction": {
+      "when": {
+        "all": [
+          {
+            "equals": "S01",
+            "path": "story.currentSceneId"
+          },
+          {
+            "equals": true,
+            "path": "story.s01Survival.axeDropped"
+          },
+          {
+            "equals": false,
+            "path": "story.s01Survival.axeFound"
+          }
+        ]
+      },
+      "writes": [
+        {
+          "path": "s01Survival.axeFound",
+          "target": "story",
+          "value": true
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s01.skinningKnifeFound",
+    "name": "拾取剥皮刀",
+    "transaction": {
+      "when": {
+        "all": [
+          {
+            "equals": "S01",
+            "path": "story.currentSceneId"
+          },
+          {
+            "equals": true,
+            "path": "story.s01Survival.axeDropped"
+          },
+          {
+            "equals": false,
+            "path": "story.s01Survival.skinningKnifeFound"
+          }
+        ]
+      },
+      "writes": [
+        {
+          "path": "s01Survival.skinningKnifeFound",
+          "target": "story",
+          "value": true
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s01.initialToolsPicked",
+    "name": "集齐初始工具",
+    "transaction": {
+      "when": {
+        "all": [
+          {
+            "equals": "S01",
+            "path": "story.currentSceneId"
+          },
+          {
+            "equals": true,
+            "path": "story.s01Survival.axeFound"
+          },
+          {
+            "equals": true,
+            "path": "story.s01Survival.skinningKnifeFound"
+          },
+          {
+            "equals": false,
+            "path": "story.s01Survival.initialToolsPicked"
+          }
+        ]
+      },
+      "writes": [
+        {
+          "path": "s01Survival.initialToolsPicked",
+          "target": "story",
+          "value": true
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s01.backpackOpened",
+    "name": "首次打开背包",
+    "transaction": {
+      "when": {
+        "all": [
+          {
+            "equals": "S01",
+            "path": "story.currentSceneId"
+          },
+          {
+            "equals": false,
+            "path": "story.s01Survival.backpackOpened"
+          }
+        ]
+      },
+      "writes": [
+        {
+          "path": "s01Survival.backpackOpened",
+          "target": "story",
+          "value": true
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s01.berriesGathered",
+    "name": "野果采集完成",
+    "transaction": {
+      "when": {
+        "all": [
+          {
+            "equals": "S01",
+            "path": "story.currentSceneId"
+          },
+          {
+            "equals": true,
+            "path": "story.s01Survival.initialToolsPicked"
+          },
+          {
+            "gte": 1,
+            "path": "story.s01Survival.berryGatherCount"
+          },
+          {
+            "equals": false,
+            "path": "story.s01Survival.berriesGathered"
+          }
+        ]
+      },
+      "writes": [
+        {
+          "path": "s01Survival.berriesGathered",
+          "target": "story",
+          "value": true
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s01.berryEaten",
+    "name": "吃下野果",
+    "transaction": {
+      "when": {
+        "all": [
+          {
+            "equals": true,
+            "path": "story.s01Survival.berriesGathered"
+          },
+          {
+            "equals": false,
+            "path": "story.s01Survival.berryEaten"
+          }
+        ]
+      },
+      "writes": [
+        {
+          "path": "s01Survival.berryEaten",
+          "target": "story",
+          "value": true
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s01.refuelCampfire",
+    "name": "篝火添柴（遇狼前）",
+    "transaction": {
+      "inventory": {
+        "entries": [
+          {
+            "itemId": "resource.wood",
+            "quantity": 1
+          }
+        ],
+        "type": "batchRemove"
+      },
+      "when": {
+        "all": [
+          {
+            "equals": "S01",
+            "path": "story.currentSceneId"
+          },
+          {
+            "equals": true,
+            "path": "story.s01Survival.campfireLit"
+          },
+          {
+            "equals": true,
+            "path": "story.s01Survival.axeFound"
+          },
+          {
+            "equals": false,
+            "path": "story.s01Survival.firstWolfSpotted"
+          },
+          {
+            "lte": 2,
+            "path": "story.s01Survival.campfireRefuelCount"
+          }
+        ]
+      },
+      "writes": [
+        {
+          "path": "s01Survival.campfireRefuelCount",
+          "target": "story",
+          "value": {
+            "$add": [
+              {
+                "$get": "story.s01Survival.campfireRefuelCount"
+              },
+              1
+            ]
+          }
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s01.refuelCampfireAfterWolf",
+    "name": "篝火添柴（杀狼后）",
+    "transaction": {
+      "inventory": {
+        "entries": [
+          {
+            "itemId": "resource.wood",
+            "quantity": 1
+          }
+        ],
+        "type": "batchRemove"
+      },
+      "when": {
+        "all": [
+          {
+            "equals": "S01",
+            "path": "story.currentSceneId"
+          },
+          {
+            "equals": true,
+            "path": "story.s01Survival.campfireLit"
+          },
+          {
+            "equals": true,
+            "path": "story.s01Survival.axeFound"
+          },
+          {
+            "equals": true,
+            "path": "story.s01Survival.firstWolfKilled"
+          }
+        ]
+      },
+      "writes": [
+        {
+          "path": "s01Survival.campfireRefuelCount",
+          "target": "story",
+          "value": {
+            "$add": [
+              {
+                "$get": "story.s01Survival.campfireRefuelCount"
+              },
+              1
+            ]
+          }
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s01.firstWolfSpotted",
+    "name": "教学狼现身",
+    "transaction": {
+      "when": {
+        "all": [
+          {
+            "equals": "S01",
+            "path": "story.currentSceneId"
+          },
+          {
+            "equals": true,
+            "path": "story.s01Survival.campfireLit"
+          },
+          {
+            "gte": 1,
+            "path": "story.s01Survival.campfireRefuelCount"
+          },
+          {
+            "equals": false,
+            "path": "story.s01Survival.firstWolfSpotted"
+          }
+        ]
+      },
+      "writes": [
+        {
+          "path": "s01Survival.firstWolfSpotted",
+          "target": "story",
+          "value": true
+        },
+        {
+          "path": "s01Survival.firstWolfCount",
+          "target": "story",
+          "value": {
+            "$max": [
+              1,
+              {
+                "$get": "payload.firstWolfCount",
+                "default": 1
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s01.woodGathered",
+    "name": "木柴收集完成",
+    "transaction": {
+      "when": {
+        "all": [
+          {
+            "equals": true,
+            "path": "story.s01Survival.axeFound"
+          },
+          {
+            "inventory": {
+              "itemId": "resource.wood",
+              "quantity": 3
+            }
+          },
+          {
+            "equals": false,
+            "path": "story.s01Survival.woodGathered"
+          }
+        ]
+      },
+      "writes": [
+        {
+          "path": "s01Survival.woodGathered",
+          "target": "story",
+          "value": true
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s01.firstWolfKilled",
+    "name": "击杀教学狼",
+    "transaction": {
+      "when": {
+        "all": [
+          {
+            "equals": true,
+            "path": "story.s01Survival.firstWolfSpotted"
+          },
+          {
+            "equals": false,
+            "path": "story.s01Survival.firstWolfKilled"
+          }
+        ]
+      },
+      "writes": [
+        {
+          "path": "s01Survival.firstWolfKilled",
+          "target": "story",
+          "value": true
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s01.wolfSkinned",
+    "name": "剥取狼皮",
+    "transaction": {
+      "when": {
+        "all": [
+          {
+            "equals": false,
+            "path": "story.s01Survival.wolfSkinned"
+          }
+        ]
+      },
+      "writes": [
+        {
+          "path": "s01Survival.wolfSkinned",
+          "target": "story",
+          "value": true
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s01.cookMeat",
+    "name": "烤制狼肉",
+    "transaction": {
+      "inventory": {
+        "addEntries": [
+          {
+            "itemId": "food.roasted_wolf_meat",
+            "quantity": 1
+          }
+        ],
+        "removeEntries": [
+          {
+            "itemId": "resource.raw_wolf_meat",
+            "quantity": 1
+          },
+          {
+            "itemId": "resource.wood",
+            "quantity": 1
+          }
+        ],
+        "type": "batchExchange"
+      },
+      "when": {
+        "all": [
+          {
+            "equals": true,
+            "path": "story.s01Survival.wolfSkinned"
+          },
+          {
+            "equals": false,
+            "path": "story.s01Survival.meatCooked"
+          }
+        ]
+      },
+      "writes": [
+        {
+          "path": "s01Survival.meatCooked",
+          "target": "story",
+          "value": true
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s01.craftWolfVest",
+    "name": "制作狼皮背心",
+    "transaction": {
+      "inventory": {
+        "addEntries": [
+          {
+            "itemId": "equipment.s01.wolf_hide_vest",
+            "quantity": 1
+          }
+        ],
+        "removeEntries": [
+          {
+            "itemId": "resource.wolf_hide",
+            "quantity": 2
+          }
+        ],
+        "type": "batchExchange"
+      },
+      "when": {
+        "all": [
+          {
+            "equals": true,
+            "path": "story.s01Survival.meatCooked"
+          },
+          {
+            "equals": false,
+            "path": "story.s01Survival.wolfVestCrafted"
+          }
+        ]
+      },
+      "writes": [
+        {
+          "path": "s01Survival.wolfVestCrafted",
+          "target": "story",
+          "value": true
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s01.craftWolfBracers",
+    "name": "制作狼皮护腕",
+    "transaction": {
+      "inventory": {
+        "addEntries": [
+          {
+            "itemId": "equipment.s01.wolf_hide_bracers",
+            "quantity": 1
+          }
+        ],
+        "removeEntries": [
+          {
+            "itemId": "resource.wolf_hide",
+            "quantity": 1
+          }
+        ],
+        "type": "batchExchange"
+      },
+      "when": {
+        "all": [
+          {
+            "equals": true,
+            "path": "story.s01Survival.meatCooked"
+          },
+          {
+            "equals": false,
+            "path": "story.s01Survival.wolfBracersCrafted"
+          }
+        ]
+      },
+      "writes": [
+        {
+          "path": "s01Survival.wolfBracersCrafted",
+          "target": "story",
+          "value": true
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "craft.s01.roastedWolfMeat",
+    "name": "兑换烤狼肉",
+    "transaction": {
+      "inventory": {
+        "addEntries": [
+          {
+            "itemId": "food.roasted_wolf_meat",
+            "quantity": 1
+          }
+        ],
+        "removeEntries": [
+          {
+            "itemId": "resource.raw_wolf_meat",
+            "quantity": 1
+          },
+          {
+            "itemId": "resource.wood",
+            "quantity": 1
+          }
+        ],
+        "type": "batchExchange"
+      }
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "craft.s01.wolfHideVest",
+    "name": "兑换狼皮背心",
+    "transaction": {
+      "inventory": {
+        "addEntries": [
+          {
+            "itemId": "equipment.s01.wolf_hide_vest",
+            "quantity": 1
+          }
+        ],
+        "removeEntries": [
+          {
+            "itemId": "resource.wolf_hide",
+            "quantity": 2
+          }
+        ],
+        "type": "batchExchange"
+      }
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "craft.s01.wolfHideBracers",
+    "name": "兑换狼皮护腕",
+    "transaction": {
+      "inventory": {
+        "addEntries": [
+          {
+            "itemId": "equipment.s01.wolf_hide_bracers",
+            "quantity": 1
+          }
+        ],
+        "removeEntries": [
+          {
+            "itemId": "resource.wolf_hide",
+            "quantity": 1
+          }
+        ],
+        "type": "batchExchange"
+      }
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s01.wolfGearCrafted",
+    "name": "狼皮套装集齐",
+    "transaction": {
+      "when": {
+        "all": [
+          {
+            "equals": true,
+            "path": "story.s01Survival.wolfVestCrafted"
+          },
+          {
+            "equals": true,
+            "path": "story.s01Survival.wolfBracersCrafted"
+          },
+          {
+            "equals": false,
+            "path": "story.s01Survival.wolfGearCrafted"
+          }
+        ]
+      },
+      "writes": [
+        {
+          "path": "s01Survival.wolfGearCrafted",
+          "target": "story",
+          "value": true
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s01.shelterCompleted",
+    "name": "庇护所搭建完成",
+    "transaction": {
+      "checkpoint": {
+        "checkpointId": "checkpoint.S01.shelterCompleted",
+        "checkpointMode": "bestEffort",
+        "reason": "checkpoint",
+        "sceneId": "S01"
+      },
+      "when": {
+        "all": [
+          {
+            "equals": true,
+            "path": "story.s01Survival.meatCooked"
+          },
+          {
+            "equals": true,
+            "path": "story.s01Survival.wolfGearCrafted"
+          },
+          {
+            "equals": false,
+            "path": "story.s01Survival.shelterCompleted"
+          }
+        ]
+      },
+      "writes": [
+        {
+          "path": "s01Survival.shelterCompleted",
+          "target": "story",
+          "value": true
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s01.overnight",
+    "name": "度过第一夜",
+    "transaction": {
+      "checkpoint": {
+        "checkpointId": "checkpoint.S01.secondDay",
+        "checkpointMode": "bestEffort",
+        "reason": "checkpoint",
+        "sceneId": "S01"
+      },
+      "inventory": {
+        "entries": [
+          {
+            "itemId": "story.s01.firestarter",
+            "quantity": 1
+          }
+        ],
+        "type": "batchAdd"
+      },
+      "when": {
+        "all": [
+          {
+            "equals": true,
+            "path": "story.s01Survival.shelterCompleted"
+          },
+          {
+            "equals": false,
+            "path": "story.s01Survival.overnightCompleted"
+          }
+        ]
+      },
+      "writes": [
+        {
+          "path": "currentDay",
+          "target": "story",
+          "value": 2
+        },
+        {
+          "path": "s01Survival.overnightCompleted",
+          "target": "story",
+          "value": true
+        },
+        {
+          "path": "s01Survival.firestarterAcquired",
+          "target": "story",
+          "value": true
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s01.leaveShelter",
+    "name": "离开庇护所",
+    "transaction": {
+      "checkpoint": {
+        "checkpointId": "checkpoint.S01.wolfPursuit",
+        "checkpointMode": "bestEffort",
+        "reason": "checkpoint",
+        "sceneId": "S01"
+      },
+      "when": {
+        "all": [
+          {
+            "equals": true,
+            "path": "story.s01Survival.overnightCompleted"
+          },
+          {
+            "equals": false,
+            "path": "story.s01Survival.shelterExitedAfterOvernight"
+          }
+        ]
+      },
+      "writes": [
+        {
+          "path": "s01Survival.shelterExitedAfterOvernight",
+          "target": "story",
+          "value": true
+        },
+        {
+          "path": "s01Survival.pursuit",
+          "target": "story",
+          "value": {
+            "active": true,
+            "killed": 0,
+            "spawned": 3
+          }
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s01.chase.kill",
+    "name": "追击战击杀计数",
+    "transaction": {
+      "when": {
+        "all": [
+          {
+            "equals": true,
+            "path": "story.s01Survival.pursuit.active"
+          },
+          {
+            "lte": 19,
+            "path": "story.s01Survival.pursuit.killed"
+          }
+        ]
+      },
+      "writes": [
+        {
+          "path": "s01Survival.pursuit.killed",
+          "target": "story",
+          "value": {
+            "$add": [
+              {
+                "$get": "story.s01Survival.pursuit.killed"
+              },
+              1
+            ]
+          }
+        },
+        {
+          "path": "s01Survival.pursuit.spawned",
+          "target": "story",
+          "value": {
+            "$min": [
+              20,
+              {
+                "$add": [
+                  {
+                    "$get": "story.s01Survival.pursuit.spawned"
+                  },
+                  2
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s01.riverCrossed",
+    "name": "渡过河流",
+    "transaction": {
+      "when": {
+        "all": [
+          {
+            "equals": true,
+            "path": "story.s01Survival.overnightCompleted"
+          },
+          {
+            "equals": true,
+            "path": "story.s01Survival.pursuit.active"
+          },
+          {
+            "equals": false,
+            "path": "story.s01Survival.riverCrossed"
+          }
+        ]
+      },
+      "writes": [
+        {
+          "path": "s01Survival.riverCrossed",
+          "target": "story",
+          "value": true
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s01.cliffReached",
+    "name": "抵达悬崖",
+    "transaction": {
+      "when": {
+        "all": [
+          {
+            "equals": true,
+            "path": "story.s01Survival.riverCrossed"
+          },
+          {
+            "equals": false,
+            "path": "story.s01Survival.cliffReached"
+          }
+        ]
+      },
+      "writes": [
+        {
+          "path": "s01Survival.cliffReached",
+          "target": "story",
+          "value": true
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s01.complete",
+    "name": "S01 剧情完成（转场 S02）",
+    "transaction": {
+      "travel": {
+        "sceneId": "S02",
+        "spawnRef": "player",
+        "transition": "fadeBlack"
+      },
+      "when": {
+        "all": [
+          {
+            "equals": "S01",
+            "path": "story.currentSceneId"
+          },
+          {
+            "equals": true,
+            "path": "story.s01Survival.cliffReached"
+          }
+        ]
+      },
+      "writes": [
+        {
+          "path": "s01Completed",
+          "target": "story",
+          "value": true
+        },
+        {
+          "path": "currentSceneId",
+          "target": "story",
+          "value": "S02"
+        },
+        {
+          "path": "pendingDefeatResolution",
+          "target": "story",
+          "value": null
+        },
+        {
+          "path": "specialFaintRescueType",
+          "target": "story",
+          "value": null
+        },
+        {
+          "path": "s01Survival.pursuit.active",
+          "target": "story",
+          "value": false
+        },
+        {
+          "path": "unlockedScenes",
+          "target": "story",
+          "value": {
+            "$appendUnique": {
+              "source": {
+                "$get": "story.unlockedScenes",
+                "default": []
+              },
+              "values": [
+                "S02"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s02.judgement.kill",
+    "name": "张角裁决：杀",
+    "transaction": {
+      "checkpoint": {
+        "checkpointId": "checkpoint.S02.judgement",
+        "reason": "checkpoint",
+        "sceneId": "S02"
+      },
+      "when": {
+        "all": [
+          {
+            "equals": "S02",
+            "path": "story.currentSceneId"
+          },
+          {
+            "not": {
+              "equals": "kill",
+              "path": "story.s02ZhangjiaoChoice"
+            }
+          }
+        ]
+      },
+      "writes": [
+        {
+          "path": "s02ZhangjiaoChoice",
+          "target": "story",
+          "value": "kill"
+        },
+        {
+          "path": "lastCheckpointId",
+          "target": "story",
+          "value": "checkpoint.S02.judgement"
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s02.judgement.save",
+    "name": "张角裁决：救",
+    "transaction": {
+      "checkpoint": {
+        "checkpointId": "checkpoint.S02.judgement",
+        "reason": "checkpoint",
+        "sceneId": "S02"
+      },
+      "when": {
+        "all": [
+          {
+            "equals": "S02",
+            "path": "story.currentSceneId"
+          },
+          {
+            "not": {
+              "equals": "save",
+              "path": "story.s02ZhangjiaoChoice"
+            }
+          }
+        ]
+      },
+      "writes": [
+        {
+          "path": "s02ZhangjiaoChoice",
+          "target": "story",
+          "value": "save"
+        },
+        {
+          "path": "lastCheckpointId",
+          "target": "story",
+          "value": "checkpoint.S02.judgement"
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s02.rescue.done",
+    "name": "伤者被抬回营地",
+    "transaction": {
+      "checkpoint": {
+        "checkpointId": "checkpoint.S02.rescued",
+        "reason": "checkpoint",
+        "sceneId": "S02"
+      },
+      "when": {
+        "all": [
+          {
+            "equals": "S02",
+            "path": "story.currentSceneId"
+          },
+          {
+            "equals": false,
+            "path": "story.s02Rescued"
+          }
+        ]
+      },
+      "writes": [
+        {
+          "path": "s02Rescued",
+          "target": "story",
+          "value": true
+        },
+        {
+          "path": "lastCheckpointId",
+          "target": "story",
+          "value": "checkpoint.S02.rescued"
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s02.summons.accept",
+    "name": "接受张角征召",
+    "transaction": {
+      "checkpoint": {
+        "checkpointId": "checkpoint.S02.summonsAccepted",
+        "reason": "checkpoint",
+        "sceneId": "S02"
+      },
+      "when": {
+        "all": [
+          {
+            "equals": "S02",
+            "path": "story.currentSceneId"
+          },
+          {
+            "equals": false,
+            "path": "story.s02SummonsAccepted"
+          }
+        ]
+      },
+      "writes": [
+        {
+          "path": "s02SummonsAccepted",
+          "target": "story",
+          "value": true
+        },
+        {
+          "path": "lastCheckpointId",
+          "target": "story",
+          "value": "checkpoint.S02.summonsAccepted"
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s02.travel",
+    "name": "启程前往广宗（S09）",
+    "transaction": {
+      "travel": {
+        "sceneId": "S09",
+        "spawnRef": "player"
+      },
+      "when": {
+        "all": [
+          {
+            "equals": "S02",
+            "path": "story.currentSceneId"
+          },
+          {
+            "equals": true,
+            "path": "story.s02SummonsAccepted"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s09.enlist",
+    "name": "加入黄巾军",
+    "transaction": {
+      "checkpoint": {
+        "checkpointId": "checkpoint.S09.enlisted",
+        "reason": "checkpoint",
+        "sceneId": "S09"
+      },
+      "when": {
+        "all": [
+          {
+            "equals": "S09",
+            "path": "story.currentSceneId"
+          },
+          {
+            "equals": false,
+            "path": "story.joinedYellowTurban"
+          }
+        ]
+      },
+      "writes": [
+        {
+          "path": "joinedYellowTurban",
+          "target": "story",
+          "value": true
+        },
+        {
+          "path": "lastCheckpointId",
+          "target": "story",
+          "value": "checkpoint.S09.enlisted"
+        },
+        {
+          "path": "joinedYellowTurban",
+          "target": "blackboard",
+          "value": true
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s09.day.advance",
+    "name": "推进当前天数",
+    "transaction": {
+      "writes": [
+        {
+          "path": "currentDay",
+          "target": "story",
+          "value": {
+            "$get": "payload.day"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s09.delayed.resolve",
+    "name": "延迟后果结算",
+    "transaction": {
+      "delayed": {
+        "currentDayPath": "story.currentDay",
+        "path": "delayedConsequences"
+      },
+      "selector": {
+        "$get": "event.type"
+      },
+      "variants": {
+        "s09.hardlineEscape": {
+          "outcome": {
+            "$if": [
+              {
+                "$get": "event.payload.willEscape"
+              },
+              "escapeOccurred",
+              "noEscape"
+            ]
+          },
+          "writes": [
+            {
+              "path": "s09RefugeeConflict",
+              "target": "story",
+              "value": {
+                "$merge": [
+                  {
+                    "$get": "story.s09RefugeeConflict"
+                  },
+                  {
+                    "hardlineEscapeDay": {
+                      "$get": "story.currentDay"
+                    },
+                    "hardlineEscapeOccurred": {
+                      "$get": "event.payload.willEscape"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "s09.silenceFoodCollapse": {
+          "outcome": "foodCollapsed",
+          "writes": [
+            {
+              "cityId": "city.s09_guangzong_camp",
+              "path": "resources.food",
+              "target": "city",
+              "value": 0
+            },
+            {
+              "path": "hiddenClues",
+              "target": "story",
+              "value": {
+                "$appendUnique": {
+                  "source": {
+                    "$get": "story.hiddenClues",
+                    "default": []
+                  },
+                  "values": [
+                    "s09.refugees.breadArmClue"
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s09.refugee.prepare",
+    "name": "难民冲突·预备",
+    "transaction": {
+      "when": {
+        "all": [
+          {
+            "equals": "S09",
+            "path": "story.currentSceneId"
+          },
+          {
+            "gte": 0.4,
+            "path": "cityStates.0.damageRatio"
+          },
+          {
+            "gte": 0.000001,
+            "path": "cityStates.0.buildingDamage.granary.s09"
+          }
+        ]
+      },
+      "writes": [
+        {
+          "path": "s09RefugeeConflict",
+          "target": "story",
+          "value": {
+            "$if": [
+              {
+                "$get": "story.s09RefugeeConflict"
+              },
+              {
+                "$get": "story.s09RefugeeConflict"
+              },
+              {
+                "branch": null,
+                "donationCommitted": false,
+                "presentationActive": true,
+                "result": null,
+                "status": "available",
+                "triggeredDay": {
+                  "$get": "story.currentDay",
+                  "default": 1
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s09.refugee.start",
+    "name": "难民冲突·开始",
+    "transaction": {
+      "when": {
+        "all": [
+          {
+            "equals": "S09",
+            "path": "story.currentSceneId"
+          },
+          {
+            "equals": "available",
+            "path": "story.s09RefugeeConflict.status"
+          }
+        ]
+      },
+      "writes": [
+        {
+          "path": "s09RefugeeConflict.status",
+          "target": "story",
+          "value": "started"
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s09.refugee.donate",
+    "name": "捐赠粮草安抚难民",
+    "transaction": {
+      "checkpoint": {
+        "checkpointId": "checkpoint.S09.refugeeDonation",
+        "reason": "checkpoint",
+        "sceneId": "S09"
+      },
+      "inventory": {
+        "entries": [
+          {
+            "itemId": "resource.food",
+            "quantity": 20
+          }
+        ],
+        "type": "batchRemove"
+      },
+      "when": {
+        "all": [
+          {
+            "equals": "S09",
+            "path": "story.currentSceneId"
+          },
+          {
+            "equals": false,
+            "path": "story.s09RefugeeConflict.donationCommitted"
+          },
+          {
+            "inventory": {
+              "itemId": "resource.food",
+              "quantity": 20
+            }
+          }
+        ]
+      },
+      "writes": [
+        {
+          "cityId": "city.s09_guangzong_camp",
+          "path": "morale",
+          "target": "city",
+          "value": {
+            "$min": [
+              100,
+              {
+                "$add": [
+                  {
+                    "$get": "cityStates.0.morale"
+                  },
+                  5
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "cityId": "city.s09_guangzong_camp",
+          "path": "damagePausedUntilDay",
+          "target": "city",
+          "value": {
+            "$add": [
+              {
+                "$get": "story.currentDay",
+                "default": 1
+              },
+              1
+            ]
+          }
+        },
+        {
+          "path": "s09RefugeeConflict",
+          "target": "story",
+          "value": {
+            "$merge": [
+              {
+                "$get": "story.s09RefugeeConflict"
+              },
+              {
+                "donationCommitted": true,
+                "donationDay": {
+                  "$get": "story.currentDay",
+                  "default": 1
+                },
+                "donationOperationId": {
+                  "$get": "payload.operationId",
+                  "default": "donation"
+                },
+                "status": "donated"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s09.refugee.branch",
+    "name": "难民冲突·分支抉择",
+    "transaction": {
+      "selector": {
+        "$get": "payload.event.choiceId"
+      },
+      "variantDefinitions": {
+        "donate_food": "story.s09.refugee.donate",
+        "retry_donation": "story.s09.refugee.donate"
+      },
+      "variants": {
+        "appease": {
+          "checkpoint": {
+            "checkpointId": "checkpoint.S09.refugeeBranch.appease",
+            "reason": "checkpoint",
+            "sceneId": "S09"
+          },
+          "onPreconditionFailed": {
+            "checkpoint": {
+              "checkpointId": "checkpoint.S09.refugeeBranch.appeaseScout",
+              "reason": "checkpoint",
+              "sceneId": "S09"
+            },
+            "writes": [
+              {
+                "path": "storyTags",
+                "target": "story",
+                "value": {
+                  "$appendUnique": {
+                    "source": {
+                      "$get": "story.storyTags",
+                      "default": []
+                    },
+                    "values": [
+                      "s09.refugees.appeaseScout"
+                    ]
+                  }
+                }
+              },
+              {
+                "path": "s09RefugeeConflict",
+                "target": "story",
+                "value": {
+                  "$merge": [
+                    {
+                      "$get": "story.s09RefugeeConflict"
+                    },
+                    {
+                      "branch": "appease",
+                      "result": "scoutTriggered",
+                      "scoutTriggered": true,
+                      "status": "resolved"
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          "when": {
+            "inventory": {
+              "toolType": "axe"
+            }
+          },
+          "writes": [
+            {
+              "path": "storyTags",
+              "target": "story",
+              "value": {
+                "$appendUnique": {
+                  "source": {
+                    "$get": "story.storyTags",
+                    "default": []
+                  },
+                  "values": [
+                    "s09.refugees.appeasedWithGathering"
+                  ]
+                }
+              }
+            },
+            {
+              "path": "s09RefugeeConflict",
+              "target": "story",
+              "value": {
+                "$merge": [
+                  {
+                    "$get": "story.s09RefugeeConflict"
+                  },
+                  {
+                    "branch": "appease",
+                    "result": "foodRestored",
+                    "status": "resolved"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "hardline": {
+          "checkpoint": {
+            "checkpointId": "checkpoint.S09.refugeeBranch.hardline",
+            "reason": "checkpoint",
+            "sceneId": "S09"
+          },
+          "writes": [
+            {
+              "cityId": "city.s09_guangzong_camp",
+              "path": "morale",
+              "target": "city",
+              "value": {
+                "$min": [
+                  100,
+                  {
+                    "$add": [
+                      {
+                        "$get": "cityStates.0.morale"
+                      },
+                      10
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "path": "storyTags",
+              "target": "story",
+              "value": {
+                "$appendUnique": {
+                  "source": {
+                    "$get": "story.storyTags",
+                    "default": []
+                  },
+                  "values": [
+                    "s09.refugees.hardline",
+                    "s09.refugees.strictCommander"
+                  ]
+                }
+              }
+            },
+            {
+              "path": "s09RefugeeConflict",
+              "target": "story",
+              "value": {
+                "$merge": [
+                  {
+                    "$get": "story.s09RefugeeConflict"
+                  },
+                  {
+                    "branch": "hardline",
+                    "hardlineEscapeOccurred": {
+                      "$chance": 0.35
+                    },
+                    "result": "hardlineEscapeScheduled",
+                    "status": "resolved"
+                  }
+                ]
+              }
+            },
+            {
+              "path": "delayedConsequences",
+              "target": "story",
+              "value": {
+                "$concat": [
+                  {
+                    "$get": "story.delayedConsequences",
+                    "default": []
+                  },
+                  [
+                    {
+                      "dueDay": {
+                        "$add": [
+                          {
+                            "$get": "story.currentDay",
+                            "default": 1
+                          },
+                          1
+                        ]
+                      },
+                      "id": "story:S09:hardline-escape",
+                      "payload": {
+                        "willEscape": {
+                          "$get": "story.s09RefugeeConflict.hardlineEscapeOccurred"
+                        }
+                      },
+                      "status": "pending",
+                      "type": "s09.hardlineEscape"
+                    }
+                  ]
+                ]
+              }
+            }
+          ]
+        },
+        "silence": {
+          "checkpoint": {
+            "checkpointId": "checkpoint.S09.refugeeBranch.silence",
+            "reason": "checkpoint",
+            "sceneId": "S09"
+          },
+          "writes": [
+            {
+              "path": "storyTags",
+              "target": "story",
+              "value": {
+                "$appendUnique": {
+                  "source": {
+                    "$get": "story.storyTags",
+                    "default": []
+                  },
+                  "values": [
+                    "s09.refugees.silence"
+                  ]
+                }
+              }
+            },
+            {
+              "path": "s09RefugeeConflict",
+              "target": "story",
+              "value": {
+                "$merge": [
+                  {
+                    "$get": "story.s09RefugeeConflict"
+                  },
+                  {
+                    "branch": "silence",
+                    "result": "delayedFoodCollapse",
+                    "status": "resolved"
+                  }
+                ]
+              }
+            },
+            {
+              "path": "delayedConsequences",
+              "target": "story",
+              "value": {
+                "$concat": [
+                  {
+                    "$get": "story.delayedConsequences",
+                    "default": []
+                  },
+                  [
+                    {
+                      "dueDay": {
+                        "$add": [
+                          {
+                            "$get": "story.currentDay",
+                            "default": 1
+                          },
+                          1
+                        ]
+                      },
+                      "id": "story:S09:silence-food-collapse",
+                      "status": "pending",
+                      "type": "s09.silenceFoodCollapse"
+                    }
+                  ]
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "when": {
+        "all": [
+          {
+            "equals": "S09",
+            "path": "story.currentSceneId"
+          },
+          {
+            "equals": true,
+            "path": "story.s09RefugeeConflict.donationCommitted"
+          }
+        ]
+      }
+    }
+  }
+]

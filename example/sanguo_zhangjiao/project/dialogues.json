@@ -1,0 +1,211 @@
+[
+  {
+    "id": "dialogue.s01.wake",
+    "nodes": {
+      "move": {
+        "speaker": "旁白",
+        "text": "先起身活动僵硬的身体，再靠近熄灭的篝火设法重新点火。"
+      },
+      "start": {
+        "speaker": "旁白",
+        "text": "寒风卷过龟裂的荒原。你从熄灭的火堆旁醒来，四肢冻得僵硬，远处只有枯草与河水的声响。"
+      }
+    },
+    "startNode": "start",
+    "title": "寒风中醒来"
+  },
+  {
+    "id": "dialogue.s02.zhangjiaoSummons",
+    "nodes": {
+      "accept": {
+        "speaker": "你",
+        "text": "我会前去赴约。先把这里能用的物资收拾妥当。"
+      },
+      "start": {
+        "nextNode": "accept",
+        "speaker": "黄巾信使",
+        "text": "你终于到了。张角正在粥棚营地召集仍愿救民的人。"
+      }
+    },
+    "startNode": "start",
+    "title": "张角召见"
+  },
+  {
+    "id": "dialogue.s02.prologue",
+    "nodes": {
+      "collapse": {
+        "nextNode": "report",
+        "speaker": "旁白",
+        "text": "眼前一黑，你倒在废弃营地外的山道旁，不省人事。"
+      },
+      "judge": {
+        "choices": [
+          {
+            "id": "kill",
+            "nextNode": "killOrder",
+            "text": "杀了：乱世自有一套规矩"
+          },
+          {
+            "id": "save",
+            "nextNode": "saveOrder",
+            "text": "救他：黄巾不杀无辜之人"
+          }
+        ],
+        "speaker": "张角",
+        "text": "乱世之人，死生各由天命。这个人——怎么处置？这个选择无法撤回。"
+      },
+      "killOrder": {
+        "speaker": "张角",
+        "text": "「留下他的药囊。人，就不用留了。」乱世草芥，山道又添一具无名尸骸。"
+      },
+      "report": {
+        "nextNode": "judge",
+        "speaker": "黄巾斥候",
+        "text": "主公！营外山道上发现一个昏倒的人，随身带着伤药，像是翻山逃难来的。"
+      },
+      "saveOrder": {
+        "speaker": "张角",
+        "text": "「苍天已死，黄天当立——立的就该是让这样的人活下去。你们两个，把他抬回营地去，小心他的伤。」"
+      },
+      "start": {
+        "nextNode": "collapse",
+        "speaker": "旁白",
+        "text": "你拖着伤腿翻过最后一道山梁。追兵的号角在身后时远时近，饥渴与失血把天地搅成一片昏黑。"
+      }
+    },
+    "startNode": "start",
+    "title": "山道抉择"
+  },
+  {
+    "id": "dialogue.s02.awakening",
+    "nodes": {
+      "greet": {
+        "speaker": "张角",
+        "text": "醒了？翻山逃命还能活下来，命硬得很。我是张角。这世道饿殍遍野、官军肆虐——你若愿意，可在此收拾歇息，随我们同走一条路。"
+      },
+      "wake": {
+        "nextNode": "greet",
+        "speaker": "旁白",
+        "text": "篝火的暖意渗进衣衫。你在营地中缓缓睁开眼，几名黄巾士兵正守在担架旁。"
+      }
+    },
+    "startNode": "wake",
+    "title": "营地苏醒"
+  },
+  {
+    "id": "dialogue.s09.enlistment",
+    "nodes": {
+      "answer": {
+        "nextNode": "choose",
+        "speaker": "你",
+        "text": "我愿加入黄巾，但愿手中所学真能让百姓活下去。"
+      },
+      "choose": {
+        "speaker": "张角",
+        "text": "去看三面军旗。张梁授战士之法，张宝授弓手之法；若愿研习符法军略，便来承军师之责。职业一旦确认，不可更改。"
+      },
+      "start": {
+        "nextNode": "answer",
+        "speaker": "张角",
+        "text": "苍生困于饥疫，空有一人之勇救不了天下。你可愿留下，与我们一道护送粮药、救济流民？"
+      }
+    },
+    "startNode": "start",
+    "title": "加入黄巾"
+  },
+  {
+    "id": "dialogue.s09.refugeeConflict",
+    "nodes": {
+      "appeaseScoutResult": {
+        "speaker": "黄巾残兵",
+        "text": "没有可用的斧头，队伍在荒地拖延太久，官军斥候已经循声赶来！"
+      },
+      "appeaseSuccessResult": {
+        "speaker": "妇人",
+        "text": "斧头还能用。众人带回燃料和散粮，营地粮食增加了三十份。"
+      },
+      "branchChoice": {
+        "choices": [
+          {
+            "id": "hardline",
+            "nextNode": "branchProcessing",
+            "text": "强硬：命残兵控制人群"
+          },
+          {
+            "id": "appease",
+            "nextNode": "branchProcessing",
+            "text": "安抚采集：带人寻找燃料与散粮"
+          },
+          {
+            "id": "silence",
+            "nextNode": "branchProcessing",
+            "text": "沉默：不再介入"
+          }
+        ],
+        "speaker": "断臂饥民",
+        "text": "众人暂时停手，却都等着你决定接下来怎么办。这个选择无法撤回。"
+      },
+      "branchProcessing": {
+        "nextNode": "branchProcessing",
+        "speaker": "你",
+        "text": "决定正在写入检查点……"
+      },
+      "deferred": {
+        "speaker": "你",
+        "text": "我先去准备粮食。现场仍会保留，之后可以回来继续处理。"
+      },
+      "donationFailed": {
+        "choices": [
+          {
+            "id": "retry_donation",
+            "nextNode": "donationProcessing",
+            "text": "再次尝试捐出粮食 ×20"
+          },
+          {
+            "id": "defer",
+            "nextNode": "deferred",
+            "text": "稍后再来"
+          }
+        ],
+        "speaker": "断臂饥民",
+        "text": "粮食还不够，或检查点没能安全写入。刚才的粮食、士气和城市状态都没有改变。"
+      },
+      "donationOffer": {
+        "choices": [
+          {
+            "id": "donate_food",
+            "nextNode": "donationProcessing",
+            "text": "捐出粮食 ×20"
+          },
+          {
+            "id": "defer",
+            "nextNode": "deferred",
+            "text": "我还需要准备"
+          }
+        ],
+        "speaker": "断臂饥民",
+        "text": "再没有粮，今晚就会有人为这一口吃的拼命。你若拿得出二十份粮食，至少能让大家先停手。"
+      },
+      "donationProcessing": {
+        "nextNode": "donationProcessing",
+        "speaker": "你",
+        "text": "先清点粮食，任何一项无法落实都不能让现场留下半笔账。"
+      },
+      "hardlineResult": {
+        "speaker": "黄巾残兵",
+        "text": "残兵列成一线压住人群。争斗停了，营中士气暂时回升；但这份强硬也可能逼得一些人在夜里离开。"
+      },
+      "silenceResult": {
+        "speaker": "断臂饥民",
+        "text": "你没有回答。汉子把饼藏回怀里；到下一游戏日，沉默的代价才会显现。"
+      },
+      "start": {
+        "nextNode": "donationOffer",
+        "speaker": "断臂饥民",
+        "text": "残兵护着最后几块饼，妇人抱紧孩子，地上两个人已经没了声息。断臂汉子把半块饼攥得发白。"
+      }
+    },
+    "startNode": "start",
+    "title": "饥民争斗"
+  }
+]
