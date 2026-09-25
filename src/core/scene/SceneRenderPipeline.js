@@ -88,6 +88,7 @@ export class SceneRenderPipeline {
       (_scene, ctx) => this.context?.ui?.layout?.isOnboardingComponentVisible?.('timeWeatherBadge') !== false
         && this.renderTimeWeatherBadge(ctx),
       (scene, ctx) => scene.renderCombatStateUI(ctx),
+      (scene, ctx) => scene.armyCommandFlow?.render(ctx),
       (scene, ctx) => { if (scene.isTransitioning) scene.renderTransition(ctx); },
       (scene, ctx) => { if (scene.performanceMonitor?.enabled) scene.performanceMonitor.render(ctx); }
     ];

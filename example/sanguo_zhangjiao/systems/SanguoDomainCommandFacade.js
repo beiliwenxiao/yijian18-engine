@@ -68,6 +68,9 @@ export class SanguoDomainCommandFacade {
       ['rescue.command', 'rescue.start.s04', () => scene.s03s08Coordinator.startS04BocaiRescue()],
       ['rescue.command', 'rescue.advance.s04', () => scene.s03s08Coordinator.completeS04BocaiEvacuation()],
       ['rescue.command', 'rescue.start.s05', () => scene.s05SceneCoordinator.startS05ZhangManchengRescue()],
+      ['scenario.command', 'army.rescue.faint', () => scene.s02ArmyRescueCoordinator.faint()],
+      ['scenario.command', 'army.rescue.begin', p => scene.s02ArmyRescueCoordinator.beginArmyRescue(p)],
+      ['scenario.command', 'army.rescue.awaken', () => scene.s02ArmyRescueCoordinator.awakenFromRescue()],
       ['construction.command', 'construction.start.s01', p => scene._s01s02Coordinator.startShelterConstruction(p)],
       ['construction.command', 'construction.start.s06', p => scene.s06SceneCoordinator.startS06FieldConstruction(p)],
       ['construction.command', 'construction.start.s10', p => scene.s10ConstructionCoordinator.startS10Construction(p)]

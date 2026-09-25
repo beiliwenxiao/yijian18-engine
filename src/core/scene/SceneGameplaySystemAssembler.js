@@ -34,6 +34,7 @@ import { AISystem } from '../../systems/AISystem.js';
 import { CollisionSystem } from '../../systems/CollisionSystem.js';
 import { PickupSystem } from '../../systems/PickupSystem.js';
 import { InventoryTransactionService } from '../../systems/InventoryTransactionService.js';
+import { SceneArmyCommandFlow } from './SceneArmyCommandFlow.js';
 import { GatheringSystem } from '../../systems/GatheringSystem.js';
 import { GatheringPuppetSystem } from '../../systems/GatheringPuppetSystem.js';
 import { AbilitySystem } from '../../systems/ability/AbilitySystem.js';
@@ -151,12 +152,17 @@ export class SceneGameplaySystemAssembler {
       pathfindingSystem: scene.pathfindingSystem,
       pathfindingCellSize: 32,
       isMovementLocked: entity => scene.locomotionSystem?.isBusy?.(entity) === true,
-      // 蓄力跳期间左摇杆只更新 JumpChargeController 的落点方向，不得移动玩家。
+      // 蓄力跳期间左摇杆只更新 JumpChargeController 的落点方向，不得移动玩家；
+      // 剧情倒地状态（S02 军团救援，scene.isPlayerDowned）下移动输入同样被抑制。
       isMoveInputSuppressed: entity => entity === scene.playerEntity
-        && scene.jumpChargeController?.isCharging?.() === true,
+        && (scene.jumpChargeController?.isCharging?.() === true
+          || scene.isPlayerDowned?.() === true),
       // 战斗状态不进行移动碰撞停顿/阻挡自动停止，保证战斗手感；战斗结束后恢复。
       combatLock: () => scene.combatSystem?.isInCombat?.() === true
     });
+    // 军团指挥（M1）：编组选择 + 点地移动 + 命令达成倒计时；设计见 .kiro/steering/army-command-design.md
+    scene.armyCommandFlow = new SceneArmyCommandFlow(scene);
+    scene.armyCommandFlow.attach();
     scene.equipmentSystem = new EquipmentSystem();
     scene.aiSystem = new AISystem();
     scene.collisionSystem = new CollisionSystem();

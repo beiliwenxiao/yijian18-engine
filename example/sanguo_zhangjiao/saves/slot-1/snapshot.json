@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "createdAt": 1790170747354,
+  "createdAt": 1790323601518,
   "meta": {
     "gameId": "sanguo_zhangjiao",
     "kind": "manual",
@@ -92,7 +92,7 @@
         "serviceStates": {
           "eventJournal": {
             "schemaVersion": 2,
-            "runId": "run-1387daf2-f4e7-4cee-aa1c-8f365536a587",
+            "runId": "run-10090776-fceb-40cd-8054-5ab9ae1dd0d4",
             "nextSequence": 0,
             "events": []
           },
@@ -330,7 +330,7 @@
             "triggers": {
               "snapshotSchemaVersion": 3,
               "definitionRevision": 1,
-              "definitionDigest": "sha256-0c1144b642a98f65c028c6b4c0f7e0fb58b366f577e3b15ab28d30a30add2c16",
+              "definitionDigest": "sha256-4f1d6b6e06281c4dd13e3d02ca35bba1b28bf567bf8a16c957da81fcfc7c15d2",
               "operationSequence": 0,
               "eventSequence": 0,
               "firedOnce": [],
@@ -418,33 +418,7 @@
                     "ledgerRevision": 1
                   },
                   {
-                    "triggerId": "trg_s01_initial_tools_picked",
-                    "definitionRevision": 1,
-                    "eventId": null,
-                    "operationId": null,
-                    "fingerprint": null,
-                    "status": "idle",
-                    "actionIndex": -1,
-                    "result": null,
-                    "startedAt": null,
-                    "finishedAt": null,
-                    "ledgerRevision": 1
-                  },
-                  {
                     "triggerId": "trg_s01_gather_berry_completed",
-                    "definitionRevision": 1,
-                    "eventId": null,
-                    "operationId": null,
-                    "fingerprint": null,
-                    "status": "idle",
-                    "actionIndex": -1,
-                    "result": null,
-                    "startedAt": null,
-                    "finishedAt": null,
-                    "ledgerRevision": 1
-                  },
-                  {
-                    "triggerId": "trg_s01_first_berry_gathered_tutorial_step",
                     "definitionRevision": 1,
                     "eventId": null,
                     "operationId": null,
@@ -471,19 +445,6 @@
                   },
                   {
                     "triggerId": "trg_s01_berries_gathered",
-                    "definitionRevision": 1,
-                    "eventId": null,
-                    "operationId": null,
-                    "fingerprint": null,
-                    "status": "idle",
-                    "actionIndex": -1,
-                    "result": null,
-                    "startedAt": null,
-                    "finishedAt": null,
-                    "ledgerRevision": 1
-                  },
-                  {
-                    "triggerId": "trg_s01_berry_eaten_advance",
                     "definitionRevision": 1,
                     "eventId": null,
                     "operationId": null,
@@ -535,46 +496,7 @@
                     "ledgerRevision": 1
                   },
                   {
-                    "triggerId": "trg_s01_wolf_skinned",
-                    "definitionRevision": 1,
-                    "eventId": null,
-                    "operationId": null,
-                    "fingerprint": null,
-                    "status": "idle",
-                    "actionIndex": -1,
-                    "result": null,
-                    "startedAt": null,
-                    "finishedAt": null,
-                    "ledgerRevision": 1
-                  },
-                  {
-                    "triggerId": "trg_s01_refuel_committed",
-                    "definitionRevision": 1,
-                    "eventId": null,
-                    "operationId": null,
-                    "fingerprint": null,
-                    "status": "idle",
-                    "actionIndex": -1,
-                    "result": null,
-                    "startedAt": null,
-                    "finishedAt": null,
-                    "ledgerRevision": 1
-                  },
-                  {
                     "triggerId": "trg_s01_first_wolf_recovery_requested",
-                    "definitionRevision": 1,
-                    "eventId": null,
-                    "operationId": null,
-                    "fingerprint": null,
-                    "status": "idle",
-                    "actionIndex": -1,
-                    "result": null,
-                    "startedAt": null,
-                    "finishedAt": null,
-                    "ledgerRevision": 1
-                  },
-                  {
-                    "triggerId": "trg_s01_first_wolf_spotted",
                     "definitionRevision": 1,
                     "eventId": null,
                     "operationId": null,
@@ -614,19 +536,6 @@
                   },
                   {
                     "triggerId": "trg_s01_chase_wolf_killed",
-                    "definitionRevision": 1,
-                    "eventId": null,
-                    "operationId": null,
-                    "fingerprint": null,
-                    "status": "idle",
-                    "actionIndex": -1,
-                    "result": null,
-                    "startedAt": null,
-                    "finishedAt": null,
-                    "ledgerRevision": 1
-                  },
-                  {
-                    "triggerId": "trg_s01_begin_tutorial_after_wake",
                     "definitionRevision": 1,
                     "eventId": null,
                     "operationId": null,
@@ -796,6 +705,58 @@
                   },
                   {
                     "triggerId": "trg_s02_spawn_initial",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s02_choice_kill",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s02_choice_save",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s02_camp_arrival",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_s02_awakening_done",
                     "definitionRevision": 1,
                     "eventId": null,
                     "operationId": null,
@@ -1820,6 +1781,71 @@
                     "startedAt": null,
                     "finishedAt": null,
                     "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_task.s01.survival_after_findTools",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_task.s01.survival_after_gatherBerries",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_task.s01.survival_after_eatBerry",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_task.s01.survival_after_spotWolf",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
+                  },
+                  {
+                    "triggerId": "trg_task.s01.survival_after_skinWolf",
+                    "definitionRevision": 1,
+                    "eventId": null,
+                    "operationId": null,
+                    "fingerprint": null,
+                    "status": "idle",
+                    "actionIndex": -1,
+                    "result": null,
+                    "startedAt": null,
+                    "finishedAt": null,
+                    "ledgerRevision": 1
                   }
                 ]
               }
@@ -1915,8 +1941,8 @@
                         "removed": false,
                         "hp": 38,
                         "position": {
-                          "x": 9810,
-                          "y": 3220
+                          "x": 9756.912699099414,
+                          "y": 3216.9577477993917
                         },
                         "ai": {
                           "active": true,
@@ -1934,7 +1960,7 @@
                         "hp": 38,
                         "position": {
                           "x": 9930,
-                          "y": 3270
+                          "y": 3216.8256000000006
                         },
                         "ai": {
                           "active": true,
@@ -1954,6 +1980,84 @@
                           "y": 3115
                         },
                         "placementSignature": "{\"collision\":null,\"group\":\"S02-initial\",\"id\":\"S02-npc-messenger\",\"kind\":\"npc\",\"overrides\":null,\"ref\":\"npc.s02_messenger\",\"sceneId\":\"S02\",\"spawnWhen\":null,\"type\":\"ref\",\"version\":1,\"x\":710,\"y\":235}"
+                      }
+                    },
+                    {
+                      "id": "S02-soldier-qian-1",
+                      "state": {
+                        "kind": "soldier",
+                        "removed": false,
+                        "hp": 40,
+                        "position": {
+                          "x": 9390,
+                          "y": 3170
+                        },
+                        "placementSignature": "{\"collision\":null,\"group\":\"S02-initial\",\"id\":\"S02-soldier-qian-1\",\"kind\":\"soldier\",\"overrides\":null,\"ref\":\"enemy.s02_yellow_turban_soldier\",\"sceneId\":\"S02\",\"spawnWhen\":null,\"type\":\"ref\",\"version\":1,\"x\":430,\"y\":290}"
+                      }
+                    },
+                    {
+                      "id": "S02-soldier-qian-2",
+                      "state": {
+                        "kind": "soldier",
+                        "removed": false,
+                        "hp": 40,
+                        "position": {
+                          "x": 9429,
+                          "y": 3180
+                        },
+                        "placementSignature": "{\"collision\":null,\"group\":\"S02-initial\",\"id\":\"S02-soldier-qian-2\",\"kind\":\"soldier\",\"overrides\":null,\"ref\":\"enemy.s02_yellow_turban_soldier\",\"sceneId\":\"S02\",\"spawnWhen\":null,\"type\":\"ref\",\"version\":1,\"x\":470,\"y\":300}"
+                      }
+                    },
+                    {
+                      "id": "S02-soldier-hou-1",
+                      "state": {
+                        "kind": "soldier",
+                        "removed": false,
+                        "hp": 40,
+                        "position": {
+                          "x": 9380,
+                          "y": 3220
+                        },
+                        "placementSignature": "{\"collision\":null,\"group\":\"S02-initial\",\"id\":\"S02-soldier-hou-1\",\"kind\":\"soldier\",\"overrides\":null,\"ref\":\"enemy.s02_yellow_turban_soldier\",\"sceneId\":\"S02\",\"spawnWhen\":null,\"type\":\"ref\",\"version\":1,\"x\":420,\"y\":340}"
+                      }
+                    },
+                    {
+                      "id": "S02-soldier-hou-2",
+                      "state": {
+                        "kind": "soldier",
+                        "removed": false,
+                        "hp": 40,
+                        "position": {
+                          "x": 9420,
+                          "y": 3230
+                        },
+                        "placementSignature": "{\"collision\":null,\"group\":\"S02-initial\",\"id\":\"S02-soldier-hou-2\",\"kind\":\"soldier\",\"overrides\":null,\"ref\":\"enemy.s02_yellow_turban_soldier\",\"sceneId\":\"S02\",\"spawnWhen\":null,\"type\":\"ref\",\"version\":1,\"x\":460,\"y\":350}"
+                      }
+                    },
+                    {
+                      "id": "S02-soldier-zuo-1",
+                      "state": {
+                        "kind": "soldier",
+                        "removed": false,
+                        "hp": 40,
+                        "position": {
+                          "x": 9340,
+                          "y": 3200
+                        },
+                        "placementSignature": "{\"collision\":null,\"group\":\"S02-initial\",\"id\":\"S02-soldier-zuo-1\",\"kind\":\"soldier\",\"overrides\":null,\"ref\":\"enemy.s02_yellow_turban_soldier\",\"sceneId\":\"S02\",\"spawnWhen\":null,\"type\":\"ref\",\"version\":1,\"x\":380,\"y\":320}"
+                      }
+                    },
+                    {
+                      "id": "S02-soldier-you-1",
+                      "state": {
+                        "kind": "soldier",
+                        "removed": false,
+                        "hp": 40,
+                        "position": {
+                          "x": 9461,
+                          "y": 3200
+                        },
+                        "placementSignature": "{\"collision\":null,\"group\":\"S02-initial\",\"id\":\"S02-soldier-you-1\",\"kind\":\"soldier\",\"overrides\":null,\"ref\":\"enemy.s02_yellow_turban_soldier\",\"sceneId\":\"S02\",\"spawnWhen\":null,\"type\":\"ref\",\"version\":1,\"x\":500,\"y\":320}"
                       }
                     },
                     {

@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { S01S02Coordinator } from '../example/sanguo_zhangjiao/systems/S01S02SceneFlow.js';
+import { compileQuestProject } from '../src/systems/quest/QuestRuntime.js';
 import { CanonicalStateTransactionService } from '../src/systems/CanonicalStateTransactionService.js';
 import { validateTriggerActionParams } from '../src/systems/TriggerCatalog.js';
 
@@ -186,10 +187,18 @@ describe('首狼出现事务的数据契约（真实 game.project.json）', () =
     expect((await storyAfter({ firstWolfCount: '7' })).firstWolfCount).toBe(7);
   });
 
-  it('触发器与场景数据契约：提交触发器携带 firstWolfCount，S01 首狼为单个 count 模板', () => {
-    for (const triggerId of ['trg_s01_refuel_committed', 'trg_s01_first_wolf_recovery_requested']) {
-      const trigger = project.triggers.find(entry => entry.id === triggerId);
-      const step = (trigger?.do || []).find(action => action.stepId === 'commit-first-wolf-spotted');
+  it('触发器与场景数据契约：提交链携带 firstWolfCount，S01 首狼为单个 count 模板', () => {
+    // 方案 B 编排步骤化：spotWolf 后段（提交 firstWolfSpotted）由任务步骤编译产物承担；
+    // 故障恢复链仍由 triggers[] 手写承担
+    const compiledAfterSpotWolf = compileQuestProject(project).triggers
+      .find(trigger => trigger.id === 'trg_task.s01.survival_after_spotWolf');
+    const recoveryTrigger = project.triggers.find(entry => entry.id === 'trg_s01_first_wolf_recovery_requested');
+    const candidates = [
+      ['trg_task.s01.survival_after_spotWolf', compiledAfterSpotWolf?.do?.find(action => action.stepId === 'step.after.spotWolf.1')],
+      ['trg_s01_first_wolf_recovery_requested', recoveryTrigger?.do?.find(action => action.stepId === 'commit-first-wolf-spotted')]
+    ];
+    for (const [triggerId, step] of candidates) {
+      expect(step, triggerId).toBeTruthy();
       expect(step?.params?.firstWolfCount, triggerId).toEqual(expect.any(Number));
       expect(step.params.firstWolfCount).toBeGreaterThanOrEqual(1);
       // 行为目录必须登记 firstWolfCount（paramsSchema additionalProperties:false），

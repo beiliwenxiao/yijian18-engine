@@ -606,6 +606,9 @@ export class MovementSystem {
       || this.inputManager.getMouseButton() !== 2
       || this.inputManager.isMouseClickHandled()) return;
 
+    // 军团指挥接管：编组选择激活时，右键 = 对选中分队下达移动命令（不动玩家）
+    if (this.armyCommandSystem?.tryHandleMoveOrder?.(this.camera)) return;
+
     const playerEntity = this.playerEntity || entities.find(e => e.type === 'player');
     if (!playerEntity) return;
     if (this.isMoveInputSuppressed(playerEntity)) {

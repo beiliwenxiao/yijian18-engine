@@ -3,10 +3,14 @@
  * @project YiJian18-Engine - 跨平台2D/3D ECS游戏引擎
  ************************************************************/
 
+import { SquadMemberComponent } from '../../ecs/components/SquadMemberComponent.js';
+import { CommandStateComponent } from '../../ecs/components/CommandStateComponent.js';
+
 const REGISTRY_KEYS = Object.freeze({
   item: 'items',
   equipment: 'equipment',
   enemy: 'enemies',
+  soldier: 'enemies',
   npc: 'npcs',
   building: 'buildings',
   vehicle: 'vehicles',
@@ -353,6 +357,29 @@ export class PlacementSpawner {
       const aiType = data.aiType || 'aggressive';
       if (data.aiActive === false) this.aiSystem?.deactivateAI?.(entity, aiType);
       else this.aiSystem?.registerAI?.(entity, aiType);
+      return entity;
+    }
+    if (kind === 'soldier') {
+      // 军团士兵（友军 ally：狼群 AI 会将其视为敌对目标，可被攻击/还击）：
+      // 复用敌人实体管线但注入 SquadMember/CommandState 组件、不注册敌对 AI——
+      // 行为由 ArmyCommandSystem 姿态机驱动；编组注册由 SceneArmyCommandFlow 扫描完成。
+      const entity = factory?.createEnemy?.({
+        ...data,
+        id: placement.id || data.id,
+        contentId: data.id,
+        templateId: data.templateId || placement.ref,
+        faction: placement.faction || data.faction || 'ally'
+      });
+      if (!entity) return null;
+      entity.faction = placement.faction || data.faction || 'ally';
+      entity.addComponent?.(new SquadMemberComponent({
+        armyId: placement.armyId || data.armyId || 'army.default',
+        squadId: placement.squadId || data.squadId || 'zhong',
+        formationIndex: placement.formationIndex ?? data.formationIndex
+      }));
+      entity.addComponent?.(new CommandStateComponent({ stance: 'hold' }));
+      if (typeof store?.addEnemy === 'function') store.addEnemy(entity);
+      else store?.add?.(entity);
       return entity;
     }
     if (kind === 'resourceNode') {

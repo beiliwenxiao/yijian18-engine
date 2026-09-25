@@ -203,6 +203,16 @@
           "y": 60,
           "width": 180,
           "height": 110
+        },
+        {
+          "id": "S02-zone-camp-rescue",
+          "type": "region",
+          "name": "救援苏醒区",
+          "regionId": "S02-camp-rescue",
+          "x": 420,
+          "y": 230,
+          "width": 340,
+          "height": 230
         }
       ]
     },
@@ -346,6 +356,132 @@
           ],
           "x": 710,
           "y": 235
+        },
+        {
+          "id": "S02-soldier-qian-1",
+          "type": "ref",
+          "kind": "soldier",
+          "ref": "enemy.s02_yellow_turban_soldier",
+          "group": "S02-army",
+          "armyId": "army.s02.guard",
+          "squadId": "qian",
+          "formationIndex": 0,
+          "tags": [
+            "army",
+            "yellow-turban"
+          ],
+          "x": 430,
+          "y": 290,
+          "spawnWhen": {
+            "blackboardKey": "storyState",
+            "path": "s02ZhangjiaoChoice",
+            "equals": "save"
+          }
+        },
+        {
+          "id": "S02-soldier-qian-2",
+          "type": "ref",
+          "kind": "soldier",
+          "ref": "enemy.s02_yellow_turban_soldier",
+          "group": "S02-army",
+          "armyId": "army.s02.guard",
+          "squadId": "qian",
+          "formationIndex": 1,
+          "tags": [
+            "army",
+            "yellow-turban"
+          ],
+          "x": 470,
+          "y": 300,
+          "spawnWhen": {
+            "blackboardKey": "storyState",
+            "path": "s02ZhangjiaoChoice",
+            "equals": "save"
+          }
+        },
+        {
+          "id": "S02-soldier-hou-1",
+          "type": "ref",
+          "kind": "soldier",
+          "ref": "enemy.s02_yellow_turban_soldier",
+          "group": "S02-army",
+          "armyId": "army.s02.guard",
+          "squadId": "hou",
+          "formationIndex": 0,
+          "tags": [
+            "army",
+            "yellow-turban"
+          ],
+          "x": 420,
+          "y": 340,
+          "spawnWhen": {
+            "blackboardKey": "storyState",
+            "path": "s02ZhangjiaoChoice",
+            "equals": "save"
+          }
+        },
+        {
+          "id": "S02-soldier-hou-2",
+          "type": "ref",
+          "kind": "soldier",
+          "ref": "enemy.s02_yellow_turban_soldier",
+          "group": "S02-army",
+          "armyId": "army.s02.guard",
+          "squadId": "hou",
+          "formationIndex": 1,
+          "tags": [
+            "army",
+            "yellow-turban"
+          ],
+          "x": 460,
+          "y": 350,
+          "spawnWhen": {
+            "blackboardKey": "storyState",
+            "path": "s02ZhangjiaoChoice",
+            "equals": "save"
+          }
+        },
+        {
+          "id": "S02-soldier-zuo-1",
+          "type": "ref",
+          "kind": "soldier",
+          "ref": "enemy.s02_yellow_turban_soldier",
+          "group": "S02-army",
+          "armyId": "army.s02.guard",
+          "squadId": "zuo",
+          "formationIndex": 0,
+          "tags": [
+            "army",
+            "yellow-turban"
+          ],
+          "x": 380,
+          "y": 320,
+          "spawnWhen": {
+            "blackboardKey": "storyState",
+            "path": "s02ZhangjiaoChoice",
+            "equals": "save"
+          }
+        },
+        {
+          "id": "S02-soldier-you-1",
+          "type": "ref",
+          "kind": "soldier",
+          "ref": "enemy.s02_yellow_turban_soldier",
+          "group": "S02-army",
+          "armyId": "army.s02.guard",
+          "squadId": "you",
+          "formationIndex": 0,
+          "tags": [
+            "army",
+            "yellow-turban"
+          ],
+          "x": 500,
+          "y": 320,
+          "spawnWhen": {
+            "blackboardKey": "storyState",
+            "path": "s02ZhangjiaoChoice",
+            "equals": "save"
+          }
         }
       ]
     },

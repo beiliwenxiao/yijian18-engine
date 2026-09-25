@@ -3452,7 +3452,10 @@ export class CombatSystem {
     
     for (const entity of entities) {
       if (entity.type !== 'enemy' || entity.isDead || entity.isDying) continue;
-      
+      // 友军单位（placement 士兵 faction=ally / 工程物 friendly）不是玩家威胁，
+      // 不计入战斗态判定——避免军团士兵驻场导致战斗态常驻、采集被禁（M4）。
+      if (entity.faction === 'ally' || entity.faction === 'friendly') continue;
+
       const et = entity.getComponent('transform');
       const es = entity.getComponent('stats');
       if (!et || !es || es.hp <= 0) continue;

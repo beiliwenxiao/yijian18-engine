@@ -190,7 +190,7 @@ describe('QuestRuntime Quest v2 编译器', () => {
     const loader = new GameLoader();
     expect(loader.questTaskDefinitions).toEqual([]);
     const compiled = compileQuestProject(project);
-    expect(compiled.taskGraphs.map(graph => graph.id)).toEqual(['task.s01.survival', 'task.s02.summons']);
+    expect(compiled.taskGraphs.map(graph => graph.id)).toEqual(['task.s01.survival', 'task.s02.summons', 'task.s02.rescue']);
     // S01/S02 无 accept/rewards（接取由现有触发器承担）；S01 开场教程步骤（step.1.1 → s01.move）
     // S01 开场段：step.1.1 对话（await，用户勾选「等待对话完成后再继续」）→ step.1.2 教程（await）
     const s01Intro = compiled.triggers.find(trigger => trigger.id === 'trg_task.s01.survival_intro');

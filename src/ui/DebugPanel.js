@@ -24,7 +24,7 @@
  * DebugPanel - 游戏调试面板（左上角浮层）
  *
  * 显示：帧率、玩家属性、敌人波次、敌人情况、当前事件、地图位置
- * 操作：上一事件、下一事件、执行事件、跳过事件、跳转到指定幕
+ * 操作：下一任务、执行任务、跳转到指定场景
  *
  * 通过触发器动作 `toggleDebug` 启用/停用。
  * DOM 渲染，不走 Canvas，始终覆盖在游戏上层。
@@ -416,18 +416,14 @@ export class DebugPanel {
         <div class="dp-section dp-actions">
           <div class="dp-title">操作</div>
           <div class="dp-btn-row">
-            <button id="dp-prev-event">◀ 上一事件</button>
-            <button id="dp-next-event">下一事件 ▶</button>
-          </div>
-          <div class="dp-btn-row">
-            <button id="dp-fire-event">⚡ 执行事件</button>
-            <button id="dp-skip-event">⏭ 跳过事件</button>
-          </div>
-          <div class="dp-btn-row">
             <select id="dp-goto-act">
               <option value="">跳转到...</option>
             </select>
             <button id="dp-goto-btn">跳转</button>
+          </div>
+          <div class="dp-btn-row">
+            <button id="dp-next-task">下一任务 ▶</button>
+            <button id="dp-fire-task">⚡ 执行任务</button>
           </div>
           <div class="dp-btn-row">
             <button id="dp-delete-all-saves" title="清空全部手动存档与自动存档（IndexedDB），不可恢复">🗑 删除所有存档</button>
@@ -634,10 +630,8 @@ export class DebugPanel {
     const el = this._el;
     el.querySelector('.dp-close').addEventListener('click', () => this.toggle());
     el.querySelector('#dp-toggle-loops').addEventListener('click', () => this._toggleGameLoops());
-    el.querySelector('#dp-prev-event').addEventListener('click', () => this._prevEvent());
-    el.querySelector('#dp-next-event').addEventListener('click', () => this._nextEvent());
-    el.querySelector('#dp-fire-event').addEventListener('click', () => this._fireEvent());
-    el.querySelector('#dp-skip-event').addEventListener('click', () => this._skipEvent());
+    el.querySelector('#dp-next-task').addEventListener('click', () => this._nextTask());
+    el.querySelector('#dp-fire-task').addEventListener('click', () => this._fireTask());
     el.querySelector('#dp-goto-btn').addEventListener('click', () => this._gotoAct());
     el.querySelector('#dp-delete-all-saves').addEventListener('click', () => this._deleteAllSaves());
     el.querySelector('#dp-show-actor-collision-edge').addEventListener('change', (event) => {
@@ -988,6 +982,7 @@ export class DebugPanel {
       lines.push('TaskGraph --');
     }
 
+    if (this._taskStatus) lines.push(`▶ ${this._taskStatus}`);
     target.textContent = lines.join('\n');
   }
 
@@ -999,47 +994,54 @@ export class DebugPanel {
     return scene.gameLoader.triggerSystem;
   }
 
-  _prevEvent() {
+  /** 任务触发器清单：trg_task.* 编译产物（intro/目标后段/completion），enabled 且 once 未触发者。 */
+  _getTaskTriggers() {
     const trig = this._getTriggersInfo();
-    if (!trig) return;
-    const pending = trig.triggers.filter(t => t.enabled !== false && !(t.once && trig._firedOnce.has(t.id)));
-    if (pending.length > 0) {
-      this._selectedEventIndex = Math.max(0, (this._selectedEventIndex || 0) - 1);
-      const t = pending[this._selectedEventIndex];
-      if (t) this._el.querySelector('#dp-triggers').innerHTML += `<br>→ ${t.id}`;
-    }
+    if (!trig) return [];
+    return trig.triggers.filter(trigger => (
+      String(trigger?.id || '').startsWith('trg_task.')
+      && trigger.enabled !== false
+      && !(trigger.once && trig._firedOnce.has(trigger.id))
+    ));
   }
 
-  _nextEvent() {
-    const trig = this._getTriggersInfo();
-    if (!trig) return;
-    const pending = trig.triggers.filter(t => t.enabled !== false && !(t.once && trig._firedOnce.has(t.id)));
-    if (pending.length > 0) {
-      this._selectedEventIndex = Math.min(pending.length - 1, (this._selectedEventIndex || 0) + 1);
-      const t = pending[this._selectedEventIndex];
-      if (t) this._el.querySelector('#dp-triggers').innerHTML += `<br>→ ${t.id}`;
-    }
+  _setTaskStatus(message) {
+    this._taskStatus = message;
+    const scene = this.getScene();
+    // now=Infinity 绕过节流，立即刷新 EventJournal/TaskGraph 投影（含任务状态行）
+    if (scene) this._updateEventTaskSaveInfo(scene, Infinity);
   }
 
-  _fireEvent() {
-    const trig = this._getTriggersInfo();
-    if (!trig) return;
-    const pending = trig.triggers.filter(t => t.enabled !== false && !(t.once && trig._firedOnce.has(t.id)));
-    const idx = this._selectedEventIndex || 0;
-    const t = pending[idx];
-    if (t && t.when) {
-      trig.fire(t.when.type, t.when.params || {});
+  /** 下一任务：在任务触发器中循环选中（状态行显示触发器 ID 与动作数）。 */
+  _nextTask() {
+    const tasks = this._getTaskTriggers();
+    if (!tasks.length) {
+      this._selectedTaskIndex = null;
+      return this._setTaskStatus('当前场景没有可执行的任务触发器（trg_task.*）');
     }
+    this._selectedTaskIndex = ((this._selectedTaskIndex ?? -1) + 1) % tasks.length;
+    const trigger = tasks[this._selectedTaskIndex];
+    this._setTaskStatus(`已选中：${trigger.id}（${(trigger.do || []).length} 个动作）`);
   }
 
-  _skipEvent() {
-    const trig = this._getTriggersInfo();
-    if (!trig) return;
-    const pending = trig.triggers.filter(t => t.enabled !== false && !(t.once && trig._firedOnce.has(t.id)));
-    const idx = this._selectedEventIndex || 0;
-    const t = pending[idx];
-    if (t && t.once) {
-      trig._firedOnce.add(t.id); // 标记为已触发，等于跳过
+  /** 执行任务：对选中的任务触发器，按其 when 直接触发执行。 */
+  _fireTask() {
+    const tasks = this._getTaskTriggers();
+    if (!tasks.length) {
+      return this._setTaskStatus('当前场景没有可执行的任务触发器（trg_task.*）');
+    }
+    const index = this._selectedTaskIndex != null
+      ? Math.min(this._selectedTaskIndex, tasks.length - 1)
+      : 0;
+    const trigger = tasks[index];
+    if (!trigger?.when) {
+      return this._setTaskStatus(`触发器 ${trigger?.id || '(未知)'} 缺少 when，无法执行`);
+    }
+    try {
+      this._getTriggersInfo().fire(trigger.when.type, trigger.when.params || {});
+      this._setTaskStatus(`⚡ 已执行：${trigger.id}`);
+    } catch (error) {
+      this._setTaskStatus(`执行失败：${trigger.id} → ${error?.message || error}`);
     }
   }
 
@@ -1047,6 +1049,21 @@ export class DebugPanel {
     const select = this._el.querySelector('#dp-goto-act');
     const sceneId = select.value;
     if (!sceneId) return;
+
+    // 调试特权：先写入剧情状态（当前场景 + 解锁列表），绕过剧情门禁，
+    // 否则 world.teleport 会因场景未解锁被拒（SanguoSceneStateFlow 门禁）。
+    // storyState 可能被快照系统冻结（只读），必须经 blackboard.set 写入新对象。
+    const loader = this.getScene()?.gameLoader;
+    const story = loader?.blackboard?.get?.('storyState') || null;
+    if (story && typeof story === 'object') {
+      const unlocked = Array.isArray(story.unlockedScenes) ? [...story.unlockedScenes] : [];
+      if (!unlocked.includes(sceneId)) unlocked.push(sceneId);
+      try {
+        loader.blackboard.set('storyState', { ...story, currentSceneId: sceneId, unlockedScenes: unlocked });
+      } catch (error) {
+        console.warn('[DebugPanel] storyState 跳转预写失败（继续尝试传送）', error?.message || error);
+      }
+    }
 
     // 优先大地图内传送（当前场景支持 teleportToChunk 时）
     const scene = this.getScene();

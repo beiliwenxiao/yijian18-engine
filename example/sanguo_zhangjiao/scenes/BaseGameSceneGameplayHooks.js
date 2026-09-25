@@ -80,10 +80,19 @@ export class BaseGameSceneGameplayHooks extends BaseGameSceneBehaviors {
     const player = this.playerEntity;
     return player?.isDead === true
       || player?.isSoulState === true
+      || this.isPlayerDowned?.() === true
       || Boolean(this.playerSoulRespawn?.pending)
       || Boolean(this.playerDeathCountdown?.pending)
       || this.gatheringSystem?.isActiveFor?.(player) === true
       || this._s01s02Coordinator?.isRecipeActionActiveFor?.(player) === true;
+  }
+
+  /**
+   * 剧情倒地状态（M4 S02 军团救援）：主角昏倒/被搬运期间禁用一切玩家操作；
+   * 由 S02ArmyRescueCoordinator 的 faint/awaken 流程置位与解除。
+   */
+  isPlayerDowned() {
+    return this.playerDowned === true;
   }
 
   /**

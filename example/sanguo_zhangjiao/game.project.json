@@ -2163,6 +2163,68 @@
       "title": "张角召见"
     },
     {
+      "id": "dialogue.s02.prologue",
+      "nodes": {
+        "collapse": {
+          "nextNode": "report",
+          "speaker": "旁白",
+          "text": "眼前一黑，你倒在废弃营地外的山道旁，不省人事。"
+        },
+        "judge": {
+          "choices": [
+            {
+              "id": "kill",
+              "nextNode": "killOrder",
+              "text": "杀了：乱世自有一套规矩"
+            },
+            {
+              "id": "save",
+              "nextNode": "saveOrder",
+              "text": "救他：黄巾不杀无辜之人"
+            }
+          ],
+          "speaker": "张角",
+          "text": "乱世之人，死生各由天命。这个人——怎么处置？这个选择无法撤回。"
+        },
+        "killOrder": {
+          "speaker": "张角",
+          "text": "「留下他的药囊。人，就不用留了。」乱世草芥，山道又添一具无名尸骸。"
+        },
+        "report": {
+          "nextNode": "judge",
+          "speaker": "黄巾斥候",
+          "text": "主公！营外山道上发现一个昏倒的人，随身带着伤药，像是翻山逃难来的。"
+        },
+        "saveOrder": {
+          "speaker": "张角",
+          "text": "「苍天已死，黄天当立——立的就该是让这样的人活下去。你们两个，把他抬回营地去，小心他的伤。」"
+        },
+        "start": {
+          "nextNode": "collapse",
+          "speaker": "旁白",
+          "text": "你拖着伤腿翻过最后一道山梁。追兵的号角在身后时远时近，饥渴与失血把天地搅成一片昏黑。"
+        }
+      },
+      "startNode": "start",
+      "title": "山道抉择"
+    },
+    {
+      "id": "dialogue.s02.awakening",
+      "nodes": {
+        "greet": {
+          "speaker": "张角",
+          "text": "醒了？翻山逃命还能活下来，命硬得很。我是张角。这世道饿殍遍野、官军肆虐——你若愿意，可在此收拾歇息，随我们同走一条路。"
+        },
+        "wake": {
+          "nextNode": "greet",
+          "speaker": "旁白",
+          "text": "篝火的暖意渗进衣衫。你在营地中缓缓睁开眼，几名黄巾士兵正守在担架旁。"
+        }
+      },
+      "startNode": "wake",
+      "title": "营地苏醒"
+    },
+    {
       "id": "dialogue.s09.enlistment",
       "nodes": {
         "answer": {
@@ -2524,6 +2586,25 @@
         }
       ],
       "title": "废营召见"
+    },
+    {
+      "category": "main",
+      "description": "张角下令救人。指挥黄巾士兵把晕倒的主角抬回营地。",
+      "id": "task.s02.rescue",
+      "rewards": [],
+      "scenes": [
+        "S02"
+      ],
+      "steps": [
+        {
+          "id": "carryToCamp",
+          "objectiveType": "commit.fact",
+          "target": "story.s02.rescue.done",
+          "title": "把伤者抬回营地",
+          "type": "objective"
+        }
+      ],
+      "title": "山道救援"
     }
   ],
   "taskGraphs": [],
@@ -4157,6 +4238,151 @@
     {
       "do": [
         {
+          "action": "spawnPlacements",
+          "params": {
+            "selector": {
+              "group": "S02-initial"
+            }
+          }
+        },
+        {
+          "action": "scenario.command",
+          "params": {
+            "operation": "army.rescue.faint",
+            "scenarioId": "scenario.command.army.rescue.faint"
+          }
+        },
+        {
+          "action": "startDialogue",
+          "params": {
+            "id": "dialogue.s02.prologue"
+          }
+        }
+      ],
+      "id": "trg_s02_spawn_initial",
+      "name": "进入S02：山道昏倒开场",
+      "once": true,
+      "when": {
+        "params": {
+          "sceneId": "S02"
+        },
+        "type": "sceneEnter"
+      }
+    },
+    {
+      "do": [
+        {
+          "action": "state.transaction",
+          "params": {
+            "definitionId": "story.s02.judgement.kill"
+          }
+        },
+        {
+          "action": "ending.command",
+          "params": {
+            "checkpointId": "checkpoint.S02.ending.chaosWeed",
+            "endingId": "sanguo-zhangjiao-endings-v1",
+            "endingKey": "chaos-weed",
+            "operation": "commit"
+          },
+          "stepId": "trg_s02_choice_kill.step.ending"
+        }
+      ],
+      "id": "trg_s02_choice_kill",
+      "name": "张角选择：杀了（乱世草芥结局）",
+      "once": true,
+      "when": {
+        "params": {
+          "choiceId": "kill",
+          "id": "dialogue.s02.prologue"
+        },
+        "type": "dialogueChoice"
+      }
+    },
+    {
+      "do": [
+        {
+          "action": "state.transaction",
+          "params": {
+            "definitionId": "story.s02.judgement.save"
+          }
+        },
+        {
+          "action": "task.command",
+          "params": {
+            "definitionId": "task.s02.rescue",
+            "instanceId": "task.s02.rescue.main",
+            "operation": "task.start",
+            "tracking": true
+          },
+          "stepId": "start-s02-rescue-task"
+        },
+        {
+          "action": "spawnPlacements",
+          "params": {
+            "selector": {
+              "group": "S02-army"
+            }
+          },
+          "stepId": "trg_s02_choice_save.step.spawn-army"
+        },
+        {
+          "action": "scenario.command",
+          "params": {
+            "goalX": 590,
+            "goalY": 345,
+            "operation": "army.rescue.begin",
+            "regionId": "S02-camp-rescue",
+            "scenarioId": "scenario.command.army.rescue.begin"
+          }
+        }
+      ],
+      "id": "trg_s02_choice_save",
+      "name": "张角选择：救他（开放搬运玩法）",
+      "once": true,
+      "when": {
+        "params": {
+          "choiceId": "save",
+          "id": "dialogue.s02.prologue"
+        },
+        "type": "dialogueChoice"
+      }
+    },
+    {
+      "do": [
+        {
+          "action": "state.transaction",
+          "params": {
+            "definitionId": "story.s02.rescue.done"
+          }
+        },
+        {
+          "action": "scenario.command",
+          "params": {
+            "operation": "army.rescue.awaken",
+            "scenarioId": "scenario.command.army.rescue.awaken"
+          }
+        },
+        {
+          "action": "startDialogue",
+          "params": {
+            "id": "dialogue.s02.awakening"
+          }
+        }
+      ],
+      "id": "trg_s02_camp_arrival",
+      "name": "伤者抵达营地：苏醒过场",
+      "once": true,
+      "when": {
+        "params": {
+          "regionId": "S02-camp-rescue"
+        },
+        "type": "enterRegion"
+      }
+    },
+    {
+      "do": [
+        {
           "action": "task.command",
           "params": {
             "definitionId": "task.s02.summons",
@@ -4167,27 +4393,20 @@
           "stepId": "start-s02-summons-task"
         },
         {
-          "action": "spawnPlacements",
-          "params": {
-            "selector": {
-              "group": "S02-initial"
-            }
-          }
-        },
-        {
           "action": "showTip",
           "params": {
-            "text": "废弃军需难以堆叠；背包装满时只会拾取可容纳部分，余量会留在原地。"
+            "text": "张角就在营地中，上前交谈接受征召。"
           }
         }
       ],
-      "id": "trg_s02_spawn_initial",
+      "id": "trg_s02_awakening_done",
+      "name": "苏醒完毕：开启征召线",
       "once": true,
       "when": {
         "params": {
-          "sceneId": "S02"
+          "id": "dialogue.s02.awakening"
         },
-        "type": "sceneEnter"
+        "type": "dialogueEnd"
       }
     },
     {
@@ -7211,6 +7430,25 @@
           "speed": 68
         },
         "templateId": "han_commander"
+      },
+      {
+        "aiType": "aggressive",
+        "id": "enemy.s02_yellow_turban_soldier",
+        "imageId": "s02.enemy.soldier",
+        "level": 1,
+        "name": "黄巾兵",
+        "sprite": {
+          "height": 52,
+          "isStatic": true,
+          "width": 40
+        },
+        "stats": {
+          "attack": 4,
+          "defense": 2,
+          "maxHp": 40,
+          "speed": 90
+        },
+        "templateId": "yellow_turban_soldier"
       }
     ],
     "npcs": [
@@ -8737,6 +8975,114 @@
                 ]
               }
             }
+          }
+        ]
+      }
+    },
+    {
+      "commandType": "state.transaction",
+      "id": "story.s02.judgement.kill",
+      "name": "张角裁决：杀",
+      "transaction": {
+        "checkpoint": {
+          "checkpointId": "checkpoint.S02.judgement",
+          "reason": "checkpoint",
+          "sceneId": "S02"
+        },
+        "when": {
+          "all": [
+            {
+              "equals": "S02",
+              "path": "story.currentSceneId"
+            },
+            {
+              "equals": false,
+              "path": "story.s02ZhangjiaoChoice"
+            }
+          ]
+        },
+        "writes": [
+          {
+            "path": "s02ZhangjiaoChoice",
+            "target": "story",
+            "value": "kill"
+          },
+          {
+            "path": "lastCheckpointId",
+            "target": "story",
+            "value": "checkpoint.S02.judgement"
+          }
+        ]
+      }
+    },
+    {
+      "commandType": "state.transaction",
+      "id": "story.s02.judgement.save",
+      "name": "张角裁决：救",
+      "transaction": {
+        "checkpoint": {
+          "checkpointId": "checkpoint.S02.judgement",
+          "reason": "checkpoint",
+          "sceneId": "S02"
+        },
+        "when": {
+          "all": [
+            {
+              "equals": "S02",
+              "path": "story.currentSceneId"
+            },
+            {
+              "equals": false,
+              "path": "story.s02ZhangjiaoChoice"
+            }
+          ]
+        },
+        "writes": [
+          {
+            "path": "s02ZhangjiaoChoice",
+            "target": "story",
+            "value": "save"
+          },
+          {
+            "path": "lastCheckpointId",
+            "target": "story",
+            "value": "checkpoint.S02.judgement"
+          }
+        ]
+      }
+    },
+    {
+      "commandType": "state.transaction",
+      "id": "story.s02.rescue.done",
+      "name": "伤者被抬回营地",
+      "transaction": {
+        "checkpoint": {
+          "checkpointId": "checkpoint.S02.rescued",
+          "reason": "checkpoint",
+          "sceneId": "S02"
+        },
+        "when": {
+          "all": [
+            {
+              "equals": "S02",
+              "path": "story.currentSceneId"
+            },
+            {
+              "equals": false,
+              "path": "story.s02Rescued"
+            }
+          ]
+        },
+        "writes": [
+          {
+            "path": "s02Rescued",
+            "target": "story",
+            "value": true
+          },
+          {
+            "path": "lastCheckpointId",
+            "target": "story",
+            "value": "checkpoint.S02.rescued"
           }
         ]
       }

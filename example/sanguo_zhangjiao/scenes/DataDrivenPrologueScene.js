@@ -58,6 +58,7 @@ import { SanguoProgressionPresentationCoordinator } from '../systems/SanguoProgr
 import { SanguoSceneLifecycleCoordinator } from '../systems/SanguoSceneLifecycleCoordinator.js';
 import { SanguoPlacementCoordinator } from '../systems/SanguoPlacementCoordinator.js';
 import { S01S02Coordinator } from '../systems/S01S02SceneFlow.js';
+import { S02ArmyRescueCoordinator } from '../systems/S02ArmyRescueFlow.js';
 import { SceneTutorialFlow } from '../../../src/core/scene/SceneTutorialFlow.js';
 import { OnboardingUiProjection } from '../../../src/core/scene/OnboardingUiProjection.js';
 import { SceneCampfireService } from '../../../src/core/scene/SceneCampfireService.js';
@@ -163,6 +164,8 @@ export class DataDrivenPrologueScene extends BaseGameScene {
       s01s02: this._s01s02Coordinator,
       defeatPolicy: this._s01s02Coordinator
     });
+    this.s02ArmyRescueCoordinator = new S02ArmyRescueCoordinator(this);
+    this.context.services.s02ArmyRescue = this.s02ArmyRescueCoordinator;
 
     // 火堆服务只保存运行态；表现参数由当前 canonical scene gameplay consumer 发布后配置。
     this._campfireService = new SceneCampfireService({

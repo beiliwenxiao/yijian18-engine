@@ -759,9 +759,42 @@ const s13s14Methods = {
     return false;
   },
 
-  async executeEndingCommand({ endingId, operation, ...payload } = {}) {
+  async executeEndingCommand({ endingId, operation, endingKey, ...payload } = {}) {
+    // commit：绕过 S14 终局门禁，按结局库元数据直接提交单个结局演出
+    // （S02 乱世草芥等剧情裁决结局走此通道，M4）。
+    // endingId 校验契约=结局库 id（$ref 存根）；endingKey=库内具体结局元数据 id。
+    if (operation === 'commit') return this.commitEndingById(endingKey || endingId, payload);
     if (operation !== 'resolve' || endingId !== this._endingConfig?.id) return false;
     return this.resolveEnding(payload);
+  },
+
+  /**
+   * 按结局库元数据直接提交结局：打开结局演出视图并写入剧情检查点。
+   * @param {string} endingId - endings 库中的结局元数据 id
+   * @param {{checkpointId?: string, reviewLines?: Array<string>}} [options]
+   */
+  async commitEndingById(endingId, { checkpointId = null, reviewLines = null } = {}) {
+    if (!this.endingPresentationView) return false;
+    const metadata = this._endingConfig?.endings?.find(ending => ending?.id === endingId);
+    if (!metadata) {
+      this._showScreenTip?.(`结局元数据缺失：${endingId}`, { title: '演出不可用' });
+      return false;
+    }
+    this.endingPresentationView.open({
+      snapshot: { endingId, endingSnapshotId: `endingSnapshot.direct.${endingId}` },
+      ending: metadata,
+      reviewLines: Array.isArray(reviewLines) ? reviewLines : []
+    });
+    if (checkpointId) {
+      try {
+        await this.requestAutoSave({
+          reason: 'checkpoint', checkpointId, sceneId: this.currentSceneId
+        });
+      } catch (error) {
+        console.warn('[S11S14SceneFlow] 结局检查点写入失败', error?.message || error);
+      }
+    }
+    return true;
   },
 
   _prepareS13Settlement(mode) {
