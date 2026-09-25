@@ -3880,7 +3880,7 @@
             "completedPath": "s01Survival.firstWolfSpotted",
             "definitionId": "story.s01.firstWolfSpotted",
             "firstWolfCount": 1,
-            "gte": 3,
+            "gte": 1,
             "operation": "commitStoryWhenReady",
             "storyPath": "s01Survival.campfireRefuelCount"
           },
@@ -4273,11 +4273,11 @@
         }
       ],
       "id": "trg_s02_prologue",
-      "name": "S01剧情完成后：山道昏倒·张角抉择",
-      "once": true,
       "if": {
         "flag": "story.s01Completed"
       },
+      "name": "S01剧情完成后：山道昏倒·张角抉择",
+      "once": true,
       "when": {
         "params": {
           "sceneId": "S02"
@@ -8357,7 +8357,7 @@
               "path": "story.s01Survival.campfireLit"
             },
             {
-              "gte": 3,
+              "gte": 1,
               "path": "story.s01Survival.campfireRefuelCount"
             },
             {
