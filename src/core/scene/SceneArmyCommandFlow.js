@@ -147,7 +147,7 @@ export class SceneArmyCommandFlow {
     else this.system.resetSquadsToEscort();
   }
 
-  /** Tab 按下沿：循环选择 全军→前军→左军→中军→右军→后军（M5，不占武将热键）。 */
+  /** Tab 按下沿：循环选择 武将→全军→前军→左军→中军→右军→后军（含武将，军队无命令时快速切回）。 */
   _handleTabCycle() {
     const input = this.scene.inputManager;
     if (!input?.isKeyPressed) return;

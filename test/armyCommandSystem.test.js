@@ -539,7 +539,7 @@ describe('ArmyCommandSystem M5 简化改造（预设+偶尔覆盖）', () => {
     expect(system.units.get('u1').entity.getComponent('commandState').stance).toBe('escort');
     expect(system.units.get('u1').entity.getComponent('movement').velocity.x).toBe(0);
 
-    // 有武将：远离跟随点 → 朝武将移动
+    // 有武将：远离跟随点 → 朝武将移动（跟随点已外推到最小跟随距离 64，方向仍指向武将侧）
     const commander = makeBody('commander', { x: 300, y: 0 });
     system.setCommanderProvider(() => commander);
     system.units.get('u1').entity.getComponent('transform').position = { x: 0, y: 0 };
@@ -547,7 +547,7 @@ describe('ArmyCommandSystem M5 简化改造（预设+偶尔覆盖）', () => {
     system.updateStances();
     const velocity = system.units.get('u1').entity.getComponent('movement').velocity;
     expect(velocity.x).toBeGreaterThan(0); // 武将在东侧 → 向东跟随
-    expect(velocity.x).toBeCloseTo(94.5); // 90 × 1.05
+    expect(velocity.x).toBeGreaterThan(90); // 外推后 x 分量略低于满速 94.5 但仍以横向为主
   });
 
   it('escort 接战：敌进入攻击范围且未拉离武将 → 站定攻击', () => {
@@ -630,11 +630,12 @@ describe('ArmyCommandSystem M5 简化改造（预设+偶尔覆盖）', () => {
     expect(system.getRescueTarget().carrying).toBe(true);
   });
 
-  it('Tab 循环：cycleSquadSelection 全军→前→左→中→右→后 回绕，不含武将', () => {
+  it('Tab 循环：cycleSquadSelection 含武将（武将→全军→前→左→中→右→后 回绕）', () => {
+    // 用户裁定：军队无命令时可快速切回武将本身
     expect(system.getSelectionSlot()).toBe('commander');
     const sequence = [];
     for (let i = 0; i < 7; i++) sequence.push(system.cycleSquadSelection());
-    expect(sequence).toEqual(['all', 'qian', 'zuo', 'zhong', 'you', 'hou', 'all']);
+    expect(sequence).toEqual(['all', 'qian', 'zuo', 'zhong', 'you', 'hou', 'commander']);
   });
 });
 

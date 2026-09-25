@@ -93,11 +93,13 @@ const STANCE_PROFILES = Object.freeze({
   flee:    { speedMultiplier: 1.5,  aggroRadius: 0,         leashRadius: 0,         engageWhileMove: false }
 });
 
-/** Tab 循环选择序列（M5：武将是默认态不在序列内）。 */
-const SQUAD_SELECTION_CYCLE = Object.freeze(['all', 'qian', 'zuo', 'zhong', 'you', 'hou']);
+/** Tab 循环选择序列（M5，用户裁定含武将：军队无命令时快速切回武将本身）。 */
+const SQUAD_SELECTION_CYCLE = Object.freeze(['commander', 'all', 'qian', 'zuo', 'zhong', 'you', 'hou']);
 
 /** 意图指令的"集结"判定半径：右键点武将附近 = 回归跟随。 */
 const INTENT_REGROUP_RADIUS = 80;
+/** 跟随武将的最小距离（用户裁定 2-3 个身位，不贴身；身位≈士兵碰撞体 24-30px）。 */
+const ESCORT_FOLLOW_MIN_DIST = 64;
 
 /**
  * 特殊命令建造定义（收口后无玩家 HUD 入口）：
@@ -938,7 +940,8 @@ export class ArmyCommandSystem {
     this._stop(entity);
   }
 
-  /** 个人跟随点：武将位置周围按 escort 单位注册序展开的阵型偏移。 */
+  /** 个人跟随点：武将位置周围按 escort 单位注册序展开的阵型偏移，
+   *  并保持最小跟随距离（用户裁定：士兵跟随武将时隔 2-3 个身位，不贴身）。 */
   _escortFollowPoint(entity) {
     const commander = this._getCommander();
     const anchor = commander?.getComponent?.('transform')?.position || { x: 0, y: 0 };
@@ -948,7 +951,17 @@ export class ArmyCommandSystem {
       .map(unit => unit.entity);
     const index = Math.max(0, escorts.indexOf(entity));
     const points = this._formationPoints(anchor, escorts);
-    return points[index] || anchor;
+    const point = points[index] || anchor;
+    const dx = point.x - anchor.x;
+    const dy = point.y - anchor.y;
+    const dist = Math.hypot(dx, dy);
+    if (dist < ESCORT_FOLLOW_MIN_DIST) {
+      // 阵型点贴着武将时沿自身方向外推到最小跟随距离；正中者默认落在武将身后
+      const dirX = dist > 0.01 ? dx / dist : 0;
+      const dirY = dist > 0.01 ? dy / dist : 1;
+      return { x: anchor.x + dirX * ESCORT_FOLLOW_MIN_DIST, y: anchor.y + dirY * ESCORT_FOLLOW_MIN_DIST };
+    }
+    return point;
   }
 
   _moveTowards(entity, target, speedMultiplier = 1) {
