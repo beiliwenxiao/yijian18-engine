@@ -46,6 +46,10 @@ export function createDemoCanonicalDisk() {
     visit(value, path.posix.dirname(file));
   };
   collect('game.project.json');
+  // shards 分片：主文件声明的分片文件一并收集进测试磁盘（collect 以 example/sanguo_zhangjiao 为根）
+  for (const shardPath of Object.values(readJson('example/sanguo_zhangjiao/game.project.json').shards || {})) {
+    collect(shardPath);
+  }
   collect('assets/scenes/S11.json');
   collect('assets/scenes/S12.json');
   collect('assets/scenes/S14.json');
@@ -69,6 +73,10 @@ function resolveDiskJson(disk, relative) {
 
 function buildRepository(disk) {
   const project = resolveDiskJson(disk, 'game.project.json');
+  // shards 分片：主文件声明的分片字段并回完整 project（$ref 解析由 resolveDiskJson 处理）
+  for (const [shardField, shardPath] of Object.entries(project.shards || {})) {
+    project[shardField] = resolveDiskJson(disk, shardPath);
+  }
   const s11 = resolveDiskJson(disk, 'assets/scenes/S11.json');
   const s12 = resolveDiskJson(disk, 'assets/scenes/S12.json');
   const s14 = resolveDiskJson(disk, 'assets/scenes/S14.json');

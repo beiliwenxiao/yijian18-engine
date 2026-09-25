@@ -6,9 +6,11 @@ import { S01S02Coordinator } from '../example/sanguo_zhangjiao/systems/S01S02Sce
 import { compileQuestProject } from '../src/systems/quest/QuestRuntime.js';
 import { CanonicalStateTransactionService } from '../src/systems/CanonicalStateTransactionService.js';
 import { validateTriggerActionParams } from '../src/systems/TriggerCatalog.js';
+import { loadProjectWithShards } from './support/projectFixture.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const readJson = relative => JSON.parse(fs.readFileSync(path.join(ROOT, relative), 'utf8'));
+const project = await loadProjectWithShards();
 
 function createSceneStub({ story = {} } = {}) {
   const tombstones = [];
@@ -132,7 +134,6 @@ describe('S01 首狼群数量旋钮', () => {
 });
 
 describe('首狼出现事务的数据契约（真实 game.project.json）', () => {
-  const project = readJson('example/sanguo_zhangjiao/game.project.json');
   const definition = project.commands.find(command => command.id === 'story.s01.firstWolfSpotted');
   const firstWolfPlacements = readJson('example/sanguo_zhangjiao/assets/scenes/S01.json')
     .layers.flatMap(layer => layer.objects || [])

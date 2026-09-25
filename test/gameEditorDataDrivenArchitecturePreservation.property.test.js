@@ -59,14 +59,16 @@ import { WorldStreamingManager } from '../src/core/WorldStreamingManager.js';
 import { BattleClient } from '../src/integration/BattleClient.js';
 import { LocalMockTransport } from '../src/integration/LocalMockTransport.js';
 import { createJsonRpcRequest } from '../src/integration/JsonRpcProtocol.js';
+import { loadProjectWithShards } from './support/projectFixture.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = relative => fs.readFileSync(path.join(ROOT, relative), 'utf8');
 const readJson = relative => JSON.parse(read(relative));
 const clone = value => structuredClone(value);
+const demoProject = await loadProjectWithShards();
 
 function observeDemoAndWorld() {
-  const project = readJson('example/sanguo_zhangjiao/game.project.json');
+  const project = clone(demoProject);
   const endings = readJson('example/sanguo_zhangjiao/config/endings.json');
   const positions = {};
   for (const region of project.worldMap.regions) {
@@ -414,7 +416,7 @@ async function observeRpcAndIsolation() {
   const replay = await transport.request(createJsonRpcRequest('request-7', 'unknown', { operationId: 'operation-stable' }));
   const conflict = await transport.request(createJsonRpcRequest('request-7', 'unknown', { operationId: 'operation-other' }));
   const networkSource = read('src/network/NetworkManager.js');
-  const project = readJson('example/sanguo_zhangjiao/game.project.json');
+  const project = demoProject;
   return {
     client: { request, result: clientResult },
     localMock: { first, replay, conflict },

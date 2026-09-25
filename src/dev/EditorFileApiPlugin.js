@@ -29,6 +29,7 @@ import { createContentValidator } from '../core/validation/ContentSchemas.js';
 import { CanonicalSceneValidator } from '../core/scene/CanonicalSceneValidation.js';
 import { prepareSharedAtlasTransaction } from './sharedAtlasTransaction.js';
 import { prepareLibraryItemImageTransaction } from './LibraryItemImageTransaction.js';
+import { normalizeShardDeclaration, findShardFieldDuplication } from '../core/projectShards.js';
 
 const JSON_HEADERS = { 'Content-Type': 'application/json; charset=utf-8' };
 
@@ -69,14 +70,16 @@ function canonicalInfo(projectPath) {
   const normalized = normalizeRelative(projectPath);
   if (!normalized.endsWith('/game.project.json')) throw Object.assign(new Error('projectPath 无效'), { statusCode: 400 });
   const root = normalized.slice(0, -'/game.project.json'.length);
-  return { projectPath: normalized, projectRoot: root, sceneRoot: `${root}/assets/scenes/` };
+  return { projectPath: normalized, projectRoot: root, sceneRoot: `${root}/assets/scenes/`, shardRoot: `${root}/project/` };
 }
 
 function isCanonicalPath(filePath, allowedProjects) {
   const normalized = normalizeRelative(filePath);
   return allowedProjects.some(projectPath => {
     const info = canonicalInfo(projectPath);
-    return normalized === info.projectPath || normalized.startsWith(info.sceneRoot);
+    return normalized === info.projectPath
+      || normalized.startsWith(info.sceneRoot)
+      || normalized.startsWith(info.shardRoot);
   });
 }
 
@@ -111,21 +114,57 @@ function validationFailure(errors, message = 'canonical 候选校验失败') {
   return Object.assign(new Error(message), { statusCode: 422, errors });
 }
 
+function parseCanonicalJson(text, source) {
+  try { return JSON.parse(text); } catch (error) {
+    throw validationFailure([{ path: '', category: 'parseFailed', reason: `${source} 无法解析: ${error.message}` }]);
+  }
+}
+
+/** 合并后的 canonical project → 主文件内容（剥离分片字段，保留 shards 声明）。 */
+function canonicalMainFromProject(project, shardEntries) {
+  const shardFields = new Set(shardEntries.map(entry => entry.field));
+  return Object.fromEntries(Object.entries(project).filter(([key]) => !shardFields.has(key)));
+}
+
 function validateCanonicalChangeSet(repoRoot, projectPath, changes) {
   const info = canonicalInfo(projectPath);
-  const projectText = finalContent(repoRoot, changes, info.projectPath);
-  if (projectText == null) throw validationFailure([{ path: '', category: 'missing', reason: '项目文件不得删除' }]);
+  const mainText = finalContent(repoRoot, changes, info.projectPath);
+  if (mainText == null) throw validationFailure([{ path: '', category: 'missing', reason: '项目文件不得删除' }]);
+  const mainProject = parseCanonicalJson(mainText, info.projectPath);
+
+  // shards 分片：声明存在时，schema 校验必须面向「主文件 + 分片」合并后的完整 project
+  //（gameProject schema 中 triggers/quests/dialogues/tutorials/library 为 required）。
+  const shardEntries = normalizeShardDeclaration(mainProject);
+  const shardByPath = new Map(shardEntries.map(entry => [`${info.projectRoot}/${entry.path}`, entry]));
+  let candidateText = mainText;
+  if (shardEntries.length > 0) {
+    const duplication = findShardFieldDuplication(mainProject);
+    if (duplication.length > 0) throw validationFailure([{
+      path: duplication.join(','), category: 'schemaFailed',
+      reason: `分片字段不得同时写入主文件: ${duplication.join(', ')}`
+    }]);
+    const merged = { ...mainProject };
+    for (const [shardPath, entry] of shardByPath) {
+      const shardText = finalContent(repoRoot, changes, shardPath);
+      if (shardText == null) throw validationFailure([{
+        path: `shards.${entry.field}`, category: 'missing', reason: `缺少分片文件 ${shardPath}`
+      }]);
+      merged[entry.field] = parseCanonicalJson(shardText, shardPath);
+    }
+    candidateText = JSON.stringify(merged, null, 2);
+  }
 
   const contentValidator = createContentValidator();
   const pipeline = new CanonicalCandidatePipeline({
     contentValidator,
     ruleValidator: new CandidateRuleValidator({ contentValidator })
   });
-  const projectResult = pipeline.process(projectText, { schemaId: 'gameProject', source: info.projectPath });
+  const projectResult = pipeline.process(candidateText, { schemaId: 'gameProject', source: info.projectPath });
   if (!projectResult.ok) throw validationFailure(projectResult.errors);
   const project = projectResult.value;
+  const canonicalMain = canonicalMainFromProject(project, shardEntries);
   const currentProjectText = fs.readFileSync(path.resolve(repoRoot, info.projectPath), 'utf8');
-  const currentProject = JSON.parse(currentProjectText);
+  const currentProject = parseCanonicalJson(currentProjectText, info.projectPath);
   const projectIds = new Set([
     ...(currentProject.scenes || []).map(scene => scene?.id).filter(Boolean),
     ...(project.scenes || []).map(scene => scene?.id).filter(Boolean)
@@ -136,6 +175,7 @@ function validateCanonicalChangeSet(repoRoot, projectPath, changes) {
     for (const candidate of [change.path || change.to, change.from].filter(Boolean)) {
       const normalized = normalizeRelative(candidate);
       if (normalized === info.projectPath || normalized === `${info.sceneRoot}_scene_order.json`) continue;
+      if (shardByPath.has(normalized)) continue;
       if (!normalized.startsWith(info.sceneRoot) || !normalized.endsWith('.json')) {
         throw Object.assign(new Error(`非当前项目 canonical JSON 路径: ${normalized}`), { statusCode: 403 });
       }
@@ -171,7 +211,8 @@ function validateCanonicalChangeSet(repoRoot, projectPath, changes) {
     if (change.operation === 'delete') return change;
     const target = normalizeRelative(change.path || change.to);
     let value = null;
-    if (target === info.projectPath) value = project;
+    if (target === info.projectPath) value = canonicalMain;
+    else if (shardByPath.has(target)) value = project[shardByPath.get(target).field];
     else if (target === orderPath) value = orderResult.value;
     else if (sceneValues.has(target)) value = sceneValues.get(target);
     return value == null ? change : { ...change, content: `${JSON.stringify(value, null, 2)}\n` };
@@ -182,6 +223,7 @@ export function editorFileAPIPlugin({ repoRoot, allowedProjectPaths = [] } = {})
   const root = path.resolve(repoRoot || '.');
   const projects = allowedProjectPaths.map(normalizeRelative);
   const sceneRoots = projects.map(projectPath => path.resolve(root, canonicalInfo(projectPath).sceneRoot));
+  const shardRoots = projects.map(projectPath => path.resolve(root, canonicalInfo(projectPath).shardRoot));
   const adapter = new AtomicDiskAdapter({ repositoryRoot: root });
   let recovery = null;
 
@@ -200,7 +242,9 @@ export function editorFileAPIPlugin({ repoRoot, allowedProjectPaths = [] } = {})
         const relativePath = normalizeRelative(path.relative(root, absolutePath));
         for (const projectPath of projects) {
           const info = canonicalInfo(projectPath);
-          if (relativePath !== info.projectPath) continue;
+          // 主文件与分片文件都触发项目级热同步
+          const isShardFile = relativePath.startsWith(info.shardRoot) && relativePath.endsWith('.json');
+          if (relativePath !== info.projectPath && !isShardFile) continue;
           return {
             absolutePath,
             relativePath,
@@ -231,10 +275,11 @@ export function editorFileAPIPlugin({ repoRoot, allowedProjectPaths = [] } = {})
         return null;
       };
       // watcher.add() 可能为已有文件补发 add；先记录启动基线，避免服务器启动时误报全部场景。
-      for (const sceneRoot of sceneRoots) {
+      for (const canonicalRoot of [...sceneRoots, ...shardRoots]) {
         try {
-          for (const fileName of fs.readdirSync(sceneRoot)) {
-            const commit = resolveSceneCommit(path.join(sceneRoot, fileName));
+          for (const fileName of fs.readdirSync(canonicalRoot)) {
+            const commit = resolveSceneCommit(path.join(canonicalRoot, fileName))
+              || resolveProjectCommit(path.join(canonicalRoot, fileName));
             if (!commit) continue;
             const stat = fs.statSync(commit.absolutePath);
             if (stat.isFile()) notifiedRevisions.set(commit.relativePath, `${stat.mtimeMs}:${stat.size}`);
@@ -321,7 +366,7 @@ export function editorFileAPIPlugin({ repoRoot, allowedProjectPaths = [] } = {})
       };
       const handleCanonicalAdd = filePath => { notifySceneCommit(filePath, 'add'); };
       const handleCanonicalChange = filePath => { notifySceneCommit(filePath, 'change'); };
-      server.watcher.add(sceneRoots);
+      server.watcher.add([...sceneRoots, ...shardRoots]);
       server.watcher.on('add', handleCanonicalAdd);
       server.watcher.on('change', handleCanonicalChange);
       server.httpServer?.once('close', () => {
@@ -381,10 +426,23 @@ export function editorFileAPIPlugin({ repoRoot, allowedProjectPaths = [] } = {})
                 library: body.library,
                 imageUpdates: body.imageUpdates,
                 canonicalizeProject: candidateProject => {
+                  // 分片工程：候选源自主文件（不含分片字段），校验前先并回磁盘分片内容；
+                  // 候选已携带的字段（如本次的 library）以候选为准，其余从磁盘补齐。
+                  const shardEntries = normalizeShardDeclaration(candidateProject);
+                  let candidateText = `${JSON.stringify(candidateProject, null, 2)}\n`;
+                  if (shardEntries.length > 0) {
+                    const info = canonicalInfo(projectPath);
+                    const merged = { ...candidateProject };
+                    for (const { field, path: shardRel } of shardEntries) {
+                      if (merged[field] !== undefined) continue;
+                      merged[field] = JSON.parse(fs.readFileSync(path.resolve(root, `${info.projectRoot}/${shardRel}`), 'utf8'));
+                    }
+                    candidateText = `${JSON.stringify(merged, null, 2)}\n`;
+                  }
                   const validated = validateCanonicalChangeSet(root, projectPath, [{
                     operation: 'replace',
                     path: projectPath,
-                    content: `${JSON.stringify(candidateProject, null, 2)}\n`
+                    content: candidateText
                   }]);
                   return validated.project;
                 }

@@ -31,7 +31,8 @@ const repoRoot = path.resolve(__dirname, '../../');
 const CANONICAL_PROJECT = 'example/sanguo_zhangjiao/game.project.json';
 
 function copyRuntimeDirsPlugin(outDir) {
-  const dirs = ['assets', 'data', 'config'];
+  // project/ = game.project.json 的 shards 分片目录，与主文件一同随构建拷贝
+  const dirs = ['assets', 'data', 'config', 'project'];
   return {
     name: 'copy-runtime-dirs',
     apply: 'build',

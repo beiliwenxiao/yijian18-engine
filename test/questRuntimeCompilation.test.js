@@ -17,10 +17,11 @@ import {
 import { TaskGraphSystem } from '../src/systems/TaskGraphSystem.js';
 import { QuestTransactionService } from '../src/systems/QuestTransactionService.js';
 import { GameLoader } from '../src/core/GameLoader.js';
+import { loadProjectWithShards } from './support/projectFixture.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const readJson = relative => JSON.parse(fs.readFileSync(path.join(ROOT, relative), 'utf8'));
-const project = readJson('example/sanguo_zhangjiao/game.project.json');
+const project = await loadProjectWithShards();
 
 const SAMPLE_QUEST = {
   id: 'quest.test.survival',

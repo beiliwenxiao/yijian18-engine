@@ -4,10 +4,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { StateTransactionEditor } from './StateTransactionEditor.js';
+import { loadProjectWithShards } from '../test/support/projectFixture.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const readJson = relative => JSON.parse(fs.readFileSync(path.join(ROOT, relative), 'utf8'));
-const project = readJson('example/sanguo_zhangjiao/game.project.json');
+const project = await loadProjectWithShards();
 
 function buildEditor() {
     const container = document.createElement('div');

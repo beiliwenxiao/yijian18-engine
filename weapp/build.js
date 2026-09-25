@@ -145,11 +145,16 @@ for (const { src, dest } of resourceDirs) {
   }
 }
 
-// 复制 game.project.json
+// 复制 game.project.json + project/ shards 分片
 const gpj = resolve(DEMO, 'game.project.json');
 if (existsSync(gpj)) {
   cpSync(gpj, resolve(assetsDir, 'game.project.json'));
   console.log('✔ 复制: game.project.json');
+}
+const shardsDir = resolve(DEMO, 'project');
+if (existsSync(shardsDir)) {
+  cpSync(shardsDir, resolve(assetsDir, 'project'), { recursive: true, force: true });
+  console.log('✔ 复制: project/ (shards)');
 }
 
 // ─── Step 3: 完成 ────────────────────────────────────────────

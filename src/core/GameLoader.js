@@ -11,6 +11,7 @@
  ************************************************************/
 
 import { Blackboard } from './Blackboard.js';
+import { mergeShardedProject } from './projectShards.js';
 import { ProgressionGraphSystem } from '../systems/progression/ProgressionGraphSystem.js';
 import { ProgressionProfile } from '../systems/progression/ProgressionProfile.js';
 import { SkillRegistry } from '../systems/ability/SkillRegistry.js';
@@ -263,9 +264,11 @@ export class GameLoader {
     const baseDir = url.substring(0, url.lastIndexOf('/') + 1);
     this._baseDir = baseDir;
     const proj = await this._loadJson(url);
-    await this._resolveRefs(proj, baseDir);
-    if (generation !== this._loadGeneration) return proj;
-    return this.assemble(proj, deps);
+    // shards 分片：主文件声明 { shards: { 字段: 相对路径 } } 时加载分片并浅合并；无声明走原单体加载
+    const project = await mergeShardedProject(proj, ref => this._loadJson(baseDir + ref));
+    await this._resolveRefs(project, baseDir);
+    if (generation !== this._loadGeneration) return project;
+    return this.assemble(project, deps);
   }
 
   _buildProgressionDraft(project, deps = {}) {

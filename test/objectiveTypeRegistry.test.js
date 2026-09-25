@@ -14,10 +14,11 @@ import {
 } from '../src/systems/quest/ObjectiveTypeRegistry.js';
 import { getTriggerEventDescriptor } from '../src/systems/TriggerCatalog.js';
 import { compileQuestProject } from '../src/systems/quest/QuestRuntime.js';
+import { loadProjectWithShards } from './support/projectFixture.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const readJson = relative => JSON.parse(fs.readFileSync(path.join(ROOT, relative), 'utf8'));
-const project = readJson('example/sanguo_zhangjiao/game.project.json');
+const project = await loadProjectWithShards();
 // 阶段③迁移：S01 任务图定义由 quests[] 编译产物提供
 const compiledTaskGraphs = compileQuestProject(project).taskGraphs;
 

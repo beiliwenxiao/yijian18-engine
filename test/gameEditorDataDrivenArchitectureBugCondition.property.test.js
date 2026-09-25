@@ -109,7 +109,13 @@ function loadCanonicalEditorAggregate() {
     }
     return Object.fromEntries(Object.entries(value).map(([key, child]) => [key, resolveRefs(child)]));
   };
-  const project = resolveRefs(JSON.parse(fs.readFileSync(path.join(root, 'game.project.json'), 'utf8')));
+  const mainProject = JSON.parse(fs.readFileSync(path.join(root, 'game.project.json'), 'utf8'));
+  // shards 分片：主文件声明的分片字段并回完整 project（$ref 解析前）
+  const projectSource = { ...mainProject };
+  for (const [shardField, shardPath] of Object.entries(mainProject.shards || {})) {
+    projectSource[shardField] = JSON.parse(fs.readFileSync(path.join(root, shardPath), 'utf8'));
+  }
+  const project = resolveRefs(projectSource);
   const sceneOrder = JSON.parse(fs.readFileSync(path.join(root, 'assets/scenes/_scene_order.json'), 'utf8'));
   const scenes = Object.fromEntries(project.scenes.map(({ id }) => [
     id,

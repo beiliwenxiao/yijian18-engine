@@ -33,6 +33,7 @@
 
 import { BaseGameScene } from './BaseGameScene.js';
 import { Scene1Terrain } from './Scene1Terrain.js';
+import { mergeShardedProject } from '../../../src/core/projectShards.js';
 import { AtlasRegistry } from '../../../src/core/scene/AtlasRegistry.js';
 import sharedAtlasConfig from '../config/atlases.json';
 import { SceneStreamingRuntime } from '../../../src/core/scene/SceneStreamingRuntime.js';
@@ -638,7 +639,13 @@ export class DataDrivenPrologueScene extends BaseGameScene {
         signal: controller?.signal
       });
       if (!response.ok) throw new Error(`读取项目内容失败: HTTP ${response.status}`);
-      const project = await response.json();
+      // shards 分片：library 等大字段存分片文件，读取后浅合并再供火堆配置消费
+      let project = await response.json();
+      project = await mergeShardedProject(project, async rel => {
+        const shardResponse = await fetch(rel, { cache: 'no-store', signal: controller?.signal });
+        if (!shardResponse.ok) throw new Error(`读取分片失败: ${rel} HTTP ${shardResponse.status}`);
+        return shardResponse.json();
+      });
       /* 火堆项目 HMR 排障日志：
       console.info('[DDScene][CampfireProjectHotSync] project-readback', {
         revision,

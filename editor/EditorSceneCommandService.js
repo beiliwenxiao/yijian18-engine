@@ -17,6 +17,7 @@ import { CandidateRuleValidator } from '../src/core/validation/CandidateRuleVali
 import { createContentValidator } from '../src/core/validation/ContentSchemas.js';
 import { createStandardConfigConsumptionRegistry } from '../src/core/ConfigConsumptionRegistry.js';
 import { commitCanonicalChanges } from './CanonicalTransactionClient.js';
+import { splitShardedProject } from '../src/core/projectShards.js';
 
 const COMMANDS = new Set(['create', 'update', 'rename', 'delete', 'import', 'save']);
 const SCALAR_SCENE_REFS = new Set([
@@ -36,9 +37,23 @@ function projectInfo(projectPath) {
   const root = normalized.slice(0, -'/game.project.json'.length);
   return {
     projectPath: normalized,
+    projectRoot: root,
     sceneRoot: `${root}/assets/scenes/`,
     orderPath: `${root}/assets/scenes/_scene_order.json`
   };
+}
+
+/** 项目写入统一入口：shards 分片工程按声明路由主文件与分片文件；无声明退化为单文件替换。 */
+function projectChanges(info, project) {
+  const { main, shards } = splitShardedProject(project);
+  return [
+    { operation: 'replace', path: info.projectPath, content: json(main) },
+    ...Object.entries(shards).map(([shardRel, value]) => ({
+      operation: 'replace',
+      path: `${info.projectRoot}/${shardRel}`,
+      content: json(value)
+    }))
+  ];
 }
 
 function validationError(path, reason, category = 'referenceFailed', code = 'invalidReference') {
@@ -298,7 +313,7 @@ export class EditorSceneCommandService {
     const changes = [];
     if (command === 'save' && changedRootPaths.size > 0) {
       if ([...changedRootPaths].some(path => path === 'project' || path.startsWith('project.'))) {
-        changes.push({ operation: 'replace', path: info.projectPath, content: json(canonical.project) });
+        changes.push(...projectChanges(info, canonical.project));
       }
       if ([...changedRootPaths].some(path => path === 'sceneOrder' || path.startsWith('sceneOrder.'))) {
         changes.push({ operation: 'replace', path: info.orderPath, content: json(canonical.sceneOrder) });
@@ -313,7 +328,7 @@ export class EditorSceneCommandService {
       return changes;
     }
     if (['create', 'import', 'rename', 'delete'].includes(command)) {
-      changes.push({ operation: 'replace', path: info.projectPath, content: json(canonical.project) });
+      changes.push(...projectChanges(info, canonical.project));
       changes.push({ operation: 'replace', path: info.orderPath, content: json(canonical.sceneOrder) });
     }
     if (command === 'create' || command === 'import') {
@@ -336,7 +351,7 @@ export class EditorSceneCommandService {
         changes.push({ operation: 'replace', path: info.orderPath, content: json(canonical.sceneOrder) });
       }
       if (sceneId) {
-        changes.push({ operation: 'replace', path: info.projectPath, content: json(canonical.project) });
+        changes.push(...projectChanges(info, canonical.project));
         changes.push({
           operation: 'replace',
           path: normalizePath(payload.sourceUri || `${info.sceneRoot}${sceneId}.json`),

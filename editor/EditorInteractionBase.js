@@ -19,6 +19,7 @@ import { EditorDataManager, loadBuiltinGamesConfig, loadScenePresetsConfig, load
         import { EditorSceneCommandService } from './EditorSceneCommandService.js';
         import { SharedAtlasCommandService } from './SharedAtlasCommandService.js';
         import { LocalStorageSceneCacheAdapter } from '../src/core/scene/CanonicalSceneAdapters.js';
+        import { mergeShardedProject } from '../src/core/projectShards.js';
         
         
 export class EditorInteractionBase {
@@ -296,6 +297,18 @@ export class EditorInteractionBase {
                         const response = await fetch('/api/read-file?path=' + encodeURIComponent(projectPath));
                         const data = response.ok ? await response.json() : null;
                         project = data?.ok && data.content ? JSON.parse(data.content) : null;
+                        if (project) {
+                            // shards 分片：读取分片并浅合并（triggers/tutorials 等大字段存分片文件）
+                            const root = projectPath.slice(0, -'/game.project.json'.length);
+                            project = await mergeShardedProject(project, async rel => {
+                                const shardResponse = await fetch('/api/read-file?path=' + encodeURIComponent(`${root}/${rel}`));
+                                const shardData = shardResponse.ok ? await shardResponse.json() : null;
+                                if (!shardData?.ok || typeof shardData.content !== 'string') {
+                                    throw new Error(shardData?.error || `无法读取分片文件: ${rel}`);
+                                }
+                                return JSON.parse(shardData.content);
+                            });
+                        }
                     }
                     this._projectDefinitions = {
                         triggers: Array.isArray(project?.triggers) ? project.triggers : [],

@@ -63,6 +63,7 @@
 
     <script type="module">
         import { EditorPageContext, renderEditorNav } from './EditorShared.js';
+        import { mergeShardedProject } from '../src/core/projectShards.js';
 
         (async () => {
             // 被「物体写法」弹窗 iframe 内嵌时：跳过顶部导航，避免弹窗内再嵌套导航
@@ -101,7 +102,18 @@
                 const response = await fetch('/api/read-file?path=' + encodeURIComponent(projectPath));
                 const data = response.ok ? await response.json() : null;
                 const project = data?.ok && data.content ? JSON.parse(data.content) : null;
-                const library = project?.library || {};
+                // shards 分片：library 存分片文件，读取后浅合并
+                const mergedProject = project
+                  ? await mergeShardedProject(project, async rel => {
+                      const shardResponse = await fetch('/api/read-file?path=' + encodeURIComponent(`${projectPath.slice(0, -'/game.project.json'.length)}/${rel}`));
+                      const shardData = shardResponse.ok ? await shardResponse.json() : null;
+                      if (!shardData?.ok || typeof shardData.content !== 'string') {
+                        throw new Error(shardData?.error || `无法读取分片文件: ${rel}`);
+                      }
+                      return JSON.parse(shardData.content);
+                    })
+                  : null;
+                const library = mergedProject?.library || {};
                 for (const def of CATEGORY_DEFS) {
                     const arr = Array.isArray(library[def.key]) ? library[def.key] : [];
                     for (const entry of arr) {

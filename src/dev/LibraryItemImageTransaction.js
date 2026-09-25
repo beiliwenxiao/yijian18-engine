@@ -23,6 +23,7 @@
 import fs from 'fs';
 import path from 'path';
 import { createContentValidator } from '../core/validation/ContentSchemas.js';
+import { splitShardedProject } from '../core/projectShards.js';
 
 const MAX_IMPORTED_PNG_BYTES = 15 * 1024 * 1024;
 const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
@@ -203,11 +204,21 @@ export function prepareLibraryItemImageTransaction({
     throw failure('更新后的 Asset Manifest 校验失败', manifestValidation.errors);
   }
 
+  // shards 分片工程：主文件与分片文件在同一事务中按声明路由，保持单一数据源
+  const { main, shards } = splitShardedProject(project);
+  const projectChanges = [
+    { operation: 'replace', path: projectPath, content: json(main) },
+    ...Object.entries(shards).map(([shardRel, value]) => ({
+      operation: 'replace',
+      path: `${projectRoot}/${shardRel}`,
+      content: json(value)
+    }))
+  ];
   return {
     project,
     manifest,
     changes: [
-      { operation: 'replace', path: projectPath, content: json(project) },
+      ...projectChanges,
       { operation: 'replace', path: manifestPath, content: json(manifest) },
       ...imageChanges
     ]

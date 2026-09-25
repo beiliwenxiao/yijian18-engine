@@ -10,6 +10,7 @@ import { EditorSceneCommandService } from './EditorSceneCommandService.js';
 import { SharedAtlasCommandService } from './SharedAtlasCommandService.js';
 import { LocalStorageSceneCacheAdapter } from '../src/core/scene/CanonicalSceneAdapters.js';
 import { InputHints } from '../src/core/input/InputHints.js';
+import { mergeShardedProject } from '../src/core/projectShards.js';
 
 // 页面注册表：页面 ID → HTML 文件名
 export const EDITOR_PAGES = Object.freeze({
@@ -377,13 +378,15 @@ export class EditorPageContext {
   async _loadCanonicalProjectAggregate(projectPath) {
     const project = await this._readCanonicalJson(projectPath);
     const root = projectPath.slice(0, -'/game.project.json'.length);
+    // shards 分片：主文件声明 { shards: { 字段: 相对路径 } } 时读取分片并浅合并；无声明走原单文件
+    const merged = await mergeShardedProject(project, rel => this._readCanonicalJson(`${root}/${rel}`));
     const sceneRoot = `${root}/assets/scenes/`;
     const sceneOrder = await this._readCanonicalJson(`${sceneRoot}_scene_order.json`);
     const scenes = {};
-    await Promise.all((project.scenes || []).map(async entry => {
+    await Promise.all((merged.scenes || []).map(async entry => {
       scenes[entry.id] = await this._readCanonicalJson(`${sceneRoot}${entry.id}.json`);
     }));
-    return { project, sceneOrder, scenes };
+    return { project: merged, sceneOrder, scenes };
   }
 
   async _ensureCanonicalProject(game) {
@@ -442,6 +445,18 @@ export class EditorPageContext {
         const response = await fetch('/api/read-file?path=' + encodeURIComponent(projectPath));
         const data = response.ok ? await response.json() : null;
         project = data?.ok && data.content ? JSON.parse(data.content) : null;
+        if (project) {
+          // shards 分片：读取分片并浅合并（triggers/tutorials 等大字段存分片文件）
+          const root = projectPath.slice(0, -'/game.project.json'.length);
+          project = await mergeShardedProject(project, async rel => {
+            const shardResponse = await fetch('/api/read-file?path=' + encodeURIComponent(`${root}/${rel}`));
+            const shardData = shardResponse.ok ? await shardResponse.json() : null;
+            if (!shardData?.ok || typeof shardData.content !== 'string') {
+              throw new Error(shardData?.error || `无法读取分片文件: ${rel}`);
+            }
+            return JSON.parse(shardData.content);
+          });
+        }
       }
       this._projectDefinitions = {
         triggers: Array.isArray(project?.triggers) ? project.triggers : [],
