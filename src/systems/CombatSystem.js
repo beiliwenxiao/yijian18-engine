@@ -152,6 +152,28 @@ export class CombatSystem {
     console.log('CombatSystem: Initialized');
   }
 
+  // ── 战斗结算随机（§13 约定6）──
+  // 注入 combatRng 时走确定性序列（联网/回放/存档可复现）；
+  // 未注入时退化为 Math.random，与旧单机行为统计等价。
+  // 仅玩法结果（伤害/掉落）经此访问；纯视觉粒子随机不归此类。
+
+  /** [0,1) 浮点随机 */
+  _rng() {
+    return this.combatRng ? this.combatRng.next() : Math.random();
+  }
+
+  /** [min,max] 闭区间整数随机 */
+  _rngInt(min, max) {
+    if (this.combatRng) return this.combatRng.int(min, max);
+    if (max < min) [min, max] = [max, min];
+    return min + Math.floor(Math.random() * (max - min + 1));
+  }
+
+  /** 以 p 概率返回 true（p∈[0,1]） */
+  _rngChance(p) {
+    return this._rng() < p;
+  }
+
   /** 降频日志：同 key 在 interval 内只 console.log 一次，其余丢弃。 */
   _logThrottled(message, key = 'global') {
     const now = Date.now();
@@ -1406,7 +1428,7 @@ export class CombatSystem {
       
       if (isLowSpeed) {
         // 低速攻击（< 10 km/h）：伤害为0-5随机值
-        finalDamage = Math.floor(Math.random() * 6); // 0-5
+        finalDamage = this._rngInt(0, 5); // 0-5
         console.log(`低速攻击 (${speedKmh.toFixed(1)} km/h)，伤害: ${finalDamage}`);
       } else {
         // 正常速度攻击（≥10 km/h）：计算正常伤害
@@ -1914,7 +1936,7 @@ export class CombatSystem {
         
         // 如果在路径宽度内，造成路径伤害（传入技能名称+路径标记）
         if (perpDist <= pathWidth) {
-          const pathDamage = Math.floor(Math.random() * (skill.damageMax - skill.damageMin + 1)) + skill.damageMin;
+          const pathDamage = this._rngInt(skill.damageMin, skill.damageMax);
           this.applyDamage(enemy, pathDamage, null, `${skill.name}[路径]`);
         }
       }
@@ -1962,9 +1984,7 @@ export class CombatSystem {
           
           // 对每个敌人造成溅射伤害（传入技能名称+溅射标记）
           for (const enemy of enemies) {
-            const splashDamage = Math.floor(
-              Math.random() * (skill.splashDamageMax - skill.splashDamageMin + 1)
-            ) + skill.splashDamageMin;
+            const splashDamage = this._rngInt(skill.splashDamageMin, skill.splashDamageMax);
             
             this.applyDamage(enemy, splashDamage, null, `${skill.name}[溅射]`);
           }
@@ -2257,12 +2277,12 @@ export class CombatSystem {
       for (const entry of entity.lootTable) {
         const chance = Math.min(1, Math.max(0, Number(entry?.chance) || 0));
         const itemId = entry?.itemId || entry?.id;
-        if (!itemId || Math.random() >= chance) continue;
+        if (!itemId || !this._rngChance(chance)) continue;
         const parsedMin = Number(entry?.minQuantity);
         const min = Math.max(0, Math.floor(Number.isFinite(parsedMin) ? parsedMin : 1));
         const parsedMax = Number(entry?.maxQuantity);
         const max = Math.max(min, Math.floor(Number.isFinite(parsedMax) ? parsedMax : min));
-        const quantity = min + Math.floor(Math.random() * (max - min + 1));
+        const quantity = this._rngInt(min, max);
         if (quantity <= 0) continue;
         loot.push({
           itemId,
@@ -2275,12 +2295,12 @@ export class CombatSystem {
 
     // 旧场景兜底：30% 不掉落；70% 掉落红瓶/蓝瓶
     const loot = [];
-    if (Math.random() < 0.3) {
+    if (this._rngChance(0.3)) {
       return loot;
     }
 
     // 70%概率掉落，其中50%红瓶，50%蓝瓶
-    if (Math.random() < 0.5) {
+    if (this._rngChance(0.5)) {
       loot.push({
         type: 'health_potion',
         name: '生命药水',
@@ -2295,11 +2315,11 @@ export class CombatSystem {
     }
 
     // 10%概率额外掉落第二瓶
-    if (Math.random() < 0.1) {
+    if (this._rngChance(0.1)) {
       loot.push({
-        type: Math.random() < 0.5 ? 'health_potion' : 'mana_potion',
-        name: Math.random() < 0.5 ? '生命药水' : '魔法药水',
-        value: Math.random() < 0.5 ? 50 : 30
+        type: this._rngChance(0.5) ? 'health_potion' : 'mana_potion',
+        name: this._rngChance(0.5) ? '生命药水' : '魔法药水',
+        value: this._rngChance(0.5) ? 50 : 30
       });
     }
 
@@ -3025,7 +3045,7 @@ export class CombatSystem {
           let damageText;
           
           if (playerMultiplier === null) {
-            finalDamage = Math.floor(Math.random() * 6);
+            finalDamage = this._rngInt(0, 5);
             damageText = `${finalDamage}`;
           } else {
             finalDamage = Math.floor(baseDamage * playerMultiplier);
@@ -3070,7 +3090,7 @@ export class CombatSystem {
           let damageText;
           
           if (enemyMultiplier === null) {
-            finalDamage = Math.floor(Math.random() * 6);
+            finalDamage = this._rngInt(0, 5);
             damageText = `${finalDamage}`;
           } else {
             finalDamage = Math.floor(baseDamage * enemyMultiplier);

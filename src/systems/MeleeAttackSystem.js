@@ -73,6 +73,15 @@ export class MeleeAttackSystem {
   }
 
   /**
+   * 战斗结算随机：复用 CombatSystem 注入的 combatRng，
+   * 保证近战/远程伤害浮动与战斗结算同序列（联网/回放确定性）。
+   * combatSystem 未就绪时退化为 Math.random。
+   */
+  _rng() {
+    return this.combatSystem?._rng?.() ?? Math.random();
+  }
+
+  /**
    * 初始化依赖
    * @param {Object} deps
    * @param {Object} deps.inputManager - 输入管理器
@@ -409,7 +418,7 @@ export class MeleeAttackSystem {
             const dy = ey - e.cy;
             const dist = Math.sqrt(dx * dx + dy * dy);
             if (dist >= sweepRadius - 25) {
-              const finalDamage = Math.max(1, Math.floor(e.damage * (0.8 + Math.random() * 0.4)));
+              const finalDamage = Math.max(1, Math.floor(e.damage * (0.8 + this._rng() * 0.4)));
               this.combatSystem.applyDamage(entity, finalDamage, null, '斩击', {
                 sourceEntity: this.playerEntity,
                 attackKind: 'melee'
@@ -447,7 +456,7 @@ export class MeleeAttackSystem {
             const dist = Math.sqrt(dx * dx + dy * dy);
             
             if (dist <= hitRadius) {
-              const finalDamage = Math.max(1, Math.floor(e.damage * (0.8 + Math.random() * 0.4)));
+              const finalDamage = Math.max(1, Math.floor(e.damage * (0.8 + this._rng() * 0.4)));
               this.combatSystem.applyDamage(entity, finalDamage, null, '远程攻击', {
                 sourceEntity: this.playerEntity,
                 attackKind: 'ranged'

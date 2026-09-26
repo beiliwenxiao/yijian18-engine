@@ -19,11 +19,18 @@
  * 掉落表项
  */
 class LootTableEntry {
-  constructor(itemId, chance, minQuantity = 1, maxQuantity = 1) {
+  constructor(itemId, chance, minQuantity = 1, maxQuantity = 1, rng = null) {
     this.itemId = itemId;
     this.chance = chance; // 掉落概率 (0-1)
     this.minQuantity = minQuantity;
     this.maxQuantity = maxQuantity;
+    // 掉落随机：注入 rng（RNG 实例）时走确定性序列，否则退化为 Math.random
+    this.rng = rng;
+  }
+
+  /** [0,1) 掉落随机 */
+  _rng() {
+    return this.rng ? this.rng.next() : Math.random();
   }
 
   /**
@@ -31,7 +38,7 @@ class LootTableEntry {
    * @returns {boolean}
    */
   shouldDrop() {
-    return Math.random() < this.chance;
+    return this._rng() < this.chance;
   }
 
   /**
@@ -39,6 +46,7 @@ class LootTableEntry {
    * @returns {number}
    */
   getDropQuantity() {
+    if (this.rng) return this.rng.int(this.minQuantity, this.maxQuantity);
     return Math.floor(Math.random() * (this.maxQuantity - this.minQuantity + 1)) + this.minQuantity;
   }
 }
@@ -47,12 +55,13 @@ class LootTableEntry {
  * 掉落表
  */
 class LootTable {
-  constructor(entries = []) {
+  constructor(entries = [], rng = null) {
+    this.rng = rng;
     this.entries = entries.map(entry => {
       if (entry instanceof LootTableEntry) {
         return entry;
       }
-      return new LootTableEntry(entry.itemId, entry.chance, entry.minQuantity, entry.maxQuantity);
+      return new LootTableEntry(entry.itemId, entry.chance, entry.minQuantity, entry.maxQuantity, rng);
     });
   }
 
@@ -64,7 +73,7 @@ class LootTable {
    * @param {number} maxQuantity - 最大数量
    */
   addEntry(itemId, chance, minQuantity = 1, maxQuantity = 1) {
-    this.entries.push(new LootTableEntry(itemId, chance, minQuantity, maxQuantity));
+    this.entries.push(new LootTableEntry(itemId, chance, minQuantity, maxQuantity, this.rng));
   }
 
   /**
@@ -142,9 +151,11 @@ class GroundItem {
  * 掉落系统
  */
 export class LootSystem {
-  constructor(mockDataService) {
+  constructor(mockDataService, rng = null) {
     this.name = 'LootSystem';
     this.mockDataService = mockDataService;
+    // 掉落随机：注入 rng（RNG 实例）时走确定性序列，否则退化为 Math.random
+    this.rng = rng;
     this.groundItems = new Map(); // 地面物品
     this.lootTables = this.initLootTables();
     
@@ -162,7 +173,7 @@ export class LootSystem {
       slime: new LootTable([
         { itemId: 'slime_gel', chance: 0.8, minQuantity: 1, maxQuantity: 3 },
         { itemId: 'health_potion', chance: 0.2, minQuantity: 1, maxQuantity: 1 }
-      ]),
+      ], this.rng),
       
       // 哥布林掉落表
       goblin: new LootTable([
@@ -170,7 +181,7 @@ export class LootSystem {
         { itemId: 'iron_ore', chance: 0.3, minQuantity: 1, maxQuantity: 1 },
         { itemId: 'rusty_sword', chance: 0.1, minQuantity: 1, maxQuantity: 1 },
         { itemId: 'mana_potion', chance: 0.15, minQuantity: 1, maxQuantity: 1 }
-      ]),
+      ], this.rng),
       
       // 骷髅掉落表
       skeleton: new LootTable([
@@ -178,7 +189,7 @@ export class LootSystem {
         { itemId: 'iron_sword', chance: 0.15, minQuantity: 1, maxQuantity: 1 },
         { itemId: 'greater_health_potion', chance: 0.1, minQuantity: 1, maxQuantity: 1 },
         { itemId: 'magic_crystal', chance: 0.05, minQuantity: 1, maxQuantity: 1 }
-      ])
+      ], this.rng)
     };
   }
 

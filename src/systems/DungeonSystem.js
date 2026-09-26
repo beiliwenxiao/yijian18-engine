@@ -50,6 +50,13 @@ export class DungeonReward {
     this.bonusExp = config.bonusExp || 0; // 首次通关奖励
     this.bonusGold = config.bonusGold || 0;
     this.bonusItems = config.bonusItems || [];
+    // 掉落随机：注入 rng（RNG 实例）时走确定性序列，否则退化为 Math.random
+    this.rng = config.rng || null;
+  }
+
+  /** [0,1) 掉落随机，注入 rng 时确定可复现 */
+  _rng() {
+    return this.rng ? this.rng.next() : Math.random();
   }
 
   /**
@@ -66,7 +73,7 @@ export class DungeonReward {
 
     // 计算物品掉落
     for (const item of this.items) {
-      if (Math.random() < item.dropRate) {
+      if (this._rng() < item.dropRate) {
         rewards.items.push({
           itemId: item.itemId,
           quantity: item.quantity || 1

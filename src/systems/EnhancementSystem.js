@@ -83,9 +83,11 @@ export const EnhancementMaterials = {
  * 装备强化系统
  */
 export class EnhancementSystem {
-  constructor(mockDataService) {
+  constructor(mockDataService, rng = null) {
     this.name = 'EnhancementSystem';
     this.mockDataService = mockDataService;
+    // 强化随机：注入 rng（RNG 实例）时走确定性序列，否则退化为 Math.random
+    this.rng = rng;
     
     // 强化配置
     this.config = {
@@ -110,6 +112,11 @@ export class EnhancementSystem {
         15: { bonus: 0.2, effect: 'legendary_aura' }
       }
     };
+  }
+
+  /** [0,1) 强化随机，注入 rng 时确定可复现 */
+  _rng() {
+    return this.rng ? this.rng.next() : Math.random();
   }
 
   /**
@@ -232,7 +239,7 @@ export class EnhancementSystem {
     const destructionRate = this.calculateDestructionRate(equipment, materials);
     
     // 执行强化
-    const random = Math.random();
+    const random = this._rng();
     
     if (random < successRate) {
       // 强化成功

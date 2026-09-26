@@ -19,8 +19,15 @@
  * 装备系统类
  */
 export class EquipmentSystem {
-  constructor() {
+  constructor(rng = null) {
     this.name = 'EquipmentSystem';
+    // 随机装备槽：注入 rng（RNG 实例）时走确定性序列，否则退化为 Math.random
+    this.rng = rng;
+  }
+
+  /** [0,1) 随机，注入 rng 时确定可复现 */
+  _rng() {
+    return this.rng ? this.rng.next() : Math.random();
   }
 
   /**
@@ -283,7 +290,7 @@ export class EquipmentSystem {
     const equippedSlots = Object.keys(allEquipment).filter(slot => allEquipment[slot] !== null);
     if (equippedSlots.length === 0) return;
 
-    const randomSlot = equippedSlots[Math.floor(Math.random() * equippedSlots.length)];
+    const randomSlot = equippedSlots[Math.floor(this._rng() * equippedSlots.length)];
     const equipment = allEquipment[randomSlot];
     
     if (equipment) {

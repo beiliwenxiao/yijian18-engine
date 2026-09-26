@@ -49,6 +49,13 @@ export class EventReward {
     this.gold = config.gold || 0;
     this.items = config.items || [];
     this.participationReward = config.participationReward || null;
+    // 掉落随机：注入 rng（RNG 实例）时走确定性序列，否则退化为 Math.random
+    this.rng = config.rng || null;
+  }
+
+  /** [0,1) 掉落随机 */
+  _rng() {
+    return this.rng ? this.rng.next() : Math.random();
   }
 
   /**
@@ -60,7 +67,7 @@ export class EventReward {
     return {
       exp: Math.floor(this.exp * contribution),
       gold: Math.floor(this.gold * contribution),
-      items: this.items.filter(item => Math.random() < (item.dropRate || 1) * contribution)
+      items: this.items.filter(item => this._rng() < (item.dropRate || 1) * contribution)
     };
   }
 }
@@ -223,6 +230,13 @@ export class EventTemplate {
     this.cooldown = config.cooldown || 600000; // 默认10分钟冷却
     this.lastSpawnTime = 0;
     this.data = config.data || {};
+    // 生成随机：注入 rng（RNG 实例）时走确定性序列，否则退化为 Math.random
+    this.rng = config.rng || null;
+  }
+
+  /** [0,1) 生成随机 */
+  _rng() {
+    return this.rng ? this.rng.next() : Math.random();
   }
 
   /**
@@ -252,7 +266,7 @@ export class EventTemplate {
       }
     }
 
-    return Math.random() < this.spawnChance;
+    return this._rng() < this.spawnChance;
   }
 
   /**
