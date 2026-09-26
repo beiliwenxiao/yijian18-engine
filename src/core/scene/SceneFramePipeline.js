@@ -164,6 +164,10 @@ export class SceneFramePipeline {
     // 更新空间分区网格
     scene.performanceOptimizer.updateSpatialGrid(entities);
 
+    // 小地图按住拖动定位：必须先于近战攻击系统消费左键按住状态，
+    // 否则点/拖小地图会被攻击系统当作“按住左键攻击”（点击卡顿主因）。
+    services.worldInteraction?.handleMinimapDrag?.();
+
     // 更新武器渲染器的鼠标角度（保留用于攻击范围计算）
     if (weaponRenderer && player && inputManager) {
       const mouseWorldPos = inputManager.getMouseWorldPosition(camera);

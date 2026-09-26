@@ -33,7 +33,6 @@ export class SceneWorldInteraction {
       input.markMouseClickHandled();
       return;
     }
-
     if (scene.dialogueSystem?.isDialogueActive()) {
       if (scene.dialogueBox?.visible &&
           scene.dialogueBox.handleMouseClick(mousePos.x, mousePos.y, button)) {
@@ -51,6 +50,43 @@ export class SceneWorldInteraction {
       scene.backpackPanel.hide();
       input.markMouseClickHandled();
     }
+  }
+
+  /**
+   * 小地图按住拖动定位；必须在攻击系统之前每帧调用。
+   * 攻击系统以“左键按住”触发扇区攻击，且 handled 标志帧尾即清——
+   * 若不在帧首消费按住状态并标记 handled，点/拖小地图会连带触发攻击（点击卡顿主因）。
+   * @returns {boolean} 本帧是否由小地图拖动占用输入
+   */
+  handleMinimapDrag() {
+    const scene = this.scene;
+    const minimap = scene.minimap;
+    const input = scene.inputManager;
+    if (!minimap || !input) return false;
+
+    if (minimap.seekDragging) {
+      if (!input.isMouseButtonDown(0) || scene.flightSystem?.isPlayerFlying?.() === true) {
+        minimap.endSeekDrag();
+        return false;
+      }
+      const pos = input.getMousePosition();
+      minimap.moveSeekDrag(pos.x, pos.y);
+      input.markMouseClickHandled();
+      return true;
+    }
+
+    // 起始沿：按下即视为拖动开始（mousedown/touchstart 当帧），提前于攻击系统消费
+    if (!input.isMouseButtonDown(0) || !input.isMouseClicked() || input.isMouseClickHandled()) return false;
+    const pos = input.getMousePosition();
+    if (!(minimap.visible && minimap.containsPoint(pos.x, pos.y))) return false;
+    // 轻功飞行期间相机由飞行系统管理：吞掉点击但不进入定位
+    if (scene.flightSystem?.isPlayerFlying?.() === true) {
+      input.markMouseClickHandled();
+      return true;
+    }
+    minimap.beginSeekDrag(pos.x, pos.y);
+    input.markMouseClickHandled();
+    return true;
   }
 
   handleGatheringCancel(event = {}) {

@@ -188,8 +188,10 @@ export class SceneHudUpdater {
 
     // 小地图点击定位观察中：玩家一旦移动就结束观察，相机平滑回到跟随。
     // 轻功飞行期间不释放（飞行自己管理 externalControl，落地后玩家位移会自然触发释放）。
+    // 按住拖动期间也不释放：拖动拥有相机控制权，松手后恢复“玩家移动→释放”检测。
     const seek = world.cameraSeek;
-    if (seek?.active === true && this.getSystems?.()?.flight?.isPlayerFlying?.() !== true) {
+    if (seek?.active === true && world.minimap?.seekDragging !== true &&
+        this.getSystems?.()?.flight?.isPlayerFlying?.() !== true) {
       const position = playerTransform?.position;
       const playerMoved = !position
         || Math.abs(position.x - seek.playerX) > 1
