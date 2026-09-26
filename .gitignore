@@ -78,3 +78,23 @@ weapp/project.private.config.json
 /*.txt
 # 不需要保存存档
 example/sanguo_zhangjiao/saves/
+
+# ---------- 本地杂物（不入库） ----------
+# 调试/审查临时目录
+.dbg/
+semantic-review/
+waitdel/
+# 临时文件与工具脚本
+tmp_dl_sdk.ps1
+vite.config.js.timestamp-*.mjs
+scripts/migrateRuntimeImages.mjs
+scripts/runJavaScriptAudit.mjs
+# 截图/文档/安装包等本地文件
+BandiView_2-12.jpg
+START_HERE.md
+事件任务教程等的关系.docx
+sanguo_zhangjiao_*.apk
+# 美术源文件（未入库）
+example/sanguo_zhangjiao/art-source/
+# Kiro hook 运行产物
+.kiro/hooks/post-task-knowledge-summary.json
