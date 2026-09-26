@@ -12,6 +12,7 @@
  ************************************************************/
 
 import { IntentType } from '../input/GamepadCombatController.js';
+import { PadButton } from '../input/Xbox360Profile.js';
 import { AbilityRejectReason } from '../../systems/ability/AbilitySystem.js';
 
 const DIAGONAL_UNIT = Math.SQRT1_2;
@@ -368,7 +369,12 @@ export class SceneCombatActions {
     const gamepadSkills = this.getGamepadSkillOptions(combat);
     controller.skillCount = Math.max(1, gamepadSkills.length);
     if (controller.currentSkillIndex >= controller.skillCount) controller.currentSkillIndex = 0;
-    controller.update(gamepad);
+    // 手柄军团指挥态（按住 LB 下达军队命令，§5 三端输入）：肩键让位——RB 不再释放技能/轻功，
+    // LB 不再切换技能；RB 由 SceneArmyCommandFlow 接管为"切换军队命令"，松开 LB 自动恢复。
+    // 直接读 LB 按住状态（与 Flow 同一数据源，时序无关），Flow 标志兜底。
+    const shoulderOverride = gamepad.isButtonDown(PadButton.LB)
+      || scene.armyCommandFlow?.gamepadCommanding === true;
+    controller.update(gamepad, { shoulderOverride });
 
     if (scene.isPlayerActionLocked?.()) {
       this.cancelGamepadCombatInput('player-action-locked');

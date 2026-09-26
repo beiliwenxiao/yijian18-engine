@@ -63,6 +63,8 @@ export class SceneArmyCommandFlow {
     this._prevTabDown = false;
     this._prevInCombat = false;
     this._attached = false;
+    /** 手柄指挥态（按住 LB）：SceneCombatActions 据此让位战斗肩键（RB 技能释放/LB 技能切换）。 */
+    this.gamepadCommanding = false;
   }
 
   /** 系统就绪后调用一次：注册 HUD 点击、帧更新钩子，并接管 MovementSystem 右键。 */
@@ -316,6 +318,7 @@ export class SceneArmyCommandFlow {
       && pressed.has(GAMEPAD_CONFIRM) && !this._prevPadButtons.has(GAMEPAD_CONFIRM)) {
       this.system.applyStance(this.system.pendingStance);
     }
+    this.gamepadCommanding = lbHeld;
     this.hud.gamepadCommanding = lbHeld;
     this._prevPadButtons = pressed;
   }

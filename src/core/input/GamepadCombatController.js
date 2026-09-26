@@ -89,14 +89,18 @@ export class GamepadCombatController {
   /**
    * 每帧更新，读取 GamepadManager 状态产出意图。
    * @param {import('./GamepadManager.js').GamepadManager} gamepad
+   * @param {Object} [options]
+   * @param {boolean} [options.shoulderOverride] 肩键让位（手柄军团指挥态，按住 LB 下达军队命令）：
+   *   RB 技能释放与 LB 技能切换/轮盘暂停，瞬态复位；松开 LB 后自动恢复。RT 攻击 / LT 格挡不受影响。
    */
-  update(gamepad) {
+  update(gamepad, options = {}) {
     this.intents = [];
     if (!gamepad || !gamepad.isConnected()) {
       this.cancelTransientState();
       return;
     }
 
+    const shoulderOverride = options.shoulderOverride === true;
     const rightStick = gamepad.rightStick;
 
     // 更新瞄准方向（右摇杆）；归中时清空，避免 RB 松开沿用上一次摇杆方向。
@@ -108,14 +112,28 @@ export class GamepadCombatController {
     // ---- RT 攻击 ----
     this._processAttack(gamepad, rightStick);
 
-    // ---- RB 释放技能 ----
-    this._processSkillRelease(gamepad, rightStick);
-
-    // ---- LB 切换技能 / 环形轮盘 ----
-    this._processSkillSwitch(gamepad, rightStick);
+    // ---- RB 释放技能 / LB 切换技能（军团指挥态时让位给军队命令）----
+    if (shoulderOverride) {
+      this._cancelShoulderTransientState();
+    } else {
+      this._processSkillRelease(gamepad, rightStick);
+      this._processSkillSwitch(gamepad, rightStick);
+    }
 
     // ---- LT 格挡 ----
     this._processBlock(gamepad);
+  }
+
+  /** 肩键瞬态复位（指挥态接管期间防残留：瞄准/轮盘/按住计数全部清零）。 */
+  _cancelShoulderTransientState() {
+    this._skillHolding = false;
+    this._flightHolding = false;
+    this._flightAiming = false;
+    this._throwHolding = false;
+    this._throwMagnitude = 0;
+    this._wheelOpen = false;
+    this._wheelHoldStart = 0;
+    this.wheelSelectedIndex = -1;
   }
 
   /** 消费意图（场景处理完毕后调用） */
