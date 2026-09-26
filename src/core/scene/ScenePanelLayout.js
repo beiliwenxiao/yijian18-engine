@@ -315,10 +315,26 @@ export class ScenePanelLayout {
       width: minimapSize,
       height: minimapSize,
       scale: 0.1,
-      visible: true
+      visible: true,
+      // 小地图点击定位：相机移动到对应世界位置（视野框随动）；玩家移动后由 SceneHudUpdater 释放并平滑回到跟随
+      onSeekWorldPosition: position => {
+        const camera = scene.camera;
+        if (!camera || scene.flightSystem?.isPlayerFlying?.()) return;
+        const transform = scene.playerEntity?.getComponent?.('transform');
+        const playerPos = transform?.position;
+        scene.cameraSeek = {
+          active: true,
+          playerX: playerPos?.x ?? position.x,
+          playerY: playerPos?.y ?? position.y
+        };
+        camera.externalControl = true;
+        camera.setPosition(position.x, position.y);
+      }
     });
     // 记录右边锚点（resize 后重新定位用）
     scene.minimap._anchorRight = scene.logicalWidth - 10;
+    // 重置点击定位观察状态（UI 重建后旧状态作废，避免释放逻辑悬挂）
+    scene.cameraSeek = null;
     // HUD 组合只同步引用和世界边界；静态缩略图由区域激活提交后显式建立。
     scene._terrainBinding.updateMinimap(scene.minimap);
     if (scene._worldIndex) {
@@ -386,6 +402,8 @@ export class ScenePanelLayout {
         this._applyBottomControlLayout(loader, width, height);
         this._applyHudLayout(loader, width, height);
         this._applyScreenHudLayout(loader, width, height);
+        // 军队操作 HUD：UI 编辑器保存的 armyCommandHud 矩形优先（布局加载晚于装配，这里补一次重排）
+        scene.armyCommandFlow?.onResize(width, height);
       }
     } catch (error) {
       console.warn('BaseGameScene: 应用 UI 布局失败', error);
@@ -510,6 +528,7 @@ export class ScenePanelLayout {
       scene.uiStrategy.layoutPlayerStatusHUD(scene.playerStatusHUD, width, height);
     }
     this._resizeScreenHud(width, height);
+    scene.armyCommandFlow?.onResize(width, height);
   }
 
   syncTouchControlsForBackpack() {

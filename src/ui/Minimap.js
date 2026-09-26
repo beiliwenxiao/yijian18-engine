@@ -51,7 +51,15 @@ export class Minimap extends UIElement {
 
     // 缩放级别：0=最大（本屏+10%），1=中间，2=最小（全部9宫格）
     this._zoomLevel = 1; // 默认中间
-    this._maxZoomLevel = 2;
+
+    // 点击定位观察：点击小地图把视野框与相机移动到对应世界位置（玩家移动后释放）
+    this.onSeekWorldPosition = typeof options.onSeekWorldPosition === 'function'
+      ? options.onSeekWorldPosition
+      : null;
+    this.seekActive = false;
+    this.seekPosition = null;
+    // 定位开始时的玩家位置锚点（SceneHudUpdater 用来判断玩家是否已移动）
+    this.seekPlayerAnchor = null;
 
     // 地形实例列表
     this._terrains = [];
@@ -168,20 +176,13 @@ export class Minimap extends UIElement {
   }
   setViewBounds(bounds) { this.viewBounds = bounds; }
 
-  /** 放大小地图（显示更小范围，更多细节） */
-  zoomIn() {
-    if (this._zoomLevel > 0) {
-      this._zoomLevel--;
-      this._updateViewport();
-    }
-  }
-
-  /** 缩小小地图（显示更大范围） */
-  zoomOut() {
-    if (this._zoomLevel < this._maxZoomLevel) {
-      this._zoomLevel++;
-      this._updateViewport();
-    }
+  /** 结束点击定位观察：小地图窗口回到跟随锚点（由玩家移动等条件触发）。 */
+  clearSeek() {
+    if (!this.seekActive) return;
+    this.seekActive = false;
+    this.seekPosition = null;
+    this.seekPlayerAnchor = null;
+    this._updateViewport();
   }
 
   /** 九宫格加载完成后主动生成一次完整缩略图背景缓存。 */
@@ -322,11 +323,12 @@ export class Minimap extends UIElement {
       minY = this.viewBounds.top - vh * 0.1;
       maxX = this.viewBounds.right + vw * 0.1;
       maxY = this.viewBounds.bottom + vh * 0.1;
-    } else if (this._zoomLevel === 1 && this.playerPosition) {
-      minX = this.playerPosition.x - chunkW * 1.5;
-      minY = this.playerPosition.y - chunkH * 1.5;
-      maxX = this.playerPosition.x + chunkW * 1.5;
-      maxY = this.playerPosition.y + chunkH * 1.5;
+    } else if (this._zoomLevel === 1 && (this.seekActive ? this.seekPosition : this.playerPosition)) {
+      const anchor = this.seekActive ? this.seekPosition : this.playerPosition;
+      minX = anchor.x - chunkW * 1.5;
+      minY = anchor.y - chunkH * 1.5;
+      maxX = anchor.x + chunkW * 1.5;
+      maxY = anchor.y + chunkH * 1.5;
     } else {
       minX = this._fullWorldMinX;
       minY = this._fullWorldMinY;
@@ -453,7 +455,7 @@ export class Minimap extends UIElement {
     }
 
     // 左下角 +/- 缩放按钮
-    // (已移除，改为点击小地图切换缩放)
+    // (已移除；点击小地图改为定位观察)
 
     ctx.restore();
   }
@@ -467,8 +469,9 @@ export class Minimap extends UIElement {
     const top = transform.offsetY + (this.viewBounds.top - this._worldMinY) * transform.scaleY;
     const right = transform.offsetX + (this.viewBounds.right - this._worldMinX) * transform.scaleX;
     const bottom = transform.offsetY + (this.viewBounds.bottom - this._worldMinY) * transform.scaleY;
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
-    ctx.lineWidth = 1;
+    // 定位观察中用金色框（与编辑器大地图小地图一致），平时白色
+    ctx.strokeStyle = this.seekActive ? 'rgba(246, 231, 168, 0.95)' : 'rgba(255, 255, 255, 0.6)';
+    ctx.lineWidth = this.seekActive ? 2 : 1;
     ctx.strokeRect(left, top, right - left, bottom - top);
   }
 
@@ -559,16 +562,31 @@ export class Minimap extends UIElement {
   }
 
   /**
-   * 处理点击事件：点击小地图任意位置，依次切换 3 种缩放级别
+   * 处理点击事件：点击小地图把视野框与相机定位到对应世界位置
+   *（类似编辑器大地图小地图的点击定位），不再切换缩放级别。
    * @param {number} x - 屏幕坐标
    * @param {number} y - 屏幕坐标
    * @returns {boolean} 是否消费了点击
    */
   handleClick(x, y) {
     if (!this.visible || !this.containsPoint(x, y)) return false;
-    // 循环切换：0 → 1 → 2 → 0
-    this._zoomLevel = (this._zoomLevel + 1) % (this._maxZoomLevel + 1);
+    // 地图未就绪或变换无效：吞掉点击，避免穿透到世界移动
+    const transform = this._renderTransform;
+    if (!this._mapCache || !(transform.scaleX > 0) || !(transform.scaleY > 0)) return true;
+    // 点击点限制在地图显示窗口内（padding 区域按最近边缘处理）
+    const px = Math.min(Math.max(x, transform.clipLeft), transform.clipRight);
+    const py = Math.min(Math.max(y, transform.clipTop), transform.clipBottom);
+    const worldX = this._worldMinX + (px - transform.offsetX) / transform.scaleX;
+    const worldY = this._worldMinY + (py - transform.offsetY) / transform.scaleY;
+    const target = {
+      x: Math.min(Math.max(worldX, this._worldMinX), this._worldMaxX),
+      y: Math.min(Math.max(worldY, this._worldMinY), this._worldMaxY)
+    };
+    this.seekPosition = target;
+    this.seekActive = true;
+    this.seekPlayerAnchor = this.playerPosition ? { ...this.playerPosition } : null;
     this._updateViewport();
+    this.onSeekWorldPosition?.({ ...target });
     return true;
   }
 

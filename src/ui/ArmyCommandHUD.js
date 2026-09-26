@@ -21,6 +21,7 @@
  ************************************************************/
 
 import { UIElement } from './UIElement.js';
+import { PlatformProfile } from '../core/PlatformProfile.js';
 import { ARMY_SELECTION_SLOTS, SQUAD_PRESET_OPTIONS } from '../systems/ArmyCommandSystem.js';
 
 const BUTTON_HEIGHT = 38;
@@ -42,17 +43,11 @@ const STANCE_BG = '#233055';
 const STANCE_BG_ACTIVE = '#4a3a1d';
 
 /**
- * Row 2 可见姿态（用户裁定 §11.1.5 收敛）：跟随武将 + 4 战术姿态。
- * 抢救伤员=剧情专用（army.rescue.begin 驱动，不走按钮）；快速逃命=全军紧急按钮（后做）；
- * 救援类操作直接用移动命令把军队派到目标位置即可。
+ * Row 2 可见姿态（用户裁定 §11.1.5 收敛）：跟随武将 + 4 战术姿态，与手柄/移动端命令循环共用
+ * SQUAD_PRESET_OPTIONS 同一集合。抢救伤员=剧情专用（army.rescue.begin 驱动，不走按钮）；
+ * 快速逃命=全军紧急按钮（后做）；救援类操作直接用移动命令把军队派到目标位置即可。
  */
-const VISIBLE_STANCES = Object.freeze([
-  { key: 'escort', label: '跟随武将' },
-  { key: 'assault', label: '全速进攻' },
-  { key: 'hold', label: '原地防守' },
-  { key: 'advance', label: '缓慢推进' },
-  { key: 'retreat', label: '稳步撤退' }
-]);
+const VISIBLE_STANCES = SQUAD_PRESET_OPTIONS;
 
 /** 预设面板的军行顺序（与 ArmyCommandSystem.squadPresets 键一致）。 */
 const PRESET_SQUADS = Object.freeze([
@@ -94,17 +89,38 @@ export class ArmyCommandHUD extends UIElement {
     this._stanceButtons = [];
     this._presetToggle = null;
     this._presetButtons = [];
+    this._prevLeftHeld = false;
     this.presetOpen = false;
     this._pulse = 0;
+    // 手柄指挥态（SceneArmyCommandFlow._handleGamepad 写入）：按住 LB 时状态行显示操作提示
+    this.gamepadCommanding = false;
   }
 
-  /** 由 ScenePanelLayout/装配方在初始化与 resize 时调用；barWidth=底部快捷栏 7 槽总宽，HUD 与其对齐。 */
-  layout(width, height, barWidth = DEFAULT_BAR_WIDTH) {
+  /**
+   * 由 SceneArmyCommandFlow.onResize / UI 布局加载后调用。
+   * @param {number} width - 逻辑画布宽
+   * @param {number} height - 逻辑画布高
+   * @param {number} barWidth - 底部快捷栏 7 槽总宽（默认布局与快捷栏对齐）
+   * @param {Object|null} [editorRect] - UI 编辑器保存的 armyCommandHud 矩形：
+   *   「合并行+编组条」的外包框；姿态/预设面板仍从框顶向上展开，宽度可自由编辑（7 槽自适应均分）
+   */
+  layout(width, height, barWidth = DEFAULT_BAR_WIDTH, editorRect = null) {
     this._barWidth = barWidth;
-    this.x = Math.round((width - barWidth) / 2);
-    this._baseY = height - 196;
+    if (editorRect) {
+      this.x = editorRect.x;
+      this.width = Math.max(100, editorRect.width);
+      this._baseY = editorRect.y + editorRect.height - COMBO_ROW_HEIGHT - BUTTON_HEIGHT;
+    } else if (PlatformProfile.isMobile) {
+      // 安卓底部图标栏形态（§11.1.6 M5-3）：加宽加大触屏按钮，固定在底部虚拟快捷栏上方
+      this.width = Math.min(560, Math.max(320, width - 24));
+      this.x = Math.round((width - this.width) / 2);
+      this._baseY = height - 136;
+    } else {
+      this.x = Math.round((width - barWidth) / 2);
+      this._baseY = height - 196;
+      this.width = barWidth;
+    }
     this.y = this._baseY;
-    this.width = barWidth;
   }
 
   /** @param {CanvasRenderingContext2D} ctx */
@@ -293,6 +309,13 @@ export class ArmyCommandHUD extends UIElement {
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText('命令已达成', statusX, progressY + COMBO_ROW_HEIGHT / 2);
+    } else if (this.gamepadCommanding && showStance) {
+      // 手柄指挥态（按住 LB）：显示手柄操作提示
+      ctx.fillStyle = 'rgba(143, 199, 255, 0.85)';
+      ctx.font = '10px "Microsoft YaHei", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('🎮 指挥中：RB 切换命令 · A 确认', statusX, progressY + COMBO_ROW_HEIGHT / 2);
     } else if (showStance) {
       // M5：选中军未下令时提示语义化操作（发完指令自动回武将）
       ctx.fillStyle = 'rgba(255, 255, 255, 0.55)';

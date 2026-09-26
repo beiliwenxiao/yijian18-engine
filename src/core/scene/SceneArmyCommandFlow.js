@@ -38,13 +38,12 @@
 import { FramePhase } from './GameSceneRuntime.js';
 import { ArmyCommandSystem } from '../../systems/ArmyCommandSystem.js';
 import { ArmyCommandHUD } from '../../ui/ArmyCommandHUD.js';
-import { ARMY_STANCES } from '../../ecs/components/CommandStateComponent.js';
 
 const DRAG_THRESHOLD_PX = 8;
-const GAMEPAD_CYCLE_FORWARD = 4;   // LB：循环切换选择槽位
-const GAMEPAD_CYCLE_BACKWARD = 5;  // RB：循环切换待确认姿态（M2）
-const GAMEPAD_CONFIRM = 0;         // A：应用待确认姿态（M2，仅编组选择激活时）
-const TAB_CYCLE_KEY = 'tab';       // Tab：循环选择 全军→五军（M5，不占武将热键；InputManager keyMap 将 Tab 归一化为小写 'tab'）
+const GAMEPAD_CYCLE_FORWARD = 4;   // LB：按下沿=循环切换编组；按住=指挥态（RB 切命令 / A 确认）
+const GAMEPAD_CYCLE_BACKWARD = 5;  // RB：指挥态下循环切换命令（跟随+4 战术）
+const GAMEPAD_CONFIRM = 0;         // A：指挥态下确认下达待确认命令
+const TAB_CYCLE_KEY = 'tab';       // Tab：循环选择 武将→全军→前→左→中→右→后（与手柄 LB 同序列；InputManager 归一化小写）
 
 export class SceneArmyCommandFlow {
   /**
@@ -116,13 +115,14 @@ export class SceneArmyCommandFlow {
     }
   }
 
-  /** 布局同步（ScenePanelLayout.onResize 调用）。HUD 宽度与底部快捷栏 7 槽对齐。 */
+  /** 布局同步（ScenePanelLayout.onResize / applyUILayout 调用）。默认与底部快捷栏 7 槽对齐；UI 编辑器保存的 armyCommandHud 矩形优先。 */
   onResize(width, height) {
     const bar = this.scene.bottomControlBar;
     const slotSize = bar?.skillSlots?.[0]?.size || 40;
     const count = bar?.skillSlots?.length || 7;
     const barWidth = count * slotSize + (count - 1) * 6;
-    this.hud.layout?.(width, height, barWidth);
+    const editorRect = this.scene.uiLayoutLoader?.getRect?.('armyCommandHud', width, height) || null;
+    this.hud.layout?.(width, height, barWidth, editorRect);
   }
 
   update(deltaTime = 0) {
@@ -286,30 +286,37 @@ export class SceneArmyCommandFlow {
     this.system.clearSelection();
   }
 
+  /**
+   * 手柄指挥（§5/§11.1.6 M5-3「按住 LB 指挥」）：
+   * - LB 按下沿：循环切换编组（武将→全军→前→左→中→右→后，与 Tab 同序列）
+   * - 按住 LB（指挥态）：RB 循环切换命令（跟随+4 战术）→ A 确认下达（成功后自动回武将）
+   * - 左摇杆移动武将不受影响（ARPG 自主权）
+   */
   _handleGamepad() {
     const gamepads = typeof navigator !== 'undefined' && navigator.getGamepads
       ? navigator.getGamepads()
       : [];
     const pad = [...gamepads].find(candidate => candidate?.connected);
-    if (!pad) return;
+    if (!pad) { this.hud.gamepadCommanding = false; return; }
     const pressed = new Set();
     pad.buttons.forEach((button, index) => { if (button?.pressed) pressed.add(index); });
-    // LB：循环切换选择槽位
-    if (pressed.has(GAMEPAD_CYCLE_FORWARD) && !this._prevPadButtons.has(GAMEPAD_CYCLE_FORWARD)) {
-      this.system.cycleSelection(1);
+    const lbHeld = pressed.has(GAMEPAD_CYCLE_FORWARD);
+    const lbWasHeld = this._prevPadButtons.has(GAMEPAD_CYCLE_FORWARD);
+    // LB 按下沿：循环切换选择（含武将，§5 切换单位键）
+    if (lbHeld && !lbWasHeld) {
+      this.system.cycleSquadSelection();
     }
-    // RB：循环切换待确认姿态（仅编组选择激活时）
-    if (this.system.hasSquadSelection()
+    // 按住 LB = 指挥态：RB 循环切换命令（可见 5 姿态）
+    if (lbHeld && this.system.hasSquadSelection()
       && pressed.has(GAMEPAD_CYCLE_BACKWARD) && !this._prevPadButtons.has(GAMEPAD_CYCLE_BACKWARD)) {
-      const stances = ARMY_STANCES.map(entry => entry.key);
-      const current = stances.indexOf(this.system.pendingStance);
-      this.system.pendingStance = stances[(current + 1) % stances.length];
+      this.system.cycleCommandStance(1);
     }
-    // A：应用待确认姿态（仅编组选择激活且有待确认姿态时）
-    if (this.system.hasSquadSelection() && this.system.pendingStance
+    // 按住 LB = 指挥态：A 确认下达待确认命令（成功后自动回武将）
+    if (lbHeld && this.system.hasSquadSelection() && this.system.pendingStance
       && pressed.has(GAMEPAD_CONFIRM) && !this._prevPadButtons.has(GAMEPAD_CONFIRM)) {
       this.system.applyStance(this.system.pendingStance);
     }
+    this.hud.gamepadCommanding = lbHeld;
     this._prevPadButtons = pressed;
   }
 }

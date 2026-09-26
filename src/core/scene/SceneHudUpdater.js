@@ -185,6 +185,26 @@ export class SceneHudUpdater {
     const player = this.getPlayer();
     const playerTransform = player?.getComponent?.('transform');
     if (playerTransform) minimap.setPlayerPosition?.(playerTransform.position);
+
+    // 小地图点击定位观察中：玩家一旦移动就结束观察，相机平滑回到跟随。
+    // 轻功飞行期间不释放（飞行自己管理 externalControl，落地后玩家位移会自然触发释放）。
+    const seek = world.cameraSeek;
+    if (seek?.active === true && this.getSystems?.()?.flight?.isPlayerFlying?.() !== true) {
+      const position = playerTransform?.position;
+      const playerMoved = !position
+        || Math.abs(position.x - seek.playerX) > 1
+        || Math.abs(position.y - seek.playerY) > 1;
+      if (playerMoved) {
+        seek.active = false;
+        const seekCamera = world.camera || world.cameraInstance;
+        if (seekCamera) {
+          seekCamera.externalControl = false;
+          seekCamera.beginSmoothFollow?.(0.12);
+        }
+        minimap.clearSeek?.();
+      }
+    }
+
     this._updateTaskMarkers(minimap, player);
 
     if (!this._enemyPositions || this._shouldUpdate('minimap')) {

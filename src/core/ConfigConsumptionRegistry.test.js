@@ -23,7 +23,13 @@ function loadResolvedDemoProject() {
     }
     return Object.fromEntries(Object.entries(value).map(([key, child]) => [key, resolveRefs(child)]));
   };
-  return resolveRefs(loadJson(path.join(root, 'game.project.json')));
+  const mainProject = loadJson(path.join(root, 'game.project.json'));
+  // shards 分片：主文件声明的分片字段并回完整 project（$ref 解析前）
+  const projectSource = { ...mainProject };
+  for (const [shardField, shardPath] of Object.entries(mainProject.shards || {})) {
+    projectSource[shardField] = loadJson(path.join(root, shardPath));
+  }
+  return resolveRefs(projectSource);
 }
 
 function minimalProject(extra = {}) {

@@ -19,6 +19,20 @@
       "hPct": 0.15139
     },
     {
+      "id": "armyCommandHud",
+      "label": "军队操作",
+      "kind": "panel",
+      "anchor": "topleft",
+      "x": 269,
+      "y": 311,
+      "width": 316,
+      "height": 64,
+      "xPct": 0.21016,
+      "yPct": 0.43194,
+      "wPct": 0.24688,
+      "hPct": 0.08889
+    },
+    {
       "id": "timeWeatherBadge",
       "label": "时间/天气",
       "kind": "panel",

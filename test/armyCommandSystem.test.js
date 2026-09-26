@@ -637,6 +637,23 @@ describe('ArmyCommandSystem M5 简化改造（预设+偶尔覆盖）', () => {
     for (let i = 0; i < 7; i++) sequence.push(system.cycleSquadSelection());
     expect(sequence).toEqual(['all', 'qian', 'zuo', 'zhong', 'you', 'hou', 'commander']);
   });
+
+  it('手柄命令循环：cycleCommandStance 仅编组选中有效，收敛可见 5 姿态（不含 rescue/flee）', () => {
+    // 手柄指挥态 RB 键走此方法（§11.1.6 M5-3 按住 LB 指挥）
+    expect(system.cycleCommandStance()).toBeNull(); // 未选中编组 → 无效
+
+    system.setSelection('all');
+    expect(system.cycleCommandStance()).toBe('escort');           // 首按落在"跟随"
+    expect(system.cycleCommandStance()).toBe('assault');
+    expect(system.cycleCommandStance()).toBe('hold');
+    expect(system.cycleCommandStance()).toBe('advance');
+    expect(system.cycleCommandStance()).toBe('retreat');
+    expect(system.cycleCommandStance()).toBe('escort');           // 回绕
+    expect(system.cycleCommandStance(-1)).toBe('retreat');        // 反向
+    // 姿态循环不得进入剧情/紧急专用姿态
+    const legal = new Set(['escort', 'assault', 'hold', 'advance', 'retreat']);
+    for (let i = 0; i < 10; i++) expect(legal.has(system.cycleCommandStance())).toBe(true);
+  });
 });
 
 describe('ArmyCommandSystem 战前预设（M5-3 per 军默认战术姿态）', () => {

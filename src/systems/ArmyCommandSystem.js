@@ -93,8 +93,8 @@ const STANCE_PROFILES = Object.freeze({
   flee:    { speedMultiplier: 1.5,  aggroRadius: 0,         leashRadius: 0,         engageWhileMove: false }
 });
 
-/** Tab 循环选择序列（M5，用户裁定含武将：军队无命令时快速切回武将本身）。 */
-const SQUAD_SELECTION_CYCLE = Object.freeze(['commander', 'all', 'qian', 'zuo', 'zhong', 'you', 'hou']);
+/** Tab/手柄 循环选择序列（用户裁定含武将：军队无命令时快速切回武将本身；§5 手柄切换单位键同序列）。 */
+export const SQUAD_SELECTION_CYCLE = Object.freeze(['commander', 'all', 'qian', 'zuo', 'zhong', 'you', 'hou']);
 
 /** 意图指令的"集结"判定半径：右键点武将附近 = 回归跟随。 */
 const INTENT_REGROUP_RADIUS = 80;
@@ -412,7 +412,7 @@ export class ArmyCommandSystem {
     return { ok: true, intent, count: units.length };
   }
 
-  /** Tab 循环选择：全军→前军→左军→中军→右军→后军（武将是默认态不在序列内）。 */
+  /** Tab/手柄 循环选择：武将→全军→前军→左军→中军→右军→后军（含武将，军队无命令时快速切回）。 */
   cycleSquadSelection() {
     const index = SQUAD_SELECTION_CYCLE.indexOf(this.selectionSlot);
     const next = SQUAD_SELECTION_CYCLE[(index + 1) % SQUAD_SELECTION_CYCLE.length];
@@ -420,6 +420,23 @@ export class ArmyCommandSystem {
     this.customSelection = null;
     this.pendingStance = null;
     return next;
+  }
+
+  /**
+   * 手柄/移动端命令循环：在玩家可见姿态（跟随+4 战术，§11.1.5 收敛集）间循环待确认姿态。
+   * 仅编组选择激活时有效；rescue/flee 为剧情/紧急专用不进入循环。
+   * @param {number} [step=1] 循环方向
+   * @returns {string|null} 循环后的待确认姿态（未激活时 null）
+   */
+  cycleCommandStance(step = 1) {
+    if (!this.hasSquadSelection()) return null;
+    const keys = SQUAD_PRESET_OPTIONS.map(option => option.key);
+    const index = keys.indexOf(this.pendingStance);
+    // 无待确认姿态时首按落在"跟随"（选中军第一下即可见反馈）
+    this.pendingStance = index === -1
+      ? keys[0]
+      : keys[(index + (step >= 0 ? 1 : keys.length - 1)) % keys.length];
+    return this.pendingStance;
   }
 
   /** 命令达成判定（用户裁定取消倒计时延迟：仅以全部到位为达成）。 */

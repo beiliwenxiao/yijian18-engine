@@ -30,6 +30,9 @@ const TIME_WEATHER_LABELS = Object.freeze({
   heavyRain: '大雨', lightFog: '薄雾', heavyFog: '浓雾', storm: '风暴'
 });
 
+/** 战斗状态徽章：脱战倒数仅剩该秒数内（真正要脱离战斗）才显示倒计时秒数。 */
+const COMBAT_EXIT_SECONDS_SHOWN = 2;
+
 /**
  * SceneRenderPipeline - Canvas 2D 场景渲染编排（框架级）
  *
@@ -448,11 +451,14 @@ export class SceneRenderPipeline {
     ctx.textBaseline = 'middle';
     ctx.font = `bold ${primaryFontSize}px Arial`;
     if (style.secondary === 'combat') {
-      // 敌人仍在附近（timer 恒为满值）只显示「战斗中」；敌人离开范围后（timer < 满值）才显示脱战倒数秒数
+      // 战斗中（敌人仍在附近，timer 恒为满值）只显示「战斗中」，不显示秒数；
+      // 仅当脱战倒数进入最后 2 秒（真正要脱离战斗）才显示倒计时秒数，
+      // 同时避免敌人在检测范围边界徘徊时秒数反复闪现。
       const exitTimer = combatSystem.getCombatExitTimer();
       const exitDelay = combatSystem.getCombatExitDelay?.() ?? exitTimer;
-      const countingDown = exitTimer > 0 && exitTimer < exitDelay;
-      if (countingDown) {
+      const aboutToExit = exitTimer > 0 && exitTimer < exitDelay
+        && exitTimer <= COMBAT_EXIT_SECONDS_SHOWN;
+      if (aboutToExit) {
         ctx.fillText(style.primary, textX, y + height * 0.35 + textOffsetY, maxTextWidth);
         ctx.fillStyle = '#ffff00';
         ctx.font = `${secondaryFontSize}px Arial`;

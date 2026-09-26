@@ -43,6 +43,8 @@ const DEFAULT_COMPONENTS = {
     components: [
       // 右侧 Canvas HUD：Android/PC 共用稳定 ID，运行时按当前平台布局加载。
       { id: 'minimap', label: '小地图', x: 1120, y: 10, width: 150, height: 150, anchor: 'topleft', kind: 'panel' },
+      // 军队操作 HUD：矩形=「合并行+编组条」外包框；姿态/预设面板运行时从框顶向上展开
+      { id: 'armyCommandHud', label: '军队操作', x: 482, y: 524, width: 316, height: 64, anchor: 'topleft', kind: 'panel' },
       { id: 'timeWeatherBadge', label: '时间/天气', x: 960, y: 10, width: 150, height: 54, fontSize: 0, textOffsetX: 0, textOffsetY: 0, anchor: 'topleft', kind: 'panel' },
       { id: 'combatStateBadge', label: '战斗/灵魂状态', x: 1030, y: 72, width: 80, height: 30, fontSize: 0, textOffsetX: 0, textOffsetY: 0, anchor: 'topleft', kind: 'panel' },
       { id: 'taskTracker', label: '任务追踪', x: 18, y: 86, width: 340, height: 150, anchor: 'topleft', kind: 'panel' },
@@ -72,6 +74,8 @@ const DEFAULT_COMPONENTS = {
     canvas: { width: 1280, height: 600 },
     components: [
       { id: 'minimap', label: '小地图', x: 1120, y: 10, width: 150, height: 150, anchor: 'topleft', kind: 'panel' },
+      // 军队操作 HUD：矩形=「合并行+编组条」外包框；姿态/预设面板运行时从框顶向上展开
+      { id: 'armyCommandHud', label: '军队操作', x: 482, y: 404, width: 316, height: 64, anchor: 'topleft', kind: 'panel' },
       { id: 'timeWeatherBadge', label: '时间/天气', x: 960, y: 10, width: 150, height: 54, fontSize: 0, textOffsetX: 0, textOffsetY: 0, anchor: 'topleft', kind: 'panel' },
       { id: 'combatStateBadge', label: '战斗/灵魂状态', x: 1030, y: 72, width: 80, height: 30, fontSize: 0, textOffsetX: 0, textOffsetY: 0, anchor: 'topleft', kind: 'panel' },
       { id: 'taskTracker', label: '任务追踪', x: 18, y: 82, width: 340, height: 140, anchor: 'topleft', kind: 'panel' },

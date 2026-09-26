@@ -401,7 +401,8 @@ export class BaseGameSceneBehaviors extends BaseGameSceneSetup {  /**
         getWorld: () => ({
           terrainBinding: this._terrainBinding,
           region: this._worldRegion,
-          camera: this.camera
+          camera: this.camera,
+          cameraSeek: this.cameraSeek || null
         }),
         getContext: () => this.context,
         getPlayer: () => this.playerEntity,
