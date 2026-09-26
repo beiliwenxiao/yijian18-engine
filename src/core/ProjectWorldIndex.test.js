@@ -6,9 +6,9 @@ import { WorldMapLoadSession } from './scene/WorldMapLoadSession.js';
 import { ChunkNavigator } from './scene/ChunkNavigator.js';
 
 function project({ rows = 2, cols = 3, chunkWidth = 960, chunkHeight = 540,
-  entrySceneId = 'B', grid = [[null, 'A', null], [null, null, 'B']], scenes = ['A', 'B'] } = {}) {
+  entrySceneId = 'B', grid = [[null, 'A', null], [null, null, 'B']], scenes = ['A', 'B'], sceneDimensions = null } = {}) {
   return {
-    scenes: scenes.map(id => ({ id })),
+    scenes: scenes.map(id => ({ id, ...(sceneDimensions || {}) })),
     worldMap: {
       entrySceneId,
       regions: [{ id: 'r1', name: 'R1', rows, cols, chunkWidth, chunkHeight, grid }]
@@ -16,9 +16,10 @@ function project({ rows = 2, cols = 3, chunkWidth = 960, chunkHeight = 540,
   };
 }
 
-function scene(id) {
+function scene(id, dimensions = null) {
   return {
     id,
+    ...(dimensions || {}),
     layers: [{ objects: [{ id: `${id}-spawn`, type: 'spawn', ref: 'player', x: 7, y: 11,
       sortY: 12, points: [[1, 2, 'keep']], path: [{ x: 3, y: 4 }] }] }]
   };
@@ -106,9 +107,10 @@ describe('ProjectWorldIndex consumers and single projection', () => {
   it('WorldMapLoadSession 只加载 index 中可加载单元并保持局部输入不变', async () => {
     const input = project({
       entrySceneId: 'A', scenes: ['A', 'R'],
+      sceneDimensions: { width: 960, height: 540 },
       grid: [[null, 'A', null], [null, null, { sceneId: 'R', reserved: true }]]
     });
-    const localScene = scene('A');
+    const localScene = scene('A', { width: 960, height: 540 });
     const before = structuredClone(localScene);
     const loadedIds = [];
     const session = new WorldMapLoadSession({
@@ -128,7 +130,7 @@ describe('ProjectWorldIndex consumers and single projection', () => {
 
   it('WorldMapLoadSession 从显式入口派生非零 Region', async () => {
     const input = {
-      scenes: [{ id: 'S03' }, { id: 'S04' }],
+      scenes: [{ id: 'S03', width: 800, height: 450 }, { id: 'S04', width: 640, height: 360 }],
       worldMap: {
         entrySceneId: 'S04',
         regions: [
@@ -139,7 +141,7 @@ describe('ProjectWorldIndex consumers and single projection', () => {
     };
     const session = new WorldMapLoadSession({
       loadProject: async () => input,
-      loadScene: async id => scene(id)
+      loadScene: async id => scene(id, id === 'S03' ? { width: 800, height: 450 } : { width: 640, height: 360 })
     });
 
     const result = await session.load({ sceneIds: 'entry' });

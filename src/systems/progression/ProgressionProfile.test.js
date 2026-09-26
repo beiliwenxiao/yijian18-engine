@@ -185,8 +185,16 @@ describe('Profile 驱动 ProgressionGraphSystem', () => {
     expect(shared.allocateNode('hero', 'board', 'n').ok).toBe(true);
     expect(shared.getLedger('hero').getAvailable('growth')).toBe(0);
 
-    // 池已耗尽，两张图都无法继续分配
-    expect(shared.allocateNode('hero', 'w-talent', 'n').reason)
+    // 池已耗尽：未达上限的新节点同样无法分配（共享池拦截）
+    shared.registerGraph({
+      id: 'w-talent-2', mode: GraphMode.CLASS_TALENT, version: 1, startNodes: [],
+      nodes: [{ id: 'm', maxRank: 2, effects: [{ type: 'attribute.modify', target: 'attack', operation: 'add', value: 5 }] }],
+      edges: []
+    });
+    expect(shared.allocateNode('hero', 'w-talent-2', 'm').reason)
       .toBe(AllocationReject.INSUFFICIENT_POINTS);
+    // 已达上限的节点也无法继续分配（等级校验先于点数校验）
+    expect(shared.allocateNode('hero', 'w-talent', 'n').reason)
+      .toBe(AllocationReject.MAX_RANK);
   });
 });

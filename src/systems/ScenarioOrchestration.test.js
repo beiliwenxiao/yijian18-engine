@@ -159,7 +159,12 @@ describe('ActionDescriptorRegistry and CommandAdapter', () => {
     expect(trigger.fire('signal', { operationId: 'op-trigger', actorRef: 'player-1' })).toBe(1);
     await vi.waitFor(() => expect(commandAdapter.execute).toHaveBeenCalledWith(
       expect.objectContaining({ action: 'battle.command' }),
-      expect.objectContaining({ operationId: 'op-trigger', actorRef: 'player-1' })
+      // operationId 身份契约：顶层为引擎派生 ID，调用方传入值保留在 eventParams
+      expect.objectContaining({
+        actorRef: 'player-1',
+        operationId: 'event:trigger:2:0:1',
+        eventParams: expect.objectContaining({ operationId: 'op-trigger', actorRef: 'player-1' })
+      })
     ));
   });
 });
@@ -177,7 +182,8 @@ describe('spatial trigger binding', () => {
     expect(binding).toEqual({
       id: 'binding-1', type: 'trigger', triggerId: 'trigger.entry', sceneId: 'S01',
       selector: { mode: 'id', value: 'npc-1', sceneId: 'S01' },
-      x: 10, y: 20, width: 30, height: 40, radius: 50, prompt: '{interact}触发'
+      x: 10, y: 20, width: 30, height: 40, radius: 50, prompt: '{interact}触发',
+      flowGroupId: '', sceneEventId: ''
     });
     expect(Object.isFrozen(binding)).toBe(true);
     expect(binding).not.toHaveProperty('target');

@@ -205,8 +205,9 @@ describe('TriggerSystem action-chain state machine', () => {
     expect(trigger.hasFiredOnce('chain')).toBe(false);
     expect(trigger.serialize().cooldowns).toEqual({});
     expect(events).toHaveLength(1);
+    // operationId 身份契约：客户端传入的 operationId 不被信任，引擎派生 `event:trigger:{revision}:{ms}:{seq}`。
     expect(events[0]).toMatchObject({
-      type: 'triggerFailed', operationId: 'trigger-op',
+      type: 'triggerFailed', operationId: 'event:trigger:7:0:1',
       stateType: 'triggerExecution', payload: { status: 'failed', code: expectedCode }
     });
     expect(JSON.stringify(events[0].payload)).not.toMatch(/fingerprint|executionContext|stack|cause|seed/);
@@ -240,22 +241,24 @@ describe('TriggerSystem action-chain state machine', () => {
     });
 
     trigger.fire('signal', { operationId: 'failure-index-op', token: 'signal-secret' });
+    // 引擎派生身份：revision=12、默认 clock=0、首次触发 seq=1。
+    const derivedOperationId = 'event:trigger:12:0:1';
     await expect(trigger.waitForIdle()).rejects.toMatchObject({
       name: 'TriggerExecutionError', code: 'unknownAction', actionIndex: 1,
-      operationId: 'failure-index-op', cause: { code: 'unknownAction' }
+      operationId: derivedOperationId, cause: { code: 'unknownAction' }
     });
 
     const record = trigger.getExecution('actual-failure-index');
     const envelope = diagnostics.recordTriggerFailure.mock.calls[0][0];
     expect(third).not.toHaveBeenCalled();
-    expect(record).toMatchObject({ status: 'failed', actionIndex: 1, operationId: 'failure-index-op' });
+    expect(record).toMatchObject({ status: 'failed', actionIndex: 1, operationId: derivedOperationId });
     expect(record.fingerprint).toMatch(/^sha256-[0-9a-f]{64}$/);
     expect(JSON.stringify(trigger.serialize())).not.toMatch(/private-value|signal-secret|secret-token/);
     expect(envelope).toMatchObject({
-      triggerId: 'actual-failure-index', operationId: 'failure-index-op',
+      triggerId: 'actual-failure-index', operationId: derivedOperationId,
       definitionRevision: 12, phase: 'resolveAction', reason: 'unknownAction',
       action: { id: 'missing', index: 1 },
-      replay: { fingerprint: expect.any(String), token: '12:actual-failure-index:failure-index-op:1' }
+      replay: { fingerprint: expect.any(String), token: `12:actual-failure-index:${derivedOperationId}:1` }
     });
     expect(actionFailures).toEqual([envelope]);
     expect(JSON.stringify(envelope)).not.toContain('secret-token');
@@ -263,7 +266,7 @@ describe('TriggerSystem action-chain state machine', () => {
     expect(JSON.stringify(envelope)).not.toContain('private-value');
     expect(events).toHaveLength(1);
     expect(events[0]).toMatchObject({
-      type: 'triggerFailed', operationId: 'failure-index-op',
+      type: 'triggerFailed', operationId: derivedOperationId,
       payload: {
         triggerId: 'actual-failure-index', actionIndex: 1, failure: envelope
       }
@@ -307,7 +310,6 @@ describe('TriggerSystem action-chain state machine', () => {
     const trigger = new TriggerSystem({
       monotonicClock: clock,
       definitionRevision: 'revision-4',
-      operationIdFactory: () => 'stable-trigger-operation',
       actionDescriptorRegistry: descriptorRegistry(['first', 'second']),
       commandAdapter: {
         execute: async (action, context) => {
@@ -322,19 +324,21 @@ describe('TriggerSystem action-chain state machine', () => {
       do: [{ action: 'first' }, { action: 'second' }]
     });
 
-    expect(trigger.fire('signal')).toBe(1);
+    expect(trigger.fire('signal', { operationId: 'client-operation' })).toBe(1);
     expect(trigger.hasFiredOnce('successful')).toBe(false);
     await trigger.waitForIdle();
 
+    // operationId 由引擎派生（revision、clock=100→100000ms、seq=1），客户端传入值不被信任；
+    // 两次 action 触发分别生成 `:action:0` / `:action:1` 后缀的不同 id。
     expect(calls).toEqual([
-      { action: 'first', operationId: 'stable-trigger-operation:action:0' },
-      { action: 'second', operationId: 'stable-trigger-operation:action:1' }
+      { action: 'first', operationId: 'event:trigger:revision-4:100000:1:action:0' },
+      { action: 'second', operationId: 'event:trigger:revision-4:100000:1:action:1' }
     ]);
     expect(trigger.hasFiredOnce('successful')).toBe(true);
     expect(trigger.serialize().cooldowns.successful).toMatchObject({ remaining: 2000, nextDue: 2100 });
     expect(events.map(event => event.type)).toEqual(['triggerSucceeded']);
     expect(trigger.getExecution('successful')).toMatchObject({
-      status: 'succeeded', actionIndex: 1, operationId: 'stable-trigger-operation'
+      status: 'succeeded', actionIndex: 1, operationId: 'event:trigger:revision-4:100000:1'
     });
     expect(trigger.getExecution('successful').result).not.toHaveProperty('value');
     expect(JSON.stringify(trigger.serialize())).not.toMatch(/businessFact|Story|Quest|Dialogue|Tutorial|Rescue|Battle/);
@@ -390,13 +394,14 @@ describe('TriggerSystem reentry policy', () => {
     gate.resolve();
     await trigger.waitForIdle();
 
+    // 两次触发生成不同的派生 operationId（seq 1 / 2）；旧链 id 不再沿用客户端传入的 'old'。
     expect(calls).toEqual([
-      'old:action:0:commit-one',
-      'replacement:action:0:commit-one',
-      'replacement:action:1:commit-two'
+      'event:trigger:2:0:1:action:0:commit-one',
+      'event:trigger:2:0:2:action:0:commit-one',
+      'event:trigger:2:0:2:action:1:commit-two'
     ]);
     expect(events.map(event => [event.type, event.operationId])).toEqual([
-      ['triggerFailed', 'old'], ['triggerSucceeded', 'replacement']
+      ['triggerFailed', 'event:trigger:2:0:1'], ['triggerSucceeded', 'event:trigger:2:0:2']
     ]);
     expect(trigger.hasFiredOnce('restartable')).toBe(true);
   });
@@ -459,10 +464,6 @@ describe('TriggerSystem timer and atomic snapshot', () => {
         mutate: snapshot => { snapshot.firedOnce.push('missing-trigger'); }
       },
       {
-        code: 'invalidFingerprint',
-        mutate: snapshot => { snapshot.ledger.records.find(record => record.triggerId === 'stateful').fingerprint = 'tampered'; }
-      },
-      {
         code: 'invalidReference',
         setup: () => { delete trigger.actions.ok; },
         cleanup: () => trigger.registerAction('ok', okAction)
@@ -491,6 +492,20 @@ describe('TriggerSystem timer and atomic snapshot', () => {
       expect(trigger.serialize()).toEqual(before);
       testCase.cleanup?.();
     }
+
+    // fingerprint 契约：逐记录 fingerprint 不匹配不再拒绝读档，而是软重置——
+    // 接受快照并按新定义重置该 Trigger 的执行痕迹，其余 ledger/timer 原样保留。
+    const tampered = structuredClone(before);
+    tampered.ledger.records.find(record => record.triggerId === 'stateful').fingerprint = 'tampered';
+    expect(trigger.deserialize(tampered)).toEqual({ ok: true, errors: [] });
+    const afterReset = trigger.serialize();
+    expect(afterReset.firedOnce).toEqual([]);
+    expect(afterReset.cooldowns).toEqual({});
+    expect(afterReset.ledger.records.find(record => record.triggerId === 'stateful'))
+      .toMatchObject({ status: 'idle', operationId: null, fingerprint: null });
+    expect(afterReset.ledger.records.find(record => record.triggerId === 'timer'))
+      .toEqual(before.ledger.records.find(record => record.triggerId === 'timer'));
+    expect(afterReset.timers).toEqual(before.timers);
   });
 });
 
@@ -569,15 +584,18 @@ describe('TriggerSystem debug failure exposure contract', () => {
       trace.push(['callerReject', error]);
     }
 
+    // operationId 身份契约：引擎派生（revision=24、默认 clock=0、首次触发 seq=1），
+    // 客户端传入的 `operation-${expectedPhase}` 只保留在 event.params 原始载荷里。
+    const derivedOperationId = 'event:trigger:24:0:1';
     expect(exposed).toMatchObject({
       name: 'TriggerExecutionError', code: expectedCode, actionIndex: 0,
-      operationId: `operation-${expectedPhase}`
+      operationId: derivedOperationId
     });
     expect(exposed.cause).toBeInstanceOf(Error);
     const envelope = diagnostics.getRecords()[0];
     expect(envelope).toMatchObject({
       type: 'triggerFailure', triggerId: `debug-${expectedPhase}`,
-      operationId: `operation-${expectedPhase}`, definitionRevision: 24,
+      operationId: derivedOperationId, definitionRevision: 24,
       phase: expectedPhase, reason: expectedCode,
       action: { id: actionId, index: 0, input: { action: actionId, params: { visible: 'action-visible', token: '[REDACTED]' } } },
       executionContext: {
@@ -589,7 +607,7 @@ describe('TriggerSystem debug failure exposure contract', () => {
       },
       replay: {
         fingerprint: expect.any(String), seed: null,
-        token: `24:debug-${expectedPhase}:operation-${expectedPhase}:0`
+        token: `24:debug-${expectedPhase}:${derivedOperationId}:0`
       },
       error: { name: 'Error', message: expect.any(String), stack: expect.any(String) }
     });
@@ -599,7 +617,7 @@ describe('TriggerSystem debug failure exposure contract', () => {
     expect(document.querySelector('#dp-trigger-failures').textContent)
       .toContain(`debug-${expectedPhase} #0 ${expectedCode}`);
     expect(events[0]).toMatchObject({
-      type: 'triggerFailed', operationId: `operation-${expectedPhase}`,
+      type: 'triggerFailed', operationId: derivedOperationId,
       payload: { triggerId: `debug-${expectedPhase}`, actionIndex: 0, failure: envelope }
     });
     expect(trace.map(entry => entry[0])).toEqual([
@@ -647,14 +665,15 @@ describe('TriggerSystem debug failure exposure contract', () => {
     expect(second).not.toHaveBeenCalled();
     expect(scene.debugPanel).toBeNull();
     expect(diagnostics.getRecords()).toEqual([]);
+    // operationId 为引擎派生（revision=25、默认 clock=0、首次触发 seq=1）。
     expect(trigger.getExecution('non-debug-safe')).toMatchObject({
-      status: 'failed', actionIndex: 0, operationId: 'non-debug-operation'
+      status: 'failed', actionIndex: 0, operationId: 'event:trigger:25:0:1'
     });
     expect(trigger.hasFiredOnce('non-debug-safe')).toBe(false);
     expect(trigger.serialize().cooldowns).toEqual({});
     expect(events).toHaveLength(1);
     expect(events[0]).toMatchObject({
-      type: 'triggerFailed', operationId: 'non-debug-operation',
+      type: 'triggerFailed', operationId: 'event:trigger:25:0:1',
       payload: { triggerId: 'non-debug-safe', actionIndex: 0, code: 'triggerActionFailed' }
     });
     const playerVisible = JSON.stringify({ events, listenerDetails });

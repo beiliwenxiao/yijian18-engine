@@ -79,7 +79,7 @@ describe('deterministic authority clocks/RNG/revisions', () => {
     const prepared = revisions.prepare('inventory:player', 0);
     expect(revisions.current('inventory:player')).toBe(0);
     expect(revisions.commit(prepared)).toEqual({ ok: true, stateRevision: 1 });
-    expect(revisions.commit(prepared)).toMatchObject({ ok: false, code: 'stateRevisionConflict' });
+    expect(revisions.commit(prepared)).toMatchObject({ ok: false, code: 'stateRevisionReservationLost' });
   });
 });
 

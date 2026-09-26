@@ -81,9 +81,12 @@ function buildRepository(disk) {
   const s12 = resolveDiskJson(disk, 'assets/scenes/S12.json');
   const s14 = resolveDiskJson(disk, 'assets/scenes/S14.json');
   const endings = resolveDiskJson(disk, 'config/endings.json');
+  // library shard 是 vehicles 的唯一定义源：场景 vehicles 仅在 library 未收编该 id 时补充，避免 duplicateId
+  const libraryVehicleIds = new Set((project.library?.vehicles || []).map(vehicle => vehicle?.id).filter(Boolean));
   project.definitionCollections = {
     ...(project.definitionCollections || {}),
-    vehicles: [...(s11.gameplay?.vehicles || []), ...(s12.gameplay?.vehicles || []), ...s14.gameplay.vehicles],
+    vehicles: [...(s11.gameplay?.vehicles || []), ...(s12.gameplay?.vehicles || []), ...s14.gameplay.vehicles]
+      .filter(vehicle => vehicle?.id && !libraryVehicleIds.has(vehicle.id)),
     endings: [endings, ...endings.endings]
   };
   const snapshot = CanonicalSnapshot.fromProject(project, { revision: 'disk-canonical-r1' });

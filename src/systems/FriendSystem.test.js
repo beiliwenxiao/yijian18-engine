@@ -319,7 +319,10 @@ describe('FriendSystem', () => {
 
     it('应该能按名字排序', () => {
       const sorted = friendSystem.getSortedFriends('name');
-      expect(sorted[0].name).toBe('张三');
+      const names = sorted.map(friend => friend.name);
+      // localeCompare 顺序随 ICU 环境不同（拼音/部首/码点），断言满足同名比较器的稳定升序
+      expect(names).toEqual([...names].sort((a, b) => a.localeCompare(b)));
+      expect(names).toHaveLength(3);
     });
   });
 

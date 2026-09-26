@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { validateSanguoZhangjiaoProject } from '../example/sanguo_zhangjiao/config/SanguoZhangjiaoContentPolicy.js';
+import { SanguoSceneStateFlow } from '../example/sanguo_zhangjiao/systems/SanguoSceneStateFlow.js';
 import { SceneObjectProjector } from '../src/core/scene/SceneObjectProjector.js';
 import { InventoryComponent } from '../src/ecs/components/InventoryComponent.js';
 import { InventoryTransactionService } from '../src/systems/InventoryTransactionService.js';
@@ -149,6 +150,8 @@ function observeInventoryAndEquipment() {
   scene.playerEntity = { getComponent: name => name === 'equipment' ? { slots: { mainhand: sword } } : null };
   scene.floatingTextManager = { addText() {} };
   scene.gameLoader = { triggerSystem: { fire: (type, payload) => events.push({ type, payload }) } };
+  // onEquipmentChanged 已迁移为委托 SanguoSceneStateFlow（流程协调器把 scene 状态经 proxy 转发），观测 harness 需挂载真实 flow
+  scene.sanguoSceneStateFlow = new SanguoSceneStateFlow(scene);
   scene.onEquipmentChanged(['equipped'], { slot: 'mainhand', item: sword, action: 'equip' });
   scene.onEquipmentChanged(['unequipped'], { slot: 'mainhand', oldItem: sword, action: 'unequip' });
 
@@ -220,7 +223,11 @@ async function observeQuestPanel() {
     };
   });
   const authority = new LocalAuthorityAdapter({ projectionStore });
-  const questSystem = new QuestSystem({ definitionRepository: repository, actorId });
+  const questSystem = new QuestSystem({
+    definitionRepository: repository, actorId,
+    // 奖励结算已迁移为原子参与者架构：含 reward 的定义 turnIn 必须配置结算参与者，否则命令被拒
+    rewardParticipants: [{ prepareReward: () => ({ commit: () => ({ ok: true }), rollback: () => {}, finalize: () => {} }) }]
+  });
   for (const commandType of Object.values(QUEST_COMMANDS)) authority.registerHandler(commandType, questSystem);
   const gateway = new CommandGateway({ authorityPort: authority, definitionRepository: repository });
   questSystem.setCommandGateway(gateway);
@@ -386,7 +393,8 @@ async function observeStreaming() {
   const first = await firstPromise;
 
   const rollbackTrace = [];
-  const rollbackManager = new WorldStreamingManager({ regionId: 'R', cols: 2, rows: 1, grid: [['S01', 'S02']] });
+  // 世界索引校验要求 chunkWidth/chunkHeight 为正数；尺寸不参与本段 rollback 观测值
+  const rollbackManager = new WorldStreamingManager({ regionId: 'R', chunkWidth: 100, chunkHeight: 100, cols: 2, rows: 1, grid: [['S01', 'S02']] });
   rollbackManager._generation = 1;
   const loads = ['S01', 'S02'].map((sceneId, index) => ({
     key: `R:${index},0`, spec: { col: index, row: 0, sceneId }, chunkDraft: {}, providerRestores: [],

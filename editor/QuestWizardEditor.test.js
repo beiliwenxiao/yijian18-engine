@@ -47,7 +47,8 @@ describe('QuestWizardEditor 任务向导', () => {
 
     it('渲染迁移后的 S01 任务：五区块齐全，编译预览展示 16 目标链且校验通过', () => {
         const { editor } = buildEditor();
-        expect(editor.container.querySelectorAll('[data-quest-id]').length).toBe(2);
+        // 工程数据会持续新增任务，这里只要求不低于基准数量
+        expect(editor.container.querySelectorAll('[data-quest-id]').length).toBeGreaterThanOrEqual(2);
         const html = detail(editor).innerHTML;
         // 五区块
         for (const legend of ['① 元信息', '② 接取', '③ 奖励', '④ 后续任务', '⚙ 编译预览']) {
@@ -131,7 +132,8 @@ describe('QuestWizardEditor 任务向导', () => {
         const { editor, patched } = buildEditor();
         const result = await editor.save();
         expect(result.ok).toBe(true);
-        expect(patched.quests.map(quest => quest.id)).toEqual(['task.s01.survival', 'task.s02.summons']);
+        // 保存需写回全部 quests；工程可能新增任务，这里断言已知任务均在写回列表中
+        expect(patched.quests.map(quest => quest.id)).toEqual(expect.arrayContaining(['task.s01.survival', 'task.s02.summons', 'task.s02.rescue']));
     });
 
     it('教程内嵌：展开就地编辑步骤文案，保存时 quests+tutorials 双字段提交', async () => {

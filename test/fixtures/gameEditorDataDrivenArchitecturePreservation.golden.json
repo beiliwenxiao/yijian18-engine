@@ -1,18 +1,598 @@
 {
-  "identity":{"schemaVersion":1,"meta":{"id":"sanguo_zhangjiao","name":"三国张角传","version":3,"schema":3,"campaignId":"sanguo-zhangjiao-s01-s14"},"sceneOrder":["S01","S02","S09","S03","S04","S05","S06","S07","S08","S10","S11","S12","S13","S14"]},
-  "legacyRejection":[{"code":"invalidCampaign","path":"meta.campaignId","actual":"legacy-six-act"},{"code":"legacyContent","path":"variables.storyState.currentSceneId","actual":"scene_Prologue"},{"code":"legacyContent","path":"variables.classId","actual":"mage"},{"code":"invalidSceneId","path":"variables.storyState.currentSceneId","actual":"scene_Prologue"}],
-  "world":{"rows":[20,20,20,20],"cols":[20,20,20,20],"positions":{"S01":["region-a",1,1],"S02":["region-a",3,3],"S09":["region-b",6,12],"S10":["region-b",6,13],"S11":["region-b",7,14],"S12":["region-b",8,15],"S03":["region-c",15,12],"S04":["region-c",15,13],"S05":["region-c",16,13],"S06":["region-c",16,14],"S07":["region-c",17,15],"S08":["region-c",17,16],"S13":["region-d",18,11],"S14":["region-d",18,12]}},
-  "projection":{"local":{"id":"object-1","x":12,"y":34,"sortY":40,"points":[[1,2]],"path":[{"x":3,"y":4}]},"projected":{"id":"object-1","x":16652,"y":11554,"sortY":11560,"points":[[16641,11522]],"path":[{"x":16643,"y":11524}],"_localX":12,"_localY":34,"_worldOffset":{"x":16640,"y":11520}}},
-  "scenarioTriggerIds":{"S01":["trg_s01_light_campfire","trg_s01_exit_s02","trg_s01_choose_not_flee"],"S02":["trg_s02_zhangjiao_summons","trg_s02_travel_s09"],"S09":["trg_s09_zhangjiao_enlistment","trg_s09_class_warrior","trg_s09_class_archer","trg_s09_class_strategist","trg_s09_start_refugee_conflict","trg_s09_travel_s03"],"S03":["trg_s03_choose_battle_mode","trg_s03_exit_s04"],"S04":["trg_s04_choose_battle_mode","trg_s04_start_bocai_rescue","trg_s04_bocai_evacuation","trg_s04_choose_yuzhou_route"],"S05":["trg_s05_claim_pickaxe","trg_s05_mine_status","trg_s05_mine_retreat","trg_s05_choose_battle_mode","trg_s05_start_zhang_mancheng_rescue","trg_s05_exit_s06"],"S06":["trg_s06_defense_choice","trg_s06_field_construction","trg_s06_complete_recall"],"S07":["trg_s07_choose_battle_mode","trg_s07_commit_delay_north","trg_s07_commit_delay_center","trg_s07_commit_delay_south","trg_s07_exit_s08"],"S08":["trg_s08_retreat_choice","trg_s08_complete_recall"],"S10":["trg_s10_zhangjiao_death","trg_s10_acknowledge_temporary_camp","trg_s10_complete_relocation","trg_s10_build_campfire","trg_s10_build_barricade","trg_s10_build_simple_wall","trg_s10_build_arrow_tower","trg_s10_exit_s11"],"S11":["trg_s11_choose_battle_mode","trg_s11_start_zhang_liang_rescue","trg_s11_light_beacon","trg_s11_rally_guards","trg_s11_west_gate_breakout","trg_s11_interact_horse","trg_s11_exit_s12"],"S12":["trg_s12_choose_battle_mode","trg_s12_start_zhang_bao_rescue","trg_s12_open_secret_passage","trg_s12_use_ladder","trg_s12_burn_ladder","trg_s12_zhang_bao_evacuation","trg_s12_exit_final_route"],"S13":["trg_s13_choose_final_battle_mode","trg_s13_exit_s14"],"S14":["trg_s14_open_cargo_transfer","trg_s14_resolve_last_cart","trg_s14_operate_catapult","trg_s14_leave_catapult","trg_s14_commit_ending"]},
-  "endingPriority":["scorched-earth","observer","spark","ember","meteor","dust"],
-  "inventory":{"first":{"ok":true,"code":null,"requested":7,"accepted":7,"remainder":0},"replay":{"ok":true,"code":null,"requested":7,"accepted":7,"remainder":0,"idempotent":true},"conflict":{"ok":false,"code":"operationIdConflict","operationId":"inventory:add:wood"},"count":7},
-  "equipment":{"equipResult":null,"unequipItemId":"sword","undo":{"ok":false,"reason":"inventoryFull","slot":"mainhand"},"slotAfterUndo":"sword","events":[{"type":"equipItem","payload":{"slot":"weapon","rawSlot":"mainhand","item":"sword"}},{"type":"unequipItem","payload":{"slot":"weapon","rawSlot":"mainhand","item":"sword"}}]},
-  "snapshot":{"restored":{"ok":false,"errors":[{"code":"rejected","path":"","message":"rejected"}]},"state":{"a":{"value":10},"b":{"value":20}},"trace":["restore:a:1","restore:b:2","restore:b:20","restore:a:10"]},
-  "input":{"priority":["modalUI","panelUI","aiming","flight","throw","pickup","skill","attack","move"],"ctrl":"modalUI","shift":"modalUI","plain":"modalUI","right":"modalUI","unified":["virtual:e","touch:e","keyboard:e"]},
-  "quest":{"panelId":"quest-panel","display":"flex","emptyText":"暂无任务","activeText":"主线 Golden Quest Lv.1 Observe 0%","trackedCountBeforeTurnIn":1,"trackedCountAfterTurnIn":0,"events":["questAccepted","questTrackingChanged","questProgress","questCompleted","questTurnedIn"],"reward":{"exp":10,"gold":2}},
-  "endings":{"previews":{"scorchedEarth":{"ok":true,"endingId":"scorched-earth","endingSnapshotId":"ending.v1.b4a44d7a53e2503e"},"observer":{"ok":true,"endingId":"observer","endingSnapshotId":"ending.v1.354690df31b7f04b"},"spark":{"ok":true,"endingId":"spark","endingSnapshotId":"ending.v1.a43784f055c1a354"},"ember":{"ok":true,"endingId":"ember","endingSnapshotId":"ending.v1.c9f9bcadd3cc7241"},"meteor":{"ok":true,"endingId":"meteor","endingSnapshotId":"ending.v1.301af52591af4a69"},"dust":{"ok":true,"endingId":"dust","endingSnapshotId":"ending.v1.970edde2311440ae"}},"resolved":{"ok":true,"endingId":"spark","endingSnapshotId":"ending.v1.a43784f055c1a354"},"trace":["commit","emit:endingResolved","checkpoint"]},
-  "backendBusiness":{"result":{"ok":true,"operationId":"route:S04:nanyang","routeId":"nanyang","entrySceneId":"S05"},"storyState":{"unlockedScenes":["S01","S05"],"storyTags":["route.nanyang"],"yuzhouRoute":{"routeId":"nanyang","entrySceneId":"S05","selectedAtSceneId":"S04","operationId":"route:S04:nanyang","status":"committed"},"lastCheckpointId":"checkpoint.S04.route.nanyang"},"trace":["commit:story","checkpoint","notify:routeCommitted"]},
-  "streaming":{"latestWins":{"first":{"ok":false,"superseded":true,"errors":[]},"second":{"ok":true,"loaded":["R:2,0","R:3,0"],"unloaded":[]},"finalScenes":["S03","S04"],"trace":["commit:S03","commit:S04"]},"rollback":{"result":{"ok":false,"superseded":false,"errors":[{"code":"chunkCommitFailed","path":"","message":"Chunk S02 提交失败"}]},"trace":["commit:S01","commit:S02","rollback:S02","rollback:S01"],"loadedSize":0}},
-  "rpc":{"client":{"request":{"jsonrpc":"2.0","id":"request-attempt-1","method":"createBattle","params":{"operationId":"operation-stable"}},"result":{"accepted":true}},"localMock":{"first":{"jsonrpc":"2.0","id":"request-7","error":{"code":-32601,"message":"未知战斗方法 unknown"}},"replay":{"jsonrpc":"2.0","id":"request-7","error":{"code":-32601,"message":"未知战斗方法 unknown"}},"conflict":{"jsonrpc":"2.0","id":"request-7","error":{"code":-32009,"message":"相同 requestId 不得对应不同请求载荷"}}},"delivery":{"resultSource":"localMock"},"networkIsolation":{"imports":["./WebSocketClient.js"],"commandChainReferences":[]}},
-  "measuredAcceptance":{"frameRate":{"status":"pendingMeasurement","sceneId":"S11","activeEntityTarget":100,"averageFpsTarget":60,"sample":null},"regionMemory":{"status":"pendingMeasurement","peakMbTargetExclusive":100,"sample":null},"dualBackend":{"status":"pendingMeasurement","modes":["2d","3d"],"replayArtifact":null},"releaseResidue":{"status":"pendingMeasurement","owners":null,"listeners":null,"timers":null,"resources":null}}
+  "identity": {
+    "schemaVersion": 1,
+    "meta": {
+      "id": "sanguo_zhangjiao",
+      "name": "三国张角传",
+      "version": 3,
+      "schema": 3,
+      "campaignId": "sanguo-zhangjiao-s01-s14"
+    },
+    "sceneOrder": [
+      "S01",
+      "S02",
+      "S09",
+      "S03",
+      "S04",
+      "S05",
+      "S06",
+      "S07",
+      "S08",
+      "S10",
+      "S11",
+      "S12",
+      "S13",
+      "S14"
+    ]
+  },
+  "legacyRejection": [
+    {
+      "code": "invalidCampaign",
+      "path": "meta.campaignId",
+      "actual": "legacy-six-act"
+    },
+    {
+      "code": "legacyContent",
+      "path": "variables.storyState.currentSceneId",
+      "actual": "scene_Prologue"
+    },
+    {
+      "code": "legacyContent",
+      "path": "variables.classId",
+      "actual": "mage"
+    },
+    {
+      "code": "invalidSceneId",
+      "path": "variables.storyState.currentSceneId",
+      "actual": "scene_Prologue"
+    }
+  ],
+  "world": {
+    "rows": [
+      20,
+      1
+    ],
+    "cols": [
+      20,
+      1
+    ],
+    "positions": {
+      "S02": [
+        "mainland",
+        4,
+        7
+      ],
+      "S01": [
+        "mainland",
+        5,
+        6
+      ],
+      "S09": [
+        "mainland",
+        6,
+        12
+      ],
+      "S10": [
+        "mainland",
+        6,
+        13
+      ],
+      "S11": [
+        "mainland",
+        7,
+        14
+      ],
+      "S12": [
+        "mainland",
+        8,
+        15
+      ],
+      "S03": [
+        "mainland",
+        15,
+        12
+      ],
+      "S04": [
+        "mainland",
+        15,
+        13
+      ],
+      "S05": [
+        "mainland",
+        16,
+        13
+      ],
+      "S06": [
+        "mainland",
+        16,
+        14
+      ],
+      "S07": [
+        "mainland",
+        17,
+        15
+      ],
+      "S08": [
+        "mainland",
+        17,
+        16
+      ],
+      "S13": [
+        "mainland",
+        18,
+        11
+      ],
+      "S14": [
+        "mainland",
+        18,
+        12
+      ]
+    }
+  },
+  "projection": {
+    "local": {
+      "id": "object-1",
+      "x": 12,
+      "y": 34,
+      "sortY": 40,
+      "points": [
+        [
+          1,
+          2
+        ]
+      ],
+      "path": [
+        {
+          "x": 3,
+          "y": 4
+        }
+      ]
+    },
+    "projected": {
+      "id": "object-1",
+      "x": 16652,
+      "y": 11554,
+      "sortY": 11560,
+      "points": [
+        [
+          16641,
+          11522
+        ]
+      ],
+      "path": [
+        {
+          "x": 16643,
+          "y": 11524
+        }
+      ],
+      "_localX": 12,
+      "_localY": 34,
+      "_worldOffset": {
+        "x": 16640,
+        "y": 11520
+      }
+    }
+  },
+  "scenarioTriggerIds": {
+    "S01": [
+      "trg_s01_light_campfire",
+      "trg_s01_craft_wolf_gear",
+      "trg_s01_refuel_campfire",
+      "trg_s01_cook_meat",
+      "trg_s01_build_shelter",
+      "trg_s01_enter_shelter",
+      "trg_s01_river_crossed",
+      "trg_s01_cliff_reached"
+    ],
+    "S02": [
+      "trg_s02_zhangjiao_summons",
+      "trg_s02_travel_s09"
+    ],
+    "S09": [
+      "trg_s09_zhangjiao_enlistment",
+      "trg_s09_class_warrior",
+      "trg_s09_class_archer",
+      "trg_s09_class_strategist",
+      "trg_s09_start_refugee_conflict",
+      "trg_s09_travel_s03"
+    ],
+    "S03": [
+      "trg_s03_choose_battle_mode",
+      "trg_s03_exit_s04"
+    ],
+    "S04": [
+      "trg_s04_choose_battle_mode",
+      "trg_s04_start_bocai_rescue",
+      "trg_s04_bocai_evacuation",
+      "trg_s04_choose_yuzhou_route"
+    ],
+    "S05": [
+      "trg_s05_claim_pickaxe",
+      "trg_s05_mine_status",
+      "trg_s05_mine_retreat",
+      "trg_s05_choose_battle_mode",
+      "trg_s05_start_zhang_mancheng_rescue",
+      "trg_s05_exit_s06"
+    ],
+    "S06": [
+      "trg_s06_defense_choice",
+      "trg_s06_field_construction",
+      "trg_s06_complete_recall"
+    ],
+    "S07": [
+      "trg_s07_choose_battle_mode",
+      "trg_s07_commit_delay_north",
+      "trg_s07_commit_delay_center",
+      "trg_s07_commit_delay_south",
+      "trg_s07_exit_s08"
+    ],
+    "S08": [
+      "trg_s08_retreat_choice",
+      "trg_s08_complete_recall"
+    ],
+    "S10": [
+      "trg_s10_zhangjiao_death",
+      "trg_s10_acknowledge_temporary_camp",
+      "trg_s10_complete_relocation",
+      "trg_s10_build_campfire",
+      "trg_s10_build_barricade",
+      "trg_s10_build_simple_wall",
+      "trg_s10_build_arrow_tower",
+      "trg_s10_exit_s11"
+    ],
+    "S11": [
+      "trg_s11_choose_battle_mode",
+      "trg_s11_start_zhang_liang_rescue",
+      "trg_s11_light_beacon",
+      "trg_s11_rally_guards",
+      "trg_s11_west_gate_breakout",
+      "trg_s11_interact_horse",
+      "trg_s11_exit_s12"
+    ],
+    "S12": [
+      "trg_s12_choose_battle_mode",
+      "trg_s12_start_zhang_bao_rescue",
+      "trg_s12_open_secret_passage",
+      "trg_s12_use_ladder",
+      "trg_s12_burn_ladder",
+      "trg_s12_zhang_bao_evacuation",
+      "trg_s12_exit_final_route"
+    ],
+    "S13": [
+      "trg_s13_choose_final_battle_mode",
+      "trg_s13_exit_s14"
+    ],
+    "S14": [
+      "trg_s14_open_cargo_transfer",
+      "trg_s14_resolve_last_cart",
+      "trg_s14_operate_catapult",
+      "trg_s14_leave_catapult",
+      "trg_s14_commit_ending"
+    ]
+  },
+  "endingPriority": [
+    "chaos-weed",
+    "scorched-earth",
+    "observer",
+    "spark",
+    "ember",
+    "meteor",
+    "dust"
+  ],
+  "inventory": {
+    "first": {
+      "ok": true,
+      "code": null,
+      "requested": 7,
+      "accepted": 7,
+      "remainder": 0
+    },
+    "replay": {
+      "ok": true,
+      "code": null,
+      "requested": 7,
+      "accepted": 7,
+      "remainder": 0,
+      "idempotent": true
+    },
+    "conflict": {
+      "ok": false,
+      "code": "operationIdConflict",
+      "operationId": "inventory:add:wood"
+    },
+    "count": 7
+  },
+  "equipment": {
+    "equipResult": null,
+    "unequipItemId": "sword",
+    "undo": {
+      "ok": false,
+      "reason": "inventoryFull",
+      "slot": "mainhand"
+    },
+    "slotAfterUndo": "sword",
+    "events": [
+      {
+        "type": "equipItem",
+        "payload": {
+          "slot": "weapon",
+          "rawSlot": "mainhand",
+          "item": "sword"
+        }
+      },
+      {
+        "type": "unequipItem",
+        "payload": {
+          "slot": "weapon",
+          "rawSlot": "mainhand",
+          "item": "sword"
+        }
+      }
+    ]
+  },
+  "snapshot": {
+    "restored": {
+      "ok": false,
+      "errors": [
+        {
+          "code": "rejected",
+          "path": "",
+          "message": "rejected"
+        }
+      ]
+    },
+    "state": {
+      "a": {
+        "value": 10
+      },
+      "b": {
+        "value": 20
+      }
+    },
+    "trace": [
+      "restore:a:1",
+      "restore:b:2",
+      "restore:b:20",
+      "restore:a:10"
+    ]
+  },
+  "input": {
+    "priority": [
+      "modalUI",
+      "panelUI",
+      "aiming",
+      "flight",
+      "throw",
+      "pickup",
+      "skill",
+      "attack",
+      "move"
+    ],
+    "ctrl": "modalUI",
+    "shift": "modalUI",
+    "plain": "modalUI",
+    "right": "modalUI",
+    "unified": [
+      "virtual:e",
+      "touch:e",
+      "keyboard:e"
+    ]
+  },
+  "quest": {
+    "panelId": "quest-panel",
+    "display": "flex",
+    "emptyText": "暂无任务",
+    "activeText": "主线 Golden Quest Lv.1 Observe 0%",
+    "trackedCountBeforeTurnIn": 1,
+    "trackedCountAfterTurnIn": 0,
+    "events": [
+      "questAccepted",
+      "questTrackingChanged",
+      "questProgress",
+      "questCompleted",
+      "questTurnedIn"
+    ],
+    "reward": {
+      "exp": 10,
+      "gold": 2
+    }
+  },
+  "endings": {
+    "previews": {
+      "scorchedEarth": {
+        "ok": true,
+        "endingId": "scorched-earth",
+        "endingSnapshotId": "ending.v1.b4a44d7a53e2503e"
+      },
+      "observer": {
+        "ok": true,
+        "endingId": "observer",
+        "endingSnapshotId": "ending.v1.354690df31b7f04b"
+      },
+      "spark": {
+        "ok": true,
+        "endingId": "spark",
+        "endingSnapshotId": "ending.v1.a43784f055c1a354"
+      },
+      "ember": {
+        "ok": true,
+        "endingId": "ember",
+        "endingSnapshotId": "ending.v1.c9f9bcadd3cc7241"
+      },
+      "meteor": {
+        "ok": true,
+        "endingId": "meteor",
+        "endingSnapshotId": "ending.v1.301af52591af4a69"
+      },
+      "dust": {
+        "ok": true,
+        "endingId": "dust",
+        "endingSnapshotId": "ending.v1.970edde2311440ae"
+      }
+    },
+    "resolved": {
+      "ok": true,
+      "endingId": "spark",
+      "endingSnapshotId": "ending.v1.a43784f055c1a354"
+    },
+    "trace": [
+      "commit",
+      "emit:endingResolved",
+      "checkpoint"
+    ]
+  },
+  "backendBusiness": {
+    "result": {
+      "ok": true,
+      "operationId": "route:S04:nanyang",
+      "routeId": "nanyang",
+      "entrySceneId": "S05"
+    },
+    "storyState": {
+      "unlockedScenes": [
+        "S01",
+        "S05"
+      ],
+      "storyTags": [
+        "route.nanyang"
+      ],
+      "yuzhouRoute": {
+        "routeId": "nanyang",
+        "entrySceneId": "S05",
+        "selectedAtSceneId": "S04",
+        "operationId": "route:S04:nanyang",
+        "status": "committed"
+      },
+      "lastCheckpointId": "checkpoint.S04.route.nanyang"
+    },
+    "trace": [
+      "commit:story",
+      "checkpoint",
+      "notify:routeCommitted"
+    ]
+  },
+  "streaming": {
+    "latestWins": {
+      "first": {
+        "ok": false,
+        "superseded": true,
+        "errors": []
+      },
+      "second": {
+        "ok": true,
+        "loaded": [
+          "R:S03",
+          "R:S04"
+        ],
+        "unloaded": []
+      },
+      "finalScenes": [
+        "S03",
+        "S04"
+      ],
+      "trace": [
+        "commit:S03",
+        "commit:S04"
+      ]
+    },
+    "rollback": {
+      "result": {
+        "ok": false,
+        "superseded": false,
+        "errors": [
+          {
+            "code": "chunkCommitFailed",
+            "path": "",
+            "message": "Chunk S02 提交失败"
+          }
+        ]
+      },
+      "trace": [
+        "commit:S01",
+        "commit:S02",
+        "rollback:S02",
+        "rollback:S01"
+      ],
+      "loadedSize": 0
+    }
+  },
+  "rpc": {
+    "client": {
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "request-attempt-1",
+        "method": "createBattle",
+        "params": {
+          "operationId": "operation-stable"
+        }
+      },
+      "result": {
+        "accepted": true
+      }
+    },
+    "localMock": {
+      "first": {
+        "jsonrpc": "2.0",
+        "id": "request-7",
+        "error": {
+          "code": -32601,
+          "message": "未知战斗方法 unknown"
+        }
+      },
+      "replay": {
+        "jsonrpc": "2.0",
+        "id": "request-7",
+        "error": {
+          "code": -32601,
+          "message": "未知战斗方法 unknown"
+        }
+      },
+      "conflict": {
+        "jsonrpc": "2.0",
+        "id": "request-7",
+        "error": {
+          "code": -32009,
+          "message": "相同 requestId 不得对应不同请求载荷"
+        }
+      }
+    },
+    "delivery": {
+      "resultSource": "localMock"
+    },
+    "networkIsolation": {
+      "imports": [
+        "./WebSocketClient.js"
+      ],
+      "commandChainReferences": []
+    }
+  },
+  "measuredAcceptance": {
+    "frameRate": {
+      "status": "pendingMeasurement",
+      "sceneId": "S11",
+      "activeEntityTarget": 100,
+      "averageFpsTarget": 60,
+      "sample": null
+    },
+    "regionMemory": {
+      "status": "pendingMeasurement",
+      "peakMbTargetExclusive": 100,
+      "sample": null
+    },
+    "dualBackend": {
+      "status": "pendingMeasurement",
+      "modes": [
+        "2d",
+        "3d"
+      ],
+      "replayArtifact": null
+    },
+    "releaseResidue": {
+      "status": "pendingMeasurement",
+      "owners": null,
+      "listeners": null,
+      "timers": null,
+      "resources": null
+    }
+  }
 }

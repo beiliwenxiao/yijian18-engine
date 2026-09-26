@@ -33,13 +33,26 @@ describe('ScenePlacementRuntime placement definition signatures', () => {
     expect(runtime.pendingPlacementStates.has(placement.id)).toBe(false);
   });
 
-  it.each([
-    ['签名缺失', undefined],
-    ['坐标已编辑', getPlacementSignature({ ...placement, _localX: 500, _localY: 480, x: 500, y: 480 })]
-  ])('%s的旧状态不会覆盖当前 canonical placement', (_name, placementSignature) => {
+  it('签名缺失的旧状态按当前 canonical placement 补签并应用', () => {
+    // 现行契约：addPendingPlacementState 为缺失签名自动补当前签名（旧存档兼容）
     const runtime = createRuntime(placement);
     runtime.setProjection([placement]);
-    runtime.addPendingPlacementState(placement.id, { kind: 'item', quantity: 2, placementSignature });
+    runtime.addPendingPlacementState(placement.id, { kind: 'item', quantity: 2, placementSignature: undefined });
+    const item = { placementId: placement.id, quantity: 1 };
+
+    runtime.applyPendingToExisting([item]);
+
+    expect(item.quantity).toBe(2);
+    expect(runtime.pendingPlacementStates.has(placement.id)).toBe(false);
+  });
+
+  it('坐标已编辑的旧状态不会覆盖当前 canonical placement', () => {
+    const runtime = createRuntime(placement);
+    runtime.setProjection([placement]);
+    runtime.addPendingPlacementState(placement.id, {
+      kind: 'item', quantity: 2,
+      placementSignature: getPlacementSignature({ ...placement, _localX: 500, _localY: 480, x: 500, y: 480 })
+    });
     const item = { placementId: placement.id, quantity: 1 };
 
     runtime.applyPendingToExisting([item]);

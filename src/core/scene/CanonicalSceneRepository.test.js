@@ -5,11 +5,11 @@ import { CanonicalSceneRepository } from './CanonicalSceneRepository.js';
 import { WorldMapLoadSession } from './WorldMapLoadSession.js';
 
 const json = value => JSON.stringify(value);
-const scene = (id, marker = id) => ({ id, layers: [{ id: 'objects', objects: [] }], marker });
+const scene = (id, marker = id) => ({ id, width: 100, height: 50, layers: [{ id: 'objects', objects: [] }], marker });
 const project = ids => ({
   schemaVersion: 1,
   meta: { id: 'game', version: 3, schema: 3 },
-  scenes: ids.map(id => ({ id }))
+  scenes: ids.map(id => ({ id, width: 100, height: 50 }))
 });
 const order = ids => ({
   gameId: 'game', order: ids.slice(),
@@ -51,7 +51,7 @@ function createRepository(disk, cache = new MemorySceneCacheAdapter(), mode = 'r
 }
 
 describe('CanonicalSceneRepository disk canonical refresh', () => {
-  it('磁盘同 ID 内容独占优先，原子发布 immutable snapshot 并写入完整 provenance', async () => {
+  it('磁盘同 ID 内容独占优先，原子发布 immutable snapshot，场景正文经 loadScene 读取', async () => {
     const disk = new MemoryDisk(['S01']);
     const cache = new MemorySceneCacheAdapter({
       S01: { sceneId: 'S01', source: 'disk://S01.json', canonicalData: scene('S01', 'stale'), eligible: true }
@@ -61,6 +61,12 @@ describe('CanonicalSceneRepository disk canonical refresh', () => {
     const result = await repository.refresh();
 
     expect(result.ok).toBe(true);
+    // 懒加载契约：refresh 只发布 project/清单 closure，场景正文按需读取
+    expect(result.snapshot.has('S01')).toBe(true);
+    expect(result.snapshot.hasRecord('S01')).toBe(false);
+    const load = await repository.loadScene('S01');
+    expect(load.ok).toBe(true);
+    expect(load.record.data.marker).toBe('S01');
     expect(result.snapshot.getScene('S01').marker).toBe('S01');
     expect(result.snapshot.getProvenance('S01')).toMatchObject({
       source: 'disk://S01.json', fallback: false, reason: null, diskRevision: 'r1'
@@ -76,7 +82,10 @@ describe('CanonicalSceneRepository disk canonical refresh', () => {
     const disk = new MemoryDisk(['S01', 'S02']);
     const cache = new MemorySceneCacheAdapter({ CACHE_ONLY: { sceneId: 'CACHE_ONLY', eligible: true } });
     const { repository } = createRepository(disk, cache);
-    expect((await repository.refresh()).snapshot.ids).toEqual(['S01', 'S02']);
+    const first = await repository.refresh();
+    await repository.loadScene('S01');
+    await repository.loadScene('S02');
+    expect(first.snapshot.ids).toEqual(['S01', 'S02']);
 
     disk.project = project(['S02', 'S03']);
     disk.order = order(['S02', 'S03']);
@@ -89,6 +98,8 @@ describe('CanonicalSceneRepository disk canonical refresh', () => {
 
     expect(result.snapshot.ids).toEqual(['S02', 'S03']);
     expect(result.snapshot.has('S01')).toBe(false);
+    await repository.loadScene('S02');
+    await repository.loadScene('S03');
     expect(result.snapshot.getScene('S02').marker).toBe('updated');
     expect(result.snapshot.getScene('S03').marker).toBe('renamed-new-id');
     expect(cache.keys().sort()).toEqual(['S02', 'S03']);
@@ -99,56 +110,69 @@ describe('CanonicalSceneRepository disk canonical refresh', () => {
     const { repository } = createRepository(disk);
     const first = await repository.refresh();
     expect(first.ok).toBe(true);
+    expect((await repository.loadScene('S01')).ok).toBe(true);
 
     disk.failures.S01 = { category: ContentErrorCategory.UNREADABLE };
-    const unreadable = await repository.refresh();
+    // loadScene 对已存在记录短路；forgetScene 丢弃记录以强制重读盘
+    repository.forgetScene('S01');
+    const unreadable = await repository.loadScene('S01');
     expect(unreadable.ok).toBe(true);
-    expect(unreadable.snapshot.getProvenance('S01')).toMatchObject({
+    expect(unreadable.warnings[0]).toMatchObject({ fallback: true, category: ContentErrorCategory.UNREADABLE });
+    expect(repository.snapshot.getProvenance('S01')).toMatchObject({
       source: 'cache', canonicalSource: 'disk://S01.json', fallback: true,
       reason: ContentErrorCategory.UNREADABLE, diskRevision: 'r1'
     });
-    expect(unreadable.warnings[0]).toMatchObject({ fallback: true, category: ContentErrorCategory.UNREADABLE });
 
     disk.failures.S01 = { raw: '{ invalid json' };
-    const parseFailed = await repository.refresh();
+    repository.forgetScene('S01');
+    const parseFailed = await repository.loadScene('S01');
     expect(parseFailed.ok).toBe(true);
-    expect(parseFailed.snapshot.getProvenance('S01').reason).toBe(ContentErrorCategory.PARSE_FAILED);
+    expect(repository.snapshot.getProvenance('S01').reason).toBe(ContentErrorCategory.PARSE_FAILED);
   });
 
   it.each([
     ['missing', { category: ContentErrorCategory.MISSING }],
     ['schema', { raw: json({ id: 'S01' }) }],
     ['reference', { raw: json(scene('S99')) }]
-  ])('%s failure 禁止 fallback 且保留旧 snapshot', async (_name, failure) => {
+  ])('%s failure 禁止 fallback 且保留旧 snapshot 与已读记录', async (_name, failure) => {
     const disk = new MemoryDisk(['S01']);
     const { repository } = createRepository(disk);
     const first = await repository.refresh();
+    await repository.loadScene('S01');
     disk.failures.S01 = failure;
+    repository.forgetScene('S01');
 
-    const failed = await repository.refresh();
+    const failed = await repository.loadScene('S01');
 
     expect(failed.ok).toBe(false);
-    expect(failed.snapshot).toBe(first.snapshot);
+    // 场景失败不再发布新 snapshot，closure 保持不变（forgetScene 已按设计丢弃旧记录）
     expect(repository.snapshot).toBe(first.snapshot);
+    expect(first.snapshot.has('S01')).toBe(true);
   });
 
   it('拒绝错误来源/validator fingerprint 的缓存，audit/publish 固定不读缓存', async () => {
     const disk = new MemoryDisk(['S01']);
     const { repository, cache } = createRepository(disk);
     await repository.refresh();
+    expect((await repository.loadScene('S01')).ok).toBe(true);
     disk.failures.S01 = { category: ContentErrorCategory.UNREADABLE };
 
     cache.entries.S01.source = 'disk://S02.json';
-    expect((await repository.refresh()).ok).toBe(false);
+    repository.forgetScene('S01');
+    expect((await repository.loadScene('S01')).ok).toBe(false);
     cache.entries.S01.source = 'disk://S01.json';
     cache.entries.S01.validatorFingerprint = 'old-validator';
-    expect((await repository.refresh()).ok).toBe(false);
+    repository.forgetScene('S01');
+    expect((await repository.loadScene('S01')).ok).toBe(false);
 
     delete disk.failures.S01;
-    await repository.refresh();
+    repository.forgetScene('S01');
+    expect((await repository.loadScene('S01')).ok).toBe(true);
     disk.failures.S01 = { category: ContentErrorCategory.UNREADABLE };
-    expect((await repository.refresh({ mode: 'audit' })).ok).toBe(false);
-    expect((await repository.refresh({ mode: 'publish' })).ok).toBe(false);
+    const auditSnapshot = (await repository.refresh({ mode: 'audit' })).snapshot;
+    expect((await repository.loadScene('S01', { snapshot: auditSnapshot })).ok).toBe(false);
+    const publishSnapshot = (await repository.refresh({ mode: 'publish' })).snapshot;
+    expect((await repository.loadScene('S01', { snapshot: publishSnapshot })).ok).toBe(false);
   });
 
   it('列表不可读时仅复用最近成功磁盘 closure；列表 missing/schema failure 不回退', async () => {
@@ -162,7 +186,7 @@ describe('CanonicalSceneRepository disk canonical refresh', () => {
     expect(fallback.ok).toBe(true);
     expect(fallback.snapshot.ids).toEqual(['S01']);
     expect(fallback.snapshot.listProvenance).toMatchObject({ fallback: true, reason: ContentErrorCategory.UNREADABLE });
-    expect(fallback.snapshot.getScene('S01').marker).toBe('fresh-with-old-closure');
+    expect((await repository.loadScene('S01')).record.data.marker).toBe('fresh-with-old-closure');
 
     disk.failures.order = { category: ContentErrorCategory.MISSING };
     expect((await repository.refresh()).ok).toBe(false);

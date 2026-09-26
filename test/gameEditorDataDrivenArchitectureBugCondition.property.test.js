@@ -342,7 +342,9 @@ async function executeOriginal(input) {
     }
     case 'world-grid-canonical-closure': {
       const candidate = loadCanonicalEditorAggregate();
-      const region = candidate.project.worldMap.regions.find(entry => Array.isArray(entry.grid));
+      // 项目新增了纯对象格 terrain region（如 mainland）；须扫描到字符串格（场景格）的 region 才能放置 sceneId
+      const region = candidate.project.worldMap.regions.find(entry => Array.isArray(entry.grid)
+        && entry.grid.some(entries => Array.isArray(entries) && entries.some(cell => typeof cell === 'string')));
       const row = region.grid.findIndex(entries => Array.isArray(entries) && entries.some(cell => typeof cell === 'string'));
       const col = region.grid[row].findIndex(cell => typeof cell === 'string');
       region.grid[row][col] = { sceneId: 'CACHE_ONLY', reserved: true };
@@ -508,7 +510,8 @@ async function executeOriginal(input) {
       trigger.on(event => events.push(event));
       trigger.register({ id: 'once-chain', when: { type: 'signal' }, once: true, cooldown: 30, do: [{ action: 'rejecting' }, { action: 'must-not-run' }] });
       trigger.fire('signal');
-      await Promise.resolve();
+      // 触发链按微任务推进：等待链路终止事件（triggerEnd）后再读取账本，避免过早求值
+      for (let tick = 0; tick < 64 && !events.includes('triggerEnd'); tick++) await Promise.resolve();
       const onceCommitted = trigger.hasFiredOnce('once-chain');
       const continued = events.includes('action:must-not-run');
       return result(input, 'trigger-ledger-commit', ['fire once trigger', 'action[0] throws', 'observe action[1]/once/cooldown'],
@@ -521,8 +524,11 @@ async function executeOriginal(input) {
       const pathResult = await executeCanonicalTriggerPath(input.seed, { withScenario: true });
       const closure = pathResult.index.getReferenceClosure('scenario.one');
       const intent = pathResult.intents[0];
+      // 现行契约：task.command 为 quest.command 的规范别名（任务中心制复用 quest 执行通道）
       const genericDescriptors = pathResult.descriptors.all().every(descriptor => descriptor.adapterId === 'command'
-        && descriptor.commandType === descriptor.id && Object.isFrozen(descriptor));
+        && (descriptor.commandType === descriptor.id
+          || (descriptor.id === 'task.command' && descriptor.commandType === 'quest.command'))
+        && Object.isFrozen(descriptor));
       return result(input, 'trigger-kernel-closure', ['publish canonical scenario/trigger definitions', 'derive read-only TriggerGraph/index', 'execute schema-validated generic action via CommandAdapter and TriggerSystem'],
         { actionContract: 'schema-validated generic command' },
         { descriptorIds: pathResult.descriptors.ids(), execution: pathResult.execution, intent, graphIds: pathResult.graph.ids(), scenarioClosure: closure, triggerLedger: pathResult.triggerSystem.serialize().ledger },
@@ -530,7 +536,7 @@ async function executeOriginal(input) {
           && pathResult.index.get('scenario.one')?.references?.triggers.includes('generic-trigger')
           && closure?.triggers?.includes('generic-trigger')
           && pathResult.execution.ok === true && pathResult.intents.length === 1
-          && intent?.operationId?.startsWith(`trigger:${pathResult.snapshot.definitionRevision}:generic-trigger:`),
+          && intent?.operationId?.startsWith(`event:trigger:${pathResult.snapshot.definitionRevision}:`),
         'canonical scenario definitions did not close through the sole TriggerSystem execution kernel and generic command adapter');
     }
     case 'quest-definition-runtime-transaction': {

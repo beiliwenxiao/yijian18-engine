@@ -38,8 +38,8 @@ export class Particle {
     this.gravity = config.gravity || 0;
     this.friction = config.friction !== undefined ? config.friction : 1;
     this.shape = config.shape || 'circle'; // circle / streak / ripple / star
-    // 行为语义必须显式传递；颜色仅是表现参数。保留旧 #ff* 调用方的兼容推断。
-    this.isFire = config.isFire === true || (config.isFire == null && typeof config.color === 'string' && config.color.startsWith('#ff'));
+    // 行为语义必须显式传递（isFire=true 才有火舌摆动与发光渲染）；颜色仅是表现参数，不做推断。
+    this.isFire = config.isFire === true;
     this.renderLayer = config.renderLayer || 'effects';
     this.blendMode = config.blendMode || 'source-over';
     this.sortY = Number.isFinite(config.sortY) ? config.sortY : this.position.y;
@@ -195,7 +195,7 @@ export class Particle {
     this.gravity = config.gravity || 0;
     this.friction = config.friction !== undefined ? config.friction : 1;
     this.shape = config.shape || 'circle';
-    this.isFire = config.isFire === true || (config.isFire == null && typeof config.color === 'string' && config.color.startsWith('#ff'));
+    this.isFire = config.isFire === true;
     this.renderLayer = config.renderLayer || 'effects';
     this.blendMode = config.blendMode || 'source-over';
     this.sortY = Number.isFinite(config.sortY) ? config.sortY : this.position.y;

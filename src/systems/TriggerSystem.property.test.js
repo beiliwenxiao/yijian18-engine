@@ -209,23 +209,27 @@ async function runReentryScenario(seed, policy) {
 }
 
 function expectedReentry(policy) {
+  // operationId 身份契约：引擎派生（revision=24、默认 clock=0）。两次 fire 消耗 seq 1/2
+  // （即使被 reject 也会先创建 request），客户端传入的 `${policy}.first/second` 不被信任。
+  const firstDerived = `event:trigger:${DEFINITION_REVISION}:0:1`;
+  const secondDerived = `event:trigger:${DEFINITION_REVISION}:0:2`;
   if (policy === 'reject') {
     return {
-      accepted: [1, 0], calls: [`${policy}.first`],
-      events: [['triggerSucceeded', `${policy}.first`]], finalOperationId: `${policy}.first`
+      accepted: [1, 0], calls: [firstDerived],
+      events: [['triggerSucceeded', firstDerived]], finalOperationId: firstDerived
     };
   }
   if (policy === 'queue') {
     return {
-      accepted: [1, 1], calls: [`${policy}.first`, `${policy}.second`],
-      events: [['triggerSucceeded', `${policy}.first`], ['triggerSucceeded', `${policy}.second`]],
-      finalOperationId: `${policy}.second`
+      accepted: [1, 1], calls: [firstDerived, secondDerived],
+      events: [['triggerSucceeded', firstDerived], ['triggerSucceeded', secondDerived]],
+      finalOperationId: secondDerived
     };
   }
   return {
-    accepted: [1, 1], calls: [`${policy}.first`, `${policy}.second`],
-    events: [['triggerFailed', `${policy}.first`], ['triggerSucceeded', `${policy}.second`]],
-    finalOperationId: `${policy}.second`
+    accepted: [1, 1], calls: [firstDerived, secondDerived],
+    events: [['triggerFailed', firstDerived], ['triggerSucceeded', secondDerived]],
+    finalOperationId: secondDerived
   };
 }
 
@@ -309,16 +313,19 @@ describe('Property 9: Trigger/scenario operation model', () => {
           expect(triggerSystem.isDebugEnabled()).toBe(debugEnabled);
           expect(started).toEqual(expectedStarted);
           expect(committed).toEqual(model.committedIndexes);
+          // operationId 身份契约：引擎派生 `event:trigger:{revision}:{ms}:{seq}`，
+          // 客户端 signal.operationId 不被信任。revision=24、clock=100→100000ms、每实例首次触发 seq=1。
+          const derivedOperationId = `event:trigger:${DEFINITION_REVISION}:100000:1`;
           expect(record).toMatchObject({
             status: model.status, actionIndex: model.actionIndex,
-            operationId: scenario.signal.operationId, definitionRevision: DEFINITION_REVISION
+            operationId: derivedOperationId, definitionRevision: DEFINITION_REVISION
           });
           expect(triggerSystem.hasFiredOnce(scenario.triggerIds[0])).toBe(model.onceCommitted);
           expect(Boolean(triggerSystem.serialize().cooldowns[scenario.triggerIds[0]]))
             .toBe(model.cooldownCommitted);
           expect(events.map(event => event.type)).toEqual([model.finalType]);
           expect(events[0]).toMatchObject({
-            operationId: scenario.signal.operationId,
+            operationId: derivedOperationId,
             payload: {
               triggerId: scenario.triggerIds[0], status: model.status,
               actionIndex: model.actionIndex
@@ -341,12 +348,12 @@ describe('Property 9: Trigger/scenario operation model', () => {
             if (debugEnabled) {
               expect(exposedError).toMatchObject({
                 name: 'TriggerExecutionError', actionIndex: scenario.faultIndex,
-                operationId: scenario.signal.operationId
+                operationId: derivedOperationId
               });
               expect(diagnosticRecords).toHaveLength(1);
               const envelope = diagnosticRecords[0];
               expect(envelope).toMatchObject({
-                triggerId: scenario.triggerIds[0], operationId: scenario.signal.operationId,
+                triggerId: scenario.triggerIds[0], operationId: derivedOperationId,
                 action: { index: scenario.faultIndex },
                 replay: { fingerprint: expect.any(String) }
               });
@@ -361,7 +368,7 @@ describe('Property 9: Trigger/scenario operation model', () => {
               expect(diagnosticRecords).toEqual([]);
               expect(actionFailures[0]).toEqual({
                 triggerId: scenario.triggerIds[0], actionIndex: scenario.faultIndex,
-                operationId: scenario.signal.operationId,
+                operationId: derivedOperationId,
                 code: expect.any(String)
               });
               expect(JSON.stringify(events[0].payload))
@@ -394,9 +401,11 @@ describe('Property 9: Trigger/scenario operation model', () => {
             status: 'succeeded', operationId: model.finalOperationId
           });
           if (policy === 'restart') {
-            expect(actual.calls[0].operationId).toBe('restart.first');
+            // 两次触发生成不同派生 id（seq 1 / 2）；旧链以派生 id 失败，不再沿用客户端传入值。
+            expect(actual.calls[0].operationId).toBe(`event:trigger:${DEFINITION_REVISION}:0:1`);
             expect(actual.events[0]).toMatchObject({
-              type: 'triggerFailed', operationId: 'restart.first', payload: { code: 'reentryRestarted' }
+              type: 'triggerFailed', operationId: `event:trigger:${DEFINITION_REVISION}:0:1`,
+              payload: { code: 'reentryRestarted' }
             });
           }
         });
@@ -478,9 +487,23 @@ describe('Property 9: Trigger/scenario operation model', () => {
       const scenario = { seed, corruption, candidate };
       await withScenario(scenario, async () => {
         const result = system.deserialize(candidate);
-        expect(result.ok).toBe(false);
-        expect(result.errors.length).toBeGreaterThan(0);
-        expect(system.serialize()).toEqual(before);
+        if (corruption === 'fingerprint') {
+          // fingerprint 契约：逐记录 fingerprint 不匹配 → 软重置（接受快照、
+          // 重置该 Trigger 的 ledger/firedOnce/cooldown），未受影响的 timer 原样保留。
+          expect(result.ok).toBe(true);
+          const after = system.serialize();
+          expect(after.firedOnce).toEqual([]);
+          expect(after.cooldowns).toEqual({});
+          expect(after.ledger.records.find(record => record.triggerId === 'trigger.stateful'))
+            .toMatchObject({ status: 'idle', operationId: null, fingerprint: null });
+          expect(after.ledger.records.find(record => record.triggerId === 'trigger.timer'))
+            .toEqual(before.ledger.records.find(record => record.triggerId === 'trigger.timer'));
+          expect(after.timers).toEqual(before.timers);
+        } else {
+          expect(result.ok).toBe(false);
+          expect(result.errors.length).toBeGreaterThan(0);
+          expect(system.serialize()).toEqual(before);
+        }
       });
     }
   });

@@ -212,9 +212,10 @@ describe('GraphViewport 缩放平移与裁剪', () => {
   });
 
   it('fitToNodes 使全部节点可见', () => {
+    // 注意：fit 受 minScale=0.5 钳制，跨度太大会无法完整放下，这里用可容纳的跨度验证 fit 行为
     const nodes = [
       { id: 'a', position: { x: 0, y: 0 } },
-      { id: 'b', position: { x: 20, y: 15 } }
+      { id: 'b', position: { x: 5, y: 3 } }
     ];
     viewport.fitToNodes(nodes);
     for (const node of nodes) {

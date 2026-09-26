@@ -36,9 +36,10 @@ describe('StateTransactionEditor 状态事务管理', () => {
         document.head.innerHTML = '';
     });
 
-    it('渲染：列表 40 条事务，选中显示表单（条件行/写入行按结构解析）', () => {
+    it('渲染：列表加载全部事务，选中显示表单（条件行/写入行按结构解析）', () => {
         const { editor } = buildEditor();
-        expect(editor.container.querySelectorAll('[data-transaction-id]').length).toBe(40);
+        // 工程数据会持续新增事务，这里只要求不低于基准数量
+        expect(editor.container.querySelectorAll('[data-transaction-id]').length).toBeGreaterThanOrEqual(40);
 
         // 选中「点亮篝火」：when 为 all 两条件，writes 一条布尔写入
         editor.selectedId = 'story.s01.campfireLit';

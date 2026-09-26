@@ -50,7 +50,7 @@ describe('Particle', () => {
     expect(particle.position.y).toBeCloseTo(5);
   });
 
-  it('应该随生命周期衰减透明度', () => {
+  it('应该随生命周期衰减透明度（前80%保持明亮，最后20%快速消失）', () => {
     const particle = new Particle({
       position: { x: 0, y: 0 },
       velocity: { x: 0, y: 0 },
@@ -60,8 +60,12 @@ describe('Particle', () => {
       alpha: 1
     });
 
+    // 前 80% 生命周期保持初始透明度（火焰粒子明亮阶段）
     particle.update(0.5); // 500ms，生命周期剩余50%
-    expect(particle.alpha).toBeCloseTo(0.5, 1);
+    expect(particle.alpha).toBe(1);
+    // 最后 20% 线性快速衰减
+    particle.update(0.45); // 950ms，剩余 5%
+    expect(particle.alpha).toBeCloseTo(0.25, 1);
   });
 
   it('应该应用重力', () => {

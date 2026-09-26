@@ -386,6 +386,8 @@ function expectedNotificationTypes(operationKind) {
     deathDrop: ITEM_LIFECYCLE_COMMANDS.DEATH_DROP
   }[operationKind];
   const types = [`${commandType}.committed`];
+  if (operationKind === 'pickupGround' || operationKind === 'pickupDeath') types.push('item.picked');
+  if (operationKind === 'drop') types.push('item.dropped');
   if (operationKind === 'equip') types.push('item.equipped');
   if (operationKind === 'unequip') types.push('item.unequipped');
   if (operationKind === 'deathDrop') types.push('item.deathDropCreated');

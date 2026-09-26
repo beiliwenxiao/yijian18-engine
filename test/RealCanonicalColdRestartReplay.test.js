@@ -38,7 +38,10 @@ function createHarness() {
 
 const s01Snapshot = () => ({
   completedTutorials: ['s01.move', 's01.attack', 's01.pickup', 's01.jump', 's01.gather'],
-  runtimeState: { blackboard: { storyState: { currentSceneId: 'S01', unlockedScenes: ['S01'], s02SummonsAccepted: false }, cityStates: [] }, inventory: [] }
+  runtimeState: {
+    blackboard: { storyState: { currentSceneId: 'S01', unlockedScenes: ['S01'], s02SummonsAccepted: false, s01Survival: { cliffReached: true } }, cityStates: [] },
+    inventory: []
+  }
 });
 
 const s09Snapshot = ({ axe = false } = {}) => ({
@@ -72,19 +75,22 @@ describe('P1–P5 canonical disk cold restart replay', () => {
     });
     expect(replay.equal).toBe(true);
     expect(replay.first.serviceState.blackboard.storyState).toMatchObject({ currentSceneId: 'S02', s01Completed: true, s02SummonsAccepted: true });
-    expect(replay.first.serviceState.inventory).toEqual(expect.arrayContaining([
-      expect.objectContaining({ definitionId: 'resource.wood', quantity: 3 }), expect.objectContaining({ definitionId: 'resource.herb', quantity: 2 })
-    ]));
+    // 现行契约：story.s01.complete 不再发放物资，事务后背包保持为空
+    expect(replay.first.serviceState.inventory).toEqual([]);
     expect(replay.first.committedEvents.map(event => event.type)).toEqual(['state.transaction.committed', 'state.transaction.committed']);
     expect(replay.first.applicationEvents.map(event => event.type)).toEqual(['state.transaction', 'state.transaction']);
 
     const failureRuntime = await createRealCanonicalRuntime({ disk: createDemoCanonicalDisk(), seed: 913, clocks: createFakeClocks(), snapshot: { ...s01Snapshot(), travelFailure: true } });
     try {
+      // 现行原子契约：travel 失败必须整体拒绝并回滚，不得保留部分提交事实
       const complete = await executeRealCanonicalCommand(failureRuntime, command('state.transaction', 'failure:s01', { definitionId: 'story.s01.complete' }));
+      expect(complete).toMatchObject({ ok: false, committed: false, code: 'targetUnavailable' });
+      expect(failureRuntime.travelAttempts).toHaveLength(1);
+      const storyState = failureRuntime.blackboard.get('storyState');
+      expect(storyState).toMatchObject({ currentSceneId: 'S01', s02SummonsAccepted: false });
+      expect(Object.hasOwn(storyState, 's01Completed')).toBe(false);
       const summons = await executeRealCanonicalCommand(failureRuntime, command('state.transaction', 'failure:s02', { definitionId: 'story.s02.summons.accept' }));
-      expect(complete).toMatchObject({ ok: true, committed: true });
-      expect(summons).toMatchObject({ ok: true, committed: true });
-      expect(failureRuntime.blackboard.get('storyState')).toMatchObject({ s02SummonsAccepted: true, lastCheckpointId: 'checkpoint.S02.summonsAccepted' });
+      expect(summons).toMatchObject({ ok: false, committed: false, code: 'preconditionFailed' });
     } finally { await destroyRealCanonicalRuntime(failureRuntime); }
   });
 

@@ -127,7 +127,9 @@ describe('ClassSystem 特化加成', () => {
     // 未选特化：只有职业基础与属性系统加成，不写入 specializationBonuses
     expect(stats.specializationBonuses).toBeUndefined();
     expect(stats.maxHp).toBeGreaterThanOrEqual(150);
-    expect(classSystem.effectResolver.getSources('c1')).toHaveLength(0);
+    // 现行契约：selectClass 会登记职业固定来源 class:<id>，但不得产生特化来源
+    const sources = classSystem.effectResolver.getSources('c1');
+    expect(sources.some(source => String(source.id || '').startsWith('specialization:'))).toBe(false);
   });
 
   it('重甲步兵特化按倍率提升生命与防御', () => {

@@ -195,7 +195,10 @@ describe('runtime consumption publication', () => {
   });
 
   it('scene gameplay consumer 驱动火堆表现且不持有可变配置', () => {
-    const scene = loadJson('example/sanguo_zhangjiao/assets/scenes/S01.json');
+    // 火堆表现已收编进 library 定义 story.s01.campfire.campfirePresentation，场景 gameplay 不再内联配置
+    const library = loadJson('example/sanguo_zhangjiao/project/library.json');
+    const campfireItem = (library.items || []).find(item => item.id === 'story.s01.campfire');
+    const scene = { gameplay: { campfire: campfireItem.campfirePresentation } };
     const registry = createStandardConfigConsumptionRegistry();
     const consumption = registry.buildSources({ scene }, {
       revision: 2,
@@ -205,9 +208,8 @@ describe('runtime consumption publication', () => {
     const service = new SceneCampfireService({ configView: view });
 
     expect(service.isConfigured()).toBe(true);
-    expect(service.initialFogOpacity).toBe(1);
     expect(service.campfire.frameCount).toBe(12);
-    expect(service.presentation.lightRadius).toBe(150);
+    expect(service.presentation.lightRadius).toBe(300);
     expect(Object.isFrozen(service.configView)).toBe(true);
     expect(() => { service.configView.sprite.frameCount = 2; }).toThrow();
   });

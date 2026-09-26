@@ -56,10 +56,62 @@ export function prefixErrors(errors = [], prefix = '') {
 }
 
 /**
+ * 结构层扫描：定位 JSON 首个"结构非法"字符（不依赖引擎报错文本）。
+ * 覆盖三类最常见错误：括号不配对、字符串未闭合、值缺失/尾随逗号
+ * （如 `{"a":}`、`[1,]`、`{,}`）。值层错误（数字格式等）交给引擎消息。
+ * @param {string} text
+ * @returns {number} 首个非法字符索引；-1 表示结构层无错
+ */
+function scanJsonStructure(text) {
+  const stack = [];
+  let inString = false;
+  let escaped = false;
+  let prevSignificant = '';
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+        continue;
+      }
+      if (ch === '\\') {
+        escaped = true;
+        continue;
+      }
+      if (ch === '"') {
+        inString = false;
+        prevSignificant = '"';
+      }
+      continue;
+    }
+    if (ch === '"') {
+      inString = true;
+      continue;
+    }
+    if (ch === ' ' || ch === '\t' || ch === '\n' || ch === '\r') continue;
+    if (ch === '{' || ch === '[') {
+      stack.push(ch);
+      prevSignificant = ch;
+      continue;
+    }
+    if (ch === '}' || ch === ']') {
+      const open = stack.pop();
+      const expected = ch === '}' ? '{' : '[';
+      if (open !== expected) return i;
+      if (prevSignificant === ',' || prevSignificant === ':' || prevSignificant === open) return i;
+      prevSignificant = ch;
+      continue;
+    }
+    prevSignificant = ch;
+  }
+  return inString ? text.length - 1 : -1;
+}
+
+/**
  * 从 JSON 解析异常中提取行列位置。
  *
- * 不同引擎的报错信息格式不一致，因此优先用 position 反算行列，
- * 拿不到位置时退回引擎自带的 line/column 描述。
+ * 不同引擎的报错信息格式不一致：老 V8 带 position、SpiderMonkey 带 line/column，
+ * 新 V8（Node 20+）两者都没有——此时回退结构层扫描自行定位。
  *
  * @param {Error} error - JSON.parse 抛出的异常
  * @param {string} text - 原始文本
@@ -78,10 +130,22 @@ export function locateJsonError(error, text) {
 
   const lineMatch = /line\s+(\d+)/i.exec(message);
   const colMatch = /column\s+(\d+)/i.exec(message);
-  return {
-    line: lineMatch ? Number(lineMatch[1]) : null,
-    column: colMatch ? Number(colMatch[1]) : null
-  };
+  if (lineMatch && typeof text === 'string') {
+    return {
+      line: Number(lineMatch[1]),
+      column: colMatch ? Number(colMatch[1]) : null
+    };
+  }
+
+  if (typeof text === 'string') {
+    const index = scanJsonStructure(text);
+    if (index >= 0) {
+      const before = text.slice(0, index + 1);
+      const lines = before.split('\n');
+      return { line: lines.length, column: lines[lines.length - 1].length };
+    }
+  }
+  return { line: null, column: null };
 }
 
 /**

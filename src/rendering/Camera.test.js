@@ -39,51 +39,47 @@ describe('Camera', () => {
     });
   });
 
-  describe('边界限制', () => {
+  describe('自由移动（不钳制边界）', () => {
     beforeEach(() => {
       // 设置地图边界: 0-2000 x 0-1500
       camera.setBounds(0, 0, 2000, 1500);
     });
 
-    it('应该限制相机不超出左边界', () => {
+    it('setPosition 不钳制，可越出左边界', () => {
       camera.setPosition(-1000, 500);
-      // 相机中心不能小于 width/2
-      expect(camera.position.x).toBe(640); // 1280/2
+      // 自由移动：相机位置不再被钳制
+      expect(camera.position.x).toBe(-1000);
+      expect(camera.position.y).toBe(500);
     });
 
-    it('应该限制相机不超出右边界', () => {
+    it('setPosition 不钳制，可越出右边界', () => {
       camera.setPosition(3000, 500);
-      // 相机中心不能大于 maxX - width/2
-      expect(camera.position.x).toBe(1360); // 2000 - 640
+      expect(camera.position.x).toBe(3000);
     });
 
-    it('应该限制相机不超出上边界', () => {
+    it('setPosition 不钳制，可越出上边界', () => {
       camera.setPosition(1000, -1000);
-      expect(camera.position.y).toBe(360); // 720/2
+      expect(camera.position.y).toBe(-1000);
     });
 
-    it('应该限制相机不超出下边界', () => {
+    it('setPosition 不钳制，可越出下边界', () => {
       camera.setPosition(1000, 3000);
-      expect(camera.position.y).toBe(1140); // 1500 - 360
+      expect(camera.position.y).toBe(3000);
     });
 
-    it('应该在移动时应用边界限制', () => {
+    it('move 同样不应用边界钳制', () => {
       camera.setPosition(100, 100);
       camera.move(-200, -200);
-      // 应该被限制在边界内
-      expect(camera.position.x).toBeGreaterThanOrEqual(640);
-      expect(camera.position.y).toBeGreaterThanOrEqual(360);
+      expect(camera.position.x).toBe(-100);
+      expect(camera.position.y).toBe(-100);
     });
 
-    it('应该处理小于视野的地图', () => {
+    it('小于视野的地图也不强制居中，位置保持所设值', () => {
       // 地图比视野小
       camera.setBounds(0, 0, 800, 500);
       camera.setPosition(400, 250);
-      
-      // 相机应该被限制在地图中心
-      // 当地图小于视野时，相机会被限制到能显示整个地图的位置
-      expect(camera.position.x).toBeLessThanOrEqual(800);
-      expect(camera.position.y).toBeLessThanOrEqual(500);
+      expect(camera.position.x).toBe(400);
+      expect(camera.position.y).toBe(250);
     });
   });
 
@@ -101,40 +97,47 @@ describe('Camera', () => {
       expect(camera.target).toBe(target);
     });
 
-    it('应该平滑跟随目标', () => {
+    it('应该直接跟随目标（直跟语义）', () => {
       camera.setTarget(target);
       camera.followSpeed = 0.1;
       camera.deadzone = { x: 0, y: 0 }; // 禁用死区以确保相机移动
-      
+
+      // 直跟：更新一帧后相机应立即到达目标位置
+      camera.update(1/60);
+
+      expect(camera.position.x).toBe(target.position.x);
+      expect(camera.position.y).toBe(target.position.y);
+    });
+
+    it('开启平滑追赶后应渐进趋近目标', () => {
+      camera.setTarget(target);
+      camera.beginSmoothFollow(0.1);
+
       const initialX = camera.position.x;
       const initialY = camera.position.y;
-      
-      // 更新一帧
+
+      // 更新一帧：只按比例趋近，不会立即到达
       camera.update(1/60);
-      
-      // 相机应该向目标移动，但不会立即到达
-      expect(camera.position.x).toBeGreaterThan(initialX);
-      expect(camera.position.y).toBeGreaterThan(initialY);
+
+      expect(camera.position.x).toBeCloseTo(initialX + (target.position.x - initialX) * 0.1);
+      expect(camera.position.y).toBeCloseTo(initialY + (target.position.y - initialY) * 0.1);
       expect(camera.position.x).toBeLessThan(target.position.x);
       expect(camera.position.y).toBeLessThan(target.position.y);
     });
 
-    it('应该在死区内不移动相机', () => {
+    it('死区不再拦截跟随：目标在死区内相机也直接跟随', () => {
       camera.setPosition(500, 500);
       camera.setTarget(target);
       camera.deadzone = { x: 100, y: 100 };
-      
+
       // 目标在死区内
       target.position = { x: 550, y: 550 };
-      
-      const initialX = camera.position.x;
-      const initialY = camera.position.y;
-      
+
       camera.update(1/60);
-      
-      // 相机不应该移动
-      expect(camera.position.x).toBe(initialX);
-      expect(camera.position.y).toBe(initialY);
+
+      // 直跟语义：相机仍然直接到达目标位置
+      expect(camera.position.x).toBe(550);
+      expect(camera.position.y).toBe(550);
     });
 
     it('应该在目标离开死区时移动相机', () => {
@@ -155,36 +158,36 @@ describe('Camera', () => {
       expect(camera.position.y).toBeGreaterThan(initialY);
     });
 
-    it('应该在跟随时遵守边界限制', () => {
+    it('跟随不进行边界钳制', () => {
       camera.setTarget(target);
       camera.followSpeed = 1.0; // 立即跟随
-      
+
       // 目标在地图边界外
       target.position = { x: 5000, y: 5000 };
-      
+
       camera.update(1/60);
-      
-      // 相机应该被限制在边界内
-      expect(camera.position.x).toBeLessThanOrEqual(2360); // 3000 - 640
-      expect(camera.position.y).toBeLessThanOrEqual(2640); // 3000 - 360
+
+      // 自由移动：相机直接到达目标位置，不被钳制在边界内
+      expect(camera.position.x).toBe(5000);
+      expect(camera.position.y).toBe(5000);
     });
 
-    it('应该支持不同的跟随速度', () => {
+    it('平滑追赶速度越大单帧趋近越多', () => {
       camera.setTarget(target);
       camera.deadzone = { x: 0, y: 0 }; // 禁用死区以确保相机移动
-      
-      // 测试慢速跟随
-      camera.followSpeed = 0.05;
+
+      // 慢速平滑追赶
+      camera.beginSmoothFollow(0.05);
       camera.update(1/60);
       const slowX = camera.position.x;
-      
-      // 重置并测试快速跟随
+
+      // 重置并测试快速平滑追赶
       camera.setPosition(800, 800);
-      camera.followSpeed = 0.5;
+      camera.beginSmoothFollow(0.5);
       camera.update(1/60);
       const fastX = camera.position.x;
-      
-      // 快速跟随应该移动更多
+
+      // 快速趋近应该移动更多
       expect(fastX).toBeGreaterThan(slowX);
     });
   });

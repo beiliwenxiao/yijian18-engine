@@ -95,7 +95,7 @@ function createFixture(scenario) {
     definitionRepository: repository,
     actorId: scenario.actorId,
     rewardParticipants: [rewards],
-    createCheckpoint: checkpoint => {
+    scheduleCheckpoint: checkpoint => {
       checkpoints.push({
         kind: checkpoint.kind,
         operationId: checkpoint.operationId,
@@ -165,7 +165,9 @@ async function runModelledCommand({ fixture, scenario, model, intent }) {
     fixture.definition, model.runtime, operation, intent.payload, logicalTime, intent.operationId, scenario.actorId
   );
   const isFinalTurnIn = intent.operationId.endsWith('turnin-2');
-  const shouldCommit = resolved.changed && (!isFinalTurnIn || scenario.faultPhase === 'none');
+  // 现行契约：scheduleCheckpoint 为提交后尽力调度，调度失败不回滚命令；仅 reward 阶段故障仍拒绝
+  const rewardFault = scenario.faultPhase === 'rewardPrepare' || scenario.faultPhase === 'rewardCommit';
+  const shouldCommit = resolved.changed && (!isFinalTurnIn || !rewardFault);
   const result = await fixture.gateway.execute(intent);
 
   expect(result.ok, `seed=${scenario.seed}, operation=${intent.operationId}, result=${JSON.stringify(result)}`).toBe(shouldCommit);
@@ -238,11 +240,14 @@ describe('Property 10: Sole QuestResolver and atomic reward settlement', () => {
           fixture.clocks.logical.tick();
         }
 
-        const successfulOperations = faultPhase === 'none' ? secondCycle : secondCycle.slice(0, 2);
+        // 现行契约：仅 reward 阶段故障拒绝 turnin-2；checkpoint 调度失败不影响提交
+        const rewardFault = faultPhase === 'rewardPrepare' || faultPhase === 'rewardCommit';
+        const successfulOperations = rewardFault ? secondCycle.slice(0, 2) : secondCycle;
         const committed = normalizedNotifications(fixture).filter(event => event.kind === 'CommittedEvent');
         expect(committed.map(event => event.operationId)).toEqual([...commands, ...successfulOperations].map(intent => intent.operationId));
         expect(committed.every(event => event.stateRevision > 0)).toBe(true);
-        expect(normalizedNotifications(fixture).some(event => event.operationId === secondCycle[2].operationId)).toBe(faultPhase === 'none');
+        expect(normalizedNotifications(fixture).some(event => event.operationId === secondCycle[2].operationId))
+          .toBe(faultPhase === 'none' || faultPhase === 'checkpoint');
         expect(fixture.checkpoints.map(checkpoint => checkpoint.operationId)).toEqual(
           faultPhase === 'rewardPrepare' || faultPhase === 'rewardCommit'
             ? [...commands, ...secondCycle.slice(0, 2)].map(intent => intent.operationId)

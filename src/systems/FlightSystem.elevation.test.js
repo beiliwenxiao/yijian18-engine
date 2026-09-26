@@ -25,7 +25,7 @@ describe('FlightSystem - elevation 化', () => {
     fs.config.chargeDuration = 0.1;
     fs.config.flyDuration = 0.1;
     fs.config.landDuration = 0.1;
-    fs.config.arcHeight = 100;
+    fs.config.peakHeight = 100;
   });
 
   it('起飞时把 LayerComponent 切到 aerial', () => {
@@ -45,7 +45,7 @@ describe('FlightSystem - elevation 化', () => {
     // 飞行中段（progress ~ 0.5）
     fs.update(0.05, player);
     const midElevation = player.getComponent('transform').position.elevation;
-    expect(midElevation).toBeGreaterThan(50);  // 半程应该接近 arcHeight
+    expect(midElevation).toBeGreaterThan(50);  // 半程应该接近 peakHeight
     expect(midElevation).toBeLessThanOrEqual(100);
   });
 

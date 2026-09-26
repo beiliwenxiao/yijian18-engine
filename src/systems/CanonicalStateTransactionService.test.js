@@ -51,7 +51,11 @@ describe('CanonicalStateTransactionService', () => {
     expect(runtime.inventory.getItemCount('resource.food')).toBe(0);
     expect(runtime.board.get('cityStates')[0].morale).toBe(40);
     expect(runtime.board.get('storyState').donated).toBe(true);
-    expect(runtime.checkpoint).toHaveBeenCalledWith({ checkpointId: 'checkpoint.donate', sceneId: 'S09' });
+    // checkpoint 钩子现行契约：第二参数携带命令上下文
+    expect(runtime.checkpoint).toHaveBeenCalledWith(
+      { checkpointId: 'checkpoint.donate', sceneId: 'S09' },
+      expect.objectContaining({ commandType: 'state.transaction', operationId: 'op-donate' })
+    );
     const replay = await runtime.gateway.execute({ intentType: 'state.transaction', actorRef: 'player', operationId: 'op-donate', payload: { definitionId: 'story.donate' } });
     expect(replay).toEqual(result);
     expect(runtime.inventory.getItemCount('resource.food')).toBe(0);

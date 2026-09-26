@@ -51,20 +51,26 @@ describe('EditorSceneCommandService atomic command chain', () => {
     expect(cache.get('S02')).toMatchObject({ sceneId: 'S02', eligible: true, diskRevision: 'tx-1', refreshedAt: 123 });
   });
 
-  it.each(['update', 'save'])('%s 原位写回加载时 sourceUri 且不重写项目/list', async command => {
+  it.each(['update', 'save'])('%s 原位写回加载时 sourceUri，project 按分片架构路由且不重写 list', async command => {
     const { service, calls } = harness();
     const result = await service[command](PROJECT_PATH, {
       sceneId: 'S01', sourceUri: 'custom/canonical/S01.json', scene: { id: 'S01', marker: command, layers: [] }
     });
     expect(result.ok).toBe(true);
-    expect(calls[0][1]).toEqual([expect.objectContaining({ operation: 'replace', path: 'custom/canonical/S01.json' })]);
+    // 分片保存架构：update/save 会按声明路由 project change（无分片声明时退化为整份主文件替换）；场景文件仍原位写回 sourceUri
+    expect(calls[0][1]).toEqual(expect.arrayContaining([
+      expect.objectContaining({ operation: 'replace', path: PROJECT_PATH }),
+      expect.objectContaining({ operation: 'replace', path: 'custom/canonical/S01.json' })
+    ]));
+    // list（_scene_order.json）不被重写
+    expect(calls[0][1].some(change => change.path === 'example/game/assets/scenes/_scene_order.json')).toBe(false);
     expect(result.value.scenes.S01.marker).toBe(command);
   });
   it('rootPaths 保存把受影响 canonical 场景同步到 fallback cache', async () => {
     const cache = new MemorySceneCacheAdapter();
     const { service, model, calls } = harness({ cacheAdapter: cache });
-    const candidate = model.getCandidate();
-    candidate.scenes.S01.marker = 'edited-through-root-path';
+    // getCandidate() 返回克隆；schema 编辑器按现行架构通过 patch 修改共享 working copy
+    model.patch('scenes.S01.marker', 'edited-through-root-path');
 
     const result = await service.save(PROJECT_PATH, {
       rootPaths: ['scenes.S01.layers[0].objects[0]']

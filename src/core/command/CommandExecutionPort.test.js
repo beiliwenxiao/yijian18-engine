@@ -132,7 +132,16 @@ describe('Unified Local-First Command Execution Port contracts', () => {
 
     expect(commandResult).toEqual(result('operation-1', { stateRevision: 1, eventFrom: 1, eventTo: 1 }));
     expect(handlerFingerprint).toContain('inventory.pickup');
-    expect(published).toEqual([{ ...event('operation-1', { stateRevision: 1 }), eventSequence: 1, logicalTime: 1 }]);
+    expect(published).toEqual([{
+      ...event('operation-1', { stateRevision: 1 }),
+      eventSequence: 1,
+      logicalTime: 1,
+      // post-commit 通知契约新增：来源标识与事件定义 ID、actor/scene 归因
+      actorRef: null,
+      sceneId: null,
+      eventDefinitionId: 'inventory.changed',
+      source: { kind: 'postCommitNotification', operationId: 'operation-1' }
+    }]);
     expect(original.payload.nested.quantity).toBe(1);
   });
 

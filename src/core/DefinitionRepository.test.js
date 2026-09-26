@@ -105,16 +105,19 @@ describe('CanonicalSnapshot 与 DefinitionRepository', () => {
 });
 
 describe('GameLoader immutable shadow publication', () => {
-  it('合法 Demo（含空 quests）一次发布，并保持 Registry 查询', () => {
+  it('合法 Demo（含任务中心 quests）一次发布，并保持 Registry 查询', () => {
     const loader = new GameLoader();
     const project = loadResolvedDemoProject();
     const result = loader.assemble(project);
 
-    expect(result.quests).toEqual([]);
+    // 任务中心制：quests[] 为编译出的 taskGraph 定义
+    expect(result.quests.map(quest => quest.id)).toEqual(['task.s01.survival', 'task.s02.summons', 'task.s02.rescue']);
     expect(loader.lastSuccessfulSnapshot.project).toBe(loader.project);
     expect(loader.runtimeConfigSnapshot.definitionRevision).toBe(1);
     expect(loader.getRegistry('items').get('resource.wood')?.name).toBe('木材');
-    expect(Object.isFrozen(loader.project)).toBe(true);
+    // loader.project 是 FlowGroup 兼容归一化的运行时副本（可变）；不可变事实源在 snapshot：定义集合与运行配置深冻结
+    expect(Object.isFrozen(loader.runtimeConfigSnapshot)).toBe(true);
+    expect(Object.isFrozen(loader.lastSuccessfulSnapshot.definitions.items)).toBe(true);
   });
 
   it('失败候选和 consumer publish 故障均保留旧快照完整可运行', () => {

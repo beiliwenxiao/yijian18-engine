@@ -146,13 +146,14 @@ describe('GamepadManager 摇杆', () => {
 });
 
 describe('GamepadManager 虚拟键映射', () => {
-  it('默认绑定把 X 映射为拾取键 e、Start 映射为背包 b', () => {
+  it('默认绑定把 X 映射为拾取键 e、Back 映射为背包 b、Start 映射为系统设置', () => {
     const pad = makePad();
     const { nav } = makeNav(pad);
     const gm = new GamepadManager({ nav });
     gm.poll();
 
     pad.buttons[PadButton.X] = { pressed: true, value: 1 };
+    pad.buttons[PadButton.BACK] = { pressed: true, value: 1 };
     pad.buttons[PadButton.START] = { pressed: true, value: 1 };
     gm.poll();
 
@@ -160,6 +161,7 @@ describe('GamepadManager 虚拟键映射', () => {
     expect(vk.down.has('e')).toBe(true);
     expect(vk.pressed.has('e')).toBe(true);
     expect(vk.down.has('b')).toBe(true);
+    expect(vk.down.has('settings')).toBe(true);
   });
 
   it('A 键不产生虚拟按键（走虚拟鼠标左键）', () => {

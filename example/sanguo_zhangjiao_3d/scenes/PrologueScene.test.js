@@ -211,14 +211,14 @@ describe('PrologueScene', () => {
     describe('场景切换', () => {
         it('应该能前往下一个场景', () => {
             const mockSceneManager = {
-                switchScene: vi.fn()
+                switchTo: vi.fn()
             };
             scene.setSceneManager(mockSceneManager);
             scene.player = { id: 'player1' };
-            
+
             scene.goToNextScene({ customData: 'test' });
-            
-            expect(mockSceneManager.switchScene).toHaveBeenCalledWith(
+
+            expect(mockSceneManager.switchTo).toHaveBeenCalledWith(
                 'Act2Scene',
                 expect.objectContaining({
                     player: scene.player,
@@ -231,14 +231,14 @@ describe('PrologueScene', () => {
         it('第六幕完成后应该调用序章完成回调', () => {
             const scene6 = new PrologueScene(6);
             const mockSceneManager = {
-                switchScene: vi.fn()
+                switchTo: vi.fn()
             };
             scene6.setSceneManager(mockSceneManager);
             scene6.onPrologueComplete = vi.fn();
-            
+
             scene6.goToNextScene();
-            
-            expect(mockSceneManager.switchScene).not.toHaveBeenCalled();
+
+            expect(mockSceneManager.switchTo).not.toHaveBeenCalled();
             expect(scene6.onPrologueComplete).toHaveBeenCalled();
         });
     });

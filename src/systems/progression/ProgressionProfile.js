@@ -97,9 +97,11 @@ export class ProgressionProfile {
 
     this.profileName = PROGRESSION_PRESETS[presetName] ? presetName : DEFAULT_PROFILE_NAME;
 
-    this.enabled = Array.isArray(config.enabled) && config.enabled.length > 0
+    // 非法条目逐个过滤；过滤后为空（入参空数组或全非法）同样回退预设，保证 profile 始终可用
+    const requestedEnabled = Array.isArray(config.enabled)
       ? config.enabled.filter(k => KIND_TO_MODE[k])
-      : [...preset.enabled];
+      : [];
+    this.enabled = requestedEnabled.length > 0 ? requestedEnabled : [...preset.enabled];
 
     const requestedPrimary = config.primary || preset.primary;
     // 主结构必须在启用列表内，否则回退到启用列表首项
