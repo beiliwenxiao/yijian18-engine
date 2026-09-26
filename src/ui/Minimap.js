@@ -570,24 +570,13 @@ export class Minimap extends UIElement {
   }
 
   _renderTaskMarkers(ctx) {
-    const radius = Math.max(5, this.markerSize + 2);
+    ctx.fillStyle = this.taskMarkerColor;
     for (let index = 0; index < this.taskMarkers.length; index++) {
       const point = this._worldToMinimap(this.taskMarkers[index]);
       if (!point || !this._isMarkerVisible(point.x, point.y)) continue;
-      ctx.save();
-      ctx.translate(point.x, point.y);
-      ctx.rotate(Math.PI / 4);
-      ctx.fillStyle = this.taskMarkerColor;
-      ctx.fillRect(-radius, -radius, radius * 2, radius * 2);
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(-radius, -radius, radius * 2, radius * 2);
-      ctx.restore();
-      ctx.strokeStyle = 'rgba(255, 213, 79, 0.9)';
-      ctx.lineWidth = 1.5;
       ctx.beginPath();
-      ctx.arc(point.x, point.y, radius + 4, 0, Math.PI * 2);
-      ctx.stroke();
+      ctx.arc(point.x, point.y, this.markerSize, 0, Math.PI * 2);
+      ctx.fill();
     }
   }
 

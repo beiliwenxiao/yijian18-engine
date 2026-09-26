@@ -744,6 +744,7 @@ export const TASK_NODE_SCHEMA = {
     eventMatcher: { type: FieldType.OBJECT, schema: 'taskEventMatcher' },
     progressBy: { type: FieldType.STRING, minLength: 1 },
     mapTarget: { type: FieldType.OBJECT, schema: 'taskMapTarget' },
+    mapTargets: { type: FieldType.ARRAY, itemSchema: 'taskMapTarget' },
     ...TASK_PARALLEL_FIELDS,
     branches: { type: FieldType.ARRAY, itemSchema: 'taskBranch' }
   }

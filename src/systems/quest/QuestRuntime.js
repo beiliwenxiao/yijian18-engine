@@ -139,6 +139,10 @@ export function compileQuestTaskGraph(quest, project = null) {
     };
     const matcher = compileObjectiveEventMatcher(step, project);
     if (matcher) node.eventMatcher = matcher;
+    // 地图引导锚点：策划在步骤上声明 mapTarget / mapTargets 时原样带入任务图节点，
+    // 供 SceneHudUpdater 解析世界坐标（小地图任务点 + 任务点粒子信标共用）。
+    if (isObject(step.mapTarget)) node.mapTarget = clone(step.mapTarget);
+    if (Array.isArray(step.mapTargets)) node.mapTargets = step.mapTargets.filter(isObject).map(clone);
     const descriptor = getObjectiveTypeDescriptor(step.objectiveType, project);
     const progressBy = step.progressBy !== undefined ? step.progressBy : descriptor?.progressBy;
     if (text(progressBy)) node.progressBy = text(progressBy);

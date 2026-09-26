@@ -106,6 +106,20 @@ export function validateTaskGraphDefinitions(definitions = []) {
           issue(errors, 'invalidTaskMapTarget', `${nodePath}.mapTarget`, 'mapTarget 必须包含 sceneId，并提供 targetId 或有限 x/y 坐标');
         }
       }
+      if (node.mapTargets !== undefined) {
+        if (!Array.isArray(node.mapTargets)) {
+          issue(errors, 'invalidTaskMapTarget', `${nodePath}.mapTargets`, 'mapTargets 必须是 mapTarget 数组');
+        } else {
+          node.mapTargets.forEach((target, index) => {
+            const hasTargetId = hasText(target?.targetId);
+            const hasCoordinates = Number.isFinite(Number(target?.x)) && Number.isFinite(Number(target?.y));
+            if (!target || typeof target !== 'object' || !hasText(target.sceneId)
+              || (!hasTargetId && !hasCoordinates)) {
+              issue(errors, 'invalidTaskMapTarget', `${nodePath}.mapTargets[${index}]`, 'mapTargets 条目必须包含 sceneId，并提供 targetId 或有限 x/y 坐标');
+            }
+          });
+        }
+      }
       nodeMap.set(node.id, clone(node));
     }
     if (!hasText(raw.entryNodeId) || !nodeMap.has(raw.entryNodeId)) {
@@ -470,7 +484,8 @@ export class TaskGraphSystem {
               currentCount,
               requiredCount,
               eventIds: Object.freeze([...state.eventIds]),
-              mapTarget: node?.mapTarget ? Object.freeze(clone(node.mapTarget)) : null
+              mapTarget: node?.mapTarget ? Object.freeze(clone(node.mapTarget)) : null,
+              mapTargets: node?.mapTargets ? Object.freeze(node.mapTargets.map(clone)) : null
             });
           });
         return Object.freeze({

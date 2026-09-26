@@ -17,8 +17,8 @@
  * 引导玩家走过去。标记点数据由 SceneHudUpdater 每帧喂送
  * （与小地图任务投影同一份 taskGraph 投影，坐标为世界坐标）。
  *
- * 表现：常驻金色火花缓慢上浮 + 周期性向上脉冲爆发（节奏感"看这里"）。
- * 纯表现组件：authority 'client'，不写回任何工程数据。
+ * 表现：萤火虫式发光点 + 星形闪光，明暗错落持续闪烁；周期性一簇星形
+ * 萤光轻轻弹起（节奏感"看这里"）。纯表现组件：authority 'client'，不写回任何工程数据。
  *
  * 使用方式：
  *   const beacon = new TaskMarkerBeacon(scene.particleSystem);
@@ -109,40 +109,46 @@ export class TaskMarkerBeacon {
     this._points = [];
   }
 
-  /** 常驻金色火花：锚点附近随机生成，缓慢上浮带水平微摆。 */
+  /** 萤火虫萤光：小发光点/星形闪光，明暗与寿命各自随机，群体验闪烁感。 */
   _emitSpark(point) {
-    const highlight = Math.random() < 0.2;
+    const highlight = Math.random() < 0.3;
+    const star = Math.random() < 0.3;
     const x = point.x + (Math.random() - 0.5) * 28;
-    const y = point.y - Math.random() * 10;
+    const y = point.y - Math.random() * 24;
     this.particleSystem.emit({
       position: { x, y },
-      velocity: { x: (Math.random() - 0.5) * 16, y: -(20 + Math.random() * 26) },
-      gravity: -14, // 轻微上浮加速
-      friction: 0.985,
-      life: (0.6 + Math.random() * 0.4) * 1000,
-      size: (2 + Math.random() * 2) * (0.8 + Math.random() * 0.4),
+      velocity: { x: (Math.random() - 0.5) * 7, y: -(6 + Math.random() * 8) },
+      gravity: -1.5, // 极轻微上浮，飘忽感
+      friction: 0.99,
+      life: (0.8 + Math.random() * 0.7) * 1000,
+      size: star ? 1.2 + Math.random() * 1.2 : 1.4 + Math.random() * 1.1,
+      shape: star ? 'star' : 'circle',
       color: highlight ? this.highlightColor : this.color,
-      alpha: 0.9,
+      alpha: 0.35 + Math.random() * 0.6, // 各自明暗错落 → 萤火虫式闪烁
+      blendMode: 'lighter', // 叠加发光，暗处更亮
       renderLayer: 'effects',
       sortY: y
     });
   }
 
-  /** 脉冲爆发：一簇向上扇形喷射，强化引导节奏。 */
+  /** 脉冲：一簇星形萤光轻轻弹起，节奏感"看这里"。 */
   _emitPulse(point) {
     for (let index = 0; index < 8; index++) {
+      const star = Math.random() < 0.6;
       const angle = -Math.PI / 2 + (Math.random() - 0.5) * (Math.PI / 3); // 向上 ±30°
-      const speed = 55 + Math.random() * 55;
-      const y = point.y - Math.random() * 6;
+      const speed = 26 + Math.random() * 26;
+      const y = point.y - Math.random() * 14;
       this.particleSystem.emit({
-        position: { x: point.x + (Math.random() - 0.5) * 10, y },
+        position: { x: point.x + (Math.random() - 0.5) * 12, y },
         velocity: { x: Math.cos(angle) * speed, y: Math.sin(angle) * speed },
-        gravity: 26, // 喷出后下落，形成喷泉弧线
-        friction: 0.98,
-        life: (0.45 + Math.random() * 0.3) * 1000,
-        size: 2.5 + Math.random() * 2,
-        color: Math.random() < 0.3 ? this.highlightColor : this.color,
-        alpha: 0.95,
+        gravity: 10, // 轻微下落弧线
+        friction: 0.985,
+        life: (0.6 + Math.random() * 0.4) * 1000,
+        size: star ? 1.4 + Math.random() * 1.4 : 1.3 + Math.random() * 1.1,
+        shape: star ? 'star' : 'circle',
+        color: Math.random() < 0.35 ? this.highlightColor : this.color,
+        alpha: 0.55 + Math.random() * 0.45,
+        blendMode: 'lighter',
         renderLayer: 'effects',
         sortY: y
       });

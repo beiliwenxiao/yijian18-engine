@@ -146,21 +146,26 @@ export class SceneHudUpdater {
 
     for (const task of projection) {
       for (const node of task?.nodes || []) {
-        const target = node?.mapTarget;
-        if (!target) continue;
-        const position = this._resolveTaskMarkerPosition(target, services);
-        if (!position) continue;
-        const key = `${target.sceneId}:${target.targetId || ''}:${position.x}:${position.y}`;
-        if (keys.has(key)) continue;
-        keys.add(key);
-        markers.push({
-          ...position,
-          sceneId: target.sceneId,
-          targetId: target.targetId || null,
-          instanceId: task.instanceId,
-          nodeId: node.nodeId,
-          label: target.label || node.label || task.title
-        });
+        // mapTargets（多锚点，如多棵枯木）优先；单个 mapTarget 兼容为单元素列表。
+        const targets = Array.isArray(node?.mapTargets) && node.mapTargets.length > 0
+          ? node.mapTargets
+          : (node?.mapTarget ? [node.mapTarget] : []);
+        for (const target of targets) {
+          if (!target) continue;
+          const position = this._resolveTaskMarkerPosition(target, services);
+          if (!position) continue;
+          const key = `${target.sceneId}:${target.targetId || ''}:${position.x}:${position.y}`;
+          if (keys.has(key)) continue;
+          keys.add(key);
+          markers.push({
+            ...position,
+            sceneId: target.sceneId,
+            targetId: target.targetId || null,
+            instanceId: task.instanceId,
+            nodeId: node.nodeId,
+            label: target.label || node.label || task.title
+          });
+        }
       }
     }
     minimap.setTaskMarkers?.(markers);
@@ -209,9 +214,11 @@ export class SceneHudUpdater {
 
     this._updateTaskMarkers(minimap, player);
 
-    // 任务点引导闪光：与小地图同一份任务投影，喂给世界粒子信标（beacon 内部按当前场景过滤）
+    // 任务点引导闪光：与小地图同一份任务投影，喂给世界粒子信标。
+    // 过滤键必须是"当前场景 id"（与 mapTarget.sceneId 同一命名空间，如 S01）；
+    // region.id 是世界区域（如 mainland），比场景大，不能混用。
     const beacon = this.getContext()?.presentation?.taskMarkerBeacon || world.taskMarkerBeacon || null;
-    if (beacon) beacon.setMarkers?.(this._taskMarkers, region?.id ?? '');
+    if (beacon) beacon.setMarkers?.(this._taskMarkers, world.currentSceneId || '');
 
     if (!this._enemyPositions || this._shouldUpdate('minimap')) {
       const positions = this._enemyPositions || [];

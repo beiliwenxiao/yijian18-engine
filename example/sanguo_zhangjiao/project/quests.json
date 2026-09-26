@@ -24,6 +24,9 @@
       },
       {
         "id": "lightCampfire",
+        "mapTargets": [
+          { "sceneId": "S01", "targetId": "S01-spawn-campfire" }
+        ],
         "objectiveType": "commit.fact",
         "target": "story.s01.campfireLit",
         "title": "点燃火堆",
@@ -53,6 +56,9 @@
       },
       {
         "id": "gatherBerries",
+        "mapTargets": [
+          { "sceneId": "S01", "targetId": "S01-node-berry-1" }
+        ],
         "objectiveType": "gather.item",
         "progressBy": null,
         "target": "resource.wild_berry",
@@ -93,6 +99,11 @@
           "resourceType": "wood"
         },
         "id": "gatherWood",
+        "mapTargets": [
+          { "sceneId": "S01", "targetId": "S01-node-wood-1" },
+          { "sceneId": "S01", "targetId": "S01-node-wood-2" },
+          { "sceneId": "S01", "targetId": "S01-node-wood-3" }
+        ],
         "objectiveType": "gather.item",
         "progressBy": "accepted",
         "requiredCount": 1,
@@ -102,6 +113,9 @@
       },
       {
         "id": "spotWolf",
+        "mapTargets": [
+          { "sceneId": "S01", "targetId": "S01-spawn-campfire" }
+        ],
         "objectiveType": "commit.fact",
         "target": "story.s01.refuelCampfire",
         "title": "为火堆添柴并应对野狼",
@@ -161,6 +175,9 @@
       },
       {
         "id": "cookMeat",
+        "mapTargets": [
+          { "sceneId": "S01", "targetId": "S01-prop-cooking-rack" }
+        ],
         "objectiveType": "commit.fact",
         "target": "story.s01.cookMeat",
         "title": "烤制狼肉",
@@ -168,6 +185,9 @@
       },
       {
         "id": "craftGear",
+        "mapTargets": [
+          { "sceneId": "S01", "targetId": "S01-prop-tanning-rack" }
+        ],
         "objectiveType": "commit.fact",
         "target": "story.s01.wolfGearCrafted",
         "title": "制作狼皮背心和护腕",
@@ -175,6 +195,9 @@
       },
       {
         "id": "buildShelter",
+        "mapTargets": [
+          { "sceneId": "S01", "targetId": "S01-shelter-site-firewood" }
+        ],
         "objectiveType": "commit.fact",
         "target": "story.s01.shelterCompleted",
         "title": "搭建庇护所",
@@ -182,6 +205,9 @@
       },
       {
         "id": "stayOvernight",
+        "mapTargets": [
+          { "sceneId": "S01", "targetId": "S01-spawn-shelter-rest" }
+        ],
         "objectiveType": "commit.fact",
         "target": "story.s01.overnight",
         "title": "在庇护所过夜",
@@ -196,6 +222,9 @@
       },
       {
         "id": "crossRiver",
+        "mapTargets": [
+          { "sceneId": "S01", "targetId": "S01-river-far-bank" }
+        ],
         "objectiveType": "commit.fact",
         "target": "story.s01.riverCrossed",
         "title": "跳石过河",
@@ -203,6 +232,9 @@
       },
       {
         "id": "reachCliff",
+        "mapTargets": [
+          { "sceneId": "S01", "targetId": "S01-cliff-base" }
+        ],
         "objectiveType": "commit.fact",
         "target": "story.s01.cliffReached",
         "title": "抵达山崖并攀藤撤离",
