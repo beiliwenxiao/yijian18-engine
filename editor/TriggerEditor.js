@@ -1371,7 +1371,7 @@ export class TriggerEditor {
     if (this._isNestedCondition(condition)) {
       return `
         <div class="do-cond-form do-cond-nested">
-          <div class="do-cond-nested-note">这是旧的组合条件，当前只读保留。请使用单个选择条件或由流程模板重新生成。</div>
+          <div class="do-cond-nested-note">这是旧的嵌套条件（多条件组合），当前只读保留。请使用单个选择条件或由流程模板重新生成。</div>
           <pre>${this._escapeHtml(this._json(condition))}</pre>
           <textarea${textareaId} class="${textareaClass}" hidden>${this._escapeHtml(this._json(condition))}</textarea>
         </div>`;
@@ -1397,16 +1397,20 @@ export class TriggerEditor {
     const emptyLabel = opts.emptyLabel || '无条件，总是执行';
     const opOptions = `<option value="">${escape(emptyLabel)}</option>`
       + ops.map(o => `<option value="${o.value}"${currentOp === o.value ? ' selected' : ''}>${o.label}</option>`).join('');
-    const valueOptions = ['', 'true', 'false', '0', '1']
+    // 判断内容/目标值用 input+datalist：select 白名单会静默丢弃未登记的变量名与任意数值（如 hp>5）
+    this._condDatalistSeq = (this._condDatalistSeq || 0) + 1;
+    const varListId = `do-if-vars-${this._condDatalistSeq}`;
+    const valueListId = `do-if-values-${this._condDatalistSeq}`;
+    const valueSuggestions = ['true', 'false', '0', '1']
       .concat(currentValue !== '' ? [currentValue] : [])
       .filter((value, index, values) => values.indexOf(value) === index)
-      .map(value => `<option value="${escape(value)}"${value === currentValue ? ' selected' : ''}>${value === '' ? '-- 请选择 --' : escape(value)}</option>`).join('');
+      .map(value => `<option value="${escape(value)}"></option>`).join('');
     return `
       <div class="do-cond-form">
         <div class="do-step-if-row">
           <label>判断方式 <select class="do-if-op">${opOptions}</select></label>
-          <label class="do-if-var-wrap${hasItem ? ' hidden' : ''}">判断内容 <select class="do-if-var"><option value="">-- 请选择 --</option>${this._selectionOptionsForField('variable', currentVar)}</select></label>
-          <label class="do-if-value-wrap${hasItem ? ' hidden' : ''}">目标值 <select class="do-if-value">${valueOptions}</select></label>
+          <label class="do-if-var-wrap${hasItem ? ' hidden' : ''}">判断内容 <input type="text" class="do-if-var" list="${varListId}" placeholder="-- 请输入变量名 --" value="${escape(currentVar)}"><datalist id="${varListId}">${this._selectionOptionsForField('variable', currentVar)}</datalist></label>
+          <label class="do-if-value-wrap${hasItem ? ' hidden' : ''}">目标值 <input type="text" class="do-if-value" list="${valueListId}" placeholder="-- 请输入目标值 --" value="${escape(currentValue)}"><datalist id="${valueListId}">${valueSuggestions}</datalist></label>
           <label class="do-if-item-wrap${hasItem ? '' : ' hidden'}">物品 <select class="do-if-item"><option value="">-- 请选择物品 --</option>${this._selectionOptionsForField('item', currentItem)}</select></label>
           <label class="do-if-count-wrap${hasItem ? '' : ' hidden'}">数量 <select class="do-if-count">${this._numberSelectionOptions(currentCount, { minimum: 1, maximum: 100 })}</select></label>
         </div>

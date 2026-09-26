@@ -78,7 +78,8 @@ describe('TriggerEditor 步骤级 if 可视化编辑器', () => {
     const editor = buildEditor(project);
     editor.selectedIndex = 0;
     editor._renderDetail();
-    const form = document.querySelector('.do-cond-form');
+    // 页面有多个 .do-cond-form（trigger 级 if / 分支 when / 步骤 if），必须定位步骤 if 的表单
+    const form = document.querySelector('.do-step-if .do-cond-form');
     const opSelect = form.querySelector('.do-if-op');
     const varInput = form.querySelector('.do-if-var');
     const valueInput = form.querySelector('.do-if-value');
@@ -105,7 +106,8 @@ describe('TriggerEditor 步骤级 if 可视化编辑器', () => {
     const editor = buildEditor(project);
     editor.selectedIndex = 0;
     editor._renderDetail();
-    const form = document.querySelector('.do-cond-form');
+    // 页面有多个 .do-cond-form，步骤 if 的表单在 details.do-step-if 内
+    const form = document.querySelector('.do-step-if .do-cond-form');
     expect(form.querySelector('.do-if-item-wrap').classList.contains('hidden')).toBe(false);
     expect(form.querySelector('.do-if-count-wrap').classList.contains('hidden')).toBe(false);
     expect(form.querySelector('.do-if-var-wrap').classList.contains('hidden')).toBe(true);
@@ -324,7 +326,6 @@ describe('TriggerEditor 分支条件可视化编辑器', () => {
     varInput.value = 'hp';
     valueInput.value = '5';
     opSelect.dispatchEvent(new Event('change'));
-    valueInput.dispatchEvent(new Event('change'));
     expect(wrap.querySelector('.do-branch-when').value).toBe('{"op":">","var":"hp","value":5}');
     editor._commitDetail();
     expect(editor.project.triggers[0].do[0].branch[0].when).toEqual({ op: '>', var: 'hp', value: 5 });
