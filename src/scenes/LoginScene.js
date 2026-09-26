@@ -17,8 +17,9 @@ import { Scene } from '../core/Scene.js';
  * 显示游戏标题和开始按钮
  */
 export class LoginScene extends Scene {
-    constructor() {
+    constructor(engine = null) {
         super('Login');
+        this.engine = engine;
         
         // UI元素
         this.title = 'HTML5 MMRPG';
@@ -232,8 +233,6 @@ export class LoginScene extends Scene {
         
         // 触发场景切换（需要通过SceneManager）
         // 这将在GameEngine中处理
-        if (window.gameEngine && window.gameEngine.sceneManager) {
-            window.gameEngine.sceneManager.switchTo('Character');
-        }
+        this.engine?.sceneManager?.switchTo('Character');
     }
 }

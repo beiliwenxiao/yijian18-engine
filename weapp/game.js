@@ -13,7 +13,7 @@
  */
 
 // ① 适配层注入（必须最先执行）
-import { mainCanvas } from './adapter/index.js';
+import { mainCanvas, getMainContext } from './adapter/index.js';
 
 // ② 引擎打包后的 bundle（Vite 构建产物）
 // 构建脚本会生成此文件，包含 SceneManager + 所有场景 + 引擎核心
@@ -29,7 +29,7 @@ const dpr = sys.pixelRatio || 1;
 mainCanvas.width = screenWidth * dpr;
 mainCanvas.height = screenHeight * dpr;
 
-const ctx = mainCanvas.getContext('2d');
+const ctx = getMainContext();
 ctx.scale(dpr, dpr);
 
 console.log(`[WeApp] 画布: ${mainCanvas.width}x${mainCanvas.height} (DPR=${dpr})`);

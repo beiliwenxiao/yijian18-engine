@@ -321,7 +321,14 @@ export class BaseGameSceneSetup extends Scene {
     this._worldPresentation = null;
 
     // 通用玩法系统由框架装配器集中创建、接线和释放。
-    this._gameplaySystemAssembler = new SceneGameplaySystemAssembler(this);
+    // 灵魂状态 body class 属表现层关注点，由本 setup（presentation）承接。
+    this._gameplaySystemAssembler = new SceneGameplaySystemAssembler(this, {
+      onSoulStateVisual: active => {
+        if (typeof document !== 'undefined') {
+          document.body.classList.toggle('soul-state', active === true);
+        }
+      }
+    });
 
     // 场景过渡：状态机与绘制由框架的 SceneTransitionFlow 承担
     this._transition = new SceneTransitionFlow({

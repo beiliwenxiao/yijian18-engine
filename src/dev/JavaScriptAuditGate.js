@@ -160,7 +160,8 @@ function policyPatterns() {
     onlineBranch: expression(['\\bif\\s*\\(\\s*online\\s*\\)']),
     directClockOrRandom: expression(['\\b(?:', date, '\\s*\\.\\s*now|new\\s+', date, '|', mathRandom, ')']),
     domOrCanvas: expression(['\\b(?:docu', 'ment|window|HTMLCanvasElement|OffscreenCanvas)\\b|\\.getContext\\s*\\(']),
-    stateWrite: expression(['\\b(?:inventory|quest|story|stats|equipment|serviceState|runtimeState)\\s*(?:\\.[A-Za-z_$][\\w$]*|\\[[^\\]]+\\])\\s*(?:=|\\+=|-=|\\+\\+|--)']),
+    // =(?!==)：等值比较（===/==）不是状态写入，剔除
+    stateWrite: expression(['\\b(?:inventory|quest|story|stats|equipment|serviceState|runtimeState)\\s*(?:\\.[A-Za-z_$][\\w$]*|\\[[^\\]]+\\])\\s*(?:=(?![=])|\\+=|-=|\\+\\+|--)']),
     singleton: expression(['\\b(?:Singleton|Service', 'Locator)\\b|\\bgetInstance\\s*\\(\\s*\\)']),
     clientStateSubmit: expression(['\\b(?:submit|send|sync|commit)\\w*\\s*\\([^)]*(?:clientState|fullState|wholeState|stateSnapshot)'])
   };
@@ -203,7 +204,9 @@ function applyPolicy(unit) {
   ));
 
   if (unit.responsibility === 'assembly') {
-    check(patterns.domOrCanvas, 'assembly-presentation-overreach', 'Assembly may not access DOM or Canvas APIs.');
+    // HTML 外壳内联脚本即平台 DOM 边界（登录/存档/触控等 UI 编排天然操作 DOM），豁免 DOM 规则；其余 assembly 规则照常。
+    const isHtmlShellScript = /\.(?:html|htm)$/i.test(unit.parentFile || '');
+    check(patterns.domOrCanvas, 'assembly-presentation-overreach', 'Assembly may not access DOM or Canvas APIs.', () => !isHtmlShellScript);
     check(patterns.stateWrite, 'assembly-business-overreach', 'Assembly may not mutate service-owned business state.');
   }
   if (unit.responsibility === 'businessLogic') {
@@ -217,8 +220,9 @@ function applyPolicy(unit) {
     const directSave = /\bfetch\s*\(\s*['"][^'"]*\/api\/canonical[^'"]*['"]/.exec(source)
       || (() => {
         const match = /\bfetch\s*\(\s*['"][^'"]*\/api\/save-file[^'"]*['"]/.exec(source);
-        // 唯一允许的 interaction 直写是编辑器自身模板；canonical 项目/场景永远经 command service。
-        return match && !source.slice(match.index, match.index + 600).includes("editor/config/scene-templates.json")
+        // 唯一允许的 interaction 直写是编辑器自有配置（editor/config/：模板、图片表等非 canonical 数据）；
+        // canonical 项目/场景文件永远经 command service。
+        return match && !/editor\/config\//.test(source.slice(match.index, match.index + 600))
           ? match
           : null;
       })();

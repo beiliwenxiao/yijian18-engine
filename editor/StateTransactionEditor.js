@@ -359,11 +359,11 @@ export class StateTransactionEditor {
     target.querySelectorAll('[data-action="add-inv"]').forEach(button => button.addEventListener('click', () => {
       command.transaction = isObject(command.transaction) ? command.transaction : {};
       const kind = button.dataset.invKind === 'add' ? 'addEntries' : 'removeEntries';
-      const inventory = isObject(command.transaction.inventory) ? command.transaction.inventory : {};
-      inventory[kind] = list(inventory[kind]);
-      inventory[kind].push({ itemId: '', quantity: 1 });
-      inventory.type = kind === 'addEntries' ? (inventory.removeEntries?.length ? 'batchExchange' : 'batchAdd') : (inventory.addEntries?.length ? 'batchExchange' : 'batchRemove');
-      command.transaction.inventory = inventory;
+      const inventoryPayload = isObject(command.transaction.inventory) ? command.transaction.inventory : {};
+      inventoryPayload[kind] = list(inventoryPayload[kind]);
+      inventoryPayload[kind].push({ itemId: '', quantity: 1 });
+      inventoryPayload.type = kind === 'addEntries' ? (inventoryPayload.removeEntries?.length ? 'batchExchange' : 'batchAdd') : (inventoryPayload.addEntries?.length ? 'batchExchange' : 'batchRemove');
+      command.transaction.inventory = inventoryPayload;
       this._dirty = true;
       this._renderDetail();
     }));
@@ -473,7 +473,7 @@ export class StateTransactionEditor {
   // —— inventory 背包：结构 ↔ 行模型 ——
   _syncInventory(command, target) {
     command.transaction = isObject(command.transaction) ? command.transaction : {};
-    const inventory = isObject(command.transaction.inventory) ? command.transaction.inventory : { type: 'batchExchange' };
+    const inventoryPayload = isObject(command.transaction.inventory) ? command.transaction.inventory : { type: 'batchExchange' };
     const readKind = kind => {
       const rows = [];
       target.querySelectorAll(`[data-inv-kind="${kind === 'addEntries' ? 'add' : 'remove'}"]`).forEach(rowEl => {
@@ -486,11 +486,11 @@ export class StateTransactionEditor {
     };
     const addEntries = readKind('addEntries');
     const removeEntries = readKind('removeEntries');
-    if (addEntries.length) inventory.addEntries = addEntries; else delete inventory.addEntries;
-    if (removeEntries.length) inventory.removeEntries = removeEntries; else delete inventory.removeEntries;
-    inventory.type = addEntries.length && removeEntries.length ? 'batchExchange' : (addEntries.length ? 'batchAdd' : 'batchRemove');
+    if (addEntries.length) inventoryPayload.addEntries = addEntries; else delete inventoryPayload.addEntries;
+    if (removeEntries.length) inventoryPayload.removeEntries = removeEntries; else delete inventoryPayload.removeEntries;
+    inventoryPayload.type = addEntries.length && removeEntries.length ? 'batchExchange' : (addEntries.length ? 'batchAdd' : 'batchRemove');
     if (!addEntries.length && !removeEntries.length) delete command.transaction.inventory;
-    else command.transaction.inventory = inventory;
+    else command.transaction.inventory = inventoryPayload;
   }
 
   _parseScalar(value) {

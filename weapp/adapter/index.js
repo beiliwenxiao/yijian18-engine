@@ -7,7 +7,7 @@
  * 引入顺序很重要：先 shim 再 import 引擎。
  */
 
-import { shimCanvas, mainCanvas } from './canvas.js';
+import { shimCanvas, mainCanvas, getMainContext } from './canvas.js';
 import { shimImage } from './image.js';
 import { shimAudio } from './audio.js';
 import { shimStorage } from './storage.js';
@@ -29,8 +29,8 @@ shimEvent(_global, mainCanvas);
 shimPerformance(_global);
 shimMisc(_global);
 
-// 导出主画布供 game.js 使用
-export { mainCanvas };
+// 导出主画布与其 2D 上下文供 game.js 使用
+export { mainCanvas, getMainContext };
 export { _global as global };
 
 console.log('[WeApp Adapter] 适配层注入完成');

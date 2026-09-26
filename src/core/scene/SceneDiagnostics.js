@@ -121,10 +121,7 @@ export class SceneDiagnostics {
     if (!scene.debugPanel) {
       scene.debugPanel = new DebugPanel({
         getScene: () => scene,
-        getSceneManager: () => {
-          const engine = typeof window !== 'undefined' ? window.gameEngine : null;
-          return engine?.sceneManager || scene.sceneManager || null;
-        },
+        getSceneManager: () => scene.sceneManager || null,
         isDebugEnabled: () => this.isDebugEnabled()
       });
     }
@@ -144,7 +141,6 @@ export class SceneDiagnostics {
    * 此方法只记录数据，不把任何阈值自动标记为通过。
    */
   startPerformanceMeasurement(metadata = {}) {
-    const engine = typeof window !== 'undefined' ? window.gameEngine : null;
     return this.scene.performanceMonitor.startMeasurement({
       ...metadata,
       sceneId: metadata.sceneId ?? this.scene.currentSceneId ?? this.scene.editorSceneId ?? null,
@@ -152,8 +148,8 @@ export class SceneDiagnostics {
         width: this.scene.logicalWidth ?? null,
         height: this.scene.logicalHeight ?? null
       },
-      requestedBackendMode: metadata.requestedBackendMode ?? engine?.requestedBackendMode ?? null,
-      actualBackendMode: metadata.actualBackendMode ?? engine?.actualBackendMode ?? null
+      requestedBackendMode: metadata.requestedBackendMode ?? this.scene.requestedBackendMode ?? null,
+      actualBackendMode: metadata.actualBackendMode ?? this.scene.actualBackendMode ?? null
     });
   }
 

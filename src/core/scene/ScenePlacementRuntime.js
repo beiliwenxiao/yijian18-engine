@@ -878,8 +878,8 @@ export class ScenePlacementRuntime {
     const stats = value?.getComponent?.('stats');
     const transform = value?.getComponent?.('transform');
     if (stats && Number.isFinite(state.hp)) {
-      const maxHp = Number.isFinite(Number(stats.maxHp)) ? Number(stats.maxHp) : Number(state.hp);
-      stats.hp = Math.min(maxHp, Math.max(0, Number(state.hp)));
+      // HP 不变式由 stats 组件自身维护（assembly 不直接写业务状态）
+      stats.applyRestoredHp(state.hp);
     }
     if (transform && Number.isFinite(state.position?.x) && Number.isFinite(state.position?.y)) {
       transform.position.x = state.position.x;

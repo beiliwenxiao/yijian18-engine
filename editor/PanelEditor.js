@@ -11,6 +11,8 @@
  * 保存为 config/PanelLayout.json，游戏运行时由面板组件读取并应用。
  */
 
+import { replaceCanonicalFile } from './CanonicalTransactionClient.js';
+
 // 旧三面板定义仅保留作为历史参考；实际回退默认值使用下方的统一背包定义。
 const LEGACY_DEFAULT_PANELS = [
   {
@@ -277,15 +279,7 @@ export class PanelEditor {
   async save() {
     const content = JSON.stringify({ panels: this.panels }, null, 2);
     try {
-      const res = await fetch('/api/save-file', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ path: this.configPath, content })
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok || data?.ok !== true) {
-        throw new Error(data.error || `保存失败（HTTP ${res.status}）`);
-      }
+      await replaceCanonicalFile(this.configPath, content);
       this._showToast('✅ 已保存到 ' + this.configPath);
     } catch (e) {
       this._showToast('❌ 保存失败: ' + e.message, true);

@@ -26,6 +26,7 @@ import { AttributeSystem } from '../systems/AttributeSystem.js';
 import { UISystem } from '../ui/UISystem.js';
 import { PlayerInfoPanel } from '../ui/PlayerInfoPanel.js';
 import { AttributePanel } from '../ui/AttributePanel.js';
+import { getDocumentBody, addDomEventListener } from '../core/PlatformBootstrap.js';
 import { EntityFactory } from '../ecs/EntityFactory.js';
 import { MockDataService } from '../data/MockDataService.js';
 
@@ -125,7 +126,7 @@ export class GameScene extends Scene {
    */
   initializeSystems() {
     const canvas = this.engine.canvas;
-    const ctx = canvas.getContext('2d');
+    const ctx = this.engine.canvasContext;
     
     // 创建相机
     this.camera = new Camera(
@@ -149,7 +150,9 @@ export class GameScene extends Scene {
     // 创建移动系统
     this.movementSystem = new MovementSystem({
       inputManager: this.engine.inputManager,
-      camera: this.camera
+      camera: this.camera,
+      // 楼层切换表现回调：替代旧的 document floorChanged DOM 事件
+      onFloorChanged: detail => this.renderSystem?.setCurrentFloor?.(detail?.floorId)
     });
     
     // 创建战斗系统
@@ -207,17 +210,7 @@ export class GameScene extends Scene {
     this.movementSystem.setMapData(this.mapData);
 
     // 监听 floorChanged，同步 RenderSystem 的 currentFloorId
-    if (!this._floorListener) {
-      this._floorListener = (ev) => {
-        const fid = ev?.detail?.floorId;
-        if (fid && this.renderSystem?.setCurrentFloor) {
-          this.renderSystem.setCurrentFloor(fid);
-        }
-      };
-      if (typeof document !== 'undefined') {
-        document.addEventListener('floorChanged', this._floorListener);
-      }
-    }
+    // （已改为 MovementSystem.onFloorChanged 回调，见 initializeSystems 注入）
     if (this.renderSystem?.setCurrentFloor) {
       this.renderSystem.setCurrentFloor(this.mapData.defaultFloor || 'ground');
     }
@@ -279,19 +272,22 @@ export class GameScene extends Scene {
     };
     
     this.attributeSystem.initializeCharacterAttributes(this.player.id, attributeConfig);
-    
+
     // 应用属性效果到角色属性
     this.applyAttributeEffectsToPlayer();
-    
-    // 监听属性变化事件
-    document.addEventListener('attributeChanged', (event) => {
-      if (event.detail.characterId === this.player.id) {
-        this.applyAttributeEffectsToPlayer();
-        console.log('GameScene: Player attributes updated');
-      }
-    });
-    
+
     console.log('GameScene: Player attributes initialized');
+  }
+
+  /**
+   * 属性变化回调（由 AttributePanel.onAttributeChanged 注入触发，替代 document 事件监听）
+   * @param {{characterId: string}} detail - 事件明细
+   */
+  onAttributeChanged(detail) {
+    if (detail?.characterId === this.player.id) {
+      this.applyAttributeEffectsToPlayer();
+      console.log('GameScene: Player attributes updated');
+    }
   }
 
   /**
@@ -335,13 +331,13 @@ export class GameScene extends Scene {
    */
   createAttributePanel() {
     if (!this.player || !this.attributeSystem) return;
-    
-    // 创建属性面板容器
-    const container = document.body;
+
+    // 创建属性面板容器（宿主 DOM 经 platformInfra 引导层获取）
+    const container = getDocumentBody();
     this.attributePanel = new AttributePanel(container, this.attributeSystem);
-    
+
     // 绑定快捷键 'C' 打开属性面板
-    document.addEventListener('keydown', (event) => {
+    addDomEventListener('keydown', (event) => {
       if (event.key.toLowerCase() === 'c' && !this.attributePanel.isOpen()) {
         event.preventDefault(); // 防止事件冲突
         this.attributePanel.show(this.player.id);
@@ -784,12 +780,6 @@ export class GameScene extends Scene {
       this.skillEffects.clear();
     }
 
-    // 解绑 floorChanged
-    if (this._floorListener && typeof document !== 'undefined') {
-      document.removeEventListener('floorChanged', this._floorListener);
-      this._floorListener = null;
-    }
-    
     console.log('GameScene: Exited and cleaned up');
   }
 }

@@ -66,7 +66,6 @@ async function fireSceneEnterTriggers() {
 
 function initializeGameLoader() {
   try {
-    const engine = window.gameEngine;
     const bridge = new SceneGameLoaderBridge({
       scope: this.resourceScope,
       loaderConfig: { contentPolicy: SANGUO_ZHANGJIAO_CONTENT_POLICY },
@@ -78,8 +77,8 @@ function initializeGameLoader() {
         commandGateway: this.sceneRuntime?.commandGateway || null,
         eventJournal: this.sceneRuntime?.eventJournal || null,
         combatSystem: this.combatSystem,
-        sceneManager: engine ? engine.sceneManager : (this.sceneManager || null),
-        audioManager: this.audioManager || (engine && engine.audioManager) || null,
+        sceneManager: this.sceneManager || null,
+        audioManager: this.audioManager || null,
         floatingText: this.floatingTextManager,
         scene: this.$scene,
         sceneDiagnostics: this._diagnostics

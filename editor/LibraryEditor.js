@@ -635,7 +635,7 @@ export class LibraryEditor {
   _renderSpriteDetail(panel, e, cat) {
     const sprite = e.sprite || {};
     const anims = e.animations || {};
-    const stats = e.baseStats || {};
+    const baseStatsView = e.baseStats || {};
     const ai = e.ai || {};
 
     let animRows = '';
@@ -650,7 +650,7 @@ export class LibraryEditor {
     }
 
     let statsHtml = '';
-    for (const [k, v] of Object.entries(stats)) {
+    for (const [k, v] of Object.entries(baseStatsView)) {
       statsHtml += `<div style="display:inline-block;margin:2px 6px 2px 0;"><label style="font-size:11px;color:#9ab;">${k}</label><input type="number" value="${v}" data-stat="${k}" style="width:50px;margin-left:4px;"></div>`;
     }
 
@@ -739,9 +739,9 @@ export class LibraryEditor {
     });
     panel.querySelector('#l-stat-add')?.addEventListener('click', () => {
       const name = prompt('属性名（如 maxHp, attack, speed）:');
-      if (name && !stats[name]) {
-        stats[name] = 0;
-        e.baseStats = stats;
+      if (name && !baseStatsView[name]) {
+        baseStatsView[name] = 0;
+        e.baseStats = baseStatsView;
         this._renderSpriteDetail(panel, e, cat);
       }
     });
@@ -847,11 +847,11 @@ export class LibraryEditor {
       });
       e.animations = anims;
       // baseStats
-      const stats = {};
+      const baseStatsView = {};
       panel.querySelectorAll('[data-stat]').forEach(input => {
-        stats[input.dataset.stat] = parseFloat(input.value) || 0;
+        baseStatsView[input.dataset.stat] = parseFloat(input.value) || 0;
       });
-      e.baseStats = stats;
+      e.baseStats = baseStatsView;
       // AI (enemies)
       if (cat === 'enemies') {
         e.ai = {

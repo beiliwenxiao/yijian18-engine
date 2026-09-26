@@ -101,6 +101,36 @@ describe('JavaScriptAuditGate', () => {
     ]));
   });
 
+  it('does not flag equality comparisons as state writes, but still flags real writes', () => {
+    const report = audit({
+      'src/ui/QuestCompareView.js': 'export const pick = quest => quest.state === "active" ? quest : null;',
+      'src/ui/QuestWriteView.js': 'export const touch = quest => { quest.state = "active"; };'
+    });
+    expect(report.violations.filter(violation => violation.code === 'presentation-business-state-write'))
+      .toEqual([expect.objectContaining({ file: 'src/ui/QuestWriteView.js' })]);
+  });
+
+  it('exempts HTML shell inline scripts from DOM rules but keeps state-write rules', () => {
+    const report = audit({
+      'example/sanguo_zhangjiao/shell.html': '<script type="module">\nconst canvas = document.getElementById("game");\nquest.state = "active";\n</script>'
+    });
+    expect(report.violations.filter(violation => violation.code === 'assembly-presentation-overreach')).toEqual([]);
+    expect(report.violations).toEqual(expect.arrayContaining([
+      expect.objectContaining({ file: 'example/sanguo_zhangjiao/shell.html#script:1', code: 'assembly-business-overreach' })
+    ]));
+  });
+
+  it('allows editor save-file calls that target editor/config paths only', () => {
+    const report = audit({
+      'editor/OwnConfigWriter.js': 'await fetch("/api/save-file", { method: "POST", body: JSON.stringify({ path: "editor/config/images.json" }) });',
+      'editor/CanonicalWriter.js': 'await fetch("/api/canonical-transaction", { method: "POST" });'
+    });
+    expect(report.violations.filter(violation => violation.file === 'editor/OwnConfigWriter.js')).toEqual([]);
+    expect(report.violations).toEqual(expect.arrayContaining([
+      expect.objectContaining({ file: 'editor/CanonicalWriter.js', code: 'editor-command-service-bypass' })
+    ]));
+  });
+
   it('reclassifies editor and platform infrastructure files out of business boundary rules', () => {
     const report = audit({
       'editor/SceneDataManager.js': 'const stamp = Date.now();\ndocument.title = "editor";',

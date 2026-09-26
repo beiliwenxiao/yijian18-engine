@@ -793,15 +793,15 @@ export class TriggerEditor {
       summary.textContent = `全部 Trigger ${this.triggers.length} 个；场景关联按空间 binding、场景条件和编辑器归属合并。`;
       return;
     }
-    const stats = { spatial: 0, condition: 0, editorScope: 0, total: 0 };
+    const tally = { spatial: 0, condition: 0, editorScope: 0, total: 0 };
     for (const trigger of this.triggers) {
       const association = this._getTriggerAssociation(trigger, sceneId, associationIndex);
-      if (association.spatial) stats.spatial++;
-      if (association.condition) stats.condition++;
-      if (association.editorScope) stats.editorScope++;
-      if (association.associated) stats.total++;
+      if (association.spatial) tally.spatial++;
+      if (association.condition) tally.condition++;
+      if (association.editorScope) tally.editorScope++;
+      if (association.associated) tally.total++;
     }
-    summary.textContent = `${sceneId}：空间绑定 ${stats.spatial}，场景条件 ${stats.condition}，编辑归属 ${stats.editorScope}，合并后 ${stats.total} 个关联 Trigger。`;
+    summary.textContent = `${sceneId}：空间绑定 ${tally.spatial}，场景条件 ${tally.condition}，编辑归属 ${tally.editorScope}，合并后 ${tally.total} 个关联 Trigger。`;
   }
 
   _moveTrigger(source, target, placeAfter) {

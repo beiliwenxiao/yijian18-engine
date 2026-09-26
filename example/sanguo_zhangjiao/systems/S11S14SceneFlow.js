@@ -1632,7 +1632,7 @@ const s13s14Methods = {
       return true;
     }
     if (command.type === 'returnTitle') {
-      const manager = this.sceneManager || globalThis.window?.gameEngine?.sceneManager;
+      const manager = this.sceneManager;
       if (!manager?.scenes?.has?.('Login')) {
         this._showScreenTip('标题场景尚未注册，当前结局演出保持打开。', { title: '无法返回标题' });
         return false;

@@ -148,15 +148,14 @@ export class SceneGameLoaderBridge {
 
   _createDeps(overrides) {
     const scope = this.scope;
-    const engine = typeof window !== 'undefined' ? window.gameEngine : null;
     const defaults = {
       dialogueSystem: this.dialogueSystem || scope?.dialogueSystem || null,
       tutorialSystem: scope?.tutorialSystem || null,
       questSystem: scope?.questSystem,
       questTransactionService: scope?.questSystem,
       combatSystem: scope?.combatSystem,
-      sceneManager: engine?.sceneManager || scope?.sceneManager || null,
-      audioManager: scope?.audioManager || engine?.audioManager || null,
+      sceneManager: scope?.sceneManager || null,
+      audioManager: scope?.audioManager || null,
       floatingText: scope?.floatingTextManager,
       player: this.getPlayer(),
       scene: scope,

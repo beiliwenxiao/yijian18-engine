@@ -20,12 +20,14 @@ export class AttributePanel {
    * @param {HTMLElement} container - 容器元素
    * @param {Object} attributeSystem - 属性系统实例
    */
-  constructor(container, attributeSystem) {
+  constructor(container, attributeSystem, config = {}) {
     this.container = container;
     this.attributeSystem = attributeSystem;
     this.characterId = null;
     this.isVisible = false;
-    
+    // 属性变化回调（供引擎侧 DOM-free 订阅；document 事件仅为外部兼容保留）
+    this.onAttributeChanged = typeof config.onAttributeChanged === 'function' ? config.onAttributeChanged : null;
+
     this.createPanel();
     this.bindEvents();
   }
@@ -432,14 +434,14 @@ export class AttributePanel {
    * 触发属性变化事件
    */
   dispatchAttributeChangeEvent() {
-    const event = new CustomEvent('attributeChanged', {
-      detail: {
-        characterId: this.characterId,
-        attributeData: this.attributeSystem.getCharacterAttributes(this.characterId),
-        effects: this.attributeSystem.calculateCharacterEffects(this.characterId)
-      }
-    });
-    
+    const detail = {
+      characterId: this.characterId,
+      attributeData: this.attributeSystem.getCharacterAttributes(this.characterId),
+      effects: this.attributeSystem.calculateCharacterEffects(this.characterId)
+    };
+    this.onAttributeChanged?.(detail);
+
+    const event = new CustomEvent('attributeChanged', { detail });
     document.dispatchEvent(event);
   }
 

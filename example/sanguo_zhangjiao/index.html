@@ -3736,8 +3736,10 @@
                                             attributePanel.show(player.id);
                                         }
                                     } else {
-                                        // 创建属性面板
-                                        attributePanel = new AttributePanel(document.body, currentAttributeSystem);
+                                        // 创建属性面板（属性变化经回调直达当前场景，document 事件仅为外部兼容保留）
+                                        attributePanel = new AttributePanel(document.body, currentAttributeSystem, {
+                                            onAttributeChanged: detail => scene?.onAttributeChanged?.(detail)
+                                        });
                                         attributePanel.show(player.id);
                                     }
                                 } else {

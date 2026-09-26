@@ -8,6 +8,11 @@
 // 主画布（首次 createCanvas）
 export const mainCanvas = wx.createCanvas();
 
+/** 主画布 2D 上下文（getContext 属平台边界，业务入口不直接调用） */
+export function getMainContext() {
+  return mainCanvas.getContext('2d');
+}
+
 // 计数：第一次 createElement('canvas') 返回主画布，后续返回离屏画布
 let _canvasCount = 0;
 

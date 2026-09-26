@@ -66,8 +66,10 @@ import { GatheringProgressPresenter } from '../../ui/GatheringProgressPresenter.
 import { WorldActionPresentation } from './WorldActionPresentation.js';
 
 export class SceneGameplaySystemAssembler {
-  constructor(scene) {
+  constructor(scene, config = {}) {
     this.scene = scene;
+    // 灵魂状态的表现层钩子（body class 切换等）由表现层注入，装配器自身不触 DOM。
+    this.onSoulStateVisual = typeof config.onSoulStateVisual === 'function' ? config.onSoulStateVisual : null;
     this._lootSequence = 0;
   }
 
@@ -362,9 +364,7 @@ export class SceneGameplaySystemAssembler {
         if (active === true && scene.combatSystem?.isInCombat?.() === true) {
           scene.combatSystem.exitCombat();
         }
-        if (typeof document !== 'undefined') {
-          document.body.classList.toggle('soul-state', active === true);
-        }
+        this.onSoulStateVisual?.(active === true);
       },
       onComplete: ({ player, deathId, position }) => scene.playerDefeatService?.completeDeferredRespawn?.(player, deathId, position)
         || { ok: false, code: 'defeatServiceMissing' }

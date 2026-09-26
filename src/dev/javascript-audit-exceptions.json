@@ -1,6 +1,18 @@
 {
   "exceptions": [
     {
+      "file": "editor/CanonicalTransactionClient.js",
+      "codes": [
+        "editor-command-service-bypass"
+      ],
+      "evidence": "canonical 命令服务传输层本体：全仓唯一 /api/canonical-transaction 调用点，所有编辑器保存（含 PanelEditor/UIEditor 改造后）经此提交，规则目标即'经它提交'，传输层自身冻结",
+      "lines": 69,
+      "responsibility": "editorInteraction",
+      "owner": "beiliwenxiao",
+      "date": "2026-09-27",
+      "contentHash": "cffd7ea7c7f62f0f022e722839758dea7f713707929ad22664f11e8db172552f"
+    },
+    {
       "file": "editor/ImageSlicer.js",
       "codes": [
         "line-limit-or-invalid-exception"
@@ -18,18 +30,19 @@
         "line-limit-or-invalid-exception"
       ],
       "evidence": "历史大文件，拆分列入架构治理计划：拆一个移一个，修改本文件前需重新审批",
-      "lines": 1290,
+      "lines": 1284,
       "responsibility": "editorInteraction",
       "owner": "beiliwenxiao",
       "date": "2026-09-27",
-      "contentHash": "60fcc1c17c98d8b031a14ff882dcf399112bc9b9f331c7e2fdce04a5979fdd8c"
+      "contentHash": "1105d994380bb0ce738deb5b4d96d4c7cf1226acbb01f738b7e51d35fb7aca75"
     },
     {
       "file": "editor/QuestWizardEditor.js",
       "codes": [
-        "line-limit-or-invalid-exception"
+        "line-limit-or-invalid-exception",
+        "editor-business-state-write"
       ],
-      "evidence": "历史大文件，拆分列入架构治理计划：拆一个移一个，修改本文件前需重新审批",
+      "evidence": "历史大文件+任务向导以草稿对象编辑为职责本身（quest.scenes 等草稿字段赋值），持久化统一经 session.patch 提交，非 service-owned 直写；修改本文件前需重新审批",
       "lines": 1111,
       "responsibility": "editorInteraction",
       "owner": "beiliwenxiao",
@@ -94,7 +107,7 @@
       "responsibility": "editorInteraction",
       "owner": "beiliwenxiao",
       "date": "2026-09-27",
-      "contentHash": "5b0c1b028e5310cdaa76531284b41ffa4791e10a9e645e4582407e8e08177751"
+      "contentHash": "9b17935ac9316cbf7d19e19aa5a99a9559cbf1bba65dd0bd69fe8cb254e2ca88"
     },
     {
       "file": "editor/UIEditor.js",
@@ -102,11 +115,11 @@
         "line-limit-or-invalid-exception"
       ],
       "evidence": "历史大文件，拆分列入架构治理计划：拆一个移一个，修改本文件前需重新审批",
-      "lines": 1869,
+      "lines": 1841,
       "responsibility": "editorInteraction",
       "owner": "beiliwenxiao",
       "date": "2026-09-27",
-      "contentHash": "09225d4176f0e2bf349dca231e18368fe52240e967d77e2f5ed8630a1e504c96"
+      "contentHash": "78853186d6f4f31ea2b0bc168ba7944a3864e28c30b53a855098e5cb460142b8"
     },
     {
       "file": "editor/WorldMapEditor.js",
@@ -126,11 +139,11 @@
         "line-limit-or-invalid-exception"
       ],
       "evidence": "历史大文件，拆分列入架构治理计划：拆一个移一个，修改本文件前需重新审批",
-      "lines": 3675,
+      "lines": 3677,
       "responsibility": "assembly",
       "owner": "beiliwenxiao",
       "date": "2026-09-27",
-      "contentHash": "e5d501572e67908e3f00dd16af6c9bcdd47df5d3196b8721c93d0de3f726ddb6"
+      "contentHash": "57b4d003d91e1ebf44d326f4b5a404f5c3fe78ebc00217b74153752590eab03b"
     },
     {
       "file": "example/sanguo_zhangjiao/scenes/BaseGameSceneSetup.js",
@@ -138,11 +151,11 @@
         "line-limit-or-invalid-exception"
       ],
       "evidence": "历史大文件，拆分列入架构治理计划：拆一个移一个，修改本文件前需重新审批",
-      "lines": 1202,
+      "lines": 1209,
       "responsibility": "presentation",
       "owner": "beiliwenxiao",
       "date": "2026-09-27",
-      "contentHash": "849cff0a6a15953c9756a243da58e042f608a0cee5efabfd199a90fe732a4832"
+      "contentHash": "5f691c444ad5be76372539af8c8925277c85e60c387f567b001676399dd51121"
     },
     {
       "file": "example/sanguo_zhangjiao/scenes/DataDrivenPrologueScene.js",
@@ -160,9 +173,10 @@
     {
       "file": "example/sanguo_zhangjiao/scenes/Scene1Terrain.js",
       "codes": [
-        "line-limit-or-invalid-exception"
+        "line-limit-or-invalid-exception",
+        "business-dom-or-canvas-access"
       ],
-      "evidence": "历史大文件，拆分列入架构治理计划：拆一个移一个，修改本文件前需重新审批",
+      "evidence": "历史大文件+地形装饰离屏画布缓存（表现关注点滞留业务层）：拆分/移层列入架构治理计划，修改本文件前需重新审批",
       "lines": 1667,
       "responsibility": "businessLogic",
       "owner": "beiliwenxiao",
@@ -352,7 +366,7 @@
       "responsibility": "businessLogic",
       "owner": "beiliwenxiao",
       "date": "2026-09-27",
-      "contentHash": "0955e3fc2dc17f83dcb103a5555a31451499f5afeb7fdd5b9fcd035e177bd2e1"
+      "contentHash": "0622aa094e693051758df38b27e07b1e127b7363376b4e365e12fb4fda44c2aa"
     },
     {
       "file": "example/sanguo_zhangjiao/systems/S13S14Coordinator.js",
@@ -372,11 +386,11 @@
         "content-flow-branch"
       ],
       "evidence": "内容工程向数据驱动迁移的过渡 handler/分支，迁移完成前冻结；修改本文件前需重新审批",
-      "lines": 342,
+      "lines": 341,
       "responsibility": "businessLogic",
       "owner": "beiliwenxiao",
       "date": "2026-09-27",
-      "contentHash": "2be199f3cfb0124ac2de22f9a8fa66298aa2c3274c9759209b4b43cb5a36783a"
+      "contentHash": "69cddf80a6e13405a228452f7ac58a0ce6661312343be1112e51c1ff253df9c1"
     },
     {
       "file": "example/sanguo_zhangjiao/systems/SanguoSceneNavigationFlow.js",
@@ -417,9 +431,10 @@
     {
       "file": "src/core/scene/SceneCampfireService.js",
       "codes": [
-        "line-limit-or-invalid-exception"
+        "line-limit-or-invalid-exception",
+        "business-dom-or-canvas-access"
       ],
-      "evidence": "历史大文件，拆分列入架构治理计划：拆一个移一个，修改本文件前需重新审批",
+      "evidence": "历史大文件+篝火大气离屏画布合成（表现关注点滞留业务层）：拆分/移层列入架构治理计划，修改本文件前需重新审批",
       "lines": 1159,
       "responsibility": "businessLogic",
       "owner": "beiliwenxiao",
@@ -436,7 +451,7 @@
       "responsibility": "assembly",
       "owner": "beiliwenxiao",
       "date": "2026-09-27",
-      "contentHash": "bcf476148f6ce356d1dd35df7d375e408b3fdf6206cceae1dc7ac1ab045f9ee4"
+      "contentHash": "68bbc7033a465281aa1f4b162da3bc0f1f2644861aac2a17111fad80e128c436"
     },
     {
       "file": "src/core/WorldStreamingManager.js",
@@ -569,6 +584,18 @@
       "owner": "beiliwenxiao",
       "date": "2026-09-27",
       "contentHash": "db737a6d7320f54127f6cd833b4eb268a78c4b20bf3378aed0108bd966a7bed2"
+    },
+    {
+      "file": "src/core/scene/SceneDiagnostics.js",
+      "codes": [
+        "business-dom-or-canvas-access"
+      ],
+      "evidence": "调试面板 DOM 观测诊断日志（面板元素存在性/连接状态探针），属调试边界，随调试层治理拆分",
+      "lines": 628,
+      "responsibility": "businessLogic",
+      "owner": "beiliwenxiao",
+      "date": "2026-09-27",
+      "contentHash": "90689706ab2e9e0de4e995862ba818d368ddeafb95cab217a78a2927bea254e5"
     }
   ]
 }

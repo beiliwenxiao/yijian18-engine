@@ -34,6 +34,8 @@ export class MovementSystem {
     this.camera = config.camera;
     this.statusEffectSystem = config.statusEffectSystem;
     this.jumpSystem = config.jumpSystem || null;
+    // 楼层切换回调（替代 document floorChanged DOM 事件）
+    this.onFloorChanged = typeof config.onFloorChanged === 'function' ? config.onFloorChanged : null;
     this.isMovementLocked = typeof config.isMovementLocked === 'function'
       ? config.isMovementLocked
       : entity => this.jumpSystem?.isJumping?.(entity) === true;
@@ -412,13 +414,11 @@ export class MovementSystem {
     transform.setPosition(toX, toZ, floor.elevation ?? 0);
     const layer = entity.getComponent?.('layer');
     if (layer) layer.floorId = toFloor;
-    try {
-      if (typeof document !== 'undefined' && typeof CustomEvent === 'function') {
-        document.dispatchEvent(new CustomEvent('floorChanged', {
-          detail: { entityId: entity.id, floorId: toFloor }
-        }));
-      }
-    } catch (_) { /* noop */ }
+    if (this.onFloorChanged) {
+      try {
+        this.onFloorChanged({ entityId: entity.id, floorId: toFloor });
+      } catch (_) { /* noop */ }
+    }
     return true;
   }
 

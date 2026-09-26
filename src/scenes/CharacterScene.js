@@ -17,8 +17,9 @@ import { Scene } from '../core/Scene.js';
  * 处理角色创建和选择
  */
 export class CharacterScene extends Scene {
-    constructor() {
+    constructor(engine = null) {
         super('Character');
+        this.engine = engine;
         
         // 场景状态
         this.mode = 'list'; // 'list' 或 'create'
@@ -193,7 +194,7 @@ export class CharacterScene extends Scene {
         const x = centerX - width / 2;
         
         // 检查鼠标悬停
-        const mousePos = window.gameEngine?.inputManager?.getMousePosition() || { x: 0, y: 0 };
+        const mousePos = this.engine?.inputManager?.getMousePosition() || { x: 0, y: 0 };
         const hovered = mousePos.x >= x && mousePos.x <= x + width &&
                        mousePos.y >= y && mousePos.y <= y + height;
 
@@ -327,7 +328,7 @@ export class CharacterScene extends Scene {
             const selected = this.createForm.selectedClass === classKey;
 
             // 检查鼠标悬停
-            const mousePos = window.gameEngine?.inputManager?.getMousePosition() || { x: 0, y: 0 };
+            const mousePos = this.engine?.inputManager?.getMousePosition() || { x: 0, y: 0 };
             const hovered = mousePos.x >= x && mousePos.x <= x + buttonWidth &&
                            mousePos.y >= y && mousePos.y <= y + buttonHeight;
 
@@ -652,29 +653,29 @@ export class CharacterScene extends Scene {
      */
     enterGame(character) {
         console.log('CharacterScene: Attempting to enter game with character:', character);
-        
-        if (!window.gameEngine) {
-            console.error('CharacterScene: window.gameEngine is not defined');
+
+        if (!this.engine) {
+            console.error('CharacterScene: engine is not injected');
             this.showError('游戏引擎未初始化');
             return;
         }
-        
-        if (!window.gameEngine.sceneManager) {
+
+        if (!this.engine.sceneManager) {
             console.error('CharacterScene: sceneManager is not defined');
             this.showError('场景管理器未初始化');
             return;
         }
-        
+
         console.log('CharacterScene: Switching to Game scene...');
-        window.gameEngine.sceneManager.switchTo('Game', { character });
+        this.engine.sceneManager.switchTo('Game', { character });
     }
 
     /**
      * 返回登录场景
      */
     goBack() {
-        if (window.gameEngine && window.gameEngine.sceneManager) {
-            window.gameEngine.sceneManager.switchTo('Login');
+        if (this.engine?.sceneManager) {
+            this.engine.sceneManager.switchTo('Login');
         }
     }
 }

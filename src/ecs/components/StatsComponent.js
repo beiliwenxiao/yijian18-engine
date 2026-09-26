@@ -136,6 +136,15 @@ export class StatsComponent extends Component {
   }
 
   /**
+   * 反序列化恢复 HP（夹取到 [0, maxHp]；maxHp 缺失时以恢复值为准）
+   * @param {number} hpValue - 持久化的 HP 值
+   */
+  applyRestoredHp(hpValue) {
+    const maxHp = Number.isFinite(Number(this.maxHp)) ? Number(this.maxHp) : Number(hpValue);
+    this.hp = Math.min(maxHp, Math.max(0, Number(hpValue)));
+  }
+
+  /**
    * 检查是否存活
    * @returns {boolean}
    */

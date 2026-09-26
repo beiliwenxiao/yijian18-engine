@@ -30,6 +30,7 @@ import { pickBackend } from '../rendering/backends/pickBackend.js';
 export class GameEngine {
     constructor(canvas, options = {}) {
         this.canvas = canvas;
+        this.canvasContext = canvas?.getContext?.('2d') || null;
         this.options = options;
         this.ctx = null;
         this.backend = null;
@@ -172,8 +173,8 @@ export class GameEngine {
         console.log('GameEngine: SceneManager initialized');
         
         // 注册场景
-        this.sceneManager.registerScene('Login', new LoginScene());
-        this.sceneManager.registerScene('Character', new CharacterScene());
+        this.sceneManager.registerScene('Login', new LoginScene(this));
+        this.sceneManager.registerScene('Character', new CharacterScene(this));
         this.sceneManager.registerScene('Game', new GameScene(this));
         
         // 初始化网络管理器（暂时跳过，因为需要真实服务器或完整的 Mock 实现）

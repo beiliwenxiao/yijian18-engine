@@ -20,6 +20,8 @@
 
  ************************************************************/
 
+import { replaceCanonicalFile } from './CanonicalTransactionClient.js';
+
 /**
  * UIEditor - 界面 UI 编辑器
  *
@@ -262,13 +264,7 @@ export class UIEditor {
     if (!this._hintActions) throw new Error('提示文案配置尚未加载');
     const file = this.configBase + 'InputHints.json';
     const content = JSON.stringify({ actions: this._hintActions }, null, 2);
-    const res = await fetch('/api/save-file', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ path: file, content })
-    });
-    const data = await res.json().catch(() => null);
-    if (!res.ok || !data?.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+    await replaceCanonicalFile(file, content);
     return true;
   }
 
@@ -1116,25 +1112,19 @@ export class UIEditor {
     if (!res.ok) throw new Error(`无法读取 ${file}: HTTP ${res.status}`);
     const data = await res.json();
     if (data?.ok !== true || !data.content) throw new Error(data?.error || `${file} 没有可编辑内容`);
-    const document = JSON.parse(data.content);
-    if (!Array.isArray(document?.controlledComponentIds) || !Array.isArray(document?.rules)) {
+    const configDoc = JSON.parse(data.content);
+    if (!Array.isArray(configDoc?.controlledComponentIds) || !Array.isArray(configDoc?.rules)) {
       throw new TypeError('OnboardingUI.json 必须包含 controlledComponentIds 和 rules 数组');
     }
-    this._onboardingUiDocument = document;
-    return document;
+    this._onboardingUiDocument = configDoc;
+    return configDoc;
   }
 
   async _saveOnboardingUiConfig() {
     if (!this._onboardingUiDocument) throw new Error('OnboardingUI 配置尚未加载');
     const file = this.configBase + 'OnboardingUI.json';
     const content = JSON.stringify(this._onboardingUiDocument, null, 2);
-    const res = await fetch('/api/save-file', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ path: file, content })
-    });
-    const data = await res.json().catch(() => null);
-    if (!res.ok || data?.ok !== true) throw new Error(data?.error || `HTTP ${res.status}`);
+    await replaceCanonicalFile(file, content);
     return true;
   }
 
@@ -1298,13 +1288,7 @@ export class UIEditor {
     if (!this._panelLayoutDocument) throw new Error('PanelLayout 配置尚未加载');
     const file = this.configBase + 'PanelLayout.json';
     const content = JSON.stringify(this._panelLayoutDocument, null, 2);
-    const res = await fetch('/api/save-file', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ path: file, content })
-    });
-    const data = await res.json().catch(() => null);
-    if (!res.ok || data?.ok !== true) throw new Error(data?.error || `HTTP ${res.status}`);
+    await replaceCanonicalFile(file, content);
     return true;
   }
 
@@ -1372,13 +1356,7 @@ export class UIEditor {
         };
         const content = JSON.stringify(out, null, 2);
         await savePart(fileName, async () => {
-          const res = await fetch('/api/save-file', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ path: file, content })
-          });
-          const data = await res.json().catch(() => null);
-          if (!res.ok || !data?.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+          await replaceCanonicalFile(file, content);
         });
       }
 
@@ -1582,13 +1560,7 @@ export class UIEditor {
       triggerThreshold: this._gamepadTriggerThreshold
     };
     const content = JSON.stringify(cfg, null, 2);
-    const res = await fetch('/api/save-file', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ path: file, content })
-    });
-    const data = await res.json().catch(() => null);
-    if (!res.ok || !data?.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+    await replaceCanonicalFile(file, content);
     return true;
   }
 
