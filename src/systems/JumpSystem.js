@@ -3,6 +3,11 @@
  * @project YiJian18-Engine - 跨平台2D/3D ECS游戏引擎
  ************************************************************/
 
+import { RNG } from '../core/RNG.js';
+
+// 表现层随机：起跳/落地烟雾粒子（非玩法结算，非权威）
+const fxRng = new RNG();
+
 const DEFAULT_CONFIG = Object.freeze({
   // 未显式指定距离时的默认落点距离；蓄力跳跃会显式传入 30~120 的距离。
   distance: 84, duration: 0.62, peakHeight: 46, deadzone: 0.2,
@@ -42,7 +47,7 @@ export class JumpSystem {
         position: { x: x + offsetX, y: y + offsetY },
         velocity: { x: Math.cos(angle) * 50, y: Math.sin(angle) * 25 - 30 },
         life: c.smokeLife,
-        size: c.smokeSize.min + Math.random() * (c.smokeSize.max - c.smokeSize.min),
+        size: c.smokeSize.min + fxRng.next() * (c.smokeSize.max - c.smokeSize.min),
         color: c.smokeColor, alpha: c.smokeAlpha, friction: c.smokeFriction, gravity: c.takeoffGravity
       });
     }
@@ -60,7 +65,7 @@ export class JumpSystem {
         position: { x: x + offsetX, y: y + offsetY },
         velocity: { x: Math.cos(angle) * 50, y: Math.sin(angle) * 25 + 10 },
         life: c.smokeLife,
-        size: c.smokeSize.min + Math.random() * (c.smokeSize.max - c.smokeSize.min),
+        size: c.smokeSize.min + fxRng.next() * (c.smokeSize.max - c.smokeSize.min),
         color: c.smokeColor, alpha: c.smokeAlpha, friction: c.smokeFriction, gravity: c.landingGravity
       });
     }

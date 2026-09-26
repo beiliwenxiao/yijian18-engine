@@ -17,6 +17,10 @@ import { ParticleSystem } from '../rendering/ParticleSystem.js';
 import { SkillEffects } from '../rendering/SkillEffects.js';
 import { MovementSystem } from '../systems/MovementSystem.js';
 import { CombatSystem } from '../systems/CombatSystem.js';
+import { RNG } from '../core/RNG.js';
+
+// 表现层随机：场景特效偏移（非玩法结算，非权威）
+const fxRng = new RNG();
 import { AttributeSystem } from '../systems/AttributeSystem.js';
 import { UISystem } from '../ui/UISystem.js';
 import { PlayerInfoPanel } from '../ui/PlayerInfoPanel.js';
@@ -385,8 +389,8 @@ export class GameScene extends Scene {
       const count = spawnPoint.count || 1;
       for (let i = 0; i < count; i++) {
         // 在出生点周围随机偏移
-        const offsetX = (Math.random() - 0.5) * 100;
-        const offsetY = (Math.random() - 0.5) * 100;
+        const offsetX = (fxRng.next() - 0.5) * 100;
+        const offsetY = (fxRng.next() - 0.5) * 100;
         
         const enemyData = this.dataService.createEnemy(
           spawnPoint.templateId,

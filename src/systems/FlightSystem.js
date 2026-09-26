@@ -10,6 +10,11 @@
  *            https://gitee.com/coderaaa/yijian18-engine
  ************************************************************/
 
+import { RNG } from '../core/RNG.js';
+
+// 表现层随机：飞行烟雾粒子（非玩法结算，非权威）
+const fxRng = new RNG();
+
 /**
  * FlightSystem - 轻功飞行系统
  * 
@@ -359,7 +364,7 @@ export class FlightSystem {
           y: Math.sin(angle) * 25 - 30 // 向外下方，然后重力让它向上
         },
         life: smokeLife,
-        size: smokeSize.min + Math.random() * (smokeSize.max - smokeSize.min),
+        size: smokeSize.min + fxRng.next() * (smokeSize.max - smokeSize.min),
         color: smokeColor,
         alpha: smokeAlpha,
         friction: smokeFriction,
@@ -389,7 +394,7 @@ export class FlightSystem {
           y: Math.sin(angle) * 25 + 10 // 向外下方
         },
         life: smokeLife,
-        size: smokeSize.min + Math.random() * (smokeSize.max - smokeSize.min),
+        size: smokeSize.min + fxRng.next() * (smokeSize.max - smokeSize.min),
         color: smokeColor,
         alpha: smokeAlpha,
         friction: smokeFriction,

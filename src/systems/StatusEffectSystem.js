@@ -16,6 +16,10 @@
  */
 
 import { StatusEffectType, StatusEffectData } from '../ecs/components/StatusEffectComponent.js';
+import { RNG } from '../core/RNG.js';
+
+// 表现层随机：状态特效粒子（非玩法结算，非权威）
+const fxRng = new RNG();
 
 /**
  * 状态效果系统
@@ -225,14 +229,14 @@ export class StatusEffectSystem {
     if (!transform) return;
     
     const damageNumber = {
-      x: transform.position.x + (Math.random() - 0.5) * 20,
+      x: transform.position.x + (fxRng.next() - 0.5) * 20,
       y: transform.position.y - 30,
       value: Math.abs(value),
       isHeal: value > 0,
       effectName: effectName,
       life: 1.5,
       maxLife: 1.5,
-      velocity: { x: (Math.random() - 0.5) * 30, y: -40 }
+      velocity: { x: (fxRng.next() - 0.5) * 30, y: -40 }
     };
     
     this.damageNumbers.push(damageNumber);

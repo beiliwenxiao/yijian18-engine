@@ -106,12 +106,14 @@ describe('JavaScriptAuditGate', () => {
       'editor/SceneDataManager.js': 'const stamp = Date.now();\ndocument.title = "editor";',
       'src/network/WebSocketClient.js': 'this.lastPongTime = Date.now();\nsetInterval(() => {}, 1000);\ndocument.title = "net";',
       'src/core/snapshot/IndexedDBAdapter.js': 'updatedAt: Date.now(),',
+      'src/core/RNG.js': 'this._state = (seed != null ? seed : (Date.now() >>> 0)) >>> 0;',
       'src/systems/StillBusiness.js': 'Math.random();'
     });
     const byFile = file => report.units.find(unit => unit.file === file);
     expect(byFile('editor/SceneDataManager.js')).toMatchObject({ responsibility: 'editorInteraction' });
     expect(byFile('src/network/WebSocketClient.js')).toMatchObject({ responsibility: 'platformInfra' });
     expect(byFile('src/core/snapshot/IndexedDBAdapter.js')).toMatchObject({ responsibility: 'platformInfra' });
+    expect(byFile('src/core/RNG.js')).toMatchObject({ responsibility: 'platformInfra' });
     expect(report.violations.filter(violation => violation.file !== 'src/systems/StillBusiness.js'
       && violation.code !== 'line-limit-or-invalid-exception')).toEqual([]);
     expect(report.violations).toEqual(expect.arrayContaining([

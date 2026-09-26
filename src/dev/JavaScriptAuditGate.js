@@ -62,7 +62,7 @@ function isPlatformInfrastructure(normalized, basename) {
   if (normalized.startsWith('src/core/snapshot/')) return true;
   if (normalized.startsWith('weapp/adapter/')) return true;
   return normalized.startsWith('src/core/')
-    && /^(?:Audio|Gamepad|Input|Logger|Error|Performance|Debug|CanvasDisplay|EventJournal|Asset|Placeholder|Platform|Presentation|IndexedDB|GameEngine)/.test(basename);
+    && /^(?:Audio|Gamepad|Input|Logger|Error|Performance|Debug|CanvasDisplay|EventJournal|Asset|Placeholder|Platform|Presentation|IndexedDB|GameEngine|RNG)/.test(basename);
 }
 
 function responsibilityFor(file) {

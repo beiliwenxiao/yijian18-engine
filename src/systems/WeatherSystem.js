@@ -72,8 +72,13 @@ function boundsOverlap(a, b) {
     && a.top < b.bottom && a.bottom > b.top;
 }
 
+import { RNG } from '../core/RNG.js';
+
+// 表现层随机：闪电/阳光/雨雾等天气表现参数（非玩法结算，非权威）
+const fxRng = new RNG();
+
 function randomBetween(min, max) {
-  return min + Math.random() * (max - min);
+  return min + fxRng.next() * (max - min);
 }
 
 function normalizeFogImageIds(imageIds) {
@@ -481,7 +486,7 @@ export class WeatherSystem {
       this._lightningTimer -= dt;
       if (this._lightningTimer <= 0) {
         this._lightningFlash = 0.9;
-        this._lightningTimer = 2 + Math.random() * 4;
+        this._lightningTimer = 2 + fxRng.next() * 4;
       }
     }
     if (this._lightningFlash > 0) {
@@ -520,34 +525,34 @@ export class WeatherSystem {
     const shouldSpawn = this._sunbeams.length < minimumBeams
       || (this._sunbeamTimer <= 0 && this._sunbeams.length < this.maxSunbeams);
     if (shouldSpawn) {
-      this._sunbeamTimer = 4 + Math.random() * 5;
-      const motionRoll = Math.random();
+      this._sunbeamTimer = 4 + fxRng.next() * 5;
+      const motionRoll = fxRng.next();
       const motion = motionRoll < 2 / 3
         ? {
-            kind: 'slow', life: 22 + Math.random() * 10,
-            horizontalSwayRatio: 0.004 + Math.random() * 0.004,
-            curveFrequency: 0.28 + Math.random() * 0.2,
-            curveSwing: 0.025 + Math.random() * 0.04
+            kind: 'slow', life: 22 + fxRng.next() * 10,
+            horizontalSwayRatio: 0.004 + fxRng.next() * 0.004,
+            curveFrequency: 0.28 + fxRng.next() * 0.2,
+            curveSwing: 0.025 + fxRng.next() * 0.04
           }
         : motionRoll < 5 / 6
           ? {
-              kind: 'fast', life: 7 + Math.random() * 5,
-              horizontalSwayRatio: 0.008 + Math.random() * 0.006,
-              curveFrequency: 0.65 + Math.random() * 0.3,
-              curveSwing: 0.06 + Math.random() * 0.06
+              kind: 'fast', life: 7 + fxRng.next() * 5,
+              horizontalSwayRatio: 0.008 + fxRng.next() * 0.006,
+              curveFrequency: 0.65 + fxRng.next() * 0.3,
+              curveSwing: 0.06 + fxRng.next() * 0.06
             }
           : {
-              kind: 'flash', life: 1.4 + Math.random() * 1.1,
-              horizontalSwayRatio: 0.015 + Math.random() * 0.007,
-              curveFrequency: 2 + Math.random() * 1.2,
-              curveSwing: 0.11 + Math.random() * 0.1
+              kind: 'flash', life: 1.4 + fxRng.next() * 1.1,
+              horizontalSwayRatio: 0.015 + fxRng.next() * 0.007,
+              curveFrequency: 2 + fxRng.next() * 1.2,
+              curveSwing: 0.11 + fxRng.next() * 0.1
             };
       const viewWidth = bounds.right - bounds.left;
       const viewHeight = bounds.bottom - bounds.top;
-      const width = 290 + Math.random() * 180;
+      const width = 290 + fxRng.next() * 180;
       const topAnchorRatio = 0.5;
-      const topInsetRatio = 0.04 + Math.random() * 0.16;
-      const curvePhase = Math.random() * Math.PI * 2;
+      const topInsetRatio = 0.04 + fxRng.next() * 0.16;
+      const curvePhase = fxRng.next() * Math.PI * 2;
       const worldAnchorX = bounds.left + viewWidth * topAnchorRatio;
       const worldAnchorY = bounds.top - viewHeight * topInsetRatio;
       const horizontalSway = viewWidth * motion.horizontalSwayRatio;
@@ -559,18 +564,18 @@ export class WeatherSystem {
         worldAnchorY,
         horizontalSway,
         width,
-        height: viewHeight * (1.06 + Math.random() * 0.16),
+        height: viewHeight * (1.06 + fxRng.next() * 0.16),
         life: motion.life,
         maxLife: motion.life,
         motionKind: motion.kind,
-        opacity: 0.28 + Math.random() * 0.16,
-        baseRotation: -0.18 + Math.random() * 0.36,
+        opacity: 0.28 + fxRng.next() * 0.16,
+        baseRotation: -0.18 + fxRng.next() * 0.36,
         rotation: 0,
         curveFrequency: motion.curveFrequency,
         curveSwing: motion.curveSwing,
         curvePhase,
-        imageIndex: Math.floor(Math.random() * this._sunbeamImages.length),
-        flipX: Math.random() < 0.5
+        imageIndex: Math.floor(fxRng.next() * this._sunbeamImages.length),
+        flipX: fxRng.next() < 0.5
       });
     }
 
@@ -647,12 +652,12 @@ export class WeatherSystem {
     return {
       x,
       y,
-      phase: Math.random() * Math.PI * 2,
-      freq: 2 + Math.random() * 3,
-      amp: weather === 'wind' ? (8 + Math.random() * 6) : (3 + Math.random() * 3),
+      phase: fxRng.next() * Math.PI * 2,
+      freq: 2 + fxRng.next() * 3,
+      amp: weather === 'wind' ? (8 + fxRng.next() * 6) : (3 + fxRng.next() * 3),
       offsetY: 0,
-      lengthJitter: Math.random(),
-      hasCurl: Math.random() < 0.3
+      lengthJitter: fxRng.next(),
+      hasCurl: fxRng.next() < 0.3
     };
   }
 
@@ -804,12 +809,12 @@ export class WeatherSystem {
 
   _spawnFogCloud(weather, coverage) {
     if (!coverage?.rects?.length || this._fogImages.length === 0) return null;
-    const rect = coverage.rects[Math.floor(Math.random() * coverage.rects.length)];
+    const rect = coverage.rects[Math.floor(fxRng.next() * coverage.rects.length)];
     const isHeavy = weather === 'heavyFog';
     const availableWidth = rect.right - rect.left;
     const availableHeight = rect.bottom - rect.top;
-    const desiredWidth = (isHeavy ? 330 : 230) + Math.random() * (isHeavy ? 150 : 120);
-    const desiredHeight = (isHeavy ? 124 : 86) + Math.random() * (isHeavy ? 56 : 46);
+    const desiredWidth = (isHeavy ? 330 : 230) + fxRng.next() * (isHeavy ? 150 : 120);
+    const desiredHeight = (isHeavy ? 124 : 86) + fxRng.next() * (isHeavy ? 56 : 46);
     const width = Math.max(1, Math.min(desiredWidth, availableWidth));
     const height = Math.max(1, Math.min(desiredHeight, availableHeight));
     const x = randomBetween(rect.left, rect.right - width);
@@ -822,12 +827,12 @@ export class WeatherSystem {
       y,
       width,
       height,
-      opacity: isHeavy ? (0.26 + Math.random() * 0.18) : (0.13 + Math.random() * 0.12),
-      speedX: 5 + Math.random() * 10,
-      speedY: (Math.random() - 0.5) * 2.5,
-      phase: Math.random() * Math.PI * 2,
-      imageIndex: Math.floor(Math.random() * this._fogImages.length),
-      flipX: Math.random() < 0.5,
+      opacity: isHeavy ? (0.26 + fxRng.next() * 0.18) : (0.13 + fxRng.next() * 0.12),
+      speedX: 5 + fxRng.next() * 10,
+      speedY: (fxRng.next() - 0.5) * 2.5,
+      phase: fxRng.next() * Math.PI * 2,
+      imageIndex: Math.floor(fxRng.next() * this._fogImages.length),
+      flipX: fxRng.next() < 0.5,
       localAlpha: 0,
       localFadeStartAlpha: 0,
       localFadeTargetAlpha: 1,

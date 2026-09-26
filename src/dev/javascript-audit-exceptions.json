@@ -492,11 +492,11 @@
         "line-limit-or-invalid-exception"
       ],
       "evidence": "历史大文件，拆分列入架构治理计划：拆一个移一个，修改本文件前需重新审批",
-      "lines": 3611,
+      "lines": 3612,
       "responsibility": "businessLogic",
       "owner": "beiliwenxiao",
       "date": "2026-09-27",
-      "contentHash": "dec067dc22f9d81c0bdbc19f51155fb80f5d0ea3facb0284a74f57a15efa3320"
+      "contentHash": "4c625ef884fa11d46de8a0930d991e26979b60e890fc44aa50afd772a3946e60"
     },
     {
       "file": "src/systems/GuildSystem.js",

@@ -15,6 +15,8 @@
  * 掉落系统 - 管理物品掉落和拾取
  */
 
+import { RNG } from '../core/RNG.js';
+
 /**
  * 掉落表项
  */
@@ -24,13 +26,13 @@ class LootTableEntry {
     this.chance = chance; // 掉落概率 (0-1)
     this.minQuantity = minQuantity;
     this.maxQuantity = maxQuantity;
-    // 掉落随机：注入 rng（RNG 实例）时走确定性序列，否则退化为 Math.random
-    this.rng = rng;
+    // 掉落随机：注入 rng（RNG 实例）时走确定性序列，否则默认内部非权威 RNG
+    this.rng = rng || new RNG();
   }
 
   /** [0,1) 掉落随机 */
   _rng() {
-    return this.rng ? this.rng.next() : Math.random();
+    return this.rng.next();
   }
 
   /**
@@ -46,8 +48,7 @@ class LootTableEntry {
    * @returns {number}
    */
   getDropQuantity() {
-    if (this.rng) return this.rng.int(this.minQuantity, this.maxQuantity);
-    return Math.floor(Math.random() * (this.maxQuantity - this.minQuantity + 1)) + this.minQuantity;
+    return this.rng.int(this.minQuantity, this.maxQuantity);
   }
 }
 
@@ -154,8 +155,8 @@ export class LootSystem {
   constructor(mockDataService, rng = null) {
     this.name = 'LootSystem';
     this.mockDataService = mockDataService;
-    // 掉落随机：注入 rng（RNG 实例）时走确定性序列，否则退化为 Math.random
-    this.rng = rng;
+    // 掉落随机：注入 rng（RNG 实例）时走确定性序列，否则默认内部非权威 RNG
+    this.rng = rng || new RNG();
     this.groundItems = new Map(); // 地面物品
     this.lootTables = this.initLootTables();
     

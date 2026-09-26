@@ -18,6 +18,10 @@
 import { ElementSystem } from './ElementSystem.js';
 import { UnitSystem } from './UnitSystem.js';
 import { CombatResolver } from './resolvers/CombatResolver.js';
+import { RNG } from '../core/RNG.js';
+
+// 表现层随机：爆炸/碎片/飘血粒子（非玩法结算，非权威；结算随机走 combatRng）
+const fxRng = new RNG();
 
 /**
  * 战斗系统
@@ -55,9 +59,9 @@ export class CombatSystem {
     // 初始化兵种系统
     this.unitSystem = new UnitSystem();
 
-    // 战斗随机源（§13 约定6）：单机为 null → Resolver 内部用 Math.random（与旧行为等价）；
+    // 战斗随机源（§13 约定6）：未注入时默认内部非权威 RNG（与旧 Math.random 行为统计等价）；
     // 联网/回放时注入种子 RNG（RNG 实例）实现确定性结算。
-    this.combatRng = config.combatRng || null;
+    this.combatRng = config.combatRng || new RNG();
     
     // 玩家实体引用
     this.playerEntity = null;
@@ -153,20 +157,17 @@ export class CombatSystem {
   }
 
   // ── 战斗结算随机（§13 约定6）──
-  // 注入 combatRng 时走确定性序列（联网/回放/存档可复现）；
-  // 未注入时退化为 Math.random，与旧单机行为统计等价。
-  // 仅玩法结果（伤害/掉落）经此访问；纯视觉粒子随机不归此类。
+  // combatRng 已在构造时兜底为内部非权威 RNG；注入种子 RNG 时结算可复现。
+  // 仅玩法结果（伤害/掉落）经此访问；纯视觉粒子随机走模块级 fxRng。
 
   /** [0,1) 浮点随机 */
   _rng() {
-    return this.combatRng ? this.combatRng.next() : Math.random();
+    return this.combatRng.next();
   }
 
   /** [min,max] 闭区间整数随机 */
   _rngInt(min, max) {
-    if (this.combatRng) return this.combatRng.int(min, max);
-    if (max < min) [min, max] = [max, min];
-    return min + Math.floor(Math.random() * (max - min + 1));
+    return this.combatRng.int(min, max);
   }
 
   /** 以 p 概率返回 true（p∈[0,1]） */
@@ -1048,14 +1049,14 @@ export class CombatSystem {
       
       // 在目标位置创建冲击波粒子
       for (let i = 0; i < 5; i++) {
-        const angle = Math.random() * Math.PI * 2;
-        const speed = 50 + Math.random() * 50;
+        const angle = fxRng.next() * Math.PI * 2;
+        const speed = 50 + fxRng.next() * 50;
         
         particleSystem.emit({
           position: { x: transform.position.x, y: transform.position.y },
           velocity: { x: Math.cos(angle) * speed, y: Math.sin(angle) * speed },
           life: 0.3,
-          size: 3 + Math.random() * 3,
+          size: 3 + fxRng.next() * 3,
           color: '#ffaa00',
           alpha: 0.8
         });
@@ -1078,7 +1079,7 @@ export class CombatSystem {
     this._notifyKill(target);
 
     // 随机选择死亡特效类型
-    const effectType = Math.random() < 0.5 ? 'explode' : 'slice';
+    const effectType = fxRng.next() < 0.5 ? 'explode' : 'slice';
     
     if (effectType === 'explode') {
       // 爆炸特效
@@ -1106,14 +1107,14 @@ export class CombatSystem {
     // 爆炸粒子
     for (let i = 0; i < 30; i++) {
       const angle = (i / 30) * Math.PI * 2;
-      const speed = 100 + Math.random() * 100;
+      const speed = 100 + fxRng.next() * 100;
       
       particleSystem.emit({
         position: { x: position.x, y: position.y },
         velocity: { x: Math.cos(angle) * speed, y: Math.sin(angle) * speed },
-        life: 0.5 + Math.random() * 0.3,
-        size: 4 + Math.random() * 4,
-        color: Math.random() < 0.5 ? '#ff4444' : '#ffaa00',
+        life: 0.5 + fxRng.next() * 0.3,
+        size: 4 + fxRng.next() * 4,
+        color: fxRng.next() < 0.5 ? '#ff4444' : '#ffaa00',
         alpha: 1.0,
         gravity: 200
       });
@@ -1123,9 +1124,9 @@ export class CombatSystem {
     for (let i = 0; i < 10; i++) {
       particleSystem.emit({
         position: { x: position.x, y: position.y },
-        velocity: { x: (Math.random() - 0.5) * 50, y: (Math.random() - 0.5) * 50 },
+        velocity: { x: (fxRng.next() - 0.5) * 50, y: (fxRng.next() - 0.5) * 50 },
         life: 0.3,
-        size: 8 + Math.random() * 8,
+        size: 8 + fxRng.next() * 8,
         color: '#ffffff',
         alpha: 1.0
       });
@@ -1142,51 +1143,51 @@ export class CombatSystem {
     const particleSystem = this.skillEffects.particleSystem;
     
     // 随机切割角度
-    const sliceAngle = Math.random() * Math.PI * 2;
+    const sliceAngle = fxRng.next() * Math.PI * 2;
     
     // 创建2-3块碎片
-    const numPieces = 2 + Math.floor(Math.random() * 2); // 2或3块
+    const numPieces = 2 + Math.floor(fxRng.next() * 2); // 2或3块
     
     for (let i = 0; i < numPieces; i++) {
       // 碎片飞出方向（垂直于切割线）
       const pieceAngle = sliceAngle + (i - numPieces / 2) * 0.5;
-      const speed = 80 + Math.random() * 60;
+      const speed = 80 + fxRng.next() * 60;
       
       // 创建多个粒子组成一块碎片
       for (let j = 0; j < 8; j++) {
-        const offsetAngle = pieceAngle + (Math.random() - 0.5) * 0.3;
-        const offsetSpeed = speed + (Math.random() - 0.5) * 40;
+        const offsetAngle = pieceAngle + (fxRng.next() - 0.5) * 0.3;
+        const offsetSpeed = speed + (fxRng.next() - 0.5) * 40;
         
         particleSystem.emit({
           position: { 
-            x: position.x + (Math.random() - 0.5) * 10,
-            y: position.y + (Math.random() - 0.5) * 10
+            x: position.x + (fxRng.next() - 0.5) * 10,
+            y: position.y + (fxRng.next() - 0.5) * 10
           },
           velocity: { 
             x: Math.cos(offsetAngle) * offsetSpeed,
             y: Math.sin(offsetAngle) * offsetSpeed
           },
-          life: 0.6 + Math.random() * 0.3,
-          size: 5 + Math.random() * 5,
+          life: 0.6 + fxRng.next() * 0.3,
+          size: 5 + fxRng.next() * 5,
           color: '#ff4444',
           alpha: 1.0,
           gravity: 250,
-          rotation: Math.random() * Math.PI * 2,
-          rotationSpeed: (Math.random() - 0.5) * 10
+          rotation: fxRng.next() * Math.PI * 2,
+          rotationSpeed: (fxRng.next() - 0.5) * 10
         });
       }
     }
     
     // 血液飞溅效果
     for (let i = 0; i < 15; i++) {
-      const angle = Math.random() * Math.PI * 2;
-      const speed = 60 + Math.random() * 80;
+      const angle = fxRng.next() * Math.PI * 2;
+      const speed = 60 + fxRng.next() * 80;
       
       particleSystem.emit({
         position: { x: position.x, y: position.y },
         velocity: { x: Math.cos(angle) * speed, y: Math.sin(angle) * speed },
-        life: 0.4 + Math.random() * 0.2,
-        size: 2 + Math.random() * 3,
+        life: 0.4 + fxRng.next() * 0.2,
+        size: 2 + fxRng.next() * 3,
         color: '#aa0000',
         alpha: 0.8,
         gravity: 300
@@ -1222,7 +1223,7 @@ export class CombatSystem {
       damageType: damageType, // 添加伤害类型
       life: 2.0, // 生命周期（秒）
       maxLife: 3.0,
-      velocity: { x: (Math.random() - 0.5) * 20, y: -50 } // 向上飘动
+      velocity: { x: (fxRng.next() - 0.5) * 20, y: -50 } // 向上飘动
     };
 
     this.damageNumbers.push(damageNumber);
@@ -2129,7 +2130,7 @@ export class CombatSystem {
       damage: amount,
       life: 1.0,
       maxLife: 1.0,
-      velocity: { x: (Math.random() - 0.5) * 20, y: -50 },
+      velocity: { x: (fxRng.next() - 0.5) * 20, y: -50 },
       isHeal: true // 标记为治疗数字
     };
     
