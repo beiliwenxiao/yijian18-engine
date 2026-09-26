@@ -154,6 +154,10 @@ export class ScenePanelLayout {
       },
       onPotionUse: (potionType) => {
         scene.usePotionFromHotbar(potionType);
+      },
+      // 教学高亮一次性熄灭：高亮槽位首次被点击时回调
+      onOnboardingComponentActivated: (componentId) => {
+        scene.notifyOnboardingControlActivated?.(componentId);
       }
     });
 
@@ -479,6 +483,11 @@ export class ScenePanelLayout {
       button.onboardingEnabled = state.enabled;
       button.onboardingHighlighted = state.highlighted;
       button.onboardingHintAction = state.hintAction || null;
+      // 教学高亮一次性熄灭：高亮按钮首次被点击时回调
+      button.onboardingComponentId = componentId;
+      button.onOnboardingComponentActivated = (componentId2) => {
+        scene.notifyOnboardingControlActivated?.(componentId2);
+      };
     }
 
     const hudComponentIds = ['hud-avatar', 'hud-name', 'hud-hp', 'hud-mp'];

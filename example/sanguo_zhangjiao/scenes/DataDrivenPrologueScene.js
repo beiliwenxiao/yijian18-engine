@@ -152,6 +152,8 @@ export class DataDrivenPrologueScene extends BaseGameScene {
     this._onboardingUi = new OnboardingUiProjection({
       getSceneId: () => this.currentSceneId,
       getStoryState: () => this.gameLoader?.blackboard?.get?.('storyState') || {},
+      // 教学高亮跨会话持久化：熄灭记入故事状态（storyState.onboardingDismissed），随存档保存
+      onDismissComponent: componentId => this._persistOnboardingDismissal(componentId),
       tutorialFlow: this._tutorialFlow,
       onProjection: projection => this._applyOnboardingUiProjection(projection)
     });
@@ -1133,6 +1135,30 @@ export class DataDrivenPrologueScene extends BaseGameScene {
   _applyOnboardingUiProjection(projection) {
     this._lastOnboardingUiProjection = projection || null;
     return this._panelLayout?.applyOnboardingUiProjection?.(projection) === true;
+  }
+
+  /** 教学高亮一次性熄灭：高亮组件首次被触发（点击/快捷键）时由 UI 层回调，本会话内不再点亮。 */
+  notifyOnboardingControlActivated(componentId) {
+    return this._onboardingUi?.dismissComponent?.(componentId) === true;
+  }
+
+  /**
+   * 教学高亮跨会话持久化：把熄灭的组件 ID 记入故事状态 onboardingDismissed。
+   * 就地修改 storyState（引用不变，避免使既有读取方缓存失效）；
+   * 随 Blackboard 序列化进入存档，新开档从 project.variables 重建自动重置。
+   * @param {string} componentId - 稳定组件 ID（如 pc-potion1）
+   */
+  _persistOnboardingDismissal(componentId) {
+    const blackboard = this.gameLoader?.blackboard;
+    if (!blackboard || typeof blackboard.get !== 'function') return false;
+    const storyState = blackboard.get('storyState');
+    if (!storyState || typeof storyState !== 'object') return false;
+    const dismissed = storyState.onboardingDismissed && typeof storyState.onboardingDismissed === 'object'
+      ? storyState.onboardingDismissed
+      : (storyState.onboardingDismissed = {});
+    if (dismissed[componentId] === true) return false;
+    dismissed[componentId] = true;
+    return true;
   }
 
   enter(data = null) {

@@ -118,6 +118,8 @@ export class BottomControlBar extends UIElement {
     // 事件回调
     this.onSkillClick = options.onSkillClick || null;
     this.onPotionUse = options.onPotionUse || null;
+    // 教学高亮一次性熄灭：高亮槽位首次被点击时回调其稳定组件 ID
+    this.onOnboardingComponentActivated = options.onOnboardingComponentActivated || null;
 
     // 是否使用 UI 编辑器的子控件独立布局（true 时不画整体背景条）
     this._hasSubLayout = false;
@@ -210,6 +212,7 @@ export class BottomControlBar extends UIElement {
     target.enabled = state.enabled !== false;
     target.onboardingHighlighted = state.highlighted === true;
     target.onboardingHintAction = state.hintAction || null;
+    target.onboardingComponentId = componentId;
     this._hotkeyScheme = null;
     return true;
   }
@@ -750,7 +753,12 @@ export class BottomControlBar extends UIElement {
 
       if (x >= slotX - halfSize && x <= slotX + halfSize &&
           y >= slotY - halfSize && y <= slotY + halfSize) {
-        
+
+        // 教学高亮一次性熄灭：高亮槽位被首次点击即回调熄灭
+        if (slot.onboardingHighlighted && slot.onboardingComponentId) {
+          this.onOnboardingComponentActivated?.(slot.onboardingComponentId);
+        }
+
         // 药水槽
         if (slot.isPotion) {
           if (this.onPotionUse) {

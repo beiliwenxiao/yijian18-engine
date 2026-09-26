@@ -278,6 +278,8 @@ export class SceneCombatActions {
 
   usePotionFromHotbar(potionType) {
     const scene = this.scene;
+    // 教学高亮一次性熄灭：药水快捷键首次被触发即视为完成指引（无论是否成功使用）。
+    scene.notifyOnboardingControlActivated?.(potionType === 'health' ? 'pc-potion1' : 'pc-potion2');
     if (!scene.playerEntity) return;
     const inventory = scene.playerEntity.getComponent('inventory');
     const stats = scene.playerEntity.getComponent('stats');

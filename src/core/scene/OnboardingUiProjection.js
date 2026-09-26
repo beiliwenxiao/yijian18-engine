@@ -35,9 +35,13 @@ export class OnboardingUiProjection {
     this.getStoryState = options.getStoryState || (() => ({}));
     this.tutorialFlow = options.tutorialFlow || null;
     this.onProjection = typeof options.onProjection === 'function' ? options.onProjection : null;
+    // 教学高亮跨会话持久化：宿主实现写入（如记入故事状态，随存档保存）
+    this.onDismissComponent = typeof options.onDismissComponent === 'function' ? options.onDismissComponent : null;
     this.definition = null;
     this.loaded = false;
     this._lastSignature = null;
+    // 教学高亮熄灭的会话内记录；跨会话持久化经 onDismissComponent 钩子写入故事状态。
+    this._dismissedComponents = new Set();
   }
 
   async load() {
@@ -66,6 +70,25 @@ export class OnboardingUiProjection {
 
   getProjection() {
     return this._buildProjection();
+  }
+
+  /**
+   * 教学高亮一次性熄灭：高亮组件首次被触发（点击/快捷键）时由 UI 层回调。
+   * 熄灭通过 onDismissComponent 钩子持久化（如记入故事状态，随存档保存），
+   * 读取时同时考虑会话内记录与故事状态，跨会话不再点亮。
+   * @param {string} componentId - 稳定组件 ID（如 pc-potion1）
+   * @returns {boolean} 是否发生了熄灭
+   */
+  dismissComponent(componentId) {
+    if (!componentId || this._dismissedComponents.has(componentId)) return false;
+    this._dismissedComponents.add(componentId);
+    try {
+      this.onDismissComponent?.(componentId);
+    } catch (error) {
+      console.warn('[OnboardingUiProjection] 熄灭状态持久化失败', error);
+    }
+    this.refresh(true);
+    return true;
   }
 
   dispose() {
@@ -101,7 +124,7 @@ export class OnboardingUiProjection {
       const highlights = rule.highlightComponentIds || (rule.highlightComponentId ? [rule.highlightComponentId] : []);
       for (const componentId of highlights) {
         const state = states[componentId];
-        if (!state) continue;
+        if (!state || this._isDismissed(componentId, storyState)) continue;
         state.highlighted = true;
         state.hintAction = rule.hintAction || null;
       }
@@ -112,6 +135,12 @@ export class OnboardingUiProjection {
   _matchesScope(rule, sceneId) {
     const sceneIds = rule?.scope?.sceneIds;
     return !Array.isArray(sceneIds) || sceneIds.length === 0 || sceneIds.includes(sceneId);
+  }
+
+  /** 熄灭判定：会话内已触发，或故事状态已持久化记录（跨会话）。 */
+  _isDismissed(componentId, storyState) {
+    if (this._dismissedComponents.has(componentId)) return true;
+    return storyState?.onboardingDismissed?.[componentId] === true;
   }
 
   _matchesWhen(when = { type: 'always' }, storyState) {

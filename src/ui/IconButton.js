@@ -58,6 +58,9 @@ export class IconButton extends UIElement {
     this.onboardingEnabled = true;
     this.onboardingHighlighted = false;
     this.onboardingHintAction = null;
+    // 教学高亮一次性熄灭：由 ScenePanelLayout 注入，高亮按钮首次被点击时回调
+    this.onboardingComponentId = null;
+    this.onOnboardingComponentActivated = null;
     // 冷却显示（毫秒）
     this.cdRemaining = 0;
     this.cdTotal = 0;
@@ -174,6 +177,10 @@ export class IconButton extends UIElement {
    */
   handleMouseClick(x, y, button = 'left') {
     if (!this.visible || this.onboardingEnabled === false || button !== 'left' || !this.containsPoint(x, y)) return false;
+    // 教学高亮一次性熄灭：高亮按钮首次被点击即回调熄灭
+    if (this.onboardingHighlighted && this.onboardingComponentId) {
+      this.onOnboardingComponentActivated?.(this.onboardingComponentId);
+    }
     if (this.onClick) this.onClick();
     return true;
   }
