@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 
-const RESPONSIBILITIES = new Set(['assembly', 'businessLogic', 'presentation', 'editorInteraction']);
+const RESPONSIBILITIES = new Set(['assembly', 'businessLogic', 'presentation', 'editorInteraction', 'platformInfra']);
 const SOURCE_EXTENSIONS = new Set(['.js', '.mjs']);
 const BLOCKED_SEGMENTS = [
   'node_modules', 'test', 'tests', 'fixture', 'fixtures', 'vendor', 'third_party',
@@ -42,6 +42,7 @@ export function exclusionReason(file) {
   const normalized = normalizePath(file);
   const lower = normalized.toLowerCase();
   if (normalized.startsWith('.git/')) return 'git metadata';
+  if (normalized.startsWith('src/dev/')) return 'dev tooling source';
   if (lower.endsWith('.test.js') || lower.endsWith('.spec.js')) return 'test source';
   if (lower.endsWith('.json')) return 'JSON/data configuration';
   if (!SOURCE_EXTENSIONS.has(path.posix.extname(lower)) && !lower.endsWith('.html')) return 'not a JavaScript, MJS, or HTML file';
@@ -51,21 +52,34 @@ export function exclusionReason(file) {
   return null;
 }
 
+/**
+ * 引擎平台基础设施判定：与真实环境（DOM/挂钟/网络/存储）打交道的边界层。
+ * 这些模块对 DOM 与挂钟的使用是其职责本身，不适用业务边界规则。
+ */
+function isPlatformInfrastructure(normalized, basename) {
+  if (normalized.startsWith('src/network/')) return true;
+  if (normalized.startsWith('src/core/input/')) return true;
+  if (normalized.startsWith('src/core/snapshot/')) return true;
+  if (normalized.startsWith('weapp/adapter/')) return true;
+  return normalized.startsWith('src/core/')
+    && /^(?:Audio|Gamepad|Input|Logger|Error|Performance|Debug|CanvasDisplay|EventJournal|Asset|Placeholder|Platform|Presentation|IndexedDB|GameEngine)/.test(basename);
+}
+
 function responsibilityFor(file) {
   const normalized = normalizePath(file);
   const basename = path.posix.basename(normalized);
-  if (normalized.startsWith('src/ui/') || normalized.startsWith('src/rendering/') || basename === 'BaseGameSceneSetup.js' || /(?:Renderer|Render|View|Hud|Panel|Tooltip|Overlay|Feedback|Canvas|Presentation)\.js$/.test(basename)) {
+  if (normalized.startsWith('editor/')) {
+    return { responsibility: 'editorInteraction', evidence: 'editor interaction path' };
+  }
+  if (normalized.startsWith('src/ui/') || normalized.startsWith('src/rendering/') || basename === 'BaseGameSceneSetup.js' || /(?:Renderer|Render|View|Hud|Presenter|Updater|Panel|Tooltip|Overlay|Feedback|Canvas|Presentation|Layout)\.js$/.test(basename)) {
     return { responsibility: 'presentation', evidence: basename === 'BaseGameSceneSetup.js'
       ? 'scene canvas/presentation setup filename'
       : 'presentation path or rendering/view filename' };
   }
-  if (normalized.startsWith('editor/')) {
-    if (/(?:Service|Model|Transaction|DataManager|DataLoader|DataExporter|History)\.js$/.test(basename)) {
-      return { responsibility: 'businessLogic', evidence: 'editor transaction/model service filename' };
-    }
-    return { responsibility: 'editorInteraction', evidence: 'editor interaction path' };
-  }
   if (normalized.endsWith('.html')) return { responsibility: 'assembly', evidence: 'HTML entrypoint script' };
+  if (isPlatformInfrastructure(normalized, basename)) {
+    return { responsibility: 'platformInfra', evidence: 'engine platform infrastructure (DOM/clock/network/storage boundary)' };
+  }
   if (normalized.endsWith('vite.config.js') || normalized.startsWith('scripts/') || normalized === 'src/main.js' || /(?:Assembler|Container|Runtime|Pipeline|Context|Lifecycle)\.js$/.test(basename)) {
     return { responsibility: 'assembly', evidence: 'entrypoint, tool, or lifecycle composition filename' };
   }
@@ -114,9 +128,21 @@ function makeViolation(unit, code, message, source, match) {
   };
 }
 
-function firstMatch(pattern, source) {
-  pattern.lastIndex = 0;
-  return pattern.exec(source);
+/**
+ * 剥离注释但保留换行结构：行号映射不变，注释里的示例代码不再触发规则。
+ * 启发式：行注释要求前一个字符不是引号/冒号/反斜杠，避免吞掉字符串里的 URL。
+ */
+function stripComments(source) {
+  return source
+    .replace(/\/\*[\s\S]*?\*\//g, match => match.replace(/[^\n]/g, ' '))
+    .replace(/(^|[^:"'`\\])\/\/[^\n]*/g, (match, lead) => lead + ' '.repeat(match.length - lead.length));
+}
+
+/** 时钟/RNG 的"值位置"判定：作为注入默认值或兜底表达式（=>、||、??、三元）出现时不计违规。 */
+function isInValuePosition(source, index) {
+  const lineStart = source.lastIndexOf('\n', index) + 1;
+  const prefix = source.slice(lineStart, index);
+  return /(?:=>|\|\||\?\?)\s*$/.test(prefix) || /\?[^?\n]*:\s*$/.test(prefix);
 }
 
 function policyPatterns() {
@@ -126,39 +152,55 @@ function policyPatterns() {
   const mathRandom = join('Math', '\\.', 'random');
   return {
     contentHandler: expression(['\\b(?:function|class|const|let|var)\\s+(?:(?:S\\d{2})\\w*|(?:', scene, '|', content, ')\\w*(?:Handler|Action))\\b']),
-    contentBranch: expression(['\\b(?:if|switch)\\s*\\([^)]*(?:', scene, '|\\bstage\\b|', content, 'Id\\b)[^)]*\\)']),
+    contentBranchIf: expression(['\\bif\\s*\\([^)]*(?:', scene, '|\\bstage\\b|', content, 'Id\\b)[^)]*(?:===|!==|==|!=)\\s*[\'"`]']),
+    contentBranchSwitch: expression(['\\bswitch\\s*\\([^)]*(?:', scene, '|\\bstage\\b|', content, 'Id\\b)[^)]*\\)\\s*\\{[\\s\\S]{0,300}?\\bcase\\s*[\'"`]']),
     timer: expression(['\\b(?:set', 'Timeout|set', 'Interval)\\s*\\(']),
     callback: expression(['\\b(?:story|dialogue|scene)\\w*[^\\n]{0,80}\\bcallback\\b']),
-    dynamicModule: expression(['\\b(?:import|require)\\s*\\(\\s*[^\\s\"\'`][^)]*\\)']),
+    dynamicModule: expression(['(?<![\\w$.])(?:import|require)\\s*\\(\\s*[^\\s\"\'`][^)]*\\)(?!\\s*\\{)']),
     onlineBranch: expression(['\\bif\\s*\\(\\s*online\\s*\\)']),
     directClockOrRandom: expression(['\\b(?:', date, '\\s*\\.\\s*now|new\\s+', date, '|', mathRandom, ')']),
     domOrCanvas: expression(['\\b(?:docu', 'ment|window|HTMLCanvasElement|OffscreenCanvas)\\b|\\.getContext\\s*\\(']),
     stateWrite: expression(['\\b(?:inventory|quest|story|stats|equipment|serviceState|runtimeState)\\s*(?:\\.[A-Za-z_$][\\w$]*|\\[[^\\]]+\\])\\s*(?:=|\\+=|-=|\\+\\+|--)']),
-    singleton: expression(['\\b(?:Singleton|Service', 'Locator|getInstance)\\b']),
+    singleton: expression(['\\b(?:Singleton|Service', 'Locator)\\b|\\bgetInstance\\s*\\(\\s*\\)']),
     clientStateSubmit: expression(['\\b(?:submit|send|sync|commit)\\w*\\s*\\([^)]*(?:clientState|fullState|wholeState|stateSnapshot)'])
   };
 }
 
 function applyPolicy(unit) {
-  const source = unit.source;
+  const source = stripComments(unit.source);
   const patterns = policyPatterns();
   const findings = [];
+  const isBusinessLogic = unit.responsibility === 'businessLogic';
+  // 首个"通过谓词"的命中（而非无条件首个命中）：避免前文误报屏蔽同文件后文的真违规
   const check = (pattern, code, message, predicate = () => true) => {
-    const match = firstMatch(pattern, source);
-    if (match && predicate(match)) findings.push(makeViolation(unit, code, message, source, match));
+    pattern.lastIndex = 0;
+    let match;
+    while ((match = pattern.exec(source)) !== null) {
+      if (predicate(match)) {
+        findings.push(makeViolation(unit, code, message, source, match));
+        return;
+      }
+      if (match.index === pattern.lastIndex) pattern.lastIndex += 1;
+    }
   };
 
   check(patterns.contentHandler, 'content-named-handler', 'Content- or SXX-named handlers are forbidden.');
-  check(patterns.contentBranch, 'content-flow-branch', 'scene/stage/content control-flow branches are forbidden.', () => unit.responsibility === 'businessLogic');
+  // typeof 守卫（typeof sceneId !== 'string'）是类型检查而非内容分支，剔除
+  check(patterns.contentBranchIf, 'content-flow-branch', 'scene/stage/content control-flow branches are forbidden.', match => (
+    isBusinessLogic && !/\btypeof\b/.test(match[0])
+  ));
+  check(patterns.contentBranchSwitch, 'content-flow-branch', 'scene/stage/content control-flow branches are forbidden.', () => isBusinessLogic);
   check(patterns.timer, 'story-timer', 'Direct timers are forbidden in audited execution units.', match => (
-    unit.responsibility !== 'editorInteraction' && source.slice(0, match.index).trimEnd().at(-1) !== '.'
+    isBusinessLogic && source.slice(0, match.index).trimEnd().at(-1) !== '.'
   ));
   check(patterns.callback, 'story-callback', 'Story, dialogue, or scene callbacks are forbidden.');
   check(patterns.dynamicModule, 'arbitrary-module-path', 'Dynamic module paths must not be executable content.');
   check(patterns.onlineBranch, 'business-online-branch', 'Business code must not branch on online state.');
   check(patterns.singleton, 'singleton-or-service-locator', 'Singleton and service locator access are forbidden.');
   check(patterns.clientStateSubmit, 'whole-client-state-submit', 'Whole client-state submission is forbidden.');
-  check(patterns.directClockOrRandom, 'direct-business-clock-or-random', 'Business logic must use injected clocks and authority RNG.', () => unit.responsibility === 'businessLogic');
+  check(patterns.directClockOrRandom, 'direct-business-clock-or-random', 'Business logic must use injected clocks and authority RNG.', match => (
+    isBusinessLogic && !isInValuePosition(source, match.index)
+  ));
 
   if (unit.responsibility === 'assembly') {
     check(patterns.domOrCanvas, 'assembly-presentation-overreach', 'Assembly may not access DOM or Canvas APIs.');
@@ -199,7 +241,10 @@ function validateException(unit, exception) {
   const exactLines = exception.lines === unit.physicalLines;
   const exactHash = exception.contentHash === unit.sourceHash;
   const responsibilityMatches = exception.responsibility === unit.responsibility;
-  const valid = missing.length === 0 && validResponsibility && validDate && exactLines && exactHash && responsibilityMatches;
+  // codes 可选：列出本例外豁免的违规代码；未提供时仅豁免行数超限（向后兼容）
+  const validCodes = exception.codes === undefined
+    || (Array.isArray(exception.codes) && exception.codes.every(code => typeof code === 'string' && code));
+  const valid = missing.length === 0 && validResponsibility && validDate && exactLines && exactHash && responsibilityMatches && validCodes;
   return {
     status: valid ? 'valid' : 'invalid',
     valid,
@@ -209,13 +254,15 @@ function validateException(unit, exception) {
     declaredLines: exception.lines ?? null,
     declaredResponsibility: exception.responsibility || null,
     declaredHash: exception.contentHash || null,
+    declaredCodes: exception.codes ?? null,
     reasons: [
       ...(missing.length ? [`missing fields: ${missing.join(', ')}`] : []),
       ...(!validResponsibility ? ['responsibility is not one of the four permitted values'] : []),
       ...(!validDate ? ['date must use YYYY-MM-DD'] : []),
       ...(!exactLines ? ['physical line count changed; exception requires reapproval'] : []),
       ...(!exactHash ? ['content hash changed; exception requires reapproval'] : []),
-      ...(!responsibilityMatches ? ['declared responsibility differs from audited responsibility'] : [])
+      ...(!responsibilityMatches ? ['declared responsibility differs from audited responsibility'] : []),
+      ...(!validCodes ? ['codes must be an array of non-empty violation code strings'] : [])
     ]
   };
 }
@@ -274,11 +321,18 @@ export function auditTrackedJavaScript({ root = process.cwd(), paths, readFile, 
     const exception = exceptions.find(entry => normalizePath(entry.file || '') === unit.file);
     const exceptionStatus = exception ? validateException(unit, exception) : { status: 'none', valid: false, reasons: [] };
     const findings = applyPolicy(unit);
+    // codes 语义：有效例外列出 codes 时按码豁免（findings+行数）；未列 codes 时仅豁免行数超限
+    const exemptCodes = exceptionStatus.valid && Array.isArray(exception?.codes)
+      ? new Set(exception.codes)
+      : null;
+    const lineLimitExempt = exceptionStatus.valid && (!exemptCodes || exemptCodes.has('line-limit-or-invalid-exception'));
     if (unit.physicalLines < 1) violations.push(makeViolation(unit, 'empty-executable-unit', 'Executable units must contain 1–1000 physical lines.', unit.source));
-    if (unit.physicalLines > 1000 && !exceptionStatus.valid) {
+    if (unit.physicalLines > 1000 && !lineLimitExempt) {
       violations.push(makeViolation(unit, 'line-limit-or-invalid-exception', 'Units over 1000 lines require a valid external-contract exception.', unit.source));
     }
-    violations.push(...findings);
+    violations.push(...(exemptCodes
+      ? findings.filter(finding => !exemptCodes.has(finding.code))
+      : findings));
     return {
       file: unit.file,
       parentFile: unit.parentFile || null,
@@ -292,7 +346,7 @@ export function auditTrackedJavaScript({ root = process.cwd(), paths, readFile, 
   });
 
   return {
-    policyVersion: 1,
+    policyVersion: 2,
     trackedPathCount: candidates.length,
     included,
     excluded,

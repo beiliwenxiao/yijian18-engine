@@ -82,6 +82,95 @@ describe('JavaScriptAuditGate', () => {
     ]));
   });
 
+  it('ignores clock/random inside comments and injected-clock value positions, but still flags direct calls', () => {
+    const report = audit({
+      'src/systems/CommentOnly.js': [
+        '// 结算禁止直接用 Math.random()/Date.now()，改用注入的 RNG：',
+        '/* 例如 new Date() 与 Math.random() 的对比 */',
+        'export function make(options = {}) {',
+        '  this.now = options.now || (() => Date.now());',
+        '  return this;',
+        '}',
+        ''
+      ].join('\n'),
+      'src/systems/StillRandom.js': 'export function roll() {\n  return Math.random();\n}\n'
+    });
+    expect(report.violations.filter(violation => violation.file === 'src/systems/CommentOnly.js')).toEqual([]);
+    expect(report.violations).toEqual(expect.arrayContaining([
+      expect.objectContaining({ file: 'src/systems/StillRandom.js', code: 'direct-business-clock-or-random' })
+    ]));
+  });
+
+  it('reclassifies editor and platform infrastructure files out of business boundary rules', () => {
+    const report = audit({
+      'editor/SceneDataManager.js': 'const stamp = Date.now();\ndocument.title = "editor";',
+      'src/network/WebSocketClient.js': 'this.lastPongTime = Date.now();\nsetInterval(() => {}, 1000);\ndocument.title = "net";',
+      'src/core/snapshot/IndexedDBAdapter.js': 'updatedAt: Date.now(),',
+      'src/systems/StillBusiness.js': 'Math.random();'
+    });
+    const byFile = file => report.units.find(unit => unit.file === file);
+    expect(byFile('editor/SceneDataManager.js')).toMatchObject({ responsibility: 'editorInteraction' });
+    expect(byFile('src/network/WebSocketClient.js')).toMatchObject({ responsibility: 'platformInfra' });
+    expect(byFile('src/core/snapshot/IndexedDBAdapter.js')).toMatchObject({ responsibility: 'platformInfra' });
+    expect(report.violations.filter(violation => violation.file !== 'src/systems/StillBusiness.js'
+      && violation.code !== 'line-limit-or-invalid-exception')).toEqual([]);
+    expect(report.violations).toEqual(expect.arrayContaining([
+      expect.objectContaining({ file: 'src/systems/StillBusiness.js', code: 'direct-business-clock-or-random' })
+    ]));
+  });
+
+  it('flags only hardcoded content comparisons as content-flow branches', () => {
+    const report = audit({
+      'src/systems/ContentFlow.js': [
+        'if (sceneId === target.sceneId) {}',
+        'switch (stage) { case nextStage: break; }',
+        'if (sceneId === "S01") {}',
+        'switch (stage) { case "S02": break; }'
+      ].join('\n')
+    });
+    expect(report.violations.filter(violation => violation.code === 'content-flow-branch')).toHaveLength(2);
+  });
+
+  it('keeps editor index scripts as editorInteraction and excludes dev tooling', () => {
+    const report = audit({
+      'editor/guide.html': '<script>export const guide = 1;</script>',
+      'src/dev/Tool.js': 'Math.random();'
+    });
+    expect(report.units.find(unit => unit.file === 'editor/guide.html#script:1'))
+      .toMatchObject({ responsibility: 'editorInteraction' });
+    expect(report.excluded).toEqual(expect.arrayContaining([
+      expect.objectContaining({ file: 'src/dev/Tool.js', reason: 'dev tooling source' })
+    ]));
+    expect(report.units.find(unit => unit.file === 'src/dev/Tool.js')).toBeUndefined();
+  });
+
+
+  it('does not flag method definitions named import/require/getInstance', () => {
+    const report = audit({
+      'editor/CommandService.js': 'import(projectPath, payload) { return this.execute("import", projectPath, payload); }',
+      'src/systems/Registry.js': 'require(id) {}\ngetInstance(instanceId) { return null; }'
+    });
+    expect(report.violations).toEqual([]);
+  });
+
+  it('exempts only the listed violation codes when a codes array is provided', () => {
+    const source = 'function S11Action() {}\nMath.random();\n';
+    const exception = {
+      file: 'src/systems/LegacyFlow.js',
+      evidence: 'transitional content-engine handler',
+      lines: 3,
+      responsibility: 'businessLogic',
+      owner: 'beiliwenxiao',
+      date: '2026-09-27',
+      contentHash: hash(source),
+      codes: ['content-named-handler']
+    };
+    const report = audit({ 'src/systems/LegacyFlow.js': source }, [exception]);
+    expect(report.violations.some(violation => violation.code === 'content-named-handler')).toBe(false);
+    expect(report.violations).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'direct-business-clock-or-random' })
+    ]));
+  });
 
   it('accepts only exact external-contract exceptions and never exempts responsibility checks', () => {
     const oversized = Array.from({ length: 1001 }, () => '// contract line').join('\n');

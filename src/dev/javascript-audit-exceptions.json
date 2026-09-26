@@ -1,4 +1,574 @@
 {
-  "version": 1,
-  "exceptions": []
+  "exceptions": [
+    {
+      "file": "editor/ImageSlicer.js",
+      "codes": [
+        "line-limit-or-invalid-exception"
+      ],
+      "evidence": "历史大文件，拆分列入架构治理计划：拆一个移一个，修改本文件前需重新审批",
+      "lines": 1018,
+      "responsibility": "editorInteraction",
+      "owner": "beiliwenxiao",
+      "date": "2026-09-27",
+      "contentHash": "6123473e710944116183af7c29fa09fe76d1281e4b5ae51f70d5161b33deb120"
+    },
+    {
+      "file": "editor/PanelEditor.js",
+      "codes": [
+        "line-limit-or-invalid-exception"
+      ],
+      "evidence": "历史大文件，拆分列入架构治理计划：拆一个移一个，修改本文件前需重新审批",
+      "lines": 1290,
+      "responsibility": "editorInteraction",
+      "owner": "beiliwenxiao",
+      "date": "2026-09-27",
+      "contentHash": "60fcc1c17c98d8b031a14ff882dcf399112bc9b9f331c7e2fdce04a5979fdd8c"
+    },
+    {
+      "file": "editor/QuestWizardEditor.js",
+      "codes": [
+        "line-limit-or-invalid-exception"
+      ],
+      "evidence": "历史大文件，拆分列入架构治理计划：拆一个移一个，修改本文件前需重新审批",
+      "lines": 1111,
+      "responsibility": "editorInteraction",
+      "owner": "beiliwenxiao",
+      "date": "2026-09-27",
+      "contentHash": "e315188bf1c7d1eb12ca6c567e77fba101e0dc5ea23083da4440d73893aac4b8"
+    },
+    {
+      "file": "editor/SceneEditorAssets.js",
+      "codes": [
+        "line-limit-or-invalid-exception"
+      ],
+      "evidence": "历史大文件，拆分列入架构治理计划：拆一个移一个，修改本文件前需重新审批",
+      "lines": 3664,
+      "responsibility": "editorInteraction",
+      "owner": "beiliwenxiao",
+      "date": "2026-09-27",
+      "contentHash": "350bdb6eacdd9f7e5e7514051bbc69c5a211fa574e2d92cdcea342e60325ae60"
+    },
+    {
+      "file": "editor/SceneEditorCanvas.js",
+      "codes": [
+        "line-limit-or-invalid-exception"
+      ],
+      "evidence": "历史大文件，拆分列入架构治理计划：拆一个移一个，修改本文件前需重新审批",
+      "lines": 1316,
+      "responsibility": "editorInteraction",
+      "owner": "beiliwenxiao",
+      "date": "2026-09-27",
+      "contentHash": "cc12b10a3b8618357be79bc4f8351556bd921c0403e613427406ada4f91e87e6"
+    },
+    {
+      "file": "editor/SceneEditorInteraction.js",
+      "codes": [
+        "line-limit-or-invalid-exception"
+      ],
+      "evidence": "历史大文件，拆分列入架构治理计划：拆一个移一个，修改本文件前需重新审批",
+      "lines": 1528,
+      "responsibility": "editorInteraction",
+      "owner": "beiliwenxiao",
+      "date": "2026-09-27",
+      "contentHash": "110e995bcbb23449dd33559d9901a614bf6614898e68cde01b61825713f9cff9"
+    },
+    {
+      "file": "editor/SceneEditorUI.js",
+      "codes": [
+        "line-limit-or-invalid-exception"
+      ],
+      "evidence": "历史大文件，拆分列入架构治理计划：拆一个移一个，修改本文件前需重新审批",
+      "lines": 2462,
+      "responsibility": "editorInteraction",
+      "owner": "beiliwenxiao",
+      "date": "2026-09-27",
+      "contentHash": "513f74193b4fe1ff623f477efdf8d1045ded0d66d764bf691d3bdf205ee7de31"
+    },
+    {
+      "file": "editor/TriggerEditor.js",
+      "codes": [
+        "line-limit-or-invalid-exception"
+      ],
+      "evidence": "历史大文件，拆分列入架构治理计划：拆一个移一个，修改本文件前需重新审批",
+      "lines": 2195,
+      "responsibility": "editorInteraction",
+      "owner": "beiliwenxiao",
+      "date": "2026-09-27",
+      "contentHash": "5b0c1b028e5310cdaa76531284b41ffa4791e10a9e645e4582407e8e08177751"
+    },
+    {
+      "file": "editor/UIEditor.js",
+      "codes": [
+        "line-limit-or-invalid-exception"
+      ],
+      "evidence": "历史大文件，拆分列入架构治理计划：拆一个移一个，修改本文件前需重新审批",
+      "lines": 1869,
+      "responsibility": "editorInteraction",
+      "owner": "beiliwenxiao",
+      "date": "2026-09-27",
+      "contentHash": "09225d4176f0e2bf349dca231e18368fe52240e967d77e2f5ed8630a1e504c96"
+    },
+    {
+      "file": "editor/WorldMapEditor.js",
+      "codes": [
+        "line-limit-or-invalid-exception"
+      ],
+      "evidence": "历史大文件，拆分列入架构治理计划：拆一个移一个，修改本文件前需重新审批",
+      "lines": 1854,
+      "responsibility": "editorInteraction",
+      "owner": "beiliwenxiao",
+      "date": "2026-09-27",
+      "contentHash": "1918040681e8d4fbba3f83194ec2943a9e9381ca24395f2b9327c9ff82b14768"
+    },
+    {
+      "file": "example/sanguo_zhangjiao/index.html#script:1",
+      "codes": [
+        "line-limit-or-invalid-exception"
+      ],
+      "evidence": "历史大文件，拆分列入架构治理计划：拆一个移一个，修改本文件前需重新审批",
+      "lines": 3675,
+      "responsibility": "assembly",
+      "owner": "beiliwenxiao",
+      "date": "2026-09-27",
+      "contentHash": "e5d501572e67908e3f00dd16af6c9bcdd47df5d3196b8721c93d0de3f726ddb6"
+    },
+    {
+      "file": "example/sanguo_zhangjiao/scenes/BaseGameSceneSetup.js",
+      "codes": [
+        "line-limit-or-invalid-exception"
+      ],
+      "evidence": "历史大文件，拆分列入架构治理计划：拆一个移一个，修改本文件前需重新审批",
+      "lines": 1202,
+      "responsibility": "presentation",
+      "owner": "beiliwenxiao",
+      "date": "2026-09-27",
+      "contentHash": "849cff0a6a15953c9756a243da58e042f608a0cee5efabfd199a90fe732a4832"
+    },
+    {
+      "file": "example/sanguo_zhangjiao/scenes/DataDrivenPrologueScene.js",
+      "codes": [
+        "content-flow-branch",
+        "line-limit-or-invalid-exception"
+      ],
+      "evidence": "历史大文件，拆分列入架构治理计划：拆一个移一个，修改本文件前需重新审批；内容工程向数据驱动迁移的过渡 handler/分支，迁移完成前冻结；修改本文件前需重新审批",
+      "lines": 1865,
+      "responsibility": "businessLogic",
+      "owner": "beiliwenxiao",
+      "date": "2026-09-27",
+      "contentHash": "d5ca47443db6111adcbf1c5dcb437154ea9dc2cabd2458800e1ddca3c4e164f9"
+    },
+    {
+      "file": "example/sanguo_zhangjiao/scenes/Scene1Terrain.js",
+      "codes": [
+        "line-limit-or-invalid-exception"
+      ],
+      "evidence": "历史大文件，拆分列入架构治理计划：拆一个移一个，修改本文件前需重新审批",
+      "lines": 1667,
+      "responsibility": "businessLogic",
+      "owner": "beiliwenxiao",
+      "date": "2026-09-27",
+      "contentHash": "89c4125c412c15a2c72e9db2ba70d1e713f8ba8212b56b6f70038dd70f5a1cfc"
+    },
+    {
+      "file": "example/sanguo_zhangjiao/systems/S01S02SceneFlow.js",
+      "codes": [
+        "content-named-handler",
+        "line-limit-or-invalid-exception"
+      ],
+      "evidence": "历史大文件，拆分列入架构治理计划：拆一个移一个，修改本文件前需重新审批；内容工程向数据驱动迁移的过渡 handler/分支，迁移完成前冻结；修改本文件前需重新审批",
+      "lines": 2042,
+      "responsibility": "businessLogic",
+      "owner": "beiliwenxiao",
+      "date": "2026-09-27",
+      "contentHash": "8cce95f3e4711083289864b30c3b36c444e375d98f8ef9c74b0392a39fb5463e"
+    },
+    {
+      "file": "example/sanguo_zhangjiao/systems/S02ArmyRescueFlow.js",
+      "codes": [
+        "content-named-handler"
+      ],
+      "evidence": "内容工程向数据驱动迁移的过渡 handler/分支，迁移完成前冻结；修改本文件前需重新审批",
+      "lines": 120,
+      "responsibility": "businessLogic",
+      "owner": "beiliwenxiao",
+      "date": "2026-09-27",
+      "contentHash": "7585b859162770f9e4dffdaf8f2adf5ae5d37caec174aa2a4c4eea39a8a96a58"
+    },
+    {
+      "file": "example/sanguo_zhangjiao/systems/S03S08SceneFlow.js",
+      "codes": [
+        "content-named-handler"
+      ],
+      "evidence": "内容工程向数据驱动迁移的过渡 handler/分支，迁移完成前冻结；修改本文件前需重新审批",
+      "lines": 364,
+      "responsibility": "businessLogic",
+      "owner": "beiliwenxiao",
+      "date": "2026-09-27",
+      "contentHash": "201a33c322891ad3460dcd64f29efb1d4be141ec17f7f5135977f46e62b57d3c"
+    },
+    {
+      "file": "example/sanguo_zhangjiao/systems/S03S14BattleCoordinator.js",
+      "codes": [
+        "content-flow-branch",
+        "content-named-handler"
+      ],
+      "evidence": "内容工程向数据驱动迁移的过渡 handler/分支，迁移完成前冻结；修改本文件前需重新审批",
+      "lines": 445,
+      "responsibility": "businessLogic",
+      "owner": "beiliwenxiao",
+      "date": "2026-09-27",
+      "contentHash": "863d4e489790b67c155417edbf9f4c3f2ed10ad7c20e26707121f36bd57a29ed"
+    },
+    {
+      "file": "example/sanguo_zhangjiao/systems/S04RouteCoordinator.js",
+      "codes": [
+        "content-named-handler"
+      ],
+      "evidence": "内容工程向数据驱动迁移的过渡 handler/分支，迁移完成前冻结；修改本文件前需重新审批",
+      "lines": 142,
+      "responsibility": "businessLogic",
+      "owner": "beiliwenxiao",
+      "date": "2026-09-27",
+      "contentHash": "de6e98821d0c3f0c4b060f5ef67344947cfdde01879e9f48efce7f3ecaae0609"
+    },
+    {
+      "file": "example/sanguo_zhangjiao/systems/S05SceneFlow.js",
+      "codes": [
+        "content-named-handler"
+      ],
+      "evidence": "内容工程向数据驱动迁移的过渡 handler/分支，迁移完成前冻结；修改本文件前需重新审批",
+      "lines": 532,
+      "responsibility": "businessLogic",
+      "owner": "beiliwenxiao",
+      "date": "2026-09-27",
+      "contentHash": "ec4b0950971a19160bcb9c33edb21a234775be810634e5032c5d64facf1434e6"
+    },
+    {
+      "file": "example/sanguo_zhangjiao/systems/S06SceneFlow.js",
+      "codes": [
+        "content-named-handler"
+      ],
+      "evidence": "内容工程向数据驱动迁移的过渡 handler/分支，迁移完成前冻结；修改本文件前需重新审批",
+      "lines": 358,
+      "responsibility": "businessLogic",
+      "owner": "beiliwenxiao",
+      "date": "2026-09-27",
+      "contentHash": "f9786f1bad2425b7cba5403d38e41041be0da4dda486f53128d272bb2e2d5b96"
+    },
+    {
+      "file": "example/sanguo_zhangjiao/systems/S07S08SceneFlow.js",
+      "codes": [
+        "content-named-handler"
+      ],
+      "evidence": "内容工程向数据驱动迁移的过渡 handler/分支，迁移完成前冻结；修改本文件前需重新审批",
+      "lines": 426,
+      "responsibility": "businessLogic",
+      "owner": "beiliwenxiao",
+      "date": "2026-09-27",
+      "contentHash": "247ddc7b16d3b20ece1006a00d97dd8df895d88cd12e7ef0b517ab9cb339d556"
+    },
+    {
+      "file": "example/sanguo_zhangjiao/systems/S09AudioDirector.js",
+      "codes": [
+        "content-flow-branch",
+        "content-named-handler"
+      ],
+      "evidence": "内容工程向数据驱动迁移的过渡 handler/分支，迁移完成前冻结；修改本文件前需重新审批",
+      "lines": 101,
+      "responsibility": "businessLogic",
+      "owner": "beiliwenxiao",
+      "date": "2026-09-27",
+      "contentHash": "6fc2f2aaf08070228601d01bcb43e9127f41617d17f269b8b3d2b5203e426fb8"
+    },
+    {
+      "file": "example/sanguo_zhangjiao/systems/S09ClassSelectionFlow.js",
+      "codes": [
+        "content-named-handler"
+      ],
+      "evidence": "内容工程向数据驱动迁移的过渡 handler/分支，迁移完成前冻结；修改本文件前需重新审批",
+      "lines": 475,
+      "responsibility": "businessLogic",
+      "owner": "beiliwenxiao",
+      "date": "2026-09-27",
+      "contentHash": "5de79b0f0026a16f91f4726d627a3bee7f14fe2d67f9249e5a09c051f5bb10c8"
+    },
+    {
+      "file": "example/sanguo_zhangjiao/systems/S09RefugeeFlow.js",
+      "codes": [
+        "content-named-handler"
+      ],
+      "evidence": "内容工程向数据驱动迁移的过渡 handler/分支，迁移完成前冻结；修改本文件前需重新审批",
+      "lines": 308,
+      "responsibility": "businessLogic",
+      "owner": "beiliwenxiao",
+      "date": "2026-09-27",
+      "contentHash": "f603b2b94473e6b07418e3bbdaaa340d4b50019ec7d47e9b9134fb5d62c43e65"
+    },
+    {
+      "file": "example/sanguo_zhangjiao/systems/S10ConstructionFlow.js",
+      "codes": [
+        "content-named-handler"
+      ],
+      "evidence": "内容工程向数据驱动迁移的过渡 handler/分支，迁移完成前冻结；修改本文件前需重新审批",
+      "lines": 723,
+      "responsibility": "businessLogic",
+      "owner": "beiliwenxiao",
+      "date": "2026-09-27",
+      "contentHash": "68cc651acbc763be8ad056145ba632408def9e01e7b17b613aa8da63c9498435"
+    },
+    {
+      "file": "example/sanguo_zhangjiao/systems/S10StoryFlow.js",
+      "codes": [
+        "content-named-handler"
+      ],
+      "evidence": "内容工程向数据驱动迁移的过渡 handler/分支，迁移完成前冻结；修改本文件前需重新审批",
+      "lines": 174,
+      "responsibility": "businessLogic",
+      "owner": "beiliwenxiao",
+      "date": "2026-09-27",
+      "contentHash": "a804019d265427fdabf75f8640d73088afd631fb6c5f1343110d5c153277cf09"
+    },
+    {
+      "file": "example/sanguo_zhangjiao/systems/S11S12Coordinator.js",
+      "codes": [
+        "content-flow-branch",
+        "content-named-handler"
+      ],
+      "evidence": "内容工程向数据驱动迁移的过渡 handler/分支，迁移完成前冻结；修改本文件前需重新审批",
+      "lines": 511,
+      "responsibility": "businessLogic",
+      "owner": "beiliwenxiao",
+      "date": "2026-09-27",
+      "contentHash": "35c78be56d8f529e3c28a66bbff9e4727be5f3aaf97f870db31475bd42cdb036"
+    },
+    {
+      "file": "example/sanguo_zhangjiao/systems/S11S14SceneFlow.js",
+      "codes": [
+        "content-named-handler",
+        "line-limit-or-invalid-exception"
+      ],
+      "evidence": "历史大文件，拆分列入架构治理计划：拆一个移一个，修改本文件前需重新审批；内容工程向数据驱动迁移的过渡 handler/分支，迁移完成前冻结；修改本文件前需重新审批",
+      "lines": 1789,
+      "responsibility": "businessLogic",
+      "owner": "beiliwenxiao",
+      "date": "2026-09-27",
+      "contentHash": "0955e3fc2dc17f83dcb103a5555a31451499f5afeb7fdd5b9fcd035e177bd2e1"
+    },
+    {
+      "file": "example/sanguo_zhangjiao/systems/S13S14Coordinator.js",
+      "codes": [
+        "content-named-handler"
+      ],
+      "evidence": "内容工程向数据驱动迁移的过渡 handler/分支，迁移完成前冻结；修改本文件前需重新审批",
+      "lines": 313,
+      "responsibility": "businessLogic",
+      "owner": "beiliwenxiao",
+      "date": "2026-09-27",
+      "contentHash": "eac32898d631a94e1e3ea9f6ecc27b3cdfdcc95bd7e1b14ce00eefcbb1a894cc"
+    },
+    {
+      "file": "example/sanguo_zhangjiao/systems/SanguoGameLoaderCoordinator.js",
+      "codes": [
+        "content-flow-branch"
+      ],
+      "evidence": "内容工程向数据驱动迁移的过渡 handler/分支，迁移完成前冻结；修改本文件前需重新审批",
+      "lines": 342,
+      "responsibility": "businessLogic",
+      "owner": "beiliwenxiao",
+      "date": "2026-09-27",
+      "contentHash": "2be199f3cfb0124ac2de22f9a8fa66298aa2c3274c9759209b4b43cb5a36783a"
+    },
+    {
+      "file": "example/sanguo_zhangjiao/systems/SanguoSceneNavigationFlow.js",
+      "codes": [
+        "content-flow-branch"
+      ],
+      "evidence": "内容工程向数据驱动迁移的过渡 handler/分支，迁移完成前冻结；修改本文件前需重新审批",
+      "lines": 36,
+      "responsibility": "businessLogic",
+      "owner": "beiliwenxiao",
+      "date": "2026-09-27",
+      "contentHash": "0d2d1c3a44d77aa823a89e14593ed819b192fbb48979f59a74b2bb469891a305"
+    },
+    {
+      "file": "example/sanguo_zhangjiao/systems/SanguoWorldRuntimeCoordinator.js",
+      "codes": [
+        "content-flow-branch"
+      ],
+      "evidence": "内容工程向数据驱动迁移的过渡 handler/分支，迁移完成前冻结；修改本文件前需重新审批",
+      "lines": 800,
+      "responsibility": "businessLogic",
+      "owner": "beiliwenxiao",
+      "date": "2026-09-27",
+      "contentHash": "9789be1fd7ded62f35657dfd9398c1f304dbe1ce1991b1294617e1a6daac1046"
+    },
+    {
+      "file": "src/core/PlaceholderAssets.js",
+      "codes": [
+        "line-limit-or-invalid-exception"
+      ],
+      "evidence": "历史大文件，拆分列入架构治理计划：拆一个移一个，修改本文件前需重新审批",
+      "lines": 1284,
+      "responsibility": "platformInfra",
+      "owner": "beiliwenxiao",
+      "date": "2026-09-27",
+      "contentHash": "d93dedddf7ba7f395bd919dff73e3cbd2d39d508785b3db059b328f6908d0523"
+    },
+    {
+      "file": "src/core/scene/SceneCampfireService.js",
+      "codes": [
+        "line-limit-or-invalid-exception"
+      ],
+      "evidence": "历史大文件，拆分列入架构治理计划：拆一个移一个，修改本文件前需重新审批",
+      "lines": 1159,
+      "responsibility": "businessLogic",
+      "owner": "beiliwenxiao",
+      "date": "2026-09-27",
+      "contentHash": "7e4d8662e6dcfe8354b4fe9abd78d188288430e20047ebb1dc609ea167587e31"
+    },
+    {
+      "file": "src/core/scene/ScenePlacementRuntime.js",
+      "codes": [
+        "line-limit-or-invalid-exception"
+      ],
+      "evidence": "历史大文件，拆分列入架构治理计划：拆一个移一个，修改本文件前需重新审批",
+      "lines": 1131,
+      "responsibility": "assembly",
+      "owner": "beiliwenxiao",
+      "date": "2026-09-27",
+      "contentHash": "bcf476148f6ce356d1dd35df7d375e408b3fdf6206cceae1dc7ac1ab045f9ee4"
+    },
+    {
+      "file": "src/core/WorldStreamingManager.js",
+      "codes": [
+        "line-limit-or-invalid-exception"
+      ],
+      "evidence": "历史大文件，拆分列入架构治理计划：拆一个移一个，修改本文件前需重新审批",
+      "lines": 1004,
+      "responsibility": "businessLogic",
+      "owner": "beiliwenxiao",
+      "date": "2026-09-27",
+      "contentHash": "22ab90c08be810281bc90e41f1d30642f74ef1d94ee6aa8b1f4f2fcdf11bac84"
+    },
+    {
+      "file": "src/rendering/SkillEffects.js",
+      "codes": [
+        "line-limit-or-invalid-exception"
+      ],
+      "evidence": "历史大文件，拆分列入架构治理计划：拆一个移一个，修改本文件前需重新审批",
+      "lines": 1233,
+      "responsibility": "presentation",
+      "owner": "beiliwenxiao",
+      "date": "2026-09-27",
+      "contentHash": "b44e703525e5b6aa62998ce89981229c8ca4087cda70b53dbaec08c260a99544"
+    },
+    {
+      "file": "src/rendering/WeaponRenderer.js",
+      "codes": [
+        "line-limit-or-invalid-exception"
+      ],
+      "evidence": "历史大文件，拆分列入架构治理计划：拆一个移一个，修改本文件前需重新审批",
+      "lines": 1019,
+      "responsibility": "presentation",
+      "owner": "beiliwenxiao",
+      "date": "2026-09-27",
+      "contentHash": "f991cb8074f418e7be471e1a8591c888e739e417ac10f4e6721724bbd8f8acfc"
+    },
+    {
+      "file": "src/systems/ArmyCommandSystem.js",
+      "codes": [
+        "line-limit-or-invalid-exception"
+      ],
+      "evidence": "历史大文件，拆分列入架构治理计划：拆一个移一个，修改本文件前需重新审批",
+      "lines": 1074,
+      "responsibility": "businessLogic",
+      "owner": "beiliwenxiao",
+      "date": "2026-09-27",
+      "contentHash": "71f7aaeae896e26a32b378da39dc868cbaf21207d260ab622e4cadb865b8a5a0"
+    },
+    {
+      "file": "src/systems/CombatSystem.js",
+      "codes": [
+        "line-limit-or-invalid-exception"
+      ],
+      "evidence": "历史大文件，拆分列入架构治理计划：拆一个移一个，修改本文件前需重新审批",
+      "lines": 3611,
+      "responsibility": "businessLogic",
+      "owner": "beiliwenxiao",
+      "date": "2026-09-27",
+      "contentHash": "dec067dc22f9d81c0bdbc19f51155fb80f5d0ea3facb0284a74f57a15efa3320"
+    },
+    {
+      "file": "src/systems/GuildSystem.js",
+      "codes": [
+        "line-limit-or-invalid-exception"
+      ],
+      "evidence": "历史大文件，拆分列入架构治理计划：拆一个移一个，修改本文件前需重新审批",
+      "lines": 1456,
+      "responsibility": "businessLogic",
+      "owner": "beiliwenxiao",
+      "date": "2026-09-27",
+      "contentHash": "337713bd42f92705995be95f76699c47e78f738d14e8fc3636d7848aa6be7af0"
+    },
+    {
+      "file": "src/systems/TeamSystem.js",
+      "codes": [
+        "line-limit-or-invalid-exception"
+      ],
+      "evidence": "历史大文件，拆分列入架构治理计划：拆一个移一个，修改本文件前需重新审批",
+      "lines": 1142,
+      "responsibility": "businessLogic",
+      "owner": "beiliwenxiao",
+      "date": "2026-09-27",
+      "contentHash": "b0630d557db50cdc12594359fae3d7a5448f19388e86f420397b65ab9b05704b"
+    },
+    {
+      "file": "src/systems/TriggerSystem.js",
+      "codes": [
+        "line-limit-or-invalid-exception"
+      ],
+      "evidence": "历史大文件，拆分列入架构治理计划：拆一个移一个，修改本文件前需重新审批",
+      "lines": 1528,
+      "responsibility": "businessLogic",
+      "owner": "beiliwenxiao",
+      "date": "2026-09-27",
+      "contentHash": "c3d6b23a5afe87dbd1a479054a5e1a4a97a9000ef519ea3529022a2f3b0e6be6"
+    },
+    {
+      "file": "src/ui/DebugPanel.js",
+      "codes": [
+        "line-limit-or-invalid-exception"
+      ],
+      "evidence": "历史大文件，拆分列入架构治理计划：拆一个移一个，修改本文件前需重新审批",
+      "lines": 1130,
+      "responsibility": "presentation",
+      "owner": "beiliwenxiao",
+      "date": "2026-09-27",
+      "contentHash": "fb40dc11b691ac76d2106c5c9e67ad87e622b9d973ca4e13a5f48c343882206b"
+    },
+    {
+      "file": "src/ui/InventoryPanel.js",
+      "codes": [
+        "line-limit-or-invalid-exception"
+      ],
+      "evidence": "历史大文件，拆分列入架构治理计划：拆一个移一个，修改本文件前需重新审批",
+      "lines": 1623,
+      "responsibility": "presentation",
+      "owner": "beiliwenxiao",
+      "date": "2026-09-27",
+      "contentHash": "f88c931f93a0ac4e77a24ffb65fd83c158eb302bcdb2012e1a7b630eb65b7ce9"
+    },
+    {
+      "file": "src/ui/PlayerInfoPanel.js",
+      "codes": [
+        "line-limit-or-invalid-exception"
+      ],
+      "evidence": "历史大文件，拆分列入架构治理计划：拆一个移一个，修改本文件前需重新审批",
+      "lines": 1067,
+      "responsibility": "presentation",
+      "owner": "beiliwenxiao",
+      "date": "2026-09-27",
+      "contentHash": "db737a6d7320f54127f6cd833b4eb268a78c4b20bf3378aed0108bd966a7bed2"
+    }
+  ]
 }
