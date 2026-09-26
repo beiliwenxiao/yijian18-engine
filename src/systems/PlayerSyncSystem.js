@@ -10,6 +10,8 @@
  *            https://gitee.com/coderaaa/yijian18-engine
  ************************************************************/
 
+import { setIntervalFn, clearIntervalFn } from '../core/Timers.js';
+
 /**
  * PlayerSyncSystem.js
  * 玩家同步系统 - 管理其他玩家实体的创建、同步和显示
@@ -167,9 +169,11 @@ export class PlayerSyncSystem {
     
     // 事件监听器
     this.listeners = new Map();
-    
-    // 清理定时器
+
+    // 清理定时器（经边界注入，可测可停）
     this.cleanupTimer = null;
+    this.setIntervalFn = config.setIntervalFn || setIntervalFn;
+    this.clearIntervalFn = config.clearIntervalFn || clearIntervalFn;
     
     // 统计
     this.stats = {
@@ -201,7 +205,7 @@ export class PlayerSyncSystem {
    */
   startCleanup() {
     this.stopCleanup();
-    this.cleanupTimer = setInterval(() => {
+    this.cleanupTimer = this.setIntervalFn(() => {
       this.cleanupTimedOutPlayers();
     }, this.config.cleanupInterval);
   }
@@ -211,7 +215,7 @@ export class PlayerSyncSystem {
    */
   stopCleanup() {
     if (this.cleanupTimer) {
-      clearInterval(this.cleanupTimer);
+      this.clearIntervalFn(this.cleanupTimer);
       this.cleanupTimer = null;
     }
   }

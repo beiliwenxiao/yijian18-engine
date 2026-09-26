@@ -227,7 +227,7 @@ export function registerDefaultActions(triggerSystem) {
     },
 
     // ---- 编排 ----
-    wait: (p) => new Promise((resolve) => setTimeout(() => resolve(true), (p.seconds || 0) * 1000)),
+    wait: (p) => new Promise((resolve) => setTimeoutFn(() => resolve(true), (p.seconds || 0) * 1000)),
     parallel: async (p, ctx) => {
       const actions = Array.isArray(p.actions) ? p.actions : [];
       const results = await Promise.all(actions.map(async act => {

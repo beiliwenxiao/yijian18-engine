@@ -22,6 +22,7 @@
  */
 
 import { Entity } from '../../../src/ecs/Entity.js';
+import { setTimeoutFn } from '../../../src/core/Timers.js';
 import { TransformComponent } from '../../../src/ecs/components/TransformComponent.js';
 import { SpriteComponent } from '../../../src/ecs/components/SpriteComponent.js';
 import { CombatComponent } from '../../../src/ecs/components/CombatComponent.js';
@@ -167,11 +168,11 @@ export class HistoricalGeneral extends Entity {
       this.displayIntroText();
       
       // 持续指定时间后恢复
-      setTimeout(() => {
+      setTimeoutFn(() => {
         // 恢复相机状态
         this.camera.setTarget(originalTarget);
         this.camera.followSpeed = originalFollowSpeed;
-        
+
         console.log(`HistoricalGeneral: Introduction complete for ${this.generalName}`);
         resolve();
       }, this.cinematicIntro.duration);
@@ -474,7 +475,7 @@ export class HistoricalGeneral extends Entity {
     movement.velocity.y = Math.sin(angle) * retreatSpeed;
     
     // 设置一个定时器，一段时间后移除武将
-    setTimeout(() => {
+    setTimeoutFn(() => {
       this.active = false;
       console.log(`HistoricalGeneral: ${this.generalName} has left the battlefield`);
     }, 5000); // 5秒后离开

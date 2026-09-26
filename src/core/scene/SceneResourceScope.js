@@ -3,6 +3,8 @@
  * @project YiJian18-Engine - 跨平台2D/3D ECS游戏引擎
  ************************************************************/
 
+import { setTimeoutFn } from '../Timers.js';
+
 const TOKEN_OWNER = Symbol('SceneResourceScope.owner');
 
 /** 统一管理场景定时器、监听器、清理函数和异步任务有效期。 */
@@ -16,7 +18,7 @@ export class SceneResourceScope {
 
   setTimeout(callback, delay = 0, ...args) {
     if (this.disposed || typeof callback !== 'function') return null;
-    const timerId = globalThis.setTimeout(() => {
+    const timerId = setTimeoutFn(() => {
       this._timers.delete(timerId);
       if (!this.disposed) callback(...args);
     }, delay);

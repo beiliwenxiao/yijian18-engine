@@ -10,6 +10,8 @@
  *            https://gitee.com/coderaaa/yijian18-engine
  ************************************************************/
 
+import { setTimeoutFn } from '../core/Timers.js';
+
 /**
  * GuildSystem.js
  * 公会系统 - 管理公会创建、成员、等级和公会战
@@ -725,6 +727,8 @@ export class GuildSystem {
     this.currentPlayerId = null;
     this.currentGuild = null;
     this.guilds = new Map();
+    // 公会战调度：可注入以支持测试/暂停；默认真实定时器边界
+    this.scheduler = config.scheduler || setTimeoutFn;
     
     // 公会战相关
     this.currentWar = null;
@@ -1068,7 +1072,7 @@ export class GuildSystem {
     this.emit('warMatched', { war, guild1, guild2 });
 
     // 准备时间后自动开始
-    setTimeout(() => {
+    this.scheduler(() => {
       this.startScheduledWar(war.id);
     }, this.config.warPreparationTime);
 
@@ -1090,7 +1094,7 @@ export class GuildSystem {
     this.emit('warStarted', { war });
 
     // 设置自动结束
-    setTimeout(() => {
+    this.scheduler(() => {
       if (this.currentWar?.id === war.id) {
         this.finishGuildWar();
       }

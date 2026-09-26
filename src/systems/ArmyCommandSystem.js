@@ -119,7 +119,9 @@ export class ArmyCommandSystem {
    * @param {Object} [config]
    * @param {Object|null} [config.camera] - 相机（worldToScreen 由 HUD 使用）
    */
-  constructor({ camera = null } = {}) {
+  constructor({ camera = null, now = null } = {}) {
+    // 挂钟注入：军令姿态机/建造计时统一走 this.now()，可注入以支持测试/暂停
+    this.now = now || (() => Date.now());
     this.camera = camera;
     this.combatSystem = null;
     /** @type {Array<Object>} 敌对实体候选（每帧由场景同步） */
@@ -321,7 +323,7 @@ export class ArmyCommandSystem {
   }
 
   /** 帧更新：搬运编排 + 姿态机 + 命令达成判定 + 建造作业。 */
-  update(deltaTime = 0, now = Date.now()) {
+  update(deltaTime = 0, now = this.now()) {
     this.updateStances(now, deltaTime);
     this.updateOrderProgress(deltaTime);
     this.updateConstruction(deltaTime);
@@ -652,7 +654,7 @@ export class ArmyCommandSystem {
   }
 
   /** 每帧驱动所有单位的姿态行为（搬运编排先行，保证本帧担架位一致）。 */
-  updateStances(now = Date.now(), deltaTime = 0) {
+  updateStances(now = this.now(), deltaTime = 0) {
     if (!this.units.size) return;
     this._updateRescueMission(deltaTime);
     for (const unit of this.units.values()) {

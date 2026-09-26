@@ -10,6 +10,8 @@
  *            https://gitee.com/coderaaa/yijian18-engine
  ************************************************************/
 
+import { setTimeoutFn } from '../core/Timers.js';
+
 /**
  * DungeonSystem.js
  * 副本系统 - 管理副本创建、进入、奖励和特殊机制
@@ -156,6 +158,8 @@ export class DungeonInstance {
     this.templateId = config.templateId;
     this.difficulty = config.difficulty || DungeonDifficulty.NORMAL;
     this.character = config.character;
+    // 波次调度：可注入以支持测试/暂停；默认真实定时器边界
+    this.scheduler = config.scheduler || setTimeoutFn;
     
     this.state = DungeonState.IN_PROGRESS;
     this.currentWave = 0;
@@ -225,7 +229,7 @@ export class DungeonInstance {
         this.currentWave++;
         
         // 延迟开始下一波
-        setTimeout(() => this.startNextWave(), 2000);
+        this.scheduler(() => this.startNextWave(), 2000);
       }
     }
   }

@@ -10,6 +10,8 @@
  *            https://gitee.com/coderaaa/yijian18-engine
  ************************************************************/
 
+import { setTimeoutFn } from '../core/Timers.js';
+
 /**
  * MeleeAttackSystem - 近战/远程扇形攻击系统
  * 
@@ -286,7 +288,7 @@ export class MeleeAttackSystem {
     const sprite = this.playerEntity.getComponent('sprite');
     if (sprite) {
       sprite.playAnimation('attack');
-      setTimeout(() => {
+      setTimeoutFn(() => {
         if (sprite.currentAnimation === 'attack') sprite.playAnimation('idle');
       }, 300);
     }

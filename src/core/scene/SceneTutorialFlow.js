@@ -1,3 +1,5 @@
+import { setTimeoutFn } from '../Timers.js';
+
 /**
  * TutorialSystem 的场景薄适配器：只转发语义信号与表现生命周期，
  * 不复制 definition、规则、阈值或完成状态。
@@ -8,7 +10,7 @@ export class SceneTutorialFlow {
     this.tutorialSystem = config.tutorialSystem;
     this.getScope = config.getScope || (() => null);
     this.presenter = config.presenter || null;
-    this.scheduler = config.scheduler || (callback => setTimeout(callback, 0));
+    this.scheduler = config.scheduler || (callback => setTimeoutFn(callback, 0));
     this._presentationBound = false;
     this._panelVisibility = new Map();
     this._lastMovementPosition = null;

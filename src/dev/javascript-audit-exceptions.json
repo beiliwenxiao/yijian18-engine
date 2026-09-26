@@ -480,11 +480,11 @@
         "line-limit-or-invalid-exception"
       ],
       "evidence": "历史大文件，拆分列入架构治理计划：拆一个移一个，修改本文件前需重新审批",
-      "lines": 1074,
+      "lines": 1076,
       "responsibility": "businessLogic",
       "owner": "beiliwenxiao",
       "date": "2026-09-27",
-      "contentHash": "71f7aaeae896e26a32b378da39dc868cbaf21207d260ab622e4cadb865b8a5a0"
+      "contentHash": "f32f654d9a2391f7a3917228eb61cf4f99033e75794640e759afd3f5dec3aedb"
     },
     {
       "file": "src/systems/CombatSystem.js",
@@ -492,11 +492,11 @@
         "line-limit-or-invalid-exception"
       ],
       "evidence": "历史大文件，拆分列入架构治理计划：拆一个移一个，修改本文件前需重新审批",
-      "lines": 3612,
+      "lines": 3613,
       "responsibility": "businessLogic",
       "owner": "beiliwenxiao",
       "date": "2026-09-27",
-      "contentHash": "4c625ef884fa11d46de8a0930d991e26979b60e890fc44aa50afd772a3946e60"
+      "contentHash": "bedb6f40943736b33da41c625915760be96fd6de43660022c02ac842cc4a2c6e"
     },
     {
       "file": "src/systems/GuildSystem.js",
@@ -504,11 +504,11 @@
         "line-limit-or-invalid-exception"
       ],
       "evidence": "历史大文件，拆分列入架构治理计划：拆一个移一个，修改本文件前需重新审批",
-      "lines": 1456,
+      "lines": 1460,
       "responsibility": "businessLogic",
       "owner": "beiliwenxiao",
       "date": "2026-09-27",
-      "contentHash": "337713bd42f92705995be95f76699c47e78f738d14e8fc3636d7848aa6be7af0"
+      "contentHash": "2bb843476109b719cbeeb16f90d28db53c3eacc59b7f952d651f25092c4a3aa7"
     },
     {
       "file": "src/systems/TeamSystem.js",
@@ -516,11 +516,11 @@
         "line-limit-or-invalid-exception"
       ],
       "evidence": "历史大文件，拆分列入架构治理计划：拆一个移一个，修改本文件前需重新审批",
-      "lines": 1142,
+      "lines": 1147,
       "responsibility": "businessLogic",
       "owner": "beiliwenxiao",
       "date": "2026-09-27",
-      "contentHash": "b0630d557db50cdc12594359fae3d7a5448f19388e86f420397b65ab9b05704b"
+      "contentHash": "6625adb263ff94290ba24e7c7a491f1864a45c4d29c121eb7290c6865f221122"
     },
     {
       "file": "src/systems/TriggerSystem.js",

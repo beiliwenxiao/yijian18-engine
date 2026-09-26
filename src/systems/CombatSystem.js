@@ -19,6 +19,7 @@ import { ElementSystem } from './ElementSystem.js';
 import { UnitSystem } from './UnitSystem.js';
 import { CombatResolver } from './resolvers/CombatResolver.js';
 import { RNG } from '../core/RNG.js';
+import { setTimeoutFn } from '../core/Timers.js';
 
 // 表现层随机：爆炸/碎片/飘血粒子（非玩法结算，非权威；结算随机走 combatRng）
 const fxRng = new RNG();
@@ -839,7 +840,7 @@ export class CombatSystem {
         sprite.playAnimation('attack');
         
         // 攻击动画结束后恢复待机动画
-        setTimeout(() => {
+        setTimeoutFn(() => {
           if (sprite.currentAnimation === 'attack') {
             sprite.playAnimation('idle');
           }
@@ -1090,7 +1091,7 @@ export class CombatSystem {
     }
     
     // 延迟很短时间后标记为已死亡（让特效播放）
-    setTimeout(() => {
+    setTimeoutFn(() => {
       target.isDead = true;
     }, 100);
   }
@@ -1268,7 +1269,7 @@ export class CombatSystem {
     sprite.flash = true;
     sprite.flashTime = 0.2; // 闪烁持续时间
     
-    setTimeout(() => {
+    setTimeoutFn(() => {
       if (sprite) {
         sprite.flash = false;
       }
@@ -1686,7 +1687,7 @@ export class CombatSystem {
       sprite.playAnimation(skill.animation);
       
       // 技能动画结束后恢复待机动画
-      setTimeout(() => {
+      setTimeoutFn(() => {
         if (sprite.currentAnimation === skill.animation) {
           sprite.playAnimation('idle');
         }
@@ -1804,7 +1805,7 @@ export class CombatSystem {
     if (sprite && skill.animation) {
       sprite.playAnimation(skill.animation);
       
-      setTimeout(() => {
+      setTimeoutFn(() => {
         if (sprite.currentAnimation === skill.animation) {
           sprite.playAnimation('idle');
         }
@@ -2235,7 +2236,7 @@ export class CombatSystem {
       
       // 未接入尸体运行时的旧场景仍按原行为延迟移除。
       if (!retainedCorpse) {
-        setTimeout(() => {
+        setTimeoutFn(() => {
           this.removeDeadEntity(entity);
         }, 1000); // 等待死亡动画播放完成
       }
@@ -2375,7 +2376,7 @@ export class CombatSystem {
       }
     }
     const deathId = `player-death-fallback-${Date.now()}`;
-    setTimeout(() => this.revivePlayer(player, { hp: 1, mp: 1 }), 10000);
+    setTimeoutFn(() => this.revivePlayer(player, { hp: 1, mp: 1 }), 10000);
     return { ok: true, fallback: true, deathId };
   }
 

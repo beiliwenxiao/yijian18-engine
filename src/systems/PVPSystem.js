@@ -58,6 +58,8 @@ export const PVPConfig = {
   loseGold: 10
 };
 
+import { setTimeoutFn, clearTimeoutFn } from '../core/Timers.js';
+
 /**
  * PVP玩家数据
  */
@@ -66,6 +68,8 @@ export class PVPPlayerData {
     this.playerId = data.playerId || '';
     this.name = data.name || '';
     this.level = data.level || 1;
+    // 挂钟注入（随系统传入；默认真实时间）
+    this.now = data.now || (() => Date.now());
     
     // PVP状态
     this.pvpEnabled = data.pvpEnabled || false;
@@ -84,8 +88,8 @@ export class PVPPlayerData {
   /**
    * 是否红名
    */
-  isHostile() {
-    return this.state === PVPState.HOSTILE && Date.now() < this.hostileUntil;
+  isHostile(now = this.now()) {
+    return this.state === PVPState.HOSTILE && now < this.hostileUntil;
   }
 
   /**
@@ -127,6 +131,7 @@ export class PVPPlayerData {
 export class ArenaBattle {
   constructor(data = {}) {
     this.id = data.id || `arena_${Date.now()}`;
+    this.now = data.now || (() => Date.now());
     this.player1 = data.player1 || null;
     this.player2 = data.player2 || null;
     this.state = data.state || ArenaState.READY;
@@ -142,7 +147,7 @@ export class ArenaBattle {
    */
   start() {
     this.state = ArenaState.IN_BATTLE;
-    this.startTime = Date.now();
+    this.startTime = this.now();
     this.endTime = this.startTime + PVPConfig.battleDuration;
   }
 
@@ -150,7 +155,7 @@ export class ArenaBattle {
    * 检查是否超时
    */
   isTimeout() {
-    return this.state === ArenaState.IN_BATTLE && Date.now() > this.endTime;
+    return this.state === ArenaState.IN_BATTLE && this.now() > this.endTime;
   }
 
   /**
@@ -158,7 +163,7 @@ export class ArenaBattle {
    */
   getRemainingTime() {
     if (this.state !== ArenaState.IN_BATTLE) return 0;
-    return Math.max(0, this.endTime - Date.now());
+    return Math.max(0, this.endTime - this.now());
   }
 
   /**
@@ -167,7 +172,7 @@ export class ArenaBattle {
   finish(winnerId) {
     this.state = ArenaState.FINISHED;
     this.winnerId = winnerId;
-    this.endTime = Date.now();
+    this.endTime = this.now();
   }
 }
 
@@ -177,6 +182,8 @@ export class ArenaBattle {
 export class PVPSystem {
   constructor(config = {}) {
     this.config = { ...PVPConfig, ...config };
+    // 挂钟注入：红名截止/竞技场计时统一走 this.now()，可注入以支持测试/暂停
+    this.now = config.now || (() => Date.now());
     this.localPlayer = null;
     this.players = new Map();
     
@@ -305,7 +312,7 @@ export class PVPSystem {
     if (!player) return;
 
     player.state = PVPState.HOSTILE;
-    player.hostileUntil = Date.now() + this.config.hostileDuration;
+    player.hostileUntil = this.now() + this.config.hostileDuration;
     
     this.emit('playerHostile', { player });
   }
@@ -347,7 +354,7 @@ export class PVPSystem {
     // 加入匹配队列
     this.matchQueue.push({
       player: this.localPlayer,
-      joinTime: Date.now()
+      joinTime: this.now()
     });
 
     // 尝试匹配
@@ -357,7 +364,7 @@ export class PVPSystem {
     }
 
     // 设置超时
-    this.matchTimer = setTimeout(() => {
+    this.matchTimer = setTimeoutFn(() => {
       this.cancelMatch();
       this.emit('matchTimeout', { player: this.localPlayer });
     }, this.config.matchTimeout);
@@ -371,7 +378,7 @@ export class PVPSystem {
    */
   cancelMatch() {
     if (this.matchTimer) {
-      clearTimeout(this.matchTimer);
+      clearTimeoutFn(this.matchTimer);
       this.matchTimer = null;
     }
 
@@ -394,7 +401,8 @@ export class PVPSystem {
     
     const battle = new ArenaBattle({
       player1: entry1.player,
-      player2: entry2.player
+      player2: entry2.player,
+      now: this.now
     });
 
     this.currentBattle = battle;
@@ -413,7 +421,7 @@ export class PVPSystem {
     
     this.matchQueue.push({
       player: opponent,
-      joinTime: Date.now()
+      joinTime: this.now()
     });
 
     return this.tryMatch();

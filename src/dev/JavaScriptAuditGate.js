@@ -62,7 +62,7 @@ function isPlatformInfrastructure(normalized, basename) {
   if (normalized.startsWith('src/core/snapshot/')) return true;
   if (normalized.startsWith('weapp/adapter/')) return true;
   return normalized.startsWith('src/core/')
-    && /^(?:Audio|Gamepad|Input|Logger|Error|Performance|Debug|CanvasDisplay|EventJournal|Asset|Placeholder|Platform|Presentation|IndexedDB|GameEngine|RNG)/.test(basename);
+    && /^(?:Audio|Gamepad|Input|Logger|Error|Performance|Debug|CanvasDisplay|EventJournal|Asset|Placeholder|Platform|Presentation|IndexedDB|GameEngine|RNG|Timers)/.test(basename);
 }
 
 function responsibilityFor(file) {
@@ -154,7 +154,7 @@ function policyPatterns() {
     contentHandler: expression(['\\b(?:function|class|const|let|var)\\s+(?:(?:S\\d{2})\\w*|(?:', scene, '|', content, ')\\w*(?:Handler|Action))\\b']),
     contentBranchIf: expression(['\\bif\\s*\\([^)]*(?:', scene, '|\\bstage\\b|', content, 'Id\\b)[^)]*(?:===|!==|==|!=)\\s*[\'"`]']),
     contentBranchSwitch: expression(['\\bswitch\\s*\\([^)]*(?:', scene, '|\\bstage\\b|', content, 'Id\\b)[^)]*\\)\\s*\\{[\\s\\S]{0,300}?\\bcase\\s*[\'"`]']),
-    timer: expression(['\\b(?:set', 'Timeout|set', 'Interval)\\s*\\(']),
+    timer: expression(['\\b(?:set', 'Timeout|set', 'Interval)\\s*\\((?!\\s*[\\w$]+\\s*(?:=[^=]|,)[^)]*\\)\\s*\\{)']),
     callback: expression(['\\b(?:story|dialogue|scene)\\w*[^\\n]{0,80}\\bcallback\\b']),
     dynamicModule: expression(['(?<![\\w$.])(?:import|require)\\s*\\(\\s*[^\\s\"\'`][^)]*\\)(?!\\s*\\{)']),
     onlineBranch: expression(['\\bif\\s*\\(\\s*online\\s*\\)']),

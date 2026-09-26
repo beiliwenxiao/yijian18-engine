@@ -10,6 +10,8 @@
  *            https://gitee.com/coderaaa/yijian18-engine
  ************************************************************/
 
+import { setIntervalFn, clearIntervalFn } from '../core/Timers.js';
+
 /**
  * TeamSystem.js
  * 组队系统 - 管理队伍创建、加入、离开和队伍功能
@@ -383,6 +385,9 @@ export class TeamSystem {
 
     this.listeners = new Map();
     this.cleanupTimer = null;
+    // 清理定时器（经边界注入，可测可停）
+    this.setIntervalFn = config.setIntervalFn || setIntervalFn;
+    this.clearIntervalFn = config.clearIntervalFn || clearIntervalFn;
   }
 
   /**
@@ -409,7 +414,7 @@ export class TeamSystem {
    */
   startCleanup() {
     this.stopCleanup();
-    this.cleanupTimer = setInterval(() => {
+    this.cleanupTimer = this.setIntervalFn(() => {
       this.cleanupExpiredInvites();
     }, this.config.cleanupInterval);
   }
@@ -419,7 +424,7 @@ export class TeamSystem {
    */
   stopCleanup() {
     if (this.cleanupTimer) {
-      clearInterval(this.cleanupTimer);
+      this.clearIntervalFn(this.cleanupTimer);
       this.cleanupTimer = null;
     }
   }

@@ -18,6 +18,7 @@ import { SkillEffects } from '../rendering/SkillEffects.js';
 import { MovementSystem } from '../systems/MovementSystem.js';
 import { CombatSystem } from '../systems/CombatSystem.js';
 import { RNG } from '../core/RNG.js';
+import { setTimeoutFn } from '../core/Timers.js';
 
 // 表现层随机：场景特效偏移（非玩法结算，非权威）
 const fxRng = new RNG();
@@ -557,7 +558,7 @@ export class GameScene extends Scene {
       if (enemySprite) {
         enemySprite.playAnimation('attack');
         
-        setTimeout(() => {
+        setTimeoutFn(() => {
           if (enemySprite.currentAnimation === 'attack') {
             enemySprite.playAnimation('idle');
           }
