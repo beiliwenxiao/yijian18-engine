@@ -313,6 +313,8 @@ function disposeEnteredRuntime() {
   }
   this._worldReadyGate = null;
   this.effectZoneRenderer?.clear?.();
+  // 任务点信标随世界区域释放：清空标记点，已发射粒子随生命自然消亡
+  this.taskMarkerBeacon?.clear?.();
   this._terrains.length = 0;
   this.terrain = null;
   this._worldRegion = null;

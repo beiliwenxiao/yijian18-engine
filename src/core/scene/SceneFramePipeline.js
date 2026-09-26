@@ -90,6 +90,7 @@ export class SceneFramePipeline {
     const particleSystem = presentation.particleSystem;
     const floatingTextManager = presentation.floatingTextManager;
     const effectZoneRenderer = presentation.effectZoneRenderer;
+    const taskMarkerBeacon = presentation.taskMarkerBeacon;
     const inputFlow = services.input;
     const hudUpdater = services.hud;
     const runtime = context?.runtime?.sceneRuntime || null;
@@ -434,6 +435,9 @@ export class SceneFramePipeline {
         particleProfile.effectZones = effectZoneRenderer.getZoneCount?.() || 0;
       }
     }
+
+    // 任务点引导闪光：世界粒子信标（标记点由 SceneHudUpdater 每帧喂送）
+    if (taskMarkerBeacon) taskMarkerBeacon.update(deltaTime);
 
     // 更新武器渲染器
     if (weaponRenderer) {

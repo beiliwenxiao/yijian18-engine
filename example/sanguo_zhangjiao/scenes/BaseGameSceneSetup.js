@@ -97,6 +97,7 @@ import { createEntitySpatialTarget } from '../../../src/core/scene/SceneSpatialG
 import { SceneInputFlow } from '../../../src/core/input/SceneInputFlow.js';
 import { ParticleSystem } from '../../../src/rendering/ParticleSystem.js';
 import { EffectZoneRenderer } from '../../../src/rendering/EffectZoneRenderer.js';
+import { TaskMarkerBeacon } from '../../../src/rendering/TaskMarkerBeacon.js';
 import { EntityLifecycleSystem } from '../../../src/systems/EntityLifecycleSystem.js';
 import { ItemRuntimeFactory } from '../../../src/systems/items/ItemRuntimeFactory.js';
 import { UISystem } from '../../../src/ui/UISystem.js';
@@ -264,6 +265,9 @@ export class BaseGameSceneSetup extends Scene {
     
     // 特效区域只由世界加载结果中的已投影 effectZones 装配。
     this.effectZoneRenderer = null;
+
+    // 任务点引导闪光（世界粒子信标；标记点由 SceneHudUpdater 每帧喂送）
+    this.taskMarkerBeacon = new TaskMarkerBeacon(this.particleSystem);
     
     // 等距渲染器
     this.isometricRenderer = null;

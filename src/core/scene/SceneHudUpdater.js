@@ -209,6 +209,10 @@ export class SceneHudUpdater {
 
     this._updateTaskMarkers(minimap, player);
 
+    // 任务点引导闪光：与小地图同一份任务投影，喂给世界粒子信标（beacon 内部按当前场景过滤）
+    const beacon = this.getContext()?.presentation?.taskMarkerBeacon || world.taskMarkerBeacon || null;
+    if (beacon) beacon.setMarkers?.(this._taskMarkers, region?.id ?? '');
+
     if (!this._enemyPositions || this._shouldUpdate('minimap')) {
       const positions = this._enemyPositions || [];
       positions.length = 0;

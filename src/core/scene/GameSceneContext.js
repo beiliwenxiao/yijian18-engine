@@ -87,6 +87,7 @@ const GROUP_DEFAULTS = Object.freeze({
     particleSystem: null,
     floatingTextManager: null,
     effectZoneRenderer: null,
+    taskMarkerBeacon: null,
     gatheringProgress: null,
     worldAction: null
   }),

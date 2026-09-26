@@ -592,6 +592,7 @@ export class SceneGameplaySystemAssembler {
       combatEffects: 'combatEffects', skillEffects: 'skillEffects', weaponRenderer: 'weaponRenderer',
       enemyWeaponRenderer: 'enemyWeaponRenderer', particleSystem: 'particleSystem',
       floatingTextManager: 'floatingTextManager', effectZoneRenderer: 'effectZoneRenderer',
+      taskMarkerBeacon: 'taskMarkerBeacon',
       gatheringProgress: 'gatheringProgressPresenter', worldAction: 'worldActionPresenter'
     };
     const projections = [];
