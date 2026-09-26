@@ -66,4 +66,35 @@ describe('TriggerTracePanel', () => {
     expect(resultHtml).toContain('trg-a');
     expect(resultHtml).not.toContain('trg-b');
   });
+
+  it('latestResultByTrigger 聚合每个 Trigger 的最近一次结果（最新优先）', () => {
+    const panel = new TriggerTracePanel(buildEditor(baseProject()));
+    panel.pushTrace({ time: '10:00', eventType: 'x', triggerId: 'trg-a', result: 'failed' });
+    panel.pushTrace({ time: '10:01', eventType: 'x', triggerId: 'trg-a', result: 'succeeded' });
+    panel.pushTrace({ time: '10:02', eventType: 'x', triggerId: 'trg-b', result: 'benign' });
+    const map = panel.latestResultByTrigger();
+    expect(map.get('trg-a')).toMatchObject({ result: 'succeeded', time: '10:01' });
+    expect(map.get('trg-b')).toMatchObject({ result: 'benign' });
+  });
+
+  it('轨迹条目点击反查总览：调用 revealTriggerInStoryline 并收起面板', () => {
+    const editor = buildEditor(baseProject());
+    editor.revealTriggerInStoryline = vi.fn(() => true);
+    const panel = new TriggerTracePanel(editor);
+    panel.show();
+    panel.pushTrace({ time: '10:00', eventType: 'x', triggerId: 'trg-a', result: 'succeeded' });
+    panel.overlay.querySelector('.tr-trace-entry[data-trigger="trg-a"]').click();
+    expect(editor.revealTriggerInStoryline).toHaveBeenCalledWith('trg-a');
+    expect(panel.overlay.style.display).toBe('none');
+  });
+
+  it('反查失败（总览无该节点）时面板保持打开', () => {
+    const editor = buildEditor(baseProject());
+    editor.revealTriggerInStoryline = () => false;
+    const panel = new TriggerTracePanel(editor);
+    panel.show();
+    panel.pushTrace({ time: '10:00', eventType: 'x', triggerId: 'trg-a', result: 'succeeded' });
+    panel.overlay.querySelector('.tr-trace-entry[data-trigger="trg-a"]').click();
+    expect(panel.overlay.style.display).toBe('flex');
+  });
 });

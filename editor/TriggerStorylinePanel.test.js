@@ -80,6 +80,41 @@ describe('TriggerStorylinePanel', () => {
     expect(editor.project.triggers[0].do[1].stepId).toBe('s1');
   });
 
+  it('运行态徽章：轨迹面板的最近结果叠加到触发器卡片', () => {
+    const editor = buildEditor(baseProject());
+    editor.triggerTracePanel = {
+      latestResultByTrigger: () => new Map([
+        ['trg-1', { result: 'failed', time: '10:00', code: 'E_INVALID', message: '动作不可用' }]
+      ])
+    };
+    const panel = document.createElement('div');
+    new TriggerStorylinePanel(editor).render(panel);
+    const badge = panel.querySelector('.story-runtime-badge');
+    expect(badge).toBeTruthy();
+    expect(badge.textContent).toContain('❌');
+    expect(badge.title).toContain('E_INVALID');
+    expect(badge.title).toContain('10:00');
+  });
+
+  it('无运行轨迹时不渲染徽章；revealTrigger 高亮定位对应卡片', () => {
+    const editor = buildEditor(baseProject());
+    const host = document.createElement('div');
+    const detail = document.createElement('div');
+    detail.id = 'trg-detail';
+    host.appendChild(detail);
+    editor.container = host;
+    const storyline = new TriggerStorylinePanel(editor);
+    storyline.render(detail);
+    expect(detail.querySelector('.story-runtime-badge')).toBeNull();
+
+    expect(storyline.revealTrigger('trg-1')).toBe(true);
+    const card = detail.querySelector('[data-trigger="trg-1"]');
+    expect(card.classList.contains('story-highlight')).toBe(true);
+    // 未命中返回 false，不影响既有高亮
+    expect(storyline.revealTrigger('trg-不存在')).toBe(false);
+    expect(card.classList.contains('story-highlight')).toBe(true);
+  });
+
   it('分支容器渲染：otherwise/when 摘要 + 子步骤缩进 + 空分支占位', () => {
     const project = baseProject();
     project.triggers[0].do = [

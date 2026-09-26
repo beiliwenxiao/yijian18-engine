@@ -33,6 +33,7 @@ import { TriggerProjectIndex } from './TriggerProjectIndex.js';
 import { TutorialEditorPanel } from './TutorialEditorPanel.js';
 import { TriggerTracePanel } from './TriggerTracePanel.js';
 import { TriggerStorylinePanel } from './TriggerStorylinePanel.js';
+import { TriggerInteractionPanel } from './TriggerInteractionPanel.js';
 
 const text = v => String(v ?? '').trim();
 const list = value => Array.isArray(value) ? value : [];
@@ -61,11 +62,11 @@ export class TriggerEditor {
     this.project = null;
     this.triggers = [];
     this.selectedIndex = -1;
-    // 全 Trigger 化：可编辑目标收敛为 storyline / triggers / tutorials（flowGroups 已删除）
+    // 全 Trigger 化：可编辑目标收敛为 storyline / triggers / interactions / tutorials（flowGroups 已删除）
     // allowedTargets 限制页内子标签（剧情页=总览+规则，教程页=仅教学步骤），缺省全量
     this.allowedTargets = Array.isArray(options.allowedTargets) && options.allowedTargets.length
-      ? options.allowedTargets.filter(item => ['storyline', 'triggers', 'tutorials'].includes(item))
-      : ['storyline', 'triggers', 'tutorials'];
+      ? options.allowedTargets.filter(item => ['storyline', 'triggers', 'interactions', 'tutorials'].includes(item))
+      : ['storyline', 'triggers', 'interactions', 'tutorials'];
     this.target = this.allowedTargets.includes(options.target)
       ? options.target
       : this.allowedTargets[0];
@@ -83,6 +84,8 @@ export class TriggerEditor {
     this.triggerTracePanel = new TriggerTracePanel(this);
     // 剧情线总览视图（Trigger 链视角）
     this.triggerStorylinePanel = new TriggerStorylinePanel(this);
+    // 交互注册表视图（interact 触发器行式表格；同一份 triggers 数据的第二视图）
+    this.triggerInteractionPanel = new TriggerInteractionPanel(this);
     this._initialized = false;
   }
 
@@ -109,7 +112,12 @@ export class TriggerEditor {
     if (!Array.isArray(this.project.triggers)) this.project.triggers = [];
     if (!Array.isArray(this.project.tutorials)) this.project.tutorials = [];
     if (!this.allowedTargets.includes(this.target)) this.target = this.allowedTargets[0];
-    this.triggers = this.project[this.target] || [];
+    // interactions 是 triggers 数据的第二编辑视图，不是独立数据源
+    this.triggers = this.target === 'storyline'
+      ? []
+      : this.target === 'interactions'
+        ? this.project.triggers
+        : this.project[this.target] || [];
     this.projectIndex = new TriggerProjectIndex(this.project, { sceneDocuments: this._getSceneDocuments() });
     WHEN_TYPES = getTriggerEvents(this.project);
     ACTION_TYPES = getTriggerActions(this.project);
@@ -156,7 +164,8 @@ export class TriggerEditor {
 
   _updateToolbarForTarget() {
     if (!this._initialized) return;
-    const storyline = this.target === 'storyline';
+    // storyline 与 interactions 都是占满详情区的总览式视图：隐藏列表与增删
+    const storyline = this.target === 'storyline' || this.target === 'interactions';
     // 剧情线总览：列表区与新增/删除隐藏，总览占满详情区
     for (const id of ['trg-add', 'trg-del']) {
       const element = this.container.querySelector(`#${id}`);
@@ -192,14 +201,19 @@ export class TriggerEditor {
     )).join('');
   }
 
-  /** 切换编辑目标（storyline 总览 ↔ triggers ↔ tutorials） */
+  /** 切换编辑目标（storyline 总览 ↔ triggers ↔ interactions ↔ tutorials） */
   _switchTarget(target) {
-    const normalized = ['storyline', 'triggers', 'tutorials'].includes(target) ? target : 'triggers';
+    const normalized = ['storyline', 'triggers', 'interactions', 'tutorials'].includes(target) ? target : 'triggers';
     if (normalized === this.target) return;
     this._commitDetail();
-    if (this.target !== 'storyline') this.project[this.target] = this.triggers; // 回写当前（storyline 无独立数据）
+    // interactions 无独立数据（视图复用 triggers），storyline 无独立数据；不回写脏字段
+    if (this.target !== 'storyline' && this.target !== 'interactions') this.project[this.target] = this.triggers;
     this.target = normalized;
-    this.triggers = this.target === 'storyline' ? [] : this.project[this.target];
+    this.triggers = this.target === 'storyline'
+      ? []
+      : this.target === 'interactions'
+        ? this.project.triggers
+        : this.project[this.target];
     this.projectIndex = new TriggerProjectIndex(this.project, { sceneDocuments: this._getSceneDocuments() });
     this.selectedIndex = -1;
     this._renderTargetTabs();
@@ -230,7 +244,8 @@ export class TriggerEditor {
       return { ok: false, committed: false, status: 'rejected', code: 'invalidJson' };
     }
     this._commitDetail(); // 先把当前编辑写回数据
-    if (this.target !== 'storyline') this.project[this.target] = this.triggers;
+    // interactions 无独立数据（视图复用 triggers），不回写脏字段
+    if (this.target !== 'storyline' && this.target !== 'interactions') this.project[this.target] = this.triggers;
     // 剧情线总览里指派的对话归属也要写回（storyline 修改的是 dialogues[].flowGroupId）
     if (this.target === 'storyline') this.project.dialogues = this.project.dialogues || [];
     // 全 Trigger 化：保存不再写入 flowGroupId / sceneEventId 死字段（旧数据读取兼容，新数据不产生）
@@ -326,7 +341,7 @@ export class TriggerEditor {
   getTriggerById(id) { return this.getTriggers().find(trigger => trigger.id === id) || null; }
 
   selectById(id, target = 'triggers') {
-    const normalized = ['storyline', 'triggers', 'tutorials'].includes(target) ? target : 'triggers';
+    const normalized = ['storyline', 'triggers', 'interactions', 'tutorials'].includes(target) ? target : 'triggers';
     if (!id || !this.project) return false;
     if (this.target !== normalized) this._switchTarget(normalized);
     const index = this.triggers.findIndex(definition => definition.id === id);
@@ -335,6 +350,16 @@ export class TriggerEditor {
     this._renderList();
     this._renderDetail();
     return true;
+  }
+
+  /**
+   * 轨迹反查入口：切到剧情线总览并高亮定位对应触发器节点。
+   * 供执行轨迹面板条目点击调用（总览 × 轨迹联动）。
+   */
+  revealTriggerInStoryline(id) {
+    if (!this.project) return false;
+    if (this.target !== 'storyline') this._switchTarget('storyline');
+    return this.triggerStorylinePanel.revealTrigger(id);
   }
 
   async refresh() {
@@ -416,6 +441,7 @@ export class TriggerEditor {
         <div class="trg-target-tabs" id="trg-target-tabs">
           <button data-target="storyline">📖 剧情线总览</button>
           <button data-target="triggers">⚙ 规则编辑</button>
+          <button data-target="interactions">🤝 交互</button>
           <button data-target="tutorials">📖 教学步骤</button>
         </div>
         <div class="trg-toolbar">
@@ -837,6 +863,11 @@ export class TriggerEditor {
     this._updateSceneFilter();
     this._updateTriggerFilter();
     this._renderAssociationSummary(filterScene, associationIndex);
+    if (this.target === 'storyline' || this.target === 'interactions') {
+      // 总览式视图没有列表区（_updateToolbarForTarget 已隐藏）；清空避免残留旧内容
+      list.innerHTML = '';
+      return;
+    }
     if (this.target === 'tutorials') {
       this._renderTutorialList(list, filterScene);
       return;
@@ -1496,6 +1527,10 @@ export class TriggerEditor {
     if (this.target === 'storyline') {
       this.triggerStorylinePanel.injectStyles();
       this.triggerStorylinePanel.render(panel);
+      return;
+    }
+    if (this.target === 'interactions') {
+      this.triggerInteractionPanel.render(panel);
       return;
     }
     const t = this.triggers[this.selectedIndex];

@@ -1,8 +1,8 @@
 /**
  * TriggerStorylinePanel - 剧情线总览（Trigger 链视图）。
  *
- * 全 Trigger 化后以 Trigger 为唯一流程编排概念：按场景/事件类型/协调组把 Trigger
- * 排成时间链，每张卡片展示「何时触发（when）→ 满足条件（if）→ 依次做什么（do[]）」，
+ * 全 Trigger 化后以 Trigger 为唯一流程编排概念：按场景或事件链把 Trigger
+ * 排成时间链（按协调组/按事件类型分组已删除，事件类型降级为工具栏筛选），每张卡片展示「何时触发（when）→ 满足条件（if）→ 依次做什么（do[]）」，
  * 教程步骤（tutorial.command）高亮为 🎓 并支持内联编排：目标教程、操作、串行等待(await)、
  * 开场/收场提示；branch[] 分支容器缩进展示各分支条件与子步骤。
  *
@@ -10,6 +10,8 @@
  */
 
 import { InputHints } from '../src/core/input/InputHints.js';
+import { getTriggerEvents } from '../src/systems/TriggerCatalog.js';
+import { RESULT_META } from './TriggerTracePanel.js';
 
 const asList = value => Array.isArray(value) ? value : [];
 const text = value => String(value ?? '').trim();
@@ -54,8 +56,9 @@ export class TriggerStorylinePanel {
   constructor(editor) {
     this.editor = editor;
     this.expanded = new Set(); // 展开的触发器 id（默认全部展开）
-    this.groupMode = 'chain'; // chain | scene | when | coordination
+    this.groupMode = 'chain'; // chain | scene（按协调组/按事件类型分组已删除；事件类型走工具栏筛选）
     this.sceneFilter = ''; // 场景筛选（groupMode=scene 时生效）
+    this.eventFilter = ''; // 事件类型筛选（when.type，跨分组维度生效）
   }
 
   /** HTML 转义（优先复用编辑器的 _escapeHtml）。 */
@@ -83,12 +86,33 @@ export class TriggerStorylinePanel {
     this._bindEvents(panel);
   }
 
-  /** 按当前分组维度把 Trigger 排成组。 */
+  /**
+   * 反查定位：滚动到指定触发器节点并高亮闪烁（轨迹面板条目点击联动）。
+   * 需在 render 之后调用（总览已在页内）。返回是否找到节点。
+   */
+  revealTrigger(id) {
+    const targetId = text(id);
+    if (!targetId) return false;
+    const panel = this.editor.container?.querySelector?.('#trg-detail');
+    const card = panel?.querySelector(`.story-trigger[data-trigger="${targetId}"]`);
+    if (!card) return false;
+    panel.querySelectorAll('.story-trigger.story-highlight').forEach(el => el.classList.remove('story-highlight'));
+    card.classList.add('story-highlight');
+    card.scrollIntoView?.({ behavior: 'smooth', block: 'center' }); // jsdom 等环境可能未实现
+    clearTimeout(this._highlightTimer);
+    this._highlightTimer = setTimeout(() => card.classList.remove('story-highlight'), 3000);
+    return true;
+  }
+
+  /** 按当前分组维度把 Trigger 排成组；事件类型筛选跨维度生效。 */
   _groupTriggers(triggers) {
-    // 场景筛选：groupMode=scene 且有选中场景时，只显示该场景的 Trigger
     let filtered = triggers;
+    if (this.eventFilter) {
+      filtered = filtered.filter(trigger => text(trigger?.when?.type) === this.eventFilter);
+    }
+    // 场景筛选：groupMode=scene 且有选中场景时，只显示该场景的 Trigger
     if (this.groupMode === 'scene' && this.sceneFilter) {
-      filtered = triggers.filter(trigger => {
+      filtered = filtered.filter(trigger => {
         const sceneIds = asList(trigger.editorScope?.sceneIds);
         return sceneIds.includes(this.sceneFilter);
       });
@@ -97,8 +121,6 @@ export class TriggerStorylinePanel {
     const groups = [];
     const groupOf = trigger => {
       if (this.groupMode === 'chain') return this._chainStage(trigger);
-      if (this.groupMode === 'when') return whenSummary(trigger).split(' ')[0] || '其他';
-      if (this.groupMode === 'coordination') return text(trigger.coordination?.group) || '（独立）';
       const sceneIds = asList(trigger.editorScope?.sceneIds);
       return sceneIds[0] || '（无场景归属）';
     };
@@ -251,9 +273,16 @@ export class TriggerStorylinePanel {
     return this._chainGraphCache;
   }
 
-  /** 顶部工具栏：分组维度切换 + 「按钮写法」帮助入口。 */
+  /** 顶部工具栏：分组维度切换 + 事件类型筛选 + 「按钮写法」帮助入口。 */
   _toolbarHtml() {
-    const modeLabel = { chain: '⛓ 事件链（执行顺序）', scene: '按场景', when: '按事件类型', coordination: '按协调组' };
+    const modeLabel = { chain: '⛓ 事件链（执行顺序）', scene: '按场景' };
+    // 事件类型筛选：只列工程里实际在用的类型（目录标签优先，未知类型回退原始值）
+    const catalogLabel = new Map(getTriggerEvents(this.editor.project).map(item => [item.v, item.label]));
+    const usedTypes = [...new Set(asList(this.editor.project?.triggers)
+      .map(trigger => text(trigger?.when?.type)).filter(Boolean))]
+      .sort((left, right) => left.localeCompare(right));
+    const eventOptions = [{ v: '', label: '全部事件类型' },
+      ...usedTypes.map(type => ({ v: type, label: catalogLabel.get(type) || type }))];
     const scenes = this.editor.getSceneList?.() || [];
     const sceneOptions = [{ id: '', name: '全部场景' }, ...scenes];
     return `
@@ -261,6 +290,9 @@ export class TriggerStorylinePanel {
         <strong class="story-toolbar-title">剧情线总览（Trigger 链）</strong>
         <select class="story-group-mode" title="切换分组维度">
           ${Object.entries(modeLabel).map(([value, label]) => `<option value="${value}"${this.groupMode === value ? ' selected' : ''}>${label}</option>`).join('')}
+        </select>
+        <select class="story-event-filter" title="按事件类型筛选">
+          ${eventOptions.map(option => `<option value="${this._escape(option.v)}"${this.eventFilter === option.v ? ' selected' : ''}>${this._escape(option.label)}</option>`).join('')}
         </select>
         ${this.groupMode === 'scene' ? `
           <select class="story-scene-filter" title="筛选场景">
@@ -294,12 +326,19 @@ export class TriggerStorylinePanel {
       ? text(trigger.when?.params?.definitionId)
       : '';
     const outgoing = this._collectCommits(trigger).map(id => `→ ${id}`);
+    // 运行态徽章（轨迹面板推送的最近一次结果，总览 × 轨迹联动）
+    const runtime = this.editor.triggerTracePanel?.latestResultByTrigger?.().get(id) || null;
+    const runtimeMeta = runtime ? RESULT_META[runtime.result] : null;
+    const runtimeTitle = runtime
+      ? `最近运行 ${runtime.time}${runtime.code ? ` · ${runtime.code}` : ''}${runtime.message ? ` · ${runtime.message}` : ''}`
+      : '';
     return `
       <div class="story-card story-trigger" data-trigger="${escape(id)}">
         <div class="story-trigger-head">
           <span class="story-type">⚡ Trigger</span>
           <span class="story-member-id">${escape(id)}</span>
           ${name ? `<small class="story-name">${escape(name)}</small>` : ''}
+          ${runtimeMeta ? `<span class="story-runtime-badge" style="color:${runtimeMeta.color};background:${runtimeMeta.bg};" title="${escape(runtimeTitle)}">${runtimeMeta.short} 运行态</span>` : ''}
           ${trigger.enabled === false ? '<span class="story-disabled">⏸ 停用</span>' : ''}
           <button class="story-jump" data-jump-target="triggers" data-jump-id="${escape(id)}">编辑 →</button>
         </div>
@@ -463,6 +502,10 @@ export class TriggerStorylinePanel {
     panel.querySelector('.story-group-mode')?.addEventListener('change', event => {
       this.groupMode = event.target.value;
       if (this.groupMode !== 'scene') this.sceneFilter = '';
+      this.render(panel);
+    });
+    panel.querySelector('.story-event-filter')?.addEventListener('change', event => {
+      this.eventFilter = event.target.value;
       this.render(panel);
     });
     panel.querySelector('.story-scene-filter')?.addEventListener('change', event => {
@@ -715,6 +758,9 @@ export class TriggerStorylinePanel {
       .story-member-id{color:#e6ecf7;font-weight:600;font-size:12px;}
       .story-name{color:#7a8aab;font-size:11px;}
       .story-disabled{color:#c07a9a;font-size:11px;border:1px solid #5a3050;border-radius:3px;padding:0 5px;}
+      .story-runtime-badge{display:inline-block;border-radius:8px;padding:1px 8px;font-size:10px;font-weight:bold;white-space:nowrap;}
+      .story-highlight{outline:2px solid #f6e7a8;box-shadow:0 0 14px rgba(246,231,168,.45);animation:story-highlight-pulse 1s ease-in-out 2;}
+      @keyframes story-highlight-pulse{0%,100%{outline-offset:0;}50%{outline-offset:4px;}}
       .story-jump{background:#26304e;border:1px solid #3a4a7e;color:#bcd;border-radius:3px;padding:2px 8px;cursor:pointer;font-size:11px;margin-left:auto;}
       .story-jump:hover{background:#34406a;color:#fff;}
       .story-steps{padding:8px 12px 10px;}

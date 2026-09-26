@@ -14,11 +14,13 @@ const asList = value => Array.isArray(value) ? value : [];
 const text = value => String(value ?? '').trim();
 
 const RESULT_META = {
-  succeeded: { label: '✅ 成功', color: '#4CAF50', bg: '#1a3320' },
-  skipped: { label: '⏭ 跳过', color: '#8a93a8', bg: '#262b33' },
-  benign: { label: '✅ 良性跳过（已提交）', color: '#4a9bd8', bg: '#1a2a3a' },
-  failed: { label: '❌ 失败', color: '#ef5350', bg: '#3a1a1a' }
+  succeeded: { label: '✅ 成功', short: '✅', color: '#4CAF50', bg: '#1a3320' },
+  skipped: { label: '⏭ 跳过', short: '⏭', color: '#8a93a8', bg: '#262b33' },
+  benign: { label: '✅ 良性跳过（已提交）', short: '✅', color: '#4a9bd8', bg: '#1a2a3a' },
+  failed: { label: '❌ 失败', short: '❌', color: '#ef5350', bg: '#3a1a1a' }
 };
+
+export { RESULT_META };
 
 const RESULT_FILTERS = [
   ['', '全部结果'],
@@ -77,6 +79,20 @@ export class TriggerTracePanel {
       this._renderProbe();
     }
     return this;
+  }
+
+  /**
+   * 每个 Trigger 的最近一次运行态（总览徽章用）。
+   * _logEntries 时间倒序（最新在前），首个即最新；返回 Map<triggerId, {result, time, code, message}>。
+   */
+  latestResultByTrigger() {
+    const map = new Map();
+    for (const entry of this._logEntries) {
+      const id = text(entry.triggerId);
+      if (!id || map.has(id)) continue;
+      map.set(id, { result: entry.result, time: entry.time, code: entry.code, message: entry.message });
+    }
+    return map;
   }
 
   /** 显示/隐藏面板。 */
@@ -187,7 +203,7 @@ export class TriggerTracePanel {
           事件仲裁：胜出 ${escapeHtml((entry.arbitration.winners || []).join('、') || '—')} · 失败 ${escapeHtml((entry.arbitration.losers || []).join('、') || '—')} · 策略 ${escapeHtml(entry.arbitration.policy || '')}
         </div>` : '';
       return `
-        <div class="tr-trace-entry" data-result="${entry.result}">
+        <div class="tr-trace-entry" data-result="${entry.result}"${entry.triggerId ? ` data-trigger="${escapeHtml(entry.triggerId)}" title="点击在剧情线总览中定位该 Trigger"` : ''}>
           <span class="tr-trace-time">${escapeHtml(entry.time)}</span>
           <span class="tr-trace-badge" style="color:${meta.color};background:${meta.bg};">${meta.label}</span>
           <span class="tr-trace-trigger">${escapeHtml(entry.triggerId || entry.name || '?')}</span>
@@ -197,6 +213,14 @@ export class TriggerTracePanel {
           ${arbitration}
         </div>`;
     }).join('');
+    // 轨迹条目点击反查：切到剧情线总览并高亮对应节点（有 triggerId 才可点）
+    for (const element of log.querySelectorAll('.tr-trace-entry[data-trigger]')) {
+      element.addEventListener('click', () => {
+        const triggerId = element.dataset.trigger;
+        const revealed = this.editor?.revealTriggerInStoryline?.(triggerId) === true;
+        if (revealed) this.hide(); // 让出画面，总览已高亮定位；点「执行轨迹」可随时回来
+      });
+    }
   }
 
   _renderProbe() {
@@ -239,6 +263,8 @@ export class TriggerTracePanel {
       .tr-trace-log{flex:1;overflow:auto;min-height:140px;padding:4px 16px 10px;font-size:11px;background:#0a1020;}
       .tr-trace-empty{color:#5a6a8a;font-size:12px;padding:8px 0;}
       .tr-trace-entry{display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px dotted #1a2440;flex-wrap:wrap;}
+      .tr-trace-entry[data-trigger]{cursor:pointer;}
+      .tr-trace-entry[data-trigger]:hover{background:#16213e;}
       .tr-trace-time{color:#5a6a8a;}
       .tr-trace-badge{display:inline-block;padding:1px 8px;border-radius:8px;font-size:10px;font-weight:bold;white-space:nowrap;}
       .tr-trace-trigger{color:#e6ecf7;font-weight:600;}
