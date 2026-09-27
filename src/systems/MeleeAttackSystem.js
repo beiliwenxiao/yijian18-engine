@@ -142,13 +142,15 @@ export class MeleeAttackSystem {
     // - 手柄连接：
     //   · 右摇杆驱动准星（isGamepadCursorActive）→ 跟随准星方向；
     //   · 右摇杆无输入 → 持续软锁定：附近有存活敌人时攻击框每帧指向最近敌人
-    //     （敌人一出现方向即就绪，攻击瞬间无需抢方向）。
+    //     （敌人一出现方向即就绪，攻击瞬间无需抢方向；软锁定命中时置
+    //     _sectorAutoAimActive，移动端空闲隐藏的扇形随之主动显示）。
     //   鼠标移动、触摸、左摇杆移动均不改变攻击方向（是否跟随与左摇杆无关）。
     // - 触屏（安卓/平板）：手指按住画布 → 跟随触摸位置（方向控制）；
-    //   无触摸 → 持续软锁定最近敌人（与手柄一致）。
+    //   无触摸 → 持续软锁定最近敌人（与手柄一致，同样点亮 _sectorAutoAimActive）。
     //   攻击按钮拖动瞄准由 SkillAimTouchCore 设置 sectorDirectionLocked，不会被此处覆盖。
     // - 键鼠：鼠标移动（有方向操作）→ 跟随鼠标；鼠标静止 → 保持当前方向。
     //   PC 不启用自动瞄准（鼠标已控制方向），手柄 RT holding 由 SceneCombatActions._syncGamepadAttackAim 锁定处理。
+    this._sectorAutoAimActive = false;
     if (!this.sectorDirectionLocked) {
       const gamepadOn = this.inputManager.isGamepadConnected?.() === true;
       const mouse = this.inputManager.getMousePosition?.() || { x: NaN, y: NaN };
@@ -160,7 +162,10 @@ export class MeleeAttackSystem {
           this.sectorDirection = Math.atan2(dy, dx);
         } else {
           const aim = this.getNearestEnemyDirection?.(480);
-          if (aim) this.sectorDirection = Math.atan2(aim.y, aim.x);
+          if (aim) {
+            this.sectorDirection = Math.atan2(aim.y, aim.x);
+            this._sectorAutoAimActive = true;
+          }
         }
       } else if (this.inputManager.isTouchDevice?.() === true) {
         this._lastAimMouse = { x: mouse.x, y: mouse.y };
@@ -170,7 +175,10 @@ export class MeleeAttackSystem {
           this.sectorDirection = Math.atan2(dy, dx);
         } else {
           const aim = this.getNearestEnemyDirection?.(480);
-          if (aim) this.sectorDirection = Math.atan2(aim.y, aim.x);
+          if (aim) {
+            this.sectorDirection = Math.atan2(aim.y, aim.x);
+            this._sectorAutoAimActive = true;
+          }
         }
       } else {
         const mouseMoved = !this._lastAimMouse
@@ -652,8 +660,8 @@ export class MeleeAttackSystem {
     
     if (this.sectorIsRanged) {
       // 远程：不再显示椭圆瞄准框（由攻击按钮的技能预览虚线框替代）
-    } else if (this.hideSectorWhenIdle && !this.sectorDirectionLocked) {
-      // 移动端近战：仅瞄准按住时显示扇形（sectorDirectionLocked 表示正在瞄准）
+    } else if (this.hideSectorWhenIdle && !this.sectorDirectionLocked && !this._sectorAutoAimActive) {
+      // 移动端近战：空闲且无软锁定目标时隐藏；软锁定（自动瞄准敌人）或拖动瞄准时显示
     } else {
       // 近战扇形
       ctx.beginPath();
