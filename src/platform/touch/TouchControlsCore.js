@@ -133,6 +133,12 @@ function setupTouchControls() {
         const doPress = (clientX, clientY, touchId) => {
             if (!isOnboardingDomEnabled(btn)) return;
             btn.classList.add('pressed');
+            // 教学高亮一次性熄灭：高亮按钮首次点击时回调（与 PC Canvas 按钮一致），
+            // 经 OnboardingUiProjection 记入 storyState.onboardingDismissed，跨会话不再点亮。
+            if (btn.classList.contains('onboarding-highlight')) {
+                const currentScene = shell.sceneManager ? shell.sceneManager.getCurrentScene() : shell.scene;
+                currentScene?.notifyOnboardingControlActivated?.(btn.id);
+            }
             if (isAimSkill) {
                 // 进入技能瞄准模式
                 skillAimApi.startSkillAim(btn, parseInt(btn.dataset.skill, 10), clientX, clientY, touchId);

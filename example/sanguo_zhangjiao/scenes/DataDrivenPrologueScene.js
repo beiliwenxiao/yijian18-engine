@@ -142,7 +142,10 @@ export class DataDrivenPrologueScene extends BaseGameScene {
           }
         },
         hide: () => this._hideScreenTip('tutorial'),
-        complete: (_tutorialId, tutorial) => {
+        complete: (tutorialId, tutorial) => {
+          // 教程完成状态持久化：教程系统只存内存，剧情事实已推进的存档不会重放
+          // 教程启动事件，不持久化会让依赖 tutorialCompleted 的渐进 UI 永不 reveal。
+          if (tutorialId) this._persistTutorialCompletion(tutorialId);
           if (tutorial?.endText) this._showScreenTip(tutorial.endText, { title: '✓ 完成', owner: 'tutorial' });
         }
       },
@@ -1144,20 +1147,49 @@ export class DataDrivenPrologueScene extends BaseGameScene {
 
   /**
    * 教学高亮跨会话持久化：把熄灭的组件 ID 记入故事状态 onboardingDismissed。
-   * 就地修改 storyState（引用不变，避免使既有读取方缓存失效）；
-   * 随 Blackboard 序列化进入存档，新开档从 project.variables 重建自动重置。
+   * storyState 是冻结的 canonical 快照，写入走克隆-合并-写回（引用替换），
+   * 与 SanguoSceneCommandFlow 的 endingInputs 结算一致；随 Blackboard 序列化
+   * 进入存档，新开档从 project.variables 重建自动重置。
    * @param {string} componentId - 稳定组件 ID（如 pc-potion1）
    */
   _persistOnboardingDismissal(componentId) {
     const blackboard = this.gameLoader?.blackboard;
-    if (!blackboard || typeof blackboard.get !== 'function') return false;
+    if (!blackboard || typeof blackboard.get !== 'function'
+      || typeof blackboard.set !== 'function') return false;
     const storyState = blackboard.get('storyState');
     if (!storyState || typeof storyState !== 'object') return false;
     const dismissed = storyState.onboardingDismissed && typeof storyState.onboardingDismissed === 'object'
       ? storyState.onboardingDismissed
-      : (storyState.onboardingDismissed = {});
+      : {};
     if (dismissed[componentId] === true) return false;
-    dismissed[componentId] = true;
+    blackboard.set('storyState', {
+      ...storyState,
+      onboardingDismissed: { ...dismissed, [componentId]: true }
+    });
+    return true;
+  }
+
+  /**
+   * 教程完成状态跨会话持久化：完成时记入故事状态 tutorialsCompleted。
+   * storyState 冻结不可扩展，写入走克隆-合并-写回（引用替换）；
+   * 随 Blackboard 序列化进入存档，场景进入时由 SanguoSceneLifecycleCoordinator
+   * 恢复到 TutorialSystem。
+   * @param {string} tutorialId - 教程 ID（如 s01.attack）
+   */
+  _persistTutorialCompletion(tutorialId) {
+    const blackboard = this.gameLoader?.blackboard;
+    if (!blackboard || typeof blackboard.get !== 'function'
+      || typeof blackboard.set !== 'function') return false;
+    const storyState = blackboard.get('storyState');
+    if (!storyState || typeof storyState !== 'object') return false;
+    const completed = storyState.tutorialsCompleted && typeof storyState.tutorialsCompleted === 'object'
+      ? storyState.tutorialsCompleted
+      : {};
+    if (completed[tutorialId] === true) return false;
+    blackboard.set('storyState', {
+      ...storyState,
+      tutorialsCompleted: { ...completed, [tutorialId]: true }
+    });
     return true;
   }
 

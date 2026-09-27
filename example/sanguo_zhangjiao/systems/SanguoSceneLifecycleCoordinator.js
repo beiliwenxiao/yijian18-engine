@@ -59,6 +59,29 @@ function initializeEnteredRuntime() {
   this.resourceScope?.track(() => this._tutorialFlow.dispose());
   const refreshOnboardingUi = this.resourceScope?.guard?.(() => this._onboardingUi?.refresh(true))
     || (() => this._onboardingUi?.refresh(true));
+  // 教程完成状态跨会话恢复：教程系统只存内存；剧情事实已推进的存档不会重放
+  // 教程启动事件，不恢复会让依赖 tutorialCompleted 的渐进 UI（红瓶/蓝瓶按钮）
+  // 永远不 reveal。优先读持久化的 tutorialsCompleted；旧存档无此字段时按 S01
+  // 剧情事实兜底推断（firstWolfSpotted ⇒ 前置教程已完成，firstWolfKilled ⇒ attack 完成）。
+  const restoredStoryState = this.gameLoader?.blackboard?.get?.('storyState') || {};
+  const restoredCompletions = restoredStoryState.tutorialsCompleted
+    && typeof restoredStoryState.tutorialsCompleted === 'object'
+    ? restoredStoryState.tutorialsCompleted
+    : null;
+  const completedTutorialIds = new Set();
+  if (restoredCompletions) {
+    for (const [tutorialId, done] of Object.entries(restoredCompletions)) {
+      if (done === true) completedTutorialIds.add(tutorialId);
+    }
+  } else {
+    const s01Survival = restoredStoryState.s01Survival || {};
+    if (s01Survival.firstWolfSpotted === true) {
+      ['s01.move', 's01.pickup', 's01.gather', 's01.chopWood', 's01.attack'].forEach(id => completedTutorialIds.add(id));
+    }
+  }
+  for (const tutorialId of completedTutorialIds) {
+    this._tutorialFlow?.complete?.(tutorialId);
+  }
   void Promise.resolve(this._onboardingUiReadyPromise).then(refreshOnboardingUi);
 
   this._s09AudioDirector?.dispose?.();
