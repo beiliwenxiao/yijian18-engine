@@ -333,60 +333,60 @@
         },
         "particlePresets": [
           {
-            "alpha": 0.85,
+            "alpha": 0.6,
             "color": "#ffaa22",
             "life": 250,
             "rate": 6,
             "size": 8.5,
-            "vy": -50
+            "vy": -35
           },
           {
-            "alpha": 0.8,
+            "alpha": 0.55,
             "color": "#ff8833",
             "life": 200,
             "rate": 8,
             "size": 6,
-            "vy": -35
+            "vy": -25
           },
           {
-            "alpha": 1,
+            "alpha": 0.7,
             "color": "#ffffee",
             "life": 400,
             "rate": 4,
             "size": 4.5,
-            "vy": -120
+            "vy": -85
           },
           {
-            "alpha": 0.9,
+            "alpha": 0.65,
             "color": "#ffee44",
             "life": 350,
             "rate": 10,
             "size": 3.5,
-            "vy": -100
+            "vy": -70
           },
           {
-            "alpha": 0.85,
+            "alpha": 0.6,
             "color": "#ff9933",
             "life": 300,
             "rate": 8,
             "size": 2.5,
-            "vy": -80
+            "vy": -55
           },
           {
-            "alpha": 0.8,
+            "alpha": 0.55,
             "color": "#ff5522",
             "life": 250,
             "rate": 6,
             "size": 2,
-            "vy": -60
+            "vy": -40
           },
           {
-            "alpha": 0.7,
+            "alpha": 0.5,
             "color": "#ff6633",
             "life": 200,
             "rate": 12,
             "size": 2,
-            "vy": -40
+            "vy": -28
           }
         ],
         "presentation": {

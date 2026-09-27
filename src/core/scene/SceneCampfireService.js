@@ -231,12 +231,13 @@ const campfireFeatureMethods = {
     const time = this.now() / 1000;
     this.campfire.emitters.forEach((emitter, index) => {
       if (!emitter) return;
+      // 摆动/横移抖动收敛（原 ±5/±4 → ±3/±3）：火焰舞动更沉稳，不再急促跳动
       const swayAmount = index < 2
-        ? (this.random() - 0.5) * 10
-        : Math.sin(time * 2 + index * 0.5) * 4 + (this.random() - 0.5) * 2;
+        ? (this.random() - 0.5) * 6
+        : Math.sin(time * 2 + index * 0.5) * 3 + (this.random() - 0.5) * 2;
       emitter.position.x = this.campfire.x + swayAmount;
       emitter.position.y = this.campfire.y - 13;
-      emitter.particleConfig.velocity.x = (this.random() - 0.5) * 10;
+      emitter.particleConfig.velocity.x = (this.random() - 0.5) * 6;
       this.particleSystem.updateEmitter(emitter, deltaTime);
     });
   },
@@ -324,8 +325,9 @@ const campfireFeatureMethods = {
       const campY = this.campfire.y - viewBounds.top;
       const campRadius = Math.max(1, this.presentation.lightRadius * 0.7);
       const light = ctx.createRadialGradient(campX, campY, 0, campX, campY, campRadius);
-      light.addColorStop(0, 'rgba(255, 200, 100, 0.30)');
-      light.addColorStop(0.5, 'rgba(255, 150, 50, 0.15)');
+      // 光晕降档（0.30/0.15 → 0.22/0.10）：配合粒子降 alpha，整体亮度收敛
+      light.addColorStop(0, 'rgba(255, 200, 100, 0.22)');
+      light.addColorStop(0.5, 'rgba(255, 150, 50, 0.10)');
       light.addColorStop(1, 'rgba(255, 80, 0, 0)');
       ctx.save();
       ctx.globalCompositeOperation = 'lighter';
@@ -353,8 +355,9 @@ const campfireFeatureMethods = {
         const glowY = y - flame.height * 0.42 + flame.offsetY;
         const radius = this.presentation.lightRadius * 0.22;
         const glow = ctx.createRadialGradient(x, glowY, 0, x, glowY, radius);
-        glow.addColorStop(0, 'rgba(255, 200, 0, 0.38)');
-        glow.addColorStop(0.5, 'rgba(255, 100, 0, 0.18)');
+        // 火焰近区光晕降档（0.38/0.18 → 0.28/0.12）
+        glow.addColorStop(0, 'rgba(255, 200, 0, 0.28)');
+        glow.addColorStop(0.5, 'rgba(255, 100, 0, 0.12)');
         glow.addColorStop(1, 'rgba(255, 50, 0, 0)');
         ctx.fillStyle = glow;
         ctx.beginPath();
