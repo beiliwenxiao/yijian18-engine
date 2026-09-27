@@ -144,6 +144,9 @@ export class MeleeAttackSystem {
     //   · 右摇杆无输入 → 持续软锁定：附近有存活敌人时攻击框每帧指向最近敌人
     //     （敌人一出现方向即就绪，攻击瞬间无需抢方向）。
     //   鼠标移动、触摸、左摇杆移动均不改变攻击方向（是否跟随与左摇杆无关）。
+    // - 触屏（安卓/平板）：手指按住画布 → 跟随触摸位置（方向控制）；
+    //   无触摸 → 持续软锁定最近敌人（与手柄一致）。
+    //   攻击按钮拖动瞄准由 SkillAimTouchCore 设置 sectorDirectionLocked，不会被此处覆盖。
     // - 键鼠：鼠标移动（有方向操作）→ 跟随鼠标；鼠标静止 → 保持当前方向。
     //   PC 不启用自动瞄准（鼠标已控制方向），手柄 RT holding 由 SceneCombatActions._syncGamepadAttackAim 锁定处理。
     if (!this.sectorDirectionLocked) {
@@ -152,6 +155,16 @@ export class MeleeAttackSystem {
       if (gamepadOn) {
         this._lastAimMouse = { x: mouse.x, y: mouse.y };
         if (this.inputManager.isGamepadCursorActive?.() === true) {
+          const dx = mouseWorldPos.x - playerCenter.x;
+          const dy = mouseWorldPos.y - playerCenter.y;
+          this.sectorDirection = Math.atan2(dy, dx);
+        } else {
+          const aim = this.getNearestEnemyDirection?.(480);
+          if (aim) this.sectorDirection = Math.atan2(aim.y, aim.x);
+        }
+      } else if (this.inputManager.isTouchDevice?.() === true) {
+        this._lastAimMouse = { x: mouse.x, y: mouse.y };
+        if (this.inputManager.isMouseButtonDown?.(0) === true) {
           const dx = mouseWorldPos.x - playerCenter.x;
           const dy = mouseWorldPos.y - playerCenter.y;
           this.sectorDirection = Math.atan2(dy, dx);

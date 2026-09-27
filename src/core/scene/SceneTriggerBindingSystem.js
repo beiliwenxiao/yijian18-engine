@@ -20,7 +20,7 @@
 
  ************************************************************/
 
-import { InputEventType, PointerButton } from '../input/InputEvent.js';
+import { InputEventType, PointerButton, InputDevice } from '../input/InputEvent.js';
 import { normalizeSceneObjectSelector, resolveSceneObjects } from './SceneObjectSelector.js';
 import { createSpatialTriggerBinding } from './SpatialTriggerBinding.js';
 import { resolveSceneSpatialGeometry } from './SceneSpatialGeometry.js';
@@ -263,7 +263,18 @@ export class SceneTriggerBindingSystem {
     if (!isKey && !isPointer) return false;
 
     const candidates = this._collectInteractCandidates(event);
-    if (candidates.length === 0) return false;
+    if (candidates.length === 0) {
+      // 触屏手指落点偏差大：点击未精确命中绑定区域时，触屏设备放宽为
+      // "玩家已处于交互范围内"即触发最近候选（区域精确命中路径不受影响）。
+      if (isPointer && event?.device === InputDevice.TOUCH) {
+        const nearby = this._collectInteractCandidates(null);
+        if (nearby.length > 0) {
+          this._fire(nearby[0].binding, 'interact', nearby[0].spatial);
+          return true;
+        }
+      }
+      return false;
+    }
     if (candidates.length > 1 && this.onInteractChoices) {
       try {
         const handled = this.onInteractChoices(this._projectInteractCandidates(candidates), event) === true;

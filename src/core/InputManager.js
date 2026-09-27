@@ -100,7 +100,11 @@ export class InputManager {
         // 指针坐标变换钩子（用于页面被 CSS 旋转/缩放时修正触摸与鼠标坐标）
         // 形如 (clientX, clientY) => ({ x, y })，返回 Canvas 像素坐标；返回 null 则走默认 rect 计算
         this.pointerTransform = null;
-        
+
+        // 触屏设备判定（构造时一次）：安卓/平板战斗瞄准走触屏分支（软锁定+手指控制）
+        this._isTouchDevice = (typeof window !== 'undefined'
+          && (('ontouchstart' in window) || (navigator.maxTouchPoints > 0))) || false;
+
         // 初始化事件监听
         this.initEventListeners();
     }
@@ -111,6 +115,15 @@ export class InputManager {
      */
     setPointerTransform(fn) {
         this.pointerTransform = (typeof fn === 'function') ? fn : null;
+    }
+
+    /**
+     * 当前环境是否触屏设备（安卓/平板）。构造时判定一次；
+     * 供战斗瞄准等系统区分触屏与键鼠行为（触屏无方向操作时启用软锁定）。
+     * @returns {boolean}
+     */
+    isTouchDevice() {
+        return this._isTouchDevice === true;
     }
 
     /**
@@ -294,7 +307,10 @@ export class InputManager {
             this.mouse.isTouch = true;
             this.mouse.isDown = true;
             this.mouse.clicked = true;
-            // 触摸等价于左键按下，记入 buttons，保证 isMouseButtonDown(0) 生效
+            this.mouse.clickedButton = 0;
+            // 触摸等价于左键按下，记入 buttons，保证 isMouseButtonDown(0) 生效；
+            // clickedButton 必须同步置 0：getMouseButton 在 clicked 期间返回它，
+            // 漏设会让 POINTER_DOWN 带 button=-1，被交互/拾取的左键过滤全部拒收。
             this.mouse.button = 0;
             this.mouse.buttons.add(0);
         }
