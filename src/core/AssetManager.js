@@ -41,6 +41,7 @@ export class AssetManager {
         this._manifestQueuedKeys = new Set();
         this._inflightAssets = new Map();
         this._inflightImages = new Map();
+        this._failedImageLoads = new Set();
         this._activeLoadBatches = 0;
         this._loadGeneration = 0;
         this._loadProgressListeners = new Set();
@@ -488,11 +489,25 @@ export class AssetManager {
      */
     getImage(key) {
         const resolvedKey = this.manifestAliases.get(key) || key;
-        if (!this.images.has(resolvedKey)) {
-            console.warn(`AssetManager: Image '${key}' not found`);
-            return null;
-        }
-        return this.images.get(resolvedKey);
+        const cached = this.images.get(resolvedKey);
+        if (cached) return cached;
+        // 清单已登记但尚未加载的图像按需补载（死亡掉落等运行期才首次渲染的资源）：
+        // 本次仍返回 null 走手绘兜底，图到位后下一帧自然显示；失败只记一次不反复重试。
+        this._requestManifestImage(resolvedKey);
+        console.warn(`AssetManager: Image '${key}' not found`);
+        return null;
+    }
+
+    /** 按 manifest 描述符按需加载图像（仅限 registerManifest 登记过的稳定 ID）。 */
+    _requestManifestImage(resolvedKey) {
+        if (this._failedImageLoads.has(resolvedKey)) return;
+        if (this.images.has(resolvedKey) || this._inflightImages.has(resolvedKey)) return;
+        const descriptor = this._multiBackendAssets?.get(resolvedKey)?.find(entry => entry?.type === 'image' && entry?.url);
+        const url = descriptor?.url;
+        if (!url) return;
+        this.loadImage(resolvedKey, url).catch(() => {
+            this._failedImageLoads.add(resolvedKey);
+        });
     }
 
     /**

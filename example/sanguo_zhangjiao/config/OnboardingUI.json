@@ -142,41 +142,15 @@
         "pc-hp-orb",
         "pc-mp-orb",
         "pc-potion1",
-        "pc-potion2",
         "pc-skill1",
-        "pc-skill2",
-        "pc-skill3",
-        "pc-skill4",
-        "pc-skill5",
-        "pc-block",
         "act-attack",
-        "act-block",
-        "act-skill3",
-        "act-skill4",
-        "act-skill5",
-        "hb-hp",
-        "hb-mp",
-        "hb-skill6",
-        "hb-skill7"
+        "hb-hp"
       ],
       "enabledComponentIds": [
         "pc-potion1",
-        "pc-potion2",
         "pc-skill1",
-        "pc-skill2",
-        "pc-skill3",
-        "pc-skill4",
-        "pc-skill5",
-        "pc-block",
         "act-attack",
-        "act-block",
-        "act-skill3",
-        "act-skill4",
-        "act-skill5",
-        "hb-hp",
-        "hb-mp",
-        "hb-skill6",
-        "hb-skill7"
+        "hb-hp"
       ],
       "highlightComponentIds": [
         "pc-skill1",
@@ -253,13 +227,8 @@
         "pc-block",
         "act-attack",
         "act-block",
-        "act-skill3",
-        "act-skill4",
-        "act-skill5",
         "hb-hp",
-        "hb-mp",
-        "hb-skill6",
-        "hb-skill7"
+        "hb-mp"
       ],
       "enabledComponentIds": [
         "pc-potion1",
@@ -272,13 +241,8 @@
         "pc-block",
         "act-attack",
         "act-block",
-        "act-skill3",
-        "act-skill4",
-        "act-skill5",
         "hb-hp",
-        "hb-mp",
-        "hb-skill6",
-        "hb-skill7"
+        "hb-mp"
       ]
     },
     {
