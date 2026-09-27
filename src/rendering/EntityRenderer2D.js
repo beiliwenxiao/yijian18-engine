@@ -15,6 +15,8 @@ export class EntityRenderer2D {
     this.assetManager = assetManager;
     this.getRenderStyle = typeof getRenderStyle === 'function' ? getRenderStyle : () => null;
     this.getRenderOffset = options.getRenderOffset || (() => ({ x: 0, y: 0 }));
+    // 玩家战斗状态回调：玩家头顶血条仅战斗状态显示（非战斗隐藏），敌对 NPC 不受影响
+    this.isPlayerInCombat = typeof options.isPlayerInCombat === 'function' ? options.isPlayerInCombat : () => false;
     this._readyImageCache = new Map();
     this._renderStyleCache = new Map();
     this._nameMeasureCache = new WeakMap();
@@ -79,7 +81,12 @@ export class EntityRenderer2D {
     if (!isCorpse) {
       this._renderName(ctx, entity, npc, x, y, height);
       this._renderInteractionPrompt(ctx, npc, x, y);
-      this._renderHealthBar(ctx, stats, npc, x, y, height);
+      // 玩家头顶血条仅战斗状态显示（非战斗隐藏）；敌对/其他实体维持原有显示规则
+      const skipPlayerBar = entity.type === 'player'
+        && this.isPlayerInCombat(entity) !== true;
+      if (!skipPlayerBar) {
+        this._renderHealthBar(ctx, stats, npc, x, y, height);
+      }
     }
   }
 

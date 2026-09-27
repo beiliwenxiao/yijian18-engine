@@ -72,20 +72,24 @@ function captureSceneSaveState() {
     }));
   }
   const seenEnemies = new Set();
-  for (const list of Object.values(this._groupEnemies || {})) {
-    for (const enemy of list || []) {
-      if (!enemy?.id || seenEnemies.has(enemy.id)) continue;
-      seenEnemies.add(enemy.id);
-      const stats = enemy.getComponent?.('stats');
-      const transform = enemy.getComponent?.('transform');
-      const corpseState = this.context.services.corpses?.capture?.(enemy);
-      placementStates.set(enemy.id, withPlacementSignature(enemy.id, corpseState || {
-        kind: 'enemy', removed: this._isEntityDead(enemy),
-        hp: Math.max(0, Number(stats?.hp) || 0),
-        position: transform ? { x: transform.position.x, y: transform.position.y } : null,
-        ai: this.aiSystem?.getRuntimeState?.(enemy) || null
-      }));
-    }
+  // 首狼经 _ensureSpawnedPlacement 单独生成、不经组管理；不入遍历会让击杀后的
+  // 尸体状态缺失，读档时 placement 按 spawnWhen 重新生成活狼（已杀的狼复活）。
+  const enemyCandidates = [
+    ...Object.values(this._groupEnemies || {}).flat(),
+    ...(this.context?.services?.s01s02?.captureFirstWolfEntities?.() || [])
+  ];
+  for (const enemy of enemyCandidates) {
+    if (!enemy?.id || seenEnemies.has(enemy.id)) continue;
+    seenEnemies.add(enemy.id);
+    const stats = enemy.getComponent?.('stats');
+    const transform = enemy.getComponent?.('transform');
+    const corpseState = this.context.services.corpses?.capture?.(enemy);
+    placementStates.set(enemy.id, withPlacementSignature(enemy.id, corpseState || {
+      kind: 'enemy', removed: this._isEntityDead(enemy),
+      hp: Math.max(0, Number(stats?.hp) || 0),
+      position: transform ? { x: transform.position.x, y: transform.position.y } : null,
+      ai: this.aiSystem?.getRuntimeState?.(enemy) || null
+    }));
   }
   const hasWorldStreaming = !!this.worldStreamingManager;
   const s11s14State = this.s11s14SceneCoordinator._captureS11S14SceneState();

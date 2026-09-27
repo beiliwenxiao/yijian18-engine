@@ -319,7 +319,9 @@ export class BaseGameScenePresentation extends BaseGameSceneGameplayHooks {
     if (!this.entityRenderer2D) {
       this.entityRenderer2D = new EntityRenderer2D(this.assetManager, getNpcRenderStyle, {
         getRenderOffset: entity => this.context?.presentation?.worldItemEvents?.getRenderOffset?.(entity)
-          || { x: 0, y: 0 }
+          || { x: 0, y: 0 },
+        // 玩家头顶血条仅战斗状态显示（CombatSystem 统一战斗状态）
+        isPlayerInCombat: () => this.combatSystem?.isInCombat() === true
       });
     }
     return this.entityRenderer2D;

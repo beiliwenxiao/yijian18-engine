@@ -34,7 +34,7 @@ const RECIPE_ACTION_PROGRESS_OWNER = 's01RecipeAction';
 const RECIPE_ACTION_RANGE = 96;
 const RECIPE_ACTIONS = Object.freeze({
   's01.roastedWolfMeat': Object.freeze({
-    workstationId: 's01.cookingRack', placementId: 'S01-prop-cooking-rack', duration: 8,
+    workstationId: 's01.cookingRack', placementId: 'S01-prop-cooking-rack', duration: 3,
     kind: 'cooking', inputImageId: 's01.item.rawWolfMeat', outputImageId: 's01.food.roastedWolfMeat',
     inputSize: Object.freeze({ width: 42, height: 34 }), outputSize: Object.freeze({ width: 44, height: 36 })
   }),
@@ -398,6 +398,18 @@ export class S01S02Coordinator {
 
   _activateFirstWolf(wolf = this.scene.entityStore?.getById?.('S01-first-wolf-1')) {
     return this._activateWolf(wolf);
+  }
+
+  /** 首狼个体（含尸体）：经 _ensureSpawnedPlacement 单独生成、不经组管理，场景存档需显式捕获。 */
+  captureFirstWolfEntities() {
+    if (this.scene.currentSceneId !== 'S01') return [];
+    const count = this._firstWolfCount();
+    const entities = [];
+    for (let index = 1; index <= count; index += 1) {
+      const entity = this.scene.entityStore?.getById?.(`${FIRST_WOLF_PREFIX}${index}`);
+      if (entity) entities.push(entity);
+    }
+    return entities;
   }
 
   /** 首狼数量：由触发器参数经 firstWolfSpotted 事务写入 StoryState；旧档缺省 1，不设上限。 */

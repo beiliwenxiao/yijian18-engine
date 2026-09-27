@@ -191,7 +191,9 @@ const campfireFeatureMethods = {
           gravity: 0, friction: 0.95,
           // 火焰语义渲染：径向渐变发光 + 火舌摆动，叠加发光避免实心圆"泡泡"感
           isFire: true,
-          blendMode: 'lighter'
+          blendMode: 'lighter',
+          // worldDepth Y-sort 必需：缺 sortY 会让深度排序 NaN 失效，火焰粒子盖住走近的玩家
+          sortY: firePoint.y
         }
       })
     );

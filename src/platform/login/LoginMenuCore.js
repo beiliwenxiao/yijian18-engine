@@ -268,6 +268,8 @@ async function openSystemMenu() {
     // 预武装：打开菜单时摇杆可能仍偏转（如跑动中按 Start），
     // 不要求先归中即可立即导航（仍按方向变化离散步进）。
     menuPadArmed = true;
+    menuPadForceArmed = true;
+    menuPadOpenedAt = performance.now();
     menuPadDirection = 0;
     menuPadIndex = 0;
     loginScreen.classList.remove('hidden');
@@ -354,6 +356,8 @@ window.addEventListener('keydown', event => {
 
 // 登录层不依赖活动场景，但复用正式 GamepadManager、Xbox360Profile 与项目绑定配置。
 let menuPadArmed = false;
+let menuPadForceArmed = false; // 程序预武装：打开菜单时的摇杆偏转/Start 残留不撤销武装
+let menuPadOpenedAt = 0;       // 打开时刻：窗口期内忽略 cancel 边沿，防 Start 按住误关菜单
 let menuPadDirection = 0;
 let menuPadIndex = 0;
 let loginGamepadManager = null;
@@ -378,6 +382,7 @@ function refreshLoginGamepadActionButtons() {
 
 function resetLoginGamepadNavigation() {
     menuPadArmed = false;
+    menuPadForceArmed = false;
     menuPadDirection = 0;
 }
 
@@ -420,7 +425,14 @@ function pollLoginGamepad(generation) {
                         .filter(button => button.offsetParent !== null && !button.disabled);
 
         if (!menuPadArmed) {
-            menuPadArmed = !confirmDown && !cancelDown && direction === 0;
+            // 程序预武装（menuPadForceArmed）保持到输入全中性：跑动中按 Start 打开菜单时
+            // 摇杆仍偏转/Start 仍按住，若按"归中+无按键"重新武装会导致菜单导航长期失效。
+            if (menuPadForceArmed) {
+                menuPadArmed = true;
+                if (!confirmDown && !cancelDown && direction === 0) menuPadForceArmed = false;
+            } else {
+                menuPadArmed = !confirmDown && !cancelDown && direction === 0;
+            }
         } else {
             if (active.length > 0) menuPadIndex = Math.min(menuPadIndex, active.length - 1);
             else menuPadIndex = 0;
@@ -447,9 +459,10 @@ function pollLoginGamepad(generation) {
                 else active[menuPadIndex]?.click();
             }
 
-            const cancelPressed = loginGamepadManager.isButtonPressed(PadButton.B)
+            const cancelPressed = (performance.now() - menuPadOpenedAt > 300)
+              && (loginGamepadManager.isButtonPressed(PadButton.B)
                 || isAnyMenuButtonPressed(loginGamepadActionButtons.cancel)
-                || isAnyMenuButtonPressed(loginGamepadActionButtons.settings);
+                || isAnyMenuButtonPressed(loginGamepadActionButtons.settings));
             if (cancelPressed) {
                 if (isConfirmingOverwrite) shell.settleOverwriteConfirmation(false);
                 else if (isPickingSave) shell.closeSavePicker();

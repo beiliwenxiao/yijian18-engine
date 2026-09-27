@@ -82,6 +82,8 @@ export class SceneRenderPipeline {
         const rect = this.context?.ui?.layout?.getScreenHudRect?.('taskTracker') || null;
         if (rect) this.context?.ui?.taskGraph?.render?.(ctx, rect);
       },
+      (_scene, ctx) => this.context?.presentation?.gatheringProgress
+        ?.render?.(ctx, { width: _scene.logicalWidth, height: _scene.logicalHeight }),
       (_scene, ctx) => this.context?.ui?.bottomControlBar?.render?.(ctx),
       (scene, ctx) => scene.blockButton?.render(ctx),
       (scene, ctx) => scene.jumpButton?.render(ctx),
@@ -107,6 +109,7 @@ export class SceneRenderPipeline {
       'renderDialogue',
       'renderCombatUi',
       'renderTaskGraph',
+      'renderGatheringProgress',
       'renderBottomControlBar',
       'renderBlockButton',
       'renderJumpButton',
@@ -520,7 +523,6 @@ export class SceneRenderPipeline {
       worldPresentation.renderBlockShield(ctx);
     }
     particleSystem.render(ctx, camera);
-    presentation.gatheringProgress?.render?.(ctx);
     presentation.worldAction?.render?.(ctx);
     // 蓄力跳跃的头顶蓄力条（世界空间）。
     scene.jumpChargeController?.render?.(ctx);

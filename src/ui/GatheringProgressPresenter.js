@@ -3,7 +3,7 @@
  * 默认消费 GatheringSystem 事件，也允许其他短时动作使用独立 owner；只读表现不持有业务状态。
  */
 export class GatheringProgressPresenter {
-  constructor({ width = 84, height = 9, offsetY = 18 } = {}) {
+  constructor({ width = 168, height = 9, offsetY = 18 } = {}) {
     this.width = Math.max(20, Number(width) || 84);
     this.height = Math.max(4, Number(height) || 9);
     this.offsetY = Math.max(0, Number(offsetY) || 18);
@@ -35,20 +35,14 @@ export class GatheringProgressPresenter {
     return false;
   }
 
-  render(ctx) {
-    if (!this.visible || !this.actor) return false;
-    const transform = this.actor.getComponent?.('transform');
-    if (!transform?.position) {
-      this.clear();
-      return false;
-    }
-    const sprite = this.actor.getComponent?.('sprite');
-    const spriteHeight = (Number(sprite?.height) || 48) * (Number(sprite?.scale) || 1);
-    const x = transform.position.x;
-    const y = transform.position.y - (Number(transform.position.elevation) || 0)
-      - spriteHeight - this.offsetY;
-    const left = x - this.width / 2;
-    const top = y - this.height / 2;
+  render(ctx, viewport = null) {
+    if (!this.visible) return false;
+    // 屏幕空间：水平居中、垂直居中（屏幕上下正中间）
+    const width = Math.max(1, Number(viewport?.width) || 0);
+    const height = Math.max(1, Number(viewport?.height) || 0);
+    if (!width || !height) return false;
+    const left = width / 2 - this.width / 2;
+    const top = height / 2 - this.height / 2;
     const fillWidth = Math.max(0, (this.width - 2) * this.progress);
 
     ctx.save();
