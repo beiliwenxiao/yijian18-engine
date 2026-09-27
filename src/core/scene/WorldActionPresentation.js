@@ -107,9 +107,20 @@ export class WorldActionPresentation {
     const rackHeight = Math.max(32, Number(sprite.height) || 64);
     const progress = clamp01(action.progress);
     const oscillation = Math.sin(progress * Math.PI * 8);
-    const y = position.y - rackHeight - 8 - oscillation * (action.kind === 'cooking' ? 4 : 2);
-    const rotation = action.kind === 'cooking' ? oscillation * 0.1 : oscillation * 0.035;
-    const scale = action.kind === 'tanning' ? 0.94 + Math.abs(oscillation) * 0.1 : 1;
+    if (action.kind === 'cooking') {
+      // 烤肉：单片生肉叠放在烧烤架横杆上翻动；整体缩小。
+      // 横杆取架子中部偏上（顶部下方约 52% 架高处），位置按横杆贴图微调 rackY 偏移即可。
+      const rackY = position.y - rackHeight * 0.52;
+      return this._drawAsset(ctx, action.inputImageId, position.x, rackY, action.inputSize, {
+        alpha: 0.9,
+        rotation: oscillation * 0.1,
+        scale: 0.7,
+        bottomCenter: true
+      });
+    }
+    const y = position.y - rackHeight - 8 - oscillation * 2;
+    const rotation = oscillation * 0.035;
+    const scale = 0.94 + Math.abs(oscillation) * 0.1;
     return this._drawAsset(ctx, action.inputImageId, position.x, y, action.inputSize, {
       alpha: 0.9,
       rotation,

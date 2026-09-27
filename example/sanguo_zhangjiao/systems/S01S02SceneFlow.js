@@ -34,7 +34,7 @@ const RECIPE_ACTION_PROGRESS_OWNER = 's01RecipeAction';
 const RECIPE_ACTION_RANGE = 96;
 const RECIPE_ACTIONS = Object.freeze({
   's01.roastedWolfMeat': Object.freeze({
-    workstationId: 's01.cookingRack', placementId: 'S01-prop-cooking-rack', duration: 2,
+    workstationId: 's01.cookingRack', placementId: 'S01-prop-cooking-rack', duration: 8,
     kind: 'cooking', inputImageId: 's01.item.rawWolfMeat', outputImageId: 's01.food.roastedWolfMeat',
     inputSize: Object.freeze({ width: 42, height: 34 }), outputSize: Object.freeze({ width: 44, height: 36 })
   }),
