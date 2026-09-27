@@ -187,6 +187,21 @@ export class ArmyCommandSystem {
 
   getUnitCount() { return this.units.size; }
 
+  /** 存活己方单位数（濒死/死亡不计；武将不在 units 内）。 */
+  getAliveUnitCount() {
+    let count = 0;
+    for (const unit of this.units.values()) {
+      const entity = unit.entity;
+      if (entity && entity.isDead !== true && entity.isDying !== true) count++;
+    }
+    return count;
+  }
+
+  /** 是否有存活的己方军队（右上角战斗徽章区分「个人/军队战斗中」用）。 */
+  hasAliveUnits() {
+    return this.getAliveUnitCount() > 0;
+  }
+
   setSelection(slotKey) {
     if (!ARMY_SELECTION_SLOTS.some(slot => slot.key === slotKey)) return false;
     this.selectionSlot = slotKey;

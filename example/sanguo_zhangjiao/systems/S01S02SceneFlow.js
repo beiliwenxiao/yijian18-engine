@@ -1350,6 +1350,12 @@ export class S01S02Coordinator {
     return { ok: true, status: reignitedByFuel ? 'reignited' : 'refueled' };
   }
 
+  /** 烤制只要求篝火点燃，不再消耗木柴；篝火服务缺席时视为可用（无火表现层）。 */
+  _isCampfireLit() {
+    const campfire = this.scene._campfireService;
+    return campfire?.isLit?.() !== false;
+  }
+
   _createRecipeSnapshot(workstationId, { statusMessage = '', statusType = 'info' } = {}) {
     const survival = this._story().s01Survival || {};
     const inventory = this.scene.playerEntity?.getComponent?.('inventory');
@@ -1359,12 +1365,13 @@ export class S01S02Coordinator {
         id: 's01.roastedWolfMeat',
         name: '烤狼肉',
         description: '恢复生命 50 点。',
-        summary: '狼肉 ×1，木柴 ×1',
-        enabled: count('resource.raw_wolf_meat') >= 1 && count('resource.wood') >= 1,
-        disabledReason: '需要生狼肉 1 块与木柴 1 根。',
+        summary: '狼肉 ×1（需篝火点燃）',
+        enabled: count('resource.raw_wolf_meat') >= 1 && this._isCampfireLit(),
+        disabledReason: count('resource.raw_wolf_meat') < 1
+          ? '需要生狼肉 1 块。'
+          : '篝火尚未点燃，先点燃篝火再烤制。',
         materials: [
-          { name: '生狼肉', available: count('resource.raw_wolf_meat'), quantity: 1 },
-          { name: '木柴', available: count('resource.wood'), quantity: 1 }
+          { name: '生狼肉', available: count('resource.raw_wolf_meat'), quantity: 1 }
         ]
       }]
       : [
@@ -1535,9 +1542,6 @@ export class S01S02Coordinator {
         `${session.operationId}:cook`
       );
       if (result.ok !== true) return result;
-      const campfire = this.scene._campfireService;
-      if (campfire?.canAddFuelUnits?.(1) === true) campfire.addFuelUnits(1);
-      campfire?.ignite?.({ runtime: { particleSystem: this.scene.particleSystem } });
       if (firstCook) await this._spawnWorkstation('S01-tanning-rack');
       this.scene._showScreenTip('烤狼肉完成，已放入背包。', { title: '烤制完成' });
       return { ...result, crafted: true };
@@ -1769,11 +1773,15 @@ export class S01S02Coordinator {
     if (operation === 'cookMeat') {
       const survival = this._story().s01Survival || {};
       if (survival.meatCooked === true) {
-        this.scene._showScreenTip('狼肉已经烤熟，不需要重复消耗木材和生肉。', { title: '烹饪已完成' });
+        this.scene._showScreenTip('狼肉已经烤熟，不需要重复烤制。', { title: '烹饪已完成' });
         return { ok: true, status: 'blocked' };
       }
       if (survival.wolfSkinned !== true) {
         this.scene._showScreenTip('先靠近第一只野狼的尸体，用剥皮刀取下狼皮。', { title: '先处理狼尸' });
+        return { ok: true, status: 'blocked' };
+      }
+      if (this._isCampfireLit() !== true) {
+        this.scene._showScreenTip('篝火尚未点燃，先点燃篝火再烤制狼肉。', { title: '篝火未点燃' });
         return { ok: true, status: 'blocked' };
       }
       const inventory = this.scene.playerEntity?.getComponent?.('inventory');
@@ -1782,12 +1790,8 @@ export class S01S02Coordinator {
         return { ok: false, code: 'inventoryUnavailable' };
       }
       const meatCount = inventory.getItemCount('resource.raw_wolf_meat');
-      const woodCount = inventory.getItemCount('resource.wood');
-      const missing = [];
-      if (meatCount < 1) missing.push(`生狼肉还缺 ${1 - meatCount} 份（现有 ${meatCount}/1）`);
-      if (woodCount < 1) missing.push(`木材还缺 ${1 - woodCount} 份（现有 ${woodCount}/1）`);
-      if (missing.length > 0) {
-        this.scene._showScreenTip(`烤制狼肉需要生狼肉 1 份、木材 1 份；${missing.join('，')}。`, { title: '材料不足' });
+      if (meatCount < 1) {
+        this.scene._showScreenTip(`烤制狼肉需要生狼肉 1 份；生狼肉还缺 ${1 - meatCount} 份（现有 ${meatCount}/1）。`, { title: '材料不足' });
         return { ok: true, status: 'blocked' };
       }
       const result = await this._submit('story.s01.cookMeat', {}, 'story:s01:cook-meat');
@@ -1795,13 +1799,7 @@ export class S01S02Coordinator {
         this.scene._showScreenTip(`烹饪结算失败：${result.code || 'unknown'}。材料和剧情状态未改变，请重试。`, { title: '烹饪失败' });
         return result;
       }
-      const campfire = this.scene._campfireService;
-      if (campfire?.canAddFuelUnits?.(1) === true) campfire.addFuelUnits(1);
-      const ignited = campfire?.ignite?.({ runtime: { particleSystem: this.scene.particleSystem } });
-      if (ignited !== true) {
-        console.warn('[S01S02Coordinator] 烹饪事务已提交，但篝火重燃表现失败');
-      }
-      this.scene._showScreenTip('你添柴重新点旺篝火，狼肉已经烤熟。接下来到制作点把两份狼皮做成背心和护腕。', { title: '烤狼肉' });
+      this.scene._showScreenTip('篝火上的狼肉滋滋作响，狼肉已经烤熟。接下来到制作点把两份狼皮做成背心和护腕。', { title: '烤狼肉' });
       return { ok: true };
     }
     if (operation === 'buildShelter') return this.startShelterConstruction(params);

@@ -60,6 +60,7 @@ function isPlatformInfrastructure(normalized, basename) {
   if (normalized.startsWith('src/network/')) return true;
   if (normalized.startsWith('src/core/input/')) return true;
   if (normalized.startsWith('src/core/snapshot/')) return true;
+  if (normalized.startsWith('src/platform/')) return true;
   if (normalized.startsWith('weapp/adapter/')) return true;
   return normalized.startsWith('src/core/')
     && /^(?:Audio|Gamepad|Input|Logger|Error|Performance|Debug|CanvasDisplay|EventJournal|Asset|Placeholder|Platform|Presentation|IndexedDB|GameEngine|RNG|Timers)/.test(basename);

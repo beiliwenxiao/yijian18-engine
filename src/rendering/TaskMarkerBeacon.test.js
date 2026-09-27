@@ -79,10 +79,12 @@ describe('TaskMarkerBeacon 任务点引导闪光', () => {
     beacon.update(1);
     expect(ps.emitted.length).toBe(0);
     beacon.setMarkers([POINT]);
+    beacon._points[0].accumulator = 1; // 消除首帧随机相位：保证本帧必发射
     beacon.update(0.1);
     expect(ps.emitted.length).toBeGreaterThan(0);
     beacon.clear();
+    const countBeforeClear = ps.emitted.length;
     beacon.update(5);
-    expect(ps.emitted.length).toBe(ps.emitted.length); // clear 后不再新增
+    expect(ps.emitted.length).toBe(countBeforeClear); // clear 后不再新增
   });
 });

@@ -188,7 +188,10 @@ const campfireFeatureMethods = {
           position: { x: firePoint.x, y: firePoint.y },
           velocity: { x: 0, y: vy },
           life, size, color, alpha,
-          gravity: 0, friction: 0.95
+          gravity: 0, friction: 0.95,
+          // 火焰语义渲染：径向渐变发光 + 火舌摆动，叠加发光避免实心圆"泡泡"感
+          isFire: true,
+          blendMode: 'lighter'
         }
       })
     );

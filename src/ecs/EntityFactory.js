@@ -193,7 +193,9 @@ export class EntityFactory {
     // 添加变换组件
     const position = enemyData.position || { x: 0, y: 0 };
     entity.addComponent(new TransformComponent(position.x, position.y));
-    
+    // 出生锚点：AI 脱战回归与原地游荡的基准点。
+    entity.spawnAnchor = { x: position.x, y: position.y };
+
     // 添加属性组件
     const stats = enemyData.stats || {};
     entity.addComponent(new StatsComponent({
@@ -396,6 +398,8 @@ export class EntityFactory {
     // 变换组件
     const position = npcData.position || { x: 0, y: 0 };
     entity.addComponent(new TransformComponent(position.x, position.y));
+    // 出生锚点：AI 脱战回归与原地游荡的基准点。
+    entity.spawnAnchor = { x: position.x, y: position.y };
 
     // ---- 精灵组件（稳定图片 ID / 序列帧配置）----
     // imageId/assetId 由 AssetManager Manifest 解析；旧 sprite.src/sheet 继续兼容。

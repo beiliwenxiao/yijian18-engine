@@ -371,6 +371,16 @@ export class BaseGameSceneSetup extends Scene {
     return globalThis.__openSystemMenu?.(this);
   }
 
+  /** 军队按钮：开关军队操作条（编组/姿态命令 HUD）。 */
+  toggleArmyCommandHud() {
+    const hud = this.armyCommandFlow?.hud;
+    if (!hud) return false;
+    hud.visible = hud.visible !== true;
+    if (hud.visible === false) hud.presetOpen = false;
+    this._showScreenTip?.(hud.visible ? '军队操作条已显示。' : '军队操作条已隐藏。', { title: '军队' });
+    return hud.visible;
+  }
+
   setSaveGameService(service) {
     this._saveGameService = service || null;
   }

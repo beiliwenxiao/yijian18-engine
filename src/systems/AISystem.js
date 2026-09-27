@@ -72,6 +72,15 @@ class AIController {
     this.timeSinceLastUpdate += deltaTime;
 
     if (this.timeSinceLastUpdate >= this.updateInterval) {
+      // 玩家状态正常（战斗外）时，追击中的怪物/NPC 放弃追击，
+      // 由 wanderNear 以出生点为锚游荡走回出生点附近。
+      if (combatSystem && combatSystem.isInCombat?.() !== true) {
+        const combat = entity.getComponent?.('combat');
+        if (combat?.hasTarget?.()) {
+          combat.clearTarget?.();
+          this.clearIdleWander();
+        }
+      }
       this.makeDecision(entity, allEntities, combatSystem, hostileCache);
       this.timeSinceLastUpdate = 0;
     }
@@ -155,15 +164,17 @@ class AIController {
   }
 
   /**
-   * 无目标时在首次失去目标的位置附近确定性徘徊。
+   * 无目标时在出生点附近确定性徘徊（远离出生点时会先走回去）。
    * 状态仅保存在 AI controller 内存中；稳定实体 ID 与步进共同决定路线，便于回放复现。
    */
   wanderNear(entity) {
     const transform = entity.getComponent('transform');
     if (!transform?.position) return;
     if (!this.idleWander) {
+      // 游荡锚点优先取出生点；无出生锚点的实体（测试桩/旧存档）退化为当前位置。
+      const anchor = entity.spawnAnchor || transform.position;
       this.idleWander = {
-        anchor: { x: transform.position.x, y: transform.position.y },
+        anchor: { x: anchor.x, y: anchor.y },
         hash: stableEntityHash(entity.id),
         step: 0,
         target: null,

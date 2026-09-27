@@ -213,6 +213,12 @@ export class ScenePanelLayout {
         icon: '⚙️', label: '系统设置', hintAction: 'settings',
         onClick: () => scene.openSystemMenu?.()
       });
+      // 军队：开关军队操作条（编组/姿态命令 HUD）
+      scene.armyButton = new IconButton({
+        x: 1058, y: 640, width: 50, height: 50,
+        icon: '⚔️', label: '军队',
+        onClick: () => scene.toggleArmyCommandHud?.()
+      });
       // 跳跃：读取当前键盘/摇杆方向，未输入方向时原地起跳
       scene.jumpButton = new IconButton({
         x: 666, y: 640, width: 50, height: 50,
@@ -291,6 +297,7 @@ export class ScenePanelLayout {
     scene.uiClickHandler.registerElement(scene.dialogueBox);
     if (scene.bagButton) scene.uiClickHandler.registerElement(scene.bagButton);
     if (scene.settingsButton) scene.uiClickHandler.registerElement(scene.settingsButton);
+    if (scene.armyButton) scene.uiClickHandler.registerElement(scene.armyButton);
     if (scene.jumpButton) scene.uiClickHandler.registerElement(scene.jumpButton);
     if (scene.flightButton) scene.uiClickHandler.registerElement(scene.flightButton);
     if (scene.throwButton) scene.uiClickHandler.registerElement(scene.throwButton);

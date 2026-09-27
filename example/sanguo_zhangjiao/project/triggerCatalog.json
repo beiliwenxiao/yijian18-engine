@@ -373,7 +373,7 @@
             ],
             "type": "object"
           },
-          "resultSemantics": "打开烹饪配方选择；选中后才以原子事务交换生狼肉、木柴与熟食。",
+          "resultSemantics": "打开烹饪配方选择；选中后才以原子事务交换生狼肉与熟食（需篝火点燃，不消耗木柴）。",
           "value": "openCookingRecipes"
         },
         {

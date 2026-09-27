@@ -572,10 +572,6 @@
           {
             "itemId": "resource.raw_wolf_meat",
             "quantity": 1
-          },
-          {
-            "itemId": "resource.wood",
-            "quantity": 1
           }
         ],
         "type": "batchExchange"
@@ -698,10 +694,6 @@
         "removeEntries": [
           {
             "itemId": "resource.raw_wolf_meat",
-            "quantity": 1
-          },
-          {
-            "itemId": "resource.wood",
             "quantity": 1
           }
         ],

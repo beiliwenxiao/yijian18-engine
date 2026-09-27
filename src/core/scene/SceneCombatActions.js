@@ -66,6 +66,15 @@ export class SceneCombatActions {
     return magnitude > 0 ? { x: x / magnitude, y: y / magnitude } : { x: 1, y: 0 };
   }
 
+  /** 无方向输入时的攻击方向：保持攻击框（扇形）当前方向，不得自动转向玩家面向。 */
+  _getCurrentSectorDirection() {
+    const melee = this.scene?.meleeAttackSystem;
+    if (melee && Number.isFinite(melee.sectorDirection)) {
+      return { x: Math.cos(melee.sectorDirection), y: Math.sin(melee.sectorDirection) };
+    }
+    return this._getPlayerFacingDirection();
+  }
+
   attackByFacing() {
     if (this._isLocked()) return false;
     const scene = this.scene;
@@ -94,7 +103,7 @@ export class SceneCombatActions {
     const inputMagnitude = Math.hypot(x, y);
     const direction = inputMagnitude > 0
       ? { x: x / inputMagnitude, y: y / inputMagnitude }
-      : this._getPlayerFacingDirection();
+      : this._getCurrentSectorDirection();
     const attackIntent = {
       ...intentDetails,
       type: 'attack',
@@ -499,10 +508,12 @@ export class SceneCombatActions {
       };
     }
 
-    const direction = controller.attackDirection || this._getPlayerFacingDirection();
+    // 无 RS 瞄准输入时不改写攻击框方向（不得自动转向玩家面向）；有瞄准输入才跟随。
+    if (controller.attackDirection) {
+      melee.sectorDirection = Math.atan2(controller.attackDirection.y, controller.attackDirection.x);
+    }
     melee.setPlayerEntity(scene.playerEntity);
     melee.setEntities(scene.entities);
-    melee.sectorDirection = Math.atan2(direction.y, direction.x);
     melee.sectorDirectionLocked = true;
     melee.sectorIsRanged = melee.checkIsRangedWeapon();
   }
@@ -554,8 +565,8 @@ export class SceneCombatActions {
     const magnitude = Math.hypot(Number(rawDirection?.x) || 0, Number(rawDirection?.y) || 0);
     const direction = magnitude > 0
       ? { x: rawDirection.x / magnitude, y: rawDirection.y / magnitude }
-      : this._getPlayerFacingDirection();
-    // 快按时只要 RT holding 内出现过有效 RS 方向也采用该方向；死区内稳定回退角色 facing。
+      : this._getCurrentSectorDirection();
+    // 快按时只要 RT holding 内出现过有效 RS 方向也采用该方向；死区内保持攻击框当前方向。
     return this.attackByDirection(direction.x, direction.y, undefined, {
       source: 'gamepad',
       holdMs: intent?.holdMs,

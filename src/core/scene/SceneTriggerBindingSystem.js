@@ -27,6 +27,10 @@ import { resolveSceneSpatialGeometry } from './SceneSpatialGeometry.js';
 
 const EMPTY_TARGETS = Object.freeze([]);
 
+/** 传送点/目标点语义：目标对象带这些角色、或 ID 含出口/检查点/撤离语义时，地面绘制发光光圈。 */
+const GROUND_MARKER_ROLES = new Set(['travelCheckpoint', 'travelMarker', 'rescueObjective', 'storyMarker']);
+const GROUND_MARKER_ID_PATTERN = /(?:exit|checkpoint|retreat)/i;
+
 /**
  * 场景空间触发器绑定：只处理已投影到世界坐标的 binding，行为始终由 TriggerSystem 执行。
  */
@@ -278,6 +282,30 @@ export class SceneTriggerBindingSystem {
   /** 当前是否有空间 trigger 占用交互提示。 */
   hasActivePrompt() {
     return this._activePromptBindingId !== null;
+  }
+
+  /**
+   * 传送点/目标点地面光圈锚点：仅收集当前激活的旅行/目标语义绑定。
+   * 供渲染层在背景之后绘制发光椭圆；不执行 trigger、不改状态。
+   * @returns {Array<{x:number, y:number, radius:number}>}
+   */
+  getGroundMarkerAnchors() {
+    if (this._disposed) return EMPTY_TARGETS;
+    const markers = [];
+    for (const binding of this.bindings) {
+      if (!this._isBindingActive(binding) || this._completedBindings.has(binding.id)) continue;
+      const definition = this.triggerSystem?.getById?.(binding.triggerId);
+      if (definition?.once && this.triggerSystem.hasFiredOnce?.(binding.triggerId)) continue;
+      const spatial = this._resolveSpatialCached(binding);
+      const target = spatial.targets[0] || null;
+      const role = String(target?.semanticRole || binding.semanticRole || '');
+      const targetId = String(target?.id || binding.target || '');
+      if (!GROUND_MARKER_ROLES.has(role) && !GROUND_MARKER_ID_PATTERN.test(targetId)) continue;
+      const anchor = spatial.geometry.anchor;
+      const radius = Math.min(48, Math.max(22, (Number(binding.radius) || 0) * 0.42));
+      markers.push(Object.freeze({ x: anchor.x, y: anchor.y, radius }));
+    }
+    return markers;
   }
 
   /** 返回只读调试快照；仅解析空间事实，不执行 trigger 或修改业务状态。 */

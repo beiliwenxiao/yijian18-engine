@@ -20,8 +20,10 @@
 
  ************************************************************/
 
+import { GroundMarkerRenderer } from '../../rendering/GroundMarkerRenderer.js';
+
 const WORLD_PHASE_NAMES = Object.freeze([
-  'renderBackground', 'renderPickups', 'renderWorldObjects', 'renderWorldEffects'
+  'renderBackground', 'renderGroundMarkers', 'renderPickups', 'renderWorldObjects', 'renderWorldEffects'
 ]);
 
 /** 天气 id → 中文显示名（时间/气候小窗用）。 */
@@ -46,6 +48,7 @@ export class SceneRenderPipeline {
     this.context = config?.context || this.scene?.context || null;
     this.worldLayers = config?.worldLayers || [
       (scene, ctx) => scene.renderBackground(ctx),
+      (_scene, ctx) => this._renderGroundMarkers(ctx),
       (scene, ctx) => scene.renderPickupItems(ctx),
       (scene, ctx) => scene.renderWorldObjects(ctx),
       (_scene, ctx) => this._renderWorldEffects(ctx)
@@ -409,11 +412,13 @@ export class SceneRenderPipeline {
     const player = this.context?.player?.entity || null;
     const soulState = player?.isSoulState === true;
     const inCombat = combatSystem?.isInCombat() === true;
+    // 战斗中有存活己方军队 → 「军队战斗中」，否则「个人战斗中」
+    const armyAlive = scene?.armyCommandFlow?.system?.hasAliveUnits() === true;
     // 状态位常显：平时显示「正常」，战斗/灵魂状态切换对应样式
     const style = soulState
       ? { background: 'rgba(36, 47, 96, 0.82)', border: '#8fc7ff', primary: '灵魂状态', secondary: null, secondaryColor: null }
       : inCombat
-        ? { background: 'rgba(139, 0, 0, 0.7)', border: '#ff0000', primary: '战斗中', secondary: 'combat', secondaryColor: null }
+        ? { background: 'rgba(139, 0, 0, 0.7)', border: '#ff0000', primary: armyAlive ? '军队战斗中' : '个人战斗中', secondary: 'combat', secondaryColor: null }
         : { background: 'rgba(40, 90, 45, 0.72)', border: '#8fd6a1', primary: '状态正常', secondary: null, secondaryColor: null };
 
     const minimap = scene?.minimap;
@@ -471,6 +476,25 @@ export class SceneRenderPipeline {
       ctx.fillText(style.primary, textX, y + height / 2 + textOffsetY, maxTextWidth);
     }
     ctx.restore();
+  }
+
+  /**
+   * 地面发光标记层：传送点（旅行/出口语义触发绑定）蓝色光圈 + 任务目标点金色光圈。
+   * 在背景之后、可拾取物与实体之前绘制，保证贴地且遮挡关系正确。
+   */
+  _renderGroundMarkers(ctx) {
+    const time = performance.now() / 1000;
+    const bindings = this.scene?._sceneTriggerBindings;
+    const anchors = typeof bindings?.getGroundMarkerAnchors === 'function'
+      ? bindings.getGroundMarkerAnchors()
+      : [];
+    for (const anchor of anchors) {
+      GroundMarkerRenderer.renderGlowEllipse(ctx, {
+        x: anchor.x, y: anchor.y, radius: anchor.radius, color: '126, 199, 255', time
+      });
+    }
+    const beacon = this.context?.presentation?.taskMarkerBeacon || this.scene?.taskMarkerBeacon;
+    if (typeof beacon?.renderGroundMarkers === 'function') beacon.renderGroundMarkers(ctx, time);
   }
 
   _renderWorldEffects(ctx) {

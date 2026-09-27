@@ -125,6 +125,7 @@ export class ArmyCommandHUD extends UIElement {
 
   /** @param {CanvasRenderingContext2D} ctx */
   render(ctx) {
+    if (this.visible === false) return; // 军队按钮可整体开关操作条
     if (!this.system.getUnitCount()) return;
     this._pulse += 0.12;
     const showStance = this.system.hasSquadSelection();
@@ -144,9 +145,9 @@ export class ArmyCommandHUD extends UIElement {
     return x >= this.x && x <= this.x + this.width && y >= this.y && y <= this.y + this.height;
   }
 
-  /** @returns {boolean} 是否消费该点击（预设面板/编组/姿态按钮命中才消费） */
+  /** @returns {boolean} 是否消费该点击（隐藏时不拦截；预设面板/编组/姿态按钮命中才消费） */
   handleMouseClick(x, y, button) {
-    if (button !== 'left') return false;
+    if (button !== 'left' || this.visible === false) return false;
     // 预设面板按钮（展开时位于最上层）
     for (const item of this._presetButtons) {
       if (x >= item.x && x <= item.x + item.width && y >= item.y && y <= item.y + item.height) {

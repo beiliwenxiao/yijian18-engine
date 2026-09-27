@@ -138,12 +138,12 @@
       "codes": [
         "line-limit-or-invalid-exception"
       ],
-      "evidence": "历史大文件，拆分列入架构治理计划：拆一个移一个，修改本文件前需重新审批",
-      "lines": 3677,
+      "evidence": "历史大文件，拆分列入架构治理计划：拆一个移一个，修改本文件前需重新审批；2026-09-27 已将登录/存档/摇杆/触控核心整段拆入 src/platform（login/LoginMenuCore、save/SavePickerCore、save/SaveStorageCore、save/AutoSaveCore、touch/VirtualJoystickCore、touch/TouchControlsCore、touch/SkillAimTouchCore），剩余为宿主装配、游戏循环与 UI 编排",
+      "lines": 1368,
       "responsibility": "assembly",
       "owner": "beiliwenxiao",
       "date": "2026-09-27",
-      "contentHash": "57b4d003d91e1ebf44d326f4b5a404f5c3fe78ebc00217b74153752590eab03b"
+      "contentHash": "de42079c83c350618702bbd7f228d65e0f02de21968cc9e969dd5564e26b535a"
     },
     {
       "file": "example/sanguo_zhangjiao/scenes/BaseGameSceneSetup.js",
@@ -151,11 +151,11 @@
         "line-limit-or-invalid-exception"
       ],
       "evidence": "历史大文件，拆分列入架构治理计划：拆一个移一个，修改本文件前需重新审批",
-      "lines": 1209,
+      "lines": 1219,
       "responsibility": "presentation",
       "owner": "beiliwenxiao",
       "date": "2026-09-27",
-      "contentHash": "5f691c444ad5be76372539af8c8925277c85e60c387f567b001676399dd51121"
+      "contentHash": "71b22e98820e0511444d02fca0dfe4dfa1dcf6eb2858e4bcc3fa8def984c0d53"
     },
     {
       "file": "example/sanguo_zhangjiao/scenes/DataDrivenPrologueScene.js",
@@ -190,11 +190,11 @@
         "line-limit-or-invalid-exception"
       ],
       "evidence": "历史大文件，拆分列入架构治理计划：拆一个移一个，修改本文件前需重新审批；内容工程向数据驱动迁移的过渡 handler/分支，迁移完成前冻结；修改本文件前需重新审批",
-      "lines": 2042,
+      "lines": 2040,
       "responsibility": "businessLogic",
       "owner": "beiliwenxiao",
       "date": "2026-09-27",
-      "contentHash": "8cce95f3e4711083289864b30c3b36c444e375d98f8ef9c74b0392a39fb5463e"
+      "contentHash": "bf8d6188fe27f8d7f16470a40a2162a83b0fdf86b741bbdb379baf9d432a08d5"
     },
     {
       "file": "example/sanguo_zhangjiao/systems/S02ArmyRescueFlow.js",
@@ -435,11 +435,11 @@
         "business-dom-or-canvas-access"
       ],
       "evidence": "历史大文件+篝火大气离屏画布合成（表现关注点滞留业务层）：拆分/移层列入架构治理计划，修改本文件前需重新审批",
-      "lines": 1159,
+      "lines": 1162,
       "responsibility": "businessLogic",
       "owner": "beiliwenxiao",
       "date": "2026-09-27",
-      "contentHash": "7e4d8662e6dcfe8354b4fe9abd78d188288430e20047ebb1dc609ea167587e31"
+      "contentHash": "f4aa188061854d25758cb3d45a6e88ee05b0ed4537612fb7d4726a0594f47da6"
     },
     {
       "file": "src/core/scene/ScenePlacementRuntime.js",
@@ -495,11 +495,11 @@
         "line-limit-or-invalid-exception"
       ],
       "evidence": "历史大文件，拆分列入架构治理计划：拆一个移一个，修改本文件前需重新审批",
-      "lines": 1076,
+      "lines": 1091,
       "responsibility": "businessLogic",
       "owner": "beiliwenxiao",
       "date": "2026-09-27",
-      "contentHash": "f32f654d9a2391f7a3917228eb61cf4f99033e75794640e759afd3f5dec3aedb"
+      "contentHash": "a21e4124f325f254161e6a85a8f89d460bba3231019e042fd91d63076769fda2"
     },
     {
       "file": "src/systems/CombatSystem.js",

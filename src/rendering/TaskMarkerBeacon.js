@@ -18,7 +18,9 @@
  * （与小地图任务投影同一份 taskGraph 投影，坐标为世界坐标）。
  *
  * 表现：萤火虫式发光点 + 星形闪光，明暗错落持续闪烁；周期性一簇星形
- * 萤光轻轻弹起（节奏感"看这里"）。纯表现组件：authority 'client'，不写回任何工程数据。
+ * 萤光轻轻弹起（节奏感"看这里"）。常驻显示但发射率刻意压低（默认
+ * 每点每秒 3 粒），引导提示而不刷屏。纯表现组件：authority 'client'，
+ * 不写回任何工程数据。
  *
  * 使用方式：
  *   const beacon = new TaskMarkerBeacon(scene.particleSystem);
@@ -26,20 +28,22 @@
  *   beacon.update(deltaTime);
  */
 
+import { GroundMarkerRenderer } from './GroundMarkerRenderer.js';
+
 const finite = value => Number.isFinite(value) ? value : null;
 
 export class TaskMarkerBeacon {
   /**
    * @param {import('./ParticleSystem.js').ParticleSystem|null} particleSystem
    * @param {Object} [options]
-   * @param {number} [options.rate=6] - 每个任务点的常驻发射率（粒子/秒）
+   * @param {number} [options.rate=3] - 每个任务点的常驻发射率（粒子/秒）
    * @param {number} [options.pulseInterval=2.5] - 脉冲爆发间隔（秒）
    * @param {string} [options.color='#ffd54f'] - 主色（与任务标记同色系）
    * @param {string} [options.highlightColor='#fff8dc'] - 高亮色（少量混入）
    */
   constructor(particleSystem, options = {}) {
     this.particleSystem = particleSystem || null;
-    this.rate = Number(options.rate) > 0 ? Number(options.rate) : 6;
+    this.rate = Number(options.rate) > 0 ? Number(options.rate) : 3;
     this.pulseInterval = Number(options.pulseInterval) > 0 ? Number(options.pulseInterval) : 2.5;
     this.color = options.color || '#ffd54f';
     this.highlightColor = options.highlightColor || '#fff8dc';
@@ -107,6 +111,24 @@ export class TaskMarkerBeacon {
   /** 清空任务点（场景切换时调用；已发射粒子随生命自然消亡）。 */
   clear() {
     this._points = [];
+  }
+
+  /**
+   * 目标点地面光圈：金色发光椭圆贴地呼吸，与粒子同色系。
+   * 在世界层背景之后调用，保证光圈被实体正确遮挡。
+   * @param {CanvasRenderingContext2D} ctx
+   * @param {number} [time] - 秒；缺省取 performance.now()
+   */
+  renderGroundMarkers(ctx, time = performance.now() / 1000) {
+    for (const point of this._points) {
+      GroundMarkerRenderer.renderGlowEllipse(ctx, {
+        x: point.x,
+        y: point.y,
+        radius: 30,
+        color: '255, 213, 79',
+        time
+      });
+    }
   }
 
   /** 萤火虫萤光：小发光点/星形闪光，明暗与寿命各自随机，群体验闪烁感。 */

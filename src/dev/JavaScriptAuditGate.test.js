@@ -136,6 +136,7 @@ describe('JavaScriptAuditGate', () => {
       'editor/SceneDataManager.js': 'const stamp = Date.now();\ndocument.title = "editor";',
       'src/network/WebSocketClient.js': 'this.lastPongTime = Date.now();\nsetInterval(() => {}, 1000);\ndocument.title = "net";',
       'src/core/snapshot/IndexedDBAdapter.js': 'updatedAt: Date.now(),',
+      'src/platform/save/SaveStorageCore.js': 'const stamp = Date.now();\ndocument.getElementById("save-slots");',
       'src/core/RNG.js': 'this._state = (seed != null ? seed : (Date.now() >>> 0)) >>> 0;',
       'src/systems/StillBusiness.js': 'Math.random();'
     });
@@ -143,6 +144,7 @@ describe('JavaScriptAuditGate', () => {
     expect(byFile('editor/SceneDataManager.js')).toMatchObject({ responsibility: 'editorInteraction' });
     expect(byFile('src/network/WebSocketClient.js')).toMatchObject({ responsibility: 'platformInfra' });
     expect(byFile('src/core/snapshot/IndexedDBAdapter.js')).toMatchObject({ responsibility: 'platformInfra' });
+    expect(byFile('src/platform/save/SaveStorageCore.js')).toMatchObject({ responsibility: 'platformInfra' });
     expect(byFile('src/core/RNG.js')).toMatchObject({ responsibility: 'platformInfra' });
     expect(report.violations.filter(violation => violation.file !== 'src/systems/StillBusiness.js'
       && violation.code !== 'line-limit-or-invalid-exception')).toEqual([]);
