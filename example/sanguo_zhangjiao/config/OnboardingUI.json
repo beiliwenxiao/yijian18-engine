@@ -333,15 +333,18 @@
       },
       "revealComponentIds": [
         "pc-hp-orb",
-        "pc-potion1"
+        "pc-potion1",
+        "hb-hp"
       ],
       "enabledComponentIds": [
         "pc-hp-orb",
-        "pc-potion1"
+        "pc-potion1",
+        "hb-hp"
       ],
       "highlightComponentIds": [
         "pc-hp-orb",
-        "pc-potion1"
+        "pc-potion1",
+        "hb-hp"
       ],
       "hintAction": ""
     }
