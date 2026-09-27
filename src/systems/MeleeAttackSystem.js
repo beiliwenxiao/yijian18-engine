@@ -138,11 +138,38 @@ export class MeleeAttackSystem {
     // 更新刀光/箭光特效
     this.updateSectorSlashEffects(1 / 60);
 
-    // 计算鼠标方向角度（当方向未被外部锁定时）
+    // 计算攻击方向（当方向未被外部锁定时）：
+    // - 手柄连接：
+    //   · 右摇杆驱动准星（isGamepadCursorActive）→ 跟随准星方向；
+    //   · 右摇杆无输入 → 持续软锁定：附近有存活敌人时攻击框每帧指向最近敌人
+    //     （敌人一出现方向即就绪，攻击瞬间无需抢方向）。
+    //   鼠标移动、触摸、左摇杆移动均不改变攻击方向（是否跟随与左摇杆无关）。
+    // - 键鼠：鼠标移动（有方向操作）→ 跟随鼠标；鼠标静止 → 保持当前方向。
+    //   PC 不启用自动瞄准（鼠标已控制方向），手柄 RT holding 由 SceneCombatActions._syncGamepadAttackAim 锁定处理。
     if (!this.sectorDirectionLocked) {
-      const dx = mouseWorldPos.x - playerCenter.x;
-      const dy = mouseWorldPos.y - playerCenter.y;
-      this.sectorDirection = Math.atan2(dy, dx);
+      const gamepadOn = this.inputManager.isGamepadConnected?.() === true;
+      const mouse = this.inputManager.getMousePosition?.() || { x: NaN, y: NaN };
+      if (gamepadOn) {
+        this._lastAimMouse = { x: mouse.x, y: mouse.y };
+        if (this.inputManager.isGamepadCursorActive?.() === true) {
+          const dx = mouseWorldPos.x - playerCenter.x;
+          const dy = mouseWorldPos.y - playerCenter.y;
+          this.sectorDirection = Math.atan2(dy, dx);
+        } else {
+          const aim = this.getNearestEnemyDirection?.(480);
+          if (aim) this.sectorDirection = Math.atan2(aim.y, aim.x);
+        }
+      } else {
+        const mouseMoved = !this._lastAimMouse
+          || mouse.x !== this._lastAimMouse.x
+          || mouse.y !== this._lastAimMouse.y;
+        this._lastAimMouse = { x: mouse.x, y: mouse.y };
+        if (mouseMoved) {
+          const dx = mouseWorldPos.x - playerCenter.x;
+          const dy = mouseWorldPos.y - playerCenter.y;
+          this.sectorDirection = Math.atan2(dy, dx);
+        }
+      }
     }
 
     // 判断近战/远程
@@ -743,10 +770,39 @@ export class MeleeAttackSystem {
 
   /**
    * 获取扇形方向（供外部使用）
-   * @returns {number}
    */
   getSectorDirection() {
     return this.sectorDirection;
+  }
+
+  /**
+   * 自动瞄准辅助：最近存活敌人的方向向量（战斗辅助瞄准用）。
+   * 排除死亡/濒死/剧情倒地目标；无玩家、无实体或射程外无敌人时返回 null。
+   * @param {number} [maxRange=480] - 索敌半径（世界像素）
+   * @returns {{x:number, y:number}|null} 归一化方向向量
+   */
+  getNearestEnemyDirection(maxRange = 480) {
+    const transform = this.playerEntity?.getComponent?.('transform');
+    if (!transform) return null;
+    const px = transform.position.x;
+    const py = transform.position.y;
+    let best = null;
+    let bestDistSq = maxRange * maxRange;
+    for (const entity of this.entities || []) {
+      if (!entity || entity.type !== 'enemy' || entity.isDead || entity.isDying || entity.plotDowned) continue;
+      const enemyTransform = entity.getComponent?.('transform');
+      if (!enemyTransform) continue;
+      const dx = enemyTransform.position.x - px;
+      const dy = enemyTransform.position.y - py;
+      const distSq = dx * dx + dy * dy;
+      if (distSq < bestDistSq) {
+        bestDistSq = distSq;
+        best = { x: dx, y: dy };
+      }
+    }
+    if (!best) return null;
+    const magnitude = Math.hypot(best.x, best.y) || 1;
+    return { x: best.x / magnitude, y: best.y / magnitude };
   }
 
   /**

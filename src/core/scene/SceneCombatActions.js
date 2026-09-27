@@ -78,7 +78,8 @@ export class SceneCombatActions {
   attackByFacing() {
     if (this._isLocked()) return false;
     const scene = this.scene;
-    const direction = this._getPlayerFacingDirection();
+    // 无方向操作：使用攻击框当前方向（手柄下 MeleeAttackSystem.update 已持续软锁定最近敌人）。
+    const direction = this._getCurrentSectorDirection();
     if (scene.handleBasicAttackIntent?.({ type: 'attack', direction, source: 'touch' }) === true) return true;
     if (!scene.playerEntity || !scene.meleeAttackSystem || !this._canAttack()) return false;
     const transform = scene.playerEntity.getComponent('transform');
@@ -508,9 +509,13 @@ export class SceneCombatActions {
       };
     }
 
-    // 无 RS 瞄准输入时不改写攻击框方向（不得自动转向玩家面向）；有瞄准输入才跟随。
+    // 有 RS 瞄准输入时跟随输入；无输入时战斗中自动瞄准最近存活敌人
+    // （无敌人则保持攻击框当前方向，不得自动转向玩家面向）。
     if (controller.attackDirection) {
       melee.sectorDirection = Math.atan2(controller.attackDirection.y, controller.attackDirection.x);
+    } else {
+      const aim = melee.getNearestEnemyDirection?.();
+      if (aim) melee.sectorDirection = Math.atan2(aim.y, aim.x);
     }
     melee.setPlayerEntity(scene.playerEntity);
     melee.setEntities(scene.entities);
@@ -566,7 +571,7 @@ export class SceneCombatActions {
     const direction = magnitude > 0
       ? { x: rawDirection.x / magnitude, y: rawDirection.y / magnitude }
       : this._getCurrentSectorDirection();
-    // 快按时只要 RT holding 内出现过有效 RS 方向也采用该方向；死区内保持攻击框当前方向。
+    // 快按时只要 RT holding 内出现过有效 RS 方向也采用该方向；死区内用攻击框当前方向（已被软锁定就绪）。
     return this.attackByDirection(direction.x, direction.y, undefined, {
       source: 'gamepad',
       holdMs: intent?.holdMs,

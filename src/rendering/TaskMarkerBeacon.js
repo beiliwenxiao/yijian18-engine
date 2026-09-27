@@ -28,8 +28,6 @@
  *   beacon.update(deltaTime);
  */
 
-import { GroundMarkerRenderer } from './GroundMarkerRenderer.js';
-
 const finite = value => Number.isFinite(value) ? value : null;
 
 export class TaskMarkerBeacon {
@@ -111,24 +109,6 @@ export class TaskMarkerBeacon {
   /** 清空任务点（场景切换时调用；已发射粒子随生命自然消亡）。 */
   clear() {
     this._points = [];
-  }
-
-  /**
-   * 目标点地面光圈：金色发光椭圆贴地呼吸，与粒子同色系。
-   * 在世界层背景之后调用，保证光圈被实体正确遮挡。
-   * @param {CanvasRenderingContext2D} ctx
-   * @param {number} [time] - 秒；缺省取 performance.now()
-   */
-  renderGroundMarkers(ctx, time = performance.now() / 1000) {
-    for (const point of this._points) {
-      GroundMarkerRenderer.renderGlowEllipse(ctx, {
-        x: point.x,
-        y: point.y,
-        radius: 30,
-        color: '255, 213, 79',
-        time
-      });
-    }
   }
 
   /** 萤火虫萤光：小发光点/星形闪光，明暗与寿命各自随机，群体验闪烁感。 */

@@ -493,8 +493,6 @@ export class SceneRenderPipeline {
         x: anchor.x, y: anchor.y, radius: anchor.radius, color: '126, 199, 255', time
       });
     }
-    const beacon = this.context?.presentation?.taskMarkerBeacon || this.scene?.taskMarkerBeacon;
-    if (typeof beacon?.renderGroundMarkers === 'function') beacon.renderGroundMarkers(ctx, time);
   }
 
   _renderWorldEffects(ctx) {
