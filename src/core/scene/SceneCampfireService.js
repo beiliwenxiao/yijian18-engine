@@ -192,8 +192,13 @@ const campfireFeatureMethods = {
           // 火焰语义渲染：径向渐变发光 + 火舌摆动，叠加发光避免实心圆"泡泡"感
           isFire: true,
           blendMode: 'lighter',
-          // worldDepth Y-sort 必需：缺 sortY 会让深度排序 NaN 失效，火焰粒子盖住走近的玩家
-          sortY: firePoint.y
+          // 必须显式进入 worldDepth 深度排序队列：缺省 renderLayer='effects' 会让
+          // 火焰在特效层最后绘制、永远盖在玩家身上（sortY 随之失效）。
+          renderLayer: 'worldDepth',
+          // worldDepth Y-sort 必需：缺 sortY 会让深度排序 NaN 失效，火焰粒子盖住走近的玩家。
+          // 遮挡锚点取火堆南缘（campfire.y + 15）而非火焰基点：与树一致——玩家站在
+          // 火堆南半边即整体位于火焰之前，站到火堆北侧才被火焰遮挡。
+          sortY: this.campfire.y + 15
         }
       })
     );
