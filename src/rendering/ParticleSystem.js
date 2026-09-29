@@ -143,7 +143,9 @@ export class ParticleSystem {
       duration: config.duration || Infinity,
       active: true,
       elapsed: 0,
-      accumulator: 0
+      accumulator: 0,
+      // 可选逐粒子速度抖动（如烟雾飘散）：{ x: 全幅, y: 全幅 }，缺省不抖动
+      velocityJitter: config.velocityJitter || null
     };
 
     return emitter;
@@ -167,10 +169,17 @@ export class ParticleSystem {
     const interval = 1 / emitter.rate;
 
     while (emitter.accumulator >= interval) {
-      this.emit({
+      const config = {
         ...emitter.particleConfig,
         position: { ...emitter.position }
-      });
+      };
+      const jitter = emitter.velocityJitter;
+      if (jitter) {
+        config.velocity = { ...(config.velocity || { x: 0, y: 0 }) };
+        config.velocity.x += (Math.random() - 0.5) * jitter.x;
+        config.velocity.y += (Math.random() - 0.5) * jitter.y;
+      }
+      this.emit(config);
       emitter.accumulator -= interval;
     }
   }

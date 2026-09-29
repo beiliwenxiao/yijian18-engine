@@ -1,14 +1,5 @@
 {
   "schemaVersion": 1,
-  "shards": {
-    "triggers": "project/triggers.json",
-    "commands": "project/commands.json",
-    "library": "project/library.json",
-    "triggerCatalog": "project/triggerCatalog.json",
-    "quests": "project/quests.json",
-    "tutorials": "project/tutorials.json",
-    "dialogues": "project/dialogues.json"
-  },
   "meta": {
     "id": "sanguo_zhangjiao",
     "name": "三国张角传",
@@ -2149,5 +2140,14 @@
         "schemaVersion": 1
       }
     }
+  },
+  "shards": {
+    "commands": "project/commands.json",
+    "dialogues": "project/dialogues.json",
+    "library": "project/library.json",
+    "quests": "project/quests.json",
+    "triggerCatalog": "project/triggerCatalog.json",
+    "triggers": "project/triggers.json",
+    "tutorials": "project/tutorials.json"
   }
 }

@@ -25,7 +25,10 @@
       {
         "id": "lightCampfire",
         "mapTargets": [
-          { "sceneId": "S01", "targetId": "S01-spawn-campfire" }
+          {
+            "sceneId": "S01",
+            "targetId": "S01-spawn-campfire"
+          }
         ],
         "objectiveType": "commit.fact",
         "target": "story.s01.campfireLit",
@@ -57,7 +60,10 @@
       {
         "id": "gatherBerries",
         "mapTargets": [
-          { "sceneId": "S01", "targetId": "S01-node-berry-1" }
+          {
+            "sceneId": "S01",
+            "targetId": "S01-node-berry-1"
+          }
         ],
         "objectiveType": "gather.item",
         "progressBy": null,
@@ -100,9 +106,18 @@
         },
         "id": "gatherWood",
         "mapTargets": [
-          { "sceneId": "S01", "targetId": "S01-node-wood-1" },
-          { "sceneId": "S01", "targetId": "S01-node-wood-2" },
-          { "sceneId": "S01", "targetId": "S01-node-wood-3" }
+          {
+            "sceneId": "S01",
+            "targetId": "S01-node-wood-1"
+          },
+          {
+            "sceneId": "S01",
+            "targetId": "S01-node-wood-2"
+          },
+          {
+            "sceneId": "S01",
+            "targetId": "S01-node-wood-3"
+          }
         ],
         "objectiveType": "gather.item",
         "progressBy": "accepted",
@@ -114,7 +129,10 @@
       {
         "id": "spotWolf",
         "mapTargets": [
-          { "sceneId": "S01", "targetId": "S01-spawn-campfire" }
+          {
+            "sceneId": "S01",
+            "targetId": "S01-spawn-campfire"
+          }
         ],
         "objectiveType": "commit.fact",
         "target": "story.s01.refuelCampfire",
@@ -176,7 +194,10 @@
       {
         "id": "cookMeat",
         "mapTargets": [
-          { "sceneId": "S01", "targetId": "S01-prop-cooking-rack" }
+          {
+            "sceneId": "S01",
+            "targetId": "S01-prop-cooking-rack"
+          }
         ],
         "objectiveType": "commit.fact",
         "target": "story.s01.cookMeat",
@@ -186,7 +207,10 @@
       {
         "id": "craftGear",
         "mapTargets": [
-          { "sceneId": "S01", "targetId": "S01-prop-tanning-rack" }
+          {
+            "sceneId": "S01",
+            "targetId": "S01-prop-tanning-rack"
+          }
         ],
         "objectiveType": "commit.fact",
         "target": "story.s01.wolfGearCrafted",
@@ -196,7 +220,10 @@
       {
         "id": "buildShelter",
         "mapTargets": [
-          { "sceneId": "S01", "targetId": "S01-shelter-site-firewood" }
+          {
+            "sceneId": "S01",
+            "targetId": "S01-shelter-site-firewood"
+          }
         ],
         "objectiveType": "commit.fact",
         "target": "story.s01.shelterCompleted",
@@ -206,7 +233,10 @@
       {
         "id": "stayOvernight",
         "mapTargets": [
-          { "sceneId": "S01", "targetId": "S01-spawn-shelter-rest" }
+          {
+            "sceneId": "S01",
+            "targetId": "S01-spawn-shelter-rest"
+          }
         ],
         "objectiveType": "commit.fact",
         "target": "story.s01.overnight",
@@ -223,7 +253,10 @@
       {
         "id": "crossRiver",
         "mapTargets": [
-          { "sceneId": "S01", "targetId": "S01-river-far-bank" }
+          {
+            "sceneId": "S01",
+            "targetId": "S01-river-far-bank"
+          }
         ],
         "objectiveType": "commit.fact",
         "target": "story.s01.riverCrossed",
@@ -233,7 +266,10 @@
       {
         "id": "reachCliff",
         "mapTargets": [
-          { "sceneId": "S01", "targetId": "S01-cliff-base" }
+          {
+            "sceneId": "S01",
+            "targetId": "S01-cliff-base"
+          }
         ],
         "objectiveType": "commit.fact",
         "target": "story.s01.cliffReached",

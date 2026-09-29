@@ -720,6 +720,15 @@
             filter: grayscale(1);
         }
         .login-action:not(:disabled):hover, .save-picker-confirm:not(:disabled):hover, .save-picker-cancel:not(:disabled):hover { filter: brightness(1.18); }
+        /* 手柄/键盘导航焦点高亮：程序 focus() 在鼠标输入模态下不渲染浏览器默认
+           outline，系统菜单摇杆导航看不到选中项——必须显式定义焦点样式。 */
+        .login-action:focus, .save-picker-confirm:focus, .save-picker-cancel:focus,
+        .save-slot-option:focus, #overwrite-confirm-modal button:focus {
+            outline: 2px solid rgba(255, 255, 255, .9);
+            outline-offset: 1px;
+            filter: brightness(1.18);
+        }
+        .save-slot-option:focus { background: rgba(255, 255, 255, .07); }
         /* 按场景分列（用户裁定）：登录=继续/开始/读取/退出；游戏内=回到游戏/手动存档/读取/退出 */
         #login-manual-save, #login-return-game,
         #login-screen.in-game #login-continue, #login-screen.in-game #login-start { display: none; }

@@ -420,6 +420,18 @@ function settleOverwriteConfirmation(result, { restoreFocus = !result } = {}) {
     }
 }
 
+/** 弹窗关闭兜底：优先还原触发者（可见时），否则落到系统菜单第一个可见的菜单动作按钮。 */
+function refocusAfterModalClose(opener, restoreFocus) {
+    if (restoreFocus && opener?.isConnected && !shell.loginScreen.classList.contains('hidden')
+      && opener.offsetParent !== null) {
+        opener.focus();
+        return;
+    }
+    const fallback = Array.from(shell.loginScreen.querySelectorAll('.login-action'))
+        .find(button => button.offsetParent !== null && !button.disabled);
+    fallback?.focus();
+}
+
 function closeSavePicker({ restoreFocus = true } = {}) {
     if (isOverwriteConfirmationOpen()) {
         settleOverwriteConfirmation(false, { restoreFocus: false });

@@ -177,7 +177,7 @@ const campfireFeatureMethods = {
     this.campfire.hasBeenIgnited = true;
     this.campfire.emitters = [];
 
-    const fireBaseY = this.campfire.y - 15;
+    const fireBaseY = this.campfire.y - 18;
     const firePoint = { x: this.campfire.x, y: fireBaseY };
     const mk = (rate, vy, life, size, color, alpha) => this.campfire.emitters.push(
       this.particleSystem.createEmitter({
@@ -205,6 +205,27 @@ const campfireFeatureMethods = {
     for (const preset of this.particlePresets) {
       mk(preset.rate, preset.vy, preset.life, preset.size, preset.color, preset.alpha);
     }
+
+    // 烟雾：灰白色低透明烟团自火焰顶端缓缓升起，横向随机飘散后渐散。
+    // 与火焰同深度锚点（campfire.y + 15），负重力让烟越飘越快，模拟热浮力。
+    this.campfire.emitterSmoke = this.particleSystem.createEmitter({
+      position: { x: firePoint.x, y: firePoint.y - 42 },
+      rate: 2.4,
+      duration: Infinity,
+      velocityJitter: { x: 22, y: 5 },
+      particleConfig: {
+        position: { x: firePoint.x, y: firePoint.y - 42 },
+        velocity: { x: 0, y: -30 },
+        life: 1700,
+        size: 11,
+        color: '#878d94',
+        alpha: 0.15,
+        gravity: -7,
+        friction: 1,
+        renderLayer: 'worldDepth',
+        sortY: this.campfire.y + 15
+      }
+    });
 
     this.logger?.debug?.('SceneCampfireService: campfire particle emitters created');
     if (this.fuel.enabled === true && this.fuel.remainingSeconds > 0
@@ -238,15 +259,22 @@ const campfireFeatureMethods = {
     const time = this.now() / 1000;
     this.campfire.emitters.forEach((emitter, index) => {
       if (!emitter) return;
-      // 摆动/横移抖动收敛（原 ±5/±4 → ±3/±3）：火焰舞动更沉稳，不再急促跳动
+      // 摆动/横移抖动收敛（±3 → ±2）：火焰跳动更轻，只剩轻微摇曳
       const swayAmount = index < 2
-        ? (this.random() - 0.5) * 6
-        : Math.sin(time * 2 + index * 0.5) * 3 + (this.random() - 0.5) * 2;
+        ? (this.random() - 0.5) * 4
+        : Math.sin(time * 2 + index * 0.5) * 2 + (this.random() - 0.5) * 1.4;
       emitter.position.x = this.campfire.x + swayAmount;
       emitter.position.y = this.campfire.y - 13;
-      emitter.particleConfig.velocity.x = (this.random() - 0.5) * 6;
+      emitter.particleConfig.velocity.x = (this.random() - 0.5) * 4;
       this.particleSystem.updateEmitter(emitter, deltaTime);
     });
+    // 烟雾发射器：跟随火堆位置，每帧驱动生成与上升
+    const smokeEmitter = this.campfire.emitterSmoke;
+    if (smokeEmitter?.active) {
+      smokeEmitter.position.x = this.campfire.x;
+      smokeEmitter.position.y = this.campfire.y - 55;
+      this.particleSystem.updateEmitter(smokeEmitter, deltaTime);
+    }
   },
   /** TimeSystem 黑暗/色调 → 玩家与火堆透光 → WeatherSystem 粒子的固定表现顺序。 */
   renderAtmosphere(ctx) {

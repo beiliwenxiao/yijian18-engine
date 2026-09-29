@@ -265,13 +265,14 @@ async function openSystemMenu() {
     }
     await shell.refreshContinueGameAction();
     setLoginMessage('');
-    // 预武装：打开菜单时摇杆可能仍偏转（如跑动中按 Start），
-    // 不要求先归中即可立即导航（仍按方向变化离散步进）。
+    // 打开时 Start 正处于按下状态（menuStartWasDown=true）：松开前不会被误判为
+    // "再按关闭"；关闭由下一次 START 按下边沿触发，与按压时长无关。
     menuPadArmed = true;
-    menuPadForceArmed = true;
-    menuPadOpenedAt = performance.now();
+    menuStartWasDown = true;
+    menuPadCancelHandled = false;
     menuPadDirection = 0;
     menuPadIndex = 0;
+    menuPadLastStepAt = 0;
     loginScreen.classList.remove('hidden');
     // 游戏内「开始游戏/继续游戏」已按场景隐藏，焦点落到第一个可见可用选项
     focusFirstMenuAction();
@@ -356,8 +357,9 @@ window.addEventListener('keydown', event => {
 
 // 登录层不依赖活动场景，但复用正式 GamepadManager、Xbox360Profile 与项目绑定配置。
 let menuPadArmed = false;
-let menuPadForceArmed = false; // 程序预武装：打开菜单时的摇杆偏转/Start 残留不撤销武装
-let menuPadOpenedAt = 0;       // 打开时刻：窗口期内忽略 cancel 边沿，防 Start 按住误关菜单
+let menuPadCancelHandled = false; // cancel（B/RS）「按住即触发一次」标记：松开前不重复触发
+let menuStartWasDown = false;     // START 上帧状态：菜单打开时按住 Start，松开前不误判"再按关闭"
+let menuPadLastStepAt = 0;        // 摇杆步进冷却：防真机摇杆死区边缘抖动导致焦点乱跳
 let menuPadDirection = 0;
 let menuPadIndex = 0;
 let loginGamepadManager = null;
@@ -382,7 +384,6 @@ function refreshLoginGamepadActionButtons() {
 
 function resetLoginGamepadNavigation() {
     menuPadArmed = false;
-    menuPadForceArmed = false;
     menuPadDirection = 0;
 }
 
@@ -406,12 +407,15 @@ function pollLoginGamepad(generation) {
 
     const connected = loginGamepadManager.poll();
     if (!loginScreen.classList.contains('hidden') && connected) {
+        // START 纯开关：菜单可见时再按下的边沿 → 关闭最上层（与按压时长完全无关）。
+        // 打开由游戏输入侧负责（scene 运行时 toggle），打开后 scene 已 pause，
+        // 所以"再按关闭"必须在这里处理。
+        const startDown = loginGamepadManager.isButtonDown(PadButton.START);
+        const startPressedEdge = startDown && !menuStartWasDown;
+        menuStartWasDown = startDown;
+
         const move = loginGamepadManager.getMoveVector();
         const direction = move.y < 0 ? -1 : (move.y > 0 ? 1 : 0);
-        const confirmDown = isAnyMenuButtonDown(loginGamepadActionButtons.confirm);
-        const cancelDown = loginGamepadManager.isButtonDown(PadButton.B)
-            || isAnyMenuButtonDown(loginGamepadActionButtons.cancel)
-            || isAnyMenuButtonDown(loginGamepadActionButtons.settings);
         const isConfirmingOverwrite = shell.isOverwriteConfirmationOpen();
         const isEditingProfile = !isConfirmingOverwrite && isNewGameProfileOpen();
         const isPickingSave = !isConfirmingOverwrite && shell.saveSlotsElement.classList.contains('visible');
@@ -424,33 +428,41 @@ function pollLoginGamepad(generation) {
                     : Array.from(loginScreen.querySelectorAll('.login-action'))
                         .filter(button => button.offsetParent !== null && !button.disabled);
 
-        if (!menuPadArmed) {
-            // 程序预武装（menuPadForceArmed）保持到输入全中性：跑动中按 Start 打开菜单时
-            // 摇杆仍偏转/Start 仍按住，若按"归中+无按键"重新武装会导致菜单导航长期失效。
-            if (menuPadForceArmed) {
-                menuPadArmed = true;
-                if (!confirmDown && !cancelDown && direction === 0) menuPadForceArmed = false;
-            } else {
-                menuPadArmed = !confirmDown && !cancelDown && direction === 0;
-            }
+        // 菜单可见即武装：不存在"摇杆偏转/瞬断导致 armed 无法恢复"的死锁，
+        // 摇杆随时可用（防误触由 START 边沿语义与步进冷却保证）。
+        menuPadArmed = true;
+
+        if (startPressedEdge) {
+            // 再按 START：关最上层（确认弹窗 → 存档弹窗 → 系统菜单）
+            menuPadCancelHandled = false;
+            if (isConfirmingOverwrite) shell.settleOverwriteConfirmation(false);
+            else if (isPickingSave) shell.closeSavePicker();
+            else if (isEditingProfile) closeNewGameProfile();
+            else if (loginScreen.classList.contains('in-game')) closeSystemMenu();
         } else {
             if (active.length > 0) menuPadIndex = Math.min(menuPadIndex, active.length - 1);
             else menuPadIndex = 0;
 
-            if (isPickingSave && direction && direction !== menuPadDirection) {
-                const options = shell.getSavePickerEntries().filter(entry => !entry.disabled);
-                if (options.length > 0) {
-                    const currentIndex = options.findIndex(entry => entry.value === shell.getSelectedSaveValue());
-                    const baseIndex = currentIndex >= 0 ? currentIndex : 0;
-                    const nextIndex = (baseIndex + direction + options.length) % options.length;
-                    const nextEntry = options[nextIndex];
-                    if (nextEntry) {
-                        shell.selectSaveEntry(nextEntry.value, { focus: true });
+            // 摇杆离散步进 + 冷却：死区边缘抖动不会导致焦点乱跳
+            const stepReady = performance.now() - menuPadLastStepAt > 180;
+            if (stepReady && direction && direction !== menuPadDirection) {
+                if (isPickingSave) {
+                    const options = shell.getSavePickerEntries().filter(entry => !entry.disabled);
+                    if (options.length > 0) {
+                        const currentIndex = options.findIndex(entry => entry.value === shell.getSelectedSaveValue());
+                        const baseIndex = currentIndex >= 0 ? currentIndex : 0;
+                        const nextIndex = (baseIndex + direction + options.length) % options.length;
+                        const nextEntry = options[nextIndex];
+                        if (nextEntry) {
+                            shell.selectSaveEntry(nextEntry.value, { focus: true });
+                            menuPadLastStepAt = performance.now();
+                        }
                     }
+                } else if (active.length) {
+                    menuPadIndex = (menuPadIndex + direction + active.length) % active.length;
+                    active[menuPadIndex].focus();
+                    menuPadLastStepAt = performance.now();
                 }
-            } else if (!isPickingSave && direction && direction !== menuPadDirection && active.length) {
-                menuPadIndex = (menuPadIndex + direction + active.length) % active.length;
-                active[menuPadIndex].focus();
             }
 
             if (isAnyMenuButtonPressed(loginGamepadActionButtons.confirm)) {
@@ -459,15 +471,18 @@ function pollLoginGamepad(generation) {
                 else active[menuPadIndex]?.click();
             }
 
-            const cancelPressed = (performance.now() - menuPadOpenedAt > 300)
-              && (loginGamepadManager.isButtonPressed(PadButton.B)
-                || isAnyMenuButtonPressed(loginGamepadActionButtons.cancel)
-                || isAnyMenuButtonPressed(loginGamepadActionButtons.settings));
+            // cancel（B/RS）「按住即触发一次」：poll 空窗期的按下-释放不会错过
+            const cancelHeld = loginGamepadManager.isButtonDown(PadButton.B)
+                || isAnyMenuButtonDown(loginGamepadActionButtons.cancel);
+            const cancelPressed = cancelHeld && !menuPadCancelHandled;
             if (cancelPressed) {
+                menuPadCancelHandled = true;
                 if (isConfirmingOverwrite) shell.settleOverwriteConfirmation(false);
                 else if (isPickingSave) shell.closeSavePicker();
                 else if (isEditingProfile) closeNewGameProfile();
                 else if (loginScreen.classList.contains('in-game')) closeSystemMenu();
+            } else if (!cancelHeld) {
+                menuPadCancelHandled = false; // 松开即重置，下次按住可再次触发
             }
         }
         menuPadDirection = direction;

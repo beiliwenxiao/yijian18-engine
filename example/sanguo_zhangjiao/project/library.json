@@ -333,60 +333,60 @@
         },
         "particlePresets": [
           {
-            "alpha": 0.6,
-            "color": "#ffaa22",
-            "life": 250,
-            "rate": 6,
-            "size": 8.5,
-            "vy": -35
+            "alpha": 0.28,
+            "color": "#ff7a1e",
+            "life": 300,
+            "rate": 5,
+            "size": 10,
+            "vy": -34
           },
           {
-            "alpha": 0.55,
-            "color": "#ff8833",
-            "life": 200,
-            "rate": 8,
-            "size": 6,
+            "alpha": 0.25,
+            "color": "#f0541e",
+            "life": 260,
+            "rate": 7,
+            "size": 8,
             "vy": -25
           },
           {
-            "alpha": 0.7,
-            "color": "#ffffee",
-            "life": 400,
-            "rate": 4,
+            "alpha": 0.38,
+            "color": "#fff3c8",
+            "life": 210,
+            "rate": 5,
             "size": 4.5,
-            "vy": -85
-          },
-          {
-            "alpha": 0.65,
-            "color": "#ffee44",
-            "life": 350,
-            "rate": 10,
-            "size": 3.5,
-            "vy": -70
-          },
-          {
-            "alpha": 0.6,
-            "color": "#ff9933",
-            "life": 300,
-            "rate": 8,
-            "size": 2.5,
-            "vy": -55
-          },
-          {
-            "alpha": 0.55,
-            "color": "#ff5522",
-            "life": 250,
-            "rate": 6,
-            "size": 2,
-            "vy": -40
-          },
-          {
-            "alpha": 0.5,
-            "color": "#ff6633",
-            "life": 200,
-            "rate": 12,
-            "size": 2,
             "vy": -28
+          },
+          {
+            "alpha": 0.38,
+            "color": "#ffc93e",
+            "life": 340,
+            "rate": 9,
+            "size": 5,
+            "vy": -72
+          },
+          {
+            "alpha": 0.34,
+            "color": "#ff8a26",
+            "life": 310,
+            "rate": 8,
+            "size": 3.6,
+            "vy": -58
+          },
+          {
+            "alpha": 0.31,
+            "color": "#c8321e",
+            "life": 340,
+            "rate": 5,
+            "size": 3.4,
+            "vy": -105
+          },
+          {
+            "alpha": 0.17,
+            "color": "#6a7cff",
+            "life": 190,
+            "rate": 2,
+            "size": 3.5,
+            "vy": -15
           }
         ],
         "presentation": {

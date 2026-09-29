@@ -73,12 +73,12 @@ export class Particle {
     if (this.isFire) {
       const lifeRatio = this.life / this.maxLife;
       const ageRatio = 1 - lifeRatio; // 0到1，0是刚生成，1是快消失
-      
-      // 随着粒子上升，增加水平摆动（形成顶部的尖锐火舌）
-      const swingMultiplier = ageRatio * 3; // 上升过程中摆动增加3倍
+
+      // 随着粒子上升，增加水平摆动（形成顶部的尖锐火舌）；幅度收敛让跳动更沉稳
+      const swingMultiplier = ageRatio * 2; // 上升过程中摆动增加2倍
       const time = performance.now() / 1000;
-      const swing = Math.sin(time * 8 + this.position.x * 0.1) * 15 * swingMultiplier;
-      
+      const swing = Math.sin(time * 8 + this.position.x * 0.1) * 8 * swingMultiplier;
+
       this.velocity.x += swing * deltaTime;
     }
 
