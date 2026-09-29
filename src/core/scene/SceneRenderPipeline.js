@@ -278,8 +278,17 @@ export class SceneRenderPipeline {
       const corpseSortOffset = entity.isCorpse === true
         ? Number(entity.corpseDefinition?.presentation?.sortYOffset) || 0
         : 0;
-      item.y = (terrains.length > 0 ? position.y : position.y - (position.z || 0) * 0.01)
+      let itemY = (terrains.length > 0 ? position.y : position.y - (position.z || 0) * 0.01)
         + corpseSortOffset;
+      // 受控攀爬：玩家应绘制在被攀爬物（树/藤蔓）之上——排序基线抬升到攀爬面底部，
+      // 否则物件按自身底边排序会盖住攀爬中的玩家。
+      if (entity === context?.player?.entity) {
+        const climbPresentation = context?.systems?.locomotion?.getClimbPresentation?.(entity) || null;
+        if (climbPresentation?.enterBounds && Number.isFinite(climbPresentation.enterBounds.maxY)) {
+          itemY = Math.max(itemY, climbPresentation.enterBounds.maxY + 1);
+        }
+      }
+      item.y = itemY;
       item.sortPriority = 2;
       item.entity = entity;
       queue.push(item);
@@ -308,30 +317,8 @@ export class SceneRenderPipeline {
 
     if (terrains.length === 0) return;
     for (const terrain of terrains) terrain.renderCliffs?.(ctx);
-    this.renderControlledClimbBounds(ctx, context?.systems?.locomotion, context?.player?.entity);
     scene._renderBuffZones?.(ctx);
     scene.renderSpeechBubbles?.(ctx);
-  }
-
-  /** 受控攀爬的世界空间活动范围；只读取 LocomotionSystem 的表现投影。 */
-  renderControlledClimbBounds(ctx, locomotionSystem, player) {
-    const presentation = locomotionSystem?.getClimbPresentation?.(player);
-    const bounds = presentation?.bounds;
-    if (!bounds) return;
-    const width = Number(bounds.maxX) - Number(bounds.minX);
-    const height = Number(bounds.maxY) - Number(bounds.minY);
-    if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) return;
-
-    ctx.save();
-    ctx.lineWidth = 2.5;
-    ctx.strokeStyle = presentation.isAtExit ? 'rgba(155, 255, 166, 0.98)' : 'rgba(255, 218, 110, 0.96)';
-    ctx.shadowColor = presentation.isAtExit ? 'rgba(84, 224, 119, 0.8)' : 'rgba(255, 183, 58, 0.8)';
-    ctx.shadowBlur = 8;
-    ctx.setLineDash([7, 5]);
-    ctx.strokeRect(bounds.minX, bounds.minY, width, height);
-    ctx.setLineDash([]);
-
-    ctx.restore();
   }
 
   /** 入队前的无分配视野检测；边距覆盖名称、血条和高精灵。 @private */
@@ -415,6 +402,8 @@ export class SceneRenderPipeline {
     const player = this.context?.player?.entity || null;
     const soulState = player?.isSoulState === true;
     const inCombat = combatSystem?.isInCombat() === true;
+    // 受控攀爬中 → 状态条显示「攀爬中」
+    const climbing = scene?.locomotionSystem?.getClimbPresentation?.(player) != null;
     // 战斗中有存活己方军队 → 「军队战斗中」，否则「个人战斗中」
     const armyAlive = scene?.armyCommandFlow?.system?.hasAliveUnits() === true;
     // 状态位常显：平时显示「正常」，战斗/灵魂状态切换对应样式
@@ -422,7 +411,9 @@ export class SceneRenderPipeline {
       ? { background: 'rgba(36, 47, 96, 0.82)', border: '#8fc7ff', primary: '灵魂状态', secondary: null, secondaryColor: null }
       : inCombat
         ? { background: 'rgba(139, 0, 0, 0.7)', border: '#ff0000', primary: armyAlive ? '军队战斗中' : '个人战斗中', secondary: 'combat', secondaryColor: null }
-        : { background: 'rgba(40, 90, 45, 0.72)', border: '#8fd6a1', primary: '状态正常', secondary: null, secondaryColor: null };
+        : climbing
+          ? { background: 'rgba(90, 200, 140, 0.82)', border: '#5adc96', primary: '攀爬中', secondary: null, secondaryColor: null }
+          : { background: 'rgba(40, 90, 45, 0.72)', border: '#8fd6a1', primary: '状态正常', secondary: null, secondaryColor: null };
 
     const minimap = scene?.minimap;
     const layoutRect = this.context?.ui?.layout?.getScreenHudRect?.('combatStateBadge') || null;

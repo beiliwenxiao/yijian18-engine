@@ -173,18 +173,25 @@ export class SceneCombatActions {
     if (!scene.jumpSystem || !player || player.isDead || player.pinnedByWeapon) return false;
     if (scene.meditationSystem?.isActive?.() || scene.locomotionSystem?.isBusy?.(player)) return false;
 
-    const climbTarget = scene.resolveClimbTarget?.({ entity: player, direction: { x: dirX, y: dirY } }) || null;
-    if (climbTarget?.requiresClimbAbility === false) {
-      // 场景教学可声明 baseline 攀爬：仍由 canonical jump 动作进入同一 LocomotionSystem，
-      // 但不错误要求尚未解锁的成长型 climb 能力。
+    // 「跳离」冷却：刚从受控攀爬脱离的短窗（250ms）内不再解析攀爬目标，
+    // 让这次跳跃作为普通跳离开，而不是当帧又被吸附回攀爬面。
+    const climbDetachCooldown = scene.locomotionSystem?.getControlledClimbDetachCooldown?.(player) || 0;
+    const climbTarget = climbDetachCooldown > 0
+      ? null
+      : (scene.resolveClimbTarget?.({ entity: player, direction: { x: dirX, y: dirY } }) || null);
+    if (scene.debugMode === true) {
+      const pos = player.getComponent?.('transform')?.position;
+      console.log('[Climb] 跳跃解析攀爬目标:', climbTarget?.id || '未命中',
+        climbDetachCooldown > 0 ? `（脱离冷却 ${Math.round(climbDetachCooldown)}ms）` : '',
+        climbTarget ? `mode=${climbTarget.mode}` : '', pos ? `player=(${Math.round(pos.x)},${Math.round(pos.y)})` : '');
+    }
+    // 攀爬不再判断能力：跳跃命中攀爬面即直接进入攀爬（requiresClimbAbility 字段已废弃）
+    if (climbTarget) {
       return scene.locomotionSystem?.execute?.({
         caster: player,
         skillId: 'climb',
         context: { climbTarget }
       }) === true;
-    }
-    if (climbTarget && scene.abilitySystem?.isUnlocked?.(player, 'climb')) {
-      return this._useLocomotion('climb', { context: { climbTarget } });
     }
 
     const transform = player.getComponent?.('transform');

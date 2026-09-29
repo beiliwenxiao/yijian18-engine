@@ -36,16 +36,19 @@ const RECIPE_ACTIONS = Object.freeze({
   's01.roastedWolfMeat': Object.freeze({
     workstationId: 's01.cookingRack', placementId: 'S01-prop-cooking-rack', duration: 3,
     kind: 'cooking', inputImageId: 's01.item.rawWolfMeat', outputImageId: 's01.food.roastedWolfMeat',
+    outputItemId: 'food.roasted_wolf_meat',
     inputSize: Object.freeze({ width: 42, height: 34 }), outputSize: Object.freeze({ width: 44, height: 36 })
   }),
   's01.wolfHideVest': Object.freeze({
     workstationId: 's01.tanningRack', placementId: 'S01-prop-tanning-rack', duration: 3,
     kind: 'tanning', inputImageId: 's01.item.wolfHide', outputImageId: 's01.equipment.wolfHideVest',
+    outputItemId: 'equipment.s01.wolf_hide_vest',
     inputSize: Object.freeze({ width: 48, height: 38 }), outputSize: Object.freeze({ width: 46, height: 52 })
   }),
   's01.wolfHideBracers': Object.freeze({
     workstationId: 's01.tanningRack', placementId: 'S01-prop-tanning-rack', duration: 2,
     kind: 'tanning', inputImageId: 's01.item.wolfHide', outputImageId: 's01.equipment.wolfHideBracers',
+    outputItemId: 'equipment.s01.wolf_hide_bracers',
     inputSize: Object.freeze({ width: 48, height: 38 }), outputSize: Object.freeze({ width: 48, height: 40 })
   })
 });
@@ -1459,9 +1462,17 @@ export class S01S02Coordinator {
     const actorPosition = session.actor.getComponent?.('transform')?.position;
     const workstationPosition = session.workstation.getComponent?.('transform')?.position;
     if (!actorPosition || !workstationPosition) return 'workstationUnavailable';
-    return Math.hypot(actorPosition.x - workstationPosition.x, actorPosition.y - workstationPosition.y) > RECIPE_ACTION_RANGE
-      ? 'outOfRange'
+    if (Math.hypot(actorPosition.x - workstationPosition.x, actorPosition.y - workstationPosition.y) > RECIPE_ACTION_RANGE) {
+      return 'outOfRange';
+    }
+    // 成品入库预检：背包满会让制作动画播完后结算失败（材料不消耗、只报"制作结算失败"），
+    // 在开始前与制作中逐帧预演入库，提前拦下并给出明确原因。
+    const outputItem = this.scene.gameLoader?.getRegistry?.('items')?.get?.(session.action.outputItemId);
+    const inventory = session.actor?.getComponent?.('inventory');
+    const preview = outputItem && inventory
+      ? this.scene.inventoryTransactions?.previewAdd?.(inventory, outputItem, 1)
       : null;
+    return preview && preview.accepted < 1 ? (preview.reason || 'inventoryFull') : null;
   }
 
   _showRecipeActionProgress(event, session, progress = 0) {
@@ -1492,6 +1503,14 @@ export class S01S02Coordinator {
     ) === true;
   }
 
+  /** 常见失败码的玩家可读文案；返回 null 表示交给通用"结算失败"提示。 */
+  _recipeFailureText(code) {
+    if (code === 'inventoryFull' || code === 'insufficientCapacity') return '背包已满，无法放入成品，先腾出空间再制作。';
+    if (code === 'resourceCapacityFull') return '资源栏已满，无法放入成品，先整理资源再制作。';
+    if (code === 'insufficientItems') return '材料不足，无法完成制作。';
+    return null;
+  }
+
   interruptRecipeAction(reason = 'interrupted') {
     const session = this.recipeActionProgress;
     if (!session || session.committing) return false;
@@ -1501,6 +1520,8 @@ export class S01S02Coordinator {
     session.resolve({ ok: false, code: 'recipeActionInterrupted', reason });
     if (reason === 'damaged') {
       this.scene._showScreenTip('受到攻击，制作已中断，材料没有被消耗。', { title: '制作中断' });
+    } else if (reason === 'inventoryFull' || reason === 'resourceCapacityFull') {
+      this.scene._showScreenTip(this._recipeFailureText(reason), { title: '制作中断' });
     }
     return true;
   }
@@ -1620,7 +1641,13 @@ export class S01S02Coordinator {
       } else {
         this._showRecipeActionProgress('interrupted', session);
         this._showRecipeActionVisual('interrupted', session);
-        this.scene._showScreenTip(`制作结算失败：${result?.code || 'unknown'}。材料和剧情状态未改变。`, { title: '制作失败' });
+        const friendly = this._recipeFailureText(result?.code);
+        if (friendly) {
+          this.scene._showScreenTip(friendly, { title: '制作失败' });
+        } else {
+          this.scene._showScreenTip(`制作结算失败：${result?.code || 'unknown'}。材料和剧情状态未改变。`, { title: '制作失败' });
+        }
+        console.warn('[S01S02] 制作结算失败', { recipeId: session.recipeId, operationId: session.operationId, result });
       }
       if (this.recipeActionProgress === session) this.recipeActionProgress = null;
       session.resolve(result);
@@ -1653,7 +1680,10 @@ export class S01S02Coordinator {
     const actionStarted = this.recipeActionInFlight === pending;
     const result = await pending;
     if (!actionStarted && result?.ok === false) {
-      this.scene._showScreenTip(`无法开始制作：${result.code || 'unknown'}。`, { title: '制作未开始' });
+      const friendly = this._recipeFailureText(result.code);
+      this.scene._showScreenTip(friendly || `无法开始制作：${result.code || 'unknown'}。`, {
+        title: '制作未开始'
+      });
     }
     return result;
   }

@@ -406,6 +406,28 @@ export class SceneDiagnostics {
     return true;
   }
 
+  /**
+   * 攀爬区域调试显示（调试面板「显示攀爬区域」）：委托各地形的 renderClimbZonesDebug，
+   * 在后期管线顶层绘制 climbable shape 色块与可攀爬物件的三区多边形。调试层只读。
+   */
+  renderClimbZones(ctx, {
+    enabled = false,
+    camera = null,
+    terrains = []
+  } = {}) {
+    if (!enabled || !camera || !Array.isArray(terrains)) return false;
+    ctx.save();
+    const viewBounds = camera.getViewBounds();
+    ctx.translate(-viewBounds.left, -viewBounds.top);
+    for (const terrain of terrains) {
+      if (typeof terrain?.renderClimbZonesDebug === 'function') {
+        terrain.renderClimbZonesDebug(ctx);
+      }
+    }
+    ctx.restore();
+    return true;
+  }
+
   /** 绘制角色脚点的实体椭圆和实际阻挡边缘，只读取已提交的碰撞参数。 */
   renderActorCollisionEdge(ctx, {
     enabled = false,

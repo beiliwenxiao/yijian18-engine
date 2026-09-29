@@ -5,10 +5,12 @@ import { SceneClimbTargetResolver } from './SceneClimbTargetResolver.js';
  * as world coordinates; local scene data is only passed to the resolver fallback.
  */
 export class SceneWorldQuery {
-  constructor({ getSession, getCurrentSceneId, getProjectedObjects } = {}) {
+  constructor({ getSession, getCurrentSceneId, getProjectedObjects, getClimbableShapes } = {}) {
     this.getSession = getSession || (() => null);
     this.getCurrentSceneId = getCurrentSceneId || (() => null);
     this.getProjectedObjects = getProjectedObjects || (() => []);
+    // 当前 chunk 地形层中标记 climbable 的 shape（世界坐标），由宿主懒加载注入。
+    this.getClimbableShapes = getClimbableShapes || (() => []);
   }
 
   getChunk(sceneId = this.getCurrentSceneId()) {
@@ -26,6 +28,7 @@ export class SceneWorldQuery {
       entity,
       sceneId,
       projectedObjects: this.getProjectedObjects() || [],
+      climbableShapes: this.getClimbableShapes() || [],
       sceneData: chunk?.sceneData || null,
       worldOffset: chunk?.offset || { x: 0, y: 0 }
     });

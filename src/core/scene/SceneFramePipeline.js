@@ -265,7 +265,42 @@ export class SceneFramePipeline {
     const keyboardJumpHeld = scene.inputManager?.isKeyDown?.('space') === true;
     const gamepadJumpHeld = scene.inputManager?.isKeyDown?.('jump') === true;
     const touchJumpHeld = scene._jumpHeld === true;
-    const jumpHeld = !worldInputBlocked && !controlledClimbActive && (keyboardJumpHeld || touchJumpHeld || gamepadJumpHeld);
+    const jumpHeldRaw = !worldInputBlocked && (keyboardJumpHeld || touchJumpHeld || gamepadJumpHeld);
+    // 「跳离」：受控攀爬中检测跳跃按下沿，按位置分流——
+    //   1) 在上部离开区（isAtExit）：脱离攀爬，玩家坐标不变（从出口离开）；
+    //   2) 不在离开区 / 无离开区：跳下——跌落到入口区垂直下方，表现类似起跳，飘字「跳下」。
+    if (controlledClimbActive && jumpHeldRaw && this._climbJumpHeldPrev !== true) {
+      const climbPresentation = locomotionSystem.getClimbPresentation(player);
+      if (climbPresentation?.isAtExit) {
+        locomotionSystem.finishControlledClimb?.(player);
+      } else {
+        locomotionSystem.cancelClimb?.(player);
+        const position = player?.getComponent?.('transform')?.position;
+        const enterBounds = climbPresentation?.enterBounds || null;
+        const drop = position && enterBounds
+          ? Math.max(0, Number(enterBounds.maxY) - Number(position.y))
+          : 0;
+        if (drop > 4 && jumpSystem) {
+          // 跌落表现：只播放跳跃的后半段（startProgress 0.5）——无上抛，从攀爬高度
+          // 直接坠入下方跌落区域；peakHeight 取攀爬抬升高度，保证下落过程高度连续。
+          const climbElevation = Number(climbPresentation?.elevation);
+          jumpSystem.startJump(player, { x: 0, y: 1 }, {
+            distance: drop * 4,
+            peakHeight: Number.isFinite(climbElevation) && climbElevation > 0 ? climbElevation : 14,
+            startProgress: 0.5,
+            duration: Math.max(0.6, Math.min(1.4, drop / 150))
+          });
+          floatingTextManager?.addText?.(
+            Number(position.x) || 0,
+            (Number(position.y) || 0) - 40,
+            '跳下',
+            '#aef3c9'
+          );
+        }
+      }
+    }
+    this._climbJumpHeldPrev = jumpHeldRaw;
+    const jumpHeld = !worldInputBlocked && !controlledClimbActive && jumpHeldRaw;
     const jumpAxis = worldInputBlocked || !gamepadJumpHeld
       ? null
       : (scene.inputManager?.getMoveAxis?.() || null);
@@ -294,9 +329,12 @@ export class SceneFramePipeline {
     }
 
     // 更新移动系统：普通模态、打坐、采集和死亡倒计时锁定玩家；灵魂状态仅允许移动。
+    // 受控攀爬期间玩家的位置由 ClimbSystem 全权驱动，MovementSystem 必须跳过玩家，
+    // 否则两套系统同时写位置会互相钳制导致角色卡死。
     let movementResult;
+    const playerControlledClimbing = locomotionSystem?.getClimbPresentation?.(player) != null;
     if ((movementInputBlocked || meditationSystem.isActive()
-      || playerMovementLocked) && player) {
+      || playerMovementLocked || playerControlledClimbing) && player) {
       // 锁定期间复用非玩家实体列表；实体数组或玩家变化时才重建，避免每帧 filter 分配。
       if (scene._meditationEntitySource !== entities ||
           scene._meditationEntityCount !== entities.length ||
@@ -316,8 +354,10 @@ export class SceneFramePipeline {
 
     const contactWasLocked = movementSystem.isContactMovementLocked?.(player) === true;
     const beforeEntityCollision = capturePosition(player);
-    // 检查实体之间的碰撞
-    collisionSystem.update(entities);
+    // 检查实体之间的碰撞；跳跃/跌落中的实体跳过（空中不受物体碰撞影响）
+    collisionSystem.update(entities, {
+      skipEntity: entity => jumpSystem?.isJumping?.(entity) === true
+    });
     const pushedByEntity = positionChanged(beforeEntityCollision, player);
 
     const beforeTerrainCollision = capturePosition(player);

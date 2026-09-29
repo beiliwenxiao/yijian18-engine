@@ -119,6 +119,19 @@ function makeOrderEntry(scene, supplied = {}) {
   return { name: scene.name || scene.id, type: scene.type || 'terrain', ...clone(supplied) };
 }
 
+/** 地形 shape 三态互斥规范化：可碰撞/可落脚/可攀爬只保留一个（保存兜底，编辑期 UI 已互斥）。 */
+function enforceTerrainFlagMutex(scene) {
+  for (const layer of scene?.layers || []) {
+    for (const obj of layer?.objects || []) {
+      if (obj?.type !== 'shape') continue;
+      if (obj.climbable === true) { obj.collide = false; obj.walkable = false; }
+      else if (obj.collide === true) { obj.climbable = false; obj.walkable = false; }
+      else if (obj.walkable === true) { obj.climbable = false; }
+    }
+  }
+  return scene;
+}
+
 /** 完整项目候选的 schema/reference/business-rule/canonicalize 聚合器。 */
 export class EditorCanonicalCandidateValidator {
   constructor({ projectPipeline = null, sceneValidator = null, configConsumptionRegistry = null } = {}) {
@@ -160,7 +173,7 @@ export class EditorCanonicalCandidateValidator {
         source: `${source}#scenes.${sceneId}`, sceneId, project
       });
       if (!result.ok) errors.push(...result.errors);
-      else scenes[sceneId] = result.value;
+      else scenes[sceneId] = enforceTerrainFlagMutex(result.value);
     }
     if (project?.worldMap) {
       try {

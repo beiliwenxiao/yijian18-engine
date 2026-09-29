@@ -91,12 +91,15 @@ export class JumpSystem {
     const peakHeight = Number(options.peakHeight) > 0
       ? Number(options.peakHeight)
       : Math.max(14, this.config.peakHeight * (0.4 + 0.7 * ratio));
+    // startProgress：从跳跃进度的某一时刻开始播放（0.5 = 只播后半段下落，用于"跳下"跌落表现）。
+    // 水平位移已按 easeOut 在该进度处的累计值折算，落点仍为 direction * distance。
+    const startProgress = Math.min(0.99, Math.max(0, Number(options.startProgress) || 0));
     this._active.set(entity, {
       transform,
       mode: options.mode === 'power' ? 'power' : 'normal',
-      elapsed: 0,
+      elapsed: duration * startProgress,
       chargeDuration: Math.max(0, Number(options.chargeDuration) || 0),
-      horizontalProgress: 0,
+      horizontalProgress: 1 - (1 - startProgress) * (1 - startProgress),
       baseElevation: transform.position.elevation || 0,
       direction: moving
         ? { x: direction.x / magnitude, y: direction.y / magnitude }

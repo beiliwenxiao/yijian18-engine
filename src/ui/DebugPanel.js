@@ -74,13 +74,17 @@ export class DebugPanel {
     this._onViewportResize = () => this._applyPanelLayout();
   }
 
-  /** 让碰撞调试绘制严格跟随 DebugPanel 的可见状态，不作为场景默认表现。 */
+  /**
+   * 让调试显示严格跟随 DebugPanel 的可见状态，不作为场景默认表现：
+   * 面板打开=显示（含攀爬区域，打开时默认勾选），面板关闭=隐藏。
+   */
   _syncCollisionDebugVisibility(visible = this.visible) {
     const scene = this._getActiveScene();
     if (!scene) return false;
     const enabled = visible === true;
     scene.debugShowActorCollisionEdge = enabled;
     scene.debugShowCollisionPolygons = enabled;
+    scene.debugShowClimbableZones = enabled;
     return enabled;
   }
 
@@ -365,6 +369,10 @@ export class DebugPanel {
           <label class="dp-check-row">
             <input type="checkbox" id="dp-show-trigger-hotspots" ${this.getScene()?.debugShowTriggerHotspots ? 'checked' : ''}>
             显示交互热点范围
+          </label>
+          <label class="dp-check-row">
+            <input type="checkbox" id="dp-show-climbable-zones" ${this.getScene()?.debugShowClimbableZones !== false ? 'checked' : ''}>
+            显示攀爬区域
           </label>
         </div>
         <div class="dp-section dp-actions">
@@ -658,6 +666,12 @@ export class DebugPanel {
       scene.debugShowTriggerHotspots = event.target.checked;
       console.log('[DebugPanel] 交互热点范围显示:', event.target.checked ? '开启' : '关闭');
     });
+    el.querySelector('#dp-show-climbable-zones').addEventListener('change', (event) => {
+      const scene = this.getScene();
+      if (!scene) return;
+      scene.debugShowClimbableZones = event.target.checked;
+      console.log('[DebugPanel] 攀爬区域显示:', event.target.checked ? '开启' : '关闭');
+    });
     el.querySelector('#dp-gamepad-panel').addEventListener('click', () => {
       const scene = this.getScene();
       if (!scene || !scene.gamepadPanel) {
@@ -890,6 +904,8 @@ export class DebugPanel {
     if (buffZoneToggle) buffZoneToggle.checked = scene.debugShowBuffZones === true;
     const triggerHotspotToggle = this._el.querySelector('#dp-show-trigger-hotspots');
     if (triggerHotspotToggle) triggerHotspotToggle.checked = scene.debugShowTriggerHotspots === true;
+    const climbableZoneToggle = this._el.querySelector('#dp-show-climbable-zones');
+    if (climbableZoneToggle) climbableZoneToggle.checked = scene.debugShowClimbableZones !== false;
 
     // 触发器事件
     const gl = scene.gameLoader;

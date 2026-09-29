@@ -120,7 +120,9 @@ export class DataDrivenPrologueScene extends BaseGameScene {
     this._worldQuery = new SceneWorldQuery({
       getSession: () => this._worldLoadSession,
       getCurrentSceneId: () => this.currentSceneId,
-      getProjectedObjects: () => this._worldLoadResult?.sceneObjects || []
+      getProjectedObjects: () => this._worldLoadResult?.sceneObjects || [],
+      // 当前 chunk 地形层 climbable shape（世界坐标）；terrain 由流式加载投影回调写入。
+      getClimbableShapes: () => this.context?.world?.terrain?.getClimbableSurfaces?.() || []
     });
     this.context.services.worldQuery = this._worldQuery;
 

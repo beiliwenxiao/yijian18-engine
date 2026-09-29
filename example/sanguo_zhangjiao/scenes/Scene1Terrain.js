@@ -338,6 +338,7 @@ export class Scene1Terrain {
     this._bgImageCache = null;
     this._collisionShapes = [];
     this._walkableShapes = [];  // walkable 可落脚区域：内部即使有碰撞区也不阻塞
+    this._climbableShapes = []; // climbable 可攀爬区域：跳入受控攀爬、跳跃随时脱离
     this._editorShapes = [];
     this._atlasRegistry.setSources(this._sharedAtlases, scene.atlases || []);
     let foundEllipse = false;
@@ -348,15 +349,26 @@ export class Scene1Terrain {
         for (const obj of layer.objects) {
           if (!obj) continue;
           const projectedObj = this._sceneObjectProjector.project(obj, this.worldOffset);
-          // walkable 优先于 collide；所有业务碰撞与表现共用同一投影入口。
+          // walkable 优先于 collide；climbable 与两者互斥，作为独立攀爬目标提供给 ClimbSystem。
           if (obj.type === 'shape' && obj.walkable) {
             this._walkableShapes.push(projectedObj);
           } else if (obj.type === 'shape' && obj.collide) {
             this._collisionShapes.push(projectedObj);
+          } else if (obj.type === 'shape' && obj.climbable) {
+            this._climbableShapes.push(projectedObj);
+          }
+          // 非 shape 物件（藤蔓/树/石头等贴图或放置物）勾选「可攀爬」同样成为攀爬面。
+          // 保留原锚点：三区多边形 climbZones 的顶点相对物件锚点存储，不能移动锚点。
+          if (!layerHidden && obj.climbable === true && obj.type !== 'shape') {
+            this._climbableShapes.push({
+              ...projectedObj,
+              width: Number(projectedObj.width) || 0,
+              height: Number(projectedObj.height) || 0
+            });
           }
           // 图层隐藏时跳过视觉渲染相关的收集
-          // 碰撞/可落脚 shape 也不重复放入 _editorShapes（避免 worldOffset 双重偏移）
-          if (layerHidden || (obj.type === 'shape' && (obj.collide || obj.walkable))) continue;
+          // 碰撞/可落脚/可攀爬 shape 也不重复放入 _editorShapes（避免 worldOffset 双重偏移）
+          if (layerHidden || (obj.type === 'shape' && (obj.collide || obj.walkable || obj.climbable))) continue;
           const _isEllipse = obj.type === 'ellipse' ||
                              (obj.type === 'shape' && obj.shapeType === 'ellipse');
           // 第一个椭圆作为地形椭圆；其余 shape（多边形/矩形/圆/额外椭圆）作为可渲染 shape
@@ -972,6 +984,16 @@ export class Scene1Terrain {
   }
 
   /**
+   * 获取场景中标记为「可攀爬」的地形 shape（世界投影坐标）。
+   * 由 SceneWorldQuery/SceneClimbTargetResolver 桥接为受控攀爬目标：
+   * 跳跃进入、攀爬中跳跃随时脱离。
+   * @returns {Array<object>}
+   */
+  getClimbableSurfaces() {
+    return this._climbableShapes || [];
+  }
+
+  /**
    * 收集装饰物到渲染队列（参与 Y-sort）
    * 标记 belowEntities 的装饰物不参与排序，由 renderBelowDecorations 单独绘制
    * @param {Array} renderQueue - 渲染队列，每项 { type, y, render }
@@ -1345,6 +1367,7 @@ export class Scene1Terrain {
 
   /**
    * 渲染编辑器中具有表现的 shape，并复用已投影的可落脚区域。
+   * （可攀爬调试显示已移至 renderClimbZonesDebug，由调试面板开关控制、在后期管线顶层绘制）
    * @param {CanvasRenderingContext2D} ctx
    */
   _renderEditorShapes(ctx) {
@@ -1357,6 +1380,64 @@ export class Scene1Terrain {
     }
     for (const shape of walkableShapes) {
       ShapeRenderer.render(ctx, shape, resolver);
+    }
+  }
+
+  /**
+   * 攀爬区域调试显示（调试面板「显示攀爬区域」开关，由 renderPostPipeline 后期管线调用，
+   * 绘制在所有实体之上，避免被树冠等贴图遮挡）：
+   *   - 地形 climbable shape：半透明青绿填充 + 描边；
+   *   - 可攀爬物件（藤蔓/树等）：三区多边形（进入/跌落=橙、攀爬=绿、离开=蓝）。
+   * @param {CanvasRenderingContext2D} ctx
+   */
+  renderClimbZonesDebug(ctx) {
+    if (this.debugShowClimbableZones === false) return;
+    const resolver = this._editorShapeResolver();
+    for (const shape of this._climbableShapes || []) {
+      if (shape.type !== 'shape') continue;
+      ShapeRenderer.render(ctx, {
+        ...shape,
+        fillMode: 'color',
+        fill: 'rgba(90, 200, 140, 0.3)',
+        edgeFade: 0,
+        stroke: 'rgba(90, 220, 150, 0.75)',
+        strokeWidth: 2
+      }, resolver);
+    }
+    const zoneStyles = [
+      ['enter', 'rgba(255, 159, 67, 0.25)', 'rgba(255, 159, 67, 0.85)'],
+      ['climb', 'rgba(90, 220, 150, 0.25)', 'rgba(90, 220, 150, 0.85)'],
+      ['exit', 'rgba(100, 181, 255, 0.25)', 'rgba(100, 181, 255, 0.85)']
+    ];
+    for (const surface of this._climbableShapes || []) {
+      const zones = surface?.climbZones;
+      if (!zones) continue;
+      const anchorX = Number(surface.x) || 0;
+      const anchorY = Number(surface.y) || 0;
+      for (const [key, fill, stroke] of zoneStyles) {
+        const points = zones[key];
+        if (!Array.isArray(points) || points.length < 3) continue;
+        ctx.beginPath();
+        let started = false;
+        for (const point of points) {
+          const x = anchorX + Number(point[0]);
+          const y = anchorY + Number(point[1]);
+          if (!Number.isFinite(x) || !Number.isFinite(y)) continue;
+          if (!started) {
+            ctx.moveTo(x, y);
+            started = true;
+          } else {
+            ctx.lineTo(x, y);
+          }
+        }
+        if (!started) continue;
+        ctx.closePath();
+        ctx.fillStyle = fill;
+        ctx.fill();
+        ctx.strokeStyle = stroke;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
     }
   }
 

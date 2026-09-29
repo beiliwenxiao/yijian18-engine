@@ -170,12 +170,24 @@ function updateBeforeBase(deltaTime) {
 }
 
 function updateAfterBase(deltaTime) {
+  // 与 updateBeforeBase 相同的子步骤探针：debugMode 下长帧日志会输出每步耗时，
+  // 用于把 updateDemoAfterBase 这个聚合热点拆到具体子系统。
+  const frameProfile = this.debugMode === true && this._framePerformanceProfile?.current
+    ? this._framePerformanceProfile.current
+    : null;
+  let phaseStartedAt = frameProfile ? performance.now() : 0;
+
   // 施工进度只会在 S06/S10 推进；S10 工事实体也仅属于 S10。
   // 避免其他场景每帧序列化营建状态、遍历工事并扫描 EntityStore。
   if (this.currentSceneId === 'S01') {
     this._s01s02Coordinator.update(deltaTime);
   } else if (this.currentSceneId === 'S06' || this.currentSceneId === 'S10') {
     this.s10ConstructionCoordinator._updateConstructionRuntime(deltaTime);
+  }
+  if (frameProfile) {
+    const now = performance.now();
+    frameProfile.updateAfterSceneRuntime = now - phaseStartedAt;
+    phaseStartedAt = now;
   }
 
   // WeatherSystem 只消费相机最终世界视野和 core 已提交九宫格 coverage；粒子不读取玩家，也不累加相机位移。
@@ -184,6 +196,11 @@ function updateAfterBase(deltaTime) {
     viewBounds: weatherCamera?.getViewBounds?.() || null,
     loadedCoverage: this.context?.world?.loadedCoverage || null
   });
+  if (frameProfile) {
+    const now = performance.now();
+    frameProfile.updateAfterWeather = now - phaseStartedAt;
+    phaseStartedAt = now;
+  }
 
   if (this.currentSceneId === 'S10') {
     this.s10ConstructionCoordinator._ensureS10StructureEntities();
@@ -193,25 +210,68 @@ function updateAfterBase(deltaTime) {
     frameToken: this.sceneRuntime.currentFrameToken,
     updateSystems: true
   });
+  if (frameProfile) {
+    const now = performance.now();
+    frameProfile.updateAfterPostScene = now - phaseStartedAt;
+    phaseStartedAt = now;
+  }
+
   this.s11s14SceneCoordinator._updateS11HorseTravel();
   this.s03s08Coordinator._updateS04BocaiRescue(deltaTime);
   this.s05SceneCoordinator._updateS05ZhangManchengRescue(deltaTime);
   this.s11s14SceneCoordinator._updateS11S12Runtime();
   this.endingPresentationView?.update?.(deltaTime * 1000);
+  if (frameProfile) {
+    const now = performance.now();
+    frameProfile.updateAfterScenarioRuntimes = now - phaseStartedAt;
+    phaseStartedAt = now;
+  }
+
   this.observeWaveEvents();
   this.observeTutorialEventSources();
+  if (frameProfile) {
+    const now = performance.now();
+    frameProfile.updateAfterWaveTutorial = now - phaseStartedAt;
+    phaseStartedAt = now;
+  }
+
   this._onboardingUi?.refresh();
+  if (frameProfile) {
+    const now = performance.now();
+    frameProfile.updateAfterOnboarding = now - phaseStartedAt;
+    phaseStartedAt = now;
+  }
+
+  // 攀爬区域调试显示开关（调试面板「显示攀爬区域」，默认开）同步到当前 chunk 地形
+  const showClimbableZones = this.debugShowClimbableZones !== false;
+  const terrainList = Array.isArray(this._terrains)
+    ? this._terrains
+    : (this._terrains instanceof Map ? [...this._terrains.values()] : []);
+  if (this.terrain && !terrainList.includes(this.terrain)) terrainList.push(this.terrain);
+  for (const terrain of terrainList) {
+    if (terrain) terrain.debugShowClimbableZones = showClimbableZones;
+  }
+
   this._campfireService.resolvePlayerCollision({
     playerEntity: this.playerEntity,
     flightSystem: this.flightSystem,
     jumpSystem: this.jumpSystem
   });
+  if (frameProfile) {
+    const now = performance.now();
+    frameProfile.updateAfterCampfireCollision = now - phaseStartedAt;
+    phaseStartedAt = now;
+  }
+
   this.context.services.diagnostics?.observeTerrainCollision({
     terrains: this._terrains || [],
     terrain: this.terrain,
     playerEntity: this.playerEntity,
     label: 'DDScene'
   });
+  if (frameProfile) {
+    frameProfile.updateAfterCollisionDebug = performance.now() - phaseStartedAt;
+  }
 }
 
 function observeWaveEvents() {
@@ -383,6 +443,12 @@ function renderPostPipeline(ctx) {
     terrains: this._terrains,
     campfire: this.context.services.campfire,
     label: 'DDScene'
+  });
+  // 攀爬区域调试显示（调试面板「显示攀爬区域」，面板打开时默认勾选）：顶层绘制避免被贴图遮挡
+  this.context.services.diagnostics?.renderClimbZones(ctx, {
+    enabled: this.debugShowClimbableZones === true,
+    camera: this.camera,
+    terrains: this._terrains
   });
   this.context.services.diagnostics?.renderActorCollisionEdge(ctx, {
     enabled: this.debugShowActorCollisionEdge,

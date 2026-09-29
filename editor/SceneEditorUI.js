@@ -868,6 +868,12 @@ export class SceneEditorUI {
       }
     }
 
+    // 「可攀爬」通用属性：任意放置物件（藤蔓/树/石头…）都可勾选为可攀爬；
+    // shape 走三态互斥面板（_buildShapeProperties），这里补非 shape 类型（贴图/放置引用/装饰物等）。
+    if (obj.type !== 'shape') {
+      html += this._buildClimbProperties(obj);
+    }
+
     html += this._buildObjectRelationshipProperties(obj);
     html += `<div class="property-row"><button id="editor-delete-obj">删除对象</button></div>`;
     panel.innerHTML = html;
@@ -884,6 +890,36 @@ export class SceneEditorUI {
       // 关联跳转只改变编辑器选中态，不修改受锁对象，保留只读查看链路。
       panel.querySelectorAll('button[data-editor-select-object-id]').forEach(control => {
         control.disabled = false;
+      });
+    }
+
+    // 可攀爬三区：切换画布上正在编辑的多边形区（进入/攀爬/离开），并支持一键生成默认区域
+    panel.querySelectorAll('button[data-climb-zone]').forEach(button => {
+      button.addEventListener('click', () => {
+        if (!isObjectEditable()) {
+          this.showToast('此对象已隐藏或锁定，无法修改', 'warn');
+          return;
+        }
+        this._activeClimbZone = button.dataset.climbZone;
+        this.updateObjectProperties();
+        editor.render();
+      });
+    });
+    const climbGenZones = panel.querySelector('button[data-climb-gen-zones]');
+    if (climbGenZones) {
+      climbGenZones.addEventListener('click', () => {
+        if (!isObjectEditable()) {
+          this.showToast('此对象已隐藏或锁定，无法修改', 'warn');
+          return;
+        }
+        editor.history?.saveHistory?.();
+        const hadExitZone = Array.isArray(obj.climbZones?.exit) && obj.climbZones.exit.length >= 3;
+        obj.climbZones = this._generateDefaultClimbZones(obj);
+        // 已启用离开区的（勾选框勾着）重新生成，不因「生成默认区域」被清掉
+        if (hadExitZone) obj.climbZones.exit = this._generateExitBand(obj);
+        this._activeClimbZone = 'climb';
+        this.updateObjectProperties();
+        editor.render();
       });
     }
 
@@ -933,16 +969,25 @@ export class SceneEditorUI {
           return;
         }
 
-        // 碰撞/可落脚互斥：勾选一个自动取消另一个
+        // 碰撞/可落脚/可攀爬三态互斥：勾选一个自动取消另外两个；取消仅清自身
         if (prop === 'collide' && value) {
           obj.collide = true;
           obj.walkable = false;
+          obj.climbable = false;
           this.updateObjectProperties();
           editor.render();
           return;
         } else if (prop === 'walkable' && value) {
           obj.walkable = true;
           obj.collide = false;
+          obj.climbable = false;
+          this.updateObjectProperties();
+          editor.render();
+          return;
+        } else if (prop === 'climbable' && value) {
+          obj.climbable = true;
+          obj.collide = false;
+          obj.walkable = false;
           this.updateObjectProperties();
           editor.render();
           return;
@@ -952,6 +997,10 @@ export class SceneEditorUI {
           return;
         } else if (prop === 'walkable' && !value) {
           obj.walkable = false;
+          editor.render();
+          return;
+        } else if (prop === 'climbable' && !value) {
+          obj.climbable = false;
           editor.render();
           return;
         }
@@ -1053,6 +1102,38 @@ export class SceneEditorUI {
           // 清理空对象，保持场景 JSON 干净
           this._pruneEmptyObjects(obj.overrides);
           if (Object.keys(obj.overrides).length === 0) delete obj.overrides;
+        } else if (prop === 'climbExitZone') {
+          // 离开区勾选：勾选=生成顶部离开区（抵达才算出口）；取消=删除离开区，跳跃随时脱离
+          editor.history?.saveHistory?.();
+          if (value) {
+            obj.climbZones = obj.climbZones || {};
+            obj.climbZones.exit = this._generateExitBand(obj);
+            this._activeClimbZone = 'exit';
+          } else if (obj.climbZones) {
+            delete obj.climbZones.exit;
+            if (this._activeClimbZone === 'exit') this._activeClimbZone = 'climb';
+          }
+          this.updateObjectProperties();
+          editor.render();
+          return;
+        } else if (prop === 'climbable') {
+          // 可攀爬勾选：勾选时自动生成默认区域（进入/攀爬两区；离开区由独立勾选框控制）；
+          // 取消时清理区域与旧的 climbSurface 语义标记，避免勾选态与运行时表现不一致
+          editor.history?.saveHistory?.();
+          if (value) {
+            obj.climbable = true;
+            // 面板展示三区编辑（装饰物只显示勾选框），仅对会展示的物件生成默认区域
+            if (obj.type !== 'decoration' && (!obj.climbZones || Object.keys(obj.climbZones).length === 0)) {
+              obj.climbZones = this._generateDefaultClimbZones(obj);
+            }
+          } else {
+            delete obj.climbable;
+            delete obj.climbZones;
+            if (obj.semanticRole === 'climbSurface') delete obj.semanticRole;
+          }
+          this.updateObjectProperties();
+          editor.render();
+          return;
         } else {
           // 直接编辑 Y 属于整体位移；显式排序基线跟随同一差值。
           // width/height 调整只改变外框，显式 sortY 保持用户指定的世界脚底线。
@@ -1394,6 +1475,129 @@ export class SceneEditorUI {
       html += `<div class="property-row"><label>刷新间隔(秒):</label><input type="number" value="${ov.refreshIntervalSeconds != null ? ov.refreshIntervalSeconds : ''}" min="0.1" step="0.1" data-prop="overrides.refreshIntervalSeconds" placeholder="留空=用库定义"></div>`;
     }
     return html;
+  }
+
+  /**
+   * 「可攀爬」通用属性面板（非 shape 类型）：勾选后该物件成为可攀爬面——
+   * 跳跃进入攀爬、攀爬中按跳跃随时脱离。
+   * 控制区域为三个五点多边形（相对物件锚点存储）：脚下=进入和跌落区、中间=攀爬区、顶上=离开区；
+   * 通过「编辑」按钮切换激活区，画布上拖动顶点调整，右键顶点/边可增删（与地形属性多边形一致）。
+   * 旧数据兼容：semanticRole:'climbSurface' 的物件视为已勾选；未生成区域时运行时回落到本体范围。
+   * @private
+   */
+  _buildClimbProperties(obj) {
+    const isClimbable = obj.climbable === true || obj.semanticRole === 'climbSurface';
+    let html = '<div class="property-row" style="border-top:1px solid #333;margin-top:6px;padding-top:6px;"><label style="color:#7ce0a8;font-weight:bold;" title="勾选后跳跃进入攀爬，攀爬中按跳跃随时脱离">可攀爬</label></div>';
+    html += `<div class="property-row"><label>可攀爬:</label><input type="checkbox" ${isClimbable ? 'checked' : ''} data-prop="climbable"></div>`;
+    if (!isClimbable || obj.type === 'decoration') return html;
+    const zones = obj.climbZones || {};
+    const zoneRow = (key, label) => {
+      const points = zones[key];
+      const active = (this._activeClimbZone || 'climb') === key;
+      const count = Array.isArray(points) ? points.length : 0;
+      return `<div class="property-row"><label>${label}:</label>` +
+        `<span style="color:#9ab;font-size:11px;flex:1;">${count >= 3 ? `五点多边形（${count} 点）` : '未生成'}</span>` +
+        `<button type="button" data-climb-zone="${key}"${active ? ' style="background:#2f7a52;"' : ''}>${active ? '编辑中' : '编辑'}</button></div>`;
+    };
+    html += zoneRow('enter', '进入/跌落区(脚下)');
+    html += zoneRow('climb', '攀爬区(中间)');
+    // 离开区默认不生成：不勾选 = 攀爬中按跳跃随时脱离（处处皆出口）；
+    // 勾选后生成顶部离开区，受控攀爬抵达离开区才可从出口结束（如剧情转场）。
+    const exitEnabled = Array.isArray(zones.exit) && zones.exit.length >= 3;
+    html += `<div class="property-row"><label>离开区(顶上):</label>` +
+      `<input type="checkbox" ${exitEnabled ? 'checked' : ''} data-prop="climbExitZone" title="勾选后生成顶部离开区：受控攀爬抵达离开区才算抵达出口；不勾选=按跳跃随时脱离">` +
+      (exitEnabled
+        ? `<span style="color:#9ab;font-size:11px;flex:1;">五点多边形（${zones.exit.length} 点）</span>` +
+          `<button type="button" data-climb-zone="exit"${(this._activeClimbZone || 'climb') === 'exit' ? ' style="background:#2f7a52;"' : ''}>${(this._activeClimbZone || 'climb') === 'exit' ? '编辑中' : '编辑'}</button>`
+        : '') +
+      `</div>`;
+    html += `<div class="property-row"><button type="button" data-climb-gen-zones>生成默认区域</button>` +
+      `<span style="color:#9ab;font-size:11px;">选中区在画布拖动顶点调整；右键顶点/边可增删（至少 3 点）</span></div>`;
+    const mode = obj.climbMode === 'controlled' ? 'controlled' : 'traverse';
+    html += `<div class="property-row"><label>攀爬模式:</label><select data-prop="climbMode">
+      <option value="traverse" ${mode === 'traverse' ? 'selected' : ''} title="起点到目标定时插值，自动结束">自动攀爬</option>
+      <option value="controlled" ${mode === 'controlled' ? 'selected' : ''} title="玩家在攀爬区域内沿输入轴自由移动">受控攀爬</option>
+    </select></div>`;
+    html += `<div class="property-row"><label>攀爬速度:</label><input type="number" value="${obj.climbSpeed || 84}" min="1" step="1" data-prop="climbSpeed" title="受控攀爬时沿输入轴的移动速度（像素/秒）"></div>`;
+    html += `<div class="property-row"><label>攀爬提示:</label><input type="text" value="${obj.prompt || ''}" data-prop="prompt" placeholder="如 {jump}攀爬"></div>`;
+    return html;
+  }
+
+  /**
+   * 可攀爬物件的本体包围盒（相对锚点偏移 + 尺寸），作为三区默认生成的基准。
+   * 锚点规则：
+   *   1. decoration/ref → 脚底锚点（x 居中、y 为脚底）；ref 优先用 resolvePlacementVisual
+   *      的可视包围盒（与选中框同源，避免内容库轴心/偏移导致区域错位）；
+   *   2. 其余矩形类类型（image/slice/fill/rect/ellipse 等）→ 锚点即左上角，直接用自身宽高。
+   * @private
+   */
+  _climbBodyBox(obj) {
+    let left;
+    let top;
+    let width;
+    let height;
+    const isFeetAnchor = obj.type === 'decoration' || obj.type === 'ref';
+    if (!isFeetAnchor) {
+      width = Math.max(1, Number(obj.width) || 64);
+      height = Math.max(1, Number(obj.height) || 64);
+      left = 0;
+      top = 0;
+    } else {
+      const visualBounds = this.editor?.assets?.resolvePlacementVisual?.(obj)?.bounds;
+      if (visualBounds && Number(visualBounds.width) > 0 && Number(visualBounds.height) > 0) {
+        width = Number(visualBounds.width);
+        height = Number(visualBounds.height);
+        left = Number(visualBounds.x) - Number(obj.x);
+        top = Number(visualBounds.y) - Number(obj.y);
+      } else {
+        width = Math.max(1, Number(obj.width) || 64);
+        height = Math.max(1, Number(obj.height) || 64);
+        left = -width / 2;
+        top = -height;
+      }
+    }
+    // 诊断日志：确认三区生成使用的包围盒来源与偏移（排查错位时看控制台）
+    console.info('[ClimbZones] 生成区域', {
+      id: obj.id, type: obj.type,
+      source: isFeetAnchor
+        ? (this.editor?.assets?.resolvePlacementVisual?.(obj)?.bounds ? 'visualBounds' : 'feetFallback')
+        : 'topLeft',
+      anchor: { x: obj.x, y: obj.y },
+      offset: { left: Math.round(left), top: Math.round(top) },
+      size: { width: Math.round(width), height: Math.round(height) }
+    });
+    return { left, top, width, height };
+  }
+
+  /** 在本体包围盒内生成一个五点横向条带（第 5 点在下边中点，可拖出突出形状）。 */
+  _climbBand(obj, y0, y1) {
+    const box = this._climbBodyBox(obj);
+    return [
+      [Math.round(box.left), Math.round(y0)],
+      [Math.round(box.left + box.width), Math.round(y0)],
+      [Math.round(box.left + box.width), Math.round(y1)],
+      [Math.round(box.left + box.width / 2), Math.round(y1)],
+      [Math.round(box.left), Math.round(y1)]
+    ];
+  }
+
+  /**
+   * 生成默认两区多边形（相对物件锚点）：中 1/3=攀爬区、脚底 1/3=进入/跌落区。
+   * 离开区默认不生成（勾选「离开区」后由 _generateExitBand 单独生成）。
+   * @private
+   */
+  _generateDefaultClimbZones(obj) {
+    const box = this._climbBodyBox(obj);
+    return {
+      climb: this._climbBand(obj, box.top + box.height / 3, box.top + box.height * 2 / 3),
+      enter: this._climbBand(obj, box.top + box.height * 2 / 3, box.top + box.height)
+    };
+  }
+
+  /** 生成顶部 1/3 离开区（勾选「离开区」勾选框时调用）。 */
+  _generateExitBand(obj) {
+    const box = this._climbBodyBox(obj);
+    return this._climbBand(obj, box.top, box.top + box.height / 3);
   }
 
   /**
@@ -2197,8 +2401,12 @@ export class SceneEditorUI {
     html += `<div class="property-row"><label>边缘淡化:</label><input type="number" value="${obj.edgeFade || 0}" step="0.05" min="0" max="1" data-prop="edgeFade"></div>`;
     html += `<div class="property-row"><label>边框色:</label><input type="color" value="${obj.stroke || '#5a8a4a'}" data-prop="stroke"></div>`;
     html += `<div class="property-row"><label>边框宽:</label><input type="number" value="${obj.strokeWidth || 0}" min="0" step="1" data-prop="strokeWidth"></div>`;
-    html += `<div class="property-row"><label>可碰撞:</label><input type="checkbox" ${obj.collide ? 'checked' : ''} data-prop="collide" title="不可通行区域（与'可落脚'互斥）"></div>`;
-    html += `<div class="property-row"><label>可落脚:</label><input type="checkbox" ${obj.walkable ? 'checked' : ''} data-prop="walkable" title="可行走区域（与'可碰撞'互斥）"></div>`;
+    html += `<div class="property-row"><label>可碰撞:</label><input type="checkbox" ${obj.collide ? 'checked' : ''} data-prop="collide" title="不可通行区域（与'可落脚'/'可攀爬'互斥）"></div>`;
+    html += `<div class="property-row"><label>可落脚:</label><input type="checkbox" ${obj.walkable ? 'checked' : ''} data-prop="walkable" title="可行走区域（与'可碰撞'/'可攀爬'互斥）"></div>`;
+    html += `<div class="property-row"><label>可攀爬:</label><input type="checkbox" ${obj.climbable ? 'checked' : ''} data-prop="climbable" title="可攀爬区域：跳跃进入受控攀爬，攀爬中按跳跃随时脱离（与'可碰撞'/'可落脚'互斥）"></div>`;
+    if (obj.climbable) {
+      html += `<div class="property-row"><label>攀爬速度:</label><input type="number" value="${obj.climbSpeed || 84}" min="1" step="1" data-prop="climbSpeed" title="攀爬中沿输入轴的移动速度（像素/秒）"></div>`;
+    }
     return html;
   }
 

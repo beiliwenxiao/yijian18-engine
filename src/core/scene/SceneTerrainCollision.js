@@ -64,10 +64,17 @@ export class SceneTerrainCollision {
     this._lastResolvedPositions = new WeakMap();
     /** 跳跃系统（可选）；注入后跳跃（滞空）中的实体跳过地形碰撞。 */
     this.jumpSystem = options.jumpSystem || null;
+    /** 攀爬系统（可选）；注入后受控攀爬中的实体跳过地形碰撞（位置由 ClimbSystem 全权驱动）。 */
+    this.climbSystem = options.climbSystem || null;
   }
 
   setJumpSystem(jumpSystem) {
     this.jumpSystem = jumpSystem || null;
+    return this;
+  }
+
+  setClimbSystem(climbSystem) {
+    this.climbSystem = climbSystem || null;
     return this;
   }
 
@@ -92,7 +99,8 @@ export class SceneTerrainCollision {
       const transform = entity.getComponent && entity.getComponent('transform');
       if (!transform) continue;
       // 跳跃（滞空）期间不做地形碰撞（可跳过水池、树、火堆等）；由场景注入 jumpSystem。
-      if (this.jumpSystem?.isJumping?.(entity)) continue;
+      // 受控攀爬同理：攀爬区间常与树冠等碰撞体重叠，位置由 ClimbSystem 全权驱动。
+      if (this.jumpSystem?.isJumping?.(entity) || this.climbSystem?.isClimbing?.(entity)) continue;
       const collision = entity.getComponent?.('collision');
       const offsetX = Number(collision?.offsetX) || 0;
       const offsetY = Number(collision?.offsetY) || 0;

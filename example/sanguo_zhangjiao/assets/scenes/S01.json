@@ -50,6 +50,7 @@
           "y": 394.54710671885306
         },
         {
+          "climbable": false,
           "collide": true,
           "editor": {
             "locked": false
@@ -157,9 +158,11 @@
           "shapeType": "polygon",
           "stroke": "#718b8d",
           "strokeWidth": 3,
-          "type": "shape"
+          "type": "shape",
+          "walkable": false
         },
         {
+          "climbable": false,
           "fill": "#8a7754",
           "fillMode": "color",
           "id": "S01-hillside-route",
@@ -257,6 +260,80 @@
             "x": 1135,
             "y": 86
           },
+          "climbZones": {
+            "climb": [
+              [
+                11,
+                0
+              ],
+              [
+                194,
+                5
+              ],
+              [
+                200,
+                200
+              ],
+              [
+                66,
+                296
+              ],
+              [
+                0,
+                200
+              ]
+            ],
+            "enter": [
+              [
+                19,
+                230
+              ],
+              [
+                107,
+                211
+              ],
+              [
+                190,
+                270
+              ],
+              [
+                157,
+                331
+              ],
+              [
+                58,
+                349
+              ],
+              [
+                0,
+                300
+              ]
+            ],
+            "exit": [
+              [
+                -1,
+                -30
+              ],
+              [
+                227,
+                -27
+              ],
+              [
+                248,
+                26
+              ],
+              [
+                103,
+                66
+              ],
+              [
+                -30,
+                23
+              ]
+            ]
+          },
+          "climbable": true,
+          "collide": false,
           "depthSort": true,
           "editor": {
             "visible": true
@@ -270,11 +347,12 @@
           "requiresClimbAbility": false,
           "rotation": 0,
           "semanticRole": "climbSurface",
-          "sortY": 9.373450579238334,
+          "sortY": 7.775448082359436,
           "type": "image",
+          "walkable": false,
           "width": 200,
-          "x": 1069.941594076781,
-          "y": -160.62654942076168
+          "x": 1060.3535790955077,
+          "y": -162.22455191764058
         },
         {
           "editor": {
@@ -308,6 +386,7 @@
           "y": 361.568287819749
         },
         {
+          "climbable": false,
           "fill": "#f3f736",
           "fillMode": "color",
           "height": 47,
@@ -325,6 +404,7 @@
           "y": 250.82020602084555
         },
         {
+          "climbable": false,
           "fill": "#fff700",
           "fillMode": "color",
           "height": 50,
@@ -350,6 +430,9 @@
       "name": "出生与动态放置",
       "objects": [
         {
+          "climbMode": "controlled",
+          "climbable": false,
+          "collide": false,
           "collision": {
             "mode": "block",
             "points": [
@@ -389,7 +472,8 @@
             "path": "s01Survival.shelterCompleted"
           },
           "type": "ref",
-          "x": 550.7813037774793,
+          "walkable": false,
+          "x": 553.5216163443814,
           "y": 429.9943506464729
         },
         {
@@ -791,8 +875,8 @@
             "pursuit"
           ],
           "type": "ref",
-          "x": 260,
-          "y": 455
+          "x": 271.80114139667984,
+          "y": 450.2795434413281
         },
         {
           "group": "S01-chase-wolves",
@@ -863,8 +947,8 @@
             "pursuit"
           ],
           "type": "ref",
-          "x": 335,
-          "y": 425
+          "x": 400.61434616554004,
+          "y": 402.81385417424184
         },
         {
           "group": "S01-chase-wolves",
@@ -1232,14 +1316,69 @@
       "objects": [
         {
           "atlasId": "mountain_landscape",
+          "climbMode": "controlled",
+          "climbZones": {
+            "climb": [
+              [
+                25,
+                59
+              ],
+              [
+                48,
+                44
+              ],
+              [
+                71,
+                58
+              ],
+              [
+                78,
+                108
+              ],
+              [
+                50,
+                125
+              ],
+              [
+                18,
+                109
+              ]
+            ],
+            "enter": [
+              [
+                31,
+                134
+              ],
+              [
+                70,
+                133
+              ],
+              [
+                103,
+                147
+              ],
+              [
+                49,
+                168
+              ],
+              [
+                -3,
+                146
+              ]
+            ]
+          },
+          "climbable": true,
+          "collide": false,
           "height": 128,
           "id": "obj_1788365045566_953",
           "name": "大树",
+          "requiresClimbAbility": true,
           "sliceKey": "tree1",
           "type": "slice",
+          "walkable": false,
           "width": 96,
-          "x": 261.56256256256256,
-          "y": 341.84384384384384
+          "x": 260.0786451209693,
+          "y": 340.8319720581178
         },
         {
           "atlasId": "mountain_landscape",

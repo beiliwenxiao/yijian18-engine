@@ -59,8 +59,9 @@ export class CollisionSystem {
     this.onCollisionCallbacks.push(callback);
   }
 
-  /** 更新实体间碰撞。 */
-  update(entities) {
+  /** 更新实体间碰撞。options.skipEntity 可传入谓词，跳过特定实体（如跳跃/跌落中的玩家，避免被空中碰撞推出）。 */
+  update(entities, options = {}) {
+    const skipEntity = typeof options.skipEntity === 'function' ? options.skipEntity : null;
     const collidable = this._collidableBuffer;
     const transforms = this._transformBuffer;
     const offsetX = this._offsetXBuffer;
@@ -82,6 +83,7 @@ export class CollisionSystem {
     for (let index = 0, length = entities?.length || 0; index < length; index++) {
       const entity = entities[index];
       if (!entity || entity.isDead || entity.isDying || !this._collidableLayers.has(entity.type)) continue;
+      if (skipEntity?.(entity)) continue;
       const transform = entity.getComponent?.('transform');
       if (!transform) continue;
       const collision = entity.getComponent?.('collision');

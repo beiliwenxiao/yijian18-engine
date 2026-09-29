@@ -1308,6 +1308,79 @@ export class SceneEditorCanvas {
       ctx.strokeStyle = '#ffffff';
       ctx.lineWidth = 2 / editor.viewport.scale;
       ctx.setLineDash([6 / editor.viewport.scale, 4 / editor.viewport.scale]);
+
+      // 可攀爬叠加：三区多边形（进入/攀爬/离开）各配色绘制；激活区显示可拖拽顶点手柄。
+      // 未生成区域时回落：攀爬区域矩形（climbBounds 或本体范围）+ 出口点与半径圈。
+      if (obj.semanticRole === 'climbSurface' || obj.climbable === true) {
+        const zones = obj.climbZones || null;
+        if (zones) {
+          const activeKey = editor.ui?._activeClimbZone || 'climb';
+          const zoneStyles = [
+            ['enter', '#ff9f43', 'rgba(255,159,67,0.20)'],
+            ['climb', '#5adc96', 'rgba(90,220,150,0.20)'],
+            ['exit', '#64b5ff', 'rgba(100,181,255,0.20)']
+          ];
+          for (const [key, stroke, fill] of zoneStyles) {
+            const points = zones[key];
+            if (!Array.isArray(points) || points.length < 3) continue;
+            const world = points
+              .filter(point => Array.isArray(point) && Number.isFinite(Number(point[0])) && Number.isFinite(Number(point[1])))
+              .map(point => [obj.x + Number(point[0]), obj.y + Number(point[1])]);
+            if (world.length < 3) continue;
+            ctx.setLineDash(key === activeKey ? [] : [4 / editor.viewport.scale, 3 / editor.viewport.scale]);
+            ctx.beginPath();
+            ctx.moveTo(world[0][0], world[0][1]);
+            for (let index = 1; index < world.length; index++) ctx.lineTo(world[index][0], world[index][1]);
+            ctx.closePath();
+            ctx.fillStyle = fill;
+            ctx.fill();
+            ctx.strokeStyle = stroke;
+            ctx.lineWidth = (key === activeKey ? 2 : 1.2) / editor.viewport.scale;
+            ctx.stroke();
+            if (key === activeKey) {
+              // 激活区顶点手柄（与 ref 碰撞多边形手柄一致）
+              ctx.fillStyle = '#ffffff';
+              const vs = 8 / editor.viewport.scale;
+              for (const [px, py] of world) {
+                ctx.fillRect(px - vs / 2, py - vs / 2, vs, vs);
+                ctx.strokeRect(px - vs / 2, py - vs / 2, vs, vs);
+              }
+            }
+          }
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 2 / editor.viewport.scale;
+          ctx.setLineDash([6 / editor.viewport.scale, 4 / editor.viewport.scale]);
+        } else {
+          const bounds = obj.climbBounds || {};
+          const bx = Number.isFinite(Number(bounds.x)) ? Number(bounds.x) : obj.x;
+          const by = Number.isFinite(Number(bounds.y)) ? Number(bounds.y) : obj.y;
+          const bw = Number.isFinite(Number(bounds.width)) ? Number(bounds.width) : (obj.width || 0);
+          const bh = Number.isFinite(Number(bounds.height)) ? Number(bounds.height) : (obj.height || 0);
+          ctx.setLineDash([]);
+          ctx.fillStyle = 'rgba(90, 220, 150, 0.22)';
+          ctx.strokeStyle = '#5adc96';
+          ctx.lineWidth = 1.5 / editor.viewport.scale;
+          ctx.fillRect(bx, by, bw, bh);
+          ctx.strokeRect(bx, by, bw, bh);
+          const exit = obj.climbExit || obj.climbTarget || null;
+          const ex = Number(exit?.x);
+          const ey = Number(exit?.y);
+          if (Number.isFinite(ex) && Number.isFinite(ey)) {
+            const exitRadius = Math.max(0, Number(obj.climbExitRadius) || 18);
+            ctx.strokeStyle = '#ffd166';
+            ctx.beginPath();
+            ctx.arc(ex, ey, exitRadius, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.fillStyle = '#ffd166';
+            ctx.beginPath();
+            ctx.arc(ex, ey, 3 / editor.viewport.scale, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 2 / editor.viewport.scale;
+          ctx.setLineDash([6 / editor.viewport.scale, 4 / editor.viewport.scale]);
+        }
+      }
     }
 
     ctx.restore();

@@ -107,6 +107,9 @@ export class SceneTerrainBinding {
     if (terrains.length === 0 || !this.SceneTerrainCollision) return;
     if (!scene._terrainCollision) scene._terrainCollision = new this.SceneTerrainCollision({ entityRadius: 12 });
     if (scene.jumpSystem) scene._terrainCollision.setJumpSystem?.(scene.jumpSystem);
+    // 攀爬中的实体跳过地形碰撞（攀爬区间常与树冠碰撞体重叠）
+    const climbSystem = scene.locomotionSystem?.climbSystem;
+    if (climbSystem) scene._terrainCollision.setClimbSystem?.(climbSystem);
     scene._terrainCollision.resolveTerrains(terrains, scene.entities);
   }
 

@@ -225,10 +225,28 @@ export class SceneEditorInteraction {
   }
 
   /**
+   * 可攀爬物件当前激活的攀爬区键（enter=进入/跌落、climb=攀爬、exit=离开）。
+   * 仅当物件已生成 climbZones 且该区有 ≥3 个顶点时返回键名；地形 shape 恒为 null。
+   */
+  _activeClimbZoneKey(obj) {
+    if (obj?.type === 'shape') return null;
+    if (obj?.climbable !== true && obj?.semanticRole !== 'climbSurface') return null;
+    const key = this.editor?.ui?._activeClimbZone || 'climb';
+    return Array.isArray(obj?.climbZones?.[key]) && obj.climbZones[key].length >= 3 ? key : null;
+  }
+
+  /**
    * 读取可编辑多边形的画布世界坐标。ref 碰撞点永远相对脚底锚点存储，
    * 只在编辑器适配层临时转换，禁止把世界坐标写回 canonical 场景数据。
+   * 可攀爬物件的攀爬区（climbZones）同理：顶点相对物件锚点存储，按激活区临时转换。
    */
   getPolygonWorldPoints(obj) {
+    const zoneKey = this._activeClimbZoneKey(obj);
+    if (zoneKey) {
+      return obj.climbZones[zoneKey]
+        .filter(point => Array.isArray(point) && Number.isFinite(point[0]) && Number.isFinite(point[1]))
+        .map(point => [obj.x + point[0], obj.y + point[1]]);
+    }
     if (obj?.type === 'ref') {
       const collision = obj.collision;
       if ((collision?.mode !== 'block' && collision?.mode !== 'walkable')
@@ -240,9 +258,17 @@ export class SceneEditorInteraction {
     return Array.isArray(obj?.points) ? obj.points : [];
   }
 
-  /** 将画布世界坐标写回可编辑多边形；ref 转回脚底锚点相对坐标。 */
+  /** 将画布世界坐标写回可编辑多边形；ref 转回脚底锚点相对坐标，攀爬区转回物件锚点相对坐标。 */
   setPolygonWorldPoints(obj, points) {
     if (!Array.isArray(points)) return false;
+    const zoneKey = this._activeClimbZoneKey(obj);
+    if (zoneKey) {
+      obj.climbZones[zoneKey] = points.map(point => [
+        Math.round(point[0] - obj.x),
+        Math.round(point[1] - obj.y)
+      ]);
+      return true;
+    }
     if (obj?.type === 'ref') {
       if (!obj.collision) return false;
       obj.collision.points = points.map(point => [
@@ -365,7 +391,8 @@ export class SceneEditorInteraction {
           && ((sel.type === 'shape' && (sel.shapeType === 'polygon' || sel.shapeType === 'path'))
             || sel.type === 'buffZone'
             || sel.type === 'effectZone'
-            || (sel.type === 'ref' && this.getPolygonWorldPoints(sel).length >= 3))) {
+            || (sel.type === 'ref' && this.getPolygonWorldPoints(sel).length >= 3)
+            || this._activeClimbZoneKey(sel) !== null)) {
           const vi = this.getVertexAt(sel, pos.x, pos.y);
           if (vi !== -1) {
             editor.interaction.isDragging = true;
@@ -698,11 +725,12 @@ export class SceneEditorInteraction {
 
     items.push({ label: '删除对象', action: () => editor.ui.deleteSelectedObjects() });
 
-    // ─── 多边形/Buff 多边形/ref 碰撞顶点编辑 ─────────────────
+    // ─── 多边形/Buff 多边形/ref 碰撞/可攀爬区顶点编辑 ─────────────────
     const isVertexShape = (clicked.type === 'shape' && (clicked.shapeType === 'polygon' || clicked.shapeType === 'path'))
       || (clicked.type === 'buffZone' && Array.isArray(clicked.points))
       || (clicked.type === 'effectZone' && Array.isArray(clicked.points))
-      || (clicked.type === 'ref' && this.getPolygonWorldPoints(clicked).length >= 3);
+      || (clicked.type === 'ref' && this.getPolygonWorldPoints(clicked).length >= 3)
+      || this._activeClimbZoneKey(clicked) !== null;
     const vertexPoints = this.getPolygonWorldPoints(clicked);
 
     if (isVertexShape && vertexPoints.length >= 3) {

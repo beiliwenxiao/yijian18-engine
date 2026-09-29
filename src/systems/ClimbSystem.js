@@ -56,6 +56,8 @@ export class ClimbSystem {
   constructor(config = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config };
     this._active = new Map();
+    // 脱离（取消/结束）受控攀爬的时间戳：供跳跃入口做短暂冷却，防止"跳离"当帧立即回攀。
+    this._controlledDetachAt = new WeakMap();
   }
 
   startClimb(entity, target = {}, options = {}) {
@@ -99,6 +101,19 @@ export class ClimbSystem {
     const exitRadius = Math.max(0, Number(options.exitRadius) || this.config.exitRadius);
     const baseElevation = Number(transform.position.elevation) || 0;
     entity.getComponent?.('movement')?.stop?.();
+    // 跳下跌落的落点基准（进入/离开区世界包围盒）：无则回落到攀爬范围底部
+    const rawEnterBounds = options.enterBounds || null;
+    const enterBounds = rawEnterBounds
+      && [rawEnterBounds.minX, rawEnterBounds.minY, rawEnterBounds.maxX, rawEnterBounds.maxY].every(Number.isFinite)
+      ? rawEnterBounds
+      : { minX: normalizedBounds.minX, minY: normalizedBounds.minY, maxX: normalizedBounds.maxX, maxY: normalizedBounds.maxY };
+    // 攀爬区多边形（世界坐标顶点）：存在时移动按多边形精确约束（而非包围盒）
+    const climbPolygon = Array.isArray(options.climbPolygon)
+      && options.climbPolygon.length >= 3
+      && options.climbPolygon.every(point => Array.isArray(point)
+        && Number.isFinite(Number(point[0])) && Number.isFinite(Number(point[1])))
+      ? options.climbPolygon.map(point => [Number(point[0]), Number(point[1])])
+      : null;
     const state = {
       mode: 'controlled',
       transform,
@@ -113,12 +128,22 @@ export class ClimbSystem {
       exitY,
       exitRadius,
       speed,
+      enterBounds,
+      climbPolygon,
+      climbSurfaceBounds: options.surfaceBounds || null,
       climbElevation: Math.max(baseElevation, Number(options.elevation) || baseElevation + this.config.controlledElevation),
       surfaceId: typeof options.surfaceId === 'string' ? options.surfaceId : null,
       ...this._acquireLayer(entity)
     };
-    state.transform.position.x = clamp(state.transform.position.x, state.minX, state.maxX);
-    state.transform.position.y = clamp(state.transform.position.y, state.minY, state.maxY);
+    if (climbPolygon) {
+      // 入口吸附：把玩家吸附到攀爬多边形最近点（从进入区"抓住"攀爬面）
+      const nearest = this._nearestPolygonPoint(climbPolygon, state.transform.position.x, state.transform.position.y);
+      state.transform.position.x = nearest.x;
+      state.transform.position.y = nearest.y;
+    } else {
+      state.transform.position.x = clamp(state.transform.position.x, state.minX, state.maxX);
+      state.transform.position.y = clamp(state.transform.position.y, state.minY, state.maxY);
+    }
     state.transform.position.elevation = state.climbElevation;
     this._active.set(entity, state);
     return true;
@@ -155,6 +180,12 @@ export class ClimbSystem {
       },
       exitPosition: { x: state.exitX, y: state.exitY },
       exitRadius: state.exitRadius,
+      // 跳下跌落落点基准（进入区世界包围盒）
+      enterBounds: state.enterBounds || null,
+      // 攀爬高度（跌落动画的起始抬升，保证下落过程高度连续）
+      elevation: state.climbElevation,
+      // 被攀爬物体的本体世界包围盒（攀爬时高亮物体边缘用）
+      surfaceBounds: state.climbSurfaceBounds || null,
       isAtExit: this.isAtControlledExit(entity)
     };
   }
@@ -363,10 +394,67 @@ export class ClimbSystem {
       : 0;
     if (magnitude > 0) {
       const distance = state.speed * deltaTime * magnitude;
-      state.transform.position.x = clamp(state.transform.position.x + rawX / rawMagnitude * distance, state.minX, state.maxX);
-      state.transform.position.y = clamp(state.transform.position.y + rawY / rawMagnitude * distance, state.minY, state.maxY);
+      const currentX = state.transform.position.x;
+      const currentY = state.transform.position.y;
+      const nextX = currentX + rawX / rawMagnitude * distance;
+      const nextY = currentY + rawY / rawMagnitude * distance;
+      if (Array.isArray(state.climbPolygon) && state.climbPolygon.length >= 3) {
+        // 多边形精确约束：整体尝试 → 分轴滑动，角色脚点始终保持在攀爬多边形内
+        const polygon = state.climbPolygon;
+        if (this._pointInPolygon(polygon, nextX, nextY)) {
+          state.transform.position.x = nextX;
+          state.transform.position.y = nextY;
+        } else if (this._pointInPolygon(polygon, nextX, currentY)) {
+          state.transform.position.x = nextX;
+        } else if (this._pointInPolygon(polygon, currentX, nextY)) {
+          state.transform.position.y = nextY;
+        }
+      } else {
+        state.transform.position.x = clamp(nextX, state.minX, state.maxX);
+        state.transform.position.y = clamp(nextY, state.minY, state.maxY);
+      }
     }
     state.transform.position.elevation = state.climbElevation;
+  }
+
+  /** 射线法：点是否在多边形内。 */
+  _pointInPolygon(polygon, x, y) {
+    let inside = false;
+    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+      const xi = polygon[i][0];
+      const yi = polygon[i][1];
+      const xj = polygon[j][0];
+      const yj = polygon[j][1];
+      if (((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi)) inside = !inside;
+    }
+    return inside;
+  }
+
+  /** 点到多边形的最近点（逐边投影取最近），用于进入攀爬时的入口吸附。 */
+  _nearestPolygonPoint(polygon, x, y) {
+    if (this._pointInPolygon(polygon, x, y)) return { x, y };
+    let best = null;
+    let bestDistance = Infinity;
+    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+      const ax = polygon[j][0];
+      const ay = polygon[j][1];
+      const bx = polygon[i][0];
+      const by = polygon[i][1];
+      const dx = bx - ax;
+      const dy = by - ay;
+      const lengthSq = dx * dx + dy * dy;
+      const t = lengthSq === 0
+        ? 0
+        : Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / lengthSq));
+      const px = ax + dx * t;
+      const py = ay + dy * t;
+      const distance = Math.hypot(x - px, y - py);
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        best = { x: px, y: py };
+      }
+    }
+    return best || { x, y };
   }
 
   _acquireLayer(entity) {
@@ -392,7 +480,15 @@ export class ClimbSystem {
   _finish(entity, state) {
     state.transform.position.elevation = state.baseElevation;
     this._releaseLayer(entity, state);
+    if (state.mode === 'controlled') this._controlledDetachAt.set(entity, performance.now());
     this._active.delete(entity);
+  }
+
+  /** 受控攀爬脱离后的冷却剩余毫秒；0 表示可立即再次攀爬。 */
+  getControlledDetachCooldown(entity, cooldownMs = 250) {
+    const detachedAt = this._controlledDetachAt.get(entity);
+    if (!detachedAt) return 0;
+    return Math.max(0, cooldownMs - (performance.now() - detachedAt));
   }
 }
 

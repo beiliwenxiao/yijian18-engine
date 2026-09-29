@@ -67,6 +67,9 @@ export class LocomotionSystem {
           exitRadius: Number(target.exitRadius) || undefined,
           speed: Number(target.speed) || undefined,
           elevation: Number(target.elevation) || undefined,
+          enterBounds: target.enterBounds || null,
+          climbPolygon: target.climbPolygon || null,
+          surfaceBounds: target.climbSurfaceBounds || null,
           surfaceId: target.id
         });
       }
@@ -98,6 +101,16 @@ export class LocomotionSystem {
 
   finishControlledClimb(entity) {
     return this.climbSystem.finishControlledClimb(entity);
+  }
+
+  /** 取消攀爬（攀爬中按跳跃随时脱离）：留在当前请求的位置，恢复正常移动层。 */
+  cancelClimb(entity) {
+    return this.climbSystem.cancel(entity);
+  }
+
+  /** 受控攀爬脱离后的再吸附冷却剩余毫秒（防"跳离"当帧立即回攀）。 */
+  getControlledClimbDetachCooldown(entity) {
+    return this.climbSystem.getControlledDetachCooldown(entity);
   }
 
   serialize(entity) {
