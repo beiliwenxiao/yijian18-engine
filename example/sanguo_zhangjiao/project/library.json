@@ -333,52 +333,58 @@
         },
         "particlePresets": [
           {
-            "alpha": 0.28,
+            "alpha": 0.4,
             "color": "#ff7a1e",
-            "life": 300,
+            "life": 500,
             "rate": 5,
-            "size": 10,
-            "vy": -34
+            "size": 9,
+            "vy": -48,
+            "xJitter": 18
           },
           {
             "alpha": 0.25,
             "color": "#f0541e",
-            "life": 260,
+            "life": 420,
             "rate": 7,
-            "size": 8,
-            "vy": -25
+            "size": 7,
+            "vy": -38,
+            "xJitter": 13
           },
           {
             "alpha": 0.38,
             "color": "#fff3c8",
-            "life": 210,
+            "life": 320,
             "rate": 5,
             "size": 4.5,
-            "vy": -28
+            "vy": -32,
+            "xJitter": 10
           },
           {
             "alpha": 0.38,
             "color": "#ffc93e",
-            "life": 340,
+            "life": 600,
             "rate": 9,
             "size": 5,
-            "vy": -72
+            "vy": -108,
+            "xJitter": 14
           },
           {
             "alpha": 0.34,
             "color": "#ff8a26",
-            "life": 310,
+            "life": 640,
             "rate": 8,
             "size": 3.6,
-            "vy": -58
+            "vy": -88,
+            "xJitter": 10
           },
           {
             "alpha": 0.31,
             "color": "#c8321e",
-            "life": 340,
+            "life": 620,
             "rate": 5,
             "size": 3.4,
-            "vy": -105
+            "vy": -156,
+            "xJitter": 7
           },
           {
             "alpha": 0.17,
@@ -386,7 +392,8 @@
             "life": 190,
             "rate": 2,
             "size": 3.5,
-            "vy": -15
+            "vy": -15,
+            "xJitter": 14
           }
         ],
         "presentation": {
@@ -394,7 +401,7 @@
           "collisionWidth": 60,
           "fireHeight": 60,
           "fireWidth": 40,
-          "lightRadius": 300
+          "lightRadius": 260
         },
         "stoneRing": {
           "height": 38,

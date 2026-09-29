@@ -177,17 +177,19 @@ const campfireFeatureMethods = {
     this.campfire.hasBeenIgnited = true;
     this.campfire.emitters = [];
 
-    const fireBaseY = this.campfire.y - 18;
+    const fireBaseY = this.campfire.y - 23;
     const firePoint = { x: this.campfire.x, y: fireBaseY };
-    const mk = (rate, vy, life, size, color, alpha) => this.campfire.emitters.push(
+    const mk = (preset) => this.campfire.emitters.push(
       this.particleSystem.createEmitter({
         position: { x: firePoint.x, y: firePoint.y },
-        rate,
+        rate: preset.rate,
         duration: Infinity,
+        // 发射横向散布：底层宽（铺满木堆）、顶层窄（火苗收拢），形成三角火形
+        positionJitter: Number(preset.xJitter) > 0 ? { x: Number(preset.xJitter) } : null,
         particleConfig: {
           position: { x: firePoint.x, y: firePoint.y },
-          velocity: { x: 0, y: vy },
-          life, size, color, alpha,
+          velocity: { x: 0, y: preset.vy },
+          life: preset.life, size: preset.size, color: preset.color, alpha: preset.alpha,
           gravity: 0, friction: 0.95,
           // 火焰语义渲染：径向渐变发光 + 火舌摆动，叠加发光避免实心圆"泡泡"感
           isFire: true,
@@ -203,7 +205,7 @@ const campfireFeatureMethods = {
       })
     );
     for (const preset of this.particlePresets) {
-      mk(preset.rate, preset.vy, preset.life, preset.size, preset.color, preset.alpha);
+      mk(preset);
     }
 
     // 烟雾：灰白色低透明烟团自火焰顶端缓缓升起，横向随机飘散后渐散。
@@ -236,13 +238,6 @@ const campfireFeatureMethods = {
   },
 
   updateCampfireAnimation(deltaTime) {
-    if (this.campfire.lit && this.campfire.imageLoaded) {
-      this.campfire.frameTime += deltaTime;
-      if (this.campfire.frameTime >= this.campfire.frameDuration) {
-        this.campfire.frameTime = 0;
-        this.campfire.currentFrame = (this.campfire.currentFrame + 1) % this.campfire.frameCount;
-      }
-    }
     if (!this.campfire.lit) {
       if (this.campfire.hasBeenIgnited && this.campfire.emberEmitters.length === 0) {
         campfireFeatureMethods._startEmberParticles.call(this);
@@ -257,15 +252,14 @@ const campfireFeatureMethods = {
       return;
     }
     const time = this.now() / 1000;
+    // 抖动节奏统一为 1.8 秒周期的平滑摆动（去掉逐帧随机乱颤）
+    const swayPhase = time * (Math.PI * 2 / 1.8);
     this.campfire.emitters.forEach((emitter, index) => {
       if (!emitter) return;
-      // 摆动/横移抖动收敛（±3 → ±2）：火焰跳动更轻，只剩轻微摇曳
-      const swayAmount = index < 2
-        ? (this.random() - 0.5) * 4
-        : Math.sin(time * 2 + index * 0.5) * 2 + (this.random() - 0.5) * 1.4;
+      const swayOffset = index * 1.7;
+      const swayAmount = Math.sin(swayPhase + swayOffset) * 2;
       emitter.position.x = this.campfire.x + swayAmount;
       emitter.position.y = this.campfire.y - 13;
-      emitter.particleConfig.velocity.x = (this.random() - 0.5) * 4;
       this.particleSystem.updateEmitter(emitter, deltaTime);
     });
     // 烟雾发射器：跟随火堆位置，每帧驱动生成与上升
@@ -539,22 +533,8 @@ const campfireFeatureMethods = {
         }
         return;
       }
-      const flame = this.visualLayers.flame;
-      if (this.campfire.imageLoaded && this.campfire.fireImage) {
-        const col = this.campfire.currentFrame % this.campfire.frameCols;
-        const row = Math.floor(this.campfire.currentFrame / this.campfire.frameCols);
-        ctx.save();
-        ctx.globalAlpha = 0.9;
-        ctx.drawImage(
-          this.campfire.fireImage,
-          col * this.campfire.frameWidth, row * this.campfire.frameHeight,
-          this.campfire.frameWidth, this.campfire.frameHeight,
-          x - flame.width * flame.pivot.x + flame.offsetX,
-          y - flame.height * flame.pivot.y + flame.offsetY,
-          flame.width, flame.height
-        );
-        ctx.restore();
-      }
+      // 火焰表现只用粒子效果（lightCampfire 的多层粒子发射器），
+      // 不再绘制火焰帧动画贴图（fireImage）。
       campfireFeatureMethods.renderFuelStatus.call(this, ctx);
       return;
     }

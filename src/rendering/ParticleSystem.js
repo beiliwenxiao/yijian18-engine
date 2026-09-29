@@ -145,7 +145,9 @@ export class ParticleSystem {
       elapsed: 0,
       accumulator: 0,
       // 可选逐粒子速度抖动（如烟雾飘散）：{ x: 全幅, y: 全幅 }，缺省不抖动
-      velocityJitter: config.velocityJitter || null
+      velocityJitter: config.velocityJitter || null,
+      // 可选逐粒子发射位置散布（如火焰底部的横向铺开）：{ x: 全幅 }，缺省不散布
+      positionJitter: config.positionJitter || null
     };
 
     return emitter;
@@ -173,6 +175,10 @@ export class ParticleSystem {
         ...emitter.particleConfig,
         position: { ...emitter.position }
       };
+      const spread = emitter.positionJitter;
+      if (spread?.x) {
+        config.position.x += (Math.random() - 0.5) * spread.x;
+      }
       const jitter = emitter.velocityJitter;
       if (jitter) {
         config.velocity = { ...(config.velocity || { x: 0, y: 0 }) };

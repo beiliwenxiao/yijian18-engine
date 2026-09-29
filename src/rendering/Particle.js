@@ -74,10 +74,10 @@ export class Particle {
       const lifeRatio = this.life / this.maxLife;
       const ageRatio = 1 - lifeRatio; // 0到1，0是刚生成，1是快消失
 
-      // 随着粒子上升，增加水平摆动（形成顶部的尖锐火舌）；幅度收敛让跳动更沉稳
+      // 随着粒子上升，增加水平摆动（形成顶部的火舌）；节奏 1.8 秒/来回，与发射器摆动统一
       const swingMultiplier = ageRatio * 2; // 上升过程中摆动增加2倍
       const time = performance.now() / 1000;
-      const swing = Math.sin(time * 8 + this.position.x * 0.1) * 8 * swingMultiplier;
+      const swing = Math.sin(time * (Math.PI * 2 / 1.8) + this.position.x * 0.1) * 8 * swingMultiplier;
 
       this.velocity.x += swing * deltaTime;
     }
@@ -154,6 +154,9 @@ export class Particle {
       ctx.closePath();
       ctx.fill();
     } else if (this.isFire) {
+      // 逐粒子明暗闪烁（相位随横向位置错开）：群体不同步，才有"火"的跳动感；频率放缓避免急促乱闪
+      const flicker = 0.78 + 0.22 * Math.sin(performance.now() / 1000 * 4 + this.position.x * 0.07 + this.position.y * 0.05);
+      ctx.globalAlpha *= flicker;
       // 火焰粒子：径向渐变发光
       const glowGradient = ctx.createRadialGradient(screenX, screenY, 0, screenX, screenY, safeSize * 1.5);
       glowGradient.addColorStop(0, this.color);
@@ -163,7 +166,7 @@ export class Particle {
       ctx.beginPath();
       ctx.arc(screenX, screenY, safeSize * 1.5, 0, Math.PI * 2);
       ctx.fill();
-      
+
       ctx.fillStyle = this.color;
       ctx.beginPath();
       ctx.arc(screenX, screenY, safeSize * 0.6, 0, Math.PI * 2);
