@@ -269,8 +269,10 @@ export class SceneFramePipeline {
     // 「跳离」：受控攀爬中检测跳跃按下沿，按位置分流——
     //   1) 在上部离开区（isAtExit）：脱离攀爬，玩家坐标不变（从出口离开）；
     //   2) 不在离开区 / 无离开区：跳下——跌落到入口区垂直下方，表现类似起跳，飘字「跳下」。
+    //   跳离后本次按住不再进入蓄力（松开按键才恢复），避免落地瞬间二次起跳。
     if (controlledClimbActive && jumpHeldRaw && this._climbJumpHeldPrev !== true) {
       const climbPresentation = locomotionSystem.getClimbPresentation(player);
+      this._climbDropSuppressCharge = true;
       if (climbPresentation?.isAtExit) {
         locomotionSystem.finishControlledClimb?.(player);
       } else {
@@ -300,7 +302,9 @@ export class SceneFramePipeline {
       }
     }
     this._climbJumpHeldPrev = jumpHeldRaw;
-    const jumpHeld = !worldInputBlocked && !controlledClimbActive && jumpHeldRaw;
+    if (this._climbDropSuppressCharge && !jumpHeldRaw) this._climbDropSuppressCharge = false;
+    const jumpHeld = !worldInputBlocked && !controlledClimbActive && jumpHeldRaw
+      && this._climbDropSuppressCharge !== true;
     const jumpAxis = worldInputBlocked || !gamepadJumpHeld
       ? null
       : (scene.inputManager?.getMoveAxis?.() || null);
