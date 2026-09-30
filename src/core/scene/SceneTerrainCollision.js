@@ -135,14 +135,28 @@ export class SceneTerrainCollision {
       for (let i = 0; i < nearbyPonds.length; i++) this.resolvePond(p, nearbyPonds[i], radiusX, radiusY);
       const nearbyTrees = this._querySpatial(spatial.trees, p.x, p.y);
       for (let i = 0; i < nearbyTrees.length; i++) this.resolveTree(p, nearbyTrees[i], radiusX, radiusY);
-      const nearbyShapes = isWalkable
-        ? EMPTY_SPATIAL_ITEMS
-        : this._querySpatialRange(spatial.shapes, p, previous, broadRadius);
-      for (let i = 0; i < nearbyShapes.length; i++) this.resolveShape(p, nearbyShapes[i], radiusX, radiusY, previous);
-      // 缺少可计算包围盒的自定义 shape 始终走兜底列表（walkable 内除外）。
-      if (!isWalkable) {
-        for (let i = 0; i < spatial.unboundedShapes.length; i++) {
-          this.resolveShape(p, spatial.unboundedShapes[i], radiusX, radiusY, previous);
+      // 若上一帧位置在可落脚区域内，而当前帧确实落入可碰撞 shape（如跳跃落进河道），
+      // 优先将角色推回起跳时的可落脚位置，避免被弹到远离起跳点的碰撞体外沿；
+      // 落在普通无阻挡地面（不在可落脚 shape 内但也未被阻挡）时不推回。
+      let pushedBackToWalkable = false;
+      if (!isWalkable && previous) {
+        if (this._isPositionInAnyWalkable(spatial, previous.x, previous.y)
+          && this._isPositionInsideAnyShape(spatial, p.x, p.y)) {
+          p.x = previous.x;
+          p.y = previous.y;
+          pushedBackToWalkable = true;
+        }
+      }
+      if (!pushedBackToWalkable) {
+        const nearbyShapes = isWalkable
+          ? EMPTY_SPATIAL_ITEMS
+          : this._querySpatialRange(spatial.shapes, p, previous, broadRadius);
+        for (let i = 0; i < nearbyShapes.length; i++) this.resolveShape(p, nearbyShapes[i], radiusX, radiusY, previous);
+        // 缺少可计算包围盒的自定义 shape 始终走兜底列表（walkable 内除外）。
+        if (!isWalkable) {
+          for (let i = 0; i < spatial.unboundedShapes.length; i++) {
+            this.resolveShape(p, spatial.unboundedShapes[i], radiusX, radiusY, previous);
+          }
         }
       }
       if (hasCollisionOffset) {
@@ -178,6 +192,9 @@ export class SceneTerrainCollision {
       this.resolveEntities(terrain, entities, options);
     }
     for (const [entity] of previousPositions) {
+      // 跳跃/攀爬中的实体位置由对应系统全权驱动，不更新已解算位置记忆，
+      // 这样落地时 previous 保持为起跳点，可正确推回起跳的可落脚区域。
+      if (this.jumpSystem?.isJumping?.(entity) || this.climbSystem?.isClimbing?.(entity)) continue;
       const transform = entity?.getComponent?.('transform');
       if (!transform) continue;
       const collision = entity.getComponent?.('collision');
@@ -552,6 +569,30 @@ export class SceneTerrainCollision {
     else if (minD === dR) p.x = right + radiusX + EPS;
     else if (minD === dT) p.y = top - radiusY - EPS;
     else p.y = bottom + radiusY + EPS;
+  }
+
+  /** @private 判定点是否落在任一可落脚 shape 内。 */
+  _isPositionInAnyWalkable(spatial, x, y) {
+    const nearby = this._querySpatial(spatial.walkables, x, y);
+    for (let i = 0; i < nearby.length; i++) {
+      if (this._pointInShape(nearby[i], x, y)) return true;
+    }
+    for (let i = 0; i < spatial.unboundedWalkables.length; i++) {
+      if (this._pointInShape(spatial.unboundedWalkables[i], x, y)) return true;
+    }
+    return false;
+  }
+
+  /** @private 判定点是否落在任一可碰撞 shape 内部（不含实体半径外沿）。 */
+  _isPositionInsideAnyShape(spatial, x, y) {
+    const nearby = this._querySpatial(spatial.shapes, x, y);
+    for (let i = 0; i < nearby.length; i++) {
+      if (this._pointInShape(nearby[i], x, y)) return true;
+    }
+    for (let i = 0; i < spatial.unboundedShapes.length; i++) {
+      if (this._pointInShape(spatial.unboundedShapes[i], x, y)) return true;
+    }
+    return false;
   }
 
   /** @private 与 terrain 实现无关的 shape 点命中。 */
