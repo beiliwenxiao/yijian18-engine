@@ -1102,6 +1102,30 @@ export class SceneEditorUI {
           // 清理空对象，保持场景 JSON 干净
           this._pruneEmptyObjects(obj.overrides);
           if (Object.keys(obj.overrides).length === 0) delete obj.overrides;
+        } else if (prop.startsWith('travel.')) {
+          // 传送点嵌套属性：travel.toSceneId / travel.fromSceneId。
+          // 选择场景时按 option 的 data-scene-name 自动写入对应场景名称；清空即移除该方向。
+          editor.history?.saveHistory?.();
+          const subKey = prop.slice(7);
+          if (!obj.travel || typeof obj.travel !== 'object') obj.travel = {};
+          const nameKey = subKey === 'toSceneId' ? 'toSceneName'
+            : subKey === 'fromSceneId' ? 'fromSceneName' : null;
+          if (nameKey) {
+            if (!value) {
+              delete obj.travel[subKey];
+              delete obj.travel[nameKey];
+            } else {
+              obj.travel[subKey] = value;
+              const sceneName = e.target.selectedOptions?.[0]?.dataset?.sceneName || '';
+              if (sceneName) obj.travel[nameKey] = sceneName;
+              else delete obj.travel[nameKey];
+            }
+            this._pruneEmptyObjects(obj.travel);
+            if (Object.keys(obj.travel).length === 0) delete obj.travel;
+            this.updateObjectProperties();
+          } else {
+            obj.travel[subKey] = value;
+          }
         } else if (prop === 'climbExitZone') {
           // 离开区勾选：勾选=生成顶部离开区（抵达才算出口）；取消=删除离开区，跳跃随时脱离
           editor.history?.saveHistory?.();
@@ -2163,6 +2187,45 @@ export class SceneEditorUI {
     return kindLabels[object.kind] || typeLabels[object.type] || '未命名对象';
   }
 
+  /**
+   * 构建传送点（travel）去向/来源场景选择字段。
+   * 选择场景时自动写入该场景的 id 与名称；清空表示不是传送点。
+   * @private
+   */
+  _buildTravelFields(obj, escapeHtml) {
+    const travel = (obj.travel && typeof obj.travel === 'object') ? obj.travel : {};
+    const scenes = this._getProjectSceneOptions();
+    const sceneOptions = selectedId => {
+      let options = '<option value="">-- 未设置 --</option>';
+      for (const scene of scenes) {
+        const selected = scene.id === selectedId ? 'selected' : '';
+        options += `<option value="${escapeHtml(scene.id)}" data-scene-name="${escapeHtml(scene.name || scene.id)}" ${selected}>${escapeHtml(scene.name || scene.id)} · ${escapeHtml(scene.id)}</option>`;
+      }
+      if (selectedId && !scenes.some(scene => scene.id === selectedId)) {
+        options += `<option value="${escapeHtml(selectedId)}" selected>${escapeHtml(selectedId)}（项目未找到）</option>`;
+      }
+      return options;
+    };
+    const marked = travel.toSceneId || travel.fromSceneId;
+    return `
+      <div class="property-row" style="border-top:1px dashed #333;margin-top:4px;padding-top:4px;"><label style="color:#7ec8ff;">传送去向:</label><select data-prop="travel.toSceneId" style="min-width:0;flex:1;" title="交互后传送到的场景；保存时自动写入场景 id 与名称">${sceneOptions(travel.toSceneId)}</select></div>
+      <div class="property-row"><label style="color:#7ec8ff;">传送来源:</label><select data-prop="travel.fromSceneId" style="min-width:0;flex:1;" title="本传送点的来源/返回场景（通常保持为当前场景）">${sceneOptions(travel.fromSceneId)}</select></div>
+      <div class="property-row"><small style="color:#7ea8c9;">${marked ? '该交互点是传送点：画布与运行时地面都会显示传送圆环。' : '设置去向或来源后，该交互点成为传送点，画布与运行时地面显示传送圆环。'}</small></div>`;
+  }
+
+  /** @private 项目场景列表（id+name），用于传送点去向/来源选择。 */
+  _getProjectSceneOptions() {
+    let scenes = null;
+    try {
+      scenes = typeof this.editor.options?.getSceneList === 'function'
+        ? this.editor.options.getSceneList()
+        : null;
+    } catch (error) {
+      console.warn('SceneEditorUI: 获取项目场景列表失败', error);
+    }
+    return Array.isArray(scenes) ? scenes.filter(scene => scene?.id) : [];
+  }
+
   _buildUnifiedTriggerProperties(obj) {
     const escapeHtml = value => String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;')
       .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
@@ -2258,6 +2321,7 @@ export class SceneEditorUI {
       <div class="property-row"><label>交互范围:</label><input type="number" value="${obj.pointerRadius != null ? obj.pointerRadius : (obj.radius != null ? obj.radius : 60)}" min="0" data-prop="radius" title="运行时交互检测范围；修改会同步写入 pointerRadius，确保实际生效"></div>
       ${obj.pointerRadius != null && obj.pointerRadius !== obj.radius ? '<div class="property-row"><small style="color:#e8a24a;">该对象存在独立的 pointerRadius 值，已显示为当前实际范围；修改将同步两者。</small></div>' : ''}
       <div class="property-row"><label>操作提示:</label><input type="text" value="${escapeHtml(obj.prompt || '')}" data-prop="prompt" placeholder="如 {interact}点燃"></div>
+      ${this._buildTravelFields(obj, escapeHtml)}
       <div class="property-row"><label>生效条件 activeWhen:</label><textarea rows="5" data-prop="activeWhen" placeholder='如 {"blackboardKey":"storyState","path":"s01Survival.berriesGathered","equals":true}' style="width:100%;font-family:monospace;">${obj.activeWhen ? escapeHtml(JSON.stringify(obj.activeWhen, null, 2)) : ''}</textarea></div>
       <div class="property-row"><small style="color:#8ea4c9;">留空表示始终生效；仅接受 JSON 对象，支持 all/any/not 与 blackboardKey/path/exists/equals/gte/lte/in。</small></div>
       <div class="property-row"><button id="editor-edit-trigger" ${obj.triggerId ? '' : 'disabled'}>编辑行为</button><button id="editor-preview-trigger" ${definition ? '' : 'disabled'}>预演摘要</button></div>

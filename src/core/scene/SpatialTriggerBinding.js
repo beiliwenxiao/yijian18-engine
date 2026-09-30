@@ -68,6 +68,10 @@ export function createSpatialTriggerBinding(source = {}) {
       : {}),
     ...(source.activeWhen && typeof source.activeWhen === 'object'
       ? { activeWhen: cloneCanonicalValue(source.activeWhen) }
+      : {}),
+    // 传送点元数据：去向/来源场景 id 与名称；编辑器与地面圆环按此识别传送点。
+    ...(source.travel && typeof source.travel === 'object'
+      ? { travel: cloneCanonicalValue(source.travel) }
       : {})
   };
   return deepFreeze(binding);

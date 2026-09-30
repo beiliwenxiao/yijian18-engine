@@ -54,7 +54,7 @@
           "height": 70,
           "id": "S01-C01-door",
           "name": "庇护所门口",
-          "semanticRole": "exit",
+          "semanticRole": "travelMarker",
           "type": "region",
           "width": 142,
           "x": 571.8438438438438,
@@ -137,6 +137,12 @@
           "radius": 84,
           "target": "S01-C01-door",
           "targetMode": "id",
+          "travel": {
+            "fromSceneId": "S01-C01",
+            "fromSceneName": "S01·小庇护所内",
+            "toSceneId": "S01",
+            "toSceneName": "S01 寒风荒野求生"
+          },
           "triggerId": "trg_s01_leave_shelter",
           "type": "trigger",
           "width": 142,

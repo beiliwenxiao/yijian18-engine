@@ -311,7 +311,9 @@ export class SceneTriggerBindingSystem {
       const target = spatial.targets[0] || null;
       const role = String(target?.semanticRole || binding.semanticRole || '');
       const targetId = String(target?.id || binding.target || '');
-      if (!GROUND_MARKER_ROLES.has(role) && !GROUND_MARKER_ID_PATTERN.test(targetId)) continue;
+      // 带 travel 元数据的绑定是显式传送点；语义角色与 ID 模式保留为旧数据兼容路径。
+      const hasTravelMetadata = binding.travel != null && typeof binding.travel === 'object';
+      if (!hasTravelMetadata && !GROUND_MARKER_ROLES.has(role) && !GROUND_MARKER_ID_PATTERN.test(targetId)) continue;
       const anchor = spatial.geometry.anchor;
       const radius = Math.min(48, Math.max(22, (Number(binding.radius) || 0) * 0.42));
       markers.push(Object.freeze({ x: anchor.x, y: anchor.y, radius }));

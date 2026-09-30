@@ -420,6 +420,27 @@ export class SceneEditorCanvas {
       ctx.fillRect(obj.x, obj.y, obj.width, obj.height);
       ctx.strokeRect(obj.x, obj.y, obj.width, obj.height);
       ctx.setLineDash([]);
+      // 传送点圆环标识：带 travel 元数据的绑定在中心绘制发光椭圆环，与运行时地面圆环对应。
+      if (obj.travel && typeof obj.travel === 'object') {
+        const ringRx = Math.max(18, Math.min(48, (obj.width || 60) / 2));
+        const ringRy = ringRx * 0.45;
+        ctx.save();
+        ctx.beginPath();
+        ctx.ellipse(centerX, centerY, ringRx, ringRy, 0, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(126,199,255,0.85)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.ellipse(centerX, centerY, ringRx * 0.62, ringRy * 0.62, 0, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(126,199,255,0.45)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.restore();
+        const toLabel = obj.travel.toSceneId
+          ? `⭕ 传送 → ${obj.travel.toSceneName || obj.travel.toSceneId} (${obj.travel.toSceneId})`
+          : '⭕ 传送点（未设置去向）';
+        this._drawLogicLabel(ctx, toLabel, obj.x + 4, obj.y + obj.height + 26, '#7ec8ff');
+      }
       ctx.fillStyle = color;
       ctx.font = '14px Arial';
       ctx.textAlign = 'left';

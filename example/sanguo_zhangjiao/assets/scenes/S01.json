@@ -376,14 +376,14 @@
             "locked": false,
             "visible": true
           },
-          "height": 75,
+          "height": 40,
           "id": "S01-shelter-rest",
-          "name": "庇护所休息处",
-          "semanticRole": "restPoint",
+          "name": "庇护所门口",
+          "semanticRole": "travelMarker",
           "type": "region",
-          "width": 75,
-          "x": 507.31417073306136,
-          "y": 361.568287819749
+          "width": 55,
+          "x": 528.3617561970024,
+          "y": 417.2163816046919
         },
         {
           "climbable": false,
@@ -488,8 +488,8 @@
           "name": "庇护所返回出生点",
           "ref": "player",
           "type": "spawn",
-          "x": 544.8141707330614,
-          "y": 436.568287819749
+          "x": 558.4616158832606,
+          "y": 421.4423323957397
         },
         {
           "group": "S01-initial",
@@ -1226,20 +1226,26 @@
             ]
           },
           "event": "interact",
-          "height": 70,
+          "height": 40,
           "id": "S01-binding-enter-shelter",
           "name": "进入小庇护所",
-          "pointerRadius": 40,
+          "pointerRadius": 72,
           "prompt": "{interact}进入小庇护所",
           "radius": 72,
           "sceneEventId": "s01.event.overnight",
           "target": "S01-shelter-rest",
           "targetMode": "id",
+          "travel": {
+            "fromSceneId": "S01",
+            "fromSceneName": "S01 寒风荒野求生",
+            "toSceneId": "S01-C01",
+            "toSceneName": "S01·小庇护所内"
+          },
           "triggerId": "trg_s01_enter_shelter",
           "type": "trigger",
-          "width": 70,
-          "x": 795,
-          "y": 485
+          "width": 55,
+          "x": 529.6364135090673,
+          "y": 402.7098339958541
         },
         {
           "activeWhen": {
@@ -1414,6 +1420,13 @@
           "y": 205.69676493402227
         }
       ],
+      "visible": true
+    },
+    {
+      "id": "layer_logic",
+      "locked": false,
+      "name": "逻辑对象",
+      "objects": [],
       "visible": true
     }
   ],
