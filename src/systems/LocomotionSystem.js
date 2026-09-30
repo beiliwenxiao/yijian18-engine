@@ -70,6 +70,7 @@ export class LocomotionSystem {
           enterBounds: target.enterBounds || null,
           climbPolygon: target.climbPolygon || null,
           surfaceBounds: target.climbSurfaceBounds || null,
+          hasExitZone: target.hasExitZone !== false,
           surfaceId: target.id
         });
       }

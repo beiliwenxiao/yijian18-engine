@@ -277,27 +277,29 @@ export class SceneFramePipeline {
         locomotionSystem.finishControlledClimb?.(player);
       } else {
         locomotionSystem.cancelClimb?.(player);
-        const position = player?.getComponent?.('transform')?.position;
         const enterBounds = climbPresentation?.enterBounds || null;
-        const drop = position && enterBounds
-          ? Math.max(0, Number(enterBounds.maxY) - Number(position.y))
-          : 0;
-        if (drop > 4 && jumpSystem) {
-          // 跌落表现：只播放跳跃的后半段（startProgress 0.5）——无上抛，从攀爬高度
-          // 直接坠入下方跌落区域；peakHeight 取攀爬抬升高度，保证下落过程高度连续。
-          const climbElevation = Number(climbPresentation?.elevation);
-          jumpSystem.startJump(player, { x: 0, y: 1 }, {
-            distance: drop * 4,
-            peakHeight: Number.isFinite(climbElevation) && climbElevation > 0 ? climbElevation : 14,
-            startProgress: 0.5,
-            duration: Math.max(0.6, Math.min(1.4, drop / 150))
-          });
-          floatingTextManager?.addText?.(
-            Number(position.x) || 0,
-            (Number(position.y) || 0) - 40,
-            '跳下',
-            '#aef3c9'
-          );
+        const position = player?.getComponent?.('transform')?.position;
+        if (enterBounds && jumpSystem) {
+          // 落点位置 = 跌落区域中底部：跳下时角色明确位移到跌落区域的落点，而非原地垂落
+          const landX = (Number(enterBounds.minX) + Number(enterBounds.maxX)) / 2;
+          const landY = Number(enterBounds.maxY);
+          const startX = Number(position?.x) || landX;
+          const startY = Number(position?.y) || landY;
+          const dx = landX - startX;
+          const dy = landY - startY;
+          const dist = Math.hypot(dx, dy);
+          if (dist > 4) {
+            // 跌落表现：只播放跳跃的后半段（startProgress 0.5）——无上抛，从攀爬高度
+            // 直接坠入落点；peakHeight 取攀爬抬升高度，保证下落过程高度连续。
+            const climbElevation = Number(climbPresentation?.elevation);
+            jumpSystem.startJump(player, { x: dx / dist, y: dy / dist }, {
+              distance: dist * 4,
+              peakHeight: Number.isFinite(climbElevation) && climbElevation > 0 ? climbElevation : 14,
+              startProgress: 0.5,
+              duration: Math.max(0.6, Math.min(1.4, dist / 150))
+            });
+            floatingTextManager?.addText?.(startX, startY - 40, '跳下', '#aef3c9');
+          }
         }
       }
     }

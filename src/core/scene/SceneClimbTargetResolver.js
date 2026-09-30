@@ -104,8 +104,9 @@ export class SceneClimbTargetResolver {
       best = {
         id: surface.id,
         distance,
-        promptTemplate: surface.prompt || '{jump}攀爬',
+        promptTemplate: surface.prompt || '{jump}可以攀爬',
         requiresClimbAbility: surface.requiresClimbAbility !== false,
+        hasExitZone: surface.climbHasExitZone !== false,
         targetPosition: {
           x: targetX + (surface.climbTargetWorld === true ? 0 : offsetX),
           y: targetY + (surface.climbTargetWorld === true ? 0 : offsetY)
@@ -191,8 +192,13 @@ export class SceneClimbTargetResolver {
         ...surface,
         climbExit: { ...(surface.climbTarget || {}) },
         climbExitWorld: true,
-        climbExitRadius: Math.max(width, height)
+        climbExitRadius: Math.max(width, height),
+        // 兜底出口仅供坐标换算：无真实离开区 → isAtExit 恒为 false（跳跃=跳下跌落）
+        climbHasExitZone: false
       };
+    } else if (hasExit) {
+      // 显式配置过出口（离开区/藤蔓 climbExit）→ 出口判定生效
+      surface = { ...surface, climbHasExitZone: true };
     }
     return surface;
   }

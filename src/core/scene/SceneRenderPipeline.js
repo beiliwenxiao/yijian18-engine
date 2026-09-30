@@ -280,12 +280,13 @@ export class SceneRenderPipeline {
         : 0;
       let itemY = (terrains.length > 0 ? position.y : position.y - (position.z || 0) * 0.01)
         + corpseSortOffset;
-      // 受控攀爬：玩家应绘制在被攀爬物（树/藤蔓）之上——排序基线抬升到攀爬面底部，
-      // 否则物件按自身底边排序会盖住攀爬中的玩家。
+      // 受控攀爬：玩家应绘制在被攀爬物（树/藤蔓）之上——排序基线抬升到物体本体包围盒
+      // 底边之下（surfaceBounds 覆盖完整物件，比攀爬区/进入区更可靠），确保玩家在物体前方。
       if (entity === context?.player?.entity) {
         const climbPresentation = context?.systems?.locomotion?.getClimbPresentation?.(entity) || null;
-        if (climbPresentation?.enterBounds && Number.isFinite(climbPresentation.enterBounds.maxY)) {
-          itemY = Math.max(itemY, climbPresentation.enterBounds.maxY + 1);
+        const surfaceBottom = Number(climbPresentation?.surfaceBounds?.maxY);
+        if (Number.isFinite(surfaceBottom)) {
+          itemY = Math.max(itemY, surfaceBottom + 1);
         }
       }
       item.y = itemY;

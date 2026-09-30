@@ -131,6 +131,7 @@ export class ClimbSystem {
       enterBounds,
       climbPolygon,
       climbSurfaceBounds: options.surfaceBounds || null,
+      hasExitZone: options.hasExitZone !== false,
       climbElevation: Math.max(baseElevation, Number(options.elevation) || baseElevation + this.config.controlledElevation),
       surfaceId: typeof options.surfaceId === 'string' ? options.surfaceId : null,
       ...this._acquireLayer(entity)
@@ -186,14 +187,16 @@ export class ClimbSystem {
       elevation: state.climbElevation,
       // 被攀爬物体的本体世界包围盒（攀爬时高亮物体边缘用）
       surfaceBounds: state.climbSurfaceBounds || null,
-      isAtExit: this.isAtControlledExit(entity)
+      // 无真实离开区的攀爬面（兜底出口）恒为 false：跳跃=跳下跌落，而非出口脱离
+      isAtExit: state.hasExitZone !== false && this.isAtControlledExit(entity)
     };
   }
 
-  /** 只有抵达出口后才可结束受控攀爬，避免流程代码把玩家提前放回地面层。 */
+  /** 只有抵达真实出口后才可结束受控攀爬（无离开区的攀爬面只能跳跃跳下）。 */
   finishControlledClimb(entity) {
     const state = this._active.get(entity);
-    if (!state || state.mode !== 'controlled' || !this.isAtControlledExit(entity)) return false;
+    if (!state || state.mode !== 'controlled'
+      || state.hasExitZone === false || !this.isAtControlledExit(entity)) return false;
     this._finish(entity, state);
     return true;
   }
@@ -245,6 +248,7 @@ export class ClimbSystem {
         exitX: state.exitX,
         exitY: state.exitY,
         exitRadius: state.exitRadius,
+        hasExitZone: state.hasExitZone !== false,
         speed: state.speed,
         climbElevation: state.climbElevation,
         surfaceId: state.surfaceId
@@ -314,6 +318,7 @@ export class ClimbSystem {
           exitX: Number(data.exitX),
           exitY: Number(data.exitY),
           exitRadius: Number(data.exitRadius),
+          hasExitZone: data.hasExitZone !== false,
           speed: Number(data.speed),
           climbElevation: Number(data.climbElevation),
           surfaceId: data.surfaceId || null
