@@ -86,8 +86,138 @@ export class DialogueBox extends UIElement {
       img.src = src;
       this.portraitImages[key] = img;
     }
-    
+
+    // UI 编辑器保存的四种对话框布局矩形 { narration, portrait, halfBody, fullBody }
+    this.layoutRects = options.layoutRects || null;
+    // presentation 图片懒加载缓存（src 路径 → HTMLImageElement）
+    this._dynamicImages = {};
+
     console.log('DialogueBox: 初始化完成');
+  }
+
+  /** 应用 UI 编辑器保存的四种对话框布局矩形（未配置的类型回退构造尺寸）。 */
+  setLayoutRects(rects) {
+    this.layoutRects = rects && typeof rects === 'object' ? rects : null;
+    return this;
+  }
+
+  /** 当前对话的演出档案：boxType + 对话级 presentation 配置。 @private */
+  _currentPresentation() {
+    const presentation = this.dialogueSystem?.currentDialogue?.presentation || null;
+    let boxType = presentation?.boxType || 'portrait';
+    if (!['narration', 'portrait', 'halfBody', 'fullBody'].includes(boxType)) boxType = 'portrait';
+    return { boxType, presentation };
+  }
+
+  /** 懒加载图片（路径 → HTMLImageElement）。 @private */
+  _getImage(src) {
+    const key = String(src || '').trim();
+    if (!key) return null;
+    if (!this._dynamicImages[key]) {
+      const img = new Image();
+      img.src = key;
+      this._dynamicImages[key] = img;
+    }
+    return this._dynamicImages[key];
+  }
+
+  /**
+   * 头像来源解析：节点 portrait（路径或 PortraitsConfig key）优先，
+   * 其次对话级 presentation.portraitImage。
+   * @returns {{img: HTMLImageElement|null, fallbackKey: string|null}}
+   * @private
+   */
+  _resolvePortraitSource(currentNode, presentation) {
+    const nodePortrait = String(currentNode?.portrait || '').trim();
+    if (nodePortrait) {
+      if (/[./]/.test(nodePortrait)) return { img: this._getImage(nodePortrait), fallbackKey: null };
+      return { img: this.portraitImages[nodePortrait] || null, fallbackKey: nodePortrait };
+    }
+    const presentationImage = String(presentation?.portraitImage || '').trim();
+    if (presentationImage) return { img: this._getImage(presentationImage), fallbackKey: null };
+    return { img: null, fallbackKey: null };
+  }
+
+  /**
+   * 当前演出类型的布局度量（纯读取，不修改几何）。
+   * narration 无立绘区；portrait 保持方形头像；halfBody 左侧立绘区随框高自适应
+   * （扣除选项区高度，避免选项与立绘重叠）。
+   * @private
+   */
+  _layoutMetrics(currentNode = null) {
+    const { boxType, presentation } = this._currentPresentation();
+    const choicesAreaHeight = currentNode?.choices?.length > 0
+      ? this.textPadding
+        + (currentNode.choices.length * this.choiceHeight)
+        + ((currentNode.choices.length - 1) * this.choiceSpacing)
+        + this.padding
+      : 0;
+    const contentHeight = Math.max(0, this.height - this.padding * 2 - 40 - choicesAreaHeight);
+    let portraitAreaHeight = 0;
+    let halfBodyWidth = 0;
+    if (boxType === 'portrait') {
+      portraitAreaHeight = this.portraitSize;
+    } else if (boxType === 'halfBody') {
+      halfBodyWidth = Math.max(120, Math.min(240, Math.round(contentHeight * 0.75)));
+      portraitAreaHeight = contentHeight;
+    }
+    const speakerColor = boxType === 'narration' ? '#9fb3c8' : this.speakerColor;
+    return { boxType, presentation, portraitAreaHeight, halfBodyWidth, speakerColor };
+  }
+
+  /** 左侧立绘/头像区域矩形（narration/fullBody 返回零宽区域）。 @private */
+  _portraitRegion(metrics) {
+    const width = metrics.boxType === 'halfBody' ? metrics.halfBodyWidth : this.portraitSize;
+    const height = metrics.boxType === 'halfBody' ? metrics.portraitAreaHeight : this.portraitSize;
+    return { x: this.x + this.padding, y: this.y + this.padding + 40, width, height };
+  }
+
+  /** 内容需要的最小高度（标题行 + 最小立绘区 + 可选项）；halfBody 立绘区用固定下限防循环增长。 @private */
+  _requiredHeight(currentNode, metrics) {
+    const choicesAreaHeight = currentNode?.choices?.length > 0
+      ? this.textPadding
+        + (currentNode.choices.length * this.choiceHeight)
+        + ((currentNode.choices.length - 1) * this.choiceSpacing)
+        + this.padding
+      : 0;
+    const minPortraitArea = metrics.boxType === 'halfBody' ? 120 : (metrics.portraitAreaHeight || 70);
+    return this.padding + 30 + minPortraitArea + this.padding + choicesAreaHeight;
+  }
+
+  /**
+   * 按当前演出类型应用几何：有编辑器矩形时以矩形为锚向下增长，
+   * 否则保持现有居中行为。返回布局度量供本轮渲染复用。
+   * @private
+   */
+  _applyLayoutGeometry(currentNode, canvasHeight) {
+    const metrics = this._layoutMetrics(currentNode);
+    const rect = this.layoutRects?.[metrics.boxType] || null;
+    const requiredHeight = this._requiredHeight(currentNode, metrics);
+    if (rect) {
+      this.x = rect.x;
+      this.y = rect.y;
+      this.width = rect.width;
+      this.height = Math.max(rect.height, requiredHeight);
+    } else {
+      this.height = Math.max(this.minHeight, requiredHeight);
+      this.y = (canvasHeight - this.height) / 2;
+    }
+    if (this.y < 0) this.y = 0;
+    if (this.y + this.height > canvasHeight) this.y = canvasHeight - this.height;
+    return metrics;
+  }
+
+  /** 区域内 contain 绘制图片（可底对齐，用于半身/全身立绘）。 @private */
+  _drawImageContain(ctx, img, region, bottomAlign = false) {
+    if (!img?.naturalWidth || !img?.naturalHeight) return;
+    const scale = Math.min(region.width / img.naturalWidth, region.height / img.naturalHeight);
+    const drawWidth = img.naturalWidth * scale;
+    const drawHeight = img.naturalHeight * scale;
+    const dx = region.x + (region.width - drawWidth) / 2;
+    const dy = bottomAlign
+      ? region.y + (region.height - drawHeight)
+      : region.y + (region.height - drawHeight) / 2;
+    ctx.drawImage(img, dx, dy, drawWidth, drawHeight);
   }
 
   update(deltaTime) {
@@ -130,45 +260,91 @@ export class DialogueBox extends UIElement {
 
   render(ctx) {
     if (!this.visible || !this.dialogueSystem || !this.dialogueSystem.isDialogueActive()) return;
-    
+
     const currentNode = this.dialogueSystem.getCurrentNode();
     if (!currentNode) return;
-    
-    this.updateHeightAndPosition(currentNode, ctx.canvas.height);
-    
+
+    const metrics = this._applyLayoutGeometry(currentNode, ctx.canvas.height);
+
     ctx.save();
     this.renderBackground(ctx);
-    if (currentNode.portrait) this.renderPortrait(ctx, currentNode.portrait);
-    this.renderSpeaker(ctx, currentNode.speaker);
-    this.renderText(ctx, this.dialogueSystem.getDisplayedText());
+    if (metrics.boxType === 'fullBody') this.renderFullBodyArt(ctx, metrics);
+    if (metrics.portraitAreaHeight > 0) this.renderPortraitArea(ctx, metrics, currentNode);
+    this.renderSpeaker(ctx, currentNode.speaker, metrics);
+    this.renderText(ctx, this.dialogueSystem.getDisplayedText(), metrics);
     if (currentNode.choices && currentNode.choices.length > 0 && !this.dialogueSystem.isTyping()) {
-      this.renderChoices(ctx, currentNode.choices);
+      this.renderChoices(ctx, currentNode.choices, metrics);
     }
     if (this.showContinuePrompt) this.renderContinuePrompt(ctx);
     ctx.restore();
   }
 
-  updateHeightAndPosition(currentNode, canvasHeight) {
-    let requiredHeight = this.padding + 30 + this.portraitSize + this.padding;
-    
-    if (currentNode.choices && currentNode.choices.length > 0) {
-      const choicesHeight = this.textPadding + 
-        (currentNode.choices.length * this.choiceHeight) + 
-        ((currentNode.choices.length - 1) * this.choiceSpacing) + 
-        this.padding;
-      requiredHeight += choicesHeight;
+  /** 左侧立绘区：portrait 保持方形头像，halfBody 绘制底对齐半身立绘。 @private */
+  renderPortraitArea(ctx, metrics, currentNode) {
+    const region = this._portraitRegion(metrics);
+    if (region.width <= 0 || region.height <= 0) return;
+    const source = this._resolvePortraitSource(currentNode, metrics.presentation);
+    const img = source.img;
+    const hasImage = img && img.complete && img.naturalWidth > 0;
+
+    // 立绘底框
+    ctx.fillStyle = 'rgba(30, 30, 30, 0.9)';
+    ctx.fillRect(region.x, region.y, region.width, region.height);
+    ctx.strokeStyle = this.borderColor;
+    ctx.lineWidth = 3;
+    ctx.strokeRect(region.x, region.y, region.width, region.height);
+
+    ctx.save();
+    if (metrics.boxType === 'halfBody') {
+      // 半身立绘：区域内 contain + 底对齐（无边距裁剪，保留立绘完整轮廓）
+      if (hasImage) {
+        this._drawImageContain(ctx, img, {
+          x: region.x + 4, y: region.y + 4,
+          width: region.width - 8, height: region.height - 8
+        }, true);
+      } else {
+        ctx.fillStyle = '#666';
+        ctx.font = '14px Arial, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('半身像', region.x + region.width / 2, region.y + region.height / 2);
+      }
+      ctx.restore();
+      return;
     }
-    
-    this.height = Math.max(this.minHeight, requiredHeight);
-    this.y = (canvasHeight - this.height) / 2;
-    
-    if (this.y < 0) {
-      this.y = 0;
+
+    // 方形头像：居中裁剪（沿用原有视觉）
+    ctx.translate(region.x + region.width / 2, region.y + region.height / 2);
+    if (hasImage) {
+      this.drawPortraitImage(ctx, img);
+    } else if (source.fallbackKey === 'zhangjiao') {
+      this.drawZhangjiaoPortrait(ctx);
+    } else if (source.fallbackKey === 'player') {
+      this.drawPlayerPortrait(ctx);
+    } else {
+      ctx.fillStyle = '#666';
+      ctx.font = '14px Arial, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('头像', 0, 0);
     }
-    
-    if (this.y + this.height > canvasHeight) {
-      this.y = canvasHeight - this.height;
-    }
+    ctx.restore();
+  }
+
+  /** 全身立绘：画在文本框右侧、底对齐（需要对话配置 fullBodyImage）。 @private */
+  renderFullBodyArt(ctx, metrics) {
+    const src = String(metrics.presentation?.fullBodyImage || '').trim();
+    if (!src) return;
+    const img = this._getImage(src);
+    if (!img || !img.complete || img.naturalWidth <= 0) return;
+    const artHeight = Math.max(160, Math.min(460, Math.round(this.height * 1.6)));
+    const artWidth = Math.max(120, Math.min(320, Math.round(artHeight * 0.6)));
+    this._drawImageContain(ctx, img, {
+      x: this.x + this.width + 20,
+      y: this.y + this.height - artHeight,
+      width: artWidth,
+      height: artHeight
+    }, true);
   }
 
   renderBackground(ctx) {
@@ -182,42 +358,6 @@ export class DialogueBox extends UIElement {
     ctx.moveTo(this.x + this.padding, this.y + this.padding + 30);
     ctx.lineTo(this.x + this.width - this.padding, this.y + this.padding + 30);
     ctx.stroke();
-  }
-
-  renderPortrait(ctx, portraitKey) {
-    const portraitX = this.x + this.padding;
-    const portraitY = this.y + this.padding + 40;
-    
-    // 绘制头像背景
-    ctx.fillStyle = 'rgba(30, 30, 30, 0.9)';
-    ctx.fillRect(portraitX, portraitY, this.portraitSize, this.portraitSize);
-    
-    // 绘制头像边框
-    ctx.strokeStyle = this.borderColor;
-    ctx.lineWidth = 3;
-    ctx.strokeRect(portraitX, portraitY, this.portraitSize, this.portraitSize);
-    
-    ctx.save();
-    ctx.translate(portraitX + this.portraitSize / 2, portraitY + this.portraitSize / 2);
-    
-    // 优先从映射表中查找图片
-    const img = this.portraitImages[portraitKey];
-    if (img && img.complete && img.naturalWidth > 0) {
-      this.drawPortraitImage(ctx, img);
-    } else if (portraitKey === 'zhangjiao') {
-      this.drawZhangjiaoPortrait(ctx);
-    } else if (portraitKey === 'player') {
-      this.drawPlayerPortrait(ctx);
-    } else {
-      // 默认占位
-      ctx.fillStyle = '#666';
-      ctx.font = '14px Arial, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('头像', 0, 0);
-    }
-    
-    ctx.restore();
   }
 
   /**
@@ -404,21 +544,22 @@ export class DialogueBox extends UIElement {
     ctx.stroke();
   }
 
-  renderSpeaker(ctx, speaker) {
+  renderSpeaker(ctx, speaker, metrics = this._layoutMetrics()) {
     if (!speaker) return;
-    ctx.fillStyle = this.speakerColor;
+    ctx.fillStyle = metrics.speakerColor;
     ctx.font = this.speakerFont;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
     ctx.fillText(speaker, this.x + this.padding, this.y + this.padding);
   }
 
-  renderText(ctx, text) {
+  renderText(ctx, text, metrics = this._layoutMetrics()) {
     if (!text) return;
-    const textX = this.x + this.padding + this.portraitSize + this.portraitPadding;
+    const region = this._portraitRegion(metrics);
+    const textX = region.x + region.width + (metrics.portraitAreaHeight > 0 ? this.portraitPadding : 0);
     const textY = this.y + this.padding + 40;
-    const textWidth = this.width - this.padding * 2 - this.portraitSize - this.portraitPadding;
-    const textHeight = this.portraitSize;
+    const textWidth = Math.max(60, this.x + this.width - this.padding - textX);
+    const textHeight = Math.max(60, metrics.portraitAreaHeight);
     ctx.fillStyle = this.textColor;
     ctx.font = this.textFont;
     ctx.textAlign = 'left';
@@ -432,9 +573,9 @@ export class DialogueBox extends UIElement {
     });
   }
 
-  renderChoices(ctx, choices) {
+  renderChoices(ctx, choices, metrics = this._layoutMetrics()) {
     if (!choices || choices.length === 0) return;
-    const choicesStartY = this.y + this.padding + 40 + this.portraitSize + this.textPadding;
+    const choicesStartY = this.y + this.padding + 40 + metrics.portraitAreaHeight + this.textPadding;
     const choiceWidth = this.width - this.padding * 2;
     choices.forEach((choice, index) => {
       const choiceY = choicesStartY + index * (this.choiceHeight + this.choiceSpacing);
@@ -496,7 +637,8 @@ export class DialogueBox extends UIElement {
       this.hoveredChoiceIndex = -1;
       return;
     }
-    const choicesStartY = this.y + this.padding + 40 + this.portraitSize + this.textPadding;
+    const metrics = this._layoutMetrics(currentNode);
+    const choicesStartY = this.y + this.padding + 40 + metrics.portraitAreaHeight + this.textPadding;
     const choiceWidth = this.width - this.padding * 2;
     let newHoveredIndex = -1;
     for (let i = 0; i < currentNode.choices.length; i++) {
@@ -523,7 +665,8 @@ export class DialogueBox extends UIElement {
       return true;
     }
     if (currentNode.choices && currentNode.choices.length > 0) {
-      const choicesStartY = this.y + this.padding + 40 + this.portraitSize + this.textPadding;
+      const metrics = this._layoutMetrics(currentNode);
+      const choicesStartY = this.y + this.padding + 40 + metrics.portraitAreaHeight + this.textPadding;
       const choiceWidth = this.width - this.padding * 2;
       for (let i = 0; i < currentNode.choices.length; i++) {
         const choiceY = choicesStartY + i * (this.choiceHeight + this.choiceSpacing);

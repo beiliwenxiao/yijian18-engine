@@ -413,6 +413,13 @@ export class ScenePanelLayout {
         this._applyBottomControlLayout(loader, width, height);
         this._applyHudLayout(loader, width, height);
         this._applyScreenHudLayout(loader, width, height);
+        // 对话框四种演出形态的布局矩形（UI 编辑器「对话框」组件；未配置时 DialogueBox 用内置默认）
+        scene.dialogueBox?.setLayoutRects?.({
+          narration: loader.getRect('dialogue-narration', width, height),
+          portrait: loader.getRect('dialogue-portrait', width, height),
+          halfBody: loader.getRect('dialogue-halfbody', width, height),
+          fullBody: loader.getRect('dialogue-fullbody', width, height)
+        });
         // 军队操作 HUD：UI 编辑器保存的 armyCommandHud 矩形优先（布局加载晚于装配，这里补一次重排）
         scene.armyCommandFlow?.onResize(width, height);
       }

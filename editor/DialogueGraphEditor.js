@@ -356,6 +356,11 @@ export class DialogueGraphEditor {
     const startOpts = nodeIds.map(id =>
       `<option value="${id}" ${d.startNode === id ? 'selected' : ''}>${id}</option>`).join('');
 
+    // 对话框演出配置（对话级）：类型 + 三套美术资源路径
+    const presentation = (d.presentation && typeof d.presentation === 'object') ? d.presentation : {};
+    const boxType = ['narration', 'portrait', 'halfBody', 'fullBody'].includes(presentation.boxType)
+      ? presentation.boxType : 'portrait';
+
     let html = `
       <div class="dlg-2col">
         <div class="row"><label>对话 ID</label><input type="text" id="d-id" value="${this._esc(d.id || '')}"></div>
@@ -364,6 +369,21 @@ export class DialogueGraphEditor {
       <div class="dlg-2col">
         <div class="row"><label>所属场景 (场景ID)</label><input type="text" id="d-scene" value="${this._esc(d.scene || d.act || '')}" placeholder="如 s1-1 / s2-1"></div>
         <div class="row"><label>状态</label><label style="display:flex;align-items:center;gap:5px;color:#fff;"><input type="checkbox" id="d-enabled" ${d.enabled !== false ? 'checked' : ''} style="width:auto;"> 启用</label></div>
+      </div>
+      <div class="dlg-2col">
+        <div class="row"><label>对话框类型</label>
+          <select id="d-box-type">
+            <option value="portrait" ${boxType === 'portrait' ? 'selected' : ''}>头像对话（默认）</option>
+            <option value="narration" ${boxType === 'narration' ? 'selected' : ''}>旁白对话</option>
+            <option value="halfBody" ${boxType === 'halfBody' ? 'selected' : ''}>NPC半身对话</option>
+            <option value="fullBody" ${boxType === 'fullBody' ? 'selected' : ''}>NPC全身对话</option>
+          </select>
+        </div>
+        <div class="row"><label>头像图 portraitImage</label><input type="text" id="d-portrait-image" value="${this._esc(presentation.portraitImage || '')}" placeholder="assets/images/xxx.png（留空用节点 portrait）"></div>
+      </div>
+      <div class="dlg-2col">
+        <div class="row"><label>半身像 halfBodyImage</label><input type="text" id="d-halfbody-image" value="${this._esc(presentation.halfBodyImage || '')}" placeholder="assets/images/xxx_half.png（半身对话使用）"></div>
+        <div class="row"><label>全身像 fullBodyImage</label><input type="text" id="d-fullbody-image" value="${this._esc(presentation.fullBodyImage || '')}" placeholder="assets/images/xxx_full.png（全身对话使用）"></div>
       </div>
       <div class="row"><label>起始节点 startNode</label><select id="d-start">${startOpts || '<option value="">(无节点)</option>'}</select></div>
       <div class="row" style="display:flex;gap:8px;">
@@ -514,6 +534,27 @@ export class DialogueGraphEditor {
     }
     const startSel = panel.querySelector('#d-start');
     if (startSel && startSel.value) d.startNode = startSel.value;
+
+    // 对话框演出配置（对话级）：类型 + 三套美术路径；
+    // 全部为默认值时删除字段，保持 JSON 干净。
+    const boxTypeEl = panel.querySelector('#d-box-type');
+    const portraitImageEl = panel.querySelector('#d-portrait-image');
+    const halfBodyImageEl = panel.querySelector('#d-halfbody-image');
+    const fullBodyImageEl = panel.querySelector('#d-fullbody-image');
+    if (boxTypeEl && portraitImageEl && halfBodyImageEl && fullBodyImageEl) {
+      const boxType = boxTypeEl.value;
+      const portraitImage = portraitImageEl.value.trim();
+      const halfBodyImage = halfBodyImageEl.value.trim();
+      const fullBodyImage = fullBodyImageEl.value.trim();
+      const isDefault = boxType === 'portrait' && !portraitImage && !halfBodyImage && !fullBodyImage;
+      if (isDefault) delete d.presentation;
+      else {
+        d.presentation = { boxType };
+        if (portraitImage) d.presentation.portraitImage = portraitImage;
+        if (halfBodyImage) d.presentation.halfBodyImage = halfBodyImage;
+        if (fullBodyImage) d.presentation.fullBodyImage = fullBodyImage;
+      }
+    }
 
     panel.querySelectorAll('.dlg-node').forEach(card => {
       const nid = card.dataset.nid;

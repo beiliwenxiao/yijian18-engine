@@ -69,7 +69,12 @@ const DEFAULT_COMPONENTS = {
       { id: 'pc-throw', label: '投掷', x: 834, y: 640, width: 50, height: 50, anchor: 'topleft', kind: 'button' },
       // 统一背包入口 + 系统设置
       { id: 'pc-bag', label: '背包', x: 890, y: 640, width: 50, height: 50, anchor: 'topleft', kind: 'button' },
-      { id: 'pc-settings', label: '系统设置', x: 946, y: 640, width: 50, height: 50, anchor: 'topleft', kind: 'button' }
+      { id: 'pc-settings', label: '系统设置', x: 946, y: 640, width: 50, height: 50, anchor: 'topleft', kind: 'button' },
+      // 对话框四种演出形态（运行时按对话 presentation.boxType 选用对应矩形）
+      { id: 'dialogue-narration', label: '旁白对话', x: 190, y: 520, width: 900, height: 150, anchor: 'topleft', kind: 'dialogue' },
+      { id: 'dialogue-portrait', label: '头像对话', x: 290, y: 245, width: 700, height: 230, anchor: 'topleft', kind: 'dialogue' },
+      { id: 'dialogue-halfbody', label: '半身对话', x: 290, y: 300, width: 700, height: 300, anchor: 'topleft', kind: 'dialogue' },
+      { id: 'dialogue-fullbody', label: '全身对话', x: 120, y: 280, width: 700, height: 230, anchor: 'topleft', kind: 'dialogue' }
     ]
   },
   mobile: {
@@ -102,7 +107,12 @@ const DEFAULT_COMPONENTS = {
       { id: 'hb-bag', label: '背包', x: 650, y: 540, width: 56, height: 56, anchor: 'topleft', kind: 'button' },
       { id: 'hb-settings', label: '系统设置', x: 580, y: 540, width: 56, height: 56, anchor: 'topleft', kind: 'button' },
       { id: 'hb-skill6', label: '回血', x: 720, y: 540, width: 56, height: 56, anchor: 'topleft', kind: 'button' },
-      { id: 'hb-skill7', label: '打坐', x: 790, y: 540, width: 56, height: 56, anchor: 'topleft', kind: 'button' }
+      { id: 'hb-skill7', label: '打坐', x: 790, y: 540, width: 56, height: 56, anchor: 'topleft', kind: 'button' },
+      // 对话框四种演出形态（运行时按对话 presentation.boxType 选用对应矩形）
+      { id: 'dialogue-narration', label: '旁白对话', x: 190, y: 430, width: 900, height: 140, anchor: 'topleft', kind: 'dialogue' },
+      { id: 'dialogue-portrait', label: '头像对话', x: 390, y: 280, width: 500, height: 170, anchor: 'topleft', kind: 'dialogue' },
+      { id: 'dialogue-halfbody', label: '半身对话', x: 340, y: 260, width: 600, height: 260, anchor: 'topleft', kind: 'dialogue' },
+      { id: 'dialogue-fullbody', label: '全身对话', x: 190, y: 220, width: 600, height: 200, anchor: 'topleft', kind: 'dialogue' }
     ]
   },
   login: {
@@ -599,6 +609,16 @@ export class UIEditor {
       .uie-comp.login-title { border-color:rgba(231,199,120,0.8); background:rgba(25,15,8,0.25); color:#f0d997; font-size:13px; font-weight:bold; }
       .uie-comp.login-subtitle, .uie-comp.login-description { border-color:rgba(255,255,255,0.5); background:rgba(0,0,0,0.2); color:#eee; }
       .uie-comp.login-actions { display:grid; grid-template-rows:repeat(3, 1fr); gap:10px; padding:0; border:0; background:transparent; overflow:visible; }
+      /* 对话框四种演出形态预览：深色底 + 棕金边框，模拟游戏内对话框 */
+      .uie-comp.dialogue { display:block; background:rgba(10,8,4,0.88); border:2px solid #8B7355; border-radius:4px; color:#e8d9b0; text-align:left; padding:4px 8px; overflow:hidden; }
+      .uie-comp.dialogue.selected { border-color:#ff5; }
+      .uie-comp.dialogue .dlg-preview-title { font-weight:bold; font-size:12px; color:#FFD700; margin-bottom:3px; }
+      .uie-comp.dialogue[data-id$="narration"] .dlg-preview-title { color:#9fb3c8; }
+      .uie-comp.dialogue .dlg-preview-body { display:flex; gap:6px; height:calc(100% - 20px); }
+      .uie-comp.dialogue .dlg-preview-avatar { width:26%; min-width:34px; height:100%; border:1px dashed #8B7355; border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:10px; color:#8B7355; flex:none; }
+      .uie-comp.dialogue .dlg-preview-lines { flex:1; display:flex; flex-direction:column; gap:4px; justify-content:flex-start; }
+      .uie-comp.dialogue .dlg-preview-line { height:7px; border-radius:3px; background:rgba(232,217,176,0.35); }
+      .uie-comp.dialogue[data-id$="narration"] .dlg-preview-avatar { display:none; }
       .uie-login-preview-action { display:flex; align-items:center; justify-content:center; border:1px solid rgba(255,255,255,0.18); border-radius:6px; background:#4b6728; color:#fff; font-size:12px; pointer-events:none; }
       .uie-comp.selected { border-color:#ff5; background:rgba(255,255,100,0.25); z-index:10; }
       .uie-comp .uie-handle { position:absolute; z-index:12; right:-5px; bottom:-5px; width:12px; height:12px; background:#ff5; border:1px solid #000; cursor:nwse-resize; }
@@ -782,6 +802,31 @@ export class UIEditor {
           action.textContent = label;
           el.appendChild(action);
         }
+      } else if (comp.kind === 'dialogue') {
+        // 对话框预览：标题 + 头像/立绘占位 + 文本行示意
+        el.textContent = '';
+        const title = document.createElement('div');
+        title.className = 'dlg-preview-title';
+        title.textContent = comp.label;
+        el.appendChild(title);
+        const body = document.createElement('div');
+        body.className = 'dlg-preview-body';
+        if (comp.id !== 'dialogue-narration') {
+          const avatar = document.createElement('div');
+          avatar.className = 'dlg-preview-avatar';
+          avatar.textContent = comp.id === 'dialogue-portrait' ? '头像' : '立绘';
+          body.appendChild(avatar);
+        }
+        const lines = document.createElement('div');
+        lines.className = 'dlg-preview-lines';
+        for (let i = 0; i < 3; i++) {
+          const line = document.createElement('div');
+          line.className = 'dlg-preview-line';
+          line.style.width = i === 2 ? '62%' : '94%';
+          lines.appendChild(line);
+        }
+        body.appendChild(lines);
+        el.appendChild(body);
       } else {
         el.textContent = comp.label;
       }

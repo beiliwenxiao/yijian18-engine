@@ -1,6 +1,9 @@
 [
   {
     "id": "dialogue.s01.wake",
+    "presentation": {
+      "boxType": "narration"
+    },
     "nodes": {
       "move": {
         "speaker": "旁白",

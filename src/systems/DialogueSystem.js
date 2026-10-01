@@ -87,6 +87,8 @@ export class DialogueSystem {
       nodes: new Map(),
       variables: dialogueData.variables || {},
       metadata: dialogueData.metadata || {},
+      // 对话框演出配置：{ boxType: narration|portrait|halfBody|fullBody, portraitImage, halfBodyImage, fullBodyImage }
+      presentation: dialogueData.presentation || null,
       // FlowGroup 外键（双轨兼容：flowGroupId 优先，sceneEventId 回退；两者同值双写）
       flowGroupId: dialogueData.flowGroupId || dialogueData.sceneEventId || null,
       sceneEventId: dialogueData.flowGroupId || dialogueData.sceneEventId || null
