@@ -337,7 +337,9 @@ export class GameLoader {
           startNode: definition.startNode || 'start',
           nodes,
           variables: definition.variables || {},
-          metadata: definition.metadata || {}
+          metadata: definition.metadata || {},
+          // 对话框演出配置（旁白/头像/半身/全身 + 美术资源），DialogueBox 每帧读取
+          presentation: definition.presentation || null
         });
       }
       let previous;

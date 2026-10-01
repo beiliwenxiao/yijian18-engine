@@ -74,7 +74,9 @@ const DEFAULT_COMPONENTS = {
       { id: 'dialogue-narration', label: '旁白对话', x: 190, y: 520, width: 900, height: 150, anchor: 'topleft', kind: 'dialogue' },
       { id: 'dialogue-portrait', label: '头像对话', x: 290, y: 245, width: 700, height: 230, anchor: 'topleft', kind: 'dialogue' },
       { id: 'dialogue-halfbody', label: '半身对话', x: 290, y: 300, width: 700, height: 300, anchor: 'topleft', kind: 'dialogue' },
-      { id: 'dialogue-fullbody', label: '全身对话', x: 120, y: 280, width: 700, height: 230, anchor: 'topleft', kind: 'dialogue' }
+      { id: 'dialogue-fullbody', label: '全身对话', x: 120, y: 280, width: 700, height: 230, anchor: 'topleft', kind: 'dialogue' },
+      // 对话选项弹窗（与文本框拆分的独立 UI）
+      { id: 'dialogue-choices', label: '选项弹窗', x: 430, y: 490, width: 420, height: 120, anchor: 'topleft', kind: 'dialogue' }
     ]
   },
   mobile: {
@@ -112,7 +114,9 @@ const DEFAULT_COMPONENTS = {
       { id: 'dialogue-narration', label: '旁白对话', x: 190, y: 430, width: 900, height: 140, anchor: 'topleft', kind: 'dialogue' },
       { id: 'dialogue-portrait', label: '头像对话', x: 390, y: 280, width: 500, height: 170, anchor: 'topleft', kind: 'dialogue' },
       { id: 'dialogue-halfbody', label: '半身对话', x: 340, y: 260, width: 600, height: 260, anchor: 'topleft', kind: 'dialogue' },
-      { id: 'dialogue-fullbody', label: '全身对话', x: 190, y: 220, width: 600, height: 200, anchor: 'topleft', kind: 'dialogue' }
+      { id: 'dialogue-fullbody', label: '全身对话', x: 190, y: 220, width: 600, height: 200, anchor: 'topleft', kind: 'dialogue' },
+      // 对话选项弹窗（与文本框拆分的独立 UI）
+      { id: 'dialogue-choices', label: '选项弹窗', x: 430, y: 380, width: 420, height: 110, anchor: 'topleft', kind: 'dialogue' }
     ]
   },
   login: {
@@ -619,6 +623,7 @@ export class UIEditor {
       .uie-comp.dialogue .dlg-preview-lines { flex:1; display:flex; flex-direction:column; gap:4px; justify-content:flex-start; }
       .uie-comp.dialogue .dlg-preview-line { height:7px; border-radius:3px; background:rgba(232,217,176,0.35); }
       .uie-comp.dialogue[data-id$="narration"] .dlg-preview-avatar { display:none; }
+      .uie-comp.dialogue .dlg-preview-choice-bar { flex:1; display:flex; align-items:center; padding:0 8px; border:1px solid rgba(90,140,220,0.7); border-radius:4px; background:rgba(74,144,226,0.55); color:#fff; font-size:11px; }
       .uie-login-preview-action { display:flex; align-items:center; justify-content:center; border:1px solid rgba(255,255,255,0.18); border-radius:6px; background:#4b6728; color:#fff; font-size:12px; pointer-events:none; }
       .uie-comp.selected { border-color:#ff5; background:rgba(255,255,100,0.25); z-index:10; }
       .uie-comp .uie-handle { position:absolute; z-index:12; right:-5px; bottom:-5px; width:12px; height:12px; background:#ff5; border:1px solid #000; cursor:nwse-resize; }
@@ -803,7 +808,7 @@ export class UIEditor {
           el.appendChild(action);
         }
       } else if (comp.kind === 'dialogue') {
-        // 对话框预览：标题 + 头像/立绘占位 + 文本行示意
+        // 对话框预览：标题 + 头像/立绘占位 + 文本行示意；选项弹窗为两条选择按钮条
         el.textContent = '';
         const title = document.createElement('div');
         title.className = 'dlg-preview-title';
@@ -811,21 +816,30 @@ export class UIEditor {
         el.appendChild(title);
         const body = document.createElement('div');
         body.className = 'dlg-preview-body';
-        if (comp.id !== 'dialogue-narration') {
-          const avatar = document.createElement('div');
-          avatar.className = 'dlg-preview-avatar';
-          avatar.textContent = comp.id === 'dialogue-portrait' ? '头像' : '立绘';
-          body.appendChild(avatar);
+        if (comp.id === 'dialogue-choices') {
+          for (let i = 0; i < 2; i++) {
+            const choiceBar = document.createElement('div');
+            choiceBar.className = 'dlg-preview-choice-bar';
+            choiceBar.textContent = `选项 ${i + 1}`;
+            body.appendChild(choiceBar);
+          }
+        } else {
+          if (comp.id !== 'dialogue-narration') {
+            const avatar = document.createElement('div');
+            avatar.className = 'dlg-preview-avatar';
+            avatar.textContent = comp.id === 'dialogue-portrait' ? '头像' : '立绘';
+            body.appendChild(avatar);
+          }
+          const lines = document.createElement('div');
+          lines.className = 'dlg-preview-lines';
+          for (let i = 0; i < 3; i++) {
+            const line = document.createElement('div');
+            line.className = 'dlg-preview-line';
+            line.style.width = i === 2 ? '62%' : '94%';
+            lines.appendChild(line);
+          }
+          body.appendChild(lines);
         }
-        const lines = document.createElement('div');
-        lines.className = 'dlg-preview-lines';
-        for (let i = 0; i < 3; i++) {
-          const line = document.createElement('div');
-          line.className = 'dlg-preview-line';
-          line.style.width = i === 2 ? '62%' : '94%';
-          lines.appendChild(line);
-        }
-        body.appendChild(lines);
         el.appendChild(body);
       } else {
         el.textContent = comp.label;
