@@ -430,8 +430,13 @@ export class DebugPanel {
             <button id="dp-goto-btn">跳转</button>
           </div>
           <div class="dp-btn-row">
-            <button id="dp-next-task">下一任务 ▶</button>
-            <button id="dp-fire-task">⚡ 执行任务</button>
+            <button id="dp-next-task" title="完成当前任务的活动目标：状态事实目标提交真实事务，事件目标发布同源事件；任务完成时奖励自动发放">下一任务 ▶</button>
+            <button id="dp-fire-task">⚡ 执行选中</button>
+          </div>
+          <div class="dp-btn-row">
+            <select id="dp-debug-target">
+              <option value="">执行目标（任务/触发器/教程/对话）...</option>
+            </select>
           </div>
           <div class="dp-btn-row">
             <button id="dp-delete-all-saves" title="清空全部手动存档与自动存档（IndexedDB），不可恢复">🗑 删除所有存档</button>
@@ -959,6 +964,7 @@ export class DebugPanel {
   _updateEventTaskSaveInfo(scene, now) {
     if (now - this._lastSaveInfoUpdateAt < this._saveInfoRefreshInterval) return;
     this._lastSaveInfoUpdateAt = now;
+    this._refreshDebugTargets();
     const target = this._el?.querySelector?.('#dp-event-task-save');
     if (!target) return;
 
@@ -1010,15 +1016,13 @@ export class DebugPanel {
     return scene.gameLoader.triggerSystem;
   }
 
-  /** 任务触发器清单：trg_task.* 编译产物（intro/目标后段/completion），enabled 且 once 未触发者。 */
-  _getTaskTriggers() {
-    const trig = this._getTriggersInfo();
-    if (!trig) return [];
-    return trig.triggers.filter(trigger => (
-      String(trigger?.id || '').startsWith('trg_task.')
-      && trigger.enabled !== false
-      && !(trigger.once && trig._firedOnce.has(trigger.id))
-    ));
+  _getTaskGraph() {
+    const scene = this.getScene();
+    return scene?.context?.services?.taskGraph || scene?.sceneRuntime?.taskGraphSystem || null;
+  }
+
+  _getQuestSystem() {
+    return this.getScene()?.questSystem || null;
   }
 
   _setTaskStatus(message) {
@@ -1028,36 +1032,239 @@ export class DebugPanel {
     if (scene) this._updateEventTaskSaveInfo(scene, Infinity);
   }
 
-  /** 下一任务：在任务触发器中循环选中（状态行显示触发器 ID 与动作数）。 */
-  _nextTask() {
-    const tasks = this._getTaskTriggers();
-    if (!tasks.length) {
-      this._selectedTaskIndex = null;
-      return this._setTaskStatus('当前场景没有可执行的任务触发器（trg_task.*）');
+  /** 活动任务实例：优先当前场景相关（quest.scenes 声明），其余活动实例排后。 */
+  _getActiveTaskInstances() {
+    const snapshot = this._getTaskGraph()?.snapshot?.() || null;
+    const instances = (Array.isArray(snapshot?.instances) ? snapshot.instances : [])
+      .filter(instance => instance?.status === 'active');
+    const sceneId = this._getActiveScene()?.currentSceneId || null;
+    if (!sceneId) return instances;
+    const questScenes = new Map();
+    const quests = this.getScene()?.gameLoader?.project?.quests;
+    if (Array.isArray(quests)) {
+      for (const quest of quests) {
+        if (Array.isArray(quest?.scenes)) questScenes.set(quest.id, quest.scenes);
+      }
     }
-    this._selectedTaskIndex = ((this._selectedTaskIndex ?? -1) + 1) % tasks.length;
-    const trigger = tasks[this._selectedTaskIndex];
-    this._setTaskStatus(`已选中：${trigger.id}（${(trigger.do || []).length} 个动作）`);
+    const sceneRank = instance => {
+      const scenes = questScenes.get(instance.definitionId);
+      return Array.isArray(scenes) ? (scenes.includes(sceneId) ? 0 : 1) : 0;
+    };
+    return [...instances].sort((a, b) => sceneRank(a) - sceneRank(b));
   }
 
-  /** 执行任务：对选中的任务触发器，按其 when 直接触发执行。 */
-  _fireTask() {
-    const tasks = this._getTaskTriggers();
-    if (!tasks.length) {
-      return this._setTaskStatus('当前场景没有可执行的任务触发器（trg_task.*）');
+  /** 任务实例的目标进度摘要（objective 节点 succeeded/required）。 */
+  _taskProgressSummary(instance) {
+    const definition = this._getTaskGraph()?.getDefinition?.(instance.definitionId);
+    const objectives = (definition?.nodes || []).filter(node => node?.type === 'objective');
+    if (!objectives.length) return '';
+    const done = objectives.filter(node => instance.nodeStates?.[node.id]?.status === 'succeeded').length;
+    return ` ${done}/${objectives.length}`;
+  }
+
+  /**
+   * 完成任务实例的当前活动目标（任务中心制）：
+   *   - 状态事实目标（eventMatcher.type === 'state.transaction'）：提交真实事务——
+   *     剧情事实落账 → 事务事件回流 → 任务图与目标后触发器同自然流程消费；
+   *     事务被拒（前置不满足）时报告原因，避免跳过事实留下后续剧情死锁。
+   *   - 事件目标：发布同源 application event（触发器 + 任务图双路消费，与自然玩法一致）。
+   *   - 任务完成时 task.completed 自动广播 → completion 触发器发放奖励/物品。
+   */
+  async _completeTaskObjective(instance) {
+    const graph = this._getTaskGraph();
+    const definition = graph?.getDefinition?.(instance.definitionId);
+    if (!definition) return this._setTaskStatus(`任务定义缺失：${instance.definitionId}`);
+    const nodeId = Object.keys(instance.nodeStates || {}).find(id => (
+      instance.nodeStates[id]?.status === 'active'
+      && definition.nodes?.find(node => node.id === id)?.type === 'objective'
+    ));
+    if (!nodeId) {
+      const nodeSummary = Object.entries(instance.nodeStates || {})
+        .map(([id, state]) => `${id}:${state?.status || '--'}`).join(', ') || 'none';
+      return this._setTaskStatus(`任务 ${instance.definitionId} 当前无可完成的目标（${nodeSummary}）`);
     }
-    const index = this._selectedTaskIndex != null
-      ? Math.min(this._selectedTaskIndex, tasks.length - 1)
-      : 0;
-    const trigger = tasks[index];
-    if (!trigger?.when) {
-      return this._setTaskStatus(`触发器 ${trigger?.id || '(未知)'} 缺少 when，无法执行`);
-    }
+    const node = (definition.nodes || []).find(entry => entry.id === nodeId);
+    const matcher = node?.eventMatcher || {};
+    const scene = this.getScene();
     try {
-      this._getTriggersInfo().fire(trigger.when.type, trigger.when.params || {});
-      this._setTaskStatus(`⚡ 已执行：${trigger.id}`);
+      if (matcher.type === 'state.transaction' && matcher.payload?.definitionId) {
+        const gateway = scene?.sceneRuntime?.commandGateway;
+        const actorRef = scene?.playerEntity?.id;
+        if (!gateway || !actorRef) return this._setTaskStatus('命令网关不可用，无法提交状态事实');
+        const result = await gateway.execute({
+          intentType: 'state.transaction',
+          actorRef,
+          operationId: `debug-fact:${matcher.payload.definitionId}:${Date.now()}`,
+          payload: { definitionId: matcher.payload.definitionId }
+        });
+        if (result?.ok === true) {
+          this._setTaskStatus(`✅ 已提交事实 ${matcher.payload.definitionId} → 目标 ${nodeId}（${instance.definitionId}）`);
+        } else {
+          console.warn('[DebugPanel] 状态事实被拒', result);
+          this._setTaskStatus(`❌ 事实 ${matcher.payload.definitionId} 被拒：${result?.error?.message || result?.code || 'preconditionFailed'}`);
+        }
+        return;
+      }
+      if (matcher.type) {
+        const result = await scene?.publishApplicationEvent?.(
+          matcher.type,
+          JSON.parse(JSON.stringify(matcher.payload || {})),
+          { reason: 'debugPanel' }
+        );
+        if (result?.ok === true || result?.ok === undefined) {
+          this._setTaskStatus(`✅ 已发布事件 ${matcher.type} → 目标 ${nodeId}（${instance.definitionId}）`);
+        } else {
+          this._setTaskStatus(`❌ 事件 ${matcher.type} 发布失败：${result?.code || 'unknown'}`);
+        }
+        return;
+      }
+      this._setTaskStatus(`目标 ${nodeId} 缺少 eventMatcher，无法直接完成`);
     } catch (error) {
-      this._setTaskStatus(`执行失败：${trigger.id} → ${error?.message || error}`);
+      console.warn('[DebugPanel] 完成任务目标异常', error);
+      this._setTaskStatus(`完成目标异常：${error?.message || error}`);
+    }
+  }
+
+  /** 下一任务：完成当前（优先当前场景）任务实例的活动目标，奖励随任务完成自动发放。 */
+  _nextTask() {
+    const instances = this._getActiveTaskInstances();
+    if (!instances.length) {
+      return this._setTaskStatus('当前没有进行中的任务（TaskGraph 无活动实例；可用「执行选中」启动指定任务）');
+    }
+    const instance = instances[0];
+    this._setTaskStatus(`⏳ 正在完成：${instance.definitionId}${this._taskProgressSummary(instance)} …`);
+    void this._completeTaskObjective(instance);
+  }
+
+  // ─── 执行目标清单（任务/触发器/教程/对话） ─────────────
+
+  _collectDebugTargets() {
+    const targets = [];
+    const graph = this._getTaskGraph();
+    const snapshot = graph?.snapshot?.() || null;
+    const instances = Array.isArray(snapshot?.instances) ? snapshot.instances : [];
+    const activeByDefinition = new Map();
+    for (const instance of instances) {
+      if (instance?.status === 'active') activeByDefinition.set(instance.definitionId, instance);
+    }
+    for (const definition of graph?.getDefinitions?.() || []) {
+      const instance = activeByDefinition.get(definition.id);
+      const label = instance
+        ? `▶ ${definition.title || definition.id}${this._taskProgressSummary(instance)}`
+        : `▷ ${definition.title || definition.id}（未开始）`;
+      targets.push({
+        group: '任务',
+        value: instance ? `task-instance:${instance.instanceId}` : `task-def:${definition.id}`,
+        label
+      });
+    }
+    const triggers = this._getTriggersInfo()?.triggers || [];
+    for (const trigger of triggers) {
+      if (trigger?.enabled === false) continue;
+      targets.push({
+        group: '触发器',
+        value: `trigger:${trigger.id}`,
+        label: `${trigger.name || trigger.id}｜${trigger.when?.type || '无 when'}`
+      });
+    }
+    const tutorials = this.getScene()?.tutorialSystem?.getAllTutorials?.() || [];
+    for (const tutorial of tutorials) {
+      if (!tutorial?.id) continue;
+      targets.push({ group: '教程', value: `tutorial:${tutorial.id}`, label: `${tutorial.title || tutorial.id}` });
+    }
+    const dialogues = this.getScene()?.dialogueSystem?.dialogues;
+    if (dialogues && typeof dialogues.keys === 'function') {
+      for (const dialogueId of dialogues.keys()) {
+        targets.push({ group: '对话', value: `dialogue:${dialogueId}`, label: `${dialogueId}` });
+      }
+    }
+    return targets;
+  }
+
+  /** 刷新执行目标下拉；内容未变化时跳过重建（避免打断展开中的下拉）。 */
+  _refreshDebugTargets() {
+    const select = this._el?.querySelector?.('#dp-debug-target');
+    if (!select) return;
+    const targets = this._collectDebugTargets();
+    const signature = targets.map(target => target.value).join('|');
+    if (signature === this._debugTargetsSignature) return;
+    this._debugTargetsSignature = signature;
+    const previous = select.value;
+    select.innerHTML = '';
+    const placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = '执行目标（任务/触发器/教程/对话）...';
+    select.appendChild(placeholder);
+    let currentGroup = null;
+    let groupElement = null;
+    for (const target of targets) {
+      if (target.group !== currentGroup) {
+        currentGroup = target.group;
+        groupElement = document.createElement('optgroup');
+        groupElement.label = currentGroup;
+        select.appendChild(groupElement);
+      }
+      const option = document.createElement('option');
+      option.value = target.value;
+      option.textContent = target.label;
+      groupElement.appendChild(option);
+    }
+    if ([...select.options].some(option => option.value === previous)) select.value = previous;
+  }
+
+  /** 执行选中的目标：任务（推进/启动）/ 触发器（fireById）/ 教程（show）/ 对话（start）。 */
+  _fireTask() {
+    const select = this._el?.querySelector?.('#dp-debug-target');
+    const value = String(select?.value || '');
+    if (!value) {
+      return this._setTaskStatus('请先在「执行目标」列表中选择：任务 / 触发器 / 教程 / 对话');
+    }
+    const separator = value.indexOf(':');
+    const kind = separator >= 0 ? value.slice(0, separator) : value;
+    const id = separator >= 0 ? value.slice(separator + 1) : '';
+    try {
+      if (kind === 'task-instance') {
+        const instance = this._getTaskGraph()?.getInstance?.(id);
+        if (!instance || instance.status !== 'active') {
+          return this._setTaskStatus(`任务实例不可用：${id}`);
+        }
+        this._setTaskStatus(`⏳ 正在完成：${instance.definitionId}${this._taskProgressSummary(instance)} …`);
+        return void this._completeTaskObjective(instance);
+      }
+      if (kind === 'task-def') {
+        const questSystem = this._getQuestSystem();
+        if (!questSystem?.startTaskGraph) return this._setTaskStatus('任务系统不可用，无法启动任务');
+        const result = questSystem.startTaskGraph(id);
+        Promise.resolve(result).then(outcome => {
+          this._setTaskStatus(outcome?.ok === true || outcome?.committed === true
+            ? `✅ 已启动任务：${id}`
+            : `❌ 启动任务被拒：${id} → ${outcome?.code || 'unknown'}`);
+        }).catch(error => this._setTaskStatus(`启动任务异常：${error?.message || error}`));
+        return;
+      }
+      if (kind === 'trigger') {
+        const trigger = this._getTriggersInfo()?.getById?.(id);
+        if (!trigger?.when) return this._setTaskStatus(`触发器 ${id} 缺少 when，无法执行`);
+        const accepted = this._getTriggersInfo().fireById(id, trigger.when.type, trigger.when.params || {});
+        return this._setTaskStatus(accepted
+          ? `⚡ 已执行触发器：${id}`
+          : `⚠️ 触发器 ${id} 未被接受（once 已触发 / 事件竞争失败）`);
+      }
+      if (kind === 'tutorial') {
+        const system = this.getScene()?.tutorialSystem;
+        if (!system?.showTutorial) return this._setTaskStatus('教程系统不可用');
+        const started = system.showTutorial(id, {});
+        return this._setTaskStatus(started === false ? `⚠️ 教程 ${id} 未启动（未解锁/进行中）` : `✅ 已显示教程：${id}`);
+      }
+      if (kind === 'dialogue') {
+        const system = this.getScene()?.dialogueSystem;
+        if (!system?.startDialogue) return this._setTaskStatus('对话系统不可用');
+        const started = system.startDialogue(id, {});
+        return this._setTaskStatus(started === false ? `⚠️ 对话 ${id} 未启动（不存在/进行中）` : `✅ 已开始对话：${id}`);
+      }
+      this._setTaskStatus(`未知执行目标类型：${kind}`);
+    } catch (error) {
+      this._setTaskStatus(`执行失败：${value} → ${error?.message || error}`);
     }
   }
 
@@ -1092,8 +1299,16 @@ export class DebugPanel {
     const scene = this.getScene();
     if (scene && scene.teleportToChunk) {
       scene.teleportToChunk({ scene: sceneId, transition: 'fadeBlack' })
+        .then(result => {
+          // 传送被门禁/导航拒绝时必须可见，否则调试者无从判断「跳转无反应」的原因
+          if (result?.ok === false) {
+            console.warn('[DebugPanel] 跳转被拒', result);
+            this._setTaskStatus(`❌ 跳转 ${sceneId} 被拒：${result?.errors?.[0]?.message || result?.code || 'worldTeleportRejected'}`);
+          }
+        })
         .catch(error => {
           console.warn('[DebugPanel] teleportToChunk 失败', error?.message || error);
+          this._setTaskStatus(`❌ 跳转 ${sceneId} 异常：${error?.message || error}`);
         });
       select.value = '';
       return;
