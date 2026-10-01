@@ -41,12 +41,25 @@ export class SceneApplicationEventBridge {
     this.unsubscribe = null;
     this.disposed = false;
     this.generation = 0;
+    // 消费序列链：总线派发循环绝不能内联 await 内容消费。场景内容（对话
+    // await、转场接续触发器）可能反过来需要总线发布后续事件，内联等待会形成
+    // 「总线派发 ↔ 内容消费」互相等待的死锁（S01→S02 转场曾因此卡死全部
+    // 事务发布）。这里把消费挂到自身序列上：保序、收据照记，总线立即放行。
+    this._consumeChain = Promise.resolve();
   }
 
   bind() {
     if (this.unsubscribe) return this.unsubscribe;
     this.disposed = false;
-    this.unsubscribe = this.notificationBus.subscribe(event => this._consume(event));
+    this.unsubscribe = this.notificationBus.subscribe(event => {
+      // 不把消费 Promise 返回给总线：总线派发循环 await 监听器返回值，
+      // 内联等待会让转场/对话类内容消费反过来等总线，形成死锁。
+      // 消费挂在自有序列链上：顺序不乱、收据（begin/completeConsumer）不变，
+      // 断点续传（resumeBacklog）语义保持。
+      this._consumeChain = this._consumeChain
+        .then(() => this._consume(event))
+        .catch(() => {});
+    });
     queueMicrotask(() => { void this.resumeBacklog(); });
     return this.unsubscribe;
   }
@@ -75,6 +88,8 @@ export class SceneApplicationEventBridge {
     this.recoveryInFlight = null;
     this.seenEventIds.clear();
     this.eventOrder.length = 0;
+    // 丢弃旧代消费链：_consume 内部按 generation/disposed 自毁，这里仅释放引用。
+    this._consumeChain = Promise.resolve();
     return true;
   }
 
@@ -335,6 +350,7 @@ export class SceneApplicationEventBridge {
     this.recoveryInFlight = null;
     this.seenEventIds.clear();
     this.eventOrder.length = 0;
+    this._consumeChain = Promise.resolve();
   }
 }
 

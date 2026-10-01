@@ -54,6 +54,8 @@ export class InteractionChoiceView extends UIElement {
     this.onCancel = null;
     this._leftStickNavArmed = false;
     this._leftStickDirection = 0;
+    this._keyNavArmed = false;
+    this._keyNavDirection = 0;
   }
 
   /** 显示一组互斥交互动作；动作 id 必须唯一且稳定。 */
@@ -157,10 +159,17 @@ export class InteractionChoiceView extends UIElement {
     this._applyViewport(viewWidth, viewHeight);
     if (this.busy || !inputManager) return true;
 
-    const left = inputManager.isKeyPressed?.('arrowleft') || inputManager.isKeyPressed?.('a');
-    const right = inputManager.isKeyPressed?.('arrowright') || inputManager.isKeyPressed?.('d');
-    if (left) this.moveSelection(-1);
-    if (right) this.moveSelection(1);
+    // 键盘导航（边沿触发）：选项纵向排列，上/下（W/S/方向键）与左/右（A/D）均可；
+    // 键名必须用 InputManager 归一化后的虚拟键（'up'/'down'/'left'/'right'），
+    // 读取原始 'a'/'arrowleft' 永远匹配不上——这是键盘导航此前完全失效的根因。
+    const keyDirection = (inputManager.isKeyPressed?.('right') || inputManager.isKeyPressed?.('down')) ? 1
+      : ((inputManager.isKeyPressed?.('left') || inputManager.isKeyPressed?.('up')) ? -1 : 0);
+    if (!this._keyNavArmed) {
+      if (keyDirection === 0) this._keyNavArmed = true;
+    } else if (keyDirection !== 0 && keyDirection !== this._keyNavDirection) {
+      this.moveSelection(keyDirection);
+    }
+    this._keyNavDirection = keyDirection;
 
     const stickX = Number(gamepad?.leftStick?.x) || 0;
     const stickDirection = stickX <= -LEFT_STICK_NAV_THRESHOLD

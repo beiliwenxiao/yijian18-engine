@@ -117,6 +117,8 @@ export class DataDrivenPrologueScene extends BaseGameScene {
     });
     // 启动场景只在 ProjectWorldIndex 构建成功后由显式 entrySceneId 决定。
     this.currentSceneId = null;
+    // 调试探针：浏览器控制台/自动化通过 window.__ddScene 读取运行时状态（仅调试用）。
+    if (typeof window !== 'undefined') window.__ddScene = this;
     // 场景命令序号：未初始化时 ++undefined = NaN，会让同一会话所有生成 id 退化为
     // 同一个 "…:NaN" —— 首个命令认领后，后续命令全部 operationConflict。
     this._scenarioCommandSequence = 0;
