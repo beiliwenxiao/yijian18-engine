@@ -714,7 +714,13 @@
       "storyTags": [],
       "unlockedScenes": [
         "S01"
-      ]
+      ],
+      "s02Rescued": false,
+      "s02SummonsAccepted": false,
+      "joinedYellowTurban": false,
+      "s09RefugeeConflict": {
+        "donationCommitted": false
+      }
     },
     "warResourceNodeStates": [],
     "warState": {

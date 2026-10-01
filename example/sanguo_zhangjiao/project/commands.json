@@ -1024,16 +1024,17 @@
           {
             "equals": "S01",
             "path": "story.currentSceneId"
-          },
-          {
-            "equals": true,
-            "path": "story.s01Survival.cliffReached"
           }
         ]
       },
       "writes": [
         {
           "path": "s01Completed",
+          "target": "story",
+          "value": true
+        },
+        {
+          "path": "s01Survival.cliffReached",
           "target": "story",
           "value": true
         },
@@ -1168,7 +1169,7 @@
             "path": "story.currentSceneId"
           },
           {
-            "equals": false,
+            "notEquals": true,
             "path": "story.s02Rescued"
           }
         ]
@@ -1204,7 +1205,7 @@
             "path": "story.currentSceneId"
           },
           {
-            "equals": false,
+            "notEquals": true,
             "path": "story.s02SummonsAccepted"
           }
         ]
@@ -1263,7 +1264,7 @@
             "path": "story.currentSceneId"
           },
           {
-            "equals": false,
+            "notEquals": true,
             "path": "story.joinedYellowTurban"
           }
         ]
@@ -1479,7 +1480,7 @@
             "path": "story.currentSceneId"
           },
           {
-            "equals": false,
+            "notEquals": true,
             "path": "story.s09RefugeeConflict.donationCommitted"
           },
           {
