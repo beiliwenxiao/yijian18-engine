@@ -148,7 +148,26 @@ export class SceneStreamingRuntime {
         terrainMap.set(chunk.key, terrain);
         created.push({ key: chunk.key, terrain });
       }
-      await Promise.all(created.map(({ terrain }) => terrain.prepareStaticCaches?.()));
+      // 逐地形独立准备：任一地形静态缓存失败（如传送竞态触发「准备已取消」）只释放失败者，
+      // 不再整批回滚——整批清空会让 syncProjection 拿到空 terrains（世界背景永久黑屏），
+      // 且空 Map 残留会让后续 update 误判「已准备」而永不重试。
+      const outcomes = await Promise.all(created.map(async ({ key, terrain }) => {
+        try {
+          await terrain.prepareStaticCaches?.();
+          return { key, terrain, ok: true };
+        } catch (error) {
+          return { key, terrain, ok: false, error };
+        }
+      }));
+      for (const outcome of outcomes) {
+        if (outcome.ok) continue;
+        if (terrainMap.get(outcome.key) === outcome.terrain) terrainMap.delete(outcome.key);
+        outcome.terrain?.releaseStaticCaches?.();
+        console.warn('[SceneStreamingRuntime] 地形静态缓存准备失败，将在下帧重试', {
+          key: outcome.key,
+          error: outcome.error?.message || String(outcome.error)
+        });
+      }
       return terrainMap;
     } catch (error) {
       for (const { key, terrain } of created) {
@@ -166,7 +185,16 @@ export class SceneStreamingRuntime {
       deserialize: (...args) => manager.deserialize(...args),
       update: async (...args) => {
         const result = await manager.update(...args);
-        if (result?.ok) await this._prepareLoadedTerrains(manager);
+        if (result?.ok) {
+          // onTransition 可能在新 chunk 地形创建完成前触发（先投影空 terrains 并释放旧地形）；
+          // 地形准备完成后按「加载块集合」签名补投影，否则世界停留在空投影（背景黑屏直到下次跨块）。
+          const terrainMap = await this._prepareLoadedTerrains(manager);
+          const expectedKeys = [...manager.getLoadedChunks().values()]
+            .map(chunk => chunk.key).sort().join('|');
+          if (this._lastProjectedChunkKeys !== expectedKeys) {
+            this.syncProjection();
+          }
+        }
         return result;
       }
     };
@@ -182,8 +210,12 @@ export class SceneStreamingRuntime {
     const manager = preparedManager || await this.prepare({
       worldResult, targetSceneId, session, stateProviders
     });
-    const preparedTerrains = this._preparedTerrains.get(manager)
-      || await this._prepareLoadedTerrains(manager);
+    // 空的缓存地形表（上一轮准备全部失败时残留）不能当作已就绪，必须重新准备，
+    // 否则 syncProjection 投影空 terrains → 世界背景永久黑屏。
+    const cachedTerrains = this._preparedTerrains.get(manager);
+    const preparedTerrains = (cachedTerrains && cachedTerrains.size > 0)
+      ? cachedTerrains
+      : await this._prepareLoadedTerrains(manager);
     this.dispose();
     manager.onChunkUnload = (col, row, chunk) => {
       const terrain = preparedTerrains.get(chunk?.key);
@@ -454,6 +486,13 @@ export class SceneStreamingRuntime {
       ? this.terrainsByChunk.get(currentChunk.key)
       : (terrains[0] || null);
     const loadedCoverage = manager.getActiveNineGridCoverage?.() || null;
+    // 仅当每个加载块都有地形（完整投影）时记录签名：空/部分投影不记，
+    // 流式 update 据此在地形就绪后补投影，避免世界停留在空投影（背景黑屏）。
+    const expectedKeys = chunks.map(chunk => chunk.key).sort().join('|');
+    const terrainKeys = chunks
+      .filter(chunk => this.terrainsByChunk.get(chunk.key))
+      .map(chunk => chunk.key).sort().join('|');
+    if (terrainKeys === expectedKeys) this._lastProjectedChunkKeys = expectedKeys;
     this.onProjection?.({ manager, chunks, terrains, terrain, currentSceneId, loadedCoverage });
     return { manager, chunks, terrains, terrain, loadedCoverage };
   }
@@ -461,6 +500,7 @@ export class SceneStreamingRuntime {
   dispose() {
     this.detach?.();
     this.detach = null;
+    this._lastProjectedChunkKeys = '';
     const manager = this.manager;
     this._releaseTerrainMap(this.terrainsByChunk);
     if (manager) {

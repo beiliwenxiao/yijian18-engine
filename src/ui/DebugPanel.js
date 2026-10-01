@@ -1005,6 +1005,20 @@ export class DebugPanel {
     }
 
     if (this._taskStatus) lines.push(`▶ ${this._taskStatus}`);
+
+    // 世界地形诊断：跳转/传送后背景缺失时，可立即看出当前 chunk 地形是否就绪
+    const terrains = Array.isArray(scene?.context?.world?.terrains)
+      ? scene.context.world.terrains.filter(Boolean) : [];
+    const currentTerrain = scene?.context?.world?.terrain || null;
+    const terrainSummary = terrains.map(terrain => {
+      const sceneId = terrain?._editorSceneId || '?';
+      const prepared = terrain?._staticCachePrepared === true;
+      const bgCount = (terrain?._editorBackgroundImages || []).length;
+      const hasCache = terrain?._bgImageCache ? '+cache' : '';
+      const combined = terrain?._combinedGroundCache ? '+combined' : '';
+      return `${sceneId}:${prepared ? 'ok' : 'pending'}(bg=${bgCount}${hasCache}${combined})`;
+    }).join(', ');
+    lines.push(`世界地形: terrains=${terrains.length} 当前=${currentTerrain?._editorSceneId || '--'} | ${terrainSummary || '--'}`);
     target.textContent = lines.join('\n');
   }
 
@@ -1302,7 +1316,11 @@ export class DebugPanel {
         .then(result => {
           // 传送被门禁/导航拒绝时必须可见，否则调试者无从判断「跳转无反应」的原因
           if (result?.ok === false) {
-            console.warn('[DebugPanel] 跳转被拒', result);
+            console.warn('[DebugPanel] 跳转被拒', {
+              operationId: result.operationId || null,
+              code: result.code || null,
+              errors: JSON.stringify(result.errors || [])
+            });
             this._setTaskStatus(`❌ 跳转 ${sceneId} 被拒：${result?.errors?.[0]?.message || result?.code || 'worldTeleportRejected'}`);
           }
         })

@@ -768,6 +768,9 @@ async function commitRegionTarget({ request, result, shadowSession, draft, valid
     if (restored?.ok === false) return restored;
   }
   this._navigationProjection.apply({ sceneId: request.sceneId, unlock: true });
+  // 用最终场景 id 重投影：initialize 阶段的投影先于导航投影（当前场景 id 仍是旧值），
+  // 不重同步会让 world.terrain 停留在旧 chunk（当前场景地形/攀爬面/小地图指向错误）。
+  this.syncWorldStreamingProjection?.();
   return { ok: true, errors: [] };
 }
 
