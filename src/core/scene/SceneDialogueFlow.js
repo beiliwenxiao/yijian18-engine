@@ -31,8 +31,12 @@ export class SceneDialogueFlow {
 
     const currentNode = dialogue.getCurrentNode();
     if (!currentNode) return;
-    // 选项节点必须由玩家明确选择，不能由继续信号自动越过。
-    if (currentNode.choices?.length > 0) return;
+    // 选项节点必须由玩家明确选择，不能由继续信号自动越过；
+    // 手柄/键盘焦点确认（A/E 确认焦点项、摇杆/方向键切换焦点）交由选项弹窗处理。
+    if (currentNode.choices?.length > 0) {
+      scene.dialogueChoiceBox?.handleConfirmInput?.(input);
+      return;
+    }
 
     dialogue.continue();
     if (clicked) input.markMouseClickHandled();

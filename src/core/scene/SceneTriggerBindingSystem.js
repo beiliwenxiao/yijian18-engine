@@ -45,7 +45,8 @@ export class SceneTriggerBindingSystem {
     getLogicalTime = () => 0,
     logger = null,
     onPromptChange = null,
-    onInteractChoices = null
+    onInteractChoices = null,
+    canInteract = null
   } = {}) {
     this.triggerSystem = triggerSystem;
     this.getPlayer = typeof getPlayer === 'function' ? getPlayer : () => null;
@@ -59,6 +60,8 @@ export class SceneTriggerBindingSystem {
     this.logger = typeof logger === 'function' ? logger : null;
     this.onPromptChange = typeof onPromptChange === 'function' ? onPromptChange : null;
     this.onInteractChoices = typeof onInteractChoices === 'function' ? onInteractChoices : null;
+    // 交互准入守卫（如对话激活时禁止交互绑定消费输入），返回 false 时 handleInteract 不命中
+    this.canInteract = typeof canInteract === 'function' ? canInteract : null;
     this.bindings = [];
     this.sceneObjects = [];
     this._inside = new Map();
@@ -258,6 +261,9 @@ export class SceneTriggerBindingSystem {
   /** 处理统一交互事件；存在有效候选时返回 true 并消费输入，不代表后续业务动作已提交成功。 */
   handleInteract(event) {
     if (this._disposed || !this.triggerSystem) return false;
+    // 交互准入守卫：对话等模态状态下交互绑定不得消费输入（否则对话选项的
+    // 指针点击会在 UI 点击路由之前被此处吞掉，导致选项无法点击）
+    if (this.canInteract && this.canInteract() !== true) return false;
     const isKey = event?.type === InputEventType.KEY_PRESS && event.key === 'e';
     const isPointer = event?.type === InputEventType.POINTER_DOWN && event.button === PointerButton.LEFT;
     if (!isKey && !isPointer) return false;

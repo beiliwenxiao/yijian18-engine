@@ -1100,6 +1100,9 @@ export class BaseGameSceneSetup extends Scene {
     this._sceneTriggerBindings = new SceneTriggerBindingSystem({
       getPlayer: () => this.playerEntity,
       getConditionRoot: key => this.gameLoader?.blackboard?.get?.(key),
+      // 对话激活时交互绑定不得消费输入：否则对话选项弹窗的指针点击
+      // 会在 UI 点击路由之前被吞掉（选项点击无反应的根因）
+      canInteract: () => this.dialogueSystem?.isDialogueActive?.() !== true,
       isTutorialCompleted: tutorialId => this._tutorialFlow?.isCompleted?.(tutorialId)
         ?? this.tutorialSystem?.isTutorialCompleted?.(tutorialId)
         ?? false,

@@ -50,6 +50,10 @@ export class DialogueChoiceBox {
     this.onSelect = options.onSelect || null;
 
     this.hoveredChoiceIndex = -1;
+    // 手柄/键盘焦点：弹窗出现时聚焦第一项，方向键或左摇杆上下切换，A/E 确认
+    this.focusedIndex = 0;
+    this._focusedNodeId = null;
+    this._navDirectionActive = false;
   }
 
   /** 应用 UI 编辑器保存的选项弹窗矩形。 */
@@ -95,7 +99,15 @@ export class DialogueChoiceBox {
     // 跟随对话状态：有 choices 的节点显示，其余隐藏；打字中不显示。
     const choices = this.currentChoices();
     this.visible = choices.length > 0 && !this.dialogueSystem.isTyping();
+    // 焦点跟随节点：换节点重置为第一项；焦点索引 clamp 到选项范围
+    const nodeId = this.dialogueSystem.getCurrentNode()?.id || null;
+    if (nodeId !== this._focusedNodeId) {
+      this._focusedNodeId = nodeId;
+      this.focusedIndex = 0;
+      this._navDirectionActive = false;
+    }
     if (this.visible) {
+      this.focusedIndex = Math.max(0, Math.min(this.focusedIndex, choices.length - 1));
       const contentHeight = this.padding * 2
         + choices.length * this.choiceHeight
         + Math.max(0, choices.length - 1) * this.choiceSpacing;
@@ -120,11 +132,19 @@ export class DialogueChoiceBox {
     choices.forEach((choice, index) => {
       const rect = rects[index];
       const isHovered = this.hoveredChoiceIndex === index;
+      const isFocused = this.focusedIndex === index;
       ctx.fillStyle = isHovered ? this.choiceHoverColor : this.choiceColor;
       ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
       ctx.strokeStyle = this.borderColor;
       ctx.lineWidth = 2;
       ctx.strokeRect(rect.x, rect.y, rect.width, rect.height);
+      // 焦点高光：手柄/键盘当前聚焦项的金色亮边（鼠标悬停同步焦点）
+      if (isFocused) {
+        ctx.strokeStyle = '#FFE066';
+        ctx.lineWidth = 3;
+        ctx.strokeRect(rect.x + 2, rect.y + 2, rect.width - 4, rect.height - 4);
+        ctx.lineWidth = 2;
+      }
       ctx.fillStyle = this.choiceTextColor;
       ctx.font = this.choiceFont;
       ctx.textAlign = 'left';
@@ -151,6 +171,47 @@ export class DialogueChoiceBox {
       this.playSound(this.choiceHoverSoundKey, { volume: 0.5 });
     }
     this.hoveredChoiceIndex = newHoveredIndex;
+    // 鼠标悬停即焦点：手柄高光与 hover 视觉一致
+    if (newHoveredIndex !== -1) this.focusedIndex = newHoveredIndex;
+  }
+
+  /**
+   * 手柄/键盘确认输入：方向键或左摇杆上下切换焦点（按住沿触发一次），
+   * E 键（手柄 A/X 映射的虚拟 e 键）确认当前焦点项。
+   * 由 SceneDialogueFlow 在选项节点调用（afterSystems 阶段，晚于鼠标点击路由）。
+   * @param {Object} input - InputManager
+   * @returns {boolean} 是否消费了确认输入
+   */
+  handleConfirmInput(input) {
+    if (!this.visible || !this.canInteract || !input) return false;
+    const choices = this.currentChoices();
+    if (choices.length === 0) return false;
+
+    // 焦点导航：up/down 涵盖键盘方向键/WASD 与手柄左摇杆（GamepadManager 注入同一虚拟键）
+    const up = input.isKeyDown?.('up') === true;
+    const down = input.isKeyDown?.('down') === true;
+    const direction = up === down ? 0 : (up ? -1 : 1);
+    if (direction !== 0 && this._navDirectionActive !== true) {
+      this.focusedIndex = (this.focusedIndex + direction + choices.length) % choices.length;
+      this.playSound(this.choiceHoverSoundKey, { volume: 0.5 });
+    }
+    this._navDirectionActive = direction !== 0;
+
+    // 确认：E / 手柄 A/X（虚拟 e 键帧沿）
+    if (input.isKeyPressed?.('e') !== true) return false;
+    const index = Math.max(0, Math.min(this.focusedIndex, choices.length - 1));
+    this.playSound(this.choiceSelectSoundKey, { volume: 0.5 });
+    const selected = choices[index];
+    const pending = this.dialogueSystem.selectChoice(index);
+    const finalize = result => {
+      if (result === false) return true;
+      this.onSelect?.(index, selected);
+      if (!this.dialogueSystem.isDialogueActive()) this.hide();
+      return true;
+    };
+    if (pending && typeof pending.then === 'function') pending.then(finalize);
+    else finalize(pending);
+    return true;
   }
 
   /** @returns {boolean} 是否消费了该点击 */
@@ -162,6 +223,7 @@ export class DialogueChoiceBox {
       const rect = rects[i];
       if (mouseX >= rect.x && mouseX <= rect.x + rect.width
         && mouseY >= rect.y && mouseY <= rect.y + rect.height) {
+        this.focusedIndex = i;
         this.playSound(this.choiceSelectSoundKey, { volume: 0.5 });
         const selected = choices[i];
         const pending = this.dialogueSystem.selectChoice(i);
