@@ -24,6 +24,7 @@ import { UILayoutLoader } from '../../ui/UILayoutLoader.js';
 import { PanelLayoutLoader } from '../../ui/PanelLayoutLoader.js';
 import { ItemIconRenderer } from '../../ui/ItemIconRenderer.js';
 import { InteractionChoiceView } from '../../ui/InteractionChoiceView.js';
+import { DialogueChoiceBox } from '../../ui/DialogueChoiceBox.js';
 import { InputHints } from '../input/InputHints.js';
 
 /**
@@ -201,6 +202,21 @@ export class ScenePanelLayout {
       }
     });
 
+    // 对话选项弹窗：与文本框拆分的独立 UI，位置大小由 UI 编辑器 dialogue-choices 配置
+    scene.dialogueChoiceBox = new DialogueChoiceBox({
+      dialogueSystem: scene.dialogueSystem,
+      x: Math.round((scene.logicalWidth - 420) / 2),
+      y: scene.isMobileLayout
+        ? scene.logicalHeight - 320
+        : Math.round((scene.logicalHeight - 230) / 2) + 250,
+      width: 420,
+      height: 120,
+      visible: false,
+      zIndex: 210,
+      audioManager: scene.audioManager || null
+    });
+    scene.dialogueBox.setChoiceBox(scene.dialogueChoiceBox);
+
     // PC 端只保留一个背包按钮；属性与装备已在背包内合并展示。
     if (!scene.isMobileLayout) {
       scene.bagButton = new IconButton({
@@ -295,6 +311,7 @@ export class ScenePanelLayout {
     scene.uiClickHandler.registerElement(scene.backpackPanel);
     scene.uiClickHandler.registerElement(scene.bottomControlBar);
     scene.uiClickHandler.registerElement(scene.dialogueBox);
+    scene.uiClickHandler.registerElement(scene.dialogueChoiceBox);
     if (scene.bagButton) scene.uiClickHandler.registerElement(scene.bagButton);
     if (scene.settingsButton) scene.uiClickHandler.registerElement(scene.settingsButton);
     if (scene.armyButton) scene.uiClickHandler.registerElement(scene.armyButton);
@@ -314,6 +331,7 @@ export class ScenePanelLayout {
     scene.uiSystem.registerPanel('backpack', scene.backpackPanel);
     scene.uiSystem.registerPanel('bottomControl', scene.bottomControlBar);
     scene.uiSystem.registerPanel('dialogue', scene.dialogueBox);
+    scene.uiSystem.registerPanel('dialogueChoices', scene.dialogueChoiceBox);
 
     // PC 功能按钮初始居中（随屏幕宽度自动对齐）
     this.layoutPCFunctionButtons(scene.logicalWidth, scene.logicalHeight);
@@ -420,6 +438,8 @@ export class ScenePanelLayout {
           halfBody: loader.getRect('dialogue-halfbody', width, height),
           fullBody: loader.getRect('dialogue-fullbody', width, height)
         });
+        // 对话选项弹窗布局（UI 编辑器「选项弹窗」组件）
+        scene.dialogueChoiceBox?.setLayoutRect?.(loader.getRect('dialogue-choices', width, height));
         // 军队操作 HUD：UI 编辑器保存的 armyCommandHud 矩形优先（布局加载晚于装配，这里补一次重排）
         scene.armyCommandFlow?.onResize(width, height);
       }

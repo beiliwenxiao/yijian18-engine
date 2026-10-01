@@ -31,41 +31,32 @@ export class DialogueBox extends UIElement {
     
     this.dialogueSystem = options.dialogueSystem;
     this.audioManager = options.audioManager;
-    this.onChoiceSelect = options.onChoiceSelect || null;
     this.onDialogueEnd = options.onDialogueEnd || null;
     this.onContinue = options.onContinue || null;
-    
+    // 独立选项弹窗（DialogueChoiceBox），由 setChoiceBox 挂接
+    this.choiceBox = null;
+
     this.padding = 20;
     this.portraitSize = 100;
     this.portraitPadding = 15;
     this.textPadding = 15;
-    this.choiceSpacing = 10;
-    this.choiceHeight = 40;
     this.minHeight = 230;
     this.baseHeight = 230;
     this.baseY = options.y || 0;
-    this.choiceOffsetY = 200;
-    
-    this.hoveredChoiceIndex = -1;
+
     this.canInteract = true;
-    
+
     this.backgroundColor = 'rgba(0, 0, 0, 0.85)';
     this.borderColor = '#8B7355';
     this.textColor = '#FFFFFF';
     this.speakerColor = '#FFD700';
-    this.choiceColor = '#4A90E2';
-    this.choiceHoverColor = '#5BA3F5';
-    this.choiceTextColor = '#FFFFFF';
-    
+
     this.speakerFont = 'bold 20px Arial, sans-serif';
     this.textFont = '18px Arial, sans-serif';
-    this.choiceFont = '16px Arial, sans-serif';
-    
+
     this.typewriterSoundKey = 'dialogue_type';
     this.typewriterSoundInterval = 3;
     this.lastTypewriterSoundIndex = 0;
-    this.choiceHoverSoundKey = 'dialogue_hover';
-    this.choiceSelectSoundKey = 'dialogue_select';
     
     this.showContinuePrompt = false;
     this.continuePromptAlpha = 0;
@@ -140,19 +131,13 @@ export class DialogueBox extends UIElement {
 
   /**
    * 当前演出类型的布局度量（纯读取，不修改几何）。
-   * narration 无立绘区；portrait 保持方形头像；halfBody 左侧立绘区随框高自适应
-   * （扣除选项区高度，避免选项与立绘重叠）。
+   * narration 无立绘区；portrait 保持方形头像；halfBody 左侧立绘区随框高自适应。
+   * 选项在独立弹窗（DialogueChoiceBox）中，不再占用文本框高度。
    * @private
    */
-  _layoutMetrics(currentNode = null) {
+  _layoutMetrics() {
     const { boxType, presentation } = this._currentPresentation();
-    const choicesAreaHeight = currentNode?.choices?.length > 0
-      ? this.textPadding
-        + (currentNode.choices.length * this.choiceHeight)
-        + ((currentNode.choices.length - 1) * this.choiceSpacing)
-        + this.padding
-      : 0;
-    const contentHeight = Math.max(0, this.height - this.padding * 2 - 40 - choicesAreaHeight);
+    const contentHeight = Math.max(0, this.height - this.padding * 2 - 40);
     let portraitAreaHeight = 0;
     let halfBodyWidth = 0;
     if (boxType === 'portrait') {
@@ -172,16 +157,10 @@ export class DialogueBox extends UIElement {
     return { x: this.x + this.padding, y: this.y + this.padding + 40, width, height };
   }
 
-  /** 内容需要的最小高度（标题行 + 最小立绘区 + 可选项）；halfBody 立绘区用固定下限防循环增长。 @private */
-  _requiredHeight(currentNode, metrics) {
-    const choicesAreaHeight = currentNode?.choices?.length > 0
-      ? this.textPadding
-        + (currentNode.choices.length * this.choiceHeight)
-        + ((currentNode.choices.length - 1) * this.choiceSpacing)
-        + this.padding
-      : 0;
+  /** 内容需要的最小高度（标题行 + 最小立绘区）；选项在独立弹窗中不计入。 @private */
+  _requiredHeight(_currentNode, metrics) {
     const minPortraitArea = metrics.boxType === 'halfBody' ? 120 : (metrics.portraitAreaHeight || 70);
-    return this.padding + 30 + minPortraitArea + this.padding + choicesAreaHeight;
+    return this.padding + 30 + minPortraitArea + this.padding;
   }
 
   /**
@@ -190,7 +169,7 @@ export class DialogueBox extends UIElement {
    * @private
    */
   _applyLayoutGeometry(currentNode, canvasHeight) {
-    const metrics = this._layoutMetrics(currentNode);
+    const metrics = this._layoutMetrics();
     const rect = this.layoutRects?.[metrics.boxType] || null;
     const requiredHeight = this._requiredHeight(currentNode, metrics);
     if (rect) {
@@ -222,11 +201,11 @@ export class DialogueBox extends UIElement {
 
   update(deltaTime) {
     if (!this.visible || !this.dialogueSystem) return;
-    
+
     const wasTyping = this.dialogueSystem.isTyping();
     this.dialogueSystem.update(deltaTime);
     const isTyping = this.dialogueSystem.isTyping();
-    
+
     if (isTyping && this.audioManager) {
       const currentIndex = this.dialogueSystem.typewriterState.currentIndex;
       if (currentIndex > this.lastTypewriterSoundIndex + this.typewriterSoundInterval) {
@@ -234,15 +213,15 @@ export class DialogueBox extends UIElement {
         this.lastTypewriterSoundIndex = currentIndex;
       }
     }
-    
+
     if (!isTyping && wasTyping) {
       this.lastTypewriterSoundIndex = 0;
     }
-    
+
     const currentNode = this.dialogueSystem.getCurrentNode();
     if (currentNode && !isTyping) {
       this.showContinuePrompt = !currentNode.choices || currentNode.choices.length === 0;
-      
+
       if (this.showContinuePrompt) {
         this.continuePromptAlpha += this.continuePromptDirection * deltaTime * 0.002;
         if (this.continuePromptAlpha >= 1) {
@@ -256,6 +235,15 @@ export class DialogueBox extends UIElement {
     } else {
       this.showContinuePrompt = false;
     }
+
+    // 选项弹窗与文本框拆分：跟随同一对话状态独立显隐
+    this.choiceBox?.update?.(deltaTime);
+  }
+
+  /** 挂接独立选项弹窗；文本框只负责文本，选项显隐/命中/渲染由 choiceBox 承担。 */
+  setChoiceBox(choiceBox) {
+    this.choiceBox = choiceBox || null;
+    return this;
   }
 
   render(ctx) {
@@ -272,11 +260,11 @@ export class DialogueBox extends UIElement {
     if (metrics.portraitAreaHeight > 0) this.renderPortraitArea(ctx, metrics, currentNode);
     this.renderSpeaker(ctx, currentNode.speaker, metrics);
     this.renderText(ctx, this.dialogueSystem.getDisplayedText(), metrics);
-    if (currentNode.choices && currentNode.choices.length > 0 && !this.dialogueSystem.isTyping()) {
-      this.renderChoices(ctx, currentNode.choices, metrics);
-    }
     if (this.showContinuePrompt) this.renderContinuePrompt(ctx);
     ctx.restore();
+
+    // 独立选项弹窗（位置大小由 UI 编辑器 dialogue-choices 配置）
+    this.choiceBox?.render?.(ctx);
   }
 
   /** 左侧立绘区：portrait 保持方形头像，halfBody 绘制底对齐半身立绘。 @private */
@@ -573,27 +561,6 @@ export class DialogueBox extends UIElement {
     });
   }
 
-  renderChoices(ctx, choices, metrics = this._layoutMetrics()) {
-    if (!choices || choices.length === 0) return;
-    const choicesStartY = this.y + this.padding + 40 + metrics.portraitAreaHeight + this.textPadding;
-    const choiceWidth = this.width - this.padding * 2;
-    choices.forEach((choice, index) => {
-      const choiceY = choicesStartY + index * (this.choiceHeight + this.choiceSpacing);
-      const isHovered = this.hoveredChoiceIndex === index;
-      ctx.fillStyle = isHovered ? this.choiceHoverColor : this.choiceColor;
-      ctx.fillRect(this.x + this.padding, choiceY, choiceWidth, this.choiceHeight);
-      ctx.strokeStyle = this.borderColor;
-      ctx.lineWidth = 2;
-      ctx.strokeRect(this.x + this.padding, choiceY, choiceWidth, this.choiceHeight);
-      ctx.fillStyle = this.choiceTextColor;
-      ctx.font = this.choiceFont;
-      ctx.textAlign = 'left';
-      ctx.textBaseline = 'middle';
-      const choiceText = String(index + 1) + '. ' + choice.text;
-      ctx.fillText(choiceText, this.x + this.padding + 15, choiceY + this.choiceHeight / 2);
-    });
-  }
-
   renderContinuePrompt(ctx) {
     // 按当前输入方案显示匹配的操作提示
     const promptText = `▼ ${InputHints.phrase('dialogueContinue')} ▼`;
@@ -630,31 +597,16 @@ export class DialogueBox extends UIElement {
     return lines;
   }
 
+  /** 兼容旧调用（index.html 等遗留路径）；悬停命中已由独立选项弹窗承担。 */
   handleMouseMove(mouseX, mouseY) {
-    if (!this.visible || !this.canInteract) return;
-    const currentNode = this.dialogueSystem.getCurrentNode();
-    if (!currentNode || !currentNode.choices || currentNode.choices.length === 0) {
-      this.hoveredChoiceIndex = -1;
-      return;
-    }
-    const metrics = this._layoutMetrics(currentNode);
-    const choicesStartY = this.y + this.padding + 40 + metrics.portraitAreaHeight + this.textPadding;
-    const choiceWidth = this.width - this.padding * 2;
-    let newHoveredIndex = -1;
-    for (let i = 0; i < currentNode.choices.length; i++) {
-      const choiceY = choicesStartY + i * (this.choiceHeight + this.choiceSpacing);
-      if (mouseX >= this.x + this.padding && mouseX <= this.x + this.padding + choiceWidth &&
-          mouseY >= choiceY && mouseY <= choiceY + this.choiceHeight) {
-        newHoveredIndex = i;
-        break;
-      }
-    }
-    if (newHoveredIndex !== this.hoveredChoiceIndex && newHoveredIndex !== -1) {
-      this.playChoiceHoverSound();
-    }
-    this.hoveredChoiceIndex = newHoveredIndex;
+    this.choiceBox?.handleMouseMove?.(mouseX, mouseY);
   }
 
+  /**
+   * 文本框点击：跳过打字机 / 推进对话。
+   * 选项命中由独立选项弹窗（choiceBox）承担；点击文本框在有选项时只消费不推进
+   * （DialogueSystem.continue 对选项节点返回 false）。
+   */
   handleMouseClick(mouseX, mouseY) {
     if (!this.visible || !this.canInteract) return false;
     if (!this.containsPoint(mouseX, mouseY)) return false;
@@ -664,39 +616,8 @@ export class DialogueBox extends UIElement {
       this.dialogueSystem.skipTypewriter();
       return true;
     }
-    if (currentNode.choices && currentNode.choices.length > 0) {
-      const metrics = this._layoutMetrics(currentNode);
-      const choicesStartY = this.y + this.padding + 40 + metrics.portraitAreaHeight + this.textPadding;
-      const choiceWidth = this.width - this.padding * 2;
-      for (let i = 0; i < currentNode.choices.length; i++) {
-        const choiceY = choicesStartY + i * (this.choiceHeight + this.choiceSpacing);
-        if (mouseX >= this.x + this.padding && mouseX <= this.x + this.padding + choiceWidth &&
-            mouseY >= choiceY && mouseY <= choiceY + this.choiceHeight) {
-          this.selectChoice(i);
-          return true;
-        }
-      }
-      return false;
-    }
     this.continueDialogue();
     return true;
-  }
-
-  selectChoice(choiceIndex) {
-    const currentNode = this.dialogueSystem.getCurrentNode();
-    if (!currentNode || !currentNode.choices || choiceIndex >= currentNode.choices.length) return;
-    this.playChoiceSelectSound();
-    const selected = currentNode.choices[choiceIndex];
-    const pending = this.dialogueSystem.selectChoice(choiceIndex);
-    const finalize = result => {
-      if (result === false) return false;
-      if (this.onChoiceSelect) this.onChoiceSelect(choiceIndex, selected);
-      if (!this.dialogueSystem.isDialogueActive()) this.handleDialogueEnd();
-      return true;
-    };
-    return pending && typeof pending.then === 'function'
-      ? pending.then(finalize)
-      : finalize(pending);
   }
 
   continueDialogue() {
@@ -709,6 +630,7 @@ export class DialogueBox extends UIElement {
 
   handleDialogueEnd() {
     this.hide();
+    this.choiceBox?.hide?.();
     if (this.onDialogueEnd) this.onDialogueEnd();
   }
 
@@ -718,29 +640,17 @@ export class DialogueBox extends UIElement {
     }
   }
 
-  playChoiceHoverSound() {
-    if (this.audioManager && this.audioManager.hasSound(this.choiceHoverSoundKey)) {
-      this.audioManager.playSound(this.choiceHoverSoundKey, { volume: 0.5 });
-    }
-  }
-
-  playChoiceSelectSound() {
-    if (this.audioManager && this.audioManager.hasSound(this.choiceSelectSoundKey)) {
-      this.audioManager.playSound(this.choiceSelectSoundKey, { volume: 0.7 });
-    }
-  }
-
   show() {
     super.show();
     this.canInteract = true;
-    this.hoveredChoiceIndex = -1;
     this.lastTypewriterSoundIndex = 0;
+    this.choiceBox?.show?.();
   }
 
   hide() {
     super.hide();
     this.canInteract = false;
-    this.hoveredChoiceIndex = -1;
+    this.choiceBox?.hide?.();
   }
 
   setDialogueSystem(dialogueSystem) {
@@ -753,14 +663,6 @@ export class DialogueBox extends UIElement {
 
   setTypewriterSoundKey(soundKey) {
     this.typewriterSoundKey = soundKey;
-  }
-
-  setChoiceHoverSoundKey(soundKey) {
-    this.choiceHoverSoundKey = soundKey;
-  }
-
-  setChoiceSelectSoundKey(soundKey) {
-    this.choiceSelectSoundKey = soundKey;
   }
 }
 

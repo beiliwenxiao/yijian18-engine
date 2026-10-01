@@ -34,6 +34,12 @@ export class SceneWorldInteraction {
       return;
     }
     if (scene.dialogueSystem?.isDialogueActive()) {
+      // 对话选项弹窗（与文本框拆分）：优先命中选项按钮
+      if (scene.dialogueChoiceBox?.visible
+          && scene.dialogueChoiceBox.handleMouseClick(mousePos.x, mousePos.y, button)) {
+        input.markMouseClickHandled();
+        return;
+      }
       if (scene.dialogueBox?.visible &&
           scene.dialogueBox.handleMouseClick(mousePos.x, mousePos.y, button)) {
         input.markMouseClickHandled();

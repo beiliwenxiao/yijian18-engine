@@ -30,14 +30,13 @@ describe('DialogueBox', () => {
     });
 
     it('应该正确初始化交互状态', () => {
-      expect(dialogueBox.hoveredChoiceIndex).toBe(-1);
+      expect(dialogueBox.choiceBox).toBeNull();
       expect(dialogueBox.canInteract).toBe(true);
     });
 
     it('应该正确初始化布局配置', () => {
       expect(dialogueBox.padding).toBe(20);
       expect(dialogueBox.portraitSize).toBe(100);
-      expect(dialogueBox.choiceHeight).toBe(40);
     });
   });
 
@@ -54,22 +53,25 @@ describe('DialogueBox', () => {
       expect(dialogueBox.visible).toBe(false);
       expect(dialogueBox.canInteract).toBe(false);
     });
+
+    it('挂接的选项弹窗应随对话框一起显隐', () => {
+      const choiceBox = {
+        visible: false,
+        show: function () { this.visible = true; },
+        hide: function () { this.visible = false; }
+      };
+      dialogueBox.setChoiceBox(choiceBox);
+      dialogueBox.show();
+      expect(choiceBox.visible).toBe(true);
+      dialogueBox.hide();
+      expect(choiceBox.visible).toBe(false);
+    });
   });
 
   describe('设置方法', () => {
     it('应该能够设置打字机音效键名', () => {
       dialogueBox.setTypewriterSoundKey('new_type_sound');
       expect(dialogueBox.typewriterSoundKey).toBe('new_type_sound');
-    });
-
-    it('应该能够设置选项悬停音效键名', () => {
-      dialogueBox.setChoiceHoverSoundKey('new_hover_sound');
-      expect(dialogueBox.choiceHoverSoundKey).toBe('new_hover_sound');
-    });
-
-    it('应该能够设置选项选择音效键名', () => {
-      dialogueBox.setChoiceSelectSoundKey('new_select_sound');
-      expect(dialogueBox.choiceSelectSoundKey).toBe('new_select_sound');
     });
   });
 
