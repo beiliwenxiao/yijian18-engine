@@ -303,6 +303,76 @@
       "yPct": 0.81389,
       "wPct": 0.03125,
       "hPct": 0.05556
+    },
+    {
+      "id": "dialogue-narration",
+      "label": "旁白对话",
+      "kind": "dialogue",
+      "anchor": "topleft",
+      "x": 262,
+      "y": 521,
+      "width": 749,
+      "height": 181,
+      "xPct": 0.20469,
+      "yPct": 0.72361,
+      "wPct": 0.58516,
+      "hPct": 0.25139
+    },
+    {
+      "id": "dialogue-portrait",
+      "label": "头像对话",
+      "kind": "dialogue",
+      "anchor": "topleft",
+      "x": 289,
+      "y": 217,
+      "width": 700,
+      "height": 230,
+      "xPct": 0.22578,
+      "yPct": 0.30139,
+      "wPct": 0.54688,
+      "hPct": 0.31944
+    },
+    {
+      "id": "dialogue-halfbody",
+      "label": "半身对话",
+      "kind": "dialogue",
+      "anchor": "topleft",
+      "x": 304,
+      "y": 228,
+      "width": 700,
+      "height": 300,
+      "xPct": 0.2375,
+      "yPct": 0.31667,
+      "wPct": 0.54688,
+      "hPct": 0.41667
+    },
+    {
+      "id": "dialogue-fullbody",
+      "label": "全身对话",
+      "kind": "dialogue",
+      "anchor": "topleft",
+      "x": 278,
+      "y": 115,
+      "width": 701,
+      "height": 408,
+      "xPct": 0.21719,
+      "yPct": 0.15972,
+      "wPct": 0.54766,
+      "hPct": 0.56667
+    },
+    {
+      "id": "dialogue-choices",
+      "label": "选项弹窗",
+      "kind": "dialogue",
+      "anchor": "topleft",
+      "x": 443,
+      "y": 428,
+      "width": 420,
+      "height": 120,
+      "xPct": 0.34609,
+      "yPct": 0.59444,
+      "wPct": 0.32813,
+      "hPct": 0.16667
     }
   ]
 }
