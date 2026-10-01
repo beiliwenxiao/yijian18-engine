@@ -1766,15 +1766,20 @@ export class S01S02Coordinator {
       return false;
     }
     if (operation === 'campfireLit') {
-      const result = await this._submit('story.s01.campfireLit', {}, 'story:s01:campfire-lit');
-      if (result.ok !== true) return false;
+      // 幂等续跑：事实已提交（如读档边界/调试补账）时跳过事务但继续表现链——
+      // 点燃表现、斧头掉落与工具包发放必须完成，否则任务链死锁（工具永远不出现）。
+      const survival = this._story().s01Survival || {};
+      if (survival.campfireLit !== true) {
+        const result = await this._submit('story.s01.campfireLit', {}, 'story:s01:campfire-lit');
+        if (result.ok !== true) return false;
+      }
       try {
         this.scene._campfireService?.ignite?.({ runtime: { particleSystem: this.scene.particleSystem } });
       } catch (error) {
         console.warn('[S01S02Coordinator] 篝火表现启动失败，业务状态已提交', error);
       }
 
-      const toolState = await this._submit('story.s01.findAxe', {}, 'story:s01:find-axe');
+      const toolState = await this._submit('story.s01.findAxe', {}, `story:s01:find-axe:${this.sequenceBootNonce}:${++this.sequence}`);
       if (toolState.ok !== true) return false;
       this.initialToolRevealPending = true;
       try {
