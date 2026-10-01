@@ -57,6 +57,8 @@ export class DialogueSystem {
     this.onNodeChangeCallback = null;
     this.onEndCallback = null;
     this.onChoiceCallback = null;
+    // 选项编排失败（dialogueChoice Trigger 动作失败）的可见化出口；由场景注入屏幕提示。
+    this.onChoiceDispatchFailed = null;
     this._choiceListeners = [];
     this._choiceDispatcher = null;
     this._pendingChoice = null;
@@ -276,7 +278,7 @@ export class DialogueSystem {
       }, context);
     } catch (error) {
       if (this._pendingChoice === pending) this._pendingChoice = null;
-      console.warn('DialogueSystem: dialogueChoice 编排失败', error);
+      this._notifyChoiceDispatchFailed(error?.code || 'choiceDispatchError', error, pending);
       return false;
     }
 
@@ -284,17 +286,46 @@ export class DialogueSystem {
       const accepted = dispatch !== false && dispatch?.ok !== false;
       const result = accepted ? commit() : false;
       if (this._pendingChoice === pending) this._pendingChoice = null;
+      if (!accepted) {
+        this._notifyChoiceDispatchFailed(dispatch?.code || 'choiceDispatchRejected', dispatch, pending);
+      }
       return result;
     }
     return Promise.resolve(dispatch)
-      .then(result => (result === false || result?.ok === false ? false : commit()))
+      .then(result => {
+        if (result === false || result?.ok === false) {
+          this._notifyChoiceDispatchFailed(result?.code || 'choiceOrchestrationFailed', result, pending);
+          return false;
+        }
+        return commit();
+      })
       .catch(error => {
         console.warn('DialogueSystem: dialogueChoice 编排失败', error);
+        this._notifyChoiceDispatchFailed(error?.code || 'choiceOrchestrationError', error, pending);
         return false;
       })
       .finally(() => {
         if (this._pendingChoice === pending) this._pendingChoice = null;
       });
+  }
+
+  /**
+   * 选项编排失败的唯一出口：不再静默吞掉，回调给场景做可见提示
+   * （dialogueChoice Trigger 任一动作失败都会走到这里）。
+   * @private
+   */
+  _notifyChoiceDispatchFailed(code, detail, pending) {
+    console.warn('DialogueSystem: 选项编排未提交（dialogueChoice 编排失败）', {
+      code,
+      dialogueId: pending?.dialogueId || null,
+      choiceId: pending?.choiceId || null,
+      detail
+    });
+    try {
+      this.onChoiceDispatchFailed?.({ code, detail, dialogueId: pending?.dialogueId || null, choiceId: pending?.choiceId || null });
+    } catch (error) {
+      console.warn('DialogueSystem: onChoiceDispatchFailed 回调出错', error);
+    }
   }
 
   /**

@@ -238,6 +238,10 @@ export class BaseGameSceneSetup extends Scene {
     // 序章系统
     this.tutorialSystem = new TutorialSystem();
     this.dialogueSystem = new DialogueSystem();
+    // 选项编排失败（dialogueChoice Trigger 动作失败）不再静默：屏幕提示失败码便于定位
+    this.dialogueSystem.onChoiceDispatchFailed = failure => {
+      this._showScreenTip?.(`剧情选项执行失败：${failure?.code || 'unknown'}`, { title: '选项执行失败' });
+    };
     this.questSystem = new QuestTransactionService({
       getDefaultActorId: () => this.playerEntity?.id || null
     });
