@@ -27,10 +27,12 @@ function normalizePath(value) {
 export function projectPathForCanonicalFile(filePath) {
   const normalized = normalizePath(filePath);
   if (normalized.endsWith('/game.project.json')) return normalized;
-  const marker = '/assets/scenes/';
-  const index = normalized.indexOf(marker);
-  if (index < 0) throw new Error(`不是 canonical 项目/场景路径: ${normalized}`);
-  return `${normalized.slice(0, index)}/game.project.json`;
+  // 项目内 canonical 资源目录：场景、配置（UILayout/InputHints/gamepad 等）
+  for (const marker of ['/assets/scenes/', '/config/']) {
+    const index = normalized.indexOf(marker);
+    if (index >= 0) return `${normalized.slice(0, index)}/game.project.json`;
+  }
+  throw new Error(`不是 canonical 项目/场景路径: ${normalized}`);
 }
 
 export async function commitCanonicalChanges(projectPath, changes, { fetchImpl = null } = {}) {

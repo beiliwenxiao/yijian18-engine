@@ -176,6 +176,7 @@ function validateCanonicalChangeSet(repoRoot, projectPath, changes) {
       const normalized = normalizeRelative(candidate);
       if (normalized === info.projectPath || normalized === `${info.sceneRoot}_scene_order.json`) continue;
       if (shardByPath.has(normalized)) continue;
+      if (normalized.startsWith(configRoot) && normalized.endsWith('.json') && normalized !== sharedAtlasConfigPath) continue;
       if (!normalized.startsWith(info.sceneRoot) || !normalized.endsWith('.json')) {
         throw Object.assign(new Error(`非当前项目 canonical JSON 路径: ${normalized}`), { statusCode: 403 });
       }
@@ -187,6 +188,10 @@ function validateCanonicalChangeSet(repoRoot, projectPath, changes) {
   }
 
   const sceneValidator = new CanonicalSceneValidator();
+  // 项目配置文件（UILayout/InputHints/gamepad/PanelLayout 等）：canonical 可写但无场景 schema，
+  // 提交内容原样落盘。共享图集 atlases.json 例外——它有专用 /api/asset-transaction 原子通道。
+  const configRoot = `${info.projectRoot}/config/`;
+  const sharedAtlasConfigPath = `${info.projectRoot}/config/atlases.json`;
   const orderPath = `${info.sceneRoot}_scene_order.json`;
   const orderText = finalContent(repoRoot, changes, orderPath);
   if (orderText == null) throw validationFailure([{ path: '', category: 'missing', reason: '场景列表不得删除' }]);
