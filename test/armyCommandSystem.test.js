@@ -392,7 +392,7 @@ function makeBody(id, { x = 0, y = 0 } = {}) {
   };
 }
 
-describe('ArmyCommandSystem 搬运玩法（M4 抢救伤员）', () => {
+describe('ArmyCommandSystem 搬运玩法（担架载具：触发框招募 + 玩家驾驶）', () => {
   let system;
 
   beforeEach(() => {
@@ -414,96 +414,116 @@ describe('ArmyCommandSystem 搬运玩法（M4 抢救伤员）', () => {
     expect(system.getRescueTarget()).toBe(null);
   });
 
-  it('接近阶段：rescue 姿态单位朝伤员移动；不足 2 人不搬运', () => {
+  it('触发框招募：两名士兵走近伤员 → 自动挂载（无需救援指令）；仅一人不挂载', () => {
     const body = makeBody('body', { x: 200, y: 0 });
-    system.setRescueTarget(body, { goal: { x: 600, y: 0 } });
-    system.applyStance('rescue');
+    system.setRescueTarget(body, { goal: { x: 600, y: 0 }, regionId: 'S02-camp-rescue' });
 
-    // 两单位都远离伤员 → 接近（速度 0.9x 朝伤员）
-    system.updateStances();
-    for (const unit of system.units.values()) {
-      const velocity = unit.entity.getComponent('movement').velocity;
-      expect(velocity.x).toBeGreaterThan(0); // 伤员在东侧
-      expect(Math.hypot(velocity.x, velocity.y)).toBeCloseTo(81); // 90 × 0.9
+    // 两名士兵都远离触发框（96 半径外）→ 不挂载
+    system.units.get('u1').entity.getComponent('transform').position = { x: 20, y: 0 };
+    system.units.get('u2').entity.getComponent('transform').position = { x: 320, y: 0 };
+    const starts = [];
+    system.onCarryStart = payload => starts.push(payload);
+    system.update(0.1);
+    expect(system.getRescueTarget().carrying).toBe(false);
+    expect(starts).toHaveLength(0);
+
+    // u2 走进触发框，u1 仍在框外 → 仅 1 人不挂载
+    system.units.get('u2').entity.getComponent('transform').position = { x: 230, y: 0 };
+    system.update(0.1);
+    expect(system.getRescueTarget().carrying).toBe(false);
+
+    // u1 也走近 → 自动挂载：两名最近士兵成为担架兵
+    system.units.get('u1').entity.getComponent('transform').position = { x: 190, y: 0 };
+    system.update(0.1);
+    expect(system.getRescueTarget().carrying).toBe(true);
+    expect(starts).toHaveLength(1);
+    expect(system.getRescueTarget().bearers).toEqual(['u1', 'u2']);
+    for (const id of ['u1', 'u2']) {
+      const command = system.units.get(id).entity.getComponent('commandState');
+      expect(command.carryState).toBe('carrying');
+      expect(command.stance).toBe('rescue');
     }
-    expect(system.getRescueTarget().carrying).toBe(false);
-
-    // 仅 1 人贴身（u2 调离到远处）→ 不搬运
-    system.units.get('u2').entity.getComponent('transform').position = { x: 205, y: 0 };
-    system.units.get('u1').entity.getComponent('transform').position = { x: 150, y: 0 };
-    system.update(0.5);
-    expect(system.getRescueTarget().carrying).toBe(false);
-    expect(body.getComponent('transform').position.x).toBe(200); // 伤员未被拖动
   });
 
-  it('搬运阶段：≥2 人贴身 → 伤员被拖向救援目标点；抵达 → onRescueComplete', () => {
+  it('搬运态（玩家驾驶）：伤员不被自动拖动；担架兵按航向左右刚性贴位；抵达 → onRescueComplete', () => {
     const body = makeBody('body', { x: 200, y: 0 });
-    system.setRescueTarget(body, { goal: { x: 400, y: 0 }, regionId: 'S02-camp-rescue' });
-    system.applyStance('rescue');
-
-    // 两人贴身 → 搬运启动，伤员向目标点慢速移动（90 × 0.45）
-    system.units.get('u1').entity.getComponent('transform').position = { x: 180, y: 0 };
-    system.units.get('u2').entity.getComponent('transform').position = { x: 220, y: 0 };
-    system.update(0.5);
+    system.setRescueTarget(body, { goal: { x: 600, y: 0 }, regionId: 'S02-camp-rescue' });
+    system.units.get('u1').entity.getComponent('transform').position = { x: 190, y: 0 };
+    system.units.get('u2').entity.getComponent('transform').position = { x: 230, y: 0 };
+    system.update(0.1);
     expect(system.getRescueTarget().carrying).toBe(true);
-    expect(body.getComponent('transform').position.x).toBeCloseTo(220.25); // 200 + 40.5 × 0.5s
 
-    // 搬运者 carryState 置位
-    expect(system.units.get('u1').entity.getComponent('commandState').carryState).toBe('carrying');
+    // 玩家未输入（速度 0）→ 组合体不自动移动；担架兵按默认航向 (1,0) 左右贴位
+    system.update(0.5);
+    expect(body.getComponent('transform').position.x).toBe(200); // 无拖拽：等待玩家驾驶
+    const u1Transform = system.units.get('u1').entity.getComponent('transform').position;
+    const u2Transform = system.units.get('u2').entity.getComponent('transform').position;
+    expect(u1Transform.y).toBeCloseTo(18); // 航向 (1,0) → 侧向 (0,1)：u1 右侧、u2 左侧
+    expect(u2Transform.y).toBeCloseTo(-18);
+    expect(u1Transform.x).toBeCloseTo(200);
+    expect(u2Transform.x).toBeCloseTo(200);
 
-    // 抵达目标点（30 半径内）→ 完成回调 + 救援单位转 hold + 任务清空
+    // 玩家驾驶：伤员自行移动到目标点附近（30 半径内）→ 完成回调 + 担架兵转 hold + 任务清空
     const completions = [];
     system.onRescueComplete = payload => completions.push(payload);
-    body.getComponent('transform').position = { x: 395, y: 0 };
-    system.units.get('u1').entity.getComponent('transform').position = { x: 375, y: 0 };
-    system.units.get('u2').entity.getComponent('transform').position = { x: 415, y: 0 };
+    body.getComponent('transform').position = { x: 585, y: 0 };
     system.update(0.016);
     expect(completions).toHaveLength(1);
     expect(completions[0].regionId).toBe('S02-camp-rescue');
     expect(system.getRescueTarget()).toBe(null);
-    for (const unit of system.units.values()) {
-      const command = unit.entity.getComponent('commandState');
+    for (const id of ['u1', 'u2']) {
+      const command = system.units.get(id).entity.getComponent('commandState');
       expect(command.stance).toBe('hold');
       expect(command.carryState).toBe(null);
-      expect(command.post).toBeTruthy();
     }
   });
 
-  it('搬运遇敌中断：放下伤员、全体切原地防守；战后重新下令可恢复搬运', () => {
+  it('搬运遇敌中断：担架解散、伤员重新倒地（onCarryEnd）；士兵切原地防守', () => {
     const body = makeBody('body', { x: 200, y: 0 });
     system.setRescueTarget(body, { goal: { x: 600, y: 0 } });
-    system.applyStance('rescue');
-    system.units.get('u1').entity.getComponent('transform').position = { x: 180, y: 0 };
-    system.units.get('u2').entity.getComponent('transform').position = { x: 220, y: 0 };
+    system.units.get('u1').entity.getComponent('transform').position = { x: 190, y: 0 };
+    system.units.get('u2').entity.getComponent('transform').position = { x: 230, y: 0 };
     system.update(0.1);
-    const carryingX = body.getComponent('transform').position.x;
     expect(system.getRescueTarget().carrying).toBe(true);
 
-    // 敌人进入救援警戒半径（160）→ 中断
+    // 敌人进入担架兵警戒半径（160）→ 解散挂载
+    const ends = [];
     const interrupts = [];
+    system.onCarryEnd = () => ends.push(true);
     system.onRescueInterrupt = payload => interrupts.push(payload);
-    system.setEnemies([makeEnemy('scavenger', { x: 260, y: 0 })]);
+    system.setEnemies([makeEnemy('scavenger', { x: 300, y: 0 })]);
     system.update(0.016);
     expect(interrupts).toHaveLength(1);
+    expect(ends).toHaveLength(1);
     expect(system.getRescueTarget().carrying).toBe(false);
-    expect(body.getComponent('transform').position.x).toBe(carryingX); // 伤员留在原地
-    for (const unit of system.units.values()) {
-      const command = unit.entity.getComponent('commandState');
+    expect(body.getComponent('transform').position.x).toBe(200); // 伤员留在原地
+    for (const id of ['u1', 'u2']) {
+      const command = system.units.get(id).entity.getComponent('commandState');
       expect(command.stance).toBe('hold'); // 切原地防守自动战斗
       expect(command.carryState).toBe(null);
     }
 
-    // 战后不自动恢复：敌人清空后仍保持 hold
+    // 战后士兵重新走近触发框 → 自动再次挂载（无需重新下令）
     system.setEnemies([]);
     system.update(0.1);
-    expect(system.units.get('u1').entity.getComponent('commandState').stance).toBe('hold');
-    expect(system.getRescueTarget().carrying).toBe(false);
-
-    // 重新下达抢救伤员 → 恢复接近/搬运
-    system.setSelection('all');
-    system.applyStance('rescue');
-    system.update(0.5);
     expect(system.getRescueTarget().carrying).toBe(true);
+  });
+
+  it('担架兵折损致不足两人 → 解散担架并触发 onCarryEnd', () => {
+    const body = makeBody('body', { x: 200, y: 0 });
+    system.setRescueTarget(body, { goal: { x: 600, y: 0 } });
+    system.units.get('u1').entity.getComponent('transform').position = { x: 190, y: 0 };
+    system.units.get('u2').entity.getComponent('transform').position = { x: 230, y: 0 };
+    system.update(0.1);
+    expect(system.getRescueTarget().carrying).toBe(true);
+
+    const ends = [];
+    system.onCarryEnd = () => ends.push(true);
+    system.units.get('u2').entity.isDead = true;
+    system.update(0.016);
+    expect(ends).toHaveLength(1);
+    expect(system.getRescueTarget().carrying).toBe(false);
+    expect(system.units.get('u1').entity.getComponent('commandState').stance).toBe('hold');
   });
 
   it('伤员消失/死亡 → 搬运任务自动清理', () => {

@@ -136,6 +136,7 @@ export class ArmyCommandHUD extends UIElement {
     this.y = this._baseY - stanceRows - this._presetRows;
     this.height = BUTTON_HEIGHT + COMBO_ROW_HEIGHT + stanceRows + this._presetRows;
     this._drawSelectionRings(ctx);
+    this._drawRescueZone(ctx);
     this._drawDragRect(ctx);
     this._drawOrderMarker(ctx);
     this._drawPanel(ctx, showStance);
@@ -403,6 +404,51 @@ export class ArmyCommandHUD extends UIElement {
     ctx.beginPath();
     ctx.ellipse(screen.x, screen.y, pulse + 8, (pulse + 8) * 0.5, 0, 0, Math.PI * 2);
     ctx.stroke();
+    ctx.restore();
+  }
+
+  /**
+   * 担架载具触发框（救援剧情）：倒地伤员周围虚线呼吸圈——士兵走进即自动挂载；
+   * 挂载后切换为担架兵连线（组合体可视化）。
+   */
+  _drawRescueZone(ctx) {
+    const rescue = this.system.getRescueTarget?.();
+    if (!rescue) return;
+    const bodyTransform = rescue.entity?.getComponent?.('transform');
+    if (!bodyTransform) return;
+    const center = this._worldToScreen(bodyTransform.position.x, bodyTransform.position.y);
+    if (!center) return;
+    ctx.save();
+    if (rescue.carrying) {
+      // 搬运中：担架兵与伤员的组合体连线（载具可视化）
+      const ids = Array.isArray(rescue.bearers) ? rescue.bearers : [];
+      ctx.strokeStyle = 'rgba(126, 217, 163, 0.55)';
+      ctx.lineWidth = 2;
+      for (const id of ids) {
+        const bearer = this.system.units?.get?.(id)?.entity || null;
+        const transform = bearer?.getComponent?.('transform');
+        if (!transform) continue;
+        const screen = this._worldToScreen(transform.position.x, transform.position.y);
+        if (!screen) continue;
+        ctx.beginPath();
+        ctx.moveTo(center.x, center.y);
+        ctx.lineTo(screen.x, screen.y);
+        ctx.stroke();
+      }
+    } else {
+      // 招募态：触发框呼吸虚线圈
+      const radius = this.system.getRecruitRadius?.() || 96;
+      const edge = this._worldToScreen(bodyTransform.position.x + radius, bodyTransform.position.y);
+      const screenRadius = edge ? Math.max(24, Math.abs(edge.x - center.x)) : 56;
+      const pulse = Math.sin(this._pulse) * 0.08;
+      ctx.strokeStyle = `rgba(126, 217, 163, ${0.45 + pulse})`;
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([7, 5]);
+      ctx.beginPath();
+      ctx.ellipse(center.x, center.y, screenRadius * (1 + pulse), screenRadius * 0.5 * (1 + pulse), 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
     ctx.restore();
   }
 

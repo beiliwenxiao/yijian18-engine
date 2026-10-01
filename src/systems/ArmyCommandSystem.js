@@ -69,11 +69,14 @@ export const SQUAD_PRESET_OPTIONS = Object.freeze([
 ]);
 const PRESET_STANCE_KEYS = new Set(SQUAD_PRESET_OPTIONS.map(option => option.key));
 
-// ─── 搬运玩法（M4，设计文档 §2.3）─────────────────────────
+// ─── 搬运玩法（M4，设计文档 §2.3；担架载具化改造）─────────────────────────
 const CARRY_FORM_RADIUS = 34;     // 搬运者需贴近伤员的担架位半径
 const CARRY_MIN_CARRIERS = 2;     // 至少 2 名救援士兵到位才能抬运
-const CARRY_SPEED_MULTIPLIER = 0.45; // 搬运慢速（速度锁定）
 const CARRY_GOAL_RADIUS = 30;     // 伤员抵达救援目标点判定半径
+// 担架载具（玩家驾驶）：伤员周围触发框——任意编队士兵走近即自动上担架，无需下令；
+// 挂载后两名担架兵为「载具」、伤员为乘客，由玩家亲自驾驶组合体移动回营地。
+const CARRY_RECRUIT_RADIUS = 96;  // 触发框半径（相对倒地伤员）
+const CARRY_FORM_OFFSET = 18;     // 担架位：两名担架兵相对伤员航向的横向半间距
 
 /**
  * 姿态行为参数表（语义见设计文档 §2.2）：
@@ -141,11 +144,15 @@ export class ArmyCommandSystem {
     this.constructionJob = null;
     this._constructionSequence = 0;
     this.onConstructionComplete = null; // (commandKey,pos,def) => void，由场景注入生成工程物实体
-    /** @type {null|{entity:Object, goal:{x,y}|null, regionId:string|null, carrying:boolean, velocity:{x,y}}} 搬运目标（倒地伤员，M4） */
+    /** @type {null|{entity:Object, goal:{x,y}|null, regionId:string|null, carrying:boolean, bearers:string[], heading:{x,y}}} 搬运目标（倒地伤员，M4；担架载具化后 bearers=担架兵实体 id） */
     this.rescueTarget = null;
     /** 搬运完成/中断回调：(payload) => void，由场景注入（触发 enterRegion / 提示） */
     this.onRescueComplete = null;
     this.onRescueInterrupt = null;
+    /** 担架挂载/解散回调（担架载具）：挂载=伤员登上担架接管移动；解散=伤员重新倒地等待再挂载 */
+    this.onCarryStart = null;
+    this.onCarryEnd = null;
+    this._carryStarted = false;
     /** 武将实体提供器（escort 跟随锚点；场景装配注入，M5） */
     this._commanderProvider = null;
     /** @type {Record<string, string>} 战前预设：per 军默认战术姿态（M5-3，开战自动应用） */
@@ -652,7 +659,8 @@ export class ArmyCommandSystem {
       goal: goal && Number.isFinite(goal.x) && Number.isFinite(goal.y) ? { x: goal.x, y: goal.y } : null,
       regionId: regionId || null,
       carrying: false,
-      velocity: { x: 0, y: 0 }
+      bearers: [],
+      heading: { x: 1, y: 0 }
     };
     return true;
   }
@@ -660,6 +668,9 @@ export class ArmyCommandSystem {
   clearRescueTarget() { this.rescueTarget = null; }
 
   getRescueTarget() { return this.rescueTarget; }
+
+  /** 担架触发框半径（HUD 可视化用）。 */
+  getRecruitRadius() { return CARRY_RECRUIT_RADIUS; }
 
   /** 当前救援姿态单位列表。 */
   getRescuers() {
@@ -678,10 +689,13 @@ export class ArmyCommandSystem {
   }
 
   /**
-   * 搬运任务编排（M4 §2.3）：
-   * - ≥2 名 rescue 姿态单位贴近伤员 → 进入搬运：伤员被拖向救援目标点（慢速）
-   * - 任一救援单位警戒半径内遇敌 → 脱离搬运、放下伤员、全体切原地防守自动战斗
-   * - 战后不自动恢复搬运（姿态已转 hold），需玩家重新下达抢救伤员
+   * 搬运任务编排（担架载具化）：
+   * - 招募态：任意存活编队士兵走进伤员周围触发框（CARRY_RECRUIT_RADIUS）即自动上担架，
+   *   无需玩家下达「抢救伤员」指令——两名最近士兵成为担架兵（载具），伤员为乘客
+   * - 搬运态：玩家恢复移动输入，亲自驾驶「伤员+担架兵」组合体移动回营地；
+   *   担架兵以伤员航向为锚左右刚性贴位（本编排跑在 AFTER_SCENE 阶段，晚于玩家移动）
+   * - 任一担架兵警戒半径内遇敌 → 解散担架、放下伤员迎战；战后士兵重新走近即再次挂载
+   * - 担架兵折损致不足两人 → 同样解散，回到招募态
    * - 伤员抵达目标点 → onRescueComplete（场景触发 enterRegion 等剧情链）
    */
   _updateRescueMission(deltaTime = 0) {
@@ -693,52 +707,103 @@ export class ArmyCommandSystem {
       this.rescueTarget = null;
       return;
     }
-    const rescuers = this.getRescuers();
-    if (!rescuers.length) {
-      if (rescue.carrying) rescue.carrying = false;
+
+    if (!rescue.carrying) {
+      // 触发框招募：统计进入伤员周围触发框的存活编队士兵（与姿态无关，走近即上担架）
+      // 敌情未解除（伤员周围仍有敌人）时不挂载：士兵先迎战，战斗结束自动恢复招募
+      if (this._nearestEnemy(bodyTransform.position, STANCE_PROFILES.rescue.aggroRadius)) return;
+      const candidates = [...this.units.values()].filter(unit => {
+        const entity = unit.entity;
+        if (!entity || entity.isDead === true || entity.isDying === true) return false;
+        const transform = entity.getComponent?.('transform');
+        if (!transform) return false;
+        const command = entity.getComponent?.('commandState');
+        if (!command) return false;
+        return Math.hypot(
+          transform.position.x - bodyTransform.position.x,
+          transform.position.y - bodyTransform.position.y
+        ) <= CARRY_RECRUIT_RADIUS;
+      });
+      if (candidates.length >= CARRY_MIN_CARRIERS) {
+        candidates.sort((a, b) => {
+          const ta = a.entity.getComponent('transform');
+          const tb = b.entity.getComponent('transform');
+          const da = Math.hypot(ta.position.x - bodyTransform.position.x, ta.position.y - bodyTransform.position.y);
+          const db = Math.hypot(tb.position.x - bodyTransform.position.x, tb.position.y - bodyTransform.position.y);
+          return da - db;
+        });
+        const bearers = candidates.slice(0, CARRY_MIN_CARRIERS);
+        rescue.carrying = true;
+        rescue.bearers = bearers.map(unit => unit.entity.id);
+        rescue.heading = { x: 1, y: 0 };
+        for (const unit of bearers) {
+          const command = unit.entity.getComponent?.('commandState');
+          if (command) {
+            command.stance = 'rescue';
+            command.carryState = 'carrying';
+            command.goal = null;
+            command.post = null;
+          }
+          this._stop(unit.entity);
+        }
+        this._carryStarted = true;
+        try {
+          this.onCarryStart?.({ bearerIds: rescue.bearers.slice() });
+        } catch (error) {
+          console.warn('[ArmyCommandSystem] onCarryStart failed', error?.message || error);
+        }
+      }
       return;
     }
-    // 遇敌中断：搬运与接近阶段一致处理（放下伤员、切原地防守）
-    for (const unit of rescuers) {
-      const position = unit.entity.getComponent('transform')?.position;
+
+    // 搬运态：担架兵存活校验（折损致不足两人 → 解散担架）
+    const bearers = (rescue.bearers || [])
+      .map(id => this.units.get(id)?.entity || null)
+      .filter(entity => entity && entity.isDead !== true && entity.isDying !== true
+        && entity.getComponent?.('transform'));
+    if (bearers.length < CARRY_MIN_CARRIERS) {
+      this._dismountRescue(bearers);
+      return;
+    }
+    // 遇敌中断：任一担架兵警戒半径内出现敌人 → 解散担架、放下伤员迎战
+    for (const entity of bearers) {
+      const position = entity.getComponent('transform')?.position;
       if (position && this._nearestEnemy(position, STANCE_PROFILES.rescue.aggroRadius)) {
-        this._breakRescue(rescuers);
+        this._breakRescue(bearers.map(bearerEntity => ({ entity: bearerEntity })));
         return;
       }
     }
-    const inPosition = rescuers.filter(unit => {
-      const transform = unit.entity.getComponent('transform');
-      return transform
-        && Math.hypot(transform.position.x - bodyTransform.position.x, transform.position.y - bodyTransform.position.y) <= CARRY_FORM_RADIUS;
+    // 担架位贴行：以伤员移动方向为航向，两名担架兵左右刚性贴位（组成单一组合体）
+    const bodyMovement = body.getComponent?.('movement');
+    const bodyVelocity = bodyMovement?.velocity || null;
+    const moving = bodyVelocity && Math.hypot(bodyVelocity.x, bodyVelocity.y) > 4;
+    if (moving) {
+      const mag = Math.hypot(bodyVelocity.x, bodyVelocity.y);
+      rescue.heading = { x: bodyVelocity.x / mag, y: bodyVelocity.y / mag };
+    }
+    const heading = rescue.heading || { x: 1, y: 0 };
+    const side = { x: -heading.y, y: heading.x };
+    const offsets = [
+      { x: side.x * CARRY_FORM_OFFSET, y: side.y * CARRY_FORM_OFFSET },
+      { x: -side.x * CARRY_FORM_OFFSET, y: -side.y * CARRY_FORM_OFFSET }
+    ];
+    bearers.forEach((entity, index) => {
+      const transform = entity.getComponent('transform');
+      const offset = offsets[index % offsets.length];
+      transform.position.x = bodyTransform.position.x + offset.x;
+      transform.position.y = bodyTransform.position.y + offset.y;
+      const unitMovement = entity.getComponent?.('movement');
+      if (unitMovement && unitMovement.velocity) unitMovement.velocity = { x: 0, y: 0 };
+      entity.getComponent?.('sprite')?.playAnimation?.(moving ? 'walk' : 'idle');
     });
-    if (inPosition.length < CARRY_MIN_CARRIERS) {
-      if (rescue.carrying) {
-        // 人手不足（伤亡/被调离）：放下伤员，等待重新凑齐
-        rescue.carrying = false;
-        rescue.velocity = { x: 0, y: 0 };
-        this._clearCarryStates();
+    // 抵达判定：伤员（组合体）进入救援目标点 → 完成搬运，剧情链由回调接手
+    const goal = rescue.goal;
+    if (goal) {
+      const dist = Math.hypot(goal.x - bodyTransform.position.x, goal.y - bodyTransform.position.y);
+      if (dist <= CARRY_GOAL_RADIUS) {
+        this._completeRescue();
       }
-      return;
     }
-    rescue.carrying = true;
-    for (const unit of inPosition) {
-      const command = unit.entity.getComponent('commandState');
-      if (command) command.carryState = 'carrying';
-    }
-    if (!rescue.goal) { rescue.velocity = { x: 0, y: 0 }; return; }
-    const dx = rescue.goal.x - bodyTransform.position.x;
-    const dy = rescue.goal.y - bodyTransform.position.y;
-    const dist = Math.hypot(dx, dy);
-    if (dist <= CARRY_GOAL_RADIUS) {
-      this._completeRescue();
-      return;
-    }
-    // 拖动伤员：直接驱动 transform（AFTER_SCENE 阶段写入，下一帧相机跟随）
-    const speed = SOLDIER_BASE_SPEED * CARRY_SPEED_MULTIPLIER;
-    const step = Math.min(dist, speed * Math.max(0, deltaTime));
-    rescue.velocity = { x: (dx / dist) * speed, y: (dy / dist) * speed };
-    bodyTransform.position.x += (dx / dist) * step;
-    bodyTransform.position.y += (dy / dist) * step;
   }
 
   /** 遇敌中断：放下伤员（留在原地），全体救援单位切原地防守自动战斗。 */
@@ -753,11 +818,36 @@ export class ArmyCommandSystem {
       command.post = transform ? { x: transform.position.x, y: transform.position.y } : command.post;
     }
     if (this.rescueTarget) this.rescueTarget.carrying = false;
+    this._notifyCarryEnd();
     const payload = { regionId: this.rescueTarget?.regionId || null };
     try {
       this.onRescueInterrupt?.(payload);
     } catch (error) {
       console.warn('[ArmyCommandSystem] onRescueInterrupt failed', error?.message || error);
+    }
+  }
+
+  /** 担架解散（担架兵折损致不足两人）：伤员重新倒地，回到触发框招募态。 */
+  _dismountRescue(bearers) {
+    for (const entity of bearers) {
+      const command = entity.getComponent?.('commandState');
+      if (!command) continue;
+      command.stance = 'hold';
+      command.carryState = null;
+      command.goal = null;
+    }
+    if (this.rescueTarget) this.rescueTarget.carrying = false;
+    this._notifyCarryEnd();
+  }
+
+  /** 通知场景伤员重新倒地（担架解散）；仅在挂载态下触发一次。 */
+  _notifyCarryEnd() {
+    if (!this._carryStarted) return;
+    this._carryStarted = false;
+    try {
+      this.onCarryEnd?.({});
+    } catch (error) {
+      console.warn('[ArmyCommandSystem] onCarryEnd failed', error?.message || error);
     }
   }
 
@@ -778,6 +868,7 @@ export class ArmyCommandSystem {
       if (bodyMovement) bodyMovement.velocity = { x: 0, y: 0 };
       this.rescueTarget = null;
     }
+    this._carryStarted = false;
     const payload = { regionId: rescue?.regionId || null, goal: rescue?.goal ? { ...rescue.goal } : null };
     try {
       this.onRescueComplete?.(payload);
@@ -915,6 +1006,8 @@ export class ArmyCommandSystem {
 
   /** 抢救伤员行为（M4）：无任务目标时保位；有目标则接近，搬运中担架位贴行。 */
   _updateRescueBehaviour(entity, command, transform, movement, profile, now) {
+    // 担架兵挂载中：位置由搬运编排刚性驱动（担架载具），姿态机不做二次转向
+    if (command.carryState === 'carrying') return;
     const rescue = this.rescueTarget;
     const bodyTransform = rescue?.entity?.getComponent?.('transform');
     if (!rescue || !bodyTransform) {
@@ -922,15 +1015,9 @@ export class ArmyCommandSystem {
       return;
     }
     const dist = Math.hypot(bodyTransform.position.x - transform.position.x, bodyTransform.position.y - transform.position.y);
-    if (rescue.carrying && dist <= CARRY_FORM_RADIUS + 12) {
-      // 担架位：跟随伤员移动方向行走，保持抬运队形
-      const velocity = rescue.velocity || { x: 0, y: 0 };
-      if (Math.hypot(velocity.x, velocity.y) > 1) {
-        movement.velocity = { x: velocity.x, y: velocity.y };
-        entity.getComponent?.('sprite')?.playAnimation?.('walk');
-      } else {
-        this._stop(entity);
-      }
+    if (dist <= CARRY_FORM_RADIUS) {
+      // 已贴近伤员：在触发框内待命（招募编排会挑最近两人上担架）
+      this._stop(entity);
       return;
     }
     this._moveTowards(entity, bodyTransform.position, profile.speedMultiplier);

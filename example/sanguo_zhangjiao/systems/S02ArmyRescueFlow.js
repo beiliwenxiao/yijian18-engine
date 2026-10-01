@@ -27,7 +27,8 @@
  * scenario.command 的军团救援操作（见 SanguoDomainCommandFacade 路由）：
  * - army.rescue.faint  —— 主角昏倒：置位倒地状态（禁用玩家操作，等待剧情裁决）
  * - army.rescue.begin  —— 张角选择「救他」：注册搬运目标与救援目标点，
- *                          开放军团指挥玩法（ArmyCommandSystem 搬运编排）
+ *                          开放担架载具玩法（ArmyCommandSystem 搬运编排：
+ *                          士兵走近伤员触发框自动挂载，玩家驾驶担架回营地）
  * - army.rescue.awaken —— 伤者被抬回营地触发区：解除倒地状态，衔接苏醒过场
  *
  * 搬运完成由 ArmyCommandSystem.onRescueComplete 回调驱动本类触发
@@ -80,11 +81,35 @@ export class S02ArmyRescueCoordinator {
     system.setRescueTarget(player, { goal, regionId: this._regionId });
     system.onRescueComplete = payload => this._handleRescueComplete(payload);
     system.onRescueInterrupt = payload => this._handleRescueInterrupt(payload);
+    // 担架载具：挂载=伤员登上担架接管移动（玩家驾驶组合体）；解散=伤员重新倒地等待再挂载
+    system.onCarryStart = () => this._handleCarryStart();
+    system.onCarryEnd = () => this._handleCarryEnd();
     scene._showScreenTip?.(
-      '选中士兵（框选/编组条）后下达「抢救伤员」，他们会把伤者抬回营地。',
+      '指挥士兵走近伤员周围的触发框，两人将自动抬起担架；随后由你亲自驾驶担架返回营地。',
       { title: '军团指挥' }
     );
     return { ok: true, regionId: this._regionId, goal };
+  }
+
+  /** 担架挂载：两名士兵成为「载具」，伤员恢复移动输入亲自驾驶组合体。 */
+  _handleCarryStart() {
+    const scene = this.scene;
+    scene.playerDowned = false;
+    const player = scene.playerEntity;
+    if (player) player.plotDowned = false;
+    scene._showScreenTip?.('担架已就位：用 WASD 抬着伤员返回营地。', { title: '担架载具' });
+  }
+
+  /** 担架解散（遇敌/担架兵折损）：伤员重新倒地，等待士兵重新走近触发框。 */
+  _handleCarryEnd() {
+    const scene = this.scene;
+    scene.playerDowned = true;
+    const player = scene.playerEntity;
+    if (player) {
+      player.plotDowned = true;
+      const movement = player.getComponent?.('movement');
+      if (movement && movement.velocity) movement.velocity = { x: 0, y: 0 };
+    }
   }
 
   /** 苏醒：解除倒地状态（含剧情保护）并清理搬运任务（剧情链由触发器数据继续）。 */
@@ -107,10 +132,10 @@ export class S02ArmyRescueCoordinator {
     scene.gameLoader?.triggerSystem?.fire?.('enterRegion', { regionId });
   }
 
-  /** 搬运中断（遇敌）：提示放下伤员迎战，战后需重新下令（§2.3 裁定）。 */
+  /** 搬运中断（遇敌）：放下伤员迎战，士兵走近伤员触发框后自动重新挂载（§担架载具）。 */
   _handleRescueInterrupt() {
     this.scene._showScreenTip?.(
-      '遭遇敌人！士兵放下伤员迎战；战斗结束后需重新下达「抢救伤员」继续搬运。',
+      '遭遇敌人！担架解散，士兵放下伤员迎战；战斗结束后走近伤员即可重新抬起担架。',
       { title: '搬运中断' }
     );
   }
