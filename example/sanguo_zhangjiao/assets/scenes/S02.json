@@ -319,32 +319,6 @@
           }
         },
         {
-          "id": "S02-scavenger-1",
-          "type": "ref",
-          "kind": "enemy",
-          "ref": "enemy.s02_scavenger",
-          "group": "S02-initial",
-          "tags": [
-            "scavenger",
-            "danger-zone"
-          ],
-          "x": 850,
-          "y": 340
-        },
-        {
-          "id": "S02-scavenger-2",
-          "type": "ref",
-          "kind": "enemy",
-          "ref": "enemy.s02_scavenger",
-          "group": "S02-initial",
-          "tags": [
-            "scavenger",
-            "danger-zone"
-          ],
-          "x": 970,
-          "y": 390
-        },
-        {
           "id": "S02-npc-messenger",
           "type": "ref",
           "kind": "npc",

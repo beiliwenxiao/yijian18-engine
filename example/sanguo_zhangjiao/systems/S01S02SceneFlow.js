@@ -2034,8 +2034,16 @@ export class S01S02Coordinator {
 
     this.climbCompletionInFlight = true;
     void this.completeS01AndTravel().then(completed => {
-      if (completed === true) locomotion?.finishControlledClimb?.(player);
-      else this.scene._showScreenTip('离开荒原的旅行事务未完成，藤蔓状态保持不变，请稍后重试。', { title: '暂时无法离开' });
+      if (completed === true) {
+        // 跨 chunk 传送后玩家已不在藤蔓出口，出口校验必然失败；
+        // 必须强制结束受控攀爬，否则残留攀爬态会把下一帧跳跃输入当作「跳离藤蔓」，
+        // 把玩家从 S02 出生点弹回 S01 藤蔓落点。
+        if (!locomotion?.finishControlledClimb?.(player)) {
+          locomotion?.cancelClimb?.(player);
+        }
+      } else {
+        this.scene._showScreenTip('离开荒原的旅行事务未完成，藤蔓状态保持不变，请稍后重试。', { title: '暂时无法离开' });
+      }
     }).catch(error => {
       console.warn('[S01S02Coordinator] 藤蔓出口旅行异常', error);
       this.scene._showScreenTip('离开荒原时发生异常，当前进度未推进。', { title: '暂时无法离开' });
