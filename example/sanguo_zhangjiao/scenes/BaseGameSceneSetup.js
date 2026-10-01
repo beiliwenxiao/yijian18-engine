@@ -1130,7 +1130,8 @@ export class BaseGameSceneSetup extends Scene {
           allowCancel: true,
           actions: candidates.map(candidate => ({
             id: candidate.bindingId,
-            label: candidate.choiceLabel || candidate.prompt || candidate.triggerId,
+            // prompt 含 {interact} 等占位符，按当前输入方案格式化（与顶部交互提示同源）
+            label: InputHints.format(candidate.choiceLabel || candidate.prompt || candidate.triggerId),
             onClick: () => {
               view.close();
               return this._sceneTriggerBindings?.executeInteractBinding(candidate.bindingId);
