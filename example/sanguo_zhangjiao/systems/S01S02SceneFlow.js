@@ -72,6 +72,9 @@ export class S01S02Coordinator {
     );
     this.scene.context.services.containerInventories = this.shelterChestInventories;
     this.shelterChestTransferBusy = false;
+    // 启动随机数：操作账本随存档持久化（TTL 24h），重载后递增序号重置会与旧账本条目
+    // 同 id 不同 payload 冲突（operationConflict），或同 payload 误重放旧结果。
+    this.sequenceBootNonce = `b${Date.now().toString(36)}${Math.floor(Math.random() * 1e6).toString(36)}`;
     this.sequence = 0;
     this.refuelCampfireInFlight = null;
     this.refuelCampfireProgress = null;
@@ -235,7 +238,7 @@ export class S01S02Coordinator {
     if (!gateway || !actorRef) return Promise.resolve({ ok: false, code: 'commandGatewayUnavailable' });
     return gateway.execute({
       intentType: 'state.transaction', actorRef,
-      operationId: operationId || `story:${definitionId}:${++this.sequence}`,
+      operationId: operationId || `story:${definitionId}:${this.sequenceBootNonce}:${++this.sequence}`,
       payload: { definitionId, ...payload }
     });
   }
@@ -2067,7 +2070,7 @@ export class S01S02Coordinator {
   }
 
   async completeS01AndTravel() {
-    return this._submit('story.s01.complete', {}, `story:s01:complete:${++this.sequence}`);
+    return this._submit('story.s01.complete', {}, `story:s01:complete:${this.sequenceBootNonce}:${++this.sequence}`);
   }
 
   async acceptS02Summons() {

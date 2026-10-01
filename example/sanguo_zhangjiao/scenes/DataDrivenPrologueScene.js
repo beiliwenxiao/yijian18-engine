@@ -117,6 +117,9 @@ export class DataDrivenPrologueScene extends BaseGameScene {
     });
     // 启动场景只在 ProjectWorldIndex 构建成功后由显式 entrySceneId 决定。
     this.currentSceneId = null;
+    // 场景命令序号：未初始化时 ++undefined = NaN，会让同一会话所有生成 id 退化为
+    // 同一个 "…:NaN" —— 首个命令认领后，后续命令全部 operationConflict。
+    this._scenarioCommandSequence = 0;
     this._worldQuery = new SceneWorldQuery({
       getSession: () => this._worldLoadSession,
       getCurrentSceneId: () => this.currentSceneId,
@@ -1578,7 +1581,13 @@ export class DataDrivenPrologueScene extends BaseGameScene {
     const normalizedPayload = intentType === SCENARIO_COMMANDS.WORLD_TELEPORT
       ? { ...payload, sceneId: payload.sceneId || payload.scene }
       : { ...payload };
-    const generatedOperationId = operationId || `scene:${intentType}:${actorRef.id}:${++this._scenarioCommandSequence}`;
+    // 启动随机数：操作账本随存档持久化（TTL 24h），页面重载后递增序号会重置，
+    // 生成的 operationId 会与上一会话账本条目同 id 不同 payload → operationConflict。
+    if (!this._scenarioCommandBootNonce) {
+      this._scenarioCommandBootNonce = `b${Date.now().toString(36)}${Math.floor(Math.random() * 1e6).toString(36)}`;
+    }
+    const generatedOperationId = operationId
+      || `scene:${intentType}:${actorRef.id}:${this._scenarioCommandBootNonce}:${++this._scenarioCommandSequence}`;
     return gateway.execute({
       intentType,
       actorRef,
