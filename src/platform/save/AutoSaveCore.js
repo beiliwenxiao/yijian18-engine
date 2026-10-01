@@ -35,7 +35,13 @@ async function performAutoSave({ reason = 'unknown', checkpointId = null, sceneI
     if (!result.ok) {
         // Snapshot 失败时 saveAuto 不会覆盖目标槽位；调用方决定该 checkpoint 是否可阻断流程。
         if (checkpointMode !== 'bestEffort') showAutoSaveStatus('自动存档保存失败', 'error');
-        console.warn('自动保存失败，保留原自动槽位内容', { reason, checkpointId, errors: result.errors });
+        // 错误码拼进日志：console 对对象数组的折叠显示（errors: Array(n)）会让文件日志丢失关键诊断信息
+        console.warn('自动保存失败，保留原自动槽位内容', {
+            reason,
+            checkpointId,
+            errorCodes: (result.errors || []).map(error => error?.code || 'unknown').join(','),
+            errors: result.errors
+        });
         return {
             ...result,
             ok: false,
@@ -92,11 +98,13 @@ async function waitForCheckpointConsumers() {
 
 async function performQueuedAutoSave(options = {}) {
     const checkpointId = String(options.checkpointId || '').trim();
-    const retryDelays = checkpointId ? [0, 500, 1000, 2000] : [0];
+    // checkpoint 与普通自动存档（interval/scene-switch）都做忙态重试：
+    // 权威端口忙（事务在途/通知分派中）是瞬态冲突，定时存档撞上时不应直接放弃本槽位。
+    const retryDelays = checkpointId ? [0, 500, 1000, 2000] : [0, 400, 1200];
     let result = null;
     for (const delay of retryDelays) {
         if (delay > 0) await new Promise(resolve => setTimeout(resolve, delay));
-        if (checkpointId) await waitForCheckpointConsumers();
+        await waitForCheckpointConsumers();
         result = await performAutoSave(options);
         if (result?.ok === true || !isAuthorityBusySaveResult(result)) return result;
     }
