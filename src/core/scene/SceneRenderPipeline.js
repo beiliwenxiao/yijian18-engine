@@ -476,6 +476,7 @@ export class SceneRenderPipeline {
   /**
    * 地面发光标记层：传送点（旅行/出口语义触发绑定）蓝色光圈 + 任务目标点金色光圈。
    * 在背景之后、可拾取物与实体之前绘制，保证贴地且遮挡关系正确。
+   * 受控攀爬中额外显示出口绿色光圈：到达即自动完成/脱离（S01 藤蔓）或按跳脱离。
    */
   _renderGroundMarkers(ctx) {
     const time = performance.now() / 1000;
@@ -486,6 +487,18 @@ export class SceneRenderPipeline {
     for (const anchor of anchors) {
       GroundMarkerRenderer.renderGlowEllipse(ctx, {
         x: anchor.x, y: anchor.y, radius: anchor.radius, color: '126, 199, 255', time
+      });
+    }
+    // 攀爬出口圆环：仅攀爬中显示（真实离开区的攀爬面）；到达出口时高亮提示可脱离
+    const climbPresentation = this.scene?.locomotionSystem?.getClimbPresentation?.(this.scene?.playerEntity);
+    if (climbPresentation?.hasExitZone === true && climbPresentation.exitPosition) {
+      const atExit = climbPresentation.isAtExit === true;
+      GroundMarkerRenderer.renderGlowEllipse(ctx, {
+        x: Number(climbPresentation.exitPosition.x),
+        y: Number(climbPresentation.exitPosition.y),
+        radius: Math.max(16, Number(climbPresentation.exitRadius) || 18) * (atExit ? 1.25 : 1),
+        color: atExit ? '160, 255, 180' : '90, 220, 150',
+        time: atExit ? time * 3 : time
       });
     }
   }

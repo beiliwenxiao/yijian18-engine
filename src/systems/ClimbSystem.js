@@ -185,6 +185,8 @@ export class ClimbSystem {
       },
       exitPosition: { x: state.exitX, y: state.exitY },
       exitRadius: state.exitRadius,
+      // 真实离开区标志：false 表示无出口的攀爬面（兜底出口），不显示出口标识
+      hasExitZone: state.hasExitZone !== false,
       // 跳下跌落落点基准（进入区世界包围盒）
       enterBounds: state.enterBounds || null,
       // 攀爬高度（跌落动画的起始抬升，保证下落过程高度连续）
