@@ -221,7 +221,7 @@
     },
     "dialogueContinue": {
       "pc": {
-        "key": "空格",
+        "key": "E",
         "kind": "key"
       },
       "android": "点击对话框",

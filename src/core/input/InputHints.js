@@ -62,7 +62,7 @@ const DEFAULT_ACTIONS = {
   heal: { pc: { key: '6', kind: 'key' }, android: '回血按钮', padFixed: 'RB', padKind: 'key' },
   meditation: { pc: { key: '7', kind: 'key' }, android: '打坐按钮', padFixed: 'RB', padKind: 'key' },
   nextAct: { pc: { key: 'N', kind: 'key' }, android: '交互按钮', padKey: 'n' },
-  dialogueContinue: { pc: { key: '空格/E', kind: 'key' }, android: '点击对话框', padKey: 'e', padFallback: 'X' },
+  dialogueContinue: { pc: { key: 'E', kind: 'key' }, android: '点击对话框', padKey: 'e', padFallback: 'X' },
   confirm: { pc: { key: 'E/回车', kind: 'key' }, android: '确认按钮', padKey: 'e', padFallback: 'A' },
   modalCancel: { pc: { key: 'Esc', kind: 'key' }, android: '取消按钮', padFixed: 'B', padKind: 'key' },
   modalNavigate: { pc: { key: '方向键', kind: 'key' }, android: '点击选项', padFixed: '十字键', padKind: 'key' },

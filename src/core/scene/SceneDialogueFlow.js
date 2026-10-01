@@ -16,12 +16,13 @@ export class SceneDialogueFlow {
     const input = scene.inputManager;
     if (!dialogue?.isDialogueActive() || !input) return;
 
-    const spacePressed = input.isKeyPressed('space');
+    // 对话/旁白只由 E 键（含手柄 A/X 映射的虚拟 e 键）与鼠标/触屏点击推进；
+    // 空格是跳跃键，不得推进剧情（否则攀爬/移动中按空格会同时触发跳跃与跳过旁白）。
     const interactPressed = input.isKeyPressed('e');
     const clicked = input.isMouseClicked?.() === true;
-    if (!spacePressed && !interactPressed && !clicked) return;
+    if (!interactPressed && !clicked) return;
 
-    // isKeyPressed 是帧沿信号，无需额外防连；lastSpacePressed 保留为旧场景兼容字段。
+    // isKeyPressed 是帧沿信号，无需额外防连。
     if (dialogue.isTyping()) {
       dialogue.skipTypewriter();
       if (clicked) input.markMouseClickHandled();
