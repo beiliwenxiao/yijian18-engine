@@ -91,7 +91,13 @@ export class SceneGameplaySystemAssembler {
     scene.locomotionSystem = new LocomotionSystem({
       jumpSystem: scene.jumpSystem,
       flightSystem: scene.flightSystem,
-      resolveClimbTarget: request => scene.resolveClimbTarget?.(request) || null
+      resolveClimbTarget: request => scene.resolveClimbTarget?.(request) || null,
+      // 攀爬开始 → 教程信号（攀藤等教程的完成依据，与 jumpPerformed 同模式）
+      onClimbStarted: (entity, info) => {
+        const tutorialFlow = scene.context?.services?.tutorialFlow;
+        if (tutorialFlow) tutorialFlow.notify('climbPerformed', info || {});
+        else scene.onPlayerTutorialAction?.('climb');
+      }
     });
     // 蓄力跳跃：松手时按蓄力时间决定落点距离并起跳（30~120px）。
     scene.jumpChargeController = new JumpChargeController({ now });

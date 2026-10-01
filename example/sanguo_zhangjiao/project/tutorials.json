@@ -238,7 +238,7 @@
     ],
     "signalRules": [
       {
-        "signal": "gatheringCompleted",
+        "signal": "climbPerformed",
         "threshold": 1
       }
     ],

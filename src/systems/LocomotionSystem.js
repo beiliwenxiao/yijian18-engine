@@ -27,10 +27,10 @@ import { ClimbSystem } from './ClimbSystem.js';
  * locomotion 技能路由到 Jump/Flight/Climb 执行器。
  */
 export class LocomotionSystem {
-  constructor({ jumpSystem = null, flightSystem = null, climbSystem = null, resolveClimbTarget = null } = {}) {
+  constructor({ jumpSystem = null, flightSystem = null, climbSystem = null, resolveClimbTarget = null, onClimbStarted = null } = {}) {
     this.jumpSystem = jumpSystem;
     this.flightSystem = flightSystem;
-    this.climbSystem = climbSystem || new ClimbSystem();
+    this.climbSystem = climbSystem || new ClimbSystem({ onClimbStarted });
     this.resolveClimbTarget = typeof resolveClimbTarget === 'function' ? resolveClimbTarget : () => null;
   }
 

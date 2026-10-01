@@ -55,6 +55,8 @@ function normalizeBounds(bounds = {}) {
 export class ClimbSystem {
   constructor(config = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config };
+    /** 攀爬开始回调（场景层注入，用于教程信号等辅助消费者） */
+    this.onClimbStarted = typeof config.onClimbStarted === 'function' ? config.onClimbStarted : null;
     this._active = new Map();
     // 脱离（取消/结束）受控攀爬的时间戳：供跳跃入口做短暂冷却，防止"跳离"当帧立即回攀。
     this._controlledDetachAt = new WeakMap();
@@ -82,6 +84,7 @@ export class ClimbSystem {
       ...this._acquireLayer(entity)
     };
     this._active.set(entity, state);
+    this.onClimbStarted?.(entity, { mode: 'traverse' });
     return true;
   }
 
@@ -147,6 +150,7 @@ export class ClimbSystem {
     }
     state.transform.position.elevation = state.climbElevation;
     this._active.set(entity, state);
+    this.onClimbStarted?.(entity, { mode: 'controlled', surfaceId: state.surfaceId });
     return true;
   }
 
