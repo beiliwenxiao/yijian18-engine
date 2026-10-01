@@ -2031,10 +2031,13 @@ export class S01S02Coordinator {
     }
     this.pendingClimb = true;
     if (!presentation.isAtExit || this.climbCompletionInFlight) return;
+    // 失败退避：事务被拒后至少间隔 2.5s 再重试，避免每帧刷提交与提示。
+    if (this.climbRetryNotBefore > performance.now()) return;
+    this.climbRetryNotBefore = undefined;
 
     this.climbCompletionInFlight = true;
-    void this.completeS01AndTravel().then(completed => {
-      if (completed === true) {
+    void this.completeS01AndTravel().then(result => {
+      if (result?.ok === true) {
         // 跨 chunk 传送后玩家已不在藤蔓出口，出口校验必然失败；
         // 必须强制结束受控攀爬，否则残留攀爬态会把下一帧跳跃输入当作「跳离藤蔓」，
         // 把玩家从 S02 出生点弹回 S01 藤蔓落点。
@@ -2042,10 +2045,13 @@ export class S01S02Coordinator {
           locomotion?.cancelClimb?.(player);
         }
       } else {
+        console.warn('[S01S02Coordinator] 藤蔓出口旅行未完成', result);
+        this.climbRetryNotBefore = performance.now() + 2500;
         this.scene._showScreenTip('离开荒原的旅行事务未完成，藤蔓状态保持不变，请稍后重试。', { title: '暂时无法离开' });
       }
     }).catch(error => {
       console.warn('[S01S02Coordinator] 藤蔓出口旅行异常', error);
+      this.climbRetryNotBefore = performance.now() + 2500;
       this.scene._showScreenTip('离开荒原时发生异常，当前进度未推进。', { title: '暂时无法离开' });
     }).finally(() => {
       this.climbCompletionInFlight = false;
@@ -2061,7 +2067,7 @@ export class S01S02Coordinator {
   }
 
   async completeS01AndTravel() {
-    return (await this._submit('story.s01.complete', {}, 'story:s01:complete')).ok === true;
+    return this._submit('story.s01.complete', {}, `story:s01:complete:${++this.sequence}`);
   }
 
   async acceptS02Summons() {
