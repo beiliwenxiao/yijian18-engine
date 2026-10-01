@@ -80,6 +80,8 @@ export class DialogueBox extends UIElement {
 
     // UI 编辑器保存的四种对话框布局矩形 { narration, portrait, halfBody, fullBody }
     this.layoutRects = options.layoutRects || null;
+    // 面板编辑器保存的四种对话框内部布局（PanelLayout dialogue-* 面板，同键结构）
+    this.dialoguePanelDefs = null;
     // presentation 图片懒加载缓存（src 路径 → HTMLImageElement）
     this._dynamicImages = {};
 
@@ -90,6 +92,40 @@ export class DialogueBox extends UIElement {
   setLayoutRects(rects) {
     this.layoutRects = rects && typeof rects === 'object' ? rects : null;
     return this;
+  }
+
+  /**
+   * 应用面板编辑器保存的四种对话框内部布局（PanelLayout dialogue-* 面板定义）。
+   * 形态无对应面板时该形态回退内置布局；part 坐标按外框实际尺寸相对面板基准缩放。
+   */
+  applyDialoguePanelLayouts(panelDefs) {
+    this.dialoguePanelDefs = panelDefs && typeof panelDefs === 'object' ? panelDefs : null;
+    return this;
+  }
+
+  /** 当前形态的面板定义（PanelLayout dialogue-*；未配置返回 null）。 @private */
+  _currentPanelDef() {
+    const boxType = this._currentPresentation().boxType;
+    return this.dialoguePanelDefs?.[boxType] || null;
+  }
+
+  /** 面板 part 矩形换算到当前外框屏幕坐标；part 缺失或尺寸非法返回 null。 @private */
+  _panelPartRect(panelDef, partId) {
+    const part = panelDef?.parts?.find(candidate => candidate?.id === partId);
+    const width = Number(part?.width);
+    const height = Number(part?.height);
+    if (!part || !(width > 0) || !(height > 0)) return null;
+    const baseWidth = Number(panelDef.width) || this.width;
+    const baseHeight = Number(panelDef.height) || this.height;
+    return {
+      x: this.x + (Number(part.x) || 0) * (this.width / baseWidth),
+      y: this.y + (Number(part.y) || 0) * (this.height / baseHeight),
+      width: width * (this.width / baseWidth),
+      height: height * (this.height / baseHeight),
+      fontSize: Number(part.fontSize) || null,
+      color: typeof part.color === 'string' && part.color ? part.color : null,
+      align: part.align || null
+    };
   }
 
   /** 当前对话的演出档案：boxType + 对话级 presentation 配置。 @private */
@@ -152,6 +188,16 @@ export class DialogueBox extends UIElement {
 
   /** 左侧立绘/头像区域矩形（narration/fullBody 返回零宽区域）。 @private */
   _portraitRegion(metrics) {
+    const panelDef = this._currentPanelDef();
+    // 面板布局：portrait 形态用 portrait part，halfBody 用 artwork part
+    if (panelDef && metrics.boxType === 'portrait') {
+      const rect = this._panelPartRect(panelDef, 'portrait');
+      if (rect) return rect;
+    }
+    if (panelDef && metrics.boxType === 'halfBody') {
+      const rect = this._panelPartRect(panelDef, 'artwork');
+      if (rect) return rect;
+    }
     const width = metrics.boxType === 'halfBody' ? metrics.halfBodyWidth : this.portraitSize;
     const height = metrics.boxType === 'halfBody' ? metrics.portraitAreaHeight : this.portraitSize;
     return { x: this.x + this.padding, y: this.y + this.padding + 40, width, height };
@@ -319,12 +365,17 @@ export class DialogueBox extends UIElement {
     ctx.restore();
   }
 
-  /** 全身立绘：画在文本框右侧、底对齐（需要对话配置 fullBodyImage）。 @private */
+  /** 全身立绘：面板布局用 fullBodyArt part 区域，否则画在文本框右侧、底对齐。 @private */
   renderFullBodyArt(ctx, metrics) {
     const src = String(metrics.presentation?.fullBodyImage || '').trim();
     if (!src) return;
     const img = this._getImage(src);
     if (!img || !img.complete || img.naturalWidth <= 0) return;
+    const panelRect = this._panelPartRect(this._currentPanelDef(), 'fullBodyArt');
+    if (panelRect) {
+      this._drawImageContain(ctx, img, panelRect, true);
+      return;
+    }
     const artHeight = Math.max(160, Math.min(460, Math.round(this.height * 1.6)));
     const artWidth = Math.max(120, Math.min(320, Math.round(artHeight * 0.6)));
     this._drawImageContain(ctx, img, {
@@ -534,26 +585,50 @@ export class DialogueBox extends UIElement {
 
   renderSpeaker(ctx, speaker, metrics = this._layoutMetrics()) {
     if (!speaker) return;
-    ctx.fillStyle = metrics.speakerColor;
-    ctx.font = this.speakerFont;
-    ctx.textAlign = 'left';
+    const panelRect = this._panelPartRect(this._currentPanelDef(), 'speaker');
+    ctx.fillStyle = panelRect?.color || metrics.speakerColor;
+    ctx.font = panelRect?.fontSize
+      ? `bold ${Math.round(panelRect.fontSize)}px Arial, sans-serif`
+      : this.speakerFont;
+    ctx.textAlign = panelRect?.align === 'center' ? 'center' : panelRect?.align === 'right' ? 'right' : 'left';
     ctx.textBaseline = 'top';
+    if (panelRect) {
+      const anchorX = panelRect.align === 'center' ? panelRect.x + panelRect.width / 2
+        : panelRect.align === 'right' ? panelRect.x + panelRect.width
+        : panelRect.x;
+      ctx.fillText(speaker, anchorX, panelRect.y);
+      return;
+    }
     ctx.fillText(speaker, this.x + this.padding, this.y + this.padding);
   }
 
   renderText(ctx, text, metrics = this._layoutMetrics()) {
     if (!text) return;
-    const region = this._portraitRegion(metrics);
-    const textX = region.x + region.width + (metrics.portraitAreaHeight > 0 ? this.portraitPadding : 0);
-    const textY = this.y + this.padding + 40;
-    const textWidth = Math.max(60, this.x + this.width - this.padding - textX);
-    const textHeight = Math.max(60, metrics.portraitAreaHeight);
-    ctx.fillStyle = this.textColor;
-    ctx.font = this.textFont;
+    const panelRect = this._panelPartRect(this._currentPanelDef(), 'text');
+    let textX;
+    let textY;
+    let textWidth;
+    let textHeight;
+    if (panelRect) {
+      textX = panelRect.x;
+      textY = panelRect.y;
+      textWidth = panelRect.width;
+      textHeight = panelRect.height;
+    } else {
+      const region = this._portraitRegion(metrics);
+      textX = region.x + region.width + (metrics.portraitAreaHeight > 0 ? this.portraitPadding : 0);
+      textY = this.y + this.padding + 40;
+      textWidth = Math.max(60, this.x + this.width - this.padding - textX);
+      textHeight = Math.max(60, metrics.portraitAreaHeight);
+    }
+    ctx.fillStyle = panelRect?.color || this.textColor;
+    ctx.font = panelRect?.fontSize
+      ? `${Math.round(panelRect.fontSize)}px Arial, sans-serif`
+      : this.textFont;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
     const lines = this.wrapText(ctx, text, textWidth);
-    const lineHeight = 24;
+    const lineHeight = panelRect?.fontSize ? Math.round(panelRect.fontSize * 1.35) : 24;
     lines.forEach((line, index) => {
       if (index * lineHeight < textHeight) {
         ctx.fillText(line, textX, textY + index * lineHeight);
@@ -564,12 +639,25 @@ export class DialogueBox extends UIElement {
   renderContinuePrompt(ctx) {
     // 按当前输入方案显示匹配的操作提示
     const promptText = `▼ ${InputHints.phrase('dialogueContinue')} ▼`;
-    const promptX = this.x + this.width - this.padding - 10;
-    const promptY = this.y + this.height - this.padding - 10;
+    const panelRect = this._panelPartRect(this._currentPanelDef(), 'continue');
     ctx.save();
     ctx.globalAlpha = this.continuePromptAlpha;
-    ctx.fillStyle = this.speakerColor;
-    ctx.font = '14px Arial, sans-serif';
+    ctx.fillStyle = panelRect?.color || this.speakerColor;
+    ctx.font = panelRect?.fontSize
+      ? `${Math.round(panelRect.fontSize)}px Arial, sans-serif`
+      : '14px Arial, sans-serif';
+    if (panelRect) {
+      ctx.textAlign = panelRect.align === 'left' ? 'left' : panelRect.align === 'center' ? 'center' : 'right';
+      ctx.textBaseline = 'bottom';
+      const anchorX = panelRect.align === 'left' ? panelRect.x
+        : panelRect.align === 'center' ? panelRect.x + panelRect.width / 2
+        : panelRect.x + panelRect.width;
+      ctx.fillText(promptText, anchorX, panelRect.y + panelRect.height);
+      ctx.restore();
+      return;
+    }
+    const promptX = this.x + this.width - this.padding - 10;
+    const promptY = this.y + this.height - this.padding - 10;
     ctx.textAlign = 'right';
     ctx.textBaseline = 'bottom';
     ctx.fillText(promptText, promptX, promptY);

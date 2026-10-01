@@ -619,10 +619,27 @@ export class PanelEditor {
         ctx.fillStyle = part.bgColor || '#333';
         ctx.fillRect(x, y, width, height);
         ctx.fillStyle = part.fillColor || '#4CAF50';
-        ctx.fillRect(x, y, width * (part.value || 0.5), height);
+        ctx.fillRect(x, y, width, height * (part.value || 0.5));
         ctx.strokeStyle = part.borderColor || '#666';
         ctx.lineWidth = 1;
         ctx.strokeRect(x, y, width, height);
+        break;
+
+      case 'image':
+        // 图片占位：深色底 + 虚线框 + 名称（运行时按 imageMode 绘制实际资源）
+        ctx.fillStyle = 'rgba(20, 20, 20, 0.6)';
+        ctx.fillRect(x, y, width, height);
+        ctx.strokeStyle = '#8B7355';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 3]);
+        ctx.strokeRect(x, y, width, height);
+        ctx.setLineDash([]);
+        ctx.fillStyle = '#8B7355';
+        ctx.font = '10px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(part.label || '图片', x + width / 2, y + height / 2);
+        ctx.textAlign = 'left';
         break;
 
       default:

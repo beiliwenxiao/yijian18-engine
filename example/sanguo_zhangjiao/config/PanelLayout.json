@@ -355,7 +355,7 @@
           "type": "text",
           "label": "背包标题",
           "x": 22,
-          "y": 13,
+          "y": 14,
           "width": 160,
           "height": 24,
           "text": "背包",
@@ -508,6 +508,252 @@
           "fontWeight": "bold",
           "color": "#FFD700",
           "align": "left"
+        }
+      ]
+    },
+    {
+      "id": "dialogue-narration",
+      "name": "对话框-旁白",
+      "width": 667,
+      "height": 192,
+      "parts": [
+        {
+          "id": "speaker",
+          "section": "dialogue",
+          "type": "text",
+          "label": "旁白标题",
+          "x": 20,
+          "y": 18,
+          "width": 400,
+          "height": 26,
+          "text": "旁白",
+          "fontSize": 20,
+          "fontWeight": "normal",
+          "color": "#9fb3c8",
+          "align": "left"
+        },
+        {
+          "id": "text",
+          "section": "dialogue",
+          "type": "text",
+          "label": "正文文本区",
+          "x": 25,
+          "y": 54,
+          "width": 614,
+          "height": 91,
+          "text": "",
+          "fontSize": 18,
+          "fontWeight": "normal",
+          "color": "#ffffff",
+          "align": "left"
+        },
+        {
+          "id": "continue",
+          "section": "dialogue",
+          "type": "text",
+          "label": "继续提示",
+          "x": 562,
+          "y": 159,
+          "width": 80,
+          "height": 22,
+          "text": "继续",
+          "fontSize": 14,
+          "fontWeight": "normal",
+          "color": "#FFD700",
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "id": "dialogue-portrait",
+      "name": "对话框-头像",
+      "width": 700,
+      "height": 230,
+      "parts": [
+        {
+          "id": "speaker",
+          "section": "dialogue",
+          "type": "text",
+          "label": "说话人",
+          "x": 20,
+          "y": 18,
+          "width": 400,
+          "height": 26,
+          "text": "说话人",
+          "fontSize": 20,
+          "fontWeight": "normal",
+          "color": "#FFD700",
+          "align": "left"
+        },
+        {
+          "id": "portrait",
+          "section": "dialogue",
+          "type": "image",
+          "label": "头像框",
+          "x": 20,
+          "y": 60,
+          "width": 128,
+          "height": 128,
+          "imageMode": "cover"
+        },
+        {
+          "id": "text",
+          "section": "dialogue",
+          "type": "text",
+          "label": "正文文本区",
+          "x": 164,
+          "y": 60,
+          "width": 507,
+          "height": 124,
+          "text": "",
+          "fontSize": 18,
+          "fontWeight": "normal",
+          "color": "#ffffff",
+          "align": "left"
+        },
+        {
+          "id": "continue",
+          "section": "dialogue",
+          "type": "text",
+          "label": "继续提示",
+          "x": 600,
+          "y": 198,
+          "width": 80,
+          "height": 22,
+          "text": "继续",
+          "fontSize": 14,
+          "fontWeight": "normal",
+          "color": "#FFD700",
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "id": "dialogue-halfbody",
+      "name": "对话框-半身",
+      "width": 707,
+      "height": 354,
+      "parts": [
+        {
+          "id": "speaker",
+          "section": "dialogue",
+          "type": "text",
+          "label": "说话人",
+          "x": 20,
+          "y": 18,
+          "width": 400,
+          "height": 26,
+          "text": "说话人",
+          "fontSize": 20,
+          "fontWeight": "normal",
+          "color": "#FFD700",
+          "align": "left"
+        },
+        {
+          "id": "artwork",
+          "section": "dialogue",
+          "type": "image",
+          "label": "半身立绘区",
+          "x": 21,
+          "y": 60,
+          "width": 188,
+          "height": 256,
+          "imageMode": "contain"
+        },
+        {
+          "id": "text",
+          "section": "dialogue",
+          "type": "text",
+          "label": "正文文本区",
+          "x": 229,
+          "y": 145,
+          "width": 426,
+          "height": 149,
+          "text": "",
+          "fontSize": 18,
+          "fontWeight": "normal",
+          "color": "#ffffff",
+          "align": "left"
+        },
+        {
+          "id": "continue",
+          "section": "dialogue",
+          "type": "text",
+          "label": "继续提示",
+          "x": 578,
+          "y": 305,
+          "width": 80,
+          "height": 22,
+          "text": "继续",
+          "fontSize": 14,
+          "fontWeight": "normal",
+          "color": "#FFD700",
+          "align": "right"
+        }
+      ],
+      "borderWidth": 1
+    },
+    {
+      "id": "dialogue-fullbody",
+      "name": "对话框-全身",
+      "width": 701,
+      "height": 408,
+      "parts": [
+        {
+          "id": "speaker",
+          "section": "dialogue",
+          "type": "text",
+          "label": "说话人",
+          "x": 20,
+          "y": 18,
+          "width": 400,
+          "height": 26,
+          "text": "说话人",
+          "fontSize": 20,
+          "fontWeight": "normal",
+          "color": "#FFD700",
+          "align": "left"
+        },
+        {
+          "id": "fullBodyArt",
+          "section": "dialogue",
+          "type": "image",
+          "label": "全身立绘区",
+          "x": 21,
+          "y": 52,
+          "width": 225,
+          "height": 328,
+          "imageMode": "contain"
+        },
+        {
+          "id": "text",
+          "section": "dialogue",
+          "type": "text",
+          "label": "正文文本区",
+          "x": 259,
+          "y": 174,
+          "width": 423,
+          "height": 189,
+          "text": "",
+          "fontSize": 18,
+          "fontWeight": "normal",
+          "color": "#ffffff",
+          "align": "left"
+        },
+        {
+          "id": "continue",
+          "section": "dialogue",
+          "type": "text",
+          "label": "继续提示",
+          "x": 596,
+          "y": 372,
+          "width": 80,
+          "height": 22,
+          "text": "继续",
+          "fontSize": 14,
+          "fontWeight": "normal",
+          "color": "#FFD700",
+          "align": "right"
         }
       ]
     }

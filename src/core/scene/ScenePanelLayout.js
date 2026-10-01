@@ -461,6 +461,15 @@ export class ScenePanelLayout {
       if (definition && scene.backpackPanel?.applyPanelLayout) {
         scene.backpackPanel.applyPanelLayout(definition);
       }
+      // 对话框四种形态的内部布局（面板编辑器 dialogue-* 面板；按 boxType 键传递）
+      if (loaded && scene.dialogueBox?.applyDialoguePanelLayouts) {
+        scene.dialogueBox.applyDialoguePanelLayouts({
+          narration: loader.getPanel('dialogue-narration') || null,
+          portrait: loader.getPanel('dialogue-portrait') || null,
+          halfBody: loader.getPanel('dialogue-halfbody') || null,
+          fullBody: loader.getPanel('dialogue-fullbody') || null
+        });
+      }
     } catch (error) {
       console.warn('BaseGameScene: 面板布局加载失败，使用默认', error);
     }

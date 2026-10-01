@@ -70,11 +70,12 @@ const DEFAULT_COMPONENTS = {
       // 统一背包入口 + 系统设置
       { id: 'pc-bag', label: '背包', x: 890, y: 640, width: 50, height: 50, anchor: 'topleft', kind: 'button' },
       { id: 'pc-settings', label: '系统设置', x: 946, y: 640, width: 50, height: 50, anchor: 'topleft', kind: 'button' },
-      // 对话框四种演出形态（运行时按对话 presentation.boxType 选用对应矩形）
-      { id: 'dialogue-narration', label: '旁白对话', x: 190, y: 520, width: 900, height: 150, anchor: 'topleft', kind: 'dialogue' },
-      { id: 'dialogue-portrait', label: '头像对话', x: 290, y: 245, width: 700, height: 230, anchor: 'topleft', kind: 'dialogue' },
-      { id: 'dialogue-halfbody', label: '半身对话', x: 290, y: 300, width: 700, height: 300, anchor: 'topleft', kind: 'dialogue' },
-      { id: 'dialogue-fullbody', label: '全身对话', x: 120, y: 280, width: 700, height: 230, anchor: 'topleft', kind: 'dialogue' },
+      // 对话框四种演出形态（运行时按对话 presentation.boxType 选用对应矩形）；
+      // kind 'panel'：外框只拖位置大小（宽高比锁定到面板编辑器 dialogue-* 面板），内部部件在面板体系编辑
+      { id: 'dialogue-narration', label: '旁白对话', x: 190, y: 520, width: 900, height: 150, anchor: 'topleft', kind: 'panel' },
+      { id: 'dialogue-portrait', label: '头像对话', x: 290, y: 245, width: 700, height: 230, anchor: 'topleft', kind: 'panel' },
+      { id: 'dialogue-halfbody', label: '半身对话', x: 290, y: 300, width: 700, height: 300, anchor: 'topleft', kind: 'panel' },
+      { id: 'dialogue-fullbody', label: '全身对话', x: 120, y: 280, width: 700, height: 230, anchor: 'topleft', kind: 'panel' },
       // 对话选项弹窗（与文本框拆分的独立 UI）
       { id: 'dialogue-choices', label: '选项弹窗', x: 430, y: 490, width: 420, height: 120, anchor: 'topleft', kind: 'dialogue' }
     ]
@@ -110,11 +111,11 @@ const DEFAULT_COMPONENTS = {
       { id: 'hb-settings', label: '系统设置', x: 580, y: 540, width: 56, height: 56, anchor: 'topleft', kind: 'button' },
       { id: 'hb-skill6', label: '回血', x: 720, y: 540, width: 56, height: 56, anchor: 'topleft', kind: 'button' },
       { id: 'hb-skill7', label: '打坐', x: 790, y: 540, width: 56, height: 56, anchor: 'topleft', kind: 'button' },
-      // 对话框四种演出形态（运行时按对话 presentation.boxType 选用对应矩形）
-      { id: 'dialogue-narration', label: '旁白对话', x: 190, y: 430, width: 900, height: 140, anchor: 'topleft', kind: 'dialogue' },
-      { id: 'dialogue-portrait', label: '头像对话', x: 390, y: 280, width: 500, height: 170, anchor: 'topleft', kind: 'dialogue' },
-      { id: 'dialogue-halfbody', label: '半身对话', x: 340, y: 260, width: 600, height: 260, anchor: 'topleft', kind: 'dialogue' },
-      { id: 'dialogue-fullbody', label: '全身对话', x: 190, y: 220, width: 600, height: 200, anchor: 'topleft', kind: 'dialogue' },
+      // 对话框四种演出形态（kind 'panel'：外框只拖位置，内部部件在面板体系编辑）
+      { id: 'dialogue-narration', label: '旁白对话', x: 190, y: 430, width: 900, height: 140, anchor: 'topleft', kind: 'panel' },
+      { id: 'dialogue-portrait', label: '头像对话', x: 390, y: 280, width: 500, height: 170, anchor: 'topleft', kind: 'panel' },
+      { id: 'dialogue-halfbody', label: '半身对话', x: 340, y: 260, width: 600, height: 260, anchor: 'topleft', kind: 'panel' },
+      { id: 'dialogue-fullbody', label: '全身对话', x: 190, y: 220, width: 600, height: 200, anchor: 'topleft', kind: 'panel' },
       // 对话选项弹窗（与文本框拆分的独立 UI）
       { id: 'dialogue-choices', label: '选项弹窗', x: 430, y: 380, width: 420, height: 110, anchor: 'topleft', kind: 'dialogue' }
     ]
@@ -1555,6 +1556,22 @@ export class UIEditor {
           ctx.strokeStyle = part.borderColor || '#666';
           ctx.lineWidth = 1;
           ctx.strokeRect(x, y, width, height);
+          break;
+        case 'image':
+          // 图片占位：深色底 + 虚线框 + 名称（运行时按 imageMode 绘制实际资源）
+          ctx.fillStyle = 'rgba(20, 20, 20, 0.6)';
+          ctx.fillRect(x, y, width, height);
+          ctx.strokeStyle = '#8B7355';
+          ctx.lineWidth = 1;
+          ctx.setLineDash([4, 3]);
+          ctx.strokeRect(x, y, width, height);
+          ctx.setLineDash([]);
+          ctx.fillStyle = '#8B7355';
+          ctx.font = '10px Arial';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(part.label || '图片', x + width / 2, y + height / 2);
+          ctx.textAlign = 'left';
           break;
       }
     }
