@@ -25,12 +25,35 @@ export class SceneHintPresenter {
     this._showCallback = null;
     this._hideCallback = null;
     this._currentHintText = null;
+    this._currentHintTemplate = null;
     this._currentHintTitle = '提示';
     this._screenRequest = null;
     this._screenQueue = [];
     this._screenVisible = false;
     this._screenSequence = 0;
     this._disposed = false;
+    // 输入方案切换（手柄接入/鼠标键盘活动）时，已渲染提示用原始模板重新格式化
+    this._schemeUnsubscribe = typeof InputHints?.onSchemeChanged === 'function'
+      ? InputHints.onSchemeChanged(() => this._refreshForSchemeChange())
+      : null;
+  }
+
+  /** 输入方案切换后：当前屏幕提示与回调提示按新方案重新渲染。 @private */
+  _refreshForSchemeChange() {
+    if (this._disposed) return;
+    if (this._screenRequest && this._screenVisible) {
+      this._screenRequest.text = this.formatHtml(this._screenRequest.template);
+      this._presentScreen(this._screenRequest);
+    }
+    for (const request of this._screenQueue) {
+      request.text = this.formatHtml(request.template);
+    }
+    if (this._currentHintTemplate !== null) {
+      const resolved = this.formatHtml(this._currentHintTemplate);
+      if (resolved === this._currentHintText) return;
+      this._currentHintText = resolved;
+      if (!this._screenVisible) this._showCallback?.(resolved, this._currentHintTitle);
+    }
   }
 
   showScreen(text, opts = {}) {
@@ -72,6 +95,7 @@ export class SceneHintPresenter {
     const resolved = this.formatHtml(text);
     if (this._currentHintText === resolved && this._currentHintTitle === title) return false;
     this._currentHintText = resolved;
+    this._currentHintTemplate = text;
     this._currentHintTitle = title;
     if (!this._screenVisible) this._showCallback?.(resolved, title);
     return true;
@@ -80,6 +104,7 @@ export class SceneHintPresenter {
   hideHint() {
     if (this._currentHintText === null) return false;
     this._currentHintText = null;
+    this._currentHintTemplate = null;
     this._currentHintTitle = '提示';
     if (!this._screenVisible) this._hideCallback?.();
     return true;
@@ -96,6 +121,7 @@ export class SceneHintPresenter {
     this._screenQueue.length = 0;
     this._screenVisible = false;
     this._currentHintText = null;
+    this._currentHintTemplate = null;
     this._currentHintTitle = '提示';
     this._hideRenderedScreen();
     return true;
@@ -105,6 +131,10 @@ export class SceneHintPresenter {
     if (this._disposed) return false;
     this.clearForRestore();
     this._disposed = true;
+    if (this._schemeUnsubscribe) {
+      this._schemeUnsubscribe();
+      this._schemeUnsubscribe = null;
+    }
     this._showCallback = null;
     this._hideCallback = null;
     return true;
@@ -118,6 +148,8 @@ export class SceneHintPresenter {
       : (Number.isFinite(configuredTtl) ? Math.max(0, configuredTtl) : 6000);
     return {
       text: this.formatHtml(text),
+      // 原始模板：输入方案切换时重新格式化（手柄接入后按键文案跟随设备）
+      template: text,
       title: opts.title || '提示',
       owner,
       persist: opts.persist === true,

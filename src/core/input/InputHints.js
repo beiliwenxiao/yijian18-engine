@@ -85,6 +85,29 @@ class InputHintsRegistry {
     this._forcedScheme = null;
     /** 最后活跃的输入设备：'pc' | 'gamepad'，用于桌面端在鼠标与手柄之间自动切换 */
     this._lastInputDevice = 'pc';
+    /** 方案变化订阅者：已渲染的提示文案跟随设备切换 */
+    this._schemeListeners = new Set();
+  }
+
+  /**
+   * 订阅输入方案变化（手柄接入/鼠标键盘活动/强制方案切换时触发）。
+   * @param {Function} callback - (newScheme, previousScheme) => void
+   * @returns {Function} 取消订阅函数
+   */
+  onSchemeChanged(callback) {
+    if (typeof callback !== 'function') return () => {};
+    this._schemeListeners.add(callback);
+    return () => this._schemeListeners.delete(callback);
+  }
+
+  /** scheme getter 结果与 previous 不同时通知订阅者。 @private */
+  _notifySchemeChanged(previous) {
+    if (this.scheme === previous) return;
+    for (const listener of [...this._schemeListeners]) {
+      try { listener(this.scheme, previous); } catch (e) {
+        console.warn('InputHints: scheme change listener failed', e);
+      }
+    }
   }
 
   /** 绑定 InputManager，用于手柄连接检测与按键绑定反查 */
@@ -134,7 +157,9 @@ class InputHintsRegistry {
 
   /** 强制使用某方案；传 null 恢复自动判定 */
   setScheme(scheme) {
+    const previous = this.scheme;
     this._forcedScheme = (scheme === 'pc' || scheme === 'android' || scheme === 'gamepad') ? scheme : null;
+    this._notifySchemeChanged(previous);
   }
 
   /**
@@ -142,7 +167,9 @@ class InputHintsRegistry {
    * 由 InputManager 在检测到鼠标点击或键盘按键时调用。
    */
   notifyMouseOrKeyboard() {
+    const previous = this.scheme;
     this._lastInputDevice = 'pc';
+    this._notifySchemeChanged(previous);
   }
 
   /**
@@ -150,7 +177,9 @@ class InputHintsRegistry {
    * 由 InputManager 在手柄有按键活动时调用。
    */
   notifyGamepad() {
+    const previous = this.scheme;
     this._lastInputDevice = 'gamepad';
+    this._notifySchemeChanged(previous);
   }
 
   /** 当前输入方案：'pc' | 'android' | 'gamepad' */
