@@ -418,7 +418,6 @@ export class DataDrivenPrologueScene extends BaseGameScene {
     this._s05MineBusy = false;
     this._s06DecisionBusy = false;
     this._s06RecallBusy = false;
-    this._s09RefugeeChoiceBusy = false;
     this._processingDelayedStoryEvents = false;
 
     // 历史场景编排使用显式 coordinator；Scene 只保留装配和入口调用。
@@ -427,6 +426,8 @@ export class DataDrivenPrologueScene extends BaseGameScene {
     this.s06SceneCoordinator = new S06SceneCoordinator(this);
     this.s07s08Coordinator = new S07S08Coordinator(this);
     this.s09RefugeeCoordinator = new S09RefugeeCoordinator(this);
+    // 流民冲突对话选项接线：否则选项后对话永久卡死在 processing 自环节点（见方法注释）
+    this.s09RefugeeCoordinator.installRefugeeDialogueWiring();
     this.s09ClassSelectionCoordinator = new S09ClassSelectionCoordinator(this);
     this.context.services.s09ClassSelection = this.s09ClassSelectionCoordinator;
     this.s10StoryCoordinator = new S10StoryCoordinator(this);

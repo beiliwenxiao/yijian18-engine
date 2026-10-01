@@ -143,6 +143,41 @@ export class S09RefugeeCoordinator extends SceneFlowCoordinator {
     }) === true;
   }
 
+  /**
+   * 流民冲突对话选项接线（修复选项后卡死）：
+   * 选项 commit 常规推进到 processing 自环节点（donationProcessing/branchProcessing，
+   * 「正在写入检查点……」），等待 branch 事务结果；但事务完成后无人把对话推进到
+   * 结果节点（handleS09RefugeeChoice 的 goToNode 在历史重构中失去接线，仅剩死标志
+   * _s09RefugeeChoiceBusy），且 donate 前置失败（粮不足）走触发器良性码
+   * preconditionFailed 同样无跳转——两条路径都会永久卡死在 processing 节点。
+   * 订阅 onChoice（编排提交后触发）读权威 storyState 投影结果节点：
+   * 捐粮成功→branchChoice、粮不足→donationFailed（自带重试/稍后选项）、
+   * 分支抉择→hardline/appease/silence 结果。defer 交由常规 nextNode 推进。
+   */
+  installRefugeeDialogueWiring() {
+    const dialogue = this.scene.dialogueSystem;
+    if (!dialogue || this._refugeeChoiceUnsubscribe) return false;
+    this._refugeeChoiceUnsubscribe = dialogue.onChoice(choice => {
+      if (dialogue.getCurrentDialogue?.()?.id !== S09_REFUGEE_DIALOGUE_ID) return;
+      if (!choice || choice.id === 'defer') return;
+      // commit 在监听器之后才 goToNode(nextNode=processing 自环)，延迟一拍覆盖为结果节点
+      setTimeout(() => {
+        if (dialogue.getCurrentDialogue?.()?.id !== S09_REFUGEE_DIALOGUE_ID) return;
+        const nodeId = dialogue.currentNode?.id;
+        if (nodeId !== 'donationProcessing' && nodeId !== 'branchProcessing') return;
+        const conflict = this.scene.gameLoader?.blackboard?.get?.('storyState')?.s09RefugeeConflict || {};
+        this._setRefugeeDialogueNode(methods._resultNode.call(this.context, conflict));
+      }, 0);
+    });
+    this.scene.resourceScope?.track(() => this.disposeRefugeeDialogueWiring());
+    return true;
+  }
+
+  disposeRefugeeDialogueWiring() {
+    this._refugeeChoiceUnsubscribe?.();
+    this._refugeeChoiceUnsubscribe = null;
+  }
+
   _getS09CityContext() {
     const blackboard = this.scene.gameLoader?.blackboard;
     const storyState = blackboard?.get?.('storyState') || null;
