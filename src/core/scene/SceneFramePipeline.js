@@ -360,9 +360,15 @@ export class SceneFramePipeline {
 
     const contactWasLocked = movementSystem.isContactMovementLocked?.(player) === true;
     const beforeEntityCollision = capturePosition(player);
-    // 检查实体之间的碰撞；跳跃/跌落中的实体跳过（空中不受物体碰撞影响）
+    // 检查实体之间的碰撞；跳跃/跌落中的实体跳过（空中不受物体碰撞影响）；
+    // 剧情倒地实体（plotDowned，如 S02 昏倒的主角）同样跳过——倒地者不应被周围人群的
+    // 碰撞分离力推走，否则士兵一聚拢就会把主角挤出场景。
+    // 搬运中的担架兵（carryState='carrying'，担架载具成员）也跳过：其位置由军团指挥
+    // 每帧刚性贴位（±18px，小于碰撞半径和），参与分离会与贴位逻辑打架推挤组合体。
     collisionSystem.update(entities, {
       skipEntity: entity => jumpSystem?.isJumping?.(entity) === true
+        || entity?.plotDowned === true
+        || entity?.getComponent?.('commandState')?.carryState === 'carrying'
     });
     const pushedByEntity = positionChanged(beforeEntityCollision, player);
 
