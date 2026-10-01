@@ -171,6 +171,10 @@ function validateCanonicalChangeSet(repoRoot, projectPath, changes) {
   ]);
   const finalProjectIds = new Set((project.scenes || []).map(scene => scene?.id).filter(Boolean));
 
+  // 项目配置文件（UILayout/InputHints/gamepad/PanelLayout 等）：canonical 可写但无场景 schema，
+  // 提交内容原样落盘。共享图集 atlases.json 例外——它有专用 /api/asset-transaction 原子通道。
+  const configRoot = `${info.projectRoot}/config/`;
+  const sharedAtlasConfigPath = `${info.projectRoot}/config/atlases.json`;
   for (const change of changes) {
     for (const candidate of [change.path || change.to, change.from].filter(Boolean)) {
       const normalized = normalizeRelative(candidate);
@@ -188,10 +192,6 @@ function validateCanonicalChangeSet(repoRoot, projectPath, changes) {
   }
 
   const sceneValidator = new CanonicalSceneValidator();
-  // 项目配置文件（UILayout/InputHints/gamepad/PanelLayout 等）：canonical 可写但无场景 schema，
-  // 提交内容原样落盘。共享图集 atlases.json 例外——它有专用 /api/asset-transaction 原子通道。
-  const configRoot = `${info.projectRoot}/config/`;
-  const sharedAtlasConfigPath = `${info.projectRoot}/config/atlases.json`;
   const orderPath = `${info.sceneRoot}_scene_order.json`;
   const orderText = finalContent(repoRoot, changes, orderPath);
   if (orderText == null) throw validationFailure([{ path: '', category: 'missing', reason: '场景列表不得删除' }]);
