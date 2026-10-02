@@ -57,7 +57,7 @@ describe('TriggerEditor 结构化参数数字字段手动填写', () => {
     document.head.innerHTML = '';
   });
 
-  it('number/integer 字段渲染为可手动输入的 number input，并附带 datalist 预设', () => {
+  it('number/integer 字段渲染为可手动输入的 number input', () => {
     const editor = buildEditor();
     const html = editor._renderStructuredParams(
       SCHEMA,
@@ -69,14 +69,8 @@ describe('TriggerEditor 结构化参数数字字段手动填写', () => {
     const input = container.querySelector('input[data-param-name="firstWolfCount"]');
     expect(input).not.toBeNull();
     expect(input.getAttribute('type')).toBe('number');
-    expect(input.getAttribute('min')).toBe('1');
-    expect(input.getAttribute('max')).toBe('200');
     expect(input.getAttribute('step')).toBe('1');
     expect(input.value).toBe('3');
-    const listId = input.getAttribute('list');
-    expect(listId).toBeTruthy();
-    const datalist = container.querySelector(`datalist[id="${listId}"]`);
-    expect(datalist?.querySelectorAll('option').length).toBeGreaterThan(3);
   });
 
   it('手动填写的任意值经 _readStructuredParams 原样写回 params；清空即移除参数', () => {
@@ -95,18 +89,5 @@ describe('TriggerEditor 结构化参数数字字段手动填写', () => {
     input.value = '';
     const cleared = editor._readStructuredParams(item, { operation: 'commitStoryWhenReady', firstWolfCount: 7 });
     expect(Object.prototype.hasOwnProperty.call(cleared, 'firstWolfCount')).toBe(false);
-  });
-
-  it('多个字段实例生成互不冲突的 datalist id', () => {
-    const editor = buildEditor();
-    const first = document.createElement('div');
-    first.innerHTML = editor._renderStructuredParams(SCHEMA, { operation: 'commitStoryWhenReady' }, { excludeOperation: true });
-    const second = document.createElement('div');
-    second.innerHTML = editor._renderStructuredParams(SCHEMA, { operation: 'commitStoryWhenReady' }, { excludeOperation: true });
-    const firstId = first.querySelector('input[data-param-name="firstWolfCount"]')?.getAttribute('list');
-    const secondId = second.querySelector('input[data-param-name="firstWolfCount"]')?.getAttribute('list');
-    expect(firstId).toBeTruthy();
-    expect(secondId).toBeTruthy();
-    expect(firstId).not.toBe(secondId);
   });
 });

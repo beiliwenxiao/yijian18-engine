@@ -201,7 +201,7 @@ MOVE     右键
 - 存档 JSON 损坏时返回 `invalidJson`，**原样保留存档**，不删不覆盖。
 - `SaveGameService` 支持 `LocalStorageAdapter`（兼容）与 `IndexedDBAdapter`（推荐）两种存储后端；IndexedDB 配额更大（通常 50MB+），适合大型存档。业务场景只注入 `capture/validate/restore`，不得绕过原子恢复直接逐段写状态。`inspect(index)` / `inspectAuto(index)` 只执行读取、迁移与校验，不调用 restore，供跨 Region 存档在正式恢复前准备目标运行时。
 - `listExistingSlotsAsync()` 返回已存在的存档列表（动态显示用），`getNextAvailableSlotIndex()` 返回下一个可用槽位编号。默认显示 9 个槽位，满后可继续新建存档，最多 100 个。
-- Trigger 快照的跨会话内容身份只能使用归一化执行语义生成的 `definitionDigest`，不得使用 `GameLoader` 的会话装配 `definitionRevision` 代替；operation fingerprint 必须绑定稳定的单 Trigger 定义摘要。同定义跨会话 revision 变化允许恢复。兼容性在单 Trigger 粒度强制：顶层 `definitionDigest` 变化只作诊断警告（内容参数调整不废档），ledger 记录的 operation fingerprint 与当前定义重算值不匹配时，该 Trigger 的执行痕迹（ledger 记录、firedOnce、cooldown/timer）在 deserialize 阶段按新定义重置并告警，其余 Trigger 历史完整保留；快照缺摘要或 ledger 引用不存在的 Trigger 仍拒绝并保持零修改；旧 Trigger snapshot schema 不补写、不静默迁移。
+- Trigger 快照的跨会话内容身份只能使用归一化执行语义生成的 `definitionDigest`，不得使用 `GameLoader` 的会话装配 `definitionRevision` 代替；operation fingerprint 必须绑定稳定的单 Trigger 定义摘要。同定义跨会话 revision 变化允许恢复，定义摘要或 fingerprint 不匹配必须在 `GameLoader.validateSerialized()` / provider `validate` 阶段拒绝并保持零修改；旧 Trigger snapshot schema 不补写当前摘要、不静默迁移。
 - 存档位固定分为 `autosave-1`、`autosave-2`、`autosave-3` 三个轮换自动位与最多 100 个 `slot-1` 至 `slot-100` 手动位。自动保存只能调用 `saveAuto()`：优先填充空自动位，三个均存在时覆盖 `createdAt` 最早的一位；手动保存只能调用 `save(index)` 或 `saveAsync(index)`，两者不得互相覆盖。
 - 张角 Demo 每 15 分钟、完成地图区块传送、以及内容触发器的 `autoSave` 动作都会请求自动保存。保存开始/成功/失败均通过 `NotificationSystem` 与菜单状态栏反馈；场景层只经 `BaseGameScene.requestAutoSave()` 请求，由宿主注入实际服务并用单一 in-flight Promise 防止并发选中同一自动位。
 - 张角 Demo 在 Vite 开发服务器下还必须把成功快照镜像到 `example/sanguo_zhangjiao/saves/{autosave-1|autosave-2|autosave-3|slot-N}/snapshot.json`，并将画面缩略图以二进制 `thumbnail.jpg` 同目录保存；JSON 用 `meta.previewFile` 引用图片，不重复内嵌 base64。IndexedDB 作为运行时主存储，开发文件镜像作为备份。
@@ -411,8 +411,6 @@ EventJournal 存档必须包含稳定 `runId`、下一事件序号、全部未�
 TaskGraph 不是 EventJournal 的替代品：任务定义只声明事件 matcher、节点和边；任务存档保存 `TaskInstance`、节点状态、完成证据 eventId、并行汇合和已选分支。任务推进、奖励与 Checkpoint 必须进入现有 `QuestTransactionService → CommandGateway → LocalAuthorityAdapter` 权威事务，禁止 `notificationBus` 监听器直接修改独立 TaskGraph 状态。任务节点可使用 `all/any/n-of-m` 并行汇合；分支按稳定优先级选择首个满足规则，选择结果只提交一次并进入存档。
 
 `task.start/task.event/task.track` 是 TaskGraph 唯一写入命令，统一使用 `quest:<actorId>` state revision；`task.track` 必须校验 instance.actorId，禁止跨 actor 修改。TaskGraph 只嵌入 QuestTransactionService 的 `quests` Authority provider，不再注册第二个独立 snapshot provider。任务定义含非空 reward 时必须存在原子 `prepareReward/commit/rollback` 参与者，否则以 `rewardSettlementUnavailable` 拒绝，禁止“任务完成但奖励未发”。TaskGraph 定义运行时、CandidateRuleValidator 和 TaskGraphEditor 必须复用 `validateTaskGraphDefinitions()`，并通过标准 `task.command` 从数据驱动 Trigger 启动。
-
-TaskGraphEditor 的策划入口只编辑一份从上到下的玩家步骤列表，再按“顺序逐项／全部完成／任意完成”生成方式自动派生 `start/objective/parallel/complete` 节点、入口、children、joinPolicy 和 next 边；不得让策划从多节点、多连线和 JSON 反向调试出单线流程。除任务 ID、任务/步骤名称和描述文案外，分类、事件类型、事件 identity、场景/binding/definition/物品等引用和目标数量全部使用项目目录下拉；节点 ID 与连线由编辑器稳定生成。已有 branch/fail 等旧复杂图必须先明确确认转换，禁止编辑任一字段时静默压平成单线。
 
 ### 已验证根因与强制收口约定
 

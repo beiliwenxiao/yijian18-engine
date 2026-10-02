@@ -90,12 +90,27 @@
             <div class="editor-content">
                 <div class="editor-tabs">
                     <button class="active" data-tab="scene">🗺️ 场景编辑</button>
+                    <button data-tab="trigger">⚡ 事件/触发器</button>
+                    <button data-tab="behavior">🧩 行为编辑器</button>
+                    <button data-tab="task">📋 任务图</button>
                     <button type="button" class="tab-extra" data-action="button-help" style="margin-left:auto;">⌨ 按钮写法</button>
                     <button type="button" class="tab-extra" data-action="item-reference">📦 物体写法</button>
                 </div>
 
                 <div class="editor-panel active" id="scene-panel">
                     <div class="panel-container" id="scene-editor-container"></div>
+                </div>
+
+                <div class="editor-panel" id="trigger-panel">
+                    <div class="panel-container" id="trigger-editor-container"></div>
+                </div>
+
+                <div class="editor-panel" id="behavior-panel">
+                    <div class="panel-container" id="behavior-editor-container"></div>
+                </div>
+
+                <div class="editor-panel" id="task-panel">
+                    <div class="panel-container" id="task-graph-editor-container"></div>
                 </div>
             </div>
         </div>
@@ -111,6 +126,9 @@
             sceneDataLoader
         } from './SceneDataLoader.js';
         import { ProjectWorldIndex } from '../src/core/ProjectWorldIndex.js';
+        import { TriggerEditor } from './TriggerEditor.js';
+        import { BehaviorEditor } from './BehaviorEditor.js';
+        import { TaskGraphEditor } from './TaskGraphEditor.js';
 
         (async () => {
             renderEditorNav('scene-workflow');
@@ -597,9 +615,10 @@
                         return result;
                     },
                     openTriggerEditor: async (definitionId, target = 'triggers') => {
-                        // 触发器编辑已迁至独立「剧情」页；hash 携带触发器 ID 供页面加载后选中
-                        const hash = definitionId ? `#${encodeURIComponent(definitionId)}` : '';
-                        window.location.href = `storyline-editor.html?gameId=${encodeURIComponent(gameId)}${hash}`;
+                        await switchTab('trigger');
+                        if (triggerEditor && definitionId) {
+                            triggerEditor.selectById?.(definitionId, target);
+                        }
                     }
                 }
             );
@@ -793,13 +812,91 @@
             return true;
         }
 
-        // 触发器/行为编辑已迁至独立页面（「剧情」页与「内容库 → 动作目录」）。
+        // 事件/触发器编辑器
+        let triggerEditor = null;
+        let triggerEditorInitPromise = null;
+        async function loadTriggerEditor() {
+            if (triggerEditorInitPromise) return triggerEditorInitPromise;
+            triggerEditor = new TriggerEditor(
+                document.getElementById('trigger-editor-container'),
+                {
+                    gameId: gameId,
+                    canonicalSession: ctx._canonicalEditorSession('project'),
+                    getSceneList: () => ctx.dataManager.getGameScenes(gameId),
+                    getSceneDocuments: () => ctx.getSceneDocuments(),
+                    getPlacementOptions: () => ctx.getPlacementOptions(sceneEditor),
+                    onSaved: project => ctx._refreshProjectTriggers(project)
+                }
+            );
+            triggerEditorInitPromise = triggerEditor.init()
+                .then(() => triggerEditor)
+                .catch(error => {
+                    triggerEditor = null;
+                    triggerEditorInitPromise = null;
+                    throw error;
+                });
+            return triggerEditorInitPromise;
+        }
+
+        // 行为编辑器：管理 project.triggerCatalog.actions[]，与事件/触发器共用 canonical session。
+        let behaviorEditor = null;
+        let behaviorEditorInitPromise = null;
+        async function loadBehaviorEditor() {
+            if (behaviorEditorInitPromise) return behaviorEditorInitPromise;
+            behaviorEditor = new BehaviorEditor(
+                document.getElementById('behavior-editor-container'),
+                {
+                    canonicalSession: ctx._canonicalEditorSession('project'),
+                    getSceneList: () => ctx.dataManager.getGameScenes(gameId),
+                    getSceneDocuments: () => ctx.getSceneDocuments(),
+                    projectPath: ctx._canonicalProjectPath(),
+                    onSaved: async project => {
+                        ctx._refreshProjectTriggers(project);
+                        await triggerEditor?.refresh?.();
+                        sceneEditor?.refreshTriggerReferences?.();
+                    }
+                }
+            );
+            behaviorEditorInitPromise = behaviorEditor.init()
+                .then(() => behaviorEditor)
+                .catch(error => {
+                    behaviorEditor = null;
+                    behaviorEditorInitPromise = null;
+                    throw error;
+                });
+            return behaviorEditorInitPromise;
+        }
+
+        // 任务图编辑器：管理 project.taskGraphs，与其他项目定义编辑器共用 canonical session。
+        let taskGraphEditor = null;
+        let taskGraphEditorInitPromise = null;
+        async function loadTaskGraphEditor() {
+            if (taskGraphEditorInitPromise) return taskGraphEditorInitPromise;
+            taskGraphEditor = new TaskGraphEditor(
+                document.getElementById('task-graph-editor-container'),
+                {
+                    canonicalSession: ctx._canonicalEditorSession('project'),
+                    projectPath: ctx._canonicalProjectPath()
+                }
+            );
+            taskGraphEditorInitPromise = taskGraphEditor.init()
+                .then(() => taskGraphEditor)
+                .catch(error => {
+                    taskGraphEditor = null;
+                    taskGraphEditorInitPromise = null;
+                    throw error;
+                });
+            return taskGraphEditorInitPromise;
+        }
 
         // 标签切换
         async function switchTab(tab) {
-            const panels = ['scene'];
+            const panels = ['scene', 'trigger', 'behavior', 'task'];
             document.querySelectorAll('.editor-tabs button[data-tab]').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
             for (const panel of panels) document.getElementById(`${panel}-panel`).classList.toggle('active', tab === panel);
+            if (tab === 'trigger') await loadTriggerEditor();
+            if (tab === 'behavior') await loadBehaviorEditor();
+            if (tab === 'task') await loadTaskGraphEditor();
             if (tab === 'scene') setTimeout(() => window.dispatchEvent(new Event('resize')), 50);
         }
 
