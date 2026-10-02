@@ -26,6 +26,9 @@ import { PadButton } from '../core/input/Xbox360Profile.js';
 
 const clone = value => value == null ? null : JSON.parse(JSON.stringify(value));
 
+/** 左摇杆导航死区阈值：超过该偏移视为一次方向输入（与 InteractionChoiceView 一致）。 */
+const LEFT_STICK_NAV_THRESHOLD = 0.5;
+
 /** 只消费不可变显示快照并发出命令；领域层拥有不可逆选择。 */
 export class IrreversibleChoiceView extends UIElement {
   constructor(options = {}) {
@@ -40,6 +43,11 @@ export class IrreversibleChoiceView extends UIElement {
     this.snapshot = null;
     this.selectedId = null;
     this.busy = false;
+    // 键盘/左摇杆导航的边沿触发状态：回中（松键）后重新武装，防止按住连发切换
+    this._keyNavArmed = false;
+    this._keyNavDirection = 0;
+    this._leftStickNavArmed = false;
+    this._leftStickDirection = 0;
   }
 
   open(snapshot = {}) {
@@ -50,6 +58,10 @@ export class IrreversibleChoiceView extends UIElement {
       : choices[0]?.id || null;
     this.busy = false;
     this.visible = choices.length > 0;
+    this._keyNavArmed = false;
+    this._keyNavDirection = 0;
+    this._leftStickNavArmed = false;
+    this._leftStickDirection = 0;
   }
 
   close() {
@@ -57,6 +69,10 @@ export class IrreversibleChoiceView extends UIElement {
     this.snapshot = null;
     this.selectedId = null;
     this.busy = false;
+    this._keyNavArmed = false;
+    this._keyNavDirection = 0;
+    this._leftStickNavArmed = false;
+    this._leftStickDirection = 0;
   }
 
   setBusy(value) { this.busy = value === true; }
@@ -94,12 +110,30 @@ export class IrreversibleChoiceView extends UIElement {
     if (this.busy || !inputManager) return true;
     const choices = this.snapshot?.choices || [];
     const compact = this.isCompact;
-    const index = Math.max(0, choices.findIndex(choice => choice.id === this.selectedId));
-    if (!compact) {
-      const left = inputManager.isKeyPressed?.('arrowleft') || inputManager.isKeyPressed?.('a');
-      const right = inputManager.isKeyPressed?.('arrowright') || inputManager.isKeyPressed?.('d');
-      if (left && choices.length) this.selectedId = choices[(index - 1 + choices.length) % choices.length].id;
-      if (right && choices.length) this.selectedId = choices[(index + 1) % choices.length].id;
+    if (!compact && choices.length > 1) {
+      // 键盘导航（边沿触发）：键名必须用 InputManager 归一化后的虚拟键（'left'/'right'），
+      // 读取原始 'a'/'arrowleft' 永远匹配不上（与 InteractionChoiceView 同族问题）。
+      const keyDirection = inputManager.isKeyPressed?.('right') ? 1
+        : (inputManager.isKeyPressed?.('left') ? -1 : 0);
+      if (!this._keyNavArmed) {
+        if (keyDirection === 0) this._keyNavArmed = true;
+      } else if (keyDirection !== 0 && keyDirection !== this._keyNavDirection) {
+        this.moveSelection(keyDirection);
+      }
+      this._keyNavDirection = keyDirection;
+
+      // 手柄左摇杆左右导航（死区阈值 + 边沿触发），十字键左右同样可用
+      const stickX = Number(gamepad?.leftStick?.x) || 0;
+      const padLeft = gamepad?.isButtonPressed?.(PadButton.DPAD_LEFT) === true;
+      const padRight = gamepad?.isButtonPressed?.(PadButton.DPAD_RIGHT) === true;
+      const stickDirection = (stickX <= -LEFT_STICK_NAV_THRESHOLD || padLeft) ? -1
+        : ((stickX >= LEFT_STICK_NAV_THRESHOLD || padRight) ? 1 : 0);
+      if (!this._leftStickNavArmed) {
+        if (stickDirection === 0) this._leftStickNavArmed = true;
+      } else if (stickDirection !== 0 && stickDirection !== this._leftStickDirection) {
+        this.moveSelection(stickDirection);
+      }
+      this._leftStickDirection = stickDirection;
     }
 
     const clicked = inputManager.isMouseClicked?.() === true
@@ -135,6 +169,18 @@ export class IrreversibleChoiceView extends UIElement {
   _confirm() {
     if (this.busy || !this.selectedId) return;
     this.onCommand({ type: 'selectChoice', choiceId: this.selectedId });
+  }
+
+  /** 左右循环切换选中项（键盘/手柄摇杆/十字键共用）。 */
+  moveSelection(delta) {
+    if (!this.visible || this.busy || !this.snapshot) return false;
+    const choices = this.snapshot.choices || [];
+    const direction = Math.sign(Number(delta) || 0);
+    if (choices.length === 0 || !direction) return false;
+    const current = Math.max(0, choices.findIndex(choice => choice.id === this.selectedId));
+    const next = (current + direction + choices.length) % choices.length;
+    this.selectedId = choices[next].id;
+    return true;
   }
 
   render(ctx, viewWidth = ctx?.canvas?.width || 1280, viewHeight = ctx?.canvas?.height || 720) {
