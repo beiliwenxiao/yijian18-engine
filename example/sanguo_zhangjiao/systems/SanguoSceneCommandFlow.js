@@ -84,8 +84,12 @@ const commandMethods = {
   },
 
   async handleGatheringEvent(event, data = {}) {
+    // 剥皮被打断（受击/移动）但已部分结算：若尸体资源恰好剥完，与 completed 同样进入
+    // 骷髅化与衰减；否则提示玩家尸体仍可继续剥取——避免玩家以为剥皮失败而弃置尸体。
+    const isInterruptedPartiallyCommitted = event === 'interrupted'
+      && data.ok === true && data.committed === true && Number(data.accepted) > 0;
     if (event === 'completed' && (data.ok !== true || data.committed !== true)) return false;
-    if (event === 'completed') {
+    if (event === 'completed' || isInterruptedPartiallyCommitted) {
       const depletedCorpse = Number(data.nodeRemaining) <= 0
         ? this.entityStore?.getById?.(data.nodeId)
         : null;
@@ -97,9 +101,11 @@ const commandMethods = {
           ? placements?.inspectPlacement?.(data.nodeId)?.placement || null
           : null;
         if (placement?.id) depletedCorpse.placementId = placement.id;
+        // 剥皮完成：尸体化为骷髅（渲染层按此标记切换骨架表现）并启动 30 秒消失衰减
+        depletedCorpse.corpseHarvested = true;
         const corpses = this.context?.services?.corpses || this.corpseRuntime;
         const decay = corpses?.startDecay?.(depletedCorpse, {
-          durationSeconds: 20,
+          durationSeconds: 30,
           operationId: data.operationId || data.gatheringOperationId || null
         });
         if (decay?.ok !== true) {
@@ -111,6 +117,9 @@ const commandMethods = {
             hasCorpseRuntime: !!corpses
           });
         }
+      } else if (isInterruptedPartiallyCommitted && Number(data.nodeRemaining) > 0
+        && this.entityStore?.getById?.(data.nodeId)?.isCorpse === true) {
+        this._showScreenTip?.('剥皮被打断，尸体仍有可剥取的部分，可以继续。');
       }
       const sourceOperationId = data.operationId || data.gatheringOperationId;
       if (!sourceOperationId) {

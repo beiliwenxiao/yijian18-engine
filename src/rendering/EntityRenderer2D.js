@@ -54,27 +54,38 @@ export class EntityRenderer2D {
 
     if (!sprite || sprite.visible !== false) {
       ctx.save();
-      if (isCorpse) {
-        const rotationDegrees = Number.isFinite(Number(corpsePresentation?.rotationDegrees))
-          ? Number(corpsePresentation.rotationDegrees)
-          : 90;
-        if (rotationDegrees !== 0) {
-          const centerY = renderY - height / 2;
-          ctx.translate(renderX, centerY);
-          ctx.rotate(rotationDegrees * Math.PI / 180);
-          ctx.translate(-renderX, -centerY);
-        }
+      if (isCorpse && entity.corpseHarvested === true) {
+        // 剥皮完成的尸体化为骷髅：骨架本身按侧躺姿态绘制，跳过兽尸贴图与侧倒旋转
         const corpseAlpha = Number(corpsePresentation?.alpha);
         ctx.globalAlpha *= Number.isFinite(corpseAlpha)
           ? Math.max(0, Math.min(1, corpseAlpha))
           : 0.86;
+        if (sprite?.alpha !== undefined) ctx.globalAlpha *= sprite.alpha;
+        this._renderHarvestedSkeleton(ctx, renderX, renderY, width, height);
+        ctx.restore();
+      } else {
+        if (isCorpse) {
+          const rotationDegrees = Number.isFinite(Number(corpsePresentation?.rotationDegrees))
+            ? Number(corpsePresentation.rotationDegrees)
+            : 90;
+          if (rotationDegrees !== 0) {
+            const centerY = renderY - height / 2;
+            ctx.translate(renderX, centerY);
+            ctx.rotate(rotationDegrees * Math.PI / 180);
+            ctx.translate(-renderX, -centerY);
+          }
+          const corpseAlpha = Number(corpsePresentation?.alpha);
+          ctx.globalAlpha *= Number.isFinite(corpseAlpha)
+            ? Math.max(0, Math.min(1, corpseAlpha))
+            : 0.86;
+        }
+        if (sprite?.alpha !== undefined) ctx.globalAlpha *= sprite.alpha;
+        // 灵魂状态（死亡待复活）：半透明渲染
+        if (entity.isSoulState === true) ctx.globalAlpha *= 0.45;
+        this._renderSprite(ctx, entity, sprite, npc, renderX, renderY, width, height);
+        this._renderAppearanceLayers(ctx, sprite, renderX, renderY);
+        ctx.restore();
       }
-      if (sprite?.alpha !== undefined) ctx.globalAlpha *= sprite.alpha;
-      // 灵魂状态（死亡待复活）：半透明渲染
-      if (entity.isSoulState === true) ctx.globalAlpha *= 0.45;
-      this._renderSprite(ctx, entity, sprite, npc, renderX, renderY, width, height);
-      this._renderAppearanceLayers(ctx, sprite, renderX, renderY);
-      ctx.restore();
     }
 
     this._renderResourceAmount(ctx, entity.getComponent?.('resourceNode'), x, y, height);
@@ -93,6 +104,86 @@ export class EntityRenderer2D {
   /** 兼容以 renderEntity 命名的场景渲染管线。 */
   renderEntity(ctx, entity) {
     this.render(ctx, entity);
+  }
+
+  /**
+   * 剥皮完成后的骷髅表现：侧躺兽骨架（头骨+脊柱+肋骨+四肢），程序化绘制
+   * 而非贴图资源，骨架贴地（脚底为 renderY），朝向固定水平。
+   */
+  _renderHarvestedSkeleton(ctx, x, y, width, height) {
+    const bone = '#e8e2d0';
+    const boneShade = '#b8b09a';
+    const socket = '#3a372e';
+    const bodyWidth = Math.max(24, width * 0.8);
+    const bodyHeight = Math.max(10, height * 0.34);
+    const centerY = y - bodyHeight / 2 - 2;
+    const headR = Math.max(5, bodyHeight * 0.42);
+    const headX = x - bodyWidth / 2 + headR;
+    const spineEndX = x + bodyWidth / 2;
+
+    ctx.save();
+    ctx.lineWidth = Math.max(1.5, bodyHeight * 0.14);
+    ctx.lineCap = 'round';
+
+    // 四肢骨（先画，被脊柱压住）
+    ctx.strokeStyle = boneShade;
+    const legDx = bodyWidth * 0.16;
+    const legSpread = bodyHeight * 0.5;
+    for (const sign of [-1, 1]) {
+      const hipX = x + sign * bodyWidth * 0.18;
+      ctx.beginPath();
+      ctx.moveTo(hipX, centerY);
+      ctx.lineTo(hipX + legDx * sign, centerY + legSpread);
+      ctx.moveTo(hipX, centerY);
+      ctx.lineTo(hipX - legDx * sign * 0.5, centerY + legSpread * 0.9);
+      ctx.stroke();
+    }
+
+    // 脊柱
+    ctx.strokeStyle = bone;
+    ctx.beginPath();
+    ctx.moveTo(headX + headR * 0.6, centerY);
+    ctx.lineTo(spineEndX, centerY);
+    ctx.stroke();
+
+    // 肋骨（脊柱前段几条向下短弧）
+    ctx.lineWidth = Math.max(1, bodyHeight * 0.1);
+    const ribCount = 4;
+    const ribStartX = headX + headR * 1.4;
+    const ribSpan = bodyWidth * 0.38;
+    for (let index = 0; index < ribCount; index += 1) {
+      const ribX = ribStartX + (ribSpan / ribCount) * index;
+      ctx.beginPath();
+      ctx.moveTo(ribX, centerY);
+      ctx.quadraticCurveTo(ribX + 2, centerY + bodyHeight * 0.34, ribX - bodyWidth * 0.05, centerY + bodyHeight * 0.4);
+      ctx.stroke();
+    }
+
+    // 头骨 + 眼窝 + 吻部
+    ctx.fillStyle = bone;
+    ctx.beginPath();
+    ctx.ellipse(headX, centerY, headR * 1.15, headR, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = bone;
+    ctx.lineWidth = Math.max(1, bodyHeight * 0.1);
+    ctx.beginPath();
+    ctx.moveTo(headX - headR * 1.1, centerY - headR * 0.15);
+    ctx.lineTo(headX - headR * 1.9, centerY + headR * 0.25);
+    ctx.stroke();
+    ctx.fillStyle = socket;
+    ctx.beginPath();
+    ctx.arc(headX - headR * 0.15, centerY - headR * 0.28, Math.max(1.2, headR * 0.24), 0, Math.PI * 2);
+    ctx.fill();
+
+    // 尾椎
+    ctx.strokeStyle = boneShade;
+    ctx.lineWidth = Math.max(1, bodyHeight * 0.09);
+    ctx.beginPath();
+    ctx.moveTo(spineEndX, centerY);
+    ctx.lineTo(spineEndX + bodyWidth * 0.07, centerY - bodyHeight * 0.18);
+    ctx.stroke();
+
+    ctx.restore();
   }
 
   _renderSprite(ctx, entity, sprite, npc, x, y, width, height) {

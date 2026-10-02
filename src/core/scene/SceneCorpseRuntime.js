@@ -142,6 +142,7 @@ export class SceneCorpseRuntime {
       transform.position.x = state.position.x;
       transform.position.y = state.position.y;
     }
+    if (state.harvested === true) entity.corpseHarvested = true;
     const node = entity.getComponent?.('resourceNode');
     if (node && state.resourceNode) node.deserialize?.(state.resourceNode);
     const decay = state.decay;
@@ -162,6 +163,7 @@ export class SceneCorpseRuntime {
       kind: 'corpse',
       removed: false,
       position: position ? { x: Number(position.x) || 0, y: Number(position.y) || 0 } : null,
+      ...(entity.corpseHarvested === true ? { harvested: true } : {}),
       ...(resourceNode?.serialize ? { resourceNode: resourceNode.serialize() } : {}),
       ...(decay?.remainingSeconds > 0 ? { decay: clone(decay) } : {})
     };
