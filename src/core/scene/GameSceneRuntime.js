@@ -358,14 +358,22 @@ export class GameSceneRuntime {
 
   registerInputHandler(handlerName, config) {
     const off = this.inputRouter.register(handlerName, config);
-    this.addDisposer(off, `input:${handlerName}`);
-    return off;
+    const unregister = this.addDisposer(off, `input:${handlerName}`);
+    // off 同时注销容器里的 $disposer holder：运行中重复 attach/detach（读档/流式重配）
+    // 不会在容器内按注册序号累积残留条目。
+    return () => {
+      off();
+      unregister?.();
+    };
   }
 
   registerSnapshotProvider(key, provider) {
     const off = this.snapshotManager.register(key, provider);
-    this.addDisposer(off, `snapshot:${key}`);
-    return off;
+    const unregister = this.addDisposer(off, `snapshot:${key}`);
+    return () => {
+      off();
+      unregister?.();
+    };
   }
 
   attachWorldStreaming(manager, {
@@ -413,8 +421,11 @@ export class GameSceneRuntime {
       const index = this._updateHooks.indexOf(hook);
       if (index !== -1) this._updateHooks.splice(index, 1);
     };
-    this.addDisposer(off, 'update-hook');
-    return off;
+    const unregister = this.addDisposer(off, 'update-hook');
+    return () => {
+      off();
+      unregister?.();
+    };
   }
 
   addDisposer(disposer, label = 'custom') {
@@ -443,8 +454,11 @@ export class GameSceneRuntime {
       const index = hooks.indexOf(hook);
       if (index !== -1) hooks.splice(index, 1);
     };
-    this.addDisposer(off, `phase:${phase}`);
-    return off;
+    const unregister = this.addDisposer(off, `phase:${phase}`);
+    return () => {
+      off();
+      unregister?.();
+    };
   }
 
   beginFrame() {

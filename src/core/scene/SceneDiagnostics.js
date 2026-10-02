@@ -124,6 +124,9 @@ export class SceneDiagnostics {
         getSceneManager: () => scene.sceneManager || null,
         isDebugEnabled: () => this.isDebugEnabled()
       });
+      // 持有自己的引用：dispose 时若 scene.debugPanel 已被其他路径提前置空，
+      // 仍能可靠释放 RAF/DOM，避免旧面板残留继续展示过期快照。
+      this._debugPanel = scene.debugPanel;
     }
     scene.debugPanel.setDiagnosticRecords(this.records);
     return scene.debugPanel;
@@ -636,14 +639,21 @@ export class SceneDiagnostics {
     this.teardownDrawCallCounter();
     // 诊断记录在 dispose 后保留（最多 128/16 条上限），供场景退出后仍可查询失败诊断。
     const scene = this.scene;
-    if (!scene.debugPanel) return;
-    console.log('[BaseGameScene][DebugPanel] 场景退出，清理调试面板', {
-      visible: scene.debugPanel.visible,
-      elementConnected: scene.debugPanel._el?.isConnected || false
-    });
-    if (typeof scene.debugPanel.dispose === 'function') scene.debugPanel.dispose();
-    else scene.debugPanel.hide?.();
+    // 优先释放自己创建的面板引用（scene.debugPanel 可能已被提前置空或替换），
+    // 再兜底清理场景当前引用，保证 RAF/DOM/Pointer 监听无残留。
+    const ownedPanel = this._debugPanel;
+    this._debugPanel = null;
+    const currentPanel = scene.debugPanel;
     scene.debugPanel = null;
+    for (const panel of new Set([ownedPanel, currentPanel])) {
+      if (!panel) continue;
+      console.log('[BaseGameScene][DebugPanel] 场景退出，清理调试面板', {
+        visible: panel.visible,
+        elementConnected: panel._el?.isConnected || false
+      });
+      if (typeof panel.dispose === 'function') panel.dispose();
+      else panel.hide?.();
+    }
   }
 }
 

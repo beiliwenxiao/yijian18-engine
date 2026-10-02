@@ -771,6 +771,10 @@ async function commitRegionTarget({ request, result, shadowSession, draft, valid
   // 用最终场景 id 重投影：initialize 阶段的投影先于导航投影（当前场景 id 仍是旧值），
   // 不重同步会让 world.terrain 停留在旧 chunk（当前场景地形/攀爬面/小地图指向错误）。
   this.syncWorldStreamingProjection?.();
+  // 切区已成功：pending 全部来自旧 Region 的 chunk 卸载，同名命名空间不会再命中，
+  // 保留只会随切换次数无界累积（OOM 隐患）。commit 失败走 restoreRegionDraft 回滚路径，
+  // rollback.domainStates 仍能完整恢复，不受此处清空影响。
+  this._pendingChunkDomainStates.clear();
   return { ok: true, errors: [] };
 }
 

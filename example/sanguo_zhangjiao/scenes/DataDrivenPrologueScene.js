@@ -726,6 +726,9 @@ export class DataDrivenPrologueScene extends BaseGameScene {
    */
   async _handleEditorSceneCommit({ sceneId, revision = null, ts = null, source = 'unknown' } = {}) {
     if (!sceneId) return;
+    // 场景已释放后编辑器迟到的提交直接忽略：下方 `|| new Map()` 会在这里重建
+    // 已随 dispose 清掉的世代/控制器 Map，此后每次提交各累积一条且无人清理（泄漏）。
+    if (this.disposed === true || this._sceneResourcesDisposed === true) return;
     const generations = this._editorSceneCommitGenerations || new Map();
     const controllers = this._editorSceneCommitControllers || new Map();
     this._editorSceneCommitGenerations = generations;

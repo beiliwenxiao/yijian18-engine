@@ -208,8 +208,10 @@ describe('runtime consumption publication', () => {
     const service = new SceneCampfireService({ configView: view });
 
     expect(service.isConfigured()).toBe(true);
+    // frameCount=12 来自火苗贴图帧解析（非策划配置）；lightRadius 从 library 读取而不是
+    // 硬编码——这里是验证「配置→消费」链路，策划调优（58a2ab7 把 300→260）不应让测试失效。
     expect(service.campfire.frameCount).toBe(12);
-    expect(service.presentation.lightRadius).toBe(300);
+    expect(service.presentation.lightRadius).toBe(campfireItem.campfirePresentation.presentation.lightRadius);
     expect(Object.isFrozen(service.configView)).toBe(true);
     expect(() => { service.configView.sprite.frameCount = 2; }).toThrow();
   });

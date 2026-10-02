@@ -809,6 +809,14 @@ export class DebugPanel {
   _startLoop() {
     const tick = now => {
       if (!this.visible) return;
+      // 场景切换/退出后停止刷新：面板持有的是创建者场景的闭包引用，
+      // 活动场景失效（isActive=false）或已无活动场景时继续跑只会展示过期快照。
+      const activeScene = this._getActiveScene();
+      if (!activeScene || (activeScene.isActive === false && activeScene.isPaused !== true)) {
+        this._destroy();
+        this.visible = false;
+        return;
+      }
       this._updateFps();
       if (now - this._lastInfoUpdateAt >= this._infoRefreshInterval) {
         this._lastInfoUpdateAt = now;
