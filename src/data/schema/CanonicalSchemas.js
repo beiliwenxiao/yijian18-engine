@@ -209,6 +209,7 @@ export const RESOURCE_NODE_DEFINITION_SCHEMA = {
     maxRemaining: nonNegativeInteger(true),
     yieldPerGather: { type: FieldType.INTEGER, required: true, min: 1 },
     harvestYieldRange: { type: FieldType.OBJECT, schema: 'resourceNodeHarvestYieldRange' },
+    gatherYieldRange: { type: FieldType.OBJECT, schema: 'resourceNodeHarvestYieldRange' },
     gatherDuration: { type: FieldType.NUMBER, required: true, min: Number.MIN_VALUE },
     interactionRadius: { type: FieldType.NUMBER, required: true, min: Number.MIN_VALUE },
     requiredToolType: { nullable: true },

@@ -10,6 +10,12 @@ export class ResourceNodeComponent extends Component {
     this.remaining = Math.max(0, Math.floor(Number(config.remaining) || 0));
     this.maxRemaining = Math.max(this.remaining, Math.floor(Number(config.maxRemaining) || this.remaining));
     this.yieldPerGather = Math.max(1, Math.floor(Number(config.yieldPerGather) || 1));
+    // 每次采集产量的随机区间（min/max 正整数且 min<=max 才生效）；缺省回退固定 yieldPerGather。
+    const rangeMin = Math.floor(Number(config.gatherYieldRange?.min) || 0);
+    const rangeMax = Math.floor(Number(config.gatherYieldRange?.max) || 0);
+    this.gatherYieldRange = rangeMin >= 1 && rangeMax >= rangeMin
+      ? { min: rangeMin, max: rangeMax }
+      : null;
     this.gatherDuration = Math.max(0.1, Number(config.gatherDuration) || 1);
     this.interactionRadius = Math.max(1, Number(config.interactionRadius) || 72);
     this.requiredToolType = config.requiredToolType || null;
@@ -61,6 +67,7 @@ export class ResourceNodeComponent extends Component {
       remaining: this.remaining,
       maxRemaining: this.maxRemaining,
       yieldPerGather: this.yieldPerGather,
+      gatherYieldRange: this.gatherYieldRange ? { ...this.gatherYieldRange } : null,
       gatherDuration: this.gatherDuration,
       requiredToolType: this.requiredToolType,
       refreshDays: this.refreshDays,
@@ -79,6 +86,11 @@ export class ResourceNodeComponent extends Component {
     if (Number.isInteger(data.remaining) && data.remaining >= 0) this.remaining = data.remaining;
     if (Number.isInteger(data.maxRemaining) && data.maxRemaining >= this.remaining) this.maxRemaining = data.maxRemaining;
     if (Number.isInteger(data.yieldPerGather) && data.yieldPerGather >= 1) this.yieldPerGather = data.yieldPerGather;
+    if (data.gatherYieldRange !== undefined) {
+      const min = Math.floor(Number(data.gatherYieldRange?.min) || 0);
+      const max = Math.floor(Number(data.gatherYieldRange?.max) || 0);
+      this.gatherYieldRange = min >= 1 && max >= min ? { min, max } : null;
+    }
     if (Number.isInteger(data.refreshProgressDays) && data.refreshProgressDays >= 0) this.refreshProgressDays = data.refreshProgressDays;
     if (data.refreshMode === 'timed' || data.refreshMode === 'none') this.refreshMode = data.refreshMode;
     if (Number.isFinite(data.refreshIntervalSeconds) && data.refreshIntervalSeconds >= 0) {

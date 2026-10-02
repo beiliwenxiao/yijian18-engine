@@ -1442,6 +1442,10 @@
       "remaining": 10,
       "maxRemaining": 10,
       "yieldPerGather": 2,
+      "gatherYieldRange": {
+        "min": 5,
+        "max": 10
+      },
       "gatherDuration": 1.6,
       "interactionRadius": 72,
       "requiredToolType": null,
@@ -1494,6 +1498,10 @@
       "remaining": 12,
       "maxRemaining": 12,
       "yieldPerGather": 3,
+      "gatherYieldRange": {
+        "min": 5,
+        "max": 12
+      },
       "gatherDuration": 1.8,
       "interactionRadius": 76,
       "requiredToolType": "axe",

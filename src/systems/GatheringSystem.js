@@ -103,8 +103,22 @@ export class GatheringSystem {
       startPosition: { x: actorTransform.position.x, y: actorTransform.position.y },
       operationId: operationId || `gather-${this.nextOperationSequence++}`
     };
+    // 随机产量：节点配置 gatherYieldRange 时在 start 时按确定性 RNG（operationId 种子，
+    // 重放一致）roll 本次产量，HUD 预期与结算使用同一值。
+    this.session.yieldAmount = this._rollSessionYield(this.session);
     this.onEvent('started', this.describe());
     return { ok: true, session: this.describe() };
+  }
+
+  /** 本次采集产量：gatherYieldRange 区间内随机，否则回退固定 yieldPerGather。 */
+  _rollSessionYield(session) {
+    const range = session.node.gatherYieldRange;
+    if (!range || range.max < range.min) return session.node.yieldPerGather;
+    const rng = this.rngFactory(stableSeed(`${session.operationId}:yield`));
+    const rolled = typeof rng?.int === 'function'
+      ? rng.int(range.min, range.max)
+      : range.min + Math.floor((typeof rng?.next === 'function' ? rng.next() : 0) * (range.max - range.min + 1));
+    return Math.min(range.max, Math.max(range.min, Math.floor(rolled)));
   }
 
   update(deltaTime) {
@@ -137,7 +151,7 @@ export class GatheringSystem {
     if (!this.session) return null;
     const { owner, actor, nodeEntity, node, inventory, tool, elapsed, duration, operationId,
       effectDuration, toolGatherSpeed, playerSpeed, playerSpeedMultiplier } = this.session;
-    const requestedYield = Math.min(node.remaining, node.yieldPerGather);
+    const requestedYield = Math.min(node.remaining, this.session.yieldAmount ?? node.yieldPerGather);
     const item = this.itemResolver(node.itemId, node.resourceType);
     const capacity = this.inventoryTransactions.previewAdd(inventory, item, requestedYield).accepted;
     return {
@@ -174,7 +188,7 @@ export class GatheringSystem {
     }
     const requested = Math.min(
       session.node.remaining,
-      Math.floor(session.node.yieldPerGather * Math.max(0, yieldRatio))
+      Math.floor((session.yieldAmount ?? session.node.yieldPerGather) * Math.max(0, yieldRatio))
     );
     if (requested <= 0) {
       return this._finish({ ok: false, code: reason, reason, accepted: 0 }, terminalEvent, emitEvent);
