@@ -1,0 +1,326 @@
+import { describe, it, expect } from 'vitest';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { SnapshotManager } from '../src/core/snapshot/SnapshotManager.js';
+import { SaveGameService } from '../src/core/snapshot/SaveGameService.js';
+import { LocalStorageAdapter } from '../src/core/snapshot/LocalStorageAdapter.js';
+import { getPlacementSignature } from '../src/core/scene/ScenePlacementRuntime.js';
+import { SceneTriggerBindingSystem } from '../src/core/scene/SceneTriggerBindingSystem.js';
+import { SanguoSceneStateFlow } from '../example/sanguo_zhangjiao/systems/SanguoSceneStateFlow.js';
+
+/**
+ * 存档/任务链路回归（2026-10 存档系统缺陷修复的永久钉子）。
+ * 四个缺陷与共同病根（读写权分散、跨层语义丢失）：
+ * - rollbackUnavailable：回滚快照采集被持久化守卫误伤 → meta 必须逐跳透传
+ * - 读档被拒：位置守卫误伤回滚采集 → rollback label 豁免
+ * - 再次读档狼复活：派生 id tombstone 在流式存档采集时被丢弃
+ * - 诊断失明：rollbackUnavailable 必须携带 capture.errors 明细
+ * 任何一条失败说明对应语义又在某一跳被丢了。
+ */
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const read = relative => fs.readFileSync(path.join(ROOT, relative), 'utf8');
+
+function extractFunction(source, signature) {
+  const start = source.indexOf(signature);
+  if (start < 0) throw new Error(`${signature} not found`);
+  let depth = 0;
+  let end = -1;
+  for (let index = start + signature.length - 1; index < source.length; index++) {
+    if (source[index] === '{') depth++;
+    if (source[index] === '}' && --depth === 0) { end = index + 1; break; }
+  }
+  if (end < 0) throw new Error(`${signature} is incomplete`);
+  return source.slice(start, end);
+}
+
+class MemoryStorage extends LocalStorageAdapter {
+  constructor() {
+    super({ prefix: 'diag', storage: (() => {
+      const map = new Map();
+      return {
+        getItem: k => map.has(k) ? map.get(k) : null,
+        setItem: (k, v) => map.set(k, String(v)),
+        removeItem: k => map.delete(k),
+        key: i => [...map.keys()][i] ?? null,
+        get length() { return map.size; }
+      };
+    })() });
+  }
+}
+
+function makeService() {
+  return new SaveGameService({ gameId: 'diag', useIndexedDB: false, storage: new MemoryStorage() });
+}
+
+/** 直接从 SanguoWorldRuntimeCoordinator 源码提取 resolveChunkPlacement + captureStreamedChunkState。 */
+function loadCaptureStreamedChunkState() {
+  const source = read('example/sanguo_zhangjiao/systems/SanguoWorldRuntimeCoordinator.js');
+  const helper = extractFunction(source, 'function resolveChunkPlacement(placementById, id) {');
+  const capture = extractFunction(source, 'function captureStreamedChunkState(chunk) {');
+  const factory = new Function('getPlacementSignature', 'cloneData',
+    `const resolveChunkPlacement = ${helper};\nreturn { ${capture.replace('function captureStreamedChunkState', 'captureStreamedChunkState')} };`);
+  const impl = factory(getPlacementSignature, value => value == null ? value : JSON.parse(JSON.stringify(value)));
+  return (fakeThis, chunk) => Reflect.apply(impl.captureStreamedChunkState, fakeThis, [chunk]);
+}
+
+function makeStreamedChunkHost({ pendingPlacementStates = [], pendingResourceNodes = [], entities = [] } = {}) {
+  return {
+    entities,
+    pickupItems: [],
+    equipmentItems: [],
+    playerEntity: null,
+    aiSystem: null,
+    _isEntityDead: () => false,
+    _pendingChunkDomainStates: new Map(),
+    _deathDrops: { capture: () => [] },
+    s10ConstructionCoordinator: { _captureS10StructureStates: () => [] },
+    _captureSceneVehicleStates: () => [],
+    context: {
+      services: {
+        placements: {
+          getPendingStateSnapshot: () => ({
+            resourceNodes: pendingResourceNodes,
+            placementStates: pendingPlacementStates
+          })
+        },
+        corpses: { capture: () => null }
+      }
+    }
+  };
+}
+
+function makeStreamedChunk({ placements = [{ id: 'S01-first-wolf', kind: 'enemy', sceneId: 'S01' }] } = {}) {
+  return {
+    key: 'S01',
+    sceneNamespace: 'S01',
+    origin: { x: 7680, y: 3600 },
+    worldWidth: 1280,
+    worldHeight: 720,
+    placements
+  };
+}
+
+describe('存档回归：capture meta 逐跳透传（rollbackUnavailable 修复）', () => {
+  it('SnapshotManager.capture 把 meta 传给 provider.snapshot', () => {
+    const manager = new SnapshotManager();
+    let received = 'not-called';
+    manager.register('probe', { snapshot: meta => { received = meta; return {}; }, restore: () => {} });
+    manager.capture({ label: 'rollback' });
+    expect(received).toEqual({ label: 'rollback' });
+  });
+
+  it('SaveGameService.setStateProvider 的包装函数透传 meta（46061c5 修复点）', () => {
+    const service = makeService();
+    let received = 'not-called';
+    service.setStateProvider({ capture: meta => { received = meta; return {}; } });
+    service.manager.capture({ label: 'rollback' });
+    expect(received).toEqual({ label: 'rollback' });
+  });
+
+  it('restore 失败路径：game provider 采集回滚快照时收到 rollback label，错误为业务拒绝而非 rollbackUnavailable', async () => {
+    const service = makeService();
+    const labels = [];
+    service.setStateProvider({
+      capture: meta => { labels.push(meta?.label ?? null); return { player: { hp: 1 } }; },
+      restore: () => ({ ok: false, errors: [{ code: 'restoreRejected', path: 'game', message: '业务拒绝' }] })
+    });
+    await service.saveAsync(1);
+    const loaded = await service.loadAsync(1);
+    // capture 调用序：保存时(无 label) → 校验后回滚快照(rollback) → 失败回滚再采集(rollback)
+    expect(labels.filter(label => label === 'rollback').length).toBeGreaterThanOrEqual(1);
+    expect(loaded.ok).toBe(false);
+    expect(loaded.errors[0]?.code).toBe('restoreRejected');
+  });
+
+  it('回滚快照采集本身失败：rollbackUnavailable 携带 capture.errors 明细（诊断增强）', async () => {
+    const service = makeService();
+    let callCount = 0;
+    service.setStateProvider({
+      capture: meta => {
+        callCount++;
+        if (callCount > 1 && meta?.label === 'rollback') {
+          const error = new Error('玩家位于无场景世界格 (0,0)');
+          error.code = 'playerOutsideLoadableWorldCell';
+          throw error;
+        }
+        return { player: { hp: 1 } };
+      },
+      restore: () => ({ ok: false, errors: [{ code: 'restoreRejected', path: 'game', message: '业务拒绝' }] })
+    });
+    await service.saveAsync(1);
+    const loaded = await service.loadAsync(1);
+    expect(loaded.ok).toBe(false);
+    expect(loaded.errors[0]?.code).toBe('rollbackUnavailable');
+    expect(JSON.stringify(loaded.errors[0]?.errors)).toContain('playerOutsideLoadableWorldCell');
+  });
+});
+
+describe('存档回归：无场景世界格守卫只属于保存语义（rollback 豁免）', () => {
+  function makeStateFlow({ hasScene = false } = {}) {
+    const scene = {
+      context: {
+        services: {
+          placements: {
+            getPendingStateSnapshot: () => ({ resourceNodes: [], placementStates: [] }),
+            getPlacements: () => []
+          },
+          containerInventories: null,
+          corpses: { capture: () => null },
+          s01s02: null
+        }
+      },
+      entities: [],
+      pickupItems: [],
+      equipmentItems: [],
+      _deathDrops: { capture: () => [], validate: () => ({ ok: true }) },
+      _groupEnemies: {},
+      _firedPickups: new Set(),
+      _clearedGroups: new Set(),
+      _regionDynamicStates: new Map(),
+      _campfireService: { snapshot: () => ({ lit: false }) },
+      _gameplaySnapshots: { capture: () => ({}), validate: () => ({ ok: true }), restoreFoundations: () => ({ ok: true }), restoreActors: () => ({ ok: true }) },
+      s03s14BattleCoordinator: { capture: () => ({}), validateSnapshot: () => ({ ok: true }) },
+      rescueSystem: null,
+      s09RefugeeCoordinator: { captureUnauthorizedHarvestOperations: () => [] },
+      s10ConstructionCoordinator: { _captureS10StructureStates: () => [], _validateS10StructureStates: () => ({ ok: true }) },
+      s11s14SceneCoordinator: { _captureS11S14SceneState: () => ({}), _validateS11S14SceneState: () => ({ ok: true }) },
+      timeSystem: null,
+      weatherSystem: null,
+      playerEntity: {
+        id: 'p1',
+        getComponent: name => name === 'transform' ? { position: { x: 420, y: 330 } } : null
+      },
+      worldStreamingManager: {
+        chunkWidth: 1280,
+        chunkHeight: 720,
+        worldToChunk: (x, y) => ({ col: Math.floor(x / 1280), row: Math.floor(y / 720) }),
+        getSceneId: () => (hasScene ? 'S01' : null),
+        serialize: () => ({ schemaVersion: 1, current: { col: 0, row: 0 }, chunks: [] })
+      }
+    };
+    return new SanguoSceneStateFlow(scene);
+  }
+
+  it('回滚采集（label=rollback）在玩家位于坏格时不抛——读档链不得被守卫拒绝', () => {
+    const flow = makeStateFlow({ hasScene: false });
+    const state = flow.captureSceneSaveState({ snapshotMeta: { label: 'rollback' } });
+    expect(state).toBeTruthy();
+  });
+
+  it('保存采集（无 meta）在坏格时仍抛 playerOutsideLoadableWorldCell——拒存保护保留', () => {
+    const flow = makeStateFlow({ hasScene: false });
+    try {
+      flow.captureSceneSaveState();
+      throw new Error('should-have-thrown');
+    } catch (error) {
+      expect(error.code).toBe('playerOutsideLoadableWorldCell');
+    }
+  });
+});
+
+describe('存档回归：count 模板派生 id 的 tombstone 必须进流式存档（狼复活修复）', () => {
+  it('pendingPlacementStates 的派生 id（base-N）经模板回退进入 chunk placementStates', () => {
+    const capture = loadCaptureStreamedChunkState();
+    const host = makeStreamedChunkHost({
+      pendingPlacementStates: [[
+        'S01-first-wolf-1',
+        { kind: 'corpse', removed: true, decayExpired: true, placementSignature: getPlacementSignature({ id: 'S01-first-wolf', kind: 'enemy', sceneId: 'S01' }) }
+      ]]
+    });
+    const snapshot = capture(host, makeStreamedChunk());
+    const wolf = snapshot.placementStates.find(entry => entry.id === 'S01-first-wolf-1');
+    expect(wolf, '派生 id tombstone 不得被丢弃').toBeTruthy();
+    expect(wolf.state.removed).toBe(true);
+  });
+
+  it('pendingResourceNodes 的派生 id 同样经模板回退（resourceNodes 不丢）', () => {
+    const capture = loadCaptureStreamedChunkState();
+    const host = makeStreamedChunkHost({
+      pendingResourceNodes: [[
+        'S01-berry-bush-2',
+        { remaining: 0, depleted: true, placementSignature: getPlacementSignature({ id: 'S01-berry-bush', kind: 'resource', sceneId: 'S01' }) }
+      ]]
+    });
+    const snapshot = capture(host, makeStreamedChunk({
+      placements: [{ id: 'S01-berry-bush', kind: 'resource', sceneId: 'S01' }]
+    }));
+    const bush = snapshot.resourceNodes.find(entry => entry.id === 'S01-berry-bush-2');
+    expect(bush, '派生 id 资源节点状态不得被丢弃').toBeTruthy();
+  });
+
+  it('live 实体的派生 id 仍按模板回退匹配（既有行为不回归）', () => {
+    const capture = loadCaptureStreamedChunkState();
+    const host = makeStreamedChunkHost({
+      entities: [{
+        id: 'S01-first-wolf-1',
+        placementId: 'S01-first-wolf-1',
+        getComponent: name => {
+          if (name === 'transform') return { position: { x: 8178, y: 4002 } };
+          if (name === 'stats') return { hp: 28 };
+          return null;
+        }
+      }]
+    });
+    const snapshot = capture(host, makeStreamedChunk());
+    const wolf = snapshot.placementStates.find(entry => entry.id === 'S01-first-wolf-1');
+    expect(wolf).toBeTruthy();
+    expect(wolf.state.hp).toBe(28);
+  });
+});
+
+describe('战斗中传送点抑制（isCombatActive 守卫）', () => {
+  function makeBindingsSystem({ combat = false } = {}) {
+    const fired = [];
+    const system = new SceneTriggerBindingSystem({
+      triggerSystem: {
+        getById: id => ({ id, when: { type: id.includes('interact') ? 'interact' : 'enter' } }),
+        hasFiredOnce: () => false,
+        fireById: triggerId => { fired.push(triggerId); return true; },
+        fire: (eventId, payload) => { fired.push(eventId); return { ok: true }; }
+      },
+      getPlayer: () => ({ getComponent: name => name === 'transform' ? { position: { x: 500, y: 400 } } : null }),
+      isCombatActive: () => combat
+    });
+    system.setBindings([
+      { type: 'trigger', id: 'b-travel', triggerId: 'trg-travel-enter', sceneId: 'S01', x: 500, y: 400, radius: 80, travel: { sceneId: 'S02' } },
+      { type: 'trigger', id: 'b-plain', triggerId: 'trg-plain-enter', sceneId: 'S01', x: 540, y: 400, radius: 80 }
+    ]);
+    return { system, fired };
+  }
+
+  it('战斗中：travel 绑定不触发传送、光圈锚点不含传送点（非 travel 触发器照常）', () => {
+    const { system, fired } = makeBindingsSystem({ combat: true });
+    system.update();
+    // 传送点被抑制；普通触发器不受战斗守卫影响
+    expect(fired).toEqual(['trg-plain-enter']);
+    const anchors = system.getGroundMarkerAnchors();
+    expect(anchors).toEqual([]);
+  });
+
+  it('脱战后恢复：传送点重新触发，光圈恢复显示', () => {
+    const { system, fired } = makeBindingsSystem({ combat: false });
+    system.update();
+    expect(fired.length).toBe(2);
+    const anchors = system.getGroundMarkerAnchors();
+    expect(anchors.length).toBe(1); // 只有 travel 绑定绘制传送点光圈
+  });
+
+  it('战斗中 interact 型传送点不出现在交互候选', () => {
+    const system = new SceneTriggerBindingSystem({
+      triggerSystem: {
+        getById: id => ({ id, when: { type: 'interact' } }),
+        hasFiredOnce: () => false,
+        fireById: () => true,
+        fire: () => ({ ok: true })
+      },
+      getPlayer: () => ({ getComponent: name => name === 'transform' ? { position: { x: 500, y: 400 } } : null }),
+      isCombatActive: () => true
+    });
+    system.setBindings([
+      { type: 'trigger', id: 'b-travel-i', triggerId: 'trg-travel-i', sceneId: 'S01', x: 500, y: 400, radius: 80, travel: { sceneId: 'S02' }, prompt: '传送' }
+    ]);
+    expect(system.listInteractCandidates()).toEqual([]);
+  });
+});

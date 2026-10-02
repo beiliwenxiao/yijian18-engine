@@ -1,0 +1,141 @@
+# 迁移方案论证：单一权威存档文档（SDD）
+
+> 状态：论证稿（v1，2026-10-03）；阶段 0 已交付（回归测试 + 硬规则）
+> 目标：回答「存档能否收敛为单一纯数据文档、任务系统能否退化为勾选器」，给出可行路径与代价。
+
+---
+
+## 零、架构硬规则（阶段 0 交付，全部功能必须遵守）
+
+以下规则来自 2026-10 存档缺陷（rollbackUnavailable / meta 丢失 / 狼复活 / 诊断失明）的根因总结，
+回归测试钉在 `test/saveSystemRegression.test.js`：
+
+1. **采集函数必须纯**。capture/serialize 路径上禁止出现持久化类守卫（如「玩家必须在可加载格」）、
+   业务副作用与状态修改。守卫属于**保存入口**（决定「要不要写档」），不属于「如何读状态」。
+   同一采集函数服务保存与回滚两种语义时，回滚语义必须跳过守卫（`snapshotMeta.label === 'rollback'`）。
+2. **跨层 meta 透传逐跳核对**。给采集链新增任何包装函数/中转对象时，meta 参数必须显式透传；
+   禁止写 `() => delegate()` 这类丢参包装。测试钉：SnapshotManager.capture → provider.snapshot(meta)
+   → setStateProvider 包装 → scene.captureSaveState 全链。
+3. **id 匹配必须走统一工具**。count 模板派生 id（`base-N`，如 `S01-first-wolf-1`）的匹配禁止裸
+   `Map.has(id)` / `find(p => p.id === id)`，必须走带派生回退的统一工具
+   （场景层 `resolveChunkPlacement`、运行时 `_findPlacement`）。新代码出现 id 匹配时先找统一工具。
+4. **回滚语义显式标记**。所有回滚用途的 capture 必须携带 `label: 'rollback'`；诊断错误
+   （rollbackUnavailable 等）必须携带底层 errors 明细，禁止吞错后只留一句笼统文案。
+5. **存档链新增行为时先看 `test/saveSystemRegression.test.js`**——修改
+   SnapshotManager / SaveGameService / captureSceneSaveState / captureStreamedChunkState /
+   SceneTriggerBindingSystem 前，先让该文件在你的改动上通过。
+
+
+## 一、现状事实
+
+当前一份产品存档是**三层嵌套的采集树**（各层由不同宿主持有、各自实现 capture/validate/restore）：
+
+```
+SnapshotManager（SaveGameService.manager）
+└─ data.game                       ← 唯一 provider「game」= scene.captureSaveState()
+   ├─ player{id,name,transform,stats,inventory,equipment}   (BaseGameSceneSetup.js:546-580)
+   ├─ tutorial / dialogue
+   ├─ authority                    ← GameSceneRuntime 的 authoritySnapshotService
+   │  ├─ stateRevisions / logicalClock / rngState / operationLedger / lastEventSequence
+   │  └─ serviceStates             ← AuthoritySnapshotService（第三层）
+   │     ├─ eventJournal           (GameSceneRuntime.js:210)
+   │     ├─ quests                 (BaseGameSceneBehaviors.js:302)  ← {schemaVersion:2, taskGraph, actors}
+   │     └─ campaignContent        (SanguoGameLoaderCoordinator.js:116) ← {blackboard, triggers}
+   └─ scene                        ← 场景运行态
+      └─ worldStreaming → chunks[] → providers.demoDynamic → {placementStates, resourceNodes, …}
+```
+
+关键事实：
+
+1. **任务状态已经是纯数据**。'quests' 段 = `{schemaVersion, definitionRevision, taskGraph, actors}`（QuestTransactionService.js:580-589）。运行态只是 `_states` Map，勾选由命令（QUEST_COMMANDS）驱动，读档后 reconcileTaskFacts 补喂合成事件对账。**用户的「任务就是清单」模型在数据层面已经成立**——问题只在它被埋在第三层 serviceStates 里，且勾选的触发、对账、快照分别由三处代码各自实现。
+2. **Blackboard 已经是单文档雏形**（Blackboard.js:24-104 扁平 _vars + serialize 浅拷贝），且 BaseGameSceneSetup.js:636-41 已有 `duplicateAuthorityState` 校验强制剧情状态只存 authority 段——收敛方向在既有架构里已有先例。
+3. **恢复顺序存在三处各自的约定**：SnapshotManager 按 provider 插入序（SnapshotManager.js:257，失败逆序回滚）；AuthoritySnapshotService 有固定 participants 序（stateRevisions→clock→rng→ledger→events→serviceStates，AuthoritySnapshotService.js:128-135）；场景层 _applyValidatedSaveState 又有 player→authority→content→dialogue→scene 序（BaseGameSceneSetup.js:795-841）。**同一份文档被三套顺序规则切开**。
+
+## 二、病根：读写权分散（拉模式）
+
+每个系统自己实现 serialize/restore/validate/回滚，SnapshotManager 只做聚合与原子性。过去一周的四个缺陷全部是这个模式的必然产物：
+
+| 缺陷 | 病根 |
+|---|---|
+| rollbackUnavailable | 采集函数混入持久化守卫（captureSceneSaveState 同时服务保存与回滚两种语义） |
+| meta 丢失 | 跨层透传经过 6 层包装函数，任一跳丢参数即静默失效（setStateProvider 那拍） |
+| 狼复活 | id 匹配规则在每个环节各写一遍（placementById.has 没抄派生回退） |
+| 结局检查点 | 同一语义的 id（preEnding checkpoint）被硬编码在一处调用点 |
+
+规律：**每当「写数据的权利」分散，语义就必然分叉**。拉模式下每个新系统都要重写一遍采集/恢复/校验/回滚四件套，每份实现都是新的耦合面——这不是哪个系统写得差，是模式本身在产生 bug。
+
+## 三、目标架构：单一权威存档文档（SDD）
+
+### 3.1 模型
+
+存档 = **一份带版本化 schema 的纯数据文档**，形如：
+
+```jsonc
+{
+  "schemaVersion": 3,
+  "campaign": { "id": "sanguo-zhangjiao-s01-s14", "revision": 7 },
+  "player":   { "identity": {}, "transform": {}, "stats": {}, "inventory": {}, "equipment": {} },
+  "world":    { "currentCell": {"col":6,"row":5}, "chunks": { "S01": {…}, "S02": {…} } },
+  "quests":   { "definitionsRevision": 7,
+                "tasks": { "task.s01.survival": { "status": "completed", "objectives": { "gather.wood": {"done":3,"need":3} } }, … },
+                "actors": { … } },
+  "narrative":{ "blackboard": {…}, "triggers": {…} },   // 现 campaignContent
+  "clock":    { "logical": 0, "rng": {}, "ledger": {}, "eventSeq": 0 }
+}
+```
+
+原则：
+
+1. **文档只有数据，没有行为**。任何函数（守卫、签名、id 匹配）不得出现在采集路径上。
+2. **读写收敛到文档节点**：系统不再 export serialize/restore，改为声明「我消费/产出文档的哪些节点」。文档由唯一的 SddStore 持有，系统经 `store.getNode('quests.tasks.<id>')` / `store.patchNode(...)` 读写，patch 全部走同一入口（天然可校验、可审计、可回滚）。
+3. **任务系统退化为勾选器**：只订阅事实事件流（`fact.committed` —— 由权威事务/命令在提交后发布），reducer 是纯函数 `(taskNode, factEvent) => taskNode'`。它不再知道「狼是什么、木头怎么来」，只认「gather.wood +1」「enemy.dead:S01-first-wolf」这类事实。reconcileTaskFacts 变成「回放事实日志」而非现状的特判补喂。
+4. **原子性由文档提交保证**：现在的 SnapshotManager.validate→restore→回滚机制整体保留，但操作对象从「N 个 provider 的散装 section」变为「一份文档的一次版本跃迁」。回滚 = 换回上一版文档引用（文档不可变/写时复制），不再需要逆序逐 provider 回滚——**本周的 rollbackUnavailable 问题在模型层面不存在**。
+5. **系统重建 = 文档投影**：读档时不再「逐系统 restore」，而是「写完文档 → 各系统订阅的节点变更事件自然到达 → 系统按数据重建运行时视图」（placement 生成、尸体重建都是视图重建，视图重建失败不影响文档，只需重放）。
+
+### 3.2 为什么可行（而非空中楼阁）
+
+- **数据已经存在**：'quests' 段就是勾选树；campaignContent.blackboard 就是叙事状态文档；worldStreaming chunks 已是分节点结构。SDD 第一版 = 把现有三层的形状**拍平换壳**，不改字段语义。
+- **收敛先例已立**：duplicateAuthorityState 校验已经在强制「叙事状态只存一处」；Blackboard 已是单容器。SDD 只是把同一纪律推广到 player/world/quests。
+- **原子机制可平移**：SnapshotManager 的 validate/rollback 骨架、operationLedger/rng/clock 的恢复序，原样保留为 SDD 的 `clock` 与提交器内部实现。
+- **兼容路径存在**：migrate 机制（SnapshotManager.migrate）已支持 v1→N 升级链，旧档一次迁移到 SDD。
+
+### 3.3 迁移路线（四阶段，每阶段可独立验证、可回退）
+
+**阶段 0：钉死现状（1-2 天）**
+- 把本周四缺陷的回归场景写成永久测试（rollback 豁免、派生 tombstone 往返、拒存守卫不误伤、meta 逐跳透传）。
+- 架构硬规则进 steering：采集函数禁止混业务守卫；跨层透传逐跳核对；派生 id 匹配必须走统一工具。
+- 产出：净基线。后续任何改动先跑这组测试。
+
+**阶段 1：立 SddStore 骨架（2-4 天）**
+- 新增 `src/core/snapshot/SddStore.js`：不可变文档 + 版本号 + 节点级 patch + 订阅。schemaVersion=3 空壳 + JSON Schema 校验。
+- SnapshotManager 增加一条旁路：捕获时**同时**产出 SDD 投影（从现有 data 结构纯函数映射，零业务逻辑），读档时先 migrate 到 v3 再走旧链路。**此阶段双写不双读**，产物仅用于校验投影等价性（等价性测试：随机操作序列下 v1 直读 ≡ v1→v3 迁移读）。
+- 产出：文档形状被 100% 测试钉住。
+
+**阶段 2：任务系统先行切换（3-5 天）**
+- quests 段成为第一个原生 SDD 节点：QuestSystem 改为订阅 `fact.committed` 的勾选器，_states Map 变成 `quests.tasks` 节点的内存投影；勾选 reducer 纯函数化。
+- reconcileTaskFacts 改写为事实日志回放。
+- 读档：quests 节点写回 → 任务视图重建。旧 quests 快照 schema（v2）保留 migrate。
+- 产出：**用户模型第一次在真实链路成立**——任务=文档节点，完成=打勾，与游戏功能零耦合。验证方式：任务全链 E2E（s01.survival→s02.rescue→s02.summons）+ 任意时点存读往返。
+
+**阶段 3：全量节点迁移（按风险从低到高，1-2 周）**
+顺序：campaignContent(blackboard/triggers) → player/tutorial/dialogue → scene/worldStreaming → clock/ledger。
+每迁移一个节点：旧 serialize 改为「读旧档时 migrate」+「写新档时产出节点」；该节点业务代码改为节点订阅。worldStreaming 最重（placementStates/resourceNodes/deathDrops…），放最后，且期间旧 captureStreamedChunkState 只充当 migrate 源。
+- 产出：SnapshotManager 退化为 SDD 的存储适配器（IndexedDB 读写 + migrate 链），三层嵌套消失。
+
+**阶段 4：清理（2-3 天）**
+- 删除各系统 serialize/restore 死代码；duplicateAuthorityState 类校验被 schema 取代；steering 文档更新。
+
+### 3.4 代价与风险
+
+| 风险 | 评估 | 缓解 |
+|---|---|---|
+| 双写期等价性偏差 | 中——节点语义微妙（如 placementSignature 与 canonical 修订联动） | 等价性模糊测试（随机操作序列）；偏差即测试失败，不静默 |
+| 任务事实化后粒度不足 | 中——现有目标有的依赖运行时查询（如「背包中」类） | 事实事件由权威事务提交点发布（已有 prepareConsumeEvent 钩子位），查询型目标改为提交时快照进事实 |
+| 迁移中途崩溃的档 | 低——migrate 链单向，回退=旧代码读旧档（双写期一直保留旧链路） | 阶段 3 结束前任何 release 都保持双链路 |
+| 工作量 | 全程约 2-4 周有效工时 | 阶段独立可交付，可穿插日常修 bug；阶段 2 完成即可获得最大痛点（任务）的收益 |
+
+**明确不做的事**：不重写业务系统；不改 playtime 内的命令/事务协议（operationLedger 原样进 clock 节点）；不动编辑器写盘的 canonical 数据（那是另一份「文档」，未来可与 SDD 同构，但不在本期）。
+
+## 四、结论
+
+用户的「清单+打勾」「存档=数据集合」模型在本引擎的数据层面**已经基本成立**（quests 段就是勾选树，blackboard 就是叙事文档），未成立的只是「读写权收敛」——正是过去一周全部缺陷的共同病根。SDD 迁移不引入新范式，只是把已经存在的收敛纪律（duplicateAuthorityState、Blackboard 单容器、migrate 链）推广到全档，并以任务系统为第一个受益者。建议按阶段 0→2 启动，阶段 2 交付后复盘再决定阶段 3 的节奏。
