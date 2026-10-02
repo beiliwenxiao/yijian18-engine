@@ -1156,7 +1156,7 @@
     {
       "aiType": "aggressive",
       "id": "enemy.s02_yellow_turban_soldier",
-      "imageId": "s02.enemy.soldier",
+      "imageId": "s03.unit.yellowTurbanSoldier",
       "level": 1,
       "name": "黄巾兵",
       "sprite": {
