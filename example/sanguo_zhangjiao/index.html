@@ -1758,7 +1758,7 @@
                 );
             }
             const windowElapsed = currentTime - profile.windowStartedAt;
-            if (windowElapsed < 1000) return;
+            if (windowElapsed < 60000) return;
             const average = name => Number(((profile.sums[name] || 0) / Math.max(1, profile.frameCount)).toFixed(2));
             const maximum = name => Number((profile.maximums[name] || 0).toFixed(2));
             const cadence = profile.cadence;
@@ -1770,7 +1770,7 @@
                 : 0;
             const effectiveFps = Number((profile.frameCount * 1000 / Math.max(1, windowElapsed)).toFixed(1));
             const rafFps = Number((cadence.rafCallbacks * 1000 / Math.max(1, windowElapsed)).toFixed(1));
-            console.info('[DDScene][FrameProfile][1秒汇总]', {
+            console.info('[DDScene][FrameProfile][60秒汇总]', {
                 sceneId: targetScene?.currentSceneId || targetScene?.name,
                 frames: profile.frameCount,
                 fps: effectiveFps,
