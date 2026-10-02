@@ -499,7 +499,7 @@ export class BaseGameSceneSetup extends Scene {
   }
 
   /** 采集可序列化的通用游戏状态，供 SnapshotManager 原子存档。 */
-  captureSaveState({ includeAuthority = true } = {}) {
+  captureSaveState({ includeAuthority = true, snapshotMeta = null } = {}) {
     const player = this.playerEntity;
     const transform = player?.getComponent?.('transform');
     const stats = player?.getComponent?.('stats');
@@ -576,7 +576,7 @@ export class BaseGameSceneSetup extends Scene {
         ? this.sceneRuntime?.authoritySnapshotService?.capture?.(checkpointMetadata) || null
         : undefined,
       ...(includeAuthority ? {} : { content: contentState }),
-      scene: this.captureSceneSaveState()
+      scene: this.captureSceneSaveState({ snapshotMeta })
     }));
     const validation = this.validateSaveState(snapshot, { requireAuthority: includeAuthority });
     if (!validation.ok) {
@@ -701,7 +701,7 @@ export class BaseGameSceneSetup extends Scene {
 
     let rollbackSnapshot;
     try {
-      rollbackSnapshot = this.captureSaveState({ includeAuthority: restoreAuthority });
+      rollbackSnapshot = this.captureSaveState({ includeAuthority: restoreAuthority, snapshotMeta: { label: 'rollback' } });
     } catch (error) {
       return {
         ok: false,

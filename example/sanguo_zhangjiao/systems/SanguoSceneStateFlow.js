@@ -44,7 +44,7 @@ export class SanguoSceneStateFlow extends SceneFlowCoordinator {
   }
 }
 
-function captureSceneSaveState() {
+function captureSceneSaveState({ snapshotMeta = null } = {}) {
   const pendingPlacementState = this.context.services.placements?.getPendingStateSnapshot?.()
     || { resourceNodes: [], placementStates: [] };
   const resourceNodeStates = new Map(pendingPlacementState.resourceNodes);
@@ -92,7 +92,11 @@ function captureSceneSaveState() {
     }));
   }
   const hasWorldStreaming = !!this.worldStreamingManager;
-  if (hasWorldStreaming) {
+  // 位置守卫只属于「保存」语义：拒绝把玩家在无场景格的坏状态固化进存档。
+  // 回滚快照（SnapshotManager.restore / restoreSaveState 失败复原）只存内存、绝不持久化，
+  // 且采集时刻玩家可能仍在初始局部坐标（读档流程尚未恢复世界坐标），换算结果无意义。
+  const isRollbackCapture = snapshotMeta?.label === 'rollback';
+  if (hasWorldStreaming && !isRollbackCapture) {
     // 玩家进入无场景世界格（传送目标非法等）时，worldStreamingState.current 会指向
     // 没有可加载场景的格子——读档时 validateSerialized 必然失败并把玩家踢回标题。
     // 与 WorldStreamingManager.validateSerialized 的 missingCurrentChunk 同一谓词：

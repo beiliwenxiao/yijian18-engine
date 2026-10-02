@@ -95,7 +95,7 @@ export class SnapshotManager {
 
     for (const [key, provider] of this.providers) {
       try {
-        data[key] = provider.snapshot();
+        data[key] = provider.snapshot(meta);
       } catch (e) {
         errors.push({
           code: e?.code || 'snapshotFailed',
@@ -244,9 +244,11 @@ export class SnapshotManager {
     // 回滚快照：恢复失败时用它复原
     const rollback = this.capture({ label: 'rollback' });
     if (!rollback.ok) {
+      // 采集失败必须暴露具体 provider 与原因，否则只能看到「无法采集回滚快照」无法定位。
+      console.error('SnapshotManager: 回滚快照采集失败，已放弃恢复', rollback.errors);
       return {
         ok: false,
-        errors: [{ code: 'rollbackUnavailable', path: '', message: '无法采集回滚快照，已放弃恢复' }]
+        errors: [{ code: 'rollbackUnavailable', path: '', message: '无法采集回滚快照，已放弃恢复', errors: rollback.errors }]
       };
     }
 

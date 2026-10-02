@@ -1266,7 +1266,7 @@ export class DataDrivenPrologueScene extends BaseGameScene {
           ? currentSceneId
           : (loadedSceneId || worldResult?.chunks?.find(chunk => chunk?.sceneData)?.sceneId || null);
         return {
-          saveState: this.captureSaveState({ includeAuthority: false }),
+          saveState: this.captureSaveState({ includeAuthority: false, snapshotMeta: { label: 'rollback' } }),
           worldResult,
           regionIndex: this._currentRegionIndex,
           restoreSceneId
@@ -1678,8 +1678,8 @@ export class DataDrivenPrologueScene extends BaseGameScene {
   }
 
   /** Demo 专属运行状态由显式 coordinator 组合；玩家/任务/黑板仍由 BaseGameScene 统一保存。 */
-  captureSceneSaveState() {
-    return this.sanguoSceneStateFlow.captureSceneSaveState();
+  captureSceneSaveState(options = {}) {
+    return this.sanguoSceneStateFlow.captureSceneSaveState(options);
   }
 
   restoreSceneSaveState(data = {}) {

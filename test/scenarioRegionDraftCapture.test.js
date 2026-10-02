@@ -24,7 +24,7 @@ function extractMethod(source, signature) {
 /** 直接从场景源码提取 captureSaveState，避免引入整套 Scene 依赖图。 */
 function loadCaptureSaveState() {
   const source = read('example/sanguo_zhangjiao/scenes/BaseGameSceneSetup.js');
-  const methodSource = extractMethod(source, '  captureSaveState({ includeAuthority = true } = {}) {');
+  const methodSource = extractMethod(source, '  captureSaveState({ includeAuthority = true, snapshotMeta = null } = {}) {');
   const factory = new Function(
     'CAMPAIGN_ID',
     'SAVE_SCHEMA_VERSION',

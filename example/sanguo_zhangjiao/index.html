@@ -1295,7 +1295,7 @@
                     ].filter(Boolean);
                     if (readyTasks.length) await Promise.all(readyTasks);
                     saveGames.setStateProvider({
-                        capture: () => scene.captureSaveState(),
+                        capture: meta => scene.captureSaveState({ snapshotMeta: meta }),
                         validate: data => scene.validateSaveState(data),
                         restore: data => scene.restoreSaveState(data)
                     });
