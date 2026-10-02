@@ -32,7 +32,8 @@ export class SaveGameService {
     autoSlotPrefix = 'autosave',
     storage = null,
     useIndexedDB = true,
-    now = null
+    now = null,
+    documentProjector = null
   } = {}) {
     this.gameId = gameId;
     this.slotCount = Math.min(MAX_MANUAL_SAVE_SLOTS, Math.max(1, Number(slotCount) || 1));
@@ -42,7 +43,11 @@ export class SaveGameService {
       ? new IndexedDBAdapter({ prefix: this._storagePrefix() })
       : new LocalStorageAdapter({ prefix: this._storagePrefix() }));
     this._isIndexedDB = this.storage instanceof IndexedDBAdapter;
-    this.manager = new SnapshotManager({ storage: this.storage, now: now || (() => Date.now()) });
+    this.manager = new SnapshotManager({
+      storage: this.storage,
+      now: now || (() => Date.now()),
+      documentProjector
+    });
     this._providerOff = null;
     this._autoSaveExecutor = null;
     this._checkpointLoadExecutor = null;

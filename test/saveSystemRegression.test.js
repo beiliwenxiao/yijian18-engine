@@ -1,10 +1,11 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { SnapshotManager } from '../src/core/snapshot/SnapshotManager.js';
 import { SaveGameService } from '../src/core/snapshot/SaveGameService.js';
 import { LocalStorageAdapter } from '../src/core/snapshot/LocalStorageAdapter.js';
+import { SDD_SCHEMA_VERSION, projectSnapshotToSdd, projectSddToSnapshot, sddSemanticEquals } from '../src/core/snapshot/SddProjection.js';
 import { getPlacementSignature } from '../src/core/scene/ScenePlacementRuntime.js';
 import { SceneTriggerBindingSystem } from '../src/core/scene/SceneTriggerBindingSystem.js';
 import { SanguoSceneStateFlow } from '../example/sanguo_zhangjiao/systems/SanguoSceneStateFlow.js';
@@ -101,6 +102,83 @@ function makeStreamedChunk({ placements = [{ id: 'S01-first-wolf', kind: 'enemy'
     placements
   };
 }
+
+describe('存档回归：SDD 双写（双写不双读，阶段 1c）', () => {
+  function makeGamePayload() {
+    return {
+      player: { id: 'player-1', hp: 12 },
+      currentSceneId: 'S01',
+      authority: {
+        snapshotSchemaVersion: 2,
+        logicalClock: { logical: 12.5 },
+        serviceStates: {
+          quests: { schemaVersion: 2, taskGraph: { nodes: {} }, actors: [] },
+          campaignContent: { blackboard: { storyState: { currentSceneId: 'S01' } }, triggers: { version: 1, records: [] } }
+        }
+      },
+      scene: { campfireLit: true }
+    };
+  }
+
+  it('注入 documentProjector：saveAsync 产出的快照携带 snapshot.sdd（schemaVersion=3 + 等价文档）', async () => {
+    const service = makeService();
+    service.setStateProvider({ capture: () => makeGamePayload(), restore: () => ({ ok: true }) });
+    const projectorCalls = [];
+    service.manager.documentProjector = snapshot => {
+      projectorCalls.push(snapshot);
+      return { schemaVersion: SDD_SCHEMA_VERSION, document: projectSnapshotToSdd(snapshot) };
+    };
+    const saved = await service.saveAsync(1);
+    expect(saved.ok).toBe(true);
+    expect(projectorCalls.length).toBeGreaterThanOrEqual(1);
+    expect(saved.snapshot.sdd.schemaVersion).toBe(SDD_SCHEMA_VERSION);
+    expect(saved.snapshot.sdd.document.quests.schemaVersion).toBe(2);
+    // 双写等价：SDD 逆投影 ≡ 旧 data.game（语义深相等）
+    const roundtrip = projectSddToSnapshot(saved.snapshot.sdd.document);
+    expect(sddSemanticEquals(roundtrip, saved.snapshot.data.game)).toBe(true);
+    if (!sddSemanticEquals(roundtrip, saved.snapshot.data.game)) {
+      console.log('v1:', JSON.stringify(saved.snapshot.data.game));
+      console.log('rt:', JSON.stringify(roundtrip));
+    }
+  });
+
+  it('未注入 documentProjector：快照不带 sdd 字段（引擎默认零侵入）', async () => {
+    const service = makeService();
+    service.setStateProvider({ capture: () => makeGamePayload(), restore: () => ({ ok: true }) });
+    const saved = await service.saveAsync(1);
+    expect(saved.ok).toBe(true);
+    expect(saved.snapshot.sdd).toBeUndefined();
+  });
+
+  it('投影抛错：saveAsync 仍成功、sdd 缺失、只告警（投影失败不阻断产品存档）', async () => {
+    const service = makeService();
+    service.setStateProvider({ capture: () => makeGamePayload(), restore: () => ({ ok: true }) });
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    service.manager.documentProjector = () => { throw new Error('projector boom'); };
+    const saved = await service.saveAsync(1);
+    expect(saved.ok).toBe(true);
+    expect(saved.snapshot.sdd).toBeUndefined();
+    expect(warnSpy).toHaveBeenCalled();
+    warnSpy.mockRestore();
+  });
+
+  it('读档链不消费 sdd 字段：带 sdd 的快照 load 行为与不带一致', async () => {
+    const service = makeService();
+    const restored = [];
+    service.setStateProvider({
+      capture: () => makeGamePayload(),
+      restore: data => { restored.push(data); return { ok: true }; }
+    });
+    await service.saveAsync(1);
+    service.manager.documentProjector = snapshot => ({
+      schemaVersion: SDD_SCHEMA_VERSION,
+      document: projectSnapshotToSdd(snapshot)
+    });
+    const loaded = await service.loadAsync(1);
+    expect(loaded.ok).toBe(true);
+    expect(restored[0]).toEqual(makeGamePayload());
+  });
+});
 
 describe('存档回归：capture meta 逐跳透传（rollbackUnavailable 修复）', () => {
   it('SnapshotManager.capture 把 meta 传给 provider.snapshot', () => {

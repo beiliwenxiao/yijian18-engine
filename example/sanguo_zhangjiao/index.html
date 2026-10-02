@@ -974,6 +974,7 @@
         import { PlayerInfoPanel } from '../../src/ui/PlayerInfoPanel.js';
         import { ItemIconRenderer } from '../../src/ui/ItemIconRenderer.js';
         import { SaveGameService } from '../../src/core/snapshot/SaveGameService.js';
+        import { SDD_SCHEMA_VERSION, projectSnapshotToSdd } from '../../src/core/snapshot/SddProjection.js';
         import { CanvasDisplayScaler } from '../../src/core/CanvasDisplayScaler.js';
         import { normalizePresentationProfile } from '../../src/core/PresentationProfile.js';
         import presentationProfileData from './config/presentation.json' with { type: 'json' };
@@ -1035,7 +1036,13 @@
             gameId: 'sanguo_zhangjiao',
             slotCount: 100,
             migrateLegacyAutoSlot: false,
-            useIndexedDB: true  // 使用 IndexedDB 存储大型存档
+            useIndexedDB: true,  // 使用 IndexedDB 存储大型存档
+            // SDD 双写（双写不双读）：投影挂在 snapshot.sdd，供后续版本迁移消费。
+            // 投影失败由 SnapshotManager 告警兜底，不阻断产品存档。
+            documentProjector: snapshot => ({
+                schemaVersion: SDD_SCHEMA_VERSION,
+                document: projectSnapshotToSdd(snapshot)
+            })
         });
         shell.saveGames = saveGames;
 

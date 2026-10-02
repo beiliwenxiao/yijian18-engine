@@ -35,6 +35,8 @@ export class SnapshotManager {
    * @param {Object} [config.storage] - 存储适配器，需实现 save/load/remove/has
    * @param {Function} [config.now] - 时间源
    * @param {Object} [config.migrations] - 版本迁移器 { [fromVersion]: (data) => data }
+   * @param {Function|null} [config.documentProjector] - SDD 双写投影 (snapshot) => {schemaVersion, document}；
+   *   双写不双读：投影挂在 snapshot.sdd 供后续版本消费，失败只告警不阻断产品存档。
    */
   constructor(config = {}) {
     /** @type {Map<string, Object>} 参与者：key -> provider */
@@ -42,6 +44,7 @@ export class SnapshotManager {
     this.storage = config.storage || null;
     this.now = config.now || (() => Date.now());
     this.migrations = config.migrations || {};
+    this.documentProjector = typeof config.documentProjector === 'function' ? config.documentProjector : null;
   }
 
   /**
@@ -110,16 +113,23 @@ export class SnapshotManager {
 
     if (errors.length > 0) return { ok: false, errors };
 
-    return {
-      ok: true,
-      errors: [],
-      snapshot: {
-        version: SNAPSHOT_VERSION,
-        createdAt: this.now(),
-        meta: { ...meta },
-        data
-      }
+    const snapshot = {
+      version: SNAPSHOT_VERSION,
+      createdAt: this.now(),
+      meta: { ...meta },
+      data
     };
+    // SDD 双写：投影挂 snapshot.sdd 供后续版本消费（双写不双读）。
+    // 投影失败只告警不阻断产品存档——投影是冗余数据，不是权威路径。
+    if (this.documentProjector) {
+      try {
+        const projection = this.documentProjector(snapshot);
+        if (projection && typeof projection === 'object') snapshot.sdd = projection;
+      } catch (error) {
+        console.warn('SnapshotManager: SDD 双写投影失败（不影响产品存档）', error);
+      }
+    }
+    return { ok: true, errors: [], snapshot };
   }
 
   /**
