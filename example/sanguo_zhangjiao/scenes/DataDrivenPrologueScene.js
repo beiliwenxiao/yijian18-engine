@@ -35,7 +35,7 @@ import { BaseGameScene } from './BaseGameScene.js';
 import { Scene1Terrain } from './Scene1Terrain.js';
 import { mergeShardedProject } from '../../../src/core/projectShards.js';
 import { AtlasRegistry } from '../../../src/core/scene/AtlasRegistry.js';
-import sharedAtlasConfig from '../config/atlases.json';
+import sharedAtlasConfig from '../config/atlases.json' with { type: 'json' };
 import { SceneStreamingRuntime } from '../../../src/core/scene/SceneStreamingRuntime.js';
 import {
   collectManifestUsageAssetIds,

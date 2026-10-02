@@ -227,7 +227,19 @@ async function loadCheckpointAutoSave({ checkpointId } = {}) {
     if (!targetId) return { ok: false, code: 'checkpointIdMissing' };
     await waitForAutoSaveQueueIdle();
     await shell.saveStorageReady;
-    const candidate = (await shell.saveGames.getAutoSlotsAsync())
+    let autoSlots = [];
+    try {
+        autoSlots = await shell.saveGames.getAutoSlotsAsync();
+    } catch (error) {
+        console.error('checkpoint 恢复读取自动存档列表失败', error);
+        return {
+            ok: false,
+            code: 'autoSlotsReadFailed',
+            checkpointId: targetId,
+            errors: [{ code: 'autoSlotsReadFailed', path: 'autosave', message: error?.message || String(error) }]
+        };
+    }
+    const candidate = autoSlots
         .filter(slot => slot.exists && slot.info?.meta?.checkpointId === targetId)
         .sort((a, b) => (Number(b.info?.createdAt) || 0) - (Number(a.info?.createdAt) || 0))[0];
     if (!candidate) return { ok: false, code: 'checkpointNotFound', checkpointId: targetId };

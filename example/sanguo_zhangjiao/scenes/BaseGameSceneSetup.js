@@ -37,7 +37,7 @@
 
 import { Scene } from '../../../src/core/Scene.js';
 import { normalizePresentationProfile } from '../../../src/core/PresentationProfile.js';
-import presentationProfileData from '../config/presentation.json';
+import presentationProfileData from '../config/presentation.json' with { type: 'json' };
 import { EntityFactory } from '../../../src/ecs/EntityFactory.js';
 import { InputManager } from '../../../src/core/InputManager.js';
 import UIClickHandler from '../../../src/core/UIClickHandler.js';

@@ -18,7 +18,7 @@
  */
 
 import { SceneDataExporter } from './SceneDataExporter.js';
-import sharedAtlasConfig from '../example/sanguo_zhangjiao/config/atlases.json';
+import sharedAtlasConfig from '../example/sanguo_zhangjiao/config/atlases.json' with { type: 'json' };
 
 const DEFAULT_ATLAS_PROJECT_PATH = 'example/sanguo_zhangjiao/game.project.json';
 

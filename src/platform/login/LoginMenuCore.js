@@ -263,7 +263,17 @@ async function openSystemMenu() {
     } else {
         loginScreen.classList.remove('in-game');
     }
-    await shell.refreshContinueGameAction();
+    // 存储读取失败不得中断菜单初始化（否则登录界面残缺），仅禁用「继续游戏」并给出提示。
+    try {
+        await shell.refreshContinueGameAction();
+    } catch (error) {
+        console.error('读取存档列表失败', error);
+        const continueButton = document.getElementById('login-continue');
+        if (continueButton) {
+            continueButton.disabled = true;
+            continueButton.title = '存档列表读取失败';
+        }
+    }
     setLoginMessage('');
     // 打开时 Start 正处于按下状态（menuStartWasDown=true）：松开前不会被误判为
     // "再按关闭"；关闭由下一次 START 按下边沿触发，与按压时长无关。

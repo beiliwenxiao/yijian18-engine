@@ -976,7 +976,7 @@
         import { SaveGameService } from '../../src/core/snapshot/SaveGameService.js';
         import { CanvasDisplayScaler } from '../../src/core/CanvasDisplayScaler.js';
         import { normalizePresentationProfile } from '../../src/core/PresentationProfile.js';
-        import presentationProfileData from './config/presentation.json';
+        import presentationProfileData from './config/presentation.json' with { type: 'json' };
         import { PortraitsConfig } from './data/PortraitsConfig.js';
         import { SelectedCharacterStore } from './data/SelectedCharacterStore.js';
         import { createSaveStorageCore } from '../../src/platform/save/SaveStorageCore.js';

@@ -532,15 +532,30 @@ function startGameFromSelection(mode, selection) {
 }
 
 document.getElementById('login-continue').addEventListener('click', async () => {
-    const selection = await refreshContinueGameAction();
+    let selection = null;
+    try {
+        selection = await refreshContinueGameAction();
+    } catch (error) {
+        console.error('读取存档列表失败', error);
+        shell.setLoginMessage('存档列表读取失败，请重试。');
+        return;
+    }
     if (!selection) {
         shell.setLoginMessage('没有可读取的有效存档，请选择 开始游戏。');
         return;
     }
-    const [autoSlots, manualSlots] = await Promise.all([
-        shell.saveGames.getAutoSlotsAsync(),
-        shell.saveGames.listExistingSlotsAsync()
-    ]);
+    let autoSlots = [];
+    let manualSlots = [];
+    try {
+        [autoSlots, manualSlots] = await Promise.all([
+            shell.saveGames.getAutoSlotsAsync(),
+            shell.saveGames.listExistingSlotsAsync()
+        ]);
+    } catch (error) {
+        console.error('读取存档列表失败', error);
+        shell.setLoginMessage('存档列表读取失败，请重试。');
+        return;
+    }
     const entry = selection.kind === 'auto'
         ? autoSlots.find(slot => slot.index === selection.index)
         : manualSlots.find(slot => slot.index === selection.index);
@@ -549,7 +564,15 @@ document.getElementById('login-continue').addEventListener('click', async () => 
 });
 
 document.getElementById('login-read-save').addEventListener('click', async () => {
-    if (!await shell.saveGames.hasAnyAsync()) {
+    let hasAny = false;
+    try {
+        hasAny = await shell.saveGames.hasAnyAsync();
+    } catch (error) {
+        console.error('读取存档列表失败', error);
+        shell.setLoginMessage('存档列表读取失败，请重试。');
+        return;
+    }
+    if (!hasAny) {
         closeSavePicker({ restoreFocus: false });
         shell.setLoginMessage('存档为空，请选择 开始游戏。');
         return;

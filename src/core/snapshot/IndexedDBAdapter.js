@@ -131,25 +131,25 @@ export class IndexedDBAdapter {
     }
   }
 
+  /**
+   * 读取全部存档记录。存储不可用或事务失败时抛出，让调用方（存档列表 UI）
+   * 得以显示明确错误，而不是静默返回空列表被误判为「没有存档」。
+   */
   async listAllSlots() {
-    try {
-      const database = await this._getDb();
-      return await new Promise(resolve => {
-        const transaction = database.transaction(this.storeName, 'readonly');
-        const request = transaction.objectStore(this.storeName).getAll();
-        request.onsuccess = () => resolve((request.result || [])
-          .filter(record => record.key.startsWith(`${this.prefix}:`))
-          .map(record => ({
-            key: record.key,
-            slot: record.key.slice(this.prefix.length + 1),
-            snapshot: record.snapshot,
-            updatedAt: record.updatedAt
-          })));
-        request.onerror = () => resolve([]);
-      });
-    } catch {
-      return [];
-    }
+    const database = await this._getDb();
+    return await new Promise((resolve, reject) => {
+      const transaction = database.transaction(this.storeName, 'readonly');
+      const request = transaction.objectStore(this.storeName).getAll();
+      request.onsuccess = () => resolve((request.result || [])
+        .filter(record => typeof record?.key === 'string' && record.key.startsWith(`${this.prefix}:`))
+        .map(record => ({
+          key: record.key,
+          slot: record.key.slice(this.prefix.length + 1),
+          snapshot: record.snapshot,
+          updatedAt: record.updatedAt
+        })));
+      request.onerror = () => reject(request.error || new Error('IndexedDB 存档列表读取失败'));
+    });
   }
 }
 
