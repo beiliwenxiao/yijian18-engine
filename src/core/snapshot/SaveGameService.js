@@ -205,6 +205,28 @@ export class SaveGameService {
     })[0];
   }
 
+  /**
+   * 自动存档选槽（含 checkpoint 防覆盖）：
+   * - checkpoint 存档（meta.checkpointId 非空）按最旧轮换正常写入；
+   * - 普通自动存档（定时/切场景）不得覆盖 checkpoint 槽——否则读检查点
+   *   （loadCheckpointAutoSave 按 meta.checkpointId 匹配）会找不到快照或读到
+   *   被覆盖后更旧的 checkpoint，表现为「读取结局前存档失败」「恢复回滚到旧检查点」。
+   * - 全部槽位都是 checkpoint 时，checkpoint 自身按最旧轮换（保留最近 autoSlotCount 个）。
+   */
+  async _selectAutoSlotForSave(meta = {}) {
+    const slots = await this.getAutoSlotsAsync();
+    const empty = slots.find(slot => !slot.exists);
+    if (empty) return empty;
+    const rotation = slots.slice().sort((left, right) => {
+      const timestamp = (Number(left.info?.createdAt) || 0) - (Number(right.info?.createdAt) || 0);
+      return timestamp || left.index - right.index;
+    });
+    const isCheckpointSave = typeof meta?.checkpointId === 'string' && meta.checkpointId.trim() !== '';
+    if (isCheckpointSave) return rotation[0];
+    const nonCheckpoint = rotation.find(slot => !slot.info?.meta?.checkpointId);
+    return nonCheckpoint || rotation[0];
+  }
+
   async listExistingSlotsAsync() {
     const records = await this._allStoredSlots();
     return records
@@ -261,7 +283,7 @@ export class SaveGameService {
   }
 
   async saveAutoAsync(meta = {}) {
-    const slot = await this.getNextAutoSlotAsync();
+    const slot = await this._selectAutoSlotForSave(meta);
     const result = await this._saveSlotAsync(slot.id, {
       gameId: this.gameId,
       kind: 'auto',

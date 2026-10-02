@@ -92,6 +92,23 @@ function captureSceneSaveState() {
     }));
   }
   const hasWorldStreaming = !!this.worldStreamingManager;
+  if (hasWorldStreaming) {
+    // 玩家进入无场景世界格（传送目标非法等）时，worldStreamingState.current 会指向
+    // 没有可加载场景的格子——读档时 validateSerialized 必然失败并把玩家踢回标题。
+    // 与 WorldStreamingManager.validateSerialized 的 missingCurrentChunk 同一谓词：
+    // 保存前拒绝固化这种坏状态，保留上一个有效存档。
+    const playerTransform = this.playerEntity?.getComponent?.('transform');
+    if (playerTransform?.position) {
+      const cell = this.worldStreamingManager.worldToChunk(playerTransform.position.x, playerTransform.position.y);
+      if (!this.worldStreamingManager.getSceneId(cell.col, cell.row)) {
+        const error = new Error(
+          `玩家位于无场景世界格 (${cell.col},${cell.row})，拒绝生成会把读档踢回标题的存档`
+        );
+        error.code = 'playerOutsideLoadableWorldCell';
+        throw error;
+      }
+    }
+  }
   const s11s14State = this.s11s14SceneCoordinator._captureS11S14SceneState();
   if (hasWorldStreaming) s11s14State.vehicleStates = [];
   return {
