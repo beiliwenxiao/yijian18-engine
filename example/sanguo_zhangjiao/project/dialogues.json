@@ -1,9 +1,6 @@
 [
   {
     "id": "dialogue.s01.wake",
-    "presentation": {
-      "boxType": "narration"
-    },
     "nodes": {
       "move": {
         "speaker": "旁白",
@@ -13,6 +10,9 @@
         "speaker": "旁白",
         "text": "寒风卷过龟裂的荒原。你从熄灭的火堆旁醒来，四肢冻得僵硬，远处只有枯草与河水的声响。"
       }
+    },
+    "presentation": {
+      "boxType": "narration"
     },
     "startNode": "start",
     "title": "寒风中醒来"

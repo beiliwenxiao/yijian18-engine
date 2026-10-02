@@ -676,6 +676,7 @@
         "resourceConstructionScore": 0
       },
       "hiddenClues": [],
+      "joinedYellowTurban": false,
       "month": 3,
       "s01Survival": {
         "axeDropped": false,
@@ -711,16 +712,15 @@
         "wolfWeatherCountdownStarted": false,
         "woodGathered": false
       },
+      "s02Rescued": false,
+      "s02SummonsAccepted": false,
+      "s09RefugeeConflict": {
+        "donationCommitted": false
+      },
       "storyTags": [],
       "unlockedScenes": [
         "S01"
-      ],
-      "s02Rescued": false,
-      "s02SummonsAccepted": false,
-      "joinedYellowTurban": false,
-      "s09RefugeeConflict": {
-        "donationCommitted": false
-      }
+      ]
     },
     "warResourceNodeStates": [],
     "warState": {
