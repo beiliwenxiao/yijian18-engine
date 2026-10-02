@@ -49,6 +49,9 @@ export class EndingPresentationView extends UIElement {
     this.busy = false;
     this.currentMusicId = null;
     this.imageCache = new Map();
+    this.notice = null;
+    this.noticeDeadline = 0;
+    this.preSaveCheckpointId = null;
   }
 
   /**
@@ -74,6 +77,9 @@ export class EndingPresentationView extends UIElement {
     this.elapsed = 0;
     this.selectedAction = 0;
     this.busy = false;
+    this.notice = null;
+    this.noticeDeadline = 0;
+    this.preSaveCheckpointId = payload.preSaveCheckpointId || null;
     this.imageCache.clear();
     this.visible = true;
     this._changeMusic(this.ending.musicId || null);
@@ -89,12 +95,36 @@ export class EndingPresentationView extends UIElement {
     this.elapsed = 0;
     this.selectedAction = 0;
     this.busy = false;
+    this.notice = null;
+    this.noticeDeadline = 0;
+    this.preSaveCheckpointId = null;
     this.imageCache.clear();
     this._changeMusic(null, true);
   }
 
   setBusy(value) {
     this.busy = value === true;
+  }
+
+  /**
+   * 在结局视图自身之上显示反馈（错误/图鉴等）。
+   * 场景层提示（_showScreenTip）会被本视图的全屏绘制盖住，必须画进视图内才可见。
+   */
+  showNotice(text, { durationMs = 3200 } = {}) {
+    this.notice = String(text || '');
+    this.noticeDeadline = typeof performance !== 'undefined'
+      ? performance.now() + durationMs
+      : Date.now() + durationMs;
+  }
+
+  _currentNotice() {
+    if (!this.notice) return null;
+    const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
+    if (now > this.noticeDeadline) {
+      this.notice = null;
+      return null;
+    }
+    return this.notice;
   }
 
   update(deltaTime) {
@@ -157,7 +187,45 @@ export class EndingPresentationView extends UIElement {
     else if (this.phase === 'review') this._renderReview(ctx, layout);
 
     this._renderHints(ctx, layout);
+    this._renderNotice(ctx, layout);
     ctx.restore();
+  }
+
+  /** 命令反馈/结局图鉴：画在本视图内，保证不被自身全屏绘制盖住。 */
+  _renderNotice(ctx, layout) {
+    const text = this._currentNotice();
+    if (!text) return;
+    const fontSize = Math.max(13, Math.min(18, layout.viewWidth * 0.016));
+    ctx.font = `${fontSize}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const lineHeight = fontSize * 1.5;
+    const characters = Array.from(text);
+    const lines = [];
+    let current = '';
+    characters.forEach(character => {
+      const candidate = current + character;
+      if (current && ctx.measureText(candidate).width > layout.contentWidth) {
+        lines.push(current);
+        current = character;
+      } else {
+        current = candidate;
+      }
+    });
+    if (current || lines.length === 0) lines.push(current);
+    const boxHeight = lines.length * lineHeight + 20;
+    const boxY = layout.viewHeight * 0.32 - boxHeight / 2;
+    ctx.fillStyle = 'rgba(12,14,17,0.92)';
+    ctx.strokeStyle = 'rgba(241,213,138,0.65)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.roundRect(layout.contentX, boxY, layout.contentWidth, boxHeight, 8);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = '#f5f1e7';
+    lines.forEach((line, index) => {
+      ctx.fillText(line, layout.viewWidth / 2, boxY + 10 + lineHeight * (index + 0.5));
+    });
   }
 
   _advance() {
@@ -451,8 +519,17 @@ export class EndingPresentationView extends UIElement {
   _renderHints(ctx, layout) {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'bottom';
-    ctx.fillStyle = this.busy ? '#f1d58a' : 'rgba(255,255,255,0.78)';
     ctx.font = `${Math.max(11, Math.min(14, layout.viewWidth * 0.012))}px sans-serif`;
+    // 页面失焦时键盘/手柄事件不会到达页面（RAF 也被节流）——必须明确告知，否则表现为「全部按钮失效」。
+    const windowBlurred = typeof document !== 'undefined'
+      && typeof document.hasFocus === 'function'
+      && document.hasFocus() === false;
+    if (windowBlurred) {
+      ctx.fillStyle = '#f1d58a';
+      ctx.fillText('窗口已失焦——键盘与手柄输入无效，请点击游戏画面后再操作。', layout.viewWidth / 2, layout.viewHeight - 7);
+      return;
+    }
+    ctx.fillStyle = this.busy ? '#f1d58a' : 'rgba(255,255,255,0.78)';
     let text = '正在处理……';
     if (!this.busy) {
       const cancel = `${InputHints.phrase('modalCancel')}关闭`;

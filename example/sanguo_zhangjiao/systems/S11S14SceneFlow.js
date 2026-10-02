@@ -783,7 +783,8 @@ const s13s14Methods = {
     this.endingPresentationView.open({
       snapshot: { endingId, endingSnapshotId: `endingSnapshot.direct.${endingId}` },
       ending: metadata,
-      reviewLines: Array.isArray(reviewLines) ? reviewLines : []
+      reviewLines: Array.isArray(reviewLines) ? reviewLines : [],
+      preSaveCheckpointId: checkpointId
     });
     if (checkpointId) {
       try {
@@ -1621,12 +1622,19 @@ const s13s14Methods = {
       `城市最终损毁：${Math.round((input.cityState?.coreDamageRatio || 0) * 100)}%`,
       `累计采集：${input.hiddenInputs?.totalGathered || 0}`
     ];
-    this.endingPresentationView.open({ snapshot: result.snapshot, ending: metadata, reviewLines });
+    this.endingPresentationView.open({
+      snapshot: result.snapshot,
+      ending: metadata,
+      reviewLines,
+      preSaveCheckpointId: options.checkpointId || 'checkpoint.S14.preEnding'
+    });
     return true;
   },
 
   async _handleEndingPresentationCommand(command = {}) {
     if (!this.endingPresentationView?.visible) return false;
+    // 场景层提示（_showScreenTip）会被结局视图全屏绘制盖住；视图打开期间的反馈一律 showNotice。
+    const notice = text => this.endingPresentationView.showNotice?.(text);
     if (command.type === 'close') {
       this.endingPresentationView.close();
       return true;
@@ -1634,7 +1642,7 @@ const s13s14Methods = {
     if (command.type === 'returnTitle') {
       const manager = this.sceneManager;
       if (!manager?.scenes?.has?.('Login')) {
-        this._showScreenTip('标题场景尚未注册，当前结局演出保持打开。', { title: '无法返回标题' });
+        notice('标题场景尚未注册，当前结局演出保持打开。');
         return false;
       }
       this.endingPresentationView.close();
@@ -1643,13 +1651,22 @@ const s13s14Methods = {
     }
     if (command.type === 'loadPreEndingSave') {
       this.endingPresentationView.setBusy?.(true);
-      const loaded = await this.requestCheckpointLoad?.('checkpoint.S14.preEnding');
-      this.endingPresentationView.setBusy?.(false);
+      let loaded = null;
+      try {
+        loaded = await this.requestCheckpointLoad?.(
+          this.endingPresentationView.preSaveCheckpointId || 'checkpoint.S14.preEnding'
+        );
+      } catch (error) {
+        console.error('[S11S14SceneFlow] 读取结局前检查点异常', error);
+        loaded = { ok: false, message: error?.message || String(error) };
+      } finally {
+        this.endingPresentationView.setBusy?.(false);
+      }
       if (!loaded?.ok) {
         const message = loaded?.code === 'checkpointNotFound'
           ? '三个自动存档中已找不到结局前检查点。'
           : (loaded?.message || loaded?.errors?.[0]?.message || '宿主无法读取结局前检查点。');
-        this._showScreenTip(message, { title: '读取失败' });
+        notice(message);
         return false;
       }
       this.endingPresentationView.close();
@@ -1658,7 +1675,7 @@ const s13s14Methods = {
     }
     if (command.type === 'viewUnlockedEndings') {
       const unlocked = this.gameLoader?.blackboard?.get?.('storyState')?.unlockedEndings || [];
-      this._showScreenTip(unlocked.length ? `已解锁：${unlocked.join('、')}` : '尚无已解锁结局。', { title: '结局图鉴' });
+      notice(unlocked.length ? `已解锁结局：${unlocked.join('、')}` : '尚无已解锁结局。');
       return true;
     }
     return false;
