@@ -71,8 +71,9 @@ const PRESET_SQUADS = Object.freeze([
  *
  * 叠加渲染：选中单位金色椭圆圈、框选矩形、命令目标脉冲标记。
  * 经 uiClickHandler.registerElement 接管点击；无军队时不渲染不拦截。
- * 显隐：PC 端默认隐藏，由底部「军队」按钮开关（toggleArmyCommandHud）；
- * 担架救援剧情可视化不受开关门控。移动端保持常显（无军队按钮入口）。
+ * 显隐：两端默认隐藏，由入口按钮开关——PC「军队」按钮 / 安卓 hb-army 触屏按钮 /
+ * 手柄 LS（armyCommand 动作）；手柄 LB 指挥按下沿自动亮出。
+ * 担架救援剧情可视化不受开关门控。
  * 特殊命令已收口：建造类不再提供 HUD 下令按钮（由任务/触发器驱动）。
  */
 export class ArmyCommandHUD extends UIElement {
@@ -85,9 +86,9 @@ export class ArmyCommandHUD extends UIElement {
   constructor({ system, camera = null, dragState = null } = {}) {
     super({
       x: 0, y: 0, width: 10, height: 10,
-      // PC 端默认隐藏：点底部「军队」按钮（toggleArmyCommandHud）打开后才显示操作条；
-      // 移动端无军队按钮入口，保持常显由有无军队决定渲染。
-      visible: PlatformProfile.isMobile === true,
+      // 两端默认隐藏：由入口按钮打开——PC「军队」按钮 / 安卓底部快捷栏 hb-army /
+      // 手柄 LS（armyCommand 动作）。手柄 LB 指挥按下沿也会自动亮出（见 SceneArmyCommandFlow）。
+      visible: false,
       zIndex: 205
     });
     this.system = system;

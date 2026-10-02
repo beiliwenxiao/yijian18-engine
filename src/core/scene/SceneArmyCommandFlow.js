@@ -304,8 +304,10 @@ export class SceneArmyCommandFlow {
     pad.buttons.forEach((button, index) => { if (button?.pressed) pressed.add(index); });
     const lbHeld = pressed.has(GAMEPAD_CYCLE_FORWARD);
     const lbWasHeld = this._prevPadButtons.has(GAMEPAD_CYCLE_FORWARD);
-    // LB 按下沿：循环切换选择（含武将，§5 切换单位键）
+    // LB 按下沿：循环切换选择（含武将，§5 切换单位键）。
+    // 操作条被军队按钮/LS 收起时，指挥按键自动亮出（指挥需要 HUD 反馈可见）。
     if (lbHeld && !lbWasHeld) {
+      if (this.system.getUnitCount() > 0 && this.hud.visible === false) this.hud.visible = true;
       this.system.cycleSquadSelection();
     }
     // 按住 LB = 指挥态：RB 循环切换命令（可见 5 姿态）

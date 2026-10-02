@@ -91,6 +91,9 @@ function setupTouchControls() {
             // 投掷现在走瞄准流程,此处不再触发
         } else if (btn.dataset.action === 'bag') {
             if (currentScene.inventoryPanel) currentScene.inventoryPanel.toggle();
+        } else if (btn.dataset.action === 'army') {
+            // 军队按钮：开关军队操作条（编组/姿态命令 HUD）
+            currentScene.toggleArmyCommandHud?.();
         } else if (btn.dataset.action === 'settings') {
             currentScene.openSystemMenu?.();
         } else if (btn.dataset.action === 'char') {
@@ -235,6 +238,7 @@ async function applyUILayoutToDom() {
         'hb-hp': 'hb-hp',
         'hb-mp': 'hb-mp',
         'hb-bag': 'hb-bag',
+        'hb-army': 'hb-army',
         'hb-settings': 'hb-settings',
         'hb-skill6': 'hb-skill6',
         'hb-skill7': 'hb-skill7'

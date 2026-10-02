@@ -3,6 +3,8 @@
  * @project YiJian18-Engine - 跨平台2D/3D ECS游戏引擎
  ************************************************************/
 
+import { ARMY_COMMAND_ACTION } from '../input/Xbox360Profile.js';
+
 /** 统一注册场景级热键、手柄连接订阅和手柄配置。 */
 export class SceneInputBindings {
   constructor({
@@ -11,6 +13,7 @@ export class SceneInputBindings {
     configUrl = 'config/gamepad.json',
     toggleBackpack,
     toggleSettings,
+    toggleArmyCommand,
     togglePerformance,
     onGamepadConnected,
     onGamepadDisconnected,
@@ -23,6 +26,7 @@ export class SceneInputBindings {
     this.configUrl = configUrl;
     this.toggleBackpack = toggleBackpack;
     this.toggleSettings = toggleSettings;
+    this.toggleArmyCommand = toggleArmyCommand;
     this.togglePerformance = togglePerformance;
     this.onGamepadConnected = onGamepadConnected;
     this.onGamepadDisconnected = onGamepadDisconnected;
@@ -41,6 +45,9 @@ export class SceneInputBindings {
     this.inputManager.registerHotkey('toggle_equipment', ['v', 'V'], toggleBackpack, { cooldown: 300 });
     this.inputManager.registerHotkey(
       'toggle_system_settings', ['escape', 'Escape', 'settings'], () => this.toggleSettings?.(), { cooldown: 300 });
+    // 手柄 LS（左摇杆按下）默认绑定 armyCommand 动作：开关军队操作条
+    this.inputManager.registerHotkey(
+      'toggle_army_command', [ARMY_COMMAND_ACTION], () => this.toggleArmyCommand?.(), { cooldown: 300 });
     this.inputManager.registerHotkey(
       'toggle_performance', ['p', 'P'], () => this.togglePerformance?.(), { cooldown: 300 });
 

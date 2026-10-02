@@ -1161,6 +1161,7 @@ export class BaseGameSceneSetup extends Scene {
       resourceScope: this.resourceScope,
       toggleBackpack: () => this.backpackPanel?.toggle(),
       toggleSettings: () => this.openSystemMenu(),
+      toggleArmyCommand: () => this.toggleArmyCommandHud?.(),
       togglePerformance: () => this._diagnostics.togglePerformance(),
       onGamepadConnected: (info) => {
         if (this.notificationSystem) {

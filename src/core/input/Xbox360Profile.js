@@ -93,6 +93,7 @@ export const FLIGHT_ACTION = 'flight';                // 兼容旧配置；新�
 export const THROW_ACTION = 'throw';                  // 兼容旧配置；新方案通过技能轮盘施展投掷
 export const BLOCK_ACTION = 'block';                  // LT 按住：格挡
 export const SETTINGS_ACTION = 'settings';            // 系统设置/标题菜单
+export const ARMY_COMMAND_ACTION = 'armyCommand';     // 军队操作条开关（LS 按下）
 
 /**
  * 默认绑定：RT攻击 / RB释放所选技能 / LB选择技能 / Y按住蓄力、松开起跳 / LT格挡。
@@ -109,7 +110,7 @@ export const DEFAULT_BINDINGS = {
   [PadButton.RT]: ATTACK_ACTION,        // 普通攻击（按住+右摇杆方向+释放）
   [PadButton.BACK]: 'b',               // 背包（属性+装备+物品）
   [PadButton.START]: SETTINGS_ACTION,   // 系统设置/标题菜单
-  [PadButton.LS]: NONE_ACTION,          // 空出
+  [PadButton.LS]: ARMY_COMMAND_ACTION,  // 军队操作条开关（左摇杆按下）
   [PadButton.RS]: 'escape',             // 取消选中
   [PadButton.DPAD_UP]: 'skill1',        // 红药水
   [PadButton.DPAD_DOWN]: 'skill2',      // 蓝药水
@@ -135,6 +136,7 @@ export const BINDABLE_ACTIONS = [
   { value: 'skill2', label: '蓝药水', group: '快捷' },
   { value: 'b', label: '背包', group: '面板' },
   { value: SETTINGS_ACTION, label: '系统设置', group: '面板' },
+  { value: ARMY_COMMAND_ACTION, label: '军队操作条开关', group: '面板' },
   { value: 'escape', label: '取消选中', group: '其它' }
 ];
 
@@ -153,7 +155,7 @@ export const BINDING_DESCRIPTIONS = {
   [PadButton.RT]: '攻击（按住瞄准）',
   [PadButton.BACK]: '背包',
   [PadButton.START]: '系统设置',
-  [PadButton.LS]: '—',
+  [PadButton.LS]: '军队操作条开关',
   [PadButton.RS]: '取消选中',
   [PadButton.DPAD_UP]: '红药水',
   [PadButton.DPAD_DOWN]: '蓝药水',

@@ -109,10 +109,12 @@ const DEFAULT_COMPONENTS = {
       { id: 'act-axe', label: '采集', x: 1312, y: 544, width: 56, height: 56, anchor: 'topleft', kind: 'button' },
       { id: 'hb-hp', label: '红瓶', x: 440, y: 540, width: 56, height: 56, anchor: 'topleft', kind: 'button' },
       { id: 'hb-mp', label: '蓝瓶', x: 510, y: 540, width: 56, height: 56, anchor: 'topleft', kind: 'button' },
-      { id: 'hb-bag', label: '背包', x: 650, y: 540, width: 56, height: 56, anchor: 'topleft', kind: 'button' },
-      { id: 'hb-settings', label: '系统设置', x: 580, y: 540, width: 56, height: 56, anchor: 'topleft', kind: 'button' },
-      { id: 'hb-skill6', label: '回血', x: 720, y: 540, width: 56, height: 56, anchor: 'topleft', kind: 'button' },
-      { id: 'hb-skill7', label: '打坐', x: 790, y: 540, width: 56, height: 56, anchor: 'topleft', kind: 'button' },
+      // 军队：开关军队操作条（armyCommandHud），排在系统设置前面
+      { id: 'hb-army', label: '军队', x: 580, y: 540, width: 56, height: 56, anchor: 'topleft', kind: 'button' },
+      { id: 'hb-settings', label: '系统设置', x: 650, y: 540, width: 56, height: 56, anchor: 'topleft', kind: 'button' },
+      { id: 'hb-bag', label: '背包', x: 720, y: 540, width: 56, height: 56, anchor: 'topleft', kind: 'button' },
+      { id: 'hb-skill6', label: '回血', x: 790, y: 540, width: 56, height: 56, anchor: 'topleft', kind: 'button' },
+      { id: 'hb-skill7', label: '打坐', x: 860, y: 540, width: 56, height: 56, anchor: 'topleft', kind: 'button' },
       // 对话框四种演出形态（kind 'panel'：外框只拖位置，内部部件在面板体系编辑）
       { id: 'dialogue-narration', label: '旁白对话', x: 190, y: 430, width: 900, height: 140, anchor: 'topleft', kind: 'panel' },
       { id: 'dialogue-portrait', label: '头像对话', x: 390, y: 280, width: 500, height: 170, anchor: 'topleft', kind: 'panel' },

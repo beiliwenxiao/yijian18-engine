@@ -319,6 +319,20 @@
       "hPct": 0.09333
     },
     {
+      "id": "hb-army",
+      "label": "军队",
+      "kind": "button",
+      "anchor": "topleft",
+      "x": 96,
+      "y": 398,
+      "width": 56,
+      "height": 56,
+      "xPct": 0.075,
+      "yPct": 0.66333,
+      "wPct": 0.04375,
+      "hPct": 0.09333
+    },
+    {
       "id": "hb-settings",
       "label": "系统设置",
       "kind": "button",
