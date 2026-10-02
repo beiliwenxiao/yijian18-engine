@@ -298,6 +298,16 @@ export class SceneCombatActions {
     // 教学高亮一次性熄灭：药水快捷键首次被触发即视为完成指引（无论是否成功使用）。
     scene.notifyOnboardingControlActivated?.(potionType === 'health' ? 'pc-potion1' : 'pc-potion2');
     if (!scene.playerEntity) return;
+    const transform = scene.playerEntity.getComponent('transform');
+    // 战斗中禁止恢复血量（快捷栏血瓶入口）：给出可见提示而非静默
+    if (potionType === 'health' && scene.combatSystem?.isInCombat?.() === true) {
+      if (transform && scene.floatingTextManager) {
+        scene.floatingTextManager.addText(
+          transform.position.x, transform.position.y - 50, '战斗中，不能恢复血量', '#ff6666'
+        );
+      }
+      return;
+    }
     const inventory = scene.playerEntity.getComponent('inventory');
     const stats = scene.playerEntity.getComponent('stats');
     if (!inventory || !stats) return;
@@ -309,7 +319,6 @@ export class SceneCombatActions {
       scene.backpackPanel?.useItem(entry.index);
       return;
     }
-    const transform = scene.playerEntity.getComponent('transform');
     if (transform && scene.floatingTextManager) {
       const potionName = potionType === 'health' ? '生命药水' : '魔法药水';
       scene.floatingTextManager.addText(
