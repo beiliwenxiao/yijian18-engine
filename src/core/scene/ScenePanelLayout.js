@@ -224,16 +224,16 @@ export class ScenePanelLayout {
         icon: '🎒', label: '背包', hintAction: 'bag',
         onClick: () => { if (scene.backpackPanel) scene.backpackPanel.toggle(); }
       });
-      scene.settingsButton = new IconButton({
-        x: 1002, y: 640, width: 50, height: 50,
-        icon: '⚙️', label: '系统设置', hintAction: 'settings',
-        onClick: () => scene.openSystemMenu?.()
-      });
-      // 军队：开关军队操作条（编组/姿态命令 HUD）
+      // 军队：开关军队操作条（编组/姿态命令 HUD）——排在系统设置按钮前面
       scene.armyButton = new IconButton({
-        x: 1058, y: 640, width: 50, height: 50,
+        x: 1002, y: 640, width: 50, height: 50,
         icon: '⚔️', label: '军队',
         onClick: () => scene.toggleArmyCommandHud?.()
+      });
+      scene.settingsButton = new IconButton({
+        x: 1058, y: 640, width: 50, height: 50,
+        icon: '⚙️', label: '系统设置', hintAction: 'settings',
+        onClick: () => scene.openSystemMenu?.()
       });
       // 跳跃：读取当前键盘/摇杆方向，未输入方向时原地起跳
       scene.jumpButton = new IconButton({
@@ -517,6 +517,7 @@ export class ScenePanelLayout {
       'pc-flight': scene.flightButton,
       'pc-throw': scene.throwButton,
       'pc-bag': scene.bagButton,
+      'pc-army': scene.armyButton,
       'pc-settings': scene.settingsButton
     };
     for (const [componentId, button] of Object.entries(canvasButtons)) {
@@ -624,6 +625,7 @@ export class ScenePanelLayout {
       'pc-flight': scene.flightButton,
       'pc-throw': scene.throwButton,
       'pc-bag': scene.bagButton,
+      'pc-army': scene.armyButton,
       'pc-settings': scene.settingsButton
     };
   }

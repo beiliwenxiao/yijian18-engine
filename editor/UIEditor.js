@@ -67,9 +67,11 @@ const DEFAULT_COMPONENTS = {
       { id: 'pc-jump', label: '跳跃', x: 722, y: 640, width: 50, height: 50, anchor: 'topleft', kind: 'button' },
       { id: 'pc-flight', label: '轻功', x: 778, y: 640, width: 50, height: 50, anchor: 'topleft', kind: 'button' },
       { id: 'pc-throw', label: '投掷', x: 834, y: 640, width: 50, height: 50, anchor: 'topleft', kind: 'button' },
-      // 统一背包入口 + 系统设置
+      // 统一背包入口 + 军队 + 系统设置
       { id: 'pc-bag', label: '背包', x: 890, y: 640, width: 50, height: 50, anchor: 'topleft', kind: 'button' },
-      { id: 'pc-settings', label: '系统设置', x: 946, y: 640, width: 50, height: 50, anchor: 'topleft', kind: 'button' },
+      // 军队：开关军队操作条（armyCommandHud），排在系统设置前面
+      { id: 'pc-army', label: '军队', x: 946, y: 640, width: 50, height: 50, anchor: 'topleft', kind: 'button' },
+      { id: 'pc-settings', label: '系统设置', x: 1002, y: 640, width: 50, height: 50, anchor: 'topleft', kind: 'button' },
       // 对话框四种演出形态（运行时按对话 presentation.boxType 选用对应矩形）；
       // kind 'panel'：外框只拖位置大小（宽高比锁定到面板编辑器 dialogue-* 面板），内部部件在面板体系编辑
       { id: 'dialogue-narration', label: '旁白对话', x: 190, y: 520, width: 900, height: 150, anchor: 'topleft', kind: 'panel' },
