@@ -1467,9 +1467,14 @@ export class TriggerEditor {
     for (const sceneId of scopeSceneIds) {
       if (!scopeScenes.has(sceneId)) scopeScenes.set(sceneId, `${sceneId}（旧引用）`);
     }
-    const scopeOptions = [...scopeScenes].map(([sceneId, sceneName]) => (
-      `<option value="${this._escapeHtml(sceneId)}"${scopeSceneIds.includes(sceneId) ? ' selected' : ''}>${this._escapeHtml(sceneName)}</option>`
-    )).join('');
+    // 单选下拉：历史多选归属只保留首个；空值 = 无归属场景（不写 editorScope.sceneIds）。
+    const selectedScopeSceneId = scopeSceneIds[0] || '';
+    const scopeOptions = [
+      `<option value=""${selectedScopeSceneId ? '' : ' selected'}>（无归属场景）</option>`,
+      ...[...scopeScenes].map(([sceneId, sceneName]) => (
+        `<option value="${this._escapeHtml(sceneId)}"${sceneId === selectedScopeSceneId ? ' selected' : ''}>${this._escapeHtml(sceneName)}</option>`
+      ))
+    ].join('');
 
     panel.innerHTML = `
       <div class="trg-definition-heading">
@@ -1486,7 +1491,7 @@ export class TriggerEditor {
         </select></label>
         <label>优先级（高值先执行）<input type="number" step="1" id="d-coordination-priority" value="${Number.isInteger(coordination.priority) ? coordination.priority : 0}"></label>
       </div>
-      <div class="row"><label>编辑器归属场景（可多选，不改变运行条件）</label><select id="d-editor-scope-scenes" multiple size="${Math.min(6, Math.max(3, scopeScenes.size))}">${scopeOptions}</select></div>
+      <div class="row"><label>编辑器归属场景（不改变运行条件）</label><select id="d-editor-scope-scenes">${scopeOptions}</select></div>
       <div class="row"><label style="display:flex;align-items:center;gap:5px;"><input type="checkbox" id="d-enabled" ${t.enabled !== false ? 'checked' : ''}> 启用</label></div>
       <section class="trg-flow-card trg-flow-start">
         <div class="trg-flow-card-title"><span>①</span><div><strong>开始事件</strong><small>直接编辑运行时 when.type / when.params</small></div>${startRegistration}</div>
@@ -1870,7 +1875,7 @@ export class TriggerEditor {
     }
     const scopeSceneSelect = panel.querySelector('#d-editor-scope-scenes');
     const scopeSceneIds = scopeSceneSelect
-      ? [...scopeSceneSelect.selectedOptions].map(option => option.value.trim()).filter(Boolean)
+      ? [String(scopeSceneSelect.value || '').trim()].filter(Boolean)
       : [];
     if (scopeSceneIds.length) {
       t.editorScope = { ...(t.editorScope || {}), sceneIds: [...new Set(scopeSceneIds)] };
