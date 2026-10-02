@@ -140,7 +140,8 @@ export class SaveGameService {
     if (!provider) return;
     this._providerOff = this.manager.register('game', {
       required: true,
-      snapshot: () => provider.capture(),
+      // 透传 capture meta（如 label:'rollback'）：回滚快照采集依赖它跳过持久化类守卫。
+      snapshot: meta => provider.capture(meta),
       validate: data => provider.validate ? provider.validate(data) : this._validateGameState(data),
       restore: data => provider.restore(data)
     });
