@@ -46,7 +46,8 @@ export class SceneTriggerBindingSystem {
     logger = null,
     onPromptChange = null,
     onInteractChoices = null,
-    canInteract = null
+    canInteract = null,
+    isCombatActive = null
   } = {}) {
     this.triggerSystem = triggerSystem;
     this.getPlayer = typeof getPlayer === 'function' ? getPlayer : () => null;
@@ -62,6 +63,8 @@ export class SceneTriggerBindingSystem {
     this.onInteractChoices = typeof onInteractChoices === 'function' ? onInteractChoices : null;
     // 交互准入守卫（如对话激活时禁止交互绑定消费输入），返回 false 时 handleInteract 不命中
     this.canInteract = typeof canInteract === 'function' ? canInteract : null;
+    // 战斗守卫：战斗中传送点不显示、不触发（含 enter/approach/interact 全部路径）
+    this.isCombatActive = typeof isCombatActive === 'function' ? isCombatActive : null;
     this.bindings = [];
     this.sceneObjects = [];
     this._inside = new Map();
@@ -134,12 +137,18 @@ export class SceneTriggerBindingSystem {
     if (this._disposed || !this.triggerSystem) return 0;
     const position = this._playerPosition();
     if (!position) return 0;
+    const combatActive = this.isCombatActive?.() === true;
     this._spatialContexts.clear();
     let fired = 0;
     for (const binding of this.bindings) {
       const eventType = this._eventType(binding);
       if (eventType !== 'approach' && eventType !== 'enter' && eventType !== 'leave') continue;
       if (!this._isBindingActive(binding)) {
+        this._inside.set(binding.id, false);
+        continue;
+      }
+      // 战斗中传送点不生效：inside 置 false，脱战后重新踏入才会正常触发。
+      if (combatActive && this._isTravelBinding(binding)) {
         this._inside.set(binding.id, false);
         continue;
       }
@@ -155,6 +164,11 @@ export class SceneTriggerBindingSystem {
     }
     this._updatePrompt(position);
     return fired;
+  }
+
+  /** 传送点语义：带 travel 元数据的显式传送绑定（战斗中显示与触发一并抑制）。 */
+  _isTravelBinding(binding) {
+    return binding?.travel != null && typeof binding.travel === 'object';
   }
 
   _resolveSpatialCached(binding) {
@@ -195,9 +209,11 @@ export class SceneTriggerBindingSystem {
     if (!player) return [];
     const isPointer = event?.type === InputEventType.POINTER_DOWN
       && event.button === PointerButton.LEFT;
+    const combatActive = this.isCombatActive?.() === true;
     this._spatialContexts.clear();
     return this.bindings
       .filter(binding => this._eventType(binding) === 'interact')
+      .filter(binding => !(combatActive && this._isTravelBinding(binding)))
       .map(binding => ({ binding, spatial: this._resolveSpatialCached(binding) }))
       .filter(candidate => this._contains(candidate.binding, player.x, player.y, false, candidate.spatial))
       .filter(candidate => this._isBindingActive(candidate.binding))
@@ -308,6 +324,7 @@ export class SceneTriggerBindingSystem {
    */
   getGroundMarkerAnchors() {
     if (this._disposed) return EMPTY_TARGETS;
+    const combatActive = this.isCombatActive?.() === true;
     const markers = [];
     for (const binding of this.bindings) {
       if (!this._isBindingActive(binding) || this._completedBindings.has(binding.id)) continue;
@@ -318,7 +335,9 @@ export class SceneTriggerBindingSystem {
       const role = String(target?.semanticRole || binding.semanticRole || '');
       const targetId = String(target?.id || binding.target || '');
       // 带 travel 元数据的绑定是显式传送点；语义角色与 ID 模式保留为旧数据兼容路径。
-      const hasTravelMetadata = binding.travel != null && typeof binding.travel === 'object';
+      const hasTravelMetadata = this._isTravelBinding(binding);
+      // 战斗中传送点不显示（任务目标点金色光圈不受影响）。
+      if (combatActive && hasTravelMetadata) continue;
       if (!hasTravelMetadata && !GROUND_MARKER_ROLES.has(role) && !GROUND_MARKER_ID_PATTERN.test(targetId)) continue;
       const anchor = spatial.geometry.anchor;
       const radius = Math.min(48, Math.max(22, (Number(binding.radius) || 0) * 0.42));
