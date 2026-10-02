@@ -442,11 +442,14 @@ function captureStreamedChunkState(chunk) {
   }
   const pendingPlacementState = this.context.services.placements?.getPendingStateSnapshot?.()
     || { resourceNodes: [], placementStates: [] };
+  // pending 条目（如 tombstone）常以 count 模板派生 id（base-N）记录；
+  // 必须与 live 遍历同样走 resolveChunkPlacement 派生回退，否则已消失的
+  // 敌人 tombstone 在存档采集时被丢弃，下次读档按 spawnWhen 复活。
   for (const [id, state] of pendingPlacementState.resourceNodes) {
-    if (placementById.has(id) && !resourceNodes.some(entry => entry.id === id)) resourceNodes.push({ id, state });
+    if (resolveChunkPlacement(placementById, id) && !resourceNodes.some(entry => entry.id === id)) resourceNodes.push({ id, state });
   }
   for (const [id, state] of pendingPlacementState.placementStates) {
-    if (placementById.has(id) && !placementStates.some(entry => entry.id === id)) placementStates.push({ id, state });
+    if (resolveChunkPlacement(placementById, id) && !placementStates.some(entry => entry.id === id)) placementStates.push({ id, state });
   }
   const pendingDomain = this._pendingChunkDomainStates?.get(chunk.key)
     || this._pendingChunkDomainStates?.get(chunk.sceneNamespace)
