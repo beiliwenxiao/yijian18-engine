@@ -598,6 +598,113 @@ describe('SDD 阶段 3b：读端 SDD 节点优先（snapshotTransformer）', () 
   });
 });
 
+describe('SDD 阶段 3 第二批：全节点读端覆盖（player/ui/world，存档时文档）', () => {
+  function makeFullSddService({ sddDocumentExtras = {} } = {}) {
+    const service = makeService();
+    service.setStateProvider({
+      capture: () => ({
+        player: { id: 'player-1', hp: 10, transform: { x: 111, y: 222 } },
+        tutorial: { phase: 'old-tutorial' },
+        dialogue: { activeId: 'old-dialogue' },
+        scene: { campfireLit: false, oldMarker: true },
+        authority: {
+          snapshotSchemaVersion: 2,
+          serviceStates: {
+            quests: { schemaVersion: 2, taskGraph: { nodes: { stale: {} } }, actors: [] },
+            campaignContent: { blackboard: { storyState: { currentSceneId: 'OLD' } }, triggers: { snapshotSchemaVersion: 3 } }
+          }
+        }
+      }),
+      restore: data => {
+        service.__restoredGame = data || null;
+        return { ok: true };
+      }
+    });
+    service.manager.documentProjector = snapshot => {
+      const document = projectSnapshotToSdd(snapshot);
+      Object.assign(document, sddDocumentExtras); // 模拟运行时文档/缺段
+      return { schemaVersion: SDD_SCHEMA_VERSION, document };
+    };
+    // index.html 的 transformer（全节点覆盖 + 缺段判空）
+    service.manager.snapshotTransformer = snapshot => {
+      const sdd = snapshot?.sdd;
+      if (!sdd?.document) return snapshot;
+      const serviceStates = snapshot?.data?.game?.authority?.serviceStates;
+      if (serviceStates) {
+        if (sdd.document.quests) serviceStates.quests = sdd.document.quests;
+        if (sdd.document.narrative) serviceStates.campaignContent = sdd.document.narrative;
+      }
+      const game = snapshot?.data?.game;
+      if (game) {
+        if (sdd.document.player) game.player = sdd.document.player;
+        if (sdd.document.ui?.tutorial) game.tutorial = sdd.document.ui.tutorial;
+        if (sdd.document.ui?.dialogue) game.dialogue = sdd.document.ui.dialogue;
+        if (sdd.document.world?.scene) game.scene = sdd.document.world.scene;
+      }
+      return snapshot;
+    };
+    return service;
+  }
+
+  it('全节点覆盖：player/tutorial/dialogue/scene 从文档节点恢复', async () => {
+    const service = makeFullSddService({
+      sddDocumentExtras: {
+        player: { id: 'player-1', hp: 99, transform: { x: 999, y: 888 } },
+        ui: { tutorial: { phase: 'new-tutorial' }, dialogue: { activeId: 'new-dialogue' } },
+        world: { currentSceneId: 'S01', scene: { campfireLit: true, newMarker: true } }
+      }
+    });
+    await service.saveAsync(1);
+    service.__restoredGame = null;
+    const loaded = await service.loadAsync(1);
+    expect(loaded.ok).toBe(true);
+    const game = service.__restoredGame;
+    expect(game.player.hp).toBe(99);
+    expect(game.player.transform.x).toBe(999);
+    expect(game.tutorial.phase).toBe('new-tutorial');
+    expect(game.dialogue.activeId).toBe('new-dialogue');
+    expect(game.scene.campfireLit).toBe(true);
+    expect(game.scene.newMarker).toBe(true);
+  });
+
+  it('缺段判空跳过：文档 player/ui/world 为 null 时不覆盖旧字段', async () => {
+    const service = makeFullSddService({
+      sddDocumentExtras: {
+        player: null, ui: { tutorial: null, dialogue: null }, world: { scene: null }
+      }
+    });
+    await service.saveAsync(1);
+    service.__restoredGame = null;
+    const loaded = await service.loadAsync(1);
+    expect(loaded.ok).toBe(true);
+    const game = service.__restoredGame;
+    expect(game.player.hp).toBe(10);                 // 旧字段保留
+    expect(game.player.transform.x).toBe(111);
+    expect(game.tutorial.phase).toBe('old-tutorial');
+    expect(game.dialogue.activeId).toBe('old-dialogue');
+    expect(game.scene.oldMarker).toBe(true);
+    expect(game.scene.campfireLit).toBe(false);
+  });
+
+  it('混合覆盖：部分节点有值部分缺段，各自独立判定', async () => {
+    const service = makeFullSddService({
+      sddDocumentExtras: {
+        player: { id: 'player-1', hp: 50 },
+        ui: { tutorial: null, dialogue: { activeId: 'new-dialogue' } },
+        world: null
+      }
+    });
+    await service.saveAsync(1);
+    service.__restoredGame = null;
+    await service.loadAsync(1);
+    const game = service.__restoredGame;
+    expect(game.player.hp).toBe(50);                 // 覆盖
+    expect(game.tutorial.phase).toBe('old-tutorial'); // 缺段跳过
+    expect(game.dialogue.activeId).toBe('new-dialogue'); // 覆盖
+    expect(game.scene.oldMarker).toBe(true);         // world 缺段跳过
+  });
+});
+
 describe('战斗中传送点抑制（isCombatActive 守卫）', () => {
   function makeBindingsSystem({ combat = false } = {}) {
     const fired = [];
