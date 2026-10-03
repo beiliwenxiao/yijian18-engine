@@ -1048,6 +1048,17 @@
                 const runtimeNarrative = scene?.gameLoader?.sddStore?.getNode('narrative');
                 if (runtimeNarrative) document.narrative = runtimeNarrative;
                 return { schemaVersion: SDD_SCHEMA_VERSION, document };
+            },
+            // 读端 SDD 节点优先：带 sdd 的存档恢复时以文档节点覆盖旧链路字段
+            // （双写等价由回归测试钉住，覆盖为同值替代——sdd 是权威源的结构声明）。
+            // 旧档无 sdd 字段时原样走旧链路。
+            snapshotTransformer: snapshot => {
+                const sdd = snapshot?.sdd;
+                const serviceStates = snapshot?.data?.game?.authority?.serviceStates;
+                if (!sdd?.document || !serviceStates) return snapshot;
+                if (sdd.document.quests) serviceStates.quests = sdd.document.quests;
+                if (sdd.document.narrative) serviceStates.campaignContent = sdd.document.narrative;
+                return snapshot;
             }
         });
         shell.saveGames = saveGames;

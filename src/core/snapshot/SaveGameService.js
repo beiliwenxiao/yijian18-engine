@@ -33,7 +33,8 @@ export class SaveGameService {
     storage = null,
     useIndexedDB = true,
     now = null,
-    documentProjector = null
+    documentProjector = null,
+    snapshotTransformer = null
   } = {}) {
     this.gameId = gameId;
     this.slotCount = Math.min(MAX_MANUAL_SAVE_SLOTS, Math.max(1, Number(slotCount) || 1));
@@ -46,7 +47,8 @@ export class SaveGameService {
     this.manager = new SnapshotManager({
       storage: this.storage,
       now: now || (() => Date.now()),
-      documentProjector
+      documentProjector,
+      snapshotTransformer
     });
     this._providerOff = null;
     this._autoSaveExecutor = null;

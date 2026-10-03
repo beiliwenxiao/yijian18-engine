@@ -37,6 +37,8 @@ export class SnapshotManager {
    * @param {Object} [config.migrations] - 版本迁移器 { [fromVersion]: (data) => data }
    * @param {Function|null} [config.documentProjector] - SDD 双写投影 (snapshot) => {schemaVersion, document}；
    *   双写不双读：投影挂在 snapshot.sdd 供后续版本消费，失败只告警不阻断产品存档。
+   * @param {Function|null} [config.snapshotTransformer] - 读档变形 (snapshot) => snapshot；
+   *   restore 前调用（如 SDD 节点优先覆盖旧字段）。失败只告警并使用原快照。
    */
   constructor(config = {}) {
     /** @type {Map<string, Object>} 参与者：key -> provider */
@@ -45,6 +47,7 @@ export class SnapshotManager {
     this.now = config.now || (() => Date.now());
     this.migrations = config.migrations || {};
     this.documentProjector = typeof config.documentProjector === 'function' ? config.documentProjector : null;
+    this.snapshotTransformer = typeof config.snapshotTransformer === 'function' ? config.snapshotTransformer : null;
   }
 
   /**
@@ -242,6 +245,14 @@ export class SnapshotManager {
    * @returns {{ok: boolean, errors: Array<Object>, restored?: Array<string>}}
    */
   restore(snapshot) {
+    // 读档变形（SDD 节点优先等）：失败只告警并使用原快照，不阻断恢复。
+    if (this.snapshotTransformer) {
+      try {
+        snapshot = this.snapshotTransformer(snapshot) || snapshot;
+      } catch (error) {
+        console.warn('SnapshotManager: 读档快照变形失败，使用原快照继续恢复', error);
+      }
+    }
     const migrated = this.migrate(snapshot);
     if (!migrated.ok) return { ok: false, errors: migrated.errors };
 

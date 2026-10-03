@@ -507,6 +507,97 @@ describe('SDD 阶段 3：narrative 节点镜像（GameLoader 叙事状态自持�
   });
 });
 
+describe('SDD 阶段 3b：读端 SDD 节点优先（snapshotTransformer）', () => {
+  function makeSddService({ transformer = true } = {}) {
+    const service = makeService();
+    service.setStateProvider({
+      capture: () => ({
+        player: { id: 'player-1', hp: 10 },
+        authority: {
+          snapshotSchemaVersion: 2,
+          serviceStates: {
+            quests: { schemaVersion: 2, taskGraph: { nodes: { stale: {} } }, actors: [] },
+            campaignContent: { blackboard: { storyState: { currentSceneId: 'OLD' } }, triggers: { snapshotSchemaVersion: 3 } }
+          }
+        }
+      }),
+      restore: data => {
+        service.__restoredServiceStates = data?.authority?.serviceStates || null;
+        return { ok: true };
+      }
+    });
+    if (transformer) {
+      service.manager.snapshotTransformer = snapshot => {
+        const sdd = snapshot?.sdd;
+        const serviceStates = snapshot?.data?.game?.authority?.serviceStates;
+        if (!sdd?.document || !serviceStates) return snapshot;
+        if (sdd.document.quests) serviceStates.quests = sdd.document.quests;
+        if (sdd.document.narrative) serviceStates.campaignContent = sdd.document.narrative;
+        return snapshot;
+      };
+    }
+    return service;
+  }
+
+  const SDD_QUESTS = { schemaVersion: 2, taskGraph: { nodes: { fresh: {} } }, actors: [{ actorId: 'p1', runtimes: [] }] };
+  const SDD_NARRATIVE = { blackboard: { storyState: { currentSceneId: 'NEW' } }, triggers: { snapshotSchemaVersion: 3 } };
+
+  it('带 sdd 的存档：restore 收到的 quests/campaignContent 来自文档节点', async () => {
+    const service = makeSddService();
+    service.manager.documentProjector = snapshot => {
+      const document = projectSnapshotToSdd(snapshot);
+      document.quests = SDD_QUESTS;             // 模拟运行时文档（新值）
+      document.narrative = SDD_NARRATIVE;
+      return { schemaVersion: SDD_SCHEMA_VERSION, document };
+    };
+    await service.saveAsync(1);
+    service.__restoredServiceStates = null;
+    const loaded = await service.loadAsync(1);
+    expect(loaded.ok).toBe(true);
+    expect(loaded.restored).toContain('game');
+    const restored = service.__restoredServiceStates;
+    expect(restored.quests).toEqual(SDD_QUESTS);
+    expect(restored.campaignContent.blackboard.storyState.currentSceneId).toBe('NEW');
+  });
+
+  it('旧档无 sdd 字段：原样走旧链路（transformer 幂等跳过）', async () => {
+    const service = makeSddService({ transformer: true });
+    service.manager.documentProjector = null; // 旧档写入方（无双写）
+    await service.saveAsync(1);
+    service.__restoredServiceStates = null;
+    const loaded = await service.loadAsync(1);
+    expect(loaded.ok).toBe(true);
+    expect(service.__restoredServiceStates.quests.taskGraph.nodes.stale).toEqual({});
+    expect(service.__restoredServiceStates.campaignContent.blackboard.storyState.currentSceneId).toBe('OLD');
+  });
+
+  it('transformer 抛错：告警并使用原快照继续恢复（不阻断读档）', async () => {
+    const service = makeSddService({ transformer: true });
+    service.setStateProvider({
+      capture: () => ({
+        player: { id: 'p1' },
+        authority: { snapshotSchemaVersion: 2, serviceStates: { quests: { schemaVersion: 2, taskGraph: { nodes: {} }, actors: [] } } }
+      }),
+      restore: data => {
+        service.__restoredServiceStates = data?.authority?.serviceStates || null;
+        return { ok: true };
+      }
+    });
+    service.manager.documentProjector = snapshot => ({
+      schemaVersion: SDD_SCHEMA_VERSION,
+      document: projectSnapshotToSdd(snapshot)
+    });
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    service.manager.snapshotTransformer = () => { throw new Error('transformer boom'); };
+    await service.saveAsync(1);
+    const loaded = await service.loadAsync(1);
+    expect(loaded.ok).toBe(true);
+    expect(service.__restoredServiceStates.quests).toBeTruthy(); // 原字段仍在
+    expect(warnSpy).toHaveBeenCalled();
+    warnSpy.mockRestore();
+  });
+});
+
 describe('战斗中传送点抑制（isCombatActive 守卫）', () => {
   function makeBindingsSystem({ combat = false } = {}) {
     const fired = [];

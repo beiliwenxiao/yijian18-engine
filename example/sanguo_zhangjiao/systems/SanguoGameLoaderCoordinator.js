@@ -123,7 +123,11 @@ function initializeGameLoader() {
               error.triggerIds = running.map(record => record.triggerId);
               throw error;
             }
-            return gameLoader.serialize(this.playerEntity?.id || null, metadata);
+            // SDD 阶段 3b：serialize 同步 sddStore.narrative 后，capture 返回文档节点
+            // （与 serialize 同源同值——'narrative' 即 campaignContent 的权威镜像）。
+            gameLoader.serialize(this.playerEntity?.id || null, metadata);
+            return gameLoader.sddStore.getNode('narrative')
+              || gameLoader.serialize(this.playerEntity?.id || null, metadata);
           },
           validate: snapshot => gameLoader.validateSerialized(snapshot, this.playerEntity?.id || null),
           restore: snapshot => gameLoader.deserialize(snapshot, this.playerEntity?.id || null, { restoreTriggers: true }),
