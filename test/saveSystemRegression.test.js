@@ -9,6 +9,8 @@ import { SDD_SCHEMA_VERSION, projectSnapshotToSdd, projectSddToSnapshot, sddSema
 import { getPlacementSignature } from '../src/core/scene/ScenePlacementRuntime.js';
 import { SceneTriggerBindingSystem } from '../src/core/scene/SceneTriggerBindingSystem.js';
 import { SanguoSceneStateFlow } from '../example/sanguo_zhangjiao/systems/SanguoSceneStateFlow.js';
+import { QuestTransactionService } from '../src/systems/QuestTransactionService.js';
+import { QuestRuntimeState } from '../src/systems/QuestRuntimeState.js';
 
 /**
  * 存档/任务链路回归（2026-10 存档系统缺陷修复的永久钉子）。
@@ -345,6 +347,94 @@ describe('存档回归：count 模板派生 id 的 tombstone 必须进流式存�
     const wolf = snapshot.placementStates.find(entry => entry.id === 'S01-first-wolf-1');
     expect(wolf).toBeTruthy();
     expect(wolf.state.hp).toBe(28);
+  });
+});
+
+describe('SDD 阶段 2：quests 节点镜像（任务系统自持文档）', () => {
+  function makeQuestSystem({ definitionRevision = 0 } = {}) {
+    return new QuestTransactionService({
+      definitionRepository: {
+        definitionRevision,
+        get: (type, id) => (id === 'q1' ? { id: 'q1', name: '测试任务' } : null),
+        snapshot: { definitions: { quests: [{ id: 'q1', name: '测试任务' }] } }
+      }
+    });
+  }
+
+  function makeRuntime(definitionId = 'q1') {
+    return QuestRuntimeState.create({ questRuntimeId: `p1:${definitionId}`, definitionId, logicalTime: 5 }).toJSON();
+  }
+
+  it('serialize 后 sdd.quests 节点镜像勾选状态', () => {
+    const quests = makeQuestSystem();
+    const data = quests.serialize();
+    const node = quests.sdd.getNode('quests');
+    expect(node).toEqual(data);
+    expect(node.actors).toEqual([]);
+    expect(node.schemaVersion).toBe(2);
+  });
+
+  it('deserialize 后 sdd.quests 镜像恢复状态，_states 与文档一致', () => {
+    const quests = makeQuestSystem();
+    const data = {
+      schemaVersion: 2,
+      definitionRevision: 0,
+      taskGraph: null,
+      actors: [{ actorId: 'p1', runtimes: [makeRuntime()] }]
+    };
+    const restored = quests.deserialize(data);
+    expect(restored.ok).toBe(true);
+    expect(quests.sdd.getNode('quests').actors[0].actorId).toBe('p1');
+    expect(quests.sdd.getNode('quests').actors[0].runtimes[0].definitionId).toBe('q1');
+    expect(quests._runtime('p1', 'q1').state).toBe('active');
+  });
+
+  it('deserialize 版本冲突时拒绝且 sdd.quests 不被污染', () => {
+    const quests = makeQuestSystem();
+    quests.serialize(); // 先建立基线节点
+    const before = quests.sdd.getNode('quests');
+    const bad = { schemaVersion: 99, definitionRevision: 0, taskGraph: null, actors: [] };
+    const result = quests.deserialize(bad);
+    expect(result.ok).toBe(false);
+    expect(quests.sdd.getNode('quests')).toEqual(before);
+  });
+
+  it('reset 后 sdd.quests 重建为空运行态', () => {
+    const quests = makeQuestSystem();
+    quests.deserialize({
+      schemaVersion: 2, definitionRevision: 0, taskGraph: null,
+      actors: [{ actorId: 'p1', runtimes: [makeRuntime()] }]
+    });
+    quests.reset();
+    const node = quests.sdd.getNode('quests');
+    expect(node.actors).toEqual([]);
+    expect(node.schemaVersion).toBe(2);
+  });
+
+  it('quests 节点可订阅：serialize/deserialize 的 patch 通知订阅者（任务视图重建入口）', () => {
+    const quests = makeQuestSystem();
+    const events = [];
+    quests.sdd.subscribe('quests', node => events.push(node));
+    quests.serialize();
+    quests.deserialize({
+      schemaVersion: 2, definitionRevision: 0, taskGraph: null,
+      actors: [{ actorId: 'p1', runtimes: [makeRuntime()] }]
+    });
+    expect(events.length).toBe(2);
+    expect(events[1].actors[0].actorId).toBe('p1');
+  });
+
+  it('重复 serialize 幂等：sdd.quests 深相等且 revision 稳定推进', () => {
+    const quests = makeQuestSystem();
+    quests.deserialize({
+      schemaVersion: 2, definitionRevision: 0, taskGraph: null,
+      actors: [{ actorId: 'p1', runtimes: [makeRuntime()] }]
+    });
+    const first = quests.serialize();
+    const revisionAfterFirst = quests.sdd.revision;
+    const second = quests.serialize();
+    expect(sddSemanticEquals(second, first)).toBe(true);
+    expect(quests.sdd.revision).toBe(revisionAfterFirst + 1);
   });
 });
 

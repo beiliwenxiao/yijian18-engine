@@ -22,6 +22,7 @@
 
 import { QuestRuntimeState, QUEST_RUNTIME_SCHEMA_VERSION } from './QuestRuntimeState.js';
 import { QuestResolver } from './resolvers/QuestResolver.js';
+import { SddStore } from '../core/snapshot/SddStore.js';
 
 const clone = value => value == null ? value : JSON.parse(JSON.stringify(value));
 const hasText = value => typeof value === 'string' && value.trim().length > 0;
@@ -73,6 +74,9 @@ export class QuestTransactionService {
     this.stateId = command => `quest:${command.actorId}`;
     this._states = new Map();
     this._listeners = new Map();
+    // SDD 迁移阶段 2：任务系统自持文档，'quests' 节点 = serialize/deserialize 的权威镜像。
+    // 文档只承载勾选数据（actors/taskGraph 纯 JSON），运行期任何时刻可按节点重建任务视图。
+    this.sdd = new SddStore({ schemaVersion: 3 });
   }
 
   setDefinitionRepository(repository) {
@@ -578,7 +582,7 @@ export class QuestTransactionService {
 
   snapshot() { return this.serialize(); }
   serialize() {
-    return {
+    const data = {
       schemaVersion: QUEST_RUNTIME_SCHEMA_VERSION,
       definitionRevision: this.definitionRepository?.definitionRevision ?? 0,
       taskGraph: this.taskGraphSystem?.snapshot?.() || null,
@@ -586,6 +590,9 @@ export class QuestTransactionService {
         actorId, runtimes: [...states.values()].map(runtime => clone(runtime))
       }))
     };
+    // SDD 同步：'quests' 节点始终镜像当前勾选状态（订阅者可按节点重建任务视图）。
+    this.sdd.patchNode('quests', clone(data));
+    return data;
   }
 
   validate(data = {}) { return this.validateSerialized(data); }
@@ -629,6 +636,8 @@ export class QuestTransactionService {
     }
     try {
       this._states = prepared.actors;
+      // SDD 同步：读档后 'quests' 节点镜像恢复后的勾选状态。
+      this.sdd.patchNode('quests', clone(data));
       return { ok: true, errors: [] };
     } catch (error) {
       this._states = previousStates;
@@ -642,6 +651,8 @@ export class QuestTransactionService {
     if (this.taskGraphSystem) {
       this.taskGraphSystem.restore({ schemaVersion: 1, nextInstanceSequence: 0, instances: [] });
     }
+    // SDD 同步：重置后按空运行态重建 'quests' 节点（而不是删除，保持文档形状稳定）。
+    this.sdd.patchNode('quests', clone(this.serialize()));
   }
   cleanup() { this._listeners.clear(); }
 }
