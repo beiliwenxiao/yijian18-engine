@@ -264,6 +264,26 @@
       "hintAction": "jump"
     },
     {
+      "id": "s01-jump-reveal-river",
+      "scope": {
+        "sceneIds": [
+          "S01"
+        ]
+      },
+      "when": {
+        "type": "tutorialCurrent",
+        "tutorialId": "s01.jump"
+      },
+      "revealComponentIds": [
+        "pc-jump",
+        "act-jump"
+      ],
+      "enabledComponentIds": [
+        "pc-jump",
+        "act-jump"
+      ]
+    },
+    {
       "id": "s01-wood-reveal-gathering",
       "scope": {
         "sceneIds": [
