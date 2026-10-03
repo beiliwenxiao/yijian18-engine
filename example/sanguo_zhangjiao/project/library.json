@@ -917,6 +917,7 @@
       "id": "enemy.s01_first_wolf",
       "imageId": "s01.enemy.wolf",
       "level": 1,
+      "maxDamage": 1,
       "lootTable": [
         {
           "chance": 1,
@@ -931,17 +932,17 @@
           "minQuantity": 5
         }
       ],
-      "name": "饥饿野狼",
+      "name": "虚弱的狼",
       "sprite": {
         "height": 48,
         "isStatic": true,
         "width": 68
       },
       "stats": {
-        "attack": 5,
+        "attack": 3,
         "defense": 1,
-        "maxHp": 32,
-        "speed": 88
+        "maxHp": 24,
+        "speed": 70
       },
       "templateId": "wild_wolf"
     },

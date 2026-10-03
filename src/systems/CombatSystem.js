@@ -1035,7 +1035,9 @@ export class CombatSystem {
       attacker: {
         attack,
         element: skillElementType !== null ? skillElementType : attackerStats.getMainElement(),
-        moraleMultiplier: attackerStats.moraleMultiplier || 1
+        moraleMultiplier: attackerStats.moraleMultiplier || 1,
+        // 虚弱攻击上限（剧情弱狼等）：enemy.maxDamage 由 EntityFactory 注入实体
+        maxDamage: attacker.maxDamage != null ? Number(attacker.maxDamage) : null
       },
       target: {
         defense,

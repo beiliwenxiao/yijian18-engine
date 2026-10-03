@@ -282,6 +282,9 @@ export class EntityFactory {
       ? JSON.parse(JSON.stringify(enemyData.ai))
       : null;
     entity.lootTable = enemyData.lootTable || [];
+    // 虚弱攻击上限（可选）：enemy.maxDamage > 0 时该敌人单次攻击伤害不超过此值
+    //（结算跳过通用 1~5 随机下限，剧情弱狼 0~1 伤害即由此实现）。
+    entity.maxDamage = Number(enemyData.maxDamage) > 0 ? Number(enemyData.maxDamage) : null;
     const corpseDefinition = enemyData.corpse && typeof enemyData.corpse === 'object'
       ? enemyData.corpse
       : {};

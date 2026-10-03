@@ -63,6 +63,23 @@ export const CombatResolver = {
     // 基础公式：攻击 - 防御，最低 1
     let dmg = Math.max(1, attack - defense);
 
+    // 虚弱攻击（attacker.maxDamage）：独立简化结算——跳过兵种/元素相克与通用
+    // 1~5 随机下限，仅基础差值 ±10% 波动后 clamp 上限。剧情弱狼等「打不疼」角色：
+    // 攻击低于防御时基础 1 波动取整自然落在 0~1（约各半），且无论攻击多高、
+    // 目标防御多低，单次伤害都不超过 maxDamage。
+    const maxDamage = (attacker.maxDamage != null && Number(attacker.maxDamage) >= 0)
+      ? Number(attacker.maxDamage) : null;
+    if (maxDamage != null) {
+      const variance = 0.1;
+      dmg = Math.floor(dmg * (1 + (rand() * 2 - 1) * variance));
+      dmg = Math.min(dmg, maxDamage);
+      const targetHp = Math.max(0, (target.hp || 0) - dmg);
+      const dead = targetHp <= 0;
+      events.push({ type: 'damage', amount: dmg, element: 0, dead });
+      if (dead) events.push({ type: 'death' });
+      return { damage: dmg, dead, targetHp, events };
+    }
+
     // 兵种相克（可注入）
     if (typeof ctx.unitCalc === 'function') {
       dmg = ctx.unitCalc(attacker, target, dmg);

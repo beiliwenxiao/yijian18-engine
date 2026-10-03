@@ -732,10 +732,10 @@
           "kind": "enemy",
           "overrides": {
             "stats": {
-              "attack": 5,
+              "attack": 3,
               "defense": 1,
-              "maxHp": 28,
-              "speed": 88
+              "maxHp": 24,
+              "speed": 70
             }
           },
           "ref": "enemy.s01_first_wolf",
