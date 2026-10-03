@@ -31,6 +31,9 @@ const REFUEL_PROGRESS_OWNER = 'campfireRefuel';
 const REFUEL_DURATION_SECONDS = 1;
 const SHELTER_CONSTRUCTION_PROGRESS_OWNER = 's01ShelterConstruction';
 const RECIPE_ACTION_PROGRESS_OWNER = 's01RecipeAction';
+const OVERNIGHT_SLEEP_PROGRESS_OWNER = 's01OvernightSleep';
+const OVERNIGHT_SLEEP_DURATION_SECONDS = 6;
+const OVERNIGHT_SLEEP_ZZZ_INTERVAL_SECONDS = 1.1;
 const RECIPE_ACTION_RANGE = 96;
 const RECIPE_ACTIONS = Object.freeze({
   's01.roastedWolfMeat': Object.freeze({
@@ -78,6 +81,8 @@ export class S01S02Coordinator {
     this.sequence = 0;
     this.refuelCampfireInFlight = null;
     this.refuelCampfireProgress = null;
+    this.overnightSleepInFlight = null;
+    this.overnightSleepProgress = null;
     this.shelterConstructionProgressActive = false;
     this.recipeActionInFlight = null;
     this.recipeActionProgress = null;
@@ -1286,6 +1291,79 @@ export class S01S02Coordinator {
     void this._refuelCampfireOnce(session.operationId).then(session.resolve, session.reject);
   }
 
+  /** 入睡计时条：复用采集进度表现，独立 owner 与添柴/搭建互不干扰。 */
+  _showSleepProgress(event, progress = 0) {
+    return this.scene.context?.presentation?.gatheringProgress?.handleEvent?.(
+      event,
+      { progress },
+      this.scene.playerEntity,
+      OVERNIGHT_SLEEP_PROGRESS_OWNER
+    ) === true;
+  }
+
+  /** 睡觉动画：玩家头顶冒「Z」，缓慢右上漂移渐隐（世界坐标飘字）。 */
+  _spawnSleepZzz() {
+    const transform = this.scene.playerEntity?.getComponent?.('transform');
+    const floating = this.scene.floatingTextManager
+      || this.scene.context?.presentation?.floatingTextManager;
+    if (!transform || !floating) return;
+    const jitterX = Math.round((Math.random() - 0.5) * 24);
+    floating.add({
+      x: transform.position.x + 14 + jitterX,
+      y: transform.position.y - 56,
+      text: 'Z',
+      color: '#cfd8ff',
+      fontSize: 17 + Math.floor(Math.random() * 9),
+      duration: 1.8,
+      velocity: { x: 7, y: -34 },
+      fadeStart: 0.45
+    });
+  }
+
+  /** 每帧推进入睡演出；离开室内/切场景中断，满 6 秒才提交过夜事务。 */
+  _updateSleepProgress(deltaTime) {
+    const session = this.overnightSleepProgress;
+    if (!session || session.committing) return;
+    const delta = Math.max(0, Number(deltaTime) || 0);
+    if (this.scene.currentSceneId !== 'S01-C01' || !this.scene.playerEntity) {
+      this._showSleepProgress('interrupted', 0);
+      this.overnightSleepProgress = null;
+      session.resolve({ ok: true, status: 'sleepInterrupted' });
+      return;
+    }
+    session.elapsed = Math.min(session.duration, session.elapsed + delta);
+    this._showSleepProgress('progress', session.duration > 0 ? session.elapsed / session.duration : 1);
+    session.zzzElapsed += delta;
+    if (session.zzzElapsed >= OVERNIGHT_SLEEP_ZZZ_INTERVAL_SECONDS) {
+      session.zzzElapsed = 0;
+      this._spawnSleepZzz();
+    }
+    if (session.elapsed < session.duration) return;
+
+    session.committing = true;
+    this._showSleepProgress('completed', 1);
+    this.overnightSleepProgress = null;
+    void this._completeOvernightSleep(session.operationId).then(session.resolve, session.reject);
+  }
+
+  /** 睡满 6 秒后的过夜提交：原 overnight 事务 + 第二天氛围与被窝表现。 */
+  async _completeOvernightSleep(operationId) {
+    const result = await this._submit('story.s01.overnight', {}, operationId);
+    if (result?.ok !== true) return result || { ok: false, code: 'overnightCommitUnavailable' };
+    this.scene.timeSystem?.setCurrentDay?.(2);
+    this._applyS01WeatherPhase(this._story().s01Survival || {}, { force: true });
+    // 进入被窝的视觉表现：显示床上的被窝图（editor.visible:false 的场景对象，
+    // 过夜后常驻——第二天起床被窝仍铺开在床上）
+    const sleepingEntity = this.scene.entityStore?.getById?.('S01-C01-bed-sleeping');
+    if (sleepingEntity) {
+      sleepingEntity.visible = true;
+      sleepingEntity.getComponent?.('sprite')?.setVisible?.(true);
+      sleepingEntity.getComponent?.('sprite') && (sleepingEntity.getComponent('sprite').visible = true);
+    }
+    this.scene._showScreenTip('你钻进被窝沉沉睡去。天亮后，先从门口离开庇护所。', { title: '安稳的一夜' });
+    return result;
+  }
+
   async _refuelCampfireOnce(sourceOperationId = null) {
     if (this.scene.currentSceneId !== 'S01') return false;
     const fuel = this.scene._campfireService;
@@ -1877,23 +1955,35 @@ export class S01S02Coordinator {
       if (survival.overnightCompleted === true) {
         return { ok: true, status: 'alreadyCommitted' };
       }
+      if (this.overnightSleepProgress || this.overnightSleepInFlight) {
+        return { ok: true, status: 'alreadySleeping' };
+      }
       const operationId = eventData.eventId
         ? `${eventData.eventId}:state:story.s01.overnight`
         : 'story:s01:overnight';
-      const result = await this._submit('story.s01.overnight', {}, operationId);
-      if (result?.ok !== true) return result || { ok: false, code: 'overnightCommitUnavailable' };
-      this.scene.timeSystem?.setCurrentDay?.(2);
-      this._applyS01WeatherPhase(this._story().s01Survival || {}, { force: true });
-      // 进入被窝的视觉表现：显示床上的被窝图（editor.visible:false 的场景对象，
-      // 过夜后常驻——第二天起床被窝仍铺开在床上）
-      const sleepingEntity = this.scene.entityStore?.getById?.('S01-C01-bed-sleeping');
-      if (sleepingEntity) {
-        sleepingEntity.visible = true;
-        sleepingEntity.getComponent?.('sprite')?.setVisible?.(true);
-        sleepingEntity.getComponent?.('sprite') && (sleepingEntity.getComponent('sprite').visible = true);
-      }
-      this.scene._showScreenTip('你钻进被窝沉沉睡去。天亮后，先从门口离开庇护所。', { title: '安稳的一夜' });
-      return result;
+      // 入睡演出：6 秒计时条 + 头顶 Zzz 飘字；期间离开室内即中断，不写任何事实。
+      let resolveAction;
+      let rejectAction;
+      const action = new Promise((resolve, reject) => {
+        resolveAction = resolve;
+        rejectAction = reject;
+      });
+      this.overnightSleepProgress = {
+        operationId,
+        elapsed: 0,
+        duration: OVERNIGHT_SLEEP_DURATION_SECONDS,
+        zzzElapsed: OVERNIGHT_SLEEP_ZZZ_INTERVAL_SECONDS,
+        committing: false,
+        resolve: resolveAction,
+        reject: rejectAction
+      };
+      this._showSleepProgress('started', 0);
+      this._spawnSleepZzz();
+      const pending = action.finally(() => {
+        if (this.overnightSleepInFlight === pending) this.overnightSleepInFlight = null;
+      });
+      this.overnightSleepInFlight = pending;
+      return pending;
     }
     if (operation === 'riverCrossed') {
       const result = await this._submit('story.s01.riverCrossed', {}, 'story:s01:river-crossed');
@@ -1917,6 +2007,8 @@ export class S01S02Coordinator {
 
   update(deltaTime) {
     this._syncShelterWeatherPause();
+    // 入睡演出在室内子场景 S01-C01 进行，必须先于下方 S01 主场景早退分支推进。
+    this._updateSleepProgress(deltaTime);
     if (this.scene.currentSceneId !== 'S01') {
       this.resolvedPlacementContinuations.clear();
       if (this.s01TimePhaseInitialized || this.s01WeatherPhaseInitialized || this.s01TimePauseOwned) {
