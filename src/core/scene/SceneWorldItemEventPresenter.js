@@ -37,6 +37,8 @@ export function emitWorldItemSparkles(particleSystem, position, payload = {}) {
 export class SceneWorldItemEventPresenter {
   constructor(config = {}) {
     this.resolveTarget = config.resolveTarget || (() => null);
+    // definitionId → 物品显示名（内容库查询注入；未注入时回退 definitionId）
+    this.resolveItemName = typeof config.resolveItemName === 'function' ? config.resolveItemName : null;
     this.particleSystem = config.particleSystem || null;
     this.notify = config.notify || (() => {});
     this.animations = new Map();
@@ -58,7 +60,9 @@ export class SceneWorldItemEventPresenter {
       });
     }
     if (position) this._emitSparkles(position, payload);
-    const name = payload.name || payload.item?.name || payload.definitionId || '物品';
+    const definitionId = payload.definitionId || payload.item?.definitionId || payload.item?.id || null;
+    const resolvedName = definitionId && this.resolveItemName ? this.resolveItemName(definitionId) : null;
+    const name = payload.name || payload.item?.name || resolvedName || definitionId || '物品';
     const defaultMessage = event.type === 'worldItem.revealed'
       ? `发现：${name}掉落在地上。`
       : (event.type === 'item.deathDropCreated' ? `${name}掉落在地上。` : `${name}已掉落。`);

@@ -1026,6 +1026,13 @@ export class BaseGameSceneSetup extends Scene {
 
     const worldItemEvents = new SceneWorldItemEventPresenter({
       particleSystem: this.particleSystem,
+      // 掉落提示显示物品名而非内部 ID：definitionId → 内容库物品 name
+      resolveItemName: definitionId => {
+        if (!definitionId) return null;
+        const items = this.gameLoader?.project?.library?.items || [];
+        const found = items.find(item => item?.id === definitionId);
+        return found?.name || null;
+      },
       resolveTarget: payload => {
         const ids = new Set([payload.placementId, payload.entityId, payload.groundId].filter(Boolean));
         return [...this.pickupItems, ...this.equipmentItems, ...this.entities]
