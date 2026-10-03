@@ -1,6 +1,6 @@
 # 设计：NPC 巡逻/警戒/追击 + Boss 攻击预警 + 追逐野狼改五只掉狼牙
 
-> 状态：实施中（v3，2026-10-03）；第一批已交付（见 2.4）；第二批已交付（AI 画像 + 编辑器 AI 区块，见 2.6）；第三批（Boss 预警）待开工
+> 状态：已完成（v4，2026-10-03）；三批全部交付（第一批内容 9862b7e / 第二批 AI+编辑器 a98fded / 第三批 Boss 预警，见六章）
 > 需求：①NPC 有巡逻路线/警戒范围/追击范围，场景编辑器可编辑（类似「可碰撞」勾选与五边形调整）；②Boss 预先放出攻击范围/技能虚线框（与玩家技能瞄准同款表现）；③追逐野狼 20→5 只，杀完刷野狼 Boss，掉「狼牙」匕首（攻击+12，可装备）。
 
 ## 一、现状关键结论（勘察实证）
@@ -109,3 +109,30 @@ placement 面板（选中场景里的怪）新增「AI」区块，照「可碰�
 
 - AISystem 26/26（新增 5 例：警戒圈内外索敌 / 无 profile 默认 400 / 追击范围放弃 / 巡逻移动 / 回家）；
   editor 18 文件 94/94；EntityFactory 6/6；RealCanonicalColdRestartReplay 5/5（library 装载链）。
+
+---
+
+## 六、第三批交付记录（2026-10-03）：Boss 攻击预警（telegraph）
+
+### 6.1 实现（CombatSystem.js）
+
+- **performAttack 开头拦截**（:814）：`aiProfile.telegraph.windupMs > 0` 且 enemy 攻击时：
+  首次调用 → `attackTelegraphs`（attackerId → {startedAt, windupMs, radius, refs, name}）进入前摇并 return；
+  前摇中重入幂等 return（不推进冷却）；前摇满 → 清记录，**目标仍在 attackRange 内才放行结算**，
+  跑出圈即落空（不推进冷却，AI 重新走预警循环——躲开机制）。
+- **渲染**（renderAttackTelegraphs，render 尾调用）：windup 中敌人脚下画攻击范围 2.5D 虚线椭圆
+  （复用 renderCircleIndicator，与玩家技能瞄准同款），红色、半径随剩余时间收圈（0.35→1 倍）——
+  直观传达「快打了，快出圈」。
+- **生命周期防泄漏**：handleDeath 清死者相关条目（攻击者/目标双角色）；渲染循环兜底清理
+  超过 2 倍前摇未结算的孤儿条目（脱战/AI 停驱残留）。
+- 普通怪 windupMs 0/未配置 = 现行为不变（立即结算）。
+- library.json 狼王已配 telegraph.windupMs 800（第二批数据就位）。
+
+### 6.2 验证
+
+- 实机状态机冒烟（pw-telegraph.mjs，真实 CombatSystem + 假实体探针）五步全过：
+  进入前摇（记录创建/零结算）→ 前摇中重入幂等 → 前摇满结算（attack 推进 + 记录清除）→
+  出圈落空（不结算 + 记录清除）→ 普通怪立即结算（零回归）；无 pageerror。
+- 场景核心 + 存档回归 112/112。
+
+**三批全部交付**。后续可选：狼牙专属贴图、范围圈半径画布拖拽、boss 多技能 telegraph 形状（路径框）。

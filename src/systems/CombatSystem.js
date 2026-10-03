@@ -114,6 +114,8 @@ export class CombatSystem {
     
     // 技能范围指示器列表
     this.skillRangeIndicators = [];
+    // Boss 攻击预警（telegraph）：attackerId → {startedAt, windupMs, radius, attackerRef, targetRef, name}
+    this.attackTelegraphs = new Map();
     
     // 技能颜色映射
     this.skillColorMap = {
@@ -547,6 +549,43 @@ export class CombatSystem {
     
     // 渲染伤害数字
     this.renderDamageNumbers(ctx);
+
+    // Boss 攻击预警（telegraph）：windup 中的敌人画攻击范围虚线圈
+    this.renderAttackTelegraphs(ctx);
+  }
+
+  /**
+   * Boss 攻击预警渲染：windup 进行中的敌人脚下画攻击范围 2.5D 虚线椭圆
+   * （与玩家技能瞄准同款表现），半径随剩余时间收圈——直观传达「快打了，快出圈」。
+   * @param {CanvasRenderingContext2D} ctx
+   */
+  renderAttackTelegraphs(ctx) {
+    if (this.attackTelegraphs.size === 0) return;
+    const now = this.now();
+    for (const [attackerId, telegraph] of this.attackTelegraphs) {
+      const elapsed = now - telegraph.startedAt;
+      // 兜底清理：脱战/AI 停止驱动后残留的过期条目（正常结算由 performAttack 消费，
+      // AI 驱动间隔远小于 2 倍前摇，超时未消费即视为孤儿）
+      if (elapsed >= telegraph.windupMs * 2) {
+        this.attackTelegraphs.delete(attackerId);
+        continue;
+      }
+      if (elapsed >= telegraph.windupMs) continue;
+      const transform = telegraph.attackerRef?.getComponent?.('transform');
+      if (!transform) continue;
+      const remaining = 1 - elapsed / telegraph.windupMs;
+      const radius = telegraph.radius * (0.35 + 0.65 * remaining);
+      this.renderCircleIndicator(ctx, {
+        type: 'circle',
+        x: transform.position.x,
+        y: transform.position.y,
+        radius,
+        color: '#ff5555',
+        skillName: `${telegraph.name || '攻击'}预警`,
+        dashOffset: -now * 0.06,
+        life: 1
+      }, Math.min(1, remaining + 0.3));
+    }
   }
 
   /**
@@ -779,7 +818,36 @@ export class CombatSystem {
     const targetTransform = target.getComponent('transform');
     
     if (!combat) return;
-    
+
+    // Boss 攻击预警（telegraph）：aiProfile.telegraph.windupMs > 0 的敌人攻击前先展示
+    // 攻击范围虚线圈（与玩家技能瞄准同款 2.5D 虚线），前摇结束且目标仍在圈内才结算——
+    // 「先看见范围，再挨打」，跑出圈即躲开。普通怪 windupMs 0/未配置 = 现行为不变。
+    const telegraphWindupMs = Number(attacker.aiProfile?.telegraph?.windupMs) > 0
+      ? Number(attacker.aiProfile.telegraph.windupMs) : 0;
+    if (telegraphWindupMs > 0 && attacker.type === 'enemy' && targetTransform) {
+      const telegraphNow = this.now();
+      const existingTelegraph = this.attackTelegraphs.get(attacker.id);
+      if (!existingTelegraph) {
+        this.attackTelegraphs.set(attacker.id, {
+          startedAt: telegraphNow,
+          windupMs: telegraphWindupMs,
+          radius: combat.attackRange,
+          attackerRef: attacker,
+          targetRef: target,
+          name: attacker.name || '攻击'
+        });
+        return;
+      }
+      if (telegraphNow - existingTelegraph.startedAt < existingTelegraph.windupMs) return; // 前摇进行中（幂等）
+      this.attackTelegraphs.delete(attacker.id);
+      // 前摇结束：目标跑出攻击范围则本次攻击落空（不推进冷却，AI 重新走预警循环）
+      const telegraphDistance = Math.hypot(
+        targetTransform.position.x - attackerTransform.position.x,
+        targetTransform.position.y - attackerTransform.position.y
+      );
+      if (telegraphDistance > combat.attackRange) return;
+    }
+
     // 检查敌人攻击是否被格挡
     if (attacker.type === 'enemy' && target.type === 'player') {
       // 主动格挡检查（优先级最高）
@@ -2205,7 +2273,13 @@ export class CombatSystem {
    */
   handleDeath(entity, deathEvent = null) {
     console.log(`${entity.name || entity.id} 死亡`);
-    
+
+    // 清理该实体相关联的攻击预警（作为攻击者或作为目标），防长期运行泄漏
+    this.attackTelegraphs.delete(entity.id);
+    for (const [attackerId, telegraph] of this.attackTelegraphs) {
+      if (telegraph.targetRef === entity) this.attackTelegraphs.delete(attackerId);
+    }
+
     // 标记为正在死亡
     entity.isDying = true;
     
