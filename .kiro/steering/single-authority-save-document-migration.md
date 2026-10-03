@@ -1,6 +1,6 @@
 # 迁移方案论证：单一权威存档文档（SDD）
 
-> 状态：迁移中（v4，2026-10-03）；阶段 0/1/2 已交付；阶段 3b 已交付（campaignContent provider 读文档节点 + snapshotTransformer 读端 SDD 优先）；quests/narrative 已成权威源；第二批（player/ui/world）待评估
+> 状态：迁移中（v5，2026-10-03）；阶段 0/1/2/3b 已交付；阶段 3 第二批已交付（snapshotTransformer 全节点读端覆盖：player/ui/world）；quests/narrative = 运行期镜像权威源，player/ui/world = 存档时文档节点；剩余阶段 4（清理旧链路）独立排期
 > 目标：回答「存档能否收敛为单一纯数据文档、任务系统能否退化为勾选器」，给出可行路径与代价。
 
 ---
@@ -196,3 +196,9 @@ SnapshotManager（SaveGameService.manager）
 第二批比原估轻得多：**读写入口集中 + sdd 已含全节点**，剩余工作是「读端覆盖扩展 + 缺段测试」，
 约 1 天。完成即达成终态：**存档文件 = SDD 文档（权威源）+ 旧字段兼容别名**；阶段 4（清理旧链路）
 可在此之后独立排期。
+
+> **交付记录（2026-10-03）**：第二批已交付。snapshotTransformer 全节点覆盖
+> （player / ui.tutorial / ui.dialogue / world.scene，缺段判空跳过）+ 等价性测试 3 例
+> （saveSystemRegression 共 32 例全绿）；实机冒烟通过（autosave-1 读档：player 位置与存档点
+> 容差内一致、narrative 镜像就位、无 pageerror）。至此 sdd.document 五节点（quests/narrative/
+> player/ui/world）在读端均为权威源。
