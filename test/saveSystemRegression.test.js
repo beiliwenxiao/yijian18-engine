@@ -11,6 +11,7 @@ import { SceneTriggerBindingSystem } from '../src/core/scene/SceneTriggerBinding
 import { SanguoSceneStateFlow } from '../example/sanguo_zhangjiao/systems/SanguoSceneStateFlow.js';
 import { QuestTransactionService } from '../src/systems/QuestTransactionService.js';
 import { QuestRuntimeState } from '../src/systems/QuestRuntimeState.js';
+import { GameLoader } from '../src/core/GameLoader.js';
 
 /**
  * 存档/任务链路回归（2026-10 存档系统缺陷修复的永久钉子）。
@@ -435,6 +436,74 @@ describe('SDD 阶段 2：quests 节点镜像（任务系统自持文档）', () 
     const second = quests.serialize();
     expect(sddSemanticEquals(second, first)).toBe(true);
     expect(quests.sdd.revision).toBe(revisionAfterFirst + 1);
+  });
+});
+
+describe('SDD 阶段 3：narrative 节点镜像（GameLoader 叙事状态自持文档）', () => {
+  function makeQuestSystem() {
+    return new QuestTransactionService({
+      definitionRepository: {
+        definitionRevision: 0,
+        get: (type, id) => (id === 'q1' ? { id: 'q1', name: '测试任务' } : null),
+        snapshot: { definitions: { quests: [{ id: 'q1', name: '测试任务' }] } }
+      }
+    });
+  }
+
+  function makeRuntime(definitionId = 'q1') {
+    return QuestRuntimeState.create({ questRuntimeId: `p1:${definitionId}`, definitionId, logicalTime: 5 }).toJSON();
+  }
+
+  function makeLoader() {
+    const loader = new GameLoader();
+    loader.blackboard.set('storyState', { currentSceneId: 'S01' });
+    return loader;
+  }
+
+  it('serialize 后 sddStore.narrative 镜像 blackboard/triggers', () => {
+    const loader = makeLoader();
+    const data = loader.serialize();
+    const node = loader.sddStore.getNode('narrative');
+    expect(node.blackboard).toEqual(data.blackboard);
+    expect(node.triggers).toEqual(data.triggers);
+  });
+
+  it('deserialize 后 sddStore.narrative 镜像恢复状态', () => {
+    const loader = makeLoader();
+    const triggers = loader.serialize().triggers; // 合法 trigger 快照形状
+    const data = {
+      blackboard: { storyState: { currentSceneId: 'S02', joinedYellowTurban: true } },
+      triggers
+    };
+    const restored = loader.deserialize(data);
+    expect(restored.ok).toBe(true);
+    const node = loader.sddStore.getNode('narrative');
+    expect(node.blackboard.storyState.joinedYellowTurban).toBe(true);
+    expect(loader.blackboard.serialize().storyState.currentSceneId).toBe('S02');
+  });
+
+  it('deserialize 校验失败时拒绝且 sddStore.narrative 不被污染', () => {
+    const loader = makeLoader();
+    loader.serialize(); // 建立基线
+    const before = loader.sddStore.getNode('narrative');
+    const result = loader.deserialize({});
+    expect(result.ok).toBe(false);
+    expect(loader.sddStore.getNode('narrative')).toEqual(before);
+  });
+
+  it('documentProjector 的运行时节点优先语义：quests/narrative 来源可切换（index.html 闭包模式复刻）', () => {
+    const quests = makeQuestSystem();
+    quests.deserialize({
+      schemaVersion: 2, definitionRevision: 0, taskGraph: null,
+      actors: [{ actorId: 'p1', runtimes: [makeRuntime()] }]
+    });
+    // 模拟 index.html documentProjector：快照投影 + 运行时节点覆盖
+    const snapshot = { data: { game: { player: { hp: 1 }, authority: { serviceStates: { quests: { schemaVersion: 2, taskGraph: { nodes: {} }, actors: [] } } } } } };
+    const document = projectSnapshotToSdd(snapshot);
+    const runtimeQuests = quests.sdd.getNode('quests');
+    if (runtimeQuests) document.quests = runtimeQuests;
+    // 运行时节点（有 actor）覆盖投影节点（空 actors）
+    expect(document.quests.actors.length).toBe(1);
   });
 });
 

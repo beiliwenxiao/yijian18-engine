@@ -1038,11 +1038,17 @@
             migrateLegacyAutoSlot: false,
             useIndexedDB: true,  // 使用 IndexedDB 存储大型存档
             // SDD 双写（双写不双读）：投影挂在 snapshot.sdd，供后续版本迁移消费。
-            // 投影失败由 SnapshotManager 告警兜底，不阻断产品存档。
-            documentProjector: snapshot => ({
-                schemaVersion: SDD_SCHEMA_VERSION,
-                document: projectSnapshotToSdd(snapshot)
-            })
+            // quests/narrative 已自持运行时文档（questSystem.sdd / gameLoader.sddStore，
+            // 与各自 serialize 同源同步），投影时以运行时节点为准；投影失败由
+            // SnapshotManager 告警兜底，不阻断产品存档。
+            documentProjector: snapshot => {
+                const document = projectSnapshotToSdd(snapshot);
+                const runtimeQuests = scene?.questSystem?.sdd?.getNode('quests');
+                if (runtimeQuests) document.quests = runtimeQuests;
+                const runtimeNarrative = scene?.gameLoader?.sddStore?.getNode('narrative');
+                if (runtimeNarrative) document.narrative = runtimeNarrative;
+                return { schemaVersion: SDD_SCHEMA_VERSION, document };
+            }
         });
         shell.saveGames = saveGames;
 

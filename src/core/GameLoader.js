@@ -30,6 +30,7 @@ import { ScenarioDefinitionIndex } from './scenario/ScenarioDefinitionIndex.js';
 import { TriggerGraph } from './scenario/TriggerGraph.js';
 import { createStandardRegistries } from './Registry.js';
 import { DefinitionRepository } from './DefinitionRepository.js';
+import { SddStore } from './snapshot/SddStore.js';
 import { compileQuestProject } from '../systems/quest/QuestRuntime.js';
 import { createStandardCapabilityStrategyRegistry } from '../systems/items/CapabilityStrategyRegistry.js';
 import {
@@ -83,6 +84,9 @@ export class GameLoader {
     this._definitionRevision = 0;
     this.blackboard = new Blackboard();
     this.triggerSystem = new TriggerSystem();
+    // SDD 迁移阶段 3：叙事状态（blackboard/triggers）自持文档节点，
+    // serialize/deserialize 时同步 'narrative' —— 运行期任何时刻可按节点重建叙事视图。
+    this.sddStore = new SddStore({ schemaVersion: 3 });
     // 任务中心制：quests[] 编译产物（taskGraph 定义 + 触发器），装配时刷新
     this.questCompilation = { taskGraphs: [], triggers: [] };
     // 兼容 Registry 只读委托当前 DefinitionRepository revision。
@@ -682,6 +686,8 @@ export class GameLoader {
       data.progression = this.progressionSystem.serializeCharacter(characterId);
     }
 
+    // SDD 同步：'narrative' 节点镜像叙事状态（订阅者可按节点重建叙事视图）。
+    this.sddStore.patchNode('narrative', JSON.parse(JSON.stringify(data)));
     return data;
   }
 
@@ -732,6 +738,9 @@ export class GameLoader {
       const triggerResult = this.triggerSystem.deserialize(data.triggers);
       if (!triggerResult.ok) return triggerResult;
     }
+
+    // SDD 同步：读档后 'narrative' 节点镜像恢复后的叙事状态。
+    this.sddStore.patchNode('narrative', JSON.parse(JSON.stringify(data)));
 
     if (characterId && data.progression && this.progressionSystem) {
       return this.progressionSystem.deserializeCharacter(characterId, data.progression);
