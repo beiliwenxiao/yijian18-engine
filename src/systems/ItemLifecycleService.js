@@ -726,15 +726,12 @@ export class ItemLifecycleService {
         const dropPosition = result.drop?.getComponent?.('transform')?.position
           || result.drop?.position
           || null;
-        return {
-          ok: true,
-          value: {
-            action: 'deathDrop', type: result.type, deathId: result.deathId,
-            dropId: result.drop?.id || null, stacks: clone(result.stacks || []), loot,
-            respawnPosition: clone(result.respawnPosition || null)
-          },
-          applicationEvents: [{
-            type: result.type === 'specialFaint' ? 'item.specialFaintResolved' : 'item.deathDropCreated',
+        // 死亡不掉落（normalDeath 无掉落物）时不再发布 deathDropCreated，
+        // 避免出现「遗失物资掉落在地上」的误导提示；specialFaint 事件保留。
+        const applicationEvents = [];
+        if (result.type === 'specialFaint') {
+          applicationEvents.push({
+            type: 'item.specialFaintResolved',
             payload: {
               deathId: result.deathId,
               dropId: result.drop?.id || null,
@@ -743,10 +740,34 @@ export class ItemLifecycleService {
               loot,
               stacks: clone(result.stacks || []),
               position: dropPosition ? { x: dropPosition.x, y: dropPosition.y } : null,
-              reason: result.type === 'specialFaint' ? 'specialFaint' : 'deathDrop',
-              announce: result.type !== 'specialFaint'
+              reason: 'specialFaint',
+              announce: false
             }
-          }],
+          });
+        } else if (result.drop) {
+          applicationEvents.push({
+            type: 'item.deathDropCreated',
+            payload: {
+              deathId: result.deathId,
+              dropId: result.drop?.id || null,
+              entityId: result.drop?.id || null,
+              name: '遗失物资',
+              loot,
+              stacks: clone(result.stacks || []),
+              position: dropPosition ? { x: dropPosition.x, y: dropPosition.y } : null,
+              reason: 'deathDrop',
+              announce: true
+            }
+          });
+        }
+        return {
+          ok: true,
+          value: {
+            action: 'deathDrop', type: result.type, deathId: result.deathId,
+            dropId: result.drop?.id || null, stacks: clone(result.stacks || []), loot,
+            respawnPosition: clone(result.respawnPosition || null)
+          },
+          applicationEvents,
           finalize: () => result.finalize?.()
         };
       },

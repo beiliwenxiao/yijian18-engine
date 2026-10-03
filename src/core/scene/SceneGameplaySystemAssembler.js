@@ -317,7 +317,7 @@ export class SceneGameplaySystemAssembler {
           choices: [{
             id: 'revive',
             label: '原地复活',
-            consequences: ['恢复全部生命与法力', '结算死亡资源损失', '死亡掉落留在原地']
+            consequences: ['恢复全部生命与法力', '背包物品全部保留']
           }]
         });
         return true;

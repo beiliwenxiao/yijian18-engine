@@ -20,27 +20,6 @@
 
  ************************************************************/
 
-function isDroppableResource(item) {
-  return item?.type === 'material' || String(item?.id || '').startsWith('resource.');
-}
-
-function buildLossDraft(inventory) {
-  const byId = new Map();
-  for (const stack of inventory?.slots || []) {
-    if (!stack || !isDroppableResource(stack.item)) continue;
-    const definitionId = stack.item.definitionId || stack.item.id;
-    byId.set(definitionId, (byId.get(definitionId) || 0)
-      + Math.max(0, Math.floor(Number(stack.quantity) || 0)));
-  }
-  return [...byId.entries()]
-    .map(([definitionId, quantity], index) => ({
-      id: `${definitionId}-${index}`,
-      definitionId,
-      quantity: Math.floor(quantity * 0.5)
-    }))
-    .filter(entry => entry.quantity > 0);
-}
-
 /** 玩家失败结算：普通死亡与特殊昏迷共用同一互斥、幂等入口。 */
 export class PlayerDefeatService {
   constructor({ inventoryTransactions, entityFactory, entityStore, revivePlayer,
@@ -88,32 +67,9 @@ export class PlayerDefeatService {
   }
 
   _resolveNormalDeath(player, deathId) {
-    const inventory = player.getComponent?.('inventory');
-    const transform = player.getComponent?.('transform');
-    if (!inventory || !transform) return { ok: false, code: 'missingPlayerState' };
-    const stacks = buildLossDraft(inventory);
-    let drop = null;
-    if (stacks.length > 0) {
-      const presentation = this.getDeathDropPresentation({ player, deathId, stacks }) || {};
-      drop = this.entityFactory?.createDeathDrop?.({
-        ...presentation,
-        id: `death-drop-${deathId}`,
-        deathId,
-        stacks,
-        position: { x: transform.position.x, y: transform.position.y }
-      });
-      if (!drop) return { ok: false, code: 'dropCreationFailed' };
-      const removal = this.inventoryTransactions.commit({
-        type: 'batchRemove',
-        inventory,
-        entries: stacks.map(stack => ({ itemId: stack.definitionId, quantity: stack.quantity })),
-        operationId: `death:${deathId}:remove`
-      });
-      if (!removal.ok) return { ...removal, code: removal.code || 'lossCommitFailed' };
-      this.entityStore?.add?.(drop);
-      this.entityStore?.addEquipmentItem?.(drop);
-    }
-    return { ok: true, type: 'normalDeath', deathId, drop, stacks };
+    // 死亡不掉落：背包物品全部保留，不再生成「遗失物资」掉落物
+    //（该机制易出 bug，已按产品决策整体移除；死亡只走复活流程）。
+    return { ok: true, type: 'normalDeath', deathId, drop: null, stacks: [] };
   }
 
   _resolveSpecialFaint(_player, deathId, resolution) {

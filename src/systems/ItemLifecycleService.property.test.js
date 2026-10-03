@@ -359,16 +359,7 @@ function expectedState(scenario, before) {
       expected.worlds = [];
       break;
     case 'deathDrop':
-      expected.inventory = removeState(expected.inventory, materialState, scenario.quantity);
-      expected.worlds = [{
-        id: `death-drop-${scenario.deathId}`,
-        kind: 'deathDrop',
-        state: {
-          schemaVersion: 2,
-          deathId: scenario.deathId,
-          stacks: [{ id: `${material.id}-0`, definitionId: material.id, quantity: scenario.quantity }]
-        }
-      }];
+      // 死亡不掉落：背包物品全部保留，世界不生成掉落物（与 before 一致）
       break;
   }
   return expected;
@@ -390,7 +381,7 @@ function expectedNotificationTypes(operationKind) {
   if (operationKind === 'drop') types.push('item.dropped');
   if (operationKind === 'equip') types.push('item.equipped');
   if (operationKind === 'unequip') types.push('item.unequipped');
-  if (operationKind === 'deathDrop') types.push('item.deathDropCreated');
+  // deathDrop（死亡不掉落）：不再发布 item.deathDropCreated
   return types;
 }
 
@@ -461,7 +452,10 @@ describe('Property 8: Definition-driven item lifecycle transaction', () => {
             const before = observableState(fixture);
             const model = expectedState(scenario, before);
             const result = await fixture.gateway.execute(intent);
-            const committed = faultPhase === 'none';
+            // 死亡不掉落：deathDrop 不再有库存事务（prepare/commit 故障面消失）；
+            // validation（actor 缺失）与 checkpoint 故障仍导致失败
+            const committed = faultPhase === 'none'
+              || (operationKind === 'deathDrop' && (faultPhase === 'prepare' || faultPhase === 'commit'));
 
             expect(result.ok).toBe(committed);
             expect(result.committed).toBe(committed);
@@ -479,7 +473,7 @@ describe('Property 8: Definition-driven item lifecycle transaction', () => {
               stateRevision: 1
             })));
             expect(fixture.checkpoints).toHaveLength(
-              faultPhase === 'none' || faultPhase === 'checkpoint' ? 1 : 0
+              committed || faultPhase === 'checkpoint' ? 1 : 0
             );
             if (fixture.checkpoints.length) {
               expect(fixture.checkpoints[0]).toMatchObject({
