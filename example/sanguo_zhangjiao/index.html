@@ -974,7 +974,7 @@
         import { PlayerInfoPanel } from '../../src/ui/PlayerInfoPanel.js';
         import { ItemIconRenderer } from '../../src/ui/ItemIconRenderer.js';
         import { SaveGameService } from '../../src/core/snapshot/SaveGameService.js';
-        import { SDD_SCHEMA_VERSION, projectSnapshotToSdd } from '../../src/core/snapshot/SddProjection.js';
+        import { createRuntimeDocumentProjector, createSddSnapshotTransformer } from '../../src/core/snapshot/SddSaveWiring.js';
         import { CanvasDisplayScaler } from '../../src/core/CanvasDisplayScaler.js';
         import { normalizePresentationProfile } from '../../src/core/PresentationProfile.js';
         import presentationProfileData from './config/presentation.json' with { type: 'json' };
@@ -1037,39 +1037,14 @@
             slotCount: 100,
             migrateLegacyAutoSlot: false,
             useIndexedDB: true,  // 使用 IndexedDB 存储大型存档
-            // SDD 双写（双写不双读）：投影挂在 snapshot.sdd，供后续版本迁移消费。
-            // quests/narrative 已自持运行时文档（questSystem.sdd / gameLoader.sddStore，
-            // 与各自 serialize 同源同步），投影时以运行时节点为准；投影失败由
-            // SnapshotManager 告警兜底，不阻断产品存档。
-            documentProjector: snapshot => {
-                const document = projectSnapshotToSdd(snapshot);
-                const runtimeQuests = scene?.questSystem?.sdd?.getNode('quests');
-                if (runtimeQuests) document.quests = runtimeQuests;
-                const runtimeNarrative = scene?.gameLoader?.sddStore?.getNode('narrative');
-                if (runtimeNarrative) document.narrative = runtimeNarrative;
-                return { schemaVersion: SDD_SCHEMA_VERSION, document };
-            },
-            // 读端 SDD 节点优先：带 sdd 的存档恢复时以文档节点覆盖旧链路字段
-            // （双写等价由回归测试钉住，覆盖为同值替代——sdd 是权威源的结构声明）。
-            // quests/narrative=运行时文档节点；player/ui/world=存档时文档节点（缺段判空跳过）。
-            // 旧档无 sdd 字段时原样走旧链路。
-            snapshotTransformer: snapshot => {
-                const sdd = snapshot?.sdd;
-                if (!sdd?.document) return snapshot;
-                const serviceStates = snapshot?.data?.game?.authority?.serviceStates;
-                if (serviceStates) {
-                    if (sdd.document.quests) serviceStates.quests = sdd.document.quests;
-                    if (sdd.document.narrative) serviceStates.campaignContent = sdd.document.narrative;
-                }
-                const game = snapshot?.data?.game;
-                if (game) {
-                    if (sdd.document.player) game.player = sdd.document.player;
-                    if (sdd.document.ui?.tutorial) game.tutorial = sdd.document.ui.tutorial;
-                    if (sdd.document.ui?.dialogue) game.dialogue = sdd.document.ui.dialogue;
-                    if (sdd.document.world?.scene) game.scene = sdd.document.world.scene;
-                }
-                return snapshot;
-            }
+            // SDD 双写接线（阶段 4 收敛）：工厂实现唯一（SddSaveWiring.js），产品与回归
+            // 测试共用同一闭包——禁止再复制。quests/narrative 已自持运行时文档
+            // （questSystem.sdd / gameLoader.sddStore，与各自 serialize 同源同步），
+            // 投影时以运行时节点为准；读端带 sdd 的存档以文档节点覆盖旧链路字段
+            // （quests/narrative=运行时文档节点；player/ui/world=存档时文档节点，
+            // 缺段判空跳过；旧档无 sdd 原样走旧链路）。
+            documentProjector: createRuntimeDocumentProjector(() => scene),
+            snapshotTransformer: createSddSnapshotTransformer()
         });
         shell.saveGames = saveGames;
 

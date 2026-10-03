@@ -5,7 +5,8 @@ import { fileURLToPath } from 'node:url';
 import { SnapshotManager } from '../src/core/snapshot/SnapshotManager.js';
 import { SaveGameService } from '../src/core/snapshot/SaveGameService.js';
 import { LocalStorageAdapter } from '../src/core/snapshot/LocalStorageAdapter.js';
-import { SDD_SCHEMA_VERSION, projectSnapshotToSdd, projectSddToSnapshot, sddSemanticEquals } from '../src/core/snapshot/SddProjection.js';
+import { SDD_SCHEMA_VERSION, projectSddToSnapshot, sddSemanticEquals } from '../src/core/snapshot/SddProjection.js';
+import { createRuntimeDocumentProjector, createSddSnapshotTransformer } from '../src/core/snapshot/SddSaveWiring.js';
 import { getPlacementSignature } from '../src/core/scene/ScenePlacementRuntime.js';
 import { SceneTriggerBindingSystem } from '../src/core/scene/SceneTriggerBindingSystem.js';
 import { SanguoSceneStateFlow } from '../example/sanguo_zhangjiao/systems/SanguoSceneStateFlow.js';
@@ -127,9 +128,10 @@ describe('存档回归：SDD 双写（双写不双读，阶段 1c）', () => {
     const service = makeService();
     service.setStateProvider({ capture: () => makeGamePayload(), restore: () => ({ ok: true }) });
     const projectorCalls = [];
+    const baseProjector = createRuntimeDocumentProjector(() => null);
     service.manager.documentProjector = snapshot => {
       projectorCalls.push(snapshot);
-      return { schemaVersion: SDD_SCHEMA_VERSION, document: projectSnapshotToSdd(snapshot) };
+      return baseProjector(snapshot);
     };
     const saved = await service.saveAsync(1);
     expect(saved.ok).toBe(true);
@@ -173,10 +175,7 @@ describe('存档回归：SDD 双写（双写不双读，阶段 1c）', () => {
       restore: data => { restored.push(data); return { ok: true }; }
     });
     await service.saveAsync(1);
-    service.manager.documentProjector = snapshot => ({
-      schemaVersion: SDD_SCHEMA_VERSION,
-      document: projectSnapshotToSdd(snapshot)
-    });
+    service.manager.documentProjector = createRuntimeDocumentProjector(() => null);
     const loaded = await service.loadAsync(1);
     expect(loaded.ok).toBe(true);
     expect(restored[0]).toEqual(makeGamePayload());
@@ -491,17 +490,15 @@ describe('SDD 阶段 3：narrative 节点镜像（GameLoader 叙事状态自持�
     expect(loader.sddStore.getNode('narrative')).toEqual(before);
   });
 
-  it('documentProjector 的运行时节点优先语义：quests/narrative 来源可切换（index.html 闭包模式复刻）', () => {
+  it('documentProjector 的运行时节点优先语义：quests/narrative 来源可切换（生产接线工厂）', () => {
     const quests = makeQuestSystem();
     quests.deserialize({
       schemaVersion: 2, definitionRevision: 0, taskGraph: null,
       actors: [{ actorId: 'p1', runtimes: [makeRuntime()] }]
     });
-    // 模拟 index.html documentProjector：快照投影 + 运行时节点覆盖
+    const projector = createRuntimeDocumentProjector(() => ({ questSystem: quests, gameLoader: null }));
     const snapshot = { data: { game: { player: { hp: 1 }, authority: { serviceStates: { quests: { schemaVersion: 2, taskGraph: { nodes: {} }, actors: [] } } } } } };
-    const document = projectSnapshotToSdd(snapshot);
-    const runtimeQuests = quests.sdd.getNode('quests');
-    if (runtimeQuests) document.quests = runtimeQuests;
+    const { document } = projector(snapshot);
     // 运行时节点（有 actor）覆盖投影节点（空 actors）
     expect(document.quests.actors.length).toBe(1);
   });
@@ -527,14 +524,7 @@ describe('SDD 阶段 3b：读端 SDD 节点优先（snapshotTransformer）', () 
       }
     });
     if (transformer) {
-      service.manager.snapshotTransformer = snapshot => {
-        const sdd = snapshot?.sdd;
-        const serviceStates = snapshot?.data?.game?.authority?.serviceStates;
-        if (!sdd?.document || !serviceStates) return snapshot;
-        if (sdd.document.quests) serviceStates.quests = sdd.document.quests;
-        if (sdd.document.narrative) serviceStates.campaignContent = sdd.document.narrative;
-        return snapshot;
-      };
+      service.manager.snapshotTransformer = createSddSnapshotTransformer();
     }
     return service;
   }
@@ -544,11 +534,12 @@ describe('SDD 阶段 3b：读端 SDD 节点优先（snapshotTransformer）', () 
 
   it('带 sdd 的存档：restore 收到的 quests/campaignContent 来自文档节点', async () => {
     const service = makeSddService();
+    const baseProjector = createRuntimeDocumentProjector(() => null);
     service.manager.documentProjector = snapshot => {
-      const document = projectSnapshotToSdd(snapshot);
-      document.quests = SDD_QUESTS;             // 模拟运行时文档（新值）
-      document.narrative = SDD_NARRATIVE;
-      return { schemaVersion: SDD_SCHEMA_VERSION, document };
+      const projection = baseProjector(snapshot);
+      projection.document.quests = SDD_QUESTS;             // 模拟运行时文档（新值）
+      projection.document.narrative = SDD_NARRATIVE;
+      return projection;
     };
     await service.saveAsync(1);
     service.__restoredServiceStates = null;
@@ -583,10 +574,7 @@ describe('SDD 阶段 3b：读端 SDD 节点优先（snapshotTransformer）', () 
         return { ok: true };
       }
     });
-    service.manager.documentProjector = snapshot => ({
-      schemaVersion: SDD_SCHEMA_VERSION,
-      document: projectSnapshotToSdd(snapshot)
-    });
+    service.manager.documentProjector = createRuntimeDocumentProjector(() => null);
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     service.manager.snapshotTransformer = () => { throw new Error('transformer boom'); };
     await service.saveAsync(1);
@@ -620,29 +608,14 @@ describe('SDD 阶段 3 第二批：全节点读端覆盖（player/ui/world，存
         return { ok: true };
       }
     });
+    const baseProjector = createRuntimeDocumentProjector(() => null);
     service.manager.documentProjector = snapshot => {
-      const document = projectSnapshotToSdd(snapshot);
-      Object.assign(document, sddDocumentExtras); // 模拟运行时文档/缺段
-      return { schemaVersion: SDD_SCHEMA_VERSION, document };
+      const projection = baseProjector(snapshot);
+      Object.assign(projection.document, sddDocumentExtras); // 模拟运行时文档/缺段
+      return projection;
     };
-    // index.html 的 transformer（全节点覆盖 + 缺段判空）
-    service.manager.snapshotTransformer = snapshot => {
-      const sdd = snapshot?.sdd;
-      if (!sdd?.document) return snapshot;
-      const serviceStates = snapshot?.data?.game?.authority?.serviceStates;
-      if (serviceStates) {
-        if (sdd.document.quests) serviceStates.quests = sdd.document.quests;
-        if (sdd.document.narrative) serviceStates.campaignContent = sdd.document.narrative;
-      }
-      const game = snapshot?.data?.game;
-      if (game) {
-        if (sdd.document.player) game.player = sdd.document.player;
-        if (sdd.document.ui?.tutorial) game.tutorial = sdd.document.ui.tutorial;
-        if (sdd.document.ui?.dialogue) game.dialogue = sdd.document.ui.dialogue;
-        if (sdd.document.world?.scene) game.scene = sdd.document.world.scene;
-      }
-      return snapshot;
-    };
+    // 生产接线工厂（全节点覆盖 + 缺段判空）
+    service.manager.snapshotTransformer = createSddSnapshotTransformer();
     return service;
   }
 
