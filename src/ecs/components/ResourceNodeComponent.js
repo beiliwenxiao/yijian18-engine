@@ -19,6 +19,8 @@ export class ResourceNodeComponent extends Component {
     this.gatherDuration = Math.max(0.1, Number(config.gatherDuration) || 1);
     this.interactionRadius = Math.max(1, Number(config.interactionRadius) || 72);
     this.requiredToolType = config.requiredToolType || null;
+    // 状态准入（如 "climbing"：必须攀爬中才能采集）；由 GatheringSystem.stateCheckers 校验
+    this.requiredState = config.requiredState || null;
     // 旧 refreshDays 仅用于兼容历史存档；不会隐式启用实时刷新。
     this.refreshDays = Math.max(0, Math.floor(Number(config.refreshDays) || 0));
     this.refreshProgressDays = Math.max(0, Math.floor(Number(config.refreshProgressDays) || 0));
@@ -70,6 +72,7 @@ export class ResourceNodeComponent extends Component {
       gatherYieldRange: this.gatherYieldRange ? { ...this.gatherYieldRange } : null,
       gatherDuration: this.gatherDuration,
       requiredToolType: this.requiredToolType,
+      requiredState: this.requiredState || null,
       refreshDays: this.refreshDays,
       refreshProgressDays: this.refreshProgressDays,
       refreshMode: this.refreshMode,

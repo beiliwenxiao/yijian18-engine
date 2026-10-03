@@ -73,6 +73,29 @@
       "usable": true
     },
     {
+      "id": "resource.apple",
+      "name": "苹果",
+      "description": "从树上摘下的鲜苹果，清脆多汁。",
+      "type": "consumable",
+      "imageId": "s01.resource.apple",
+      "capabilities": [
+        {
+          "id": "consumable"
+        }
+      ],
+      "effect": {
+        "type": "heal",
+        "value": 15
+      },
+      "maxStack": 10,
+      "sprite": {
+        "height": 30,
+        "width": 30
+      },
+      "subType": "food",
+      "usable": true
+    },
+    {
       "id": "tool.skinning_knife",
       "name": "旧剥皮刀",
       "description": "刃口磨损的旧剥皮刀。",
@@ -754,6 +777,11 @@
       "description": "野狼王的獠牙磨制的匕首，锋利且轻便。攻击间隔慢于1秒时，攻击间隔缩短1.5秒。",
       "type": "equipment",
       "imageId": "inventory.equipment.wolfFang",
+      "attackSpeedReduce": {
+        "minSec": 0.5,
+        "reduceSec": 1.5,
+        "thresholdSec": 1
+      },
       "maxStack": 1,
       "rarity": 2,
       "sprite": {
@@ -762,11 +790,6 @@
       },
       "stats": {
         "attack": 12
-      },
-      "attackSpeedReduce": {
-        "thresholdSec": 1,
-        "reduceSec": 1.5,
-        "minSec": 0.5
       },
       "subType": "weapon"
     },
@@ -917,7 +940,6 @@
       "id": "enemy.s01_first_wolf",
       "imageId": "s01.enemy.wolf",
       "level": 1,
-      "maxDamage": 1,
       "lootTable": [
         {
           "chance": 1,
@@ -932,6 +954,7 @@
           "minQuantity": 5
         }
       ],
+      "maxDamage": 1,
       "name": "虚弱的狼",
       "sprite": {
         "height": 48,
@@ -947,6 +970,19 @@
       "templateId": "wild_wolf"
     },
     {
+      "ai": {
+        "detectionRange": 260,
+        "leashRange": 560,
+        "patrol": {
+          "enabled": true,
+          "mode": "pingpong",
+          "points": []
+        },
+        "pursuitRange": 480,
+        "telegraph": {
+          "windupMs": 0
+        }
+      },
       "aiType": "aggressive",
       "corpse": {
         "name": "野狼尸体",
@@ -970,19 +1006,6 @@
         }
       ],
       "name": "追逐野狼",
-      "ai": {
-        "detectionRange": 260,
-        "pursuitRange": 480,
-        "leashRange": 560,
-        "patrol": {
-          "enabled": true,
-          "mode": "pingpong",
-          "points": []
-        },
-        "telegraph": {
-          "windupMs": 0
-        }
-      },
       "sprite": {
         "height": 48,
         "isStatic": true,
@@ -997,7 +1020,24 @@
       "templateId": "wild_wolf"
     },
     {
+      "ai": {
+        "detectionRange": 320,
+        "leashRange": 640,
+        "patrol": {
+          "enabled": true,
+          "mode": "loop",
+          "points": []
+        },
+        "pursuitRange": 560,
+        "telegraph": {
+          "pathLength": 180,
+          "pathWidth": 72,
+          "shape": "path",
+          "windupMs": 800
+        }
+      },
       "aiType": "aggressive",
+      "attackRange": 90,
       "corpse": {
         "name": "狼王尸体",
         "presentation": {
@@ -1012,23 +1052,6 @@
       "imageId": "s01.enemy.wolf",
       "isBoss": true,
       "level": 2,
-      "attackRange": 90,
-      "ai": {
-        "detectionRange": 320,
-        "pursuitRange": 560,
-        "leashRange": 640,
-        "patrol": {
-          "enabled": true,
-          "mode": "loop",
-          "points": []
-        },
-        "telegraph": {
-          "windupMs": 800,
-          "shape": "path",
-          "pathLength": 180,
-          "pathWidth": 72
-        }
-      },
       "lootTable": [
         {
           "chance": 1,
@@ -1552,6 +1575,31 @@
       "riskEvents": [],
       "damageRatio": 0,
       "imageId": "s01.resource.wildBerryNode",
+      "sprite": {
+        "height": 58,
+        "isStatic": true,
+        "width": 68
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "node.apple_thicket",
+      "name": "苹果丛",
+      "resourceType": "food",
+      "itemId": "resource.apple",
+      "remaining": 10,
+      "maxRemaining": 10,
+      "yieldPerGather": 1,
+      "gatherDuration": 1.5,
+      "interactionRadius": 80,
+      "requiredToolType": null,
+      "requiredState": "climbing",
+      "refreshDays": 0,
+      "refreshMode": "none",
+      "guardUnitIds": [],
+      "riskEvents": [],
+      "damageRatio": 0,
+      "imageId": "s01.resource.appleThicket",
       "sprite": {
         "height": 58,
         "isStatic": true,

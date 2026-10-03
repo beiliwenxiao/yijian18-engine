@@ -635,6 +635,19 @@
           "y": 581.709465042264
         },
         {
+          "group": "S01-apple-thickets",
+          "id": "S01-node-apple-1",
+          "kind": "resourceNode",
+          "ref": "node.apple_thicket",
+          "tags": [
+            "resource",
+            "apple"
+          ],
+          "type": "ref",
+          "x": 262,
+          "y": 296
+        },
+        {
           "group": "S01-worn-axe",
           "id": "S01-pickup-worn-axe",
           "kind": "item",
@@ -749,8 +762,8 @@
             "tutorial-wolf"
           ],
           "type": "ref",
-          "x": 391.64782334595037,
-          "y": 324.6565141187963
+          "x": 419.6073523281485,
+          "y": 341.7929996240145
         },
         {
           "group": "S01-chase-wolves",
@@ -767,8 +780,8 @@
             "pursuit"
           ],
           "type": "ref",
-          "x": 350,
-          "y": 610
+          "x": 249.88684783793565,
+          "y": 628.0384057949666
         },
         {
           "group": "S01-chase-wolves",
@@ -785,8 +798,8 @@
             "pursuit"
           ],
           "type": "ref",
-          "x": 455,
-          "y": 650
+          "x": 332.33884059422746,
+          "y": 649.0980797102517
         },
         {
           "group": "S01-chase-wolves",
@@ -803,8 +816,8 @@
             "pursuit"
           ],
           "type": "ref",
-          "x": 565,
-          "y": 625
+          "x": 418.8889130607709,
+          "y": 655.6652898514432
         },
         {
           "group": "S01-wolf-boss",
@@ -821,8 +834,8 @@
             "boss"
           ],
           "type": "ref",
-          "x": 455,
-          "y": 600
+          "x": 335.94652175322074,
+          "y": 573.8443115972985
         },
         {
           "editor": {

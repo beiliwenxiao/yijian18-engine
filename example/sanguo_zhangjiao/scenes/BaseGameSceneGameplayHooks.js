@@ -139,7 +139,8 @@ export class BaseGameSceneGameplayHooks extends BaseGameSceneBehaviors {
     if (!result.ok && !silent) {
       const messages = {
         gatheringBusy: '正在采集中', nodeDepleted: '资源节点已经耗尽',
-        outOfRange: '附近没有可采集资源', toolRequired: '需要可用的采集工具', invalidTarget: '附近没有可采集资源'
+        outOfRange: '附近没有可采集资源', toolRequired: '需要可用的采集工具', invalidTarget: '附近没有可采集资源',
+        stateRequired: result.requiredState === 'climbing' ? '需要攀爬状态才能采摘' : '当前状态无法采集'
       };
       this._showScreenTip(messages[result.code] || '暂时无法采集');
     }

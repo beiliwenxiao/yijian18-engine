@@ -12,7 +12,7 @@ function stableSeed(value) {
 /** 单活动采集会话；库存、节点与工具只在结算点提交。 */
 export class GatheringSystem {
   constructor({ inventoryTransactions, itemResolver = null, onEvent = null, rngFactory = null,
-    riskResolver = null, effectResolver = null, settlementPolicy = null } = {}) {
+    riskResolver = null, effectResolver = null, settlementPolicy = null, stateCheckers = null } = {}) {
     if (!inventoryTransactions) throw new TypeError('GatheringSystem requires inventoryTransactions');
     this.inventoryTransactions = inventoryTransactions;
     this.itemResolver = typeof itemResolver === 'function' ? itemResolver : id => ({ id, name: id, type: 'material', maxStack: 99 });
@@ -21,6 +21,8 @@ export class GatheringSystem {
     this.riskResolver = typeof riskResolver === 'function' ? riskResolver : null;
     this.effectResolver = effectResolver || null;
     this.settlementPolicy = typeof settlementPolicy === 'function' ? settlementPolicy : null;
+    // 状态准入校验：node.requiredState → (actor) => boolean（如 climbing：必须攀爬中才能采集）
+    this.stateCheckers = stateCheckers && typeof stateCheckers === 'object' ? stateCheckers : {};
     this.nextOperationSequence = 1;
     this.completedOperations = new Map();
     this.session = null;
@@ -84,6 +86,13 @@ export class GatheringSystem {
 
     const tool = this._findTool(inventory, node.requiredToolType);
     if (node.requiredToolType && !tool) return { ok: false, code: 'toolRequired', toolType: node.requiredToolType };
+    // 状态准入（如苹果丛 requiredState: "climbing"——必须攀爬中才能采摘）
+    if (node.requiredState) {
+      const checker = this.stateCheckers[node.requiredState];
+      if (checker && checker(actor) !== true) {
+        return { ok: false, code: 'stateRequired', requiredState: node.requiredState };
+      }
+    }
     const effectDuration = this.effectResolver
       ? this.effectResolver.getValue(owner.id, 'gather.duration', node.gatherDuration, {
         player: owner, owner, actor, nodeEntity, node, resourceType: node.resourceType

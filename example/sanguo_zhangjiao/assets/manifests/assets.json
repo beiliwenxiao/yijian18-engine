@@ -4212,6 +4212,68 @@
       "revision": 1
     },
     {
+      "assetId": "s01.resource.appleThicket",
+      "imageId": "s01.resource.appleThicket",
+      "category": "resource-node",
+      "usage": [
+        "S01",
+        "apple",
+        "food"
+      ],
+      "sourceFile": "assets/images/s01/apple-thicket.png",
+      "runtime2D": {
+        "path": "assets/images/s01/apple-thicket.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "s01.resource.appleThicket"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      },
+      "bounds": {
+        "width": 68,
+        "height": 58
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "procedural",
+      "revision": 1
+    },
+    {
+      "assetId": "s01.resource.apple",
+      "imageId": "s01.resource.apple",
+      "category": "item",
+      "usage": [
+        "S01",
+        "apple",
+        "food"
+      ],
+      "sourceFile": "assets/images/s01/apple.png",
+      "runtime2D": {
+        "path": "assets/images/s01/apple.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "s01.resource.apple"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      },
+      "bounds": {
+        "width": 30,
+        "height": 30
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "procedural",
+      "revision": 1
+    },
+    {
       "assetId": "s01.tool.skinningKnife",
       "imageId": "s01.tool.skinningKnife",
       "category": "tool",

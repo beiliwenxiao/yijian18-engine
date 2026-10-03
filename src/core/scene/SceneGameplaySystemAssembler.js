@@ -224,6 +224,10 @@ export class SceneGameplaySystemAssembler {
       itemResolver: (itemId, resourceType) => scene.gameLoader?.registries?.items?.get?.(itemId) || {
         id: itemId, name: itemId, type: 'material', subType: resourceType, maxStack: 99
       },
+      // 状态准入：requiredState: "climbing" 的资源节点（苹果丛）必须攀爬中才能采摘
+      stateCheckers: {
+        climbing: entity => scene.locomotionSystem?.climbSystem?.isClimbing?.(entity) === true
+      },
       settlementPolicy: context => scene.prepareGatheringSettlement?.(context) || null,
       onEvent: (event, data) => scene.onGatheringEvent?.(event, data)
     });
