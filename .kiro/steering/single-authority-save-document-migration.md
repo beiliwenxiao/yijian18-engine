@@ -275,3 +275,22 @@ sddSemanticEquals 往返测试钉住），AuthoritySnapshotService 固定恢复�
 ColdRestartReplay 全绿证实。
 
 验证：saveSystemRegression 35/35 + RealCanonicalColdRestartReplay 5/5 + 实机冒烟与收口前一致。
+
+### 6.6 阶段 4 标量收口：restore 输入 100% 由 sdd 决定（2026-10-03）
+
+最后三个未覆盖的投影标量——`currentSceneId` / `campaignId` / `gameSchemaVersion`——进入
+transformer 覆盖（判空跳过）。至此 restore 链（migrate → validate → providers）的输入
+**完全由 sdd.document 决定**，旧 data.game 段降级为「写端采集源 + 兼容别名」：
+
+- 写端：capture 树仍是唯一采集实现（player/world 高频写，不做运行期镜像——5.2 修正 1），
+  投影从它派生文档；quests/narrative 双源同值（运行时节点覆盖）。
+- 读端：restore 全部消费 sdd 节点；旧档（无 sdd）原样走旧链路。
+- **边界如实记录**：启动引导链的 `prepareRestoreRegion`（SanguoWorldRuntimeCoordinator:80）
+  在 restore 之前读**原始 payload** 的 currentSceneId 做跨 Region 预准备——属引导链语义，
+  不经 transformer；投影与采集同源同值，无行为差异。
+- saveSystemRegression 新增 2 例（标量覆盖 / 标量缺段跳过），现 37 例。
+
+验证：saveSystemRegression 37/37 + RealCanonicalColdRestartReplay 5/5；实机冒烟用用户最新
+autosave-1（S09 跨区域档）读档：玩家位置像素级一致、narrative 镜像 S09、无 pageerror。
+
+**迁移终态达成**：存档 = SDD 文档（restore 权威源）+ 旧链路（写端采集器 + 旧档兼容面）。

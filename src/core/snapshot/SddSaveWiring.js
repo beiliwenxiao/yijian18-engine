@@ -32,8 +32,10 @@ export function createRuntimeDocumentProjector(getScene) {
 /**
  * 读端变形（SnapshotManager.restore 前调用）：带 sdd 的存档以文档节点覆盖旧链路字段
  * （同值替代——sdd 是权威源的结构声明）。覆盖面=全部投影节点：
- * quests/narrative=运行时文档节点；player/ui/world=存档时文档节点；
- * eventJournal/clock=权威时钟存档时文档节点（clock 逐字段判空跳过）。
+ * quests/narrative=运行时文档节点；player/ui/world/eventJournal/clock=存档时文档节点
+ * （clock 逐字段判空跳过）；标量 currentSceneId/campaignId/gameSchemaVersion 收口
+ * （阶段 4——覆盖后 restore 链的 migrate/validate/providers 输入完全由 sdd 决定；
+ * 注意启动引导的 prepareRestoreRegion 在 restore 之前读原始 payload，属引导链不在此列）。
  * 旧档无 sdd 字段时原样返回（走旧链路）。
  * @returns {(snapshot: any) => any}
  */
@@ -61,6 +63,11 @@ export function createSddSnapshotTransformer() {
       if (clock.operationLedger) authority.operationLedger = clock.operationLedger;
     }
     if (game) {
+      // 标量收口（阶段 4）：restore 输入 100% 由 sdd 决定。
+      const sceneId = sdd.document.currentSceneId ?? sdd.document.world?.currentSceneId;
+      if (sceneId != null) game.currentSceneId = sceneId;
+      if (sdd.document.campaignId != null) game.campaignId = sdd.document.campaignId;
+      if (sdd.document.gameSchemaVersion != null) game.schemaVersion = sdd.document.gameSchemaVersion;
       if (sdd.document.player) game.player = sdd.document.player;
       if (sdd.document.ui?.tutorial) game.tutorial = sdd.document.ui.tutorial;
       if (sdd.document.ui?.dialogue) game.dialogue = sdd.document.ui.dialogue;

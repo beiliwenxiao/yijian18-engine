@@ -679,7 +679,7 @@ describe('SDD 阶段 3 第二批：全节点读端覆盖（player/ui/world，存
 });
 
 describe('SDD 阶段 3 收口：eventJournal/clock 读端权威（存档时文档节点）', () => {
-  function makeClockSddService({ clockExtras = {}, eventJournal } = {}) {
+  function makeClockSddService({ clockExtras = {}, eventJournal, documentExtras = {} } = {}) {
     const service = makeService();
     service.setStateProvider({
       capture: () => ({
@@ -701,6 +701,7 @@ describe('SDD 阶段 3 收口：eventJournal/clock 读端权威（存档时文�
       }),
       restore: data => {
         service.__restoredAuthority = data?.authority || null;
+        service.__restoredGame = data || null;
         return { ok: true };
       }
     });
@@ -708,6 +709,7 @@ describe('SDD 阶段 3 收口：eventJournal/clock 读端权威（存档时文�
     service.manager.documentProjector = snapshot => {
       const projection = baseProjector(snapshot);
       if (eventJournal !== undefined) projection.document.eventJournal = eventJournal;
+      Object.assign(projection.document, documentExtras);
       Object.assign(projection.document.clock, clockExtras);
       return projection;
     };
@@ -762,6 +764,36 @@ describe('SDD 阶段 3 收口：eventJournal/clock 读端权威（存档时文�
     service.__restoredAuthority = null;
     await service.loadAsync(1);
     expect(service.__restoredAuthority.serviceStates.eventJournal).toEqual({ seq: 7, entries: ['old-event'] });
+  });
+
+  it('标量收口：currentSceneId/campaignId/gameSchemaVersion 从文档节点恢复（阶段 4）', async () => {
+    const service = makeClockSddService({
+      documentExtras: {
+        currentSceneId: 'S02',
+        campaignId: 'sanguo-zhangjiao-s01-s14',
+        gameSchemaVersion: 99
+      }
+    });
+    await service.saveAsync(1);
+    service.__restoredGame = null;
+    await service.loadAsync(1);
+    const game = service.__restoredGame;
+    expect(game.currentSceneId).toBe('S02');
+    expect(game.campaignId).toBe('sanguo-zhangjiao-s01-s14');
+    expect(game.schemaVersion).toBe(99);
+  });
+
+  it('标量缺段跳过：文档标量为 null 时保留旧链路值', async () => {
+    const service = makeClockSddService({
+      documentExtras: { currentSceneId: null, campaignId: null, gameSchemaVersion: null }
+    });
+    await service.saveAsync(1);
+    service.__restoredGame = null;
+    await service.loadAsync(1);
+    const game = service.__restoredGame;
+    expect(game.currentSceneId).toBeUndefined();  // capture 本就没有 → 未被覆盖
+    expect(game.campaignId).toBeUndefined();
+    expect(game.schemaVersion).toBeUndefined();
   });
 });
 

@@ -1042,8 +1042,9 @@
             // （questSystem.sdd / gameLoader.sddStore，与各自 serialize 同源同步），
             // 投影时以运行时节点为准；读端带 sdd 的存档以文档节点覆盖旧链路字段
             // （覆盖面=全部投影节点：quests/narrative=运行时文档节点；player/ui/world/
-            // eventJournal/clock=存档时文档节点，clock 逐字段判空跳过；旧档无 sdd 原样
-            // 走旧链路）。
+            // eventJournal/clock=存档时文档节点，clock 逐字段判空跳过；标量
+            // currentSceneId/campaignId/gameSchemaVersion 一并收口——restore 输入 100%
+            // 由 sdd 决定；旧档无 sdd 原样走旧链路）。
             documentProjector: createRuntimeDocumentProjector(() => scene),
             snapshotTransformer: createSddSnapshotTransformer()
         });
