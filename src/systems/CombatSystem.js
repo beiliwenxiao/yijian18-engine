@@ -556,8 +556,9 @@ export class CombatSystem {
   }
 
   /**
-   * Boss 攻击预警渲染：windup 进行中的敌人脚下画攻击范围 2.5D 虚线椭圆
-   * （与玩家技能瞄准同款表现），半径随剩余时间收圈——直观传达「快打了，快出圈」。
+   * Boss 攻击预警渲染：windup 进行中的敌人脚下画攻击范围 2.5D 虚线框，
+   * 框内泛红色（随前摇进度加深，逼近时红得刺眼）——直观传达「快打了，快出圈」。
+   * 框体尺寸全程固定不收缩：玩家看到多大危险区，结算就是多大危险区。
    * @param {CanvasRenderingContext2D} ctx
    */
   renderAttackTelegraphs(ctx) {
@@ -576,18 +577,21 @@ export class CombatSystem {
       const targetTransform = telegraph.targetRef?.getComponent?.('transform');
       if (!attackerTransform) continue;
       const remaining = 1 - elapsed / telegraph.windupMs;
+      // 泛红填充：前摇越深红越浓（0.18 → 0.52，含 globalAlpha 合成后约 0.11~0.31），
+      // 逼近结算时红得刺眼，边界与玩家技能指示器区分明显
       const indicator = {
         color: '#ff5555',
         skillName: `${telegraph.name || '攻击'}预警`,
         dashOffset: -now * 0.06,
-        life: 1
+        life: 1,
+        fillColor: `rgba(255, 48, 48, ${(0.18 + 0.34 * (1 - remaining)).toFixed(3)})`
       };
       if (telegraph.shape === 'path' && targetTransform) {
-        // 路径形（扑击/冲刺）：从攻击者朝目标方向展开矩形虚线框
+        // 路径形（扑击/冲刺）：从攻击者朝目标方向展开矩形虚线框（全程固定长度）
         const dx = targetTransform.position.x - attackerTransform.position.x;
         const dy = targetTransform.position.y - attackerTransform.position.y;
         const distance = Math.hypot(dx, dy) || 1;
-        const length = Math.max(telegraph.radius, telegraph.pathLength) * (0.5 + 0.5 * remaining);
+        const length = Math.max(telegraph.radius, telegraph.pathLength);
         this.renderPathIndicator(ctx, {
           type: 'path',
           startX: attackerTransform.position.x,
@@ -599,13 +603,12 @@ export class CombatSystem {
         }, Math.min(1, remaining + 0.3));
         continue;
       }
-      // 圆形（默认）：攻击范围 2.5D 虚线椭圆，半径随剩余时间收圈
-      const radius = telegraph.radius * (0.35 + 0.65 * remaining);
+      // 圆形（默认）：攻击范围 2.5D 虚线椭圆（全程固定半径）
       this.renderCircleIndicator(ctx, {
         type: 'circle',
         x: attackerTransform.position.x,
         y: attackerTransform.position.y,
-        radius,
+        radius: telegraph.radius,
         ...indicator
       }, Math.min(1, remaining + 0.3));
     }
@@ -3471,6 +3474,11 @@ export class CombatSystem {
     // 2.5D椭圆（纵向压扁0.5，模拟俯视透视）
     ctx.beginPath();
     ctx.ellipse(indicator.x, indicator.y, indicator.radius, indicator.radius * 0.5, 0, 0, Math.PI * 2);
+    // 内部泛色填充（可选）：攻击预警用，玩家技能指示器不传 fillColor 不受影响
+    if (indicator.fillColor) {
+      ctx.fillStyle = indicator.fillColor;
+      ctx.fill();
+    }
     ctx.stroke();
 
     // 技能名称
@@ -3518,6 +3526,11 @@ export class CombatSystem {
     ctx.lineTo(indicator.endX - nx25d * hw, indicator.endY - ny25d * hw);
     ctx.lineTo(indicator.startX - nx25d * hw, indicator.startY - ny25d * hw);
     ctx.closePath();
+    // 内部泛色填充（可选）：攻击预警用，玩家技能指示器不传 fillColor 不受影响
+    if (indicator.fillColor) {
+      ctx.fillStyle = indicator.fillColor;
+      ctx.fill();
+    }
     ctx.stroke();
 
     // 终点AOE椭圆（2.5D）

@@ -53,7 +53,7 @@ const RECIPE_ACTIONS = Object.freeze({
   })
 });
 const CHASE_WOLF_PREFIX = 'S01-chase-wolf-';
-const MAX_CHASE_WOLVES = 5;
+const MAX_CHASE_WOLVES = 3;
 const FIRST_WOLF_PREFIX = 'S01-first-wolf-';
 const PURSUIT_RECONCILE_INTERVAL_SECONDS = 0.75;
 const FIRST_WOLF_CORPSE_RETRY_INTERVAL_SECONDS = 0.1;
@@ -1735,7 +1735,7 @@ export class S01S02Coordinator {
       );
       if (result.ok !== true) return result;
       await this._reconcileWolfPursuit();
-      // 追逐狼群（5 只）清空后召唤狼王：placement spawnWhen 为数据兜底，
+      // 追逐狼群（3 只）清空后召唤狼王：placement spawnWhen 为数据兜底，
       // 这里显式补一次生成保证运行中即时登场；_ensureSpawnedPlacement 幂等防重复。
       const killed = Number(this._story().s01Survival?.pursuit?.killed) || 0;
       if (killed >= MAX_CHASE_WOLVES) {

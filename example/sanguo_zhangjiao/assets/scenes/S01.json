@@ -807,49 +807,13 @@
           "y": 625
         },
         {
-          "group": "S01-chase-wolves",
-          "id": "S01-chase-wolf-4",
-          "kind": "enemy",
-          "ref": "enemy.s01_chase_wolf",
-          "spawnWhen": {
-            "blackboardKey": "storyState",
-            "gte": 4,
-            "path": "s01Survival.pursuit.spawned"
-          },
-          "tags": [
-            "wolf",
-            "pursuit"
-          ],
-          "type": "ref",
-          "x": 275,
-          "y": 570
-        },
-        {
-          "group": "S01-chase-wolves",
-          "id": "S01-chase-wolf-5",
-          "kind": "enemy",
-          "ref": "enemy.s01_chase_wolf",
-          "spawnWhen": {
-            "blackboardKey": "storyState",
-            "gte": 5,
-            "path": "s01Survival.pursuit.spawned"
-          },
-          "tags": [
-            "wolf",
-            "pursuit"
-          ],
-          "type": "ref",
-          "x": 363.3893557367418,
-          "y": 665.587219355684
-        },
-        {
           "group": "S01-wolf-boss",
           "id": "S01-wolf-boss",
           "kind": "enemy",
           "ref": "enemy.s01_wolf_king",
           "spawnWhen": {
             "blackboardKey": "storyState",
-            "gte": 5,
+            "gte": 3,
             "path": "s01Survival.pursuit.killed"
           },
           "tags": [

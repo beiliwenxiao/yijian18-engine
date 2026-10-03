@@ -897,7 +897,7 @@
             "path": "story.s01Survival.pursuit.active"
           },
           {
-            "lte": 4,
+            "lte": 2,
             "path": "story.s01Survival.pursuit.killed"
           }
         ]
@@ -920,7 +920,7 @@
           "target": "story",
           "value": {
             "$min": [
-              5,
+              3,
               {
                 "$add": [
                   {
