@@ -21,6 +21,7 @@
     "id": "dialogue.s02.zhangjiaoSummons",
     "nodes": {
       "accept": {
+        "portrait": "player",
         "speaker": "你",
         "text": "我会前去赴约。先把这里能用的物资收拾妥当。"
       },
@@ -54,10 +55,12 @@
             "text": "救他：黄巾不杀无辜之人"
           }
         ],
+        "portrait": "zhangjiao",
         "speaker": "张角",
         "text": "乱世之人，死生各由天命。这个人——怎么处置？这个选择无法撤回。"
       },
       "killOrder": {
+        "portrait": "zhangjiao",
         "speaker": "张角",
         "text": "「留下他的药囊。人，就不用留了。」乱世草芥，山道又添一具无名尸骸。"
       },
@@ -67,6 +70,7 @@
         "text": "主公！营外山道上发现一个昏倒的人，随身带着伤药，像是翻山逃难来的。"
       },
       "saveOrder": {
+        "portrait": "zhangjiao",
         "speaker": "张角",
         "text": "「苍天已死，黄天当立——立的就该是让这样的人活下去。你们两个，把他抬回营地去，小心他的伤。」"
       },
@@ -83,6 +87,7 @@
     "id": "dialogue.s02.awakening",
     "nodes": {
       "greet": {
+        "portrait": "zhangjiao",
         "speaker": "张角",
         "text": "醒了？翻山逃命还能活下来，命硬得很。我是张角。这世道饿殍遍野、官军肆虐——你若愿意，可在此收拾歇息，随我们同走一条路。"
       },
@@ -100,15 +105,18 @@
     "nodes": {
       "answer": {
         "nextNode": "choose",
+        "portrait": "player",
         "speaker": "你",
         "text": "我愿加入黄巾，但愿手中所学真能让百姓活下去。"
       },
       "choose": {
+        "portrait": "zhangjiao",
         "speaker": "张角",
         "text": "去看三面军旗。张梁授战士之法，张宝授弓手之法；若愿研习符法军略，便来承军师之责。职业一旦确认，不可更改。"
       },
       "start": {
         "nextNode": "answer",
+        "portrait": "zhangjiao",
         "speaker": "张角",
         "text": "苍生困于饥疫，空有一人之勇救不了天下。你可愿留下，与我们一道护送粮药、救济流民？"
       }
@@ -150,10 +158,12 @@
       },
       "branchProcessing": {
         "nextNode": "branchProcessing",
+        "portrait": "player",
         "speaker": "你",
         "text": "决定正在写入检查点……"
       },
       "deferred": {
+        "portrait": "player",
         "speaker": "你",
         "text": "我先去准备粮食。现场仍会保留，之后可以回来继续处理。"
       },
@@ -191,6 +201,7 @@
       },
       "donationProcessing": {
         "nextNode": "donationProcessing",
+        "portrait": "player",
         "speaker": "你",
         "text": "先清点粮食，任何一项无法落实都不能让现场留下半笔账。"
       },
