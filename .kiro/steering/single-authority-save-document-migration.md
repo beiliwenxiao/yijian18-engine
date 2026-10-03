@@ -139,3 +139,60 @@ SnapshotManager（SaveGameService.manager）
 ## 四、结论
 
 用户的「清单+打勾」「存档=数据集合」模型在本引擎的数据层面**已经基本成立**（quests 段就是勾选树，blackboard 就是叙事文档），未成立的只是「读写权收敛」——正是过去一周全部缺陷的共同病根。SDD 迁移不引入新范式，只是把已经存在的收敛纪律（duplicateAuthorityState、Blackboard 单容器、migrate 链）推广到全档，并以任务系统为第一个受益者。建议按阶段 0→2 启动，阶段 2 交付后复盘再决定阶段 3 的节奏。
+
+---
+
+## 五、阶段 3 第二批论证：player/ui/world 节点（2026-10-03）
+
+### 5.1 现状事实
+
+1. **读写入口高度集中**：player/tutorial/dialogue 段的采集与恢复全部集中在两个函数——
+   `captureSaveState`（BaseGameSceneSetup.js:502-589，statsFields 25 字段 + transform/stats/inventory/equipment/name 五组件）与
+   `_applyValidatedSaveState`（:753-850，name→transform→equipment→stats→inventory 固定序）。
+   scene 段同样集中：`captureSceneSaveState`/`applySceneSaveState`（SanguoSceneStateFlow.js:47-142/375-460，
+   含 worldStreamingState、regionStates、campfire、containerInventories、firedPickups、clearedGroups、
+   time/weather/gameplaySnapshots/battle/rescue/s11s14 等约 15 个子段）。
+2. **transform 是每帧高频写**（MovementSystem.update→setPosition），stats 半高频（stamina 每帧回复 + 战斗/物品事件）。
+   若照搬 quests/narrative 模式（每次写同步 patch 文档），每帧深冻结整棵 player 子树——**性能上不可接受**。
+3. **worldStreaming 已自治**：WorldStreamingManager.deserialize（:830-981）本身就是 prepareRestore/commit/rollback
+   两阶段事务，demoDynamic provider 已实现完整 prepareRestore/commitRestore/rollbackRestore。
+   它不需要 SDD 再发明事务，只需要被文档**引用**。
+
+### 5.2 对原方案的修正
+
+原方案说「该节点业务代码改为节点订阅」——对 player/world **不成立，也不应该做**：
+
+- **修正 1：文档镜像分两级**。
+  - **运行期镜像节点**（可订阅）：仅限低频事件状态且有视图重建需求的 quests、narrative（已交付）。
+  - **存档时文档节点**：player/ui/world——transform 每帧写、world 体积大且自带事务，
+    只在 capture 时投影进文档、restore 时从文档读回（sdd 优先）。**不为它们建运行期镜像、不做逐帧同步**。
+- **修正 2：sdd.document 已含这三个节点**。阶段 1 的 `projectSnapshotToSdd` 是全量映射
+  （player/ui/world.scene 均在），即**每次存档的 sdd 已经是完整文档**。第二批的剩余工作
+  只是读端：`snapshotTransformer` 的覆盖范围从 quests/narrative 扩展到 player/ui/world。
+- **修正 3：终态定义收敛**。SDD 的价值 = 「存档是规范形状的纯数据集合」（用户最初模型），
+  而非「所有状态实时住在文档里」。运行期系统继续用组件/Map；文档在存档时组装完整、
+  在读档时作为权威源。这与用户模型完全一致，且避免了高频写陷阱。
+
+### 5.3 实施步骤（轻量，合计约 1 天）
+
+1. **snapshotTransformer 扩展**：sdd.document 存在时依次覆盖
+   `data.game.player`（判空跳过——投影对缺段写 null）、`data.game.tutorial/dialogue`（ui 节点）、
+   `data.game.scene`（world.scene 节点）；覆盖语义仍是同值替代（随机往返测试已钉等价性）。
+2. **等价性测试扩展**：随机档生成器加强 player.ui（tutorial/dialogue 缺失组合）与 scene 段
+   子段缺失组合的覆盖；断言扩展 transformer 后 roundtrip ≡ 原快照。
+3. **回归**：现有 29 例 + 新增用例全绿；实机冒烟（读档后 player 位置/UI 状态/场景状态与存档一致）。
+
+### 5.4 风险
+
+| 风险 | 评估 | 缓解 |
+|---|---|---|
+| sdd.player 缺段覆盖丢字段 | 低——投影对缺段写 null，transformer 判空跳过 | 测试覆盖缺段组合 |
+| world.scene 大对象拷贝开销 | 低——结构化克隆存档时本来就要做一次 | 无额外动作 |
+| 回滚快照也带 sdd 被重复覆盖 | 无害——回滚快照的 sdd 与其 data 同源（capture 时同生） | 同值替代幂等 |
+| 每帧写陷阱回归 | —— | 硬规则追加：player/world 节点禁止运行期镜像（本节即规则） |
+
+### 5.5 结论
+
+第二批比原估轻得多：**读写入口集中 + sdd 已含全节点**，剩余工作是「读端覆盖扩展 + 缺段测试」，
+约 1 天。完成即达成终态：**存档文件 = SDD 文档（权威源）+ 旧字段兼容别名**；阶段 4（清理旧链路）
+可在此之后独立排期。
