@@ -2670,6 +2670,37 @@
       "revision": 1
     },
     {
+      "assetId": "s01.prop.bedSleeping",
+      "imageId": "s01.prop.bedSleeping",
+      "category": "story-prop",
+      "usage": [
+        "S01-C01",
+        "sleep",
+        "overnight"
+      ],
+      "sourceFile": "assets/images/s01/bed-sleeping.png",
+      "runtime2D": {
+        "path": "assets/images/s01/bed-sleeping.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "s01.prop.bedSleeping"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      },
+      "bounds": {
+        "width": 165,
+        "height": 82
+      },
+      "animations": [],
+      "targetPhase": "P4",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
       "assetId": "s10.environment.relocationSign",
       "imageId": "s10.environment.relocationSign",
       "category": "environment-prop",

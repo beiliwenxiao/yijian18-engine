@@ -1884,7 +1884,15 @@ export class S01S02Coordinator {
       if (result?.ok !== true) return result || { ok: false, code: 'overnightCommitUnavailable' };
       this.scene.timeSystem?.setCurrentDay?.(2);
       this._applyS01WeatherPhase(this._story().s01Survival || {}, { force: true });
-      this.scene._showScreenTip('你在床上沉沉睡去。天亮后，先从门口离开庇护所。', { title: '安稳的一夜' });
+      // 进入被窝的视觉表现：显示床上的被窝图（editor.visible:false 的场景对象，
+      // 过夜后常驻——第二天起床被窝仍铺开在床上）
+      const sleepingEntity = this.scene.entityStore?.getById?.('S01-C01-bed-sleeping');
+      if (sleepingEntity) {
+        sleepingEntity.visible = true;
+        sleepingEntity.getComponent?.('sprite')?.setVisible?.(true);
+        sleepingEntity.getComponent?.('sprite') && (sleepingEntity.getComponent('sprite').visible = true);
+      }
+      this.scene._showScreenTip('你钻进被窝沉沉睡去。天亮后，先从门口离开庇护所。', { title: '安稳的一夜' });
       return result;
     }
     if (operation === 'riverCrossed') {

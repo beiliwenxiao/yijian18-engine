@@ -822,15 +822,6 @@
         "reason": "checkpoint",
         "sceneId": "S01"
       },
-      "inventory": {
-        "entries": [
-          {
-            "itemId": "story.s01.firestarter",
-            "quantity": 1
-          }
-        ],
-        "type": "batchAdd"
-      },
       "when": {
         "all": [
           {
@@ -851,11 +842,6 @@
         },
         {
           "path": "s01Survival.overnightCompleted",
-          "target": "story",
-          "value": true
-        },
-        {
-          "path": "s01Survival.firestarterAcquired",
           "target": "story",
           "value": true
         }

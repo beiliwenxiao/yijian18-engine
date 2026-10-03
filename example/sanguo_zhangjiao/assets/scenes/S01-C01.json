@@ -30,6 +30,21 @@
         },
         {
           "depthSort": true,
+          "editor": {
+            "locked": false,
+            "visible": false
+          },
+          "height": 82,
+          "id": "S01-C01-bed-sleeping",
+          "imageId": "s01.prop.bedSleeping",
+          "name": "被窝（过夜后）",
+          "type": "image",
+          "width": 165,
+          "x": 657.8738738738739,
+          "y": 374.3123123123123
+        },
+        {
+          "depthSort": true,
           "height": 84,
           "id": "S01-C01-chest",
           "imageId": "s01.prop.shelterChest",
