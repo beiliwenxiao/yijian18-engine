@@ -748,17 +748,13 @@
   {
     "commandType": "state.transaction",
     "id": "story.s01.wolfGearCrafted",
-    "name": "狼皮套装集齐",
+    "name": "狼皮背心制作完成",
     "transaction": {
       "when": {
         "all": [
           {
             "equals": true,
             "path": "story.s01Survival.wolfVestCrafted"
-          },
-          {
-            "equals": true,
-            "path": "story.s01Survival.wolfBracersCrafted"
           },
           {
             "equals": false,

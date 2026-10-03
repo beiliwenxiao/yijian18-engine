@@ -1128,7 +1128,7 @@ export class S01S02Coordinator {
     }
     const survival = this._story().s01Survival || {};
     if (!survival.meatCooked || !survival.wolfGearCrafted) {
-      this.scene._showScreenTip('先烤制狼肉，再制作狼皮背心和狼皮护腕，之后才能搭建庇护所。', { title: '准备不足' });
+      this.scene._showScreenTip('先烤制狼肉，再制作狼皮背心，之后才能搭建庇护所。', { title: '准备不足' });
       return { ok: true, status: 'blocked', code: 'shelterPrerequisitesMissing' };
     }
     const siteId = 'site.s01.small_shelter';
@@ -1601,8 +1601,8 @@ export class S01S02Coordinator {
     let shelterConstructionUnlocked = false;
     if (firstStoryCraft
       && survival.wolfVestCrafted === true
-      && survival.wolfBracersCrafted === true
       && survival.wolfGearCrafted !== true) {
+      // 主线只需制作狼皮背心；护腕为可选制作，不阻塞庇护所解锁。
       const aggregate = await this._submit(
         'story.s01.wolfGearCrafted',
         {},
@@ -1804,7 +1804,7 @@ export class S01S02Coordinator {
     if (operation === 'craftWolfGear') {
       const survival = this._story().s01Survival || {};
       if (survival.wolfGearCrafted === true) {
-        this.scene._showScreenTip('狼皮背心和狼皮护腕已经制作完成。', { title: '制作已完成' });
+        this.scene._showScreenTip('狼皮背心已经制作完成。', { title: '制作已完成' });
         return { ok: true, status: 'blocked' };
       }
       if (survival.meatCooked !== true) {
@@ -1818,7 +1818,7 @@ export class S01S02Coordinator {
       }
       const hideCount = inventory.getItemCount('resource.wolf_hide');
       if (hideCount < 2) {
-        this.scene._showScreenTip(`制作狼皮背心和狼皮护腕需要狼皮 2 份，现有 ${hideCount}/2。`, { title: '材料不足' });
+        this.scene._showScreenTip(`制作狼皮背心需要狼皮 2 份，现有 ${hideCount}/2。`, { title: '材料不足' });
         return { ok: true, status: 'blocked' };
       }
       const result = await this._submit('story.s01.craftWolfGear', {}, 'story:s01:craft-wolf-gear');
@@ -1826,7 +1826,7 @@ export class S01S02Coordinator {
         this.scene._showScreenTip(`制作结算失败：${result.code || 'unknown'}。狼皮和剧情状态未改变，请重试。`, { title: '制作失败' });
         return result;
       }
-      this.scene._showScreenTip('你将狼皮裁成背心和护腕。两件装备已经放入背包，可以在装备栏中穿戴；接下来搭建小庇护所。', {
+      this.scene._showScreenTip('你将狼皮裁成背心。背心已经放入背包，可以在装备栏中穿戴；接下来搭建小庇护所。', {
         title: '狼皮装备完成'
       });
       return { ok: true };
@@ -1860,7 +1860,7 @@ export class S01S02Coordinator {
         this.scene._showScreenTip(`烹饪结算失败：${result.code || 'unknown'}。材料和剧情状态未改变，请重试。`, { title: '烹饪失败' });
         return result;
       }
-      this.scene._showScreenTip('篝火上的狼肉滋滋作响，狼肉已经烤熟。接下来到制作点把两份狼皮做成背心和护腕。', { title: '烤狼肉' });
+      this.scene._showScreenTip('篝火上的狼肉滋滋作响，狼肉已经烤熟。接下来到制作点把两份狼皮做成背心。', { title: '烤狼肉' });
       return { ok: true };
     }
     if (operation === 'buildShelter') return this.startShelterConstruction(params);
