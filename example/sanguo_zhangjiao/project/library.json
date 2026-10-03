@@ -1123,6 +1123,8 @@
     {
       "aiActive": false,
       "aiType": "aggressive",
+      "faction": "friendly",
+      "factionId": "yellow_turban",
       "id": "enemy.s09_granary_guard",
       "imageId": "s09.character.granaryGuard",
       "level": 2,
@@ -1593,13 +1595,13 @@
       "gatherDuration": 1.5,
       "interactionRadius": 80,
       "requiredToolType": null,
-      "requiredState": "climbing",
       "refreshDays": 0,
       "refreshMode": "none",
       "guardUnitIds": [],
       "riskEvents": [],
       "damageRatio": 0,
       "imageId": "s01.resource.appleThicket",
+      "requiredState": "climbing",
       "sprite": {
         "height": 58,
         "isStatic": true,

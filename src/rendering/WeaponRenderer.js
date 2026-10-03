@@ -737,6 +737,9 @@ export class WeaponRenderer {
     for (const entity of entities) {
       // 只攻击敌人
       if (entity.type !== 'enemy') continue;
+      // 同阵营友军单位（faction=friendly/ally，如黄巾粮仓哨兵）不是攻击目标，
+      // 避免玩家普攻/技能误伤友军。
+      if (entity.faction === 'friendly' || entity.faction === 'ally') continue;
       if (entity.isDead || entity.isDying) continue;
       
       const targetTransform = entity.getComponent('transform');

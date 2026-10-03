@@ -264,7 +264,8 @@ export class EntityFactory {
     
     // 添加名字组件
     entity.addComponent(new NameComponent(enemyData.name, {
-      color: '#ff6666',
+      // 同阵营友军（faction 显式非敌，如黄巾粮仓哨兵/波才/张曼成）显示绿色名字
+      color: enemyData.faction && enemyData.faction !== 'enemy' ? '#66ff66' : '#ff6666',
       fontSize: 14,
       offsetY: -10
     }));

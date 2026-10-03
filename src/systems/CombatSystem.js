@@ -406,7 +406,8 @@ export class CombatSystem {
     const clickRadius = 30;
     
     // 查找所有敌人
-    const enemies = entities.filter(e => e.type === 'enemy');
+    const enemies = entities.filter(e => e.type === 'enemy'
+      && e.faction !== 'friendly' && e.faction !== 'ally');
     
     // 查找最近的敌人
     let closestEnemy = null;
@@ -508,7 +509,8 @@ export class CombatSystem {
     if (!playerTransform) return;
     
     // 查找最近的敌人
-    const enemies = entities.filter(e => e.type === 'enemy' && !e.isDead);
+    const enemies = entities.filter(e => e.type === 'enemy' && !e.isDead
+      && e.faction !== 'friendly' && e.faction !== 'ally');
     if (enemies.length === 0) return;
     
     let nearestEnemy = null;
