@@ -31,8 +31,9 @@ export function createRuntimeDocumentProjector(getScene) {
 
 /**
  * 读端变形（SnapshotManager.restore 前调用）：带 sdd 的存档以文档节点覆盖旧链路字段
- * （同值替代——sdd 是权威源的结构声明）。quests/narrative=运行时文档节点；
- * player/ui/world=存档时文档节点（缺段判空跳过——投影对缺段写 null）。
+ * （同值替代——sdd 是权威源的结构声明）。覆盖面=全部投影节点：
+ * quests/narrative=运行时文档节点；player/ui/world=存档时文档节点；
+ * eventJournal/clock=权威时钟存档时文档节点（clock 逐字段判空跳过）。
  * 旧档无 sdd 字段时原样返回（走旧链路）。
  * @returns {(snapshot: any) => any}
  */
@@ -40,12 +41,25 @@ export function createSddSnapshotTransformer() {
   return snapshot => {
     const sdd = snapshot?.sdd;
     if (!sdd?.document) return snapshot;
-    const serviceStates = snapshot?.data?.game?.authority?.serviceStates;
+    const game = snapshot?.data?.game;
+    const serviceStates = game?.authority?.serviceStates;
     if (serviceStates) {
       if (sdd.document.quests) serviceStates.quests = sdd.document.quests;
       if (sdd.document.narrative) serviceStates.campaignContent = sdd.document.narrative;
+      if (sdd.document.eventJournal) serviceStates.eventJournal = sdd.document.eventJournal;
     }
-    const game = snapshot?.data?.game;
+    // clock 节点：权威时钟字段逐字段覆盖（投影对缺段写 null，逐字段判空跳过）。
+    const authority = game?.authority;
+    const clock = sdd.document.clock;
+    if (authority && clock && typeof clock === 'object') {
+      if (clock.snapshotSchemaVersion != null) authority.snapshotSchemaVersion = clock.snapshotSchemaVersion;
+      if (clock.definitionRevision != null) authority.definitionRevision = clock.definitionRevision;
+      if (clock.stateRevisions) authority.stateRevisions = clock.stateRevisions;
+      if (clock.lastEventSequence != null) authority.lastEventSequence = clock.lastEventSequence;
+      if (clock.logicalClock) authority.logicalClock = clock.logicalClock;
+      if (clock.rngState) authority.rngState = clock.rngState;
+      if (clock.operationLedger) authority.operationLedger = clock.operationLedger;
+    }
     if (game) {
       if (sdd.document.player) game.player = sdd.document.player;
       if (sdd.document.ui?.tutorial) game.tutorial = sdd.document.ui.tutorial;

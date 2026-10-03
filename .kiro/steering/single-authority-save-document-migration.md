@@ -257,3 +257,21 @@ index.html 内联的 projector/transformer 闭包在测试中曾有 3 处复刻�
 
 验证：saveSystemRegression 32/32 + RealCanonicalColdRestartReplay 5/5（单独跑全绿，含此前
 并发波动的 P5.2）。
+
+### 6.5 阶段 3 尾巴收口：eventJournal/clock 读端权威（2026-10-03）
+
+原阶段 3 排序「clock/ledger 放最后」的残留：sdd.document 的 `eventJournal` 与 `clock` 节点
+一直只投影不消费（读端覆盖了 quests/narrative/player/ui/world 五节点）。收口动作：
+
+- `createSddSnapshotTransformer` 扩展：`serviceStates.eventJournal` 覆盖 +
+  authority 时钟字段逐字段覆盖（snapshotSchemaVersion / definitionRevision / stateRevisions /
+  lastEventSequence / logicalClock / rngState / operationLedger，逐字段判空跳过——投影对缺段写 null）。
+- saveSystemRegression 新增 3 例（clock/eventJournal 全字段恢复 / clock 逐字段 null 跳过 /
+  eventJournal 缺段跳过），现 35 例。
+
+**至此 sdd.document 全部投影节点（quests/narrative/player/ui/world/eventJournal/clock）在读端
+均为权威源，「双写不双读」的例外清零**。语义安全性：clock 覆盖是同值替代（投影与采集同源同值，
+sddSemanticEquals 往返测试钉住），AuthoritySnapshotService 固定恢复序不受影响——RealCanonical
+ColdRestartReplay 全绿证实。
+
+验证：saveSystemRegression 35/35 + RealCanonicalColdRestartReplay 5/5 + 实机冒烟与收口前一致。

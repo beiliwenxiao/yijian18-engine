@@ -678,6 +678,93 @@ describe('SDD 阶段 3 第二批：全节点读端覆盖（player/ui/world，存
   });
 });
 
+describe('SDD 阶段 3 收口：eventJournal/clock 读端权威（存档时文档节点）', () => {
+  function makeClockSddService({ clockExtras = {}, eventJournal } = {}) {
+    const service = makeService();
+    service.setStateProvider({
+      capture: () => ({
+        player: { id: 'player-1', hp: 10 },
+        authority: {
+          snapshotSchemaVersion: 2,
+          definitionRevision: 5,
+          stateRevisions: { demoDynamic: 11 },
+          lastEventSequence: 7,
+          logicalClock: { logical: 12.5 },
+          rngState: { counter: 3 },
+          operationLedger: { entries: ['old-op'] },
+          serviceStates: {
+            eventJournal: { seq: 7, entries: ['old-event'] },
+            quests: { schemaVersion: 2, taskGraph: { nodes: {} }, actors: [] },
+            campaignContent: { blackboard: { storyState: { currentSceneId: 'OLD' } }, triggers: { snapshotSchemaVersion: 3 } }
+          }
+        }
+      }),
+      restore: data => {
+        service.__restoredAuthority = data?.authority || null;
+        return { ok: true };
+      }
+    });
+    const baseProjector = createRuntimeDocumentProjector(() => null);
+    service.manager.documentProjector = snapshot => {
+      const projection = baseProjector(snapshot);
+      if (eventJournal !== undefined) projection.document.eventJournal = eventJournal;
+      Object.assign(projection.document.clock, clockExtras);
+      return projection;
+    };
+    service.manager.snapshotTransformer = createSddSnapshotTransformer();
+    return service;
+  }
+
+  it('eventJournal 与 clock 全字段从文档节点恢复', async () => {
+    const service = makeClockSddService({
+      eventJournal: { seq: 99, entries: ['new-event'] },
+      clockExtras: {
+        definitionRevision: 8,
+        stateRevisions: { demoDynamic: 20 },
+        lastEventSequence: 99,
+        logicalClock: { logical: 50 },
+        rngState: { counter: 42 },
+        operationLedger: { entries: ['new-op'] }
+      }
+    });
+    await service.saveAsync(1);
+    service.__restoredAuthority = null;
+    await service.loadAsync(1);
+    const authority = service.__restoredAuthority;
+    expect(authority.serviceStates.eventJournal).toEqual({ seq: 99, entries: ['new-event'] });
+    expect(authority.definitionRevision).toBe(8);
+    expect(authority.stateRevisions).toEqual({ demoDynamic: 20 });
+    expect(authority.lastEventSequence).toBe(99);
+    expect(authority.logicalClock).toEqual({ logical: 50 });
+    expect(authority.rngState).toEqual({ counter: 42 });
+    expect(authority.operationLedger).toEqual({ entries: ['new-op'] });
+    // 未在 extras 中覆盖的字段来自投影（与旧链路采集同值）
+    expect(authority.snapshotSchemaVersion).toBe(2);
+  });
+
+  it('clock 逐字段判空跳过：文档字段为 null 时保留旧链路值', async () => {
+    const service = makeClockSddService({
+      clockExtras: { logicalClock: null, rngState: null, stateRevisions: null }
+    });
+    await service.saveAsync(1);
+    service.__restoredAuthority = null;
+    await service.loadAsync(1);
+    const authority = service.__restoredAuthority;
+    expect(authority.logicalClock).toEqual({ logical: 12.5 });  // null 跳过 → 旧链路值
+    expect(authority.rngState).toEqual({ counter: 3 });
+    expect(authority.stateRevisions).toEqual({ demoDynamic: 11 });
+    expect(authority.lastEventSequence).toBe(7);                // 未置 null 的字段照常走文档
+  });
+
+  it('eventJournal 缺段（null）时跳过，保留旧链路值', async () => {
+    const service = makeClockSddService({ eventJournal: null });
+    await service.saveAsync(1);
+    service.__restoredAuthority = null;
+    await service.loadAsync(1);
+    expect(service.__restoredAuthority.serviceStates.eventJournal).toEqual({ seq: 7, entries: ['old-event'] });
+  });
+});
+
 describe('战斗中传送点抑制（isCombatActive 守卫）', () => {
   function makeBindingsSystem({ combat = false } = {}) {
     const fired = [];
