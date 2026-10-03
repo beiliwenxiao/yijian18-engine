@@ -10,6 +10,7 @@
  ************************************************************/
 
 import { InputHints } from '../core/input/InputHints.js';
+import { PadButton } from '../core/input/Xbox360Profile.js';
 
 /**
  * DialogueChoiceBox - 对话选项弹窗（框架级）
@@ -187,9 +188,14 @@ export class DialogueChoiceBox {
     const choices = this.currentChoices();
     if (choices.length === 0) return false;
 
-    // 焦点导航：up/down 涵盖键盘方向键/WASD 与手柄左摇杆（GamepadManager 注入同一虚拟键）
-    const up = input.isKeyDown?.('up') === true;
-    const down = input.isKeyDown?.('down') === true;
+    // 焦点导航：键盘方向/WASD（虚拟 up/down）+ 手柄直读（左摇杆虚拟键已并入；十字键
+    // 默认绑定红/蓝药水，必须直读按钮才能用于导航——参照 IrreversibleChoiceView 模式）
+    const gamepad = input.gamepad || null;
+    const padUp = gamepad?.isButtonPressed?.(PadButton.DPAD_UP) === true;
+    const padDown = gamepad?.isButtonPressed?.(PadButton.DPAD_DOWN) === true;
+    const stickY = Number(gamepad?.leftStick?.y) || 0;
+    const up = input.isKeyDown?.('up') === true || padUp || stickY < -0.5;
+    const down = input.isKeyDown?.('down') === true || padDown || stickY > 0.5;
     const direction = up === down ? 0 : (up ? -1 : 1);
     if (direction !== 0 && this._navDirectionActive !== true) {
       this.focusedIndex = (this.focusedIndex + direction + choices.length) % choices.length;
@@ -197,8 +203,10 @@ export class DialogueChoiceBox {
     }
     this._navDirectionActive = direction !== 0;
 
-    // 确认：E / 手柄 A/X（虚拟 e 键帧沿）
-    if (input.isKeyPressed?.('e') !== true) return false;
+    // 确认：E / 手柄 A/X 直读
+    const padConfirm = gamepad?.isButtonPressed?.(PadButton.A) === true
+      || gamepad?.isButtonPressed?.(PadButton.X) === true;
+    if (input.isKeyPressed?.('e') !== true && !padConfirm) return false;
     const index = Math.max(0, Math.min(this.focusedIndex, choices.length - 1));
     this.playSound(this.choiceSelectSoundKey, { volume: 0.5 });
     const selected = choices[index];
