@@ -749,6 +749,23 @@
       "subType": "weapon"
     },
     {
+      "id": "weapon.wolf_fang",
+      "name": "狼牙",
+      "description": "野狼王的獠牙磨制的匕首，锋利且轻便。",
+      "type": "equipment",
+      "imageId": "inventory.equipment.ironSword",
+      "maxStack": 1,
+      "rarity": 2,
+      "sprite": {
+        "height": 48,
+        "width": 48
+      },
+      "stats": {
+        "attack": 12
+      },
+      "subType": "weapon"
+    },
+    {
       "id": "leather_armor",
       "name": "黄巾皮甲",
       "type": "equipment",
@@ -957,6 +974,50 @@
         "defense": 1,
         "maxHp": 32,
         "speed": 88
+      },
+      "templateId": "wild_wolf"
+    },
+    {
+      "aiType": "aggressive",
+      "corpse": {
+        "name": "狼王尸体",
+        "presentation": {
+          "alpha": 0.9,
+          "offsetY": 0,
+          "rotationDegrees": 0,
+          "sortYOffset": -64
+        },
+        "resourceNodeRef": "node.wolf_carcass"
+      },
+      "id": "enemy.s01_wolf_king",
+      "imageId": "s01.enemy.wolf",
+      "isBoss": true,
+      "level": 2,
+      "lootTable": [
+        {
+          "chance": 1,
+          "itemId": "weapon.wolf_fang",
+          "maxQuantity": 1,
+          "minQuantity": 1
+        },
+        {
+          "chance": 1,
+          "itemId": "resource.raw_wolf_meat",
+          "maxQuantity": 5,
+          "minQuantity": 2
+        }
+      ],
+      "name": "狼王",
+      "sprite": {
+        "height": 64,
+        "isStatic": true,
+        "width": 96
+      },
+      "stats": {
+        "attack": 9,
+        "defense": 2,
+        "maxHp": 110,
+        "speed": 78
       },
       "templateId": "wild_wolf"
     },
