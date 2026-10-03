@@ -116,6 +116,8 @@ export class CombatSystem {
     this.skillRangeIndicators = [];
     // Boss 攻击预警（telegraph）：attackerId → {startedAt, windupMs, radius, attackerRef, targetRef, name}
     this.attackTelegraphs = new Map();
+    // 扑击冲刺：attackerId → {startX/Y, endX/Y, startedAt, duration, landed, attackerRef, targetRef}
+    this.attackDashes = new Map();
     
     // 技能颜色映射
     this.skillColorMap = {
@@ -227,7 +229,10 @@ export class CombatSystem {
    */
   update(deltaTime, entities) {
     const currentTime = this.now();
-    
+
+    // 推进扑击冲刺（预警结束后的本体位移，落地后由 AI 决策结算伤害+击退）
+    this._updateAttackDashes();
+
     // 清理过期的格挡标记（超过0.5秒）
     this.cleanupBlockedAttacks(currentTime);
     
@@ -842,15 +847,20 @@ export class CombatSystem {
     const sprite = attacker.getComponent('sprite');
     const attackerTransform = attacker.getComponent('transform');
     const targetTransform = target.getComponent('transform');
-    
+
     if (!combat) return;
+
+    // 扑击冲刺进行中（预警已结束、本体还在位移）：等落地后再结算（update 每帧推进）
+    const pendingDash = this.attackDashes.get(attacker.id);
+    if (pendingDash && !pendingDash.landed) return;
 
     // Boss 攻击预警（telegraph）：aiProfile.telegraph.windupMs > 0 的敌人攻击前先展示
     // 攻击范围虚线圈（与玩家技能瞄准同款 2.5D 虚线），前摇结束且目标仍在圈内才结算——
     // 「先看见范围，再挨打」，跑出圈即躲开。普通怪 windupMs 0/未配置 = 现行为不变。
+    // 扑击落地（pendingDash.landed）后跳过预警重建，直接走下方结算（伤害+击退）。
     const telegraphWindupMs = Number(attacker.aiProfile?.telegraph?.windupMs) > 0
       ? Number(attacker.aiProfile.telegraph.windupMs) : 0;
-    if (telegraphWindupMs > 0 && attacker.type === 'enemy' && targetTransform) {
+    if (telegraphWindupMs > 0 && attacker.type === 'enemy' && targetTransform && !pendingDash?.landed) {
       const telegraphNow = this.now();
       const existingTelegraph = this.attackTelegraphs.get(attacker.id);
       if (!existingTelegraph) {
@@ -882,6 +892,13 @@ export class CombatSystem {
         targetTransform.position.y - attackerTransform.position.y
       );
       if (telegraphDistance > telegraphReach) return;
+
+      // 扑击冲刺（仅 path 形）：预警结束先向目标方向冲刺位移（update 每帧插值），
+      // 落地后 AI 下一次决策再走正常结算（伤害+击退）——冲刺期间玩家跑开则扑空。
+      if (existingTelegraph.shape === 'path'
+        && this._beginAttackDash(attacker, target, attackerTransform, targetTransform, existingTelegraph)) {
+        return;
+      }
     }
 
     // 检查敌人攻击是否被格挡
@@ -967,8 +984,84 @@ export class CombatSystem {
       const attackType = this.getAttackText(attacker);
       this.applyDamage(target, damage, null, attackType, { sourceEntity: attacker });
 
+      // 扑击命中击退：冲刺扑击（path 形预警）落地的这次结算把玩家沿攻击方向推开
+      if (this._consumePounceKnockback(attacker.id) && targetTransform && attackerTransform) {
+        const kbDx = targetTransform.position.x - attackerTransform.position.x;
+        const kbDy = targetTransform.position.y - attackerTransform.position.y;
+        const kbDist = Math.hypot(kbDx, kbDy) || 1;
+        this.applyKnockback(target, { x: kbDx / kbDist, y: kbDy / kbDist });
+      }
+
       this._logThrottled(`${attacker.name || attacker.id} 攻击 ${target.name || target.id}，造成 ${damage} 点伤害`);
     }
+  }
+
+  /**
+   * 发起扑击冲刺：预警（path 形）结束后敌人向目标方向快速位移。
+   * 由 update 每帧插值推进；冲刺期间清零移动速度避免移动系统干扰。
+   * @returns {boolean} true = 已进入冲刺（调用方应 return 等落地后结算）
+   */
+  _beginAttackDash(attacker, target, attackerTransform, targetTransform, telegraph) {
+    if (this.attackDashes.has(attacker.id)) return true; // 已在进行（update 负责完成）
+    const dx = targetTransform.position.x - attackerTransform.position.x;
+    const dy = targetTransform.position.y - attackerTransform.position.y;
+    const dist = Math.hypot(dx, dy) || 1;
+    const length = Math.min(Number(telegraph.pathLength) || 0, dist);
+    if (length < 24) return false; // 距离很近，原地结算即可
+    // 播放攻击动画（冲刺即扑击动作）
+    const sprite = attacker.getComponent('sprite');
+    if (sprite) sprite.playAnimation('attack');
+    this.attackDashes.set(attacker.id, {
+      attackerRef: attacker,
+      targetRef: target,
+      startX: attackerTransform.position.x,
+      startY: attackerTransform.position.y,
+      endX: attackerTransform.position.x + (dx / dist) * length,
+      endY: attackerTransform.position.y + (dy / dist) * length,
+      startedAt: this.now(),
+      duration: 160,
+      landed: false,
+      landedAt: 0
+    });
+    return true;
+  }
+
+  /** update 每帧推进扑击冲刺：位置插值 + 冲刺中清零移动速度 + 落地/超时回收 */
+  _updateAttackDashes() {
+    if (this.attackDashes.size === 0) return;
+    const now = this.now();
+    for (const [attackerId, dash] of this.attackDashes) {
+      const transform = dash.attackerRef?.getComponent?.('transform');
+      if (!transform) { this.attackDashes.delete(attackerId); continue; }
+      const progress = Math.min(1, (now - dash.startedAt) / dash.duration);
+      if (progress < 1) {
+        // 冲刺中：插值位移（ease-in 加速扑击感）并抑制移动系统
+        const ease = progress * progress;
+        transform.position.x = dash.startX + (dash.endX - dash.startX) * ease;
+        transform.position.y = dash.startY + (dash.endY - dash.startY) * ease;
+        const movement = dash.attackerRef.getComponent?.('movement');
+        if (movement) { movement.velocity.x = 0; movement.velocity.y = 0; }
+        continue;
+      }
+      if (!dash.landed) {
+        // 落地：钉在终点，保留条目等 AI 下一次决策结算（伤害+击退）
+        transform.position.x = dash.endX;
+        transform.position.y = dash.endY;
+        dash.landed = true;
+        dash.landedAt = now;
+        continue;
+      }
+      // 落地后超时未结算（玩家跑出攻击范围，AI 不再发起）：扑空回收
+      if (now - dash.landedAt > 800) this.attackDashes.delete(attackerId);
+    }
+  }
+
+  /** 消费扑击落地标记（结算段一次性击退触发）；无标记返回 false */
+  _consumePounceKnockback(attackerId) {
+    const dash = this.attackDashes.get(attackerId);
+    if (!dash?.landed) return false;
+    this.attackDashes.delete(attackerId);
+    return true;
   }
   
   /**
@@ -2316,6 +2409,11 @@ export class CombatSystem {
     this.attackTelegraphs.delete(entity.id);
     for (const [attackerId, telegraph] of this.attackTelegraphs) {
       if (telegraph.targetRef === entity) this.attackTelegraphs.delete(attackerId);
+    }
+    // 同步清理扑击冲刺（冲刺者死亡或目标死亡都不再结算）
+    this.attackDashes.delete(entity.id);
+    for (const [attackerId, dash] of this.attackDashes) {
+      if (dash.targetRef === entity) this.attackDashes.delete(attackerId);
     }
 
     // 标记为正在死亡
