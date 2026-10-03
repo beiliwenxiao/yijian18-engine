@@ -1006,6 +1006,7 @@
       "imageId": "s01.enemy.wolf",
       "isBoss": true,
       "level": 2,
+      "attackRange": 90,
       "ai": {
         "detectionRange": 320,
         "pursuitRange": 560,

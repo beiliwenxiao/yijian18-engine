@@ -550,8 +550,9 @@ export class CombatSystem {
     // 渲染伤害数字
     this.renderDamageNumbers(ctx);
 
-    // Boss 攻击预警（telegraph）：windup 中的敌人画攻击范围虚线圈
-    this.renderAttackTelegraphs(ctx);
+    // Boss 攻击预警（telegraph）不在本 HUD 通道渲染：
+    // 预警框是世界坐标图形，必须在已应用相机变换的世界通道绘制
+    //（SceneRenderPipeline._renderWorldEffects），否则会画到屏幕外不可见。
   }
 
   /**
@@ -867,12 +868,17 @@ export class CombatSystem {
       }
       if (telegraphNow - existingTelegraph.startedAt < existingTelegraph.windupMs) return; // 前摇进行中（幂等）
       this.attackTelegraphs.delete(attacker.id);
-      // 前摇结束：目标跑出攻击范围则本次攻击落空（不推进冷却，AI 重新走预警循环）
+      // 前摇结束：目标跑出攻击范围则本次攻击落空（不推进冷却，AI 重新走预警循环）。
+      // path 形（扑击/冲刺）的预警框视觉长度为 max(attackRange, pathLength)，
+      // 结算判定必须与视觉一致——玩家看见的框就是危险区，跑出框才算躲开。
+      const telegraphReach = existingTelegraph.shape === 'path'
+        ? Math.max(combat.attackRange, existingTelegraph.pathLength)
+        : combat.attackRange;
       const telegraphDistance = Math.hypot(
         targetTransform.position.x - attackerTransform.position.x,
         targetTransform.position.y - attackerTransform.position.y
       );
-      if (telegraphDistance > combat.attackRange) return;
+      if (telegraphDistance > telegraphReach) return;
     }
 
     // 检查敌人攻击是否被格挡

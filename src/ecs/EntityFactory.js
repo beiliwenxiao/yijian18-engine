@@ -251,7 +251,8 @@ export class EntityFactory {
     
     // 添加战斗组件
     const combat = new CombatComponent({
-      attackRange: 40,
+      // 攻击范围：库定义 enemy.attackRange 优先（如狼王扑击距离），未配置维持 40 现状
+      attackRange: Number(enemyData.attackRange) > 0 ? Number(enemyData.attackRange) : 40,
       attackCooldown: 1500
     });
     entity.addComponent(combat);

@@ -542,6 +542,8 @@ export class SceneRenderPipeline {
       scene._debugParticleFrames--;
     }
     combatSystem?.renderSkillRangeIndicators(ctx);
+    // Boss 攻击预警（telegraph）：世界坐标虚线框，与玩家技能指示器同通道（相机变换已应用）
+    combatSystem?.renderAttackTelegraphs(ctx);
     if (services.worldInteraction) services.worldInteraction.renderClickRings(ctx);
     else scene._renderClickRings(ctx);
     if (services.skills) services.skills.renderAimPreview(ctx);
