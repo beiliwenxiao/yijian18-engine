@@ -379,7 +379,14 @@ export class EquipmentPanel extends UIElement {
         ctx.fillText(`多重箭: ${equipment.multishot}`, tooltipX + 15, tooltipY + yOffset);
         yOffset += 12;
       }
-      
+      // 条件加速词条（如狼牙：攻击间隔慢于1秒时缩短1.5秒）
+      if (equipment.attackSpeedReduce && equipment.attackSpeedReduce.reduceSec > 0) {
+        const threshold = equipment.attackSpeedReduce.thresholdSec ?? 1;
+        ctx.fillStyle = '#66ffcc';
+        ctx.fillText(`攻速强化: 攻击间隔慢于${threshold}秒时，缩短${equipment.attackSpeedReduce.reduceSec}秒`, tooltipX + 15, tooltipY + yOffset);
+        yOffset += 12;
+      }
+
       // 元素属性
       if (equipment.stats.elementAttack) {
         const elementNames = ['火', '爆', '水', '冰', '风', '电', '暴风', '雷电', '雷暴', '土', '滚石', '木', '落木'];

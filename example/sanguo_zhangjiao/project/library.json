@@ -751,7 +751,7 @@
     {
       "id": "weapon.wolf_fang",
       "name": "狼牙",
-      "description": "野狼王的獠牙磨制的匕首，锋利且轻便。",
+      "description": "野狼王的獠牙磨制的匕首，锋利且轻便。攻击间隔慢于1秒时，攻击间隔缩短1.5秒。",
       "type": "equipment",
       "imageId": "inventory.equipment.wolfFang",
       "maxStack": 1,
@@ -762,6 +762,11 @@
       },
       "stats": {
         "attack": 12
+      },
+      "attackSpeedReduce": {
+        "thresholdSec": 1,
+        "reduceSec": 1.5,
+        "minSec": 0.5
       },
       "subType": "weapon"
     },

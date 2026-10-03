@@ -958,6 +958,15 @@ export class InventoryPanel extends UIElement {
       ctx.fillText(`攻击间隔: 3秒`, tooltipX + 15, tooltipY + yOffset);
       yOffset += 12;
     }
+
+    // 条件加速词条（如狼牙：攻击间隔慢于1秒时缩短1.5秒）
+    if (item.attackSpeedReduce && item.attackSpeedReduce.reduceSec > 0) {
+      const threshold = item.attackSpeedReduce.thresholdSec ?? 1;
+      ctx.fillStyle = '#66ffcc';
+      ctx.font = '10px Arial';
+      ctx.fillText(`攻速强化: 攻击间隔慢于${threshold}秒时，缩短${item.attackSpeedReduce.reduceSec}秒`, tooltipX + 15, tooltipY + yOffset);
+      yOffset += 12;
+    }
     
     // 物品价值
     if (item.value) {

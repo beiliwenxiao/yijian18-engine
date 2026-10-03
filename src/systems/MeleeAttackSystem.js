@@ -230,6 +230,36 @@ export class MeleeAttackSystem {
   }
 
   /**
+   * 解析当前武器攻击冷却（秒）：
+   * 1. 全局默认 sliceGlobalCooldown；
+   * 2. 主手/副手 attackSpeed 覆盖（武器自带攻速）；
+   * 3. 主手/副手 attackSpeedReduce 条件加速词条——当前冷却 ≥ thresholdSec 时缩短 reduceSec
+   *   （匕首类「快攻」：如狼牙 攻击间隔慢于1秒时缩短1.5秒），minSec 兜底下限防无限加速。
+   * @returns {number} 冷却秒数
+   */
+  _resolveWeaponCooldown() {
+    let cooldown = this.sliceGlobalCooldown;
+    const equipComp = this.playerEntity?.getComponent?.('equipment');
+    const mainhand = equipComp?.getEquipment?.('mainhand');
+    const offhand = equipComp?.getEquipment?.('offhand');
+    if (mainhand && mainhand.attackSpeed != null) {
+      cooldown = mainhand.attackSpeed;
+    } else if (offhand && offhand.attackSpeed != null) {
+      cooldown = offhand.attackSpeed;
+    }
+    const reduce = mainhand?.attackSpeedReduce || offhand?.attackSpeedReduce || null;
+    if (reduce) {
+      const thresholdSec = Number(reduce.thresholdSec) > 0 ? Number(reduce.thresholdSec) : 1;
+      const reduceSec = Number(reduce.reduceSec) > 0 ? Number(reduce.reduceSec) : 0;
+      const minSec = Number(reduce.minSec) > 0 ? Number(reduce.minSec) : 0;
+      if (reduceSec > 0 && cooldown >= thresholdSec) {
+        cooldown = Math.max(minSec, cooldown - reduceSec);
+      }
+    }
+    return cooldown;
+  }
+
+  /**
    * 执行扇形攻击
    * @param {Object} playerCenter - 玩家中心坐标
    * @param {number} currentTime - 当前时间（秒）
@@ -237,22 +267,12 @@ export class MeleeAttackSystem {
    */
   performSectorAttack(playerCenter, currentTime, overrideDistance) {
     if (!this.playerEntity || !this.combatSystem) return false;
-    
+
     const playerStats = this.playerEntity.getComponent('stats');
     if (!playerStats) return false;
-    
-    // 获取武器冷却时间
-    let weaponCooldown = this.sliceGlobalCooldown;
-    const equipComp = this.playerEntity.getComponent('equipment');
-    if (equipComp) {
-      const mainhand = equipComp.getEquipment('mainhand');
-      const offhand = equipComp.getEquipment('offhand');
-      if (mainhand && mainhand.attackSpeed != null) {
-        weaponCooldown = mainhand.attackSpeed;
-      } else if (offhand && offhand.attackSpeed != null) {
-        weaponCooldown = offhand.attackSpeed;
-      }
-    }
+
+    // 获取武器冷却时间（attackSpeed 覆盖 + attackSpeedReduce 条件加速）
+    const weaponCooldown = this._resolveWeaponCooldown();
     
     // 检查全局武器冷却
     const timeSinceLastAttack = currentTime - this.sliceLastAttackTime;
@@ -305,7 +325,8 @@ export class MeleeAttackSystem {
     const dir = this.sectorDirection;
     let weaponAttackRange = this.sectorAngle;
     let weaponAttackDistance = this.sliceAttackRange;
-    
+
+    const equipComp = this.playerEntity.getComponent('equipment');
     if (equipComp) {
       const mainhand = equipComp.getEquipment('mainhand');
       if (mainhand) {
@@ -690,18 +711,9 @@ export class MeleeAttackSystem {
     // 武器冷却时间条
     const currentTime = performance.now() / 1000;
     const timeSinceLastAttack = currentTime - this.sliceLastAttackTime;
-    
-    let weaponCooldown = this.sliceGlobalCooldown;
-    if (equipComp) {
-      const mainhand2 = equipComp.getEquipment('mainhand');
-      const offhand2 = equipComp.getEquipment('offhand');
-      if (mainhand2 && mainhand2.attackSpeed != null) {
-        weaponCooldown = mainhand2.attackSpeed;
-      } else if (offhand2 && offhand2.attackSpeed != null) {
-        weaponCooldown = offhand2.attackSpeed;
-      }
-    }
-    
+
+    const weaponCooldown = this._resolveWeaponCooldown();
+
     if (timeSinceLastAttack < weaponCooldown && this.sliceLastAttackTime > 0) {
       const barWidth = 40;
       const barHeight = 5;
