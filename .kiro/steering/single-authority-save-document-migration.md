@@ -241,3 +241,19 @@ index.html 内联的 projector/transformer 闭包在测试中曾有 3 处复刻�
 - SDD 相关测试 49/49 全绿（saveSystemRegression 32 + SddStore 13 + SddProjection 4）
 - 实机冒烟（pw-sdd-p3b.mjs）：autosave-1 读档 playerNearSaved=true、narrativeSceneId=S01、无 pageerror，
   与收敛前逐项一致（行为保持）
+
+### 6.4 追加勘察（第二轮）：死文件与重复调用
+
+- **删除 `src/core/snapshot/index.js`**：barrel 纯再导出，全仓零消费者
+  （原生 ESM 无目录导入，浏览器直跑无 bundler 解析）。
+- **campaignContent capture 双 serialize 兜底简化**（SanguoGameLoaderCoordinator）：
+  serialize 已同步 patch 'narrative' 节点，`getNode('narrative') || gameLoader.serialize(...)`
+  的右支是不可能分支的重复序列化 → 改为捕获首次返回值 `?? serialized` 兜底（同形状）。
+- **复核有消费方、确认保留**：GameLoader.lastSuccessfulSnapshot（canonical pipeline/测试）、
+  SaveGameService 槽位常量（产品接线）、questSystem.snapshot()/restore()（quests authority
+  participant）、LocalStorageAdapter（非 IndexedDB 回退 + 旧档迁移）、SnapshotManager.migrate（restore 链）。
+- **仍属「契约面」生产暂无调用（保留）**：SddStore subscribe/validate/toJSON/fromJSON、
+  SddProjection 的 projectSddToSnapshot/sddSemanticEquals（等价断言 + 未来 migrate 链读取端）。
+
+验证：saveSystemRegression 32/32 + RealCanonicalColdRestartReplay 5/5（单独跑全绿，含此前
+并发波动的 P5.2）。
