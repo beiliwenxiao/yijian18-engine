@@ -1,6 +1,6 @@
 # 迁移方案论证：单一权威存档文档（SDD）
 
-> 状态：迁移中（v5，2026-10-03）；阶段 0/1/2/3b 已交付；阶段 3 第二批已交付（snapshotTransformer 全节点读端覆盖：player/ui/world）；quests/narrative = 运行期镜像权威源，player/ui/world = 存档时文档节点；剩余阶段 4（清理旧链路）独立排期
+> 状态：已完成（v6，2026-10-03）；阶段 0/1/2/3（第一批+3b+第二批）已交付；阶段 4 已交付（接线收敛，见第六章）；终态达成：sdd.document 五节点为权威源，旧链路保留为兼容面
 > 目标：回答「存档能否收敛为单一纯数据文档、任务系统能否退化为勾选器」，给出可行路径与代价。
 
 ---
@@ -24,6 +24,9 @@
 5. **存档链新增行为时先看 `test/saveSystemRegression.test.js`**——修改
    SnapshotManager / SaveGameService / captureSceneSaveState / captureStreamedChunkState /
    SceneTriggerBindingSystem 前，先让该文件在你的改动上通过。
+6. **SDD 接线（documentProjector / snapshotTransformer）只在 `src/core/snapshot/SddSaveWiring.js`**
+   （阶段 4 交付）。产品（index.html）与回归测试共用同一工厂实例，禁止再复制闭包——
+   同一语义两处实现必然分叉（阶段 4 前曾有 3 处复刻，属四缺陷同族病灶）。
 
 
 ## 一、现状事实
@@ -202,3 +205,39 @@ SnapshotManager（SaveGameService.manager）
 > （saveSystemRegression 共 32 例全绿）；实机冒烟通过（autosave-1 读档：player 位置与存档点
 > 容差内一致、narrative 镜像就位、无 pageerror）。至此 sdd.document 五节点（quests/narrative/
 > player/ui/world）在读端均为权威源。
+
+---
+
+## 六、阶段 4 交付记录（2026-10-03）：接线收敛
+
+### 6.1 勘察结论：修正后架构下没有 serialize/restore 死代码可删
+
+原方案阶段 4「删除各系统 serialize/restore 死代码」是为全量节点迁移（业务代码改节点订阅）设计的；
+第五章修正后终态收窄（运行期系统继续用组件/Map，文档只在存档时组装、读档时为权威源），
+逐项勘察结果：
+
+| 候选 | 结论 | 理由 |
+|---|---|---|
+| QuestTransactionService / GameLoader serialize-deserialize | **保留（活代码）** | 写端文档镜像的同步源（serialize 时 patch sdd 节点）+ 旧档兼容链路 |
+| `duplicateAuthorityState` 校验（BaseGameSceneSetup） | **保留** | 读端守卫：拒绝旧格式在 AuthoritySnapshot 外重复保存叙事状态；SddStore validator 尚未覆盖此语义 |
+| SddProjection 三函数 | **保留（全在用）** | 产品投影 + 测试等价断言的基础设施 |
+| SddStore subscribe/validate/toJSON/fromJSON | **保留** | 已文档化契约面（quests 节点订阅=任务视图重建入口），测试钉住 |
+
+### 6.2 收敛动作：接线工厂化（消灭复制漂移面）
+
+index.html 内联的 projector/transformer 闭包在测试中曾有 3 处复刻（3b describe、第二批 describe、
+运行时优先语义测试）——正是「同一语义两处实现必然分叉」的缺陷同族病灶。收敛为：
+
+- 新增 `src/core/snapshot/SddSaveWiring.js`：
+  - `createRuntimeDocumentProjector(getScene)`——写端投影（快照投影 + quests/narrative 运行时节点覆盖）
+  - `createSddSnapshotTransformer()`——读端变形（五节点覆盖 + 缺段判空跳过 + 旧档原样跳过）
+- index.html 改为工厂调用（`createRuntimeDocumentProjector(() => scene)`），注释收敛为一段
+- saveSystemRegression 六处复刻闭包全部替换为消费同一工厂（SDD_QUESTS/SDD_NARRATIVE 等
+  测试固定值仍通过包装 baseProjector 注入）
+- 硬规则第六条进本文件（见零章）
+
+### 6.3 验证
+
+- SDD 相关测试 49/49 全绿（saveSystemRegression 32 + SddStore 13 + SddProjection 4）
+- 实机冒烟（pw-sdd-p3b.mjs）：autosave-1 读档 playerNearSaved=true、narrativeSceneId=S01、无 pageerror，
+  与收敛前逐项一致（行为保持）
