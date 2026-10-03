@@ -23,6 +23,7 @@
     "pc-flight",
     "pc-throw",
     "pc-bag",
+    "pc-army",
     "pc-settings",
     "act-attack",
     "act-block",
@@ -37,6 +38,7 @@
     "hb-hp",
     "hb-mp",
     "hb-bag",
+    "hb-army",
     "hb-settings",
     "hb-skill6",
     "hb-skill7"
@@ -72,6 +74,7 @@
         "pc-skill5",
         "pc-block",
         "pc-bag",
+        "pc-army",
         "pc-settings",
         "act-attack",
         "act-block",
@@ -83,6 +86,7 @@
         "hb-hp",
         "hb-mp",
         "hb-bag",
+        "hb-army",
         "hb-settings",
         "hb-skill6",
         "hb-skill7"
@@ -100,6 +104,7 @@
         "pc-skill5",
         "pc-block",
         "pc-bag",
+        "pc-army",
         "pc-settings",
         "act-attack",
         "act-block",
@@ -111,6 +116,7 @@
         "hb-hp",
         "hb-mp",
         "hb-bag",
+        "hb-army",
         "hb-settings",
         "hb-skill6",
         "hb-skill7"
@@ -338,6 +344,24 @@
         "pc-jump",
         "act-jump"
       ]
+    },
+    {
+      "id": "s02-rescue-highlight-army",
+      "scope": {
+        "sceneIds": [
+          "S02"
+        ]
+      },
+      "when": {
+        "type": "storyPath",
+        "path": "s02Rescued",
+        "equals": false
+      },
+      "highlightComponentIds": [
+        "pc-army",
+        "hb-army"
+      ],
+      "hintAction": "army"
     },
     {
       "id": "s01-wood-keep-gathering-ui",
