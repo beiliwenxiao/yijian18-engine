@@ -367,6 +367,23 @@ export class EquipmentPanel extends UIElement {
         ctx.fillText(`速度: +${equipment.stats.speed}`, tooltipX + 15, tooltipY + yOffset);
         yOffset += 12;
       }
+
+      // 攻击间隔（武器特有属性）：显示词条生效后的实际值（如狼牙 3-1.5=1.5秒）
+      if (equipment.attackSpeed != null || equipment.subType === 'mainhand' || equipment.subType === 'offhand' || equipment.subType === 'weapon') {
+        const speedReduce = equipment.attackSpeedReduce;
+        const baseInterval = equipment.attackSpeed != null ? equipment.attackSpeed : 3;
+        const reduceApplies = equipment.attackSpeed == null
+          && speedReduce && Number(speedReduce.reduceSec) > 0
+          && baseInterval >= (Number(speedReduce.thresholdSec) > 0 ? Number(speedReduce.thresholdSec) : 1);
+        ctx.fillStyle = '#ffaa00';
+        if (reduceApplies) {
+          const resolvedInterval = Math.max(Number(speedReduce.minSec) || 0, baseInterval - Number(speedReduce.reduceSec));
+          ctx.fillText(`攻击间隔: ${resolvedInterval}秒 (${baseInterval}-${speedReduce.reduceSec})`, tooltipX + 15, tooltipY + yOffset);
+        } else {
+          ctx.fillText(`攻击间隔: ${baseInterval}秒`, tooltipX + 15, tooltipY + yOffset);
+        }
+        yOffset += 12;
+      }
       
       // 特殊属性（穿刺、多重箭等）
       if (equipment.pierce) {

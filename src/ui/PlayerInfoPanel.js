@@ -813,27 +813,35 @@ export class PlayerInfoPanel extends UIElement {
    * @param {Object} equipment - 装备组件
    */
   renderEquipmentTooltip(ctx, equipment) {
-    if (!this.hoveredEquipSlot || !equipment) return;
-    
-    const item = equipment.slots[this.hoveredEquipSlot];
+    if (!equipment) return;
+    // 手柄聚焦的装备槽与鼠标悬停显示完全一致的完整信息；焦点即时显示，锚定槽位旁
+    const activeSlot = this.hoveredEquipSlot || this.focusedEquipSlot;
+    if (!activeSlot) return;
+
+    const item = equipment.slots[activeSlot];
     if (!item) return;
-    
+
     const tooltipWidth = 280;
     const isTool = typeof item.toolType === 'string' && item.toolType.length > 0;
     const toolLineCount = isTool ? (Number(item.durability) <= 0 ? 4 : 3) : 0;
     const tooltipHeight = 200 + toolLineCount * 14;
-    
+
     // 获取canvas尺寸
     const canvasWidth = ctx.canvas.width;
     const canvasHeight = ctx.canvas.height;
-    
-    // 默认显示在鼠标右侧
-    let tooltipX = this.mouseX + 15;
-    let tooltipY = this.mouseY - 20;
-    
-    // 如果超出右边界，显示在鼠标左侧
+
+    // 手柄焦点锚定槽位；否则显示在鼠标右侧
+    const focusSlotRect = this.hoveredEquipSlot ? null : this.equipSlots[this.focusedEquipSlot];
+    const anchorX = focusSlotRect ? focusSlotRect.x + focusSlotRect.width : this.mouseX;
+    const anchorY = focusSlotRect ? focusSlotRect.y : this.mouseY;
+
+    // 默认显示在锚点右侧
+    let tooltipX = anchorX + 15;
+    let tooltipY = anchorY - 20;
+
+    // 如果超出右边界，显示在锚点左侧
     if (tooltipX + tooltipWidth > canvasWidth) {
-      tooltipX = this.mouseX - tooltipWidth - 15;
+      tooltipX = anchorX - tooltipWidth - 15;
     }
     
     // 如果左侧也超出，显示在面板右侧
@@ -980,14 +988,20 @@ export class PlayerInfoPanel extends UIElement {
       yOffset += 12;
     }
     
-    // 攻击间隔（武器特有属性）
-    if (item.attackSpeed != null) {
+    // 攻击间隔（武器特有属性）：显示词条生效后的实际值（如狼牙 3-1.5=1.5秒）
+    const speedReduce = item.attackSpeedReduce;
+    const baseInterval = item.attackSpeed != null ? item.attackSpeed : 3;
+    const reduceApplies = item.attackSpeed == null
+      && speedReduce && Number(speedReduce.reduceSec) > 0
+      && baseInterval >= (Number(speedReduce.thresholdSec) > 0 ? Number(speedReduce.thresholdSec) : 1);
+    if (item.attackSpeed != null || item.subType === 'mainhand' || item.subType === 'offhand' || item.subType === 'weapon') {
       ctx.fillStyle = '#ffaa00';
-      ctx.fillText(`攻击间隔: ${item.attackSpeed}秒`, tooltipX + 15, tooltipY + yOffset);
-      yOffset += 12;
-    } else if (item.subType === 'mainhand' || item.subType === 'offhand' || item.subType === 'weapon') {
-      ctx.fillStyle = '#ffaa00';
-      ctx.fillText(`攻击间隔: 3秒`, tooltipX + 15, tooltipY + yOffset);
+      if (reduceApplies) {
+        const resolvedInterval = Math.max(Number(speedReduce.minSec) || 0, baseInterval - Number(speedReduce.reduceSec));
+        ctx.fillText(`攻击间隔: ${resolvedInterval}秒 (${baseInterval}-${speedReduce.reduceSec})`, tooltipX + 15, tooltipY + yOffset);
+      } else {
+        ctx.fillText(`攻击间隔: ${baseInterval}秒`, tooltipX + 15, tooltipY + yOffset);
+      }
       yOffset += 12;
     }
 

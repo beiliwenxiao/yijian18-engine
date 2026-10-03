@@ -746,39 +746,74 @@ export class InventoryPanel extends UIElement {
   }
 
   /**
+   * 手柄焦点槽位的格子锚点（渲染坐标）；滚动出可视区时返回 null（不显示 tooltip）。
+   * @param {number} slotIndex
+   * @returns {{x: number, y: number}|null}
+   */
+  _getFocusedSlotAnchor(slotIndex) {
+    if (!Number.isInteger(slotIndex) || slotIndex < 0) return null;
+    const row = Math.floor(slotIndex / this.slotsPerRow);
+    const visibleRow = row - (this.scrollRow || 0);
+    if (visibleRow < 0 || visibleRow >= this.maxVisibleRows) return null;
+    const col = slotIndex % this.slotsPerRow;
+    return {
+      x: this.x + this.slotStartX + col * (this.slotSize + this.slotPadding),
+      y: this.y + this.slotStartY + visibleRow * (this.slotSize + this.slotPadding)
+    };
+  }
+
+  /**
    * 渲染物品提示框
    * @param {CanvasRenderingContext2D} ctx - 渲染上下文
    */
   renderItemTooltip(ctx) {
     if (!this.showTooltip && !this.longPressShowTooltip) return;
-    if (this.hoveredSlot === -1 || !this.entity) return;
-    // 悬停延迟：桌面鼠标悬停需 tooltipDelay 秒；长按模式直接显示
-    if (!this.longPressShowTooltip && this.hoverTime < this.tooltipDelay) return;
-    
+    if (!this.entity) return;
+
     const inventoryComponent = this.entity.getComponent('inventory');
     if (!inventoryComponent) return;
-    
-    const slot = inventoryComponent.getSlot(this.hoveredSlot);
+
+    // 提示目标三优先级：长按（触屏）> 鼠标悬停 > 手柄焦点。
+    // 手柄焦点即时显示（无悬停延迟），锚定在焦点格子旁——与鼠标悬停信息完全一致。
+    let slotIndex = this.hoveredSlot;
+    let anchorX = this.mouseX;
+    let anchorY = this.mouseY;
+    let gamepadFocusMode = false;
+    if (this.longPressShowTooltip && this.longPressSlot >= 0) {
+      slotIndex = this.longPressSlot;
+    } else if (slotIndex === -1 && this.focusedSlot >= 0) {
+      const pos = this._getFocusedSlotAnchor(this.focusedSlot);
+      if (!pos) return;
+      slotIndex = this.focusedSlot;
+      anchorX = pos.x + this.slotSize / 2;
+      anchorY = pos.y;
+      gamepadFocusMode = true;
+    }
+    if (slotIndex === -1 || slotIndex == null) return;
+    // 悬停延迟：桌面鼠标悬停需 tooltipDelay 秒；长按与手柄焦点直接显示
+    if (!this.longPressShowTooltip && !gamepadFocusMode && this.hoverTime < this.tooltipDelay) return;
+
+    const slot = inventoryComponent.getSlot(slotIndex);
     if (!slot) return;
-    
+
     const item = slot.item;
     const tooltipWidth = 280;
     const isTool = typeof item.toolType === 'string' && item.toolType.length > 0;
     const toolLineCount = isTool ? (Number(item.durability) <= 0 ? 4 : 3) : 0;
     const tooltipHeight = 200 + toolLineCount * 14;
-    
+
     // 获取canvas尺寸
     const canvas = document.getElementById('gameCanvas');
     const canvasWidth = canvas ? canvas.width : 800;
     const canvasHeight = canvas ? canvas.height : 600;
-    
-    // 默认显示在鼠标右侧
-    let tooltipX = this.mouseX + 15;
-    let tooltipY = this.mouseY - 20;
-    
-    // 如果超出右边界，显示在鼠标左侧
+
+    // 默认显示在锚点右侧
+    let tooltipX = anchorX + 15;
+    let tooltipY = anchorY - 20;
+
+    // 如果超出右边界，显示在锚点左侧
     if (tooltipX + tooltipWidth > canvasWidth) {
-      tooltipX = this.mouseX - tooltipWidth - 15;
+      tooltipX = anchorX - tooltipWidth - 15;
     }
     
     // 如果左侧也超出，显示在背包右侧
@@ -946,16 +981,21 @@ export class InventoryPanel extends UIElement {
       yOffset += 12;
     }
     
-    // 攻击间隔（武器特有属性）
-    if (item.attackSpeed != null) {
+    // 攻击间隔（武器特有属性）：显示词条生效后的实际值（如狼牙 3-1.5=1.5秒）
+    const speedReduce = item.attackSpeedReduce;
+    const baseInterval = item.attackSpeed != null ? item.attackSpeed : 3;
+    const reduceApplies = item.attackSpeed == null
+      && speedReduce && Number(speedReduce.reduceSec) > 0
+      && baseInterval >= (Number(speedReduce.thresholdSec) > 0 ? Number(speedReduce.thresholdSec) : 1);
+    if (item.attackSpeed != null || item.subType === 'mainhand' || item.subType === 'offhand' || item.subType === 'weapon') {
       ctx.fillStyle = '#ffaa00';
       ctx.font = '10px Arial';
-      ctx.fillText(`攻击间隔: ${item.attackSpeed}秒`, tooltipX + 15, tooltipY + yOffset);
-      yOffset += 12;
-    } else if (item.subType === 'mainhand' || item.subType === 'offhand' || item.subType === 'weapon') {
-      ctx.fillStyle = '#ffaa00';
-      ctx.font = '10px Arial';
-      ctx.fillText(`攻击间隔: 3秒`, tooltipX + 15, tooltipY + yOffset);
+      if (reduceApplies) {
+        const resolvedInterval = Math.max(Number(speedReduce.minSec) || 0, baseInterval - Number(speedReduce.reduceSec));
+        ctx.fillText(`攻击间隔: ${resolvedInterval}秒 (${baseInterval}-${speedReduce.reduceSec})`, tooltipX + 15, tooltipY + yOffset);
+      } else {
+        ctx.fillText(`攻击间隔: ${baseInterval}秒`, tooltipX + 15, tooltipY + yOffset);
+      }
       yOffset += 12;
     }
 
