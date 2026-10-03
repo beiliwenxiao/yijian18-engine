@@ -59,6 +59,13 @@ export class MovementSystem {
     this._contactLocks = new WeakMap();
     this._blockedTotals = new WeakMap();
     this.pathfindingSystem = config.pathfindingSystem || new PathfindingSystem();
+    // 点击跳（点击跳跃可达但步行不可达的位置时自动跳过去）：
+    // onAutoJump(entity, dirX, dirY, chargeDistance) 走统一跳跃入口（发教程信号）；
+    // isPositionBlocked(x, y) 复用正式碰撞几何的只读阻挡查询。
+    this.onAutoJump = typeof config.onAutoJump === 'function' ? config.onAutoJump : null;
+    this.isPositionBlocked = typeof config.isPositionBlocked === 'function' ? config.isPositionBlocked : null;
+    // 跳跃距离上限：与蓄力满跳 distanceReference 对齐
+    this.autoJumpMaxDistance = Math.max(24, Number(config.autoJumpMaxDistance) || 120);
     this.pathfindingCellSize = Math.max(8, Number(config.pathfindingCellSize) || 32);
     this.pathfindingMaxVisited = Math.max(64, Number(config.pathfindingMaxVisited) || 2048);
     this.axisLookAheadDistance = Math.max(
@@ -634,11 +641,48 @@ export class MovementSystem {
       : this.inputManager.getMouseWorldPosition();
     if (this.findEnemyAtPosition(clickPos, entities)) return;
 
+    // 点击跳：目标在跳跃距离内但直线路径被阻挡（水/崖/障碍）时，自动跳过去而不是
+    // 走向障碍卡住。目标点必须可站立；触发走统一跳跃入口（jumpByDirection，发教程信号）。
+    if (!routedToVehicle && this._tryAutoJumpToPosition(playerEntity, clickPos)) {
+      this.inputManager.markMouseClickHandled();
+      return;
+    }
+
     if (routedToVehicle) this._cancelNavigationIntent(playerEntity);
     else this._setPointerNavigationIntent(entity, clickPos);
     movement.setPath([clickPos]);
     if (sprite && sprite.currentAnimation !== 'walk') sprite.playAnimation('walk');
     this.inputManager.markMouseClickHandled();
+  }
+
+  /**
+   * 点击跳判定：点击点在跳跃距离内（24~autoJumpMaxDistance）、目标点可站立、
+   * 且玩家到目标点的直线路径存在阻挡（步行不可达）时，朝目标方向自动跳跃。
+   * @param {Entity} entity - 玩家实体
+   * @param {{x:number, y:number}} clickPos - 点击世界坐标
+   * @returns {boolean} 是否已触发跳跃
+   * @private
+   */
+  _tryAutoJumpToPosition(entity, clickPos) {
+    if (typeof this.onAutoJump !== 'function' || typeof this.isPositionBlocked !== 'function') return false;
+    const transform = entity.getComponent('transform');
+    if (!transform?.position) return false;
+    const dx = clickPos.x - transform.position.x;
+    const dy = clickPos.y - transform.position.y;
+    const distance = Math.hypot(dx, dy);
+    // 太近无需跳（步行直达）；超出跳跃距离上限不处理（维持现状：走向目标/绕行）
+    if (distance <= 24 || distance > this.autoJumpMaxDistance) return false;
+    // 目标点必须可站立，跳进阻挡里没有意义
+    if (this.isPositionBlocked(clickPos.x, clickPos.y)) return false;
+    // 直线路径采样：中途任一点被挡 = 步行不可达（终点已单独查过，起点为玩家所在处）
+    const steps = Math.max(2, Math.ceil(distance / 16));
+    for (let index = 1; index < steps; index += 1) {
+      const ratio = index / steps;
+      if (this.isPositionBlocked(transform.position.x + dx * ratio, transform.position.y + dy * ratio)) {
+        return this.onAutoJump(entity, dx / distance, dy / distance, distance) === true;
+      }
+    }
+    return false;
   }
   
   /**

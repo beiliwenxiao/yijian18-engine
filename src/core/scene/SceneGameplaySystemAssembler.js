@@ -166,7 +166,15 @@ export class SceneGameplaySystemAssembler {
         && (scene.jumpChargeController?.isCharging?.() === true
           || scene.isPlayerDowned?.() === true),
       // 战斗状态不进行移动碰撞停顿/阻挡自动停止，保证战斗手感；战斗结束后恢复。
-      combatLock: () => scene.combatSystem?.isInCombat?.() === true
+      combatLock: () => scene.combatSystem?.isInCombat?.() === true,
+      // 点击跳：点击点在跳跃距离内但步行不可达（直线路径被阻挡）时自动跳过去。
+      // 走 scene.jumpByDirection 统一入口（jumpPerformed 教程信号随跳发出）。
+      onAutoJump: (entity, dirX, dirY, chargeDistance) => (
+        entity === scene.playerEntity
+          ? scene.jumpByDirection?.(dirX, dirY, chargeDistance) === true
+          : false
+      ),
+      isPositionBlocked: (x, y, options) => scene._terrainBinding?.isPositionBlocked?.(x, y, options) === true
     });
     // 军团指挥（M1）：编组选择 + 点地移动 + 命令达成倒计时；设计见 .kiro/steering/army-command-design.md
     scene.armyCommandFlow = new SceneArmyCommandFlow(scene);
