@@ -133,8 +133,18 @@ export class OnboardingUiProjection {
   }
 
   _matchesScope(rule, sceneId) {
-    const sceneIds = rule?.scope?.sceneIds;
-    return !Array.isArray(sceneIds) || sceneIds.length === 0 || sceneIds.includes(sceneId);
+    const scope = rule?.scope;
+    const sceneIds = scope?.sceneIds;
+    const sceneListed = Array.isArray(sceneIds) && sceneIds.length > 0
+      ? sceneIds.includes(sceneId)
+      : true;
+    if (!sceneListed) return false;
+    // excludeSceneIds：全场景兜底规则排除特定场景（如 S01 有自己的渐进节奏，全局常驻规则排除它）
+    const excludeSceneIds = scope?.excludeSceneIds;
+    if (Array.isArray(excludeSceneIds) && excludeSceneIds.length > 0 && excludeSceneIds.includes(sceneId)) {
+      return false;
+    }
+    return true;
   }
 
   /** 熄灭判定：会话内已触发，或故事状态已持久化记录（跨会话）。 */
