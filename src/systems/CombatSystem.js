@@ -984,13 +984,8 @@ export class CombatSystem {
       const attackType = this.getAttackText(attacker);
       this.applyDamage(target, damage, null, attackType, { sourceEntity: attacker });
 
-      // 扑击命中击退：冲刺扑击（path 形预警）落地的这次结算把玩家沿攻击方向推开
-      if (this._consumePounceKnockback(attacker.id) && targetTransform && attackerTransform) {
-        const kbDx = targetTransform.position.x - attackerTransform.position.x;
-        const kbDy = targetTransform.position.y - attackerTransform.position.y;
-        const kbDist = Math.hypot(kbDx, kbDy) || 1;
-        this.applyKnockback(target, { x: kbDx / kbDist, y: kbDy / kbDist });
-      }
+      // 冲撞击退已在冲刺落地瞬间生效（_pounceTargetOnLanding），这里仅清理条目
+      this._consumePounceKnockback(attacker.id);
 
       this._logThrottled(`${attacker.name || attacker.id} 攻击 ${target.name || target.id}，造成 ${damage} 点伤害`);
     }
@@ -1020,6 +1015,7 @@ export class CombatSystem {
       endY: attackerTransform.position.y + (dy / dist) * length,
       startedAt: this.now(),
       duration: 160,
+      pathWidth: Number(telegraph.pathWidth) || 72,
       landed: false,
       landedAt: 0
     });
@@ -1044,11 +1040,13 @@ export class CombatSystem {
         continue;
       }
       if (!dash.landed) {
-        // 落地：钉在终点，保留条目等 AI 下一次决策结算（伤害+击退）
+        // 落地：钉在终点并立即把范围内目标撞开（不等 AI 下一次决策——
+        // 否则玩家会先停顿最多 0.3s 才被弹开）。条目保留给 AI 结算咬击伤害。
         transform.position.x = dash.endX;
         transform.position.y = dash.endY;
         dash.landed = true;
         dash.landedAt = now;
+        this._pounceTargetOnLanding(dash);
         continue;
       }
       // 落地后超时未结算（玩家跑出攻击范围，AI 不再发起）：扑空回收
@@ -1056,7 +1054,26 @@ export class CombatSystem {
     }
   }
 
-  /** 消费扑击落地标记（结算段一次性击退触发）；无标记返回 false */
+  /**
+   * 冲撞落地瞬间：目标若仍在撞圈内（以扑击框宽为判定半径），立即沿冲击方向撞开。
+   * 击退在此即时生效；伤害由 AI 落地后的下一次咬击结算（pounced 标记防重复击退）。
+   */
+  _pounceTargetOnLanding(dash) {
+    const target = dash.targetRef;
+    const targetTransform = target?.getComponent?.('transform');
+    const attackerTransform = dash.attackerRef?.getComponent?.('transform');
+    if (!targetTransform || !attackerTransform) return;
+    if (target.isDead || target.isDying || target.isSoulState) return;
+    const dx = targetTransform.position.x - attackerTransform.position.x;
+    const dy = targetTransform.position.y - attackerTransform.position.y;
+    const dist = Math.hypot(dx, dy) || 1;
+    const hitRadius = Number(dash.pathWidth) > 0 ? Number(dash.pathWidth) : 72;
+    if (dist > hitRadius) return; // 玩家已跑开：扑空不撞
+    dash.pounced = true;
+    this.applyKnockback(target, { x: dx / dist, y: dy / dist });
+  }
+
+  /** 消费扑击条目（AI 落地结算时调用：清状态；撞击击退已在落地瞬间生效） */
   _consumePounceKnockback(attackerId) {
     const dash = this.attackDashes.get(attackerId);
     if (!dash?.landed) return false;
