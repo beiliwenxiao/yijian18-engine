@@ -118,6 +118,8 @@ export class CombatSystem {
     this.attackTelegraphs = new Map();
     // 扑击冲刺：attackerId → {startX/Y, endX/Y, startedAt, duration, landed, attackerRef, targetRef}
     this.attackDashes = new Map();
+    // 击飞滑行：entityId → {startX/Y, endX/Y, startedAt, duration, entityRef}
+    this.knockbackFlights = new Map();
     
     // 技能颜色映射
     this.skillColorMap = {
@@ -232,6 +234,8 @@ export class CombatSystem {
 
     // 推进扑击冲刺（预警结束后的本体位移，落地后由 AI 决策结算伤害+击退）
     this._updateAttackDashes();
+    // 推进击飞滑行（被狼王撞开后 30~50px 的弹飞过程）
+    this._updateKnockbackFlights();
 
     // 清理过期的格挡标记（超过0.5秒）
     this.cleanupBlockedAttacks(currentTime);
@@ -1070,7 +1074,47 @@ export class CombatSystem {
     const hitRadius = Number(dash.pathWidth) > 0 ? Number(dash.pathWidth) : 72;
     if (dist > hitRadius) return; // 玩家已跑开：扑空不撞
     dash.pounced = true;
-    this.applyKnockback(target, { x: dx / dist, y: dy / dist });
+    // 击飞 30~50px（随机）：带弹飞滑行过程，而非瞬移式击退
+    const flightDistance = 30 + fxRng.next() * 20;
+    this.applyKnockbackFlight(target, { x: dx / dist, y: dy / dist }, flightDistance);
+  }
+
+  /**
+   * 击飞：目标在 duration 内沿方向滑行 distance 像素（ease-out 先快后慢），
+   * 期间抑制自身移动——「被撞飞」的观感，区别于 applyKnockback 的瞬移。
+   */
+  applyKnockbackFlight(target, direction, distance, duration = 160) {
+    const transform = target?.getComponent?.('transform');
+    if (!transform || !Number.isFinite(direction?.x) || !Number.isFinite(direction?.y)) return;
+    this.knockbackFlights.set(target.id, {
+      entityRef: target,
+      startX: transform.position.x,
+      startY: transform.position.y,
+      endX: transform.position.x + direction.x * distance,
+      endY: transform.position.y + direction.y * distance,
+      startedAt: this.now(),
+      duration
+    });
+    // 起飞瞬间在目标位置生成冲击粒子
+    this.applyKnockback(target, { x: 0, y: 0 });
+  }
+
+  /** update 每帧推进击飞滑行：ease-out 插值 + 滑行中抑制自身移动 */
+  _updateKnockbackFlights() {
+    if (this.knockbackFlights.size === 0) return;
+    const now = this.now();
+    for (const [entityId, flight] of this.knockbackFlights) {
+      const transform = flight.entityRef?.getComponent?.('transform');
+      if (!transform) { this.knockbackFlights.delete(entityId); continue; }
+      const progress = Math.min(1, (now - flight.startedAt) / flight.duration);
+      // ease-out：起手最快，随滑行衰减——被撞飞的观感
+      const eased = 1 - (1 - progress) * (1 - progress);
+      transform.position.x = flight.startX + (flight.endX - flight.startX) * eased;
+      transform.position.y = flight.startY + (flight.endY - flight.startY) * eased;
+      const movement = flight.entityRef.getComponent?.('movement');
+      if (movement && progress < 1) { movement.velocity.x = 0; movement.velocity.y = 0; }
+      if (progress >= 1) this.knockbackFlights.delete(entityId);
+    }
   }
 
   /** 消费扑击条目（AI 落地结算时调用：清状态；撞击击退已在落地瞬间生效） */
