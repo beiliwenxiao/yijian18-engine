@@ -1265,6 +1265,22 @@ export class SceneEditorCanvas {
         rangeRing(aiOv?.detectionRange, 'rgba(255,213,79,0.75)', 4);
         rangeRing(aiOv?.pursuitRange, 'rgba(255,107,107,0.75)', 8);
         rangeRing(aiOv?.leashRange, 'rgba(168,168,168,0.6)', 2);
+        // 半径拖拽手柄：每圈 45° 方向一个小方块，拖动改 overrides.ai 半径
+        for (const [rangeKey, color] of [
+          ['detectionRange', '#ffd54f'], ['pursuitRange', '#ff6b6b'], ['leashRange', '#a8a8a8']
+        ]) {
+          const r = Number(aiOv?.[rangeKey]);
+          if (!(r > 0)) continue;
+          const hx = obj.x + r * 0.7071;
+          const hy = obj.y + r * 0.7071;
+          ctx.fillStyle = color;
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 1.5 / vpScale;
+          ctx.setLineDash([]);
+          const hs = handleSize;
+          ctx.fillRect(hx - hs / 2, hy - hs / 2, hs, hs);
+          ctx.strokeRect(hx - hs / 2, hy - hs / 2, hs, hs);
+        }
         // 巡逻路线编辑态：开放折线 + 圆形路径点手柄（顶点相对锚点，与碰撞多边形同约定）
         if (editor.ui?._editingPatrolRoute === true && obj.kind === 'enemy'
           && obj.overrides?.ai?.patrol?.enabled === true && Array.isArray(aiOv.patrol.points)) {

@@ -241,6 +241,26 @@ export class SceneEditorInteraction {
       && obj?.type === 'ref' && obj?.kind === 'enemy';
   }
 
+  /** enemy ref：AI 范围圈手柄的可编辑对象判定（不依赖巡逻路线编辑开关）。 */
+  _isPatrolEditingCapable(obj) {
+    return obj?.type === 'ref' && obj?.kind === 'enemy';
+  }
+
+  /** 命中 AI 范围圈半径手柄（圆周 45° 方向的小方块）返回对应字段名，未命中返回 null。 */
+  getRangeHandleAt(obj, x, y) {
+    const ai = obj?.overrides?.ai;
+    if (!ai || typeof ai !== 'object') return null;
+    const r = 10 / this.editor.viewport.scale;
+    for (const key of ['detectionRange', 'pursuitRange', 'leashRange']) {
+      const radius = Number(ai[key]);
+      if (!(radius > 0)) continue;
+      const hx = obj.x + radius * 0.7071;
+      const hy = obj.y + radius * 0.7071;
+      if (Math.hypot(x - hx, y - hy) <= r) return key;
+    }
+    return null;
+  }
+
   /**
    * 读取可编辑多边形的画布世界坐标。ref 碰撞点永远相对脚底锚点存储，
    * 只在编辑器适配层临时转换，禁止把世界坐标写回 canonical 场景数据。
@@ -413,6 +433,16 @@ export class SceneEditorInteraction {
       // 选中单个多边形/路径/buffZone时，优先检测顶点拖拽
       if (editor.selectedObjects.length === 1) {
         const sel = editor.selectedObjects[0];
+        // AI 范围圈半径手柄优先（enemy 的三圈虚线，拖动改 overrides.ai 半径）
+        if (editor.layers.isObjectEditableFor(sel) && this._isPatrolEditingCapable(sel)) {
+          const rangeKey = this.getRangeHandleAt(sel, pos.x, pos.y);
+          if (rangeKey) {
+            editor.interaction.isDragging = true;
+            editor.interaction.draggingRange = { obj: sel, key: rangeKey };
+            editor.interaction.dragStart = { x: pos.x, y: pos.y };
+            return;
+          }
+        }
         if (editor.layers.isObjectEditableFor(sel)
           && ((sel.type === 'shape' && (sel.shapeType === 'polygon' || sel.shapeType === 'path'))
             || sel.type === 'buffZone'
@@ -532,6 +562,19 @@ export class SceneEditorInteraction {
     }
 
     if (!editor.interaction.isDragging) return;
+
+    // AI 范围圈半径拖拽：按手柄到锚点的距离更新 overrides.ai 半径
+    if (editor.interaction.draggingRange) {
+      const pos = this.screenToScene(e.offsetX, e.offsetY);
+      const { obj, key } = editor.interaction.draggingRange;
+      const radius = Math.max(24, Math.round(Math.hypot(pos.x - obj.x, pos.y - obj.y)));
+      obj.overrides = obj.overrides || {};
+      obj.overrides.ai = obj.overrides.ai && typeof obj.overrides.ai === 'object' ? obj.overrides.ai : {};
+      obj.overrides.ai[key] = radius;
+      editor.ui.updateObjectProperties();
+      editor.render();
+      return;
+    }
 
     // 顶点拖拽（多边形/路径）
     if (editor.interaction.draggingVertex) {
@@ -671,6 +714,7 @@ export class SceneEditorInteraction {
     editor.interaction.resizeTarget = null;
     editor.interaction.resizeStart = null;
     editor.interaction.draggingVertex = null;
+    editor.interaction.draggingRange = null;
     editor.interaction.pointsStart = null;
     editor.interaction.allObjectStarts = null;
   }
