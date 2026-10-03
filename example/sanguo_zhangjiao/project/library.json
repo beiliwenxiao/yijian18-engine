@@ -1016,7 +1016,10 @@
           "points": []
         },
         "telegraph": {
-          "windupMs": 800
+          "windupMs": 800,
+          "shape": "path",
+          "pathLength": 180,
+          "pathWidth": 72
         }
       },
       "lootTable": [

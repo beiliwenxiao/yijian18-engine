@@ -571,19 +571,41 @@ export class CombatSystem {
         continue;
       }
       if (elapsed >= telegraph.windupMs) continue;
-      const transform = telegraph.attackerRef?.getComponent?.('transform');
-      if (!transform) continue;
+      const attackerTransform = telegraph.attackerRef?.getComponent?.('transform');
+      const targetTransform = telegraph.targetRef?.getComponent?.('transform');
+      if (!attackerTransform) continue;
       const remaining = 1 - elapsed / telegraph.windupMs;
-      const radius = telegraph.radius * (0.35 + 0.65 * remaining);
-      this.renderCircleIndicator(ctx, {
-        type: 'circle',
-        x: transform.position.x,
-        y: transform.position.y,
-        radius,
+      const indicator = {
         color: '#ff5555',
         skillName: `${telegraph.name || '攻击'}预警`,
         dashOffset: -now * 0.06,
         life: 1
+      };
+      if (telegraph.shape === 'path' && targetTransform) {
+        // 路径形（扑击/冲刺）：从攻击者朝目标方向展开矩形虚线框
+        const dx = targetTransform.position.x - attackerTransform.position.x;
+        const dy = targetTransform.position.y - attackerTransform.position.y;
+        const distance = Math.hypot(dx, dy) || 1;
+        const length = Math.max(telegraph.radius, telegraph.pathLength) * (0.5 + 0.5 * remaining);
+        this.renderPathIndicator(ctx, {
+          type: 'path',
+          startX: attackerTransform.position.x,
+          startY: attackerTransform.position.y,
+          endX: attackerTransform.position.x + (dx / distance) * length,
+          endY: attackerTransform.position.y + (dy / distance) * length,
+          pathWidth: telegraph.pathWidth,
+          ...indicator
+        }, Math.min(1, remaining + 0.3));
+        continue;
+      }
+      // 圆形（默认）：攻击范围 2.5D 虚线椭圆，半径随剩余时间收圈
+      const radius = telegraph.radius * (0.35 + 0.65 * remaining);
+      this.renderCircleIndicator(ctx, {
+        type: 'circle',
+        x: attackerTransform.position.x,
+        y: attackerTransform.position.y,
+        radius,
+        ...indicator
       }, Math.min(1, remaining + 0.3));
     }
   }
@@ -828,10 +850,15 @@ export class CombatSystem {
       const telegraphNow = this.now();
       const existingTelegraph = this.attackTelegraphs.get(attacker.id);
       if (!existingTelegraph) {
+        const telegraphConfig = attacker.aiProfile?.telegraph || {};
         this.attackTelegraphs.set(attacker.id, {
           startedAt: telegraphNow,
           windupMs: telegraphWindupMs,
           radius: combat.attackRange,
+          // 形状：circle（默认，攻击范围圆）| path（朝目标的矩形扑击/冲刺框）
+          shape: telegraphConfig.shape === 'path' ? 'path' : 'circle',
+          pathLength: Number(telegraphConfig.pathLength) > 0 ? Number(telegraphConfig.pathLength) : 160,
+          pathWidth: Number(telegraphConfig.pathWidth) > 0 ? Number(telegraphConfig.pathWidth) : 64,
           attackerRef: attacker,
           targetRef: target,
           name: attacker.name || '攻击'
