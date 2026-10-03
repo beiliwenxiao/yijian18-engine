@@ -4774,6 +4774,37 @@
       "revision": 1
     },
     {
+      "assetId": "inventory.equipment.wolfFang",
+      "imageId": "inventory.equipment.wolfFang",
+      "category": "inventory-icon",
+      "usage": [
+        "inventory",
+        "equipment",
+        "weapon"
+      ],
+      "sourceFile": "assets/images/items/equipment-wolf-fang.png",
+      "runtime2D": {
+        "path": "assets/images/items/equipment-wolf-fang.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "inventory.equipment.wolfFang"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "animations": [],
+      "targetPhase": "P2",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
       "assetId": "inventory.equipment.leatherArmor",
       "imageId": "inventory.equipment.leatherArmor",
       "category": "inventory-icon",

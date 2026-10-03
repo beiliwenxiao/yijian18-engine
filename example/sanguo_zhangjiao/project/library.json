@@ -753,7 +753,7 @@
       "name": "狼牙",
       "description": "野狼王的獠牙磨制的匕首，锋利且轻便。",
       "type": "equipment",
-      "imageId": "inventory.equipment.ironSword",
+      "imageId": "inventory.equipment.wolfFang",
       "maxStack": 1,
       "rarity": 2,
       "sprite": {
