@@ -1,6 +1,6 @@
 # 设计：NPC 巡逻/警戒/追击 + Boss 攻击预警 + 追逐野狼改五只掉狼牙
 
-> 状态：实施中（v2，2026-10-03）；第一批已交付（追逐狼 5 只 + 狼王 Boss + 狼牙掉落，见 2.4 交付记录）；第二批（AI+编辑器）、第三批（Boss 预警）待开工
+> 状态：实施中（v3，2026-10-03）；第一批已交付（见 2.4）；第二批已交付（AI 画像 + 编辑器 AI 区块，见 2.6）；第三批（Boss 预警）待开工
 > 需求：①NPC 有巡逻路线/警戒范围/追击范围，场景编辑器可编辑（类似「可碰撞」勾选与五边形调整）；②Boss 预先放出攻击范围/技能虚线框（与玩家技能瞄准同款表现）；③追逐野狼 20→5 只，杀完刷野狼 Boss，掉「狼牙」匕首（攻击+12，可装备）。
 
 ## 一、现状关键结论（勘察实证）
@@ -79,3 +79,33 @@ placement 面板（选中场景里的怪）新增「AI」区块，照「可碰�
   实机冒烟（pw-wolf-boss.mjs）：写黑板 pursuit{killed:4} → fire enemy.killed → killed=5、
   狼王实体刷出（placementId/hp 110/name 正确）、lootTable 挂载正确、generateLoot 产出 2 掉落物、
   onLootDrop 地面投影回调触发、无 pageerror。真实击杀掉落与拾取装备留玩家实测。
+
+## 五、第二批交付记录（2026-10-03）：AI 画像 + 编辑器 AI 区块
+
+### 5.1 数据与运行时
+
+- **数据链免费复用**：placement `overrides.ai` 经 PlacementSpawner.mergeOverrides（浅一层深合并）
+  自动流入 EntityFactory → `entity.aiProfile`（深拷贝注入，EntityFactory.js:280）。
+- **points 格式定案**：`[[x, y], ...]` 相对出生锚点偏移（与碰撞多边形同约定，移动物体路线跟随）。
+- **AISystem 状态机**（AggressiveAI.makeDecision，AIController 基类提供步进方法）：
+  索敌半径 `detectionRange ?? 400`（零回归默认）→ 追击守卫 `distanceFromSpawnAnchor(target) > pursuitRange` 放弃
+  → 无目标时 `stepReturnHome`（leashRange，returning 粘滞防抖）→ `stepPatrol`（loop/pingpong，到点停 1s）
+  → `wanderNear`（现状默认）。状态存 controller 实例字段（每实体独立 controller，AISystem.js:516）。
+- **library.json 样例**：饥饿野狼/追逐野狼（detection 260/pursuit 480/leash 560/patrol pingpong）；
+  狼王（detection 320/pursuit 560/leash 640/patrol loop/telegraph windupMs 800——供第三批消费）。
+
+### 5.2 编辑器（照「可碰撞」同款交互）
+
+- **SceneEditorUI ref 面板** enemy 专属「AI 行为（本处覆盖）」区块：警戒/追击/回家三个数字输入 +
+  巡逻 checkbox + 巡逻方式 select + 「编辑巡逻路线」开关按钮（data-patrol-toggle，
+  `_editingPatrolRoute` 状态；换选非敌怪自动退出防顶点误路由）。
+- **巡逻路线编辑**：复用多边形顶点机制——SceneEditorInteraction.getPolygonWorldPoints/
+  setPolygonWorldPoints 增 patrol 分流（相对锚点换算）；右键菜单最少点数 patrol=1（闭合多边形仍 3）；
+  拖动入口同步放行。
+- **SceneEditorCanvas**：选中 enemy 画三圈虚线预览（警戒黄/追击红/回家灰，读 overrides.ai 未配置不画）；
+  巡逻编辑态画开放折线 + 蓝色圆点手柄，并隐藏碰撞手柄（防双套手柄互劫）。
+
+### 5.3 验证
+
+- AISystem 26/26（新增 5 例：警戒圈内外索敌 / 无 profile 默认 400 / 追击范围放弃 / 巡逻移动 / 回家）；
+  editor 18 文件 94/94；EntityFactory 6/6；RealCanonicalColdRestartReplay 5/5（library 装载链）。

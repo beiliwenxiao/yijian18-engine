@@ -430,4 +430,74 @@ describe('AISystem', () => {
       expect(endTime - startTime).toBeLessThan(16);
     });
   });
+
+  describe('AI 行为画像（aiProfile：巡逻/警戒/追击/回家）', () => {
+    /** 构造带 aiProfile 的实体与候选敌人，脱离共享 beforeEach 的坐标预设。 */
+    function makeScenario({ profile, entityPos = [0, 0], enemyPos = [80, 0], spawnAnchor = [0, 0] }) {
+      const ai = new AISystem();
+      const self = new MockEntity('wolf1', 'enemy', 'enemy');
+      self.addComponent('transform', new MockTransform(entityPos[0], entityPos[1]));
+      self.addComponent('combat', new MockCombat());
+      self.addComponent('movement', new MockMovement());
+      self.addComponent('stats', new MockStats());
+      self.addComponent('sprite', new MockSprite());
+      self.aiProfile = profile;
+      if (spawnAnchor) self.spawnAnchor = { x: spawnAnchor[0], y: spawnAnchor[1] };
+      const enemy = new MockEntity('player1', 'player', 'ally');
+      enemy.addComponent('transform', new MockTransform(enemyPos[0], enemyPos[1]));
+      enemy.addComponent('stats', new MockStats());
+      return { ai, self, enemy };
+    }
+
+    it('警戒范围（detectionRange）：圈内索敌，圈外不索', () => {
+      const { ai, self, enemy } = makeScenario({
+        profile: { detectionRange: 100 },
+        entityPos: [0, 0], enemyPos: [150, 0]
+      });
+      ai.createAIController('aggressive').makeDecision(self, [enemy], null);
+      expect(self.getComponent('combat').hasTarget()).toBe(false);
+
+      const near = makeScenario({ profile: { detectionRange: 100 }, enemyPos: [80, 0] });
+      near.ai.createAIController('aggressive').makeDecision(near.self, [near.enemy], null);
+      expect(near.self.getComponent('combat').hasTarget()).toBe(true);
+    });
+
+    it('无 aiProfile 时维持现状：默认 400 索敌半径', () => {
+      const { ai, self, enemy } = makeScenario({ profile: null, enemyPos: [350, 0] });
+      ai.createAIController('aggressive').makeDecision(self, [enemy], null);
+      expect(self.getComponent('combat').hasTarget()).toBe(true);
+    });
+
+    it('追击范围（pursuitRange）：目标距出生锚点超出即放弃', () => {
+      const { ai, self, enemy } = makeScenario({
+        profile: { pursuitRange: 300 },
+        enemyPos: [500, 0], spawnAnchor: [0, 0]
+      });
+      self.getComponent('combat').setTarget(enemy);
+      ai.createAIController('aggressive').makeDecision(self, [enemy], null);
+      expect(self.getComponent('combat').hasTarget()).toBe(false);
+    });
+
+    it('巡逻（patrol）：无目标时朝相对锚点的路径点移动', () => {
+      const { ai, self } = makeScenario({
+        profile: { patrol: { enabled: true, mode: 'loop', points: [[100, 0]] } },
+        entityPos: [0, 0], enemyPos: [9999, 9999], spawnAnchor: [0, 0]
+      });
+      ai.createAIController('aggressive').makeDecision(self, [], null);
+      const velocity = self.getComponent('movement').velocity;
+      expect(velocity.x).toBeGreaterThan(0);   // 朝 +x 方向的路径点移动
+      expect(velocity.y).toBe(0);
+    });
+
+    it('回家（leashRange）：远离出生锚点且无目标时先走回出生点', () => {
+      const { ai, self } = makeScenario({
+        profile: { leashRange: 100 },
+        entityPos: [400, 0], enemyPos: [9999, 9999], spawnAnchor: [0, 0]
+      });
+      ai.createAIController('aggressive').makeDecision(self, [], null);
+      const velocity = self.getComponent('movement').velocity;
+      expect(velocity.x).toBeLessThan(0);      // 朝出生点（-x）返回
+      expect(velocity.y).toBe(0);
+    });
+  });
 });

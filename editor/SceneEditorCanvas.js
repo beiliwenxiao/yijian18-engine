@@ -1224,7 +1224,9 @@ export class SceneEditorCanvas {
           ctx.stroke();
         }
         const collision = obj.collision;
-        if ((collision?.mode === 'block' || collision?.mode === 'walkable')
+        // 巡逻路线编辑态下不画碰撞手柄：画布顶点操作统一路由到巡逻路径点
+        const patrolEditing = editor.ui?._editingPatrolRoute === true && obj.kind === 'enemy';
+        if (!patrolEditing && (collision?.mode === 'block' || collision?.mode === 'walkable')
           && collision.shapeType === 'polygon' && Array.isArray(collision.points) && collision.points.length >= 3) {
           const points = collision.points.map(point => [obj.x + point[0], obj.y + point[1]]);
           const color = collision.mode === 'walkable' ? '#37d8cf' : '#ff8a4c';
@@ -1247,6 +1249,44 @@ export class SceneEditorCanvas {
           ctx.strokeStyle = '#ffffff';
           ctx.lineWidth = 2 / editor.viewport.scale;
           ctx.setLineDash([6 / editor.viewport.scale, 4 / editor.viewport.scale]);
+        }
+        // AI 行为预览（enemy ref）：警戒/追击/回家三圈虚线（读本处覆盖，未配置不画）
+        const aiOv = obj.overrides?.ai;
+        const vpScale = editor.viewport.scale;
+        const rangeRing = (radius, color, dashScale) => {
+          if (!(Number(radius) > 0)) return;
+          ctx.beginPath();
+          ctx.arc(obj.x, obj.y, radius, 0, Math.PI * 2);
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 1.2 / vpScale;
+          ctx.setLineDash([dashScale / vpScale, dashScale / vpScale]);
+          ctx.stroke();
+        };
+        rangeRing(aiOv?.detectionRange, 'rgba(255,213,79,0.75)', 4);
+        rangeRing(aiOv?.pursuitRange, 'rgba(255,107,107,0.75)', 8);
+        rangeRing(aiOv?.leashRange, 'rgba(168,168,168,0.6)', 2);
+        // 巡逻路线编辑态：开放折线 + 圆形路径点手柄（顶点相对锚点，与碰撞多边形同约定）
+        if (editor.ui?._editingPatrolRoute === true && obj.kind === 'enemy'
+          && obj.overrides?.ai?.patrol?.enabled === true && Array.isArray(aiOv.patrol.points)) {
+          const world = aiOv.patrol.points
+            .filter(p => Array.isArray(p) && Number.isFinite(p[0]) && Number.isFinite(p[1]))
+            .map(p => [obj.x + p[0], obj.y + p[1]]);
+          if (world.length > 0) {
+            ctx.beginPath();
+            ctx.moveTo(world[0][0], world[0][1]);
+            for (let index = 1; index < world.length; index++) ctx.lineTo(world[index][0], world[index][1]);
+            ctx.strokeStyle = '#66ccff';
+            ctx.lineWidth = 1.5 / vpScale;
+            ctx.setLineDash([]);
+            ctx.stroke();
+            ctx.fillStyle = '#66ccff';
+            for (const point of world) {
+              ctx.beginPath();
+              ctx.arc(point[0], point[1], handleSize * 0.7, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.stroke();
+            }
+          }
         }
         continue;
       } else if (obj.type === 'spawn' || obj.type === 'portal' || obj.type === 'npc') {

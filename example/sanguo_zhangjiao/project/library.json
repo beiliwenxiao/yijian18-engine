@@ -964,6 +964,19 @@
         }
       ],
       "name": "追逐野狼",
+      "ai": {
+        "detectionRange": 260,
+        "pursuitRange": 480,
+        "leashRange": 560,
+        "patrol": {
+          "enabled": true,
+          "mode": "pingpong",
+          "points": []
+        },
+        "telegraph": {
+          "windupMs": 0
+        }
+      },
       "sprite": {
         "height": 48,
         "isStatic": true,
@@ -993,6 +1006,19 @@
       "imageId": "s01.enemy.wolf",
       "isBoss": true,
       "level": 2,
+      "ai": {
+        "detectionRange": 320,
+        "pursuitRange": 560,
+        "leashRange": 640,
+        "patrol": {
+          "enabled": true,
+          "mode": "loop",
+          "points": []
+        },
+        "telegraph": {
+          "windupMs": 800
+        }
+      },
       "lootTable": [
         {
           "chance": 1,

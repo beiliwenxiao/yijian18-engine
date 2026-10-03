@@ -275,6 +275,11 @@ export class EntityFactory {
     entity.templateId = enemyData.templateId;
     entity.renderStyle = enemyData.renderStyle || null;
     entity.aiType = enemyData.aiType || 'passive';
+    // AI 行为画像（可选）：库定义 enemy.ai ← placement overrides.ai 已由 PlacementSpawner
+    // mergeOverrides 合成；AISystem 据此驱动巡逻/警戒/追击/回家（无 ai 块 = 现行为零回归）。
+    entity.aiProfile = enemyData.ai && typeof enemyData.ai === 'object'
+      ? JSON.parse(JSON.stringify(enemyData.ai))
+      : null;
     entity.lootTable = enemyData.lootTable || [];
     const corpseDefinition = enemyData.corpse && typeof enemyData.corpse === 'object'
       ? enemyData.corpse

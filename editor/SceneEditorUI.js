@@ -801,6 +801,8 @@ export class SceneEditorUI {
     }
 
     const obj = editor.selectedObjects[0];
+    // 巡逻路线编辑态只在「单选敌怪 ref」时保持；换选其他对象自动退出，避免顶点操作被误路由
+    if (!(obj.type === 'ref' && obj.kind === 'enemy')) this._editingPatrolRoute = false;
     const isObjectEditable = () => (obj.type === 'decoration' && obj._decoRef)
       || editor.layers.isObjectEditableFor(obj);
     const objectEditable = isObjectEditable();
@@ -922,6 +924,20 @@ export class SceneEditorUI {
         editor.render();
       });
     }
+
+    // 巡逻路线编辑开关：进入后画布显示路径点手柄（SceneEditorInteraction/Canvas 按
+    // ui._editingPatrolRoute 分流读写 overrides.ai.patrol.points）
+    panel.querySelectorAll('button[data-patrol-toggle]').forEach(button => {
+      button.addEventListener('click', () => {
+        if (!isObjectEditable()) {
+          this.showToast('此对象已隐藏或锁定，无法修改', 'warn');
+          return;
+        }
+        this._editingPatrolRoute = !this._editingPatrolRoute;
+        this.updateObjectProperties();
+        editor.render();
+      });
+    });
 
     // 绑定属性修改事件
     panel.querySelectorAll('input[data-prop], select[data-prop], textarea[data-prop]').forEach(input => {
@@ -1497,6 +1513,25 @@ export class SceneEditorUI {
         <option value="timed" ${ov.refreshMode === 'timed' ? 'selected' : ''}>定时刷新</option>
       </select></div>`;
       html += `<div class="property-row"><label>刷新间隔(秒):</label><input type="number" value="${ov.refreshIntervalSeconds != null ? ov.refreshIntervalSeconds : ''}" min="0.1" step="0.1" data-prop="overrides.refreshIntervalSeconds" placeholder="留空=用库定义"></div>`;
+    }
+    if (obj.kind === 'enemy') {
+      const ovAi = obj.overrides?.ai && typeof obj.overrides.ai === 'object' ? obj.overrides.ai : {};
+      const patrol = ovAi.patrol && typeof ovAi.patrol === 'object' ? ovAi.patrol : {};
+      const patrolPoints = Array.isArray(patrol.points) ? patrol.points.length : 0;
+      const editingPatrol = this._editingPatrolRoute === true;
+      html += '<div class="property-row" style="border-top:1px solid #333;margin-top:6px;padding-top:6px;">' +
+        '<label style="color:#7cf;font-weight:bold;" title="仅覆盖本放置点；留空沿用内容库定义的 ai 块。运行时：进警戒圈索敌，追击超出追击圈自动回家，无战斗时沿巡逻路线走">AI 行为（本处覆盖）</label></div>';
+      html += `<div class="property-row"><label title="玩家进入该半径（黄圈）即被索敌">警戒范围:</label><input type="number" value="${ovAi.detectionRange != null ? ovAi.detectionRange : ''}" min="0" data-prop="overrides.ai.detectionRange" placeholder="留空=用库定义"></div>`;
+      html += `<div class="property-row"><label title="追击最远距离（相对出生点，红圈），超出放弃追击并回家">追击范围:</label><input type="number" value="${ovAi.pursuitRange != null ? ovAi.pursuitRange : ''}" min="0" data-prop="overrides.ai.pursuitRange" placeholder="留空=用库定义"></div>`;
+      html += `<div class="property-row"><label title="无战斗时离出生点最远距离（灰圈），超出自动回家">回家距离:</label><input type="number" value="${ovAi.leashRange != null ? ovAi.leashRange : ''}" min="0" data-prop="overrides.ai.leashRange" placeholder="留空=用库定义"></div>`;
+      html += `<div class="property-row"><label title="勾选后无战斗时沿巡逻路线移动">巡逻:</label><input type="checkbox" ${patrol.enabled === true ? 'checked' : ''} data-prop="overrides.ai.patrol.enabled"></div>`;
+      html += `<div class="property-row"><label>巡逻方式:</label><select data-prop="overrides.ai.patrol.mode">
+        <option value="" ${!patrol.mode ? 'selected' : ''}>（用库定义）</option>
+        <option value="loop" ${patrol.mode === 'loop' ? 'selected' : ''}>循环</option>
+        <option value="pingpong" ${patrol.mode === 'pingpong' ? 'selected' : ''}>往返</option>
+      </select></div>`;
+      html += `<div class="property-row"><label>巡逻路线:</label><input value="路径点（${patrolPoints} 点）" disabled title="路径点相对物体锚点保存，移动物体时路线自动跟随"></div>`;
+      html += `<div class="property-row"><label>编辑:</label><button data-patrol-toggle style="${editingPatrol ? 'background:#2a6;background:#2a6a4a;' : ''}flex:1;">${editingPatrol ? '完成路线编辑' : '编辑巡逻路线'}</button><span style="color:#9ab;font-size:11px;"> 勾选巡逻后：画布拖动蓝色圆点调整，右键路线增删点</span></div>`;
     }
     return html;
   }

@@ -163,6 +163,98 @@ class AIController {
     this.idleWander = null;
   }
 
+  /** 目标（或坐标）距实体出生锚点的距离；无锚点时退化为 0（= 不限制追击）。 */
+  distanceFromSpawnAnchor(entity, target) {
+    const anchor = entity.spawnAnchor || entity.getComponent?.('transform')?.position;
+    const targetPosition = target?.getComponent?.('transform')?.position;
+    if (!anchor || !targetPosition) return 0;
+    return Math.hypot(targetPosition.x - anchor.x, targetPosition.y - anchor.y);
+  }
+
+  /**
+   * AI 状态机·回家步（aiProfile.leashRange）：无目标且离出生锚点超过 leashRange 时
+   * 先走回出生点再继续巡逻/徘徊。返回 true = 本帧移动已被接管。
+   * returning 粘滞防边界抖动：一旦进入回家态就走到家为止。
+   */
+  stepReturnHome(entity) {
+    const profile = entity.aiProfile && typeof entity.aiProfile === 'object' ? entity.aiProfile : null;
+    const leashRange = Number(profile?.leashRange) > 0 ? Number(profile.leashRange) : 0;
+    const transform = entity.getComponent('transform');
+    if (!transform?.position) return false;
+    const anchor = entity.spawnAnchor || transform.position;
+    const distance = Math.hypot(transform.position.x - anchor.x, transform.position.y - anchor.y);
+    if (!this._returningHome) {
+      if (leashRange <= 0 || distance <= leashRange) return false;
+      this._returningHome = true;
+      this.clearPatrolState();
+    }
+    if (distance <= 12) {
+      this._returningHome = false;
+      this.stopMovement(entity);
+      return true;
+    }
+    this.moveTowardsPosition(entity, anchor);
+    return true;
+  }
+
+  /**
+   * AI 状态机·巡逻步（aiProfile.patrol）：enabled 且 points 非空时沿路径点移动，
+   * mode=loop 循环 / pingpong 往返，到点停留 1 秒。points 为相对出生锚点的偏移
+   * （与碰撞多边形同约定，编辑器拖动物体时路线自动跟随）。返回 true = 本帧移动已被接管。
+   */
+  stepPatrol(entity) {
+    const profile = entity.aiProfile && typeof entity.aiProfile === 'object' ? entity.aiProfile : null;
+    const patrol = profile?.patrol;
+    // points 与碰撞多边形同格式：[[x, y], ...]（相对出生锚点的偏移）
+    const points = Array.isArray(patrol?.points)
+      ? patrol.points.filter(p => Array.isArray(p) && Number.isFinite(p[0]) && Number.isFinite(p[1]))
+      : [];
+    if (patrol?.enabled !== true || points.length === 0) {
+      this.clearPatrolState();
+      return false;
+    }
+    const transform = entity.getComponent('transform');
+    if (!transform?.position) return false;
+    if (!this._patrolState) this._patrolState = { index: 0, dir: 1, waitRemaining: 0 };
+    const state = this._patrolState;
+    const anchor = entity.spawnAnchor || transform.position;
+
+    if (state.waitRemaining > 0) {
+      state.waitRemaining -= this.updateInterval;
+      if (state.waitRemaining > 0) {
+        this.stopMovement(entity);
+        return true;
+      }
+      state.index = patrol.mode === 'pingpong' && points.length > 1
+        ? this._nextPatrolIndex(state, points.length)
+        : (state.index + 1) % points.length;
+    }
+
+    const target = { x: anchor.x + points[state.index][0], y: anchor.y + points[state.index][1] };
+    const reached = Math.hypot(target.x - transform.position.x, target.y - transform.position.y) <= 8;
+    if (reached) {
+      state.waitRemaining = 1.0;
+      this.stopMovement(entity);
+      return true;
+    }
+    this.moveTowardsPosition(entity, target);
+    return true;
+  }
+
+  /** pingpong 巡逻的下一步索引（端点反向）。 */
+  _nextPatrolIndex(state, length) {
+    let next = state.index + state.dir;
+    if (next >= length || next < 0) {
+      state.dir = -state.dir;
+      next = state.index + state.dir;
+    }
+    return Math.max(0, Math.min(length - 1, next));
+  }
+
+  clearPatrolState() {
+    this._patrolState = null;
+  }
+
   /**
    * 无目标时在出生点附近确定性徘徊（远离出生点时会先走回去）。
    * 状态仅保存在 AI controller 内存中；稳定实体 ID 与步进共同决定路线，便于回放复现。
@@ -252,6 +344,7 @@ class AggressiveAI extends AIController {
   makeDecision(entity, allEntities, combatSystem, hostileCache = null) {
     const combat = entity.getComponent('combat');
     if (!combat) return;
+    const profile = entity.aiProfile && typeof entity.aiProfile === 'object' ? entity.aiProfile : null;
 
     // 如果没有目标或目标已死亡，寻找新目标
     if (!combat.hasTarget() || this.isTargetDead(combat.target)) {
@@ -260,23 +353,34 @@ class AggressiveAI extends AIController {
         combat.clearTarget();
       }
 
-      const newTarget = this.findNearestEnemy(entity, allEntities, 400, hostileCache);
+      // 警戒范围（aiProfile.detectionRange）：进入则索敌；未配置维持 400 现状
+      const detectionRange = Number(profile?.detectionRange) > 0 ? Number(profile.detectionRange) : 400;
+      const newTarget = this.findNearestEnemy(entity, allEntities, detectionRange, hostileCache);
       if (newTarget) {
         combat.setTarget(newTarget);
         console.log(`${entity.name} 找到目标: ${newTarget.name} (type: ${newTarget.type}, faction: ${newTarget.faction})`);
       }
     }
 
+    // 追击范围（aiProfile.pursuitRange）：目标距出生锚点超出即放弃追击（回家）
+    if (combat.hasTarget()) {
+      const pursuitRange = Number(profile?.pursuitRange) > 0 ? Number(profile.pursuitRange) : Infinity;
+      if (this.distanceFromSpawnAnchor(entity, combat.target) > pursuitRange) {
+        combat.clearTarget();
+      }
+    }
+
     // 如果有目标，尝试攻击或移动
     if (combat.hasTarget()) {
       this.clearIdleWander();
+      this.clearPatrolState();
       const target = combat.target;
 
       // 检查是否在攻击范围内
       if (this.isInRange(entity, target, combat.attackRange)) {
         // 在范围内，停止移动并攻击
         this.stopMovement(entity);
-        
+
         // 执行攻击
         const currentTime = performance.now();
         if (combat.canAttack(currentTime) && combatSystem) {
@@ -286,10 +390,13 @@ class AggressiveAI extends AIController {
         // 不在范围内，移动到目标
         this.moveTowardsTarget(entity, target);
       }
-    } else {
-      // 没有目标时保持在最后一次战斗附近确定性徘徊。
-      this.wanderNear(entity);
+      return;
     }
+
+    // 没有目标：回家（leashRange）→ 巡逻（patrol）→ 确定性徘徊（现状默认）
+    if (this.stepReturnHome(entity)) return;
+    if (this.stepPatrol(entity)) return;
+    this.wanderNear(entity);
   }
 
   /**

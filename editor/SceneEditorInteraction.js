@@ -235,12 +235,27 @@ export class SceneEditorInteraction {
     return Array.isArray(obj?.climbZones?.[key]) && obj.climbZones[key].length >= 3 ? key : null;
   }
 
+  /** 巡逻路线编辑态：UI「编辑巡逻路线」开关打开且对象是敌怪 ref。 */
+  _isPatrolEditing(obj) {
+    return this.editor?.ui?._editingPatrolRoute === true
+      && obj?.type === 'ref' && obj?.kind === 'enemy';
+  }
+
   /**
    * 读取可编辑多边形的画布世界坐标。ref 碰撞点永远相对脚底锚点存储，
    * 只在编辑器适配层临时转换，禁止把世界坐标写回 canonical 场景数据。
    * 可攀爬物件的攀爬区（climbZones）同理：顶点相对物件锚点存储，按激活区临时转换。
+   * 巡逻路线（enemy overrides.ai.patrol.points，UI 开关 _editingPatrolRoute）同约定：
+   * 相对锚点存储、开放路径，运行时 AISystem.stepPatrol 消费。
    */
   getPolygonWorldPoints(obj) {
+    if (this.editor?.ui?._editingPatrolRoute === true && obj?.type === 'ref' && obj?.kind === 'enemy') {
+      const points = obj.overrides?.ai?.patrol?.points;
+      if (!Array.isArray(points)) return [];
+      return points
+        .filter(point => Array.isArray(point) && Number.isFinite(point[0]) && Number.isFinite(point[1]))
+        .map(point => [obj.x + point[0], obj.y + point[1]]);
+    }
     const zoneKey = this._activeClimbZoneKey(obj);
     if (zoneKey) {
       return obj.climbZones[zoneKey]
@@ -261,6 +276,17 @@ export class SceneEditorInteraction {
   /** 将画布世界坐标写回可编辑多边形；ref 转回脚底锚点相对坐标，攀爬区转回物件锚点相对坐标。 */
   setPolygonWorldPoints(obj, points) {
     if (!Array.isArray(points)) return false;
+    if (this.editor?.ui?._editingPatrolRoute === true && obj?.type === 'ref' && obj?.kind === 'enemy') {
+      obj.overrides = obj.overrides || {};
+      obj.overrides.ai = obj.overrides.ai && typeof obj.overrides.ai === 'object' ? obj.overrides.ai : {};
+      obj.overrides.ai.patrol = obj.overrides.ai.patrol && typeof obj.overrides.ai.patrol === 'object'
+        ? obj.overrides.ai.patrol : {};
+      obj.overrides.ai.patrol.points = points.map(point => [
+        Math.round(point[0] - obj.x),
+        Math.round(point[1] - obj.y)
+      ]);
+      return true;
+    }
     const zoneKey = this._activeClimbZoneKey(obj);
     if (zoneKey) {
       obj.climbZones[zoneKey] = points.map(point => [
@@ -392,6 +418,7 @@ export class SceneEditorInteraction {
             || sel.type === 'buffZone'
             || sel.type === 'effectZone'
             || (sel.type === 'ref' && this.getPolygonWorldPoints(sel).length >= 3)
+            || this._isPatrolEditing(sel)
             || this._activeClimbZoneKey(sel) !== null)) {
           const vi = this.getVertexAt(sel, pos.x, pos.y);
           if (vi !== -1) {
@@ -726,14 +753,18 @@ export class SceneEditorInteraction {
     items.push({ label: '删除对象', action: () => editor.ui.deleteSelectedObjects() });
 
     // ─── 多边形/Buff 多边形/ref 碰撞/可攀爬区顶点编辑 ─────────────────
+    const isPatrolEditing = this._isPatrolEditing(clicked);
     const isVertexShape = (clicked.type === 'shape' && (clicked.shapeType === 'polygon' || clicked.shapeType === 'path'))
       || (clicked.type === 'buffZone' && Array.isArray(clicked.points))
       || (clicked.type === 'effectZone' && Array.isArray(clicked.points))
       || (clicked.type === 'ref' && this.getPolygonWorldPoints(clicked).length >= 3)
+      || (isPatrolEditing && this.getPolygonWorldPoints(clicked).length >= 1)
       || this._activeClimbZoneKey(clicked) !== null;
     const vertexPoints = this.getPolygonWorldPoints(clicked);
+    // 巡逻路线 1 点即合法（守一个点来回走）；闭合多边形仍要求至少 3 点
+    const minVertexCount = isPatrolEditing ? 1 : 3;
 
-    if (isVertexShape && vertexPoints.length >= 3) {
+    if (isVertexShape && vertexPoints.length >= minVertexCount) {
       // 判断右键命中的是某个顶点还是某条边
       const hitVertex = this.getVertexAt(clicked, pos.x, pos.y);
       const hitEdge = hitVertex === -1 ? this._getEdgeAt(clicked, pos.x, pos.y) : -1;
@@ -751,9 +782,9 @@ export class SceneEditorInteraction {
         items.push({ separator: true });
         items.push({
           label: `🔴 删除顶点 #${hitVertex}`,
-          disabled: vertexPoints.length <= 3, // 三角形不能再删
+          disabled: vertexPoints.length <= minVertexCount,
           action: () => {
-            if (vertexPoints.length <= 3) return;
+            if (vertexPoints.length <= minVertexCount) return;
             const nextPoints = vertexPoints.filter((_point, index) => index !== hitVertex);
             commitPoints(nextPoints, `已删除顶点 #${hitVertex}，剩余 ${nextPoints.length} 个`);
           }
