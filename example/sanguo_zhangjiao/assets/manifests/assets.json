@@ -5401,6 +5401,161 @@
       "targetPhase": "P6",
       "status": "ai-generated",
       "revision": 1
+    },
+    {
+      "assetId": "ui.portrait.huangjinMessenger",
+      "imageId": "ui.portrait.huangjinMessenger",
+      "category": "ui-portrait",
+      "usage": [
+        "dialogue",
+        "portrait",
+        "huangjin-messenger"
+      ],
+      "sourceFile": "assets/images/huangjin-messenger.png",
+      "runtime2D": {
+        "path": "assets/images/huangjin-messenger.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "ui.portrait.huangjinMessenger"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 128,
+        "height": 128
+      },
+      "animations": [],
+      "targetPhase": "P2",
+      "status": "final",
+      "revision": 1
+    },
+    {
+      "assetId": "ui.portrait.huangjinScout",
+      "imageId": "ui.portrait.huangjinScout",
+      "category": "ui-portrait",
+      "usage": [
+        "dialogue",
+        "portrait",
+        "huangjin-scout"
+      ],
+      "sourceFile": "assets/images/huangjin-scout.png",
+      "runtime2D": {
+        "path": "assets/images/huangjin-scout.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "ui.portrait.huangjinScout"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 128,
+        "height": 128
+      },
+      "animations": [],
+      "targetPhase": "P2",
+      "status": "final",
+      "revision": 1
+    },
+    {
+      "assetId": "ui.portrait.huangjinSoldier",
+      "imageId": "ui.portrait.huangjinSoldier",
+      "category": "ui-portrait",
+      "usage": [
+        "dialogue",
+        "portrait",
+        "huangjin-soldier"
+      ],
+      "sourceFile": "assets/images/huangjin-soldier.png",
+      "runtime2D": {
+        "path": "assets/images/huangjin-soldier.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "ui.portrait.huangjinSoldier"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 128,
+        "height": 128
+      },
+      "animations": [],
+      "targetPhase": "P2",
+      "status": "final",
+      "revision": 1
+    },
+    {
+      "assetId": "ui.portrait.refugeeWoman",
+      "imageId": "ui.portrait.refugeeWoman",
+      "category": "ui-portrait",
+      "usage": [
+        "dialogue",
+        "portrait",
+        "refugee-woman"
+      ],
+      "sourceFile": "assets/images/refugee-woman.png",
+      "runtime2D": {
+        "path": "assets/images/refugee-woman.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "ui.portrait.refugeeWoman"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 128,
+        "height": 128
+      },
+      "animations": [],
+      "targetPhase": "P2",
+      "status": "final",
+      "revision": 1
+    },
+    {
+      "assetId": "ui.portrait.oneArmedRefugee",
+      "imageId": "ui.portrait.oneArmedRefugee",
+      "category": "ui-portrait",
+      "usage": [
+        "dialogue",
+        "portrait",
+        "one-armed-refugee"
+      ],
+      "sourceFile": "assets/images/one-armed-refugee.png",
+      "runtime2D": {
+        "path": "assets/images/one-armed-refugee.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "ui.portrait.oneArmedRefugee"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 128,
+        "height": 128
+      },
+      "animations": [],
+      "targetPhase": "P2",
+      "status": "final",
+      "revision": 1
     }
   ]
 }

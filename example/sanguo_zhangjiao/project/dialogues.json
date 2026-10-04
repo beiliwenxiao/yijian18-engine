@@ -27,6 +27,7 @@
       },
       "start": {
         "nextNode": "accept",
+        "portrait": "huangjin_messenger",
         "speaker": "黄巾信使",
         "text": "你终于到了。张角正在粥棚营地召集仍愿救民的人。"
       }
@@ -66,6 +67,7 @@
       },
       "report": {
         "nextNode": "judge",
+        "portrait": "huangjin_scout",
         "speaker": "黄巾斥候",
         "text": "主公！营外山道上发现一个昏倒的人，随身带着伤药，像是翻山逃难来的。"
       },
@@ -128,10 +130,12 @@
     "id": "dialogue.s09.refugeeConflict",
     "nodes": {
       "appeaseScoutResult": {
+        "portrait": "huangjin_soldier",
         "speaker": "黄巾残兵",
         "text": "没有可用的斧头，队伍在荒地拖延太久，官军斥候已经循声赶来！"
       },
       "appeaseSuccessResult": {
+        "portrait": "refugee_woman",
         "speaker": "妇人",
         "text": "斧头还能用。众人带回燃料和散粮，营地粮食增加了三十份。"
       },
@@ -153,6 +157,7 @@
             "text": "沉默：不再介入"
           }
         ],
+        "portrait": "one_armed_refugee",
         "speaker": "断臂饥民",
         "text": "众人暂时停手，却都等着你决定接下来怎么办。这个选择无法撤回。"
       },
@@ -180,6 +185,7 @@
             "text": "稍后再来"
           }
         ],
+        "portrait": "one_armed_refugee",
         "speaker": "断臂饥民",
         "text": "粮食还不够，或检查点没能安全写入。刚才的粮食、士气和城市状态都没有改变。"
       },
@@ -196,6 +202,7 @@
             "text": "我还需要准备"
           }
         ],
+        "portrait": "one_armed_refugee",
         "speaker": "断臂饥民",
         "text": "再没有粮，今晚就会有人为这一口吃的拼命。你若拿得出二十份粮食，至少能让大家先停手。"
       },
@@ -206,15 +213,18 @@
         "text": "先清点粮食，任何一项无法落实都不能让现场留下半笔账。"
       },
       "hardlineResult": {
+        "portrait": "huangjin_soldier",
         "speaker": "黄巾残兵",
         "text": "残兵列成一线压住人群。争斗停了，营中士气暂时回升；但这份强硬也可能逼得一些人在夜里离开。"
       },
       "silenceResult": {
+        "portrait": "one_armed_refugee",
         "speaker": "断臂饥民",
         "text": "你没有回答。汉子把饼藏回怀里；到下一游戏日，沉默的代价才会显现。"
       },
       "start": {
         "nextNode": "donationOffer",
+        "portrait": "one_armed_refugee",
         "speaker": "断臂饥民",
         "text": "残兵护着最后几块饼，妇人抱紧孩子，地上两个人已经没了声息。断臂汉子把半块饼攥得发白。"
       }

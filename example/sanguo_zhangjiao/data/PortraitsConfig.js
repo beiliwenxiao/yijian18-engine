@@ -21,9 +21,11 @@
 export const PortraitsConfig = {
   zhangjiao:  'assets/images/zhangjiao.png',
   player:     'assets/images/zhujiao.png',
-  // 后续可扩展：
-  // zhangliang: 'assets/images/zhangliang.png',
-  // zhangbao:   'assets/images/zhangbao.png',
+  huangjin_messenger: 'assets/images/huangjin-messenger.png',   // 黄巾信使
+  huangjin_scout:     'assets/images/huangjin-scout.png',       // 黄巾斥候
+  huangjin_soldier:   'assets/images/huangjin-soldier.png',     // 黄巾残兵
+  refugee_woman:      'assets/images/refugee-woman.png',        // 妇人
+  one_armed_refugee:  'assets/images/one-armed-refugee.png',    // 断臂饥民
 };
 
 export default PortraitsConfig;
