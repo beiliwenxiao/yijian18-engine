@@ -438,6 +438,69 @@ function disposeEnteredRuntime() {
   this._s04RouteBusy = false;
 }
 
+/**
+ * 庇护所室内（S01-C01）：篝火点燃后火光透窗而入。
+ * 屏幕空间后期绘制（renderPostPipeline 在 ctx.restore 之后调用），
+ * 世界坐标经 camera viewBounds 换算；窗户矩形直接取当前地形里的
+ * S01-C01-window 背景图条目，不硬编码坐标。
+ */
+function renderShelterWindowFirelight(ctx) {
+  if (this.currentSceneId !== 'S01-C01') return false;
+  const storyState = this.gameLoader?.blackboard?.get?.('storyState');
+  if (storyState?.s01Survival?.campfireLit !== true) return false;
+  const camera = this.camera;
+  if (!camera || !Array.isArray(this._terrains)) return false;
+  let windowRect = null;
+  for (const terrain of this._terrains) {
+    for (const image of terrain?._editorBackgroundImages || []) {
+      if (image?.id === 'S01-C01-window' && image.hidden !== true && image._img) {
+        windowRect = image;
+        break;
+      }
+    }
+    if (windowRect) break;
+  }
+  if (!windowRect) return false;
+  const viewBounds = camera.getViewBounds();
+  const time = performance.now() / 1000;
+  // 火焰闪烁：双正弦叠加出 irregular 明暗（与篝火辉光同风格的暖色系）
+  const flicker = 0.72 + 0.18 * Math.sin(time * 7.3) + 0.10 * Math.sin(time * 13.7 + 1.7);
+  const left = windowRect.x - viewBounds.left;
+  const top = windowRect.y - viewBounds.top;
+  const width = windowRect.width;
+  const height = windowRect.height;
+  const centerX = left + width / 2;
+  const centerY = top + height / 2;
+  // 1) 窗玻璃暖光：裁剪在窗框内，火光在玻璃后摇曳
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(left, top, width, height);
+  ctx.clip();
+  const glass = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, width * 0.95);
+  glass.addColorStop(0, `rgba(255, 190, 80, ${(0.30 * flicker).toFixed(3)})`);
+  glass.addColorStop(0.55, `rgba(255, 120, 30, ${(0.16 * flicker).toFixed(3)})`);
+  glass.addColorStop(1, 'rgba(255, 60, 0, 0)');
+  ctx.fillStyle = glass;
+  ctx.fillRect(left, top, width, height);
+  ctx.restore();
+  // 2) 透入室内的地面光斑：窗下暖色椭圆软光，落在门口与床之间的地板上
+  const floorCenterY = windowRect.y + windowRect.height + 125 - viewBounds.top;
+  const spillRadius = width * 1.5;
+  ctx.save();
+  ctx.translate(centerX, floorCenterY);
+  ctx.scale(1, 0.42);
+  const spill = ctx.createRadialGradient(0, 0, 0, 0, 0, spillRadius);
+  spill.addColorStop(0, `rgba(255, 170, 60, ${(0.15 * flicker).toFixed(3)})`);
+  spill.addColorStop(0.6, `rgba(255, 110, 30, ${(0.08 * flicker).toFixed(3)})`);
+  spill.addColorStop(1, 'rgba(255, 60, 0, 0)');
+  ctx.fillStyle = spill;
+  ctx.beginPath();
+  ctx.arc(0, 0, spillRadius, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+  return true;
+}
+
 function renderPostPipeline(ctx) {
   this.context.services.diagnostics?.renderCollisionShapes(ctx, {
     enabled: this.debugShowCollisionPolygons,
@@ -466,6 +529,8 @@ function renderPostPipeline(ctx) {
       ? triggerBindings?.getDebugHotspotSnapshot?.() || []
       : []
   });
+  // 庇护所室内：篝火点燃后火光透窗而入（世界后期效果，先于过场淡入与 HUD）
+  renderShelterWindowFirelight(ctx);
   this._renderTeleportFade(ctx);
   this.s03s14BattleCoordinator.renderLayer('hud', ctx, this.logicalWidth, this.logicalHeight);
   this.rescueObjectiveView?.render?.(ctx, this.logicalWidth, this.logicalHeight);
