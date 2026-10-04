@@ -322,6 +322,7 @@ function configureSharedClassEffects(gameLoader) {
 function registerGameLoaderActions(triggerSystem) {
   const registered = registerSceneTriggerActions(triggerSystem, {
     spawnPlacements: selector => this.context.services.placements?.spawn(selector),
+    despawnPlacements: selector => this.context.services.placements?.despawn(selector),
     getWeatherSystem: () => this.weatherSystem,
     getTimeSystem: () => this.timeSystem,
     logger: console

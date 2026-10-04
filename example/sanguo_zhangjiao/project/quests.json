@@ -287,8 +287,15 @@
     "title": "荒原求生"
   },
   {
+    "accept": {
+      "mode": "auto",
+      "when": {
+        "questId": "task.s02.refugeeRelief",
+        "type": "questCompleted"
+      }
+    },
     "category": "main",
-    "description": "清点废弃营地物资，接受张角召见并前往粥棚营地。",
+    "description": "饥民之事了结后，黄巾信使引你去见张角。接受召见并前往粥棚营地。",
     "id": "task.s02.summons",
     "rewards": [],
     "scenes": [
@@ -330,5 +337,623 @@
       }
     ],
     "title": "山道救援"
+  },
+  {
+    "category": "main",
+    "description": "黄巾军离开后，废营东侧的饥民正为最后一点粮食争执。若粮草不足，可先搜索废营物资。",
+    "id": "task.s02.refugeeRelief",
+    "rewards": [],
+    "scenes": [
+      "S02"
+    ],
+    "steps": [
+      {
+        "id": "meetRefugees",
+        "objectiveType": "commit.fact",
+        "target": "story.s09.refugee.start",
+        "title": "与断臂饥民交谈",
+        "type": "objective"
+      },
+      {
+        "id": "settleConflict",
+        "objectiveType": "commit.fact",
+        "target": "story.s09.refugee.branch",
+        "title": "决断饥民去留",
+        "type": "objective"
+      }
+    ],
+    "title": "饥民救济"
+  },
+  {
+    "accept": {
+      "mode": "auto",
+      "when": {
+        "event": "sceneEnter",
+        "params": {
+          "sceneId": "S09"
+        },
+        "type": "event"
+      }
+    },
+    "category": "main",
+    "description": "回应张角的入伍之邀，并在三面军旗前确认自己的职业方向。",
+    "id": "task.s09.joinYellowTurban",
+    "rewards": [],
+    "scenes": [
+      "S09"
+    ],
+    "steps": [
+      {
+        "id": "enlist",
+        "objectiveType": "commit.fact",
+        "target": "story.s09.enlist",
+        "title": "回应张角入伍之邀",
+        "type": "objective"
+      },
+      {
+        "eventMatcher": {
+          "type": "classSelected"
+        },
+        "id": "chooseClass",
+        "objectiveType": "custom.event",
+        "title": "在军旗前选定职业方向",
+        "type": "objective"
+      }
+    ],
+    "title": "加入黄巾"
+  },
+  {
+    "accept": {
+      "mode": "auto",
+      "when": {
+        "event": "sceneEnter",
+        "params": {
+          "sceneId": "S03"
+        },
+        "type": "event"
+      }
+    },
+    "category": "main",
+    "description": "官军已至颍川。选定你的参战方式，见证这场首战的结局，随后启程长社。",
+    "id": "task.s03.yingchuanBattle",
+    "rewards": [],
+    "scenes": [
+      "S03"
+    ],
+    "steps": [
+      {
+        "eventMatcher": {
+          "payload": {
+            "triggerId": "trg_s03_choose_battle_mode"
+          },
+          "type": "triggerSucceeded"
+        },
+        "id": "chooseBattleMode",
+        "objectiveType": "custom.event",
+        "title": "选定颍川首战的参战方式",
+        "type": "objective"
+      },
+      {
+        "eventMatcher": {
+          "payload": {
+            "triggerId": "trg_s03_exit_s04"
+          },
+          "type": "triggerSucceeded"
+        },
+        "id": "headToChangshe",
+        "objectiveType": "custom.event",
+        "title": "启程前往长社",
+        "type": "objective"
+      }
+    ],
+    "title": "颍川首战"
+  },
+  {
+    "accept": {
+      "mode": "auto",
+      "when": {
+        "event": "sceneEnter",
+        "params": {
+          "sceneId": "S04"
+        },
+        "type": "event"
+      }
+    },
+    "category": "main",
+    "description": "长社火急。波才被官军围困，时限之内组织救援，随后确认豫州路线。",
+    "id": "task.s04.changsheDefense",
+    "rewards": [],
+    "scenes": [
+      "S04"
+    ],
+    "steps": [
+      {
+        "eventMatcher": {
+          "payload": {
+            "triggerId": "trg_s04_start_bocai_rescue"
+          },
+          "type": "triggerSucceeded"
+        },
+        "id": "bocaiRescue",
+        "objectiveType": "custom.event",
+        "title": "启动波才限时救援",
+        "type": "objective"
+      },
+      {
+        "eventMatcher": {
+          "payload": {
+            "triggerId": "trg_s04_choose_yuzhou_route"
+          },
+          "type": "triggerSucceeded"
+        },
+        "id": "yuzhouRoute",
+        "objectiveType": "custom.event",
+        "title": "确认豫州路线",
+        "type": "objective"
+      }
+    ],
+    "title": "长社驰援"
+  },
+  {
+    "accept": {
+      "mode": "auto",
+      "when": {
+        "event": "sceneEnter",
+        "params": {
+          "sceneId": "S05"
+        },
+        "type": "event"
+      }
+    },
+    "category": "main",
+    "description": "宛城外围矿坑潜伏着铁矿伏兵。领取矿镐、驰援张曼成，随后转进宛城。",
+    "id": "task.s05.wanchengOutskirts",
+    "rewards": [],
+    "scenes": [
+      "S05"
+    ],
+    "steps": [
+      {
+        "eventMatcher": {
+          "payload": {
+            "triggerId": "trg_s05_claim_pickaxe"
+          },
+          "type": "triggerSucceeded"
+        },
+        "id": "claimPickaxe",
+        "objectiveType": "custom.event",
+        "title": "领取矿镐探明矿坑",
+        "type": "objective"
+      },
+      {
+        "eventMatcher": {
+          "payload": {
+            "triggerId": "trg_s05_start_zhang_mancheng_rescue"
+          },
+          "type": "triggerSucceeded"
+        },
+        "id": "zhangManchengRescue",
+        "objectiveType": "custom.event",
+        "title": "启动张曼成救援",
+        "type": "objective"
+      },
+      {
+        "eventMatcher": {
+          "payload": {
+            "triggerId": "trg_s05_exit_s06"
+          },
+          "type": "triggerSucceeded"
+        },
+        "id": "headToWancheng",
+        "objectiveType": "custom.event",
+        "title": "转进宛城",
+        "type": "objective"
+      }
+    ],
+    "title": "宛城外围"
+  },
+  {
+    "accept": {
+      "mode": "auto",
+      "when": {
+        "event": "sceneEnter",
+        "params": {
+          "sceneId": "S06"
+        },
+        "type": "event"
+      }
+    },
+    "category": "main",
+    "description": "宛城围攻胶着。确定防御策略，组织野战工事，直至信使召回。",
+    "id": "task.s06.wanchengSiege",
+    "rewards": [],
+    "scenes": [
+      "S06"
+    ],
+    "steps": [
+      {
+        "eventMatcher": {
+          "payload": {
+            "triggerId": "trg_s06_defense_choice"
+          },
+          "type": "triggerSucceeded"
+        },
+        "id": "defenseChoice",
+        "objectiveType": "custom.event",
+        "title": "确定宛城防御策略",
+        "type": "objective"
+      },
+      {
+        "eventMatcher": {
+          "payload": {
+            "triggerId": "trg_s06_complete_recall"
+          },
+          "type": "triggerSucceeded"
+        },
+        "id": "completeRecall",
+        "objectiveType": "custom.event",
+        "title": "响应信使召回",
+        "type": "objective"
+      }
+    ],
+    "title": "宛城围攻"
+  },
+  {
+    "accept": {
+      "mode": "auto",
+      "when": {
+        "event": "sceneEnter",
+        "params": {
+          "sceneId": "S07"
+        },
+        "type": "event"
+      }
+    },
+    "category": "main",
+    "description": "西华战局僵持。组织迟滞作战，为大军转移争取时间，随后收兵撤离。",
+    "id": "task.s07.xihuaDelay",
+    "rewards": [],
+    "scenes": [
+      "S07"
+    ],
+    "steps": [
+      {
+        "eventMatcher": {
+          "payload": {
+            "triggerId": "trg_s07_choose_battle_mode"
+          },
+          "type": "triggerSucceeded"
+        },
+        "id": "delayBattle",
+        "objectiveType": "custom.event",
+        "title": "组织西华迟滞作战",
+        "type": "objective"
+      },
+      {
+        "eventMatcher": {
+          "payload": {
+            "triggerId": "trg_s07_exit_s08"
+          },
+          "type": "triggerSucceeded"
+        },
+        "id": "retreatToXihua",
+        "objectiveType": "custom.event",
+        "title": "收兵转移西华余部",
+        "type": "objective"
+      }
+    ],
+    "title": "西华迟滞"
+  },
+  {
+    "accept": {
+      "mode": "auto",
+      "when": {
+        "event": "sceneEnter",
+        "params": {
+          "sceneId": "S08"
+        },
+        "type": "event"
+      }
+    },
+    "category": "main",
+    "description": "西华残营。乘撤运车收拢余部，完成信使召回，向冀州转移。",
+    "id": "task.s08.xihuaRetreat",
+    "rewards": [],
+    "scenes": [
+      "S08"
+    ],
+    "steps": [
+      {
+        "eventMatcher": {
+          "payload": {
+            "triggerId": "trg_s08_retreat_choice"
+          },
+          "type": "triggerSucceeded"
+        },
+        "id": "retreatChoice",
+        "objectiveType": "custom.event",
+        "title": "乘撤运车撤离",
+        "type": "objective"
+      },
+      {
+        "eventMatcher": {
+          "payload": {
+            "triggerId": "trg_s08_complete_recall"
+          },
+          "type": "triggerSucceeded"
+        },
+        "id": "completeRecall",
+        "objectiveType": "custom.event",
+        "title": "完成信使召回",
+        "type": "objective"
+      }
+    ],
+    "title": "西华余部"
+  },
+  {
+    "accept": {
+      "mode": "auto",
+      "when": {
+        "event": "sceneEnter",
+        "params": {
+          "sceneId": "S10"
+        },
+        "type": "event"
+      }
+    },
+    "category": "main",
+    "description": "广城失守，张角病重。确认临时扎营、完成迁营，并沿路营建工事，随后出发广宗。",
+    "id": "task.s10.guangchengCamp",
+    "rewards": [],
+    "scenes": [
+      "S10"
+    ],
+    "steps": [
+      {
+        "eventMatcher": {
+          "payload": {
+            "triggerId": "trg_s10_acknowledge_temporary_camp"
+          },
+          "type": "triggerSucceeded"
+        },
+        "id": "temporaryCamp",
+        "objectiveType": "custom.event",
+        "title": "确认临时扎营选址",
+        "type": "objective"
+      },
+      {
+        "eventMatcher": {
+          "payload": {
+            "triggerId": "trg_s10_complete_relocation"
+          },
+          "type": "triggerSucceeded"
+        },
+        "id": "completeRelocation",
+        "objectiveType": "custom.event",
+        "title": "完成营地迁移",
+        "type": "objective"
+      },
+      {
+        "eventMatcher": {
+          "payload": {
+            "triggerId": "trg_s10_exit_s11"
+          },
+          "type": "triggerSucceeded"
+        },
+        "id": "headToGuangzong",
+        "objectiveType": "custom.event",
+        "title": "出发广宗",
+        "type": "objective"
+      }
+    ],
+    "title": "广城扎营"
+  },
+  {
+    "accept": {
+      "mode": "auto",
+      "when": {
+        "event": "sceneEnter",
+        "params": {
+          "sceneId": "S11"
+        },
+        "type": "event"
+      }
+    },
+    "category": "main",
+    "description": "张梁困守广宗。点燃烽火、集合卫兵、击退刺客，护他自西门突围。",
+    "id": "task.s11.guangzongRescue",
+    "rewards": [],
+    "scenes": [
+      "S11"
+    ],
+    "steps": [
+      {
+        "eventMatcher": {
+          "payload": {
+            "triggerId": "trg_s11_start_zhang_liang_rescue"
+          },
+          "type": "triggerSucceeded"
+        },
+        "id": "zhangLiangRescue",
+        "objectiveType": "custom.event",
+        "title": "启动张梁限时救援",
+        "type": "objective"
+      },
+      {
+        "eventMatcher": {
+          "payload": {
+            "triggerId": "trg_s11_west_gate_breakout"
+          },
+          "type": "triggerSucceeded"
+        },
+        "id": "westGateBreakout",
+        "objectiveType": "custom.event",
+        "title": "护送张梁西门突围",
+        "type": "objective"
+      },
+      {
+        "eventMatcher": {
+          "payload": {
+            "triggerId": "trg_s11_exit_s12"
+          },
+          "type": "triggerSucceeded"
+        },
+        "id": "headToXiaquyang",
+        "objectiveType": "custom.event",
+        "title": "转进下曲阳",
+        "type": "objective"
+      }
+    ],
+    "title": "广宗救援"
+  },
+  {
+    "accept": {
+      "mode": "auto",
+      "when": {
+        "event": "sceneEnter",
+        "params": {
+          "sceneId": "S12"
+        },
+        "type": "event"
+      }
+    },
+    "category": "main",
+    "description": "下曲阳危局。张宝固守府衙，先破密道再护送撤离，随后奔赴最终决战。",
+    "id": "task.s12.xiaquyangRescue",
+    "rewards": [],
+    "scenes": [
+      "S12"
+    ],
+    "steps": [
+      {
+        "eventMatcher": {
+          "payload": {
+            "triggerId": "trg_s12_start_zhang_bao_rescue"
+          },
+          "type": "triggerSucceeded"
+        },
+        "id": "zhangBaoRescue",
+        "objectiveType": "custom.event",
+        "title": "启动张宝限时救援",
+        "type": "objective"
+      },
+      {
+        "eventMatcher": {
+          "payload": {
+            "triggerId": "trg_s12_zhang_bao_evacuation"
+          },
+          "type": "triggerSucceeded"
+        },
+        "id": "zhangBaoEvacuation",
+        "objectiveType": "custom.event",
+        "title": "护送张宝撤离",
+        "type": "objective"
+      },
+      {
+        "eventMatcher": {
+          "payload": {
+            "triggerId": "trg_s12_exit_final_route"
+          },
+          "type": "triggerSucceeded"
+        },
+        "id": "finalRoute",
+        "objectiveType": "custom.event",
+        "title": "奔赴最终决战",
+        "type": "objective"
+      }
+    ],
+    "title": "下曲阳突围"
+  },
+  {
+    "accept": {
+      "mode": "auto",
+      "when": {
+        "event": "sceneEnter",
+        "params": {
+          "sceneId": "S13"
+        },
+        "type": "event"
+      }
+    },
+    "category": "main",
+    "description": "决战已至。选定参战方式，亲历这场决定黄巾命运的会战。",
+    "id": "task.s13.jingshanBattle",
+    "rewards": [],
+    "scenes": [
+      "S13"
+    ],
+    "steps": [
+      {
+        "eventMatcher": {
+          "payload": {
+            "triggerId": "trg_s13_choose_final_battle_mode"
+          },
+          "type": "triggerSucceeded"
+        },
+        "id": "finalBattleMode",
+        "objectiveType": "custom.event",
+        "title": "选定决战参战方式",
+        "type": "objective"
+      },
+      {
+        "eventMatcher": {
+          "payload": {
+            "triggerId": "trg_s13_exit_s14"
+          },
+          "type": "triggerSucceeded"
+        },
+        "id": "headToFinale",
+        "objectiveType": "custom.event",
+        "title": "前往结局营地",
+        "type": "objective"
+      }
+    ],
+    "title": "驹山决战"
+  },
+  {
+    "accept": {
+      "mode": "auto",
+      "when": {
+        "event": "sceneEnter",
+        "params": {
+          "sceneId": "S14"
+        },
+        "type": "event"
+      }
+    },
+    "category": "main",
+    "description": "大势已定。清点随行辎重，了结此局——你的每个选择都将写入结局。",
+    "id": "task.s14.finalCommit",
+    "rewards": [],
+    "scenes": [
+      "S14"
+    ],
+    "steps": [
+      {
+        "eventMatcher": {
+          "payload": {
+            "triggerId": "trg_s14_open_cargo_transfer"
+          },
+          "type": "triggerSucceeded"
+        },
+        "id": "cargoTransfer",
+        "objectiveType": "custom.event",
+        "title": "清点随行辎重",
+        "type": "objective"
+      },
+      {
+        "eventMatcher": {
+          "payload": {
+            "triggerId": "trg_s14_commit_ending"
+          },
+          "type": "triggerSucceeded"
+        },
+        "id": "commitEnding",
+        "objectiveType": "custom.event",
+        "title": "了结此局",
+        "type": "objective"
+      }
+    ],
+    "title": "最后的选择"
   }
 ]

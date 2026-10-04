@@ -26,6 +26,7 @@
  */
 export function registerSceneTriggerActions(triggerSystem, {
   spawnPlacements,
+  despawnPlacements,
   weatherSystem,
   timeSystem,
   getWeatherSystem,
@@ -50,6 +51,9 @@ export function registerSceneTriggerActions(triggerSystem, {
 
   if (typeof spawnPlacements === 'function') {
     register('spawnPlacements', params => spawnPlacements(params?.selector || params));
+  }
+  if (typeof despawnPlacements === 'function') {
+    register('despawnPlacements', params => despawnPlacements(params?.selector || params));
   }
   if (typeof getWeatherSystem === 'function' || typeof weatherSystem?.setWeather === 'function') {
     register('setWeather', (params = {}) => {

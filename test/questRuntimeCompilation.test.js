@@ -191,7 +191,26 @@ describe('QuestRuntime Quest v2 编译器', () => {
     const loader = new GameLoader();
     expect(loader.questTaskDefinitions).toEqual([]);
     const compiled = compileQuestProject(project);
-    expect(compiled.taskGraphs.map(graph => graph.id)).toEqual(['task.s01.survival', 'task.s02.summons', 'task.s02.rescue']);
+    // 新基线：S02-S14 主线全部任务化（S02 refugeeRelief/summons/rescue、S09 joinYellowTurban、
+    // S03-S08/S10-S14 薄任务串接），共 16 条 quest 定义
+    expect(compiled.taskGraphs.map(graph => graph.id)).toEqual([
+      'task.s01.survival',
+      'task.s02.summons',
+      'task.s02.rescue',
+      'task.s02.refugeeRelief',
+      'task.s09.joinYellowTurban',
+      'task.s03.yingchuanBattle',
+      'task.s04.changsheDefense',
+      'task.s05.wanchengOutskirts',
+      'task.s06.wanchengSiege',
+      'task.s07.xihuaDelay',
+      'task.s08.xihuaRetreat',
+      'task.s10.guangchengCamp',
+      'task.s11.guangzongRescue',
+      'task.s12.xiaquyangRescue',
+      'task.s13.jingshanBattle',
+      'task.s14.finalCommit'
+    ]);
     // S01/S02 无 accept/rewards（接取由现有触发器承担）；S01 开场教程步骤（step.1.1 → s01.move）
     // S01 开场段：step.1.1 对话（await，用户勾选「等待对话完成后再继续」）→ step.1.2 教程（await）
     const s01Intro = compiled.triggers.find(trigger => trigger.id === 'trg_task.s01.survival_intro');
@@ -201,7 +220,8 @@ describe('QuestRuntime Quest v2 编译器', () => {
     expect(s01Intro.do[0].params).toEqual({ dialogueId: 'dialogue.s01.wake', operation: 'start', await: true });
     expect(s01Intro.do[1].params).toEqual({ operation: 'show', tutorialId: 's01.move', await: true });
     // 方案 B 编排步骤化：S01 目标后段（5 个）由步骤编译（findTools/gatherBerries/eatBerry/spotWolf/skinWolf）
-    expect(compiled.triggers.map(trigger => trigger.id)).toEqual([
+    // 新基线：全集 19 个（s01 编排 6 个 + S02-S14 任务化 accept 13 个），s01 六个仍居首
+    expect(compiled.triggers.slice(0, 6).map(trigger => trigger.id)).toEqual([
       'trg_task.s01.survival_intro',
       'trg_task.s01.survival_after_findTools',
       'trg_task.s01.survival_after_gatherBerries',
@@ -276,9 +296,12 @@ describe('阶段③ S01 迁移契约：quest 编译产物与手写任务图逐�
     expect(acceptTrigger).toBeTruthy();
     expect(acceptTrigger.do[0].params.definitionId).toBe('task.s01.survival');
     // 方案 B 编排步骤化：开场段 + 5 个目标后段由步骤编译（findTools/gatherBerries/eatBerry/spotWolf/skinWolf）；
-    // 交互/机制类触发器（拾斧、添柴交互、sceneEnter 装配等）仍由 triggers[] 手写承担
+    // 交互/机制类触发器（拾斧、添柴交互、sceneEnter 装配等）仍由 triggers[] 手写承担。
+    // 新基线：S02-S14 任务化新增 13 个 accept 触发器（12 sceneEnter + summons 的 questCompleted 前置），
+    // 编译触发器全集 = s01 编排 6 个 + accept 13 个 = 19。
     const triggers = compileQuestProject(project).triggers;
-    expect(triggers.map(trigger => trigger.id)).toEqual([
+    expect(triggers.length).toBe(19);
+    expect(triggers.slice(0, 6).map(trigger => trigger.id)).toEqual([
       'trg_task.s01.survival_intro',
       'trg_task.s01.survival_after_findTools',
       'trg_task.s01.survival_after_gatherBerries',
@@ -286,6 +309,26 @@ describe('阶段③ S01 迁移契约：quest 编译产物与手写任务图逐�
       'trg_task.s01.survival_after_spotWolf',
       'trg_task.s01.survival_after_skinWolf'
     ]);
+    const acceptIds = triggers.filter(trigger => trigger.id.endsWith('_accept')).map(trigger => trigger.id);
+    expect(acceptIds).toEqual([
+      'trg_task.s02.summons_accept',
+      'trg_task.s09.joinYellowTurban_accept',
+      'trg_task.s03.yingchuanBattle_accept',
+      'trg_task.s04.changsheDefense_accept',
+      'trg_task.s05.wanchengOutskirts_accept',
+      'trg_task.s06.wanchengSiege_accept',
+      'trg_task.s07.xihuaDelay_accept',
+      'trg_task.s08.xihuaRetreat_accept',
+      'trg_task.s10.guangchengCamp_accept',
+      'trg_task.s11.guangzongRescue_accept',
+      'trg_task.s12.xiaquyangRescue_accept',
+      'trg_task.s13.jingshanBattle_accept',
+      'trg_task.s14.finalCommit_accept'
+    ]);
+    expect(triggers.find(trigger => trigger.id === 'trg_task.s02.summons_accept').when)
+      .toEqual({ type: 'task.completed', params: { definitionId: 'task.s02.refugeeRelief' } });
+    expect(triggers.find(trigger => trigger.id === 'trg_task.s03.yingchuanBattle_accept').when)
+      .toEqual({ type: 'sceneEnter', params: { sceneId: 'S03' } });
     // 目标后段语义抽查：eatBerry 后段 = 完成吃教程 + 显示砍柴教程(await)；spotWolf 后段合并了首狼生成链
     const eatBerryAfter = triggers.find(trigger => trigger.id === 'trg_task.s01.survival_after_eatBerry');
     expect(eatBerryAfter.when).toEqual({ type: 'state.transaction', params: { definitionId: 'story.s01.berryEaten' } });

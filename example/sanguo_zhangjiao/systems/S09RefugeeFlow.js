@@ -25,6 +25,12 @@ import { CityStateSummaryPanel } from '../../../src/ui/CityStateSummaryPanel.js'
 
 export const S09_REFUGEE_DIALOGUE_ID = 'dialogue.s09.refugeeConflict';
 export const S09_SILENCE_EVENT_TYPE = 's09.silenceFoodCollapse';
+// 饥民争斗事件自 S09 迁移至 S02（救援苏醒后、召见前）；对话 id 与 storyState 键名
+// 保留 S09 前缀以维持存档兼容。城市摘要与擅自采集惩罚仍属 S09 粮仓玩法。
+export const REFUGEE_CONFLICT_SCENE_ID = 'S02';
+export const CITY_SCENE_ID = 'S09';
+const REFUGEE_PLACEMENT_GROUP = 'S02-refugee-conflict';
+const REFUGEE_SCOUT_GROUP = 'S02-refugee-scout';
 
 const cloneData = value => value == null ? value : JSON.parse(JSON.stringify(value));
 
@@ -55,7 +61,7 @@ const methods = {
   async prepareS09RefugeeConflict() {
     const result = await methods._submit.call(this, 'story.s09.refugee.prepare');
     if (result.ok) {
-      await this.context.services.placements?.spawn({ group: 'S09-refugee-conflict' });
+      await this.context.services.placements?.spawn({ group: REFUGEE_PLACEMENT_GROUP });
       this._s09AudioDirector?.playFeedback?.('conflict');
     }
     return result.ok === true;
@@ -86,7 +92,7 @@ const methods = {
       this.dialogueSystem.goToNode?.(this._resultNode(conflict), { player: this.playerEntity, scene: this.$scene });
     }
     this._s09AudioDirector?.playFeedback?.(choiceId);
-    if (conflict.scoutTriggered) await this.context.services.placements?.spawn({ group: 'S09-refugee-scout' });
+    if (conflict.scoutTriggered) await this.context.services.placements?.spawn({ group: REFUGEE_SCOUT_GROUP });
     return true;
   },
 
@@ -221,7 +227,7 @@ export class S09RefugeeCoordinator extends SceneFlowCoordinator {
     const scene = this.scene;
     const panel = scene.cityStateSummaryPanel;
     if (!panel) return false;
-    if (scene.currentSceneId !== 'S09') {
+    if (scene.currentSceneId !== CITY_SCENE_ID) {
       panel.hide();
       return false;
     }
@@ -265,7 +271,7 @@ export class S09RefugeeCoordinator extends SceneFlowCoordinator {
   prepareUnauthorizedHarvestSettlement(context = {}) {
     const { operationId, node, owner } = context;
     const scene = this.scene;
-    if (scene.currentSceneId !== 'S09' || node?.resourceType !== 'food') return null;
+    if (scene.currentSceneId !== CITY_SCENE_ID || node?.resourceType !== 'food') return null;
     if (!operationId) return { ok: false, code: 'missingGatheringOperationId' };
     if (this._unauthorizedHarvestOperations.has(operationId)) return { ok: true, idempotent: true };
 

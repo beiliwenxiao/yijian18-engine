@@ -301,6 +301,23 @@
           }
         },
         {
+          "id": "S02-supply-food",
+          "type": "ref",
+          "kind": "item",
+          "ref": "resource.food",
+          "group": "S02-initial",
+          "tags": [
+            "supply",
+            "abandoned",
+            "relief"
+          ],
+          "x": 585,
+          "y": 415,
+          "overrides": {
+            "quantity": 24
+          }
+        },
+        {
           "id": "S02-tool-axe",
           "type": "ref",
           "kind": "item",
@@ -372,6 +389,151 @@
             "path": "s02ZhangjiaoChoice",
             "equals": "save"
           }
+        },
+        {
+          "id": "S02-refugee-soldier",
+          "type": "ref",
+          "kind": "npc",
+          "ref": "npc.s09_refugee_soldier",
+          "group": "S02-refugee-conflict",
+          "tags": [
+            "story",
+            "refugeeConflict",
+            "soldier"
+          ],
+          "spawnWhen": {
+            "path": "s09RefugeeConflict.status",
+            "exists": true
+          },
+          "x": 720,
+          "y": 310
+        },
+        {
+          "id": "S02-refugee-woman",
+          "type": "ref",
+          "kind": "npc",
+          "ref": "npc.s09_refugee_woman",
+          "group": "S02-refugee-conflict",
+          "tags": [
+            "story",
+            "refugeeConflict",
+            "civilian"
+          ],
+          "spawnWhen": {
+            "path": "s09RefugeeConflict.status",
+            "exists": true
+          },
+          "x": 795,
+          "y": 300
+        },
+        {
+          "id": "S02-refugee-child",
+          "type": "ref",
+          "kind": "npc",
+          "ref": "npc.s09_refugee_child",
+          "group": "S02-refugee-conflict",
+          "tags": [
+            "story",
+            "refugeeConflict",
+            "civilian"
+          ],
+          "spawnWhen": {
+            "path": "s09RefugeeConflict.status",
+            "exists": true
+          },
+          "x": 850,
+          "y": 315
+        },
+        {
+          "id": "S02-refugee-dead-west",
+          "type": "ref",
+          "kind": "npc",
+          "ref": "npc.s09_refugee_dead",
+          "group": "S02-refugee-conflict",
+          "tags": [
+            "story",
+            "refugeeConflict",
+            "dead"
+          ],
+          "spawnWhen": {
+            "path": "s09RefugeeConflict.status",
+            "exists": true
+          },
+          "x": 740,
+          "y": 325
+        },
+        {
+          "id": "S02-refugee-dead-east",
+          "type": "ref",
+          "kind": "npc",
+          "ref": "npc.s09_refugee_dead",
+          "group": "S02-refugee-conflict",
+          "tags": [
+            "story",
+            "refugeeConflict",
+            "dead"
+          ],
+          "spawnWhen": {
+            "path": "s09RefugeeConflict.status",
+            "exists": true
+          },
+          "x": 805,
+          "y": 340
+        },
+        {
+          "id": "S02-refugee-one-armed",
+          "type": "ref",
+          "kind": "npc",
+          "ref": "npc.s09_one_armed_refugee",
+          "group": "S02-refugee-conflict",
+          "tags": [
+            "story",
+            "refugeeConflict",
+            "oneArmed",
+            "bread"
+          ],
+          "spawnWhen": {
+            "path": "s09RefugeeConflict.status",
+            "exists": true
+          },
+          "x": 905,
+          "y": 310
+        },
+        {
+          "id": "S02-story-bread",
+          "type": "ref",
+          "kind": "item",
+          "ref": "story.s09.bread",
+          "group": "S02-refugee-conflict",
+          "tags": [
+            "story",
+            "refugeeConflict",
+            "bread"
+          ],
+          "spawnWhen": {
+            "path": "s09RefugeeConflict.status",
+            "exists": true
+          },
+          "x": 932,
+          "y": 328
+        },
+        {
+          "id": "S02-refugee-scout",
+          "type": "ref",
+          "kind": "enemy",
+          "ref": "enemy.s09_refugee_scout",
+          "group": "S02-refugee-scout",
+          "tags": [
+            "story",
+            "refugeeConflict",
+            "scout"
+          ],
+          "spawnWhen": {
+            "path": "s09RefugeeConflict.scoutTriggered",
+            "equals": true
+          },
+          "x": 960,
+          "y": 205
         }
       ]
     },
@@ -412,6 +574,22 @@
           "radius": 110,
           "pointerRadius": 60,
           "prompt": "{interact}前往粥棚营地"
+        },
+        {
+          "id": "S02-binding-refugee-conflict",
+          "type": "trigger",
+          "name": "处理饥民争斗",
+          "triggerId": "trg_s02_start_refugee_conflict",
+          "x": 880,
+          "y": 285,
+          "width": 50,
+          "height": 50,
+          "event": "interact",
+          "targetMode": "id",
+          "target": "S02-refugee-one-armed",
+          "radius": 96,
+          "pointerRadius": 48,
+          "prompt": "{interact}查看饥民争斗"
         }
       ]
     }

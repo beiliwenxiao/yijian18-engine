@@ -1368,7 +1368,7 @@
       "when": {
         "all": [
           {
-            "equals": "S09",
+            "equals": "S02",
             "path": "story.currentSceneId"
           },
           {
@@ -1418,7 +1418,7 @@
       "when": {
         "all": [
           {
-            "equals": "S09",
+            "equals": "S02",
             "path": "story.currentSceneId"
           },
           {
@@ -1444,7 +1444,7 @@
       "checkpoint": {
         "checkpointId": "checkpoint.S09.refugeeDonation",
         "reason": "checkpoint",
-        "sceneId": "S09"
+        "sceneId": "S02"
       },
       "inventory": {
         "entries": [
@@ -1458,7 +1458,7 @@
       "when": {
         "all": [
           {
-            "equals": "S09",
+            "equals": "S02",
             "path": "story.currentSceneId"
           },
           {
@@ -1549,13 +1549,13 @@
           "checkpoint": {
             "checkpointId": "checkpoint.S09.refugeeBranch.appease",
             "reason": "checkpoint",
-            "sceneId": "S09"
+            "sceneId": "S02"
           },
           "onPreconditionFailed": {
             "checkpoint": {
               "checkpointId": "checkpoint.S09.refugeeBranch.appeaseScout",
               "reason": "checkpoint",
-              "sceneId": "S09"
+              "sceneId": "S02"
             },
             "writes": [
               {
@@ -1635,7 +1635,7 @@
           "checkpoint": {
             "checkpointId": "checkpoint.S09.refugeeBranch.hardline",
             "reason": "checkpoint",
-            "sceneId": "S09"
+            "sceneId": "S02"
           },
           "writes": [
             {
@@ -1730,7 +1730,7 @@
           "checkpoint": {
             "checkpointId": "checkpoint.S09.refugeeBranch.silence",
             "reason": "checkpoint",
-            "sceneId": "S09"
+            "sceneId": "S02"
           },
           "writes": [
             {

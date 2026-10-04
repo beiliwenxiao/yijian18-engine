@@ -900,22 +900,43 @@
       {
         "action": "task.command",
         "params": {
-          "definitionId": "task.s02.summons",
-          "instanceId": "task.s02.summons.main",
+          "definitionId": "task.s02.refugeeRelief",
+          "instanceId": "task.s02.refugeeRelief.main",
           "operation": "task.start",
           "tracking": true
         },
-        "stepId": "start-s02-summons-task"
+        "stepId": "start-s02-refugee-task"
       },
       {
         "action": "showTip",
         "params": {
-          "text": "张角就在营地中，上前交谈接受征召。"
+          "text": "黄巾军一行朝粥棚方向离开了。废营东侧隐约传来争执声……"
         }
       }
     ],
     "id": "trg_s02_awakening_done",
-    "name": "苏醒完毕：开启征召线",
+    "name": "苏醒完毕：黄巾军离开，饥民事件浮现",
+    "once": true,
+    "when": {
+      "params": {
+        "id": "dialogue.s02.awakening"
+      },
+      "type": "dialogueEnd"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "despawnPlacements",
+        "params": {
+          "selector": {
+            "group": "S02-army"
+          }
+        }
+      }
+    ],
+    "id": "trg_s02_farewell",
+    "name": "黄巾军一行离开废营",
     "once": true,
     "when": {
       "params": {
@@ -1017,11 +1038,11 @@
         }
       }
     ],
-    "id": "trg_s09_prepare_refugee_conflict",
+    "id": "trg_s02_prepare_refugee_conflict",
     "once": false,
     "when": {
       "params": {
-        "sceneId": "S09"
+        "sceneId": "S02"
       },
       "type": "sceneEnter"
     }
@@ -1043,7 +1064,7 @@
         }
       }
     ],
-    "id": "trg_s09_start_refugee_conflict",
+    "id": "trg_s02_start_refugee_conflict",
     "once": false,
     "when": {
       "params": {},
@@ -1059,7 +1080,7 @@
         }
       }
     ],
-    "id": "trg_s09_refugee_choice",
+    "id": "trg_s02_refugee_choice",
     "once": false,
     "when": {
       "params": {

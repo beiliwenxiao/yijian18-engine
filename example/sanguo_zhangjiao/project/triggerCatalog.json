@@ -11,6 +11,16 @@
       "value": "spawnPlacements"
     },
     {
+      "label": "移除放置点（剧情离场）",
+      "paramsSchema": {
+        "additionalProperties": true,
+        "properties": {},
+        "type": "object"
+      },
+      "v": "despawnPlacements",
+      "value": "despawnPlacements"
+    },
+    {
       "label": "spawnGroup",
       "value": "spawnGroup"
     },

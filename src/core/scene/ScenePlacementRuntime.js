@@ -357,6 +357,36 @@ export class ScenePlacementRuntime {
   }
 
   /**
+   * 按 selector 永久移除放置点（tombstone 入存档链），用于剧情性单位离场：
+   * 已生成实体销毁，且后续流式重建被 tombstone 拒绝，不会随切场景复活。
+   * selector：{ group }（按组移除）或 { id }（单点移除）。
+   */
+  despawn(selector = {}) {
+    if (this.disposed) {
+      return { ok: false, code: 'placementRuntimeUnavailable' };
+    }
+    const group = typeof selector === 'string' ? selector : selector?.group;
+    const targetId = typeof selector === 'object' ? selector?.id : null;
+    if (!group && !targetId) {
+      return { ok: false, code: 'despawnSelectorRequired' };
+    }
+    const targets = (this.placements || []).filter(placement => (
+      group ? placement?.group === group : placement?.id === targetId
+    ));
+    if (targets.length === 0) return { ok: true, removed: 0, results: [] };
+    const results = targets.map(placement => (
+      this.tombstonePlacement(placement.id, { reason: 'despawnPlacements' })
+    ));
+    const failed = results.filter(result => result?.ok !== true);
+    return {
+      ok: failed.length === 0,
+      removed: results.filter(result => result?.removed === true).length,
+      results,
+      errors: failed.map(result => ({ code: result.code, placementId: result.placementId }))
+    };
+  }
+
+  /**
    * 让 spawner 忘记指定放置点已生成（不销毁实体）。
    * 用于补偿链路：实体已不在场景（被拾取后的重建/清理）而 spawner 仍拒绝重生成时，
    * 调用方 forget 后重新 spawn 即可恢复。
