@@ -648,6 +648,8 @@ export class SceneGameplaySystemAssembler {
       onEvent: (event, data) => scene.onAbilityEvent?.(event, data)
     });
     scene.abilitySystem = abilitySystem;
+    // 敌人攻击编排：注入技能定义注册表，EnemySkillDirector 复用 skills.json 结算
+    scene.aiSystem?.skillDirector?.setSkillRegistry?.(skillRegistry);
     scene.gatheringPuppetSystem?.configure?.({ effectResolver, owner: scene.playerEntity });
     return {
       id: 'gameplay-ability',

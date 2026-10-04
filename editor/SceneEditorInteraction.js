@@ -241,6 +241,39 @@ export class SceneEditorInteraction {
       && obj?.type === 'ref' && obj?.kind === 'enemy';
   }
 
+  /**
+   * 技能范围编辑态：UI「编辑技能范围」针对某条 skill 动作打开（_editingSkillRange = 动作下标）。
+   * 画布出现虚线圆 + 正五边形手柄，拖动顶点 = 改技能半径（写 overrides.ai.attackActions[i].paramsOverride.radius）。
+   */
+  _isSkillRangeEditing(obj) {
+    return Number.isInteger(this.editor?.ui?._editingSkillRange)
+      && obj?.type === 'ref' && obj?.kind === 'enemy';
+  }
+
+  /** 技能范围当前半径：paramsOverride.radius 优先，未配置回退 150（与运行时 applyAOEDamage 兜底一致）。 */
+  _skillRangeRadius(obj) {
+    const index = this.editor?.ui?._editingSkillRange;
+    if (!Number.isInteger(index)) return null;
+    const actions = obj?.overrides?.ai?.attackActions;
+    const action = Array.isArray(actions) ? actions[index] : null;
+    if (!action) return null;
+    const radius = Number(action.paramsOverride?.radius);
+    return radius > 0 ? radius : 150;
+  }
+
+  /** 技能范围正五边形的世界坐标顶点（顶点朝上，固定 5 点；radius 由 _skillRangeRadius 决定）。 */
+  getSkillRangeWorldPoints(obj) {
+    if (!this._isSkillRangeEditing(obj)) return null;
+    const radius = this._skillRangeRadius(obj);
+    if (!(radius > 0)) return null;
+    const points = [];
+    for (let i = 0; i < 5; i++) {
+      const angle = -Math.PI / 2 + i * (2 * Math.PI / 5);
+      points.push([obj.x + radius * Math.cos(angle), obj.y + radius * Math.sin(angle)]);
+    }
+    return points;
+  }
+
   /** enemy ref：AI 范围圈手柄的可编辑对象判定（不依赖巡逻路线编辑开关）。 */
   _isPatrolEditingCapable(obj) {
     return obj?.type === 'ref' && obj?.kind === 'enemy';
@@ -269,6 +302,9 @@ export class SceneEditorInteraction {
    * 相对锚点存储、开放路径，运行时 AISystem.stepPatrol 消费。
    */
   getPolygonWorldPoints(obj) {
+    // 技能范围编辑态：正五边形由半径即时换算（不是存储数据），拖顶点在 handleMouseMove 里改半径
+    const skillRangePoints = this.getSkillRangeWorldPoints(obj);
+    if (skillRangePoints) return skillRangePoints;
     if (this.editor?.ui?._editingPatrolRoute === true && obj?.type === 'ref' && obj?.kind === 'enemy') {
       const points = obj.overrides?.ai?.patrol?.points;
       if (!Array.isArray(points)) return [];
@@ -296,6 +332,8 @@ export class SceneEditorInteraction {
   /** 将画布世界坐标写回可编辑多边形；ref 转回脚底锚点相对坐标，攀爬区转回物件锚点相对坐标。 */
   setPolygonWorldPoints(obj, points) {
     if (!Array.isArray(points)) return false;
+    // 技能范围五边形不是存储数据：拖顶点改半径走 handleMouseMove 专用分支，此处拒绝写入
+    if (this._isSkillRangeEditing(obj)) return false;
     if (this.editor?.ui?._editingPatrolRoute === true && obj?.type === 'ref' && obj?.kind === 'enemy') {
       obj.overrides = obj.overrides || {};
       obj.overrides.ai = obj.overrides.ai && typeof obj.overrides.ai === 'object' ? obj.overrides.ai : {};
@@ -433,6 +471,16 @@ export class SceneEditorInteraction {
       // 选中单个多边形/路径/buffZone时，优先检测顶点拖拽
       if (editor.selectedObjects.length === 1) {
         const sel = editor.selectedObjects[0];
+        // 技能范围五边形顶点拖拽优先（半径换算），技能范围编辑态下禁用 AI 范围圈手柄
+        if (editor.layers.isObjectEditableFor(sel) && this._isSkillRangeEditing(sel)) {
+          const vi = this.getVertexAt(sel, pos.x, pos.y);
+          if (vi !== -1) {
+            editor.interaction.isDragging = true;
+            editor.interaction.draggingVertex = { obj: sel, index: vi };
+            editor.interaction.dragStart = { x: pos.x, y: pos.y };
+            return;
+          }
+        }
         // AI 范围圈半径手柄优先（enemy 的三圈虚线，拖动改 overrides.ai 半径）
         if (editor.layers.isObjectEditableFor(sel) && this._isPatrolEditingCapable(sel)) {
           const rangeKey = this.getRangeHandleAt(sel, pos.x, pos.y);
@@ -573,6 +621,25 @@ export class SceneEditorInteraction {
       obj.overrides.ai[key] = radius;
       editor.ui.updateObjectProperties();
       editor.render();
+      return;
+    }
+
+    // 技能范围五边形顶点拖拽：拖动 = 改半径（正五边形按半径重绘，不落顶点存储）
+    if (editor.interaction.draggingVertex && this._isSkillRangeEditing(editor.interaction.draggingVertex.obj)) {
+      const pos = this.screenToScene(e.offsetX, e.offsetY);
+      const { obj } = editor.interaction.draggingVertex;
+      const index = this.editor.ui._editingSkillRange;
+      const actions = obj.overrides?.ai?.attackActions;
+      const action = Array.isArray(actions) ? actions[index] : null;
+      if (action) {
+        const radius = Math.max(24, Math.round(Math.hypot(pos.x - obj.x, pos.y - obj.y)));
+        obj.overrides.ai.attackActions[index] = action;
+        action.paramsOverride = action.paramsOverride && typeof action.paramsOverride === 'object'
+          ? action.paramsOverride : {};
+        action.paramsOverride.radius = radius;
+        editor.ui.updateObjectProperties();
+        editor.render();
+      }
       return;
     }
 
@@ -798,12 +865,15 @@ export class SceneEditorInteraction {
 
     // ─── 多边形/Buff 多边形/ref 碰撞/可攀爬区顶点编辑 ─────────────────
     const isPatrolEditing = this._isPatrolEditing(clicked);
-    const isVertexShape = (clicked.type === 'shape' && (clicked.shapeType === 'polygon' || clicked.shapeType === 'path'))
+    // 技能范围五边形固定 5 点（拖顶点=改半径），右键不提供增删顶点
+    const isSkillRangeEditing = this._isSkillRangeEditing(clicked);
+    const isVertexShape = !isSkillRangeEditing
+      && ((clicked.type === 'shape' && (clicked.shapeType === 'polygon' || clicked.shapeType === 'path'))
       || (clicked.type === 'buffZone' && Array.isArray(clicked.points))
       || (clicked.type === 'effectZone' && Array.isArray(clicked.points))
       || (clicked.type === 'ref' && this.getPolygonWorldPoints(clicked).length >= 3)
       || (isPatrolEditing && this.getPolygonWorldPoints(clicked).length >= 1)
-      || this._activeClimbZoneKey(clicked) !== null;
+      || this._activeClimbZoneKey(clicked) !== null);
     const vertexPoints = this.getPolygonWorldPoints(clicked);
     // 巡逻路线 1 点即合法（守一个点来回走）；闭合多边形仍要求至少 3 点
     const minVertexCount = isPatrolEditing ? 1 : 3;

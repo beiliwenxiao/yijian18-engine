@@ -1165,16 +1165,21 @@ export class LibraryEditor {
 
   /** 战斗技能引用 + 攻击编排行编辑（简版：type/skillId/intervalSeconds；链式字段二期在场景编辑器补全）。 */
   _skillRefEditorHtml(attackActions, skillOptions) {
-    const skillOptionsHtml = (skillOptions || [])
-      .map(skill => `<option value="${escapeHtml(skill.id || '')}">${escapeHtml(skill.id || '')}${skill.name ? ' · ' + escapeHtml(skill.name) : ''}</option>`)
-      .join('');
-    const rows = (attackActions || []).map((action, index) => `
+    const rows = (attackActions || []).map((action, index) => {
+      const skillId = action.skillId || '';
+      const skillOptionsHtml = (skillOptions || [])
+        .map(skill => `<option value="${escapeHtml(skill.id || '')}" ${skill.id === skillId ? 'selected' : ''}>${escapeHtml(skill.id || '')}${skill.name ? ' · ' + escapeHtml(skill.name) : ''}</option>`)
+        .join('');
+      const invalidOption = skillId && !(skillOptions || []).some(skill => skill.id === skillId)
+        ? `<option value="${escapeHtml(skillId)}" selected>当前无效：${escapeHtml(skillId)}</option>` : '';
+      return `
       <tr data-row="${index}">
         <td><select class="aa-type"><option value="skill" ${action.type === 'skill' ? 'selected' : ''}>技能</option><option value="basic" ${action.type === 'basic' ? 'selected' : ''}>普通攻击</option></select></td>
-        <td><select class="aa-skill" ${action.type === 'basic' ? 'disabled' : ''}><option value="">选择技能</option>${skillOptionsHtml}</select></td>
+        <td><select class="aa-skill" ${action.type === 'basic' ? 'disabled' : ''}><option value="">选择技能</option>${skillOptionsHtml}${invalidOption}</select></td>
         <td><input type="number" class="aa-interval" value="${escapeHtml(action.intervalSeconds ?? 5)}" min="0" step="0.5" style="width:64px;" title="间隔秒数（0=冷却就绪即放）"></td>
         <td><button class="aa-del" data-row="${index}" style="padding:2px 6px;cursor:pointer;">×</button></td>
-      </tr>`).join('');
+      </tr>`;
+    }).join('');
     return `
       <table style="width:100%;font-size:11px;border-collapse:collapse;">
         <thead><tr style="color:#9ab;"><th>动作</th><th>技能</th><th>间隔(秒)</th><th></th></tr></thead>

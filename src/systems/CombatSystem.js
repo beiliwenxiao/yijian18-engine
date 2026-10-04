@@ -20,6 +20,7 @@ import { UnitSystem } from './UnitSystem.js';
 import { CombatResolver } from './resolvers/CombatResolver.js';
 import { RNG } from '../core/RNG.js';
 import { setTimeoutFn } from '../core/Timers.js';
+import { isHostileTarget } from '../core/FactionRules.js';
 
 // 表现层随机：爆炸/碎片/飘血粒子（非玩法结算，非权威；结算随机走 combatRng）
 const fxRng = new RNG();
@@ -2100,7 +2101,9 @@ export class CombatSystem {
       const radius = Math.max(0, Number(skill.aoeRadius ?? skill.radius) || 0);
       const recipients = [caster];
       for (const entity of entities || []) {
-        if (!entity || entity === caster || entity.type === 'enemy' || entity.faction === 'enemy') continue;
+        // 敌我判定统一走 isHostileTarget：施法者的敌对目标不治疗，
+        // 友军/同阵营（含敌方治疗者治疗同阵营狼群）按施法者相对计算。
+        if (!entity || entity === caster || isHostileTarget(caster, entity)) continue;
         const transform = entity.getComponent?.('transform');
         if (!transform || !casterTransform) continue;
         const distance = Math.hypot(
@@ -2197,9 +2200,9 @@ export class CombatSystem {
     const dirX = dx / distance;
     const dirY = dy / distance;
     
-    // 检测路径上的敌人
+    // 检测路径上的敌人（敌我判定按施法者相对计算：玩家施法打敌方，敌方施法打玩家与友军）
     const pathWidth = 30; // 路径宽度
-    const enemies = entities.filter(e => e.type === 'enemy' && !e.isDead && !e.isDying);
+    const enemies = entities.filter(e => isHostileTarget(caster, e));
     
     for (const enemy of enemies) {
       const enemyTransform = enemy.getComponent('transform');
@@ -2252,11 +2255,11 @@ export class CombatSystem {
           // 主火焰伤害
           this.applyAOEDamage(caster, targetPos, skill, entities);
           
-          // 溅射小火焰伤害
+          // 溅射小火焰伤害（敌我判定按施法者相对计算）
           const splashRadius = 80;
           const enemies = entities.filter(e => {
-            if (e.type !== 'enemy' || e.isDead || e.isDying) return false;
-            
+            if (!isHostileTarget(caster, e)) return false;
+
             const transform = e.getComponent('transform');
             if (!transform) return false;
             
@@ -2292,12 +2295,11 @@ export class CombatSystem {
       ? configuredRadius
       : 150;
     
-    // 查找范围内的所有敌人
+    // 查找范围内的所有敌人（敌我判定按施法者相对计算：玩家 AOE 打敌方阵营，
+    // 敌方施法者打玩家与友军；友方守卫 faction friendly 对任何人非敌对）
     const enemies = entities.filter(e => {
-      // 只对敌人造成伤害
-      if (e.type !== 'enemy') return false;
-      if (e.isDead || e.isDying) return false;
-      
+      if (!isHostileTarget(caster, e)) return false;
+
       const transform = e.getComponent('transform');
       if (!transform) return false;
       

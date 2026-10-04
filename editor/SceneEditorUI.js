@@ -801,8 +801,11 @@ export class SceneEditorUI {
     }
 
     const obj = editor.selectedObjects[0];
-    // 巡逻路线编辑态只在「单选敌怪 ref」时保持；换选其他对象自动退出，避免顶点操作被误路由
-    if (!(obj.type === 'ref' && obj.kind === 'enemy')) this._editingPatrolRoute = false;
+    // 巡逻路线/技能范围编辑态只在「单选敌怪 ref」时保持；换选其他对象自动退出，避免顶点操作被误路由
+    if (!(obj.type === 'ref' && obj.kind === 'enemy')) {
+      this._editingPatrolRoute = false;
+      this._editingSkillRange = null;
+    }
     const isObjectEditable = () => (obj.type === 'decoration' && obj._decoRef)
       || editor.layers.isObjectEditableFor(obj);
     const objectEditable = isObjectEditable();
@@ -934,6 +937,31 @@ export class SceneEditorUI {
           return;
         }
         this._editingPatrolRoute = !this._editingPatrolRoute;
+        // 巡逻/技能范围两种顶点编辑互斥，避免画布操作路由歧义
+        this._editingSkillRange = null;
+        this.updateObjectProperties();
+        editor.render();
+      });
+    });
+
+    // 技能范围编辑开关：进入后画布显示技能虚线圆 + 正五边形手柄
+    //（SceneEditorInteraction/Canvas 按 ui._editingSkillRange 分流，拖顶点=改半径）
+    panel.querySelectorAll('button[data-skillrange-toggle]').forEach(button => {
+      button.addEventListener('click', () => {
+        if (!isObjectEditable()) {
+          this.showToast('此对象已隐藏或锁定，无法修改', 'warn');
+          return;
+        }
+        const index = parseInt(button.dataset.skillrangeToggle, 10);
+        if (!Number.isInteger(index)) return;
+        if (this._editingSkillRange !== index) {
+          // 进入前把有效编排骨架落成本处覆盖（一次），之后拖顶点就地写 paramsOverride.radius
+          if (!this._ensureSkillRangeOverride(obj, index)) return;
+          this._editingPatrolRoute = false;
+          this._editingSkillRange = index;
+        } else {
+          this._editingSkillRange = null;
+        }
         this.updateObjectProperties();
         editor.render();
       });
@@ -1532,8 +1560,96 @@ export class SceneEditorUI {
       </select></div>`;
       html += `<div class="property-row"><label>巡逻路线:</label><input value="路径点（${patrolPoints} 点）" disabled title="路径点相对物体锚点保存，移动物体时路线自动跟随"></div>`;
       html += `<div class="property-row"><label>编辑:</label><button data-patrol-toggle style="${editingPatrol ? 'background:#2a6;background:#2a6a4a;' : ''}flex:1;">${editingPatrol ? '完成路线编辑' : '编辑巡逻路线'}</button><span style="color:#9ab;font-size:11px;"> 勾选巡逻后：画布拖动蓝色圆点调整，右键路线增删点</span></div>`;
+
+      // 掉落与攻击编排摘要：库定义只读展示（在内容库 NPC 页编辑），技能范围可本处覆盖
+      const libDef = this._getCachedLibraryDef(obj.ref);
+      if (!libDef && obj.ref) this._loadLibraryDefAsync(obj.ref);
+      const lootTable = Array.isArray(libDef?.lootTable) ? libDef.lootTable : [];
+      const lootText = lootTable.length
+        ? lootTable.map(entry => `${entry.itemId || '?'} ×${entry.min ?? 1}~${entry.max ?? 1}（${Math.round((Number(entry.chance) || 0) * 100)}%）`).join('；')
+        : '无';
+      html += '<div class="property-row" style="border-top:1px solid #333;margin-top:6px;padding-top:6px;">' +
+        '<label style="color:#ffb36b;font-weight:bold;" title="掉落表在内容库 NPC 页编辑；此处只读展示">掉落与攻击编排</label></div>';
+      html += `<div class="property-row"><label>掉落表:</label><span style="color:#9ab;font-size:11px;flex:1;" title="库定义 lootTable">${escapeHtml(lootText)}</span></div>`;
+
+      // 有效编排：本处覆盖优先，否则沿用库定义 ai.attackActions
+      const ovActions = Array.isArray(ovAi.attackActions) ? ovAi.attackActions : null;
+      const libActions = Array.isArray(libDef?.ai?.attackActions) ? libDef.ai.attackActions : [];
+      const effectiveActions = ovActions || libActions;
+      const skillActions = effectiveActions.filter(action => action && action.type === 'skill');
+      if (skillActions.length === 0) {
+        html += '<div class="property-row"><label>攻击编排:</label><span style="color:#9ab;font-size:11px;flex:1;">未配置技能动作（在内容库 NPC 页为该 NPC 添加攻击编排）</span></div>';
+      }
+      for (const action of effectiveActions) {
+        if (!action) continue;
+        const actionIndex = effectiveActions.indexOf(action);
+        if (action.type === 'basic') {
+          html += `<div class="property-row"><label>普攻:</label><span style="color:#9ab;font-size:11px;flex:1;">间隔 ${Number(action.intervalSeconds) || 0} 秒</span></div>`;
+          continue;
+        }
+        const radius = Number(action.paramsOverride?.radius) > 0 ? Number(action.paramsOverride.radius) : null;
+        const editingThis = this._editingSkillRange === actionIndex;
+        html += `<div class="property-row"><label>${escapeHtml(action.skillId || '技能')}:</label>` +
+          `<span style="color:#9ab;font-size:11px;flex:1;">间隔 ${Number(action.intervalSeconds) || 0} 秒 · 范围 ${radius != null ? radius : '库默认'}</span>` +
+          `<button type="button" data-skillrange-toggle="${actionIndex}"${editingThis ? ' style="background:#2f7a52;"' : ''}>${editingThis ? '完成范围编辑' : '编辑技能范围'}</button></div>`;
+      }
+      if (skillActions.length > 0) {
+        html += '<div class="property-row"><label>编辑:</label><span style="color:#9ab;font-size:11px;flex:1;">点「编辑技能范围」后画布出现虚线圆与五边形手柄，拖动顶点调整技能半径（写入本处覆盖）</span></div>';
+      }
     }
     return html;
+  }
+
+  /**
+   * 同步取缓存的库定义（掉落/编排摘要用）；未命中时用 _loadLibraryDefAsync 异步加载。
+   * @private
+   */
+  _getCachedLibraryDef(refId) {
+    if (!refId || !this._libraryDefCache || this._libraryDefCache.id !== refId) return null;
+    return this._libraryDefCache.def;
+  }
+
+  /** 异步加载库定义（npcs/enemies 合并查找），加载完成后若仍选中同一条目则刷新面板。 */
+  async _loadLibraryDefAsync(refId) {
+    if (!refId || this._libraryDefLoadingId === refId) return;
+    this._libraryDefLoadingId = refId;
+    try {
+      const library = await this.editor.assets?._ensureContentLibrary?.();
+      if (!library || this._libraryDefLoadingId !== refId) return;
+      const pool = [...(library.enemies || []), ...(library.npcs || [])];
+      const def = pool.find(entry => entry && entry.id === refId) || null;
+      this._libraryDefCache = { id: refId, def };
+      const selected = this.editor.selectedObjects?.[0];
+      if (selected && selected.ref === refId) {
+        this.updateObjectProperties();
+        this.editor.render();
+      }
+    } catch (error) {
+      console.warn('SceneEditorUI: 读取内容库定义失败', error);
+    } finally {
+      if (this._libraryDefLoadingId === refId) this._libraryDefLoadingId = null;
+    }
+  }
+
+  /**
+   * 进入技能范围编辑前，把有效编排落成本处覆盖（overrides.ai.attackActions）。
+   * 直接改库定义数组的下标会因覆盖合并整体替换，因此整组落盘，编辑就地改半径。
+   * @private
+   */
+  _ensureSkillRangeOverride(obj, index) {
+    const ovAi = obj.overrides?.ai && typeof obj.overrides.ai === 'object' ? obj.overrides.ai : null;
+    const ovActions = ovAi && Array.isArray(ovAi.attackActions) ? ovAi.attackActions : null;
+    if (ovActions && ovActions[index]) return true;
+    const libDef = this._getCachedLibraryDef(obj.ref);
+    const libActions = Array.isArray(libDef?.ai?.attackActions) ? libDef.ai.attackActions : [];
+    if (libActions.length === 0) {
+      this.showToast('该敌怪未配置攻击编排，请先在内容库 NPC 页添加', 'warn');
+      return false;
+    }
+    obj.overrides = obj.overrides || {};
+    obj.overrides.ai = obj.overrides.ai && typeof obj.overrides.ai === 'object' ? obj.overrides.ai : {};
+    obj.overrides.ai.attackActions = JSON.parse(JSON.stringify(libActions));
+    return true;
   }
 
   /**

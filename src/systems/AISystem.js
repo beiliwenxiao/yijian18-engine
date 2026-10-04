@@ -19,7 +19,8 @@
  * - CombatSystem: 攻击判定和伤害计算
  */
 
-const hasTag = (entity, tag) => Array.isArray(entity?.tags) && entity.tags.includes(tag);
+import { isHostileTarget } from '../core/FactionRules.js';
+import { EnemySkillDirector } from './EnemySkillDirector.js';
 
 /** 跨客户端以稳定实体 ID 推导游荡相位，避免 Math.random 破坏回放与服务端权威。 */
 function stableEntityHash(entityId) {
@@ -31,25 +32,6 @@ function stableEntityHash(entityId) {
   return hash >>> 0;
 }
 
-/** canonical 战役单位只攻击其他参战阵营；普通敌人继续使用 legacy faction/type 规则。 */
-function isHostileTarget(entity, candidate) {
-  if (candidate === entity || candidate?.isDead || candidate?.isDying || candidate?.isSoulState) return false;
-  // 剧情倒地（如 S02 救援昏倒）：敌人不再索敌，避免剧情演出被击杀流程打断。
-  if (candidate?.plotDowned) return false;
-  if (hasTag(entity, 'battleParticipant')) {
-    const candidateParticipates = hasTag(candidate, 'battleParticipant')
-      || hasTag(candidate, 'battleIntervenor');
-    return candidateParticipates
-      && !!entity.factionId
-      && !!candidate.factionId
-      && entity.factionId !== candidate.factionId;
-  }
-  if (candidate?.faction === entity.faction) return false;
-  if (entity.faction === 'enemy' && candidate?.type !== 'player' && candidate?.faction !== 'ally') return false;
-  if (entity.faction === 'ally' && candidate?.type !== 'enemy') return false;
-  return true;
-}
-
 /**
  * AI控制器基类
  */
@@ -58,6 +40,14 @@ class AIController {
     this.updateInterval = 0.5; // AI更新间隔（秒）
     this.timeSinceLastUpdate = 0;
     this.idleWander = null;
+    // 由 AISystem 注入（createAIController）；存在攻击编排（aiProfile.attackActions）的实体
+    // 其普攻/技能触发让位 EnemySkillDirector，控制器只负责索敌与走位。
+    this.skillDirector = null;
+  }
+
+  /** 实体的攻击触发是否已委托给 EnemySkillDirector。 */
+  attacksDelegatedToDirector(entity) {
+    return this.skillDirector?.hasAttackActions?.(entity) === true;
   }
 
   /**
@@ -381,9 +371,9 @@ class AggressiveAI extends AIController {
         // 在范围内，停止移动并攻击
         this.stopMovement(entity);
 
-        // 执行攻击
+        // 执行攻击（有攻击编排的实体由 EnemySkillDirector 接管普攻/技能触发）
         const currentTime = performance.now();
-        if (combat.canAttack(currentTime) && combatSystem) {
+        if (!this.attacksDelegatedToDirector(entity) && combat.canAttack(currentTime) && combatSystem) {
           combatSystem.performAttack(entity, target, currentTime);
         }
       } else {
@@ -447,10 +437,10 @@ class DefensiveAI extends AIController {
         // 在攻击范围内，停止移动并攻击
         this.stopMovement(entity);
         combat.setTarget(nearestEnemy);
-        
-        // 执行攻击
+
+        // 执行攻击（有攻击编排的实体由 EnemySkillDirector 接管普攻/技能触发）
         const currentTime = performance.now();
-        if (combat.canAttack(currentTime) && combatSystem) {
+        if (!this.attacksDelegatedToDirector(entity) && combat.canAttack(currentTime) && combatSystem) {
           combatSystem.performAttack(entity, nearestEnemy, currentTime);
         }
       } else {
@@ -525,9 +515,9 @@ class SupportAI extends AIController {
         // 在范围内，停止移动并攻击
         this.stopMovement(entity);
 
-        // 执行攻击
+        // 执行攻击（有攻击编排的实体由 EnemySkillDirector 接管普攻/技能触发）
         const currentTime = performance.now();
-        if (combat.canAttack(currentTime) && combatSystem) {
+        if (!this.attacksDelegatedToDirector(entity) && combat.canAttack(currentTime) && combatSystem) {
           combatSystem.performAttack(entity, weakEnemy, currentTime);
         }
       } else {
@@ -544,10 +534,10 @@ class SupportAI extends AIController {
         
         if (this.isInRange(entity, nearestEnemy, combat.attackRange)) {
           this.stopMovement(entity);
-          
-          // 执行攻击
+
+          // 执行攻击（有攻击编排的实体由 EnemySkillDirector 接管普攻/技能触发）
           const currentTime = performance.now();
-          if (combat.canAttack(currentTime) && combatSystem) {
+          if (!this.attacksDelegatedToDirector(entity) && combat.canAttack(currentTime) && combatSystem) {
             combatSystem.performAttack(entity, nearestEnemy, currentTime);
           }
         } else {
@@ -614,6 +604,8 @@ export class AISystem {
     this.aiControllers = new Map();
     this.inactiveAI = new Map();
     this.lureTargets = new Map();
+    // 敌人攻击编排调度器：按 aiProfile.attackActions 逐帧调度普攻与技能（含前摇 telegraph）
+    this.skillDirector = new EnemySkillDirector();
     console.log('AISystem: Initialized');
   }
 
@@ -630,15 +622,19 @@ export class AISystem {
   }
 
   createAIController(aiType) {
-    switch (aiType) {
-      case 'battleFormation':
-      case 'aggressive': return new AggressiveAI();
-      case 'defensive': return new DefensiveAI();
-      case 'support': return new SupportAI();
-      default:
-        console.warn(`AISystem: Unknown AI type: ${aiType}, using aggressive`);
-        return new AggressiveAI();
-    }
+    const controller = (() => {
+      switch (aiType) {
+        case 'battleFormation':
+        case 'aggressive': return new AggressiveAI();
+        case 'defensive': return new DefensiveAI();
+        case 'support': return new SupportAI();
+        default:
+          console.warn(`AISystem: Unknown AI type: ${aiType}, using aggressive`);
+          return new AggressiveAI();
+      }
+    })();
+    controller.skillDirector = this.skillDirector;
+    return controller;
   }
 
   /** 暂停 AI 但保留期望类型，供可见休眠守卫稍后激活。 */
@@ -646,6 +642,7 @@ export class AISystem {
     if (!entity?.id) return false;
     this.aiControllers.delete(entity.id);
     this.lureTargets.delete(entity.id);
+    this.skillDirector.resetEntity(entity.id);
     this.inactiveAI.set(entity.id, aiType || 'aggressive');
     entity.getComponent?.('movement')?.stop?.();
     entity.isAI = false;
@@ -669,6 +666,7 @@ export class AISystem {
     const hadInactive = this.inactiveAI.delete(entity.id);
     const existed = hadActive || hadInactive;
     this.lureTargets.delete(entity.id);
+    this.skillDirector.resetEntity(entity.id);
     entity.getComponent?.('movement')?.stop?.();
     entity.isAI = false;
     entity.aiActive = false;
@@ -727,10 +725,17 @@ export class AISystem {
       if (!entity) {
         this.aiControllers.delete(entityId);
         this.lureTargets.delete(entityId);
+        this.skillDirector.resetEntity(entityId);
         continue;
       }
-      if (entity.isDead || entity.isDying) continue;
+      if (entity.isDead || entity.isDying) {
+        // 死亡/濒死：清掉编排施法状态与计时，防止尸体复用实体时瞬发技能
+        this.skillDirector.resetEntity(entityId);
+        continue;
+      }
       if (this._updateLure(entity, deltaTime)) continue;
+      // 攻击编排调度（makeDecision 前）：有 attackActions 的实体普攻/技能由 Director 触发
+      this.skillDirector.update(entity, entities, combatSystem);
       // 传入预计算的敌对列表，消除每只 AI 的 O(N) filter
       controller.update(entity, entities, deltaTime, combatSystem, hostileCache.get(entity));
     }
@@ -794,6 +799,7 @@ export class AISystem {
     this.aiControllers.clear();
     this.inactiveAI.clear();
     this.lureTargets.clear();
+    this.skillDirector.clear();
     console.log('AISystem: Cleared all AI controllers');
   }
 

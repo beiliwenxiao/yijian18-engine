@@ -1304,6 +1304,48 @@ export class SceneEditorCanvas {
             }
           }
         }
+        // 技能范围编辑态：虚线圆（技能 AOE 半径）+ 正五边形顶点手柄（拖顶点=改半径）
+        if (Number.isInteger(editor.ui?._editingSkillRange) && obj.kind === 'enemy') {
+          const interactionModule = editor.interactionModule;
+          const skillPoints = interactionModule?.getSkillRangeWorldPoints?.(obj);
+          if (Array.isArray(skillPoints) && skillPoints.length === 5) {
+            const actions = obj.overrides?.ai?.attackActions;
+            const action = Array.isArray(actions) ? actions[editor.ui._editingSkillRange] : null;
+            const skillRadius = interactionModule?._skillRangeRadius?.(obj) || 150;
+            // 虚线圆（半径与运行时 applyAOEDamage / telegraph 圈同源）
+            ctx.beginPath();
+            ctx.arc(obj.x, obj.y, skillRadius, 0, Math.PI * 2);
+            ctx.strokeStyle = 'rgba(255,120,220,0.85)';
+            ctx.lineWidth = 1.2 / vpScale;
+            ctx.setLineDash([5 / vpScale, 5 / vpScale]);
+            ctx.stroke();
+            // 正五边形 + 顶点手柄
+            ctx.beginPath();
+            ctx.moveTo(skillPoints[0][0], skillPoints[0][1]);
+            for (let index = 1; index < skillPoints.length; index++) ctx.lineTo(skillPoints[index][0], skillPoints[index][1]);
+            ctx.closePath();
+            ctx.fillStyle = 'rgba(255,120,220,0.10)';
+            ctx.fill();
+            ctx.strokeStyle = '#ff78dc';
+            ctx.lineWidth = 1.5 / vpScale;
+            ctx.setLineDash([]);
+            ctx.stroke();
+            ctx.fillStyle = '#ff78dc';
+            ctx.strokeStyle = '#ffffff';
+            for (const point of skillPoints) {
+              ctx.fillRect(point[0] - handleSize / 2, point[1] - handleSize / 2, handleSize, handleSize);
+              ctx.strokeRect(point[0] - handleSize / 2, point[1] - handleSize / 2, handleSize, handleSize);
+            }
+            // 技能名标注（圆心上方）
+            if (action?.skillId) {
+              ctx.fillStyle = '#ff78dc';
+              ctx.font = `${12 / vpScale}px sans-serif`;
+              ctx.textAlign = 'center';
+              ctx.fillText(`${action.skillId}（范围 ${skillRadius}）`, obj.x, obj.y - skillRadius - 8 / vpScale);
+              ctx.textAlign = 'left';
+            }
+          }
+        }
         continue;
       } else if (obj.type === 'spawn' || obj.type === 'portal' || obj.type === 'npc') {
         // 点状逻辑对象：圆形选中框，无缩放手柄
