@@ -1068,8 +1068,10 @@ export class CombatSystem {
   }
 
   /**
-   * 冲撞落地瞬间：目标若仍在撞圈内（以扑击框宽为判定半径），立即沿冲击方向撞开。
-   * 击退在此即时生效；伤害由 AI 落地后的下一次咬击结算（pounced 标记防重复击退）。
+   * 冲撞落地瞬间：目标若仍在撞圈内（以扑击框宽为判定半径），立即结算伤害并沿
+   * 冲击方向撞开。伤害与击退都在落地瞬间生效——此前设计由落地后的下一次咬击
+   * 结算，但击退（100~200px）必然把目标推出攻击范围，咬击永远追不上，
+   * 冲撞会变成零伤害。
    */
   _pounceTargetOnLanding(dash) {
     const target = dash.targetRef;
@@ -1083,6 +1085,9 @@ export class CombatSystem {
     const hitRadius = Number(dash.pathWidth) > 0 ? Number(dash.pathWidth) : 72;
     if (dist > hitRadius) return; // 玩家已跑开：扑空不撞
     dash.pounced = true;
+    // 冲撞伤害：命中即结算（与咬击同一伤害公式），之后照常进入攻击冷却节奏
+    const damage = this.calculateDamage(dash.attackerRef, target);
+    this.applyDamage(target, damage, null, this.getAttackText(dash.attackerRef), { sourceEntity: dash.attackerRef });
     // 击飞距离（px，随机）：telegraph.knockbackDistance 配置优先（狼王撞击 100~200），
     // 未配置回退 30~50；带弹飞滑行过程，而非瞬移式击退。
     // 滑行时长随距离略增，远距离击飞保持「被撞飞」观感而非瞬移。
