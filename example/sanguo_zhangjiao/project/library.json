@@ -1593,6 +1593,10 @@
       "remaining": 10,
       "maxRemaining": 10,
       "yieldPerGather": 1,
+      "gatherYieldRange": {
+        "min": 5,
+        "max": 10
+      },
       "gatherDuration": 1.5,
       "interactionRadius": 80,
       "requiredToolType": null,
