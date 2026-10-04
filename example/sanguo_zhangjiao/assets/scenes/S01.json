@@ -635,19 +635,6 @@
           "y": 581.709465042264
         },
         {
-          "group": "S01-apple-thickets",
-          "id": "S01-node-apple-1",
-          "kind": "resourceNode",
-          "ref": "node.apple_thicket",
-          "tags": [
-            "resource",
-            "apple"
-          ],
-          "type": "ref",
-          "x": 262,
-          "y": 296
-        },
-        {
           "group": "S01-worn-axe",
           "id": "S01-pickup-worn-axe",
           "kind": "item",
@@ -854,6 +841,19 @@
           "type": "ref",
           "x": 597.5734139061408,
           "y": 522.1311001005256
+        },
+        {
+          "group": "S01-apple-thickets",
+          "id": "S01-node-apple-1",
+          "kind": "resourceNode",
+          "ref": "node.apple_thicket",
+          "tags": [
+            "resource",
+            "apple"
+          ],
+          "type": "ref",
+          "x": 305.7566177611256,
+          "y": 401.81145749508556
         }
       ],
       "visible": true
