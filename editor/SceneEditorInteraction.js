@@ -861,6 +861,33 @@ export class SceneEditorInteraction {
       items.push({ separator: true });
     }
 
+    // 刷新对象：改图后强制从磁盘重载选中对象引用的图片，即时看效果
+    if (editor.selectedObjects.length > 0) {
+      items.push({ separator: true });
+      items.push({
+        label: '🔄 刷新对象',
+        action: async () => {
+          try {
+            const result = await editor.assets?.reloadObjectsImages?.(editor.selectedObjects || []);
+            if (!result) {
+              editor.ui.showToast('图片刷新不可用', 'warn');
+              return;
+            }
+            if (result.reloaded === 0 && result.failed === 0) {
+              editor.ui.showToast('选中对象未引用可刷新的图片', 'warn');
+              return;
+            }
+            editor.ui.showToast(result.failed > 0
+              ? `已刷新 ${result.reloaded} 张图片，${result.failed} 张失败`
+              : `已刷新 ${result.reloaded} 张图片`, result.failed > 0 ? 'warn' : 'success');
+          } catch (error) {
+            console.warn('[SceneEditorInteraction] 刷新对象图片失败', error);
+            editor.ui.showToast('刷新对象图片失败，详见控制台', 'warn');
+          }
+        }
+      });
+    }
+
     items.push({ label: '删除对象', action: () => editor.ui.deleteSelectedObjects() });
 
     // ─── 多边形/Buff 多边形/ref 碰撞/可攀爬区顶点编辑 ─────────────────

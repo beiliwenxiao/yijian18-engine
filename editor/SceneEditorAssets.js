@@ -446,6 +446,75 @@ export class SceneEditorAssets {
     return this.loadPlacementVisualImages();
   }
 
+  /**
+   * 刷新对象：强制从磁盘重载选中对象引用的图片（改图后即时看效果，不必重开场景）。
+   * 覆盖两类来源：
+   *   1. ref 放置物 → Manifest 图片（resolvePlacementVisual 的 imageRequests）；
+   *   2. image 对象 → 场景 imageAssets / obj.src 直引路径。
+   * 统一写入 editor.loadedImages（ref 与普通图片渲染的同一数据源），
+   * URL 追加时间戳绕过浏览器缓存；同 imageId 的 manifest 别名（imageId/assetId）一并更新。
+   * @param {Array<Object>} objects - 选中对象列表
+   * @returns {Promise<{reloaded: number, failed: number}>}
+   */
+  async reloadObjectsImages(objects = []) {
+    const editor = this.editor;
+    const list = (Array.isArray(objects) ? objects : []).filter(Boolean);
+    const tasks = new Map();
+    const addTask = (imageId, url, manifestEntry = null) => {
+      const id = typeof imageId === 'string' ? imageId.trim() : '';
+      const resolvedUrl = typeof url === 'string' ? url.trim() : '';
+      if (!id || !resolvedUrl || tasks.has(id)) return;
+      tasks.set(id, { imageId: id, url: resolvedUrl, manifestEntry });
+    };
+    for (const obj of list) {
+      if (obj.type === 'ref') {
+        let visual = null;
+        try {
+          visual = this.resolvePlacementVisual(obj);
+        } catch (error) {
+          visual = null;
+        }
+        for (const request of visual?.imageRequests || []) {
+          addTask(request?.imageId, request?.url, request?.manifestEntry || null);
+        }
+      }
+      // 普通图片对象（image/imageSrc 键），路径取场景 imageAssets 或对象自带 src
+      for (const key of ['imageId', 'imageSrc']) {
+        const id = typeof obj?.[key] === 'string' ? obj[key].trim() : '';
+        if (!id || tasks.has(id)) continue;
+        const assetSrc = editor.sceneData.imageAssets?.[id]?.src;
+        const url = (typeof assetSrc === 'string' && assetSrc.trim())
+          || (typeof obj?.src === 'string' ? obj.src : '');
+        addTask(id, url, null);
+      }
+    }
+    if (tasks.size === 0) return { reloaded: 0, failed: 0 };
+
+    const bust = Date.now();
+    let reloaded = 0;
+    let failed = 0;
+    await Promise.all([...tasks.values()].map(task => new Promise(resolve => {
+      const bustUrl = `${task.url}${task.url.includes('?') ? '&' : '?'}t=${bust}`;
+      const image = new Image();
+      image.onload = () => {
+        const entry = task.manifestEntry || this._manifestEntriesById.get(task.imageId) || null;
+        const aliases = new Set([task.imageId]);
+        if (typeof entry?.imageId === 'string' && entry.imageId.trim()) aliases.add(entry.imageId.trim());
+        if (typeof entry?.assetId === 'string' && entry.assetId.trim()) aliases.add(entry.assetId.trim());
+        for (const alias of aliases) editor.loadedImages.set(alias, image);
+        reloaded += 1;
+        resolve();
+      };
+      image.onerror = () => {
+        failed += 1;
+        resolve();
+      };
+      image.src = bustUrl;
+    })));
+    if (reloaded > 0) editor.render();
+    return { reloaded, failed };
+  }
+
   _activateSharedAtlasProject() {
     return this.editor.activateSharedAtlasProject(this._currentProjectPath());
   }
