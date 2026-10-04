@@ -166,6 +166,67 @@ export class SceneEditorAssets {
   }
 
   /**
+   * 场景保存前的兜底同步：把场景 imageAssets 中「未登记 Manifest」的稳定 ID
+   * 批量送入 /api/scene-image-asset-transaction（一次事务全部条目，服务端幂等）。
+   * 覆盖除「添加图片资源」之外的所有产生路径：全局图片库合并、图片路径修改、
+   * 历史数据、手工编辑等——保证保存的场景不会引用运行时解析不到的图片。
+   * 非项目内 assets/images/*.png 路径的条目跳过（运行时也不按 Manifest 加载它们）。
+   * @returns {Promise<{registered: number, skipped: number}>}
+   */
+  async syncSceneImageAssetsToManifest() {
+    const editor = this.editor;
+    const imageAssets = editor.sceneData?.imageAssets || {};
+    const projectPath = this._normalizeProjectPath();
+    if (!projectPath.endsWith('/game.project.json')) return { registered: 0, skipped: 0 };
+
+    try {
+      await this._ensureAssetManifest();
+    } catch (error) {
+      console.warn('[SceneEditorAssets] Manifest 读取失败，跳过图片登记同步', error);
+      return { registered: 0, skipped: 0 };
+    }
+
+    const sceneId = String(editor.sceneData?.id || '').trim();
+    const pending = [];
+    let skipped = 0;
+    for (const [imageId, asset] of Object.entries(imageAssets)) {
+      const id = String(imageId || '').trim();
+      const src = String(asset?.src || '').replace(/\\/g, '/');
+      if (!id || !src) continue;
+      if (this._manifestEntriesById.has(id)) continue;
+      const marker = 'assets/images/';
+      const markerIndex = src.lastIndexOf(marker);
+      const runtimePath = markerIndex >= 0 ? src.slice(markerIndex) : '';
+      if (!/\.png$/i.test(runtimePath)) {
+        skipped += 1;
+        continue;
+      }
+      pending.push({ imageId: id, runtimePath, sceneId });
+    }
+    if (pending.length === 0) return { registered: 0, skipped };
+
+    const res = await fetch('/api/scene-image-asset-transaction', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ projectPath, imageAssets: pending })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || data?.ok !== true || data?.committed !== true) {
+      throw new Error(data.error || `图片登记同步失败（HTTP ${res.status}）`);
+    }
+    for (const update of pending) {
+      const entry = (data.manifest?.assets || []).find(candidate => (
+        candidate && (candidate.assetId === update.imageId || candidate.imageId === update.imageId)
+      ));
+      if (entry) {
+        this._manifestEntriesById.set(update.imageId, entry);
+        if (entry.assetId && entry.assetId !== update.imageId) this._manifestEntriesById.set(entry.assetId, entry);
+      }
+    }
+    return { registered: pending.length, skipped };
+  }
+
+  /**
    * 「导入即登记」：把图片作为稳定资源条目 upsert 进项目 assets/manifests/assets.json。
    * 走专用事务 /api/scene-image-asset-transaction（save-file 对 Manifest 路径 409 拦截）：
    * 服务端校验路径与 PNG、以磁盘文件头为准取尺寸，创建/更新条目后整体校验原子落盘。

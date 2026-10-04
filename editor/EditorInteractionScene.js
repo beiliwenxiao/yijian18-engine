@@ -837,6 +837,16 @@ export class EditorInteractionScene extends EditorInteractionBase {            /
                     };
                 }
                 try {
+                    // 保存前兜底：场景 imageAssets 中未登记 Manifest 的图片自动登记
+                    //（「导入即登记」之外的入口——全局图片合并/路径修改/历史数据——都由此覆盖）
+                    try {
+                        const sync = await this.sceneEditor.assets?.syncSceneImageAssetsToManifest?.();
+                        if (sync?.registered > 0) {
+                            this.sceneEditor?.ui?.showToast?.(`已自动登记 ${sync.registered} 个图片资源到 Manifest`);
+                        }
+                    } catch (syncError) {
+                        console.warn('[SceneEditor] 图片登记同步失败，继续保存场景', syncError);
+                    }
                     const { service, projectPath } = this._sceneCommands();
                     return await service.save(projectPath, {
                         sceneId: this.currentSceneId,
