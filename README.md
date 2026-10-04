@@ -91,6 +91,13 @@ Demo 支持双渲染后端，通过 URL 参数切换：
 http://localhost:3000/example/sanguo_zhangjiao/index.html?mode=3d
 ```
 
+### 建议开启浏览器硬件加速
+
+1. 地址栏输入 `chrome://settings/system`
+2. 打开「**使用硬件加速模式（如果可用）**」（Use graphics acceleration when available）
+3. 按提示**重启 Chrome**（必须重启才生效）
+4. 回到 `chrome://gpu` 复查：应变为 `Hardware accelerated`
+
 ## 📖 项目介绍
 
 本项目是一个通用的 HTML5 游戏引擎框架，采用 ECS 架构设计，核心系统与游戏逻辑分离。
