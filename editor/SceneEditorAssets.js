@@ -80,6 +80,8 @@ export class SceneEditorAssets {
     this._manifestPromiseEpoch = -1;
     this._manifestEntriesById = new Map();
     this._contentDraftSequence = 0;
+    // Manifest 写盘串行队列：连续导入多张图时避免并发 fetch+save 互相覆盖
+    this._manifestWriteQueue = Promise.resolve();
   }
 
   _currentProjectPath() {
@@ -161,6 +163,53 @@ export class SceneEditorAssets {
 
   _indexManifest(manifest) {
     return indexManifestEntries(manifest);
+  }
+
+  /**
+   * 「导入即登记」：把图片作为稳定资源条目 upsert 进项目 assets/manifests/assets.json。
+   * 走专用事务 /api/scene-image-asset-transaction（save-file 对 Manifest 路径 409 拦截）：
+   * 服务端校验路径与 PNG、以磁盘文件头为准取尺寸，创建/更新条目后整体校验原子落盘。
+   * 成功后用响应里的 manifest 同步内存索引 _manifestEntriesById，编辑器即刻可用。
+   * @param {Object} params
+   * @param {string} params.imageId - 稳定 ID（assetId/imageId 同值）
+   * @param {string} params.assetPath - 项目内相对路径（assets/images/...png）
+   * @returns {Promise<{ok: boolean, created?: boolean, updated?: boolean}>}
+   */
+  _upsertManifestAsset({ imageId, assetPath }) {
+    const task = this._manifestWriteQueue.then(async () => {
+      const editor = this.editor;
+      const projectPath = this._normalizeProjectPath();
+      if (!projectPath.endsWith('/game.project.json')) {
+        throw new Error('projectPath 无效（缺少 game.project.json）');
+      }
+      const res = await fetch('/api/scene-image-asset-transaction', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projectPath,
+          imageAssets: [{
+            imageId: String(imageId || '').trim(),
+            runtimePath: String(assetPath || '').trim(),
+            sceneId: String(editor.sceneData?.id || '').trim()
+          }]
+        })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || data?.ok !== true || data?.committed !== true) {
+        throw new Error(data.error || `Manifest 登记失败（HTTP ${res.status}）`);
+      }
+      const normalizedId = String(imageId || '').trim();
+      const entry = (data.manifest?.assets || []).find(candidate => (
+        candidate && (candidate.assetId === normalizedId || candidate.imageId === normalizedId)
+      ));
+      if (entry) {
+        this._manifestEntriesById.set(normalizedId, entry);
+        if (entry.assetId && entry.assetId !== normalizedId) this._manifestEntriesById.set(entry.assetId, entry);
+      }
+      return { ok: true, created: entry?.revision === 1, updated: entry?.revision !== 1 };
+    });
+    this._manifestWriteQueue = task.catch(() => {});
+    return task;
   }
 
   async _ensureAssetManifest() {
@@ -1309,11 +1358,25 @@ export class SceneEditorAssets {
       const img = new Image();
       img.onload = () => {
         editor.loadedImages.set(id, img);
-        
+
         if (!editor.sceneData.imageAssets) editor.sceneData.imageAssets = {};
         editor.sceneData.imageAssets[id] = { src: relativeSrc, name: file.name };
         // 登记到全局图片库缓存，使其成为库资源（切换场景/保存清理时不丢失）
         addGlobalImage(id, { src: relativeSrc, name: file.name });
+
+        // 导入即登记 Manifest：运行时只按 assets.json 解析稳定 ID，不登记会在游戏里
+        // 退化为 Missing Asset 占位块。异步执行不阻塞导入，失败仅告警（图片仍可编辑器预览）。
+        const manifestPath = 'assets/images/' + subPath.trim().replace(/\\/g, '/');
+        this._upsertManifestAsset({ imageId: id, assetPath: manifestPath })
+          .then(result => {
+            editor.ui.showToast?.(result.created
+              ? `已登记 Manifest 资源: ${id}`
+              : `Manifest 资源已更新: ${id}`);
+          })
+          .catch(error => {
+            console.warn('[SceneEditorAssets] Manifest 登记失败', id, error);
+            editor.ui.showToast?.(`图片已入场景，但 Manifest 登记失败: ${error.message}`, 'warn');
+          });
 
         const assetList = document.getElementById('editor-asset-list');
         const item = document.createElement('div');

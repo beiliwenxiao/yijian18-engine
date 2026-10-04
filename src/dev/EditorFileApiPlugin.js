@@ -29,6 +29,7 @@ import { createContentValidator } from '../core/validation/ContentSchemas.js';
 import { CanonicalSceneValidator } from '../core/scene/CanonicalSceneValidation.js';
 import { prepareSharedAtlasTransaction } from './sharedAtlasTransaction.js';
 import { prepareLibraryItemImageTransaction } from './LibraryItemImageTransaction.js';
+import { prepareSceneImageAssetTransaction } from './SceneImageAssetTransaction.js';
 import { normalizeShardDeclaration, findShardFieldDuplication } from '../core/projectShards.js';
 
 const JSON_HEADERS = { 'Content-Type': 'application/json; charset=utf-8' };
@@ -412,6 +413,32 @@ export function editorFileAPIPlugin({ repoRoot, allowedProjectPaths = [] } = {})
               catalog: prepared.catalog,
               manifest: prepared.manifest
             });
+          }
+
+          // 「导入即登记」：场景编辑器导入图片后把稳定 imageId upsert 进 Asset Manifest。
+          // save-file 对 manifest 路径 409 拦截，此处是普通图片条目的唯一登记通道。
+          if (req.method === 'POST' && req.url === '/api/scene-image-asset-transaction') {
+            await recovery;
+            const body = await parseBody(req);
+            const projectPath = normalizeRelative(body.projectPath);
+            if (!projects.includes(projectPath)) {
+              return reply(res, 403, { ok: false, committed: false, error: '非当前项目' });
+            }
+            const info = canonicalInfo(projectPath);
+            let prepared;
+            const result = await adapter.commitPrepared(() => {
+              prepared = prepareSceneImageAssetTransaction({
+                repoRoot: root,
+                projectPath,
+                projectRoot: info.projectRoot,
+                imageAssets: body.imageAssets
+              });
+              return prepared.changes;
+            });
+            if (!result.ok) {
+              return reply(res, 500, { ...result, error: result.error?.message || '场景图片 Manifest 登记失败' });
+            }
+            return reply(res, 200, { ...result, manifest: prepared.manifest });
           }
 
           if (req.method === 'POST' && req.url === '/api/library-item-image-transaction') {

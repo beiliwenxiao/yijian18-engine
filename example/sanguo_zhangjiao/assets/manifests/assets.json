@@ -5556,6 +5556,37 @@
       "targetPhase": "P2",
       "status": "final",
       "revision": 1
+    },
+    {
+      "assetId": "img.s01-s01_right",
+      "imageId": "img.s01-s01_right",
+      "category": "environment-background",
+      "usage": [
+        "S01",
+        "scene-background",
+        "s01"
+      ],
+      "sourceFile": "assets/images/s01/s01_right.png",
+      "runtime2D": {
+        "path": "assets/images/s01/s01_right.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "img.s01-s01_right"
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0
+      },
+      "bounds": {
+        "width": 1542,
+        "height": 829
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "final",
+      "revision": 2
     }
   ]
 }
