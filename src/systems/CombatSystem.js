@@ -2169,8 +2169,8 @@ export class CombatSystem {
       return;
     }
     
-    // 特殊处理：火焰掌（主伤害 + 溅射）
-    if (skill.id === 'flame_palm') {
+    // 特殊处理：火焰掌/烈焰掌（主伤害 + 溅射；烈焰掌为 5 连发强化版）
+    if (skill.id === 'flame_palm' || skill.id === 'inferno_palm') {
       this.applyFlamePalmDamage(caster, targetPos, skill, entities);
       return;
     }
@@ -2296,8 +2296,8 @@ export class CombatSystem {
           // 主火焰伤害
           this.applyAOEDamage(caster, targetPos, skill, entities);
           
-          // 溅射小火焰伤害（敌我判定按施法者相对计算）
-          const splashRadius = 80;
+          // 溅射小火焰伤害（敌我判定按施法者相对计算；溅射半径可由技能定义覆盖）
+          const splashRadius = Number(skill.splashRadius) > 0 ? Number(skill.splashRadius) : 80;
           const enemies = entities.filter(e => {
             if (!isHostileTarget(caster, e)) return false;
 
