@@ -82,7 +82,9 @@ export class SceneItemGainedFlow {
       onClick: () => advance(() => this._drop(item))
     });
 
-    const defaultActionId = item.type === 'consumable' && item.usable ? 'primary' : 'store';
+    // 用户约定：默认选项=立即装备/立即使用（手柄焦点默认落在这里）；纯材料无 primary 仍默认放入背包。
+    // 5 秒自动入包兜底保留（防弹窗久挂，不自动换装）。
+    const defaultActionId = primaryLabel ? 'primary' : 'store';
     popup.show({
       item,
       comparison,

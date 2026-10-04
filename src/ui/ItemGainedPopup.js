@@ -100,12 +100,13 @@ export class ItemGainedPopup extends UIElement {
       .filter(action => action && typeof action.label === 'string' && typeof action.onClick === 'function')
       .slice(0, 3);
     const requestedActionId = String(cfg.defaultActionId || '').trim();
+    // 默认优先级：显式指定 > 可用消耗品的 primary > primary（立即装备） > store（放入背包）
     const defaultAction = this.actions.find(action => action.id === requestedActionId)
       || (this.item?.type === 'consumable' && this.item?.usable
         ? this.actions.find(action => action.id === 'primary')
         : null)
-      || this.actions.find(action => action.id === 'store')
       || this.actions.find(action => action.id === 'primary')
+      || this.actions.find(action => action.id === 'store')
       || this.actions[0]
       || null;
     this._defaultActionId = defaultAction?.id || null;
