@@ -164,6 +164,8 @@ export class ScenePlacementRuntime {
 
   /** 返回 live 世界坐标与当前只投影一次后的 placement 世界坐标是否一致。 */
   inspectPlacement(placementId, { epsilon = 0.001 } = {}) {
+    // 与 shouldSpawn 同一释放规则：refreshAt 到期的墓碑在此就地释放，检查结果不滞后。
+    this._releaseExpiredTombstone(placementId);
     const placement = this._findPlacement(placementId);
     const value = this.findLivePlacementValue(placementId);
     const actual = getRuntimePosition(value);
@@ -264,6 +266,9 @@ export class ScenePlacementRuntime {
   }
 
   shouldSpawn(placement = {}) {
+    // 已采空且过了消失期限的资源点：先把陈旧 pending 状态升级为 tombstone（仅改映射，
+    // 不触碰实体），再走统一墓碑判定——存档恢复时不会先闪现一帧采空节点。
+    this._expireDepletedResourceNodeState(placement);
     if (this._isPlacementTombstoned(placement) || this._playerHoldsPlacementInstance(placement)) return false;
     const condition = placement.spawnWhen;
     if (!condition || typeof condition !== 'object') return true;
@@ -283,11 +288,65 @@ export class ScenePlacementRuntime {
   /** @private 已拾取或已销毁的 placement 不得被流式恢复再次实例化。 */
   _isPlacementTombstoned(placement = {}) {
     if (!placement?.id) return false;
+    // refreshAt 到期的下架墓碑就地释放：清墓碑与陈旧资源状态，资源点按 canonical 定义重生。
+    this._releaseExpiredTombstone(placement.id);
     const state = this.pendingPlacementStates.get(placement.id);
     if (state?.removed !== true || typeof state.placementSignature !== 'string') return false;
     const currentSignature = getPlacementSignature(placement);
     return state.placementSignature === currentSignature
       || signaturesDifferOnlyByCoordinates(state.placementSignature, currentSignature);
+  }
+
+  /**
+   * 采空资源点到期下架：写 tombstone（timed 刷新点带 refreshAt），销毁活实体并忘记生成登记。
+   * 由帧管线在消失期限到期时调用；非 timed 节点（refreshAt 缺省）永久下架。
+   */
+  retireDepletedResourceNode(entity = null) {
+    if (this.disposed) return false;
+    const node = entity?.getComponent?.('resourceNode');
+    const placementId = entity?.placementId || entity?.id;
+    if (!node || node.depleted !== true || !placementId) return false;
+    const refreshAt = Number(node.refreshAtMs);
+    const result = this.tombstonePlacement(placementId, {
+      reason: 'resourceNodeDepleted',
+      ...(Number.isFinite(refreshAt) && refreshAt > 0 ? { refreshAt } : {})
+    });
+    if (result?.ok === true) {
+      this.pendingResourceNodeStates.delete(placementId);
+      this.pendingResourceNodeStates.delete(entity.id);
+    }
+    return result?.ok === true;
+  }
+
+  /** @private 已采空且过了消失期限的资源点 pending 状态 → 就地升级为 tombstone（带 refreshAt）。 */
+  _expireDepletedResourceNodeState(placement = {}) {
+    const placementId = placement?.id;
+    if (!placementId) return false;
+    const state = this.pendingResourceNodeStates.get(placementId);
+    if (state?.depleted !== true) return false;
+    const disappearAtMs = Number(state.disappearAtMs);
+    if (!Number.isFinite(disappearAtMs) || disappearAtMs <= 0 || Date.now() < disappearAtMs) return false;
+    const refreshAt = Number(state.refreshAtMs);
+    this.pendingPlacementStates.set(placementId, {
+      removed: true,
+      reason: 'resourceNodeDepleted',
+      ...(Number.isFinite(refreshAt) && refreshAt > 0 ? { refreshAt } : {}),
+      placementSignature: getPlacementSignature(placement)
+    });
+    this.pendingResourceNodeStates.delete(placementId);
+    return true;
+  }
+
+  /** @private refreshAt 到期的下架墓碑释放：清墓碑与陈旧资源状态，放置点重新可生成。 */
+  _releaseExpiredTombstone(placementId = null) {
+    if (!placementId) return false;
+    const state = this.pendingPlacementStates.get(placementId);
+    if (state?.removed !== true) return false;
+    const refreshAt = Number(state.refreshAt);
+    if (!Number.isFinite(refreshAt) || refreshAt <= 0 || Date.now() < refreshAt) return false;
+    this.pendingPlacementStates.delete(placementId);
+    this.pendingResourceNodeStates.delete(placementId);
+    return true;
   }
 
   /** @private 稳定实例已进入玩家背包或装备栏时，拒绝重建其原始世界 placement。 */

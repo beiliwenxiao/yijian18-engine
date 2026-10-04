@@ -841,19 +841,6 @@
           "type": "ref",
           "x": 597.5734139061408,
           "y": 522.1311001005256
-        },
-        {
-          "group": "S01-apple-thickets",
-          "id": "S01-node-apple-1",
-          "kind": "resourceNode",
-          "ref": "node.apple_thicket",
-          "tags": [
-            "resource",
-            "apple"
-          ],
-          "type": "ref",
-          "x": 305.7566177611256,
-          "y": 401.81145749508556
         }
       ],
       "visible": true
@@ -1180,8 +1167,8 @@
           "type": "slice",
           "walkable": false,
           "width": 96,
-          "x": 260.0786451209693,
-          "y": 340.8319720581178
+          "x": 260.5277263935781,
+          "y": 330.9291538707294
         },
         {
           "atlasId": "mountain_landscape",
@@ -1215,6 +1202,19 @@
           "width": 55,
           "x": 720.4670617636806,
           "y": 205.69676493402227
+        },
+        {
+          "group": "S01-apple-thickets",
+          "id": "S01-node-apple-1",
+          "kind": "resourceNode",
+          "ref": "node.apple_thicket",
+          "tags": [
+            "resource",
+            "apple"
+          ],
+          "type": "ref",
+          "x": 306.6547803063432,
+          "y": 395.0752384059537
         }
       ],
       "visible": true

@@ -1352,13 +1352,18 @@ export class S01S02Coordinator {
     if (result?.ok !== true) return result || { ok: false, code: 'overnightCommitUnavailable' };
     this.scene.timeSystem?.setCurrentDay?.(2);
     this._applyS01WeatherPhase(this._story().s01Survival || {}, { force: true });
-    // 进入被窝的视觉表现：显示床上的被窝图（editor.visible:false 的场景对象，
-    // 过夜后常驻——第二天起床被窝仍铺开在床上）
-    const sleepingEntity = this.scene.entityStore?.getById?.('S01-C01-bed-sleeping');
-    if (sleepingEntity) {
-      sleepingEntity.visible = true;
-      sleepingEntity.getComponent?.('sprite')?.setVisible?.(true);
-      sleepingEntity.getComponent?.('sprite') && (sleepingEntity.getComponent('sprite').visible = true);
+    // 进入被窝的视觉表现：被窝是编辑器装饰图片（editor.visible:false 初始隐藏，
+    // 过夜后铺开常驻——第二天起床被窝仍铺开在床上）。
+    const terrain = this.scene.terrain || this.scene._terrainBinding?.terrain || null;
+    const showedBed = terrain?.setDecorationVisible?.('S01-C01-bed-sleeping', true) === true;
+    if (!showedBed) {
+      // 兼容兜底：若被窝以实体形式存在（数据形态变化时）仍走实体显示。
+      const sleepingEntity = this.scene.entityStore?.getById?.('S01-C01-bed-sleeping');
+      if (sleepingEntity) {
+        sleepingEntity.visible = true;
+        sleepingEntity.getComponent?.('sprite')?.setVisible?.(true);
+        sleepingEntity.getComponent?.('sprite') && (sleepingEntity.getComponent('sprite').visible = true);
+      }
     }
     this.scene._showScreenTip('你钻进被窝沉沉睡去。天亮后，先从门口离开庇护所。', { title: '安稳的一夜' });
     return result;

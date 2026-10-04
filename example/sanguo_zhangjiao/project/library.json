@@ -1572,7 +1572,8 @@
       "interactionRadius": 72,
       "requiredToolType": null,
       "refreshDays": 0,
-      "refreshMode": "none",
+      "refreshMode": "timed",
+      "refreshIntervalSeconds": 7200,
       "guardUnitIds": [],
       "riskEvents": [],
       "damageRatio": 0,
@@ -1596,7 +1597,8 @@
       "interactionRadius": 80,
       "requiredToolType": null,
       "refreshDays": 0,
-      "refreshMode": "none",
+      "refreshMode": "timed",
+      "refreshIntervalSeconds": 7200,
       "guardUnitIds": [],
       "riskEvents": [],
       "damageRatio": 0,
@@ -1653,7 +1655,8 @@
       "interactionRadius": 76,
       "requiredToolType": "axe",
       "refreshDays": 0,
-      "refreshMode": "none",
+      "refreshMode": "timed",
+      "refreshIntervalSeconds": 7200,
       "guardUnitIds": [],
       "riskEvents": [
         {
@@ -1687,6 +1690,8 @@
       "interactionRadius": 72,
       "requiredToolType": null,
       "refreshDays": 0,
+      "refreshMode": "timed",
+      "refreshIntervalSeconds": 7200,
       "guardUnitIds": [],
       "riskEvents": [
         {
@@ -1746,6 +1751,8 @@
       "interactionRadius": 76,
       "requiredToolType": "pickaxe",
       "refreshDays": 0,
+      "refreshMode": "timed",
+      "refreshIntervalSeconds": 7200,
       "guardUnitIds": [],
       "riskEvents": [],
       "damageRatio": 0,

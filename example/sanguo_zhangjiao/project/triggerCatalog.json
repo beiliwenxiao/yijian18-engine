@@ -73,7 +73,7 @@
               },
               "inventoryItemId": {
                 "minLength": 1,
-                "title": "背包物��� ID",
+                "title": "背包物品 ID",
                 "type": "string"
               },
               "minimumQuantity": {
@@ -215,7 +215,7 @@
             ],
             "type": "object"
           },
-          "resultSemantics": "按已提交首狼事实恢复放置与攻击状态；辅助对��暂缺时由既有补偿链继续处理。",
+          "resultSemantics": "按已提交首狼事实恢复放置与攻击状态；辅助对象暂缺时由既有补偿链继续处理。",
           "value": "ensureFirstWolf"
         },
         {
@@ -446,7 +446,7 @@
             ],
             "type": "object"
           },
-          "resultSemantics": "原子提交次日、火种与追逐事实并创建检查点；成功后恢复���气和狼群，事务失败时短路。",
+          "resultSemantics": "原子提交次日、火种与追逐事实并创建检查点；成功后恢复天气和狼群，事务失败时短路。",
           "value": "overnight"
         },
         {

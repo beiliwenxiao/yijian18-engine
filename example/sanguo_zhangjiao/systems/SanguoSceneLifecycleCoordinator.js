@@ -179,7 +179,9 @@ function updateAfterBase(deltaTime) {
 
   // 施工进度只会在 S06/S10 推进；S10 工事实体也仅属于 S10。
   // 避免其他场景每帧序列化营建状态、遍历工事并扫描 EntityStore。
-  if (this.currentSceneId === 'S01') {
+  // S01-C01（庇护所室内）也要推进：入睡演出（overnightSleepProgress）在室内进行，
+  // coordinator.update 内部对非 S01 主场景有各自的早退保护。
+  if (this.currentSceneId === 'S01' || this.currentSceneId === 'S01-C01') {
     this._s01s02Coordinator.update(deltaTime);
   } else if (this.currentSceneId === 'S06' || this.currentSceneId === 'S10') {
     this.s10ConstructionCoordinator._updateConstructionRuntime(deltaTime);

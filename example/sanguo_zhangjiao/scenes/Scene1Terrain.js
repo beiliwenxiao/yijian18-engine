@@ -422,6 +422,9 @@ export class Scene1Terrain {
                 sortY: Number.isFinite(projectedObj.sortY)
                   ? projectedObj.sortY
                   : projectedObj.y + projectedObj.height,
+                // 编辑器「初始隐藏」对象（如过夜后才铺开的被窝）：仍收集进队列数据，
+                // 但渲染跳过；剧情可通过 setDecorationVisible 在运行时显示。
+                hidden: obj.editor?.visible === false,
                 _img: null,
                 _loaded: false
               };
@@ -1136,6 +1139,7 @@ export class Scene1Terrain {
       }
 
       for (const image of this._depthSortedImages || []) {
+        if (image.hidden === true) continue;
         const rotated = image.rotation !== 0;
         const centerX = image.x + image.width / 2;
         const centerY = image.y + image.height / 2;
@@ -1609,6 +1613,7 @@ export class Scene1Terrain {
     // 画背景图片
     if (this._editorBackgroundImages) {
       for (const bgImg of this._editorBackgroundImages) {
+        if (bgImg.hidden === true) continue;
         if (!bgImg._loaded || !bgImg._img) continue;
         gctx.save();
         if (bgImg.opacity !== undefined) gctx.globalAlpha = bgImg.opacity;
@@ -1621,6 +1626,33 @@ export class Scene1Terrain {
     this._combinedGroundCacheX = offsetX;
     this._combinedGroundCacheY = offsetY;
     console.log(`Scene1Terrain: 合并地面缓存已构建 (${cacheW}x${cacheH})`);
+  }
+
+  /**
+   * 运行时切换编辑器装饰图片（type:image）的可见性。
+   * 场景对象 editor.visible:false 的初始隐藏由此数据承载（hidden 标记），
+   * 剧情提交（如过夜铺被窝）通过本方法显示。切换后需失效相关缓存让下一帧重绘。
+   * @returns {boolean} 是否找到并变更了对象
+   */
+  setDecorationVisible(objectId, visible = true) {
+    if (!objectId) return false;
+    let changed = false;
+    for (const pool of [this._depthSortedImages, this._editorBackgroundImages]) {
+      for (const image of pool || []) {
+        if (image.id !== objectId) continue;
+        const next = visible !== true;
+        if (image.hidden !== next) {
+          image.hidden = next;
+          changed = true;
+        }
+      }
+    }
+    if (changed) {
+      // 被窝类 depthSort 对象走实时装饰队列，无需缓存失效；背景缓存图留兜底。
+      this._combinedGroundCache = null;
+      this._bgImageCache = null;
+    }
+    return changed;
   }
   
   /** 九宫格准备阶段一次合并普通背景图片；渲染帧只消费缓存。 */

@@ -29,6 +29,10 @@ export class ResourceNodeComponent extends Component {
       ? Math.max(0.1, Number(config.refreshIntervalSeconds) || 0.1)
       : Math.max(0, Number(config.refreshIntervalSeconds) || 0);
     this.refreshElapsedSeconds = Math.max(0, Number(config.refreshElapsedSeconds) || 0);
+    // 采空后的下架/刷新墙钟时间戳（ms）：消失期限后由放置运行时下架；
+    // timed 刷新点在消失时点再叠加一个刷新间隔，到点由墓碑放行重建。
+    this.disappearAtMs = Math.max(0, Number(config.disappearAtMs) || 0);
+    this.refreshAtMs = Math.max(0, Number(config.refreshAtMs) || 0);
     this.guardUnitIds = Array.isArray(config.guardUnitIds) ? [...config.guardUnitIds] : [];
     this.riskEvents = Array.isArray(config.riskEvents)
       ? config.riskEvents
@@ -58,7 +62,37 @@ export class ResourceNodeComponent extends Component {
     this.remaining = this.maxRemaining;
     this.depleted = false;
     this.refreshElapsedSeconds = 0;
+    this.disappearAtMs = 0;
+    this.refreshAtMs = 0;
     return true;
+  }
+
+  /**
+   * 采空时打上消失/刷新时间戳（墙钟 ms，幂等）：默认 30 秒后从场景消失；
+   * timed 刷新点在消失时点再叠加 refreshIntervalSeconds，到点由放置运行时重建。
+   * @returns {boolean} 本次是否写入了时间戳
+   */
+  beginDepletion(now = Date.now(), disappearDelaySeconds = 30) {
+    if (!this.depleted || this.disappearAtMs > 0) return false;
+    const base = Math.max(0, Number(now) || Date.now());
+    this.disappearAtMs = base + Math.max(0, Number(disappearDelaySeconds) || 0) * 1000;
+    this.refreshAtMs = this.refreshMode === 'timed' && this.refreshIntervalSeconds > 0
+      ? this.disappearAtMs + this.refreshIntervalSeconds * 1000
+      : 0;
+    return true;
+  }
+
+  /** 采集结算回滚：资源不再采空时撤销消失/刷新时间戳。 */
+  revokeDepletion() {
+    if (this.depleted || this.remaining <= 0) return false;
+    this.disappearAtMs = 0;
+    this.refreshAtMs = 0;
+    return true;
+  }
+
+  /** 采空后是否已到消失期限（引擎每帧检查，由放置运行时执行下架）。 */
+  isDisappearDue(now = Date.now()) {
+    return this.depleted && this.disappearAtMs > 0 && (Number(now) || Date.now()) >= this.disappearAtMs;
   }
 
   serialize() {
@@ -78,6 +112,8 @@ export class ResourceNodeComponent extends Component {
       refreshMode: this.refreshMode,
       refreshIntervalSeconds: this.refreshIntervalSeconds,
       refreshElapsedSeconds: this.refreshElapsedSeconds,
+      disappearAtMs: this.disappearAtMs,
+      refreshAtMs: this.refreshAtMs,
       guardUnitIds: [...this.guardUnitIds],
       riskEvents: this.riskEvents.map(event => ({ ...event, payload: { ...event.payload } })),
       damageRatio: this.damageRatio,
@@ -104,6 +140,8 @@ export class ResourceNodeComponent extends Component {
     if (Number.isFinite(data.refreshElapsedSeconds) && data.refreshElapsedSeconds >= 0) {
       this.refreshElapsedSeconds = data.refreshElapsedSeconds;
     }
+    if (Number.isFinite(data.disappearAtMs) && data.disappearAtMs >= 0) this.disappearAtMs = data.disappearAtMs;
+    if (Number.isFinite(data.refreshAtMs) && data.refreshAtMs >= 0) this.refreshAtMs = data.refreshAtMs;
     if (Number.isFinite(data.damageRatio)) this.damageRatio = Math.min(1, Math.max(0, data.damageRatio));
     this.depleted = data.depleted === true || this.remaining <= 0;
   }

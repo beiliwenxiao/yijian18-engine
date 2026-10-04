@@ -223,12 +223,21 @@ export class SceneFramePipeline {
     abilitySystem?.update?.(deltaTime, entities);
     gatheringSystem?.update?.(deltaTime);
     gatheringPuppetSystem?.update?.(deltaTime);
+    // 采空到期资源点先收集、循环外统一下架：下架（tombstone）会销毁实体并改写
+    // 实体集合，不能在 entities 迭代中途执行；尸体衰减由 corpseRuntime 全权负责。
+    const depletedDueEntities = [];
     for (const entity of entities) {
       entity.update(deltaTime);
       const resourceNode = entity.getComponent?.('resourceNode');
-      if (resourceNode?.updateRefresh?.(deltaTime) === true) {
+      if (!resourceNode) continue;
+      if (resourceNode.updateRefresh?.(deltaTime) === true) {
         services.placements?.addPendingResourceNodeState?.(entity.id, resourceNode.serialize());
+      } else if (resourceNode.isDisappearDue?.() === true && entity.isCorpse !== true) {
+        depletedDueEntities.push(entity);
       }
+    }
+    for (const entity of depletedDueEntities) {
+      services.placements?.retireDepletedResourceNode?.(entity);
     }
     if (frameProfile) {
       const now = performance.now();
@@ -256,7 +265,25 @@ export class SceneFramePipeline {
 
     // 更新攀爬等统一位移执行器；受控攀爬读取与普通移动相同的设备无关移动轴。
     // 模态/面板接管时不再向攀爬器传递世界输入，避免 UI 操作推动角色。
-    const locomotionAxis = worldInputBlocked ? null : inputManager?.getMoveAxis?.() || null;
+    let locomotionAxis = worldInputBlocked ? null : inputManager?.getMoveAxis?.() || null;
+    // 受控攀爬中允许按住鼠标左键朝指针方向攀爬（攀爬中左键没有攻击语义）：
+    // 与摇杆/方向键汇入同一条移动轴，方向指向鼠标世界坐标；8px 死区防止
+    // 点在自己身上时抖动；UI 刚消费过的点击沿不驱动攀爬。
+    if (locomotionAxis == null && !worldInputBlocked && player && inputManager && camera
+      && locomotionSystem?.getClimbPresentation?.(player) != null
+      && inputManager.isMouseButtonDown?.(0) === true
+      && !(inputManager.isMouseClicked?.() === true && inputManager.isMouseClickHandled?.() === true)) {
+      const mouseWorldPos = inputManager.getMouseWorldPosition?.(camera) || null;
+      const playerTransform = player.getComponent?.('transform');
+      if (mouseWorldPos && playerTransform) {
+        const dx = mouseWorldPos.x - playerTransform.position.x;
+        const dy = mouseWorldPos.y - playerTransform.position.y;
+        const pointerDistance = Math.hypot(dx, dy);
+        if (pointerDistance > 8) {
+          locomotionAxis = { x: dx / pointerDistance, y: dy / pointerDistance, magnitude: 1 };
+        }
+      }
+    }
     locomotionSystem?.update?.(deltaTime, { inputAxis: locomotionAxis });
 
     // 蓄力跳跃：空格/Y 保持时由对应设备连续更新目标；虚拟跳跃按钮进入点选模式。

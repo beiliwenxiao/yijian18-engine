@@ -228,6 +228,8 @@ export class GatheringSystem {
 
     session.node.remaining -= result.accepted;
     session.node.depleted = session.node.remaining <= 0;
+    // 采空打上 30 秒消失/刷新时间戳（墙钟）；尸体衰减由 corpseRuntime 全权负责，不在此打标。
+    if (session.node.depleted && session.nodeEntity?.isCorpse !== true) session.node.beginDepletion?.();
     let toolBroken = false;
     if (session.tool) {
       session.tool.durability = Math.max(0, Number(session.tool.durability) - 1);
@@ -242,6 +244,7 @@ export class GatheringSystem {
       if (inventoryBefore && session.inventory.loadItems) session.inventory.loadItems(inventoryBefore);
       session.node.remaining = nodeBefore.remaining;
       session.node.depleted = nodeBefore.depleted;
+      if (!session.node.depleted) session.node.revokeDepletion?.();
       if (session.tool) session.tool.durability = toolDurabilityBefore;
       this.inventoryTransactions.forgetOperation?.(settleOperationId);
       return this._finish({ ok: false, code: 'policyCommitFailed', reason, accepted: 0, error }, 'interrupted', emitEvent);
