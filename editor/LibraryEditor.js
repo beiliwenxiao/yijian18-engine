@@ -97,13 +97,15 @@ const CATEGORIES = [
   },
   { key: 'resourceNodes', label: '资源节点', tpl: {
     name: '新资源节点', schemaVersion: 1, resourceType: 'wood', itemId: '',
+    imageId: '', sprite: { width: 48, height: 48, isStatic: true },
     remaining: 10, maxRemaining: 10, yieldPerGather: 2, gatherDuration: 1.5,
     interactionRadius: 72, requiredToolType: null, refreshDays: 0,
     guardUnitIds: [], damageRatio: 0
   }},
   { key: 'shops', label: '商店', tpl: { name: '新商店', goods: [] } },
   { key: 'vehicles', label: '载具', tpl: {
-    name: '新载具', vehicleType: 'horse', speed: 200, hp: 100,
+    name: '新载具', vehicleType: 'horse', imageId: '', width: 64, height: 64,
+    speed: 200, hp: 100,
     seats: [{ id: 'drv', role: 'driver', offset: [0, 0] }]
   }},
   { key: 'buildings', label: '建筑', tpl: {
@@ -123,10 +125,18 @@ const CATEGORIES = [
   { key: 'talents', label: '天赋', tpl: { name: '新天赋', tier: 1, maxRank: 3, effects: [] } }
 ];
 
+// 无图条目的列表占位小图标（有 Manifest 图片则显示真实缩略图）。
+const LIST_THUMB_ICONS = Object.freeze({
+  resourceNodes: '⛏️',
+  vehicles: '🐎',
+  combatSkills: '✨'
+});
+
 // 战斗技能（config/skills.json）新增条目模板：与运行时 SkillDefinition/SkillRegistry 字段对齐
 const SKILL_TPL = {
   id: '', name: '新技能', description: '',
   category: 'attack', targeting: 'area',
+  imageId: '',
   params: { damage: 20, range: 120, radius: 100, cooldown: 5 },
   costs: {}, tags: [], vfx: { effect: 'slash' }
 };
@@ -326,6 +336,20 @@ export class LibraryEditor {
         return { ok: false, committed: false, status: 'rejected', code: 'invalidSkillDefinition' };
       }
       try {
+        // 技能面板里改过 Manifest 图片路径映射时：先走图片事务提交 library+manifest，再写 skills.json
+        if (this._pendingImageUpdates.size > 0) {
+          const imageResult = await this.imageCommandService.save(this.canonicalSession.sourceUri || this.projectPath, {
+            library: this.library,
+            imageUpdates: [...this._pendingImageUpdates.values()]
+          });
+          if (imageResult?.ok !== true || imageResult?.committed !== true) {
+            const firstError = imageResult?.errors?.[0];
+            const message = [firstError?.path, firstError?.message || firstError?.reason]
+              .filter(Boolean).join(': ') || imageResult?.error?.message || imageResult?.error || '图片事务失败';
+            throw new Error(message);
+          }
+          this._acceptImageTransaction(imageResult);
+        }
         await this._saveSkillsOnly();
         this._status('✅ 已保存到 ' + this._skillsFilePath(), 'ok');
         this._toast('战斗技能已保存（' + this._skills.length + ' 条）', 'success');
@@ -676,10 +700,11 @@ export class LibraryEditor {
     }
   }
 
-  /** 列表行 HTML：合并分类与有图分类显示缩略图 + 类型徽标。 */
+  /** 列表行 HTML：合并分类与有图分类显示缩略图 + 类型徽标；无图回退分类小图标。 */
   _listItemHtml(e) {
     const section = this._sectionOf(e);
-    const showsThumb = ['items', 'npcs'].includes(this.activeCategory)
+    const thumbIcon = LIST_THUMB_ICONS[this.activeCategory] || '';
+    const showsThumb = ['items', 'npcs', 'resourceNodes', 'vehicles', 'combatSkills'].includes(this.activeCategory)
       || ['items', 'equipment', 'npcs', 'enemies'].includes(section);
     const metaParts = [];
     if (this.activeCategory === 'npcs') {
@@ -698,7 +723,9 @@ export class LibraryEditor {
     const image = this._manifestImageOption(imageId);
     const preview = image?.url
       ? `<img class="li-preview" src="${escapeHtml(image.url)}" alt="${escapeHtml(e.name || e.id || '图片')}">`
-      : `<div class="li-preview" style="display:flex;align-items:center;justify-content:center;color:#ff9a9a;font-size:10px;">缺图</div>`;
+      : (thumbIcon
+        ? `<div class="li-preview" style="display:flex;align-items:center;justify-content:center;font-size:18px;" title="未配置图片，显示分类图标">${thumbIcon}</div>`
+        : `<div class="li-preview" style="display:flex;align-items:center;justify-content:center;color:#ff9a9a;font-size:10px;">缺图</div>`);
     return `<div class="li-item-row">${preview}<div style="min-width:0;flex:1;"><div class="li-name">${escapeHtml(e.name || '(未命名)')}</div><div class="li-id">${escapeHtml(e.id || '')}</div>${metaHtml}</div></div>`;
   }
 
@@ -728,6 +755,14 @@ export class LibraryEditor {
     }
     if (cat === 'combatSkills') {
       this._renderSkillDetail(panel, e);
+      return;
+    }
+    if (cat === 'resourceNodes') {
+      this._renderResourceNodeDetail(panel, e);
+      return;
+    }
+    if (cat === 'vehicles') {
+      this._renderVehicleDetail(panel, e);
       return;
     }
 
@@ -819,6 +854,30 @@ export class LibraryEditor {
       empty.style.display = '';
     }
     status.textContent = display.status;
+  }
+
+  /**
+   * 图片引用编辑区 HTML（物品/NPC/资源节点/载具/技能详情共用）：
+   * Manifest 稳定 ID 选择 + 路径映射修改 + 预览。DOM id 与 _updateItemImagePreview 对齐。
+   */
+  _imageSectionHtml(imageId) {
+    const imageOptions = this._manifestImageOptions;
+    const hasCurrentImage = imageOptions.some(option => option.imageId === imageId);
+    const display = this._imageDisplay(imageId);
+    return `
+      <div class="row"><label>图片资源 ID</label><select id="l-image-id" ${imageOptions.length ? '' : 'disabled'}><option value="">选择 Manifest 图片资源</option>${!hasCurrentImage && imageId ? `<option value="${escapeHtml(imageId)}" selected>当前 ID 无效：${escapeHtml(imageId)}</option>` : ''}${imageOptions
+        .map(option => `<option value="${escapeHtml(option.imageId)}" ${option.imageId === imageId ? 'selected' : ''}>${escapeHtml(option.imageId)} · ${escapeHtml(option.path)}</option>`)
+        .join('')}</select></div>
+      <div class="row"><label>图片路径（Manifest 映射）</label><input type="text" id="l-image-path" value="${escapeHtml(display.path)}" placeholder="assets/images/...png"><small style="display:block;margin-top:4px;color:#9ab;font-size:11px;line-height:1.45;">修改路径只改当前稳定 ID 的 Manifest 映射，保存时随工程一并提交。</small></div>
+      <div class="row" style="display:flex;gap:10px;align-items:center;"><div style="width:72px;height:72px;border:1px solid #2a3a5e;border-radius:4px;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#080d1a;flex:none;"><img id="l-image-preview" alt="图片预览" src="${escapeHtml(display.url)}" style="display:${display.url ? 'block' : 'none'};width:100%;height:100%;object-fit:contain;"><span id="l-image-empty" style="display:${display.url ? 'none' : ''};padding:6px;text-align:center;color:#ff9a9a;font-size:11px;">${this._manifestError ? '图片目录加载失败' : '未选择图片'}</span></div><small id="l-image-status" style="color:#9ab;font-size:11px;line-height:1.45;">${escapeHtml(display.status)}</small></div>
+    `;
+  }
+
+  /** 绑定图片引用编辑区事件并初始化预览。 */
+  _bindImageSection(panel) {
+    panel.querySelector('#l-image-id')?.addEventListener('change', () => this._updateItemImagePreview(panel));
+    panel.querySelector('#l-image-path')?.addEventListener('change', () => this._queueImagePathUpdate(panel));
+    this._updateItemImagePreview(panel);
   }
 
   _queueImagePathUpdate(panel) {
@@ -973,6 +1032,82 @@ export class LibraryEditor {
   }
 
   // ==== 合并后的 NPC 结构化面板（真实 schema：imageId + sprite{w,h} + stats + lootTable + ai）====
+
+  /**
+   * 资源节点结构化面板：图片引用 + 贴图尺寸 + 专属 JSON。
+   * 运行时契约（EntityFactory.createResourceNode）：顶层 imageId/assetId → sprite.imageId，
+   * 显示尺寸读 sprite.width/height（回退 data.width/48）。
+   */
+  _renderResourceNodeDetail(panel, e) {
+    const imageId = String(e.imageId || '').trim();
+    const sprite = e.sprite || {};
+    const rest = {};
+    for (const key of Object.keys(e)) {
+      if (!['id', 'name', 'imageId', 'sprite'].includes(key)) rest[key] = e[key];
+    }
+    panel.innerHTML = `
+      <div class="row"><label>ID（库主键，场景对象用它引用）</label><input type="text" id="l-id" value="${escapeHtml(e.id || '')}"></div>
+      <div class="row"><label>名称 name</label><input type="text" id="l-name" value="${escapeHtml(e.name || '')}"></div>
+      <div class="row"><label style="font-weight:bold;">图片（Manifest 稳定 ID）</label></div>
+      ${this._imageSectionHtml(imageId)}
+      <div class="row" style="display:flex;gap:8px;">
+        <div style="flex:1;"><label>贴图宽 sprite.width</label><input type="number" id="l-sprite-w" value="${escapeHtml(sprite.width ?? 48)}" min="1" style="width:100%;"></div>
+        <div style="flex:1;"><label>贴图高 sprite.height</label><input type="number" id="l-sprite-h" value="${escapeHtml(sprite.height ?? 48)}" min="1" style="width:100%;"></div>
+      </div>
+      <div class="row"><label>专属属性（JSON）</label><textarea id="l-props">${escapeHtml(this._json(rest, 2))}</textarea></div>
+    `;
+    this._bindImageSection(panel);
+    this._bindJsonValidation(panel.querySelector('#l-props'));
+  }
+
+  /**
+   * 载具结构化面板：图片引用 + 显示宽高（顶层 width/height）+ 专属 JSON。
+   * 运行时契约（EntityFactory.createVehicle）：图片读顶层 imageId/assetId，尺寸读顶层 width/height。
+   */
+  _renderVehicleDetail(panel, e) {
+    const imageId = String(e.imageId || '').trim();
+    const rest = {};
+    for (const key of Object.keys(e)) {
+      if (!['id', 'name', 'imageId', 'width', 'height'].includes(key)) rest[key] = e[key];
+    }
+    panel.innerHTML = `
+      <div class="row"><label>ID（库主键，场景对象用它引用）</label><input type="text" id="l-id" value="${escapeHtml(e.id || '')}"></div>
+      <div class="row"><label>名称 name</label><input type="text" id="l-name" value="${escapeHtml(e.name || '')}"></div>
+      <div class="row"><label style="font-weight:bold;">图片（Manifest 稳定 ID）</label></div>
+      ${this._imageSectionHtml(imageId)}
+      <div class="row" style="display:flex;gap:8px;">
+        <div style="flex:1;"><label>显示宽 width</label><input type="number" id="l-veh-w" value="${escapeHtml(e.width ?? 64)}" min="1" style="width:100%;"></div>
+        <div style="flex:1;"><label>显示高 height</label><input type="number" id="l-veh-h" value="${escapeHtml(e.height ?? 64)}" min="1" style="width:100%;"></div>
+      </div>
+      <div class="row"><label>专属属性（JSON）</label><textarea id="l-props">${escapeHtml(this._json(rest, 2))}</textarea></div>
+    `;
+    this._bindImageSection(panel);
+    this._bindJsonValidation(panel.querySelector('#l-props'));
+  }
+
+  /** 资源节点/载具通用提交：专属 JSON 合并 + 图片引用 + 尺寸字段（sizeMode 'sprite'=sprite{w,h}，'top'=顶层 width/height）。 */
+  _commitPlacedEntryDetail(panel, e, sizeMode) {
+    const rest = this._parseJson(panel.querySelector('#l-props')?.value, {});
+    for (const k of Object.keys(e)) {
+      if (!COMMON_FIELDS.includes(k)) delete e[k];
+    }
+    Object.assign(e, rest);
+    const imageId = String(panel.querySelector('#l-image-id')?.value || '').trim();
+    if (imageId) e.imageId = imageId; else delete e.imageId;
+    if (sizeMode === 'sprite') {
+      const sprite = { ...(e.sprite || {}) };
+      const width = parseInt(panel.querySelector('#l-sprite-w')?.value, 10);
+      const height = parseInt(panel.querySelector('#l-sprite-h')?.value, 10);
+      if (width > 0) sprite.width = width; else delete sprite.width;
+      if (height > 0) sprite.height = height; else delete sprite.height;
+      if (Object.keys(sprite).length > 0) e.sprite = sprite; else delete e.sprite;
+    } else {
+      const width = parseInt(panel.querySelector('#l-veh-w')?.value, 10);
+      const height = parseInt(panel.querySelector('#l-veh-h')?.value, 10);
+      if (width > 0) e.width = width; else delete e.width;
+      if (height > 0) e.height = height; else delete e.height;
+    }
+  }
 
   _renderNpcDetail(panel, e) {
     const section = this._sectionOf(e);
@@ -1659,6 +1794,8 @@ export class LibraryEditor {
         <div style="flex:2;"><label>特效 vfx.effect</label><input type="text" id="l-skill-vfx" value="${escapeHtml(skill.vfx?.effect || '')}" placeholder="slash / flame_palm / whirlwind"></div>
       </div>
       <div class="row"><label>标签 tags（逗号分隔）</label><input type="text" id="l-skill-tags" value="${escapeHtml((skill.tags || []).join(', '))}"></div>
+      <div class="row"><label style="font-weight:bold;">图片（Manifest 稳定 ID，列表缩略图/图标引用）</label></div>
+      ${this._imageSectionHtml(String(skill.imageId || '').trim())}
       <div class="row"><label style="font-weight:bold;">技能形状（AOE 影响区域）</label><small style="color:#9ab;margin-left:8px;">拖动手柄调整；1:1 实际像素</small></div>
       <div style="display:flex;gap:10px;align-items:flex-start;">
         <canvas class="aa-shape" width="300" height="300" style="flex:none;cursor:crosshair;border:1px solid #2a3a5e;border-radius:4px;background:#080d1a;" title="拖动手柄调整技能影响区域；运行时伤害与预警按此形状结算/渲染"></canvas>
@@ -1676,6 +1813,7 @@ export class LibraryEditor {
         }
       });
     });
+    this._bindImageSection(panel);
   }
 
   _commitSkillDetail(panel, skill) {
@@ -1702,6 +1840,8 @@ export class LibraryEditor {
     else delete skill.vfx;
     skill.tags = (panel.querySelector('#l-skill-tags')?.value || '')
       .split(',').map(tag => tag.trim()).filter(Boolean);
+    const skillImageId = String(panel.querySelector('#l-image-id')?.value || '').trim();
+    if (skillImageId) skill.imageId = skillImageId; else delete skill.imageId;
   }
 
   _bindJsonValidation(el) {
@@ -1828,6 +1968,15 @@ export class LibraryEditor {
         e.assetId = imageId;
         this._queueImagePathUpdate(panel);
       }
+      return;
+    }
+
+    if (cat === 'resourceNodes') {
+      this._commitPlacedEntryDetail(panel, e, 'sprite');
+      return;
+    }
+    if (cat === 'vehicles') {
+      this._commitPlacedEntryDetail(panel, e, 'top');
       return;
     }
 
