@@ -956,6 +956,7 @@
       ],
       "maxDamage": 1,
       "name": "虚弱的狼",
+      "npcType": "monster",
       "sprite": {
         "height": 48,
         "isStatic": true,
@@ -1006,6 +1007,7 @@
         }
       ],
       "name": "追逐野狼",
+      "npcType": "monster",
       "sprite": {
         "height": 48,
         "isStatic": true,
@@ -1021,6 +1023,25 @@
     },
     {
       "ai": {
+        "attackActions": [
+          {
+            "id": "wolf_king_bite",
+            "intervalSeconds": 6,
+            "skillId": "wolf_bite",
+            "type": "skill"
+          },
+          {
+            "id": "wolf_king_dash_bite",
+            "intervalSeconds": 12,
+            "skillId": "wolf_dash_bite",
+            "type": "skill"
+          },
+          {
+            "id": "wolf_king_basic",
+            "intervalSeconds": 3,
+            "type": "basic"
+          }
+        ],
         "detectionRange": 320,
         "leashRange": 640,
         "patrol": {
@@ -1031,8 +1052,8 @@
         "pursuitRange": 560,
         "telegraph": {
           "knockbackDistance": {
-            "min": 100,
-            "max": 200
+            "max": 200,
+            "min": 100
           },
           "pathLength": 180,
           "pathWidth": 72,
@@ -1040,6 +1061,7 @@
           "windupMs": 800
         }
       },
+      "aiActive": false,
       "aiType": "aggressive",
       "attackRange": 90,
       "corpse": {
@@ -1071,6 +1093,7 @@
         }
       ],
       "name": "狼王",
+      "npcType": "monster_boss",
       "sprite": {
         "height": 64,
         "isStatic": true,
@@ -1091,6 +1114,7 @@
       "level": 1,
       "lootTable": [],
       "name": "荒野盗匪",
+      "npcType": "enemy",
       "sprite": {
         "height": 76,
         "isStatic": true,
@@ -1111,6 +1135,7 @@
       "level": 1,
       "lootTable": [],
       "name": "营地拾荒者",
+      "npcType": "enemy",
       "sprite": {
         "height": 70,
         "isStatic": true,
@@ -1125,8 +1150,10 @@
       "templateId": "scavenger"
     },
     {
+      "ai": {},
       "aiActive": false,
       "aiType": "aggressive",
+      "attackRange": 60,
       "faction": "friendly",
       "factionId": "yellow_turban",
       "id": "enemy.s09_granary_guard",
@@ -1134,6 +1161,7 @@
       "level": 2,
       "lootTable": [],
       "name": "粮仓哨兵",
+      "npcType": "enemy",
       "sprite": {
         "height": 76,
         "isStatic": true,
@@ -1154,6 +1182,7 @@
       "level": 2,
       "lootTable": [],
       "name": "官军斥候",
+      "npcType": "enemy",
       "sprite": {
         "height": 76,
         "isStatic": true,
@@ -1176,6 +1205,7 @@
       "level": 2,
       "lootTable": [],
       "name": "颍川黄巾先军",
+      "npcType": "enemy",
       "sprite": {
         "height": 64,
         "isStatic": true,
@@ -1198,6 +1228,7 @@
       "level": 2,
       "lootTable": [],
       "name": "颍川官军守军",
+      "npcType": "enemy",
       "sprite": {
         "height": 64,
         "isStatic": true,
@@ -1221,6 +1252,7 @@
       "level": 4,
       "lootTable": [],
       "name": "波才",
+      "npcType": "enemy",
       "sprite": {
         "height": 74,
         "isStatic": true,
@@ -1244,6 +1276,7 @@
       "level": 4,
       "lootTable": [],
       "name": "张曼成",
+      "npcType": "enemy",
       "sprite": {
         "height": 82,
         "isStatic": true,
@@ -1266,6 +1299,7 @@
       "level": 4,
       "lootTable": [],
       "name": "秦颉",
+      "npcType": "enemy",
       "sprite": {
         "height": 82,
         "isStatic": true,
@@ -1285,6 +1319,7 @@
       "imageId": "s03.unit.yellowTurbanSoldier",
       "level": 1,
       "name": "黄巾兵",
+      "npcType": "enemy",
       "sprite": {
         "height": 52,
         "isStatic": true,
@@ -1301,6 +1336,7 @@
   ],
   "npcs": [
     {
+      "dialogueId": "",
       "faction": "friendly",
       "id": "npc.s02_messenger",
       "idleText": "信使正在等待你整理行装。",
@@ -1310,6 +1346,16 @@
         "trigger": "interact"
       },
       "name": "黄巾信使",
+      "npcType": "ally_npc",
+      "portrait": "",
+      "questId": "",
+      "renderStyle": "",
+      "shopId": "",
+      "sprite": {
+        "height": 64,
+        "isStatic": true,
+        "width": 64
+      },
       "title": "张角使者"
     },
     {
@@ -1324,7 +1370,11 @@
         "trigger": "interact"
       },
       "name": "张角",
+      "npcType": "ally_npc",
+      "portrait": "",
+      "questId": "",
       "renderStyle": "zhangjiao",
+      "shopId": "",
       "sprite": {
         "height": 88,
         "isStatic": true,
@@ -1343,6 +1393,7 @@
         "trigger": "interact"
       },
       "name": "张梁",
+      "npcType": "ally_npc",
       "renderStyle": "zhangliang",
       "sprite": {
         "height": 82,
@@ -1362,6 +1413,7 @@
         "trigger": "interact"
       },
       "name": "张宝",
+      "npcType": "ally_npc",
       "renderStyle": "zhangbao",
       "sprite": {
         "height": 82,
@@ -1375,6 +1427,7 @@
       "id": "npc.s09_refugee_soldier",
       "imageId": "s09.character.woundedSoldier",
       "name": "黄巾残兵",
+      "npcType": "ally_npc",
       "renderStyle": "wounded_soldier",
       "sprite": {
         "height": 70,
@@ -1388,6 +1441,7 @@
       "id": "npc.s09_refugee_woman",
       "imageId": "s09.character.refugeeWoman",
       "name": "逃难妇人",
+      "npcType": "ally_npc",
       "renderStyle": "refugee_woman",
       "sprite": {
         "height": 70,
@@ -1401,6 +1455,7 @@
       "id": "npc.s09_refugee_child",
       "imageId": "s09.character.refugeeChild",
       "name": "饥饿孩童",
+      "npcType": "ally_npc",
       "renderStyle": "refugee_child",
       "sprite": {
         "height": 54,
@@ -1410,11 +1465,21 @@
       "title": "饥民"
     },
     {
+      "dialogueId": "",
       "faction": "neutral",
       "id": "npc.s09_refugee_dead",
       "imageId": "s09.character.refugeeDead",
+      "interaction": {
+        "prompt": "按 E 对话",
+        "radius": 60,
+        "trigger": "interact"
+      },
       "name": "死去的饥民",
+      "npcType": "ally_npc",
+      "portrait": "",
+      "questId": "",
       "renderStyle": "refugee_dead",
+      "shopId": "",
       "sprite": {
         "height": 34,
         "isStatic": true,
@@ -1427,6 +1492,7 @@
       "id": "npc.s09_one_armed_refugee",
       "imageId": "s09.character.oneArmedRefugee",
       "name": "断臂饥民",
+      "npcType": "ally_npc",
       "renderStyle": "one_armed_refugee",
       "sprite": {
         "height": 72,

@@ -7,8 +7,23 @@
       "name": "寒风荒野背景",
       "objects": [
         {
+          "edgeFade": 0,
+          "fill": "#dac2a2",
+          "fillMode": "color",
+          "height": 1223,
+          "id": "ellipse_1791135626370_982",
+          "name": "地形椭圆",
+          "opacity": 1,
+          "stroke": "",
+          "strokeWidth": 0,
+          "type": "ellipse",
+          "width": 2075,
+          "x": -334.76988354327386,
+          "y": -280.9356904016254
+        },
+        {
           "editor": {
-            "locked": true,
+            "locked": false,
             "visible": true
           },
           "height": 720,
@@ -23,6 +38,19 @@
           "width": 1280,
           "x": 0,
           "y": -1.2812812812812808
+        },
+        {
+          "height": 829,
+          "id": "obj_1791107592728",
+          "imageId": "img.s01-s01_right",
+          "name": "s01_right.png",
+          "rotation": 0,
+          "semanticRole": "sceneImage",
+          "type": "image",
+          "visualDescription": "s01_right.png；请按场景用途补充地貌、建筑或道具说明。",
+          "width": 1542,
+          "x": 447.4021511848522,
+          "y": -220.83562433456294
         }
       ],
       "visible": true
@@ -46,8 +74,8 @@
           "type": "shape",
           "walkable": false,
           "width": 320,
-          "x": 448.4953544253134,
-          "y": 394.54710671885306
+          "x": 238.20329283153495,
+          "y": 389.7459853758313
         },
         {
           "climbable": false,
@@ -62,96 +90,96 @@
           "opacity": 0.72,
           "points": [
             [
-              327,
+              294,
+              3
+            ],
+            [
+              350,
+              2
+            ],
+            [
+              414,
               9
             ],
             [
-              383,
-              8
+              567,
+              91
             ],
             [
-              496,
-              6
+              894,
+              177
             ],
             [
-              657,
-              74
+              1002,
+              232
             ],
             [
-              844,
-              230
-            ],
-            [
-              992,
-              274
-            ],
-            [
-              1064,
-              334
-            ],
-            [
-              1238,
-              397
+              1085,
+              296
             ],
             [
               1248,
-              712
+              437
             ],
             [
-              1018,
-              619
+              1253,
+              694
             ],
             [
-              862,
-              435
+              1036,
+              571
             ],
             [
-              705,
-              392
+              858,
+              465
             ],
             [
-              526,
-              294
+              634,
+              398
             ],
             [
-              433,
-              192
+              463,
+              284
             ],
             [
-              385,
-              157
+              417,
+              219
             ],
             [
-              377,
-              129
+              362,
+              185
             ],
             [
-              348,
-              122
+              337,
+              148
             ],
             [
-              304,
-              111
+              307,
+              136
             ],
             [
-              263,
-              76
+              271,
+              105
             ],
             [
-              243,
-              54
+              210,
+              92
             ],
             [
-              213,
+              169,
+              83
+            ],
+            [
+              148,
               37
             ],
             [
-              191,
-              10
+              78,
+              -4
             ],
             [
-              246,
-              6
+              213,
+              0
             ]
           ],
           "semanticRole": "water",
@@ -170,12 +198,12 @@
           "opacity": 0.55,
           "points": [
             [
-              805,
-              213
+              939,
+              180
             ],
             [
-              866,
-              204
+              896,
+              142
             ],
             [
               1006,
@@ -194,8 +222,8 @@
               214
             ],
             [
-              933,
-              256
+              1036,
+              231
             ]
           ],
           "semanticRole": "travelRoute",
@@ -216,11 +244,11 @@
           "imageId": "s01.resource.dryWoodNode",
           "name": "小庇护所预备木柴",
           "semanticRole": "constructionMaterial",
-          "sortY": 424.2080909595875,
+          "sortY": 479.30318605468256,
           "type": "image",
           "width": 64,
-          "x": 524.950232759357,
-          "y": 368.28478069284023
+          "x": 454.47976228888655,
+          "y": 423.3798757879353
         },
         {
           "height": 90,
@@ -229,8 +257,8 @@
           "semanticRole": "travelCheckpoint",
           "type": "region",
           "width": 130,
-          "x": 809.9042417440937,
-          "y": 129.56075586288998
+          "x": 926.5008383406904,
+          "y": 132.12331842545254
         },
         {
           "height": 120,
@@ -419,12 +447,12 @@
           "requiresClimbAbility": false,
           "rotation": 0,
           "semanticRole": "climbSurface",
-          "sortY": 11.197801935497605,
+          "sortY": 31.761575585691002,
           "type": "image",
           "walkable": false,
           "width": 200,
-          "x": 1058.9846375542525,
-          "y": -158.8021980645024
+          "x": 1017.8570902538656,
+          "y": -138.238424414309
         },
         {
           "editor": {
@@ -440,8 +468,8 @@
           "semanticRole": "constructionSite",
           "type": "region",
           "width": 150,
-          "x": 469.96059914823866,
-          "y": 312.3315647389365
+          "x": 321.3320409470133,
+          "y": 373.1850586762312
         },
         {
           "editor": {
@@ -454,47 +482,52 @@
           "semanticRole": "travelMarker",
           "type": "region",
           "width": 55,
-          "x": 528.3617561970024,
-          "y": 417.2163816046919
+          "x": 376.1397591257787,
+          "y": 465.3453953845641
         },
         {
           "climbable": false,
-          "fill": "#f3f736",
+          "collide": false,
+          "edgeFade": 0,
+          "fill": "#5a2a4d",
           "fillMode": "color",
-          "height": 47,
-          "id": "S01-stepping-stone-1",
-          "name": "跳石一",
+          "id": "obj_1791102721114",
+          "name": "多边形",
           "opacity": 0,
-          "semanticRole": "steppingStone",
-          "shapeType": "ellipse",
-          "stroke": "#aaa08e",
+          "points": [
+            [
+              792,
+              233
+            ],
+            [
+              886,
+              249
+            ],
+            [
+              936,
+              313
+            ],
+            [
+              874,
+              343
+            ],
+            [
+              798,
+              340
+            ],
+            [
+              703,
+              294
+            ]
+          ],
+          "shapeType": "polygon",
+          "stroke": "#5a8a4a",
           "strokeWidth": 2,
           "type": "shape",
-          "walkable": true,
-          "width": 72,
-          "x": 612.9811794684708,
-          "y": 250.82020602084555
-        },
-        {
-          "climbable": false,
-          "fill": "#fff700",
-          "fillMode": "color",
-          "height": 50,
-          "id": "S01-stepping-stone-2",
-          "name": "跳石二",
-          "opacity": 0,
-          "semanticRole": "steppingStone",
-          "shapeType": "ellipse",
-          "stroke": "#aaa08e",
-          "strokeWidth": 2,
-          "type": "shape",
-          "walkable": true,
-          "width": 68,
-          "x": 714.2990707003498,
-          "y": 208.46101876669184
+          "walkable": true
         }
       ],
-      "visible": true
+      "visible": false
     },
     {
       "id": "S01-spawns",
@@ -545,23 +578,23 @@
           },
           "type": "ref",
           "walkable": false,
-          "x": 553.5216163443814,
-          "y": 429.9943506464729
+          "x": 401.99175795135795,
+          "y": 500.45008726981104
         },
         {
           "id": "S01-spawn-player",
           "ref": "player",
           "type": "spawn",
-          "x": 596.5592301814667,
-          "y": 565.0234141595082
+          "x": 478.82803310644493,
+          "y": 628.3646445484285
         },
         {
           "id": "S01-spawn-shelter-rest",
           "name": "庇护所返回出生点",
           "ref": "player",
           "type": "spawn",
-          "x": 558.4616158832606,
-          "y": 421.4423323957397
+          "x": 399.53858034043765,
+          "y": 500.51063444997794
         },
         {
           "group": "S01-initial",
@@ -569,8 +602,8 @@
           "kind": "item",
           "ref": "story.s01.campfire",
           "type": "ref",
-          "x": 598.5509187273913,
-          "y": 515
+          "x": 461.144551695323,
+          "y": 588.3423029680041
         },
         {
           "collision": {
@@ -613,26 +646,8 @@
             "path": "s01Survival.meatCooked"
           },
           "type": "ref",
-          "x": 482.8583027095395,
-          "y": 489.9152950703045
-        },
-        {
-          "group": "S01-berries",
-          "id": "S01-node-berry-1",
-          "kind": "resourceNode",
-          "ref": "node.wild_berry",
-          "spawnWhen": {
-            "blackboardKey": "storyState",
-            "equals": true,
-            "path": "s01Survival.initialToolsPicked"
-          },
-          "tags": [
-            "resource",
-            "berry"
-          ],
-          "type": "ref",
-          "x": 431.1323167971492,
-          "y": 581.709465042264
+          "x": 565.1800648881928,
+          "y": 544.2814624468094
         },
         {
           "group": "S01-worn-axe",
@@ -648,8 +663,8 @@
             "path": "s01Survival.axeDropped"
           },
           "type": "ref",
-          "x": 671.8730446387601,
-          "y": 595.2346966695305
+          "x": 574.684823096148,
+          "y": 656.9075959190947
         },
         {
           "group": "S01-wood",
@@ -666,8 +681,8 @@
             "wood"
           ],
           "type": "ref",
-          "x": 366.4691610670198,
-          "y": 505.1604476136454
+          "x": 135.00611778647527,
+          "y": 391.68658769523677
         },
         {
           "group": "S01-wood",
@@ -684,8 +699,8 @@
             "wood"
           ],
           "type": "ref",
-          "x": 250.59142904932588,
-          "y": 449.1425417119548
+          "x": 235.10998053870864,
+          "y": 353.4122315477028
         },
         {
           "group": "S01-wood",
@@ -702,8 +717,8 @@
             "wood"
           ],
           "type": "ref",
-          "x": 355.42245825795516,
-          "y": 413.22170070377337
+          "x": 623.1219309972034,
+          "y": 573.030186324457
         },
         {
           "group": "S01-skinning-knife",
@@ -719,8 +734,8 @@
             "path": "s01Survival.axeDropped"
           },
           "type": "ref",
-          "x": 628.9987699533783,
-          "y": 595.6107254885911
+          "x": 543.1247013227977,
+          "y": 661.1875608458039
         },
         {
           "count": {
@@ -749,8 +764,8 @@
             "tutorial-wolf"
           ],
           "type": "ref",
-          "x": 419.6073523281485,
-          "y": 341.7929996240145
+          "x": 436.2640089848052,
+          "y": 371.262469093484
         },
         {
           "group": "S01-chase-wolves",
@@ -767,8 +782,8 @@
             "pursuit"
           ],
           "type": "ref",
-          "x": 249.88684783793565,
-          "y": 628.0384057949666
+          "x": 162.75972071080855,
+          "y": 563.9743417309026
         },
         {
           "group": "S01-chase-wolves",
@@ -785,8 +800,8 @@
             "pursuit"
           ],
           "type": "ref",
-          "x": 332.33884059422746,
-          "y": 649.0980797102517
+          "x": 211.898400153787,
+          "y": 681.1301117422837
         },
         {
           "group": "S01-chase-wolves",
@@ -803,8 +818,8 @@
             "pursuit"
           ],
           "type": "ref",
-          "x": 418.8889130607709,
-          "y": 655.6652898514432
+          "x": 326.6366608085187,
+          "y": 691.541165727319
         },
         {
           "group": "S01-wolf-boss",
@@ -821,8 +836,8 @@
             "boss"
           ],
           "type": "ref",
-          "x": 351.5753373820363,
-          "y": 538.324276077263
+          "x": 70.97473678143575,
+          "y": 603.6696214226083
         },
         {
           "editor": {
@@ -839,8 +854,8 @@
             "path": "s01Survival.wolfSkinned"
           },
           "type": "ref",
-          "x": 597.5734139061408,
-          "y": 522.1311001005256
+          "x": 458.27798188206003,
+          "y": 592.5661084645569
         }
       ],
       "visible": true
@@ -1167,41 +1182,8 @@
           "type": "slice",
           "walkable": false,
           "width": 96,
-          "x": 260.5277263935781,
-          "y": 330.9291538707294
-        },
-        {
-          "atlasId": "mountain_landscape",
-          "height": 128,
-          "id": "obj_1788365049294_446",
-          "name": "大树",
-          "sliceKey": "tree1",
-          "type": "slice",
-          "width": 96,
-          "x": 112.08087186752715,
-          "y": 352.7807807807808
-        },
-        {
-          "atlasId": "mountain_landscape",
-          "height": 47,
-          "id": "obj_1788990182747_176",
-          "name": "灌木1",
-          "sliceKey": "bush2",
-          "type": "slice",
-          "width": 49,
-          "x": 624.8530561693271,
-          "y": 257.9953185387593
-        },
-        {
-          "atlasId": "mountain_landscape",
-          "height": 48,
-          "id": "obj_1788990187169_740",
-          "name": "灌木1",
-          "sliceKey": "bush2",
-          "type": "slice",
-          "width": 55,
-          "x": 720.4670617636806,
-          "y": 205.69676493402227
+          "x": 151.6229129138432,
+          "y": 327.2399774344917
         },
         {
           "group": "S01-apple-thickets",
@@ -1213,8 +1195,26 @@
             "apple"
           ],
           "type": "ref",
-          "x": 306.6547803063432,
-          "y": 395.0752384059537
+          "x": 200.32056200459277,
+          "y": 388.1868750742237
+        },
+        {
+          "group": "S01-berries",
+          "id": "S01-node-berry-1",
+          "kind": "resourceNode",
+          "ref": "node.wild_berry",
+          "spawnWhen": {
+            "blackboardKey": "storyState",
+            "equals": true,
+            "path": "s01Survival.initialToolsPicked"
+          },
+          "tags": [
+            "resource",
+            "berry"
+          ],
+          "type": "ref",
+          "x": 271.61392470509224,
+          "y": 502.51609470970834
         }
       ],
       "visible": true
@@ -1256,6 +1256,10 @@
   "gameplay": {},
   "height": 720,
   "imageAssets": {
+    "img.s01-s01_right": {
+      "name": "s01_right.png",
+      "src": "../example/sanguo_zhangjiao/assets/images/s01/s01_right.png"
+    },
     "s01.environment.cliffVine": {
       "name": "逃生藤蔓",
       "src": "../example/sanguo_zhangjiao/assets/images/s01/cliff-vine.png"
