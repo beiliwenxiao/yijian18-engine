@@ -101,7 +101,7 @@ export const ARMY_COMMAND_ACTION = 'armyCommand';     // 军队操作条开关�
  */
 export const DEFAULT_BINDINGS = {
   [PadButton.A]: 'e',                   // 拾取/交互/确认对话
-  [PadButton.B]: NONE_ACTION,           // 不再直连投掷
+  [PadButton.B]: ARMY_COMMAND_ACTION,   // 军队操作条开关（B = fight 入口）
   [PadButton.X]: 'e',                   // 拾取/交互/确认对话（与A一致）
   [PadButton.Y]: JUMP_ACTION,           // 按住蓄力，松开起跳
   [PadButton.LB]: SKILL_SWITCH_ACTION,  // 切换技能（按住弹环形轮盘）
@@ -146,7 +146,7 @@ export const ACTION_LABELS = BINDABLE_ACTIONS.reduce((m, a) => { m[a.value] = a.
 /** 绑定的中文说明（UI 映射表用） */
 export const BINDING_DESCRIPTIONS = {
   [PadButton.A]: '拾取/交互/确认',
-  [PadButton.B]: '—',
+  [PadButton.B]: '军队操作条开关',
   [PadButton.X]: '拾取/交互/确认',
   [PadButton.Y]: '跳跃（按住蓄力，松开起跳）',
   [PadButton.LB]: '切换技能（环形轮盘）',

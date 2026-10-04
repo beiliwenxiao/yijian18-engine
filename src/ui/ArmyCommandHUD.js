@@ -112,8 +112,10 @@ export class ArmyCommandHUD extends UIElement {
    * @param {number} barWidth - 底部快捷栏 7 槽总宽（默认布局与快捷栏对齐）
    * @param {Object|null} [editorRect] - UI 编辑器保存的 armyCommandHud 矩形：
    *   「合并行+编组条」的外包框；姿态/预设面板仍从框顶向上展开，宽度可自由编辑（7 槽自适应均分）
+   * @param {Object|null} [anchorRect] - 军队按钮矩形（跟随锚点）：右边缘与按钮右缘对齐、
+   *   面板底边贴按钮上方；UI 编辑器矩形优先，无编辑器矩形才用按钮锚定
    */
-  layout(width, height, barWidth = DEFAULT_BAR_WIDTH, editorRect = null) {
+  layout(width, height, barWidth = DEFAULT_BAR_WIDTH, editorRect = null, anchorRect = null) {
     this._barWidth = barWidth;
     if (editorRect) {
       this.x = editorRect.x;
@@ -124,6 +126,11 @@ export class ArmyCommandHUD extends UIElement {
       this.width = Math.min(560, Math.max(320, width - 24));
       this.x = Math.round((width - this.width) / 2);
       this._baseY = height - 136;
+    } else if (anchorRect) {
+      // 锚定「军队」按钮：右对齐按钮右缘，面板底边贴按钮上方（按钮移动时自动跟随）
+      this.width = barWidth;
+      this.x = Math.round(anchorRect.x + anchorRect.width - this.width);
+      this._baseY = Math.round(anchorRect.y - 8);
     } else {
       this.x = Math.round((width - barWidth) / 2);
       this._baseY = height - 196;
@@ -303,6 +310,13 @@ export class ArmyCommandHUD extends UIElement {
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(label, statusX, progressY + COMBO_ROW_HEIGHT / 2);
+    } else if (this.system.isArmyDriveActive?.()) {
+      // 军队直接驾驶中：提示接管状态与恢复方式
+      ctx.fillStyle = 'rgba(143, 199, 255, 0.9)';
+      ctx.font = '10px "Microsoft YaHei", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('WASD/摇杆 驾驶中 · 松开驻守 · 关列表恢复武将', statusX, progressY + COMBO_ROW_HEIGHT / 2);
     } else if (this.system.isCustomSelection()) {
       ctx.fillStyle = 'rgba(255, 255, 255, 0.55)';
       ctx.font = '10px "Microsoft YaHei", sans-serif';

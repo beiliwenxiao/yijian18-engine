@@ -155,6 +155,12 @@ export class ArmyCommandSystem {
     this._carryStarted = false;
     /** 武将实体提供器（escort 跟随锚点；场景装配注入，M5） */
     this._commanderProvider = null;
+    /** HUD 显隐提供器（军队驾驶 gate：操作条开启才允许 WASD/摇杆接管编组） */
+    this._hudVisibleProvider = null;
+    /** @type {Set<string>} 当前被驾驶的单位 id 集（WASD/摇杆接管期间） */
+    this._driveUnitIds = new Set();
+    /** 驾驶心跳（now() 基准）：姿态机在窗口期内不抢被驾驶单位的速度 */
+    this._driveActiveAt = 0;
     /** @type {Record<string, string>} 战前预设：per 军默认战术姿态（M5-3，开战自动应用） */
     this.squadPresets = { qian: 'escort', zuo: 'escort', zhong: 'escort', you: 'escort', hou: 'escort' };
     /** 战斗态中预设是否已应用（战斗结束回 escort 时清位） */
@@ -317,6 +323,73 @@ export class ArmyCommandSystem {
     this.selectionSlot = 'commander';
     this.customSelection = null;
     this.pendingStance = null;
+  }
+
+  // ─── 军队直接驾驶（WASD/左摇杆接管：操作条开启 + 选中非武将编组） ──
+
+  /** 注入 HUD 显隐提供器（SceneArmyCommandFlow.attach 注入：() => hud.visible）。 */
+  setHudVisibleProvider(provider) {
+    this._hudVisibleProvider = typeof provider === 'function' ? provider : null;
+  }
+
+  /** 是否处于军队驾驶接管条件：操作条开启且选中了可受命编组（武将槽选中单位为空，天然排除）。 */
+  isArmyDriveActive() {
+    return this._hudVisibleProvider?.() === true && this.hasSquadSelection();
+  }
+
+  /**
+   * MovementSystem 每帧喂入移动轴：有轴输入且满足接管条件时直接驱动选中单位
+   * （velocity 直写，姿态机在窗口期内不抢速度）；松开/条件丢失时自动原地驻守收尾。
+   * @returns {boolean} 是否消费了本次轴输入（true=武将移动被接管，MovementSystem 应跳过）
+   */
+  handleDriveInput(vx, vy, magnitude = 0) {
+    if (!this.isArmyDriveActive() || !(magnitude > 0.01)) {
+      if (this._driveUnitIds.size) this.endArmyDrive();
+      return false;
+    }
+    this._driveActiveAt = this.now();
+    const units = this.getSelectedUnits().filter(entity => !this._isDriveExempt(entity));
+    this._driveUnitIds = new Set(units.map(entity => entity.id));
+    const len = Math.hypot(vx, vy) || 1;
+    const dirX = vx / len;
+    const dirY = vy / len;
+    const scale = Math.min(1, magnitude);
+    for (const entity of units) {
+      const movement = entity.getComponent?.('movement');
+      if (!movement) continue;
+      const speed = (movement.speed || SOLDIER_BASE_SPEED) * scale;
+      movement.velocity = { x: dirX * speed, y: dirY * speed };
+      entity.getComponent?.('sprite')?.playAnimation?.('walk');
+    }
+    return true;
+  }
+
+  /** 驾驶豁免：建造工与担架搬运兵由专门编排刚性驱动，不被 WASD 接管。 */
+  _isDriveExempt(entity) {
+    const job = this.constructionJob;
+    if (job && !job.done && job.builders.includes(entity.id)) return true;
+    return entity.getComponent?.('commandState')?.carryState === 'carrying';
+  }
+
+  /** 姿态机守卫：驾驶窗口期内被驾驶单位不跑姿态（建造/搬运单位不在驾驶集合内，不受影响）。 */
+  _isDriveSuppressed(entity) {
+    return this._driveUnitIds.has(entity.id) && (this.now() - this._driveActiveAt) < 250;
+  }
+
+  /** 停止驾驶：被驾驶单位原地驻守（goal 清空、驻守点更新为当前位置，已确认裁定）。 */
+  endArmyDrive() {
+    for (const id of this._driveUnitIds) {
+      const entity = this.units.get(id)?.entity;
+      if (!entity) continue;
+      const command = entity.getComponent?.('commandState');
+      const transform = entity.getComponent?.('transform');
+      if (command) {
+        command.goal = null;
+        if (transform) command.post = { x: transform.position.x, y: transform.position.y };
+      }
+      this._stop(entity);
+    }
+    this._driveUnitIds = new Set();
   }
 
   /**
@@ -886,6 +959,8 @@ export class ArmyCommandSystem {
 
   _updateUnitStance(unit, now) {
     const { entity } = unit;
+    // 军队直接驾驶中：被驾驶单位由 WASD/摇杆驱动，姿态机不抢速度（窗口期外自动恢复）
+    if (this._isDriveSuppressed(entity)) return;
     const command = entity.getComponent?.('commandState');
     const transform = entity.getComponent?.('transform');
     const movement = entity.getComponent?.('movement');

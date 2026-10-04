@@ -555,6 +555,12 @@ export class MovementSystem {
       }
     }
 
+    // 军队直接驾驶接管：操作条开启且选中编组（非武将）时，WASD/左摇杆驱动编组，武将原地站定
+    if (this.armyCommandSystem?.handleDriveInput?.(vx, vy, magnitude) === true) {
+      this._stopEntityMovement(playerEntity);
+      return;
+    }
+
     const target = this._resolveMoveTarget(playerEntity, {
       type: 'move', source: 'axis', direction: { x: vx, y: vy }, magnitude
     });

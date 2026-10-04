@@ -739,3 +739,108 @@ describe('ArmyCommandSystem 战前预设（M5-3 per 军默认战术姿态）', (
     expect(system.getSquadPreset('hou')).toBe('assault');
   });
 });
+
+describe('ArmyCommandSystem 军队直接驾驶（WASD/左摇杆接管，M6）', () => {
+  let system;
+  let fakeNow;
+
+  beforeEach(() => {
+    fakeNow = 1_000_000;
+    system = new ArmyCommandSystem({ now: () => fakeNow });
+  });
+
+  it('驾驶接管：操作条开启 + 选中编组 → 轴输入直写 velocity 并消费输入', () => {
+    const unit = makeUnit('u1', { x: 0, y: 0, squadId: 'qian', speed: 90 });
+    system.registerUnit(unit, { squadId: 'qian' });
+    system.setHudVisibleProvider(() => true);
+    system.setSelection('qian');
+
+    expect(system.isArmyDriveActive()).toBe(true);
+    expect(system.handleDriveInput(1, 0, 1)).toBe(true);
+    expect(unit.getComponent('movement').velocity).toEqual({ x: 90, y: 0 });
+    expect(unit.getComponent('sprite').playAnimation).toHaveBeenCalledWith('walk');
+  });
+
+  it('武将槽/操作条关闭时不接管，武将移动不被消费', () => {
+    const unit = makeUnit('u1', { squadId: 'qian' });
+    system.registerUnit(unit, { squadId: 'qian' });
+    system.setHudVisibleProvider(() => true);
+    // 武将槽：选中单位为空 → hasSquadSelection false
+    expect(system.handleDriveInput(1, 0, 1)).toBe(false);
+    // 操作条关闭
+    system.setSelection('qian');
+    system.setHudVisibleProvider(() => false);
+    expect(system.isArmyDriveActive()).toBe(false);
+    expect(system.handleDriveInput(1, 0, 1)).toBe(false);
+    expect(unit.getComponent('movement').velocity).toEqual({ x: 0, y: 0 });
+  });
+
+  it('驾驶窗口期内姿态机不抢速度（escort 不拉回武将）', () => {
+    const commander = makeBody('commander', { x: 1000, y: 1000 });
+    const unit = makeUnit('u1', { x: 0, y: 0, squadId: 'qian' });
+    system.registerUnit(unit, { squadId: 'qian' });
+    system.setCommanderProvider(() => commander);
+    unit.getComponent('commandState').stance = 'escort';
+    system.setHudVisibleProvider(() => true);
+    system.setSelection('qian');
+
+    expect(system.handleDriveInput(0, -1, 1)).toBe(true);
+    const velocity = { ...unit.getComponent('movement').velocity };
+    expect(velocity.y).toBeCloseTo(-90);
+    system.update(0.016); // 同帧姿态机被驾驶守卫压制
+    expect(unit.getComponent('movement').velocity).toEqual(velocity);
+  });
+
+  it('松开摇杆（magnitude=0）→ 原地驻守：goal 清空、post 更新为当前位置、速度清零', () => {
+    const unit = makeUnit('u1', { x: 120, y: 80, squadId: 'qian' });
+    system.registerUnit(unit, { squadId: 'qian' });
+    system.setHudVisibleProvider(() => true);
+    system.setSelection('qian');
+    unit.getComponent('commandState').goal = { x: 500, y: 500 };
+
+    expect(system.handleDriveInput(1, 0, 1)).toBe(true);
+    unit.getComponent('transform').position = { x: 200, y: 60 }; // 驾驶期间移动
+    expect(system.handleDriveInput(0, 0, 0)).toBe(false); // 松开收尾
+    const command = unit.getComponent('commandState');
+    expect(command.goal).toBeNull();
+    expect(command.post).toEqual({ x: 200, y: 60 });
+    expect(unit.getComponent('movement').velocity).toEqual({ x: 0, y: 0 });
+  });
+
+  it('关列表收尾后窗口期结束，姿态机恢复（escort 朝武将回归）', () => {
+    const commander = makeBody('commander', { x: 1000, y: 0 });
+    const unit = makeUnit('u1', { x: 0, y: 0, squadId: 'qian' });
+    system.registerUnit(unit, { squadId: 'qian' });
+    system.setCommanderProvider(() => commander);
+    unit.getComponent('commandState').stance = 'escort';
+    system.setHudVisibleProvider(() => true);
+    system.setSelection('qian');
+
+    system.handleDriveInput(1, 0, 1);
+    system.setHudVisibleProvider(() => false); // 关闭操作条 → 下一帧收尾
+    expect(system.handleDriveInput(1, 0, 1)).toBe(false);
+    expect(unit.getComponent('movement').velocity).toEqual({ x: 0, y: 0 });
+    fakeNow += 300; // 越过 250ms 驾驶窗口
+    system.update(0.016);
+    expect(unit.getComponent('movement').velocity.x).toBeGreaterThan(0);
+  });
+
+  it('搬运中单位豁免：不被驾驶驱动也不被收尾停止（担架编排刚性驱动）', () => {
+    const carrier = makeUnit('u1', { x: 0, y: 0, squadId: 'qian' });
+    const normal = makeUnit('u2', { x: 40, y: 0, squadId: 'qian' });
+    system.registerUnit(carrier, { squadId: 'qian' });
+    system.registerUnit(normal, { squadId: 'qian' });
+    carrier.getComponent('commandState').carryState = 'carrying';
+    carrier.getComponent('movement').velocity = { x: 30, y: -40 };
+    system.setHudVisibleProvider(() => true);
+    system.setSelection('qian');
+
+    expect(system.handleDriveInput(1, 0, 1)).toBe(true);
+    expect(carrier.getComponent('movement').velocity).toEqual({ x: 30, y: -40 }); // 不扰动
+    expect(normal.getComponent('movement').velocity).toEqual({ x: 90, y: 0 });    // 正常驾驶
+
+    system.handleDriveInput(0, 0, 0); // 松开收尾
+    expect(carrier.getComponent('movement').velocity).toEqual({ x: 30, y: -40 }); // 仍不扰动
+    expect(normal.getComponent('movement').velocity).toEqual({ x: 0, y: 0 });
+  });
+});

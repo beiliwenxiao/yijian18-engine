@@ -75,6 +75,7 @@ export class SceneArmyCommandFlow {
     this.system.setInputManager?.(scene.inputManager || null);
     this.system.setCombatSystem?.(scene.combatSystem || null);
     this.system.setCommanderProvider?.(() => scene.playerEntity || null);
+    this.system.setHudVisibleProvider?.(() => this.hud.visible === true);
     this._enableBuildingCollision(scene);
     this.system.onConstructionComplete = (commandKey, pos, def) => this._spawnConstructionEntity(commandKey, pos, def);
     this.onResize(scene.logicalWidth || 1280, scene.logicalHeight || 720);
@@ -117,14 +118,16 @@ export class SceneArmyCommandFlow {
     }
   }
 
-  /** 布局同步（ScenePanelLayout.onResize / applyUILayout 调用）。默认与底部快捷栏 7 槽对齐；UI 编辑器保存的 armyCommandHud 矩形优先。 */
+  /** 布局同步（ScenePanelLayout.onResize / applyUILayout 调用）。UI 编辑器矩形优先；否则锚定「军队」按钮右对齐。 */
   onResize(width, height) {
     const bar = this.scene.bottomControlBar;
     const slotSize = bar?.skillSlots?.[0]?.size || 40;
     const count = bar?.skillSlots?.length || 7;
     const barWidth = count * slotSize + (count - 1) * 6;
     const editorRect = this.scene.uiLayoutLoader?.getRect?.('armyCommandHud', width, height) || null;
-    this.hud.layout?.(width, height, barWidth, editorRect);
+    const button = this.scene.armyButton;
+    const anchorRect = button ? { x: button.x, y: button.y, width: button.width, height: button.height } : null;
+    this.hud.layout?.(width, height, barWidth, editorRect, anchorRect);
   }
 
   update(deltaTime = 0) {

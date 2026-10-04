@@ -1,7 +1,7 @@
 {
   "bindings": {
     "0": "e",
-    "1": "",
+    "1": "armyCommand",
     "2": "e",
     "3": "jump",
     "4": "skillSwitch",
