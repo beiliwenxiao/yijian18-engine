@@ -1280,6 +1280,7 @@ export class LibraryEditor {
       });
       card.querySelectorAll('canvas.aa-shape').forEach(canvas => {
         this._bindSkillShapeCanvas(canvas, {
+          host: card,
           getParams: () => {
             const action = (e.ai?.attackActions || [])[Number(card.dataset.row)];
             if (!action) return null;
@@ -1313,10 +1314,12 @@ export class LibraryEditor {
    * 技能形状编辑画布（300×300，1:1 实际像素）：按「技能形状」下拉在 圆形/矩形/多边形 间切换，
    * 拖动手柄直接勾出技能影响区域（运行时 applyAOEDamage 与 telegraph 预警按同形状结算/渲染）。
    * options.getParams 返回形状数据宿主（编排卡=paramsOverride，技能详情=params），拖动/输入实时写回；
-   * options.imageUrl 提供怪物参照图（半透明绘制在落点中心，直观感受覆盖范围）。
+   * options.imageUrl 提供怪物参照图（半透明绘制在落点中心，直观感受覆盖范围）；
+   * options.host 为形状数值字段（.aa-radius/.aa-width/.aa-height/.aa-shape-type）所在容器，
+   * 编排卡传 .aa-card、技能详情传 panel；不传则不联动数值输入。
    * @private
    */
-  _bindSkillShapeCanvas(canvas, { getParams, imageUrl = '' } = {}) {
+  _bindSkillShapeCanvas(canvas, { getParams, imageUrl = '', host = null } = {}) {
     const CANVAS_SIZE = 300;
     const CENTER = CANVAS_SIZE / 2;
     const MIN_RADIUS = 24;
@@ -1438,7 +1441,7 @@ export class LibraryEditor {
           handles.push({ px: CENTER + point[0], py: CENTER + point[1] });
         });
       } else {
-        const displayRadius = Number(params.shapeData?.radius) || 150;
+        const displayRadius = Number(params.shapeData?.radius) || Number(params.radius) || 150;
         ctx.beginPath();
         ctx.setLineDash([6, 4]);
         ctx.arc(CENTER, CENTER, displayRadius, 0, Math.PI * 2);
@@ -1460,7 +1463,7 @@ export class LibraryEditor {
       // 标注（固定画布顶部）
       const label = params.shape === 'rect'
         ? `${params.shapeData?.width}×${params.shapeData?.height}`
-        : (params.shape === 'polygon' ? `多边形 ${params.shapeData?.points?.length ?? 0} 点` : `半径 ${params.shapeData?.radius}`);
+        : (params.shape === 'polygon' ? `多边形 ${params.shapeData?.points?.length ?? 0} 点` : `半径 ${params.shapeData?.radius ?? params.radius ?? 150}`);
       ctx.fillStyle = '#ff78dc';
       ctx.font = '12px sans-serif';
       ctx.textAlign = 'center';
@@ -1480,7 +1483,7 @@ export class LibraryEditor {
       } else if (params.shape === 'polygon') {
         handles = (params.shapeData?.points || []).map(point => ({ px: CENTER + point[0], py: CENTER + point[1] }));
       } else {
-        const displayRadius = Number(params.shapeData?.radius) || 150;
+        const displayRadius = Number(params.shapeData?.radius) || Number(params.radius) || 150;
         for (let i = 0; i < 5; i++) {
           const angle = -Math.PI / 2 + i * (2 * Math.PI / 5);
           handles.push({ px: CENTER + displayRadius * Math.cos(angle), py: CENTER + displayRadius * Math.sin(angle) });
@@ -1514,8 +1517,8 @@ export class LibraryEditor {
             width: Math.max(MIN_SIDE, Math.round(Math.abs(dx) * 2)),
             height: Math.max(MIN_SIDE, Math.round(Math.abs(dy) * 2))
           };
-          const widthInput = card?.querySelector('.aa-width');
-          const heightInput = card?.querySelector('.aa-height');
+          const widthInput = host?.querySelector('.aa-width');
+          const heightInput = host?.querySelector('.aa-height');
           if (widthInput) widthInput.value = String(params.shapeData.width);
           if (heightInput) heightInput.value = String(params.shapeData.height);
         } else if (params.shape === 'polygon') {
@@ -1528,7 +1531,7 @@ export class LibraryEditor {
           const radius = Math.max(MIN_RADIUS, Math.round(Math.hypot(dx, dy)));
           params.shapeData = { radius };
           params.radius = radius;
-          const radiusInput = card?.querySelector('.aa-radius');
+          const radiusInput = host?.querySelector('.aa-radius');
           if (radiusInput) radiusInput.value = String(radius);
         }
         draw();
@@ -1544,19 +1547,19 @@ export class LibraryEditor {
     });
 
     // 形状切换：派生新形状数据 + 切换数值字段显隐 + 回填派生数值
-    card?.querySelector('.aa-shape-type')?.addEventListener('change', event => {
+    host?.querySelector('.aa-shape-type')?.addEventListener('change', event => {
       applyShape(event.currentTarget.value);
       const shapeType = event.currentTarget.value;
-      card.querySelector('.aa-circle-fields').style.display = shapeType === 'circle' ? 'block' : 'none';
-      card.querySelector('.aa-rect-fields').style.display = shapeType === 'rect' ? 'block' : 'none';
+      host.querySelector('.aa-circle-fields').style.display = shapeType === 'circle' ? 'block' : 'none';
+      host.querySelector('.aa-rect-fields').style.display = shapeType === 'rect' ? 'block' : 'none';
       const params = ensureOf();
       if (params) {
         if (shapeType === 'circle') {
-          const radiusInput = card.querySelector('.aa-radius');
+          const radiusInput = host.querySelector('.aa-radius');
           if (radiusInput) radiusInput.value = String(params.shapeData?.radius ?? '');
         } else if (shapeType === 'rect') {
-          const widthInput = card.querySelector('.aa-width');
-          const heightInput = card.querySelector('.aa-height');
+          const widthInput = host.querySelector('.aa-width');
+          const heightInput = host.querySelector('.aa-height');
           if (widthInput) widthInput.value = String(params.shapeData?.width ?? '');
           if (heightInput) heightInput.value = String(params.shapeData?.height ?? '');
         }
@@ -1565,7 +1568,7 @@ export class LibraryEditor {
     });
 
     // 数值输入实时写回（与拖动同通道）；circle 清空 = 删除形状覆盖恢复库默认
-    card?.querySelector('.aa-radius')?.addEventListener('input', event => {
+    host?.querySelector('.aa-radius')?.addEventListener('input', event => {
       const params = ensureOf();
       if (!params || params.shape !== 'circle') return;
       const raw = event.currentTarget.value;
@@ -1581,11 +1584,11 @@ export class LibraryEditor {
       draw();
     });
     const bindRectInput = selector => {
-      card?.querySelector(selector)?.addEventListener('input', () => {
+      host?.querySelector(selector)?.addEventListener('input', () => {
         const params = ensureOf();
         if (!params || params.shape !== 'rect') return;
-        const width = Math.max(MIN_SIDE, Math.round(Number(card.querySelector('.aa-width')?.value) || 0));
-        const height = Math.max(MIN_SIDE, Math.round(Number(card.querySelector('.aa-height')?.value) || 0));
+        const width = Math.max(MIN_SIDE, Math.round(Number(host.querySelector('.aa-width')?.value) || 0));
+        const height = Math.max(MIN_SIDE, Math.round(Number(host.querySelector('.aa-height')?.value) || 0));
         params.shapeData = { width, height };
         draw();
       });
@@ -1666,6 +1669,7 @@ export class LibraryEditor {
     // 形状画布：宿主为技能 params（shape/shapeData/radius 直写 params，随保存落盘 skills.json）
     panel.querySelectorAll('canvas.aa-shape').forEach(canvas => {
       this._bindSkillShapeCanvas(canvas, {
+        host: panel,
         getParams: () => {
           skill.params = skill.params && typeof skill.params === 'object' ? skill.params : {};
           return skill.params;
