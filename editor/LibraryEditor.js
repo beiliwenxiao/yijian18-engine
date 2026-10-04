@@ -1163,37 +1163,72 @@ export class LibraryEditor {
     `;
   }
 
-  /** 战斗技能引用 + 攻击编排行编辑（简版：type/skillId/intervalSeconds；链式字段二期在场景编辑器补全）。 */
+  /**
+   * 战斗技能引用 + 攻击编排编辑（动作卡片：type/skillId/interval + 链式 afterSkillId/
+   * delayAfterSkillSeconds + 技能范围 paramsOverride.radius 小五边形画布）。
+   * 链式语义与运行时 EnemySkillDirector 一致：前置动作触发后按延迟计时，与自身间隔取先到。
+   */
   _skillRefEditorHtml(attackActions, skillOptions) {
-    const rows = (attackActions || []).map((action, index) => {
+    const cards = (attackActions || []).map((action, index) => {
+      const type = action.type === 'basic' ? 'basic' : 'skill';
       const skillId = action.skillId || '';
       const skillOptionsHtml = (skillOptions || [])
         .map(skill => `<option value="${escapeHtml(skill.id || '')}" ${skill.id === skillId ? 'selected' : ''}>${escapeHtml(skill.id || '')}${skill.name ? ' · ' + escapeHtml(skill.name) : ''}</option>`)
         .join('');
       const invalidOption = skillId && !(skillOptions || []).some(skill => skill.id === skillId)
         ? `<option value="${escapeHtml(skillId)}" selected>当前无效：${escapeHtml(skillId)}</option>` : '';
+      // 链式前置动作候选：其他动作且带稳定 id（运行时按 id 匹配触发锚点）
+      const chainOptions = (attackActions || [])
+        .map((candidate, candidateIndex) => ({ candidate, candidateIndex }))
+        .filter(({ candidate, candidateIndex }) => candidateIndex !== index
+          && candidate && typeof candidate.id === 'string' && candidate.id.trim());
+      const chainOptionsHtml = chainOptions
+        .map(({ candidate, candidateIndex }) => `<option value="${escapeHtml(candidate.id.trim())}" ${candidate.id.trim() === (action.afterSkillId || '') ? 'selected' : ''}>${escapeHtml(candidate.id)} · #${candidateIndex + 1} ${escapeHtml(candidate.skillId || (candidate.type === 'basic' ? '普攻' : '技能'))}</option>`)
+        .join('');
+      const invalidChain = action.afterSkillId
+        && !chainOptions.some(({ candidate }) => candidate.id.trim() === action.afterSkillId)
+        ? `<option value="${escapeHtml(action.afterSkillId)}" selected>当前无效：${escapeHtml(action.afterSkillId)}</option>` : '';
+      const radius = Number(action.paramsOverride?.radius);
+      const radiusRaw = radius > 0 ? radius : '';
       return `
-      <tr data-row="${index}">
-        <td><select class="aa-type"><option value="skill" ${action.type === 'skill' ? 'selected' : ''}>技能</option><option value="basic" ${action.type === 'basic' ? 'selected' : ''}>普通攻击</option></select></td>
-        <td><select class="aa-skill" ${action.type === 'basic' ? 'disabled' : ''}><option value="">选择技能</option>${skillOptionsHtml}${invalidOption}</select></td>
-        <td><input type="number" class="aa-interval" value="${escapeHtml(action.intervalSeconds ?? 5)}" min="0" step="0.5" style="width:64px;" title="间隔秒数（0=冷却就绪即放）"></td>
-        <td><button class="aa-del" data-row="${index}" style="padding:2px 6px;cursor:pointer;">×</button></td>
-      </tr>`;
+      <div class="aa-card" data-row="${index}" style="border:1px solid #2a3a5e;border-radius:4px;padding:6px;margin-bottom:6px;font-size:11px;">
+        <div style="display:flex;gap:6px;align-items:center;">
+          <select class="aa-type" title="动作类型"><option value="skill" ${type === 'skill' ? 'selected' : ''}>技能</option><option value="basic" ${type === 'basic' ? 'selected' : ''}>普攻</option></select>
+          <select class="aa-skill" ${type === 'basic' ? 'disabled' : ''} style="flex:1;min-width:0;"><option value="">选择技能</option>${skillOptionsHtml}${invalidOption}</select>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:4px;align-items:center;flex-wrap:wrap;">
+          <label style="color:#9ab;flex:none;">间隔</label><input type="number" class="aa-interval" value="${escapeHtml(action.intervalSeconds ?? 5)}" min="0" step="0.5" style="width:50px;" title="间隔秒数（兼作接敌开场延迟；0=冷却就绪即放）">
+          <label style="color:#9ab;flex:none;" title="链式：前置动作触发成功后，本动作按延迟计时（与自身间隔取先到）">前置于</label>
+          <select class="aa-chain" style="flex:1;min-width:80px;" title="前置动作触发成功后，本动作按延迟计时（与自身间隔取先到）"><option value="">（无 · 按间隔）</option>${chainOptionsHtml}${invalidChain}</select>
+          <label style="color:#9ab;flex:none;">延迟</label><input type="number" class="aa-delay" value="${escapeHtml(action.delayAfterSkillSeconds ?? 0)}" min="0" step="0.5" style="width:48px;" ${action.afterSkillId ? '' : 'disabled'} title="前置动作触发后 x 秒（与自身间隔取先到）；仅选择了前置动作时生效">
+        </div>
+        ${type === 'skill' ? `
+        <div class="aa-skill-only" style="display:flex;gap:8px;margin-top:6px;align-items:center;">
+          <canvas class="aa-pentagon" width="90" height="90" style="flex:none;cursor:crosshair;border:1px solid #2a3a5e;border-radius:4px;background:#080d1a;" title="在小图上拖动顶点拉出技能范围（虚线圆=AOE 半径，与运行时预警圈同源）；写入 paramsOverride.radius"></canvas>
+          <div style="min-width:0;">
+            <div><label>范围半径 radius</label><input type="number" class="aa-radius" value="${escapeHtml(radiusRaw)}" min="24" step="1" placeholder="库默认" style="width:70px;" title="留空=用技能定义 params.radius；拖动小图顶点或直接填数均可"></div>
+            <small style="color:#9ab;display:block;margin-top:4px;line-height:1.5;">在小图上按住拖动拉出范围；<br>清空半径 = 恢复技能定义默认</small>
+          </div>
+        </div>` : ''}
+        <div style="text-align:right;margin-top:4px;"><button class="aa-del" data-row="${index}" style="padding:1px 8px;cursor:pointer;">× 删除</button></div>
+      </div>`;
     }).join('');
     return `
-      <table style="width:100%;font-size:11px;border-collapse:collapse;">
-        <thead><tr style="color:#9ab;"><th>动作</th><th>技能</th><th>间隔(秒)</th><th></th></tr></thead>
-        <tbody class="aa-rows">${rows}</tbody>
-      </table>
-      <button class="aa-add" style="padding:2px 8px;cursor:pointer;margin-top:4px;">+ 添加编排</button>
+      ${cards || '<div style="color:#9ab;font-size:11px;margin-bottom:6px;">尚未配置攻击编排。点击「+ 添加编排」新增动作；运行时按数组顺序每帧至多触发一个。</div>'}
+      <button class="aa-add" style="padding:2px 8px;cursor:pointer;">+ 添加编排</button>
     `;
   }
 
-  /** 把编排/掉落行的 DOM 读回 entry（_commitNpcDetail 内调用）。 */
+  /** 把编排卡片/掉落行的 DOM 读回 entry（_commitNpcDetail 内调用）。 */
   _bindSkillRefEditor(panel, e) {
     panel.querySelector('.aa-add')?.addEventListener('click', () => {
       const ai = e.ai || (e.ai = {});
-      ai.attackActions = [...(ai.attackActions || []), { id: `action_${(ai.attackActions?.length || 0) + 1}`, type: 'skill', skillId: '', intervalSeconds: 5 }];
+      // 生成不与现有动作冲突的稳定 id（运行时链式按 id 匹配）
+      const existingIds = new Set((ai.attackActions || []).map(action => action?.id).filter(Boolean));
+      let counter = (ai.attackActions?.length || 0) + 1;
+      let newId = `action_${counter}`;
+      while (existingIds.has(newId)) newId = `action_${++counter}`;
+      ai.attackActions = [...(ai.attackActions || []), { id: newId, type: 'skill', skillId: '', intervalSeconds: 5 }];
       this._renderNpcDetail(panel, e);
     });
     panel.querySelectorAll('.aa-del').forEach(btn => {
@@ -1203,11 +1238,127 @@ export class LibraryEditor {
         this._renderNpcDetail(panel, e);
       });
     });
-    panel.querySelectorAll('.aa-rows tr').forEach(tr => {
-      tr.querySelector('.aa-type')?.addEventListener('change', event => {
-        tr.querySelector('.aa-skill').disabled = event.currentTarget.value === 'basic';
+    panel.querySelectorAll('.aa-card').forEach(card => {
+      // 类型切换：普攻隐藏技能选择与范围编辑；清空链式时禁用延迟输入
+      card.querySelector('.aa-type')?.addEventListener('change', event => {
+        const isBasic = event.currentTarget.value === 'basic';
+        const skillSelect = card.querySelector('.aa-skill');
+        if (skillSelect) skillSelect.disabled = isBasic;
+        const skillOnly = card.querySelector('.aa-skill-only');
+        if (skillOnly) skillOnly.style.display = isBasic ? 'none' : 'flex';
+        this._refreshChainOptionLabels(panel, e);
+      });
+      // 换技能后同步刷新其他卡片链式下拉里的动作标签（如「#1 技能」→「#1 cleave」）
+      card.querySelector('.aa-skill')?.addEventListener('change', () => this._refreshChainOptionLabels(panel, e));
+      card.querySelector('.aa-chain')?.addEventListener('change', event => {
+        const delayInput = card.querySelector('.aa-delay');
+        if (delayInput) delayInput.disabled = !event.currentTarget.value;
+      });
+      card.querySelectorAll('canvas.aa-pentagon').forEach(canvas => {
+        this._bindPentagonRadiusCanvas(canvas, card, e);
       });
     });
+  }
+
+  /** 链式前置下拉的动作标签实时刷新（按当前 type/skillId 生成，不触碰「当前无效」占位项）。 */
+  _refreshChainOptionLabels(panel, entry) {
+    const actions = entry?.ai?.attackActions || [];
+    panel.querySelectorAll('.aa-card').forEach(card => {
+      const chainSelect = card.querySelector('.aa-chain');
+      if (!chainSelect) return;
+      chainSelect.querySelectorAll('option').forEach(option => {
+        if (!option.value) return;
+        const sourceIndex = actions.findIndex(action => action?.id === option.value);
+        if (sourceIndex < 0) return;
+        const source = actions[sourceIndex];
+        option.textContent = `${source.id} · #${sourceIndex + 1} ${source.skillId || (source.type === 'basic' ? '普攻' : '技能')}`;
+      });
+    });
+  }
+
+  /**
+   * 技能范围小五边形画布：按住拖动顶点改写 paramsOverride.radius（与场景编辑器同语义）。
+   * 拖动期间锁定按下降时半径换算的比例尺，避免半径变化引发比例跳变；
+   * 落盘双通道：实时写入 action 对象（重绘/联防丢焦点）+ 同步半径输入框（保存时读 DOM）。
+   * @private
+   */
+  _bindPentagonRadiusCanvas(canvas, card, entry) {
+    const CANVAS_SIZE = 90;
+    const CENTER = CANVAS_SIZE / 2;
+    const MAX_DISPLAY_RADIUS = 34;
+    const MIN_RADIUS = 24;
+    const getAction = () => (entry?.ai?.attackActions || [])[Number(card.dataset.row)] || null;
+    const getRadiusInput = () => card.querySelector('.aa-radius');
+    const draw = () => {
+      const action = getAction();
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+      if (!action) return;
+      const hasOverride = Number(action.paramsOverride?.radius) > 0;
+      const radius = Math.max(MIN_RADIUS, Number(action.paramsOverride?.radius) || 150);
+      const scale = MAX_DISPLAY_RADIUS / radius;
+      // 虚线圆（= AOE 半径，与运行时 applyAOEDamage / telegraph 圈同源）
+      ctx.beginPath();
+      ctx.setLineDash([4, 3]);
+      ctx.arc(CENTER, CENTER, Math.max(3, radius * scale), 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(255,120,220,0.9)';
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+      ctx.setLineDash([]);
+      // 正五边形（顶点朝上）
+      ctx.beginPath();
+      for (let i = 0; i < 5; i++) {
+        const angle = -Math.PI / 2 + i * (2 * Math.PI / 5);
+        const px = CENTER + radius * scale * Math.cos(angle);
+        const py = CENTER + radius * scale * Math.sin(angle);
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+      ctx.strokeStyle = '#ff78dc';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.fillStyle = '#ff78dc';
+      for (let i = 0; i < 5; i++) {
+        const angle = -Math.PI / 2 + i * (2 * Math.PI / 5);
+        ctx.fillRect(CENTER + radius * scale * Math.cos(angle) - 2.5, CENTER + radius * scale * Math.sin(angle) - 2.5, 5, 5);
+      }
+      ctx.fillRect(CENTER - 1.5, CENTER - 1.5, 3, 3);
+      // 半径标注：上方放不下时画到下方
+      const label = hasOverride ? `${radius}px` : `默认 ${radius}`;
+      const topY = CENTER - radius * scale - 4;
+      ctx.fillStyle = hasOverride ? '#ff78dc' : '#8fa3bf';
+      ctx.font = '10px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(label, CENTER, topY >= 10 ? topY : Math.min(CANVAS_SIZE - 3, CENTER + radius * scale + 11));
+      ctx.textAlign = 'left';
+    };
+    canvas.addEventListener('mousedown', event => {
+      event.preventDefault();
+      const action = getAction();
+      if (!action) return;
+      const startRadius = Math.max(MIN_RADIUS, Number(action.paramsOverride?.radius) || 150);
+      const dragScale = MAX_DISPLAY_RADIUS / startRadius;
+      const applyFromPointer = pointerEvent => {
+        const rect = canvas.getBoundingClientRect();
+        const dx = pointerEvent.clientX - rect.left - CENTER;
+        const dy = pointerEvent.clientY - rect.top - CENTER;
+        const nextRadius = Math.max(MIN_RADIUS, Math.min(100000, Math.round(Math.hypot(dx, dy) / dragScale)));
+        action.paramsOverride = { ...(action.paramsOverride || {}), radius: nextRadius };
+        const radiusInput = getRadiusInput();
+        if (radiusInput) radiusInput.value = String(nextRadius);
+        draw();
+      };
+      applyFromPointer(event);
+      const onMove = pointerEvent => applyFromPointer(pointerEvent);
+      const onUp = () => {
+        window.removeEventListener('mousemove', onMove);
+        window.removeEventListener('mouseup', onUp);
+      };
+      window.addEventListener('mousemove', onMove);
+      window.addEventListener('mouseup', onUp);
+    });
+    draw();
   }
 
   /** 装备结构化面板（subType 槽位 + stats + rarity + Manifest 图片）。 */
@@ -1514,15 +1665,38 @@ export class LibraryEditor {
         ? restAi
         : { ...(e.ai || {}) };
       delete preservedAi.attackActions;
-      const attackActions = Array.from(panel.querySelectorAll('.aa-rows tr')).map((tr, index) => {
+      const attackActions = Array.from(panel.querySelectorAll('.aa-card')).map((card, index) => {
         const original = (e.ai?.attackActions || [])[index] || {};
-        const type = tr.querySelector('.aa-type')?.value || 'skill';
-        return {
+        const type = card.querySelector('.aa-type')?.value || 'skill';
+        const action = {
           id: original.id || `action_${index + 1}`,
           type,
-          ...(type === 'skill' ? { skillId: tr.querySelector('.aa-skill')?.value.trim() || original.skillId || '' } : {}),
-          intervalSeconds: Math.max(0, Number(tr.querySelector('.aa-interval')?.value) || 0)
+          ...(type === 'skill' ? { skillId: card.querySelector('.aa-skill')?.value.trim() || original.skillId || '' } : {}),
+          intervalSeconds: Math.max(0, Number(card.querySelector('.aa-interval')?.value) || 0)
         };
+        // 链式：选择了前置动作才写 afterSkillId/delayAfterSkillSeconds（与运行时语义一致）
+        const chainAfter = card.querySelector('.aa-chain')?.value.trim() || '';
+        if (chainAfter) {
+          action.afterSkillId = chainAfter;
+          action.delayAfterSkillSeconds = Math.max(0, Number(card.querySelector('.aa-delay')?.value) || 0);
+        }
+        // paramsOverride：radius 由范围编辑产生；其余 override 键原样保留。
+        // 留空半径 = 删除覆盖的 radius（恢复技能定义默认），其余键不动；普攻整段保留原 override。
+        const originalOverride = original.paramsOverride && typeof original.paramsOverride === 'object'
+          ? original.paramsOverride : {};
+        if (type === 'skill') {
+          const radiusRaw = card.querySelector('.aa-radius')?.value ?? '';
+          if (radiusRaw !== '') {
+            const radius = Math.max(24, Math.round(Number(radiusRaw) || 0));
+            if (radius > 0) action.paramsOverride = { ...originalOverride, radius };
+          } else {
+            const { radius: _ignored, ...restOverride } = originalOverride;
+            if (Object.keys(restOverride).length > 0) action.paramsOverride = restOverride;
+          }
+        } else if (Object.keys(originalOverride).length > 0) {
+          action.paramsOverride = originalOverride;
+        }
+        return action;
       });
       e.ai = { ...preservedAi, ...(attackActions.length > 0 ? { attackActions } : {}) };
     } else {
