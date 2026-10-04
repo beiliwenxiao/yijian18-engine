@@ -34,6 +34,7 @@
  */
 
 import { isHostileTarget } from '../core/FactionRules.js';
+import { resolveSkillArea } from './SkillArea.js';
 
 /** paramsOverride.radius 与技能定义均未配置 radius 时的 AOE 兜底半径（与 applyAOEDamage 一致）。 */
 const DEFAULT_SKILL_RADIUS = 150;
@@ -260,12 +261,16 @@ export class EnemySkillDirector {
       combat.isCasting = true;
       combat.castingSkill = { id: action.skillId, name: definition.name || action.skillId, castTime: castTimeMs };
       combat.castStartTime = now;
-      // 技能前摇只走 telegraph 圈（circle），不与 attackDash 叠加
+      // 技能前摇走形状化 telegraph（circle/rect/polygon，由技能形状编辑决定），不与 attackDash 叠加
+      const skillArea = resolveSkillArea(params, DEFAULT_SKILL_RADIUS);
       combatSystem?.attackTelegraphs?.set?.(entity.id, {
         startedAt: now,
         windupMs: castTimeMs,
-        radius: Number(params.radius) > 0 ? Number(params.radius) : DEFAULT_SKILL_RADIUS,
-        shape: 'circle',
+        radius: skillArea.radius,
+        shape: skillArea.shape,
+        shapeData: skillArea.shape === 'rect'
+          ? { width: skillArea.width, height: skillArea.height }
+          : (skillArea.shape === 'polygon' ? { points: skillArea.points } : undefined),
         pathLength: 0,
         pathWidth: 0,
         knockbackMin: 0,

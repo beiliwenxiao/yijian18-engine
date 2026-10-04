@@ -184,4 +184,55 @@ describe('狼王技能结算（CombatSystem.executeSkill）', () => {
     expect(ally.getComponent('stats').hp).toBeLessThan(80);
     expect(isHostileTarget(wolf, ally)).toBe(true);
   });
+
+  it('矩形形状：落点周围按轴对齐矩形判定（圆形半径外的角落点命中）', () => {
+    const combatSystem = makeCombatSystem();
+    const wolf = makeWolf({ x: 0, y: 0 });
+    // 矩形 200×120（半宽 100/半高 60）：(90, 50) 距离约 103 > 圆形 100，但矩形内命中
+    const params = { shape: 'rect', shapeData: { width: 200, height: 120 }, damageMin: 10, damageMax: 10 };
+    const inRect = makePlayer({ x: 90, y: 50, hp: 100 });
+    const outside = makePlayer({ x: 110, y: 0, hp: 100 });
+    const entities = [wolf, inRect, outside];
+
+    combatSystem.executeSkill({
+      caster: wolf,
+      definition: { id: 'wolf_slam', name: '狼王重击', category: 'attack', targeting: 'position', params },
+      view: { id: 'wolf_slam', name: '狼王重击', category: 'attack', targeting: 'position', params },
+      params,
+      target: inRect,
+      targetPosition: { x: 0, y: 0 },
+      entities,
+      currentTime: 1000
+    });
+
+    expect(inRect.getComponent('stats').hp).toBe(90);
+    expect(outside.getComponent('stats').hp).toBe(100);
+  });
+
+  it('多边形形状：按顶点射线法判定（菱形对角外的点不命中）', () => {
+    const combatSystem = makeCombatSystem();
+    const wolf = makeWolf({ x: 0, y: 0 });
+    const params = {
+      shape: 'polygon',
+      shapeData: { points: [[0, -100], [100, 0], [0, 100], [-100, 0]] },
+      damageMin: 10, damageMax: 10
+    };
+    const inside = makePlayer({ x: 70, y: 0, hp: 100 });
+    const outside = makePlayer({ x: 60, y: 60, hp: 100 }); // |dx|+|dy|=120 > 100，菱形对角外
+    const entities = [wolf, inside, outside];
+
+    combatSystem.executeSkill({
+      caster: wolf,
+      definition: { id: 'wolf_claw', name: '狼王爪击', category: 'attack', targeting: 'position', params },
+      view: { id: 'wolf_claw', name: '狼王爪击', category: 'attack', targeting: 'position', params },
+      params,
+      target: inside,
+      targetPosition: { x: 0, y: 0 },
+      entities,
+      currentTime: 1000
+    });
+
+    expect(inside.getComponent('stats').hp).toBe(90);
+    expect(outside.getComponent('stats').hp).toBe(100);
+  });
 });

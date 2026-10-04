@@ -1190,6 +1190,9 @@ export class LibraryEditor {
         ? `<option value="${escapeHtml(action.afterSkillId)}" selected>当前无效：${escapeHtml(action.afterSkillId)}</option>` : '';
       const radius = Number(action.paramsOverride?.radius);
       const radiusRaw = radius > 0 ? radius : '';
+      const shapeType = ['circle', 'rect', 'polygon'].includes(action.paramsOverride?.shape)
+        ? action.paramsOverride.shape : 'circle';
+      const shapeData = action.paramsOverride?.shapeData || {};
       return `
       <div class="aa-card" data-row="${index}" style="border:1px solid #2a3a5e;border-radius:4px;padding:6px;margin-bottom:6px;font-size:11px;">
         <div style="display:flex;gap:6px;align-items:center;">
@@ -1203,11 +1206,26 @@ export class LibraryEditor {
           <label style="color:#9ab;flex:none;">延迟</label><input type="number" class="aa-delay" value="${escapeHtml(action.delayAfterSkillSeconds ?? 0)}" min="0" step="0.5" style="width:48px;" ${action.afterSkillId ? '' : 'disabled'} title="前置动作触发后 x 秒（与自身间隔取先到）；仅选择了前置动作时生效">
         </div>
         ${type === 'skill' ? `
-        <div class="aa-skill-only" style="display:flex;gap:8px;margin-top:6px;align-items:center;">
-          <canvas class="aa-pentagon" width="90" height="90" style="flex:none;cursor:crosshair;border:1px solid #2a3a5e;border-radius:4px;background:#080d1a;" title="在小图上拖动顶点拉出技能范围（虚线圆=AOE 半径，与运行时预警圈同源）；写入 paramsOverride.radius"></canvas>
-          <div style="min-width:0;">
-            <div><label>范围半径 radius</label><input type="number" class="aa-radius" value="${escapeHtml(radiusRaw)}" min="24" step="1" placeholder="库默认" style="width:70px;" title="留空=用技能定义 params.radius；拖动小图顶点或直接填数均可"></div>
-            <small style="color:#9ab;display:block;margin-top:4px;line-height:1.5;">在小图上按住拖动拉出范围；<br>清空半径 = 恢复技能定义默认</small>
+        <div class="aa-skill-only" style="display:flex;gap:10px;margin-top:6px;align-items:flex-start;">
+          <canvas class="aa-shape" width="300" height="300" style="flex:none;cursor:crosshair;border:1px solid #2a3a5e;border-radius:4px;background:#080d1a;" title="拖动手柄调整技能影响区域形状（运行时伤害与预警圈按此形状结算/渲染）"></canvas>
+          <div style="min-width:0;flex:1;display:flex;flex-direction:column;gap:6px;">
+            <div><label>技能形状</label><select class="aa-shape-type" style="width:100%;">
+              <option value="circle" ${shapeType === 'circle' ? 'selected' : ''}>圆形</option>
+              <option value="rect" ${shapeType === 'rect' ? 'selected' : ''}>矩形</option>
+              <option value="polygon" ${shapeType === 'polygon' ? 'selected' : ''}>多边形（五点）</option>
+            </select></div>
+            <div class="aa-circle-fields" style="display:${shapeType === 'circle' ? 'block' : 'none'};">
+              <label>范围半径 radius</label><input type="number" class="aa-radius" value="${escapeHtml(radiusRaw)}" min="24" step="1" placeholder="库默认" style="width:80px;" title="留空=用技能定义 params.radius；拖动画布手柄或直接填数均可">
+            </div>
+            <div class="aa-rect-fields" style="display:${shapeType === 'rect' ? 'block' : 'none'};">
+              <div><label>宽度 width</label><input type="number" class="aa-width" value="${escapeHtml(shapeData.width ?? '')}" min="16" step="1" placeholder="库默认" style="width:80px;"></div>
+              <div style="margin-top:4px;"><label>高度 height</label><input type="number" class="aa-height" value="${escapeHtml(shapeData.height ?? '')}" min="16" step="1" placeholder="库默认" style="width:80px;"></div>
+            </div>
+            <small class="aa-shape-hint" style="color:#9ab;display:block;line-height:1.6;">${shapeType === 'polygon'
+              ? '拖动五个顶点勾出任意多边形区域（相对落点中心）。'
+              : (shapeType === 'rect'
+                ? '拖动四个角手柄对称调整宽高。'
+                : '拖动圆周手柄调整半径。')}清空数值 = 恢复技能定义默认。画布会按形状大小自动缩放显示。</small>
           </div>
         </div>` : ''}
         <div style="text-align:right;margin-top:4px;"><button class="aa-del" data-row="${index}" style="padding:1px 8px;cursor:pointer;">× 删除</button></div>
@@ -1254,8 +1272,8 @@ export class LibraryEditor {
         const delayInput = card.querySelector('.aa-delay');
         if (delayInput) delayInput.disabled = !event.currentTarget.value;
       });
-      card.querySelectorAll('canvas.aa-pentagon').forEach(canvas => {
-        this._bindPentagonRadiusCanvas(canvas, card, e);
+      card.querySelectorAll('canvas.aa-shape').forEach(canvas => {
+        this._bindSkillShapeCanvas(canvas, card, e);
       });
     });
   }
@@ -1277,76 +1295,231 @@ export class LibraryEditor {
   }
 
   /**
-   * 技能范围小五边形画布：按住拖动顶点改写 paramsOverride.radius（与场景编辑器同语义）。
-   * 拖动期间锁定按下降时半径换算的比例尺，避免半径变化引发比例跳变；
-   * 落盘双通道：实时写入 action 对象（重绘/联防丢焦点）+ 同步半径输入框（保存时读 DOM）。
+   * 技能形状编辑画布（300×300）：按「技能形状」下拉在 圆形/矩形/多边形 间切换，
+   * 拖动手柄直接勾出技能影响区域（运行时 applyAOEDamage 与 telegraph 预警按同形状结算/渲染）。
+   * 数据写入 action.paramsOverride：{ shape, shapeData: {radius|width,height|points} }；
+   * circle 模式同步写 radius 字段（兼容旧读取点）。画布按形状外接尺寸自动缩放，拖动期间锁定比例尺。
    * @private
    */
-  _bindPentagonRadiusCanvas(canvas, card, entry) {
-    const CANVAS_SIZE = 90;
+  _bindSkillShapeCanvas(canvas, card, entry) {
+    const CANVAS_SIZE = 300;
     const CENTER = CANVAS_SIZE / 2;
-    const MAX_DISPLAY_RADIUS = 34;
+    const MAX_DISPLAY_EXTENT = 132; // 中心到画布边的安全半径（留标注空间）
     const MIN_RADIUS = 24;
+    const MIN_SIDE = 16;
+    const HANDLE_HIT = 10;
     const getAction = () => (entry?.ai?.attackActions || [])[Number(card.dataset.row)] || null;
-    const getRadiusInput = () => card.querySelector('.aa-radius');
-    const draw = () => {
+    const getOverride = () => {
       const action = getAction();
+      if (!action) return null;
+      action.paramsOverride = action.paramsOverride && typeof action.paramsOverride === 'object'
+        ? action.paramsOverride : {};
+      return action.paramsOverride;
+    };
+
+    /** 归一化形状覆盖：无 shape 的旧数据（仅 radius）补 circle + shapeData。 */
+    const normalizeOverride = () => {
+      const override = getOverride();
+      if (!override) return null;
+      if (override.shape !== 'rect' && override.shape !== 'polygon') {
+        override.shape = 'circle';
+        const radius = Number(override.shapeData?.radius ?? override.radius);
+        override.shapeData = { radius: radius > 0 ? radius : 150 };
+      }
+      return override;
+    };
+
+    /** 当前形状外接半径（世界单位），用于 fit 缩放。 */
+    const extentOf = override => {
+      if (override.shape === 'rect') {
+        return Math.max(8, Math.hypot(Number(override.shapeData?.width) || 0, Number(override.shapeData?.height) || 0) / 2);
+      }
+      if (override.shape === 'polygon') {
+        const points = Array.isArray(override.shapeData?.points) ? override.shapeData.points : [];
+        return Math.max(8, ...points.map(point => Math.hypot(point[0], point[1])));
+      }
+      return Math.max(8, Number(override.shapeData?.radius) || 150);
+    };
+
+    /** 形状切换/初始化：从当前外接半径派生新形状数据。 */
+    const applyShape = shapeType => {
+      const override = getOverride();
+      if (!override) return;
+      const baseRadius = Math.max(MIN_RADIUS, Number(override.shapeData?.radius ?? override.radius) || 150);
+      override.shape = shapeType;
+      if (shapeType === 'circle') {
+        override.shapeData = { radius: baseRadius };
+        override.radius = baseRadius;
+      } else if (shapeType === 'rect') {
+        override.shapeData = { width: Math.round(baseRadius * 1.6), height: baseRadius };
+        delete override.radius;
+      } else {
+        const points = [];
+        for (let i = 0; i < 5; i++) {
+          const angle = -Math.PI / 2 + i * (2 * Math.PI / 5);
+          points.push([Math.round(baseRadius * Math.cos(angle)), Math.round(baseRadius * Math.sin(angle))]);
+        }
+        override.shapeData = { points };
+        delete override.radius;
+      }
+    };
+
+    const draw = () => {
+      const override = normalizeOverride();
       const ctx = canvas.getContext('2d');
       ctx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
-      if (!action) return;
-      const hasOverride = Number(action.paramsOverride?.radius) > 0;
-      const radius = Math.max(MIN_RADIUS, Number(action.paramsOverride?.radius) || 150);
-      const scale = MAX_DISPLAY_RADIUS / radius;
-      // 虚线圆（= AOE 半径，与运行时 applyAOEDamage / telegraph 圈同源）
-      ctx.beginPath();
-      ctx.setLineDash([4, 3]);
-      ctx.arc(CENTER, CENTER, Math.max(3, radius * scale), 0, Math.PI * 2);
-      ctx.strokeStyle = 'rgba(255,120,220,0.9)';
-      ctx.lineWidth = 1.2;
-      ctx.stroke();
-      ctx.setLineDash([]);
-      // 正五边形（顶点朝上）
-      ctx.beginPath();
-      for (let i = 0; i < 5; i++) {
-        const angle = -Math.PI / 2 + i * (2 * Math.PI / 5);
-        const px = CENTER + radius * scale * Math.cos(angle);
-        const py = CENTER + radius * scale * Math.sin(angle);
-        if (i === 0) ctx.moveTo(px, py);
-        else ctx.lineTo(px, py);
+      if (!override) return;
+      const scale = MAX_DISPLAY_EXTENT / extentOf(override);
+      const toX = dx => CENTER + dx * scale;
+      const toY = dy => CENTER + dy * scale;
+
+      // 淡网格（世界 50px 间隔，按比例换算到画布）
+      const gridStep = 50 * scale;
+      if (gridStep >= 12) {
+        ctx.strokeStyle = 'rgba(90,110,160,0.16)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        for (let offset = gridStep; CENTER - offset >= 0; offset += gridStep) {
+          ctx.moveTo(CENTER - offset, 0); ctx.lineTo(CENTER - offset, CANVAS_SIZE);
+          ctx.moveTo(CENTER + offset, 0); ctx.lineTo(CENTER + offset, CANVAS_SIZE);
+          ctx.moveTo(0, CENTER - offset); ctx.lineTo(CANVAS_SIZE, CENTER - offset);
+          ctx.moveTo(0, CENTER + offset); ctx.lineTo(CANVAS_SIZE, CENTER + offset);
+        }
+        ctx.stroke();
       }
-      ctx.closePath();
+      // 中心十字（落点）
+      ctx.strokeStyle = 'rgba(140,160,200,0.7)';
+      ctx.beginPath();
+      ctx.moveTo(CENTER - 6, CENTER); ctx.lineTo(CENTER + 6, CENTER);
+      ctx.moveTo(CENTER, CENTER - 6); ctx.lineTo(CENTER, CENTER + 6);
+      ctx.stroke();
+
+      ctx.fillStyle = 'rgba(255,120,220,0.10)';
       ctx.strokeStyle = '#ff78dc';
-      ctx.lineWidth = 1;
-      ctx.stroke();
-      ctx.fillStyle = '#ff78dc';
-      for (let i = 0; i < 5; i++) {
-        const angle = -Math.PI / 2 + i * (2 * Math.PI / 5);
-        ctx.fillRect(CENTER + radius * scale * Math.cos(angle) - 2.5, CENTER + radius * scale * Math.sin(angle) - 2.5, 5, 5);
+      ctx.lineWidth = 1.6;
+      const handles = [];
+      if (override.shape === 'rect') {
+        const hw = (Number(override.shapeData?.width) || 0) / 2;
+        const hh = (Number(override.shapeData?.height) || 0) / 2;
+        ctx.beginPath();
+        ctx.rect(toX(-hw), toY(-hh), hw * 2 * scale, hh * 2 * scale);
+        ctx.fill(); ctx.stroke();
+        for (const [sx, sy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) {
+          const px = toX(hw * sx);
+          const py = toY(hh * sy);
+          handles.push({ px, py, index: handles.length });
+        }
+      } else if (override.shape === 'polygon') {
+        const points = override.shapeData?.points || [];
+        ctx.beginPath();
+        points.forEach(([px, py], index) => {
+          if (index === 0) ctx.moveTo(toX(px), toY(py));
+          else ctx.lineTo(toX(px), toY(py));
+        });
+        ctx.closePath();
+        ctx.fill(); ctx.stroke();
+        points.forEach((point, index) => {
+          handles.push({ px: toX(point[0]), py: toY(point[1]), index });
+        });
+      } else {
+        const displayRadius = (Number(override.shapeData?.radius) || 150) * scale;
+        ctx.beginPath();
+        ctx.setLineDash([6, 4]);
+        ctx.arc(CENTER, CENTER, displayRadius, 0, Math.PI * 2);
+        ctx.fill(); ctx.stroke();
+        ctx.setLineDash([]);
+        for (let i = 0; i < 5; i++) {
+          const angle = -Math.PI / 2 + i * (2 * Math.PI / 5);
+          handles.push({ px: CENTER + displayRadius * Math.cos(angle), py: CENTER + displayRadius * Math.sin(angle), index: i });
+        }
       }
-      ctx.fillRect(CENTER - 1.5, CENTER - 1.5, 3, 3);
-      // 半径标注：上方放不下时画到下方
-      const label = hasOverride ? `${radius}px` : `默认 ${radius}`;
-      const topY = CENTER - radius * scale - 4;
-      ctx.fillStyle = hasOverride ? '#ff78dc' : '#8fa3bf';
-      ctx.font = '10px sans-serif';
+      // 手柄
+      ctx.fillStyle = '#ff78dc';
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1;
+      for (const handle of handles) {
+        ctx.fillRect(handle.px - 4, handle.py - 4, 8, 8);
+        ctx.strokeRect(handle.px - 4, handle.py - 4, 8, 8);
+      }
+      // 标注
+      const label = override.shape === 'rect'
+        ? `${override.shapeData?.width}×${override.shapeData?.height}`
+        : (override.shape === 'polygon' ? `多边形 ${override.shapeData?.points?.length ?? 0} 点` : `半径 ${override.shapeData?.radius}`);
+      ctx.fillStyle = '#ff78dc';
+      ctx.font = '12px sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(label, CENTER, topY >= 10 ? topY : Math.min(CANVAS_SIZE - 3, CENTER + radius * scale + 11));
+      const labelY = Math.max(14, CENTER - extentOf(override) * scale - 10);
+      ctx.fillText(label, CENTER, labelY);
       ctx.textAlign = 'left';
     };
+
+    // 手柄命中（画布像素距离）
+    const hitHandle = (mouseX, mouseY) => {
+      const override = normalizeOverride();
+      if (!override) return -1;
+      const scale = MAX_DISPLAY_EXTENT / extentOf(override);
+      const toX = dx => CENTER + dx * scale;
+      const toY = dy => CENTER + dy * scale;
+      let handles = [];
+      if (override.shape === 'rect') {
+        const hw = (Number(override.shapeData?.width) || 0) / 2;
+        const hh = (Number(override.shapeData?.height) || 0) / 2;
+        handles = [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([sx, sy]) => ({ px: toX(hw * sx), py: toY(hh * sy) }));
+      } else if (override.shape === 'polygon') {
+        handles = (override.shapeData?.points || []).map(point => ({ px: toX(point[0]), py: toY(point[1]) }));
+      } else {
+        const displayRadius = (Number(override.shapeData?.radius) || 150) * scale;
+        for (let i = 0; i < 5; i++) {
+          const angle = -Math.PI / 2 + i * (2 * Math.PI / 5);
+          handles.push({ px: CENTER + displayRadius * Math.cos(angle), py: CENTER + displayRadius * Math.sin(angle) });
+        }
+      }
+      for (let index = 0; index < handles.length; index++) {
+        if (Math.hypot(mouseX - handles[index].px, mouseY - handles[index].py) <= HANDLE_HIT) return index;
+      }
+      return -1;
+    };
+
     canvas.addEventListener('mousedown', event => {
       event.preventDefault();
-      const action = getAction();
-      if (!action) return;
-      const startRadius = Math.max(MIN_RADIUS, Number(action.paramsOverride?.radius) || 150);
-      const dragScale = MAX_DISPLAY_RADIUS / startRadius;
+      const override = normalizeOverride();
+      if (!override) return;
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = event.clientX - rect.left;
+      const mouseY = event.clientY - rect.top;
+      const dragScale = MAX_DISPLAY_EXTENT / extentOf(override); // 拖动期间锁定比例尺
+      const handleIndex = hitHandle(mouseX, mouseY);
+      const isCircle = override.shape === 'circle';
+      if (!isCircle && handleIndex < 0) return; // 矩形/多边形需命中手柄
+
       const applyFromPointer = pointerEvent => {
-        const rect = canvas.getBoundingClientRect();
-        const dx = pointerEvent.clientX - rect.left - CENTER;
-        const dy = pointerEvent.clientY - rect.top - CENTER;
-        const nextRadius = Math.max(MIN_RADIUS, Math.min(100000, Math.round(Math.hypot(dx, dy) / dragScale)));
-        action.paramsOverride = { ...(action.paramsOverride || {}), radius: nextRadius };
-        const radiusInput = getRadiusInput();
-        if (radiusInput) radiusInput.value = String(nextRadius);
+        const px = pointerEvent.clientX - rect.left;
+        const py = pointerEvent.clientY - rect.top;
+        const dx = (px - CENTER) / dragScale;
+        const dy = (py - CENTER) / dragScale;
+        if (override.shape === 'rect') {
+          if (handleIndex < 0) return;
+          override.shapeData = {
+            width: Math.max(MIN_SIDE, Math.round(Math.abs(dx) * 2)),
+            height: Math.max(MIN_SIDE, Math.round(Math.abs(dy) * 2))
+          };
+          const widthInput = card.querySelector('.aa-width');
+          const heightInput = card.querySelector('.aa-height');
+          if (widthInput) widthInput.value = String(override.shapeData.width);
+          if (heightInput) heightInput.value = String(override.shapeData.height);
+        } else if (override.shape === 'polygon') {
+          if (handleIndex < 0) return;
+          const points = Array.isArray(override.shapeData?.points) ? override.shapeData.points : [];
+          if (!points[handleIndex]) return;
+          points[handleIndex] = [Math.round(dx), Math.round(dy)];
+          override.shapeData = { points };
+        } else {
+          const radius = Math.max(MIN_RADIUS, Math.round(Math.hypot(dx, dy)));
+          override.shapeData = { radius };
+          override.radius = radius;
+          const radiusInput = card.querySelector('.aa-radius');
+          if (radiusInput) radiusInput.value = String(radius);
+        }
         draw();
       };
       applyFromPointer(event);
@@ -1358,6 +1531,57 @@ export class LibraryEditor {
       window.addEventListener('mousemove', onMove);
       window.addEventListener('mouseup', onUp);
     });
+
+    // 形状切换：派生新形状数据 + 切换数值字段显隐 + 回填派生数值
+    card.querySelector('.aa-shape-type')?.addEventListener('change', event => {
+      applyShape(event.currentTarget.value);
+      const shapeType = event.currentTarget.value;
+      card.querySelector('.aa-circle-fields').style.display = shapeType === 'circle' ? 'block' : 'none';
+      card.querySelector('.aa-rect-fields').style.display = shapeType === 'rect' ? 'block' : 'none';
+      const override = normalizeOverride();
+      if (override) {
+        if (shapeType === 'circle') {
+          const radiusInput = card.querySelector('.aa-radius');
+          if (radiusInput) radiusInput.value = String(override.shapeData?.radius ?? '');
+        } else if (shapeType === 'rect') {
+          const widthInput = card.querySelector('.aa-width');
+          const heightInput = card.querySelector('.aa-height');
+          if (widthInput) widthInput.value = String(override.shapeData?.width ?? '');
+          if (heightInput) heightInput.value = String(override.shapeData?.height ?? '');
+        }
+      }
+      draw();
+    });
+
+    // 数值输入实时写回（与拖动同通道）；circle 清空 = 删除形状覆盖恢复库默认
+    card.querySelector('.aa-radius')?.addEventListener('input', event => {
+      const override = normalizeOverride();
+      if (!override || override.shape !== 'circle') return;
+      const raw = event.currentTarget.value;
+      if (raw === '') {
+        delete override.shapeData;
+        delete override.shape;
+        delete override.radius;
+      } else {
+        const radius = Math.max(MIN_RADIUS, Math.round(Number(raw) || 0));
+        override.shapeData = { radius };
+        override.radius = radius;
+      }
+      draw();
+    });
+    const bindRectInput = selector => {
+      card.querySelector(selector)?.addEventListener('input', () => {
+        const override = normalizeOverride();
+        if (!override || override.shape !== 'rect') return;
+        const width = Math.max(MIN_SIDE, Math.round(Number(card.querySelector('.aa-width')?.value) || 0));
+        const height = Math.max(MIN_SIDE, Math.round(Number(card.querySelector('.aa-height')?.value) || 0));
+        override.shapeData = { width, height };
+        draw();
+      });
+    };
+    bindRectInput('.aa-width');
+    bindRectInput('.aa-height');
+
     draw();
   }
 
@@ -1680,21 +1904,12 @@ export class LibraryEditor {
           action.afterSkillId = chainAfter;
           action.delayAfterSkillSeconds = Math.max(0, Number(card.querySelector('.aa-delay')?.value) || 0);
         }
-        // paramsOverride：radius 由范围编辑产生；其余 override 键原样保留。
-        // 留空半径 = 删除覆盖的 radius（恢复技能定义默认），其余键不动；普攻整段保留原 override。
+        // paramsOverride：形状编辑（画布拖动/数值输入）实时写 action 对象，提交时原样保留。
+        // 空覆盖不写字段；普攻与技能同规则（拖动通道已含清空语义）。
         const originalOverride = original.paramsOverride && typeof original.paramsOverride === 'object'
-          ? original.paramsOverride : {};
-        if (type === 'skill') {
-          const radiusRaw = card.querySelector('.aa-radius')?.value ?? '';
-          if (radiusRaw !== '') {
-            const radius = Math.max(24, Math.round(Number(radiusRaw) || 0));
-            if (radius > 0) action.paramsOverride = { ...originalOverride, radius };
-          } else {
-            const { radius: _ignored, ...restOverride } = originalOverride;
-            if (Object.keys(restOverride).length > 0) action.paramsOverride = restOverride;
-          }
-        } else if (Object.keys(originalOverride).length > 0) {
-          action.paramsOverride = originalOverride;
+          ? original.paramsOverride : null;
+        if (originalOverride && Object.keys(originalOverride).length > 0) {
+          action.paramsOverride = JSON.parse(JSON.stringify(originalOverride));
         }
         return action;
       });

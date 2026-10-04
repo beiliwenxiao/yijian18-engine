@@ -21,6 +21,7 @@ import { CombatResolver } from './resolvers/CombatResolver.js';
 import { RNG } from '../core/RNG.js';
 import { setTimeoutFn } from '../core/Timers.js';
 import { isHostileTarget } from '../core/FactionRules.js';
+import { resolveSkillArea, isPointInSkillArea } from './SkillArea.js';
 
 // 表现层随机：爆炸/碎片/飘血粒子（非玩法结算，非权威；结算随机走 combatRng）
 const fxRng = new RNG();
@@ -611,6 +612,18 @@ export class CombatSystem {
           endX: attackerTransform.position.x + (dx / distance) * length,
           endY: attackerTransform.position.y + (dy / distance) * length,
           pathWidth: telegraph.pathWidth,
+          ...indicator
+        }, Math.min(1, remaining + 0.3));
+        continue;
+      }
+      if ((telegraph.shape === 'rect' || telegraph.shape === 'polygon') && telegraph.shapeData) {
+        // 矩形/多边形（技能形状编辑）：以攻击者位置为落点中心的轴对齐形状
+        this.renderShapeIndicator(ctx, {
+          type: telegraph.shape,
+          x: attackerTransform.position.x,
+          y: attackerTransform.position.y,
+          shapeData: telegraph.shapeData,
+          radius: telegraph.radius,
           ...indicator
         }, Math.min(1, remaining + 0.3));
         continue;
@@ -2317,12 +2330,9 @@ export class CombatSystem {
    * @param {Array<Entity>} entities - 实体列表
    */
   applyAOEDamage(caster, centerPos, skill, entities) {
-    // AOE 范围优先消费 canonical radius；旧内容仍可使用 aoeRadius。
-    const configuredRadius = Number(skill.aoeRadius ?? skill.radius);
-    const aoeRadius = Number.isFinite(configuredRadius) && configuredRadius >= 0
-      ? configuredRadius
-      : 150;
-    
+    // AOE 形状归一化：circle（缺省）/rect/polygon，半径兜底与历史行为一致
+    const area = resolveSkillArea(skill);
+
     // 查找范围内的所有敌人（敌我判定按施法者相对计算：玩家 AOE 打敌方阵营，
     // 敌方施法者打玩家与友军；友方守卫 faction friendly 对任何人非敌对）
     const enemies = entities.filter(e => {
@@ -2330,13 +2340,13 @@ export class CombatSystem {
 
       const transform = e.getComponent('transform');
       if (!transform) return false;
-      
-      // 计算距离
-      const dx = transform.position.x - centerPos.x;
-      const dy = transform.position.y - centerPos.y;
-      const distance = Math.sqrt(dx * dx + dy * dy);
-      
-      return distance <= aoeRadius;
+
+      // 按技能形状判定命中（相对落点中心的偏移）
+      return isPointInSkillArea(
+        area,
+        transform.position.x - centerPos.x,
+        transform.position.y - centerPos.y
+      );
     });
     
     console.log(`AOE技能 ${skill.name} 命中 ${enemies.length} 个敌人`);
@@ -3668,6 +3678,56 @@ export class CombatSystem {
         this.renderCircleIndicator(ctx, indicator, alpha);
       }
     }
+    ctx.restore();
+  }
+
+  /**
+   * 渲染矩形/多边形范围指示器（技能形状编辑产物；2.5D Y 压扁与圆形指示器同风格）
+   * @param {CanvasRenderingContext2D} ctx
+   * @param {Object} indicator - { type:'rect'|'polygon', x, y, shapeData, radius, color, skillName, fillColor, dashOffset }
+   * @param {number} alpha
+   */
+  renderShapeIndicator(ctx, indicator, alpha) {
+    const shapeData = indicator.shapeData || {};
+    ctx.save();
+    ctx.globalAlpha = alpha * 0.6;
+    ctx.strokeStyle = indicator.color;
+    ctx.lineWidth = 5;
+    ctx.setLineDash([8, 6]);
+    ctx.lineDashOffset = -indicator.dashOffset;
+
+    // 2.5D：Y 方向压扁 0.5 模拟俯视透视（以中心为基准）
+    const flattenY = value => indicator.y + value * 0.5;
+    ctx.beginPath();
+    if (indicator.type === 'rect') {
+      const hw = Math.max(8, Number(shapeData.width) || 0) / 2;
+      const hh = Math.max(8, Number(shapeData.height) || 0) / 2;
+      ctx.moveTo(indicator.x - hw, flattenY(-hh));
+      ctx.lineTo(indicator.x + hw, flattenY(-hh));
+      ctx.lineTo(indicator.x + hw, flattenY(hh));
+      ctx.lineTo(indicator.x - hw, flattenY(hh));
+    } else {
+      const points = Array.isArray(shapeData.points) ? shapeData.points : [];
+      if (points.length < 3) { ctx.restore(); return; }
+      points.forEach(([px, py], index) => {
+        if (index === 0) ctx.moveTo(indicator.x + px, flattenY(py));
+        else ctx.lineTo(indicator.x + px, flattenY(py));
+      });
+    }
+    ctx.closePath();
+    if (indicator.fillColor) {
+      ctx.fillStyle = indicator.fillColor;
+      ctx.fill();
+    }
+    ctx.stroke();
+
+    // 技能名称（顶点外接半径上方）
+    ctx.setLineDash([]);
+    ctx.globalAlpha = alpha * 0.8;
+    ctx.fillStyle = indicator.color;
+    ctx.font = 'bold 12px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(indicator.skillName, indicator.x, indicator.y - (indicator.radius || 40) * 0.5 - 8);
     ctx.restore();
   }
 
