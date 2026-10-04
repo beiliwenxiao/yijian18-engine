@@ -266,12 +266,13 @@ export class SceneFramePipeline {
     // 更新攀爬等统一位移执行器；受控攀爬读取与普通移动相同的设备无关移动轴。
     // 模态/面板接管时不再向攀爬器传递世界输入，避免 UI 操作推动角色。
     let locomotionAxis = worldInputBlocked ? null : inputManager?.getMoveAxis?.() || null;
-    // 受控攀爬中允许按住鼠标左键朝指针方向攀爬（攀爬中左键没有攻击语义）：
+    // 受控攀爬中允许按住鼠标右键朝指针方向攀爬（与常规「右键移动」同键，攀爬中
+    // MovementSystem 的点击移动已被 isMovementLocked 拦截且不标记 handled）：
     // 与摇杆/方向键汇入同一条移动轴，方向指向鼠标世界坐标；8px 死区防止
     // 点在自己身上时抖动；UI 刚消费过的点击沿不驱动攀爬。
     if (locomotionAxis == null && !worldInputBlocked && player && inputManager && camera
       && locomotionSystem?.getClimbPresentation?.(player) != null
-      && inputManager.isMouseButtonDown?.(0) === true
+      && inputManager.isMouseButtonDown?.(2) === true
       && !(inputManager.isMouseClicked?.() === true && inputManager.isMouseClickHandled?.() === true)) {
       const mouseWorldPos = inputManager.getMouseWorldPosition?.(camera) || null;
       const playerTransform = player.getComponent?.('transform');
