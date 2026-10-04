@@ -529,8 +529,9 @@ function renderPostPipeline(ctx) {
       ? triggerBindings?.getDebugHotspotSnapshot?.() || []
       : []
   });
-  // 庇护所室内：篝火点燃后火光透窗而入（世界后期效果，先于过场淡入与 HUD）
-  renderShelterWindowFirelight(ctx);
+  // 庇护所室内：篝火点燃后火光透窗而入（世界后期效果，先于过场淡入与 HUD）。
+  // 模块级函数须显式传 this——flow 方法的 this 是场景 Proxy，普通调用会丢失。
+  renderShelterWindowFirelight.call(this, ctx);
   this._renderTeleportFade(ctx);
   this.s03s14BattleCoordinator.renderLayer('hud', ctx, this.logicalWidth, this.logicalHeight);
   this.rescueObjectiveView?.render?.(ctx, this.logicalWidth, this.logicalHeight);
