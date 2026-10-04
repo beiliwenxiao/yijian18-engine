@@ -879,6 +879,11 @@ export class CombatSystem {
           shape: telegraphConfig.shape === 'path' ? 'path' : 'circle',
           pathLength: Number(telegraphConfig.pathLength) > 0 ? Number(telegraphConfig.pathLength) : 160,
           pathWidth: Number(telegraphConfig.pathWidth) > 0 ? Number(telegraphConfig.pathWidth) : 64,
+          // 撞击击飞距离区间（px）：未配置回退 30~50
+          knockbackMin: Number(telegraphConfig.knockbackDistance?.min) > 0
+            ? Number(telegraphConfig.knockbackDistance.min) : 30,
+          knockbackMax: Number(telegraphConfig.knockbackDistance?.max) > 0
+            ? Number(telegraphConfig.knockbackDistance.max) : 50,
           attackerRef: attacker,
           targetRef: target,
           name: attacker.name || '攻击'
@@ -1022,6 +1027,8 @@ export class CombatSystem {
       startedAt: this.now(),
       duration: 160,
       pathWidth: Number(telegraph.pathWidth) || 72,
+      knockbackMin: Number(telegraph.knockbackMin) > 0 ? Number(telegraph.knockbackMin) : 30,
+      knockbackMax: Number(telegraph.knockbackMax) > 0 ? Number(telegraph.knockbackMax) : 50,
       landed: false,
       landedAt: 0
     });
@@ -1076,9 +1083,18 @@ export class CombatSystem {
     const hitRadius = Number(dash.pathWidth) > 0 ? Number(dash.pathWidth) : 72;
     if (dist > hitRadius) return; // 玩家已跑开：扑空不撞
     dash.pounced = true;
-    // 击飞 30~50px（随机）：带弹飞滑行过程，而非瞬移式击退
-    const flightDistance = 30 + fxRng.next() * 20;
-    this.applyKnockbackFlight(target, { x: dx / dist, y: dy / dist }, flightDistance);
+    // 击飞距离（px，随机）：telegraph.knockbackDistance 配置优先（狼王撞击 100~200），
+    // 未配置回退 30~50；带弹飞滑行过程，而非瞬移式击退。
+    // 滑行时长随距离略增，远距离击飞保持「被撞飞」观感而非瞬移。
+    const kbMin = Number(dash.knockbackMin) > 0 ? Number(dash.knockbackMin) : 30;
+    const kbMax = Math.max(kbMin, Number(dash.knockbackMax) > 0 ? Number(dash.knockbackMax) : 50);
+    const flightDistance = kbMin + fxRng.next() * (kbMax - kbMin);
+    this.applyKnockbackFlight(
+      target,
+      { x: dx / dist, y: dy / dist },
+      flightDistance,
+      Math.max(160, Math.round(flightDistance * 1.1))
+    );
   }
 
   /**

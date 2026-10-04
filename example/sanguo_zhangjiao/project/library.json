@@ -1030,6 +1030,10 @@
         },
         "pursuitRange": 560,
         "telegraph": {
+          "knockbackDistance": {
+            "min": 100,
+            "max": 200
+          },
           "pathLength": 180,
           "pathWidth": 72,
           "shape": "path",
@@ -1600,7 +1604,6 @@
       "gatherDuration": 1.5,
       "interactionRadius": 80,
       "requiredToolType": null,
-      "sortYOffset": 80,
       "refreshDays": 0,
       "refreshMode": "timed",
       "refreshIntervalSeconds": 7200,
@@ -1609,6 +1612,7 @@
       "damageRatio": 0,
       "imageId": "s01.resource.appleThicket",
       "requiredState": "climbing",
+      "sortYOffset": 80,
       "sprite": {
         "height": 58,
         "isStatic": true,
