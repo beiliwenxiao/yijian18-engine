@@ -469,7 +469,8 @@ export class S01S02Coordinator {
         const activated = placement.ok ? this._activateFirstWolf(placement.target) : false;
         if (!placement.ok || !activated) {
           allSettled = false;
-          console.warn('[S01S02Coordinator] 首狼放置进入退避补偿', {
+          // 纯等待类提示降级为 log：有界补偿会自动重试，仅异常终止时用 warn/error
+          console.log('[S01S02Coordinator] 首狼放置进入退避补偿', {
             placementId,
             code: placement.ok ? 'firstWolfActivateFailed' : (placement.code || 'placementSpawnFailed')
           });
@@ -573,7 +574,8 @@ export class S01S02Coordinator {
       const spawned = Math.min(MAX_CHASE_WOLVES, Math.max(0, Math.floor(Number(pursuit.spawned) || 0)));
       const result = await this._spawnGroup('S01-chase-wolves');
       if (result?.ok !== true || (result.errors || []).length > 0) {
-        console.warn('[S01S02Coordinator] 追逐狼放置未完整成立，等待补偿', result);
+        // 纯等待类提示降级为 log：有界补偿会自动重试
+        console.log('[S01S02Coordinator] 追逐狼放置未完整成立，等待补偿', result);
         return false;
       }
 
@@ -595,7 +597,8 @@ export class S01S02Coordinator {
         this._activateWolf(wolf);
       }
       if (missing.length > 0) {
-        console.warn('[S01S02Coordinator] 追逐狼仍有缺失，等待补偿', missing);
+        // 纯等待类提示降级为 log：有界补偿会自动重试
+        console.log('[S01S02Coordinator] 追逐狼仍有缺失，等待补偿', missing);
         return false;
       }
       return true;
@@ -879,7 +882,7 @@ export class S01S02Coordinator {
     const placement = await this._ensureSpawnedPlacement(continuation.group, continuation.placementId);
     if (!placement.ok) {
       this._rememberPendingReveal(continuation);
-      console.warn('[S01S02Coordinator] 双工具拾取后野果放置进入退避补偿', placement);
+      console.log('[S01S02Coordinator] 双工具拾取后野果放置进入退避补偿', placement);
       return fuelStarted;
     }
     this.pendingPlacementReveals.delete(continuation.placementId);
@@ -894,7 +897,7 @@ export class S01S02Coordinator {
     const placement = await this._ensureSpawnedPlacement(continuation.group, continuation.placementId);
     if (!placement.ok) {
       this._rememberPendingReveal(continuation);
-      console.warn('[S01S02Coordinator] 野果采集完成后木材放置进入退避补偿', placement);
+      console.log('[S01S02Coordinator] 野果采集完成后木材放置进入退避补偿', placement);
       return fuelStarted;
     }
     this.pendingPlacementReveals.delete(continuation.placementId);
@@ -943,7 +946,8 @@ export class S01S02Coordinator {
     if (!this.firstWolfCorpsePending) {
       this.firstWolfCorpsePending = { entity, entityId: entity.id, attempts: 0 };
       this.firstWolfCorpseRetryElapsed = 0;
-      console.warn('[S01S02Coordinator] 首狼尸体或采集节点尚未完整成立，等待有界补偿', {
+      // 纯等待类提示降级为 log：有界补偿会自动重试，仅达上限时用 error
+      console.log('[S01S02Coordinator] 首狼尸体或采集节点尚未完整成立，等待有界补偿', {
         entityId: entity.id,
         maxAttempts: FIRST_WOLF_CORPSE_MAX_ATTEMPTS
       });
@@ -1826,7 +1830,7 @@ export class S01S02Coordinator {
         if (bossSpawn.ok === true) {
           this.scene._showScreenTip('一声压低的长嚎自林间响起——狼王出现了！', { title: '狼王登场' });
         } else {
-          console.warn('[S01S02Coordinator] 狼王生成未完成，等待流式补偿', bossSpawn);
+          console.log('[S01S02Coordinator] 狼王生成未完成，等待流式补偿', bossSpawn);
         }
       }
       return { ok: true };
@@ -1879,7 +1883,7 @@ export class S01S02Coordinator {
       try {
         await this._revealInitialToolKit();
       } catch (error) {
-        console.warn('[S01S02Coordinator] 篝火工具包放置进入退避补偿', error);
+        console.log('[S01S02Coordinator] 篝火工具包放置进入退避补偿', error);
       }
       return true;
     }
