@@ -36,6 +36,13 @@ const TIME_WEATHER_LABELS = Object.freeze({
 const COMBAT_EXIT_SECONDS_SHOWN = 2;
 
 /**
+ * 受控攀爬的排序抬升量（叠加在被攀爬物本体包围盒底边之上）。
+ * 必须大于依附在被攀爬物上的节点可能使用的最大 sortYOffset（当前苹果丛 80），
+ * 否则攀爬玩家会排在树冠果丛之后、被苹果贴图盖住。
+ */
+const CLIMB_SORT_BOOST = 96;
+
+/**
  * SceneRenderPipeline - Canvas 2D 场景渲染编排（框架级）
  *
  * 场景持有内容与 UI 实例，本类固定世界、屏幕 UI 与最高层弹窗的绘制顺序。
@@ -284,13 +291,14 @@ export class SceneRenderPipeline {
       const entitySortOffset = Number(entity.sortYOffset) || 0;
       let itemY = (terrains.length > 0 ? position.y : position.y - (position.z || 0) * 0.01)
         + corpseSortOffset + entitySortOffset;
-      // 受控攀爬：玩家应绘制在被攀爬物（树/藤蔓）之上——排序基线抬升到物体本体包围盒
-      // 底边之下（surfaceBounds 覆盖完整物件，比攀爬区/进入区更可靠），确保玩家在物体前方。
+      // 受控攀爬：玩家应绘制在被攀爬物（树/藤蔓）及其依附节点（如树冠上的果丛）
+      // 之上——排序基线抬升到物体本体包围盒底边 + CLIMB_SORT_BOOST
+      // （surfaceBounds 覆盖完整物件，比攀爬区/进入区更可靠），确保玩家在物体前方。
       if (entity === context?.player?.entity) {
         const climbPresentation = context?.systems?.locomotion?.getClimbPresentation?.(entity) || null;
         const surfaceBottom = Number(climbPresentation?.surfaceBounds?.maxY);
         if (Number.isFinite(surfaceBottom)) {
-          itemY = Math.max(itemY, surfaceBottom + 1);
+          itemY = Math.max(itemY, surfaceBottom + 1 + CLIMB_SORT_BOOST);
         }
       }
       item.y = itemY;
