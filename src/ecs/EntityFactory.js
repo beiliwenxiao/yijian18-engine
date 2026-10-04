@@ -544,6 +544,9 @@ export class EntityFactory {
     }));
     entity.name = data.name || data.resourceType || '资源节点';
     entity.tags = ['resourceNode', data.resourceType].filter(Boolean);
+    // 深度排序抬升：依附在大树等装饰物上的节点（如果丛贴在树冠上）把排序基线
+    // 抬到装饰物脚底之上，否则 y 排序会让装饰树冠盖住节点贴图。
+    entity.sortYOffset = Math.max(0, Number(data.sortYOffset) || 0);
     entity.addComponent(new LayerComponent({ worldLayer: 'entity' }));
     return entity;
   }

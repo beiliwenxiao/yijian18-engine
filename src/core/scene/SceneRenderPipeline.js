@@ -280,8 +280,10 @@ export class SceneRenderPipeline {
       const corpseSortOffset = entity.isCorpse === true
         ? Number(entity.corpseDefinition?.presentation?.sortYOffset) || 0
         : 0;
+      // 通用排序抬升（如依附树冠的资源节点）：把基线抬到所依附装饰物的脚底之上。
+      const entitySortOffset = Number(entity.sortYOffset) || 0;
       let itemY = (terrains.length > 0 ? position.y : position.y - (position.z || 0) * 0.01)
-        + corpseSortOffset;
+        + corpseSortOffset + entitySortOffset;
       // 受控攀爬：玩家应绘制在被攀爬物（树/藤蔓）之上——排序基线抬升到物体本体包围盒
       // 底边之下（surfaceBounds 覆盖完整物件，比攀爬区/进入区更可靠），确保玩家在物体前方。
       if (entity === context?.player?.entity) {

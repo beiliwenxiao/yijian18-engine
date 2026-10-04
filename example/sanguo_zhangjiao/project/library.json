@@ -1596,6 +1596,7 @@
       "gatherDuration": 1.5,
       "interactionRadius": 80,
       "requiredToolType": null,
+      "sortYOffset": 80,
       "refreshDays": 0,
       "refreshMode": "timed",
       "refreshIntervalSeconds": 7200,
