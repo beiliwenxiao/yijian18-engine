@@ -67,6 +67,51 @@
       "tags": ["support"]
     },
     {
+      "id": "flame_palm",
+      "name": "烈焰掌",
+      "description": "向目标位置喷发烈焰，对主范围造成伤害并溅射周围敌人",
+      "category": "attack",
+      "targeting": "position",
+      "params": {
+        "damageMin": 18,
+        "damageMax": 30,
+        "range": 170,
+        "radius": 70,
+        "splashDamageMin": 8,
+        "splashDamageMax": 14,
+        "cooldown": 6,
+        "castTime": 300
+      },
+      "costs": { "mp": 20 },
+      "tags": ["fire", "aoe", "strategist"],
+      "vfx": { "effect": "flame_palm" }
+    },
+    {
+      "id": "wolf_bite",
+      "name": "撕咬",
+      "description": "咬住面前的猎物造成撕裂伤害",
+      "category": "attack",
+      "targeting": "entity",
+      "params": { "damageMin": 6, "damageMax": 12, "range": 90, "radius": 90, "cooldown": 5 },
+      "tags": ["melee", "physical", "wolf"]
+    },
+    {
+      "id": "wolf_dash_bite",
+      "name": "冲刺撕咬",
+      "description": "蓄力后扑向猎物，冲撞落点造成范围伤害",
+      "category": "attack",
+      "targeting": "entity",
+      "params": {
+        "damageMin": 14,
+        "damageMax": 22,
+        "range": 260,
+        "radius": 100,
+        "cooldown": 10,
+        "castTime": 600
+      },
+      "tags": ["melee", "physical", "wolf", "dash"]
+    },
+    {
       "id": "gathering_puppet",
       "name": "采集傀儡",
       "description": "军师每次职业检查点可召唤一次傀儡执行采集；傀儡被摧毁时取消本次产物。",

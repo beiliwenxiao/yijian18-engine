@@ -364,7 +364,7 @@ const methods = {
     const resolver = this.gameLoader?.progressionSystem?.effectResolver;
     const registry = this.gameLoader?.skillRegistry;
     if (!combat || !resolver || !registry || !player?.id) return false;
-    const canonicalIds = new Set(['cleave', 'arrow_shot', 'talisman_water', 'gathering_puppet', 'power_jump']);
+    const canonicalIds = new Set(['cleave', 'arrow_shot', 'talisman_water', 'flame_palm', 'gathering_puppet', 'power_jump']);
     const removedLegacyIds = new Set(['flame_palm', 'ice_finger', 'inferno_palm', 'heal', 'meditation']);
     const unlockedIds = new Set(resolver.getUnlockedSkills(player.id).filter(id => canonicalIds.has(id)));
     const previousCooldowns = new Map(combat.skillCooldowns || []);

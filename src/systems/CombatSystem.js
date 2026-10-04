@@ -1817,8 +1817,8 @@ export class CombatSystem {
     stats.consumeMana(skill.manaCost);
     
     // 应用技能效果
-    this.applySkillEffects(caster, target, skill, currentTime);
-    
+    this.applySkillEffects(caster, target, skill, currentTime, entities || []);
+
     console.log(`${caster.name || caster.id} 使用技能 ${skill.name}`);
     return true;
   }
@@ -1950,7 +1950,7 @@ export class CombatSystem {
       return true;
     }
 
-    this.applySkillEffects(caster, target || null, skill, currentTime);
+    this.applySkillEffects(caster, target || null, skill, currentTime, entities || []);
     return true;
   }
 
@@ -1961,7 +1961,7 @@ export class CombatSystem {
    * @param {Object} skill - 技能数据
    * @param {number} currentTime - 当前时间（毫秒）
    */
-  applySkillEffects(caster, target, skill, currentTime) {
+  applySkillEffects(caster, target, skill, currentTime, entities = []) {
     const sprite = caster.getComponent('sprite');
     const casterTransform = caster.getComponent('transform');
     const targetTransform = target ? target.getComponent('transform') : null;
@@ -2014,12 +2014,40 @@ export class CombatSystem {
       return;
     }
     
+    // 特殊技能处理：狼王冲刺撕咬 —— 蓄力预警结束后扑至目标附近，对落点范围结算
+    if (skill.id === 'wolf_dash_bite' && target && targetTransform) {
+      const casterMovement = caster.getComponent('movement');
+      if (casterMovement) {
+        const dx = targetTransform.position.x - casterTransform.position.x;
+        const dy = targetTransform.position.y - casterTransform.position.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        if (distance > 0) {
+          // 冲到目标身前保持 40px 距离（与 warrior_charge 同位移模式）
+          const keepDistance = 40;
+          const ratio = Math.max(0, (distance - keepDistance) / distance);
+          casterTransform.setPosition(
+            casterTransform.position.x + dx * ratio,
+            casterTransform.position.y + dy * ratio
+          );
+        }
+      }
+
+      // 冲撞落点特效（从扑击起点到落点）
+      if (this.skillEffects && casterTransform) {
+        this.skillEffects.createSkillEffect(skill.id, casterTransform.position, targetTransform.position);
+      }
+
+      // 落点范围结算（敌我判定按施法者相对计算，radius 即预警圈）
+      this.applyAOEDamage(caster, targetTransform.position, skill, entities || []);
+      return;
+    }
+
     // 创建技能特效
     if (this.skillEffects && casterTransform) {
       const targetPos = targetTransform ? targetTransform.position : null;
       
       // 对于抛射物技能，延迟应用伤害直到命中
-      if (skill.type === 'physical' || skill.type === 'magic') {
+      if (skill.type === 'physical' || skill.type === 'magic' || skill.type === 'attack') {
         if (skill.range > 100 && target) {
           // 远程技能，使用抛射物
           this.skillEffects.createSkillEffect(
@@ -2046,8 +2074,8 @@ export class CombatSystem {
       }
     }
     
-    // 根据技能类型应用效果
-    if (skill.type === 'physical' || skill.type === 'magic') {
+    // 根据技能类型应用效果（canonical skills 的攻击类别为 'attack'，与旧 'physical'/'magic' 等价处理）
+    if (skill.type === 'physical' || skill.type === 'magic' || skill.type === 'attack') {
       // 伤害技能（近战或没有特效系统）（传入技能名称）
       if (target && skill.range <= 100) {
         const damage = this.calculateSkillDamage(caster, target, skill);
