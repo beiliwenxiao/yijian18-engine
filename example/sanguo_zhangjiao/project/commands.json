@@ -1798,7 +1798,7 @@
       "when": {
         "all": [
           {
-            "equals": "S09",
+            "equals": "S02",
             "path": "story.currentSceneId"
           },
           {

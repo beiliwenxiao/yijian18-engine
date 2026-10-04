@@ -110,8 +110,9 @@ describe('GameLoader immutable shadow publication', () => {
     const project = loadResolvedDemoProject();
     const result = loader.assemble(project);
 
-    // 任务中心制：quests[] 为编译出的 taskGraph 定义
-    expect(result.quests.map(quest => quest.id)).toEqual(['task.s01.survival', 'task.s02.summons', 'task.s02.rescue']);
+    // 任务中心制：quests[] 为编译出的 taskGraph 定义，与工程 quests 声明顺序一一对应
+    //（不硬编码任务清单：demo 工程内容随章节扩展持续增长）
+    expect(result.quests.map(quest => quest.id)).toEqual(project.quests.map(quest => quest.id));
     expect(loader.lastSuccessfulSnapshot.project).toBe(loader.project);
     expect(loader.runtimeConfigSnapshot.definitionRevision).toBe(1);
     expect(loader.getRegistry('items').get('resource.wood')?.name).toBe('木材');

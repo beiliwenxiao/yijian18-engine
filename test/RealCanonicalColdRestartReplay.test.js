@@ -44,10 +44,13 @@ const s01Snapshot = () => ({
   }
 });
 
+// 难民冲突剧情已随 S02 难民迁移章节从 S09 迁至 S02 场景触发
+//（story.s09.refugee.* 的 when 要求 currentSceneId === 'S02'，城市仍为光宗营），
+// 快照场景 ID 跟随内容迁移，函数名保留历史语义。
 const s09Snapshot = ({ axe = false } = {}) => ({
   runtimeState: {
     blackboard: {
-      storyState: { currentSceneId: 'S09', currentDay: 1, storyTags: [], delayedConsequences: [] },
+      storyState: { currentSceneId: 'S02', currentDay: 1, storyTags: [], delayedConsequences: [] },
       cityStates: [{ id: 'city.s09_guangzong_camp', morale: 40, damageRatio: 0.5, buildingDamage: { granary: { s09: 1 } }, resources: { food: 60 } }]
     },
     inventory: [
