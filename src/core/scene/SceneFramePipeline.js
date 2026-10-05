@@ -269,22 +269,33 @@ export class SceneFramePipeline {
     // 键盘/摇杆是否实际有输入：getMoveAxis() 无输入时返回零向量（truthy）而非 null，
     // 必须按 magnitude 判定，否则下方右键攀爬分支永远进不去。
     const keyboardAxisHeld = !!(locomotionAxis && Number(locomotionAxis.magnitude) > 0);
-    // 受控攀爬中允许按住鼠标右键朝指针方向攀爬（与常规「右键移动」同键，攀爬中
-    // MovementSystem 的点击移动已被 isMovementLocked 拦截且不标记 handled）：
-    // 与摇杆/方向键汇入同一条移动轴，方向指向鼠标世界坐标；8px 死区防止
-    // 点在自己身上时抖动；UI 刚消费过的点击沿不驱动攀爬。
-    if (!keyboardAxisHeld && !worldInputBlocked && player && inputManager && camera
-      && locomotionSystem?.getClimbPresentation?.(player) != null
-      && inputManager.isMouseButtonDown?.(2) === true
-      && !(inputManager.isMouseClicked?.() === true && inputManager.isMouseClickHandled?.() === true)) {
-      const mouseWorldPos = inputManager.getMouseWorldPosition?.(camera) || null;
+    // 受控攀爬的右键移动（与常规「右键移动」同键；攀爬中 MovementSystem 的点击
+    // 移动已被 isMovementLocked 拦截且不标记 handled）：
+    //   按住右键 → 目标点实时跟随指针，朝指针方向攀爬；
+    //   点一下右键 → 以最后指针位置为目的地持续攀爬，抵达后自动停（与地面
+    //   「点了就走」的操作习惯一致）；再次点击可改目标；WASD/摇杆随时抢占。
+    // 8px 死区防止点在自己身上时抖动；UI 消费过的点击不更新目标。
+    const climbPresentation = player && locomotionSystem
+      ? locomotionSystem.getClimbPresentation?.(player) || null
+      : null;
+    if (!climbPresentation) {
+      this._climbMoveTarget = null;
+    } else if (!worldInputBlocked && player && inputManager && camera && !keyboardAxisHeld) {
+      const rightHeld = inputManager.isMouseButtonDown?.(2) === true;
+      const uiAteClick = inputManager.isMouseClicked?.() === true
+        && inputManager.isMouseClickHandled?.() === true;
+      if (rightHeld && !uiAteClick) {
+        this._climbMoveTarget = inputManager.getMouseWorldPosition?.(camera) || this._climbMoveTarget;
+      }
       const playerTransform = player.getComponent?.('transform');
-      if (mouseWorldPos && playerTransform) {
-        const dx = mouseWorldPos.x - playerTransform.position.x;
-        const dy = mouseWorldPos.y - playerTransform.position.y;
-        const pointerDistance = Math.hypot(dx, dy);
-        if (pointerDistance > 8) {
-          locomotionAxis = { x: dx / pointerDistance, y: dy / pointerDistance, magnitude: 1 };
+      if (this._climbMoveTarget && playerTransform) {
+        const dx = this._climbMoveTarget.x - playerTransform.position.x;
+        const dy = this._climbMoveTarget.y - playerTransform.position.y;
+        const targetDistance = Math.hypot(dx, dy);
+        if (targetDistance > 8) {
+          locomotionAxis = { x: dx / targetDistance, y: dy / targetDistance, magnitude: 1 };
+        } else if (!rightHeld) {
+          this._climbMoveTarget = null;
         }
       }
     }
