@@ -897,6 +897,11 @@ export const HudIconPainter = {
     return typeof name === 'string' && Object.prototype.hasOwnProperty.call(PAINTERS, name);
   },
 
+  /** 全部内置图标名列表（导出图片资产等工具用）。 */
+  names() {
+    return Object.keys(PAINTERS);
+  },
+
   /**
    * 以 (cx, cy) 为中心绘制手绘风图标。
    * @param {string} name - 图标名（PAINTERS 键）
