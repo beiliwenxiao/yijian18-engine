@@ -399,14 +399,17 @@ export class ScenePlacementRuntime {
       this.spawner.forgetPlacements(result.entities.map(entity => entity?.placementId || entity?.id).filter(Boolean));
       return { ok: false, ...result, errors: [...result.errors, ...colliderSync.errors] };
     }
-    this.logger.log('[ScenePlacementRuntime] spawn', {
-      selector: result.selector,
-      matched: result.matchedPlacements.map(placement => placement.id),
-      counts: result.counts,
-      outcomes: result.outcomes,
-      skipped: result.skipped,
-      errors: result.errors.length
-    });
+    // 降噪：仅在本次确实有新实体刷出时记录（流式加载/重复调用会频繁空跑）
+    if ((Number(result.counts?.total) || 0) > 0) {
+      this.logger.log('[ScenePlacementRuntime] spawn', {
+        selector: result.selector,
+        matched: result.matchedPlacements.map(placement => placement.id),
+        counts: result.counts,
+        outcomes: result.outcomes,
+        skipped: result.skipped,
+        errors: result.errors.length
+      });
+    }
     return { ok: true, ...result };
   }
 
