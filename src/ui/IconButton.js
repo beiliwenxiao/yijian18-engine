@@ -108,7 +108,7 @@ export class IconButton extends UIElement {
       const iconSize = Math.floor(h * 0.62);
       const painted = HudIconPainter.draw(
         ctx, this.icon, cx, iconCy, iconSize,
-        this.hovered ? '#ffffff' : '#e8d9a8'
+        { brighten: this.hovered ? 0.35 : 0 }
       );
       if (!painted) {
         ctx.fillStyle = '#ffffff';

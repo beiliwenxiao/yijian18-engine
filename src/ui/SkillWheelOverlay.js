@@ -123,7 +123,7 @@ export class SkillWheelOverlay extends UIElement {
 
       // 图标：矢量图标（HudIconPainter）优先，emoji 回退
       const iconKey = this._getSkillIconKey(skill);
-      if (!HudIconPainter.draw(ctx, iconKey, ix, iy, bgSize * 0.52, '#ffffff')) {
+      if (!HudIconPainter.draw(ctx, iconKey, ix, iy, bgSize * 0.52)) {
         const iconEmoji = this._getSkillEmoji(skill);
         ctx.fillStyle = '#ffffff';
         ctx.font = `${Math.floor(bgSize * 0.5)}px Arial`;
