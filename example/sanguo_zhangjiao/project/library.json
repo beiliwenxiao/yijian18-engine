@@ -927,6 +927,7 @@
   "enemies": [
     {
       "aiType": "aggressive",
+      "attackRange": 50,
       "corpse": {
         "name": "野狼尸体",
         "presentation": {
@@ -954,7 +955,6 @@
           "minQuantity": 5
         }
       ],
-      "attackRange": 50,
       "maxDamage": 1,
       "name": "虚弱的狼",
       "npcType": "monster",
@@ -986,6 +986,7 @@
         }
       },
       "aiType": "aggressive",
+      "attackRange": 50,
       "corpse": {
         "name": "野狼尸体",
         "presentation": {
@@ -1007,7 +1008,6 @@
           "minQuantity": 0
         }
       ],
-      "attackRange": 50,
       "name": "追逐野狼",
       "npcType": "monster",
       "sprite": {
@@ -1063,7 +1063,7 @@
           "windupMs": 800
         }
       },
-      "aiActive": false,
+      "aiActive": true,
       "aiType": "aggressive",
       "attackRange": 90,
       "corpse": {
