@@ -313,7 +313,12 @@ export class BottomControlBar extends UIElement {
     const stats = this.entity.getComponent('stats');
     if (stats) parts.push(stats.hp, stats.maxHp, stats.mp, stats.maxMp);
     const combat = this.entity.getComponent('combat');
-    if (combat) parts.push(Math.ceil((Number(combat.healCooldownUntil) || 0) / 100));
+    if (combat) {
+      // heal 槽进食冷却：必须用「剩余时间」量化（绝对截止时间戳是常数，会让签名
+      // 在冷却期间不变、离屏不重绘，倒计时卡死不走）
+      const healRemaining = Math.max(0, (Number(combat.healCooldownUntil) || 0) - (this._frameNow || 0));
+      parts.push(Math.ceil(healRemaining / 100));
+    }
     const skills = combat && Array.isArray(combat.skills) ? combat.skills : null;
     if (skills) parts.push('skills', skills.length);
     for (let i = 0; i < this.skillSlots.length; i++) {
