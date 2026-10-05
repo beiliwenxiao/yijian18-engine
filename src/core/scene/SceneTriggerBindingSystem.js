@@ -546,7 +546,15 @@ export class SceneTriggerBindingSystem {
     if (!fired) {
       // 诊断告警：绑定已命中但触发器被拒绝（冷却/once/重入/前置不满足）——
       // 此前这里静默吞掉，「提示在按 E 无反应」无从排查。
-      this.logger?.('triggerRejected', binding, { triggerId: binding.triggerId, eventType });
+      // 同一绑定同一事件类型 5 秒内只告警一次：前置不满足时逐帧重试会刷屏。
+      const rejectKey = `${binding.id || binding.triggerId}|${eventType}`;
+      const nowMs = Date.now();
+      const lastLoggedAt = this._rejectLogAt?.get(rejectKey) || 0;
+      if (nowMs - lastLoggedAt > 5000) {
+        this._rejectLogAt = this._rejectLogAt || new Map();
+        this._rejectLogAt.set(rejectKey, nowMs);
+        this.logger?.('triggerRejected', binding, { triggerId: binding.triggerId, eventType });
+      }
     }
     return fired;
   }
