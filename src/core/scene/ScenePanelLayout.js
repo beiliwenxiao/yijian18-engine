@@ -226,42 +226,42 @@ export class ScenePanelLayout {
     if (!scene.isMobileLayout) {
       scene.bagButton = new IconButton({
         x: 946, y: 640, width: 50, height: 50,
-        icon: '🎒', label: '背包', hintAction: 'bag',
+        icon: 'backpack', label: '背包', hintAction: 'bag',
         onClick: () => { if (scene.backpackPanel) scene.backpackPanel.toggle(); }
       });
       // 军队：开关军队操作条（编组/姿态命令 HUD）——排在系统设置按钮前面
       scene.armyButton = new IconButton({
         x: 1002, y: 640, width: 50, height: 50,
-        icon: '⚔️', label: '军队',
+        icon: 'army', label: '军队',
         onClick: () => scene.toggleArmyCommandHud?.()
       });
       scene.settingsButton = new IconButton({
         x: 1058, y: 640, width: 50, height: 50,
-        icon: '⚙️', label: '系统设置', hintAction: 'settings',
+        icon: 'settings', label: '系统设置', hintAction: 'settings',
         onClick: () => scene.openSystemMenu?.()
       });
       // 跳跃：读取当前键盘/摇杆方向，未输入方向时原地起跳
       scene.jumpButton = new IconButton({
         x: 666, y: 640, width: 50, height: 50,
-        icon: '⬆️', label: '跳跃', hintAction: 'jump',
+        icon: 'jump', label: '跳跃', hintAction: 'jump',
         onClick: () => { scene.enqueueLocomotionInput?.('jump'); }
       });
       // 轻功（按下进入瞄准，左键在射程内确认瞬移）
       scene.flightButton = new IconButton({
         x: 722, y: 640, width: 50, height: 50,
-        icon: '💨', label: '轻功', hintAction: 'flight',
+        icon: 'flight', label: '轻功', hintAction: 'flight',
         onClick: () => { scene.enterPCAimMode('flight'); }
       });
       // 投掷（按下进入瞄准，左键在射程内确认投掷）
       scene.throwButton = new IconButton({
         x: 778, y: 640, width: 50, height: 50,
-        icon: '🎯', label: '投掷', hintAction: 'throw',
+        icon: 'throwIcon', label: '投掷', hintAction: 'throw',
         onClick: () => { scene.enterPCAimMode('throw'); }
       });
       // 格挡（按下激活格挡防护）
       scene.blockButton = new IconButton({
         x: 666, y: 640, width: 50, height: 50,
-        icon: '🛡', label: '格挡', hintAction: 'block',
+        icon: 'block', label: '格挡', hintAction: 'block',
         onClick: () => { scene.activateBlock(); }
       });
     }

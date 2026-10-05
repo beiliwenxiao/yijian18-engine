@@ -7,6 +7,7 @@
  */
 
 import { UIElement } from './UIElement.js';
+import { HudIconPainter } from './HudIconPainter.js';
 
 export class SkillWheelOverlay extends UIElement {
   constructor(options = {}) {
@@ -120,13 +121,16 @@ export class SkillWheelOverlay extends UIElement {
       ctx.lineWidth = isSelected ? 3 : 1.5;
       ctx.stroke();
 
-      // 图标 emoji
-      const iconEmoji = this._getSkillEmoji(skill);
-      ctx.fillStyle = '#ffffff';
-      ctx.font = `${Math.floor(bgSize * 0.5)}px Arial`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(iconEmoji, ix, iy);
+      // 图标：矢量图标（HudIconPainter）优先，emoji 回退
+      const iconKey = this._getSkillIconKey(skill);
+      if (!HudIconPainter.draw(ctx, iconKey, ix, iy, bgSize * 0.52, '#ffffff')) {
+        const iconEmoji = this._getSkillEmoji(skill);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = `${Math.floor(bgSize * 0.5)}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(iconEmoji, ix, iy);
+      }
 
       // 技能名（选中时显示在图标下方）
       if (isSelected) {
@@ -145,6 +149,29 @@ export class SkillWheelOverlay extends UIElement {
     ctx.fillText('推动右摇杆选择', cx, cy);
 
     ctx.restore();
+  }
+
+  /** 技能 → 矢量图标键（HudIconPainter）；未映射的 id 回退 effectType，再回退 emoji。 */
+  _getSkillIconKey(skill) {
+    if (!skill) return '';
+    if (HudIconPainter.has(skill.icon)) return skill.icon;
+    const map = {
+      flame_palm: 'flame',
+      inferno_palm: 'flame',
+      fireball: 'flame',
+      ice_finger: 'frost',
+      ice_lance: 'frost',
+      heal: 'heal',
+      talisman_water: 'heal',
+      meditation: 'meditation',
+      cleave: 'attack',
+      arrow_shot: 'arrow',
+      power_jump: 'jump',
+      jump: 'jump',
+      flight: 'flight',
+      gathering_puppet: 'gather'
+    };
+    return map[skill.id] || map[skill.effectType] || '';
   }
 
   _getSkillEmoji(skill) {

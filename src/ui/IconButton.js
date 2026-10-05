@@ -22,6 +22,7 @@
 
 import { UIElement } from './UIElement.js';
 import { InputHints } from '../core/input/InputHints.js';
+import { HudIconPainter } from './HudIconPainter.js';
 
 /**
  * IconButton - 通用图标按钮（Canvas 渲染，可点击）
@@ -101,13 +102,21 @@ export class IconButton extends UIElement {
     const cx = x + w / 2;
     const cy = y + h / 2;
 
-    // 图标
+    // 图标：矢量图标名（HudIconPainter）优先，未知名回退 emoji/短文本
     if (this.icon) {
-      ctx.fillStyle = '#ffffff';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.font = `${Math.floor(h * 0.42)}px Arial`;
-      ctx.fillText(this.icon, cx, cy - (this.label ? h * 0.12 : 0));
+      const iconCy = cy - (this.label ? h * 0.12 : 0);
+      const iconSize = Math.floor(h * 0.62);
+      const painted = HudIconPainter.draw(
+        ctx, this.icon, cx, iconCy, iconSize,
+        this.hovered ? '#ffffff' : '#e8d9a8'
+      );
+      if (!painted) {
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.font = `${Math.floor(h * 0.42)}px Arial`;
+        ctx.fillText(this.icon, cx, iconCy);
+      }
     }
     // 标签
     if (this.label) {
