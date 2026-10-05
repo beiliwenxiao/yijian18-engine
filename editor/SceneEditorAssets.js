@@ -82,6 +82,15 @@ export class SceneEditorAssets {
     this._contentDraftSequence = 0;
     // Manifest 写盘串行队列：连续导入多张图时避免并发 fetch+save 互相覆盖
     this._manifestWriteQueue = Promise.resolve();
+    // 共享图集草稿是内存态：有未落盘修改时拦截刷新/关闭，防「导入的图集刷新后消失」
+    this._beforeunloadGuard = event => {
+      const hasDirtyDraft = [...(this.editor.sharedAtlasDrafts?.values() || [])]
+        .some(draft => draft?.dirty === true);
+      if (!hasDirtyDraft) return;
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', this._beforeunloadGuard);
   }
 
   _currentProjectPath() {
@@ -2899,7 +2908,15 @@ export class SceneEditorAssets {
       this._updateSlicePreviews();
       this._showAtlasProperties();
       editor.render();
-      editor.ui.showToast?.(`已创建共享图集草稿 ${id}；保存时会自动同步 Manifest`);
+      // 导入即落盘：此前草稿只存内存、需手动「保存图集」，刷新后导入的图集直接丢失
+      //（用户反馈）。复用 saveAtlases 的原子事务（catalog + Manifest 同步提交）；
+      // 保存失败时草稿保留（dirty），由 beforeunload 拦截与手动保存兜底。
+      editor.ui.showToast?.(`已创建共享图集 ${id}，正在保存并同步 Manifest…`);
+      const saveResult = await this.saveAtlases();
+      if (saveResult?.ok === true && saveResult.committed === true) {
+        editor.ui.showToast?.(`共享图集 ${id} 已落盘`);
+        return { ok: true, committed: true, status: 'committed', atlasId: id, atlas };
+      }
       return { ok: true, committed: false, status: 'draft', atlasId: id, atlas };
     } catch (error) {
       editor.ui.showToast?.(`新建图集失败: ${error.message}`, 'error');
