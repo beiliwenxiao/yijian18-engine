@@ -120,7 +120,7 @@ export class SceneGameplaySystemAssembler {
     scene.combatSystem.setOnEnterCombat(() => {
       if (scene.meditationSystem?.isActive()) scene.meditationSystem.stop();
     });
-    scene.combatSystem.onPotionUse = potionType => scene.usePotionFromHotbar(potionType);
+    scene.combatSystem.onPotionUse = (potionType, modifiers) => scene.usePotionFromHotbar(potionType, modifiers);
     scene.combatSystem.setLootDropCallback((position, lootItems) => {
       for (const item of lootItems || []) {
         const definitionId = item.itemId || item.definitionId || item.id || item.type;
