@@ -114,6 +114,11 @@ export class BottomControlBar extends UIElement {
     this.hoveredSlot = -1;
     this.mouseX = 0;
     this.mouseY = 0;
+
+    // 离屏缓存：底栏每帧全量重绘是长帧常量热点（~9ms）——状态签名未变化时直接贴图
+    this._offscreenCanvas = null;
+    this._renderSignature = null;
+    this._offscreenReady = false;
     
     // 事件回调
     this.onSkillClick = options.onSkillClick || null;
@@ -188,6 +193,7 @@ export class BottomControlBar extends UIElement {
    */
   setEntity(entity) {
     this.entity = entity;
+    this._renderSignature = null;
   }
 
   /**
@@ -214,6 +220,7 @@ export class BottomControlBar extends UIElement {
     target.onboardingHintAction = state.hintAction || null;
     target.onboardingComponentId = componentId;
     this._hotkeyScheme = null;
+    this._renderSignature = null;
     return true;
   }
 
@@ -231,31 +238,100 @@ export class BottomControlBar extends UIElement {
    */
   render(ctx) {
     if (!this.visible) return;
-    
+
     if (!this.entity) return;
 
     this._frameNow = this.now();
     this._preparePotionSummaries(this.entity.getComponent('inventory'));
     this._prepareHotkeyLabels();
 
+    // 离屏缓存：状态签名未变化时整帧贴图，跳过血蓝球/技能槽的全量重绘。
+    const canvas = ctx.canvas;
+    if (!this._offscreenCanvas || this._offscreenCanvas.width !== canvas.width
+      || this._offscreenCanvas.height !== canvas.height) {
+      this._offscreenCanvas = document.createElement('canvas');
+      this._offscreenCanvas.width = canvas.width;
+      this._offscreenCanvas.height = canvas.height;
+      this._renderSignature = null;
+    }
+    const signature = this._buildRenderSignature();
+    if (signature !== this._renderSignature || this._offscreenReady !== true) {
+      this._renderSignature = signature;
+      const offCtx = this._offscreenCanvas.getContext('2d');
+      offCtx.setTransform(1, 0, 0, 1, 0, 0);
+      offCtx.clearRect(0, 0, this._offscreenCanvas.width, this._offscreenCanvas.height);
+      // 与主画布保持同一变换（含 dpr 缩放），离屏像素与主画布逐像素对齐
+      if (typeof ctx.getTransform === 'function') {
+        const m = ctx.getTransform();
+        offCtx.setTransform(m.a, m.b, m.c, m.d, m.e, m.f);
+      }
+      this._renderAll(offCtx);
+      this._offscreenReady = true;
+    }
+
+    // 贴回主画布：恒等变换按物理像素 1:1，避免二次缩放模糊
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.drawImage(this._offscreenCanvas, 0, 0);
+    ctx.restore();
+  }
+
+  /** 原有全量绘制路径（绘制目标为主画布或离屏缓存）。 */
+  _renderAll(ctx) {
     ctx.save();
 
     // 渲染背景（使用子控件独立布局时不画整体背景条）
     if (!this._hasSubLayout) {
       this.renderBackground(ctx);
     }
-    
+
     // 渲染血球与蓝球，同帧只解析一次 StatsComponent
     if (this.showOrbs) {
       const stats = this.entity.getComponent('stats');
       if (this.hpOrb.visible !== false) this.renderHpOrb(ctx, stats);
       if (this.mpOrb.visible !== false) this.renderMpOrb(ctx, stats);
     }
-    
+
     // 渲染技能槽
     this.renderSkillSlots(ctx);
 
     ctx.restore();
+  }
+
+  /**
+   * 底栏重绘签名：覆盖全部绘制输入（布局/血蓝/槽位/冷却/药水/引导态）。
+   * 冷却剩余按 0.1s 量化，冷却动画期间以 ~10fps 刷新遮罩。
+   */
+  _buildRenderSignature() {
+    const parts = [
+      this.hoveredSlot, this.showOrbs, this.showHotkeyNumbers, this._hasSubLayout,
+      this.x, this.y, this.width, this.height,
+      this.hpOrb.x, this.hpOrb.y, this.hpOrb.radius, this.hpOrb.visible,
+      this.mpOrb.x, this.mpOrb.y, this.mpOrb.radius, this.mpOrb.visible,
+      this._hotkeyScheme
+    ];
+    const stats = this.entity.getComponent('stats');
+    if (stats) parts.push(stats.hp, stats.maxHp, stats.mp, stats.maxMp);
+    const combat = this.entity.getComponent('combat');
+    const skills = combat && Array.isArray(combat.skills) ? combat.skills : null;
+    if (skills) parts.push('skills', skills.length);
+    for (let i = 0; i < this.skillSlots.length; i++) {
+      const slot = this.skillSlots[i];
+      parts.push(slot.x, slot.y, slot.size, slot.visible, slot.enabled,
+        slot.onboardingHighlighted, slot.onboardingHintAction, slot.hintAction);
+      if (slot.isPotion) {
+        const summary = this._potionSummaries[i];
+        parts.push(summary.count, summary.item ? (summary.item.id || summary.item.name || '?') : null);
+      } else if (skills) {
+        const skill = skills[slot.skillIndex];
+        if (!skill) { parts.push('empty'); continue; }
+        parts.push(skill.id);
+        const remaining = typeof combat.getSkillCooldownRemaining === 'function'
+          ? combat.getSkillCooldownRemaining(skill.id, this._frameNow) : 0;
+        parts.push(Math.ceil(remaining / 100));
+      }
+    }
+    return parts.join('|');
   }
 
   _preparePotionSummaries(inventory) {

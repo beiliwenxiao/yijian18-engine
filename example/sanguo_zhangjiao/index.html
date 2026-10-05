@@ -1704,7 +1704,9 @@
                 ]);
                 const aggregateNames = new Set([
                     'updateDemoBeforeBase', 'updateBaseFrame', 'updateDemoAfterBase',
-                    'renderScreenUi'
+                    'renderScreenUi',
+                    // 有细分子段的聚合段：叶子热点只展示子段，避免父子重复计数
+                    'updateFrameMovementCollision', 'updateFrameUiCleanup'
                 ]);
                 const detailEntries = Object.entries(sample)
                     .filter(([name, value]) => name !== 'startedAt' && name !== 'total'

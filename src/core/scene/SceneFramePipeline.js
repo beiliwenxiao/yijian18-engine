@@ -361,6 +361,12 @@ export class SceneFramePipeline {
     if (flightSystem && player) {
       flightSystem.update(deltaTime, player);
     }
+    if (frameProfile) {
+      const now = performance.now();
+      // 覆盖攀爬执行器 + 跳跃蓄力 + 跳跃 + 轻功（updateFrameEntities 之后到移动前的位移准备段）
+      frameProfile.updateFrameLocomotionPrep = now - phaseStartedAt;
+      phaseStartedAt = now;
+    }
 
     // 更新移动系统：普通模态、打坐、采集和死亡倒计时锁定玩家；灵魂状态仅允许移动。
     // 受控攀爬期间玩家的位置由 ClimbSystem 全权驱动，MovementSystem 必须跳过玩家，
@@ -388,6 +394,11 @@ export class SceneFramePipeline {
 
     const contactWasLocked = movementSystem.isContactMovementLocked?.(player) === true;
     const beforeEntityCollision = capturePosition(player);
+    if (frameProfile) {
+      const now = performance.now();
+      frameProfile.updateFrameMovementOnly = now - phaseStartedAt;
+      phaseStartedAt = now;
+    }
     // 检查实体之间的碰撞；跳跃/跌落中的实体跳过（空中不受物体碰撞影响）；
     // 剧情倒地实体（plotDowned，如 S02 昏倒的主角）同样跳过——倒地者不应被周围人群的
     // 碰撞分离力推走，否则士兵一聚拢就会把主角挤出场景。
@@ -559,15 +570,31 @@ export class SceneFramePipeline {
 
     // 移除死亡实体
     scene.removeDeadEntities();
+    if (frameProfile) {
+      const now = performance.now();
+      frameProfile.updateUiCleanupDeadRemoval = now - phaseStartedAt;
+      phaseStartedAt = now;
+    }
 
     // 更新小地图数据（玩家、敌人、相机和多 terrain 缓存）。
     hudUpdater?.updateMinimap(deltaTime);
+    if (frameProfile) {
+      const now = performance.now();
+      frameProfile.updateUiCleanupMinimap = now - phaseStartedAt;
+      phaseStartedAt = now;
+    }
 
     // 输入清帧必须保持在原有的正常帧末尾；转场提前返回路径只 releaseFrame。
     runtime?.runFramePhase?.(FramePhase.AFTER_SCENE, deltaTime, { scene, frameToken });
     if (inputFlow) inputFlow.flush();
     else if (runtime) runtime.flushInput({ frameToken });
     else inputManager.update();
+    if (frameProfile) {
+      const now = performance.now();
+      // AFTER_SCENE 相位：军团指挥姿态机、S01S02 剧情协调器、教程事件源等后置更新
+      frameProfile.updateUiCleanupAfterScenePhase = now - phaseStartedAt;
+      phaseStartedAt = now;
+    }
 
     // 性能监控关闭时不做计时、可见实体裁剪、纹理遍历和对象池快照。
     if (monitorEnabled) {
