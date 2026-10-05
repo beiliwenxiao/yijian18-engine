@@ -138,7 +138,7 @@
     "steps": [
       {
         "id": "s01.attack.step.attack",
-        "text": "随着篝火的火光越来也亮，远处的一匹野狼出现后，按{attack}反击。",
+        "text": "随着篝火的火光越来越亮，远处的一匹野狼出现后，按{attack}反击。",
         "highlightTarget": false
       }
     ],
@@ -167,7 +167,7 @@
     "steps": [
       {
         "id": "s01.durability.step.tools",
-        "text": "按{harvest}用剥皮刀剥取狼皮。",
+        "text": "{harvest}用剥皮刀剥取狼皮。",
         "highlightTarget": false
       }
     ],

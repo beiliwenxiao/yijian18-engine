@@ -1665,6 +1665,12 @@ export class CombatSystem {
               this.tryUseSkillAtPosition(this.playerEntity, skill, mouseWorldPos, currentTime, entities);
             }
           }
+        } else {
+          // 未学会该技能（新档平民无技能）：飘字反馈而非静默跳过
+          const casterTransform = this.playerEntity.getComponent?.('transform');
+          if (casterTransform && this.floatingTextManager) {
+            this.floatingTextManager.addText(casterTransform.position.x, casterTransform.position.y - 60, '尚未学会技能', '#8fb7ff');
+          }
         }
       }
     }
