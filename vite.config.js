@@ -9,7 +9,18 @@ const CANONICAL_PROJECT = 'example/sanguo_zhangjiao/game.project.json';
 export default defineConfig({
   server: {
     port: 3000,
-    open: true
+    open: true,
+    // dev 冷启动预热：提前转换游戏入口模块链，缓解首次导航后旧文档画面长时间停留
+    warmup: {
+      clientFiles: [
+        './example/sanguo_zhangjiao/index.html',
+        './example/sanguo_zhangjiao/scenes/**/*.js',
+        './example/sanguo_zhangjiao/systems/**/*.js',
+        './src/core/**/*.js',
+        './src/systems/**/*.js',
+        './src/ui/**/*.js'
+      ]
+    }
   },
   plugins: [editorFileAPIPlugin({
     repoRoot: __dirname,

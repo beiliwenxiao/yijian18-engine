@@ -156,6 +156,11 @@ export class ScenePanelLayout {
       onPotionUse: (potionType) => {
         scene.usePotionFromHotbar(potionType);
       },
+      // heal 槽右键：打开恢复类消耗品选择列表（Shift+1 为快速循环切换）
+      onHealSlotRightClick: () => {
+        scene._ensureCombatActions?.().openHealItemPicker?.()
+          || scene.notificationSystem?.addNotification?.('背包里没有可用的恢复类消耗品', 'info');
+      },
       // 教学高亮一次性熄灭：高亮槽位首次被点击时回调
       onOnboardingComponentActivated: (componentId) => {
         scene.notifyOnboardingControlActivated?.(componentId);

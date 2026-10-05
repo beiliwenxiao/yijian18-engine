@@ -387,6 +387,7 @@ export class S01S02Coordinator {
 
   /** 存档没有可恢复的活动教程时，仅按已提交 StoryState 投影当前目标，不重放 Trigger。 */
   projectRestoredProgress() {
+    if (this.scene.currentSceneId === 'S02') return this.reconcileS02RestoredState();
     if (this.scene.currentSceneId !== 'S01' || this.scene.tutorialSystem?.getCurrentTutorial?.()) return false;
     const tutorialId = this._deriveRestoredTutorialId();
     if (!tutorialId || this.scene._tutorialFlow?.isCompleted?.(tutorialId) === true) return false;
@@ -396,6 +397,46 @@ export class S01S02Coordinator {
     }) === true;
     if (shown) console.log('[S01S02Coordinator] 已按存档 StoryState 重投影当前目标', tutorialId);
     return shown;
+  }
+
+  /**
+   * S02 读档/回滚后的剧情碎片重放：昏倒状态由场景恢复保留，但 sceneEnter 触发器
+   * 已被 once 消费、sceneEnter 事件也不会重发——开场对话/裁决/救援需要按剧情事实补放。
+   * - 裁决未做 → 重放开场对话（对话选项触发 杀/救 裁决事务）
+   * - 已选「救」 → 补刷前军/后军（spawnWhen 事件驱动，读档错过）+ 幂等激活担架救援
+   * - 已选「杀」 → 解除倒地，让玩家继续该分支路线
+   */
+  reconcileS02RestoredState() {
+    const scene = this.scene;
+    if (scene.currentSceneId !== 'S02') return false;
+    const choice = this._readStoryPath('s02ZhangjiaoChoice');
+    const downed = scene.playerDowned === true || scene.playerEntity?.plotDowned === true;
+    const rescue = scene.s02ArmyRescueCoordinator || null;
+
+    if (!choice) {
+      if (downed && scene.dialogueSystem?.isDialogueActive?.() !== true) {
+        const started = scene.dialogueSystem?.startDialogue?.('dialogue.s02.prologue', { sceneId: 'S02' }) === true;
+        if (started) console.log('[S01S02Coordinator] S02 读档重放开场对话（裁决选择）');
+        return started;
+      }
+      return false;
+    }
+    if (choice === 'save') {
+      const spawned = scene.context?.services?.placements?.spawnGroup?.('S02-army') || null;
+      const started = rescue?.beginArmyRescue?.({});
+      if (started?.ok === true || (spawned && spawned.ok === true)) {
+        scene._showScreenTip?.('黄巾士兵发现了你。指挥士兵走近，抬起担架返回营地。', { title: '军团指挥' });
+        console.log('[S01S02Coordinator] S02 救分支救援编排已补放', { spawned: spawned?.ok === true, rescueStarted: started?.ok === true });
+        return true;
+      }
+      return false;
+    }
+    if (choice === 'kill' && downed) {
+      rescue?.awakenFromRescue?.();
+      console.log('[S01S02Coordinator] S02 杀分支：解除倒地继续剧情');
+      return true;
+    }
+    return false;
   }
 
   _activateWolf(wolf) {
@@ -2001,6 +2042,10 @@ export class S01S02Coordinator {
     }
     if (operation === 'cliffReached') {
       const result = await this._submit('story.s01.cliffReached', {}, 'story:s01:cliff-reached');
+      if (!result.ok) {
+        // 失败必须可见：此前静默吞掉，玩家表现为「按 E 无响应」无从排查
+        this.scene._showScreenTip(`攀藤状态提交失败：${result.code || 'unknown'}。剧情进度未改变，请稍后再试。`, { title: '提交失败' });
+      }
       return result.ok === true;
     }
     return false;

@@ -673,8 +673,8 @@ export class BaseGameSceneBehaviors extends BaseGameSceneSetup {  /**
   }
 
   /** 从快捷栏使用药水。 */
-  usePotionFromHotbar(potionType) {
-    return this._ensureCombatActions().usePotionFromHotbar(potionType);
+  usePotionFromHotbar(potionType, modifiers = {}) {
+    return this._ensureCombatActions().usePotionFromHotbar(potionType, modifiers);
   }
 
   /**

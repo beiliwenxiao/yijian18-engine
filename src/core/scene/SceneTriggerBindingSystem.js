@@ -543,7 +543,11 @@ export class SceneTriggerBindingSystem {
       params.sourceEventPayload = journalEvent.payload;
     }
     const fired = this.triggerSystem.fireById(binding.triggerId, eventType, params);
-    if (!fired && !definition) this.logger?.('missingTrigger', binding);
+    if (!fired) {
+      // 诊断告警：绑定已命中但触发器被拒绝（冷却/once/重入/前置不满足）——
+      // 此前这里静默吞掉，「提示在按 E 无反应」无从排查。
+      this.logger?.('triggerRejected', binding, { triggerId: binding.triggerId, eventType });
+    }
     return fired;
   }
 

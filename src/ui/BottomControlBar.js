@@ -313,6 +313,7 @@ export class BottomControlBar extends UIElement {
     const stats = this.entity.getComponent('stats');
     if (stats) parts.push(stats.hp, stats.maxHp, stats.mp, stats.maxMp);
     const combat = this.entity.getComponent('combat');
+    if (combat) parts.push(Math.ceil((Number(combat.healCooldownUntil) || 0) / 100));
     const skills = combat && Array.isArray(combat.skills) ? combat.skills : null;
     if (skills) parts.push('skills', skills.length);
     for (let i = 0; i < this.skillSlots.length; i++) {
@@ -600,6 +601,32 @@ export class BottomControlBar extends UIElement {
       // 渲染内容
       if (slot.isPotion) {
         this.renderPotionSlot(ctx, slotX, slotY, slot.size, i, this._potionSummaries[i]);
+        // heal 槽战斗进食冷却遮罩（15 秒共享冷却，与技能冷却同款扫过样式）
+        if (i === 0 && combat) {
+          const healCooldownUntil = Number(combat.healCooldownUntil) || 0;
+          const remainingMs = healCooldownUntil - (this._frameNow || 0);
+          if (remainingMs > 0) {
+            const remainingSec = remainingMs / 1000;
+            const ratio = Math.min(1, remainingSec / 15);
+            ctx.save();
+            ctx.globalAlpha = 0.7;
+            ctx.fillStyle = '#000000';
+            ctx.beginPath();
+            ctx.rect(slotX - halfSize, slotY - halfSize, slot.size, slot.size);
+            ctx.clip();
+            ctx.beginPath();
+            ctx.moveTo(slotX, slotY);
+            ctx.arc(slotX, slotY, slot.size, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * ratio);
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+            ctx.fillStyle = '#ffcc66';
+            ctx.font = 'bold 12px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(Math.ceil(remainingSec), slotX, slotY);
+          }
+        }
       } else if (combat && combat.skills) {
         const skill = combat.skills[slot.skillIndex];
         if (skill) {
@@ -622,7 +649,11 @@ export class BottomControlBar extends UIElement {
       // 名称显示（槽上方）
       let slotName = '';
       if (slot.isPotion) {
-        slotName = i === 0 ? '红瓶' : '蓝瓶';
+        // heal 槽显示当前选中的恢复类消耗品名（Shift+1 切换 / 右键打开选择列表）
+        const summary = this._potionSummaries[i];
+        slotName = i === 0
+          ? (summary?.item?.name || '红瓶')
+          : '蓝瓶';
       } else if (combat && combat.skills) {
         const skill = combat.skills[slot.skillIndex];
         if (skill) slotName = skill.name || '';
@@ -816,7 +847,7 @@ export class BottomControlBar extends UIElement {
    * @param {number} y - 鼠标Y坐标
    * @returns {boolean} 是否处理了点击
    */
-  handleMouseClick(x, y) {
+  handleMouseClick(x, y, button = 'left') {
     if (!this.visible || !this.containsPoint(x, y)) return false;
 
     // 检查技能槽点击
@@ -837,6 +868,11 @@ export class BottomControlBar extends UIElement {
 
         // 药水槽
         if (slot.isPotion) {
+          // heal 槽右键 = 打开恢复类消耗品选择列表（Shift+1 为快速循环切换）
+          if (i === 0 && button === 'right' && this.onHealSlotRightClick) {
+            this.onHealSlotRightClick();
+            return true;
+          }
           if (this.onPotionUse) {
             const potionType = i === 0 ? 'health' : 'mana';
             this.onPotionUse(potionType);

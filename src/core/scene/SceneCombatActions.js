@@ -293,38 +293,132 @@ export class SceneCombatActions {
     return !!(scene.combatSystem && scene.playerEntity && scene.combatSystem.activateBlock());
   }
 
-  usePotionFromHotbar(potionType) {
+  usePotionFromHotbar(potionType, { shift = false } = {}) {
     const scene = this.scene;
     // 教学高亮一次性熄灭：药水快捷键首次被触发即视为完成指引（无论是否成功使用）。
     scene.notifyOnboardingControlActivated?.(potionType === 'health' ? 'pc-potion1' : 'pc-potion2');
     if (!scene.playerEntity) return;
     const transform = scene.playerEntity.getComponent('transform');
-    // 战斗中禁止恢复血量（快捷栏血瓶入口）：给出可见提示而非静默
-    if (potionType === 'health' && scene.combatSystem?.isInCombat?.() === true) {
-      if (transform && scene.floatingTextManager) {
-        scene.floatingTextManager.addText(
-          transform.position.x, transform.position.y - 50, '战斗中，不能恢复血量', '#ff6666'
-        );
-      }
+    const inventory = scene.playerEntity.getComponent('inventory');
+    if (!inventory) return;
+    const effectType = potionType === 'health' ? 'heal' : 'restore_mana';
+
+    // heal 槽（食物/药水）支持选择当前消耗品：Shift+1 循环切换，右键槽位打开选择列表
+    if (effectType === 'heal' && shift) {
+      this.selectNextHealItem();
       return;
     }
-    const inventory = scene.playerEntity.getComponent('inventory');
+
     const stats = scene.playerEntity.getComponent('stats');
-    if (!inventory || !stats) return;
-    const effectType = potionType === 'health' ? 'heal' : 'restore_mana';
-    const entry = inventory.getAllItems().find(({ slot }) => (
-      slot.item?.type === 'consumable' && slot.item.usable && slot.item.effect?.type === effectType
-    ));
+    if (!stats) return;
+
+    // 战斗中使用恢复类消耗品（食物/药水）受 15 秒共享冷却：防连续进食；脱战无冷却。
+    // 时钟与底栏一致（simulationClock，暂停时不走表），避免冷却读数错位。
+    const combat = scene.playerEntity.getComponent('combat');
+    const sceneNow = () => scene.simulationClock?.now?.() ?? performance.now();
+    if (effectType === 'heal' && scene.combatSystem?.isInCombat?.() === true) {
+      const now = sceneNow();
+      const cooldownUntil = Number(combat?.healCooldownUntil) || 0;
+      if (now < cooldownUntil) {
+        const remaining = Math.ceil((cooldownUntil - now) / 1000);
+        if (transform && scene.floatingTextManager) {
+          scene.floatingTextManager.addText(
+            transform.position.x, transform.position.y - 50,
+            `进食冷却中，剩余 ${remaining} 秒，无法使用`, '#ffcc66'
+          );
+        }
+        return;
+      }
+    }
+
+    const entry = this._pickConsumableEntry(inventory, effectType);
     if (entry) {
+      if (effectType === 'heal' && scene.combatSystem?.isInCombat?.() === true && combat) {
+        combat.healCooldownUntil = sceneNow() + 15000;
+      }
       scene.backpackPanel?.useItem(entry.index);
       return;
     }
     if (transform && scene.floatingTextManager) {
-      const potionName = potionType === 'health' ? '生命药水' : '魔法药水';
+      const potionName = potionType === 'health' ? '恢复食物/药水' : '魔法药水';
       scene.floatingTextManager.addText(
         transform.position.x, transform.position.y - 50, `没有${potionName}`, '#ff6666'
       );
     }
+  }
+
+  /** 收集背包中指定效果的可用消耗品条目（含背包索引，供使用/选择）。 */
+  _collectConsumableEntries(inventory, effectType) {
+    return inventory.getAllItems().filter(({ slot }) => (
+      slot.item?.type === 'consumable' && slot.item.usable && slot.item.effect?.type === effectType
+    ));
+  }
+
+  /** heal 槽当前选中项：inventory.preferredHealItemId 优先，缺省取第一个。 */
+  _pickConsumableEntry(inventory, effectType) {
+    const entries = this._collectConsumableEntries(inventory, effectType);
+    if (!entries.length) return null;
+    if (effectType === 'heal') {
+      const preferredId = inventory.preferredHealItemId;
+      const preferred = preferredId
+        && entries.find(({ slot }) => String(slot.item.id || slot.item.name) === String(preferredId));
+      if (preferred) return preferred;
+    }
+    return entries[0];
+  }
+
+  /** Shift+1：循环切换 heal 槽当前食品（偏好写入 inventory.preferredHealItemId）。 */
+  selectNextHealItem() {
+    const scene = this.scene;
+    const inventory = scene.playerEntity?.getComponent?.('inventory');
+    if (!inventory) return false;
+    const entries = this._collectConsumableEntries(inventory, 'heal');
+    if (entries.length === 0) return false;
+    const preferredId = inventory.preferredHealItemId;
+    const currentIndex = entries.findIndex(({ slot }) => String(slot.item.id || slot.item.name) === String(preferredId));
+    const next = entries[(currentIndex + 1) % entries.length];
+    const item = next.slot.item;
+    const nextId = String(item.id || item.name);
+    inventory.preferredHealItemId = nextId;
+    const transform = scene.playerEntity.getComponent('transform');
+    if (transform && scene.floatingTextManager) {
+      const count = next.slot.quantity ?? 1;
+      scene.floatingTextManager.addText(
+        transform.position.x, transform.position.y - 50,
+        `当前食品：${item.name || nextId} ×${count}（Shift+1 切换）`, '#9fd8ff'
+      );
+    }
+    return true;
+  }
+
+  /** 右键 heal 槽：打开恢复类消耗品选择列表（interactionChoiceView）。 */
+  openHealItemPicker() {
+    const scene = this.scene;
+    const inventory = scene.playerEntity?.getComponent?.('inventory');
+    const view = scene.interactionChoiceView;
+    if (!inventory || !view || view.visible) return false;
+    const entries = this._collectConsumableEntries(inventory, 'heal');
+    if (!entries.length) return false;
+    const preferredId = String(inventory.preferredHealItemId || '');
+    view.open({
+      title: '选择食品',
+      description: '选择快捷栏 1 号槽使用的恢复类消耗品',
+      allowCancel: true,
+      actions: entries.map(({ slot }) => {
+        const item = slot.item;
+        const id = String(item.id || item.name);
+        const heal = Number(item.effect?.healAmount ?? item.effect?.value ?? 0) || 0;
+        return {
+          id,
+          label: `${item.name || id} ×${slot.quantity ?? 1}${heal ? ` · 回复生命 ${heal}` : ''}${id === preferredId ? '（当前）' : ''}`,
+          onClick: () => {
+            view.close();
+            inventory.preferredHealItemId = id;
+          }
+        };
+      })
+    });
+    return true;
   }
 
   handleWeaponThrow() {

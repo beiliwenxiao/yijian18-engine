@@ -1617,7 +1617,9 @@ export class CombatSystem {
     for (const [key, potionType] of Object.entries(this.potionKeyMap)) {
       if (this.inputManager.isKeyPressed(key)) {
         if (this.onPotionUse) {
-          this.onPotionUse(potionType);
+          // Shift+数字 = 切换该槽位的恢复类消耗品（食品选择），不直接使用
+          const withShift = this.inputManager.isKeyDown('shift') === true;
+          this.onPotionUse(potionType, { shift: withShift });
         }
       }
     }
