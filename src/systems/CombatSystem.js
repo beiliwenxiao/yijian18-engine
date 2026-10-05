@@ -2058,8 +2058,18 @@ export class CombatSystem {
         this.skillEffects.createSkillEffect(skill.id, casterTransform.position, targetTransform.position);
       }
 
-      // 落点范围结算（敌我判定按施法者相对计算，radius 即预警圈）
-      this.applyAOEDamage(caster, targetTransform.position, skill, entities || []);
+      // 落点范围结算（敌我判定按施法者相对计算，radius 即预警圈）；
+      // 冲撞附带击飞：与普攻扑击同源（aiProfile.telegraph.knockbackDistance，
+      // 狼王 100~200px），方向从冲撞者（扑击落定后位置）指向被撞者
+      const telegraphKb = caster.aiProfile?.telegraph?.knockbackDistance || {};
+      this.applyAOEDamage(caster, targetTransform.position, skill, entities || [], {
+        knockback: {
+          min: Number(telegraphKb.min) > 0 ? Number(telegraphKb.min) : 30,
+          max: Number(telegraphKb.max) > 0 ? Number(telegraphKb.max) : 50,
+          fromX: casterTransform.position.x,
+          fromY: casterTransform.position.y
+        }
+      });
       return;
     }
 
@@ -2336,8 +2346,9 @@ export class CombatSystem {
    * @param {Object} centerPos - 中心位置 {x, y}
    * @param {Object} skill - 技能数据
    * @param {Array<Entity>} entities - 实体列表
+   * @param {Object} [options] - { knockback: { min, max, fromX, fromY } } 冲撞类 AOE 附带击飞
    */
-  applyAOEDamage(caster, centerPos, skill, entities) {
+  applyAOEDamage(caster, centerPos, skill, entities, options = {}) {
     // AOE 形状归一化：circle（缺省）/rect/polygon，半径兜底与历史行为一致
     const area = resolveSkillArea(skill);
 
@@ -2360,9 +2371,29 @@ export class CombatSystem {
     console.log(`AOE技能 ${skill.name} 命中 ${enemies.length} 个敌人`);
     
     // 对每个敌人造成伤害（传入技能名称）
+    const kb = options.knockback || null;
     for (const enemy of enemies) {
       const damage = this.calculateSkillDamage(caster, enemy, skill);
       this.applyDamage(enemy, damage, null, skill.name);
+      // 冲撞类 AOE 附带击飞（狼王冲刺撕咬等）：沿冲撞者→目标方向弹飞滑行
+      //（与普攻扑击落地 _pounceTargetOnLanding 同一击飞机制）
+      if (kb && !enemy.isDead && !enemy.isDying) {
+        const enemyTransform = enemy.getComponent('transform');
+        const away = enemyTransform
+          ? Math.hypot(enemyTransform.position.x - kb.fromX, enemyTransform.position.y - kb.fromY)
+          : 0;
+        if (enemyTransform && away > 1) {
+          const kbMin = Number(kb.min) > 0 ? Number(kb.min) : 30;
+          const kbMax = Math.max(kbMin, Number(kb.max) > 0 ? Number(kb.max) : 50);
+          const flightDistance = kbMin + fxRng.next() * (kbMax - kbMin);
+          this.applyKnockbackFlight(
+            enemy,
+            { x: (enemyTransform.position.x - kb.fromX) / away, y: (enemyTransform.position.y - kb.fromY) / away },
+            flightDistance,
+            Math.max(160, Math.round(flightDistance * 1.1))
+          );
+        }
+      }
     }
   }
 
