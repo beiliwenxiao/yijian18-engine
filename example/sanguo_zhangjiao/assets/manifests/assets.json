@@ -5858,9 +5858,9 @@
       "usage": [
         "player"
       ],
-      "sourceFile": "assets/images/player/refugee-girl.png",
+      "sourceFile": "assets/images/player/refugee-girl-core.png",
       "runtime2D": {
-        "path": "assets/images/player/refugee-girl.png",
+        "path": "assets/images/player/refugee-girl-core.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -5878,6 +5878,181 @@
       "grid": {
         "columns": 4,
         "rows": 8,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 2
+    },
+    {
+      "assetId": "player.parts.arm-l",
+      "imageId": "player.parts.arm-l",
+      "category": "character-part",
+      "usage": [
+        "player-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player/parts/arm-l.png",
+      "runtime2D": {
+        "path": "assets/images/player/parts/arm-l.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player.parts.arm-l"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.09375
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "player.parts.arm-r",
+      "imageId": "player.parts.arm-r",
+      "category": "character-part",
+      "usage": [
+        "player-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player/parts/arm-r.png",
+      "runtime2D": {
+        "path": "assets/images/player/parts/arm-r.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player.parts.arm-r"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.09375
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "player.parts.weapon-axe",
+      "imageId": "player.parts.weapon-axe",
+      "category": "character-part",
+      "usage": [
+        "player-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player/parts/weapon-axe.png",
+      "runtime2D": {
+        "path": "assets/images/player/parts/weapon-axe.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player.parts.weapon-axe"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.15625
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "player.parts.skirt-front",
+      "imageId": "player.parts.skirt-front",
+      "category": "character-part",
+      "usage": [
+        "player-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player/parts/skirt-front.png",
+      "runtime2D": {
+        "path": "assets/images/player/parts/skirt-front.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player.parts.skirt-front"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.09375
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "player.parts.skirt-back",
+      "imageId": "player.parts.skirt-back",
+      "category": "character-part",
+      "usage": [
+        "player-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player/parts/skirt-back.png",
+      "runtime2D": {
+        "path": "assets/images/player/parts/skirt-back.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player.parts.skirt-back"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.09375
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
         "cellWidth": 64,
         "cellHeight": 64
       },

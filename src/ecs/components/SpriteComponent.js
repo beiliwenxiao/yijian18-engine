@@ -260,6 +260,11 @@ export class SpriteComponent extends Component {
         this.walkFrame = 1;
         this.walkFrameTime = 0;
       }
+      // 骨骼实体 update 提前返回，停止完成逻辑不可达；恢复行走时直接取消停止标记，
+      // 否则 isStopping 永久卡死 → 状态映射器一直播待机剪辑（人物滑行/漂浮感）
+      if (this.isSkeleton) {
+        this.isStopping = false;
+      }
     } else {
       // 停止行走：标记为停止中，让当前循环播完
       if (this.isWalking) {

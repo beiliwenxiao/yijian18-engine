@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "skeletonId": "skeleton.player",
   "meta": {
-    "width": 100,
-    "height": 160
+    "width": 64,
+    "height": 64
   },
   "defaultClip": "idle_down",
   "bones": [
@@ -50,8 +50,8 @@
     {
       "id": "armL",
       "parent": "torso",
-      "x": -10,
-      "y": -18,
+      "x": -6,
+      "y": 7,
       "rot": 0,
       "scaleX": 1,
       "scaleY": 1,
@@ -60,8 +60,8 @@
     {
       "id": "armR",
       "parent": "torso",
-      "x": 10,
-      "y": -18,
+      "x": 6,
+      "y": 7,
       "rot": 0,
       "scaleX": 1,
       "scaleY": 1,
@@ -90,8 +90,8 @@
     {
       "id": "hand",
       "parent": "torso",
-      "x": 12,
-      "y": -10,
+      "x": 7,
+      "y": 22,
       "rot": 0,
       "scaleX": 1,
       "scaleY": 1,
@@ -118,6 +118,20 @@
       }
     },
     {
+      "id": "skirtBack",
+      "bone": "torso",
+      "z": 1,
+      "attachment": {
+        "type": "image",
+        "assetId": "player.parts.skirt-back",
+        "x": 0,
+        "y": 44,
+        "rot": 0,
+        "width": 64,
+        "height": 64
+      }
+    },
+    {
       "id": "body",
       "bone": "torso",
       "z": 1,
@@ -127,7 +141,49 @@
         "fps": 8,
         "frames": [],
         "x": 0,
-        "y": 0,
+        "y": 14,
+        "rot": 0,
+        "width": 64,
+        "height": 64
+      }
+    },
+    {
+      "id": "skirtFront",
+      "bone": "torso",
+      "z": 3,
+      "attachment": {
+        "type": "image",
+        "assetId": "player.parts.skirt-front",
+        "x": 0,
+        "y": 44,
+        "rot": 0,
+        "width": 64,
+        "height": 64
+      }
+    },
+    {
+      "id": "armL",
+      "bone": "armL",
+      "z": 4,
+      "attachment": {
+        "type": "image",
+        "assetId": "player.parts.arm-l",
+        "x": 0,
+        "y": 26,
+        "rot": 0,
+        "width": 64,
+        "height": 64
+      }
+    },
+    {
+      "id": "armR",
+      "bone": "armR",
+      "z": 5,
+      "attachment": {
+        "type": "image",
+        "assetId": "player.parts.arm-r",
+        "x": 0,
+        "y": 26,
         "rot": 0,
         "width": 64,
         "height": 64
@@ -136,12 +192,15 @@
     {
       "id": "toolHand",
       "bone": "hand",
-      "z": 2,
+      "z": 6,
       "attachment": {
-        "type": "empty",
+        "type": "image",
+        "assetId": "player.parts.weapon-axe",
         "x": 0,
-        "y": 0,
-        "rot": 0
+        "y": 22,
+        "rot": 0,
+        "width": 64,
+        "height": 64
       }
     },
     {
@@ -1249,18 +1308,18 @@
             {
               "t": 0,
               "rot": 85,
-              "y": -14
+              "y": -18
             },
             {
               "t": 1200,
               "rot": 87,
-              "y": -15,
+              "y": -19,
               "ease": "easeInOut"
             },
             {
               "t": 2400,
               "rot": 85,
-              "y": -14,
+              "y": -18,
               "ease": "easeInOut"
             }
           ]
@@ -1315,18 +1374,18 @@
             {
               "t": 0,
               "rot": 90,
-              "y": -14
+              "y": -18
             },
             {
               "t": 600,
               "rot": 88,
-              "y": -15,
+              "y": -19,
               "ease": "easeInOut"
             },
             {
               "t": 1200,
               "rot": 90,
-              "y": -14,
+              "y": -18,
               "ease": "easeInOut"
             }
           ]
@@ -1362,16 +1421,19 @@
           "keys": [
             {
               "t": 0,
-              "rot": 0
+              "rot": 0,
+              "y": -20
             },
             {
               "t": 380,
               "rot": 90,
+              "y": -18,
               "ease": "easeInOut"
             },
             {
               "t": 520,
-              "rot": 90
+              "rot": 90,
+              "y": -18
             }
           ]
         },
