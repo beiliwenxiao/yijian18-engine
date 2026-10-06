@@ -31,8 +31,9 @@ export const CharactersConfig = [
     class: 'refugee',
     // 角色选择界面预览图
     previewImage: 'assets/images/zhujiao.png',
-    // 使用默认动画精灵（girl.png 注册为 player_animated）
-    spriteSheet: 'player_animated',
+    // 骨骼驱动（混合模式）：skeleton.player 走 Manifest mode='skeleton'，
+    // 身体槽位帧表由 PlayerSkeletonStateMapper 按 girl.png（player.animated）4×8 布局计算
+    spriteSheet: 'skeleton.player',
     spriteConfig: null, // 为空表示使用 EntityFactory 默认动画精灵配置
   },
 ];

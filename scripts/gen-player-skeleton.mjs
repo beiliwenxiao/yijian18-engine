@@ -173,7 +173,8 @@ function buildSkeleton({ skeletonId, bodyAssetId, bodyWidth, bodyHeight }) {
   };
 }
 
-// 玩家骨骼（身体槽位 assetId 占位：接线后由映射器按角色配置 sheet 覆盖帧表）
+// 玩家骨骼（body 槽位 = girl.png 玩家 sheet，manifest 稳定 ID player.animated；
+// 帧表由 PlayerSkeletonStateMapper 按 4×8 布局+方向行运行时计算覆盖）
 mkdirSync(OUT_DIR, { recursive: true });
 const playerDoc = buildSkeleton({ skeletonId: 'skeleton.player', bodyAssetId: 'player.animated', bodyWidth: 64, bodyHeight: 64 });
 writeFileSync(`${OUT_DIR}/player.json`, `${JSON.stringify(playerDoc, null, 2)}\n`);

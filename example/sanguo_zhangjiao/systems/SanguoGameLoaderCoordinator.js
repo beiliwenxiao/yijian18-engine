@@ -154,6 +154,11 @@ function initializeGameLoader() {
         this._rejectAssetManifestReady = null;
         console.log('[DDScene][Assets] Manifest 索引完成，等待九宫格按需加载', manifestResult);
         this.entityRenderer2D?.clearCaches?.();
+        // 玩家实体创建早于 Manifest 就绪（enter 同步创建），骨骼资产判定此刻才可完成——补挂
+        const playerSprite = this.playerEntity?.getComponent?.('sprite');
+        if (playerSprite && playerSprite.isSkeleton !== true) {
+          this.entityFactory.attachSkeletonForEntity(this.playerEntity, playerSprite.spriteSheet);
+        }
         const currentClass = this.playerEntity?.getComponent?.('stats')?.class || this.playerEntity?.class;
         this.s09ClassSelectionCoordinator.syncPlayerClassAppearance(currentClass);
         this.configureSharedClassEffects(gameLoader);

@@ -86,6 +86,19 @@ export class EntityFactory {
     entity.addComponent(skeletonComponent);
   }
 
+  /**
+   * Manifest 就绪后补挂骨骼组件（玩家实体创建早于异步 Manifest 注册的场景）。
+   * @param {Entity} entity
+   * @param {string} stableSpriteId
+   */
+  attachSkeletonForEntity(entity, stableSpriteId) {
+    if (!entity || entity.getComponent?.('skeleton')) return false;
+    const sprite = entity.getComponent?.('sprite');
+    if (!sprite) return false;
+    this._attachSkeletonIfAsset(entity, sprite, stableSpriteId);
+    return sprite.isSkeleton === true;
+  }
+
   setItemRuntimeFactory(itemRuntimeFactory) {
     if (!itemRuntimeFactory?.createDeathDropProjection) {
       throw new TypeError('EntityFactory requires ItemRuntimeFactory');

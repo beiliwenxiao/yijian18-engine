@@ -68,7 +68,9 @@ export function createPlayerSkeletonStateMapper(entity, { getAssetManager = null
     if (entity.isDead || entity.isDying) targetClip = 'death';
     else if (entity.isSoulState === true) targetClip = 'soul';
     else if (entity._climbing === true) targetClip = 'climb_back';
-    else if (sprite.isWalking === true || (Number(sprite.walkFrame) > 0 && sprite.isStopping !== true)) {
+    // isStopping（松开方向）立即回待机：骨骼模式下 SpriteComponent 帧归零逻辑不跑，
+    // 不能依赖 walkFrame 归零信号
+    else if (sprite.isWalking === true && sprite.isStopping !== true) {
       targetClip = `walk_${directionKey(sprite)}`;
     } else {
       targetClip = `idle_${directionKey(sprite)}`;

@@ -5850,6 +5850,41 @@
       "targetPhase": "P1",
       "status": "placeholder",
       "revision": 1
+    },
+    {
+      "assetId": "player.animated",
+      "imageId": "player.animated",
+      "category": "character-spritesheet",
+      "usage": [
+        "player"
+      ],
+      "sourceFile": "assets/images/girl.png",
+      "runtime2D": {
+        "path": "assets/images/girl.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player.animated"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      },
+      "bounds": {
+        "width": 256,
+        "height": 512
+      },
+      "grid": {
+        "columns": 4,
+        "rows": 8,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
     }
   ]
 }
