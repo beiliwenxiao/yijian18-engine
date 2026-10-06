@@ -30,6 +30,7 @@ import { CanonicalSceneValidator } from '../core/scene/CanonicalSceneValidation.
 import { prepareSharedAtlasTransaction } from './sharedAtlasTransaction.js';
 import { prepareLibraryItemImageTransaction } from './LibraryItemImageTransaction.js';
 import { prepareSceneImageAssetTransaction } from './SceneImageAssetTransaction.js';
+import { prepareSkeletonAssetTransaction } from './SkeletonAssetTransaction.js';
 import { normalizeShardDeclaration, findShardFieldDuplication } from '../core/projectShards.js';
 
 const JSON_HEADERS = { 'Content-Type': 'application/json; charset=utf-8' };
@@ -439,6 +440,31 @@ export function editorFileAPIPlugin({ repoRoot, allowedProjectPaths = [] } = {})
               return reply(res, 500, { ...result, error: result.error?.message || '场景图片 Manifest 登记失败' });
             }
             return reply(res, 200, { ...result, manifest: prepared.manifest });
+          }
+
+          // 骨骼动画资产：骨骼 JSON 落盘 + Asset Manifest 原子同步（编辑器保存通道）
+          if (req.method === 'POST' && req.url === '/api/skeleton-asset-transaction') {
+            await recovery;
+            const body = await parseBody(req);
+            const projectPath = normalizeRelative(body.projectPath);
+            if (!projects.includes(projectPath)) {
+              return reply(res, 403, { ok: false, committed: false, error: '非当前项目' });
+            }
+            const info = canonicalInfo(projectPath);
+            let prepared;
+            const result = await adapter.commitPrepared(() => {
+              prepared = prepareSkeletonAssetTransaction({
+                repoRoot: root,
+                projectPath,
+                projectRoot: info.projectRoot,
+                skeletons: body.skeletons
+              });
+              return prepared.changes;
+            });
+            if (!result.ok) {
+              return reply(res, 500, { ...result, error: result.error?.message || '骨骼资产磁盘提交失败' });
+            }
+            return reply(res, 200, { ...result, manifest: prepared.manifest, skeletons: prepared.skeletons });
           }
 
           if (req.method === 'POST' && req.url === '/api/library-item-image-transaction') {

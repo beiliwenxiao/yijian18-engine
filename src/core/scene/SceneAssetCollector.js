@@ -69,8 +69,10 @@ export function collectManifestUsageAssetIds(manifestEntries, usages = []) {
   const output = new Set();
   const accepted = new Set((usages || []).filter(Boolean).map(String));
   if (accepted.size === 0 || !manifestEntries?.values) return output;
+  // skeleton 模式：loadAsset 支持 type==='skeleton'（JSON 拉取解析），可安全进预载清单
+  const PRELOADABLE_MODES = ['image', 'skeleton'];
   for (const entry of new Set(manifestEntries.values())) {
-    if (entry?.runtime2D?.mode !== 'image' || !entry.runtime2D.path) continue;
+    if (!PRELOADABLE_MODES.includes(entry?.runtime2D?.mode) || !entry.runtime2D.path) continue;
     if (!(entry.usage || []).some(usage => accepted.has(String(usage)))) continue;
     output.add(entry.imageId || entry.assetId);
   }

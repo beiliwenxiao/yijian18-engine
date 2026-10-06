@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🦴 骨骼动画编辑器 - 游戏编辑器</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Microsoft YaHei', Arial, sans-serif; background: #0a0a1e; color: #e0e0e0; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+        button { padding: 4px 10px; background: #3a4a7e; border: none; border-radius: 4px; color: #fff; cursor: pointer; font-size: 12px; }
+        button:hover { background: #4a5a9e; }
+        button.primary { background: #4CAF50; color: #000; font-weight: bold; }
+        button.danger { background: #8a3a3a; }
+        button:disabled { opacity: 0.5; cursor: default; }
+        input, select { background: #1a2440; color: #e0e0e0; border: 1px solid #3a4a7e; border-radius: 3px; padding: 3px 6px; font-size: 12px; }
+        input[type="number"] { width: 64px; }
+        label { font-size: 12px; color: #9aa5c0; }
+
+        .se-header { display: flex; align-items: center; gap: 10px; padding: 8px 14px; background: #16213e; border-bottom: 1px solid #2a3a5e; flex-wrap: wrap; }
+        .se-header h1 { font-size: 16px; color: #4CAF50; margin-right: 8px; }
+        .se-header .group { display: flex; align-items: center; gap: 6px; }
+        .se-header .spacer { flex: 1; }
+        #se-toast { font-size: 12px; color: #ffd479; min-width: 220px; text-align: right; }
+
+        .se-main { flex: 1; display: grid; grid-template-columns: 230px 1fr 280px; grid-template-rows: 1fr 218px; gap: 6px; padding: 6px; min-height: 0; }
+        .se-panel { background: #101830; border: 1px solid #26355c; border-radius: 6px; overflow: auto; padding: 8px; }
+        .se-panel h3 { font-size: 13px; color: #7ec8ff; margin: 4px 0 8px; border-bottom: 1px solid #26355c; padding-bottom: 4px; }
+        .se-panel.center { display: flex; flex-direction: column; overflow: hidden; padding: 0; }
+        .se-panel.bottom { grid-column: 2 / 4; display: flex; flex-direction: column; overflow: hidden; }
+
+        #se-canvas { flex: 1; background: #0d1226; cursor: crosshair; display: block; width: 100%; height: 100%; }
+
+        .se-bone-item, .se-slot-item { display: flex; align-items: center; gap: 4px; padding: 3px 6px; border-radius: 4px; cursor: pointer; font-size: 12px; margin-bottom: 2px; }
+        .se-bone-item:hover, .se-slot-item:hover { background: #1a2440; }
+        .se-bone-item.selected, .se-slot-item.selected { background: #2a4a3e; outline: 1px solid #4CAF50; }
+        .se-bone-item .name, .se-slot-item .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .se-bone-item .depth { color: #5a6a90; }
+
+        .se-inspector .row { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+        .se-inspector .row label { min-width: 52px; }
+        .se-inspector .row input[type="text"] { flex: 1; min-width: 0; }
+        .se-attachment-box { border: 1px solid #26355c; border-radius: 4px; padding: 8px; margin-top: 6px; }
+
+        .se-timeline { display: flex; flex-direction: column; height: 100%; }
+        .se-tl-toolbar { display: flex; align-items: center; gap: 6px; padding: 4px 6px; border-bottom: 1px solid #26355c; flex-wrap: wrap; }
+        .se-tl-body { flex: 1; overflow: auto; position: relative; }
+        .se-tl-row { display: flex; align-items: center; height: 26px; border-bottom: 1px solid #1a2440; }
+        .se-tl-row .label { width: 100px; min-width: 100px; font-size: 12px; padding: 0 8px; color: #9aa5c0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .se-tl-row .lane { flex: 1; height: 100%; position: relative; background: repeating-linear-gradient(to right, #131c36 0, #131c36 39px, #1a2440 39px, #1a2440 40px); cursor: crosshair; }
+        .se-tl-key { position: absolute; top: 50%; width: 10px; height: 10px; background: #ffd479; transform: translate(-50%, -50%) rotate(45deg); border: 1px solid #8a6a1c; cursor: pointer; }
+        .se-tl-key.selected { background: #ff9a3c; outline: 2px solid #fff; }
+        #se-tl-playhead { position: absolute; top: 0; bottom: 0; width: 2px; background: #ff5a5a; pointer-events: none; }
+        .se-empty { color: #5a6a90; font-size: 12px; padding: 8px; text-align: center; }
+    </style>
+</head>
+<body>
+    <div id="editor-nav"></div>
+    <div class="se-header">
+        <h1>🦴 骨骼动画编辑器</h1>
+        <div class="group">
+            <label>骨骼资产</label>
+            <select id="se-asset-select"><option value="">➕ 新建骨骼…</option></select>
+        </div>
+        <div class="group">
+            <label>ID</label>
+            <input type="text" id="se-skeleton-id" placeholder="skeleton.xxx" disabled>
+        </div>
+        <div class="group">
+            <label>设计尺寸</label>
+            <input type="number" id="se-meta-width" min="8" step="1"> ×
+            <input type="number" id="se-meta-height" min="8" step="1">
+        </div>
+        <div class="spacer"></div>
+        <span id="se-dirty" style="font-size:12px;color:#ff9a3c;display:none;">● 未保存</span>
+        <button class="primary" id="se-save" disabled>💾 保存（骨骼 JSON + Manifest）</button>
+        <span id="se-toast"></span>
+    </div>
+
+    <div class="se-main">
+        <div class="se-panel" id="se-left">
+            <h3>骨骼树</h3>
+            <div id="se-bone-tree"></div>
+            <div style="display:flex;gap:4px;margin:6px 0 12px;">
+                <button id="se-bone-add">✚ 子骨骼</button>
+                <button id="se-bone-del" class="danger">🗑 删除</button>
+            </div>
+            <h3>槽位（z 从小到大绘制）</h3>
+            <div id="se-slot-list"></div>
+            <div style="display:flex;gap:4px;margin-top:6px;">
+                <button id="se-slot-add">✚ 槽位</button>
+                <button id="se-slot-del" class="danger">🗑 删除</button>
+            </div>
+        </div>
+
+        <div class="se-panel center">
+            <canvas id="se-canvas"></canvas>
+        </div>
+
+        <div class="se-panel se-inspector" id="se-inspector">
+            <h3 id="se-inspector-title">属性</h3>
+            <div id="se-inspector-body"><div class="se-empty">选中骨骼或槽位以编辑属性</div></div>
+        </div>
+
+        <div class="se-panel bottom">
+            <div class="se-timeline">
+                <div class="se-tl-toolbar">
+                    <label>剪辑</label>
+                    <select id="se-clip-select"></select>
+                    <button id="se-clip-add">✚ 剪辑</button>
+                    <button id="se-clip-del" class="danger">🗑</button>
+                    <label>时长ms</label>
+                    <input type="number" id="se-clip-duration" min="50" step="50" style="width:72px;">
+                    <label>循环</label>
+                    <input type="checkbox" id="se-clip-loop">
+                    <span style="border-left:1px solid #26355c; height:20px;"></span>
+                    <button id="se-play">▶ 播放</button>
+                    <button id="se-rewind">⏮</button>
+                    <button id="se-keyframe" title="在当前时间记录选中骨骼的姿态">🔑 打关键帧(K)</button>
+                    <button id="se-key-del" class="danger" disabled>🗑 删除关键帧</button>
+                    <label>轨道骨骼</label>
+                    <select id="se-track-bone-select"></select>
+                    <button id="se-track-add">✚ 轨道</button>
+                    <button id="se-track-del" class="danger">🗑 轨道</button>
+                </div>
+                <div class="se-tl-body" id="se-tl-body"></div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { renderEditorNav } from './EditorShared.js';
+        import { SkeletonEditor } from './SkeletonEditor.js';
+
+        (async () => {
+            renderEditorNav('skeleton-editor');
+            const params = new URLSearchParams(location.search);
+            let gameId = params.get('gameId');
+            if (!gameId) {
+                gameId = 'sanguo_zhangjiao';
+                console.info('[SkeletonEditor] 未指定 gameId，默认使用 sanguo_zhangjiao');
+            }
+            const projectPath = `example/${gameId}/game.project.json`;
+            const editor = new SkeletonEditor(document.body, { gameId, projectPath });
+            await editor.init();
+        })().catch(error => {
+            console.error('[SkeletonEditor] 初始化失败', error);
+            alert(`骨骼动画编辑器初始化失败：${error?.message || String(error)}`);
+        });
+    </script>
+</body>
+</html>

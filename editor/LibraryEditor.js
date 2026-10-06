@@ -800,7 +800,7 @@ export class LibraryEditor {
         .map(type => `<option value="${escapeHtml(type)}" ${type === selectedType ? 'selected' : ''}>${escapeHtml(itemTypeLabel(type))}</option>`)
         .join('')}</select></div>
       <div class="row"><label>图片资源 ID（稳定 ID）</label><select id="l-image-id" ${imageOptions.length ? '' : 'disabled'}><option value="">选择 Manifest 图片资源</option>${!hasCurrentImage && selectedImageId ? `<option value="${escapeHtml(selectedImageId)}" selected>当前 ID 无效：${escapeHtml(selectedImageId)}</option>` : ''}${imageOptions
-        .map(option => `<option value="${escapeHtml(option.imageId)}" ${option.imageId === selectedImageId ? 'selected' : ''}>${escapeHtml(option.imageId)} · ${escapeHtml(option.path)}</option>`)
+        .map(option => `<option value="${escapeHtml(option.imageId)}" ${option.imageId === selectedImageId ? 'selected' : ''}>${option.mode === 'skeleton' ? '[骨骼] ' : ''}${escapeHtml(option.imageId)} · ${escapeHtml(option.path)}</option>`)
         .join('')}</select><small style="display:block;margin-top:4px;color:#9ab;font-size:11px;line-height:1.45;">选择其他稳定 ID 会更换本物品的图片引用；不会修改资源本身的稳定 ID。</small></div>
       <div class="row"><label>图片路径（Manifest）</label><input type="text" id="l-image-path" value="${escapeHtml(selectedDisplay.path)}" placeholder="assets/images/...png"><small style="display:block;margin-top:4px;color:#9ab;font-size:11px;line-height:1.45;">仅修改当前稳定 ID 对应的 Manifest 映射；路径必须是 assets/images/ 下的 .png。</small></div>
       <div class="row"><label>从本机导入 PNG（替换当前稳定 ID 的图片文件）</label><input type="file" id="l-image-file" accept=".png,image/png"><small style="display:block;margin-top:4px;color:#9ab;font-size:11px;line-height:1.45;">文件会先作为草稿预览，点击保存后才与 library、Manifest 一次性提交。</small></div>
@@ -866,7 +866,7 @@ export class LibraryEditor {
     const display = this._imageDisplay(imageId);
     return `
       <div class="row"><label>图片资源 ID</label><select id="l-image-id" ${imageOptions.length ? '' : 'disabled'}><option value="">选择 Manifest 图片资源</option>${!hasCurrentImage && imageId ? `<option value="${escapeHtml(imageId)}" selected>当前 ID 无效：${escapeHtml(imageId)}</option>` : ''}${imageOptions
-        .map(option => `<option value="${escapeHtml(option.imageId)}" ${option.imageId === imageId ? 'selected' : ''}>${escapeHtml(option.imageId)} · ${escapeHtml(option.path)}</option>`)
+        .map(option => `<option value="${escapeHtml(option.imageId)}" ${option.imageId === imageId ? 'selected' : ''}>${option.mode === 'skeleton' ? '[骨骼] ' : ''}${escapeHtml(option.imageId)} · ${escapeHtml(option.path)}</option>`)
         .join('')}</select></div>
       <div class="row"><label>图片路径（Manifest 映射）</label><input type="text" id="l-image-path" value="${escapeHtml(display.path)}" placeholder="assets/images/...png"><small style="display:block;margin-top:4px;color:#9ab;font-size:11px;line-height:1.45;">修改路径只改当前稳定 ID 的 Manifest 映射，保存时随工程一并提交。</small></div>
       <div class="row" style="display:flex;gap:10px;align-items:center;"><div style="width:72px;height:72px;border:1px solid #2a3a5e;border-radius:4px;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#080d1a;flex:none;"><img id="l-image-preview" alt="图片预览" src="${escapeHtml(display.url)}" style="display:${display.url ? 'block' : 'none'};width:100%;height:100%;object-fit:contain;"><span id="l-image-empty" style="display:${display.url ? 'none' : ''};padding:6px;text-align:center;color:#ff9a9a;font-size:11px;">${this._manifestError ? '图片目录加载失败' : '未选择图片'}</span></div><small id="l-image-status" style="color:#9ab;font-size:11px;line-height:1.45;">${escapeHtml(display.status)}</small></div>
@@ -888,6 +888,10 @@ export class LibraryEditor {
       this._status('❌ 请先选择图片资源 ID', 'err');
       return;
     }
+    if (this._manifestImageOption(imageId)?.mode === 'skeleton') {
+      this._status('❌ 骨骼资产请在「🦴 骨骼」编辑器中维护，不能替换图片文件', 'err');
+      return;
+    }
     const pending = this._pendingImageUpdates.get(imageId);
     if (pending?.mode === 'importPng') {
       this._pendingImageUpdates.set(imageId, { ...pending, runtimePath });
@@ -906,6 +910,10 @@ export class LibraryEditor {
     const runtimePath = this._projectImagePathForLocalFile(file.name, pathInput?.value);
     if (!imageId || !this._manifestImageOption(imageId)) {
       this._status('❌ 请先选择有效的 Manifest 图片资源', 'err');
+      return;
+    }
+    if (this._manifestImageOption(imageId)?.mode === 'skeleton') {
+      this._status('❌ 骨骼资产请在「🦴 骨骼」编辑器中维护，不能替换图片文件', 'err');
       return;
     }
     if (!/\.png$/i.test(file.name) || (file.type && file.type !== 'image/png')) {
@@ -1188,7 +1196,7 @@ export class LibraryEditor {
       <hr style="border-color:#2a3a5e;margin:10px 0;">
       <div class="row"><label style="font-weight:bold;">图片（Manifest 稳定 ID）</label></div>
       <div class="row"><label>图片资源 ID</label><select id="l-image-id" ${imageOptions.length ? '' : 'disabled'}><option value="">选择 Manifest 图片资源</option>${!hasCurrentImage && imageId ? `<option value="${escapeHtml(imageId)}" selected>当前 ID 无效：${escapeHtml(imageId)}</option>` : ''}${imageOptions
-        .map(option => `<option value="${escapeHtml(option.imageId)}" ${option.imageId === imageId ? 'selected' : ''}>${escapeHtml(option.imageId)} · ${escapeHtml(option.path)}</option>`)
+        .map(option => `<option value="${escapeHtml(option.imageId)}" ${option.imageId === imageId ? 'selected' : ''}>${option.mode === 'skeleton' ? '[骨骼] ' : ''}${escapeHtml(option.imageId)} · ${escapeHtml(option.path)}</option>`)
         .join('')}</select></div>
       <div class="row"><label>图片路径（Manifest 映射）</label><input type="text" id="l-image-path" value="${escapeHtml(display.path)}" placeholder="assets/images/...png"></div>
       <div class="row" style="display:flex;gap:10px;align-items:flex-start;">
@@ -1759,7 +1767,7 @@ export class LibraryEditor {
         ${['attack', 'defense', 'maxHp'].map(key => `<div><label>${key}</label><input type="number" id="l-eq-${key}" value="${escapeHtml(stats[key] ?? 0)}" style="width:70px;"></div>`).join('')}
       </div>
       <div class="row"><label>图片资源 ID（Manifest）</label><select id="l-image-id" ${imageOptions.length ? '' : 'disabled'}><option value="">选择 Manifest 图片资源</option>${!hasCurrentImage && imageId ? `<option value="${escapeHtml(imageId)}" selected>当前 ID 无效：${escapeHtml(imageId)}</option>` : ''}${imageOptions
-        .map(option => `<option value="${escapeHtml(option.imageId)}" ${option.imageId === imageId ? 'selected' : ''}>${escapeHtml(option.imageId)} · ${escapeHtml(option.path)}</option>`)
+        .map(option => `<option value="${escapeHtml(option.imageId)}" ${option.imageId === imageId ? 'selected' : ''}>${option.mode === 'skeleton' ? '[骨骼] ' : ''}${escapeHtml(option.imageId)} · ${escapeHtml(option.path)}</option>`)
         .join('')}</select></div>
       <div class="row" style="display:flex;gap:10px;align-items:center;"><div style="width:72px;height:72px;border:1px solid #2a3a5e;border-radius:4px;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#080d1a;flex:none;"><img id="l-image-preview" alt="装备图片预览" src="${escapeHtml(display.url)}" style="display:${display.url ? 'block' : 'none'};width:100%;height:100%;object-fit:contain;"><span id="l-image-empty" style="display:${display.url ? 'none' : ''};padding:6px;text-align:center;color:#ff9a9a;font-size:11px;">未选择图片</span></div><small id="l-image-status" style="color:#9ab;font-size:11px;">${escapeHtml(display.status)}</small></div>
       <div class="row"><label>专属属性（JSON）</label><textarea id="l-props">${escapeHtml(this._json(rest, 2))}</textarea></div>

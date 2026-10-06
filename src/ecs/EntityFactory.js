@@ -32,15 +32,43 @@ import { ObjectiveComponent } from './components/ObjectiveComponent.js';
 import { ControllerComponent, ControllerKind } from './components/ControllerComponent.js';
 import { NpcComponent } from './components/NpcComponent.js';
 import { ResourceNodeComponent } from './components/ResourceNodeComponent.js';
+import { SkeletonComponent } from './components/SkeletonComponent.js';
 
 /**
  * 实体工厂类
  * 提供创建各种游戏实体的工厂方法
  */
 export class EntityFactory {
-  constructor({ itemRuntimeFactory = null } = {}) {
+  constructor({ itemRuntimeFactory = null, manifestReader = null } = {}) {
     this.entityIdCounter = 0;
     this.itemRuntimeFactory = itemRuntimeFactory;
+    // Manifest 读取器：(stableId) => manifestEntry|null，用于骨骼资产判定（资产级替换）
+    this.manifestReader = typeof manifestReader === 'function' ? manifestReader : null;
+  }
+
+  /**
+   * 注入 Manifest 读取器（宿主 Scene 在 assetManager 就绪后调用；懒访问安全）。
+   * @param {(stableId: string) => Object|null} reader
+   */
+  setManifestReader(reader) {
+    this.manifestReader = typeof reader === 'function' ? reader : null;
+    return this;
+  }
+
+  /**
+   * 稳定 ID 指向骨骼资产（manifest runtime2D.mode==='skeleton'）时：
+   * SpriteComponent 标记 isSkeleton 并清空帧动画（保留外观语义），挂 SkeletonComponent。
+   * playAnimation 由 SpriteComponent 兼容转发到 playClip，杜绝双驱动。
+   */
+  _attachSkeletonIfAsset(entity, sprite, stableSpriteId) {
+    if (!sprite || !stableSpriteId || !this.manifestReader) return;
+    const entry = this.manifestReader(stableSpriteId);
+    if (entry?.runtime2D?.mode !== 'skeleton') return;
+    sprite.isSkeleton = true;
+    sprite.animations.clear();
+    const skeletonComponent = new SkeletonComponent({ skeletonId: stableSpriteId });
+    sprite.skeletonDelegate = skeletonComponent;
+    entity.addComponent(skeletonComponent);
   }
 
   setItemRuntimeFactory(itemRuntimeFactory) {
@@ -131,7 +159,9 @@ export class EntityFactory {
     // 添加基础动画
     this.addCharacterAnimations(sprite);
     entity.addComponent(sprite);
-    
+    // 主角绑定骨骼资产（manifest 资产级替换）
+    this._attachSkeletonIfAsset(entity, sprite, spriteSheet);
+
     // 添加战斗组件
     const combat = new CombatComponent({
       attackRange: 50,
@@ -248,7 +278,9 @@ export class EntityFactory {
     // 添加基础动画
     this.addCharacterAnimations(sprite);
     entity.addComponent(sprite);
-    
+    // 敌人绑定骨骼资产（manifest 资产级替换）
+    this._attachSkeletonIfAsset(entity, sprite, stableSpriteId);
+
     // 添加战斗组件
     const combat = new CombatComponent({
       // 攻击范围：库定义 enemy.attackRange 优先（如狼王扑击距离），未配置维持 40 现状
@@ -453,6 +485,8 @@ export class EntityFactory {
     }
     sprite.playAnimation(spriteCfg.defaultAnimation || firstAnim || 'idle', true);
     entity.addComponent(sprite);
+    // NPC 绑定骨骼资产（manifest 资产级替换）
+    this._attachSkeletonIfAsset(entity, sprite, stableSpriteId);
 
     // ---- 名字组件（含称号）----
     entity.addComponent(new NameComponent(npcData.name || 'NPC', {
@@ -653,6 +687,8 @@ export class EntityFactory {
       sprite.scale = data.scale || 1;
       sprite.addAnimation('idle', { frames: [0], frameRate: 1, loop: true });
       entity.addComponent(sprite);
+      // 载具绑定骨骼资产（manifest 资产级替换）
+      this._attachSkeletonIfAsset(entity, sprite, stableId || data.spriteSheet);
     }
 
     entity.name = data.name || data.vehicleType;

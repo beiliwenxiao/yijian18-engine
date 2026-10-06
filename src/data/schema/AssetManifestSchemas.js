@@ -26,7 +26,7 @@ export const ASSET_RUNTIME_2D_SCHEMA = {
     mode: {
       type: FieldType.STRING,
       required: true,
-      enum: ['image', 'atlas']
+      enum: ['image', 'atlas', 'skeleton']
     }
   }
 };
@@ -133,18 +133,18 @@ export const ASSET_MANIFEST_SCHEMA = {
           ));
         }
         imageIds.add(asset.imageId);
-        if (['image', 'atlas'].includes(asset.runtime2D?.mode) && asset.imageId !== asset.assetId) {
+        if (['image', 'atlas', 'skeleton'].includes(asset.runtime2D?.mode) && asset.imageId !== asset.assetId) {
           errors.push(makeError(
             ValidationCode.INVALID_REFERENCE,
             `assets[${index}].imageId`,
-            'image/atlas 资产的 imageId 必须与 assetId 相同'
+            'image/atlas/skeleton 资产的 imageId 必须与 assetId 相同'
           ));
         }
-      } else if (['image', 'atlas'].includes(asset.runtime2D?.mode)) {
+      } else if (['image', 'atlas', 'skeleton'].includes(asset.runtime2D?.mode)) {
         errors.push(makeError(
           ValidationCode.MISSING_FIELD,
           `assets[${index}].imageId`,
-          'image/atlas 资产必须提供稳定 imageId'
+          'image/atlas/skeleton 资产必须提供稳定 imageId'
         ));
       }
 

@@ -141,6 +141,8 @@ export class BaseGameSceneSetup extends Scene {
       getDefinitionRepository: () => this.gameLoader?.definitionRepository || null
     });
     this.entityFactory = new EntityFactory({ itemRuntimeFactory: this.itemRuntimeFactory });
+    // 骨骼资产判定：工厂按 Manifest mode==='skeleton' 决定是否挂 SkeletonComponent（懒访问）
+    this.entityFactory.setManifestReader(id => this.assetManager?.getManifestEntry?.(id) || null);
     this._playerFactory = new DemoPlayerFactory();
     this.entityStore = new SceneEntityStore();
     this.entities = this.entityStore.all;

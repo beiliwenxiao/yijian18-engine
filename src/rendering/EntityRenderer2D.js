@@ -1,4 +1,5 @@
 import { ItemSpriteRenderer } from './ItemSpriteRenderer.js';
+import { SkeletonRenderer } from './SkeletonRenderer.js';
 
 /**
  * 可复用的 Canvas 2D 实体渲染器。
@@ -17,6 +18,7 @@ export class EntityRenderer2D {
     this.getRenderOffset = options.getRenderOffset || (() => ({ x: 0, y: 0 }));
     // 玩家战斗状态回调：玩家头顶血条仅战斗状态显示（非战斗隐藏），敌对 NPC 不受影响
     this.isPlayerInCombat = typeof options.isPlayerInCombat === 'function' ? options.isPlayerInCombat : () => false;
+    this.skeletonRenderer = options.skeletonRenderer || new SkeletonRenderer(options.skeletonRendererOptions || {});
     this._readyImageCache = new Map();
     this._renderStyleCache = new Map();
     this._nameMeasureCache = new WeakMap();
@@ -187,6 +189,19 @@ export class EntityRenderer2D {
   }
 
   _renderSprite(ctx, entity, sprite, npc, x, y, width, height) {
+    // 骨骼实体：委托 SkeletonRenderer（资产未加载时走样式/色块兜底，
+    // 不进入下方图片分支——spriteSheet 是骨骼稳定 ID，查图会告警刷屏）
+    if (sprite?.isSkeleton) {
+      const handled = this.skeletonRenderer.render(ctx, {
+        assetManager: this.assetManager,
+        skeletonComponent: entity.getComponent?.('skeleton') || null,
+        sprite, x, y, width, height
+      });
+      if (handled) return;
+      this._renderFallbackBody(ctx, entity, npc, sprite, x, y, width, height);
+      return;
+    }
+
     let rendered = false;
     const image = sprite?.spriteSheet ? this._getReadyImage(sprite.spriteSheet) : null;
 
@@ -234,20 +249,23 @@ export class EntityRenderer2D {
     }
 
     if (!rendered) {
-      const styleKey = npc?.renderStyle || entity.renderStyle;
-      const drawStyle = styleKey ? this._getRenderStyle(styleKey) : null;
-      if (typeof drawStyle === 'function') {
-        drawStyle(ctx, x, y, sprite?.scale || 1);
-        rendered = true;
-      }
+      this._renderFallbackBody(ctx, entity, npc, sprite, x, y, width, height);
     }
+  }
 
-    if (!rendered && entity.type === 'loot') {
+  /** 兜底绘制：代码渲染样式 → 掉落物 → 色块。 */
+  _renderFallbackBody(ctx, entity, npc, sprite, x, y, width, height) {
+    const styleKey = npc?.renderStyle || entity.renderStyle;
+    const drawStyle = styleKey ? this._getRenderStyle(styleKey) : null;
+    if (typeof drawStyle === 'function') {
+      drawStyle(ctx, x, y, sprite?.scale || 1);
+      return;
+    }
+    if (entity.type === 'loot') {
       this._renderLootFallback(ctx, entity, x, y);
-      rendered = true;
+      return;
     }
-
-    if (!rendered && sprite) {
+    if (sprite) {
       ctx.fillStyle = sprite.color || '#00ff00';
       ctx.fillRect(x - width / 2, y - height, width, height);
       ctx.strokeStyle = entity.type === 'player' ? '#4CAF50' : '#ff4444';

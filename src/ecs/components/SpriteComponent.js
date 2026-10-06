@@ -146,6 +146,11 @@ export class SpriteComponent extends Component {
    * @param {boolean} force - 是否强制重新播放
    */
   playAnimation(name, force = false) {
+    // 骨骼实体：兼容转发到 SkeletonComponent.playClip（帧动画已清空，避免告警）
+    if (this.isSkeleton) {
+      this.skeletonDelegate?.playClip?.(name, force);
+      return;
+    }
     if (!this.animations.has(name)) {
       console.warn(`Animation "${name}" not found`);
       return;
@@ -164,7 +169,10 @@ export class SpriteComponent extends Component {
    */
   update(deltaTime) {
     if (!this.visible) return;
-    
+
+    // 骨骼实体：帧推进由 SkeletonComponent 负责（每帧毫秒转秒由 Entity 链统一）
+    if (this.isSkeleton) return;
+
     // 转换为毫秒
     const deltaMs = deltaTime * 1000;
     

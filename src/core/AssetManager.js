@@ -12,6 +12,7 @@
 
 import { PlaceholderAssets } from './PlaceholderAssets.js';
 import { AudioManager } from './AudioManager.js';
+import { parseSkeletonAsset } from '../animation/SkeletonAsset.js';
 
 /**
  * 资源管理器
@@ -42,6 +43,10 @@ export class AssetManager {
         this._inflightAssets = new Map();
         this._inflightImages = new Map();
         this._failedImageLoads = new Set();
+        // 骨骼动画资产缓存：stableId -> parseSkeletonAsset 产物（懒加载）
+        this.skeletonAssets = new Map();
+        this._inflightSkeletons = new Map();
+        this._failedSkeletonLoads = new Set();
         this._activeLoadBatches = 0;
         this._loadGeneration = 0;
         this._loadProgressListeners = new Set();
@@ -306,6 +311,7 @@ export class AssetManager {
                 if (descriptor.type === 'image' || descriptor.type === 'texture' || descriptor.type === 'atlas') {
                     return this.loadImage(key, descriptor.url);
                 }
+                if (descriptor.type === 'skeleton') return this.loadSkeletonAsset(key, descriptor.url);
                 if (descriptor.type === 'audio') return this.loadAudioFile(key, descriptor.url);
                 throw new Error(`AssetManager: 不支持按需加载类型 ${descriptor.type}`);
             })();
@@ -508,6 +514,56 @@ export class AssetManager {
         this.loadImage(resolvedKey, url).catch(() => {
             this._failedImageLoads.add(resolvedKey);
         });
+    }
+
+    /**
+     * 获取骨骼动画资产（parseSkeletonAsset 产物）。
+     * 未加载时触发异步加载，本帧返回 null（渲染走兜底，到位后自然显示）。
+     * @param {string} assetIdOrImageId - 骨骼资产稳定 ID
+     * @returns {Object|null}
+     */
+    getSkeletonAsset(assetIdOrImageId) {
+        const resolvedKey = this.manifestAliases.get(assetIdOrImageId) || assetIdOrImageId;
+        const cached = this.skeletonAssets.get(resolvedKey);
+        if (cached) return cached;
+        this._requestSkeletonAsset(resolvedKey);
+        return null;
+    }
+
+    _requestSkeletonAsset(resolvedKey) {
+        if (this._failedSkeletonLoads.has(resolvedKey)) return;
+        if (this.skeletonAssets.has(resolvedKey) || this._inflightSkeletons.has(resolvedKey)) return;
+        const entry = this.getManifestEntry(resolvedKey);
+        if (entry?.runtime2D?.mode !== 'skeleton' || !entry.runtime2D.path) return;
+        const url = this.resolveAssetPath(entry.runtime2D.path);
+        const promise = this.loadSkeletonAsset(resolvedKey, url);
+        this._inflightSkeletons.set(resolvedKey, promise);
+        promise.finally(() => {
+            if (this._inflightSkeletons.get(resolvedKey) === promise) this._inflightSkeletons.delete(resolvedKey);
+        }).catch(() => {});
+    }
+
+    /** 拉取并解析骨骼 JSON；随后为槽位附件引用的图片 ID 触发按需加载。 */
+    async loadSkeletonAsset(key, url) {
+        try {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const doc = await response.json();
+            const parsed = parseSkeletonAsset(doc);
+            if (!parsed) throw new Error('骨骼资产结构无效');
+            this.skeletonAssets.set(key, parsed);
+            for (const slot of parsed.slots) {
+                const ref = slot.attachment?.assetId || slot.attachment?.spriteSheet;
+                if (!ref) continue;
+                const alias = this.manifestAliases.get(ref) || ref;
+                if (!this.images.has(alias)) this._requestManifestImage(alias);
+            }
+            return parsed;
+        } catch (error) {
+            this._failedSkeletonLoads.add(key);
+            console.error(`AssetManager: 骨骼资产加载失败 ${key}`, error);
+            throw error;
+        }
     }
 
     /**

@@ -25,7 +25,8 @@ export const EDITOR_PAGES = Object.freeze({
   'dialogue-editor': 'dialogue-editor.html',
   'world-map-editor': 'world-map-editor.html',
   'panel-editor': 'panel-editor.html',
-  'system-editor': 'system-editor.html'
+  'system-editor': 'system-editor.html',
+  'skeleton-editor': 'skeleton-editor.html'
 });
 
 // 导航项定义（分组即显示分组，组间渲染分隔线）。
@@ -50,7 +51,8 @@ const NAV_GROUPS = Object.freeze([
     { id: 'ui-editor', label: '🎨 UI', file: 'ui-editor.html' },
     { id: 'panel-editor', label: '🧩 面板', file: 'panel-editor.html' },
     { id: 'library-editor', label: '📚 内容库', file: 'library-editor.html' },
-    { id: 'system-editor', label: '⚙️ 系统', file: 'system-editor.html' }
+    { id: 'system-editor', label: '⚙️ 系统', file: 'system-editor.html' },
+    { id: 'skeleton-editor', label: '🦴 骨骼', file: 'skeleton-editor.html' }
   ]}
 ]);
 

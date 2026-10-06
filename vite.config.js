@@ -42,7 +42,8 @@ export default defineConfig({
         'editor-dialogue': path.resolve(__dirname, 'editor/dialogue-editor.html'),
         'editor-world-map': path.resolve(__dirname, 'editor/world-map-editor.html'),
         'editor-panel': path.resolve(__dirname, 'editor/panel-editor.html'),
-        'editor-system': path.resolve(__dirname, 'editor/system-editor.html')
+        'editor-system': path.resolve(__dirname, 'editor/system-editor.html'),
+        'editor-skeleton': path.resolve(__dirname, 'editor/skeleton-editor.html')
       }
     }
   },

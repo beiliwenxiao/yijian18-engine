@@ -5587,6 +5587,124 @@
       "targetPhase": "P1",
       "status": "final",
       "revision": 2
+    },
+    {
+      "assetId": "img.s01-shelter_in",
+      "imageId": "img.s01-shelter_in",
+      "category": "environment-image",
+      "usage": [
+        "S01-C01",
+        "s01-c01"
+      ],
+      "sourceFile": "assets/images/s01/shelter_in.png",
+      "runtime2D": {
+        "path": "assets/images/s01/shelter_in.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "img.s01-shelter_in"
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0
+      },
+      "bounds": {
+        "width": 1280,
+        "height": 957
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "s01_images",
+      "imageId": "s01_images",
+      "category": "environment-atlas",
+      "sourceFile": "assets/images/s01/s01_images.png",
+      "runtime2D": {
+        "path": "assets/images/s01/s01_images.png",
+        "mode": "atlas"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "s01_images"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      },
+      "bounds": {
+        "width": 1280,
+        "height": 720
+      },
+      "usage": [
+        "runtime-environment-atlas",
+        "environment"
+      ],
+      "animations": [],
+      "targetPhase": "P6",
+      "status": "third-party-approved",
+      "revision": 1
+    },
+    {
+      "assetId": "img.demo-skeleton-orb",
+      "imageId": "img.demo-skeleton-orb",
+      "category": "effect-image",
+      "usage": [
+        "demo"
+      ],
+      "sourceFile": "assets/images/skeleton/demo-orb.png",
+      "runtime2D": {
+        "path": "assets/images/skeleton/demo-orb.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "img.demo-skeleton-orb"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      },
+      "bounds": {
+        "width": 64,
+        "height": 32
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "skeleton.demo",
+      "imageId": "skeleton.demo",
+      "category": "character-skeleton",
+      "usage": [
+        "demo"
+      ],
+      "sourceFile": "assets/skeletons/demo.json",
+      "runtime2D": {
+        "path": "assets/skeletons/demo.json",
+        "mode": "skeleton"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skeleton.demo"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      },
+      "bounds": {
+        "width": 100,
+        "height": 160
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 2
     }
   ]
 }

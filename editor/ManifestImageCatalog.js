@@ -84,7 +84,9 @@ export function buildManifestImageOptions(manifestOrEntries, projectPath) {
       assetId: typeof entry?.assetId === 'string' && entry.assetId.trim() ? entry.assetId.trim() : imageId,
       path,
       url: resolveManifestImageUrl(entry, projectPath),
-      status: entry?.status || ''
+      status: entry?.status || '',
+      // skeleton 模式条目（骨骼动画资产）也可作为稳定 imageId 绑定到 NPC/载具/主角
+      mode: entry?.runtime2D?.mode === 'skeleton' ? 'skeleton' : 'image'
     });
   }
   return [...optionsByImageId.values()].sort((left, right) => left.imageId.localeCompare(right.imageId, 'en'));

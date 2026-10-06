@@ -1894,7 +1894,7 @@ export class SceneEditorUI {
           if (modal.dataset.contentDefinitionGeneration !== modalGeneration) return;
           imageOptions = options.filter(option => option.path && option.url);
           imageSelect.innerHTML = `<option value="">选择 Manifest 图片资源</option>${imageOptions
-            .map(option => `<option value="${escapeHtml(option.imageId)}">${escapeHtml(option.imageId)} · ${escapeHtml(option.path)}</option>`)
+            .map(option => `<option value="${escapeHtml(option.imageId)}">${option.mode === 'skeleton' ? '[骨骼] ' : ''}${escapeHtml(option.imageId)} · ${escapeHtml(option.path)}</option>`)
             .join('')}`;
           imageSelect.disabled = imageOptions.length === 0;
           if (imageOptions.some(option => option.imageId === requestedImageId)) imageSelect.value = requestedImageId;
