@@ -7,28 +7,6 @@
       "name": "庇护所内景",
       "objects": [
         {
-          "depthSort": false,
-          "height": 560,
-          "id": "S01-C01-shelter-shell",
-          "imageId": "s01.environment.smallShelter",
-          "name": "小庇护所木墙",
-          "type": "image",
-          "width": 720,
-          "x": 277.6876876876877,
-          "y": 48.936936936936945
-        },
-        {
-          "depthSort": true,
-          "height": 82,
-          "id": "S01-C01-bed",
-          "imageId": "s10.story.zhangjiaoDeathbed",
-          "name": "草铺木床",
-          "type": "image",
-          "width": 165,
-          "x": 657.8738738738739,
-          "y": 374.3123123123123
-        },
-        {
           "depthSort": true,
           "editor": {
             "locked": false,
@@ -44,6 +22,30 @@
           "y": 374.3123123123123
         },
         {
+          "height": 333,
+          "id": "obj_1791234767638",
+          "imageId": "img.s01-shelter_in",
+          "name": "shelter_in.png",
+          "rotation": 0,
+          "semanticRole": "sceneImage",
+          "type": "image",
+          "visualDescription": "shelter_in.png；请按场景用途补充地貌、建筑或道具说明。",
+          "width": 400,
+          "x": 436.15615615615616,
+          "y": 199.2657657657657
+        },
+        {
+          "depthSort": true,
+          "height": 84,
+          "id": "S01-C01-bed",
+          "imageId": "s10.story.zhangjiaoDeathbed",
+          "name": "草铺木床",
+          "type": "image",
+          "width": 169,
+          "x": 517.9443317270812,
+          "y": 399.661012677908
+        },
+        {
           "depthSort": true,
           "height": 84,
           "id": "S01-C01-chest",
@@ -51,19 +53,8 @@
           "name": "木制储物箱",
           "type": "image",
           "width": 112,
-          "x": 499.87787787787784,
-          "y": 375.93593593593596
-        },
-        {
-          "depthSort": false,
-          "height": 120,
-          "id": "S01-C01-window",
-          "imageId": "s01.environment.shelterWindow",
-          "name": "庇护所窗户",
-          "type": "image",
-          "width": 120,
-          "x": 575.001001001001,
-          "y": 235.47047047047045
+          "x": 642.6961402838617,
+          "y": 354.7952209925211
         },
         {
           "height": 70,
@@ -72,8 +63,8 @@
           "semanticRole": "travelMarker",
           "type": "region",
           "width": 142,
-          "x": 571.8438438438438,
-          "y": 514.6866866866867
+          "x": 576.968968968969,
+          "y": 505.71771771771773
         }
       ],
       "visible": true
@@ -87,8 +78,8 @@
           "id": "S01-C01-spawn-door",
           "ref": "player",
           "type": "spawn",
-          "x": 640,
-          "y": 550
+          "x": 639.924724971281,
+          "y": 550.1161241291936
         }
       ],
       "visible": true
@@ -123,8 +114,8 @@
           "triggerId": "trg_s01_overnight",
           "type": "trigger",
           "width": 164,
-          "x": 655.3113113113113,
-          "y": 380.7187187187187
+          "x": 1037.0962918189562,
+          "y": 148.48085039148768
         },
         {
           "event": "interact",
@@ -139,8 +130,8 @@
           "triggerId": "trg_s01_open_shelter_chest",
           "type": "trigger",
           "width": 112,
-          "x": 502.44044044044034,
-          "y": 377.21721721721724
+          "x": 1032.8928442333204,
+          "y": 389.5328617497219
         },
         {
           "event": "interact",
@@ -161,15 +152,28 @@
           "triggerId": "trg_s01_leave_shelter",
           "type": "trigger",
           "width": 142,
-          "x": 570.5625625625626,
-          "y": 513.4054054054054
+          "x": 571.7685688151248,
+          "y": 508.3211293807551
         }
       ],
+      "visible": true
+    },
+    {
+      "id": "layer_deco",
+      "locked": false,
+      "name": "装饰层",
+      "objects": [],
       "visible": true
     }
   ],
   "backgroundColor": "#392f24",
   "height": 720,
+  "imageAssets": {
+    "img.s01-shelter_in": {
+      "name": "shelter_in.png",
+      "src": "../example/sanguo_zhangjiao/assets/images/s01/shelter_in.png"
+    }
+  },
   "name": "S01·小庇护所内",
   "previewOnly": false,
   "productionState": "playable",

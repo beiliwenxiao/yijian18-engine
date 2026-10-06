@@ -88,6 +88,27 @@
           "collide": false
         }
       }
+    },
+    {
+      "id": "s01_images",
+      "assetId": "s01_images",
+      "imageId": "s01_images",
+      "name": "s01_images",
+      "path": "assets/images/s01/s01_images.png",
+      "width": 1280,
+      "height": 720,
+      "slices": {
+        "slice_1": {
+          "name": "新切片",
+          "sx": 696,
+          "sy": 0,
+          "sw": 109,
+          "sh": 167,
+          "collide": true,
+          "colliderRadiusX": 16,
+          "colliderRadiusY": 10
+        }
+      }
     }
   ]
 }
