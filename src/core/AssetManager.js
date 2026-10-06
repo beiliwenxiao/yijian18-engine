@@ -498,22 +498,30 @@ export class AssetManager {
         const cached = this.images.get(resolvedKey);
         if (cached) return cached;
         // 清单已登记但尚未加载的图像按需补载（死亡掉落等运行期才首次渲染的资源）：
-        // 本次仍返回 null 走手绘兜底，图到位后下一帧自然显示；失败只记一次不反复重试。
-        this._requestManifestImage(resolvedKey);
-        console.warn(`AssetManager: Image '${key}' not found`);
+        // 本次仍返回 null 走手绘兜底，图到位后下一帧自然显示。
+        // 已发起/进行中/已知失败的键不再重复告警（避免渲染期逐帧刷屏）；无法发起加载才告警。
+        const requested = this._requestManifestImage(resolvedKey);
+        if (!requested && !this._failedImageLoads.has(resolvedKey)) {
+            console.warn(`AssetManager: Image '${key}' not found`);
+        }
         return null;
     }
 
-    /** 按 manifest 描述符按需加载图像（仅限 registerManifest 登记过的稳定 ID）。 */
+    /** 按 manifest 描述符按需加载图像（仅限 registerManifest 登记过的稳定 ID）。
+     * @returns {Promise|null} 加载 Promise（已就位/进行中返回已完成 Promise）；无法发起时返回 null */
     _requestManifestImage(resolvedKey) {
-        if (this._failedImageLoads.has(resolvedKey)) return;
-        if (this.images.has(resolvedKey) || this._inflightImages.has(resolvedKey)) return;
+        if (this._failedImageLoads.has(resolvedKey)) return null;
+        if (this.images.has(resolvedKey)) return Promise.resolve();
+        const inflight = this._inflightImages.get(resolvedKey);
+        if (inflight) return inflight;
         const descriptor = this._multiBackendAssets?.get(resolvedKey)?.find(entry => entry?.type === 'image' && entry?.url);
         const url = descriptor?.url;
-        if (!url) return;
-        this.loadImage(resolvedKey, url).catch(() => {
+        if (!url) return null;
+        const promise = this.loadImage(resolvedKey, url).catch(error => {
             this._failedImageLoads.add(resolvedKey);
+            console.warn(`AssetManager: 图片按需加载失败 '${resolvedKey}'`, error?.message || error);
         });
+        return promise;
     }
 
     /**
@@ -543,7 +551,8 @@ export class AssetManager {
         }).catch(() => {});
     }
 
-    /** 拉取并解析骨骼 JSON；随后为槽位附件引用的图片 ID 触发按需加载。 */
+    /** 拉取并解析骨骼 JSON；附件引用的图片全部热加载完成后才对外发布资产，
+     *  保证首次渲染时部件/body 贴图必然就位（避免渲染期按需补载的首帧缺口）。 */
     async loadSkeletonAsset(key, url) {
         try {
             const response = await fetch(url);
@@ -551,13 +560,16 @@ export class AssetManager {
             const doc = await response.json();
             const parsed = parseSkeletonAsset(doc);
             if (!parsed) throw new Error('骨骼资产结构无效');
-            this.skeletonAssets.set(key, parsed);
+            const imageWaits = [];
             for (const slot of parsed.slots) {
                 const ref = slot.attachment?.assetId || slot.attachment?.spriteSheet;
                 if (!ref) continue;
                 const alias = this.manifestAliases.get(ref) || ref;
-                if (!this.images.has(alias)) this._requestManifestImage(alias);
+                const pending = this._requestManifestImage(alias);
+                if (pending) imageWaits.push(pending.catch(() => {}));
             }
+            if (imageWaits.length > 0) await Promise.all(imageWaits);
+            this.skeletonAssets.set(key, parsed);
             return parsed;
         } catch (error) {
             this._failedSkeletonLoads.add(key);
