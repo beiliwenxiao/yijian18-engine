@@ -513,6 +513,36 @@ export class SceneRenderPipeline {
         time: atExit ? time * 3 : time
       });
     }
+    // 战斗中最近敌人锁定光圈（传送点同款椭圆，暖红色区分蓝色传送点/绿色出口）
+    const combatSystem = this.scene?.combatSystem;
+    const player = this.scene?.playerEntity;
+    if (combatSystem?.isInCombat?.() === true && player) {
+      const playerPos = player.getComponent?.('transform')?.position;
+      if (playerPos) {
+        let nearest = null;
+        let nearestDistance = Infinity;
+        for (const enemy of this.scene?.enemyEntities || []) {
+          if (!enemy || enemy.isDead || enemy.isDying) continue;
+          const position = enemy.getComponent?.('transform')?.position;
+          if (!position) continue;
+          const distance = Math.hypot(position.x - playerPos.x, position.y - playerPos.y);
+          if (distance < nearestDistance) {
+            nearestDistance = distance;
+            nearest = { position, enemy };
+          }
+        }
+        if (nearest) {
+          const spriteWidth = nearest.enemy.getComponent?.('sprite')?.width || 40;
+          GroundMarkerRenderer.renderGlowEllipse(ctx, {
+            x: nearest.position.x,
+            y: nearest.position.y,
+            radius: Math.max(22, spriteWidth * 0.62),
+            color: '255, 120, 90',
+            time
+          });
+        }
+      }
+    }
   }
 
   _renderWorldEffects(ctx) {
