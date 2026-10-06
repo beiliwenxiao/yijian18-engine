@@ -32,6 +32,8 @@ export class SkeletonComponent extends Component {
     super('skeleton');
     this.skeletonId = options.skeletonId || '';
     this.skeletonAsset = null;          // parseSkeletonAsset 产物（由 AssetManager 懒加载后注入）
+    this.deps = options.deps || null;   // { getAssetManager } 状态映射器等依赖
+    this.stateHook = null;              // 可选：每帧状态→剪辑映射（PlayerSkeletonStateMapper）
     this.currentClip = null;            // 当前剪辑名
     this.clipTime = 0;                  // 剪辑内时间（毫秒）
     this.playing = true;
@@ -92,7 +94,9 @@ export class SkeletonComponent extends Component {
   /** 剪辑时间推进 + 槽位序列帧推进。deltaTime 为秒（Entity.update 约定）。 */
   update(deltaTime) {
     const asset = this.skeletonAsset;
-    if (!asset || !this.playing) return;
+    if (!asset) return;
+    this.stateHook?.(this, deltaTime);
+    if (!this.playing) return;
     const deltaMs = Math.max(0, Number(deltaTime) || 0) * 1000 * this.speed;
     if (deltaMs === 0 && !this._poseDirty) return;
 
@@ -148,6 +152,21 @@ export class SkeletonComponent extends Component {
   /** 取槽位序列帧游标（渲染用）。 */
   getSlotFrame(slotId) {
     return this.slotFrameState.get(slotId)?.frame || 0;
+  }
+
+  /**
+   * 动态改写槽位序列帧表（状态映射器按方向行/贴图布局更新 body 槽位用）。
+   * @param {string} slotId
+   * @param {Array<{sx:number,sy:number,sw:number,sh:number}>} frames
+   * @param {number} [fps]
+   */
+  setSlotFrames(slotId, frames, fps = null) {
+    const slot = this.skeletonAsset?.slots?.find(candidate => candidate.id === slotId);
+    if (!slot?.attachment || slot.attachment.type !== 'sequence') return;
+    slot.attachment.frames = frames;
+    if (fps > 0) slot.attachment.fps = fps;
+    this.slotFrameState.delete(slotId);
+    this._poseDirty = true;
   }
 }
 

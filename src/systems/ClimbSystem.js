@@ -84,6 +84,7 @@ export class ClimbSystem {
       ...this._acquireLayer(entity)
     };
     this._active.set(entity, state);
+    entity._climbing = true;
     this.onClimbStarted?.(entity, { mode: 'traverse' });
     return true;
   }
@@ -150,6 +151,7 @@ export class ClimbSystem {
     }
     state.transform.position.elevation = state.climbElevation;
     this._active.set(entity, state);
+    entity._climbing = true;
     this.onClimbStarted?.(entity, { mode: 'controlled', surfaceId: state.surfaceId });
     return true;
   }
@@ -367,6 +369,7 @@ export class ClimbSystem {
     this._applyTraversePosition(state);
     if (state.elapsed >= state.duration) {
       state.transform.position.elevation = state.baseElevation;
+      entity._climbing = false;
       this._releaseLayer(entity, state);
       return { ok: true };
     }
@@ -490,6 +493,7 @@ export class ClimbSystem {
 
   _finish(entity, state) {
     state.transform.position.elevation = state.baseElevation;
+    entity._climbing = false;
     this._releaseLayer(entity, state);
     if (state.mode === 'controlled') this._controlledDetachAt.set(entity, performance.now());
     this._active.delete(entity);

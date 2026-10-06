@@ -33,6 +33,7 @@ import { ControllerComponent, ControllerKind } from './components/ControllerComp
 import { NpcComponent } from './components/NpcComponent.js';
 import { ResourceNodeComponent } from './components/ResourceNodeComponent.js';
 import { SkeletonComponent } from './components/SkeletonComponent.js';
+import { createPlayerSkeletonStateMapper } from '../animation/PlayerSkeletonStateMapper.js';
 
 /**
  * 实体工厂类
@@ -56,6 +57,15 @@ export class EntityFactory {
   }
 
   /**
+   * 注入骨骼动画依赖（assetManager 访问器）：身体槽位帧表按实体实际贴图计算。
+   * @param {{ getAssetManager: () => Object|null }} deps
+   */
+  setAnimationDeps(deps) {
+    this.animationDeps = deps && typeof deps.getAssetManager === 'function' ? deps : null;
+    return this;
+  }
+
+  /**
    * 稳定 ID 指向骨骼资产（manifest runtime2D.mode==='skeleton'）时：
    * SpriteComponent 标记 isSkeleton 并清空帧动画（保留外观语义），挂 SkeletonComponent。
    * playAnimation 由 SpriteComponent 兼容转发到 playClip，杜绝双驱动。
@@ -66,8 +76,13 @@ export class EntityFactory {
     if (entry?.runtime2D?.mode !== 'skeleton') return;
     sprite.isSkeleton = true;
     sprite.animations.clear();
-    const skeletonComponent = new SkeletonComponent({ skeletonId: stableSpriteId });
+    const skeletonComponent = new SkeletonComponent({
+      skeletonId: stableSpriteId,
+      deps: this.animationDeps
+    });
     sprite.skeletonDelegate = skeletonComponent;
+    // 角色/生物实体挂状态映射器：连续状态（死亡/灵魂/攀爬/行走/待机）自动驱动剪辑
+    skeletonComponent.stateHook = createPlayerSkeletonStateMapper(entity, this.animationDeps || {});
     entity.addComponent(skeletonComponent);
   }
 
