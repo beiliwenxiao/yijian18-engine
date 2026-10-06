@@ -289,19 +289,32 @@ export class Scene1Terrain {
           if (!obj) continue;
           
           let key = null;
+          let source = null; // 任意共享图集切片（atlasId+sliceKey）：{ atlasId, sx, sy, sw, sh, collide }
           if (obj.type === 'deco') {
             key = obj.decoKey || obj.name;
           } else if (obj.type === 'slice') {
             key = obj.decoKey || obj.sliceKey;
+            // 非 mountain 图集的共享切片：从共享 catalog registry 解析源矩形，
+            // 不要求 decoSprites 预登记（decoSprites 仅由 mountain_landscape 构建）
+            if ((!key || !this.decoSprites[key]) && obj.atlasId && obj.sliceKey) {
+              const slice = this._atlasRegistry.getSlice(obj.atlasId, obj.sliceKey);
+              if (slice) {
+                source = {
+                  atlasId: obj.atlasId,
+                  sx: slice.sx, sy: slice.sy, sw: slice.sw, sh: slice.sh,
+                  collide: slice.collide === true
+                };
+              }
+            }
           } else {
             continue;
           }
-          
-          if (!key || !this.decoSprites[key]) continue;
+
+          const sprite = source || this.decoSprites[key];
+          if (!sprite) continue;
           totalDecoDefined++;
           // 图层隐藏时（编辑器中设为不可见）不加入渲染列表
           if (layerHidden) continue;
-          const sprite = this.decoSprites[key];
           const w = obj.width || sprite.sw;
           const h = obj.height || sprite.sh;
           const anchor = this._sceneObjectProjector.project({
@@ -313,7 +326,8 @@ export class Scene1Terrain {
             y: Math.round(anchor.y),
             key,
             w, h,
-            scale: w / sprite.sw
+            scale: w / sprite.sw,
+            ...(source ? { source } : {})
           });
         }
       }
@@ -1123,7 +1137,7 @@ export class Scene1Terrain {
 
       for (const deco of this.decorations) {
         if (deco.belowEntities) continue;
-        const sprite = this.decoSprites[deco.key];
+        const sprite = deco.source || this.decoSprites[deco.key];
         if (!sprite || !sprite.collide) continue;
         const size = this._decoRenderSize(deco, sprite);
         this._decorationQueueEntries.push({
@@ -1199,12 +1213,13 @@ export class Scene1Terrain {
    */
   _buildDecorationLayerCache(predicate) {
     if (!this.loaded.mountain || !this.images.mountain) return null;
-    const entries = this.decorations.filter(deco => predicate(deco, this.decoSprites[deco.key]));
+    const entries = this.decorations.filter(deco => predicate(deco, deco.source || this.decoSprites[deco.key]));
     if (entries.length === 0) return null;
 
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
     for (const deco of entries) {
-      const sprite = this.decoSprites[deco.key];
+      const sprite = deco.source || this.decoSprites[deco.key];
+      if (!sprite) continue;
       const { w, h } = this._decoRenderSize(deco, sprite);
       const dx = deco.x - w / 2;
       const dy = deco.y - h;
@@ -1225,10 +1240,14 @@ export class Scene1Terrain {
     const offsetX = minX - 2;
     const offsetY = minY - 2;
     for (const deco of entries) {
-      const sprite = this.decoSprites[deco.key];
+      const sprite = deco.source || this.decoSprites[deco.key];
+      if (!sprite) continue;
+      // 图源：mountain decoSprites 用 mountain 图；deco.source 用其所属共享图集
+      const img = deco.source ? this._getAtlasImage(deco.source.atlasId) : this.images.mountain;
+      if (!img) continue;
       const { w, h } = this._decoRenderSize(deco, sprite);
       gctx.drawImage(
-        this.images.mountain,
+        img,
         sprite.sx, sprite.sy, sprite.sw, sprite.sh,
         deco.x - w / 2 - offsetX,
         deco.y - h - offsetY,
@@ -1242,7 +1261,7 @@ export class Scene1Terrain {
   _buildGroundDecoCache() {
     if (this._groundDecoCache) return;
     const cache = this._buildDecorationLayerCache((deco, sprite) =>
-      !deco.belowEntities && sprite && !sprite.collide
+      !deco.belowEntities && ((!!sprite && !sprite.collide) || (!!deco.source && !deco.source.collide))
     );
     if (!cache) return;
     this._groundDecoCache = cache.canvas;
@@ -1254,7 +1273,7 @@ export class Scene1Terrain {
   _buildBelowDecoCache() {
     if (this._belowDecoCache) return;
     const cache = this._buildDecorationLayerCache((deco, sprite) =>
-      deco.belowEntities === true && !!sprite
+      deco.belowEntities === true && (!!sprite || !!deco.source)
     );
     if (!cache) return;
     this._belowDecoCache = cache.canvas;
@@ -1278,19 +1297,20 @@ export class Scene1Terrain {
   }
 
   /**
-   * 渲染单个装饰物（从共享 mountain_landscape 图集切片绘制）
+   * 渲染单个装饰物（mountain decoSprites 或任意共享图集切片 deco.source）
    * @private
    */
   _renderDecoration(ctx, deco) {
-    if (!this.loaded.mountain) return;
-    const sprite = this.decoSprites[deco.key];
+    const sprite = deco.source || this.decoSprites[deco.key];
     if (!sprite) return;
+    const img = deco.source ? this._getAtlasImage(deco.source.atlasId) : this.images.mountain;
+    if (!img) return;
     const { w, h } = this._decoRenderSize(deco, sprite);
     // 锚点：底部中央
     const dx = deco.x - w / 2;
     const dy = deco.y - h;
     ctx.drawImage(
-      this.images.mountain,
+      img,
       sprite.sx, sprite.sy, sprite.sw, sprite.sh,
       dx, dy, w, h
     );
@@ -1306,8 +1326,10 @@ export class Scene1Terrain {
     if (deco.w != null && deco.h != null) {
       return { w: deco.w, h: deco.h };
     }
-    const totalScale = (deco.scale ?? 1) * (sprite.scale ?? 1);
-    return { w: sprite.sw * totalScale, h: sprite.sh * totalScale };
+    const source = deco.source || sprite;
+    if (!source) return { w: deco.w || 0, h: deco.h || 0 };
+    const totalScale = (deco.scale ?? 1) * (source.scale ?? 1);
+    return { w: source.sw * totalScale, h: source.sh * totalScale };
   }
 
   /**
