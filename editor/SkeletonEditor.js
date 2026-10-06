@@ -945,12 +945,24 @@ export class SkeletonEditor {
     if (!boneId) { this._toast('先选中一个骨骼', true); return; }
     const existing = (this.doc.slots || []).find(slot => slot.attachment?.assetId === assetId && slot.bone === boneId);
     if (existing) { this.selectedSlot = existing.id; this._toast('该骨骼已挂此图片，已选中其槽位'); this._renderSlotList(); return; }
+    // sprite sheet 按 manifest 网格取单帧尺寸，避免整图铺满画布
+    const item = this.imageCatalog.get(assetId);
+    const grid = item?.entry?.grid;
+    const attachment = { type: 'image', assetId, x: 0, y: 0, rot: 0, width: 0, height: 0 };
+    if (grid?.columns > 0 && grid?.rows > 0 && item) {
+      const naturalWidth = item.element?.naturalWidth || item.width || 0;
+      const naturalHeight = item.element?.naturalHeight || item.height || 0;
+      if (naturalWidth && naturalHeight) {
+        attachment.width = Math.round(naturalWidth / grid.columns);
+        attachment.height = Math.round(naturalHeight / grid.rows);
+      }
+    }
     const index = (this.doc.slots || []).length;
     const slot = {
       id: `slot_${assetId.replace(/[^a-zA-Z0-9-]/g, '-').slice(-24)}_${index}`,
       bone: boneId,
       z: (this.doc.slots || []).reduce((max, candidate) => Math.max(max, candidate.z), 0) + 1,
-      attachment: { type: 'image', assetId, x: 0, y: 0, rot: 0, width: 0, height: 0 }
+      attachment
     };
     this.doc.slots = this.doc.slots || [];
     this.doc.slots.push(slot);
