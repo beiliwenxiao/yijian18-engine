@@ -840,10 +840,18 @@ export class SceneEditorUI {
       } else {
         html += `<div class="property-row"><label>X:</label><input type="number" value="${Math.round(obj.x)}" data-prop="x"></div>`;
         html += `<div class="property-row"><label>Y:</label><input type="number" value="${Math.round(obj.y)}" data-prop="y"></div>`;
-        if (obj.type === 'rect' || obj.type === 'image' || obj.type === 'slice' || obj.type === 'fill' || obj.type === 'deco' || obj.type === 'ellipse' || obj.type === 'shape' || obj.type === 'region') {
-          html += `<div class="property-row"><label>宽度:</label><input type="number" value="${Math.round(obj.width)}" data-prop="width"></div>`;
-          html += `<div class="property-row"><label>高度:</label><input type="number" value="${Math.round(obj.height)}" data-prop="height"></div>`;
-        } else if (obj.type === 'circle') {
+        // 图片对象缺尺寸字段时以图片自然尺寸补齐（旧数据/特殊流程创建的对象兼容）
+      if (obj.type === 'image' && (!Number.isFinite(obj.width) || !Number.isFinite(obj.height))) {
+        const imgEl = this.editor.loadedImages.get(obj.imageId);
+        if (imgEl?.naturalWidth > 0) {
+          obj.width = imgEl.naturalWidth;
+          obj.height = imgEl.naturalHeight;
+        }
+      }
+      if (obj.type === 'rect' || obj.type === 'image' || obj.type === 'slice' || obj.type === 'fill' || obj.type === 'deco' || obj.type === 'ellipse' || obj.type === 'shape' || obj.type === 'region') {
+        html += `<div class="property-row"><label>宽度:</label><input type="number" value="${Math.round(obj.width)}" data-prop="width"></div>`;
+        html += `<div class="property-row"><label>高度:</label><input type="number" value="${Math.round(obj.height)}" data-prop="height"></div>`;
+      } else if (obj.type === 'circle') {
           html += `<div class="property-row"><label>半径:</label><input type="number" value="${Math.round(obj.radius)}" data-prop="radius"></div>`;
         }
       }
@@ -1324,18 +1332,52 @@ export class SceneEditorUI {
         } else {
           editor.sceneData.imageAssets[imgObj.imageId].src = newSrc;
         }
-        // 重新加载图片刷新画布与尺寸显示
-        const newImg = new Image();
-        newImg.onload = () => {
-          editor.loadedImages.set(imgObj.imageId, newImg);
-          const dimEl = document.getElementById('editor-image-dim');
-          if (dimEl) dimEl.value = `${newImg.naturalWidth}×${newImg.naturalHeight}`;
+        // 替换图片文件：穿透缓存重载 + 按新图自然尺寸同步对象宽高（获取最新属性）
+        const previous = editor.loadedImages.get(imgObj.imageId);
+        const previousWidth = Number.isFinite(previous?.naturalWidth) ? previous.naturalWidth : null;
+        this._reloadSceneImageAsset(imgObj).then(image => {
+          if (!image) {
+            this.showToast('图片加载失败: ' + newSrc, 'error');
+            return;
+          }
+          editor.history?.saveHistory?.();
+          if (!Number.isFinite(imgObj.width) || !Number.isFinite(imgObj.height) || imgObj.width === previousWidth) {
+            imgObj.width = image.naturalWidth;
+            imgObj.height = image.naturalHeight;
+          }
+          this.updateObjectProperties();
+          this._fetchImageFileSize(newSrc);
           editor.render();
-        };
-        newImg.onerror = () => this.showToast('图片加载失败: ' + newSrc, 'error');
-        newImg.src = newSrc;
-        this._fetchImageFileSize(newSrc);
+          this.showToast(`图片已更新：${image.naturalWidth}×${image.naturalHeight}，对象宽高已同步`);
+        });
       });
+
+      // 刷新图片按钮：源文件被外部修改后穿透缓存重载并同步对象宽高
+      const imgRefreshBtn = document.getElementById('editor-image-refresh-btn');
+      if (imgRefreshBtn) {
+        imgRefreshBtn.addEventListener('click', async () => {
+          if (!isObjectEditable()) {
+            this.showToast('此对象已隐藏或锁定，无法修改', 'warn');
+            return;
+          }
+          imgRefreshBtn.disabled = true;
+          try {
+            const image = await this._reloadSceneImageAsset(imgObj);
+            if (!image) {
+              this.showToast('图片加载失败，请检查路径', 'error');
+              return;
+            }
+            editor.history?.saveHistory?.();
+            imgObj.width = image.naturalWidth;
+            imgObj.height = image.naturalHeight;
+            this.updateObjectProperties();
+            editor.render();
+            this.showToast(`图片已刷新：${image.naturalWidth}×${image.naturalHeight}，对象宽高已同步`);
+          } finally {
+            imgRefreshBtn.disabled = false;
+          }
+        });
+      }
 
       // 编辑按钮：弹窗编辑图片属性
       const imgEditBtn = document.getElementById('editor-image-edit-btn');
@@ -2659,6 +2701,7 @@ export class SceneEditorUI {
     html += `<div class="property-row" style="align-items:flex-start;"><label>图片预览:</label><div style="width:96px;height:64px;padding:2px;background:#0b1224;border:1px solid #344d7f;border-radius:4px;"><img id="editor-image-manifest-preview" alt="${escapeHtml(obj.name || obj.imageId || '图片预览')}" style="display:none;width:100%;height:100%;object-fit:contain;"><small id="editor-image-manifest-status" style="display:block;padding:5px;color:#8ea4c9;line-height:1.3;">正在读取 Manifest…</small></div></div>`;
     html += `<div class="property-row"><label title="替换当前 ID 对应的图片文件，所有引用保持不变">替换文件:</label><input type="text" id="editor-image-src" value="${escapeHtml(src)}" style="flex:1;"></div>`;
     html += `<div class="property-row"><label>图片尺寸:</label><input id="editor-image-dim" value="${dim}" disabled style="color:#88ccff;"></div>`;
+    html += `<div class="property-row"><label title="源图片文件被外部修改后，穿透缓存重载并按新图自然尺寸同步对象宽高">刷新图片:</label><button id="editor-image-refresh-btn" style="flex:1;padding:4px;cursor:pointer;">🔄 刷新图片</button></div>`;
     html += `<div class="property-row"><label>文件大小:</label><input id="editor-image-filesize" value="计算中…" disabled style="color:#88ccff;"></div>`;
     html += `<div class="property-row"><label title="与实体按脚底 Y 共同排序；关闭时图片固定在地面层">实体遮挡:</label><input type="checkbox" ${obj.depthSort === true ? 'checked' : ''} data-prop="depthSort"></div>`;
     html += `<div class="property-row"><label title="图片脚底排序 Y；默认使用图片底边">排序基线Y:</label><input type="number" value="${Number.isFinite(obj.sortY) ? obj.sortY : (obj.y || 0) + (obj.height || 0)}" data-prop="sortY"></div>`;
@@ -2691,6 +2734,31 @@ export class SceneEditorUI {
       }
     } catch (e) {
       el.value = '查询失败';
+    }
+  }
+
+  /**
+   * 穿透缓存重载图片对象的源图（外部修改文件后取最新内容）。
+   * @returns {Promise<HTMLImageElement|null>}
+   */
+  async _reloadSceneImageAsset(imgObj) {
+    const editor = this.editor;
+    const src = editor.sceneData.imageAssets?.[imgObj.imageId]?.src || '';
+    if (!src) return null;
+    const bustSrc = /^(https?:|data:)/i.test(src)
+      ? src
+      : `${src}${src.includes('?') ? '&' : '?'}imgRefresh=${Date.now()}`;
+    try {
+      const image = await new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(new Error('图片加载失败'));
+        img.src = bustSrc;
+      });
+      editor.loadedImages.set(imgObj.imageId, image);
+      return image;
+    } catch {
+      return null;
     }
   }
 

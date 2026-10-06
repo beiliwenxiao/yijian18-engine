@@ -870,14 +870,69 @@ export class LibraryEditor {
         .join('')}</select></div>
       <div class="row"><label>图片路径（Manifest 映射）</label><input type="text" id="l-image-path" value="${escapeHtml(display.path)}" placeholder="assets/images/...png"><small style="display:block;margin-top:4px;color:#9ab;font-size:11px;line-height:1.45;">修改路径只改当前稳定 ID 的 Manifest 映射，保存时随工程一并提交。</small></div>
       <div class="row" style="display:flex;gap:10px;align-items:center;"><div style="width:72px;height:72px;border:1px solid #2a3a5e;border-radius:4px;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#080d1a;flex:none;"><img id="l-image-preview" alt="图片预览" src="${escapeHtml(display.url)}" style="display:${display.url ? 'block' : 'none'};width:100%;height:100%;object-fit:contain;"><span id="l-image-empty" style="display:${display.url ? 'none' : ''};padding:6px;text-align:center;color:#ff9a9a;font-size:11px;">${this._manifestError ? '图片目录加载失败' : '未选择图片'}</span></div><small id="l-image-status" style="color:#9ab;font-size:11px;line-height:1.45;">${escapeHtml(display.status)}</small></div>
+      <div class="row"><label>图片尺寸</label><input type="text" id="l-image-dim" readonly value="读取中…" style="flex:1;color:#88ccff;"><button type="button" id="l-image-refresh" title="源图片文件被外部修改后，穿透缓存重新加载并显示最新尺寸">🔄 刷新图片</button></div>
     `;
   }
 
   /** 绑定图片引用编辑区事件并初始化预览。 */
   _bindImageSection(panel) {
-    panel.querySelector('#l-image-id')?.addEventListener('change', () => this._updateItemImagePreview(panel));
+    panel.querySelector('#l-image-id')?.addEventListener('change', () => {
+      this._updateItemImagePreview(panel);
+      this._loadLibraryImageDims(panel);
+    });
     panel.querySelector('#l-image-path')?.addEventListener('change', () => this._queueImagePathUpdate(panel));
+    panel.querySelector('#l-image-refresh')?.addEventListener('click', async () => {
+      const button = panel.querySelector('#l-image-refresh');
+      button.disabled = true;
+      try {
+        await this._loadLibraryImageDims(panel, true);
+      } finally {
+        button.disabled = false;
+      }
+    });
     this._updateItemImagePreview(panel);
+    this._loadLibraryImageDims(panel);
+  }
+
+  /**
+   * 读取图片资源的实际尺寸（图片尺寸可能随源文件修改而变化，Manifest bounds 未必最新）。
+   * @param {HTMLElement} panel
+   * @param {boolean} [bust] - true 时穿透 HTTP 缓存重载（刷新图片按钮用）
+   */
+  async _loadLibraryImageDims(panel, bust = false) {
+    const imageId = String(panel.querySelector('#l-image-id')?.value || '').trim();
+    const dimInput = panel.querySelector('#l-image-dim');
+    if (!dimInput) return;
+    if (!imageId) { dimInput.value = '未选择图片'; return; }
+    const display = this._imageDisplay(imageId);
+    if (!display.url) { dimInput.value = '无可加载图片'; return; }
+    if (this._manifestImageOption(imageId)?.mode === 'skeleton') {
+      dimInput.value = '骨骼资产（无图片尺寸）';
+      return;
+    }
+    const url = bust
+      ? `${display.url}${display.url.includes('?') ? '&' : '?'}imgRefresh=${Date.now()}`
+      : display.url;
+    try {
+      const image = await new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(new Error('图片加载失败'));
+        img.src = url;
+      });
+      dimInput.value = `${image.naturalWidth}×${image.naturalHeight}`;
+      if (bust) {
+        const preview = panel.querySelector('#l-image-preview');
+        if (preview) {
+          preview.src = url;
+          preview.style.display = 'block';
+          const empty = panel.querySelector('#l-image-empty');
+          if (empty) empty.style.display = 'none';
+        }
+      }
+    } catch {
+      dimInput.value = '加载失败';
+    }
   }
 
   _queueImagePathUpdate(panel) {
@@ -1206,6 +1261,7 @@ export class LibraryEditor {
           <div><label>贴图高 sprite.height</label><input type="number" id="l-sprite-h" value="${escapeHtml(sprite.height || 64)}" min="1" style="width:70px;"></div>
         </div>
       </div>
+      <div class="row"><label>图片尺寸</label><input type="text" id="l-image-dim" readonly value="读取中…" style="flex:1;color:#88ccff;"><button type="button" id="l-image-refresh" title="源图片文件被外部修改后，穿透缓存重新加载并显示最新尺寸">🔄 刷新图片</button></div>
       <hr style="border-color:#2a3a5e;margin:10px 0;">
       <div class="row"><label style="font-weight:bold;">基础属性 stats</label> <button id="l-stat-add" style="padding:2px 8px;cursor:pointer;margin-left:8px;">+ 属性</button></div>
       <div id="l-stats-area">${statsHtml}</div>
@@ -1218,8 +1274,21 @@ export class LibraryEditor {
     `;
 
     // 绑定事件
-    panel.querySelector('#l-image-id')?.addEventListener('change', () => this._updateItemImagePreview(panel));
+    panel.querySelector('#l-image-id')?.addEventListener('change', () => {
+      this._updateItemImagePreview(panel);
+      this._loadLibraryImageDims(panel);
+    });
     panel.querySelector('#l-image-path')?.addEventListener('change', () => this._queueImagePathUpdate(panel));
+    panel.querySelector('#l-image-refresh')?.addEventListener('click', async () => {
+      const button = panel.querySelector('#l-image-refresh');
+      button.disabled = true;
+      try {
+        await this._loadLibraryImageDims(panel, true);
+      } finally {
+        button.disabled = false;
+      }
+    });
+    this._loadLibraryImageDims(panel);
     panel.querySelector('#l-npc-type')?.addEventListener('change', event => {
       this._commitNpcDetail(panel, e);
       this._switchNpcType(e, event.currentTarget.value);
