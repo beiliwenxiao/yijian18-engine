@@ -8,6 +8,7 @@
 
 import { UIElement } from './UIElement.js';
 import { HudIconPainter } from './HudIconPainter.js';
+import { drawSkillIcon } from './SkillIconResolver.js';
 
 export class SkillWheelOverlay extends UIElement {
   constructor(options = {}) {
@@ -20,6 +21,7 @@ export class SkillWheelOverlay extends UIElement {
     });
     this.radius = options.radius || 120;        // 轮盘半径
     this.iconSize = options.iconSize || 48;     // 图标大小
+    this.getAssetManager = options.getAssetManager || null; // 技能 icon 图片解析（manifest）
     this.skills = [];                           // [{ name, icon, effectType }]
     this.selectedIndex = -1;
     this.centerX = this.width / 2;
@@ -121,9 +123,11 @@ export class SkillWheelOverlay extends UIElement {
       ctx.lineWidth = isSelected ? 3 : 1.5;
       ctx.stroke();
 
-      // 图标：矢量图标（HudIconPainter）优先，emoji 回退
+      // 图标：manifest 图片（skill.icon）→ HudIconPainter 矢量 → emoji 兜底
       const iconKey = this._getSkillIconKey(skill);
-      if (!HudIconPainter.draw(ctx, iconKey, ix, iy, bgSize * 0.52)) {
+      const painted = drawSkillIcon(ctx, skill, ix, iy, bgSize * 0.52, this.getAssetManager)
+        || HudIconPainter.draw(ctx, iconKey, ix, iy, bgSize * 0.52);
+      if (!painted) {
         const iconEmoji = this._getSkillEmoji(skill);
         ctx.fillStyle = '#ffffff';
         ctx.font = `${Math.floor(bgSize * 0.5)}px Arial`;

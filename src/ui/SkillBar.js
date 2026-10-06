@@ -11,6 +11,7 @@
  ************************************************************/
 
 import { UIElement } from './UIElement.js';
+import { drawSkillIcon } from './SkillIconResolver.js';
 
 /**
  * 技能栏组件
@@ -36,6 +37,7 @@ export class SkillBar extends UIElement {
     this.borderColor = options.borderColor || '#ffffff';
     this.cooldownColor = options.cooldownColor || 'rgba(0, 0, 0, 0.6)';
     this.insufficientManaColor = options.insufficientManaColor || '#ff0000';
+    this.getAssetManager = typeof options.getAssetManager === 'function' ? options.getAssetManager : null;
     
     this.borderWidth = 2;
     this.padding = 5;
@@ -159,9 +161,15 @@ export class SkillBar extends UIElement {
     const centerX = x + this.slotSize / 2;
     const centerY = y + this.slotSize / 2;
     const iconSize = this.slotSize - 10;
-    
+
     ctx.save();
-    
+
+    // manifest 图片（skill.icon）→ HudIconPainter 矢量 → 代码图标兜底
+    if (drawSkillIcon(ctx, skill, centerX, centerY, iconSize, this.getAssetManager)) {
+      ctx.restore();
+      return;
+    }
+
     // 根据技能ID绘制不同的图标
     switch(skill.id) {
       case 'basic_attack':

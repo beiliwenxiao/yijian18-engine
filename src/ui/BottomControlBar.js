@@ -28,11 +28,18 @@
 import { UIElement } from './UIElement.js';
 import { ItemIconRenderer } from './ItemIconRenderer.js';
 import { InputHints } from '../core/input/InputHints.js';
+import { drawSkillIcon } from './SkillIconResolver.js';
 
 const EMPTY_POTION_ITEMS = Object.freeze([
   Object.freeze({ id: 'health_potion', type: 'consumable', effect: Object.freeze({ type: 'heal' }) }),
   Object.freeze({ id: 'mana_potion', type: 'consumable', effect: Object.freeze({ type: 'restore_mana' }) })
 ]);
+
+/** effectType → emoji 兜底映射（无 icon 图片且无矢量图标时）。 */
+const SKILL_EMOJI_MAP = Object.freeze({
+  flame_palm: '🔥', fireball: '🔥', ice_finger: '❄', ice_lance: '❄',
+  inferno_palm: '💥', flame_burst: '💥', heal: '💚', meditation: '🧘'
+});
 
 /**
  * 底部控制栏
@@ -53,6 +60,8 @@ export class BottomControlBar extends UIElement {
 
     this.entity = null;
     this.now = typeof options.now === 'function' ? options.now : () => performance.now();
+    // 技能 icon 图片解析（manifest 稳定 ID → AssetManager）
+    this.getAssetManager = typeof options.getAssetManager === 'function' ? options.getAssetManager : null;
 
     // 显示配置（移动端可隐藏血球/蓝球和数字快捷键）
     this.showOrbs = options.showOrbs !== false;
@@ -775,47 +784,30 @@ export class BottomControlBar extends UIElement {
    */
   renderSkillIcon(ctx, skill, x, y, size) {
     const halfSize = size / 2;
-    
+
     ctx.save();
     ctx.translate(x, y);
-    
-    // 优先使用技能自带的 icon 属性
-    if (skill.icon) {
+
+    // 技能图标：manifest 图片（skill.icon）→ HudIconPainter 矢量 → emoji/短文本兜底
+    const iconDrawn = drawSkillIcon(ctx, skill, 0, 0, size * 0.72, this.getAssetManager);
+    if (!iconDrawn) {
+      // skill.icon 若是短 emoji/文本沿用；否则按 effectType 映射
+      const customIcon = typeof skill.icon === 'string' && skill.icon.length <= 4 && !/^[A-Za-z]/.test(skill.icon)
+        ? skill.icon
+        : (SKILL_EMOJI_MAP[skill.effectType] || '⚡');
       ctx.font = `${size * 0.55}px Arial`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(skill.icon, 0, 0);
-      
-      // 技能名称（小字）
-      if (skill.name) {
-        ctx.font = `${Math.max(10, size * 0.18)}px Arial`;
-        ctx.fillStyle = '#ffffff';
-        ctx.fillText(skill.name, 0, halfSize - 6);
-      }
-      
-      ctx.restore();
-      return;
+      ctx.fillText(customIcon, 0, 0);
     }
-    
-    // 默认图标映射表
-    const iconMap = {
-      'flame_palm': '🔥',
-      'fireball': '🔥',
-      'ice_finger': '❄',
-      'ice_lance': '❄',
-      'inferno_palm': '💥',
-      'flame_burst': '💥',
-      'heal': '💚',
-      'meditation': '🧘'
-    };
-    
-    const emoji = iconMap[skill.effectType] || '⚡';
-    
-    ctx.font = `${size * 0.55}px Arial`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(emoji, 0, 0);
-    
+
+    // 技能名称（小字）：仅在 icon 为短文本（旧配置）时绘制，图片/矢量图标不再叠加
+    if (!iconDrawn && typeof skill.icon === 'string' && skill.icon.length <= 4 && skill.name) {
+      ctx.font = `${Math.max(10, size * 0.18)}px Arial`;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(skill.name, 0, halfSize - 6);
+    }
+
     ctx.restore();
   }
 

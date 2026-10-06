@@ -150,6 +150,7 @@ export class ScenePanelLayout {
       showOrbs: barOptions.showOrbs,
       showHotkeyNumbers: barOptions.showHotkeyNumbers,
       now: () => scene.simulationClock?.now?.() ?? performance.now(),
+      getAssetManager: () => scene.assetManager || null,
       onSkillClick: (skill) => {
         scene.onSkillClicked(skill);
       },
@@ -305,7 +306,8 @@ export class ScenePanelLayout {
     // 环形技能轮盘（LB 按住弹出）
     scene.skillWheelOverlay = new SkillWheelOverlay({
       canvasWidth: scene.logicalWidth,
-      canvasHeight: scene.logicalHeight
+      canvasHeight: scene.logicalHeight,
+      getAssetManager: () => scene.assetManager || null
     });
 
     // 注册 UI 元素到 UIClickHandler

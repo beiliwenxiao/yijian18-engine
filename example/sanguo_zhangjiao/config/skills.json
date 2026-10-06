@@ -8,28 +8,57 @@
       "description": "对前方敌人造成物理伤害",
       "category": "attack",
       "targeting": "direction",
-      "params": { "damage": 30, "range": 90, "radius": 60, "cooldown": 4 },
-      "costs": { "stamina": 10 },
-      "tags": ["melee", "physical"],
-      "vfx": { "effect": "slash" },
+      "params": {
+        "damage": 30,
+        "range": 90,
+        "radius": 60,
+        "cooldown": 4
+      },
+      "costs": {
+        "stamina": 10
+      },
+      "tags": [
+        "melee",
+        "physical"
+      ],
+      "vfx": {
+        "effect": "slash"
+      },
       "variants": {
         "whirlwind": {
           "name": "旋风斩",
           "description": "改为对周身全部敌人造成伤害，但单体伤害降低",
           "targeting": "area",
-          "params": { "damage": 20, "radius": 120, "cooldown": 6 },
-          "tags": ["aoe"],
-          "vfx": { "effect": "whirlwind" }
+          "params": {
+            "damage": 20,
+            "radius": 120,
+            "cooldown": 6
+          },
+          "tags": [
+            "aoe"
+          ],
+          "vfx": {
+            "effect": "whirlwind"
+          }
         },
         "execute": {
           "name": "斩杀",
           "description": "改为单体高伤，冷却更长",
           "targeting": "entity",
-          "params": { "damage": 70, "range": 70, "cooldown": 9 },
-          "tags": ["single"],
-          "vfx": { "effect": "execute" }
+          "params": {
+            "damage": 70,
+            "range": 70,
+            "cooldown": 9
+          },
+          "tags": [
+            "single"
+          ],
+          "vfx": {
+            "effect": "execute"
+          }
         }
-      }
+      },
+      "icon": "inventory.equipment.ironSword"
     },
     {
       "id": "arrow_shot",
@@ -37,24 +66,48 @@
       "description": "远程单体射击",
       "category": "attack",
       "targeting": "position",
-      "params": { "damage": 25, "range": 320, "radius": 24, "cooldown": 3, "projectileCount": 1 },
-      "costs": { "stamina": 8 },
-      "tags": ["ranged", "physical"],
+      "params": {
+        "damage": 25,
+        "range": 320,
+        "radius": 24,
+        "cooldown": 3,
+        "projectileCount": 1
+      },
+      "costs": {
+        "stamina": 8
+      },
+      "tags": [
+        "ranged",
+        "physical"
+      ],
       "variants": {
         "volley": {
           "name": "多重射击",
           "description": "改为同时射出三箭，单箭伤害降低",
-          "params": { "damage": 14, "projectileCount": 3, "cooldown": 5 },
-          "tags": ["multishot"]
+          "params": {
+            "damage": 14,
+            "projectileCount": 3,
+            "cooldown": 5
+          },
+          "tags": [
+            "multishot"
+          ]
         },
         "pierce": {
           "name": "穿甲射击",
           "description": "改为穿透直线上的敌人",
           "targeting": "direction",
-          "params": { "damage": 22, "range": 420, "cooldown": 6 },
-          "tags": ["pierce"]
+          "params": {
+            "damage": 22,
+            "range": 420,
+            "cooldown": 6
+          },
+          "tags": [
+            "pierce"
+          ]
         }
-      }
+      },
+      "icon": "inventory.equipment.shortBow"
     },
     {
       "id": "talisman_water",
@@ -62,9 +115,19 @@
       "description": "治疗自身与附近友军",
       "category": "heal",
       "targeting": "area",
-      "params": { "healAmount": 40, "radius": 140, "cooldown": 12, "castTime": 600 },
-      "costs": { "mp": 25 },
-      "tags": ["support"]
+      "params": {
+        "healAmount": 40,
+        "radius": 140,
+        "cooldown": 12,
+        "castTime": 600
+      },
+      "costs": {
+        "mp": 25
+      },
+      "tags": [
+        "support"
+      ],
+      "icon": "inventory.equipment.talisman"
     },
     {
       "id": "flame_palm",
@@ -84,9 +147,19 @@
         "cooldown": 3,
         "castTime": 300
       },
-      "costs": { "mp": 15 },
-      "tags": ["fire", "aoe", "strategist", "v002"],
-      "vfx": { "effect": "flame_palm" }
+      "costs": {
+        "mp": 15
+      },
+      "tags": [
+        "fire",
+        "aoe",
+        "strategist",
+        "v002"
+      ],
+      "vfx": {
+        "effect": "flame_palm"
+      },
+      "icon": "skill.icon.flame-palm"
     },
     {
       "id": "inferno_palm",
@@ -104,9 +177,19 @@
         "cooldown": 10,
         "castTime": 500
       },
-      "costs": { "mp": 25 },
-      "tags": ["fire", "aoe", "strategist", "v002"],
-      "vfx": { "effect": "inferno_palm" }
+      "costs": {
+        "mp": 25
+      },
+      "tags": [
+        "fire",
+        "aoe",
+        "strategist",
+        "v002"
+      ],
+      "vfx": {
+        "effect": "inferno_palm"
+      },
+      "icon": "skill.icon.inferno-palm"
     },
     {
       "id": "ice_finger",
@@ -124,9 +207,19 @@
         "projectileSpeed": 600,
         "cooldown": 3
       },
-      "costs": { "mp": 12 },
-      "tags": ["ice", "pierce", "strategist", "v002"],
-      "vfx": { "effect": "ice_finger" }
+      "costs": {
+        "mp": 12
+      },
+      "tags": [
+        "ice",
+        "pierce",
+        "strategist",
+        "v002"
+      ],
+      "vfx": {
+        "effect": "ice_finger"
+      },
+      "icon": "skill.icon.ice-finger"
     },
     {
       "id": "wolf_bite",
@@ -134,8 +227,18 @@
       "description": "咬住面前的猎物造成撕裂伤害",
       "category": "attack",
       "targeting": "entity",
-      "params": { "damageMin": 6, "damageMax": 12, "range": 90, "radius": 90, "cooldown": 5 },
-      "tags": ["melee", "physical", "wolf"]
+      "params": {
+        "damageMin": 6,
+        "damageMax": 12,
+        "range": 90,
+        "radius": 90,
+        "cooldown": 5
+      },
+      "tags": [
+        "melee",
+        "physical",
+        "wolf"
+      ]
     },
     {
       "id": "wolf_dash_bite",
@@ -151,7 +254,12 @@
         "cooldown": 10,
         "castTime": 600
       },
-      "tags": ["melee", "physical", "wolf", "dash"]
+      "tags": [
+        "melee",
+        "physical",
+        "wolf",
+        "dash"
+      ]
     },
     {
       "id": "gathering_puppet",
@@ -159,9 +267,19 @@
       "description": "军师每次职业检查点可召唤一次傀儡执行采集；傀儡被摧毁时取消本次产物。",
       "category": "utility",
       "targeting": "position",
-      "params": { "duration": 20, "range": 240, "cooldown": 0, "charges": 1, "backlashDamage": 15 },
+      "params": {
+        "duration": 20,
+        "range": 240,
+        "cooldown": 0,
+        "charges": 1,
+        "backlashDamage": 15
+      },
       "costs": {},
-      "tags": ["gather", "summon", "strategist"]
+      "tags": [
+        "gather",
+        "summon",
+        "strategist"
+      ]
     },
     {
       "id": "jump",
@@ -169,9 +287,16 @@
       "description": "短距离瞬发跳跃",
       "category": "locomotion",
       "targeting": "position",
-      "params": { "cooldown": 1 },
-      "costs": { "stamina": 5 },
-      "tags": ["locomotion", "jump"]
+      "params": {
+        "cooldown": 1
+      },
+      "costs": {
+        "stamina": 5
+      },
+      "tags": [
+        "locomotion",
+        "jump"
+      ]
     },
     {
       "id": "power_jump",
@@ -179,9 +304,19 @@
       "description": "蓄力后跨越较远距离，落地有硬直",
       "category": "locomotion",
       "targeting": "position",
-      "params": { "range": 240, "cooldown": 6, "castTime": 400 },
-      "costs": { "stamina": 18 },
-      "tags": ["locomotion", "jump", "charged"]
+      "params": {
+        "range": 240,
+        "cooldown": 6,
+        "castTime": 400
+      },
+      "costs": {
+        "stamina": 18
+      },
+      "tags": [
+        "locomotion",
+        "jump",
+        "charged"
+      ]
     },
     {
       "id": "flight",
@@ -189,21 +324,39 @@
       "description": "指向远距离位移",
       "category": "locomotion",
       "targeting": "position",
-      "params": { "range": 400, "cooldown": 5 },
-      "costs": { "stamina": 25 },
-      "tags": ["locomotion", "flight"],
+      "params": {
+        "range": 400,
+        "cooldown": 5
+      },
+      "costs": {
+        "stamina": 25
+      },
+      "tags": [
+        "locomotion",
+        "flight"
+      ],
       "variants": {
         "double_flight": {
           "name": "二段轻功",
           "description": "改为可连续两段位移，单段距离降低",
-          "params": { "range": 260, "cooldown": 7 },
-          "tags": ["double"]
+          "params": {
+            "range": 260,
+            "cooldown": 7
+          },
+          "tags": [
+            "double"
+          ]
         },
         "vault": {
           "name": "越障轻功",
           "description": "改为可越过低矮障碍，落地不被打断",
-          "params": { "range": 340, "cooldown": 6 },
-          "tags": ["vault"]
+          "params": {
+            "range": 340,
+            "cooldown": 6
+          },
+          "tags": [
+            "vault"
+          ]
         }
       }
     },
@@ -213,9 +366,16 @@
       "description": "攀附可攀爬面进行垂直移动",
       "category": "locomotion",
       "targeting": "self",
-      "params": { "cooldown": 0 },
-      "costs": { "stamina": 2 },
-      "tags": ["locomotion", "climb"]
+      "params": {
+        "cooldown": 0
+      },
+      "costs": {
+        "stamina": 2
+      },
+      "tags": [
+        "locomotion",
+        "climb"
+      ]
     }
   ]
 }

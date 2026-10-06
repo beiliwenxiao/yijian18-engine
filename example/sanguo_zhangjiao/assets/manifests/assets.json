@@ -5705,6 +5705,93 @@
       "targetPhase": "P1",
       "status": "placeholder",
       "revision": 2
+    },
+    {
+      "assetId": "skill.icon.flame-palm",
+      "imageId": "skill.icon.flame-palm",
+      "category": "skill-icon",
+      "usage": [
+        "skills-ui"
+      ],
+      "sourceFile": "assets/images/skills/skill-flame-palm.png",
+      "runtime2D": {
+        "path": "assets/images/skills/skill-flame-palm.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skill.icon.flame-palm"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "skill.icon.ice-finger",
+      "imageId": "skill.icon.ice-finger",
+      "category": "skill-icon",
+      "usage": [
+        "skills-ui"
+      ],
+      "sourceFile": "assets/images/skills/skill-ice-finger.png",
+      "runtime2D": {
+        "path": "assets/images/skills/skill-ice-finger.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skill.icon.ice-finger"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "skill.icon.inferno-palm",
+      "imageId": "skill.icon.inferno-palm",
+      "category": "skill-icon",
+      "usage": [
+        "skills-ui"
+      ],
+      "sourceFile": "assets/images/skills/skill-inferno-palm.png",
+      "runtime2D": {
+        "path": "assets/images/skills/skill-inferno-palm.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skill.icon.inferno-palm"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
     }
   ]
 }
