@@ -737,6 +737,52 @@ export class SceneEditorAssets {
     });
   }
 
+  /**
+   * 「刷新图片」：图集源文件被外部修改后，穿透 HTTP 缓存重载该图，并替换
+   * 编辑器内全部图片缓存（draft.previewImages / editor.loadedImages）——
+   * 已放置的切片对象随下一次渲染立即显示新图。
+   * @param {string} atlasId
+   * @returns {Promise<{ok:boolean, width?:number, height?:number, error?:string}>}
+   */
+  async refreshAtlasImage(atlasId) {
+    const editor = this.editor;
+    if (!atlasId) return { ok: false, error: '未选择图集' };
+    const projectPath = this._currentProjectPath();
+    const activeDraft = editor.sharedAtlasDrafts?.get?.(projectPath) || null;
+    const atlas = activeDraft?.config?.atlases?.find(candidate => candidate?.id === atlasId)
+      || editor.getCommittedSharedAtlasCatalog?.(projectPath)?.atlases?.find(candidate => candidate?.id === atlasId)
+      || (editor.sceneData?.atlases || []).find(candidate => candidate?.id === atlasId)
+      || null;
+    if (!atlas) return { ok: false, error: `未找到图集定义: ${atlasId}` };
+
+    const baseUrl = this._resolveAtlasImageUrl(atlas, projectPath);
+    if (!baseUrl) return { ok: false, error: '图集图片路径为空' };
+    const bustUrl = `${baseUrl}${baseUrl.includes('?') ? '&' : '?'}atlasRefresh=${Date.now()}`;
+    try {
+      const image = await new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(new Error(`图片加载失败: ${atlas.path}`));
+        img.src = bustUrl;
+      });
+      editor.loadedImages?.set?.(atlasId, image);
+      if (activeDraft?.previewImages instanceof Map) activeDraft.previewImages.set(atlasId, image);
+      // 源图尺寸变化时同步草稿数值（已提交 catalog 不直改，由保存事务归一）
+      if (activeDraft?.config?.atlases?.includes(atlas)
+        && (atlas.width !== image.naturalWidth || atlas.height !== image.naturalHeight)) {
+        atlas.width = image.naturalWidth;
+        atlas.height = image.naturalHeight;
+        this._markSharedAtlasDraftDirty(activeDraft);
+      }
+      this._updateSlicePreviews?.();
+      if (editor.selectedAtlasId === atlasId) this._showAtlasProperties?.();
+      editor.render?.();
+      return { ok: true, width: image.naturalWidth, height: image.naturalHeight };
+    } catch (error) {
+      return { ok: false, error: error.message };
+    }
+  }
+
   _normalizeAtlasPath(value) {
     let normalized = String(value || '').trim().replace(/\\/g, '/');
     const gamePath = String(window._editorCurrentGame?.path || '')
@@ -2390,6 +2436,9 @@ export class SceneEditorAssets {
         <button id="atlas-new-slice-btn" style="flex:1;padding:5px;cursor:pointer;">+ 新建切片</button>
       </div>
       <div class="slice-prop-row">
+        <button id="atlas-refresh-btn" style="width:100%;padding:5px;cursor:pointer;" title="源图片文件被外部修改后，穿透缓存重新加载并替换编辑器内所有图片缓存">🔄 刷新图片</button>
+      </div>
+      <div class="slice-prop-row">
         <button id="atlas-save-btn" style="width:100%;padding:5px;cursor:pointer;">💾 保存共享图集</button>
       </div>
       <div style="padding:8px 2px;color:${shared ? '#7ec8ff' : '#e5b567'};font-size:11px;line-height:1.5;">
@@ -2468,6 +2517,20 @@ export class SceneEditorAssets {
       this._openNewSliceModal(atlas);
     });
     document.getElementById('atlas-save-btn').addEventListener('click', () => this.saveAtlases());
+    document.getElementById('atlas-refresh-btn').addEventListener('click', async () => {
+      const button = document.getElementById('atlas-refresh-btn');
+      button.disabled = true;
+      try {
+        const result = await this.refreshAtlasImage(atlas.id);
+        if (result.ok) {
+          editor.ui.showToast?.(`图片已刷新（${result.width}×${result.height}），画布切片将使用新图`);
+        } else {
+          editor.ui.showToast?.(`刷新失败：${result.error}`, 'error');
+        }
+      } finally {
+        button.disabled = false;
+      }
+    });
   }
 
   /**
