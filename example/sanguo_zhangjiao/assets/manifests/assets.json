@@ -5992,6 +5992,41 @@
       "revision": 1
     },
     {
+      "assetId": "player.parts.weapon-spear",
+      "imageId": "player.parts.weapon-spear",
+      "category": "character-part",
+      "usage": [
+        "player-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player/parts/weapon-spear.png",
+      "runtime2D": {
+        "path": "assets/images/player/parts/weapon-spear.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player.parts.weapon-spear"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
       "assetId": "player.parts.skirt-front",
       "imageId": "player.parts.skirt-front",
       "category": "character-part",

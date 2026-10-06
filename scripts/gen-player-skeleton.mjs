@@ -39,9 +39,9 @@ function buildSkeleton({ skeletonId, bodyAssetId, bodyWidth, bodyHeight, withPar
   ];
 
   // 槽位渲染按数组顺序绘制（z 仅元数据）。
-  // 玩家拆件（withParts）：shadow → skirtBack → body → skirtFront → armL → armR → toolHand(武器) → armor
+  // 玩家拆件（withParts）：shadow → spearBack(背矛) → skirtBack → body → skirtFront → armL → armR → toolHand(斧) → armor
   // 部件附件偏移 = (图中心 - pivot)：64×64 部件图 pivot(px,py) → (32-px, 32-py)。
-  //   臂 pivot 肩点 (32,6) → (0,26)；斧握点 (32,10) → (0,22)；
+  //   臂 pivot 肩点 (32,6) → (0,26)；斧握点 (32,10) → (0,22)+x4 外移；矛 pivot 中心 (32,32) → (0,4) 下移贴背；
   //   裙 pivot 顶中 (32,6) → (0,44)（挂 torso：裙顶对齐腰部世界 -28，横躺随躯干旋转）。
   const baseSlots = [
     { id: 'shadow', bone: 'root', z: 0, attachment: { type: 'empty' } },
@@ -52,31 +52,35 @@ function buildSkeleton({ skeletonId, bodyAssetId, bodyWidth, bodyHeight, withPar
     { id: 'armor', bone: 'torso', z: 3, attachment: { type: 'empty', x: 0, y: 0, rot: 0 } }
   ];
   const partSlots = [
-    { id: 'skirtBack', bone: 'torso', z: 1, attachment: {
+    { id: 'spearBack', bone: 'back', z: 1, attachment: {
+      type: 'image', assetId: 'player.parts.weapon-spear', x: 3, y: 8, rot: 0, width: 64, height: 64
+    } },
+    { id: 'skirtBack', bone: 'torso', z: 2, attachment: {
       type: 'image', assetId: 'player.parts.skirt-back', x: 0, y: 44, rot: 0, width: 64, height: 64
     } },
-    { id: 'skirtFront', bone: 'torso', z: 3, attachment: {
+    { id: 'skirtFront', bone: 'torso', z: 4, attachment: {
       type: 'image', assetId: 'player.parts.skirt-front', x: 0, y: 44, rot: 0, width: 64, height: 64
     } },
-    { id: 'armL', bone: 'armL', z: 4, attachment: {
+    { id: 'armL', bone: 'armL', z: 5, attachment: {
       type: 'image', assetId: 'player.parts.arm-l', x: 0, y: 26, rot: 0, width: 64, height: 64
     } },
-    { id: 'armR', bone: 'armR', z: 5, attachment: {
+    { id: 'armR', bone: 'armR', z: 6, attachment: {
       type: 'image', assetId: 'player.parts.arm-r', x: 0, y: 26, rot: 0, width: 64, height: 64
     } },
-    { id: 'toolHand', bone: 'hand', z: 6, attachment: {
-      type: 'image', assetId: 'player.parts.weapon-axe', x: 0, y: 22, rot: 0, width: 64, height: 64
+    { id: 'toolHand', bone: 'hand', z: 7, attachment: {
+      type: 'image', assetId: 'player.parts.weapon-axe', x: 7, y: 22, rot: 0, width: 64, height: 64
     } }
   ];
   const slots = withParts
     ? [
         baseSlots[0],
-        partSlots[0],            // skirtBack
+        partSlots[0],            // spearBack（背背长矛，最外层之后）
+        partSlots[1],            // skirtBack
         baseSlots[1],            // body
-        partSlots[1],            // skirtFront
-        partSlots[2],            // armL
-        partSlots[3],            // armR
-        partSlots[4],            // toolHand（武器）
+        partSlots[2],            // skirtFront
+        partSlots[3],            // armL
+        partSlots[4],            // armR
+        partSlots[5],            // toolHand（武器）
         baseSlots[3]             // armor
       ]
     : baseSlots;

@@ -118,9 +118,23 @@
       }
     },
     {
+      "id": "spearBack",
+      "bone": "back",
+      "z": 1,
+      "attachment": {
+        "type": "image",
+        "assetId": "player.parts.weapon-spear",
+        "x": 3,
+        "y": 8,
+        "rot": 0,
+        "width": 64,
+        "height": 64
+      }
+    },
+    {
       "id": "skirtBack",
       "bone": "torso",
-      "z": 1,
+      "z": 2,
       "attachment": {
         "type": "image",
         "assetId": "player.parts.skirt-back",
@@ -150,7 +164,7 @@
     {
       "id": "skirtFront",
       "bone": "torso",
-      "z": 3,
+      "z": 4,
       "attachment": {
         "type": "image",
         "assetId": "player.parts.skirt-front",
@@ -164,7 +178,7 @@
     {
       "id": "armL",
       "bone": "armL",
-      "z": 4,
+      "z": 5,
       "attachment": {
         "type": "image",
         "assetId": "player.parts.arm-l",
@@ -178,7 +192,7 @@
     {
       "id": "armR",
       "bone": "armR",
-      "z": 5,
+      "z": 6,
       "attachment": {
         "type": "image",
         "assetId": "player.parts.arm-r",
@@ -192,11 +206,11 @@
     {
       "id": "toolHand",
       "bone": "hand",
-      "z": 6,
+      "z": 7,
       "attachment": {
         "type": "image",
         "assetId": "player.parts.weapon-axe",
-        "x": 0,
+        "x": 7,
         "y": 22,
         "rot": 0,
         "width": 64,
