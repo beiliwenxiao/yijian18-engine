@@ -8,7 +8,7 @@ const normalizeProjectPath = value => String(value || '')
  * 服务端负责校验 catalog、同步 Manifest，并在同一磁盘事务中提交两者。
  */
 export class SharedAtlasCommandService {
-  constructor({ endpoint = '/api/asset-transaction', fetchImpl = globalThis.fetch } = {}) {
+  constructor({ endpoint = '/api/asset-transaction', fetchImpl = globalThis.fetch.bind(globalThis) } = {}) {
     if (typeof fetchImpl !== 'function') throw new TypeError('SharedAtlasCommandService requires fetch');
     this.endpoint = endpoint;
     this.fetchImpl = fetchImpl;
