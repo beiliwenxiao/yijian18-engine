@@ -913,18 +913,31 @@ export class SkeletonEditor {
     this._renderInspector();
   }
 
-  /** 图片库（Spine 式）：缩略图列表；「绑骨骼」把图片作为 image 附件挂到选中骨骼新槽位。 */
+  /** 图片库（Spine 式）：缩略图列表；「→骨骼」挂图、「解绑」移除该图片的所有槽位。 */
   _renderImageLib() {
     const container = document.getElementById('se-image-lib');
     if (!container) return;
+    const slots = this.doc?.slots || [];
+    const boundBonesOf = assetId => slots
+      .filter(slot => slot.attachment?.assetId === assetId)
+      .map(slot => `${slot.id}@${slot.bone}`);
     const items = [...this.imageCatalog.entries()];
-    container.innerHTML = items.length > 0 ? items.map(([assetId, item]) => `
+    container.innerHTML = items.length > 0 ? items.map(([assetId, item]) => {
+      const bound = boundBonesOf(assetId);
+      const boundBadge = bound.length > 0
+        ? `<span style="color:#7ec8ff;font-size:10px;flex:none;" title="${bound.join(', ')}">已绑×${bound.length}</span>`
+        : '';
+      const action = bound.length > 0
+        ? `<button data-unbind="1" class="danger" title="移除引用该图片的所有槽位">解绑</button>`
+        : `<button data-bind="1" title="作为 image 附件挂到当前选中骨骼">→骨骼</button>`;
+      return `
       <div class="se-img-item ${assetId === this._selectedImageId ? 'selected' : ''}" data-id="${assetId}">
         <img src="${item.url}" loading="lazy" alt="${assetId}">
         <span class="name" title="${assetId}">${assetId}</span>
-        <button data-bind="1" title="作为 image 附件挂到当前选中骨骼">→骨骼</button>
-      </div>
-    `).join('') : '<div class="se-empty">Manifest 无图片资产</div>';
+        ${boundBadge}
+        ${action}
+      </div>`;
+    }).join('') : '<div class="se-empty">Manifest 无图片资产</div>';
     for (const item of container.querySelectorAll('.se-img-item')) {
       item.addEventListener('click', () => {
         this._selectedImageId = item.dataset.id;
@@ -937,6 +950,29 @@ export class SkeletonEditor {
         this._bindImageToSelectedBone(event.target.closest('.se-img-item').dataset.id);
       });
     }
+    for (const button of container.querySelectorAll('button[data-unbind]')) {
+      button.addEventListener('click', event => {
+        event.stopPropagation();
+        this._unbindImage(event.target.closest('.se-img-item').dataset.id);
+      });
+    }
+  }
+
+  /** 解绑：移除引用该图片的所有槽位（含 sequence，body 等核心槽位也会被移除，操作可撤销=不保存）。 */
+  _unbindImage(assetId) {
+    const slots = this.doc?.slots || [];
+    const bound = slots.filter(slot => slot.attachment?.assetId === assetId);
+    if (bound.length === 0) { this._toast('该图片未绑定任何骨骼', true); return; }
+    const detail = bound.map(slot => `${slot.id}(${slot.bone})`).join('、');
+    this.doc.slots = slots.filter(slot => slot.attachment?.assetId !== assetId);
+    if (bound.some(slot => slot.id === this.selectedSlot)) {
+      this.selectedSlot = null;
+      this._renderInspector();
+    }
+    this._markDirty();
+    this._renderSlotList();
+    this._renderImageLib();
+    this._toast(`已解绑 ${assetId}：移除槽位 ${detail}`);
   }
 
   /** 把图片库中的图片绑定到选中骨骼：自动创建槽位（z 置顶）+ image 附件。 */
@@ -972,6 +1008,7 @@ export class SkeletonEditor {
     this._renderSlotList();
     this._renderBoneTree();
     this._renderInspector();
+    this._renderImageLib();
     this._toast(`已挂载 ${assetId} → 骨骼 ${boneId}（可在检查器改偏移/尺寸/绑定）`);
   }
 
