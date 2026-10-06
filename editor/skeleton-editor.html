@@ -31,10 +31,19 @@
         #se-canvas { flex: 1; background: #0d1226; cursor: crosshair; display: block; width: 100%; height: 100%; }
 
         .se-bone-item, .se-slot-item { display: flex; align-items: center; gap: 4px; padding: 3px 6px; border-radius: 4px; cursor: pointer; font-size: 12px; margin-bottom: 2px; }
-        .se-bone-item:hover, .se-slot-item:hover { background: #1a2440; }
+        .se-bone-item:hover, .se-slot-item:hover, .se-img-item:hover { background: #1a2440; }
         .se-bone-item.selected, .se-slot-item.selected { background: #2a4a3e; outline: 1px solid #4CAF50; }
         .se-bone-item .name, .se-slot-item .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .se-bone-item .depth { color: #5a6a90; }
+
+        /* 图片库（Spine 式 Images 面板：图片 → 槽位 → 骨骼） */
+        #se-image-lib { max-height: 180px; overflow: auto; }
+        .se-img-item { display: flex; align-items: center; gap: 6px; padding: 2px 4px; border-radius: 4px; cursor: grab; font-size: 11px; margin-bottom: 2px; }
+        .se-img-item.selected { background: #2a4a3e; outline: 1px solid #4CAF50; }
+        .se-img-item img { width: 26px; height: 26px; object-fit: contain; background: #0d1226; border: 1px solid #26355c; border-radius: 3px; flex: none; }
+        .se-img-item .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #9aa5c0; }
+        .se-img-item button { padding: 2px 5px; font-size: 10px; }
+        .se-slot-item .zbtn { padding: 1px 5px; font-size: 10px; line-height: 1; }
 
         .se-inspector .row { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
         .se-inspector .row label { min-width: 52px; }
@@ -84,12 +93,14 @@
                 <button id="se-bone-add">✚ 子骨骼</button>
                 <button id="se-bone-del" class="danger">🗑 删除</button>
             </div>
-            <h3>槽位（z 从小到大绘制）</h3>
+            <h3>槽位（图层栈 · z 从小到大绘制）</h3>
             <div id="se-slot-list"></div>
             <div style="display:flex;gap:4px;margin-top:6px;">
                 <button id="se-slot-add">✚ 槽位</button>
                 <button id="se-slot-del" class="danger">🗑 删除</button>
             </div>
+            <h3>图片库（点「绑骨骼」挂到选中骨骼）</h3>
+            <div id="se-image-lib"></div>
         </div>
 
         <div class="se-panel center">

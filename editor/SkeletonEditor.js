@@ -40,6 +40,7 @@ export class SkeletonEditor {
     this.runtime = null;          // parseSkeletonAsset 产物（预览/gizmo）
     this.dirty = false;
     this.imageCatalog = new Map();   // assetId -> { entry, url, element|null }
+    this._selectedImageId = '';      // 图片库当前选中
     this.skeletonEntries = [];       // manifest 中 mode==='skeleton' 的条目
 
     // 选择与预览状态
@@ -141,6 +142,7 @@ export class SkeletonEditor {
         }
       }
       this._refreshAssetSelect();
+      this._renderImageLib();
     } catch (error) {
       this._toast(`Manifest 读取失败：${error.message}`, true);
     }
@@ -654,13 +656,32 @@ export class SkeletonEditor {
       return { element, sx: attachment.sx, sy: attachment.sy, sw: attachment.sw, sh: attachment.sh };
     }
     if (attachment.type === 'sequence') {
-      const frames = attachment.frames || [];
-      if (frames.length === 0) return null;
+      let frames = attachment.frames || [];
+      if (frames.length === 0) {
+        // 运行时由状态映射器按方向行计算帧表：编辑器用 Manifest 网格兜底显示
+        frames = this._fallbackSequenceFrames(assetId, item);
+        if (frames.length === 0) return null;
+      }
       const slotFrame = this._sequenceFrameIndex(attachment);
       const rect = frames[slotFrame % frames.length];
       return { element, sx: rect.sx, sy: rect.sy, sw: rect.sw, sh: rect.sh };
     }
     return null;
+  }
+
+  /** sequence 帧表为空时的显示兜底：Manifest grid 首格 → 整图。 */
+  _fallbackSequenceFrames(assetId, item) {
+    const grid = item?.entry?.grid;
+    const element = this._imageElement(assetId);
+    const naturalWidth = element?.naturalWidth || item?.width || 0;
+    const naturalHeight = element?.naturalHeight || item?.height || 0;
+    if (!naturalWidth || !naturalHeight) return [];
+    if (grid?.columns > 0 && grid?.rows > 0) {
+      const cellWidth = naturalWidth / grid.columns;
+      const cellHeight = naturalHeight / grid.rows;
+      return [{ sx: 0, sy: 0, sw: cellWidth, sh: cellHeight }];
+    }
+    return [{ sx: 0, sy: 0, sw: naturalWidth, sh: naturalHeight }];
   }
 
   // 序列帧预览帧游标：预览播放时按 fps 推进（编辑器内独立于运行时状态）
@@ -689,7 +710,7 @@ export class SkeletonEditor {
       if (bone && boneWorld) {
         const anchor = this._worldToScreen(boneWorld.x, boneWorld.y);
         const distance = Math.hypot(mx - anchor.x, my - anchor.y);
-        if (distance > 15 && distance < 33) {
+        if (distance > 12 && distance < 38) {
           this._drag = {
             kind: 'rotate',
             boneId: bone.id,
@@ -704,7 +725,7 @@ export class SkeletonEditor {
     }
     // 命中骨骼原点（优先近者）
     let hit = null;
-    let hitDistance = 14;
+    let hitDistance = 16;
     for (const bone of this.doc.bones || []) {
       const boneWorld = world.get(bone.id);
       if (!boneWorld) continue;
@@ -769,10 +790,8 @@ export class SkeletonEditor {
         this._upsertKey(track, { t: Math.round(this.previewTime), x: nextX, y: nextY });
         this._markDirty();
       } else {
-        bone.x = nextX;
-        bone.y = nextY;
-        this._markDirty();
-        this.runtime = parseSkeletonAsset(structuredClone(this.doc));
+        // 所见即所得：拖动无轨道骨骼 = 自动建轨道并在当前时间打关键帧（摆姿势即录入）
+        this._ensureTrackAndKey(bone.id, clip, { x: nextX, y: nextY });
       }
     } else if (this._drag.kind === 'rotate') {
       const boneWorld = this._boneWorldTransforms().get(bone.id);
@@ -784,13 +803,27 @@ export class SkeletonEditor {
         this._upsertKey(track, { t: Math.round(this.previewTime), rot: nextRot });
         this._markDirty();
       } else {
-        bone.rot = nextRot;
-        this._markDirty();
-        this.runtime = parseSkeletonAsset(structuredClone(this.doc));
+        // 所见即所得：旋转无轨道骨骼 = 自动建轨道并打关键帧
+        this._ensureTrackAndKey(bone.id, clip, { rot: nextRot });
       }
     }
     this._renderInspector();
     this._renderTimeline();
+  }
+
+  /** 为当前剪辑确保骨骼轨道存在并打关键帧（拖拽摆姿势路径）。 */
+  _ensureTrackAndKey(boneId, clip, partial) {
+    if (!clip) return;
+    clip.tracks = clip.tracks || [];
+    let track = clip.tracks.find(candidate => candidate.bone === boneId);
+    if (!track) {
+      const rest = this._boneById(boneId) || {};
+      track = { bone: boneId, keys: [{ t: 0, x: rest.x ?? 0, y: rest.y ?? 0, rot: rest.rot ?? 0 }] };
+      clip.tracks.push(track);
+    }
+    this._upsertKey(track, { t: Math.round(this.previewTime), ...partial });
+    this._markDirty();
+    this.runtime = parseSkeletonAsset(structuredClone(this.doc));
   }
 
   _onCanvasWheel(event) {
@@ -840,8 +873,10 @@ export class SkeletonEditor {
   _renderSlotList() {
     const container = this.el.slotList;
     const slots = [...(this.doc.slots || [])].sort((a, b) => a.z - b.z);
-    container.innerHTML = slots.length > 0 ? slots.map(slot => `
+    container.innerHTML = slots.length > 0 ? slots.map((slot, index) => `
       <div class="se-slot-item ${slot.id === this.selectedSlot ? 'selected' : ''}" data-id="${slot.id}">
+        <button class="zbtn" data-dir="-1" ${index === 0 ? 'disabled' : ''} title="上移图层">▲</button>
+        <button class="zbtn" data-dir="1" ${index === slots.length - 1 ? 'disabled' : ''} title="下移图层">▼</button>
         <span class="name">${slot.id} · ${slot.attachment?.type || 'empty'} · bone:${slot.bone} · z${slot.z}</span>
       </div>
     `).join('') : '<div class="se-empty">暂无槽位</div>';
@@ -854,6 +889,78 @@ export class SkeletonEditor {
         this._renderInspector();
       });
     }
+    for (const button of container.querySelectorAll('.zbtn')) {
+      button.addEventListener('click', event => {
+        event.stopPropagation();
+        this._moveSlotZ(event.target.closest('.se-slot-item').dataset.id, Number(event.target.dataset.dir));
+      });
+    }
+  }
+
+  /** 图层栈排序：与相邻槽位交换 z（绘制顺序即时生效）。 */
+  _moveSlotZ(slotId, direction) {
+    const slots = [...(this.doc.slots || [])].sort((a, b) => a.z - b.z);
+    const index = slots.findIndex(slot => slot.id === slotId);
+    const targetIndex = index + direction;
+    if (index < 0 || targetIndex < 0 || targetIndex >= slots.length) return;
+    const current = slots[index];
+    const neighbor = slots[targetIndex];
+    const z = current.z;
+    current.z = neighbor.z;
+    neighbor.z = z;
+    this._markDirty();
+    this._renderSlotList();
+    this._renderInspector();
+  }
+
+  /** 图片库（Spine 式）：缩略图列表；「绑骨骼」把图片作为 image 附件挂到选中骨骼新槽位。 */
+  _renderImageLib() {
+    const container = document.getElementById('se-image-lib');
+    if (!container) return;
+    const items = [...this.imageCatalog.entries()];
+    container.innerHTML = items.length > 0 ? items.map(([assetId, item]) => `
+      <div class="se-img-item ${assetId === this._selectedImageId ? 'selected' : ''}" data-id="${assetId}">
+        <img src="${item.url}" loading="lazy" alt="${assetId}">
+        <span class="name" title="${assetId}">${assetId}</span>
+        <button data-bind="1" title="作为 image 附件挂到当前选中骨骼">→骨骼</button>
+      </div>
+    `).join('') : '<div class="se-empty">Manifest 无图片资产</div>';
+    for (const item of container.querySelectorAll('.se-img-item')) {
+      item.addEventListener('click', () => {
+        this._selectedImageId = item.dataset.id;
+        this._renderImageLib();
+      });
+    }
+    for (const button of container.querySelectorAll('button[data-bind]')) {
+      button.addEventListener('click', event => {
+        event.stopPropagation();
+        this._bindImageToSelectedBone(event.target.closest('.se-img-item').dataset.id);
+      });
+    }
+  }
+
+  /** 把图片库中的图片绑定到选中骨骼：自动创建槽位（z 置顶）+ image 附件。 */
+  _bindImageToSelectedBone(assetId) {
+    const boneId = this.selectedBone || this.doc.bones?.[0]?.id;
+    if (!boneId) { this._toast('先选中一个骨骼', true); return; }
+    const existing = (this.doc.slots || []).find(slot => slot.attachment?.assetId === assetId && slot.bone === boneId);
+    if (existing) { this.selectedSlot = existing.id; this._toast('该骨骼已挂此图片，已选中其槽位'); this._renderSlotList(); return; }
+    const index = (this.doc.slots || []).length;
+    const slot = {
+      id: `slot_${assetId.replace(/[^a-zA-Z0-9-]/g, '-').slice(-24)}_${index}`,
+      bone: boneId,
+      z: (this.doc.slots || []).reduce((max, candidate) => Math.max(max, candidate.z), 0) + 1,
+      attachment: { type: 'image', assetId, x: 0, y: 0, rot: 0, width: 0, height: 0 }
+    };
+    this.doc.slots = this.doc.slots || [];
+    this.doc.slots.push(slot);
+    this.selectedSlot = slot.id;
+    this.selectedBone = boneId;
+    this._markDirty();
+    this._renderSlotList();
+    this._renderBoneTree();
+    this._renderInspector();
+    this._toast(`已挂载 ${assetId} → 骨骼 ${boneId}（可在检查器改偏移/尺寸/绑定）`);
   }
 
   _renderInspector() {

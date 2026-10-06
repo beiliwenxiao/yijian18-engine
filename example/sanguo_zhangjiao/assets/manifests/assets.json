@@ -5858,9 +5858,9 @@
       "usage": [
         "player"
       ],
-      "sourceFile": "assets/images/girl.png",
+      "sourceFile": "assets/images/player/refugee-girl.png",
       "runtime2D": {
-        "path": "assets/images/girl.png",
+        "path": "assets/images/player/refugee-girl.png",
         "mode": "image"
       },
       "runtime3D": {
