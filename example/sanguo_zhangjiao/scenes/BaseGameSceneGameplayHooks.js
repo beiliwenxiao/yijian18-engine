@@ -88,6 +88,21 @@ export class BaseGameSceneGameplayHooks extends BaseGameSceneBehaviors {
   }
 
   /**
+   * 玩家移动专用锁：与硬锁的区别是采集进行中不锁移动——
+   * 玩家走开时位移触发 GatheringSystem 的 interrupt('moved')（走开即中断采集），
+   * 其余硬锁（死亡/灵魂/倒地/复活倒计时/配方动作）仍冻结移动。
+   */
+  isPlayerMovementLocked() {
+    const player = this.playerEntity;
+    return player?.isDead === true
+      || player?.isSoulState === true
+      || this.isPlayerDowned?.() === true
+      || Boolean(this.playerSoulRespawn?.pending)
+      || Boolean(this.playerDeathCountdown?.pending)
+      || this._s01s02Coordinator?.isRecipeActionActiveFor?.(player) === true;
+  }
+
+  /**
    * 剧情倒地状态（M4 S02 军团救援）：主角昏倒/被搬运期间禁用一切玩家操作；
    * 由 S02ArmyRescueCoordinator 的 faint/awaken 流程置位与解除。
    */

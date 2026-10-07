@@ -118,7 +118,10 @@ export class SceneFramePipeline {
     const soulMovementAllowed = player?.isSoulState === true
       && scene.playerSoulRespawn?.pending != null;
     const playerActionLocked = scene.isPlayerActionLocked?.() === true && !inCombat;
-    const playerMovementLocked = playerActionLocked && !soulMovementAllowed;
+    // 移动锁与动作锁分离：场景实现 isPlayerMovementLocked 时采集进行中不冻结移动
+    // （玩家走开 → GatheringSystem 位移中断接管）；未实现的场景回退动作锁。
+    const movementLockSource = scene.isPlayerMovementLocked ?? scene.isPlayerActionLocked;
+    const playerMovementLocked = movementLockSource?.call?.(scene) === true && !soulMovementAllowed;
 
     // 技能轮盘只冻结世界模拟，不能使用 isPaused，否则下一帧无法读取 LB 松开沿。
     if (scene.isSkillWheelWorldPaused) {

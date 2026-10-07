@@ -21,31 +21,40 @@ export class ItemIconRenderer {
   /** 稳定 imageId/assetId → 已就绪图片的解析器，由宿主注入（表现层，无业务状态）。 */
   static _imageResolver = null;
 
+  /** 图标位图缓存（key: stableId|id|effect|size）：首帧把几十次矢量路径绘制降为 drawImage 复用。 */
+  static _iconCache = new Map();
+  static _iconCacheLimit = 256;
+
   /**
    * 注入稳定资源 ID 的图片解析器；传入非函数即关闭图片图标，回到手绘画法。
    * @param {?function(string, Object): (HTMLImageElement|HTMLCanvasElement|null)} resolver
    */
   static setImageResolver(resolver) {
     ItemIconRenderer._imageResolver = typeof resolver === 'function' ? resolver : null;
+    ItemIconRenderer._iconCache.clear();
     return ItemIconRenderer._imageResolver;
   }
 
-  /**
-   * 用内容定义的稳定资源 ID 绘制图标，等比缩放并在格子内居中。
-   * 资源未登记或尚未就绪时返回 false，交给既有手绘画法兜底。
-   */
-  static drawStableImage(ctx, item, cx, cy, slotSize) {
+  /** 解析物品的稳定图片：{ stableId, image, pending }——image 仅在已就绪时非空。 */
+  static _resolveStableImage(item) {
+    const sprite = item?.sprite || {};
+    const stableId = item?.iconImageId || item?.imageId || item?.assetId || sprite.imageId || sprite.assetId || null;
+    if (!stableId) return { stableId: null, image: null, pending: false };
     const resolver = ItemIconRenderer._imageResolver;
-    if (!resolver || !item) return false;
-    const sprite = item.sprite || {};
-    const stableId = item.iconImageId || item.imageId || item.assetId || sprite.imageId || sprite.assetId;
-    if (!stableId) return false;
-    const image = resolver(stableId, item);
-    if (!image || image.complete === false) return false;
+    const image = resolver ? resolver(stableId, item) : null;
+    if (!image || image.complete === false) return { stableId, image: null, pending: true };
     const width = image.naturalWidth || image.width || 0;
     const height = image.naturalHeight || image.height || 0;
-    if (width <= 0 || height <= 0) return false;
+    if (width <= 0 || height <= 0) return { stableId, image: null, pending: true };
+    return { stableId, image, pending: false };
+  }
 
+  /** 用内容定义的稳定资源 ID 绘制图标，等比缩放并在格子内居中。 */
+  static drawStableImage(ctx, item, cx, cy, slotSize) {
+    const { image } = ItemIconRenderer._resolveStableImage(item);
+    if (!image) return false;
+    const width = image.naturalWidth || image.width;
+    const height = image.naturalHeight || image.height;
     const scale = Math.min(slotSize / width, slotSize / height);
     const drawWidth = width * scale;
     const drawHeight = height * scale;
@@ -53,8 +62,65 @@ export class ItemIconRenderer {
     return true;
   }
 
+  /** 图标缓存键；图片仍在加载（pending）时返回 null——不缓存，保证图就绪后自然切换。 */
+  static _iconKey(item, size) {
+    const id = item?.id || '';
+    const effectType = item?.effect?.type || '';
+    const { stableId, pending } = ItemIconRenderer._resolveStableImage(item);
+    if (pending) return null;
+    return `${stableId || ''}|${id}|${effectType}|${size}`;
+  }
+
+  /** 把图标渲染到独立离屏画布（DPR 感知）；无法渲染返回 null。 */
+  static _renderIconToCanvas(item, size) {
+    const dpr = Math.min(2, globalThis.devicePixelRatio || 1);
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(size * dpr));
+    canvas.height = canvas.width;
+    const c = canvas.getContext('2d');
+    c.scale(dpr, dpr);
+    c.translate(size / 2, size / 2);
+    const { image } = ItemIconRenderer._resolveStableImage(item);
+    if (image) {
+      const width = image.naturalWidth || image.width;
+      const height = image.naturalHeight || image.height;
+      const scale = Math.min(size / width, size / height);
+      c.drawImage(image, -width * scale / 2, -height * scale / 2, width * scale, height * scale);
+      return canvas;
+    }
+    const drawer = ItemIconRenderer._resolveVectorDrawer(item);
+    if (!drawer) return null;
+    c.scale(size / 32, size / 32);
+    drawer(c);
+    return canvas;
+  }
+
+  /** 手绘矢量图标分派（id/效果类型 → 具体绘制函数）。 */
+  static _resolveVectorDrawer(item) {
+    const id = item?.id || '';
+    const effectType = item?.effect?.type || '';
+    switch (true) {
+      case id === 'leftover_food': return c => ItemIconRenderer.drawLeftoverFood(c);
+      case id === 'ragged_clothes': return c => ItemIconRenderer.drawRaggedClothes(c);
+      case id === 'wooden_sword': return c => ItemIconRenderer.drawWoodenSword(c);
+      case id === 'cloth_armor': return c => ItemIconRenderer.drawClothArmor(c);
+      case id === 'wooden_bow': return c => ItemIconRenderer.drawWoodenBow(c);
+      case id === 'wooden_arrow': return c => ItemIconRenderer.drawWoodenArrow(c);
+      case id === 'talisman_water': return c => ItemIconRenderer.drawTalismanWater(c);
+      case id === 'cloth_belt': return c => ItemIconRenderer.drawClothBelt(c);
+      case id === 'straw_sandals': return c => ItemIconRenderer.drawStrawSandals(c);
+      case id === 'coin_sword': return c => ItemIconRenderer.drawCoinSword(c);
+      case id.includes('health_potion') || (item.type === 'consumable' && effectType === 'heal'):
+        return c => ItemIconRenderer.drawPotion(c, '#ff3333', '#ff6666', '#cc0000');
+      case id.includes('mana_potion') || (item.type === 'consumable' && effectType === 'restore_mana'):
+        return c => ItemIconRenderer.drawPotion(c, '#3366ff', '#6699ff', '#0033cc');
+      default: return null;
+    }
+  }
+
   /**
-   * 绘制物品图标（通用入口）
+   * 绘制物品图标（通用入口）。命中位图缓存时仅一次 drawImage；
+   * 缓存未就绪（图片加载中/不可渲染物品）回退即时绘制。
    * @param {CanvasRenderingContext2D} ctx
    * @param {Object} item - 物品对象（需要 id, effect 等属性）
    * @param {number} cx - 中心X
@@ -63,61 +129,33 @@ export class ItemIconRenderer {
    * @returns {boolean} 是否成功绘制了图标
    */
   static drawIcon(ctx, item, cx, cy, slotSize) {
-    const id = item.id || '';
-    const effectType = item.effect?.type || '';
-    const scale = slotSize / 32;
-
-    // 内容定义的稳定 imageId/assetId 优先于硬编码手绘画法。
+    const size = Math.max(1, Math.round(slotSize));
+    const key = ItemIconRenderer._iconKey(item, size);
+    if (key) {
+      let cached = ItemIconRenderer._iconCache.get(key);
+      if (!cached) {
+        cached = ItemIconRenderer._renderIconToCanvas(item, size);
+        if (cached) {
+          if (ItemIconRenderer._iconCache.size >= ItemIconRenderer._iconCacheLimit) {
+            ItemIconRenderer._iconCache.clear();
+          }
+          ItemIconRenderer._iconCache.set(key, cached);
+        }
+      }
+      if (cached) {
+        ctx.drawImage(cached, cx - slotSize / 2, cy - slotSize / 2, slotSize, slotSize);
+        return true;
+      }
+    }
+    // 未缓存兜底：stable image 优先，其次手绘矢量
     if (ItemIconRenderer.drawStableImage(ctx, item, cx, cy, slotSize)) return true;
-
-    if (id === 'leftover_food') {
-      return ItemIconRenderer._drawScaled(ctx, cx, cy, scale, ItemIconRenderer.drawLeftoverFood);
-    }
-    if (id === 'ragged_clothes') {
-      return ItemIconRenderer._drawScaled(ctx, cx, cy, scale, ItemIconRenderer.drawRaggedClothes);
-    }
-    if (id === 'wooden_sword') {
-      return ItemIconRenderer._drawScaled(ctx, cx, cy, scale, ItemIconRenderer.drawWoodenSword);
-    }
-    if (id === 'wooden_sword') {
-      return ItemIconRenderer._drawScaled(ctx, cx, cy, scale, ItemIconRenderer.drawWoodenSword);
-    }
-    if (id === 'cloth_armor') {
-      return ItemIconRenderer._drawScaled(ctx, cx, cy, scale, ItemIconRenderer.drawClothArmor);
-    }
-    if (id === 'wooden_bow') {
-      return ItemIconRenderer._drawScaled(ctx, cx, cy, scale, ItemIconRenderer.drawWoodenBow);
-    }
-    if (id === 'wooden_arrow') {
-      return ItemIconRenderer._drawScaled(ctx, cx, cy, scale, ItemIconRenderer.drawWoodenArrow);
-    }
-    if (id === 'talisman_water') {
-      return ItemIconRenderer._drawScaled(ctx, cx, cy, scale, ItemIconRenderer.drawTalismanWater);
-    }
-    if (id === 'cloth_belt') {
-      return ItemIconRenderer._drawScaled(ctx, cx, cy, scale, ItemIconRenderer.drawClothBelt);
-    }
-    if (id === 'straw_sandals') {
-      return ItemIconRenderer._drawScaled(ctx, cx, cy, scale, ItemIconRenderer.drawStrawSandals);
-    }
-    if (id === 'coin_sword') {
-      return ItemIconRenderer._drawScaled(ctx, cx, cy, scale, ItemIconRenderer.drawCoinSword);
-    }
-    if (id.includes('health_potion') || (item.type === 'consumable' && effectType === 'heal')) {
-      return ItemIconRenderer._drawScaled(ctx, cx, cy, scale, (c) => ItemIconRenderer.drawPotion(c, '#ff3333', '#ff6666', '#cc0000'));
-    }
-    if (id.includes('mana_potion') || (item.type === 'consumable' && effectType === 'restore_mana')) {
-      return ItemIconRenderer._drawScaled(ctx, cx, cy, scale, (c) => ItemIconRenderer.drawPotion(c, '#3366ff', '#6699ff', '#0033cc'));
-    }
-    return false;
-  }
-
-  /** @private 缩放绘制包装 */
-  static _drawScaled(ctx, cx, cy, scale, drawFn) {
+    const drawer = ItemIconRenderer._resolveVectorDrawer(item);
+    if (!drawer) return false;
+    const scale = slotSize / 32;
     ctx.save();
     ctx.translate(cx, cy);
     ctx.scale(scale, scale);
-    drawFn(ctx);
+    drawer(ctx);
     ctx.restore();
     return true;
   }
