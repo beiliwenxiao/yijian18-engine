@@ -115,6 +115,12 @@ export class SkeletonEditor {
     $('se-bone-add').addEventListener('click', () => this._addBone());
     $('se-bone-del').addEventListener('click', () => this._deleteBone());
     $('se-bone-template').addEventListener('click', () => this._applyHumanoidTemplate());
+    $('se-image-import').addEventListener('click', () => $('se-image-import-file').click());
+    $('se-image-import-file').addEventListener('change', event => {
+      const file = event.target.files?.[0];
+      event.target.value = ''; // 允许重复导入同一文件
+      if (file) this._importImageFromFile(file);
+    });
     $('se-slot-add').addEventListener('click', () => this._addSlot());
     $('se-slot-del').addEventListener('click', () => this._deleteSlot());
 
@@ -781,10 +787,11 @@ export class SkeletonEditor {
     if (!this.runtime) { ctx.restore(); return; }
     const world = this._boneWorldTransforms();
 
-    // 槽位附件预览（z 顺序；隐藏/锁定的槽位不画）
+    // 槽位附件预览（z 顺序；隐藏/锁定的槽位不画；attachment.visible=false 不画——对齐运行时三方向切换语义）
     for (const slot of this.runtime.slots) {
       const attachment = slot.attachment;
       if (!attachment || attachment.type === 'empty') continue;
+      if (attachment.visible === false) continue;
       if (this._isSlotPreviewHidden(slot.id, slot.bone)) continue;
       const boneWorld = world.get(slot.bone);
       if (!boneWorld) continue;
@@ -1485,20 +1492,55 @@ export class SkeletonEditor {
   };
 
   static RIG_PART_NAMES = [
-    'head', 'head-front', 'head-side', 'head-back', 'torso', 'pelvis',
+    'head', 'head-front', 'head-side', 'head-back',
+    'torso', 'torso-front', 'torso-side', 'torso-back', 'pelvis',
     'upper-arm-l', 'upper-arm-r', 'fore-arm-l', 'fore-arm-r',
     'thigh-l', 'thigh-r', 'calf-l', 'calf-r',
-    'skirt-front', 'skirt-back', 'weapon'
+    'skirt-front', 'skirt-back', 'weapon', 'weapon-front', 'weapon-side', 'weapon-back'
   ];
 
-  /** 进入切件模式：画布切换为源图视图，拖框切片。 */
+  /** 部件名 → 骨骼解析：先查全名，再剥离 -front/-side/-back 方向后缀查表。 */
+  static _resolvePartBone(name) {
+    const lower = (name || '').trim().toLowerCase();
+    if (SkeletonEditor.RIG_PART_MAP[lower]) return SkeletonEditor.RIG_PART_MAP[lower];
+    const stripped = lower.replace(/-(front|side|back)$/, '');
+    return SkeletonEditor.RIG_PART_MAP[stripped] || null;
+  }
+
+  /** 进入切件模式：画布切换为源图视图，拖框切片。
+   *  大图懒加载竞态防护：图片未加载完（width 缺省）时先适配，加载完成后重新适配坐标系。 */
   _enterSliceMode(assetId) {
     const item = this.imageCatalog.get(assetId);
     if (!item) return;
     this._removeContextMenu();
     this._exitSlicePanel();
-    this._sliceMode = { assetId, width: item.width || 64, height: item.height || 64, rect: null };
-    this._fitViewToSliceSource();
+    this._sliceMode = { assetId, width: item.width || 0, height: item.height || 0, rect: null };
+    const applyView = () => {
+      if (!this._sliceMode || this._sliceMode.assetId !== assetId) return;
+      if (item.width > 0 && (this._sliceMode.width !== item.width || this._sliceMode.height !== item.height)) {
+        this._sliceMode.width = item.width;
+        this._sliceMode.height = item.height;
+        this._sliceMode.rect = null; // 坐标系更新后旧选区无效
+      }
+      if (this._sliceMode.width > 0 && this._sliceMode.height > 0) {
+        this._fitViewToSliceSource();
+        this._draw();
+      }
+    };
+    applyView();
+    if (item.element && !item.element.complete) {
+      item.element.addEventListener('load', applyView, { once: true });
+    } else if (!item.element || !item.width) {
+      // 预热完整加载（元素缺失，或懒加载缩略图尚未请求主图）
+      const element = new Image();
+      element.onload = () => {
+        item.width = item.width || element.naturalWidth;
+        item.height = item.height || element.naturalHeight;
+        if (!item.element?.complete) item.element = element;
+        applyView();
+      };
+      element.src = item.url;
+    }
     this._toast(`切件模式：在 ${assetId} 上拖框选择部件区域，Esc 退出`);
   }
 
@@ -1573,7 +1615,7 @@ export class SkeletonEditor {
     ctx.strokeRect(viewRect.x + 8, viewRect.y + 8, 320, 26);
     ctx.fillStyle = '#ffd479';
     ctx.font = '12px sans-serif';
-    ctx.fillText(`✂ 切件模式：${source.assetId} — 拖框切片，Esc 退出`, viewRect.x + 16, viewRect.y + 25);
+    ctx.fillText(`✂ 切件：${source.assetId} — 命名 head / head-side / head-back 区分三方向（side/back 自动隐藏），Esc 退出`, viewRect.x + 16, viewRect.y + 25);
   }
 
   /** 切片确认面板：部件命名（约定 datalist）+ 目标骨骼 → 创建 slice 附件槽位。 */
@@ -1612,9 +1654,9 @@ export class SkeletonEditor {
     this._slicePanel = panel;
     const nameInput = panel.querySelector('#se-slice-name');
     const boneSelect = panel.querySelector('#se-slice-bone');
-    // 命名 → 骨骼自动映射
+    // 命名 → 骨骼自动映射（支持 -front/-side/-back 方向后缀剥离）
     nameInput.addEventListener('input', () => {
-      const mapped = SkeletonEditor.RIG_PART_MAP[nameInput.value.trim().toLowerCase()];
+      const mapped = SkeletonEditor._resolvePartBone(nameInput.value);
       if (mapped && [...boneSelect.options].some(option => option.value === mapped)) {
         boneSelect.value = mapped;
       }
@@ -1642,7 +1684,8 @@ export class SkeletonEditor {
     this._slicePanel = null;
   }
 
-  /** 由选区创建 slice 附件槽位（源图矩形区域，零文件 IO）。 */
+  /** 由选区创建 slice 附件槽位（源图矩形区域，零文件 IO）。
+   *  三方向约定：名称以 -front 结尾或无后缀 → 可见；-side / -back → 默认隐藏（运行时按朝向切换）。 */
   _createSliceAttachment(name, boneId, rect) {
     if (!boneId || !this._boneById(boneId)) { this._toast('目标骨骼不存在', true); return; }
     this._pushHistory();
@@ -1650,6 +1693,7 @@ export class SkeletonEditor {
     let index = 1;
     while (this._slotById(slotId)) slotId = `slice_${name}_${index++}`;
     const maxZ = (this.doc.slots || []).reduce((max, candidate) => Math.max(max, candidate.z || 0), 0);
+    const directionHidden = /-(side|back)$/.test(name);
     this.doc.slots = this.doc.slots || [];
     this.doc.slots.push({
       id: slotId,
@@ -1661,7 +1705,8 @@ export class SkeletonEditor {
         sx: Math.round(rect.x), sy: Math.round(rect.y),
         sw: Math.round(rect.w), sh: Math.round(rect.h),
         x: 0, y: 0, rot: 0,
-        width: Math.round(rect.w), height: Math.round(rect.h)
+        width: Math.round(rect.w), height: Math.round(rect.h),
+        visible: !directionHidden
       }
     });
     this.selectedSlot = slotId;
@@ -1669,7 +1714,55 @@ export class SkeletonEditor {
     this._markDirty();
     this._afterDocChange();
     this._renderImageLib();
-    this._toast(`已创建切片槽位 ${slotId} → ${boneId}（可拖动微调挂点）`);
+    this._toast(`已创建切片槽位 ${slotId} → ${boneId}${directionHidden ? '（side/back 方向默认隐藏）' : ''}（可拖动微调挂点）`);
+  }
+
+  /** 导入外部图片（三方向设定图等）：统一转 PNG 落盘 + manifest 事务登记 + 图片库刷新。 */
+  async _importImageFromFile(file) {
+    if (!file || !this.projectPath) { this._toast('未加载项目，无法导入', true); return; }
+    const baseName = (file.name.replace(/\.[^.]+$/, '') || 'character')
+      .toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '') || 'character';
+    const nameInput = prompt('登记图片 ID（图片库标识；建议带角色名，如 wanderer-girl）：', baseName);
+    if (!nameInput?.trim()) return;
+    const imageId = nameInput.trim().replace(/\s+/g, '-');
+    try {
+      // 解码并统一转 PNG（登记端点校验 .png 后缀与 PNG 头）
+      const dataUrl = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error('文件读取失败'));
+        reader.readAsDataURL(file);
+      });
+      const image = await new Promise((resolve, reject) => {
+        const element = new Image();
+        element.onload = () => resolve(element);
+        element.onerror = () => reject(new Error('图片解码失败'));
+        element.src = dataUrl;
+      });
+      const canvas = document.createElement('canvas');
+      canvas.width = image.naturalWidth;
+      canvas.height = image.naturalHeight;
+      canvas.getContext('2d').drawImage(image, 0, 0);
+      const pngBase64 = canvas.toDataURL('image/png').split(',')[1];
+      const runtimePath = `assets/images/characters/${imageId}.png`;
+      const saved = await fetch('/api/save-file', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: `${this.gameRoot}/${runtimePath}`, content: pngBase64, encoding: 'base64' })
+      }).then(response => response.json());
+      if (!saved?.ok) { this._toast(`图片落盘失败：${saved?.error || saved?.message || ''}`, true); return; }
+      const registered = await fetch('/api/scene-image-asset-transaction', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projectPath: this.projectPath,
+          imageAssets: [{ imageId, runtimePath, sceneId: 'skeleton-editor' }]
+        })
+      }).then(response => response.json());
+      if (!registered?.ok) { this._toast(`Manifest 登记失败：${registered?.error || registered?.message || ''}`, true); return; }
+      await this._loadManifest();
+      this._toast(`已导入 ${imageId}（${canvas.width}×${canvas.height}），可在切件模式中装配`);
+    } catch (error) {
+      this._toast(`导入失败：${error.message}`, true);
+    }
   }
 
   /** 人形 rig 模板：一键生成标准 13 骨骼火柴人骨架（关节坐标式，与 player.json 布局一致）。 */
@@ -2069,6 +2162,7 @@ export class SkeletonEditor {
           <select id="se-att-type">
             ${['empty', 'image', 'slice', 'sequence'].map(type => `<option value="${type}" ${attachment.type === type ? 'selected' : ''}>${type}</option>`).join('')}
           </select>
+          <label style="flex:none;margin-left:8px;"><input type="checkbox" id="se-att-visible" ${attachment.visible === false ? '' : 'checked'}> 可见</label>
         </div>
         ${attachment.type === 'empty' ? '' : `
         <div class="row"><label>图片ID</label><select id="se-att-asset">${imageOptions}</select></div>
@@ -2124,6 +2218,11 @@ export class SkeletonEditor {
       this._afterDocChange();
     });
     $('se-slot-z').addEventListener('change', event => { slot.z = Number(event.target.value) || 0; this._markDirty(); this._afterDocChange(); });
+    $('se-att-visible').addEventListener('change', event => {
+      attachment.visible = event.target.checked;
+      this._markDirty();
+      this._afterDocChange();
+    });
     $('se-att-type').addEventListener('change', event => {
       const type = event.target.value;
       slot.attachment = type === 'empty'

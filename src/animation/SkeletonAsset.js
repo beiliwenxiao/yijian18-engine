@@ -47,7 +47,9 @@ function normalizeAttachment(raw) {
     assetId: str(raw?.assetId) || str(raw?.spriteSheet),
     x: num(raw?.x), y: num(raw?.y), rot: num(raw?.rot),
     width: num(raw?.width) || 0,
-    height: num(raw?.height) || 0
+    height: num(raw?.height) || 0,
+    // 三方向可见性（front/side/back 组）：解析即透传，缺省可见（缺字段会被当 undefined 恒显示）
+    visible: raw?.visible !== false
   };
   if (type === 'slice') {
     return { ...base, sx: num(raw?.sx), sy: num(raw?.sy), sw: num(raw?.sw), sh: num(raw?.sh) };

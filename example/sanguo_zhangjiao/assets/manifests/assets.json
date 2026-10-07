@@ -5814,13 +5814,13 @@
         "y": 1
       },
       "bounds": {
-        "width": 100,
-        "height": 160
+        "width": 64,
+        "height": 64
       },
       "animations": [],
       "targetPhase": "P1",
       "status": "placeholder",
-      "revision": 1
+      "revision": 3
     },
     {
       "assetId": "skeleton.wolf-demo",
@@ -6510,6 +6510,36 @@
         "rows": 1,
         "cellWidth": 64,
         "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "wanderer-girl",
+      "imageId": "wanderer-girl",
+      "category": "environment-image",
+      "usage": [
+        "skeleton-editor",
+        "skeleton-editor"
+      ],
+      "sourceFile": "assets/images/characters/wanderer-girl.png",
+      "runtime2D": {
+        "path": "assets/images/characters/wanderer-girl.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "wanderer-girl"
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0
+      },
+      "bounds": {
+        "width": 822,
+        "height": 759
       },
       "animations": [],
       "targetPhase": "P1",
