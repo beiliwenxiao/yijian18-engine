@@ -1373,6 +1373,8 @@ export class S01S02Coordinator {
     if (this.scene.currentSceneId !== 'S01-C01' || !this.scene.playerEntity) {
       this._showSleepProgress('interrupted', 0);
       this.overnightSleepProgress = null;
+      // 睡眠中断：切回待机（循环 sleep 剪辑的 mapperHold 需显式释放）
+      this.scene.playerEntity?.getComponent?.('sprite')?.playAnimation?.('idle');
       session.resolve({ ok: true, status: 'sleepInterrupted' });
       return;
     }
@@ -1388,6 +1390,8 @@ export class S01S02Coordinator {
     session.committing = true;
     this._showSleepProgress('completed', 1);
     this.overnightSleepProgress = null;
+    // 睡满起床：切回待机（起床表现）
+    this.scene.playerEntity?.getComponent?.('sprite')?.playAnimation?.('idle');
     void this._completeOvernightSleep(session.operationId).then(session.resolve, session.reject);
   }
 
@@ -2029,6 +2033,8 @@ export class S01S02Coordinator {
       };
       this._showSleepProgress('started', 0);
       this._spawnSleepZzz();
+      // 离散动作接线：躺平入睡（循环剪辑保持到睡醒/中断显式切回）
+      this.scene.playerEntity?.getComponent?.('sprite')?.playAnimation?.('sleep');
       const pending = action.finally(() => {
         if (this.overnightSleepInFlight === pending) this.overnightSleepInFlight = null;
       });

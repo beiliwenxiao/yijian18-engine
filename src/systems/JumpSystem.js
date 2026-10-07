@@ -108,6 +108,10 @@ export class JumpSystem {
       duration,
       peakHeight
     });
+    // 离散动作接线：骨骼实体播跳跃剪辑（非循环，播完由状态映射器自动回归行走/待机；
+    // 普通帧动画实体无 jump 动画，不播避免警告刷屏）
+    const sprite = entity?.getComponent?.('sprite');
+    if (sprite?.isSkeleton) sprite.playAnimation('jump');
     return true;
   }
 

@@ -50,7 +50,8 @@ export class S02ArmyRescueCoordinator {
     if (player) player.plotDowned = true;
     const movement = player?.getComponent?.('movement');
     if (movement) movement.velocity = { x: 0, y: 0 };
-    player?.getComponent?.('sprite')?.playAnimation?.('idle');
+    // 离散动作接线：平躺待搬运（循环剪辑保持，苏醒时切回）
+    player?.getComponent?.('sprite')?.playAnimation?.('stretcher');
     return { ok: true };
   }
 
@@ -116,7 +117,11 @@ export class S02ArmyRescueCoordinator {
   awakenFromRescue() {
     const scene = this.scene;
     scene.playerDowned = false;
-    if (scene.playerEntity) scene.playerEntity.plotDowned = false;
+    if (scene.playerEntity) {
+      scene.playerEntity.plotDowned = false;
+      // 离散动作接线：苏醒起立（释放 stretcher 循环 hold）
+      scene.playerEntity.getComponent?.('sprite')?.playAnimation?.('idle');
+    }
     scene.armyCommandFlow?.system?.clearRescueTarget?.();
     this._active = false;
     return { ok: true };

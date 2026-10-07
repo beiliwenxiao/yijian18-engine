@@ -115,6 +115,11 @@ export class BaseGameSceneGameplayHooks extends BaseGameSceneBehaviors {
     return this.combatSystem?.isInCombat?.() === true;
   }
 
+  /** 播放玩家骨骼/精灵动画（骨骼实体转发 playClip，普通实体走帧动画）。 */
+  _playPlayerAnimation(name) {
+    this.playerEntity?.getComponent?.('sprite')?.playAnimation?.(name);
+  }
+
   harvestByFacing({ silent = false } = {}) {
     if (!this.playerEntity || !this.gatheringSystem) return false;
     if (!this.canPerformPlayerAction('gather')) {
@@ -153,9 +158,16 @@ export class BaseGameSceneGameplayHooks extends BaseGameSceneBehaviors {
       data,
       this.gatheringSystem?.session?.actor || null
     );
-    // 采集进行态只使用玩家头顶世界进度条，不再占用全局文字提示槽。
-    if (event === 'started' || event === 'progress') return;
-
+    // 离散动作接线：按节点资源类型播放对应骨骼剪辑（wood=logging 挥斧 / iron=mining 连凿 / 其余=gather 弯腰采摘）；
+    // 结束（完成/中断/取消）切回待机——循环动作剪辑的 mapperHold 不会自释放，必须显式回归。
+    if (event === 'started') {
+      const node = this.gatheringSystem?.session?.node || data?.node || null;
+      const clipByType = { wood: 'logging', iron: 'mining', herb: 'gather', food: 'gather' };
+      this._playPlayerAnimation(clipByType[node?.resourceType] || 'gather');
+      return;
+    }
+    if (event === 'progress') return;
+    if (event === 'completed' || event === 'interrupted') this._playPlayerAnimation('idle');
     this._lastGatheringProgressPercent = null;
     this._hintPresenter?.hideScreen?.('gathering');
     if (event === 'riskTriggered') {
