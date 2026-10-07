@@ -132,14 +132,17 @@ export function parseSkeletonAsset(doc) {
     for (const track of (Array.isArray(raw?.tracks) ? raw.tracks : [])) {
       const boneId = str(track?.bone);
       if (!boneId || !bones.has(boneId)) continue;
+      // null/undefined 一律解析为 null（采样时回退骨骼 rest）；
+      // 注意 Number(null)===0，不能用 Number.isFinite(Number(v)) 判空——会把缺省缩放解析成 0（骨骼塌缩）。
+      const nullableNum = value => (value == null || !Number.isFinite(Number(value))) ? null : Number(value);
       const keys = (Array.isArray(track?.keys) ? track.keys : [])
         .map(key => ({
           t: Math.max(0, num(key?.t)),
-          x: Number.isFinite(Number(key?.x)) ? Number(key.x) : null,
-          y: Number.isFinite(Number(key?.y)) ? Number(key.y) : null,
-          rot: Number.isFinite(Number(key?.rot)) ? Number(key.rot) : null,
-          scaleX: Number.isFinite(Number(key?.scaleX)) ? Number(key.scaleX) : null,
-          scaleY: Number.isFinite(Number(key?.scaleY)) ? Number(key.scaleY) : null,
+          x: nullableNum(key?.x),
+          y: nullableNum(key?.y),
+          rot: nullableNum(key?.rot),
+          scaleX: nullableNum(key?.scaleX),
+          scaleY: nullableNum(key?.scaleY),
           ease: key?.ease === 'easeInOut' ? 'easeInOut' : 'linear'
         }))
         .sort((a, b) => a.t - b.t);

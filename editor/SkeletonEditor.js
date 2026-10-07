@@ -68,6 +68,10 @@ export class SkeletonEditor {
     this._undoStack = [];
     this._redoStack = [];
     this._contextMenuCloser = null;
+    // 半自动装配：切件模式（在整图上拖框切片 → slice 附件挂骨骼，零文件 IO）
+    this._sliceMode = null;      // { assetId, width, height, rect:{x,y,w,h}|null }
+    this._sliceSelecting = null; // { startX, startY } 屏幕坐标
+    this._slicePanel = null;
   }
 
   /* ---------------- 初始化 ---------------- */
@@ -110,6 +114,7 @@ export class SkeletonEditor {
     this.el.save.addEventListener('click', () => this._save());
     $('se-bone-add').addEventListener('click', () => this._addBone());
     $('se-bone-del').addEventListener('click', () => this._deleteBone());
+    $('se-bone-template').addEventListener('click', () => this._applyHumanoidTemplate());
     $('se-slot-add').addEventListener('click', () => this._addSlot());
     $('se-slot-del').addEventListener('click', () => this._deleteSlot());
 
@@ -144,7 +149,7 @@ export class SkeletonEditor {
     const canvas = this.el.canvas;
     canvas.addEventListener('mousedown', event => this._onCanvasDown(event));
     window.addEventListener('mousemove', event => this._onCanvasMove(event));
-    window.addEventListener('mouseup', () => { this._drag = null; });
+    window.addEventListener('mouseup', event => this._onCanvasUp(event));
     canvas.addEventListener('wheel', event => this._onCanvasWheel(event), { passive: false });
     // 右键画布：命中图片附件 → 选中槽位并弹出图片右键菜单（对齐场景编辑器交互）
     canvas.addEventListener('contextmenu', event => {
@@ -208,6 +213,10 @@ export class SkeletonEditor {
       if ((event.ctrlKey || event.metaKey) && (event.key === 'y' || event.key === 'Y')) {
         event.preventDefault();
         this._redo();
+        return;
+      }
+      if (event.key === 'Escape' && this._sliceMode) {
+        this._exitSliceMode();
         return;
       }
       if (event.key === 'k' || event.key === 'K') this._keySelectedBone();
@@ -325,7 +334,7 @@ export class SkeletonEditor {
       this.currentClip = this.runtime?.defaultClip || null;
     }
     this.previewTime = Math.max(0, Math.min(this.previewTime, this._clipDuration()));
-    this._fitView();
+    if (!this._sliceMode) this._fitView(); // 切件模式保持源图视图
     this._renderBoneTree();
     this._renderSlotList();
     this._renderInspector();
@@ -728,6 +737,12 @@ export class SkeletonEditor {
     ctx.setTransform(window.devicePixelRatio || 1, 0, 0, window.devicePixelRatio || 1, 0, 0);
     const rect = this.el.canvas.getBoundingClientRect();
     ctx.clearRect(0, 0, rect.width, rect.height);
+    // 切件模式：源图视图（不画骨骼/附件）
+    if (this._sliceMode) {
+      this._drawSliceMode(ctx, { x: 0, y: 0 });
+      ctx.restore();
+      return;
+    }
 
     const meta = this.doc?.meta || { width: 100, height: 160 };
     const topLeft = this._worldToScreen(-meta.width / 2, -meta.height);
@@ -809,20 +824,20 @@ export class SkeletonEditor {
         ctx.lineTo(start.x - nx * w0, start.y - ny * w0);
         ctx.closePath();
         ctx.fillStyle = selected
-          ? 'rgba(255,96,60,0.9)'
-          : (hidden ? 'rgba(160,170,200,0.25)' : (locked ? 'rgba(200,160,255,0.4)' : 'rgba(200,210,255,0.5)'));
+          ? 'rgba(255,96,60,0.95)'
+          : (hidden ? 'rgba(160,170,200,0.3)' : (locked ? 'rgba(200,160,255,0.75)' : 'rgba(214,224,248,0.9)'));
         ctx.fill();
       }
       // 起点关节环
-      ctx.strokeStyle = selected ? '#ff603c' : (locked ? 'rgba(200,160,255,0.8)' : 'rgba(220,230,255,0.9)');
-      ctx.lineWidth = selected ? 2.5 : 1.5;
+      ctx.strokeStyle = selected ? '#ff603c' : (locked ? 'rgba(200,160,255,0.9)' : 'rgba(226,234,252,0.95)');
+      ctx.lineWidth = selected ? 2.5 : 1.8;
       ctx.beginPath();
-      ctx.arc(start.x, start.y, selected ? 6 : 4.5, 0, Math.PI * 2);
+      ctx.arc(start.x, start.y, selected ? 6 : 5, 0, Math.PI * 2);
       ctx.stroke();
       // 末端小点
-      ctx.fillStyle = selected ? '#ff603c' : 'rgba(220,230,255,0.7)';
+      ctx.fillStyle = selected ? '#ff603c' : 'rgba(226,234,252,0.85)';
       ctx.beginPath();
-      ctx.arc(end.x, end.y, selected ? 3 : 2, 0, Math.PI * 2);
+      ctx.arc(end.x, end.y, selected ? 3 : 2.5, 0, Math.PI * 2);
       ctx.fill();
     }
 
@@ -942,6 +957,15 @@ export class SkeletonEditor {
     const my = event.clientY - rect.top;
     if (event.button === 1 || event.button === 2) {
       this._drag = { kind: 'pan', startX: mx, startY: my, ox: this.view.ox, oy: this.view.oy };
+      return;
+    }
+    // 切件模式：左键拖框选区
+    if (this._sliceMode) {
+      if (event.button !== 0) return;
+      this._exitSlicePanel();
+      const world = this._screenToWorld(mx, my);
+      this._sliceSelecting = { startX: world.x, startY: world.y };
+      this._sliceMode.rect = { x: world.x, y: world.y, w: 0, h: 0 };
       return;
     }
     if (!this.runtime) return;
@@ -1168,6 +1192,20 @@ export class SkeletonEditor {
   }
 
   _onCanvasMove(event) {
+    // 切件模式：更新选区矩形
+    if (this._sliceMode && this._sliceSelecting) {
+      const rect = this.el.canvas.getBoundingClientRect();
+      const world = this._screenToWorld(event.clientX - rect.left, event.clientY - rect.top);
+      const startX = this._sliceSelecting.startX;
+      const startY = this._sliceSelecting.startY;
+      this._sliceMode.rect = {
+        x: Math.min(startX, world.x),
+        y: Math.min(startY, world.y),
+        w: Math.abs(world.x - startX),
+        h: Math.abs(world.y - startY)
+      };
+      return;
+    }
     if (!this._drag) return;
     const rect = this.el.canvas.getBoundingClientRect();
     const mx = event.clientX - rect.left;
@@ -1398,6 +1436,251 @@ export class SkeletonEditor {
     return this.imageCatalog.get(assetId)?.entry?.sourceFile || '';
   }
 
+  /* ---------------- 半自动装配：切件模式 ---------------- */
+
+  /** 命名 → 骨骼自动映射（人形装配约定；匹配不到回落当前选中骨骼）。 */
+  static RIG_PART_MAP = {
+    head: 'head', 'head-front': 'head', 'head-side': 'head', 'head-back': 'head',
+    torso: 'torso', body: 'torso', pelvis: 'hips',
+    'upper-arm-l': 'armUL', 'upper-arm-r': 'armUR', armul: 'armUL', armur: 'armUR',
+    'fore-arm-l': 'armFL', 'fore-arm-r': 'armFR', arml: 'armFL', armr: 'armFR',
+    'thigh-l': 'thighL', 'thigh-r': 'thighR', thighl: 'thighL', thighr: 'thighR',
+    'calf-l': 'calfL', 'calf-r': 'calfR', calfl: 'calfL', calfr: 'calfR',
+    'skirt-front': 'torso', 'skirt-back': 'torso', skirt: 'torso',
+    weapon: 'armFR', 'weapon-axe': 'armFR', 'weapon-spear': 'back'
+  };
+
+  static RIG_PART_NAMES = [
+    'head', 'head-front', 'head-side', 'head-back', 'torso', 'pelvis',
+    'upper-arm-l', 'upper-arm-r', 'fore-arm-l', 'fore-arm-r',
+    'thigh-l', 'thigh-r', 'calf-l', 'calf-r',
+    'skirt-front', 'skirt-back', 'weapon'
+  ];
+
+  /** 进入切件模式：画布切换为源图视图，拖框切片。 */
+  _enterSliceMode(assetId) {
+    const item = this.imageCatalog.get(assetId);
+    if (!item) return;
+    this._removeContextMenu();
+    this._exitSlicePanel();
+    this._sliceMode = { assetId, width: item.width || 64, height: item.height || 64, rect: null };
+    this._fitViewToSliceSource();
+    this._toast(`切件模式：在 ${assetId} 上拖框选择部件区域，Esc 退出`);
+  }
+
+  _exitSliceMode() {
+    this._sliceMode = null;
+    this._sliceSelecting = null;
+    this._exitSlicePanel();
+    this._fitView();
+  }
+
+  /** 视图适配到切件源图（源图世界原点 (0,0)，留 40px 边距）。 */
+  _fitViewToSliceSource() {
+    const canvas = this.el.canvas;
+    const rect = canvas.getBoundingClientRect();
+    if (rect.width < 10 || rect.height < 10) return;
+    const source = this._sliceMode;
+    this.view.scale = Math.max(0.1, Math.min(
+      (rect.width - 80) / source.width,
+      (rect.height - 80) / source.height,
+      6
+    ));
+    this.view.ox = rect.width / 2 - (source.width / 2) * this.view.scale;
+    this.view.oy = rect.height / 2 - (source.height / 2) * this.view.scale;
+    this._sizeCanvas();
+  }
+
+  /** 切件模式画布绘制：源图 + 已建切片框 + 当前选区。 */
+  _drawSliceMode(ctx, viewRect) {
+    const source = this._sliceMode;
+    const img = this._imageElement(source.assetId);
+    const topLeft = this._worldToScreen(0, 0);
+    if (img) {
+      ctx.drawImage(img, topLeft.x, topLeft.y, source.width * this.view.scale, source.height * this.view.scale);
+    } else {
+      ctx.fillStyle = 'rgba(126,200,255,0.15)';
+      ctx.fillRect(topLeft.x, topLeft.y, source.width * this.view.scale, source.height * this.view.scale);
+    }
+    ctx.strokeStyle = 'rgba(255,212,121,0.9)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(topLeft.x, topLeft.y, source.width * this.view.scale, source.height * this.view.scale);
+    // 已建切片框（当前源图引用中的 slice 附件）
+    for (const slot of this.doc?.slots || []) {
+      const att = slot.attachment;
+      if (att?.type !== 'slice' || att.assetId !== source.assetId) continue;
+      const box = this._worldToScreen(att.sx, att.sy);
+      ctx.strokeStyle = 'rgba(126,200,255,0.9)';
+      ctx.setLineDash([4, 3]);
+      ctx.strokeRect(box.x, box.y, att.sw * this.view.scale, att.sh * this.view.scale);
+      ctx.setLineDash([]);
+      ctx.fillStyle = 'rgba(126,200,255,0.9)';
+      ctx.font = '10px sans-serif';
+      ctx.fillText(slot.id, box.x, box.y - 3);
+    }
+    // 当前选区
+    if (source.rect) {
+      const rect = this._worldToScreen(source.rect.x, source.rect.y);
+      ctx.strokeStyle = '#ffd479';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([6, 3]);
+      ctx.strokeRect(rect.x, rect.y, source.rect.w * this.view.scale, source.rect.h * this.view.scale);
+      ctx.setLineDash([]);
+      ctx.fillStyle = 'rgba(255,212,121,0.12)';
+      ctx.fillRect(rect.x, rect.y, source.rect.w * this.view.scale, source.rect.h * this.view.scale);
+      ctx.fillStyle = '#ffd479';
+      ctx.font = '11px sans-serif';
+      ctx.fillText(`${Math.round(source.rect.w)}×${Math.round(source.rect.h)}`, rect.x, rect.y - 4);
+    }
+    // 模式提示条
+    ctx.fillStyle = 'rgba(16,24,48,0.92)';
+    ctx.fillRect(viewRect.x + 8, viewRect.y + 8, 320, 26);
+    ctx.strokeStyle = 'rgba(58,74,126,0.9)';
+    ctx.strokeRect(viewRect.x + 8, viewRect.y + 8, 320, 26);
+    ctx.fillStyle = '#ffd479';
+    ctx.font = '12px sans-serif';
+    ctx.fillText(`✂ 切件模式：${source.assetId} — 拖框切片，Esc 退出`, viewRect.x + 16, viewRect.y + 25);
+  }
+
+  /** 切片确认面板：部件命名（约定 datalist）+ 目标骨骼 → 创建 slice 附件槽位。 */
+  _showSlicePanel(screenX, screenY) {
+    this._exitSlicePanel();
+    const rect = this._sliceMode.rect;
+    if (!rect || rect.w < 2 || rect.h < 2) return;
+    const panel = document.createElement('div');
+    panel.id = 'se-slice-panel';
+    Object.assign(panel.style, {
+      position: 'fixed', zIndex: '10001', background: '#1a2440', border: '1px solid #3a4a7e',
+      borderRadius: '6px', padding: '8px', fontSize: '12px', color: '#e0e0e0',
+      display: 'flex', flexDirection: 'column', gap: '6px', minWidth: '230px',
+      boxShadow: '0 6px 18px rgba(0,0,0,0.55)'
+    });
+    const boneOptions = (this.doc?.bones || [])
+      .map(bone => `<option value="${bone.id}">${bone.id}</option>`).join('');
+    const nameList = SkeletonEditor.RIG_PART_NAMES
+      .map(name => `<option value="${name}">`).join('');
+    panel.innerHTML = `
+      <div style="color:#ffd479;">✂ 新部件切片（${Math.round(rect.w)}×${Math.round(rect.h)}）</div>
+      <div style="display:flex;gap:4px;align-items:center;">
+        <label style="color:#9aa5c0;">名称</label>
+        <input id="se-slice-name" list="se-rig-part-names" placeholder="如 head / upper-arm-l" style="flex:1;min-width:0;">
+        <datalist id="se-rig-part-names">${nameList}</datalist>
+      </div>
+      <div style="display:flex;gap:4px;align-items:center;">
+        <label style="color:#9aa5c0;">骨骼</label>
+        <select id="se-slice-bone" style="flex:1;min-width:0;">${boneOptions}</select>
+      </div>
+      <div style="display:flex;gap:6px;justify-content:flex-end;">
+        <button id="se-slice-cancel">取消</button>
+        <button id="se-slice-create" class="primary" style="background:#4CAF50;color:#000;font-weight:bold;">创建切片附件</button>
+      </div>`;
+    document.body.appendChild(panel);
+    this._slicePanel = panel;
+    const nameInput = panel.querySelector('#se-slice-name');
+    const boneSelect = panel.querySelector('#se-slice-bone');
+    // 命名 → 骨骼自动映射
+    nameInput.addEventListener('input', () => {
+      const mapped = SkeletonEditor.RIG_PART_MAP[nameInput.value.trim().toLowerCase()];
+      if (mapped && [...boneSelect.options].some(option => option.value === mapped)) {
+        boneSelect.value = mapped;
+      }
+    });
+    const close = () => {
+      panel.remove();
+      if (this._slicePanel === panel) this._slicePanel = null;
+    };
+    panel.querySelector('#se-slice-cancel').addEventListener('click', close);
+    panel.querySelector('#se-slice-create').addEventListener('click', () => {
+      const name = nameInput.value.trim().replace(/\s+/g, '-').toLowerCase();
+      if (!name) { this._toast('请输入部件名', true); return; }
+      this._createSliceAttachment(name, boneSelect.value, rect);
+      close();
+    });
+    // 定位到选区旁（视口内收拢）
+    const panelRect = panel.getBoundingClientRect();
+    panel.style.left = `${Math.max(4, Math.min(screenX, window.innerWidth - panelRect.width - 8))}px`;
+    panel.style.top = `${Math.max(4, Math.min(screenY, window.innerHeight - panelRect.height - 8))}px`;
+    nameInput.focus();
+  }
+
+  _exitSlicePanel() {
+    document.getElementById('se-slice-panel')?.remove();
+    this._slicePanel = null;
+  }
+
+  /** 由选区创建 slice 附件槽位（源图矩形区域，零文件 IO）。 */
+  _createSliceAttachment(name, boneId, rect) {
+    if (!boneId || !this._boneById(boneId)) { this._toast('目标骨骼不存在', true); return; }
+    this._pushHistory();
+    let slotId = `slice_${name}`;
+    let index = 1;
+    while (this._slotById(slotId)) slotId = `slice_${name}_${index++}`;
+    const maxZ = (this.doc.slots || []).reduce((max, candidate) => Math.max(max, candidate.z || 0), 0);
+    this.doc.slots = this.doc.slots || [];
+    this.doc.slots.push({
+      id: slotId,
+      bone: boneId,
+      z: maxZ + 1,
+      attachment: {
+        type: 'slice',
+        assetId: this._sliceMode.assetId,
+        sx: Math.round(rect.x), sy: Math.round(rect.y),
+        sw: Math.round(rect.w), sh: Math.round(rect.h),
+        x: 0, y: 0, rot: 0,
+        width: Math.round(rect.w), height: Math.round(rect.h)
+      }
+    });
+    this.selectedSlot = slotId;
+    this.selectedBone = boneId;
+    this._markDirty();
+    this._afterDocChange();
+    this._renderImageLib();
+    this._toast(`已创建切片槽位 ${slotId} → ${boneId}（可拖动微调挂点）`);
+  }
+
+  /** 人形 rig 模板：一键生成标准 13 骨骼火柴人骨架（关节坐标式，与 player.json 布局一致）。 */
+  _applyHumanoidTemplate() {
+    if (this.dirty && !confirm('应用模板将替换当前骨骼树（槽位清空），未保存修改将丢失，确定？')) return;
+    this._pushHistory();
+    const B = (id, parent, x, y, length) => ({ id, parent, x, y, rot: 0, scaleX: 1, scaleY: 1, length });
+    this.doc.bones = [
+      B('root', null, 0, 0, 16),
+      B('hips', 'root', 0, -26, 14),
+      B('torso', 'hips', 0, -2, 20),
+      B('head', 'torso', 0, -20, 16),
+      B('armUL', 'torso', -7, -16, 12),
+      B('armUR', 'torso', 7, -16, 12),
+      B('armFL', 'armUL', 0, 12, 13),
+      B('armFR', 'armUR', 0, 12, 13),
+      B('thighL', 'hips', -5, -1, 13),
+      B('thighR', 'hips', 5, -1, 13),
+      B('calfL', 'thighL', 0, 13, 14),
+      B('calfR', 'thighR', 0, 13, 14),
+      B('back', 'hips', 0, -14, 10)
+    ];
+    this.doc.slots = [
+      { id: 'shadow', bone: 'root', z: 0, attachment: { type: 'empty' } }
+    ];
+    if (!this.doc.defaultClip) this.doc.defaultClip = 'idle_down';
+    if (!this.doc.clips?.length) {
+      this.doc.clips = [{ name: 'idle_down', durationMs: 1000, loop: true, tracks: [] }];
+    }
+    this.selectedBone = 'root';
+    this.selectedSlot = null;
+    this._hiddenBones.clear();
+    this._lockedBones.clear();
+    this._hiddenSlots.clear();
+    this._lockedSlots.clear();
+    this._markDirty();
+    this._afterDocChange();
+    this._toast('已应用人形模板：13 骨骼，可进入切件模式装配部件');
+  }
+
+  /** 图片库条目/画布图片的 manifest 路径（sourceFile）。 */
+  _imageEntryPath(assetId) {
+    return this.imageCatalog.get(assetId)?.entry?.sourceFile || '';
+  }
+
   /** 通用右键菜单（对齐场景编辑器交互：items 数组 + fixed DOM + 越界翻转 + 外点关闭）。 */
   _showContextMenu(event, items, header = '') {
     this._removeContextMenu();
@@ -1487,6 +1770,7 @@ export class SkeletonEditor {
       });
     }
     items.push({ separator: true });
+    items.push({ label: '✂ 在切件模式中打开（拖框切片挂骨骼）', action: () => this._enterSliceMode(assetId) });
     items.push({
       label: '📋 复制图片路径',
       action: () => {
@@ -1921,6 +2205,18 @@ export class SkeletonEditor {
     // 当前时间输入框同步
     const timeInput = document.getElementById('se-time-input');
     if (timeInput && document.activeElement !== timeInput) timeInput.value = Math.round(this.previewTime);
+  }
+
+  /** mouseup：切件选区完成 → 弹确认面板；过小的选择丢弃。 */
+  _onCanvasUp(event) {
+    if (!this._sliceMode || !this._sliceSelecting) return;
+    this._sliceSelecting = null;
+    const rect = this._sliceMode.rect;
+    if (rect && rect.w >= 2 && rect.h >= 2) {
+      this._showSlicePanel(event.clientX, event.clientY);
+    } else {
+      this._sliceMode.rect = null;
+    }
   }
 
   /* ---------------- 保存 ---------------- */
