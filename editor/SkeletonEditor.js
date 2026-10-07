@@ -150,6 +150,11 @@ export class SkeletonEditor {
     canvas.addEventListener('mousedown', event => this._onCanvasDown(event));
     window.addEventListener('mousemove', event => this._onCanvasMove(event));
     window.addEventListener('mouseup', event => this._onCanvasUp(event));
+    // 拖拽防呆：窗口失焦（拖拽中切窗口导致 mouseup 丢失）时释放拖拽/选区状态
+    window.addEventListener('blur', () => {
+      this._drag = null;
+      this._sliceSelecting = null;
+    });
     canvas.addEventListener('wheel', event => this._onCanvasWheel(event), { passive: false });
     // 右键画布：命中图片附件 → 选中槽位并弹出图片右键菜单（对齐场景编辑器交互）
     canvas.addEventListener('contextmenu', event => {
@@ -200,9 +205,12 @@ export class SkeletonEditor {
     }
 
     window.addEventListener('keydown', event => {
-      // 焦点在输入控件时不响应快捷键（避免输入空格/删除键误触发编辑器动作）
+      // 焦点在输入控件时不响应快捷键（避免输入空格/删除键误触发编辑器动作）；Esc 例外：先失焦再走取消逻辑
       const tag = document.activeElement?.tagName;
-      if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+      if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') {
+        if (event.key !== 'Escape') return;
+        document.activeElement.blur?.();
+      }
       // 撤销 / 重做（Blender 惯例：Ctrl+Z / Ctrl+Shift+Z / Ctrl+Y）
       if ((event.ctrlKey || event.metaKey) && (event.key === 'z' || event.key === 'Z')) {
         event.preventDefault();
@@ -217,6 +225,11 @@ export class SkeletonEditor {
       }
       if (event.key === 'Escape' && this._sliceMode) {
         this._exitSliceMode();
+        return;
+      }
+      // Esc 取消进行中的拖拽（附件跟随中按 Esc 立即放手）
+      if (event.key === 'Escape' && this._drag) {
+        this._drag = null;
         return;
       }
       if (event.key === 'k' || event.key === 'K') this._keySelectedBone();
@@ -2207,16 +2220,19 @@ export class SkeletonEditor {
     if (timeInput && document.activeElement !== timeInput) timeInput.value = Math.round(this.previewTime);
   }
 
-  /** mouseup：切件选区完成 → 弹确认面板；过小的选择丢弃。 */
+  /** mouseup：切件选区完成 → 弹确认面板；所有拖拽统一在此释放（勿只在切件分支 return）。 */
   _onCanvasUp(event) {
-    if (!this._sliceMode || !this._sliceSelecting) return;
-    this._sliceSelecting = null;
-    const rect = this._sliceMode.rect;
-    if (rect && rect.w >= 2 && rect.h >= 2) {
-      this._showSlicePanel(event.clientX, event.clientY);
-    } else {
-      this._sliceMode.rect = null;
+    if (this._sliceMode && this._sliceSelecting) {
+      this._sliceSelecting = null;
+      const rect = this._sliceMode.rect;
+      if (rect && rect.w >= 2 && rect.h >= 2) {
+        this._showSlicePanel(event.clientX, event.clientY);
+      } else {
+        this._sliceMode.rect = null;
+      }
     }
+    // 任何拖拽（骨骼/附件/旋转/平移）松开即结束
+    this._drag = null;
   }
 
   /* ---------------- 保存 ---------------- */
