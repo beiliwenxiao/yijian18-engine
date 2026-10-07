@@ -63,7 +63,8 @@ export class SkeletonRenderer {
     let drewAny = false;
     for (const slot of asset.slots) {
       const attachment = slot.attachment;
-      if (!attachment || attachment.type === 'empty') continue;
+      // visible === false：运行时按状态切换显示的部件（如头部三态），渲染跳过
+      if (!attachment || attachment.type === 'empty' || attachment.visible === false) continue;
       const boneWorld = worldPose.get(slot.bone);
       if (!boneWorld) continue;
 
@@ -76,6 +77,7 @@ export class SkeletonRenderer {
       ctx.scale(boneWorld.sx, boneWorld.sy);
       ctx.translate(attachment.x, attachment.y);
       ctx.rotate((attachment.rot || 0) * DEG2RAD);
+      if (attachment.flipX) ctx.scale(-1, 1);   // 附件水平镜像（背面长矛等视角切换）
 
       const drawW = attachment.width > 0 ? attachment.width : source.sw;
       const drawH = attachment.height > 0 ? attachment.height : source.sh;

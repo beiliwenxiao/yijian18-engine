@@ -6095,6 +6095,426 @@
       "targetPhase": "P1",
       "status": "placeholder",
       "revision": 1
+    },
+    {
+      "assetId": "player.parts.head-front",
+      "imageId": "player.parts.head-front",
+      "category": "character-part",
+      "usage": [
+        "player-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player/parts/head-front.png",
+      "runtime2D": {
+        "path": "assets/images/player/parts/head-front.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player.parts.head-front"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.375
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "player.parts.head-side",
+      "imageId": "player.parts.head-side",
+      "category": "character-part",
+      "usage": [
+        "player-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player/parts/head-side.png",
+      "runtime2D": {
+        "path": "assets/images/player/parts/head-side.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player.parts.head-side"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.375
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "player.parts.head-back",
+      "imageId": "player.parts.head-back",
+      "category": "character-part",
+      "usage": [
+        "player-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player/parts/head-back.png",
+      "runtime2D": {
+        "path": "assets/images/player/parts/head-back.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player.parts.head-back"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.375
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "player.parts.torso",
+      "imageId": "player.parts.torso",
+      "category": "character-part",
+      "usage": [
+        "player-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player/parts/torso.png",
+      "runtime2D": {
+        "path": "assets/images/player/parts/torso.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player.parts.torso"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.46875
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "player.parts.upper-arm-l",
+      "imageId": "player.parts.upper-arm-l",
+      "category": "character-part",
+      "usage": [
+        "player-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player/parts/upper-arm-l.png",
+      "runtime2D": {
+        "path": "assets/images/player/parts/upper-arm-l.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player.parts.upper-arm-l"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.0625
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "player.parts.upper-arm-r",
+      "imageId": "player.parts.upper-arm-r",
+      "category": "character-part",
+      "usage": [
+        "player-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player/parts/upper-arm-r.png",
+      "runtime2D": {
+        "path": "assets/images/player/parts/upper-arm-r.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player.parts.upper-arm-r"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.0625
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "player.parts.fore-arm-l",
+      "imageId": "player.parts.fore-arm-l",
+      "category": "character-part",
+      "usage": [
+        "player-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player/parts/fore-arm-l.png",
+      "runtime2D": {
+        "path": "assets/images/player/parts/fore-arm-l.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player.parts.fore-arm-l"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.0625
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "player.parts.fore-arm-r",
+      "imageId": "player.parts.fore-arm-r",
+      "category": "character-part",
+      "usage": [
+        "player-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player/parts/fore-arm-r.png",
+      "runtime2D": {
+        "path": "assets/images/player/parts/fore-arm-r.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player.parts.fore-arm-r"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.0625
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "player.parts.thigh-l",
+      "imageId": "player.parts.thigh-l",
+      "category": "character-part",
+      "usage": [
+        "player-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player/parts/thigh-l.png",
+      "runtime2D": {
+        "path": "assets/images/player/parts/thigh-l.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player.parts.thigh-l"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.0625
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "player.parts.thigh-r",
+      "imageId": "player.parts.thigh-r",
+      "category": "character-part",
+      "usage": [
+        "player-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player/parts/thigh-r.png",
+      "runtime2D": {
+        "path": "assets/images/player/parts/thigh-r.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player.parts.thigh-r"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.0625
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "player.parts.calf-l",
+      "imageId": "player.parts.calf-l",
+      "category": "character-part",
+      "usage": [
+        "player-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player/parts/calf-l.png",
+      "runtime2D": {
+        "path": "assets/images/player/parts/calf-l.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player.parts.calf-l"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.0625
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "player.parts.calf-r",
+      "imageId": "player.parts.calf-r",
+      "category": "character-part",
+      "usage": [
+        "player-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player/parts/calf-r.png",
+      "runtime2D": {
+        "path": "assets/images/player/parts/calf-r.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player.parts.calf-r"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.0625
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
     }
   ]
 }

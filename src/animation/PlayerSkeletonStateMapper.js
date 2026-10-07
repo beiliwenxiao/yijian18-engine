@@ -11,16 +11,17 @@
  ************************************************************/
 
 /**
- * PlayerSkeletonStateMapper - 玩家/角色骨骼状态映射器（混合模式第一期）
+ * PlayerSkeletonStateMapper - 玩家骨骼状态映射器（完整全身骨骼方案）
  *
- * 每帧把实体连续状态映射为骨骼剪辑 + 身体槽位帧表：
+ * 每帧把实体连续状态映射为骨骼剪辑：
  *   死亡 > 灵魂 > 攀爬(背向) > 行走(按方向) > 待机(按方向)
  * 离散动作剪辑（attack/gather/logging/mining/fishing/sleep/stretcher/jump）
  * 由各系统经 sprite.playAnimation → playClip 触发，映射器不抢占；
  * 非循环离散剪辑播完后自动回到连续状态剪辑。
  *
- * 身体槽位帧表：按实体 sprite 的 cols×rows + directionRowMap 计算方向行
- * 帧矩形（适应任意角色 sheet 布局）；无 manifest 图片时保持 JSON 定义。
+ * 方向表达（全身骨骼无帧表）：
+ *   - 头部三态：headFront/headSide/headBack 槽位按朝向切 visible（正/侧/背）
+ *   - 侧向左右：sprite.flipX 整体镜像（side 姿态 + flip=左）
  */
 
 const MAPPER_CLIPS = new Set([
@@ -29,8 +30,12 @@ const MAPPER_CLIPS = new Set([
   'idle_down', 'idle_up', 'idle_side'
 ]);
 
-/** framesKey 按组件实例缓存（模块级函数无法持有闭包变量）。 */
-const BODY_FRAMES_KEY_CACHE = new WeakMap();
+/** 头部三态槽位可见性（key: 方向键 down/side/up） */
+const HEAD_SLOTS = {
+  down: { headFront: true, headSide: false, headBack: false },
+  side: { headFront: false, headSide: true, headBack: false },
+  up: { headFront: false, headSide: false, headBack: true }
+};
 
 /**
  * @param {Entity} entity
@@ -40,6 +45,7 @@ const BODY_FRAMES_KEY_CACHE = new WeakMap();
 export function createPlayerSkeletonStateMapper(entity, { getAssetManager = null } = {}) {
   let lastClip = '';
   let mapperHold = '';
+  let lastFacingKey = '';
 
   return (skeletonComponent) => {
     const asset = skeletonComponent.skeletonAsset;
@@ -68,8 +74,7 @@ export function createPlayerSkeletonStateMapper(entity, { getAssetManager = null
     if (entity.isDead || entity.isDying) targetClip = 'death';
     else if (entity.isSoulState === true) targetClip = 'soul';
     else if (entity._climbing === true) targetClip = 'climb_back';
-    // isStopping（松开方向）立即回待机：骨骼模式下 SpriteComponent 帧归零逻辑不跑，
-    // 不能依赖 walkFrame 归零信号
+    // isStopping（松开方向）立即回待机：骨骼模式下 SpriteComponent 帧归零逻辑不跑
     else if (sprite.isWalking === true && sprite.isStopping !== true) {
       targetClip = `walk_${directionKey(sprite)}`;
     } else {
@@ -87,8 +92,30 @@ export function createPlayerSkeletonStateMapper(entity, { getAssetManager = null
       mapperHold = '';
     }
 
-    // 身体槽位帧表：方向行帧矩形（贴图布局来自实体 sprite 配置）
-    syncBodyFrames(entity, skeletonComponent, sprite, targetClip);
+    // 头部三态 + 侧向镜像（方向键变化时才写共享资产，避免每帧触碰）
+    const facing = sprite?.direction || 'down';
+    const key = directionKey(sprite);
+    // 侧向左右共用 side 姿态与侧面头：left 由整体 flipX 镜像
+    const wantFlip = facing === 'left';
+    if (sprite.flipX !== wantFlip) sprite.flipX = wantFlip;
+    if (key !== lastFacingKey) {
+      lastFacingKey = key;
+      const plan = HEAD_SLOTS[key];
+      if (plan) {
+        for (const slot of asset.slots) {
+          if (!(slot.id in plan) && slot.id !== 'spearBack') continue;
+          const attachment = slot.attachment;
+          if (!attachment) continue;
+          // 背面时长矛水平翻转（枪头换边：正面朝右上 → 背面朝左上）
+          if (slot.id === 'spearBack') {
+            const wantFlip = key === 'up';
+            if (attachment.flipX !== wantFlip) attachment.flipX = wantFlip;
+            continue;
+          }
+          if (attachment.visible !== plan[slot.id]) attachment.visible = plan[slot.id];
+        }
+      }
+    }
   };
 }
 
@@ -97,43 +124,4 @@ function directionKey(sprite) {
   if (direction === 'up') return 'up';
   if (direction === 'left' || direction === 'right') return 'side';
   return 'down';
-}
-
-/** 计算方向行帧矩形并写入 body 槽位（缓存键避免每帧重建数组）。 */
-function syncBodyFrames(entity, skeletonComponent, sprite, targetClip) {
-  const slot = skeletonComponent.skeletonAsset?.slots?.find(candidate => candidate.id === 'body');
-  if (!slot?.attachment || slot.attachment.type !== 'sequence') return;
-  // 身体图源：JSON 声明的 assetId 优先；未声明（占位）回退实体自身 spriteSheet 稳定 ID
-  const stableId = slot.attachment.assetId || sprite.spriteSheet;
-  if (!stableId) return;
-  const manager = skeletonComponent.deps?.getAssetManager?.();
-  if (!manager) return;
-  const key = manager.resolveManifestAsset?.(stableId, '2d')?.key || stableId;
-  const image = manager.getImage?.(key) || null;
-  if (!image || !(image.naturalWidth > 0)) return;
-
-  const cols = Math.max(1, sprite.spriteColumns || 1);
-  const rows = Math.max(1, sprite.spriteRows || 1);
-  const cellWidth = image.naturalWidth / cols;
-  const cellHeight = image.naturalHeight / rows;
-  const walking = targetClip.startsWith('walk');
-  const rowMap = sprite.directionRowMap || {};
-  const rowIndex = Math.max(0, Math.min(rows - 1, walking
-    ? (rowMap[sprite.direction] ?? rowMap.idle ?? 0)
-    : (rowMap.idle ?? 0)));
-  const frameCount = walking ? Math.max(1, cols) : 1;
-  const framesKey = `${stableId}|${cellWidth.toFixed(1)}|${cellHeight.toFixed(1)}|${rowIndex}|${frameCount}`;
-  if (BODY_FRAMES_KEY_CACHE.get(skeletonComponent) === framesKey) return;
-  BODY_FRAMES_KEY_CACHE.set(skeletonComponent, framesKey);
-
-  const frames = [];
-  for (let index = 0; index < frameCount; index += 1) {
-    frames.push({
-      sx: Math.round(index * cellWidth),
-      sy: Math.round(rowIndex * cellHeight),
-      sw: Math.round(cellWidth),
-      sh: Math.round(cellHeight)
-    });
-  }
-  skeletonComponent.setSlotFrames('body', frames, walking ? 8 : 4);
 }
