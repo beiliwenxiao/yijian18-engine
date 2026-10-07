@@ -57,6 +57,13 @@ export class SkeletonEditor {
     this._drag = null;               // { kind: 'move'|'rotate'|'attach-move'|'attach-rotate'|'pan', ... }
     this._alphaBoundsCache = new Map(); // 附件非透明像素包围盒缓存（key: assetId|srcRect）
     this._alphaSampleCanvas = null;     // alpha 扫描离屏画布
+    // 图层式编辑辅助（会话态，不写入骨骼 JSON）：
+    //   隐藏=仅编辑器预览不画（对齐场景编辑器物品级 👁 语义）；锁定=画布点选/拖拽跳过（防误触）。
+    //   骨骼级按钮级联作用于子孙骨骼。
+    this._hiddenSlots = new Set();
+    this._lockedSlots = new Set();
+    this._hiddenBones = new Set();
+    this._lockedBones = new Set();
   }
 
   /* ---------------- 初始化 ---------------- */
@@ -283,6 +290,36 @@ export class SkeletonEditor {
 
   _boneById(id) {
     return this.doc.bones.find(bone => bone.id === id) || null;
+  }
+
+  /** 骨骼（或其祖先）是否被隐藏预览：隐藏骨骼级联隐藏子孙骨骼上的附件。 */
+  _isBoneHidden(boneId) {
+    let cursor = boneId || null;
+    while (cursor) {
+      if (this._hiddenBones.has(cursor)) return true;
+      cursor = this._boneById(cursor)?.parent || null;
+    }
+    return false;
+  }
+
+  /** 骨骼（或其祖先）是否被锁定：画布点选/拖拽跳过。 */
+  _isBoneLocked(boneId) {
+    let cursor = boneId || null;
+    while (cursor) {
+      if (this._lockedBones.has(cursor)) return true;
+      cursor = this._boneById(cursor)?.parent || null;
+    }
+    return false;
+  }
+
+  /** 槽位预览是否被隐藏（槽位级隐藏 或 所属骨骼链被隐藏）。 */
+  _isSlotPreviewHidden(slotId, boneId) {
+    return this._hiddenSlots.has(slotId) || this._isBoneHidden(boneId);
+  }
+
+  /** 槽位是否被锁定不可点选（槽位级锁定 或 所属骨骼链被锁定）。 */
+  _isSlotInteractiveLocked(slotId, boneId) {
+    return this._lockedSlots.has(slotId) || this._isBoneLocked(boneId);
   }
 
   _addBone() {
@@ -610,10 +647,11 @@ export class SkeletonEditor {
     if (!this.runtime) { ctx.restore(); return; }
     const world = this._boneWorldTransforms();
 
-    // 槽位附件预览（z 顺序）
+    // 槽位附件预览（z 顺序；隐藏/锁定的槽位不画）
     for (const slot of this.runtime.slots) {
       const attachment = slot.attachment;
       if (!attachment || attachment.type === 'empty') continue;
+      if (this._isSlotPreviewHidden(slot.id, slot.bone)) continue;
       const boneWorld = world.get(slot.bone);
       if (!boneWorld) continue;
       const source = this._attachmentSource(attachment);
@@ -663,7 +701,8 @@ export class SkeletonEditor {
       const runtimeSlot = this.runtime?.slots.find(candidate => candidate.id === this.selectedSlot);
       const attachment = runtimeSlot?.attachment;
       const boneWorld = runtimeSlot ? world.get(runtimeSlot.bone) : null;
-      if (attachment && attachment.type !== 'empty' && boneWorld) {
+      if (attachment && attachment.type !== 'empty' && boneWorld
+        && !this._isSlotPreviewHidden(runtimeSlot.id, runtimeSlot.bone)) {
         const source = this._attachmentSource(attachment);
         if (source) {
           const anchor = this._worldToScreen(
@@ -834,10 +873,11 @@ export class SkeletonEditor {
         return;
       }
     }
-    // 命中骨骼原点（优先近者）
+    // 命中骨骼原点（优先近者；锁定的骨骼跳过——防误选误拖）
     let hit = null;
     let hitDistance = 16;
     for (const bone of this.doc.bones || []) {
+      if (this._isBoneLocked(bone.id)) continue;
       const boneWorld = world.get(bone.id);
       if (!boneWorld) continue;
       const anchor = this._worldToScreen(boneWorld.x, boneWorld.y);
@@ -874,6 +914,9 @@ export class SkeletonEditor {
     for (const runtimeSlot of slots) {
       const attachment = runtimeSlot.attachment;
       if (!attachment || attachment.type === 'empty') continue;
+      // 隐藏/锁定的槽位（或其骨骼链）不参与命中
+      if (this._isSlotPreviewHidden(runtimeSlot.id, runtimeSlot.bone)) continue;
+      if (this._isSlotInteractiveLocked(runtimeSlot.id, runtimeSlot.bone)) continue;
       const boneWorld = world.get(runtimeSlot.bone);
       if (!boneWorld) continue;
       const source = this._attachmentSource(attachment);
@@ -970,6 +1013,7 @@ export class SkeletonEditor {
     if (this._drag.kind === 'attach-move' || this._drag.kind === 'attach-rotate') {
       const slot = this._slotById(this._drag.slotId);
       if (!slot?.attachment) { this._drag = null; return; }
+      if (this._isSlotInteractiveLocked(slot.id, slot.bone)) { this._drag = null; return; }
       if (this._drag.kind === 'attach-move') {
         const boneWorld = this._drag.boneWorld;
         const worldDx = (mx - this._drag.startX) / this.view.scale;
@@ -998,6 +1042,7 @@ export class SkeletonEditor {
     }
     const bone = this._boneById(this._drag.boneId);
     if (!bone) return;
+    if (this._isBoneLocked(bone.id)) { this._drag = null; return; }
     const clip = this._clip();
     const track = clip?.tracks?.find(candidate => candidate.bone === bone.id) || null;
     const parent = this._drag.parent;
@@ -1079,14 +1124,32 @@ export class SkeletonEditor {
       }
       return depthOf.get(id);
     };
-    container.innerHTML = bones.map(bone => `
+    container.innerHTML = bones.map(bone => {
+      const hidden = this._hiddenBones.has(bone.id);
+      const locked = this._lockedBones.has(bone.id);
+      return `
       <div class="se-bone-item ${bone.id === this.selectedBone ? 'selected' : ''}" data-id="${bone.id}">
+        <button class="se-tgl" data-kind="vis" title="${hidden ? '仅在编辑器中显示（级联子骨骼）' : '仅在编辑器中隐藏（级联子骨骼）'}"
+          style="flex:none;width:20px;height:18px;padding:0;font-size:10px;line-height:1;border-radius:3px;border:1px solid;cursor:pointer;${hidden ? 'background:#3a3a3a;border-color:#666;opacity:.75;' : 'background:#254830;border-color:#4a8a4a;'}">${hidden ? '🚫' : '👁'}</button>
+        <button class="se-tgl" data-kind="lock" title="${locked ? '已锁定：画布不可点选/拖拽，点击解锁' : '未锁定：点击锁定防误触（级联子骨骼）'}"
+          style="flex:none;width:20px;height:18px;padding:0;font-size:10px;line-height:1;border-radius:3px;border:1px solid;cursor:pointer;${locked ? 'background:#5a2a2a;border-color:#c0504a;' : 'background:#26365f;border-color:#5574ad;'}">${locked ? '🔒' : '🔓'}</button>
         <span class="depth">${'· '.repeat(depth(bone.id))}</span>
         <span class="name">${bone.id}${bone.parent ? ` ⇐ ${bone.parent}` : ' (根)'}</span>
-      </div>
-    `).join('');
+      </div>`;
+    }).join('');
     for (const item of container.querySelectorAll('.se-bone-item')) {
-      item.addEventListener('click', () => {
+      item.addEventListener('click', event => {
+        const button = event.target.closest('.se-tgl');
+        if (button) {
+          const boneId = item.dataset.id;
+          if (button.dataset.kind === 'vis') {
+            if (this._hiddenBones.has(boneId)) this._hiddenBones.delete(boneId);
+            else this._hiddenBones.add(boneId);
+          } else if (this._lockedBones.has(boneId)) this._lockedBones.delete(boneId);
+          else this._lockedBones.add(boneId);
+          this._renderBoneTree();
+          return;
+        }
         this.selectedBone = item.dataset.id;
         this.selectedSlot = null;
         this._renderBoneTree();
@@ -1099,15 +1162,34 @@ export class SkeletonEditor {
   _renderSlotList() {
     const container = this.el.slotList;
     const slots = [...(this.doc.slots || [])].sort((a, b) => a.z - b.z);
-    container.innerHTML = slots.length > 0 ? slots.map((slot, index) => `
-      <div class="se-slot-item ${slot.id === this.selectedSlot ? 'selected' : ''}" data-id="${slot.id}">
+    container.innerHTML = slots.length > 0 ? slots.map((slot, index) => {
+      const hidden = this._hiddenSlots.has(slot.id);
+      const locked = this._lockedSlots.has(slot.id);
+      return `
+      <div class="se-slot-item ${slot.id === this.selectedSlot ? 'selected' : ''}" data-id="${slot.id}"
+        style="${hidden ? 'opacity:.55;' : ''}">
+        <button class="se-tgl" data-kind="vis" title="${hidden ? '仅在编辑器中显示此槽位附件' : '仅在编辑器中隐藏此槽位附件'}"
+          style="flex:none;width:20px;height:18px;padding:0;font-size:10px;line-height:1;border-radius:3px;border:1px solid;cursor:pointer;${hidden ? 'background:#3a3a3a;border-color:#666;opacity:.85;' : 'background:#254830;border-color:#4a8a4a;'}">${hidden ? '🚫' : '👁'}</button>
+        <button class="se-tgl" data-kind="lock" title="${locked ? '已锁定：画布不可点选/拖拽，点击解锁' : '未锁定：点击锁定防误触'}"
+          style="flex:none;width:20px;height:18px;padding:0;font-size:10px;line-height:1;border-radius:3px;border:1px solid;cursor:pointer;${locked ? 'background:#5a2a2a;border-color:#c0504a;' : 'background:#26365f;border-color:#5574ad;'}">${locked ? '🔒' : '🔓'}</button>
         <button class="zbtn" data-dir="-1" ${index === 0 ? 'disabled' : ''} title="上移图层">▲</button>
         <button class="zbtn" data-dir="1" ${index === slots.length - 1 ? 'disabled' : ''} title="下移图层">▼</button>
         <span class="name">${slot.id} · ${slot.attachment?.type || 'empty'} · bone:${slot.bone} · z${slot.z}</span>
-      </div>
-    `).join('') : '<div class="se-empty">暂无槽位</div>';
+      </div>`;
+    }).join('') : '<div class="se-empty">暂无槽位</div>';
     for (const item of container.querySelectorAll('.se-slot-item')) {
-      item.addEventListener('click', () => {
+      item.addEventListener('click', event => {
+        const toggle = event.target.closest('.se-tgl');
+        if (toggle) {
+          const slotId = item.dataset.id;
+          if (toggle.dataset.kind === 'vis') {
+            if (this._hiddenSlots.has(slotId)) this._hiddenSlots.delete(slotId);
+            else this._hiddenSlots.add(slotId);
+          } else if (this._lockedSlots.has(slotId)) this._lockedSlots.delete(slotId);
+          else this._lockedSlots.add(slotId);
+          this._renderSlotList();
+          return;
+        }
         this.selectedSlot = item.dataset.id;
         this.selectedBone = this._slotById(this.selectedSlot)?.bone || this.selectedBone;
         // 图片库联动高亮：选中槽位时同步高亮其引用图片
