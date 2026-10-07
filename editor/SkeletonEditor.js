@@ -119,7 +119,27 @@ export class SkeletonEditor {
     window.addEventListener('mousemove', event => this._onCanvasMove(event));
     window.addEventListener('mouseup', () => { this._drag = null; });
     canvas.addEventListener('wheel', event => this._onCanvasWheel(event), { passive: false });
-    canvas.addEventListener('contextmenu', event => event.preventDefault());
+    // 右键画布：命中图片附件 → 选中槽位并弹出图片右键菜单（对齐场景编辑器交互）
+    canvas.addEventListener('contextmenu', event => {
+      event.preventDefault();
+      this._removeContextMenu();
+      if (!this.runtime) return;
+      const rect = canvas.getBoundingClientRect();
+      const mx = event.clientX - rect.left;
+      const my = event.clientY - rect.top;
+      const hitSlotId = this._hitAttachment(mx, my, this._boneWorldTransforms());
+      if (!hitSlotId) return;
+      const slot = this._slotById(hitSlotId);
+      const assetId = slot?.attachment?.assetId || '';
+      this.selectedSlot = hitSlotId;
+      this.selectedBone = slot?.bone || this.selectedBone;
+      this._renderBoneTree();
+      this._renderSlotList();
+      this._renderInspector();
+      if (assetId && this.imageCatalog.has(assetId)) {
+        this._showContextMenu(event, this._buildImageMenuItems(assetId), this._imageEntryPath(assetId));
+      }
+    });
     window.addEventListener('keydown', event => {
       // 焦点在输入控件时不响应快捷键（避免输入空格/删除键误触发编辑器动作）
       const tag = document.activeElement?.tagName;
@@ -1122,6 +1142,133 @@ export class SkeletonEditor {
     this._renderInspector();
   }
 
+  /** 图片库条目/画布图片的 manifest 路径（sourceFile）。 */
+  _imageEntryPath(assetId) {
+    return this.imageCatalog.get(assetId)?.entry?.sourceFile || '';
+  }
+
+  /** 通用右键菜单（对齐场景编辑器交互：items 数组 + fixed DOM + 越界翻转 + 外点关闭）。 */
+  _showContextMenu(event, items, header = '') {
+    this._removeContextMenu();
+    const menu = document.createElement('div');
+    menu.id = 'editor-context-menu';
+    Object.assign(menu.style, {
+      position: 'fixed', zIndex: '10000', minWidth: '190px', maxWidth: '340px',
+      background: '#1a2440', border: '1px solid #3a4a7e', borderRadius: '6px',
+      padding: '4px', boxShadow: '0 6px 18px rgba(0,0,0,0.55)', fontSize: '12px', color: '#e0e0e0',
+      userSelect: 'none'
+    });
+    if (header) {
+      const head = document.createElement('div');
+      head.textContent = header;
+      head.title = header;
+      Object.assign(head.style, {
+        padding: '3px 8px 5px', color: '#9aa5c0', fontSize: '11px',
+        borderBottom: '1px solid #26355c', marginBottom: '3px',
+        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
+      });
+      menu.appendChild(head);
+    }
+    for (const item of items) {
+      if (item.separator) {
+        const hr = document.createElement('div');
+        Object.assign(hr.style, { height: '1px', background: '#26355c', margin: '3px 4px' });
+        menu.appendChild(hr);
+        continue;
+      }
+      const row = document.createElement('div');
+      row.textContent = item.label;
+      Object.assign(row.style, {
+        padding: '5px 10px', borderRadius: '4px', cursor: item.disabled ? 'default' : 'pointer',
+        color: item.disabled ? '#5a6a90' : '#e0e0e0', whiteSpace: 'nowrap'
+      });
+      if (!item.disabled) {
+        row.addEventListener('mouseenter', () => { row.style.background = '#2a4a3e'; });
+        row.addEventListener('mouseleave', () => { row.style.background = ''; });
+        row.addEventListener('click', () => {
+          this._removeContextMenu();
+          item.action();
+        });
+      }
+      menu.appendChild(row);
+    }
+    document.body.appendChild(menu);
+    const rect = menu.getBoundingClientRect();
+    menu.style.left = `${Math.max(4, Math.min(event.clientX, window.innerWidth - rect.width - 8))}px`;
+    menu.style.top = `${Math.max(4, Math.min(event.clientY, window.innerHeight - rect.height - 8))}px`;
+    this._contextMenuCloser = mouseEvent => {
+      if (!menu.contains(mouseEvent.target)) this._removeContextMenu();
+    };
+    setTimeout(() => document.addEventListener('mousedown', this._contextMenuCloser), 0);
+  }
+
+  _removeContextMenu() {
+    document.getElementById('editor-context-menu')?.remove();
+    if (this._contextMenuCloser) {
+      document.removeEventListener('mousedown', this._contextMenuCloser);
+      this._contextMenuCloser = null;
+    }
+  }
+
+  /** 图片右键菜单项：绑定/定位/删除 + 复制路径 + 缓存重载。 */
+  _buildImageMenuItems(assetId) {
+    const bound = (this.doc?.slots || []).filter(slot => slot.attachment?.assetId === assetId);
+    const path = this._imageEntryPath(assetId);
+    const item = this.imageCatalog.get(assetId);
+    const items = [];
+    if (bound.length > 0) {
+      items.push({
+        label: `🎯 选中引用槽位（${bound.map(slot => slot.id).join('、')}）`,
+        action: () => {
+          this.selectedSlot = bound[0].id;
+          this.selectedBone = bound[0].bone;
+          this._renderSlotList();
+          this._renderBoneTree();
+          this._renderInspector();
+        }
+      });
+      items.push({ label: '🗑 删除引用槽位', action: () => this._unbindImage(assetId) });
+    } else {
+      items.push({
+        label: '🔗 挂到当前骨骼',
+        disabled: !this.selectedBone,
+        action: () => this._bindImageToSelectedBone(assetId)
+      });
+    }
+    items.push({ separator: true });
+    items.push({
+      label: '📋 复制图片路径',
+      action: () => {
+        navigator.clipboard?.writeText(path).then(
+          () => this._toast(`已复制路径 ${path}`),
+          () => this._toast('复制失败（剪贴板不可用）', true)
+        );
+      }
+    });
+    items.push({
+      label: `🔄 重新加载图片${item ? `（${item.width || '?'}×${item.height || '?'}）` : ''}`,
+      action: () => this._reloadImageElement(assetId)
+    });
+    return items;
+  }
+
+  /** 缓存穿透重载图片元素并清理派生缓存（alpha 命中盒等）。 */
+  _reloadImageElement(assetId) {
+    const entry = this.imageCatalog.get(assetId);
+    if (!entry) return;
+    const element = new Image();
+    element.onload = () => {
+      entry.width = element.naturalWidth;
+      entry.height = element.naturalHeight;
+    };
+    element.src = `${entry.url}${entry.url.includes('?') ? '&' : '?'}t=${Date.now()}`;
+    entry.element = element;
+    for (const key of [...this._alphaBoundsCache.keys()]) {
+      if (key.startsWith(`${assetId}|`)) this._alphaBoundsCache.delete(key);
+    }
+    this._toast(`已重载图片 ${assetId}`);
+  }
+
   /** 图片库（Spine 式）：缩略图列表；「→骨骼」挂图、「解绑」移除该图片的所有槽位。 */
   _renderImageLib() {
     const container = document.getElementById('se-image-lib');
@@ -1133,6 +1280,7 @@ export class SkeletonEditor {
     const items = [...this.imageCatalog.entries()];
     container.innerHTML = items.length > 0 ? items.map(([assetId, item]) => {
       const bound = boundBonesOf(assetId);
+      const path = this._imageEntryPath(assetId);
       const boundBadge = bound.length > 0
         ? `<span class="bound-badge" data-slot="${bound[0].split('@')[0]}" style="color:#7ec8ff;font-size:10px;flex:none;cursor:pointer;" title="点击选中引用槽位 ${bound.join(', ')}">已绑×${bound.length}</span>`
         : '';
@@ -1142,7 +1290,7 @@ export class SkeletonEditor {
       return `
       <div class="se-img-item ${assetId === this._selectedImageId ? 'selected' : ''}" data-id="${assetId}">
         <img src="${item.url}" loading="lazy" alt="${assetId}">
-        <span class="name" title="${assetId}">${assetId}</span>
+        <span class="name" title="${assetId}${path ? '（' + path + '）' : ''}">${assetId}</span>
         ${boundBadge}
         ${action}
       </div>`;
@@ -1151,6 +1299,14 @@ export class SkeletonEditor {
       item.addEventListener('click', () => {
         this._selectedImageId = item.dataset.id;
         this._renderImageLib();
+      });
+      // 右键图片库条目：弹出该图片的右键菜单（路径/绑定/重载）
+      item.addEventListener('contextmenu', event => {
+        event.preventDefault();
+        event.stopPropagation();
+        this._selectedImageId = item.dataset.id;
+        this._renderImageLib();
+        this._showContextMenu(event, this._buildImageMenuItems(item.dataset.id), this._imageEntryPath(item.dataset.id));
       });
     }
     // 点击「已绑×N」徽标：定位选中引用槽位（画布高亮 + 检查器）
@@ -1309,6 +1465,7 @@ export class SkeletonEditor {
       .map(bone => `<option value="${bone.id}" ${slot.bone === bone.id ? 'selected' : ''}>${bone.id}</option>`)
       .join('');
     const isSequence = attachment.type === 'sequence';
+    const seAttPath = attachment.assetId ? this._imageEntryPath(attachment.assetId) : '';
     body.innerHTML = `
       <div class="row"><label>ID</label><input type="text" id="se-slot-id" value="${slot.id}"></div>
       <div class="row"><label>骨骼</label><select id="se-slot-bone">${boneOptions}</select></div>
@@ -1321,6 +1478,7 @@ export class SkeletonEditor {
         </div>
         ${attachment.type === 'empty' ? '' : `
         <div class="row"><label>图片ID</label><select id="se-att-asset">${imageOptions}</select></div>
+        <div class="row"><label>路径</label><span id="se-att-path" title="${seAttPath}" style="flex:1;min-width:0;font-size:11px;color:#9aa5c0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${seAttPath || '(未登记路径)'}</span></div>
         <div class="row"><label>偏移X</label><input type="number" id="se-att-x" step="1" value="${attachment.x ?? 0}"></div>
         <div class="row"><label>偏移Y</label><input type="number" id="se-att-y" step="1" value="${attachment.y ?? 0}"></div>
         <div class="row"><label>旋转°</label><input type="number" id="se-att-rot" step="1" value="${attachment.rot ?? 0}"></div>
