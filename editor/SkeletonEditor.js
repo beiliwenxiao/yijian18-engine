@@ -898,6 +898,24 @@ export class SkeletonEditor {
       }
     }
 
+    // 拖放换绑目标高亮：附件拖拽悬停在骨骼原点附近时提示「松手换绑」
+    if (this._drag?.kind === 'attach-move' && this._drag.rebindTarget) {
+      const targetWorld = world.get(this._drag.rebindTarget);
+      if (targetWorld) {
+        const anchor = this._worldToScreen(targetWorld.x, targetWorld.y);
+        ctx.strokeStyle = '#ffd479';
+        ctx.lineWidth = 2.5;
+        ctx.setLineDash([5, 4]);
+        ctx.beginPath();
+        ctx.arc(anchor.x, anchor.y, 14, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = '#ffd479';
+        ctx.font = 'bold 12px sans-serif';
+        ctx.fillText(`松手换绑 → ${this._drag.rebindTarget}`, anchor.x + 18, anchor.y - 10);
+      }
+    }
+
     // 选中骨骼旋转手柄环
     if (this.selectedBone) {
       const boneWorld = world.get(this.selectedBone);
@@ -1237,6 +1255,9 @@ export class SkeletonEditor {
         const boneWorld = this._drag.boneWorld;
         const worldDx = (mx - this._drag.startX) / this.view.scale;
         const worldDy = (my - this._drag.startY) / this.view.scale;
+        // 拖放换绑探测：鼠标靠近其他骨骼原点（16px）时记录目标，松手重挂（保持世界位置）
+        this._drag.rebindTarget = this._pickBoneOrigin(mx, my, this._boneWorldTransforms(), 16, slot.bone);
+        if (this._drag.rebindTarget) return; // 悬停目标骨骼上时冻结偏移预览，松手换绑
         let localDx = worldDx;
         let localDy = worldDy;
         if (boneWorld) {
@@ -2037,7 +2058,11 @@ export class SkeletonEditor {
     const seAttPath = attachment.assetId ? this._imageEntryPath(attachment.assetId) : '';
     body.innerHTML = `
       <div class="row"><label>ID</label><input type="text" id="se-slot-id" value="${slot.id}"></div>
-      <div class="row"><label>骨骼</label><select id="se-slot-bone">${boneOptions}</select></div>
+      <div class="row"><label>骨骼</label>
+        <button id="se-slot-bone-prev" title="换绑到骨骼树中的上一个骨骼（保持部件位置）" style="flex:none;">‹</button>
+        <select id="se-slot-bone" style="flex:1;min-width:0;">${boneOptions}</select>
+        <button id="se-slot-bone-next" title="换绑到骨骼树中的下一个骨骼（保持部件位置）" style="flex:none;">›</button>
+      </div>
       <div class="row"><label>z 序</label><input type="number" id="se-slot-z" step="1" value="${slot.z}"></div>
       <div class="se-attachment-box">
         <div class="row"><label>附件类型</label>
@@ -2081,7 +2106,23 @@ export class SkeletonEditor {
         this._afterDocChange();
       }
     });
-    $('se-slot-bone').addEventListener('change', event => { slot.bone = event.target.value; this._markDirty(); this._afterDocChange(); });
+    // 换绑骨骼（下拉/‹›快捷）统一保持部件世界位置不变
+    const rotateSlotBone = direction => {
+      const index = this.doc.bones.findIndex(candidate => candidate.id === slot.bone);
+      const next = this.doc.bones[(index + direction + this.doc.bones.length) % this.doc.bones.length];
+      if (!next || next.id === slot.bone) return;
+      this._rebindSlotKeepWorld(slot.id, next.id);
+      this._markDirty();
+      this._afterDocChange();
+      this._toast(`已换绑到骨骼 ${next.id}`);
+    };
+    $('se-slot-bone-prev').addEventListener('click', () => rotateSlotBone(-1));
+    $('se-slot-bone-next').addEventListener('click', () => rotateSlotBone(1));
+    $('se-slot-bone').addEventListener('change', event => {
+      this._rebindSlotKeepWorld(slot.id, event.target.value);
+      this._markDirty();
+      this._afterDocChange();
+    });
     $('se-slot-z').addEventListener('change', event => { slot.z = Number(event.target.value) || 0; this._markDirty(); this._afterDocChange(); });
     $('se-att-type').addEventListener('change', event => {
       const type = event.target.value;
@@ -2220,8 +2261,69 @@ export class SkeletonEditor {
     if (timeInput && document.activeElement !== timeInput) timeInput.value = Math.round(this.previewTime);
   }
 
-  /** mouseup：切件选区完成 → 弹确认面板；所有拖拽统一在此释放（勿只在切件分支 return）。 */
+  /** 换绑槽位到目标骨骼并保持部件世界位置/角度不变（拖放换绑与检查器换绑共用）。 */
+  _rebindSlotKeepWorld(slotId, newBoneId) {
+    const slot = this._slotById(slotId);
+    if (!slot || !this._boneById(newBoneId)) return false;
+    const att = slot.attachment;
+    if (!att || att.type === 'empty') {
+      slot.bone = newBoneId;
+      return true;
+    }
+    const world = this._boneWorldTransforms();
+    const oldBone = world.get(slot.bone);
+    const newBone = world.get(newBoneId);
+    if (!oldBone || !newBone) {
+      slot.bone = newBoneId;
+      return true;
+    }
+    const cos = Math.cos(oldBone.rad);
+    const sin = Math.sin(oldBone.rad);
+    const worldX = oldBone.x + att.x * cos - att.y * sin;
+    const worldY = oldBone.y + att.x * sin + att.y * cos;
+    const invCos = Math.cos(-newBone.rad);
+    const invSin = Math.sin(-newBone.rad);
+    const dx = worldX - newBone.x;
+    const dy = worldY - newBone.y;
+    const r1 = value => Math.round(value * 10) / 10;
+    att.x = r1(dx * invCos - dy * invSin);
+    att.y = r1(dx * invSin + dy * invCos);
+    const worldRot = oldBone.rad + (att.rot || 0) * Math.PI / 180;
+    att.rot = r1((worldRot - newBone.rad) * 57.29578);
+    slot.bone = newBoneId;
+    return true;
+  }
+
+  /** 拾取鼠标附近的骨骼原点（拖放换绑的目标探测；排除自身骨骼）。 */
+  _pickBoneOrigin(mx, my, world, radius = 16, excludeBoneId = null) {
+    let hit = null;
+    let best = radius;
+    for (const bone of this.doc.bones || []) {
+      if (this._isBoneLocked(bone.id) || bone.id === excludeBoneId) continue;
+      const boneWorld = world.get(bone.id);
+      if (!boneWorld) continue;
+      const anchor = this._worldToScreen(boneWorld.x, boneWorld.y);
+      const distance = Math.hypot(anchor.x - mx, anchor.y - my);
+      if (distance < best) { hit = bone.id; best = distance; }
+    }
+    return hit;
+  }
+
+  /** mouseup：切件选区完成 → 弹确认面板；所有拖拽统一在此释放。 */
   _onCanvasUp(event) {
+    // 拖放换绑：附件拖到目标骨骼原点附近松手 → 重挂到该骨骼（保持世界位置）
+    if (this._drag?.kind === 'attach-move' && this._drag.rebindTarget) {
+      const slotId = this._drag.slotId;
+      const target = this._drag.rebindTarget;
+      if (this._rebindSlotKeepWorld(slotId, target)) {
+        this._toast(`已换绑到骨骼 ${target}（部件位置保持不变）`);
+        this._renderSlotList();
+        this._renderBoneTree();
+        this._renderInspector();
+      }
+      this._drag = null;
+      return;
+    }
     if (this._sliceMode && this._sliceSelecting) {
       this._sliceSelecting = null;
       const rect = this._sliceMode.rect;
