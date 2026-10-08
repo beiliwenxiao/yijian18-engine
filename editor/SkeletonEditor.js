@@ -712,7 +712,7 @@ export class SkeletonEditor {
     this.el.clipLoop.checked = clip?.loop !== false;
     // 轨道骨骼下拉：所有骨骼
     this.el.trackBoneSelect.innerHTML = (this.doc.bones || [])
-      .map(bone => `<option value="${bone.id}">${bone.id}</option>`).join('');
+      .map(bone => `<option value="${bone.id}">${SkeletonEditor._displayName(bone.id)}</option>`).join('');
   }
 
   _addTrack() {
@@ -1997,7 +1997,7 @@ export class SkeletonEditor {
           style="flex:none;width:20px;height:18px;padding:0;font-size:10px;line-height:1;border-radius:3px;border:1px solid;cursor:pointer;${eyeStyle}">${state.selfHidden ? '🚫' : '👁'}</button>
         <button class="se-tgl" data-kind="lock" title="${lockTitle}"
           style="flex:none;width:20px;height:18px;padding:0;font-size:10px;line-height:1;border-radius:3px;border:1px solid;cursor:pointer;${lockStyle}">${state.selfLocked ? '🔒' : '🔓'}</button>
-        <span class="name">${bone.id}${bone.parent ? '' : ' (根)'}</span>
+        <span class="name">${SkeletonEditor._displayName(bone.id)}</span>
       </div>`;
     }).join('');
 
@@ -2205,7 +2205,7 @@ export class SkeletonEditor {
           style="flex:none;width:20px;height:18px;padding:0;font-size:10px;line-height:1;border-radius:3px;border:1px solid;cursor:pointer;${lockStyle}">${selfLocked ? '🔒' : '🔓'}</button>
         <button class="zbtn" data-dir="-1" ${index === 0 ? 'disabled' : ''} title="上移图层">▲</button>
         <button class="zbtn" data-dir="1" ${index === slots.length - 1 ? 'disabled' : ''} title="下移图层">▼</button>
-        <span class="name">${slot.id} · ${slot.attachment?.type || 'empty'} · bone:${slot.bone} · z${slot.z}</span>
+        <span class="name">${SkeletonEditor._displayName(slot.id)} · ${slot.attachment?.type || 'empty'} · bone:${SkeletonEditor._displayName(slot.bone)} · z${slot.z}</span>
       </div>`;
     }).join('') : '<div class="se-empty">暂无槽位</div>';
     for (const item of container.querySelectorAll('.se-slot-item')) {
@@ -2286,6 +2286,39 @@ export class SkeletonEditor {
     'thigh-l', 'thigh-r', 'calf-l', 'calf-r',
     'skirt-front', 'skirt-back', 'weapon', 'weapon-front', 'weapon-side', 'weapon-back'
   ];
+
+  /** 命名 → 中文(英文) 显示文本（骨骼/槽位/图片通用）。 */
+  static _displayName(id) {
+    const map = {
+      // 骨骼
+      root: '根(root)', hips: '胯(hips)', torso: '躯干(torso)', head: '头(head)',
+      armUL: '左上臂(armUL)', armUR: '右上臂(armUR)', armFL: '左前臂(armFL)', armFR: '右前臂(armFR)',
+      thighL: '左大腿(thighL)', thighR: '右大腿(thighR)', calfL: '左小腿(calfL)', calfR: '右小腿(calfR)',
+      back: '背(back)',
+      // 槽位
+      shadow: '影子(shadow)', spearBack: '背枪(spearBack)', skirtBack: '背裙(skirtBack)',
+      toolHand: '手持(toolHand)', torsoSlot: '躯干图(torsoSlot)', skirtFront: '前裙(skirtFront)',
+      headFront: '正面头(headFront)', headSide: '侧面头(headSide)', headBack: '背面头(headBack)',
+      armor: '护甲(armor)',
+      // 图片 assetId 通用部件名（剥离 player.parts. 前缀后的 key）
+      'head-front': '正面头(head-front)', 'head-side': '侧面头(head-side)', 'head-back': '背面头(head-back)',
+      'torso-front': '正面躯干(torso-front)', 'torso-side': '侧面躯干(torso-side)', 'torso-back': '背面躯干(torso-back)',
+      'upper-arm-l': '左上臂(upper-arm-l)', 'upper-arm-r': '右上臂(upper-arm-r)',
+      'fore-arm-l': '左前臂(fore-arm-l)', 'fore-arm-r': '右前臂(fore-arm-r)',
+      'thigh-l': '左大腿(thigh-l)', 'thigh-r': '右大腿(thigh-r)',
+      'calf-l': '左小腿(calf-l)', 'calf-r': '右小腿(calf-r)',
+      'skirt-front': '前裙(skirt-front)', 'skirt-back': '背裙(skirt-back)',
+      'weapon-spear': '枪(weapon-spear)', 'weapon-axe': '斧(weapon-axe)',
+      'weapon-front': '正面武器(weapon-front)', 'weapon-side': '侧面武器(weapon-side)', 'weapon-back': '背面武器(weapon-back)'
+    };
+    // 先精确匹配
+    if (map[id]) return map[id];
+    // 图片 assetId 格式：xxx.parts.xxx-name，取最后一段再精确匹配
+    const lastPart = String(id).split('.').pop();
+    if (map[lastPart]) return map[lastPart];
+    // 兜底：原样返回（自定义命名未收录时保持英文）
+    return id;
+  }
 
   /** 部件名 → 骨骼解析：先查全名，再剥离 -front/-side/-back 方向后缀查表。 */
   static _resolvePartBone(name) {
@@ -2420,7 +2453,7 @@ export class SkeletonEditor {
       boxShadow: '0 6px 18px rgba(0,0,0,0.55)'
     });
     const boneOptions = (this.doc?.bones || [])
-      .map(bone => `<option value="${bone.id}">${bone.id}</option>`).join('');
+      .map(bone => `<option value="${bone.id}">${SkeletonEditor._displayName(bone.id)}</option>`).join('');
     const nameList = SkeletonEditor.RIG_PART_NAMES
       .map(name => `<option value="${name}">`).join('');
     panel.innerHTML = `
@@ -2740,7 +2773,7 @@ export class SkeletonEditor {
       return `
       <div class="se-img-item ${assetId === this._selectedImageId ? 'selected' : ''}" data-id="${assetId}">
         <img src="${item.url}" loading="lazy" alt="${assetId}">
-        <span class="name" title="${assetId}${path ? '（' + path + '）' : ''}">${assetId}</span>
+        <span class="name" title="${assetId}${path ? '（' + path + '）' : ''}">${SkeletonEditor._displayName(assetId)}</span>
         ${boundBadge}
         ${action}
       </div>`;
@@ -2854,10 +2887,10 @@ export class SkeletonEditor {
       body.innerHTML = '<div class="se-empty">选中骨骼或槽位以编辑属性</div>';
       return;
     }
-    this.el.inspectorTitle.textContent = `骨骼 · ${bone.id}`;
+    this.el.inspectorTitle.textContent = `骨骼 · ${SkeletonEditor._displayName(bone.id)}`;
     const parentOptions = (this.doc.bones || [])
       .filter(candidate => candidate.id !== bone.id && !this._isDescendant(bone.id, candidate.id))
-      .map(candidate => `<option value="${candidate.id}" ${bone.parent === candidate.id ? 'selected' : ''}>${candidate.id}</option>`)
+      .map(candidate => `<option value="${candidate.id}" ${bone.parent === candidate.id ? 'selected' : ''}>${SkeletonEditor._displayName(candidate.id)}</option>`)
       .join('');
     body.innerHTML = `
       <div class="row"><label>ID</label><input type="text" id="se-bone-id" value="${bone.id}"></div>
@@ -2905,7 +2938,7 @@ export class SkeletonEditor {
     }
     const sampled = this._sampledBoneLocal(bone.id) || {};
     bar.style.display = 'flex';
-    bar.querySelector('#se-ov-bone').textContent = bone.id;
+    bar.querySelector('#se-ov-bone').textContent = SkeletonEditor._displayName(bone.id);
     bar.querySelector('#se-ov-x').value = (sampled.x ?? bone.x ?? 0).toFixed(1);
     bar.querySelector('#se-ov-y').value = (sampled.y ?? bone.y ?? 0).toFixed(1);
     bar.querySelector('#se-ov-rot').value = (sampled.rot ?? bone.rot ?? 0).toFixed(1);
@@ -2927,13 +2960,13 @@ export class SkeletonEditor {
     const slot = this._slotById(this.selectedSlot);
     if (!slot) return;
     this._syncOverlayToolbar(); // 槽位选中时隐藏骨骼悬浮工具条
-    this.el.inspectorTitle.textContent = `槽位 · ${slot.id}`;
+    this.el.inspectorTitle.textContent = `槽位 · ${SkeletonEditor._displayName(slot.id)}`;
     const attachment = slot.attachment || { type: 'empty' };
     const imageOptions = [...this.imageCatalog.keys()]
-      .map(id => `<option value="${id}" ${attachment.assetId === id ? 'selected' : ''}>${id}</option>`)
+      .map(id => `<option value="${id}" ${attachment.assetId === id ? 'selected' : ''}>${SkeletonEditor._displayName(id)}</option>`)
       .join('');
     const boneOptions = (this.doc.bones || [])
-      .map(bone => `<option value="${bone.id}" ${slot.bone === bone.id ? 'selected' : ''}>${bone.id}</option>`)
+      .map(bone => `<option value="${bone.id}" ${slot.bone === bone.id ? 'selected' : ''}>${SkeletonEditor._displayName(bone.id)}</option>`)
       .join('');
     const isSequence = attachment.type === 'sequence';
     const seAttPath = attachment.assetId ? this._imageEntryPath(attachment.assetId) : '';
@@ -3079,7 +3112,7 @@ export class SkeletonEditor {
         return `<div class="se-tl-key ${selected ? 'selected' : ''}" data-bone="${track.bone}" data-index="${index}" style="left:${left}%" title="t=${key.t}ms"></div>`;
       }).join('');
       return `<div class="se-tl-row" data-bone="${track.bone}">
-        <div class="label">${track.bone}</div>
+        <div class="label">${SkeletonEditor._displayName(track.bone)}</div>
         <div class="lane">${keys}<div id="se-tl-playhead" style="left:${(this.previewTime / clip.durationMs) * 100}%"></div></div>
       </div>`;
     }).join('');
