@@ -24,6 +24,8 @@
  *   - 侧向左右：sprite.flipX 整体镜像（side 姿态 + flip=左）
  */
 
+import { weaponKeyOf } from './SkeletonPartResolver.js';
+
 const MAPPER_CLIPS = new Set([
   'death', 'soul', 'climb_back',
   'walk_down', 'walk_up', 'walk_side',
@@ -55,11 +57,6 @@ function parseWeaponSlot(slot) {
   const key = match[1];
   const isBack = /-back$/i.test(slotId) || slot?.bone === WEAPON_BACK_BONE;
   return { key, pos: isBack ? 'back' : 'hand' };
-}
-
-/** 读取物品的武器标识：优先 weaponKey，工具类回退 toolType（斧头/镐等手持工具同样走挂点联动）。 */
-function weaponKeyOf(item) {
-  return item?.weaponKey || item?.toolType || null;
 }
 
 /** 收集背包中所有武器的 weaponKey 集合（weaponKey 取自已装备的武器定义）。 */

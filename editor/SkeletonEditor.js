@@ -22,6 +22,7 @@
 
 import { parseSkeletonAsset } from '../src/animation/SkeletonAsset.js';
 import { evaluateSkeletonPose } from '../src/animation/SkeletonPose.js';
+import { buildPartRegistry } from '../src/animation/SkeletonPartResolver.js';
 import { validateSkeletonAsset } from '../src/core/validation/SkeletonAssetValidator.js';
 import { SkeletonEditorCommandService } from './SkeletonEditorCommandService.js';
 
@@ -40,7 +41,9 @@ export class SkeletonEditor {
     this.runtime = null;          // parseSkeletonAsset 产物（预览/gizmo）
     this.dirty = false;
     this.imageCatalog = new Map();   // assetId -> { entry, url, element|null }
+    this.partCatalog = new Map();    // partId -> skeletonPart 定义（内容库 skeletonParts）
     this._selectedImageId = '';      // 图片库当前选中
+    this._selectedPartId = '';       // 部件库当前选中
     this.skeletonEntries = [];       // manifest 中 mode==='skeleton' 的条目
 
     // 选择与预览状态（多选集合先于 selectedBone/selectedSlot 初始化——后者 setter 会同步集合）
@@ -139,6 +142,7 @@ export class SkeletonEditor {
     // 初始化按钮高亮状态
     this._refreshModeButtons();
     this._refreshDirectionButtons();
+    this._setLibTab('parts'); // 默认显示部件库
   }
 
   _bindDom() {
@@ -173,6 +177,9 @@ export class SkeletonEditor {
     $('se-bone-del').addEventListener('click', () => this._deleteBone());
     $('se-bone-template').addEventListener('click', () => this._applyHumanoidTemplate());
     $('se-image-import').addEventListener('click', () => $('se-image-import-file').click());
+    // 部件库 / 素材 Tab 切换
+    $('se-tab-parts').addEventListener('click', () => this._setLibTab('parts'));
+    $('se-tab-assets').addEventListener('click', () => this._setLibTab('assets'));
     $('se-image-import-file').addEventListener('change', event => {
       const file = event.target.files?.[0];
       event.target.value = ''; // 允许重复导入同一文件
@@ -312,7 +319,11 @@ export class SkeletonEditor {
 
   async _loadManifest() {
     try {
-      const manifest = await this.commands.fetchManifest(this.gameRoot);
+      const [manifest, library] = await Promise.all([
+        this.commands.fetchManifest(this.gameRoot),
+        this.commands.fetchLibrary(this.gameRoot).catch(() => null) // 内容库缺失不阻塞
+      ]);
+      this.partCatalog = buildPartRegistry(library?.skeletonParts || []);
       const entries = Array.isArray(manifest?.assets) ? manifest.assets : [];
       for (const entry of entries) {
         const mode = entry?.runtime2D?.mode;
@@ -327,6 +338,7 @@ export class SkeletonEditor {
         }
       }
       this._refreshAssetSelect();
+      this._renderPartLib();
       this._renderImageLib();
     } catch (error) {
       this._toast(`Manifest 读取失败：${error.message}`, true);
@@ -2295,6 +2307,11 @@ export class SkeletonEditor {
       armUL: '左上臂(armUL)', armUR: '右上臂(armUR)', armFL: '左前臂(armFL)', armFR: '右前臂(armFR)',
       thighL: '左大腿(thighL)', thighR: '右大腿(thighR)', calfL: '左小腿(calfL)', calfR: '右小腿(calfR)',
       back: '背(back)',
+      // 部件分类
+      arm: '手臂(arm)', leg: '腿部(leg)', skirt: '裙(skirt)', weapon: '武器(weapon)',
+      // weaponKey / direction
+      axe: '斧(axe)', spear: '枪(spear)',
+      front: '正面(front)', side: '侧面(side)',
       // 槽位
       shadow: '影子(shadow)', spearBack: '背枪(spearBack)', skirtBack: '背裙(skirtBack)',
       toolHand: '手持(toolHand)', torsoSlot: '躯干图(torsoSlot)', skirtFront: '前裙(skirtFront)',
@@ -2752,6 +2769,110 @@ export class SkeletonEditor {
     this._toast(`已重载图片 ${assetId}`);
   }
 
+  /* ---------------- 部件库 ---------------- */
+
+  _setLibTab(tab) {
+    const partsEl = document.getElementById('se-part-lib');
+    const assetsEl = document.getElementById('se-image-lib');
+    const partsBtn = document.getElementById('se-tab-parts');
+    const assetsBtn = document.getElementById('se-tab-assets');
+    if (!partsEl || !assetsEl) return;
+    const isParts = tab === 'parts';
+    partsEl.style.display = isParts ? '' : 'none';
+    assetsEl.style.display = isParts ? 'none' : '';
+    if (partsBtn) partsBtn.style.background = isParts ? '#2a4a3e' : '';
+    if (assetsBtn) assetsBtn.style.background = isParts ? '' : '#2a4a3e';
+  }
+
+  /** 部件库：按 category 分组显示，点击「挂骨骼」一键创建槽位（含 partId）。 */
+  _renderPartLib() {
+    const container = document.getElementById('se-part-lib');
+    if (!container) return;
+    const slots = this.doc?.slots || [];
+    const usedPartIds = new Set(slots.map(slot => slot.attachment?.partId).filter(Boolean));
+    const categories = new Map();
+    for (const [id, part] of this.partCatalog) {
+      const cat = part.category || '其他';
+      if (!categories.has(cat)) categories.set(cat, []);
+      categories.get(cat).push({ id, part });
+    }
+    const sortedCats = [...categories.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+    container.innerHTML = sortedCats.map(([cat, list]) => {
+      const rows = list.map(({ id, part }) => {
+        const used = usedPartIds.has(id);
+        const img = this.imageCatalog.get(part.assetId);
+        const display = SkeletonEditor._displayName(part.assetId);
+        const dirTag = part.direction ? `<span style="color:#5a6a90;font-size:10px;">${part.direction}</span>` : '';
+        const sideTag = part.side ? `<span style="color:#5a6a90;font-size:10px;">${part.side}</span>` : '';
+        return `
+        <div class="se-img-item ${id === this._selectedPartId ? 'selected' : ''}" data-id="${id}" style="${used ? 'opacity:.55;' : ''}">
+          <img src="${img?.url || ''}" loading="lazy" alt="${id}" style="width:32px;height:32px;object-fit:contain;border-radius:3px;background:#1a2440;">
+          <span class="name" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${display}${dirTag ? ' ' + dirTag : ''}${sideTag ? ' ' + sideTag : ''}</span>
+          <button data-bind="1" style="flex:none;font-size:10px;padding:1px 4px;" title="作为部件挂到推荐骨骼（${SkeletonEditor._displayName(part.bone || '')}）">→挂骨骼</button>
+        </div>`;
+      }).join('');
+      return `
+      <div style="margin-bottom:6px;">
+        <div style="font-size:11px;color:#7ec8ff;padding:2px 4px;border-bottom:1px solid #26355c;">${SkeletonEditor._displayName(cat)}</div>
+        ${rows}
+      </div>`;
+    }).join('') || '<div class="se-empty">内容库无部件定义</div>';
+    for (const item of container.querySelectorAll('.se-img-item')) {
+      item.addEventListener('click', () => {
+        this._selectedPartId = item.dataset.id;
+        this._renderPartLib();
+      });
+    }
+    for (const button of container.querySelectorAll('button[data-bind]')) {
+      button.addEventListener('click', event => {
+        event.stopPropagation();
+        this._bindPartToSelectedBone(event.target.closest('.se-img-item').dataset.id);
+      });
+    }
+  }
+
+  /** 部件绑定：读取 part 定义，创建含 partId 的槽位，自动挂上推荐骨骼。 */
+  _bindPartToSelectedBone(partId) {
+    const part = this.partCatalog.get(partId);
+    if (!part) { this._toast('部件未找到', true); return; }
+    this._pushHistory();
+    // 部件自带推荐挂点优先；用户想挂别的骨骼可先选中该骨骼再挂（此时 selectedBone 覆盖 part.bone 需清空选中）
+    const boneId = part.bone || this.selectedBone || this.doc.bones?.[0]?.id;
+    if (!boneId) { this._toast('先选中一个骨骼', true); return; }
+    // 已挂载同 partId 到同骨骼 → 直接选中
+    const existing = (this.doc.slots || []).find(slot => slot.attachment?.partId === partId && slot.bone === boneId);
+    if (existing) { this.selectedSlot = existing.id; this._toast('该骨骼已挂此部件，已选中其槽位'); this._renderSlotList(); return; }
+    const attachment = {
+      type: 'image',
+      assetId: part.assetId,
+      partId,
+      x: 0, y: 0, rot: 0,
+      width: Number(part.width) || 0,
+      height: Number(part.height) || 0
+    };
+    const index = (this.doc.slots || []).length;
+    const slotId = partId.replace(/\./g, '-');
+    const uniqueId = (this.doc.slots || []).some(s => s.id === slotId) ? `${slotId}-${index}` : slotId;
+    const slot = {
+      id: uniqueId,
+      bone: boneId,
+      z: (this.doc.slots || []).reduce((max, candidate) => Math.max(max, candidate.z), 0) + 1,
+      attachment
+    };
+    this.doc.slots = this.doc.slots || [];
+    this.doc.slots.push(slot);
+    this.selectedSlot = slot.id;
+    this.selectedBone = boneId;
+    this._markDirty();
+    this.runtime = parseSkeletonAsset(structuredClone(this.doc)); // 重建 runtime 让画布立即渲染新槽位
+    this._renderSlotList();
+    this._renderBoneTree();
+    this._renderInspector();
+    this._renderPartLib();
+    this._renderImageLib();
+    this._toast(`已挂载 ${SkeletonEditor._displayName(part.assetId)} → 骨骼 ${SkeletonEditor._displayName(boneId)}`);
+  }
+
   /** 图片库（Spine 式）：缩略图列表；「→骨骼」挂图、「解绑」移除该图片的所有槽位。 */
   _renderImageLib() {
     const container = document.getElementById('se-image-lib');
@@ -2832,6 +2953,7 @@ export class SkeletonEditor {
       this._renderInspector();
     }
     this._markDirty();
+    this.runtime = parseSkeletonAsset(structuredClone(this.doc)); // 重建 runtime 让画布立即移除槽位
     this._renderSlotList();
     this._renderImageLib();
     this._toast(`已解绑 ${assetId}：移除槽位 ${detail}`);
@@ -2868,6 +2990,7 @@ export class SkeletonEditor {
     this.selectedSlot = slot.id;
     this.selectedBone = boneId;
     this._markDirty();
+    this.runtime = parseSkeletonAsset(structuredClone(this.doc)); // 重建 runtime 让画布立即渲染新槽位
     this._renderSlotList();
     this._renderBoneTree();
     this._renderInspector();
@@ -2978,6 +3101,7 @@ export class SkeletonEditor {
         <button id="se-slot-bone-next" title="换绑到骨骼树中的下一个骨骼（保持部件位置）" style="flex:none;">›</button>
       </div>
       <div class="row"><label>z 序</label><input type="number" id="se-slot-z" step="1" value="${slot.z}"></div>
+      ${attachment.partId ? `<div class="row"><label>部件</label><span style="flex:1;min-width:0;font-size:11px;color:#7ec8ff;">${SkeletonEditor._displayName(attachment.partId)}</span></div>` : ''}
       <div class="se-attachment-box">
         <div class="row"><label>附件类型</label>
           <select id="se-att-type">

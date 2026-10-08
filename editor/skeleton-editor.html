@@ -100,11 +100,15 @@
                 <button id="se-slot-add">✚ 槽位</button>
                 <button id="se-slot-del" class="danger">🗑 删除</button>
             </div>
-            <h3>图片库（点「绑骨骼」挂到选中骨骼）
-                <button id="se-image-import" title="导入外部图片（三方向设定图等）：自动转 PNG 落盘并登记 manifest">📥 导入图片</button>
+            <div style="display:flex;align-items:center;gap:2px;margin:4px 0 6px;border-bottom:1px solid #26355c;padding-bottom:4px;">
+                <button id="se-tab-parts" class="primary" style="flex:none;font-size:11px;padding:2px 8px;">部件库</button>
+                <button id="se-tab-assets" style="flex:none;font-size:11px;padding:2px 8px;">素材</button>
+                <span style="flex:1;"></span>
+                <button id="se-image-import" title="导入外部图片（三方向设定图等）：自动转 PNG 落盘并登记 manifest" style="flex:none;font-size:11px;padding:2px 6px;">📥</button>
                 <input type="file" id="se-image-import-file" accept="image/png,image/jpeg,image/webp" style="display:none;">
-            </h3>
-            <div id="se-image-lib"></div>
+            </div>
+            <div id="se-part-lib"></div>
+            <div id="se-image-lib" style="display:none;"></div>
         </div>
 
         <div class="se-panel center">

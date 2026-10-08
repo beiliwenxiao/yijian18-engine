@@ -69,6 +69,13 @@ export class SkeletonEditorCommandService {
     return response.json();
   }
 
+  /** 读取内容库（skeletonParts 部件定义等）。 */
+  async fetchLibrary(gameRoot) {
+    const response = await this.fetchImpl(`/${gameRoot}/project/library.json`);
+    if (!response.ok) throw new Error(`内容库读取失败（HTTP ${response.status}）`);
+    return response.json();
+  }
+
   /** 读取骨骼资产 JSON 文档。 */
   async fetchSkeletonDocument(url) {
     const response = await this.fetchImpl(url);

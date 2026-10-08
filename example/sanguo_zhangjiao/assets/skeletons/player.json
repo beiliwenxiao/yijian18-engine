@@ -154,6 +154,7 @@
       "attachment": {
         "type": "image",
         "assetId": "player.parts.weapon-spear",
+        "partId": "part.weapon.spear",
         "x": -26.7,
         "y": -12.7,
         "rot": -39.5,
@@ -169,6 +170,7 @@
       "attachment": {
         "type": "image",
         "assetId": "player.parts.skirt-back",
+        "partId": "part.skirt.back",
         "x": 0,
         "y": 22,
         "rot": 0,
@@ -184,6 +186,7 @@
       "attachment": {
         "type": "image",
         "assetId": "player.parts.weapon-axe",
+        "partId": "part.weapon.axe",
         "x": 17.8,
         "y": -7.2,
         "rot": 0,
@@ -199,6 +202,7 @@
       "attachment": {
         "type": "image",
         "assetId": "player.parts.upper-arm-l",
+        "partId": "part.upper-arm.l",
         "x": 8.6,
         "y": 11.4,
         "rot": -61.6,
@@ -214,6 +218,7 @@
       "attachment": {
         "type": "image",
         "assetId": "player.parts.fore-arm-l",
+        "partId": "part.fore-arm.l",
         "x": 10.8,
         "y": 28.4,
         "rot": 0,
@@ -229,6 +234,7 @@
       "attachment": {
         "type": "image",
         "assetId": "player.parts.upper-arm-r",
+        "partId": "part.upper-arm.r",
         "x": 0,
         "y": 28,
         "rot": 0,
@@ -244,6 +250,7 @@
       "attachment": {
         "type": "image",
         "assetId": "player.parts.fore-arm-r",
+        "partId": "part.fore-arm.r",
         "x": 0,
         "y": 28,
         "rot": 0,
@@ -259,6 +266,7 @@
       "attachment": {
         "type": "image",
         "assetId": "player.parts.torso",
+        "partId": "part.torso",
         "x": -1.4,
         "y": 4.2,
         "rot": 0,
@@ -274,6 +282,7 @@
       "attachment": {
         "type": "image",
         "assetId": "player.parts.skirt-front",
+        "partId": "part.skirt.front",
         "x": -1.1,
         "y": 23.2,
         "rot": 0,
@@ -289,6 +298,7 @@
       "attachment": {
         "type": "image",
         "assetId": "player.parts.head-front",
+        "partId": "part.head.front",
         "x": 0,
         "y": 8,
         "rot": 0,
@@ -304,6 +314,7 @@
       "attachment": {
         "type": "image",
         "assetId": "player.parts.head-side",
+        "partId": "part.head.side",
         "x": 0.3,
         "y": 7.5,
         "rot": 0,
@@ -319,6 +330,7 @@
       "attachment": {
         "type": "image",
         "assetId": "player.parts.head-back",
+        "partId": "part.head.back",
         "x": 0,
         "y": 8,
         "rot": 0,

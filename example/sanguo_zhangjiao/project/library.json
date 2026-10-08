@@ -548,7 +548,14 @@
         "height": 40,
         "width": 40
       },
-      "toolType": "axe"
+      "toolType": "axe",
+      "skeletonPart": {
+        "partId": "part.weapon.axe",
+        "bone": "armFR",
+        "slotId": "toolHand",
+        "weaponKey": "axe",
+        "offset": { "x": 17.8, "y": -7.2, "rot": 0 }
+      }
     },
     {
       "id": "story.s05.mine_collapse",
@@ -1839,6 +1846,165 @@
         "isStatic": true,
         "width": 64
       }
+    }
+  ],
+  "skeletonParts": [
+    {
+      "id": "part.head.front",
+      "category": "head",
+      "direction": "front",
+      "assetId": "player.parts.head-front",
+      "bone": "head",
+      "width": 64,
+      "height": 64,
+      "tags": ["body"]
+    },
+    {
+      "id": "part.head.side",
+      "category": "head",
+      "direction": "side",
+      "assetId": "player.parts.head-side",
+      "bone": "head",
+      "width": 64,
+      "height": 64,
+      "tags": ["body"]
+    },
+    {
+      "id": "part.head.back",
+      "category": "head",
+      "direction": "back",
+      "assetId": "player.parts.head-back",
+      "bone": "head",
+      "width": 64,
+      "height": 64,
+      "tags": ["body"]
+    },
+    {
+      "id": "part.torso",
+      "category": "torso",
+      "assetId": "player.parts.torso",
+      "bone": "torso",
+      "width": 64,
+      "height": 64,
+      "tags": ["body"]
+    },
+    {
+      "id": "part.upper-arm.l",
+      "category": "arm",
+      "side": "left",
+      "assetId": "player.parts.upper-arm-l",
+      "bone": "armUL",
+      "width": 64,
+      "height": 64,
+      "tags": ["body"]
+    },
+    {
+      "id": "part.upper-arm.r",
+      "category": "arm",
+      "side": "right",
+      "assetId": "player.parts.upper-arm-r",
+      "bone": "armUR",
+      "width": 64,
+      "height": 64,
+      "tags": ["body"]
+    },
+    {
+      "id": "part.fore-arm.l",
+      "category": "arm",
+      "side": "left",
+      "assetId": "player.parts.fore-arm-l",
+      "bone": "armFL",
+      "width": 64,
+      "height": 64,
+      "tags": ["body"]
+    },
+    {
+      "id": "part.fore-arm.r",
+      "category": "arm",
+      "side": "right",
+      "assetId": "player.parts.fore-arm-r",
+      "bone": "armFR",
+      "width": 64,
+      "height": 64,
+      "tags": ["body"]
+    },
+    {
+      "id": "part.thigh.l",
+      "category": "leg",
+      "side": "left",
+      "assetId": "player.parts.thigh-l",
+      "bone": "thighL",
+      "width": 64,
+      "height": 64,
+      "tags": ["body"]
+    },
+    {
+      "id": "part.thigh.r",
+      "category": "leg",
+      "side": "right",
+      "assetId": "player.parts.thigh-r",
+      "bone": "thighR",
+      "width": 64,
+      "height": 64,
+      "tags": ["body"]
+    },
+    {
+      "id": "part.calf.l",
+      "category": "leg",
+      "side": "left",
+      "assetId": "player.parts.calf-l",
+      "bone": "calfL",
+      "width": 64,
+      "height": 64,
+      "tags": ["body"]
+    },
+    {
+      "id": "part.calf.r",
+      "category": "leg",
+      "side": "right",
+      "assetId": "player.parts.calf-r",
+      "bone": "calfR",
+      "width": 64,
+      "height": 64,
+      "tags": ["body"]
+    },
+    {
+      "id": "part.skirt.front",
+      "category": "skirt",
+      "direction": "front",
+      "assetId": "player.parts.skirt-front",
+      "bone": "torso",
+      "width": 64,
+      "height": 64,
+      "tags": ["body"]
+    },
+    {
+      "id": "part.skirt.back",
+      "category": "skirt",
+      "direction": "back",
+      "assetId": "player.parts.skirt-back",
+      "bone": "torso",
+      "width": 64,
+      "height": 64,
+      "tags": ["body"]
+    },
+    {
+      "id": "part.weapon.axe",
+      "category": "weapon",
+      "weaponKey": "axe",
+      "assetId": "player.parts.weapon-axe",
+      "bone": "armFR",
+      "width": 64,
+      "height": 64
+    },
+    {
+      "id": "part.weapon.spear",
+      "category": "weapon",
+      "weaponKey": "spear",
+      "assetId": "player.parts.weapon-spear",
+      "bone": "back",
+      "width": 64,
+      "height": 64
     }
   ],
   "combatSkills": [],
