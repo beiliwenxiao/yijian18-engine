@@ -1,0 +1,6 @@
+{
+  "projectPath": "example/sanguo_zhangjiao/game.project.json",
+  "imageAssets": [
+    { "imageId": "wanderer-girl", "runtimePath": "assets/images/characters/wanderer-girl.png", "sceneId": "skeleton-editor" }
+  ]
+}

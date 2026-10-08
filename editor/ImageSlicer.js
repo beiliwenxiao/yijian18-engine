@@ -150,14 +150,11 @@ export class ImageSlicer {
         </div>
       </div>
     `;
-    
     // 添加样式
     this._addStyles();
-    
     // 绑定事件
     this._bindEvents();
   }
-  
   /**
    * 添加样式
    * @private

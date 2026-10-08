@@ -1269,7 +1269,7 @@
           "event": "interact",
           "height": 115,
           "id": "S01-binding-build-shelter",
-          "name": "搭建���庇护所",
+          "name": "搭建����庇护所",
           "pointerRadius": 58,
           "prompt": "{interact}用木材搭建小庇护所",
           "radius": 105,
@@ -1378,7 +1378,68 @@
       "id": "layer_placement",
       "locked": false,
       "name": "放置层",
-      "objects": [],
+      "objects": [
+        {
+          "atlasId": "s01_images",
+          "climbZones": {
+            "climb": [
+              [
+                56,
+                58
+              ],
+              [
+                78,
+                87
+              ],
+              [
+                68,
+                121
+              ],
+              [
+                48,
+                123
+              ],
+              [
+                36,
+                93
+              ]
+            ],
+            "enter": [
+              [
+                44,
+                135
+              ],
+              [
+                76,
+                136
+              ],
+              [
+                102,
+                149
+              ],
+              [
+                58,
+                164
+              ],
+              [
+                17,
+                148
+              ]
+            ]
+          },
+          "climbable": true,
+          "collide": false,
+          "height": 170,
+          "id": "obj_1791238140543_776",
+          "name": "新切片",
+          "sliceKey": "slice_1",
+          "type": "slice",
+          "walkable": false,
+          "width": 112,
+          "x": 138.1793671663536,
+          "y": 269.580115213251
+        }
+      ],
       "visible": true
     },
     {
@@ -1386,85 +1447,6 @@
       "locked": false,
       "name": "装饰层",
       "objects": [
-        {
-          "atlasId": "mountain_landscape",
-          "climbMode": "controlled",
-          "climbZones": {
-            "climb": [
-              [
-                25,
-                59
-              ],
-              [
-                48,
-                44
-              ],
-              [
-                71,
-                58
-              ],
-              [
-                78,
-                108
-              ],
-              [
-                50,
-                125
-              ],
-              [
-                18,
-                109
-              ]
-            ],
-            "enter": [
-              [
-                31,
-                134
-              ],
-              [
-                70,
-                133
-              ],
-              [
-                103,
-                147
-              ],
-              [
-                51,
-                155
-              ],
-              [
-                -3,
-                146
-              ]
-            ]
-          },
-          "climbable": true,
-          "collide": false,
-          "height": 128,
-          "id": "obj_1788365045566_953",
-          "name": "大树",
-          "requiresClimbAbility": true,
-          "sliceKey": "tree1",
-          "type": "slice",
-          "walkable": false,
-          "width": 96,
-          "x": 149.87264820339817,
-          "y": 328.1151097897142
-        },
-        {
-          "group": "S01-apple-thickets",
-          "id": "S01-node-apple-1",
-          "kind": "resourceNode",
-          "ref": "node.apple_thicket",
-          "tags": [
-            "resource",
-            "apple"
-          ],
-          "type": "ref",
-          "x": 200.32056200459277,
-          "y": 388.1868750742237
-        },
         {
           "group": "S01-berries",
           "id": "S01-node-berry-1",
@@ -1482,17 +1464,6 @@
           "type": "ref",
           "x": 272.88128805294804,
           "y": 516.4188652946602
-        },
-        {
-          "atlasId": "s01_images",
-          "height": 170,
-          "id": "obj_1791238140543_776",
-          "name": "新切片",
-          "sliceKey": "slice_1",
-          "type": "slice",
-          "width": 112,
-          "x": 88.2968229186704,
-          "y": 179.44148262533218
         }
       ],
       "visible": true
@@ -1501,7 +1472,21 @@
       "id": "layer_logic",
       "locked": false,
       "name": "逻辑对象",
-      "objects": [],
+      "objects": [
+        {
+          "group": "S01-apple-thickets",
+          "id": "S01-node-apple-1",
+          "kind": "resourceNode",
+          "ref": "node.apple_thicket",
+          "tags": [
+            "resource",
+            "apple"
+          ],
+          "type": "ref",
+          "x": 195.94490022848026,
+          "y": 359.30750735188076
+        }
+      ],
       "visible": true
     }
   ],

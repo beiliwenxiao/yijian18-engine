@@ -154,9 +154,9 @@
       "attachment": {
         "type": "image",
         "assetId": "player.parts.weapon-spear",
-        "x": 3,
-        "y": 0,
-        "rot": 0,
+        "x": -26.7,
+        "y": -12.7,
+        "rot": -39.5,
         "width": 64,
         "height": 64,
         "visible": true
@@ -184,8 +184,8 @@
       "attachment": {
         "type": "image",
         "assetId": "player.parts.weapon-axe",
-        "x": 5,
-        "y": 30,
+        "x": 17.8,
+        "y": -7.2,
         "rot": 0,
         "width": 64,
         "height": 64,
@@ -199,9 +199,9 @@
       "attachment": {
         "type": "image",
         "assetId": "player.parts.upper-arm-l",
-        "x": 0,
-        "y": 28,
-        "rot": 0,
+        "x": 8.6,
+        "y": 11.4,
+        "rot": -61.6,
         "width": 64,
         "height": 64,
         "visible": true
@@ -214,8 +214,8 @@
       "attachment": {
         "type": "image",
         "assetId": "player.parts.fore-arm-l",
-        "x": 0,
-        "y": 28,
+        "x": 10.8,
+        "y": 28.4,
         "rot": 0,
         "width": 64,
         "height": 64,
@@ -259,8 +259,8 @@
       "attachment": {
         "type": "image",
         "assetId": "player.parts.torso",
-        "x": 0,
-        "y": 2,
+        "x": -1.4,
+        "y": 4.2,
         "rot": 0,
         "width": 64,
         "height": 64,
@@ -274,8 +274,8 @@
       "attachment": {
         "type": "image",
         "assetId": "player.parts.skirt-front",
-        "x": 0,
-        "y": 22,
+        "x": -1.1,
+        "y": 23.2,
         "rot": 0,
         "width": 64,
         "height": 64,
@@ -304,8 +304,8 @@
       "attachment": {
         "type": "image",
         "assetId": "player.parts.head-side",
-        "x": 0,
-        "y": 8,
+        "x": 0.3,
+        "y": 7.5,
         "rot": 0,
         "width": 64,
         "height": 64,
@@ -713,7 +713,8 @@
           "keys": [
             {
               "t": 0,
-              "y": 0
+              "y": -0.25,
+              "x": 7
             },
             {
               "t": 124,
@@ -780,7 +781,9 @@
           "keys": [
             {
               "t": 0,
-              "rot": -17.6
+              "rot": -17.6,
+              "x": -7.979380726658167,
+              "y": 11.393923034522885
             },
             {
               "t": 207,
@@ -818,7 +821,9 @@
           "keys": [
             {
               "t": 0,
-              "rot": -2
+              "rot": -2,
+              "x": 13.547150168545388,
+              "y": 10.492566588943852
             },
             {
               "t": 207,
@@ -856,7 +861,9 @@
           "keys": [
             {
               "t": 0,
-              "rot": -17.6
+              "rot": -17.6,
+              "x": 7.2496573836886435,
+              "y": -15.986916010939265
             },
             {
               "t": 207,
@@ -875,7 +882,9 @@
           "keys": [
             {
               "t": 0,
-              "rot": 6.16
+              "rot": 6.16,
+              "x": 0.546871924801764,
+              "y": 12.115892613498936
             },
             {
               "t": 207,
@@ -895,6 +904,11 @@
             {
               "t": 0,
               "rot": -6.16
+            },
+            {
+              "t": 41,
+              "x": 14.177794454935622,
+              "y": 8.088140545265368
             },
             {
               "t": 207,
