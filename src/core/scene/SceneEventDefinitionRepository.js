@@ -1,3 +1,15 @@
+/************************************************************
+ * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
+ * 
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+ * @author    刘枭 (beiliwenxiao)
+ * @email     beiliwenxiao@qq.com
+ * @date      2026-01-14
+ * @blog      `https://blog.csdn.net/beiliwenxiao`
+ * @repo      `https://github.com/beiliwenxiao/yijian18-engine`
+ *            `https://gitee.com/coderaaa/yijian18-engine`
+ ************************************************************/
+
 /**
  * @deprecated 2026-08: SceneEventDefinitionRepository 已重命名为 FlowGroupDefinitionRepository。
  * 本文件作为兼容别名转发导入，保留一个大版本（或到所有项目执行过一键迁移后）删除。

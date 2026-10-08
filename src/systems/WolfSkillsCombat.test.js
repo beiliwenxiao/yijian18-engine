@@ -1,3 +1,15 @@
+/************************************************************
+ * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
+ * 
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+ * @author    刘枭 (beiliwenxiao)
+ * @email     beiliwenxiao@qq.com
+ * @date      2026-01-14
+ * @blog      `https://blog.csdn.net/beiliwenxiao`
+ * @repo      `https://github.com/beiliwenxiao/yijian18-engine`
+ *            `https://gitee.com/coderaaa/yijian18-engine`
+ ************************************************************/
+
 /**
  * WolfSkillsCombat.test.js
  * 狼王技能运行时结算测试：撕咬（entity 瞄准 AOE）与冲刺撕咬（位移 + 落点 AOE）。

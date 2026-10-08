@@ -1,4 +1,16 @@
 /************************************************************
+ * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
+ * 
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+ * @author    刘枭 (beiliwenxiao)
+ * @email     beiliwenxiao@qq.com
+ * @date      2026-01-14
+ * @blog      `https://blog.csdn.net/beiliwenxiao`
+ * @repo      `https://github.com/beiliwenxiao/yijian18-engine`
+ *            `https://gitee.com/coderaaa/yijian18-engine`
+ ************************************************************/
+
+/************************************************************
  * 有人建筑到 VehicleSystem 的薄适配层。
  * 建筑仍拥有耐久/损毁事实，VehicleSystem 继续拥有席位、乘降、控制与弹员规则。
  ************************************************************/

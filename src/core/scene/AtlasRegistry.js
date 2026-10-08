@@ -1,3 +1,15 @@
+/************************************************************
+ * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
+ * 
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+ * @author    刘枭 (beiliwenxiao)
+ * @email     beiliwenxiao@qq.com
+ * @date      2026-01-14
+ * @blog      `https://blog.csdn.net/beiliwenxiao`
+ * @repo      `https://github.com/beiliwenxiao/yijian18-engine`
+ *            `https://gitee.com/coderaaa/yijian18-engine`
+ ************************************************************/
+
 /**
  * 共享图集定义的只读解析投影。
  * sharedAtlases 是游戏级事实源；localAtlases 仅用于读取旧场景，不能覆盖同 ID 的共享定义。

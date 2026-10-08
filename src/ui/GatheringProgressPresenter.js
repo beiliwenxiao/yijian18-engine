@@ -1,3 +1,15 @@
+/************************************************************
+ * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
+ * 
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+ * @author    刘枭 (beiliwenxiao)
+ * @email     beiliwenxiao@qq.com
+ * @date      2026-01-14
+ * @blog      `https://blog.csdn.net/beiliwenxiao`
+ * @repo      `https://github.com/beiliwenxiao/yijian18-engine`
+ *            `https://gitee.com/coderaaa/yijian18-engine`
+ ************************************************************/
+
 /**
  * GatheringProgressPresenter - 世界空间头顶动作进度表现。
  * 默认消费 GatheringSystem 事件，也允许其他短时动作使用独立 owner；只读表现不持有业务状态。

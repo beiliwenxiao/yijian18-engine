@@ -1,3 +1,15 @@
+/************************************************************
+ * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
+ * 
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+ * @author    刘枭 (beiliwenxiao)
+ * @email     beiliwenxiao@qq.com
+ * @date      2026-01-14
+ * @blog      `https://blog.csdn.net/beiliwenxiao`
+ * @repo      `https://github.com/beiliwenxiao/yijian18-engine`
+ *            `https://gitee.com/coderaaa/yijian18-engine`
+ ************************************************************/
+
 // 触屏技能瞄准核心：技能/攻击/投掷/轻功按住拖动瞄准。抽取自 example/sanguo_zhangjiao/index.html，跨模块状态经 shell 宿主读写。
 // 需要瞄准的技能索引集合（技能3/4/5 = 索引 0/1/2）
 export const AIM_SKILLS = new Set([0, 1, 2]);
