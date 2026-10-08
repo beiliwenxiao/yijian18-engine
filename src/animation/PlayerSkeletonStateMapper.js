@@ -37,6 +37,63 @@ const HEAD_SLOTS = {
   up: { headFront: false, headSide: false, headBack: true }
 };
 
+/** 手持位挂点骨骼（右前臂） */
+const WEAPON_HAND_BONE = 'armFR';
+/** 背挂位挂点骨骼（背部） */
+const WEAPON_BACK_BONE = 'back';
+
+/**
+ * 解析武器槽位的 weaponKey 与位置。
+ * 约定：assetId 或槽位 id 含 weapon-{key}；位置由槽位 id 的 -back 后缀或挂 back 骨骼判定。
+ * @returns {{key:string, pos:'hand'|'back'}|null} 非武器槽位返回 null
+ */
+function parseWeaponSlot(slot) {
+  const assetId = slot?.attachment?.assetId || '';
+  const slotId = slot?.id || '';
+  const match = assetId.match(/weapon-([a-z0-9_]+)/i) || slotId.match(/weapon-([a-z0-9_]+?)(-back)?$/i);
+  if (!match) return null;
+  const key = match[1];
+  const isBack = /-back$/i.test(slotId) || slot?.bone === WEAPON_BACK_BONE;
+  return { key, pos: isBack ? 'back' : 'hand' };
+}
+
+/** 读取物品的武器标识：优先 weaponKey，工具类回退 toolType（斧头/镐等手持工具同样走挂点联动）。 */
+function weaponKeyOf(item) {
+  return item?.weaponKey || item?.toolType || null;
+}
+
+/** 收集背包中所有武器的 weaponKey 集合（weaponKey 取自已装备的武器定义）。 */
+function collectInventoryWeaponKeys(entity) {
+  const keys = new Set();
+  const inventory = entity?.getComponent?.('inventory');
+  for (const stack of inventory?.slots || []) {
+    const key = weaponKeyOf(stack?.item);
+    if (key) keys.add(key);
+  }
+  return keys;
+}
+
+/**
+ * 武器槽位联动：手持位显示当前装备的武器，背挂位显示「背包里有但手上没拿」的武器。
+ * 装备 weaponKey=W → weapon-W 显示、weapon-W-back 隐藏（拔刀）；
+ * 卸下 W → weapon-W 隐藏、weapon-W-back 显示（收刀回背）。
+ */
+function updateWeaponSlots(entity, asset) {
+  const mainhand = entity?.getComponent?.('equipment')?.getEquipment?.('mainhand');
+  const equippedKey = weaponKeyOf(mainhand);
+  const ownedKeys = collectInventoryWeaponKeys(entity);
+  for (const slot of asset.slots) {
+    const parsed = parseWeaponSlot(slot);
+    if (!parsed) continue;
+    const attachment = slot.attachment;
+    if (!attachment) continue;
+    const visible = parsed.pos === 'hand'
+      ? parsed.key === equippedKey
+      : parsed.key !== equippedKey && ownedKeys.has(parsed.key);
+    if (attachment.visible !== visible) attachment.visible = visible;
+  }
+}
+
 /**
  * @param {Entity} entity
  * @param {Object} deps - { getAssetManager }
@@ -46,6 +103,7 @@ export function createPlayerSkeletonStateMapper(entity, { getAssetManager = null
   let lastClip = '';
   let mapperHold = '';
   let lastFacingKey = '';
+  let lastWeaponState = ''; // 武器槽位联动守卫：equippedKey|ownedKeys 签名变化才写共享资产
 
   return (skeletonComponent) => {
     const asset = skeletonComponent.skeletonAsset;
@@ -115,6 +173,16 @@ export function createPlayerSkeletonStateMapper(entity, { getAssetManager = null
           if (attachment.visible !== plan[slot.id]) attachment.visible = plan[slot.id];
         }
       }
+    }
+
+    // 武器槽位联动：手持位 = 当前主手装备；背挂位 = 背包里有但没装备
+    const mainhand = entity.getComponent?.('equipment')?.getEquipment?.('mainhand');
+    const equippedKey = weaponKeyOf(mainhand) || '';
+    const ownedKeys = [...collectInventoryWeaponKeys(entity)].sort().join(',');
+    const weaponState = `${equippedKey}|${ownedKeys}`;
+    if (weaponState !== lastWeaponState) {
+      lastWeaponState = weaponState;
+      updateWeaponSlots(entity, asset);
     }
   };
 }
