@@ -429,6 +429,66 @@
         "y": 0,
         "rot": 0
       }
+    },
+    {
+      "id": "legThighL",
+      "bone": "thighL",
+      "z": 2,
+      "attachment": {
+        "type": "image",
+        "assetId": "player.parts.thigh-l",
+        "partId": "part.thigh.l",
+        "x": 0,
+        "y": 0,
+        "rot": 0,
+        "width": 64,
+        "height": 64
+      }
+    },
+    {
+      "id": "legThighR",
+      "bone": "thighR",
+      "z": 2,
+      "attachment": {
+        "type": "image",
+        "assetId": "player.parts.thigh-r",
+        "partId": "part.thigh.r",
+        "x": 0,
+        "y": 0,
+        "rot": 0,
+        "width": 64,
+        "height": 64
+      }
+    },
+    {
+      "id": "legCalfL",
+      "bone": "calfL",
+      "z": 2,
+      "attachment": {
+        "type": "image",
+        "assetId": "player.parts.calf-l",
+        "partId": "part.calf.l",
+        "x": 0,
+        "y": 0,
+        "rot": 0,
+        "width": 64,
+        "height": 64
+      }
+    },
+    {
+      "id": "legCalfR",
+      "bone": "calfR",
+      "z": 2,
+      "attachment": {
+        "type": "image",
+        "assetId": "player.parts.calf-r",
+        "partId": "part.calf.r",
+        "x": 0,
+        "y": 0,
+        "rot": 0,
+        "width": 64,
+        "height": 64
+      }
     }
   ],
   "clips": [
