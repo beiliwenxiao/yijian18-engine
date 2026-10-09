@@ -255,6 +255,8 @@ export class SkeletonEditor {
         this._renderBoneTree();
         this._renderSlotList();
         this._renderInspector();
+        // 图层序操作（对齐场景编辑器）：置顶/上一层/下一层/置底
+        items.push(...this._buildZOrderMenuItems(hitSlotId), { separator: true });
         if (assetId && this.imageCatalog.has(assetId)) {
           items.push(...this._buildImageMenuItems(assetId));
           this._showContextMenu(event, items, this._imageEntryPath(assetId));
@@ -2905,6 +2907,55 @@ export class SkeletonEditor {
     return items;
   }
 
+  /**
+   * 槽位图层序（z）调整：'top' 置顶 | 'up' 上一层 | 'down' 下一层 | 'bottom' 置底。
+   * 绘制顺序 = z 升序；调整后全量重排 z 为 0..n-1，保持序号连续。
+   * @returns {boolean} 是否发生移动
+   */
+  _adjustSlotZ(slotId, action) {
+    const slots = [...(this.doc.slots || [])].sort((a, b) => (a.z ?? 0) - (b.z ?? 0));
+    const index = slots.findIndex(slot => slot.id === slotId);
+    if (index < 0) return false;
+    let target = index;
+    if (action === 'top') target = slots.length - 1;
+    else if (action === 'bottom') target = 0;
+    else if (action === 'up') target = Math.min(slots.length - 1, index + 1);
+    else if (action === 'down') target = Math.max(0, index - 1);
+    if (target === index) return false;
+    this._pushHistory();
+    const [moved] = slots.splice(index, 1);
+    slots.splice(target, 0, moved);
+    slots.forEach((slot, slotIndex) => { slot.z = slotIndex; });
+    this._markDirty();
+    this.runtime = parseSkeletonAsset(structuredClone(this.doc));
+    this._renderSlotList();
+    this._renderInspector();
+    return true;
+  }
+
+  /** 右键菜单的图层序操作项：置顶/上一层/下一层/置底（边界自动禁用）。 */
+  _buildZOrderMenuItems(slotId) {
+    const slot = this._slotById(slotId);
+    if (!slot) return [];
+    const slots = [...(this.doc.slots || [])].sort((a, b) => (a.z ?? 0) - (b.z ?? 0));
+    const index = slots.findIndex(candidate => candidate.id === slotId);
+    const isTop = index >= slots.length - 1;
+    const isBottom = index <= 0;
+    return [
+      { label: '⤒ 置顶', disabled: isTop, action: () => this._adjustSlotZ(slotId, 'top') },
+      { label: '↑ 上一层', disabled: isTop, action: () => this._adjustSlotZ(slotId, 'up') },
+      { label: '↓ 下一层', disabled: isBottom, action: () => this._adjustSlotZ(slotId, 'down') },
+      { label: '⤓ 置底', disabled: isBottom, action: () => this._adjustSlotZ(slotId, 'bottom') }
+    ];
+  }
+
+  /** 某骨骼的主挂件槽位（按 z 最小取）；无挂件返回 null。时间轴行右键的层序操作目标。 */
+  _primarySlotOfBone(boneId) {
+    return (this.doc.slots || [])
+      .filter(slot => slot.bone === boneId)
+      .sort((a, b) => (a.z ?? 0) - (b.z ?? 0))[0] || null;
+  }
+
   /** 缓存穿透重载图片元素并清理派生缓存（alpha 命中盒等）。 */
   _reloadImageElement(assetId) {
     const entry = this.imageCatalog.get(assetId);
@@ -3412,8 +3463,9 @@ export class SkeletonEditor {
         return `<div class="se-tl-key ${selected ? 'selected' : ''}" data-bone="${track.bone}" data-index="${index}" style="left:${left}%" title="t=${key.t}ms"></div>`;
       }).join('') : '';
       const hint = track ? '' : ' title="无轨道：双击建轨道并以当前姿态打关键帧"';
-      return `<div class="se-tl-row ${track ? '' : 'no-track'}" data-bone="${bone.id}"${hint}>
-        <div class="label">${SkeletonEditor._displayName(bone.id)}</div>
+      const rowSelected = this.selectedBone === bone.id ? 'selected' : '';
+      return `<div class="se-tl-row ${rowSelected} ${track ? '' : 'no-track'}" data-bone="${bone.id}"${hint}>
+        <div class="label" title="点击选中骨骼及其挂件；右键行=图层序操作">${SkeletonEditor._displayName(bone.id)}</div>
         <div class="lane">${keys}<div id="se-tl-playhead" style="left:${(this.previewTime / clip.durationMs) * 100}%"></div></div>
       </div>`;
     }).join('');
@@ -3423,6 +3475,32 @@ export class SkeletonEditor {
     for (const row of body.querySelectorAll('.se-tl-row')) {
       const lane = row.querySelector('.lane');
       const boneId = row.dataset.bone;
+      // 行标签点击 = 选中该骨骼及其主挂件槽位（与左侧骨骼树/检查器联动）；lane 点击仍是拖动播放头
+      row.querySelector('.label').addEventListener('click', () => {
+        const slot = this._primarySlotOfBone(boneId);
+        this.selectedBone = boneId;
+        this.selectedSlot = slot?.id || null;
+        this._renderBoneTree();
+        this._renderSlotList();
+        this._renderInspector();
+        this._renderTimeline();
+      });
+      // 行右键 = 图层序操作（作用于该骨骼的主挂件槽位；无挂件时给出禁用提示）
+      row.addEventListener('contextmenu', event => {
+        event.preventDefault();
+        this._removeContextMenu();
+        const slot = this._primarySlotOfBone(boneId);
+        this.selectedBone = boneId;
+        this.selectedSlot = slot?.id || null;
+        this._renderBoneTree();
+        this._renderSlotList();
+        this._renderInspector();
+        this._renderTimeline();
+        const items = slot
+          ? this._buildZOrderMenuItems(slot.id)
+          : [{ label: '该骨骼没有挂件槽位', disabled: true }];
+        this._showContextMenu(event, items, SkeletonEditor._displayName(boneId));
+      });
       lane.addEventListener('mousedown', event => {
         if (event.target.classList.contains('se-tl-key')) return;
         const laneRect = lane.getBoundingClientRect();
