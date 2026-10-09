@@ -1394,7 +1394,9 @@ export class SkeletonEditor {
           this._beginAttachScaleDrag(hitSlotId, mx, my, world);
           return;
         }
-        this._beginAttachMove(hitSlotId, mx, my, world);
+        // Shift+拖 = 允许拖放换绑（拖到目标骨骼原点附近松手重挂）；
+        // 默认拖拽只调绑定点偏移，绝不换绑——避免扫过其他骨点时「一点一拖就全乱」
+        this._beginAttachMove(hitSlotId, mx, my, world, event.shiftKey === true);
         return;
       }
     }
@@ -1604,7 +1606,7 @@ export class SkeletonEditor {
   }
 
   /** 开始附件拖拽：单选该槽位（或保留多选集合并整体拖动），记录初始偏移。 */
-  _beginAttachMove(hitSlotId, mx, my, world) {
+  _beginAttachMove(hitSlotId, mx, my, world, rebindEnabled = false) {
     const slot = this._slotById(hitSlotId);
     // 已处在多选集合中：保持集合整体拖动；否则单选
     if (!this.selectedSlots.has(hitSlotId)) this.selectedSlot = hitSlotId;
@@ -1613,10 +1615,12 @@ export class SkeletonEditor {
     this._renderSlotList();
     this._renderInspector();
     this._renderImageLib();
-    // 选中即开始拖拽：直接调整附件偏移/绑定点（所见即所得）；多选集合同步拖动
+    // 选中即开始拖拽：直接调整附件偏移/绑定点（所见即所得）；多选集合同步拖动。
+    // rebindEnabled=true（Shift+拖）才会在拖到目标骨骼原点附近时换绑，默认关闭防误换绑
     this._drag = {
       kind: 'attach-move',
       slotId: hitSlotId,
+      rebindEnabled,
       startX: mx, startY: my,
       startOffset: { x: slot?.attachment?.x ?? 0, y: slot?.attachment?.y ?? 0 },
       boneWorld: world.get(slot?.bone) || null,
@@ -1913,8 +1917,11 @@ export class SkeletonEditor {
       if (this._drag.kind === 'attach-move') {
         const worldDx = (mx - this._drag.startX) / this.view.scale;
         const worldDy = (my - this._drag.startY) / this.view.scale;
-        // 拖放换绑探测：鼠标靠近其他骨骼原点（16px）时记录目标，松手重挂（保持世界位置）
-        this._drag.rebindTarget = this._pickBoneOrigin(mx, my, this._boneWorldTransforms(), 16, slot.bone);
+        // 拖放换绑探测：仅 Shift+拖（rebindEnabled）时启用——鼠标靠近其他骨骼原点（16px）
+        // 记录目标，松手重挂（保持世界位置）；默认拖拽永不换绑，防「一点一拖就全乱」
+        this._drag.rebindTarget = this._drag.rebindEnabled === true
+          ? this._pickBoneOrigin(mx, my, this._boneWorldTransforms(), 16, slot.bone)
+          : null;
         if (this._drag.rebindTarget) return; // 悬停目标骨骼上时冻结偏移预览，松手换绑
         this._applyAttachMove(slot, this._drag.boneWorld, this._drag.startOffset, worldDx, worldDy);
         // 多选槽位同步拖动
@@ -3292,7 +3299,7 @@ export class SkeletonEditor {
         </div>
         <div class="se-empty" style="text-align:left;">按图片行优先切出 ${attachment.frames?.length || 0} 帧（等分整图）</div>` : ''}
       </div>
-      <div class="se-empty" style="text-align:left;">画布：拖动图片=调整绑定点（黄菱形标记）/ 蓝色手柄=缩放 / 蓝环拖=旋转图片 / Alt+点击=穿透选骨骼 / Ctrl+点击=加选 / 方向键=微移</div>
+      <div class="se-empty" style="text-align:left;">画布：拖动图片=改绑定点偏移（黄菱形，即与骨骼的相对位置）/ 右键=切 移动·旋转·缩放 模式 / Shift+拖图片=拖到骨点换绑 / 偏移X·Y·旋转=精确数值 / Alt+点击=穿透选骨骼 / Ctrl+点击=加选 / 方向键=微移</div>
     `;
     const $ = id => document.getElementById(id);
     $('se-slot-id').addEventListener('change', event => {
