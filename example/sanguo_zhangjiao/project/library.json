@@ -142,7 +142,14 @@
         "reduceSec": 1.5,
         "minSec": 1.5
       },
-      "toolType": "skinningKnife"
+      "toolType": "skinningKnife",
+      "skeletonPart": {
+        "partId": "part.weapon.skinningKnife",
+        "bone": "armFR",
+        "slotId": "weaponSkinningKnife",
+        "weaponKey": "skinningKnife",
+        "offset": { "x": 0, "y": 26, "rot": 0 }
+      }
     },
     {
       "id": "resource.raw_wolf_meat",
@@ -821,7 +828,14 @@
       "stats": {
         "attack": 12
       },
-      "subType": "weapon"
+      "subType": "weapon",
+      "skeletonPart": {
+        "partId": "part.weapon.wolfFang",
+        "bone": "armFR",
+        "slotId": "weaponWolfFang",
+        "weaponKey": "wolfFang",
+        "offset": { "x": 0, "y": 26, "rot": 0 }
+      }
     },
     {
       "id": "leather_armor",
@@ -870,7 +884,14 @@
         "attack": 4,
         "range": 260
       },
-      "subType": "weapon"
+      "subType": "weapon",
+      "skeletonPart": {
+        "partId": "part.weapon.bow",
+        "bone": "armFR",
+        "slotId": "weaponBow",
+        "weaponKey": "bow",
+        "offset": { "x": 0, "y": 26, "rot": 0 }
+      }
     },
     {
       "id": "leather_vest",
@@ -917,7 +938,14 @@
       "stats": {
         "magicAttack": 5
       },
-      "subType": "weapon"
+      "subType": "weapon",
+      "skeletonPart": {
+        "partId": "part.weapon.staff",
+        "bone": "armFR",
+        "slotId": "weaponStaff",
+        "weaponKey": "staff",
+        "offset": { "x": 0, "y": 26, "rot": 0 }
+      }
     },
     {
       "id": "strategist_robe",
@@ -2026,6 +2054,51 @@
       "weaponKey": "spear",
       "assetId": "player.parts.weapon-spear",
       "bone": "back",
+      "width": 64,
+      "height": 64
+    },
+    {
+      "id": "part.weapon.spear-hand",
+      "category": "weapon",
+      "weaponKey": "spear",
+      "assetId": "player.parts.weapon-spear",
+      "bone": "armFR",
+      "width": 64,
+      "height": 64
+    },
+    {
+      "id": "part.weapon.skinningKnife",
+      "category": "weapon",
+      "weaponKey": "skinningKnife",
+      "assetId": "player.parts.weapon-skinningKnife",
+      "bone": "armFR",
+      "width": 64,
+      "height": 64
+    },
+    {
+      "id": "part.weapon.wolfFang",
+      "category": "weapon",
+      "weaponKey": "wolfFang",
+      "assetId": "player.parts.weapon-wolfFang",
+      "bone": "armFR",
+      "width": 64,
+      "height": 64
+    },
+    {
+      "id": "part.weapon.bow",
+      "category": "weapon",
+      "weaponKey": "bow",
+      "assetId": "player.parts.weapon-bow",
+      "bone": "armFR",
+      "width": 64,
+      "height": 64
+    },
+    {
+      "id": "part.weapon.staff",
+      "category": "weapon",
+      "weaponKey": "staff",
+      "assetId": "player.parts.weapon-staff",
+      "bone": "armFR",
       "width": 64,
       "height": 64
     }

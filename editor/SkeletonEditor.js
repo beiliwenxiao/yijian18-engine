@@ -2337,6 +2337,8 @@ export class SkeletonEditor {
       shadow: '影子(shadow)', spearBack: '背枪(spearBack)', skirtBack: '背裙(skirtBack)',
       toolHand: '手持(toolHand)', torsoSlot: '躯干图(torsoSlot)', skirtFront: '前裙(skirtFront)',
       headFront: '正面头(headFront)', headSide: '侧面头(headSide)', headBack: '背面头(headBack)',
+      weaponSpear: '手持枪(weaponSpear)', weaponSkinningKnife: '手持剥皮刀(weaponSkinningKnife)',
+      weaponWolfFang: '手持狼牙(weaponWolfFang)', weaponBow: '手持弓(weaponBow)', weaponStaff: '手持符杖(weaponStaff)',
       armor: '护甲(armor)',
       // 图片 assetId 通用部件名（剥离 player.parts. 前缀后的 key）
       'head-front': '正面头(head-front)', 'head-side': '侧面头(head-side)', 'head-back': '背面头(head-back)',
@@ -2347,6 +2349,8 @@ export class SkeletonEditor {
       'calf-l': '左小腿(calf-l)', 'calf-r': '右小腿(calf-r)',
       'skirt-front': '前裙(skirt-front)', 'skirt-back': '背裙(skirt-back)',
       'weapon-spear': '枪(weapon-spear)', 'weapon-axe': '斧(weapon-axe)',
+      'weapon-skinningKnife': '剥皮刀(weapon-skinningKnife)', 'weapon-wolfFang': '狼牙(weapon-wolfFang)',
+      'weapon-bow': '短弓(weapon-bow)', 'weapon-staff': '符杖(weapon-staff)',
       'weapon-front': '正面武器(weapon-front)', 'weapon-side': '侧面武器(weapon-side)', 'weapon-back': '背面武器(weapon-back)'
     };
     // 先精确匹配
@@ -2860,9 +2864,22 @@ export class SkeletonEditor {
     // 部件自带推荐挂点优先；用户想挂别的骨骼可先选中该骨骼再挂（此时 selectedBone 覆盖 part.bone 需清空选中）
     const boneId = part.bone || this.selectedBone || this.doc.bones?.[0]?.id;
     if (!boneId) { this._toast('先选中一个骨骼', true); return; }
-    // 已挂载同 partId 到同骨骼 → 直接选中
+    // 已挂载同 partId 到同骨骼 → 直接选中并点亮（预置槽位 visible:false 是运行时联动初始态）
     const existing = (this.doc.slots || []).find(slot => slot.attachment?.partId === partId && slot.bone === boneId);
-    if (existing) { this.selectedSlot = existing.id; this._toast('该骨骼已挂此部件，已选中其槽位'); this._renderSlotList(); return; }
+    if (existing) {
+      this.selectedSlot = existing.id;
+      if (existing.attachment && existing.attachment.visible === false) {
+        this._pushHistory();
+        existing.attachment.visible = true;
+        this._markDirty();
+        this.runtime = parseSkeletonAsset(structuredClone(this.doc));
+      }
+      this._toast('该骨骼已挂此部件，已选中其槽位');
+      this._renderSlotList();
+      this._renderInspector();
+      this._renderPartLib();
+      return;
+    }
     const attachment = {
       type: 'image',
       assetId: part.assetId,

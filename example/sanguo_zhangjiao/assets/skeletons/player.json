@@ -340,6 +340,86 @@
       }
     },
     {
+      "id": "weaponSpear",
+      "bone": "armFR",
+      "z": 5,
+      "attachment": {
+        "type": "image",
+        "assetId": "player.parts.weapon-spear",
+        "partId": "part.weapon.spear-hand",
+        "x": 0,
+        "y": 26,
+        "rot": 0,
+        "width": 64,
+        "height": 64,
+        "visible": false
+      }
+    },
+    {
+      "id": "weaponSkinningKnife",
+      "bone": "armFR",
+      "z": 5,
+      "attachment": {
+        "type": "image",
+        "assetId": "player.parts.weapon-skinningKnife",
+        "partId": "part.weapon.skinningKnife",
+        "x": 0,
+        "y": 26,
+        "rot": 0,
+        "width": 64,
+        "height": 64,
+        "visible": false
+      }
+    },
+    {
+      "id": "weaponWolfFang",
+      "bone": "armFR",
+      "z": 5,
+      "attachment": {
+        "type": "image",
+        "assetId": "player.parts.weapon-wolfFang",
+        "partId": "part.weapon.wolfFang",
+        "x": 0,
+        "y": 26,
+        "rot": 0,
+        "width": 64,
+        "height": 64,
+        "visible": false
+      }
+    },
+    {
+      "id": "weaponBow",
+      "bone": "armFR",
+      "z": 5,
+      "attachment": {
+        "type": "image",
+        "assetId": "player.parts.weapon-bow",
+        "partId": "part.weapon.bow",
+        "x": 0,
+        "y": 26,
+        "rot": 0,
+        "width": 64,
+        "height": 64,
+        "visible": false
+      }
+    },
+    {
+      "id": "weaponStaff",
+      "bone": "armFR",
+      "z": 5,
+      "attachment": {
+        "type": "image",
+        "assetId": "player.parts.weapon-staff",
+        "partId": "part.weapon.staff",
+        "x": 0,
+        "y": 26,
+        "rot": 0,
+        "width": 64,
+        "height": 64,
+        "visible": false
+      }
+    },
+    {
       "id": "armor",
       "bone": "torso",
       "z": 9,

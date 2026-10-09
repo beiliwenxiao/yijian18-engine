@@ -6025,7 +6025,147 @@
       "targetPhase": "P1",
       "status": "placeholder",
       "revision": 1
+    },    {
+      "assetId": "player.parts.weapon-skinningKnife",
+      "imageId": "player.parts.weapon-skinningKnife",
+      "category": "character-part",
+      "usage": [
+        "player-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player/parts/weapon-skinningKnife.png",
+      "runtime2D": {
+        "path": "assets/images/player/parts/weapon-skinningKnife.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player.parts.weapon-skinningKnife"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
     },
+    {
+      "assetId": "player.parts.weapon-wolfFang",
+      "imageId": "player.parts.weapon-wolfFang",
+      "category": "character-part",
+      "usage": [
+        "player-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player/parts/weapon-wolfFang.png",
+      "runtime2D": {
+        "path": "assets/images/player/parts/weapon-wolfFang.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player.parts.weapon-wolfFang"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "player.parts.weapon-bow",
+      "imageId": "player.parts.weapon-bow",
+      "category": "character-part",
+      "usage": [
+        "player-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player/parts/weapon-bow.png",
+      "runtime2D": {
+        "path": "assets/images/player/parts/weapon-bow.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player.parts.weapon-bow"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "player.parts.weapon-staff",
+      "imageId": "player.parts.weapon-staff",
+      "category": "character-part",
+      "usage": [
+        "player-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player/parts/weapon-staff.png",
+      "runtime2D": {
+        "path": "assets/images/player/parts/weapon-staff.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player.parts.weapon-staff"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+
     {
       "assetId": "player.parts.skirt-front",
       "imageId": "player.parts.skirt-front",
