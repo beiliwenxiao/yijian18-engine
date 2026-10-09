@@ -1,14 +1,4 @@
 <!DOCTYPE html>
-<!--
-  Copyright (c) 2026 Liu Xiao (beiliwenxiao)
-  @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
-  @author    刘枭 (beiliwenxiao)
-  @email     beiliwenxiao@qq.com
-  @date      2026-01-14
-  @blog      `https://blog.csdn.net/beiliwenxiao`
-  @repo      `https://github.com/beiliwenxiao/yijian18-engine`
-             `https://gitee.com/coderaaa/yijian18-engine`
--->
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
@@ -64,6 +54,8 @@
         .se-tl-toolbar { display: flex; align-items: center; gap: 6px; padding: 4px 6px; border-bottom: 1px solid #26355c; flex-wrap: wrap; }
         .se-tl-body { flex: 1; overflow: auto; position: relative; }
         .se-tl-row { display: flex; align-items: center; height: 26px; border-bottom: 1px solid #1a2440; }
+        .se-tl-row.no-track .label { color: #55607a; font-style: italic; }
+        .se-tl-row.no-track .lane { background: repeating-linear-gradient(to right, #0e1526 0, #0e1526 39px, #141d33 39px, #141d33 40px); opacity: 0.75; }
         .se-tl-row .label { width: 100px; min-width: 100px; font-size: 12px; padding: 0 8px; color: #9aa5c0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .se-tl-row .lane { flex: 1; height: 100%; position: relative; background: repeating-linear-gradient(to right, #131c36 0, #131c36 39px, #1a2440 39px, #1a2440 40px); cursor: crosshair; }
         .se-tl-key { position: absolute; top: 50%; width: 10px; height: 10px; background: #ffd479; transform: translate(-50%, -50%) rotate(45deg); border: 1px solid #8a6a1c; cursor: pointer; }
