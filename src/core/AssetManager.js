@@ -732,11 +732,17 @@ export class AssetManager {
 
         // 九宫格方向精灵（用于玩家）
         const characterClasses = ['warrior', 'strategist', 'archer', 'refugee'];
+        // 仅 refugee.png 存在真实图片，其余职业直接使用占位符，避免无效加载请求
+        const realImageClasses = ['refugee'];
         characterClasses.forEach(className => {
-            // 尝试加载真实图片，如果失败则使用占位符
-            const realImagePath = this.resolveAssetPath(`images/${className}.png`);
-            this.loadDirectionalSpriteImage(className, realImagePath);
-            
+            if (realImageClasses.includes(className)) {
+                const realImagePath = this.resolveAssetPath(`images/${className}.png`);
+                this.loadDirectionalSpriteImage(className, realImagePath);
+            } else {
+                const directional = this.placeholderAssets.createDirectionalSprite(className, 32);
+                this.images.set(`directional_${className}`, directional);
+            }
+
             // 保留旧的单帧精灵作为备用
             const sprite = this.placeholderAssets.createCharacterSprite(className, 64);
             this.images.set(`character_${className}`, sprite);
