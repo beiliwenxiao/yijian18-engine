@@ -89,6 +89,10 @@ export class GamepadManager {
     this.leftStick = { x: 0, y: 0, magnitude: 0 };
     this.rightStick = { x: 0, y: 0, magnitude: 0 };
 
+    /** 摇杆静息偏置（自动校准）：连接后首次近静息读数时采集，读数先扣偏置再过死区 */
+    this._stickBias = { lx: 0, ly: 0, rx: 0, ry: 0 };
+    this._stickBiasCaptured = false;
+
     /** 连接 / 断开监听 */
     this._connectListeners = [];
     this._disconnectListeners = [];
@@ -244,8 +248,37 @@ export class GamepadManager {
   /** @private 读摇杆，应用死区后把 [deadzone,1] 重标定到 [0,1]，避免死区边缘速度跳变 */
   _readSticks(pad) {
     const axes = pad.axes || [];
-    this.leftStick = this._applyDeadzone(axes[PadAxis.LEFT_X] || 0, axes[PadAxis.LEFT_Y] || 0);
-    this.rightStick = this._applyDeadzone(axes[PadAxis.RIGHT_X] || 0, axes[PadAxis.RIGHT_Y] || 0);
+    const lx = Number(axes[PadAxis.LEFT_X]) || 0;
+    const ly = Number(axes[PadAxis.LEFT_Y]) || 0;
+    const rx = Number(axes[PadAxis.RIGHT_X]) || 0;
+    const ry = Number(axes[PadAxis.RIGHT_Y]) || 0;
+    this._captureStickBias(lx, ly, rx, ry);
+    // 先扣静息偏置再过死区：老摇杆中位漂移（如实测静息 -0.23、下行程只剩 0.67）
+    // 会让单侧方向的有效行程大幅缩水；校准后下行程恢复 0.90、静息不再缓慢漂移。
+    this.leftStick = this._applyDeadzone(lx - this._stickBias.lx, ly - this._stickBias.ly);
+    this.rightStick = this._applyDeadzone(rx - this._stickBias.rx, ry - this._stickBias.ry);
+  }
+
+  /**
+   * 连接后首次读到"全部轴近静息"时采集偏置，仅采集一次（重连后重新采集）。
+   * 阈值 0.35 必须高于常见漂移幅度、低于玩家主动推杆，避免把主动推杆当静息中心；
+   * 漂移超过阈值的极端手柄采不到偏置，退化为未校准行为（与旧版一致）。
+   * @private
+   */
+  _captureStickBias(lx, ly, rx, ry) {
+    if (this._stickBiasCaptured) return;
+    if (Math.max(Math.abs(lx), Math.abs(ly), Math.abs(rx), Math.abs(ry)) > 0.35) return;
+    this._stickBias = { lx, ly, rx, ry };
+    this._stickBiasCaptured = true;
+    if (lx || ly || rx || ry) {
+      console.log('GamepadManager: 摇杆静息校准完成', { lx, ly, rx, ry });
+    }
+  }
+
+  /** 清除已采集的静息偏置，下一次近静息读数会重新校准（供设置界面"重新校准摇杆"）。 */
+  recalibrateSticks() {
+    this._stickBias = { lx: 0, ly: 0, rx: 0, ry: 0 };
+    this._stickBiasCaptured = false;
   }
 
   /** @private 径向死区 + 重标定 */
@@ -267,6 +300,9 @@ export class GamepadManager {
     this._clearFrameState();
     this.leftStick = { x: 0, y: 0, magnitude: 0 };
     this.rightStick = { x: 0, y: 0, magnitude: 0 };
+    // 重连后需要重新采集静息偏置（换手柄或同一手柄状态可能不同）
+    this._stickBias = { lx: 0, ly: 0, rx: 0, ry: 0 };
+    this._stickBiasCaptured = false;
     console.log('GamepadManager: 手柄已断开');
     for (const cb of [...this._disconnectListeners]) {
       try { cb(info); } catch (e) { console.warn('GamepadManager: onDisconnect 监听器出错', e); }
@@ -459,6 +495,8 @@ export class GamepadManager {
     this._lastPollTime = 0;
     this.leftStick = { x: 0, y: 0, magnitude: 0 };
     this.rightStick = { x: 0, y: 0, magnitude: 0 };
+    this._stickBias = { lx: 0, ly: 0, rx: 0, ry: 0 };
+    this._stickBiasCaptured = false;
   }
 }
 

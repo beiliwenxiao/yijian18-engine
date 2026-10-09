@@ -145,6 +145,59 @@ describe('GamepadManager 摇杆', () => {
   });
 });
 
+describe('GamepadManager 摇杆静息校准', () => {
+  it('连接后首次近静息读数被记为偏置，静息漂移不再产生摇杆输出', () => {
+    const pad = makePad();
+    const { nav } = makeNav(pad);
+    const gm = new GamepadManager({ nav, deadzone: 0.22 });
+    pad.axes = [0, -0.23, 0, 0]; // 静息漂移（实测磨损手柄）
+    gm.poll();
+    expect(gm._stickBiasCaptured).toBe(true);
+    expect(gm._stickBias.ly).toBeCloseTo(-0.23, 5);
+    expect(gm.leftStick.magnitude).toBe(0);
+  });
+
+  it('校准后单侧磨损行程被恢复：下推 0.67 等效 0.90 行程', () => {
+    const pad = makePad();
+    const { nav } = makeNav(pad);
+    const gm = new GamepadManager({ nav, deadzone: 0.22 });
+    pad.axes = [0, -0.23, 0, 0];
+    gm.poll(); // 采集静息偏置 -0.23
+    pad.axes = [0, 0.67, 0, 0]; // 磨损后的下推到底
+    gm.poll();
+    // 校正后行程 0.67-(-0.23)=0.90，重标定 (0.90-0.22)/(1-0.22)≈0.87
+    expect(gm.leftStick.y).toBeGreaterThan(0.8);
+    expect(gm.leftStick.magnitude).toBeGreaterThan(0.8);
+  });
+
+  it('主动推杆时不采集偏置，松开归中后才校准', () => {
+    const pad = makePad();
+    const { nav } = makeNav(pad);
+    const gm = new GamepadManager({ nav, deadzone: 0.2 });
+    pad.axes = [0, 1, 0, 0]; // 首次 poll 就在推杆
+    gm.poll();
+    expect(gm._stickBiasCaptured).toBe(false);
+    pad.axes = [0, 0, 0, 0];
+    gm.poll();
+    expect(gm._stickBiasCaptured).toBe(true);
+    expect(gm._stickBias.ly).toBe(0);
+  });
+
+  it('recalibrateSticks 清除偏置并重新采集', () => {
+    const pad = makePad();
+    const { nav } = makeNav(pad);
+    const gm = new GamepadManager({ nav, deadzone: 0.22 });
+    pad.axes = [0, -0.23, 0, 0];
+    gm.poll();
+    expect(gm._stickBiasCaptured).toBe(true);
+    gm.recalibrateSticks();
+    expect(gm._stickBiasCaptured).toBe(false);
+    pad.axes = [0, 0, 0, 0];
+    gm.poll();
+    expect(gm._stickBias.ly).toBe(0);
+  });
+});
+
 describe('GamepadManager 虚拟键映射', () => {
   it('默认绑定把 X 映射为拾取键 e、Back 映射为背包 b、Start 映射为系统设置', () => {
     const pad = makePad();
