@@ -104,10 +104,11 @@ const CATEGORIES = [
   // ==== 角色养成全局定义 ====
   { key: 'players', label: '玩家', tpl: {
     name: '新玩家',
+    useSkeletonAnimation: false,
     sprite: { src: '', frameWidth: 64, frameHeight: 64, cols: 4, rows: 4 },
     animations: { idle: { row: 0, frames: 4, speed: 0.15 }, walk: { row: 1, frames: 4, speed: 0.1 }, attack: { row: 2, frames: 4, speed: 0.08 }, death: { row: 3, frames: 4, speed: 0.12 } },
     baseStats: { maxHp: 100, maxMp: 50, attack: 10, defense: 5, speed: 150 }
-  }},
+}},
   { key: 'classes', label: '职业', tpl: { name: '新职业', baseStats: { maxHp: 100, maxMp: 50, attack: 10, defense: 5, speed: 100 }, startSkills: [] } },
   { key: 'combatSkills', label: '战斗技能', tpl: { name: '新战斗技能', skillType: 'combat', cooldown: 3, castTime: 0, manaCost: 10, damage: 0, element: 0, range: 100 } },
   { key: 'gatherSkills', label: '采集技能', tpl: { name: '新采集技能', skillType: 'gather', resource: '', gatherTime: 2, level: 1, yield: 1 } },
@@ -1040,6 +1041,11 @@ export class LibraryEditor {
     panel.innerHTML = `
       <div class="row"><label>ID（库主键）</label><input type="text" id="l-id" value="${e.id || ''}"></div>
       <div class="row"><label>名称</label><input type="text" id="l-name" value="${e.name || ''}"></div>
+      <div class="row" style="display:flex;align-items:center;gap:8px;">
+        <label style="font-weight:bold;flex:none;">骨骼动画 useSkeletonAnimation</label>
+        <input type="checkbox" id="l-use-skeleton" ${e.useSkeletonAnimation === true ? 'checked' : ''}>
+        <small style="color:#9ab;">勾选 = 运行时用骨骼动画（skeleton.player）渲染本角色，忽略下方序列帧配置</small>
+      </div>
       <hr style="border-color:#2a3a5e;margin:10px 0;">
       <div class="row"><label style="font-weight:bold;">序列帧（Sprite Sheet）</label></div>
       <div class="row"><label>图片路径</label><input type="text" id="l-sprite-src" value="${sprite.src || ''}" placeholder="assets/images/player.png"></div>
@@ -2057,6 +2063,8 @@ export class LibraryEditor {
   }
 
   _commitSheetSpriteDetail(panel, e) {
+    const skeletonEl = panel.querySelector('#l-use-skeleton');
+    if (skeletonEl) e.useSkeletonAnimation = skeletonEl.checked === true;
     const srcEl = panel.querySelector('#l-sprite-src');
     if (srcEl) {
       e.sprite = {
