@@ -165,10 +165,6 @@ export class SceneGameplaySystemAssembler {
           : false
       ),
       isPositionBlocked: (x, y, options) => scene._terrainBinding?.isPositionBlocked?.(x, y, options) === true
-        || scene.isOutsideLoadableWorld?.(x, y) === true,
-      // 已加载世界硬边界：目标点不在任何可加载场景矩形内时不可达，
-      // 阻止玩家走进未加载虚空（数据驱动大地图场景提供，其余场景不受影响）。
-      movementBoundsProvider: () => scene.getLoadableWorldRects?.() || null
     });
     // 军团指挥（M1）：编组选择 + 点地移动 + 命令达成倒计时；设计见 .kiro/steering/army-command-design.md
     scene.armyCommandFlow = new SceneArmyCommandFlow(scene);
