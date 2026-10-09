@@ -64,6 +64,12 @@ export class MovementSystem {
     // isPositionBlocked(x, y) 复用正式碰撞几何的只读阻挡查询。
     this.onAutoJump = typeof config.onAutoJump === 'function' ? config.onAutoJump : null;
     this.isPositionBlocked = typeof config.isPositionBlocked === 'function' ? config.isPositionBlocked : null;
+    // 已加载世界边界提供者：返回可站立矩形数组 [{left, top, right, bottom}]。
+    // 目标点不在任一矩形内即视为不可达，阻止实体走进未加载的世界虚空
+    // （如 S01 出生点正下方的无场景世界格，玩家走进去还会令存档守卫拒绝固化）。
+    this.movementBoundsProvider = typeof config.movementBoundsProvider === 'function'
+      ? config.movementBoundsProvider
+      : null;
     // 跳跃距离上限：与蓄力满跳 distanceReference 对齐
     this.autoJumpMaxDistance = Math.max(24, Number(config.autoJumpMaxDistance) || 120);
     this.pathfindingCellSize = Math.max(8, Number(config.pathfindingCellSize) || 32);
@@ -590,7 +596,9 @@ export class MovementSystem {
         }
       }
       speed = Math.max(0, Number(speed) || 0);
-      movement.startKeyboardMovement(vx * speed * magnitude, vy * speed * magnitude);
+      // vx/vy 已按 magnitude 缩放（键盘/十字键归一化为 ±1，摇杆含模拟量），
+      // 再乘 magnitude 会把摇杆量平方（半程推杆 0.42²≈0.18 倍速），这里只乘一次。
+      movement.startKeyboardMovement(vx * speed, vy * speed);
       if (sprite && sprite.currentAnimation !== 'walk') sprite.playAnimation('walk');
       return;
     }
@@ -833,7 +841,14 @@ export class MovementSystem {
     if (!this.isWithinMapBounds(x, y)) {
       return false;
     }
-    
+
+    // 已加载世界硬边界：目标点不在任何可加载场景矩形内时不可达
+    const loadedRects = this.movementBoundsProvider?.();
+    if (Array.isArray(loadedRects) && loadedRects.length > 0
+      && !this._isInsideAnyRect(loadedRects, x, y)) {
+      return false;
+    }
+
     // 楼层碰撞地图优先（若有）
     const floorId = entity?.getComponent?.('transform')?.floorId;
     const floor = this.floors.get(floorId);
@@ -878,6 +893,15 @@ export class MovementSystem {
       y >= this.mapBounds.minY &&
       y <= this.mapBounds.maxY
     );
+  }
+
+  /** 目标点是否落在任一边界矩形内（含边界）。 */
+  _isInsideAnyRect(rects, x, y) {
+    for (let index = 0; index < rects.length; index++) {
+      const rect = rects[index];
+      if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) return true;
+    }
+    return false;
   }
 
   /**

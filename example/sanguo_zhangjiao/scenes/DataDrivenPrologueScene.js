@@ -494,6 +494,43 @@ export class DataDrivenPrologueScene extends BaseGameScene {
     return this.sanguoWorldRuntimeCoordinator.restoreStreamedDomainState(sceneId);
   }
 
+  /**
+   * Region 内全部可加载场景锚点的矩形并集（世界坐标）。
+   * 作为移动硬边界来源：S01 出生点正下方等无场景世界格没有可加载地块，
+   * 玩家走进去会掉进未加载虚空（存档守卫 playerOutsideLoadableWorldCell 也会拒绝固化）。
+   * 使用静态 worldIndex 而非流式已加载集合，避免跨格加载窗口在相邻场景间立起临时墙。
+   * @returns {Array<{left:number, top:number, right:number, bottom:number}>|null}
+   */
+  getLoadableWorldRects() {
+    const index = this._worldIndex;
+    if (!index) return null;
+    const region = index.getRegion(this._currentRegionIndex ?? 0)
+      || index.getRegion(index.getEntry?.()?.regionId ?? 0);
+    if (!region) return null;
+    const signature = `${region.id}:${region.cells.length}`;
+    if (this._loadableWorldRectsCache?.signature === signature) {
+      return this._loadableWorldRectsCache.rects;
+    }
+    const rects = region.cells
+      .filter(anchor => anchor.loadable === true && anchor.offset
+        && Number.isFinite(anchor.worldWidth) && Number.isFinite(anchor.worldHeight))
+      .map(anchor => ({
+        left: anchor.offset.x,
+        top: anchor.offset.y,
+        right: anchor.offset.x + anchor.worldWidth,
+        bottom: anchor.offset.y + anchor.worldHeight
+      }));
+    this._loadableWorldRectsCache = { signature, rects };
+    return rects;
+  }
+
+  /** 只读判定：世界坐标是否在可加载世界之外（点击跳/寻路把虚空同样视为阻挡）。 */
+  isOutsideLoadableWorld(x, y) {
+    const rects = this.getLoadableWorldRects();
+    if (!Array.isArray(rects) || rects.length === 0) return false;
+    return !rects.some(rect => x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom);
+  }
+
   _debugCanonicalHotSync(stage, detail = {}) {
     if (!this.debugMode) return;
     console.log(`[DDScene][CanonicalHotSync] ${stage}`, detail);
