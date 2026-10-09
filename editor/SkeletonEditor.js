@@ -63,6 +63,7 @@ export class SkeletonEditor {
     this.view = { scale: 1, ox: 0, oy: 0 };
     this._drag = null;               // { kind: 'move'|'rotate'|'attach-move'|'attach-rotate'|'pan', ... }
     this._libDrag = null;            // 库条目拖入画布的组合预览态：{ partId, assetId, mx, my, dropWorld, hoverBone }
+    this._partCheckResult = null;    // 部件体检结果（会话态）：{ rows, at }
     this._alphaBoundsCache = new Map(); // 附件非透明像素包围盒缓存（key: assetId|srcRect）
     this._alphaSampleCanvas = null;     // alpha 扫描离屏画布
     // 图层式编辑辅助（会话态，不写入骨骼 JSON）：
@@ -3067,7 +3068,23 @@ export class SkeletonEditor {
       categories.get(cat).push({ id, part });
     }
     const sortedCats = [...categories.entries()].sort((a, b) => a[0].localeCompare(b[0]));
-    container.innerHTML = sortedCats.map(([cat, list]) => {
+    // 部件体检面板：扫描灰盒/缺图部件，结果行可点击定位（已绑槽位同时选中）
+    const checkRows = this._partCheckResult?.rows || [];
+    const checkPanel = `
+      <div style="display:flex;align-items:center;gap:6px;padding:0 2px 6px;">
+        <button id="se-part-check" style="flex:none;font-size:11px;padding:2px 8px;cursor:pointer;">🔍 部件体检</button>
+        <span style="font-size:10px;color:#9aa5c0;">扫描灰盒/缺图部件</span>
+      </div>
+      ${this._partCheckResult ? `<div style="max-height:140px;overflow:auto;border:1px solid #26355c;border-radius:4px;margin:0 2px 6px;">
+        ${checkRows.map(row => `
+        <div class="se-part-check-row" data-id="${row.id}" title="${row.detail || ''}${row.boundSlotId ? '（已绑槽位 ' + row.boundSlotId + '）' : ''}"
+          style="display:flex;gap:6px;align-items:center;padding:2px 6px;font-size:11px;cursor:pointer;${row.warn ? 'color:#ff9a9a;' : 'color:#9aa5c0;'}">
+          <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${row.name}</span>
+          <span style="flex:none;">${row.detail || ''}</span>
+          <span style="flex:none;font-weight:bold;">${row.verdict}</span>
+        </div>`).join('')}
+      </div>` : ''}`;
+    container.innerHTML = checkPanel + (sortedCats.map(([cat, list]) => {
       const rows = list.map(({ id, part }) => {
         const used = usedPartIds.has(id);
         const img = this.imageCatalog.get(part.assetId);
@@ -3086,10 +3103,27 @@ export class SkeletonEditor {
         <div style="font-size:11px;color:#7ec8ff;padding:2px 4px;border-bottom:1px solid #26355c;">${SkeletonEditor._displayName(cat)}</div>
         ${rows}
       </div>`;
-    }).join('') || '<div class="se-empty">内容库无部件定义</div>';
+    }).join('') || '<div class="se-empty">内容库无部件定义</div>');
     for (const item of container.querySelectorAll('.se-img-item')) {
       item.addEventListener('click', () => {
         this._selectedPartId = item.dataset.id;
+        this._renderPartLib();
+      });
+    }
+    // 体检：运行扫描 + 结果行点击定位（选中部件；已绑槽位时同时选中槽位）
+    container.querySelector('#se-part-check')?.addEventListener('click', () => { this._runPartCheck(); });
+    for (const row of container.querySelectorAll('.se-part-check-row')) {
+      row.addEventListener('click', () => {
+        const partId = row.dataset.id;
+        this._selectedPartId = partId;
+        const slot = (this.doc.slots || []).find(candidate => candidate.attachment?.partId === partId);
+        if (slot) {
+          this.selectedSlot = slot.id;
+          this.selectedBone = slot.bone;
+        }
+        this._renderSlotList();
+        this._renderBoneTree();
+        this._renderInspector();
         this._renderPartLib();
       });
     }
@@ -3111,6 +3145,72 @@ export class SkeletonEditor {
       });
       item.addEventListener('dragend', () => { this._libDrag = null; });
     }
+  }
+
+  /** 确保图片元素已加载（体检 alpha 扫描前置）；返回元素或 null。 */
+  _ensureImageLoaded(assetId) {
+    const entry = this.imageCatalog.get(assetId);
+    if (!entry) return Promise.resolve(null);
+    if (entry.element?.complete && entry.element.naturalWidth > 0) return Promise.resolve(entry.element);
+    return new Promise(resolve => {
+      const img = new Image();
+      img.onload = () => {
+        entry.width = img.naturalWidth;
+        entry.height = img.naturalHeight;
+        entry.element = img;
+        // 图片元素替换后清掉该资源的 alpha 缓存，避免读到旧扫描结果
+        for (const key of [...this._alphaBoundsCache.keys()]) {
+          if (key.startsWith(`${assetId}|`)) this._alphaBoundsCache.delete(key);
+        }
+        resolve(img);
+      };
+      img.onerror = () => resolve(null);
+      img.src = entry.url;
+    });
+  }
+
+  /**
+   * 部件体检：扫描全部部件图的非透明内容占比。
+   * 内容占画布 <12% 判定为灰盒/内容过小（⚠），结果按问题优先排序，行点击可定位槽位。
+   */
+  async _runPartCheck() {
+    this._toast('部件体检中…');
+    const rows = [];
+    for (const [id, part] of this.partCatalog) {
+      const name = SkeletonEditor._displayName(part.assetId || id);
+      const entry = this.imageCatalog.get(part.assetId);
+      if (!entry) {
+        rows.push({ id, name, verdict: '缺图', detail: 'Manifest 无此资源', warn: true });
+        continue;
+      }
+      const element = await this._ensureImageLoaded(part.assetId);
+      if (!element) {
+        rows.push({ id, name, verdict: '加载失败', detail: entry.url, warn: true });
+        continue;
+      }
+      const attachment = { assetId: part.assetId, type: 'image' };
+      const source = this._attachmentSource(attachment);
+      const bounds = source ? this._alphaBounds(attachment, source) : null;
+      if (!bounds) {
+        rows.push({ id, name, verdict: '—', detail: '整图不透明（无 alpha 可扫）', warn: false });
+        continue;
+      }
+      const contentW = Math.round(bounds.x1 - bounds.x0);
+      const contentH = Math.round(bounds.y1 - bounds.y0);
+      const ratio = (contentW * contentH) / Math.max(1, source.sw * source.sh);
+      const warn = ratio < 0.12;
+      rows.push({
+        id, name,
+        verdict: warn ? '⚠ 灰盒' : '✓',
+        detail: `内容 ${contentW}×${contentH}（${Math.round(ratio * 100)}%）`,
+        warn,
+        boundSlotId: (this.doc.slots || []).find(slot => slot.attachment?.partId === id)?.id || null
+      });
+    }
+    rows.sort((a, b) => (b.warn ? 1 : 0) - (a.warn ? 1 : 0));
+    this._partCheckResult = { rows, at: Date.now() };
+    this._renderPartLib();
+    this._toast(`体检完成：${rows.filter(row => row.warn).length}/${rows.length} 个部件需要处理`);
   }
 
   /** 部件绑定：读取 part 定义，创建含 partId 的槽位，自动挂上推荐骨骼。 */
