@@ -77,7 +77,8 @@ function collectInventoryWeaponKeys(entity) {
  */
 function updateWeaponSlots(entity, asset) {
   const mainhand = entity?.getComponent?.('equipment')?.getEquipment?.('mainhand');
-  const equippedKey = weaponKeyOf(mainhand);
+  // 采集自动手持（_handToolOverride）优先于主手装备：采集是显式动作，手上显示正在用的工具
+  const equippedKey = entity?._handToolOverride || weaponKeyOf(mainhand) || null;
   const ownedKeys = collectInventoryWeaponKeys(entity);
   for (const slot of asset.slots) {
     const parsed = parseWeaponSlot(slot);
@@ -172,9 +173,9 @@ export function createPlayerSkeletonStateMapper(entity, { getAssetManager = null
       }
     }
 
-    // 武器槽位联动：手持位 = 当前主手装备；背挂位 = 背包里有但没装备
+    // 武器槽位联动：手持位 = 采集自动手持 > 当前主手装备；背挂位 = 背包里有但没装备
     const mainhand = entity.getComponent?.('equipment')?.getEquipment?.('mainhand');
-    const equippedKey = weaponKeyOf(mainhand) || '';
+    const equippedKey = entity._handToolOverride || weaponKeyOf(mainhand) || '';
     const ownedKeys = [...collectInventoryWeaponKeys(entity)].sort().join(',');
     const weaponState = `${equippedKey}|${ownedKeys}`;
     if (weaponState !== lastWeaponState) {

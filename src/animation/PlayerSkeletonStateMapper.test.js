@@ -1,15 +1,3 @@
-/************************************************************
- * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
- * 
- * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
- * @author    刘枭 (beiliwenxiao)
- * @email     beiliwenxiao@qq.com
- * @date      2026-01-14
- * @blog      `https://blog.csdn.net/beiliwenxiao`
- * @repo      `https://github.com/beiliwenxiao/yijian18-engine`
- *            `https://gitee.com/coderaaa/yijian18-engine`
- ************************************************************/
-
 import { describe, it, expect } from 'vitest';
 import { parseSkeletonAsset } from './SkeletonAsset.js';
 import { createPlayerSkeletonStateMapper } from './PlayerSkeletonStateMapper.js';
@@ -130,5 +118,41 @@ describe('武器槽位联动（装备=手持，卸下=背挂）', () => {
     mainhandBox.current = null;                            // 卸下
     hook(skeleton);
     expect(slotVisible(asset, 'toolHand')).toBe(false);    // 手持隐藏
+  });
+
+  it('采集自动手持：未装备工具时 _handToolOverride 使手持位显示（采集开始）', () => {
+    const asset = buildWeaponSkeleton();
+    const entity = buildEntity({ bag: [{ id: 'tool.worn_axe', toolType: 'axe' }] });
+    entity._handToolOverride = 'axe';                      // GatheringSystem.start 设置
+    const hook = createPlayerSkeletonStateMapper(entity, {});
+    hook(buildSkeletonComponent(asset));
+    expect(slotVisible(asset, 'toolHand')).toBe(true);     // 手上出现斧头
+  });
+
+  it('采集结束：_handToolOverride 清除后手持位隐藏（工具消失）', () => {
+    const asset = buildWeaponSkeleton();
+    const entity = buildEntity({ bag: [{ id: 'tool.worn_axe', toolType: 'axe' }] });
+    entity._handToolOverride = 'axe';
+    const hook = createPlayerSkeletonStateMapper(entity, {});
+    const skeleton = buildSkeletonComponent(asset);
+    hook(skeleton);
+    expect(slotVisible(asset, 'toolHand')).toBe(true);
+
+    entity._handToolOverride = null;                       // _finish 清除
+    hook(skeleton);
+    expect(slotVisible(asset, 'toolHand')).toBe(false);
+  });
+
+  it('采集 override 优先于主手装备：手上显示正在用的工具', () => {
+    const asset = buildWeaponSkeleton();
+    const entity = buildEntity({
+      mainhand: { id: 'weapon.axe', weaponKey: 'axe' },
+      bag: [{ id: 'weapon.spear', weaponKey: 'spear' }]
+    });
+    entity._handToolOverride = 'axe';                      // 采集中
+    const hook = createPlayerSkeletonStateMapper(entity, {});
+    hook(buildSkeletonComponent(asset));
+    expect(slotVisible(asset, 'toolHand')).toBe(true);     // axe 手持（override 与装备同值）
+    expect(slotVisible(asset, 'spearBack')).toBe(true);    // spear 背挂照常
   });
 });

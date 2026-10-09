@@ -11,6 +11,7 @@
  ************************************************************/
 
 import { RNG } from '../core/RNG.js';
+import { weaponKeyOf } from '../animation/SkeletonPartResolver.js';
 
 function stableSeed(value) {
   let hash = 2166136261;
@@ -127,6 +128,10 @@ export class GatheringSystem {
     // 随机产量：节点配置 gatherYieldRange 时在 start 时按确定性 RNG（operationId 种子，
     // 重放一致）roll 本次产量，HUD 预期与结算使用同一值。
     this.session.yieldAmount = this._rollSessionYield(this.session);
+    // 采集自动手持：未装备对应工具时临时「握在手上」表现采集动画（不真正装备，
+    // 不动背包/装备数据）；采集结束（完成/中断）由 _finish 清除。
+    // 装备了同款工具时 override 与装备 weaponKey 同值，显示结果一致。
+    actor._handToolOverride = tool ? weaponKeyOf(tool) : null;
     this.onEvent('started', this.describe());
     return { ok: true, session: this.describe() };
   }
@@ -303,6 +308,8 @@ export class GatheringSystem {
 
   _finish(result, terminalEvent = (result.ok ? 'completed' : 'interrupted'), emitEvent = true) {
     const details = this.describe();
+    // 采集结束：清除自动手持（工具从手上消失）
+    if (this.session?.actor) this.session.actor._handToolOverride = null;
     this.session = null;
     const payload = { ...details, ...result };
     if (emitEvent) this.onEvent(terminalEvent, payload);

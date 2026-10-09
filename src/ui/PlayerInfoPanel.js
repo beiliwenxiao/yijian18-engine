@@ -994,7 +994,7 @@ export class PlayerInfoPanel extends UIElement {
     const reduceApplies = item.attackSpeed == null
       && speedReduce && Number(speedReduce.reduceSec) > 0
       && baseInterval >= (Number(speedReduce.thresholdSec) > 0 ? Number(speedReduce.thresholdSec) : 1);
-    if (item.attackSpeed != null || item.subType === 'mainhand' || item.subType === 'offhand' || item.subType === 'weapon') {
+    if (item.attackSpeed != null || item.subType === 'mainhand' || item.subType === 'offhand' || item.subType === 'weapon' || item.subType === 'tool') {
       ctx.fillStyle = '#ffaa00';
       if (reduceApplies) {
         const resolvedInterval = Math.max(Number(speedReduce.minSec) || 0, baseInterval - Number(speedReduce.reduceSec));

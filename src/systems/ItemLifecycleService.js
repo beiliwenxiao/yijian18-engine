@@ -530,7 +530,7 @@ export class ItemLifecycleService {
     const found = this._itemFromInventory(inventory, command.payload.itemId, command.payload.instanceId);
     if (!found) return { ok: false, code: 'itemMissing' };
     const definition = this._definition(found.item.definitionId || found.item.id) || found.item;
-    if (!this._hasCapability(definition, 'equippable', found.item.type === 'equipment')) {
+    if (!this._hasCapability(definition, 'equippable', found.item.type === 'equipment' || found.item.type === 'tool')) {
       return { ok: false, code: 'itemNotEquippable' };
     }
     const equipment = actor.getComponent?.('equipment');

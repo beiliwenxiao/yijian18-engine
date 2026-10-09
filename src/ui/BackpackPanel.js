@@ -352,7 +352,7 @@ export class BackpackPanel extends UIElement {
 
   _getMenuActions({ item, descriptor }) {
     if (descriptor.kind === 'equipment') return [{ id: 'unequip', label: '卸下', color: '#8d5a3b' }];
-    if (item.type === 'equipment') {
+    if (item.type === 'equipment' || item.type === 'tool') {
       return [
         { id: 'equip', label: '装备', color: '#3f7e48' },
         { id: 'drop', label: '丢弃', color: '#8d3d3d' }

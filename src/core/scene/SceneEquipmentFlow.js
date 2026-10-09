@@ -25,7 +25,8 @@ export const SLOT_MAP = {
   weapon: 'mainhand',
   shield: 'offhand',
   ammo: 'offhand',
-  ring: 'ring1'
+  ring: 'ring1',
+  tool: 'mainhand'
 };
 
 /** 参与对比展示的属性字段与中文名 */

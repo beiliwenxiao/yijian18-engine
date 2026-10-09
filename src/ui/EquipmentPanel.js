@@ -369,7 +369,7 @@ export class EquipmentPanel extends UIElement {
       }
 
       // 攻击间隔（武器特有属性）：显示词条生效后的实际值（如狼牙 3-1.5=1.5秒）
-      if (equipment.attackSpeed != null || equipment.subType === 'mainhand' || equipment.subType === 'offhand' || equipment.subType === 'weapon') {
+      if (equipment.attackSpeed != null || equipment.subType === 'mainhand' || equipment.subType === 'offhand' || equipment.subType === 'weapon' || equipment.subType === 'tool') {
         const speedReduce = equipment.attackSpeedReduce;
         const baseInterval = equipment.attackSpeed != null ? equipment.attackSpeed : 3;
         const reduceApplies = equipment.attackSpeed == null
