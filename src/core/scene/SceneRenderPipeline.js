@@ -11,6 +11,7 @@
  ************************************************************/
 
 import { GroundMarkerRenderer } from '../../rendering/GroundMarkerRenderer.js';
+import { OcclusionFadeController } from '../../rendering/OcclusionFade.js';
 
 const WORLD_PHASE_NAMES = Object.freeze([
   'renderBackground', 'renderGroundMarkers', 'renderPickups', 'renderWorldObjects', 'renderWorldEffects'
@@ -143,6 +144,9 @@ export class SceneRenderPipeline {
       camera: null, viewBounds: null, loadedCoverage: null, width: 0, height: 0
     };
     this._campfireRenderRuntime = { particleSystem: null, width: 0, height: 0 };
+    /** 大物件遮挡玩家渐隐：每帧复用的候选缓冲 + 控制器 */
+    this._occluderBuffer = [];
+    this._occlusionFade = new OcclusionFadeController();
   }
 
   render(ctx) {
@@ -310,10 +314,22 @@ export class SceneRenderPipeline {
     const queueSortStartedAt = frameProfile ? performance.now() : 0;
     queue.sort((a, b) => (a.y - b.y) || ((a.sortPriority || 0) - (b.sortPriority || 0)));
     if (frameProfile) frameProfile.worldQueueSort = performance.now() - queueSortStartedAt;
+
+    // 大物件遮挡玩家渐隐：排序后（拿到每项最终 sortY）扫描并更新 alpha
+    const playerEntity = context?.player?.entity || null;
+    this._updateOcclusionFade(playerEntity, queue);
     const queueDrawStartedAt = frameProfile ? performance.now() : 0;
     for (let i = 0, len = queue.length; i < len; i++) {
       const item = queue[i];
-      if (item.type === 'entity') scene.renderEntity(ctx, item.entity);
+      const itemKey = item.type === 'entity' ? item.entity : item;
+      const occlusionAlpha = this._occlusionFade.alphaFor(itemKey);
+      if (occlusionAlpha < 1) {
+        ctx.save();
+        ctx.globalAlpha *= Math.max(0.05, occlusionAlpha);
+        if (item.type === 'entity') scene.renderEntity(ctx, item.entity);
+        else item.render?.();
+        ctx.restore();
+      } else if (item.type === 'entity') scene.renderEntity(ctx, item.entity);
       else item.render?.();
     }
     if (frameProfile) frameProfile.worldQueueDraw = performance.now() - queueDrawStartedAt;
@@ -322,6 +338,60 @@ export class SceneRenderPipeline {
     for (const terrain of terrains) terrain.renderCliffs?.(ctx);
     scene._renderBuffZones?.(ctx);
     scene.renderSpeechBubbles?.(ctx);
+  }
+
+  /**
+   * 大物件遮挡渐隐：从 Y-sort 队列提取候选（场景装饰图 / 场景图片 / 大体积实体）
+   * 并更新 OcclusionFadeController。必须在排序后调用（sortY 才是最终绘制顺序）。
+   * @private
+   */
+  _updateOcclusionFade(playerEntity, queue) {
+    const occluders = this._occluderBuffer;
+    occluders.length = 0;
+    let player = null;
+    for (let i = 0, len = queue.length; i < len; i++) {
+      const item = queue[i];
+      if (item.type === 'entity') {
+        const entity = item.entity;
+        if (!entity) continue;
+        if (entity === playerEntity) {
+          // 玩家信息：脚底锚点 + 精灵高度（含缩放）作为采样身高
+          const position = entity.getComponent?.('transform')?.position;
+          const sprite = entity.getComponent?.('sprite');
+          if (position) {
+            player = {
+              x: position.x,
+              yFeet: position.y,
+              height: (sprite?.height || 48) * (sprite?.scale || 1),
+              sortY: item.y
+            };
+          }
+          continue;
+        }
+        const sprite = entity.getComponent?.('sprite');
+        if (!sprite || sprite.visible === false) continue;
+        const scale = sprite.scale || 1;
+        const width = (sprite.width || 0) * scale;
+        const height = (sprite.height || 0) * scale;
+        if (width * height < this._occlusionFade.minArea || height < this._occlusionFade.minHeight) continue;
+        const position = entity.getComponent?.('transform')?.position;
+        if (!position) continue;
+        occluders.push({
+          key: entity,
+          left: position.x - width / 2, right: position.x + width / 2,
+          top: item.y - height, bottom: item.y,
+          sortY: item.y
+        });
+      } else {
+        // 场景装饰/图片队列项（含 left/right/top/bottom 世界包围盒；ground cache 无 bounds 跳过）
+        if (item.left === undefined) continue;
+        const width = item.right - item.left;
+        const height = item.bottom - item.top;
+        if (width * height < this._occlusionFade.minArea || height < this._occlusionFade.minHeight) continue;
+        occluders.push({ key: item, left: item.left, right: item.right, top: item.top, bottom: item.bottom, sortY: item.y });
+      }
+    }
+    this._occlusionFade.update(player, occluders);
   }
 
   /** 入队前的无分配视野检测；边距覆盖名称、血条和高精灵。 @private */
