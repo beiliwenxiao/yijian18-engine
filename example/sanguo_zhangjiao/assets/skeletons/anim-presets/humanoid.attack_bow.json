@@ -1,0 +1,134 @@
+{
+  "presetId": "humanoid.attack_bow",
+  "topology": "humanoid",
+  "clipName": "attack_bow",
+  "durationMs": 900,
+  "loop": false,
+  "tracks": [
+    {
+      "bone": "armUL",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "easeInOut"
+        },
+        {
+          "t": 200,
+          "ease": "easeInOut",
+          "rot": -85
+        },
+        {
+          "t": 700,
+          "ease": "easeInOut",
+          "rot": -85
+        },
+        {
+          "t": 900,
+          "ease": "easeInOut"
+        }
+      ]
+    },
+    {
+      "bone": "armFL",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "easeInOut"
+        },
+        {
+          "t": 200,
+          "ease": "easeInOut",
+          "rot": -15
+        },
+        {
+          "t": 700,
+          "ease": "easeInOut",
+          "rot": -15
+        },
+        {
+          "t": 900,
+          "ease": "easeInOut"
+        }
+      ]
+    },
+    {
+      "bone": "armUR",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "easeInOut"
+        },
+        {
+          "t": 150,
+          "ease": "easeInOut",
+          "rot": -70
+        },
+        {
+          "t": 350,
+          "ease": "easeInOut",
+          "rot": -78
+        },
+        {
+          "t": 550,
+          "ease": "easeInOut",
+          "rot": -60
+        },
+        {
+          "t": 650,
+          "ease": "easeInOut",
+          "rot": -85
+        },
+        {
+          "t": 900,
+          "ease": "easeInOut"
+        }
+      ]
+    },
+    {
+      "bone": "armFR",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "easeInOut"
+        },
+        {
+          "t": 150,
+          "ease": "easeInOut",
+          "rot": -30
+        },
+        {
+          "t": 550,
+          "ease": "easeInOut",
+          "rot": -20
+        },
+        {
+          "t": 650,
+          "ease": "easeInOut",
+          "rot": -35
+        },
+        {
+          "t": 900,
+          "ease": "easeInOut"
+        }
+      ]
+    },
+    {
+      "bone": "torso",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "easeInOut"
+        },
+        {
+          "t": 200,
+          "ease": "easeInOut",
+          "rot": -6
+        },
+        {
+          "t": 900,
+          "ease": "easeInOut"
+        }
+      ]
+    }
+  ]
+}

@@ -20,7 +20,7 @@ import { CanonicalSceneValidator } from '../core/scene/CanonicalSceneValidation.
 import { prepareSharedAtlasTransaction } from './sharedAtlasTransaction.js';
 import { prepareLibraryItemImageTransaction } from './LibraryItemImageTransaction.js';
 import { prepareSceneImageAssetTransaction } from './SceneImageAssetTransaction.js';
-import { prepareSkeletonAssetTransaction } from './SkeletonAssetTransaction.js';
+import { prepareSkeletonAssetTransaction, prepareAnimPresetTransaction } from './SkeletonAssetTransaction.js';
 import { normalizeShardDeclaration, findShardFieldDuplication } from '../core/projectShards.js';
 
 const JSON_HEADERS = { 'Content-Type': 'application/json; charset=utf-8' };
@@ -441,6 +441,23 @@ export function editorFileAPIPlugin({ repoRoot, allowedProjectPaths = [] } = {})
               return reply(res, 403, { ok: false, committed: false, error: '非当前项目' });
             }
             const info = canonicalInfo(projectPath);
+            // 动作预设通道：presets 存在且无 skeletons → 写 anim-presets/，不动 Manifest
+            if (Array.isArray(body.presets) && body.presets.length > 0 && !body.skeletons) {
+              let presetPrepared;
+              const presetResult = await adapter.commitPrepared(() => {
+                presetPrepared = prepareAnimPresetTransaction({
+                  repoRoot: root,
+                  projectPath,
+                  projectRoot: info.projectRoot,
+                  presets: body.presets
+                });
+                return presetPrepared.changes;
+              });
+              if (!presetResult.ok) {
+                return reply(res, 500, { ...presetResult, error: presetResult.error?.message || '动作预设磁盘提交失败' });
+              }
+              return reply(res, 200, { ...presetResult, presets: presetPrepared.presets });
+            }
             let prepared;
             const result = await adapter.commitPrepared(() => {
               prepared = prepareSkeletonAssetTransaction({

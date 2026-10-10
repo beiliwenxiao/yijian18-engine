@@ -1,0 +1,106 @@
+{
+  "presetId": "humanoid.attack_melee",
+  "topology": "humanoid",
+  "clipName": "attack_melee",
+  "durationMs": 700,
+  "loop": false,
+  "tracks": [
+    {
+      "bone": "armUR",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "easeInOut"
+        },
+        {
+          "t": 150,
+          "ease": "easeInOut",
+          "rot": -55
+        },
+        {
+          "t": 350,
+          "ease": "easeInOut",
+          "rot": 60
+        },
+        {
+          "t": 550,
+          "ease": "easeInOut",
+          "rot": 20
+        },
+        {
+          "t": 700,
+          "ease": "easeInOut"
+        }
+      ]
+    },
+    {
+      "bone": "armFR",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "easeInOut"
+        },
+        {
+          "t": 150,
+          "ease": "easeInOut",
+          "rot": -20
+        },
+        {
+          "t": 350,
+          "ease": "easeInOut",
+          "rot": 15
+        },
+        {
+          "t": 550,
+          "ease": "easeInOut",
+          "rot": 10
+        },
+        {
+          "t": 700,
+          "ease": "easeInOut"
+        }
+      ]
+    },
+    {
+      "bone": "armUL",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "easeInOut"
+        },
+        {
+          "t": 350,
+          "ease": "easeInOut",
+          "rot": 25
+        },
+        {
+          "t": 700,
+          "ease": "easeInOut"
+        }
+      ]
+    },
+    {
+      "bone": "torso",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "easeInOut"
+        },
+        {
+          "t": 150,
+          "ease": "easeInOut",
+          "rot": -10
+        },
+        {
+          "t": 350,
+          "ease": "easeInOut",
+          "rot": 14
+        },
+        {
+          "t": 700,
+          "ease": "easeInOut"
+        }
+      ]
+    }
+  ]
+}

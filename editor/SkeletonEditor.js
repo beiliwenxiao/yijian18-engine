@@ -92,6 +92,9 @@ export class SkeletonEditor {
     this.displayMode = 'all';
     // 模板编辑态：true=当前打开的是 tpl.* 模板文档（保存写回 templates/，不动 Manifest）
     this.editingTemplate = false;
+    // 动作模板索引（anim-presets/index.json，懒加载）与拓扑骨集缓存
+    this.presetIndex = null;
+    this._tplBoneSets = null;
     // 撤销/重做：doc JSON 快照栈（编辑器会话内，最多 50 步）
     this._undoStack = [];
     this._redoStack = [];
@@ -203,6 +206,7 @@ export class SkeletonEditor {
     // 部件库 / 素材 Tab 切换
     $('se-tab-parts').addEventListener('click', () => this._setLibTab('parts'));
     $('se-tab-assets').addEventListener('click', () => this._setLibTab('assets'));
+    $('se-tab-presets').addEventListener('click', () => this._setLibTab('presets'));
     $('se-image-import-file').addEventListener('change', event => {
       const file = event.target.files?.[0];
       event.target.value = ''; // 允许重复导入同一文件
@@ -3200,14 +3204,155 @@ export class SkeletonEditor {
   _setLibTab(tab) {
     const partsEl = document.getElementById('se-part-lib');
     const assetsEl = document.getElementById('se-image-lib');
+    const presetsEl = document.getElementById('se-preset-lib');
     const partsBtn = document.getElementById('se-tab-parts');
     const assetsBtn = document.getElementById('se-tab-assets');
-    if (!partsEl || !assetsEl) return;
-    const isParts = tab === 'parts';
-    partsEl.style.display = isParts ? '' : 'none';
-    assetsEl.style.display = isParts ? 'none' : '';
-    if (partsBtn) partsBtn.style.background = isParts ? '#2a4a3e' : '';
-    if (assetsBtn) assetsBtn.style.background = isParts ? '' : '#2a4a3e';
+    const presetsBtn = document.getElementById('se-tab-presets');
+    if (!partsEl || !assetsEl || !presetsEl) return;
+    partsEl.style.display = tab === 'parts' ? '' : 'none';
+    assetsEl.style.display = tab === 'assets' ? '' : 'none';
+    presetsEl.style.display = tab === 'presets' ? '' : 'none';
+    if (partsBtn) partsBtn.style.background = tab === 'parts' ? '#2a4a3e' : '';
+    if (assetsBtn) assetsBtn.style.background = tab === 'assets' ? '#2a4a3e' : '';
+    if (presetsBtn) presetsBtn.style.background = tab === 'presets' ? '#2a4a3e' : '';
+    if (tab === 'presets') this._renderPresetLib();
+  }
+
+  /* ---------------- 动作模板（animation presets：套用即深拷贝，零数据关联） ---------------- */
+
+  /** 当前文档拓扑识别：与各模板的骨名集合求重合度，取最高分（缓存模板骨集）。 */
+  async _detectTopology() {
+    if (!this.doc) return null;
+    if (!this._tplBoneSets) {
+      this._tplBoneSets = new Map();
+      for (const templateId of SKELETON_TEMPLATES) {
+        try {
+          const tpl = await this._fetchTemplate(templateId);
+          this._tplBoneSets.set(templateId.replace(/^tpl\./, ''), new Set(tpl.bones.map(b => b.id)));
+        } catch { /* 模板缺失跳过 */ }
+      }
+    }
+    const docBones = new Set((this.doc.bones || []).map(b => b.id));
+    let best = null;
+    let bestScore = 0;
+    for (const [topology, bones] of this._tplBoneSets.entries()) {
+      let score = 0;
+      for (const id of bones) if (docBones.has(id)) score++;
+      const ratio = score / bones.size;
+      if (ratio > bestScore) { bestScore = ratio; best = topology; }
+    }
+    return bestScore >= 0.6 ? best : null;
+  }
+
+  /** 动作模板面板：按拓扑分组列出预设；顶部「存为预设」。 */
+  async _renderPresetLib() {
+    const container = document.getElementById('se-preset-lib');
+    if (!container) return;
+    if (!this.presetIndex) {
+      try {
+        const res = await fetch(`/${this.gameRoot}/assets/skeletons/anim-presets/index.json`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        this.presetIndex = await res.json();
+      } catch (error) {
+        container.innerHTML = `<div style="padding:8px;color:#e08080;font-size:12px;">预设索引读取失败：${error.message}</div>`;
+        return;
+      }
+    }
+    const topology = await this._detectTopology();
+    const groups = new Map();
+    for (const preset of this.presetIndex) {
+      if (!groups.has(preset.topology)) groups.set(preset.topology, []);
+      groups.get(preset.topology).push(preset);
+    }
+    const html = [
+      '<div style="padding:6px 8px;border-bottom:1px solid #26355c;display:flex;gap:4px;align-items:center;">',
+      `<span style="font-size:11px;color:#9aa5c0;">当前拓扑：${topology ? `<b style="color:#8fd0a8;">${topology}</b>` : '未识别（全部列出）'}</span>`,
+      '<span style="flex:1;"></span>',
+      '<button id="se-preset-save" style="flex:none;font-size:11px;padding:2px 6px;" title="把当前剪辑序列化为预设 JSON（可新建或覆盖）">💾 存为预设</button>',
+      '</div>'
+    ];
+    for (const [presetTopology, presets] of groups) {
+      if (topology && presetTopology !== topology) continue;
+      html.push(`<div style="padding:4px 8px;font-size:11px;color:#5a6a90;border-bottom:1px solid #1c2742;">${presetTopology}</div>`);
+      for (const preset of presets) {
+        html.push(`<div class="se-preset-item" data-preset-id="${preset.presetId}" style="padding:3px 8px;font-size:12px;cursor:pointer;border-bottom:1px solid #1c2742;display:flex;justify-content:space-between;">`
+          + `<span>${preset.clipName}</span><span style="color:#5a6a90;">${preset.durationMs}ms${preset.loop === false ? ' ⏹' : ' ↻'}</span></div>`);
+      }
+    }
+    container.innerHTML = html.join('');
+    container.querySelectorAll('.se-preset-item').forEach(item => {
+      item.addEventListener('click', () => this._applyPreset(item.dataset.presetId));
+      item.addEventListener('mouseenter', () => { item.style.background = '#1c2a4a'; });
+      item.addEventListener('mouseleave', () => { item.style.background = ''; });
+    });
+    document.getElementById('se-preset-save')?.addEventListener('click', () => this._saveClipAsPreset());
+  }
+
+  /** 套用预设：按骨名匹配写入轨道（匹配不到的骨跳过），可撤销；同名剪辑需确认覆盖。 */
+  async _applyPreset(presetId) {
+    if (!this.doc) return;
+    let preset;
+    try {
+      const res = await fetch(`/${this.gameRoot}/assets/skeletons/anim-presets/${presetId}.json`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      preset = await res.json();
+    } catch (error) {
+      this._toast(`预设读取失败：${error.message}`, true);
+      return;
+    }
+    const docBones = new Set((this.doc.bones || []).map(b => b.id));
+    const matchedTracks = (preset.tracks || []).filter(track => docBones.has(track.bone));
+    if (matchedTracks.length === 0) {
+      this._toast(`预设 ${presetId} 没有任何轨道匹配当前骨架，未套用`, true);
+      return;
+    }
+    const existing = (this.doc.clips || []).find(clip => clip.name === preset.clipName);
+    if (existing && !confirm(`剪辑「${preset.clipName}」已存在，覆盖？（可 Ctrl+Z 撤销）`)) return;
+    this._pushHistory();
+    const clip = {
+      name: preset.clipName,
+      durationMs: preset.durationMs || 1000,
+      loop: preset.loop !== false,
+      tracks: structuredClone(matchedTracks)
+    };
+    if (existing) {
+      const index = this.doc.clips.indexOf(existing);
+      this.doc.clips[index] = clip;
+    } else {
+      this.doc.clips.push(clip);
+    }
+    this.currentClip = clip.name;
+    this.previewTime = 0;
+    this._afterDocChange();
+    this._markDirty();
+    const skipped = (preset.tracks || []).length - matchedTracks.length;
+    this._toast(`已套用 ${presetId}（匹配 ${matchedTracks.length} 条轨道${skipped > 0 ? `，跳过 ${skipped} 条` : ''}）——深拷贝写入，与预设无关联`);
+  }
+
+  /** 当前剪辑 → 预设 JSON（保存经 /api/skeleton-asset-transaction 的 presets 通道写 anim-presets/）。 */
+  async _saveClipAsPreset() {
+    const clip = this._clip();
+    if (!clip) { this._toast('当前没有剪辑', true); return; }
+    const topology = await this._detectTopology();
+    const suggested = `${topology || 'custom'}.${clip.name}`;
+    const presetId = (prompt('预设 ID（拓扑.动作名）：', suggested) || '').trim();
+    if (!presetId) return;
+    if (!/^[A-Za-z][A-Za-z0-9._-]*$/.test(presetId)) { this._toast('预设 ID 不合法', true); return; }
+    const preset = {
+      presetId, topology: topology || 'custom', clipName: clip.name,
+      durationMs: clip.durationMs || 1000, loop: clip.loop !== false,
+      tracks: structuredClone(clip.tracks || [])
+    };
+    const result = await this.commands.savePreset(this.projectPath, preset);
+    if (result.ok) {
+      if (!this.presetIndex.some(item => item.presetId === presetId)) {
+        this.presetIndex.push({ presetId, topology: preset.topology, clipName: preset.clipName, durationMs: preset.durationMs, loop: preset.loop });
+        this._renderPresetLib();
+      }
+      this._toast(`预设已保存：anim-presets/${presetId}.json（只影响之后的套用）`);
+    } else {
+      this._toast(`预设保存失败：${result.error || '未知错误'}`, true);
+    }
   }
 
   /** 部件库：按 category 分组显示，点击「挂骨骼」一键创建槽位（含 partId）。 */

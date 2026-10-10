@@ -1,0 +1,247 @@
+[
+  {
+    "presetId": "humanoid.walk_S",
+    "topology": "humanoid",
+    "clipName": "walk_S",
+    "durationMs": 800,
+    "loop": true
+  },
+  {
+    "presetId": "humanoid.walk_SE",
+    "topology": "humanoid",
+    "clipName": "walk_SE",
+    "durationMs": 800,
+    "loop": true
+  },
+  {
+    "presetId": "humanoid.walk_E",
+    "topology": "humanoid",
+    "clipName": "walk_E",
+    "durationMs": 800,
+    "loop": true
+  },
+  {
+    "presetId": "humanoid.walk_NE",
+    "topology": "humanoid",
+    "clipName": "walk_NE",
+    "durationMs": 800,
+    "loop": true
+  },
+  {
+    "presetId": "humanoid.walk_N",
+    "topology": "humanoid",
+    "clipName": "walk_N",
+    "durationMs": 800,
+    "loop": true
+  },
+  {
+    "presetId": "humanoid.walk_NW",
+    "topology": "humanoid",
+    "clipName": "walk_NW",
+    "durationMs": 800,
+    "loop": true
+  },
+  {
+    "presetId": "humanoid.walk_W",
+    "topology": "humanoid",
+    "clipName": "walk_W",
+    "durationMs": 800,
+    "loop": true
+  },
+  {
+    "presetId": "humanoid.walk_SW",
+    "topology": "humanoid",
+    "clipName": "walk_SW",
+    "durationMs": 800,
+    "loop": true
+  },
+  {
+    "presetId": "humanoid.run_S",
+    "topology": "humanoid",
+    "clipName": "run_S",
+    "durationMs": 480,
+    "loop": true
+  },
+  {
+    "presetId": "humanoid.run_SE",
+    "topology": "humanoid",
+    "clipName": "run_SE",
+    "durationMs": 480,
+    "loop": true
+  },
+  {
+    "presetId": "humanoid.run_E",
+    "topology": "humanoid",
+    "clipName": "run_E",
+    "durationMs": 480,
+    "loop": true
+  },
+  {
+    "presetId": "humanoid.run_NE",
+    "topology": "humanoid",
+    "clipName": "run_NE",
+    "durationMs": 480,
+    "loop": true
+  },
+  {
+    "presetId": "humanoid.run_N",
+    "topology": "humanoid",
+    "clipName": "run_N",
+    "durationMs": 480,
+    "loop": true
+  },
+  {
+    "presetId": "humanoid.run_NW",
+    "topology": "humanoid",
+    "clipName": "run_NW",
+    "durationMs": 480,
+    "loop": true
+  },
+  {
+    "presetId": "humanoid.run_W",
+    "topology": "humanoid",
+    "clipName": "run_W",
+    "durationMs": 480,
+    "loop": true
+  },
+  {
+    "presetId": "humanoid.run_SW",
+    "topology": "humanoid",
+    "clipName": "run_SW",
+    "durationMs": 480,
+    "loop": true
+  },
+  {
+    "presetId": "humanoid.jump",
+    "topology": "humanoid",
+    "clipName": "jump",
+    "durationMs": 900,
+    "loop": false
+  },
+  {
+    "presetId": "humanoid.climb",
+    "topology": "humanoid",
+    "clipName": "climb",
+    "durationMs": 900,
+    "loop": true
+  },
+  {
+    "presetId": "humanoid.attack_melee",
+    "topology": "humanoid",
+    "clipName": "attack_melee",
+    "durationMs": 700,
+    "loop": false
+  },
+  {
+    "presetId": "humanoid.attack_bow",
+    "topology": "humanoid",
+    "clipName": "attack_bow",
+    "durationMs": 900,
+    "loop": false
+  },
+  {
+    "presetId": "humanoid.attack_cast",
+    "topology": "humanoid",
+    "clipName": "attack_cast",
+    "durationMs": 900,
+    "loop": false
+  },
+  {
+    "presetId": "wolf.walk",
+    "topology": "wolf",
+    "clipName": "walk",
+    "durationMs": 700,
+    "loop": true
+  },
+  {
+    "presetId": "wolf.run",
+    "topology": "wolf",
+    "clipName": "run",
+    "durationMs": 450,
+    "loop": true
+  },
+  {
+    "presetId": "wolf.attack_bite",
+    "topology": "wolf",
+    "clipName": "attack_bite",
+    "durationMs": 600,
+    "loop": false
+  },
+  {
+    "presetId": "horse.walk",
+    "topology": "horse",
+    "clipName": "walk",
+    "durationMs": 800,
+    "loop": true
+  },
+  {
+    "presetId": "horse.run",
+    "topology": "horse",
+    "clipName": "run",
+    "durationMs": 500,
+    "loop": true
+  },
+  {
+    "presetId": "horse.attack_bite",
+    "topology": "horse",
+    "clipName": "attack_bite",
+    "durationMs": 600,
+    "loop": false
+  },
+  {
+    "presetId": "mounted.ride_idle",
+    "topology": "mounted",
+    "clipName": "ride_idle",
+    "durationMs": 1600,
+    "loop": true
+  },
+  {
+    "presetId": "mounted.ride_run",
+    "topology": "mounted",
+    "clipName": "ride_run",
+    "durationMs": 600,
+    "loop": true
+  },
+  {
+    "presetId": "siege_ram.ram_advance",
+    "topology": "siege_ram",
+    "clipName": "ram_advance",
+    "durationMs": 1000,
+    "loop": true
+  },
+  {
+    "presetId": "siege_ram.ram_strike",
+    "topology": "siege_ram",
+    "clipName": "ram_strike",
+    "durationMs": 900,
+    "loop": true
+  },
+  {
+    "presetId": "siege_catapult.catapult_cock",
+    "topology": "siege_catapult",
+    "clipName": "catapult_cock",
+    "durationMs": 1400,
+    "loop": false
+  },
+  {
+    "presetId": "siege_catapult.catapult_launch",
+    "topology": "siege_catapult",
+    "clipName": "catapult_launch",
+    "durationMs": 800,
+    "loop": false
+  },
+  {
+    "presetId": "siege_tower.tower_advance",
+    "topology": "siege_tower",
+    "clipName": "tower_advance",
+    "durationMs": 1200,
+    "loop": true
+  },
+  {
+    "presetId": "siege_tower.tower_deploy",
+    "topology": "siege_tower",
+    "clipName": "tower_deploy",
+    "durationMs": 1000,
+    "loop": false
+  }
+]

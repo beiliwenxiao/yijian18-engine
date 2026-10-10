@@ -1,0 +1,109 @@
+{
+  "presetId": "siege_tower.tower_advance",
+  "topology": "siege_tower",
+  "clipName": "tower_advance",
+  "durationMs": 1200,
+  "loop": true,
+  "tracks": [
+    {
+      "bone": "wheelFL",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "linear",
+          "rot": 0
+        },
+        {
+          "t": 1200,
+          "ease": "linear",
+          "rot": 360
+        }
+      ]
+    },
+    {
+      "bone": "wheelBL",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "linear",
+          "rot": 0
+        },
+        {
+          "t": 1200,
+          "ease": "linear",
+          "rot": 360
+        }
+      ]
+    },
+    {
+      "bone": "wheelFR",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "linear",
+          "rot": 0
+        },
+        {
+          "t": 1200,
+          "ease": "linear",
+          "rot": 360
+        }
+      ]
+    },
+    {
+      "bone": "wheelBR",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "linear",
+          "rot": 0
+        },
+        {
+          "t": 1200,
+          "ease": "linear",
+          "rot": 360
+        }
+      ]
+    },
+    {
+      "bone": "towerL3",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "easeInOut",
+          "rot": 1
+        },
+        {
+          "t": 600,
+          "ease": "easeInOut",
+          "rot": -1
+        },
+        {
+          "t": 1200,
+          "ease": "easeInOut",
+          "rot": 1
+        }
+      ]
+    },
+    {
+      "bone": "top_platform",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "easeInOut",
+          "rot": -1
+        },
+        {
+          "t": 600,
+          "ease": "easeInOut",
+          "rot": 1
+        },
+        {
+          "t": 1200,
+          "ease": "easeInOut",
+          "rot": -1
+        }
+      ]
+    }
+  ]
+}

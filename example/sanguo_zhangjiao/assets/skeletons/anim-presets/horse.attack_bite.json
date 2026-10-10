@@ -1,0 +1,80 @@
+{
+  "presetId": "horse.attack_bite",
+  "topology": "horse",
+  "clipName": "attack_bite",
+  "durationMs": 600,
+  "loop": false,
+  "tracks": [
+    {
+      "bone": "neck1",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "easeInOut"
+        },
+        {
+          "t": 200,
+          "ease": "easeInOut",
+          "rot": -6
+        },
+        {
+          "t": 350,
+          "ease": "easeInOut",
+          "rot": 8
+        },
+        {
+          "t": 600,
+          "ease": "easeInOut"
+        }
+      ]
+    },
+    {
+      "bone": "head",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "easeInOut"
+        },
+        {
+          "t": 200,
+          "ease": "easeInOut",
+          "rot": -8
+        },
+        {
+          "t": 350,
+          "ease": "easeInOut",
+          "rot": 10
+        },
+        {
+          "t": 600,
+          "ease": "easeInOut"
+        }
+      ]
+    },
+    {
+      "bone": "chest",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "easeInOut",
+          "x": 0
+        },
+        {
+          "t": 200,
+          "ease": "easeInOut",
+          "x": 3
+        },
+        {
+          "t": 350,
+          "ease": "easeInOut",
+          "x": 6
+        },
+        {
+          "t": 600,
+          "ease": "easeInOut",
+          "x": 0
+        }
+      ]
+    }
+  ]
+}

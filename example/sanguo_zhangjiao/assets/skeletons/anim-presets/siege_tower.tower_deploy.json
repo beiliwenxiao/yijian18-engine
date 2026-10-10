@@ -1,0 +1,64 @@
+{
+  "presetId": "siege_tower.tower_deploy",
+  "topology": "siege_tower",
+  "clipName": "tower_deploy",
+  "durationMs": 1000,
+  "loop": false,
+  "tracks": [
+    {
+      "bone": "shield_front",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "easeInOut"
+        },
+        {
+          "t": 600,
+          "ease": "easeInOut",
+          "rot": -18
+        },
+        {
+          "t": 1000,
+          "ease": "easeInOut",
+          "rot": -18
+        }
+      ]
+    },
+    {
+      "bone": "towerL1",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "easeInOut"
+        },
+        {
+          "t": 600,
+          "ease": "easeInOut",
+          "rot": 2
+        },
+        {
+          "t": 1000,
+          "ease": "easeInOut"
+        }
+      ]
+    },
+    {
+      "bone": "top_platform",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "easeInOut"
+        },
+        {
+          "t": 600,
+          "ease": "easeInOut",
+          "rot": -2
+        },
+        {
+          "t": 1000,
+          "ease": "easeInOut"
+        }
+      ]
+    }
+  ]
+}

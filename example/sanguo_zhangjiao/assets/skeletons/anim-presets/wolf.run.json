@@ -1,0 +1,249 @@
+{
+  "presetId": "wolf.run",
+  "topology": "wolf",
+  "clipName": "run",
+  "durationMs": 450,
+  "loop": true,
+  "tracks": [
+    {
+      "bone": "legFL_upper",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "easeInOut",
+          "rot": 30
+        },
+        {
+          "t": 225,
+          "ease": "easeInOut",
+          "rot": -30
+        },
+        {
+          "t": 450,
+          "ease": "easeInOut",
+          "rot": 30
+        }
+      ]
+    },
+    {
+      "bone": "legHR_upper",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "easeInOut",
+          "rot": 30
+        },
+        {
+          "t": 225,
+          "ease": "easeInOut",
+          "rot": -30
+        },
+        {
+          "t": 450,
+          "ease": "easeInOut",
+          "rot": 30
+        }
+      ]
+    },
+    {
+      "bone": "legFR_upper",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "easeInOut",
+          "rot": -30
+        },
+        {
+          "t": 225,
+          "ease": "easeInOut",
+          "rot": 30
+        },
+        {
+          "t": 450,
+          "ease": "easeInOut",
+          "rot": -30
+        }
+      ]
+    },
+    {
+      "bone": "legHL_upper",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "easeInOut",
+          "rot": -30
+        },
+        {
+          "t": 225,
+          "ease": "easeInOut",
+          "rot": 30
+        },
+        {
+          "t": 450,
+          "ease": "easeInOut",
+          "rot": -30
+        }
+      ]
+    },
+    {
+      "bone": "legFL_lower",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "easeInOut",
+          "rot": -15
+        },
+        {
+          "t": 225,
+          "ease": "easeInOut",
+          "rot": 15
+        },
+        {
+          "t": 450,
+          "ease": "easeInOut",
+          "rot": -15
+        }
+      ]
+    },
+    {
+      "bone": "legHR_lower",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "easeInOut",
+          "rot": -15
+        },
+        {
+          "t": 225,
+          "ease": "easeInOut",
+          "rot": 15
+        },
+        {
+          "t": 450,
+          "ease": "easeInOut",
+          "rot": -15
+        }
+      ]
+    },
+    {
+      "bone": "legFR_lower",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "easeInOut",
+          "rot": 15
+        },
+        {
+          "t": 225,
+          "ease": "easeInOut",
+          "rot": -15
+        },
+        {
+          "t": 450,
+          "ease": "easeInOut",
+          "rot": 15
+        }
+      ]
+    },
+    {
+      "bone": "legHL_lower",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "easeInOut",
+          "rot": 15
+        },
+        {
+          "t": 225,
+          "ease": "easeInOut",
+          "rot": -15
+        },
+        {
+          "t": 450,
+          "ease": "easeInOut",
+          "rot": 15
+        }
+      ]
+    },
+    {
+      "bone": "head",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "easeInOut",
+          "rot": -3
+        },
+        {
+          "t": 225,
+          "ease": "easeInOut",
+          "rot": 3
+        },
+        {
+          "t": 450,
+          "ease": "easeInOut",
+          "rot": -3
+        }
+      ]
+    },
+    {
+      "bone": "tail1",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "easeInOut",
+          "rot": 10
+        },
+        {
+          "t": 225,
+          "ease": "easeInOut",
+          "rot": -10
+        },
+        {
+          "t": 450,
+          "ease": "easeInOut",
+          "rot": 10
+        }
+      ]
+    },
+    {
+      "bone": "tail2",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "easeInOut",
+          "rot": 14
+        },
+        {
+          "t": 225,
+          "ease": "easeInOut",
+          "rot": -14
+        },
+        {
+          "t": 450,
+          "ease": "easeInOut",
+          "rot": 14
+        }
+      ]
+    },
+    {
+      "bone": "spine",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "easeInOut",
+          "rot": 4
+        },
+        {
+          "t": 225,
+          "ease": "easeInOut",
+          "rot": 2
+        },
+        {
+          "t": 450,
+          "ease": "easeInOut",
+          "rot": 4
+        }
+      ]
+    }
+  ]
+}

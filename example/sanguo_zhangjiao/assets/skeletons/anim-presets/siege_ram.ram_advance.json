@@ -1,0 +1,89 @@
+{
+  "presetId": "siege_ram.ram_advance",
+  "topology": "siege_ram",
+  "clipName": "ram_advance",
+  "durationMs": 1000,
+  "loop": true,
+  "tracks": [
+    {
+      "bone": "wheelFL",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "linear",
+          "rot": 0
+        },
+        {
+          "t": 1000,
+          "ease": "linear",
+          "rot": 360
+        }
+      ]
+    },
+    {
+      "bone": "wheelBL",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "linear",
+          "rot": 0
+        },
+        {
+          "t": 1000,
+          "ease": "linear",
+          "rot": 360
+        }
+      ]
+    },
+    {
+      "bone": "wheelFR",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "linear",
+          "rot": 0
+        },
+        {
+          "t": 1000,
+          "ease": "linear",
+          "rot": 360
+        }
+      ]
+    },
+    {
+      "bone": "wheelBR",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "linear",
+          "rot": 0
+        },
+        {
+          "t": 1000,
+          "ease": "linear",
+          "rot": 360
+        }
+      ]
+    },
+    {
+      "bone": "ram_arm",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "easeInOut",
+          "rot": 4
+        },
+        {
+          "t": 500,
+          "ease": "easeInOut",
+          "rot": -4
+        },
+        {
+          "t": 1000,
+          "ease": "easeInOut",
+          "rot": 4
+        }
+      ]
+    }
+  ]
+}

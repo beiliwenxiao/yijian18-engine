@@ -188,3 +188,67 @@ export function prepareSkeletonAssetTransaction({
 }
 
 export default prepareSkeletonAssetTransaction;
+
+/**
+ * 动作预设「保存即落盘」事务：preset JSON 写 assets/skeletons/anim-presets/（不动 Manifest）。
+ * 轻校验：presetId 稳定 ID + clipName/durationMs/tracks 结构 + 键时间单调非负。
+ * 预设是纯便利起点（套用即深拷贝），与目标骨架无数据关联——模板独立性原则。
+ */
+export function prepareAnimPresetTransaction({
+  repoRoot,
+  projectPath,
+  projectRoot,
+  presets
+} = {}) {
+  if (!Array.isArray(presets) || presets.length === 0) {
+    throw failure('presets 不能为空', [validationError('presets', '至少需要一项动作预设')]);
+  }
+  const changes = [];
+  const committed = [];
+  for (const [index, update] of presets.entries()) {
+    const source = `presets[${index}]`;
+    const preset = update?.preset;
+    if (!preset || typeof preset !== 'object') {
+      throw failure(`${source} 必须是对象`);
+    }
+    const presetId = String(preset.presetId || '').trim();
+    if (!STABLE_ID_PATTERN.test(presetId)) {
+      throw failure(`动作预设 ID 无效: ${presetId}`, [validationError(`${source}.presetId`, 'presetId 必须是稳定标识符')]);
+    }
+    if (!String(preset.clipName || '').trim()) {
+      throw failure(`${source}.clipName 不能为空`);
+    }
+    const durationMs = Number(preset.durationMs);
+    if (!(durationMs > 0)) {
+      throw failure(`${source}.durationMs 必须大于 0`);
+    }
+    if (!Array.isArray(preset.tracks)) {
+      throw failure(`${source}.tracks 必须是数组`);
+    }
+    for (const [trackIndex, track] of preset.tracks.entries()) {
+      if (!track?.bone || !Array.isArray(track.keys) || track.keys.length === 0) {
+        throw failure(`${source}.tracks[${trackIndex}] 必须含 bone 与非空 keys`);
+      }
+      let previousT = -1;
+      for (const key of track.keys) {
+        const t = Number(key?.t);
+        if (!Number.isFinite(t) || t < 0 || t > durationMs || t < previousT) {
+          throw failure(`${source}.tracks[${trackIndex}].keys 存在非法/越界/非单调的 t`);
+        }
+        previousT = t;
+      }
+    }
+    const target = path.resolve(repoRoot, projectRoot, `assets/skeletons/anim-presets/${presetId}.json`);
+    const relative = path.relative(path.resolve(repoRoot, projectRoot), target);
+    if (relative.startsWith('..') || path.isAbsolute(relative)) {
+      throw failure('预设文件路径越出当前游戏目录', [validationError(`${source}.presetId`, '路径越权')]);
+    }
+    changes.push({
+      operation: fs.existsSync(target) ? 'replace' : 'create',
+      path: `${projectRoot}/assets/skeletons/anim-presets/${presetId}.json`,
+      content: json(preset)
+    });
+    committed.push(preset);
+  }
+  return { presets: committed, changes };
+}

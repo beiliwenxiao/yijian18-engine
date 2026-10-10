@@ -1,0 +1,66 @@
+{
+  "presetId": "siege_catapult.catapult_cock",
+  "topology": "siege_catapult",
+  "clipName": "catapult_cock",
+  "durationMs": 1400,
+  "loop": false,
+  "tracks": [
+    {
+      "bone": "throw_arm",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "easeInOut",
+          "rot": -30
+        },
+        {
+          "t": 1400,
+          "ease": "easeInOut",
+          "rot": -72
+        }
+      ]
+    },
+    {
+      "bone": "sling",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "easeInOut"
+        },
+        {
+          "t": 1400,
+          "ease": "easeInOut",
+          "rot": 8
+        }
+      ]
+    },
+    {
+      "bone": "counterweight",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "easeInOut"
+        },
+        {
+          "t": 1400,
+          "ease": "easeInOut",
+          "rot": -6
+        }
+      ]
+    },
+    {
+      "bone": "frame_winch",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "easeInOut"
+        },
+        {
+          "t": 1400,
+          "ease": "easeInOut",
+          "rot": 20
+        }
+      ]
+    }
+  ]
+}

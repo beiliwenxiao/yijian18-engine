@@ -1,0 +1,229 @@
+{
+  "presetId": "wolf.walk",
+  "topology": "wolf",
+  "clipName": "walk",
+  "durationMs": 700,
+  "loop": true,
+  "tracks": [
+    {
+      "bone": "legFL_upper",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "easeInOut",
+          "rot": 20
+        },
+        {
+          "t": 350,
+          "ease": "easeInOut",
+          "rot": -20
+        },
+        {
+          "t": 700,
+          "ease": "easeInOut",
+          "rot": 20
+        }
+      ]
+    },
+    {
+      "bone": "legHR_upper",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "easeInOut",
+          "rot": 20
+        },
+        {
+          "t": 350,
+          "ease": "easeInOut",
+          "rot": -20
+        },
+        {
+          "t": 700,
+          "ease": "easeInOut",
+          "rot": 20
+        }
+      ]
+    },
+    {
+      "bone": "legFR_upper",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "easeInOut",
+          "rot": -20
+        },
+        {
+          "t": 350,
+          "ease": "easeInOut",
+          "rot": 20
+        },
+        {
+          "t": 700,
+          "ease": "easeInOut",
+          "rot": -20
+        }
+      ]
+    },
+    {
+      "bone": "legHL_upper",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "easeInOut",
+          "rot": -20
+        },
+        {
+          "t": 350,
+          "ease": "easeInOut",
+          "rot": 20
+        },
+        {
+          "t": 700,
+          "ease": "easeInOut",
+          "rot": -20
+        }
+      ]
+    },
+    {
+      "bone": "legFL_lower",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "easeInOut",
+          "rot": -10
+        },
+        {
+          "t": 350,
+          "ease": "easeInOut",
+          "rot": 10
+        },
+        {
+          "t": 700,
+          "ease": "easeInOut",
+          "rot": -10
+        }
+      ]
+    },
+    {
+      "bone": "legHR_lower",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "easeInOut",
+          "rot": -10
+        },
+        {
+          "t": 350,
+          "ease": "easeInOut",
+          "rot": 10
+        },
+        {
+          "t": 700,
+          "ease": "easeInOut",
+          "rot": -10
+        }
+      ]
+    },
+    {
+      "bone": "legFR_lower",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "easeInOut",
+          "rot": 10
+        },
+        {
+          "t": 350,
+          "ease": "easeInOut",
+          "rot": -10
+        },
+        {
+          "t": 700,
+          "ease": "easeInOut",
+          "rot": 10
+        }
+      ]
+    },
+    {
+      "bone": "legHL_lower",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "easeInOut",
+          "rot": 10
+        },
+        {
+          "t": 350,
+          "ease": "easeInOut",
+          "rot": -10
+        },
+        {
+          "t": 700,
+          "ease": "easeInOut",
+          "rot": 10
+        }
+      ]
+    },
+    {
+      "bone": "head",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "easeInOut",
+          "rot": -3
+        },
+        {
+          "t": 350,
+          "ease": "easeInOut",
+          "rot": 3
+        },
+        {
+          "t": 700,
+          "ease": "easeInOut",
+          "rot": -3
+        }
+      ]
+    },
+    {
+      "bone": "tail1",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "easeInOut",
+          "rot": 10
+        },
+        {
+          "t": 350,
+          "ease": "easeInOut",
+          "rot": -10
+        },
+        {
+          "t": 700,
+          "ease": "easeInOut",
+          "rot": 10
+        }
+      ]
+    },
+    {
+      "bone": "tail2",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "easeInOut",
+          "rot": 14
+        },
+        {
+          "t": 350,
+          "ease": "easeInOut",
+          "rot": -14
+        },
+        {
+          "t": 700,
+          "ease": "easeInOut",
+          "rot": 14
+        }
+      ]
+    }
+  ]
+}

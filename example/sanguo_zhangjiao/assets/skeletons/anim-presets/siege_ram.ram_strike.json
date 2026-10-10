@@ -1,0 +1,36 @@
+{
+  "presetId": "siege_ram.ram_strike",
+  "topology": "siege_ram",
+  "clipName": "ram_strike",
+  "durationMs": 900,
+  "loop": true,
+  "tracks": [
+    {
+      "bone": "ram_arm",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "easeInOut"
+        },
+        {
+          "t": 250,
+          "ease": "easeInOut",
+          "rot": -38
+        },
+        {
+          "t": 450,
+          "ease": "easeInOut",
+          "rot": 32
+        },
+        {
+          "t": 650,
+          "ease": "easeInOut"
+        },
+        {
+          "t": 900,
+          "ease": "easeInOut"
+        }
+      ]
+    }
+  ]
+}

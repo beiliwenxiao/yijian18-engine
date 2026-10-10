@@ -1,0 +1,179 @@
+{
+  "presetId": "humanoid.walk_NW",
+  "topology": "humanoid",
+  "clipName": "walk_NW",
+  "durationMs": 800,
+  "loop": true,
+  "tracks": [
+    {
+      "bone": "thighL",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "easeInOut",
+          "rot": -14
+        },
+        {
+          "t": 400,
+          "ease": "easeInOut",
+          "rot": 14
+        },
+        {
+          "t": 800,
+          "ease": "easeInOut",
+          "rot": -14
+        }
+      ]
+    },
+    {
+      "bone": "thighR",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "easeInOut",
+          "rot": 14
+        },
+        {
+          "t": 400,
+          "ease": "easeInOut",
+          "rot": -14
+        },
+        {
+          "t": 800,
+          "ease": "easeInOut",
+          "rot": 14
+        }
+      ]
+    },
+    {
+      "bone": "calfL",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "easeInOut",
+          "rot": 8.4
+        },
+        {
+          "t": 400,
+          "ease": "easeInOut",
+          "rot": -8.4
+        },
+        {
+          "t": 800,
+          "ease": "easeInOut",
+          "rot": 8.4
+        }
+      ]
+    },
+    {
+      "bone": "calfR",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "easeInOut",
+          "rot": -8.4
+        },
+        {
+          "t": 400,
+          "ease": "easeInOut",
+          "rot": 8.4
+        },
+        {
+          "t": 800,
+          "ease": "easeInOut",
+          "rot": -8.4
+        }
+      ]
+    },
+    {
+      "bone": "armUL",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "easeInOut",
+          "rot": 9.799999999999999
+        },
+        {
+          "t": 400,
+          "ease": "easeInOut",
+          "rot": -9.799999999999999
+        },
+        {
+          "t": 800,
+          "ease": "easeInOut",
+          "rot": 9.799999999999999
+        }
+      ]
+    },
+    {
+      "bone": "armUR",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "easeInOut",
+          "rot": -9.799999999999999
+        },
+        {
+          "t": 400,
+          "ease": "easeInOut",
+          "rot": 9.799999999999999
+        },
+        {
+          "t": 800,
+          "ease": "easeInOut",
+          "rot": -9.799999999999999
+        }
+      ]
+    },
+    {
+      "bone": "hips",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "easeInOut",
+          "y": 0
+        },
+        {
+          "t": 200,
+          "ease": "easeInOut",
+          "y": -2
+        },
+        {
+          "t": 400,
+          "ease": "easeInOut",
+          "y": 0
+        },
+        {
+          "t": 600,
+          "ease": "easeInOut",
+          "y": -2
+        },
+        {
+          "t": 800,
+          "ease": "easeInOut",
+          "y": 0
+        }
+      ]
+    },
+    {
+      "bone": "torso",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "easeInOut",
+          "rot": -2
+        },
+        {
+          "t": 400,
+          "ease": "easeInOut",
+          "rot": 2
+        },
+        {
+          "t": 800,
+          "ease": "easeInOut",
+          "rot": -2
+        }
+      ]
+    }
+  ]
+}

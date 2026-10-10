@@ -1,0 +1,81 @@
+{
+  "presetId": "siege_catapult.catapult_launch",
+  "topology": "siege_catapult",
+  "clipName": "catapult_launch",
+  "durationMs": 800,
+  "loop": false,
+  "tracks": [
+    {
+      "bone": "throw_arm",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "easeInOut",
+          "rot": -72
+        },
+        {
+          "t": 120,
+          "ease": "easeInOut",
+          "rot": 38
+        },
+        {
+          "t": 300,
+          "ease": "easeInOut",
+          "rot": 20
+        },
+        {
+          "t": 800,
+          "ease": "easeInOut",
+          "rot": -30
+        }
+      ]
+    },
+    {
+      "bone": "sling",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "easeInOut",
+          "rot": 8
+        },
+        {
+          "t": 120,
+          "ease": "easeInOut",
+          "rot": -25
+        },
+        {
+          "t": 300,
+          "ease": "easeInOut"
+        },
+        {
+          "t": 800,
+          "ease": "easeInOut"
+        }
+      ]
+    },
+    {
+      "bone": "counterweight",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "easeInOut",
+          "rot": -6
+        },
+        {
+          "t": 120,
+          "ease": "easeInOut",
+          "rot": 24
+        },
+        {
+          "t": 300,
+          "ease": "easeInOut",
+          "rot": 10
+        },
+        {
+          "t": 800,
+          "ease": "easeInOut"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,149 @@
+{
+  "presetId": "mounted.ride_idle",
+  "topology": "mounted",
+  "clipName": "ride_idle",
+  "durationMs": 1600,
+  "loop": true,
+  "tracks": [
+    {
+      "bone": "spine",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "easeInOut",
+          "rot": 2
+        },
+        {
+          "t": 800,
+          "ease": "easeInOut",
+          "rot": -2
+        },
+        {
+          "t": 1600,
+          "ease": "easeInOut",
+          "rot": 2
+        }
+      ]
+    },
+    {
+      "bone": "neck1",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "easeInOut",
+          "rot": 3
+        },
+        {
+          "t": 800,
+          "ease": "easeInOut",
+          "rot": -3
+        },
+        {
+          "t": 1600,
+          "ease": "easeInOut",
+          "rot": 3
+        }
+      ]
+    },
+    {
+      "bone": "tail1",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "easeInOut",
+          "rot": 8
+        },
+        {
+          "t": 800,
+          "ease": "easeInOut",
+          "rot": -8
+        },
+        {
+          "t": 1600,
+          "ease": "easeInOut",
+          "rot": 8
+        }
+      ]
+    },
+    {
+      "bone": "rider_torso",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "easeInOut",
+          "rot": -2
+        },
+        {
+          "t": 800,
+          "ease": "easeInOut",
+          "rot": 2
+        },
+        {
+          "t": 1600,
+          "ease": "easeInOut",
+          "rot": -2
+        }
+      ]
+    },
+    {
+      "bone": "rider_head",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "easeInOut",
+          "rot": 3
+        },
+        {
+          "t": 800,
+          "ease": "easeInOut",
+          "rot": -3
+        },
+        {
+          "t": 1600,
+          "ease": "easeInOut",
+          "rot": 3
+        }
+      ]
+    },
+    {
+      "bone": "rider_armUL",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "easeInOut",
+          "rot": -3
+        },
+        {
+          "t": 800,
+          "ease": "easeInOut",
+          "rot": 3
+        },
+        {
+          "t": 1600,
+          "ease": "easeInOut",
+          "rot": -3
+        }
+      ]
+    },
+    {
+      "bone": "rider_armUR",
+      "keys": [
+        {
+          "t": 0,
+          "ease": "easeInOut",
+          "rot": 3
+        },
+        {
+          "t": 800,
+          "ease": "easeInOut",
+          "rot": -3
+        },
+        {
+          "t": 1600,
+          "ease": "easeInOut",
+          "rot": 3
+        }
+      ]
+    }
+  ]
+}

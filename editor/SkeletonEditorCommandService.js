@@ -83,6 +83,38 @@ export class SkeletonEditorCommandService {
     if (!response.ok) throw new Error(`骨骼资产读取失败（HTTP ${response.status}）`);
     return response.json();
   }
+
+  /** 保存动作预设（走同一事务端点的 presets 通道，写 assets/skeletons/anim-presets/，不动 Manifest）。 */
+  savePreset(projectPath, preset) {
+    const normalized = normalizeProjectPath(projectPath);
+    const current = this._queue
+      .catch(() => undefined)
+      .then(() => this._savePreset(normalized, preset));
+    this._queue = current;
+    return current;
+  }
+
+  async _savePreset(projectPath, preset) {
+    try {
+      const response = await this.fetchImpl(this.endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectPath, presets: [{ preset }] })
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok || payload?.ok !== true || payload.committed !== true) {
+        return {
+          ...payload,
+          ok: false,
+          committed: false,
+          error: payload?.error || payload?.error?.message || `动作预设提交失败（HTTP ${response.status}）`
+        };
+      }
+      return payload;
+    } catch (error) {
+      return { ok: false, committed: false, error: error?.message || String(error) };
+    }
+  }
 }
 
 export default SkeletonEditorCommandService;
