@@ -3319,14 +3319,17 @@ export class SkeletonEditor {
     this._toast(`已挂载 ${SkeletonEditor._displayName(part.assetId)} → 骨骼 ${SkeletonEditor._displayName(boneId)}`);
   }
 
-  /** 拖拽组合的落点反算：附件中心对齐世界坐标 worldPos（挂点偏移=世界坐标→骨骼局部）。 */
+  /** 拖拽组合的落点反算：附件中心对齐世界坐标 worldPos（挂点偏移=世界坐标→骨骼局部，需按骨骼旋转逆转，与 _attachmentAnchorWorld 互逆）。 */
   _applyAttachmentDropOffset(slot, boneId, worldPos) {
     if (!worldPos) return;
     const boneWorld = this._boneWorldTransforms().get(boneId);
     if (!boneWorld) return;
-    // 与 _attachmentAnchorWorld 的正变换互逆（运行时语义：挂点偏移随骨骼旋转/缩放）
-    slot.attachment.x = Math.round(((worldPos.x - boneWorld.x) / (boneWorld.sx || 1)) * 10) / 10;
-    slot.attachment.y = Math.round(((worldPos.y - boneWorld.y) / (boneWorld.sy || 1)) * 10) / 10;
+    const dx = worldPos.x - boneWorld.x;
+    const dy = worldPos.y - boneWorld.y;
+    const cos = Math.cos(-boneWorld.rad);
+    const sin = Math.sin(-boneWorld.rad);
+    slot.attachment.x = Math.round(((dx * cos - dy * sin) / (boneWorld.sx || 1)) * 10) / 10;
+    slot.attachment.y = Math.round(((dx * sin + dy * cos) / (boneWorld.sy || 1)) * 10) / 10;
   }
 
   /**
@@ -3371,7 +3374,7 @@ export class SkeletonEditor {
     this._renderInspector();
     this._renderPartLib();
     this._renderImageLib();
-    this._toast(`已组合 ${SkeletonEditor._displayName(part.assetId)} → ${SkeletonEditor._displayName(boneId)}${worldPos ? '（落点即位置）' : ''}`);
+    this._toast(`已组合 ${SkeletonEditor._displayName(part.assetId)} → ${SkeletonEditor._displayName(boneId)}${worldPos ? '（落点即位置）' : ''}${this.displayMode === 'bones' ? '（仅骨架视图，切「图片+骨架」查看）' : ''}`);
   }
 
   /**
@@ -3420,7 +3423,7 @@ export class SkeletonEditor {
     this._renderInspector();
     this._renderImageLib();
     this._renderPartLib();
-    this._toast(`已组合 ${SkeletonEditor._displayName(assetId)} → ${SkeletonEditor._displayName(boneId)}${worldPos ? '（落点即位置）' : ''}`);
+    this._toast(`已组合 ${SkeletonEditor._displayName(assetId)} → ${SkeletonEditor._displayName(boneId)}${worldPos ? '（落点即位置）' : ''}${this.displayMode === 'bones' ? '（仅骨架视图，切「图片+骨架」查看）' : ''}`);
   }
 
   /** 图片库（Spine 式）：缩略图列表；「→骨骼」挂图、「解绑」移除该图片的所有槽位。 */
