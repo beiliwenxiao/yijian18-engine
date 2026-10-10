@@ -82,6 +82,8 @@ export class SkeletonEditor {
     this.transformMode = 'move';
     // 方向预览（会话态）：'down'|'side'|'up'——按运行时 HEAD_SLOTS 规则切头部三态槽位预览可见性
     this.previewDirection = 'down';
+    // 显示模式（会话态）：'all' 图片+骨架 | 'bones' 仅骨架（调动作） | 'images' 仅图片（查外观）
+    this.displayMode = 'all';
     // 撤销/重做：doc JSON 快照栈（编辑器会话内，最多 50 步）
     this._undoStack = [];
     this._redoStack = [];
@@ -205,6 +207,9 @@ export class SkeletonEditor {
     $('se-dir-down').addEventListener('click', () => this._setPreviewDirection('down'));
     $('se-dir-side').addEventListener('click', () => this._setPreviewDirection('side'));
     $('se-dir-up').addEventListener('click', () => this._setPreviewDirection('up'));
+    $('se-disp-all').addEventListener('click', () => this._setDisplayMode('all'));
+    $('se-disp-bones').addEventListener('click', () => this._setDisplayMode('bones'));
+    $('se-disp-images').addEventListener('click', () => this._setDisplayMode('images'));
     // 帧步进 + 当前时间输入（步长 = 剪辑时长 / 12）
     $('se-frame-prev').addEventListener('click', () => {
       this.previewTime = Math.max(0, this.previewTime - this._clipDuration() / 12);
@@ -1098,7 +1103,9 @@ export class SkeletonEditor {
     const world = this._boneWorldTransforms();
 
     // 槽位附件预览（z 顺序；隐藏/锁定的槽位不画；attachment.visible=false 不画——对齐运行时三方向切换语义）
+    // 仅骨架模式（displayMode='bones'）：隐藏全部挂件，便于调骨骼动作
     for (const slot of this.runtime.slots) {
+      if (this.displayMode === 'bones') break;
       const attachment = slot.attachment;
       if (!attachment || attachment.type === 'empty') continue;
       // 方向预览：三态头部槽位按 previewDirection 覆盖可见性（不覆写 JSON，对齐运行时 HEAD_SLOTS）
@@ -1131,14 +1138,17 @@ export class SkeletonEditor {
     }
 
     // 骨骼骨形（Spine/火柴人式）：骨条画向子骨骼原点（叶子骨骼沿身体方向），首尾相接
+    // 仅图片模式（displayMode='images'）：只画选中骨骼的细骨形（保持可见所选），其余隐藏
     for (const bone of this.doc.bones || []) {
       const boneWorld = world.get(bone.id);
       if (!boneWorld) continue;
+      const isSelectedBone = this.selectedBones.has(bone.id);
+      if (this.displayMode === 'images' && !isSelectedBone) continue;
       const tip = this._boneTip(bone, world);
       if (!tip) continue;
       const start = this._worldToScreen(boneWorld.x, boneWorld.y);
       const end = this._worldToScreen(tip.x, tip.y);
-      const selected = this.selectedBones.has(bone.id);
+      const selected = isSelectedBone;
       const locked = this._isBoneLocked(bone.id);
       const hidden = this._isBoneHidden(bone.id);
       const dx = end.x - start.x;
@@ -1175,8 +1185,29 @@ export class SkeletonEditor {
       ctx.fill();
     }
 
+    // 仅骨架模式：骨骼名标注（骨条中点），方便按名字找骨调动
+    if (this.displayMode === 'bones') {
+      ctx.font = '10px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      for (const bone of this.doc.bones || []) {
+        const boneWorld = world.get(bone.id);
+        if (!boneWorld) continue;
+        const tip = this._boneTip(bone, world);
+        if (!tip) continue;
+        const start = this._worldToScreen(boneWorld.x, boneWorld.y);
+        const end = this._worldToScreen(tip.x, tip.y);
+        const selected = this.selectedBones.has(bone.id);
+        ctx.fillStyle = selected ? '#ffd479' : 'rgba(154,165,192,0.95)';
+        ctx.fillText(SkeletonEditor._displayName(bone.id), (start.x + end.x) / 2, (start.y + end.y) / 2 - 9);
+      }
+      ctx.textAlign = 'start';
+      ctx.textBaseline = 'alphabetic';
+    }
+
     // 多选槽位附件高亮：描边盒 + 骨骼原点→附件中心偏移连线（Spine 式挂点可视化）
-    for (const slotId of this.selectedSlots) {
+    // 仅骨架模式下挂件不可见，高亮一并跳过
+    if (this.displayMode !== 'bones') for (const slotId of this.selectedSlots) {
       const runtimeSlot = this.runtime?.slots.find(candidate => candidate.id === slotId);
       const attachment = runtimeSlot?.attachment;
       const boneWorld = runtimeSlot ? world.get(runtimeSlot.bone) : null;
@@ -1223,7 +1254,8 @@ export class SkeletonEditor {
     }
 
     // 主选中附件的 8 手柄变换框（FW8 式：角=双向缩放，边中点=单向缩放；Shift+角=等比）
-    const handleBox = this._attachmentHandles(world);
+    // 仅骨架模式下挂件不可见，变换框一并隐藏
+    const handleBox = this.displayMode === 'bones' ? null : this._attachmentHandles(world);
     if (handleBox) {
       ctx.strokeStyle = '#7ec8ff';
       ctx.lineWidth = 1;
@@ -1421,8 +1453,8 @@ export class SkeletonEditor {
     if (!this.runtime) return;
     const world = this._boneWorldTransforms();
     const additive = event.ctrlKey || event.metaKey;
-    // 缩放模式：8 手柄变换框命中（仅缩放模式启用；移动/旋转模式下选框仅作选中指示）
-    if (this.transformMode === 'scale' && !additive) {
+    // 缩放模式：8 手柄变换框命中（仅缩放模式启用；移动/旋转模式下选框仅作选中指示；仅骨架模式挂件不可见不命中）
+    if (this.transformMode === 'scale' && this.displayMode !== 'bones' && !additive) {
       const handleHit = this._hitTransformHandles(mx, my, world);
       if (handleHit) {
         const slot = this._slotById(handleHit.slotId);
@@ -1621,6 +1653,8 @@ export class SkeletonEditor {
    *  命中盒按图片非透明像素包围盒（alpha 扫描缓存），避免透明区域遮挡下层图片的点选。
    *  返回 doc 槽位 ID。 */
   _hitAttachment(mx, my, world) {
+    // 仅骨架模式：挂件不可见也不可点（点击穿透到骨骼）
+    if (this.displayMode === 'bones') return null;
     const slots = [...(this.runtime?.slots || [])].reverse();
     for (const runtimeSlot of slots) {
       const attachment = runtimeSlot.attachment;
@@ -2380,6 +2414,23 @@ export class SkeletonEditor {
     for (const d of ['down', 'side', 'up']) {
       const btn = document.getElementById(`se-dir-${d}`);
       if (btn) btn.style.background = this.previewDirection === d ? '#2a4a3e' : '';
+    }
+  }
+
+  /** 显示模式切换：'all' 图片+骨架 | 'bones' 仅骨架 | 'images' 仅图片。 */
+  _setDisplayMode(mode) {
+    if (this.displayMode === mode) return;
+    this.displayMode = mode;
+    this._refreshDisplayButtons();
+    this._draw();
+    const labels = { all: '图片+骨架', bones: '仅骨架（挂件已隐藏，骨骼名已标注）', images: '仅图片（骨骼线已隐藏）' };
+    this._toast(`显示：${labels[mode] || mode}`);
+  }
+
+  _refreshDisplayButtons() {
+    for (const mode of ['all', 'bones', 'images']) {
+      const btn = document.getElementById(`se-disp-${mode}`);
+      if (btn) btn.style.background = this.displayMode === mode ? '#2a4a3e' : '';
     }
   }
 
