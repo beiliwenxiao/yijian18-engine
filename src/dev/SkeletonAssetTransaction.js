@@ -53,7 +53,9 @@ function readJson(absolutePath, source) {
  * @param {string} params.repoRoot - dev server 工作根
  * @param {string} params.projectPath - 项目路径（game.project.json）
  * @param {string} params.projectRoot - 项目根（不含 game.project.json）
- * @param {Array<{document: Object}>} params.skeletons - 骨骼文档列表
+ * @param {Array<{document: Object, template?: boolean}>} params.skeletons - 骨骼文档列表；
+ *   template=true 表示骨架模板（tpl.*）：写回 assets/skeletons/templates/、跳过附件 Manifest
+ *   引用检查、不做 Manifest upsert（模板是纯便利起点，非运行时资产——模板独立性原则）
  * @returns {{ manifest: Object, skeletons: Array<Object>, changes: Array<{operation:string, path:string, content:string}> }}
  */
 export function prepareSkeletonAssetTransaction({
@@ -71,9 +73,11 @@ export function prepareSkeletonAssetTransaction({
   const skeletonRoot = `${projectRoot}/assets/skeletons`;
   const changes = [];
   const committed = [];
+  let manifestDirty = false;
 
   for (const [index, update] of skeletons.entries()) {
     const source = `skeletons[${index}]`;
+    const isTemplate = update?.template === true;
     const validation = validateSkeletonAsset(update?.document);
     if (!validation.ok) {
       throw failure(`骨骼资产校验失败: ${update?.document?.skeletonId || '(匿名)'}`, validation.errors);
@@ -86,17 +90,20 @@ export function prepareSkeletonAssetTransaction({
       ]);
     }
 
-    // 附件引用必须已在 Manifest 登记为 image 模式
-    for (const [slotIndex, slot] of (doc.slots || []).entries()) {
-      const attachment = slot?.attachment;
-      if (!attachment || attachment.type === 'empty') continue;
-      const ref = String(attachment.assetId || '').trim();
-      const refEntry = manifestEntries.find(entry => entry?.assetId === ref || entry?.imageId === ref);
-      if (!refEntry || refEntry.runtime2D?.mode !== 'image') {
-        throw failure(`槽位 ${slotIndex} 附件引用的图片未登记或不是 image 模式: ${ref}`, [
-          validationError(`${source}.slots[${slotIndex}].attachment.assetId`,
-            '请先通过场景图片导入登记素材图片，再保存骨骼资产')
-        ]);
+    // 附件引用必须已在 Manifest 登记为 image 模式（模板跳过：槽位为 empty 占位，
+    // 自定义模板的示例附件不强制先登记）
+    if (!isTemplate) {
+      for (const [slotIndex, slot] of (doc.slots || []).entries()) {
+        const attachment = slot?.attachment;
+        if (!attachment || attachment.type === 'empty') continue;
+        const ref = String(attachment.assetId || '').trim();
+        const refEntry = manifestEntries.find(entry => entry?.assetId === ref || entry?.imageId === ref);
+        if (!refEntry || refEntry.runtime2D?.mode !== 'image') {
+          throw failure(`槽位 ${slotIndex} 附件引用的图片未登记或不是 image 模式: ${ref}`, [
+            validationError(`${source}.slots[${slotIndex}].attachment.assetId`,
+              '请先通过场景图片导入登记素材图片，再保存骨骼资产')
+          ]);
+        }
       }
     }
 
@@ -108,7 +115,9 @@ export function prepareSkeletonAssetTransaction({
     const existingPath = existingEntry?.runtime2D?.mode === 'skeleton'
       ? String(existingEntry.runtime2D.path || '').trim()
       : '';
-    const skeletonRelPath = existingPath || `assets/skeletons/${skeletonId}.json`;
+    const skeletonRelPath = isTemplate
+      ? `assets/skeletons/templates/${skeletonId}.json`
+      : (existingPath || `assets/skeletons/${skeletonId}.json`);
     if (!skeletonRelPath.startsWith('assets/skeletons/') || skeletonRelPath.includes('..')) {
       throw failure(`骨骼文件路径越出 assets/skeletons/：${skeletonRelPath}`, [
         validationError(`${source}.skeletonId`, '路径越权')
@@ -125,51 +134,56 @@ export function prepareSkeletonAssetTransaction({
       content: json(doc)
     });
 
-    // Manifest upsert
-    const metaWidth = Number(doc.meta?.width) > 0 ? Number(doc.meta.width) : 64;
-    const metaHeight = Number(doc.meta?.height) > 0 ? Number(doc.meta.height) : 128;
-    const existingIndex = manifestEntries.findIndex(entry => entry?.assetId === skeletonId || entry?.imageId === skeletonId);
-    if (existingIndex >= 0) {
-      const entry = manifestEntries[existingIndex];
-      if (entry.runtime2D?.mode === 'atlas') {
-        throw failure(`目标条目是共享图集资源，不允许通过骨骼资产事务改写: ${skeletonId}`, [
-          validationError(`${source}.skeletonId`, 'atlas 资源请通过共享图集事务维护')
-        ]);
+    // Manifest upsert（模板不做：模板非运行时资产，不出现在 Manifest / 游戏资产表）
+    if (!isTemplate) {
+      manifestDirty = true;
+      const metaWidth = Number(doc.meta?.width) > 0 ? Number(doc.meta.width) : 64;
+      const metaHeight = Number(doc.meta?.height) > 0 ? Number(doc.meta.height) : 128;
+      const existingIndex = manifestEntries.findIndex(entry => entry?.assetId === skeletonId || entry?.imageId === skeletonId);
+      if (existingIndex >= 0) {
+        const entry = manifestEntries[existingIndex];
+        if (entry.runtime2D?.mode === 'atlas') {
+          throw failure(`目标条目是共享图集资源，不允许通过骨骼资产事务改写: ${skeletonId}`, [
+            validationError(`${source}.skeletonId`, 'atlas 资源请通过共享图集事务维护')
+          ]);
+        }
+        manifestEntries[existingIndex] = {
+          ...entry,
+          sourceFile: skeletonRelPath,
+          runtime2D: { path: skeletonRelPath, mode: 'skeleton' },
+          bounds: { ...entry.bounds, width: metaWidth, height: metaHeight },
+          pivot: { ...entry.pivot, x: 0.5, y: 1 },
+          revision: Math.max(1, Number(entry.revision) || 1) + 1
+        };
+      } else {
+        manifestEntries.push({
+          assetId: skeletonId,
+          imageId: skeletonId,
+          category: 'character-skeleton',
+          usage: ['editor-skeleton'],
+          sourceFile: skeletonRelPath,
+          runtime2D: { path: skeletonRelPath, mode: 'skeleton' },
+          runtime3D: { mode: 'billboard', sourceAssetId: skeletonId },
+          pivot: { x: 0.5, y: 1 },
+          bounds: { width: metaWidth, height: metaHeight },
+          animations: [],
+          targetPhase: 'P1',
+          status: 'placeholder',
+          revision: 1
+        });
       }
-      manifestEntries[existingIndex] = {
-        ...entry,
-        sourceFile: skeletonRelPath,
-        runtime2D: { path: skeletonRelPath, mode: 'skeleton' },
-        bounds: { ...entry.bounds, width: metaWidth, height: metaHeight },
-        pivot: { ...entry.pivot, x: 0.5, y: 1 },
-        revision: Math.max(1, Number(entry.revision) || 1) + 1
-      };
-    } else {
-      manifestEntries.push({
-        assetId: skeletonId,
-        imageId: skeletonId,
-        category: 'character-skeleton',
-        usage: ['editor-skeleton'],
-        sourceFile: skeletonRelPath,
-        runtime2D: { path: skeletonRelPath, mode: 'skeleton' },
-        runtime3D: { mode: 'billboard', sourceAssetId: skeletonId },
-        pivot: { x: 0.5, y: 1 },
-        bounds: { width: metaWidth, height: metaHeight },
-        animations: [],
-        targetPhase: 'P1',
-        status: 'placeholder',
-        revision: 1
-      });
     }
     committed.push(doc);
   }
 
-  const manifestValidation = createContentValidator().validate(manifest, 'assetManifest');
-  if (!manifestValidation.ok) {
-    throw failure('同步后的 Asset Manifest 校验失败', manifestValidation.errors);
+  // 仅在发生运行时资产 upsert 时校验并写回 Manifest（纯模板保存不动 Manifest）
+  if (manifestDirty) {
+    const manifestValidation = createContentValidator().validate(manifest, 'assetManifest');
+    if (!manifestValidation.ok) {
+      throw failure('同步后的 Asset Manifest 校验失败', manifestValidation.errors);
+    }
+    changes.push({ operation: 'replace', path: manifestPath, content: json(manifest) });
   }
-
-  changes.push({ operation: 'replace', path: manifestPath, content: json(manifest) });
   return { manifest, skeletons: committed, changes };
 }
 

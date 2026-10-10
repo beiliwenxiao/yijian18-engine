@@ -30,22 +30,23 @@ export class SkeletonEditorCommandService {
     this._queue = Promise.resolve();
   }
 
-  /** 串行提交骨骼资产（同一时刻只有一个磁盘事务，避免并发覆盖）。 */
-  saveSkeleton(projectPath, document) {
+  /** 串行提交骨骼资产（同一时刻只有一个磁盘事务，避免并发覆盖）。options.template=true 写回 templates/ 且不动 Manifest。 */
+  saveSkeleton(projectPath, document, options = {}) {
     const normalized = normalizeProjectPath(projectPath);
+    const template = options?.template === true;
     const current = this._queue
       .catch(() => undefined)
-      .then(() => this._save(normalized, document));
+      .then(() => this._save(normalized, document, template));
     this._queue = current;
     return current;
   }
 
-  async _save(projectPath, document) {
+  async _save(projectPath, document, template = false) {
     try {
       const response = await this.fetchImpl(this.endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ projectPath, skeletons: [{ document }] })
+        body: JSON.stringify({ projectPath, skeletons: [{ document, template }] })
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok || payload?.ok !== true || payload.committed !== true) {

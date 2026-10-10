@@ -1,0 +1,274 @@
+{
+  "schemaVersion": 1,
+  "skeletonId": "tpl.siege_ram",
+  "meta": {
+    "width": 96,
+    "height": 72
+  },
+  "defaultClip": "idle",
+  "bones": [
+    {
+      "id": "base",
+      "parent": null,
+      "x": 0,
+      "y": -10,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 36
+    },
+    {
+      "id": "roof",
+      "parent": "base",
+      "x": 0,
+      "y": -24,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 34
+    },
+    {
+      "id": "cover",
+      "parent": "roof",
+      "x": 0,
+      "y": 4,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 28
+    },
+    {
+      "id": "ram_arm",
+      "parent": "roof",
+      "x": 0,
+      "y": 10,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 34
+    },
+    {
+      "id": "ram_head",
+      "parent": "ram_arm",
+      "x": 0,
+      "y": 30,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 10
+    },
+    {
+      "id": "wheelFL",
+      "parent": "base",
+      "x": 14,
+      "y": 8,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 10
+    },
+    {
+      "id": "wheelBL",
+      "parent": "base",
+      "x": -14,
+      "y": 8,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 10
+    },
+    {
+      "id": "wheelFR",
+      "parent": "base",
+      "x": 14,
+      "y": 8,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 10
+    },
+    {
+      "id": "wheelBR",
+      "parent": "base",
+      "x": -14,
+      "y": 8,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 10
+    },
+    {
+      "id": "pusherL",
+      "parent": "base",
+      "x": 18,
+      "y": -2,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 8
+    },
+    {
+      "id": "pusherR",
+      "parent": "base",
+      "x": -18,
+      "y": -2,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 8
+    },
+    {
+      "id": "pusherB",
+      "parent": "base",
+      "x": 0,
+      "y": 4,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 8
+    }
+  ],
+  "slots": [
+    {
+      "id": "slot_base",
+      "bone": "base",
+      "z": 1,
+      "visible": true,
+      "locked": false,
+      "attachment": {
+        "type": "empty"
+      }
+    },
+    {
+      "id": "slot_roof",
+      "bone": "roof",
+      "z": 2,
+      "visible": true,
+      "locked": false,
+      "attachment": {
+        "type": "empty"
+      }
+    },
+    {
+      "id": "slot_cover",
+      "bone": "cover",
+      "z": 3,
+      "visible": true,
+      "locked": false,
+      "attachment": {
+        "type": "empty"
+      }
+    },
+    {
+      "id": "slot_ram_arm",
+      "bone": "ram_arm",
+      "z": 4,
+      "visible": true,
+      "locked": false,
+      "attachment": {
+        "type": "empty"
+      }
+    },
+    {
+      "id": "slot_ram_head",
+      "bone": "ram_head",
+      "z": 5,
+      "visible": true,
+      "locked": false,
+      "attachment": {
+        "type": "empty"
+      }
+    },
+    {
+      "id": "slot_wheelFL",
+      "bone": "wheelFL",
+      "z": 6,
+      "visible": true,
+      "locked": false,
+      "attachment": {
+        "type": "empty"
+      }
+    },
+    {
+      "id": "slot_wheelBL",
+      "bone": "wheelBL",
+      "z": 7,
+      "visible": true,
+      "locked": false,
+      "attachment": {
+        "type": "empty"
+      }
+    },
+    {
+      "id": "slot_pusherL",
+      "bone": "pusherL",
+      "z": 8,
+      "visible": true,
+      "locked": false,
+      "attachment": {
+        "type": "empty"
+      }
+    },
+    {
+      "id": "slot_pusherR",
+      "bone": "pusherR",
+      "z": 9,
+      "visible": true,
+      "locked": false,
+      "attachment": {
+        "type": "empty"
+      }
+    },
+    {
+      "id": "slot_pusherB",
+      "bone": "pusherB",
+      "z": 10,
+      "visible": true,
+      "locked": false,
+      "attachment": {
+        "type": "empty"
+      }
+    }
+  ],
+  "clips": [
+    {
+      "name": "idle",
+      "durationMs": 2000,
+      "loop": true,
+      "tracks": [
+        {
+          "bone": "ram_arm",
+          "keys": [
+            {
+              "t": 0,
+              "x": 0,
+              "y": 0,
+              "rot": 3,
+              "scaleX": null,
+              "scaleY": null,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1000,
+              "x": 0,
+              "y": 0,
+              "rot": -3,
+              "scaleX": null,
+              "scaleY": null,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 2000,
+              "x": 0,
+              "y": 0,
+              "rot": 3,
+              "scaleX": null,
+              "scaleY": null,
+              "ease": "easeInOut"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

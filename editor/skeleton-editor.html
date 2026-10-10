@@ -86,6 +86,11 @@
             <select id="se-asset-select"><option value="">➕ 新建骨骼…</option></select>
         </div>
         <div class="group">
+            <label>骨架模板</label>
+            <select id="se-template-select" title="模板 = 纯便利起点（使用即深拷贝，与模板无数据关联）；tpl.* 也可直接选中编辑，保存写回模板文件"><option value="">选择模板…</option></select>
+            <button id="se-new-from-template" title="以模板副本新建骨骼资产（复制数据，与模板无任何关联）">＋新建自模板</button>
+        </div>
+        <div class="group">
             <label>ID</label>
             <input type="text" id="se-skeleton-id" placeholder="skeleton.xxx" disabled>
         </div>

@@ -28,6 +28,12 @@ import { SkeletonEditorCommandService } from './SkeletonEditorCommandService.js'
 
 const DEG2RAD = Math.PI / 180;
 
+/** 引擎内置骨架模板（assets/skeletons/templates/<id>.json，tpl.* 约定前缀；生成脚本 scripts/generate-skeleton-templates.mjs）。 */
+const SKELETON_TEMPLATES = [
+  'tpl.humanoid', 'tpl.wolf', 'tpl.horse', 'tpl.mounted',
+  'tpl.siege_ram', 'tpl.siege_catapult', 'tpl.siege_tower'
+];
+
 export class SkeletonEditor {
   constructor(container, { gameId, projectPath }) {
     this.container = container;
@@ -84,6 +90,8 @@ export class SkeletonEditor {
     this.previewDirection = 'down';
     // 显示模式（会话态）：'all' 图片+骨架 | 'bones' 仅骨架（调动作） | 'images' 仅图片（查外观）
     this.displayMode = 'all';
+    // 模板编辑态：true=当前打开的是 tpl.* 模板文档（保存写回 templates/，不动 Manifest）
+    this.editingTemplate = false;
     // 撤销/重做：doc JSON 快照栈（编辑器会话内，最多 50 步）
     this._undoStack = [];
     this._redoStack = [];
@@ -145,6 +153,7 @@ export class SkeletonEditor {
     await this._loadManifest();
     this._newDoc();
     this._refreshAssetSelect();
+    this._refreshTemplateSelect();
     this._loop();
     // 初始化按钮高亮状态
     this._refreshModeButtons();
@@ -156,6 +165,7 @@ export class SkeletonEditor {
     const $ = id => document.getElementById(id);
     this.el = {
       assetSelect: $('se-asset-select'), skeletonId: $('se-skeleton-id'),
+      templateSelect: $('se-template-select'),
       metaWidth: $('se-meta-width'), metaHeight: $('se-meta-height'),
       dirty: $('se-dirty'), toast: $('se-toast'), save: $('se-save'),
       boneTree: $('se-bone-tree'), slotList: $('se-slot-list'),
@@ -166,6 +176,12 @@ export class SkeletonEditor {
     };
 
     this.el.assetSelect.addEventListener('change', () => this._onAssetSelect());
+    this.el.templateSelect.addEventListener('change', () => {
+      // 选中模板即直接打开模板文档（可编辑，保存写回 templates/，改模板不影响已创建对象）
+      if (this.el.templateSelect.value) this._onTemplateSelect();
+      else this._refreshAssetSelect();
+    });
+    $('se-new-from-template').addEventListener('click', () => this._newFromTemplate());
     this.el.skeletonId.addEventListener('change', () => {
       if (!this.doc) return;
       this.doc.skeletonId = this.el.skeletonId.value.trim() || this.doc.skeletonId;
@@ -420,13 +436,107 @@ export class SkeletonEditor {
       + this.skeletonEntries.map(entry => {
         const id = entry.imageId || entry.assetId;
         return `<option value="${id}">${id}</option>`;
-      }).join('');
+      }).join('')
+      + '<optgroup label="骨架模板（tpl.*，可编辑）">'
+      + SKELETON_TEMPLATES.map(id => `<option value="${id}">${id}</option>`).join('')
+      + '</optgroup>';
     if (current && [...select.options].some(option => option.value === current)) select.value = current;
+  }
+
+  /* ---------------- 骨架模板（tpl.*：纯便利起点，使用即深拷贝，零数据关联） ---------------- */
+
+  /** 模板下拉（与资产下拉同列表，独立高亮）。 */
+  _refreshTemplateSelect() {
+    const select = this.el.templateSelect;
+    select.innerHTML = '<option value="">选择模板…</option>'
+      + SKELETON_TEMPLATES.map(id => `<option value="${id}">${id}</option>`).join('');
+  }
+
+  /** 拉取模板 JSON。 */
+  async _fetchTemplate(templateId) {
+    const response = await fetch(`/${this.gameRoot}/assets/skeletons/templates/${templateId}.json`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  }
+
+  /** 资产下拉选中 tpl.* → 打开模板文档（直接编辑模板本身）。 */
+  async _onTemplateSelect() {
+    const templateId = this.el.templateSelect.value;
+    if (this.dirty && !confirm('当前骨骼未保存，切换将丢失修改，确定？')) {
+      this._refreshTemplateSelect();
+      return;
+    }
+    if (!templateId) return;
+    try {
+      const doc = await this._fetchTemplate(templateId);
+      this._adoptDoc(doc, { template: true });
+      this._toast(`已打开模板 ${templateId}（可编辑；保存写回模板文件，不影响已创建的骨骼）`);
+    } catch (error) {
+      this._toast(`模板读取失败：${error.message}`, true);
+    }
+  }
+
+  /** 「＋新建自模板」：模板深拷贝 → 改新 ID → 标脏待保存（保存后才落盘为新资产）。 */
+  async _newFromTemplate() {
+    if (this.dirty && !confirm('当前骨骼未保存，切换将丢失修改，确定？')) return;
+    const templateId = this.el.templateSelect.value;
+    if (!templateId) {
+      this._toast('请先在上拉框选择一个骨架模板', true);
+      return;
+    }
+    let template;
+    try {
+      template = await this._fetchTemplate(templateId);
+    } catch (error) {
+      this._toast(`模板读取失败：${error.message}`, true);
+      return;
+    }
+    const suggested = `skeleton.${templateId.replace(/^tpl\./, '')}`;
+    const newId = (prompt('新骨骼资产 ID（保存后即文件名）：', suggested) || '').trim();
+    if (!newId) return;
+    if (!/^[A-Za-z][A-Za-z0-9._-]*$/.test(newId)) {
+      this._toast('ID 只能包含字母、数字、点、下划线、短横线，且以字母开头', true);
+      return;
+    }
+    if (newId === templateId) {
+      this._toast('新 ID 不能与模板 ID 相同', true);
+      return;
+    }
+    // 使用即深拷贝：此后 doc 与模板无任何引用/关联
+    const doc = structuredClone(template);
+    doc.skeletonId = newId;
+    this._adoptDoc(doc, { newId });
+    this.dirty = true;
+    if (this.el.dirty) this.el.dirty.style.display = '';
+    this._toast(`已从模板 ${templateId} 创建 ${newId}（深拷贝，与模板无关联）——点「保存」落盘`);
+  }
+
+  /** 文档接管统一入口：重置选择/播放态，刷新面板与输入框。options.template=模板编辑态。 */
+  _adoptDoc(doc, { template = false, newId = null } = {}) {
+    this.doc = doc;
+    this.editingTemplate = template;
+    this._clearSelection();
+    this.selectedBone = doc.bones?.[0]?.id || null;
+    this._selectedBoneId = this.selectedBone;
+    this.selectedSlot = null;
+    this.selectedKey = null;
+    this.currentClip = doc.defaultClip || doc.clips?.[0]?.name || null;
+    this.previewTime = 0;
+    this.playing = false;
+    this.dirty = false;
+    if (this.el.dirty) this.el.dirty.style.display = 'none';
+    if (newId) this.doc.skeletonId = newId;
+    this._afterDocChange();
+    this.el.skeletonId.value = this.doc.skeletonId || '';
+    this.el.metaWidth.value = this.doc.meta?.width ?? 100;
+    this.el.metaHeight.value = this.doc.meta?.height ?? 160;
+    this.el.skeletonId.disabled = !newId; // 保存过/模板：ID 固定（文件名即 ID）；新资产可改
   }
 
   /* ---------------- 文档管理 ---------------- */
 
   _newDoc() {
+    this.editingTemplate = false;
     this.doc = {
       schemaVersion: 1,
       skeletonId: 'skeleton.new',
@@ -458,20 +568,8 @@ export class SkeletonEditor {
     if (!entry) return;
     try {
       const doc = await this.commands.fetchSkeletonDocument(`/${this.gameRoot}/${entry.runtime2D.path}`);
-      this.doc = doc;
-      this.selectedBone = doc.bones?.[0]?.id || null;
-      this.selectedSlot = null;
-      this.selectedKey = null;
-      this.currentClip = doc.defaultClip || doc.clips?.[0]?.name || null;
-      this.previewTime = 0;
-      this.playing = false;
-      this.dirty = false;
-      this._afterDocChange();
-    this.el.skeletonId.value = doc.skeletonId || '';
-    this.el.metaWidth.value = doc.meta?.width ?? 100;
-    this.el.metaHeight.value = doc.meta?.height ?? 160;
-    this.el.skeletonId.disabled = true; // 保存后 ID 固定（文件名即 ID）
-    this._toast(`已加载 ${skeletonId}`);
+      this._adoptDoc(doc); // 普通资产：非模板编辑态
+      this._toast(`已加载 ${skeletonId}`);
     } catch (error) {
       this._toast(`骨骼资产读取失败：${error.message}`, true);
     }
@@ -483,8 +581,14 @@ export class SkeletonEditor {
       this._refreshAssetSelect();
       return;
     }
-    if (value) this._loadDoc(value);
-    else this._newDoc();
+    if (value.startsWith('tpl.')) {
+      this.el.templateSelect.value = value; // 两处下拉联动
+      this._onTemplateSelect();
+    } else if (value) {
+      this._loadDoc(value);
+    } else {
+      this._newDoc();
+    }
   }
 
   /** 文档任何变更后的统一入口：重建运行时 + 刷新面板。 */
@@ -4051,19 +4155,22 @@ export class SkeletonEditor {
     }
     this.el.save.disabled = true;
     try {
-      const result = await this.commands.saveSkeleton(this.projectPath, structuredClone(this.doc));
+      // 模板编辑态：写回 assets/skeletons/templates/，不动 Manifest（改模板不影响已创建对象）
+      const result = this.editingTemplate
+        ? await this.commands.saveSkeleton(this.projectPath, structuredClone(this.doc), { template: true })
+        : await this.commands.saveSkeleton(this.projectPath, structuredClone(this.doc));
       if (result.ok) {
         this.dirty = false;
         this.el.dirty.style.display = 'none';
         this.el.skeletonId.disabled = true;
-        if (!this.skeletonEntries.some(entry => (entry.imageId || entry.assetId) === this.doc.skeletonId)) {
+        if (!this.editingTemplate && !this.skeletonEntries.some(entry => (entry.imageId || entry.assetId) === this.doc.skeletonId)) {
           this.skeletonEntries.push({
             assetId: this.doc.skeletonId, imageId: this.doc.skeletonId,
             runtime2D: { mode: 'skeleton', path: `assets/skeletons/${this.doc.skeletonId}.json` }
           });
           this._refreshAssetSelect();
         }
-        this._toast('已保存：骨骼 JSON + Manifest 已落盘');
+        this._toast(this.editingTemplate ? '模板已写回 templates/（不影响已创建的骨骼资产）' : '已保存：骨骼 JSON + Manifest 已落盘');
       } else {
         this._toast(`保存失败：${result.error || '未知错误'}`, true);
       }

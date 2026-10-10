@@ -1,0 +1,400 @@
+{
+  "schemaVersion": 1,
+  "skeletonId": "tpl.humanoid",
+  "meta": {
+    "width": 64,
+    "height": 64
+  },
+  "defaultClip": "idle",
+  "bones": [
+    {
+      "id": "root",
+      "parent": null,
+      "x": 0,
+      "y": 0,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 16
+    },
+    {
+      "id": "hips",
+      "parent": "root",
+      "x": 0,
+      "y": -26,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 14
+    },
+    {
+      "id": "torso",
+      "parent": "hips",
+      "x": 0,
+      "y": -2,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 20
+    },
+    {
+      "id": "head",
+      "parent": "torso",
+      "x": 0,
+      "y": -20,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 16
+    },
+    {
+      "id": "back",
+      "parent": "torso",
+      "x": 0,
+      "y": -4,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 18
+    },
+    {
+      "id": "armUL",
+      "parent": "torso",
+      "x": -7,
+      "y": -16,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 12
+    },
+    {
+      "id": "armFL",
+      "parent": "armUL",
+      "x": 0,
+      "y": 12,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 13
+    },
+    {
+      "id": "armUR",
+      "parent": "torso",
+      "x": 7,
+      "y": -16,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 12
+    },
+    {
+      "id": "armFR",
+      "parent": "armUR",
+      "x": 0,
+      "y": 12,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 13
+    },
+    {
+      "id": "thighL",
+      "parent": "hips",
+      "x": -5,
+      "y": -1,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 13
+    },
+    {
+      "id": "calfL",
+      "parent": "thighL",
+      "x": 0,
+      "y": 13,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 14
+    },
+    {
+      "id": "thighR",
+      "parent": "hips",
+      "x": 5,
+      "y": -1,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 13
+    },
+    {
+      "id": "calfR",
+      "parent": "thighR",
+      "x": 0,
+      "y": 13,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 14
+    }
+  ],
+  "slots": [
+    {
+      "id": "slot_hips",
+      "bone": "hips",
+      "z": 1,
+      "visible": true,
+      "locked": false,
+      "attachment": {
+        "type": "empty"
+      }
+    },
+    {
+      "id": "slot_torso",
+      "bone": "torso",
+      "z": 2,
+      "visible": true,
+      "locked": false,
+      "attachment": {
+        "type": "empty"
+      }
+    },
+    {
+      "id": "slot_head",
+      "bone": "head",
+      "z": 3,
+      "visible": true,
+      "locked": false,
+      "attachment": {
+        "type": "empty"
+      }
+    },
+    {
+      "id": "slot_back",
+      "bone": "back",
+      "z": 4,
+      "visible": true,
+      "locked": false,
+      "attachment": {
+        "type": "empty"
+      }
+    },
+    {
+      "id": "slot_armUL",
+      "bone": "armUL",
+      "z": 5,
+      "visible": true,
+      "locked": false,
+      "attachment": {
+        "type": "empty"
+      }
+    },
+    {
+      "id": "slot_armFL",
+      "bone": "armFL",
+      "z": 6,
+      "visible": true,
+      "locked": false,
+      "attachment": {
+        "type": "empty"
+      }
+    },
+    {
+      "id": "slot_armUR",
+      "bone": "armUR",
+      "z": 7,
+      "visible": true,
+      "locked": false,
+      "attachment": {
+        "type": "empty"
+      }
+    },
+    {
+      "id": "slot_armFR",
+      "bone": "armFR",
+      "z": 8,
+      "visible": true,
+      "locked": false,
+      "attachment": {
+        "type": "empty"
+      }
+    },
+    {
+      "id": "slot_thighL",
+      "bone": "thighL",
+      "z": 9,
+      "visible": true,
+      "locked": false,
+      "attachment": {
+        "type": "empty"
+      }
+    },
+    {
+      "id": "slot_calfL",
+      "bone": "calfL",
+      "z": 10,
+      "visible": true,
+      "locked": false,
+      "attachment": {
+        "type": "empty"
+      }
+    },
+    {
+      "id": "slot_thighR",
+      "bone": "thighR",
+      "z": 11,
+      "visible": true,
+      "locked": false,
+      "attachment": {
+        "type": "empty"
+      }
+    },
+    {
+      "id": "slot_calfR",
+      "bone": "calfR",
+      "z": 12,
+      "visible": true,
+      "locked": false,
+      "attachment": {
+        "type": "empty"
+      }
+    }
+  ],
+  "clips": [
+    {
+      "name": "idle",
+      "durationMs": 1600,
+      "loop": true,
+      "tracks": [
+        {
+          "bone": "torso",
+          "keys": [
+            {
+              "t": 0,
+              "x": 0,
+              "y": 0,
+              "rot": 2,
+              "scaleX": null,
+              "scaleY": null,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 800,
+              "x": 0,
+              "y": 0,
+              "rot": -2,
+              "scaleX": null,
+              "scaleY": null,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1600,
+              "x": 0,
+              "y": 0,
+              "rot": 2,
+              "scaleX": null,
+              "scaleY": null,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "head",
+          "keys": [
+            {
+              "t": 0,
+              "x": 0,
+              "y": 0,
+              "rot": 3,
+              "scaleX": null,
+              "scaleY": null,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 800,
+              "x": 0,
+              "y": 0,
+              "rot": -3,
+              "scaleX": null,
+              "scaleY": null,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1600,
+              "x": 0,
+              "y": 0,
+              "rot": 3,
+              "scaleX": null,
+              "scaleY": null,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "armUL",
+          "keys": [
+            {
+              "t": 0,
+              "x": 0,
+              "y": 0,
+              "rot": 3,
+              "scaleX": null,
+              "scaleY": null,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 800,
+              "x": 0,
+              "y": 0,
+              "rot": -3,
+              "scaleX": null,
+              "scaleY": null,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1600,
+              "x": 0,
+              "y": 0,
+              "rot": 3,
+              "scaleX": null,
+              "scaleY": null,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "armUR",
+          "keys": [
+            {
+              "t": 0,
+              "x": 0,
+              "y": 0,
+              "rot": 3,
+              "scaleX": null,
+              "scaleY": null,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 800,
+              "x": 0,
+              "y": 0,
+              "rot": -3,
+              "scaleX": null,
+              "scaleY": null,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1600,
+              "x": 0,
+              "y": 0,
+              "rot": 3,
+              "scaleX": null,
+              "scaleY": null,
+              "ease": "easeInOut"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

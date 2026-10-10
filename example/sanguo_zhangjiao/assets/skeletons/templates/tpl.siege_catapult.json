@@ -1,0 +1,226 @@
+{
+  "schemaVersion": 1,
+  "skeletonId": "tpl.siege_catapult",
+  "meta": {
+    "width": 88,
+    "height": 80
+  },
+  "defaultClip": "idle",
+  "bones": [
+    {
+      "id": "base",
+      "parent": null,
+      "x": 0,
+      "y": -8,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 34
+    },
+    {
+      "id": "wheelF",
+      "parent": "base",
+      "x": 13,
+      "y": 6,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 9
+    },
+    {
+      "id": "wheelB",
+      "parent": "base",
+      "x": -13,
+      "y": 6,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 9
+    },
+    {
+      "id": "frame_winch",
+      "parent": "base",
+      "x": -12,
+      "y": -12,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 8
+    },
+    {
+      "id": "throw_arm",
+      "parent": "base",
+      "x": 2,
+      "y": -12,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 28
+    },
+    {
+      "id": "sling",
+      "parent": "throw_arm",
+      "x": 0,
+      "y": 26,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 8
+    },
+    {
+      "id": "counterweight",
+      "parent": "throw_arm",
+      "x": -4,
+      "y": 8,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 10
+    }
+  ],
+  "slots": [
+    {
+      "id": "slot_base",
+      "bone": "base",
+      "z": 1,
+      "visible": true,
+      "locked": false,
+      "attachment": {
+        "type": "empty"
+      }
+    },
+    {
+      "id": "slot_wheelF",
+      "bone": "wheelF",
+      "z": 2,
+      "visible": true,
+      "locked": false,
+      "attachment": {
+        "type": "empty"
+      }
+    },
+    {
+      "id": "slot_wheelB",
+      "bone": "wheelB",
+      "z": 3,
+      "visible": true,
+      "locked": false,
+      "attachment": {
+        "type": "empty"
+      }
+    },
+    {
+      "id": "slot_frame_winch",
+      "bone": "frame_winch",
+      "z": 4,
+      "visible": true,
+      "locked": false,
+      "attachment": {
+        "type": "empty"
+      }
+    },
+    {
+      "id": "slot_throw_arm",
+      "bone": "throw_arm",
+      "z": 5,
+      "visible": true,
+      "locked": false,
+      "attachment": {
+        "type": "empty"
+      }
+    },
+    {
+      "id": "slot_sling",
+      "bone": "sling",
+      "z": 6,
+      "visible": true,
+      "locked": false,
+      "attachment": {
+        "type": "empty"
+      }
+    },
+    {
+      "id": "slot_counterweight",
+      "bone": "counterweight",
+      "z": 7,
+      "visible": true,
+      "locked": false,
+      "attachment": {
+        "type": "empty"
+      }
+    }
+  ],
+  "clips": [
+    {
+      "name": "idle",
+      "durationMs": 2400,
+      "loop": true,
+      "tracks": [
+        {
+          "bone": "throw_arm",
+          "keys": [
+            {
+              "t": 0,
+              "x": 0,
+              "y": 0,
+              "rot": 2,
+              "scaleX": null,
+              "scaleY": null,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1200,
+              "x": 0,
+              "y": 0,
+              "rot": -2,
+              "scaleX": null,
+              "scaleY": null,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 2400,
+              "x": 0,
+              "y": 0,
+              "rot": 2,
+              "scaleX": null,
+              "scaleY": null,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "sling",
+          "keys": [
+            {
+              "t": 0,
+              "x": 0,
+              "y": 0,
+              "rot": 1,
+              "scaleX": null,
+              "scaleY": null,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1200,
+              "x": 0,
+              "y": 0,
+              "rot": -1,
+              "scaleX": null,
+              "scaleY": null,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 2400,
+              "x": 0,
+              "y": 0,
+              "rot": 1,
+              "scaleX": null,
+              "scaleY": null,
+              "ease": "easeInOut"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

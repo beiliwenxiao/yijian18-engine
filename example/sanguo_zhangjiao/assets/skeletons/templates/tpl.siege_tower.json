@@ -1,0 +1,286 @@
+{
+  "schemaVersion": 1,
+  "skeletonId": "tpl.siege_tower",
+  "meta": {
+    "width": 80,
+    "height": 144
+  },
+  "defaultClip": "idle",
+  "bones": [
+    {
+      "id": "base",
+      "parent": null,
+      "x": 0,
+      "y": -6,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 36
+    },
+    {
+      "id": "wheelFL",
+      "parent": "base",
+      "x": 14,
+      "y": 4,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 8
+    },
+    {
+      "id": "wheelBL",
+      "parent": "base",
+      "x": -14,
+      "y": 4,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 8
+    },
+    {
+      "id": "wheelFR",
+      "parent": "base",
+      "x": 14,
+      "y": 4,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 8
+    },
+    {
+      "id": "wheelBR",
+      "parent": "base",
+      "x": -14,
+      "y": 4,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 8
+    },
+    {
+      "id": "towerL1",
+      "parent": "base",
+      "x": 0,
+      "y": -10,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 20
+    },
+    {
+      "id": "towerL2",
+      "parent": "towerL1",
+      "x": 0,
+      "y": -18,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 20
+    },
+    {
+      "id": "towerL3",
+      "parent": "towerL2",
+      "x": 0,
+      "y": -18,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 16
+    },
+    {
+      "id": "top_platform",
+      "parent": "towerL3",
+      "x": 0,
+      "y": -12,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 20
+    },
+    {
+      "id": "ladder",
+      "parent": "towerL1",
+      "x": -12,
+      "y": -20,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 52
+    },
+    {
+      "id": "shield_front",
+      "parent": "towerL2",
+      "x": 8,
+      "y": -16,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 16
+    }
+  ],
+  "slots": [
+    {
+      "id": "slot_base",
+      "bone": "base",
+      "z": 1,
+      "visible": true,
+      "locked": false,
+      "attachment": {
+        "type": "empty"
+      }
+    },
+    {
+      "id": "slot_wheelFL",
+      "bone": "wheelFL",
+      "z": 2,
+      "visible": true,
+      "locked": false,
+      "attachment": {
+        "type": "empty"
+      }
+    },
+    {
+      "id": "slot_wheelBL",
+      "bone": "wheelBL",
+      "z": 3,
+      "visible": true,
+      "locked": false,
+      "attachment": {
+        "type": "empty"
+      }
+    },
+    {
+      "id": "slot_towerL1",
+      "bone": "towerL1",
+      "z": 4,
+      "visible": true,
+      "locked": false,
+      "attachment": {
+        "type": "empty"
+      }
+    },
+    {
+      "id": "slot_towerL2",
+      "bone": "towerL2",
+      "z": 5,
+      "visible": true,
+      "locked": false,
+      "attachment": {
+        "type": "empty"
+      }
+    },
+    {
+      "id": "slot_towerL3",
+      "bone": "towerL3",
+      "z": 6,
+      "visible": true,
+      "locked": false,
+      "attachment": {
+        "type": "empty"
+      }
+    },
+    {
+      "id": "slot_top_platform",
+      "bone": "top_platform",
+      "z": 7,
+      "visible": true,
+      "locked": false,
+      "attachment": {
+        "type": "empty"
+      }
+    },
+    {
+      "id": "slot_ladder",
+      "bone": "ladder",
+      "z": 8,
+      "visible": true,
+      "locked": false,
+      "attachment": {
+        "type": "empty"
+      }
+    },
+    {
+      "id": "slot_shield_front",
+      "bone": "shield_front",
+      "z": 9,
+      "visible": true,
+      "locked": false,
+      "attachment": {
+        "type": "empty"
+      }
+    }
+  ],
+  "clips": [
+    {
+      "name": "idle",
+      "durationMs": 3000,
+      "loop": true,
+      "tracks": [
+        {
+          "bone": "towerL3",
+          "keys": [
+            {
+              "t": 0,
+              "x": 0,
+              "y": 0,
+              "rot": 1,
+              "scaleX": null,
+              "scaleY": null,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1500,
+              "x": 0,
+              "y": 0,
+              "rot": -1,
+              "scaleX": null,
+              "scaleY": null,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 3000,
+              "x": 0,
+              "y": 0,
+              "rot": 1,
+              "scaleX": null,
+              "scaleY": null,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "top_platform",
+          "keys": [
+            {
+              "t": 0,
+              "x": 0,
+              "y": 0,
+              "rot": 1,
+              "scaleX": null,
+              "scaleY": null,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1500,
+              "x": 0,
+              "y": 0,
+              "rot": -1,
+              "scaleX": null,
+              "scaleY": null,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 3000,
+              "x": 0,
+              "y": 0,
+              "rot": 1,
+              "scaleX": null,
+              "scaleY": null,
+              "ease": "easeInOut"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
