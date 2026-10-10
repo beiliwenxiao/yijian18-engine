@@ -22,7 +22,7 @@
 
 const DEFAULTS = Object.freeze({
   targetAlpha: 0.5,     // 遮挡时的目标透明度
-  fadeRate: 4,          // alpha 每秒变化速率（1→0.5 约 125ms，快到不碍眼、慢到不闪烁）
+  fadeRate: 0.5,        // alpha 每秒变化速率（1→0.5 / 0.5→1 各约 1 秒完成）
   minArea: 96 * 96,     // 候选最小包围盒面积（px²）
   minHeight: 64,        // 候选最小高度（地面贴片不参与）
   scanIntervalMs: 100   // 遮挡重判节流
