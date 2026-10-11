@@ -118,6 +118,11 @@
           }
         }
       ],
+      "attackSpeedReduce": {
+        "minSec": 1.5,
+        "reduceSec": 1.5,
+        "thresholdSec": 1
+      },
       "durability": 8,
       "functionDescription": "用于剥取兽皮和处理猎物。",
       "gatherSpeed": 1,
@@ -129,27 +134,26 @@
           "quantity": 1
         }
       ],
+      "skeletonPart": {
+        "bone": "armFR",
+        "offset": {
+          "rot": 0,
+          "x": 0,
+          "y": 26
+        },
+        "partId": "part.weapon.skinningKnife",
+        "slotId": "weaponSkinningKnife",
+        "weaponKey": "skinningKnife"
+      },
       "sprite": {
         "height": 42,
         "width": 42
       },
-      "subType": "tool",
       "stats": {
         "attack": 5
       },
-      "attackSpeedReduce": {
-        "thresholdSec": 1,
-        "reduceSec": 1.5,
-        "minSec": 1.5
-      },
-      "toolType": "skinningKnife",
-      "skeletonPart": {
-        "partId": "part.weapon.skinningKnife",
-        "bone": "armFR",
-        "slotId": "weaponSkinningKnife",
-        "weaponKey": "skinningKnife",
-        "offset": { "x": 0, "y": 26, "rot": 0 }
-      }
+      "subType": "tool",
+      "toolType": "skinningKnife"
     },
     {
       "id": "resource.raw_wolf_meat",
@@ -213,7 +217,7 @@
     },
     {
       "id": "food.roasted_wolf_meat",
-      "name": "烤狼肉",
+      "name": "��狼肉",
       "type": "consumable",
       "imageId": "s01.food.roastedWolfMeat",
       "capabilities": [
@@ -549,6 +553,11 @@
           }
         }
       ],
+      "attackSpeedReduce": {
+        "minSec": 2.5,
+        "reduceSec": 0.5,
+        "thresholdSec": 1
+      },
       "durability": 8,
       "functionDescription": "用于砍伐树木。",
       "gatherSpeed": 1,
@@ -560,27 +569,26 @@
           "quantity": 1
         }
       ],
+      "skeletonPart": {
+        "bone": "armFR",
+        "offset": {
+          "rot": 0,
+          "x": 17.8,
+          "y": -7.2
+        },
+        "partId": "part.weapon.axe",
+        "slotId": "toolHand",
+        "weaponKey": "axe"
+      },
       "sprite": {
         "height": 40,
         "width": 40
       },
-      "subType": "tool",
       "stats": {
         "attack": 10
       },
-      "attackSpeedReduce": {
-        "thresholdSec": 1,
-        "reduceSec": 0.5,
-        "minSec": 2.5
-      },
-      "toolType": "axe",
-      "skeletonPart": {
-        "partId": "part.weapon.axe",
-        "bone": "armFR",
-        "slotId": "toolHand",
-        "weaponKey": "axe",
-        "offset": { "x": 17.8, "y": -7.2, "rot": 0 }
-      }
+      "subType": "tool",
+      "toolType": "axe"
     },
     {
       "id": "story.s05.mine_collapse",
@@ -660,7 +668,7 @@
           "parameters": {
             "gatherSpeed": 1,
             "subType": "tool",
-      "toolType": "shovel"
+            "toolType": "shovel"
           }
         }
       ],
@@ -702,7 +710,7 @@
           "parameters": {
             "gatherSpeed": 1,
             "subType": "tool",
-      "toolType": "shovel"
+            "toolType": "shovel"
           }
         }
       ],
@@ -821,6 +829,17 @@
       },
       "maxStack": 1,
       "rarity": 2,
+      "skeletonPart": {
+        "bone": "armFR",
+        "offset": {
+          "rot": 0,
+          "x": 0,
+          "y": 26
+        },
+        "partId": "part.weapon.wolfFang",
+        "slotId": "weaponWolfFang",
+        "weaponKey": "wolfFang"
+      },
       "sprite": {
         "height": 48,
         "width": 48
@@ -828,14 +847,7 @@
       "stats": {
         "attack": 12
       },
-      "subType": "weapon",
-      "skeletonPart": {
-        "partId": "part.weapon.wolfFang",
-        "bone": "armFR",
-        "slotId": "weaponWolfFang",
-        "weaponKey": "wolfFang",
-        "offset": { "x": 0, "y": 26, "rot": 0 }
-      }
+      "subType": "weapon"
     },
     {
       "id": "leather_armor",
@@ -876,6 +888,17 @@
       "imageId": "inventory.equipment.shortBow",
       "maxStack": 1,
       "rarity": 1,
+      "skeletonPart": {
+        "bone": "armFR",
+        "offset": {
+          "rot": 0,
+          "x": 0,
+          "y": 26
+        },
+        "partId": "part.weapon.bow",
+        "slotId": "weaponBow",
+        "weaponKey": "bow"
+      },
       "sprite": {
         "height": 48,
         "width": 48
@@ -884,14 +907,7 @@
         "attack": 4,
         "range": 260
       },
-      "subType": "weapon",
-      "skeletonPart": {
-        "partId": "part.weapon.bow",
-        "bone": "armFR",
-        "slotId": "weaponBow",
-        "weaponKey": "bow",
-        "offset": { "x": 0, "y": 26, "rot": 0 }
-      }
+      "subType": "weapon"
     },
     {
       "id": "leather_vest",
@@ -931,6 +947,17 @@
       "imageId": "inventory.equipment.talismanStaff",
       "maxStack": 1,
       "rarity": 1,
+      "skeletonPart": {
+        "bone": "armFR",
+        "offset": {
+          "rot": 0,
+          "x": 0,
+          "y": 26
+        },
+        "partId": "part.weapon.staff",
+        "slotId": "weaponStaff",
+        "weaponKey": "staff"
+      },
       "sprite": {
         "height": 48,
         "width": 48
@@ -938,14 +965,7 @@
       "stats": {
         "magicAttack": 5
       },
-      "subType": "weapon",
-      "skeletonPart": {
-        "partId": "part.weapon.staff",
-        "bone": "armFR",
-        "slotId": "weaponStaff",
-        "weaponKey": "staff",
-        "offset": { "x": 0, "y": 26, "rot": 0 }
-      }
+      "subType": "weapon"
     },
     {
       "id": "strategist_robe",
@@ -1899,213 +1919,717 @@
       }
     }
   ],
-  "skeletonParts": [
-    {
-      "id": "part.head.front",
-      "category": "head",
-      "direction": "front",
-      "assetId": "player.parts.head-front",
-      "bone": "head",
-      "width": 64,
-      "height": 64,
-      "tags": ["body"]
-    },
-    {
-      "id": "part.head.side",
-      "category": "head",
-      "direction": "side",
-      "assetId": "player.parts.head-side",
-      "bone": "head",
-      "width": 64,
-      "height": 64,
-      "tags": ["body"]
-    },
-    {
-      "id": "part.head.back",
-      "category": "head",
-      "direction": "back",
-      "assetId": "player.parts.head-back",
-      "bone": "head",
-      "width": 64,
-      "height": 64,
-      "tags": ["body"]
-    },
-    {
-      "id": "part.torso",
-      "category": "torso",
-      "assetId": "player.parts.torso",
-      "bone": "torso",
-      "width": 64,
-      "height": 64,
-      "tags": ["body"]
-    },
-    {
-      "id": "part.upper-arm.l",
-      "category": "arm",
-      "side": "left",
-      "assetId": "player.parts.upper-arm-l",
-      "bone": "armUL",
-      "width": 64,
-      "height": 64,
-      "tags": ["body"]
-    },
-    {
-      "id": "part.upper-arm.r",
-      "category": "arm",
-      "side": "right",
-      "assetId": "player.parts.upper-arm-r",
-      "bone": "armUR",
-      "width": 64,
-      "height": 64,
-      "tags": ["body"]
-    },
-    {
-      "id": "part.fore-arm.l",
-      "category": "arm",
-      "side": "left",
-      "assetId": "player.parts.fore-arm-l",
-      "bone": "armFL",
-      "width": 64,
-      "height": 64,
-      "tags": ["body"]
-    },
-    {
-      "id": "part.fore-arm.r",
-      "category": "arm",
-      "side": "right",
-      "assetId": "player.parts.fore-arm-r",
-      "bone": "armFR",
-      "width": 64,
-      "height": 64,
-      "tags": ["body"]
-    },
-    {
-      "id": "part.thigh.l",
-      "category": "leg",
-      "side": "left",
-      "assetId": "player.parts.thigh-l",
-      "bone": "thighL",
-      "width": 64,
-      "height": 64,
-      "tags": ["body"]
-    },
-    {
-      "id": "part.thigh.r",
-      "category": "leg",
-      "side": "right",
-      "assetId": "player.parts.thigh-r",
-      "bone": "thighR",
-      "width": 64,
-      "height": 64,
-      "tags": ["body"]
-    },
-    {
-      "id": "part.calf.l",
-      "category": "leg",
-      "side": "left",
-      "assetId": "player.parts.calf-l",
-      "bone": "calfL",
-      "width": 64,
-      "height": 64,
-      "tags": ["body"]
-    },
-    {
-      "id": "part.calf.r",
-      "category": "leg",
-      "side": "right",
-      "assetId": "player.parts.calf-r",
-      "bone": "calfR",
-      "width": 64,
-      "height": 64,
-      "tags": ["body"]
-    },
-    {
-      "id": "part.skirt.front",
-      "category": "skirt",
-      "direction": "front",
-      "assetId": "player.parts.skirt-front",
-      "bone": "torso",
-      "width": 64,
-      "height": 64,
-      "tags": ["body"]
-    },
-    {
-      "id": "part.skirt.back",
-      "category": "skirt",
-      "direction": "back",
-      "assetId": "player.parts.skirt-back",
-      "bone": "torso",
-      "width": 64,
-      "height": 64,
-      "tags": ["body"]
-    },
-    {
-      "id": "part.weapon.axe",
-      "category": "weapon",
-      "weaponKey": "axe",
-      "assetId": "player.parts.weapon-axe",
-      "bone": "armFR",
-      "width": 64,
-      "height": 64
-    },
-    {
-      "id": "part.weapon.spear",
-      "category": "weapon",
-      "weaponKey": "spear",
-      "assetId": "player.parts.weapon-spear",
-      "bone": "back",
-      "width": 64,
-      "height": 64
-    },
-    {
-      "id": "part.weapon.spear-hand",
-      "category": "weapon",
-      "weaponKey": "spear",
-      "assetId": "player.parts.weapon-spear",
-      "bone": "armFR",
-      "width": 64,
-      "height": 64
-    },
-    {
-      "id": "part.weapon.skinningKnife",
-      "category": "weapon",
-      "weaponKey": "skinningKnife",
-      "assetId": "player.parts.weapon-skinningKnife",
-      "bone": "armFR",
-      "width": 64,
-      "height": 64
-    },
-    {
-      "id": "part.weapon.wolfFang",
-      "category": "weapon",
-      "weaponKey": "wolfFang",
-      "assetId": "player.parts.weapon-wolfFang",
-      "bone": "armFR",
-      "width": 64,
-      "height": 64
-    },
-    {
-      "id": "part.weapon.bow",
-      "category": "weapon",
-      "weaponKey": "bow",
-      "assetId": "player.parts.weapon-bow",
-      "bone": "armFR",
-      "width": 64,
-      "height": 64
-    },
-    {
-      "id": "part.weapon.staff",
-      "category": "weapon",
-      "weaponKey": "staff",
-      "assetId": "player.parts.weapon-staff",
-      "bone": "armFR",
-      "width": 64,
-      "height": 64
-    }
-  ],
   "combatSkills": [],
   "craftSkills": [],
   "gatherSkills": [],
-  "players": [],
+  "players": [
+    {
+      "id": "player",
+      "name": "主角",
+      "useSkeletonAnimation": true,
+      "sprite": { "src": "", "frameWidth": 64, "frameHeight": 64, "cols": 4, "rows": 4 },
+      "animations": {
+        "idle": { "row": 0, "frames": 4, "speed": 0.15 },
+        "walk": { "row": 1, "frames": 4, "speed": 0.1 },
+        "attack": { "row": 2, "frames": 4, "speed": 0.08 },
+        "death": { "row": 3, "frames": 4, "speed": 0.12 }
+      },
+      "baseStats": { "maxHp": 100, "maxMp": 50, "attack": 10, "defense": 5, "speed": 150 }
+    }
+  ],
+  "skeletonParts": [
+    {
+      "assetId": "player.parts.head-front",
+      "bone": "head",
+      "category": "head",
+      "direction": "front",
+      "height": 64,
+      "id": "part.head.front",
+      "tags": [
+        "body"
+      ],
+      "width": 64
+    },
+    {
+      "assetId": "player.parts.head-side",
+      "bone": "head",
+      "category": "head",
+      "direction": "side",
+      "height": 64,
+      "id": "part.head.side",
+      "tags": [
+        "body"
+      ],
+      "width": 64
+    },
+    {
+      "assetId": "player.parts.head-back",
+      "bone": "head",
+      "category": "head",
+      "direction": "back",
+      "height": 64,
+      "id": "part.head.back",
+      "tags": [
+        "body"
+      ],
+      "width": 64
+    },
+    {
+      "assetId": "player.parts.torso",
+      "bone": "torso",
+      "category": "torso",
+      "height": 64,
+      "id": "part.torso",
+      "tags": [
+        "body"
+      ],
+      "width": 64
+    },
+    {
+      "assetId": "player.parts.upper-arm-l",
+      "bone": "armUL",
+      "category": "arm",
+      "height": 64,
+      "id": "part.upper-arm.l",
+      "side": "left",
+      "tags": [
+        "body"
+      ],
+      "width": 64
+    },
+    {
+      "assetId": "player.parts.upper-arm-r",
+      "bone": "armUR",
+      "category": "arm",
+      "height": 64,
+      "id": "part.upper-arm.r",
+      "side": "right",
+      "tags": [
+        "body"
+      ],
+      "width": 64
+    },
+    {
+      "assetId": "player.parts.fore-arm-l",
+      "bone": "armFL",
+      "category": "arm",
+      "height": 64,
+      "id": "part.fore-arm.l",
+      "side": "left",
+      "tags": [
+        "body"
+      ],
+      "width": 64
+    },
+    {
+      "assetId": "player.parts.fore-arm-r",
+      "bone": "armFR",
+      "category": "arm",
+      "height": 64,
+      "id": "part.fore-arm.r",
+      "side": "right",
+      "tags": [
+        "body"
+      ],
+      "width": 64
+    },
+    {
+      "assetId": "player.parts.thigh-l",
+      "bone": "thighL",
+      "category": "leg",
+      "height": 64,
+      "id": "part.thigh.l",
+      "side": "left",
+      "tags": [
+        "body"
+      ],
+      "width": 64
+    },
+    {
+      "assetId": "player.parts.thigh-r",
+      "bone": "thighR",
+      "category": "leg",
+      "height": 64,
+      "id": "part.thigh.r",
+      "side": "right",
+      "tags": [
+        "body"
+      ],
+      "width": 64
+    },
+    {
+      "assetId": "player.parts.calf-l",
+      "bone": "calfL",
+      "category": "leg",
+      "height": 64,
+      "id": "part.calf.l",
+      "side": "left",
+      "tags": [
+        "body"
+      ],
+      "width": 64
+    },
+    {
+      "assetId": "player.parts.calf-r",
+      "bone": "calfR",
+      "category": "leg",
+      "height": 64,
+      "id": "part.calf.r",
+      "side": "right",
+      "tags": [
+        "body"
+      ],
+      "width": 64
+    },
+    {
+      "assetId": "player.parts.skirt-front",
+      "bone": "torso",
+      "category": "skirt",
+      "direction": "front",
+      "height": 64,
+      "id": "part.skirt.front",
+      "tags": [
+        "body"
+      ],
+      "width": 64
+    },
+    {
+      "assetId": "player.parts.skirt-back",
+      "bone": "torso",
+      "category": "skirt",
+      "direction": "back",
+      "height": 64,
+      "id": "part.skirt.back",
+      "tags": [
+        "body"
+      ],
+      "width": 64
+    },
+    {
+      "assetId": "player.parts.weapon-axe",
+      "bone": "armFR",
+      "category": "weapon",
+      "height": 64,
+      "id": "part.weapon.axe",
+      "weaponKey": "axe",
+      "width": 64
+    },
+    {
+      "assetId": "player.parts.weapon-spear",
+      "bone": "back",
+      "category": "weapon",
+      "height": 64,
+      "id": "part.weapon.spear",
+      "weaponKey": "spear",
+      "width": 64
+    },
+    {
+      "assetId": "player.parts.weapon-spear",
+      "bone": "armFR",
+      "category": "weapon",
+      "height": 64,
+      "id": "part.weapon.spear-hand",
+      "weaponKey": "spear",
+      "width": 64
+    },
+    {
+      "assetId": "player.parts.weapon-skinningKnife",
+      "bone": "armFR",
+      "category": "weapon",
+      "height": 64,
+      "id": "part.weapon.skinningKnife",
+      "weaponKey": "skinningKnife",
+      "width": 64
+    },
+    {
+      "assetId": "player.parts.weapon-wolfFang",
+      "bone": "armFR",
+      "category": "weapon",
+      "height": 64,
+      "id": "part.weapon.wolfFang",
+      "weaponKey": "wolfFang",
+      "width": 64
+    },
+    {
+      "assetId": "player.parts.weapon-bow",
+      "bone": "armFR",
+      "category": "weapon",
+      "height": 64,
+      "id": "part.weapon.bow",
+      "weaponKey": "bow",
+      "width": 64
+    },
+    {
+      "assetId": "player.parts.weapon-staff",
+      "bone": "armFR",
+      "category": "weapon",
+      "height": 64,
+      "id": "part.weapon.staff",
+      "weaponKey": "staff",
+      "width": 64
+    },
+    {
+      "assetId": "wolf.parts.body",
+      "bone": "spine",
+      "category": "wolf",
+      "height": 64,
+      "id": "part.wolf.body",
+      "tags": [
+        "creature"
+      ],
+      "width": 96
+    },
+    {
+      "assetId": "wolf.parts.neck",
+      "bone": "neck",
+      "category": "wolf",
+      "height": 64,
+      "id": "part.wolf.neck",
+      "tags": [
+        "creature"
+      ],
+      "width": 64
+    },
+    {
+      "assetId": "wolf.parts.head",
+      "bone": "head",
+      "category": "wolf",
+      "height": 64,
+      "id": "part.wolf.head",
+      "tags": [
+        "creature"
+      ],
+      "width": 64
+    },
+    {
+      "assetId": "wolf.parts.jaw",
+      "bone": "jaw",
+      "category": "wolf",
+      "height": 64,
+      "id": "part.wolf.jaw",
+      "tags": [
+        "creature"
+      ],
+      "width": 64
+    },
+    {
+      "assetId": "wolf.parts.tail",
+      "bone": "tail1",
+      "category": "wolf",
+      "height": 64,
+      "id": "part.wolf.tail",
+      "tags": [
+        "creature"
+      ],
+      "width": 64
+    },
+    {
+      "assetId": "wolf.parts.leg-upper",
+      "bone": "legFL_upper",
+      "category": "wolf",
+      "height": 64,
+      "id": "part.wolf.leg-upper",
+      "tags": [
+        "creature"
+      ],
+      "width": 64
+    },
+    {
+      "assetId": "wolf.parts.leg-lower",
+      "bone": "legFL_lower",
+      "category": "wolf",
+      "height": 64,
+      "id": "part.wolf.leg-lower",
+      "tags": [
+        "creature"
+      ],
+      "width": 64
+    },
+    {
+      "assetId": "horse.parts.body",
+      "bone": "spine",
+      "category": "horse",
+      "height": 64,
+      "id": "part.horse.body",
+      "tags": [
+        "creature"
+      ],
+      "width": 96
+    },
+    {
+      "assetId": "horse.parts.neck",
+      "bone": "neck1",
+      "category": "horse",
+      "height": 64,
+      "id": "part.horse.neck",
+      "tags": [
+        "creature"
+      ],
+      "width": 64
+    },
+    {
+      "assetId": "horse.parts.head",
+      "bone": "head",
+      "category": "horse",
+      "height": 64,
+      "id": "part.horse.head",
+      "tags": [
+        "creature"
+      ],
+      "width": 64
+    },
+    {
+      "assetId": "horse.parts.tail",
+      "bone": "tail1",
+      "category": "horse",
+      "height": 64,
+      "id": "part.horse.tail",
+      "tags": [
+        "creature"
+      ],
+      "width": 64
+    },
+    {
+      "assetId": "horse.parts.saddle",
+      "bone": "saddle",
+      "category": "horse",
+      "height": 64,
+      "id": "part.horse.saddle",
+      "tags": [
+        "creature"
+      ],
+      "width": 64
+    },
+    {
+      "assetId": "horse.parts.leg-upper",
+      "bone": "legFL_upper",
+      "category": "horse",
+      "height": 64,
+      "id": "part.horse.leg-upper",
+      "tags": [
+        "creature"
+      ],
+      "width": 64
+    },
+    {
+      "assetId": "horse.parts.leg-lower",
+      "bone": "legFL_lower",
+      "category": "horse",
+      "height": 64,
+      "id": "part.horse.leg-lower",
+      "tags": [
+        "creature"
+      ],
+      "width": 64
+    },
+    {
+      "assetId": "rider.parts.torso",
+      "bone": "rider_torso",
+      "category": "rider",
+      "height": 64,
+      "id": "part.rider.torso",
+      "tags": [
+        "creature"
+      ],
+      "width": 64
+    },
+    {
+      "assetId": "rider.parts.head",
+      "bone": "rider_head",
+      "category": "rider",
+      "height": 64,
+      "id": "part.rider.head",
+      "tags": [
+        "creature"
+      ],
+      "width": 64
+    },
+    {
+      "assetId": "rider.parts.arm-upper",
+      "bone": "rider_armUL",
+      "category": "rider",
+      "height": 64,
+      "id": "part.rider.arm-upper",
+      "tags": [
+        "creature"
+      ],
+      "width": 64
+    },
+    {
+      "assetId": "rider.parts.arm-fore",
+      "bone": "rider_armFL",
+      "category": "rider",
+      "height": 64,
+      "id": "part.rider.arm-fore",
+      "tags": [
+        "creature"
+      ],
+      "width": 64
+    },
+    {
+      "assetId": "ram.parts.base",
+      "bone": "base",
+      "category": "ram",
+      "height": 64,
+      "id": "part.ram.base",
+      "tags": [
+        "siege"
+      ],
+      "width": 96
+    },
+    {
+      "assetId": "ram.parts.roof",
+      "bone": "roof",
+      "category": "ram",
+      "height": 64,
+      "id": "part.ram.roof",
+      "tags": [
+        "siege"
+      ],
+      "width": 96
+    },
+    {
+      "assetId": "ram.parts.cover",
+      "bone": "cover",
+      "category": "ram",
+      "height": 64,
+      "id": "part.ram.cover",
+      "tags": [
+        "siege"
+      ],
+      "width": 96
+    },
+    {
+      "assetId": "ram.parts.arm",
+      "bone": "ram_arm",
+      "category": "ram",
+      "height": 64,
+      "id": "part.ram.arm",
+      "tags": [
+        "siege"
+      ],
+      "width": 96
+    },
+    {
+      "assetId": "ram.parts.head",
+      "bone": "ram_head",
+      "category": "ram",
+      "height": 64,
+      "id": "part.ram.head",
+      "tags": [
+        "siege"
+      ],
+      "width": 64
+    },
+    {
+      "assetId": "ram.parts.wheel",
+      "bone": "wheelFL",
+      "category": "ram",
+      "height": 64,
+      "id": "part.ram.wheel",
+      "tags": [
+        "siege"
+      ],
+      "width": 64
+    },
+    {
+      "assetId": "ram.parts.pusher",
+      "bone": "pusherL",
+      "category": "ram",
+      "height": 64,
+      "id": "part.ram.pusher",
+      "tags": [
+        "siege"
+      ],
+      "width": 64
+    },
+    {
+      "assetId": "catapult.parts.base",
+      "bone": "base",
+      "category": "catapult",
+      "height": 64,
+      "id": "part.catapult.base",
+      "tags": [
+        "siege"
+      ],
+      "width": 96
+    },
+    {
+      "assetId": "catapult.parts.wheel",
+      "bone": "wheelF",
+      "category": "catapult",
+      "height": 64,
+      "id": "part.catapult.wheel",
+      "tags": [
+        "siege"
+      ],
+      "width": 64
+    },
+    {
+      "assetId": "catapult.parts.frame",
+      "bone": "frame_winch",
+      "category": "catapult",
+      "height": 64,
+      "id": "part.catapult.frame",
+      "tags": [
+        "siege"
+      ],
+      "width": 64
+    },
+    {
+      "assetId": "catapult.parts.arm",
+      "bone": "throw_arm",
+      "category": "catapult",
+      "height": 64,
+      "id": "part.catapult.arm",
+      "tags": [
+        "siege"
+      ],
+      "width": 96
+    },
+    {
+      "assetId": "catapult.parts.sling",
+      "bone": "sling",
+      "category": "catapult",
+      "height": 64,
+      "id": "part.catapult.sling",
+      "tags": [
+        "siege"
+      ],
+      "width": 64
+    },
+    {
+      "assetId": "catapult.parts.weight",
+      "bone": "counterweight",
+      "category": "catapult",
+      "height": 64,
+      "id": "part.catapult.weight",
+      "tags": [
+        "siege"
+      ],
+      "width": 64
+    },
+    {
+      "assetId": "catapult.parts.stone",
+      "bone": "sling",
+      "category": "catapult",
+      "height": 64,
+      "id": "part.catapult.stone",
+      "tags": [
+        "siege"
+      ],
+      "width": 64
+    },
+    {
+      "assetId": "tower.parts.base",
+      "bone": "base",
+      "category": "tower",
+      "height": 64,
+      "id": "part.tower.base",
+      "tags": [
+        "siege"
+      ],
+      "width": 64
+    },
+    {
+      "assetId": "tower.parts.wheel",
+      "bone": "wheelFL",
+      "category": "tower",
+      "height": 64,
+      "id": "part.tower.wheel",
+      "tags": [
+        "siege"
+      ],
+      "width": 64
+    },
+    {
+      "assetId": "tower.parts.body-1",
+      "bone": "towerL1",
+      "category": "tower",
+      "height": 64,
+      "id": "part.tower.body-1",
+      "tags": [
+        "siege"
+      ],
+      "width": 64
+    },
+    {
+      "assetId": "tower.parts.body-2",
+      "bone": "towerL2",
+      "category": "tower",
+      "height": 64,
+      "id": "part.tower.body-2",
+      "tags": [
+        "siege"
+      ],
+      "width": 64
+    },
+    {
+      "assetId": "tower.parts.body-3",
+      "bone": "towerL3",
+      "category": "tower",
+      "height": 64,
+      "id": "part.tower.body-3",
+      "tags": [
+        "siege"
+      ],
+      "width": 64
+    },
+    {
+      "assetId": "tower.parts.platform",
+      "bone": "top_platform",
+      "category": "tower",
+      "height": 64,
+      "id": "part.tower.platform",
+      "tags": [
+        "siege"
+      ],
+      "width": 64
+    },
+    {
+      "assetId": "tower.parts.ladder",
+      "bone": "ladder",
+      "category": "tower",
+      "height": 64,
+      "id": "part.tower.ladder",
+      "tags": [
+        "siege"
+      ],
+      "width": 64
+    },
+    {
+      "assetId": "tower.parts.shield",
+      "bone": "shield_front",
+      "category": "tower",
+      "height": 64,
+      "id": "part.tower.shield",
+      "tags": [
+        "siege"
+      ],
+      "width": 64
+    },
+    {
+      "assetId": "player.parts.armor-leather",
+      "bone": "torso",
+      "category": "armor",
+      "height": 64,
+      "id": "part.armor.leather",
+      "tags": [
+        "armor"
+      ],
+      "width": 64
+    },
+    {
+      "assetId": "player.parts.armor-iron",
+      "bone": "torso",
+      "category": "armor",
+      "height": 64,
+      "id": "part.armor.iron",
+      "tags": [
+        "armor"
+      ],
+      "width": 64
+    }
+  ],
   "talents": []
 }

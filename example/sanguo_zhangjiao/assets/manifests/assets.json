@@ -6685,6 +6685,1476 @@
       "targetPhase": "P1",
       "status": "placeholder",
       "revision": 1
+    },
+    {
+      "assetId": "wolf.parts.body",
+      "imageId": "wolf.parts.body",
+      "category": "character-part",
+      "usage": [
+        "skeleton-part"
+      ],
+      "sourceFile": "assets/images/units/parts/wolf-body.png",
+      "runtime2D": {
+        "path": "assets/images/units/parts/wolf-body.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "wolf.parts.body"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 96,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 96,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "wolf.parts.neck",
+      "imageId": "wolf.parts.neck",
+      "category": "character-part",
+      "usage": [
+        "skeleton-part"
+      ],
+      "sourceFile": "assets/images/units/parts/wolf-neck.png",
+      "runtime2D": {
+        "path": "assets/images/units/parts/wolf-neck.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "wolf.parts.neck"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "wolf.parts.head",
+      "imageId": "wolf.parts.head",
+      "category": "character-part",
+      "usage": [
+        "skeleton-part"
+      ],
+      "sourceFile": "assets/images/units/parts/wolf-head.png",
+      "runtime2D": {
+        "path": "assets/images/units/parts/wolf-head.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "wolf.parts.head"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "wolf.parts.jaw",
+      "imageId": "wolf.parts.jaw",
+      "category": "character-part",
+      "usage": [
+        "skeleton-part"
+      ],
+      "sourceFile": "assets/images/units/parts/wolf-jaw.png",
+      "runtime2D": {
+        "path": "assets/images/units/parts/wolf-jaw.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "wolf.parts.jaw"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "wolf.parts.tail",
+      "imageId": "wolf.parts.tail",
+      "category": "character-part",
+      "usage": [
+        "skeleton-part"
+      ],
+      "sourceFile": "assets/images/units/parts/wolf-tail.png",
+      "runtime2D": {
+        "path": "assets/images/units/parts/wolf-tail.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "wolf.parts.tail"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "wolf.parts.leg-upper",
+      "imageId": "wolf.parts.leg-upper",
+      "category": "character-part",
+      "usage": [
+        "skeleton-part"
+      ],
+      "sourceFile": "assets/images/units/parts/wolf-leg-upper.png",
+      "runtime2D": {
+        "path": "assets/images/units/parts/wolf-leg-upper.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "wolf.parts.leg-upper"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "wolf.parts.leg-lower",
+      "imageId": "wolf.parts.leg-lower",
+      "category": "character-part",
+      "usage": [
+        "skeleton-part"
+      ],
+      "sourceFile": "assets/images/units/parts/wolf-leg-lower.png",
+      "runtime2D": {
+        "path": "assets/images/units/parts/wolf-leg-lower.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "wolf.parts.leg-lower"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "horse.parts.body",
+      "imageId": "horse.parts.body",
+      "category": "character-part",
+      "usage": [
+        "skeleton-part"
+      ],
+      "sourceFile": "assets/images/units/parts/horse-body.png",
+      "runtime2D": {
+        "path": "assets/images/units/parts/horse-body.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "horse.parts.body"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 96,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 96,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "horse.parts.neck",
+      "imageId": "horse.parts.neck",
+      "category": "character-part",
+      "usage": [
+        "skeleton-part"
+      ],
+      "sourceFile": "assets/images/units/parts/horse-neck.png",
+      "runtime2D": {
+        "path": "assets/images/units/parts/horse-neck.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "horse.parts.neck"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "horse.parts.head",
+      "imageId": "horse.parts.head",
+      "category": "character-part",
+      "usage": [
+        "skeleton-part"
+      ],
+      "sourceFile": "assets/images/units/parts/horse-head.png",
+      "runtime2D": {
+        "path": "assets/images/units/parts/horse-head.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "horse.parts.head"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "horse.parts.tail",
+      "imageId": "horse.parts.tail",
+      "category": "character-part",
+      "usage": [
+        "skeleton-part"
+      ],
+      "sourceFile": "assets/images/units/parts/horse-tail.png",
+      "runtime2D": {
+        "path": "assets/images/units/parts/horse-tail.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "horse.parts.tail"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "horse.parts.saddle",
+      "imageId": "horse.parts.saddle",
+      "category": "character-part",
+      "usage": [
+        "skeleton-part"
+      ],
+      "sourceFile": "assets/images/units/parts/horse-saddle.png",
+      "runtime2D": {
+        "path": "assets/images/units/parts/horse-saddle.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "horse.parts.saddle"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "horse.parts.leg-upper",
+      "imageId": "horse.parts.leg-upper",
+      "category": "character-part",
+      "usage": [
+        "skeleton-part"
+      ],
+      "sourceFile": "assets/images/units/parts/horse-leg-upper.png",
+      "runtime2D": {
+        "path": "assets/images/units/parts/horse-leg-upper.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "horse.parts.leg-upper"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "horse.parts.leg-lower",
+      "imageId": "horse.parts.leg-lower",
+      "category": "character-part",
+      "usage": [
+        "skeleton-part"
+      ],
+      "sourceFile": "assets/images/units/parts/horse-leg-lower.png",
+      "runtime2D": {
+        "path": "assets/images/units/parts/horse-leg-lower.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "horse.parts.leg-lower"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "rider.parts.torso",
+      "imageId": "rider.parts.torso",
+      "category": "character-part",
+      "usage": [
+        "skeleton-part"
+      ],
+      "sourceFile": "assets/images/units/parts/rider-torso.png",
+      "runtime2D": {
+        "path": "assets/images/units/parts/rider-torso.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "rider.parts.torso"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "rider.parts.head",
+      "imageId": "rider.parts.head",
+      "category": "character-part",
+      "usage": [
+        "skeleton-part"
+      ],
+      "sourceFile": "assets/images/units/parts/rider-head.png",
+      "runtime2D": {
+        "path": "assets/images/units/parts/rider-head.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "rider.parts.head"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "rider.parts.arm-upper",
+      "imageId": "rider.parts.arm-upper",
+      "category": "character-part",
+      "usage": [
+        "skeleton-part"
+      ],
+      "sourceFile": "assets/images/units/parts/rider-arm-upper.png",
+      "runtime2D": {
+        "path": "assets/images/units/parts/rider-arm-upper.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "rider.parts.arm-upper"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "rider.parts.arm-fore",
+      "imageId": "rider.parts.arm-fore",
+      "category": "character-part",
+      "usage": [
+        "skeleton-part"
+      ],
+      "sourceFile": "assets/images/units/parts/rider-arm-fore.png",
+      "runtime2D": {
+        "path": "assets/images/units/parts/rider-arm-fore.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "rider.parts.arm-fore"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "ram.parts.base",
+      "imageId": "ram.parts.base",
+      "category": "siege-part",
+      "usage": [
+        "skeleton-part"
+      ],
+      "sourceFile": "assets/images/units/parts/ram-base.png",
+      "runtime2D": {
+        "path": "assets/images/units/parts/ram-base.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "ram.parts.base"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 96,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 96,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "ram.parts.roof",
+      "imageId": "ram.parts.roof",
+      "category": "siege-part",
+      "usage": [
+        "skeleton-part"
+      ],
+      "sourceFile": "assets/images/units/parts/ram-roof.png",
+      "runtime2D": {
+        "path": "assets/images/units/parts/ram-roof.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "ram.parts.roof"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 96,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 96,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "ram.parts.cover",
+      "imageId": "ram.parts.cover",
+      "category": "siege-part",
+      "usage": [
+        "skeleton-part"
+      ],
+      "sourceFile": "assets/images/units/parts/ram-cover.png",
+      "runtime2D": {
+        "path": "assets/images/units/parts/ram-cover.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "ram.parts.cover"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 96,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 96,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "ram.parts.arm",
+      "imageId": "ram.parts.arm",
+      "category": "siege-part",
+      "usage": [
+        "skeleton-part"
+      ],
+      "sourceFile": "assets/images/units/parts/ram-arm.png",
+      "runtime2D": {
+        "path": "assets/images/units/parts/ram-arm.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "ram.parts.arm"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 96,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 96,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "ram.parts.head",
+      "imageId": "ram.parts.head",
+      "category": "siege-part",
+      "usage": [
+        "skeleton-part"
+      ],
+      "sourceFile": "assets/images/units/parts/ram-head.png",
+      "runtime2D": {
+        "path": "assets/images/units/parts/ram-head.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "ram.parts.head"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "ram.parts.wheel",
+      "imageId": "ram.parts.wheel",
+      "category": "siege-part",
+      "usage": [
+        "skeleton-part"
+      ],
+      "sourceFile": "assets/images/units/parts/ram-wheel.png",
+      "runtime2D": {
+        "path": "assets/images/units/parts/ram-wheel.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "ram.parts.wheel"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "ram.parts.pusher",
+      "imageId": "ram.parts.pusher",
+      "category": "siege-part",
+      "usage": [
+        "skeleton-part"
+      ],
+      "sourceFile": "assets/images/units/parts/ram-pusher.png",
+      "runtime2D": {
+        "path": "assets/images/units/parts/ram-pusher.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "ram.parts.pusher"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "catapult.parts.base",
+      "imageId": "catapult.parts.base",
+      "category": "siege-part",
+      "usage": [
+        "skeleton-part"
+      ],
+      "sourceFile": "assets/images/units/parts/catapult-base.png",
+      "runtime2D": {
+        "path": "assets/images/units/parts/catapult-base.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "catapult.parts.base"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 96,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 96,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "catapult.parts.wheel",
+      "imageId": "catapult.parts.wheel",
+      "category": "siege-part",
+      "usage": [
+        "skeleton-part"
+      ],
+      "sourceFile": "assets/images/units/parts/catapult-wheel.png",
+      "runtime2D": {
+        "path": "assets/images/units/parts/catapult-wheel.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "catapult.parts.wheel"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "catapult.parts.frame",
+      "imageId": "catapult.parts.frame",
+      "category": "siege-part",
+      "usage": [
+        "skeleton-part"
+      ],
+      "sourceFile": "assets/images/units/parts/catapult-frame.png",
+      "runtime2D": {
+        "path": "assets/images/units/parts/catapult-frame.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "catapult.parts.frame"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "catapult.parts.arm",
+      "imageId": "catapult.parts.arm",
+      "category": "siege-part",
+      "usage": [
+        "skeleton-part"
+      ],
+      "sourceFile": "assets/images/units/parts/catapult-arm.png",
+      "runtime2D": {
+        "path": "assets/images/units/parts/catapult-arm.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "catapult.parts.arm"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 96,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 96,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "catapult.parts.sling",
+      "imageId": "catapult.parts.sling",
+      "category": "siege-part",
+      "usage": [
+        "skeleton-part"
+      ],
+      "sourceFile": "assets/images/units/parts/catapult-sling.png",
+      "runtime2D": {
+        "path": "assets/images/units/parts/catapult-sling.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "catapult.parts.sling"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "catapult.parts.weight",
+      "imageId": "catapult.parts.weight",
+      "category": "siege-part",
+      "usage": [
+        "skeleton-part"
+      ],
+      "sourceFile": "assets/images/units/parts/catapult-weight.png",
+      "runtime2D": {
+        "path": "assets/images/units/parts/catapult-weight.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "catapult.parts.weight"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "catapult.parts.stone",
+      "imageId": "catapult.parts.stone",
+      "category": "siege-part",
+      "usage": [
+        "skeleton-part"
+      ],
+      "sourceFile": "assets/images/units/parts/catapult-stone.png",
+      "runtime2D": {
+        "path": "assets/images/units/parts/catapult-stone.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "catapult.parts.stone"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "tower.parts.base",
+      "imageId": "tower.parts.base",
+      "category": "siege-part",
+      "usage": [
+        "skeleton-part"
+      ],
+      "sourceFile": "assets/images/units/parts/tower-base.png",
+      "runtime2D": {
+        "path": "assets/images/units/parts/tower-base.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "tower.parts.base"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "tower.parts.wheel",
+      "imageId": "tower.parts.wheel",
+      "category": "siege-part",
+      "usage": [
+        "skeleton-part"
+      ],
+      "sourceFile": "assets/images/units/parts/tower-wheel.png",
+      "runtime2D": {
+        "path": "assets/images/units/parts/tower-wheel.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "tower.parts.wheel"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "tower.parts.body-1",
+      "imageId": "tower.parts.body-1",
+      "category": "siege-part",
+      "usage": [
+        "skeleton-part"
+      ],
+      "sourceFile": "assets/images/units/parts/tower-body-1.png",
+      "runtime2D": {
+        "path": "assets/images/units/parts/tower-body-1.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "tower.parts.body-1"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "tower.parts.body-2",
+      "imageId": "tower.parts.body-2",
+      "category": "siege-part",
+      "usage": [
+        "skeleton-part"
+      ],
+      "sourceFile": "assets/images/units/parts/tower-body-2.png",
+      "runtime2D": {
+        "path": "assets/images/units/parts/tower-body-2.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "tower.parts.body-2"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "tower.parts.body-3",
+      "imageId": "tower.parts.body-3",
+      "category": "siege-part",
+      "usage": [
+        "skeleton-part"
+      ],
+      "sourceFile": "assets/images/units/parts/tower-body-3.png",
+      "runtime2D": {
+        "path": "assets/images/units/parts/tower-body-3.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "tower.parts.body-3"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "tower.parts.platform",
+      "imageId": "tower.parts.platform",
+      "category": "siege-part",
+      "usage": [
+        "skeleton-part"
+      ],
+      "sourceFile": "assets/images/units/parts/tower-platform.png",
+      "runtime2D": {
+        "path": "assets/images/units/parts/tower-platform.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "tower.parts.platform"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "tower.parts.ladder",
+      "imageId": "tower.parts.ladder",
+      "category": "siege-part",
+      "usage": [
+        "skeleton-part"
+      ],
+      "sourceFile": "assets/images/units/parts/tower-ladder.png",
+      "runtime2D": {
+        "path": "assets/images/units/parts/tower-ladder.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "tower.parts.ladder"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "tower.parts.shield",
+      "imageId": "tower.parts.shield",
+      "category": "siege-part",
+      "usage": [
+        "skeleton-part"
+      ],
+      "sourceFile": "assets/images/units/parts/tower-shield.png",
+      "runtime2D": {
+        "path": "assets/images/units/parts/tower-shield.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "tower.parts.shield"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "player.parts.armor-leather",
+      "imageId": "player.parts.armor-leather",
+      "category": "character-part",
+      "usage": [
+        "skeleton-part"
+      ],
+      "sourceFile": "assets/images/player/parts/armor-leather.png",
+      "runtime2D": {
+        "path": "assets/images/player/parts/armor-leather.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player.parts.armor-leather"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "player.parts.armor-iron",
+      "imageId": "player.parts.armor-iron",
+      "category": "character-part",
+      "usage": [
+        "skeleton-part"
+      ],
+      "sourceFile": "assets/images/player/parts/armor-iron.png",
+      "runtime2D": {
+        "path": "assets/images/player/parts/armor-iron.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player.parts.armor-iron"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
     }
   ]
 }
