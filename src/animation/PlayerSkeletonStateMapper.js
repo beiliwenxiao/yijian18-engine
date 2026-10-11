@@ -29,15 +29,23 @@ import { weaponKeyOf } from './SkeletonPartResolver.js';
 const MAPPER_CLIPS = new Set([
   'death', 'soul', 'climb_back',
   'walk_down', 'walk_up', 'walk_side',
+  'walk_SE', 'walk_SW', 'walk_NE', 'walk_NW',
   'idle_down', 'idle_up', 'idle_side'
 ]);
 
-/** 头部三态槽位可见性（key: 方向键 down/side/up） */
+/** 头部槽位可见性（key: 方向键 down/side/up + 对角 SE/SW/NE/NW——斜下正脸、斜上后脑） */
 const HEAD_SLOTS = {
   down: { headFront: true, headSide: false, headBack: false },
   side: { headFront: false, headSide: true, headBack: false },
-  up: { headFront: false, headSide: false, headBack: true }
+  up: { headFront: false, headSide: false, headBack: true },
+  SE: { headFront: true, headSide: false, headBack: false },
+  SW: { headFront: true, headSide: false, headBack: false },
+  NE: { headFront: false, headSide: false, headBack: true },
+  NW: { headFront: false, headSide: false, headBack: true }
 };
+
+/** 斜向剪辑缺失时回退到就近基本方向（对角 idle 无专属剪辑，复用正/背待机）。 */
+const DIAGONAL_FALLBACK = { SE: 'down', SW: 'down', NE: 'up', NW: 'up' };
 
 /** 手持位挂点骨骼（右前臂） */
 const WEAPON_HAND_BONE = 'armFR';
@@ -125,18 +133,21 @@ export function createPlayerSkeletonStateMapper(entity, { getAssetManager = null
       }
     }
 
-    // 连续状态 → 剪辑名（优先级从上到下）
+    // 连续状态 → 剪辑名（优先级从上到下）；斜向回退：对角 idle 复用正/背待机，剪辑缺失回退基本向
     let targetClip;
+    const moveKey = directionKey(sprite);
     if (entity.isDead || entity.isDying) targetClip = 'death';
     else if (entity.isSoulState === true) targetClip = 'soul';
     else if (entity._climbing === true) targetClip = 'climb_back';
     // isStopping（松开方向）立即回待机：骨骼模式下 SpriteComponent 帧归零逻辑不跑
     else if (sprite.isWalking === true && sprite.isStopping !== true) {
-      targetClip = `walk_${directionKey(sprite)}`;
+      targetClip = `walk_${moveKey}`;
     } else {
-      targetClip = `idle_${directionKey(sprite)}`;
+      targetClip = `idle_${moveKey}`;
     }
-
+    if (!asset.clips.has(targetClip)) {
+      targetClip = `${targetClip.startsWith('walk_') ? 'walk_' : 'idle_'}${DIAGONAL_FALLBACK[moveKey] || moveKey}`;
+    }
     if (!asset.clips.has(targetClip)) {
       targetClip = asset.defaultClip;
       if (!targetClip) return;
@@ -148,20 +159,27 @@ export function createPlayerSkeletonStateMapper(entity, { getAssetManager = null
       mapperHold = '';
     }
 
-    // 头部三态 + 侧向镜像（方向键变化时才写共享资产，避免每帧触碰）
+    // 头部槽位切换 + 侧向镜像（方向键变化时才写共享资产，避免每帧触碰）
     const facing = sprite?.direction || 'down';
-    const key = directionKey(sprite);
-    // 侧向左右共用 side 姿态与侧面头：left 由整体 flipX 镜像
-    const wantFlip = facing === 'left';
+    const key = moveKey;
+    // 左系朝向（left / 斜左下 SW / 斜左上 NW）由整体 flipX 镜像
+    const wantFlip = facing === 'left' || facing === 'down-left' || facing === 'up-left';
     if (sprite.flipX !== wantFlip) sprite.flipX = wantFlip;
-    if (key !== lastFacingKey) {
-      lastFacingKey = key;
+    // side 键下 left/right 共用剪辑与侧脸头，头的翻转依赖 facing → 守卫需区分两者
+    const facingKey = key === 'side' ? `${key}|${facing}` : key;
+    if (facingKey !== lastFacingKey) {
+      lastFacingKey = facingKey;
       const plan = HEAD_SLOTS[key];
       if (plan) {
         for (const slot of asset.slots) {
           if (!(slot.id in plan) && slot.id !== 'spearBack') continue;
           const attachment = slot.attachment;
           if (!attachment) continue;
+          // 侧脸基准图朝左（鼻梁在左缘）：附件恒翻为「朝右基准」，
+          // 最终朝向由实体 flipX 决定（右行 flip=false→朝右；左行 flip=true→镜像回朝左）
+          if (slot.id === 'headSide') {
+            if (attachment.flipX !== true) attachment.flipX = true;
+          }
           // 背面时长矛水平翻转（枪头换边：正面朝右上 → 背面朝左上）
           if (slot.id === 'spearBack') {
             const wantFlip = key === 'up';
@@ -189,5 +207,9 @@ function directionKey(sprite) {
   const direction = sprite?.direction || 'down';
   if (direction === 'up') return 'up';
   if (direction === 'left' || direction === 'right') return 'side';
+  if (direction === 'down-right') return 'SE';
+  if (direction === 'down-left') return 'SW';
+  if (direction === 'up-right') return 'NE';
+  if (direction === 'up-left') return 'NW';
   return 'down';
 }

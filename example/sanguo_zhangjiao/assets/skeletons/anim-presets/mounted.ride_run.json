@@ -221,27 +221,27 @@
         {
           "t": 0,
           "ease": "easeInOut",
-          "y": 0
+          "y": -8
         },
         {
           "t": 150,
           "ease": "easeInOut",
-          "y": -2
+          "y": -10
         },
         {
           "t": 300,
           "ease": "easeInOut",
-          "y": 0
+          "y": -8
         },
         {
           "t": 450,
           "ease": "easeInOut",
-          "y": -2
+          "y": -10
         },
         {
           "t": 600,
           "ease": "easeInOut",
-          "y": 0
+          "y": -8
         }
       ]
     }

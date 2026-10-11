@@ -31,6 +31,9 @@ const outDir = path.join(root, 'example/sanguo_zhangjiao/assets/skeletons/anim-p
 const tplDir = path.join(root, 'example/sanguo_zhangjiao/assets/skeletons/templates');
 
 /* ---- 键/轨道快捷构造 ---- */
+// 键值是绝对局部值（采样时直接替换 rest），位移类键必须基于目标骨骼 rest 基准展开。
+const HUMANOID_HIPS_REST_Y = -26;   // tpl.humanoid hips rest y
+const RIDER_TORSO_REST_Y = -8;      // tpl.mounted rider_torso rest y
 const k = (t, extra = {}) => ({ t, ease: 'easeInOut', ...extra });       // 部分字段键
 const klin = (t, extra = {}) => ({ t, ease: 'linear', ...extra });       // 线性（轮转等）
 const tr = (boneId, keys) => ({ bone: boneId, keys });
@@ -42,10 +45,10 @@ const swing = (boneId, amp, dur, { phase = 0, ease = 'easeInOut' } = {}) => {
     : [k(0, { rot: -amp }), k(half, { rot: amp }), k(dur, { rot: -amp })];
   return tr(boneId, keys.map(x => ({ ...x, ease })));
 };
-/** 上下起伏（y 偏移，负=向上）。 */
-const bob = (boneId, amp, dur) => tr(boneId, [
-  k(0, { y: 0 }), k(dur * 0.25, { y: -amp }), k(dur * 0.5, { y: 0 }),
-  k(dur * 0.75, { y: -amp }), k(dur, { y: 0 })
+/** 上下起伏（y 偏移，负=向上）。baseY=骨骼 rest y——键值是绝对局部值，必须基于 rest 展开。 */
+const bob = (boneId, amp, dur, baseY = 0) => tr(boneId, [
+  k(0, { y: baseY }), k(dur * 0.25, { y: baseY - amp }), k(dur * 0.5, { y: baseY }),
+  k(dur * 0.75, { y: baseY - amp }), k(dur, { y: baseY })
 ]);
 
 /* ---- 人形步行（按方向参数化：正面小幅/侧面大幅/对角折中） ---- */
@@ -65,7 +68,7 @@ function walkTracks(dir, { dur = 800, amp = null, bobAmp = 2, torsoAmp = 2 } = {
     swing('calfR', resolvedAmp * 0.6, dur, { phase: legPhase }),
     swing('armUL', armAmp, dur, { phase: armPhase }),
     swing('armUR', armAmp, dur, { phase: 1 - armPhase }),
-    bob('hips', bobAmp, dur),
+    bob('hips', bobAmp, dur, HUMANOID_HIPS_REST_Y),
     swing('torso', torsoAmp, dur, { phase: legPhase })
   ];
   return tracks;
@@ -82,7 +85,7 @@ const runTracks = (dir, { dur = 480 } = {}) => {
     swing('armUL', amp * 0.8, dur, { phase: 1 - flip }),
     swing('armUR', amp * 0.8, dur, { phase: flip }),
     tr('torso', [k(0, { rot: 6 }), k(dur / 2, { rot: 3 }), k(dur, { rot: 6 })]),
-    bob('hips', 3, dur)
+    bob('hips', 3, dur, HUMANOID_HIPS_REST_Y)
   ];
 };
 
@@ -216,7 +219,7 @@ PRESETS.push(
       tr('rider_torso', [k(0, { rot: 8 }), k(300, { rot: 5 }), k(600, { rot: 8 })]),
       tr('rider_armUL', [k(0, { rot: -20 }), k(600, { rot: -20 })]),
       tr('rider_armUR', [k(0, { rot: -20 }), k(600, { rot: -20 })]),
-      bob('rider_torso', 2, 600)
+      bob('rider_torso', 2, 600, RIDER_TORSO_REST_Y)
     ]
   }
 );

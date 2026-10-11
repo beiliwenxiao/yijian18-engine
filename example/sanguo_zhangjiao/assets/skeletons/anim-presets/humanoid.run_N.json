@@ -151,27 +151,27 @@
         {
           "t": 0,
           "ease": "easeInOut",
-          "y": 0
+          "y": -26
         },
         {
           "t": 120,
           "ease": "easeInOut",
-          "y": -3
+          "y": -29
         },
         {
           "t": 240,
           "ease": "easeInOut",
-          "y": 0
+          "y": -26
         },
         {
           "t": 360,
           "ease": "easeInOut",
-          "y": -3
+          "y": -29
         },
         {
           "t": 480,
           "ease": "easeInOut",
-          "y": 0
+          "y": -26
         }
       ]
     }

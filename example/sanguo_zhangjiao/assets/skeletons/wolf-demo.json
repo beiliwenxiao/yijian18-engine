@@ -8,18 +8,8 @@
   "defaultClip": "idle_down",
   "bones": [
     {
-      "id": "root",
-      "parent": null,
-      "x": 0,
-      "y": 0,
-      "rot": 0,
-      "scaleX": 1,
-      "scaleY": 1,
-      "length": 16
-    },
-    {
       "id": "hips",
-      "parent": "root",
+      "parent": null,
       "x": 0,
       "y": -18,
       "rot": 0,
@@ -71,7 +61,7 @@
   "slots": [
     {
       "id": "shadow",
-      "bone": "root",
+      "bone": "hips",
       "z": 0,
       "attachment": {
         "type": "empty"
@@ -85,7 +75,14 @@
         "type": "sequence",
         "assetId": "s01.enemy.wolf",
         "fps": 8,
-        "frames": [],
+        "frames": [
+          {
+            "sx": 0,
+            "sy": 0,
+            "sw": 68,
+            "sh": 48
+          }
+        ],
         "x": 0,
         "y": 4,
         "rot": 0,
@@ -127,25 +124,6 @@
       "loop": true,
       "tracks": [
         {
-          "bone": "root",
-          "keys": [
-            {
-              "t": 0,
-              "y": 0
-            },
-            {
-              "t": 207,
-              "y": -3,
-              "ease": "easeInOut"
-            },
-            {
-              "t": 413,
-              "y": 0,
-              "ease": "easeInOut"
-            }
-          ]
-        },
-        {
           "bone": "legL",
           "keys": [
             {
@@ -179,6 +157,25 @@
             {
               "t": 413,
               "rot": 14,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "hips",
+          "keys": [
+            {
+              "t": 0,
+              "y": -18
+            },
+            {
+              "t": 207,
+              "y": -21,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 413,
+              "y": -18,
               "ease": "easeInOut"
             }
           ]

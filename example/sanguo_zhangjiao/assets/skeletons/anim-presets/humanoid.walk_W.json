@@ -131,27 +131,27 @@
         {
           "t": 0,
           "ease": "easeInOut",
-          "y": 0
+          "y": -26
         },
         {
           "t": 200,
           "ease": "easeInOut",
-          "y": -2
+          "y": -28
         },
         {
           "t": 400,
           "ease": "easeInOut",
-          "y": 0
+          "y": -26
         },
         {
           "t": 600,
           "ease": "easeInOut",
-          "y": -2
+          "y": -28
         },
         {
           "t": 800,
           "ease": "easeInOut",
-          "y": 0
+          "y": -26
         }
       ]
     },

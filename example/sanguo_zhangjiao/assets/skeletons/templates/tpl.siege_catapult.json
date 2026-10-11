@@ -80,19 +80,9 @@
   ],
   "slots": [
     {
-      "id": "slot_base",
-      "bone": "base",
-      "z": 1,
-      "visible": true,
-      "locked": false,
-      "attachment": {
-        "type": "empty"
-      }
-    },
-    {
       "id": "slot_wheelF",
       "bone": "wheelF",
-      "z": 2,
+      "z": 1,
       "visible": true,
       "locked": false,
       "attachment": {
@@ -102,7 +92,7 @@
     {
       "id": "slot_wheelB",
       "bone": "wheelB",
-      "z": 3,
+      "z": 2,
       "visible": true,
       "locked": false,
       "attachment": {
@@ -112,7 +102,7 @@
     {
       "id": "slot_frame_winch",
       "bone": "frame_winch",
-      "z": 4,
+      "z": 3,
       "visible": true,
       "locked": false,
       "attachment": {
@@ -122,7 +112,7 @@
     {
       "id": "slot_throw_arm",
       "bone": "throw_arm",
-      "z": 5,
+      "z": 4,
       "visible": true,
       "locked": false,
       "attachment": {
@@ -132,7 +122,7 @@
     {
       "id": "slot_sling",
       "bone": "sling",
-      "z": 6,
+      "z": 5,
       "visible": true,
       "locked": false,
       "attachment": {
@@ -142,7 +132,7 @@
     {
       "id": "slot_counterweight",
       "bone": "counterweight",
-      "z": 7,
+      "z": 6,
       "visible": true,
       "locked": false,
       "attachment": {

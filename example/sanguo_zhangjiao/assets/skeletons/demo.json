@@ -8,18 +8,8 @@
   "defaultClip": "idle",
   "bones": [
     {
-      "id": "root",
-      "parent": null,
-      "x": 0,
-      "y": 0,
-      "rot": 0,
-      "scaleX": 1,
-      "scaleY": 1,
-      "length": 20
-    },
-    {
       "id": "torso",
-      "parent": "root",
+      "parent": null,
       "x": 0,
       "y": -60,
       "rot": 0,
@@ -41,7 +31,7 @@
   "slots": [
     {
       "id": "aura",
-      "bone": "root",
+      "bone": "torso",
       "z": 0,
       "attachment": {
         "type": "sequence",
@@ -137,42 +127,25 @@
       "loop": true,
       "tracks": [
         {
-          "bone": "root",
-          "keys": [
-            {
-              "t": 0,
-              "y": 0,
-              "ease": "easeInOut"
-            },
-            {
-              "t": 400,
-              "y": -6,
-              "ease": "easeInOut"
-            },
-            {
-              "t": 800,
-              "y": 0,
-              "ease": "easeInOut"
-            }
-          ]
-        },
-        {
           "bone": "torso",
           "keys": [
             {
               "t": 0,
               "rot": -6,
-              "ease": "easeInOut"
+              "ease": "easeInOut",
+              "y": -60
             },
             {
               "t": 400,
               "rot": 6,
-              "ease": "easeInOut"
+              "ease": "easeInOut",
+              "y": -66
             },
             {
               "t": 800,
               "rot": -6,
-              "ease": "easeInOut"
+              "ease": "easeInOut",
+              "y": -60
             }
           ]
         }

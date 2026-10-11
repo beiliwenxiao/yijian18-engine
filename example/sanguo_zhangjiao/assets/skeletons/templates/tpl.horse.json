@@ -8,18 +8,8 @@
   "defaultClip": "idle",
   "bones": [
     {
-      "id": "root",
-      "parent": null,
-      "x": 0,
-      "y": 0,
-      "rot": 0,
-      "scaleX": 1,
-      "scaleY": 1,
-      "length": 36
-    },
-    {
       "id": "spine",
-      "parent": "root",
+      "parent": null,
       "x": -2,
       "y": -22,
       "rot": 0,

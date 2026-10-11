@@ -146,9 +146,14 @@ export class SpriteComponent extends Component {
    * @param {boolean} force - 是否强制重新播放
    */
   playAnimation(name, force = false) {
-    // 骨骼实体：兼容转发到 SkeletonComponent.playClip（帧动画已清空，避免告警）
+    // 骨骼实体：兼容转发到 SkeletonComponent.playClip（帧动画已清空，避免告警）。
+    // 必须同步维护 currentAnimation：MovementSystem 的 `currentAnimation !== 'walk'`
+    // 去重守卫依赖本字段——缺写会每帧强制转发 playClip 覆盖状态映射器选定的方向剪辑。
     if (this.isSkeleton) {
-      this.skeletonDelegate?.playClip?.(name, force);
+      if (this.currentAnimation !== name || force) {
+        this.currentAnimation = name;
+        this.skeletonDelegate?.playClip?.(name, force);
+      }
       return;
     }
     if (!this.animations.has(name)) {

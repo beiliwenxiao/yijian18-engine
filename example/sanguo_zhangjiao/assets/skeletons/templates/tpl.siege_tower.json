@@ -120,19 +120,9 @@
   ],
   "slots": [
     {
-      "id": "slot_base",
-      "bone": "base",
-      "z": 1,
-      "visible": true,
-      "locked": false,
-      "attachment": {
-        "type": "empty"
-      }
-    },
-    {
       "id": "slot_wheelFL",
       "bone": "wheelFL",
-      "z": 2,
+      "z": 1,
       "visible": true,
       "locked": false,
       "attachment": {
@@ -142,7 +132,7 @@
     {
       "id": "slot_wheelBL",
       "bone": "wheelBL",
-      "z": 3,
+      "z": 2,
       "visible": true,
       "locked": false,
       "attachment": {
@@ -152,7 +142,7 @@
     {
       "id": "slot_towerL1",
       "bone": "towerL1",
-      "z": 4,
+      "z": 3,
       "visible": true,
       "locked": false,
       "attachment": {
@@ -162,7 +152,7 @@
     {
       "id": "slot_towerL2",
       "bone": "towerL2",
-      "z": 5,
+      "z": 4,
       "visible": true,
       "locked": false,
       "attachment": {
@@ -172,7 +162,7 @@
     {
       "id": "slot_towerL3",
       "bone": "towerL3",
-      "z": 6,
+      "z": 5,
       "visible": true,
       "locked": false,
       "attachment": {
@@ -182,7 +172,7 @@
     {
       "id": "slot_top_platform",
       "bone": "top_platform",
-      "z": 7,
+      "z": 6,
       "visible": true,
       "locked": false,
       "attachment": {
@@ -192,7 +182,7 @@
     {
       "id": "slot_ladder",
       "bone": "ladder",
-      "z": 8,
+      "z": 7,
       "visible": true,
       "locked": false,
       "attachment": {
@@ -202,7 +192,7 @@
     {
       "id": "slot_shield_front",
       "bone": "shield_front",
-      "z": 9,
+      "z": 8,
       "visible": true,
       "locked": false,
       "attachment": {

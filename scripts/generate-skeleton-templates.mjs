@@ -42,7 +42,7 @@ const slotFor = (boneId, z) => ({ id: `slot_${boneId}`, bone: boneId, z, visible
 /** 组装模板文档：bones/slots/idle 由各拓扑构建器给出。 */
 function makeDoc(templateId, meta, builders) {
   const bones = builders.bones();
-  const slotBones = bones.filter(b => b.id !== 'root' && !builders.slotExclude?.includes(b.id));
+  const slotBones = bones.filter(b => b.parent !== null && !builders.slotExclude?.includes(b.id));
   return {
     schemaVersion: 1,
     skeletonId: templateId,
@@ -61,8 +61,7 @@ const TEMPLATES = {
   'tpl.humanoid': makeDoc('tpl.humanoid', { width: 64, height: 64 }, {
     idleMs: 1600,
     bones: () => [
-      bone('root', null, 0, 0, 16),
-      bone('hips', 'root', 0, -26, 14),
+      bone('hips', null, 0, -26, 14), // 骨架根=骨盆（对齐 Spine/Unity；实体定位原点=脚底由渲染承担）
       bone('torso', 'hips', 0, -2, 20),
       bone('head', 'torso', 0, -20, 16),
       bone('back', 'torso', 0, -4, 18),
@@ -78,8 +77,7 @@ const TEMPLATES = {
   'tpl.wolf': makeDoc('tpl.wolf', { width: 96, height: 64 }, {
     idleMs: 1200,
     bones: () => [
-      bone('root', null, 0, 0, 30),
-      bone('spine', 'root', -2, -16, 16),
+      bone('spine', null, -2, -16, 16), // 骨架根=躯干（四足）
       bone('chest', 'spine', 10, -4, 14),
       bone('neck', 'chest', 8, -8, 10),
       bone('head', 'neck', 6, -4, 12),
@@ -98,8 +96,7 @@ const TEMPLATES = {
   'tpl.horse': makeDoc('tpl.horse', { width: 128, height: 88 }, {
     idleMs: 1600,
     bones: () => [
-      bone('root', null, 0, 0, 36),
-      bone('spine', 'root', -2, -22, 18),
+      bone('spine', null, -2, -22, 18), // 骨架根=躯干（四足/骑乘）
       bone('chest', 'spine', 12, -4, 16),
       bone('neck1', 'chest', 10, -10, 12),
       bone('neck2', 'neck1', 6, -10, 12),
@@ -119,8 +116,7 @@ const TEMPLATES = {
   'tpl.mounted': makeDoc('tpl.mounted', { width: 128, height: 96 }, {
     idleMs: 1600,
     bones: () => [
-      bone('root', null, 0, 0, 36),
-      bone('spine', 'root', -2, -22, 18),
+      bone('spine', null, -2, -22, 18), // 骨架根=躯干（四足/骑乘）
       bone('chest', 'spine', 12, -4, 16),
       bone('neck1', 'chest', 10, -10, 12),
       bone('neck2', 'neck1', 6, -10, 12),
