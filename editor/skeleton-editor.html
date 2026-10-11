@@ -99,6 +99,17 @@
             <input type="number" id="se-meta-width" min="8" step="1"> ×
             <input type="number" id="se-meta-height" min="8" step="1">
         </div>
+        <div class="group">
+            <button id="se-select-all" title="全选所有骨骼与挂件（锁定的跳过）">☐ 全选</button>
+            <button id="se-copy" title="复制选中挂件（含绑定与偏移）">📋 复制</button>
+            <button id="se-paste" title="粘贴挂件到当前选中骨骼（偏移 6px 防重叠）">📌 粘贴</button>
+        </div>
+        <div class="group">
+            <button id="se-undo" title="撤销 (Ctrl+Z)">↶</button>
+            <button id="se-redo" title="重做 (Ctrl+Y)">↷</button>
+            <button id="se-fit" title="适配视图：缩放平移到设计盒居中">⤢</button>
+            <button id="se-pan" title="抓手平移 (H)：开启后左键拖动画布">🖐️</button>
+        </div>
         <div class="spacer"></div>
         <span id="se-dirty" style="font-size:12px;color:#ff9a3c;display:none;">● 未保存</span>
         <button class="primary" id="se-save" disabled>💾 保存（骨骼 JSON + Manifest）</button>

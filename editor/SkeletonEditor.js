@@ -67,7 +67,7 @@ export class SkeletonEditor {
 
     // 画布视图
     this.view = { scale: 1, ox: 0, oy: 0 };
-    this._drag = null;               // { kind: 'move'|'rotate'|'attach-move'|'attach-rotate'|'pan', ... }
+    this._drag = null;               // 拖拽态：{ kind: 'move'|'attach-move'|'attach-scale'|'bone-scale'|'object-rotate'|'tip-length'|'pan'|'marquee', ... }
     this._libDrag = null;            // 库条目拖入画布的组合预览态：{ partId, assetId, mx, my, dropWorld, hoverBone }
     this._partCheckResult = null;    // 部件体检结果（会话态）：{ rows, at }
     this._alphaBoundsCache = new Map(); // 附件非透明像素包围盒缓存（key: assetId|srcRect）
@@ -83,13 +83,17 @@ export class SkeletonEditor {
     this._collapsedBones = new Set();
     // 编辑模式（会话态）：'animate' 动画（骨骼驱动图片+实时打关键帧）| 'setup' 装配（移骨骼图片不动，反算挂点）
     this.editMode = 'animate';
-    // 变换模式（会话态）：'move' 移动 | 'rotate' 旋转 | 'scale' 缩放——
-    // 选中对象后右键菜单切换；点击永远只选中，拖拽语义由当前模式决定
-    this.transformMode = 'move';
     // 方向预览（会话态）：'down'|'side'|'up'——按运行时 HEAD_SLOTS 规则切头部三态槽位预览可见性
     this.previewDirection = 'down';
     // 显示模式（会话态）：'all' 图片+骨架 | 'bones' 仅骨架（调动作） | 'images' 仅图片（查外观）
     this.displayMode = 'all';
+    // 统一手势状态（取代移动/旋转/缩放模式切换）：
+    // _rotPivot：用户点选的小方框（旋转圆心）{ targetId, handleKey }；_hoverRotCorner：悬停的角手柄（画旋转箭头）
+    this._rotPivot = null;
+    this._hoverRotCorner = null;
+    // 编辑操作状态：抓手平移模式（开启后左键拖动画布）与挂件复制剪贴板
+    this._panMode = false;
+    this._clipboard = null;
     // 模板编辑态：true=当前打开的是 tpl.* 模板文档（保存写回 templates/，不动 Manifest）
     this.editingTemplate = false;
     // 动作模板索引（anim-presets/index.json，懒加载）与拓扑骨集缓存
@@ -149,6 +153,8 @@ export class SkeletonEditor {
     this.selectedSlots.clear();
     this._selectedBoneId = null;
     this._selectedSlotId = null;
+    this._rotPivot = null;
+    this._hoverRotCorner = null;
   }
 
   async init() {
@@ -230,6 +236,14 @@ export class SkeletonEditor {
     $('se-disp-all').addEventListener('click', () => this._setDisplayMode('all'));
     $('se-disp-bones').addEventListener('click', () => this._setDisplayMode('bones'));
     $('se-disp-images').addEventListener('click', () => this._setDisplayMode('images'));
+    // 编辑操作按钮组（对齐场景编辑器）：全选/复制/粘贴/撤销/重做/适配视图/抓手
+    $('se-select-all').addEventListener('click', () => this._selectAll());
+    $('se-copy').addEventListener('click', () => this._copySelection());
+    $('se-paste').addEventListener('click', () => this._pasteSelection());
+    $('se-undo').addEventListener('click', () => this._undo());
+    $('se-redo').addEventListener('click', () => this._redo());
+    $('se-fit').addEventListener('click', () => this._fitView());
+    $('se-pan').addEventListener('click', () => this._togglePanMode());
     // 帧步进 + 当前时间输入（步长 = 剪辑时长 / 12）
     $('se-frame-prev').addEventListener('click', () => {
       this.previewTime = Math.max(0, this.previewTime - this._clipDuration() / 12);
@@ -275,7 +289,6 @@ export class SkeletonEditor {
       const hitSlotId = this._hitAttachment(mx, my, world);
       const hitBone = hitSlotId ? null : this._pickBone(mx, my, world);
       if (!hitSlotId && !hitBone) return;
-      const items = [...this._buildTransformMenuItems(), { separator: true }];
       if (hitSlotId) {
         const slot = this._slotById(hitSlotId);
         const assetId = slot?.attachment?.assetId || '';
@@ -284,7 +297,7 @@ export class SkeletonEditor {
         this._renderSlotList();
         this._renderInspector();
         // 图层序操作（对齐场景编辑器）：置顶/上一层/下一层/置底
-        items.push(...this._buildZOrderMenuItems(hitSlotId), { separator: true });
+        const items = [...this._buildZOrderMenuItems(hitSlotId), { separator: true }];
         if (assetId && this.imageCatalog.has(assetId)) {
           items.push(...this._buildImageMenuItems(assetId));
           this._showContextMenu(event, items, this._imageEntryPath(assetId));
@@ -293,13 +306,13 @@ export class SkeletonEditor {
         }
         return;
       }
-      // 右键骨骼：选中骨骼后给模式切换菜单
+      // 右键骨骼：仅选中（变换已统一为直接手势：拖=移动/方框=缩放/角外圈=旋转，无菜单项）
       this.selectedBone = hitBone.id;
       this.selectedSlot = null;
+      this._rotPivot = null;
       this._renderBoneTree();
       this._renderSlotList();
       this._renderInspector();
-      this._showContextMenu(event, items, SkeletonEditor._displayName(hitBone.id));
     });
 
     // 拖拽组合：库条目拖入画布 → ghost 预览跟随鼠标 + 最近骨骼吸附高亮，松手即组合（落点=挂点位置）
@@ -346,14 +359,6 @@ export class SkeletonEditor {
       + '<label style="color:#9aa5c0;">旋转°</label><input type="number" id="se-ov-rot" step="1" style="width:64px;">'
       + '<span style="color:#5a6a90;font-size:10px;">Enter 应用（自动打关键帧）</span>';
     canvas.parentElement.appendChild(overlayBar);
-    // 变换模式徽标（画布左上角常驻）：显示当前 移动/旋转/缩放 模式（右键菜单切换）
-    const modeBadge = document.createElement('div');
-    modeBadge.id = 'se-mode-badge';
-    modeBadge.style.cssText = 'position:absolute;left:12px;top:10px;padding:4px 10px;'
-      + 'background:rgba(16,24,48,0.92);border:1px solid #3a4a7e;border-radius:6px;'
-      + 'font-size:12px;color:#ffd479;font-weight:bold;z-index:20;white-space:nowrap;';
-    modeBadge.textContent = '✥ 移动模式';
-    canvas.parentElement.appendChild(modeBadge);
     for (const [field, axis] of [['se-ov-x', 'x'], ['se-ov-y', 'y'], ['se-ov-rot', 'rot']]) {
       overlayBar.querySelector(`#${field}`).addEventListener('change', event => {
         const boneId = this.selectedBone;
@@ -386,8 +391,22 @@ export class SkeletonEditor {
         this._redo();
         return;
       }
+      // Ctrl+C / Ctrl+V：挂件复制粘贴（对齐场景编辑器快捷键习惯）
+      if ((event.ctrlKey || event.metaKey) && (event.key === 'c' || event.key === 'C')) {
+        this._copySelection();
+        return;
+      }
+      if ((event.ctrlKey || event.metaKey) && (event.key === 'v' || event.key === 'V')) {
+        this._pasteSelection();
+        return;
+      }
       if (event.key === 'Escape' && this._sliceMode) {
         this._exitSliceMode();
+        return;
+      }
+      // Esc 退出抓手平移模式
+      if (event.key === 'Escape' && this._panMode) {
+        this._togglePanMode();
         return;
       }
       // Esc 取消进行中的拖拽（附件跟随中按 Esc 立即放手）
@@ -657,6 +676,95 @@ export class SkeletonEditor {
     this._undoStack.push(JSON.stringify(this.doc));
     this._restoreHistory(this._redoStack.pop());
     this._toast('已重做');
+  }
+
+  /* ---------------- 编辑操作（对齐场景编辑器）：全选 / 复制 / 粘贴 / 抓手 ---------------- */
+
+  /** 全选：所有未锁定未隐藏骨骼 + 可交互可见挂件槽位。 */
+  _selectAll() {
+    if (!this.doc) return;
+    const bones = (this.doc.bones || [])
+      .filter(bone => !this._isBoneLocked(bone.id) && !this._isBoneHidden(bone.id));
+    this.selectedBones = new Set(bones.map(bone => bone.id));
+    this._selectedBoneId = bones[0]?.id || null;
+    const slots = (this.runtime?.slots || []).filter(slot => {
+      const attachment = slot.attachment;
+      if (!attachment || attachment.type === 'empty' || attachment.visible === false) return false;
+      return !this._isSlotInteractiveLocked(slot.id, slot.bone) && !this._isSlotPreviewHidden(slot.id, slot.bone);
+    });
+    this.selectedSlots = new Set(slots.map(slot => slot.id));
+    this._selectedSlotId = slots[0]?.id || null;
+    this._rotPivot = null;
+    this._renderBoneTree();
+    this._renderSlotList();
+    this._renderInspector();
+    this._toast(`已全选 ${this.selectedBones.size} 根骨骼、${this.selectedSlots.size} 个挂件`);
+  }
+
+  /** 复制选中挂件槽位（深拷贝 attachment 与绑定信息到内部剪贴板）。 */
+  _copySelection() {
+    const slots = [...this.selectedSlots]
+      .map(id => this._slotById(id))
+      .filter(slot => slot?.attachment && slot.attachment.type !== 'empty');
+    if (!slots.length) { this._toast('请先选中要复制的挂件', true); return; }
+    this._clipboard = {
+      kind: 'slots',
+      items: slots.map(slot => ({
+        id: slot.id,
+        bone: slot.bone,
+        z: slot.z ?? 0,
+        attachment: structuredClone(slot.attachment)
+      }))
+    };
+    this._toast(`已复制 ${slots.length} 个挂件（粘贴到当前选中骨骼）`);
+  }
+
+  /** 粘贴：挂件挂到当前选中骨骼（无选中则原骨骼），偏移 +6px 防重叠，槽位 ID 与 z 自动去重。 */
+  _pasteSelection() {
+    if (!this.doc || this._clipboard?.kind !== 'slots' || !this._clipboard.items.length) {
+      this._toast('剪贴板没有可粘贴的挂件', true);
+      return;
+    }
+    this._pushHistory();
+    const bones = this.doc.bones || [];
+    const slots = this.doc.slots || [];
+    let maxZ = slots.reduce((z, slot) => Math.max(z, slot.z ?? 0), 0);
+    const existing = new Set(slots.map(slot => slot.id));
+    const targetBone = this.selectedBone || this._clipboard.items[0].bone;
+    if (!bones.some(bone => bone.id === targetBone)) { this._toast('粘贴目标骨骼不存在', true); return; }
+    let index = 1;
+    for (const item of this._clipboard.items) {
+      let newId = `${item.id}_copy${index > 1 ? index : ''}`;
+      while (existing.has(newId)) newId = `${item.id}_copy${++index}`;
+      existing.add(newId);
+      const attachment = structuredClone(item.attachment);
+      attachment.x = Math.round(((attachment.x || 0) + 6) * 10) / 10;
+      attachment.y = Math.round(((attachment.y || 0) + 6) * 10) / 10;
+      slots.push({
+        id: newId,
+        bone: targetBone,
+        z: ++maxZ,
+        attachment
+      });
+      index++;
+    }
+    this._markDirty();
+    this.selectedSlots = new Set(slots.slice(-this._clipboard.items.length).map(slot => slot.id));
+    this._selectedSlotId = slots[slots.length - 1]?.id || null;
+    this._afterDocChange();
+    this._toast(`已粘贴 ${this._clipboard.items.length} 个挂件到 ${SkeletonEditor._displayName(targetBone)}`);
+  }
+
+  /** 抓手平移模式：开启后画布左键拖动 = 平移视图（再点或 Esc 取消）。 */
+  _togglePanMode() {
+    this._panMode = !this._panMode;
+    const button = document.getElementById('se-pan');
+    if (button) {
+      button.style.background = this._panMode ? '#2a4a3e' : '';
+      button.style.borderColor = this._panMode ? '#3fbf7f' : '';
+    }
+    this.el.canvas.style.cursor = this._panMode ? 'grab' : '';
+    this._toast(this._panMode ? '抓手模式：左键拖动画布平移' : '抓手模式已关闭');
   }
 
   _toast(message, isError = false) {
@@ -1225,7 +1333,8 @@ export class SkeletonEditor {
       if (!boneWorld) continue;
       const source = this._attachmentSource(attachment);
       if (!source) continue;
-      const anchor = this._worldToScreen(this._attachmentAnchorWorld(boneWorld, attachment));
+      const anchorWorld = this._attachmentAnchorWorld(boneWorld, attachment);
+      const anchor = this._worldToScreen(anchorWorld.x, anchorWorld.y);
       const drawW = (attachment.width > 0 ? attachment.width : source.sw) * boneWorld.sx * this.view.scale;
       const drawH = (attachment.height > 0 ? attachment.height : source.sh) * boneWorld.sy * this.view.scale;
       ctx.save();
@@ -1323,7 +1432,8 @@ export class SkeletonEditor {
         && !this._isSlotPreviewHidden(runtimeSlot.id, runtimeSlot.bone)) {
         const source = this._attachmentSource(attachment);
         if (source) {
-          const anchor = this._worldToScreen(this._attachmentAnchorWorld(boneWorld, attachment));
+          const anchorWorld = this._attachmentAnchorWorld(boneWorld, attachment);
+      const anchor = this._worldToScreen(anchorWorld.x, anchorWorld.y);
           const drawW = (attachment.width > 0 ? attachment.width : source.sw) * boneWorld.sx * this.view.scale;
           const drawH = (attachment.height > 0 ? attachment.height : source.sh) * boneWorld.sy * this.view.scale;
           const angle = boneWorld.rad + (attachment.rot || 0) * DEG2RAD;
@@ -1361,22 +1471,48 @@ export class SkeletonEditor {
       }
     }
 
-    // 主选中附件的 8 手柄变换框（FW8 式：角=双向缩放，边中点=单向缩放；Shift+角=等比）
-    // 仅骨架模式下挂件不可见，变换框一并隐藏
-    const handleBox = this.displayMode === 'bones' ? null : this._attachmentHandles(world);
-    if (handleBox) {
+    // 选中对象统一变换盒：虚线外框 + 8 方框手柄（4 角 + 4 边中点）+ 旋转圆心高亮 + 悬停角旋转箭头
+    // 手势：按住小方框=缩放；点击小方框（不拖）=设为旋转圆心；按住角手柄外圈=绕圆心旋转
+    const selBox = this._selectedObjectBox(world);
+    if (selBox) {
       ctx.strokeStyle = '#7ec8ff';
       ctx.lineWidth = 1;
+      ctx.setLineDash([6, 4]);
       ctx.save();
-      ctx.translate(handleBox.anchor.x, handleBox.anchor.y);
-      ctx.rotate(handleBox.angle);
-      ctx.strokeRect(-handleBox.drawW / 2, -handleBox.drawH / 2, handleBox.drawW, handleBox.drawH);
+      ctx.translate(selBox.cx, selBox.cy);
+      ctx.rotate(selBox.angle);
+      ctx.strokeRect(-selBox.w / 2, -selBox.h / 2, selBox.w, selBox.h);
       ctx.restore();
-      for (const handle of handleBox.handles) {
-        ctx.fillStyle = '#0d1226';
-        ctx.fillRect(handle.x - 3.5, handle.y - 3.5, 7, 7);
-        ctx.strokeStyle = '#7ec8ff';
-        ctx.strokeRect(handle.x - 3.5, handle.y - 3.5, 7, 7);
+      ctx.setLineDash([]);
+      for (const handle of selBox.handles) {
+        const isPivot = this._rotPivot?.targetId === selBox.id && this._rotPivot?.handleKey === handle.key;
+        ctx.fillStyle = isPivot ? '#ffd479' : '#0d1226';
+        ctx.fillRect(handle.x - 4, handle.y - 4, 8, 8);
+        ctx.strokeStyle = isPivot ? '#ff9c3c' : '#7ec8ff';
+        ctx.strokeRect(handle.x - 4, handle.y - 4, 8, 8);
+      }
+      // 悬停角手柄：外侧显示圆形旋转箭头（按住即绕圆心旋转）
+      if (this._hoverRotCorner) {
+        const corner = selBox.handles.find(handle => handle.key === this._hoverRotCorner.key) || this._hoverRotCorner;
+        const dirX = corner.x - selBox.cx;
+        const dirY = corner.y - selBox.cy;
+        const dirLen = Math.hypot(dirX, dirY) || 1;
+        const ax = corner.x + (dirX / dirLen) * 20;
+        const ay = corner.y + (dirY / dirLen) * 20;
+        ctx.strokeStyle = '#ffd479';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(ax, ay, 7, 0.5 * Math.PI, 2.15 * Math.PI);
+        ctx.stroke();
+        const endX = ax + Math.cos(2.15 * Math.PI) * 7;
+        const endY = ay + Math.sin(2.15 * Math.PI) * 7;
+        ctx.fillStyle = '#ffd479';
+        ctx.beginPath();
+        ctx.moveTo(endX + 4, endY - 1);
+        ctx.lineTo(endX - 2, endY - 4);
+        ctx.lineTo(endX - 1, endY + 3);
+        ctx.closePath();
+        ctx.fill();
       }
     }
 
@@ -1420,24 +1556,6 @@ export class SkeletonEditor {
         ctx.fillStyle = '#ffd479';
         ctx.font = 'bold 12px sans-serif';
         ctx.fillText(`松手换绑 → ${this._drag.rebindTarget}`, anchor.x + 18, anchor.y - 10);
-      }
-    }
-
-    // 旋转模式指示环（仅旋转模式绘制，半径=骨条末端之外一圈）；环宿主 = 选中槽位的挂载骨骼 或 选中骨骼。
-    // 旋转环不再参与鼠标命中：旋转语义由模式 + 拖拽决定，环只是「当前可旋转」的可视提示
-    if (this.transformMode === 'rotate') {
-      const drawRingBoneId = this.selectedSlot ? this._slotById(this.selectedSlot)?.bone : this.selectedBone;
-      if (drawRingBoneId) {
-        const ringBone = this._boneById(drawRingBoneId);
-        const boneWorld = world.get(drawRingBoneId);
-        if (ringBone && boneWorld) {
-          const anchor = this._worldToScreen(boneWorld.x, boneWorld.y);
-          ctx.strokeStyle = this.selectedSlot ? 'rgba(126,200,255,0.9)' : 'rgba(255,212,121,0.9)';
-          ctx.lineWidth = 1.5;
-          ctx.beginPath();
-          ctx.arc(anchor.x, anchor.y, this._rotateRingRadius(ringBone, world), 0, Math.PI * 2);
-          ctx.stroke();
-        }
       }
     }
 
@@ -1545,7 +1663,7 @@ export class SkeletonEditor {
     const rect = this.el.canvas.getBoundingClientRect();
     const mx = event.clientX - rect.left;
     const my = event.clientY - rect.top;
-    if (event.button === 1 || event.button === 2) {
+    if (event.button === 1 || event.button === 2 || (event.button === 0 && this._panMode)) {
       this._drag = { kind: 'pan', startX: mx, startY: my, ox: this.view.ox, oy: this.view.oy };
       return;
     }
@@ -1561,30 +1679,41 @@ export class SkeletonEditor {
     if (!this.runtime) return;
     const world = this._boneWorldTransforms();
     const additive = event.ctrlKey || event.metaKey;
-    // 缩放模式：8 手柄变换框命中（仅缩放模式启用；移动/旋转模式下选框仅作选中指示；仅骨架模式挂件不可见不命中）
-    if (this.transformMode === 'scale' && this.displayMode !== 'bones' && !additive) {
-      const handleHit = this._hitTransformHandles(mx, my, world);
-      if (handleHit) {
-        const slot = this._slotById(handleHit.slotId);
-        const attachment = slot?.attachment;
-        if (attachment) {
-          const source = this._attachmentSource(attachment);
-          this._drag = {
-            kind: 'attach-scale',
-            slotId: handleHit.slotId,
-            handle: handleHit.handle,
-            startX: mx, startY: my,
-            startW: attachment.width > 0 ? attachment.width : (source?.sw || 1),
-            startH: attachment.height > 0 ? attachment.height : (source?.sh || 1),
-            angle: handleHit.box.angle,
-            boneWorld: handleHit.box.boneWorld
-          };
+    // 统一手势（无模式）：① 骨点 10px=选中+移动（骨点是骨骼最可靠抓点，优先于图片遮挡）
+    // ② 角手柄盒外环带=旋转（圆心=已点选的小方框或盒中心）③ 小方框=缩放 ④ 图片/骨身按住=移动 ⑤ 空白=框选
+    if (!additive && !event.altKey) {
+      const originHit = this._pickBoneOrigin(mx, my, world, 10, null);
+      if (originHit && !this._isBoneLocked(originHit) && !this._isBoneHidden(originHit)) {
+        const originBone = this._boneById(originHit);
+        if (originBone) {
+          if (!this.selectedBones.has(originHit)) {
+            this.selectedBone = originHit;
+            this.selectedSlot = null;
+          }
+          if (this._rotPivot?.targetId !== originHit) this._rotPivot = null;
+          this._renderBoneTree();
+          this._renderSlotList();
+          this._renderInspector();
+          this._beginBoneMove(originBone, mx, my, world);
           return;
         }
       }
     }
+    const box = this._selectedObjectBox(world);
+    if (box && !additive && !event.altKey) {
+      const rotHit = this._hitRotateZone(mx, my, box);
+      if (rotHit) {
+        this._beginObjectRotate(box, mx, my, world);
+        return;
+      }
+      const handleHit = this._hitBoxHandles(mx, my, box);
+      if (handleHit) {
+        this._beginHandleScale(box, handleHit, mx, my, world);
+        return;
+      }
+    }
     // 命中槽位附件（alpha 精确命中；Alt+点击穿透选骨骼；Ctrl=加选/减选）。
-    // 拖拽语义由当前变换模式决定：移动=位移，旋转=绕骨骼锚点转，缩放=距锚点比例等比缩放
+    // 按住拖动 = 移动（Shift+拖 = 允许拖放换绑，拖到目标骨骼原点附近松手重挂）
     if (!event.altKey) {
       const hitSlotId = this._hitAttachment(mx, my, world)
         // 绑定点热区：主选中槽位黄菱形 8px 内即使图片像素透明也命中（点绑定点=可靠抓图）
@@ -1601,14 +1730,6 @@ export class SkeletonEditor {
           this._renderImageLib();
           return;
         }
-        if (this.transformMode === 'rotate') {
-          this._beginAttachRotate(hitSlotId, mx, my, world);
-          return;
-        }
-        if (this.transformMode === 'scale') {
-          this._beginAttachScaleDrag(hitSlotId, mx, my, world);
-          return;
-        }
         // Shift+拖 = 允许拖放换绑（拖到目标骨骼原点附近松手重挂）；
         // 默认拖拽只调绑定点偏移，绝不换绑——避免扫过其他骨点时「一点一拖就全乱」
         this._beginAttachMove(hitSlotId, mx, my, world, event.shiftKey === true);
@@ -1616,7 +1737,7 @@ export class SkeletonEditor {
       }
     }
     // 命中骨骼骨身/关节（原点优先评分；锁定的骨骼跳过；Ctrl=加选/减选）。
-    // 旧隐形旋转环已删除：旋转/缩放由右键切模式后拖拽触发，点击不再误触发变换
+    // 按住拖动 = 移动骨骼（动画模式自动打关键帧）
     const hit = this._pickBone(mx, my, world);
     if (hit) {
       if (additive) {
@@ -1626,7 +1747,7 @@ export class SkeletonEditor {
         this._renderInspector();
         return;
       }
-      // 叶子骨骼末端 7px 内：拖动调整骨骼长度（Shift=X 轴缩放）——各模式下均可用
+      // 叶子骨骼末端 7px 内：拖动调整骨骼长度（Shift=X 轴缩放）
       const leafTip = this._boneTip(hit, world);
       const leafTipScreen = leafTip ? this._worldToScreen(leafTip.x, leafTip.y) : null;
       const hasChild = (this.doc.bones || []).some(candidate => candidate.parent === hit.id);
@@ -1646,52 +1767,11 @@ export class SkeletonEditor {
         this.selectedBone = hit.id;
         this.selectedSlot = null;
       }
+      if (this._rotPivot?.targetId !== hit.id) this._rotPivot = null;
       this._renderBoneTree();
       this._renderSlotList();
       this._renderInspector();
-      const boneWorld = world.get(hit.id);
-      const anchor = this._worldToScreen(boneWorld.x, boneWorld.y);
-      if (this.transformMode === 'rotate') {
-        this._drag = {
-          kind: 'rotate',
-          boneId: hit.id,
-          startX: mx, startY: my,
-          startLocal: { ...(this._sampledBoneLocal(hit.id) || hit) },
-          startWorldRot: Math.atan2(my - anchor.y, mx - anchor.x),
-          parent: this._parentWorldTransform(world, hit)
-        };
-        return;
-      }
-      if (this.transformMode === 'scale') {
-        const sampled = this._sampledBoneLocal(hit.id) || hit;
-        this._drag = {
-          kind: 'bone-scale',
-          boneId: hit.id,
-          anchorX: anchor.x, anchorY: anchor.y,
-          startDist: Math.max(8, Math.hypot(mx - anchor.x, my - anchor.y)),
-          startScale: sampled.sx ?? hit.scaleX ?? 1
-        };
-        return;
-      }
-      // 多选骨骼：记录集合内其余骨骼的初始姿态，拖动时整体位移
-      const extraBones = [...this.selectedBones]
-        .filter(id => id !== hit.id && !this._isBoneLocked(id))
-        .map(id => {
-          const candidate = this._boneById(id);
-          return candidate
-            ? { id, startLocal: { ...(this._sampledBoneLocal(id) || candidate) }, parent: this._parentWorldTransform(world, candidate) }
-            : null;
-        })
-        .filter(Boolean);
-      this._drag = {
-        kind: 'move', // 移动模式：骨身/原点命中一律为位移
-        boneId: hit.id,
-        startX: mx, startY: my,
-        startLocal: { ...(this._sampledBoneLocal(hit.id) || hit) },
-        startWorldRot: Math.atan2(my - anchor.y, mx - anchor.x),
-        parent: this._parentWorldTransform(world, hit),
-        extraBones
-      };
+      this._beginBoneMove(hit, mx, my, world);
       return;
     }
     // 空白：框选（Ctrl=在现有选择上叠加）；无 Ctrl 先清空选择
@@ -1702,14 +1782,30 @@ export class SkeletonEditor {
     this._renderInspector();
   }
 
-  /** 旋转环半径：骨条屏幕长度之外一圈——环永不遮挡骨身（骨身拖=移动，环=旋转）。 */
-  _rotateRingRadius(bone, world) {
-    const boneWorld = world.get(bone?.id);
-    if (!boneWorld) return 26;
-    const tip = this._boneTip(bone, world);
-    const origin = this._worldToScreen(boneWorld.x, boneWorld.y);
-    const tipScreen = tip ? this._worldToScreen(tip.x, tip.y) : origin;
-    return Math.max(26, Math.hypot(tipScreen.x - origin.x, tipScreen.y - origin.y) + 16);
+  /** 开始骨骼移动拖拽（骨点/骨身共用）：动画模式写关键帧，装配模式改静止姿态；子孙骨骼关节跟随。 */
+  _beginBoneMove(bone, mx, my, world) {
+    const boneWorld = world.get(bone.id);
+    if (!boneWorld) return;
+    const anchor = this._worldToScreen(boneWorld.x, boneWorld.y);
+    // 多选骨骼：记录集合内其余骨骼的初始姿态，拖动时整体位移
+    const extraBones = [...this.selectedBones]
+      .filter(id => id !== bone.id && !this._isBoneLocked(id))
+      .map(id => {
+        const candidate = this._boneById(id);
+        return candidate
+          ? { id, startLocal: { ...(this._sampledBoneLocal(id) || candidate) }, parent: this._parentWorldTransform(world, candidate) }
+          : null;
+      })
+      .filter(Boolean);
+    this._drag = {
+      kind: 'move', // 按住骨点/骨身 = 位移（子骨骼树关节跟随）
+      boneId: bone.id,
+      startX: mx, startY: my,
+      startLocal: { ...(this._sampledBoneLocal(bone.id) || bone) },
+      startWorldRot: Math.atan2(my - anchor.y, mx - anchor.x),
+      parent: this._parentWorldTransform(world, bone),
+      extraBones
+    };
   }
 
   /** 主选中槽位附件的 8 手柄变换框数据（屏幕坐标）。无有效附件返回 null。 */
@@ -1724,7 +1820,8 @@ export class SkeletonEditor {
     if (this._isSlotInteractiveLocked(runtimeSlot.id, runtimeSlot.bone)) return null;
     const source = this._attachmentSource(attachment);
     if (!source) return null;
-    const anchor = this._worldToScreen(this._attachmentAnchorWorld(boneWorld, attachment));
+    const anchorWorld = this._attachmentAnchorWorld(boneWorld, attachment);
+      const anchor = this._worldToScreen(anchorWorld.x, anchorWorld.y);
     const drawW = (attachment.width > 0 ? attachment.width : source.sw) * boneWorld.sx * this.view.scale;
     const drawH = (attachment.height > 0 ? attachment.height : source.sh) * boneWorld.sy * this.view.scale;
     if (drawW < 2 || drawH < 2) return null;
@@ -1743,18 +1840,6 @@ export class SkeletonEditor {
         { key: 'sw', ...pt(-hw, hh) }, { key: 'w', ...pt(-hw, 0) }
       ]
     };
-  }
-
-  /** 8 手柄命中检测（屏幕 8px 半径）。命中返回 { slotId, handle, box }。 */
-  _hitTransformHandles(mx, my, world) {
-    const box = this._attachmentHandles(world);
-    if (!box) return null;
-    for (const handle of box.handles) {
-      if (Math.hypot(mx - handle.x, my - handle.y) <= 8) {
-        return { slotId: box.slotId, handle: handle.key, box };
-      }
-    }
-    return null;
   }
 
   /** 附件命中测试：从最上层槽位向下找鼠标点所在的附件内容盒（与 _draw 同变换）。
@@ -1779,7 +1864,8 @@ export class SkeletonEditor {
       const drawW = (attachment.width > 0 ? attachment.width : source.sw) * boneWorld.sx * this.view.scale;
       const drawH = (attachment.height > 0 ? attachment.height : source.sh) * boneWorld.sy * this.view.scale;
       if (drawW < 2 || drawH < 2) continue;
-      const anchor = this._worldToScreen(this._attachmentAnchorWorld(boneWorld, attachment));
+      const anchorWorld = this._attachmentAnchorWorld(boneWorld, attachment);
+      const anchor = this._worldToScreen(anchorWorld.x, anchorWorld.y);
       const angle = boneWorld.rad + (attachment.rot || 0) * DEG2RAD;
       const dx = mx - anchor.x;
       const dy = my - anchor.y;
@@ -1847,81 +1933,149 @@ export class SkeletonEditor {
     };
   }
 
-  /** 右键菜单顶部的变换模式切换项：移动/旋转/缩放（当前项打勾）。 */
-  _buildTransformMenuItems() {
-    const modes = [
-      ['move', '✥ 移动'],
-      ['rotate', '⟳ 旋转'],
-      ['scale', '⤢ 缩放']
-    ];
-    return modes.map(([mode, label]) => ({
-      label: `${this.transformMode === mode ? '✓' : '　'} ${label}`,
-      action: () => {
-        this.transformMode = mode;
-        this._updateModeBadge();
-      }
-    }));
-  }
-
-  /** 更新画布左上角的变换模式徽标文案。 */
-  _updateModeBadge() {
-    const badge = document.getElementById('se-mode-badge');
-    if (!badge) return;
-    const labels = { move: '✥ 移动模式', rotate: '⟳ 旋转模式', scale: '⤢ 缩放模式' };
-    badge.textContent = labels[this.transformMode] || labels.move;
-  }
+  /* ---------------- 统一手势：变换盒 / 缩放 / 旋转 ---------------- */
 
   /**
-   * 旋转模式：附件拖拽 = 绕挂载骨骼锚点旋转（写入 attachment.rot）。
-   * 附件为空或骨骼缺失时退化为移动，保证拖拽始终有响应。
+   * 当前选中对象的变换盒（统一手势数据源）：
+   * - 选中图片槽位 → 附件盒（挂点中心、随骨骼旋转；仅骨架模式不显示）
+   * - 选中骨骼 → 骨条盒（原点→末端方向对齐的细长盒）
+   * 返回 { kind:'slot'|'bone', id, cx, cy, angle, w, h, handles:[{key,x,y}], ... } 或 null。
    */
-  _beginAttachRotate(slotId, mx, my, world) {
-    const slot = this._slotById(slotId);
-    const boneWorld = world.get(slot?.bone);
-    // 同步选中状态（移动模式由 _beginAttachMove 负责；旋转/缩放为单选语义）
-    this.selectedSlot = slotId;
-    this._renderBoneTree();
-    this._renderSlotList();
-    this._renderInspector();
-    if (!slot?.attachment || slot.attachment.type === 'empty' || !boneWorld) {
-      this._beginAttachMove(slotId, mx, my, world);
-      return;
+  _selectedObjectBox(world) {
+    if (this.displayMode !== 'bones') {
+      const slotBox = this._attachmentHandles(world);
+      if (slotBox) {
+        return {
+          kind: 'slot', id: slotBox.slotId,
+          cx: slotBox.anchor.x, cy: slotBox.anchor.y,
+          angle: slotBox.angle, w: slotBox.drawW, h: slotBox.drawH,
+          anchor: slotBox.anchor, boneWorld: slotBox.boneWorld,
+          handles: slotBox.handles
+        };
+      }
     }
-    const anchor = this._worldToScreen(boneWorld.x, boneWorld.y);
-    this._drag = {
-      kind: 'attach-rotate',
-      slotId,
-      boneId: slot.bone,
-      startRot: slot.attachment.rot || 0,
-      startWorldRot: Math.atan2(my - anchor.y, mx - anchor.x)
+    const boneId = this.selectedBone;
+    if (!boneId || this._sliceMode) return null;
+    const bone = this._boneById(boneId);
+    const boneWorld = world.get(boneId);
+    if (!bone || !boneWorld || this._isBoneLocked(boneId) || this._isBoneHidden(boneId)) return null;
+    const tip = this._boneTip(bone, world);
+    const o = this._worldToScreen(boneWorld.x, boneWorld.y);
+    const t = tip ? this._worldToScreen(tip.x, tip.y) : o;
+    const angle = Math.atan2(t.y - o.y, t.x - o.x);
+    const w = Math.max(28, Math.hypot(t.x - o.x, t.y - o.y));
+    const h = 26;
+    const cx = (o.x + t.x) / 2;
+    const cy = (o.y + t.y) / 2;
+    const cos = Math.cos(angle);
+    const sin = Math.sin(angle);
+    const pt = (lx, ly) => ({ x: cx + lx * cos - ly * sin, y: cy + lx * sin + ly * cos });
+    const hw = w / 2;
+    const hh = h / 2;
+    return {
+      kind: 'bone', id: boneId, cx, cy, angle, w, h, origin: o, tip: t, bone, boneWorld,
+      handles: [
+        { key: 'nw', ...pt(-hw, -hh) }, { key: 'n', ...pt(0, -hh) },
+        { key: 'ne', ...pt(hw, -hh) }, { key: 'e', ...pt(hw, 0) },
+        { key: 'se', ...pt(hw, hh) }, { key: 's', ...pt(0, hh) },
+        { key: 'sw', ...pt(-hw, hh) }, { key: 'w', ...pt(-hw, 0) }
+      ]
     };
   }
 
-  /**
-   * 缩放模式：附件拖拽 = 距骨骼锚点距离比例等比缩放 width/height。
-   * 附件为空或骨骼缺失时退化为移动。
-   */
-  _beginAttachScaleDrag(slotId, mx, my, world) {
-    const slot = this._slotById(slotId);
-    const boneWorld = world.get(slot?.bone);
-    // 同步选中状态（缩放为单选语义）
-    this.selectedSlot = slotId;
-    this._renderBoneTree();
-    this._renderSlotList();
-    this._renderInspector();
-    if (!slot?.attachment || slot.attachment.type === 'empty' || !boneWorld) {
-      this._beginAttachMove(slotId, mx, my, world);
+  /** 角手柄外圈旋转区命中（仅 4 角；只认「远离盒心」的外侧半边环带，内侧留给骨点/骨身移动）。 */
+  _hitRotateZone(mx, my, box) {
+    for (const handle of box.handles) {
+      if (handle.key.length !== 2) continue; // 只看 4 角
+      const d = Math.hypot(mx - handle.x, my - handle.y);
+      if (d <= 9 || d > 22) continue;
+      const outX = handle.x - box.cx;
+      const outY = handle.y - box.cy;
+      if ((mx - handle.x) * outX + (my - handle.y) * outY > 0) return { corner: handle };
+    }
+    return null;
+  }
+
+  /** 8 方框手柄命中（9px 半径）。 */
+  _hitBoxHandles(mx, my, box) {
+    for (const handle of box.handles) {
+      if (Math.hypot(mx - handle.x, my - handle.y) <= 9) return { handle };
+    }
+    return null;
+  }
+
+  /** 开始旋转拖拽：圆心 = 已点选的小方框（_rotPivot）或盒中心。 */
+  _beginObjectRotate(box, mx, my, world) {
+    const pivotHandle = this._rotPivot?.targetId === box.id
+      ? box.handles.find(handle => handle.key === this._rotPivot.handleKey)
+      : null;
+    const pivot = pivotHandle || { x: box.cx, y: box.cy };
+    const drag = {
+      kind: 'object-rotate',
+      boxKind: box.kind,
+      id: box.id,
+      pivotX: pivot.x, pivotY: pivot.y,
+      startAngle: Math.atan2(my - pivot.y, mx - pivot.x),
+      moved: false
+    };
+    if (box.kind === 'slot') {
+      const slot = this._slotById(box.id);
+      const attachment = slot?.attachment;
+      if (!attachment) return;
+      drag.startRot = attachment.rot || 0;
+      drag.startAnchorWorld = this._attachmentAnchorWorld(box.boneWorld, attachment);
+      drag.boneWorld = box.boneWorld;
+    } else {
+      const bone = box.bone;
+      drag.startLocal = { ...(this._sampledBoneLocal(box.id) || bone) };
+      drag.startOriginWorld = { x: box.boneWorld.x, y: box.boneWorld.y };
+      drag.parent = this._parentWorldTransform(world, bone);
+      // 装配模式补偿：绑定到该骨骼的挂图保持世界位置与朝向
+      drag.startSlotAnchors = (this.editMode === 'setup')
+        ? (this.doc.slots || [])
+          .filter(slot => slot.bone === box.id && !this.selectedSlots.has(slot.id)
+            && slot.attachment && slot.attachment.type !== 'empty')
+          .map(slot => ({
+            id: slot.id,
+            rot: slot.attachment.rot || 0,
+            anchorWorld: this._attachmentAnchorWorld(box.boneWorld, slot.attachment)
+          }))
+        : [];
+    }
+    this._drag = drag;
+  }
+
+  /** 开始手柄缩放：图片 → 8 手柄改宽高；骨骼 → 距原点比例改 scaleX/Y（角=等比，边=单轴）。 */
+  _beginHandleScale(box, handleHit, mx, my, world) {
+    if (box.kind === 'slot') {
+      const slot = this._slotById(box.id);
+      const attachment = slot?.attachment;
+      if (!attachment) return;
+      const source = this._attachmentSource(attachment);
+      this._drag = {
+        kind: 'attach-scale',
+        slotId: box.id,
+        handle: handleHit.handle.key,
+        startX: mx, startY: my,
+        startW: attachment.width > 0 ? attachment.width : (source?.sw || 1),
+        startH: attachment.height > 0 ? attachment.height : (source?.sh || 1),
+        angle: box.angle,
+        boneWorld: box.boneWorld
+      };
       return;
     }
-    const source = this._attachmentSource(slot.attachment);
-    const anchor = this._worldToScreen(boneWorld.x, boneWorld.y);
+    const sampled = this._sampledBoneLocal(box.id) || box.bone;
+    const key = handleHit.handle.key;
     this._drag = {
-      kind: 'attach-scale-drag',
-      slotId,
-      startW: slot.attachment.width > 0 ? slot.attachment.width : (source?.sw || 1),
-      startH: slot.attachment.height > 0 ? slot.attachment.height : (source?.sh || 1),
-      anchorX: anchor.x, anchorY: anchor.y,
-      startDist: Math.max(8, Math.hypot(mx - anchor.x, my - anchor.y))
+      kind: 'bone-scale',
+      boneId: box.id,
+      handle: key,
+      anchorX: box.origin.x, anchorY: box.origin.y,
+      clickX: mx, clickY: my,
+      startDist: Math.max(8, Math.hypot(mx - box.origin.x, my - box.origin.y)),
+      startScaleX: sampled.sx ?? box.bone.scaleX ?? 1,
+      startScaleY: sampled.sy ?? box.bone.scaleY ?? 1,
+      axis: key.length === 2 ? 'uniform' : ((key.includes('e') || key.includes('w')) ? 'x' : 'y')
     };
   }
 
@@ -2037,10 +2191,29 @@ export class SkeletonEditor {
       };
       return;
     }
-    if (!this._drag) return;
     const rect = this.el.canvas.getBoundingClientRect();
     const mx = event.clientX - rect.left;
     const my = event.clientY - rect.top;
+    // 无拖拽：更新悬停状态（角手柄外圈 → 旋转箭头图标+grab 光标；手柄 → 缩放光标）
+    if (!this._drag) {
+      this._hoverRotCorner = null;
+      let cursor = '';
+      if (this.runtime && !this._sliceMode) {
+        const hoverWorld = this._boneWorldTransforms();
+        const hoverBox = this._selectedObjectBox(hoverWorld);
+        if (hoverBox) {
+          const rotHit = this._hitRotateZone(mx, my, hoverBox);
+          if (rotHit) {
+            this._hoverRotCorner = rotHit.corner;
+            cursor = 'grab';
+          } else if (this._hitBoxHandles(mx, my, hoverBox)) {
+            cursor = 'nwse-resize';
+          }
+        }
+      }
+      if (this.el.canvas.style.cursor !== cursor) this.el.canvas.style.cursor = cursor;
+      return;
+    }
     // 拖拽首次实际移动才入历史（纯点击不污染撤销栈）；pan/marquee 不改文档不入栈
     if (this._drag.kind !== 'pan' && this._drag.kind !== 'marquee') this._ensureDragHistory();
     // 骨骼长度调整：叶子骨骼末端拖动 = 鼠标世界位置到骨骼原点的距离，沿骨骼自身方向投影
@@ -2073,18 +2246,6 @@ export class SkeletonEditor {
     if (this._drag.kind === 'marquee') {
       this._drag.currentX = mx;
       this._drag.currentY = my;
-      return;
-    }
-    // 缩放模式拖拽附件：距骨骼锚点的屏幕距离比例 → 等比缩放 width/height（拖离锚点=放大）
-    if (this._drag.kind === 'attach-scale-drag') {
-      const slot = this._slotById(this._drag.slotId);
-      if (!slot?.attachment) { this._drag = null; return; }
-      const ratio = Math.max(8, Math.hypot(mx - this._drag.anchorX, my - this._drag.anchorY)) / this._drag.startDist;
-      slot.attachment.width = Math.max(1, Math.round(this._drag.startW * ratio));
-      slot.attachment.height = Math.max(1, Math.round(this._drag.startH * ratio));
-      this._markDirty();
-      this.runtime = parseSkeletonAsset(structuredClone(this.doc));
-      this._renderInspector();
       return;
     }
     // 附件缩放：8 手柄拖拽 → 按手柄方向改 attachment.width/height（角=双向，边=单向，Shift+角=等比）
@@ -2120,12 +2281,12 @@ export class SkeletonEditor {
       this._renderInspector();
       return;
     }
-    // 附件拖拽：移动 = 世界位移→骨骼局部空间写入 attachment.x/y；旋转 = 角度差写入 attachment.rot
-    if (this._drag.kind === 'attach-move' || this._drag.kind === 'attach-rotate') {
+    // 附件拖拽：移动 = 世界位移→骨骼局部空间写入 attachment.x/y
+    if (this._drag.kind === 'attach-move') {
       const slot = this._slotById(this._drag.slotId);
       if (!slot?.attachment) { this._drag = null; return; }
       if (this._isSlotInteractiveLocked(slot.id, slot.bone)) { this._drag = null; return; }
-      if (this._drag.kind === 'attach-move') {
+      {
         const worldDx = (mx - this._drag.startX) / this.view.scale;
         const worldDy = (my - this._drag.startY) / this.view.scale;
         // 拖放换绑探测：仅 Shift+拖（rebindEnabled）时启用——鼠标靠近其他骨骼原点（16px）
@@ -2140,16 +2301,86 @@ export class SkeletonEditor {
           const extraSlot = this._slotById(extra.id);
           if (extraSlot?.attachment) this._applyAttachMove(extraSlot, extra.boneWorld, extra.startOffset, worldDx, worldDy);
         }
-      } else {
-        const boneWorld = this._boneWorldTransforms().get(this._drag.boneId);
-        if (!boneWorld) { this._drag = null; return; }
-        const anchor = this._worldToScreen(boneWorld.x, boneWorld.y);
-        const deltaDeg = (Math.atan2(my - anchor.y, mx - anchor.x) - this._drag.startWorldRot) / DEG2RAD;
-        slot.attachment.rot = Math.round((this._drag.startRot + deltaDeg) * 10) / 10;
       }
       this._markDirty();
       this.runtime = parseSkeletonAsset(structuredClone(this.doc));
       this._renderInspector();
+      return;
+    }
+    // 统一旋转：图片 = 锚点绕圆心公转 + 自转（rot）；骨骼 = 原点公转 + 自转（装配模式挂图世界固定补偿）
+    if (this._drag.kind === 'object-rotate') {
+      const deltaRad = Math.atan2(my - this._drag.pivotY, mx - this._drag.pivotX) - this._drag.startAngle;
+      const deltaDeg = Math.round((deltaRad / DEG2RAD) * 10) / 10;
+      const cos = Math.cos(deltaRad);
+      const sin = Math.sin(deltaRad);
+      const orbit = point => {
+        const dx = point.x - this._drag.pivotX;
+        const dy = point.y - this._drag.pivotY;
+        return { x: this._drag.pivotX + dx * cos - dy * sin, y: this._drag.pivotY + dx * sin + dy * cos };
+      };
+      if (this._drag.boxKind === 'slot') {
+        const slot = this._slotById(this._drag.id);
+        if (!slot?.attachment) { this._drag = null; return; }
+        // 锚点屏幕坐标绕圆心公转 → 世界坐标 → 骨骼局部空间反算 attachment.x/y；rot 自转
+        const startAnchorScreen = this._worldToScreen(this._drag.startAnchorWorld.x, this._drag.startAnchorWorld.y);
+        const nextAnchorWorld = this._screenToWorld(orbit(startAnchorScreen).x, orbit(startAnchorScreen).y);
+        const boneWorld = this._boneWorldTransforms().get(slot.bone) || this._drag.boneWorld;
+        const vx = nextAnchorWorld.x - boneWorld.x;
+        const vy = nextAnchorWorld.y - boneWorld.y;
+        const invCos = Math.cos(-boneWorld.rad);
+        const invSin = Math.sin(-boneWorld.rad);
+        slot.attachment.x = Math.round(((vx * invCos - vy * invSin) / (boneWorld.sx || 1)) * 10) / 10;
+        slot.attachment.y = Math.round(((vx * invSin + vy * invCos) / (boneWorld.sy || 1)) * 10) / 10;
+        slot.attachment.rot = Math.round((this._drag.startRot + deltaDeg) * 10) / 10;
+        this._markDirty();
+        this.runtime = parseSkeletonAsset(structuredClone(this.doc));
+        this._renderInspector();
+        return;
+      }
+      const bone = this._boneById(this._drag.id);
+      if (!bone) { this._drag = null; return; }
+      // 骨骼原点屏幕坐标绕圆心公转 → 世界 → 父空间局部 x/y
+      const startOriginScreen = this._worldToScreen(this._drag.startOriginWorld.x, this._drag.startOriginWorld.y);
+      const nextOriginWorld = this._screenToWorld(orbit(startOriginScreen).x, orbit(startOriginScreen).y);
+      const parent = this._drag.parent;
+      const relX = nextOriginWorld.x - parent.x;
+      const relY = nextOriginWorld.y - parent.y;
+      const pCos = Math.cos(-parent.rad);
+      const pSin = Math.sin(-parent.rad);
+      const nextX = Math.round(((relX * pCos - relY * pSin) / (parent.sx || 1)) * 10) / 10;
+      const nextY = Math.round(((relX * pSin + relY * pCos) / (parent.sy || 1)) * 10) / 10;
+      const nextRot = Math.round((this._drag.startLocal.rot + deltaDeg) * 10) / 10;
+      const clip = this._clip();
+      if (this.editMode === 'setup' || !clip) {
+        // 装配模式（或无当前剪辑兜底）：直接改静止姿态；绑定挂图世界固定补偿（锚点反算 x/y，rot 还原）
+        bone.x = nextX;
+        bone.y = nextY;
+        bone.rot = nextRot;
+        this._markDirty();
+        this.runtime = parseSkeletonAsset(structuredClone(this.doc));
+        const world2 = this._boneWorldTransforms();
+        const boneWorld2 = world2.get(bone.id);
+        if (boneWorld2) {
+          for (const saved of this._drag.startSlotAnchors || []) {
+            const slot = this._slotById(saved.id);
+            if (!slot?.attachment) continue;
+            const vx = saved.anchorWorld.x - boneWorld2.x;
+            const vy = saved.anchorWorld.y - boneWorld2.y;
+            const invCos = Math.cos(-boneWorld2.rad);
+            const invSin = Math.sin(-boneWorld2.rad);
+            slot.attachment.x = Math.round(((vx * invCos - vy * invSin) / (boneWorld2.sx || 1)) * 10) / 10;
+            slot.attachment.y = Math.round(((vx * invSin + vy * invCos) / (boneWorld2.sy || 1)) * 10) / 10;
+            slot.attachment.rot = saved.rot;
+          }
+        }
+        this.runtime = parseSkeletonAsset(structuredClone(this.doc));
+      } else {
+        // 动画模式：x/y/rot 一并打关键帧（挂件随骨骼跟随）
+        this._ensureTrackAndKey(bone.id, clip, { x: nextX, y: nextY, rot: nextRot });
+        this._markDirty();
+      }
+      this._renderInspector();
+      this._renderTimeline();
       return;
     }
     const bone = this._boneById(this._drag.boneId);
@@ -2159,21 +2390,29 @@ export class SkeletonEditor {
     const track = clip?.tracks?.find(candidate => candidate.bone === bone.id) || null;
     const parent = this._drag.parent;
 
-    // 缩放模式拖拽骨骼：距骨骼原点的屏幕距离比例 → 等比 scaleX/scaleY（装配改静止姿态，动画打关键帧）
+    // 手柄缩放骨骼：距骨骼原点的屏幕距离比例 → scaleX/scaleY（角手柄=等比，e/w=scaleX，n/s=scaleY；
+    // 装配改静止姿态，动画打关键帧）
     if (this._drag.kind === 'bone-scale') {
       const ratio = Math.max(8, Math.hypot(mx - this._drag.anchorX, my - this._drag.anchorY)) / this._drag.startDist;
-      const nextScale = Math.max(0.05, Math.round(this._drag.startScale * ratio * 100) / 100);
+      const nextScaleX = Math.max(0.05, Math.round(this._drag.startScaleX * ratio * 100) / 100);
+      const nextScaleY = Math.max(0.05, Math.round(this._drag.startScaleY * ratio * 100) / 100);
+      const applyX = this._drag.axis !== 'y';
+      const applyY = this._drag.axis !== 'x';
+      const partial = {};
+      if (applyX) partial.scaleX = nextScaleX;
+      if (applyY) partial.scaleY = nextScaleY;
       if (this.editMode === 'setup') {
-        bone.scaleX = nextScale;
-        bone.scaleY = nextScale;
+        if (applyX) bone.scaleX = nextScaleX;
+        if (applyY) bone.scaleY = nextScaleY;
         this._markDirty();
         this.runtime = parseSkeletonAsset(structuredClone(this.doc));
       } else if (track) {
-        this._upsertKey(track, { t: Math.round(this.previewTime), scaleX: nextScale, scaleY: nextScale });
+        this._upsertKey(track, { t: Math.round(this.previewTime), ...partial });
         this._markDirty();
+        this.runtime = parseSkeletonAsset(structuredClone(this.doc)); // 重建采样：连续缩放每帧都要新姿态
         this._renderTimeline();
       } else {
-        this._ensureTrackAndKey(bone.id, clip, { scaleX: nextScale, scaleY: nextScale });
+        this._ensureTrackAndKey(bone.id, clip, partial);
         this._renderTimeline();
       }
       this._renderInspector();
@@ -2190,8 +2429,8 @@ export class SkeletonEditor {
       const localDy = (worldDx * sin + worldDy * cos) / (parent.sy || 1);
       const nextX = this._drag.startLocal.x + localDx;
       const nextY = this._drag.startLocal.y + localDy;
-      if (this.editMode === 'setup') {
-        // 装配模式：直接改静止姿态，不打关键帧；未显式同选的挂图保持世界位置（反算偏移）
+      if (this.editMode === 'setup' || !clip) {
+        // 装配模式（或无当前剪辑兜底）：直接改静止姿态，不打关键帧；未显式同选的挂图保持世界位置（反算偏移）
         bone.x = Math.round(nextX * 10) / 10;
         bone.y = Math.round(nextY * 10) / 10;
         this._markDirty();
@@ -2204,36 +2443,13 @@ export class SkeletonEditor {
         if (track) {
           this._upsertKey(track, { t: Math.round(this.previewTime), x: nextX, y: nextY });
           this._markDirty();
+          this.runtime = parseSkeletonAsset(structuredClone(this.doc)); // 重建采样：连续拖拽每帧都要新姿态
         } else {
           // 所见即所得：拖动无轨道骨骼 = 自动建轨道并在当前时间打关键帧（摆姿势即录入）
           this._ensureTrackAndKey(bone.id, clip, { x: nextX, y: nextY });
         }
         // 多选骨骼：整体移动（打关键帧）
         for (const extra of this._drag.extraBones || []) this._animateMoveExtraBone(extra, worldDx, worldDy, clip);
-      }
-    } else if (this._drag.kind === 'rotate') {
-      const boneWorld = this._boneWorldTransforms().get(bone.id);
-      const anchor = this._worldToScreen(boneWorld.x, boneWorld.y);
-      const angle = Math.atan2(my - anchor.y, mx - anchor.x);
-      const deltaDeg = (angle - this._drag.startWorldRot) / DEG2RAD;
-      const nextRot = Math.round((this._drag.startLocal.rot + deltaDeg) * 10) / 10;
-      if (this.editMode === 'setup') {
-        // 装配模式：直接改静止姿态；未同选挂图反算 rot 保持世界姿态
-        bone.rot = nextRot;
-        this._markDirty();
-        this.runtime = parseSkeletonAsset(structuredClone(this.doc));
-        for (const slot of this.doc.slots || []) {
-          if (slot.bone !== bone.id || this.selectedSlots.has(slot.id)) continue;
-          if (!slot.attachment || slot.attachment.type === 'empty') continue;
-          slot.attachment.rot = Math.round(((slot.attachment.rot || 0) - deltaDeg) * 10) / 10;
-        }
-        this.runtime = parseSkeletonAsset(structuredClone(this.doc));
-      } else if (track) {
-        this._upsertKey(track, { t: Math.round(this.previewTime), rot: nextRot });
-        this._markDirty();
-      } else {
-        // 所见即所得：旋转无轨道骨骼 = 自动建轨道并打关键帧
-        this._ensureTrackAndKey(bone.id, clip, { rot: nextRot });
       }
     }
     this._renderInspector();
@@ -4219,6 +4435,22 @@ export class SkeletonEditor {
 
   /** mouseup：切件选区完成 → 弹确认面板；所有拖拽统一在此释放。 */
   _onCanvasUp(event) {
+    // 手柄点击（按下到松开几乎未移动）= 设为旋转圆心：之后按住角手柄外圈即绕该点旋转
+    if (this._drag && (this._drag.kind === 'attach-scale' || this._drag.kind === 'bone-scale')) {
+      const rect = this.el.canvas.getBoundingClientRect();
+      const mx = event.clientX - rect.left;
+      const my = event.clientY - rect.top;
+      const clickX = this._drag.kind === 'attach-scale' ? this._drag.startX : this._drag.clickX;
+      const clickY = this._drag.kind === 'attach-scale' ? this._drag.startY : this._drag.clickY;
+      if (Math.hypot(mx - clickX, my - clickY) < 4) {
+        this._rotPivot = {
+          targetId: this._drag.kind === 'attach-scale' ? this._drag.slotId : this._drag.boneId,
+          handleKey: this._drag.handle
+        };
+        this._toast(`旋转圆心已设为手柄 ${this._drag.handle.toUpperCase()}（按住角手柄外圈即绕它旋转）`);
+      }
+    }
+    this.el.canvas.style.cursor = '';
     // 拖放换绑：附件拖到目标骨骼原点附近松手 → 重挂到该骨骼（保持世界位置）
     if (this._drag?.kind === 'attach-move' && this._drag.rebindTarget) {
       const slotId = this._drag.slotId;
