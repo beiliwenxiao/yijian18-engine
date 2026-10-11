@@ -66,6 +66,17 @@ export class EntityRenderer2D {
     const renderX = x + corpseOffsetX;
     const renderY = y + corpseOffsetY;
 
+    // 玩家死亡遗体：灵魂状态期间在倒下位置绘制骷髅（复活完成由 PlayerSoulRespawn 清除标记）
+    if (entity.isSoulState === true && entity.deathSkeletonPosition) {
+      const remains = entity.deathSkeletonPosition;
+      if (Number.isFinite(remains?.x) && Number.isFinite(remains?.y)) {
+        ctx.save();
+        ctx.globalAlpha *= 0.92;
+        this._renderPlayerRemains(ctx, remains.x, remains.y, width, height);
+        ctx.restore();
+      }
+    }
+
     if (!sprite || sprite.visible !== false) {
       ctx.save();
       if (isCorpse && entity.corpseHarvested === true) {
@@ -196,6 +207,87 @@ export class EntityRenderer2D {
     ctx.moveTo(spineEndX, centerY);
     ctx.lineTo(spineEndX + bodyWidth * 0.07, centerY - bodyHeight * 0.18);
     ctx.stroke();
+
+    ctx.restore();
+  }
+
+  /**
+   * 玩家死亡遗体：贴地人形骷髅（头骨+胸腔肋骨+骨盆+摊开四肢），
+   * 程序化绘制与兽尸骷髅同族配色；y 为脚底（地面）位置。
+   */
+  _renderPlayerRemains(ctx, x, y, width, height) {
+    const bone = '#e8e2d0';
+    const boneShade = '#b8b09a';
+    const socket = '#3a372e';
+    const bodyWidth = Math.max(26, width * 0.95);
+    const bodyHeight = Math.max(9, height * 0.2);
+    const centerY = y - bodyHeight * 0.6 - 1;
+    const headR = Math.max(5, bodyHeight * 0.62);
+    const headX = x - bodyWidth / 2 + headR;
+    const pelvisX = x + bodyWidth * 0.26;
+
+    ctx.save();
+    ctx.lineCap = 'round';
+
+    // 双臂：从胸腔向两侧摊开（上举微弯）
+    ctx.strokeStyle = boneShade;
+    ctx.lineWidth = Math.max(1.4, bodyHeight * 0.22);
+    for (const sign of [-1, 1]) {
+      const shoulderX = headX + headR * 1.6 + (pelvisX - headX - headR * 1.6) * 0.18;
+      ctx.beginPath();
+      ctx.moveTo(shoulderX, centerY);
+      ctx.lineTo(shoulderX + sign * bodyWidth * 0.2, centerY - bodyHeight * 0.55);
+      ctx.lineTo(shoulderX + sign * bodyWidth * 0.3, centerY - bodyHeight * 0.2);
+      ctx.stroke();
+    }
+
+    // 双腿：从骨盆向右下摊开
+    const legDx = bodyWidth * 0.16;
+    const legSpread = bodyHeight * 0.75;
+    for (const sign of [-1, 1]) {
+      ctx.beginPath();
+      ctx.moveTo(pelvisX, centerY);
+      ctx.lineTo(pelvisX + legDx * (sign + 1.4), centerY + legSpread);
+      ctx.moveTo(pelvisX, centerY);
+      ctx.lineTo(pelvisX + legDx * (sign + 1.4) * 0.55, centerY + legSpread * 1.05);
+      ctx.stroke();
+    }
+
+    // 脊柱（头骨→骨盆）
+    ctx.strokeStyle = bone;
+    ctx.lineWidth = Math.max(1.8, bodyHeight * 0.26);
+    ctx.beginPath();
+    ctx.moveTo(headX + headR * 0.5, centerY);
+    ctx.lineTo(pelvisX, centerY);
+    ctx.stroke();
+
+    // 肋骨（脊柱前段几条向上短弧）
+    ctx.lineWidth = Math.max(1, bodyHeight * 0.12);
+    const ribCount = 4;
+    const ribStartX = headX + headR * 1.3;
+    const ribSpan = (pelvisX - ribStartX) * 0.55;
+    for (let index = 0; index < ribCount; index += 1) {
+      const ribX = ribStartX + (ribSpan / ribCount) * index;
+      ctx.beginPath();
+      ctx.moveTo(ribX, centerY);
+      ctx.quadraticCurveTo(ribX + 1.5, centerY - bodyHeight * 0.42, ribX - bodyWidth * 0.04, centerY - bodyHeight * 0.5);
+      ctx.stroke();
+    }
+
+    // 骨盆（小圆盘）
+    ctx.fillStyle = bone;
+    ctx.beginPath();
+    ctx.ellipse(pelvisX, centerY, bodyHeight * 0.34, bodyHeight * 0.3, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 头骨（侧躺）+ 眼窝
+    ctx.beginPath();
+    ctx.ellipse(headX, centerY, headR * 1.15, headR, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = socket;
+    ctx.beginPath();
+    ctx.arc(headX - headR * 0.1, centerY - headR * 0.22, Math.max(1.2, headR * 0.24), 0, Math.PI * 2);
+    ctx.fill();
 
     ctx.restore();
   }

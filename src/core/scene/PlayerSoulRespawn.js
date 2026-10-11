@@ -54,6 +54,9 @@ export class PlayerSoulRespawn {
     const transform = player.getComponent?.('transform');
     if (!transform?.position) return false;
 
+    // 记录真实死亡位置：灵魂状态期间在倒下处绘制骷髅遗体（复活完成即清除）
+    const deathPosition = { x: transform.position.x, y: transform.position.y };
+
     const campfire = this.getCampfirePosition();
     const hasCampfire = Number.isFinite(campfire?.x) && Number.isFinite(campfire?.y);
     const fallback = hasCampfire ? null : this.getSpawnPosition();
@@ -84,6 +87,7 @@ export class PlayerSoulRespawn {
       confirmationPresented: false
     };
     player.isSoulState = true;
+    player.deathSkeletonPosition = deathPosition;
     this.onSoulStateChange(true);
     this._presentDeathTip(this.pending);
     this._presentCountdown(this.pending, Math.ceil(this.pending.remaining));
@@ -167,6 +171,7 @@ export class PlayerSoulRespawn {
 
   _finish(pending, result) {
     pending.player.isSoulState = false;
+    pending.player.deathSkeletonPosition = null; // 复活完成：移除死亡地点的骷髅遗体
     this.onSoulStateChange(false);
     this._presentCountdown(pending, null);
     this.hideTip?.();
@@ -204,6 +209,7 @@ export class PlayerSoulRespawn {
     this.disposed = true;
     if (this.pending) {
       this.pending.player.isSoulState = false;
+      this.pending.player.deathSkeletonPosition = null;
       this._presentCountdown(this.pending, null);
       this.pending = null;
     }
