@@ -229,6 +229,7 @@ export class MovementSystem {
         ? Math.min(this.mapBounds.maxY, Math.max(start.y, goal.y) + margin)
         : Math.max(start.y, goal.y) + margin
     };
+    const pathStart = performance.now();
     const path = this.pathfindingSystem.findPath({
       start,
       goal,
@@ -238,6 +239,10 @@ export class MovementSystem {
       maxVisited: this.pathfindingMaxVisited,
       allowDiagonal: true
     });
+    const pathCost = performance.now() - pathStart;
+    if (pathCost > 8) {
+      console.warn(`[MoveProbe] reroute findPath ${pathCost.toFixed(1)}ms dist=${Math.round(distance)} bounds=${Math.round(bounds.maxX - bounds.minX)}x${Math.round(bounds.maxY - bounds.minY)}`);
+    }
     state.rerouteCooldown = this.rerouteCooldownDuration;
     if (!Array.isArray(path) || path.length === 0) return false;
 
@@ -490,8 +495,14 @@ export class MovementSystem {
     // 处理键盘移动输入
     this.handleKeyboardInput(entities, deltaTime);
     
-    // 处理点击移动
+    // 处理点击移动（性能探针：右键卡顿定位——超 8ms 的调用打印明细）
+    const clickMoveStart = performance.now();
     this.handleClickMovement(entities);
+    const clickMoveCost = performance.now() - clickMoveStart;
+    if (clickMoveCost > 8) {
+      const clickPos = this.inputManager ? this.inputManager.getMousePosition() : { x: -1, y: -1 };
+      console.warn(`[MoveProbe] handleClickMovement ${clickMoveCost.toFixed(1)}ms mouse=(${clickPos.x},${clickPos.y})`);
+    }
     
     // 更新所有实体的移动
     let playerBlocked = false;
@@ -621,18 +632,26 @@ export class MovementSystem {
       || this.inputManager.getMouseButton() !== 2
       || this.inputManager.isMouseClickHandled()) return;
 
+    // 早退原因探针（右键丢命令定位）：每次右键点击打一行走到哪一步
+    const probe = reason => {
+      const mp = this.inputManager.getMousePosition();
+      console.info(`[MoveProbe] click(${mp.x},${mp.y}) → ${reason}`);
+    };
+
     // 军团指挥接管：编组选择激活时，右键 = 对选中分队下达移动命令（不动玩家）
-    if (this.armyCommandSystem?.tryHandleMoveOrder?.(this.camera)) return;
+    if (this.armyCommandSystem?.tryHandleMoveOrder?.(this.camera)) { probe('army-move-order'); return; }
 
     const playerEntity = this.playerEntity || entities.find(e => e.type === 'player');
-    if (!playerEntity) return;
+    if (!playerEntity) { probe('no-player'); return; }
     if (this.isMoveInputSuppressed(playerEntity)) {
+      probe('suppressed');
       this._cancelNavigationIntent(playerEntity);
       this._stopEntityMovement(playerEntity);
       this.inputManager.markMouseClickHandled();
       return;
     }
     if (this.isContactMovementLocked(playerEntity)) {
+      probe('contact-locked');
       this._stopEntityMovement(playerEntity);
       this.inputManager.markMouseClickHandled();
       return;
@@ -640,18 +659,24 @@ export class MovementSystem {
     const target = this._resolveMoveTarget(playerEntity, { type: 'move', source: 'pointer' });
     const { entity, movement, sprite, routedToVehicle } = target;
     if (!movement || movement.enabled === false
-      || (!routedToVehicle && this.isMovementLocked(playerEntity))) return;
-    if (movement.movementType === 'keyboard') return;
+      || (!routedToVehicle && this.isMovementLocked(playerEntity))) { probe('movement-unavailable'); return; }
+    if (movement.movementType === 'keyboard') {
+      // 右键点击接管键盘移动（主流 ARPG 行为）：清除键盘驱动后继续走点击路径；
+      // 之后按键盘会由 startKeyboardMovement 立即切回，双向可接管。
+      probe('keyboard-takeover');
+      movement.stop();
+    }
 
     const mouseScreen = this.inputManager.getMousePosition();
     const clickPos = this.camera
       ? this.camera.screenToWorld(mouseScreen.x, mouseScreen.y)
       : this.inputManager.getMouseWorldPosition();
-    if (this.findEnemyAtPosition(clickPos, entities)) return;
+    if (this.findEnemyAtPosition(clickPos, entities)) { probe('enemy-selected'); return; }
 
     // 点击跳：目标在跳跃距离内但直线路径被阻挡（水/崖/障碍）时，自动跳过去而不是
     // 走向障碍卡住。目标点必须可站立；触发走统一跳跃入口（jumpByDirection，发教程信号）。
     if (!routedToVehicle && this._tryAutoJumpToPosition(playerEntity, clickPos)) {
+      probe('auto-jump');
       this.inputManager.markMouseClickHandled();
       return;
     }
@@ -661,6 +686,7 @@ export class MovementSystem {
     movement.setPath([clickPos]);
     if (sprite && sprite.currentAnimation !== 'walk') sprite.playAnimation('walk');
     this.inputManager.markMouseClickHandled();
+    probe(`path-set → (${Math.round(clickPos.x)},${Math.round(clickPos.y)}) type=${movement.movementType}`);
   }
 
   /**
@@ -673,6 +699,7 @@ export class MovementSystem {
    */
   _tryAutoJumpToPosition(entity, clickPos) {
     if (typeof this.onAutoJump !== 'function' || typeof this.isPositionBlocked !== 'function') return false;
+    const probeStart = performance.now();
     const transform = entity.getComponent('transform');
     if (!transform?.position) return false;
     const dx = clickPos.x - transform.position.x;
@@ -687,9 +714,13 @@ export class MovementSystem {
     for (let index = 1; index < steps; index += 1) {
       const ratio = index / steps;
       if (this.isPositionBlocked(transform.position.x + dx * ratio, transform.position.y + dy * ratio)) {
+        const probeCost = performance.now() - probeStart;
+        if (probeCost > 8) console.warn(`[MoveProbe] autoJumpSampling ${probeCost.toFixed(1)}ms steps=${steps} dist=${Math.round(distance)}`);
         return this.onAutoJump(entity, dx / distance, dy / distance, distance) === true;
       }
     }
+    const probeCost = performance.now() - probeStart;
+    if (probeCost > 8) console.warn(`[MoveProbe] autoJumpSampling ${probeCost.toFixed(1)}ms steps=${steps} dist=${Math.round(distance)} (noBlock)`);
     return false;
   }
   
