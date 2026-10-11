@@ -237,7 +237,7 @@ describe('存档回归：capture meta 逐跳透传（rollbackUnavailable 修复�
   });
 });
 
-describe('存档回归：无场景世界格守卫只属于保存语义（rollback 豁免）', () => {
+describe('存档回归：开放世界空区不拒存（位置守卫已移除）', () => {
   function makeStateFlow({ hasScene = false } = {}) {
     const scene = {
       context: {
@@ -289,14 +289,10 @@ describe('存档回归：无场景世界格守卫只属于保存语义（rollbac
     expect(state).toBeTruthy();
   });
 
-  it('保存采集（无 meta）在坏格时仍抛 playerOutsideLoadableWorldCell——拒存保护保留', () => {
+  it('保存采集（无 meta）在坏格时不再抛——开放世界允许玩家处于空区', () => {
     const flow = makeStateFlow({ hasScene: false });
-    try {
-      flow.captureSceneSaveState();
-      throw new Error('should-have-thrown');
-    } catch (error) {
-      expect(error.code).toBe('playerOutsideLoadableWorldCell');
-    }
+    const state = flow.captureSceneSaveState();
+    expect(state).toBeTruthy();
   });
 });
 

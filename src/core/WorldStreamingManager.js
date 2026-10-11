@@ -744,6 +744,26 @@ export class WorldStreamingManager {
     return anchor;
   }
 
+  /**
+   * 螺旋搜索距离 (col,row) 最近的包含可加载场景的世界格。
+   * 开放世界不设围栏，玩家可处于空格；存档 current 需归一化到最近
+   * 可加载格，避免读档校验失败把玩家踢回标题。
+   */
+  _findNearestLoadableCell(col, row, maxRadius = 64) {
+    if (this.getSceneId(col, row)) return { col, row };
+    for (let radius = 1; radius <= maxRadius; radius++) {
+      for (let dy = -radius; dy <= radius; dy++) {
+        for (let dx = -radius; dx <= radius; dx++) {
+          if (Math.max(Math.abs(dx), Math.abs(dy)) !== radius) continue; // 只扫外圈
+          const c = col + dx;
+          const r = row + dy;
+          if (this.getSceneId(c, r)) return { col: c, row: r };
+        }
+      }
+    }
+    return null;
+  }
+
   validateSerialized(data) {
     const errors = [];
     if (!data || data.schemaVersion !== STREAMING_SCHEMA_VERSION) {
@@ -755,7 +775,15 @@ export class WorldStreamingManager {
     if (!data.current || !Number.isInteger(data.current.col) || !Number.isInteger(data.current.row)) {
       errors.push({ code: 'invalidCurrentChunk', path: 'current', message: '当前世界格坐标无效' });
     } else if (!this.getSceneId(data.current.col, data.current.row)) {
-      errors.push({ code: 'missingCurrentChunk', path: 'current', message: '当前世界格没有可加载场景' });
+      // 开放世界不设围栏：current 允许落在无场景空格。归一化到最近可加载格，
+      // 避免读档校验失败把玩家踢回标题；搜不到任何可加载格才报错。
+      const nearest = this._findNearestLoadableCell(data.current.col, data.current.row);
+      if (!nearest) {
+        errors.push({ code: 'missingCurrentChunk', path: 'current', message: '当前世界格没有可加载场景' });
+      } else {
+        data.current.col = nearest.col;
+        data.current.row = nearest.row;
+      }
     }
     if (!Array.isArray(data.chunks)) {
       errors.push({ code: 'invalidChunks', path: 'chunks', message: '缺少 chunk 状态数组' });

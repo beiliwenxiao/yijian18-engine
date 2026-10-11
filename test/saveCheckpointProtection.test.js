@@ -8,7 +8,7 @@ import { SanguoSceneStateFlow } from '../example/sanguo_zhangjiao/systems/Sanguo
  * 存档完整性回归（对应修复）：
  * - checkpoint 存档防轮换覆盖（读检查点回滚到旧状态/结局读档失败的根源）
  * - 结局界面 E 确认→命令派发链路
- * - 玩家位于无场景世界格时拒绝固化自动存档（读档踢回标题的根源）
+ * - 玩家位于无场景世界格时存档正常固化（开放世界不设围栏，空区由流式管理器归一化）
  */
 
 class MemoryStorage extends LocalStorageAdapter {
@@ -118,7 +118,7 @@ describe('存档完整性：结局界面 E 确认链路', () => {
   });
 });
 
-describe('存档完整性：无场景世界格拒绝固化存档', () => {
+describe('存档完整性：开放世界空区存档正常固化', () => {
   function makeStateFlow({ playerCell = { col: 6, row: 5 }, hasScene = true } = {}) {
     const scene = {
       context: {
@@ -172,13 +172,9 @@ describe('存档完整性：无场景世界格拒绝固化存档', () => {
     expect(state.worldStreamingState).toBeTruthy();
   });
 
-  it('玩家所在格无场景：抛 playerOutsideLoadableWorldCell，不生成存档', () => {
+  it('玩家所在格无场景：存档正常固化（开放世界空区不拒存）', () => {
     const flow = makeStateFlow({ hasScene: false });
-    expect(() => flow.captureSceneSaveState()).toThrowError(/无场景世界格/);
-    try {
-      flow.captureSceneSaveState();
-    } catch (error) {
-      expect(error.code).toBe('playerOutsideLoadableWorldCell');
-    }
+    const state = flow.captureSceneSaveState();
+    expect(state.worldStreamingState).toBeTruthy();
   });
 });
