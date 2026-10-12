@@ -217,7 +217,7 @@
     },
     {
       "id": "food.roasted_wolf_meat",
-      "name": "��狼肉",
+      "name": "烤狼肉",
       "type": "consumable",
       "imageId": "s01.food.roastedWolfMeat",
       "capabilities": [
