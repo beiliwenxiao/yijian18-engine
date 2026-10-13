@@ -10,6 +10,8 @@
  *            https://gitee.com/coderaaa/yijian18-engine
  ************************************************************/
 
+import { Logger } from '../core/Logger.js';
+
 /**
  * AttributePanel.js
  * 属性分配面板UI组件
@@ -345,23 +347,23 @@ export class AttributePanel {
    * @param {string} characterId - 角色ID
    */
   show(characterId) {
-    console.log('AttributePanel: 尝试显示面板，角色ID:', characterId);
+    Logger.log('AttributePanel: 尝试显示面板，角色ID:', characterId);
     
     this.characterId = characterId;
     this.isVisible = true;
     this.panel.style.display = 'block';
     this.panel.style.zIndex = '10000'; // 确保z-index足够高
     
-    console.log('AttributePanel: 面板样式已设置');
-    console.log('AttributePanel: display =', this.panel.style.display);
-    console.log('AttributePanel: z-index =', this.panel.style.zIndex);
+    Logger.log('AttributePanel: 面板样式已设置');
+    Logger.log('AttributePanel: display =', this.panel.style.display);
+    Logger.log('AttributePanel: z-index =', this.panel.style.zIndex);
     
     this.updateDisplay();
     
     // 强制重绘
     this.panel.offsetHeight;
     
-    console.log('AttributePanel: 面板显示完成');
+    Logger.log('AttributePanel: 面板显示完成');
   }
 
   /**

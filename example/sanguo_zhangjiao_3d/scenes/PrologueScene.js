@@ -1,3 +1,4 @@
+import { Logger } from '../../../src/core/Logger.js';
 import { Scene } from '../../../src/core/Scene.js';
 
 /**
@@ -33,7 +34,7 @@ export class PrologueScene extends Scene {
         this.entities = new Map();
         this.npcs = new Map();
         
-        console.log(`PrologueScene: Created ${this.name} (Act ${actNumber})`);
+        Logger.log(`PrologueScene: Created ${this.name} (Act ${actNumber})`);
     }
 
     /**
@@ -57,7 +58,7 @@ export class PrologueScene extends Scene {
         // 启动任务
         this.startQuests();
         
-        console.log(`PrologueScene: Entered ${this.name}`);
+        Logger.log(`PrologueScene: Entered ${this.name}`);
     }
 
     /**
@@ -141,7 +142,7 @@ export class PrologueScene extends Scene {
      * 场景退出时调用
      */
     exit() {
-        console.log(`PrologueScene: Exiting ${this.name}`);
+        Logger.log(`PrologueScene: Exiting ${this.name}`);
         
         // 清理教程系统
         if (this.tutorialSystem && typeof this.tutorialSystem.cleanup === 'function') {
@@ -195,7 +196,7 @@ export class PrologueScene extends Scene {
      * 子类应重写此方法以加载特定场景数据
      */
     loadSceneData() {
-        console.log(`PrologueScene: Loading scene data for ${this.name}`);
+        Logger.log(`PrologueScene: Loading scene data for ${this.name}`);
         
         // 从sceneData加载配置
         if (this.sceneData) {
@@ -228,7 +229,7 @@ export class PrologueScene extends Scene {
      * 子类可重写此方法以自定义教程初始化
      */
     initializeTutorials() {
-        console.log(`PrologueScene: Initializing tutorials for ${this.name}`);
+        Logger.log(`PrologueScene: Initializing tutorials for ${this.name}`);
         // 子类实现
     }
 
@@ -237,7 +238,7 @@ export class PrologueScene extends Scene {
      * 子类可重写此方法以自定义任务启动
      */
     startQuests() {
-        console.log(`PrologueScene: Starting quests for ${this.name}`);
+        Logger.log(`PrologueScene: Starting quests for ${this.name}`);
         // 子类实现
     }
 
@@ -254,7 +255,7 @@ export class PrologueScene extends Scene {
      * @param {Object} data - 传递给下一个场景的数据
      */
     goToNextScene(data = {}) {
-        console.log(`PrologueScene: Going to next scene from ${this.name}`);
+        Logger.log(`PrologueScene: Going to next scene from ${this.name}`);
         
         // 准备传递的数据
         const sceneData = {
@@ -270,7 +271,7 @@ export class PrologueScene extends Scene {
                 this.sceneManager.switchTo(`Act${nextActNumber}Scene`, sceneData);
             } else {
                 // 序章完成
-                console.log('PrologueScene: Prologue completed!');
+                Logger.log('PrologueScene: Prologue completed!');
                 this.onPrologueComplete();
             }
         }
@@ -281,7 +282,7 @@ export class PrologueScene extends Scene {
      * 子类可重写此方法以处理序章完成逻辑
      */
     onPrologueComplete() {
-        console.log('PrologueScene: Prologue complete callback');
+        Logger.log('PrologueScene: Prologue complete callback');
         // 子类实现
     }
 
@@ -300,7 +301,7 @@ export class PrologueScene extends Scene {
      * @param {Array} tutorials - 教程数据数组
      */
     loadTutorials(tutorials) {
-        console.log(`PrologueScene: Loading ${tutorials.length} tutorials`);
+        Logger.log(`PrologueScene: Loading ${tutorials.length} tutorials`);
         // 子类可以重写以实现具体加载逻辑
     }
 
@@ -309,7 +310,7 @@ export class PrologueScene extends Scene {
      * @param {Object} dialogues - 对话数据对象
      */
     loadDialogues(dialogues) {
-        console.log(`PrologueScene: Loading dialogues`);
+        Logger.log(`PrologueScene: Loading dialogues`);
         // 子类可以重写以实现具体加载逻辑
     }
 
@@ -318,7 +319,7 @@ export class PrologueScene extends Scene {
      * @param {Array} quests - 任务数据数组
      */
     loadQuests(quests) {
-        console.log(`PrologueScene: Loading ${quests.length} quests`);
+        Logger.log(`PrologueScene: Loading ${quests.length} quests`);
         // 子类可以重写以实现具体加载逻辑
     }
 
@@ -327,7 +328,7 @@ export class PrologueScene extends Scene {
      * @param {Array} npcs - NPC数据数组
      */
     loadNPCs(npcs) {
-        console.log(`PrologueScene: Loading ${npcs.length} NPCs`);
+        Logger.log(`PrologueScene: Loading ${npcs.length} NPCs`);
         // 子类可以重写以实现具体加载逻辑
     }
 
@@ -336,7 +337,7 @@ export class PrologueScene extends Scene {
      */
     pause() {
         this.isPaused = true;
-        console.log(`PrologueScene: Paused ${this.name}`);
+        Logger.log(`PrologueScene: Paused ${this.name}`);
     }
 
     /**
@@ -344,7 +345,7 @@ export class PrologueScene extends Scene {
      */
     resume() {
         this.isPaused = false;
-        console.log(`PrologueScene: Resumed ${this.name}`);
+        Logger.log(`PrologueScene: Resumed ${this.name}`);
     }
 
     /**
@@ -354,7 +355,7 @@ export class PrologueScene extends Scene {
      */
     addEntity(id, entity) {
         this.entities.set(id, entity);
-        console.log(`PrologueScene: Added entity ${id}`);
+        Logger.log(`PrologueScene: Added entity ${id}`);
     }
 
     /**
@@ -364,7 +365,7 @@ export class PrologueScene extends Scene {
     removeEntity(id) {
         if (this.entities.has(id)) {
             this.entities.delete(id);
-            console.log(`PrologueScene: Removed entity ${id}`);
+            Logger.log(`PrologueScene: Removed entity ${id}`);
         }
     }
 
@@ -384,7 +385,7 @@ export class PrologueScene extends Scene {
      */
     addNPC(id, npc) {
         this.npcs.set(id, npc);
-        console.log(`PrologueScene: Added NPC ${id}`);
+        Logger.log(`PrologueScene: Added NPC ${id}`);
     }
 
     /**
@@ -394,7 +395,7 @@ export class PrologueScene extends Scene {
     removeNPC(id) {
         if (this.npcs.has(id)) {
             this.npcs.delete(id);
-            console.log(`PrologueScene: Removed NPC ${id}`);
+            Logger.log(`PrologueScene: Removed NPC ${id}`);
         }
     }
 

@@ -15,6 +15,7 @@
  * 装备组件 - 管理实体的装备系统
  */
 
+import { Logger } from '../../core/Logger.js';
 import { Component } from '../Component.js';
 
 /**
@@ -74,7 +75,7 @@ export class EquipmentComponent extends Component {
    * @returns {Object|null} 被替换的装备，如果没有则返回null
    */
   equip(slotType, equipment) {
-    console.log(`尝试装备到槽位 ${slotType}:`, equipment);
+    Logger.log(`尝试装备到槽位 ${slotType}:`, equipment);
     
     if (!this.slots.hasOwnProperty(slotType)) {
       console.warn(`Invalid equipment slot: ${slotType}`);
@@ -96,7 +97,7 @@ export class EquipmentComponent extends Component {
     // 重新计算属性加成
     this.recalculateBonusStats();
     
-    console.log(`成功装备到槽位 ${slotType}，属性加成:`, this.bonusStats);
+    Logger.log(`成功装备到槽位 ${slotType}，属性加成:`, this.bonusStats);
     
     return oldEquipment;
   }

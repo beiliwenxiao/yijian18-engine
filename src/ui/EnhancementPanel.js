@@ -15,6 +15,7 @@
  * 装备强化UI组件
  */
 
+import { Logger } from '../core/Logger.js';
 import { UIElement } from './UIElement.js';
 import { EnhancementResult } from '../systems/EnhancementSystem.js';
 
@@ -476,7 +477,7 @@ export class EnhancementPanel extends UIElement {
     // 清空材料
     this.clearMaterials();
     
-    console.log(result.message);
+    Logger.log(result.message);
   }
 
   /**

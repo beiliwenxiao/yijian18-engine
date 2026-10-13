@@ -10,6 +10,7 @@
  *            https://gitee.com/coderaaa/yijian18-engine
  ************************************************************/
 
+import { Logger } from '../core/Logger.js';
 import { SceneObjectProjector } from '../core/scene/SceneObjectProjector.js';
 
 /**
@@ -143,7 +144,7 @@ export class EffectZoneRenderer {
     }
 
     if (this.zones.length > 0) {
-      console.log(`[EffectZoneRenderer] 加载了 ${this.zones.length} 个特效区域`);
+      Logger.log(`[EffectZoneRenderer] 加载了 ${this.zones.length} 个特效区域`);
     }
   }
 

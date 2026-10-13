@@ -25,6 +25,7 @@
  * 第一幕和第二幕都继承此类
  */
 
+import { Logger } from '../../../src/core/Logger.js';
 import { Scene } from '../../../src/core/Scene.js';
 import { normalizePresentationProfile } from '../../../src/core/PresentationProfile.js';
 import presentationProfileData from '../config/presentation.json' with { type: 'json' };
@@ -405,7 +406,7 @@ export class BaseGameSceneSetup extends Scene {
     } catch (error) {
       console.warn('[BaseGameScene] 删除自动存档失败', error);
     }
-    console.log('[BaseGameScene] 已清空存档', { manualCleared, manualFailed, autoCleared });
+    Logger.log('[BaseGameScene] 已清空存档', { manualCleared, manualFailed, autoCleared });
     return { ok: manualFailed === 0 && autoCleared, manualCleared, manualFailed, autoCleared };
   }
 
@@ -1012,8 +1013,8 @@ export class BaseGameSceneSetup extends Scene {
     });
     this.context.lifecycle.player = this.playerLifecycle;
     this.playerEntity = this.playerLifecycle.createOrInherit(data || {}, {
-      onInherited: (player) => console.log('BaseGameScene: 继承玩家实体', player),
-      onCreated: () => console.log('BaseGameScene: 创建新玩家实体')
+      onInherited: (player) => Logger.log('BaseGameScene: 继承玩家实体', player),
+      onCreated: () => Logger.log('BaseGameScene: 创建新玩家实体')
     });
     this.seedItemLifecycleProjection();
 
@@ -1143,7 +1144,7 @@ export class BaseGameSceneSetup extends Scene {
       }
     });
 
-    console.log(`BaseGameScene: 进入场景 ${this.name}`);
+    Logger.log(`BaseGameScene: 进入场景 ${this.name}`);
 
     this.playerLifecycle.configureCleanup();
 
@@ -1175,7 +1176,7 @@ export class BaseGameSceneSetup extends Scene {
       onGamepadDisconnected: () => {
         if (this.notificationSystem) this.notificationSystem.addNotification('手柄已断开', 'info');
       },
-      logger: () => console.log('BaseGameScene: 已加载手柄绑定配置 config/gamepad.json')
+      logger: () => Logger.log('BaseGameScene: 已加载手柄绑定配置 config/gamepad.json')
     });
     this.context.input.bindings = this._inputBindings;
     this._inputBindings.register();

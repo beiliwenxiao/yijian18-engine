@@ -15,6 +15,7 @@
  * 掉落系统 - 管理物品掉落和拾取
  */
 
+import { Logger } from '../core/Logger.js';
 import { RNG } from '../core/RNG.js';
 
 /**
@@ -365,7 +366,7 @@ export class LootSystem {
         this.groundItems.delete(groundItemId);
       }
       
-      console.log(`${entity.name || 'Entity'} 拾取了 ${addedQuantity} 个 ${groundItem.item.name}`);
+      Logger.log(`${entity.name || 'Entity'} 拾取了 ${addedQuantity} 个 ${groundItem.item.name}`);
       return true;
     }
     

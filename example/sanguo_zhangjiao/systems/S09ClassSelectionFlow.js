@@ -10,6 +10,7 @@
  *            https://gitee.com/coderaaa/yijian18-engine
  ************************************************************/
 
+import { Logger } from '../../../src/core/Logger.js';
 import { SceneFlowCoordinator } from '../../../src/core/scene/SceneFlowCoordinator.js';
 import { InputHints } from '../../../src/core/input/InputHints.js';
 import { PadButton } from '../../../src/core/input/Xbox360Profile.js';
@@ -204,7 +205,7 @@ const methods = {
       confirmHover: false,
       cancelHover: false
     };
-    console.log(`[S09ClassSelectionCoordinator] 显示职业确认窗口: ${this._classConfirm.className}`);
+    Logger.log(`[S09ClassSelectionCoordinator] 显示职业确认窗口: ${this._classConfirm.className}`);
     return true;
   },
 
@@ -248,7 +249,7 @@ const methods = {
       void this.confirmSelection(confirmation.classId);
     } else if (!this._classSelectionBusy && (cancelPressed || (clicked && confirmation.cancelHover))) {
       this._classConfirm = null;
-      console.log('[S09ClassSelectionCoordinator] 取消职业选择');
+      Logger.log('[S09ClassSelectionCoordinator] 取消职业选择');
     }
     return true;
   },
@@ -274,7 +275,7 @@ const methods = {
     const className = ClassNames[classType] || classType;
     this.notificationSystem?.addNotification?.(`你选择了${className}，初始能力和装备已发放`, 'success');
     this.gameLoader?.triggerSystem?.fire('classSelected', { class: classType, className });
-    console.log('%c[S09ClassSelectionCoordinator] S09 职业检查点已提交:', 'color:#4CAF50', className);
+    Logger.log('%c[S09ClassSelectionCoordinator] S09 职业检查点已提交:', 'color:#4CAF50', className);
   },
 
   executeAbility(context = {}) {

@@ -10,6 +10,8 @@
  *            https://gitee.com/coderaaa/yijian18-engine
  ************************************************************/
 
+import { Logger } from '../core/Logger.js';
+
 /**
  * MeditationSystem.js
  * 冥想/打坐系统 - 管理打坐状态、恢复逻辑、中断检测
@@ -69,7 +71,7 @@ export class MeditationSystem {
    */
   start(playerEntity) {
     if (this.combatSystem && this.combatSystem.isInCombat()) {
-      console.log('MeditationSystem: 战斗中无法打坐');
+      Logger.log('MeditationSystem: 战斗中无法打坐');
       return false;
     }
     
@@ -93,7 +95,7 @@ export class MeditationSystem {
       }
     }
     
-    console.log('MeditationSystem: 开始打坐');
+    Logger.log('MeditationSystem: 开始打坐');
     return true;
   }
 
@@ -105,7 +107,7 @@ export class MeditationSystem {
     if (this.skillEffects) {
       this.skillEffects.stopMeditationEffect();
     }
-    console.log('MeditationSystem: 停止打坐');
+    Logger.log('MeditationSystem: 停止打坐');
   }
 
   /**
@@ -128,7 +130,7 @@ export class MeditationSystem {
     
     // 满血满蓝自动停止
     if (stats.hp >= stats.maxHp && stats.mp >= stats.maxMp) {
-      console.log('MeditationSystem: 满血满蓝，自动停止打坐');
+      Logger.log('MeditationSystem: 满血满蓝，自动停止打坐');
       this.stop();
       return;
     }
@@ -169,7 +171,7 @@ export class MeditationSystem {
     const isMoving = this.moveKeys.some(key => this.inputManager.isKeyDown(key));
     
     if (isMoving) {
-      console.log('MeditationSystem: 移动中断打坐');
+      Logger.log('MeditationSystem: 移动中断打坐');
       this.stop();
       
       if (this.floatingTextManager && playerEntity) {

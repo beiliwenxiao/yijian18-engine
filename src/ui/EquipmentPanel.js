@@ -15,6 +15,7 @@
  * 装备栏UI组件 - 显示和管理角色装备
  */
 
+import { Logger } from '../core/Logger.js';
 import { UIElement } from './UIElement.js';
 import { QualityColors } from '../data/EquipmentData.js';
 import { ItemIconRenderer } from './ItemIconRenderer.js';
@@ -526,7 +527,7 @@ export class EquipmentPanel extends UIElement {
             const equipment = equipmentComponent.getEquipment(slotType);
             
             if (equipment) {
-              console.log(`尝试卸下装备: ${equipment.name} 从 ${slotType} 槽位`);
+              Logger.log(`尝试卸下装备: ${equipment.name} 从 ${slotType} 槽位`);
               
               // 保存卸下前的属性
               const statsComponent = this.entity.getComponent('stats');
@@ -547,7 +548,7 @@ export class EquipmentPanel extends UIElement {
                 const added = inventoryComponent.addItem(unequippedItem, addQuantity);
                 
                 if (added > 0) {
-                  console.log(`成功卸下装备: ${unequippedItem.name}，已放回背包`);
+                  Logger.log(`成功卸下装备: ${unequippedItem.name}，已放回背包`);
                   
                   // 更新玩家属性（移除装备加成）
                   if (statsComponent) {
@@ -635,7 +636,7 @@ export class EquipmentPanel extends UIElement {
       statsComponent.speed += bonusStats.speed;
     }
     
-    console.log('EquipmentPanel: 更新实体属性', {
+    Logger.log('EquipmentPanel: 更新实体属性', {
       attack: statsComponent.attack,
       defense: statsComponent.defense,
       maxHp: statsComponent.maxHp,
@@ -704,7 +705,7 @@ export class EquipmentPanel extends UIElement {
     }
     
     // 输出到控制台
-    console.log('装备变化:', messages.join(' | '));
+    Logger.log('装备变化:', messages.join(' | '));
     
     // 触发通知回调
     if (this.onEquipmentChange) {

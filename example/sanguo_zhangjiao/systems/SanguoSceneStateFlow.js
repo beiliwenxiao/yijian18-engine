@@ -10,6 +10,7 @@
  *            https://gitee.com/coderaaa/yijian18-engine
  ************************************************************/
 
+import { Logger } from '../../../src/core/Logger.js';
 import { SceneFlowCoordinator } from '../../../src/core/scene/SceneFlowCoordinator.js';
 import { getPlacementSignature } from '../../../src/core/scene/ScenePlacementRuntime.js';
 import { S09_REFUGEE_DIALOGUE_ID } from './S09RefugeeFlow.js';
@@ -242,7 +243,7 @@ async function handleApplicationEvent(event = {}) {
   }
 
   this._firedPickups.add(uid);
-  console.log('[DDScene] itemPickup committed:', itemId);
+  Logger.log('[DDScene] itemPickup committed:', itemId);
   return { ok: true, itemId, dispatch };
 }
 

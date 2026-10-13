@@ -3,6 +3,7 @@
  * @project YiJian18-Engine - 跨平台2D/3D ECS游戏引擎
  ************************************************************/
 
+import { Logger } from '../Logger.js';
 import { SceneAimController } from './SceneAimController.js';
 
 /** 统一处理技能释放、可用性检查及 PC 瞄准状态。 */
@@ -21,7 +22,7 @@ export class SceneSkillActions {
   onSkillClicked(skill) {
     const scene = this.scene;
     if (scene.isPlayerActionLocked?.()) return false;
-    console.log('BaseGameScene: 技能点击', skill);
+    Logger.log('BaseGameScene: 技能点击', skill);
     if (!scene.playerEntity || !scene.combatSystem) return;
 
     if (skill.id === 'meditation') {
@@ -238,11 +239,11 @@ export class SceneSkillActions {
     if (kind === 'skill') {
       const skill = scene.playerEntity.getComponent('combat')?.skills?.[index];
       if (!skill) {
-        console.log('[PCAim] 技能不存在, index=', index);
+        Logger.log('[PCAim] 技能不存在, index=', index);
         return;
       }
       if (!this.checkSkillUsable(skill)) {
-        console.log('[PCAim] 技能不可用(冷却/蓝量):', skill.id);
+        Logger.log('[PCAim] 技能不可用(冷却/蓝量):', skill.id);
         return;
       }
     } else if (kind === 'flight' && scene.flightSystem?.isPlayerFlying?.()) {
@@ -251,7 +252,7 @@ export class SceneSkillActions {
       return;
     }
     this.ensureController().enter(kind, index);
-    console.log(`[PCAim] 进入瞄准: kind=${kind}, index=${index}`);
+    Logger.log(`[PCAim] 进入瞄准: kind=${kind}, index=${index}`);
   }
 
   cancelPCAimMode() {

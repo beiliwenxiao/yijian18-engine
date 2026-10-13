@@ -10,6 +10,7 @@
  *            https://gitee.com/coderaaa/yijian18-engine
  ************************************************************/
 
+import { Logger } from '../Logger.js';
 import { FramePhase } from './GameSceneRuntime.js';
 
 const COLLISION_POSITION_EPSILON_SQUARED = 0.0001;
@@ -138,7 +139,7 @@ export class SceneFramePipeline {
 
     // 调试：输出update调用
     if (scene._debugNextUpdate) {
-      console.log('【更新】update方法被调用, deltaTime=', deltaTime);
+      Logger.log('【更新】update方法被调用, deltaTime=', deltaTime);
       scene._debugNextUpdate = false;
     }
 

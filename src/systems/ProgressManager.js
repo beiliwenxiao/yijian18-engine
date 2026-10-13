@@ -10,6 +10,8 @@
  *            https://gitee.com/coderaaa/yijian18-engine
  ************************************************************/
 
+import { Logger } from '../core/Logger.js';
+
 /**
  * 进度管理器
  * 负责序章进度的保存、加载和继承
@@ -23,7 +25,7 @@ export class ProgressManager {
         this.checkpoints = new Map();
         this.version = '1.0';
         
-        console.log('ProgressManager: Initialized');
+        Logger.log('ProgressManager: Initialized');
     }
 
     /**
@@ -42,7 +44,7 @@ export class ProgressManager {
             const jsonData = JSON.stringify(saveData);
             localStorage.setItem(this.storageKey, jsonData);
             
-            console.log('ProgressManager: Progress saved successfully');
+            Logger.log('ProgressManager: Progress saved successfully');
             return { success: true };
         } catch (error) {
             console.error('ProgressManager: Failed to save progress', error);
@@ -59,7 +61,7 @@ export class ProgressManager {
             const data = localStorage.getItem(this.storageKey);
             
             if (!data) {
-                console.log('ProgressManager: No saved progress found');
+                Logger.log('ProgressManager: No saved progress found');
                 return null;
             }
             
@@ -70,7 +72,7 @@ export class ProgressManager {
                 console.warn(`ProgressManager: Version mismatch (saved: ${progressData.version}, current: ${this.version})`);
             }
             
-            console.log('ProgressManager: Progress loaded successfully');
+            Logger.log('ProgressManager: Progress loaded successfully');
             return progressData;
         } catch (error) {
             console.error('ProgressManager: Failed to load progress', error);
@@ -94,7 +96,7 @@ export class ProgressManager {
                 timestamp: Date.now()
             });
             
-            console.log(`ProgressManager: Checkpoint created: ${checkpointId}`);
+            Logger.log(`ProgressManager: Checkpoint created: ${checkpointId}`);
         } catch (error) {
             console.error(`ProgressManager: Failed to create checkpoint ${checkpointId}`, error);
         }
@@ -109,7 +111,7 @@ export class ProgressManager {
         const checkpoint = this.checkpoints.get(checkpointId);
         
         if (checkpoint) {
-            console.log(`ProgressManager: Checkpoint loaded: ${checkpointId}`);
+            Logger.log(`ProgressManager: Checkpoint loaded: ${checkpointId}`);
             return checkpoint;
         }
         
@@ -125,7 +127,7 @@ export class ProgressManager {
     deleteCheckpoint(checkpointId) {
         if (this.checkpoints.has(checkpointId)) {
             this.checkpoints.delete(checkpointId);
-            console.log(`ProgressManager: Checkpoint deleted: ${checkpointId}`);
+            Logger.log(`ProgressManager: Checkpoint deleted: ${checkpointId}`);
             return true;
         }
         
@@ -146,7 +148,7 @@ export class ProgressManager {
      */
     clearAllCheckpoints() {
         this.checkpoints.clear();
-        console.log('ProgressManager: All checkpoints cleared');
+        Logger.log('ProgressManager: All checkpoints cleared');
     }
 
     /**
@@ -187,7 +189,7 @@ export class ProgressManager {
             inheritedAt: Date.now()
         };
         
-        console.log('ProgressManager: Inherit data prepared');
+        Logger.log('ProgressManager: Inherit data prepared');
         return inheritData;
     }
 
@@ -241,7 +243,7 @@ export class ProgressManager {
         try {
             localStorage.removeItem(this.storageKey);
             this.checkpoints.clear();
-            console.log('ProgressManager: Progress cleared');
+            Logger.log('ProgressManager: Progress cleared');
             return true;
         } catch (error) {
             console.error('ProgressManager: Failed to clear progress', error);
@@ -303,7 +305,7 @@ export class ProgressManager {
                 return null;
             }
             
-            console.log('ProgressManager: Progress exported');
+            Logger.log('ProgressManager: Progress exported');
             return data;
         } catch (error) {
             console.error('ProgressManager: Failed to export progress', error);
@@ -324,7 +326,7 @@ export class ProgressManager {
             // 保存到localStorage
             localStorage.setItem(this.storageKey, jsonData);
             
-            console.log('ProgressManager: Progress imported successfully');
+            Logger.log('ProgressManager: Progress imported successfully');
             return true;
         } catch (error) {
             console.error('ProgressManager: Failed to import progress', error);

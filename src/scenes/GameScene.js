@@ -10,6 +10,7 @@
  *            https://gitee.com/coderaaa/yijian18-engine
  ************************************************************/
 
+import { Logger } from '../core/Logger.js';
 import { Scene } from '../core/Scene.js';
 import { Camera } from '../rendering/Camera.js';
 import { RenderSystem } from '../rendering/RenderSystem.js';
@@ -69,7 +70,7 @@ export class GameScene extends Scene {
     this.aiUpdateTimer = 0;
     this.aiUpdateInterval = 0.1; // 每0.1秒更新一次AI
     
-    console.log('GameScene: Created');
+    Logger.log('GameScene: Created');
 
     // 标识：本场景已适配双后端抽象，使用 renderCommon(backend)
     this.__dualBackendAware = true;
@@ -83,7 +84,7 @@ export class GameScene extends Scene {
   enter(data = null) {
     super.enter(data);
     
-    console.log('GameScene: Entering with data:', data);
+    Logger.log('GameScene: Entering with data:', data);
     
     // 初始化系统
     this.initializeSystems();
@@ -118,7 +119,7 @@ export class GameScene extends Scene {
     // 生成敌人
     this.spawnEnemies();
     
-    console.log(`GameScene: Initialized with ${this.entities.length} entities`);
+    Logger.log(`GameScene: Initialized with ${this.entities.length} entities`);
   }
 
   /**
@@ -172,7 +173,7 @@ export class GameScene extends Scene {
       camera: this.camera
     });
     
-    console.log('GameScene: All systems initialized');
+    Logger.log('GameScene: All systems initialized');
   }
 
   /**
@@ -215,7 +216,7 @@ export class GameScene extends Scene {
       this.renderSystem.setCurrentFloor(this.mapData.defaultFloor || 'ground');
     }
     
-    console.log(`GameScene: Map ${mapId} loaded`);
+    Logger.log(`GameScene: Map ${mapId} loaded`);
   }
 
   /**
@@ -253,7 +254,7 @@ export class GameScene extends Scene {
     // 创建属性面板
     this.createAttributePanel();
     
-    console.log(`GameScene: Player created - ${this.player.name}`);
+    Logger.log(`GameScene: Player created - ${this.player.name}`);
   }
 
   /**
@@ -276,7 +277,7 @@ export class GameScene extends Scene {
     // 应用属性效果到角色属性
     this.applyAttributeEffectsToPlayer();
 
-    console.log('GameScene: Player attributes initialized');
+    Logger.log('GameScene: Player attributes initialized');
   }
 
   /**
@@ -286,7 +287,7 @@ export class GameScene extends Scene {
   onAttributeChanged(detail) {
     if (detail?.characterId === this.player.id) {
       this.applyAttributeEffectsToPlayer();
-      console.log('GameScene: Player attributes updated');
+      Logger.log('GameScene: Player attributes updated');
     }
   }
 
@@ -344,7 +345,7 @@ export class GameScene extends Scene {
       }
     });
     
-    console.log('GameScene: Attribute panel created (Press C to open)');
+    Logger.log('GameScene: Attribute panel created (Press C to open)');
   }
 
   /**
@@ -360,7 +361,7 @@ export class GameScene extends Scene {
     });
     
     this.uiSystem.addElement(playerInfoPanel);
-    console.log('GameScene: Player info panel created');
+    Logger.log('GameScene: Player info panel created');
   }
 
   /**
@@ -403,7 +404,7 @@ export class GameScene extends Scene {
       }
     }
     
-    console.log(`GameScene: Spawned ${enemyCount} enemies`);
+    Logger.log(`GameScene: Spawned ${enemyCount} enemies`);
   }
 
   /**
@@ -570,7 +571,7 @@ export class GameScene extends Scene {
       const damage = this.combatSystem.calculateDamage(enemy, target);
       this.combatSystem.applyDamage(target, damage);
       
-      console.log(`${enemy.name} 攻击 ${target.name}，造成 ${damage} 点伤害`);
+      Logger.log(`${enemy.name} 攻击 ${target.name}，造成 ${damage} 点伤害`);
     }
   }
 
@@ -584,7 +585,7 @@ export class GameScene extends Scene {
       // 从实体列表中移除
       this.entities = this.entities.filter(e => !e.isDead);
       
-      console.log(`GameScene: Removed ${deadEntities.length} dead entities`);
+      Logger.log(`GameScene: Removed ${deadEntities.length} dead entities`);
     }
   }
 
@@ -721,7 +722,7 @@ export class GameScene extends Scene {
     // 检查C键打开属性面板
     if (inputManager.isKeyPressed('c') && this.attributePanel && !this.attributePanel.isOpen()) {
       this.attributePanel.show(this.player.id);
-      console.log('GameScene: Attribute panel opened via input manager');
+      Logger.log('GameScene: Attribute panel opened via input manager');
     }
     
     // 检查L键模拟升级（测试用）
@@ -750,14 +751,14 @@ export class GameScene extends Scene {
     // 应用属性效果
     this.applyAttributeEffectsToPlayer();
     
-    console.log(`Player leveled up from ${oldLevel} to ${newLevel}! Press C to allocate attribute points.`);
+    Logger.log(`Player leveled up from ${oldLevel} to ${newLevel}! Press C to allocate attribute points.`);
   }
 
   /**
    * 显示暂停菜单
    */
   showPauseMenu() {
-    console.log('GameScene: Pause menu (not implemented yet)');
+    Logger.log('GameScene: Pause menu (not implemented yet)');
     // TODO: 实现暂停菜单
   }
 
@@ -780,6 +781,6 @@ export class GameScene extends Scene {
       this.skillEffects.clear();
     }
 
-    console.log('GameScene: Exited and cleaned up');
+    Logger.log('GameScene: Exited and cleaned up');
   }
 }

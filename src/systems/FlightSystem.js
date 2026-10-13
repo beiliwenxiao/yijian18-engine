@@ -10,6 +10,7 @@
  *            https://gitee.com/coderaaa/yijian18-engine
  ************************************************************/
 
+import { Logger } from '../core/Logger.js';
 import { RNG } from '../core/RNG.js';
 
 // 表现层随机：飞行烟雾粒子（非玩法结算，非权威）
@@ -179,7 +180,7 @@ export class FlightSystem {
     // 创建起飞烟雾特效
     this.createTakeoffSmoke(startX, startY);
     
-    console.log('FlightSystem: 开始轻功飞行', { 
+    Logger.log('FlightSystem: 开始轻功飞行', { 
       from: { x: startX, y: startY }, 
       to: { x: finalTargetX, y: finalTargetY },
       distance: Math.sqrt((finalTargetX - startX) ** 2 + (finalTargetY - startY) ** 2)
@@ -312,7 +313,7 @@ export class FlightSystem {
         this.camera.beginSmoothFollow();
       }
       
-      console.log('FlightSystem: 轻功完成');
+      Logger.log('FlightSystem: 轻功完成');
     } else {
       // 落地缓冲效果（轻微下蹲再恢复）
       const bounceOffset = Math.sin(data.progress * Math.PI) * this.config.bounceOffset;

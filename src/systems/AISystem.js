@@ -19,6 +19,7 @@
  * - CombatSystem: 攻击判定和伤害计算
  */
 
+import { Logger } from '../core/Logger.js';
 import { isHostileTarget } from '../core/FactionRules.js';
 import { EnemySkillDirector } from './EnemySkillDirector.js';
 
@@ -348,7 +349,7 @@ class AggressiveAI extends AIController {
       const newTarget = this.findNearestEnemy(entity, allEntities, detectionRange, hostileCache);
       if (newTarget) {
         combat.setTarget(newTarget);
-        console.log(`${entity.name} 找到目标: ${newTarget.name} (type: ${newTarget.type}, faction: ${newTarget.faction})`);
+        Logger.log(`${entity.name} 找到目标: ${newTarget.name} (type: ${newTarget.type}, faction: ${newTarget.faction})`);
       }
     }
 
@@ -606,7 +607,7 @@ export class AISystem {
     this.lureTargets = new Map();
     // 敌人攻击编排调度器：按 aiProfile.attackActions 逐帧调度普攻与技能（含前摇 telegraph）
     this.skillDirector = new EnemySkillDirector();
-    console.log('AISystem: Initialized');
+    Logger.log('AISystem: Initialized');
   }
 
   registerAI(entity, aiType = 'aggressive') {
@@ -617,7 +618,7 @@ export class AISystem {
     entity.isAI = true;
     entity.aiActive = true;
     entity.aiType = resolvedType;
-    console.log(`AISystem: Registered ${resolvedType} AI for entity ${entity.id}`);
+    Logger.log(`AISystem: Registered ${resolvedType} AI for entity ${entity.id}`);
     return true;
   }
 
@@ -671,7 +672,7 @@ export class AISystem {
     entity.isAI = false;
     entity.aiActive = false;
     entity.aiType = null;
-    if (existed) console.log(`AISystem: Unregistered AI for entity ${entity.id}`);
+    if (existed) Logger.log(`AISystem: Unregistered AI for entity ${entity.id}`);
     return existed;
   }
 
@@ -800,7 +801,7 @@ export class AISystem {
     this.inactiveAI.clear();
     this.lureTargets.clear();
     this.skillDirector.clear();
-    console.log('AISystem: Cleared all AI controllers');
+    Logger.log('AISystem: Cleared all AI controllers');
   }
 
   getAICount() { return this.aiControllers.size; }
@@ -816,7 +817,7 @@ export class AISystem {
     }
     this.aiControllers.set(entity.id, this.createAIController(newAIType));
     entity.aiType = newAIType;
-    console.log(`AISystem: Changed AI type for entity ${entity.id} to ${newAIType}`);
+    Logger.log(`AISystem: Changed AI type for entity ${entity.id} to ${newAIType}`);
     return true;
   }
 }

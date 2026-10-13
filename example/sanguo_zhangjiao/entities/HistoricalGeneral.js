@@ -21,6 +21,7 @@
  * - SkillTreeSystem: 武将特殊技能
  */
 
+import { Logger } from '../../../src/core/Logger.js';
 import { Entity } from '../../../src/ecs/Entity.js';
 import { setTimeoutFn } from '../../../src/core/Timers.js';
 import { TransformComponent } from '../../../src/ecs/components/TransformComponent.js';
@@ -73,7 +74,7 @@ export class HistoricalGeneral extends Entity {
     // 初始化组件
     this.initializeComponents(data);
     
-    console.log(`HistoricalGeneral: Created ${this.generalName} (${this.title})`);
+    Logger.log(`HistoricalGeneral: Created ${this.generalName} (${this.title})`);
   }
 
   /**
@@ -148,7 +149,7 @@ export class HistoricalGeneral extends Entity {
         return;
       }
       
-      console.log(`HistoricalGeneral: Playing introduction for ${this.generalName}`);
+      Logger.log(`HistoricalGeneral: Playing introduction for ${this.generalName}`);
       
       // 保存原始相机状态
       const originalTarget = this.camera.target;
@@ -173,7 +174,7 @@ export class HistoricalGeneral extends Entity {
         this.camera.setTarget(originalTarget);
         this.camera.followSpeed = originalFollowSpeed;
 
-        console.log(`HistoricalGeneral: Introduction complete for ${this.generalName}`);
+        Logger.log(`HistoricalGeneral: Introduction complete for ${this.generalName}`);
         resolve();
       }, this.cinematicIntro.duration);
     });
@@ -234,12 +235,12 @@ export class HistoricalGeneral extends Entity {
    * 实际应该通过UI系统显示，这里只是打印日志
    */
   displayIntroText() {
-    console.log(`=== ${this.generalName} ===`);
-    console.log(`字: ${this.title}`);
+    Logger.log(`=== ${this.generalName} ===`);
+    Logger.log(`字: ${this.title}`);
     if (this.biography) {
-      console.log(`简介: ${this.biography}`);
+      Logger.log(`简介: ${this.biography}`);
     }
-    console.log('===================');
+    Logger.log('===================');
   }
 
   /**
@@ -262,7 +263,7 @@ export class HistoricalGeneral extends Entity {
       return false;
     }
     
-    console.log(`HistoricalGeneral: ${this.generalName} uses ${skillId}`);
+    Logger.log(`HistoricalGeneral: ${this.generalName} uses ${skillId}`);
     
     // 获取技能数据
     const skillData = this.getSkillData(skillId);
@@ -358,14 +359,14 @@ export class HistoricalGeneral extends Entity {
         const stats = this.getComponent('stats');
         const finalDamage = Math.max(1, skillData.damage + (stats?.attack || 0) - (targetStats.defense || 0));
         targetStats.takeDamage(finalDamage);
-        console.log(`HistoricalGeneral: ${this.generalName}'s ${skillId} deals ${finalDamage} damage`);
+        Logger.log(`HistoricalGeneral: ${this.generalName}'s ${skillId} deals ${finalDamage} damage`);
       }
     } else if (skillData.healAmount) {
       // 治疗效果
       const stats = this.getComponent('stats');
       if (stats) {
         stats.heal(skillData.healAmount);
-        console.log(`HistoricalGeneral: ${this.generalName} heals ${skillData.healAmount} HP`);
+        Logger.log(`HistoricalGeneral: ${this.generalName} heals ${skillData.healAmount} HP`);
       }
     }
   }
@@ -392,7 +393,7 @@ export class HistoricalGeneral extends Entity {
     if (this.isRetreating) return;
     
     this.isRetreating = true;
-    console.log(`HistoricalGeneral: ${this.generalName} is retreating!`);
+    Logger.log(`HistoricalGeneral: ${this.generalName} is retreating!`);
     
     // 创建撤退特效
     this.createRetreatEffect();
@@ -450,7 +451,7 @@ export class HistoricalGeneral extends Entity {
     ];
     
     const message = messages[Math.floor(Math.random() * messages.length)];
-    console.log(message);
+    Logger.log(message);
   }
 
   /**
@@ -477,7 +478,7 @@ export class HistoricalGeneral extends Entity {
     // 设置一个定时器，一段时间后移除武将
     setTimeoutFn(() => {
       this.active = false;
-      console.log(`HistoricalGeneral: ${this.generalName} has left the battlefield`);
+      Logger.log(`HistoricalGeneral: ${this.generalName} has left the battlefield`);
     }, 5000); // 5秒后离开
   }
 

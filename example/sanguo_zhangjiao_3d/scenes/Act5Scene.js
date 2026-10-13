@@ -9,6 +9,7 @@
  * 需求：24, 25, 26, 27, 28, 29, 30, 31
  */
 
+import { Logger } from '../../../src/core/Logger.js';
 import { BaseGameScene } from './BaseGameScene.js';
 
 export class Act5Scene extends BaseGameScene {
@@ -39,7 +40,7 @@ export class Act5Scene extends BaseGameScene {
   enter(data = null) {
     super.enter(data);
     
-    console.log('Act5Scene: 进入第五幕场景', data);
+    Logger.log('Act5Scene: 进入第五幕场景', data);
     
     // 重置玩家位置
     if (this.playerEntity) {
@@ -134,7 +135,7 @@ export class Act5Scene extends BaseGameScene {
     const dialogueKeys = ['battle_uprising', 'battle_guangzong', 'battle_yangcheng', 'battle_final'];
     this.dialogueSystem.startDialogue(dialogueKeys[battleIndex]);
     
-    console.log(`Act5Scene: 开始第${battleIndex + 1}场战斗对话`);
+    Logger.log(`Act5Scene: 开始第${battleIndex + 1}场战斗对话`);
   }
 
   /**
@@ -214,7 +215,7 @@ export class Act5Scene extends BaseGameScene {
     // 注册所有敌人的AI
     this.aiSystem.registerBatch(this.enemyEntities, 'aggressive');
     
-    console.log(`Act5Scene: 第${battleIndex + 1}场战斗生成 ${this.enemyEntities.length} 个敌人`);
+    Logger.log(`Act5Scene: 第${battleIndex + 1}场战斗生成 ${this.enemyEntities.length} 个敌人`);
   }
 
   /**
@@ -253,7 +254,7 @@ export class Act5Scene extends BaseGameScene {
     if (this.battleState === 'dialogue') {
       this.battleState = 'battle';
       this.spawnBattleEnemies(this.currentBattle);
-      console.log(`Act5Scene: 第${this.currentBattle + 1}场战斗开始！`);
+      Logger.log(`Act5Scene: 第${this.currentBattle + 1}场战斗开始！`);
     }
   }
 
@@ -269,7 +270,7 @@ export class Act5Scene extends BaseGameScene {
       this.battleState = 'cleared';
       
       const battleNames = ['起义之战', '广宗之战', '阳城之战', '黄巾终战'];
-      console.log(`Act5Scene: ${battleNames[this.currentBattle]} 胜利！`);
+      Logger.log(`Act5Scene: ${battleNames[this.currentBattle]} 胜利！`);
       
       // 显示胜利文字
       if (this.playerEntity) {

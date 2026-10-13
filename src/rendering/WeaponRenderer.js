@@ -10,6 +10,8 @@
  *            https://gitee.com/coderaaa/yijian18-engine
  ************************************************************/
 
+import { Logger } from '../core/Logger.js';
+
 /**
  * WeaponRenderer.js
  * 武器渲染器 - 负责渲染玩家的主手和副手武器，并处理攻击动画
@@ -115,7 +117,7 @@ export class WeaponRenderer {
     // 更新眩晕状态
     if (this.stunned.active && this.now() >= this.stunned.endTime) {
       this.stunned.active = false;
-      console.log('武器眩晕恢复，可以格挡了');
+      Logger.log('武器眩晕恢复，可以格挡了');
     }
     
     if (this.attackAnimation.active) {
@@ -177,7 +179,7 @@ export class WeaponRenderer {
       return;
     }
     
-    console.log('WeaponRenderer: 武器自动回收');
+    Logger.log('WeaponRenderer: 武器自动回收');
     
     // 解除目标的钉住状态
     if (this.thrownWeapon.targetEntity) {
@@ -897,7 +899,7 @@ export class WeaponRenderer {
       const equipment = playerEntity.getComponent('equipment');
       if (equipment && equipment.slots.mainhand) {
         // TODO: 在这里可以创建一个掉落的武器实体
-        console.log('WeaponRenderer: 其他玩家拾取武器，丢掉自己的武器');
+        Logger.log('WeaponRenderer: 其他玩家拾取武器，丢掉自己的武器');
       }
       
       // 装备拾取的武器

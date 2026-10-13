@@ -20,6 +20,7 @@
  * DOM 渲染，不走 Canvas，始终覆盖在游戏上层。
  */
 
+import { Logger } from '../core/Logger.js';
 import { InputHints } from '../core/input/InputHints.js';
 import { getWorldMapCellSceneId } from '../core/WorldMapCell.js';
 
@@ -92,7 +93,7 @@ export class DebugPanel {
       isConnected: this._el?.isConnected || false,
       domCount: typeof document !== 'undefined' ? document.querySelectorAll('#debug-panel').length : 0
     };
-    console.log('[DebugPanel] toggle 开始', before);
+    Logger.log('[DebugPanel] toggle 开始', before);
 
     this.visible = !this.visible;
     this._syncCollisionDebugVisibility(this.visible);
@@ -118,7 +119,7 @@ export class DebugPanel {
       const rect = domElement.getBoundingClientRect();
       bounds = { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
     }
-    console.log('[DebugPanel] toggle 完成', {
+    Logger.log('[DebugPanel] toggle 完成', {
       visible: this.visible,
       hasElement: !!this._el,
       isConnected: this._el?.isConnected || false,
@@ -641,31 +642,31 @@ export class DebugPanel {
       const scene = this.getScene();
       if (!scene) return;
       scene.debugShowActorCollisionEdge = event.target.checked;
-      console.log('[DebugPanel] 角色碰撞边缘显示:', event.target.checked ? '开启' : '关闭');
+      Logger.log('[DebugPanel] 角色碰撞边缘显示:', event.target.checked ? '开启' : '关闭');
     });
     el.querySelector('#dp-show-collision').addEventListener('change', (event) => {
       const scene = this.getScene();
       if (!scene) return;
       scene.debugShowCollisionPolygons = event.target.checked;
-      console.log('[DebugPanel] 地形碰撞多边形显示:', event.target.checked ? '开启' : '关闭');
+      Logger.log('[DebugPanel] 地形碰撞多边形显示:', event.target.checked ? '开启' : '关闭');
     });
     el.querySelector('#dp-show-buffzones').addEventListener('change', (event) => {
       const scene = this.getScene();
       if (!scene) return;
       scene.debugShowBuffZones = event.target.checked;
-      console.log('[DebugPanel] Buff 多边形显示:', event.target.checked ? '开启' : '关闭');
+      Logger.log('[DebugPanel] Buff 多边形显示:', event.target.checked ? '开启' : '关闭');
     });
     el.querySelector('#dp-show-trigger-hotspots').addEventListener('change', (event) => {
       const scene = this.getScene();
       if (!scene) return;
       scene.debugShowTriggerHotspots = event.target.checked;
-      console.log('[DebugPanel] 交互热点范围显示:', event.target.checked ? '开启' : '关闭');
+      Logger.log('[DebugPanel] 交互热点范围显示:', event.target.checked ? '开启' : '关闭');
     });
     el.querySelector('#dp-show-climbable-zones').addEventListener('change', (event) => {
       const scene = this.getScene();
       if (!scene) return;
       scene.debugShowClimbableZones = event.target.checked;
-      console.log('[DebugPanel] 攀爬区域显示:', event.target.checked ? '开启' : '关闭');
+      Logger.log('[DebugPanel] 攀爬区域显示:', event.target.checked ? '开启' : '关闭');
     });
     el.querySelector('#dp-gamepad-panel').addEventListener('click', () => {
       const scene = this.getScene();
@@ -674,7 +675,7 @@ export class DebugPanel {
         return;
       }
       scene.gamepadPanel.toggle();
-      console.log('[DebugPanel] 手柄按键图:', scene.gamepadPanel.visible ? '显示' : '隐藏');
+      Logger.log('[DebugPanel] 手柄按键图:', scene.gamepadPanel.visible ? '显示' : '隐藏');
     });
     const applyDebugWeather = () => {
       const scene = this._getActiveScene();
@@ -683,7 +684,7 @@ export class DebugPanel {
       const applied = scene.weatherSystem.setDebugWeatherOverride?.(type)
         ?? scene.weatherSystem.setWeather?.(type);
       if (applied === false) return false;
-      console.log('[DebugPanel] 调试天气覆盖:', type);
+      Logger.log('[DebugPanel] 调试天气覆盖:', type);
       return true;
     };
     // 选择即应用，避免信息面板刷新先把未提交的下拉选择回写为剧情天气。
@@ -694,7 +695,7 @@ export class DebugPanel {
       const scene = this._getActiveScene();
       if (!scene?.weatherSystem) return;
       scene.weatherSystem.clearDebugWeatherOverride?.();
-      console.log('[DebugPanel] 恢复剧情天气');
+      Logger.log('[DebugPanel] 恢复剧情天气');
     });
 
     // ── 时间控制 ──
@@ -704,7 +705,7 @@ export class DebugPanel {
       const period = el.querySelector('#dp-time-select').value;
       const applied = scene.timeSystem.setTimePeriod?.(period);
       if (applied === false) return false;
-      console.log('[DebugPanel] 跳转时间段:', period);
+      Logger.log('[DebugPanel] 跳转时间段:', period);
       return true;
     };
     // 选择即应用，避免信息面板刷新先把未提交的下拉选择回写为当前时段。
@@ -714,19 +715,19 @@ export class DebugPanel {
       const scene = this._getActiveScene();
       if (!scene?.timeSystem) return;
       scene.timeSystem.setPaused?.(true);
-      console.log('[DebugPanel] 时间已暂停');
+      Logger.log('[DebugPanel] 时间已暂停');
     });
     el.querySelector('#dp-time-restore').addEventListener('click', () => {
       const scene = this._getActiveScene();
       if (!scene?.timeSystem) return;
       scene.timeSystem.setPaused?.(false);
-      console.log('[DebugPanel] 时间恢复流动');
+      Logger.log('[DebugPanel] 时间恢复流动');
     });
     el.querySelector('#dp-time-advance-day').addEventListener('click', () => {
       const scene = this._getActiveScene();
       if (!scene?.timeSystem) return;
       scene.timeSystem.advanceDays?.(1);
-      console.log('[DebugPanel] 推进一天');
+      Logger.log('[DebugPanel] 推进一天');
     });
 
     // 动态加载场景列表到跳转下拉
@@ -1358,7 +1359,7 @@ export class DebugPanel {
         console.warn('[DebugPanel] 删除存档失败', result);
         button.textContent = '删除失败';
       } else {
-        console.log('[DebugPanel] 已删除全部存档', result);
+        Logger.log('[DebugPanel] 已删除全部存档', result);
         button.textContent = '已删除';
       }
     } catch (error) {

@@ -10,6 +10,8 @@
  *            https://gitee.com/coderaaa/yijian18-engine
  ************************************************************/
 
+import { Logger } from '../core/Logger.js';
+
 /**
  * ElementSystem.js
  * 五行元素系统 - 处理元素相克、升级和伤害计算
@@ -171,7 +173,7 @@ export class ElementSystem {
     // 初始化相克表
     this.counterTable = new ElementCounterTable();
     
-    console.log('ElementSystem: 五行元素系统已初始化');
+    Logger.log('ElementSystem: 五行元素系统已初始化');
   }
   
   /**

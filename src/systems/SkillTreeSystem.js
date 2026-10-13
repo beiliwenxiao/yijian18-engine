@@ -18,6 +18,7 @@
  * 主动技能的实际释放将在 AbilitySystem 中处理，本系统只负责解锁与等级。
  */
 
+import { Logger } from '../core/Logger.js';
 import { EffectResolver } from './effects/EffectResolver.js';
 import { ProgressionGraphSystem } from './progression/ProgressionGraphSystem.js';
 import { LegacyProgressionAdapter } from './progression/LegacyProgressionAdapter.js';
@@ -602,7 +603,7 @@ export class SkillTreeSystem {
     if (success) {
       this.projectCharacterState(character);
       const node = skillTree.getNode(skillId);
-      if (node) console.log(`成功学习技能: ${node.name} (等级 ${node.currentLevel})`);
+      if (node) Logger.log(`成功学习技能: ${node.name} (等级 ${node.currentLevel})`);
     }
     return success;
   }
@@ -829,7 +830,7 @@ export class SkillTree {
     if (success) {
       // 更新解锁状态
       this.updateUnlockStatus();
-      console.log(`成功学习技能: ${node.name} (等级 ${node.currentLevel})`);
+      Logger.log(`成功学习技能: ${node.name} (等级 ${node.currentLevel})`);
     }
 
     return success;
@@ -856,7 +857,7 @@ export class SkillTree {
     // 更新解锁状态
     this.updateUnlockStatus();
     
-    console.log(`技能树重置完成，返还 ${returnedPoints} 技能点`);
+    Logger.log(`技能树重置完成，返还 ${returnedPoints} 技能点`);
     return returnedPoints;
   }
 

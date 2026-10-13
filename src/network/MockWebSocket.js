@@ -10,6 +10,8 @@
  *            https://gitee.com/coderaaa/yijian18-engine
  ************************************************************/
 
+import { Logger } from '../core/Logger.js';
+
 /**
  * 模拟WebSocket客户端
  * 用于前端开发，模拟与服务器的通信
@@ -46,7 +48,7 @@ export class MockWebSocket {
             // 模拟连接延迟
             setTimeout(() => {
                 this.isConnected = true;
-                console.log('MockWebSocket: Connected (simulated)');
+                Logger.log('MockWebSocket: Connected (simulated)');
                 resolve();
             }, this.config.mockDelay);
         });
@@ -59,7 +61,7 @@ export class MockWebSocket {
         this.isConnected = false;
         this.messageQueue = [];
         this.pendingCallbacks.clear();
-        console.log('MockWebSocket: Disconnected');
+        Logger.log('MockWebSocket: Disconnected');
     }
 
     /**
@@ -88,7 +90,7 @@ export class MockWebSocket {
      * 模拟发送消息
      */
     simulateSend(message, resolve, reject) {
-        console.log('MockWebSocket: Sending message', message);
+        Logger.log('MockWebSocket: Sending message', message);
 
         // 模拟网络延迟
         setTimeout(() => {
@@ -291,7 +293,7 @@ export class MockWebSocket {
      * 处理接收到的消息
      */
     handleMessage(message) {
-        console.log('MockWebSocket: Received message', message);
+        Logger.log('MockWebSocket: Received message', message);
 
         // 触发对应类型的处理器
         if (this.messageHandlers.has(message.type)) {

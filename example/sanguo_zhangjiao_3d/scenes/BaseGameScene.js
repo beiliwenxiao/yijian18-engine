@@ -13,6 +13,7 @@
  * 第一幕和第二幕都继承此类
  */
 
+import { Logger } from '../../../src/core/Logger.js';
 import { PrologueScene } from './PrologueScene.js';
 import { EntityFactory } from '../../../src/ecs/EntityFactory.js';
 import { InputManager } from '../../../src/core/InputManager.js';
@@ -317,16 +318,16 @@ export class BaseGameScene extends PrologueScene {
     if (data && data.playerEntity) {
       this.playerEntity = data.playerEntity;
       this.entities.push(this.playerEntity);
-      console.log(`BaseGameScene: 继承玩家实体`, this.playerEntity);
+      Logger.log(`BaseGameScene: 继承玩家实体`, this.playerEntity);
       
       // 重新绑定UI面板到继承的玩家实体
       this.bindUIPanelsToPlayer();
     } else {
       this.createPlayerEntity();
-      console.log(`BaseGameScene: 创建新玩家实体`);
+      Logger.log(`BaseGameScene: 创建新玩家实体`);
     }
     
-    console.log(`BaseGameScene: 进入场景 ${this.name}`);
+    Logger.log(`BaseGameScene: 进入场景 ${this.name}`);
     
     // 配置实体生命周期系统
     this.entityLifecycleSystem.protect(this.playerEntity);
@@ -365,7 +366,7 @@ export class BaseGameScene extends PrologueScene {
     // 性能监控切换 (P)
     this.inputManager.registerHotkey('toggle_performance', ['p', 'P'], () => {
       this.performanceMonitor.toggle();
-      console.log('性能监控:', this.performanceMonitor.enabled ? '开启' : '关闭');
+      Logger.log('性能监控:', this.performanceMonitor.enabled ? '开启' : '关闭');
     }, { cooldown: 300 });
   }
 
@@ -384,7 +385,7 @@ export class BaseGameScene extends PrologueScene {
       })
       .then(data => {
         this.actData = data;
-        console.log(`BaseGameScene: 加载幕数据成功 Act${actNumber}`, data);
+        Logger.log(`BaseGameScene: 加载幕数据成功 Act${actNumber}`, data);
       })
       .catch(error => {
         console.warn(`BaseGameScene: 加载幕数据失败 Act${actNumber}`, error);
@@ -400,7 +401,7 @@ export class BaseGameScene extends PrologueScene {
     this.campfire.fireImage = new Image();
     this.campfire.fireImage.onload = () => {
       this.campfire.imageLoaded = true;
-      console.log('BaseGameScene: 火焰图片加载成功');
+      Logger.log('BaseGameScene: 火焰图片加载成功');
     };
     this.campfire.fireImage.onerror = () => {
       console.warn('BaseGameScene: 火焰图片加载失败');
@@ -422,10 +423,10 @@ export class BaseGameScene extends PrologueScene {
       height: 580,
       visible: false,
       onAttributeAllocate: (player) => {
-        console.log('BaseGameScene: 属性加点按钮被点击');
+        Logger.log('BaseGameScene: 属性加点按钮被点击');
       },
       onEquipmentClick: (slotType, button) => {
-        console.log('BaseGameScene: 装备槽被点击', slotType, button);
+        Logger.log('BaseGameScene: 装备槽被点击', slotType, button);
         // 右键点击卸下装备
         if (button === 'right' && this.playerEntity) {
           const equipment = this.playerEntity.getComponent('equipment');
@@ -489,7 +490,7 @@ export class BaseGameScene extends PrologueScene {
       dialogueSystem: this.dialogueSystem,
       portraits: PortraitsConfig,
       onDialogueEnd: () => {
-        console.log('BaseGameScene: 对话结束');
+        Logger.log('BaseGameScene: 对话结束');
       }
     });
     
@@ -547,7 +548,7 @@ export class BaseGameScene extends PrologueScene {
       }
     }
     
-    console.log('BaseGameScene: 装备变化', messages);
+    Logger.log('BaseGameScene: 装备变化', messages);
   }
 
   /**
@@ -555,7 +556,7 @@ export class BaseGameScene extends PrologueScene {
    * @param {Object} skill - 技能对象
    */
   onSkillClicked(skill) {
-    console.log('BaseGameScene: 技能点击', skill);
+    Logger.log('BaseGameScene: 技能点击', skill);
     
     if (!this.playerEntity || !this.combatSystem) return;
     
@@ -753,7 +754,7 @@ export class BaseGameScene extends PrologueScene {
       this.isometricRenderer.setMapData(this.mapData, null);
     }
     
-    console.log('BaseGameScene: 生成等距地图', this.mapWidth, 'x', this.mapHeight);
+    Logger.log('BaseGameScene: 生成等距地图', this.mapWidth, 'x', this.mapHeight);
   }
 
   /**
@@ -857,7 +858,7 @@ export class BaseGameScene extends PrologueScene {
     
     // 调试：检查精灵组件
     const sprite = this.playerEntity.getComponent('sprite');
-    console.log('BaseGameScene: 玩家精灵组件', {
+    Logger.log('BaseGameScene: 玩家精灵组件', {
       spriteSheet: sprite?.spriteSheet,
       useDirectionalSprite: sprite?.useDirectionalSprite,
       direction: sprite?.direction,
@@ -878,7 +879,7 @@ export class BaseGameScene extends PrologueScene {
     this.playerInfoPanel.setPlayer(this.playerEntity);
     this.bottomControlBar.setEntity(this.playerEntity);
     
-    console.log('BaseGameScene: 创建玩家实体', this.playerEntity);
+    Logger.log('BaseGameScene: 创建玩家实体', this.playerEntity);
   }
 
   /**
@@ -912,7 +913,7 @@ export class BaseGameScene extends PrologueScene {
       this.bottomControlBar.setEntity(this.playerEntity);
     }
     
-    console.log('BaseGameScene: UI面板已绑定到玩家实体');
+    Logger.log('BaseGameScene: UI面板已绑定到玩家实体');
   }
 
 
@@ -927,7 +928,7 @@ export class BaseGameScene extends PrologueScene {
     
     // 调试：输出update调用
     if (this._debugNextUpdate) {
-      console.log('【更新】update方法被调用, deltaTime=', deltaTime);
+      Logger.log('【更新】update方法被调用, deltaTime=', deltaTime);
       this._debugNextUpdate = false;
     }
     
@@ -1153,7 +1154,7 @@ export class BaseGameScene extends PrologueScene {
    * 开始场景过渡
    */
   startTransition(mainText = '场景切换中...', subText = '') {
-    console.log('BaseGameScene: 开始场景过渡');
+    Logger.log('BaseGameScene: 开始场景过渡');
     this.isTransitioning = true;
     this.transitionPhase = 'fade_out';
     this.transitionTimer = 0;
@@ -1263,7 +1264,7 @@ export class BaseGameScene extends PrologueScene {
     if (!transform) return;
     
     try {
-      console.log('=== 轻功开始 ===');
+      Logger.log('=== 轻功开始 ===');
       
       // 获取鼠标屏幕坐标
       const mouseScreenPos = this.inputManager.getMousePosition();
@@ -1334,7 +1335,7 @@ export class BaseGameScene extends PrologueScene {
     );
     
     if (success) {
-      console.log('BaseGameScene: 武器投掷成功', clickedEnemy ? '目标敌人' : '自由投掷');
+      Logger.log('BaseGameScene: 武器投掷成功', clickedEnemy ? '目标敌人' : '自由投掷');
       this.inputManager.markMouseClickHandled();
     }
   }
@@ -1578,7 +1579,7 @@ export class BaseGameScene extends PrologueScene {
     const backend = is3D ? ctxOrBackend : null;
 
     if (this._debugNextRender) {
-      console.log('【渲染】render, is3D=', is3D);
+      Logger.log('【渲染】render, is3D=', is3D);
     }
     
     // 3D 模式：让相机跟随玩家
@@ -1607,7 +1608,7 @@ export class BaseGameScene extends PrologueScene {
       ctx.save();
       const viewBounds = this.camera.getViewBounds();
       if (this._debugNextRender) {
-        console.log('【渲染】相机:', this.camera.position.x, this.camera.position.y);
+        Logger.log('【渲染】相机:', this.camera.position.x, this.camera.position.y);
         this._debugNextRender = false;
       }
       ctx.translate(-viewBounds.left, -viewBounds.top);
@@ -1626,7 +1627,7 @@ export class BaseGameScene extends PrologueScene {
       this.meleeAttackSystem.renderSectorSlashEffects(ctx);
       this.particleSystem.render(ctx, this.camera);
       if (this._debugParticleFrames > 0) {
-        console.log('【渲染】粒子系统活跃粒子数:', this.particleSystem.getActiveCount());
+        Logger.log('【渲染】粒子系统活跃粒子数:', this.particleSystem.getActiveCount());
         this._debugParticleFrames--;
       }
       if (this.combatSystem) {
@@ -2168,7 +2169,7 @@ export class BaseGameScene extends PrologueScene {
           if (!this._debugSpriteLogged) {
             const cellW = image.width / sprite.spriteColumns;
             const cellH = image.height / sprite.spriteRows;
-            console.log(`【精灵调试】图片尺寸: ${image.width}x${image.height}, 列数: ${sprite.spriteColumns}, 行数: ${sprite.spriteRows}, 单元格: ${cellW}x${cellH}`);
+            Logger.log(`【精灵调试】图片尺寸: ${image.width}x${image.height}, 列数: ${sprite.spriteColumns}, 行数: ${sprite.spriteRows}, 单元格: ${cellW}x${cellH}`);
             this._debugSpriteLogged = true;
           }
           // 获取当前帧的行和列
@@ -2375,7 +2376,7 @@ export class BaseGameScene extends PrologueScene {
       previousAct: this.actNumber
     };
     
-    console.log(`BaseGameScene: 切换到下一幕，传递数据`, sceneData);
+    Logger.log(`BaseGameScene: 切换到下一幕，传递数据`, sceneData);
     this.goToNextScene(sceneData);
   }
 
@@ -2445,7 +2446,7 @@ export class BaseGameScene extends PrologueScene {
     }
     this.entities = [];
     
-    console.log(`BaseGameScene: 退出场景 ${this.name}`);
+    Logger.log(`BaseGameScene: 退出场景 ${this.name}`);
   }
 
   /**

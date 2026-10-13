@@ -21,6 +21,7 @@
  * 各场景流程由 GameProject triggers 与区块传送驱动。
  */
 
+import { Logger } from '../../../src/core/Logger.js';
 import { BaseGameScene } from './BaseGameScene.js';
 import { Scene1Terrain } from './Scene1Terrain.js';
 import { mergeShardedProject } from '../../../src/core/projectShards.js';
@@ -291,7 +292,7 @@ export class DataDrivenPrologueScene extends BaseGameScene {
         this._sceneTriggerBindings?.setBindings(triggerBindings, sceneObjects);
         const effectZoneRenderer = this._terrainBinding.setEffectZones(effectZones);
         if (effectZoneRenderer?.zones.length > 0) {
-          console.log(`[DDScene] 加载了 ${effectZoneRenderer.zones.length} 个特效区域`);
+          Logger.log(`[DDScene] 加载了 ${effectZoneRenderer.zones.length} 个特效区域`);
         }
       },
       onTransition: async ({ manager }) => {
@@ -501,7 +502,7 @@ export class DataDrivenPrologueScene extends BaseGameScene {
 
   _debugCanonicalHotSync(stage, detail = {}) {
     if (!this.debugMode) return;
-    console.log(`[DDScene][CanonicalHotSync] ${stage}`, detail);
+    Logger.log(`[DDScene][CanonicalHotSync] ${stage}`, detail);
   }
 
   _refreshCanonicalHotSyncMinimap(sceneId, phase) {
@@ -585,7 +586,7 @@ export class DataDrivenPrologueScene extends BaseGameScene {
         source: 'hmr', revision: project.revision, ts: project.ts
       });
       /* 火堆项目 HMR 排障日志：
-      console.info('[DDScene][CampfireProjectHotSync] notification-received', {
+      Logger.info('[DDScene][CampfireProjectHotSync] notification-received', {
         revision: project.revision,
         projectPath: PROJECT_PATH,
         currentSceneId: this.currentSceneId
@@ -655,7 +656,7 @@ export class DataDrivenPrologueScene extends BaseGameScene {
         return shardResponse.json();
       });
       /* 火堆项目 HMR 排障日志：
-      console.info('[DDScene][CampfireProjectHotSync] project-readback', {
+      Logger.info('[DDScene][CampfireProjectHotSync] project-readback', {
         revision,
         campfirePresentation: project?.library?.items
           ?.find(item => item?.id === 'story.s01.campfire')?.campfirePresentation?.presentation || null
@@ -676,7 +677,7 @@ export class DataDrivenPrologueScene extends BaseGameScene {
       }
       if (result?.ok === false) throw new Error(result.message || result.code || '火堆配置同步失败');
       /* 火堆项目 HMR 排障日志：
-      console.info('[DDScene][CampfireProjectHotSync] configure-result', {
+      Logger.info('[DDScene][CampfireProjectHotSync] configure-result', {
         revision,
         sceneId: expectedSceneId,
         result
@@ -1364,7 +1365,7 @@ export class DataDrivenPrologueScene extends BaseGameScene {
         // 用户裁定存档节奏：每 5 分钟定时 + 每切换一次场景；开/关菜单与完成任务不触发存档。
         // fire-and-forget（经 requestAutoSave → 串行队列），失败仅告警不阻断导航。
         void this.requestAutoSave?.({ reason: 'scene-switch', sceneId });
-        console.log(`[DDScene] teleportToChunk → ${sceneId} (${x}, ${y})`);
+        Logger.log(`[DDScene] teleportToChunk → ${sceneId} (${x}, ${y})`);
       },
       onFallback: ({ reason, sceneId }) => {
         if (reason === 'missingSceneId') {
@@ -1448,7 +1449,7 @@ export class DataDrivenPrologueScene extends BaseGameScene {
     // 数据驱动：装配 GameProject 触发器/黑板/对话，fire(sceneEnter)
     this._initGameLoader();
 
-    console.log('DataDrivenPrologueScene: 进入（数据驱动序章）');
+    Logger.log('DataDrivenPrologueScene: 进入（数据驱动序章）');
   }
 
   update(deltaTime) {
@@ -1464,7 +1465,7 @@ export class DataDrivenPrologueScene extends BaseGameScene {
     // 必须在任何提前返回或 inputManager.update() 之前读取，否则本帧按下状态会被清空。
     const debugPanelKeyPressed = !!this.inputManager?.isKeyPressed?.('`');
     if (debugPanelKeyPressed) {
-      console.log('[DDScene][DebugPanel] update 捕获反引号，准备切换面板', {
+      Logger.log('[DDScene][DebugPanel] update 捕获反引号，准备切换面板', {
         scene: this.name,
         isActive: this.isActive,
         isPaused: this.isPaused,

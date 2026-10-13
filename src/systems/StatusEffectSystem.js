@@ -15,6 +15,7 @@
  * 状态效果系统 - 管理所有实体的状态效果更新和应用
  */
 
+import { Logger } from '../core/Logger.js';
 import { StatusEffectType, StatusEffectData } from '../ecs/components/StatusEffectComponent.js';
 import { RNG } from '../core/RNG.js';
 
@@ -36,7 +37,7 @@ export class StatusEffectSystem {
     // 伤害数字列表（用于显示DOT/HOT数字）
     this.damageNumbers = [];
     
-    console.log('StatusEffectSystem: Initialized');
+    Logger.log('StatusEffectSystem: Initialized');
   }
 
   /**

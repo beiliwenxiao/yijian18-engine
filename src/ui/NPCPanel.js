@@ -15,6 +15,7 @@
  * NPC交互面板UI组件
  */
 
+import { Logger } from '../core/Logger.js';
 import { NPCType, NPCState } from '../systems/NPCSystem.js';
 
 /**
@@ -279,7 +280,7 @@ export class NPCPanel {
    * @param {Object} data
    */
   onDialogAction(data) {
-    console.log('Dialog action:', data.action);
+    Logger.log('Dialog action:', data.action);
     // 这里可以处理各种动作，如打开商店、接受任务等
   }
 

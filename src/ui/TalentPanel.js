@@ -15,6 +15,7 @@
  * 天赋面板UI组件 - 显示天赋树界面，支持天赋学习和重置
  */
 
+import { Logger } from '../core/Logger.js';
 import { UIElement } from './UIElement.js';
 import { TalentType } from '../systems/TalentSystem.js';
 
@@ -212,7 +213,7 @@ export class TalentPanel extends UIElement {
       if (result.canLearn) {
         const learnResult = this.talentSystem.learnTalent(this.character, node.id);
         if (learnResult.success) {
-          console.log(learnResult.message);
+          Logger.log(learnResult.message);
           this.onTalentLearned && this.onTalentLearned(node);
         }
       }
@@ -227,7 +228,7 @@ export class TalentPanel extends UIElement {
   handleResetClick() {
     if (confirm('确定要重置所有天赋吗？这将返还所有天赋点。')) {
       const returnedPoints = this.talentSystem.resetTalentTree(this.character);
-      console.log(`天赋重置完成，返还 ${returnedPoints} 天赋点`);
+      Logger.log(`天赋重置完成，返还 ${returnedPoints} 天赋点`);
       this.selectedNode = null;
       this.onTalentReset && this.onTalentReset(returnedPoints);
     }

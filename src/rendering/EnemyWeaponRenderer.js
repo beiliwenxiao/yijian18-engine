@@ -10,6 +10,8 @@
  *            https://gitee.com/coderaaa/yijian18-engine
  ************************************************************/
 
+import { Logger } from '../core/Logger.js';
+
 /**
  * EnemyWeaponRenderer.js
  * 敌人武器渲染器 - 负责渲染敌人的攻击动画
@@ -104,7 +106,7 @@ export class EnemyWeaponRenderer {
     const dy = targetPos.y - transform.position.y;
     const angle = Math.atan2(dy, dx);
     
-    console.log(`[EnemyWeaponRenderer] startAttack: entity=${entity.id}, duration=${config.animationDuration}`);
+    Logger.log(`[EnemyWeaponRenderer] startAttack: entity=${entity.id}, duration=${config.animationDuration}`);
     
     // 创建攻击动画状态
     this.attackAnimations.set(entity.id, {

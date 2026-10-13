@@ -10,6 +10,8 @@
  *            https://gitee.com/coderaaa/yijian18-engine
  ************************************************************/
 
+import { Logger } from './Logger.js';
+
 /**
  * 错误处理器
  * 负责捕获、记录和显示游戏中的错误
@@ -61,7 +63,7 @@ export class ErrorHandler {
             });
         });
 
-        console.log('ErrorHandler: Global error handlers initialized');
+        Logger.log('ErrorHandler: Global error handlers initialized');
     }
 
     /**
@@ -197,7 +199,7 @@ export class ErrorHandler {
         this.errorOverlay.appendChild(this.errorContainer);
         document.body.appendChild(this.errorOverlay);
 
-        console.log('ErrorHandler: Error UI created');
+        Logger.log('ErrorHandler: Error UI created');
     }
 
     /**
@@ -326,7 +328,7 @@ ${this.currentError.line ? `位置: 行 ${this.currentError.line}, 列 ${this.cu
      */
     clearErrors() {
         this.errors = [];
-        console.log('ErrorHandler: All errors cleared');
+        Logger.log('ErrorHandler: All errors cleared');
     }
 
     /**
@@ -356,7 +358,7 @@ ${this.currentError.line ? `位置: 行 ${this.currentError.line}, 列 ${this.cu
         }
         this.errors = [];
         this.onError = null;
-        console.log('ErrorHandler: Destroyed');
+        Logger.log('ErrorHandler: Destroyed');
     }
 }
 

@@ -23,6 +23,7 @@
  * 需求: 30 - 大规模战斗性能优化
  */
 
+import { Logger } from '../core/Logger.js';
 import { ObjectPool } from '../core/ObjectPool.js';
 
 /**
@@ -286,7 +287,7 @@ export class PerformanceOptimizer {
     const pool = new ObjectPool(factory, reset, initialSize, maxSize);
     this.pools.set(name, pool);
     
-    console.log(`PerformanceOptimizer: Initialized pool '${name}' with ${initialSize} objects`);
+    Logger.log(`PerformanceOptimizer: Initialized pool '${name}' with ${initialSize} objects`);
   }
 
   /**

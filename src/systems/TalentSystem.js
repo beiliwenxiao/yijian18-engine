@@ -18,6 +18,7 @@
  * 不再逐字段判断 effects.xxx 后手工写入 stats。
  */
 
+import { Logger } from '../core/Logger.js';
 import { EffectResolver } from './effects/EffectResolver.js';
 import { ProgressionGraphSystem } from './progression/ProgressionGraphSystem.js';
 import { LegacyProgressionAdapter } from './progression/LegacyProgressionAdapter.js';
@@ -887,7 +888,7 @@ export class TalentSystem {
     const pointsGained = 1;
     character.talentPoints = (character.talentPoints || 0) + pointsGained;
     
-    console.log(`角色升级到 ${level} 级，获得 ${pointsGained} 天赋点`);
+    Logger.log(`角色升级到 ${level} 级，获得 ${pointsGained} 天赋点`);
   }
 
   /**

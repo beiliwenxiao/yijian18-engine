@@ -11,6 +11,7 @@
  * 需求：1, 2, 3, 4, 5, 6, 7
  */
 
+import { Logger } from '../../../src/core/Logger.js';
 import { Scene } from '../../../src/core/Scene.js';
 import Act1Config from '../config/Act1Config.js';
 import { TutorialConfig } from '../config/TutorialConfig.js';
@@ -30,14 +31,14 @@ export class Act1Scene extends Scene {
     this.playerEntity = null;
     this.npcEntities = [];
     
-    console.log('Act1Scene: 场景已创建');
+    Logger.log('Act1Scene: 场景已创建');
   }
   
   /**
    * 初始化场景
    */
   async init() {
-    console.log('Act1Scene: 开始初始化场景');
+    Logger.log('Act1Scene: 开始初始化场景');
     
     // 获取引擎提供的系统
     this.dialogueSystem = this.engine.getSystem('dialogue');
@@ -80,14 +81,14 @@ export class Act1Scene extends Scene {
     this.createEntities();
     
     this.initialized = true;
-    console.log('Act1Scene: 场景初始化完成');
+    Logger.log('Act1Scene: 场景初始化完成');
   }
   
   /**
    * 加载配置
    */
   async loadConfigurations() {
-    console.log('Act1Scene: 加载配置');
+    Logger.log('Act1Scene: 加载配置');
     
     // 加载对话配置
     this.loadDialogues();
@@ -107,7 +108,7 @@ export class Act1Scene extends Scene {
     
     for (const [dialogueId, dialogueData] of Object.entries(dialogues)) {
       this.dialogueSystem.registerDialogue(dialogueId, dialogueData);
-      console.log(`Act1Scene: 注册对话 "${dialogueId}"`);
+      Logger.log(`Act1Scene: 注册对话 "${dialogueId}"`);
     }
   }
   
@@ -119,7 +120,7 @@ export class Act1Scene extends Scene {
     
     for (const [tutorialId, tutorialData] of Object.entries(tutorials)) {
       this.tutorialSystem.registerTutorial(tutorialId, tutorialData);
-      console.log(`Act1Scene: 注册教程 "${tutorialId}"`);
+      Logger.log(`Act1Scene: 注册教程 "${tutorialId}"`);
     }
   }
   
@@ -133,7 +134,7 @@ export class Act1Scene extends Scene {
       const { Quest } = require('../../systems/QuestSystem.js');
       const quest = new Quest(questData);
       this.questSystem.registerQuest(quest);
-      console.log(`Act1Scene: 注册任务 "${questData.name}"`);
+      Logger.log(`Act1Scene: 注册任务 "${questData.name}"`);
     });
   }
   
@@ -141,7 +142,7 @@ export class Act1Scene extends Scene {
    * 设置场景
    */
   setupScene() {
-    console.log('Act1Scene: 设置场景');
+    Logger.log('Act1Scene: 设置场景');
     
     // 设置场景尺寸
     this.width = this.config.scene.width;
@@ -160,7 +161,7 @@ export class Act1Scene extends Scene {
    * 创建实体
    */
   createEntities() {
-    console.log('Act1Scene: 创建实体');
+    Logger.log('Act1Scene: 创建实体');
     
     // 创建玩家
     this.createPlayer();
@@ -190,7 +191,7 @@ export class Act1Scene extends Scene {
       });
       
       this.addEntity(this.playerEntity);
-      console.log('Act1Scene: 玩家实体已创建');
+      Logger.log('Act1Scene: 玩家实体已创建');
     } else {
       // 简化版本：创建一个简单的玩家对象
       const spawn = this.config.scene.playerSpawn;
@@ -201,7 +202,7 @@ export class Act1Scene extends Scene {
         height: 32,
         type: 'player'
       };
-      console.log('Act1Scene: 玩家对象已创建（简化版）');
+      Logger.log('Act1Scene: 玩家对象已创建（简化版）');
     }
   }
   
@@ -214,7 +215,7 @@ export class Act1Scene extends Scene {
     npcs.forEach(npcData => {
       const npc = this.createNPC(npcData);
       this.npcEntities.push(npc);
-      console.log(`Act1Scene: NPC "${npcData.name}" 已创建`);
+      Logger.log(`Act1Scene: NPC "${npcData.name}" 已创建`);
     });
   }
   
@@ -266,7 +267,7 @@ export class Act1Scene extends Scene {
    * 场景进入
    */
   enter(data = null) {
-    console.log('Act1Scene: 进入场景');
+    Logger.log('Act1Scene: 进入场景');
     
     if (!this.initialized) {
       this.init();
@@ -280,7 +281,7 @@ export class Act1Scene extends Scene {
    * 场景退出
    */
   exit() {
-    console.log('Act1Scene: 退出场景');
+    Logger.log('Act1Scene: 退出场景');
     
     // 清理资源
     this.cleanup();
@@ -432,7 +433,7 @@ export class Act1Scene extends Scene {
    * 与NPC交互
    */
   interactWithNPC(npc) {
-    console.log(`Act1Scene: 与 ${npc.name} 交互`);
+    Logger.log(`Act1Scene: 与 ${npc.name} 交互`);
     
     // 开始对话
     if (this.dialogueSystem && npc.dialogueId) {
@@ -447,7 +448,7 @@ export class Act1Scene extends Scene {
    * 清理资源
    */
   cleanup() {
-    console.log('Act1Scene: 清理资源');
+    Logger.log('Act1Scene: 清理资源');
     
     // 清理实体
     this.playerEntity = null;
@@ -467,7 +468,7 @@ export class Act1Scene extends Scene {
       this.engine.assetManager.loadImage(imagePath)
         .then(image => {
           this.backgroundImage = image;
-          console.log(`Act1Scene: 背景图片加载成功 "${imagePath}"`);
+          Logger.log(`Act1Scene: 背景图片加载成功 "${imagePath}"`);
         })
         .catch(error => {
           console.warn(`Act1Scene: 背景图片加载失败 "${imagePath}"`, error);
@@ -475,7 +476,7 @@ export class Act1Scene extends Scene {
           this.backgroundImage = null;
         });
     } else {
-      console.log(`Act1Scene: AssetManager不可用，跳过背景图片加载 "${imagePath}"`);
+      Logger.log(`Act1Scene: AssetManager不可用，跳过背景图片加载 "${imagePath}"`);
     }
   }
   

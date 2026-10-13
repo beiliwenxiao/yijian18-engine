@@ -10,6 +10,8 @@
  *            https://gitee.com/coderaaa/yijian18-engine
  ************************************************************/
 
+import { Logger } from '../core/Logger.js';
+
 /**
  * EquipmentSystem.js
  * 装备系统 - 管理装备的穿戴、卸下和属性计算
@@ -182,7 +184,7 @@ export class EquipmentSystem {
     statsComponent.hp = Math.min(statsComponent.maxHp, Math.max(0, nextHp));
     statsComponent.mp = Math.min(statsComponent.maxMp, Math.max(0, nextMp));
 
-    console.log('EquipmentSystem: 更新实体属性', {
+    Logger.log('EquipmentSystem: 更新实体属性', {
       attack: statsComponent.attack,
       defense: statsComponent.defense,
       maxHp: statsComponent.maxHp,
@@ -298,7 +300,7 @@ export class EquipmentSystem {
       
       // 如果装备完全损坏，可能需要特殊处理
       if (equipment.durability === 0) {
-        console.log(`Equipment ${equipment.name} is broken!`);
+        Logger.log(`Equipment ${equipment.name} is broken!`);
         // 这里可以触发装备损坏事件
       }
     }

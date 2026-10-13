@@ -26,6 +26,7 @@
  * authority: 'client'  // 纯输入采集
  */
 
+import { Logger } from '../Logger.js';
 import {
   PadButton,
   PadAxis,
@@ -100,10 +101,10 @@ export class GamepadManager {
 
     /** 保存浏览器事件监听引用，供 destroy() 精确移除 */
     this._onGamepadConnected = (e) => {
-      console.log('GamepadManager: gamepadconnected', e.gamepad && e.gamepad.id);
+      Logger.log('GamepadManager: gamepadconnected', e.gamepad && e.gamepad.id);
     };
     this._onGamepadDisconnected = (e) => {
-      console.log('GamepadManager: gamepaddisconnected', e.gamepad && e.gamepad.id);
+      Logger.log('GamepadManager: gamepaddisconnected', e.gamepad && e.gamepad.id);
     };
     this._browserEventsBound = false;
 
@@ -181,7 +182,7 @@ export class GamepadManager {
       for (const cb of [...this._connectListeners]) {
         try { cb(this.info); } catch (e) { console.warn('GamepadManager: onConnect 监听器出错', e); }
       }
-      console.log('GamepadManager: 手柄已连接 →', this.info.id,
+      Logger.log('GamepadManager: 手柄已连接 →', this.info.id,
         `(mapping=${this.info.mapping || 'none'}, 按钮${this.info.buttonCount}, 轴${this.info.axisCount})`);
     }
 
@@ -271,7 +272,7 @@ export class GamepadManager {
     this._stickBias = { lx, ly, rx, ry };
     this._stickBiasCaptured = true;
     if (lx || ly || rx || ry) {
-      console.log('GamepadManager: 摇杆静息校准完成', { lx, ly, rx, ry });
+      Logger.log('GamepadManager: 摇杆静息校准完成', { lx, ly, rx, ry });
     }
   }
 
@@ -303,7 +304,7 @@ export class GamepadManager {
     // 重连后需要重新采集静息偏置（换手柄或同一手柄状态可能不同）
     this._stickBias = { lx: 0, ly: 0, rx: 0, ry: 0 };
     this._stickBiasCaptured = false;
-    console.log('GamepadManager: 手柄已断开');
+    Logger.log('GamepadManager: 手柄已断开');
     for (const cb of [...this._disconnectListeners]) {
       try { cb(info); } catch (e) { console.warn('GamepadManager: onDisconnect 监听器出错', e); }
     }

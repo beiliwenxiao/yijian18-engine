@@ -10,6 +10,7 @@
  *            https://gitee.com/coderaaa/yijian18-engine
  ************************************************************/
 
+import { Logger } from '../../../src/core/Logger.js';
 import { InventoryComponent } from '../../../src/ecs/components/InventoryComponent.js';
 import { SceneContainerInventoryRegistry } from '../../../src/core/scene/SceneContainerInventoryRegistry.js';
 
@@ -216,7 +217,7 @@ export class S01S02Coordinator {
   async leaveShelter(eventData = {}) {
     // interact 触发器无差别监听：不在室内属于正常分支，良性消费不写失败诊断（对齐下方 blockedUntilOvernight）
     if (!this._isInShelterInterior()) {
-      console.info('[S01Flow] leaveShelter 跳过：currentSceneId =', this.scene.currentSceneId,
+      Logger.info('[S01Flow] leaveShelter 跳过：currentSceneId =', this.scene.currentSceneId,
         '，玩家脚下世界格 =', this._playerChunkSceneId(), '（均非室内）');
       return { ok: true, skipped: true, status: 'notInShelter' };
     }
@@ -407,7 +408,7 @@ export class S01S02Coordinator {
       restored: true,
       derivedFromStory: true
     }) === true;
-    if (shown) console.log('[S01S02Coordinator] 已按存档 StoryState 重投影当前目标', tutorialId);
+    if (shown) Logger.log('[S01S02Coordinator] 已按存档 StoryState 重投影当前目标', tutorialId);
     return shown;
   }
 
@@ -428,7 +429,7 @@ export class S01S02Coordinator {
     if (!choice) {
       if (downed && scene.dialogueSystem?.isDialogueActive?.() !== true) {
         const started = scene.dialogueSystem?.startDialogue?.('dialogue.s02.prologue', { sceneId: 'S02' }) === true;
-        if (started) console.log('[S01S02Coordinator] S02 读档重放开场对话（裁决选择）');
+        if (started) Logger.log('[S01S02Coordinator] S02 读档重放开场对话（裁决选择）');
         return started;
       }
       return false;
@@ -438,14 +439,14 @@ export class S01S02Coordinator {
       const started = rescue?.beginArmyRescue?.({});
       if (started?.ok === true || (spawned && spawned.ok === true)) {
         scene._showScreenTip?.('黄巾士兵发现了你。指挥士兵走近，抬起担架返回营地。', { title: '军团指挥' });
-        console.log('[S01S02Coordinator] S02 救分支救援编排已补放', { spawned: spawned?.ok === true, rescueStarted: started?.ok === true });
+        Logger.log('[S01S02Coordinator] S02 救分支救援编排已补放', { spawned: spawned?.ok === true, rescueStarted: started?.ok === true });
         return true;
       }
       return false;
     }
     if (choice === 'kill' && downed) {
       rescue?.awakenFromRescue?.();
-      console.log('[S01S02Coordinator] S02 杀分支：解除倒地继续剧情');
+      Logger.log('[S01S02Coordinator] S02 杀分支：解除倒地继续剧情');
       return true;
     }
     return false;
@@ -523,7 +524,7 @@ export class S01S02Coordinator {
         if (!placement.ok || !activated) {
           allSettled = false;
           // 纯等待类提示降级为 log：有界补偿会自动重试，仅异常终止时用 warn/error
-          console.log('[S01S02Coordinator] 首狼放置进入退避补偿', {
+          Logger.log('[S01S02Coordinator] 首狼放置进入退避补偿', {
             placementId,
             code: placement.ok ? 'firstWolfActivateFailed' : (placement.code || 'placementSpawnFailed')
           });
@@ -889,7 +890,7 @@ export class S01S02Coordinator {
     const placement = await this._ensureSpawnedPlacement(continuation.group, continuation.placementId);
     if (!placement.ok) {
       this._rememberPendingReveal(continuation);
-      console.log('[S01S02Coordinator] 双工具拾取后野果放置进入退避补偿', placement);
+      Logger.log('[S01S02Coordinator] 双工具拾取后野果放置进入退避补偿', placement);
       return fuelStarted;
     }
     this.pendingPlacementReveals.delete(continuation.placementId);
@@ -904,7 +905,7 @@ export class S01S02Coordinator {
     const placement = await this._ensureSpawnedPlacement(continuation.group, continuation.placementId);
     if (!placement.ok) {
       this._rememberPendingReveal(continuation);
-      console.log('[S01S02Coordinator] 野果采集完成后木材放置进入退避补偿', placement);
+      Logger.log('[S01S02Coordinator] 野果采集完成后木材放置进入退避补偿', placement);
       return fuelStarted;
     }
     this.pendingPlacementReveals.delete(continuation.placementId);
@@ -954,7 +955,7 @@ export class S01S02Coordinator {
       this.firstWolfCorpsePending = { entity, entityId: entity.id, attempts: 0 };
       this.firstWolfCorpseRetryElapsed = 0;
       // 纯等待类提示降级为 log：有界补偿会自动重试，仅达上限时用 error
-      console.log('[S01S02Coordinator] 首狼尸体或采集节点尚未完整成立，等待有界补偿', {
+      Logger.log('[S01S02Coordinator] 首狼尸体或采集节点尚未完整成立，等待有界补偿', {
         entityId: entity.id,
         maxAttempts: FIRST_WOLF_CORPSE_MAX_ATTEMPTS
       });
@@ -1859,7 +1860,7 @@ export class S01S02Coordinator {
       try {
         await this._revealInitialToolKit();
       } catch (error) {
-        console.log('[S01S02Coordinator] 篝火工具包放置进入退避补偿', error);
+        Logger.log('[S01S02Coordinator] 篝火工具包放置进入退避补偿', error);
       }
       return true;
     }

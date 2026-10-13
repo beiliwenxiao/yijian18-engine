@@ -1,3 +1,5 @@
+
+import { Logger } from '../../src/core/Logger.js';
 /**
  * 序章管理器
  * 负责管理张角黄巾起义序章的六幕流程、场景切换和进度管理
@@ -64,7 +66,7 @@ export class PrologueManager {
             ]
         };
         
-        console.log('PrologueManager: Created');
+        Logger.log('PrologueManager: Created');
     }
 
     /**
@@ -78,7 +80,7 @@ export class PrologueManager {
         }
 
         try {
-            console.log('PrologueManager: Initializing...');
+            Logger.log('PrologueManager: Initializing...');
             
             // 初始化玩家数据
             this.initPlayerData();
@@ -90,7 +92,7 @@ export class PrologueManager {
             await this.loadAssets();
             
             this.isInitialized = true;
-            console.log('PrologueManager: Initialization complete');
+            Logger.log('PrologueManager: Initialization complete');
             
         } catch (error) {
             console.error('PrologueManager: Initialization failed', error);
@@ -174,7 +176,7 @@ export class PrologueManager {
             }
         };
         
-        console.log('PrologueManager: Player data initialized');
+        Logger.log('PrologueManager: Player data initialized');
     }
 
     /**
@@ -201,7 +203,7 @@ export class PrologueManager {
             this.actScenes.set(i, actSceneNames[i]);
         }
         
-        console.log('PrologueManager: Scene mappings registered');
+        Logger.log('PrologueManager: Scene mappings registered');
         
         // 实际场景注册将在实现具体场景类后进行
         // 例如: this.sceneManager.registerScene('PrologueAct1', new Act1Scene(this));
@@ -212,7 +214,7 @@ export class PrologueManager {
      * 加载音乐、音效等资源
      */
     async loadAssets() {
-        console.log('PrologueManager: Loading assets...');
+        Logger.log('PrologueManager: Loading assets...');
         
         try {
             // 加载音频配置
@@ -224,7 +226,7 @@ export class PrologueManager {
                     this.audioManager.addMusic(key, config.file, {
                         volume: config.volume
                     });
-                    console.log(`PrologueManager: Registered music '${key}'`);
+                    Logger.log(`PrologueManager: Registered music '${key}'`);
                 }
             }
             
@@ -235,14 +237,14 @@ export class PrologueManager {
                         volume: config.volume,
                         loop: config.loop || false
                     });
-                    console.log(`PrologueManager: Registered sound '${key}'`);
+                    Logger.log(`PrologueManager: Registered sound '${key}'`);
                 }
             }
             
             // 保存场景音乐映射
             this.sceneMusic = audioConfig.sceneMusic || {};
             
-            console.log('PrologueManager: Assets loaded successfully');
+            Logger.log('PrologueManager: Assets loaded successfully');
             
         } catch (error) {
             console.warn('PrologueManager: Failed to load audio assets', error);
@@ -279,7 +281,7 @@ export class PrologueManager {
             return;
         }
 
-        console.log(`PrologueManager: Starting prologue with character "${characterName}"`);
+        Logger.log(`PrologueManager: Starting prologue with character "${characterName}"`);
         
         // 设置角色名称
         this.playerData.name = characterName;
@@ -308,7 +310,7 @@ export class PrologueManager {
             return;
         }
 
-        console.log(`PrologueManager: Going to ${this.config.actNames[actNumber]}`);
+        Logger.log(`PrologueManager: Going to ${this.config.actNames[actNumber]}`);
         
         // 更新当前幕数
         this.currentAct = actNumber;
@@ -349,7 +351,7 @@ export class PrologueManager {
         if (musicKey && this.audioManager.hasMusic(musicKey)) {
             // 淡出当前音乐，淡入新音乐
             this.audioManager.playMusic(musicKey, true);
-            console.log(`PrologueManager: Switched to music '${musicKey}'`);
+            Logger.log(`PrologueManager: Switched to music '${musicKey}'`);
         }
     }
 
@@ -358,7 +360,7 @@ export class PrologueManager {
      * @param {Object} actResult - 当前幕的结果数据
      */
     completeCurrentAct(actResult = null) {
-        console.log(`PrologueManager: Completing act ${this.currentAct}`);
+        Logger.log(`PrologueManager: Completing act ${this.currentAct}`);
         
         // 记录完成的幕
         if (!this.playerData.prologueData.completedActs.includes(this.currentAct)) {
@@ -384,7 +386,7 @@ export class PrologueManager {
      * 处理序章完成逻辑，准备进度继承
      */
     complete() {
-        console.log('PrologueManager: Prologue completed!');
+        Logger.log('PrologueManager: Prologue completed!');
         
         this.isCompleted = true;
         this.isActive = false;
@@ -405,7 +407,7 @@ export class PrologueManager {
             this.audioManager.stopMusic(true);
         }
         
-        console.log('PrologueManager: Inherit data prepared', inheritData);
+        Logger.log('PrologueManager: Inherit data prepared', inheritData);
         
         // 触发完成回调（如果有）
         if (this.onComplete) {
@@ -455,7 +457,7 @@ export class PrologueManager {
             };
             
             localStorage.setItem('prologue_progress', JSON.stringify(progressData));
-            console.log('PrologueManager: Progress saved');
+            Logger.log('PrologueManager: Progress saved');
             
         } catch (error) {
             console.error('PrologueManager: Failed to save progress', error);
@@ -480,7 +482,7 @@ export class PrologueManager {
         try {
             const savedData = localStorage.getItem('prologue_progress');
             if (!savedData) {
-                console.log('PrologueManager: No saved progress found');
+                Logger.log('PrologueManager: No saved progress found');
                 return false;
             }
             
@@ -497,7 +499,7 @@ export class PrologueManager {
             this.isCompleted = progressData.isCompleted;
             this.playerData = progressData.playerData;
             
-            console.log(`PrologueManager: Progress loaded (Act ${this.currentAct})`);
+            Logger.log(`PrologueManager: Progress loaded (Act ${this.currentAct})`);
             return true;
             
         } catch (error) {
@@ -521,7 +523,7 @@ export class PrologueManager {
     clearProgress() {
         try {
             localStorage.removeItem('prologue_progress');
-            console.log('PrologueManager: Progress cleared');
+            Logger.log('PrologueManager: Progress cleared');
         } catch (error) {
             console.error('PrologueManager: Failed to clear progress', error);
         }
@@ -608,7 +610,7 @@ export class PrologueManager {
      */
     recordPlayerChoice(choiceId, choice) {
         this.playerData.prologueData.playerChoices.set(choiceId, choice);
-        console.log(`PrologueManager: Recorded choice "${choiceId}": ${choice}`);
+        Logger.log(`PrologueManager: Recorded choice "${choiceId}": ${choice}`);
     }
 
     /**
@@ -618,7 +620,7 @@ export class PrologueManager {
     recruitNPC(npcId) {
         if (!this.playerData.prologueData.recruitedNPCs.includes(npcId)) {
             this.playerData.prologueData.recruitedNPCs.push(npcId);
-            console.log(`PrologueManager: Recruited NPC "${npcId}"`);
+            Logger.log(`PrologueManager: Recruited NPC "${npcId}"`);
         }
     }
 
@@ -644,7 +646,7 @@ export class PrologueManager {
     recordAllyRescued(allyId) {
         if (!this.playerData.prologueData.rescuedAllies.includes(allyId)) {
             this.playerData.prologueData.rescuedAllies.push(allyId);
-            console.log(`PrologueManager: Rescued ally "${allyId}"`);
+            Logger.log(`PrologueManager: Rescued ally "${allyId}"`);
         }
     }
 
@@ -653,7 +655,7 @@ export class PrologueManager {
      * 清理资源和状态
      */
     destroy() {
-        console.log('PrologueManager: Destroying...');
+        Logger.log('PrologueManager: Destroying...');
         
         // 停止音乐
         if (this.audioManager) {
@@ -664,7 +666,7 @@ export class PrologueManager {
         this.isActive = false;
         this.isInitialized = false;
         
-        console.log('PrologueManager: Destroyed');
+        Logger.log('PrologueManager: Destroyed');
     }
 
     // ==================== 音效辅助方法 ====================

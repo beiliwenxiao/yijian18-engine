@@ -15,6 +15,7 @@
  * 事件通知面板UI组件
  */
 
+import { Logger } from '../core/Logger.js';
 import { EventType, EventState } from '../systems/EventSystem.js';
 
 /**
@@ -430,7 +431,7 @@ export class EventPanel {
    */
   onEventClick(event) {
     // 可以扩展为显示详细信息或传送到事件位置
-    console.log('Event clicked:', event);
+    Logger.log('Event clicked:', event);
   }
 
   /**

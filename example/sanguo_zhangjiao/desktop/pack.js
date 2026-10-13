@@ -1,3 +1,5 @@
+
+import { Logger } from '../../../src/core/Logger.js';
 // 使用 @electron/packager 把游戏打包成可直接运行的 Windows 程序（含 .exe）
 // 不需要代码签名工具（winCodeSign），规避 Windows 符号链接权限问题。
 const path = require('path');
@@ -15,7 +17,7 @@ async function main() {
     process.exit(1);
   }
 
-  console.log('[pack] 开始打包...');
+  Logger.log('[pack] 开始打包...');
 
   // 先彻底清理旧的输出目录，避免 overwrite 残留导致 ignore 不生效
   if (fs.existsSync(outDir)) {
@@ -52,9 +54,9 @@ async function main() {
     }
   });
 
-  console.log('[pack] 打包完成，输出目录：');
-  appPaths.forEach((p) => console.log('  - ' + p));
-  console.log('[pack] 可执行文件：' + path.join(appPaths[0], 'ZhangjiaoUprising.exe'));
+  Logger.log('[pack] 打包完成，输出目录：');
+  appPaths.forEach((p) => Logger.log('  - ' + p));
+  Logger.log('[pack] 可执行文件：' + path.join(appPaths[0], 'ZhangjiaoUprising.exe'));
 }
 
 main().catch((err) => {

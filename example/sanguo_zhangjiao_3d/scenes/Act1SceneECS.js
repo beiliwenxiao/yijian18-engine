@@ -11,6 +11,7 @@
  * 需求：1, 2, 3, 4, 5, 6, 7
  */
 
+import { Logger } from '../../../src/core/Logger.js';
 import { BaseGameScene } from './BaseGameScene.js';
 import { TutorialConfig } from '../config/TutorialConfig.js';
 import { TutorialConditions } from '../conditions/TutorialConditions.js';
@@ -122,7 +123,7 @@ export class Act1SceneECS extends BaseGameScene {
     // 调用父类的 enter，初始化所有基础系统
     super.enter(data);
     
-    console.log('Act1SceneECS: enter() 完成，isActive =', this.isActive);
+    Logger.log('Act1SceneECS: enter() 完成，isActive =', this.isActive);
     
     // 初始化教程阶段配置
     this.initTutorialPhases();
@@ -146,7 +147,7 @@ export class Act1SceneECS extends BaseGameScene {
     // 第一幕特有：显示角色创建
     this.showCharacterCreation();
     
-    console.log('Act1SceneECS: 进入第一幕 - 绝望的开始');
+    Logger.log('Act1SceneECS: 进入第一幕 - 绝望的开始');
   }
 
   /**
@@ -165,7 +166,7 @@ export class Act1SceneECS extends BaseGameScene {
       stats.hp = Math.floor(stats.maxHp * 0.3); // 30% 生命值
     }
     
-    console.log('Act1SceneECS: 创建玩家实体（初始血量30%）', this.playerEntity);
+    Logger.log('Act1SceneECS: 创建玩家实体（初始血量30%）', this.playerEntity);
   }
 
   /**
@@ -176,7 +177,7 @@ export class Act1SceneECS extends BaseGameScene {
     
     // 不在这里显示教程，等待回调设置后再显示
     // 教程会在 index.html 的 initGame 中设置回调后显示
-    console.log('Act1SceneECS: showCharacterCreation 完成，等待教程回调设置');
+    Logger.log('Act1SceneECS: showCharacterCreation 完成，等待教程回调设置');
   }
 
   /**
@@ -263,7 +264,7 @@ export class Act1SceneECS extends BaseGameScene {
    * 开始移动教程
    */
   startMovementTutorial() {
-    console.log('Act1SceneECS: 开始移动教程');
+    Logger.log('Act1SceneECS: 开始移动教程');
     this.tutorialPhase = 'movement';
     // 不再调用 showTutorial，使用渐进式提示系统
     
@@ -278,7 +279,7 @@ export class Act1SceneECS extends BaseGameScene {
    * 开始拾取教程
    */
   startPickupTutorial() {
-    console.log('Act1SceneECS: 开始拾取教程');
+    Logger.log('Act1SceneECS: 开始拾取教程');
     this.tutorialPhase = 'pickup';
     this.spawnPickupItems();
     // 不再调用 showTutorial，使用渐进式提示系统
@@ -323,7 +324,7 @@ export class Act1SceneECS extends BaseGameScene {
       });
     }
 
-    console.log('Act1SceneECS: 生成拾取物品', this.pickupItems);
+    Logger.log('Act1SceneECS: 生成拾取物品', this.pickupItems);
   }
 
 
@@ -378,7 +379,7 @@ export class Act1SceneECS extends BaseGameScene {
       });
     }
     
-    console.log('Act1SceneECS: 生成装备物品', this.equipmentItems);
+    Logger.log('Act1SceneECS: 生成装备物品', this.equipmentItems);
   }
 
   /**
@@ -387,7 +388,7 @@ export class Act1SceneECS extends BaseGameScene {
   pickupItem(item, fromEquipmentItems = false) {
     if (item.picked) return;
     
-    console.log(`Act1SceneECS: 拾取物品 - ${item.name}`);
+    Logger.log(`Act1SceneECS: 拾取物品 - ${item.name}`);
     item.picked = true;
     
     // 添加到背包
@@ -421,7 +422,7 @@ export class Act1SceneECS extends BaseGameScene {
       if (item.multishot != null) itemData.multishot = item.multishot;
       
       inventory.addItem(itemData, item.quantity || 1);
-      console.log('Act1SceneECS: 物品已添加到背包', itemData);
+      Logger.log('Act1SceneECS: 物品已添加到背包', itemData);
     }
   }
 
@@ -429,7 +430,7 @@ export class Act1SceneECS extends BaseGameScene {
    * 开始装备教程
    */
   startEquipmentTutorial() {
-    console.log('Act1SceneECS: 开始装备教程');
+    Logger.log('Act1SceneECS: 开始装备教程');
     this.tutorialPhase = 'equipment';
     // 不再调用 showTutorial，使用渐进式提示系统
   }
@@ -438,7 +439,7 @@ export class Act1SceneECS extends BaseGameScene {
    * 开始战斗教程
    */
   startCombatTutorial() {
-    console.log('Act1SceneECS: 开始战斗教程');
+    Logger.log('Act1SceneECS: 开始战斗教程');
     this.tutorialPhase = 'combat';
     // 不再调用 showTutorial，使用渐进式提示系统
     this.spawnCombatWave(0);
@@ -448,7 +449,7 @@ export class Act1SceneECS extends BaseGameScene {
    * 生成战斗波次
    */
   spawnCombatWave(waveIndex) {
-    console.log(`Act1SceneECS: 生成第${waveIndex + 1}波敌人`);
+    Logger.log(`Act1SceneECS: 生成第${waveIndex + 1}波敌人`);
     this.combatWave = waveIndex;
     this.waveSpawned = true;
     
@@ -478,7 +479,7 @@ export class Act1SceneECS extends BaseGameScene {
       this.starvingSpawner.active = true;
       this.starvingSpawner.spawnedCount = 0;
       this.starvingSpawner.spawnTimer = 0;
-      console.log('Act1SceneECS: 启动饥民逐渐生成模式，总数:', this.starvingSpawner.totalCount);
+      Logger.log('Act1SceneECS: 启动饥民逐渐生成模式，总数:', this.starvingSpawner.totalCount);
       return; // 不走下面的批量生成逻辑
     }
     
@@ -495,7 +496,7 @@ export class Act1SceneECS extends BaseGameScene {
       
       // 调试：检查名字组件
       const nameComp = enemy.getComponent('name');
-      console.log(`创建敌人: ${enemy.name}, 名字组件:`, nameComp);
+      Logger.log(`创建敌人: ${enemy.name}, 名字组件:`, nameComp);
       
       this.entities.push(enemy);
       this.enemyEntities.push(enemy);
@@ -509,7 +510,7 @@ export class Act1SceneECS extends BaseGameScene {
       }
       
       // 调试：确认敌人属性
-      console.log(`敌人 ${enemy.name} 已创建:`, {
+      Logger.log(`敌人 ${enemy.name} 已创建:`, {
         id: enemy.id,
         type: enemy.type,
         faction: enemy.faction,
@@ -518,8 +519,8 @@ export class Act1SceneECS extends BaseGameScene {
       });
     }
     
-    console.log(`Act1SceneECS: 生成了 ${waveData.length} 个敌人，已注册AI`);
-    console.log(`玩家信息:`, {
+    Logger.log(`Act1SceneECS: 生成了 ${waveData.length} 个敌人，已注册AI`);
+    Logger.log(`玩家信息:`, {
       id: this.playerEntity?.id,
       type: this.playerEntity?.type,
       faction: this.playerEntity?.faction
@@ -531,7 +532,7 @@ export class Act1SceneECS extends BaseGameScene {
    */
   update(deltaTime) {
     if (!this.isActive) {
-      console.log('Act1SceneECS: update 被跳过，场景未激活');
+      Logger.log('Act1SceneECS: update 被跳过，场景未激活');
       return;
     }
     
@@ -598,7 +599,7 @@ export class Act1SceneECS extends BaseGameScene {
     
     const stats = this.playerEntity?.getComponent('stats');
     if (stats && stats.hp <= 0) {
-      console.log('Act1SceneECS: 检测到玩家死亡');
+      Logger.log('Act1SceneECS: 检测到玩家死亡');
       this.triggerPlayerDeath();
     }
   }
@@ -652,14 +653,14 @@ export class Act1SceneECS extends BaseGameScene {
           
           if (anyPressed) {
             const pressedKeys = this.inputManager.getKeysPressed();
-            console.log('Act1SceneECS: 检测到按键！', pressedKeys);
+            Logger.log('Act1SceneECS: 检测到按键！', pressedKeys);
           }
           
           return anyPressed;
         },
         onComplete: () => {
           this.completeTutorial('progressive_tip_1');
-          console.log('Act1SceneECS: 完成tip_1，进入移动阶段');
+          Logger.log('Act1SceneECS: 完成tip_1，进入移动阶段');
           this.startMovementTutorial();
         }
       },
@@ -676,7 +677,7 @@ export class Act1SceneECS extends BaseGameScene {
             
             if (this.playerMovedDistance >= 10 && !this.tutorialsCompleted.progressive_tip_2) {
               this.completeTutorial('progressive_tip_2');
-              console.log('Act1SceneECS: 完成tip_2 - 移动');
+              Logger.log('Act1SceneECS: 完成tip_2 - 移动');
             }
           }
         },
@@ -684,7 +685,7 @@ export class Act1SceneECS extends BaseGameScene {
         onComplete: () => {
           this.completeTutorial('movement');
           this.tutorialPhase = 'campfire';
-          console.log('Act1SceneECS: 等待点燃火堆');
+          Logger.log('Act1SceneECS: 等待点燃火堆');
         }
       },
       
@@ -692,11 +693,11 @@ export class Act1SceneECS extends BaseGameScene {
         check: () => this.campfire.lit && !this.tutorialsCompleted.campfire,
         onComplete: () => {
           this.tutorialsCompleted.campfire = true;
-          console.log('Act1SceneECS: 火堆已点燃');
+          Logger.log('Act1SceneECS: 火堆已点燃');
           
           if (!this.tutorialsCompleted.progressive_tip_3) {
             this.completeTutorial('progressive_tip_3');
-            console.log('Act1SceneECS: 完成tip_3 - 点燃火堆');
+            Logger.log('Act1SceneECS: 完成tip_3 - 点燃火堆');
           }
           
           // 确保当前教程已隐藏，避免阻塞后续提示
@@ -723,11 +724,11 @@ export class Act1SceneECS extends BaseGameScene {
           
           if (!this.tutorialsCompleted.progressive_tip_4) {
             this.completeTutorial('progressive_tip_4');
-            console.log('Act1SceneECS: 完成tip_4 - 拾取物品');
+            Logger.log('Act1SceneECS: 完成tip_4 - 拾取物品');
           }
           
           this.tutorialPhase = 'view_inventory';
-          console.log('Act1SceneECS: 进入背包查看阶段');
+          Logger.log('Act1SceneECS: 进入背包查看阶段');
         }
       },
       
@@ -735,7 +736,7 @@ export class Act1SceneECS extends BaseGameScene {
         check: () => this.tutorialsCompleted.progressive_tip_5,
         onComplete: () => {
           this.tutorialPhase = 'consumable';
-          console.log('Act1SceneECS: 进入消耗品使用阶段');
+          Logger.log('Act1SceneECS: 进入消耗品使用阶段');
         }
       },
       
@@ -753,15 +754,15 @@ export class Act1SceneECS extends BaseGameScene {
         },
         onComplete: () => {
           this.tutorialsCompleted.consumable = true;
-          console.log('Act1SceneECS: 完成消耗品使用阶段');
+          Logger.log('Act1SceneECS: 完成消耗品使用阶段');
           
           if (!this.tutorialsCompleted.progressive_tip_7) {
             this.completeTutorial('progressive_tip_7');
-            console.log('Act1SceneECS: 完成tip_7 - 使用消耗品');
+            Logger.log('Act1SceneECS: 完成tip_7 - 使用消耗品');
           }
           
           this.tutorialPhase = 'close_panels';
-          console.log('Act1SceneECS: 进入关闭面板阶段');
+          Logger.log('Act1SceneECS: 进入关闭面板阶段');
         }
       },
       
@@ -771,18 +772,18 @@ export class Act1SceneECS extends BaseGameScene {
           
           if (bothPanelsClosed && !this.tutorialsCompleted.progressive_tip_7_1) {
             this.completeTutorial('progressive_tip_7_1');
-            console.log('Act1SceneECS: 完成tip_7.1 - 关闭面板');
+            Logger.log('Act1SceneECS: 完成tip_7.1 - 关闭面板');
           }
         },
         check: () => this.tutorialsCompleted.progressive_tip_7_1,
         onComplete: () => {
           if (this.equipmentItems.length === 0) {
             this.spawnEquipmentItems();
-            console.log('Act1SceneECS: 生成第二批物品（装备）');
+            Logger.log('Act1SceneECS: 生成第二批物品（装备）');
           }
           
           this.tutorialPhase = 'pickup_equipment';
-          console.log('Act1SceneECS: 进入装备拾取阶段');
+          Logger.log('Act1SceneECS: 进入装备拾取阶段');
         }
       },
       
@@ -794,7 +795,7 @@ export class Act1SceneECS extends BaseGameScene {
         onComplete: () => {
           if (!this.tutorialsCompleted.progressive_tip_8) {
             this.completeTutorial('progressive_tip_8');
-            console.log('Act1SceneECS: 完成tip_8 - 拾取装备');
+            Logger.log('Act1SceneECS: 完成tip_8 - 拾取装备');
           }
           
           this.startEquipmentTutorial();
@@ -814,12 +815,12 @@ export class Act1SceneECS extends BaseGameScene {
           
           if (!this.tutorialsCompleted.progressive_tip_9) {
             this.completeTutorial('progressive_tip_9');
-            console.log('Act1SceneECS: 完成tip_9 - 装备物品');
+            Logger.log('Act1SceneECS: 完成tip_9 - 装备物品');
           }
           
           if (!this.tutorialsCompleted.progressive_tip_10) {
             this.completeTutorial('progressive_tip_10');
-            console.log('Act1SceneECS: 完成tip_10 - 查看装备');
+            Logger.log('Act1SceneECS: 完成tip_10 - 查看装备');
           }
           
           this.startCombatTutorial();
@@ -843,7 +844,7 @@ export class Act1SceneECS extends BaseGameScene {
           }
           
           this.tutorialPhase = 'combat_complete';
-          console.log('Act1SceneECS: 战斗完成，等待按N键进入下一幕');
+          Logger.log('Act1SceneECS: 战斗完成，等待按N键进入下一幕');
         }
       },
       
@@ -862,7 +863,7 @@ export class Act1SceneECS extends BaseGameScene {
   updateTutorialPhase(deltaTime) {
     const handler = this.tutorialPhaseHandlers[this.tutorialPhase];
     if (!handler) {
-      console.log('Act1SceneECS: 没有找到阶段处理器:', this.tutorialPhase);
+      Logger.log('Act1SceneECS: 没有找到阶段处理器:', this.tutorialPhase);
       return;
     }
     
@@ -873,7 +874,7 @@ export class Act1SceneECS extends BaseGameScene {
     
     // 检查阶段完成条件
     if (handler.check && handler.check()) {
-      console.log('Act1SceneECS: 阶段完成条件满足，当前阶段:', this.tutorialPhase);
+      Logger.log('Act1SceneECS: 阶段完成条件满足，当前阶段:', this.tutorialPhase);
       handler.onComplete();
     }
   }
@@ -940,7 +941,7 @@ export class Act1SceneECS extends BaseGameScene {
     // 如果玩家靠近火堆（距离小于80），点燃火堆
     if (distance <= 80) {
       this.lightCampfire();
-      console.log('Act1SceneECS: 点燃火堆');
+      Logger.log('Act1SceneECS: 点燃火堆');
     }
   }
 
@@ -1092,7 +1093,7 @@ export class Act1SceneECS extends BaseGameScene {
   lightCampfire() {
     if (this.campfire.lit) return;
     
-    console.log('Act1SceneECS: 点燃火堆');
+    Logger.log('Act1SceneECS: 点燃火堆');
     this.campfire.lit = true;
     
     // 创建简洁的火焰粒子效果
@@ -1222,7 +1223,7 @@ export class Act1SceneECS extends BaseGameScene {
       }
     }));
     
-    console.log('Act1SceneECS: 火焰粒子效果已创建（1个发射点，7种粒子）');
+    Logger.log('Act1SceneECS: 火焰粒子效果已创建（1个发射点，7种粒子）');
     
     // 触发迷雾消散
     this.fog.targetOpacity = 0;
@@ -1356,13 +1357,13 @@ export class Act1SceneECS extends BaseGameScene {
     });
     
     if (!hasAliveEnemy) {
-      console.log(`Act1SceneECS: 第${this.combatWave + 1}波完成, enemyEntities.length=${this.enemyEntities.length}`);
+      Logger.log(`Act1SceneECS: 第${this.combatWave + 1}波完成, enemyEntities.length=${this.enemyEntities.length}`);
       
       if (this.combatWave === 0) {
         // 野狗打完，标记战斗完成
         this.tutorialsCompleted.combat = true;
         this.combatComplete = true;
-        console.log('Act1SceneECS: combatComplete=true, 等待 updateTutorialPhase 触发 onComplete');
+        Logger.log('Act1SceneECS: combatComplete=true, 等待 updateTutorialPhase 触发 onComplete');
       } else if (this.combatWave === 1) {
         // 饥民波次：所有饥民都已生成且全部死亡后触发死亡
         if (this.starvingSpawner.spawnedCount >= this.starvingSpawner.totalCount) {
@@ -1391,7 +1392,7 @@ export class Act1SceneECS extends BaseGameScene {
   triggerPlayerDeath() {
     if (this.playerDied) return;
     
-    console.log('Act1SceneECS: 触发玩家死亡');
+    Logger.log('Act1SceneECS: 触发玩家死亡');
     this.playerDied = true;
     
     const stats = this.playerEntity.getComponent('stats');
@@ -1407,7 +1408,7 @@ export class Act1SceneECS extends BaseGameScene {
    * 切换到下一幕
    */
   switchToNextScene() {
-    console.log('Act1SceneECS: 切换到第二幕');
+    Logger.log('Act1SceneECS: 切换到第二幕');
     
     // 获取玩家组件数据
     const stats = this.playerEntity.getComponent('stats');
@@ -1439,7 +1440,7 @@ export class Act1SceneECS extends BaseGameScene {
       previousAct: 1
     };
     
-    console.log('Act1SceneECS: 传递数据到第二幕', sceneData);
+    Logger.log('Act1SceneECS: 传递数据到第二幕', sceneData);
     
     // 调用父类的场景切换方法
     this.goToNextScene(sceneData);

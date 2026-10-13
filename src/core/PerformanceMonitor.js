@@ -4,6 +4,8 @@
  * @project YiJian18-Engine - 跨平台2D/3D ECS游戏引擎
  ************************************************************/
 
+import { Logger } from './Logger.js';
+
 const MB = 1024 * 1024;
 
 function now() {
@@ -408,7 +410,7 @@ export class PerformanceMonitor {
   logToConsole() {
     console.group('Performance Metrics');
     console.table(this.getMetrics());
-    if (this.measurement) console.log('Measurement:', this.getMeasurementSnapshot());
+    if (this.measurement) Logger.log('Measurement:', this.getMeasurementSnapshot());
     console.groupEnd();
   }
 

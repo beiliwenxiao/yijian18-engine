@@ -10,6 +10,8 @@
  *            https://gitee.com/coderaaa/yijian18-engine
  ************************************************************/
 
+import { Logger } from '../core/Logger.js';
+
 /**
  * SpriteRenderer.js
  * 精灵渲染器 - 负责渲染精灵图和动画
@@ -124,7 +126,7 @@ export class SpriteRenderer {
     
     // 调试日志
     if (entity.type === 'enemy' || entity.type === 'loot') {
-      console.log('renderName 被调用:', {
+      Logger.log('renderName 被调用:', {
         entityId: entity.id,
         entityType: entity.type,
         hasNameComponent: !!nameComponent,
@@ -135,7 +137,7 @@ export class SpriteRenderer {
     // 如果没有名字组件或不可见，则不渲染
     if (!nameComponent || !nameComponent.visible) {
       if (entity.type === 'enemy' || entity.type === 'loot') {
-        console.log('名字不渲染，原因:', !nameComponent ? '没有名字组件' : '不可见');
+        Logger.log('名字不渲染，原因:', !nameComponent ? '没有名字组件' : '不可见');
       }
       return;
     }
@@ -173,7 +175,7 @@ export class SpriteRenderer {
     // 使用名字组件中的颜色
     ctx.fillStyle = nameComponent.color || '#ffffff';
     
-    console.log('渲染名字:', name, '颜色:', nameComponent.color, '位置:', transform.position);
+    Logger.log('渲染名字:', name, '颜色:', nameComponent.color, '位置:', transform.position);
     
     ctx.fillText(name, transform.position.x, nameY);
     ctx.restore();

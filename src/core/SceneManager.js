@@ -10,6 +10,8 @@
  *            https://gitee.com/coderaaa/yijian18-engine
  ************************************************************/
 
+import { Logger } from './Logger.js';
+
 /**
  * 场景管理器
  * 负责场景注册、切换和生命周期管理
@@ -51,7 +53,7 @@ export class SceneManager {
         }
         
         this.scenes.set(name, scene);
-        console.log(`SceneManager: Registered scene "${name}"`);
+        Logger.log(`SceneManager: Registered scene "${name}"`);
     }
 
     /**
@@ -76,13 +78,13 @@ export class SceneManager {
         if (!this.currentScene) {
             this.currentScene = nextScene;
             this.currentScene.enter(data);
-            console.log(`SceneManager: Entered scene "${name}"`);
+            Logger.log(`SceneManager: Entered scene "${name}"`);
             return;
         }
 
         // 如果切换到相同场景，重新进入（允许传递新数据）
         if (this.currentScene === nextScene) {
-            console.log(`SceneManager: Re-entering scene "${name}" with new data`);
+            Logger.log(`SceneManager: Re-entering scene "${name}" with new data`);
             this.currentScene.exit();
             this.currentScene.enter(data);
             return;
@@ -95,8 +97,8 @@ export class SceneManager {
         this.transitionProgress = 0;
         this.transitionPhase = 'fadeOut';
         
-        console.log(`SceneManager: Transitioning from "${this.currentScene.name}" to "${name}"`);
-        console.log(`SceneManager: Transition data stored:`, this.transitionData);
+        Logger.log(`SceneManager: Transitioning from "${this.currentScene.name}" to "${name}"`);
+        Logger.log(`SceneManager: Transition data stored:`, this.transitionData);
     }
 
     /**

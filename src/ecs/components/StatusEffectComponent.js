@@ -15,6 +15,7 @@
  * 状态效果组件 - 管理实体的状态效果（Buff/Debuff）
  */
 
+import { Logger } from '../../core/Logger.js';
 import { Component } from '../Component.js';
 
 /**
@@ -194,12 +195,12 @@ export class StatusEffectComponent extends Component {
       if (duration > existing.remainingTime || intensity > existing.intensity) {
         this.effects.set(type, new StatusEffect(type, duration, intensity, source));
         this.needsRecalculation = true;
-        console.log(`StatusEffect: 替换状态效果 ${StatusEffectData[type].name}`);
+        Logger.log(`StatusEffect: 替换状态效果 ${StatusEffectData[type].name}`);
         return true;
       } else {
         // 刷新现有效果的持续时间
         existing.remainingTime = Math.max(existing.remainingTime, duration);
-        console.log(`StatusEffect: 刷新状态效果 ${StatusEffectData[type].name}`);
+        Logger.log(`StatusEffect: 刷新状态效果 ${StatusEffectData[type].name}`);
         return false;
       }
     }
@@ -209,7 +210,7 @@ export class StatusEffectComponent extends Component {
     this.effects.set(type, effect);
     this.needsRecalculation = true;
     
-    console.log(`StatusEffect: 添加状态效果 ${StatusEffectData[type].name}，持续${duration}秒`);
+    Logger.log(`StatusEffect: 添加状态效果 ${StatusEffectData[type].name}，持续${duration}秒`);
     return true;
   }
 
@@ -222,7 +223,7 @@ export class StatusEffectComponent extends Component {
     if (this.effects.has(type)) {
       this.effects.delete(type);
       this.needsRecalculation = true;
-      console.log(`StatusEffect: 移除状态效果 ${StatusEffectData[type].name}`);
+      Logger.log(`StatusEffect: 移除状态效果 ${StatusEffectData[type].name}`);
       return true;
     }
     return false;
@@ -260,7 +261,7 @@ export class StatusEffectComponent extends Component {
   clearAllEffects() {
     this.effects.clear();
     this.needsRecalculation = true;
-    console.log('StatusEffect: 清除所有状态效果');
+    Logger.log('StatusEffect: 清除所有状态效果');
   }
 
   /**
@@ -310,7 +311,7 @@ export class StatusEffectComponent extends Component {
         if (effect.isExpired()) {
           this.effects.delete(type);
           this.needsRecalculation = true;
-          console.log(`StatusEffect: 状态效果 ${effect.data.name} 过期`);
+          Logger.log(`StatusEffect: 状态效果 ${effect.data.name} 过期`);
         }
       }
     }
@@ -341,14 +342,14 @@ export class StatusEffectComponent extends Component {
         // 治疗效果
         const actualHeal = stats.heal(hpChange);
         if (actualHeal > 0) {
-          console.log(`${data.name}: 恢复 ${actualHeal} 点生命值`);
+          Logger.log(`${data.name}: 恢复 ${actualHeal} 点生命值`);
           // 可以在这里触发治疗特效
         }
       } else {
         // 伤害效果
         const actualDamage = stats.takeDamage(-hpChange);
         if (actualDamage > 0) {
-          console.log(`${data.name}: 造成 ${actualDamage} 点伤害`);
+          Logger.log(`${data.name}: 造成 ${actualDamage} 点伤害`);
           // 可以在这里触发伤害特效
         }
       }
@@ -381,7 +382,7 @@ export class StatusEffectComponent extends Component {
       }
     }
     
-    console.log('StatusEffect: 重新计算属性修改器', this.modifiers);
+    Logger.log('StatusEffect: 重新计算属性修改器', this.modifiers);
   }
 
   /**

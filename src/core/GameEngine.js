@@ -15,7 +15,7 @@ import { InputManager } from './InputManager.js';
 import { SceneManager } from './SceneManager.js';
 import { NetworkManager } from '../network/NetworkManager.js';
 import { ErrorHandler } from './ErrorHandler.js';
-import { logger, LogLevel } from './Logger.js';
+import { Logger, logger, LogLevel } from './Logger.js';
 import { DebugTools } from './DebugTools.js';
 import { LoginScene } from '../scenes/LoginScene.js';
 import { CharacterScene } from '../scenes/CharacterScene.js';
@@ -159,18 +159,18 @@ export class GameEngine {
         this.assetManager = new AssetManager({
             assetBasePath: this.options?.assetBasePath || ''
         });
-        console.log('GameEngine: AssetManager initialized');
+        Logger.log('GameEngine: AssetManager initialized');
         
         // 初始化输入管理器
         this.inputManager = new InputManager(this.canvas);
         if (this.backend && typeof this.inputManager.setBackend === 'function') {
             this.inputManager.setBackend(this.backend);
         }
-        console.log('GameEngine: InputManager initialized');
+        Logger.log('GameEngine: InputManager initialized');
         
         // 初始化场景管理器
         this.sceneManager = new SceneManager();
-        console.log('GameEngine: SceneManager initialized');
+        Logger.log('GameEngine: SceneManager initialized');
         
         // 注册场景
         this.sceneManager.registerScene('Login', new LoginScene(this));
@@ -184,7 +184,7 @@ export class GameEngine {
         //     debugMode: true
         // });
         // await this.networkManager.connect();
-        console.log('GameEngine: NetworkManager skipped (no server available)');
+        Logger.log('GameEngine: NetworkManager skipped (no server available)');
         
         // 加载初始资源（如果有）
         // 当前没有资源需要加载，后续任务会添加
@@ -194,9 +194,9 @@ export class GameEngine {
         
         // 切换到初始场景（登录场景）
         this.sceneManager.switchTo('Login');
-        console.log('GameEngine: Switched to initial scene (Login)');
+        Logger.log('GameEngine: Switched to initial scene (Login)');
         
-        console.log('GameEngine: Systems initialized');
+        Logger.log('GameEngine: Systems initialized');
     }
 
     /**
@@ -210,7 +210,7 @@ export class GameEngine {
 
         this.isRunning = true;
         this.lastFrameTime = performance.now();
-        console.log('GameEngine: Starting game loop');
+        Logger.log('GameEngine: Starting game loop');
         
         // 启动游戏循环
         this.gameLoop(this.lastFrameTime);
@@ -221,7 +221,7 @@ export class GameEngine {
      */
     stop() {
         this.isRunning = false;
-        console.log('GameEngine: Game loop stopped');
+        Logger.log('GameEngine: Game loop stopped');
     }
 
     /**

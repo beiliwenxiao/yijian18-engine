@@ -9,6 +9,7 @@
  * 需求：8, 9, 10, 11, 12
  */
 
+import { Logger } from '../../../src/core/Logger.js';
 import { BaseGameScene } from './BaseGameScene.js';
 import { AttributeSystem } from '../../../src/systems/AttributeSystem.js';
 import { SkillTreeSystem } from '../../../src/systems/SkillTreeSystem.js';
@@ -54,7 +55,7 @@ export class Act2Scene extends BaseGameScene {
     // 父类会自动处理玩家实体的继承
     super.enter(data);
     
-    console.log('Act2Scene: 进入第二幕场景', data);
+    Logger.log('Act2Scene: 进入第二幕场景', data);
     
     // 重置玩家位置
     if (this.playerEntity) {
@@ -69,7 +70,7 @@ export class Act2Scene extends BaseGameScene {
       if (stats) {
         stats.hp = 1;
         stats.mp = 1;
-        console.log('Act2Scene: 玩家处于濒死状态 - HP: 1, MP: 1');
+        Logger.log('Act2Scene: 玩家处于濒死状态 - HP: 1, MP: 1');
       }
     }
     
@@ -108,7 +109,7 @@ export class Act2Scene extends BaseGameScene {
     this.skillTreeSystem = new SkillTreeSystem();
     this.registerAct2Dialogues();
     this.registerAct2Tutorials();
-    console.log('Act2Scene: 第二幕系统初始化完成');
+    Logger.log('Act2Scene: 第二幕系统初始化完成');
   }
 
   /**
@@ -286,7 +287,7 @@ export class Act2Scene extends BaseGameScene {
    * 发送通知
    */
   notify(message, type = 'info') {
-    console.log(`Act2Scene 通知: ${message}`);
+    Logger.log(`Act2Scene 通知: ${message}`);
     if (this.onNotification) {
       this.onNotification(message, type);
     }
@@ -361,7 +362,7 @@ export class Act2Scene extends BaseGameScene {
    * 切换到第三幕
    */
   transitionToAct3() {
-    console.log('Act2Scene: 切换到第三幕');
+    Logger.log('Act2Scene: 切换到第三幕');
     
     // 通过 SceneManager 切换场景
     if (this.sceneManager) {
@@ -987,7 +988,7 @@ export class Act2Scene extends BaseGameScene {
    */
   registerAct2Tutorials() {
     // 第二幕暂无特殊教程
-    console.log('Act2Scene: 第二幕教程注册完成');
+    Logger.log('Act2Scene: 第二幕教程注册完成');
   }
 }
 

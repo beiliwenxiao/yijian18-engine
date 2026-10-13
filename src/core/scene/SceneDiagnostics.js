@@ -9,6 +9,7 @@
  * @repo      https://github.com/beiliwenxiao/yijian18-engine
  *            https://gitee.com/coderaaa/yijian18-engine
  ************************************************************/
+import { Logger } from '../Logger.js';
 import { DebugPanel } from '../../ui/DebugPanel.js';
 import { normalizeRuntimeDebugMode } from '../CanonicalSnapshot.js';
 import { PerformanceOptimizer } from '../../systems/PerformanceOptimizer.js';
@@ -125,7 +126,7 @@ export class SceneDiagnostics {
   togglePerformance() {
     const monitor = this.scene.performanceMonitor;
     monitor.toggle();
-    console.log('性能监控:', monitor.enabled ? '开启' : '关闭');
+    Logger.log('性能监控:', monitor.enabled ? '开启' : '关闭');
     return monitor.enabled;
   }
 
@@ -211,7 +212,7 @@ export class SceneDiagnostics {
       scene.debugPanel?.hide?.();
       return false;
     }
-    console.log('[BaseGameScene][DebugPanel] 收到切换请求', {
+    Logger.log('[BaseGameScene][DebugPanel] 收到切换请求', {
       scene: scene.name,
       isActive: scene.isActive,
       isPaused: scene.isPaused,
@@ -223,10 +224,10 @@ export class SceneDiagnostics {
     });
 
     const panel = this._ensureDebugPanel();
-    if (!scene.debugPanel.visible) console.log('[BaseGameScene][DebugPanel] 已创建或复用 DebugPanel 实例');
+    if (!scene.debugPanel.visible) Logger.log('[BaseGameScene][DebugPanel] 已创建或复用 DebugPanel 实例');
 
     const visible = panel.toggle();
-    console.log('[BaseGameScene][DebugPanel] 切换调用结束', {
+    Logger.log('[BaseGameScene][DebugPanel] 切换调用结束', {
       visibleAfter: scene.debugPanel.visible,
       elementConnectedAfter: scene.debugPanel._el?.isConnected || false,
       domElement: typeof document !== 'undefined'
@@ -274,7 +275,7 @@ export class SceneDiagnostics {
     const signature = JSON.stringify(state);
     if (signature === this._terrainCollisionSignature) return false;
     const transform = playerEntity?.getComponent?.('transform');
-    console.log(`[${label}][Collision] 地形碰撞数据状态变化`, {
+    Logger.log(`[${label}][Collision] 地形碰撞数据状态变化`, {
       terrains: state,
       mainTerrainSceneId: terrain?._editorSceneId || null,
       playerPosition: transform
@@ -305,7 +306,7 @@ export class SceneDiagnostics {
           + (first ? `, first.points[0..1]=${JSON.stringify(first.points?.slice(0, 2))}` : '');
       });
       const bounds = camera.getViewBounds();
-      console.log(`[${label}][CollisionDebug]`, shapeInfo.join(' | '),
+      Logger.log(`[${label}][CollisionDebug]`, shapeInfo.join(' | '),
         `| view: L=${Math.round(bounds.left)} T=${Math.round(bounds.top)} R=${Math.round(bounds.right)} B=${Math.round(bounds.bottom)}`);
     }
 
@@ -566,7 +567,7 @@ export class SceneDiagnostics {
     label = 'Scene'
   } = {}) {
     if (!this._collisionEntered) {
-      console.log(`%c[${label}] checkTerrainCollision 进入方法体`, 'color:lime;font-size:14px');
+      Logger.log(`%c[${label}] checkTerrainCollision 进入方法体`, 'color:lime;font-size:14px');
       this._collisionEntered = true;
     }
     if (terrains.length === 0) {
@@ -578,15 +579,15 @@ export class SceneDiagnostics {
     }
     const current = terrain || terrains[0];
     if (!this._collisionInitLogged) {
-      console.log(`[${label}] checkTerrainCollision, collisionShapes:`, current?._collisionShapes?.length,
+      Logger.log(`[${label}] checkTerrainCollision, collisionShapes:`, current?._collisionShapes?.length,
         'secondary terrain shapes:', secondaryTerrain?._collisionShapes?.length);
       for (let index = 0; index < Math.min(3, current?._collisionShapes?.length || 0); index++) {
         const shape = current._collisionShapes[index];
-        console.log(`[${label}] shape[${index}]: type=${shape.shapeType}, points前3个=`,
+        Logger.log(`[${label}] shape[${index}]: type=${shape.shapeType}, points前3个=`,
           shape.points ? shape.points.slice(0, 3) : 'NO POINTS');
       }
       const transform = playerEntity?.getComponent?.('transform');
-      console.log(`[${label}] 玩家位置:`, transform
+      Logger.log(`[${label}] 玩家位置:`, transform
         ? `(${Math.round(transform.position.x)},${Math.round(transform.position.y)})`
         : 'null');
       this._collisionInitLogged = true;
@@ -637,7 +638,7 @@ export class SceneDiagnostics {
     scene.debugPanel = null;
     for (const panel of new Set([ownedPanel, currentPanel])) {
       if (!panel) continue;
-      console.log('[BaseGameScene][DebugPanel] 场景退出，清理调试面板', {
+      Logger.log('[BaseGameScene][DebugPanel] 场景退出，清理调试面板', {
         visible: panel.visible,
         elementConnected: panel._el?.isConnected || false
       });

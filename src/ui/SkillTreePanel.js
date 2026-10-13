@@ -10,6 +10,7 @@
  *            https://gitee.com/coderaaa/yijian18-engine
  ************************************************************/
 
+import { Logger } from '../core/Logger.js';
 import { UIElement } from './UIElement.js';
 
 /**
@@ -186,7 +187,7 @@ export class SkillTreePanel extends UIElement {
       if (this.skillTreeSystem.canLearnSkill(this.character, node.id)) {
         const success = this.skillTreeSystem.learnSkill(this.character, node.id);
         if (success) {
-          console.log(`成功学习技能: ${node.name}`);
+          Logger.log(`成功学习技能: ${node.name}`);
           // 触发技能学习事件
           this.onSkillLearned && this.onSkillLearned(node);
         }
@@ -203,7 +204,7 @@ export class SkillTreePanel extends UIElement {
   handleResetClick() {
     if (confirm('确定要重置技能树吗？这将返还所有技能点。')) {
       const returnedPoints = this.skillTreeSystem.resetSkillTree(this.character);
-      console.log(`技能树重置完成，返还 ${returnedPoints} 技能点`);
+      Logger.log(`技能树重置完成，返还 ${returnedPoints} 技能点`);
       this.selectedNode = null;
       // 触发技能重置事件
       this.onSkillReset && this.onSkillReset(returnedPoints);

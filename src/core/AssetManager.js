@@ -10,6 +10,7 @@
  *            https://gitee.com/coderaaa/yijian18-engine
  ************************************************************/
 
+import { Logger } from './Logger.js';
 import { PlaceholderAssets } from './PlaceholderAssets.js';
 import { AudioManager } from './AudioManager.js';
 import { parseSkeletonAsset } from '../animation/SkeletonAsset.js';
@@ -216,14 +217,14 @@ export class AssetManager {
      */
     async loadAll() {
         if (this.loadQueue.length === 0) {
-            console.log('AssetManager: No assets to load');
+            Logger.log('AssetManager: No assets to load');
             return;
         }
 
         const batch = this.loadQueue.splice(0, this.loadQueue.length);
         this._beginLoadBatch(batch.length);
 
-        console.log(`AssetManager: Loading ${batch.length} queued assets...`);
+        Logger.log(`AssetManager: Loading ${batch.length} queued assets...`);
 
         const promises = batch.map(async asset => {
             await this.loadAssetWithFallback(asset);
@@ -232,7 +233,7 @@ export class AssetManager {
 
         try {
             await Promise.all(promises);
-            console.log('AssetManager: All queued assets loaded successfully');
+            Logger.log('AssetManager: All queued assets loaded successfully');
         } catch (error) {
             console.error('AssetManager: Failed to load some assets', error);
 
@@ -285,7 +286,7 @@ export class AssetManager {
         ctx.fillText('Asset', 32, 42);
         
         this.images.set(key, canvas);
-        console.log(`AssetManager: Created fallback image for ${key}`);
+        Logger.log(`AssetManager: Created fallback image for ${key}`);
     }
 
     /**
@@ -346,15 +347,15 @@ export class AssetManager {
             .map(id => id.trim()))];
         if (ids.length === 0) return { loaded: [], count: 0 };
         this._beginLoadBatch(ids.length);
-        console.log(`AssetManager: Loading ${ids.length} targeted assets...`);
+        Logger.log(`AssetManager: Loading ${ids.length} targeted assets...`);
         try {
             const loaded = await Promise.all(ids.map(async id => {
                 const result = await this.loadAsset(id, options);
                 this._markLoadItemComplete();
-                console.log(`AssetManager: Loaded ${id} (${this.loadedCount}/${this.totalCount})`);
+                Logger.log(`AssetManager: Loaded ${id} (${this.loadedCount}/${this.totalCount})`);
                 return result;
             }));
-            console.log('AssetManager: Targeted assets loaded successfully');
+            Logger.log('AssetManager: Targeted assets loaded successfully');
             return { loaded, count: loaded.length };
         } finally {
             this._endLoadBatch();
@@ -708,7 +709,7 @@ export class AssetManager {
         this.totalCount = 0;
         this.loadProgress = 0;
         this._emitLoadProgress();
-        console.log('AssetManager: All assets cleared');
+        Logger.log('AssetManager: All assets cleared');
     }
 
     /**
@@ -728,7 +729,7 @@ export class AssetManager {
      * 用于快速开发，无需外部图片文件
      */
     loadPlaceholderAssets() {
-        console.log('AssetManager: Loading placeholder assets...');
+        Logger.log('AssetManager: Loading placeholder assets...');
 
         // 加载4x8动画精灵（玩家角色）
         this.loadAnimatedSpriteImage('player_animated', this.resolveAssetPath('images/girl.png'));
@@ -792,8 +793,8 @@ export class AssetManager {
             this.images.set(`particle_${particleType}`, texture);
         });
 
-        console.log('AssetManager: Placeholder assets loaded successfully');
-        console.log('AssetManager: 已加载的图片资源:', Array.from(this.images.keys()));
+        Logger.log('AssetManager: Placeholder assets loaded successfully');
+        Logger.log('AssetManager: 已加载的图片资源:', Array.from(this.images.keys()));
     }
 
     /**
@@ -812,10 +813,10 @@ export class AssetManager {
         const img = new Image();
         img.onload = () => {
             this.images.set(key, img);
-            console.log(`AssetManager: 成功加载真实精灵图 ${key} (${img.width}x${img.height})`);
+            Logger.log(`AssetManager: 成功加载真实精灵图 ${key} (${img.width}x${img.height})`);
         };
         img.onerror = () => {
-            console.log(`AssetManager: 无法加载 ${imagePath}，使用占位符`);
+            Logger.log(`AssetManager: 无法加载 ${imagePath}，使用占位符`);
         };
         img.src = imagePath;
     }
@@ -834,10 +835,10 @@ export class AssetManager {
         const img = new Image();
         img.onload = () => {
             this.images.set(key, img);
-            console.log(`AssetManager: 成功加载动画精灵图 ${key} (${img.width}x${img.height})`);
+            Logger.log(`AssetManager: 成功加载动画精灵图 ${key} (${img.width}x${img.height})`);
         };
         img.onerror = () => {
-            console.log(`AssetManager: 无法加载 ${imagePath}，使用占位符渲染`);
+            Logger.log(`AssetManager: 无法加载 ${imagePath}，使用占位符渲染`);
         };
         img.src = imagePath;
     }
@@ -863,8 +864,8 @@ export class AssetManager {
      * 注意：这些是占位符，实际游戏应该使用真实的音频文件
      */
     loadPlaceholderSounds() {
-        console.log('AudioManager: Placeholder sounds would be loaded here');
-        console.log('Note: Actual audio files should be added to assets/audio/ directory');
+        Logger.log('AudioManager: Placeholder sounds would be loaded here');
+        Logger.log('Note: Actual audio files should be added to assets/audio/ directory');
         
         // 示例：如果有真实音频文件，可以这样加载
         // this.audioManager.addSound('attack', 'assets/audio/attack.mp3');

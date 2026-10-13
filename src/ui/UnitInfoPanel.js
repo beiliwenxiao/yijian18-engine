@@ -15,6 +15,7 @@
  * 兵种信息面板 - 显示兵种相克信息和升级选项
  */
 
+import { Logger } from '../core/Logger.js';
 import { UnitSystem, UnitTypes, UnitNames } from '../systems/UnitSystem.js';
 
 /**
@@ -256,7 +257,7 @@ export class UnitInfoPanel {
         const newUnitType = upgradeOptions[keyNum - 1];
         stats.setUnitType(newUnitType);
         
-        console.log(`兵种升级: ${this.unitSystem.getUnitName(unitType)} -> ${this.unitSystem.getUnitName(newUnitType)}`);
+        Logger.log(`兵种升级: ${this.unitSystem.getUnitName(unitType)} -> ${this.unitSystem.getUnitName(newUnitType)}`);
         return true;
       }
     }

@@ -94,7 +94,7 @@ export class Logger {
             [LogLevel.ERROR]: '#e74c3c'
         };
         
-        console.log('Logger: Initialized with level', this.levelNames[this.level]);
+        Logger.log('Logger: Initialized with level', this.levelNames[this.level]);
     }
 
     /**
@@ -314,7 +314,7 @@ export class Logger {
      */
     setLevel(level) {
         this.level = level;
-        console.log('Logger: Level set to', this.levelNames[level]);
+        Logger.log('Logger: Level set to', this.levelNames[level]);
     }
 
     /**
@@ -359,7 +359,7 @@ export class Logger {
      */
     clearLogs() {
         this.logs = [];
-        console.log('Logger: All logs cleared');
+        Logger.log('Logger: All logs cleared');
     }
 
     /**
@@ -476,7 +476,7 @@ export class Logger {
         a.click();
         URL.revokeObjectURL(url);
 
-        console.log(`Logger: Logs downloaded as ${filename}`);
+        Logger.log(`Logger: Logs downloaded as ${filename}`);
     }
 
     /**

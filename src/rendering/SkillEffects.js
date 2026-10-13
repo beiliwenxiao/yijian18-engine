@@ -10,6 +10,8 @@
  *            https://gitee.com/coderaaa/yijian18-engine
  ************************************************************/
 
+import { Logger } from '../core/Logger.js';
+
 /**
  * SkillEffects.js
  * 技能特效系统 - 为不同技能创建粒子特效
@@ -32,7 +34,7 @@ export class SkillEffects {
     // 抛射物列表（如火球、箭矢等）
     this.projectiles = [];
     
-    console.log('SkillEffects: Initialized');
+    Logger.log('SkillEffects: Initialized');
   }
 
   /**

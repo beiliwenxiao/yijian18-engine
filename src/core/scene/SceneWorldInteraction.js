@@ -3,6 +3,7 @@
  * @project YiJian18-Engine - 跨平台2D/3D ECS游戏引擎
  ************************************************************/
 
+import { Logger } from '../Logger.js';
 import { ClickFeedbackRenderer } from '../../rendering/ClickFeedbackRenderer.js';
 import { InputEventType } from '../input/InputEvent.js';
 
@@ -40,7 +41,7 @@ export class SceneWorldInteraction {
       const dialogueUiVisible = scene.dialogueChoiceBox?.visible === true
         || scene.dialogueBox?.visible === true;
       if (button === 'right' && !dialogueUiVisible) {
-        console.info('[MoveProbe] dialogue active but UI hidden — not swallowing right-click (state desync?)');
+        Logger.info('[MoveProbe] dialogue active but UI hidden — not swallowing right-click (state desync?)');
       }
       if (!dialogueUiVisible) return false;
       // 对话选项弹窗（与文本框拆分）：优先命中选项按钮
@@ -56,7 +57,7 @@ export class SceneWorldInteraction {
       }
       // 对话期间即使点击框外，也不能穿透到世界移动。
       if (button === 'right') {
-        console.info('[MoveProbe] right-click swallowed by dialogue UI');
+        Logger.info('[MoveProbe] right-click swallowed by dialogue UI');
       }
       input.markMouseClickHandled();
       return true;
@@ -64,7 +65,7 @@ export class SceneWorldInteraction {
 
     if (scene.uiClickHandler.handleClick(mousePos.x, mousePos.y, button)) {
       if (button === 'right') {
-        console.info('[MoveProbe] right-click swallowed by HUD (uiClickHandler hit)');
+        Logger.info('[MoveProbe] right-click swallowed by HUD (uiClickHandler hit)');
       }
       input.markMouseClickHandled();
     } else if (button === 'left' && scene.backpackPanel?.visible) {
@@ -203,7 +204,7 @@ export class SceneWorldInteraction {
     if (!transform) return;
 
     try {
-      console.log('=== 轻功开始 ===');
+      Logger.log('=== 轻功开始 ===');
       const mouseScreenPos = input.getMousePosition();
       const mouseWorld = scene.camera.screenToWorld(mouseScreenPos.x, mouseScreenPos.y);
       if (scene.flightSystem?.startFlight(transform, mouseWorld.x, mouseWorld.y)) {

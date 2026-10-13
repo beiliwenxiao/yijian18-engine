@@ -15,13 +15,14 @@
  * ECS系统使用示例
  */
 
+import { Logger } from '../core/Logger.js';
 import { EntityFactory } from './EntityFactory.js';
 
 // 创建实体工厂
 const factory = new EntityFactory();
 
 // ========== 示例1: 创建玩家角色 ==========
-console.log('=== 示例1: 创建玩家角色 ===');
+Logger.log('=== 示例1: 创建玩家角色 ===');
 
 const player = factory.createPlayer({
   name: '勇者',
@@ -48,9 +49,9 @@ const player = factory.createPlayer({
   ]
 });
 
-console.log(`创建玩家: ${player.name} (${player.class})`);
-console.log(`实体ID: ${player.id}`);
-console.log(`实体类型: ${player.type}`);
+Logger.log(`创建玩家: ${player.name} (${player.class})`);
+Logger.log(`实体ID: ${player.id}`);
+Logger.log(`实体类型: ${player.type}`);
 
 // 获取组件
 const playerTransform = player.getComponent('transform');
@@ -59,15 +60,15 @@ const playerCombat = player.getComponent('combat');
 const playerMovement = player.getComponent('movement');
 const playerSprite = player.getComponent('sprite');
 
-console.log(`位置: (${playerTransform.position.x}, ${playerTransform.position.y})`);
-console.log(`生命值: ${playerStats.hp}/${playerStats.maxHp}`);
-console.log(`魔法值: ${playerStats.mp}/${playerStats.maxMp}`);
-console.log(`攻击力: ${playerStats.attack}`);
-console.log(`防御力: ${playerStats.defense}`);
-console.log(`技能数量: ${playerCombat.skills.length}`);
+Logger.log(`位置: (${playerTransform.position.x}, ${playerTransform.position.y})`);
+Logger.log(`生命值: ${playerStats.hp}/${playerStats.maxHp}`);
+Logger.log(`魔法值: ${playerStats.mp}/${playerStats.maxMp}`);
+Logger.log(`攻击力: ${playerStats.attack}`);
+Logger.log(`防御力: ${playerStats.defense}`);
+Logger.log(`技能数量: ${playerCombat.skills.length}`);
 
 // ========== 示例2: 创建敌人 ==========
-console.log('\n=== 示例2: 创建敌人 ===');
+Logger.log('\n=== 示例2: 创建敌人 ===');
 
 const enemy = factory.createEnemy({
   templateId: 'goblin',
@@ -83,19 +84,19 @@ const enemy = factory.createEnemy({
   aiType: 'aggressive'
 });
 
-console.log(`创建敌人: ${enemy.name}`);
-console.log(`模板ID: ${enemy.templateId}`);
-console.log(`AI类型: ${enemy.aiType}`);
+Logger.log(`创建敌人: ${enemy.name}`);
+Logger.log(`模板ID: ${enemy.templateId}`);
+Logger.log(`AI类型: ${enemy.aiType}`);
 
 const enemyStats = enemy.getComponent('stats');
-console.log(`生命值: ${enemyStats.hp}/${enemyStats.maxHp}`);
+Logger.log(`生命值: ${enemyStats.hp}/${enemyStats.maxHp}`);
 
 // ========== 示例3: 战斗系统 ==========
-console.log('\n=== 示例3: 战斗系统 ===');
+Logger.log('\n=== 示例3: 战斗系统 ===');
 
 // 设置攻击目标
 playerCombat.setTarget(enemy);
-console.log(`${player.name} 锁定目标: ${enemy.name}`);
+Logger.log(`${player.name} 锁定目标: ${enemy.name}`);
 
 // 执行攻击
 const currentTime = Date.now();
@@ -106,35 +107,35 @@ if (playerCombat.canAttack(currentTime)) {
   const damage = Math.max(1, playerStats.attack - enemyStats.defense);
   const actualDamage = enemyStats.takeDamage(damage);
   
-  console.log(`${player.name} 攻击 ${enemy.name}，造成 ${actualDamage} 点伤害`);
-  console.log(`${enemy.name} 剩余生命值: ${enemyStats.hp}/${enemyStats.maxHp}`);
+  Logger.log(`${player.name} 攻击 ${enemy.name}，造成 ${actualDamage} 点伤害`);
+  Logger.log(`${enemy.name} 剩余生命值: ${enemyStats.hp}/${enemyStats.maxHp}`);
   
   if (enemyStats.isDead()) {
-    console.log(`${enemy.name} 被击败了！`);
+    Logger.log(`${enemy.name} 被击败了！`);
   }
 }
 
 // 使用技能
-console.log('\n使用技能:');
+Logger.log('\n使用技能:');
 const skill = playerCombat.useSkill('slash', currentTime);
 if (skill) {
-  console.log(`${player.name} 使用技能: ${skill.name}`);
+  Logger.log(`${player.name} 使用技能: ${skill.name}`);
   
   // 消耗魔法值
   if (playerStats.consumeMana(skill.manaCost)) {
-    console.log(`消耗魔法值: ${skill.manaCost}`);
-    console.log(`剩余魔法值: ${playerStats.mp}/${playerStats.maxMp}`);
+    Logger.log(`消耗魔法值: ${skill.manaCost}`);
+    Logger.log(`剩余魔法值: ${playerStats.mp}/${playerStats.maxMp}`);
     
     // 技能伤害
     const skillDamage = skill.damage;
     enemyStats.takeDamage(skillDamage);
-    console.log(`技能造成 ${skillDamage} 点伤害`);
-    console.log(`${enemy.name} 剩余生命值: ${enemyStats.hp}/${enemyStats.maxHp}`);
+    Logger.log(`技能造成 ${skillDamage} 点伤害`);
+    Logger.log(`${enemy.name} 剩余生命值: ${enemyStats.hp}/${enemyStats.maxHp}`);
   }
 }
 
 // ========== 示例4: 移动系统 ==========
-console.log('\n=== 示例4: 移动系统 ===');
+Logger.log('\n=== 示例4: 移动系统 ===');
 
 // 设置移动路径
 playerMovement.setPath([
@@ -143,12 +144,12 @@ playerMovement.setPath([
   { x: 550, y: 400 }
 ]);
 
-console.log(`设置移动路径，共 ${playerMovement.path.length} 个路径点`);
-console.log(`移动状态: ${playerMovement.isMoving ? '移动中' : '静止'}`);
-console.log(`移动类型: ${playerMovement.movementType}`);
+Logger.log(`设置移动路径，共 ${playerMovement.path.length} 个路径点`);
+Logger.log(`移动状态: ${playerMovement.isMoving ? '移动中' : '静止'}`);
+Logger.log(`移动类型: ${playerMovement.movementType}`);
 
 // 模拟移动更新
-console.log('\n模拟移动:');
+Logger.log('\n模拟移动:');
 for (let i = 0; i < 3; i++) {
   playerMovement.calculateVelocityToTarget(playerTransform.position);
   
@@ -159,85 +160,85 @@ for (let i = 0; i < 3; i++) {
     playerMovement.velocity.y * deltaTime
   );
   
-  console.log(`帧 ${i + 1}: 位置 (${Math.round(playerTransform.position.x)}, ${Math.round(playerTransform.position.y)})`);
-  console.log(`  速度: (${Math.round(playerMovement.velocity.x)}, ${Math.round(playerMovement.velocity.y)})`);
-  console.log(`  朝向: ${playerMovement.facing}`);
+  Logger.log(`帧 ${i + 1}: 位置 (${Math.round(playerTransform.position.x)}, ${Math.round(playerTransform.position.y)})`);
+  Logger.log(`  速度: (${Math.round(playerMovement.velocity.x)}, ${Math.round(playerMovement.velocity.y)})`);
+  Logger.log(`  朝向: ${playerMovement.facing}`);
   
   // 检查是否到达目标点
   if (playerMovement.hasReachedTarget(playerTransform.position)) {
-    console.log('  到达路径点！');
+    Logger.log('  到达路径点！');
     if (!playerMovement.moveToNextPathPoint()) {
-      console.log('  到达最终目的地');
+      Logger.log('  到达最终目的地');
       break;
     }
   }
 }
 
 // ========== 示例5: 精灵动画 ==========
-console.log('\n=== 示例5: 精灵动画 ===');
+Logger.log('\n=== 示例5: 精灵动画 ===');
 
-console.log(`当前动画: ${playerSprite.currentAnimation}`);
+Logger.log(`当前动画: ${playerSprite.currentAnimation}`);
 
 // 播放行走动画
 playerSprite.playAnimation('walk');
-console.log(`切换到行走动画: ${playerSprite.currentAnimation}`);
+Logger.log(`切换到行走动画: ${playerSprite.currentAnimation}`);
 
 // 模拟动画更新
-console.log('\n模拟动画帧:');
+Logger.log('\n模拟动画帧:');
 for (let i = 0; i < 5; i++) {
   playerSprite.update(125); // 每帧125ms（8fps）
-  console.log(`帧 ${i + 1}: 当前帧索引 ${playerSprite.frame}, 精灵帧 ${playerSprite.getCurrentFrame()}`);
+  Logger.log(`帧 ${i + 1}: 当前帧索引 ${playerSprite.frame}, 精灵帧 ${playerSprite.getCurrentFrame()}`);
 }
 
 // 播放攻击动画
 playerSprite.playAnimation('attack');
-console.log(`\n切换到攻击动画: ${playerSprite.currentAnimation}`);
+Logger.log(`\n切换到攻击动画: ${playerSprite.currentAnimation}`);
 
 // ========== 示例6: 属性操作 ==========
-console.log('\n=== 示例6: 属性操作 ===');
+Logger.log('\n=== 示例6: 属性操作 ===');
 
-console.log(`初始状态:`);
-console.log(`  生命值: ${playerStats.hp}/${playerStats.maxHp} (${Math.round(playerStats.getHpPercent() * 100)}%)`);
-console.log(`  魔法值: ${playerStats.mp}/${playerStats.maxMp} (${Math.round(playerStats.getMpPercent() * 100)}%)`);
+Logger.log(`初始状态:`);
+Logger.log(`  生命值: ${playerStats.hp}/${playerStats.maxHp} (${Math.round(playerStats.getHpPercent() * 100)}%)`);
+Logger.log(`  魔法值: ${playerStats.mp}/${playerStats.maxMp} (${Math.round(playerStats.getMpPercent() * 100)}%)`);
 
 // 受到伤害
 const damage = 30;
 playerStats.takeDamage(damage);
-console.log(`\n受到 ${damage} 点伤害`);
-console.log(`  生命值: ${playerStats.hp}/${playerStats.maxHp} (${Math.round(playerStats.getHpPercent() * 100)}%)`);
+Logger.log(`\n受到 ${damage} 点伤害`);
+Logger.log(`  生命值: ${playerStats.hp}/${playerStats.maxHp} (${Math.round(playerStats.getHpPercent() * 100)}%)`);
 
 // 恢复生命值
 const healAmount = 20;
 const actualHeal = playerStats.heal(healAmount);
-console.log(`\n恢复 ${actualHeal} 点生命值`);
-console.log(`  生命值: ${playerStats.hp}/${playerStats.maxHp} (${Math.round(playerStats.getHpPercent() * 100)}%)`);
+Logger.log(`\n恢复 ${actualHeal} 点生命值`);
+Logger.log(`  生命值: ${playerStats.hp}/${playerStats.maxHp} (${Math.round(playerStats.getHpPercent() * 100)}%)`);
 
 // 恢复魔法值
 const manaRestore = 30;
 const actualManaRestore = playerStats.restoreMana(manaRestore);
-console.log(`\n恢复 ${actualManaRestore} 点魔法值`);
-console.log(`  魔法值: ${playerStats.mp}/${playerStats.maxMp} (${Math.round(playerStats.getMpPercent() * 100)}%)`);
+Logger.log(`\n恢复 ${actualManaRestore} 点魔法值`);
+Logger.log(`  魔法值: ${playerStats.mp}/${playerStats.maxMp} (${Math.round(playerStats.getMpPercent() * 100)}%)`);
 
 // ========== 示例7: 实体更新 ==========
-console.log('\n=== 示例7: 实体更新 ===');
+Logger.log('\n=== 示例7: 实体更新 ===');
 
-console.log('更新玩家实体...');
+Logger.log('更新玩家实体...');
 player.update(16.67); // 模拟一帧（60fps）
-console.log('更新完成');
+Logger.log('更新完成');
 
-console.log('\n更新敌人实体...');
+Logger.log('\n更新敌人实体...');
 enemy.update(16.67);
-console.log('更新完成');
+Logger.log('更新完成');
 
 // ========== 示例8: 实体销毁 ==========
-console.log('\n=== 示例8: 实体销毁 ===');
+Logger.log('\n=== 示例8: 实体销毁 ===');
 
-console.log(`敌人状态: ${enemy.active ? '活跃' : '已销毁'}`);
-console.log(`组件数量: ${enemy.components.size}`);
+Logger.log(`敌人状态: ${enemy.active ? '活跃' : '已销毁'}`);
+Logger.log(`组件数量: ${enemy.components.size}`);
 
 enemy.destroy();
-console.log('\n销毁敌人实体...');
-console.log(`敌人状态: ${enemy.active ? '活跃' : '已销毁'}`);
-console.log(`组件数量: ${enemy.components.size}`);
+Logger.log('\n销毁敌人实体...');
+Logger.log(`敌人状态: ${enemy.active ? '活跃' : '已销毁'}`);
+Logger.log(`组件数量: ${enemy.components.size}`);
 
-console.log('\n=== 示例完成 ===');
+Logger.log('\n=== 示例完成 ===');

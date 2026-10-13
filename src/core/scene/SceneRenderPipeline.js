@@ -10,6 +10,7 @@
  *            https://gitee.com/coderaaa/yijian18-engine
  ************************************************************/
 
+import { Logger } from '../Logger.js';
 import { GroundMarkerRenderer } from '../../rendering/GroundMarkerRenderer.js';
 import { OcclusionFadeController } from '../../rendering/OcclusionFade.js';
 
@@ -650,7 +651,7 @@ export class SceneRenderPipeline {
       scene.eventTargetFlash.render(ctx);
     }
     if (scene._debugParticleFrames > 0) {
-      console.log('【渲染】粒子系统活跃粒子数:', particleSystem.getActiveCount());
+      Logger.log('【渲染】粒子系统活跃粒子数:', particleSystem.getActiveCount());
       scene._debugParticleFrames--;
     }
     combatSystem?.renderSkillRangeIndicators(ctx);

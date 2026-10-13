@@ -10,6 +10,8 @@
  *            https://gitee.com/coderaaa/yijian18-engine
  ************************************************************/
 
+import { Logger } from '../core/Logger.js';
+
 /**
  * UnitSystem.js
  * 兵种升级系统 - 处理兵种相克、升级和战斗加成计算
@@ -150,7 +152,7 @@ export class UnitSystem {
     // 初始化相克表
     this.counterTable = new UnitCounterTable();
     
-    console.log('UnitSystem: 兵种升级系统已初始化');
+    Logger.log('UnitSystem: 兵种升级系统已初始化');
   }
   
   /**

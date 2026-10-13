@@ -8,6 +8,7 @@
  * 需求：13, 14, 15, 16, 17, 18
  */
 
+import { Logger } from '../../../src/core/Logger.js';
 import { BaseGameScene } from './BaseGameScene.js';
 
 export class Act3Scene extends BaseGameScene {
@@ -43,7 +44,7 @@ export class Act3Scene extends BaseGameScene {
     // 调用父类的 enter，初始化所有基础系统
     super.enter(data);
     
-    console.log('Act3Scene: 进入第三幕场景', data);
+    Logger.log('Act3Scene: 进入第三幕场景', data);
     
     // 重置玩家位置
     if (this.playerEntity) {
@@ -80,7 +81,7 @@ export class Act3Scene extends BaseGameScene {
     // 注册第三幕教程
     this.registerAct3Tutorials();
     
-    console.log('Act3Scene: 第三幕系统初始化完成');
+    Logger.log('Act3Scene: 第三幕系统初始化完成');
   }
 
   /**
@@ -202,7 +203,7 @@ export class Act3Scene extends BaseGameScene {
    * 发送通知
    */
   notify(message, type = 'info') {
-    console.log(`Act3Scene 通知: ${message}`);
+    Logger.log(`Act3Scene 通知: ${message}`);
     if (this.onNotification) {
       this.onNotification(message, type);
     }
@@ -244,7 +245,7 @@ export class Act3Scene extends BaseGameScene {
     if (this.dialogueSystem && !this.dialogueSystem.isDialogueActive()) {
       // 铜钱法器对话结束 -> 给予铜钱剑
       if (this.dialoguePhase === 'coin_artifact' && !this.coinArtifactDialogueCompleted) {
-        console.log('Act3Scene: 铜钱法器对话完成');
+        Logger.log('Act3Scene: 铜钱法器对话完成');
         this.coinArtifactDialogueCompleted = true;
         this.giveCoinSword();
       }

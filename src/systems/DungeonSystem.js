@@ -10,6 +10,7 @@
  *            https://gitee.com/coderaaa/yijian18-engine
  ************************************************************/
 
+import { Logger } from '../core/Logger.js';
 import { setTimeoutFn } from '../core/Timers.js';
 
 /**
@@ -782,7 +783,7 @@ export class DungeonSystem {
    * @param {string} reason
    */
   handleDungeonFail(instance, reason) {
-    console.log(`副本失败: ${reason}`);
+    Logger.log(`副本失败: ${reason}`);
     this.activeInstances.delete(instance.id);
   }
 
@@ -818,7 +819,7 @@ export class DungeonSystem {
       if (!template.isUnlocked && template.unlockCondition) {
         if (character.level >= (template.unlockCondition.minLevel || 0)) {
           template.unlock();
-          console.log(`解锁副本: ${template.name}`);
+          Logger.log(`解锁副本: ${template.name}`);
         }
       }
     }
@@ -829,7 +830,7 @@ export class DungeonSystem {
    */
   resetDailyCounts() {
     // 这个方法应该在每日重置时调用
-    console.log('重置每日副本次数');
+    Logger.log('重置每日副本次数');
   }
 
   /**

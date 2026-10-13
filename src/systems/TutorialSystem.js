@@ -22,6 +22,7 @@
  * 需求：2, 3, 4, 5, 11, 12, 37
  */
 
+import { Logger } from '../core/Logger.js';
 import { TutorialDefinitionRepository } from './TutorialDefinitionRepository.js';
 
 const matchesScope = (definition, scope = null) => {
@@ -234,16 +235,16 @@ export class TutorialSystem {
    * @returns {boolean} 是否显示成功
    */
   showTutorial(tutorialId, context = {}) {
-    console.log(`TutorialSystem: showTutorial 被调用, ID=${tutorialId}`);
+    Logger.log(`TutorialSystem: showTutorial 被调用, ID=${tutorialId}`);
     
     if (!this.enabled) {
-      console.log('TutorialSystem: 教程系统未启用');
+      Logger.log('TutorialSystem: 教程系统未启用');
       return false;
     }
 
     // 已完成或同一教程已在显示时视为幂等成功，避免事件重放失败。
     if (this.completedTutorials.has(tutorialId)) {
-      console.log(`TutorialSystem: 教程 ${tutorialId} 已完成，忽略重复展示请求`);
+      Logger.log(`TutorialSystem: 教程 ${tutorialId} 已完成，忽略重复展示请求`);
       return true;
     }
     if (this.currentTutorial?.id === tutorialId) return true;
@@ -262,7 +263,7 @@ export class TutorialSystem {
       return true;
     }
 
-    console.log(`TutorialSystem: 显示教程 ${tutorialId}`);
+    Logger.log(`TutorialSystem: 显示教程 ${tutorialId}`);
 
     // 设置当前教程
     this.currentTutorial = tutorial;
@@ -351,7 +352,7 @@ export class TutorialSystem {
 
     // 触发步骤显示回调
     if (this.onShowCallback) {
-      console.log('TutorialSystem: 调用 onShowCallback');
+      Logger.log('TutorialSystem: 调用 onShowCallback');
       this.onShowCallback(stepData, context);
     } else {
       console.warn('TutorialSystem: onShowCallback 未设置！');

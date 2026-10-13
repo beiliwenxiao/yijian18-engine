@@ -15,6 +15,7 @@
  * 移动系统 - 处理实体的移动逻辑
  */
 
+import { Logger } from '../core/Logger.js';
 import { PathfindingSystem } from './PathfindingSystem.js';
 
 /**
@@ -99,7 +100,7 @@ export class MovementSystem {
     // 玩家实体引用（用于相机跟随）
     this.playerEntity = null;
     
-    console.log('MovementSystem: Initialized');
+    Logger.log('MovementSystem: Initialized');
   }
 
   /**
@@ -632,7 +633,7 @@ export class MovementSystem {
     // 早退原因探针（右键丢命令定位）：点击被吞时也给出原因，避免「完全无响应」无从排查。
     const probeBlocked = reason => {
       const mp = this.inputManager.getMousePosition();
-      console.info(`[MoveProbe] click(${mp.x},${mp.y}) blocked: ${reason}`);
+      Logger.info(`[MoveProbe] click(${mp.x},${mp.y}) blocked: ${reason}`);
     };
     if (this.inputManager.getMouseButton() !== 2) {
       probeBlocked(`button=${this.inputManager.getMouseButton()}`);
@@ -646,7 +647,7 @@ export class MovementSystem {
     // 流程内分支探针：走到哪一步被拦截/接管
     const probe = reason => {
       const mp = this.inputManager.getMousePosition();
-      console.info(`[MoveProbe] click(${mp.x},${mp.y}) → ${reason}`);
+      Logger.info(`[MoveProbe] click(${mp.x},${mp.y}) → ${reason}`);
     };
 
     // 军团指挥接管：编组选择激活时，右键 = 对选中分队下达移动命令（不动玩家）

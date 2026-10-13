@@ -10,6 +10,7 @@
  *            https://gitee.com/coderaaa/yijian18-engine
  ************************************************************/
 
+import { Logger } from '../core/Logger.js';
 import { Scene } from '../core/Scene.js';
 
 /**
@@ -229,7 +230,7 @@ export class LoginScene extends Scene {
      * 开始按钮点击事件
      */
     onStartButtonClick() {
-        console.log('LoginScene: Start button clicked');
+        Logger.log('LoginScene: Start button clicked');
         
         // 触发场景切换（需要通过SceneManager）
         // 这将在GameEngine中处理

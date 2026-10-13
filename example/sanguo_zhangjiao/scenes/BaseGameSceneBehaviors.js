@@ -25,6 +25,7 @@
  * 第一幕和第二幕都继承此类
  */
 
+import { Logger } from '../../../src/core/Logger.js';
 import { Scene } from '../../../src/core/Scene.js';
 import { normalizePresentationProfile } from '../../../src/core/PresentationProfile.js';
 import presentationProfileData from '../config/presentation.json' with { type: 'json' };
@@ -251,7 +252,7 @@ export class BaseGameSceneBehaviors extends BaseGameSceneSetup {  /**
       }
     }
     
-    console.log('BaseGameScene: 装备变化', messages);
+    Logger.log('BaseGameScene: 装备变化', messages);
   }
 
   /**

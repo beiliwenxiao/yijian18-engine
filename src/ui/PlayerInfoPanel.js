@@ -10,6 +10,7 @@
  *            https://gitee.com/coderaaa/yijian18-engine
  ************************************************************/
 
+import { Logger } from '../core/Logger.js';
 import { UIElement } from './UIElement.js';
 import { ItemIconRenderer } from './ItemIconRenderer.js';
 
@@ -1062,7 +1063,7 @@ export class PlayerInfoPanel extends UIElement {
       const btn = this.attributeButtonRect;
       if (x >= btn.x && x <= btn.x + btn.width &&
           y >= btn.y && y <= btn.y + btn.height) {
-        console.log('PlayerInfoPanel: 点击属性加点按钮');
+        Logger.log('PlayerInfoPanel: 点击属性加点按钮');
         if (this.onAttributeAllocate) {
           this.onAttributeAllocate(this.player);
         }
@@ -1074,7 +1075,7 @@ export class PlayerInfoPanel extends UIElement {
     for (const [slotType, slot] of Object.entries(this.equipSlots)) {
       if (x >= slot.x && x <= slot.x + slot.width &&
           y >= slot.y && y <= slot.y + slot.height) {
-        console.log('PlayerInfoPanel: 点击装备槽', slotType);
+        Logger.log('PlayerInfoPanel: 点击装备槽', slotType);
         if (this.onEquipmentClick) {
           this.onEquipmentClick(slotType, button);
         }

@@ -10,6 +10,7 @@
  *            https://gitee.com/coderaaa/yijian18-engine
  ************************************************************/
 
+import { Logger } from '../../../src/core/Logger.js';
 import { ShapeRenderer } from '../../../src/rendering/ShapeRenderer.js';
 import { SceneObjectProjector } from '../../../src/core/scene/SceneObjectProjector.js';
 import { AtlasRegistry } from '../../../src/core/scene/AtlasRegistry.js';
@@ -203,14 +204,14 @@ export class Scene1Terrain {
     this._buildDecorations();
     // Terrain 只消费世界会话已经加载并验证的 canonical 数据，不自行读取文件或缓存。
     this._editorSceneId = editorSceneId;
-    console.log('[Scene1Terrain][Collision] 开始应用 canonical 场景数据', {
+    Logger.log('[Scene1Terrain][Collision] 开始应用 canonical 场景数据', {
       sceneId: editorSceneId,
       worldOffset: { ...this.worldOffset },
       initialCollisionShapes: this._collisionShapes.length,
       source: 'world-load-session'
     });
     this._applySceneData(sceneData);
-    console.log('[Scene1Terrain][Collision] 已应用 canonical 场景数据', {
+    Logger.log('[Scene1Terrain][Collision] 已应用 canonical 场景数据', {
       sceneId: editorSceneId,
       layerCount: sceneData.layers.length,
       collisionShapeCount: this._collisionShapes.length,
@@ -247,7 +248,7 @@ export class Scene1Terrain {
         if (!layer || !Array.isArray(layer.objects)) continue;
         for (const obj of layer.objects) {
           if (obj && obj.type === 'shape' && obj.collide && obj.points) {
-            console.log('[Scene1Terrain] _applySceneData 收到碰撞 shape 原始坐标', {
+            Logger.log('[Scene1Terrain] _applySceneData 收到碰撞 shape 原始坐标', {
               sceneId: this._editorSceneId,
               shapeId: obj.id,
               worldOffset: { ...this.worldOffset },
@@ -332,7 +333,7 @@ export class Scene1Terrain {
       this._treeColliders = null; // 重置碰撞缓存，下次按新装饰物重建
       // 标记：使用编辑器保存的顺序（深度），不再 Y-sort
       this._useEditorOrder = true;
-      console.log('Scene1Terrain: 已应用编辑器场景数据，装饰物数量 =', decorations.length, '（定义总数 =', totalDecoDefined, '）');
+      Logger.log('Scene1Terrain: 已应用编辑器场景数据，装饰物数量 =', decorations.length, '（定义总数 =', totalDecoDefined, '）');
     }
     
     // 3. 读取图层中的图片对象：普通 image/fill 留在地面层，显式 depthSort 的 image 进入实体 Y-sort。
@@ -396,7 +397,7 @@ export class Scene1Terrain {
             this._terrainEllipse = this._buildTerrainEllipseFromObject(obj, cx, cy, rx, ry);
             this._grassCanvas = null;          // 重建草地缓存
             this._combinedGroundCache = null;  // 重建合并缓存
-            console.log('Scene1Terrain: 应用编辑器椭圆', { cx, cy, rx, ry, fillMode: this._terrainEllipse.fillMode });
+            Logger.log('Scene1Terrain: 应用编辑器椭圆', { cx, cy, rx, ry, fillMode: this._terrainEllipse.fillMode });
           } else if (obj.type === 'shape') {
             // 其它 shape 使用与碰撞相同的世界投影结果。
             this._editorShapes.push(projectedObj);
@@ -1637,7 +1638,7 @@ export class Scene1Terrain {
     this._combinedGroundCache = canvas;
     this._combinedGroundCacheX = offsetX;
     this._combinedGroundCacheY = offsetY;
-    console.log(`Scene1Terrain: 合并地面缓存已构建 (${cacheW}x${cacheH})`);
+    Logger.log(`Scene1Terrain: 合并地面缓存已构建 (${cacheW}x${cacheH})`);
   }
 
   /**

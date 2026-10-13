@@ -15,6 +15,7 @@
  * 需求: 6, 9, 35
  */
 
+import { Logger } from '../core/Logger.js';
 import { UIElement } from './UIElement.js';
 import { InputHints } from '../core/input/InputHints.js';
 
@@ -85,7 +86,7 @@ export class DialogueBox extends UIElement {
     // presentation 图片懒加载缓存（src 路径 → HTMLImageElement）
     this._dynamicImages = {};
 
-    console.log('DialogueBox: 初始化完成');
+    Logger.log('DialogueBox: 初始化完成');
   }
 
   /** 应用 UI 编辑器保存的四种对话框布局矩形（未配置的类型回退构造尺寸）。 */

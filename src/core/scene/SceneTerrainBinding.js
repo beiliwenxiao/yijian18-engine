@@ -10,6 +10,7 @@
  *            https://gitee.com/coderaaa/yijian18-engine
  ************************************************************/
 
+import { Logger } from '../Logger.js';
 import { SceneObjectProjector } from './SceneObjectProjector.js';
 
 /**
@@ -75,7 +76,7 @@ export class SceneTerrainBinding {
       scene._buffZones = zones;
       if (loadedCount >= total) scene._buffZonesCollected = true;
       if (zones.length > 0 && !scene._buffZonesLogged) {
-        console.log(`[SceneTerrainBinding] 收集到 ${zones.length} 个 Buff 多边形 (${loadedCount}/${total} terrains loaded)`);
+        Logger.log(`[SceneTerrainBinding] 收集到 ${zones.length} 个 Buff 多边形 (${loadedCount}/${total} terrains loaded)`);
         scene._buffZonesLogged = true;
       }
     }

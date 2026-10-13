@@ -10,6 +10,7 @@
  *            https://gitee.com/coderaaa/yijian18-engine
  ************************************************************/
 
+import { Logger } from './core/Logger.js';
 import { GameEngine } from './core/GameEngine.js';
 import {
   resolveGameCanvas,
@@ -40,7 +41,7 @@ async function main() {
         exposeGameEngine(gameEngine);
 
         // 初始化游戏引擎
-        console.log('Initializing game engine...');
+        Logger.log('Initializing game engine...');
 
         // 更新加载进度
         updateLoadingProgress(0, 'Initializing game engine...');
@@ -51,7 +52,7 @@ async function main() {
         updateLoadingProgress(1, 'Loading complete!');
 
         // 启动游戏
-        console.log('Starting game...');
+        Logger.log('Starting game...');
         gameEngine.start();
 
         // 隐藏加载屏幕

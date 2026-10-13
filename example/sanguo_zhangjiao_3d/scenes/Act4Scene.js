@@ -11,6 +11,7 @@
  * 需求：19, 20, 21, 22, 23
  */
 
+import { Logger } from '../../../src/core/Logger.js';
 import { BaseGameScene } from './BaseGameScene.js';
 import { ClassSystem, ClassType, ClassNames } from '../../../src/systems/ClassSystem.js';
 import { SkillTreePanel } from '../../../src/ui/SkillTreePanel.js';
@@ -76,7 +77,7 @@ export class Act4Scene extends BaseGameScene {
     // 调用父类的 enter，初始化所有基础系统
     super.enter(data);
     
-    console.log('Act4Scene: 进入第四幕场景', data);
+    Logger.log('Act4Scene: 进入第四幕场景', data);
     
     // 重置玩家位置
     if (this.playerEntity) {
@@ -136,7 +137,7 @@ export class Act4Scene extends BaseGameScene {
     // 注册第四幕教程
     this.registerAct4Tutorials();
     
-    console.log('Act4Scene: 第四幕系统初始化完成');
+    Logger.log('Act4Scene: 第四幕系统初始化完成');
   }
 
   /**
@@ -355,7 +356,7 @@ export class Act4Scene extends BaseGameScene {
    */
   selectClass(classType) {
     if (this.classSelected) {
-      console.log('Act4Scene: 已经选择过职业');
+      Logger.log('Act4Scene: 已经选择过职业');
       return;
     }
 
@@ -390,7 +391,7 @@ export class Act4Scene extends BaseGameScene {
             // 其他职业使用默认基础兵种
             stats.setUnitType(classData.baseUnitType);
           }
-          console.log(`Act4Scene: 设置兵种类型为 ${stats.getUnitType()}`);
+          Logger.log(`Act4Scene: 设置兵种类型为 ${stats.getUnitType()}`);
         }
       }
     }
@@ -408,7 +409,7 @@ export class Act4Scene extends BaseGameScene {
     const className = ClassNames[classType];
     this.notify(`你选择了 ${className} 职业！`, 'success');
 
-    console.log(`Act4Scene: 选择职业 ${className}`);
+    Logger.log(`Act4Scene: 选择职业 ${className}`);
   }
 
   /**
@@ -515,7 +516,7 @@ export class Act4Scene extends BaseGameScene {
    * 发送通知
    */
   notify(message, type = 'info') {
-    console.log(`Act4Scene 通知: ${message}`);
+    Logger.log(`Act4Scene 通知: ${message}`);
     if (this.onNotification) {
       this.onNotification(message, type);
     }
@@ -579,13 +580,13 @@ export class Act4Scene extends BaseGameScene {
       // 介绍对话结束
       if (this.dialoguePhase === 'intro' && !this.introDialogueCompleted) {
         this.introDialogueCompleted = true;
-        console.log('Act4Scene: 介绍对话完成，可以点击教官选择职业了');
+        Logger.log('Act4Scene: 介绍对话完成，可以点击教官选择职业了');
       }
       // 职业选择对话结束 - 显示确认窗口
       else if (this.dialoguePhase === 'class_selection' && !this.classSelectionDialogueCompleted) {
         // 如果有待选择的职业且还没选择职业，显示确认窗口
         if (this.pendingClassType && !this.classSelected) {
-          console.log('Act4Scene: 显示确认窗口, pendingClassType:', this.pendingClassType);
+          Logger.log('Act4Scene: 显示确认窗口, pendingClassType:', this.pendingClassType);
           this.showClassConfirmation = true;
           this.classSelectionDialogueCompleted = true;
         }
@@ -677,13 +678,13 @@ export class Act4Scene extends BaseGameScene {
     
     // 点击确定按钮
     if (this.confirmButtonHovered) {
-      console.log('Act4Scene: 确认选择职业', this.pendingClassType);
+      Logger.log('Act4Scene: 确认选择职业', this.pendingClassType);
       
       // 如果选择的是战士，显示兵种选择窗口
       if (this.pendingClassType === ClassType.WARRIOR) {
         this.showClassConfirmation = false;
         this.showUnitSelection = true;
-        console.log('Act4Scene: 显示兵种选择窗口');
+        Logger.log('Act4Scene: 显示兵种选择窗口');
       } else {
         // 其他职业直接选择
         this.selectClass(this.pendingClassType);
@@ -695,7 +696,7 @@ export class Act4Scene extends BaseGameScene {
     }
     // 点击取消按钮
     else if (this.cancelButtonHovered) {
-      console.log('Act4Scene: 取消选择职业');
+      Logger.log('Act4Scene: 取消选择职业');
       this.showClassConfirmation = false;
       this.pendingClassType = null;
       this.classSelectionDialogueCompleted = false; // 重置对话完成标志，允许重新点击教官
@@ -760,7 +761,7 @@ export class Act4Scene extends BaseGameScene {
     
     // 点击刀盾兵按钮
     if (this.shieldSoldierButtonHovered) {
-      console.log('Act4Scene: 选择刀盾兵');
+      Logger.log('Act4Scene: 选择刀盾兵');
       this.selectedUnitType = 'shield_soldier';
       this.selectClass(ClassType.WARRIOR);
       this.showUnitSelection = false;
@@ -769,7 +770,7 @@ export class Act4Scene extends BaseGameScene {
     }
     // 点击长枪兵按钮
     else if (this.spearmanButtonHovered) {
-      console.log('Act4Scene: 选择长枪兵');
+      Logger.log('Act4Scene: 选择长枪兵');
       this.selectedUnitType = 'spearman';
       this.selectClass(ClassType.WARRIOR);
       this.showUnitSelection = false;
@@ -813,7 +814,7 @@ export class Act4Scene extends BaseGameScene {
       return;
     }
     
-    console.log('Act4Scene: 点击教官', clickedInstructor.name, clickedInstructor.classType);
+    Logger.log('Act4Scene: 点击教官', clickedInstructor.name, clickedInstructor.classType);
     
     // 保存选择的职业类型，用于对话结束后选择
     this.pendingClassType = clickedInstructor.classType;
@@ -835,7 +836,7 @@ export class Act4Scene extends BaseGameScene {
     
     this.inputManager.markMouseClickHandled();
     
-    console.log('Act4Scene: 开始职业对话', clickedInstructor.name);
+    Logger.log('Act4Scene: 开始职业对话', clickedInstructor.name);
   }
 
   /**
@@ -888,7 +889,7 @@ export class Act4Scene extends BaseGameScene {
       const now = Date.now();
       if (!this._lastNextSceneTime || now - this._lastNextSceneTime > 1000) {
         this._lastNextSceneTime = now;
-        console.log('Act4Scene: N键触发，切换到第五幕');
+        Logger.log('Act4Scene: N键触发，切换到第五幕');
         this.switchToNextScene();
       }
     }

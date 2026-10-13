@@ -10,6 +10,8 @@
  *            https://gitee.com/coderaaa/yijian18-engine
  ************************************************************/
 
+import { Logger } from './Logger.js';
+
 /**
  * 场景基类
  * 所有游戏场景都应继承此类
@@ -31,7 +33,7 @@ export class Scene {
      */
     enter(data = null) {
         this.isActive = true;
-        console.log(`Scene: Entering ${this.name}`);
+        Logger.log(`Scene: Entering ${this.name}`);
     }
 
     /**
@@ -125,7 +127,7 @@ export class Scene {
      */
     exit() {
         this.isActive = false;
-        console.log(`Scene: Exiting ${this.name}`);
+        Logger.log(`Scene: Exiting ${this.name}`);
     }
 
     /**

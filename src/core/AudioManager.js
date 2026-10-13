@@ -10,6 +10,8 @@
  *            https://gitee.com/coderaaa/yijian18-engine
  ************************************************************/
 
+import { Logger } from './Logger.js';
+
 /**
  * 音频管理器
  * 负责管理游戏音效和背景音乐
@@ -35,7 +37,7 @@ export class AudioManager {
         // 音频上下文（用于Web Audio API）
         this.audioContext = null;
         
-        console.log('AudioManager: Initialized');
+        Logger.log('AudioManager: Initialized');
     }
 
     /**
@@ -46,7 +48,7 @@ export class AudioManager {
             try {
                 const AudioContext = window.AudioContext || window.webkitAudioContext;
                 this.audioContext = new AudioContext();
-                console.log('AudioManager: Audio context initialized');
+                Logger.log('AudioManager: Audio context initialized');
             } catch (error) {
                 console.warn('AudioManager: Web Audio API not supported', error);
             }
@@ -71,7 +73,7 @@ export class AudioManager {
             instances: [] // 用于支持同时播放多个实例
         });
         
-        console.log(`AudioManager: Sound '${key}' added`);
+        Logger.log(`AudioManager: Sound '${key}' added`);
     }
 
     /**
@@ -91,7 +93,7 @@ export class AudioManager {
             baseVolume: options.volume ?? this.musicVolume
         });
         
-        console.log(`AudioManager: Music '${key}' added`);
+        Logger.log(`AudioManager: Music '${key}' added`);
     }
 
     /**
@@ -196,7 +198,7 @@ export class AudioManager {
                 this.currentMusic.play();
             }
             
-            console.log(`AudioManager: Playing music '${key}'`);
+            Logger.log(`AudioManager: Playing music '${key}'`);
             
         } catch (error) {
             console.warn(`AudioManager: Error playing music '${key}'`, error);
@@ -278,7 +280,7 @@ export class AudioManager {
     setMasterVolume(volume) {
         this.masterVolume = Math.max(0, Math.min(1, volume));
         this.updateAllVolumes();
-        console.log(`AudioManager: Master volume set to ${this.masterVolume}`);
+        Logger.log(`AudioManager: Master volume set to ${this.masterVolume}`);
     }
 
     /**
@@ -288,7 +290,7 @@ export class AudioManager {
     setSoundVolume(volume) {
         this.soundVolume = Math.max(0, Math.min(1, volume));
         this.updateAllVolumes();
-        console.log(`AudioManager: Sound volume set to ${this.soundVolume}`);
+        Logger.log(`AudioManager: Sound volume set to ${this.soundVolume}`);
     }
 
     /**
@@ -298,7 +300,7 @@ export class AudioManager {
     setMusicVolume(volume) {
         this.musicVolume = Math.max(0, Math.min(1, volume));
         this.updateAllVolumes();
-        console.log(`AudioManager: Music volume set to ${this.musicVolume}`);
+        Logger.log(`AudioManager: Music volume set to ${this.musicVolume}`);
     }
 
     /**
@@ -337,7 +339,7 @@ export class AudioManager {
             this.resumeMusic();
         }
         
-        console.log(`AudioManager: Muted = ${this.muted}`);
+        Logger.log(`AudioManager: Muted = ${this.muted}`);
     }
 
     /**
@@ -379,7 +381,7 @@ export class AudioManager {
         this.stopMusic();
         this.music.clear();
         
-        console.log('AudioManager: All audio cleared');
+        Logger.log('AudioManager: All audio cleared');
     }
 
     /**

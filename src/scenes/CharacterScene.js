@@ -10,6 +10,7 @@
  *            https://gitee.com/coderaaa/yijian18-engine
  ************************************************************/
 
+import { Logger } from '../core/Logger.js';
 import { Scene } from '../core/Scene.js';
 
 /**
@@ -573,7 +574,7 @@ export class CharacterScene extends Scene {
             position: { x: 640, y: 360 }
         };
 
-        console.log('CharacterScene: Character created', newCharacter);
+        Logger.log('CharacterScene: Character created', newCharacter);
 
         // 直接进入游戏场景
         this.enterGame(newCharacter);
@@ -644,7 +645,7 @@ export class CharacterScene extends Scene {
      * 选择已有角色
      */
     selectCharacter(character) {
-        console.log('CharacterScene: Character selected', character);
+        Logger.log('CharacterScene: Character selected', character);
         this.enterGame(character);
     }
 
@@ -652,7 +653,7 @@ export class CharacterScene extends Scene {
      * 进入游戏场景
      */
     enterGame(character) {
-        console.log('CharacterScene: Attempting to enter game with character:', character);
+        Logger.log('CharacterScene: Attempting to enter game with character:', character);
 
         if (!this.engine) {
             console.error('CharacterScene: engine is not injected');
@@ -666,7 +667,7 @@ export class CharacterScene extends Scene {
             return;
         }
 
-        console.log('CharacterScene: Switching to Game scene...');
+        Logger.log('CharacterScene: Switching to Game scene...');
         this.engine.sceneManager.switchTo('Game', { character });
     }
 

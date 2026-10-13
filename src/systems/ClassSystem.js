@@ -20,6 +20,7 @@
  * - AttributeSystem: 属性系统
  */
 
+import { Logger } from '../core/Logger.js';
 import { SkillTreeSystem } from './SkillTreeSystem.js';
 import { UnitSystem, UnitTypes } from './UnitSystem.js';
 import { AttributeSystem, AttributeType } from './AttributeSystem.js';
@@ -183,7 +184,7 @@ export class ClassSystem {
     // 初始化职业数据
     this.initializeClasses();
     
-    console.log('ClassSystem: 职业系统已初始化');
+    Logger.log('ClassSystem: 职业系统已初始化');
   }
   
   /**
@@ -425,7 +426,7 @@ export class ClassSystem {
     });
     this.syncClassSource(characterId);
 
-    console.log(`角色 ${characterId} 选择了职业: ${classData.displayName}`);
+    Logger.log(`角色 ${characterId} 选择了职业: ${classData.displayName}`);
     return true;
   }
 
@@ -547,7 +548,7 @@ export class ClassSystem {
     // 设置特化
     this.characterSpecializations.set(characterId, specializationId);
     
-    console.log(`角色 ${characterId} 选择了特化: ${specialization.name}`);
+    Logger.log(`角色 ${characterId} 选择了特化: ${specialization.name}`);
     return true;
   }
   
@@ -747,7 +748,7 @@ export class ClassSystem {
     // 给予属性点
     this.attributeSystem.onLevelUp(characterId, newLevel);
     
-    console.log(`角色 ${characterId} 升级到 ${newLevel} 级`);
+    Logger.log(`角色 ${characterId} 升级到 ${newLevel} 级`);
   }
   
   /**

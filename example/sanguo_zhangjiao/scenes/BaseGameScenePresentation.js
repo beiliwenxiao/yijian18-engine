@@ -10,6 +10,7 @@
  *            https://gitee.com/coderaaa/yijian18-engine
  ************************************************************/
 
+import { Logger } from '../../../src/core/Logger.js';
 import { applySceneRuntimeConfig, toggleSceneDebugPanel } from '../../../src/core/scene/RuntimeDebugWiring.js';
 import { EntityRenderer2D } from '../../../src/rendering/EntityRenderer2D.js';
 import { getNpcRenderStyle } from '../../../src/rendering/NpcRenderStyles.js';
@@ -21,7 +22,7 @@ import { BaseGameSceneGameplayHooks } from './BaseGameSceneGameplayHooks.js';
 /** 场景表现与兼容转发层；不拥有领域状态或生命周期 owner。 */
 export class BaseGameScenePresentation extends BaseGameSceneGameplayHooks {
   startTransition(mainText = '场景切换中...', subText = '') {
-    console.log('BaseGameScene: 开始场景过渡');
+    Logger.log('BaseGameScene: 开始场景过渡');
     this._transition.start(mainText, subText);
   }
 
@@ -302,7 +303,7 @@ export class BaseGameScenePresentation extends BaseGameSceneGameplayHooks {
       this.mapData.push(row);
     }
     this.isometricRenderer?.setMapData(this.mapData, null);
-    console.log('BaseGameScene: 生成等距地图', this.mapWidth, 'x', this.mapHeight);
+    Logger.log('BaseGameScene: 生成等距地图', this.mapWidth, 'x', this.mapHeight);
   }
 
   _ensureEntityRenderer() {
@@ -400,7 +401,7 @@ export class BaseGameScenePresentation extends BaseGameSceneGameplayHooks {
     this.inputManager = null;
     this.playerEntity = null;
 
-    console.log(`BaseGameScene: 退出场景 ${this.name}`);
+    Logger.log(`BaseGameScene: 退出场景 ${this.name}`);
     return true;
   }
 }

@@ -10,6 +10,7 @@
  *            https://gitee.com/coderaaa/yijian18-engine
  ************************************************************/
 
+import { Logger } from '../../../src/core/Logger.js';
 import { SceneFlowCoordinator } from '../../../src/core/scene/SceneFlowCoordinator.js';
 import { SceneGameLoaderBridge } from '../../../src/core/scene/SceneGameLoaderBridge.js';
 import { registerSceneTriggerActions } from '../../../src/core/scene/SceneTriggerActionProvider.js';
@@ -50,7 +51,7 @@ async function fireSceneEnterTriggers() {
     console.error('[DDScene][GameLoader] sceneEnter 触发器执行失败:', sceneId, sceneEnterResult.records);
     return { ok: false, code: 'sceneEnterTriggerFailed', records: sceneEnterResult.records };
   }
-  console.log('%c[DDScene][GameLoader] sceneEnter 触发器已执行:', 'color:#4CAF50', sceneId);
+  Logger.log('%c[DDScene][GameLoader] sceneEnter 触发器已执行:', 'color:#4CAF50', sceneId);
   return { ok: true, ...sceneEnterResult };
 }
 
@@ -132,7 +133,7 @@ function initializeGameLoader() {
         });
         this.applyRuntimeConfig(gameLoader.runtimeConfigSnapshot);
         const offTriggerLog = triggerSystem.on((event, trigger) => {
-          if (event === 'triggerStart') console.log('[DDScene][Trigger] 执行:', trigger.id, trigger.do);
+          if (event === 'triggerStart') Logger.log('[DDScene][Trigger] 执行:', trigger.id, trigger.do);
         });
         this.resourceScope?.track(offTriggerLog);
         if (!this.assetManager?.registerManifest) {
@@ -142,7 +143,7 @@ function initializeGameLoader() {
         this._resolveAssetManifestReady?.(manifestResult);
         this._resolveAssetManifestReady = null;
         this._rejectAssetManifestReady = null;
-        console.log('[DDScene][Assets] Manifest 索引完成，等待九宫格按需加载', manifestResult);
+        Logger.log('[DDScene][Assets] Manifest 索引完成，等待九宫格按需加载', manifestResult);
         this.entityRenderer2D?.clearCaches?.();
         // 玩家实体创建早于 Manifest 就绪（enter 同步创建），骨骼资产判定此刻才可完成——补挂
         const playerSprite = this.playerEntity?.getComponent?.('sprite');
@@ -178,7 +179,7 @@ function initializeGameLoader() {
       // sceneEnter 触发器不再在装配 ready 阶段等待（修复加载死锁）：intro 等编排触发器
       // 含「等待对话/教程完成」步骤，会等玩家交互——而加载页此时还盖着画面，玩家无法
       // 交互 → 双向死锁。改由 initGame 在隐藏加载屏后调用 fireSceneEnterTriggers()。
-      console.log('%c[DDScene][GameLoader] 装配完成（sceneEnter 延后触发），触发器数量:', 'color:#4CAF50', gameLoader.triggerSystem.triggers.length);
+      Logger.log('%c[DDScene][GameLoader] 装配完成（sceneEnter 延后触发），触发器数量:', 'color:#4CAF50', gameLoader.triggerSystem.triggers.length);
       return gameLoader;
     })).catch(this.resourceScope.guard(error => {
       this._rejectAssetManifestReady?.(error);

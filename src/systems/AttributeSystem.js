@@ -10,6 +10,8 @@
  *            https://gitee.com/coderaaa/yijian18-engine
  ************************************************************/
 
+import { Logger } from '../core/Logger.js';
+
 /**
  * AttributeSystem.js
  * 属性点分配系统 - 管理角色的五大属性点分配和效果计算
@@ -326,7 +328,7 @@ export class AttributeSystem {
     const pointsGained = 5;
     attributeData.addAvailablePoints(pointsGained);
     
-    console.log(`角色 ${characterId} 升级到 ${level} 级，获得 ${pointsGained} 属性点`);
+    Logger.log(`角色 ${characterId} 升级到 ${level} 级，获得 ${pointsGained} 属性点`);
   }
 
   /**
@@ -364,7 +366,7 @@ export class AttributeSystem {
     }
 
     attributeData.resetAttributes();
-    console.log(`角色 ${characterId} 的属性点已重置`);
+    Logger.log(`角色 ${characterId} 的属性点已重置`);
     return true;
   }
 

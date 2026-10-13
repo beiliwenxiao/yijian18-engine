@@ -10,6 +10,7 @@
  *            https://gitee.com/coderaaa/yijian18-engine
  ************************************************************/
 
+import { Logger } from '../../src/core/Logger.js';
 import { defineConfig } from 'vite';
 import { fileURLToPath } from 'url';
 import path from 'path';
@@ -32,7 +33,7 @@ function copyRuntimeDirsPlugin(outDir) {
         const to = path.resolve(outDir, dir);
         if (fs.existsSync(from)) {
           fs.cpSync(from, to, { recursive: true });
-          console.log(`[copy-runtime-dirs] 已拷贝 ${dir} -> ${to}`);
+          Logger.log(`[copy-runtime-dirs] 已拷贝 ${dir} -> ${to}`);
         }
       }
     }

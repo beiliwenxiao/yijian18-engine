@@ -15,6 +15,7 @@
  * 背包UI组件 - 显示和管理物品
  */
 
+import { Logger } from '../core/Logger.js';
 import { UIElement } from './UIElement.js';
 import { ItemRarity } from '../data/ItemData.js';
 import { ItemIconRenderer } from './ItemIconRenderer.js';
@@ -1261,7 +1262,7 @@ export class InventoryPanel extends UIElement {
       const option = this.contextMenu.options[optionIndex];
       const slotIndex = this.contextMenu.slotIndex;
       
-      console.log(`点击菜单选项: ${option.label}, 槽位: ${slotIndex}`);
+      Logger.log(`点击菜单选项: ${option.label}, 槽位: ${slotIndex}`);
       
       // 执行对应操作
       switch (option.action) {
@@ -1293,7 +1294,7 @@ export class InventoryPanel extends UIElement {
     const stack = inventory?.getSlot?.(slotIndex);
     if (!stack?.item || !this.onIntent) return;
     const item = stack.item;
-    console.log(`丢弃物品: ${item.name}`);
+    Logger.log(`丢弃物品: ${item.name}`);
     return this.onIntent('item.drop', {
       itemId: item.id,
       instanceId: item.instanceId || null,
@@ -1487,13 +1488,13 @@ export class InventoryPanel extends UIElement {
    */
   handleSlotLeftClick(slotIndex) {
     this.selectedSlot = slotIndex;
-    console.log(`选中槽位: ${slotIndex}`);
+    Logger.log(`选中槽位: ${slotIndex}`);
     const inventory = this.entity?.getComponent?.('inventory');
     const stack = inventory?.getSlot?.(slotIndex);
     if (!stack?.item || !this.onIntent) return;
     const item = stack.item;
     if (item.type === 'equipment') {
-      console.log(`尝试装备物品: ${item.name}, subType: ${item.subType}`);
+      Logger.log(`尝试装备物品: ${item.name}, subType: ${item.subType}`);
       return this.onIntent('item.equip', {
         itemId: item.id,
         instanceId: item.instanceId || null
@@ -1512,10 +1513,10 @@ export class InventoryPanel extends UIElement {
     if (!stack?.item?.usable || !this.onIntent) return;
     const item = stack.item;
     if (this.canUseItem && !this.canUseItem(item)) {
-      console.log(`物品 ${item.name} 暂时无法使用`);
+      Logger.log(`物品 ${item.name} 暂时无法使用`);
       return;
     }
-    console.log(`使用物品: ${item.name}`);
+    Logger.log(`使用物品: ${item.name}`);
     return this.onIntent('item.use', {
       itemId: item.id,
       instanceId: item.instanceId || null,
@@ -1662,7 +1663,7 @@ export class InventoryPanel extends UIElement {
     }
     
     // 输出到控制台
-    console.log('装备变化:', messages.join(' | '));
+    Logger.log('装备变化:', messages.join(' | '));
     
     // 触发通知回调
     if (this.onEquipmentChange) {

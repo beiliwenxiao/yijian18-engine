@@ -10,6 +10,7 @@
  *            https://gitee.com/coderaaa/yijian18-engine
  ************************************************************/
 
+import { Logger } from './Logger.js';
 import { GamepadManager } from './input/GamepadManager.js';
 import { InputHints } from './input/InputHints.js';
 
@@ -146,7 +147,7 @@ export class InputManager {
         window.addEventListener('keydown', this._eventHandlers.keydown);
         window.addEventListener('keyup', this._eventHandlers.keyup);
         
-        console.log('InputManager: 键盘事件监听器已绑定到 window');
+        Logger.log('InputManager: 键盘事件监听器已绑定到 window');
         
         this.canvas.addEventListener('mousedown', this._eventHandlers.mousedown);
         this.canvas.addEventListener('mouseup', this._eventHandlers.mouseup);
@@ -157,7 +158,7 @@ export class InputManager {
         this.canvas.addEventListener('touchend', this._eventHandlers.touchend, { passive: false });
         this.canvas.addEventListener('touchmove', this._eventHandlers.touchmove, { passive: false });
         
-        console.log('InputManager: Event listeners initialized');
+        Logger.log('InputManager: Event listeners initialized');
     }
 
     /**
@@ -198,7 +199,7 @@ export class InputManager {
 
         // 调试面板快捷键诊断：确认浏览器事件是否到达 InputManager，以及是否写入本帧按下状态
         if (isDebugPanelKey) {
-            console.log('[InputManager][DebugPanel] 收到反引号 keydown', {
+            Logger.log('[InputManager][DebugPanel] 收到反引号 keydown', {
                 key,
                 code: event.code,
                 repeat: event.repeat,
@@ -214,7 +215,7 @@ export class InputManager {
         if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' ', 'Tab'].includes(key) || isDebugPanelKey) {
             event.preventDefault();
             if (isDebugPanelKey) {
-                console.log('[InputManager][DebugPanel] 已阻止反引号键默认行为', {
+                Logger.log('[InputManager][DebugPanel] 已阻止反引号键默认行为', {
                     defaultPrevented: event.defaultPrevented
                 });
             }
@@ -823,6 +824,6 @@ export class InputManager {
         this.gamepad?.destroy?.();
         this.clear();
         this.clearHotkeys();
-        console.log('InputManager: Destroyed');
+        Logger.log('InputManager: Destroyed');
     }
 }

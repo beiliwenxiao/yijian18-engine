@@ -10,6 +10,7 @@
  *            https://gitee.com/coderaaa/yijian18-engine
  ************************************************************/
 
+import { Logger } from '../Logger.js';
 import { UILayoutLoader } from '../../ui/UILayoutLoader.js';
 import { PanelLayoutLoader } from '../../ui/PanelLayoutLoader.js';
 import { ItemIconRenderer } from '../../ui/ItemIconRenderer.js';
@@ -102,7 +103,7 @@ export class ScenePanelLayout {
       inventoryOptions: invOpts,
       isMobileLayout: scene.isMobileLayout === true || invOpts?.showTooltip === false,
       onAttributeAllocate: () => {
-        console.log('BaseGameScene: 属性加点按钮被点击');
+        Logger.log('BaseGameScene: 属性加点按钮被点击');
       },
       onEquipmentClick: (slotType, button) => scene._handleEquipmentSlotClick(slotType, button),
       onItemUse: (item, healAmount, manaAmount) => scene.onItemUsed(item, healAmount, manaAmount),
@@ -194,7 +195,7 @@ export class ScenePanelLayout {
       dialogueSystem: scene.dialogueSystem,
       portraits: PortraitsConfig,
       onDialogueEnd: () => {
-        console.log('BaseGameScene: 对话结束');
+        Logger.log('BaseGameScene: 对话结束');
       }
     });
 
@@ -400,7 +401,7 @@ export class ScenePanelLayout {
     scene.bottomControlBar?.setEntity?.(player || null);
     scene.playerStatusHUD?.setPlayer?.(player || null);
 
-    if (player && log) console.log('BaseGameScene: UI面板已绑定到玩家实体');
+    if (player && log) Logger.log('BaseGameScene: UI面板已绑定到玩家实体');
     return Boolean(player);
   }
 

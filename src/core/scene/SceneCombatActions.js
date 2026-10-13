@@ -11,6 +11,7 @@
  *            https://gitee.com/coderaaa/yijian18-engine
  ************************************************************/
 
+import { Logger } from '../Logger.js';
 import { IntentType } from '../input/GamepadCombatController.js';
 import { PadButton } from '../input/Xbox360Profile.js';
 import { AbilityRejectReason } from '../../systems/ability/AbilitySystem.js';
@@ -181,7 +182,7 @@ export class SceneCombatActions {
       : (scene.resolveClimbTarget?.({ entity: player, direction: { x: dirX, y: dirY } }) || null);
     if (scene.debugMode === true) {
       const pos = player.getComponent?.('transform')?.position;
-      console.log('[Climb] 跳跃解析攀爬目标:', climbTarget?.id || '未命中',
+      Logger.log('[Climb] 跳跃解析攀爬目标:', climbTarget?.id || '未命中',
         climbDetachCooldown > 0 ? `（脱离冷却 ${Math.round(climbDetachCooldown)}ms）` : '',
         climbTarget ? `mode=${climbTarget.mode}` : '', pos ? `player=(${Math.round(pos.x)},${Math.round(pos.y)})` : '');
     }
@@ -435,7 +436,7 @@ export class SceneCombatActions {
       scene.playerEntity, enemy, transform.position, targetTransform?.position || mouseWorld, performance.now() / 1000
     );
     if (success) {
-      console.log('BaseGameScene: 武器投掷成功', enemy ? '目标敌人' : '自由投掷');
+      Logger.log('BaseGameScene: 武器投掷成功', enemy ? '目标敌人' : '自由投掷');
       scene.inputManager.markMouseClickHandled();
     }
   }

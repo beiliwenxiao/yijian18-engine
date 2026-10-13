@@ -20,6 +20,7 @@
  * - 多步骤教程导航
  */
 
+import { Logger } from '../core/Logger.js';
 import { UIElement } from './UIElement.js';
 
 export class TutorialTooltip extends UIElement {
@@ -88,7 +89,7 @@ export class TutorialTooltip extends UIElement {
     this.stepSoundKey = 'tutorial_step';
     this.completeSoundKey = 'tutorial_complete';
     
-    console.log('TutorialTooltip: 初始化完成');
+    Logger.log('TutorialTooltip: 初始化完成');
   }
 
   /**
@@ -111,7 +112,7 @@ export class TutorialTooltip extends UIElement {
     this.updateCurrentStep();
     this.playShowSound();
     
-    console.log(`TutorialTooltip: 显示教程 "${tutorial.title}"`);
+    Logger.log(`TutorialTooltip: 显示教程 "${tutorial.title}"`);
   }
 
   /**
@@ -212,7 +213,7 @@ export class TutorialTooltip extends UIElement {
    * 跳过教程
    */
   skipTutorial() {
-    console.log('TutorialTooltip: 跳过教程');
+    Logger.log('TutorialTooltip: 跳过教程');
     this.hide();
     this.currentTutorial = null;
     this.currentStepIndex = 0;
@@ -226,7 +227,7 @@ export class TutorialTooltip extends UIElement {
    * 完成教程
    */
   completeTutorial() {
-    console.log('TutorialTooltip: 完成教程');
+    Logger.log('TutorialTooltip: 完成教程');
     this.playCompleteSound();
     this.hide();
     

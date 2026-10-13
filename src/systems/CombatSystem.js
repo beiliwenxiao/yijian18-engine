@@ -15,6 +15,7 @@
  * 战斗系统 - 处理目标选择、攻击、技能释放等战斗逻辑
  */
 
+import { Logger } from '../core/Logger.js';
 import { ElementSystem } from './ElementSystem.js';
 import { UnitSystem } from './UnitSystem.js';
 import { CombatResolver } from './resolvers/CombatResolver.js';
@@ -162,7 +163,7 @@ export class CombatSystem {
     this._logThrottleMap = new Map();
     this._logThrottleInterval = 1000;
 
-    console.log('CombatSystem: Initialized');
+    Logger.log('CombatSystem: Initialized');
   }
 
   // ── 战斗结算随机（§13 约定6）──
@@ -190,7 +191,7 @@ export class CombatSystem {
     const last = this._logThrottleMap.get(key) || 0;
     if (now - last < this._logThrottleInterval) return;
     this._logThrottleMap.set(key, now);
-    console.log(message);
+    Logger.log(message);
   }
 
   /** 注入领域效果量过滤器；返回旧过滤器，便于场景退出时恢复。 */
@@ -374,7 +375,7 @@ export class CombatSystem {
       if (clickedEnemy) {
         // 选中敌人
         this.selectTarget(clickedEnemy);
-        console.log(`CombatSystem: Selected target: ${clickedEnemy.name || clickedEnemy.id}`);
+        Logger.log(`CombatSystem: Selected target: ${clickedEnemy.name || clickedEnemy.id}`);
       } else {
         // 点击空白处，取消选中
         // 注意：这里不取消选中，因为点击空白处可能是移动指令
@@ -465,7 +466,7 @@ export class CombatSystem {
    */
   clearTarget() {
     if (this.selectedTarget) {
-      console.log('CombatSystem: Target cleared');
+      Logger.log('CombatSystem: Target cleared');
     }
     
     this.selectedTarget = null;
@@ -649,7 +650,7 @@ export class CombatSystem {
     const currentTime = this.now();
     // 调试日志（每秒只输出一次）
     if (this._lastDamageNumberLog == null || currentTime - this._lastDamageNumberLog > 1000) {
-      console.log(`[renderDamageNumbers] 正在渲染 ${this.damageNumbers.length} 个伤害数字`);
+      Logger.log(`[renderDamageNumbers] 正在渲染 ${this.damageNumbers.length} 个伤害数字`);
       this._lastDamageNumberLog = currentTime;
     }
 
@@ -665,7 +666,7 @@ export class CombatSystem {
       if (isWeaponCollision
         && (this._lastWeaponCollisionRenderLog == null
           || currentTime - this._lastWeaponCollisionRenderLog > 1000)) {
-        console.log(`[renderDamageNumbers] 武器碰撞伤害 世界坐标:(${dn.x.toFixed(0)}, ${dn.y.toFixed(0)}) -> 屏幕坐标:(${screenPos.x.toFixed(0)}, ${screenPos.y.toFixed(0)})`);
+        Logger.log(`[renderDamageNumbers] 武器碰撞伤害 世界坐标:(${dn.x.toFixed(0)}, ${dn.y.toFixed(0)}) -> 屏幕坐标:(${screenPos.x.toFixed(0)}, ${screenPos.y.toFixed(0)})`);
         this._lastWeaponCollisionRenderLog = currentTime;
       }
 
@@ -950,14 +951,14 @@ export class CombatSystem {
       
       // 检查玩家武器是否眩晕（无法格挡）
       if (this.weaponRenderer && this.weaponRenderer.stunned.active) {
-        console.log(`${attacker.name || attacker.id} 的攻击命中！玩家武器眩晕中，无法格挡`);
+        Logger.log(`${attacker.name || attacker.id} 的攻击命中！玩家武器眩晕中，无法格挡`);
         // 武器眩晕，无法格挡，继续正常攻击流程
       } else {
         // 武器未眩晕，检查是否有格挡标记
         const blockInfo = this.blockedAttacks.get(attacker.id);
         if (blockInfo && blockInfo.blocked) {
           // 攻击被格挡，不造成伤害
-          console.log(`${attacker.name || attacker.id} 的攻击被格挡！`);
+          Logger.log(`${attacker.name || attacker.id} 的攻击被格挡！`);
           
           // 显示格挡提示
           if (targetTransform && this.floatingTextManager) {
@@ -1505,7 +1506,7 @@ export class CombatSystem {
       || currentTime - this._lastDamageNumberCreateLog > 1000;
     // 调试日志保留，但高频群战时最多每秒输出一组。
     if (shouldLog) {
-      console.log(`[showDamageNumber] 位置: (${position?.x?.toFixed(0)}, ${position?.y?.toFixed(0)}), 伤害: ${damage}, 类型: ${damageType}`);
+      Logger.log(`[showDamageNumber] 位置: (${position?.x?.toFixed(0)}, ${position?.y?.toFixed(0)}), 伤害: ${damage}, 类型: ${damageType}`);
       this._lastDamageNumberCreateLog = currentTime;
     }
 
@@ -1525,7 +1526,7 @@ export class CombatSystem {
     };
 
     this.damageNumbers.push(damageNumber);
-    if (shouldLog) console.log(`[showDamageNumber] damageNumbers数组长度: ${this.damageNumbers.length}`);
+    if (shouldLog) Logger.log(`[showDamageNumber] damageNumbers数组长度: ${this.damageNumbers.length}`);
   }
 
   /**
@@ -1599,7 +1600,7 @@ export class CombatSystem {
       }
     }
     
-    console.log(`CombatSystem: Loaded ${combat.skills.length} skills for ${entity.name || entity.id}`);
+    Logger.log(`CombatSystem: Loaded ${combat.skills.length} skills for ${entity.name || entity.id}`);
   }
 
   /**
@@ -1637,7 +1638,7 @@ export class CombatSystem {
             if (this.selectedTarget) {
               this.tryUseWeaponAttack(this.playerEntity, skill, currentTime, entities);
             } else {
-              console.log('普通攻击需要选择目标');
+              Logger.log('普通攻击需要选择目标');
             }
           } 
           // 特殊处理：治疗技能（对自己释放）
@@ -1654,7 +1655,7 @@ export class CombatSystem {
             if (this.onMeditationSkill) {
               this.onMeditationSkill(skill);
             } else {
-              console.log('打坐技能需要场景支持');
+              Logger.log('打坐技能需要场景支持');
             }
           }
           else {
@@ -1695,7 +1696,7 @@ export class CombatSystem {
     
     // 检查冷却
     if (!combat.canUseSkill(skill.id, currentTime)) {
-      console.log(`技能 ${skill.name} 冷却中`);
+      Logger.log(`技能 ${skill.name} 冷却中`);
       return false;
     }
     
@@ -1707,7 +1708,7 @@ export class CombatSystem {
       this.weaponRenderer.getEnemiesInRange(casterTransform.position, entities, attackRange) : [];
     
     if (enemiesInRange.length === 0) {
-      console.log('攻击范围内没有敌人');
+      Logger.log('攻击范围内没有敌人');
       return false;
     }
     
@@ -1736,7 +1737,7 @@ export class CombatSystem {
       if (isLowSpeed) {
         // 低速攻击（< 10 km/h）：伤害为0-5随机值
         finalDamage = this._rngInt(0, 5); // 0-5
-        console.log(`低速攻击 (${speedKmh.toFixed(1)} km/h)，伤害: ${finalDamage}`);
+        Logger.log(`低速攻击 (${speedKmh.toFixed(1)} km/h)，伤害: ${finalDamage}`);
       } else {
         // 正常速度攻击（≥10 km/h）：计算正常伤害
         // 获取滑动伤害倍率
@@ -1780,10 +1781,10 @@ export class CombatSystem {
     
     // 显示攻击信息
     if (isLowSpeed) {
-      console.log(`${caster.name || caster.id} 低速攻击，命中 ${enemiesInRange.length} 个敌人，速度: ${speedKmh.toFixed(1)} km/h`);
+      Logger.log(`${caster.name || caster.id} 低速攻击，命中 ${enemiesInRange.length} 个敌人，速度: ${speedKmh.toFixed(1)} km/h`);
     } else {
       const damageMultiplier = this.weaponRenderer ? this.weaponRenderer.getSwipeDamageMultiplier() : 1.0;
-      console.log(`${caster.name || caster.id} 使用武器攻击，命中 ${enemiesInRange.length} 个敌人，伤害倍率: ${damageMultiplier.toFixed(2)}x`);
+      Logger.log(`${caster.name || caster.id} 使用武器攻击，命中 ${enemiesInRange.length} 个敌人，伤害倍率: ${damageMultiplier.toFixed(2)}x`);
     }
     
     return true;
@@ -1805,27 +1806,27 @@ export class CombatSystem {
     
     // 检查冷却
     if (!combat.canUseSkill(skill.id, currentTime)) {
-      console.log(`技能 ${skill.name} 冷却中`);
+      Logger.log(`技能 ${skill.name} 冷却中`);
       return false;
     }
     
     // 检查魔法值
     if (stats.mp < skill.manaCost) {
-      console.log(`魔法值不足，需要 ${skill.manaCost}，当前 ${stats.mp}`);
+      Logger.log(`魔法值不足，需要 ${skill.manaCost}，当前 ${stats.mp}`);
       return false;
     }
     
     // 检查目标（如果需要目标）
     let target = combat.target;
     if (skill.range > 0 && !target) {
-      console.log(`技能 ${skill.name} 需要目标`);
+      Logger.log(`技能 ${skill.name} 需要目标`);
       return false;
     }
     
     // 检查范围（如果有目标）
     if (target && skill.range > 0) {
       if (!this.isInRange(caster, target, skill.range)) {
-        console.log(`目标超出技能范围`);
+        Logger.log(`目标超出技能范围`);
         return false;
       }
     }
@@ -1840,7 +1841,7 @@ export class CombatSystem {
     // 应用技能效果
     this.applySkillEffects(caster, target, skill, currentTime, entities || []);
 
-    console.log(`${caster.name || caster.id} 使用技能 ${skill.name}`);
+    Logger.log(`${caster.name || caster.id} 使用技能 ${skill.name}`);
     return true;
   }
 
@@ -1862,13 +1863,13 @@ export class CombatSystem {
     
     // 检查冷却
     if (!combat.canUseSkill(skill.id, currentTime)) {
-      console.log(`技能 ${skill.name} 冷却中`);
+      Logger.log(`技能 ${skill.name} 冷却中`);
       return false;
     }
     
     // 检查魔法值
     if (stats.mp < skill.manaCost) {
-      console.log(`魔法值不足，需要 ${skill.manaCost}，当前 ${stats.mp}`);
+      Logger.log(`魔法值不足，需要 ${skill.manaCost}，当前 ${stats.mp}`);
       return false;
     }
     
@@ -1879,7 +1880,7 @@ export class CombatSystem {
       const distance = Math.sqrt(dx * dx + dy * dy);
       
       if (distance > skill.range) {
-        console.log(`目标位置超出技能范围`);
+        Logger.log(`目标位置超出技能范围`);
         return false;
       }
     }
@@ -1909,7 +1910,7 @@ export class CombatSystem {
       this.addSkillRangeIndicator(casterTransform.position, targetPos, skill);
     }
     
-    console.log(`${caster.name || caster.id} 在位置 (${Math.floor(targetPos.x)}, ${Math.floor(targetPos.y)}) 使用技能 ${skill.name}`);
+    Logger.log(`${caster.name || caster.id} 在位置 (${Math.floor(targetPos.x)}, ${Math.floor(targetPos.y)}) 使用技能 ${skill.name}`);
     return true;
   }
 
@@ -2368,7 +2369,7 @@ export class CombatSystem {
       );
     });
     
-    console.log(`AOE技能 ${skill.name} 命中 ${enemies.length} 个敌人`);
+    Logger.log(`AOE技能 ${skill.name} 命中 ${enemies.length} 个敌人`);
     
     // 对每个敌人造成伤害（传入技能名称）
     const kb = options.knockback || null;
@@ -2507,7 +2508,7 @@ export class CombatSystem {
    */
   applyBuff(target, skill) {
     // 简化实现，实际应该有完整的Buff系统
-    console.log(`应用Buff: ${skill.name}`);
+    Logger.log(`应用Buff: ${skill.name}`);
   }
 
   /**
@@ -2518,7 +2519,7 @@ export class CombatSystem {
    */
   applyEffect(caster, target, effect) {
     // 简化实现，实际应该有完整的效果系统
-    console.log(`应用效果: ${effect.type}`);
+    Logger.log(`应用效果: ${effect.type}`);
   }
 
   /**
@@ -2566,7 +2567,7 @@ export class CombatSystem {
    * @param {Entity} entity - 实体
    */
   handleDeath(entity, deathEvent = null) {
-    console.log(`${entity.name || entity.id} 死亡`);
+    Logger.log(`${entity.name || entity.id} 死亡`);
 
     // 清理该实体相关联的攻击预警（作为攻击者或作为目标），防长期运行泄漏
     this.attackTelegraphs.delete(entity.id);
@@ -2623,19 +2624,19 @@ export class CombatSystem {
   spawnLoot(entity) {
     const transform = entity.getComponent('transform');
     if (!transform) {
-      console.log('CombatSystem: 实体没有 transform 组件，无法掉落');
+      Logger.log('CombatSystem: 实体没有 transform 组件，无法掉落');
       return;
     }
     
-    console.log(`CombatSystem: 准备生成掉落物，位置: (${transform.position.x}, ${transform.position.y})`);
+    Logger.log(`CombatSystem: 准备生成掉落物，位置: (${transform.position.x}, ${transform.position.y})`);
     
     // 触发掉落事件，让场景处理掉落物生成
     if (this.onLootDrop) {
       const lootItems = this.generateLoot(entity);
-      console.log(`CombatSystem: 生成了 ${lootItems.length} 个掉落物`, lootItems);
+      Logger.log(`CombatSystem: 生成了 ${lootItems.length} 个掉落物`, lootItems);
       this.onLootDrop(transform.position, lootItems);
     } else {
-      console.log('CombatSystem: 掉落回调未设置！');
+      Logger.log('CombatSystem: 掉落回调未设置！');
     }
   }
 
@@ -2737,7 +2738,7 @@ export class CombatSystem {
    * @param {Entity} player - 玩家实体
    */
   handlePlayerDeath(player, deathEvent = null) {
-    console.log('玩家死亡，进入统一失败结算');
+    Logger.log('玩家死亡，进入统一失败结算');
     this.clearTarget();
     player.isDead = true;
     if (this.onPlayerDeathCallback) {
@@ -2761,7 +2762,7 @@ export class CombatSystem {
     const stats = player.getComponent('stats');
     if (!stats) return;
 
-    console.log('玩家复活');
+    Logger.log('玩家复活');
 
     // 显式绝对值优先，比例用于权威死亡/复活结算，避免 UI 或表现层直接修改属性。
     stats.fullRestore();
@@ -2795,7 +2796,7 @@ export class CombatSystem {
    */
   removeDeadEntity(entity) {
     entity.isDead = true;
-    console.log(`移除死亡实体: ${entity.name || entity.id}`);
+    Logger.log(`移除死亡实体: ${entity.name || entity.id}`);
     
     // 如果死亡的是当前目标，清除选中
     if (this.selectedTarget === entity) {
@@ -2893,7 +2894,7 @@ export class CombatSystem {
       enemy.isAI = true;
     }
 
-    console.log(`CombatSystem: 初始化大规模战斗 - 友军: ${this.largeBattle.allies.length}, 敌军: ${this.largeBattle.enemies.length}`);
+    Logger.log(`CombatSystem: 初始化大规模战斗 - 友军: ${this.largeBattle.allies.length}, 敌军: ${this.largeBattle.enemies.length}`);
   }
 
   /**
@@ -3126,7 +3127,7 @@ export class CombatSystem {
     // 检查友军全灭
     if (aliveAllies === 0) {
       this.largeBattle.battleState = 'enemy_victory';
-      console.log('CombatSystem: 战斗结束 - 敌军胜利');
+      Logger.log('CombatSystem: 战斗结束 - 敌军胜利');
       this.onBattleEnd('enemy_victory');
       return;
     }
@@ -3134,7 +3135,7 @@ export class CombatSystem {
     // 检查敌军全灭
     if (aliveEnemies === 0) {
       this.largeBattle.battleState = 'ally_victory';
-      console.log('CombatSystem: 战斗结束 - 友军胜利');
+      Logger.log('CombatSystem: 战斗结束 - 友军胜利');
       this.onBattleEnd('ally_victory');
       return;
     }
@@ -3142,14 +3143,14 @@ export class CombatSystem {
     // 检查士气崩溃
     if (this.largeBattle.allyMorale <= 0) {
       this.largeBattle.battleState = 'enemy_victory';
-      console.log('CombatSystem: 战斗结束 - 友军士气崩溃');
+      Logger.log('CombatSystem: 战斗结束 - 友军士气崩溃');
       this.onBattleEnd('enemy_victory');
       return;
     }
 
     if (this.largeBattle.enemyMorale <= 0) {
       this.largeBattle.battleState = 'ally_victory';
-      console.log('CombatSystem: 战斗结束 - 敌军士气崩溃');
+      Logger.log('CombatSystem: 战斗结束 - 敌军士气崩溃');
       this.onBattleEnd('ally_victory');
       return;
     }
@@ -3294,7 +3295,7 @@ export class CombatSystem {
   endLargeScaleBattle() {
     if (this.largeBattle) {
       this.largeBattle.active = false;
-      console.log('CombatSystem: 大规模战斗已结束');
+      Logger.log('CombatSystem: 大规模战斗已结束');
     }
   }
 
@@ -3936,7 +3937,7 @@ export class CombatSystem {
       this.onEnterCombatCallback();
     }
     
-    console.log('CombatSystem: 进入战斗状态');
+    Logger.log('CombatSystem: 进入战斗状态');
   }
 
   /**
@@ -3950,7 +3951,7 @@ export class CombatSystem {
       this.onExitCombatCallback();
     }
     
-    console.log('CombatSystem: 脱离战斗状态');
+    Logger.log('CombatSystem: 脱离战斗状态');
   }
 
   /**

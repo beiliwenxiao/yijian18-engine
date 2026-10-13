@@ -10,6 +10,7 @@
  *            https://gitee.com/coderaaa/yijian18-engine
  ************************************************************/
 
+import { Logger } from '../../../src/core/Logger.js';
 import { CollisionComponent } from '../../../src/ecs/components/CollisionComponent.js';
 import { SelectedCharacterStore } from '../data/SelectedCharacterStore.js';
 
@@ -74,7 +75,7 @@ export class DemoPlayerFactory {
     this.configurePlayer(scene, player);
 
     const sprite = player.getComponent('sprite');
-    console.log('BaseGameScene: 玩家精灵组件', {
+    Logger.log('BaseGameScene: 玩家精灵组件', {
       spriteSheet: sprite?.spriteSheet,
       useDirectionalSprite: sprite?.useDirectionalSprite,
       direction: sprite?.direction,
@@ -82,7 +83,7 @@ export class DemoPlayerFactory {
       height: sprite?.height
     });
 
-    console.log('BaseGameScene: 创建玩家实体', player);
+    Logger.log('BaseGameScene: 创建玩家实体', player);
     return player;
   }
 

@@ -10,6 +10,7 @@
  * 需求：32, 33, 34
  */
 
+import { Logger } from '../../../src/core/Logger.js';
 import { BaseGameScene } from './BaseGameScene.js';
 import { ProgressManager } from '../../../src/systems/ProgressManager.js';
 
@@ -56,7 +57,7 @@ export class Act6Scene extends BaseGameScene {
     // 调用父类的 enter，初始化所有基础系统
     super.enter(data);
     
-    console.log('Act6Scene: 进入第六幕场景', data);
+    Logger.log('Act6Scene: 进入第六幕场景', data);
     
     // 重置玩家位置
     if (this.playerEntity) {
@@ -97,14 +98,14 @@ export class Act6Scene extends BaseGameScene {
     // 注册第六幕对话
     this.registerAct6Dialogues();
     
-    console.log('Act6Scene: 第六幕系统初始化完成');
+    Logger.log('Act6Scene: 第六幕系统初始化完成');
   }
 
   /**
    * 处理战斗结果
    */
   processBattleResults(battleResults) {
-    console.log('Act6Scene: 处理战斗结果', battleResults);
+    Logger.log('Act6Scene: 处理战斗结果', battleResults);
     
     for (const result of battleResults) {
       if (result.victory) {
@@ -153,7 +154,7 @@ export class Act6Scene extends BaseGameScene {
       this.endingDescription = '你在乱世中艰难求生，虽然起义失败，但你活了下来。未来的路还很长。';
     }
     
-    console.log(`Act6Scene: 结局类型 - ${this.endingType} (${this.endingTitle})`);
+    Logger.log(`Act6Scene: 结局类型 - ${this.endingType} (${this.endingTitle})`);
   }
 
   /**
@@ -249,7 +250,7 @@ export class Act6Scene extends BaseGameScene {
       });
     }
     
-    console.log('Act6Scene: 奖励计算完成', this.completionRewards);
+    Logger.log('Act6Scene: 奖励计算完成', this.completionRewards);
   }
 
   /**
@@ -429,7 +430,7 @@ export class Act6Scene extends BaseGameScene {
    */
   showPrologueStats() {
     this.sceneState = 'stats';
-    console.log('Act6Scene: 显示序章统计', this.prologueStats);
+    Logger.log('Act6Scene: 显示序章统计', this.prologueStats);
     
     // 显示统计信息（在渲染中处理）
     setTimeout(() => {
@@ -443,7 +444,7 @@ export class Act6Scene extends BaseGameScene {
   showRewards() {
     this.sceneState = 'rewards';
     this.calculateRewards();
-    console.log('Act6Scene: 显示奖励', this.completionRewards);
+    Logger.log('Act6Scene: 显示奖励', this.completionRewards);
     
     // 显示奖励信息（在渲染中处理）
     setTimeout(() => {
@@ -456,7 +457,7 @@ export class Act6Scene extends BaseGameScene {
    */
   prepareInheritance() {
     this.sceneState = 'inherit';
-    console.log('Act6Scene: 准备进度继承');
+    Logger.log('Act6Scene: 准备进度继承');
     
     // 准备继承数据
     if (this.playerEntity) {
@@ -479,7 +480,7 @@ export class Act6Scene extends BaseGameScene {
       
       this.progressManager.saveProgress(progressData);
       
-      console.log('Act6Scene: 进度继承数据已保存', inheritData);
+      Logger.log('Act6Scene: 进度继承数据已保存', inheritData);
     }
     
     // 显示继承信息（在渲染中处理）
@@ -566,7 +567,7 @@ export class Act6Scene extends BaseGameScene {
    */
   completeScene() {
     this.sceneState = 'complete';
-    console.log('Act6Scene: 序章完成！');
+    Logger.log('Act6Scene: 序章完成！');
     
     // 显示完成提示
     if (this.playerEntity) {

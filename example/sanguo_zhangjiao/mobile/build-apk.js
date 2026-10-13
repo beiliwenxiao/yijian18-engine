@@ -1,3 +1,5 @@
+
+import { Logger } from '../../../src/core/Logger.js';
 // 调用 Android 工程的 gradlew 构建 debug APK，并拷贝到 release/ 目录
 const { execSync } = require('child_process');
 const fs = require('fs');
@@ -14,7 +16,7 @@ if (!fs.existsSync(androidDir)) {
 const isWin = process.platform === 'win32';
 const gradlew = isWin ? 'gradlew.bat' : './gradlew';
 
-console.log('[build-apk] 开始构建 debug APK ...');
+Logger.log('[build-apk] 开始构建 debug APK ...');
 try {
   execSync(`${gradlew} assembleDebug`, {
     cwd: androidDir,
@@ -39,4 +41,4 @@ fs.mkdirSync(releaseDir, { recursive: true });
 const apkDest = path.resolve(releaseDir, 'ZhangjiaoUprising.apk');
 fs.copyFileSync(apkSrc, apkDest);
 
-console.log(`[build-apk] 构建完成，APK 输出: ${apkDest}`);
+Logger.log(`[build-apk] 构建完成，APK 输出: ${apkDest}`);
