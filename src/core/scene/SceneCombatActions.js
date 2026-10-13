@@ -164,7 +164,7 @@ export class SceneCombatActions {
     return false;
   }
 
-  jumpByDirection(dirX = 0, dirY = 0, chargeDistance = 0) {
+  jumpByDirection(dirX = 0, dirY = 0, chargeDistance = 0, jumpOptions = null) {
     if (this._isLocked()) return false;
     const scene = this.scene;
     if (scene.dialogueSystem?.isDialogueActive?.() || scene.itemGainedPopup?.visible ||
@@ -212,7 +212,7 @@ export class SceneCombatActions {
     } else {
       direction = { x: 0, y: 0 }; // 点按原地跳
     }
-    return scene.jumpSystem.startJump(player, direction, { distance: range });
+    return scene.jumpSystem.startJump(player, direction, { distance: range, ...(jumpOptions || {}) });
   }
 
   flightByFacing() {

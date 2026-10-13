@@ -643,8 +643,8 @@ export class SceneRenderPipeline {
     }
     particleSystem.render(ctx, camera);
     presentation.worldAction?.render?.(ctx);
-    // 蓄力跳跃的头顶蓄力条（世界空间）。
-    scene.jumpChargeController?.render?.(ctx);
+    // 悬停瞄准跳（AIR_AIM）的范围圈/落点标记/剩余时间条（世界空间）。
+    scene.airAimController?.render?.(ctx);
     if (scene.eventTargetFlash) {
       scene.eventTargetFlash.prune();
       scene.eventTargetFlash.render(ctx);

@@ -40,7 +40,7 @@ import { MeleeAttackSystem } from '../../systems/MeleeAttackSystem.js';
 import { ZoneEffectSystem } from '../../systems/ZoneEffectSystem.js';
 import { FlightSystem } from '../../systems/FlightSystem.js';
 import { JumpSystem } from '../../systems/JumpSystem.js';
-import { JumpChargeController } from './JumpChargeController.js';
+import { AirAimController } from './AirAimController.js';
 import { LocomotionSystem } from '../../systems/LocomotionSystem.js';
 import { ClassSystem } from '../../systems/ClassSystem.js';
 import { ConstructionSystem } from '../../systems/ConstructionSystem.js';
@@ -89,11 +89,46 @@ export class SceneGameplaySystemAssembler {
         else scene.onPlayerTutorialAction?.('climb');
       }
     });
-    // 蓄力跳跃：松手时按蓄力时间决定落点距离并起跳（30~120px）。
-    scene.jumpChargeController = new JumpChargeController({ now });
-    scene.jumpChargeController.setJumpCallback(({ distance, holdMs, direction }) => {
-      const started = scene.jumpByDirection?.(direction?.x || 0, direction?.y || 0, distance) === true;
-      return { started, distance, holdMs, direction };
+    // 悬停瞄准跳（AIR_AIM）：按下即跳，按住超 apexHoldMs 进入悬停瞄准，松手跳向落点。
+    // 参数可由 scene.airAimConfig 覆盖（设计见 .kiro/steering/air-aim-jump-design.md）。
+    scene.jumpSystem.setLandCallback?.((entity, info) => {
+      scene.gameLoader?.triggerSystem?.fire?.('jump.landed', { entity, ...info });
+      if (info?.relocate === true) {
+        scene.gameLoader?.triggerSystem?.fire?.('jump.relocate.landed', {
+          entity, from: info.from, to: info.to
+        });
+      }
+    });
+    scene.airAimController = new AirAimController({ now, ...(scene.airAimConfig || {}) });
+    scene.airAimController.setPressJumpCallback(({ actor, moveDirection, distance, duration }) => {
+      const started = scene.jumpByDirection?.(
+        moveDirection?.x || 0,
+        moveDirection?.y || 0,
+        distance,
+        Number(duration) > 0 ? { duration } : null
+      ) === true;
+      return { started };
+    });
+    scene.airAimController.setHoverCallback(({ actor, expireAt }) => {
+      const started = scene.jumpSystem?.hoverJump?.(actor) === true;
+      if (started) {
+        scene.gameLoader?.triggerSystem?.fire?.('jump.aim.started', { entity: actor, expireAt });
+      }
+      return { started };
+    });
+    scene.airAimController.setRelocateCallback(({ actor, target, distance, direction }) => {
+      const started = scene.jumpSystem?.relocateJump?.(actor, direction, { distance }) === true;
+      if (started) {
+        scene.gameLoader?.triggerSystem?.fire?.('jump.aim.ended', { entity: actor, reason: 'release' });
+      }
+      return { started };
+    });
+    scene.airAimController.setResumeCallback(({ actor, reason }) => {
+      const resumed = scene.jumpSystem?.resumeFromHover?.(actor) === true;
+      if (resumed) {
+        scene.gameLoader?.triggerSystem?.fire?.('jump.aim.ended', { entity: actor, reason });
+      }
+      return { resumed };
     });
 
     scene.combatSystem = new CombatSystem({
@@ -150,10 +185,10 @@ export class SceneGameplaySystemAssembler {
       pathfindingSystem: scene.pathfindingSystem,
       pathfindingCellSize: 32,
       isMovementLocked: entity => scene.locomotionSystem?.isBusy?.(entity) === true,
-      // 蓄力跳期间左摇杆只更新 JumpChargeController 的落点方向，不得移动玩家；
+      // 跳跃跟踪/悬停瞄准期间移动输入被抑制（手柄摇杆用于落点）；悬停中角色本身也冻结；
       // 剧情倒地状态（S02 军团救援，scene.isPlayerDowned）下移动输入同样被抑制。
       isMoveInputSuppressed: entity => entity === scene.playerEntity
-        && (scene.jumpChargeController?.isCharging?.() === true
+        && (scene.airAimController?.isCharging?.() === true
           || scene.isPlayerDowned?.() === true),
       // 战斗状态不进行移动碰撞停顿/阻挡自动停止，保证战斗手感；战斗结束后恢复。
       combatLock: () => scene.combatSystem?.isInCombat?.() === true,
@@ -564,7 +599,7 @@ export class SceneGameplaySystemAssembler {
       ['gameplay.pickup', scene.pickupSystem],
       ['gameplay.gatheringProgress', scene.gatheringProgressPresenter, 'dispose'],
       ['presentation.worldAction', scene.worldActionPresenter, 'dispose', 'update'],
-      ['gameplay.jumpCharge', scene.jumpChargeController, 'dispose'],
+      ['gameplay.airAim', scene.airAimController, 'dispose'],
       ['gameplay.gathering', scene.gatheringSystem],
       ['gameplay.gatheringPuppet', scene.gatheringPuppetSystem, 'dispose'],
       ['gameplay.playerDefeat', scene.playerDefeatService],

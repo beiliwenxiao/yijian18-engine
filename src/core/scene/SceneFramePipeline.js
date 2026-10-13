@@ -294,8 +294,8 @@ export class SceneFramePipeline {
     }
     locomotionSystem?.update?.(deltaTime, { inputAxis: locomotionAxis });
 
-    // 蓄力跳跃：空格/Y 保持时由对应设备连续更新目标；虚拟跳跃按钮进入点选模式。
-    // 手柄用左摇杆更新相对落点，PC 用鼠标位置更新落点；触屏点选由 AIMING 优先级确认。
+    // 悬停瞄准跳（AIR_AIM）：按下即跳 → 按住超 apexHoldMs 悬停瞄准 → 松手跳向落点。
+    // 落点输入：手柄摇杆走 direction；PC 鼠标右键 / 触屏点选由 AIMING 优先级 selectTarget 提交。
     const controlledClimbActive = locomotionSystem?.getClimbPresentation?.(player) != null;
     const keyboardJumpHeld = scene.inputManager?.isKeyDown?.('space') === true;
     const gamepadJumpHeld = scene.inputManager?.isKeyDown?.('jump') === true;
@@ -345,14 +345,12 @@ export class SceneFramePipeline {
     const jumpAxis = worldInputBlocked || !gamepadJumpHeld
       ? null
       : (scene.inputManager?.getMoveAxis?.() || null);
-    const jumpTargetPosition = worldInputBlocked || gamepadJumpHeld || (!keyboardJumpHeld && !touchJumpHeld)
-      ? null
-      : scene.inputManager?.getMouseWorldPosition?.(camera) || null;
-    scene.jumpChargeController?.update?.({
+    scene.airAimController?.update?.({
       held: jumpHeld,
       actor: player,
+      isJumping: jumpSystem?.isJumping?.(player) === true,
+      moveDirection: worldInputBlocked ? null : (scene.inputManager?.getMoveAxis?.() || null),
       direction: jumpAxis,
-      targetPosition: jumpTargetPosition,
       blocked: worldInputBlocked
         || scene.playerEntity?.isDead === true
         || scene.dialogueSystem?.isDialogueActive?.() === true

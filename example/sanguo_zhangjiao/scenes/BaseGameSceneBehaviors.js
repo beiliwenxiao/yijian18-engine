@@ -334,8 +334,8 @@ export class BaseGameSceneBehaviors extends BaseGameSceneSetup {  /**
         ),
         onLocomotionInput: event => this.jumpByInput({ event }),
         chargedJump: {
-          canHandle: event => this.jumpChargeController?.canSelectTarget?.(event) === true,
-          handleInput: event => this.jumpChargeController?.selectTarget?.(event.world) !== null
+          canHandle: event => this.airAimController?.canSelectTarget?.(event) === true,
+          handleInput: event => this.airAimController?.selectTarget?.(event.world) !== null
         },
         dialogue: this._ensureDialogueFlow(),
         aiming: this._ensureSkillActions(),
@@ -613,27 +613,27 @@ export class BaseGameSceneBehaviors extends BaseGameSceneSetup {  /**
   }
 
   /**
-   * 键盘/手柄保持键由帧管线开始蓄力；虚拟跳跃按钮进入持续点选模式。
+   * 起跳键按下沿由帧管线立即起跳；虚拟跳跃按钮标记点选模式（触屏点落点即跳）。
    * @param {{event?:Object}} options
    * @returns {boolean}
    */
   jumpByInput({ event } = {}) {
     if (this.isPlayerActionLocked()) return false;
     if (event?.device === 'virtual') {
-      return this.jumpChargeController?.beginTargeting?.(this.playerEntity) === true;
+      return this.airAimController?.beginVirtualTargeting?.() === true;
     }
     return true;
   }
 
-  /** 触屏跳跃按钮：设置按住状态，驱动蓄力轮询。 */
+  /** 触屏跳跃按钮：设置按住状态，驱动 AIR_AIM 状态机轮询。 */
   setJumpHeld(held) {
     this._jumpHeld = !!held;
   }
 
-  /** 按指定方向起跳；chargeDistance > 0 时使用蓄力距离（30~120px），否则用默认距离。 */
-  jumpByDirection(dirX, dirY, chargeDistance = 0) {
+  /** 按指定方向起跳；chargeDistance > 0 时使用该距离，jumpOptions 透传 startJump（如 duration）。 */
+  jumpByDirection(dirX, dirY, chargeDistance = 0, jumpOptions = null) {
     if (this.isPlayerActionLocked()) return false;
-    const started = this._ensureCombatActions().jumpByDirection(dirX, dirY, chargeDistance) === true;
+    const started = this._ensureCombatActions().jumpByDirection(dirX, dirY, chargeDistance, jumpOptions) === true;
     if (started) {
       const tutorialFlow = this.context?.services?.tutorialFlow;
       if (tutorialFlow) tutorialFlow.notify('jumpPerformed');

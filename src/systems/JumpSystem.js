@@ -99,8 +99,15 @@ export class JumpSystem {
       mode: options.mode === 'power' ? 'power' : 'normal',
       elapsed: duration * startProgress,
       chargeDuration: Math.max(0, Number(options.chargeDuration) || 0),
+      // AIR_AIM 重定位跳：从悬停高度续跳（起始高度高于落点地面时按线性落差回落）。
+      baseElevation: Number.isFinite(Number(options.baseElevation))
+        ? Number(options.baseElevation)
+        : (transform.position.elevation || 0),
+      startElevationOffset: Math.max(0, Number(options.startElevationOffset) || 0),
+      startPos: { x: transform.position.x, y: transform.position.y },
+      relocate: options.relocate === true,
+      hover: false,
       horizontalProgress: 1 - (1 - startProgress) * (1 - startProgress),
-      baseElevation: transform.position.elevation || 0,
       direction: moving
         ? { x: direction.x / magnitude, y: direction.y / magnitude }
         : { x: 0, y: 0 },
@@ -119,6 +126,48 @@ export class JumpSystem {
     return this._active.has(entity);
   }
 
+  /** 注册落地回调：entity 落地时调用（含 AIR_AIM 重定位跳；from/to 为起跳/落地地面坐标）。 */
+  setLandCallback(fn) {
+    this.onLand = typeof fn === 'function' ? fn : null;
+  }
+
+  /** 悬停（AIR_AIM）：冻结当前跳跃进度，速度=0、重力挂起；resumeFromHover 恢复剩余弧线。 */
+  hoverJump(entity) {
+    const data = this._active.get(entity);
+    if (!data || data.hover) return false;
+    data.hover = true;
+    return true;
+  }
+
+  isHovering(entity) {
+    const data = this._active.get(entity);
+    return !!data && data.hover === true;
+  }
+
+  /** 解除悬停：从冻结进度继续播放原跳跃剩余段（超时/打断恢复）。 */
+  resumeFromHover(entity) {
+    const data = this._active.get(entity);
+    if (!data || !data.hover) return false;
+    data.hover = false;
+    return true;
+  }
+
+  /** AIR_AIM 重定位：解除悬停条目，从悬停点重新起跳到新落点（不重置 elevation，避免瞬移）。 */
+  relocateJump(entity, direction = { x: 0, y: 0 }, options = {}) {
+    const data = this._active.get(entity);
+    if (!data || !data.hover) return this.startJump(entity, direction, options);
+    const transform = entity?.getComponent?.('transform');
+    if (!transform) return false;
+    const startElevationOffset = Math.max(0, (transform.position.elevation || 0) - data.baseElevation);
+    this._active.delete(entity);
+    return this.startJump(entity, direction, {
+      ...options,
+      baseElevation: data.baseElevation,
+      startElevationOffset,
+      relocate: true
+    });
+  }
+
   update(deltaTime) {
     for (const [entity, data] of this._active) {
       const transform = entity?.getComponent?.('transform');
@@ -126,6 +175,8 @@ export class JumpSystem {
         this._active.delete(entity);
         continue;
       }
+      // 悬停（AIR_AIM）：推进全部冻结，位置与高度保持不变。
+      if (data.hover) continue;
       data.elapsed += Math.max(0, deltaTime || 0);
       if (data.elapsed < data.chargeDuration) {
         transform.position.elevation = data.baseElevation;
@@ -139,13 +190,19 @@ export class JumpSystem {
       // 落点由起跳瞬间的方向与距离锁定，滞空期间不再调整位置。
       transform.position.x += data.direction.x * step;
       transform.position.y += data.direction.y * step;
-      transform.position.elevation = data.baseElevation +
-        data.peakHeight * 4 * progress * (1 - progress);
+      transform.position.elevation = data.baseElevation
+        + data.startElevationOffset * (1 - progress)
+        + data.peakHeight * 4 * progress * (1 - progress);
       data.horizontalProgress = horizontal;
       if (progress >= 1) {
         transform.position.elevation = data.baseElevation;
         this._emitLandingSmoke(transform.position.x, transform.position.y);
         this._active.delete(entity);
+        this.onLand?.(entity, {
+          from: data.startPos || null,
+          to: { x: transform.position.x, y: transform.position.y },
+          relocate: data.relocate === true
+        });
       }
     }
   }
