@@ -21,7 +21,7 @@
  *   - flipX 通过整体 x 镜像实现；透明度遵循调用方 ctx.globalAlpha
  */
 
-import { SKELETON_ATTACHMENT_TYPES } from '../animation/SkeletonAsset.js';
+import { SKELETON_ATTACHMENT_TYPES, resolveAttachmentOffset, resolveDirectionKey } from '../animation/SkeletonAsset.js';
 
 const DEG2RAD = Math.PI / 180;
 
@@ -75,9 +75,11 @@ export class SkeletonRenderer {
       ctx.translate(boneWorld.x, boneWorld.y);
       ctx.rotate(boneWorld.rad);
       ctx.scale(boneWorld.sx, boneWorld.sy);
-      ctx.translate(attachment.x, attachment.y);
-      ctx.rotate((attachment.rot || 0) * DEG2RAD);
-      if (attachment.flipX) ctx.scale(-1, 1);   // 附件水平镜像（背面长矛等视角切换）
+      // 方向性附件偏移（背挂武器等按朝向摆位）：side/up 覆盖缺省时逐字段回退顶层值
+      const directionOverride = resolveAttachmentOffset(attachment, resolveDirectionKey(sprite?.direction));
+      ctx.translate(directionOverride?.x ?? attachment.x, directionOverride?.y ?? attachment.y);
+      ctx.rotate(((directionOverride?.rot ?? attachment.rot) || 0) * DEG2RAD);
+      if ((directionOverride?.flipX ?? attachment.flipX) === true) ctx.scale(-1, 1);   // 附件水平镜像（背面长矛等视角切换）
 
       const drawW = attachment.width > 0 ? attachment.width : source.sw;
       const drawH = attachment.height > 0 ? attachment.height : source.sh;

@@ -872,65 +872,6 @@
           "path": "s01Survival.shelterExitedAfterOvernight",
           "target": "story",
           "value": true
-        },
-        {
-          "path": "s01Survival.pursuit",
-          "target": "story",
-          "value": {
-            "active": true,
-            "killed": 0,
-            "spawned": 3
-          }
-        }
-      ]
-    }
-  },
-  {
-    "commandType": "state.transaction",
-    "id": "story.s01.chase.kill",
-    "name": "追击战击杀计数",
-    "transaction": {
-      "when": {
-        "all": [
-          {
-            "equals": true,
-            "path": "story.s01Survival.pursuit.active"
-          },
-          {
-            "lte": 2,
-            "path": "story.s01Survival.pursuit.killed"
-          }
-        ]
-      },
-      "writes": [
-        {
-          "path": "s01Survival.pursuit.killed",
-          "target": "story",
-          "value": {
-            "$add": [
-              {
-                "$get": "story.s01Survival.pursuit.killed"
-              },
-              1
-            ]
-          }
-        },
-        {
-          "path": "s01Survival.pursuit.spawned",
-          "target": "story",
-          "value": {
-            "$min": [
-              3,
-              {
-                "$add": [
-                  {
-                    "$get": "story.s01Survival.pursuit.spawned"
-                  },
-                  2
-                ]
-              }
-            ]
-          }
         }
       ]
     }
@@ -945,10 +886,6 @@
           {
             "equals": true,
             "path": "story.s01Survival.overnightCompleted"
-          },
-          {
-            "equals": true,
-            "path": "story.s01Survival.pursuit.active"
           },
           {
             "equals": false,
@@ -1034,11 +971,6 @@
           "path": "specialFaintRescueType",
           "target": "story",
           "value": null
-        },
-        {
-          "path": "s01Survival.pursuit.active",
-          "target": "story",
-          "value": false
         },
         {
           "path": "unlockedScenes",

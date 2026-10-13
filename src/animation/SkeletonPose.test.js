@@ -85,6 +85,51 @@ describe('sampleClip', () => {
     expect(sampleClip(clip, 99999, rest).get('child').rot).toBe(90);
   });
 
+  it('循环剪辑尾段自动环绕：最后关键帧之后与首帧插值，t=durationMs 恰好回到首帧姿态', () => {
+    const skeleton = parseSkeletonAsset({
+      schemaVersion: 1,
+      skeletonId: 'skeleton.loop',
+      bones: [
+        { id: 'root', parent: null, x: 0, y: 0 },
+        { id: 'child', parent: 'root', x: 0, y: -50, length: 20 }
+      ],
+      slots: [],
+      clips: [
+        {
+          name: 'bob',
+          durationMs: 1000,
+          loop: true,
+          tracks: [
+            {
+              bone: 'child',
+              keys: [
+                { t: 0, y: -50 },
+                { t: 400, y: -30 }
+              ]
+            }
+          ]
+        }
+      ]
+    });
+    const rest = createRestLocalPose(skeleton);
+    const clip = skeleton.clips.get('bob');
+    // 尾段中点（700ms）：-30 与 -50 的中点
+    expect(sampleClip(clip, 700, rest).get('child').y).toBeCloseTo(-40);
+    // t=durationMs 恰好等于首帧姿态 → 循环回绕点无跳变
+    expect(sampleClip(clip, 1000, rest).get('child').y).toBeCloseTo(-50);
+    expect(sampleClip(clip, 0, rest).get('child').y).toBeCloseTo(-50);
+    // 中段插值不受影响
+    expect(sampleClip(clip, 200, rest).get('child').y).toBeCloseTo(-40);
+  });
+
+  it('非循环剪辑尾段保持 hold 最后一帧（一次性动作语义不变）', () => {
+    const skeleton = buildSkeleton();
+    const rest = createRestLocalPose(skeleton);
+    const clip = skeleton.clips.get('turn');
+    expect(clip.loop).toBe(false);
+    expect(sampleClip(clip, 1000, rest).get('child').rot).toBe(90);
+  });
+
   it('无轨道骨骼回退静止姿态', () => {
     const skeleton = buildSkeleton();
     const rest = createRestLocalPose(skeleton);

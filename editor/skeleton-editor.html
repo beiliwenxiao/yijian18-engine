@@ -32,11 +32,27 @@
         .se-header .spacer { flex: 1; }
         #se-toast { font-size: 12px; color: #ffd479; min-width: 220px; text-align: right; }
 
-        .se-main { flex: 1; display: grid; grid-template-columns: 230px 1fr 280px; grid-template-rows: 1fr 218px; gap: 6px; padding: 6px; min-height: 0; }
+        .se-main { flex: 1; display: grid; grid-template-columns: 230px 6px 1fr 6px 280px; grid-template-rows: 1fr 6px 218px; gap: 6px; padding: 6px; min-height: 0; }
         .se-panel { background: #101830; border: 1px solid #26355c; border-radius: 6px; overflow: auto; padding: 8px; }
         .se-panel h3 { font-size: 13px; color: #7ec8ff; margin: 4px 0 8px; border-bottom: 1px solid #26355c; padding-bottom: 4px; }
         .se-panel.center { display: flex; flex-direction: column; overflow: hidden; padding: 0; }
-        .se-panel.bottom { grid-column: 2 / 4; display: flex; flex-direction: column; overflow: hidden; }
+        .se-panel.bottom { display: flex; flex-direction: column; overflow: hidden; }
+
+        /* 栏位拖动分隔条（左/右调宽度，下调高度；双击恢复默认） */
+        .se-resizer { background: #2a3a5e; border-radius: 3px; position: relative; touch-action: none; transition: background .15s; }
+        .se-resizer.vertical { cursor: col-resize; }
+        .se-resizer.horizontal { cursor: row-resize; }
+        .se-resizer.vertical::after { content: ''; position: absolute; top: calc(50% - 24px); left: 2px; width: 2px; height: 48px; border-left: 1px solid rgba(255,255,255,.35); border-right: 1px solid rgba(255,255,255,.2); }
+        .se-resizer.horizontal::after { content: ''; position: absolute; left: calc(50% - 24px); top: 2px; height: 2px; width: 48px; border-top: 1px solid rgba(255,255,255,.35); border-bottom: 1px solid rgba(255,255,255,.2); }
+        .se-resizer:hover, .se-resizer.dragging { background: #4CAF50; }
+
+        #se-left { grid-column: 1; grid-row: 1 / 4; }
+        #se-resizer-left { grid-column: 2; grid-row: 1 / 4; }
+        .se-panel.center { grid-column: 3; grid-row: 1; }
+        #se-resizer-right { grid-column: 4; grid-row: 1; }
+        #se-inspector { grid-column: 5; grid-row: 1; }
+        #se-resizer-bottom { grid-column: 3 / 6; grid-row: 2; }
+        .se-panel.bottom { grid-column: 3 / 6; grid-row: 3; }
 
         #se-canvas { flex: 1; min-height: 0; background: #0d1226; cursor: crosshair; display: block; width: 100%; }
 
@@ -73,6 +89,10 @@
         .se-tl-row .lane { flex: 1; height: 100%; position: relative; background: repeating-linear-gradient(to right, #131c36 0, #131c36 39px, #1a2440 39px, #1a2440 40px); cursor: crosshair; }
         .se-tl-key { position: absolute; top: 50%; width: 10px; height: 10px; background: #ffd479; transform: translate(-50%, -50%) rotate(45deg); border: 1px solid #8a6a1c; cursor: pointer; }
         .se-tl-key.selected { background: #ff9a3c; outline: 2px solid #fff; }
+        .se-tl-key.multi-selected { background: #4CAF50; border-color: #fff; }
+        .se-tl-marquee { position: absolute; border: 1px solid #4CAF50; background: rgba(76, 175, 80, 0.14); pointer-events: none; z-index: 5; }
+        .se-tl-key-ghost { background: transparent; border: 1px dashed #ffd479; cursor: default; pointer-events: none; transform: translate(-50%, -50%) rotate(45deg); }
+        .se-tl-loop-tie { position: absolute; top: 50%; height: 0; border-top: 1px dashed rgba(255, 212, 121, 0.45); pointer-events: none; right: 0; }
         #se-tl-playhead { position: absolute; top: 0; bottom: 0; width: 2px; background: #ff5a5a; pointer-events: none; }
         .se-empty { color: #5a6a90; font-size: 12px; padding: 8px; text-align: center; }
     </style>
@@ -144,6 +164,8 @@
             <div id="se-preset-lib" style="display:none;"></div>
         </div>
 
+        <div class="se-resizer vertical" id="se-resizer-left" role="separator" aria-orientation="vertical" title="左右拖动调整左栏宽度；双击恢复默认"></div>
+
         <div class="se-panel center">
             <div style="display:flex;align-items:center;gap:6px;padding:4px 8px;border-bottom:1px solid #26355c;font-size:12px;">
                 <label style="color:#9aa5c0;">模式</label>
@@ -164,10 +186,14 @@
             <canvas id="se-canvas"></canvas>
         </div>
 
+        <div class="se-resizer vertical" id="se-resizer-right" role="separator" aria-orientation="vertical" title="左右拖动调整右侧属性栏宽度；双击恢复默认"></div>
+
         <div class="se-panel se-inspector" id="se-inspector">
             <h3 id="se-inspector-title">属性</h3>
             <div id="se-inspector-body"><div class="se-empty">选中骨骼或槽位以编辑属性</div></div>
         </div>
+
+        <div class="se-resizer horizontal" id="se-resizer-bottom" role="separator" aria-orientation="horizontal" title="上下拖动调整时间线高度；双击恢复默认"></div>
 
         <div class="se-panel bottom">
             <div class="se-timeline">
@@ -181,17 +207,18 @@
                     <label>循环</label>
                     <input type="checkbox" id="se-clip-loop">
                     <span style="border-left:1px solid #26355c; height:20px;"></span>
+                    <button id="se-frame-prev" title="向前逐帧：后退一帧（步长=剪辑时长/12）；按住可连续逐帧播放">◀|</button>
                     <button id="se-play">▶ 播放</button>
+                    <button id="se-frame-next" title="向后逐帧：前进一帧（步长=剪辑时长/12）；按住可连续逐帧播放">|▶</button>
                     <button id="se-rewind">⏮</button>
-                    <button id="se-frame-prev" title="上一帧（步长=剪辑时长/12）">‹</button>
                     <input type="number" id="se-time-input" min="0" step="10" style="width:70px;" title="当前时间（ms）">
-                    <button id="se-frame-next" title="下一帧（步长=剪辑时长/12）">›</button>
                     <button id="se-keyframe" title="在当前时间记录选中骨骼的姿态">🔑 打关键帧(K)</button>
                     <button id="se-key-del" class="danger" disabled>🗑 删除关键帧</button>
                     <label>轨道骨骼</label>
                     <select id="se-track-bone-select"></select>
                     <button id="se-track-add">✚ 轨道</button>
                     <button id="se-track-del" class="danger">🗑 轨道</button>
+                    <span style="color:#5a6a90;font-size:11px;margin-left:4px;" title="框选：按住 Alt 在轨道区拖出矩形选中多个关键帧（Shift/Ctrl+Alt 追加选区）；拖动任一选中帧整组移动">框选：Alt+拖动（Shift=追加）</span>
                 </div>
                 <div class="se-tl-body" id="se-tl-body"></div>
             </div>
@@ -213,6 +240,73 @@
             const projectPath = `example/${gameId}/game.project.json`;
             const editor = new SkeletonEditor(document.body, { gameId, projectPath });
             await editor.init();
+
+            // 栏位拖动（左/右调宽度，下调时间线高度；双击恢复默认）。
+            // 布局为 CSS Grid：列 [左栏, 分隔条, 画布, 分隔条, 右栏]，行 [内容, 分隔条, 时间线]。
+            // 画布 buffer 由 SkeletonEditor 渲染循环每帧 _sizeCanvas 自动同步，无需手动重绘。
+            const main = document.querySelector('.se-main');
+            const RESIZER_DEFAULTS = { left: 230, right: 280, bottom: 218 };
+            const resizerState = { ...RESIZER_DEFAULTS };
+            const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+            const applyColumns = () => {
+                main.style.gridTemplateColumns = `${resizerState.left}px 6px 1fr 6px ${resizerState.right}px`;
+            };
+            const applyRows = () => {
+                main.style.gridTemplateRows = `1fr 6px ${resizerState.bottom}px`;
+            };
+            const bindResizer = (id, { axis, apply, clampValue, sign = 1 }) => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                const key = id.replace('se-resizer-', '');
+                el.addEventListener('pointerdown', event => {
+                    event.preventDefault();
+                    const start = axis === 'x' ? event.clientX : event.clientY;
+                    const startValue = resizerState[key];
+                    el.classList.add('dragging');
+                    el.setPointerCapture?.(event.pointerId);
+                    document.body.style.userSelect = 'none';
+                    document.body.style.cursor = axis === 'x' ? 'col-resize' : 'row-resize';
+                    const onMove = moveEvent => {
+                        const delta = (axis === 'x' ? moveEvent.clientX : moveEvent.clientY) - start;
+                        resizerState[key] = clampValue(startValue + delta * sign);
+                        apply();
+                    };
+                    const end = () => {
+                        el.classList.remove('dragging');
+                        el.releasePointerCapture?.(event.pointerId);
+                        document.body.style.userSelect = '';
+                        document.body.style.cursor = '';
+                        window.removeEventListener('pointermove', onMove);
+                        window.removeEventListener('pointerup', end);
+                        window.removeEventListener('pointercancel', end);
+                    };
+                    window.addEventListener('pointermove', onMove);
+                    window.addEventListener('pointerup', end);
+                    window.addEventListener('pointercancel', end);
+                });
+                el.addEventListener('dblclick', () => {
+                    resizerState[key] = RESIZER_DEFAULTS[key];
+                    apply();
+                });
+            };
+            const maxBottom = () => Math.max(160, Math.floor(window.innerHeight * 0.6));
+            bindResizer('se-resizer-left', {
+                axis: 'x',
+                apply: applyColumns,
+                clampValue: value => clamp(value, 160, 520)
+            });
+            bindResizer('se-resizer-right', {
+                axis: 'x',
+                sign: -1,
+                apply: applyColumns,
+                clampValue: value => clamp(value, 160, 520)
+            });
+            bindResizer('se-resizer-bottom', {
+                axis: 'y',
+                sign: -1,
+                apply: applyRows,
+                clampValue: value => clamp(value, 120, maxBottom())
+            });
         })().catch(error => {
             console.error('[SkeletonEditor] 初始化失败', error);
             alert(`骨骼动画编辑器初始化失败：${error?.message || String(error)}`);

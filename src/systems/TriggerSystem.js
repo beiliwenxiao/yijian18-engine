@@ -100,6 +100,9 @@ function normalizeLegacyResult(value, operationId, triggerId) {
     ok: true,
     operationId,
     status: value?.status || (hasCommittedRevision ? 'committed' : 'succeeded'),
+    // 良性跳过协议：handler 判定场景/前置/幂等不符时标记 skipped=true，
+    // _execute 据此跳过冷却写入与 once 标记（空跑执行不占冷却名额）。
+    skipped: value?.skipped === true,
     committed: hasCommittedRevision,
     code: null,
     stateId: hasCommittedRevision ? value.stateId : `trigger:${triggerId}`,
@@ -376,6 +379,41 @@ export class TriggerSystem {
     return this._tryRun(trigger, { type: eventType, params });
   }
 
+  /**
+   * 诊断：说明 fireById 被拒的原因（绑定层 triggerRejected 日志用）。
+   * 判定顺序与 fireById/_eligible 完全一致；cooldown 携带 remainingMs/now/nextDue，
+   * 若多次日志 remainingMs 不随真实时间减少即为时钟冻结。
+   */
+  describeRejection(id, eventType, params = {}) {
+    const trigger = this.getById(id);
+    if (!trigger) return { code: 'notRegistered' };
+    if (!trigger.when || trigger.when.type !== eventType) {
+      return { code: 'whenTypeMismatch', whenType: trigger.when?.type || null };
+    }
+    if (!this._matchParams(trigger.when.params, params)) return { code: 'whenParamsMismatch' };
+    if (trigger.enabled === false) return { code: 'disabled' };
+    if (trigger.once && this._firedOnce.has(trigger.id)) return { code: 'onceFired' };
+    const cooldownNow = this.monotonicClock.now();
+    const cooldown = this._cooldowns[trigger.id];
+    // 与 _eligible 判定对齐：冷却条目存在但已过期（nextDue <= now）不算拒绝，
+    // 否则诊断日志会误报 cooldown（remainingMs=0 的假拒绝，误导排查）。
+    if (cooldown && cooldownNow < cooldown.nextDue) {
+      return {
+        code: 'cooldown', remainingMs: Math.max(0, cooldown.nextDue - cooldownNow),
+        clockNow: cooldownNow, nextDue: cooldown.nextDue
+      };
+    }
+    if (trigger.if) {
+      try {
+        if (!this.expr.eval(trigger.if)) return { code: 'ifConditionFalse', if: trigger.if };
+      } catch (error) {
+        return { code: 'ifConditionError', if: trigger.if, message: String(error?.message || error) };
+      }
+    }
+    if (this._active.get(trigger.id)) return { code: 'reentryActive', policy: this._reentryPolicy(trigger) };
+    return { code: 'unknown' };
+  }
+
   getById(id) { return this._triggersById.get(id) || null; }
   getExecution(id) { return this.ledger.get(id); }
   hasFiredOnce(id) { return this._firedOnce.has(id); }
@@ -384,6 +422,12 @@ export class TriggerSystem {
     if (hasText(id)) return this._firedOnce.delete(id);
     this._firedOnce.clear();
     return true;
+  }
+
+  /** 清除指定触发器的冷却（业务握手：场景流互切成功后允许立即反向交互，如进出庇护所）。 */
+  clearCooldown(triggerId) {
+    if (hasText(triggerId)) return delete this._cooldowns[triggerId];
+    return false;
   }
 
   async waitForIdle(triggerId = null) {
@@ -668,8 +712,12 @@ export class TriggerSystem {
       lastResult = executed.lastResult;
       actionIndex = executed.actionIndex;
       const record = this.ledger.finish(trigger.id, request.operationId, 'succeeded', lastResult, this.monotonicClock.now());
-      if (trigger.once) this._firedOnce.add(trigger.id);
-      if (Number(trigger.cooldown) > 0) {
+      // 良性跳过（业务守卫拒绝：场景不符/前置未满足/幂等去重）与失败结果（ok:false）
+      // 都不占冷却名额、不消耗 once 名额——空跑/失败后玩家立即重试是合理诉求，
+      // 否则边界竞态的空跑会把真实请求静默拒之门外。
+      const skipCooldown = lastResult?.skipped === true || lastResult?.ok === false;
+      if (!skipCooldown && trigger.once) this._firedOnce.add(trigger.id);
+      if (!skipCooldown && Number(trigger.cooldown) > 0) {
         const duration = Number(trigger.cooldown) * 1000;
         this._cooldowns[trigger.id] = { nextDue: this.monotonicClock.now() + duration, duration };
       }
@@ -1188,17 +1236,30 @@ export class TriggerSystem {
     errors.push(...ledgerValidation.errors.map(error => ({ ...error, path: `triggers.${error.path}` })));
 
     for (const trigger of this.triggers) this._validateDefinitionReferences(trigger, errors);
+    // 「Trigger 被删除」的存档引用按可过滤处理：deserialize 丢弃这些历史记录，
+    // 其余历史完整保留——删除触发器不应废档（与定义变化重置同理念）。
+    const removedTriggerIds = new Set();
     for (const id of data.firedOnce || []) {
-      if (!this._triggersById.has(id)) errors.push({ code: 'invalidReference', path: `triggers.firedOnce.${id}`, message: `未知 trigger ${id}` });
+      if (!this._triggersById.has(id)) removedTriggerIds.add(id);
+    }
+    for (const id of Object.keys(data.cooldowns || {})) {
+      if (!this._triggersById.has(id)) removedTriggerIds.add(id);
+    }
+    for (const timer of data.timers || []) {
+      if (timer?.triggerId && !this._triggersById.has(timer.triggerId)) removedTriggerIds.add(timer.triggerId);
+    }
+    for (const record of data.ledger?.records || []) {
+      if (record?.triggerId && !this._triggersById.has(record.triggerId)) removedTriggerIds.add(record.triggerId);
     }
     for (const [id, value] of Object.entries(data.cooldowns || {})) {
-      if (!this._triggersById.has(id)) errors.push({ code: 'invalidReference', path: `triggers.cooldowns.${id}`, message: `未知 trigger ${id}` });
+      if (removedTriggerIds.has(id)) continue;
       if (value?.definitionRevision !== data.definitionRevision || !this._validTiming(value)) {
         errors.push({ code: 'invalidTiming', path: `triggers.cooldowns.${id}`, message: 'cooldown revision/timing 非法' });
       }
     }
     const timerIds = new Set();
     for (const [index, timer] of (data.timers || []).entries()) {
+      if (removedTriggerIds.has(timer?.triggerId)) continue; // 已删除 Trigger 的 timer：由 deserialize 丢弃
       const trigger = this._triggersById.get(timer?.triggerId);
       const currentTimer = this._timers.find(entry => entry.trigger.id === timer?.triggerId);
       if (!trigger || trigger.when?.type !== 'timer' || !currentTimer) errors.push({ code: 'invalidReference', path: `triggers.timers[${index}].triggerId`, message: 'timer trigger 引用无效' });
@@ -1220,20 +1281,19 @@ export class TriggerSystem {
     // 逐记录 fingerprint：绑定单 Trigger 定义摘要。定义在存档后发生变化且有执行痕迹的
     // Trigger 不再整体拒绝读档，而是收集为 changedTriggerIds，由 deserialize 按新定义
     // 重置其执行痕迹（ledger 记录、firedOnce、cooldown/timer）——参数调整等内容改动
-    // 修改后读档即可生效，未改动的 Trigger 历史完整保留。结构性问题（Trigger 被删除）
-    // 仍拒绝。
+    // 修改后读档即可生效，未改动的 Trigger 历史完整保留。已删除 Trigger 的引用由
+    // removedTriggerIds 过滤丢弃（见上方）。
     const changedTriggerIds = this._collectChangedTriggerIds(data);
     if (changedTriggerIds.size > 0) {
       console.warn('[TriggerSystem] 以下 Trigger 的定义在存档后发生变化，其执行痕迹将按新定义重置：', [...changedTriggerIds]);
     }
     for (const record of data.ledger?.records || []) {
-      const trigger = this._triggersById.get(record.triggerId);
-      if (!trigger) errors.push({ code: 'invalidReference', path: `triggers.ledger.${record.triggerId}`, message: 'ledger trigger 引用无效' });
+      if (removedTriggerIds.has(record?.triggerId)) continue; // 已删除 Trigger：由 deserialize 丢弃
       if (record.definitionRevision !== data.definitionRevision) {
         errors.push({ code: 'definitionRevisionMismatch', path: `triggers.ledger.${record.triggerId}.definitionRevision`, message: 'ledger definition revision 与快照不一致' });
       }
     }
-    return { ok: errors.length === 0, errors, changedTriggerIds };
+    return { ok: errors.length === 0, errors, changedTriggerIds, removedTriggerIds };
   }
 
   /** 收集「定义在存档后发生变化且有执行痕迹」的 Trigger：fingerprint 与当前定义重算值不匹配。 */
@@ -1254,13 +1314,18 @@ export class TriggerSystem {
     const validation = this.validateSnapshot(data);
     if (!validation.ok) return validation;
     const changedTriggerIds = validation.changedTriggerIds || new Set();
+    const removedTriggerIds = validation.removedTriggerIds || new Set();
+    const dropTriggerIds = new Set([...changedTriggerIds, ...removedTriggerIds]);
+    if (removedTriggerIds.size > 0) {
+      console.warn('[TriggerSystem] 以下 Trigger 已在当前定义中删除，其存档执行痕迹将被丢弃：', [...removedTriggerIds]);
+    }
     const now = this.monotonicClock.now();
-    // 定义发生变化的 Trigger：执行痕迹（ledger/firedOnce/cooldown/timer）按新定义重置，
-    // 保留其余 Trigger 的历史不变。
+    // 定义发生变化的 Trigger：执行痕迹（ledger/firedOnce/cooldown/timer）按新定义重置；
+    // 已删除 Trigger 的执行痕迹直接丢弃；保留其余 Trigger 的历史不变。
     const normalizedLedger = {
       ...data.ledger,
       records: data.ledger.records
-        .filter(record => !changedTriggerIds.has(record.triggerId))
+        .filter(record => !dropTriggerIds.has(record.triggerId))
         .map(record => ({
           ...record,
           definitionRevision: this.definitionRevision
@@ -1273,17 +1338,17 @@ export class TriggerSystem {
     const restoredOperationSequence = Number.isInteger(data.operationSequence) && data.operationSequence >= 0
       ? data.operationSequence
       : getRestoredOperationSequence(data.ledger);
-    const nextOnce = new Set([...data.firedOnce].filter(id => !changedTriggerIds.has(id)));
+    const nextOnce = new Set([...data.firedOnce].filter(id => !dropTriggerIds.has(id)));
     const nextCooldowns = Object.create(null);
     for (const [id, saved] of Object.entries(data.cooldowns)) {
-      if (changedTriggerIds.has(id)) continue;
+      if (dropTriggerIds.has(id)) continue;
       nextCooldowns[id] = {
         duration: saved.duration,
         nextDue: this._restoreDue(saved, now, this._triggersById.get(id)?.catchUpPolicy || 'resume')
       };
     }
     const nextTimers = data.timers
-      .filter(saved => !changedTriggerIds.has(saved.triggerId))
+      .filter(saved => !dropTriggerIds.has(saved.triggerId))
       .map(saved => {
         const trigger = this._triggersById.get(saved.triggerId);
         const definitionTimer = this._timers.find(entry => entry.trigger.id === saved.triggerId);

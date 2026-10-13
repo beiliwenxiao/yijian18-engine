@@ -37,20 +37,13 @@
       {
         "action": "s01Survival",
         "params": {
-          "operation": "reconcilePursuit"
-        },
-        "stepId": "reconcile-pursuit"
-      },
-      {
-        "action": "s01Survival",
-        "params": {
           "operation": "presentEntry"
         },
         "stepId": "present-entry"
       }
     ],
     "id": "trg_s01_spawn_initial",
-    "name": "进入 S01：装配初始场景与恢复追逐",
+    "name": "进入 S01：装配初始场景",
     "once": false,
     "when": {
       "params": {
@@ -458,31 +451,6 @@
       {
         "action": "s01Survival",
         "params": {
-          "operation": "recordChaseWolfKilled"
-        },
-        "stepId": "record-chase-wolf-killed"
-      }
-    ],
-    "editorScope": {
-      "sceneIds": [
-        "S01"
-      ]
-    },
-    "id": "trg_s01_chase_wolf_killed",
-    "name": "追逐狼死亡：增加追逐压力并补充狼群",
-    "once": false,
-    "when": {
-      "params": {
-        "enemyRole": "chaseWolf"
-      },
-      "type": "enemy.killed"
-    }
-  },
-  {
-    "do": [
-      {
-        "action": "s01Survival",
-        "params": {
           "operation": "ensureMovedAfterWake"
         },
         "stepId": "ensure-moved-after-wake"
@@ -629,7 +597,9 @@
     "name": "进入小庇护所",
     "once": false,
     "when": {
-      "params": {},
+      "params": {
+        "sceneId": "S01"
+      },
       "type": "interact"
     }
   },
@@ -686,7 +656,9 @@
     "name": "离开小庇护所",
     "once": false,
     "when": {
-      "params": {},
+      "params": {
+        "sceneId": "S01-C01"
+      },
       "type": "interact"
     }
   },

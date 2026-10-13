@@ -46,12 +46,29 @@ function lerp(a, b, t) {
   return a + (b - a) * t;
 }
 
-/** 单字段插值：两键都缺省返回 null（由调用方回退静止姿态）。 */
-function sampleField(keys, timeMs, field) {
+/**
+ * 单字段插值：两键都缺省返回 null（由调用方回退静止姿态）。
+ * loop=true 时尾段（最后关键帧 → durationMs）与第一关键帧插值（Unity 式自动环绕：
+ * 隐式把首帧姿态复制到 t=durationMs），循环回绕点两侧姿态一致，消除循环跳变；
+ * loop=false 保持 hold 最后一帧（攻击停格等一次性动作语义）。
+ */
+function sampleField(keys, timeMs, field, loop, durationMs) {
   const first = keys[0];
   const last = keys[keys.length - 1];
   if (timeMs <= first.t) return first[field];
-  if (timeMs >= last.t) return last[field];
+  if (timeMs >= last.t) {
+    const shouldWrap = loop === true && durationMs > last.t;
+    if (!shouldWrap) return last[field];
+    const span = durationMs - last.t;
+    const ratio = span > 0 ? (timeMs - last.t) / span : 0;
+    const eased = applyEase(first.ease, Math.max(0, Math.min(1, ratio)));
+    const va = last[field];
+    const vb = first[field];
+    if (va === null && vb === null) return null;
+    if (va === null) return vb;
+    if (vb === null) return va;
+    return lerp(va, vb, eased);
+  }
 
   let upper = 1;
   while (upper < keys.length && keys[upper].t < timeMs) upper += 1;
@@ -90,11 +107,11 @@ export function sampleClip(clip, timeMs, restPose) {
       pose.set(boneId, { ...rest });
       continue;
     }
-    const x = sampleField(keys, clamped, 'x');
-    const y = sampleField(keys, clamped, 'y');
-    const rot = sampleField(keys, clamped, 'rot');
-    const sx = sampleField(keys, clamped, 'scaleX');
-    const sy = sampleField(keys, clamped, 'scaleY');
+    const x = sampleField(keys, clamped, 'x', clip.loop === true, clip.durationMs);
+    const y = sampleField(keys, clamped, 'y', clip.loop === true, clip.durationMs);
+    const rot = sampleField(keys, clamped, 'rot', clip.loop === true, clip.durationMs);
+    const sx = sampleField(keys, clamped, 'scaleX', clip.loop === true, clip.durationMs);
+    const sy = sampleField(keys, clamped, 'scaleY', clip.loop === true, clip.durationMs);
     pose.set(boneId, {
       x: x === null ? rest.x : x,
       y: y === null ? rest.y : y,

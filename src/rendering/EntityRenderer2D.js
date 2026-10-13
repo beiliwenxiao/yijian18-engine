@@ -292,6 +292,89 @@ export class EntityRenderer2D {
     ctx.restore();
   }
 
+  /**
+   * 施工表现：建筑工人在施工点旁抡锤作业（4 帧循环雪碧图）。
+   * 由 SceneRenderPipeline 以 Y-sort 队列项调用（fx.render 闭包），参与前后遮挡排序。
+   * 布局：worker-build.png 192×48 横排 4 帧（每帧 48×48，脚底 y≈44，面朝左）。
+   * @param {CanvasRenderingContext2D} ctx
+   * @param {{x:number, y:number, height?:number, scale?:number, startedAtMs:number}} fx
+   */
+  drawConstructionWorker(ctx, fx) {
+    const x = Number(fx?.x);
+    const yFeet = Number(fx?.y);
+    if (!Number.isFinite(x) || !Number.isFinite(yFeet)) return;
+    const frameSize = 48;
+    const scale = Math.max(0.6, Number(fx?.scale) || 1);
+    const drawH = frameSize * scale;
+    const drawW = frameSize * scale;
+
+    const image = this._getReadyImage('units.worker-build');
+    ctx.save();
+    ctx.imageSmoothingEnabled = false;
+    if (image) {
+      // 4 帧循环：举锤→下砸→砸实+尘土→回位，180ms/帧（约 1.4s 一轮，与敲击节奏匹配）
+      const elapsed = Math.max(0, (performance.now() - Number(fx.startedAtMs) || 0));
+      const frame = Math.floor(elapsed / 180) % 4;
+      ctx.drawImage(image, frame * frameSize, 0, frameSize, frameSize,
+        x - drawW / 2, yFeet - drawH, drawW, drawH);
+    } else {
+      // 图片未就绪的程序化兜底：简化抡锤小人（与死亡骷髅同款纯绘制架构）
+      this._renderConstructionWorkerFallback(ctx, x, yFeet, drawW);
+    }
+    ctx.restore();
+  }
+
+  /** 雪碧图未加载时的兜底小人：斗笠 + 褐衣 + 摆动铁锤。 */
+  _renderConstructionWorkerFallback(ctx, x, yFeet, size) {
+    const s = size / 48;
+    const elapsed = Math.max(0, (performance.now() - (this._workerFallbackT0 || (this._workerFallbackT0 = performance.now()))));
+    const phase = Math.floor(elapsed / 180) % 4;
+    const swing = phase === 0 ? -1 : (phase === 1 || phase === 2) ? 1 : 0;
+    const bx = x + 3 * s;
+
+    ctx.save();
+    ctx.lineCap = 'butt';
+    // 木桩
+    ctx.fillStyle = '#6b4a26';
+    ctx.fillRect(x - 15 * s, yFeet - 11 * s, 12 * s, 11 * s);
+    ctx.fillStyle = '#a67b47';
+    ctx.fillRect(x - 15 * s, yFeet - 11 * s, 12 * s, 2 * s);
+    // 身体
+    ctx.fillStyle = '#7a5230';
+    ctx.fillRect(bx - 4 * s, yFeet - 28 * s, 9 * s, 13 * s);
+    // 腿与鞋
+    ctx.fillStyle = '#5a3c22';
+    ctx.fillRect(bx - 4 * s, yFeet - 16 * s, 4 * s, 13 * s);
+    ctx.fillRect(bx + 1 * s, yFeet - 16 * s, 4 * s, 13 * s);
+    // 头 + 斗笠
+    ctx.fillStyle = '#d8a878';
+    ctx.fillRect(bx - 3 * s, yFeet - 34 * s, 7 * s, 7 * s);
+    ctx.fillStyle = '#c8a050';
+    ctx.fillRect(bx - 7 * s, yFeet - 39 * s, 15 * s, 5 * s);
+    // 手臂 + 锤（摆动角度随相位）
+    ctx.strokeStyle = '#d8a878';
+    ctx.lineWidth = 3 * s;
+    const shoulderX = bx + 1 * s;
+    const shoulderY = yFeet - 26 * s;
+    const hammerAngle = swing === -1 ? -1.9 : swing === 1 ? 0.6 : -0.2;
+    const handX = shoulderX + Math.cos(hammerAngle) * 10 * s;
+    const handY = shoulderY + Math.sin(hammerAngle) * 10 * s;
+    ctx.beginPath();
+    ctx.moveTo(shoulderX, shoulderY);
+    ctx.lineTo(handX, handY);
+    ctx.stroke();
+    ctx.strokeStyle = '#8a6238';
+    ctx.lineWidth = 2 * s;
+    ctx.beginPath();
+    ctx.moveTo(handX, handY);
+    ctx.lineTo(handX - 14 * s * (swing === 1 ? 0.4 : 0.15), handY + (swing === -1 ? -10 : swing === 1 ? 6 : 2) * s);
+    ctx.stroke();
+    ctx.fillStyle = '#767e8a';
+    ctx.fillRect(handX - 18 * s * (swing === 1 ? 0.4 : 0.15) - 4 * s,
+      handY + (swing === -1 ? -10 : swing === 1 ? 6 : 2) * s - 3 * s, 8 * s, 6 * s);
+    ctx.restore();
+  }
+
   _renderSprite(ctx, entity, sprite, npc, x, y, width, height) {
     // 骨骼实体：委托 SkeletonRenderer（资产未加载时走样式/色块兜底，
     // 不进入下方图片分支——spriteSheet 是骨骼稳定 ID，查图会告警刷屏）

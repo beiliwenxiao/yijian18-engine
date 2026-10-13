@@ -45,10 +45,7 @@ const RECIPE_ACTIONS = Object.freeze({
     inputSize: Object.freeze({ width: 48, height: 38 }), outputSize: Object.freeze({ width: 48, height: 40 })
   })
 });
-const CHASE_WOLF_PREFIX = 'S01-chase-wolf-';
-const MAX_CHASE_WOLVES = 3;
 const FIRST_WOLF_PREFIX = 'S01-first-wolf-';
-const PURSUIT_RECONCILE_INTERVAL_SECONDS = 0.75;
 const FIRST_WOLF_CORPSE_RETRY_INTERVAL_SECONDS = 0.1;
 const FIRST_WOLF_CORPSE_MAX_ATTEMPTS = 30;
 const SHELTER_CHEST_INVENTORY_ID = 's01-shelter-chest:inventory';
@@ -76,8 +73,6 @@ export class S01S02Coordinator {
     this.shelterConstructionProgressActive = false;
     this.recipeActionInFlight = null;
     this.recipeActionProgress = null;
-    this.pursuitReconcileElapsed = 0;
-    this.pursuitReconcileInFlight = false;
     this.pendingAxeDiscovery = false;
     this.initialToolRevealPending = false;
     this.initialToolRevealRetryElapsed = 0;
@@ -105,8 +100,27 @@ export class S01S02Coordinator {
     return this.scene.gameLoader?.blackboard?.get?.('storyState') || {};
   }
 
+  /**
+   * 玩家脚下世界格的场景归属（物理事实）。
+   * currentSceneId 是传送回调维护的运行时变量，enterStreamedScene 投影失败时的
+   * restore 会让它停留在旧值（玩家已被传进新场景）——场景判定不能只信它。
+   */
+  _playerChunkSceneId() {
+    const position = this.scene.playerEntity?.getComponent?.('transform')?.position;
+    const manager = this.scene.worldStreamingManager;
+    if (!position || !manager?.worldToChunk || !manager?.getSceneId) return null;
+    const center = manager.worldToChunk(position.x, position.y);
+    return center ? (manager.getSceneId(center.col, center.row) || null) : null;
+  }
+
   _isInShelterInterior() {
-    return this.scene.currentSceneId === 'S01-C01';
+    if (this.scene.currentSceneId === 'S01-C01') return true;
+    return this._playerChunkSceneId() === 'S01-C01';
+  }
+
+  _isInMainScene() {
+    if (this.scene.currentSceneId === 'S01') return true;
+    return this._playerChunkSceneId() === 'S01';
   }
 
   /** 室内不绘制也不推进天气；Region 切换重建 WeatherSystem 时按实例重新应用。 */
@@ -138,7 +152,7 @@ export class S01S02Coordinator {
 
   openShelterChest() {
     // 不在室内是 interact 无差别监听的正常分支，不是执行错误（避免污染失败诊断）
-    if (!this._isInShelterInterior()) return { ok: true, status: 'notInShelterInterior' };
+    if (!this._isInShelterInterior()) return { ok: true, skipped: true, status: 'notInShelterInterior' };
     if (!this.scene.cargoTransferView) return false;
     this.scene.cargoTransferView.open(this._buildShelterChestSnapshot());
     return true;
@@ -184,8 +198,9 @@ export class S01S02Coordinator {
   /** 进入独立庇护所 Region；保留跨区加载的稳定错误码供 Trigger 诊断。 */
   async enterShelter(eventData = {}) {
     // interact 触发器无差别监听：不在主场景（如在室内交互）属于正常分支，良性消费不写失败诊断
-    if (this.scene.currentSceneId !== 'S01') {
-      return { ok: true, status: 'notInMainScene' };
+    // 场景判定带世界格兜底：currentSceneId 失同步时以玩家脚下世界格为准
+    if (!this._isInMainScene()) {
+      return { ok: true, skipped: true, status: 'notInMainScene' };
     }
     const entered = await this.scene.travelToRegion({
       sceneId: 'S01-C01',
@@ -193,17 +208,26 @@ export class S01S02Coordinator {
       operationId: this._eventOperationId(eventData, 'enterShelter.teleport')
     });
     this._syncShelterWeatherPause();
+    // 进屋成功即解除「出门」冷却：spawn 点就在门边，玩家原路返回不应被 1 秒冷却静默拒绝
+    if (entered?.ok) this.scene.gameLoader?.triggerSystem?.clearCooldown?.('trg_s01_leave_shelter');
     return entered;
   }
 
   async leaveShelter(eventData = {}) {
     // interact 触发器无差别监听：不在室内属于正常分支，良性消费不写失败诊断（对齐下方 blockedUntilOvernight）
-    if (!this._isInShelterInterior()) return { ok: true, status: 'notInShelter' };
+    if (!this._isInShelterInterior()) {
+      console.info('[S01Flow] leaveShelter 跳过：currentSceneId =', this.scene.currentSceneId,
+        '，玩家脚下世界格 =', this._playerChunkSceneId(), '（均非室内）');
+      return { ok: true, skipped: true, status: 'notInShelter' };
+    }
     const survival = this._story().s01Survival || {};
     if (survival.overnightCompleted !== true) {
+      console.warn('[S01Flow] leaveShelter 拦截：overnightCompleted ≠ true（story.s01Survival =',
+        JSON.stringify(survival), '）——玩家无法出门将无法自救，请检查存档/回滚链路');
       this.scene._showScreenTip('先靠近床睡觉。', { title: '仍需过夜' });
       // 这是被明确提示的流程前置，不是触发器执行错误；保持交互被消费但不写失败诊断。
-      return { ok: true, status: 'blockedUntilOvernight' };
+      // skipped：前置拦截不占冷却名额，玩家睡完回来立刻出门不受冷却影响。
+      return { ok: true, skipped: true, status: 'blockedUntilOvernight' };
     }
     const returned = await this.scene.travelToRegion({
       sceneId: 'S01',
@@ -212,8 +236,11 @@ export class S01S02Coordinator {
     });
     this._syncShelterWeatherPause();
     if (!returned?.ok) {
+      console.warn('[S01Flow] leaveShelter 传送失败:', JSON.stringify(returned || { code: 'shelterReturnFailed' }));
       return returned || { ok: false, code: 'shelterReturnFailed' };
     }
+    // 出门成功即解除「进屋」冷却（对称握手）：门口立刻折返不应被冷却静默拒绝
+    this.scene.gameLoader?.triggerSystem?.clearCooldown?.('trg_s01_enter_shelter');
     if (survival.shelterExitedAfterOvernight === true) return true;
     const committed = await this._submit(
       'story.s01.leaveShelter',
@@ -222,8 +249,6 @@ export class S01S02Coordinator {
     );
     if (!committed?.ok) return committed;
     this.scene._campfireService?.extinguish?.();
-    this.scene._showScreenTip('天亮了，篝火熄灭了。但篝火旁却有三只狼在取暖休息。\n当你出现时，三只狼都向你冲了过来。', { title: '狼群来袭' });
-    await this._reconcileWolfPursuit();
     return true;
   }
 
@@ -363,9 +388,6 @@ export class S01S02Coordinator {
   }
 
   _deriveRestoredTutorialId(survival = this._story().s01Survival || {}) {
-    if (survival.pursuit?.active === true) {
-      return survival.riverCrossed === true ? 's01.capacity' : 's01.jump';
-    }
     if (survival.firstWolfKilled === true && survival.wolfSkinned !== true) return 's01.durability';
     if (survival.firstWolfSpotted === true && survival.firstWolfKilled !== true) return 's01.attack';
     if (survival.berriesGathered === true && survival.woodGathered !== true) return 's01.chopWood';
@@ -593,52 +615,6 @@ export class S01S02Coordinator {
       result,
       target: inspection.value
     };
-  }
-
-  async _reconcileWolfPursuit() {
-    const pursuit = this._story().s01Survival?.pursuit;
-    if (this.scene.currentSceneId !== 'S01' || pursuit?.active !== true) return true;
-    if (this.pursuitReconcileInFlight) return true;
-
-    this.pursuitReconcileInFlight = true;
-    try {
-      const spawned = Math.min(MAX_CHASE_WOLVES, Math.max(0, Math.floor(Number(pursuit.spawned) || 0)));
-      const result = await this._spawnGroup('S01-chase-wolves');
-      if (result?.ok !== true || (result.errors || []).length > 0) {
-        // 纯等待类提示降级为 log：有界补偿会自动重试
-        console.log('[S01S02Coordinator] 追逐狼放置未完整成立，等待补偿', result);
-        return false;
-      }
-
-      const missing = [];
-      const placements = this.scene.context.services.placements;
-      for (let index = 1; index <= spawned; index += 1) {
-        const entityId = `${CHASE_WOLF_PREFIX}${index}`;
-        const wolf = this.scene.entityStore?.getById?.(entityId);
-        if (!wolf) {
-          const inspection = placements?.inspectPlacement?.(entityId) || null;
-          // 已进入生成账本但当前无 live 实体，可能是尸体衰减/terminal tombstone；
-          // 追逐击杀不是流程前置，禁止把终态狼重新补生成或每帧反复报警。
-          if (inspection?.spawned === true || inspection?.tombstoned === true) continue;
-          missing.push(entityId);
-          continue;
-        }
-        if (!wolf.placementId) wolf.placementId = entityId;
-        if (wolf.isDead || wolf.isDying || !wolf.getComponent?.('combat')) continue;
-        this._activateWolf(wolf);
-      }
-      if (missing.length > 0) {
-        // 纯等待类提示降级为 log：有界补偿会自动重试
-        console.log('[S01S02Coordinator] 追逐狼仍有缺失，等待补偿', missing);
-        return false;
-      }
-      return true;
-    } catch (error) {
-      console.warn('[S01S02Coordinator] 追逐狼补偿异常', error);
-      return false;
-    } finally {
-      this.pursuitReconcileInFlight = false;
-    }
   }
 
   _createWoodGatherContinuation() {
@@ -1072,14 +1048,9 @@ export class S01S02Coordinator {
 
   async handleEnemyKilled(entity) {
     if (this.scene.currentSceneId !== 'S01' || !entity?.id) return false;
-    const isChaseWolf = entity.id.startsWith(CHASE_WOLF_PREFIX);
     // 首狼群：任意一只教学狼死亡即进入首杀管线；击杀事实提交后其余狼退散。
     const isFirstWolf = entity.id.startsWith(FIRST_WOLF_PREFIX);
-    if (!isChaseWolf && !isFirstWolf) return false;
-    if (isChaseWolf) {
-      const published = await this._publishEnemyKilled(entity, 'chaseWolf', false);
-      return published?.ok === true;
-    }
+    if (!isFirstWolf) return false;
     // 退散已执行：同帧双杀等竞态下不再重复进入首杀管线。
     if (this.firstWolfRetreatDone) return true;
 
@@ -1844,36 +1815,6 @@ export class S01S02Coordinator {
       await this._ensureFirstWolfFromCommittedState();
       return { ok: true };
     }
-    if (operation === 'recordChaseWolfKilled') {
-      const entityId = String(eventData.entityId || '').trim();
-      const sourceOperationId = eventData.operationId || eventData.eventId;
-      if (!entityId.startsWith(CHASE_WOLF_PREFIX) || !sourceOperationId) {
-        return { ok: false, code: 'chaseWolfEventInvalid' };
-      }
-      const result = await this._submit(
-        'story.s01.chase.kill',
-        {},
-        `${sourceOperationId}:state:story.s01.chase.kill`
-      );
-      if (result.ok !== true) return result;
-      await this._reconcileWolfPursuit();
-      // 追逐狼群（3 只）清空后召唤狼王：placement spawnWhen 为数据兜底，
-      // 这里显式补一次生成保证运行中即时登场；_ensureSpawnedPlacement 幂等防重复。
-      const killed = Number(this._story().s01Survival?.pursuit?.killed) || 0;
-      if (killed >= MAX_CHASE_WOLVES) {
-        const bossSpawn = await this._ensureSpawnedPlacement('S01-wolf-boss', 'S01-wolf-boss');
-        if (bossSpawn.ok === true) {
-          this.scene._showScreenTip('一声压低的长嚎自林间响起——狼王出现了！', { title: '狼王登场' });
-        } else {
-          console.log('[S01S02Coordinator] 狼王生成未完成，等待流式补偿', bossSpawn);
-        }
-      }
-      return { ok: true };
-    }
-    if (operation === 'reconcilePursuit') {
-      await this._reconcileWolfPursuit();
-      return true;
-    }
     if (operation === 'presentEntry') {
       const survival = this._story().s01Survival || {};
       this._applyS01WeatherPhase(survival);
@@ -1993,14 +1934,14 @@ export class S01S02Coordinator {
     if (operation === 'overnight') {
       // interact 触发器无差别监听：不在室内属于正常分支，良性消费不写失败诊断
       if (!this._isInShelterInterior()) {
-        return { ok: true, status: 'notInShelterInterior' };
+        return { ok: true, skipped: true, status: 'notInShelterInterior' };
       }
       const survival = this._story().s01Survival || {};
       if (survival.overnightCompleted === true) {
-        return { ok: true, status: 'alreadyCommitted' };
+        return { ok: true, skipped: true, status: 'alreadyCommitted' };
       }
       if (this.overnightSleepProgress || this.overnightSleepInFlight) {
-        return { ok: true, status: 'alreadySleeping' };
+        return { ok: true, skipped: true, status: 'alreadySleeping' };
       }
       const operationId = eventData.eventId
         ? `${eventData.eventId}:state:story.s01.overnight`
@@ -2075,6 +2016,7 @@ export class S01S02Coordinator {
         this._showShelterConstructionProgress('interrupted');
         this.shelterConstructionProgressActive = false;
       }
+      this._clearShelterConstructionFx();
       return;
     }
     const dt = Math.max(0, Number(deltaTime) || 0);
@@ -2083,16 +2025,6 @@ export class S01S02Coordinator {
     const survival = this._story().s01Survival || {};
     this._applyS01WeatherPhase(survival);
     this._updateFirstWolfCorpseCommit(dt);
-    if (survival.pursuit?.active === true) {
-      this.pursuitReconcileElapsed += dt;
-      if (this.pursuitReconcileElapsed >= PURSUIT_RECONCILE_INTERVAL_SECONDS
-        && !this.pursuitReconcileInFlight) {
-        this.pursuitReconcileElapsed = 0;
-        void this._reconcileWolfPursuit();
-      }
-    } else {
-      this.pursuitReconcileElapsed = 0;
-    }
     const pickupNeedsRecovery = survival.campfireLit === true
       && survival.axeDropped === true
       && survival.initialToolsPicked !== true;
@@ -2181,12 +2113,52 @@ export class S01S02Coordinator {
       const shelterTerminal = terminal.find(result => (
         (result?.siteId || result?.structure?.siteId) === 'site.s01.small_shelter'
       ));
+      if (shelterTerminal) {
+        // 施工终态（完成/失败）：工人作业表现随进度条一起收场
+        this._clearShelterConstructionFx();
+      }
       if (shelterTerminal && this.shelterConstructionProgressActive) {
         this._showShelterConstructionProgress(shelterTerminal.ok === true ? 'completed' : 'interrupted');
         this.shelterConstructionProgressActive = false;
       }
+      // 工人生灭与施工 pending 严格同步（含存档读回后按 pending 自动重建）
+      if (pending?.status === 'active') {
+        this._ensureShelterConstructionFx();
+      } else {
+        this._clearShelterConstructionFx();
+      }
     }
     this._updateControlledVineClimb();
+  }
+
+  /**
+   * 施工表现：在施工点旁生成建筑工人作业动画（纯表现，不进存档；
+   * 每帧由本方法按 pending 保活，pending 消失即同步移除）。
+   * 工人站在施工点 region 内偏右前（成品庇护所出现在中后区域，避免重叠）。
+   */
+  _ensureShelterConstructionFx() {
+    const scene = this.scene;
+    if (scene.shelterConstructionFx) return;
+    const region = scene.context?.services?.placements?.findLivePlacementValue?.('S01-shelter-site') || null;
+    const rx = Number(region?.x);
+    const ry = Number(region?.y);
+    const rw = Number(region?.width);
+    const rh = Number(region?.height);
+    // region 中心底部偏右下；取不到 region 时用 S01 施工点标称坐标兜底
+    const x = Number.isFinite(rx) && Number.isFinite(rw) ? rx + rw * 0.72 : 436;
+    const y = Number.isFinite(ry) && Number.isFinite(rh) ? ry + rh * 0.9 : 478;
+    scene.shelterConstructionFx = {
+      x,
+      y,
+      sortY: y,
+      scale: 1,
+      startedAtMs: performance.now(),
+      render: ctx => scene.entityRenderer2D?.drawConstructionWorker?.(ctx, scene.shelterConstructionFx)
+    };
+  }
+
+  _clearShelterConstructionFx() {
+    this.scene.shelterConstructionFx = null;
   }
 
   _updateControlledVineClimb() {
@@ -2257,8 +2229,7 @@ export class S01S02Coordinator {
     if (this.scene.currentSceneId !== 'S01') return false;
     const survival = this._story().s01Survival || {};
     return this.scene._tutorialFlow?.isCurrent?.('s01.attack') === true
-      || (survival.firstWolfSpotted === true && survival.firstWolfKilled !== true)
-      || survival.pursuit?.active === true;
+      || (survival.firstWolfSpotted === true && survival.firstWolfKilled !== true);
   }
 }
 

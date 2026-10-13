@@ -473,10 +473,6 @@ describe('TriggerSystem timer and atomic snapshot', () => {
       },
       {
         code: 'invalidReference',
-        mutate: snapshot => { snapshot.firedOnce.push('missing-trigger'); }
-      },
-      {
-        code: 'invalidReference',
         setup: () => { delete trigger.actions.ok; },
         cleanup: () => trigger.registerAction('ok', okAction)
       },
@@ -504,6 +500,26 @@ describe('TriggerSystem timer and atomic snapshot', () => {
       expect(trigger.serialize()).toEqual(before);
       testCase.cleanup?.();
     }
+
+    // 已删除 Trigger 的存档引用不再拒绝读档，而是过滤丢弃——删除触发器不应废档。
+    // firedOnce/cooldowns/ledger 中指向当前定义不存在 Trigger 的条目被丢弃，
+    // 其余历史完整保留。
+    const withRemoved = structuredClone(before);
+    withRemoved.firedOnce.push('removed-trigger');
+    withRemoved.cooldowns['removed-trigger'] = {
+      definitionRevision: withRemoved.definitionRevision,
+      remaining: 100, nextDue: 150, duration: 100
+    };
+    withRemoved.ledger.records.push({
+      triggerId: 'removed-trigger', definitionRevision: withRemoved.definitionRevision,
+      status: 'idle', actionIndex: -1, eventId: null, operationId: null, fingerprint: null, result: null
+    });
+    expect(trigger.deserialize(withRemoved)).toEqual({ ok: true, errors: [] });
+    const afterRemoved = trigger.serialize();
+    expect(afterRemoved.firedOnce).toEqual(before.firedOnce);
+    expect(Object.keys(afterRemoved.cooldowns)).toEqual(Object.keys(before.cooldowns));
+    expect(afterRemoved.ledger.records.map(record => record.triggerId).sort())
+      .toEqual(before.ledger.records.map(record => record.triggerId).sort());
 
     // fingerprint 契约：逐记录 fingerprint 不匹配不再拒绝读档，而是软重置——
     // 接受快照并按新定义重置该 Trigger 的执行痕迹，其余 ledger/timer 原样保留。

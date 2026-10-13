@@ -248,6 +248,11 @@ export class DataDrivenPrologueScene extends BaseGameScene {
           this.assetManager?.manifestEntries,
           [sceneId, sceneNamespace]
         )) assetIds.add(id);
+        // 共享图集本体是每个 chunk 地形（Scene1Terrain）的直接依赖，必须随 prepare 就绪，
+        // 否则 createTerrain 拿不到图集图，逐帧告警且地形装饰退化。
+        for (const atlas of sharedAtlases) {
+          if (atlas?.assetId || atlas?.id) assetIds.add(atlas.assetId || atlas.id);
+        }
         await this.assetManager?.loadAssets?.(assetIds, { mode: '2d', signal, required: true });
       },
       getPosition: () => this.playerEntity?.getComponent?.('transform')?.position || null,

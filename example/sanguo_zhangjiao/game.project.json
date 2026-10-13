@@ -695,11 +695,6 @@
         "initialToolsPicked": false,
         "meatCooked": false,
         "overnightCompleted": false,
-        "pursuit": {
-          "active": false,
-          "killed": 0,
-          "spawned": 0
-        },
         "riverCrossed": false,
         "shelterCompleted": false,
         "shelterExitedAfterOvernight": false,

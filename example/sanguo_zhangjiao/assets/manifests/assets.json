@@ -5820,7 +5820,7 @@
       "animations": [],
       "targetPhase": "P1",
       "status": "placeholder",
-      "revision": 3
+      "revision": 14
     },
     {
       "assetId": "skeleton.wolf-demo",
@@ -6025,7 +6025,8 @@
       "targetPhase": "P1",
       "status": "placeholder",
       "revision": 1
-    },    {
+    },
+    {
       "assetId": "player.parts.weapon-skinningKnife",
       "imageId": "player.parts.weapon-skinningKnife",
       "category": "character-part",
@@ -6165,7 +6166,6 @@
       "status": "placeholder",
       "revision": 1
     },
-
     {
       "assetId": "player.parts.skirt-front",
       "imageId": "player.parts.skirt-front",
@@ -8150,6 +8150,41 @@
         "rows": 1,
         "cellWidth": 64,
         "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "units.worker-build",
+      "imageId": "units.worker-build",
+      "category": "effect",
+      "usage": [
+        "scene-effect"
+      ],
+      "sourceFile": "assets/images/units/worker-build.png",
+      "runtime2D": {
+        "path": "assets/images/units/worker-build.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "units.worker-build"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      },
+      "bounds": {
+        "width": 192,
+        "height": 48
+      },
+      "grid": {
+        "columns": 4,
+        "rows": 1,
+        "cellWidth": 48,
+        "cellHeight": 48
       },
       "animations": [],
       "targetPhase": "P1",

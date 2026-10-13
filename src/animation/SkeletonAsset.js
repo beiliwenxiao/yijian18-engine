@@ -35,6 +35,54 @@
 
 export const SKELETON_ATTACHMENT_TYPES = Object.freeze(['empty', 'image', 'slice', 'sequence']);
 
+/** 方向偏移覆盖的合法键：编辑器用 down/side/up；运行时斜向键先精确匹配再回退正/背。 */
+export const SKELETON_DIRECTION_KEYS = Object.freeze(['down', 'side', 'up', 'SE', 'SW', 'NE', 'NW']);
+const DIRECTION_MERGE = Object.freeze({ SE: 'down', SW: 'down', NE: 'up', NW: 'up' });
+
+/**
+ * 解析附件方向偏移：{ down|side|up|...: { x, y, rot, flipX? } }。
+ * 逐字段生效（缺字段回退附件顶层值）；缺省对象 = 全方向共用顶层偏移（零迁移）。
+ */
+function normalizeDirectionOffsets(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const out = {};
+  for (const key of SKELETON_DIRECTION_KEYS) {
+    const value = raw[key];
+    if (!value || typeof value !== 'object') continue;
+    const entry = { x: num(value.x), y: num(value.y), rot: num(value.rot) };
+    if (value.flipX !== undefined) entry.flipX = value.flipX === true;
+    out[key] = entry;
+  }
+  return Object.keys(out).length > 0 ? out : null;
+}
+
+/**
+ * 取附件在指定方向键下的偏移覆盖：先精确匹配（含斜向 SE/SW/NE/NW），
+ * 无则按语义回退（斜下→down、斜上→up），仍无返回 null（全字段回退顶层值）。
+ */
+export function resolveAttachmentOffset(attachment, directionKey) {
+  const offsets = attachment?.directionOffsets;
+  if (!offsets || !directionKey) return null;
+  if (offsets[directionKey]) return offsets[directionKey];
+  const merged = DIRECTION_MERGE[directionKey];
+  return merged ? offsets[merged] || null : null;
+}
+
+/**
+ * 实体朝向（8 方向字符串）→ 附件方向键：left/right→side、
+ * 斜向→SE/SW/NE/NW（与 PlayerSkeletonStateMapper 的 directionKey 对齐）。
+ */
+export function resolveDirectionKey(direction) {
+  const value = String(direction || 'down');
+  if (value === 'up') return 'up';
+  if (value === 'left' || value === 'right') return 'side';
+  if (value === 'down-right') return 'SE';
+  if (value === 'down-left') return 'SW';
+  if (value === 'up-right') return 'NE';
+  if (value === 'up-left') return 'NW';
+  return 'down';
+}
+
 const num = (value, fallback = 0) => (Number.isFinite(Number(value)) ? Number(value) : fallback);
 const str = value => (typeof value === 'string' ? value.trim() : '');
 
@@ -51,6 +99,9 @@ function normalizeAttachment(raw) {
     // 三方向可见性（front/side/back 组）：解析即透传，缺省可见（缺字段会被当 undefined 恒显示）
     visible: raw?.visible !== false
   };
+  const directionOffsets = normalizeDirectionOffsets(raw?.directionOffsets);
+  if (directionOffsets) base.directionOffsets = directionOffsets;
+  if (raw?.flipX !== undefined) base.flipX = raw.flipX === true;
   if (type === 'slice') {
     return { ...base, sx: num(raw?.sx), sy: num(raw?.sy), sw: num(raw?.sw), sh: num(raw?.sh) };
   }

@@ -1035,78 +1035,6 @@
           "y": 360.70620235133714
         },
         {
-          "group": "S01-chase-wolves",
-          "id": "S01-chase-wolf-1",
-          "kind": "enemy",
-          "ref": "enemy.s01_chase_wolf",
-          "spawnWhen": {
-            "blackboardKey": "storyState",
-            "gte": 1,
-            "path": "s01Survival.pursuit.spawned"
-          },
-          "tags": [
-            "wolf",
-            "pursuit"
-          ],
-          "type": "ref",
-          "x": 162.75972071080855,
-          "y": 563.9743417309026
-        },
-        {
-          "group": "S01-chase-wolves",
-          "id": "S01-chase-wolf-2",
-          "kind": "enemy",
-          "ref": "enemy.s01_chase_wolf",
-          "spawnWhen": {
-            "blackboardKey": "storyState",
-            "gte": 2,
-            "path": "s01Survival.pursuit.spawned"
-          },
-          "tags": [
-            "wolf",
-            "pursuit"
-          ],
-          "type": "ref",
-          "x": 211.898400153787,
-          "y": 681.1301117422837
-        },
-        {
-          "group": "S01-chase-wolves",
-          "id": "S01-chase-wolf-3",
-          "kind": "enemy",
-          "ref": "enemy.s01_chase_wolf",
-          "spawnWhen": {
-            "blackboardKey": "storyState",
-            "gte": 3,
-            "path": "s01Survival.pursuit.spawned"
-          },
-          "tags": [
-            "wolf",
-            "pursuit"
-          ],
-          "type": "ref",
-          "x": 326.6366608085187,
-          "y": 691.541165727319
-        },
-        {
-          "group": "S01-wolf-boss",
-          "id": "S01-wolf-boss",
-          "kind": "enemy",
-          "ref": "enemy.s01_wolf_king",
-          "spawnWhen": {
-            "blackboardKey": "storyState",
-            "gte": 3,
-            "path": "s01Survival.pursuit.killed"
-          },
-          "tags": [
-            "wolf",
-            "boss"
-          ],
-          "type": "ref",
-          "x": 70.97473678143575,
-          "y": 603.6696214226083
-        },
-        {
           "editor": {
             "locked": false,
             "visible": true
@@ -1317,10 +1245,6 @@
           "activeWhen": {
             "all": [
               {
-                "equals": true,
-                "path": "s01Survival.pursuit.active"
-              },
-              {
                 "equals": false,
                 "path": "s01Survival.riverCrossed"
               }
@@ -1392,8 +1316,8 @@
                 87
               ],
               [
-                68,
-                121
+                72,
+                123
               ],
               [
                 48,
@@ -1415,15 +1339,15 @@
               ],
               [
                 102,
-                149
+                159
               ],
               [
                 58,
-                164
+                171
               ],
               [
-                17,
-                148
+                20,
+                157
               ]
             ]
           },
@@ -1436,7 +1360,7 @@
           "type": "slice",
           "walkable": false,
           "width": 112,
-          "x": 138.1793671663536,
+          "x": 134.32878480337453,
           "y": 269.580115213251
         }
       ],

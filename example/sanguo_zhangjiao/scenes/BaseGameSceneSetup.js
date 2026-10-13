@@ -1117,7 +1117,7 @@ export class BaseGameSceneSetup extends Scene {
       },
       eventJournal: this.sceneRuntime?.eventJournal || null,
       getLogicalTime: () => this.sceneRuntime?.authorityClocks?.logical?.now?.() || 0,
-      logger: (reason, binding) => console.warn(`BaseGameScene: 场景触发器绑定 ${reason}`, binding?.id),
+      logger: (reason, binding, detail) => console.warn(`BaseGameScene: 场景触发器绑定 ${reason}`, binding?.id, detail),
       onPromptChange: prompt => {
         if (prompt) this._hintPresenter?.showHint(prompt, '交互');
         else this._hintPresenter?.hideHint();

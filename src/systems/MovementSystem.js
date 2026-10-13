@@ -628,11 +628,22 @@ export class MovementSystem {
    */
   handleClickMovement(entities) {
     if (!this.inputManager) return;
-    if (!this.inputManager.isMouseClicked()
-      || this.inputManager.getMouseButton() !== 2
-      || this.inputManager.isMouseClickHandled()) return;
+    if (!this.inputManager.isMouseClicked()) return;
+    // 早退原因探针（右键丢命令定位）：点击被吞时也给出原因，避免「完全无响应」无从排查。
+    const probeBlocked = reason => {
+      const mp = this.inputManager.getMousePosition();
+      console.info(`[MoveProbe] click(${mp.x},${mp.y}) blocked: ${reason}`);
+    };
+    if (this.inputManager.getMouseButton() !== 2) {
+      probeBlocked(`button=${this.inputManager.getMouseButton()}`);
+      return;
+    }
+    if (this.inputManager.isMouseClickHandled()) {
+      probeBlocked('handled-by-ui');
+      return;
+    }
 
-    // 早退原因探针（右键丢命令定位）：每次右键点击打一行走到哪一步
+    // 流程内分支探针：走到哪一步被拦截/接管
     const probe = reason => {
       const mp = this.inputManager.getMousePosition();
       console.info(`[MoveProbe] click(${mp.x},${mp.y}) → ${reason}`);

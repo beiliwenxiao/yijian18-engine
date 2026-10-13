@@ -114,7 +114,10 @@ export class AssetManager {
             }
             registered++;
 
-            if (entry.runtime2D?.mode !== 'image' || !entry.runtime2D.path) continue;
+            // 'atlas' 条目（共享图集）本体同样是一张图：登记 descriptor 后
+            // getImage/getAsset 可按需补载（Scene1Terrain 等图集消费者依赖）。
+            const mode2d = entry.runtime2D?.mode;
+            if ((mode2d !== 'image' && mode2d !== 'atlas') || !entry.runtime2D.path) continue;
             const rawPath = `${basePath || ''}${entry.runtime2D.path}`;
             const url = this.resolveAssetPath(rawPath);
             const descriptor = { name: key, key, type: 'image', url, backends: ['2d', '3d'], manifestEntry: entry };

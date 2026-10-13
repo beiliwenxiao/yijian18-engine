@@ -301,6 +301,18 @@ export class SceneRenderPipeline {
       queue.push(item);
     }
 
+    // 施工表现（建筑工人抡锤）：场景状态驱动的伪实体，以脚底 sortY 参与 Y-sort，
+    // 玩家走近/走远时与工人正确前后遮挡；闭包绘制与营火/地形装饰队列项同款。
+    const constructionFx = scene.shelterConstructionFx;
+    if (constructionFx?.x != null && constructionFx?.render) {
+      queue.push({
+        type: 'constructionFx',
+        y: Number(constructionFx.sortY) || Number(constructionFx.y) || 0,
+        sortPriority: 2,
+        render: () => constructionFx.render(ctx)
+      });
+    }
+
     if (frameProfile) {
       let depthParticleCount = 0;
       for (let index = 0; index < queue.length; index++) {

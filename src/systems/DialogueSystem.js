@@ -207,8 +207,14 @@ export class DialogueSystem {
     }
 
     // 触发节点变化回调
+    // 回调异常不得中断对话状态机：否则 currentDialogue 停在 active 而 UI 未渲染，
+    // 上层「对话激活即吞掉一切点击」的守卫会把玩家锁进全局无响应。
     if (this.onNodeChangeCallback) {
-      this.onNodeChangeCallback(this.currentNode, context);
+      try {
+        this.onNodeChangeCallback(this.currentNode, context);
+      } catch (error) {
+        console.warn('DialogueSystem: onNodeChange 回调出错', nodeId, error);
+      }
     }
 
     // 记录历史

@@ -1390,6 +1390,7 @@
         // 暴露给数据驱动场景(DataDrivenPrologueScene)复用原版提示样式
         window.__ddShowTips = (title, text) => showTips(title, text);
         window.__ddHideTips = () => hideTips();
+        window.__shell = shell; // 临时调试暴露（复现庇护所出门问题用，复现完删除）
         
         // 触控按键在页面加载后固定存在；缓存 DOM 查询并按 1% 冷却进度刷新样式，
         // 避免每个 RAF 重复 selector、布局无效化与 Canvas 图标扫描。

@@ -49,7 +49,7 @@ export default defineConfig({
     editorFileAPIPlugin({ repoRoot, allowedProjectPaths: [CANONICAL_PROJECT] })
   ],
   server: {
-    port: 3100,
+    port: 3000,
     open: true,
     fs: { allow: [repoRoot] }
   },

@@ -101,7 +101,8 @@ describe('S01 首狼群数量旋钮', () => {
     };
     expect(await coordinator.handleEnemyKilled({ id: 'S01-first-wolf-7' })).toBe(true);
     expect(await coordinator.handleEnemyKilled({ id: 'S01-first-wolf-23' })).toBe(true);
-    expect(await coordinator.handleEnemyKilled({ id: 'S01-chase-wolf-1' })).toBe(true);
+    // 追逐狼功能已移除：旧 id 不再进入任何击杀管线
+    expect(await coordinator.handleEnemyKilled({ id: 'S01-chase-wolf-1' })).toBe(false);
     expect(await coordinator.handleEnemyKilled({ id: 'S01-wanderer-1' })).toBe(false);
     expect(published).toEqual(['S01-first-wolf-7', 'S01-first-wolf-23']);
   });

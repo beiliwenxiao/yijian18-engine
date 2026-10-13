@@ -34,23 +34,38 @@ export class SceneWorldInteraction {
       return;
     }
     if (scene.dialogueSystem?.isDialogueActive()) {
+      // 卡死自愈：active 但对话 UI 均不可见 = 对话节点渲染回调曾抛错/状态失同步，
+      // 此时吞点会让玩家陷入「无对话框却全局无响应」。仅当对话 UI 真正可见才吞，
+      // 否则放行（右键移动恢复；对话推进仍可走 E 键路径）。
+      const dialogueUiVisible = scene.dialogueChoiceBox?.visible === true
+        || scene.dialogueBox?.visible === true;
+      if (button === 'right' && !dialogueUiVisible) {
+        console.info('[MoveProbe] dialogue active but UI hidden — not swallowing right-click (state desync?)');
+      }
+      if (!dialogueUiVisible) return false;
       // 对话选项弹窗（与文本框拆分）：优先命中选项按钮
       if (scene.dialogueChoiceBox?.visible
           && scene.dialogueChoiceBox.handleMouseClick(mousePos.x, mousePos.y, button)) {
         input.markMouseClickHandled();
-        return;
+        return true;
       }
       if (scene.dialogueBox?.visible &&
           scene.dialogueBox.handleMouseClick(mousePos.x, mousePos.y, button)) {
         input.markMouseClickHandled();
-        return;
+        return true;
       }
       // 对话期间即使点击框外，也不能穿透到世界移动。
+      if (button === 'right') {
+        console.info('[MoveProbe] right-click swallowed by dialogue UI');
+      }
       input.markMouseClickHandled();
-      return;
+      return true;
     }
 
     if (scene.uiClickHandler.handleClick(mousePos.x, mousePos.y, button)) {
+      if (button === 'right') {
+        console.info('[MoveProbe] right-click swallowed by HUD (uiClickHandler hit)');
+      }
       input.markMouseClickHandled();
     } else if (button === 'left' && scene.backpackPanel?.visible) {
       scene.backpackPanel.hide();

@@ -543,7 +543,11 @@ export class SceneTriggerBindingSystem {
       if (nowMs - lastLoggedAt > 5000) {
         this._rejectLogAt = this._rejectLogAt || new Map();
         this._rejectLogAt.set(rejectKey, nowMs);
-        this.logger?.('triggerRejected', binding, { triggerId: binding.triggerId, eventType });
+        this.logger?.('triggerRejected', binding, {
+          triggerId: binding.triggerId,
+          eventType,
+          reason: this.triggerSystem?.describeRejection?.(binding.triggerId, eventType, params) || null
+        });
       }
     }
     return fired;
