@@ -22,10 +22,42 @@ export const LogLevel = {
 };
 
 /**
+ * 全局调试日志开关
+ * - true：输出日志（开发/调试用）
+ * - false：静默；日志调用代码可永久保留在代码中，不影响正式运行
+ * 通过 Logger.log() 等静态方法使用，也可在运行时修改 Logger.IS_TEST 切换
+ */
+export const IS_TEST = true;
+
+/**
  * 日志系统
  * 提供分级日志记录、过滤和导出功能
  */
 export class Logger {
+    /** 全局调试开关（运行时可改，如控制台执行 Logger.IS_TEST = false） */
+    static IS_TEST = IS_TEST;
+
+    /** 以下静态日志方法受 IS_TEST 控制：true 时输出，false 时不输出，调用代码可永久保留 */
+    static log(...args) {
+        if (Logger.IS_TEST) console.log(...args);
+    }
+
+    static debug(...args) {
+        if (Logger.IS_TEST) console.debug(...args);
+    }
+
+    static info(...args) {
+        if (Logger.IS_TEST) console.info(...args);
+    }
+
+    static warn(...args) {
+        if (Logger.IS_TEST) console.warn(...args);
+    }
+
+    static error(...args) {
+        if (Logger.IS_TEST) console.error(...args);
+    }
+
     constructor(options = {}) {
         // 当前日志级别
         this.level = options.level !== undefined ? options.level : LogLevel.INFO;
