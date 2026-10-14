@@ -17,12 +17,8 @@ const DEFAULT_CUES = Object.freeze({
     Object.freeze({ id: 's09.ambient.crowd', volume: 0.2 })
   ]),
   feedback: Object.freeze({
-    conflict: 's09.sfx.refugeeConflict',
     donation: 's09.sfx.donationCommitted',
-    classSelected: 's09.sfx.classSelected',
-    hardline: 's09.sfx.branchHardline',
-    appease: 's09.sfx.branchAppease',
-    silence: 's09.sfx.branchSilence'
+    classSelected: 's09.sfx.classSelected'
   })
 });
 
