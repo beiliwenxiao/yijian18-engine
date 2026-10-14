@@ -395,6 +395,54 @@
           "overrides": {
             "aiActive": false
           }
+        },
+        {
+          "id": "S03-vanguard-1",
+          "type": "ref",
+          "kind": "enemy",
+          "ref": "enemy.s03_han_soldier",
+          "group": "S03-han-vanguard",
+          "tags": [
+            "han_government",
+            "vanguard"
+          ],
+          "x": 430,
+          "y": 505,
+          "overrides": {
+            "aiActive": true
+          }
+        },
+        {
+          "id": "S03-vanguard-2",
+          "type": "ref",
+          "kind": "enemy",
+          "ref": "enemy.s03_han_soldier",
+          "group": "S03-han-vanguard",
+          "tags": [
+            "han_government",
+            "vanguard"
+          ],
+          "x": 520,
+          "y": 455,
+          "overrides": {
+            "aiActive": true
+          }
+        },
+        {
+          "id": "S03-vanguard-3",
+          "type": "ref",
+          "kind": "enemy",
+          "ref": "enemy.s03_han_soldier",
+          "group": "S03-han-vanguard",
+          "tags": [
+            "han_government",
+            "vanguard"
+          ],
+          "x": 615,
+          "y": 400,
+          "overrides": {
+            "aiActive": true
+          }
         }
       ]
     },

@@ -32,7 +32,7 @@
   "entryPointRef": "battle-intervention",
   "modeView": {
     "title": "广宗战场·选择参战方式", "description": "观战会禁用张梁救援；介入后有 120 秒完成四阶段突围。", "allowCancel": true,
-    "observe": { "label": "观战", "consequences": ["不能影响交战单位", "不能启动张梁救援", "等待广宗战果冻结"] },
-    "intervene": { "label": "介入", "consequences": ["进入黄巾阵线", "可启动张梁 120 秒救援", "承担百人战与三波刺客压力"] }
+    "observe": { "label": "观战", "consequences": ["不能影响交战单位", "不能启动张梁救援", "等待广宗战果冻结", "你的参战方式将计入结局判定"] },
+    "intervene": { "label": "介入", "consequences": ["进入黄巾阵线", "可启动张梁 120 秒救援", "承担百人战与三波刺客压力", "你的参战方式将计入结局判定"] }
   }
 }

@@ -1224,6 +1224,48 @@
       "templateId": "wild_wolf"
     },
     {
+      "ai": {
+        "detectionRange": 460,
+        "leashRange": 1400,
+        "pursuitRange": 900,
+        "telegraph": {
+          "shape": "path",
+          "pathLength": 190,
+          "pathWidth": 76,
+          "windupMs": 800
+        }
+      },
+      "aiActive": true,
+      "aiType": "aggressive",
+      "attackRange": 95,
+      "id": "enemy.s13_sun_xia",
+      "imageId": "s03.unit.hanSoldier",
+      "isBoss": true,
+      "level": 6,
+      "lootTable": [
+        {
+          "chance": 1,
+          "itemId": "resource.iron",
+          "maxQuantity": 8,
+          "minQuantity": 4
+        }
+      ],
+      "name": "孙夏",
+      "npcType": "monster_boss",
+      "sprite": {
+        "height": 88,
+        "isStatic": true,
+        "width": 62
+      },
+      "stats": {
+        "attack": 12,
+        "defense": 4,
+        "maxHp": 160,
+        "speed": 70
+      },
+      "templateId": "han_elite"
+    },
+    {
       "aiType": "aggressive",
       "id": "enemy.s01_bandit",
       "imageId": "s09.character.governmentScout",

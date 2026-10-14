@@ -1784,5 +1784,338 @@
         ]
       }
     }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s03.vanguardBroken",
+    "name": "击退朱儁前锋",
+    "transaction": {
+      "writes": [
+        {
+          "path": "s03.vanguardBroken",
+          "target": "story",
+          "value": true
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s13.sunXiaDefeated",
+    "name": "讨斩敌将孙夏",
+    "transaction": {
+      "writes": [
+        {
+          "path": "s13.sunXiaDefeated",
+          "target": "story",
+          "value": true
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "reward.s01.survivalKit",
+    "name": "奖励：山崖撤离补给",
+    "transaction": {
+      "when": {
+        "equals": false,
+        "path": "story.rewards.survivalKit"
+      },
+      "inventory": {
+        "addEntries": [
+          { "itemId": "resource.herb", "quantity": 3 },
+          { "itemId": "resource.food", "quantity": 3 }
+        ],
+        "type": "batchAdd"
+      },
+      "writes": [
+        { "path": "rewards.survivalKit", "target": "story", "value": true }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "reward.s02.rescueGift",
+    "name": "奖励：黄巾军的疗伤草药",
+    "transaction": {
+      "when": {
+        "equals": false,
+        "path": "story.rewards.rescueGift"
+      },
+      "inventory": {
+        "addEntries": [
+          { "itemId": "resource.herb", "quantity": 2 }
+        ],
+        "type": "batchAdd"
+      },
+      "writes": [
+        { "path": "rewards.rescueGift", "target": "story", "value": true }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "reward.s02.reliefGift",
+    "name": "奖励：饥民凑出的木料",
+    "transaction": {
+      "when": {
+        "equals": false,
+        "path": "story.rewards.reliefGift"
+      },
+      "inventory": {
+        "addEntries": [
+          { "itemId": "resource.wood", "quantity": 5 }
+        ],
+        "type": "batchAdd"
+      },
+      "writes": [
+        { "path": "rewards.reliefGift", "target": "story", "value": true }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "reward.s02.rationGift",
+    "name": "奖励：张角给的行军口粮",
+    "transaction": {
+      "when": {
+        "equals": false,
+        "path": "story.rewards.rationGift"
+      },
+      "inventory": {
+        "addEntries": [
+          { "itemId": "resource.food", "quantity": 5 }
+        ],
+        "type": "batchAdd"
+      },
+      "writes": [
+        { "path": "rewards.rationGift", "target": "story", "value": true }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "reward.s09.classGift",
+    "name": "奖励：军械库配发的铁料",
+    "transaction": {
+      "when": {
+        "equals": false,
+        "path": "story.rewards.classGift"
+      },
+      "inventory": {
+        "addEntries": [
+          { "itemId": "resource.iron", "quantity": 5 }
+        ],
+        "type": "batchAdd"
+      },
+      "writes": [
+        { "path": "rewards.classGift", "target": "story", "value": true }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "reward.s03.firstBattle",
+    "name": "奖励：首战缴获",
+    "transaction": {
+      "when": {
+        "equals": false,
+        "path": "story.rewards.firstBattle"
+      },
+      "inventory": {
+        "addEntries": [
+          { "itemId": "resource.herb", "quantity": 2 }
+        ],
+        "type": "batchAdd"
+      },
+      "writes": [
+        { "path": "rewards.firstBattle", "target": "story", "value": true }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "reward.s04.bocaiGift",
+    "name": "奖励：波才的谢礼",
+    "transaction": {
+      "when": {
+        "equals": false,
+        "path": "story.rewards.bocaiGift"
+      },
+      "inventory": {
+        "addEntries": [
+          { "itemId": "resource.food", "quantity": 4 },
+          { "itemId": "resource.herb", "quantity": 2 }
+        ],
+        "type": "batchAdd"
+      },
+      "writes": [
+        { "path": "rewards.bocaiGift", "target": "story", "value": true }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "reward.s05.mineGift",
+    "name": "奖励：矿坑铁矿",
+    "transaction": {
+      "when": {
+        "equals": false,
+        "path": "story.rewards.mineGift"
+      },
+      "inventory": {
+        "addEntries": [
+          { "itemId": "resource.iron", "quantity": 6 }
+        ],
+        "type": "batchAdd"
+      },
+      "writes": [
+        { "path": "rewards.mineGift", "target": "story", "value": true }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "reward.s06.siegeGift",
+    "name": "奖励：守城余下的木料",
+    "transaction": {
+      "when": {
+        "equals": false,
+        "path": "story.rewards.siegeGift"
+      },
+      "inventory": {
+        "addEntries": [
+          { "itemId": "resource.wood", "quantity": 8 }
+        ],
+        "type": "batchAdd"
+      },
+      "writes": [
+        { "path": "rewards.siegeGift", "target": "story", "value": true }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "reward.s07.delayGift",
+    "name": "奖励：迟滞作战缴获",
+    "transaction": {
+      "when": {
+        "equals": false,
+        "path": "story.rewards.delayGift"
+      },
+      "inventory": {
+        "addEntries": [
+          { "itemId": "resource.herb", "quantity": 3 }
+        ],
+        "type": "batchAdd"
+      },
+      "writes": [
+        { "path": "rewards.delayGift", "target": "story", "value": true }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "reward.s08.retreatGift",
+    "name": "奖励：撤运车上的存粮",
+    "transaction": {
+      "when": {
+        "equals": false,
+        "path": "story.rewards.retreatGift"
+      },
+      "inventory": {
+        "addEntries": [
+          { "itemId": "resource.food", "quantity": 4 }
+        ],
+        "type": "batchAdd"
+      },
+      "writes": [
+        { "path": "rewards.retreatGift", "target": "story", "value": true }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "reward.s10.campGift",
+    "name": "奖励：营地建设结余",
+    "transaction": {
+      "when": {
+        "equals": false,
+        "path": "story.rewards.campGift"
+      },
+      "inventory": {
+        "addEntries": [
+          { "itemId": "resource.wood", "quantity": 6 },
+          { "itemId": "resource.iron", "quantity": 4 }
+        ],
+        "type": "batchAdd"
+      },
+      "writes": [
+        { "path": "rewards.campGift", "target": "story", "value": true }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "reward.s11.zhangliangGift",
+    "name": "奖励：张梁的信物",
+    "transaction": {
+      "when": {
+        "equals": false,
+        "path": "story.rewards.zhangliangGift"
+      },
+      "inventory": {
+        "addEntries": [
+          { "itemId": "resource.herb", "quantity": 4 },
+          { "itemId": "resource.iron", "quantity": 4 }
+        ],
+        "type": "batchAdd"
+      },
+      "writes": [
+        { "path": "rewards.zhangliangGift", "target": "story", "value": true }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "reward.s12.zhangbaoGift",
+    "name": "奖励：张宝的信物",
+    "transaction": {
+      "when": {
+        "equals": false,
+        "path": "story.rewards.zhangbaoGift"
+      },
+      "inventory": {
+        "addEntries": [
+          { "itemId": "resource.food", "quantity": 6 },
+          { "itemId": "resource.herb", "quantity": 4 }
+        ],
+        "type": "batchAdd"
+      },
+      "writes": [
+        { "path": "rewards.zhangbaoGift", "target": "story", "value": true }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "reward.s13.bossGift",
+    "name": "奖励：孙夏的甲胄铁料",
+    "transaction": {
+      "when": {
+        "equals": false,
+        "path": "story.rewards.bossGift"
+      },
+      "inventory": {
+        "addEntries": [
+          { "itemId": "resource.iron", "quantity": 8 }
+        ],
+        "type": "batchAdd"
+      },
+      "writes": [
+        { "path": "rewards.bossGift", "target": "story", "value": true }
+      ]
+    }
   }
 ]

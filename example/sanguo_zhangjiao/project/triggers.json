@@ -697,6 +697,13 @@
           "tutorialId": "s01.capacity"
         },
         "stepId": "show-tutorial-s01-capacity"
+      },
+      {
+        "action": "state.transaction",
+        "params": {
+          "definitionId": "reward.s01.survivalKit"
+        },
+        "stepId": "reward-s01-survival-kit"
       }
     ],
     "id": "trg_s01_cliff_reached",
@@ -884,6 +891,13 @@
         "params": {
           "text": "黄巾军一行朝粥棚方向离开了。废营东侧隐约传来争执声……"
         }
+      },
+      {
+        "action": "state.transaction",
+        "params": {
+          "definitionId": "reward.s02.rescueGift"
+        },
+        "stepId": "reward-s02-rescue-gift"
       }
     ],
     "id": "trg_s02_awakening_done",
@@ -966,6 +980,13 @@
         "params": {
           "definitionId": "story.s02.travel"
         }
+      },
+      {
+        "action": "state.transaction",
+        "params": {
+          "definitionId": "reward.s02.rationGift"
+        },
+        "stepId": "reward-s02-ration-gift"
       }
     ],
     "id": "trg_s02_travel_s09",
@@ -1050,6 +1071,13 @@
         "params": {
           "definitionId": "story.s09.refugee.branch"
         }
+      },
+      {
+        "action": "state.transaction",
+        "params": {
+          "definitionId": "reward.s02.reliefGift"
+        },
+        "stepId": "reward-s02-relief-gift"
       }
     ],
     "id": "trg_s02_refugee_choice",
@@ -1169,6 +1197,13 @@
         "params": {
           "text": "职业已固定，初始装备和能力已发放。北侧军令旗现可通往颍川首战。"
         }
+      },
+      {
+        "action": "state.transaction",
+        "params": {
+          "definitionId": "reward.s09.classGift"
+        },
+        "stepId": "reward-s09-class-gift"
       }
     ],
     "id": "trg_s09_class_selected_feedback",
@@ -1257,6 +1292,13 @@
           "operation": "exit.s03",
           "scenarioId": "scenario.command.exit.s03"
         }
+      },
+      {
+        "action": "state.transaction",
+        "params": {
+          "definitionId": "reward.s03.firstBattle"
+        },
+        "stepId": "reward-s03-first-battle"
       }
     ],
     "id": "trg_s03_exit_s04",
@@ -1379,6 +1421,13 @@
           "operation": "route.choose",
           "scenarioId": "scenario.command.route.choose"
         }
+      },
+      {
+        "action": "state.transaction",
+        "params": {
+          "definitionId": "reward.s04.bocaiGift"
+        },
+        "stepId": "reward-s04-bocai-gift"
       }
     ],
     "id": "trg_s04_choose_yuzhou_route",
@@ -1487,6 +1536,13 @@
           "operation": "exit.s05",
           "scenarioId": "scenario.command.exit.s05"
         }
+      },
+      {
+        "action": "state.transaction",
+        "params": {
+          "definitionId": "reward.s05.mineGift"
+        },
+        "stepId": "reward-s05-mine-gift"
       }
     ],
     "id": "trg_s05_exit_s06",
@@ -1541,6 +1597,13 @@
           "operation": "recall.s06",
           "scenarioId": "scenario.command.recall.s06"
         }
+      },
+      {
+        "action": "state.transaction",
+        "params": {
+          "definitionId": "reward.s06.siegeGift"
+        },
+        "stepId": "reward-s06-siege-gift"
       }
     ],
     "id": "trg_s06_complete_recall",
@@ -1671,6 +1734,13 @@
           "spawnRef": "player",
           "transition": "fadeBlack"
         }
+      },
+      {
+        "action": "state.transaction",
+        "params": {
+          "definitionId": "reward.s07.delayGift"
+        },
+        "stepId": "reward-s07-delay-gift"
       }
     ],
     "id": "trg_s07_exit_s08",
@@ -1729,6 +1799,13 @@
           "scenarioId": "scenario.command.recall.s08",
           "sceneId": "S08"
         }
+      },
+      {
+        "action": "state.transaction",
+        "params": {
+          "definitionId": "reward.s08.retreatGift"
+        },
+        "stepId": "reward-s08-retreat-gift"
       }
     ],
     "id": "trg_s08_complete_recall",
@@ -1899,6 +1976,13 @@
           "operation": "exit.s10",
           "scenarioId": "scenario.command.exit.s10"
         }
+      },
+      {
+        "action": "state.transaction",
+        "params": {
+          "definitionId": "reward.s10.campGift"
+        },
+        "stepId": "reward-s10-camp-gift"
       }
     ],
     "id": "trg_s10_exit_s11",
@@ -2132,6 +2216,13 @@
           "scenarioId": "scenario.command.exit.s11",
           "sceneId": "S12"
         }
+      },
+      {
+        "action": "state.transaction",
+        "params": {
+          "definitionId": "reward.s11.zhangliangGift"
+        },
+        "stepId": "reward-s11-zhangliang-gift"
       }
     ],
     "id": "trg_s11_exit_s12",
@@ -2321,6 +2412,13 @@
           "operation": "exit.s12",
           "scenarioId": "scenario.command.exit.s12"
         }
+      },
+      {
+        "action": "state.transaction",
+        "params": {
+          "definitionId": "reward.s12.zhangbaoGift"
+        },
+        "stepId": "reward-s12-zhangbao-gift"
       }
     ],
     "id": "trg_s12_exit_final_route",
@@ -2392,6 +2490,13 @@
           "scenarioId": "scenario.command.exit.s13",
           "sceneId": "S14"
         }
+      },
+      {
+        "action": "state.transaction",
+        "params": {
+          "definitionId": "reward.s13.bossGift"
+        },
+        "stepId": "reward-s13-boss-gift"
       }
     ],
     "id": "trg_s13_exit_s14",
@@ -2511,6 +2616,56 @@
     "when": {
       "params": {},
       "type": "interact"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "state.transaction",
+        "params": {
+          "definitionId": "story.s03.vanguardBroken"
+        }
+      },
+      {
+        "action": "showTip",
+        "params": {
+          "text": "朱儁前锋溃退——这是你投军后的第一战。"
+        }
+      }
+    ],
+    "id": "trg_s03_vanguard_broken",
+    "name": "颍川玩家初战：击退朱儁前锋",
+    "once": true,
+    "when": {
+      "params": {
+        "group": "S03-han-vanguard"
+      },
+      "type": "waveCleared"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "state.transaction",
+        "params": {
+          "definitionId": "story.s13.sunXiaDefeated"
+        }
+      },
+      {
+        "action": "showTip",
+        "params": {
+          "text": "孙夏已伏诛，精山残部士气大振。"
+        }
+      }
+    ],
+    "id": "trg_s13_sun_xia_defeated",
+    "name": "精山决战：讨斩敌将孙夏",
+    "once": true,
+    "when": {
+      "params": {
+        "group": "S13-sun-xia"
+      },
+      "type": "waveCleared"
     }
   }
 ]

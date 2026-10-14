@@ -44,7 +44,10 @@
       { "id": "S13-yellow-03", "type": "ref", "kind": "enemy", "ref": "enemy.s03_yellow_turban_soldier", "group": "S13-yellow-turban", "tags": ["battleParticipant", "yellow_turban"], "x": 500, "y": 535, "overrides": { "aiActive": false } },
       { "id": "S13-han-01", "type": "ref", "kind": "enemy", "ref": "enemy.s03_han_soldier", "group": "S13-han-army", "tags": ["battleParticipant", "han_government"], "x": 760, "y": 245, "overrides": { "aiActive": false } },
       { "id": "S13-han-02", "type": "ref", "kind": "enemy", "ref": "enemy.s03_han_soldier", "group": "S13-han-army", "tags": ["battleParticipant", "han_government"], "x": 845, "y": 300, "overrides": { "aiActive": false } },
-      { "id": "S13-han-03", "type": "ref", "kind": "enemy", "ref": "enemy.s03_han_soldier", "group": "S13-han-army", "tags": ["battleParticipant", "han_government"], "x": 925, "y": 355, "overrides": { "aiActive": false } }
+      { "id": "S13-han-03", "type": "ref", "kind": "enemy", "ref": "enemy.s03_han_soldier", "group": "S13-han-army", "tags": ["battleParticipant", "han_government"], "x": 925, "y": 355, "overrides": { "aiActive": false } },
+      { "id": "S13-sun-xia", "type": "ref", "kind": "enemy", "ref": "enemy.s13_sun_xia", "group": "S13-sun-xia", "tags": ["han_government", "boss"], "x": 760, "y": 300, "overrides": { "aiActive": true } },
+      { "id": "S13-sun-xia-guard-1", "type": "ref", "kind": "enemy", "ref": "enemy.s03_han_soldier", "group": "S13-sun-xia", "tags": ["han_government", "bossGuard"], "x": 700, "y": 360, "overrides": { "aiActive": true } },
+      { "id": "S13-sun-xia-guard-2", "type": "ref", "kind": "enemy", "ref": "enemy.s03_han_soldier", "group": "S13-sun-xia", "tags": ["han_government", "bossGuard"], "x": 830, "y": 360, "overrides": { "aiActive": true } }
     ] },
     { "id": "layer_logic", "name": "终局战役交互", "visible": true, "locked": false, "objects": [
       { "id": "S13-cliff-shortcut", "type": "region", "name": "精山断崖攀爬捷径", "semanticRole": "climbSurface", "x": 210, "y": 500, "width": 90, "height": 100, "radius": 115, "climbTarget": { "x": 430, "y": 430 }, "prompt": "{climb}攀上断崖，绕至军令台侧翼" },

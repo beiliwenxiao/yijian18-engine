@@ -436,6 +436,18 @@
       {
         "eventMatcher": {
           "payload": {
+            "triggerId": "trg_s03_vanguard_broken"
+          },
+          "type": "triggerSucceeded"
+        },
+        "id": "vanguardBroken",
+        "objectiveType": "custom.event",
+        "title": "击退朱儁前锋",
+        "type": "objective"
+      },
+      {
+        "eventMatcher": {
+          "payload": {
             "triggerId": "trg_s03_exit_s04"
           },
           "type": "triggerSucceeded"
@@ -540,6 +552,18 @@
       {
         "eventMatcher": {
           "payload": {
+            "triggerId": "trg_s05_mine_status"
+          },
+          "type": "triggerSucceeded"
+        },
+        "id": "mineRecon",
+        "objectiveType": "custom.event",
+        "title": "探明矿坑敌情",
+        "type": "objective"
+      },
+      {
+        "eventMatcher": {
+          "payload": {
             "triggerId": "trg_s05_exit_s06"
           },
           "type": "triggerSucceeded"
@@ -581,6 +605,18 @@
         "id": "defenseChoice",
         "objectiveType": "custom.event",
         "title": "确定宛城防御策略",
+        "type": "objective"
+      },
+      {
+        "eventMatcher": {
+          "payload": {
+            "triggerId": "trg_s06_field_construction"
+          },
+          "type": "triggerSucceeded"
+        },
+        "id": "fieldWorks",
+        "objectiveType": "custom.event",
+        "title": "修筑野战工事",
         "type": "objective"
       },
       {
@@ -724,6 +760,18 @@
       {
         "eventMatcher": {
           "payload": {
+            "triggerId": "trg_s10_zhangjiao_death"
+          },
+          "type": "triggerSucceeded"
+        },
+        "id": "farewellZhangjiao",
+        "objectiveType": "custom.event",
+        "title": "送张角最后一程",
+        "type": "objective"
+      },
+      {
+        "eventMatcher": {
+          "payload": {
             "triggerId": "trg_s10_complete_relocation"
           },
           "type": "triggerSucceeded"
@@ -777,6 +825,30 @@
         "id": "zhangLiangRescue",
         "objectiveType": "custom.event",
         "title": "启动张梁限时救援",
+        "type": "objective"
+      },
+      {
+        "eventMatcher": {
+          "payload": {
+            "triggerId": "trg_s11_light_beacon"
+          },
+          "type": "triggerSucceeded"
+        },
+        "id": "lightBeacon",
+        "objectiveType": "custom.event",
+        "title": "点燃烽火",
+        "type": "objective"
+      },
+      {
+        "eventMatcher": {
+          "payload": {
+            "triggerId": "trg_s11_assassin_wave_3_defeated"
+          },
+          "type": "triggerSucceeded"
+        },
+        "id": "assassinsRepelled",
+        "objectiveType": "custom.event",
+        "title": "击退三波刺客",
         "type": "objective"
       },
       {
@@ -840,6 +912,30 @@
       {
         "eventMatcher": {
           "payload": {
+            "triggerId": "trg_s12_open_secret_passage"
+          },
+          "type": "triggerSucceeded"
+        },
+        "id": "secretPassage",
+        "objectiveType": "custom.event",
+        "title": "打开密道",
+        "type": "objective"
+      },
+      {
+        "eventMatcher": {
+          "payload": {
+            "triggerId": "trg_s12_burn_ladder"
+          },
+          "type": "triggerSucceeded"
+        },
+        "id": "burnLadder",
+        "objectiveType": "custom.event",
+        "title": "焚毁云梯",
+        "type": "objective"
+      },
+      {
+        "eventMatcher": {
+          "payload": {
             "triggerId": "trg_s12_zhang_bao_evacuation"
           },
           "type": "triggerSucceeded"
@@ -898,6 +994,18 @@
       {
         "eventMatcher": {
           "payload": {
+            "triggerId": "trg_s13_sun_xia_defeated"
+          },
+          "type": "triggerSucceeded"
+        },
+        "id": "sunXiaDefeated",
+        "objectiveType": "custom.event",
+        "title": "讨斩敌将孙夏",
+        "type": "objective"
+      },
+      {
+        "eventMatcher": {
+          "payload": {
             "triggerId": "trg_s13_exit_s14"
           },
           "type": "triggerSucceeded"
@@ -939,6 +1047,18 @@
         "id": "cargoTransfer",
         "objectiveType": "custom.event",
         "title": "清点随行辎重",
+        "type": "objective"
+      },
+      {
+        "eventMatcher": {
+          "payload": {
+            "triggerId": "trg_s14_operate_catapult"
+          },
+          "type": "triggerSucceeded"
+        },
+        "id": "operateCatapult",
+        "objectiveType": "custom.event",
+        "title": "驾驭投石机",
         "type": "objective"
       },
       {

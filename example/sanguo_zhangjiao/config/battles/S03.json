@@ -52,7 +52,7 @@
   "entryPointRef": "battle-intervention",
   "modeView": {
     "title": "颍川首战·选择参战方式", "description": "本场选择确认后不可更改；确认后两军将按实时 Combat/AI/Collision 流程交战。", "allowCancel": true,
-    "observe": { "label": "观战", "consequences": ["不能伤害或治疗交战阵营", "不能使用战场救援入口", "保留探索与非战役交互"] },
-    "intervene": { "label": "介入", "consequences": ["进入黄巾前线", "允许影响战斗与使用救援", "承担战场伤亡风险"] }
+    "observe": { "label": "观战", "consequences": ["不能伤害或治疗交战阵营", "不能使用战场救援入口", "保留探索与非战役交互", "你的参战方式将计入结局判定"] },
+    "intervene": { "label": "介入", "consequences": ["进入黄巾前线", "允许影响战斗与使用救援", "承担战场伤亡风险", "你的参战方式将计入结局判定"] }
   }
 }

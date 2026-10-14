@@ -36,7 +36,7 @@
   "entryPointRef": "battle-intervention",
   "modeView": {
     "title": "下曲阳·选择参战方式", "description": "士气为 0 将直接敌胜；观战禁用救援，介入并确认路线会原子扣除粮食 20、草药 10。", "allowCancel": true,
-    "observe": { "label": "观战", "consequences": ["不能启动张宝救援", "不能影响府衙守军", "等待下曲阳战果冻结"] },
-    "intervene": { "label": "介入", "consequences": ["消耗粮食 20 与草药 10", "守门 60 秒后开放密道", "护送失败会冻结张宝死亡结果"] }
+    "observe": { "label": "观战", "consequences": ["不能启动张宝救援", "不能影响府衙守军", "等待下曲阳战果冻结", "你的参战方式将计入结局判定"] },
+    "intervene": { "label": "介入", "consequences": ["消耗粮食 20 与草药 10", "守门 60 秒后开放密道", "护送失败会冻结张宝死亡结果", "你的参战方式将计入结局判定"] }
   }
 }

@@ -29,7 +29,7 @@
     { "id": "south", "label": "south 南线", "cost": { "wood": 4, "herb": 2 }, "collider": { "type": "rect", "x": 505, "y": 530, "width": 220, "height": 55 } }
   ],
   "modeView": { "title": "西华三线阻滞·选择参战方式", "description": "LocalMock 与实时战斗共享同一战役、阵营、目标和战果结构。介入后依次提交北、中、南三处阻滞点；本战没有历史武将救援。", "allowCancel": true,
-    "observe": { "label": "观战", "consequences": ["不能伤害或治疗交战单位", "不能亲自提交三线阻滞点", "等待西华战果冻结"] },
-    "intervene": { "label": "介入", "consequences": ["进入黄巾残部阵线", "可提交 north/center/south 三处阻滞点", "承担追击战伤亡风险"] }
+    "observe": { "label": "观战", "consequences": ["不能伤害或治疗交战单位", "不能亲自提交三线阻滞点", "等待西华战果冻结", "你的参战方式将计入结局判定"] },
+    "intervene": { "label": "介入", "consequences": ["进入黄巾残部阵线", "可提交 north/center/south 三处阻滞点", "承担追击战伤亡风险", "你的参战方式将计入结局判定"] }
   }
 }
