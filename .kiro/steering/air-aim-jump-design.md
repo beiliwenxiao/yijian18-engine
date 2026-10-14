@@ -43,7 +43,7 @@ ON_GROUND --按下起跳键--> JUMPING --按住≥apexHoldMs--> AIR_AIM --释放
 |---|--------|----------|------|-----------|
 | T1 | ON_GROUND | 起跳键**按下**（PC空格/手柄Y/触屏按住式键） | JUMPING | 立即 `startJump`：方向=移动输入方向（无输入=朝向，原地跳），距离=`pressJump.distance`；起跳烟尘；发 `jump_aim.press` |
 | T2 | JUMPING | 起跳键**释放**（holdMs < apexHoldMs） | JUMPING | 无（本次就是普通短跳，自然落地）；区别仅在于玩家没按住 |
-| T3 | JUMPING | **持续按住** holdMs ≥ `apexHoldMs`(500ms) 且未被打断 | AIR_AIM | 冻结跳跃进度（速度=0，重力挂起，停在当前 elevation≈顶点）；启动 `aimWindowMs`(3000) 倒计时；显示范围圈+落点标记；**子弹时间表现层开启**；发 `jump.aim.started` |
+| T3 | JUMPING | **持续按住** holdMs ≥ `apexHoldMs`(300ms) 且未被打断 | AIR_AIM | 冻结跳跃进度（速度=0，重力挂起，停在当前 elevation≈顶点）；启动 `aimWindowMs`(3000) 倒计时；显示范围圈+落点标记；**子弹时间表现层开启**；发 `jump.aim.started` |
 | T4 | AIR_AIM | 落点输入（PC右键/手柄摇杆/触屏触点） | AIR_AIM | 更新落点标记，距离按 `aimRange` 裁剪 |
 | T5 | AIR_AIM | 起跳键**释放** 且已存在有效落点 | RELOCATE | 以悬停点为起点重新 `startJump` 到落点（方向/距离由落点决定）；子弹时间表现层关闭；发 `jump.aim.ended{reason:'release'}` |
 | T6 | AIR_AIM | `aimWindowMs`(3000) 超时未释放 | JUMPING | **恢复原跳跃剩余段**（`startProgress` 续播，落回原落点）；表现层关闭；发 `jump.aim.ended{reason:'timeout'}` |
@@ -54,9 +54,9 @@ ON_GROUND --按下起跳键--> JUMPING --按住≥apexHoldMs--> AIR_AIM --释放
 
 | 参数 | 默认值 | 说明 |
 |------|--------|------|
-| `apexHoldMs` | 500 | 按住多久触发悬停；**基础跳 duration 须调至 1.0s 使顶点≈0.5s 与阈值对齐**（现状默认 duration 0.62s 顶点在 0.31s，直接沿用会导致"最高点"与触发时机不符） |
+| `apexHoldMs` | 300 | 按住多久触发悬停；**基础跳 duration 调至 0.6s 使顶点≈0.3s 与阈值对齐**（2026-10-14 手感调参：1.0s→0.6s，阈值 500ms→300ms） |
 | `pressJump.distance` | 84 | 按下即跳的短跳距离（提前松手时的落点），策划可调 |
-| `pressJump.duration` | 1.0 | 基础跳时长；顶点出现在 duration/2 |
+| `pressJump.duration` | 0.6 | 基础跳时长；顶点出现在 duration/2 |
 | `aimWindowMs` | 3000 | 悬停瞄准窗口，服务器真实时间权威 |
 | `aimRange` | 120 | 悬停点为圆心的最大重定位距离（沿用现 `maxDistance`） |
 | `freezeWorld` | false | 单机可选"真·全局子弹时间"（世界 timeScale=0）；**网络版强制 false** |
@@ -85,7 +85,7 @@ ON_GROUND --按下起跳键--> JUMPING --按住≥apexHoldMs--> AIR_AIM --释放
 
 ## 7. 网络版设计（服务器权威悬停）
 
-**原则**：0.5s 阈值、3s 窗口、落点校验全部以服务器时钟/服务器裁定为准；客户端本地预测整条链路（T1→T5），偏差 reconcile 收敛。悬停期间角色位置冻结，落点数据稳定，`jump_aim_release` 天然幂等。
+**原则**：0.3s 阈值、3s 窗口、落点校验全部以服务器时钟/服务器裁定为准；客户端本地预测整条链路（T1→T5），偏差 reconcile 收敛。悬停期间角色位置冻结，落点数据稳定，`jump_aim_release` 天然幂等。
 
 | 项 | 方案 |
 |----|------|
@@ -112,7 +112,7 @@ ON_GROUND --按下起跳键--> JUMPING --按住≥apexHoldMs--> AIR_AIM --释放
 1. **JumpSystem**：active 数据增加 `hover` 分支——`update()` 悬停时不推进 progress、不推进位移；新增 `resumeFromHover(entity)`（等价于按冻结 progress 续播，复用 `startProgress` 语义）；RELOCATE 直接对悬停实体重新 `startJump`（替换 active 条目）。
 2. **JumpChargeController → AirAimController**（新文件 `src/core/scene/AirAimController.js`，旧控制器保留直至切换）：保留 `_begin / setTargetPosition / getAimTarget / AimPreviewRenderer`；删除蓄力距离语义（`tapMaxMs/chargeMaxMs/_distanceForHold`）；状态由"按下保持"改为"跳跃中按住超阈值"，`update()` 入参增加 `isJumping`。
 3. **BaseGameSceneBehaviors**：AIMING 优先消费改右键；`update` 驱动传入跳跃状态；接 `airAim` 配置块与事件发布。
-4. **配置**：场景 config 增加 3.2 节参数块；`pressJump.duration` 调 1.0s 对齐顶点。
+4. **配置**：场景 config 增加 3.2 节参数块；`pressJump.duration` 调 0.6s 对齐顶点。
 5. **网络版（二期）**：NetworkManager 增加上表 action 与 state 字段；服务器校验逻辑独立成可单测的纯函数。
 6. **日志**：状态迁移统一 `Logger.log`（受 `IS_TEST` 开关控制）。
 

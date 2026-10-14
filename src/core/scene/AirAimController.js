@@ -34,10 +34,10 @@ import { Logger } from '../Logger.js';
 export class AirAimController {
   constructor(config = {}) {
     this.config = {
-      apexHoldMs: 500,          // 按住多久触发悬停瞄准（基础跳 duration 须使顶点≈该值）
+      apexHoldMs: 300,          // 按住多久触发悬停瞄准（基础跳 duration 须使顶点≈该值）
       aimWindowMs: 3000,        // 悬停瞄准窗口（超时恢复原跳跃）
       aimRange: 120,            // 悬停点为圆心的最大重定位距离
-      pressJump: { distance: 84, duration: 1.0 },  // 按下即跳的短跳参数
+      pressJump: { distance: 84, duration: 0.6 },  // 按下即跳的短跳参数
       targetRadius: 24,
       rangeColor: '#ffc46b',
       targetColor: '#00ff00',
@@ -45,7 +45,7 @@ export class AirAimController {
       barHeight: 8,
       barOffsetY: 22,
       ...config,
-      pressJump: { distance: 84, duration: 1.0, ...(config.pressJump || {}) }
+      pressJump: { distance: 84, duration: 0.6, ...(config.pressJump || {}) }
     };
     this._now = config.now || (() => performance.now());
     this.active = false;      // 正在跟踪一次起跳按键（T1 之后）
