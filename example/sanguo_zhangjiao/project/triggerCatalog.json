@@ -219,48 +219,6 @@
           "value": "ensureFirstWolf"
         },
         {
-          "id": "recordChaseWolfKilled",
-          "label": "记录追逐狼击杀",
-          "paramsSchema": {
-            "additionalProperties": false,
-            "properties": {
-              "operation": {
-                "enum": [
-                  "recordChaseWolfKilled"
-                ],
-                "type": "string"
-              }
-            },
-            "required": [
-              "operation"
-            ],
-            "type": "object"
-          },
-          "resultSemantics": "校验已提交敌人事件后原子增加追逐压力并恢复狼群；事件身份无效或事务失败时失败。",
-          "value": "recordChaseWolfKilled"
-        },
-        {
-          "id": "reconcilePursuit",
-          "label": "对齐追逐狼运行态",
-          "paramsSchema": {
-            "additionalProperties": false,
-            "properties": {
-              "operation": {
-                "enum": [
-                  "reconcilePursuit"
-                ],
-                "type": "string"
-              }
-            },
-            "required": [
-              "operation"
-            ],
-            "type": "object"
-          },
-          "resultSemantics": "按已提交追逐事实补齐放置与人工智能状态；无活动追逐时成功空操作。",
-          "value": "reconcilePursuit"
-        },
-        {
           "id": "presentEntry",
           "label": "展示荒原入场流程",
           "paramsSchema": {

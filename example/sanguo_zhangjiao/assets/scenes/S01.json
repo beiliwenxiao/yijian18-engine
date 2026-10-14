@@ -504,6 +504,28 @@
           "y": 465.3453953845641
         },
         {
+          "height": 200,
+          "id": "S01-zone-wolf-region",
+          "name": "狼群领地",
+          "regionId": "S01-wolf-region",
+          "semanticRole": "gameplayZone",
+          "type": "region",
+          "width": 240,
+          "x": 225,
+          "y": 200
+        },
+        {
+          "height": 100,
+          "id": "S01-zone-river-bank",
+          "name": "河岸跳石区",
+          "regionId": "S01-river-bank",
+          "semanticRole": "travelCheckpoint",
+          "type": "region",
+          "width": 120,
+          "x": 480,
+          "y": 340
+        },
+        {
           "climbable": false,
           "collide": false,
           "edgeFade": 0,
@@ -852,8 +874,8 @@
           "id": "S01-spawn-player",
           "ref": "player",
           "type": "spawn",
-          "x": 478.82803310644493,
-          "y": 628.3646445484285
+          "x": 408.81744468864395,
+          "y": 625.182345074892
         },
         {
           "id": "S01-spawn-shelter-rest",
@@ -930,8 +952,8 @@
             "path": "s01Survival.axeDropped"
           },
           "type": "ref",
-          "x": 542.1363339745284,
-          "y": 657.7872848142736
+          "x": 561.2301308157467,
+          "y": 653.8094104723531
         },
         {
           "group": "S01-wood",
@@ -1001,8 +1023,8 @@
             "path": "s01Survival.axeDropped"
           },
           "type": "ref",
-          "x": 543.1247013227977,
-          "y": 661.1875608458039
+          "x": 577.3344206633141,
+          "y": 622.9999671633669
         },
         {
           "count": {
@@ -1039,11 +1061,6 @@
           "id": "S01-wolf-pack-1",
           "kind": "enemy",
           "ref": "enemy.s01_chase_wolf",
-          "spawnWhen": {
-            "blackboardKey": "storyState",
-            "equals": true,
-            "path": "s01Survival.firstWolfKilled"
-          },
           "tags": [
             "wolf"
           ],
@@ -1056,11 +1073,6 @@
           "id": "S01-wolf-pack-2",
           "kind": "enemy",
           "ref": "enemy.s01_chase_wolf",
-          "spawnWhen": {
-            "blackboardKey": "storyState",
-            "equals": true,
-            "path": "s01Survival.firstWolfKilled"
-          },
           "tags": [
             "wolf"
           ],
@@ -1073,11 +1085,6 @@
           "id": "S01-wolf-pack-3",
           "kind": "enemy",
           "ref": "enemy.s01_chase_wolf",
-          "spawnWhen": {
-            "blackboardKey": "storyState",
-            "equals": true,
-            "path": "s01Survival.firstWolfKilled"
-          },
           "tags": [
             "wolf"
           ],
@@ -1090,11 +1097,6 @@
           "id": "S01-wolf-pack-4",
           "kind": "enemy",
           "ref": "enemy.s01_chase_wolf",
-          "spawnWhen": {
-            "blackboardKey": "storyState",
-            "equals": true,
-            "path": "s01Survival.firstWolfKilled"
-          },
           "tags": [
             "wolf"
           ],
@@ -1107,11 +1109,6 @@
           "id": "S01-wolf-king",
           "kind": "enemy",
           "ref": "enemy.s01_wolf_king",
-          "spawnWhen": {
-            "blackboardKey": "storyState",
-            "equals": true,
-            "path": "s01Survival.wolfPackCleared"
-          },
           "tags": [
             "wolf",
             "boss"
@@ -1380,6 +1377,42 @@
           "width": 130,
           "x": 845.6738947537871,
           "y": -101.91725394435701
+        },
+        {
+          "activeWhen": {
+            "all": [
+              {
+                "equals": true,
+                "path": "s01Survival.firstWolfKilled"
+              }
+            ]
+          },
+          "event": "enter",
+          "height": 200,
+          "id": "S01-binding-wolf-region",
+          "name": "狼群领地：狼群战开启",
+          "sceneEventId": "s01.event.wolfAmbush",
+          "target": "S01-zone-wolf-region",
+          "targetMode": "id",
+          "triggerId": "trg_s01_wolf_region_enter",
+          "type": "trigger",
+          "width": 240,
+          "x": 225,
+          "y": 200
+        },
+        {
+          "event": "enter",
+          "height": 100,
+          "id": "S01-binding-river-bank",
+          "name": "抵达河岸：跳跃教学",
+          "sceneEventId": "s01.event.riverBank",
+          "target": "S01-zone-river-bank",
+          "targetMode": "id",
+          "triggerId": "trg_s01_river_bank_enter",
+          "type": "trigger",
+          "width": 120,
+          "x": 480,
+          "y": 340
         }
       ],
       "visible": true
@@ -1458,6 +1491,63 @@
       "name": "装饰层",
       "objects": [
         {
+          "climbable": false,
+          "collide": true,
+          "edgeFade": 0,
+          "fill": "#3a5a2a",
+          "fillMode": "color",
+          "id": "shape_1791988116815_337",
+          "name": "地形多边形",
+          "opacity": 0,
+          "points": [
+            [
+              389,
+              565
+            ],
+            [
+              382,
+              629
+            ],
+            [
+              344,
+              634
+            ],
+            [
+              300,
+              620
+            ],
+            [
+              233,
+              632
+            ],
+            [
+              181,
+              566
+            ],
+            [
+              197,
+              530
+            ],
+            [
+              275,
+              507
+            ],
+            [
+              320,
+              523
+            ],
+            [
+              344,
+              550
+            ]
+          ],
+          "shapeType": "polygon",
+          "stroke": "#5a8a4a",
+          "strokeWidth": 0,
+          "type": "shape",
+          "walkable": false
+        },
+        {
           "group": "S01-berries",
           "id": "S01-node-berry-1",
           "kind": "resourceNode",
@@ -1472,8 +1562,8 @@
             "berry"
           ],
           "type": "ref",
-          "x": 272.88128805294804,
-          "y": 516.4188652946602
+          "x": 487.0479970667312,
+          "y": 677.2710997951882
         }
       ],
       "visible": true

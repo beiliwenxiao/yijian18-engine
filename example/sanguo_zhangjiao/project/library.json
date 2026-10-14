@@ -1251,9 +1251,9 @@
         "leashRange": 1400,
         "pursuitRange": 900,
         "telegraph": {
-          "shape": "path",
           "pathLength": 190,
           "pathWidth": 76,
+          "shape": "path",
           "windupMs": 800
         }
       },
@@ -2046,17 +2046,45 @@
   "gatherSkills": [],
   "players": [
     {
+      "animations": {
+        "attack": {
+          "frames": 4,
+          "row": 2,
+          "speed": 0.08
+        },
+        "death": {
+          "frames": 4,
+          "row": 3,
+          "speed": 0.12
+        },
+        "idle": {
+          "frames": 4,
+          "row": 0,
+          "speed": 0.15
+        },
+        "walk": {
+          "frames": 4,
+          "row": 1,
+          "speed": 0.1
+        }
+      },
+      "baseStats": {
+        "attack": 10,
+        "defense": 5,
+        "maxHp": 100,
+        "maxMp": 50,
+        "speed": 150
+      },
       "id": "player",
       "name": "主角",
-      "useSkeletonAnimation": true,
-      "sprite": { "src": "", "frameWidth": 64, "frameHeight": 64, "cols": 4, "rows": 4 },
-      "animations": {
-        "idle": { "row": 0, "frames": 4, "speed": 0.15 },
-        "walk": { "row": 1, "frames": 4, "speed": 0.1 },
-        "attack": { "row": 2, "frames": 4, "speed": 0.08 },
-        "death": { "row": 3, "frames": 4, "speed": 0.12 }
+      "sprite": {
+        "cols": 4,
+        "frameHeight": 64,
+        "frameWidth": 64,
+        "rows": 4,
+        "src": ""
       },
-      "baseStats": { "maxHp": 100, "maxMp": 50, "attack": 10, "defense": 5, "speed": 150 }
+      "useSkeletonAnimation": true
     }
   ],
   "skeletonParts": [

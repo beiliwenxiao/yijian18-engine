@@ -535,6 +535,19 @@
           "radius": 110,
           "pointerRadius": 60,
           "prompt": "{interact}前往粥棚营地"
+        },
+        {
+          "id": "S02-binding-village-beg",
+          "type": "trigger",
+          "name": "荒村乞讨区：村民乞讨",
+          "triggerId": "trg_s02_village_beg",
+          "x": 450,
+          "y": 430,
+          "width": 360,
+          "height": 170,
+          "event": "enter",
+          "targetMode": "id",
+          "target": "S02-zone-village-beg"
         }
       ]
     }

@@ -36,13 +36,6 @@
         "type": "objective"
       },
       {
-        "id": "findTools",
-        "objectiveType": "commit.fact",
-        "target": "story.s01.initialToolsPicked",
-        "title": "找齐斧头和剥皮刀",
-        "type": "objective"
-      },
-      {
         "action": "s01Survival",
         "id": "after.findTools.1",
         "params": {
@@ -92,6 +85,13 @@
         "title": "完成吃野果教程",
         "tutorialId": "tutorial-001",
         "type": "tutorial"
+      },
+      {
+        "id": "findTools",
+        "objectiveType": "commit.fact",
+        "target": "story.s01.initialToolsPicked",
+        "title": "找齐斧头和剥皮刀",
+        "type": "objective"
       },
       {
         "await": true,

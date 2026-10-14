@@ -81,7 +81,8 @@ describe('S01 庇护所过夜演出', () => {
 
     const pending = coordinator.handleAction({ operation: 'overnight' }, {});
     const repeated = await coordinator.handleAction({ operation: 'overnight' }, {});
-    expect(repeated).toEqual({ ok: true, status: 'alreadySleeping' });
+    // skipped：重复触发属前置拦截，不占 interact 冷却名额
+    expect(repeated).toEqual({ ok: true, skipped: true, status: 'alreadySleeping' });
 
     // 玩家走出室内：演出中断、进度条清理、事务零提交
     scene.currentSceneId = 'S01';
@@ -99,7 +100,8 @@ describe('S01 庇护所过夜演出', () => {
     );
     const coordinator = new S01S02Coordinator(scene);
     const result = await coordinator.handleAction({ operation: 'overnight' }, {});
-    expect(result).toEqual({ ok: true, status: 'alreadyCommitted' });
+    // skipped：已过夜的前置短路同样不占冷却名额
+    expect(result).toEqual({ ok: true, skipped: true, status: 'alreadyCommitted' });
     expect(coordinator.overnightSleepProgress).toBeNull();
   });
 });

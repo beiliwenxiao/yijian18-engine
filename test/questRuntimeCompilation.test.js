@@ -218,13 +218,16 @@ describe('QuestRuntime Quest v2 编译器', () => {
     expect(s01Intro.do.map(action => action.action)).toEqual(['dialogue.command', 'tutorial.command']);
     expect(s01Intro.do[0].params).toEqual({ dialogueId: 'dialogue.s01.wake', operation: 'start', await: true });
     expect(s01Intro.do[1].params).toEqual({ operation: 'show', tutorialId: 's01.move', await: true });
-    // 方案 B 编排步骤化：S01 目标后段（5 个）由步骤编译（findTools/gatherBerries/eatBerry/spotWolf/skinWolf）
-    // 新基线：全集 19 个（s01 编排 6 个 + S02-S14 任务化 accept 13 个），s01 六个仍居首
-    expect(compiled.triggers.slice(0, 6).map(trigger => trigger.id)).toEqual([
+    // 方案 B 编排步骤化：S01 目标后段由步骤编译；编辑器重排后目标链为
+    // lightCampfire → gatherBerries → eatBerry → findTools → gatherWood…，
+    // 编排段随步骤归属移动（after.eatBerry.2 现归属 findTools 段）。
+    // 新基线：全集 20 个（s01 编排 7 个 + S02-S14 任务化 accept 13 个），s01 七个仍居首
+    expect(compiled.triggers.slice(0, 7).map(trigger => trigger.id)).toEqual([
       'trg_task.s01.survival_intro',
-      'trg_task.s01.survival_after_findTools',
+      'trg_task.s01.survival_after_lightCampfire',
       'trg_task.s01.survival_after_gatherBerries',
       'trg_task.s01.survival_after_eatBerry',
+      'trg_task.s01.survival_after_findTools',
       'trg_task.s01.survival_after_spotWolf',
       'trg_task.s01.survival_after_skinWolf'
     ]);
@@ -255,7 +258,7 @@ describe('阶段③ S01 迁移契约：quest 编译产物与手写任务图逐�
     expect(compiledGraph.category).toBe('main');
     const objectives = compiledGraph.nodes.filter(node => node.type === 'objective');
     expect(objectives.map(node => node.id)).toEqual([
-      'lightCampfire', 'findTools', 'gatherBerries', 'eatBerry', 'gatherWood',
+      'lightCampfire', 'gatherBerries', 'eatBerry', 'findTools', 'gatherWood',
       'spotWolf', 'killWolf', 'skinWolf', 'cookMeat', 'craftGear',
       'buildShelter', 'stayOvernight', 'leaveShelter', 'crossRiver', 'reachCliff', 'escape'
     ]);
@@ -294,17 +297,18 @@ describe('阶段③ S01 迁移契约：quest 编译产物与手写任务图逐�
     const acceptTrigger = project.triggers.find(trigger => trigger.id === 'trg_s01_start_survival_task');
     expect(acceptTrigger).toBeTruthy();
     expect(acceptTrigger.do[0].params.definitionId).toBe('task.s01.survival');
-    // 方案 B 编排步骤化：开场段 + 5 个目标后段由步骤编译（findTools/gatherBerries/eatBerry/spotWolf/skinWolf）；
+    // 方案 B 编排步骤化：开场段 + 6 个目标后段由步骤编译（lightCampfire/gatherBerries/eatBerry/findTools/spotWolf/skinWolf）；
     // 交互/机制类触发器（拾斧、添柴交互、sceneEnter 装配等）仍由 triggers[] 手写承担。
     // 新基线：S02-S14 任务化新增 13 个 accept 触发器（12 sceneEnter + summons 的 questCompleted 前置），
-    // 编译触发器全集 = s01 编排 6 个 + accept 13 个 = 19。
+    // 编译触发器全集 = s01 编排 7 个 + accept 13 个 = 20。
     const triggers = compileQuestProject(project).triggers;
-    expect(triggers.length).toBe(19);
-    expect(triggers.slice(0, 6).map(trigger => trigger.id)).toEqual([
+    expect(triggers.length).toBe(20);
+    expect(triggers.slice(0, 7).map(trigger => trigger.id)).toEqual([
       'trg_task.s01.survival_intro',
-      'trg_task.s01.survival_after_findTools',
+      'trg_task.s01.survival_after_lightCampfire',
       'trg_task.s01.survival_after_gatherBerries',
       'trg_task.s01.survival_after_eatBerry',
+      'trg_task.s01.survival_after_findTools',
       'trg_task.s01.survival_after_spotWolf',
       'trg_task.s01.survival_after_skinWolf'
     ]);
@@ -328,12 +332,15 @@ describe('阶段③ S01 迁移契约：quest 编译产物与手写任务图逐�
       .toEqual({ type: 'task.completed', params: { definitionId: 'task.s02.rescue' } });
     expect(triggers.find(trigger => trigger.id === 'trg_task.s03.yingchuanBattle_accept').when)
       .toEqual({ type: 'sceneEnter', params: { sceneId: 'S03' } });
-    // 目标后段语义抽查：eatBerry 后段 = 完成吃教程 + 显示砍柴教程(await)；spotWolf 后段合并了首狼生成链
+    // 目标后段语义抽查（编辑器重排后）：eatBerry 段 = 完成吃教程；砍柴教程步骤现归属 findTools 段；
+    // spotWolf 段合并了首狼生成链
     const eatBerryAfter = triggers.find(trigger => trigger.id === 'trg_task.s01.survival_after_eatBerry');
     expect(eatBerryAfter.when).toEqual({ type: 'state.transaction', params: { definitionId: 'story.s01.berryEaten' } });
-    expect(eatBerryAfter.do.map(action => action.action)).toEqual(['tutorial.command', 'tutorial.command']);
+    expect(eatBerryAfter.do.map(action => action.action)).toEqual(['tutorial.command']);
     expect(eatBerryAfter.do[0].params).toEqual({ operation: 'complete', tutorialId: 'tutorial-001' });
-    expect(eatBerryAfter.do[1].params).toEqual({ operation: 'show', tutorialId: 's01.chopWood', await: true });
+    const findToolsAfter = triggers.find(trigger => trigger.id === 'trg_task.s01.survival_after_findTools');
+    expect(findToolsAfter.do.map(action => action.action)).toEqual(['tutorial.command']);
+    expect(findToolsAfter.do[0].params).toEqual({ operation: 'show', tutorialId: 's01.chopWood', await: true });
     const spotWolfAfter = triggers.find(trigger => trigger.id === 'trg_task.s01.survival_after_spotWolf');
     expect(spotWolfAfter.do.map(action => action.params.operation)).toEqual(['commitStoryWhenReady', 'ensureFirstWolf', 'show']);
   });

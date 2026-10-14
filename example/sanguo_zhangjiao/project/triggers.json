@@ -2621,10 +2621,8 @@
     "name": "荒村：村民乞讨",
     "once": true,
     "when": {
-      "params": {
-        "regionId": "S02-village-beg"
-      },
-      "type": "enterRegion"
+      "params": {},
+      "type": "enter"
     }
   },
   {
@@ -2745,6 +2743,15 @@
         }
       },
       {
+        "action": "spawnPlacements",
+        "params": {
+          "selector": {
+            "group": "S01-wolf-king"
+          }
+        },
+        "stepId": "spawn-wolf-king"
+      },
+      {
         "action": "showTip",
         "params": {
           "text": "狼群倒下了。林间传来一声低沉的咆哮——一头巨狼踏出阴影。"
@@ -2784,6 +2791,61 @@
         "group": "S01-wolf-king"
       },
       "type": "waveCleared"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "spawnPlacements",
+        "params": {
+          "selector": {
+            "group": "S01-wolf-pack"
+          }
+        },
+        "stepId": "spawn-wolf-pack"
+      },
+      {
+        "action": "showTip",
+        "params": {
+          "text": "林间的阴影里竖起了耳朵——狼群压低身子，围拢过来。"
+        }
+      }
+    ],
+    "editorScope": {
+      "sceneIds": [
+        "S01"
+      ]
+    },
+    "id": "trg_s01_wolf_region_enter",
+    "name": "荒原：踏入狼群领地，狼群战开启",
+    "once": true,
+    "when": {
+      "params": {},
+      "type": "enter"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "tutorial.command",
+        "params": {
+          "operation": "show",
+          "tutorialId": "s01.jump"
+        },
+        "stepId": "show-tutorial-s01-jump"
+      }
+    ],
+    "editorScope": {
+      "sceneIds": [
+        "S01"
+      ]
+    },
+    "id": "trg_s01_river_bank_enter",
+    "name": "荒原：抵达河岸，跳跃教学开始",
+    "once": true,
+    "when": {
+      "params": {},
+      "type": "enter"
     }
   }
 ]

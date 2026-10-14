@@ -44,8 +44,9 @@ function findNode(system, nodeId) {
 }
 
 function runToWoodStage(system) {
+  // 目标链（编辑器重排后）：lightCampfire → gatherBerries → eatBerry → findTools → gatherWood。
+  // 任务图无事件缓冲：每个事实必须在对应目标节点 active 时提交，提前提交会被丢弃。
   commitEvent(system, 1, 'story.s01.campfireLit');
-  commitEvent(system, 2, 'story.s01.initialToolsPicked');
   // gatherBerries 已改为真实采集事件驱动（gathering.completed + itemId）
   system.consumeEvent({
     eventId: 'evt:gather:berries:1',
@@ -53,6 +54,7 @@ function runToWoodStage(system) {
     payload: { itemId: 'resource.wild_berry', accepted: 1, nodeId: 'S01-node-berry-1' }
   });
   commitEvent(system, 4, 'story.s01.berryEaten');
+  commitEvent(system, 2, 'story.s01.initialToolsPicked');
 }
 
 describe('S01 采集木材任务进度（真实 task.s01.survival 定义）', () => {

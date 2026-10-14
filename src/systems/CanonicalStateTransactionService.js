@@ -205,7 +205,12 @@ export class CanonicalStateTransactionService {
             addedItems = addEntries.map(entry => ({ item: clone(entry.item), quantity: entry.quantity }));
           }
         } else {
-          const entries = this._value(inventorySpec.entries || [], env).map(entry => inventorySpec.type === 'batchAdd'
+          // 词汇对齐：batchAdd 与 batchExchange 一样使用 addEntries（奖励事务内容侧统一写法）；
+          // batchRemove 沿用 entries。两者互为兜底，避免键名分叉静默产出空操作。
+          const rawEntries = inventorySpec.type === 'batchAdd'
+            ? (inventorySpec.addEntries ?? inventorySpec.entries ?? [])
+            : (inventorySpec.entries ?? inventorySpec.removeEntries ?? []);
+          const entries = this._value(rawEntries, env).map(entry => inventorySpec.type === 'batchAdd'
             ? { item: { ...this.getItem(entry.itemId), ...(entry.item || {}) }, quantity: entry.quantity }
             : { itemId: entry.itemId, quantity: entry.quantity });
           inventoryOperation = this.inventoryTransactions.commit({ type: inventorySpec.type, inventory, entries,

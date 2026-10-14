@@ -98,6 +98,7 @@ describe('P1–P5 canonical disk cold restart replay', () => {
       {
         name: 'fushui-gift', snapshot: s02Snapshot(),
         commands: [command('state.transaction', 'gift:first', { definitionId: 'reward.s02.rescueGift' })],
+        // 奖励事务的应用事件 = 1 条事务 + 每件入包物品 1 条 item.gained（符水×2 + 草药×1 → 2 条）
         assert: state => {
           expect(state.blackboard.storyState.rewards).toMatchObject({ rescueGift: true });
           expect(state.inventory).toEqual(expect.arrayContaining([
@@ -106,13 +107,18 @@ describe('P1–P5 canonical disk cold restart replay', () => {
         }
       }
     ];
+    const expectedApplicationEvents = {
+      'wolf-chain': ['state.transaction', 'state.transaction'],
+      'fushui-gift': ['state.transaction', 'item.gained', 'item.gained']
+    };
     for (const scenario of cases) {
       const { harness } = createHarness();
       const replay = await harness.replay({ seed: 0x5eed, clocks: createFakeClocks({ logical: 20, monotonic: 100 }), snapshot: scenario.snapshot, commands: scenario.commands });
       expect(replay.equal, scenario.name).toBe(true);
       scenario.assert(replay.first.serviceState);
       expect(replay.first.committedEvents.length).toBe(scenario.commands.length);
-      expect(replay.first.applicationEvents.length).toBe(scenario.commands.length);
+      expect(replay.first.applicationEvents.map(event => event.type))
+        .toEqual(expectedApplicationEvents[scenario.name]);
     }
   });
 
@@ -171,8 +177,20 @@ describe('P1–P5 canonical disk cold restart replay', () => {
   });
 
   it('P2.2 checkpoint 失败时真实事务原子回滚 inventory 与 story 奖励事实', async () => {
+    // rescueGift 事务本身无 checkpoint 节拍：在测试磁盘克隆上为它注入一个 checkpoint 步骤，
+    // 使注入的 checkpoint 失败能命中真实回滚链路（inventory + storyState 双还原）。
+    const disk = createDemoCanonicalDisk();
+    const commands = JSON.parse(JSON.stringify(disk.read('project/commands.json')));
+    const gift = (commands || []).find(entry => entry?.id === 'reward.s02.rescueGift');
+    expect(gift, 'reward.s02.rescueGift 定义存在').toBeTruthy();
+    gift.transaction.checkpoint = {
+      checkpointId: 'checkpoint.S02.rescueGift',
+      checkpointMode: 'bestEffort',
+      reason: 'checkpoint'
+    };
+    disk.write('project/commands.json', commands);
     const runtime = await createRealCanonicalRuntime({
-      disk: createDemoCanonicalDisk(), seed: 91, clocks: createFakeClocks(),
+      disk, seed: 91, clocks: createFakeClocks(),
       snapshot: { ...s02Snapshot(), checkpointFailure: true }
     });
     try {

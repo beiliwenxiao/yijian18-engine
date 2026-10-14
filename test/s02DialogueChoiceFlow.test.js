@@ -46,6 +46,7 @@ async function buildChoiceChain({ storyStateOverrides = {} } = {}) {
   const dialogues = readProjectJson('project/dialogues.json');
   const commands = readProjectJson('project/commands.json');
   const quests = readProjectJson('project/quests.json');
+  const tutorials = readProjectJson('project/tutorials.json');
 
   const prologue = dialogues.find(dialogue => dialogue?.id === 'dialogue.s02.prologue');
   const choiceTriggers = triggers.filter(trigger => (
@@ -55,16 +56,21 @@ async function buildChoiceChain({ storyStateOverrides = {} } = {}) {
     ['story.s02.judgement.kill', 'story.s02.judgement.save'].includes(command?.id)
   ));
   const rescueQuest = quests.find(quest => quest?.id === 'task.s02.rescue');
+  // choice_save 的教学位引用两条指挥教程：最小快照必须带全，否则定义库校验报悬空引用
+  const choiceTutorials = tutorials.filter(tutorial => (
+    ['s02.command.move', 's02.command.carry'].includes(tutorial?.id)
+  ));
 
   expect(prologue, 'dialogue.s02.prologue 存在').toBeTruthy();
   expect(choiceTriggers, '两个 S02 选项触发器存在').toHaveLength(2);
   expect(judgementCommands, '两个裁决事务定义存在').toHaveLength(2);
   expect(rescueQuest, 'task.s02.rescue 定义存在').toBeTruthy();
+  expect(choiceTutorials, '两条指挥教程定义存在').toHaveLength(2);
 
   const project = {
     schemaVersion: 1,
     scenes: [{ id: 'S02' }],
-    battles: [], rescues: [], tutorials: [], library: {},
+    battles: [], rescues: [], tutorials: choiceTutorials, library: {},
     endings: [{ id: 'sanguo-zhangjiao-endings-v1', endings: [{ id: 'chaos-weed' }, { id: 'order-weed' }] }],
     dialogues: [prologue],
     triggers: choiceTriggers,
@@ -176,6 +182,8 @@ async function buildChoiceChain({ storyStateOverrides = {} } = {}) {
         }
         case 'ending.command':
         case 'scenario.command':
+        case 'tutorial.command':
+          // 教学位 tutorial.command 与结局/编排一致：编排链路桩恒真（教程表现由 TutorialSystem 自测覆盖）
           return commandResult(command.operationId);
         default:
           throw new Error(`未路由的命令类型: ${command.commandType}`);
