@@ -4462,6 +4462,68 @@
       "revision": 1
     },
     {
+      "assetId": "s01.equipment.wolfHideSkirt",
+      "imageId": "s01.equipment.wolfHideSkirt",
+      "category": "equipment",
+      "usage": [
+        "S01",
+        "armor",
+        "crafting"
+      ],
+      "sourceFile": "assets/images/s01/wolf-hide-skirt.png",
+      "runtime2D": {
+        "path": "assets/images/s01/wolf-hide-skirt.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "s01.equipment.wolfHideSkirt"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 46,
+        "height": 44
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "s01.equipment.wolfHideBoots",
+      "imageId": "s01.equipment.wolfHideBoots",
+      "category": "equipment",
+      "usage": [
+        "S01",
+        "boots",
+        "crafting"
+      ],
+      "sourceFile": "assets/images/s01/wolf-hide-boots.png",
+      "runtime2D": {
+        "path": "assets/images/s01/wolf-hide-boots.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "s01.equipment.wolfHideBoots"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 42,
+        "height": 34
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
       "assetId": "s01.food.roastedWolfMeat",
       "imageId": "s01.food.roastedWolfMeat",
       "category": "item",
