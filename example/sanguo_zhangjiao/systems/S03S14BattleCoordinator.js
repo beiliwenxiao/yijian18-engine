@@ -16,6 +16,7 @@ import { SceneBattleRuntime } from '../../../src/core/scene/SceneBattleRuntime.j
 import { BattleMode, BattleState } from '../../../src/systems/BattleSystem.js';
 import { RescueSystem } from '../../../src/systems/RescueSystem.js';
 import { EndingSystem } from '../../../src/systems/EndingSystem.js';
+import { Logger } from '../../../src/core/Logger.js';
 import { RescueObjectiveView } from '../../../src/ui/RescueObjectiveView.js';
 import { IrreversibleChoiceView } from '../../../src/ui/IrreversibleChoiceView.js';
 import { EndingPresentationView } from '../../../src/ui/EndingPresentationView.js';
@@ -31,6 +32,8 @@ import { S13S14Coordinator } from './S13S14Coordinator.js';
 const S04_BATTLE_ID = 'battle.s04.changshe';
 const S13_BATTLE_ID = 'battle.s13.jingshan';
 const BATTLE_SCENE_IDS = Object.freeze(['S03', 'S04', 'S05', 'S07', 'S11', 'S12', 'S13']);
+// 个人决斗组：观战模式下随战果按历史结局离场，介入模式由玩家亲手解决（组灭触发 waveCleared）
+const PERSONAL_DUEL_GROUPS = Object.freeze({ S03: 'S03-han-vanguard', S13: 'S13-sun-xia' });
 const BATTLE_IDS = Object.freeze([
   S03_BATTLE_ID, S04_BATTLE_ID, S05_BATTLE_ID, S07_BATTLE_ID,
   S11_BATTLE_ID, S12_BATTLE_ID, S13_BATTLE_ID
@@ -176,6 +179,7 @@ export class S03S14BattleCoordinator {
       },
       beforeSelect: ({ mode, sceneId }) => {
         if (sceneId === 'S05') this._markS05Visited(gameLoader);
+        this._retirePersonalDuelGroup(gameLoader, sceneId, mode);
         if (sceneId !== 'S13') return { ok: true };
         return this.scene.s11s14SceneCoordinator.prepareS13Settlement(mode);
       },
@@ -192,6 +196,11 @@ export class S03S14BattleCoordinator {
       settleResult: context => this._settleSpecialResult(context),
       afterDomainSettlement: context => this._settleUnavailableRescue(context),
       afterSettlement: async ({ result }) => {
+        // 战果冻结时收束个人决斗目标：介入亲手击杀的组已真实 waveCleared（once 幂等），
+        // 观战/回避战斗的组按历史结局在此补发，任务目标不会悬空。
+        const duelGroup = result.battleId === S03_BATTLE_ID ? PERSONAL_DUEL_GROUPS.S03
+          : result.battleId === S13_BATTLE_ID ? PERSONAL_DUEL_GROUPS.S13 : null;
+        if (duelGroup) gameLoader.triggerSystem?.fire?.('waveCleared', { group: duelGroup });
         if (result.battleId === S13_BATTLE_ID && this.scene.currentSceneId === 'S13') {
           await this.scene.s11s14SceneCoordinator.checkS13Exit();
         }
@@ -329,6 +338,19 @@ export class S03S14BattleCoordinator {
       ...before, visitedScenes: [...new Set([...(before.visitedScenes || []), 'S05'])]
     });
     return true;
+  }
+
+  /**
+   * 观战模式：个人决斗组（S03 前锋 / S13 孙夏）不与玩家交手，
+   * 墓碑式离场（tombstone 入存档链，切场景不复活），战果由 afterSettlement 按历史结局收束。
+   */
+  _retirePersonalDuelGroup(gameLoader, sceneId, mode) {
+    if (mode !== BattleMode.OBSERVE) return false;
+    const group = PERSONAL_DUEL_GROUPS[sceneId];
+    if (!group) return false;
+    const result = this.scene.context.services.placements?.despawn?.({ group });
+    Logger.log('[S03S14BattleCoordinator] 观战离场个人决斗组:', group, result?.ok === true);
+    return result?.ok === true;
   }
 
   _resolveS12LowMorale(gameLoader, { sceneId, definition }) {
