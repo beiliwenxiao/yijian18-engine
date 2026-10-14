@@ -347,22 +347,12 @@ export class GamepadManager {
   }
 
   /**
-   * 左摇杆 + 十字键合成的移动向量。
-   * 十字键为数字输入，magnitude 记为 1（全速）。
+   * 左摇杆移动向量。
+   * 十字键不参与移动（仅用于 UI 列表导航），移动方向只认左摇杆模拟量。
    * @returns {{x:number, y:number, magnitude:number}}
    */
   getMoveVector() {
-    if (this.leftStick.magnitude > 0) return { ...this.leftStick };
-
-    let x = 0, y = 0;
-    if (this.isButtonDown(PadButton.DPAD_LEFT)) x -= 1;
-    if (this.isButtonDown(PadButton.DPAD_RIGHT)) x += 1;
-    if (this.isButtonDown(PadButton.DPAD_UP)) y -= 1;
-    if (this.isButtonDown(PadButton.DPAD_DOWN)) y += 1;
-    if (x === 0 && y === 0) return { x: 0, y: 0, magnitude: 0 };
-
-    const mag = Math.hypot(x, y);
-    return { x: x / mag, y: y / mag, magnitude: 1 };
+    return { ...this.leftStick };
   }
 
   /** 右摇杆（瞄准）向量 */

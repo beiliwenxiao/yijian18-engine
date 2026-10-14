@@ -510,7 +510,8 @@ export class InputManager {
     }
 
     /**
-     * 移动输入向量。手柄左摇杆可给出模拟量（轻推慢走），键盘/十字键为 ±1。
+     * 移动输入向量。手柄左摇杆可给出模拟量（轻推慢走），键盘 WASD/方向键为 ±1。
+     * 十字键不参与移动（仅 UI 列表导航与药水快捷键）。
      * MovementSystem 优先用它，取不到再退回逐键判断。
      * @returns {{x:number, y:number, magnitude:number}}
      */

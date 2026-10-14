@@ -602,7 +602,7 @@ export class MovementSystem {
         }
       }
       speed = Math.max(0, Number(speed) || 0);
-      // vx/vy 已按 magnitude 缩放（键盘/十字键归一化为 ±1，摇杆含模拟量），
+      // vx/vy 已按 magnitude 缩放（键盘归一化为 ±1，摇杆含模拟量），
       // 再乘 magnitude 会把摇杆量平方（半程推杆 0.42²≈0.18 倍速），这里只乘一次。
       movement.startKeyboardMovement(vx * speed, vy * speed);
       if (sprite && sprite.currentAnimation !== 'walk') sprite.playAnimation('walk');
