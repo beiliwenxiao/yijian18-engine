@@ -216,6 +216,42 @@
       "subType": "accessory"
     },
     {
+      "id": "equipment.s01.wolf_hide_skirt",
+      "name": "狼皮裙",
+      "type": "equipment",
+      "imageId": "s01.equipment.wolfHideSkirt",
+      "assetId": "s01.equipment.wolfHideSkirt",
+      "maxStack": 1,
+      "rarity": 1,
+      "sprite": {
+        "height": 44,
+        "width": 46
+      },
+      "stats": {
+        "defense": 6,
+        "maxHp": 4
+      },
+      "subType": "armor"
+    },
+    {
+      "id": "equipment.s01.wolf_hide_boots",
+      "name": "狼皮靴",
+      "type": "equipment",
+      "imageId": "s01.equipment.wolfHideBoots",
+      "assetId": "s01.equipment.wolfHideBoots",
+      "maxStack": 1,
+      "rarity": 1,
+      "sprite": {
+        "height": 34,
+        "width": 42
+      },
+      "stats": {
+        "defense": 4,
+        "maxHp": 3
+      },
+      "subType": "boots"
+    },
+    {
       "id": "food.roasted_wolf_meat",
       "name": "烤狼肉",
       "type": "consumable",

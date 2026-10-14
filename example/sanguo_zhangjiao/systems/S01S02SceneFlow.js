@@ -44,6 +44,18 @@ const RECIPE_ACTIONS = Object.freeze({
     kind: 'tanning', inputImageId: 's01.item.wolfHide', outputImageId: 's01.equipment.wolfHideBracers',
     outputItemId: 'equipment.s01.wolf_hide_bracers',
     inputSize: Object.freeze({ width: 48, height: 38 }), outputSize: Object.freeze({ width: 48, height: 40 })
+  }),
+  's01.wolfHideSkirt': Object.freeze({
+    workstationId: 's01.tanningRack', placementId: 'S01-prop-tanning-rack', duration: 3,
+    kind: 'tanning', inputImageId: 's01.item.wolfHide', outputImageId: 's01.equipment.wolfHideSkirt',
+    outputItemId: 'equipment.s01.wolf_hide_skirt',
+    inputSize: Object.freeze({ width: 48, height: 38 }), outputSize: Object.freeze({ width: 46, height: 44 })
+  }),
+  's01.wolfHideBoots': Object.freeze({
+    workstationId: 's01.tanningRack', placementId: 'S01-prop-tanning-rack', duration: 3,
+    kind: 'tanning', inputImageId: 's01.item.wolfHide', outputImageId: 's01.equipment.wolfHideBoots',
+    outputItemId: 'equipment.s01.wolf_hide_boots',
+    inputSize: Object.freeze({ width: 48, height: 38 }), outputSize: Object.freeze({ width: 42, height: 34 })
   })
 });
 const FIRST_WOLF_PREFIX = 'S01-first-wolf-';
@@ -1504,6 +1516,24 @@ export class S01S02Coordinator {
           enabled: count('resource.wolf_hide') >= 1,
           disabledReason: '需要狼皮 1 张。',
           materials: [{ name: '狼皮', available: count('resource.wolf_hide'), quantity: 1 }]
+        },
+        {
+          id: 's01.wolfHideSkirt',
+          name: '狼皮裙',
+          description: '防御 +6，生命 +4。',
+          summary: '狼皮 ×2',
+          enabled: count('resource.wolf_hide') >= 2,
+          disabledReason: '需要狼皮 2 张。',
+          materials: [{ name: '狼皮', available: count('resource.wolf_hide'), quantity: 2 }]
+        },
+        {
+          id: 's01.wolfHideBoots',
+          name: '狼皮靴',
+          description: '防御 +4，生命 +3。',
+          summary: '狼皮 ×2',
+          enabled: count('resource.wolf_hide') >= 2,
+          disabledReason: '需要狼皮 2 张。',
+          materials: [{ name: '狼皮', available: count('resource.wolf_hide'), quantity: 2 }]
         }
       ];
     return Object.freeze({
@@ -1677,15 +1707,30 @@ export class S01S02Coordinator {
       return { ...result, crafted: true };
     }
 
-    const craftingVest = session.recipeId === 's01.wolfHideVest';
-    const firstStoryCraft = craftingVest
-      ? beforeCraft.wolfVestCrafted !== true
-      : beforeCraft.wolfBracersCrafted !== true;
-    const definitionId = craftingVest
-      ? (firstStoryCraft ? 'story.s01.craftWolfVest' : 'craft.s01.wolfHideVest')
-      : session.recipeId === 's01.wolfHideBracers'
-        ? (firstStoryCraft ? 'story.s01.craftWolfBracers' : 'craft.s01.wolfHideBracers')
-        : null;
+    const recipeLabels = {
+      's01.wolfHideVest': '狼皮背心',
+      's01.wolfHideBracers': '狼皮护腕',
+      's01.wolfHideSkirt': '狼皮裙',
+      's01.wolfHideBoots': '狼皮靴'
+    };
+    const recipeLabel = recipeLabels[session.recipeId];
+    let definitionId = null;
+    let firstStoryCraft = false;
+    let isStoryRecipe = false;
+    if (session.recipeId === 's01.wolfHideVest') {
+      // 主线只需制作狼皮背心；护腕/裙/靴为可选制作，不阻塞庇护所解锁。
+      isStoryRecipe = true;
+      firstStoryCraft = beforeCraft.wolfVestCrafted !== true;
+      definitionId = firstStoryCraft ? 'story.s01.craftWolfVest' : 'craft.s01.wolfHideVest';
+    } else if (session.recipeId === 's01.wolfHideBracers') {
+      isStoryRecipe = true;
+      firstStoryCraft = beforeCraft.wolfBracersCrafted !== true;
+      definitionId = firstStoryCraft ? 'story.s01.craftWolfBracers' : 'craft.s01.wolfHideBracers';
+    } else if (session.recipeId === 's01.wolfHideSkirt') {
+      definitionId = 'craft.s01.wolfHideSkirt';
+    } else if (session.recipeId === 's01.wolfHideBoots') {
+      definitionId = 'craft.s01.wolfHideBoots';
+    }
     const result = definitionId
       ? await this._submit(definitionId, {}, `${session.operationId}:craft`)
       : { ok: false, code: 'recipeUnknown' };
@@ -1693,10 +1738,10 @@ export class S01S02Coordinator {
 
     const survival = this._story().s01Survival || {};
     let shelterConstructionUnlocked = false;
-    if (firstStoryCraft
+    if (isStoryRecipe
+      && firstStoryCraft
       && survival.wolfVestCrafted === true
       && survival.wolfGearCrafted !== true) {
-      // 主线只需制作狼皮背心；护腕为可选制作，不阻塞庇护所解锁。
       const aggregate = await this._submit(
         'story.s01.wolfGearCrafted',
         {},
@@ -1706,10 +1751,8 @@ export class S01S02Coordinator {
       shelterConstructionUnlocked = true;
     }
     this.scene._showScreenTip(shelterConstructionUnlocked
-      ? `${craftingVest ? '狼皮背心' : '狼皮护腕'}制作完成，已放入背包。天气寒冷，需要建立一个庇护所，才能度过寒冷的夜晚。`
-      : craftingVest
-        ? '狼皮背心制作完成，已放入背包。'
-        : '狼皮护腕制作完成，已放入背包。', {
+      ? `${recipeLabel}制作完成，已放入背包。天气寒冷，需要建立一个庇护所，才能度过寒冷的夜晚。`
+      : `${recipeLabel || '物品'}制作完成，已放入背包。`, {
       title: shelterConstructionUnlocked ? '寒夜将至' : '制作完成'
     });
     return { ...result, crafted: true };

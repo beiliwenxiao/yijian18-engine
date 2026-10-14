@@ -747,6 +747,50 @@
   },
   {
     "commandType": "state.transaction",
+    "id": "craft.s01.wolfHideSkirt",
+    "name": "兑换狼皮裙",
+    "transaction": {
+      "inventory": {
+        "addEntries": [
+          {
+            "itemId": "equipment.s01.wolf_hide_skirt",
+            "quantity": 1
+          }
+        ],
+        "removeEntries": [
+          {
+            "itemId": "resource.wolf_hide",
+            "quantity": 2
+          }
+        ],
+        "type": "batchExchange"
+      }
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "craft.s01.wolfHideBoots",
+    "name": "兑换狼皮靴",
+    "transaction": {
+      "inventory": {
+        "addEntries": [
+          {
+            "itemId": "equipment.s01.wolf_hide_boots",
+            "quantity": 1
+          }
+        ],
+        "removeEntries": [
+          {
+            "itemId": "resource.wolf_hide",
+            "quantity": 2
+          }
+        ],
+        "type": "batchExchange"
+      }
+    }
+  },
+  {
+    "commandType": "state.transaction",
     "id": "story.s01.wolfGearCrafted",
     "name": "狼皮背心制作完成",
     "transaction": {

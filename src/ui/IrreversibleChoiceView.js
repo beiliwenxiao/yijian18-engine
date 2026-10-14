@@ -100,19 +100,23 @@ export class IrreversibleChoiceView extends UIElement {
     if (this.busy || !inputManager) return true;
     const choices = this.snapshot?.choices || [];
     const compact = this.isCompact;
-    if (!compact && choices.length > 1) {
-      // 键盘导航（边沿触发）：键名必须用 InputManager 归一化后的虚拟键（'left'/'right'），
-      // 读取原始 'a'/'arrowleft' 永远匹配不上（与 InteractionChoiceView 同族问题）。
-      const keyDirection = inputManager.isKeyPressed?.('right') ? 1
-        : (inputManager.isKeyPressed?.('left') ? -1 : 0);
-      if (!this._keyNavArmed) {
-        if (keyDirection === 0) this._keyNavArmed = true;
-      } else if (keyDirection !== 0 && keyDirection !== this._keyNavDirection) {
-        this.moveSelection(keyDirection);
+    if (choices.length > 1) {
+      if (!compact) {
+        // 键盘导航（边沿触发）：键名必须用 InputManager 归一化后的虚拟键（'left'/'right'），
+        // 读取原始 'a'/'arrowleft' 永远匹配不上（与 InteractionChoiceView 同族问题）。
+        // 紧凑弹窗（灵魂复活确认）不启用键盘导航：allowMovement 下 A/D 同时用于世界移动。
+        const keyDirection = inputManager.isKeyPressed?.('right') ? 1
+          : (inputManager.isKeyPressed?.('left') ? -1 : 0);
+        if (!this._keyNavArmed) {
+          if (keyDirection === 0) this._keyNavArmed = true;
+        } else if (keyDirection !== 0 && keyDirection !== this._keyNavDirection) {
+          this.moveSelection(keyDirection);
+        }
+        this._keyNavDirection = keyDirection;
       }
-      this._keyNavDirection = keyDirection;
 
-      // 手柄左摇杆左右导航（死区阈值 + 边沿触发），十字键左右同样可用
+      // 手柄左摇杆左右导航（死区阈值 + 边沿触发），十字键左右同样可用。
+      // 紧凑复活确认（compact）同样启用：手柄玩家用左摇杆在 取消/复活 间切换。
       const stickX = Number(gamepad?.leftStick?.x) || 0;
       const padLeft = gamepad?.isButtonPressed?.(PadButton.DPAD_LEFT) === true;
       const padRight = gamepad?.isButtonPressed?.(PadButton.DPAD_RIGHT) === true;
