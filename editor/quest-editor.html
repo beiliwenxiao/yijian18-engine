@@ -43,7 +43,16 @@
                 canonicalSession: ctx._canonicalEditorSession('project'),
                 projectPath: ctx._canonicalProjectPath(),
                 getSceneList: () => ctx.dataManager.getGameScenes(gameId),
-                getSceneDocuments: () => ctx.getSceneDocuments()
+                getSceneDocuments: () => ctx.getSceneDocuments(),
+                // 场景出生条件联动：任务编辑器内一键把联动计划写回场景文件（与场景编辑器同一 canonical 命令通道）
+                saveSceneDocument: async (sceneId, scene) => {
+                    const { service, projectPath } = ctx._sceneCommands();
+                    return service.save(projectPath, {
+                        sceneId,
+                        sourceUri: `${projectPath.slice(0, -'/game.project.json'.length)}/assets/scenes/${sceneId}.json`,
+                        scene: structuredClone(scene)
+                    });
+                }
             });
             await editor.init();
         })().catch(error => {

@@ -21,6 +21,11 @@ import {
   validateQuestDefinition
 } from '../src/systems/quest/QuestRuntime.js';
 import { getTriggerEventDescriptor, getTriggerEvents, validateTriggerActionParams } from '../src/systems/TriggerCatalog.js';
+import {
+  computeConditionSyncPlan,
+  applyConditionSyncPlan,
+  conditionSyncPlanSignature
+} from './QuestSceneConditionSync.js';
 
 const clone = value => structuredClone(value);
 const list = value => Array.isArray(value) ? value : [];
@@ -51,11 +56,12 @@ const ACCEPT_SOURCES = Object.freeze([
  * 保存契约：validateQuestDefinition 全部通过后才允许提交（产物由运行时编译器二次校验）。
  */
 export class QuestWizardEditor {
-  constructor(container, { canonicalSession, projectPath = '', getSceneList = () => [], getSceneDocuments = () => [] } = {}) {
+  constructor(container, { canonicalSession, projectPath = '', getSceneList = () => [], getSceneDocuments = () => [], saveSceneDocument = null } = {}) {
     if (!(container instanceof HTMLElement)) throw new TypeError('QuestWizardEditor requires a container element');
     if (!canonicalSession) throw new TypeError('QuestWizardEditor requires a shared CanonicalEditorSession');
     this.container = container;
     this.canonicalSession = canonicalSession;
+    this.deps = { saveSceneDocument };
     this.projectPath = projectPath || canonicalSession.sourceUri;
     this.getSceneList = typeof getSceneList === 'function' ? getSceneList : () => [];
     this.getSceneDocuments = typeof getSceneDocuments === 'function' ? getSceneDocuments : () => [];
@@ -68,6 +74,8 @@ export class QuestWizardEditor {
     this._dialoguesDirty = false;
     this._expandedDlgSteps = new Set(); // 展开就地编辑的对话 ID（dialogue 步骤卡）
     this.selectedId = null;
+    this._conditionSyncPlan = { links: [], updates: [] };
+    this._conditionSyncDismissed = null;
     this._initialized = false;
   }
 
@@ -95,6 +103,10 @@ export class QuestWizardEditor {
     this.dialogues = list(project.dialogues).map(clone);
     this._dialoguesDirty = false;
     this._expandedDlgSteps = new Set();
+    this._conditionSyncPlan = { links: [], updates: [] };
+    this._conditionSyncDismissed = null;
+    // 联动基线：加载时的步骤顺序快照（只有本会话内被拖动/重排的目标步骤才参与自动改写）
+    this._stepsAtLoad = new Map(this.quests.map(quest => [quest?.id, structuredClone(list(quest?.steps))]));
     if (this.selectedId && !this.quests.some(quest => quest?.id === this.selectedId)) this.selectedId = null;
   }
 
@@ -247,8 +259,16 @@ export class QuestWizardEditor {
     // 三态：external（accept 缺省，由现有触发器接取）/ auto（运行时自动）/ manual（NPC 触发器接取）
     const acceptMode = quest.accept ? (text(accept.mode) || 'auto') : 'external';
     const acceptWhen = accept.when || {};
+    // 场景出生条件联动：随每次重排/编辑自动重算（拖动步骤后立即反映到审查栏）
+    this._conditionSyncPlan = this._computeConditionSync(quest);
+    const stepLinks = new Map();
+    for (const link of this._conditionSyncPlan.links) {
+      if (!stepLinks.has(link.stepId)) stepLinks.set(link.stepId, []);
+      stepLinks.get(link.stepId).push(link);
+    }
     target.innerHTML = `
       <div class="qwe-note">从上到下填写玩家的经历；保存后运行时自动编译为任务图与编排触发器，触发器/教程/对话都是这里的步骤。</div>
+      ${this._conditionSyncHtml(this._conditionSyncPlan)}
       <div class="qwe-graph" data-role="quest-graph">${this._graphSvg(quest)}</div>
       <fieldset class="qwe-block"><legend>① 元信息</legend>
         <div class="qwe-grid">
@@ -278,7 +298,7 @@ export class QuestWizardEditor {
         <h3>任务步骤（${list(quest.steps).length}）</h3>
         <button type="button" data-action="add-step">+ 添加步骤</button>
       </div>
-      <div class="qwe-steps">${list(quest.steps).map((step, index, all) => this._stepCard(step, index, all.length)).join('') || '<div class="qwe-empty compact">暂无步骤，请添加玩家的第一件事</div>'}</div>
+      <div class="qwe-steps">${list(quest.steps).map((step, index, all) => this._stepCard(step, index, all.length, stepLinks.get(text(step.id)) || [])).join('') || '<div class="qwe-empty compact">暂无步骤，请添加玩家的第一件事</div>'}</div>
       <fieldset class="qwe-block"><legend>③ 奖励</legend>
         <div class="qwe-rewards">${list(quest.rewards).map((reward, index) => this._rewardCard(reward, index)).join('') || '<small class="qwe-muted">无奖励（可留空）</small>'}</div>
         <button type="button" data-action="add-reward">+ 添加奖励</button>
@@ -503,7 +523,7 @@ export class QuestWizardEditor {
       ${valueField}`;
   }
 
-  _stepCard(step, index, total) {
+  _stepCard(step, index, total, links = []) {
     const type = text(step.type) || 'objective';
     let typeFields = '';
     if (type === 'dialogue') {
@@ -540,7 +560,8 @@ export class QuestWizardEditor {
         <div class="qwe-field"><label>目标类型</label><select data-step-field="objectiveType">${typeOptions}</select></div>
         <div class="qwe-field"><label>${this._escape(identityField?.label || '目标 ID')}</label><select data-step-field="target">${this._targetOptions(descriptor, step.target)}</select></div>
         <div class="qwe-field"><label>目标数量</label><select data-step-field="requiredCount">${this._countOptions(Math.max(1, Math.floor(Number(step.requiredCount) || 1)))}</select></div>
-        <div class="qwe-field full"><small>数量累计：${descriptor?.progressBy ? `按「${this._escape(descriptor.progressBy)}」份数累计${step.progressBy === null ? '（本目标已显式关闭）' : ''}` : '按事件次数累计'}${descriptor?.description ? ` · ${this._escape(descriptor.description)}` : ''}</small></div>`;
+        <div class="qwe-field full"><small>数量累计：${descriptor?.progressBy ? `按「${this._escape(descriptor.progressBy)}」份数累计${step.progressBy === null ? '（本目标已显式关闭）' : ''}` : '按事件次数累计'}${descriptor?.description ? ` · ${this._escape(descriptor.description)}` : ''}</small></div>
+        ${links.length ? this._stepLinkHtml(links) : ''}`;
     } else {
       const paramsText = this._escape(JSON.stringify(step.params || {}, null, 2));
       const paramsErrors = validateTriggerActionParams({ action: step.action, params: step.params || {} }, this.project, 'params');
@@ -600,6 +621,99 @@ export class QuestWizardEditor {
       </div>`;
   }
 
+  // ── 场景出生条件联动（拖动/重排步骤后，mapTargets 关联对象的 spawnWhen 跟随新顺序）──
+
+  _computeConditionSync(quest) {
+    try {
+      const plan = computeConditionSyncPlan({
+        quest,
+        project: this.project,
+        sceneDocs: this.getSceneDocuments(),
+        previousSteps: this._stepsAtLoad?.get(quest?.id) || null
+      });
+      // 内容变化后自动重新展示（忽略状态按计划签名失效）
+      if (conditionSyncPlanSignature(plan) !== this._conditionSyncDismissed) this._conditionSyncDismissed = null;
+      return plan;
+    } catch (error) {
+      console.warn('[QuestWizardEditor] 场景出生条件联动计算失败', error);
+      return { links: [], updates: [] };
+    }
+  }
+
+  _conditionSyncHtml(plan) {
+    if (!plan?.updates?.length) return '';
+    if (this._conditionSyncDismissed) return ''; // 本次计划已被忽略（计划变化时签名失效自动恢复展示）
+    const rows = plan.updates.map(update => {
+      const target = update.clearExpected
+        ? '移除出生条件（成为首个目标，进入场景直接生成）'
+        : `改写为 <code>${this._escape(update.expectedPath)}</code>（前序目标「${this._escape(update.precedingStepTitle || '')}」提交）`;
+      return `<li><code>${this._escape(update.sceneId)}</code> · ${this._escape(update.label)}
+        ：<code>${this._escape(update.currentPath || '(无)')}</code> → ${target}</li>`;
+    }).join('');
+    const saveReady = typeof this.deps.saveSceneDocument === 'function';
+    return `
+      <div class="qwe-sync" data-role="condition-sync">
+        <div class="qwe-sync-head">
+          <strong>🗺 场景出生条件联动（${plan.updates.length} 处待更新）</strong>
+          <small>拖动步骤调整顺序后，关联场景对象的出生条件可一键跟随新流程</small>
+          <span class="qwe-sync-actions">
+            <button type="button" data-action="sync-apply" ${saveReady ? '' : 'disabled title="当前页面未接入场景保存通道"'}>应用到场景文件</button>
+            <button type="button" data-action="sync-dismiss">忽略</button>
+          </span>
+        </div>
+        <ul>${rows}</ul>
+      </div>`;
+  }
+
+  _stepLinkHtml(links) {
+    const items = links.map(link => {
+      if (link.status === 'match') {
+        return `<span class="qwe-link ok" title="与当前步骤顺序一致">🗺 ${this._escape(link.placementId)} · 门控 ${this._escape(link.currentPath || '')} ✓</span>`;
+      }
+      if (link.status === 'mismatch') {
+        if (link.changedByReorder) {
+          const expected = link.clearExpected ? '（应移除出生条件）' : `（期望 ${this._escape(link.expectedPath || '')}）`;
+          return `<span class="qwe-link warn" title="步骤已拖动，可在顶部联动栏一键应用">🗺 ${this._escape(link.placementId)} · 门控 ${this._escape(link.currentPath || '')} ⚠${expected}</span>`;
+        }
+        return `<span class="qwe-link muted" title="出生条件与步骤顺序不一致，但本会话未拖动该步骤；拖动它即可联动更新">🗺 ${this._escape(link.placementId)} · 门控 ${this._escape(link.currentPath || '')} ⚠（未联动）</span>`;
+      }
+      return `<span class="qwe-link muted" title="${this._escape(link.reason || '保持不变')}">🗺 ${this._escape(link.placementId)} · 门控 ${this._escape(link.currentPath || '(复合条件)')} · 保持不变</span>`;
+    });
+    return `<div class="qwe-field full"><small class="qwe-links">${items.join(' ')}</small></div>`;
+  }
+
+  async _applyConditionSync() {
+    const plan = this._conditionSyncPlan;
+    if (!plan?.updates?.length) return;
+    if (typeof this.deps.saveSceneDocument !== 'function') {
+      this._toast('当前页面未接入场景保存通道', 'error');
+      return;
+    }
+    const applyButton = this.container.querySelector('[data-action="sync-apply"]');
+    if (applyButton) applyButton.disabled = true;
+    try {
+      const { sceneDocs, sceneIds } = applyConditionSyncPlan(this.getSceneDocuments(), plan.updates);
+      let committed = 0;
+      for (const sceneId of sceneIds) {
+        const result = await this.deps.saveSceneDocument(sceneId, sceneDocs[sceneId]);
+        if (result?.ok !== true || result.committed !== true) {
+          const message = this._saveError(result);
+          this._toast(`场景 ${sceneId} 保存失败：${message}`, 'error');
+          return;
+        }
+        committed += 1;
+      }
+      this._conditionSyncDismissed = conditionSyncPlanSignature(plan);
+      this._toast(`已更新 ${committed} 个场景的出生条件并保存`, 'success');
+    } catch (error) {
+      console.error('[QuestWizardEditor] 应用场景出生条件联动失败', error);
+      this._toast(`应用失败：${error?.message || error}`, 'error');
+    } finally {
+      if (applyButton) applyButton.disabled = false;
+      this._renderDetail();
+    }
+  }
+
   _bindDetail(quest) {
     const target = this.container.querySelector('[data-role="quest-detail"]');
     target.querySelectorAll('[data-quest-field]').forEach(input => input.addEventListener('change', () => {
@@ -625,6 +739,12 @@ export class QuestWizardEditor {
       quest.next = [...next];
     }));
     target.querySelectorAll('[data-step-index]').forEach(card => this._bindStep(quest, card));
+    // 场景出生条件联动：一键写回场景文件 / 忽略本次计划
+    target.querySelector('[data-action="sync-apply"]')?.addEventListener('click', () => { this._applyConditionSync(); });
+    target.querySelector('[data-action="sync-dismiss"]')?.addEventListener('click', () => {
+      this._conditionSyncDismissed = conditionSyncPlanSignature(this._conditionSyncPlan);
+      this._renderDetail();
+    });
     // 示意图节点点击 → 滚动定位到对应步骤卡
     target.querySelectorAll('[data-graph-node-id]').forEach(node => node.addEventListener('click', () => {
       const stepId = node.dataset.graphNodeId;
@@ -1091,7 +1211,7 @@ export class QuestWizardEditor {
     const style = document.createElement('style');
     style.id = 'qwe-styles';
     style.textContent = `
-      .qwe-root{height:100%;display:flex;flex-direction:column;background:#0d1326;color:#fff;font-size:13px}.qwe-toolbar{display:flex;align-items:center;gap:8px;padding:10px 16px;background:#16213e;border-bottom:1px solid #2a3a5e}.qwe-toolbar button,.qwe-node-toolbar button{padding:7px 12px;border:0;border-radius:4px;background:#3a4a7e;color:#fff;cursor:pointer}.qwe-toolbar .primary{background:#4caf50;color:#102010;font-weight:bold}.qwe-toolbar .danger,.qwe-step .danger{background:#7e3a3a}.qwe-hint{margin-left:auto;color:#8aa;font-size:12px}.qwe-main{min-height:0;flex:1;display:flex;overflow:hidden}.qwe-list{width:240px;flex:none;overflow:auto;background:#111a30}.qwe-quest{display:flex;width:100%;flex-direction:column;gap:3px;padding:10px 13px;text-align:left;color:#fff;background:transparent;border:0;border-bottom:1px solid #1e2b47;cursor:pointer}.qwe-quest:hover{background:#1a2540}.qwe-quest.active{background:#2a3a6e}.qwe-quest small{color:#9ab}.qwe-detail{min-width:0;flex:1;overflow:auto;padding:16px}.qwe-note{margin-bottom:12px;padding:10px 12px;border:1px solid #3b6b54;border-radius:5px;background:#10251e;color:#a9d8bc}.qwe-graph{margin-bottom:14px;overflow:auto;border:1px solid #2a3a5e;border-radius:6px;background:#091020;max-height:380px}.qwe-graph svg{display:block}.qwe-graph-edges path{fill:none;stroke:#6d84c7;stroke-width:2}.qwe-graph-node{cursor:pointer}.qwe-graph-node rect{fill:#17264a;stroke:#7d98db;stroke-width:1.5}.qwe-graph-node:hover rect{fill:#294078;stroke:#b9ceff}.qwe-graph-node text{fill:#fff;font-size:11px;pointer-events:none}.qwe-graph-node text.type{fill:#8fa7d8;font-size:10px}.qwe-graph-node.start rect{stroke:#4caf50}.qwe-graph-node.complete rect{stroke:#c9a227}.qwe-graph-node.objective rect{fill:#1a2f55}.qwe-block{margin-bottom:14px;padding:10px 14px;border:1px solid #2a3a5e;border-radius:6px;background:#0f1830}.qwe-block legend{padding:0 8px;color:#8fa7d8;font-weight:bold}.qwe-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.qwe-field{min-width:0}.qwe-field.full{grid-column:1/-1}.qwe-field label{display:block;margin-bottom:4px;color:#9ab;font-size:12px}.qwe-field input,.qwe-field select,.qwe-field textarea{width:100%;padding:7px;border:1px solid #2a3a5e;border-radius:3px;background:#0a1020;color:#fff;font:inherit}.qwe-field textarea{resize:vertical;font-family:Consolas,monospace;font-size:12px}.qwe-field textarea.invalid{border-color:#e66;box-shadow:0 0 0 1px #e66}.qwe-field small{display:block;margin-top:4px;color:#789;font-size:11px}.qwe-checks{display:flex;flex-wrap:wrap;gap:10px}.qwe-check{display:inline-flex;align-items:center;gap:5px;color:#cdd;font-size:12px}.qwe-check input{width:auto}.qwe-check-row{display:flex;align-items:center}.qwe-node-toolbar{display:flex;align-items:center;justify-content:space-between;margin:16px 0 10px}.qwe-node-toolbar h3{font-size:14px}.qwe-step{margin-bottom:12px;padding:12px;border:1px solid #2a3a5e;border-radius:6px;background:#0f1830}.qwe-step-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}.qwe-step-actions{display:flex;gap:6px}.qwe-step-actions button{padding:4px 8px;border:0;border-radius:3px;background:#3a4a7e;color:#fff;cursor:pointer}.qwe-step-actions button:disabled{opacity:.35;cursor:default}.qwe-rewards{margin-bottom:8px}.qwe-reward{margin-bottom:8px;padding:8px;border:1px dashed #2a3a5e;border-radius:4px}.qwe-tut-edit{margin-top:8px;padding:10px;border:1px solid #3a4a7e;border-radius:5px;background:#0a1020;display:flex;flex-direction:column;gap:8px}.qwe-tut-step{padding:8px;border:1px solid #223055;border-radius:4px}.qwe-tut-step-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;color:#8fa7d8;font-size:11px}.qwe-tut-step textarea{width:100%;padding:6px;border:1px solid #2a3a5e;border-radius:3px;background:#0a1020;color:#fff;font:inherit;resize:vertical}.qwe-dlg-edit{margin-top:8px;padding:10px;border:1px solid #3a4a7e;border-radius:5px;background:#0a1020;display:flex;flex-direction:column;gap:8px}.qwe-dlg-node{padding:8px;border:1px solid #223055;border-radius:4px;display:flex;flex-direction:column;gap:6px}.qwe-dlg-node input,.qwe-dlg-node textarea{width:100%;padding:6px;border:1px solid #2a3a5e;border-radius:3px;background:#0a1020;color:#fff;font:inherit;resize:vertical}.qwe-dlg-node textarea{font-family:Consolas,monospace;font-size:12px}.qwe-muted{color:#789}.qwe-error{color:#e66}.qwe-ok{color:#6c6}.qwe-preview{font-size:12px;color:#9ab}.qwe-preview ul{margin:6px 0 0 18px}.qwe-empty{padding:38px 16px;color:#789;text-align:center;line-height:1.7}.qwe-empty.compact{padding:18px}.qwe-steps-nav{width:200px;flex:none;overflow:auto;background:#111a30;padding:10px 8px;display:flex;flex-direction:column;gap:6px}.qwe-steps-nav h4{margin:0 2px 4px;color:#8fa7d8;font-size:12px;font-weight:bold;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.qwe-snav-hint{color:#678;font-size:10px;text-align:center;margin-top:2px}.qwe-snav{display:flex;flex-direction:column;gap:3px;padding:8px 10px;border:1px solid transparent;border-radius:5px;color:#fff;text-align:left;cursor:grab;font:inherit}.qwe-snav:active{cursor:grabbing}.qwe-snav .t{font-size:10px;opacity:.9}.qwe-snav small{font-size:11px;color:rgba(255,255,255,.85);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.qwe-snav small.sid{color:rgba(255,255,255,.45);font-size:10px}.qwe-snav.type-objective{background:#1a2f55;border-color:#3a5a9e}.qwe-snav.type-dialogue{background:#3a2a5e;border-color:#7a5abE}.qwe-snav.type-tutorial{background:#1d4a30;border-color:#3a7e54}.qwe-snav.type-action{background:#5e4a1d;border-color:#9e8a3a}.qwe-snav.active{outline:2px solid #c9a227}.qwe-snav.drag-over{outline:2px dashed #7d98db;outline-offset:-2px}.qwe-divider{width:6px;flex:none;cursor:col-resize;background:#16213e}.qwe-divider:hover,.qwe-divider.dragging{background:#3a5a9e}.qwe-ctx-menu{position:fixed;z-index:100001;display:flex;flex-direction:column;min-width:132px;padding:4px;border:1px solid #3a4a7e;border-radius:5px;background:#16213e;box-shadow:0 6px 18px #000a}.qwe-ctx-menu button{padding:6px 10px;border:0;border-radius:3px;background:transparent;color:#fff;text-align:left;cursor:pointer;font:inherit;white-space:nowrap}.qwe-ctx-menu button:hover{background:#2a3a6e}.qwe-ctx-menu button.danger{color:#e88}.qwe-ctx-menu button:disabled{opacity:.35;cursor:default}.qwe-ctx-menu button:disabled:hover{background:transparent}.qwe-status{min-height:30px;padding:7px 16px;background:#0a1020;color:#9ab}.qwe-status.ok{color:#6c6}.qwe-status.warn{color:#e6bd5d}.qwe-status.error{color:#e66}.qwe-toast{position:fixed;top:58px;left:50%;z-index:100000;max-width:min(600px,90vw);padding:10px 18px;border-radius:6px;background:#2e7d32;color:#fff;box-shadow:0 4px 16px #0008;opacity:0;pointer-events:none;transform:translate(-50%,-8px);transition:opacity .2s,transform .2s}.qwe-toast[data-type="error"]{background:#c62828}.qwe-toast[data-type="warn"]{background:#9a6700}.qwe-toast.visible{opacity:1;transform:translate(-50%,0)}@media (max-width:800px){.qwe-list{width:150px}.qwe-steps-nav{width:150px}.qwe-grid{grid-template-columns:1fr}.qwe-field.full{grid-column:auto}.qwe-hint{display:none}}
+      .qwe-root{height:100%;display:flex;flex-direction:column;background:#0d1326;color:#fff;font-size:13px}.qwe-toolbar{display:flex;align-items:center;gap:8px;padding:10px 16px;background:#16213e;border-bottom:1px solid #2a3a5e}.qwe-toolbar button,.qwe-node-toolbar button{padding:7px 12px;border:0;border-radius:4px;background:#3a4a7e;color:#fff;cursor:pointer}.qwe-toolbar .primary{background:#4caf50;color:#102010;font-weight:bold}.qwe-toolbar .danger,.qwe-step .danger{background:#7e3a3a}.qwe-hint{margin-left:auto;color:#8aa;font-size:12px}.qwe-main{min-height:0;flex:1;display:flex;overflow:hidden}.qwe-list{width:240px;flex:none;overflow:auto;background:#111a30}.qwe-quest{display:flex;width:100%;flex-direction:column;gap:3px;padding:10px 13px;text-align:left;color:#fff;background:transparent;border:0;border-bottom:1px solid #1e2b47;cursor:pointer}.qwe-quest:hover{background:#1a2540}.qwe-quest.active{background:#2a3a6e}.qwe-quest small{color:#9ab}.qwe-detail{min-width:0;flex:1;overflow:auto;padding:16px}.qwe-note{margin-bottom:12px;padding:10px 12px;border:1px solid #3b6b54;border-radius:5px;background:#10251e;color:#a9d8bc}.qwe-graph{margin-bottom:14px;overflow:auto;border:1px solid #2a3a5e;border-radius:6px;background:#091020;max-height:380px}.qwe-graph svg{display:block}.qwe-graph-edges path{fill:none;stroke:#6d84c7;stroke-width:2}.qwe-graph-node{cursor:pointer}.qwe-graph-node rect{fill:#17264a;stroke:#7d98db;stroke-width:1.5}.qwe-graph-node:hover rect{fill:#294078;stroke:#b9ceff}.qwe-graph-node text{fill:#fff;font-size:11px;pointer-events:none}.qwe-graph-node text.type{fill:#8fa7d8;font-size:10px}.qwe-graph-node.start rect{stroke:#4caf50}.qwe-graph-node.complete rect{stroke:#c9a227}.qwe-graph-node.objective rect{fill:#1a2f55}.qwe-block{margin-bottom:14px;padding:10px 14px;border:1px solid #2a3a5e;border-radius:6px;background:#0f1830}.qwe-block legend{padding:0 8px;color:#8fa7d8;font-weight:bold}.qwe-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.qwe-field{min-width:0}.qwe-field.full{grid-column:1/-1}.qwe-field label{display:block;margin-bottom:4px;color:#9ab;font-size:12px}.qwe-field input,.qwe-field select,.qwe-field textarea{width:100%;padding:7px;border:1px solid #2a3a5e;border-radius:3px;background:#0a1020;color:#fff;font:inherit}.qwe-field textarea{resize:vertical;font-family:Consolas,monospace;font-size:12px}.qwe-field textarea.invalid{border-color:#e66;box-shadow:0 0 0 1px #e66}.qwe-field small{display:block;margin-top:4px;color:#789;font-size:11px}.qwe-checks{display:flex;flex-wrap:wrap;gap:10px}.qwe-check{display:inline-flex;align-items:center;gap:5px;color:#cdd;font-size:12px}.qwe-check input{width:auto}.qwe-check-row{display:flex;align-items:center}.qwe-node-toolbar{display:flex;align-items:center;justify-content:space-between;margin:16px 0 10px}.qwe-node-toolbar h3{font-size:14px}.qwe-step{margin-bottom:12px;padding:12px;border:1px solid #2a3a5e;border-radius:6px;background:#0f1830}.qwe-step-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}.qwe-step-actions{display:flex;gap:6px}.qwe-step-actions button{padding:4px 8px;border:0;border-radius:3px;background:#3a4a7e;color:#fff;cursor:pointer}.qwe-step-actions button:disabled{opacity:.35;cursor:default}.qwe-rewards{margin-bottom:8px}.qwe-reward{margin-bottom:8px;padding:8px;border:1px dashed #2a3a5e;border-radius:4px}.qwe-tut-edit{margin-top:8px;padding:10px;border:1px solid #3a4a7e;border-radius:5px;background:#0a1020;display:flex;flex-direction:column;gap:8px}.qwe-tut-step{padding:8px;border:1px solid #223055;border-radius:4px}.qwe-tut-step-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;color:#8fa7d8;font-size:11px}.qwe-tut-step textarea{width:100%;padding:6px;border:1px solid #2a3a5e;border-radius:3px;background:#0a1020;color:#fff;font:inherit;resize:vertical}.qwe-dlg-edit{margin-top:8px;padding:10px;border:1px solid #3a4a7e;border-radius:5px;background:#0a1020;display:flex;flex-direction:column;gap:8px}.qwe-dlg-node{padding:8px;border:1px solid #223055;border-radius:4px;display:flex;flex-direction:column;gap:6px}.qwe-dlg-node input,.qwe-dlg-node textarea{width:100%;padding:6px;border:1px solid #2a3a5e;border-radius:3px;background:#0a1020;color:#fff;font:inherit;resize:vertical}.qwe-dlg-node textarea{font-family:Consolas,monospace;font-size:12px}.qwe-muted{color:#789}.qwe-error{color:#e66}.qwe-ok{color:#6c6}.qwe-preview{font-size:12px;color:#9ab}.qwe-preview ul{margin:6px 0 0 18px}.qwe-empty{padding:38px 16px;color:#789;text-align:center;line-height:1.7}.qwe-empty.compact{padding:18px}.qwe-steps-nav{width:200px;flex:none;overflow:auto;background:#111a30;padding:10px 8px;display:flex;flex-direction:column;gap:6px}.qwe-steps-nav h4{margin:0 2px 4px;color:#8fa7d8;font-size:12px;font-weight:bold;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.qwe-snav-hint{color:#678;font-size:10px;text-align:center;margin-top:2px}.qwe-snav{display:flex;flex-direction:column;gap:3px;padding:8px 10px;border:1px solid transparent;border-radius:5px;color:#fff;text-align:left;cursor:grab;font:inherit}.qwe-snav:active{cursor:grabbing}.qwe-snav .t{font-size:10px;opacity:.9}.qwe-snav small{font-size:11px;color:rgba(255,255,255,.85);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.qwe-snav small.sid{color:rgba(255,255,255,.45);font-size:10px}.qwe-snav.type-objective{background:#1a2f55;border-color:#3a5a9e}.qwe-snav.type-dialogue{background:#3a2a5e;border-color:#7a5abE}.qwe-snav.type-tutorial{background:#1d4a30;border-color:#3a7e54}.qwe-snav.type-action{background:#5e4a1d;border-color:#9e8a3a}.qwe-snav.active{outline:2px solid #c9a227}.qwe-snav.drag-over{outline:2px dashed #7d98db;outline-offset:-2px}.qwe-divider{width:6px;flex:none;cursor:col-resize;background:#16213e}.qwe-divider:hover,.qwe-divider.dragging{background:#3a5a9e}.qwe-ctx-menu{position:fixed;z-index:100001;display:flex;flex-direction:column;min-width:132px;padding:4px;border:1px solid #3a4a7e;border-radius:5px;background:#16213e;box-shadow:0 6px 18px #000a}.qwe-ctx-menu button{padding:6px 10px;border:0;border-radius:3px;background:transparent;color:#fff;text-align:left;cursor:pointer;font:inherit;white-space:nowrap}.qwe-ctx-menu button:hover{background:#2a3a6e}.qwe-ctx-menu button.danger{color:#e88}.qwe-ctx-menu button:disabled{opacity:.35;cursor:default}.qwe-ctx-menu button:disabled:hover{background:transparent}.qwe-status{min-height:30px;padding:7px 16px;background:#0a1020;color:#9ab}.qwe-status.ok{color:#6c6}.qwe-status.warn{color:#e6bd5d}.qwe-status.error{color:#e66}.qwe-toast{position:fixed;top:58px;left:50%;z-index:100000;max-width:min(600px,90vw);padding:10px 18px;border-radius:6px;background:#2e7d32;color:#fff;box-shadow:0 4px 16px #0008;opacity:0;pointer-events:none;transform:translate(-50%,-8px);transition:opacity .2s,transform .2s}.qwe-toast[data-type="error"]{background:#c62828}.qwe-toast[data-type="warn"]{background:#9a6700}.qwe-toast.visible{opacity:1;transform:translate(-50%,0)}.qwe-sync{margin-bottom:12px;padding:10px 12px;border:1px solid #9e8a3a;border-radius:6px;background:#241f0d}.qwe-sync-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.qwe-sync-head strong{color:#e6c85d}.qwe-sync-head small{color:#9a8f6a}.qwe-sync-actions{margin-left:auto;display:flex;gap:6px}.qwe-sync-actions button{padding:4px 10px;border:0;border-radius:3px;background:#3a4a7e;color:#fff;cursor:pointer;font:inherit}.qwe-sync-actions button:disabled{opacity:.4;cursor:default}.qwe-sync ul{margin:8px 0 0 18px;color:#cdd;font-size:12px;display:flex;flex-direction:column;gap:4px}.qwe-sync code{color:#e6c85d;font-family:Consolas,monospace}.qwe-links{display:flex;flex-wrap:wrap;gap:8px}.qwe-link.ok{color:#6c6}.qwe-link.warn{color:#e6bd5d}.qwe-link.muted{color:#789}@media (max-width:800px){.qwe-list{width:150px}.qwe-steps-nav{width:150px}.qwe-grid{grid-template-columns:1fr}.qwe-field.full{grid-column:auto}.qwe-hint{display:none}}
     `;
     document.head.appendChild(style);
   }
