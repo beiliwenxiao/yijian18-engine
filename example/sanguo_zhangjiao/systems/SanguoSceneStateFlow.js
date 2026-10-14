@@ -13,7 +13,6 @@
 import { Logger } from '../../../src/core/Logger.js';
 import { SceneFlowCoordinator } from '../../../src/core/scene/SceneFlowCoordinator.js';
 import { getPlacementSignature } from '../../../src/core/scene/ScenePlacementRuntime.js';
-import { S09_REFUGEE_DIALOGUE_ID } from './S09RefugeeFlow.js';
 
 const cloneData = value => value == null ? value : JSON.parse(JSON.stringify(value));
 
@@ -465,18 +464,6 @@ function applySceneSaveState(data) {
     this._syncUnlockedClassSkills();
     const gameplayActors = this._gameplaySnapshots.restoreActors(data);
     if (!gameplayActors.ok) return gameplayActors;
-    const refugeeConflict = restoredStory.s09RefugeeConflict;
-    if (refugeeConflict && this.dialogueSystem?.getCurrentDialogue?.()?.id === S09_REFUGEE_DIALOGUE_ID) {
-      if (refugeeConflict.branch) {
-        this.s09RefugeeCoordinator._setRefugeeDialogueNode(
-          this.s09RefugeeCoordinator._refugeeBranchResultNode(refugeeConflict)
-        );
-      } else if (refugeeConflict.donationCommitted) {
-        this.s09RefugeeCoordinator._setRefugeeDialogueNode('branchChoice');
-      } else if (refugeeConflict.status === 'started') {
-        this.s09RefugeeCoordinator._setRefugeeDialogueNode('donationOffer');
-      }
-    }
     this._classConfirm = null;
     this._classSelectionBusy = false;
     this._campfireService.restore(

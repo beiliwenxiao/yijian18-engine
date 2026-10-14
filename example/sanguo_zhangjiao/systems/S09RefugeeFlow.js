@@ -13,21 +13,15 @@
 import { SceneFlowCoordinator } from '../../../src/core/scene/SceneFlowCoordinator.js';
 import { CityStateSummaryPanel } from '../../../src/ui/CityStateSummaryPanel.js';
 
-export const S09_REFUGEE_DIALOGUE_ID = 'dialogue.s09.refugeeConflict';
-export const S09_SILENCE_EVENT_TYPE = 's09.silenceFoodCollapse';
-// 饥民争斗事件自 S09 迁移至 S02（救援苏醒后、召见前）；对话 id 与 storyState 键名
-// 保留 S09 前缀以维持存档兼容。城市摘要与擅自采集惩罚仍属 S09 粮仓玩法。
-export const REFUGEE_CONFLICT_SCENE_ID = 'S02';
 export const CITY_SCENE_ID = 'S09';
-const REFUGEE_PLACEMENT_GROUP = 'S02-refugee-conflict';
-const REFUGEE_SCOUT_GROUP = 'S02-refugee-scout';
 
 const cloneData = value => value == null ? value : JSON.parse(JSON.stringify(value));
 
 /**
- * P2.2 S09 历史流程协调器。剧情选择经统一命令端口提交；采粮政策仅在
+ * S09 城市流程协调器。采粮政策仅在
  * GatheringSystem 的既有 prepare/commit/rollback 事务中投影 Story/City 结果，
  * coordinator 自身只持有可快照恢复的操作幂等记录。
+ * （饥民争斗事件已于 S01/S02 剧情修订中整体移除，相关处理随之清退。）
  */
 const methods = {
   _submit(definitionId, payload = {}) {
@@ -48,44 +42,6 @@ const methods = {
     return result.ok === true;
   },
 
-  async prepareS09RefugeeConflict() {
-    const result = await methods._submit.call(this, 'story.s09.refugee.prepare');
-    if (result.ok) {
-      await this.context.services.placements?.spawn({ group: REFUGEE_PLACEMENT_GROUP });
-      this._s09AudioDirector?.playFeedback?.('conflict');
-    }
-    return result.ok === true;
-  },
-
-  async startS09RefugeeConflict() {
-    if (this.dialogueSystem?.isDialogueActive?.()) return false;
-    const result = await methods._submit.call(this, 'story.s09.refugee.start');
-    if (!result.ok) return false;
-    return this.dialogueSystem?.startDialogue?.(S09_REFUGEE_DIALOGUE_ID, {
-      player: this.playerEntity, scene: this.$scene
-    }) === true;
-  },
-
-  _resultNode(conflict = {}) {
-    if (conflict.branch === 'hardline') return 'hardlineResult';
-    if (conflict.branch === 'appease') return conflict.result === 'foodRestored' ? 'appeaseSuccessResult' : 'appeaseScoutResult';
-    if (conflict.branch === 'silence') return 'silenceResult';
-    return conflict.donationCommitted ? 'branchChoice' : 'donationFailed';
-  },
-
-  async handleS09RefugeeChoice(choiceId) {
-    if (choiceId === 'defer') return true;
-    const result = await methods._submit.call(this, 'story.s09.refugee.branch', { event: { choiceId } });
-    if (!result.ok) return false;
-    const conflict = result.value?.state?.story?.s09RefugeeConflict || {};
-    if (this.dialogueSystem?.getCurrentDialogue?.()?.id === S09_REFUGEE_DIALOGUE_ID) {
-      this.dialogueSystem.goToNode?.(this._resultNode(conflict), { player: this.playerEntity, scene: this.$scene });
-    }
-    this._s09AudioDirector?.playFeedback?.(choiceId);
-    if (conflict.scoutTriggered) await this.context.services.placements?.spawn({ group: REFUGEE_SCOUT_GROUP });
-    return true;
-  },
-
   advanceGameDay(days = 1) {
     const currentDay = this.timeSystem?.advanceDays?.(Math.max(1, Math.floor(Number(days) || 1)));
     if (!currentDay) return false;
@@ -98,80 +54,13 @@ export class S09RefugeeCoordinator extends SceneFlowCoordinator {
   constructor(scene) {
     super(scene, methods, { name: 'S09RefugeeCoordinator' });
     this._unauthorizedHarvestOperations = new Set();
-    this._nextDueStoryEventCheckAt = 0;
   }
 
   _onGameDayChanged(currentDay) {
     const day = Math.max(1, Math.floor(Number(currentDay) || 0));
     if (!day) return Promise.resolve(false);
     return Promise.resolve(this._submit('story.s09.day.advance', { day }))
-      .then(result => result?.ok === true ? this._processDueStoryEvents({ force: true }) : false);
-  }
-
-  _processDueStoryEvents({ force = false } = {}) {
-    if (this._dueStoryEventsPromise) return this._dueStoryEventsPromise;
-    const now = this.scene.simulationClock?.now?.() ?? performance.now();
-    if (!force && now < this._nextDueStoryEventCheckAt) return false;
-    this._nextDueStoryEventCheckAt = now + 1000;
-    const scene = this.scene;
-    const storyState = scene.gameLoader?.blackboard?.get?.('storyState') || {};
-    const currentDay = Math.max(0, Number(storyState.currentDay) || 0);
-    const hasDueEvent = (storyState.delayedConsequences || []).some(event => (
-      event?.status === 'pending' && Number(event?.dueDay) <= currentDay
-    ));
-    if (!hasDueEvent) return false;
-    this._dueStoryEventsPromise = Promise.resolve(this._submit('story.s09.delayed.resolve'))
-      .then(result => result?.ok === true)
-      .finally(() => { this._dueStoryEventsPromise = null; });
-    return this._dueStoryEventsPromise;
-  }
-
-  _refugeeBranchResultNode(conflict = {}) {
-    return methods._resultNode.call(this.context, conflict);
-  }
-
-  _setRefugeeDialogueNode(nodeId) {
-    const dialogue = this.scene.dialogueSystem;
-    if (!nodeId || dialogue?.getCurrentDialogue?.()?.id !== S09_REFUGEE_DIALOGUE_ID) return false;
-    return dialogue.goToNode?.(nodeId, {
-      player: this.scene.playerEntity,
-      scene: this.scene
-    }) === true;
-  }
-
-  /**
-   * 流民冲突对话选项接线（修复选项后卡死）：
-   * 选项 commit 常规推进到 processing 自环节点（donationProcessing/branchProcessing，
-   * 「正在写入检查点……」），等待 branch 事务结果；但事务完成后无人把对话推进到
-   * 结果节点（handleS09RefugeeChoice 的 goToNode 在历史重构中失去接线，仅剩死标志
-   * _s09RefugeeChoiceBusy），且 donate 前置失败（粮不足）走触发器良性码
-   * preconditionFailed 同样无跳转——两条路径都会永久卡死在 processing 节点。
-   * 订阅 onChoice（编排提交后触发）读权威 storyState 投影结果节点：
-   * 捐粮成功→branchChoice、粮不足→donationFailed（自带重试/稍后选项）、
-   * 分支抉择→hardline/appease/silence 结果。defer 交由常规 nextNode 推进。
-   */
-  installRefugeeDialogueWiring() {
-    const dialogue = this.scene.dialogueSystem;
-    if (!dialogue || this._refugeeChoiceUnsubscribe) return false;
-    this._refugeeChoiceUnsubscribe = dialogue.onChoice(choice => {
-      if (dialogue.getCurrentDialogue?.()?.id !== S09_REFUGEE_DIALOGUE_ID) return;
-      if (!choice || choice.id === 'defer') return;
-      // commit 在监听器之后才 goToNode(nextNode=processing 自环)，延迟一拍覆盖为结果节点
-      setTimeout(() => {
-        if (dialogue.getCurrentDialogue?.()?.id !== S09_REFUGEE_DIALOGUE_ID) return;
-        const nodeId = dialogue.currentNode?.id;
-        if (nodeId !== 'donationProcessing' && nodeId !== 'branchProcessing') return;
-        const conflict = this.scene.gameLoader?.blackboard?.get?.('storyState')?.s09RefugeeConflict || {};
-        this._setRefugeeDialogueNode(methods._resultNode.call(this.context, conflict));
-      }, 0);
-    });
-    this.scene.resourceScope?.track(() => this.disposeRefugeeDialogueWiring());
-    return true;
-  }
-
-  disposeRefugeeDialogueWiring() {
-    this._refugeeChoiceUnsubscribe?.();
-    this._refugeeChoiceUnsubscribe = null;
+      .then(result => result?.ok === true);
   }
 
   _getS09CityContext() {
@@ -226,19 +115,6 @@ export class S09RefugeeCoordinator extends SceneFlowCoordinator {
       panel.hide();
       return false;
     }
-    const conflict = context.storyState.s09RefugeeConflict || {};
-    const silenceEvent = (context.storyState.delayedConsequences || [])
-      .find(event => event?.type === S09_SILENCE_EVENT_TYPE);
-    const branchLabels = {
-      hardline: '强硬控制',
-      appease: conflict.result === 'foodRestored' ? '安抚采集成功' : '安抚采集遇袭',
-      silence: silenceEvent?.status === 'completed' ? '沉默（粮食已归零）' : '沉默（后果待结算）'
-    };
-    let refugeeStatus = '尚未发生';
-    if (conflict.branch) refugeeStatus = branchLabels[conflict.branch] || conflict.branch;
-    else if (conflict.donationCommitted) refugeeStatus = '已捐粮，等待抉择';
-    else if (conflict.status === 'started') refugeeStatus = '争斗处理中';
-    else if (conflict.status === 'ready') refugeeStatus = '现场已出现';
     panel.setSnapshot({
       cityName: context.city.name,
       resources: context.city.resources,
@@ -246,7 +122,7 @@ export class S09RefugeeCoordinator extends SceneFlowCoordinator {
       morale: context.city.morale,
       reputation: context.blackboard.get('reputation'),
       currentDay: scene.timeSystem?.getCurrentDay?.() || context.storyState.currentDay || 1,
-      refugeeStatus,
+      refugeeStatus: '饥民事已在山道了结',
       icons: {
         morale: 's09.ui.morale',
         reputation: 's09.ui.reputation',

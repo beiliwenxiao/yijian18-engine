@@ -44,27 +44,15 @@ const s01Snapshot = () => ({
   }
 });
 
-// 难民冲突剧情已随 S02 难民迁移章节从 S09 迁至 S02 场景触发
-//（story.s09.refugee.* 的 when 要求 currentSceneId === 'S02'，城市仍为光宗营），
-// 快照场景 ID 跟随内容迁移，函数名保留历史语义。
-const s09Snapshot = ({ axe = false } = {}) => ({
+// 荒村冲突剧情修订后，S02 的可重放事务素材更换为狼斗事实链与符水奖励
+//（story.s01.wolfPackCleared/wolfKingDefeated 无 when 依赖；
+// reward.s02.rescueGift 带 when 守卫与 inventory 副作用，适合回滚/幂等断言）。
+const s02Snapshot = () => ({
   runtimeState: {
-    blackboard: {
-      storyState: { currentSceneId: 'S02', currentDay: 1, storyTags: [], delayedConsequences: [] },
-      cityStates: [{ id: 'city.s09_guangzong_camp', morale: 40, damageRatio: 0.5, buildingDamage: { granary: { s09: 1 } }, resources: { food: 60 } }]
-    },
-    inventory: [
-      { definitionId: 'resource.food', quantity: 20 },
-      ...(axe ? [{ definitionId: 'tool.worn_axe', instanceId: 'axe-s09', mutable: { durability: 8 } }] : [])
-    ]
+    blackboard: { storyState: { currentSceneId: 'S02', storyTags: [] }, cityStates: [] },
+    inventory: []
   }
 });
-
-const donateFlow = prefix => [
-  command('state.transaction', `${prefix}:prepare`, { definitionId: 'story.s09.refugee.prepare' }),
-  command('state.transaction', `${prefix}:start`, { definitionId: 'story.s09.refugee.start' }),
-  command('state.transaction', `${prefix}:donate`, { definitionId: 'story.s09.refugee.branch', event: { choiceId: 'donate_food' }, operationId: `${prefix}:donate` })
-];
 
 describe('P1–P5 canonical disk cold restart replay', () => {
   it('P1.1/P1.3 从磁盘定义经 Gateway/Authority 完成 S01→S02，并在召见 checkpoint 后保持 travel 失败前的提交事实', async () => {
@@ -97,24 +85,24 @@ describe('P1–P5 canonical disk cold restart replay', () => {
     } finally { await destroyRealCanonicalRuntime(failureRuntime); }
   });
 
-  it('P2.2 使用真实 state.transaction 定义重放 donation、hardline 稳定 RNG/延迟结果、无斧 appease 斥候反馈与 silence 延迟结果', async () => {
+  it('P2.2 使用真实 state.transaction 定义重放狼斗事实链与符水奖励发放，冷重启严格等价', async () => {
     const cases = [
       {
-        name: 'hardline', snapshot: s09Snapshot(),
-        commands: [...donateFlow('hardline'), command('state.transaction', 'hardline:choice', { definitionId: 'story.s09.refugee.branch', event: { choiceId: 'hardline' } }), command('state.transaction', 'hardline:day', { definitionId: 'story.s09.day.advance', day: 2 }), command('state.transaction', 'hardline:delayed', { definitionId: 'story.s09.delayed.resolve' })],
-        assert: state => expect(state.blackboard.storyState.s09RefugeeConflict).toMatchObject({ branch: 'hardline', hardlineEscapeOccurred: expect.any(Boolean) })
+        name: 'wolf-chain', snapshot: s02Snapshot(),
+        commands: [
+          command('state.transaction', 'wolf:pack', { definitionId: 'story.s01.wolfPackCleared' }),
+          command('state.transaction', 'wolf:king', { definitionId: 'story.s01.wolfKingDefeated' })
+        ],
+        assert: state => expect(state.blackboard.storyState.s01Survival).toMatchObject({ wolfPackCleared: true, wolfKingDefeated: true })
       },
       {
-        name: 'appease-without-axe', snapshot: s09Snapshot(),
-        commands: [...donateFlow('appease'), command('state.transaction', 'appease:choice', { definitionId: 'story.s09.refugee.branch', event: { choiceId: 'appease' } })],
-        assert: state => expect(state.blackboard.storyState.s09RefugeeConflict).toMatchObject({ branch: 'appease', result: 'scoutTriggered', scoutTriggered: true })
-      },
-      {
-        name: 'silence', snapshot: s09Snapshot({ axe: true }),
-        commands: [...donateFlow('silence'), command('state.transaction', 'silence:choice', { definitionId: 'story.s09.refugee.branch', event: { choiceId: 'silence' } }), command('state.transaction', 'silence:day', { definitionId: 'story.s09.day.advance', day: 2 }), command('state.transaction', 'silence:delayed', { definitionId: 'story.s09.delayed.resolve' })],
+        name: 'fushui-gift', snapshot: s02Snapshot(),
+        commands: [command('state.transaction', 'gift:first', { definitionId: 'reward.s02.rescueGift' })],
         assert: state => {
-          expect(state.blackboard.storyState.s09RefugeeConflict).toMatchObject({ branch: 'silence', result: 'delayedFoodCollapse' });
-          expect(state.blackboard.cityStates[0].resources.food).toBe(0);
+          expect(state.blackboard.storyState.rewards).toMatchObject({ rescueGift: true });
+          expect(state.inventory).toEqual(expect.arrayContaining([
+            expect.objectContaining({ definitionId: 'consumable.fushui', quantity: 2 })
+          ]));
         }
       }
     ];
@@ -182,21 +170,17 @@ describe('P1–P5 canonical disk cold restart replay', () => {
     }
   });
 
-  it('P2.2 checkpoint 失败时真实事务原子回滚 inventory、Story、City 和 operation 结果', async () => {
+  it('P2.2 checkpoint 失败时真实事务原子回滚 inventory 与 story 奖励事实', async () => {
     const runtime = await createRealCanonicalRuntime({
       disk: createDemoCanonicalDisk(), seed: 91, clocks: createFakeClocks(),
-      snapshot: { ...s09Snapshot(), checkpointFailure: true }
+      snapshot: { ...s02Snapshot(), checkpointFailure: true }
     });
     try {
-      await executeRealCanonicalCommand(runtime, command('state.transaction', 'rollback:prepare', { definitionId: 'story.s09.refugee.prepare' }));
-      await executeRealCanonicalCommand(runtime, command('state.transaction', 'rollback:start', { definitionId: 'story.s09.refugee.start' }));
-      const result = await executeRealCanonicalCommand(runtime, command('state.transaction', 'rollback:donate', { definitionId: 'story.s09.refugee.branch', event: { choiceId: 'donate_food' } }));
+      const result = await executeRealCanonicalCommand(runtime, command('state.transaction', 'rollback:gift', { definitionId: 'reward.s02.rescueGift' }));
       expect(result).toMatchObject({ ok: false, committed: false, code: 'injectedCheckpointFailure' });
-      expect(runtime.inventory.getItemCount('resource.food')).toBe(20);
-      const city = runtime.blackboard.get('cityStates')[0];
-      expect(city.morale).toBe(40);
-      expect(Object.hasOwn(city, 'damagePausedUntilDay')).toBe(false);
-      expect(runtime.blackboard.get('storyState').s09RefugeeConflict).toMatchObject({ status: 'started', donationCommitted: false });
+      expect(runtime.inventory.getItemCount('consumable.fushui')).toBe(0);
+      expect(runtime.inventory.getItemCount('resource.herb')).toBe(0);
+      expect(Object.hasOwn(runtime.blackboard.get('storyState').rewards || {}, 'rescueGift')).toBe(false);
     } finally { await destroyRealCanonicalRuntime(runtime); }
   });
 });

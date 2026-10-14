@@ -112,7 +112,6 @@ function updateBeforeBase(deltaTime) {
     const currentDay = this.timeSystem.getCurrentDay();
     if (currentDay !== previousDay) this.s09RefugeeCoordinator._onGameDayChanged(currentDay);
   }
-  this.s09RefugeeCoordinator._processDueStoryEvents();
   if (frameProfile) {
     const now = performance.now();
     frameProfile.updateDemoTimeStory = now - phaseStartedAt;

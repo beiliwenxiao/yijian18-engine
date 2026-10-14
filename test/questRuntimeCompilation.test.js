@@ -191,13 +191,12 @@ describe('QuestRuntime Quest v2 编译器', () => {
     const loader = new GameLoader();
     expect(loader.questTaskDefinitions).toEqual([]);
     const compiled = compileQuestProject(project);
-    // 新基线：S02-S14 主线全部任务化（S02 refugeeRelief/summons/rescue、S09 joinYellowTurban、
-    // S03-S08/S10-S14 薄任务串接），共 16 条 quest 定义
+    // 新基线：S02-S14 主线全部任务化（S02 rescue/summons、S09 joinYellowTurban、
+    // S03-S08/S10-S14 薄任务串接），共 15 条 quest 定义
     expect(compiled.taskGraphs.map(graph => graph.id)).toEqual([
       'task.s01.survival',
       'task.s02.summons',
       'task.s02.rescue',
-      'task.s02.refugeeRelief',
       'task.s09.joinYellowTurban',
       'task.s03.yingchuanBattle',
       'task.s04.changsheDefense',
@@ -326,7 +325,7 @@ describe('阶段③ S01 迁移契约：quest 编译产物与手写任务图逐�
       'trg_task.s14.finalCommit_accept'
     ]);
     expect(triggers.find(trigger => trigger.id === 'trg_task.s02.summons_accept').when)
-      .toEqual({ type: 'task.completed', params: { definitionId: 'task.s02.refugeeRelief' } });
+      .toEqual({ type: 'task.completed', params: { definitionId: 'task.s02.rescue' } });
     expect(triggers.find(trigger => trigger.id === 'trg_task.s03.yingchuanBattle_accept').when)
       .toEqual({ type: 'sceneEnter', params: { sceneId: 'S03' } });
     // 目标后段语义抽查：eatBerry 后段 = 完成吃教程 + 显示砍柴教程(await)；spotWolf 后段合并了首狼生成链

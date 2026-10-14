@@ -859,6 +859,22 @@
         }
       },
       {
+        "action": "tutorial.command",
+        "params": {
+          "operation": "complete",
+          "tutorialId": "s02.command.move"
+        },
+        "stepId": "complete-tutorial-s02-command-move"
+      },
+      {
+        "action": "tutorial.command",
+        "params": {
+          "operation": "complete",
+          "tutorialId": "s02.command.carry"
+        },
+        "stepId": "complete-tutorial-s02-command-carry"
+      },
+      {
         "action": "startDialogue",
         "params": {
           "id": "dialogue.s02.awakening"

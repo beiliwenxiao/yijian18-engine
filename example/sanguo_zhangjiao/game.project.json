@@ -36,18 +36,7 @@
       "$ref": "config/endings.json",
       "id": "sanguo-zhangjiao-endings-v1"
     },
-    "sanguoZhangjiao": {
-      "s09RefugeeConflict": {
-        "appeaseFood": 30,
-        "consequenceDelayDays": 1,
-        "damagePauseDays": 1,
-        "donationFood": 20,
-        "donationMorale": 5,
-        "hardlineEscapeChance": 0.35,
-        "hardlineMorale": 10,
-        "minimumCityDamageRatio": 0.4
-      }
-    }
+    "sanguoZhangjiao": {}
   },
   "system": {
     "debug": true,
@@ -709,9 +698,6 @@
       },
       "s02Rescued": false,
       "s02SummonsAccepted": false,
-      "s09RefugeeConflict": {
-        "donationCommitted": false
-      },
       "storyTags": [],
       "unlockedScenes": [
         "S01"
