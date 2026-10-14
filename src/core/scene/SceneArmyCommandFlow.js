@@ -110,6 +110,7 @@ export class SceneArmyCommandFlow {
 
   /** 布局同步（ScenePanelLayout.onResize / applyUILayout 调用）。UI 编辑器矩形优先；否则锚定「军队」按钮右对齐。 */
   onResize(width, height) {
+    this._lastLayoutSize = { width, height };
     const bar = this.scene.bottomControlBar;
     const slotSize = bar?.skillSlots?.[0]?.size || 40;
     const count = bar?.skillSlots?.length || 7;
@@ -118,6 +119,15 @@ export class SceneArmyCommandFlow {
     const button = this.scene.armyButton;
     const anchorRect = button ? { x: button.x, y: button.y, width: button.width, height: button.height } : null;
     this.hud.layout?.(width, height, barWidth, editorRect, anchorRect);
+  }
+
+  /** 面板编辑器「军队操作」定义（行高覆盖）；加载晚于装配，应用后按最近画布尺寸重排。 */
+  applyPanelDefinition(panelDefinition) {
+    if (!panelDefinition) return false;
+    this.hud?.setPanelDefinition?.(panelDefinition);
+    const size = this._lastLayoutSize;
+    if (size) this.onResize(size.width, size.height);
+    return true;
   }
 
   update(deltaTime = 0) {

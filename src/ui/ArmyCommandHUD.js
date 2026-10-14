@@ -93,6 +93,28 @@ export class ArmyCommandHUD extends UIElement {
     this._pulse = 0;
     // 手柄指挥态（SceneArmyCommandFlow._handleGamepad 写入）：按住 LB 时状态行显示操作提示
     this.gamepadCommanding = false;
+    // 面板编辑器「军队操作」定义覆盖的行高（setPanelDefinition 写入；null=内置默认）
+    this._metrics = null;
+  }
+
+  /** 面板编辑器 armyCommandHud 面板定义：覆盖 编组条/合并行/姿态面板 行高（钳制 16~96px）。 */
+  setPanelDefinition(panelDefinition) {
+    const partHeight = id => {
+      const part = panelDefinition?.parts?.find(candidate => candidate.id === id);
+      const height = Number(part?.height);
+      return Number.isFinite(height) ? Math.min(96, Math.max(16, Math.round(height))) : null;
+    };
+    this._metrics = {
+      buttonHeight: partHeight('groupBar') || BUTTON_HEIGHT,
+      comboRowHeight: partHeight('comboRow') || COMBO_ROW_HEIGHT,
+      stanceHeight: partHeight('stancePanel') || STANCE_HEIGHT
+    };
+  }
+
+  /** 当前生效行高（未配置时回落内置常量）。 */
+  get _layoutMetrics() {
+    return this._metrics
+      || { buttonHeight: BUTTON_HEIGHT, comboRowHeight: COMBO_ROW_HEIGHT, stanceHeight: STANCE_HEIGHT };
   }
 
   /**
@@ -110,7 +132,8 @@ export class ArmyCommandHUD extends UIElement {
     if (editorRect) {
       this.x = editorRect.x;
       this.width = Math.max(100, editorRect.width);
-      this._baseY = editorRect.y + editorRect.height - COMBO_ROW_HEIGHT - BUTTON_HEIGHT;
+      this._baseY = editorRect.y + editorRect.height
+        - this._layoutMetrics.comboRowHeight - this._layoutMetrics.buttonHeight;
     } else if (PlatformProfile.isMobile) {
       // 安卓底部图标栏形态（§11.1.6 M5-3）：加宽加大触屏按钮，固定在底部虚拟快捷栏上方
       this.width = Math.min(560, Math.max(320, width - 24));
@@ -137,12 +160,12 @@ export class ArmyCommandHUD extends UIElement {
     if (this.visible === false) return; // 军队按钮可整体开关操作条（PC 端默认隐藏）
     if (!this.system.getUnitCount()) return;
     const showStance = this.system.hasSquadSelection();
-    const stanceRows = showStance ? (STANCE_HEIGHT + 6) : 0;
+    const stanceRows = showStance ? (this._layoutMetrics.stanceHeight + 6) : 0;
     this._stanceRows = stanceRows;
     // 向上展开（用户裁定）：姿态行/状态行显示在编组条上方，预设面板再向上；AABB 覆盖全部按钮
     this._presetRows = this.presetOpen ? PRESET_SQUADS.length * PRESET_ROW_HEIGHT + 22 : 0;
     this.y = this._baseY - stanceRows - this._presetRows;
-    this.height = BUTTON_HEIGHT + COMBO_ROW_HEIGHT + stanceRows + this._presetRows;
+    this.height = this._layoutMetrics.buttonHeight + this._layoutMetrics.comboRowHeight + stanceRows + this._presetRows;
     this._drawSelectionRings(ctx);
     this._drawRescueZone(ctx);
     this._drawDragRect(ctx);
@@ -198,7 +221,7 @@ export class ArmyCommandHUD extends UIElement {
     // Row 1：编组选择（最底行；姿态/状态/预设面板按需向上展开）
     const presetRows = this._presetRows || 0;
     const stanceRows = this._stanceRows || 0;
-    const row1Y = this.y + presetRows + stanceRows + COMBO_ROW_HEIGHT;
+    const row1Y = this.y + presetRows + stanceRows + this._layoutMetrics.comboRowHeight;
     const slotW = (this.width - (ARMY_SELECTION_SLOTS.length - 1) * BUTTON_GAP) / ARMY_SELECTION_SLOTS.length;
     const selectedSlot = this.system.getSelectionSlot();
     this._buttons = ARMY_SELECTION_SLOTS.map((slot, index) => {
@@ -208,7 +231,7 @@ export class ArmyCommandHUD extends UIElement {
         x: this.x + index * (slotW + BUTTON_GAP),
         y: row1Y,
         width: slotW,
-        height: BUTTON_HEIGHT
+        height: this._layoutMetrics.buttonHeight
       };
       const active = !this.system.isCustomSelection() && item.slotKey === selectedSlot;
       ctx.fillStyle = active ? BUTTON_BG_ACTIVE : BUTTON_BG;
@@ -232,7 +255,7 @@ export class ArmyCommandHUD extends UIElement {
       x: this.x,
       y: comboY,
       width: PRESET_TOGGLE_WIDTH,
-      height: COMBO_ROW_HEIGHT - 2
+      height: this._layoutMetrics.comboRowHeight - 2
     };
     {
       const toggle = this._presetToggle;
@@ -262,7 +285,7 @@ export class ArmyCommandHUD extends UIElement {
           x: this.x + index * (stanceW + BUTTON_GAP),
           y: stanceY,
           width: stanceW,
-          height: STANCE_HEIGHT
+          height: this._layoutMetrics.stanceHeight
         };
         this._stanceButtons.push(item);
         const isActive = item.stanceKey === activeStance;
@@ -299,47 +322,47 @@ export class ArmyCommandHUD extends UIElement {
       ctx.font = '10px "Microsoft YaHei", sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(label, statusX, progressY + COMBO_ROW_HEIGHT / 2);
+      ctx.fillText(label, statusX, progressY + this._layoutMetrics.comboRowHeight / 2);
     } else if (this.system.isArmyDriveActive?.()) {
       // 军队直接驾驶中：提示接管状态与恢复方式
       ctx.fillStyle = 'rgba(143, 199, 255, 0.9)';
       ctx.font = '10px "Microsoft YaHei", sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText('WASD/摇杆 驾驶中 · 松开驻守 · 关列表恢复武将', statusX, progressY + COMBO_ROW_HEIGHT / 2);
+      ctx.fillText('WASD/摇杆 驾驶中 · 松开驻守 · 关列表恢复武将', statusX, progressY + this._layoutMetrics.comboRowHeight / 2);
     } else if (this.system.isCustomSelection()) {
       ctx.fillStyle = 'rgba(255, 255, 255, 0.55)';
       ctx.font = '10px "Microsoft YaHei", sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(this.system.getSelectionLabel(), statusX, progressY + COMBO_ROW_HEIGHT / 2);
+      ctx.fillText(this.system.getSelectionLabel(), statusX, progressY + this._layoutMetrics.comboRowHeight / 2);
     } else if (order && !order.done) {
       // 用户裁定取消命令倒计时：执行中只显示轻量文字提示，达成=全部到位
       ctx.fillStyle = 'rgba(255, 255, 255, 0.55)';
       ctx.font = '10px "Microsoft YaHei", sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText('执行中…', statusX, progressY + COMBO_ROW_HEIGHT / 2);
+      ctx.fillText('执行中…', statusX, progressY + this._layoutMetrics.comboRowHeight / 2);
     } else if (order?.done) {
       ctx.fillStyle = 'rgba(76, 175, 80, 0.9)';
       ctx.font = '10px "Microsoft YaHei", sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText('命令已达成', statusX, progressY + COMBO_ROW_HEIGHT / 2);
+      ctx.fillText('命令已达成', statusX, progressY + this._layoutMetrics.comboRowHeight / 2);
     } else if (this.gamepadCommanding && showStance) {
       // 手柄指挥态（按住 LB）：显示手柄操作提示
       ctx.fillStyle = 'rgba(143, 199, 255, 0.85)';
       ctx.font = '10px "Microsoft YaHei", sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText('🎮 指挥中：RB 切换命令 · A 确认', statusX, progressY + COMBO_ROW_HEIGHT / 2);
+      ctx.fillText('🎮 指挥中：RB 切换命令 · A 确认', statusX, progressY + this._layoutMetrics.comboRowHeight / 2);
     } else if (showStance) {
       // M5：选中军未下令时提示语义化操作（发完指令自动回武将）
       ctx.fillStyle = 'rgba(255, 255, 255, 0.55)';
       ctx.font = '10px "Microsoft YaHei", sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText('右键点敌=进攻 · 点地=驻守 · 点武将=集结', statusX, progressY + COMBO_ROW_HEIGHT / 2);
+      ctx.fillText('右键点敌=进攻 · 点地=驻守 · 点武将=集结', statusX, progressY + this._layoutMetrics.comboRowHeight / 2);
     }
 
     // Row 4+：战前预设面板（M5-3，点击 Row1「预设」开关展开；开战自动生效）。

@@ -468,6 +468,11 @@ export class ScenePanelLayout {
           fullBody: loader.getPanel('dialogue-fullbody') || null
         });
       }
+      // 军队操作 HUD 内部行高（面板编辑器「军队操作」面板；缺省沿用内置常量）
+      const armyPanelDefinition = loaded ? loader.getPanel('armyCommandHud') : null;
+      if (armyPanelDefinition) {
+        scene.armyCommandFlow?.applyPanelDefinition?.(armyPanelDefinition);
+      }
     } catch (error) {
       console.warn('BaseGameScene: 面板布局加载失败，使用默认', error);
     }

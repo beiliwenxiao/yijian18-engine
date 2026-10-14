@@ -144,6 +144,17 @@ const DEFAULT_PANELS = [
       { id: 'scrollbar', section: 'inventory', type: 'scrollbar', label: '滚动条', x: 842, y: 100, width: 12, height: 380 },
       { id: 'bagGoldRow', section: 'inventory', type: 'text', label: '金币', x: 340, y: 500, width: 180, height: 20, text: '💰 0 金币', fontSize: 13, fontWeight: 'bold', color: '#FFD700', align: 'left' }
     ]
+  },
+  {
+    // 军队操作 HUD 内部行高管理：运行时 ArmyCommandHUD.setPanelDefinition 读取各部件
+    // 高度并钳制到 16~96px；宽度始终与 HUD 外框一致（外框位置在 UI 编辑器 armyCommandHud 编辑）。
+    id: 'armyCommandHud', name: '军队操作', width: 316, height: 100,
+    backgroundColor: 'rgba(13, 19, 38, 0.86)', borderColor: '#c9a227', borderWidth: 2,
+    parts: [
+      { id: 'groupBar', type: 'panel', label: '编组条 Row1', x: 0, y: 0, width: 316, height: 38, bgColor: '#1a2f55', borderColor: '#3a4a7e' },
+      { id: 'comboRow', type: 'panel', label: '合并行（预设+状态）', x: 0, y: 38, width: 316, height: 26, bgColor: '#233055', borderColor: '#3a4a7e' },
+      { id: 'stancePanel', type: 'panel', label: '姿态面板 Row2', x: 0, y: 64, width: 316, height: 28, bgColor: '#233055', borderColor: '#3a4a7e' }
+    ]
   }
 ];
 
@@ -151,6 +162,7 @@ const DEFAULT_PANELS = [
 const PART_TYPES = {
   'text': { label: '文本', defaults: { text: '文本', fontSize: 14, color: '#ffffff', align: 'left', fontWeight: 'normal' } },
   'line': { label: '分隔线', defaults: { color: '#4a9eff' } },
+  'panel': { label: '面板块', defaults: { bgColor: '#1a2f55', borderColor: '#3a4a7e' } },
   'button': { label: '按钮', defaults: { text: '按钮', fontSize: 12, color: '#ffffff', bgColor: '#3a4a7e', borderColor: '#666' } },
   'equip-slot': { label: '装备槽', defaults: { slotType: 'accessory', slotLabel: '装备槽', slotBgColor: 'rgba(30,30,30,0.9)', slotBorderColor: '#555' } },
   'slot-grid': { label: '物品格子', defaults: { cols: 6, rows: 4, slotSize: 50, slotPadding: 5, slotBgColor: 'rgba(50,50,50,0.8)', slotBorderColor: '#666' } },
@@ -279,7 +291,12 @@ export class PanelEditor {
       if (data && data.ok && data.content) {
         const parsed = JSON.parse(data.content);
         if (Array.isArray(parsed.panels) && parsed.panels.length > 0) {
-          this.panels = parsed.panels;
+          // 以文件为准，并补齐默认面板中文件缺失的项（如「军队操作」管理面板）
+          const savedIds = new Set(parsed.panels.map(panel => panel?.id).filter(Boolean));
+          const missing = DEFAULT_PANELS
+            .filter(definition => !savedIds.has(definition.id))
+            .map(definition => JSON.parse(JSON.stringify(definition)));
+          this.panels = [...parsed.panels, ...missing];
         }
       }
     } catch (e) {
@@ -287,9 +304,13 @@ export class PanelEditor {
     }
   }
 
-  /** 保存到文件 */
+  /** 保存到文件（显隐/锁定为编辑器状态，落盘前剥离） */
   async save() {
-    const content = JSON.stringify({ panels: this.panels }, null, 2);
+    const sanitizePanel = panel => ({
+      ...panel,
+      parts: (panel.parts || []).map(({ editorHidden, editorLocked, ...rest }) => rest)
+    });
+    const content = JSON.stringify({ panels: this.panels.map(sanitizePanel) }, null, 2);
     try {
       await replaceCanonicalFile(this.configPath, content);
       this._showToast('✅ 已保存到 ' + this.configPath);
@@ -312,6 +333,11 @@ export class PanelEditor {
           <div class="pe-tabs" id="pe-tabs"></div>
         </div>
         <div class="pe-main">
+          <div class="pe-list" id="pe-list">
+            <h4>部件列表</h4>
+            <div id="pe-list-items"></div>
+          </div>
+          <div class="pe-resizer" id="pe-resizer-left" title="拖动调整部件列表宽度"></div>
           <div class="pe-canvas-wrap">
             <div class="pe-canvas-toolbar">
               <button id="pe-add-part">＋部件</button>
@@ -323,6 +349,7 @@ export class PanelEditor {
               <canvas id="pe-canvas"></canvas>
             </div>
           </div>
+          <div class="pe-resizer" id="pe-resizer-right" title="拖动调整属性面板宽度"></div>
           <div class="pe-props" id="pe-props">
             <h4>属性</h4>
             <div class="pe-prop-empty">选择一个部件</div>
@@ -353,6 +380,20 @@ export class PanelEditor {
       .pe-tab-actions button.primary { background:#4CAF50; color:#000; font-weight:bold; }
       .pe-tab-actions button:disabled { opacity:0.45; cursor:not-allowed; }
       .pe-main { flex:1; display:flex; overflow:hidden; }
+      .pe-list { width:210px; min-width:210px; background:#111a30; border-right:1px solid #2a3a5e; padding:12px 10px; overflow-y:auto; }
+      .pe-list h4 { color:#4CAF50; margin-bottom:8px; }
+      .pe-list-empty { color:#778; font-size:12px; padding:6px 2px; }
+      .pe-list-item { display:flex; align-items:center; gap:3px; padding:3px 4px; margin:1px 0; border-radius:3px; cursor:pointer; font-size:12px; background:#16213e; }
+      .pe-list-item:hover { background:#1d2a49; }
+      .pe-list-item.selected { background:#3a4a2a; outline:1px solid #4CAF50; }
+      .pe-list-item.hidden { opacity:0.5; }
+      .pe-list-btn { flex-shrink:0; width:22px; height:20px; padding:0; font-size:11px; background:#2a3a5e; border:1px solid #5574ad; border-radius:3px; cursor:pointer; color:#fff; line-height:1; }
+      .pe-list-btn.visibility.off { background:#3a3a3a; border-color:#666; opacity:0.8; }
+      .pe-list-btn.lock.on { background:#5a2a2a; border-color:#c0504a; }
+      .pe-list-name { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#cfe3ff; }
+      .pe-list-type { flex-shrink:0; color:#667; font-size:10px; }
+      .pe-resizer { flex-shrink:0; width:6px; cursor:col-resize; background:#16213e; }
+      .pe-resizer:hover, .pe-resizer.active { background:#4CAF50; }
       .pe-canvas-wrap { flex:1; display:flex; flex-direction:column; overflow:hidden; }
       .pe-canvas-toolbar { display:flex; gap:8px; padding:6px 12px; background:#111a30; border-bottom:1px solid #2a3a5e; align-items:center; }
       .pe-canvas-toolbar button { padding:4px 10px; background:#3a4a7e; border:none; border-radius:3px; color:#fff; cursor:pointer; font-size:12px; }
@@ -400,6 +441,9 @@ export class PanelEditor {
     this.container.querySelector('#pe-del-part').addEventListener('click', () => this._deletePart());
     // 复制部件
     this.container.querySelector('#pe-dup-part').addEventListener('click', () => this._duplicatePart());
+    // 左右面板宽度拖拽
+    this._setupResizer(this.container.querySelector('#pe-resizer-left'), this.container.querySelector('#pe-list'), 160, 400);
+    this._setupResizer(this.container.querySelector('#pe-resizer-right'), this.container.querySelector('#pe-props'), 220, 440);
 
     // Canvas 交互
     const canvas = this.container.querySelector('#pe-canvas');
@@ -418,9 +462,87 @@ export class PanelEditor {
   /** 渲染整个编辑器 */
   _render() {
     this._renderTabs();
+    this._renderPartList();
     this._renderCanvas();
     this._renderProps();
     this._updateHistoryButtons();
+  }
+
+  /** 渲染左侧部件列表（显隐 👁 / 锁定 🔒，与 UI 编辑器控件列表同模式） */
+  _renderPartList() {
+    const listEl = this.container.querySelector('#pe-list-items');
+    if (!listEl) return;
+    const panel = this.activePanel;
+    if (!panel) {
+      listEl.innerHTML = '<div class="pe-list-empty">无面板</div>';
+      return;
+    }
+    listEl.innerHTML = panel.parts.map(part => {
+      const hidden = part.editorHidden === true;
+      const locked = part.editorLocked === true;
+      const selected = this.selectedPartIds.has(part.id);
+      return `
+        <div class="pe-list-item${selected ? ' selected' : ''}${hidden ? ' hidden' : ''}" data-list-part="${part.id}">
+          <button class="pe-list-btn visibility${hidden ? ' off' : ''}" data-list-action="visibility" title="${hidden ? '在编辑器中显示' : '在编辑器中隐藏'}">${hidden ? '🚫' : '👁'}</button>
+          <button class="pe-list-btn lock${locked ? ' on' : ''}" data-list-action="lock" title="${locked ? '已锁定，点击解锁' : '未锁定，点击锁定'}">${locked ? '🔒' : '🔓'}</button>
+          <span class="pe-list-name" title="${part.id}">${part.label || part.id}</span>
+          <span class="pe-list-type">${part.type}</span>
+        </div>`;
+    }).join('');
+
+    listEl.querySelectorAll('.pe-list-item').forEach(item => {
+      item.addEventListener('click', (e) => {
+        const part = panel.parts.find(candidate => candidate.id === item.dataset.listPart);
+        if (!part) return;
+        const action = e.target.closest('[data-list-action]')?.dataset.listAction;
+        if (action === 'visibility') {
+          part.editorHidden = part.editorHidden !== true;
+          if (part.editorHidden) {
+            this.selectedPartIds.delete(part.id);
+            if (this.selectedPartId === part.id) {
+              this.selectedPartId = this._getSelectedParts().slice(-1)[0]?.id || null;
+            }
+          }
+        } else if (action === 'lock') {
+          part.editorLocked = part.editorLocked !== true;
+        } else {
+          this._setSelection([part], part.id);
+        }
+        this._render();
+      });
+    });
+  }
+
+  /** 左右面板宽度拖拽（仿场景编辑器 resizer） */
+  _setupResizer(resizer, panelEl, minWidth, maxWidth) {
+    if (!resizer || !panelEl) return;
+    let startX = 0;
+    let startWidth = 0;
+    const onMouseDown = (e) => {
+      e.preventDefault();
+      startX = e.clientX;
+      startWidth = panelEl.offsetWidth;
+      resizer.classList.add('active');
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+      document.addEventListener('mousemove', onMouseMove);
+      document.addEventListener('mouseup', onMouseUp);
+    };
+    const onMouseMove = (e) => {
+      const side = resizer.id === 'pe-resizer-left' ? 'left' : 'right';
+      const dx = e.clientX - startX;
+      const width = Math.max(minWidth, Math.min(maxWidth, side === 'left' ? startWidth + dx : startWidth - dx));
+      panelEl.style.width = `${width}px`;
+      panelEl.style.minWidth = `${width}px`;
+    };
+    const onMouseUp = () => {
+      resizer.classList.remove('active');
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    };
+    resizer.addEventListener('mousedown', onMouseDown);
   }
 
   /** 渲染面板 tab 栏 */
@@ -482,8 +604,9 @@ export class PanelEditor {
     ctx.lineWidth = panel.borderWidth || 2;
     ctx.strokeRect(0, 0, panel.width, panel.height);
 
-    // 渲染所有部件
+    // 渲染所有部件（编辑器中隐藏的部件跳过；显隐/锁定仅编辑态，不写入 JSON）
     for (const part of panel.parts) {
+      if (part.editorHidden === true) continue;
       this._renderPart(ctx, part);
     }
 
@@ -553,6 +676,22 @@ export class PanelEditor {
         ctx.moveTo(x, y + height / 2);
         ctx.lineTo(x + width, y + height / 2);
         ctx.stroke();
+        break;
+
+      case 'panel':
+        ctx.fillStyle = part.bgColor || '#1a2f55';
+        ctx.fillRect(x, y, width, height);
+        ctx.strokeStyle = part.borderColor || '#3a4a7e';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x, y, width, height);
+        if (part.label) {
+          ctx.fillStyle = 'rgba(255,255,255,0.6)';
+          ctx.font = '10px Arial';
+          ctx.textAlign = 'left';
+          ctx.textBaseline = 'top';
+          ctx.fillText(part.label, x + 4, y + 4);
+          ctx.textAlign = 'left';
+        }
         break;
 
       case 'button':
@@ -748,7 +887,7 @@ export class PanelEditor {
     html += `<div class="pe-prop-row"><label>ID</label><input type="text" data-part-key="id" value="${part.id}"></div>`;
     html += `<div class="pe-prop-row"><label>名称</label><input type="text" data-part-key="label" value="${part.label || ''}"></div>`;
     html += `<div class="pe-prop-row"><label>类型</label><select data-part-key="type">${Object.entries(PART_TYPES).map(([k, v]) => `<option value="${k}" ${k === part.type ? 'selected' : ''}>${v.label}</option>`).join('')}</select></div>`;
-    html += `<div class="pe-prop-row"><label>区域</label><select data-part-key="section"><option value="character" ${part.section === 'character' ? 'selected' : ''}>角色/装备</option><option value="inventory" ${part.section === 'inventory' ? 'selected' : ''}>背包物品</option></select></div>`;
+    html += `<div class="pe-prop-row"><label>区域</label><select data-part-key="section"><option value="" ${!part.section ? 'selected' : ''}>通用</option><option value="character" ${part.section === 'character' ? 'selected' : ''}>角色/装备</option><option value="inventory" ${part.section === 'inventory' ? 'selected' : ''}>背包物品</option></select></div>`;
     html += `</div>`;
 
     html += `<div class="pe-prop-section"><div class="pe-prop-section-title">位置/大小</div>`;
@@ -802,6 +941,10 @@ export class PanelEditor {
         break;
       case 'line':
         html += this._propRow('color', '颜色', part.color || '#4a9eff', 'color');
+        break;
+      case 'panel':
+        html += this._propRow('bgColor', '背景色', part.bgColor || '#1a2f55', 'color');
+        html += this._propRow('borderColor', '边框色', part.borderColor || '#3a4a7e', 'color');
         break;
       case 'button':
         html += this._propRow('text', '文本', part.text || '', 'text');
@@ -897,6 +1040,7 @@ export class PanelEditor {
     const panel = this.activePanel;
     if (!panel) return [];
     return panel.parts.filter(part =>
+      part.editorLocked !== true &&
       part.x < rect.x + rect.width &&
       part.x + part.width > rect.x &&
       part.y < rect.y + rect.height &&
@@ -914,12 +1058,15 @@ export class PanelEditor {
   _moveSelectedParts(deltaX, deltaY) {
     const selectedParts = this._getSelectedParts();
     if (selectedParts.length === 0) return false;
+    let moved = false;
     for (const part of selectedParts) {
+      if (part.editorLocked === true) continue;
       part.x = Math.round(part.x + deltaX);
       part.y = Math.round(part.y + deltaY);
+      moved = true;
     }
-    this._renderCanvas();
-    return true;
+    if (moved) this._renderCanvas();
+    return moved;
   }
 
   _onKeyDown(e) {
@@ -1006,9 +1153,10 @@ export class PanelEditor {
   _getPartAt(x, y) {
     const panel = this.activePanel;
     if (!panel) return null;
-    // 从后往前（上层优先）
+    // 从后往前（上层优先）；锁定的部件不响应画布命中（仍可在左侧列表选中）
     for (let i = panel.parts.length - 1; i >= 0; i--) {
       const p = panel.parts[i];
+      if (p.editorLocked === true) continue;
       if (x >= p.x && x <= p.x + p.width && y >= p.y && y <= p.y + p.height) {
         return p;
       }

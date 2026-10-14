@@ -137,6 +137,8 @@ const MOBILE_TOUCH_BUTTON_IDS = new Set([
   'hb-hp', 'hb-mp', 'hb-bag', 'hb-settings', 'hb-skill6', 'hb-skill7'
 ]);
 const EDITABLE_PANEL_PART_IDS = new Set(['bagTitle', 'bagSeparator']);
+// 外框不锁比例的面板：armyCommandHud 的高度由内部行高堆叠决定，与 PanelLayout 面板比例无关
+const ASPECT_FREE_PANEL_IDS = new Set(['armyCommandHud']);
 const PANEL_PART_MIN_SIZE = 16;
 const PANEL_LINE_HIT_HEIGHT = 8;
 
@@ -179,6 +181,13 @@ export class UIEditor {
     this.selectedPanelPart = null;
     this.scale = 1; // 预览缩放
 
+    // 与场景/面板编辑器一致的快照历史：后退(撤销)/前进(重做)仅保存布局数据。
+    this.undoStack = [];
+    this.redoStack = [];
+    this.maxHistorySize = 50;
+    // 属性输入连续编辑期间的历史快照（focus 捕获、change 提交）
+    this._propHistorySnapshot = null;
+
     this._dragState = null;
     this._initialized = false;
     this._loginBackgroundImage = '';
@@ -197,6 +206,78 @@ export class UIEditor {
   _cloneDefault(platform) {
     const defaultPlatform = LOGIN_LAYOUT_PLATFORMS.has(platform) ? 'login' : platform;
     return JSON.parse(JSON.stringify(DEFAULT_COMPONENTS[defaultPlatform]));
+  }
+
+  // ─── 快照历史（后退=撤销 / 前进=重做，与场景/面板编辑器同模式） ───────────
+
+  _createHistorySnapshot() {
+    return JSON.stringify({ layouts: this.layouts });
+  }
+
+  _commitHistorySnapshot(snapshot) {
+    if (!snapshot || snapshot === this._createHistorySnapshot()) return false;
+    this.undoStack.push(snapshot);
+    if (this.undoStack.length > this.maxHistorySize) this.undoStack.shift();
+    this.redoStack = [];
+    this._updateHistoryButtons();
+    return true;
+  }
+
+  saveHistory() {
+    this.undoStack.push(this._createHistorySnapshot());
+    if (this.undoStack.length > this.maxHistorySize) this.undoStack.shift();
+    this.redoStack = [];
+    this._updateHistoryButtons();
+  }
+
+  _restoreHistorySnapshot(snapshot) {
+    const state = JSON.parse(snapshot);
+    this.layouts = state.layouts;
+    this.selectedId = null;
+    this.selectedPanelPart = null;
+    this._dragState = null;
+    this._render();
+  }
+
+  undo() {
+    if (this.undoStack.length === 0) return;
+    this.redoStack.push(this._createHistorySnapshot());
+    this._restoreHistorySnapshot(this.undoStack.pop());
+    this._setStatus('↶ 已后退');
+  }
+
+  redo() {
+    if (this.redoStack.length === 0) return;
+    this.undoStack.push(this._createHistorySnapshot());
+    this._restoreHistorySnapshot(this.redoStack.pop());
+    this._setStatus('↷ 已前进');
+  }
+
+  _updateHistoryButtons() {
+    const undoButton = this.container?.querySelector('#uie-undo');
+    const redoButton = this.container?.querySelector('#uie-redo');
+    if (undoButton) undoButton.disabled = this.undoStack.length === 0;
+    if (redoButton) redoButton.disabled = this.redoStack.length === 0;
+  }
+
+  /** Ctrl+Z 后退 / Ctrl+Y 或 Ctrl+Shift+Z 前进（输入框焦点时交给浏览器原生行为）。 */
+  _bindHistoryShortcuts() {
+    this._onHistoryKeyDown = (e) => {
+      if (!(e.ctrlKey || e.metaKey)) return;
+      const target = e.target;
+      if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement
+        || target instanceof HTMLSelectElement || target?.isContentEditable) return;
+      const key = e.key.toLowerCase();
+      if (key === 'z') {
+        e.preventDefault();
+        if (e.shiftKey) this.redo();
+        else this.undo();
+      } else if (key === 'y') {
+        e.preventDefault();
+        this.redo();
+      }
+    };
+    document.addEventListener('keydown', this._onHistoryKeyDown);
   }
 
   /** 初始化（首次显示时调用） */
@@ -302,6 +383,7 @@ export class UIEditor {
    * @returns {number|null} 宽/高比，无约束时返回 null
    */
   _getLockedAspect(comp) {
+    if (!comp || ASPECT_FREE_PANEL_IDS.has(comp.id)) return null;
     const panel = comp && this._panelLayouts ? this._panelLayouts[comp.id] : null;
     if (!panel || !panel.width || !panel.height) return null;
     return panel.width / panel.height;
@@ -442,14 +524,22 @@ export class UIEditor {
               <button id="uie-mobile-button-add" type="button">＋ 添加按钮</button>
               <button id="uie-mobile-button-delete" type="button">🗑 删除选中</button>
             </div>
+            <button id="uie-undo" title="后退/撤销 (Ctrl+Z)">↶ 后退</button>
+            <button id="uie-redo" title="前进/重做 (Ctrl+Y)">↷ 前进</button>
             <button id="uie-reset">恢复默认</button>
             <button id="uie-save" class="primary">💾 保存到文件</button>
           </div>
         </div>
         <div class="uie-main">
+          <div class="uie-list" id="uie-list">
+            <h4>控件列表</h4>
+            <div class="uie-list-items" id="uie-list-items"></div>
+          </div>
+          <div class="uie-resizer" id="uie-resizer-left" title="拖动调整控件列表宽度"></div>
           <div class="uie-stage-wrap">
             <div class="uie-stage" id="uie-stage"></div>
           </div>
+          <div class="uie-resizer" id="uie-resizer-right" title="拖动调整属性面板宽度"></div>
           <div class="uie-props" id="uie-props">
             <h4>属性</h4>
             <div class="uie-prop-empty">选择一个组件</div>
@@ -475,6 +565,11 @@ export class UIEditor {
 
     this.container.querySelector('#uie-mobile-button-add').addEventListener('click', () => this._addMobileTouchButton());
     this.container.querySelector('#uie-mobile-button-delete').addEventListener('click', () => this._deleteSelectedMobileTouchButton());
+    this.container.querySelector('#uie-undo').addEventListener('click', () => this.undo());
+    this.container.querySelector('#uie-redo').addEventListener('click', () => this.redo());
+    this._bindHistoryShortcuts();
+    this._setupResizer(this.container.querySelector('#uie-resizer-left'), this.container.querySelector('#uie-list'), 160, 420);
+    this._setupResizer(this.container.querySelector('#uie-resizer-right'), this.container.querySelector('#uie-props'), 200, 440);
 
     this.container.querySelector('#uie-save').addEventListener('click', async () => {
       try {
@@ -509,9 +604,11 @@ export class UIEditor {
         return;
       }
       if (confirm('恢复当前平台为默认布局？(未保存)')) {
+        const snapshot = this._createHistorySnapshot();
         this.layouts[this.platform] = this._cloneDefault(this.platform);
         this.selectedId = null;
         this.selectedPanelPart = null;
+        this._commitHistorySnapshot(snapshot);
         this._render();
       }
     });
@@ -558,9 +655,11 @@ export class UIEditor {
       this._setStatus(`Android 按钮已存在：${componentId}`, true);
       return;
     }
+    const snapshot = this._createHistorySnapshot();
     layout.components.push(structuredClone(template));
     this.selectedId = componentId;
     this.selectedPanelPart = null;
+    this._commitHistorySnapshot(snapshot);
     this._setStatus(`已添加 Android 按钮：${template.label}（未保存）`);
     this._render();
   }
@@ -575,10 +674,91 @@ export class UIEditor {
       return;
     }
     if (!confirm(`删除 Android 按钮“${component.label}”？保存后运行时将不再显示它。`)) return;
+    const snapshot = this._createHistorySnapshot();
     layout.components.splice(index, 1);
     this.selectedId = null;
+    this._commitHistorySnapshot(snapshot);
     this._setStatus(`已删除 Android 按钮：${component.label}（未保存）`);
     this._render();
+  }
+
+  // ─── 左右面板宽度拖拽（左列表 / 右属性，仿场景编辑器 resizer） ───────────
+
+  _setupResizer(resizer, panel, minWidth, maxWidth) {
+    if (!resizer || !panel) return;
+    let startX = 0;
+    let startWidth = 0;
+    const onMouseDown = (e) => {
+      e.preventDefault();
+      startX = e.clientX;
+      startWidth = panel.offsetWidth;
+      resizer.classList.add('active');
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+      document.addEventListener('mousemove', onMouseMove);
+      document.addEventListener('mouseup', onMouseUp);
+    };
+    const onMouseMove = (e) => {
+      // 左侧分隔条向右拖=加宽，右侧分隔条向右拖=收窄
+      const side = resizer.id === 'uie-resizer-left' ? 'left' : 'right';
+      const dx = e.clientX - startX;
+      const width = Math.max(minWidth, Math.min(maxWidth, side === 'left' ? startWidth + dx : startWidth - dx));
+      panel.style.width = `${width}px`;
+      panel.style.minWidth = `${width}px`;
+    };
+    const onMouseUp = () => {
+      resizer.classList.remove('active');
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+      // 宽度变化影响舞台适配缩放，松手后重排一次
+      this._render();
+    };
+    resizer.addEventListener('mousedown', onMouseDown);
+  }
+
+  // ─── 左侧控件列表（显隐 👁 / 锁定 🔒，仿场景编辑器图层列表） ───────────
+
+  /** 渲染当前平台的控件列表；显隐/锁定为编辑器状态，不写入布局 JSON。 */
+  _renderComponentList() {
+    const listEl = this.container.querySelector('#uie-list-items');
+    if (!listEl) return;
+    const layout = this.layouts[this.platform];
+    if (!layout || !Array.isArray(layout.components)) {
+      listEl.innerHTML = '<div class="uie-list-empty">当前标签无控件列表</div>';
+      return;
+    }
+    listEl.innerHTML = layout.components.map(comp => {
+      const hidden = comp.editorHidden === true;
+      const locked = comp.editorLocked === true;
+      const selected = comp.id === this.selectedId;
+      return `
+        <div class="uie-list-item${selected ? ' selected' : ''}${hidden ? ' hidden' : ''}" data-list-id="${escapeHtml(comp.id)}">
+          <button class="uie-list-btn visibility${hidden ? ' off' : ''}" data-list-action="visibility" title="${hidden ? '在编辑器中显示' : '在编辑器中隐藏'}">${hidden ? '🚫' : '👁'}</button>
+          <button class="uie-list-btn lock${locked ? ' on' : ''}" data-list-action="lock" title="${locked ? '已锁定，点击解锁' : '未锁定，点击锁定'}">${locked ? '🔒' : '🔓'}</button>
+          <span class="uie-list-name" title="${escapeHtml(comp.id)}">${escapeHtml(comp.label || comp.id)}</span>
+          <span class="uie-list-id">${escapeHtml(comp.id)}</span>
+        </div>`;
+    }).join('');
+
+    listEl.querySelectorAll('.uie-list-item').forEach(item => {
+      item.addEventListener('click', (e) => {
+        const comp = layout.components.find(candidate => candidate.id === item.dataset.listId);
+        if (!comp) return;
+        const action = e.target.closest('[data-list-action]')?.dataset.listAction;
+        if (action === 'visibility') {
+          comp.editorHidden = comp.editorHidden !== true;
+          if (comp.editorHidden && this.selectedId === comp.id) this.selectedId = null;
+        } else if (action === 'lock') {
+          comp.editorLocked = comp.editorLocked !== true;
+        } else {
+          this.selectedId = comp.id;
+          this.selectedPanelPart = null;
+        }
+        this._render();
+      });
+    });
   }
 
   _injectStyles() {
@@ -597,6 +777,20 @@ export class UIEditor {
       .uie-mobile-button-actions { display:flex; align-items:center; gap:6px; padding-right:8px; border-right:1px solid #41547e; }
       .uie-mobile-button-actions select { max-width:180px; background:#0a1020; border:1px solid #2a3a5e; border-radius:4px; color:#fff; padding:7px; }
       .uie-main { flex:1; display:flex; overflow:hidden; }
+      .uie-list { width:220px; min-width:220px; background:#111a30; border-right:1px solid #2a3a5e; padding:12px 10px; overflow-y:auto; }
+      .uie-list h4 { color:#4CAF50; margin-bottom:8px; }
+      .uie-list-empty { color:#778; font-size:12px; padding:6px 2px; }
+      .uie-list-item { display:flex; align-items:center; gap:3px; padding:3px 4px; margin:1px 0; border-radius:3px; cursor:pointer; font-size:12px; background:#16213e; }
+      .uie-list-item:hover { background:#1d2a49; }
+      .uie-list-item.selected { background:#3a4a2a; outline:1px solid #4CAF50; }
+      .uie-list-item.hidden { opacity:0.5; }
+      .uie-list-btn { flex-shrink:0; width:22px; height:20px; padding:0; font-size:11px; background:#2a3a5e; border:1px solid #5574ad; border-radius:3px; cursor:pointer; color:#fff; line-height:1; }
+      .uie-list-btn.visibility.off { background:#3a3a3a; border-color:#666; opacity:0.8; }
+      .uie-list-btn.lock.on { background:#5a2a2a; border-color:#c0504a; }
+      .uie-list-name { flex-shrink:0; max-width:96px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#cfe3ff; }
+      .uie-list-id { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#667; font-size:10px; text-align:right; }
+      .uie-resizer { flex-shrink:0; width:6px; cursor:col-resize; background:#16213e; }
+      .uie-resizer:hover, .uie-resizer.active { background:#4CAF50; }
       .uie-stage-wrap { flex:1; display:flex; align-items:center; justify-content:center; overflow:auto; padding:20px; background:#070b18; }
       .uie-stage { position:relative; background:#1a2238; border:2px solid #4CAF50; box-shadow:0 0 30px rgba(0,0,0,0.6); }
       .uie-stage.login-stage { background-color:#211613; background-image:none; background-position:center; background-size:cover; background-repeat:no-repeat; }
@@ -744,6 +938,15 @@ export class UIEditor {
     const layout = this.layouts[this.platform];
     const stage = this.container.querySelector('#uie-stage');
     if (!stage) return;
+    // 控件列表/左右分隔条仅在布局类标签显示（手柄/文案/引导标签无画布布局）
+    const layoutEditorActive = EDITABLE_LAYOUT_PLATFORMS.includes(this.platform);
+    const listPanel = this.container.querySelector('#uie-list');
+    const leftResizer = this.container.querySelector('#uie-resizer-left');
+    const rightResizer = this.container.querySelector('#uie-resizer-right');
+    if (listPanel) listPanel.style.display = layoutEditorActive ? '' : 'none';
+    if (leftResizer) leftResizer.style.display = layoutEditorActive ? '' : 'none';
+    if (rightResizer) rightResizer.style.display = layoutEditorActive ? '' : 'none';
+    this._renderComponentList();
     const isLoginPreview = LOGIN_LAYOUT_PLATFORMS.has(this.platform);
     stage.classList.toggle('login-stage', isLoginPreview);
     stage.classList.toggle('no-bg', this.platform === 'gamepad' || this.platform === 'hints');
@@ -767,6 +970,8 @@ export class UIEditor {
     stage.innerHTML = '';
 
     for (const comp of layout.components) {
+      // 编辑器中隐藏的组件跳过渲染（仅编辑态，不写入布局 JSON）
+      if (comp.editorHidden === true) continue;
       const el = document.createElement('div');
       el.className = 'uie-comp ' + (comp.kind || '');
       if (comp.id === this.selectedId) el.classList.add('selected');
@@ -856,6 +1061,14 @@ export class UIEditor {
   }
 
   _startDrag(e, comp, mode) {
+    // 锁定的组件仅可选中，不可拖动/缩放（左侧列表解锁后恢复）
+    if (comp.editorLocked === true) {
+      this.selectedId = comp.id;
+      this.selectedPanelPart = null;
+      this._render();
+      this._setStatus('组件已锁定：仅可选中，在左侧列表解锁后才能拖动/缩放', true);
+      return;
+    }
     e.preventDefault();
     this.selectedId = comp.id;
     this.selectedPanelPart = null;
@@ -863,6 +1076,7 @@ export class UIEditor {
       target: 'component',
       mode,
       comp,
+      historySnapshot: this._createHistorySnapshot(),
       startMouseX: e.clientX,
       startMouseY: e.clientY,
       startX: comp.x,
@@ -870,11 +1084,13 @@ export class UIEditor {
       startW: comp.width,
       startH: comp.height
     };
+    const ds = this._dragState;
     const onMove = event => this._onDragMove(event);
     const onUp = () => {
       window.removeEventListener('mousemove', onMove);
       window.removeEventListener('mouseup', onUp);
-      this._dragState = null;
+      this._commitHistorySnapshot(ds.historySnapshot);
+      if (this._dragState === ds) this._dragState = null;
     };
     window.addEventListener('mousemove', onMove);
     window.addEventListener('mouseup', onUp);
@@ -895,6 +1111,7 @@ export class UIEditor {
       part,
       editorScale: this.scale,
       contentScale: transform.contentScale,
+      historySnapshot: this._createHistorySnapshot(),
       startMouseX: e.clientX,
       startMouseY: e.clientY,
       startX: part.x,
@@ -902,11 +1119,13 @@ export class UIEditor {
       startW: part.width,
       startH: part.height
     };
+    const ds = this._dragState;
     const onMove = event => this._onDragMove(event);
     const onUp = () => {
       window.removeEventListener('mousemove', onMove);
       window.removeEventListener('mouseup', onUp);
-      this._dragState = null;
+      this._commitHistorySnapshot(ds.historySnapshot);
+      if (this._dragState === ds) this._dragState = null;
       this._setStatus(`PanelLayout.${part.id} 已修改，PC/Android 将共用此内部坐标（未保存）`);
     };
     window.addEventListener('mousemove', onMove);
@@ -1051,23 +1270,42 @@ export class UIEditor {
       </div>
     `;
 
+    // 历史：编辑前快照（focus）→ 提交入栈（change）
+    const snapshotOnFocus = input => {
+      input.addEventListener('focus', () => {
+        this._propHistorySnapshot = this._createHistorySnapshot();
+      });
+    };
+    const commitOnChange = input => {
+      input.addEventListener('change', () => {
+        this._commitHistorySnapshot(this._propHistorySnapshot);
+        this._propHistorySnapshot = null;
+      });
+    };
     props.querySelectorAll('input[data-part-number]').forEach(input => {
+      snapshotOnFocus(input);
       input.addEventListener('change', () => {
         this._updatePanelPartNumber(panelDef, part, input.dataset.partNumber, Number(input.value));
         this._setStatus(`PanelLayout.${part.id} 属性已修改（未保存）`);
+        this._commitHistorySnapshot(this._propHistorySnapshot);
+        this._propHistorySnapshot = null;
         this._render();
       });
     });
     props.querySelectorAll('input[data-part-text]').forEach(input => {
+      snapshotOnFocus(input);
+      commitOnChange(input);
       input.addEventListener('change', () => {
         part[input.dataset.partText] = input.value;
         this._setStatus(`PanelLayout.${part.id} 属性已修改（未保存）`);
         this._render();
       });
     });
-    props.querySelectorAll('select[data-part-select]').forEach(select => {
-      select.addEventListener('change', () => {
-        part[select.dataset.partSelect] = select.value;
+    props.querySelectorAll('select[data-part-select]').forEach(input => {
+      snapshotOnFocus(input);
+      commitOnChange(input);
+      input.addEventListener('change', () => {
+        part[input.dataset.partSelect] = input.value;
         this._setStatus(`PanelLayout.${part.id} 属性已修改（未保存）`);
         this._render();
       });
@@ -1119,6 +1357,10 @@ export class UIEditor {
       <div class="uie-prop-empty" style="margin-top:10px">画布: ${layout.canvas.width}×${layout.canvas.height}</div>
     `;
     props.querySelectorAll('input[data-k]').forEach(input => {
+      // 历史：focus 捕获编辑前快照，change（提交/失焦）入栈
+      input.addEventListener('focus', () => {
+        this._propHistorySnapshot = this._createHistorySnapshot();
+      });
       input.addEventListener('input', () => {
         const k = input.dataset.k;
         const v = Number(input.value);
@@ -1134,6 +1376,10 @@ export class UIEditor {
           comp[k] = k === 'fontSize' ? Math.max(0, v) : v;
         }
         this._render();
+      });
+      input.addEventListener('change', () => {
+        this._commitHistorySnapshot(this._propHistorySnapshot);
+        this._propHistorySnapshot = null;
       });
     });
   }
