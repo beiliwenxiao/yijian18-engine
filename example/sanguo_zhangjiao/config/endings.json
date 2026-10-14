@@ -14,7 +14,7 @@
   },
   "reviewTemplates": [
     { "id": "first-fire", "path": "storyState.s01FirstFireLit", "when": "truthy", "text": "你在 S01 点燃了第一堆火。" },
-    { "id": "class", "path": "storyState.classId", "text": "你选择了「{value|className}」。" }, { "id": "refugees", "path": "storyState.s09RefugeeConflict.choiceId", "text": "饥民争斗：{value|refugeeChoice}。" },
+    { "id": "class", "path": "storyState.classId", "text": "你选择了「{value|className}」。" },
     { "id": "yingchuan", "path": "battleModeStats.yingchuan", "text": "颍川：{value|battleMode}。" }, { "id": "bocai", "path": "heroes.bocai.survived", "text": "波才：{value|survival}。" },
     { "id": "route", "path": "storyState.yuzhouRoute.routeId", "text": "路线：{value|routeName}。" }, { "id": "zhang-mancheng", "path": "heroes.zhangMancheng.status", "text": "张曼成：{value|heroStatus}。" },
     { "id": "zhang-liang", "path": "heroes.zhangLiang.survived", "text": "张梁：{value|survival}。" }, { "id": "zhang-bao", "path": "heroes.zhangBao.survived", "text": "张宝：{value|survival}。" },
@@ -30,5 +30,5 @@
     { "id": "meteor", "title": "流星——短暂照亮乱世", "condition": { "all": [{ "path": "heroes.zhangLiang.survived", "op": "eq", "value": false }, { "path": "heroes.zhangBao.survived", "op": "eq", "value": false }, { "any": [{ "path": "heroes.bocai.survived", "op": "eq", "value": true }, { "path": "heroes.zhangMancheng.survived", "op": "eq", "value": true }] }] }, "keyArtImageId": "ending.art.meteor", "musicId": "music.ending.meteor", "shots": [{ "cameraId": "ending.meteor.local-rule", "durationMs": 5400, "subtitle": "活下来的旧将占住一块地方，像夜里突然亮起的星。" }, { "cameraId": "ending.meteor.falling", "durationMs": 5600, "subtitle": "那道光很快，后来被曹操的版图吞没。" }, { "cameraId": "ending.meteor.harvest", "durationMs": 4700, "subtitle": "但在它落下以前，仍有人因为那点光多活了一季。" }] },
     { "id": "dust", "title": "尘埃——史书无名", "fallback": true, "condition": true, "keyArtImageId": "ending.art.dust", "musicId": "music.ending.dust", "shots": [{ "cameraId": "ending.dust.history", "durationMs": 5200, "subtitle": "黄巾覆灭。史书用寥寥几字写完这一年。" }, { "cameraId": "ending.dust.empty-camp", "durationMs": 5200, "subtitle": "你的名字不在其中。" }, { "cameraId": "ending.dust.wind", "durationMs": 5600, "subtitle": "风吹过曾经的营地，卷走最后一点灰。" }] }
   ],
-  "formatMaps": { "className": { "warrior": "战士", "archer": "弓手", "strategist": "军师" }, "refugeeChoice": { "hardline": "强硬", "appease": "安抚", "silence": "沉默" }, "battleMode": { "observe": "观战", "intervene": "介入" }, "survival": { "true": "存活", "false": "死亡" }, "routeName": { "nanyang": "南阳", "xihua": "西华" }, "heroStatus": { "alive": "存活", "dead": "死亡", "notVisited": "未前往" } }
+  "formatMaps": { "className": { "warrior": "战士", "archer": "弓手", "strategist": "军师" }, "battleMode": { "observe": "观战", "intervene": "介入" }, "survival": { "true": "存活", "false": "死亡" }, "routeName": { "nanyang": "南阳", "xihua": "西华" }, "heroStatus": { "alive": "存活", "dead": "死亡", "notVisited": "未前往" } }
 }

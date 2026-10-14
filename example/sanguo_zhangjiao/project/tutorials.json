@@ -203,7 +203,7 @@
     "steps": [
       {
         "id": "s01.jump.step.river",
-        "text": "狼群追来后，使用 {jump} 跳过河中石块逃到对岸。",
+        "text": "前方河面乱石密布，使用 {jump} 跳过河中石块，抵达对岸。",
         "highlightTarget": false
       }
     ],
@@ -273,5 +273,55 @@
     "priority": 0,
     "beginText": "采到了野果，肚子饿了。选中野果，按{eat}键吃掉充饥。",
     "endText": "你吃掉了野果，体力恢复了。"
+  },
+  {
+    "id": "s02.command.move",
+    "title": "指挥士兵",
+    "category": "s02-rescue",
+    "scope": {
+      "sceneIds": [
+        "S02"
+      ]
+    },
+    "steps": [
+      {
+        "id": "s02.command.move.step",
+        "text": "昏迷中你仍可调遣黄巾士兵：{interact} 靠近士兵下达移动指令，让他们靠近你的位置。",
+        "highlightTarget": false
+      }
+    ],
+    "completionPolicy": "allSteps",
+    "pauseGame": false,
+    "canSkip": true,
+    "autoTrigger": false,
+    "autoAdvance": false,
+    "priority": 0,
+    "beginText": "你还动不了，但士兵听你号令。",
+    "endText": "士兵就位了。"
+  },
+  {
+    "id": "s02.command.carry",
+    "title": "抬担架回营",
+    "category": "s02-rescue",
+    "scope": {
+      "sceneIds": [
+        "S02"
+      ]
+    },
+    "steps": [
+      {
+        "id": "s02.command.carry.step",
+        "text": "士兵到位后，{interact} 下令抬起担架，沿山道把你送回营地。",
+        "highlightTarget": false
+      }
+    ],
+    "completionPolicy": "allSteps",
+    "pauseGame": false,
+    "canSkip": true,
+    "autoTrigger": false,
+    "autoAdvance": false,
+    "priority": 0,
+    "beginText": "人手够了。让他们抬起担架。",
+    "endText": "担架启程，山道尽头就是营地。"
   }
 ]

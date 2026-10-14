@@ -1264,529 +1264,6 @@
   },
   {
     "commandType": "state.transaction",
-    "id": "story.s09.delayed.resolve",
-    "name": "延迟后果结算",
-    "transaction": {
-      "delayed": {
-        "currentDayPath": "story.currentDay",
-        "path": "delayedConsequences"
-      },
-      "selector": {
-        "$get": "event.type"
-      },
-      "variants": {
-        "s09.hardlineEscape": {
-          "outcome": {
-            "$if": [
-              {
-                "$get": "event.payload.willEscape"
-              },
-              "escapeOccurred",
-              "noEscape"
-            ]
-          },
-          "writes": [
-            {
-              "path": "s09RefugeeConflict",
-              "target": "story",
-              "value": {
-                "$merge": [
-                  {
-                    "$get": "story.s09RefugeeConflict"
-                  },
-                  {
-                    "hardlineEscapeDay": {
-                      "$get": "story.currentDay"
-                    },
-                    "hardlineEscapeOccurred": {
-                      "$get": "event.payload.willEscape"
-                    }
-                  }
-                ]
-              }
-            }
-          ]
-        },
-        "s09.silenceFoodCollapse": {
-          "outcome": "foodCollapsed",
-          "writes": [
-            {
-              "cityId": "city.s09_guangzong_camp",
-              "path": "resources.food",
-              "target": "city",
-              "value": 0
-            },
-            {
-              "path": "hiddenClues",
-              "target": "story",
-              "value": {
-                "$appendUnique": {
-                  "source": {
-                    "$get": "story.hiddenClues",
-                    "default": []
-                  },
-                  "values": [
-                    "s09.refugees.breadArmClue"
-                  ]
-                }
-              }
-            }
-          ]
-        }
-      }
-    }
-  },
-  {
-    "commandType": "state.transaction",
-    "id": "story.s09.refugee.prepare",
-    "name": "难民冲突·预备",
-    "transaction": {
-      "when": {
-        "all": [
-          {
-            "equals": "S02",
-            "path": "story.currentSceneId"
-          },
-          {
-            "gte": 0.4,
-            "path": "cityStates.0.damageRatio"
-          },
-          {
-            "gte": 0.000001,
-            "path": "cityStates.0.buildingDamage.granary.s09"
-          }
-        ]
-      },
-      "writes": [
-        {
-          "path": "s09RefugeeConflict",
-          "target": "story",
-          "value": {
-            "$if": [
-              {
-                "$get": "story.s09RefugeeConflict"
-              },
-              {
-                "$get": "story.s09RefugeeConflict"
-              },
-              {
-                "branch": null,
-                "donationCommitted": false,
-                "presentationActive": true,
-                "result": null,
-                "status": "available",
-                "triggeredDay": {
-                  "$get": "story.currentDay",
-                  "default": 1
-                }
-              }
-            ]
-          }
-        }
-      ]
-    }
-  },
-  {
-    "commandType": "state.transaction",
-    "id": "story.s09.refugee.start",
-    "name": "难民冲突·开始",
-    "transaction": {
-      "when": {
-        "all": [
-          {
-            "equals": "S02",
-            "path": "story.currentSceneId"
-          },
-          {
-            "equals": "available",
-            "path": "story.s09RefugeeConflict.status"
-          }
-        ]
-      },
-      "writes": [
-        {
-          "path": "s09RefugeeConflict.status",
-          "target": "story",
-          "value": "started"
-        }
-      ]
-    }
-  },
-  {
-    "commandType": "state.transaction",
-    "id": "story.s09.refugee.donate",
-    "name": "捐赠粮草安抚难民",
-    "transaction": {
-      "checkpoint": {
-        "checkpointId": "checkpoint.S09.refugeeDonation",
-        "reason": "checkpoint",
-        "sceneId": "S02"
-      },
-      "inventory": {
-        "entries": [
-          {
-            "itemId": "resource.food",
-            "quantity": 20
-          }
-        ],
-        "type": "batchRemove"
-      },
-      "when": {
-        "all": [
-          {
-            "equals": "S02",
-            "path": "story.currentSceneId"
-          },
-          {
-            "notEquals": true,
-            "path": "story.s09RefugeeConflict.donationCommitted"
-          },
-          {
-            "inventory": {
-              "itemId": "resource.food",
-              "quantity": 20
-            }
-          }
-        ]
-      },
-      "writes": [
-        {
-          "cityId": "city.s09_guangzong_camp",
-          "path": "morale",
-          "target": "city",
-          "value": {
-            "$min": [
-              100,
-              {
-                "$add": [
-                  {
-                    "$get": "cityStates.0.morale"
-                  },
-                  5
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "cityId": "city.s09_guangzong_camp",
-          "path": "damagePausedUntilDay",
-          "target": "city",
-          "value": {
-            "$add": [
-              {
-                "$get": "story.currentDay",
-                "default": 1
-              },
-              1
-            ]
-          }
-        },
-        {
-          "path": "s09RefugeeConflict",
-          "target": "story",
-          "value": {
-            "$merge": [
-              {
-                "$get": "story.s09RefugeeConflict"
-              },
-              {
-                "donationCommitted": true,
-                "donationDay": {
-                  "$get": "story.currentDay",
-                  "default": 1
-                },
-                "donationOperationId": {
-                  "$get": "payload.operationId",
-                  "default": "donation"
-                },
-                "status": "donated"
-              }
-            ]
-          }
-        }
-      ]
-    }
-  },
-  {
-    "commandType": "state.transaction",
-    "id": "story.s09.refugee.branch",
-    "name": "难民冲突·分支抉择",
-    "transaction": {
-      "selector": {
-        "$get": "payload.event.choiceId"
-      },
-      "variantDefinitions": {
-        "donate_food": "story.s09.refugee.donate",
-        "retry_donation": "story.s09.refugee.donate"
-      },
-      "variants": {
-        "appease": {
-          "checkpoint": {
-            "checkpointId": "checkpoint.S09.refugeeBranch.appease",
-            "reason": "checkpoint",
-            "sceneId": "S02"
-          },
-          "onPreconditionFailed": {
-            "checkpoint": {
-              "checkpointId": "checkpoint.S09.refugeeBranch.appeaseScout",
-              "reason": "checkpoint",
-              "sceneId": "S02"
-            },
-            "writes": [
-              {
-                "path": "storyTags",
-                "target": "story",
-                "value": {
-                  "$appendUnique": {
-                    "source": {
-                      "$get": "story.storyTags",
-                      "default": []
-                    },
-                    "values": [
-                      "s09.refugees.appeaseScout"
-                    ]
-                  }
-                }
-              },
-              {
-                "path": "s09RefugeeConflict",
-                "target": "story",
-                "value": {
-                  "$merge": [
-                    {
-                      "$get": "story.s09RefugeeConflict"
-                    },
-                    {
-                      "branch": "appease",
-                      "result": "scoutTriggered",
-                      "scoutTriggered": true,
-                      "status": "resolved"
-                    }
-                  ]
-                }
-              }
-            ]
-          },
-          "when": {
-            "inventory": {
-              "toolType": "axe"
-            }
-          },
-          "writes": [
-            {
-              "path": "storyTags",
-              "target": "story",
-              "value": {
-                "$appendUnique": {
-                  "source": {
-                    "$get": "story.storyTags",
-                    "default": []
-                  },
-                  "values": [
-                    "s09.refugees.appeasedWithGathering"
-                  ]
-                }
-              }
-            },
-            {
-              "path": "s09RefugeeConflict",
-              "target": "story",
-              "value": {
-                "$merge": [
-                  {
-                    "$get": "story.s09RefugeeConflict"
-                  },
-                  {
-                    "branch": "appease",
-                    "result": "foodRestored",
-                    "status": "resolved"
-                  }
-                ]
-              }
-            }
-          ]
-        },
-        "hardline": {
-          "checkpoint": {
-            "checkpointId": "checkpoint.S09.refugeeBranch.hardline",
-            "reason": "checkpoint",
-            "sceneId": "S02"
-          },
-          "writes": [
-            {
-              "cityId": "city.s09_guangzong_camp",
-              "path": "morale",
-              "target": "city",
-              "value": {
-                "$min": [
-                  100,
-                  {
-                    "$add": [
-                      {
-                        "$get": "cityStates.0.morale"
-                      },
-                      10
-                    ]
-                  }
-                ]
-              }
-            },
-            {
-              "path": "storyTags",
-              "target": "story",
-              "value": {
-                "$appendUnique": {
-                  "source": {
-                    "$get": "story.storyTags",
-                    "default": []
-                  },
-                  "values": [
-                    "s09.refugees.hardline",
-                    "s09.refugees.strictCommander"
-                  ]
-                }
-              }
-            },
-            {
-              "path": "s09RefugeeConflict",
-              "target": "story",
-              "value": {
-                "$merge": [
-                  {
-                    "$get": "story.s09RefugeeConflict"
-                  },
-                  {
-                    "branch": "hardline",
-                    "hardlineEscapeOccurred": {
-                      "$chance": 0.35
-                    },
-                    "result": "hardlineEscapeScheduled",
-                    "status": "resolved"
-                  }
-                ]
-              }
-            },
-            {
-              "path": "delayedConsequences",
-              "target": "story",
-              "value": {
-                "$concat": [
-                  {
-                    "$get": "story.delayedConsequences",
-                    "default": []
-                  },
-                  [
-                    {
-                      "dueDay": {
-                        "$add": [
-                          {
-                            "$get": "story.currentDay",
-                            "default": 1
-                          },
-                          1
-                        ]
-                      },
-                      "id": "story:S09:hardline-escape",
-                      "payload": {
-                        "willEscape": {
-                          "$get": "story.s09RefugeeConflict.hardlineEscapeOccurred"
-                        }
-                      },
-                      "status": "pending",
-                      "type": "s09.hardlineEscape"
-                    }
-                  ]
-                ]
-              }
-            }
-          ]
-        },
-        "silence": {
-          "checkpoint": {
-            "checkpointId": "checkpoint.S09.refugeeBranch.silence",
-            "reason": "checkpoint",
-            "sceneId": "S02"
-          },
-          "writes": [
-            {
-              "path": "storyTags",
-              "target": "story",
-              "value": {
-                "$appendUnique": {
-                  "source": {
-                    "$get": "story.storyTags",
-                    "default": []
-                  },
-                  "values": [
-                    "s09.refugees.silence"
-                  ]
-                }
-              }
-            },
-            {
-              "path": "s09RefugeeConflict",
-              "target": "story",
-              "value": {
-                "$merge": [
-                  {
-                    "$get": "story.s09RefugeeConflict"
-                  },
-                  {
-                    "branch": "silence",
-                    "result": "delayedFoodCollapse",
-                    "status": "resolved"
-                  }
-                ]
-              }
-            },
-            {
-              "path": "delayedConsequences",
-              "target": "story",
-              "value": {
-                "$concat": [
-                  {
-                    "$get": "story.delayedConsequences",
-                    "default": []
-                  },
-                  [
-                    {
-                      "dueDay": {
-                        "$add": [
-                          {
-                            "$get": "story.currentDay",
-                            "default": 1
-                          },
-                          1
-                        ]
-                      },
-                      "id": "story:S09:silence-food-collapse",
-                      "status": "pending",
-                      "type": "s09.silenceFoodCollapse"
-                    }
-                  ]
-                ]
-              }
-            }
-          ]
-        }
-      },
-      "when": {
-        "all": [
-          {
-            "equals": "S02",
-            "path": "story.currentSceneId"
-          },
-          {
-            "equals": true,
-            "path": "story.s09RefugeeConflict.donationCommitted"
-          }
-        ]
-      }
-    }
-  },
-  {
-    "commandType": "state.transaction",
     "id": "story.s03.vanguardBroken",
     "name": "击退朱儁前锋",
     "transaction": {
@@ -1815,6 +1292,34 @@
   },
   {
     "commandType": "state.transaction",
+    "id": "story.s01.wolfPackCleared",
+    "name": "狼群清空，狼王现身",
+    "transaction": {
+      "writes": [
+        {
+          "path": "s01Survival.wolfPackCleared",
+          "target": "story",
+          "value": true
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s01.wolfKingDefeated",
+    "name": "讨斩狼王",
+    "transaction": {
+      "writes": [
+        {
+          "path": "s01Survival.wolfKingDefeated",
+          "target": "story",
+          "value": true
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
     "id": "reward.s01.survivalKit",
     "name": "奖励：山崖撤离补给",
     "transaction": {
@@ -1824,20 +1329,30 @@
       },
       "inventory": {
         "addEntries": [
-          { "itemId": "resource.herb", "quantity": 3 },
-          { "itemId": "resource.food", "quantity": 3 }
+          {
+            "itemId": "resource.herb",
+            "quantity": 3
+          },
+          {
+            "itemId": "resource.food",
+            "quantity": 3
+          }
         ],
         "type": "batchAdd"
       },
       "writes": [
-        { "path": "rewards.survivalKit", "target": "story", "value": true }
+        {
+          "path": "rewards.survivalKit",
+          "target": "story",
+          "value": true
+        }
       ]
     }
   },
   {
     "commandType": "state.transaction",
     "id": "reward.s02.rescueGift",
-    "name": "奖励：黄巾军的疗伤草药",
+    "name": "奖励：张角赠符水",
     "transaction": {
       "when": {
         "equals": false,
@@ -1845,32 +1360,23 @@
       },
       "inventory": {
         "addEntries": [
-          { "itemId": "resource.herb", "quantity": 2 }
+          {
+            "itemId": "consumable.fushui",
+            "quantity": 2
+          },
+          {
+            "itemId": "resource.herb",
+            "quantity": 1
+          }
         ],
         "type": "batchAdd"
       },
       "writes": [
-        { "path": "rewards.rescueGift", "target": "story", "value": true }
-      ]
-    }
-  },
-  {
-    "commandType": "state.transaction",
-    "id": "reward.s02.reliefGift",
-    "name": "奖励：饥民凑出的木料",
-    "transaction": {
-      "when": {
-        "equals": false,
-        "path": "story.rewards.reliefGift"
-      },
-      "inventory": {
-        "addEntries": [
-          { "itemId": "resource.wood", "quantity": 5 }
-        ],
-        "type": "batchAdd"
-      },
-      "writes": [
-        { "path": "rewards.reliefGift", "target": "story", "value": true }
+        {
+          "path": "rewards.rescueGift",
+          "target": "story",
+          "value": true
+        }
       ]
     }
   },
@@ -1885,12 +1391,19 @@
       },
       "inventory": {
         "addEntries": [
-          { "itemId": "resource.food", "quantity": 5 }
+          {
+            "itemId": "resource.food",
+            "quantity": 5
+          }
         ],
         "type": "batchAdd"
       },
       "writes": [
-        { "path": "rewards.rationGift", "target": "story", "value": true }
+        {
+          "path": "rewards.rationGift",
+          "target": "story",
+          "value": true
+        }
       ]
     }
   },
@@ -1905,12 +1418,19 @@
       },
       "inventory": {
         "addEntries": [
-          { "itemId": "resource.iron", "quantity": 5 }
+          {
+            "itemId": "resource.iron",
+            "quantity": 5
+          }
         ],
         "type": "batchAdd"
       },
       "writes": [
-        { "path": "rewards.classGift", "target": "story", "value": true }
+        {
+          "path": "rewards.classGift",
+          "target": "story",
+          "value": true
+        }
       ]
     }
   },
@@ -1925,12 +1445,19 @@
       },
       "inventory": {
         "addEntries": [
-          { "itemId": "resource.herb", "quantity": 2 }
+          {
+            "itemId": "resource.herb",
+            "quantity": 2
+          }
         ],
         "type": "batchAdd"
       },
       "writes": [
-        { "path": "rewards.firstBattle", "target": "story", "value": true }
+        {
+          "path": "rewards.firstBattle",
+          "target": "story",
+          "value": true
+        }
       ]
     }
   },
@@ -1945,13 +1472,23 @@
       },
       "inventory": {
         "addEntries": [
-          { "itemId": "resource.food", "quantity": 4 },
-          { "itemId": "resource.herb", "quantity": 2 }
+          {
+            "itemId": "resource.food",
+            "quantity": 4
+          },
+          {
+            "itemId": "resource.herb",
+            "quantity": 2
+          }
         ],
         "type": "batchAdd"
       },
       "writes": [
-        { "path": "rewards.bocaiGift", "target": "story", "value": true }
+        {
+          "path": "rewards.bocaiGift",
+          "target": "story",
+          "value": true
+        }
       ]
     }
   },
@@ -1966,12 +1503,19 @@
       },
       "inventory": {
         "addEntries": [
-          { "itemId": "resource.iron", "quantity": 6 }
+          {
+            "itemId": "resource.iron",
+            "quantity": 6
+          }
         ],
         "type": "batchAdd"
       },
       "writes": [
-        { "path": "rewards.mineGift", "target": "story", "value": true }
+        {
+          "path": "rewards.mineGift",
+          "target": "story",
+          "value": true
+        }
       ]
     }
   },
@@ -1986,12 +1530,19 @@
       },
       "inventory": {
         "addEntries": [
-          { "itemId": "resource.wood", "quantity": 8 }
+          {
+            "itemId": "resource.wood",
+            "quantity": 8
+          }
         ],
         "type": "batchAdd"
       },
       "writes": [
-        { "path": "rewards.siegeGift", "target": "story", "value": true }
+        {
+          "path": "rewards.siegeGift",
+          "target": "story",
+          "value": true
+        }
       ]
     }
   },
@@ -2006,12 +1557,19 @@
       },
       "inventory": {
         "addEntries": [
-          { "itemId": "resource.herb", "quantity": 3 }
+          {
+            "itemId": "resource.herb",
+            "quantity": 3
+          }
         ],
         "type": "batchAdd"
       },
       "writes": [
-        { "path": "rewards.delayGift", "target": "story", "value": true }
+        {
+          "path": "rewards.delayGift",
+          "target": "story",
+          "value": true
+        }
       ]
     }
   },
@@ -2026,12 +1584,19 @@
       },
       "inventory": {
         "addEntries": [
-          { "itemId": "resource.food", "quantity": 4 }
+          {
+            "itemId": "resource.food",
+            "quantity": 4
+          }
         ],
         "type": "batchAdd"
       },
       "writes": [
-        { "path": "rewards.retreatGift", "target": "story", "value": true }
+        {
+          "path": "rewards.retreatGift",
+          "target": "story",
+          "value": true
+        }
       ]
     }
   },
@@ -2046,13 +1611,23 @@
       },
       "inventory": {
         "addEntries": [
-          { "itemId": "resource.wood", "quantity": 6 },
-          { "itemId": "resource.iron", "quantity": 4 }
+          {
+            "itemId": "resource.wood",
+            "quantity": 6
+          },
+          {
+            "itemId": "resource.iron",
+            "quantity": 4
+          }
         ],
         "type": "batchAdd"
       },
       "writes": [
-        { "path": "rewards.campGift", "target": "story", "value": true }
+        {
+          "path": "rewards.campGift",
+          "target": "story",
+          "value": true
+        }
       ]
     }
   },
@@ -2067,13 +1642,23 @@
       },
       "inventory": {
         "addEntries": [
-          { "itemId": "resource.herb", "quantity": 4 },
-          { "itemId": "resource.iron", "quantity": 4 }
+          {
+            "itemId": "resource.herb",
+            "quantity": 4
+          },
+          {
+            "itemId": "resource.iron",
+            "quantity": 4
+          }
         ],
         "type": "batchAdd"
       },
       "writes": [
-        { "path": "rewards.zhangliangGift", "target": "story", "value": true }
+        {
+          "path": "rewards.zhangliangGift",
+          "target": "story",
+          "value": true
+        }
       ]
     }
   },
@@ -2088,13 +1673,23 @@
       },
       "inventory": {
         "addEntries": [
-          { "itemId": "resource.food", "quantity": 6 },
-          { "itemId": "resource.herb", "quantity": 4 }
+          {
+            "itemId": "resource.food",
+            "quantity": 6
+          },
+          {
+            "itemId": "resource.herb",
+            "quantity": 4
+          }
         ],
         "type": "batchAdd"
       },
       "writes": [
-        { "path": "rewards.zhangbaoGift", "target": "story", "value": true }
+        {
+          "path": "rewards.zhangbaoGift",
+          "target": "story",
+          "value": true
+        }
       ]
     }
   },
@@ -2109,12 +1704,19 @@
       },
       "inventory": {
         "addEntries": [
-          { "itemId": "resource.iron", "quantity": 8 }
+          {
+            "itemId": "resource.iron",
+            "quantity": 8
+          }
         ],
         "type": "batchAdd"
       },
       "writes": [
-        { "path": "rewards.bossGift", "target": "story", "value": true }
+        {
+          "path": "rewards.bossGift",
+          "target": "story",
+          "value": true
+        }
       ]
     }
   }

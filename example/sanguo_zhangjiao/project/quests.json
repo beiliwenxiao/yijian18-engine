@@ -290,12 +290,12 @@
     "accept": {
       "mode": "auto",
       "when": {
-        "questId": "task.s02.refugeeRelief",
+        "questId": "task.s02.rescue",
         "type": "questCompleted"
       }
     },
     "category": "main",
-    "description": "饥民之事了结后，黄巾信使引你去见张角。接受召见并前往粥棚营地。",
+    "description": "荒村冲突后，黄巾信使引你去见张角。接受召见并前往粥棚营地。",
     "id": "task.s02.summons",
     "rewards": [],
     "scenes": [
@@ -337,32 +337,6 @@
       }
     ],
     "title": "山道救援"
-  },
-  {
-    "category": "main",
-    "description": "黄巾军离开后，废营东侧的饥民正为最后一点粮食争执。若粮草不足，可先搜索废营物资。",
-    "id": "task.s02.refugeeRelief",
-    "rewards": [],
-    "scenes": [
-      "S02"
-    ],
-    "steps": [
-      {
-        "id": "meetRefugees",
-        "objectiveType": "commit.fact",
-        "target": "story.s09.refugee.start",
-        "title": "与断臂饥民交谈",
-        "type": "objective"
-      },
-      {
-        "id": "settleConflict",
-        "objectiveType": "commit.fact",
-        "target": "story.s09.refugee.branch",
-        "title": "决断饥民去留",
-        "type": "objective"
-      }
-    ],
-    "title": "饥民救济"
   },
   {
     "accept": {

@@ -73,6 +73,28 @@
       "usable": true
     },
     {
+      "id": "consumable.fushui",
+      "name": "符水",
+      "type": "consumable",
+      "imageId": "inventory.resource.herb",
+      "capabilities": [
+        {
+          "id": "consumable"
+        }
+      ],
+      "effect": {
+        "type": "heal",
+        "value": 35
+      },
+      "maxStack": 5,
+      "sprite": {
+        "height": 32,
+        "width": 32
+      },
+      "subType": "medicine",
+      "usable": true
+    },
+    {
       "id": "resource.apple",
       "name": "苹果",
       "description": "从树上摘下的鲜苹果，清脆多汁。",
@@ -1264,6 +1286,28 @@
         "speed": 70
       },
       "templateId": "han_elite"
+    },
+    {
+      "aiType": "aggressive",
+      "attackRange": 40,
+      "id": "enemy.s02_plague_villager",
+      "imageId": "s09.character.woundedSoldier",
+      "level": 1,
+      "lootTable": [],
+      "name": "染疫村民",
+      "npcType": "enemy",
+      "sprite": {
+        "height": 68,
+        "isStatic": true,
+        "width": 56
+      },
+      "stats": {
+        "attack": 4,
+        "defense": 0,
+        "maxHp": 26,
+        "speed": 55
+      },
+      "templateId": "plague_villager"
     },
     {
       "aiType": "aggressive",

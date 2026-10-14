@@ -1035,6 +1035,92 @@
           "y": 360.70620235133714
         },
         {
+          "group": "S01-wolf-pack",
+          "id": "S01-wolf-pack-1",
+          "kind": "enemy",
+          "ref": "enemy.s01_chase_wolf",
+          "spawnWhen": {
+            "blackboardKey": "storyState",
+            "equals": true,
+            "path": "s01Survival.firstWolfKilled"
+          },
+          "tags": [
+            "wolf"
+          ],
+          "type": "ref",
+          "x": 300,
+          "y": 300
+        },
+        {
+          "group": "S01-wolf-pack",
+          "id": "S01-wolf-pack-2",
+          "kind": "enemy",
+          "ref": "enemy.s01_chase_wolf",
+          "spawnWhen": {
+            "blackboardKey": "storyState",
+            "equals": true,
+            "path": "s01Survival.firstWolfKilled"
+          },
+          "tags": [
+            "wolf"
+          ],
+          "type": "ref",
+          "x": 345,
+          "y": 275
+        },
+        {
+          "group": "S01-wolf-pack",
+          "id": "S01-wolf-pack-3",
+          "kind": "enemy",
+          "ref": "enemy.s01_chase_wolf",
+          "spawnWhen": {
+            "blackboardKey": "storyState",
+            "equals": true,
+            "path": "s01Survival.firstWolfKilled"
+          },
+          "tags": [
+            "wolf"
+          ],
+          "type": "ref",
+          "x": 265,
+          "y": 330
+        },
+        {
+          "group": "S01-wolf-pack",
+          "id": "S01-wolf-pack-4",
+          "kind": "enemy",
+          "ref": "enemy.s01_chase_wolf",
+          "spawnWhen": {
+            "blackboardKey": "storyState",
+            "equals": true,
+            "path": "s01Survival.firstWolfKilled"
+          },
+          "tags": [
+            "wolf"
+          ],
+          "type": "ref",
+          "x": 390,
+          "y": 250
+        },
+        {
+          "group": "S01-wolf-king",
+          "id": "S01-wolf-king",
+          "kind": "enemy",
+          "ref": "enemy.s01_wolf_king",
+          "spawnWhen": {
+            "blackboardKey": "storyState",
+            "equals": true,
+            "path": "s01Survival.wolfPackCleared"
+          },
+          "tags": [
+            "wolf",
+            "boss"
+          ],
+          "type": "ref",
+          "x": 310,
+          "y": 255
+        },
+        {
           "editor": {
             "locked": false,
             "visible": true

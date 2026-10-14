@@ -724,37 +724,22 @@
         }
       },
       {
-        "action": "scenario.command",
+        "action": "spawnPlacements",
         "params": {
-          "operation": "army.rescue.faint",
-          "scenarioId": "scenario.command.army.rescue.faint"
+          "selector": {
+            "group": "S02-villagers-calm"
+          }
+        }
+      },
+      {
+        "action": "showTip",
+        "params": {
+          "text": "山道旁的荒村飘着炊烟。几个村民蹲在路边，朝你招手。"
         }
       }
     ],
     "id": "trg_s02_spawn_initial",
-    "name": "进入S02：主角昏倒在营地外",
-    "once": true,
-    "when": {
-      "params": {
-        "sceneId": "S02"
-      },
-      "type": "sceneEnter"
-    }
-  },
-  {
-    "do": [
-      {
-        "action": "startDialogue",
-        "params": {
-          "id": "dialogue.s02.prologue"
-        }
-      }
-    ],
-    "id": "trg_s02_prologue",
-    "if": {
-      "flag": "story.s01Completed"
-    },
-    "name": "S01剧情完成后：山道昏倒·张角抉择",
+    "name": "进入S02：荒村乞讨者",
     "once": true,
     "when": {
       "params": {
@@ -829,6 +814,22 @@
           "regionId": "S02-camp-rescue",
           "scenarioId": "scenario.command.army.rescue.begin"
         }
+      },
+      {
+        "action": "tutorial.command",
+        "params": {
+          "operation": "show",
+          "tutorialId": "s02.command.move"
+        },
+        "stepId": "show-tutorial-s02-command-move"
+      },
+      {
+        "action": "tutorial.command",
+        "params": {
+          "operation": "show",
+          "tutorialId": "s02.command.carry"
+        },
+        "stepId": "show-tutorial-s02-command-carry"
       }
     ],
     "id": "trg_s02_choice_save",
@@ -877,19 +878,9 @@
   {
     "do": [
       {
-        "action": "task.command",
-        "params": {
-          "definitionId": "task.s02.refugeeRelief",
-          "instanceId": "task.s02.refugeeRelief.main",
-          "operation": "task.start",
-          "tracking": true
-        },
-        "stepId": "start-s02-refugee-task"
-      },
-      {
         "action": "showTip",
         "params": {
-          "text": "黄巾军一行朝粥棚方向离开了。废营东侧隐约传来争执声……"
+          "text": "黄巾军一行朝粥棚方向离开了。信使示意你跟上——张角要见你。"
         }
       },
       {
@@ -901,7 +892,7 @@
       }
     ],
     "id": "trg_s02_awakening_done",
-    "name": "苏醒完毕：黄巾军离开，饥民事件浮现",
+    "name": "苏醒完毕：张角赠符水，召见在即",
     "once": true,
     "when": {
       "params": {
@@ -1020,73 +1011,6 @@
         "sceneId": "S09"
       },
       "type": "sceneEnter"
-    }
-  },
-  {
-    "do": [
-      {
-        "action": "state.transaction",
-        "params": {
-          "definitionId": "story.s09.refugee.prepare"
-        }
-      }
-    ],
-    "id": "trg_s02_prepare_refugee_conflict",
-    "once": false,
-    "when": {
-      "params": {
-        "sceneId": "S02"
-      },
-      "type": "sceneEnter"
-    }
-  },
-  {
-    "cooldown": 1,
-    "do": [
-      {
-        "action": "state.transaction",
-        "params": {
-          "definitionId": "story.s09.refugee.start"
-        }
-      },
-      {
-        "action": "dialogue.command",
-        "params": {
-          "dialogueId": "dialogue.s09.refugeeConflict",
-          "operation": "start"
-        }
-      }
-    ],
-    "id": "trg_s02_start_refugee_conflict",
-    "once": false,
-    "when": {
-      "params": {},
-      "type": "interact"
-    }
-  },
-  {
-    "do": [
-      {
-        "action": "state.transaction",
-        "params": {
-          "definitionId": "story.s09.refugee.branch"
-        }
-      },
-      {
-        "action": "state.transaction",
-        "params": {
-          "definitionId": "reward.s02.reliefGift"
-        },
-        "stepId": "reward-s02-relief-gift"
-      }
-    ],
-    "id": "trg_s02_refugee_choice",
-    "once": false,
-    "when": {
-      "params": {
-        "id": "dialogue.s09.refugeeConflict"
-      },
-      "type": "dialogueChoice"
     }
   },
   {
@@ -2664,6 +2588,184 @@
     "when": {
       "params": {
         "group": "S13-sun-xia"
+      },
+      "type": "waveCleared"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "startDialogue",
+        "params": {
+          "id": "dialogue.s02.villageBeg"
+        }
+      }
+    ],
+    "id": "trg_s02_village_beg",
+    "name": "荒村：村民乞讨",
+    "once": true,
+    "when": {
+      "params": {
+        "regionId": "S02-village-beg"
+      },
+      "type": "enterRegion"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "despawnPlacements",
+        "params": {
+          "selector": {
+            "group": "S02-villagers-calm"
+          }
+        }
+      },
+      {
+        "action": "spawnPlacements",
+        "params": {
+          "selector": {
+            "group": "S02-villagers-hostile"
+          }
+        }
+      },
+      {
+        "action": "showTip",
+        "params": {
+          "text": "粮食没能递出去。村民们眼里的光浑浊了，嘶吼着围拢上来——"
+        }
+      }
+    ],
+    "id": "trg_s02_village_escalate",
+    "name": "荒村：村民转为敌对",
+    "once": true,
+    "when": {
+      "params": {
+        "choiceId": "confront",
+        "id": "dialogue.s02.villageBeg"
+      },
+      "type": "dialogueChoice"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "despawnPlacements",
+        "params": {
+          "selector": {
+            "group": "S02-villagers-calm"
+          }
+        }
+      },
+      {
+        "action": "showTip",
+        "params": {
+          "text": "你握紧了武器，却没有拔出来。拳脚和木棍雨点般落在身上，眼前一次次发黑……"
+        }
+      },
+      {
+        "action": "scenario.command",
+        "params": {
+          "operation": "army.rescue.faint",
+          "scenarioId": "scenario.command.army.rescue.faint"
+        }
+      },
+      {
+        "action": "startDialogue",
+        "params": {
+          "id": "dialogue.s02.prologue"
+        }
+      }
+    ],
+    "id": "trg_s02_village_pacifist",
+    "name": "荒村：不动手被打晕",
+    "once": true,
+    "when": {
+      "params": {
+        "choiceId": "pacify",
+        "id": "dialogue.s02.villageBeg"
+      },
+      "type": "dialogueChoice"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "showTip",
+        "params": {
+          "text": "村民们散开了。力竭的你扶着断墙滑坐在地，眼前一黑——"
+        }
+      },
+      {
+        "action": "scenario.command",
+        "params": {
+          "operation": "army.rescue.faint",
+          "scenarioId": "scenario.command.army.rescue.faint"
+        }
+      },
+      {
+        "action": "startDialogue",
+        "params": {
+          "id": "dialogue.s02.prologue"
+        }
+      }
+    ],
+    "id": "trg_s02_village_cleared",
+    "name": "荒村：力竭昏迷",
+    "once": true,
+    "when": {
+      "params": {
+        "group": "S02-villagers-hostile"
+      },
+      "type": "waveCleared"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "state.transaction",
+        "params": {
+          "definitionId": "story.s01.wolfPackCleared"
+        }
+      },
+      {
+        "action": "showTip",
+        "params": {
+          "text": "狼群倒下了。林间传来一声低沉的咆哮——一头巨狼踏出阴影。"
+        }
+      }
+    ],
+    "id": "trg_s01_wolf_pack_cleared",
+    "name": "荒原：狼群清空，狼王现身",
+    "once": true,
+    "when": {
+      "params": {
+        "group": "S01-wolf-pack"
+      },
+      "type": "waveCleared"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "state.transaction",
+        "params": {
+          "definitionId": "story.s01.wolfKingDefeated"
+        }
+      },
+      {
+        "action": "showTip",
+        "params": {
+          "text": "狼王轰然倒地。荒原的前路畅通了。"
+        }
+      }
+    ],
+    "id": "trg_s01_wolf_king_defeated",
+    "name": "荒原：讨斩狼王",
+    "once": true,
+    "when": {
+      "params": {
+        "group": "S01-wolf-king"
       },
       "type": "waveCleared"
     }

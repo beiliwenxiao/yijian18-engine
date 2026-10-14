@@ -205,6 +205,16 @@
           "height": 110
         },
         {
+          "id": "S02-zone-village-beg",
+          "type": "region",
+          "name": "荒村乞讨区",
+          "regionId": "S02-village-beg",
+          "x": 450,
+          "y": 430,
+          "width": 360,
+          "height": 170
+        },
+        {
           "id": "S02-zone-camp-rescue",
           "type": "region",
           "name": "救援苏醒区",
@@ -250,6 +260,102 @@
           "y": 380,
           "overrides": {
             "quantity": 18
+          }
+        },
+        {
+          "group": "S02-villagers-calm",
+          "id": "S02-villager-calm-1",
+          "kind": "enemy",
+          "ref": "enemy.s02_plague_villager",
+          "tags": [
+            "story",
+            "villager"
+          ],
+          "type": "ref",
+          "x": 500,
+          "y": 530,
+          "overrides": {
+            "aiActive": false
+          }
+        },
+        {
+          "group": "S02-villagers-calm",
+          "id": "S02-villager-calm-2",
+          "kind": "enemy",
+          "ref": "enemy.s02_plague_villager",
+          "tags": [
+            "story",
+            "villager"
+          ],
+          "type": "ref",
+          "x": 545,
+          "y": 555,
+          "overrides": {
+            "aiActive": false
+          }
+        },
+        {
+          "group": "S02-villagers-calm",
+          "id": "S02-villager-calm-3",
+          "kind": "enemy",
+          "ref": "enemy.s02_plague_villager",
+          "tags": [
+            "story",
+            "villager"
+          ],
+          "type": "ref",
+          "x": 475,
+          "y": 560,
+          "overrides": {
+            "aiActive": false
+          }
+        },
+        {
+          "group": "S02-villagers-hostile",
+          "id": "S02-villager-hostile-1",
+          "kind": "enemy",
+          "ref": "enemy.s02_plague_villager",
+          "tags": [
+            "story",
+            "villager"
+          ],
+          "type": "ref",
+          "x": 500,
+          "y": 530,
+          "overrides": {
+            "aiActive": true
+          }
+        },
+        {
+          "group": "S02-villagers-hostile",
+          "id": "S02-villager-hostile-2",
+          "kind": "enemy",
+          "ref": "enemy.s02_plague_villager",
+          "tags": [
+            "story",
+            "villager"
+          ],
+          "type": "ref",
+          "x": 545,
+          "y": 555,
+          "overrides": {
+            "aiActive": true
+          }
+        },
+        {
+          "group": "S02-villagers-hostile",
+          "id": "S02-villager-hostile-3",
+          "kind": "enemy",
+          "ref": "enemy.s02_plague_villager",
+          "tags": [
+            "story",
+            "villager"
+          ],
+          "type": "ref",
+          "x": 475,
+          "y": 560,
+          "overrides": {
+            "aiActive": true
           }
         },
         {
@@ -389,151 +495,6 @@
             "path": "s02ZhangjiaoChoice",
             "equals": "save"
           }
-        },
-        {
-          "id": "S02-refugee-soldier",
-          "type": "ref",
-          "kind": "npc",
-          "ref": "npc.s09_refugee_soldier",
-          "group": "S02-refugee-conflict",
-          "tags": [
-            "story",
-            "refugeeConflict",
-            "soldier"
-          ],
-          "spawnWhen": {
-            "path": "s09RefugeeConflict.status",
-            "exists": true
-          },
-          "x": 720,
-          "y": 310
-        },
-        {
-          "id": "S02-refugee-woman",
-          "type": "ref",
-          "kind": "npc",
-          "ref": "npc.s09_refugee_woman",
-          "group": "S02-refugee-conflict",
-          "tags": [
-            "story",
-            "refugeeConflict",
-            "civilian"
-          ],
-          "spawnWhen": {
-            "path": "s09RefugeeConflict.status",
-            "exists": true
-          },
-          "x": 795,
-          "y": 300
-        },
-        {
-          "id": "S02-refugee-child",
-          "type": "ref",
-          "kind": "npc",
-          "ref": "npc.s09_refugee_child",
-          "group": "S02-refugee-conflict",
-          "tags": [
-            "story",
-            "refugeeConflict",
-            "civilian"
-          ],
-          "spawnWhen": {
-            "path": "s09RefugeeConflict.status",
-            "exists": true
-          },
-          "x": 850,
-          "y": 315
-        },
-        {
-          "id": "S02-refugee-dead-west",
-          "type": "ref",
-          "kind": "npc",
-          "ref": "npc.s09_refugee_dead",
-          "group": "S02-refugee-conflict",
-          "tags": [
-            "story",
-            "refugeeConflict",
-            "dead"
-          ],
-          "spawnWhen": {
-            "path": "s09RefugeeConflict.status",
-            "exists": true
-          },
-          "x": 740,
-          "y": 325
-        },
-        {
-          "id": "S02-refugee-dead-east",
-          "type": "ref",
-          "kind": "npc",
-          "ref": "npc.s09_refugee_dead",
-          "group": "S02-refugee-conflict",
-          "tags": [
-            "story",
-            "refugeeConflict",
-            "dead"
-          ],
-          "spawnWhen": {
-            "path": "s09RefugeeConflict.status",
-            "exists": true
-          },
-          "x": 805,
-          "y": 340
-        },
-        {
-          "id": "S02-refugee-one-armed",
-          "type": "ref",
-          "kind": "npc",
-          "ref": "npc.s09_one_armed_refugee",
-          "group": "S02-refugee-conflict",
-          "tags": [
-            "story",
-            "refugeeConflict",
-            "oneArmed",
-            "bread"
-          ],
-          "spawnWhen": {
-            "path": "s09RefugeeConflict.status",
-            "exists": true
-          },
-          "x": 905,
-          "y": 310
-        },
-        {
-          "id": "S02-story-bread",
-          "type": "ref",
-          "kind": "item",
-          "ref": "story.s09.bread",
-          "group": "S02-refugee-conflict",
-          "tags": [
-            "story",
-            "refugeeConflict",
-            "bread"
-          ],
-          "spawnWhen": {
-            "path": "s09RefugeeConflict.status",
-            "exists": true
-          },
-          "x": 932,
-          "y": 328
-        },
-        {
-          "id": "S02-refugee-scout",
-          "type": "ref",
-          "kind": "enemy",
-          "ref": "enemy.s09_refugee_scout",
-          "group": "S02-refugee-scout",
-          "tags": [
-            "story",
-            "refugeeConflict",
-            "scout"
-          ],
-          "spawnWhen": {
-            "path": "s09RefugeeConflict.scoutTriggered",
-            "equals": true
-          },
-          "x": 960,
-          "y": 205
         }
       ]
     },
@@ -574,22 +535,6 @@
           "radius": 110,
           "pointerRadius": 60,
           "prompt": "{interact}前往粥棚营地"
-        },
-        {
-          "id": "S02-binding-refugee-conflict",
-          "type": "trigger",
-          "name": "处理饥民争斗",
-          "triggerId": "trg_s02_start_refugee_conflict",
-          "x": 880,
-          "y": 285,
-          "width": 50,
-          "height": 50,
-          "event": "interact",
-          "targetMode": "id",
-          "target": "S02-refugee-one-armed",
-          "radius": 96,
-          "pointerRadius": 48,
-          "prompt": "{interact}查看饥民争斗"
         }
       ]
     }
