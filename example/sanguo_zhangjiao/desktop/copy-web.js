@@ -1,5 +1,3 @@
-
-import { Logger } from '../../../src/core/Logger.js';
 // 将 Vite 构建产物拷贝到 Electron 壳的 game/ 目录
 const fs = require('fs');
 const path = require('path');
@@ -17,4 +15,4 @@ if (!fs.existsSync(src)) {
 fs.rmSync(dest, { recursive: true, force: true });
 fs.cpSync(src, dest, { recursive: true });
 
-Logger.log(`[copy-web] 已拷贝 ${src} -> ${dest}`);
+console.log(`[copy-web] 已拷贝 ${src} -> ${dest}`);
