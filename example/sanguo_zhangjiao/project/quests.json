@@ -398,6 +398,18 @@
         "objectiveType": "custom.event",
         "title": "在军旗前选定职业方向",
         "type": "objective"
+      },
+      {
+        "eventMatcher": {
+          "payload": {
+            "triggerId": "trg_s09_travel_s03"
+          },
+          "type": "triggerSucceeded"
+        },
+        "id": "travelToYingchuan",
+        "objectiveType": "custom.event",
+        "title": "启程前往颍川",
+        "type": "objective"
       }
     ],
     "title": "加入黄巾"
@@ -482,6 +494,18 @@
       {
         "eventMatcher": {
           "payload": {
+            "triggerId": "trg_s04_choose_battle_mode"
+          },
+          "type": "triggerSucceeded"
+        },
+        "id": "chooseBattleMode",
+        "objectiveType": "custom.event",
+        "title": "选定长社参战方式",
+        "type": "objective"
+      },
+      {
+        "eventMatcher": {
+          "payload": {
             "triggerId": "trg_s04_start_bocai_rescue"
           },
           "type": "triggerSucceeded"
@@ -489,6 +513,18 @@
         "id": "bocaiRescue",
         "objectiveType": "custom.event",
         "title": "启动波才限时救援",
+        "type": "objective"
+      },
+      {
+        "eventMatcher": {
+          "payload": {
+            "triggerId": "trg_s04_bocai_evacuation"
+          },
+          "type": "triggerSucceeded"
+        },
+        "id": "bocaiEvacuation",
+        "objectiveType": "custom.event",
+        "title": "护送波才抵达撤离点",
         "type": "objective"
       },
       {
@@ -528,6 +564,18 @@
       {
         "eventMatcher": {
           "payload": {
+            "triggerId": "trg_s05_choose_battle_mode"
+          },
+          "type": "triggerSucceeded"
+        },
+        "id": "chooseBattleMode",
+        "objectiveType": "custom.event",
+        "title": "选定宛城外围参战方式",
+        "type": "objective"
+      },
+      {
+        "eventMatcher": {
+          "payload": {
             "triggerId": "trg_s05_claim_pickaxe"
           },
           "type": "triggerSucceeded"
@@ -559,6 +607,18 @@
         "id": "mineRecon",
         "objectiveType": "custom.event",
         "title": "探明矿坑敌情",
+        "type": "objective"
+      },
+      {
+        "eventMatcher": {
+          "payload": {
+            "triggerId": "trg_s05_mine_retreat"
+          },
+          "type": "triggerSucceeded"
+        },
+        "id": "mineRetreat",
+        "objectiveType": "custom.event",
+        "title": "撤出矿坑",
         "type": "objective"
       },
       {
@@ -668,6 +728,42 @@
       {
         "eventMatcher": {
           "payload": {
+            "triggerId": "trg_s07_commit_delay_north"
+          },
+          "type": "triggerSucceeded"
+        },
+        "id": "delayNorth",
+        "objectiveType": "custom.event",
+        "title": "提交北路阻滞",
+        "type": "objective"
+      },
+      {
+        "eventMatcher": {
+          "payload": {
+            "triggerId": "trg_s07_commit_delay_center"
+          },
+          "type": "triggerSucceeded"
+        },
+        "id": "delayCenter",
+        "objectiveType": "custom.event",
+        "title": "提交中路阻滞",
+        "type": "objective"
+      },
+      {
+        "eventMatcher": {
+          "payload": {
+            "triggerId": "trg_s07_commit_delay_south"
+          },
+          "type": "triggerSucceeded"
+        },
+        "id": "delaySouth",
+        "objectiveType": "custom.event",
+        "title": "提交南路阻滞",
+        "type": "objective"
+      },
+      {
+        "eventMatcher": {
+          "payload": {
             "triggerId": "trg_s07_exit_s08"
           },
           "type": "triggerSucceeded"
@@ -772,6 +868,54 @@
       {
         "eventMatcher": {
           "payload": {
+            "triggerId": "trg_s10_build_campfire"
+          },
+          "type": "triggerSucceeded"
+        },
+        "id": "buildCampfire",
+        "objectiveType": "custom.event",
+        "title": "点燃营火",
+        "type": "objective"
+      },
+      {
+        "eventMatcher": {
+          "payload": {
+            "triggerId": "trg_s10_build_barricade"
+          },
+          "type": "triggerSucceeded"
+        },
+        "id": "buildBarricade",
+        "objectiveType": "custom.event",
+        "title": "修筑拒马",
+        "type": "objective"
+      },
+      {
+        "eventMatcher": {
+          "payload": {
+            "triggerId": "trg_s10_build_simple_wall"
+          },
+          "type": "triggerSucceeded"
+        },
+        "id": "buildSimpleWall",
+        "objectiveType": "custom.event",
+        "title": "垒砌壁垒",
+        "type": "objective"
+      },
+      {
+        "eventMatcher": {
+          "payload": {
+            "triggerId": "trg_s10_build_arrow_tower"
+          },
+          "type": "triggerSucceeded"
+        },
+        "id": "buildArrowTower",
+        "objectiveType": "custom.event",
+        "title": "修筑箭楼",
+        "type": "objective"
+      },
+      {
+        "eventMatcher": {
+          "payload": {
             "triggerId": "trg_s10_complete_relocation"
           },
           "type": "triggerSucceeded"
@@ -818,6 +962,18 @@
       {
         "eventMatcher": {
           "payload": {
+            "triggerId": "trg_s11_choose_battle_mode"
+          },
+          "type": "triggerSucceeded"
+        },
+        "id": "chooseBattleMode",
+        "objectiveType": "custom.event",
+        "title": "选定广宗参战方式",
+        "type": "objective"
+      },
+      {
+        "eventMatcher": {
+          "payload": {
             "triggerId": "trg_s11_start_zhang_liang_rescue"
           },
           "type": "triggerSucceeded"
@@ -842,6 +998,42 @@
       {
         "eventMatcher": {
           "payload": {
+            "triggerId": "trg_s11_rally_guards"
+          },
+          "type": "triggerSucceeded"
+        },
+        "id": "rallyGuards",
+        "objectiveType": "custom.event",
+        "title": "集结卫兵",
+        "type": "objective"
+      },
+      {
+        "eventMatcher": {
+          "payload": {
+            "triggerId": "trg_s11_assassin_wave_1_defeated"
+          },
+          "type": "triggerSucceeded"
+        },
+        "id": "assassinWave1",
+        "objectiveType": "custom.event",
+        "title": "击退刺客第一波",
+        "type": "objective"
+      },
+      {
+        "eventMatcher": {
+          "payload": {
+            "triggerId": "trg_s11_assassin_wave_2_defeated"
+          },
+          "type": "triggerSucceeded"
+        },
+        "id": "assassinWave2",
+        "objectiveType": "custom.event",
+        "title": "击退刺客第二波",
+        "type": "objective"
+      },
+      {
+        "eventMatcher": {
+          "payload": {
             "triggerId": "trg_s11_assassin_wave_3_defeated"
           },
           "type": "triggerSucceeded"
@@ -861,6 +1053,18 @@
         "id": "westGateBreakout",
         "objectiveType": "custom.event",
         "title": "护送张梁西门突围",
+        "type": "objective"
+      },
+      {
+        "eventMatcher": {
+          "payload": {
+            "triggerId": "trg_s11_interact_horse"
+          },
+          "type": "triggerSucceeded"
+        },
+        "id": "rideHorse",
+        "objectiveType": "custom.event",
+        "title": "登上战马撤离",
         "type": "objective"
       },
       {
@@ -900,6 +1104,18 @@
       {
         "eventMatcher": {
           "payload": {
+            "triggerId": "trg_s12_choose_battle_mode"
+          },
+          "type": "triggerSucceeded"
+        },
+        "id": "chooseBattleMode",
+        "objectiveType": "custom.event",
+        "title": "选定下曲阳参战方式",
+        "type": "objective"
+      },
+      {
+        "eventMatcher": {
+          "payload": {
             "triggerId": "trg_s12_start_zhang_bao_rescue"
           },
           "type": "triggerSucceeded"
@@ -919,6 +1135,18 @@
         "id": "secretPassage",
         "objectiveType": "custom.event",
         "title": "打开密道",
+        "type": "objective"
+      },
+      {
+        "eventMatcher": {
+          "payload": {
+            "triggerId": "trg_s12_use_ladder"
+          },
+          "type": "triggerSucceeded"
+        },
+        "id": "useLadder",
+        "objectiveType": "custom.event",
+        "title": "架上云梯",
         "type": "objective"
       },
       {
@@ -1047,6 +1275,30 @@
         "id": "cargoTransfer",
         "objectiveType": "custom.event",
         "title": "清点随行辎重",
+        "type": "objective"
+      },
+      {
+        "eventMatcher": {
+          "payload": {
+            "triggerId": "trg_s14_resolve_last_cart"
+          },
+          "type": "triggerSucceeded"
+        },
+        "id": "resolveLastCart",
+        "objectiveType": "custom.event",
+        "title": "处置随行马车",
+        "type": "objective"
+      },
+      {
+        "eventMatcher": {
+          "payload": {
+            "triggerId": "trg_s14_resolve_catapult"
+          },
+          "type": "triggerSucceeded"
+        },
+        "id": "resolveCatapult",
+        "objectiveType": "custom.event",
+        "title": "处置投石机",
         "type": "objective"
       },
       {
