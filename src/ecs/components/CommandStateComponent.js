@@ -12,7 +12,7 @@
 
 import { Component } from '../Component.js';
 
-/** 攻击命令姿态（互斥；语义见 .trae/steering/army-command-design.md §2.2）。 */
+/** 攻击命令姿态（互斥；语义见 .trae/rules/army-command-design.md §2.2）。 */
 export const ARMY_STANCES = Object.freeze([
   { key: 'assault', label: '全速进攻' },
   { key: 'hold', label: '原地防守' },

@@ -17,7 +17,7 @@
 /**
  * SDD v3 投影：把现有三层嵌套快照（data.game）与单一权威文档互转的**纯函数**。
  *
- * 阶段 1 纪律（见 .trae/steering/single-authority-save-document-migration.md）：
+ * 阶段 1 纪律（见 .trae/rules/single-authority-save-document-migration.md）：
  * - 只做形状重排，不改任何字段语义；缺段容忍（旧档/部分段 undefined）。
  * - 双写不双读：本投影仅用于等价性校验与 migrate 链，产品读写仍走旧链路。
  * - 等价性契约：projectSddToSnapshot(projectSnapshotToSdd(snapshot)) 与原快照

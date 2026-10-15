@@ -13,7 +13,7 @@
 /**
  * AirAimController - 悬停瞄准跳跃控制器（AIR_AIM 状态机）
  *
- * 新跳跃流程（设计见 .trae/steering/air-aim-jump-design.md）：
+ * 新跳跃流程（设计见 .trae/rules/air-aim-jump-design.md）：
  * - T1 按下起跳键（PC空格/手柄Y/触屏按住式键）立即起跳（短跳，方向=移动输入或朝向）；
  * - T3 持续按住 ≥ apexHoldMs 且仍在空中 → 进入 AIR_AIM 悬停瞄准（冻结跳跃进度，
  *      启动 aimWindowMs 倒计时，显示范围圈与落点标记；"子弹时间"仅为表现层）；

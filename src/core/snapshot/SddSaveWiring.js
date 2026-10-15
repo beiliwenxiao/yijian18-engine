@@ -19,7 +19,7 @@ import { SDD_SCHEMA_VERSION, projectSnapshotToSdd } from './SddProjection.js';
 /**
  * SDD 产品接线（阶段 4 收敛）：documentProjector / snapshotTransformer 只在此处定义，
  * index.html 与回归测试共用同一实现。禁止在别处复制闭包——同一语义两处实现必然分叉
- * （见 .trae/steering/single-authority-save-document-migration.md 硬规则）。
+ * （见 .trae/rules/single-authority-save-document-migration.md 硬规则）。
  */
 
 /**

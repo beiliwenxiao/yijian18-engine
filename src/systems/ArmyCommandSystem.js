@@ -18,7 +18,7 @@
  *     的移动与接敌行为；士兵攻击经 CombatSystem.performAttack 走正规击杀链
  *     （伤害数字/尸体/战利品/enemy.killed 事件全自动）。
  * M4：抢救伤员搬运编排（setRescueTarget + rescue 姿态 → 拖运回营地/遇敌中断）。
- * 设计文档：.trae/steering/army-command-design.md
+ * 设计文档：.trae/rules/army-command-design.md
  *
  * - 编制与选择两层分离：Army→Squad（前/后/左/中/右军）→Unit 为编制；
  *   武将(自己)/全军/五军 为选择过滤器；武将不编入 Squad、不响应军团命令（ARPG 自主权）。

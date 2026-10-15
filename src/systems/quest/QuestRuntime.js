@@ -17,7 +17,7 @@ import { validateTaskGraphDefinitions } from '../TaskGraphSystem.js';
 /**
  * QuestRuntime - 任务中心制编译器（Quest v2 → 现有运行时原语）
  *
- * 编译模型（设计文档 .trae/steering/quest-center-design.md §3.3）：
+ * 编译模型（设计文档 .trae/rules/quest-center-design.md §3.3）：
  *   1 个 Quest → 1 个 taskGraph 定义 + N 个触发器。
  *   TaskGraphSystem / TriggerSystem 零改动；quest.id 直接作为 taskGraph definitionId，
  *   任务实例状态、per-trigger fingerprint 存档兼容机制对编译产物自动生效。
