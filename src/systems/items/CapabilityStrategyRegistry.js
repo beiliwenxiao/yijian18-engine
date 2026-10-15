@@ -206,7 +206,6 @@ export function createStandardCapabilityStrategyRegistry() {
         toolType: { type: 'string', required: true },
         gatherSpeed: { type: 'number', min: Number.MIN_VALUE }
       },
-      requires: ['durable'],
       conflictsWith: ['stackable'],
       project: ({ parameters, runtimeState }) => ({
         toolType: parameters.toolType,

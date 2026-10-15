@@ -135,14 +135,14 @@
           "value": "afterBerriesGathered"
         },
         {
-          "id": "afterInitialToolsPicked",
-          "label": "双工具齐全后接续",
+          "id": "openBerryGathering",
+          "label": "点火后开放野果采集",
           "paramsSchema": {
             "additionalProperties": false,
             "properties": {
               "operation": {
                 "enum": [
-                  "afterInitialToolsPicked"
+                  "openBerryGathering"
                 ],
                 "type": "string"
               }
@@ -153,7 +153,7 @@
             "type": "object"
           },
           "resultSemantics": "开放野果采集并接续教学后成功；放置或接续异常时失败并短路。",
-          "value": "afterInitialToolsPicked"
+          "value": "openBerryGathering"
         },
         {
           "id": "afterWoodGathered",

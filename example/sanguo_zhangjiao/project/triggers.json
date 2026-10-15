@@ -113,64 +113,6 @@
       {
         "action": "s01Survival",
         "params": {
-          "completedPath": "s01Survival.initialToolsPicked",
-          "definitionId": "story.s01.initialToolsPicked",
-          "equals": true,
-          "operation": "commitStoryWhenReady",
-          "storyPath": "s01Survival.skinningKnifeFound"
-        },
-        "stepId": "commit-initial-tools-picked"
-      }
-    ],
-    "editorScope": {
-      "sceneIds": [
-        "S01"
-      ]
-    },
-    "id": "trg_s01_axe_found_check_tools",
-    "name": "斧头已获得",
-    "once": false,
-    "when": {
-      "params": {
-        "definitionId": "story.s01.axeFound"
-      },
-      "type": "state.transaction"
-    }
-  },
-  {
-    "do": [
-      {
-        "action": "s01Survival",
-        "params": {
-          "completedPath": "s01Survival.initialToolsPicked",
-          "definitionId": "story.s01.initialToolsPicked",
-          "equals": true,
-          "operation": "commitStoryWhenReady",
-          "storyPath": "s01Survival.axeFound"
-        },
-        "stepId": "commit-initial-tools-picked"
-      }
-    ],
-    "editorScope": {
-      "sceneIds": [
-        "S01"
-      ]
-    },
-    "id": "trg_s01_skinning_knife_found_check_tools",
-    "name": "剥皮刀已获得",
-    "once": false,
-    "when": {
-      "params": {
-        "definitionId": "story.s01.skinningKnifeFound"
-      },
-      "type": "state.transaction"
-    }
-  },
-  {
-    "do": [
-      {
-        "action": "s01Survival",
-        "params": {
           "definitionId": "story.s01.berryGathered",
           "operation": "commitStoryWhenReady",
           "successTip": "荒野酸果 ×{accepted} 已放入背包。",

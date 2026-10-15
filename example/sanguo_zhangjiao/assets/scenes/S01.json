@@ -952,8 +952,8 @@
             "path": "s01Survival.berryEaten"
           },
           "type": "ref",
-          "x": 561.2301308157467,
-          "y": 653.8094104723531
+          "x": 525.0676367982876,
+          "y": 703.7794022055693
         },
         {
           "group": "S01-wood",
@@ -963,7 +963,7 @@
           "spawnWhen": {
             "blackboardKey": "storyState",
             "equals": true,
-            "path": "s01Survival.initialToolsPicked"
+            "path": "s01Survival.axeFound"
           },
           "tags": [
             "resource",
@@ -981,7 +981,7 @@
           "spawnWhen": {
             "blackboardKey": "storyState",
             "equals": true,
-            "path": "s01Survival.initialToolsPicked"
+            "path": "s01Survival.axeFound"
           },
           "tags": [
             "resource",
@@ -992,6 +992,32 @@
           "y": 348.16143741636773
         },
         {
+          "collision": {
+            "mode": "block",
+            "points": [
+              [
+                -18,
+                0
+              ],
+              [
+                22,
+                1
+              ],
+              [
+                19,
+                -13
+              ],
+              [
+                1,
+                -23
+              ],
+              [
+                -16,
+                -14
+              ]
+            ],
+            "shapeType": "polygon"
+          },
           "group": "S01-wood",
           "id": "S01-node-wood-3",
           "kind": "resourceNode",
@@ -999,7 +1025,7 @@
           "spawnWhen": {
             "blackboardKey": "storyState",
             "equals": true,
-            "path": "s01Survival.initialToolsPicked"
+            "path": "s01Survival.axeFound"
           },
           "tags": [
             "resource",
@@ -1020,11 +1046,11 @@
           "spawnWhen": {
             "blackboardKey": "storyState",
             "equals": true,
-            "path": "s01Survival.berryEaten"
+            "path": "s01Survival.firstWolfKilled"
           },
           "type": "ref",
-          "x": 577.3344206633141,
-          "y": 622.9999671633669
+          "x": 497.4,
+          "y": 565.2
         },
         {
           "count": {
@@ -1272,7 +1298,7 @@
           "event": "interact",
           "height": 115,
           "id": "S01-binding-build-shelter",
-          "name": "搭建����庇护所",
+          "name": "搭建庇护所",
           "pointerRadius": 58,
           "prompt": "{interact}用木材搭建小庇护所",
           "radius": 105,
@@ -1486,6 +1512,9 @@
           "climbable": false,
           "collide": true,
           "edgeFade": 0,
+          "editor": {
+            "locked": true
+          },
           "fill": "#3a5a2a",
           "fillMode": "color",
           "id": "shape_1791988116815_337",
@@ -1540,6 +1569,32 @@
           "walkable": false
         },
         {
+          "collision": {
+            "mode": "block",
+            "points": [
+              [
+                -11,
+                -17
+              ],
+              [
+                4,
+                -17
+              ],
+              [
+                17,
+                -26
+              ],
+              [
+                -4,
+                -39
+              ],
+              [
+                -22,
+                -26
+              ]
+            ],
+            "shapeType": "polygon"
+          },
           "group": "S01-berries",
           "id": "S01-node-berry-1",
           "kind": "resourceNode",

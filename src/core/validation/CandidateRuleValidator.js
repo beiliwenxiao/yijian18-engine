@@ -279,8 +279,10 @@ export class CandidateRuleValidator {
     }
 
     const itemIds = libraryIds.items || new Set();
+    // 工具类型收集：带 toolType 字段的物品均可声明（type 'tool' 旧式工具 + 'equipment'
+    // 装备类工具如破旧斧头/旧剥皮刀——装备到主手后生效，见 GatheringSystem._findTool）。
     const toolTypes = new Set(list(candidate?.library?.items)
-      .filter(item => item?.type === 'tool' && typeof item.toolType === 'string')
+      .filter(item => typeof item?.toolType === 'string' && item.toolType)
       .map(item => item.toolType));
     list(candidate?.library?.resourceNodes).forEach((node, index) => {
       if (!itemIds.has(node?.itemId)) {

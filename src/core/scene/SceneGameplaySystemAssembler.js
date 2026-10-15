@@ -89,7 +89,7 @@ export class SceneGameplaySystemAssembler {
         else scene.onPlayerTutorialAction?.('climb');
       }
     });
-    // 悬停瞄准跳（AIR_AIM）：按下即跳，按住超 apexHoldMs 进入悬停瞄准，松手跳向落点。
+    // 按下即跳（v2：大跳/二段跳/空中改落点，悬停子弹时间已废弃）。
     // 参数可由 scene.airAimConfig 覆盖（设计见 .trae/rules/air-aim-jump-design.md）。
     scene.jumpSystem.setLandCallback?.((entity, info) => {
       scene.gameLoader?.triggerSystem?.fire?.('jump.landed', { entity, ...info });
@@ -109,27 +109,29 @@ export class SceneGameplaySystemAssembler {
       ) === true;
       return { started };
     });
-    scene.airAimController.setHoverCallback(({ actor, expireAt }) => {
-      const started = scene.jumpSystem?.hoverJump?.(actor) === true;
+    scene.airAimController.setBigJumpCallback(({ actor, distance }) => {
+      const upgraded = scene.jumpSystem?.extendJumpTo?.(actor, distance) === true;
+      if (upgraded) {
+        scene.gameLoader?.triggerSystem?.fire?.('jump.big', { entity: actor, distance });
+      }
+      return { upgraded };
+    });
+    scene.airAimController.setDoubleJumpCallback(({ actor, moveDirection, distance, duration }) => {
+      const started = scene.jumpSystem?.relocateJump?.(
+        actor,
+        { x: moveDirection?.x || 0, y: moveDirection?.y || 0 },
+        Number(duration) > 0 ? { distance, duration } : { distance }
+      ) === true;
       if (started) {
-        scene.gameLoader?.triggerSystem?.fire?.('jump.aim.started', { entity: actor, expireAt });
+        scene.gameLoader?.triggerSystem?.fire?.('jump.double', { entity: actor });
       }
       return { started };
     });
-    scene.airAimController.setRelocateCallback(({ actor, target, distance, direction }) => {
-      const started = scene.jumpSystem?.relocateJump?.(actor, direction, { distance }) === true;
-      if (started) {
-        scene.gameLoader?.triggerSystem?.fire?.('jump.aim.ended', { entity: actor, reason: 'release' });
-      }
-      return { started };
-    });
-    scene.airAimController.setResumeCallback(({ actor, reason }) => {
-      const resumed = scene.jumpSystem?.resumeFromHover?.(actor) === true;
-      if (resumed) {
-        scene.gameLoader?.triggerSystem?.fire?.('jump.aim.ended', { entity: actor, reason });
-      }
-      return { resumed };
-    });
+    // 空中轻推（v2.2 T4/T5）：矢量混合渐进转向——键盘/摇杆按 strength×dt 连续推，
+    // 右键/触点按 pointerBlend 单次推；剩余距离守恒，起跳方向保留惯性。
+    scene.airAimController.setSteerCallback(({ actor, direction, blend }) => ({
+      steered: scene.jumpSystem?.steerJump?.(actor, { direction, blend }) === true
+    }));
 
     scene.combatSystem = new CombatSystem({
       inputManager: scene.inputManager,
@@ -185,21 +187,12 @@ export class SceneGameplaySystemAssembler {
       pathfindingSystem: scene.pathfindingSystem,
       pathfindingCellSize: 32,
       isMovementLocked: entity => scene.locomotionSystem?.isBusy?.(entity) === true,
-      // 跳跃跟踪/悬停瞄准期间移动输入被抑制（手柄摇杆用于落点）；悬停中角色本身也冻结；
-      // 剧情倒地状态（S02 军团救援，scene.isPlayerDowned）下移动输入同样被抑制。
+      // 剧情倒地状态（S02 军团救援，scene.isPlayerDowned）下移动输入被抑制；
+      // 跳跃中不抑制（移动输入=空中操舵，见 AirAimController T4）。
       isMoveInputSuppressed: entity => entity === scene.playerEntity
-        && (scene.airAimController?.isCharging?.() === true
-          || scene.isPlayerDowned?.() === true),
+        && scene.isPlayerDowned?.() === true,
       // 战斗状态不进行移动碰撞停顿/阻挡自动停止，保证战斗手感；战斗结束后恢复。
-      combatLock: () => scene.combatSystem?.isInCombat?.() === true,
-      // 点击跳：点击点在跳跃距离内但步行不可达（直线路径被阻挡）时自动跳过去。
-      // 走 scene.jumpByDirection 统一入口（jumpPerformed 教程信号随跳发出）。
-      onAutoJump: (entity, dirX, dirY, chargeDistance) => (
-        entity === scene.playerEntity
-          ? scene.jumpByDirection?.(dirX, dirY, chargeDistance) === true
-          : false
-      ),
-      isPositionBlocked: (x, y, options) => scene._terrainBinding?.isPositionBlocked?.(x, y, options) === true
+      combatLock: () => scene.combatSystem?.isInCombat?.() === true
     });
     // 军团指挥（M1）：编组选择 + 点地移动 + 命令达成倒计时；设计见 .trae/rules/army-command-design.md
     scene.armyCommandFlow = new SceneArmyCommandFlow(scene);

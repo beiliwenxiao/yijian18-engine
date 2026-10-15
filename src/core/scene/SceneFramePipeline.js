@@ -295,8 +295,8 @@ export class SceneFramePipeline {
     }
     locomotionSystem?.update?.(deltaTime, { inputAxis: locomotionAxis });
 
-    // 悬停瞄准跳（AIR_AIM）：按下即跳 → 按住超 apexHoldMs 悬停瞄准 → 松手跳向落点。
-    // 落点输入：手柄摇杆走 direction；PC 鼠标右键 / 触屏点选由 AIMING 优先级 selectTarget 提交。
+    // 按下即跳（v2.2）：按下沿起跳 → 按住超 bigJumpHoldMs 升级大跳 → 0.5s 内再按二段跳。
+    // 滞空中移动输入持续传入（空中轻推转向，衰减+惯性，dt 积分混合比）。
     const controlledClimbActive = locomotionSystem?.getClimbPresentation?.(player) != null;
     const keyboardJumpHeld = scene.inputManager?.isKeyDown?.('space') === true;
     const gamepadJumpHeld = scene.inputManager?.isKeyDown?.('jump') === true;
@@ -343,15 +343,12 @@ export class SceneFramePipeline {
     if (this._climbDropSuppressCharge && !jumpHeldRaw) this._climbDropSuppressCharge = false;
     const jumpHeld = !worldInputBlocked && !controlledClimbActive && jumpHeldRaw
       && this._climbDropSuppressCharge !== true;
-    const jumpAxis = worldInputBlocked || !gamepadJumpHeld
-      ? null
-      : (scene.inputManager?.getMoveAxis?.() || null);
     scene.airAimController?.update?.({
       held: jumpHeld,
       actor: player,
       isJumping: jumpSystem?.isJumping?.(player) === true,
       moveDirection: worldInputBlocked ? null : (scene.inputManager?.getMoveAxis?.() || null),
-      direction: jumpAxis,
+      dt: deltaTime,
       blocked: worldInputBlocked
         || scene.playerEntity?.isDead === true
         || scene.dialogueSystem?.isDialogueActive?.() === true

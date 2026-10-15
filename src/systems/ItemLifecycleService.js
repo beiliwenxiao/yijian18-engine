@@ -183,9 +183,15 @@ export class ItemLifecycleService {
     return definitionId ? this.resolveDefinition(definitionId) : null;
   }
 
+  /**
+   * 判定物品是否具备某能力。capabilities 显式声明与 legacy 类型语义（如
+   * type 'equipment' → equippable、usable → consumable）取并集：声明了部分
+   * capability（如 durable/tool）不得屏蔽物品类型自带的行为语义，否则
+   * 「配了耐久却忘了 equippable」这类物品会静默失去装备能力。
+   */
   _hasCapability(definition, capabilityId, legacyPredicate = false) {
     const capabilities = normalizeCapabilities(definition);
-    return capabilities.length ? capabilities.some(value => (value?.id || value?.capabilityId) === capabilityId) : legacyPredicate;
+    return capabilities.some(value => (value?.id || value?.capabilityId) === capabilityId) || legacyPredicate;
   }
 
   _itemFromInventory(inventory, itemId, instanceId = null) {

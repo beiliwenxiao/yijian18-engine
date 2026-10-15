@@ -800,7 +800,10 @@ export class InventoryPanel extends UIElement {
     const item = slot.item;
     const tooltipWidth = 280;
     const isTool = typeof item.toolType === 'string' && item.toolType.length > 0;
-    const toolLineCount = isTool ? (Number(item.durability) <= 0 ? 4 : 3) : 0;
+    // 声明了耐久（maxDurability > 0）的工具才有耐久/损坏行；未声明耐久的工具只有功能与采集速度两行
+    const toolLineCount = isTool
+      ? (Number(item.maxDurability) > 0 ? (Number(item.durability) <= 0 ? 4 : 3) : 2)
+      : 0;
     const tooltipHeight = 200 + toolLineCount * 14;
 
     // 获取canvas尺寸
@@ -948,6 +951,7 @@ export class InventoryPanel extends UIElement {
     }
     
     // 工具属性：功能、耐久和速度属于定义/实例状态，只读展示。
+    // 声明了耐久（maxDurability > 0）的工具才展示耐久与损坏提示；未声明耐久的工具没有耐久属性。
     if (isTool) {
       const maxDurability = Number(item.maxDurability) || 0;
       const durability = Math.max(0, Number(item.durability) || 0);
@@ -955,13 +959,15 @@ export class InventoryPanel extends UIElement {
       ctx.font = '10px Arial';
       ctx.fillText(`功能: ${item.functionDescription || `用于${item.toolType}`}`, tooltipX + 10, tooltipY + yOffset);
       yOffset += 14;
-      ctx.fillStyle = durability <= 0 ? '#ff7777' : '#ffffff';
-      ctx.fillText(`耐久: ${durability}/${maxDurability}`, tooltipX + 10, tooltipY + yOffset);
-      yOffset += 14;
+      if (maxDurability > 0) {
+        ctx.fillStyle = durability <= 0 ? '#ff7777' : '#ffffff';
+        ctx.fillText(`耐久: ${durability}/${maxDurability}`, tooltipX + 10, tooltipY + yOffset);
+        yOffset += 14;
+      }
       ctx.fillStyle = '#a9e59b';
       ctx.fillText(`采集速度: ×${Number(item.gatherSpeed) > 0 ? item.gatherSpeed : 1}`, tooltipX + 10, tooltipY + yOffset);
       yOffset += 14;
-      if (durability <= 0) {
+      if (maxDurability > 0 && durability <= 0) {
         ctx.fillStyle = '#ff7777';
         ctx.fillText('工具已损坏，可锻造修复', tooltipX + 10, tooltipY + yOffset);
         yOffset += 14;
@@ -1388,9 +1394,11 @@ export class InventoryPanel extends UIElement {
     // 面板位置：背包面板顶部居中
     const isTool = typeof item.toolType === 'string' && item.toolType.length > 0;
     const pw = 220;
-    const isRepairable = isTool && item.instanceId && Number(item.maxDurability) > 0
+    // 声明了耐久（maxDurability > 0）的工具才展示耐久行与修复入口；未声明耐久的工具（如破旧斧头/旧剥皮刀）永久可用
+    const hasDurability = isTool && Number(item.maxDurability) > 0;
+    const isRepairable = hasDurability && item.instanceId
       && Number(item.durability) < Number(item.maxDurability);
-    const ph = isTool ? 182 : 140;
+    const ph = isTool ? (hasDurability ? 182 : 168) : 140;
     const px = this.x + Math.round((this.width - pw) / 2);
     const py = this.y - ph - 6;
 
@@ -1432,13 +1440,15 @@ export class InventoryPanel extends UIElement {
       yOff += 14;
     }
 
-    if (typeof item.toolType === 'string' && item.toolType) {
+    if (isTool) {
       ctx.fillStyle = '#7fd6ff';
       ctx.fillText(`功能: ${item.functionDescription || `用于${item.toolType}`}`, px + 10, py + yOff);
       yOff += 14;
-      ctx.fillStyle = Number(item.durability) <= 0 ? '#ff7777' : '#ffffff';
-      ctx.fillText(`耐久: ${Math.max(0, Number(item.durability) || 0)}/${Number(item.maxDurability) || 0}`, px + 10, py + yOff);
-      yOff += 14;
+      if (hasDurability) {
+        ctx.fillStyle = Number(item.durability) <= 0 ? '#ff7777' : '#ffffff';
+        ctx.fillText(`耐久: ${Math.max(0, Number(item.durability) || 0)}/${Number(item.maxDurability) || 0}`, px + 10, py + yOff);
+        yOff += 14;
+      }
       ctx.fillStyle = '#a9e59b';
       ctx.fillText(`采集速度: ×${Number(item.gatherSpeed) > 0 ? item.gatherSpeed : 1}`, px + 10, py + yOff);
       yOff += 14;

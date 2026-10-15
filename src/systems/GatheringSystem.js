@@ -97,7 +97,7 @@ export class GatheringSystem {
     );
     if (distance > node.interactionRadius) return { ok: false, code: 'outOfRange' };
 
-    const tool = this._findTool(inventory, node.requiredToolType);
+    const tool = this._findTool(inventory, node.requiredToolType, owner);
     if (node.requiredToolType && !tool) return { ok: false, code: 'toolRequired', toolType: node.requiredToolType };
     // 状态准入（如苹果丛 requiredState: "climbing"——必须攀爬中才能采摘）
     if (node.requiredState) {
@@ -197,8 +197,8 @@ export class GatheringSystem {
       requestedYield,
       capacity,
       expectedYield: Math.min(requestedYield, capacity),
-      toolDurability: tool ? Number(tool.durability) || 0 : null,
-      toolMaxDurability: tool ? Number(tool.maxDurability) || Number(tool.durability) || 0 : null
+      toolDurability: tool && this._hasDurability(tool) ? Number(tool.durability) || 0 : null,
+      toolMaxDurability: tool && this._hasDurability(tool) ? Number(tool.maxDurability) || Number(tool.durability) || 0 : null
     };
   }
 
@@ -248,7 +248,7 @@ export class GatheringSystem {
     // 采空打上 30 秒消失/刷新时间戳（墙钟）；尸体衰减由 corpseRuntime 全权负责，不在此打标。
     if (session.node.depleted && session.nodeEntity?.isCorpse !== true) session.node.beginDepletion?.();
     let toolBroken = false;
-    if (session.tool) {
+    if (this._hasDurability(session.tool)) {
       session.tool.durability = Math.max(0, Number(session.tool.durability) - 1);
       toolBroken = session.tool.durability === 0;
     }
@@ -352,14 +352,36 @@ export class GatheringSystem {
     return null;
   }
 
-  _findTool(inventory, requiredToolType) {
+  /**
+   * 查找满足 requiredToolType 的可用工具。
+   * 查找顺序：主手装备 → 背包。工具只需持有即可使用——装备到武器栏仅提供
+   * 属性加成与外观（如破旧斧头/旧剥皮刀），未装备放在背包里同样可用。
+   * 声明了耐久（durability/maxDurability 字段存在）的工具耐久耗尽后不可用；
+   * 未声明耐久的工具视为永久可用。
+   */
+  _findTool(inventory, requiredToolType, owner = null) {
     if (!requiredToolType) return null;
+    const equipped = owner?.getComponent?.('equipment')?.getEquipment?.('mainhand') || null;
+    if (equipped && equipped.toolType === requiredToolType && this._isToolUsable(equipped)) {
+      return equipped;
+    }
     for (const stack of inventory.slots || []) {
       const item = stack?.item;
       if (!item || item.toolType !== requiredToolType) continue;
-      if (Number(item.durability) > 0) return item;
+      if (this._isToolUsable(item)) return item;
     }
     return null;
+  }
+
+  /** 工具是否声明耐久概念（durability/maxDurability 字段存在）。 */
+  _hasDurability(item) {
+    return Boolean(item) && (item.durability != null || item.maxDurability != null);
+  }
+
+  /** 声明了耐久的工具要求耐久 > 0；未声明耐久的工具永久可用。 */
+  _isToolUsable(item) {
+    if (!this._hasDurability(item)) return true;
+    return Number(item.durability) > 0;
   }
 }
 

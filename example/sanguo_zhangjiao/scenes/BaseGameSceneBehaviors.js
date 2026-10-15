@@ -334,9 +334,10 @@ export class BaseGameSceneBehaviors extends BaseGameSceneSetup {  /**
           this._ensureCombatActions().cancelGamepadCombatInput(reason)
         ),
         onLocomotionInput: event => this.jumpByInput({ event }),
-        chargedJump: {
-          canHandle: event => this.airAimController?.canSelectTarget?.(event) === true,
-          handleInput: event => this.airAimController?.selectTarget?.(event.world) !== null
+        // 空中轻推（v2.2 T5）：跳跃中右键/触点朝点击方向推（渐进转向，保持惯性）。
+        airSteer: {
+          canHandle: event => this.airAimController?.canSteer?.(event) === true,
+          handleInput: event => this.airAimController?.steerTowardsPointer?.(event.world) === true
         },
         dialogue: this._ensureDialogueFlow(),
         aiming: this._ensureSkillActions(),
@@ -614,19 +615,16 @@ export class BaseGameSceneBehaviors extends BaseGameSceneSetup {  /**
   }
 
   /**
-   * 起跳键按下沿由帧管线立即起跳；虚拟跳跃按钮标记点选模式（触屏点落点即跳）。
+   * 起跳键按下沿由帧管线立即起跳（含虚拟键；v2 起触屏点选落点=空中改落点，无需点选模式标记）。
    * @param {{event?:Object}} options
    * @returns {boolean}
    */
   jumpByInput({ event } = {}) {
     if (this.isPlayerActionLocked()) return false;
-    if (event?.device === 'virtual') {
-      return this.airAimController?.beginVirtualTargeting?.() === true;
-    }
     return true;
   }
 
-  /** 触屏跳跃按钮：设置按住状态，驱动 AIR_AIM 状态机轮询。 */
+  /** 触屏跳跃按钮：设置按住状态，驱动按下即跳状态机轮询（大跳/二段跳/空中改落点）。 */
   setJumpHeld(held) {
     this._jumpHeld = !!held;
   }

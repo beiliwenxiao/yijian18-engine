@@ -321,16 +321,13 @@ export class S01S02Coordinator {
     return false;
   }
 
-  async _revealInitialToolKit() {
+  /** 新链序：只投放破旧斧头（剥皮刀改由首狼被击败后在火堆旁经 spawnWhen 自行出现）。 */
+  async _revealWornAxe() {
     const survival = this._story().s01Survival || {};
     const axe = survival.axeFound === true || this._heldInstance('S01-tool-axe-1')
       ? { ok: true, created: false }
       : await this._ensureSpawnedPlacement('S01-worn-axe', 'S01-pickup-worn-axe');
     if (!axe.ok) return false;
-    const knife = survival.skinningKnifeFound === true || this._heldInstance('S01-tool-skinning-knife-1')
-      ? { ok: true, created: false }
-      : await this._ensureSpawnedPlacement('S01-skinning-knife', 'S01-pickup-skinning-knife');
-    if (!knife.ok) return false;
     this.initialToolRevealPending = false;
     this.initialToolRevealRetryElapsed = 0;
     return true;
@@ -404,9 +401,9 @@ export class S01S02Coordinator {
   _deriveRestoredTutorialId(survival = this._story().s01Survival || {}) {
     if (survival.firstWolfKilled === true && survival.wolfSkinned !== true) return 's01.durability';
     if (survival.firstWolfSpotted === true && survival.firstWolfKilled !== true) return 's01.attack';
-    // 新链序：点火→采野果→吃野果→拾工具→砍柴，读档按最近未完成环节推导当前教程
-    if (survival.initialToolsPicked === true && survival.woodGathered !== true) return 's01.chopWood';
-    if (survival.berryEaten === true && survival.initialToolsPicked !== true) return 's01.pickup';
+    // 新链序：点火→采野果→吃野果→拾斧头→砍柴→杀首狼→发现剥皮刀→剥皮，读档按最近未完成环节推导
+    if (survival.axeFound === true && survival.woodGathered !== true) return 's01.chopWood';
+    if (survival.berryEaten === true && survival.axeFound !== true) return 's01.pickup';
     if (survival.berriesGathered === true && survival.berryEaten !== true) return 'tutorial-001';
     if (survival.campfireLit === true && survival.berriesGathered !== true) return 's01.gather';
     if (survival.campfireLit !== true) return 's01.move';
@@ -896,9 +893,8 @@ export class S01S02Coordinator {
     });
   }
 
-  async onInitialToolsPickedCommitted() {
-    // 新链序：此操作由 lightCampfire 段编排（点火后开放野果采集），不再用 initialToolsPicked 做顺序守卫——
-    // 信任段编排的触发时机，仅保留场景守卫 + 幂等；s01.pickup 教程生命周期改由任务段驱动。
+  /** 点火段编排（after.lightCampfire.1）：启动燃料倒计时 + 权威投放野果丛。 */
+  async openBerryGathering() {
     if (this.scene.currentSceneId !== 'S01') return false;
     const fuelStarted = this.scene._campfireService?.startFuelCountdown?.() === true;
     const continuation = this._createCampfireContinuation();
@@ -913,7 +909,7 @@ export class S01S02Coordinator {
   }
 
   async onBerriesGatheredCommitted() {
-    // 新链序：木材改在 findTools（initialToolsPicked）后由 spawnWhen + 事实提交重评估生成，
+    // 新链序：木材改在找到斧头（axeFound）后由 spawnWhen + 事实提交重评估生成，
     // 此处不再权威 eager spawn（权威通道会越过 spawnWhen 造成提前显示）；仅保留燃料倒计时启动。
     if (this.scene.currentSceneId !== 'S01'
       || this._story().s01Survival?.berriesGathered !== true) return false;
@@ -921,11 +917,12 @@ export class S01S02Coordinator {
   }
 
   /**
-   * 新链序（eatBerry 段）：吃下野果后投放斧头与剥皮刀。
-   * 提交 story.s01.findAxe（事务 when 已改挂 berryEaten）→ 权威生成工具包；
+   * 新链序（eatBerry 段）：吃下野果后投放破旧斧头。
+   * 提交 story.s01.findAxe（事务 when 挂 berryEaten）→ 权威生成斧头；
    * 生成失败进入退避补偿（每帧恢复在 axeDropped 提交后兜底重试）。
+   * 剥皮刀不再在此投放——首狼被击败后经 spawnWhen(firstWolfKilled) 出现在火堆旁。
    */
-  async dropInitialTools() {
+  async dropWornAxe() {
     if (this.scene.currentSceneId !== 'S01') return false;
     const survival = this._story().s01Survival || {};
     if (survival.axeDropped !== true) {
@@ -934,9 +931,9 @@ export class S01S02Coordinator {
     }
     this.initialToolRevealPending = true;
     try {
-      await this._revealInitialToolKit();
+      await this._revealWornAxe();
     } catch (error) {
-      Logger.log('[S01S02Coordinator] 工具包放置进入退避补偿', error);
+      Logger.log('[S01S02Coordinator] 斧头放置进入退避补偿', error);
     }
     return true;
   }
@@ -1860,12 +1857,12 @@ export class S01S02Coordinator {
       await this.onBerriesGatheredCommitted();
       return { ok: true };
     }
-    if (operation === 'afterInitialToolsPicked') {
-      await this.onInitialToolsPickedCommitted();
+    if (operation === 'openBerryGathering') {
+      await this.openBerryGathering();
       return { ok: true };
     }
-    if (operation === 'dropInitialTools') {
-      await this.dropInitialTools();
+    if (operation === 'dropWornAxe') {
+      await this.dropWornAxe();
       return { ok: true };
     }
     if (operation === 'afterWoodGathered') {
@@ -1906,7 +1903,7 @@ export class S01S02Coordinator {
     }
     if (operation === 'campfireLit') {
       // 幂等续跑：事实已提交（如读档边界/调试补账）时跳过事务但继续表现链——
-      // 点燃表现必须完成。新链序下斧头/剥皮刀改由 dropInitialTools（吃果段）投放，点火链不再负责。
+      // 点燃表现必须完成。新链序下破旧斧头改由 dropWornAxe（吃果段）投放，剥皮刀由首狼败后 spawnWhen 出现，点火链不再负责。
       const survival = this._story().s01Survival || {};
       if (survival.campfireLit !== true) {
         const result = await this._submit('story.s01.campfireLit', {}, 'story:s01:campfire-lit');
@@ -2083,14 +2080,14 @@ export class S01S02Coordinator {
     this._updateFirstWolfCorpseCommit(dt);
     const pickupNeedsRecovery = survival.campfireLit === true
       && survival.axeDropped === true
-      && survival.initialToolsPicked !== true;
+      && survival.axeFound !== true;
     if (pickupNeedsRecovery) this.initialToolRevealPending = true;
     if (this.initialToolRevealPending) {
       this.initialToolRevealRetryElapsed += dt;
       if (this.initialToolRevealRetryElapsed >= 0.75) {
         this.initialToolRevealRetryElapsed = 0;
-        void this._revealInitialToolKit().catch(error => {
-          console.warn('[S01S02Coordinator] 篝火工具包补偿失败', error);
+        void this._revealWornAxe().catch(error => {
+          console.warn('[S01S02Coordinator] 篝火斧头补偿失败', error);
         });
       }
     } else {
@@ -2115,7 +2112,7 @@ export class S01S02Coordinator {
         });
       }
     }
-    // 新链序恢复窗：野果丛在点火后（campfireLit）开放，木材在拾齐工具（initialToolsPicked）后开放
+    // 新链序恢复窗：野果丛在点火后（campfireLit）开放，木材在找到斧头（axeFound）后开放
     const gatherPlacementNeedsRecovery = survival.campfireLit === true
       && survival.berriesGathered !== true;
     if (gatherPlacementNeedsRecovery) {
@@ -2126,7 +2123,7 @@ export class S01S02Coordinator {
     } else {
       this.resolvedPlacementContinuations.delete('S01-node-berry-1');
     }
-    const woodPlacementNeedsRecovery = survival.initialToolsPicked === true
+    const woodPlacementNeedsRecovery = survival.axeFound === true
       && survival.woodGathered !== true;
     if (woodPlacementNeedsRecovery) {
       if (!this.resolvedPlacementContinuations.has('S01-node-wood-1')

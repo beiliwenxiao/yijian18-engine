@@ -259,14 +259,6 @@ export class SceneTerrainCollision {
     return false;
   }
 
-  /** 多 terrain 只读阻挡聚合；任一 terrain 命中即阻挡。 */
-  isAnyPositionBlocked(terrains, x, y, options = EMPTY_OPTIONS) {
-    for (let index = 0; index < (terrains?.length || 0); index++) {
-      if (this.isPositionBlocked(terrains[index], x, y, options)) return true;
-    }
-    return false;
-  }
-
   /** 显式使动态碰撞体变更后的 terrain 索引失效。 */
   invalidate(terrain) {
     if (!terrain) return false;

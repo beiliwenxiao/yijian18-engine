@@ -62,6 +62,7 @@ describe('CapabilityStrategyRegistry', () => {
     const registry = createStandardCapabilityStrategyRegistry();
     expect(new Set(registry.entries().map(entry => entry.capabilityId))).toEqual(new Set(ITEM_CAPABILITY_IDS));
     const errors = registry.validateDefinition({ id: 'invalid', capabilities: [
+      { id: 'cargo', strategyId: 'item.cargo.container', parameters: { capacity: 20 } },
       { id: 'tool', strategyId: 'item.tool.gathering', parameters: { toolType: 'axe' } },
       { id: 'stackable', strategyId: 'item.stack.standard', parameters: { maxStack: 1 } },
       { id: 'questBound', strategyId: 'item.quest.bound', parameters: { questId: 'missing' } }
@@ -69,6 +70,10 @@ describe('CapabilityStrategyRegistry', () => {
     expect(errors.map(error => error.code)).toEqual(expect.arrayContaining([
       'capabilityDependencyMissing', 'capabilityConflict', 'outOfRange', 'invalidReference'
     ]));
+    // tool 不再强制依赖 durable（耐久为可选增强）：单独的 tool capability 合法
+    expect(registry.validateDefinition({ id: 'axe-only', capabilities: [
+      { id: 'tool', strategyId: 'item.tool.gathering', parameters: { toolType: 'axe' } }
+    ] })).toEqual([]);
   });
 
   it('DefinitionRepository 与 consumer coverage 使用同一精确 strategy 契约', () => {

@@ -37,7 +37,7 @@
       },
       {
         "action": "s01Survival",
-        "id": "after.findTools.1",
+        "id": "after.lightCampfire.1",
         "mapTargets": [
           {
             "sceneId": "S01",
@@ -45,13 +45,13 @@
           }
         ],
         "params": {
-          "operation": "afterInitialToolsPicked"
+          "operation": "openBerryGathering"
         },
         "title": "开放野果采集",
         "type": "action"
       },
       {
-        "id": "after.findTools.2",
+        "id": "after.lightCampfire.2",
         "title": "显示采集教程",
         "tutorialId": "s01.gather",
         "type": "tutorial"
@@ -89,9 +89,9 @@
         "action": "s01Survival",
         "id": "after.eatBerry.3",
         "params": {
-          "operation": "dropInitialTools"
+          "operation": "dropWornAxe"
         },
-        "title": "投放斧头与剥皮刀",
+        "title": "投放破旧斧头",
         "type": "action"
       },
       {
@@ -108,24 +108,20 @@
         "type": "tutorial"
       },
       {
-        "id": "findTools",
+        "id": "findAxe",
         "mapTargets": [
           {
             "sceneId": "S01",
             "targetId": "S01-pickup-worn-axe"
-          },
-          {
-            "sceneId": "S01",
-            "targetId": "S01-pickup-skinning-knife"
           }
         ],
         "objectiveType": "commit.fact",
-        "target": "story.s01.initialToolsPicked",
-        "title": "找齐斧头和剥皮刀",
+        "target": "story.s01.axeFound",
+        "title": "找到破旧斧头",
         "type": "objective"
       },
       {
-        "id": "after.findTools.3",
+        "id": "after.findAxe.1",
         "operation": "complete",
         "title": "完成拾取教程",
         "tutorialId": "s01.pickup",
@@ -211,6 +207,19 @@
         "objectiveType": "kill.enemy",
         "target": "story.s01.firstWolfKilled",
         "title": "击杀教学野狼",
+        "type": "objective"
+      },
+      {
+        "id": "findSkinningKnife",
+        "mapTargets": [
+          {
+            "sceneId": "S01",
+            "targetId": "S01-pickup-skinning-knife"
+          }
+        ],
+        "objectiveType": "commit.fact",
+        "target": "story.s01.skinningKnifeFound",
+        "title": "在火堆附近发现剥皮刀",
         "type": "objective"
       },
       {

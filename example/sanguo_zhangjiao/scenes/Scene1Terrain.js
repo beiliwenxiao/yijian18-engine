@@ -293,7 +293,9 @@ export class Scene1Terrain {
                 source = {
                   atlasId: obj.atlasId,
                   sx: slice.sx, sy: slice.sy, sw: slice.sw, sh: slice.sh,
-                  collide: slice.collide === true
+                  collide: slice.collide === true,
+                  colliderRadiusX: slice.colliderRadiusX,
+                  colliderRadiusY: slice.colliderRadiusY
                 };
               }
             }
@@ -967,18 +969,20 @@ export class Scene1Terrain {
 
   /**
    * 获取所有树木的碰撞椭圆（仅盆地内的，外圈树不参与碰撞因为本来就在悬崖外）。
+   * 共享图集切片（deco.source，如 s01_images 的树切片）与 mountain decoSprites
+   * 同规则参与：collide + 椭圆半径，图集是唯一事实源。
    * @returns {Array<{x:number, y:number, radiusX:number, radiusY:number}>}
    */
   getTreeColliders() {
     if (!this._treeColliders) {
       this._treeColliders = [];
       for (const deco of this.decorations) {
-        const sprite = this.decoSprites[deco.key];
+        const sprite = deco.source || this.decoSprites[deco.key];
         if (!sprite || !sprite.collide) continue;
         const radiusX = Number(sprite.colliderRadiusX);
         const radiusY = Number(sprite.colliderRadiusY);
         if (!(radiusX > 0) || !(radiusY > 0)) {
-          throw new TypeError(`Scene1Terrain requires ellipse collider radii for ${deco.key}`);
+          throw new TypeError(`Scene1Terrain requires ellipse collider radii for ${deco.source ? `${deco.source.atlasId}/${deco.key}` : deco.key}`);
         }
         this._treeColliders.push({
           x: deco.x,

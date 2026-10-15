@@ -99,14 +99,13 @@ export class JumpSystem {
       mode: options.mode === 'power' ? 'power' : 'normal',
       elapsed: duration * startProgress,
       chargeDuration: Math.max(0, Number(options.chargeDuration) || 0),
-      // AIR_AIM 重定位跳：从悬停高度续跳（起始高度高于落点地面时按线性落差回落）。
+      // 二段跳/跳下：从空中高度续跳（起始高度高于落点地面时按线性落差回落）。
       baseElevation: Number.isFinite(Number(options.baseElevation))
         ? Number(options.baseElevation)
         : (transform.position.elevation || 0),
       startElevationOffset: Math.max(0, Number(options.startElevationOffset) || 0),
       startPos: { x: transform.position.x, y: transform.position.y },
       relocate: options.relocate === true,
-      hover: false,
       horizontalProgress: 1 - (1 - startProgress) * (1 - startProgress),
       direction: moving
         ? { x: direction.x / magnitude, y: direction.y / magnitude }
@@ -126,36 +125,59 @@ export class JumpSystem {
     return this._active.has(entity);
   }
 
-  /** 注册落地回调：entity 落地时调用（含 AIR_AIM 重定位跳；from/to 为起跳/落地地面坐标）。 */
+  /** 注册落地回调：entity 落地时调用（含二段跳；from/to 为起跳/落地地面坐标）。 */
   setLandCallback(fn) {
     this.onLand = typeof fn === 'function' ? fn : null;
   }
 
-  /** 悬停（AIR_AIM）：冻结当前跳跃进度，速度=0、重力挂起；resumeFromHover 恢复剩余弧线。 */
-  hoverJump(entity) {
+  /**
+   * 大跳升级（v2.1 设计 §6）：把落点总位移拉满到 totalDistance（已走部分不回退）。
+   * 只改剩余水平距离，elapsed/duration/peakHeight/elevation 不动——重力弧线照常
+   * 播放，弧线时长不变（水平速度变快）。滞空微调已废弃，无方向/落点改写模式。
+   */
+  extendJumpTo(entity, totalDistance) {
     const data = this._active.get(entity);
-    if (!data || data.hover) return false;
-    data.hover = true;
+    if (!data || !Number.isFinite(totalDistance) || totalDistance < 0) return false;
+    const remaining = Math.max(0.05, 1 - data.horizontalProgress);
+    const done = data.horizontalProgress * data.distance;
+    data.distance = Math.max(0, (totalDistance - done) / remaining);
     return true;
   }
 
-  isHovering(entity) {
+  /**
+   * 空中轻推转向（v2.2 设计 §6）：把当前跳跃方向向输入方向做矢量混合——
+   * blend ∈ (0,1]：0=不变，1=完全对齐输入方向（行走式响应）。
+   * - **距离守恒**：剩余水平总量不变，落点随方向缓慢旋转；
+   * - **惯性**：blend<1 时原方向保留主导权（一阶响应，转向需要时间），
+   *   与行走的区别仅在此——行走 blend=1 即时改向，空中由调用方传衰减 blend；
+   * - **反向死区**：输入与当前方向正相反且 blend=0.5 时矢量抵消，保持原方向。
+   * 原地跳（direction={0,0}）时轻推可把剩余段拉向输入方向。
+   */
+  steerJump(entity, { direction = null, blend = 0 } = {}) {
     const data = this._active.get(entity);
-    return !!data && data.hover === true;
-  }
-
-  /** 解除悬停：从冻结进度继续播放原跳跃剩余段（超时/打断恢复）。 */
-  resumeFromHover(entity) {
-    const data = this._active.get(entity);
-    if (!data || !data.hover) return false;
-    data.hover = false;
+    if (!data || !direction) return false;
+    const magnitude = Math.hypot(direction.x || 0, direction.y || 0);
+    if (magnitude < 0.01) return false;
+    const k = Math.min(1, Math.max(0, Number(blend) || 0));
+    if (!(k > 0)) return false;
+    const inputX = direction.x / magnitude;
+    const inputY = direction.y / magnitude;
+    const dx = data.direction.x * (1 - k) + inputX * k;
+    const dy = data.direction.y * (1 - k) + inputY * k;
+    const length = Math.hypot(dx, dy);
+    if (length < 0.01) return false;   // 反向抵消：保持惯性方向
+    data.direction = { x: dx / length, y: dy / length };
     return true;
   }
 
-  /** AIR_AIM 重定位：解除悬停条目，从悬停点重新起跳到新落点（不重置 elevation，避免瞬移）。 */
+  /**
+   * 跳中重跳（二段跳原语，v2 设计 §6）：删旧条目，从当前空中位置以新参数再起
+   * 一段（baseElevation 继承 + startElevationOffset=当前高差，弧线从当前高度续起）。
+   * 非跳跃中调用退化为普通 startJump。
+   */
   relocateJump(entity, direction = { x: 0, y: 0 }, options = {}) {
     const data = this._active.get(entity);
-    if (!data || !data.hover) return this.startJump(entity, direction, options);
+    if (!data) return this.startJump(entity, direction, options);
     const transform = entity?.getComponent?.('transform');
     if (!transform) return false;
     const startElevationOffset = Math.max(0, (transform.position.elevation || 0) - data.baseElevation);
@@ -175,8 +197,6 @@ export class JumpSystem {
         this._active.delete(entity);
         continue;
       }
-      // 悬停（AIR_AIM）：推进全部冻结，位置与高度保持不变。
-      if (data.hover) continue;
       data.elapsed += Math.max(0, deltaTime || 0);
       if (data.elapsed < data.chargeDuration) {
         transform.position.elevation = data.baseElevation;

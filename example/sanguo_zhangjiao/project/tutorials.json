@@ -102,7 +102,7 @@
     "steps": [
       {
         "id": "s01.chopWood.step.firewood",
-        "text": "篝火快熄灭了。{harvest}砍取枯木，再回火堆添柴。",
+        "text": "篝火快熄灭了。用{harvest}砍取枯木，再回火堆添柴。",
         "highlightTarget": false
       }
     ],

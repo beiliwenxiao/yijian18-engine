@@ -120,17 +120,10 @@
     {
       "id": "tool.skinning_knife",
       "name": "旧剥皮刀",
-      "description": "刃口磨损的旧剥皮刀。攻击 +5，攻击间隔缩短 1.5 秒。装备后可以剥皮。",
-      "type": "tool",
+      "description": "刃口磨损的旧剥皮刀。攻击 +5，攻击间隔缩短 1.5 秒。持有即可剥皮。",
+      "type": "equipment",
       "imageId": "s01.tool.skinningKnife",
       "capabilities": [
-        {
-          "id": "durable",
-          "strategyId": "item.durable.standard",
-          "parameters": {
-            "maxDurability": 8
-          }
-        },
         {
           "id": "tool",
           "strategyId": "item.tool.gathering",
@@ -145,17 +138,9 @@
         "reduceSec": 1.5,
         "thresholdSec": 1
       },
-      "durability": 8,
       "functionDescription": "用于剥取兽皮和处理猎物。",
       "gatherSpeed": 1,
-      "maxDurability": 8,
       "maxStack": 1,
-      "repairCosts": [
-        {
-          "itemId": "resource.iron",
-          "quantity": 1
-        }
-      ],
       "skeletonPart": {
         "bone": "armFR",
         "offset": {
@@ -591,17 +576,10 @@
     {
       "id": "tool.worn_axe",
       "name": "破旧斧头",
-      "description": "斧刃钝化、木柄裂纹遍布的旧斧。攻击 +10，攻击间隔缩短 0.5 秒。装备后可以砍伐树木。",
-      "type": "tool",
+      "description": "斧刃钝化、木柄裂纹遍布的旧斧。攻击 +10，攻击间隔缩短 0.5 秒。持有即可砍伐树木。",
+      "type": "equipment",
       "imageId": "s01.tool.wornAxe",
       "capabilities": [
-        {
-          "id": "durable",
-          "strategyId": "item.durable.standard",
-          "parameters": {
-            "maxDurability": 8
-          }
-        },
         {
           "id": "tool",
           "strategyId": "item.tool.gathering",
@@ -616,17 +594,9 @@
         "reduceSec": 0.5,
         "thresholdSec": 1
       },
-      "durability": 8,
       "functionDescription": "用于砍伐树木。",
       "gatherSpeed": 1,
-      "maxDurability": 8,
       "maxStack": 1,
-      "repairCosts": [
-        {
-          "itemId": "resource.iron",
-          "quantity": 1
-        }
-      ],
       "skeletonPart": {
         "bone": "armFR",
         "offset": {

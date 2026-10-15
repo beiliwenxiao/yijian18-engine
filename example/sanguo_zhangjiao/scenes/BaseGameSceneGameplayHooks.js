@@ -147,9 +147,13 @@ export class BaseGameSceneGameplayHooks extends BaseGameSceneBehaviors {
       .sort((left, right) => left.distance - right.distance);
     const result = this.gatheringSystem.start({ player: this.playerEntity, nodeEntity: candidates[0]?.entity });
     if (!result.ok && !silent) {
+      const toolNames = { axe: '斧头', skinningKnife: '剥皮刀' };
+      const toolName = toolNames[result.toolType] || '对应工具';
       const messages = {
         gatheringBusy: '正在采集中', nodeDepleted: '资源节点已经耗尽',
-        outOfRange: '附近没有可采集资源', toolRequired: '需要可用的采集工具', invalidTarget: '附近没有可采集资源',
+        outOfRange: '附近没有可采集资源',
+        toolRequired: `徒手无法采集——需要${toolName}`,
+        invalidTarget: '附近没有可采集资源',
         stateRequired: result.requiredState === 'climbing' ? '需要攀爬状态才能采摘' : '当前状态无法采集'
       };
       this._showScreenTip(messages[result.code] || '暂时无法采集');

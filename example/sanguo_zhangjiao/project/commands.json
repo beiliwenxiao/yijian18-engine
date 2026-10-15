@@ -184,7 +184,7 @@
           },
           {
             "equals": true,
-            "path": "story.s01Survival.axeDropped"
+            "path": "story.s01Survival.firstWolfKilled"
           },
           {
             "equals": false,
@@ -195,40 +195,6 @@
       "writes": [
         {
           "path": "s01Survival.skinningKnifeFound",
-          "target": "story",
-          "value": true
-        }
-      ]
-    }
-  },
-  {
-    "commandType": "state.transaction",
-    "id": "story.s01.initialToolsPicked",
-    "name": "集齐初始工具",
-    "transaction": {
-      "when": {
-        "all": [
-          {
-            "equals": "S01",
-            "path": "story.currentSceneId"
-          },
-          {
-            "equals": true,
-            "path": "story.s01Survival.axeFound"
-          },
-          {
-            "equals": true,
-            "path": "story.s01Survival.skinningKnifeFound"
-          },
-          {
-            "equals": false,
-            "path": "story.s01Survival.initialToolsPicked"
-          }
-        ]
-      },
-      "writes": [
-        {
-          "path": "s01Survival.initialToolsPicked",
           "target": "story",
           "value": true
         }
