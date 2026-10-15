@@ -135,7 +135,7 @@
             const ctx = new EditorPageContext();
             await ctx.init();
 
-            const { gameId, sceneId } = getQueryParams();
+            const { gameId, sceneId, placementId } = getQueryParams();
             if (!gameId) {
                 alert('请先选择游戏');
                 navigateTo('game-list');
@@ -994,9 +994,42 @@
             return false;
         }
 
+        // 跨编辑器定位（任务编辑器断链提示等）：URL placementId 指向的放置点，
+        // 初始场景加载完成后选中它并把视口居中；一次性消费后从地址栏清除（切场景不再误触发）。
+        function selectPlacementFromUrl(targetPlacementId, targetSceneId) {
+            if (!targetPlacementId || !targetSceneId) return;
+            if (ctx.currentSceneId !== targetSceneId) return; // 初始加载回退到其他场景：不定位
+            const url = new URL(window.location);
+            if (url.searchParams.has('placementId')) {
+                url.searchParams.delete('placementId');
+                window.history.replaceState({}, '', url);
+            }
+            if (!sceneEditor?.sceneData?.layers) return;
+            const object = sceneEditor.sceneData.layers
+                .flatMap(layer => layer?.objects || [])
+                .find(obj => obj?.id === targetPlacementId) || null;
+            if (!object) {
+                showSceneEditorToast(`场景 ${targetSceneId} 中不存在放置点 ${targetPlacementId}`, 'error');
+                return;
+            }
+            sceneEditor.selectedObjects = [object];
+            sceneEditor.ui.updateObjectProperties();
+            // 视口居中：screen = world * scale + offset → offset = center - world * scale
+            const canvas = document.getElementById('editor-canvas');
+            if (canvas) {
+                const centerX = (Number(object.x) || 0) + (Number(object.width) || 0) / 2;
+                const centerY = (Number(object.y) || 0) + (Number(object.height) || 0) / 2;
+                sceneEditor.viewport.offsetX = canvas.width / 2 - centerX * sceneEditor.viewport.scale;
+                sceneEditor.viewport.offsetY = canvas.height / 2 - centerY * sceneEditor.viewport.scale;
+            }
+            sceneEditor.render();
+            showSceneEditorToast(`已定位放置点 ${targetPlacementId}`, 'success');
+        }
+
         // 初始化
         renderSceneList();
         await loadInitialScene();
+        selectPlacementFromUrl(placementId, sceneId);
 
         // 场景模板筛选
         document.getElementById('new-template-btn').addEventListener('click', async () => {

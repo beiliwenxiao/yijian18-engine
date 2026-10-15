@@ -461,14 +461,6 @@
           "operation": "campfireLit"
         },
         "stepId": "light-campfire"
-      },
-      {
-        "action": "tutorial.command",
-        "params": {
-          "operation": "show",
-          "tutorialId": "s01.pickup"
-        },
-        "stepId": "show-tutorial-s01-pickup"
       }
     ],
     "id": "trg_s01_light_campfire",

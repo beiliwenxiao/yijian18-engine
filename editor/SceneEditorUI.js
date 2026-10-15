@@ -963,6 +963,13 @@ export class SceneEditorUI {
       });
     });
 
+    // 引用触发器按钮：跳转触发器编辑器（与事件过滤条同一入口）
+    panel.querySelectorAll('button[data-open-trigger]').forEach(button => {
+      button.addEventListener('click', () => {
+        editor.options.openTriggerEditor?.(button.dataset.openTrigger, 'triggers');
+      });
+    });
+
     // 绑定属性修改事件
     panel.querySelectorAll('input[data-prop], select[data-prop], textarea[data-prop]').forEach(input => {
       input.addEventListener('change', (e) => {
@@ -1041,6 +1048,36 @@ export class SceneEditorUI {
           return;
         } else if (prop === 'climbable' && !value) {
           obj.climbable = false;
+          editor.render();
+          return;
+        }
+
+        // 生成模式三选一：story=剧情生成（触发器权威生成+账本）；condition=简单等值出生条件；always=清空两者
+        if (prop === 'spawnMode') {
+          const mode = String(value || '').trim();
+          editor.history?.saveHistory?.();
+          if (mode === 'story') {
+            obj.spawnMode = 'story';
+            delete obj.spawnWhen;
+          } else if (mode === 'condition') {
+            // 不预写空条件：空 spawnWhen 在运行时是永假门，会让对象隐形。
+            // 只有输入了事实路径（spawnWhenPath）才落盘；未填时选择项仅为本地面板状态。
+            delete obj.spawnMode;
+          } else {
+            delete obj.spawnMode;
+            delete obj.spawnWhen;
+          }
+          this.updateObjectProperties();
+          editor.render();
+          return;
+        }
+        // 条件门控的简单事实路径（storyState 下布尔事实）；留空 = 撤门
+        if (prop === 'spawnWhenPath') {
+          editor.history?.saveHistory?.();
+          const path = String(value || '').trim();
+          if (path) obj.spawnWhen = { blackboardKey: 'storyState', equals: true, path };
+          else delete obj.spawnWhen;
+          this.updateObjectProperties();
           editor.render();
           return;
         }
@@ -1519,6 +1556,38 @@ export class SceneEditorUI {
   }
 
   /**
+   * 扫描引用该放置点（按组名或对象 ID）的项目触发器动作。
+   * 覆盖 spawnPlacements/despawnPlacements（selector.group/id）与旧式 spawnGroup/spawnWave（params.group）。
+   * @private
+   */
+  _collectPlacementTriggerReferences(obj) {
+    const triggers = this.editor?.getProjectTriggers?.() || [];
+    const id = obj?.id || '';
+    const group = obj?.group || '';
+    if (!id && !group) return [];
+    const references = [];
+    for (const trigger of triggers) {
+      if (!trigger?.id || !Array.isArray(trigger.do)) continue;
+      for (const action of trigger.do) {
+        const act = action?.action || '';
+        const params = action?.params || {};
+        let kind = null;
+        if ((act === 'spawnPlacements' || act === 'despawnPlacements') && params.selector && typeof params.selector === 'object') {
+          if (group && params.selector.group === group) kind = act;
+          else if (id && (params.selector.id === id || params.selector.placementId === id)) kind = act;
+        } else if ((act === 'spawnGroup' || act === 'spawnWave') && group && params.group === group) {
+          kind = act;
+        }
+        if (kind) {
+          references.push({ triggerId: trigger.id, action: kind });
+          break; // 每个触发器只列一次
+        }
+      }
+    }
+    return references;
+  }
+
+  /**
    * 放置引用对象属性面板
    * @private
    */
@@ -1541,6 +1610,31 @@ export class SceneEditorUI {
     html += `<div class="property-row"><label>名称:</label><input value="${obj.name || ''}" disabled></div>`;
     html += `<div class="property-row"><label title="触发器可按组名批量放置同组物品">组名:</label><input type="text" value="${obj.group || ''}" data-prop="group" placeholder="如 act1_pickups"></div>`;
     html += `<div class="property-row"><label title="多个标签用英文逗号分隔；触发器可按标签批量放置物品">标签:</label><input type="text" value="${tags}" data-prop="tags" placeholder="如 教程, 食物"></div>`;
+
+    // ── 生成模式：常驻（无条件进场景即生成）/ 条件门控（spawnWhen）/ 剧情生成（触发器权威生成 + 生成账本）
+    const sw = obj.spawnWhen && typeof obj.spawnWhen === 'object' ? obj.spawnWhen : null;
+    const isSimpleGate = sw && sw.equals === true && typeof sw.path === 'string' && (sw.blackboardKey === undefined || sw.blackboardKey === 'storyState');
+    const spawnMode = obj.spawnMode === 'story' ? 'story' : (sw ? 'condition' : 'always');
+    html += '<div class="property-row" style="border-top:1px solid #333;margin-top:6px;padding-top:6px;"><label style="color:#7cf;font-weight:bold;" title="决定该对象在游戏内何时出现">生成模式</label></div>';
+    html += `<div class="property-row"><label>模式:</label><select data-prop="spawnMode">
+      <option value="always" ${spawnMode === 'always' ? 'selected' : ''}>常驻（进场景即生成）</option>
+      <option value="condition" ${spawnMode === 'condition' ? 'selected' : ''}>条件门控（条件满足才生成）</option>
+      <option value="story" ${spawnMode === 'story' ? 'selected' : ''}>剧情生成（触发器触发）</option>
+    </select></div>`;
+    if (spawnMode === 'condition') {
+      if (isSimpleGate) {
+        html += `<div class="property-row"><label title="storyState 下的布尔事实路径；留空 = 暂不设门（等同常驻）">出生条件:</label><input type="text" value="${escapeHtml(sw.path)}" data-prop="spawnWhenPath" placeholder="如 s01Survival.campfireLit"></div>`;
+      } else {
+        html += `<div class="property-row"><label>出生条件:</label><textarea rows="2" disabled style="font-size:10px;color:#9ab;" title="复合出生条件需手动编辑场景 JSON 或经任务编辑器联动改写">${escapeHtml(JSON.stringify(sw))}</textarea></div>`;
+      }
+    } else if (spawnMode === 'story') {
+      html += `<div class="property-row"><label>说明:</label><span style="color:#9ab;font-size:11px;flex:1;" title="由触发器 spawnPlacements 权威生成并记入生成账本；存档重载按账本恢复，despawn/移除后不复活（账本被墓碑压住）">由下方引用触发器生成；重载按账本恢复</span></div>`;
+    }
+    const references = this._collectPlacementTriggerReferences(obj);
+    const refButtons = references.map(reference =>
+      `<button type="button" data-open-trigger="${escapeHtml(reference.triggerId)}" title="在触发器编辑器中打开">⚔ ${escapeHtml(reference.triggerId)} · ${escapeHtml(reference.action)}</button>`
+    ).join(' ');
+    html += `<div class="property-row"><label title="项目中引用该对象（按组名/ID）的触发器动作，点击直接跳转编辑">引用触发器:</label><span style="flex:1;display:flex;flex-wrap:wrap;gap:4px;">${refButtons || '<span style="color:#9ab;font-size:11px;">无</span>'}</span></div>`;
 
     // 放置点级覆盖：同一库定义在不同场景可挂不同交互（如张角在第二幕给符水、第三幕给铜钱剑）
     // 留空 = 沿用内容库定义

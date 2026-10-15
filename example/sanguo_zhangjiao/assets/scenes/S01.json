@@ -511,8 +511,8 @@
           "semanticRole": "gameplayZone",
           "type": "region",
           "width": 240,
-          "x": 225,
-          "y": 200
+          "x": 11.100149736513401,
+          "y": 509.20176374721814
         },
         {
           "height": 100,
@@ -949,7 +949,7 @@
           "spawnWhen": {
             "blackboardKey": "storyState",
             "equals": true,
-            "path": "s01Survival.axeDropped"
+            "path": "s01Survival.berryEaten"
           },
           "type": "ref",
           "x": 561.2301308157467,
@@ -963,7 +963,7 @@
           "spawnWhen": {
             "blackboardKey": "storyState",
             "equals": true,
-            "path": "s01Survival.berriesGathered"
+            "path": "s01Survival.initialToolsPicked"
           },
           "tags": [
             "resource",
@@ -981,7 +981,7 @@
           "spawnWhen": {
             "blackboardKey": "storyState",
             "equals": true,
-            "path": "s01Survival.berriesGathered"
+            "path": "s01Survival.initialToolsPicked"
           },
           "tags": [
             "resource",
@@ -999,7 +999,7 @@
           "spawnWhen": {
             "blackboardKey": "storyState",
             "equals": true,
-            "path": "s01Survival.berriesGathered"
+            "path": "s01Survival.initialToolsPicked"
           },
           "tags": [
             "resource",
@@ -1020,7 +1020,7 @@
           "spawnWhen": {
             "blackboardKey": "storyState",
             "equals": true,
-            "path": "s01Survival.axeDropped"
+            "path": "s01Survival.berryEaten"
           },
           "type": "ref",
           "x": 577.3344206633141,
@@ -1061,61 +1061,53 @@
           "id": "S01-wolf-pack-1",
           "kind": "enemy",
           "ref": "enemy.s01_chase_wolf",
+          "spawnMode": "story",
           "tags": [
             "wolf"
           ],
           "type": "ref",
-          "x": 300,
-          "y": 300
+          "x": 94.57143093506733,
+          "y": 567.9042679042677
         },
         {
           "group": "S01-wolf-pack",
           "id": "S01-wolf-pack-2",
           "kind": "enemy",
           "ref": "enemy.s01_chase_wolf",
+          "spawnMode": "story",
           "tags": [
             "wolf"
           ],
           "type": "ref",
-          "x": 345,
-          "y": 275
+          "x": 166.41022769530065,
+          "y": 560.9449593456327
         },
         {
           "group": "S01-wolf-pack",
           "id": "S01-wolf-pack-3",
           "kind": "enemy",
           "ref": "enemy.s01_chase_wolf",
+          "spawnMode": "story",
           "tags": [
             "wolf"
           ],
           "type": "ref",
-          "x": 265,
-          "y": 330
-        },
-        {
-          "group": "S01-wolf-pack",
-          "id": "S01-wolf-pack-4",
-          "kind": "enemy",
-          "ref": "enemy.s01_chase_wolf",
-          "tags": [
-            "wolf"
-          ],
-          "type": "ref",
-          "x": 390,
-          "y": 250
+          "x": 159.1089850180759,
+          "y": 648.7319550955913
         },
         {
           "group": "S01-wolf-king",
           "id": "S01-wolf-king",
           "kind": "enemy",
           "ref": "enemy.s01_wolf_king",
+          "spawnMode": "story",
           "tags": [
             "wolf",
             "boss"
           ],
           "type": "ref",
-          "x": 310,
-          "y": 255
+          "x": 70.56864945753831,
+          "y": 514.8121026852789
         },
         {
           "editor": {
@@ -1397,8 +1389,8 @@
           "triggerId": "trg_s01_wolf_region_enter",
           "type": "trigger",
           "width": 240,
-          "x": 225,
-          "y": 200
+          "x": 16.094022294920194,
+          "y": 457.92959575226666
         },
         {
           "event": "enter",
@@ -1555,7 +1547,7 @@
           "spawnWhen": {
             "blackboardKey": "storyState",
             "equals": true,
-            "path": "s01Survival.initialToolsPicked"
+            "path": "s01Survival.campfireLit"
           },
           "tags": [
             "resource",

@@ -47,7 +47,8 @@ function rejected(command, code, message = code) {
 export class CanonicalStateTransactionService {
   constructor({ definitionRepository, getBlackboard, getInventory = () => null, inventoryTransactions = null,
     getItem = () => null, checkpoint = async () => ({ ok: true }), travel = async () => ({ ok: true }),
-    executeScenarioCommand = null, tutorialComplete = () => true, stateId = 'canonical:state' } = {}) {
+    executeScenarioCommand = null, tutorialComplete = () => true, stateId = 'canonical:state',
+    afterCommitted = null } = {}) {
     if (!definitionRepository?.get) throw new TypeError('CanonicalStateTransactionService requires DefinitionRepository');
     if (typeof getBlackboard !== 'function') throw new TypeError('CanonicalStateTransactionService requires getBlackboard');
     this.definitionRepository = definitionRepository;
@@ -61,6 +62,8 @@ export class CanonicalStateTransactionService {
     this.tutorialComplete = tutorialComplete;
     this.stateType = 'canonicalState';
     this.stateId = typeof stateId === 'function' ? stateId : () => stateId;
+    // 事实提交后回调（如「放置点按新事实重评估」）：宿主自行防抖，此处同步通知不阻塞提交
+    this.afterCommitted = typeof afterCommitted === 'function' ? afterCommitted : null;
   }
 
   _definition(id) {
@@ -275,6 +278,12 @@ export class CanonicalStateTransactionService {
             }
           };
         });
+      // 事实提交后通知（不阻塞提交、失败仅告警）：驱动「放置点按新事实重评估」等宿主侧钩子
+      if (this.afterCommitted) {
+        try { this.afterCommitted(definition.id); } catch (hookError) {
+          console.warn('[CanonicalStateTransactionService] afterCommitted 回调失败（提交已生效）', hookError);
+        }
+      }
       return {
         result,
         committedEvents: [{ ...base, type: 'state.transaction.committed', payload: value }],

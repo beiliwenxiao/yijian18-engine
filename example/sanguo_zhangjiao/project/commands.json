@@ -92,10 +92,6 @@
           {
             "equals": true,
             "path": "story.s01Survival.campfireLit"
-          },
-          {
-            "equals": true,
-            "path": "story.s01Survival.initialToolsPicked"
           }
         ]
       },
@@ -128,7 +124,7 @@
           },
           {
             "equals": true,
-            "path": "story.s01Survival.campfireLit"
+            "path": "story.s01Survival.berryEaten"
           },
           {
             "equals": false,
@@ -275,10 +271,6 @@
           {
             "equals": "S01",
             "path": "story.currentSceneId"
-          },
-          {
-            "equals": true,
-            "path": "story.s01Survival.initialToolsPicked"
           },
           {
             "gte": 1,

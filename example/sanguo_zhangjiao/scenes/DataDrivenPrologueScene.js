@@ -330,6 +330,7 @@ export class DataDrivenPrologueScene extends BaseGameScene {
     this._progressionBootstrap = { isNewGame: false, playerStartMode: 'restore' };
     this._playerStartMode = 'restore';
     this._initialPlayerSpawnPending = false;
+    this._placementReassessmentQueued = false;
     this.classSystem = null;
     this._classSelected = false;
     this.selectedClass = null;
@@ -1175,6 +1176,24 @@ export class DataDrivenPrologueScene extends BaseGameScene {
   }
 
   /**
+   * 事实提交 → 放置点重评估（防抖合并）。
+   * CanonicalStateTransactionService.afterCommitted 在每次事实提交后触发；spawn() 为全量幂等评估
+   * （已生成 → alreadySpawned no-op、story 组查账本、condition 组查 spawnWhen），只补生成不做自动 despawn。
+   * 防抖到下一 tick，避免在事务提交的同步窗口内重入。
+   */
+  _schedulePlacementReassessment() {
+    if (this._placementReassessmentQueued) return;
+    this._placementReassessmentQueued = true;
+    this.resourceScope?.setTimeout(() => {
+      this._placementReassessmentQueued = false;
+      const placements = this.context.services.placements;
+      if (!placements || typeof placements.spawn !== 'function') return;
+      Promise.resolve(placements.spawn())
+        .catch(error => console.warn('[DDScene] 事实提交后放置点重评估失败', error));
+    }, 0);
+  }
+
+  /**
    * 教程完成状态跨会话持久化：完成时记入故事状态 tutorialsCompleted。
    * storyState 冻结不可扩展，写入走克隆-合并-写回（引用替换）；
    * 随 Blackboard 序列化进入存档，场景进入时由 SanguoSceneLifecycleCoordinator
@@ -1287,6 +1306,14 @@ export class DataDrivenPrologueScene extends BaseGameScene {
         if (this.gameLoader) this.gameLoader.lastValidationErrors = errors;
       },
       getConditionRoot: key => this.gameLoader?.blackboard?.get?.(key),
+      // 生成账本（spawnLedger）：story 模式放置点被触发器实际生成后按组记账，随存档走
+      commitSpawnLedger: groupIds => {
+        const blackboard = this.gameLoader?.blackboard;
+        if (!blackboard || !Array.isArray(groupIds) || groupIds.length === 0) return;
+        const ledger = { ...(blackboard.get('spawnLedger') || {}) };
+        for (const groupId of groupIds) ledger[groupId] = true;
+        blackboard.set('spawnLedger', ledger);
+      },
       getCurrentSceneId: () => this.currentSceneId,
       getPlayer: () => this.playerEntity,
       getCamera: () => this.camera,
@@ -1404,6 +1431,8 @@ export class DataDrivenPrologueScene extends BaseGameScene {
         payload,
         `${command.operationId}:${intentType}`
       ),
+      // 事实提交 → 放置点重评估：消除「改了 spawnWhen 还要重载场景才生效」的隐性重载依赖
+      afterCommitted: () => this._schedulePlacementReassessment(),
       stateId: () => 'sanguo:campaign'
     });
     this.sceneRuntime.registerCommandHandler('state.transaction', this._canonicalStateTransactions);

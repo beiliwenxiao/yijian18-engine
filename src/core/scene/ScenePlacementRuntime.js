@@ -98,6 +98,11 @@ export class ScenePlacementRuntime {
     this.validatePlacementReferences = config.validatePlacementReferences || (() => ({ ok: true, errors: [] }));
     this.setValidationErrors = config.setValidationErrors || (() => {});
     this.getConditionRoot = config.getConditionRoot || (() => undefined);
+    // 生成账本（spawnLedger）写钩子：story 模式放置点被 spawnPlacements 实际生成后，
+    // 由运行时调用 commitSpawnLedger([groupId, ...]) 记账（宿主写入黑板，随存档走）。
+    this.commitSpawnLedger = config.commitSpawnLedger || null;
+    // 权威生成标志：spawnPlacements 触发动作置位（spawnMatching 同步窗口内对 shouldSpawn 可见）
+    this._authoritativeSpawn = false;
     this.getCurrentSceneId = config.getCurrentSceneId || (() => null);
     this.getPlayer = config.getPlayer || (() => null);
     this.getCamera = config.getCamera || (() => null);
@@ -260,6 +265,15 @@ export class ScenePlacementRuntime {
     // 不触碰实体），再走统一墓碑判定——存档恢复时不会先闪现一帧采空节点。
     this._expireDepletedResourceNodeState(placement);
     if (this._isPlacementTombstoned(placement) || this._playerHoldsPlacementInstance(placement)) return false;
+    // story 生成模式：触发器（spawnPlacements）是唯一生成时机，账本事实是唯一持久门。
+    // 优先级：tombstone（上方，despawn/剧情移除永远压过账本）→ timed 墓碑到期释放后回到
+    // 账本判定（波次刷新免再触发）→ 账本。spawnWhen 在 story 模式下被忽略（一种模式一个门）。
+    if (placement.spawnMode === 'story') {
+      // 权威通道（触发动作 spawnPlacements）：越过账本直接生成，成功后由 spawn() 记账
+      if (this._authoritativeSpawn === true) return true;
+      const ledger = this.getConditionRoot('spawnLedger');
+      return ledger?.[placement.group] === true;
+    }
     const condition = placement.spawnWhen;
     if (!condition || typeof condition !== 'object') return true;
     let value = this.getConditionRoot(condition.blackboardKey || 'storyState');
@@ -273,6 +287,23 @@ export class ScenePlacementRuntime {
     if (Object.prototype.hasOwnProperty.call(condition, 'lte') && !(Number(value) <= Number(condition.lte))) return false;
     if (Array.isArray(condition.in) && !condition.in.includes(value)) return false;
     return true;
+  }
+
+  /** @private 收集本次 spawn 中实际生成（spawned/alreadySpawned）的 story 模式组（去重）。 */
+  _collectStoryLedgerGroups(result = {}) {
+    const generatedIds = new Set();
+    for (const outcome of result.outcomes || []) {
+      if ((outcome.status === 'spawned' || outcome.status === 'alreadySpawned') && outcome.placementId) {
+        generatedIds.add(outcome.placementId);
+      }
+    }
+    const groups = new Set();
+    for (const id of generatedIds) {
+      // count 模板的派生实例（base-N）反查模板：账本按 group 记账，一个事实覆盖全部实例
+      const placement = this._findPlacement(id);
+      if (placement?.spawnMode === 'story' && placement.group) groups.add(placement.group);
+    }
+    return [...groups];
   }
 
   /** @private 已拾取或已销毁的 placement 不得被流式恢复再次实例化。 */
@@ -373,14 +404,34 @@ export class ScenePlacementRuntime {
       this.logger.error('[ScenePlacementRuntime] 放置点引用校验失败', validation.errors);
       return { ok: false, errors: validation.errors || [] };
     }
-    const result = this.spawner.spawnMatching({
-      selector,
-      placements: this.placements,
-      registries: this.getRegistries()
-    });
+    // 权威生成（spawnPlacements 触发动作）：story 组越过账本检查直接生成，成功后记账补上
+    // 持久门——否则账本门会连触发器本身也挡住（先有账本才有生成的死锁）。
+    // spawnMatching 全程同步，_authoritativeSpawn 标志在 shouldSpawn 内单线程可见。
+    const authoritative = selector?.authoritative === true;
+    const spawnerSelector = authoritative ? { ...selector, authoritative: undefined } : selector;
+    this._authoritativeSpawn = authoritative;
+    let result;
+    try {
+      result = this.spawner.spawnMatching({
+        selector: spawnerSelector,
+        placements: this.placements,
+        registries: this.getRegistries()
+      });
+    } finally {
+      this._authoritativeSpawn = false;
+    }
     for (const entry of result.errors) {
       if (entry.reason === 'definitionNotFound') {
         this.logger.warn('[ScenePlacementRuntime] 未找到放置定义', entry.kind, entry.ref);
+      }
+    }
+    // 生成账本：story 模式组在本会话实际生成（spawned/alreadySpawned）即记账——
+    // 账本是「触发器已声明生成过」的持久历史（随存档走），despawn/tombstone 不回滚它。
+    // 流式自动生成不会误写：未触发的 story 组 outcome 为 conditionFalse。
+    const ledgerGroups = this._collectStoryLedgerGroups(result);
+    if (ledgerGroups.length > 0) {
+      try { this.commitSpawnLedger?.(ledgerGroups); } catch (error) {
+        this.logger.warn('[ScenePlacementRuntime] 生成账本记账失败', ledgerGroups, error);
       }
     }
     const colliderSync = this._syncDynamicColliders(result.entities);

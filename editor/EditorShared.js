@@ -301,17 +301,19 @@ export function getQueryParams() {
   return {
     gameId: params.get('gameId') || null,
     sceneId: params.get('sceneId') || null,
-    page: params.get('page') || null
+    page: params.get('page') || null,
+    placementId: params.get('placementId') || null
   };
 }
 
 /** 构建带参数的页面 URL */
-export function buildPageUrl(pageId, { gameId = null, sceneId = null } = {}) {
+export function buildPageUrl(pageId, { gameId = null, sceneId = null, placementId = null } = {}) {
   const file = EDITOR_PAGES[pageId];
   if (!file) throw new Error(`Unknown editor page: ${pageId}`);
   const params = new URLSearchParams();
   if (gameId) params.set('gameId', gameId);
   if (sceneId) params.set('sceneId', sceneId);
+  if (placementId) params.set('placementId', placementId);
   const query = params.toString();
   return query ? `${file}?${query}` : file;
 }

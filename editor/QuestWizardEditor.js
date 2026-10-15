@@ -56,12 +56,12 @@ const ACCEPT_SOURCES = Object.freeze([
  * 保存契约：validateQuestDefinition 全部通过后才允许提交（产物由运行时编译器二次校验）。
  */
 export class QuestWizardEditor {
-  constructor(container, { canonicalSession, projectPath = '', getSceneList = () => [], getSceneDocuments = () => [], saveSceneDocument = null } = {}) {
+  constructor(container, { canonicalSession, projectPath = '', getSceneList = () => [], getSceneDocuments = () => [], saveSceneDocument = null, openScenePlacement = null } = {}) {
     if (!(container instanceof HTMLElement)) throw new TypeError('QuestWizardEditor requires a container element');
     if (!canonicalSession) throw new TypeError('QuestWizardEditor requires a shared CanonicalEditorSession');
     this.container = container;
     this.canonicalSession = canonicalSession;
-    this.deps = { saveSceneDocument };
+    this.deps = { saveSceneDocument, openScenePlacement };
     this.projectPath = projectPath || canonicalSession.sourceUri;
     this.getSceneList = typeof getSceneList === 'function' ? getSceneList : () => [];
     this.getSceneDocuments = typeof getSceneDocuments === 'function' ? getSceneDocuments : () => [];
@@ -636,32 +636,84 @@ export class QuestWizardEditor {
       return plan;
     } catch (error) {
       console.warn('[QuestWizardEditor] 场景出生条件联动计算失败', error);
-      return { links: [], updates: [] };
+      return { links: [], updates: [], orphans: [] };
     }
   }
 
   _conditionSyncHtml(plan) {
-    if (!plan?.updates?.length) return '';
-    if (this._conditionSyncDismissed) return ''; // 本次计划已被忽略（计划变化时签名失效自动恢复展示）
-    const rows = plan.updates.map(update => {
+    if (!plan || this._conditionSyncDismissed) return ''; // 本次计划已被忽略（计划内容变化时签名失效自动恢复展示）
+    const updates = list(plan.updates);
+    const statics = list(plan.links).filter(link => link.status === 'mismatch' && link.changedByReorder !== true);
+    const orphans = list(plan.orphans);
+    if (!updates.length && !statics.length && !orphans.length) return '';
+    const saveReady = typeof this.deps.saveSceneDocument === 'function';
+    const disabled = saveReady ? '' : 'disabled title="当前页面未接入场景保存通道"';
+    const locateReady = typeof this.deps.openScenePlacement === 'function';
+    const syncRow = update => {
       const target = update.clearExpected
         ? '移除出生条件（成为首个目标，进入场景直接生成）'
         : `改写为 <code>${this._escape(update.expectedPath)}</code>（前序目标「${this._escape(update.precedingStepTitle || '')}」提交）`;
       return `<li><code>${this._escape(update.sceneId)}</code> · ${this._escape(update.label)}
         ：<code>${this._escape(update.currentPath || '(无)')}</code> → ${target}</li>`;
-    }).join('');
-    const saveReady = typeof this.deps.saveSceneDocument === 'function';
+    };
+    const staticRow = link => `<li><code>${this._escape(link.sceneId)}</code> · ${this._escape(link.label)}
+        ：<code>${this._escape(link.currentPath || '(无)')}</code> → ${link.clearExpected
+          ? '移除出生条件'
+          : `<code>${this._escape(link.expectedPath || '')}</code>`}（步骤「${this._escape(link.stepTitle || '')}」期望）
+        <button type="button" data-action="sync-apply-one" data-sync-scene="${this._escape(link.sceneId)}" data-sync-placement="${this._escape(link.placementId)}" ${disabled}>应用此条</button></li>`;
+    const orphanRow = orphan => {
+      const locate = `<button type="button" data-action="sync-open-placement" data-open-scene="${this._escape(orphan.sceneId)}" data-open-placement="${this._escape(orphan.placementId)}" ${locateReady ? '' : 'disabled title="当前页面未接入场景编辑器定位通道"'}>在场景编辑器中定位</button>`;
+      if (orphan.kind === 'result') {
+        return `<li><code>${this._escape(orphan.sceneId)}</code> · ${this._escape(orphan.label)} · 产出型放置点
+        ——完成「${this._escape(orphan.producingStepTitle || '')}」后生成（其施工/交互对象已由该步骤引用，产物无需地图引用）${locate}</li>`;
+      }
+      return `<li><code>${this._escape(orphan.sceneId)}</code> · ${this._escape(orphan.label)}
+        门控于 <code>${this._escape(orphan.factPath)}</code>，却未被任何步骤的地图引用（mapTargets）——拖动顺序不会联动它；若它属于本任务流程，请为对应步骤补地图引用 ${locate}</li>`;
+    };
+    const sections = [];
+    if (updates.length) {
+      sections.push(`
+      <div class="qwe-sync-head">
+        <strong>🗺 场景出生条件联动（${updates.length} 处待更新）</strong>
+        <small>拖动步骤调整顺序后，关联场景对象的出生条件可一键跟随新流程</small>
+        <span class="qwe-sync-actions">
+          <button type="button" data-action="sync-apply" ${disabled}>应用到场景文件</button>
+        </span>
+      </div>
+      <ul>${updates.map(syncRow).join('')}</ul>`);
+    }
+    if (statics.length) {
+      sections.push(`
+      <div class="qwe-sync-head">
+        <strong>静态不一致（${statics.length} 处，非本会话拖动）</strong>
+        <small>出生条件与步骤顺序不符；可逐条应用或全部应用</small>
+        <span class="qwe-sync-actions">
+          <button type="button" data-action="sync-apply-statics" ${disabled}>全部应用</button>
+        </span>
+      </div>
+      <ul>${statics.map(staticRow).join('')}</ul>`);
+    }
+    if (orphans.length) {
+      const resultCount = orphans.filter(orphan => orphan.kind === 'result').length;
+      const brokenCount = orphans.length - resultCount;
+      const orphanTitle = brokenCount === 0
+        ? `产出型放置点（${resultCount} 处，目标完成后的产物，无需处理）`
+        : resultCount === 0
+          ? `断链提示（${brokenCount} 处）`
+          : `断链提示（${brokenCount} 处）· 产出型放置点（${resultCount} 处）`;
+      sections.push(`
+      <div class="qwe-sync-head">
+        <strong>📍 ${orphanTitle}</strong>
+        <small>这些放置点出生条件门控于本任务目标事实，但任务步骤未引用它们（仅提示，不自动改写）</small>
+      </div>
+      <ul>${orphans.map(orphanRow).join('')}</ul>`);
+    }
     return `
       <div class="qwe-sync" data-role="condition-sync">
-        <div class="qwe-sync-head">
-          <strong>🗺 场景出生条件联动（${plan.updates.length} 处待更新）</strong>
-          <small>拖动步骤调整顺序后，关联场景对象的出生条件可一键跟随新流程</small>
-          <span class="qwe-sync-actions">
-            <button type="button" data-action="sync-apply" ${saveReady ? '' : 'disabled title="当前页面未接入场景保存通道"'}>应用到场景文件</button>
-            <button type="button" data-action="sync-dismiss">忽略</button>
-          </span>
+        ${sections.join('')}
+        <div class="qwe-sync-actions">
+          <button type="button" data-action="sync-dismiss">忽略</button>
         </div>
-        <ul>${rows}</ul>
       </div>`;
   }
 
@@ -675,24 +727,26 @@ export class QuestWizardEditor {
           const expected = link.clearExpected ? '（应移除出生条件）' : `（期望 ${this._escape(link.expectedPath || '')}）`;
           return `<span class="qwe-link warn" title="步骤已拖动，可在顶部联动栏一键应用">🗺 ${this._escape(link.placementId)} · 门控 ${this._escape(link.currentPath || '')} ⚠${expected}</span>`;
         }
-        return `<span class="qwe-link muted" title="出生条件与步骤顺序不一致，但本会话未拖动该步骤；拖动它即可联动更新">🗺 ${this._escape(link.placementId)} · 门控 ${this._escape(link.currentPath || '')} ⚠（未联动）</span>`;
+        return `<span class="qwe-link muted" title="出生条件与步骤顺序不一致，但本会话未拖动该步骤；可在顶部联动栏逐条应用">🗺 ${this._escape(link.placementId)} · 门控 ${this._escape(link.currentPath || '')} ⚠（未联动）</span>`;
       }
       return `<span class="qwe-link muted" title="${this._escape(link.reason || '保持不变')}">🗺 ${this._escape(link.placementId)} · 门控 ${this._escape(link.currentPath || '(复合条件)')} · 保持不变</span>`;
     });
     return `<div class="qwe-field full"><small class="qwe-links">${items.join(' ')}</small></div>`;
   }
 
-  async _applyConditionSync() {
+  /** 应用联动子集：默认 plan.updates（拖动项）；statics 全部/单条由按钮传入。 */
+  async _applyConditionSync(selected = null) {
     const plan = this._conditionSyncPlan;
-    if (!plan?.updates?.length) return;
+    const updates = Array.isArray(selected) && selected.length ? selected : list(plan?.updates);
+    if (!updates.length) return;
     if (typeof this.deps.saveSceneDocument !== 'function') {
       this._toast('当前页面未接入场景保存通道', 'error');
       return;
     }
-    const applyButton = this.container.querySelector('[data-action="sync-apply"]');
-    if (applyButton) applyButton.disabled = true;
+    const applyButtons = this.container.querySelectorAll('[data-action^="sync-apply"]');
+    applyButtons.forEach(button => { button.disabled = true; });
     try {
-      const { sceneDocs, sceneIds } = applyConditionSyncPlan(this.getSceneDocuments(), plan.updates);
+      const { sceneDocs, sceneIds } = applyConditionSyncPlan(this.getSceneDocuments(), updates);
       let committed = 0;
       for (const sceneId of sceneIds) {
         const result = await this.deps.saveSceneDocument(sceneId, sceneDocs[sceneId]);
@@ -704,14 +758,31 @@ export class QuestWizardEditor {
         committed += 1;
       }
       this._conditionSyncDismissed = conditionSyncPlanSignature(plan);
-      this._toast(`已更新 ${committed} 个场景的出生条件并保存`, 'success');
+      this._toast(`已应用 ${updates.length} 处出生条件（写入 ${committed} 个场景）`, 'success');
     } catch (error) {
       console.error('[QuestWizardEditor] 应用场景出生条件联动失败', error);
       this._toast(`应用失败：${error?.message || error}`, 'error');
     } finally {
-      if (applyButton) applyButton.disabled = false;
+      applyButtons.forEach(button => { button.disabled = false; });
       this._renderDetail();
     }
+  }
+
+  /** 静态不一致单条应用：按场景/放置点定位 links 中的 mismatch 项。 */
+  _applySingleSyncLink(sceneId, placementId) {
+    const plan = this._conditionSyncPlan;
+    const link = list(plan?.links).find(item => item.status === 'mismatch' && item.changedByReorder !== true
+      && item.sceneId === sceneId && item.placementId === placementId);
+    if (link) this._applyConditionSync([link]);
+  }
+
+  /** 断链提示定位：由宿主在场景编辑器中打开该场景并选中放置点（多标签协作）。 */
+  _openScenePlacement(sceneId, placementId) {
+    if (typeof this.deps.openScenePlacement !== 'function') {
+      this._toast('当前页面未接入场景编辑器定位通道', 'error');
+      return;
+    }
+    this.deps.openScenePlacement(sceneId, placementId);
   }
 
   _bindDetail(quest) {
@@ -739,8 +810,18 @@ export class QuestWizardEditor {
       quest.next = [...next];
     }));
     target.querySelectorAll('[data-step-index]').forEach(card => this._bindStep(quest, card));
-    // 场景出生条件联动：一键写回场景文件 / 忽略本次计划
+    // 场景出生条件联动：一键写回场景文件 / 静态不一致逐条·全部应用 / 忽略本次计划
     target.querySelector('[data-action="sync-apply"]')?.addEventListener('click', () => { this._applyConditionSync(); });
+    target.querySelector('[data-action="sync-apply-statics"]')?.addEventListener('click', () => {
+      const plan = this._conditionSyncPlan;
+      this._applyConditionSync(list(plan?.links).filter(link => link.status === 'mismatch' && link.changedByReorder !== true));
+    });
+    target.querySelectorAll('[data-action="sync-apply-one"]').forEach(button => button.addEventListener('click', () => {
+      this._applySingleSyncLink(button.dataset.syncScene, button.dataset.syncPlacement);
+    }));
+    target.querySelectorAll('[data-action="sync-open-placement"]').forEach(button => button.addEventListener('click', () => {
+      this._openScenePlacement(button.dataset.openScene, button.dataset.openPlacement);
+    }));
     target.querySelector('[data-action="sync-dismiss"]')?.addEventListener('click', () => {
       this._conditionSyncDismissed = conditionSyncPlanSignature(this._conditionSyncPlan);
       this._renderDetail();

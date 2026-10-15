@@ -73,3 +73,89 @@ describe('ScenePlacementRuntime placement definition signatures', () => {
     expect(runtime.pendingPlacementStates.has(placement.id)).toBe(false);
   });
 });
+
+describe('ScenePlacementRuntime story 生成模式（生成账本 spawnLedger）', () => {
+  const storyPlacement = () => ({
+    id: 'S01-wolf-pack-1', sceneId: 'S01', type: 'ref', kind: 'item',
+    ref: 'tool.worn_axe', group: 'S01-wolf-pack', spawnMode: 'story',
+    // story 模式下 spawnWhen 被忽略：即便写 true 条件也不影响账本判定
+    spawnWhen: { blackboardKey: 'storyState', path: 's01Survival.anything', equals: true },
+    x: 300, y: 300
+  });
+
+  function createStoryRuntime({ ledger = {}, committedGroups = [] } = {}) {
+    const pickups = [];
+    const store = {
+      all: [], pickups, equipmentItems: [],
+      addPickup: item => pickups.push(item),
+      removeMany: values => {
+        for (const value of values) {
+          const index = pickups.indexOf(value);
+          if (index >= 0) pickups.splice(index, 1);
+        }
+        return values;
+      }
+    };
+    const runtime = new ScenePlacementRuntime({
+      entityStore: store,
+      getWorldPromise: () => Promise.resolve({ region: {} }),
+      validatePlacementReferences: () => ({ ok: true, errors: [] }),
+      getRegistries: () => ({ items: { 'tool.worn_axe': { id: 'tool.worn_axe', name: '破旧斧头' } } }),
+      getConditionRoot: key => (key === 'spawnLedger' ? ledger : undefined),
+      // 与宿主接线同构：记账钩子真实写入账本（供后续重载判定）
+      commitSpawnLedger: groupIds => {
+        committedGroups.push(...groupIds);
+        for (const groupId of groupIds) ledger[groupId] = true;
+      }
+    });
+    runtime.setProjection([storyPlacement()]);
+    return { runtime, pickups, ledger, committedGroups };
+  }
+
+  it('未触发（账本无记录）：流式/场景加载自动生成被拒且不记账', async () => {
+    const { runtime, pickups, committedGroups } = createStoryRuntime();
+    const result = await runtime.spawn({ sceneId: 'S01' });
+    expect(result.ok).toBe(true);
+    expect(result.outcomes[0].status).toBe('conditionFalse');
+    expect(pickups).toHaveLength(0);
+    expect(committedGroups).toEqual([]);
+  });
+
+  it('权威生成（spawnPlacements 触发动作）：越过账本直接生成并记账', async () => {
+    const { runtime, pickups, ledger, committedGroups } = createStoryRuntime();
+    const result = await runtime.spawn({ group: 'S01-wolf-pack', authoritative: true });
+    expect(result.ok).toBe(true);
+    expect(result.outcomes[0].status).toBe('spawned');
+    expect(pickups).toHaveLength(1);
+    expect(committedGroups).toEqual(['S01-wolf-pack']);
+    expect(ledger['S01-wolf-pack']).toBe(true);
+  });
+
+  it('记账后：重载/流式（非权威）按账本自动生成，重复权威生成 alreadySpawned 幂等', async () => {
+    const { runtime, pickups } = createStoryRuntime({ ledger: { 'S01-wolf-pack': true } });
+    const reload = await runtime.spawn({ sceneId: 'S01' });
+    expect(reload.outcomes[0].status).toBe('spawned');
+    expect(pickups).toHaveLength(1);
+
+    const repeat = await runtime.spawn({ group: 'S01-wolf-pack', authoritative: true });
+    expect(repeat.outcomes[0].status).toBe('alreadySpawned');
+    expect(pickups).toHaveLength(1);
+  });
+
+  it('despawn 互斥：tombstone 压过账本——移除后权威与非权威都不再生成', async () => {
+    const { runtime, pickups } = createStoryRuntime({ ledger: { 'S01-wolf-pack': true } });
+    // 先生成一次（建立 spawnedPlacementIds 登记），再剧情移除（tombstone）
+    await runtime.spawn({ sceneId: 'S01' });
+    expect(pickups).toHaveLength(1);
+    const despawn = await runtime.despawn({ group: 'S01-wolf-pack' });
+    expect(despawn.ok).toBe(true);
+    expect(pickups).toHaveLength(0);
+
+    const retried = await runtime.spawn({ group: 'S01-wolf-pack', authoritative: true });
+    expect(retried.outcomes[0].status).toBe('conditionFalse');
+    expect(pickups).toHaveLength(0);
+    const streamed = await runtime.spawn({ sceneId: 'S01' });
+    expect(streamed.outcomes[0].status).toBe('conditionFalse');
+    expect(pickups).toHaveLength(0);
+  });
+});

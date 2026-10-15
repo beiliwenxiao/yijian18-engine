@@ -38,6 +38,12 @@
       {
         "action": "s01Survival",
         "id": "after.findTools.1",
+        "mapTargets": [
+          {
+            "sceneId": "S01",
+            "targetId": "S01-node-berry-1"
+          }
+        ],
         "params": {
           "operation": "afterInitialToolsPicked"
         },
@@ -80,6 +86,15 @@
         "type": "objective"
       },
       {
+        "action": "s01Survival",
+        "id": "after.eatBerry.3",
+        "params": {
+          "operation": "dropInitialTools"
+        },
+        "title": "投放斧头与剥皮刀",
+        "type": "action"
+      },
+      {
         "id": "after.eatBerry.1",
         "operation": "complete",
         "title": "完成吃野果教程",
@@ -87,11 +102,34 @@
         "type": "tutorial"
       },
       {
+        "id": "after.eatBerry.4",
+        "title": "显示拾取教程",
+        "tutorialId": "s01.pickup",
+        "type": "tutorial"
+      },
+      {
         "id": "findTools",
+        "mapTargets": [
+          {
+            "sceneId": "S01",
+            "targetId": "S01-pickup-worn-axe"
+          },
+          {
+            "sceneId": "S01",
+            "targetId": "S01-pickup-skinning-knife"
+          }
+        ],
         "objectiveType": "commit.fact",
         "target": "story.s01.initialToolsPicked",
         "title": "找齐斧头和剥皮刀",
         "type": "objective"
+      },
+      {
+        "id": "after.findTools.3",
+        "operation": "complete",
+        "title": "完成拾取教程",
+        "tutorialId": "s01.pickup",
+        "type": "tutorial"
       },
       {
         "await": true,

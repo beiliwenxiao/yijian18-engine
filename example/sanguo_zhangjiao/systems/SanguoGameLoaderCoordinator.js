@@ -317,7 +317,8 @@ function configureSharedClassEffects(gameLoader) {
 
 function registerGameLoaderActions(triggerSystem) {
   const registered = registerSceneTriggerActions(triggerSystem, {
-    spawnPlacements: selector => this.context.services.placements?.spawn(selector),
+    // 权威生成：触发动作 spawnPlacements 对 story 模式组越过账本门直接生成，成功后运行时自动记账
+    spawnPlacements: selector => this.context.services.placements?.spawn({ ...selector, authoritative: true }),
     despawnPlacements: selector => this.context.services.placements?.despawn(selector),
     getWeatherSystem: () => this.weatherSystem,
     getTimeSystem: () => this.timeSystem,

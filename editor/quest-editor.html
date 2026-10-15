@@ -27,7 +27,7 @@
         <div class="panel-container" id="quest-wizard-container"></div>
     </div>
     <script type="module">
-        import { EditorPageContext, renderEditorNav } from './EditorShared.js';
+        import { EditorPageContext, renderEditorNav, buildPageUrl } from './EditorShared.js';
         import { QuestWizardEditor } from './QuestWizardEditor.js';
 
         (async () => {
@@ -52,6 +52,10 @@
                         sourceUri: `${projectPath.slice(0, -'/game.project.json'.length)}/assets/scenes/${sceneId}.json`,
                         scene: structuredClone(scene)
                     });
+                },
+                // 断链提示定位：新标签打开场景编辑器并选中该放置点（多标签协作，URL 参数传递）
+                openScenePlacement: (sceneId, placementId) => {
+                    window.open(buildPageUrl('scene-workflow', { gameId, sceneId, placementId }), '_blank');
                 }
             });
             await editor.init();
