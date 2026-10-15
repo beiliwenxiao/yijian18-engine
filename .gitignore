@@ -96,5 +96,5 @@ START_HERE.md
 sanguo_zhangjiao_*.apk
 # 美术源文件（未入库）
 example/sanguo_zhangjiao/art-source/
-# Kiro hook 运行产物
-.kiro/hooks/post-task-knowledge-summary.json
+# Kiro hook 运行产物（kiro 已废弃，归档于 .kiro_old）
+.kiro_old/hooks/post-task-knowledge-summary.json

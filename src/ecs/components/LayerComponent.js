@@ -14,7 +14,7 @@
  * LayerComponent.js
  * 世界渲染分层组件
  *
- * 三类分层语义（见 .kiro/specs/dual-rendering-backend/design.md §9）：
+ * 三类分层语义（见 .kiro_old/specs/dual-rendering-backend/design.md §9）：
  *   - worldLayer ：世界子层（绘制顺序分组）
  *   - floorId    ：地图楼层（与 TransformComponent.floorId 冗余，便于索引）
  *   - renderOrder：同层内手动微调

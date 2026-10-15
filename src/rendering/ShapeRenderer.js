@@ -20,7 +20,7 @@
  * 渲染逻辑只此一份，编辑器 SceneEditorCanvas 与游戏侧地形都调用它。
  * 通过 resolver 注入资源获取（图片/切片），使本模块不依赖具体编辑器或游戏环境。
  *
- * shape 数据结构见 .kiro/steering/editor-architecture.md §3。
+ * shape 数据结构见 .kiro_old/steering/editor-architecture.md §3。
  *
  * resolver 接口（可选，image/slice 模式需要）：
  *   getImage(keyOrSrc): HTMLImageElement | null   // imageId 或 imageSrc

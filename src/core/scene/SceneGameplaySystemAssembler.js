@@ -90,7 +90,7 @@ export class SceneGameplaySystemAssembler {
       }
     });
     // 悬停瞄准跳（AIR_AIM）：按下即跳，按住超 apexHoldMs 进入悬停瞄准，松手跳向落点。
-    // 参数可由 scene.airAimConfig 覆盖（设计见 .kiro/steering/air-aim-jump-design.md）。
+    // 参数可由 scene.airAimConfig 覆盖（设计见 .trae/steering/air-aim-jump-design.md）。
     scene.jumpSystem.setLandCallback?.((entity, info) => {
       scene.gameLoader?.triggerSystem?.fire?.('jump.landed', { entity, ...info });
       if (info?.relocate === true) {
@@ -201,7 +201,7 @@ export class SceneGameplaySystemAssembler {
       ),
       isPositionBlocked: (x, y, options) => scene._terrainBinding?.isPositionBlocked?.(x, y, options) === true
     });
-    // 军团指挥（M1）：编组选择 + 点地移动 + 命令达成倒计时；设计见 .kiro/steering/army-command-design.md
+    // 军团指挥（M1）：编组选择 + 点地移动 + 命令达成倒计时；设计见 .trae/steering/army-command-design.md
     scene.armyCommandFlow = new SceneArmyCommandFlow(scene);
     scene.armyCommandFlow.attach();
     scene.equipmentSystem = new EquipmentSystem();

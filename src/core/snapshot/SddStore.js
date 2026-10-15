@@ -17,7 +17,7 @@
 /**
  * SddStore —— 单一权威存档文档（SDD）的内存持有者。
  *
- * 设计要点（见 .kiro/steering/single-authority-save-document-migration.md）：
+ * 设计要点（见 .trae/steering/single-authority-save-document-migration.md）：
  * - 文档是纯数据：任何业务守卫/副作用不得进入文档读写路径。
  * - 不可变：patch 走写时复制（沿路径浅拷贝），旧版本引用不受影响——
  *   回滚 = 换回上一版引用，模型层面不存在「逐系统逆序回滚」。
