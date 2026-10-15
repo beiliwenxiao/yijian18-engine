@@ -1,6 +1,6 @@
 # 任务中心制架构设计文档（Quest-Centric Architecture）
 
-> 交付物：本设计文档落盘为 `d:\yijian18-engine\.kiro\steering\quest-center-design.md`，作为 `progression-implementation.md` 的姊妹篇进入项目事实源。
+> 交付物：本设计文档落盘为 `d:\yijian18-engine\.trae\steering\quest-center-design.md`（2026-10-16 自 .kiro/steering 迁入 .trae），作为 `progression-implementation.md` 的姊妹篇进入项目事实源。
 > 实施不在本次范围内——按阶段①~④另行启动。
 
 ---
@@ -208,7 +208,7 @@ P2 的对账（reconcile）逻辑随之从场景层迁入 QuestRuntime（读档�
 
 ## 5. 本次执行步骤（计划批准后）
 
-1. 将本设计文档保存为 **`d:\yijian18-engine\.kiro\steering\quest-center-design.md`**（内容即第 1~4 章，与 .kiro/steering 既有文档风格对齐）。
+1. 将本设计文档保存为 **`d:\yijian18-engine\.trae\steering\quest-center-design.md`**（内容即第 1~4 章，与 .trae/steering 既有文档风格对齐）。
 2. 完成。实施按阶段①~④待用户指令后启动。
 
 ## 6. 验证方式

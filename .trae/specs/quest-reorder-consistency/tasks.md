@@ -1,6 +1,6 @@
 # 任务清单：quest-reorder-consistency
 
-> 规格：`.kiro/specs/quest-reorder-consistency/spec.md`
+> 规格：`.trae/specs/quest-reorder-consistency/spec.md`
 > 约束：不跑测试；改动不提交（等用户游戏内验证）；每步完成后 Grep/Read 核实已写入。
 
 ## T1 S01S02SceneFlow 去硬编码（spec A1-A5）
