@@ -225,6 +225,9 @@ export class CombatSystem {
    */
   setPlayerEntity(entity) {
     this.playerEntity = entity;
+    // 武器持握标志跟随战斗态：换实体（切场景/重建）时按当前战斗态同步一次，
+    // 防止新实体标志漂移（默认 undefined=收刀，若已在战斗中则立即拔出）
+    if (entity) entity._weaponDrawn = this.combatState.inCombat;
   }
 
   /**
@@ -3932,11 +3935,13 @@ export class CombatSystem {
     this.combatState.inCombat = true;
     this.combatState.lastCombatTime = this.now() / 1000;
     this.combatState.combatExitTimer = this.combatState.combatExitDelay;
-    
+    // 拔出武器：骨骼手持位显示主手装备（PlayerSkeletonStateMapper 消费）
+    if (this.playerEntity) this.playerEntity._weaponDrawn = true;
+
     if (this.onEnterCombatCallback) {
       this.onEnterCombatCallback();
     }
-    
+
     Logger.log('CombatSystem: 进入战斗状态');
   }
 
@@ -3946,11 +3951,13 @@ export class CombatSystem {
   exitCombat() {
     this.combatState.inCombat = false;
     this.combatState.combatExitTimer = 0;
-    
+    // 收刀回背：骨骼手持位隐藏主手装备、背挂位显示（PlayerSkeletonStateMapper 消费）
+    if (this.playerEntity) this.playerEntity._weaponDrawn = false;
+
     if (this.onExitCombatCallback) {
       this.onExitCombatCallback();
     }
-    
+
     Logger.log('CombatSystem: 脱离战斗状态');
   }
 

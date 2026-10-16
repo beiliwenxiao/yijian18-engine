@@ -79,23 +79,38 @@ function collectInventoryWeaponKeys(entity) {
 }
 
 /**
- * 武器槽位联动：手持位显示当前装备的武器，背挂位显示「背包里有但手上没拿」的武器。
- * 装备 weaponKey=W → weapon-W 显示、weapon-W-back 隐藏（拔刀）；
- * 卸下 W → weapon-W 隐藏、weapon-W-back 显示（收刀回背）。
+ * 解析武器持握与背挂来源（CombatSystem._weaponDrawn / GatheringSystem._handToolOverride 联动）。
+ * - heldKey（当前应手持的武器）：采集自动手持 > 战斗中主手装备（拔出）> 空（非战斗收刀回背）；
+ * - ownedKeys（背挂来源）：背包武器 + 已装备主手武器（装备时物品移出背包，需补回，
+ *   否则非战斗时已装备武器无处可挂）。
+ */
+function resolveWeaponDisplay(entity) {
+  const mainhand = entity?.getComponent?.('equipment')?.getEquipment?.('mainhand');
+  const mainhandKey = weaponKeyOf(mainhand) || '';
+  const heldKey = entity?._handToolOverride
+    || (entity?._weaponDrawn === true ? mainhandKey : '')
+    || '';
+  const ownedKeys = collectInventoryWeaponKeys(entity);
+  if (mainhandKey) ownedKeys.add(mainhandKey);
+  return { heldKey, ownedKeys };
+}
+
+/**
+ * 武器槽位联动：手持位显示当前应手持的武器（采集工具或战斗中拔出的装备），
+ * 背挂位显示「背包有或已装备、但没在手上」的武器。
+ * 装备 weaponKey=W 且战斗中 → weapon-W 显示、weapon-W-back 隐藏（拔出）；
+ * 脱战/非战斗 → weapon-W 隐藏、weapon-W-back 显示（收刀回背）。
  */
 function updateWeaponSlots(entity, asset) {
-  const mainhand = entity?.getComponent?.('equipment')?.getEquipment?.('mainhand');
-  // 采集自动手持（_handToolOverride）优先于主手装备：采集是显式动作，手上显示正在用的工具
-  const equippedKey = entity?._handToolOverride || weaponKeyOf(mainhand) || null;
-  const ownedKeys = collectInventoryWeaponKeys(entity);
+  const { heldKey, ownedKeys } = resolveWeaponDisplay(entity);
   for (const slot of asset.slots) {
     const parsed = parseWeaponSlot(slot);
     if (!parsed) continue;
     const attachment = slot.attachment;
     if (!attachment) continue;
     const visible = parsed.pos === 'hand'
-      ? parsed.key === equippedKey
-      : parsed.key !== equippedKey && ownedKeys.has(parsed.key);
+      ? parsed.key === heldKey
+      : parsed.key !== heldKey && ownedKeys.has(parsed.key);
     if (attachment.visible !== visible) attachment.visible = visible;
   }
 }
@@ -109,13 +124,22 @@ export function createPlayerSkeletonStateMapper(entity, { getAssetManager = null
   let lastClip = '';
   let mapperHold = '';
   let lastFacingKey = '';
-  let lastWeaponState = ''; // 武器槽位联动守卫：equippedKey|ownedKeys 签名变化才写共享资产
+  let lastWeaponState = ''; // 武器槽位联动守卫：heldKey|ownedKeys 签名变化才写共享资产
 
   return (skeletonComponent) => {
     const asset = skeletonComponent.skeletonAsset;
     if (!asset) return;
     const sprite = entity.getComponent?.('sprite');
     if (!sprite) return;
+
+    // 武器槽位联动：必须先于离散剪辑保持（mapperHold）执行——
+    // 采集（logging/gather）/攻击（attack）等离散动作播放期间，斧头也要正确上手/回背
+    const { heldKey, ownedKeys } = resolveWeaponDisplay(entity);
+    const weaponState = `${heldKey}|${[...ownedKeys].sort().join(',')}`;
+    if (weaponState !== lastWeaponState) {
+      lastWeaponState = weaponState;
+      updateWeaponSlots(entity, asset);
+    }
 
     // 外部 playClip（系统触发的离散动作：attack/gather/sleep/stretcher…）：
     //   循环剪辑保持到下一次外部切换；非循环剪辑播完自动回归连续状态映射
@@ -172,7 +196,7 @@ export function createPlayerSkeletonStateMapper(entity, { getAssetManager = null
       const plan = HEAD_SLOTS[key];
       if (plan) {
         for (const slot of asset.slots) {
-          if (!(slot.id in plan) && slot.id !== 'spearBack') continue;
+          if (!(slot.id in plan) && slot.id !== 'spearBack' && slot.id !== 'axeBack') continue;
           const attachment = slot.attachment;
           if (!attachment) continue;
           // 侧脸基准图朝左（鼻梁在左缘）：附件恒翻为「朝右基准」，
@@ -180,8 +204,8 @@ export function createPlayerSkeletonStateMapper(entity, { getAssetManager = null
           if (slot.id === 'headSide') {
             if (attachment.flipX !== true) attachment.flipX = true;
           }
-          // 背面时长矛水平翻转（枪头换边：正面朝右上 → 背面朝左上）
-          if (slot.id === 'spearBack') {
+          // 背面时背挂武器水平翻转（长矛枪头/斧头换边：正面朝右上 → 背面朝左上）
+          if (slot.id === 'spearBack' || slot.id === 'axeBack') {
             const wantFlip = key === 'up';
             if (attachment.flipX !== wantFlip) attachment.flipX = wantFlip;
             continue;
@@ -189,16 +213,6 @@ export function createPlayerSkeletonStateMapper(entity, { getAssetManager = null
           if (attachment.visible !== plan[slot.id]) attachment.visible = plan[slot.id];
         }
       }
-    }
-
-    // 武器槽位联动：手持位 = 采集自动手持 > 当前主手装备；背挂位 = 背包里有但没装备
-    const mainhand = entity.getComponent?.('equipment')?.getEquipment?.('mainhand');
-    const equippedKey = entity._handToolOverride || weaponKeyOf(mainhand) || '';
-    const ownedKeys = [...collectInventoryWeaponKeys(entity)].sort().join(',');
-    const weaponState = `${equippedKey}|${ownedKeys}`;
-    if (weaponState !== lastWeaponState) {
-      lastWeaponState = weaponState;
-      updateWeaponSlots(entity, asset);
     }
   };
 }

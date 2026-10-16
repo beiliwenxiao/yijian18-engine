@@ -154,6 +154,22 @@
       }
     },
     {
+      "id": "axeBack",
+      "bone": "back",
+      "z": 1,
+      "attachment": {
+        "type": "image",
+        "assetId": "player.parts.weapon-axe",
+        "partId": "part.weapon.axe.back",
+        "x": -22,
+        "y": -8,
+        "rot": -40,
+        "width": 64,
+        "height": 64,
+        "visible": false
+      }
+    },
+    {
       "id": "skirtBack",
       "bone": "torso",
       "z": 2,

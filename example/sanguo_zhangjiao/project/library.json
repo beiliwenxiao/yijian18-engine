@@ -2235,6 +2235,15 @@
       "width": 64
     },
     {
+      "assetId": "player.parts.weapon-axe",
+      "bone": "back",
+      "category": "weapon",
+      "height": 64,
+      "id": "part.weapon.axe.back",
+      "weaponKey": "axe",
+      "width": 64
+    },
+    {
       "assetId": "player.parts.weapon-spear",
       "bone": "back",
       "category": "weapon",
