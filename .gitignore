@@ -84,6 +84,8 @@ example/sanguo_zhangjiao/saves/
 .dbg/
 semantic-review/
 waitdel/
+# 一次性迁移/诊断脚本与临时产物
+Temp/
 # 临时文件与工具脚本
 tmp_dl_sdk.ps1
 vite.config.js.timestamp-*.mjs
