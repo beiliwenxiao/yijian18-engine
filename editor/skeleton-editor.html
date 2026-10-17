@@ -121,6 +121,7 @@
             <input type="number" id="se-meta-width" min="8" step="1"> ×
             <input type="number" id="se-meta-height" min="8" step="1">
             <button id="se-align-ground" title="按静止姿态测量所有可见挂件的最低非透明像素，移动 root 骨骼使其落在地平面（y=0），确立「原点=水平中心+脚底」锚点；Ctrl+Z 可撤销">⌊ 脚底贴地</button>
+            <button id="se-reload-data" title="从磁盘重新加载当前骨骼资产（绕过浏览器缓存），丢弃本地未保存修改——外部脚本改动 JSON 后点此立即生效，无需硬刷新页面">⟳ 刷新数据</button>
         </div>
         <div class="group">
             <button id="se-select-all" title="全选所有骨骼与挂件（锁定的跳过）">☐ 全选</button>
@@ -131,7 +132,7 @@
             <button id="se-undo" title="撤销 (Ctrl+Z)">↶</button>
             <button id="se-redo" title="重做 (Ctrl+Y)">↷</button>
             <button id="se-fit" title="适配视图：缩放平移到设计盒居中">⤢</button>
-            <button id="se-select" title="选择模式：点选/拖动骨骼与挂件（默认；Esc 从抓手返回）">🖱️</button>
+            <button id="se-select" title="选择模式：点选/拖动骨骼与挂件（默认；Esc 从抓手返回）">↖</button>
             <button id="se-pan" title="抓手平移：开启后左键拖动画布平移">🖐️</button>
         </div>
         <div class="spacer"></div>

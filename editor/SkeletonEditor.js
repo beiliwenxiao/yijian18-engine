@@ -244,11 +244,12 @@ export class SkeletonEditor {
     $('se-undo').addEventListener('click', () => this._undo());
     $('se-redo').addEventListener('click', () => this._redo());
     $('se-fit').addEventListener('click', () => this._fitView());
-    // 工具模式（对齐场景编辑器）：🖱️ 选择（默认）与 🖐️ 抓手平移互斥
+    // 工具模式（对齐场景编辑器）：↖ 选择（默认）与 🖐️ 抓手平移互斥
     $('se-select').addEventListener('click', () => this._setPanMode(false));
     $('se-pan').addEventListener('click', () => this._setPanMode(!this._panMode));
     this._refreshToolButtons();
     $('se-align-ground').addEventListener('click', () => this._alignFeetToGround());
+    $('se-reload-data').addEventListener('click', () => this._reloadDocFromDisk());
     // 逐帧步进（步长 = 剪辑时长 / 12）：单击走一帧；按住 300ms 后连续逐帧播放。
     // 步进会暂停自动播放，否则 previewTime 被播放循环每帧覆盖、步进无效。
     this._bindFrameStepper($('se-frame-prev'), -1);
@@ -593,6 +594,26 @@ export class SkeletonEditor {
       this._toast(`已加载 ${skeletonId}`);
     } catch (error) {
       this._toast(`骨骼资产读取失败：${error.message}`, true);
+    }
+  }
+
+  /**
+   * 从磁盘重新加载当前骨骼资产（绕过浏览器缓存），丢弃本地未保存修改。
+   * 场景：外部脚本改动骨骼 JSON 后，点此立即生效，无需硬刷新页面。
+   */
+  async _reloadDocFromDisk() {
+    if (!this.doc?.skeletonId) { this._toast('当前没有骨骼文档可刷新', true); return; }
+    const entry = this.skeletonEntries.find(candidate => (candidate.imageId || candidate.assetId) === this.doc.skeletonId);
+    if (!entry) { this._toast('当前文档不是已保存的资产（模板/新建），无法刷新', true); return; }
+    if (this.dirty && !confirm('当前有未保存修改，刷新数据将被磁盘内容覆盖，确定？')) return;
+    try {
+      const response = await fetch(`/${this.gameRoot}/${entry.runtime2D.path}?t=${Date.now()}`);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const doc = await response.json();
+      this._adoptDoc(doc); // 内部已重置 dirty / 撤销栈语义并全面板刷新
+      this._toast(`已从磁盘刷新 ${this.doc.skeletonId}`);
+    } catch (error) {
+      this._toast(`刷新数据失败：${error.message}`, true);
     }
   }
 
@@ -4809,6 +4830,9 @@ export class SkeletonEditor {
         const seek = clientX => {
           this.previewTime = Math.max(0, Math.min(duration, ((clientX - laneRect.left) / laneRect.width) * duration));
         };
+        // 按在播放头竖条附近（±6px）= 抓住播放头拖动扫动（先于 seek 取位置）
+        const playheadX = laneRect.left + (this.previewTime / duration) * laneRect.width;
+        const grabPlayhead = Math.abs(event.clientX - playheadX) <= 6;
         // 空白定位播放头时清空关键帧多选（常规 dope sheet 行为）
         if (this._multiSelectedKeys.size > 0) {
           this._multiSelectedKeys.clear();
@@ -4816,11 +4840,16 @@ export class SkeletonEditor {
         }
         seek(event.clientX);
         this._renderTimeline();
-        // 普通左键双职责：位移超阈值 = 转为框选关键帧；未超阈值 = 播放头定位/扫动
+        // 普通左键双职责：抓住播放头 = 纯扫动；空白处拖动超阈值 = 框选关键帧
         const startX = event.clientX;
         const startY = event.clientY;
         let marqueeBegan = false;
         const onMove = moveEvent => {
+          if (grabPlayhead) {
+            seek(moveEvent.clientX);
+            this._renderTimeline();
+            return;
+          }
           if (!marqueeBegan
             && Math.abs(moveEvent.clientX - startX) <= 4
             && Math.abs(moveEvent.clientY - startY) <= 4) {

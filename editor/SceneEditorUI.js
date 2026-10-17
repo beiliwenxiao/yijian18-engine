@@ -86,7 +86,7 @@ export class SceneEditorUI {
             <button id="editor-redo" title="重做 (Ctrl+Y)">↷</button>
           </div>
           <div class="toolbar-group">
-            <button id="editor-select" class="active" title="选择工具 (V)">🖱️</button>
+            <button id="editor-select" class="active" title="选择工具 (V)">↖</button>
             <button id="editor-pan" title="平移工具 (H)">🖐️</button>
             <button id="editor-place" title="放置工具 (P)">+</button>
           </div>
