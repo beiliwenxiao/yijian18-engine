@@ -2107,11 +2107,11 @@
     },
     {
       "assetId": "player.parts.upper-arm-l",
-      "bone": "armUL",
+      "bone": "armUR",
       "category": "arm",
       "height": 64,
       "id": "part.upper-arm.l",
-      "side": "left",
+      "side": "right",
       "tags": [
         "body"
       ],
@@ -2119,11 +2119,11 @@
     },
     {
       "assetId": "player.parts.upper-arm-r",
-      "bone": "armUR",
+      "bone": "armUL",
       "category": "arm",
       "height": 64,
       "id": "part.upper-arm.r",
-      "side": "right",
+      "side": "left",
       "tags": [
         "body"
       ],
@@ -2131,11 +2131,11 @@
     },
     {
       "assetId": "player.parts.fore-arm-l",
-      "bone": "armFL",
+      "bone": "armFR",
       "category": "arm",
       "height": 64,
       "id": "part.fore-arm.l",
-      "side": "left",
+      "side": "right",
       "tags": [
         "body"
       ],
@@ -2143,11 +2143,11 @@
     },
     {
       "assetId": "player.parts.fore-arm-r",
-      "bone": "armFR",
+      "bone": "armFL",
       "category": "arm",
       "height": 64,
       "id": "part.fore-arm.r",
-      "side": "right",
+      "side": "left",
       "tags": [
         "body"
       ],
@@ -2155,11 +2155,11 @@
     },
     {
       "assetId": "player.parts.thigh-l",
-      "bone": "thighL",
+      "bone": "thighR",
       "category": "leg",
       "height": 64,
       "id": "part.thigh.l",
-      "side": "left",
+      "side": "right",
       "tags": [
         "body"
       ],
@@ -2167,22 +2167,10 @@
     },
     {
       "assetId": "player.parts.thigh-r",
-      "bone": "thighR",
+      "bone": "thighL",
       "category": "leg",
       "height": 64,
       "id": "part.thigh.r",
-      "side": "right",
-      "tags": [
-        "body"
-      ],
-      "width": 64
-    },
-    {
-      "assetId": "player.parts.calf-l",
-      "bone": "calfL",
-      "category": "leg",
-      "height": 64,
-      "id": "part.calf.l",
       "side": "left",
       "tags": [
         "body"
@@ -2190,12 +2178,24 @@
       "width": 64
     },
     {
-      "assetId": "player.parts.calf-r",
+      "assetId": "player.parts.calf-l",
       "bone": "calfR",
       "category": "leg",
       "height": 64,
-      "id": "part.calf.r",
+      "id": "part.calf.l",
       "side": "right",
+      "tags": [
+        "body"
+      ],
+      "width": 64
+    },
+    {
+      "assetId": "player.parts.calf-r",
+      "bone": "calfL",
+      "category": "leg",
+      "height": 64,
+      "id": "part.calf.r",
+      "side": "left",
       "tags": [
         "body"
       ],

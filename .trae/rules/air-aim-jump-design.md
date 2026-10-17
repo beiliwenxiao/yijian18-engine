@@ -1,9 +1,11 @@
-# 按下即跳跳跃系统设计（大跳 / 二段跳 / 空中轻推转向）
+# 按下即跳跳跃系统设计（大跳 / 空中换向跳 / 空中轻推转向）
 
-> v2.2（2026-10-16 三次变更）：**恢复滞空方向控制，语义为「轻推+惯性」**——方向键/右键/
-> 左摇杆在滞空中仍可转向，但响应强度低于行走（衰减），且起跳方向保留主导权（一阶响应，
-> 渐进转向，剩余距离守恒）。非 v2 的瞬时旋转，也非 v2.1 的完全锁定。
-> v2.1：滞空微调废弃（已被 v2.2 取代）；v2：取消 v1 的「按住悬停瞄准 + 子弹时间」整链。
+> v3.2（2026-10-18 触发方式调整）：**二段跳改回按键触发**——滞空中再次按下跳跃键触发
+> （每次腾空限一次），方向取当前输入（无输入则沿当前跳跃方向）；「方向明显改变自动换向」废弃。
+> v3.1（2026-10-18 语义修正）：起跳永远原地跳，方向全部在滞空中生效——首次输入方向=
+> launchJump 跳出；持续同向 ≥300ms=大跳；微调走轻推。
+> v3（2026-10-18）：大跳与换向改由方向输入驱动，小跳置空 0.5s、大跳 1s；
+> v2.2（2026-10-16）：恢复滞空方向控制（轻推+惯性）；v2.1：滞空微调废弃；v2：取消 v1 的「按住悬停瞄准 + 子弹时间」整链。
 
 ## 1. 背景与诉求（2026-10-16 用户原话）
 
@@ -39,33 +41,40 @@ ON_GROUND --按下跳键--> JUMPING --持续按住≥bigJumpHoldMs--> JUMPING(�
 
 | # | 当前态 | 触发条件 | 动作 |
 |---|--------|----------|------|
-| T1 | ON_GROUND | 跳键**按下沿** | 立即 `startJump` 短跳：方向=移动输入（无输入=朝向原地跳），distance=`pressJump.distance`；发 `jump.performed` |
-| T2 | JUMPING | 跳键**保持按住** holdMs ≥ `bigJumpHoldMs`(300) 且本段未升级 | **大跳升级**：`extendJumpTo(maxJumpDistance)`；发 `jump.big` |
-| T3 | JUMPING | 松手后再**按下沿**，距首跳 ≤ `doubleJumpWindowMs`(500)，未二段跳过 | **二段跳**：`relocateJump` 从空中位置再跳一段；发 `jump.double` |
-| T4 | JUMPING | 方向键/左摇杆**持续输入**（每帧） | **空中轻推**：`steerJump {direction, blend: strength×dt}`——渐进转向，剩余距离守恒；不发事件 |
-| T5 | JUMPING | 右键/触点**点击**（AIMING 指针通道） | **单次推方向**：`steerJump {direction: 点击方向, blend: pointerBlend}`——比连续输入强一档，仍非瞬时对齐 |
-| T6 | JUMPING | 落地 progress ≥ 1 | 落地烟尘；`jump.landed`；二段跳加发 `jump.relocate.landed` |
-| T7 | JUMPING | 死亡/对话/冥想/切场景（blocked） | 停止跟踪，跳跃自然落地 |
+| T1 | ON_GROUND | 跳键**按下沿** | 立即 `startJump` **原地小跳**（distance=0，置空 0.5s——起跳瞬间不看方向输入）；发 `jump.performed` |
+| T2 | JUMPING | 滞空中**首次输入方向**（尚未跳出） | **空中跳出**：`launchJump(方向, 84)`——方向立即对齐+剩余段拉出距离；此后进入方向跟踪 |
+| T3 | JUMPING | 已跳出，输入方向与当前跳跃方向点积 ≥ 0.5（同向）持续累计 ≥ `bigJumpHoldMs`(300) 且本段未升级 | **大跳升级**：`extendJumpTo(120, {duration: 1.0})`——距离拉满+置空 1s；发 `jump.big` |
+| T4 | JUMPING | 滞空中**再次按下跳跃键**（按下沿），本段未用过 | **二段跳/空中换向跳**：`relocateJump(方向, 小跳参数)`——方向取当前输入，无输入沿当前跳跃方向；从空中位置再跳 0.5s，每次腾空限一次；发 `jump.double` |
+| T5 | JUMPING | 已跳出，输入方向与当前方向点积 ≥ 0.5（微调，每帧） | **空中轻推**：`steerJump {direction, blend: strength×dt}`——渐进转向，剩余距离守恒；不发事件 |
+| T6 | JUMPING | 右键/触点**点击**（AIMING 指针通道） | **单次推方向**：`steerJump {direction: 点击方向, blend: pointerBlend}`——比连续输入强一档，仍非瞬时对齐 |
+| T7 | JUMPING | 落地 progress ≥ 1 | 落地烟尘；`jump.landed`；换向跳加发 `jump.relocate.landed` |
+| T8 | JUMPING | 死亡/对话/冥想/切场景（blocked） | 停止跟踪，跳跃自然落地 |
 
 ## 4. 时序与距离参数（可配置，scene.airAimConfig 覆盖）
 
 | 参数 | 默认值 | 说明 |
 |------|--------|------|
-| `pressJump.distance` | 84 | 按下即跳的短跳距离 |
-| `pressJump.duration` | 0.6 | 短跳时长 |
-| `bigJumpHoldMs` | 300 | 按住多久触发大跳升级 |
-| `doubleJumpWindowMs` | 500 | 首次起跳后多久内允许二段跳 |
-| `maxJumpDistance` | 120 | 大跳最远距离 |
-| `airSteer.strength` | 1.2 | 连续轻推强度（/秒）——0.6s 全程按住约转一半方向；越小惯性越强 |
+| `pressJump.distance` | 100 | 空中跳出距离（原地跳 distance=0） |
+| `pressJump.duration` | 0.5 | 小跳置空时间 |
+| `bigJumpHoldMs` | 300 | 跳出后方向持续不变的时长阈值 → 升级大跳 |
+| `turnThreshold` | 0.5 | 同向判定：输入·当前方向点积 ≥ 0.5 计入大跳累计；< 0.5 不累计（仅轻推） |
+| `bigJump.distance` | 150 | 大跳最远距离 |
+| `bigJump.duration` | 1.0 | 大跳置空时间（extendJumpTo 的 duration 扩展，elapsed 同比例重映射保持 progress 连续） |
+| `bigJump.peakHeight` | 60 | 大跳峰值高度（随剩余 progress 从当前峰值渐变提升，避免高度瞬跳） |
+| `airSteer.strength` | 1.2 | 连续轻推强度（/秒）——越小惯性越强 |
 | `airSteer.pointerBlend` | 0.5 | 右键/触点单次推的混合比——一次点击转一半，剩余保留惯性 |
+
+> 表现层补充（v3.2）：跳跃期间保持 jump 剪辑——JumpSystem 置 `entity._jumping` 标志，
+> mapper 在 jump 播完后若仍在跳跃中保持末帧，落地后回归行走/待机（修复跳跃中途切回
+> 待机的观感问题）。跳出/大跳的峰值提升按 progress 渐变（`peakFrom→peakTo`），无高度瞬跳。
 
 ## 5. 输入映射
 
-| 平台 | 起跳（T1） | 大跳（T2） | 二段跳（T3） | 轻推（T4） | 单次推（T5） |
+| 平台 | 起跳（T1） | 大跳（T2） | 空中换向（T3） | 轻推（T4） | 单次推（T5） |
 |------|-----------|-----------|-------------|-----------|-------------|
-| PC | 空格按下 | 按住 ≥0.3s | 0.5s 内再按 | WASD 持续 | 右键点击 |
-| 手柄 | Y 按下 | 按住不放 | 再按 Y | 左摇杆持续 | — |
-| 触屏 | 虚拟键按下 | 按住不放 | 再按虚拟键 | 虚拟摇杆持续 | 触点点击 |
+| PC | 空格按下 | 起跳后按住方向不变 ≥0.3s | 滞空中明显改方向（夹角 >60°） | WASD 微调 | 右键点击 |
+| 手柄 | Y 按下 | 起跳后左摇杆持续同向 ≥0.3s | 滞空中左摇杆明显改方向 | 左摇杆微调 | — |
+| 触屏 | 虚拟键按下 | 起跳后虚拟摇杆持续同向 ≥0.3s | 滞空中摇杆明显改方向 | 虚拟摇杆微调 | 触点点击 |
 
 ## 6. 落点规则与实现原语（JumpSystem）
 

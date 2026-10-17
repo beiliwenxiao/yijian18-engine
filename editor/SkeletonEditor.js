@@ -69,6 +69,8 @@ export class SkeletonEditor {
     // 画布视图
     this.view = { scale: 1, ox: 0, oy: 0 };
     this._drag = null;               // 拖拽态：{ kind: 'move'|'attach-move'|'attach-scale'|'bone-scale'|'object-rotate'|'tip-length'|'pan'|'marquee', ... }
+    this._mirrorPreview = false;     // 镜像预览：沿角色中轴翻转画布（模拟 sprite.flipX 左向渲染）
+    this._hideWeaponSlots = false;   // 武器装备预览开关：true=编辑器画布隐藏手持+背挂武器（纯预览，不写数据）
     this._libDrag = null;            // 库条目拖入画布的组合预览态：{ partId, assetId, mx, my, dropWorld, hoverBone }
     this._partCheckResult = null;    // 部件体检结果（会话态）：{ rows, at }
     this._alphaBoundsCache = new Map(); // 附件非透明像素包围盒缓存（key: assetId|srcRect）
@@ -250,6 +252,23 @@ export class SkeletonEditor {
     this._refreshToolButtons();
     $('se-align-ground').addEventListener('click', () => this._alignFeetToGround());
     $('se-reload-data').addEventListener('click', () => this._reloadDocFromDisk());
+    // 镜像预览：换算层翻转（_worldToScreen/_screenToWorld），绘制/手柄/命中自动跟随
+    $('se-mirror-preview').addEventListener('click', () => {
+      this._mirrorPreview = !this._mirrorPreview;
+      const button = $('se-mirror-preview');
+      button.style.background = this._mirrorPreview ? '#2a4a3e' : '';
+      button.style.borderColor = this._mirrorPreview ? '#3fbf7f' : '';
+      this._draw();
+    });
+    // 武器装备预览开关：编辑器画布隐藏/显示手持+背挂武器（纯预览，不影响骨骼数据）
+    $('se-disp-weapons').addEventListener('click', () => {
+      this._hideWeaponSlots = !this._hideWeaponSlots;
+      const button = $('se-disp-weapons');
+      button.style.background = this._hideWeaponSlots ? '#4a3a2a' : '';
+      button.style.borderColor = this._hideWeaponSlots ? '#bf8f3f' : '';
+      button.style.textDecoration = this._hideWeaponSlots ? 'line-through' : '';
+      this._draw();
+    });
     // 逐帧步进（步长 = 剪辑时长 / 12）：单击走一帧；按住 300ms 后连续逐帧播放。
     // 步进会暂停自动播放，否则 previewTime 被播放循环每帧覆盖、步进无效。
     this._bindFrameStepper($('se-frame-prev'), -1);
@@ -831,6 +850,9 @@ export class SkeletonEditor {
 
   /** 槽位预览是否被隐藏（槽位级隐藏 或 所属骨骼链被隐藏）。 */
   _isSlotPreviewHidden(slotId, boneId) {
+    // 武器装备预览开关：手持武器（id 以 weapon 开头）+ 背挂武器（挂 back 骨骼）可整体隐藏，
+    // 纯编辑器预览态，不写骨骼数据、不影响游戏实际显示（运行时由 mapper 按背包/装备驱动）
+    if (this._hideWeaponSlots && (slotId.startsWith('weapon') || boneId === 'back')) return true;
     return this._hiddenSlots.has(slotId) || this._isBoneHidden(boneId);
   }
 
@@ -1035,7 +1057,7 @@ export class SkeletonEditor {
         : clips.filter(clip => this._directionFromClip(clip.name) === key);
       if (!list.length) return '';
       return `<optgroup label="${label}">`
-        + list.map(clip => `<option value="${clip.name}">${clip.name}</option>`).join('')
+        + list.map(clip => `<option value="${clip.name}">${SkeletonEditor._displayName(clip.name)}</option>`).join('')
         + '</optgroup>';
     }).join('');
     if (this.currentClip) select.value = this.currentClip;
@@ -1615,11 +1637,15 @@ export class SkeletonEditor {
   }
 
   _worldToScreen(x, y) {
-    return { x: this.view.ox + x * this.view.scale, y: this.view.oy + y * this.view.scale };
+    // 镜像预览：沿角色中轴（世界 x=0）水平翻转——模拟游戏里 sprite.flipX 左向渲染，
+    // 调背挂武器/装备位置时所见即背面/左向所得；手柄与命中测试共用换算自动跟随
+    const mx = this._mirrorPreview ? -x : x;
+    return { x: this.view.ox + mx * this.view.scale, y: this.view.oy + y * this.view.scale };
   }
 
   _screenToWorld(x, y) {
-    return { x: (x - this.view.ox) / this.view.scale, y: (y - this.view.oy) / this.view.scale };
+    const sign = this._mirrorPreview ? -1 : 1;
+    return { x: (sign * (x - this.view.ox)) / this.view.scale, y: (y - this.view.oy) / this.view.scale };
   }
 
   _imageElement(assetId) {
@@ -3326,7 +3352,17 @@ export class SkeletonEditor {
       headFront: '正面头(headFront)', headSide: '侧面头(headSide)', headBack: '背面头(headBack)',
       weaponSpear: '手持枪(weaponSpear)', weaponSkinningKnife: '手持剥皮刀(weaponSkinningKnife)',
       weaponWolfFang: '手持狼牙(weaponWolfFang)', weaponBow: '手持弓(weaponBow)', weaponStaff: '手持符杖(weaponStaff)',
+      weaponAxe: '手持斧(weaponAxe)', axeBack: '背斧(axeBack)',
       armor: '护甲(armor)',
+      // 剪辑
+      idle_down: '待机-下(idle_down)', idle_up: '待机-上(idle_up)', idle_side: '待机-侧(idle_side)',
+      walk_down: '行走-下(walk_down)', walk_up: '行走-上(walk_up)', walk_side: '行走-侧(walk_side)',
+      walk_SE: '行走-右下(walk_SE)', walk_SW: '行走-左下(walk_SW)',
+      walk_NE: '行走-右上(walk_NE)', walk_NW: '行走-左上(walk_NW)',
+      jump: '跳跃(jump)', attack: '攻击(attack)',
+      gather: '采集(gather)', logging: '砍伐(logging)', mining: '挖矿(mining)', fishing: '钓鱼(fishing)',
+      climb_back: '攀爬(climb_back)', sleep: '睡觉(sleep)', stretcher: '担架(stretcher)',
+      death: '死亡(death)', soul: '灵魂(soul)',
       legThighL: '左大腿(legThighL)', legThighR: '右大腿(legThighR)',
       legCalfL: '左小腿(legCalfL)', legCalfR: '右小腿(legCalfR)',
       // 图片 assetId 通用部件名（剥离 player.parts. 前缀后的 key）

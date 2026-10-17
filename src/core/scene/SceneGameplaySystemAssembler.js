@@ -109,14 +109,22 @@ export class SceneGameplaySystemAssembler {
       ) === true;
       return { started };
     });
-    scene.airAimController.setBigJumpCallback(({ actor, distance }) => {
-      const upgraded = scene.jumpSystem?.extendJumpTo?.(actor, distance) === true;
+    // 空中跳出（v3.1 T2）：原地小跳后滞空中首次输入方向 → launchJump 向该方向拉出剩余距离
+    scene.airAimController.setLaunchCallback(({ actor, direction, distance }) => ({
+      launched: scene.jumpSystem?.launchJump?.(actor, direction, distance) === true
+    }));
+    scene.airAimController.setBigJumpCallback(({ actor, distance, duration, peakHeight }) => {
+      const options = {};
+      if (Number(duration) > 0) options.duration = Number(duration);
+      if (Number(peakHeight) > 0) options.peakHeight = Number(peakHeight);
+      const upgraded = scene.jumpSystem?.extendJumpTo?.(actor, distance, options) === true;
       if (upgraded) {
         scene.gameLoader?.triggerSystem?.fire?.('jump.big', { entity: actor, distance });
       }
       return { upgraded };
     });
-    scene.airAimController.setDoubleJumpCallback(({ actor, moveDirection, distance, duration }) => {
+    // 空中换向跳（v3 T3）：滞空中方向明显改变 → 从空中位置向新方向再跳一段（小跳参数）
+    scene.airAimController.setAirRedirectCallback(({ actor, moveDirection, distance, duration }) => {
       const started = scene.jumpSystem?.relocateJump?.(
         actor,
         { x: moveDirection?.x || 0, y: moveDirection?.y || 0 },

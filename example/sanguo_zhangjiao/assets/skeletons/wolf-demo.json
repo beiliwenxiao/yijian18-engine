@@ -38,7 +38,7 @@
       "length": 14
     },
     {
-      "id": "legL",
+      "id": "legR",
       "parent": "hips",
       "x": -10,
       "y": 4,
@@ -48,7 +48,7 @@
       "length": 20
     },
     {
-      "id": "legR",
+      "id": "legL",
       "parent": "hips",
       "x": 10,
       "y": 4,
@@ -124,7 +124,7 @@
       "loop": true,
       "tracks": [
         {
-          "bone": "legL",
+          "bone": "legR",
           "keys": [
             {
               "t": 0,
@@ -143,7 +143,7 @@
           ]
         },
         {
-          "bone": "legR",
+          "bone": "legL",
           "keys": [
             {
               "t": 0,

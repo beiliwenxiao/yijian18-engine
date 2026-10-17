@@ -71,6 +71,12 @@ export class JumpSystem {
     }
   }
 
+  /** 距离 → 跳跃峰值高度推导（距离越长跳越高）。 */
+  _peakForDistance(distance) {
+    const ratio = Math.min(1, distance / Math.max(1, this.config.distanceReference || 120));
+    return Math.max(14, this.config.peakHeight * (0.4 + 0.7 * ratio));
+  }
+
   startJump(entity, direction = { x: 0, y: 0 }, options = {}) {
     const transform = entity?.getComponent?.('transform');
     if (!transform || this._active.has(entity)) return false;
@@ -84,19 +90,19 @@ export class JumpSystem {
     }
     const distance = moving ? Math.max(0, Number(options.distance) || this.config.distance) : 0;
     // 距离越长 → 起跳越高、滞空越久；未显式指定时按距离推导。
-    const ratio = Math.min(1, distance / Math.max(1, this.config.distanceReference || 120));
     const duration = Number(options.duration) > 0
       ? Number(options.duration)
-      : Math.max(0.28, this.config.duration * (0.45 + 0.75 * ratio));
+      : Math.max(0.28, this.config.duration * (0.45 + 0.75 * (distance / Math.max(1, this.config.distanceReference || 120))));
     const peakHeight = Number(options.peakHeight) > 0
       ? Number(options.peakHeight)
-      : Math.max(14, this.config.peakHeight * (0.4 + 0.7 * ratio));
+      : this._peakForDistance(distance);
     // startProgress：从跳跃进度的某一时刻开始播放（0.5 = 只播后半段下落，用于"跳下"跌落表现）。
     // 水平位移已按 easeOut 在该进度处的累计值折算，落点仍为 direction * distance。
     const startProgress = Math.min(0.99, Math.max(0, Number(options.startProgress) || 0));
     this._active.set(entity, {
       transform,
       mode: options.mode === 'power' ? 'power' : 'normal',
+      jumping: true,
       elapsed: duration * startProgress,
       chargeDuration: Math.max(0, Number(options.chargeDuration) || 0),
       // 二段跳/跳下：从空中高度续跳（起始高度高于落点地面时按线性落差回落）。
@@ -118,6 +124,7 @@ export class JumpSystem {
     // 普通帧动画实体无 jump 动画，不播避免警告刷屏）
     const sprite = entity?.getComponent?.('sprite');
     if (sprite?.isSkeleton) sprite.playAnimation('jump');
+    entity._jumping = true;   // 跳跃中标志：mapper 播完 jump 后保持末帧直到落地
     return true;
   }
 
@@ -131,17 +138,49 @@ export class JumpSystem {
   }
 
   /**
-   * 大跳升级（v2.1 设计 §6）：把落点总位移拉满到 totalDistance（已走部分不回退）。
-   * 只改剩余水平距离，elapsed/duration/peakHeight/elevation 不动——重力弧线照常
-   * 播放，弧线时长不变（水平速度变快）。滞空微调已废弃，无方向/落点改写模式。
+   * 大跳升级（v3 设计）：落点总位移拉满到 totalDistance（已走部分不回退），
+   * 并可扩展滞空时长（options.duration，大跳=1s——progress 推进变缓，弧线更舒展）。
+   * 已过时间不回退，只改剩余水平距离与总时长。
    */
-  extendJumpTo(entity, totalDistance) {
+  extendJumpTo(entity, totalDistance, options = {}) {
     const data = this._active.get(entity);
     if (!data || !Number.isFinite(totalDistance) || totalDistance < 0) return false;
     const remaining = Math.max(0.05, 1 - data.horizontalProgress);
     const done = data.horizontalProgress * data.distance;
     data.distance = Math.max(0, (totalDistance - done) / remaining);
+    // duration 扩展时 elapsed 同比例重映射，保持 progress 连续——
+    // 否则 progress 瞬间倒退（如 0.7→0.35），step 变负导致角色回跳抖动
+    if (Number(options.duration) > data.duration) {
+      const progress = Math.min(1, data.elapsed / data.duration);
+      data.duration = Number(options.duration);
+      data.elapsed = data.duration * progress;
+    }
+    // 峰值高度提升：随剩余 progress 线性渐变过渡（peakFrom→peakTo），
+    // 避免 peak 突变造成高度瞬跳
+    if (Number(options.peakHeight) > 0 && Number(options.peakHeight) !== data.peakHeight) {
+      data.peakFrom = data.peakHeight;
+      data.peakTo = Number(options.peakHeight);
+      data.peakBlendFrom = data.horizontalProgress;
+    }
     return true;
+  }
+
+  /**
+   * 空中启动位移（v3.1 设计）：原地小跳后，滞空中首次输入方向时向该方向「跳出」——
+   * 方向立即对齐（blend=1，起跳后无历史惯性）+ 剩余段拉出 distance 总量。
+   * 非跳跃中调用无效（launch 只作用于已在空中的原地跳）。
+   */
+  launchJump(entity, direction, distance = this.config.distance) {
+    const data = this._active.get(entity);
+    if (!data) return false;
+    const mag = Math.hypot(direction?.x || 0, direction?.y || 0);
+    if (mag < 0.01) return false;
+    const aligned = this.steerJump(entity, { direction, blend: 1 });
+    // 跳出后高度同步提升到该距离对应峰值（渐变过渡，避免瞬跳）
+    const extended = this.extendJumpTo(entity, Math.max(0, Number(distance) || 0), {
+      peakHeight: this._peakForDistance(Math.max(0, Number(distance) || 0))
+    });
+    return aligned || extended;
   }
 
   /**
@@ -210,12 +249,26 @@ export class JumpSystem {
       // 落点由起跳瞬间的方向与距离锁定，滞空期间不再调整位置。
       transform.position.x += data.direction.x * step;
       transform.position.y += data.direction.y * step;
+      // 峰值高度渐变（大跳/跳出提升峰值时）：随 progress 从 peakFrom 线性过渡到 peakTo，
+      // 避免 peak 突变造成高度瞬跳
+      let peak = data.peakHeight;
+      if (data.peakTo != null) {
+        const blendSpan = Math.max(0.01, 1 - data.peakBlendFrom);
+        const t = Math.min(1, Math.max(0, (progress - data.peakBlendFrom) / blendSpan));
+        peak = data.peakFrom + (data.peakTo - data.peakFrom) * t;
+        if (t >= 1) {
+          data.peakHeight = data.peakTo;
+          data.peakTo = null;
+          peak = data.peakTo;
+        }
+      }
       transform.position.elevation = data.baseElevation
         + data.startElevationOffset * (1 - progress)
-        + data.peakHeight * 4 * progress * (1 - progress);
+        + peak * 4 * progress * (1 - progress);
       data.horizontalProgress = horizontal;
       if (progress >= 1) {
         transform.position.elevation = data.baseElevation;
+        entity._jumping = false;   // 落地：清除跳跃标志（mapper 恢复行走/待机）
         this._emitLandingSmoke(transform.position.x, transform.position.y);
         this._active.delete(entity);
         this.onLand?.(entity, {
@@ -228,8 +281,9 @@ export class JumpSystem {
   }
 
   cleanup() {
-    for (const data of this._active.values()) {
+    for (const [entity, data] of this._active) {
       data.transform.position.elevation = data.baseElevation;
+      entity._jumping = false;
     }
     this._active.clear();
   }

@@ -141,6 +141,44 @@ export function createPlayerSkeletonStateMapper(entity, { getAssetManager = null
       updateWeaponSlots(entity, asset);
     }
 
+    // 头部槽位切换 + 侧向镜像 + 背挂换边（方向键变化时才写共享资产，避免每帧触碰）。
+    // 提取为闭包函数：跳跃 hold 保持期间也调用——空中改变方向时头部/背挂跟随变化
+    const applyFacing = () => {
+      const facing = sprite?.direction || 'down';
+      const key = directionKey(sprite);
+      // 左系朝向（left / 斜左下 SW / 斜左上 NW）由整体 flipX 镜像
+      const wantFlip = facing === 'left' || facing === 'down-left' || facing === 'up-left';
+      if (sprite.flipX !== wantFlip) sprite.flipX = wantFlip;
+      // side 键下 left/right 共用剪辑与侧脸头，头的翻转依赖 facing → 守卫需区分两者
+      const facingKey = key === 'side' ? `${key}|${facing}` : key;
+      if (facingKey !== lastFacingKey) {
+        lastFacingKey = facingKey;
+        const plan = HEAD_SLOTS[key];
+        if (plan) {
+          for (const slot of asset.slots) {
+            // 背挂槽泛化判定：挂 back 骨骼即背挂（axeBack/spearBack 及未来盾牌/箭袋等），
+            // 背面视角自动水平换边，策划新增背挂槽零代码；头部三态挂 head 骨骼不受影响
+            const isBackMount = slot.bone === WEAPON_BACK_BONE;
+            if (!(slot.id in plan) && !isBackMount) continue;
+            const attachment = slot.attachment;
+            if (!attachment) continue;
+            // 侧脸基准图朝左（鼻梁在左缘）：附件恒翻为「朝右基准」，
+            // 最终朝向由实体 flipX 决定（右行 flip=false→朝右；左行 flip=true→镜像回朝左）
+            if (slot.id === 'headSide') {
+              if (attachment.flipX !== true) attachment.flipX = true;
+            }
+            // 背面时背挂武器水平翻转（斧头/长矛换边：正面朝右上 → 背面朝左上）
+            if (isBackMount) {
+              const wantBackFlip = key === 'up';
+              if (attachment.flipX !== wantBackFlip) attachment.flipX = wantBackFlip;
+              continue;
+            }
+            if (attachment.visible !== plan[slot.id]) attachment.visible = plan[slot.id];
+          }
+        }
+      }
+    };
+
     // 外部 playClip（系统触发的离散动作：attack/gather/sleep/stretcher…）：
     //   循环剪辑保持到下一次外部切换；非循环剪辑播完自动回归连续状态映射
     const current = skeletonComponent.currentClip;
@@ -151,8 +189,16 @@ export function createPlayerSkeletonStateMapper(entity, { getAssetManager = null
     if (mapperHold) {
       const holdClip = asset.clips.get(mapperHold);
       if (!holdClip || (!holdClip.loop && skeletonComponent.clipTime >= holdClip.durationMs)) {
+        // 非循环离散剪辑播完：仍在跳跃中则保持末帧（人还在空中，不切回待机）；
+        // 落地（JumpSystem 清 _jumping）后回归连续状态映射。
+        // 保持期间仍执行朝向处理——空中改变方向时头部三态/背挂换边跟随
+        if (mapperHold === 'jump' && entity._jumping === true) {
+          applyFacing();
+          return;
+        }
         mapperHold = '';
       } else {
+        applyFacing();
         return;
       }
     }
@@ -183,37 +229,7 @@ export function createPlayerSkeletonStateMapper(entity, { getAssetManager = null
       mapperHold = '';
     }
 
-    // 头部槽位切换 + 侧向镜像（方向键变化时才写共享资产，避免每帧触碰）
-    const facing = sprite?.direction || 'down';
-    const key = moveKey;
-    // 左系朝向（left / 斜左下 SW / 斜左上 NW）由整体 flipX 镜像
-    const wantFlip = facing === 'left' || facing === 'down-left' || facing === 'up-left';
-    if (sprite.flipX !== wantFlip) sprite.flipX = wantFlip;
-    // side 键下 left/right 共用剪辑与侧脸头，头的翻转依赖 facing → 守卫需区分两者
-    const facingKey = key === 'side' ? `${key}|${facing}` : key;
-    if (facingKey !== lastFacingKey) {
-      lastFacingKey = facingKey;
-      const plan = HEAD_SLOTS[key];
-      if (plan) {
-        for (const slot of asset.slots) {
-          if (!(slot.id in plan) && slot.id !== 'spearBack' && slot.id !== 'axeBack') continue;
-          const attachment = slot.attachment;
-          if (!attachment) continue;
-          // 侧脸基准图朝左（鼻梁在左缘）：附件恒翻为「朝右基准」，
-          // 最终朝向由实体 flipX 决定（右行 flip=false→朝右；左行 flip=true→镜像回朝左）
-          if (slot.id === 'headSide') {
-            if (attachment.flipX !== true) attachment.flipX = true;
-          }
-          // 背面时背挂武器水平翻转（长矛枪头/斧头换边：正面朝右上 → 背面朝左上）
-          if (slot.id === 'spearBack' || slot.id === 'axeBack') {
-            const wantFlip = key === 'up';
-            if (attachment.flipX !== wantFlip) attachment.flipX = wantFlip;
-            continue;
-          }
-          if (attachment.visible !== plan[slot.id]) attachment.visible = plan[slot.id];
-        }
-      }
-    }
+    applyFacing();
   };
 }
 

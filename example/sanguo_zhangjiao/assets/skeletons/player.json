@@ -11,7 +11,7 @@
       "id": "hips",
       "parent": null,
       "x": 0,
-      "y": -26,
+      "y": -33.6,
       "rot": 0,
       "scaleX": 1,
       "scaleY": 1,
@@ -38,7 +38,7 @@
       "length": 16
     },
     {
-      "id": "armUL",
+      "id": "armUR",
       "parent": "torso",
       "x": -7,
       "y": -16,
@@ -48,7 +48,7 @@
       "length": 12
     },
     {
-      "id": "armUR",
+      "id": "armUL",
       "parent": "torso",
       "x": 7,
       "y": -16,
@@ -56,16 +56,6 @@
       "scaleX": 1,
       "scaleY": 1,
       "length": 12
-    },
-    {
-      "id": "armFL",
-      "parent": "armUL",
-      "x": 0,
-      "y": 12,
-      "rot": 0,
-      "scaleX": 1,
-      "scaleY": 1,
-      "length": 13
     },
     {
       "id": "armFR",
@@ -78,7 +68,17 @@
       "length": 13
     },
     {
-      "id": "thighL",
+      "id": "armFL",
+      "parent": "armUL",
+      "x": 0,
+      "y": 12,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 13
+    },
+    {
+      "id": "thighR",
       "parent": "hips",
       "x": -5,
       "y": -1,
@@ -88,7 +88,7 @@
       "length": 13
     },
     {
-      "id": "thighR",
+      "id": "thighL",
       "parent": "hips",
       "x": 5,
       "y": -1,
@@ -98,8 +98,8 @@
       "length": 13
     },
     {
-      "id": "calfL",
-      "parent": "thighL",
+      "id": "calfR",
+      "parent": "thighR",
       "x": 0,
       "y": 13,
       "rot": 0,
@@ -108,8 +108,8 @@
       "length": 14
     },
     {
-      "id": "calfR",
-      "parent": "thighR",
+      "id": "calfL",
+      "parent": "thighL",
       "x": 0,
       "y": 13,
       "rot": 0,
@@ -132,7 +132,7 @@
     {
       "id": "shadow",
       "bone": "hips",
-      "z": 1,
+      "z": 3,
       "attachment": {
         "type": "empty"
       }
@@ -140,7 +140,7 @@
     {
       "id": "spearBack",
       "bone": "back",
-      "z": -1,
+      "z": 1,
       "attachment": {
         "type": "image",
         "assetId": "player.parts.weapon-spear",
@@ -156,23 +156,23 @@
     {
       "id": "axeBack",
       "bone": "back",
-      "z": -2,
+      "z": 0,
       "attachment": {
         "type": "image",
         "assetId": "player.parts.weapon-axe",
         "partId": "part.weapon.axe.back",
-        "x": -7.1,
-        "y": 8.1,
+        "x": -3.1,
+        "y": -0.3,
         "rot": -155.4,
         "width": 64,
         "height": 64,
-        "visible": false
+        "visible": true
       }
     },
     {
       "id": "skirtBack",
       "bone": "torso",
-      "z": 0,
+      "z": 2,
       "attachment": {
         "type": "image",
         "assetId": "player.parts.skirt-back",
@@ -186,9 +186,9 @@
       }
     },
     {
-      "id": "armUL",
-      "bone": "armUL",
-      "z": 18,
+      "id": "armUR",
+      "bone": "armUR",
+      "z": 17,
       "attachment": {
         "type": "image",
         "assetId": "player.parts.upper-arm-l",
@@ -209,9 +209,9 @@
       }
     },
     {
-      "id": "armFL",
-      "bone": "armFL",
-      "z": 5,
+      "id": "armFR",
+      "bone": "armFR",
+      "z": 7,
       "attachment": {
         "type": "image",
         "assetId": "player.parts.fore-arm-l",
@@ -225,9 +225,9 @@
       }
     },
     {
-      "id": "armUR",
-      "bone": "armUR",
-      "z": 6,
+      "id": "armUL",
+      "bone": "armUL",
+      "z": 22,
       "attachment": {
         "type": "image",
         "assetId": "player.parts.upper-arm-r",
@@ -241,9 +241,9 @@
       }
     },
     {
-      "id": "armFR",
-      "bone": "armFR",
-      "z": 7,
+      "id": "armFL",
+      "bone": "armFL",
+      "z": 23,
       "attachment": {
         "type": "image",
         "assetId": "player.parts.fore-arm-r",
@@ -275,7 +275,7 @@
     {
       "id": "skirtFront",
       "bone": "torso",
-      "z": 20,
+      "z": 18,
       "attachment": {
         "type": "image",
         "assetId": "player.parts.skirt-front",
@@ -291,7 +291,7 @@
     {
       "id": "headFront",
       "bone": "head",
-      "z": 13,
+      "z": 12,
       "attachment": {
         "type": "image",
         "assetId": "player.parts.head-front",
@@ -307,7 +307,7 @@
     {
       "id": "headSide",
       "bone": "head",
-      "z": 14,
+      "z": 13,
       "attachment": {
         "type": "image",
         "assetId": "player.parts.head-side",
@@ -323,7 +323,7 @@
     {
       "id": "headBack",
       "bone": "head",
-      "z": 15,
+      "z": 14,
       "attachment": {
         "type": "image",
         "assetId": "player.parts.head-back",
@@ -371,23 +371,30 @@
     {
       "id": "weaponWolfFang",
       "bone": "armFR",
-      "z": 10,
+      "z": 20,
       "attachment": {
         "type": "image",
         "assetId": "player.parts.weapon-wolfFang",
         "partId": "part.weapon.wolfFang",
-        "x": 0,
-        "y": 12.6,
-        "rot": 0,
-        "width": 64,
-        "height": 64,
-        "visible": false
+        "x": -11.7,
+        "y": 25.2,
+        "rot": 176.4,
+        "width": 31,
+        "height": 35,
+        "visible": true,
+        "directionOffsets": {
+          "up": {
+            "x": -13.1,
+            "y": -14.6,
+            "rot": 185.7
+          }
+        }
       }
     },
     {
       "id": "weaponBow",
       "bone": "armFR",
-      "z": 11,
+      "z": 10,
       "attachment": {
         "type": "image",
         "assetId": "player.parts.weapon-bow",
@@ -403,7 +410,7 @@
     {
       "id": "weaponStaff",
       "bone": "armFR",
-      "z": 12,
+      "z": 11,
       "attachment": {
         "type": "image",
         "assetId": "player.parts.weapon-staff",
@@ -417,9 +424,25 @@
       }
     },
     {
+      "id": "weaponAxe",
+      "bone": "armFR",
+      "z": 21,
+      "attachment": {
+        "type": "image",
+        "assetId": "player.parts.weapon-axe",
+        "partId": "part.weapon.axe",
+        "x": -5.9,
+        "y": 14,
+        "rot": 244.7,
+        "width": 64,
+        "height": 64,
+        "visible": true
+      }
+    },
+    {
       "id": "armor",
       "bone": "torso",
-      "z": 16,
+      "z": 15,
       "attachment": {
         "type": "empty",
         "x": -6.8,
@@ -428,9 +451,9 @@
       }
     },
     {
-      "id": "legThighL",
-      "bone": "thighL",
-      "z": 2,
+      "id": "legThighR",
+      "bone": "thighR",
+      "z": 4,
       "attachment": {
         "type": "image",
         "assetId": "player.parts.thigh-l",
@@ -443,9 +466,9 @@
       }
     },
     {
-      "id": "legThighR",
-      "bone": "thighR",
-      "z": 3,
+      "id": "legThighL",
+      "bone": "thighL",
+      "z": 5,
       "attachment": {
         "type": "image",
         "assetId": "player.parts.thigh-r",
@@ -458,9 +481,9 @@
       }
     },
     {
-      "id": "legCalfR",
-      "bone": "calfR",
-      "z": 4,
+      "id": "legCalfL",
+      "bone": "calfL",
+      "z": 6,
       "attachment": {
         "type": "image",
         "assetId": "player.parts.calf-r",
@@ -473,9 +496,9 @@
       }
     },
     {
-      "id": "part-calf-l",
-      "bone": "calfL",
-      "z": 17,
+      "id": "part-calf-r",
+      "bone": "calfR",
+      "z": 16,
       "attachment": {
         "type": "image",
         "assetId": "player.parts.calf-l",
@@ -567,7 +590,7 @@
           ]
         },
         {
-          "bone": "armUL",
+          "bone": "armUR",
           "keys": [
             {
               "t": 0,
@@ -599,7 +622,7 @@
           ]
         },
         {
-          "bone": "armUR",
+          "bone": "armUL",
           "keys": [
             {
               "t": 0,
@@ -631,7 +654,7 @@
           ]
         },
         {
-          "bone": "armFL",
+          "bone": "armFR",
           "keys": [
             {
               "t": 0,
@@ -663,7 +686,7 @@
           ]
         },
         {
-          "bone": "armFR",
+          "bone": "armFL",
           "keys": [
             {
               "t": 0,
@@ -725,7 +748,7 @@
           ]
         },
         {
-          "bone": "calfL",
+          "bone": "calfR",
           "keys": [
             {
               "t": 0,
@@ -747,7 +770,7 @@
           ]
         },
         {
-          "bone": "thighL",
+          "bone": "thighR",
           "keys": [
             {
               "t": 0,
@@ -758,7 +781,25 @@
               "scaleY": 1
             },
             {
-              "t": 451,
+              "t": 450,
+              "x": -5,
+              "y": -1.75,
+              "rot": 0,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "linear"
+            },
+            {
+              "t": 900,
+              "x": -5,
+              "y": -1.75,
+              "rot": 0,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "linear"
+            },
+            {
+              "t": 1350,
               "x": -5,
               "y": -1.75,
               "rot": 0,
@@ -769,7 +810,7 @@
           ]
         },
         {
-          "bone": "thighR",
+          "bone": "thighL",
           "keys": [
             {
               "t": 0,
@@ -780,7 +821,7 @@
           ]
         },
         {
-          "bone": "calfR",
+          "bone": "calfL",
           "keys": [
             {
               "t": 0,
@@ -846,7 +887,7 @@
           ]
         },
         {
-          "bone": "armUL",
+          "bone": "armUR",
           "keys": [
             {
               "t": 0,
@@ -870,7 +911,7 @@
           ]
         },
         {
-          "bone": "armUR",
+          "bone": "armUL",
           "keys": [
             {
               "t": 0,
@@ -894,7 +935,7 @@
           ]
         },
         {
-          "bone": "armFL",
+          "bone": "armFR",
           "keys": [
             {
               "t": 0,
@@ -918,7 +959,7 @@
           ]
         },
         {
-          "bone": "armFR",
+          "bone": "armFL",
           "keys": [
             {
               "t": 0,
@@ -997,7 +1038,7 @@
           ]
         },
         {
-          "bone": "armUL",
+          "bone": "armUR",
           "keys": [
             {
               "t": 0,
@@ -1021,7 +1062,7 @@
           ]
         },
         {
-          "bone": "armUR",
+          "bone": "armUL",
           "keys": [
             {
               "t": 0,
@@ -1045,7 +1086,7 @@
           ]
         },
         {
-          "bone": "armFL",
+          "bone": "armFR",
           "keys": [
             {
               "t": 0,
@@ -1069,7 +1110,7 @@
           ]
         },
         {
-          "bone": "armFR",
+          "bone": "armFL",
           "keys": [
             {
               "t": 0,
@@ -1180,51 +1221,51 @@
           ]
         },
         {
-          "bone": "thighL",
-          "keys": [
-            {
-              "t": 0,
-              "rot": 0,
-              "x": -5,
-              "y": -3,
-              "scaleX": 1,
-              "scaleY": 1
-            },
-            {
-              "t": 155,
-              "rot": 0,
-              "x": -5,
-              "y": 0,
-              "scaleX": 1,
-              "scaleY": 1,
-              "ease": "easeInOut"
-            },
-            {
-              "t": 310,
-              "rot": 0,
-              "x": -5,
-              "y": 0,
-              "scaleX": 1,
-              "scaleY": 1,
-              "ease": "easeInOut"
-            },
-            {
-              "t": 465,
-              "rot": 0,
-              "x": -5,
-              "y": 0,
-              "scaleX": 1,
-              "scaleY": 1,
-              "ease": "easeInOut"
-            }
-          ]
-        },
-        {
           "bone": "thighR",
           "keys": [
             {
               "t": 0,
               "rot": 0,
+              "x": -5,
+              "y": -3,
+              "scaleX": 1,
+              "scaleY": 1
+            },
+            {
+              "t": 155,
+              "rot": 0,
+              "x": -5,
+              "y": 0,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 310,
+              "rot": 0,
+              "x": -5,
+              "y": 0,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 465,
+              "rot": 0,
+              "x": -5,
+              "y": 0,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "thighL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
               "x": 5,
               "y": 0,
               "scaleX": 1,
@@ -1260,7 +1301,7 @@
           ]
         },
         {
-          "bone": "calfL",
+          "bone": "calfR",
           "keys": [
             {
               "t": 0,
@@ -1300,7 +1341,7 @@
           ]
         },
         {
-          "bone": "calfR",
+          "bone": "calfL",
           "keys": [
             {
               "t": 0,
@@ -1340,50 +1381,50 @@
           ]
         },
         {
-          "bone": "armUL",
-          "keys": [
-            {
-              "t": 0,
-              "rot": 8,
-              "x": -7,
-              "y": -16,
-              "scaleX": 1,
-              "scaleY": 1
-            },
-            {
-              "t": 155,
-              "rot": 0,
-              "x": -7,
-              "y": -16,
-              "scaleX": 1,
-              "scaleY": 1,
-              "ease": "easeInOut"
-            },
-            {
-              "t": 310,
-              "rot": -8,
-              "x": -7,
-              "y": -16,
-              "scaleX": 1,
-              "scaleY": 1,
-              "ease": "easeInOut"
-            },
-            {
-              "t": 465,
-              "rot": 0,
-              "x": -7,
-              "y": -16,
-              "scaleX": 1,
-              "scaleY": 1,
-              "ease": "easeInOut"
-            }
-          ]
-        },
-        {
           "bone": "armUR",
           "keys": [
             {
               "t": 0,
+              "rot": 8,
+              "x": -7,
+              "y": -16,
+              "scaleX": 1,
+              "scaleY": 1
+            },
+            {
+              "t": 155,
+              "rot": 0,
+              "x": -7,
+              "y": -16,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 310,
+              "rot": -8,
+              "x": -7,
+              "y": -16,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 465,
+              "rot": 0,
+              "x": -7,
+              "y": -16,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "armUL",
+          "keys": [
+            {
+              "t": 0,
               "rot": -8,
               "x": 7,
               "y": -16,
@@ -1420,7 +1461,7 @@
           ]
         },
         {
-          "bone": "armFL",
+          "bone": "armFR",
           "keys": [
             {
               "t": 0,
@@ -1460,7 +1501,7 @@
           ]
         },
         {
-          "bone": "armFR",
+          "bone": "armFL",
           "keys": [
             {
               "t": 0,
@@ -1507,87 +1548,81 @@
       "loop": true,
       "tracks": [
         {
+          "bone": "hips",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "x": 0,
+              "y": -29.4,
+              "scaleX": 1,
+              "scaleY": 1
+            },
+            {
+              "t": 155,
+              "rot": 0,
+              "x": 0,
+              "y": -28.6,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 310,
+              "rot": 0,
+              "x": 0,
+              "y": -29.4,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 465,
+              "rot": 0,
+              "x": 0,
+              "y": -28.6,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
           "bone": "torso",
           "keys": [
             {
               "t": 0,
-              "rot": -3
+              "rot": -3,
+              "x": 0,
+              "y": -2,
+              "scaleX": 1,
+              "scaleY": 1
             },
             {
-              "t": 156,
+              "t": 155,
               "rot": 0,
+              "x": 0,
+              "y": -2,
+              "scaleX": 1,
+              "scaleY": 1,
               "ease": "easeInOut"
             },
             {
               "t": 310,
               "rot": 3,
+              "x": 0,
+              "y": -2,
+              "scaleX": 1,
+              "scaleY": 1,
               "ease": "easeInOut"
             },
             {
               "t": 465,
               "rot": 0,
-              "ease": "easeInOut"
-            }
-          ]
-        },
-        {
-          "bone": "thighL",
-          "keys": [
-            {
-              "t": 0,
-              "rot": -22,
-              "x": -4.095301569326213,
-              "y": -0.4345634808288833
-            },
-            {
-              "t": 155,
-              "rot": 0,
-              "ease": "easeInOut",
-              "x": -4.095302,
-              "y": -0.434563
-            },
-            {
-              "t": 311,
-              "rot": -7.9,
-              "ease": "easeInOut",
-              "x": -4.095302,
-              "y": -0.434563
-            },
-            {
-              "t": 465,
-              "rot": 0,
-              "ease": "easeInOut",
-              "x": -4.095302,
-              "y": -0.434563
-            }
-          ]
-        },
-        {
-          "bone": "calfL",
-          "keys": [
-            {
-              "t": 0,
-              "x": -4.649268647501784,
-              "y": 8.35854933875271,
-              "rot": 22.7
-            },
-            {
-              "t": 155,
-              "x": -0.685488708750281,
-              "y": 12.928435822255064,
-              "rot": 0.4
-            },
-            {
-              "t": 311,
-              "rot": 8.2,
-              "x": -2.710350719993803,
-              "y": 13.295127937674312
-            },
-            {
-              "t": 467,
-              "rot": 2,
-              "x": -1.1924652585769582,
-              "y": 13.138599164461564,
+              "x": 0,
+              "y": -2,
+              "scaleX": 1,
+              "scaleY": 1,
               "ease": "easeInOut"
             }
           ]
@@ -1597,30 +1632,78 @@
           "keys": [
             {
               "t": 0,
-              "rot": 22,
-              "x": 3.865146,
-              "y": -0.290716
+              "rot": 0,
+              "x": -5,
+              "y": -3,
+              "scaleX": 1,
+              "scaleY": 1
             },
             {
               "t": 155,
               "rot": 0,
-              "ease": "easeInOut",
-              "x": 3.865146,
-              "y": -0.290716
+              "x": -5,
+              "y": 0,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
             },
             {
               "t": 310,
-              "rot": -22,
-              "ease": "easeInOut",
-              "x": 3.865146,
-              "y": -0.290716
+              "rot": 0,
+              "x": -5,
+              "y": 0,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
             },
             {
-              "t": 467,
+              "t": 465,
               "rot": 0,
-              "ease": "easeInOut",
-              "x": 3.8651462885628014,
-              "y": -0.2907164303517511
+              "x": -5,
+              "y": 0,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "thighL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "x": 5,
+              "y": 0,
+              "scaleX": 1,
+              "scaleY": 1
+            },
+            {
+              "t": 155,
+              "rot": 0,
+              "x": 5,
+              "y": 0,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 310,
+              "rot": 0,
+              "x": 5,
+              "y": -3,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 465,
+              "rot": 0,
+              "x": 5,
+              "y": 0,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
             }
           ]
         },
@@ -1629,48 +1712,77 @@
           "keys": [
             {
               "t": 0,
-              "x": 5.698474855452539,
-              "y": 11.809372394063548,
-              "rot": -23.9
-            },
-            {
-              "t": 156,
-              "x": 0.09285101612870011,
-              "y": 13.193228696575707,
-              "rot": -0.4,
-              "ease": "easeInOut"
-            },
-            {
-              "t": 311,
-              "rot": 20.9,
-              "ease": "easeInOut",
-              "x": -3.3944241292119877,
-              "y": 8.78202336096671
-            },
-            {
-              "t": 467,
-              "rot": -4.9,
-              "ease": "easeInOut",
-              "x": 0.4959348418888687,
-              "y": 13.354074125718167
-            }
-          ]
-        },
-        {
-          "bone": "armUL",
-          "keys": [
-            {
-              "t": 0,
-              "rot": 17.6
+              "rot": -10,
+              "x": 0,
+              "y": 13,
+              "scaleX": 1,
+              "scaleY": 1
             },
             {
               "t": 155,
               "rot": 0,
+              "x": 0,
+              "y": 13,
+              "scaleX": 1,
+              "scaleY": 1,
               "ease": "easeInOut"
             },
             {
               "t": 310,
-              "rot": -17.6,
+              "rot": 0,
+              "x": 0,
+              "y": 13,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 465,
+              "rot": 0,
+              "x": 0,
+              "y": 13,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "calfL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "x": 0,
+              "y": 13,
+              "scaleX": 1,
+              "scaleY": 1
+            },
+            {
+              "t": 155,
+              "rot": 0,
+              "x": 0,
+              "y": 13,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 310,
+              "rot": 10,
+              "x": 0,
+              "y": 13,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 465,
+              "rot": 0,
+              "x": 0,
+              "y": 13,
+              "scaleX": 1,
+              "scaleY": 1,
               "ease": "easeInOut"
             }
           ]
@@ -1680,62 +1792,78 @@
           "keys": [
             {
               "t": 0,
-              "rot": -17.6,
-              "x": 7.2496573836886435,
-              "y": -15.986916010939265
+              "rot": 8,
+              "x": -7,
+              "y": -16,
+              "scaleX": 1,
+              "scaleY": 1
             },
             {
               "t": 155,
               "rot": 0,
-              "x": 7.2496573836886435,
-              "y": -15.986916010939265,
+              "x": -7,
+              "y": -16,
+              "scaleX": 1,
+              "scaleY": 1,
               "ease": "easeInOut"
             },
             {
-              "t": 311,
-              "rot": 17.6,
-              "ease": "easeInOut",
-              "x": 5.973790258670495,
-              "y": -16.579938369913773
+              "t": 310,
+              "rot": -8,
+              "x": -7,
+              "y": -16,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
             },
             {
               "t": 465,
               "rot": 0,
-              "ease": "easeInOut",
-              "x": 5.97379,
-              "y": -16.579938
+              "x": -7,
+              "y": -16,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
             }
           ]
         },
         {
-          "bone": "armFL",
+          "bone": "armUL",
           "keys": [
             {
-              "t": 1,
-              "x": 1.968357250275633,
-              "y": 10.210834502958498,
-              "rot": -14.6
+              "t": 0,
+              "rot": -8,
+              "x": 7,
+              "y": -16,
+              "scaleX": 1,
+              "scaleY": 1
             },
             {
-              "t": 156,
-              "x": -0.5074820492660777,
-              "y": 10.835476643552939,
-              "rot": 5,
+              "t": 155,
+              "rot": 0,
+              "x": 7,
+              "y": -16,
+              "scaleX": 1,
+              "scaleY": 1,
               "ease": "easeInOut"
             },
             {
-              "t": 311,
-              "rot": 21.2,
-              "ease": "easeInOut",
-              "x": -3.481710693977109,
-              "y": 10.600252529083422
+              "t": 310,
+              "rot": 8,
+              "x": 7,
+              "y": -16,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
             },
             {
-              "t": 467,
+              "t": 465,
               "rot": 0,
-              "ease": "easeInOut",
-              "x": -0.39754439310126344,
-              "y": 9.076919077026059
+              "x": 7,
+              "y": -16,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
             }
           ]
         },
@@ -1744,59 +1872,78 @@
           "keys": [
             {
               "t": 0,
-              "x": -1.2076583247746167,
-              "y": 11.118953952845196,
-              "rot": 8
+              "rot": 5,
+              "x": 0,
+              "y": 12,
+              "scaleX": 1,
+              "scaleY": 1
             },
             {
-              "t": 156,
-              "x": 0.82,
-              "y": 11.53,
-              "rot": -5.4,
+              "t": 155,
+              "rot": 0,
+              "x": 0,
+              "y": 12,
+              "scaleX": 1,
+              "scaleY": 1,
               "ease": "easeInOut"
             },
             {
-              "t": 311,
-              "rot": -21.5,
-              "ease": "easeInOut",
-              "x": 5.442405573149481,
-              "y": 11.474312825832921
+              "t": 310,
+              "rot": -5,
+              "x": 0,
+              "y": 12,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
             },
             {
-              "t": 467,
-              "rot": -7.4,
-              "ease": "easeInOut",
-              "x": 0.06559702759332124,
-              "y": 10.53421119424271
+              "t": 465,
+              "rot": 0,
+              "x": 0,
+              "y": 12,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
             }
           ]
         },
         {
-          "bone": "hips",
+          "bone": "armFL",
           "keys": [
             {
               "t": 0,
-              "y": -29,
-              "ease": "easeInOut",
-              "x": 0
+              "rot": -5,
+              "x": 0,
+              "y": 12,
+              "scaleX": 1,
+              "scaleY": 1
             },
             {
-              "t": 157,
-              "y": -29,
-              "ease": "easeInOut",
-              "x": 0
+              "t": 155,
+              "rot": 0,
+              "x": 0,
+              "y": 12,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
             },
             {
               "t": 310,
-              "y": -29.003574196108044,
-              "ease": "easeInOut",
-              "x": 0
+              "rot": 5,
+              "x": 0,
+              "y": 12,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
             },
             {
               "t": 465,
-              "y": -29,
-              "ease": "easeInOut",
-              "x": 0
+              "rot": 0,
+              "x": 0,
+              "y": 12,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
             }
           ]
         }
@@ -1832,7 +1979,7 @@
           ]
         },
         {
-          "bone": "thighL",
+          "bone": "thighR",
           "keys": [
             {
               "t": 0,
@@ -1856,7 +2003,7 @@
           ]
         },
         {
-          "bone": "calfL",
+          "bone": "calfR",
           "keys": [
             {
               "t": 0,
@@ -1880,7 +2027,7 @@
           ]
         },
         {
-          "bone": "thighR",
+          "bone": "thighL",
           "keys": [
             {
               "t": 0,
@@ -1904,7 +2051,7 @@
           ]
         },
         {
-          "bone": "calfR",
+          "bone": "calfL",
           "keys": [
             {
               "t": 0,
@@ -1928,7 +2075,7 @@
           ]
         },
         {
-          "bone": "armUL",
+          "bone": "armUR",
           "keys": [
             {
               "t": 0,
@@ -1952,7 +2099,7 @@
           ]
         },
         {
-          "bone": "armUR",
+          "bone": "armUL",
           "keys": [
             {
               "t": 0,
@@ -1976,7 +2123,7 @@
           ]
         },
         {
-          "bone": "armFL",
+          "bone": "armFR",
           "keys": [
             {
               "t": 0,
@@ -2000,7 +2147,7 @@
           ]
         },
         {
-          "bone": "armFR",
+          "bone": "armFL",
           "keys": [
             {
               "t": 0,
@@ -2055,7 +2202,7 @@
       "loop": false,
       "tracks": [
         {
-          "bone": "thighL",
+          "bone": "thighR",
           "keys": [
             {
               "t": 0,
@@ -2071,12 +2218,12 @@
             },
             {
               "t": 420,
-              "rot": 0
+              "rot": 26
             }
           ]
         },
         {
-          "bone": "thighR",
+          "bone": "thighL",
           "keys": [
             {
               "t": 0,
@@ -2092,28 +2239,7 @@
             },
             {
               "t": 420,
-              "rot": 0
-            }
-          ]
-        },
-        {
-          "bone": "calfL",
-          "keys": [
-            {
-              "t": 0,
-              "rot": 0
-            },
-            {
-              "t": 120,
               "rot": -26
-            },
-            {
-              "t": 300,
-              "rot": -10
-            },
-            {
-              "t": 420,
-              "rot": 0
             }
           ]
         },
@@ -2134,24 +2260,28 @@
             },
             {
               "t": 420,
-              "rot": 0
+              "rot": -18
             }
           ]
         },
         {
-          "bone": "armUL",
+          "bone": "calfL",
           "keys": [
             {
               "t": 0,
               "rot": 0
             },
             {
-              "t": 140,
-              "rot": -46
+              "t": 120,
+              "rot": -26
+            },
+            {
+              "t": 300,
+              "rot": -10
             },
             {
               "t": 420,
-              "rot": 0
+              "rot": -18
             }
           ]
         },
@@ -2164,11 +2294,28 @@
             },
             {
               "t": 140,
+              "rot": -46
+            },
+            {
+              "t": 420,
+              "rot": -18
+            }
+          ]
+        },
+        {
+          "bone": "armUL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0
+            },
+            {
+              "t": 140,
               "rot": 46
             },
             {
               "t": 420,
-              "rot": 0
+              "rot": 18
             }
           ]
         },
@@ -2207,15 +2354,34 @@
       "loop": false,
       "tracks": [
         {
+          "bone": "torso",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -8
+            },
+            {
+              "t": 160,
+              "rot": 10,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
           "bone": "armUR",
           "keys": [
             {
               "t": 0,
-              "rot": -70
+              "rot": 70
             },
             {
               "t": 160,
-              "rot": 55,
+              "rot": -55,
               "ease": "easeInOut"
             },
             {
@@ -2230,30 +2396,13 @@
           "keys": [
             {
               "t": 0,
-              "rot": -10
+              "rot": 27,
+              "x": 0.338726,
+              "y": 12.071998342066294
             },
             {
               "t": 160,
-              "rot": 20,
-              "ease": "easeInOut"
-            },
-            {
-              "t": 400,
-              "rot": 0,
-              "ease": "easeInOut"
-            }
-          ]
-        },
-        {
-          "bone": "torso",
-          "keys": [
-            {
-              "t": 0,
-              "rot": -8
-            },
-            {
-              "t": 160,
-              "rot": 10,
+              "rot": -20,
               "ease": "easeInOut"
             },
             {
@@ -2278,13 +2427,18 @@
               "rot": 0
             },
             {
+              "t": 225,
+              "rot": 17,
+              "ease": "easeInOut"
+            },
+            {
               "t": 450,
               "rot": 34,
               "ease": "easeInOut"
             },
             {
-              "t": 900,
-              "rot": 0,
+              "t": 675,
+              "rot": 17,
               "ease": "easeInOut"
             }
           ]
@@ -2297,13 +2451,18 @@
               "rot": 0
             },
             {
-              "t": 450,
-              "rot": 62,
+              "t": 225,
+              "rot": -31,
               "ease": "easeInOut"
             },
             {
-              "t": 900,
-              "rot": 0,
+              "t": 450,
+              "rot": -62,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 675,
+              "rot": -31,
               "ease": "easeInOut"
             }
           ]
@@ -2316,13 +2475,18 @@
               "rot": 0
             },
             {
-              "t": 450,
-              "rot": 18,
+              "t": 225,
+              "rot": -9,
               "ease": "easeInOut"
             },
             {
-              "t": 900,
-              "rot": 0,
+              "t": 450,
+              "rot": -18,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 675,
+              "rot": -9,
               "ease": "easeInOut"
             }
           ]
@@ -2335,21 +2499,50 @@
       "loop": true,
       "tracks": [
         {
+          "bone": "torso",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -6
+            },
+            {
+              "t": 275,
+              "rot": 5,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 550,
+              "rot": 16,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 825,
+              "rot": 5,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
           "bone": "armUR",
           "keys": [
             {
               "t": 0,
-              "rot": -95,
+              "rot": 95,
               "ease": "easeInOut"
             },
             {
-              "t": 480,
-              "rot": 70,
+              "t": 275,
+              "rot": 12.5,
               "ease": "easeInOut"
             },
             {
-              "t": 1100,
-              "rot": -95,
+              "t": 550,
+              "rot": -70,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 825,
+              "rot": 12.5,
               "ease": "easeInOut"
             }
           ]
@@ -2359,36 +2552,22 @@
           "keys": [
             {
               "t": 0,
-              "rot": -20,
+              "rot": 20,
               "ease": "easeInOut"
             },
             {
-              "t": 480,
-              "rot": 15,
+              "t": 275,
+              "rot": 2.5,
               "ease": "easeInOut"
             },
             {
-              "t": 1100,
-              "rot": -20,
-              "ease": "easeInOut"
-            }
-          ]
-        },
-        {
-          "bone": "torso",
-          "keys": [
-            {
-              "t": 0,
-              "rot": -6
-            },
-            {
-              "t": 480,
-              "rot": 16,
+              "t": 550,
+              "rot": -15,
               "ease": "easeInOut"
             },
             {
-              "t": 1100,
-              "rot": -6,
+              "t": 825,
+              "rot": 2.5,
               "ease": "easeInOut"
             }
           ]
@@ -2401,20 +2580,49 @@
       "loop": true,
       "tracks": [
         {
+          "bone": "armUL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 30
+            },
+            {
+              "t": 200,
+              "rot": 20,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "rot": 10,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "rot": 20,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
           "bone": "armUR",
           "keys": [
             {
               "t": 0,
-              "rot": -70
+              "rot": 70
             },
             {
-              "t": 300,
-              "rot": 55,
+              "t": 200,
+              "rot": 7.5,
               "ease": "easeInOut"
             },
             {
-              "t": 800,
-              "rot": -70,
+              "t": 400,
+              "rot": -55,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "rot": 7.5,
               "ease": "easeInOut"
             }
           ]
@@ -2424,35 +2632,21 @@
           "keys": [
             {
               "t": 0,
-              "rot": -8
+              "rot": 8
             },
             {
-              "t": 300,
-              "rot": 12,
+              "t": 200,
+              "rot": -2,
               "ease": "easeInOut"
             },
             {
-              "t": 800,
-              "rot": -8,
-              "ease": "easeInOut"
-            }
-          ]
-        },
-        {
-          "bone": "armUL",
-          "keys": [
-            {
-              "t": 0,
-              "rot": -30
-            },
-            {
-              "t": 300,
-              "rot": -10,
+              "t": 400,
+              "rot": -12,
               "ease": "easeInOut"
             },
             {
-              "t": 800,
-              "rot": -30,
+              "t": 600,
+              "rot": -2,
               "ease": "easeInOut"
             }
           ]
@@ -2465,21 +2659,50 @@
       "loop": true,
       "tracks": [
         {
+          "bone": "torso",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0
+            },
+            {
+              "t": 550,
+              "rot": 2,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1100,
+              "rot": 4,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1650,
+              "rot": 3,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
           "bone": "armUR",
           "keys": [
             {
               "t": 0,
-              "rot": -40,
+              "rot": 40,
               "ease": "easeInOut"
             },
             {
-              "t": 300,
-              "rot": 30,
+              "t": 550,
+              "rot": 5,
               "ease": "easeInOut"
             },
             {
-              "t": 2200,
-              "rot": -12,
+              "t": 1100,
+              "rot": -30,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1650,
+              "rot": -9,
               "ease": "easeInOut"
             }
           ]
@@ -2489,36 +2712,22 @@
           "keys": [
             {
               "t": 0,
-              "rot": -15,
+              "rot": 15,
               "ease": "easeInOut"
             },
             {
-              "t": 300,
-              "rot": 20,
+              "t": 550,
+              "rot": -2.5,
               "ease": "easeInOut"
             },
             {
-              "t": 2200,
-              "rot": 0,
-              "ease": "easeInOut"
-            }
-          ]
-        },
-        {
-          "bone": "torso",
-          "keys": [
-            {
-              "t": 0,
-              "rot": 0
-            },
-            {
-              "t": 300,
-              "rot": 4,
+              "t": 1100,
+              "rot": -20,
               "ease": "easeInOut"
             },
             {
-              "t": 2200,
-              "rot": 2,
+              "t": 1650,
+              "rot": -10,
               "ease": "easeInOut"
             }
           ]
@@ -2531,18 +2740,27 @@
       "loop": true,
       "tracks": [
         {
-          "bone": "armUL",
+          "bone": "armUR",
           "keys": [
             {
               "t": 0,
               "rot": 170,
-              "x": -7,
-              "y": -16,
+              "x": -7.721742581409798,
+              "y": -20.21800754458547,
               "scaleX": 1,
               "scaleY": 1
             },
             {
-              "t": 233,
+              "t": 175,
+              "rot": 137.5,
+              "x": -7,
+              "y": -16,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 350,
               "rot": 105,
               "x": -7,
               "y": -16,
@@ -2551,8 +2769,8 @@
               "ease": "easeInOut"
             },
             {
-              "t": 467,
-              "rot": 170,
+              "t": 525,
+              "rot": 137.5,
               "x": -7,
               "y": -16,
               "scaleX": 1,
@@ -2562,7 +2780,7 @@
           ]
         },
         {
-          "bone": "armUR",
+          "bone": "armUL",
           "keys": [
             {
               "t": 0,
@@ -2573,50 +2791,28 @@
               "scaleY": 1
             },
             {
-              "t": 233,
+              "t": 175,
+              "rot": -137.5,
+              "x": 7,
+              "y": -16,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 351,
               "rot": -170,
+              "x": 8.31263090571555,
+              "y": -21.939444427331598,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 525,
+              "rot": -137.5,
               "x": 7,
               "y": -16,
-              "scaleX": 1,
-              "scaleY": 1,
-              "ease": "easeInOut"
-            },
-            {
-              "t": 467,
-              "rot": -105,
-              "x": 7,
-              "y": -16,
-              "scaleX": 1,
-              "scaleY": 1,
-              "ease": "easeInOut"
-            }
-          ]
-        },
-        {
-          "bone": "armFL",
-          "keys": [
-            {
-              "t": 0,
-              "rot": 10,
-              "x": 0,
-              "y": 12,
-              "scaleX": 1,
-              "scaleY": 1
-            },
-            {
-              "t": 233,
-              "rot": 60,
-              "x": 0,
-              "y": 12,
-              "scaleX": 1,
-              "scaleY": 1,
-              "ease": "easeInOut"
-            },
-            {
-              "t": 467,
-              "rot": 10,
-              "x": 0,
-              "y": 12,
               "scaleX": 1,
               "scaleY": 1,
               "ease": "easeInOut"
@@ -2628,15 +2824,15 @@
           "keys": [
             {
               "t": 0,
-              "rot": -60,
+              "rot": 10,
               "x": 0,
               "y": 12,
               "scaleX": 1,
               "scaleY": 1
             },
             {
-              "t": 233,
-              "rot": -10,
+              "t": 175,
+              "rot": 35,
               "x": 0,
               "y": 12,
               "scaleX": 1,
@@ -2644,8 +2840,17 @@
               "ease": "easeInOut"
             },
             {
-              "t": 467,
-              "rot": -60,
+              "t": 351,
+              "rot": 60,
+              "x": 2.689889535619809,
+              "y": 11.428165857819726,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 525,
+              "rot": 35,
               "x": 0,
               "y": 12,
               "scaleX": 1,
@@ -2655,30 +2860,39 @@
           ]
         },
         {
-          "bone": "thighL",
+          "bone": "armFL",
           "keys": [
             {
               "t": 0,
-              "rot": 0,
-              "x": -5,
-              "y": -1,
+              "rot": -67.2,
+              "x": -5.988194163150461,
+              "y": 12.516266079082044,
               "scaleX": 1,
               "scaleY": 1
             },
             {
-              "t": 233,
-              "rot": 0,
-              "x": -5,
-              "y": -10,
+              "t": 175,
+              "rot": -35,
+              "x": 0,
+              "y": 12,
               "scaleX": 1,
               "scaleY": 1,
               "ease": "easeInOut"
             },
             {
-              "t": 467,
-              "rot": 0,
-              "x": -5,
-              "y": -1,
+              "t": 350,
+              "rot": -10,
+              "x": 0,
+              "y": 12,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 525,
+              "rot": -35,
+              "x": 0,
+              "y": 12,
               "scaleX": 1,
               "scaleY": 1,
               "ease": "easeInOut"
@@ -2691,13 +2905,62 @@
             {
               "t": 0,
               "rot": 0,
+              "x": -5,
+              "y": -1,
+              "scaleX": 1,
+              "scaleY": 1
+            },
+            {
+              "t": 175,
+              "rot": 0,
+              "x": -5,
+              "y": -5.5,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 350,
+              "rot": 0,
+              "x": -5,
+              "y": -10,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 525,
+              "rot": 0,
+              "x": -5,
+              "y": -5.5,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "thighL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
               "x": 5,
               "y": -10,
               "scaleX": 1,
               "scaleY": 1
             },
             {
-              "t": 233,
+              "t": 175,
+              "rot": 0,
+              "x": 5,
+              "y": -5.5,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 350,
               "rot": 0,
               "x": 5,
               "y": -1,
@@ -2706,41 +2969,10 @@
               "ease": "easeInOut"
             },
             {
-              "t": 467,
+              "t": 525,
               "rot": 0,
               "x": 5,
-              "y": -10,
-              "scaleX": 1,
-              "scaleY": 1,
-              "ease": "easeInOut"
-            }
-          ]
-        },
-        {
-          "bone": "calfL",
-          "keys": [
-            {
-              "t": 0,
-              "rot": 0,
-              "x": -3.5020441417076125,
-              "y": 9.999046067203114,
-              "scaleX": 1,
-              "scaleY": 1
-            },
-            {
-              "t": 233,
-              "x": -8.290257307139735,
-              "y": 5.715901773596805,
-              "rot": 0,
-              "scaleX": 1,
-              "scaleY": 1,
-              "ease": "linear"
-            },
-            {
-              "t": 467,
-              "rot": 0,
-              "x": 0,
-              "y": 13,
+              "y": -5.5,
               "scaleX": 1,
               "scaleY": 1,
               "ease": "easeInOut"
@@ -2752,6 +2984,46 @@
           "keys": [
             {
               "t": 0,
+              "rot": 0,
+              "x": -3.5020441417076125,
+              "y": 9.999046067203114,
+              "scaleX": 1,
+              "scaleY": 1
+            },
+            {
+              "t": 175,
+              "rot": 0,
+              "x": -5.9,
+              "y": 7.86,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "linear"
+            },
+            {
+              "t": 350,
+              "x": -8.290257307139735,
+              "y": 5.715901773596805,
+              "rot": 0,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "linear"
+            },
+            {
+              "t": 525,
+              "x": -4.15,
+              "y": 9.36,
+              "rot": 0,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "calfL",
+          "keys": [
+            {
+              "t": 0,
               "rot": -4.8,
               "x": 8.5,
               "y": 8.5,
@@ -2759,7 +3031,16 @@
               "scaleY": 1
             },
             {
-              "t": 233,
+              "t": 175,
+              "rot": -2.4,
+              "x": 4.25,
+              "y": 10.75,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 350,
               "rot": 0,
               "x": 0,
               "y": 13,
@@ -2768,13 +3049,12 @@
               "ease": "easeInOut"
             },
             {
-              "t": 467,
-              "rot": -135,
-              "x": 0,
-              "y": 13,
+              "t": 525,
+              "x": 6.920251980673806,
+              "y": 7.03256452249713,
+              "rot": -3.1749852498845765,
               "scaleX": 1,
-              "scaleY": 1,
-              "ease": "easeInOut"
+              "scaleY": 1
             }
           ]
         },
@@ -2790,7 +3070,16 @@
               "scaleY": 1
             },
             {
-              "t": 233,
+              "t": 175,
+              "rot": 0,
+              "x": 0,
+              "y": -2,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 350,
               "rot": -3,
               "x": 0,
               "y": -2,
@@ -2799,8 +3088,8 @@
               "ease": "easeInOut"
             },
             {
-              "t": 467,
-              "rot": 3,
+              "t": 525,
+              "rot": 0,
               "x": 0,
               "y": -2,
               "scaleX": 1,
@@ -2821,7 +3110,16 @@
               "scaleY": 1
             },
             {
-              "t": 233,
+              "t": 175,
+              "rot": 0,
+              "x": 0,
+              "y": -27.5,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 350,
               "rot": 0,
               "x": 0,
               "y": -30,
@@ -2830,10 +3128,10 @@
               "ease": "easeInOut"
             },
             {
-              "t": 467,
+              "t": 525,
               "rot": 0,
               "x": 0,
-              "y": -25,
+              "y": -27.5,
               "scaleX": 1,
               "scaleY": 1,
               "ease": "easeInOut"
@@ -2856,15 +3154,21 @@
               "y": -8
             },
             {
+              "t": 600,
+              "rot": 86,
+              "y": -8.5,
+              "ease": "easeInOut"
+            },
+            {
               "t": 1200,
               "rot": 87,
               "y": -9,
               "ease": "easeInOut"
             },
             {
-              "t": 2400,
-              "rot": 85,
-              "y": -8,
+              "t": 1800,
+              "rot": 86,
+              "y": -8.5,
               "ease": "easeInOut"
             }
           ]
@@ -2877,23 +3181,19 @@
               "rot": 6
             },
             {
+              "t": 600,
+              "rot": 7,
+              "ease": "easeInOut"
+            },
+            {
               "t": 1200,
               "rot": 8,
               "ease": "easeInOut"
             },
             {
-              "t": 2400,
-              "rot": 6,
+              "t": 1800,
+              "rot": 7,
               "ease": "easeInOut"
-            }
-          ]
-        },
-        {
-          "bone": "thighL",
-          "keys": [
-            {
-              "t": 0,
-              "rot": 8
             }
           ]
         },
@@ -2902,16 +3202,16 @@
           "keys": [
             {
               "t": 0,
-              "rot": -6
+              "rot": 8
             }
           ]
         },
         {
-          "bone": "calfL",
+          "bone": "thighL",
           "keys": [
             {
               "t": 0,
-              "rot": -4
+              "rot": -6
             }
           ]
         },
@@ -2920,12 +3220,21 @@
           "keys": [
             {
               "t": 0,
+              "rot": -4
+            }
+          ]
+        },
+        {
+          "bone": "calfL",
+          "keys": [
+            {
+              "t": 0,
               "rot": 4
             }
           ]
         },
         {
-          "bone": "armUL",
+          "bone": "armUR",
           "keys": [
             {
               "t": 0,
@@ -2934,7 +3243,7 @@
           ]
         },
         {
-          "bone": "armUR",
+          "bone": "armUL",
           "keys": [
             {
               "t": 0,
@@ -2958,21 +3267,27 @@
               "y": -16
             },
             {
+              "t": 300,
+              "rot": 87,
+              "y": -17.5,
+              "ease": "easeInOut"
+            },
+            {
               "t": 600,
               "rot": 86,
               "y": -19,
               "ease": "easeInOut"
             },
             {
-              "t": 1200,
-              "rot": 88,
-              "y": -16,
+              "t": 900,
+              "rot": 87,
+              "y": -17.5,
               "ease": "easeInOut"
             }
           ]
         },
         {
-          "bone": "thighL",
+          "bone": "thighR",
           "keys": [
             {
               "t": 0,
@@ -2981,7 +3296,7 @@
           ]
         },
         {
-          "bone": "thighR",
+          "bone": "thighL",
           "keys": [
             {
               "t": 0,
@@ -3059,7 +3374,7 @@
           ]
         },
         {
-          "bone": "thighL",
+          "bone": "thighR",
           "keys": [
             {
               "t": 0,
@@ -3077,7 +3392,7 @@
           ]
         },
         {
-          "bone": "thighR",
+          "bone": "thighL",
           "keys": [
             {
               "t": 0,
@@ -3095,7 +3410,7 @@
           ]
         },
         {
-          "bone": "armUL",
+          "bone": "armUR",
           "keys": [
             {
               "t": 0,
@@ -3113,7 +3428,7 @@
           ]
         },
         {
-          "bone": "armUR",
+          "bone": "armUL",
           "keys": [
             {
               "t": 0,
@@ -3145,13 +3460,18 @@
               "rot": -3
             },
             {
-              "t": 733,
+              "t": 550,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1100,
               "rot": 3,
               "ease": "easeInOut"
             },
             {
-              "t": 1467,
-              "rot": -3,
+              "t": 1650,
+              "rot": 0,
               "ease": "easeInOut"
             }
           ]
@@ -3164,13 +3484,18 @@
               "rot": -2
             },
             {
-              "t": 733,
+              "t": 550,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1100,
               "rot": 2,
               "ease": "easeInOut"
             },
             {
-              "t": 1467,
-              "rot": -2,
+              "t": 1650,
+              "rot": 0,
               "ease": "easeInOut"
             }
           ]
@@ -3183,13 +3508,18 @@
               "y": -34
             },
             {
-              "t": 733,
+              "t": 550,
+              "y": -38,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1100,
               "y": -42,
               "ease": "easeInOut"
             },
             {
-              "t": 1467,
-              "y": -34,
+              "t": 1650,
+              "y": -38,
               "ease": "easeInOut"
             }
           ]
@@ -3202,177 +3532,42 @@
       "loop": true,
       "tracks": [
         {
-          "bone": "thighL",
-          "keys": [
-            {
-              "t": 0,
-              "ease": "easeInOut",
-              "rot": 14
-            },
-            {
-              "t": 200,
-              "ease": "easeInOut",
-              "rot": 0
-            },
-            {
-              "t": 400,
-              "ease": "easeInOut",
-              "rot": -14
-            },
-            {
-              "t": 600,
-              "ease": "easeInOut",
-              "rot": 0
-            }
-          ]
-        },
-        {
-          "bone": "thighR",
-          "keys": [
-            {
-              "t": 0,
-              "ease": "easeInOut",
-              "rot": -14
-            },
-            {
-              "t": 200,
-              "ease": "easeInOut",
-              "rot": 0
-            },
-            {
-              "t": 400,
-              "ease": "easeInOut",
-              "rot": 14
-            },
-            {
-              "t": 600,
-              "ease": "easeInOut",
-              "rot": 0
-            }
-          ]
-        },
-        {
-          "bone": "calfL",
-          "keys": [
-            {
-              "t": 0,
-              "ease": "easeInOut",
-              "rot": -8.4
-            },
-            {
-              "t": 200,
-              "ease": "easeInOut",
-              "rot": 0
-            },
-            {
-              "t": 400,
-              "ease": "easeInOut",
-              "rot": 8.4
-            },
-            {
-              "t": 600,
-              "ease": "easeInOut",
-              "rot": 0
-            }
-          ]
-        },
-        {
-          "bone": "calfR",
-          "keys": [
-            {
-              "t": 0,
-              "ease": "easeInOut",
-              "rot": 8.4
-            },
-            {
-              "t": 200,
-              "ease": "easeInOut",
-              "rot": 0
-            },
-            {
-              "t": 400,
-              "ease": "easeInOut",
-              "rot": -8.4
-            },
-            {
-              "t": 600,
-              "ease": "easeInOut",
-              "rot": 0
-            }
-          ]
-        },
-        {
-          "bone": "armUL",
-          "keys": [
-            {
-              "t": 0,
-              "ease": "easeInOut",
-              "rot": -9.799999999999999
-            },
-            {
-              "t": 200,
-              "ease": "easeInOut",
-              "rot": 0
-            },
-            {
-              "t": 400,
-              "ease": "easeInOut",
-              "rot": 9.799999999999999
-            },
-            {
-              "t": 600,
-              "ease": "easeInOut",
-              "rot": 0
-            }
-          ]
-        },
-        {
-          "bone": "armUR",
-          "keys": [
-            {
-              "t": 0,
-              "ease": "easeInOut",
-              "rot": 9.799999999999999
-            },
-            {
-              "t": 200,
-              "ease": "easeInOut",
-              "rot": 0
-            },
-            {
-              "t": 400,
-              "ease": "easeInOut",
-              "rot": -9.799999999999999
-            },
-            {
-              "t": 600,
-              "ease": "easeInOut",
-              "rot": 0
-            }
-          ]
-        },
-        {
           "bone": "hips",
           "keys": [
             {
               "t": 0,
-              "ease": "easeInOut",
-              "y": -26
+              "rot": 0,
+              "x": 0,
+              "y": -28.7,
+              "scaleX": 1,
+              "scaleY": 1
             },
             {
               "t": 200,
-              "ease": "easeInOut",
-              "y": -28
+              "rot": 0,
+              "x": 0,
+              "y": -29.3,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
             },
             {
               "t": 400,
-              "ease": "easeInOut",
-              "y": -26
+              "rot": 0,
+              "x": 0,
+              "y": -28.7,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
             },
             {
               "t": 600,
-              "ease": "easeInOut",
-              "y": -28
+              "rot": 0,
+              "x": 0,
+              "y": -29.3,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
             }
           ]
         },
@@ -3381,23 +3576,278 @@
           "keys": [
             {
               "t": 0,
-              "ease": "easeInOut",
-              "rot": 2
+              "rot": 4,
+              "x": 0,
+              "y": -2,
+              "scaleX": 1,
+              "scaleY": 1
             },
             {
               "t": 200,
-              "ease": "easeInOut",
-              "rot": 0
+              "rot": 4,
+              "x": 0,
+              "y": -2,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
             },
             {
               "t": 400,
-              "ease": "easeInOut",
-              "rot": -2
+              "rot": 4,
+              "x": 0,
+              "y": -2,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
             },
             {
               "t": 600,
-              "ease": "easeInOut",
-              "rot": 0
+              "rot": 4,
+              "x": 0,
+              "y": -2,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "thighL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "x": -5,
+              "y": -3.5,
+              "scaleX": 1,
+              "scaleY": 1
+            },
+            {
+              "t": 200,
+              "rot": 0,
+              "x": -5,
+              "y": -1,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "rot": 0,
+              "x": -5,
+              "y": -1,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "rot": 0,
+              "x": -5,
+              "y": -1,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "thighR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "x": 5,
+              "y": -1,
+              "scaleX": 1,
+              "scaleY": 1
+            },
+            {
+              "t": 200,
+              "rot": 0,
+              "x": 5,
+              "y": -1,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "rot": 0,
+              "x": 5,
+              "y": -3.5,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "rot": 0,
+              "x": 5,
+              "y": -1,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "calfL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -8,
+              "x": 0,
+              "y": 13,
+              "scaleX": 1,
+              "scaleY": 1
+            },
+            {
+              "t": 200,
+              "rot": 0,
+              "x": 0,
+              "y": 13,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "rot": 0,
+              "x": 0,
+              "y": 13,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "rot": 0,
+              "x": 0,
+              "y": 13,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "calfR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "x": 0,
+              "y": 13,
+              "scaleX": 1,
+              "scaleY": 1
+            },
+            {
+              "t": 200,
+              "rot": 0,
+              "x": 0,
+              "y": 13,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "rot": 8,
+              "x": 0,
+              "y": 13,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "rot": 0,
+              "x": 0,
+              "y": 13,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "armUL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 12,
+              "x": -7,
+              "y": -16,
+              "scaleX": 1,
+              "scaleY": 1
+            },
+            {
+              "t": 200,
+              "rot": 0,
+              "x": -7,
+              "y": -16,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "rot": -12,
+              "x": -7,
+              "y": -16,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "rot": 0,
+              "x": -7,
+              "y": -16,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "armUR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -12,
+              "x": 7,
+              "y": -16,
+              "scaleX": 1,
+              "scaleY": 1
+            },
+            {
+              "t": 200,
+              "rot": 0,
+              "x": 7,
+              "y": -16,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "rot": 12,
+              "x": 7,
+              "y": -16,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "rot": 0,
+              "x": 7,
+              "y": -16,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
             }
           ]
         }
@@ -3409,177 +3859,42 @@
       "loop": true,
       "tracks": [
         {
-          "bone": "thighL",
-          "keys": [
-            {
-              "t": 0,
-              "ease": "easeInOut",
-              "rot": -14
-            },
-            {
-              "t": 200,
-              "ease": "easeInOut",
-              "rot": 0
-            },
-            {
-              "t": 400,
-              "ease": "easeInOut",
-              "rot": 14
-            },
-            {
-              "t": 600,
-              "ease": "easeInOut",
-              "rot": 0
-            }
-          ]
-        },
-        {
-          "bone": "thighR",
-          "keys": [
-            {
-              "t": 0,
-              "ease": "easeInOut",
-              "rot": 14
-            },
-            {
-              "t": 200,
-              "ease": "easeInOut",
-              "rot": 0
-            },
-            {
-              "t": 400,
-              "ease": "easeInOut",
-              "rot": -14
-            },
-            {
-              "t": 600,
-              "ease": "easeInOut",
-              "rot": 0
-            }
-          ]
-        },
-        {
-          "bone": "calfL",
-          "keys": [
-            {
-              "t": 0,
-              "ease": "easeInOut",
-              "rot": 8.4
-            },
-            {
-              "t": 200,
-              "ease": "easeInOut",
-              "rot": 0
-            },
-            {
-              "t": 400,
-              "ease": "easeInOut",
-              "rot": -8.4
-            },
-            {
-              "t": 600,
-              "ease": "easeInOut",
-              "rot": 0
-            }
-          ]
-        },
-        {
-          "bone": "calfR",
-          "keys": [
-            {
-              "t": 0,
-              "ease": "easeInOut",
-              "rot": -8.4
-            },
-            {
-              "t": 200,
-              "ease": "easeInOut",
-              "rot": 0
-            },
-            {
-              "t": 400,
-              "ease": "easeInOut",
-              "rot": 8.4
-            },
-            {
-              "t": 600,
-              "ease": "easeInOut",
-              "rot": 0
-            }
-          ]
-        },
-        {
-          "bone": "armUL",
-          "keys": [
-            {
-              "t": 0,
-              "ease": "easeInOut",
-              "rot": 9.799999999999999
-            },
-            {
-              "t": 200,
-              "ease": "easeInOut",
-              "rot": 0
-            },
-            {
-              "t": 400,
-              "ease": "easeInOut",
-              "rot": -9.799999999999999
-            },
-            {
-              "t": 600,
-              "ease": "easeInOut",
-              "rot": 0
-            }
-          ]
-        },
-        {
-          "bone": "armUR",
-          "keys": [
-            {
-              "t": 0,
-              "ease": "easeInOut",
-              "rot": -9.799999999999999
-            },
-            {
-              "t": 200,
-              "ease": "easeInOut",
-              "rot": 0
-            },
-            {
-              "t": 400,
-              "ease": "easeInOut",
-              "rot": 9.799999999999999
-            },
-            {
-              "t": 600,
-              "ease": "easeInOut",
-              "rot": 0
-            }
-          ]
-        },
-        {
           "bone": "hips",
           "keys": [
             {
               "t": 0,
-              "ease": "easeInOut",
-              "y": -26
+              "rot": 0,
+              "x": 0,
+              "y": -28.7,
+              "scaleX": 1,
+              "scaleY": 1
             },
             {
               "t": 200,
-              "ease": "easeInOut",
-              "y": -28
+              "rot": 0,
+              "x": 0,
+              "y": -29.3,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
             },
             {
               "t": 400,
-              "ease": "easeInOut",
-              "y": -26
+              "rot": 0,
+              "x": 0,
+              "y": -28.7,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
             },
             {
               "t": 600,
-              "ease": "easeInOut",
-              "y": -28
+              "rot": 0,
+              "x": 0,
+              "y": -29.3,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
             }
           ]
         },
@@ -3588,23 +3903,278 @@
           "keys": [
             {
               "t": 0,
-              "ease": "easeInOut",
-              "rot": -2
+              "rot": 4,
+              "x": 0,
+              "y": -2,
+              "scaleX": 1,
+              "scaleY": 1
             },
             {
               "t": 200,
-              "ease": "easeInOut",
-              "rot": 0
+              "rot": 4,
+              "x": 0,
+              "y": -2,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
             },
             {
               "t": 400,
-              "ease": "easeInOut",
-              "rot": 2
+              "rot": 4,
+              "x": 0,
+              "y": -2,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
             },
             {
               "t": 600,
-              "ease": "easeInOut",
-              "rot": 0
+              "rot": 4,
+              "x": 0,
+              "y": -2,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "thighL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "x": -5,
+              "y": -3.5,
+              "scaleX": 1,
+              "scaleY": 1
+            },
+            {
+              "t": 200,
+              "rot": 0,
+              "x": -5,
+              "y": -1,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "rot": 0,
+              "x": -5,
+              "y": -1,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "rot": 0,
+              "x": -5,
+              "y": -1,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "thighR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "x": 5,
+              "y": -1,
+              "scaleX": 1,
+              "scaleY": 1
+            },
+            {
+              "t": 200,
+              "rot": 0,
+              "x": 5,
+              "y": -1,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "rot": 0,
+              "x": 5,
+              "y": -3.5,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "rot": 0,
+              "x": 5,
+              "y": -1,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "calfL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -8,
+              "x": 0,
+              "y": 13,
+              "scaleX": 1,
+              "scaleY": 1
+            },
+            {
+              "t": 200,
+              "rot": 0,
+              "x": 0,
+              "y": 13,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "rot": 0,
+              "x": 0,
+              "y": 13,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "rot": 0,
+              "x": 0,
+              "y": 13,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "calfR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "x": 0,
+              "y": 13,
+              "scaleX": 1,
+              "scaleY": 1
+            },
+            {
+              "t": 200,
+              "rot": 0,
+              "x": 0,
+              "y": 13,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "rot": 8,
+              "x": 0,
+              "y": 13,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "rot": 0,
+              "x": 0,
+              "y": 13,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "armUL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 12,
+              "x": -7,
+              "y": -16,
+              "scaleX": 1,
+              "scaleY": 1
+            },
+            {
+              "t": 200,
+              "rot": 0,
+              "x": -7,
+              "y": -16,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "rot": -12,
+              "x": -7,
+              "y": -16,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "rot": 0,
+              "x": -7,
+              "y": -16,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "armUR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -12,
+              "x": 7,
+              "y": -16,
+              "scaleX": 1,
+              "scaleY": 1
+            },
+            {
+              "t": 200,
+              "rot": 0,
+              "x": 7,
+              "y": -16,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "rot": 12,
+              "x": 7,
+              "y": -16,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "rot": 0,
+              "x": 7,
+              "y": -16,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
             }
           ]
         }
@@ -3616,177 +4186,42 @@
       "loop": true,
       "tracks": [
         {
-          "bone": "thighL",
-          "keys": [
-            {
-              "t": 0,
-              "ease": "easeInOut",
-              "rot": 14
-            },
-            {
-              "t": 200,
-              "ease": "easeInOut",
-              "rot": 0
-            },
-            {
-              "t": 400,
-              "ease": "easeInOut",
-              "rot": -14
-            },
-            {
-              "t": 600,
-              "ease": "easeInOut",
-              "rot": 0
-            }
-          ]
-        },
-        {
-          "bone": "thighR",
-          "keys": [
-            {
-              "t": 0,
-              "ease": "easeInOut",
-              "rot": -14
-            },
-            {
-              "t": 200,
-              "ease": "easeInOut",
-              "rot": 0
-            },
-            {
-              "t": 400,
-              "ease": "easeInOut",
-              "rot": 14
-            },
-            {
-              "t": 600,
-              "ease": "easeInOut",
-              "rot": 0
-            }
-          ]
-        },
-        {
-          "bone": "calfL",
-          "keys": [
-            {
-              "t": 0,
-              "ease": "easeInOut",
-              "rot": -8.4
-            },
-            {
-              "t": 200,
-              "ease": "easeInOut",
-              "rot": 0
-            },
-            {
-              "t": 400,
-              "ease": "easeInOut",
-              "rot": 8.4
-            },
-            {
-              "t": 600,
-              "ease": "easeInOut",
-              "rot": 0
-            }
-          ]
-        },
-        {
-          "bone": "calfR",
-          "keys": [
-            {
-              "t": 0,
-              "ease": "easeInOut",
-              "rot": 8.4
-            },
-            {
-              "t": 200,
-              "ease": "easeInOut",
-              "rot": 0
-            },
-            {
-              "t": 400,
-              "ease": "easeInOut",
-              "rot": -8.4
-            },
-            {
-              "t": 600,
-              "ease": "easeInOut",
-              "rot": 0
-            }
-          ]
-        },
-        {
-          "bone": "armUL",
-          "keys": [
-            {
-              "t": 0,
-              "ease": "easeInOut",
-              "rot": -9.799999999999999
-            },
-            {
-              "t": 200,
-              "ease": "easeInOut",
-              "rot": 0
-            },
-            {
-              "t": 400,
-              "ease": "easeInOut",
-              "rot": 9.799999999999999
-            },
-            {
-              "t": 600,
-              "ease": "easeInOut",
-              "rot": 0
-            }
-          ]
-        },
-        {
-          "bone": "armUR",
-          "keys": [
-            {
-              "t": 0,
-              "ease": "easeInOut",
-              "rot": 9.799999999999999
-            },
-            {
-              "t": 200,
-              "ease": "easeInOut",
-              "rot": 0
-            },
-            {
-              "t": 400,
-              "ease": "easeInOut",
-              "rot": -9.799999999999999
-            },
-            {
-              "t": 600,
-              "ease": "easeInOut",
-              "rot": 0
-            }
-          ]
-        },
-        {
           "bone": "hips",
           "keys": [
             {
               "t": 0,
-              "ease": "easeInOut",
-              "y": -26
+              "rot": 0,
+              "x": 0,
+              "y": -28.7,
+              "scaleX": 1,
+              "scaleY": 1
             },
             {
               "t": 200,
-              "ease": "easeInOut",
-              "y": -28
+              "rot": 0,
+              "x": 0,
+              "y": -29.3,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
             },
             {
               "t": 400,
-              "ease": "easeInOut",
-              "y": -26
+              "rot": 0,
+              "x": 0,
+              "y": -28.7,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
             },
             {
               "t": 600,
-              "ease": "easeInOut",
-              "y": -28
+              "rot": 0,
+              "x": 0,
+              "y": -29.3,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
             }
           ]
         },
@@ -3795,23 +4230,278 @@
           "keys": [
             {
               "t": 0,
-              "ease": "easeInOut",
-              "rot": 2
+              "rot": 4,
+              "x": 0,
+              "y": -2,
+              "scaleX": 1,
+              "scaleY": 1
             },
             {
               "t": 200,
-              "ease": "easeInOut",
-              "rot": 0
+              "rot": 4,
+              "x": 0,
+              "y": -2,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
             },
             {
               "t": 400,
-              "ease": "easeInOut",
-              "rot": -2
+              "rot": 4,
+              "x": 0,
+              "y": -2,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
             },
             {
               "t": 600,
-              "ease": "easeInOut",
-              "rot": 0
+              "rot": 4,
+              "x": 0,
+              "y": -2,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "thighL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "x": -5,
+              "y": -3.5,
+              "scaleX": 1,
+              "scaleY": 1
+            },
+            {
+              "t": 200,
+              "rot": 0,
+              "x": -5,
+              "y": -1,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "rot": 0,
+              "x": -5,
+              "y": -1,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "rot": 0,
+              "x": -5,
+              "y": -1,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "thighR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "x": 5,
+              "y": -1,
+              "scaleX": 1,
+              "scaleY": 1
+            },
+            {
+              "t": 200,
+              "rot": 0,
+              "x": 5,
+              "y": -1,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "rot": 0,
+              "x": 5,
+              "y": -3.5,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "rot": 0,
+              "x": 5,
+              "y": -1,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "calfL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 8,
+              "x": 0,
+              "y": 13,
+              "scaleX": 1,
+              "scaleY": 1
+            },
+            {
+              "t": 200,
+              "rot": 0,
+              "x": 0,
+              "y": 13,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "rot": 0,
+              "x": 0,
+              "y": 13,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "rot": 0,
+              "x": 0,
+              "y": 13,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "calfR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "x": 0,
+              "y": 13,
+              "scaleX": 1,
+              "scaleY": 1
+            },
+            {
+              "t": 200,
+              "rot": 0,
+              "x": 0,
+              "y": 13,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "rot": -8,
+              "x": 0,
+              "y": 13,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "rot": 0,
+              "x": 0,
+              "y": 13,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "armUL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 9,
+              "x": -7,
+              "y": -16,
+              "scaleX": 1,
+              "scaleY": 1
+            },
+            {
+              "t": 200,
+              "rot": 0,
+              "x": -7,
+              "y": -16,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "rot": -9,
+              "x": -7,
+              "y": -16,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "rot": 0,
+              "x": -7,
+              "y": -16,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "armUR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -14,
+              "x": 7,
+              "y": -16,
+              "scaleX": 1,
+              "scaleY": 1
+            },
+            {
+              "t": 200,
+              "rot": 0,
+              "x": 7,
+              "y": -16,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "rot": 14,
+              "x": 7,
+              "y": -16,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "rot": 0,
+              "x": 7,
+              "y": -16,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
             }
           ]
         }
@@ -3823,177 +4513,42 @@
       "loop": true,
       "tracks": [
         {
-          "bone": "thighL",
-          "keys": [
-            {
-              "t": 0,
-              "ease": "easeInOut",
-              "rot": -14
-            },
-            {
-              "t": 200,
-              "ease": "easeInOut",
-              "rot": 0
-            },
-            {
-              "t": 400,
-              "ease": "easeInOut",
-              "rot": 14
-            },
-            {
-              "t": 600,
-              "ease": "easeInOut",
-              "rot": 0
-            }
-          ]
-        },
-        {
-          "bone": "thighR",
-          "keys": [
-            {
-              "t": 0,
-              "ease": "easeInOut",
-              "rot": 14
-            },
-            {
-              "t": 200,
-              "ease": "easeInOut",
-              "rot": 0
-            },
-            {
-              "t": 400,
-              "ease": "easeInOut",
-              "rot": -14
-            },
-            {
-              "t": 600,
-              "ease": "easeInOut",
-              "rot": 0
-            }
-          ]
-        },
-        {
-          "bone": "calfL",
-          "keys": [
-            {
-              "t": 0,
-              "ease": "easeInOut",
-              "rot": 8.4
-            },
-            {
-              "t": 200,
-              "ease": "easeInOut",
-              "rot": 0
-            },
-            {
-              "t": 400,
-              "ease": "easeInOut",
-              "rot": -8.4
-            },
-            {
-              "t": 600,
-              "ease": "easeInOut",
-              "rot": 0
-            }
-          ]
-        },
-        {
-          "bone": "calfR",
-          "keys": [
-            {
-              "t": 0,
-              "ease": "easeInOut",
-              "rot": -8.4
-            },
-            {
-              "t": 200,
-              "ease": "easeInOut",
-              "rot": 0
-            },
-            {
-              "t": 400,
-              "ease": "easeInOut",
-              "rot": 8.4
-            },
-            {
-              "t": 600,
-              "ease": "easeInOut",
-              "rot": 0
-            }
-          ]
-        },
-        {
-          "bone": "armUL",
-          "keys": [
-            {
-              "t": 0,
-              "ease": "easeInOut",
-              "rot": 9.799999999999999
-            },
-            {
-              "t": 200,
-              "ease": "easeInOut",
-              "rot": 0
-            },
-            {
-              "t": 400,
-              "ease": "easeInOut",
-              "rot": -9.799999999999999
-            },
-            {
-              "t": 600,
-              "ease": "easeInOut",
-              "rot": 0
-            }
-          ]
-        },
-        {
-          "bone": "armUR",
-          "keys": [
-            {
-              "t": 0,
-              "ease": "easeInOut",
-              "rot": -9.799999999999999
-            },
-            {
-              "t": 200,
-              "ease": "easeInOut",
-              "rot": 0
-            },
-            {
-              "t": 400,
-              "ease": "easeInOut",
-              "rot": 9.799999999999999
-            },
-            {
-              "t": 600,
-              "ease": "easeInOut",
-              "rot": 0
-            }
-          ]
-        },
-        {
           "bone": "hips",
           "keys": [
             {
               "t": 0,
-              "ease": "easeInOut",
-              "y": -26
+              "rot": 0,
+              "x": 0,
+              "y": -28.7,
+              "scaleX": 1,
+              "scaleY": 1
             },
             {
               "t": 200,
-              "ease": "easeInOut",
-              "y": -28
+              "rot": 0,
+              "x": 0,
+              "y": -29.3,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
             },
             {
               "t": 400,
-              "ease": "easeInOut",
-              "y": -26
+              "rot": 0,
+              "x": 0,
+              "y": -28.7,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
             },
             {
               "t": 600,
-              "ease": "easeInOut",
-              "y": -28
+              "rot": 0,
+              "x": 0,
+              "y": -29.3,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
             }
           ]
         },
@@ -4002,23 +4557,278 @@
           "keys": [
             {
               "t": 0,
-              "ease": "easeInOut",
-              "rot": -2
+              "rot": 4,
+              "x": 0,
+              "y": -2,
+              "scaleX": 1,
+              "scaleY": 1
             },
             {
               "t": 200,
-              "ease": "easeInOut",
-              "rot": 0
+              "rot": 4,
+              "x": 0,
+              "y": -2,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
             },
             {
               "t": 400,
-              "ease": "easeInOut",
-              "rot": 2
+              "rot": 4,
+              "x": 0,
+              "y": -2,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
             },
             {
               "t": 600,
-              "ease": "easeInOut",
-              "rot": 0
+              "rot": 4,
+              "x": 0,
+              "y": -2,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "thighL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "x": -5,
+              "y": -3.5,
+              "scaleX": 1,
+              "scaleY": 1
+            },
+            {
+              "t": 200,
+              "rot": 0,
+              "x": -5,
+              "y": -1,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "rot": 0,
+              "x": -5,
+              "y": -1,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "rot": 0,
+              "x": -5,
+              "y": -1,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "thighR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "x": 5,
+              "y": -1,
+              "scaleX": 1,
+              "scaleY": 1
+            },
+            {
+              "t": 200,
+              "rot": 0,
+              "x": 5,
+              "y": -1,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "rot": 0,
+              "x": 5,
+              "y": -3.5,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "rot": 0,
+              "x": 5,
+              "y": -1,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "calfL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 8,
+              "x": 0,
+              "y": 13,
+              "scaleX": 1,
+              "scaleY": 1
+            },
+            {
+              "t": 200,
+              "rot": 0,
+              "x": 0,
+              "y": 13,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "rot": 0,
+              "x": 0,
+              "y": 13,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "rot": 0,
+              "x": 0,
+              "y": 13,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "calfR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "x": 0,
+              "y": 13,
+              "scaleX": 1,
+              "scaleY": 1
+            },
+            {
+              "t": 200,
+              "rot": 0,
+              "x": 0,
+              "y": 13,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "rot": -8,
+              "x": 0,
+              "y": 13,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "rot": 0,
+              "x": 0,
+              "y": 13,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "armUL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 9,
+              "x": -7,
+              "y": -16,
+              "scaleX": 1,
+              "scaleY": 1
+            },
+            {
+              "t": 200,
+              "rot": 0,
+              "x": -7,
+              "y": -16,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "rot": -9,
+              "x": -7,
+              "y": -16,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "rot": 0,
+              "x": -7,
+              "y": -16,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "armUR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -14,
+              "x": 7,
+              "y": -16,
+              "scaleX": 1,
+              "scaleY": 1
+            },
+            {
+              "t": 200,
+              "rot": 0,
+              "x": 7,
+              "y": -16,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "rot": 14,
+              "x": 7,
+              "y": -16,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "rot": 0,
+              "x": 7,
+              "y": -16,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
             }
           ]
         }

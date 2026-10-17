@@ -151,7 +151,7 @@ describe('武器槽位联动（战斗=手持，非战斗=背挂，采集=手持�
     expect(slotVisible(asset, 'axeBack')).toBe(true);      // axe 仍在背上（背包有）
   });
 
-  it('战斗态但主手为空：手持不显示（无武器可拔）', () => {
+  it('战斗态但主手为空：背包有斧头则自动上手（攻击时手持斧头）', () => {
     const asset = buildWeaponSkeleton();
     const entity = buildEntity({
       bag: [{ id: 'tool.worn_axe', toolType: 'axe' }],
@@ -159,8 +159,17 @@ describe('武器槽位联动（战斗=手持，非战斗=背挂，采集=手持�
     });
     const hook = createPlayerSkeletonStateMapper(entity, {});
     hook(buildSkeletonComponent(asset));
-    expect(slotVisible(asset, 'toolHand')).toBe(false);    // 无装备：战斗也不凭空持握
-    expect(slotVisible(asset, 'axeBack')).toBe(true);     // 斧头仍在背上
+    expect(slotVisible(asset, 'toolHand')).toBe(true);     // 背包有斧头：攻击时拿在手上
+    expect(slotVisible(asset, 'axeBack')).toBe(false);     // 拿在手上 → 背挂隐藏
+  });
+
+  it('战斗态且没有任何武器：手持不显示（不凭空持握）', () => {
+    const asset = buildWeaponSkeleton();
+    const entity = buildEntity({ bag: [], drawn: true });
+    const hook = createPlayerSkeletonStateMapper(entity, {});
+    hook(buildSkeletonComponent(asset));
+    expect(slotVisible(asset, 'toolHand')).toBe(false);    // 无装备无背包武器：不显示
+    expect(slotVisible(asset, 'axeBack')).toBe(false);     // 背包无斧头：背挂也隐藏
   });
 
   it('装备变化驱动状态切换：战斗中卸下 axe 后手持隐藏、背挂显示（武器回背包）', () => {

@@ -122,6 +122,7 @@
             <input type="number" id="se-meta-height" min="8" step="1">
             <button id="se-align-ground" title="按静止姿态测量所有可见挂件的最低非透明像素，移动 root 骨骼使其落在地平面（y=0），确立「原点=水平中心+脚底」锚点；Ctrl+Z 可撤销">⌊ 脚底贴地</button>
             <button id="se-reload-data" title="从磁盘重新加载当前骨骼资产（绕过浏览器缓存），丢弃本地未保存修改——外部脚本改动 JSON 后点此立即生效，无需硬刷新页面">⟳ 刷新数据</button>
+            <button id="se-mirror-preview" title="镜像预览：沿角色中轴水平翻转画布，模拟游戏里 sprite.flipX 左向行走渲染——调背挂武器/装备位置时所见即左向所得；再点一次还原">⇋ 镜像</button>
         </div>
         <div class="group">
             <button id="se-select-all" title="全选所有骨骼与挂件（锁定的跳过）">☐ 全选</button>
@@ -187,6 +188,7 @@
                 <button id="se-disp-all" title="图片+骨架：默认视图">图片+骨架</button>
                 <button id="se-disp-bones" title="仅骨架：隐藏挂件，显示骨骼名——调整骨骼动作用">仅骨架</button>
                 <button id="se-disp-images" title="仅图片：隐藏骨骼线（保留所选骨骼细骨形），检查外观用">仅图片</button>
+                <button id="se-disp-weapons" title="显示/隐藏 武器装备：仅控制编辑器画布预览（手持武器+背挂武器），不影响骨骼数据与游戏实际显示">武器装备</button>
             </div>
             <canvas id="se-canvas"></canvas>
         </div>
