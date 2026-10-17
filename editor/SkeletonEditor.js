@@ -254,6 +254,7 @@ export class SkeletonEditor {
       this._renderTimeline();
     });
     $('se-keyframe').addEventListener('click', () => this._keySelectedBone());
+    $('se-loop-tie').addEventListener('click', () => this._appendLoopTieKeys());
     $('se-key-del').addEventListener('click', () => this._deleteSelectedKey());
     $('se-track-add').addEventListener('click', () => this._addTrack());
     $('se-track-del').addEventListener('click', () => this._removeTrack());
@@ -1074,6 +1075,45 @@ export class SkeletonEditor {
       track.keys.push(key);
       track.keys.sort((a, b) => a.t - b.t);
     }
+  }
+
+  /**
+   * 补循环尾帧：在剪辑结尾（t=durationMs）为所有已有轨道补一帧循环闭合帧，
+   * 姿态=各自首帧（运行时 sampleField 在末帧贴结尾时 hold 末帧 → 回绕首帧无跳变）。
+   * 支撑完整循环动作结构（静止→迈左→交叉→迈右→交叉），替代「尾段隐式回插首帧」
+   * 只能做出半步循环的限制；已有结尾帧的轨道跳过（±5ms 容差，不覆盖美术已调姿态）。
+   */
+  _appendLoopTieKeys() {
+    const clip = this._clip();
+    if (!clip) { this._toast('无剪辑', true); return; }
+    if (clip.loop === false) { this._toast('当前剪辑未开启循环，先勾选「循环」', true); return; }
+    const tracks = clip.tracks || [];
+    if (!tracks.length) { this._toast('当前剪辑无轨道，先打关键帧建轨道', true); return; }
+    const duration = clip.durationMs;
+    this._pushHistory();
+    let added = 0;
+    let skipped = 0;
+    for (const track of tracks) {
+      const keys = track.keys || [];
+      if (!keys.length) { skipped++; continue; }
+      if (duration - keys[keys.length - 1].t <= 5) { skipped++; continue; }
+      const first = keys[0];
+      track.keys.push({
+        t: duration,
+        x: first.x ?? 0,
+        y: first.y ?? 0,
+        rot: first.rot ?? 0,
+        scaleX: first.scaleX ?? null,
+        scaleY: first.scaleY ?? null,
+        ease: 'linear'
+      });
+      added++;
+    }
+    this._markDirty();
+    this._afterDocChange();
+    this._toast(added > 0
+      ? `已补循环尾帧（t=${duration}ms，姿态=首帧）：新增 ${added} 轨，跳过 ${skipped} 轨（已有结尾帧）`
+      : '所有轨道已有结尾帧，无需补');
   }
 
   _deleteSelectedKey() {
@@ -4475,8 +4515,10 @@ export class SkeletonEditor {
       const track = trackByBone.get(bone.id) || null;
       // 循环衔接提示：最后关键帧 → 剪辑结尾与首帧自动插值（隐式首帧），
       // 画虚线 + 右端空心菱形，美术一眼看出结尾会平滑回到开头姿态。
+      // 末帧已贴剪辑结尾（补过循环尾帧）时不画：循环直接闭环，无隐式回插段。
       let loopTie = '';
-      if (track && clip.loop !== false && (track.keys || []).length > 0) {
+      if (track && clip.loop !== false && (track.keys || []).length > 0
+        && clip.durationMs - track.keys[track.keys.length - 1].t > 5) {
         const lastLeft = ((track.keys[track.keys.length - 1].t / clip.durationMs) * 100).toFixed(3);
         const firstT = track.keys[0].t;
         loopTie = `<div class="se-tl-loop-tie" style="left:${lastLeft}%" title="循环衔接：此段自动插值回首帧姿态（t=${firstT}ms）"></div>`

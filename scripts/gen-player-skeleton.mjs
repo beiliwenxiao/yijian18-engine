@@ -102,39 +102,42 @@ function buildPlayerSkeleton() {
       ])
     ]));
   }
-  // 行走（3 方向）：髋/膝/臂交替摆 + 躯干起伏（摆幅按像素可见性调大）
+  // 行走（3 方向）：4 组关键帧（接触左 → passing → 接触右 → passing），
+  // 末段（3/4 → duration）由运行时隐式首帧自动回插 = 第 5 组（循环闭环，无 hold 尾）。
+  // 髋/膝/臂交替摆 + 躯干起伏（摆幅按像素可见性调大）
   for (const dir of ['down', 'up', 'side']) {
     const stride = dir === 'side' ? 30 : 22;
+    const passingCalf = -(stride * 0.8 + 2) / 2; // passing 屈膝中位（伸直 -2 与抬腿屈膝的均值）
     clips.push(clip(`walk_${dir}`, 620, true, [
       loopTrack('root', 620, [
-        { y: 0 }, { y: -3, ease: 'easeInOut' }, { y: 0, ease: 'easeInOut' }, { y: -3, ease: 'easeInOut' }, { y: 0, ease: 'easeInOut' }
+        { y: 0 }, { y: -3, ease: 'easeInOut' }, { y: 0, ease: 'easeInOut' }, { y: -3, ease: 'easeInOut' }
       ]),
       loopTrack('torso', 620, [
-        { rot: -3 }, { rot: 3, ease: 'easeInOut' }, { rot: -3, ease: 'easeInOut' }
+        { rot: -3 }, { rot: 0, ease: 'easeInOut' }, { rot: 3, ease: 'easeInOut' }, { rot: 0, ease: 'easeInOut' }
       ]),
       loopTrack('thighL', 620, [
-        { rot: -stride }, { rot: stride, ease: 'easeInOut' }, { rot: -stride, ease: 'easeInOut' }
+        { rot: -stride }, { rot: 0, ease: 'easeInOut' }, { rot: stride, ease: 'easeInOut' }, { rot: 0, ease: 'easeInOut' }
       ]),
       loopTrack('calfL', 620, [
-        { rot: -stride * 0.8 }, { rot: -2, ease: 'easeInOut' }, { rot: -stride * 0.8, ease: 'easeInOut' }
+        { rot: -stride * 0.8 }, { rot: passingCalf, ease: 'easeInOut' }, { rot: -2, ease: 'easeInOut' }, { rot: passingCalf, ease: 'easeInOut' }
       ]),
       loopTrack('thighR', 620, [
-        { rot: stride }, { rot: -stride, ease: 'easeInOut' }, { rot: stride, ease: 'easeInOut' }
+        { rot: stride }, { rot: 0, ease: 'easeInOut' }, { rot: -stride, ease: 'easeInOut' }, { rot: 0, ease: 'easeInOut' }
       ]),
       loopTrack('calfR', 620, [
-        { rot: -2 }, { rot: -stride * 0.8, ease: 'easeInOut' }, { rot: -2, ease: 'easeInOut' }
+        { rot: -2 }, { rot: passingCalf, ease: 'easeInOut' }, { rot: -stride * 0.8, ease: 'easeInOut' }, { rot: passingCalf, ease: 'easeInOut' }
       ]),
       loopTrack('armUL', 620, [
-        { rot: stride * 0.8 }, { rot: -stride * 0.8, ease: 'easeInOut' }, { rot: stride * 0.8, ease: 'easeInOut' }
+        { rot: stride * 0.8 }, { rot: 0, ease: 'easeInOut' }, { rot: -stride * 0.8, ease: 'easeInOut' }, { rot: 0, ease: 'easeInOut' }
       ]),
       loopTrack('armUR', 620, [
-        { rot: -stride * 0.8 }, { rot: stride * 0.8, ease: 'easeInOut' }, { rot: -stride * 0.8, ease: 'easeInOut' }
+        { rot: -stride * 0.8 }, { rot: 0, ease: 'easeInOut' }, { rot: stride * 0.8, ease: 'easeInOut' }, { rot: 0, ease: 'easeInOut' }
       ]),
       loopTrack('armFL', 620, [
-        { rot: stride * 0.28 }, { rot: -stride * 0.28, ease: 'easeInOut' }, { rot: stride * 0.28, ease: 'easeInOut' }
+        { rot: stride * 0.28 }, { rot: 0, ease: 'easeInOut' }, { rot: -stride * 0.28, ease: 'easeInOut' }, { rot: 0, ease: 'easeInOut' }
       ]),
       loopTrack('armFR', 620, [
-        { rot: -stride * 0.28 }, { rot: stride * 0.28, ease: 'easeInOut' }, { rot: -stride * 0.28, ease: 'easeInOut' }
+        { rot: -stride * 0.28 }, { rot: 0, ease: 'easeInOut' }, { rot: stride * 0.28, ease: 'easeInOut' }, { rot: 0, ease: 'easeInOut' }
       ])
     ]));
   }
