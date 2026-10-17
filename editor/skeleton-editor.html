@@ -69,7 +69,9 @@
         .se-img-item img { width: 26px; height: 26px; object-fit: contain; background: #0d1226; border: 1px solid #26355c; border-radius: 3px; flex: none; }
         .se-img-item .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #9aa5c0; }
         .se-img-item button { padding: 2px 5px; font-size: 10px; }
-        .se-slot-item .zbtn { padding: 1px 5px; font-size: 10px; line-height: 1; }
+        /* 槽位列表拖拽排序：插入位置指示线（inset 阴影不挤占布局） */
+        .se-slot-item.drop-above { box-shadow: inset 0 2px 0 #4CAF50; }
+        .se-slot-item.drop-below { box-shadow: inset 0 -2px 0 #4CAF50; }
 
         .se-inspector .row { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
         .se-inspector .row label { min-width: 52px; }
@@ -118,6 +120,7 @@
             <label>设计尺寸</label>
             <input type="number" id="se-meta-width" min="8" step="1"> ×
             <input type="number" id="se-meta-height" min="8" step="1">
+            <button id="se-align-ground" title="按静止姿态测量所有可见挂件的最低非透明像素，移动 root 骨骼使其落在地平面（y=0），确立「原点=水平中心+脚底」锚点；Ctrl+Z 可撤销">⌊ 脚底贴地</button>
         </div>
         <div class="group">
             <button id="se-select-all" title="全选所有骨骼与挂件（锁定的跳过）">☐ 全选</button>
@@ -128,7 +131,8 @@
             <button id="se-undo" title="撤销 (Ctrl+Z)">↶</button>
             <button id="se-redo" title="重做 (Ctrl+Y)">↷</button>
             <button id="se-fit" title="适配视图：缩放平移到设计盒居中">⤢</button>
-            <button id="se-pan" title="抓手平移 (H)：开启后左键拖动画布">🖐️</button>
+            <button id="se-select" title="选择模式：点选/拖动骨骼与挂件（默认；Esc 从抓手返回）">🖱️</button>
+            <button id="se-pan" title="抓手平移：开启后左键拖动画布平移">🖐️</button>
         </div>
         <div class="spacer"></div>
         <span id="se-dirty" style="font-size:12px;color:#ff9a3c;display:none;">● 未保存</span>
@@ -145,7 +149,7 @@
                 <button id="se-bone-del" class="danger">🗑 删除</button>
                 <button id="se-bone-template" title="一键生成标准 13 骨骼人形骨架（root/hips/torso/head/双臂两段/双腿两段/背骨）">🦴 人形模板</button>
             </div>
-            <h3>槽位（图层栈 · z 从小到大绘制）</h3>
+            <h3>槽位（图层栈 · 上=最上层）</h3>
             <div id="se-slot-list"></div>
             <div style="display:flex;gap:4px;margin-top:6px;">
                 <button id="se-slot-add">✚ 槽位</button>
@@ -219,7 +223,7 @@
                     <select id="se-track-bone-select"></select>
                     <button id="se-track-add">✚ 轨道</button>
                     <button id="se-track-del" class="danger">🗑 轨道</button>
-                    <span style="color:#5a6a90;font-size:11px;margin-left:4px;" title="框选：按住 Alt 在轨道区拖出矩形选中多个关键帧（Shift/Ctrl+Alt 追加选区）；拖动任一选中帧整组移动">框选：Alt+拖动（Shift=追加）</span>
+                    <span style="color:#5a6a90;font-size:11px;margin-left:4px;" title="框选：在轨道区空白处按住拖出矩形，选中框内所有关键帧（Shift/Ctrl+拖动=追加选区；Alt+拖动同框选）；拖动任一选中帧=整组平移；Ctrl/Shift+点选=逐个加选">框选：空白处拖动（Shift/Ctrl=追加）</span>
                 </div>
                 <div class="se-tl-body" id="se-tl-body"></div>
             </div>

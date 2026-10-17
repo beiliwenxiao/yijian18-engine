@@ -132,7 +132,7 @@
     {
       "id": "shadow",
       "bone": "hips",
-      "z": 0,
+      "z": 1,
       "attachment": {
         "type": "empty"
       }
@@ -140,7 +140,7 @@
     {
       "id": "spearBack",
       "bone": "back",
-      "z": 1,
+      "z": -1,
       "attachment": {
         "type": "image",
         "assetId": "player.parts.weapon-spear",
@@ -150,13 +150,13 @@
         "rot": -72.4,
         "width": 64,
         "height": 64,
-        "visible": true
+        "visible": false
       }
     },
     {
       "id": "axeBack",
       "bone": "back",
-      "z": 23,
+      "z": -2,
       "attachment": {
         "type": "image",
         "assetId": "player.parts.weapon-axe",
@@ -166,35 +166,19 @@
         "rot": -155.4,
         "width": 64,
         "height": 64,
-        "visible": true
+        "visible": false
       }
     },
     {
       "id": "skirtBack",
       "bone": "torso",
-      "z": 2,
+      "z": 0,
       "attachment": {
         "type": "image",
         "assetId": "player.parts.skirt-back",
         "partId": "part.skirt.back",
         "x": 0,
-        "y": 22,
-        "rot": 0,
-        "width": 64,
-        "height": 64,
-        "visible": true
-      }
-    },
-    {
-      "id": "toolHand",
-      "bone": "armFR",
-      "z": 7,
-      "attachment": {
-        "type": "image",
-        "assetId": "player.parts.weapon-axe",
-        "partId": "part.weapon.axe",
-        "x": 0,
-        "y": 13,
+        "y": 21.6,
         "rot": 0,
         "width": 64,
         "height": 64,
@@ -204,14 +188,14 @@
     {
       "id": "armUL",
       "bone": "armUL",
-      "z": 8,
+      "z": 18,
       "attachment": {
         "type": "image",
         "assetId": "player.parts.upper-arm-l",
         "partId": "part.upper-arm.l",
-        "x": 0,
-        "y": 0,
-        "rot": -61.6,
+        "x": -3.5,
+        "y": -1.8,
+        "rot": 1.5,
         "width": 64,
         "height": 64,
         "visible": true
@@ -220,13 +204,13 @@
     {
       "id": "armFL",
       "bone": "armFL",
-      "z": 9,
+      "z": 5,
       "attachment": {
         "type": "image",
         "assetId": "player.parts.fore-arm-l",
         "partId": "part.fore-arm.l",
-        "x": 0,
-        "y": 0,
+        "x": -2.8,
+        "y": 1,
         "rot": 0,
         "width": 64,
         "height": 64,
@@ -236,13 +220,13 @@
     {
       "id": "armUR",
       "bone": "armUR",
-      "z": 10,
+      "z": 6,
       "attachment": {
         "type": "image",
         "assetId": "player.parts.upper-arm-r",
         "partId": "part.upper-arm.r",
         "x": 0,
-        "y": 0,
+        "y": -0.5,
         "rot": 0,
         "width": 64,
         "height": 64,
@@ -252,13 +236,13 @@
     {
       "id": "armFR",
       "bone": "armFR",
-      "z": 11,
+      "z": 7,
       "attachment": {
         "type": "image",
         "assetId": "player.parts.fore-arm-r",
         "partId": "part.fore-arm.r",
         "x": 0,
-        "y": 0,
+        "y": -0.5,
         "rot": 0,
         "width": 64,
         "height": 64,
@@ -268,13 +252,13 @@
     {
       "id": "torsoSlot",
       "bone": "torso",
-      "z": 12,
+      "z": 19,
       "attachment": {
         "type": "image",
         "assetId": "player.parts.torso",
         "partId": "part.torso",
-        "x": -1.4,
-        "y": 4.2,
+        "x": 1,
+        "y": 2.6,
         "rot": 0,
         "width": 64,
         "height": 64,
@@ -284,14 +268,14 @@
     {
       "id": "skirtFront",
       "bone": "torso",
-      "z": 18,
+      "z": 20,
       "attachment": {
         "type": "image",
         "assetId": "player.parts.skirt-front",
         "partId": "part.skirt.front",
-        "x": -1.1,
-        "y": 23.2,
-        "rot": 0,
+        "x": 2,
+        "y": 23.7,
+        "rot": -1.8,
         "width": 64,
         "height": 64,
         "visible": true
@@ -300,13 +284,13 @@
     {
       "id": "headFront",
       "bone": "head",
-      "z": 19,
+      "z": 13,
       "attachment": {
         "type": "image",
         "assetId": "player.parts.head-front",
         "partId": "part.head.front",
         "x": 0,
-        "y": 8,
+        "y": 7.6,
         "rot": 0,
         "width": 64,
         "height": 64,
@@ -316,7 +300,7 @@
     {
       "id": "headSide",
       "bone": "head",
-      "z": 20,
+      "z": 14,
       "attachment": {
         "type": "image",
         "assetId": "player.parts.head-side",
@@ -332,7 +316,7 @@
     {
       "id": "headBack",
       "bone": "head",
-      "z": 21,
+      "z": 15,
       "attachment": {
         "type": "image",
         "assetId": "player.parts.head-back",
@@ -348,13 +332,13 @@
     {
       "id": "weaponSpear",
       "bone": "armFR",
-      "z": 13,
+      "z": 8,
       "attachment": {
         "type": "image",
         "assetId": "player.parts.weapon-spear",
         "partId": "part.weapon.spear-hand",
         "x": 0,
-        "y": 13,
+        "y": 12.6,
         "rot": 0,
         "width": 64,
         "height": 64,
@@ -364,13 +348,13 @@
     {
       "id": "weaponSkinningKnife",
       "bone": "armFR",
-      "z": 14,
+      "z": 9,
       "attachment": {
         "type": "image",
         "assetId": "player.parts.weapon-skinningKnife",
         "partId": "part.weapon.skinningKnife",
         "x": 0,
-        "y": 13,
+        "y": 12.6,
         "rot": 0,
         "width": 64,
         "height": 64,
@@ -380,13 +364,13 @@
     {
       "id": "weaponWolfFang",
       "bone": "armFR",
-      "z": 15,
+      "z": 10,
       "attachment": {
         "type": "image",
         "assetId": "player.parts.weapon-wolfFang",
         "partId": "part.weapon.wolfFang",
         "x": 0,
-        "y": 13,
+        "y": 12.6,
         "rot": 0,
         "width": 64,
         "height": 64,
@@ -396,13 +380,13 @@
     {
       "id": "weaponBow",
       "bone": "armFR",
-      "z": 16,
+      "z": 11,
       "attachment": {
         "type": "image",
         "assetId": "player.parts.weapon-bow",
         "partId": "part.weapon.bow",
         "x": 0,
-        "y": 13,
+        "y": 12.6,
         "rot": 0,
         "width": 64,
         "height": 64,
@@ -412,13 +396,13 @@
     {
       "id": "weaponStaff",
       "bone": "armFR",
-      "z": 17,
+      "z": 12,
       "attachment": {
         "type": "image",
         "assetId": "player.parts.weapon-staff",
         "partId": "part.weapon.staff",
         "x": 0,
-        "y": 13,
+        "y": 12.6,
         "rot": 0,
         "width": 64,
         "height": 64,
@@ -428,24 +412,24 @@
     {
       "id": "armor",
       "bone": "torso",
-      "z": 22,
+      "z": 16,
       "attachment": {
         "type": "empty",
-        "x": 0,
-        "y": 0,
+        "x": -6.8,
+        "y": 6.8,
         "rot": 0
       }
     },
     {
       "id": "legThighL",
       "bone": "thighL",
-      "z": 3,
+      "z": 2,
       "attachment": {
         "type": "image",
         "assetId": "player.parts.thigh-l",
         "partId": "part.thigh.l",
         "x": 0,
-        "y": 0,
+        "y": -0.3,
         "rot": 0,
         "width": 64,
         "height": 64
@@ -454,28 +438,13 @@
     {
       "id": "legThighR",
       "bone": "thighR",
-      "z": 4,
+      "z": 3,
       "attachment": {
         "type": "image",
         "assetId": "player.parts.thigh-r",
         "partId": "part.thigh.r",
         "x": 0,
-        "y": 0,
-        "rot": 0,
-        "width": 64,
-        "height": 64
-      }
-    },
-    {
-      "id": "legCalfL",
-      "bone": "calfL",
-      "z": 5,
-      "attachment": {
-        "type": "image",
-        "assetId": "player.parts.calf-l",
-        "partId": "part.calf.l",
-        "x": 0,
-        "y": 0,
+        "y": -0.5,
         "rot": 0,
         "width": 64,
         "height": 64
@@ -484,13 +453,28 @@
     {
       "id": "legCalfR",
       "bone": "calfR",
-      "z": 6,
+      "z": 4,
       "attachment": {
         "type": "image",
         "assetId": "player.parts.calf-r",
         "partId": "part.calf.r",
         "x": -0.7,
-        "y": 0,
+        "y": -0.5,
+        "rot": 0,
+        "width": 64,
+        "height": 64
+      }
+    },
+    {
+      "id": "part-calf-l",
+      "bone": "calfL",
+      "z": 17,
+      "attachment": {
+        "type": "image",
+        "assetId": "player.parts.calf-l",
+        "partId": "part.calf.l",
+        "x": 0,
+        "y": -0.3,
         "rot": 0,
         "width": 64,
         "height": 64
@@ -508,17 +492,30 @@
           "keys": [
             {
               "t": 0,
-              "y": -2
+              "y": -2.75,
+              "x": 0,
+              "rot": 0
             },
             {
-              "t": 600,
-              "y": -3.5,
-              "ease": "easeInOut"
+              "t": 450,
+              "y": -3.12,
+              "x": 0,
+              "ease": "easeInOut",
+              "rot": 0
             },
             {
-              "t": 1200,
-              "y": -2,
-              "ease": "easeInOut"
+              "t": 901,
+              "y": -3.4999848859082774,
+              "ease": "linear",
+              "x": 0,
+              "rot": 0
+            },
+            {
+              "t": 1350,
+              "y": -2.75,
+              "ease": "easeInOut",
+              "x": 0,
+              "rot": 0
             }
           ]
         },
@@ -527,17 +524,38 @@
           "keys": [
             {
               "t": 0,
-              "rot": 0
-            },
-            {
-              "t": 600,
-              "rot": 4,
-              "ease": "easeInOut"
-            },
-            {
-              "t": 1200,
               "rot": 0,
-              "ease": "easeInOut"
+              "x": 0,
+              "y": -20.75,
+              "scaleX": 1,
+              "scaleY": 1
+            },
+            {
+              "t": 450,
+              "rot": 2,
+              "x": 0,
+              "y": -20.75,
+              "ease": "easeInOut",
+              "scaleX": 1,
+              "scaleY": 1
+            },
+            {
+              "t": 899,
+              "x": 0,
+              "y": -20.75,
+              "rot": 2,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "linear"
+            },
+            {
+              "t": 1350,
+              "rot": 2,
+              "ease": "easeInOut",
+              "x": 0,
+              "y": -20.75,
+              "scaleX": 1,
+              "scaleY": 1
             }
           ]
         },
@@ -546,17 +564,30 @@
           "keys": [
             {
               "t": 0,
-              "rot": 0
-            },
-            {
-              "t": 600,
-              "rot": 3,
-              "ease": "easeInOut"
-            },
-            {
-              "t": 1200,
               "rot": 0,
+              "x": -7,
+              "y": -16.75
+            },
+            {
+              "t": 450,
+              "rot": 1.5,
+              "x": -7,
+              "y": -16.75,
               "ease": "easeInOut"
+            },
+            {
+              "t": 900,
+              "rot": 3,
+              "ease": "easeInOut",
+              "x": -7,
+              "y": -16.75
+            },
+            {
+              "t": 1350,
+              "rot": 1.5,
+              "ease": "easeInOut",
+              "x": -7,
+              "y": -16.75
             }
           ]
         },
@@ -565,17 +596,30 @@
           "keys": [
             {
               "t": 0,
-              "rot": 0
-            },
-            {
-              "t": 600,
-              "rot": -3,
-              "ease": "easeInOut"
-            },
-            {
-              "t": 1200,
               "rot": 0,
+              "x": 7,
+              "y": -16.75
+            },
+            {
+              "t": 450,
+              "rot": -1.5,
+              "x": 7,
+              "y": -16.75,
               "ease": "easeInOut"
+            },
+            {
+              "t": 900,
+              "rot": -3,
+              "ease": "easeInOut",
+              "x": 7,
+              "y": -16.75
+            },
+            {
+              "t": 1350,
+              "rot": -1.5,
+              "ease": "easeInOut",
+              "x": 7,
+              "y": -16.75
             }
           ]
         },
@@ -584,17 +628,30 @@
           "keys": [
             {
               "t": 0,
-              "rot": 0
-            },
-            {
-              "t": 600,
-              "rot": 2,
-              "ease": "easeInOut"
-            },
-            {
-              "t": 1200,
               "rot": 0,
+              "x": 0,
+              "y": 11.25
+            },
+            {
+              "t": 450,
+              "rot": 1,
+              "x": 0,
+              "y": 11.25,
               "ease": "easeInOut"
+            },
+            {
+              "t": 900,
+              "rot": 2,
+              "ease": "easeInOut",
+              "x": 0,
+              "y": 11.25
+            },
+            {
+              "t": 1350,
+              "rot": 1,
+              "ease": "easeInOut",
+              "x": 0,
+              "y": 11.25
             }
           ]
         },
@@ -603,17 +660,30 @@
           "keys": [
             {
               "t": 0,
-              "rot": 0
-            },
-            {
-              "t": 600,
-              "rot": -2,
-              "ease": "easeInOut"
-            },
-            {
-              "t": 1200,
               "rot": 0,
+              "x": 0,
+              "y": 11.25
+            },
+            {
+              "t": 450,
+              "rot": -1,
+              "x": 0,
+              "y": 11.25,
               "ease": "easeInOut"
+            },
+            {
+              "t": 900,
+              "rot": -2,
+              "ease": "easeInOut",
+              "x": 0,
+              "y": 11.25
+            },
+            {
+              "t": 1350,
+              "rot": -1,
+              "ease": "easeInOut",
+              "x": 0,
+              "y": 11.25
             }
           ]
         },
@@ -623,23 +693,93 @@
             {
               "t": 0,
               "x": 0,
-              "y": -14,
+              "y": -14.75,
               "rot": 0
             },
             {
-              "t": 602,
+              "t": 450,
+              "x": 0,
+              "y": -15.4,
+              "rot": 3.3
+            },
+            {
+              "t": 900,
               "x": 0,
               "y": -16.05725865560528,
               "rot": 6.6
             },
             {
-              "t": 1205,
+              "t": 1350,
               "x": 0,
-              "y": -15.02211203405078,
-              "rot": 3.279091526169991,
-              "scaleX": null,
-              "scaleY": null,
+              "y": -15.54,
+              "rot": 4.94,
               "ease": "linear"
+            }
+          ]
+        },
+        {
+          "bone": "calfL",
+          "keys": [
+            {
+              "t": 0,
+              "x": 0,
+              "y": 12.25,
+              "rot": 0
+            }
+          ]
+        },
+        {
+          "bone": "hips",
+          "keys": [
+            {
+              "t": 0,
+              "x": 0,
+              "y": -26.75,
+              "rot": 0
+            }
+          ]
+        },
+        {
+          "bone": "thighL",
+          "keys": [
+            {
+              "t": 0,
+              "x": -5,
+              "y": -1.75,
+              "rot": 0,
+              "scaleX": 1,
+              "scaleY": 1
+            },
+            {
+              "t": 451,
+              "x": -5,
+              "y": -1.75,
+              "rot": 0,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "linear"
+            }
+          ]
+        },
+        {
+          "bone": "thighR",
+          "keys": [
+            {
+              "t": 0,
+              "x": 5,
+              "y": -1.75,
+              "rot": 0
+            }
+          ]
+        },
+        {
+          "bone": "calfR",
+          "keys": [
+            {
+              "t": 0,
+              "x": 0,
+              "y": 12.25,
+              "rot": 0
             }
           ]
         }
@@ -658,13 +798,18 @@
               "y": -2
             },
             {
-              "t": 600,
+              "t": 450,
+              "y": -2.75,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 900,
               "y": -3.5,
               "ease": "easeInOut"
             },
             {
-              "t": 1200,
-              "y": -2,
+              "t": 1350,
+              "y": -2.75,
               "ease": "easeInOut"
             }
           ]
@@ -677,13 +822,18 @@
               "rot": 0
             },
             {
-              "t": 600,
+              "t": 450,
+              "rot": 2,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 900,
               "rot": 4,
               "ease": "easeInOut"
             },
             {
-              "t": 1200,
-              "rot": 0,
+              "t": 1350,
+              "rot": 2,
               "ease": "easeInOut"
             }
           ]
@@ -696,13 +846,18 @@
               "rot": 0
             },
             {
-              "t": 600,
+              "t": 450,
+              "rot": 1.5,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 900,
               "rot": 3,
               "ease": "easeInOut"
             },
             {
-              "t": 1200,
-              "rot": 0,
+              "t": 1350,
+              "rot": 1.5,
               "ease": "easeInOut"
             }
           ]
@@ -715,13 +870,18 @@
               "rot": 0
             },
             {
-              "t": 600,
+              "t": 450,
+              "rot": -1.5,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 900,
               "rot": -3,
               "ease": "easeInOut"
             },
             {
-              "t": 1200,
-              "rot": 0,
+              "t": 1350,
+              "rot": -1.5,
               "ease": "easeInOut"
             }
           ]
@@ -734,13 +894,18 @@
               "rot": 0
             },
             {
-              "t": 600,
+              "t": 450,
+              "rot": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 900,
               "rot": 2,
               "ease": "easeInOut"
             },
             {
-              "t": 1200,
-              "rot": 0,
+              "t": 1350,
+              "rot": 1,
               "ease": "easeInOut"
             }
           ]
@@ -753,13 +918,18 @@
               "rot": 0
             },
             {
-              "t": 600,
+              "t": 450,
+              "rot": -1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 900,
               "rot": -2,
               "ease": "easeInOut"
             },
             {
-              "t": 1200,
-              "rot": 0,
+              "t": 1350,
+              "rot": -1,
               "ease": "easeInOut"
             }
           ]
@@ -779,13 +949,18 @@
               "y": -2
             },
             {
-              "t": 600,
+              "t": 450,
+              "y": -2.75,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 900,
               "y": -3.5,
               "ease": "easeInOut"
             },
             {
-              "t": 1200,
-              "y": -2,
+              "t": 1350,
+              "y": -2.75,
               "ease": "easeInOut"
             }
           ]
@@ -798,13 +973,18 @@
               "rot": 0
             },
             {
-              "t": 600,
+              "t": 450,
+              "rot": 1.5,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 900,
               "rot": 3,
               "ease": "easeInOut"
             },
             {
-              "t": 1200,
-              "rot": 0,
+              "t": 1350,
+              "rot": 1.5,
               "ease": "easeInOut"
             }
           ]
@@ -817,13 +997,18 @@
               "rot": 0
             },
             {
-              "t": 600,
+              "t": 450,
+              "rot": 1.5,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 900,
               "rot": 3,
               "ease": "easeInOut"
             },
             {
-              "t": 1200,
-              "rot": 0,
+              "t": 1350,
+              "rot": 1.5,
               "ease": "easeInOut"
             }
           ]
@@ -836,13 +1021,18 @@
               "rot": 0
             },
             {
-              "t": 600,
+              "t": 450,
+              "rot": -1.5,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 900,
               "rot": -3,
               "ease": "easeInOut"
             },
             {
-              "t": 1200,
-              "rot": 0,
+              "t": 1350,
+              "rot": -1.5,
               "ease": "easeInOut"
             }
           ]
@@ -855,13 +1045,18 @@
               "rot": 0
             },
             {
-              "t": 600,
+              "t": 450,
+              "rot": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 900,
               "rot": 2,
               "ease": "easeInOut"
             },
             {
-              "t": 1200,
-              "rot": 0,
+              "t": 1350,
+              "rot": 1,
               "ease": "easeInOut"
             }
           ]
@@ -874,13 +1069,18 @@
               "rot": 0
             },
             {
-              "t": 600,
+              "t": 450,
+              "rot": -1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 900,
               "rot": -2,
               "ease": "easeInOut"
             },
             {
-              "t": 1200,
-              "rot": 0,
+              "t": 1350,
+              "rot": -1,
               "ease": "easeInOut"
             }
           ]
@@ -900,7 +1100,7 @@
               "rot": -3
             },
             {
-              "t": 155,
+              "t": 156,
               "rot": 0,
               "ease": "easeInOut"
             },
@@ -921,22 +1121,30 @@
           "keys": [
             {
               "t": 0,
-              "rot": -22
+              "rot": -22,
+              "x": -4.095301569326213,
+              "y": -0.4345634808288833
             },
             {
               "t": 155,
               "rot": 0,
-              "ease": "easeInOut"
+              "ease": "easeInOut",
+              "x": -4.095302,
+              "y": -0.434563
             },
             {
-              "t": 310,
-              "rot": 22,
-              "ease": "easeInOut"
+              "t": 311,
+              "rot": -7.9,
+              "ease": "easeInOut",
+              "x": -4.095302,
+              "y": -0.434563
             },
             {
               "t": 465,
               "rot": 0,
-              "ease": "easeInOut"
+              "ease": "easeInOut",
+              "x": -4.095302,
+              "y": -0.434563
             }
           ]
         },
@@ -945,27 +1153,27 @@
           "keys": [
             {
               "t": 0,
-              "x": -8.463685697478518,
-              "y": 8.039553348359549,
-              "rot": 28
+              "x": -4.649268647501784,
+              "y": 8.35854933875271,
+              "rot": 22.7
             },
             {
               "t": 155,
-              "x": -6.24,
-              "y": 9.19,
-              "rot": 2.55
+              "x": -0.685488708750281,
+              "y": 12.928435822255064,
+              "rot": 0.4
             },
             {
-              "t": 310,
-              "rot": -22.9,
-              "x": -4.019969105668516,
-              "y": 10.339604398311458
+              "t": 311,
+              "rot": 8.2,
+              "x": -2.710350719993803,
+              "y": 13.295127937674312
             },
             {
-              "t": 465,
-              "rot": -20.25,
-              "x": -2,
-              "y": 12.01,
+              "t": 467,
+              "rot": 2,
+              "x": -1.1924652585769582,
+              "y": 13.138599164461564,
               "ease": "easeInOut"
             }
           ]
@@ -975,22 +1183,30 @@
           "keys": [
             {
               "t": 0,
-              "rot": 22
+              "rot": 22,
+              "x": 3.865146,
+              "y": -0.290716
             },
             {
               "t": 155,
               "rot": 0,
-              "ease": "easeInOut"
+              "ease": "easeInOut",
+              "x": 3.865146,
+              "y": -0.290716
             },
             {
               "t": 310,
               "rot": -22,
-              "ease": "easeInOut"
+              "ease": "easeInOut",
+              "x": 3.865146,
+              "y": -0.290716
             },
             {
-              "t": 465,
+              "t": 467,
               "rot": 0,
-              "ease": "easeInOut"
+              "ease": "easeInOut",
+              "x": 3.8651462885628014,
+              "y": -0.2907164303517511
             }
           ]
         },
@@ -999,30 +1215,30 @@
           "keys": [
             {
               "t": 0,
-              "x": 1.5214811954154994,
-              "y": 12.148818949518711,
-              "rot": -39.9
+              "x": 5.698474855452539,
+              "y": 11.809372394063548,
+              "rot": -23.9
             },
             {
-              "t": 155,
-              "x": -1.49,
-              "y": 11.61,
-              "rot": -28.2,
+              "t": 156,
+              "x": 0.09285101612870011,
+              "y": 13.193228696575707,
+              "rot": -0.4,
               "ease": "easeInOut"
             },
             {
-              "t": 310,
-              "rot": -16.5,
+              "t": 311,
+              "rot": 20.9,
               "ease": "easeInOut",
-              "x": -4.510102906293343,
-              "y": 11.061393906578678
+              "x": -3.3944241292119877,
+              "y": 8.78202336096671
             },
             {
-              "t": 465,
-              "rot": -7.05,
+              "t": 467,
+              "rot": -4.9,
               "ease": "easeInOut",
-              "x": -4.88,
-              "y": 12.55
+              "x": 0.4959348418888687,
+              "y": 13.354074125718167
             }
           ]
         },
@@ -1031,22 +1247,30 @@
           "keys": [
             {
               "t": 0,
-              "rot": 17.6
+              "rot": 17.6,
+              "x": -8.491434682765355,
+              "y": -14.149794646463874
             },
             {
               "t": 155,
               "rot": 0,
-              "ease": "easeInOut"
+              "ease": "easeInOut",
+              "x": -7.993218,
+              "y": -14.767859
             },
             {
               "t": 310,
               "rot": -17.6,
-              "ease": "easeInOut"
+              "ease": "easeInOut",
+              "x": -7.495002,
+              "y": -15.385923
             },
             {
-              "t": 465,
-              "rot": 0,
-              "ease": "easeInOut"
+              "t": 464,
+              "x": -7,
+              "y": -16,
+              "rot": -0.057629338572365185,
+              "ease": "linear"
             }
           ]
         },
@@ -1067,14 +1291,18 @@
               "ease": "easeInOut"
             },
             {
-              "t": 310,
+              "t": 311,
               "rot": 17.6,
-              "ease": "easeInOut"
+              "ease": "easeInOut",
+              "x": 5.973790258670495,
+              "y": -16.579938369913773
             },
             {
               "t": 465,
               "rot": 0,
-              "ease": "easeInOut"
+              "ease": "easeInOut",
+              "x": 5.97379,
+              "y": -16.579938
             }
           ]
         },
@@ -1083,32 +1311,30 @@
           "keys": [
             {
               "t": 0,
-              "x": -0.5074820492660777,
-              "y": 10.835476643552939,
-              "rot": 27.5,
-              "scaleX": 1.1,
-              "scaleY": 1.1
+              "x": 2.271149703835335,
+              "y": 11.373272635481733,
+              "rot": -14.6
             },
             {
-              "t": 155,
+              "t": 156,
               "x": -0.5074820492660777,
               "y": 10.835476643552939,
-              "rot": 10.67,
-              "scaleX": 1.1,
-              "scaleY": 1.1,
+              "rot": 5,
               "ease": "easeInOut"
             },
             {
-              "t": 310,
-              "rot": -6.16,
-              "ease": "easeInOut"
+              "t": 311,
+              "rot": 21.2,
+              "ease": "easeInOut",
+              "x": -3.481710693977109,
+              "y": 10.600252529083422
             },
             {
-              "t": 465,
+              "t": 467,
               "rot": 0,
               "ease": "easeInOut",
-              "x": 2.5976249293884823,
-              "y": 11.064245513501511
+              "x": -0.39754439310126344,
+              "y": 9.076919077026059
             }
           ]
         },
@@ -1117,30 +1343,30 @@
           "keys": [
             {
               "t": 0,
-              "x": 2.6261788752876254,
-              "y": 10.156305354747788,
-              "rot": 5.6
+              "x": -1.2076583247746167,
+              "y": 11.118953952845196,
+              "rot": 8
             },
             {
-              "t": 155,
+              "t": 156,
               "x": 0.82,
               "y": 11.53,
-              "rot": 12.55,
+              "rot": -5.4,
               "ease": "easeInOut"
             },
             {
-              "t": 310,
-              "rot": 19.5,
+              "t": 311,
+              "rot": -21.5,
               "ease": "easeInOut",
-              "x": -0.9949309753409303,
-              "y": 12.906979798180283
+              "x": 5.442405573149481,
+              "y": 11.474312825832921
             },
             {
-              "t": 465,
-              "rot": 19.5,
+              "t": 467,
+              "rot": -7.4,
               "ease": "easeInOut",
-              "x": 0.07,
-              "y": 13.26
+              "x": 0.06559702759332124,
+              "y": 10.53421119424271
             }
           ]
         },
@@ -1150,10 +1376,11 @@
             {
               "t": 0,
               "y": -29,
-              "ease": "easeInOut"
+              "ease": "easeInOut",
+              "x": 0
             },
             {
-              "t": 155,
+              "t": 157,
               "y": -29,
               "ease": "easeInOut",
               "x": 0
@@ -1187,7 +1414,7 @@
               "rot": -3
             },
             {
-              "t": 155,
+              "t": 156,
               "rot": 0,
               "ease": "easeInOut"
             },
@@ -1208,22 +1435,30 @@
           "keys": [
             {
               "t": 0,
-              "rot": -22
+              "rot": -22,
+              "x": -4.095301569326213,
+              "y": -0.4345634808288833
             },
             {
               "t": 155,
               "rot": 0,
-              "ease": "easeInOut"
+              "ease": "easeInOut",
+              "x": -4.095302,
+              "y": -0.434563
             },
             {
-              "t": 310,
-              "rot": 22,
-              "ease": "easeInOut"
+              "t": 311,
+              "rot": -7.9,
+              "ease": "easeInOut",
+              "x": -4.095302,
+              "y": -0.434563
             },
             {
               "t": 465,
               "rot": 0,
-              "ease": "easeInOut"
+              "ease": "easeInOut",
+              "x": -4.095302,
+              "y": -0.434563
             }
           ]
         },
@@ -1232,21 +1467,27 @@
           "keys": [
             {
               "t": 0,
-              "rot": -17.6
+              "x": -4.649268647501784,
+              "y": 8.35854933875271,
+              "rot": 22.7
             },
             {
               "t": 155,
-              "rot": -9.8,
-              "ease": "easeInOut"
+              "x": -0.685488708750281,
+              "y": 12.928435822255064,
+              "rot": 0.4
             },
             {
-              "t": 310,
-              "rot": -2,
-              "ease": "easeInOut"
+              "t": 311,
+              "rot": 8.2,
+              "x": -2.710350719993803,
+              "y": 13.295127937674312
             },
             {
-              "t": 465,
-              "rot": -9.8,
+              "t": 467,
+              "rot": 2,
+              "x": -1.1924652585769582,
+              "y": 13.138599164461564,
               "ease": "easeInOut"
             }
           ]
@@ -1256,22 +1497,30 @@
           "keys": [
             {
               "t": 0,
-              "rot": 22
+              "rot": 22,
+              "x": 3.865146,
+              "y": -0.290716
             },
             {
               "t": 155,
               "rot": 0,
-              "ease": "easeInOut"
+              "ease": "easeInOut",
+              "x": 3.865146,
+              "y": -0.290716
             },
             {
               "t": 310,
               "rot": -22,
-              "ease": "easeInOut"
+              "ease": "easeInOut",
+              "x": 3.865146,
+              "y": -0.290716
             },
             {
-              "t": 465,
+              "t": 467,
               "rot": 0,
-              "ease": "easeInOut"
+              "ease": "easeInOut",
+              "x": 3.8651462885628014,
+              "y": -0.2907164303517511
             }
           ]
         },
@@ -1280,22 +1529,30 @@
           "keys": [
             {
               "t": 0,
-              "rot": -2
+              "x": 5.698474855452539,
+              "y": 11.809372394063548,
+              "rot": -23.9
             },
             {
-              "t": 155,
-              "rot": -9.8,
+              "t": 156,
+              "x": 0.09285101612870011,
+              "y": 13.193228696575707,
+              "rot": -0.4,
               "ease": "easeInOut"
             },
             {
-              "t": 310,
-              "rot": -17.6,
-              "ease": "easeInOut"
+              "t": 311,
+              "rot": 20.9,
+              "ease": "easeInOut",
+              "x": -3.3944241292119877,
+              "y": 8.78202336096671
             },
             {
-              "t": 465,
-              "rot": -9.8,
-              "ease": "easeInOut"
+              "t": 467,
+              "rot": -4.9,
+              "ease": "easeInOut",
+              "x": 0.4959348418888687,
+              "y": 13.354074125718167
             }
           ]
         },
@@ -1315,11 +1572,6 @@
               "t": 310,
               "rot": -17.6,
               "ease": "easeInOut"
-            },
-            {
-              "t": 465,
-              "rot": 0,
-              "ease": "easeInOut"
             }
           ]
         },
@@ -1328,22 +1580,30 @@
           "keys": [
             {
               "t": 0,
-              "rot": -17.6
+              "rot": -17.6,
+              "x": 7.2496573836886435,
+              "y": -15.986916010939265
             },
             {
               "t": 155,
               "rot": 0,
+              "x": 7.2496573836886435,
+              "y": -15.986916010939265,
               "ease": "easeInOut"
             },
             {
-              "t": 310,
+              "t": 311,
               "rot": 17.6,
-              "ease": "easeInOut"
+              "ease": "easeInOut",
+              "x": 5.973790258670495,
+              "y": -16.579938369913773
             },
             {
               "t": 465,
               "rot": 0,
-              "ease": "easeInOut"
+              "ease": "easeInOut",
+              "x": 5.97379,
+              "y": -16.579938
             }
           ]
         },
@@ -1351,23 +1611,31 @@
           "bone": "armFL",
           "keys": [
             {
-              "t": 0,
-              "rot": 6.16
+              "t": 1,
+              "x": 1.968357250275633,
+              "y": 10.210834502958498,
+              "rot": -14.6
             },
             {
-              "t": 155,
+              "t": 156,
+              "x": -0.5074820492660777,
+              "y": 10.835476643552939,
+              "rot": 5,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 311,
+              "rot": 21.2,
+              "ease": "easeInOut",
+              "x": -3.481710693977109,
+              "y": 10.600252529083422
+            },
+            {
+              "t": 467,
               "rot": 0,
-              "ease": "easeInOut"
-            },
-            {
-              "t": 310,
-              "rot": -6.16,
-              "ease": "easeInOut"
-            },
-            {
-              "t": 465,
-              "rot": 0,
-              "ease": "easeInOut"
+              "ease": "easeInOut",
+              "x": -0.39754439310126344,
+              "y": 9.076919077026059
             }
           ]
         },
@@ -1376,22 +1644,30 @@
           "keys": [
             {
               "t": 0,
-              "rot": -6.16
+              "x": -1.2076583247746167,
+              "y": 11.118953952845196,
+              "rot": 8
             },
             {
-              "t": 155,
-              "rot": 0,
+              "t": 156,
+              "x": 0.82,
+              "y": 11.53,
+              "rot": -5.4,
               "ease": "easeInOut"
             },
             {
-              "t": 310,
-              "rot": 6.16,
-              "ease": "easeInOut"
+              "t": 311,
+              "rot": -21.5,
+              "ease": "easeInOut",
+              "x": 5.442405573149481,
+              "y": 11.474312825832921
             },
             {
-              "t": 465,
-              "rot": 0,
-              "ease": "easeInOut"
+              "t": 467,
+              "rot": -7.4,
+              "ease": "easeInOut",
+              "x": 0.06559702759332124,
+              "y": 10.53421119424271
             }
           ]
         },
@@ -1400,22 +1676,27 @@
           "keys": [
             {
               "t": 0,
-              "y": -26
+              "y": -29,
+              "ease": "easeInOut",
+              "x": 0
             },
             {
-              "t": 155,
+              "t": 157,
               "y": -29,
-              "ease": "easeInOut"
+              "ease": "easeInOut",
+              "x": 0
             },
             {
               "t": 310,
-              "y": -26,
-              "ease": "easeInOut"
+              "y": -29.003574196108044,
+              "ease": "easeInOut",
+              "x": 0
             },
             {
               "t": 465,
               "y": -29,
-              "ease": "easeInOut"
+              "ease": "easeInOut",
+              "x": 0
             }
           ]
         }
