@@ -182,7 +182,14 @@
         "rot": 0,
         "width": 64,
         "height": 64,
-        "visible": true
+        "visible": true,
+        "directionOffsets": {
+          "side": {
+            "x": -0.2,
+            "y": 21.6,
+            "rot": 0
+          }
+        }
       }
     },
     {
@@ -204,6 +211,11 @@
             "x": 0.3,
             "y": 0.2,
             "rot": 1.5
+          },
+          "side": {
+            "x": -3.7,
+            "y": -1.8,
+            "rot": 1.5
           }
         }
       }
@@ -221,7 +233,14 @@
         "rot": 0,
         "width": 64,
         "height": 64,
-        "visible": true
+        "visible": true,
+        "directionOffsets": {
+          "side": {
+            "x": -3,
+            "y": 1,
+            "rot": 0
+          }
+        }
       }
     },
     {
@@ -237,7 +256,14 @@
         "rot": 0,
         "width": 64,
         "height": 64,
-        "visible": true
+        "visible": true,
+        "directionOffsets": {
+          "side": {
+            "x": 1.5,
+            "y": -1.6,
+            "rot": 0
+          }
+        }
       }
     },
     {
@@ -250,10 +276,17 @@
         "partId": "part.fore-arm.r",
         "x": 1.3,
         "y": 1.2,
-        "rot": 0,
+        "rot": -2.3,
         "width": 64,
         "height": 64,
-        "visible": true
+        "visible": true,
+        "directionOffsets": {
+          "side": {
+            "x": 1.1,
+            "y": 1.2,
+            "rot": -2.3
+          }
+        }
       }
     },
     {
@@ -269,7 +302,14 @@
         "rot": 0,
         "width": 64,
         "height": 64,
-        "visible": true
+        "visible": true,
+        "directionOffsets": {
+          "side": {
+            "x": 0.8,
+            "y": 2.6,
+            "rot": 0
+          }
+        }
       }
     },
     {
@@ -289,18 +329,80 @@
       }
     },
     {
+      "id": "headBodyFront",
+      "bone": "head",
+      "z": 11.5,
+      "attachment": {
+        "type": "image",
+        "assetId": "player.parts.head-body-front",
+        "partId": "part.head.head-body-front",
+        "x": -0.2,
+        "y": -11.8,
+        "rot": 0,
+        "width": 29,
+        "height": 30,
+        "visible": true
+      }
+    },
+    {
+      "id": "headBodySide",
+      "bone": "head",
+      "z": 12.5,
+      "attachment": {
+        "type": "image",
+        "assetId": "player.parts.head-body-side",
+        "partId": "part.head.head-body-side",
+        "x": -0.2,
+        "y": -11.8,
+        "rot": 0,
+        "width": 29,
+        "height": 30,
+        "visible": false,
+        "directionOffsets": {
+          "side": {
+            "x": -0.4,
+            "y": -11.8,
+            "rot": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "headBodyBack",
+      "bone": "head",
+      "z": 13.5,
+      "attachment": {
+        "type": "image",
+        "assetId": "player.parts.head-body-back",
+        "partId": "part.head.head-body-back",
+        "x": -0.2,
+        "y": -11.8,
+        "rot": 0,
+        "width": 29,
+        "height": 30,
+        "visible": false,
+        "directionOffsets": {
+          "side": {
+            "x": -0.4,
+            "y": -11.8,
+            "rot": 0
+          }
+        }
+      }
+    },
+    {
       "id": "headFront",
       "bone": "head",
       "z": 12,
       "attachment": {
         "type": "image",
-        "assetId": "player.parts.head-front",
-        "partId": "part.head.front",
-        "x": 0,
-        "y": 7.6,
+        "assetId": "player.parts.hair-heroine-front",
+        "partId": "part.head.hair-front",
+        "x": -0.7,
+        "y": -18.9,
         "rot": 0,
-        "width": 64,
-        "height": 64,
+        "width": 26,
+        "height": 30,
         "visible": true
       }
     },
@@ -310,14 +412,21 @@
       "z": 13,
       "attachment": {
         "type": "image",
-        "assetId": "player.parts.head-side",
-        "partId": "part.head.side",
-        "x": 0.3,
-        "y": 7.5,
+        "assetId": "player.parts.hair-heroine-side",
+        "partId": "part.head.hair-side",
+        "x": -0.2,
+        "y": -18.9,
         "rot": 0,
-        "width": 64,
-        "height": 64,
-        "visible": false
+        "width": 32,
+        "height": 29,
+        "visible": false,
+        "directionOffsets": {
+          "side": {
+            "x": -0.4,
+            "y": -18.9,
+            "rot": 0
+          }
+        }
       }
     },
     {
@@ -326,14 +435,21 @@
       "z": 14,
       "attachment": {
         "type": "image",
-        "assetId": "player.parts.head-back",
-        "partId": "part.head.back",
-        "x": 0,
-        "y": 8,
+        "assetId": "player.parts.hair-heroine-back",
+        "partId": "part.head.hair-back",
+        "x": -0.2,
+        "y": -18.9,
         "rot": 0,
-        "width": 64,
-        "height": 64,
-        "visible": false
+        "width": 26,
+        "height": 30,
+        "visible": false,
+        "directionOffsets": {
+          "up": {
+            "x": -0.2,
+            "y": -18.7,
+            "rot": 0
+          }
+        }
       }
     },
     {
@@ -440,17 +556,6 @@
       }
     },
     {
-      "id": "armor",
-      "bone": "torso",
-      "z": 15,
-      "attachment": {
-        "type": "empty",
-        "x": -6.8,
-        "y": 6.8,
-        "rot": 0
-      }
-    },
-    {
       "id": "legThighR",
       "bone": "thighR",
       "z": 4,
@@ -462,7 +567,14 @@
         "y": -0.3,
         "rot": 0,
         "width": 64,
-        "height": 64
+        "height": 64,
+        "directionOffsets": {
+          "side": {
+            "x": -0.2,
+            "y": -0.3,
+            "rot": 0
+          }
+        }
       }
     },
     {
@@ -477,7 +589,14 @@
         "y": -0.5,
         "rot": 0,
         "width": 64,
-        "height": 64
+        "height": 64,
+        "directionOffsets": {
+          "side": {
+            "x": -0.2,
+            "y": -0.5,
+            "rot": 0
+          }
+        }
       }
     },
     {
@@ -492,7 +611,14 @@
         "y": -0.5,
         "rot": 0,
         "width": 64,
-        "height": 64
+        "height": 64,
+        "directionOffsets": {
+          "side": {
+            "x": -0.9,
+            "y": -0.6,
+            "rot": 0
+          }
+        }
       }
     },
     {
@@ -507,7 +633,14 @@
         "y": -0.3,
         "rot": 0,
         "width": 64,
-        "height": 64
+        "height": 64,
+        "directionOffsets": {
+          "side": {
+            "x": -0.2,
+            "y": -0.4,
+            "rot": 0
+          }
+        }
       }
     }
   ],
@@ -1959,7 +2092,17 @@
           "keys": [
             {
               "t": 0,
-              "rot": -3
+              "rot": -3,
+              "x": 0.15887951960120777,
+              "y": -2
+            },
+            {
+              "t": 145,
+              "x": -0.09879917679446013,
+              "y": -2,
+              "rot": -0.03943553411246148,
+              "scaleX": 1,
+              "scaleY": 1
             },
             {
               "t": 155,
@@ -1986,6 +2129,14 @@
               "rot": -30
             },
             {
+              "t": 145,
+              "x": -5.25,
+              "y": -1,
+              "rot": -0.3943553411246157,
+              "scaleX": 1,
+              "scaleY": 1
+            },
+            {
               "t": 155,
               "rot": 0,
               "ease": "easeInOut"
@@ -2008,6 +2159,14 @@
             {
               "t": 0,
               "rot": -24
+            },
+            {
+              "t": 145,
+              "x": -0.24999061569406766,
+              "y": 12.997833882528361,
+              "rot": -13.14459695841236,
+              "scaleX": 1,
+              "scaleY": 1
             },
             {
               "t": 155,
@@ -2034,6 +2193,14 @@
               "rot": 30
             },
             {
+              "t": 145,
+              "x": 4.75,
+              "y": -1,
+              "rot": 0.3943553411246157,
+              "scaleX": 1,
+              "scaleY": 1
+            },
+            {
               "t": 155,
               "rot": 0,
               "ease": "easeInOut"
@@ -2056,6 +2223,14 @@
             {
               "t": 0,
               "rot": -2
+            },
+            {
+              "t": 145,
+              "x": -0.24999061569406766,
+              "y": 13.002166117471639,
+              "rot": -12.85540304158764,
+              "scaleX": 1,
+              "scaleY": 1
             },
             {
               "t": 155,
@@ -2082,6 +2257,14 @@
               "rot": 24
             },
             {
+              "t": 145,
+              "x": -7.24999990615636,
+              "y": -16.000216614430435,
+              "rot": 0.31548427289969183,
+              "scaleX": 1,
+              "scaleY": 1
+            },
+            {
               "t": 155,
               "rot": 0,
               "ease": "easeInOut"
@@ -2104,6 +2287,14 @@
             {
               "t": 0,
               "rot": -24
+            },
+            {
+              "t": 145,
+              "x": 6.75000009384364,
+              "y": -16.000216614430435,
+              "rot": -0.31548427289969183,
+              "scaleX": 1,
+              "scaleY": 1
             },
             {
               "t": 155,
@@ -2130,6 +2321,14 @@
               "rot": 8.4
             },
             {
+              "t": 145,
+              "x": -0.24999540167542134,
+              "y": 12.001516291906169,
+              "rot": 0.11041949551489161,
+              "scaleX": 1,
+              "scaleY": 1
+            },
+            {
               "t": 155,
               "rot": 0,
               "ease": "easeInOut"
@@ -2152,6 +2351,14 @@
             {
               "t": 0,
               "rot": -8.4
+            },
+            {
+              "t": 145,
+              "x": -0.24999239870315923,
+              "y": 11.998050489640796,
+              "rot": -0.11041949551489161,
+              "scaleX": 1,
+              "scaleY": 1
             },
             {
               "t": 155,
@@ -2178,6 +2385,14 @@
               "y": -26
             },
             {
+              "t": 145,
+              "x": -0.25,
+              "y": -28.89983703185299,
+              "rot": 0,
+              "scaleX": 1,
+              "scaleY": 1
+            },
+            {
               "t": 155,
               "y": -29,
               "ease": "easeInOut"
@@ -2191,6 +2406,44 @@
               "t": 465,
               "y": -29,
               "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "head",
+          "keys": [
+            {
+              "t": 0,
+              "x": 0,
+              "y": -20,
+              "rot": 0
+            },
+            {
+              "t": 145,
+              "x": -0.25767859966963996,
+              "y": -20.000223267696217,
+              "rot": 0,
+              "scaleX": 1,
+              "scaleY": 1
+            }
+          ]
+        },
+        {
+          "bone": "back",
+          "keys": [
+            {
+              "t": 0,
+              "x": 0,
+              "y": -14,
+              "rot": 0
+            },
+            {
+              "t": 145,
+              "x": -0.25767869639566787,
+              "y": -14,
+              "rot": 0,
+              "scaleX": 1,
+              "scaleY": 1
             }
           ]
         }

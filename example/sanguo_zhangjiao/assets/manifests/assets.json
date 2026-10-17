@@ -5882,7 +5882,7 @@
       "animations": [],
       "targetPhase": "P1",
       "status": "placeholder",
-      "revision": 43
+      "revision": 50
     },
     {
       "assetId": "skeleton.wolf-demo",
@@ -8252,6 +8252,216 @@
       "targetPhase": "P1",
       "status": "placeholder",
       "revision": 1
+    },
+    {
+      "assetId": "player.parts.hair-heroine-front",
+      "imageId": "player.parts.hair-heroine-front",
+      "category": "character-part",
+      "usage": [
+        "player-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player/parts/hair-heroine-front.png",
+      "runtime2D": {
+        "path": "assets/images/player/parts/hair-heroine-front.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player.parts.hair-heroine-front"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 51,
+        "height": 64
+      },
+      "status": "ai-generated",
+      "animations": [],
+      "targetPhase": "P1",
+      "revision": 1,
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 51,
+        "cellHeight": 64
+      }
+    },
+    {
+      "assetId": "player.parts.hair-heroine-side",
+      "imageId": "player.parts.hair-heroine-side",
+      "category": "character-part",
+      "usage": [
+        "player-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player/parts/hair-heroine-side.png",
+      "runtime2D": {
+        "path": "assets/images/player/parts/hair-heroine-side.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player.parts.hair-heroine-side"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 66,
+        "height": 64
+      },
+      "status": "ai-generated",
+      "animations": [],
+      "targetPhase": "P1",
+      "revision": 1,
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 66,
+        "cellHeight": 64
+      }
+    },
+    {
+      "assetId": "player.parts.hair-heroine-back",
+      "imageId": "player.parts.hair-heroine-back",
+      "category": "character-part",
+      "usage": [
+        "player-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player/parts/hair-heroine-back.png",
+      "runtime2D": {
+        "path": "assets/images/player/parts/hair-heroine-back.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player.parts.hair-heroine-back"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 49,
+        "height": 64
+      },
+      "status": "ai-generated",
+      "animations": [],
+      "targetPhase": "P1",
+      "revision": 1,
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 49,
+        "cellHeight": 64
+      }
+    },
+    {
+      "assetId": "player.parts.head-body-front",
+      "imageId": "player.parts.head-body-front",
+      "category": "character-part",
+      "usage": [
+        "player-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player/parts/head-body-front.png",
+      "runtime2D": {
+        "path": "assets/images/player/parts/head-body-front.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player.parts.head-body-front"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "status": "ai-generated",
+      "animations": [],
+      "targetPhase": "P1",
+      "revision": 1,
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      }
+    },
+    {
+      "assetId": "player.parts.head-body-side",
+      "imageId": "player.parts.head-body-side",
+      "category": "character-part",
+      "usage": [
+        "player-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player/parts/head-body-side.png",
+      "runtime2D": {
+        "path": "assets/images/player/parts/head-body-side.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player.parts.head-body-side"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "status": "ai-generated",
+      "animations": [],
+      "targetPhase": "P1",
+      "revision": 1,
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      }
+    },
+    {
+      "assetId": "player.parts.head-body-back",
+      "imageId": "player.parts.head-body-back",
+      "category": "character-part",
+      "usage": [
+        "player-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player/parts/head-body-back.png",
+      "runtime2D": {
+        "path": "assets/images/player/parts/head-body-back.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player.parts.head-body-back"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "status": "ai-generated",
+      "animations": [],
+      "targetPhase": "P1",
+      "revision": 1,
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      }
     }
   ]
 }

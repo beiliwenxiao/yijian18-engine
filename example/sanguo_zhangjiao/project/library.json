@@ -2758,6 +2758,78 @@
         "armor"
       ],
       "width": 64
+    },
+    {
+      "assetId": "player.parts.hair-heroine-front",
+      "bone": "head",
+      "category": "head",
+      "direction": "front",
+      "height": 64,
+      "id": "part.head.hair-front",
+      "tags": [
+        "body"
+      ],
+      "width": 51
+    },
+    {
+      "assetId": "player.parts.hair-heroine-side",
+      "bone": "head",
+      "category": "head",
+      "direction": "side",
+      "height": 64,
+      "id": "part.head.hair-side",
+      "tags": [
+        "body"
+      ],
+      "width": 66
+    },
+    {
+      "assetId": "player.parts.hair-heroine-back",
+      "bone": "head",
+      "category": "head",
+      "direction": "back",
+      "height": 64,
+      "id": "part.head.hair-back",
+      "tags": [
+        "body"
+      ],
+      "width": 49
+    },
+    {
+      "assetId": "player.parts.head-body-front",
+      "bone": "head",
+      "category": "head",
+      "direction": "front",
+      "height": 64,
+      "id": "part.head.head-body-front",
+      "tags": [
+        "body"
+      ],
+      "width": 64
+    },
+    {
+      "assetId": "player.parts.head-body-side",
+      "bone": "head",
+      "category": "head",
+      "direction": "side",
+      "height": 64,
+      "id": "part.head.head-body-side",
+      "tags": [
+        "body"
+      ],
+      "width": 64
+    },
+    {
+      "assetId": "player.parts.head-body-back",
+      "bone": "head",
+      "category": "head",
+      "direction": "back",
+      "height": 64,
+      "id": "part.head.head-body-back",
+      "tags": [
+        "body"
+      ],
+      "width": 64
     }
   ],
   "talents": []

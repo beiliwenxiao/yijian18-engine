@@ -449,6 +449,7 @@ export class SkeletonEditor {
         this.commands.fetchLibrary(this.gameRoot).catch(() => null) // 内容库缺失不阻塞
       ]);
       this.partCatalog = buildPartRegistry(library?.skeletonParts || []);
+      this.skeletonEntries.length = 0;   // 可重入（刷新数据时重建清单），防重复累积
       const entries = Array.isArray(manifest?.assets) ? manifest.assets : [];
       for (const entry of entries) {
         const mode = entry?.runtime2D?.mode;
@@ -626,6 +627,7 @@ export class SkeletonEditor {
     if (!entry) { this._toast('当前文档不是已保存的资产（模板/新建），无法刷新', true); return; }
     if (this.dirty && !confirm('当前有未保存修改，刷新数据将被磁盘内容覆盖，确定？')) return;
     try {
+      await this._loadManifest();   // 同步重建图片/部件/骨骼清单（外部新增的资产登记一并生效）
       const response = await fetch(`/${this.gameRoot}/${entry.runtime2D.path}?t=${Date.now()}`);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const doc = await response.json();
@@ -3156,10 +3158,11 @@ export class SkeletonEditor {
 
   /** 当前预览方向下，三态头部槽位是否应显示。仅影响编辑器画布预览，不覆写 JSON。 */
   _isHeadSlotVisibleInPreview(slotId) {
+    // 头部三态预览（双槽结构）：发型 head* 与素体脸 headBody* 同步切换
     const plan = {
-      down: { headFront: true, headSide: false, headBack: false },
-      side: { headFront: false, headSide: true, headBack: false },
-      up: { headFront: false, headSide: false, headBack: true }
+      down: { headFront: true, headSide: false, headBack: false, headBodyFront: true, headBodySide: false, headBodyBack: false },
+      side: { headFront: false, headSide: true, headBack: false, headBodyFront: false, headBodySide: true, headBodyBack: false },
+      up: { headFront: false, headSide: false, headBack: true, headBodyFront: false, headBodySide: false, headBodyBack: true }
     }[this.previewDirection];
     if (!plan || !(slotId in plan)) return null; // 非三态槽位 = 不干涉
     return plan[slotId];

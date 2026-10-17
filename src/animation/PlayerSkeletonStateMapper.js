@@ -33,15 +33,16 @@ const MAPPER_CLIPS = new Set([
   'idle_down', 'idle_up', 'idle_side'
 ]);
 
-/** 头部槽位可见性（key: 方向键 down/side/up + 对角 SE/SW/NE/NW——斜下正脸、斜上后脑） */
+/** 头部槽位可见性（key: 方向键 down/side/up + 对角 SE/SW/NE/NW——斜下正脸、斜上后脑）。
+ *  headBody*（素体脸底层）与 head*（发型顶层）同步三态切换——双槽叠穿结构。 */
 const HEAD_SLOTS = {
-  down: { headFront: true, headSide: false, headBack: false },
-  side: { headFront: false, headSide: true, headBack: false },
-  up: { headFront: false, headSide: false, headBack: true },
-  SE: { headFront: true, headSide: false, headBack: false },
-  SW: { headFront: true, headSide: false, headBack: false },
-  NE: { headFront: false, headSide: false, headBack: true },
-  NW: { headFront: false, headSide: false, headBack: true }
+  down: { headFront: true, headSide: false, headBack: false, headBodyFront: true, headBodySide: false, headBodyBack: false },
+  side: { headFront: false, headSide: true, headBack: false, headBodyFront: false, headBodySide: true, headBodyBack: false },
+  up: { headFront: false, headSide: false, headBack: true, headBodyFront: false, headBodySide: false, headBodyBack: true },
+  SE: { headFront: true, headSide: false, headBack: false, headBodyFront: true, headBodySide: false, headBodyBack: false },
+  SW: { headFront: true, headSide: false, headBack: false, headBodyFront: true, headBodySide: false, headBodyBack: false },
+  NE: { headFront: false, headSide: false, headBack: true, headBodyFront: false, headBodySide: false, headBodyBack: true },
+  NW: { headFront: false, headSide: false, headBack: true, headBodyFront: false, headBodySide: false, headBodyBack: true }
 };
 
 /** 斜向剪辑缺失时回退到就近基本方向（对角 idle 无专属剪辑，复用正/背待机）。 */
@@ -164,7 +165,8 @@ export function createPlayerSkeletonStateMapper(entity, { getAssetManager = null
             if (!attachment) continue;
             // 侧脸基准图朝左（鼻梁在左缘）：附件恒翻为「朝右基准」，
             // 最终朝向由实体 flipX 决定（右行 flip=false→朝右；左行 flip=true→镜像回朝左）
-            if (slot.id === 'headSide') {
+            // headBodySide（素体脸侧槽，双槽叠穿）与发型侧槽同基准同翻转
+            if (slot.id === 'headSide' || slot.id === 'headBodySide') {
               if (attachment.flipX !== true) attachment.flipX = true;
             }
             // 背面时背挂武器水平翻转（斧头/长矛换边：正面朝右上 → 背面朝左上）
