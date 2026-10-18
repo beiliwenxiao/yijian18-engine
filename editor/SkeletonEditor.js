@@ -1308,7 +1308,23 @@ export class SkeletonEditor {
     return {
       x: override?.x ?? attachment?.x ?? 0,
       y: override?.y ?? attachment?.y ?? 0,
-      rot: override?.rot ?? attachment?.rot ?? 0
+      rot: override?.rot ?? attachment?.rot ?? 0,
+      // 方向换图（身体三态）：side/up 覆盖可声明 assetId/width/height，整体替换部件图
+      assetId: override?.assetId ?? null,
+      width: override?.width ?? null,
+      height: override?.height ?? null
+    };
+  }
+
+  /** 预览方向下的有效附件：offset 声明了 assetId 时返回换图后的附件（对齐运行时渲染）。 */
+  _effectiveAttachment(attachment) {
+    const offset = this._effectiveAttachmentOffset(attachment);
+    if (!offset?.assetId || !attachment) return attachment;
+    return {
+      ...attachment,
+      assetId: offset.assetId,
+      ...(offset.width > 0 ? { width: offset.width } : {}),
+      ...(offset.height > 0 ? { height: offset.height } : {})
     };
   }
 
@@ -1729,12 +1745,14 @@ export class SkeletonEditor {
       if (this._isSlotPreviewHidden(slot.id, slot.bone)) continue;
       const boneWorld = world.get(slot.bone);
       if (!boneWorld) continue;
-      const source = this._attachmentSource(attachment);
+      // 方向换图（身体三态）：side/up 预览用 offset.assetId 的部件图（对齐运行时渲染）
+      const effAttachment = this._effectiveAttachment(attachment);
+      const source = this._attachmentSource(effAttachment);
       if (!source) continue;
       const anchorWorld = this._attachmentAnchorWorld(boneWorld, attachment);
       const anchor = this._worldToScreen(anchorWorld.x, anchorWorld.y);
-      const drawW = (attachment.width > 0 ? attachment.width : source.sw) * boneWorld.sx * this.view.scale;
-      const drawH = (attachment.height > 0 ? attachment.height : source.sh) * boneWorld.sy * this.view.scale;
+      const drawW = (effAttachment.width > 0 ? effAttachment.width : source.sw) * boneWorld.sx * this.view.scale;
+      const drawH = (effAttachment.height > 0 ? effAttachment.height : source.sh) * boneWorld.sy * this.view.scale;
       ctx.save();
       ctx.translate(anchor.x, anchor.y);
       // 旋转用有效偏移 rot（side/up 方向覆盖），与运行时 SkeletonRenderer 的 directionOverride.rot 一致
@@ -2264,10 +2282,12 @@ export class SkeletonEditor {
       if (this._isSlotInteractiveLocked(runtimeSlot.id, runtimeSlot.bone)) continue;
       const boneWorld = world.get(runtimeSlot.bone);
       if (!boneWorld) continue;
-      const source = this._attachmentSource(attachment);
+      // 命中盒按预览方向的有效附件（方向换图后以 side/back 图计算，所见即可点）
+      const effAttachment = this._effectiveAttachment(attachment);
+      const source = this._attachmentSource(effAttachment);
       if (!source) continue;
-      const drawW = (attachment.width > 0 ? attachment.width : source.sw) * boneWorld.sx * this.view.scale;
-      const drawH = (attachment.height > 0 ? attachment.height : source.sh) * boneWorld.sy * this.view.scale;
+      const drawW = (effAttachment.width > 0 ? effAttachment.width : source.sw) * boneWorld.sx * this.view.scale;
+      const drawH = (effAttachment.height > 0 ? effAttachment.height : source.sh) * boneWorld.sy * this.view.scale;
       if (drawW < 2 || drawH < 2) continue;
       const anchorWorld = this._attachmentAnchorWorld(boneWorld, attachment);
       const anchor = this._worldToScreen(anchorWorld.x, anchorWorld.y);

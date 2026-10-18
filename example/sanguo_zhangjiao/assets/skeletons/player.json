@@ -10,8 +10,8 @@
     {
       "id": "hips",
       "parent": null,
-      "x": 0,
-      "y": -33.6,
+      "x": 2.5,
+      "y": -24.5,
       "rot": 0,
       "scaleX": 1,
       "scaleY": 1,
@@ -20,8 +20,8 @@
     {
       "id": "torso",
       "parent": "hips",
-      "x": 0,
-      "y": -2,
+      "x": 2.5,
+      "y": -20.6,
       "rot": 0,
       "scaleX": 1,
       "scaleY": 1,
@@ -30,8 +30,8 @@
     {
       "id": "head",
       "parent": "torso",
-      "x": 0,
-      "y": -20,
+      "x": 2.5,
+      "y": -38.6,
       "rot": 0,
       "scaleX": 1,
       "scaleY": 1,
@@ -40,8 +40,8 @@
     {
       "id": "armUR",
       "parent": "torso",
-      "x": -7,
-      "y": -16,
+      "x": -4.5,
+      "y": -34.6,
       "rot": 0,
       "scaleX": 1,
       "scaleY": 1,
@@ -50,8 +50,8 @@
     {
       "id": "armUL",
       "parent": "torso",
-      "x": 7,
-      "y": -16,
+      "x": 9.5,
+      "y": -34.6,
       "rot": 0,
       "scaleX": 1,
       "scaleY": 1,
@@ -60,8 +60,8 @@
     {
       "id": "armFR",
       "parent": "armUR",
-      "x": 0,
-      "y": 12,
+      "x": 2.5,
+      "y": -6.6,
       "rot": 0,
       "scaleX": 1,
       "scaleY": 1,
@@ -70,8 +70,8 @@
     {
       "id": "armFL",
       "parent": "armUL",
-      "x": 0,
-      "y": 12,
+      "x": 2.5,
+      "y": -6.6,
       "rot": 0,
       "scaleX": 1,
       "scaleY": 1,
@@ -80,8 +80,8 @@
     {
       "id": "thighR",
       "parent": "hips",
-      "x": -5,
-      "y": -1,
+      "x": -2.5,
+      "y": -19.6,
       "rot": 0,
       "scaleX": 1,
       "scaleY": 1,
@@ -90,8 +90,8 @@
     {
       "id": "thighL",
       "parent": "hips",
-      "x": 5,
-      "y": -1,
+      "x": 7.5,
+      "y": -19.6,
       "rot": 0,
       "scaleX": 1,
       "scaleY": 1,
@@ -100,8 +100,8 @@
     {
       "id": "calfR",
       "parent": "thighR",
-      "x": 0,
-      "y": 13,
+      "x": 2.5,
+      "y": -5.6,
       "rot": 0,
       "scaleX": 1,
       "scaleY": 1,
@@ -110,8 +110,8 @@
     {
       "id": "calfL",
       "parent": "thighL",
-      "x": 0,
-      "y": 13,
+      "x": 2.5,
+      "y": -5.6,
       "rot": 0,
       "scaleX": 1,
       "scaleY": 1,
@@ -120,8 +120,8 @@
     {
       "id": "back",
       "parent": "hips",
-      "x": 0,
-      "y": -14,
+      "x": 2.5,
+      "y": -32.6,
       "rot": 0,
       "scaleX": 1,
       "scaleY": 1,
@@ -146,11 +146,18 @@
         "assetId": "player.parts.weapon-spear",
         "partId": "part.weapon.spear",
         "x": -15.7,
-        "y": -6.4,
+        "y": -10.6,
         "rot": -72.4,
         "width": 64,
         "height": 64,
-        "visible": false
+        "visible": false,
+        "directionOffsets": {
+          "side": {
+            "x": -15.7,
+            "y": -6.6,
+            "rot": -72.4
+          }
+        }
       }
     },
     {
@@ -162,11 +169,18 @@
         "assetId": "player.parts.weapon-axe",
         "partId": "part.weapon.axe.back",
         "x": -3.1,
-        "y": -0.3,
+        "y": -4.5,
         "rot": -155.4,
         "width": 64,
         "height": 64,
-        "visible": true
+        "visible": true,
+        "directionOffsets": {
+          "side": {
+            "x": -3.1,
+            "y": -0.5,
+            "rot": -155.4
+          }
+        }
       }
     },
     {
@@ -177,16 +191,16 @@
         "type": "image",
         "assetId": "player.parts.skirt-back",
         "partId": "part.skirt.back",
-        "x": 0,
-        "y": 21.6,
+        "x": -0.2,
+        "y": 15.2,
         "rot": 0,
         "width": 64,
         "height": 64,
         "visible": true,
         "directionOffsets": {
           "side": {
-            "x": -0.2,
-            "y": 21.6,
+            "x": 0,
+            "y": 21.4,
             "rot": 0
           }
         }
@@ -201,7 +215,7 @@
         "assetId": "player.parts.upper-arm-r",
         "partId": "part.upper-arm.r",
         "x": -6.4,
-        "y": 6.8,
+        "y": 2.6,
         "rot": 1.5,
         "width": 64,
         "height": 64,
@@ -213,8 +227,8 @@
             "rot": 7
           },
           "side": {
-            "x": -7.4,
-            "y": 5.1,
+            "x": -6.4,
+            "y": 6.6,
             "rot": 1.5
           }
         }
@@ -229,15 +243,15 @@
         "assetId": "player.parts.fore-arm-r",
         "partId": "part.fore-arm.r",
         "x": -14,
-        "y": 24,
+        "y": 19.8,
         "rot": 0,
         "width": 64,
         "height": 64,
         "visible": true,
         "directionOffsets": {
           "side": {
-            "x": -14.4,
-            "y": 22.3,
+            "x": -14,
+            "y": 23.8,
             "rot": 0
           },
           "up": {
@@ -257,15 +271,20 @@
         "assetId": "player.parts.upper-arm-l",
         "partId": "part.upper-arm.l",
         "x": 7.3,
-        "y": 10.1,
+        "y": 5.9,
         "rot": 0,
         "width": 62,
         "height": 62,
         "visible": true,
         "directionOffsets": {
           "side": {
-            "x": 5.3,
-            "y": 9.5,
+            "x": 7.3,
+            "y": 9.9,
+            "rot": 0
+          },
+          "up": {
+            "x": 0,
+            "y": 0,
             "rot": 0
           }
         }
@@ -279,16 +298,16 @@
         "type": "image",
         "assetId": "player.parts.fore-arm-l",
         "partId": "part.fore-arm.l",
-        "x": 16.7,
-        "y": 24.5,
+        "x": 17,
+        "y": 21.1,
         "rot": -2.3,
         "width": 64,
         "height": 64,
         "visible": true,
         "directionOffsets": {
           "side": {
-            "x": 14.5,
-            "y": 23.6,
+            "x": 16.7,
+            "y": 24.3,
             "rot": -2.3
           },
           "up": {
@@ -308,21 +327,23 @@
         "assetId": "player.parts.torso",
         "partId": "part.torso",
         "x": 1,
-        "y": 2.6,
+        "y": 0.2,
         "rot": 0,
         "width": 64,
         "height": 64,
         "visible": true,
         "directionOffsets": {
           "side": {
-            "x": 0.8,
-            "y": 2.6,
-            "rot": 0
+            "x": 1,
+            "y": 2.4,
+            "rot": 0,
+            "assetId": "player.parts.torso-side"
           },
           "up": {
             "x": 1.7,
             "y": 4.1,
-            "rot": 0
+            "rot": 0,
+            "assetId": "player.parts.torso-back"
           }
         }
       }
@@ -335,12 +356,19 @@
         "type": "image",
         "assetId": "player.parts.skirt-front",
         "partId": "part.skirt.front",
-        "x": 2,
-        "y": 23.7,
+        "x": 1.8,
+        "y": 31.1,
         "rot": -1.8,
         "width": 64,
         "height": 64,
-        "visible": true
+        "visible": true,
+        "directionOffsets": {
+          "side": {
+            "x": 2,
+            "y": 23.5,
+            "rot": -1.8
+          }
+        }
       }
     },
     {
@@ -352,11 +380,18 @@
         "assetId": "player.parts.head-front",
         "partId": "part.head.head-front",
         "x": 0,
-        "y": 7.6,
+        "y": 3.4,
         "rot": 0,
         "width": 64,
         "height": 64,
-        "visible": true
+        "visible": true,
+        "directionOffsets": {
+          "side": {
+            "x": -12.3,
+            "y": 77.9,
+            "rot": 0
+          }
+        }
       }
     },
     {
@@ -373,7 +408,14 @@
         "width": 64,
         "height": 64,
         "flipX": true,
-        "visible": false
+        "visible": false,
+        "directionOffsets": {
+          "side": {
+            "x": 0.3,
+            "y": 7.3,
+            "rot": 0
+          }
+        }
       }
     },
     {
@@ -389,7 +431,14 @@
         "rot": 0,
         "width": 64,
         "height": 64,
-        "visible": false
+        "visible": false,
+        "directionOffsets": {
+          "side": {
+            "x": -12.3,
+            "y": 78.3,
+            "rot": 0
+          }
+        }
       }
     },
     {
@@ -401,11 +450,18 @@
         "assetId": "player.parts.hair-heroine-front",
         "partId": "part.head.hair-front",
         "x": 0.3,
-        "y": -15,
+        "y": -19.2,
         "rot": 0,
         "width": 24,
         "height": 29,
-        "visible": true
+        "visible": true,
+        "directionOffsets": {
+          "side": {
+            "x": -12.1,
+            "y": 55.3,
+            "rot": 0
+          }
+        }
       }
     },
     {
@@ -425,8 +481,8 @@
         "visible": false,
         "directionOffsets": {
           "side": {
-            "x": -1.2,
-            "y": -16,
+            "x": -0.5,
+            "y": -18.2,
             "rot": 0
           }
         }
@@ -451,6 +507,11 @@
             "x": 0.1,
             "y": -15.1,
             "rot": 0
+          },
+          "side": {
+            "x": -12.3,
+            "y": 63.5,
+            "rot": 0
           }
         }
       }
@@ -463,15 +524,20 @@
         "type": "image",
         "assetId": "player.parts.thigh-r",
         "partId": "part.thigh.r",
-        "x": 0,
-        "y": -0.3,
+        "x": -2,
+        "y": 21.5,
         "rot": 0,
         "width": 64,
         "height": 64,
         "directionOffsets": {
           "side": {
-            "x": -0.2,
-            "y": -0.3,
+            "x": 0,
+            "y": -0.5,
+            "rot": 0
+          },
+          "up": {
+            "x": 0,
+            "y": 0,
             "rot": 0
           }
         }
@@ -485,15 +551,20 @@
         "type": "image",
         "assetId": "player.parts.thigh-l",
         "partId": "part.thigh.l",
-        "x": 0,
-        "y": -0.5,
+        "x": 2,
+        "y": 23.2,
         "rot": 0,
         "width": 64,
         "height": 64,
         "directionOffsets": {
           "side": {
-            "x": -0.2,
-            "y": -0.5,
+            "x": 0,
+            "y": -0.7,
+            "rot": 0
+          },
+          "up": {
+            "x": 0,
+            "y": 0,
             "rot": 0
           }
         }
@@ -507,15 +578,20 @@
         "type": "image",
         "assetId": "player.parts.calf-l",
         "partId": "part.calf.l",
-        "x": -0.7,
-        "y": -0.5,
+        "x": 1.4,
+        "y": 30.1,
         "rot": 0,
         "width": 64,
         "height": 64,
         "directionOffsets": {
           "side": {
-            "x": -0.9,
-            "y": -0.6,
+            "x": -0.7,
+            "y": -0.7,
+            "rot": 0
+          },
+          "up": {
+            "x": 0,
+            "y": 0,
             "rot": 0
           }
         }
@@ -529,15 +605,20 @@
         "type": "image",
         "assetId": "player.parts.calf-r",
         "partId": "part.calf.r",
-        "x": 0,
-        "y": -0.3,
+        "x": -4.4,
+        "y": 31.1,
         "rot": 0,
         "width": 64,
         "height": 64,
         "directionOffsets": {
           "side": {
-            "x": -0.2,
-            "y": -0.4,
+            "x": 0,
+            "y": -0.5,
+            "rot": 0
+          },
+          "up": {
+            "x": 0,
+            "y": 0,
             "rot": 0
           }
         }
@@ -552,11 +633,18 @@
         "assetId": "player.parts.weapon-spear",
         "partId": "part.weapon.spear-hand",
         "x": 0,
-        "y": 12.6,
+        "y": 8.4,
         "rot": 0,
         "width": 64,
         "height": 64,
-        "visible": false
+        "visible": false,
+        "directionOffsets": {
+          "side": {
+            "x": 0,
+            "y": 12.4,
+            "rot": 0
+          }
+        }
       }
     },
     {
@@ -568,11 +656,18 @@
         "assetId": "player.parts.weapon-skinningKnife",
         "partId": "part.weapon.skinningKnife",
         "x": 0,
-        "y": 12.6,
+        "y": 8.4,
         "rot": 0,
         "width": 64,
         "height": 64,
-        "visible": false
+        "visible": false,
+        "directionOffsets": {
+          "side": {
+            "x": 0,
+            "y": 12.4,
+            "rot": 0
+          }
+        }
       }
     },
     {
@@ -583,9 +678,9 @@
         "type": "image",
         "assetId": "player.parts.weapon-wolfFang",
         "partId": "part.weapon.wolfFang",
-        "x": 3.1,
-        "y": 15.2,
-        "rot": 54.6,
+        "x": -30,
+        "y": 30,
+        "rot": 227,
         "width": 31,
         "height": 35,
         "visible": true,
@@ -594,6 +689,11 @@
             "x": -31.9,
             "y": -19.5,
             "rot": 185.7
+          },
+          "side": {
+            "x": 3.1,
+            "y": 15,
+            "rot": 54.6
           }
         }
       }
@@ -607,11 +707,18 @@
         "assetId": "player.parts.weapon-bow",
         "partId": "part.weapon.bow",
         "x": 0,
-        "y": 12.6,
+        "y": 8.4,
         "rot": 0,
         "width": 64,
         "height": 64,
-        "visible": false
+        "visible": false,
+        "directionOffsets": {
+          "side": {
+            "x": 0,
+            "y": 12.4,
+            "rot": 0
+          }
+        }
       }
     },
     {
@@ -623,11 +730,18 @@
         "assetId": "player.parts.weapon-staff",
         "partId": "part.weapon.staff",
         "x": 0,
-        "y": 12.6,
+        "y": 8.4,
         "rot": 0,
         "width": 64,
         "height": 64,
-        "visible": false
+        "visible": false,
+        "directionOffsets": {
+          "side": {
+            "x": 0,
+            "y": 12.4,
+            "rot": 0
+          }
+        }
       }
     },
     {
@@ -639,11 +753,18 @@
         "assetId": "player.parts.weapon-axe",
         "partId": "part.weapon.axe",
         "x": -5.9,
-        "y": 14,
+        "y": 9.8,
         "rot": 244.7,
         "width": 64,
         "height": 64,
-        "visible": true
+        "visible": true,
+        "directionOffsets": {
+          "side": {
+            "x": -5.9,
+            "y": 13.8,
+            "rot": 244.7
+          }
+        }
       }
     }
   ],
@@ -658,7 +779,7 @@
           "keys": [
             {
               "t": 0,
-              "y": -2.75,
+              "y": -4.640076764333736,
               "x": 0,
               "rot": 0
             },
@@ -682,6 +803,14 @@
               "ease": "easeInOut",
               "x": 0,
               "rot": 0
+            },
+            {
+              "t": 1417,
+              "x": 0,
+              "y": -5.5,
+              "rot": 0,
+              "scaleX": 1,
+              "scaleY": 1
             }
           ]
         },
@@ -692,7 +821,7 @@
               "t": 0,
               "rot": 0,
               "x": 0,
-              "y": -20.75,
+              "y": -22.640076764333735,
               "scaleX": 1,
               "scaleY": 1
             },
@@ -722,6 +851,14 @@
               "y": -20.75,
               "scaleX": 1,
               "scaleY": 1
+            },
+            {
+              "t": 1417,
+              "x": 0,
+              "y": -23.5,
+              "rot": 1.7022222222222223,
+              "scaleX": 1,
+              "scaleY": 1
             }
           ]
         },
@@ -732,7 +869,7 @@
               "t": 0,
               "rot": 0,
               "x": -7,
-              "y": -16.75
+              "y": -18.640076764333735
             },
             {
               "t": 450,
@@ -754,6 +891,14 @@
               "ease": "easeInOut",
               "x": -7,
               "y": -16.75
+            },
+            {
+              "t": 1417,
+              "x": -7,
+              "y": -19.5,
+              "rot": 1.2766666666666666,
+              "scaleX": 1,
+              "scaleY": 1
             }
           ]
         },
@@ -764,7 +909,7 @@
               "t": 0,
               "rot": 0,
               "x": 7,
-              "y": -16.75
+              "y": -18.640076764333735
             },
             {
               "t": 450,
@@ -786,6 +931,14 @@
               "ease": "easeInOut",
               "x": 7,
               "y": -16.75
+            },
+            {
+              "t": 1417,
+              "x": 7,
+              "y": -19.5,
+              "rot": -1.2766666666666666,
+              "scaleX": 1,
+              "scaleY": 1
             }
           ]
         },
@@ -796,7 +949,7 @@
               "t": 0,
               "rot": 0,
               "x": 0,
-              "y": 11.25
+              "y": 9.359923235666265
             },
             {
               "t": 450,
@@ -818,6 +971,14 @@
               "ease": "easeInOut",
               "x": 0,
               "y": 11.25
+            },
+            {
+              "t": 1417,
+              "x": -0.061270530835979775,
+              "y": 8.500682644354962,
+              "rot": 0.8511111111111112,
+              "scaleX": 1,
+              "scaleY": 1
             }
           ]
         },
@@ -828,7 +989,7 @@
               "t": 0,
               "rot": 0,
               "x": 0,
-              "y": 11.25
+              "y": 9.359923235666265
             },
             {
               "t": 450,
@@ -850,6 +1011,14 @@
               "ease": "easeInOut",
               "x": 0,
               "y": 11.25
+            },
+            {
+              "t": 1417,
+              "x": 0.061270530835979775,
+              "y": 8.500682644354962,
+              "rot": -0.8511111111111112,
+              "scaleX": 1,
+              "scaleY": 1
             }
           ]
         },
@@ -859,7 +1028,7 @@
             {
               "t": 0,
               "x": 0,
-              "y": -14.75,
+              "y": -16.640076764333735,
               "rot": 0
             },
             {
@@ -880,6 +1049,14 @@
               "y": -15.54,
               "rot": 4.94,
               "ease": "linear"
+            },
+            {
+              "t": 1417,
+              "x": 0,
+              "y": -18.172377777777776,
+              "rot": 4.204488888888889,
+              "scaleX": 1,
+              "scaleY": 1
             }
           ]
         },
@@ -889,8 +1066,16 @@
             {
               "t": 0,
               "x": 0,
-              "y": 12.25,
+              "y": 10.109923235666265,
               "rot": 0
+            },
+            {
+              "t": 1417,
+              "x": 0,
+              "y": 9.25,
+              "rot": 0,
+              "scaleX": 1,
+              "scaleY": 1
             }
           ]
         },
@@ -899,9 +1084,17 @@
           "keys": [
             {
               "t": 0,
-              "x": 0,
-              "y": -26.75,
+              "x": -0.25,
+              "y": -53.140076764333735,
               "rot": 0
+            },
+            {
+              "t": 1413,
+              "x": -0.25,
+              "y": -54,
+              "rot": 0,
+              "scaleX": 1,
+              "scaleY": 1
             }
           ]
         },
@@ -911,7 +1104,7 @@
             {
               "t": 0,
               "x": -5,
-              "y": -1.75,
+              "y": -3.6400767643337377,
               "rot": 0,
               "scaleX": 1,
               "scaleY": 1
@@ -942,6 +1135,14 @@
               "scaleX": 1,
               "scaleY": 1,
               "ease": "linear"
+            },
+            {
+              "t": 1417,
+              "x": -5,
+              "y": -4.5,
+              "rot": 0,
+              "scaleX": 1,
+              "scaleY": 1
             }
           ]
         },
@@ -951,8 +1152,16 @@
             {
               "t": 0,
               "x": 5,
-              "y": -1.75,
+              "y": -3.6400767643337377,
               "rot": 0
+            },
+            {
+              "t": 1417,
+              "x": 5,
+              "y": -4.5,
+              "rot": 0,
+              "scaleX": 1,
+              "scaleY": 1
             }
           ]
         },
@@ -962,8 +1171,16 @@
             {
               "t": 0,
               "x": 0,
-              "y": 12.25,
-              "rot": 0
+              "y": 10.359923235666265,
+              "rot": -6.4
+            },
+            {
+              "t": 1417,
+              "x": 0,
+              "y": 9.5,
+              "rot": -6.4,
+              "scaleX": 1,
+              "scaleY": 1
             }
           ]
         }

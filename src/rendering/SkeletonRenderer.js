@@ -68,21 +68,32 @@ export class SkeletonRenderer {
       const boneWorld = worldPose.get(slot.bone);
       if (!boneWorld) continue;
 
-      const source = this._resolveAttachmentSource(attachment, assetManager, skeletonComponent, slot);
+      // 方向性附件偏移（背挂武器等按朝向摆位）：side/up 覆盖缺省时逐字段回退顶层值。
+      // offset.assetId/width/height：按方向整体换部件图（身体三态：正面/侧面/背面），
+      // 换图时绘制盒以 offset 声明为准，未声明沿用顶层附件盒。
+      const directionOverride = resolveAttachmentOffset(attachment, resolveDirectionKey(sprite?.direction));
+      const effectiveAttachment = directionOverride?.assetId
+        ? {
+          ...attachment,
+          assetId: directionOverride.assetId,
+          ...(directionOverride.width > 0 ? { width: directionOverride.width } : {}),
+          ...(directionOverride.height > 0 ? { height: directionOverride.height } : {})
+        }
+        : attachment;
+
+      const source = this._resolveAttachmentSource(effectiveAttachment, assetManager, skeletonComponent, slot);
       if (!source) continue;
 
       ctx.save();
       ctx.translate(boneWorld.x, boneWorld.y);
       ctx.rotate(boneWorld.rad);
       ctx.scale(boneWorld.sx, boneWorld.sy);
-      // 方向性附件偏移（背挂武器等按朝向摆位）：side/up 覆盖缺省时逐字段回退顶层值
-      const directionOverride = resolveAttachmentOffset(attachment, resolveDirectionKey(sprite?.direction));
       ctx.translate(directionOverride?.x ?? attachment.x, directionOverride?.y ?? attachment.y);
       ctx.rotate(((directionOverride?.rot ?? attachment.rot) || 0) * DEG2RAD);
       if ((directionOverride?.flipX ?? attachment.flipX) === true) ctx.scale(-1, 1);   // 附件水平镜像（背面长矛等视角切换）
 
-      const drawW = attachment.width > 0 ? attachment.width : source.sw;
-      const drawH = attachment.height > 0 ? attachment.height : source.sh;
+      const drawW = effectiveAttachment.width > 0 ? effectiveAttachment.width : source.sw;
+      const drawH = effectiveAttachment.height > 0 ? effectiveAttachment.height : source.sh;
       if (source.image && source.sw > 0 && source.sh > 0 && drawW > 0 && drawH > 0) {
         // 附件盒以骨骼点为中心（脚底类附件可用 attachment.y 下移）
         ctx.drawImage(source.image, source.sx, source.sy, source.sw, source.sh,

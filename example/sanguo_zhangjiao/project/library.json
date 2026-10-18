@@ -2830,6 +2830,30 @@
         "body"
       ],
       "width": 64
+    },
+    {
+      "assetId": "player.parts.torso-side",
+      "bone": "torso",
+      "category": "body",
+      "direction": "side",
+      "height": 64,
+      "id": "part.torso.side",
+      "tags": [
+        "body"
+      ],
+      "width": 64
+    },
+    {
+      "assetId": "player.parts.torso-back",
+      "bone": "torso",
+      "category": "body",
+      "direction": "back",
+      "height": 64,
+      "id": "part.torso.back",
+      "tags": [
+        "body"
+      ],
+      "width": 64
     }
   ],
   "talents": []

@@ -5882,7 +5882,7 @@
       "animations": [],
       "targetPhase": "P1",
       "status": "placeholder",
-      "revision": 70
+      "revision": 80
     },
     {
       "assetId": "skeleton.wolf-demo",
@@ -8462,6 +8462,64 @@
         "cellWidth": 64,
         "cellHeight": 64
       }
+    },
+    {
+      "assetId": "player.parts.torso-side",
+      "imageId": "player.parts.torso-side",
+      "category": "character-part",
+      "usage": [
+        "player-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player/parts/torso-side.png",
+      "runtime2D": {
+        "path": "assets/images/player/parts/torso-side.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player.parts.torso-side"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "status": "ai-generated",
+      "animations": [],
+      "targetPhase": "P1",
+      "revision": 1
+    },
+    {
+      "assetId": "player.parts.torso-back",
+      "imageId": "player.parts.torso-back",
+      "category": "character-part",
+      "usage": [
+        "player-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player/parts/torso-back.png",
+      "runtime2D": {
+        "path": "assets/images/player/parts/torso-back.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player.parts.torso-back"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "status": "ai-generated",
+      "animations": [],
+      "targetPhase": "P1",
+      "revision": 1
     }
   ]
 }
