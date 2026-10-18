@@ -60,6 +60,45 @@ export class PickupSystem {
     return this.triggerPickup(playerEntity, pickupItems, equipmentItems, request);
   }
 
+  /**
+   * 焦点候选：范围内最近的可拾取物（与 _tryPickup 同一套候选/排序语义）。
+   * 供渲染层画「按 E 拾取」焦点提示，拾取仍由 intent 链路结算。
+   * @returns {{item, x, y, name, quantity, distance}|null}
+   */
+  getFocusCandidate(playerEntity, pickupItems = [], equipmentItems = []) {
+    const position = playerEntity?.getComponent?.('transform')?.position;
+    if (!position) return null;
+    let best = null;
+    for (const item of [...pickupItems, ...equipmentItems]) {
+      if (!item || item.picked) continue;
+      const itemPosition = item.getComponent?.('transform')?.position || item;
+      if (!Number.isFinite(itemPosition?.x) || !Number.isFinite(itemPosition?.y)) continue;
+      const distance = Math.hypot(itemPosition.x - position.x, itemPosition.y - position.y);
+      if (distance > this.pickupRadius) continue;
+      if (!best || distance < best.distance) {
+        best = {
+          item,
+          x: itemPosition.x,
+          y: itemPosition.y,
+          name: this._resolveItemName(item),
+          quantity: Math.max(1, Math.floor(Number(item.quantity
+            ?? item.getComponent?.('itemProjection')?.quantity) || 1)),
+          distance
+        };
+      }
+    }
+    return best;
+  }
+
+  /** @private 物品显示名（投影/定义/实体三级回退）。 */
+  _resolveItemName(item) {
+    return item.getItemName?.()
+      || item.itemProjection?.name
+      || item.definition?.name
+      || item.name
+      || '物品';
+  }
+
   _tryPickup(playerEntity, pickupItems = [], equipmentItems = [], request = {}) {
     const position = playerEntity.getComponent?.('transform')?.position;
     if (!position || !this.commandGateway) return this._emptyResult();

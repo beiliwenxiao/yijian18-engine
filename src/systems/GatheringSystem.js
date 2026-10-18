@@ -132,6 +132,9 @@ export class GatheringSystem {
     // 不动背包/装备数据）；采集结束（完成/中断）由 _finish 清除。
     // 装备了同款工具时 override 与装备 weaponKey 同值，显示结果一致。
     actor._handToolOverride = tool ? weaponKeyOf(tool) : null;
+    // 采集开始即停止移动（清速度与移动意图）——否则开始瞬间的速度残量/按住的
+    // 方向键会让角色一边播放采集动画一边滑行（表现为自动往前走）。
+    actor.getComponent?.('movement')?.stop?.();
     this.onEvent('started', this.describe());
     return { ok: true, session: this.describe() };
   }

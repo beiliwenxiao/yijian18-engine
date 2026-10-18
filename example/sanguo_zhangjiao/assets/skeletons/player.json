@@ -195,7 +195,7 @@
     {
       "id": "armUR",
       "bone": "armUR",
-      "z": 17,
+      "z": 20,
       "attachment": {
         "type": "image",
         "assetId": "player.parts.upper-arm-l",
@@ -223,7 +223,7 @@
     {
       "id": "armFR",
       "bone": "armFR",
-      "z": 7,
+      "z": 22,
       "attachment": {
         "type": "image",
         "assetId": "player.parts.fore-arm-l",
@@ -246,7 +246,7 @@
     {
       "id": "armUL",
       "bone": "armUL",
-      "z": 22,
+      "z": 18,
       "attachment": {
         "type": "image",
         "assetId": "player.parts.upper-arm-r",
@@ -269,7 +269,7 @@
     {
       "id": "armFL",
       "bone": "armFL",
-      "z": 23,
+      "z": 19,
       "attachment": {
         "type": "image",
         "assetId": "player.parts.fore-arm-r",
@@ -292,7 +292,7 @@
     {
       "id": "torsoSlot",
       "bone": "torso",
-      "z": 19,
+      "z": 16,
       "attachment": {
         "type": "image",
         "assetId": "player.parts.torso",
@@ -315,7 +315,7 @@
     {
       "id": "skirtFront",
       "bone": "torso",
-      "z": 18,
+      "z": 15,
       "attachment": {
         "type": "image",
         "assetId": "player.parts.skirt-front",
@@ -329,230 +329,51 @@
       }
     },
     {
-      "id": "headBodyFront",
-      "bone": "head",
-      "z": 11.5,
-      "attachment": {
-        "type": "image",
-        "assetId": "player.parts.head-body-front",
-        "partId": "part.head.head-body-front",
-        "x": -0.2,
-        "y": -11.8,
-        "rot": 0,
-        "width": 29,
-        "height": 30,
-        "visible": true
-      }
-    },
-    {
-      "id": "headBodySide",
-      "bone": "head",
-      "z": 12.5,
-      "attachment": {
-        "type": "image",
-        "assetId": "player.parts.head-body-side",
-        "partId": "part.head.head-body-side",
-        "x": -0.2,
-        "y": -11.8,
-        "rot": 0,
-        "width": 29,
-        "height": 30,
-        "visible": false,
-        "directionOffsets": {
-          "side": {
-            "x": -0.4,
-            "y": -11.8,
-            "rot": 0
-          }
-        }
-      }
-    },
-    {
-      "id": "headBodyBack",
-      "bone": "head",
-      "z": 13.5,
-      "attachment": {
-        "type": "image",
-        "assetId": "player.parts.head-body-back",
-        "partId": "part.head.head-body-back",
-        "x": -0.2,
-        "y": -11.8,
-        "rot": 0,
-        "width": 29,
-        "height": 30,
-        "visible": false,
-        "directionOffsets": {
-          "side": {
-            "x": -0.4,
-            "y": -11.8,
-            "rot": 0
-          }
-        }
-      }
-    },
-    {
       "id": "headFront",
       "bone": "head",
-      "z": 12,
+      "z": 11,
       "attachment": {
         "type": "image",
-        "assetId": "player.parts.hair-heroine-front",
-        "partId": "part.head.hair-front",
-        "x": -0.7,
-        "y": -18.9,
+        "assetId": "player.parts.head-front",
+        "partId": "part.head.head-front",
+        "x": 0,
+        "y": 7.6,
         "rot": 0,
-        "width": 26,
-        "height": 30,
+        "width": 64,
+        "height": 64,
         "visible": true
       }
     },
     {
       "id": "headSide",
       "bone": "head",
-      "z": 13,
+      "z": 12,
       "attachment": {
         "type": "image",
-        "assetId": "player.parts.hair-heroine-side",
-        "partId": "part.head.hair-side",
-        "x": -0.2,
-        "y": -18.9,
+        "assetId": "player.parts.head-side",
+        "partId": "part.head.head-side",
+        "x": 0.3,
+        "y": 7.5,
         "rot": 0,
-        "width": 32,
-        "height": 29,
-        "visible": false,
-        "directionOffsets": {
-          "side": {
-            "x": -0.4,
-            "y": -18.9,
-            "rot": 0
-          }
-        }
+        "width": 64,
+        "height": 64,
+        "visible": false
       }
     },
     {
       "id": "headBack",
       "bone": "head",
-      "z": 14,
+      "z": 13,
       "attachment": {
         "type": "image",
-        "assetId": "player.parts.hair-heroine-back",
-        "partId": "part.head.hair-back",
-        "x": -0.2,
-        "y": -18.9,
-        "rot": 0,
-        "width": 26,
-        "height": 30,
-        "visible": false,
-        "directionOffsets": {
-          "up": {
-            "x": -0.2,
-            "y": -18.7,
-            "rot": 0
-          }
-        }
-      }
-    },
-    {
-      "id": "weaponSpear",
-      "bone": "armFR",
-      "z": 8,
-      "attachment": {
-        "type": "image",
-        "assetId": "player.parts.weapon-spear",
-        "partId": "part.weapon.spear-hand",
+        "assetId": "player.parts.head-back",
+        "partId": "part.head.head-back",
         "x": 0,
-        "y": 12.6,
+        "y": 8,
         "rot": 0,
         "width": 64,
         "height": 64,
         "visible": false
-      }
-    },
-    {
-      "id": "weaponSkinningKnife",
-      "bone": "armFR",
-      "z": 9,
-      "attachment": {
-        "type": "image",
-        "assetId": "player.parts.weapon-skinningKnife",
-        "partId": "part.weapon.skinningKnife",
-        "x": 0,
-        "y": 12.6,
-        "rot": 0,
-        "width": 64,
-        "height": 64,
-        "visible": false
-      }
-    },
-    {
-      "id": "weaponWolfFang",
-      "bone": "armFR",
-      "z": 20,
-      "attachment": {
-        "type": "image",
-        "assetId": "player.parts.weapon-wolfFang",
-        "partId": "part.weapon.wolfFang",
-        "x": -11.7,
-        "y": 25.2,
-        "rot": 176.4,
-        "width": 31,
-        "height": 35,
-        "visible": true,
-        "directionOffsets": {
-          "up": {
-            "x": -13.1,
-            "y": -14.6,
-            "rot": 185.7
-          }
-        }
-      }
-    },
-    {
-      "id": "weaponBow",
-      "bone": "armFR",
-      "z": 10,
-      "attachment": {
-        "type": "image",
-        "assetId": "player.parts.weapon-bow",
-        "partId": "part.weapon.bow",
-        "x": 0,
-        "y": 12.6,
-        "rot": 0,
-        "width": 64,
-        "height": 64,
-        "visible": false
-      }
-    },
-    {
-      "id": "weaponStaff",
-      "bone": "armFR",
-      "z": 11,
-      "attachment": {
-        "type": "image",
-        "assetId": "player.parts.weapon-staff",
-        "partId": "part.weapon.staff",
-        "x": 0,
-        "y": 12.6,
-        "rot": 0,
-        "width": 64,
-        "height": 64,
-        "visible": false
-      }
-    },
-    {
-      "id": "weaponAxe",
-      "bone": "armFR",
-      "z": 21,
-      "attachment": {
-        "type": "image",
-        "assetId": "player.parts.weapon-axe",
-        "partId": "part.weapon.axe",
-        "x": -5.9,
-        "y": 14,
-        "rot": 244.7,
-        "width": 64,
-        "height": 64,
-        "visible": true
       }
     },
     {
@@ -624,7 +445,7 @@
     {
       "id": "part-calf-r",
       "bone": "calfR",
-      "z": 16,
+      "z": 14,
       "attachment": {
         "type": "image",
         "assetId": "player.parts.calf-l",
@@ -641,6 +462,109 @@
             "rot": 0
           }
         }
+      }
+    },
+    {
+      "id": "weaponSpear",
+      "bone": "armFR",
+      "z": 7,
+      "attachment": {
+        "type": "image",
+        "assetId": "player.parts.weapon-spear",
+        "partId": "part.weapon.spear-hand",
+        "x": 0,
+        "y": 12.6,
+        "rot": 0,
+        "width": 64,
+        "height": 64,
+        "visible": false
+      }
+    },
+    {
+      "id": "weaponSkinningKnife",
+      "bone": "armFR",
+      "z": 8,
+      "attachment": {
+        "type": "image",
+        "assetId": "player.parts.weapon-skinningKnife",
+        "partId": "part.weapon.skinningKnife",
+        "x": 0,
+        "y": 12.6,
+        "rot": 0,
+        "width": 64,
+        "height": 64,
+        "visible": false
+      }
+    },
+    {
+      "id": "weaponWolfFang",
+      "bone": "armFR",
+      "z": 21,
+      "attachment": {
+        "type": "image",
+        "assetId": "player.parts.weapon-wolfFang",
+        "partId": "part.weapon.wolfFang",
+        "x": 5.9,
+        "y": 15.3,
+        "rot": 54.6,
+        "width": 31,
+        "height": 35,
+        "visible": true,
+        "directionOffsets": {
+          "up": {
+            "x": -13.1,
+            "y": -14.6,
+            "rot": 185.7
+          }
+        }
+      }
+    },
+    {
+      "id": "weaponBow",
+      "bone": "armFR",
+      "z": 9,
+      "attachment": {
+        "type": "image",
+        "assetId": "player.parts.weapon-bow",
+        "partId": "part.weapon.bow",
+        "x": 0,
+        "y": 12.6,
+        "rot": 0,
+        "width": 64,
+        "height": 64,
+        "visible": false
+      }
+    },
+    {
+      "id": "weaponStaff",
+      "bone": "armFR",
+      "z": 10,
+      "attachment": {
+        "type": "image",
+        "assetId": "player.parts.weapon-staff",
+        "partId": "part.weapon.staff",
+        "x": 0,
+        "y": 12.6,
+        "rot": 0,
+        "width": 64,
+        "height": 64,
+        "visible": false
+      }
+    },
+    {
+      "id": "weaponAxe",
+      "bone": "armFR",
+      "z": 17,
+      "attachment": {
+        "type": "image",
+        "assetId": "player.parts.weapon-axe",
+        "partId": "part.weapon.axe",
+        "x": -5.9,
+        "y": 14,
+        "rot": 244.7,
+        "width": 64,
+        "height": 64,
+        "visible": true
       }
     }
   ],

@@ -299,8 +299,11 @@ export class TutorialSystem {
       return false;
     }
     if (this.currentTutorial && this.currentTutorial.id !== tutorialId) {
-      console.warn('TutorialSystem: 已有其他教程正在显示:', this.currentTutorial.id);
-      return false;
+      // 槽忙入队等待（与 showTutorial 同语义）——不拒绝请求，避免上层状态事务
+      // 因槽忙而失败（触发器编排的 showStep 会被 scenario command rejected 打断）。
+      console.warn(`TutorialSystem: 教程槽忙（当前=${this.currentTutorial.id}），步骤 ${tutorialId}/${tutorialStepId} 加入待显示队列`);
+      this.pendingTutorials.push({ tutorialId, tutorialStepId, context: context || {} });
+      return true;
     }
     if (this.currentTutorial?.id === tutorialId && this.currentStepIndex >= stepIndex) return true;
 
@@ -464,11 +467,15 @@ export class TutorialSystem {
     this.hideTutorial();
   }
 
-  /** 槽位空闲后，依次补显待显示队列中的教程。 */
+  /** 槽位空闲后，依次补显待显示队列中的教程（步骤级请求走 showTutorialStep）。 */
   _flushPendingTutorials() {
     while (this.pendingTutorials.length && !this.currentTutorial) {
       const next = this.pendingTutorials.shift();
-      this.showTutorial(next.tutorialId, next.context || {});
+      if (next.tutorialStepId) {
+        this.showTutorialStep(next.tutorialId, next.tutorialStepId, next.context || {});
+      } else {
+        this.showTutorial(next.tutorialId, next.context || {});
+      }
     }
   }
 

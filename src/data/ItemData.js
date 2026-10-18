@@ -49,6 +49,29 @@ export class ItemData {
    */
   initItemTemplates() {
     return {
+      // 工具（与 library.json tool.skinning_knife 同源——掉落拾取链路需要本地模板）
+      tool_skinning_knife: {
+        id: 'tool.skinning_knife',
+        name: '旧剥皮刀',
+        type: ItemType.EQUIPMENT,
+        rarity: ItemRarity.COMMON,
+        description: '刃口磨损的旧剥皮刀。攻击 +5，攻击间隔缩短 1.5 秒。持有即可剥皮。',
+        icon: 's01.tool.skinningKnife',
+        maxStack: 1,
+        subType: 'tool',
+        toolType: 'skinningKnife',
+        imageId: 's01.tool.skinningKnife',
+        stats: { attack: 5 },
+        attackSpeedReduce: { minSec: 1.5, reduceSec: 1.5, thresholdSec: 1 },
+        skeletonPart: {
+          bone: 'armFR',
+          offset: { rot: 0, x: 0, y: 26 },
+          partId: 'part.weapon.skinningKnife',
+          slotId: 'weaponSkinningKnife',
+          weaponKey: 'skinningKnife'
+        },
+        value: 15
+      },
       // 消耗品
       health_potion: {
         id: 'health_potion',

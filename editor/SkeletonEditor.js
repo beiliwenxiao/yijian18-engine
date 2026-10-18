@@ -3158,11 +3158,10 @@ export class SkeletonEditor {
 
   /** 当前预览方向下，三态头部槽位是否应显示。仅影响编辑器画布预览，不覆写 JSON。 */
   _isHeadSlotVisibleInPreview(slotId) {
-    // 头部三态预览（双槽结构）：发型 head* 与素体脸 headBody* 同步切换
     const plan = {
-      down: { headFront: true, headSide: false, headBack: false, headBodyFront: true, headBodySide: false, headBodyBack: false },
-      side: { headFront: false, headSide: true, headBack: false, headBodyFront: false, headBodySide: true, headBodyBack: false },
-      up: { headFront: false, headSide: false, headBack: true, headBodyFront: false, headBodySide: false, headBodyBack: true }
+      down: { headFront: true, headSide: false, headBack: false },
+      side: { headFront: false, headSide: true, headBack: false },
+      up: { headFront: false, headSide: false, headBack: true }
     }[this.previewDirection];
     if (!plan || !(slotId in plan)) return null; // 非三态槽位 = 不干涉
     return plan[slotId];

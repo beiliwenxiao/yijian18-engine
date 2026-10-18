@@ -6,6 +6,7 @@
 import { Logger } from '../Logger.js';
 import { ClickFeedbackRenderer } from '../../rendering/ClickFeedbackRenderer.js';
 import { InputEventType } from '../input/InputEvent.js';
+import { InputHints } from '../input/InputHints.js';
 
 /** 统一处理 UI/世界点击、点击拾取、兼容轻功入口与右键反馈。 */
 export class SceneWorldInteraction {
@@ -188,6 +189,62 @@ export class SceneWorldInteraction {
 
   _applyPickupResult(result = {}) {
     this.entityStore.removeMany(result.removedEntities || []);
+  }
+
+  /**
+   * 拾取焦点提示：范围内最近的可拾取物头顶画「E + 拾取 物品名」提示条。
+   * 世界坐标绘制（调用点在 SceneRenderPipeline 相机变换段内）；无焦点时不画。
+   * @param {CanvasRenderingContext2D} ctx
+   */
+  renderPickupFocusHint(ctx) {
+    const scene = this.scene;
+    const player = scene.playerEntity;
+    const pickupSystem = scene.pickupSystem;
+    if (!player || !pickupSystem?.getFocusCandidate) return;
+    const focus = pickupSystem.getFocusCandidate(player, scene.pickupItems, scene.equipmentItems);
+    if (!focus) return;
+
+    const keyLabel = InputHints.key('pickup') || 'E';
+    const label = `${focus.name}${focus.quantity > 1 ? ` ×${focus.quantity}` : ''}`;
+    ctx.save();
+    ctx.font = 'bold 12px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const keyWidth = ctx.measureText(keyLabel).width + 12;
+    const textWidth = ctx.measureText(label).width;
+    const gap = 6;
+    const boxWidth = keyWidth + gap + textWidth + 16;
+    const boxHeight = 22;
+    const boxX = focus.x - boxWidth / 2;
+    const boxY = focus.y - 46;
+
+    // 背景条（半透明黑 + 描边），带轻微上下浮动
+    const bob = Math.sin(Date.now() * 0.004) * 1.5;
+    ctx.globalAlpha = 0.82;
+    ctx.fillStyle = 'rgba(10, 12, 16, 0.88)';
+    ctx.strokeStyle = 'rgba(255, 220, 120, 0.55)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.roundRect(boxX, boxY + bob, boxWidth, boxHeight, 6);
+    ctx.fill();
+    ctx.stroke();
+
+    // E 键角标（金底黑字）
+    ctx.globalAlpha = 1;
+    const keyX = boxX + 8;
+    const keyY = boxY + bob + (boxHeight - 15) / 2;
+    ctx.fillStyle = '#ffd76a';
+    ctx.beginPath();
+    ctx.roundRect(keyX, keyY, keyWidth - 12 + 10, 15, 3);
+    ctx.fill();
+    ctx.fillStyle = '#20180a';
+    ctx.fillText(keyLabel, keyX + (keyWidth - 12 + 10) / 2, keyY + 8);
+
+    // 物品名
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'left';
+    ctx.fillText(label, keyX + keyWidth - 12 + 10 + gap, boxY + bob + boxHeight / 2 + 1);
+    ctx.restore();
   }
 
   /** 保留旧 Ctrl+左键轻功入口；当前 PC 主路径由瞄准服务驱动。 */
