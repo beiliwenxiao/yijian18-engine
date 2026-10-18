@@ -404,14 +404,14 @@
         "x": 5,
         "y": -8.5,
         "rot": 0,
-        "width": 39.6,
-        "height": 38.4,
+        "width": 28,
+        "height": 28,
         "flipX": true,
         "visible": false,
         "directionOffsets": {
           "side": {
-            "x": -3.2,
-            "y": -21.6,
+            "x": -1.2,
+            "y": -16,
             "rot": 0
           }
         }
@@ -428,13 +428,13 @@
         "x": 0,
         "y": -6.8,
         "rot": 0,
-        "width": 27,
-        "height": 35.3,
+        "width": 24,
+        "height": 30,
         "visible": false,
         "directionOffsets": {
           "up": {
-            "x": 0.3,
-            "y": -18.6,
+            "x": 0.6,
+            "y": -14.1,
             "rot": 0
           }
         }
