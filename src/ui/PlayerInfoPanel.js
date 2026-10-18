@@ -95,7 +95,7 @@ export class PlayerInfoPanel extends UIElement {
       'refugee': '平民'
     };
     
-    // 装备槽位置定义（3列4行布局）
+    // 装备槽位置定义（3列5行布局）
     this.equipSlotPositions = {
       'accessory': { row: 0, col: 0, label: '饰品' },
       'helmet': { row: 0, col: 1, label: '头盔' },
@@ -108,7 +108,10 @@ export class PlayerInfoPanel extends UIElement {
       'ring2': { row: 2, col: 2, label: '戒指' },
       'instrument': { row: 3, col: 0, label: '器械' },
       'boots': { row: 3, col: 1, label: '鞋子' },
-      'mount': { row: 3, col: 2, label: '坐骑' }
+      'mount': { row: 3, col: 2, label: '坐骑' },
+      'trinket1': { row: 4, col: 0, label: '饰品' },
+      'pants': { row: 4, col: 1, label: '裤子' },
+      'trinket2': { row: 4, col: 2, label: '饰品' }
     };
   }
 

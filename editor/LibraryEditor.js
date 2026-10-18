@@ -144,7 +144,8 @@ const NPC_TYPES = Object.freeze({
 /** 装备槽位（与 EquipmentComponent.isValidEquipmentForSlot 的 subType 值域一致）。 */
 const EQUIPMENT_SUBTYPES = Object.freeze([
   'mainhand', 'offhand', 'armor', 'helmet', 'boots',
-  'accessory', 'necklace', 'ring', 'belt', 'instrument', 'mount'
+  'accessory', 'necklace', 'ring', 'belt', 'instrument', 'mount',
+  'pants', 'skirt', 'trinket'
 ]);
 
 /**

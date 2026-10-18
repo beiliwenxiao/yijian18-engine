@@ -26,7 +26,10 @@ export const SLOT_MAP = {
   shield: 'offhand',
   ammo: 'offhand',
   ring: 'ring1',
-  tool: 'mainhand'
+  tool: 'mainhand',
+  pants: 'pants',
+  skirt: 'pants',
+  trinket: 'trinket1'
 };
 
 /** 参与对比展示的属性字段与中文名 */
@@ -120,7 +123,19 @@ export class SceneEquipmentFlow {
     const eq = player.getComponent('equipment');
     const stats = player.getComponent('stats');
     const inv = player.getComponent('inventory');
-    const targetSlot = SceneEquipmentFlow.resolveSlot(item);
+    let targetSlot = SceneEquipmentFlow.resolveSlot(item);
+
+    // 多栏自动顺延：首选槽已占用且备选栏为空时装备到备选栏
+    // - 饰品（accessory）：饰品栏 → 饰品栏1 → 饰品栏2
+    // - 饰物（trinket）：饰品栏1 → 饰品栏2
+    if (eq) {
+      if (targetSlot === 'accessory' && eq.getEquipment('accessory')
+        && !eq.getEquipment('trinket1')) targetSlot = 'trinket1';
+      if ((targetSlot === 'accessory' || targetSlot === 'trinket1')
+        && eq.getEquipment(targetSlot) && !eq.getEquipment('trinket2')) {
+        targetSlot = 'trinket2';
+      }
+    }
 
     if (eq && eq.isValidEquipmentForSlot && !eq.isValidEquipmentForSlot(item, targetSlot)) {
       return { ok: false, reason: 'invalidSlot', slot: targetSlot };

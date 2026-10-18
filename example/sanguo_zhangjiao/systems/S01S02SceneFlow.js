@@ -857,6 +857,13 @@ export class S01S02Coordinator {
         && this._readStoryPath(params.completedPath) === true;
       return { ok: true, status: achieved ? 'alreadyCommitted' : 'notReady' };
     }
+    if (result.ok === true) {
+      // 事实提交后重评估场景放置点：spawnWhen 因本事实新满足的 placement 此刻补刷。
+      // chunk 首次加载时条件未满足的 placement 不会自动重试（剥皮刀「杀了狼却不出」的根因），
+      // 这里做统一的「事实提交 → 出现」时机；幂等：已生成的走 alreadySpawned 短路。
+      void this.scene.context?.services?.placements?.spawn?.({ sceneId: this.scene.currentSceneId })
+        ?.catch?.(error => console.warn('[S01S02Coordinator] 事实提交后放置点补刷失败', error));
+    }
     if (result.ok === true && params.successTip) {
       const accepted = Math.max(0, Number(eventData.accepted) || 0);
       this.scene._showScreenTip(String(params.successTip).replaceAll('{accepted}', String(accepted)), {

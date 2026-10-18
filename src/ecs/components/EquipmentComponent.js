@@ -41,6 +41,9 @@ export class EquipmentComponent extends Component {
       ring1: null,        // 戒指1
       belt: null,         // 腰带
       ring2: null,        // 戒指2
+      pants: null,        // 裤子/裙子
+      trinket1: null,     // 饰品栏1
+      trinket2: null,     // 饰品栏2
       instrument: null,   // 器械
       boots: null,        // 鞋子
       mount: null         // 坐骑
@@ -158,6 +161,9 @@ export class EquipmentComponent extends Component {
       ring1: ['ring'],
       belt: ['belt'],
       ring2: ['ring'],
+      pants: ['pants', 'skirt'],                 // 裤子栏：可穿裤子或裙子
+      trinket1: ['trinket', 'accessory'],        // 饰品栏：饰品/饰物类通用
+      trinket2: ['trinket', 'accessory'],
       instrument: ['instrument'],
       boots: ['boots'],
       mount: ['mount']

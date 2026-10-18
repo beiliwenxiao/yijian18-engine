@@ -546,7 +546,9 @@ export class BackpackPanel extends UIElement {
     const col = slotIndex % columns;
     if (direction === 'left' && col === 0) {
       this._gamepadFocus.area = 'equipment';
-      return this._setEquipmentFocus(this.playerInfoContent.getEquipmentSlotAt(Math.min(3, row), 2));
+      const positions = Object.values(this.playerInfoContent.equipSlotPositions || {});
+      const maxRow = positions.length ? Math.max(...positions.map(p => p.row)) : 3;
+      return this._setEquipmentFocus(this.playerInfoContent.getEquipmentSlotAt(Math.min(maxRow, row), 2));
     }
     let next = slotIndex;
     if (direction === 'left' && col > 0) next--;
@@ -564,12 +566,14 @@ export class BackpackPanel extends UIElement {
       const maxSlots = Number(inventory?.maxSlots) || 0;
       return maxSlots > 0 && this._setInventoryFocus(Math.min(maxSlots - 1, current.row * this.inventoryContent.slotsPerRow));
     }
+    const positions = Object.values(this.playerInfoContent.equipSlotPositions || {});
+    const maxRow = positions.length ? Math.max(...positions.map(p => p.row)) : 3;
     let row = current.row;
     let col = current.col;
     if (direction === 'left') col = Math.max(0, col - 1);
     if (direction === 'right') col = Math.min(2, col + 1);
     if (direction === 'up') row = Math.max(0, row - 1);
-    if (direction === 'down') row = Math.min(3, row + 1);
+    if (direction === 'down') row = Math.min(maxRow, row + 1);
     return this._setEquipmentFocus(this.playerInfoContent.getEquipmentSlotAt(row, col));
   }
 
