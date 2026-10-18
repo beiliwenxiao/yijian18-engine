@@ -357,6 +357,7 @@
         "rot": 0,
         "width": 64,
         "height": 64,
+        "flipX": true,
         "visible": false
       }
     },
@@ -400,13 +401,20 @@
         "type": "image",
         "assetId": "player.parts.hair-heroine-side",
         "partId": "part.head.hair-side",
-        "x": -2,
-        "y": -6.8,
+        "x": 5,
+        "y": -8.5,
         "rot": 0,
-        "width": 24,
-        "height": 23.3,
+        "width": 39.6,
+        "height": 38.4,
         "flipX": true,
-        "visible": false
+        "visible": false,
+        "directionOffsets": {
+          "side": {
+            "x": -3.2,
+            "y": -21.6,
+            "rot": 0
+          }
+        }
       }
     },
     {
@@ -422,7 +430,14 @@
         "rot": 0,
         "width": 27,
         "height": 35.3,
-        "visible": false
+        "visible": false,
+        "directionOffsets": {
+          "up": {
+            "x": 0.3,
+            "y": -18.6,
+            "rot": 0
+          }
+        }
       }
     },
     {
