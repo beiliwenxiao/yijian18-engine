@@ -377,6 +377,55 @@
       }
     },
     {
+      "id": "hairFront",
+      "bone": "head",
+      "z": 14,
+      "attachment": {
+        "type": "image",
+        "assetId": "player.parts.hair-heroine-front",
+        "partId": "part.head.hair-front",
+        "x": 0.3,
+        "y": -15,
+        "rot": 0,
+        "width": 24,
+        "height": 29,
+        "visible": true
+      }
+    },
+    {
+      "id": "hairSide",
+      "bone": "head",
+      "z": 15,
+      "attachment": {
+        "type": "image",
+        "assetId": "player.parts.hair-heroine-side",
+        "partId": "part.head.hair-side",
+        "x": -2,
+        "y": -6.8,
+        "rot": 0,
+        "width": 24,
+        "height": 23.3,
+        "flipX": true,
+        "visible": false
+      }
+    },
+    {
+      "id": "hairBack",
+      "bone": "head",
+      "z": 16,
+      "attachment": {
+        "type": "image",
+        "assetId": "player.parts.hair-heroine-back",
+        "partId": "part.head.hair-back",
+        "x": 0,
+        "y": -6.8,
+        "rot": 0,
+        "width": 27,
+        "height": 35.3,
+        "visible": false
+      }
+    },
+    {
       "id": "legThighR",
       "bone": "thighR",
       "z": 4,

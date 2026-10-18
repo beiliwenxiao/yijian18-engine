@@ -33,15 +33,15 @@ const MAPPER_CLIPS = new Set([
   'idle_down', 'idle_up', 'idle_side'
 ]);
 
-/** 头部槽位可见性（key: 方向键 down/side/up + 对角 SE/SW/NE/NW——斜下正脸、斜上后脑）。 */
+/** 头部槽位可见性（key: 方向键 down/side/up + 对角 SE/SW/NE/NW——斜下正脸、斜上后脑；hair* 发型槽与头三态同步切换）。 */
 const HEAD_SLOTS = {
-  down: { headFront: true, headSide: false, headBack: false },
-  side: { headFront: false, headSide: true, headBack: false },
-  up: { headFront: false, headSide: false, headBack: true },
-  SE: { headFront: true, headSide: false, headBack: false },
-  SW: { headFront: true, headSide: false, headBack: false },
-  NE: { headFront: false, headSide: false, headBack: true },
-  NW: { headFront: false, headSide: false, headBack: true }
+  down: { headFront: true, headSide: false, headBack: false, hairFront: true, hairSide: false, hairBack: false },
+  side: { headFront: false, headSide: true, headBack: false, hairFront: false, hairSide: true, hairBack: false },
+  up: { headFront: false, headSide: false, headBack: true, hairFront: false, hairSide: false, hairBack: true },
+  SE: { headFront: true, headSide: false, headBack: false, hairFront: true, hairSide: false, hairBack: false },
+  SW: { headFront: true, headSide: false, headBack: false, hairFront: true, hairSide: false, hairBack: false },
+  NE: { headFront: false, headSide: false, headBack: true, hairFront: false, hairSide: false, hairBack: true },
+  NW: { headFront: false, headSide: false, headBack: true, hairFront: false, hairSide: false, hairBack: true }
 };
 
 /** 斜向剪辑缺失时回退到就近基本方向（对角 idle 无专属剪辑，复用正/背待机）。 */
@@ -164,7 +164,7 @@ export function createPlayerSkeletonStateMapper(entity, { getAssetManager = null
             if (!attachment) continue;
             // 侧脸基准图朝左（鼻梁在左缘）：附件恒翻为「朝右基准」，
             // 最终朝向由实体 flipX 决定（右行 flip=false→朝右；左行 flip=true→镜像回朝左）
-            if (slot.id === 'headSide') {
+            if (slot.id === 'headSide' || slot.id === 'hairSide') {
               if (attachment.flipX !== true) attachment.flipX = true;
             }
             // 背面时背挂武器水平翻转（斧头/长矛换边：正面朝右上 → 背面朝左上）

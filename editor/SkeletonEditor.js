@@ -71,6 +71,7 @@ export class SkeletonEditor {
     this._drag = null;               // 拖拽态：{ kind: 'move'|'attach-move'|'attach-scale'|'bone-scale'|'object-rotate'|'tip-length'|'pan'|'marquee', ... }
     this._mirrorPreview = false;     // 镜像预览：沿角色中轴翻转画布（模拟 sprite.flipX 左向渲染）
     this._hideWeaponSlots = false;   // 武器装备预览开关：true=编辑器画布隐藏手持+背挂武器（纯预览，不写数据）
+    this._hideDirGhosts = false;     // 辅助线开关：true=隐藏方向幽灵预览框（正/侧/背虚线框），侧背视图调试时降噪
     this._libDrag = null;            // 库条目拖入画布的组合预览态：{ partId, assetId, mx, my, dropWorld, hoverBone }
     this._partCheckResult = null;    // 部件体检结果（会话态）：{ rows, at }
     this._alphaBoundsCache = new Map(); // 附件非透明像素包围盒缓存（key: assetId|srcRect）
@@ -267,6 +268,15 @@ export class SkeletonEditor {
       button.style.background = this._hideWeaponSlots ? '#4a3a2a' : '';
       button.style.borderColor = this._hideWeaponSlots ? '#bf8f3f' : '';
       button.style.textDecoration = this._hideWeaponSlots ? 'line-through' : '';
+      this._draw();
+    });
+    // 辅助线开关：隐藏方向幽灵预览框（正/侧/背虚线框）——侧面/背面视图虚线过多时降噪
+    $('se-aux-lines').addEventListener('click', () => {
+      this._hideDirGhosts = !this._hideDirGhosts;
+      const button = $('se-aux-lines');
+      button.style.background = this._hideDirGhosts ? '#4a3a2a' : '';
+      button.style.borderColor = this._hideDirGhosts ? '#bf8f3f' : '';
+      button.style.textDecoration = this._hideDirGhosts ? 'line-through' : '';
       this._draw();
     });
     // 逐帧步进（步长 = 剪辑时长 / 12）：单击走一帧；按住 300ms 后连续逐帧播放。
@@ -1409,6 +1419,7 @@ export class SkeletonEditor {
    */
   _drawDirectionOffsetGhosts(ctx, slot, attachment, boneWorld, source, drawW, drawH) {
     if (this.previewDirection === 'down') return;
+    if (this._hideDirGhosts) return; // 辅助线开关：隐藏正/侧/背幽灵虚线框
     const overrides = attachment.directionOffsets;
     if (!overrides) return;
     const GHOSTS = [
@@ -2244,8 +2255,11 @@ export class SkeletonEditor {
       const attachment = runtimeSlot.attachment;
       if (!attachment || attachment.type === 'empty') continue;
       // 隐藏（side/back 方向组或手动隐藏）/方向预览不可见/锁定的槽位不参与命中（所见即可点）
-      if (attachment.visible === false) continue;
-      if (this._isHeadSlotVisibleInPreview(runtimeSlot.id) === false) continue;
+      // 三态头/发槽（head*/hair*）数据 visible=false 仅表示默认朝向不可见——
+      // 以当前预览方向为准：预览中显示即可命中（对齐渲染逻辑），否则侧面/背面选不中侧发/背发
+      const headVisible = this._isHeadSlotVisibleInPreview(runtimeSlot.id);
+      if (headVisible === false) continue;
+      if (headVisible !== true && attachment.visible === false) continue;
       if (this._isSlotPreviewHidden(runtimeSlot.id, runtimeSlot.bone)) continue;
       if (this._isSlotInteractiveLocked(runtimeSlot.id, runtimeSlot.bone)) continue;
       const boneWorld = world.get(runtimeSlot.bone);
@@ -3159,9 +3173,9 @@ export class SkeletonEditor {
   /** 当前预览方向下，三态头部槽位是否应显示。仅影响编辑器画布预览，不覆写 JSON。 */
   _isHeadSlotVisibleInPreview(slotId) {
     const plan = {
-      down: { headFront: true, headSide: false, headBack: false },
-      side: { headFront: false, headSide: true, headBack: false },
-      up: { headFront: false, headSide: false, headBack: true }
+      down: { headFront: true, headSide: false, headBack: false, hairFront: true, hairSide: false, hairBack: false },
+      side: { headFront: false, headSide: true, headBack: false, hairFront: false, hairSide: true, hairBack: false },
+      up: { headFront: false, headSide: false, headBack: true, hairFront: false, hairSide: false, hairBack: true }
     }[this.previewDirection];
     if (!plan || !(slotId in plan)) return null; // 非三态槽位 = 不干涉
     return plan[slotId];
