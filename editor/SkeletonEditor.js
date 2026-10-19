@@ -328,7 +328,11 @@ export class SkeletonEditor {
         this._renderSlotList();
         this._renderInspector();
         // 图层序操作（对齐场景编辑器）：置顶/上一层/下一层/置底
-        const items = [...this._buildZOrderMenuItems(hitSlotId), { separator: true }];
+        const items = [{
+          label: '🔓 解绑骨骼（挂到根骨骼·保持位置）',
+          disabled: !(this.doc.bones || []).some(candidate => !candidate.parent && candidate.id !== slot?.bone),
+          action: () => this._unbindSlotFromBone(hitSlotId)
+        }, ...this._buildZOrderMenuItems(hitSlotId), { separator: true }];
         if (assetId && this.imageCatalog.has(assetId)) {
           items.push(...this._buildImageMenuItems(assetId));
           this._showContextMenu(event, items, this._imageEntryPath(assetId));
@@ -5143,6 +5147,24 @@ export class SkeletonEditor {
     window.addEventListener('mousemove', onMove);
     window.addEventListener('mouseup', onUp);
     apply(startEvent);
+  }
+
+  /**
+   * 解绑骨骼：槽位挂到根骨骼（parent 为空的第一根），保持部件世界位置不变。
+   * 解绑后调整原骨骼（移动/缩放/调长度）不再带动该部件——用于只想调骨架不动图的场景。
+   * @returns {boolean} 是否发生解绑
+   */
+  _unbindSlotFromBone(slotId) {
+    const slot = this._slotById(slotId);
+    if (!slot) return false;
+    const root = (this.doc.bones || []).find(candidate => !candidate.parent);
+    if (!root || root.id === slot.bone) return false;
+    this._pushHistory();
+    if (!this._rebindSlotKeepWorld(slotId, root.id)) return false;
+    this._markDirty();
+    this._afterDocChange();
+    this._toast(`已解绑：${slot.id} 挂到根骨骼 ${root.id}（调原骨骼不再带动它）`);
+    return true;
   }
 
   /** 换绑槽位到目标骨骼并保持部件世界位置/角度不变（拖放换绑与检查器换绑共用）。 */
