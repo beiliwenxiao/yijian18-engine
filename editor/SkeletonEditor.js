@@ -2167,7 +2167,7 @@ export class SkeletonEditor {
         this._renderInspector();
         return;
       }
-      // 叶子骨骼末端 7px 内：拖动调整骨骼长度（Shift=X 轴缩放）
+      // 叶子骨骼末端 7px 内：拖动调整骨骼长度（Shift=沿骨骼轴平移骨骼，挂图不拉伸）
       const leafTip = this._boneTip(hit, world);
       const leafTipScreen = leafTip ? this._worldToScreen(leafTip.x, leafTip.y) : null;
       const hasChild = (this.doc.bones || []).some(candidate => candidate.parent === hit.id);
@@ -2649,7 +2649,7 @@ export class SkeletonEditor {
     // 拖拽首次实际移动才入历史（纯点击不污染撤销栈）；pan/marquee 不改文档不入栈
     if (this._drag.kind !== 'pan' && this._drag.kind !== 'marquee') this._ensureDragHistory();
     // 骨骼长度调整：叶子骨骼末端拖动 = 鼠标世界位置到骨骼原点的距离，沿骨骼自身方向投影
-    // Shift+拖 = 骨骼 scaleX 缩放（保持 length 不变，整体缩放该骨骼及其子树/挂图）
+    // Shift+拖 = 沿骨骼轴平移骨骼本身（scale 不变，挂图零拉伸；length 同步保持骨条视觉一致）
     if (this._drag.kind === 'tip-length') {
       const bone = this._boneById(this._drag.boneId);
       const boneWorld = this._boneWorldTransforms().get(this._drag.boneId);
@@ -2661,8 +2661,36 @@ export class SkeletonEditor {
       const sin = Math.sin(-boneWorld.rad);
       const along = dx * cos - dy * sin; // 骨骼自身 x 轴分量
       if (event.shiftKey) {
-        const parentSx = (boneWorld.sx || 1) / (bone.scaleX || 1);
-        bone.scaleX = Math.max(0.1, Math.round((along / Math.max(1, bone.length) / parentSx) * 100) / 100);
+        // 旧实现 bone.scaleX = along/length 会沿骨骼方向拉伸子树及挂图——
+        // 即"调整骨骼长度导致图片变形"的根因。改为平移骨骼：setup 模式直接改 rest
+        // 并按编辑器既有语义反算挂点（挂图世界位置固定，同 _nudgeSelection）；动画模式打关键帧。
+        const currentLenWorld = Math.max(1, (bone.length || 0) * (boneWorld.sx || 1));
+        const deltaWorld = along - currentLenWorld;
+        if (Math.abs(deltaWorld) > 0.5) {
+          const rad = boneWorld.rad;
+          const wx = Math.cos(rad) * deltaWorld;
+          const wy = Math.sin(rad) * deltaWorld;
+          const parentWorld = bone.parent ? this._boneWorldTransforms().get(bone.parent) : null;
+          if (parentWorld) {
+            const pCos = Math.cos(-parentWorld.rad);
+            const pSin = Math.sin(-parentWorld.rad);
+            const localDx = (wx * pCos - wy * pSin) / (parentWorld.sx || 1);
+            const localDy = (wx * pSin + wy * pCos) / (parentWorld.sy || 1);
+            if (this.editMode === 'setup') {
+              bone.x = Math.round((bone.x + localDx) * 10) / 10;
+              bone.y = Math.round((bone.y + localDy) * 10) / 10;
+              this.runtime = parseSkeletonAsset(structuredClone(this.doc));
+              this._keepAttachmentsWorldFixed(bone.id, wx, wy);
+            } else {
+              const sampled = this._sampledBoneLocal(bone.id) || bone;
+              this._ensureTrackAndKey(bone.id, this._clip(), {
+                x: Math.round((sampled.x + localDx) * 10) / 10,
+                y: Math.round((sampled.y + localDy) * 10) / 10
+              });
+            }
+          }
+        }
+        bone.length = Math.max(2, Math.round(along / (boneWorld.sx || 1)));
       } else {
         bone.length = Math.max(2, Math.round(along / (boneWorld.sx || 1)));
       }
@@ -4592,7 +4620,7 @@ export class SkeletonEditor {
         <div style="font-size:12px;color:#7ec8ff;margin-bottom:4px;">关联挂件（${boundSlots.length}）<span style="color:#5a6a90;font-size:10px;">— 点击行选中槽位，可改绑定骨骼/偏移/尺寸</span></div>
         ${boundRows || '<div class="se-empty" style="text-align:left;">无挂件——左侧部件库/图片库「→挂骨骼」，或直接拖图进画布落到本骨骼</div>'}
       </div>
-      <div class="se-empty" style="text-align:left;">画布：拖骨身=移动 / 黄环/角外圈=绕关节旋转 / 叶子骨骼末端拖=调长度（Shift=X缩放）/ Alt+点击=穿透图片选骨骼 / 滚轮缩放 / 右键平移</div>
+      <div class="se-empty" style="text-align:left;">画布：拖骨身=移动 / 黄环/角外圈=绕关节旋转 / 叶子骨骼末端拖=调长度（Shift=沿轴平移骨骼·挂图不拉伸）/ Alt+点击=穿透图片选骨骼 / 滚轮缩放 / 右键平移</div>
     `;
     // 关联挂件行点击 → 选中该槽位（检查器切到槽位属性，骨骼下拉可换绑且保持世界位置）
     for (const row of body.querySelectorAll('.se-bound-slot-row')) {
