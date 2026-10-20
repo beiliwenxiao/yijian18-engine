@@ -1098,6 +1098,11 @@ export class SceneEditorUI {
           const tags = [...new Set(String(value || '').split(',').map(tag => tag.trim()).filter(Boolean))];
           if (tags.length) obj.tags = tags;
           else delete obj.tags;
+        } else if (prop === 'faction') {
+          // 军队出兵点阵营：留空 = 沿用运行时默认（ally），不写空字符串进场景 JSON
+          editor.history?.saveHistory?.();
+          if (value) obj.faction = value;
+          else delete obj.faction;
         } else if (prop === '_vertexCount') {
           // 修改顶点数：加点=在随机边中点插入；减点=随机删除一个顶点（保持形状不变形）
           const n = Math.max(3, Math.min(100, Math.round(value)));
@@ -1666,6 +1671,22 @@ export class SceneEditorUI {
       </select></div>`;
       html += `<div class="property-row"><label>刷新间隔(秒):</label><input type="number" value="${ov.refreshIntervalSeconds != null ? ov.refreshIntervalSeconds : ''}" min="0.1" step="0.1" data-prop="overrides.refreshIntervalSeconds" placeholder="留空=用库定义"></div>`;
     }
+    if (obj.kind === 'army') {
+      const libDef = this._getCachedLibraryDef(obj.ref);
+      if (!libDef && obj.ref) this._loadLibraryDefAsync(obj.ref);
+      const squads = Array.isArray(libDef?.squads) ? libDef.squads : [];
+      const squadSummary = squads.length
+        ? squads.map(squad => `${squad.name || squad.id}×${(squad.units || []).reduce((total, unit) => total + (Number(unit?.count) || 0), 0)}`).join('、')
+        : '（定义未加载或无分队）';
+      html += '<div class="property-row" style="border-top:1px solid #333;margin-top:6px;padding-top:6px;">' +
+        '<label style="color:#7cf;font-weight:bold;" title="军队出兵点：运行时按 armies 定义 squads×units 展开，数量构成单一来源归定义">军队编制</label></div>';
+      html += `<div class="property-row"><label title="留空=友军（运行时默认 ally）">阵营:</label><select data-prop="faction">
+        <option value="" ${!obj.faction ? 'selected' : ''}>（默认友军）</option>
+        <option value="ally" ${obj.faction === 'ally' ? 'selected' : ''}>友军 ally</option>
+        <option value="enemy" ${obj.faction === 'enemy' ? 'selected' : ''}>敌军 enemy</option>
+      </select></div>`;
+      html += `<div class="property-row"><label>编制构成:</label><span style="color:#9ab;font-size:11px;flex:1;" title="在左侧「军队」列表点击此定义编辑 squads（分队 id 对齐选择槽 qian/zuo/zhong/you/hou）">${escapeHtml(squadSummary)}</span></div>`;
+    }
     if (obj.kind === 'enemy') {
       const ovAi = obj.overrides?.ai && typeof obj.overrides.ai === 'object' ? obj.overrides.ai : {};
       const patrol = ovAi.patrol && typeof ovAi.patrol === 'object' ? ovAi.patrol : {};
@@ -1733,14 +1754,14 @@ export class SceneEditorUI {
     return this._libraryDefCache.def;
   }
 
-  /** 异步加载库定义（npcs/enemies 合并查找），加载完成后若仍选中同一条目则刷新面板。 */
+  /** 异步加载库定义（npcs/enemies/armies 合并查找），加载完成后若仍选中同一条目则刷新面板。 */
   async _loadLibraryDefAsync(refId) {
     if (!refId || this._libraryDefLoadingId === refId) return;
     this._libraryDefLoadingId = refId;
     try {
       const library = await this.editor.assets?._ensureContentLibrary?.();
       if (!library || this._libraryDefLoadingId !== refId) return;
-      const pool = [...(library.enemies || []), ...(library.npcs || [])];
+      const pool = [...(library.enemies || []), ...(library.npcs || []), ...(library.armies || [])];
       const def = pool.find(entry => entry && entry.id === refId) || null;
       this._libraryDefCache = { id: refId, def };
       const selected = this.editor.selectedObjects?.[0];

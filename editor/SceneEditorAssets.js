@@ -2098,6 +2098,7 @@ export class SceneEditorAssets {
       { key: 'equipment', label: '装备', kind: 'equipment' },
       { key: 'npcs', label: 'NPC', kind: 'npc' },
       { key: 'enemies', label: '敌人', kind: 'enemy' },
+      { key: 'armies', label: '军队', kind: 'army' },
       { key: 'resourceNodes', label: '资源节点', kind: 'resourceNode' },
       { key: 'shops', label: '商店', kind: 'shop' },
       { key: 'vehicles', label: '载具', kind: 'vehicle' },

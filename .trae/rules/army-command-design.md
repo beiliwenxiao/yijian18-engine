@@ -228,4 +228,4 @@ placement(kind:'army', ref:'army.s02.guard', faction?, tags?)
 4. ContentSchemas.js：ARMY_SCHEMA / ARMY_SQUAD_SCHEMA / ARMY_UNIT_SCHEMA。
 5. 首支军队：library.json `army.s02.guard`（qian/hou 各 1 黄巾兵）；S02.json 两条逐兵 placement 合并为一条 army placement（同 group S02-army，触发器 despawn 兼容）。
 6. 单测：PlacementSpawner.army.test.js（展开数量/派生 id/组件注入/幂等/count 无效/门控/定义缺失/overrides 合并）。
-7. 场景编辑器 army-spawn 面板：待做（当前手写 JSON）。
+7. 场景编辑器（已实施）：内容库新增「军队」类别（列表/拖放/新增定义/整库保存全链通用）；army placement 属性面板（阵营下拉 + 编制构成摘要）；画布 army 标记（军字圆标 + 分队锚点示意圈）。

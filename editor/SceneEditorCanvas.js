@@ -293,11 +293,11 @@ export class SceneEditorCanvas {
   _renderRefObject(ctx, obj) {
     const colors = {
       item: '#e0c040', equipment: '#c0a0e0', npc: '#50c88c',
-      enemy: '#d05050', resourceNode: '#78a84f', shop: '#e08040',
+      enemy: '#d05050', army: '#d8aa32', resourceNode: '#78a84f', shop: '#e08040',
       vehicle: '#5a78c0', building: '#a0885a'
     };
     const icons = {
-      item: '道', equipment: '装', npc: '☺', enemy: '⚔', resourceNode: '资',
+      item: '道', equipment: '装', npc: '☺', enemy: '⚔', army: '军', resourceNode: '资',
       shop: '$', vehicle: '车', building: '城'
     };
     const color = colors[obj.kind] || '#8888aa';
@@ -366,6 +366,27 @@ export class SceneEditorCanvas {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(icons[obj.kind] || '?', obj.x, obj.y);
+    // army 出兵点：按 armies 定义画分队锚点示意（运行时锚点动态跟武将，此处为编制构成示意）
+    if (obj.kind === 'army') {
+      const armyDef = (this.editor.assets?._contentLib?.armies || []).find(entry => entry?.id === obj.ref);
+      const squads = Array.isArray(armyDef?.squads) ? armyDef.squads : [];
+      const squadCount = Math.max(1, squads.length);
+      squads.forEach((squad, index) => {
+        const angle = (Math.PI * 2 * index) / squadCount - Math.PI / 2;
+        const anchorX = obj.x + Math.cos(angle) * 26;
+        const anchorY = obj.y + Math.sin(angle) * 18;
+        ctx.beginPath();
+        ctx.arc(anchorX, anchorY, 8, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(216,170,50,0.85)';
+        ctx.lineWidth = 1.2;
+        ctx.setLineDash([3, 2]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = 'rgba(216,170,50,0.9)';
+        ctx.font = '8px Arial';
+        ctx.fillText(String(squad?.name || squad?.id || '?').slice(0, 1), anchorX, anchorY);
+      });
+    }
     this._drawLogicLabel(ctx, label, obj.x + radius + 3, obj.y + 4, color);
     ctx.restore();
   }
