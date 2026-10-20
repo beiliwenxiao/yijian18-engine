@@ -81,7 +81,7 @@ describe('PlacementSpawner army 编制展开', () => {
     const spawner = createSpawner({ storyState: { s02ZhangjiaoChoice: 'save' } });
     const result = spawnGuard(spawner);
     const [qian1, qian2, hou1] = result.entities;
-    expect(qian1.components.map(c => c.name)).toEqual(['squadMember', 'commandState']);
+    expect(qian1.components.map(c => c.type)).toEqual(['squadMember', 'commandState']);
     expect(qian1.components[0].armyId).toBe('army.s02.guard');
     expect(qian1.components[0].squadId).toBe('qian');
     expect(qian1.components[0].formationIndex).toBe(0);
@@ -123,9 +123,22 @@ describe('PlacementSpawner army 编制展开', () => {
     expect(result.counts.soldier).toBe(3);
   });
 
-  it('spawnWhen 门控：条件不满足时逐虚拟实例 conditionFalse', () => {
-    const spawner = createSpawner({ storyState: { s02ZhangjiaoChoice: 'kill' } });
-    const result = spawnGuard(spawner);
+  it('门控逐虚拟实例生效：shouldSpawn 拒绝时 conditionFalse 且不生成（spawnWhen 由运行时门控解析）', () => {
+    const spawner = new PlacementSpawner({
+      entityFactory: {
+        createEnemy: data => ({ ...data, components: [], addComponent(component) { this.components.push(component); } })
+      },
+      entityStore: { enemies: [], all: [], addEnemy: entity => spawner._store.enemies.push(entity), removeMany: values => values },
+      aiSystem: { registerAI: () => {}, deactivateAI: () => {}, unregisterAI: () => {} },
+      // 模拟 ScenePlacementRuntime 的 shouldSpawn 门控：按 spawnWhen 条件解析
+      shouldSpawn: ({ placement }) => placement.spawnWhen?.equals !== 'kill'
+    });
+    spawner._store = { enemies: [] };
+    const result = spawner.spawnMatching({
+      placements: [{ ...ARMY_PLACEMENT, spawnWhen: { blackboardKey: 'storyState', path: 's02ZhangjiaoChoice', equals: 'kill' } }],
+      registries,
+      selector: { group: 'S02-army' }
+    });
     expect(result.counts.soldier).toBe(0);
     expect(result.outcomes.filter(outcome => outcome.status === 'conditionFalse')).toHaveLength(3);
     expect(spawner._store.enemies).toHaveLength(0);
