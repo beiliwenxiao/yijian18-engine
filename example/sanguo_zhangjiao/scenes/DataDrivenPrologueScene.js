@@ -47,6 +47,8 @@ import { SanguoDomainCommandFacade } from '../systems/SanguoDomainCommandFacade.
 import { CargoTransferView } from '../../../src/ui/CargoTransferView.js';
 import { RecipeSelectionView } from '../../../src/ui/RecipeSelectionView.js';
 import { SanguoProgressionPresentationCoordinator } from '../systems/SanguoProgressionPresentationCoordinator.js';
+import { SanguoProgressionStatsFlow } from '../systems/SanguoProgressionStatsFlow.js';
+import { SanguoExperienceFlow } from '../systems/SanguoExperienceFlow.js';
 import { SanguoSceneLifecycleCoordinator } from '../systems/SanguoSceneLifecycleCoordinator.js';
 import { SanguoPlacementCoordinator } from '../systems/SanguoPlacementCoordinator.js';
 import { S01S02Coordinator } from '../systems/S01S02SceneFlow.js';
@@ -434,11 +436,15 @@ export class DataDrivenPrologueScene extends BaseGameScene {
     this.sanguoSceneStateFlow = new SanguoSceneStateFlow(this);
     this.sanguoSceneLifecycleCoordinator = new SanguoSceneLifecycleCoordinator(this);
     this.sanguoProgressionPresentationCoordinator = new SanguoProgressionPresentationCoordinator(this);
+    this.sanguoProgressionStatsFlow = new SanguoProgressionStatsFlow(this);
+    this.sanguoExperienceFlow = new SanguoExperienceFlow(this);
     this.sanguoGameLoaderCoordinator = new SanguoGameLoaderCoordinator(this);
     Object.assign(this.context.services, {
       sanguoSceneState: this.sanguoSceneStateFlow,
       sanguoSceneLifecycle: this.sanguoSceneLifecycleCoordinator,
       sanguoProgressionPresentation: this.sanguoProgressionPresentationCoordinator,
+      sanguoProgressionStats: this.sanguoProgressionStatsFlow,
+      sanguoExperience: this.sanguoExperienceFlow,
       sanguoGameLoader: this.sanguoGameLoaderCoordinator
     });
     this.cityWarStateBridge = new SceneCityWarStateBridge({
@@ -1728,6 +1734,8 @@ export class DataDrivenPrologueScene extends BaseGameScene {
 
   /** CombatSystem 的统一击杀出口；首狼尸体与剥皮任务由 Demo coordinator 编排。 */
   onEnemyKilled(entity) {
+    // 经验结算（击杀者归属不限：军团/傀儡击杀同样滋养主角成长）
+    this.sanguoExperienceFlow?.handleEnemyKilled?.(entity);
     void this._s01s02Coordinator.handleEnemyKilled(entity);
   }
 
@@ -1833,6 +1841,8 @@ export class DataDrivenPrologueScene extends BaseGameScene {
 
   /** 职业技能投影由 S09 coordinator 拥有；保留其他 Demo 调用方的兼容入口。 */
   _syncUnlockedClassSkills() {
+    // 技能重投影的同时做一次成长属性差量投影（职业提交/读档恢复后重建基线）
+    this.sanguoProgressionStatsFlow?.projectProgressionStats?.('classSkillsSync');
     return this.s09ClassSelectionCoordinator.syncUnlockedClassSkills();
   }
 

@@ -670,35 +670,35 @@ export class ClassSystem {
     
     // 应用属性系统效果
     const statsWithAttributes = this.attributeSystem.applyAttributeEffects(characterId, baseStats);
-    
-    // 应用特化加成（统一走 EffectResolver，不再逐字段判断倍率）
+
+    // 同步特化来源（有特化才产生来源；加成结算统一走下方 resolveAll）
     const specialization = this.getCharacterSpecialization(characterId);
     if (specialization) {
-      const bonuses = specialization.bonuses || {};
       this._syncSpecializationSource(characterId, specialization);
-
-      const targets = {};
-      for (const key of SPECIALIZATION_STAT_TARGETS) {
-        if (typeof statsWithAttributes[key] === 'number') {
-          targets[key] = statsWithAttributes[key];
-        }
-      }
-
-      const resolved = this.effectResolver.resolveAll(characterId, targets);
-      for (const key of Object.keys(targets)) {
-        // 只改写确实被加成影响的字段，保持未受影响字段的原值
-        if (resolved[key] !== targets[key]) {
-          statsWithAttributes[key] = Math.floor(resolved[key]);
-        }
-      }
-
       // 添加特化特殊效果（保留旧字段供未迁移系统使用）
-      statsWithAttributes.specializationBonuses = bonuses;
+      statsWithAttributes.specializationBonuses = specialization.bonuses || {};
     }
-    
+
+    // 统一效果结算：全部 EffectResolver 来源（成长图/天赋/特化/职业修正）无条件参与，
+    // 不再依赖特化分支——否则无特化角色的成长加点效果会被整体跳过
+    const targets = {};
+    for (const key of SPECIALIZATION_STAT_TARGETS) {
+      if (typeof statsWithAttributes[key] === 'number') {
+        targets[key] = statsWithAttributes[key];
+      }
+    }
+
+    const resolved = this.effectResolver.resolveAll(characterId, targets);
+    for (const key of Object.keys(targets)) {
+      // 只改写确实被加成影响的字段，保持未受影响字段的原值
+      if (resolved[key] !== targets[key]) {
+        statsWithAttributes[key] = Math.floor(resolved[key]);
+      }
+    }
+
     // 添加兵种类型
     statsWithAttributes.unitType = this.getCharacterUnitType(characterId);
-    
+
     return statsWithAttributes;
   }
   

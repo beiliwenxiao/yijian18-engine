@@ -461,6 +461,8 @@ function applySceneSaveState(data) {
       this.selectedClass = null;
     }
     this._syncPlayerClassAppearance(this.selectedClass);
+    // 读档恢复后重建成长投影基线（stats 已含存档成长效果，防差量双算）
+    this.sanguoProgressionStatsFlow?.projectProgressionStats?.('restore');
     this._syncUnlockedClassSkills();
     const gameplayActors = this._gameplaySnapshots.restoreActors(data);
     if (!gameplayActors.ok) return gameplayActors;

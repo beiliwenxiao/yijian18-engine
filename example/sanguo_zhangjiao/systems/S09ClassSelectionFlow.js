@@ -357,7 +357,7 @@ const methods = {
     if (!combat || !resolver || !registry || !player?.id) return false;
     const canonicalIds = new Set(['cleave', 'arrow_shot', 'talisman_water', 'flame_palm', 'ice_finger', 'inferno_palm', 'gathering_puppet', 'power_jump']);
     const removedLegacyIds = new Set(['flame_palm', 'ice_finger', 'inferno_palm', 'heal', 'meditation']);
-    const unlockedIds = new Set(resolver.getUnlockedSkills(player.id).filter(id => canonicalIds.has(id)));
+    const unlockedIds = [...resolver.getUnlockedSkills(player.id).filter(id => canonicalIds.has(id))];
     const previousCooldowns = new Map(combat.skillCooldowns || []);
     combat.skills = (combat.skills || []).filter(skill =>
       !canonicalIds.has(skill?.id) && !removedLegacyIds.has(skill?.id)
@@ -365,7 +365,29 @@ const methods = {
     for (const skillId of [...canonicalIds, ...removedLegacyIds]) {
       combat.skillCooldowns.delete(skillId);
     }
-    for (const skillId of unlockedIds) {
+
+    // 技能装配：快捷栏 3 槽由玩家自由组合；全解锁集合供选择 UI 消费。
+    // 语义：黑板无 skillLoadout（玩家从未配置）时按解锁顺序自动装满；
+    // 玩家一旦通过选择列表配置（setSkillLoadoutSlot 写黑板），此后严格按其配置（空槽保持空）。
+    // 黑板随存档走，读档后恢复玩家的自定义组合。
+    const SKILL_BAR_SLOTS = 3;
+    player.availableSkillIds = unlockedIds;
+    const blackboard = this.gameLoader?.blackboard;
+    const savedLoadout = Array.isArray(blackboard?.get?.('skillLoadout'))
+      ? blackboard.get('skillLoadout') : null;
+    let loadout;
+    if (savedLoadout) {
+      loadout = savedLoadout.slice(0, SKILL_BAR_SLOTS)
+        .map(id => (id && unlockedIds.includes(id)) ? id : null);
+      while (loadout.length < SKILL_BAR_SLOTS) loadout.push(null);
+    } else {
+      loadout = unlockedIds.slice(0, SKILL_BAR_SLOTS);
+      while (loadout.length < SKILL_BAR_SLOTS) loadout.push(null);
+    }
+    combat.skillLoadout = loadout;
+
+    for (const skillId of combat.skillLoadout) {
+      if (!skillId) continue;
       const definition = registry.get(skillId);
       if (!definition) continue;
       const view = definition.resolveVariant(null);
@@ -388,6 +410,30 @@ const methods = {
     this.gatheringPuppetSystem?.configure?.({ effectResolver: resolver, owner: player });
     this.gatheringPuppetSystem?.initializeCharges?.();
     return true;
+  },
+
+  /**
+   * 技能装配：把某技能装入快捷栏指定槽位（null=清空槽位），并刷新快捷栏。
+   * @param {number} slotIndex - 0..2 槽位
+   * @param {string|null} skillId - 技能 id；null 清空
+   * @returns {boolean} 是否生效
+   */
+  setSkillLoadoutSlot(slotIndex, skillId) {
+    const player = this.playerEntity;
+    const combat = player?.getComponent?.('combat');
+    if (!player || !combat || !Array.isArray(combat.skillLoadout)) return false;
+    if (slotIndex < 0 || slotIndex >= combat.skillLoadout.length) return false;
+    if (skillId !== null && !(player.availableSkillIds || []).includes(skillId)) return false;
+    if (skillId !== null) {
+      const dupIndex = combat.skillLoadout.indexOf(skillId);
+      if (dupIndex !== -1 && dupIndex !== slotIndex) {
+        combat.skillLoadout[dupIndex] = null;
+      }
+    }
+    combat.skillLoadout[slotIndex] = skillId;
+    // 玩家显式配置：固化进黑板（此后 sync 走严格槽位制），再刷新快捷栏
+    this.gameLoader?.blackboard?.set?.('skillLoadout', [...combat.skillLoadout]);
+    return this.syncUnlockedClassSkills();
   },
 
   ensureClassSystem() {

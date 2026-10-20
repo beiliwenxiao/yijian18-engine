@@ -185,6 +185,32 @@ export class StatsComponent extends Component {
   }
 
   /**
+   * 升到下一级所需经验（线性公式：等级 × 100）
+   * @returns {number}
+   */
+  getExpToNextLevel() {
+    return Math.max(1, this.level) * 100;
+  }
+
+  /**
+   * 获得经验并按阈值自动升级（支持连升）
+   * @param {number} amount - 经验增量
+   * @returns {{gained: number, levelsGained: number, level: number}} 结算结果
+   */
+  gainExperience(amount) {
+    const gained = Math.max(0, Math.floor(Number(amount) || 0));
+    if (gained <= 0) return { gained: 0, levelsGained: 0, level: this.level };
+    this.exp += gained;
+    let levelsGained = 0;
+    while (this.exp >= this.getExpToNextLevel()) {
+      this.exp -= this.getExpToNextLevel();
+      levelsGained += 1;
+      this.levelUp();
+    }
+    return { gained, levelsGained, level: this.level };
+  }
+
+  /**
    * 升级
    */
   levelUp() {

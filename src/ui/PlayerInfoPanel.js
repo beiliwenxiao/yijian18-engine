@@ -389,6 +389,23 @@ export class PlayerInfoPanel extends UIElement {
     ctx.fillStyle = this.labelColor;
     ctx.font = '12px Arial';
     ctx.fillText(`Lv.${stats.level}`, this.x + pad, ly);
+
+    // 经验进度条（等级右侧：槽 + 紫色填充 + 数值）
+    const expNeed = stats.getExpToNextLevel();
+    const expRatio = Math.max(0, Math.min(1, (stats.exp || 0) / expNeed));
+    const expBarX = this.x + pad + 42;
+    const expBarY = ly - 9;
+    const expBarW = 64;
+    const expBarH = 8;
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+    ctx.fillRect(expBarX, expBarY, expBarW, expBarH);
+    ctx.fillStyle = '#c9a3ff';
+    ctx.fillRect(expBarX, expBarY, Math.round(expBarW * expRatio), expBarH);
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(expBarX + 0.5, expBarY + 0.5, expBarW - 1, expBarH - 1);
+    ctx.fillStyle = this.labelColor;
+    ctx.fillText(`${Math.floor(stats.exp || 0)}/${expNeed}`, expBarX + expBarW + 6, ly);
     ly += 20;
 
     // 属性列表
@@ -559,6 +576,26 @@ export class PlayerInfoPanel extends UIElement {
 
       ctx.fillStyle = this.textColor;
       ctx.fillText(`${stats.level}`, this.x + this.padding + 190, currentY);
+
+      // 经验进度条（等级行右侧同行：槽 + 紫色填充 + 数值，不增加面板高度）
+      const expNeed = stats.getExpToNextLevel();
+      const expRatio = Math.max(0, Math.min(1, (stats.exp || 0) / expNeed));
+      const expBarX = this.x + this.padding + 220;
+      const expBarW = Math.max(60, this.width - this.padding * 2 - 220 - 80);
+      const expBarH = 8;
+      const expBarY = currentY - 11;
+
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+      ctx.fillRect(expBarX, expBarY, expBarW, expBarH);
+      ctx.fillStyle = '#c9a3ff';
+      ctx.fillRect(expBarX, expBarY, Math.round(expBarW * expRatio), expBarH);
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(expBarX + 0.5, expBarY + 0.5, expBarW - 1, expBarH - 1);
+
+      ctx.fillStyle = this.textColor;
+      ctx.font = '12px Arial';
+      ctx.fillText(`${Math.floor(stats.exp || 0)}/${expNeed}`, expBarX + expBarW + 6, currentY);
       currentY += this.lineHeight + 10;
     }
 

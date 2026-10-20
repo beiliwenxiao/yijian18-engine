@@ -41,7 +41,8 @@ const CORE_EVENT_PARAMS = Object.freeze({
   // 任务中心制阶段①：任务图高频事件补全（此前仅项目级 triggerCatalog 登记才可见）
   'gathering.completed': eventSchema({ itemId: { type: 'string', title: '物品 ID' }, resourceType: { type: 'string', title: '资源类型' }, nodeId: { type: 'string', title: '资源节点 ID' }, accepted: { type: 'integer', title: '入包份数' } }),
   'state.transaction': eventSchema({ definitionId: { type: 'string', title: '状态事务 ID', minLength: 1 } }),
-  'enemy.killed': eventSchema({ enemyRole: { type: 'string', title: '敌人角色 ID' }, entityId: { type: 'string', title: '实体 ID' }, corpseReady: { type: 'boolean', title: '尸体已成立' } })
+  'enemy.killed': eventSchema({ enemyRole: { type: 'string', title: '敌人角色 ID' }, entityId: { type: 'string', title: '实体 ID' }, corpseReady: { type: 'boolean', title: '尸体已成立' } }),
+  'character.levelUp': eventSchema({ level: { type: 'integer', title: '升级后等级' }, levelsGained: { type: 'integer', title: '连升级数' }, gainedPoints: { type: 'integer', title: '获得成长点' }, pool: { type: 'string', title: '成长点池' } })
 });
 
 const CORE_EVENT_IDENTITIES = Object.freeze({
@@ -49,13 +50,15 @@ const CORE_EVENT_IDENTITIES = Object.freeze({
   itemPickup: ['placementId', 'itemId'], interact: ['bindingId', 'target'], questComplete: ['questId'],
   questProgress: ['questId'], chunkEnter: ['sceneId'], sceneComplete: ['sceneId'], equipItem: ['slot', 'item'],
   unequipItem: ['slot', 'item'], classSelected: ['classId'], triggerSucceeded: ['triggerId'], triggerFailed: ['triggerId'],
-  'gathering.completed': ['itemId'], 'state.transaction': ['definitionId'], 'enemy.killed': ['enemyRole']
+  'gathering.completed': ['itemId'], 'state.transaction': ['definitionId'], 'enemy.killed': ['enemyRole'],
+  'character.levelUp': ['level']
 });
 
 const EVENT_SOURCES = Object.freeze({
   'gathering.completed': 'GatheringSystem',
   'state.transaction': 'CanonicalStateTransactionService',
-  'enemy.killed': 'CombatSystem'
+  'enemy.killed': 'CombatSystem',
+  'character.levelUp': 'SanguoExperienceFlow'
 });
 
 const CORE_EVENTS = [
@@ -68,7 +71,7 @@ const CORE_EVENTS = [
   ['approach', '靠近', true], ['enter', '进入范围', true], ['leave', '离开范围', true],
   ['stand', '站立'], ['climb', '攀爬'], ['jump', '跳跃'], ['itemTransform', '物品转化'],
   ['sceneComplete', '场景完成'], ['triggerSucceeded', 'Trigger 执行成功'], ['triggerFailed', 'Trigger 执行失败'],
-  ['gathering.completed', '采集完成'], ['state.transaction', '状态事务已提交'], ['enemy.killed', '敌人死亡已提交']
+  ['gathering.completed', '采集完成'], ['state.transaction', '状态事务已提交'], ['enemy.killed', '敌人死亡已提交'], ['character.levelUp', '角色升级']
 ].map(([value, label, spatial = false]) => Object.freeze({
   value,
   v: value,

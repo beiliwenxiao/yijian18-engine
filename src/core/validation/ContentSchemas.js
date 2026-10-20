@@ -219,6 +219,15 @@ export const PROFICIENCY_CONFIG_SCHEMA = {
   }
 };
 
+/** 升级发成长点配置：池名必须是项目已启用的逻辑池，数量为正。 */
+export const LEVEL_UP_POINTS_SCHEMA = {
+  id: 'levelUpPointsConfig',
+  fields: {
+    pool: { type: FieldType.STRING, enum: ['skill', 'talent', 'unit', 'passive'], required: true },
+    amount: { type: FieldType.NUMBER, required: true, min: 1 }
+  }
+};
+
 /** 成长 Profile */
 export const PROGRESSION_CONFIG_SCHEMA = {
   id: 'progressionConfig',
@@ -235,7 +244,9 @@ export const PROGRESSION_CONFIG_SCHEMA = {
     graphIds: { type: FieldType.OBJECT, valueType: FieldType.STRING },
     graphs: { type: FieldType.ARRAY },
     skills: {},
-    proficiency: { type: FieldType.OBJECT, schema: 'proficiencyConfig' }
+    proficiency: { type: FieldType.OBJECT, schema: 'proficiencyConfig' },
+    levelUpPoints: { type: FieldType.OBJECT, schema: 'levelUpPointsConfig' },
+    battleRewards: { type: FieldType.OBJECT }
   },
 
   /** primary 必须在 enabled 内 */
@@ -346,6 +357,7 @@ export const CONTENT_SCHEMAS = [
   NODE_SCHEMA,
   GRAPH_SCHEMA,
   PROFICIENCY_CONFIG_SCHEMA,
+  LEVEL_UP_POINTS_SCHEMA,
   PROGRESSION_CONFIG_SCHEMA,
   RESCUE_STAGE_SCHEMA,
   RESCUE_DEFINITION_SCHEMA,

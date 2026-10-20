@@ -155,6 +155,7 @@ function initializeGameLoader() {
         this.configureSharedClassEffects(gameLoader);
         await this.s03s14BattleCoordinator.initialize(gameLoader);
         this.sanguoProgressionPresentationCoordinator.installProgressionUI(gameLoader);
+        this.sanguoProgressionStatsFlow.installProgressionStatsProjection(gameLoader);
       }
     });
     this.gameLoader = bridge.loader;

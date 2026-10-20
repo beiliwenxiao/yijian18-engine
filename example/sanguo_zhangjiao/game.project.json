@@ -236,6 +236,10 @@
         }
       }
     },
+    "levelUpPoints": {
+      "amount": 1,
+      "pool": "skill"
+    },
     "battleRewards": {
       "byScene": {
         "S03": [
