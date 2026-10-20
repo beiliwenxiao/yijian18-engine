@@ -403,6 +403,7 @@ export class SkeletonEditor {
       + '<label style="color:#9aa5c0;">X</label><input type="number" id="se-ov-x" step="1" style="width:64px;">'
       + '<label style="color:#9aa5c0;">Y</label><input type="number" id="se-ov-y" step="1" style="width:64px;">'
       + '<label style="color:#9aa5c0;">旋转°</label><input type="number" id="se-ov-rot" step="1" style="width:64px;">'
+      + '<label style="color:#5a6a90;">缩放</label><span id="se-ov-scale" style="font-family:monospace;color:#9aa5c0;"></span>'
       + '<span style="color:#5a6a90;font-size:10px;">Enter 应用（自动打关键帧）</span>';
     canvas.parentElement.appendChild(overlayBar);
     for (const [field, axis] of [['se-ov-x', 'x'], ['se-ov-y', 'y'], ['se-ov-rot', 'rot']]) {
@@ -4685,6 +4686,22 @@ export class SkeletonEditor {
     bar.querySelector('#se-ov-x').value = (sampled.x ?? bone.x ?? 0).toFixed(1);
     bar.querySelector('#se-ov-y').value = (sampled.y ?? bone.y ?? 0).toFixed(1);
     bar.querySelector('#se-ov-rot').value = (sampled.rot ?? bone.rot ?? 0).toFixed(1);
+    // 缩放显示：本=采样局部缩放（关键帧）；世界=父链累乘缩放（真正作用于挂图尺寸）。
+    // 世界 ≠1 即父链或本骨骼存在 scale 污染（挂图会被拉伸）——红色警示。
+    const worldPose = this._boneWorldTransforms().get(bone.id);
+    const lSx = sampled.sx ?? bone.scaleX ?? 1;
+    const lSy = sampled.sy ?? bone.scaleY ?? 1;
+    const wSx = worldPose?.sx ?? 1;
+    const wSy = worldPose?.sy ?? 1;
+    const polluted = Math.abs(wSx - 1) > 0.001 || Math.abs(wSy - 1) > 0.001;
+    const scaleEl = bar.querySelector('#se-ov-scale');
+    if (scaleEl) {
+      scaleEl.textContent = `本${lSx.toFixed(2)}×${lSy.toFixed(2)} 世界${wSx.toFixed(2)}×${wSy.toFixed(2)}`;
+      scaleEl.style.color = polluted ? '#ff6a6a' : '#9aa5c0';
+      scaleEl.title = polluted
+        ? '世界缩放≠1：本骨骼或父链存在 scale 污染，挂图会被拉伸'
+        : '本=采样局部缩放；世界=父链累乘缩放（作用于挂图尺寸）';
+    }
   }
 
   _isDescendant(boneId, candidateId) {
