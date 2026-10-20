@@ -11,6 +11,7 @@ const REGISTRY_KEYS = Object.freeze({
   equipment: 'equipment',
   enemy: 'enemies',
   soldier: 'enemies',
+  army: 'armies',
   npc: 'npcs',
   building: 'buildings',
   vehicle: 'vehicles',
@@ -194,7 +195,7 @@ export class PlacementSpawner {
    */
   spawnMatching({ placements = [], registries = {}, selector = {} } = {}) {
     const normalized = normalizeSelector(selector);
-    const counts = { item: 0, equipment: 0, enemy: 0, npc: 0, building: 0, vehicle: 0, resourceNode: 0, total: 0 };
+    const counts = { item: 0, equipment: 0, enemy: 0, soldier: 0, npc: 0, building: 0, vehicle: 0, resourceNode: 0, total: 0 };
     const entities = [];
     const errors = [];
     const outcomes = [];
@@ -233,86 +234,16 @@ export class PlacementSpawner {
         recordOutcome(placement, 'unsupportedKind', 'unsupportedKind');
         continue;
       }
-      // count 展开：声明了 count 的模板（含 count=1）一律派生 `id-N` 实例 id——
-      // 调用方（如首狼流程）以 `base-1` 寻址，count=1 时不派生会导致实体 id 与寻址不一致。
-      // 未声明 count 的旧数据不展开，行为与旧版完全一致。
-      const hasCount = placement.count != null;
-      const instanceCount = resolveInstanceCount(placement, this.getConditionRoot);
-      const definition = registryGet(registries, kind, placement.ref);
-      if (!definition) {
-        recordError(placement, 'definitionNotFound');
-        recordOutcome(placement, 'failed', 'definitionNotFound');
+      // army 编制展开：placement 引用 army 定义 → 按 squads×units 展开为 soldier 虚拟
+      // placement 逐个生成（数量构成单一来源归 armies 定义，placement 不携带数量）。
+      if (kind === 'army') {
+        const soldierPlacements = this._expandArmyPlacement(placement, registries, recordError, recordOutcome);
+        for (const soldierPlacement of soldierPlacements) {
+          this._spawnPlacementInstance(soldierPlacement, 'soldier', registries, normalized, counts, entities, recordError, recordOutcome);
+        }
         continue;
       }
-      for (let index = 1; index <= instanceCount; index += 1) {
-        const instance = hasCount
-          ? expandPlacement(placement, index, { deriveFirst: true })
-          : placement;
-        if (instance.id && this.spawnedPlacementIds.has(instance.id)) {
-          recordOutcome(instance, 'alreadySpawned');
-          continue;
-        }
-        if (this.shouldSpawn) {
-          try {
-            if (this.shouldSpawn({ placement: instance, selector: normalized }) === false) {
-              recordOutcome(instance, 'conditionFalse');
-              continue;
-            }
-          } catch (error) {
-            recordError(instance, 'spawnConditionFailed', error);
-            recordOutcome(instance, 'failed', 'spawnConditionFailed');
-            continue;
-          }
-        }
-
-        try {
-          const data = mergeOverrides(definition, instance.overrides);
-          if (kind === 'enemy' && data.corpse?.resourceNodeRef) {
-            const resourceNode = registryGet(registries, 'resourceNode', data.corpse.resourceNodeRef);
-            if (!resourceNode) {
-              recordError(instance, 'corpseResourceNodeNotFound');
-              recordOutcome(instance, 'failed', 'corpseResourceNodeNotFound');
-              continue;
-            }
-            data.corpse = {
-              ...data.corpse,
-              resourceNode: mergeOverrides(resourceNode, data.corpse.resourceNode)
-            };
-          }
-          data.position = { x: Number(instance.x) || 0, y: Number(instance.y) || 0 };
-          const entity = this._spawn(kind, data, instance);
-          if (!entity) {
-            recordError(instance, 'factoryUnavailable');
-            recordOutcome(instance, 'failed', 'factoryUnavailable');
-            continue;
-          }
-          if (!entity.placementId && instance.id) entity.placementId = instance.id;
-          // 地面可拾取物与装备同样可以声明稳定 imageId，需要一起预载图片。
-          if (['npc', 'enemy', 'resourceNode', 'item', 'equipment'].includes(kind)) {
-            this._preloadEntityImage(kind, data, entity, instance);
-          }
-          if (typeof this.onSpawn === 'function') {
-            try {
-              this.onSpawn({ entity, kind, group: instance.group || normalized.group || null, placement: instance, definition: data });
-            } catch (error) {
-              this.aiSystem?.unregisterAI?.(entity);
-              this.entityStore?.remove?.(entity);
-              try { entity?.destroy?.(); } catch (destroyError) { /* best-effort rollback */ }
-              recordError(instance, 'onSpawnFailed', error);
-              recordOutcome(instance, 'failed', 'onSpawnFailed');
-              continue;
-            }
-          }
-          entities.push(entity);
-          if (instance.id) this.spawnedPlacementIds.add(instance.id);
-          counts[kind]++;
-          counts.total++;
-          recordOutcome(instance, 'spawned');
-        } catch (error) {
-          recordError(instance, 'spawnFailed', error);
-          recordOutcome(instance, 'failed', 'spawnFailed');
-        }
-      }
+      this._spawnPlacementInstance(placement, kind, registries, normalized, counts, entities, recordError, recordOutcome);
     }
 
     const skipped = outcomes.filter(outcome => (
@@ -321,6 +252,144 @@ export class PlacementSpawner {
       || outcome.status === 'nonRef'
     ));
     return { selector: normalized, matchedPlacements, counts, entities, errors, outcomes, skipped };
+  }
+
+  /**
+   * army 编制展开：读 army 注册表定义，按 squads×units 展开为 soldier 虚拟 placement 数组。
+   * - 虚拟 id `{placementId}-{squadId}-{n}` 稳定派生，spawnedPlacementIds 借此幂等去重；
+   * - 坐标全员以出兵点为心环形散布（首兵原位，黄金角 + 半径 70 起步），避免多兵重叠；
+   * - spawnWhen/faction/group/tags 从 army placement 继承到每个虚拟实例；
+   * - placement 上携带的 count 无效（编制数量单一来源归 armies 定义）。
+   * @private
+   */
+  _expandArmyPlacement(placement, registries, recordError, recordOutcome) {
+    const army = registryGet(registries, 'army', placement.ref);
+    if (!army) {
+      recordError(placement, 'definitionNotFound');
+      recordOutcome(placement, 'failed', 'definitionNotFound');
+      return [];
+    }
+    const baseX = Number(placement.x) || 0;
+    const baseY = Number(placement.y) || 0;
+    const armyId = placement.armyId || army.id || 'army.default';
+    const virtual = [];
+    let globalIndex = 0;
+    for (const squad of Array.isArray(army.squads) ? army.squads : []) {
+      if (!squad?.id) continue;
+      let formationIndex = 0;
+      for (const unit of Array.isArray(squad.units) ? squad.units : []) {
+        const count = Math.max(0, Math.floor(Number(unit?.count) || 0));
+        for (let i = 0; i < count; i += 1) {
+          const ringIndex = globalIndex; // 0 = 出兵点原位，其余环形散布
+          const angle = ringIndex * 137.508 * Math.PI / 180;
+          const radius = ringIndex === 0 ? 0 : 70 + Math.floor((ringIndex - 1) / 10) * 55;
+          formationIndex += 1;
+          globalIndex += 1;
+          virtual.push({
+            ...placement,
+            kind: 'soldier',
+            ref: unit.ref,
+            id: `${placement.id}-${squad.id}-${formationIndex}`,
+            armyId,
+            squadId: squad.id,
+            formationIndex: formationIndex - 1,
+            overrides: unit.overrides,
+            count: undefined,
+            x: Math.round((baseX + Math.cos(angle) * radius) * 100) / 100,
+            y: Math.round((baseY + Math.sin(angle) * radius * 0.6) * 100) / 100
+          });
+        }
+      }
+    }
+    return virtual;
+  }
+
+  /**
+   * 生成单条 placement 实例（count 展开 + 定义合并 + 工厂生成 + 预载 + onSpawn 回调）。
+   * army 展开的 soldier 虚拟 placement 也走此路径（count 已被清除，不二次展开）。
+   * @private
+   */
+  _spawnPlacementInstance(placement, kind, registries, normalized, counts, entities, recordError, recordOutcome) {
+    // count 展开：声明了 count 的模板（含 count=1）一律派生 `id-N` 实例 id——
+    // 调用方（如首狼流程）以 `base-1` 寻址，count=1 时不派生会导致实体 id 与寻址不一致。
+    // 未声明 count 的旧数据不展开，行为与旧版完全一致。
+    const hasCount = placement.count != null;
+    const instanceCount = resolveInstanceCount(placement, this.getConditionRoot);
+    const definition = registryGet(registries, kind, placement.ref);
+    if (!definition) {
+      recordError(placement, 'definitionNotFound');
+      recordOutcome(placement, 'failed', 'definitionNotFound');
+      return;
+    }
+    for (let index = 1; index <= instanceCount; index += 1) {
+      const instance = hasCount
+        ? expandPlacement(placement, index, { deriveFirst: true })
+        : placement;
+      if (instance.id && this.spawnedPlacementIds.has(instance.id)) {
+        recordOutcome(instance, 'alreadySpawned');
+        continue;
+      }
+      if (this.shouldSpawn) {
+        try {
+          if (this.shouldSpawn({ placement: instance, selector: normalized }) === false) {
+            recordOutcome(instance, 'conditionFalse');
+            continue;
+          }
+        } catch (error) {
+          recordError(instance, 'spawnConditionFailed', error);
+          recordOutcome(instance, 'failed', 'spawnConditionFailed');
+          continue;
+        }
+      }
+
+      try {
+        const data = mergeOverrides(definition, instance.overrides);
+        if (kind === 'enemy' && data.corpse?.resourceNodeRef) {
+          const resourceNode = registryGet(registries, 'resourceNode', data.corpse.resourceNodeRef);
+          if (!resourceNode) {
+            recordError(instance, 'corpseResourceNodeNotFound');
+            recordOutcome(instance, 'failed', 'corpseResourceNodeNotFound');
+            continue;
+          }
+          data.corpse = {
+            ...data.corpse,
+            resourceNode: mergeOverrides(resourceNode, data.corpse.resourceNode)
+          };
+        }
+        data.position = { x: Number(instance.x) || 0, y: Number(instance.y) || 0 };
+        const entity = this._spawn(kind, data, instance);
+        if (!entity) {
+          recordError(instance, 'factoryUnavailable');
+          recordOutcome(instance, 'failed', 'factoryUnavailable');
+          continue;
+        }
+        if (!entity.placementId && instance.id) entity.placementId = instance.id;
+        // 地面可拾取物与装备同样可以声明稳定 imageId，需要一起预载图片。
+        if (['npc', 'enemy', 'resourceNode', 'item', 'equipment'].includes(kind)) {
+          this._preloadEntityImage(kind, data, entity, instance);
+        }
+        if (typeof this.onSpawn === 'function') {
+          try {
+            this.onSpawn({ entity, kind, group: instance.group || normalized.group || null, placement: instance, definition: data });
+          } catch (error) {
+            this.aiSystem?.unregisterAI?.(entity);
+            this.entityStore?.remove?.(entity);
+            try { entity?.destroy?.(); } catch (destroyError) { /* best-effort rollback */ }
+            recordError(instance, 'onSpawnFailed', error);
+            recordOutcome(instance, 'failed', 'onSpawnFailed');
+            continue;
+          }
+        }
+        entities.push(entity);
+        if (instance.id) this.spawnedPlacementIds.add(instance.id);
+        counts[kind]++;
+        counts.total++;
+        recordOutcome(instance, 'spawned');
+      } catch (error) {
+        recordError(instance, 'spawnFailed', error);
+        recordOutcome(instance, 'failed', 'spawnFailed');
+      }
+    }
   }
 
   _spawn(kind, data, placement) {
@@ -377,7 +446,9 @@ export class PlacementSpawner {
         squadId: placement.squadId || data.squadId || 'zhong',
         formationIndex: placement.formationIndex ?? data.formationIndex
       }));
-      entity.addComponent?.(new CommandStateComponent({ stance: 'escort' }));
+      // 初始姿态用组件默认 hold：escort（跟随武将）是 ArmyCommandSystem 选择槽语义，
+      // 不是 CommandStateComponent 的 6 姿态枚举值，传 'escort' 会被静默回退。
+      entity.addComponent?.(new CommandStateComponent());
       if (typeof store?.addEnemy === 'function') store.addEnemy(entity);
       else store?.add?.(entity);
       return entity;

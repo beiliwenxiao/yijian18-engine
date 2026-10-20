@@ -235,7 +235,8 @@ export class GameLoader {
   validatePlacementReferences(placements = []) {
     const registryNames = {
       item: 'items', equipment: 'equipment', enemy: 'enemies', npc: 'npcs',
-      building: 'buildings', vehicle: 'vehicles', resourceNode: 'resourceNodes'
+      building: 'buildings', vehicle: 'vehicles', resourceNode: 'resourceNodes',
+      soldier: 'enemies', army: 'armies'
     };
     const errors = [];
     for (const [index, placement] of (placements || []).entries()) {

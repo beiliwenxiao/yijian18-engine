@@ -1914,6 +1914,30 @@
       "templateId": "scavenger_chief"
     }
   ],
+  "armies": [
+    {
+      "id": "army.s02.guard",
+      "name": "张角亲卫队",
+      "commander": { "type": "player" },
+      "defaultStance": "escort",
+      "squads": [
+        {
+          "id": "qian",
+          "name": "前军",
+          "units": [
+            { "ref": "enemy.s02_yellow_turban_soldier", "count": 1 }
+          ]
+        },
+        {
+          "id": "hou",
+          "name": "后军",
+          "units": [
+            { "ref": "enemy.s02_yellow_turban_soldier", "count": 1 }
+          ]
+        }
+      ]
+    }
+  ],
   "npcs": [
     {
       "dialogueId": "",

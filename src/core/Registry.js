@@ -49,7 +49,7 @@ export class Registry {
 
 export const STANDARD_REGISTRY_KINDS = Object.freeze([
   'npcs', 'enemies', 'items', 'equipment', 'shops', 'classes', 'skills',
-  'vehicles', 'buildings', 'resourceNodes'
+  'vehicles', 'buildings', 'resourceNodes', 'armies'
 ]);
 
 /** 创建委托同一只读 repository revision 的标准 Registry Facade。 */

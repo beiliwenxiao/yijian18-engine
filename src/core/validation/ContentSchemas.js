@@ -350,6 +350,78 @@ export const RESCUE_DEFINITION_SCHEMA = {
   }
 };
 
+/** 军团编制定义；分队 id 对齐选择槽循环（qian/zuo/zhong/you/hou），兵种引用 enemies 注册表。 */
+export const ARMY_SCHEMA = {
+  id: 'armyDefinition',
+  fields: {
+    id: { type: FieldType.STRING, required: true, minLength: 1 },
+    name: { type: FieldType.STRING, required: true, minLength: 1 },
+    commander: { type: FieldType.OBJECT },
+    defaultStance: { type: FieldType.STRING, minLength: 1 },
+    squads: { type: FieldType.ARRAY, required: true, minItems: 1, maxItems: 5, itemSchema: 'armySquad' }
+  },
+  validate(definition) {
+    const errors = [];
+    const squadIds = new Set();
+    for (const [index, squad] of (definition.squads || []).entries()) {
+      if (squad?.id && squadIds.has(squad.id)) {
+        errors.push(makeError(
+          ValidationCode.DUPLICATE_ID,
+          `squads[${index}].id`,
+          `重复的分队 id: ${squad.id}`
+        ));
+      }
+      if (squad?.id) squadIds.add(squad.id);
+      const KNOWN_SQUADS = new Set(['qian', 'zuo', 'zhong', 'you', 'hou']);
+      if (squad?.id && !KNOWN_SQUADS.has(squad.id)) {
+        errors.push(makeError(
+          ValidationCode.OUT_OF_RANGE,
+          `squads[${index}].id`,
+          `分队 id 必须对齐选择槽循环（qian/zuo/zhong/you/hou）: ${squad.id}`
+        ));
+      }
+      for (const [unitIndex, unit] of (squad?.units || []).entries()) {
+        if (!unit?.ref || typeof unit.ref !== 'string') {
+          errors.push(makeError(
+            ValidationCode.MISSING_FIELD,
+            `squads[${index}].units[${unitIndex}].ref`,
+            '兵种单位必须引用 enemies 注册表 id'
+          ));
+        }
+        const count = Number(unit?.count);
+        if (!Number.isFinite(count) || count < 0) {
+          errors.push(makeError(
+            ValidationCode.OUT_OF_RANGE,
+            `squads[${index}].units[${unitIndex}].count`,
+            '单位数量必须为非负数字（0 = 占编组槽不出兵）'
+          ));
+        }
+      }
+    }
+    return { ok: errors.length === 0, errors };
+  }
+};
+
+/** 军团编制分队；数量构成（units[].count）是编制数量的单一来源。 */
+export const ARMY_SQUAD_SCHEMA = {
+  id: 'armySquad',
+  fields: {
+    id: { type: FieldType.STRING, required: true, minLength: 1 },
+    name: { type: FieldType.STRING, required: true, minLength: 1 },
+    units: { type: FieldType.ARRAY, required: true, minItems: 1, itemSchema: 'armyUnit' }
+  }
+};
+
+/** 军团单位构成行；overrides 复用 placement 同款合并语义。 */
+export const ARMY_UNIT_SCHEMA = {
+  id: 'armyUnit',
+  fields: {
+    ref: { type: FieldType.STRING, required: true, minLength: 1 },
+    count: { type: FieldType.NUMBER, required: true, min: 0 },
+    overrides: { type: FieldType.OBJECT }
+  }
+};
+
 /** 全部内置 Schema：成长配置、救援定义 + Canonical 业务模型 */
 export const CONTENT_SCHEMAS = [
   EFFECT_SCHEMA,
@@ -361,6 +433,9 @@ export const CONTENT_SCHEMAS = [
   PROGRESSION_CONFIG_SCHEMA,
   RESCUE_STAGE_SCHEMA,
   RESCUE_DEFINITION_SCHEMA,
+  ARMY_SCHEMA,
+  ARMY_SQUAD_SCHEMA,
+  ARMY_UNIT_SCHEMA,
   ...CANONICAL_SCHEMAS,
   ...ASSET_MANIFEST_SCHEMAS,
   ...PRESENTATION_PROFILE_SCHEMAS

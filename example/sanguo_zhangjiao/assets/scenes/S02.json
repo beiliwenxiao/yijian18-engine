@@ -471,41 +471,18 @@
           "y": 235
         },
         {
-          "id": "S02-soldier-qian-1",
+          "id": "S02-army-guard",
           "type": "ref",
-          "kind": "soldier",
-          "ref": "enemy.s02_yellow_turban_soldier",
+          "kind": "army",
+          "ref": "army.s02.guard",
           "group": "S02-army",
-          "armyId": "army.s02.guard",
-          "squadId": "qian",
-          "formationIndex": 0,
+          "faction": "ally",
           "tags": [
             "army",
             "yellow-turban"
           ],
-          "x": 430,
-          "y": 290,
-          "spawnWhen": {
-            "blackboardKey": "storyState",
-            "path": "s02ZhangjiaoChoice",
-            "equals": "save"
-          }
-        },
-        {
-          "id": "S02-soldier-hou-1",
-          "type": "ref",
-          "kind": "soldier",
-          "ref": "enemy.s02_yellow_turban_soldier",
-          "group": "S02-army",
-          "armyId": "army.s02.guard",
-          "squadId": "hou",
-          "formationIndex": 0,
-          "tags": [
-            "army",
-            "yellow-turban"
-          ],
-          "x": 420,
-          "y": 340,
+          "x": 425,
+          "y": 315,
           "spawnWhen": {
             "blackboardKey": "storyState",
             "path": "s02ZhangjiaoChoice",

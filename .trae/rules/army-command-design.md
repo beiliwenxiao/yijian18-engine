@@ -161,3 +161,71 @@ battle 定义携带的方案被否原因：空间与编制分离导致策划要�
 - **rescue（S02 搬运）与建造作业（任务驱动）不受影响**：rescue 姿态单位不接受意图指令（搬运任务优先）
 - 命令倒计时保留——它就是"指令有执行过程、非瞬时生效"的表现
 - HUD Row2 姿态按钮 M5-1 保留（含 rescue/flee），语义化右键作为主路径叠加；M5-3 再收敛可见项。
+
+## 12. armies 定义库数据结构（2026-10-20 设计并实施）
+
+### 12.1 归属与分层
+
+`library.json` 顶层注册键 `armies: []`（已实施：Registry STANDARD_REGISTRY_KINDS + GameLoader kind 映射 `army: 'armies'` + validatePlacementReferences 支持 soldier/army）。
+
+分层职责（落实 §10 裁定，数量构成**单一来源归 armies**，placement 不重复携带避免双源漂移）：
+
+| 数据 | 归属 | 说明 |
+|------|------|------|
+| 兵种构成 / 每分队数量 | armies 定义 | units[].ref + count |
+| 出兵点坐标 / 朝向 | placement（kind:'army'） | 空间属性所见即所得 |
+| 生成时机 | 触发器 spawnPlacements / spawnWhen 门控 | 与现有出兵管线一致 |
+| 运行时阵型偏移 | ArmyCommandSystem 自有算法 | 按分队/注册序推导，定义层不逐兵硬编码 |
+
+### 12.2 Schema
+
+```jsonc
+{
+  "id": "army.s02.guard",
+  "name": "张角亲卫队",
+  "commander": { "type": "player" },          // 可选；player=玩家自身，未来 NPC 武将时扩展
+  "defaultStance": "escort",                  // 预留（M5-3 per 军预设消费）；当前运行时以 escort 为默认
+  "squads": [                                  // 1-5 个；id 必须对齐选择槽循环 SQUAD_SELECTION_CYCLE
+    {
+      "id": "qian",                            // qian|zuo|zhong|you|hou（拼音，ArmyCommandSystem 槽位枚举）
+      "name": "前军",                          // HUD/编组按钮显示名
+      "units": [
+        { "ref": "enemy.s02_yellow_turban_soldier", "count": 2 },
+        { "ref": "enemy.yt_archer", "count": 1,
+          "overrides": { "stats": { "speed": 65 } } }   // 复用 placement overrides 同款合并
+      ]
+    }
+  ]
+}
+```
+
+字段约定：
+
+- **squads[].id 枚举 qian/zuo/zhong/you/hou**——与 ArmyCommandSystem 选择槽循环（commander→all→qian→zuo→zhong→you→hou）严格对齐，ContentSchemas ARMY_SCHEMA 强校验；缺的分队自然空槽（可选、下令无效）。
+- `units[].ref` 必须是 enemies 注册表 id——EntityFactory 整链免费继承（stats/ai 画像/imageId/lootTable/experience），生成时追加 `SquadMemberComponent {armyId, squadId, formationIndex}`。
+- `count` 为静态数字（编制是定义不是事实，动态规模由触发器分段出兵表达）；count=0 该单位行不出兵。placement 上的 count 对 army kind 无效。
+- 初始 CommandStateComponent 用组件默认 hold；escort（跟随武将）是选择槽语义不是 6 姿态枚举值。
+- 分队内个体阵型位置由 ArmyCommandSystem 运行时算法推导（个人跟随点/网格分布），定义层无阵型字段——未来需要分队级自定义阵型时再扩展。
+
+### 12.3 生成链路（已实施）
+
+```
+placement(kind:'army', ref:'army.s02.guard', faction?, tags?)
+  → PlacementSpawner.spawnMatching：_expandArmyPlacement 按 squads×units 展开为 soldier 虚拟 placement
+    （虚拟 id `{placementId}-{squadId}-{n}` 稳定派生；首兵出兵点原位、其余黄金角环形散布；
+     spawnWhen/faction/group/tags 继承；复用 soldier 生成路径注入 SquadMember/CommandState 组件）
+  → SceneArmyCommandFlow._syncUnits 扫描 squadMember 组件注册编组 → ArmyCommandSystem 指挥
+```
+
+- counts 统计：army 展开实体计入 `counts.soldier`（已补该键，修复旧 soldier 计数 NaN 缺陷）。
+- 幂等：虚拟实例 id 稳定，重入 spawn 走 alreadySpawned。
+
+### 12.4 实施落点（已完成）
+
+1. Registry.js：STANDARD_REGISTRY_KINDS 加 armies。
+2. GameLoader.js：validatePlacementReferences registryNames 加 soldier/army。
+3. PlacementSpawner.js：REGISTRY_KEYS 加 army；_expandArmyPlacement 展开 + 单条生成抽为 _spawnPlacementInstance。
+4. ContentSchemas.js：ARMY_SCHEMA / ARMY_SQUAD_SCHEMA / ARMY_UNIT_SCHEMA。
+5. 首支军队：library.json `army.s02.guard`（qian/hou 各 1 黄巾兵）；S02.json 两条逐兵 placement 合并为一条 army placement（同 group S02-army，触发器 despawn 兼容）。
+6. 单测：PlacementSpawner.army.test.js（展开数量/派生 id/组件注入/幂等/count 无效/门控/定义缺失/overrides 合并）。
+7. 场景编辑器 army-spawn 面板：待做（当前手写 JSON）。
