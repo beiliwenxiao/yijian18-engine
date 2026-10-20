@@ -260,6 +260,54 @@
           "y": 640
         },
         {
+          "group": "S06-han-skirmishers",
+          "id": "S06-han-skirmish-1",
+          "kind": "enemy",
+          "ref": "enemy.s03_han_soldier",
+          "tags": [
+            "skirmisher",
+            "han_government"
+          ],
+          "type": "ref",
+          "x": 200,
+          "y": 380,
+          "overrides": {
+            "aiActive": true
+          }
+        },
+        {
+          "group": "S06-han-skirmishers",
+          "id": "S06-han-skirmish-2",
+          "kind": "enemy",
+          "ref": "enemy.s03_han_soldier",
+          "tags": [
+            "skirmisher",
+            "han_government"
+          ],
+          "type": "ref",
+          "x": 260,
+          "y": 340,
+          "overrides": {
+            "aiActive": true
+          }
+        },
+        {
+          "group": "S06-han-skirmishers",
+          "id": "S06-han-skirmish-3",
+          "kind": "enemy",
+          "ref": "enemy.s03_han_soldier",
+          "tags": [
+            "skirmisher",
+            "han_government"
+          ],
+          "type": "ref",
+          "x": 930,
+          "y": 370,
+          "overrides": {
+            "aiActive": true
+          }
+        },
+        {
           "id": "S06-worn-shovel",
           "type": "ref",
           "kind": "item",

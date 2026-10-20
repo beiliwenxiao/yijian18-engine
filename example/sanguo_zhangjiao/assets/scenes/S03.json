@@ -349,6 +349,23 @@
           }
         },
         {
+          "id": "S03-han-boss",
+          "type": "ref",
+          "kind": "enemy",
+          "ref": "enemy.s03_han_elite_commander",
+          "group": "S03-han-army",
+          "tags": [
+            "battleParticipant",
+            "han_government",
+            "boss"
+          ],
+          "x": 1020,
+          "y": 260,
+          "overrides": {
+            "aiActive": false
+          }
+        },
+        {
           "id": "S03-han-1",
           "type": "ref",
           "kind": "enemy",

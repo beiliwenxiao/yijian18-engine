@@ -3,7 +3,15 @@
     "category": "main",
     "description": "在干旱荒原活过第一夜，并逃往废弃营地。",
     "id": "task.s01.survival",
-    "rewards": [],
+    "rewards": [
+      {
+        "items": [
+          { "count": 2, "itemId": "resource.herb" },
+          { "count": 3, "itemId": "resource.wild_berry" }
+        ],
+        "type": "items"
+      }
+    ],
     "scenes": [
       "S01"
     ],
@@ -344,7 +352,14 @@
     "category": "main",
     "description": "荒村冲突后，黄巾信使引你去见张角。接受召见并前往粥棚营地。",
     "id": "task.s02.summons",
-    "rewards": [],
+    "rewards": [
+      {
+        "items": [
+          { "count": 2, "itemId": "resource.food" }
+        ],
+        "type": "items"
+      }
+    ],
     "scenes": [
       "S02"
     ],
@@ -370,7 +385,15 @@
     "category": "main",
     "description": "张角下令救人。指挥黄巾士兵把晕倒的主角抬回营地。",
     "id": "task.s02.rescue",
-    "rewards": [],
+    "rewards": [
+      {
+        "items": [
+          { "count": 2, "itemId": "resource.herb" },
+          { "count": 2, "itemId": "resource.food" }
+        ],
+        "type": "items"
+      }
+    ],
     "scenes": [
       "S02"
     ],
@@ -399,7 +422,15 @@
     "category": "main",
     "description": "回应张角的入伍之邀，并在三面军旗前确认自己的职业方向。",
     "id": "task.s09.joinYellowTurban",
-    "rewards": [],
+    "rewards": [
+      {
+        "items": [
+          { "count": 3, "itemId": "resource.food" },
+          { "count": 2, "itemId": "resource.herb" }
+        ],
+        "type": "items"
+      }
+    ],
     "scenes": [
       "S09"
     ],
@@ -449,7 +480,15 @@
     "category": "main",
     "description": "官军已至颍川。选定你的参战方式，见证这场首战的结局，随后启程长社。",
     "id": "task.s03.yingchuanBattle",
-    "rewards": [],
+    "rewards": [
+      {
+        "items": [
+          { "count": 2, "itemId": "resource.herb" },
+          { "count": 2, "itemId": "resource.food" }
+        ],
+        "type": "items"
+      }
+    ],
     "scenes": [
       "S03"
     ],
@@ -507,7 +546,15 @@
     "category": "main",
     "description": "长社火急。波才被官军围困，时限之内组织救援，随后确认豫州路线。",
     "id": "task.s04.changsheDefense",
-    "rewards": [],
+    "rewards": [
+      {
+        "items": [
+          { "count": 3, "itemId": "resource.herb" },
+          { "count": 2, "itemId": "resource.food" }
+        ],
+        "type": "items"
+      }
+    ],
     "scenes": [
       "S04"
     ],
@@ -577,7 +624,14 @@
     "category": "main",
     "description": "宛城外围矿坑潜伏着铁矿伏兵。领取矿镐、驰援张曼成，随后转进宛城。",
     "id": "task.s05.wanchengOutskirts",
-    "rewards": [],
+    "rewards": [
+      {
+        "items": [
+          { "count": 3, "itemId": "resource.iron" }
+        ],
+        "type": "items"
+      }
+    ],
     "scenes": [
       "S05"
     ],
@@ -671,7 +725,15 @@
     "category": "main",
     "description": "宛城围攻胶着。确定防御策略，组织野战工事，直至信使召回。",
     "id": "task.s06.wanchengSiege",
-    "rewards": [],
+    "rewards": [
+      {
+        "items": [
+          { "count": 4, "itemId": "resource.wood" },
+          { "count": 2, "itemId": "resource.iron" }
+        ],
+        "type": "items"
+      }
+    ],
     "scenes": [
       "S06"
     ],
@@ -729,7 +791,15 @@
     "category": "main",
     "description": "西华战局僵持。组织迟滞作战，为大军转移争取时间，随后收兵撤离。",
     "id": "task.s07.xihuaDelay",
-    "rewards": [],
+    "rewards": [
+      {
+        "items": [
+          { "count": 3, "itemId": "resource.herb" },
+          { "count": 2, "itemId": "resource.food" }
+        ],
+        "type": "items"
+      }
+    ],
     "scenes": [
       "S07"
     ],
@@ -811,7 +881,15 @@
     "category": "main",
     "description": "西华残营。乘撤运车收拢余部，完成信使召回，向冀州转移。",
     "id": "task.s08.xihuaRetreat",
-    "rewards": [],
+    "rewards": [
+      {
+        "items": [
+          { "count": 3, "itemId": "resource.food" },
+          { "count": 2, "itemId": "resource.herb" }
+        ],
+        "type": "items"
+      }
+    ],
     "scenes": [
       "S08"
     ],
@@ -857,7 +935,15 @@
     "category": "main",
     "description": "广城失守，张角病重。确认临时扎营、完成迁营，并沿路营建工事，随后出发广宗。",
     "id": "task.s10.guangchengCamp",
-    "rewards": [],
+    "rewards": [
+      {
+        "items": [
+          { "count": 4, "itemId": "resource.wood" },
+          { "count": 2, "itemId": "resource.herb" }
+        ],
+        "type": "items"
+      }
+    ],
     "scenes": [
       "S10"
     ],
@@ -975,7 +1061,15 @@
     "category": "main",
     "description": "张梁困守广宗。点燃烽火、集合卫兵、击退刺客，护他自西门突围。",
     "id": "task.s11.guangzongRescue",
-    "rewards": [],
+    "rewards": [
+      {
+        "items": [
+          { "count": 3, "itemId": "resource.iron" },
+          { "count": 2, "itemId": "resource.herb" }
+        ],
+        "type": "items"
+      }
+    ],
     "scenes": [
       "S11"
     ],
@@ -1117,7 +1211,15 @@
     "category": "main",
     "description": "下曲阳危局。张宝固守府衙，先破密道再护送撤离，随后奔赴最终决战。",
     "id": "task.s12.xiaquyangRescue",
-    "rewards": [],
+    "rewards": [
+      {
+        "items": [
+          { "count": 2, "itemId": "resource.iron" },
+          { "count": 3, "itemId": "resource.herb" }
+        ],
+        "type": "items"
+      }
+    ],
     "scenes": [
       "S12"
     ],
@@ -1223,7 +1325,15 @@
     "category": "main",
     "description": "决战已至。选定参战方式，亲历这场决定黄巾命运的会战。",
     "id": "task.s13.jingshanBattle",
-    "rewards": [],
+    "rewards": [
+      {
+        "items": [
+          { "count": 3, "itemId": "resource.herb" },
+          { "count": 3, "itemId": "resource.food" }
+        ],
+        "type": "items"
+      }
+    ],
     "scenes": [
       "S13"
     ],

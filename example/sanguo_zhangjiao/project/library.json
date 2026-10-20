@@ -894,6 +894,149 @@
       "subType": "armor"
     },
     {
+      "id": "weapon.s03.han_ring_blade",
+      "name": "北军环首刀",
+      "description": "北军督尉的佩刀，刀身淬过百战之铁。官军的精良，此刻为你所用。",
+      "type": "equipment",
+      "imageId": "inventory.equipment.hanRingBlade",
+      "maxStack": 1,
+      "rarity": 2,
+      "sprite": {
+        "height": 48,
+        "width": 48
+      },
+      "stats": {
+        "attack": 14,
+        "speed": 2
+      },
+      "subType": "weapon"
+    },
+    {
+      "id": "equipment.s04.fire_hardened_armor",
+      "name": "火燎皮甲",
+      "description": "纵火校尉的防火皮甲，被烟火燎出斑斑焦痕，却挡住了长社的冲天大火。",
+      "type": "equipment",
+      "imageId": "inventory.equipment.fireHardenedArmor",
+      "maxStack": 1,
+      "rarity": 2,
+      "sprite": {
+        "height": 48,
+        "width": 48
+      },
+      "stats": {
+        "defense": 6,
+        "maxHp": 15
+      },
+      "subType": "armor"
+    },
+    {
+      "id": "equipment.s05.prefect_iron_armor",
+      "name": "官制铁铠",
+      "description": "南阳太守秦颉的制式铁铠，札叶齐整，是官军军械之精的缩影。",
+      "type": "equipment",
+      "imageId": "inventory.equipment.prefectIronArmor",
+      "maxStack": 1,
+      "rarity": 3,
+      "sprite": {
+        "height": 48,
+        "width": 48
+      },
+      "stats": {
+        "defense": 8
+      },
+      "subType": "armor"
+    },
+    {
+      "id": "weapon.s07.pursuit_spear",
+      "name": "追风长枪",
+      "description": "追击先锋的骑枪，枪杆笔直轻韧，专为追杀逃亡者而生。如今它为逃亡者断后。",
+      "type": "equipment",
+      "imageId": "inventory.equipment.pursuitSpear",
+      "maxStack": 1,
+      "rarity": 2,
+      "sprite": {
+        "height": 48,
+        "width": 48
+      },
+      "stats": {
+        "attack": 13,
+        "speed": 5
+      },
+      "subType": "weapon"
+    },
+    {
+      "id": "weapon.s10.talisman_staff",
+      "name": "大贤良师的符杖",
+      "description": "张角行医十年所持的桃木杖，杖身缠着褪色的黄符。百姓要的不是神仙，是活下去——如今，这根杖交到了你手里。",
+      "type": "equipment",
+      "imageId": "inventory.equipment.guangzongTalismanStaff",
+      "maxStack": 1,
+      "rarity": 3,
+      "sprite": {
+        "height": 48,
+        "width": 48
+      },
+      "stats": {
+        "attack": 10,
+        "maxMp": 25
+      },
+      "subType": "weapon"
+    },
+    {
+      "id": "equipment.s11.breakthrough_armor",
+      "name": "陷阵铁铠",
+      "description": "陷阵都尉的攻城重铠，正面厚得能挡撞角回弹。斩将夺铠，西门为之洞开。",
+      "type": "equipment",
+      "imageId": "inventory.equipment.breakthroughArmor",
+      "maxStack": 1,
+      "rarity": 3,
+      "sprite": {
+        "height": 48,
+        "width": 48
+      },
+      "stats": {
+        "defense": 9,
+        "maxHp": 10
+      },
+      "subType": "armor"
+    },
+    {
+      "id": "equipment.s12.taiping_scripture",
+      "name": "《太平经》残卷",
+      "description": "张宝将军断前托付的手抄经卷，字迹力透纸背。符水救不了人，刀兵也救不了人——能救人的，是让人相信太平还会来。",
+      "type": "equipment",
+      "imageId": "inventory.equipment.taipingScripture",
+      "maxStack": 1,
+      "rarity": 3,
+      "sprite": {
+        "height": 48,
+        "width": 48
+      },
+      "stats": {
+        "maxMp": 25,
+        "speed": 3
+      },
+      "subType": "talisman"
+    },
+    {
+      "id": "equipment.s13.sunxia_shield",
+      "name": "孙夏的将盾",
+      "description": "叛将孙夏的将盾，盾面官漆之下还残留着黄巾的旧记号。他背叛了旗，旗却记得他。",
+      "type": "equipment",
+      "imageId": "inventory.equipment.sunxiaShield",
+      "maxStack": 1,
+      "rarity": 3,
+      "sprite": {
+        "height": 48,
+        "width": 48
+      },
+      "stats": {
+        "defense": 7,
+        "attack": 3
+      },
+      "subType": "shield"
+    },
+    {
       "id": "wooden_shield",
       "name": "木盾",
       "type": "equipment",
@@ -1044,6 +1187,7 @@
         },
         "resourceNodeRef": "node.wolf_carcass"
       },
+      "experience": 8,
       "id": "enemy.s01_first_wolf",
       "imageId": "s01.enemy.wolf",
       "level": 1,
@@ -1103,6 +1247,7 @@
         },
         "resourceNodeRef": "node.wolf_carcass"
       },
+      "experience": 10,
       "id": "enemy.s01_chase_wolf",
       "imageId": "s01.enemy.wolf",
       "level": 1,
@@ -1182,6 +1327,7 @@
         },
         "resourceNodeRef": "node.wolf_carcass"
       },
+      "experience": 80,
       "id": "enemy.s01_wolf_king",
       "imageId": "s01.enemy.wolf",
       "isBoss": true,
@@ -1230,17 +1376,14 @@
       "aiActive": true,
       "aiType": "aggressive",
       "attackRange": 95,
+      "experience": 100,
       "id": "enemy.s13_sun_xia",
       "imageId": "s03.unit.hanSoldier",
       "isBoss": true,
       "level": 6,
       "lootTable": [
-        {
-          "chance": 1,
-          "itemId": "resource.iron",
-          "maxQuantity": 8,
-          "minQuantity": 4
-        }
+        { "chance": 1, "itemId": "equipment.s13.sunxia_shield", "minQuantity": 1, "maxQuantity": 1 },
+        { "chance": 1, "itemId": "resource.iron", "minQuantity": 4, "maxQuantity": 8 }
       ],
       "name": "孙夏",
       "npcType": "monster_boss",
@@ -1260,10 +1403,13 @@
     {
       "aiType": "aggressive",
       "attackRange": 40,
+      "experience": 10,
       "id": "enemy.s02_plague_villager",
       "imageId": "s09.character.woundedSoldier",
       "level": 1,
-      "lootTable": [],
+      "lootTable": [
+        { "chance": 0.3, "itemId": "resource.food", "minQuantity": 1, "maxQuantity": 2 }
+      ],
       "name": "染疫村民",
       "npcType": "enemy",
       "sprite": {
@@ -1281,10 +1427,13 @@
     },
     {
       "aiType": "aggressive",
+      "experience": 15,
       "id": "enemy.s01_bandit",
       "imageId": "s09.character.governmentScout",
       "level": 1,
-      "lootTable": [],
+      "lootTable": [
+        { "chance": 0.35, "itemId": "resource.iron", "minQuantity": 1, "maxQuantity": 2 }
+      ],
       "name": "荒野盗匪",
       "npcType": "enemy",
       "sprite": {
@@ -1302,10 +1451,13 @@
     },
     {
       "aiType": "aggressive",
+      "experience": 12,
       "id": "enemy.s02_scavenger",
       "imageId": "s09.character.woundedSoldier",
       "level": 1,
-      "lootTable": [],
+      "lootTable": [
+        { "chance": 0.3, "itemId": "resource.herb", "minQuantity": 1, "maxQuantity": 1 }
+      ],
       "name": "营地拾荒者",
       "npcType": "enemy",
       "sprite": {
@@ -1328,6 +1480,7 @@
       "attackRange": 60,
       "faction": "friendly",
       "factionId": "yellow_turban",
+      "experience": 18,
       "id": "enemy.s09_granary_guard",
       "imageId": "s09.character.granaryGuard",
       "level": 2,
@@ -1349,10 +1502,13 @@
     },
     {
       "aiType": "aggressive",
+      "experience": 15,
       "id": "enemy.s09_refugee_scout",
       "imageId": "s09.character.governmentScout",
       "level": 2,
-      "lootTable": [],
+      "lootTable": [
+        { "chance": 0.3, "itemId": "resource.herb", "minQuantity": 1, "maxQuantity": 2 }
+      ],
       "name": "官军斥候",
       "npcType": "enemy",
       "sprite": {
@@ -1372,6 +1528,7 @@
       "aiActive": false,
       "aiType": "battleFormation",
       "factionId": "yellow_turban",
+      "experience": 20,
       "id": "enemy.s03_yellow_turban_soldier",
       "imageId": "s03.unit.yellowTurbanSoldier",
       "level": 2,
@@ -1395,10 +1552,13 @@
       "aiActive": false,
       "aiType": "battleFormation",
       "factionId": "han_government",
+      "experience": 20,
       "id": "enemy.s03_han_soldier",
       "imageId": "s03.unit.hanSoldier",
       "level": 2,
-      "lootTable": [],
+      "lootTable": [
+        { "chance": 0.25, "itemId": "resource.food", "minQuantity": 1, "maxQuantity": 2 }
+      ],
       "name": "颍川官军守军",
       "npcType": "enemy",
       "sprite": {
@@ -1419,6 +1579,7 @@
       "aiType": "defensive",
       "faction": "friendly",
       "factionId": "yellow_turban",
+      "experience": 60,
       "id": "enemy.s04_bocai",
       "imageId": "s03.unit.yellowTurbanSoldier",
       "level": 4,
@@ -1443,6 +1604,7 @@
       "aiType": "defensive",
       "faction": "friendly",
       "factionId": "yellow_turban",
+      "experience": 55,
       "id": "enemy.s05_zhang_mancheng",
       "imageId": "s05.character.zhangMancheng",
       "level": 4,
@@ -1465,13 +1627,26 @@
     {
       "aiActive": false,
       "aiType": "battleFormation",
+      "aiProfile": {
+        "telegraph": {
+          "radius": 64,
+          "shape": "circle",
+          "windupMs": 800
+        }
+      },
       "factionId": "han_government",
+      "experience": 60,
       "id": "enemy.s05_qin_jie",
       "imageId": "s05.character.qinJie",
+      "isBoss": true,
       "level": 4,
-      "lootTable": [],
+      "lootTable": [
+        { "chance": 1, "itemId": "equipment.s05.prefect_iron_armor", "minQuantity": 1, "maxQuantity": 1 },
+        { "chance": 0.8, "itemId": "resource.iron", "minQuantity": 2, "maxQuantity": 4 },
+        { "chance": 0.5, "itemId": "resource.herb", "minQuantity": 2, "maxQuantity": 3 }
+      ],
       "name": "秦颉",
-      "npcType": "enemy",
+      "npcType": "monster_boss",
       "sprite": {
         "height": 82,
         "isStatic": true,
@@ -1487,6 +1662,7 @@
     },
     {
       "aiType": "aggressive",
+      "experience": 12,
       "id": "enemy.s02_yellow_turban_soldier",
       "imageId": "s03.unit.yellowTurbanSoldier",
       "level": 1,
@@ -1504,6 +1680,238 @@
         "speed": 90
       },
       "templateId": "yellow_turban_soldier"
+    },
+    {
+      "aiProfile": {
+        "detectionRange": 300,
+        "leashRange": 480,
+        "pursuitRange": 420,
+        "telegraph": {
+          "radius": 70,
+          "shape": "circle",
+          "windupMs": 900
+        }
+      },
+      "aiType": "aggressive",
+      "attackRange": 60,
+      "experience": 45,
+      "factionId": "han_government",
+      "id": "enemy.s03_han_elite_commander",
+      "imageId": "s03.unit.hanSoldier",
+      "isBoss": true,
+      "level": 4,
+      "lootTable": [
+        { "chance": 1, "itemId": "weapon.s03.han_ring_blade", "minQuantity": 1, "maxQuantity": 1 },
+        { "chance": 0.8, "itemId": "resource.iron", "minQuantity": 2, "maxQuantity": 4 },
+        { "chance": 0.4, "itemId": "resource.herb", "minQuantity": 1, "maxQuantity": 2 }
+      ],
+      "name": "北军督尉",
+      "npcType": "monster_boss",
+      "sprite": {
+        "height": 74,
+        "isStatic": true,
+        "width": 54
+      },
+      "stats": {
+        "attack": 10,
+        "defense": 3,
+        "maxHp": 140,
+        "speed": 72
+      },
+      "templateId": "han_elite"
+    },
+    {
+      "aiProfile": {
+        "detectionRange": 300,
+        "leashRange": 480,
+        "pursuitRange": 420,
+        "telegraph": {
+          "radius": 70,
+          "shape": "circle",
+          "windupMs": 900
+        }
+      },
+      "aiType": "aggressive",
+      "attackRange": 60,
+      "experience": 45,
+      "factionId": "han_government",
+      "id": "enemy.s04_fire_captain",
+      "imageId": "s03.unit.hanSoldier",
+      "isBoss": true,
+      "level": 4,
+      "lootTable": [
+        { "chance": 1, "itemId": "equipment.s04.fire_hardened_armor", "minQuantity": 1, "maxQuantity": 1 },
+        { "chance": 0.6, "itemId": "resource.herb", "minQuantity": 2, "maxQuantity": 3 },
+        { "chance": 0.5, "itemId": "resource.iron", "minQuantity": 1, "maxQuantity": 2 }
+      ],
+      "name": "纵火校尉",
+      "npcType": "monster_boss",
+      "sprite": {
+        "height": 74,
+        "isStatic": true,
+        "width": 54
+      },
+      "stats": {
+        "attack": 9,
+        "defense": 3,
+        "maxHp": 130,
+        "speed": 76
+      },
+      "templateId": "han_elite"
+    },
+    {
+      "aiProfile": {
+        "detectionRange": 300,
+        "leashRange": 480,
+        "pursuitRange": 420,
+        "telegraph": {
+          "radius": 70,
+          "shape": "circle",
+          "windupMs": 900
+        }
+      },
+      "aiType": "aggressive",
+      "attackRange": 60,
+      "experience": 50,
+      "factionId": "han_government",
+      "id": "enemy.s07_vanguard_captain",
+      "imageId": "s03.unit.hanSoldier",
+      "isBoss": true,
+      "level": 5,
+      "lootTable": [
+        { "chance": 1, "itemId": "weapon.s07.pursuit_spear", "minQuantity": 1, "maxQuantity": 1 },
+        { "chance": 0.6, "itemId": "resource.food", "minQuantity": 2, "maxQuantity": 4 },
+        { "chance": 0.5, "itemId": "resource.iron", "minQuantity": 1, "maxQuantity": 3 }
+      ],
+      "name": "追击先锋",
+      "npcType": "monster_boss",
+      "sprite": {
+        "height": 76,
+        "isStatic": true,
+        "width": 56
+      },
+      "stats": {
+        "attack": 10,
+        "defense": 4,
+        "maxHp": 150,
+        "speed": 80
+      },
+      "templateId": "han_elite"
+    },
+    {
+      "aiProfile": {
+        "detectionRange": 320,
+        "leashRange": 480,
+        "pursuitRange": 420,
+        "telegraph": {
+          "radius": 74,
+          "shape": "circle",
+          "windupMs": 900
+        }
+      },
+      "aiType": "aggressive",
+      "attackRange": 64,
+      "experience": 55,
+      "factionId": "han_government",
+      "id": "enemy.s11_siege_commander",
+      "imageId": "s03.unit.hanSoldier",
+      "isBoss": true,
+      "level": 5,
+      "lootTable": [
+        { "chance": 1, "itemId": "equipment.s11.breakthrough_armor", "minQuantity": 1, "maxQuantity": 1 },
+        { "chance": 0.8, "itemId": "resource.iron", "minQuantity": 2, "maxQuantity": 4 },
+        { "chance": 0.5, "itemId": "resource.herb", "minQuantity": 2, "maxQuantity": 2 }
+      ],
+      "name": "陷阵都尉",
+      "npcType": "monster_boss",
+      "sprite": {
+        "height": 76,
+        "isStatic": true,
+        "width": 56
+      },
+      "stats": {
+        "attack": 11,
+        "defense": 4,
+        "maxHp": 160,
+        "speed": 70
+      },
+      "templateId": "han_elite"
+    },
+    {
+      "aiProfile": {
+        "detectionRange": 320,
+        "leashRange": 480,
+        "pursuitRange": 420,
+        "telegraph": {
+          "radius": 74,
+          "shape": "circle",
+          "windupMs": 900
+        }
+      },
+      "aiType": "aggressive",
+      "attackRange": 64,
+      "experience": 55,
+      "factionId": "han_government",
+      "id": "enemy.s12_ladder_captain",
+      "imageId": "s03.unit.hanSoldier",
+      "isBoss": true,
+      "level": 5,
+      "lootTable": [
+        { "chance": 0.7, "itemId": "resource.iron", "minQuantity": 2, "maxQuantity": 3 },
+        { "chance": 0.5, "itemId": "resource.food", "minQuantity": 2, "maxQuantity": 3 }
+      ],
+      "name": "云梯都尉",
+      "npcType": "monster_boss",
+      "sprite": {
+        "height": 76,
+        "isStatic": true,
+        "width": 56
+      },
+      "stats": {
+        "attack": 11,
+        "defense": 4,
+        "maxHp": 160,
+        "speed": 72
+      },
+      "templateId": "han_elite"
+    },
+    {
+      "aiProfile": {
+        "detectionRange": 260,
+        "leashRange": 420,
+        "pursuitRange": 360,
+        "telegraph": {
+          "radius": 56,
+          "shape": "circle",
+          "windupMs": 600
+        }
+      },
+      "aiType": "aggressive",
+      "attackRange": 52,
+      "experience": 30,
+      "id": "enemy.s02_scavenger_chief",
+      "imageId": "s09.character.woundedSoldier",
+      "isBoss": true,
+      "level": 2,
+      "lootTable": [
+        { "chance": 0.6, "itemId": "resource.herb", "minQuantity": 1, "maxQuantity": 2 },
+        { "chance": 0.5, "itemId": "resource.food", "minQuantity": 2, "maxQuantity": 3 },
+        { "chance": 0.35, "itemId": "resource.iron", "minQuantity": 1, "maxQuantity": 2 }
+      ],
+      "name": "拾荒者头目",
+      "npcType": "monster_boss",
+      "sprite": {
+        "height": 60,
+        "isStatic": true,
+        "width": 44
+      },
+      "stats": {
+        "attack": 7,
+        "defense": 3,
+        "maxHp": 90,
+        "speed": 85
+      },
+      "templateId": "scavenger_chief"
     }
   ],
   "npcs": [

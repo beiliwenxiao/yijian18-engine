@@ -483,6 +483,23 @@
           }
         },
         {
+          "id": "S04-han-boss",
+          "type": "ref",
+          "kind": "enemy",
+          "ref": "enemy.s04_fire_captain",
+          "group": "S04-han-army",
+          "tags": [
+            "battleParticipant",
+            "han_government",
+            "boss"
+          ],
+          "x": 990,
+          "y": 340,
+          "overrides": {
+            "aiActive": false
+          }
+        },
+        {
           "id": "S04-han-1",
           "type": "ref",
           "kind": "enemy",

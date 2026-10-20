@@ -358,6 +358,23 @@
           }
         },
         {
+          "id": "S07-han-boss",
+          "type": "ref",
+          "kind": "enemy",
+          "ref": "enemy.s07_vanguard_captain",
+          "group": "S07-han-army",
+          "tags": [
+            "battleParticipant",
+            "han_government",
+            "boss"
+          ],
+          "x": 750,
+          "y": 130,
+          "overrides": {
+            "aiActive": false
+          }
+        },
+        {
           "id": "S07-han-1",
           "type": "ref",
           "kind": "enemy",

@@ -260,6 +260,38 @@
           "ref": "player",
           "x": 105,
           "y": 625
+        },
+        {
+          "group": "S08-han-outriders",
+          "id": "S08-han-outrider-1",
+          "kind": "enemy",
+          "ref": "enemy.s03_han_soldier",
+          "tags": [
+            "outrider",
+            "han_government"
+          ],
+          "type": "ref",
+          "x": 700,
+          "y": 480,
+          "overrides": {
+            "aiActive": true
+          }
+        },
+        {
+          "group": "S08-han-outriders",
+          "id": "S08-han-outrider-2",
+          "kind": "enemy",
+          "ref": "enemy.s03_han_soldier",
+          "tags": [
+            "outrider",
+            "han_government"
+          ],
+          "type": "ref",
+          "x": 830,
+          "y": 430,
+          "overrides": {
+            "aiActive": true
+          }
         }
       ]
     },

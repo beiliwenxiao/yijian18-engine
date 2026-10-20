@@ -1161,6 +1161,13 @@
     "cooldown": 1,
     "do": [
       {
+        "action": "startDialogue",
+        "params": {
+          "id": "dialogue.s03.afterBattle"
+        },
+        "stepId": "after-battle-dialogue"
+      },
+      {
         "action": "scenario.command",
         "params": {
           "operation": "exit.s03",
@@ -1290,6 +1297,13 @@
     "cooldown": 0.5,
     "do": [
       {
+        "action": "startDialogue",
+        "params": {
+          "id": "dialogue.s04.afterRescue"
+        },
+        "stepId": "after-rescue-dialogue"
+      },
+      {
         "action": "scenario.command",
         "params": {
           "operation": "route.choose",
@@ -1405,6 +1419,13 @@
     "cooldown": 0.5,
     "do": [
       {
+        "action": "startDialogue",
+        "params": {
+          "id": "dialogue.s05.afterRescue"
+        },
+        "stepId": "after-rescue-dialogue"
+      },
+      {
         "action": "scenario.command",
         "params": {
           "operation": "exit.s05",
@@ -1465,6 +1486,13 @@
   {
     "cooldown": 0.5,
     "do": [
+      {
+        "action": "startDialogue",
+        "params": {
+          "id": "dialogue.s06.afterDefense"
+        },
+        "stepId": "after-defense-dialogue"
+      },
       {
         "action": "scenario.command",
         "params": {
@@ -1600,6 +1628,13 @@
     "cooldown": 0.5,
     "do": [
       {
+        "action": "startDialogue",
+        "params": {
+          "id": "dialogue.s07.afterDelay"
+        },
+        "stepId": "after-delay-dialogue"
+      },
+      {
         "action": "scenario.command",
         "params": {
           "operation": "exit.s07",
@@ -1666,6 +1701,13 @@
     "cooldown": 0.5,
     "do": [
       {
+        "action": "startDialogue",
+        "params": {
+          "id": "dialogue.s08.farewell"
+        },
+        "stepId": "farewell-dialogue"
+      },
+      {
         "action": "scenario.command",
         "params": {
           "exitId": "S08-recall-exit",
@@ -1711,11 +1753,27 @@
     "cooldown": 0.5,
     "do": [
       {
+        "action": "startDialogue",
+        "params": {
+          "id": "dialogue.s10.zhangjiaoLastWords"
+        },
+        "stepId": "last-words-dialogue"
+      },
+      {
         "action": "scenario.command",
         "params": {
           "operation": "story.death",
           "scenarioId": "scenario.command.story.death"
         }
+      },
+      {
+        "action": "giveReward",
+        "params": {
+          "items": [
+            { "id": "weapon.s10.talisman_staff", "quantity": 1 }
+          ]
+        },
+        "stepId": "gift-talisman-staff"
       }
     ],
     "id": "trg_s10_zhangjiao_death",
@@ -1844,6 +1902,13 @@
   {
     "cooldown": 0.5,
     "do": [
+      {
+        "action": "startDialogue",
+        "params": {
+          "id": "dialogue.s10.farewell"
+        },
+        "stepId": "farewell-dialogue"
+      },
       {
         "action": "scenario.command",
         "params": {
@@ -2084,6 +2149,13 @@
     "cooldown": 1,
     "do": [
       {
+        "action": "startDialogue",
+        "params": {
+          "id": "dialogue.s11.afterRescue"
+        },
+        "stepId": "after-rescue-dialogue"
+      },
+      {
         "action": "scenario.command",
         "params": {
           "operation": "exit.s11",
@@ -2279,6 +2351,22 @@
     "cooldown": 1,
     "do": [
       {
+        "action": "startDialogue",
+        "params": {
+          "id": "dialogue.s12.zhangbaoFarewell"
+        },
+        "stepId": "zhangbao-farewell-dialogue"
+      },
+      {
+        "action": "giveReward",
+        "params": {
+          "items": [
+            { "id": "equipment.s12.taiping_scripture", "quantity": 1 }
+          ]
+        },
+        "stepId": "gift-taiping-scripture"
+      },
+      {
         "action": "scenario.command",
         "params": {
           "eligibleSceneId": "S13",
@@ -2357,6 +2445,13 @@
   {
     "cooldown": 1,
     "do": [
+      {
+        "action": "startDialogue",
+        "params": {
+          "id": "dialogue.s13.afterBoss"
+        },
+        "stepId": "after-boss-dialogue"
+      },
       {
         "action": "scenario.command",
         "params": {
@@ -2690,6 +2785,13 @@
         "params": {
           "text": "狼群倒下了。林间传来一声低沉的咆哮——一头巨狼踏出阴影。"
         }
+      },
+      {
+        "action": "startDialogue",
+        "params": {
+          "id": "dialogue.s01.wolfKingEncounter"
+        },
+        "stepId": "wolf-king-encounter-dialogue"
       }
     ],
     "id": "trg_s01_wolf_pack_cleared",
@@ -2715,6 +2817,13 @@
         "params": {
           "text": "狼王轰然倒地。荒原的前路畅通了。"
         }
+      },
+      {
+        "action": "startDialogue",
+        "params": {
+          "id": "dialogue.s01.wolfKingAftermath"
+        },
+        "stepId": "wolf-king-aftermath-dialogue"
       }
     ],
     "id": "trg_s01_wolf_king_defeated",
@@ -2780,6 +2889,265 @@
     "when": {
       "params": {},
       "type": "enter"
+    }
+  },
+  {
+    "cooldown": 1,
+    "do": [
+      {
+        "action": "startDialogue",
+        "params": {
+          "id": "dialogue.s02.scavengerChiefEncounter"
+        },
+        "stepId": "scavenger-chief-encounter-dialogue"
+      }
+    ],
+    "id": "trg_s02_scavenger_chief_encounter",
+    "name": "S02：拾荒者警戒区头目遭遇对话",
+    "once": true,
+    "when": {
+      "params": {},
+      "type": "enter"
+    }
+  },
+  {
+    "cooldown": 1,
+    "do": [
+      {
+        "action": "startDialogue",
+        "params": {
+          "id": "dialogue.s09.arrival"
+        }
+      }
+    ],
+    "id": "trg_s09_opening_dialogue",
+    "name": "进入 S09：初入广宗大营开场对话",
+    "once": true,
+    "when": {
+      "params": {
+        "sceneId": "S09"
+      },
+      "type": "sceneEnter"
+    }
+  },
+  {
+    "cooldown": 1,
+    "do": [
+      {
+        "action": "startDialogue",
+        "params": {
+          "id": "dialogue.s03.opening"
+        }
+      }
+    ],
+    "id": "trg_s03_opening_dialogue",
+    "name": "进入 S03：颍川烟尘开场对话",
+    "once": true,
+    "when": {
+      "params": {
+        "sceneId": "S03"
+      },
+      "type": "sceneEnter"
+    }
+  },
+  {
+    "cooldown": 1,
+    "do": [
+      {
+        "action": "startDialogue",
+        "params": {
+          "id": "dialogue.s04.opening"
+        }
+      }
+    ],
+    "id": "trg_s04_opening_dialogue",
+    "name": "进入 S04：长社风急开场对话",
+    "once": true,
+    "when": {
+      "params": {
+        "sceneId": "S04"
+      },
+      "type": "sceneEnter"
+    }
+  },
+  {
+    "cooldown": 1,
+    "do": [
+      {
+        "action": "startDialogue",
+        "params": {
+          "id": "dialogue.s05.opening"
+        }
+      }
+    ],
+    "id": "trg_s05_opening_dialogue",
+    "name": "进入 S05：宛城矿尘开场对话",
+    "once": true,
+    "when": {
+      "params": {
+        "sceneId": "S05"
+      },
+      "type": "sceneEnter"
+    }
+  },
+  {
+    "cooldown": 1,
+    "do": [
+      {
+        "action": "startDialogue",
+        "params": {
+          "id": "dialogue.s06.opening"
+        }
+      }
+    ],
+    "id": "trg_s06_opening_dialogue",
+    "name": "进入 S06：宛城备御开场对话",
+    "once": true,
+    "when": {
+      "params": {
+        "sceneId": "S06"
+      },
+      "type": "sceneEnter"
+    }
+  },
+  {
+    "cooldown": 1,
+    "do": [
+      {
+        "action": "startDialogue",
+        "params": {
+          "id": "dialogue.s07.opening"
+        }
+      }
+    ],
+    "id": "trg_s07_opening_dialogue",
+    "name": "进入 S07：西华迟滞开场对话",
+    "once": true,
+    "when": {
+      "params": {
+        "sceneId": "S07"
+      },
+      "type": "sceneEnter"
+    }
+  },
+  {
+    "cooldown": 1,
+    "do": [
+      {
+        "action": "startDialogue",
+        "params": {
+          "id": "dialogue.s08.opening"
+        }
+      }
+    ],
+    "id": "trg_s08_opening_dialogue",
+    "name": "进入 S08：西华残道开场对话",
+    "once": true,
+    "when": {
+      "params": {
+        "sceneId": "S08"
+      },
+      "type": "sceneEnter"
+    }
+  },
+  {
+    "cooldown": 1,
+    "do": [
+      {
+        "action": "startDialogue",
+        "params": {
+          "id": "dialogue.s10.opening"
+        }
+      }
+    ],
+    "id": "trg_s10_opening_dialogue",
+    "name": "进入 S10：病帐秋声开场对话",
+    "once": true,
+    "when": {
+      "params": {
+        "sceneId": "S10"
+      },
+      "type": "sceneEnter"
+    }
+  },
+  {
+    "cooldown": 1,
+    "do": [
+      {
+        "action": "startDialogue",
+        "params": {
+          "id": "dialogue.s11.opening"
+        }
+      }
+    ],
+    "id": "trg_s11_opening_dialogue",
+    "name": "进入 S11：广宗烽火开场对话",
+    "once": true,
+    "when": {
+      "params": {
+        "sceneId": "S11"
+      },
+      "type": "sceneEnter"
+    }
+  },
+  {
+    "cooldown": 1,
+    "do": [
+      {
+        "action": "startDialogue",
+        "params": {
+          "id": "dialogue.s12.opening"
+        }
+      }
+    ],
+    "id": "trg_s12_opening_dialogue",
+    "name": "进入 S12：下曲阳暮色开场对话",
+    "once": true,
+    "when": {
+      "params": {
+        "sceneId": "S12"
+      },
+      "type": "sceneEnter"
+    }
+  },
+  {
+    "cooldown": 1,
+    "do": [
+      {
+        "action": "startDialogue",
+        "params": {
+          "id": "dialogue.s13.opening"
+        }
+      }
+    ],
+    "id": "trg_s13_opening_dialogue",
+    "name": "进入 S13：精山残阳开场对话",
+    "once": true,
+    "when": {
+      "params": {
+        "sceneId": "S13"
+      },
+      "type": "sceneEnter"
+    }
+  },
+  {
+    "cooldown": 1,
+    "do": [
+      {
+        "action": "startDialogue",
+        "params": {
+          "id": "dialogue.s14.opening"
+        }
+      }
+    ],
+    "id": "trg_s14_opening_dialogue",
+    "name": "进入 S14：尘埃落定终章引导对话",
+    "once": true,
+    "when": {
+      "params": {
+        "sceneId": "S14"
+      },
+      "type": "sceneEnter"
     }
   }
 ]

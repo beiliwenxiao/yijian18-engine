@@ -279,6 +279,22 @@
           }
         },
         {
+          "group": "S02-scavenger-elites",
+          "id": "S02-scavenger-chief",
+          "kind": "enemy",
+          "ref": "enemy.s02_scavenger_chief",
+          "tags": [
+            "scavenger",
+            "boss"
+          ],
+          "type": "ref",
+          "x": 950,
+          "y": 360,
+          "overrides": {
+            "aiActive": true
+          }
+        },
+        {
           "group": "S02-villagers-calm",
           "id": "S02-villager-calm-2",
           "kind": "enemy",
@@ -548,6 +564,19 @@
           "event": "enter",
           "targetMode": "id",
           "target": "S02-zone-village-beg"
+        },
+        {
+          "id": "S02-binding-scavenger-chief",
+          "type": "trigger",
+          "name": "拾荒者警戒区：头目遭遇",
+          "triggerId": "trg_s02_scavenger_chief_encounter",
+          "x": 760,
+          "y": 250,
+          "width": 320,
+          "height": 240,
+          "event": "enter",
+          "targetMode": "id",
+          "target": "S02-danger-zone"
         }
       ]
     }

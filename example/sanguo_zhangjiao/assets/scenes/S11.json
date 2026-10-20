@@ -133,6 +133,7 @@
         { "id": "S11-yellow-49", "type": "ref", "kind": "enemy", "ref": "enemy.s03_yellow_turban_soldier", "group": "S11-yellow-turban", "tags": ["battleParticipant","yellow_turban"], "x": 620, "y": 610, "overrides": { "aiActive": false } },
         { "id": "S11-yellow-50", "type": "ref", "kind": "enemy", "ref": "enemy.s03_yellow_turban_soldier", "group": "S11-yellow-turban", "tags": ["battleParticipant","yellow_turban"], "x": 675, "y": 610, "overrides": { "aiActive": false } },
 
+        { "id": "S11-han-boss", "type": "ref", "kind": "enemy", "ref": "enemy.s11_siege_commander", "group": "S11-han-army", "tags": ["battleParticipant","han_government","boss"], "x": 790, "y": 200, "overrides": { "aiActive": false } },
         { "id": "S11-han-01", "type": "ref", "kind": "enemy", "ref": "enemy.s03_han_soldier", "group": "S11-han-army", "tags": ["battleParticipant","han_government"], "x": 720, "y": 160, "overrides": { "aiActive": false } },
         { "id": "S11-han-02", "type": "ref", "kind": "enemy", "ref": "enemy.s03_han_soldier", "group": "S11-han-army", "tags": ["battleParticipant","han_government"], "x": 775, "y": 160, "overrides": { "aiActive": false } },
         { "id": "S11-han-03", "type": "ref", "kind": "enemy", "ref": "enemy.s03_han_soldier", "group": "S11-han-army", "tags": ["battleParticipant","han_government"], "x": 830, "y": 160, "overrides": { "aiActive": false } },
