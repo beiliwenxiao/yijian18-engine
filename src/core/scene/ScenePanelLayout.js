@@ -142,8 +142,15 @@ export class ScenePanelLayout {
       showHotkeyNumbers: barOptions.showHotkeyNumbers,
       now: () => scene.simulationClock?.now?.() ?? performance.now(),
       getAssetManager: () => scene.assetManager || null,
+      // 触屏长按技能槽装配：读取 InputManager 触摸按住状态做短按/长按判定
+      inputProvider: () => scene.inputManager || null,
       onSkillClick: (skill) => {
         scene.onSkillClicked(skill);
+      },
+      // 技能槽右键：打开技能装配选择列表（3 槽自由组合）
+      onSkillSlotRightClick: (slotIndex) => {
+        scene._ensureCombatActions?.().openSkillLoadoutPicker?.(slotIndex)
+          || scene.notificationSystem?.addNotification?.('尚无已解锁技能可供装配', 'info');
       },
       onPotionUse: (potionType) => {
         scene.usePotionFromHotbar(potionType);

@@ -422,6 +422,60 @@ export class SceneCombatActions {
     return true;
   }
 
+  /**
+   * 右键技能槽：打开技能装配选择列表（3 槽自由组合）。
+   * 列出全部已解锁技能（排除已装入其他槽位的），支持清空槽位。
+   * @param {number} slotIndex - 快捷栏槽位 0..2
+   * @returns {boolean} 是否打开
+   */
+  openSkillLoadoutPicker(slotIndex) {
+    const scene = this.scene;
+    const player = scene.playerEntity;
+    const view = scene.interactionChoiceView;
+    if (!player || !view || view.visible) return false;
+    const flow = scene.s09ClassSelectionCoordinator;
+    if (typeof flow?.setSkillLoadoutSlot !== 'function') return false;
+    const available = Array.isArray(player.availableSkillIds) ? player.availableSkillIds : [];
+    if (!available.length) return false;
+    const loadout = player.getComponent('combat')?.skillLoadout || [];
+    const registry = scene.gameLoader?.skillRegistry;
+    const currentId = loadout[slotIndex] || null;
+    const actions = available
+      .filter(id => !loadout.includes(id) || id === currentId)
+      .map(id => {
+        let name = id;
+        let description = '';
+        try {
+          const skillView = registry?.get(id)?.resolveVariant(null);
+          name = skillView?.name || id;
+          description = skillView?.description || '';
+        } catch { /* 定义缺失时降级为 id 展示 */ }
+        return {
+          id,
+          label: `${name}${description ? ` · ${description}` : ''}${id === currentId ? '（当前）' : ''}`,
+          onClick: () => {
+            view.close();
+            flow.setSkillLoadoutSlot(slotIndex, id);
+          }
+        };
+      });
+    actions.push({
+      id: '__clear__',
+      label: '清空该槽位',
+      onClick: () => {
+        view.close();
+        flow.setSkillLoadoutSlot(slotIndex, null);
+      }
+    });
+    view.open({
+      title: `装配技能 · 槽位 ${slotIndex + 1}`,
+      description: '选择装入该快捷栏槽位的技能（已解锁技能可自由组合）',
+      allowCancel: true,
+      actions
+    });
+    return true;
+  }
+
   handleWeaponThrow() {
     if (this._isLocked()) return false;
     const scene = this.scene;

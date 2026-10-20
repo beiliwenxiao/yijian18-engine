@@ -31,6 +31,9 @@ const SKILL_EMOJI_MAP = Object.freeze({
   inferno_palm: '💥', flame_burst: '💥', heal: '💚', meditation: '🧘'
 });
 
+/** 触屏技能槽长按阈值（毫秒）：≥ 该值为长按（装配），抬起早于该值为短按（释放） */
+const SKILL_LONG_PRESS_MS = 500;
+
 /**
  * 底部控制栏
  */
@@ -124,6 +127,10 @@ export class BottomControlBar extends UIElement {
     this.onPotionUse = options.onPotionUse || null;
     // 教学高亮一次性熄灭：高亮槽位首次被点击时回调其稳定组件 ID
     this.onOnboardingComponentActivated = options.onOnboardingComponentActivated || null;
+    // 触屏长按装配：经 inputProvider 读取 InputManager 的触摸按住状态
+    this.inputProvider = typeof options.inputProvider === 'function' ? options.inputProvider : null;
+    /** @type {{skillIndex:number, startedAt:number}|null} 触摸按下技能槽后的挂起判定态 */
+    this._pendingSkillPress = null;
 
     // 是否使用 UI 编辑器的子控件独立布局（true 时不画整体背景条）
     this._hasSubLayout = false;
@@ -229,6 +236,35 @@ export class BottomControlBar extends UIElement {
    */
   update(deltaTime) {
     if (!this.visible || !this.entity) return;
+    this._updatePendingSkillPress();
+  }
+
+  /**
+   * 触屏技能槽挂起判定：短按（≤500ms 抬起）释放技能，长按（≥500ms）打开装配选择。
+   * 由 updatePanels 驱动（UI 通道约 30Hz），判定用 InputManager 的触摸按住状态。
+   * @private
+   */
+  _updatePendingSkillPress() {
+    const pending = this._pendingSkillPress;
+    if (!pending) return;
+
+    const input = this.inputProvider?.();
+    if (input?.isTouchHoldActive?.() === true) {
+      // 仍按住且未滑动：达到长按阈值 → 装配；否则继续等待
+      if (input.getTouchHoldMs() >= SKILL_LONG_PRESS_MS) {
+        this._pendingSkillPress = null;
+        this.onSkillSlotRightClick?.(pending.skillIndex);
+      }
+      return;
+    }
+
+    // 已抬起或滑动：按短按处理（释放技能）
+    this._pendingSkillPress = null;
+    const combat = this.entity.getComponent('combat');
+    const skill = combat?.skills?.[pending.skillIndex];
+    if (skill) {
+      this.onSkillClick?.(skill);
+    }
   }
 
   /**
@@ -867,7 +903,17 @@ export class BottomControlBar extends UIElement {
           return true;
         }
         
-        // 技能槽
+        // 技能槽：右键 = 打开技能装配选择列表（3 槽自由组合）；左键 = 释放技能
+        if (button === 'right' && this.onSkillSlotRightClick) {
+          this.onSkillSlotRightClick(slot.skillIndex);
+          return true;
+        }
+        // 触屏左键：挂起不立即释放——update 里按手势判定（短按释放 / 长按装配）
+        const input = this.inputProvider?.();
+        if (input?.isTouchHoldActive?.() === true) {
+          this._pendingSkillPress = { skillIndex: slot.skillIndex, startedAt: this.now() };
+          return true;
+        }
         if (this.onSkillClick && this.entity) {
           const combat = this.entity.getComponent('combat');
           if (combat && combat.skills) {
@@ -877,7 +923,7 @@ export class BottomControlBar extends UIElement {
             }
           }
         }
-        
+
         return true;
       }
     }

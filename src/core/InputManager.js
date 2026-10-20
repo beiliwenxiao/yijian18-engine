@@ -14,6 +14,9 @@ import { Logger } from './Logger.js';
 import { GamepadManager } from './input/GamepadManager.js';
 import { InputHints } from './input/InputHints.js';
 
+/** 触摸位移超过该值（逻辑像素）视为滑动，取消长按资格 */
+const TOUCH_MOVE_CANCEL_PX = 24;
+
 /**
  * 输入管理器
  * 统一处理键盘、鼠标、手柄输入
@@ -53,6 +56,15 @@ export class InputManager {
             clickedButton: -1,    // 本次按下沿的按钮；mouseup 先于游戏帧时仍可正确识别右键
             handled: false,  // 标记点击事件是否已被处理（用于 UI 点击阻止）
             isTouch: false   // 最近一次指针按下是否来自触屏（供 InputActionRouter 标记设备）
+        };
+
+        // 触摸长按状态：记录按住起点（时间+位置），供 UI 长按手势判定（如技能槽长按装配）。
+        // 位移超过 TOUCH_MOVE_CANCEL_PX 视为滑动，取消长按资格。
+        this.touch = {
+            startedAt: 0,
+            startX: 0,
+            startY: 0,
+            moved: false
         };
         
         // 键位映射
@@ -314,6 +326,11 @@ export class InputManager {
             // 漏设会让 POINTER_DOWN 带 button=-1，被交互/拾取的左键过滤全部拒收。
             this.mouse.button = 0;
             this.mouse.buttons.add(0);
+            // 记录长按起点（时间 + 逻辑坐标），供 isTouchHoldActive 判定
+            this.touch.startedAt = performance.now();
+            this.touch.startX = this.mouse.x;
+            this.touch.startY = this.mouse.y;
+            this.touch.moved = false;
         }
     }
 
@@ -326,6 +343,8 @@ export class InputManager {
         // 释放左键
         this.mouse.buttons.delete(0);
         this.mouse.button = -1;
+        // 清除长按起点：按住链路终止
+        this.touch.startedAt = 0;
     }
 
     /**
@@ -336,7 +355,34 @@ export class InputManager {
         if (event.touches.length > 0) {
             const touch = event.touches[0];
             this.updateTouchPosition(touch);
+            // 位移超阈值视为滑动，取消长按资格（保持已记录的起点供 hold 时长计算）
+            if (this.touch.startedAt > 0 && !this.touch.moved) {
+                const dx = this.mouse.x - this.touch.startX;
+                const dy = this.mouse.y - this.touch.startY;
+                if ((dx * dx + dy * dy) > TOUCH_MOVE_CANCEL_PX * TOUCH_MOVE_CANCEL_PX) {
+                    this.touch.moved = true;
+                }
+            }
         }
+    }
+
+    /**
+     * 触摸是否仍在按住（且未滑动）——UI 长按手势的挂起判定依据。
+     * @returns {boolean}
+     */
+    isTouchHoldActive() {
+        return this.mouse.isTouch === true
+            && this.mouse.isDown === true
+            && this.touch.startedAt > 0
+            && this.touch.moved === false;
+    }
+
+    /**
+     * 当前触摸按住时长（毫秒）。未按住/已滑动时返回 0。
+     * @returns {number}
+     */
+    getTouchHoldMs() {
+        return this.isTouchHoldActive() ? performance.now() - this.touch.startedAt : 0;
     }
 
     /**
