@@ -67,6 +67,8 @@ export class SceneHudUpdater {
       'getThrowCooldownRemaining', 'getThrowCooldownTotal');
     this._updateCooldown(ui.blockButton, systems.combatSystem || systems.combat,
       'getBlockCooldownRemaining', 'getBlockCooldownTotal');
+    this._updateCooldown(ui.dodgeButton, systems.dodgeSystem || systems.dodge,
+      'getDodgeCooldownRemaining', 'getDodgeCooldownTotal');
   }
 
   _updateCooldown(button, system, remaining, total) {

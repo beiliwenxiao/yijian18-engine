@@ -25,7 +25,9 @@
  *   药水    skill1(红) / skill2(蓝)
  *   技能    skill3 / skill4 / skill5 / skill6 / skill7
  *   拾取    e        面板  c(属性) / b(背包) / v(装备)
- *   格挡    q        取消  escape
+ *   格挡    q        闪避  r（PC）/ dodge（手柄 B）
+ *   军队    f（PC）/ armyCommand（手柄 LS）
+ *   取消    escape
  *
  * authority: 'client'  // 纯输入映射，无游戏逻辑
  */
@@ -92,16 +94,17 @@ export const JUMP_ACTION = 'jump';                    // 可重绑：独立跳�
 export const FLIGHT_ACTION = 'flight';                // 兼容旧配置；新方案通过技能轮盘施展轻功
 export const THROW_ACTION = 'throw';                  // 兼容旧配置；新方案通过技能轮盘施展投掷
 export const BLOCK_ACTION = 'block';                  // LT 按住：格挡
+export const DODGE_ACTION = 'dodge';                  // B 按下沿：闪避（左摇杆方向/面向）
 export const SETTINGS_ACTION = 'settings';            // 系统设置/标题菜单
 export const ARMY_COMMAND_ACTION = 'armyCommand';     // 军队操作条开关（LS 按下）
 
 /**
- * 默认绑定：RT攻击 / RB释放所选技能 / LB选择技能 / Y按住蓄力、松开起跳 / LT格挡。
+ * 默认绑定：RT攻击 / RB释放所选技能 / LB选择技能 / Y按住蓄力、松开起跳 / LT格挡 / B闪避。
  * 轻功与投掷作为技能轮盘选项，由 LB 选择、RB 瞄准并释放。
  */
 export const DEFAULT_BINDINGS = {
   [PadButton.A]: 'e',                   // 拾取/交互/确认对话
-  [PadButton.B]: ARMY_COMMAND_ACTION,   // 军队操作条开关（B = fight 入口）
+  [PadButton.B]: DODGE_ACTION,          // 闪避（按下沿；军队操作条开关在 LS）
   [PadButton.X]: 'e',                   // 拾取/交互/确认对话（与A一致）
   [PadButton.Y]: JUMP_ACTION,           // 按住蓄力，松开起跳
   [PadButton.LB]: SKILL_SWITCH_ACTION,  // 切换技能（按住弹环形轮盘）
@@ -131,6 +134,7 @@ export const BINDABLE_ACTIONS = [
   { value: SKILL_SWITCH_ACTION, label: '切换技能（轮盘）', group: '战斗' },
   { value: JUMP_ACTION, label: '跳跃（Y，按住蓄力，松开起跳）', group: '移动' },
   { value: BLOCK_ACTION, label: '格挡（按住生效）', group: '战斗' },
+  { value: DODGE_ACTION, label: '闪避（B，方向键/摇杆方向）', group: '战斗' },
   { value: 'e', label: '拾取/交互/确认', group: '交互' },
   { value: 'skill1', label: '红药水', group: '快捷' },
   { value: 'skill2', label: '蓝药水', group: '快捷' },
@@ -146,7 +150,7 @@ export const ACTION_LABELS = BINDABLE_ACTIONS.reduce((m, a) => { m[a.value] = a.
 /** 绑定的中文说明（UI 映射表用） */
 export const BINDING_DESCRIPTIONS = {
   [PadButton.A]: '拾取/交互/确认',
-  [PadButton.B]: '军队操作条开关',
+  [PadButton.B]: '闪避（移动方向）',
   [PadButton.X]: '拾取/交互/确认',
   [PadButton.Y]: '跳跃（按住蓄力，松开起跳）',
   [PadButton.LB]: '切换技能（环形轮盘）',

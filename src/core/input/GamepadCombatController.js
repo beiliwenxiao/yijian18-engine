@@ -20,6 +20,7 @@
  *   Y   由 InputManager 作为独立 jump 虚拟键处理（按下即跳）
  *   轻功/投掷 作为轮盘技能，由 RB 释放
  *   LT  格挡（按住期间生效）
+ *   B   闪避（按下沿，左摇杆方向/面向）
  *
  * 该控制器不直接修改游戏状态，而是产出「意图」供场景逻辑执行。
  * 场景每帧调用 update() → 读取 intents → 执行对应操作 → 调用 consumeIntents()。
@@ -32,7 +33,8 @@ import {
   SKILL_SWITCH_ACTION,
   FLIGHT_ACTION,
   THROW_ACTION,
-  BLOCK_ACTION
+  BLOCK_ACTION,
+  DODGE_ACTION
 } from './Xbox360Profile.js';
 
 /** 快按阈值（毫秒）：无有效右摇杆方向时使用角色面向方向 */
@@ -57,7 +59,8 @@ export const IntentType = {
   JUMP: 'jump',                 // 跳跃
   THROW: 'throw',               // 投掷
   BLOCK_START: 'blockStart',    // 格挡开始
-  BLOCK_END: 'blockEnd'         // 格挡结束
+  BLOCK_END: 'blockEnd',        // 格挡结束
+  DODGE: 'dodge'                // 闪避（B 按下沿，方向=按下时左摇杆/面向）
 };
 
 export class GamepadCombatController {
@@ -134,6 +137,9 @@ export class GamepadCombatController {
 
     // ---- LT 格挡 ----
     this._processBlock(gamepad);
+
+    // ---- B 闪避 ----
+    this._processDodge(gamepad);
   }
 
   /** 肩键瞬态复位（指挥态接管期间防残留：瞄准/轮盘/按住计数全部清零）。 */
@@ -505,6 +511,20 @@ export class GamepadCombatController {
     if (released && this._blockActive) {
       this._blockActive = false;
       this.intents.push({ type: IntentType.BLOCK_END });
+    }
+  }
+
+  /** B 闪避：按下沿触发一次；方向取按下时左摇杆（无输入由场景回退角色面向）。 */
+  _processDodge(gamepad) {
+    const btn = this._getButtonForAction(gamepad, DODGE_ACTION);
+    if (btn < 0) return;
+
+    if (gamepad.isButtonPressed(btn)) {
+      const leftStick = gamepad.leftStick;
+      const direction = leftStick && leftStick.magnitude > 0.2
+        ? { x: leftStick.x, y: leftStick.y }
+        : null;
+      this.intents.push({ type: IntentType.DODGE, direction });
     }
   }
 }

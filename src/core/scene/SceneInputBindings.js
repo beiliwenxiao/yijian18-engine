@@ -14,6 +14,7 @@ export class SceneInputBindings {
     toggleBackpack,
     toggleSettings,
     toggleArmyCommand,
+    performDodge,
     togglePerformance,
     onGamepadConnected,
     onGamepadDisconnected,
@@ -27,6 +28,7 @@ export class SceneInputBindings {
     this.toggleBackpack = toggleBackpack;
     this.toggleSettings = toggleSettings;
     this.toggleArmyCommand = toggleArmyCommand;
+    this.performDodge = performDodge;
     this.togglePerformance = togglePerformance;
     this.onGamepadConnected = onGamepadConnected;
     this.onGamepadDisconnected = onGamepadDisconnected;
@@ -45,9 +47,12 @@ export class SceneInputBindings {
     this.inputManager.registerHotkey('toggle_equipment', ['v', 'V'], toggleBackpack, { cooldown: 300 });
     this.inputManager.registerHotkey(
       'toggle_system_settings', ['escape', 'Escape', 'settings'], () => this.toggleSettings?.(), { cooldown: 300 });
-    // 军队操作条开关：PC 热键 F（fight）+ 手柄 LS/B（armyCommand 动作，见 Xbox360Profile）
+    // 军队操作条开关：PC 热键 F（fight）+ 手柄 LS（armyCommand 动作）；B 已让给闪避
     this.inputManager.registerHotkey(
       'toggle_army_command', ['f', 'F', ARMY_COMMAND_ACTION], () => this.toggleArmyCommand?.(), { cooldown: 300 });
+    // 闪避：PC 热键 R，闪向鼠标方向 3 个身位（手柄 B/触屏按钮走各自输入链）
+    this.inputManager.registerHotkey(
+      'perform_dodge', ['r', 'R'], () => this.performDodge?.(), { cooldown: 300 });
     this.inputManager.registerHotkey(
       'toggle_performance', ['p', 'P'], () => this.togglePerformance?.(), { cooldown: 300 });
 

@@ -671,6 +671,30 @@ export class BaseGameSceneBehaviors extends BaseGameSceneSetup {  /**
     return this._ensureCombatActions().activateBlock();
   }
 
+  /** PC：闪向鼠标方向（3 个身位，冷却与格挡一致）。 */
+  dodgeByPointer() {
+    if (this.isPlayerActionLocked()) return false;
+    return this._ensureCombatActions().dodgeByPointer();
+  }
+
+  /** 触屏/手柄：按移动输入方向闪避，无输入时按角色面向。 */
+  dodgeByInput() {
+    if (this.isPlayerActionLocked()) return false;
+    return this._ensureCombatActions().dodgeByInput();
+  }
+
+  /** 按指定方向闪避；方向过小时回退角色面向。 */
+  dodgeByDirection(dirX, dirY) {
+    if (this.isPlayerActionLocked()) return false;
+    return this._ensureCombatActions().dodgeByDirection(dirX, dirY);
+  }
+
+  /** 按角色面向闪避。 */
+  dodgeByFacing() {
+    if (this.isPlayerActionLocked()) return false;
+    return this._ensureCombatActions().dodgeByFacing();
+  }
+
   /** 从快捷栏使用药水。 */
   usePotionFromHotbar(potionType, modifiers = {}) {
     return this._ensureCombatActions().usePotionFromHotbar(potionType, modifiers);

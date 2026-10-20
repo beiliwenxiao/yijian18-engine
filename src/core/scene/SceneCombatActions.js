@@ -294,6 +294,58 @@ export class SceneCombatActions {
     return !!(scene.combatSystem && scene.playerEntity && scene.combatSystem.activateBlock());
   }
 
+  /** PC：闪向鼠标方向（3 个身位，冷却与格挡一致）。 */
+  dodgeByPointer() {
+    if (this._isLocked()) return false;
+    const scene = this.scene;
+    const player = scene.playerEntity;
+    if (!scene.dodgeSystem || !player) return false;
+    const transform = player.getComponent('transform');
+    if (!transform) return false;
+    const mouse = scene.inputManager?.getMouseWorldPosition?.(scene.camera);
+    if (!mouse) return false;
+    return this._performDodge(mouse.x - transform.position.x, mouse.y - transform.position.y);
+  }
+
+  /** 触屏/手柄：按当前移动输入方向闪避（无输入时按角色面向）。 */
+  dodgeByInput() {
+    const scene = this.scene;
+    const axis = scene.inputManager?.getMoveAxis?.() || { x: 0, y: 0 };
+    return this.dodgeByDirection(axis.x || 0, axis.y || 0);
+  }
+
+  /** 按指定方向闪避；方向过小时回退角色面向。 */
+  dodgeByDirection(dirX, dirY) {
+    if (this._isLocked()) return false;
+    const scene = this.scene;
+    const player = scene.playerEntity;
+    if (!scene.dodgeSystem || !player) return false;
+    const transform = player.getComponent('transform');
+    if (!transform) return false;
+    const magnitude = Math.hypot(dirX, dirY);
+    if (magnitude < 0.01) return this.dodgeByFacing();
+    return this._performDodge(dirX / magnitude, dirY / magnitude);
+  }
+
+  /** 按角色面向闪避。 */
+  dodgeByFacing() {
+    if (this._isLocked()) return false;
+    const scene = this.scene;
+    const facing = scene.getPlayerFacingVector?.()
+      || directionToVector(scene.playerEntity?.getComponent?.('sprite')?.direction);
+    const magnitude = Math.hypot(facing.x || 0, facing.y || 0) || 1;
+    return this._performDodge((facing.x || 0) / magnitude, (facing.y || 0) / magnitude);
+  }
+
+  _performDodge(dirX, dirY) {
+    const scene = this.scene;
+    const player = scene.playerEntity;
+    if (!player || player.isDead || player.pinnedByWeapon) return false;
+    if (scene.dialogueSystem?.isDialogueActive?.() || scene.isTransitioning) return false;
+    if (scene.meditationSystem?.isActive?.() || scene.locomotionSystem?.isBusy?.(player)) return false;
+    return scene.dodgeSystem.startDodge(player, { x: dirX, y: dirY });
+  }
+
   usePotionFromHotbar(potionType, { shift = false } = {}) {
     const scene = this.scene;
     // 教学高亮一次性熄灭：药水快捷键首次被触发即视为完成指引（无论是否成功使用）。
@@ -579,6 +631,11 @@ export class SceneCombatActions {
 
     if (controller.hasIntent(IntentType.BLOCK_START)) scene.activateBlock?.();
     if (controller.hasIntent(IntentType.BLOCK_END)) scene.deactivateBlock?.();
+    const dodge = controller.getIntent(IntentType.DODGE);
+    if (dodge) {
+      if (dodge.direction) scene.dodgeByDirection?.(dodge.direction.x, dodge.direction.y);
+      else scene.dodgeByFacing?.();
+    }
     controller.consumeIntents();
   }
 

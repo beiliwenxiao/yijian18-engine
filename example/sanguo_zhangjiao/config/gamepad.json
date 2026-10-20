@@ -1,7 +1,7 @@
 {
   "bindings": {
     "0": "e",
-    "1": "armyCommand",
+    "1": "dodge",
     "2": "e",
     "3": "jump",
     "4": "skillSwitch",
@@ -10,7 +10,7 @@
     "7": "attack",
     "8": "b",
     "9": "settings",
-    "10": "",
+    "10": "armyCommand",
     "11": "escape",
     "12": "skill1",
     "13": "skill2",

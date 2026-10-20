@@ -40,6 +40,7 @@ import { MeleeAttackSystem } from '../../systems/MeleeAttackSystem.js';
 import { ZoneEffectSystem } from '../../systems/ZoneEffectSystem.js';
 import { FlightSystem } from '../../systems/FlightSystem.js';
 import { JumpSystem } from '../../systems/JumpSystem.js';
+import { DodgeSystem } from '../../systems/DodgeSystem.js';
 import { AirAimController } from './AirAimController.js';
 import { LocomotionSystem } from '../../systems/LocomotionSystem.js';
 import { ClassSystem } from '../../systems/ClassSystem.js';
@@ -78,9 +79,16 @@ export class SceneGameplaySystemAssembler {
       now
     });
     scene.jumpSystem = new JumpSystem({ particleSystem: scene.particleSystem });
+    // 闪避：向输入方向快速滑出 3 个身位（冷却与格挡一致，头顶「闪避」飘字）
+    scene.dodgeSystem = new DodgeSystem({
+      particleSystem: scene.particleSystem,
+      floatingTextManager: scene.floatingTextManager,
+      now
+    });
     scene.locomotionSystem = new LocomotionSystem({
       jumpSystem: scene.jumpSystem,
       flightSystem: scene.flightSystem,
+      dodgeSystem: scene.dodgeSystem,
       resolveClimbTarget: request => scene.resolveClimbTarget?.(request) || null,
       // 攀爬开始 → 教程信号（攀藤等教程的完成依据，与 jumpPerformed 同模式）
       onClimbStarted: (entity, info) => {
@@ -588,6 +596,7 @@ export class SceneGameplaySystemAssembler {
       ['gameplay.enemyWeaponRenderer', scene.enemyWeaponRenderer, 'cleanup'],
       ['gameplay.flight', scene.flightSystem, 'cleanup'],
       ['gameplay.jump', scene.jumpSystem, 'cleanup'],
+      ['gameplay.dodge', scene.dodgeSystem, 'cleanup'],
       ['gameplay.locomotion', scene.locomotionSystem, 'cleanup'],
       ['gameplay.combat', scene.combatSystem],
       ['gameplay.pathfinding', scene.pathfindingSystem],
@@ -627,7 +636,7 @@ export class SceneGameplaySystemAssembler {
       corpses: 'corpseRuntime',
       pickup: 'pickupSystem', gathering: 'gatheringSystem', gatheringPuppet: 'gatheringPuppetSystem',
       meditation: 'meditationSystem', zoneEffect: 'zoneEffectSystem', meleeAttack: 'meleeAttackSystem',
-      flight: 'flightSystem', jump: 'jumpSystem', locomotion: 'locomotionSystem',
+      flight: 'flightSystem', jump: 'jumpSystem', dodge: 'dodgeSystem', locomotion: 'locomotionSystem',
       playerDefeat: 'playerDefeatService', itemLifecycle: 'itemLifecycleService',
       toolRepair: 'toolRepairService',
       inventoryTransactions: 'inventoryTransactions'

@@ -414,6 +414,8 @@
         #act-attack  { right: 66px; bottom: 70px; }
         /* 格挡按钮：攻击按钮下方 */
         #act-block   { right: 66px; bottom: 0px; }
+        /* 闪避按钮：格挡按钮右侧 */
+        #act-dodge   { right: 0px;  bottom: 0px; }
         /* 外侧3个技能：水平翻转后的位置 */
         #act-skill3  { right: 154px; bottom: 84px; }
         #act-skill4  { right: 114px; bottom: 150px; }
@@ -820,6 +822,8 @@
                 <div class="action-btn attack" id="act-attack" data-act="attack"><span class="atk-icon">⚔️</span><span class="label atk-label">攻击</span></div>
                 <!-- 格挡按钮 -->
                 <div class="action-btn move" id="act-block" data-act="block">🛡️<span class="label">格挡</span><div class="skill-cd-overlay"></div><span class="skill-cd-text"></span></div>
+                <!-- 闪避按钮：位于格挡旁 -->
+                <div class="action-btn move" id="act-dodge" data-act="dodge">⚡<span class="label">闪避</span><div class="skill-cd-overlay"></div><span class="skill-cd-text"></span></div>
                 <!-- 轻功 -->
                 <div class="action-btn move" id="act-flight" data-act="flight">🌀<span class="label">轻功</span><div class="skill-cd-overlay"></div><span class="skill-cd-text"></span></div>
                 <!-- 跳跃：位于轻功下方 -->
@@ -1398,7 +1402,8 @@
         const _moveCooldownButtons = {
             flight: document.getElementById('act-flight'),
             throw: document.getElementById('act-throw'),
-            block: document.getElementById('act-block')
+            block: document.getElementById('act-block'),
+            dodge: document.getElementById('act-dodge')
         };
         const _cooldownVisualState = new WeakMap();
         const _potionIconState = { health: null, mana: null };
@@ -1486,6 +1491,13 @@
                     _moveCooldownButtons.block,
                     cs.combatSystem.getBlockCooldownRemaining(),
                     cs.combatSystem.getBlockCooldownTotal()
+                );
+            }
+            if (cs.dodgeSystem) {
+                updateCooldownVisual(
+                    _moveCooldownButtons.dodge,
+                    cs.dodgeSystem.getDodgeCooldownRemaining(),
+                    cs.dodgeSystem.getDodgeCooldownTotal()
                 );
             }
         }

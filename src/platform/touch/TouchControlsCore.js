@@ -88,6 +88,9 @@ function setupTouchControls() {
         } else if (btn.dataset.act === 'block') {
             // 格挡按钮
             if (currentScene.activateBlock) currentScene.activateBlock();
+        } else if (btn.dataset.act === 'dodge') {
+            // 闪避按钮：按移动输入方向闪避（无输入按角色面向）
+            if (currentScene.dodgeByInput) currentScene.dodgeByInput();
         } else if (btn.dataset.act === 'interact') {
             // 交互按钮直接进入统一 InputActionRouter；不再夹带旧 N 场景推进。
             enqueueSceneInteract();
@@ -176,6 +179,10 @@ function setupTouchControls() {
                 // 格挡按钮：直接激活
                 const currentScene = shell.sceneManager ? shell.sceneManager.getCurrentScene() : shell.scene;
                 if (currentScene && currentScene.activateBlock) currentScene.activateBlock();
+            } else if (btn.dataset.act === 'dodge') {
+                // 闪避按钮：按移动输入方向闪避（无输入按角色面向）
+                const currentScene = shell.sceneManager ? shell.sceneManager.getCurrentScene() : shell.scene;
+                if (currentScene && currentScene.dodgeByInput) currentScene.dodgeByInput();
             } else if (btn.dataset.key !== undefined) {
                 tapKey(keyMap[btn.dataset.key] || btn.dataset.key);
             } else {
@@ -239,6 +246,7 @@ async function applyUILayoutToDom() {
         'joystick': 'joystick-zone',
         'act-attack': 'act-attack',
         'act-block': 'act-block',
+        'act-dodge': 'act-dodge',
         'act-skill3': 'act-skill3',
         'act-skill4': 'act-skill4',
         'act-skill5': 'act-skill5',

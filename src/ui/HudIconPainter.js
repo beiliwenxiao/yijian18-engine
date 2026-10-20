@@ -496,6 +496,53 @@ const PAINTERS = {
     glossArc(ctx, 0, -0.02 * s, 0.19 * s, Math.PI * 1.1, Math.PI * 1.5, lw * 0.8, t);
   },
 
+  /** 闪避：斜向残影疾冲（前实后虚双箭头 + 尾部风流线） */
+  dodge(ctx, s, t, lw) {
+    const C = hex => shade(hex, t);
+    // 单支斜向箭头（指向右上 45°），offset 控制残影前后
+    const arrow = (offset, scale, fill, stroke, alpha) => {
+      ctx.save();
+      ctx.translate(offset * 0.16 * s, offset * 0.16 * s);
+      ctx.scale(scale, scale);
+      ctx.globalAlpha = alpha;
+      ctx.beginPath();
+      ctx.moveTo(0.30 * s, -0.30 * s);                       // 箭头尖
+      ctx.lineTo(0.06 * s, -0.26 * s);
+      ctx.lineTo(0.16 * s, -0.16 * s);                       // 内凹
+      ctx.lineTo(-0.24 * s, 0.24 * s);                       // 箭身斜杆
+      ctx.lineTo(-0.16 * s, 0.32 * s);                       // 杆尾
+      ctx.lineTo(0.24 * s, -0.06 * s);
+      ctx.lineTo(0.14 * s, 0.04 * s);
+      ctx.closePath();
+      ctx.fillStyle = fill;
+      ctx.fill();
+      ctx.strokeStyle = stroke;
+      ctx.lineWidth = lw * 0.9;
+      ctx.lineJoin = 'round';
+      ctx.stroke();
+      ctx.restore();
+    };
+    // 后侧两道淡残影 → 前侧实影：疾冲方向感
+    arrow(1, 0.72, C('#9fb7c4'), '#2c343a', 0.4);
+    arrow(0.5, 0.86, C('#c3d6df'), '#2c343a', 0.65);
+    arrow(0, 1, linGrad(ctx, -0.2 * s, 0.2 * s, 0.3 * s, -0.3 * s,
+      [[0, C('#eef6fa')], [0.55, C('#b9ced9')], [1, C('#7e97a4')]]), '#262b31', 1);
+    // 尾部风流线（左下三道弧，渐短）
+    ctx.globalAlpha = 1;
+    for (const [i, len] of [[0, 0.30], [1, 0.22], [2, 0.14]]) {
+      ctx.beginPath();
+      ctx.moveTo((-0.34 + i * 0.05) * s, (0.10 - i * 0.07) * s);
+      ctx.quadraticCurveTo(
+        (-0.34 - len * 0.5) * s, (0.10 - i * 0.07 + 0.05) * s,
+        (-0.34 - len) * s, (0.10 - i * 0.07 - 0.02) * s
+      );
+      ctx.strokeStyle = `rgba(214,232,240,${0.85 - i * 0.2})`;
+      ctx.lineWidth = lw * (0.8 - i * 0.15);
+      ctx.lineCap = 'round';
+      ctx.stroke();
+    }
+  },
+
   /** 攻击：单剑斩击（钢刃 + 斩击星芒） */
   attack(ctx, s, t, lw) {
     sword(ctx, s, t, 1, lw);

@@ -263,6 +263,12 @@ export class ScenePanelLayout {
         icon: 'block', label: '格挡', hintAction: 'block',
         onClick: () => { scene.activateBlock(); }
       });
+      // 闪避（闪向鼠标方向 3 个身位，冷却与格挡一致）——排布在格挡按钮旁
+      scene.dodgeButton = new IconButton({
+        x: 666, y: 640, width: 50, height: 50,
+        icon: 'dodge', label: '闪避', hintAction: 'dodge',
+        onClick: () => { scene.dodgeByPointer?.(); }
+      });
     }
 
     // 左下角系统文字提示（拾取/装备等）：底锚贴底部控制栏（栏顶 = logicalHeight - 100）上方
@@ -324,6 +330,7 @@ export class ScenePanelLayout {
     if (scene.flightButton) scene.uiClickHandler.registerElement(scene.flightButton);
     if (scene.throwButton) scene.uiClickHandler.registerElement(scene.throwButton);
     if (scene.blockButton) scene.uiClickHandler.registerElement(scene.blockButton);
+    if (scene.dodgeButton) scene.uiClickHandler.registerElement(scene.dodgeButton);
     const interactionChoiceView = scene.interactionChoiceView;
     scene.resourceScope?.track(() => {
       interactionChoiceView.close();
@@ -523,6 +530,7 @@ export class ScenePanelLayout {
     };
     const canvasButtons = {
       'pc-block': scene.blockButton,
+      'pc-dodge': scene.dodgeButton,
       'pc-jump': scene.jumpButton,
       'pc-flight': scene.flightButton,
       'pc-throw': scene.throwButton,
@@ -631,6 +639,7 @@ export class ScenePanelLayout {
     const scene = this.scene;
     return {
       'pc-block': scene.blockButton,
+      'pc-dodge': scene.dodgeButton,
       'pc-jump': scene.jumpButton,
       'pc-flight': scene.flightButton,
       'pc-throw': scene.throwButton,

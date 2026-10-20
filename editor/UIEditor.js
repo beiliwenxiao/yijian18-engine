@@ -89,6 +89,7 @@ const DEFAULT_COMPONENTS = {
       { id: 'hud-mp', label: 'HUD蓝条', x: 78, y: 52, width: 140, height: 14, anchor: 'topleft', kind: 'panel' },
       { id: 'act-attack', label: '攻击', x: 1126, y: 510, width: 78, height: 78, anchor: 'topleft', kind: 'button' },
       { id: 'act-block', label: '格挡', x: 1126, y: 544, width: 56, height: 56, anchor: 'topleft', kind: 'button' },
+      { id: 'act-dodge', label: '闪避', x: 1141, y: 504, width: 56, height: 56, anchor: 'topleft', kind: 'button' },
       { id: 'act-skill3', label: '技能3', x: 1102, y: 452, width: 62, height: 62, anchor: 'topleft', kind: 'button' },
       { id: 'act-skill4', label: '技能4', x: 1062, y: 386, width: 62, height: 62, anchor: 'topleft', kind: 'button' },
       { id: 'act-skill5', label: '技能5', x: 986, y: 380, width: 62, height: 62, anchor: 'topleft', kind: 'button' },
@@ -132,7 +133,7 @@ const BADGE_TEXT_LAYOUT_IDS = new Set(['timeWeatherBadge', 'combatStateBadge']);
 const BADGE_TEXT_LAYOUT_FIELDS = ['fontSize', 'textOffsetX', 'textOffsetY'];
 const PANEL_LAYOUT_PLATFORMS = new Set(['desktop', 'mobile']);
 const MOBILE_TOUCH_BUTTON_IDS = new Set([
-  'act-attack', 'act-block', 'act-skill3', 'act-skill4', 'act-skill5',
+  'act-attack', 'act-block', 'act-dodge', 'act-skill3', 'act-skill4', 'act-skill5',
   'act-flight', 'act-jump', 'act-interact', 'act-throw', 'act-axe',
   'hb-hp', 'hb-mp', 'hb-bag', 'hb-settings', 'hb-skill6', 'hb-skill7'
 ]);

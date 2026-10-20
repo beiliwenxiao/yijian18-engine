@@ -73,6 +73,7 @@ export class SceneFramePipeline {
     const meleeAttackSystem = systems.meleeAttack;
     const flightSystem = systems.flight;
     const jumpSystem = systems.jump;
+    const dodgeSystem = systems.dodge;
     const locomotionSystem = systems.locomotion;
     const combatEffects = presentation.combatEffects;
     const skillEffects = presentation.skillEffects;
@@ -363,6 +364,11 @@ export class SceneFramePipeline {
     // 更新轻功飞行系统
     if (flightSystem && player) {
       flightSystem.update(deltaTime, player);
+    }
+
+    // 更新闪避系统（地面快速位移；MovementSystem 经 locomotionSystem.isBusy 跳过闪避中的玩家）
+    if (dodgeSystem && player) {
+      dodgeSystem.update(deltaTime);
     }
     if (frameProfile) {
       const now = performance.now();

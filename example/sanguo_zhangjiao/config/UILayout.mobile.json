@@ -179,6 +179,20 @@
       "hPct": 0.10667
     },
     {
+      "id": "act-dodge",
+      "label": "闪避",
+      "kind": "button",
+      "anchor": "topleft",
+      "x": 1141,
+      "y": 504,
+      "width": 56,
+      "height": 56,
+      "xPct": 0.89141,
+      "yPct": 0.84,
+      "wPct": 0.04375,
+      "hPct": 0.09333
+    },
+    {
       "id": "act-skill3",
       "label": "技能3",
       "kind": "button",
@@ -267,11 +281,11 @@
       "label": "投掷",
       "kind": "button",
       "anchor": "topleft",
-      "x": 1104,
+      "x": 1072,
       "y": 504,
       "width": 64,
       "height": 64,
-      "xPct": 0.8625,
+      "xPct": 0.8375,
       "yPct": 0.84,
       "wPct": 0.05,
       "hPct": 0.10667
