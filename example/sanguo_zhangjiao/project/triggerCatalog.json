@@ -156,6 +156,27 @@
           "value": "openBerryGathering"
         },
         {
+          "id": "dropWornAxe",
+          "label": "吃果后投放破旧斧头",
+          "paramsSchema": {
+            "additionalProperties": false,
+            "properties": {
+              "operation": {
+                "enum": [
+                  "dropWornAxe"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "operation"
+            ],
+            "type": "object"
+          },
+          "resultSemantics": "在火堆附近投放破旧斧头放置点并接续教学后成功；放置异常时失败并短路。",
+          "value": "dropWornAxe"
+        },
+        {
           "id": "afterWoodGathered",
           "label": "木材目标完成后提示",
           "paramsSchema": {

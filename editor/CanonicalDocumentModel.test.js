@@ -10,6 +10,7 @@
  *            `https://gitee.com/coderaaa/yijian18-engine`
  ************************************************************/
 
+// @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
 import { CanonicalDocumentModel } from './CanonicalDocumentModel.js';
 import { CanonicalDocumentService } from './CanonicalDocumentService.js';

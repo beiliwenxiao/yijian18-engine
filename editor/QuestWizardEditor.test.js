@@ -71,8 +71,8 @@ describe('QuestWizardEditor 任务向导', () => {
         expect(html).toContain('逃往废弃营地');
         expect(html).toContain('编译校验通过');
         expect(html).toContain('trg_task.s01.survival_intro');
-        // 示意图：start + 16 目标 + complete 节点（教程步骤不进图，含连线容器）
-        expect(detail(editor).querySelectorAll('[data-graph-node-id]').length).toBe(18);
+        // 示意图：start + 17 目标 + complete 节点（教程步骤不进图，含连线容器）
+        expect(detail(editor).querySelectorAll('[data-graph-node-id]').length).toBe(19);
         expect(detail(editor).querySelector('[data-graph-node-id="lightCampfire"]')).toBeTruthy();
         expect(detail(editor).querySelector('.qwe-graph-edges path')).toBeTruthy();
     });
@@ -219,9 +219,9 @@ describe('QuestWizardEditor 任务向导', () => {
     it('步骤次级导航：类型背景色区分，拖动 drop 重排写回 quest.steps，点击高亮定位', () => {
         const { editor } = buildEditor();
         const nav = editor.container.querySelector('[data-role="steps-nav"]');
-        // S01：27 步 = 开场对话 + 开场教程 + 16 目标 + 9 个编排段步骤（方案 B：目标后剧情链已步骤化）
+        // S01：31 步 = 开场对话 + 开场教程 + 17 目标 + 12 个编排段步骤（方案 B：目标后剧情链已步骤化）
         const items = nav.querySelectorAll('[data-snav-index]');
-        expect(items.length).toBe(27);
+        expect(items.length).toBe(31);
         expect(items[0].classList.contains('type-dialogue')).toBe(true);
         expect(items[1].classList.contains('type-tutorial')).toBe(true);
         expect(items[2].classList.contains('type-objective')).toBe(true);

@@ -182,12 +182,15 @@
       "trg_s01_build_shelter",
       "trg_s01_enter_shelter",
       "trg_s01_river_crossed",
-      "trg_s01_cliff_reached"
+      "trg_s01_cliff_reached",
+      "trg_s01_wolf_region_enter",
+      "trg_s01_river_bank_enter"
     ],
     "S02": [
       "trg_s02_zhangjiao_summons",
       "trg_s02_travel_s09",
-      "trg_s02_start_refugee_conflict"
+      "trg_s02_village_beg",
+      "trg_s02_scavenger_chief_encounter"
     ],
     "S09": [
       "trg_s09_zhangjiao_enlistment",

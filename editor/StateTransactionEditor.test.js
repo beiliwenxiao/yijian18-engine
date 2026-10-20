@@ -84,9 +84,16 @@ describe('StateTransactionEditor 状态事务管理', () => {
 
     it('高级字段锁定：variants/delayed 类事务强制 JSON 模式，编辑写回', () => {
         const { editor } = buildEditor();
-        editor.selectedId = 'story.s09.delayed.resolve';
+        // 工程数据随任务链重排已无高级字段事务：注入自持测试定义，不依赖真实数据
+        editor.commands.push({
+            commandType: 'state.transaction',
+            id: 'story.test.delayed.resolve',
+            name: '延迟后果结算',
+            transaction: { when: {}, writes: [], delayed: { seconds: 5, writes: [] } }
+        });
+        editor.selectedId = 'story.test.delayed.resolve';
         editor._render();
-        // 含 selector/variants → 无表单字段，直接 JSON 源码
+        // 含 delayed 高级字段 → 无表单字段，直接 JSON 源码
         expect(detail(editor).querySelector('[data-role="json-source"]')).toBeTruthy();
         expect(detail(editor).querySelector('[data-ste-field="id"]')).toBeNull();
 
@@ -96,7 +103,7 @@ describe('StateTransactionEditor 状态事务管理', () => {
         parsed.name = '延迟后果结算（改名测试）';
         textarea.value = JSON.stringify(parsed, null, 2);
         textarea.dispatchEvent(new Event('change'));
-        expect(editor.commands.find(item => item.id === 'story.s09.delayed.resolve').name).toBe('延迟后果结算（改名测试）');
+        expect(editor.commands.find(item => item.id === 'story.test.delayed.resolve').name).toBe('延迟后果结算（改名测试）');
     });
 
     it('新增事务 + 保存：patch commands 且草稿随 save 提交', async () => {
