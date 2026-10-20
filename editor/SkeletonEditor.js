@@ -327,11 +327,22 @@ export class SkeletonEditor {
         this._renderBoneTree();
         this._renderSlotList();
         this._renderInspector();
-        // 图层序操作（对齐场景编辑器）：置顶/上一层/下一层/置底
+        // 对象操作：解绑 / 恢复原始大小 / 刷新对象；图层序操作（对齐场景编辑器）：置顶/上一层/下一层/置底
+        const hitAttachment = slot?.attachment || null;
+        const hitSource = hitAttachment ? this._attachmentSource(hitAttachment) : null;
+        const hitAssetId = hitAttachment ? (hitAttachment.assetId || hitAttachment.spriteSheet || '') : '';
         const items = [{
           label: '🔓 解绑骨骼（挂到根骨骼·保持位置）',
           disabled: !(this.doc.bones || []).some(candidate => !candidate.parent && candidate.id !== slot?.bone),
           action: () => this._unbindSlotFromBone(hitSlotId)
+        }, {
+          label: `📐 恢复原始大小${hitSource && hitSource.sw > 0 ? `（${Math.round(hitSource.sw)}×${Math.round(hitSource.sh)}）` : ''}`,
+          disabled: !((hitAttachment?.width ?? 0) > 0 || (hitAttachment?.height ?? 0) > 0),
+          action: () => this._restoreAttachmentOriginalSize(hitSlotId)
+        }, {
+          label: '🔄 刷新对象（图片更改后同步）',
+          disabled: !(hitAssetId && this.imageCatalog.has(hitAssetId)),
+          action: () => this._refreshSlotObject(hitSlotId)
         }, ...this._buildZOrderMenuItems(hitSlotId), { separator: true }];
         if (assetId && this.imageCatalog.has(assetId)) {
           items.push(...this._buildImageMenuItems(assetId));
@@ -5164,6 +5175,42 @@ export class SkeletonEditor {
     this._markDirty();
     this._afterDocChange();
     this._toast(`已解绑：${slot.id} 挂到根骨骼 ${root.id}（调原骨骼不再带动它）`);
+    return true;
+  }
+
+  /**
+   * 恢复附件原始大小：删除手柄缩放写入的显式 width/height，绘制回退到源图/切片/
+   * 序列帧的原始像素尺寸（渲染层仅 width>0 时覆盖源尺寸）。挂点位置与旋转不变，可撤销。
+   * @returns {boolean} 是否发生还原
+   */
+  _restoreAttachmentOriginalSize(slotId) {
+    const slot = this._slotById(slotId);
+    const attachment = slot?.attachment;
+    if (!attachment) return false;
+    if (!((attachment.width ?? 0) > 0) && !((attachment.height ?? 0) > 0)) return false;
+    this._pushHistory();
+    delete attachment.width;
+    delete attachment.height;
+    this._markDirty();
+    this._afterDocChange();
+    const source = this._attachmentSource(attachment);
+    this._toast(`已恢复原始大小${source && source.sw > 0 ? `（${Math.round(source.sw)}×${Math.round(source.sh)}）` : ''}：${slot.id}`);
+    return true;
+  }
+
+  /**
+   * 刷新对象：源图文件被外部修改/替换后，穿透浏览器缓存重载图片元素并清理派生
+   * 缓存（alpha 命中盒）——主循环下一帧即显示最新图片；若图片尺寸也变了，可再点
+   * 「恢复原始大小」让挂件跟随新尺寸。
+   * @returns {boolean} 是否执行了刷新
+   */
+  _refreshSlotObject(slotId) {
+    const slot = this._slotById(slotId);
+    const attachment = slot?.attachment;
+    const assetId = attachment ? (attachment.assetId || attachment.spriteSheet || '') : '';
+    if (!slot || !(assetId && this.imageCatalog.has(assetId))) return false;
+    this._reloadImageElement(assetId);
+    this._toast(`已刷新对象 ${slot.id}：正在重新加载图片 ${assetId}`);
     return true;
   }
 
