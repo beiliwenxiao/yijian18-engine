@@ -180,6 +180,10 @@ export class BaseGameSceneSetup extends Scene {
     // 调试模式只投影 RuntimeConfig 的规范化结果，不再作为独立事实源。
     this.debugMode = false;
 
+    // 场景级光照配置（阴影用）：{directionX, directionY, elevation, strength, pointLights}。
+    // null = 用 SceneRenderPipeline 内置默认（光从左上、中高仰角）；营火点燃时自动并入点光源。
+    this.lighting = null;
+
     // Terrain 实例由唯一世界流式会话使用 canonical chunk 数据创建。
     this.terrain = null;
     this.editorSceneId = sceneData.editorSceneId || 'S01';

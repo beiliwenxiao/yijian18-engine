@@ -186,10 +186,16 @@ async function configureWorldRuntimeFromLoad(options = {}) {
       return { ok: false, code: 'invalidProjectLibrary', message: '项目内容库缺少 library.items' };
     }
     const campfireRefs = new Set();
+    let campfireLightRadiusOverride = null;
     for (const layer of sceneData.layers) {
       for (const placement of layer?.objects || []) {
         if (placement?.type === 'ref' && placement.kind === 'item' && placement.ref) {
           campfireRefs.add(placement.ref);
+          // placement 级光源半径覆盖（overrides.lightRadius）：同库定义多处放置可各调各的光照范围
+          const overrideRadius = Number(placement?.overrides?.lightRadius);
+          if (Number.isFinite(overrideRadius) && overrideRadius > 0) {
+            campfireLightRadiusOverride = overrideRadius;
+          }
         }
       }
     }
@@ -203,7 +209,13 @@ async function configureWorldRuntimeFromLoad(options = {}) {
       this._campfireService.dispose();
       return { ok: true, applied: false, cleared: true };
     }
-    const campfireConfig = campfireDefinition.campfirePresentation;
+    const baseCampfireConfig = campfireDefinition.campfirePresentation;
+    const campfireConfig = campfireLightRadiusOverride != null && baseCampfireConfig
+      ? {
+        ...baseCampfireConfig,
+        presentation: { ...baseCampfireConfig.presentation, lightRadius: campfireLightRadiusOverride }
+      }
+      : baseCampfireConfig;
     if (!campfireConfig || typeof campfireConfig !== 'object') {
       return {
         ok: false,

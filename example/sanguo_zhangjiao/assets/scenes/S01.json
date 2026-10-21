@@ -1143,6 +1143,12 @@
           "group": "S01-cooking-rack",
           "id": "S01-prop-cooking-rack",
           "kind": "item",
+          "overrides": {
+            "shadow": {
+              "ground": false,
+              "long": false
+            }
+          },
           "ref": "story.s01.cooking_rack",
           "spawnWhen": {
             "blackboardKey": "storyState",
@@ -1598,6 +1604,13 @@
           "group": "S01-berries",
           "id": "S01-node-berry-1",
           "kind": "resourceNode",
+          "overrides": {
+            "shadow": {
+              "lift": 0.5,
+              "radius": 8,
+              "scale": 0.3
+            }
+          },
           "ref": "node.wild_berry",
           "spawnWhen": {
             "blackboardKey": "storyState",
@@ -1618,7 +1631,7 @@
     {
       "id": "layer_logic",
       "locked": false,
-      "name": "逻辑对象",
+      "name": "逻辑对���",
       "objects": [
         {
           "group": "S01-apple-thickets",

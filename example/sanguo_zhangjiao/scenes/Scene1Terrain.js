@@ -12,8 +12,12 @@
 
 import { Logger } from '../../../src/core/Logger.js';
 import { ShapeRenderer } from '../../../src/rendering/ShapeRenderer.js';
+import { ShadowRenderer } from '../../../src/rendering/ShadowRenderer.js';
 import { SceneObjectProjector } from '../../../src/core/scene/SceneObjectProjector.js';
 import { AtlasRegistry } from '../../../src/core/scene/AtlasRegistry.js';
+
+/** 树影只跟随全局方向光：点光源不参与（物理简化兼性能边界），复用同一空数组避免逐帧分配。 */
+const TREE_SHADOW_NO_POINT_LIGHTS = Object.freeze([]);
 
 /**
  * Scene1Terrain - 第一幕盆地地形系统
@@ -71,6 +75,13 @@ export class Scene1Terrain {
     this._belowDecoCache = null;
     this._belowDecoCacheX = 0;
     this._belowDecoCacheY = 0;
+    // 树木贴地阴影：直接按树逐个绘制（无离屏缓存），
+    // 复用的树影光照运行时（树影只跟全局方向光，不响应点光源）
+    this._treeShadowRenderer = new ShadowRenderer();
+    this._treeShadowLighting = {
+      directionX: -0.6, directionY: -0.8, elevation: 0.45, strength: 0.9,
+      pointLights: TREE_SHADOW_NO_POINT_LIGHTS
+    };
 
     // 盆地中心 = 火堆位置
     this.centerX = config.centerX ?? 350;
@@ -1289,6 +1300,64 @@ export class Scene1Terrain {
       if (!deco.belowEntities) continue;
       this._renderDecoration(ctx, deco);
     }
+  }
+
+  /**
+   * 树木贴地阴影（SceneRenderPipeline 阴影 pass 调用，画在所有 Y-sort 队列项之前）。
+   *
+   * 性能约定：**不做视口级离屏缓存**。视口缓存（视口尺寸 + 256px 余量）在 2x DPR
+   * 背板上每帧要把一整张几乎全透明的画布 source-over 到全屏，等于每帧多刷
+   * 3.7M 像素，直接把帧时间顶过 33ms（长帧主因），而且相机每移动半屏就要
+   * 重烘焙一次（clearRect + 重新分配画布）。改为「按树逐个画一次贴地椭圆阴影」：
+   * 成本与可见树木数量线性相关，没有整屏 overdraw，也没有重烘焙抖动。
+   *
+   * 树影只跟随全局方向光（不响应点光源——物理简化兼性能边界）。
+   * @param {CanvasRenderingContext2D} ctx 已应用相机变换
+   * @param {Object} lighting 管线组装的光照运行时 {directionX, directionY, elevation, strength, pointLights}
+   * @param {{left:number,top:number,right:number,bottom:number}} viewBounds 相机世界视野
+   */
+  renderTreeShadows(ctx, lighting, viewBounds) {
+    if (this._released) return;
+    const decorations = this.decorations;
+    if (!decorations || decorations.length === 0) return;
+    const renderer = this._treeShadowRenderer;
+    const treeLighting = this._treeShadowLighting;
+    treeLighting.directionX = lighting.directionX;
+    treeLighting.directionY = lighting.directionY;
+    // 高树冠用更低仰角投影：树越高影子拖得越长（透视直觉），椭圆拉伸明显可见
+    treeLighting.elevation = Math.min(lighting.elevation, 0.45);
+    treeLighting.strength = lighting.strength; // 明暗与角色阴影一致
+    treeLighting.pointLights = TREE_SHADOW_NO_POINT_LIGHTS;
+    const pad = 64; // 阴影外扩余量
+    // drawShadow 会写 globalAlpha：整段包在 save/restore 内，避免污染后续绘制
+    ctx.save();
+    for (const deco of decorations) {
+      const sprite = deco.source || this.decoSprites[deco.key];
+      if (!sprite || sprite.collide !== true) continue; // 草/灌木/无碰撞装饰不投影
+      const { w: decoW, h: decoH } = this._decoRenderSize(deco, sprite);
+      // 只有树冠级别的碰撞装饰（tree1/2/3、大树切片等 ≥90px 高）才投影；
+      // 矮碰撞物（石头等）忽略，避免地面碎影噪点
+      if (decoH < 90) continue;
+      if (viewBounds) {
+        const left = deco.x - decoW / 2;
+        const top = deco.y - decoH;
+        if (left > viewBounds.right + pad || left + decoW < viewBounds.left - pad ||
+            top > viewBounds.bottom + pad || deco.y < viewBounds.top - pad) {
+          continue;
+        }
+      }
+      // 树冠宽度基本全幅投影（0.85），树影要能撑住树的存在感。
+      // 树影椭圆中心锚定树根后整体上移 1/3 影高（顶视透视：影子视觉中心在树根稍上方），
+      // 不走人影的"近端焦点"漂移——大树椭圆大，漂移会让中心明显离开树根。
+      // 树影无点光源（TREE_SHADOW_NO_POINT_LIGHTS），永远不产生长影层。
+      const params = renderer.computeShadowParams(
+        deco.x, deco.y, decoW * 0.85, decoH, 0, treeLighting
+      );
+      params.x = deco.x;
+      params.y = deco.y - params.radiusY * (2 / 3);
+      renderer.drawShadow(ctx, params);
+    }
+    ctx.restore();
   }
 
   /**

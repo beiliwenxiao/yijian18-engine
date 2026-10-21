@@ -110,6 +110,24 @@ describe('PlacementSpawner count 展开', () => {
     expect(result.counts.enemy).toBe(expected);
     expect(spawner._store.enemies).toHaveLength(expected);
   });
+
+  it('overrides.shadow 合成到实体 shadowProfile（无 shadow 块的实体不挂该字段）', () => {
+    const spawner = createSpawner();
+    const result = spawner.spawnMatching({
+      placements: [
+        { ...TEMPLATE, overrides: { shadow: { ground: false, long: false } } },
+        { ...TEMPLATE, id: 'S01-shadow-long-off', overrides: { shadow: { long: false } } },
+        { ...TEMPLATE, id: 'S01-no-shadow-block' }
+      ],
+      registries,
+      selector: { group: 'S01-first-wolf' }
+    });
+    expect(result.counts.enemy).toBe(3);
+    const [off, longOff, none] = result.entities;
+    expect(off.shadowProfile).toEqual({ ground: false, long: false });
+    expect(longOff.shadowProfile).toEqual({ long: false });
+    expect(none.shadowProfile).toBeUndefined();
+  });
 });
 
 function createRuntime({ storyState = {} } = {}) {

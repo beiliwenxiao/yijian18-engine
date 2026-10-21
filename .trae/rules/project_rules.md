@@ -25,6 +25,23 @@ inclusion: always
 - 资源加载使用懒加载策略
 - 优化渲染性能，减少重绘
 
+#### Canvas 2D 离屏缓存禁忌（长帧根因约定）
+- **禁止「视口级离屏缓存 + 每帧整屏 blit」**：把一整张视口大小（视口 + 外扩余量）
+  的离屏 Canvas 每帧 source-over 到主画布，等于每帧多刷一遍全屏像素
+  （2x DPR 背板下 1280×720 视口 ≈ 3.7M 像素），直接把帧时间顶过 33ms。
+  根因是这类画布绝大多数像素全透明，但 source-over 仍逐像素混合。
+- 离屏缓存只用于「内容与画布尺寸固定」的场景层（地面/背景/图集切片），
+  且缓存尺寸要贴合实际内容包围盒，不要按视口开。
+- 视口相关、需要随相机移动的静态层（树影等），改为**按对象逐个绘制**
+  （一次小 drawImage），成本与可见对象数线性相关，不产生整屏 overdraw，
+  也没有「相机移动半屏就重烘焙一次」的周期性抖动。
+- Canvas 2D 是延迟光栅：主画布的绘制命令先录制成 display list，
+  光栅化在 flush 点才发生。**帧内耗时的归属会随 flush 点漂移**
+  （同一段成本可能这帧记在 build 段、下帧记在 draw 段），
+  所以定位长帧要看「这一帧多画了什么」，不能只看热点落在哪个函数。
+- 逐帧新建渐变、逐帧 `ctx.shadowBlur`、`globalCompositeOperation='multiply'`
+  与 `willReadFrequently` 一律视为性能杀手（见 美术资源 / 阴影实现约定）。
+
 ### 测试要求
 - 核心功能必须有单元测试
 - 测试覆盖率目标：80%+
@@ -53,6 +70,116 @@ inclusion: always
 - 实时战斗系统
 - 背包和装备系统
 - 社交和组队功能
+
+## 骨骼动画变换语义
+
+- **`bone.length` 是纯视觉属性**：只决定编辑器骨条画多长，**不进任何变换矩阵**，
+  不影响挂图尺寸、不影响子骨位置（与 Spine 一致）。编辑器里拖「骨骼自身方向末端黄点」
+  才是改长度；沿骨条拖 8 手柄改的是 `scaleX/scaleY`（骨架比例），不是长度。
+- **挂图默认不跟随骨骼缩放**：`slot.follow` 缺省 `noScale`——渲染时挂图只取骨骼的
+  位置与旋转，不乘骨骼世界缩放（等价 Unity「骨骼缩放=顶点变形、贴图尺寸独立」）。
+  需要 squash & stretch 的挂件显式设 `follow='bone'`。
+- **骨骼继承模式** `bone.inherit`（Spine Transform Mode 等价，决定本骨骼如何继承父级）：
+  `normal`（全继承，缺省）/ `noScale`（继承位移+旋转，不继承父级缩放）/
+  `noRotation`（继承位移+缩放，不继承父级旋转）/ `translationOnly`（只继承父级位移）。
+- 编辑器预览、命中、拖拽与运行时 `SkeletonRenderer` 必须同一口径：挂图绘制尺寸与挂点
+  偏移的度量单位都按 follow 取缩放系数（`editor/SkeletonEditorGeometry.js` 是共用内核）。
+- 现有骨骼资产的 `scaleX/scaleY` 全为 1 或缺省，因此上述语义切换对存量内容零影响。
+
+### 方向形态（正面/侧面/背面/斜前/斜后）
+
+- 角色外观按 **7 个形态**组织（左右两侧靠整体 flipX 镜像复用同一套图）：
+  `down` 正面基准 / `side` 侧面 / `up` 背面 / `SE` 斜前右 / `SW` 斜前左 / `NE` 斜后右 / `NW` 斜后左。
+- **共享定义在 `src/animation/SkeletonDirection.js`**：形态键集合、显示名、朝向→形态映射
+  （`resolveDirectionKey`）、斜向头部显隐表（`SKELETON_HEAD_SLOT_PLAN`）、斜向剪辑回退表。
+  运行时状态映射器与编辑器预览共用同一份，不要各自维护副本。
+- **每形态可配两类数据**（存 `attachment.directionOffsets[形态键]`）：
+  偏移 `x/y/rot` + **形态图** `assetId/width/height`（不同形态用不同部件图）。
+  未配置该形态 → 逐字段回退顶层，即「沿用正面基准图」，运行时与编辑器预览同口径。
+- 编辑器：工具条 7 个方向按钮；槽位检查器「形态图」区（部件图下拉 + 绘制宽高 + 置空回基准）。
+- 斜向专属动画剪辑命名 `walk_SE` / `idle_SW` 等；缺失时回退正/背剪辑
+  （`SKELETON_DIAGONAL_FALLBACK`，与附件形态回退是两套语义，不要混用）。
+
+### 骨骼局部坐标系（单一来源约定）
+
+- **剪辑关键帧的 x/y 是绝对局部值**（`SkeletonPose.sampleClip` 采样时整列替换 rest，
+  缺该字段才回退 rest）。因此 `bones` 的 rest 坐标必须与所有剪辑键值**同源**，
+  否则「该剪辑缺某骨轨道」的骨骼会落到另一套坐标系 → 实机人物变形。
+- 资产上以 `meta.coordinateSpace: 'canonical-v1'` 标记归一化后的坐标系版本；
+  迁移脚本 `scripts/normalize-player-skeleton-space.mjs` 幂等（已是该版本则跳过）。
+- 历史教训：同一资产曾并存三套局部坐标（旧 rest 系 / gen 原设计系 / 现行系），
+  且「骨骼左右语义交换」只翻了部分轨道的 x 符号。**改 bones 布局后必须重新标定
+  依赖旧布局的形态偏移**，否则侧/背形态腿会悬空（实测 12~26px）。
+- **判定坐标系归属要看动画实际表现，不能只看单帧数值**：用
+  `scripts/audit-player-skeleton-clips.mjs`（逐剪辑首帧世界坐标对比）与
+  `scripts/diff-skeleton-render.mjs`（逐帧像素差）交叉验证。
+
+### 形态偏移模板（美术摆位依据）
+
+- 模板生成 `scripts/apply-form-template.mjs`，输出
+  `assets/skeletons/presets/player.form-template.json`（含逐槽位逐形态的偏移与真人比例参照）。
+- 推导模型：部位在形态 F 下的目标内容中心
+  `x = 体轴 + 横向偏移·cos(θF) + 前后深度·sin(θF)`，`y` 取正面形态的解剖高度。
+  θF：down 0° / side 90° / up 180° / SE·SW 45° / NE·NW 135°。
+  横向偏移由**正面形态渲染实测**反推（不是魔数）；前后深度是解剖表（头 +2、背挂点 −4）。
+- 派生效果：side 四肢横向投影收拢到体轴（双腿重叠）；up 横向整体镜像（背面左右互换）；
+  斜向介于两者之间。头/发三态槽位（headSide/headBack/hairSide/hairBack）共用同一 landmark，只换图。
+- **左向朝向由实体级 `sprite.flipX` 整体镜像**（`PlayerSkeletonStateMapper.isMirroredFacing`），
+  故 SW 与 SE、NW 与 NE 的偏移数值相同，数据里不要再翻一次 x。
+- 形态图在运行时只有两档：**精确匹配该形态 → 回顶层基准图**（`resolveAttachmentOffset`
+  无中间级回退）。需要基准形态图的形态（NE/NW 斜后视用背面图）由模板生成时
+  **显式继承写入** `directionOffsets.assetId`（`apply-form-template.mjs`）——
+  推导用图与运行时渲染图必须同源，否则偏移按 A 图解、画面画 B 图。
+  头部三态槽位例外：斜向换图靠 `SKELETON_HEAD_SLOT_PLAN` 显隐切换，不走 assetId。
+- 换图后只需微调偏移：求解式已把图 pivot 差自动吸收
+  （`挂点偏移 = R⁻¹(目标内容中心 − 骨世界位姿 − R·内容中心偏移)`）。
+
+### 真人比例（7.5 头身）参照
+
+- 模板文件 `humanProportionReference` 段给出 landmark 表（占身高比例，脚底=0、头顶=1）：
+  眼 93% / 颏 87% / 肩 82% / 胸 72% / 脐 60% / 髋 48% / 膝 28.5% / 踝 4% /
+  肘 63% / 腕 48.5%；肩宽约 2 头宽，腿长占 47%。
+- 当前 player.json 部件图是 **Q 版（约 4.5~5 头身、头偏高、腿偏短）**，
+  与真人比例的差距由美术重绘部件图消除，脚本不改部件图本身。
+  实测差距用 `scripts/audit-form-template.mjs` 复核。
+
+### transform 约束（挂件跟随挂件）
+
+- 数据在 `doc.constraints`：
+  `{ type:'transform', slot, target, mix, offsetX, offsetY, offsetRot, followRotation }`。
+- 求解内核 `src/animation/SkeletonConstraint.js`（运行时渲染器与编辑器预览共用同一份）。
+- 渲染/预览都是**两遍**：先算所有槽位锚点 → 应用约束 → 绘制（跟随者要先拿到目标锚点）。
+- 校验器要求约束引用的槽位存在；Spine 侧无「附件跟随附件」等价物，导出时记有损。
+
+### 曲线烘焙（运行时查表）
+
+- `src/animation/SkeletonBake.js`：按固定步长（默认 20ms）预采样成 Float32Array 表，运行时查表 + 线性插值。
+- 烘焙取值**必须复用引擎自己的 `sampleClip`**（别另写一份插值，语义会漂移）。
+- 字段名坑：局部姿势对象是 `sx/sy`，烘焙表列名是 `scaleX/scaleY`（写错会静默失效）。
+
+### 骨骼导出（Spine 格式）
+
+- 导出器 `src/dev/SkeletonSpineExporter.js`（纯函数）+ `scripts/export-skeleton-spine.mjs`
+  （离线脚本：sharp 合成图集 + 落盘 + 报告）。
+- 输出 **Spine 3.8 格式**（兼容性最广：spine-canvas / Spine Unity / cocos-spine）。
+- 映射要点：Spine transform ↔ 本引擎 `inherit`；**Spine 时间轴是相对 setup 的增量/比例**
+  （导出必须转差值/比值）；缺省帧在本引擎是「取下一有效值」的阶跃，导出要补阶跃关键帧；
+  命名缓动映射为贝塞尔控制点（easeInOut → [0.42,0,0.58,1]，属近似）。
+- **方向形态 → 一形态一个 skin**（skin 名 = 形态键），目标端按方向 `setSkin` 切换。
+- 有损项必须写进 `export-report.json`（`report.lossy`）：`inherit=noRotation`、`slot.follow=noScale`
+  （Spine 附件天然跟随骨骼缩放）、sequence 附件、循环回绕插值、transform 约束。
+
+### IK 约束
+
+- **IK 求解器在 `src/animation/SkeletonIk.js`（纯函数）**：两类——`aim` 链式朝向 IK
+  （根骨对齐目标方向、链内相对偏角保持，等价 Spine IK constraint）与 `twoBone` 位置 IK
+  （CCD 迭代，链末端原点命中目标，等价 Unity TwoBoneIK；对任意局部偏移都收敛）。
+- **IK 数据不进资产 JSON**：编辑器侧是工具态（`SkeletonEditor._ikTool`），拖目标点实时求解
+  并**直接写回 FK**（动画模式打 rot 关键帧 / 装配模式写静止姿态）——即「用 IK 摆姿势并烘焙
+  成 FK」，导出与运行时不残留 IK。运行时侧是实体本地约束
+  （`SkeletonComponent.setIkConstraints/setIkTarget`），目标点用骨骼资产坐标系。
+- **骨链必须是连续父子链**（`resolveIkChain` 校验），非法链整条约束被安全忽略。
+- IK 求解改写的是**局部 rot**，因此任何导出格式都只需处理 FK 关键帧。
 
 ## 开发流程
 1. 功能开发前先更新 spec 文档

@@ -364,6 +364,11 @@ export class PlacementSpawner {
           continue;
         }
         if (!entity.placementId && instance.id) entity.placementId = instance.id;
+        // 阴影配置（库定义/场景 overrides 的 shadow 块，mergeOverrides 已合成）：
+        // { ground: true, long: true }——ground=false 无任何阴影，long=false 无点光长影
+        if (data.shadow && typeof data.shadow === 'object') {
+          entity.shadowProfile = { ...data.shadow };
+        }
         // 地面可拾取物与装备同样可以声明稳定 imageId，需要一起预载图片。
         if (['npc', 'enemy', 'resourceNode', 'item', 'equipment'].includes(kind)) {
           this._preloadEntityImage(kind, data, entity, instance);

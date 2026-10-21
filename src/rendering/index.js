@@ -19,6 +19,7 @@ export { Camera } from './Camera.js';
 export { RenderSystem } from './RenderSystem.js';
 export { IsometricRenderer } from './IsometricRenderer.js';
 export { SpriteRenderer } from './SpriteRenderer.js';
+export { ShadowRenderer } from './ShadowRenderer.js';
 export { AnimationManager, Animation, AnimationState, AnimationStateMachine } from './AnimationManager.js';
 export { Particle } from './Particle.js';
 export { ParticleSystem } from './ParticleSystem.js';

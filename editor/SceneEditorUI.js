@@ -1603,6 +1603,13 @@ export class SceneEditorUI {
     html += `<div class="property-row"><label>引用定义ID:</label><input value="${obj.ref || ''}" disabled title="明细在内容库中编辑"></div>`;
     if (obj.kind === 'item') {
       html += '<div class="property-row"><label>物品属性:</label><span style="color:#9ab;font-size:11px;">在左侧「物品」列表点击此定义，可编辑图片、尺寸和世界物件表现</span></div>';
+      // 营火类物品：本处可覆盖点光源半径（overrides.lightRadius，运行时覆盖库定义 lightRadius）
+      const itemLibDef = this._getCachedLibraryDef(obj.ref);
+      if (!itemLibDef && obj.ref) this._loadLibraryDefAsync(obj.ref);
+      if (itemLibDef?.campfirePresentation || Number.isFinite(Number(obj.overrides?.lightRadius))) {
+        const radiusOverride = obj.overrides?.lightRadius;
+        html += `<div class="property-row"><label title="营火点光源半径（px）：影响阴影长影触发范围与火光覆盖范围。写入本处覆盖，留空=用库定义 lightRadius">光源半径:</label><input type="number" min="32" step="10" value="${radiusOverride != null ? radiusOverride : ''}" data-prop="overrides.lightRadius" placeholder="留空=用库定义"></div>`;
+      }
     }
     const collision = obj.collision && typeof obj.collision === 'object' ? obj.collision : null;
     const collisionMode = collision?.mode === 'walkable' ? 'walkable' : (collision?.mode === 'block' ? 'block' : 'none');
@@ -1742,6 +1749,16 @@ export class SceneEditorUI {
         html += '<div class="property-row"><label>编辑:</label><span style="color:#9ab;font-size:11px;flex:1;">点「编辑技能范围」后画布出现虚线圆与五边形手柄，拖动顶点调整技能半径（写入本处覆盖）</span></div>';
       }
     }
+
+    // ── 阴影（所有引用类型通用）：默认全开；取消勾选写入本处覆盖 overrides.shadow
+    const ovShadow = obj.overrides?.shadow && typeof obj.overrides.shadow === 'object' ? obj.overrides.shadow : {};
+    html += '<div class="property-row" style="border-top:1px solid #333;margin-top:6px;padding-top:6px;">' +
+      '<label style="color:#7cf;font-weight:bold;" title="默认全开。取消勾选写入本处覆盖（overrides.shadow），运行时实体按此投影">阴影</label></div>';
+    html += `<div class="property-row"><label title="贴地椭圆基础影（跟随全局光照方向）">基础阴影:</label><input type="checkbox" ${ovShadow.ground !== false ? 'checked' : ''} data-prop="overrides.shadow.ground"></div>`;
+    html += `<div class="property-row"><label title="靠近营火等点光源时背光拉出的长影">点光源长影:</label><input type="checkbox" ${ovShadow.long !== false ? 'checked' : ''} data-prop="overrides.shadow.long"></div>`;
+    html += `<div class="property-row"><label title="贴地影大小倍率，1=默认（按精灵尺寸推导），0.5=减半，2=翻倍">大小倍率:</label><input type="number" step="0.1" min="0.1" value="${ovShadow.scale != null ? ovShadow.scale : ''}" data-prop="overrides.shadow.scale" placeholder="1=默认"></div>`;
+    html += `<div class="property-row"><label title="贴地影横半径（px）：设置后覆盖按精灵尺寸的自动推导，纵半径按椭圆扁率跟随；留空=自动">基础半径:</label><input type="number" step="2" min="4" value="${ovShadow.radius != null ? ovShadow.radius : ''}" data-prop="overrides.shadow.radius" placeholder="自动"></div>`;
+    html += `<div class="property-row"><label title="贴地影向上偏移量占影高比例（0~1）；仅对物品/采集点等非人形实体生效（角色影子贴脚）。0.33=默认上移 1/3 影高，0=贴脚">上移比例:</label><input type="number" step="0.05" min="0" max="1" value="${ovShadow.lift != null ? ovShadow.lift : ''}" data-prop="overrides.shadow.lift" placeholder="0.33=默认"></div>`;
     return html;
   }
 

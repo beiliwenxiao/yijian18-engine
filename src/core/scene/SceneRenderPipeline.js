@@ -13,6 +13,7 @@
 import { Logger } from '../Logger.js';
 import { GroundMarkerRenderer } from '../../rendering/GroundMarkerRenderer.js';
 import { OcclusionFadeController } from '../../rendering/OcclusionFade.js';
+import { ShadowRenderer } from '../../rendering/ShadowRenderer.js';
 
 const WORLD_PHASE_NAMES = Object.freeze([
   'renderBackground', 'renderGroundMarkers', 'renderPickups', 'renderWorldObjects', 'renderWorldEffects'
@@ -148,6 +149,12 @@ export class SceneRenderPipeline {
     /** 大物件遮挡玩家渐隐：每帧复用的候选缓冲 + 控制器 */
     this._occluderBuffer = [];
     this._occlusionFade = new OcclusionFadeController();
+    /** 参数化贴地阴影：实体批量 pass + 光照运行时（scene.lighting + 营火点光源） */
+    this._shadowRenderer = new ShadowRenderer();
+    this._shadowLightingRuntime = {
+      directionX: -0.6, directionY: -0.8, elevation: 0.72, strength: 0.9,
+      pointLights: []
+    };
   }
 
   render(ctx) {
@@ -257,6 +264,18 @@ export class SceneRenderPipeline {
     queue.length = 0;
 
     for (const terrain of terrains) terrain.renderBelowDecorations?.(ctx);
+    // 贴地阴影 pass：树影（按树逐个绘制，不做视口级离屏缓存）→ 实体影子（批量一次 drawImage/个）。
+    // 全部画在 Y-sort 队列之前，保证影子贴地且被树冠/角色正确遮挡。
+    this._assembleShadowLighting(scene, context);
+    const treeShadowStartedAt = frameProfile ? performance.now() : 0;
+    for (const terrain of terrains) terrain.renderTreeShadows?.(ctx, this._shadowLightingRuntime, this._viewBounds);
+    if (frameProfile) frameProfile.shadowTree = performance.now() - treeShadowStartedAt;
+    const entityShadowStartedAt = frameProfile ? performance.now() : 0;
+    this._shadowRenderer.renderEntityShadows(ctx, entities, {
+      viewBounds: this._viewBounds,
+      lighting: this._shadowLightingRuntime
+    });
+    if (frameProfile) frameProfile.shadowEntities = performance.now() - entityShadowStartedAt;
     const campfire = context?.services?.campfire || null;
     const campfireRuntime = this._campfireRenderRuntime;
     campfireRuntime.particleSystem = particleSystem;
@@ -351,6 +370,40 @@ export class SceneRenderPipeline {
     for (const terrain of terrains) terrain.renderCliffs?.(ctx);
     scene._renderBuffZones?.(ctx);
     scene.renderSpeechBubbles?.(ctx);
+  }
+
+  /**
+   * 组装本帧阴影光照（复用缓冲，零分配）：
+   * 全局方向光取 scene.lighting（缺省内置值），点光源合并已点燃的营火。
+   * @private
+   */
+  _assembleShadowLighting(scene, context) {
+    const runtime = this._shadowLightingRuntime;
+    const config = scene?.lighting || null;
+    runtime.directionX = Number.isFinite(config?.directionX) ? config.directionX : runtime.directionX;
+    runtime.directionY = Number.isFinite(config?.directionY) ? config.directionY : runtime.directionY;
+    runtime.elevation = Number.isFinite(config?.elevation) ? config.elevation : 0.72;
+    runtime.strength = Number.isFinite(config?.strength) ? config.strength : 0.9;
+    const lights = runtime.pointLights;
+    lights.length = 0;
+    if (Array.isArray(config?.pointLights)) {
+      for (const light of config.pointLights) {
+        if (light && Number.isFinite(light.x) && Number.isFinite(light.y) && light.radius > 0) {
+          lights.push({ x: light.x, y: light.y, radius: light.radius, strength: light.strength ?? 0.8 });
+        }
+      }
+    }
+    // 营火点燃时自动成为点光源（火光半径内实体影子背向营火）
+    const campfire = context?.services?.campfire || null;
+    const fire = campfire?.campfire;
+    if (fire?.lit === true && Number.isFinite(fire.x) && Number.isFinite(fire.y)) {
+      const radius = Number(campfire.presentation?.lightRadius);
+      lights.push({
+        x: fire.x, y: fire.y,
+        radius: radius > 32 ? radius : 220,
+        strength: 0.85
+      });
+    }
   }
 
   /**
