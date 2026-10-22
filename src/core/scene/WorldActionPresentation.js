@@ -84,6 +84,18 @@ export class WorldActionPresentation {
     return true;
   }
 
+  /**
+   * 当前活动/完成呈现的深度排序基线（锚点实体=工作台的脚底 y）。
+   * 供 worldDepth Y-sort 队列使用：玩家在工作台前（y 更大）时角色盖住动作呈现，
+   * 在工作台后时动作呈现盖住角色。无活动呈现返回 null。
+   */
+  getSortY() {
+    const action = this.active || this.completion;
+    if (!action) return null;
+    const position = action.anchorEntity?.getComponent?.('transform')?.position;
+    return Number.isFinite(position?.y) ? position.y : null;
+  }
+
   render(ctx) {
     const activeRendered = this.active ? this._renderActive(ctx, this.active) : false;
     const completionRendered = this.completion ? this._renderCompletion(ctx, this.completion) : false;

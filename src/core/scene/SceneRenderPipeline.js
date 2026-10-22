@@ -283,6 +283,18 @@ export class SceneRenderPipeline {
     campfireRuntime.width = scene.logicalWidth;
     campfireRuntime.height = scene.logicalHeight;
     campfire?.appendRenderItems?.(queue, ctx, campfireRuntime);
+    // 短时世界动作呈现（烤肉/制皮等）：以锚点实体（工作台）脚底 y 参与 Y-sort——
+    // 玩家在工作台前（y 更大）时角色盖住动作，在工作台后时动作盖住角色。
+    // sortPriority 1 与火焰同档：同 y 时先入队的火焰先画、肉后画（肉在火焰之上）。
+    const worldAction = context?.presentation?.worldAction || null;
+    const worldActionSortY = worldAction?.getSortY?.();
+    if (Number.isFinite(worldActionSortY)) {
+      const worldActionCtx = ctx;
+      queue.push({
+        type: 'worldAction', y: worldActionSortY, sortPriority: 1,
+        render: () => worldAction.render(worldActionCtx)
+      });
+    }
     for (const terrain of terrains) terrain.collectDecorations?.(queue, ctx, this._viewBounds);
     particleSystem?.collectDepthSorted?.(queue, ctx, camera, this._viewBounds);
 
@@ -696,7 +708,8 @@ export class SceneRenderPipeline {
       worldPresentation.renderBlockShield(ctx);
     }
     particleSystem.render(ctx, camera);
-    presentation.worldAction?.render?.(ctx);
+    // 短时世界动作呈现（烤肉等）已入 worldDepth Y-sort 队列（与工作台按 y 前后遮挡），
+    // 不再在特效层绘制——特效层在深度队列之后，会让烤肉永远盖在角色身上。
     if (scene.eventTargetFlash) {
       scene.eventTargetFlash.prune();
       scene.eventTargetFlash.render(ctx);
