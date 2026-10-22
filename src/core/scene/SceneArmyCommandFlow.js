@@ -52,6 +52,8 @@ export class SceneArmyCommandFlow {
     this._prevPadButtons = new Set();
     this._prevTabDown = false;
     this._prevInCombat = false;
+    /** 已套用内容库 defaultStance 的分队（避免每帧覆盖玩家在 HUD 改过的预设）。 */
+    this._defaultStanceApplied = new Set();
     this._attached = false;
     /** 手柄指挥态（按住 LB）：SceneCombatActions 据此让位战斗肩键（RB 技能释放/LB 技能切换）。 */
     this.gamepadCommanding = false;
@@ -226,6 +228,29 @@ export class SceneArmyCommandFlow {
       const member = entity?.getComponent?.('squadMember');
       if (!member) continue;
       this.system.registerUnit(entity, member);
+    }
+    this._applyArmyDefaultStances();
+  }
+
+  /**
+   * 内容库 armies 定义的 defaultStance → 该军各分队的战前预设姿态
+   * （M5-3 预设机制的默认值来源，开战沿检测时由 applySquadPresets 应用）。
+   * 规则：只在该分队预设仍是初始「跟随」时套用，玩家在 HUD 改过就不再覆盖。
+   */
+  _applyArmyDefaultStances() {
+    const armies = this.scene.gameLoader?.registries?.armies;
+    if (!armies?.get) return;
+    for (const unit of this.system.units.values()) {
+      const squadId = unit.squadId;
+      if (!squadId || this._defaultStanceApplied.has(squadId)) continue;
+      this._defaultStanceApplied.add(squadId);
+      if (this.system.getSquadPreset(squadId) !== 'escort') continue;
+      const stance = unit.armyId ? armies.get(unit.armyId)?.defaultStance : null;
+      if (typeof stance !== 'string' || stance.length === 0) continue;
+      const result = this.system.setSquadPreset(squadId, stance);
+      if (result?.ok !== true) {
+        console.warn('[SceneArmyCommandFlow] armies.defaultStance 非法，未套用', unit.armyId, stance, result?.code || '');
+      }
     }
   }
 

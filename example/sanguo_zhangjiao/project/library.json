@@ -1031,8 +1031,8 @@
         "width": 48
       },
       "stats": {
-        "defense": 7,
-        "attack": 3
+        "attack": 3,
+        "defense": 7
       },
       "subType": "shield"
     },
@@ -1382,8 +1382,18 @@
       "isBoss": true,
       "level": 6,
       "lootTable": [
-        { "chance": 1, "itemId": "equipment.s13.sunxia_shield", "minQuantity": 1, "maxQuantity": 1 },
-        { "chance": 1, "itemId": "resource.iron", "minQuantity": 4, "maxQuantity": 8 }
+        {
+          "chance": 1,
+          "itemId": "equipment.s13.sunxia_shield",
+          "maxQuantity": 1,
+          "minQuantity": 1
+        },
+        {
+          "chance": 1,
+          "itemId": "resource.iron",
+          "maxQuantity": 8,
+          "minQuantity": 4
+        }
       ],
       "name": "孙夏",
       "npcType": "monster_boss",
@@ -1408,7 +1418,12 @@
       "imageId": "s09.character.woundedSoldier",
       "level": 1,
       "lootTable": [
-        { "chance": 0.3, "itemId": "resource.food", "minQuantity": 1, "maxQuantity": 2 }
+        {
+          "chance": 0.3,
+          "itemId": "resource.food",
+          "maxQuantity": 2,
+          "minQuantity": 1
+        }
       ],
       "name": "染疫村民",
       "npcType": "enemy",
@@ -1432,7 +1447,12 @@
       "imageId": "s09.character.governmentScout",
       "level": 1,
       "lootTable": [
-        { "chance": 0.35, "itemId": "resource.iron", "minQuantity": 1, "maxQuantity": 2 }
+        {
+          "chance": 0.35,
+          "itemId": "resource.iron",
+          "maxQuantity": 2,
+          "minQuantity": 1
+        }
       ],
       "name": "荒野盗匪",
       "npcType": "enemy",
@@ -1456,7 +1476,12 @@
       "imageId": "s09.character.woundedSoldier",
       "level": 1,
       "lootTable": [
-        { "chance": 0.3, "itemId": "resource.herb", "minQuantity": 1, "maxQuantity": 1 }
+        {
+          "chance": 0.3,
+          "itemId": "resource.herb",
+          "maxQuantity": 1,
+          "minQuantity": 1
+        }
       ],
       "name": "营地拾荒者",
       "npcType": "enemy",
@@ -1478,9 +1503,9 @@
       "aiActive": false,
       "aiType": "aggressive",
       "attackRange": 60,
+      "experience": 18,
       "faction": "friendly",
       "factionId": "yellow_turban",
-      "experience": 18,
       "id": "enemy.s09_granary_guard",
       "imageId": "s09.character.granaryGuard",
       "level": 2,
@@ -1507,7 +1532,12 @@
       "imageId": "s09.character.governmentScout",
       "level": 2,
       "lootTable": [
-        { "chance": 0.3, "itemId": "resource.herb", "minQuantity": 1, "maxQuantity": 2 }
+        {
+          "chance": 0.3,
+          "itemId": "resource.herb",
+          "maxQuantity": 2,
+          "minQuantity": 1
+        }
       ],
       "name": "官军斥候",
       "npcType": "enemy",
@@ -1527,8 +1557,8 @@
     {
       "aiActive": false,
       "aiType": "battleFormation",
-      "factionId": "yellow_turban",
       "experience": 20,
+      "factionId": "yellow_turban",
       "id": "enemy.s03_yellow_turban_soldier",
       "imageId": "s03.unit.yellowTurbanSoldier",
       "level": 2,
@@ -1551,13 +1581,18 @@
     {
       "aiActive": false,
       "aiType": "battleFormation",
-      "factionId": "han_government",
       "experience": 20,
+      "factionId": "han_government",
       "id": "enemy.s03_han_soldier",
       "imageId": "s03.unit.hanSoldier",
       "level": 2,
       "lootTable": [
-        { "chance": 0.25, "itemId": "resource.food", "minQuantity": 1, "maxQuantity": 2 }
+        {
+          "chance": 0.25,
+          "itemId": "resource.food",
+          "maxQuantity": 2,
+          "minQuantity": 1
+        }
       ],
       "name": "颍川官军守军",
       "npcType": "enemy",
@@ -1577,9 +1612,9 @@
     {
       "aiActive": false,
       "aiType": "defensive",
+      "experience": 60,
       "faction": "friendly",
       "factionId": "yellow_turban",
-      "experience": 60,
       "id": "enemy.s04_bocai",
       "imageId": "s03.unit.yellowTurbanSoldier",
       "level": 4,
@@ -1602,9 +1637,9 @@
     {
       "aiActive": false,
       "aiType": "defensive",
+      "experience": 55,
       "faction": "friendly",
       "factionId": "yellow_turban",
-      "experience": 55,
       "id": "enemy.s05_zhang_mancheng",
       "imageId": "s05.character.zhangMancheng",
       "level": 4,
@@ -1626,7 +1661,6 @@
     },
     {
       "aiActive": false,
-      "aiType": "battleFormation",
       "aiProfile": {
         "telegraph": {
           "radius": 64,
@@ -1634,16 +1668,32 @@
           "windupMs": 800
         }
       },
-      "factionId": "han_government",
+      "aiType": "battleFormation",
       "experience": 60,
+      "factionId": "han_government",
       "id": "enemy.s05_qin_jie",
       "imageId": "s05.character.qinJie",
       "isBoss": true,
       "level": 4,
       "lootTable": [
-        { "chance": 1, "itemId": "equipment.s05.prefect_iron_armor", "minQuantity": 1, "maxQuantity": 1 },
-        { "chance": 0.8, "itemId": "resource.iron", "minQuantity": 2, "maxQuantity": 4 },
-        { "chance": 0.5, "itemId": "resource.herb", "minQuantity": 2, "maxQuantity": 3 }
+        {
+          "chance": 1,
+          "itemId": "equipment.s05.prefect_iron_armor",
+          "maxQuantity": 1,
+          "minQuantity": 1
+        },
+        {
+          "chance": 0.8,
+          "itemId": "resource.iron",
+          "maxQuantity": 4,
+          "minQuantity": 2
+        },
+        {
+          "chance": 0.5,
+          "itemId": "resource.herb",
+          "maxQuantity": 3,
+          "minQuantity": 2
+        }
       ],
       "name": "秦颉",
       "npcType": "monster_boss",
@@ -1701,9 +1751,24 @@
       "isBoss": true,
       "level": 4,
       "lootTable": [
-        { "chance": 1, "itemId": "weapon.s03.han_ring_blade", "minQuantity": 1, "maxQuantity": 1 },
-        { "chance": 0.8, "itemId": "resource.iron", "minQuantity": 2, "maxQuantity": 4 },
-        { "chance": 0.4, "itemId": "resource.herb", "minQuantity": 1, "maxQuantity": 2 }
+        {
+          "chance": 1,
+          "itemId": "weapon.s03.han_ring_blade",
+          "maxQuantity": 1,
+          "minQuantity": 1
+        },
+        {
+          "chance": 0.8,
+          "itemId": "resource.iron",
+          "maxQuantity": 4,
+          "minQuantity": 2
+        },
+        {
+          "chance": 0.4,
+          "itemId": "resource.herb",
+          "maxQuantity": 2,
+          "minQuantity": 1
+        }
       ],
       "name": "北军督尉",
       "npcType": "monster_boss",
@@ -1740,9 +1805,24 @@
       "isBoss": true,
       "level": 4,
       "lootTable": [
-        { "chance": 1, "itemId": "equipment.s04.fire_hardened_armor", "minQuantity": 1, "maxQuantity": 1 },
-        { "chance": 0.6, "itemId": "resource.herb", "minQuantity": 2, "maxQuantity": 3 },
-        { "chance": 0.5, "itemId": "resource.iron", "minQuantity": 1, "maxQuantity": 2 }
+        {
+          "chance": 1,
+          "itemId": "equipment.s04.fire_hardened_armor",
+          "maxQuantity": 1,
+          "minQuantity": 1
+        },
+        {
+          "chance": 0.6,
+          "itemId": "resource.herb",
+          "maxQuantity": 3,
+          "minQuantity": 2
+        },
+        {
+          "chance": 0.5,
+          "itemId": "resource.iron",
+          "maxQuantity": 2,
+          "minQuantity": 1
+        }
       ],
       "name": "纵火校尉",
       "npcType": "monster_boss",
@@ -1779,9 +1859,24 @@
       "isBoss": true,
       "level": 5,
       "lootTable": [
-        { "chance": 1, "itemId": "weapon.s07.pursuit_spear", "minQuantity": 1, "maxQuantity": 1 },
-        { "chance": 0.6, "itemId": "resource.food", "minQuantity": 2, "maxQuantity": 4 },
-        { "chance": 0.5, "itemId": "resource.iron", "minQuantity": 1, "maxQuantity": 3 }
+        {
+          "chance": 1,
+          "itemId": "weapon.s07.pursuit_spear",
+          "maxQuantity": 1,
+          "minQuantity": 1
+        },
+        {
+          "chance": 0.6,
+          "itemId": "resource.food",
+          "maxQuantity": 4,
+          "minQuantity": 2
+        },
+        {
+          "chance": 0.5,
+          "itemId": "resource.iron",
+          "maxQuantity": 3,
+          "minQuantity": 1
+        }
       ],
       "name": "追击先锋",
       "npcType": "monster_boss",
@@ -1818,9 +1913,24 @@
       "isBoss": true,
       "level": 5,
       "lootTable": [
-        { "chance": 1, "itemId": "equipment.s11.breakthrough_armor", "minQuantity": 1, "maxQuantity": 1 },
-        { "chance": 0.8, "itemId": "resource.iron", "minQuantity": 2, "maxQuantity": 4 },
-        { "chance": 0.5, "itemId": "resource.herb", "minQuantity": 2, "maxQuantity": 2 }
+        {
+          "chance": 1,
+          "itemId": "equipment.s11.breakthrough_armor",
+          "maxQuantity": 1,
+          "minQuantity": 1
+        },
+        {
+          "chance": 0.8,
+          "itemId": "resource.iron",
+          "maxQuantity": 4,
+          "minQuantity": 2
+        },
+        {
+          "chance": 0.5,
+          "itemId": "resource.herb",
+          "maxQuantity": 2,
+          "minQuantity": 2
+        }
       ],
       "name": "陷阵都尉",
       "npcType": "monster_boss",
@@ -1857,8 +1967,18 @@
       "isBoss": true,
       "level": 5,
       "lootTable": [
-        { "chance": 0.7, "itemId": "resource.iron", "minQuantity": 2, "maxQuantity": 3 },
-        { "chance": 0.5, "itemId": "resource.food", "minQuantity": 2, "maxQuantity": 3 }
+        {
+          "chance": 0.7,
+          "itemId": "resource.iron",
+          "maxQuantity": 3,
+          "minQuantity": 2
+        },
+        {
+          "chance": 0.5,
+          "itemId": "resource.food",
+          "maxQuantity": 3,
+          "minQuantity": 2
+        }
       ],
       "name": "云梯都尉",
       "npcType": "monster_boss",
@@ -1894,9 +2014,24 @@
       "isBoss": true,
       "level": 2,
       "lootTable": [
-        { "chance": 0.6, "itemId": "resource.herb", "minQuantity": 1, "maxQuantity": 2 },
-        { "chance": 0.5, "itemId": "resource.food", "minQuantity": 2, "maxQuantity": 3 },
-        { "chance": 0.35, "itemId": "resource.iron", "minQuantity": 1, "maxQuantity": 2 }
+        {
+          "chance": 0.6,
+          "itemId": "resource.herb",
+          "maxQuantity": 2,
+          "minQuantity": 1
+        },
+        {
+          "chance": 0.5,
+          "itemId": "resource.food",
+          "maxQuantity": 3,
+          "minQuantity": 2
+        },
+        {
+          "chance": 0.35,
+          "itemId": "resource.iron",
+          "maxQuantity": 2,
+          "minQuantity": 1
+        }
       ],
       "name": "拾荒者头目",
       "npcType": "monster_boss",
@@ -1912,30 +2047,6 @@
         "speed": 85
       },
       "templateId": "scavenger_chief"
-    }
-  ],
-  "armies": [
-    {
-      "id": "army.s02.guard",
-      "name": "张角亲卫队",
-      "commander": { "type": "player" },
-      "defaultStance": "escort",
-      "squads": [
-        {
-          "id": "qian",
-          "name": "前军",
-          "units": [
-            { "ref": "enemy.s02_yellow_turban_soldier", "count": 1 }
-          ]
-        },
-        {
-          "id": "hou",
-          "name": "后军",
-          "units": [
-            { "ref": "enemy.s02_yellow_turban_soldier", "count": 1 }
-          ]
-        }
-      ]
     }
   ],
   "npcs": [
@@ -2441,6 +2552,38 @@
         "isStatic": true,
         "width": 64
       }
+    }
+  ],
+  "armies": [
+    {
+      "commander": {
+        "type": "player"
+      },
+      "defaultStance": "escort",
+      "id": "army.s02.guard",
+      "name": "张角亲卫队",
+      "squads": [
+        {
+          "id": "qian",
+          "name": "前军",
+          "units": [
+            {
+              "count": 1,
+              "ref": "enemy.s02_yellow_turban_soldier"
+            }
+          ]
+        },
+        {
+          "id": "hou",
+          "name": "后军",
+          "units": [
+            {
+              "count": 1,
+              "ref": "enemy.s02_yellow_turban_soldier"
+            }
+          ]
+        }
+      ]
     }
   ],
   "combatSkills": [],
