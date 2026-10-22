@@ -1606,9 +1606,10 @@
           "kind": "resourceNode",
           "overrides": {
             "shadow": {
-              "lift": 0.5,
-              "radius": 8,
-              "scale": 0.3
+              "ground": true,
+              "lift": 0.35,
+              "long": false,
+              "radius": 14
             }
           },
           "ref": "node.wild_berry",
