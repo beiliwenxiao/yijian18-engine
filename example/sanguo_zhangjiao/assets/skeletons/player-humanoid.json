@@ -1,0 +1,556 @@
+{
+  "schemaVersion": 1,
+  "skeletonId": "skeleton.player-humanoid",
+  "meta": {
+    "width": 96,
+    "height": 96,
+    "coordinateSpace": "canonical-v1",
+    "headProportionApplied": true
+  },
+  "defaultClip": "idle_down",
+  "bones": [
+    {
+      "id": "hips",
+      "parent": null,
+      "x": 0,
+      "y": -53,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 12
+    },
+    {
+      "id": "spine",
+      "parent": "hips",
+      "x": 0,
+      "y": 1,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 19
+    },
+    {
+      "id": "chest",
+      "parent": "spine",
+      "x": 0,
+      "y": -19,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 17
+    },
+    {
+      "id": "neck",
+      "parent": "chest",
+      "x": 0,
+      "y": -17,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 5
+    },
+    {
+      "id": "head",
+      "parent": "neck",
+      "x": 0,
+      "y": -5,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 15
+    },
+    {
+      "id": "upperArmR",
+      "parent": "chest",
+      "x": -13,
+      "y": -14,
+      "rot": 4,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 18
+    },
+    {
+      "id": "upperArmL",
+      "parent": "chest",
+      "x": 13,
+      "y": -14,
+      "rot": -4,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 18
+    },
+    {
+      "id": "forearmR",
+      "parent": "upperArmR",
+      "x": 0,
+      "y": 18,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 15
+    },
+    {
+      "id": "forearmL",
+      "parent": "upperArmL",
+      "x": 0,
+      "y": 18,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 15
+    },
+    {
+      "id": "thighR",
+      "parent": "hips",
+      "x": -5.5,
+      "y": 1,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 22
+    },
+    {
+      "id": "thighL",
+      "parent": "hips",
+      "x": 5.5,
+      "y": 1,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 22
+    },
+    {
+      "id": "shinR",
+      "parent": "thighR",
+      "x": 0,
+      "y": 22,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 26
+    },
+    {
+      "id": "shinL",
+      "parent": "thighL",
+      "x": 0,
+      "y": 22,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 26
+    },
+    {
+      "id": "footR",
+      "parent": "shinR",
+      "x": 0,
+      "y": 26,
+      "rot": -90,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 7
+    },
+    {
+      "id": "footL",
+      "parent": "shinL",
+      "x": 0,
+      "y": 26,
+      "rot": -90,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 7
+    }
+  ],
+  "slots": [
+    {
+      "id": "axeBack",
+      "bone": "chest",
+      "z": 1,
+      "attachment": {
+        "type": "image",
+        "assetId": "player.humanoid.axe.png",
+        "partId": "part.humanoid.axe",
+        "x": -15,
+        "y": -8,
+        "rot": 0,
+        "visible": true
+      }
+    },
+    {
+      "id": "armUR",
+      "bone": "upperArmR",
+      "z": 3,
+      "attachment": {
+        "type": "image",
+        "assetId": "player.humanoid.upper-arm.png",
+        "partId": "part.humanoid.upper-arm",
+        "x": 0,
+        "y": 2,
+        "rot": 0,
+        "visible": true
+      }
+    },
+    {
+      "id": "armUL",
+      "bone": "upperArmL",
+      "z": 4,
+      "attachment": {
+        "type": "image",
+        "assetId": "player.humanoid.upper-arm.png",
+        "partId": "part.humanoid.upper-arm",
+        "x": 0,
+        "y": 2,
+        "rot": 0,
+        "visible": true
+      }
+    },
+    {
+      "id": "legThighR",
+      "bone": "thighR",
+      "z": 5,
+      "attachment": {
+        "type": "image",
+        "assetId": "player.humanoid.thigh.png",
+        "partId": "part.humanoid.thigh",
+        "x": 0,
+        "y": 10,
+        "rot": 0,
+        "visible": true
+      }
+    },
+    {
+      "id": "legThighL",
+      "bone": "thighL",
+      "z": 6,
+      "attachment": {
+        "type": "image",
+        "assetId": "player.humanoid.thigh.png",
+        "partId": "part.humanoid.thigh",
+        "x": 0,
+        "y": 10,
+        "rot": 0,
+        "visible": true
+      }
+    },
+    {
+      "id": "legShinR",
+      "bone": "shinR",
+      "z": 7,
+      "attachment": {
+        "type": "image",
+        "assetId": "player.humanoid.shin.png",
+        "partId": "part.humanoid.shin",
+        "x": 0,
+        "y": 12,
+        "rot": 0,
+        "visible": true
+      }
+    },
+    {
+      "id": "legShinL",
+      "bone": "shinL",
+      "z": 8,
+      "attachment": {
+        "type": "image",
+        "assetId": "player.humanoid.shin.png",
+        "partId": "part.humanoid.shin",
+        "x": 0,
+        "y": 12,
+        "rot": 0,
+        "visible": true
+      }
+    },
+    {
+      "id": "footR",
+      "bone": "footR",
+      "z": 9,
+      "attachment": {
+        "type": "image",
+        "assetId": "player.humanoid.foot.png",
+        "partId": "part.humanoid.foot",
+        "x": -2,
+        "y": -1,
+        "rot": 0,
+        "visible": true
+      }
+    },
+    {
+      "id": "footL",
+      "bone": "footL",
+      "z": 10,
+      "attachment": {
+        "type": "image",
+        "assetId": "player.humanoid.foot.png",
+        "partId": "part.humanoid.foot",
+        "x": 2,
+        "y": -1,
+        "rot": 0,
+        "visible": true
+      }
+    },
+    {
+      "id": "waist",
+      "bone": "spine",
+      "z": 12,
+      "attachment": {
+        "type": "image",
+        "assetId": "player.humanoid.waist.png",
+        "partId": "part.humanoid.waist",
+        "x": 0,
+        "y": -14,
+        "rot": 0,
+        "visible": true
+      }
+    },
+    {
+      "id": "chestSlot",
+      "bone": "chest",
+      "z": 14,
+      "attachment": {
+        "type": "image",
+        "assetId": "player.humanoid.chest.png",
+        "partId": "part.humanoid.chest",
+        "x": 0,
+        "y": -8,
+        "rot": 0,
+        "visible": true
+      }
+    },
+    {
+      "id": "armFR",
+      "bone": "forearmR",
+      "z": 16,
+      "attachment": {
+        "type": "image",
+        "assetId": "player.humanoid.forearm.png",
+        "partId": "part.humanoid.forearm",
+        "x": 0,
+        "y": 1,
+        "rot": 0,
+        "visible": true
+      }
+    },
+    {
+      "id": "armFL",
+      "bone": "forearmL",
+      "z": 17,
+      "attachment": {
+        "type": "image",
+        "assetId": "player.humanoid.forearm.png",
+        "partId": "part.humanoid.forearm",
+        "x": 0,
+        "y": 1,
+        "rot": 0,
+        "visible": true
+      }
+    },
+    {
+      "id": "neckSlot",
+      "bone": "neck",
+      "z": 19,
+      "attachment": {
+        "type": "image",
+        "assetId": "player.humanoid.neck.png",
+        "partId": "part.humanoid.neck",
+        "x": 0,
+        "y": -2,
+        "rot": 0,
+        "visible": true
+      }
+    },
+    {
+      "id": "headSlot",
+      "bone": "head",
+      "z": 21,
+      "attachment": {
+        "type": "image",
+        "assetId": "player.humanoid.head.png",
+        "partId": "part.humanoid.head",
+        "x": 0,
+        "y": -6,
+        "rot": 0,
+        "visible": true
+      }
+    }
+  ],
+  "clips": [
+    {
+      "name": "idle_down",
+      "durationMs": 1800,
+      "loop": true,
+      "tracks": [
+        {
+          "bone": "chest",
+          "keys": [
+            {
+              "t": 0,
+              "x": 0,
+              "y": -19,
+              "rot": 0
+            },
+            {
+              "t": 450,
+              "x": 0,
+              "y": -18.4,
+              "rot": 0.6,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 900,
+              "x": 0,
+              "y": -18.1,
+              "rot": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1350,
+              "x": 0,
+              "y": -18.5,
+              "rot": 0.6,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1799,
+              "x": 0,
+              "y": -19,
+              "rot": 0
+            }
+          ]
+        },
+        {
+          "bone": "head",
+          "keys": [
+            {
+              "t": 0,
+              "x": 0,
+              "y": -5,
+              "rot": 0
+            },
+            {
+              "t": 450,
+              "x": 0,
+              "y": -4.8,
+              "rot": 1.2,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 900,
+              "x": 0,
+              "y": -4.6,
+              "rot": 1.8,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1350,
+              "x": 0,
+              "y": -4.8,
+              "rot": 1.2,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1799,
+              "x": 0,
+              "y": -5,
+              "rot": 0
+            }
+          ]
+        },
+        {
+          "bone": "upperArmR",
+          "keys": [
+            {
+              "t": 0,
+              "x": -11,
+              "y": -14,
+              "rot": 3
+            },
+            {
+              "t": 900,
+              "x": -11,
+              "y": -14,
+              "rot": 4.5,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1799,
+              "x": -11,
+              "y": -14,
+              "rot": 3
+            }
+          ]
+        },
+        {
+          "bone": "upperArmL",
+          "keys": [
+            {
+              "t": 0,
+              "x": 11,
+              "y": -14,
+              "rot": -3
+            },
+            {
+              "t": 900,
+              "x": 11,
+              "y": -14,
+              "rot": -4.5,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1799,
+              "x": 11,
+              "y": -14,
+              "rot": -3
+            }
+          ]
+        },
+        {
+          "bone": "forearmR",
+          "keys": [
+            {
+              "t": 0,
+              "x": 0,
+              "y": 18,
+              "rot": 0
+            },
+            {
+              "t": 900,
+              "x": 0,
+              "y": 18,
+              "rot": -1.2,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1799,
+              "x": 0,
+              "y": 18,
+              "rot": 0
+            }
+          ]
+        },
+        {
+          "bone": "forearmL",
+          "keys": [
+            {
+              "t": 0,
+              "x": 0,
+              "y": 18,
+              "rot": 0
+            },
+            {
+              "t": 900,
+              "x": 0,
+              "y": 18,
+              "rot": 1.2,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1799,
+              "x": 0,
+              "y": 18,
+              "rot": 0
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

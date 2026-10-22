@@ -72,6 +72,7 @@ import { SKELETON_HEAD_SLOT_PLAN } from '../src/animation/SkeletonDirection.js';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const file = path.join(root, 'example/sanguo_zhangjiao/assets/skeletons/player.json');
 const PART_DIR = path.join(root, 'example/sanguo_zhangjiao/assets/images/player/parts');
+const PART_DIR_NEW = path.join(root, 'example/sanguo_zhangjiao/assets/images/player/parts-humanoid');
 
 const doc = JSON.parse(readFileSync(file, 'utf8'));
 const asset = parseSkeletonAsset(doc);
@@ -127,11 +128,14 @@ const SLOT_SCOPE = new Set([
 /* ------------------------------------------------------------------ */
 
 const imgCache = new Map();
-async function loadPart(name) {
-  if (imgCache.has(name)) return imgCache.get(name);
-  const { data, info } = await sharp(path.join(PART_DIR, name)).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+async function loadPart(assetId, name) {
+  const cacheKey = assetId + '|' + name;
+  if (imgCache.has(cacheKey)) return imgCache.get(cacheKey);
+  // 新骨架身体部件在 parts-humanoid/，旧资产（头/发/裙/武器）在 parts/
+  const dir = assetId.startsWith('player.humanoid.') ? PART_DIR_NEW : PART_DIR;
+  const { data, info } = await sharp(path.join(dir, name)).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
   const entry = { data, w: info.width, h: info.height };
-  imgCache.set(name, entry);
+  imgCache.set(cacheKey, entry);
   return entry;
 }
 
@@ -149,9 +153,9 @@ async function measure(formKey, clipName, timeMs, slotId, artId) {
   const att = slot.attachment;
   const bone = world.get(slot.bone);
   if (!bone) return null;
-  const artName = artId.replace('player.parts.', '') + '.png';
+  const artName = artId.replace('player.parts.', '').replace('player.humanoid.', '') + '.png';
   let img;
-  try { img = await loadPart(artName); } catch { return null; }
+  try { img = await loadPart(artId, artName); } catch { return null; }
   const dw = att.width || img.w;
   const dh = att.height || img.h;
   const sx = dw / img.w, sy = dh / img.h;
