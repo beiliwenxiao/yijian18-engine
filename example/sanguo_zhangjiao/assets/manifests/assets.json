@@ -4932,7 +4932,11 @@
       "assetId": "inventory.equipment.hanRingBlade",
       "imageId": "inventory.equipment.hanRingBlade",
       "category": "inventory-icon",
-      "usage": ["inventory", "equipment", "weapon"],
+      "usage": [
+        "inventory",
+        "equipment",
+        "weapon"
+      ],
       "sourceFile": "assets/images/items/equipment-han-ring-blade.png",
       "runtime2D": {
         "path": "assets/images/items/equipment-han-ring-blade.png",
@@ -4942,8 +4946,14 @@
         "mode": "billboard",
         "sourceAssetId": "inventory.equipment.hanRingBlade"
       },
-      "pivot": { "x": 0.5, "y": 0.5 },
-      "bounds": { "width": 64, "height": 64 },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
       "animations": [],
       "targetPhase": "P2",
       "status": "ai-generated",
@@ -4953,7 +4963,11 @@
       "assetId": "inventory.equipment.fireHardenedArmor",
       "imageId": "inventory.equipment.fireHardenedArmor",
       "category": "inventory-icon",
-      "usage": ["inventory", "equipment", "armor"],
+      "usage": [
+        "inventory",
+        "equipment",
+        "armor"
+      ],
       "sourceFile": "assets/images/items/equipment-fire-hardened-armor.png",
       "runtime2D": {
         "path": "assets/images/items/equipment-fire-hardened-armor.png",
@@ -4963,8 +4977,14 @@
         "mode": "billboard",
         "sourceAssetId": "inventory.equipment.fireHardenedArmor"
       },
-      "pivot": { "x": 0.5, "y": 0.5 },
-      "bounds": { "width": 64, "height": 64 },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
       "animations": [],
       "targetPhase": "P2",
       "status": "ai-generated",
@@ -4974,7 +4994,11 @@
       "assetId": "inventory.equipment.prefectIronArmor",
       "imageId": "inventory.equipment.prefectIronArmor",
       "category": "inventory-icon",
-      "usage": ["inventory", "equipment", "armor"],
+      "usage": [
+        "inventory",
+        "equipment",
+        "armor"
+      ],
       "sourceFile": "assets/images/items/equipment-prefect-iron-armor.png",
       "runtime2D": {
         "path": "assets/images/items/equipment-prefect-iron-armor.png",
@@ -4984,8 +5008,14 @@
         "mode": "billboard",
         "sourceAssetId": "inventory.equipment.prefectIronArmor"
       },
-      "pivot": { "x": 0.5, "y": 0.5 },
-      "bounds": { "width": 64, "height": 64 },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
       "animations": [],
       "targetPhase": "P2",
       "status": "ai-generated",
@@ -4995,7 +5025,11 @@
       "assetId": "inventory.equipment.pursuitSpear",
       "imageId": "inventory.equipment.pursuitSpear",
       "category": "inventory-icon",
-      "usage": ["inventory", "equipment", "weapon"],
+      "usage": [
+        "inventory",
+        "equipment",
+        "weapon"
+      ],
       "sourceFile": "assets/images/items/equipment-pursuit-spear.png",
       "runtime2D": {
         "path": "assets/images/items/equipment-pursuit-spear.png",
@@ -5005,8 +5039,14 @@
         "mode": "billboard",
         "sourceAssetId": "inventory.equipment.pursuitSpear"
       },
-      "pivot": { "x": 0.5, "y": 0.5 },
-      "bounds": { "width": 64, "height": 64 },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
       "animations": [],
       "targetPhase": "P2",
       "status": "ai-generated",
@@ -5016,7 +5056,11 @@
       "assetId": "inventory.equipment.guangzongTalismanStaff",
       "imageId": "inventory.equipment.guangzongTalismanStaff",
       "category": "inventory-icon",
-      "usage": ["inventory", "equipment", "weapon"],
+      "usage": [
+        "inventory",
+        "equipment",
+        "weapon"
+      ],
       "sourceFile": "assets/images/items/equipment-talisman-staff.png",
       "runtime2D": {
         "path": "assets/images/items/equipment-talisman-staff.png",
@@ -5026,8 +5070,14 @@
         "mode": "billboard",
         "sourceAssetId": "inventory.equipment.guangzongTalismanStaff"
       },
-      "pivot": { "x": 0.5, "y": 0.5 },
-      "bounds": { "width": 64, "height": 64 },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
       "animations": [],
       "targetPhase": "P2",
       "status": "ai-generated",
@@ -5037,7 +5087,11 @@
       "assetId": "inventory.equipment.breakthroughArmor",
       "imageId": "inventory.equipment.breakthroughArmor",
       "category": "inventory-icon",
-      "usage": ["inventory", "equipment", "armor"],
+      "usage": [
+        "inventory",
+        "equipment",
+        "armor"
+      ],
       "sourceFile": "assets/images/items/equipment-breakthrough-armor.png",
       "runtime2D": {
         "path": "assets/images/items/equipment-breakthrough-armor.png",
@@ -5047,8 +5101,14 @@
         "mode": "billboard",
         "sourceAssetId": "inventory.equipment.breakthroughArmor"
       },
-      "pivot": { "x": 0.5, "y": 0.5 },
-      "bounds": { "width": 64, "height": 64 },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
       "animations": [],
       "targetPhase": "P2",
       "status": "ai-generated",
@@ -5058,7 +5118,11 @@
       "assetId": "inventory.equipment.taipingScripture",
       "imageId": "inventory.equipment.taipingScripture",
       "category": "inventory-icon",
-      "usage": ["inventory", "equipment", "talisman"],
+      "usage": [
+        "inventory",
+        "equipment",
+        "talisman"
+      ],
       "sourceFile": "assets/images/items/equipment-taiping-scripture.png",
       "runtime2D": {
         "path": "assets/images/items/equipment-taiping-scripture.png",
@@ -5068,8 +5132,14 @@
         "mode": "billboard",
         "sourceAssetId": "inventory.equipment.taipingScripture"
       },
-      "pivot": { "x": 0.5, "y": 0.5 },
-      "bounds": { "width": 64, "height": 64 },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
       "animations": [],
       "targetPhase": "P2",
       "status": "ai-generated",
@@ -5079,7 +5149,11 @@
       "assetId": "inventory.equipment.sunxiaShield",
       "imageId": "inventory.equipment.sunxiaShield",
       "category": "inventory-icon",
-      "usage": ["inventory", "equipment", "shield"],
+      "usage": [
+        "inventory",
+        "equipment",
+        "shield"
+      ],
       "sourceFile": "assets/images/items/equipment-sunxia-shield.png",
       "runtime2D": {
         "path": "assets/images/items/equipment-sunxia-shield.png",
@@ -5089,8 +5163,14 @@
         "mode": "billboard",
         "sourceAssetId": "inventory.equipment.sunxiaShield"
       },
-      "pivot": { "x": 0.5, "y": 0.5 },
-      "bounds": { "width": 64, "height": 64 },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
       "animations": [],
       "targetPhase": "P2",
       "status": "ai-generated",
@@ -6050,7 +6130,7 @@
       "animations": [],
       "targetPhase": "P1",
       "status": "placeholder",
-      "revision": 81
+      "revision": 82
     },
     {
       "assetId": "skeleton.wolf-demo",

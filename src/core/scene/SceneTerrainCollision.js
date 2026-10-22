@@ -125,11 +125,25 @@ export class SceneTerrainCollision {
       for (let i = 0; i < nearbyPonds.length; i++) this.resolvePond(p, nearbyPonds[i], radiusX, radiusY);
       const nearbyTrees = this._querySpatial(spatial.trees, p.x, p.y);
       for (let i = 0; i < nearbyTrees.length; i++) this.resolveTree(p, nearbyTrees[i], radiusX, radiusY);
+      // 跳跃落地：落点若落在阻挡形状（如河道）内，沿跳跃方向回退到最后一个站得住的点。
+      // 不能用 previous（跳跃前的旧位置）——那会把玩家传送回出发点，而不是停在岸边。
+      const landing = this.jumpSystem?.getLastLanding?.(entity) || null;
+      let landedOnJumpPath = false;
+      if (landing && !isWalkable
+        && this._isPositionInsideAnyShape(spatial, p.x, p.y)) {
+        const backstop = this._findLastWalkableAlongJump(spatial, landing, p);
+        if (backstop) {
+          p.x = backstop.x;
+          p.y = backstop.y;
+          landedOnJumpPath = true;
+        }
+      }
       // 若上一帧位置在可落脚区域内，而当前帧确实落入可碰撞 shape（如跳跃落进河道），
       // 优先将角色推回起跳时的可落脚位置，避免被弹到远离起跳点的碰撞体外沿；
       // 落在普通无阻挡地面（不在可落脚 shape 内但也未被阻挡）时不推回。
+      // 跳跃落地帧跳过：previous 是跳跃前的旧位置，会把玩家传送回出发点。
       let pushedBackToWalkable = false;
-      if (!isWalkable && previous) {
+      if (!landing && !landedOnJumpPath && !isWalkable && previous) {
         if (this._isPositionInAnyWalkable(spatial, previous.x, previous.y)
           && this._isPositionInsideAnyShape(spatial, p.x, p.y)) {
           p.x = previous.x;
@@ -138,17 +152,26 @@ export class SceneTerrainCollision {
         }
       }
       if (!pushedBackToWalkable) {
+        // 跳跃落地帧：穿墙判定的起点用「跳跃起点」而不是跳跃前的旧位置——
+        // 旧位置在跳跃前的地面上，会让「起跳点→落点」的线段被判为穿墙而弹回出发点。
+        const crossFrom = landing
+          ? { x: landing.startX, y: landing.startY }
+          : previous;
         const nearbyShapes = isWalkable
           ? EMPTY_SPATIAL_ITEMS
-          : this._querySpatialRange(spatial.shapes, p, previous, broadRadius);
-        for (let i = 0; i < nearbyShapes.length; i++) this.resolveShape(p, nearbyShapes[i], radiusX, radiusY, previous);
+          : this._querySpatialRange(spatial.shapes, p, crossFrom, broadRadius);
+        for (let i = 0; i < nearbyShapes.length; i++) {
+          this.resolveShape(p, nearbyShapes[i], radiusX, radiusY, crossFrom, Boolean(landing));
+        }
         // 缺少可计算包围盒的自定义 shape 始终走兜底列表（walkable 内除外）。
         if (!isWalkable) {
           for (let i = 0; i < spatial.unboundedShapes.length; i++) {
-            this.resolveShape(p, spatial.unboundedShapes[i], radiusX, radiusY, previous);
+            this.resolveShape(p, spatial.unboundedShapes[i], radiusX, radiusY, crossFrom, Boolean(landing));
           }
         }
       }
+      // 落地追踪信息只对落地这一帧有效：用毕即清，避免后续帧误用旧跳跃数据。
+      if (landing) this.jumpSystem?.clearLastLanding?.(entity);
       if (hasCollisionOffset) {
         transform.position.x = p.x - offsetX;
         transform.position.y = p.y - offsetY;
@@ -479,8 +502,11 @@ export class SceneTerrainCollision {
    * @param {number} radiusX - 实体椭圆横轴半径
    * @param {number} radiusY - 实体椭圆纵轴半径
    * @param {{x:number,y:number}|null} [previous] - 上一次地形解算后的坐标
+   * @param {boolean} [skipCrossCheck=false] - 跳过「单帧跨越窄碰撞体」的穿墙回退。
+   *   跳跃落地时置 true：跳跃本就允许跨过水面（跳石过河），
+   *   若按 previous（跳跃前的旧位置）判穿墙，会把玩家传送回出发点。
    */
-  resolveShape(p, s, radiusX, radiusY, previous = null) {
+  resolveShape(p, s, radiusX, radiusY, previous = null, skipCrossCheck = false) {
     const st = s.shapeType;
     const EPS = this.pushEpsilon;
 
@@ -498,7 +524,7 @@ export class SceneTerrainCollision {
           return;
         }
       }
-      if (this._crossedPolygon(previous, p, s.points)) {
+      if (!skipCrossCheck && this._crossedPolygon(previous, p, s.points)) {
         p.x = previous.x;
         p.y = previous.y;
       }
@@ -563,6 +589,47 @@ export class SceneTerrainCollision {
       if (this._pointInShape(spatial.unboundedWalkables[i], x, y)) return true;
     }
     return false;
+  }
+
+  /**
+   * @private 跳跃落点非法时，沿跳跃路径回溯出「最后一个站得住的点」。
+   *
+   * 场景：玩家从河岸跳向对岸踏石，落点仍落在河道可碰撞 shape 内（跳得不够远）。
+   * 旧的兜底分支用 previous（跳跃前的旧位置）回退，会把玩家传送回出发点，
+   * 视觉上就是「明明跳过去了却被弹回来」。
+   *
+   * 正确行为：沿跳跃方向从落点往回找，找到最后一个**不在任何可碰撞 shape 内**的
+   * 位置——即玩家「刚好能站住」的那一点（可能是河岸、也可能是踏石）。
+   *
+   * @param {Object} spatial - 静态碰撞空间索引
+   * @param {{startX:number,startY:number,dirX:number,dirY:number}} landing - 跳跃起跳点与方向
+   * @param {{x:number,y:number}} landingPos - 实际落点
+   * @returns {{x:number,y:number}|null} 可站立点；找不到返回 null（交由原兜底分支处理）
+   * @private
+   */
+  _findLastWalkableAlongJump(spatial, landing, landingPos) {
+    const dirX = landing.dirX;
+    const dirY = landing.dirY;
+    const length = Math.hypot(dirX, dirY);
+    if (length < 1e-6) return null;
+    const ux = dirX / length;
+    const uy = dirY / length;
+    // 回溯步长：细到能贴住边界，粗到步数可控
+    const step = 4;
+    const total = Math.hypot(landingPos.x - landing.startX, landingPos.y - landing.startY);
+    const maxSteps = Math.min(256, Math.ceil(total / step) + 1);
+    let best = null;
+    for (let i = 0; i <= maxSteps; i++) {
+      const distance = total - i * step;
+      if (distance < 0) break;
+      const x = landingPos.x - ux * distance;
+      const y = landingPos.y - uy * distance;
+      if (!this._isPositionInsideAnyShape(spatial, x, y)) {
+        best = { x, y };   // 已站得住（不在任何阻挡 shape 内）
+        break;
+      }
+    }
+    return best;
   }
 
   /** @private 判定点是否落在任一可碰撞 shape 内部（不含实体半径外沿）。 */

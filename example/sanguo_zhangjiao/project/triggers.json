@@ -1770,7 +1770,10 @@
         "action": "giveReward",
         "params": {
           "items": [
-            { "id": "weapon.s10.talisman_staff", "quantity": 1 }
+            {
+              "id": "weapon.s10.talisman_staff",
+              "quantity": 1
+            }
           ]
         },
         "stepId": "gift-talisman-staff"
@@ -2361,7 +2364,10 @@
         "action": "giveReward",
         "params": {
           "items": [
-            { "id": "equipment.s12.taiping_scripture", "quantity": 1 }
+            {
+              "id": "equipment.s12.taiping_scripture",
+              "quantity": 1
+            }
           ]
         },
         "stepId": "gift-taiping-scripture"

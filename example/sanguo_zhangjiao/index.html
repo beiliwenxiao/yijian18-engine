@@ -1825,6 +1825,8 @@
                     build: { average: average('worldQueueBuild'), max: maximum('worldQueueBuild') },
                     sort: { average: average('worldQueueSort'), max: maximum('worldQueueSort') },
                     draw: { average: average('worldQueueDraw'), max: maximum('worldQueueDraw') },
+                    shadowTree: { average: average('shadowTree'), max: maximum('shadowTree') },
+                    shadowEntities: { average: average('shadowEntities'), max: maximum('shadowEntities') },
                     length: sample.worldQueueLength || 0,
                     entities: sample.visibleEntityCount || 0,
                     depthParticles: sample.worldDepthParticleCount || 0

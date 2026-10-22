@@ -6,8 +6,14 @@
     "rewards": [
       {
         "items": [
-          { "count": 2, "itemId": "resource.herb" },
-          { "count": 3, "itemId": "resource.wild_berry" }
+          {
+            "count": 2,
+            "itemId": "resource.herb"
+          },
+          {
+            "count": 3,
+            "itemId": "resource.wild_berry"
+          }
         ],
         "type": "items"
       }
@@ -300,9 +306,41 @@
       },
       {
         "id": "leaveShelter",
+        "mapTargets": [
+          {
+            "sceneId": "S01",
+            "targetId": "S01-spawn-shelter-rest"
+          }
+        ],
         "objectiveType": "commit.fact",
         "target": "story.s01.leaveShelter",
         "title": "离开庇护所并躲避狼群",
+        "type": "objective"
+      },
+      {
+        "id": "defeatWolfPack",
+        "mapTargets": [
+          {
+            "sceneId": "S01",
+            "targetId": "S01-zone-wolf-region"
+          }
+        ],
+        "objectiveType": "commit.fact",
+        "target": "story.s01.wolfPackCleared",
+        "title": "踏入狼群领地，击退狼群",
+        "type": "objective"
+      },
+      {
+        "id": "defeatWolfKing",
+        "mapTargets": [
+          {
+            "sceneId": "S01",
+            "targetId": "S01-zone-wolf-region"
+          }
+        ],
+        "objectiveType": "commit.fact",
+        "target": "story.s01.wolfKingDefeated",
+        "title": "讨斩狼王",
         "type": "objective"
       },
       {
@@ -355,7 +393,10 @@
     "rewards": [
       {
         "items": [
-          { "count": 2, "itemId": "resource.food" }
+          {
+            "count": 2,
+            "itemId": "resource.food"
+          }
         ],
         "type": "items"
       }
@@ -388,8 +429,14 @@
     "rewards": [
       {
         "items": [
-          { "count": 2, "itemId": "resource.herb" },
-          { "count": 2, "itemId": "resource.food" }
+          {
+            "count": 2,
+            "itemId": "resource.herb"
+          },
+          {
+            "count": 2,
+            "itemId": "resource.food"
+          }
         ],
         "type": "items"
       }
@@ -425,8 +472,14 @@
     "rewards": [
       {
         "items": [
-          { "count": 3, "itemId": "resource.food" },
-          { "count": 2, "itemId": "resource.herb" }
+          {
+            "count": 3,
+            "itemId": "resource.food"
+          },
+          {
+            "count": 2,
+            "itemId": "resource.herb"
+          }
         ],
         "type": "items"
       }
@@ -483,8 +536,14 @@
     "rewards": [
       {
         "items": [
-          { "count": 2, "itemId": "resource.herb" },
-          { "count": 2, "itemId": "resource.food" }
+          {
+            "count": 2,
+            "itemId": "resource.herb"
+          },
+          {
+            "count": 2,
+            "itemId": "resource.food"
+          }
         ],
         "type": "items"
       }
@@ -549,8 +608,14 @@
     "rewards": [
       {
         "items": [
-          { "count": 3, "itemId": "resource.herb" },
-          { "count": 2, "itemId": "resource.food" }
+          {
+            "count": 3,
+            "itemId": "resource.herb"
+          },
+          {
+            "count": 2,
+            "itemId": "resource.food"
+          }
         ],
         "type": "items"
       }
@@ -627,7 +692,10 @@
     "rewards": [
       {
         "items": [
-          { "count": 3, "itemId": "resource.iron" }
+          {
+            "count": 3,
+            "itemId": "resource.iron"
+          }
         ],
         "type": "items"
       }
@@ -728,8 +796,14 @@
     "rewards": [
       {
         "items": [
-          { "count": 4, "itemId": "resource.wood" },
-          { "count": 2, "itemId": "resource.iron" }
+          {
+            "count": 4,
+            "itemId": "resource.wood"
+          },
+          {
+            "count": 2,
+            "itemId": "resource.iron"
+          }
         ],
         "type": "items"
       }
@@ -794,8 +868,14 @@
     "rewards": [
       {
         "items": [
-          { "count": 3, "itemId": "resource.herb" },
-          { "count": 2, "itemId": "resource.food" }
+          {
+            "count": 3,
+            "itemId": "resource.herb"
+          },
+          {
+            "count": 2,
+            "itemId": "resource.food"
+          }
         ],
         "type": "items"
       }
@@ -884,8 +964,14 @@
     "rewards": [
       {
         "items": [
-          { "count": 3, "itemId": "resource.food" },
-          { "count": 2, "itemId": "resource.herb" }
+          {
+            "count": 3,
+            "itemId": "resource.food"
+          },
+          {
+            "count": 2,
+            "itemId": "resource.herb"
+          }
         ],
         "type": "items"
       }
@@ -938,8 +1024,14 @@
     "rewards": [
       {
         "items": [
-          { "count": 4, "itemId": "resource.wood" },
-          { "count": 2, "itemId": "resource.herb" }
+          {
+            "count": 4,
+            "itemId": "resource.wood"
+          },
+          {
+            "count": 2,
+            "itemId": "resource.herb"
+          }
         ],
         "type": "items"
       }
@@ -1064,8 +1156,14 @@
     "rewards": [
       {
         "items": [
-          { "count": 3, "itemId": "resource.iron" },
-          { "count": 2, "itemId": "resource.herb" }
+          {
+            "count": 3,
+            "itemId": "resource.iron"
+          },
+          {
+            "count": 2,
+            "itemId": "resource.herb"
+          }
         ],
         "type": "items"
       }
@@ -1214,8 +1312,14 @@
     "rewards": [
       {
         "items": [
-          { "count": 2, "itemId": "resource.iron" },
-          { "count": 3, "itemId": "resource.herb" }
+          {
+            "count": 2,
+            "itemId": "resource.iron"
+          },
+          {
+            "count": 3,
+            "itemId": "resource.herb"
+          }
         ],
         "type": "items"
       }
@@ -1328,8 +1432,14 @@
     "rewards": [
       {
         "items": [
-          { "count": 3, "itemId": "resource.herb" },
-          { "count": 3, "itemId": "resource.food" }
+          {
+            "count": 3,
+            "itemId": "resource.herb"
+          },
+          {
+            "count": 3,
+            "itemId": "resource.food"
+          }
         ],
         "type": "items"
       }

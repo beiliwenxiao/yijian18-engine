@@ -86,6 +86,30 @@ inclusion: always
   偏移的度量单位都按 follow 取缩放系数（`editor/SkeletonEditorGeometry.js` 是共用内核）。
 - 现有骨骼资产的 `scaleX/scaleY` 全为 1 或缺省，因此上述语义切换对存量内容零影响。
 
+### 跳跃落地与地形碰撞（落地帧语义）
+
+- **滞空期实体不参与地形碰撞**（`SceneTerrainCollision.resolveEntities` 跳过 `jumpSystem.isJumping` 的实体），
+  跳跃因此可以跨越水面（跳石过河）。
+- **落地帧的 `previous` 是「跳跃前的旧位置」**，不是跳跃起点——滞空期刻意不更新已解算位置记忆。
+  用它做兜底回退会把玩家传送回出发点（实测弹回 418px），这是"明明跳过去了却被弹回来"的根因。
+- **落地帧的三条规则**（`src/core/scene/SceneTerrainCollision.js` + `src/systems/JumpSystem.js`）：
+  1. 落点落在阻挡 shape 内 → 沿跳跃方向回溯到最后一个「不在任何阻挡 shape 内」的点（`_findLastWalkableAlongJump`）；
+  2. 跳过 `pushedBackToWalkable` 兜底分支（同样依赖跳跃前的旧位置）；
+  3. 穿墙判定（`_crossedPolygon`）的起点用**跳跃起点**且落地帧跳过——跳跃本就允许跨过水面。
+- JumpSystem 落地时把 `startPos` + 跳跃方向写入 `_lastLanding`（`getLastLanding`/`clearLastLanding`），
+  仅对落地那一帧有效，用毕即清。
+
+### 任务链与空间触发点的引导一致性
+
+- **空间触发（`enter` 绑定）本身不引导玩家**：绑定只在玩家真的踏进区域时才点火。
+  若该区域不在任务链的行走路径上（或与路径反向），内容就等于不存在——玩家永远看不到，
+  且不会有任何报错（表现为"事件不发生"）。
+- 凡是靠"踏入某区域"推进的玩法，任务链必须同时具备：
+  1. **对应的任务步骤**（objective 用该玩法产出的事实做 target）；
+  2. **mapTarget 引导**（指向该区域 id，供小地图/目标箭头标记）。
+- 判定方法：区域相对出生点的方位 + 任务链 mapTarget 序列要对得上；
+  路径可达性用 `scripts/probe-s01-wolf-region-reach.mjs`（BFS）验证。
+
 ### 方向形态（正面/侧面/背面/斜前/斜后）
 
 - 角色外观按 **7 个形态**组织（左右两侧靠整体 flipX 镜像复用同一套图）：

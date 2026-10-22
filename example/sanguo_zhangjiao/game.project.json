@@ -237,8 +237,8 @@
       }
     },
     "levelUpPoints": {
-      "amount": 1,
-      "pool": "skill"
+      "pool": "skill",
+      "amount": 1
     },
     "battleRewards": {
       "byScene": {

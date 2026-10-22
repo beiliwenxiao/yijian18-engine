@@ -29,6 +29,8 @@ export class JumpSystem {
     this.config = { ...DEFAULT_CONFIG, ...config };
     this.particleSystem = config.particleSystem || null;
     this._active = new Map();
+    /** 落地追踪：entity -> { startX, startY, dirX, dirY }（落地帧供地形碰撞回退用） */
+    this._lastLanding = new Map();
   }
 
   setParticleSystem(particleSystem) {
@@ -130,6 +132,24 @@ export class JumpSystem {
 
   isJumping(entity) {
     return this._active.has(entity);
+  }
+
+  /**
+   * 实体刚结束一次跳跃时，返回该次跳跃的起跳点与落点方向（供地形碰撞解算用）。
+   * - 仅在落地后的那一帧有效（落地帧结束即清除）；
+   * - 用途：跳跃落点若落在阻挡形状（如河道）内，应沿跳跃方向回退到「最后可落脚点」，
+   *   而不是回退到跳跃前的旧位置（那会把玩家传送回出发点）。
+   * @param {Object} entity - 实体
+   * @returns {{startX:number,startY:number,dirX:number,dirY:number}|null}
+   */
+  getLastLanding(entity) {
+    const info = this._lastLanding?.get(entity);
+    return info ? { ...info } : null;
+  }
+
+  /** 清除实体的落地追踪信息（落地帧用毕即弃）。 */
+  clearLastLanding(entity) {
+    this._lastLanding?.delete(entity);
   }
 
   /** 注册落地回调：entity 落地时调用（含二段跳；from/to 为起跳/落地地面坐标）。 */
@@ -271,6 +291,13 @@ export class JumpSystem {
         entity._jumping = false;   // 落地：清除跳跃标志（mapper 恢复行走/待机）
         this._emitLandingSmoke(transform.position.x, transform.position.y);
         this._active.delete(entity);
+        // 落地追踪：起跳点 + 跳跃方向（供落地帧地形碰撞把非法落点回退到最后可落脚点）
+        this._lastLanding.set(entity, {
+          startX: data.startPos?.x ?? transform.position.x,
+          startY: data.startPos?.y ?? transform.position.y,
+          dirX: data.direction.x,
+          dirY: data.direction.y
+        });
         this.onLand?.(entity, {
           from: data.startPos || null,
           to: { x: transform.position.x, y: transform.position.y },
