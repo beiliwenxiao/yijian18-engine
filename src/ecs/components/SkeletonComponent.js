@@ -20,7 +20,9 @@
  */
 
 import { Component } from '../Component.js';
-import { evaluateSkeletonPose } from '../../animation/SkeletonPose.js';
+import { evaluateSkeletonPose, createRestLocalPose, composeWorldTransforms } from '../../animation/SkeletonPose.js';
+import { evaluatePoseWithIk } from '../../animation/SkeletonIk.js';
+import { bakeClip, sampleBakedClip } from '../../animation/SkeletonBake.js';
 
 export class SkeletonComponent extends Component {
   /**
@@ -40,6 +42,23 @@ export class SkeletonComponent extends Component {
     this.speed = 1;                     // 播放速率倍数
     // 槽位序列帧独立推进状态：Map(slotId -> { frame, frameTime })
     this.slotFrameState = new Map();
+    // 每实体槽位覆盖层：Map(slotId -> { visible?, flipX?, frames?, fps? })
+    // 共享资产（AssetManager 缓存的 parseSkeletonAsset 产物）全局唯一，
+    // 运行时状态（头部三态可见性、武器上手/背挂、背挂换边、序列帧表）
+    // 必须落在实体本地覆盖层——直接改写共享 attachment 会让同骨架的多个
+    // 实体互相覆盖（甲朝下写的 headFront.visible 被乙朝上写回覆盖）。
+    this.slotOverrides = new Map();
+    // IK 约束（实体本地）：运行时 IK 修正（脚部贴地/瞄准/骑乘）。
+    // 结构 { id, type:'aim'|'twoBone', bones:[...], target:{x,y}, mix, offsetAngle, iterations }，
+    // target 为骨骼资产坐标系（design space）的世界坐标。
+    this.ikConstraints = [];
+    // 曲线预烘焙：按固定步长预采样，运行时查表（贝塞尔曲线落地后省掉每段二分求解）。
+    // 烘焙表懒构建（首次播放该剪辑时建一次），换资产时清空。
+    this.useBakedClips = true;
+    this.bakeStepMs = 20;
+    this._bakedClips = new Map();
+    this._bakedRestPose = null;
+    this._localPoseOut = new Map();
     this._worldPose = null;
     this._poseDirty = true;
   }
@@ -49,6 +68,11 @@ export class SkeletonComponent extends Component {
     if (!asset || asset === this.skeletonAsset) return;
     this.skeletonAsset = asset;
     this.slotFrameState.clear();
+    // 换资产 = 槽位 id 集合可能变化，旧覆盖层的 slotId 不再对应 → 清空
+    this.slotOverrides.clear();
+    // 换资产 = 骨骼/剪辑全变 → 烘焙表与静止姿态缓存失效
+    this._bakedClips.clear();
+    this._bakedRestPose = null;
     // 当前剪辑名失效时回退默认剪辑
     if (!this.currentClip || !asset.clips.has(this.currentClip)) {
       this.currentClip = (this.defaultClipOverride && asset.clips.has(this.defaultClipOverride))
@@ -115,7 +139,8 @@ export class SkeletonComponent extends Component {
 
     // 槽位序列帧：每槽独立 fps 与帧游标（非循环序列停在最后一帧）
     for (const slot of asset.slots) {
-      const attachment = slot.attachment;
+      // 帧表可能来自实体本地覆盖层（方向行切换），必须读合并后的附件
+      const attachment = this.resolveSlotAttachment(slot);
       if (attachment?.type !== 'sequence' || !Array.isArray(attachment.frames) || attachment.frames.length === 0) {
         continue;
       }
@@ -136,6 +161,7 @@ export class SkeletonComponent extends Component {
 
   /**
    * 取当前世界姿态（缓存：仅脏时重算）。
+   * 存在 IK 约束时：FK 采样 → IK 求解 → 最终世界变换。
    * @returns {Map(boneId -> {x,y,rot,sx,sy,rad})|null}
    */
   getWorldPose() {
@@ -143,10 +169,88 @@ export class SkeletonComponent extends Component {
     if (!asset) return null;
     if (!this._worldPose || this._poseDirty) {
       const clip = asset.clips.get(this.currentClip) || null;
-      this._worldPose = evaluateSkeletonPose(asset, clip, this.clipTime).world;
+      const local = this._sampleLocalPose(clip);
+      let world = composeWorldTransforms(asset, local);
+      if (this.ikConstraints.length > 0) {
+        world = evaluatePoseWithIk(asset, local, world, this.ikConstraints).world;
+      }
+      this._worldPose = world;
       this._poseDirty = false;
     }
     return this._worldPose;
+  }
+
+  /**
+   * 采样局部姿势：优先用烘焙表（查表），无烘焙表时走原始关键帧采样。
+   * @param {Object|null} clip - 当前剪辑
+   * @returns {Map} 局部姿势（boneId -> {x,y,rot,sx,sy}）
+   */
+  _sampleLocalPose(clip) {
+    if (!clip) return createRestLocalPose(this.skeletonAsset);
+    const baked = this.useBakedClips === false ? null : this._bakedClip(clip);
+    if (!baked) {
+      return evaluateSkeletonPose(this.skeletonAsset, clip, this.clipTime).local;
+    }
+    this._localPoseOut.clear();
+    const sampled = sampleBakedClip(baked, this.clipTime, this._localPoseOut);
+    // 烘焙表只含有轨道的骨骼 → 补齐无轨道骨骼的静止姿态（IK 求解与世界组合都要完整局部姿势）
+    if (this._bakedRestPose) {
+      for (const [boneId, value] of this._bakedRestPose) {
+        if (!sampled.has(boneId)) sampled.set(boneId, { ...value });
+      }
+    }
+    return sampled;
+  }
+
+  /**
+   * 取（并懒构建）剪辑的烘焙表。
+   * @param {Object} clip - 剪辑
+   * @returns {Object|null} 烘焙产物
+   */
+  _bakedClip(clip) {
+    if (!clip) return null;
+    const name = clip.name;
+    if (this._bakedClips.has(name)) return this._bakedClips.get(name);
+    if (!this._bakedRestPose) this._bakedRestPose = createRestLocalPose(this.skeletonAsset);
+    const baked = bakeClip(clip, this._bakedRestPose, { stepMs: this.bakeStepMs });
+    this._bakedClips.set(name, baked);
+    return baked;
+  }
+
+  /**
+   * 写入 IK 约束（实体本地；不进共享资产）。
+   * @param {Array<Object>} constraints - [{ id, type, bones, target, mix, offsetAngle, iterations }]
+   */
+  setIkConstraints(constraints) {
+    this.ikConstraints = Array.isArray(constraints) ? constraints.filter(Boolean) : [];
+    this._poseDirty = true;
+  }
+
+  /** 取当前 IK 约束（只读引用）。 */
+  getIkConstraints() {
+    return this.ikConstraints;
+  }
+
+  /**
+   * 更新某条 IK 约束的目标点（骨骼资产坐标系）。
+   * 目标每帧变化时必须调用，否则世界姿态缓存不会刷新。
+   * @param {string} id - 约束 id
+   * @param {number} x - 目标 x
+   * @param {number} y - 目标 y
+   * @returns {boolean} 是否命中该约束
+   */
+  setIkTarget(id, x, y) {
+    const constraint = this.ikConstraints.find(candidate => candidate.id === id);
+    if (!constraint || !constraint.target) return false;
+    constraint.target.x = x;
+    constraint.target.y = y;
+    this._poseDirty = true;
+    return true;
+  }
+
+  /** 标记姿态缓存失效（IK 目标或外部状态变化后调用）。 */
+  markPoseDirty() {
+    this._poseDirty = true;
   }
 
   /** 取槽位序列帧游标（渲染用）。 */
@@ -155,7 +259,52 @@ export class SkeletonComponent extends Component {
   }
 
   /**
+   * 写实体本地槽位覆盖（不触碰共享资产）。
+   * @param {string} slotId
+   * @param {Object} patch - { visible?, flipX?, frames?, fps? }；字段为 undefined 表示不改
+   */
+  setSlotOverride(slotId, patch) {
+    if (!slotId || !patch) return;
+    const current = this.slotOverrides.get(slotId) || {};
+    let changed = false;
+    for (const [key, value] of Object.entries(patch)) {
+      if (value === undefined) continue;
+      if (current[key] === value) continue;
+      current[key] = value;
+      changed = true;
+    }
+    if (!changed) return;
+    this.slotOverrides.set(slotId, current);
+    // 帧表变了 → 帧游标重置（否则按旧表长度取模会越界）
+    if (patch.frames !== undefined) this.slotFrameState.delete(slotId);
+  }
+
+  /**
+   * 取实体本地槽位覆盖（渲染用；无覆盖返回 null）。
+   * @param {string} slotId
+   * @returns {Object|null}
+   */
+  getSlotOverride(slotId) {
+    return this.slotOverrides.get(slotId) || null;
+  }
+
+  /**
+   * 取槽位的最终附件（共享 attachment + 实体本地覆盖合并）。
+   * 渲染与状态映射统一走这里，保证「共享资产只读 + 实体态叠加」单一口径。
+   * @param {Object} slot - parseSkeletonAsset 产物的 slot
+   * @returns {Object|null}
+   */
+  resolveSlotAttachment(slot) {
+    if (!slot?.attachment) return null;
+    const override = this.slotOverrides.get(slot.id);
+    if (!override) return slot.attachment;
+    return { ...slot.attachment, ...override };
+  }
+
+  /**
    * 动态改写槽位序列帧表（状态映射器按方向行/贴图布局更新 body 槽位用）。
+   * 写入实体本地覆盖层——共享资产的 frames 表全局唯一，直接改写会让
+   * 同骨架实体的方向帧表互相覆盖。
    * @param {string} slotId
    * @param {Array<{sx:number,sy:number,sw:number,sh:number}>} frames
    * @param {number} [fps]
@@ -163,8 +312,9 @@ export class SkeletonComponent extends Component {
   setSlotFrames(slotId, frames, fps = null) {
     const slot = this.skeletonAsset?.slots?.find(candidate => candidate.id === slotId);
     if (!slot?.attachment || slot.attachment.type !== 'sequence') return;
-    slot.attachment.frames = frames;
-    if (fps > 0) slot.attachment.fps = fps;
+    const patch = { frames };
+    if (fps > 0) patch.fps = fps;
+    this.setSlotOverride(slotId, patch);
     this.slotFrameState.delete(slotId);
     this._poseDirty = true;
   }

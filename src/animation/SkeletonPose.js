@@ -124,7 +124,69 @@ export function sampleClip(clip, timeMs, restPose) {
 }
 
 /**
+ * 单骨世界变换组合（继承模式在此生效）。
+ * @param {Object} bone - 骨骼定义（含 inherit）
+ * @param {Object} local - 局部变换 { x, y, rot, sx, sy }
+ * @param {Object|null} parent - 父骨世界变换
+ * @returns {{x:number, y:number, rot:number, sx:number, sy:number, rad:number}}
+ */
+function composeBoneWorld(bone, local, parent) {
+  if (!parent) {
+    const rad = local.rot * DEG2RAD;
+    return { x: local.x, y: local.y, rot: local.rot, sx: local.sx, sy: local.sy, rad };
+  }
+  const inherit = bone.inherit || 'normal';
+  let x;
+  let y;
+  let rot;
+  let sx;
+  let sy;
+  if (inherit === 'translationOnly') {
+    // 只继承父级位移：局部偏移保持世界轴向
+    x = parent.x + local.x;
+    y = parent.y + local.y;
+    rot = local.rot;
+    sx = local.sx;
+    sy = local.sy;
+  } else if (inherit === 'noRotation') {
+    // 继承父级位移+缩放，不继承父级旋转
+    x = parent.x + local.x * parent.sx;
+    y = parent.y + local.y * parent.sy;
+    rot = local.rot;
+    sx = parent.sx * local.sx;
+    sy = parent.sy * local.sy;
+  } else if (inherit === 'noScale') {
+    // 继承父级位移+旋转，不继承父级缩放
+    const parentRad = parent.rad;
+    const cos = Math.cos(parentRad);
+    const sin = Math.sin(parentRad);
+    x = parent.x + (local.x * cos - local.y * sin);
+    y = parent.y + (local.x * sin + local.y * cos);
+    rot = parent.rot + local.rot;
+    sx = local.sx;
+    sy = local.sy;
+  } else {
+    const parentRad = parent.rad;
+    const cos = Math.cos(parentRad);
+    const sin = Math.sin(parentRad);
+    x = parent.x + (local.x * cos - local.y * sin) * parent.sx;
+    y = parent.y + (local.x * sin + local.y * cos) * parent.sy;
+    rot = parent.rot + local.rot;
+    sx = parent.sx * local.sx;
+    sy = parent.sy * local.sy;
+  }
+  return { x, y, rot, sx, sy, rad: rot * DEG2RAD };
+}
+
+/**
  * 沿父链组合世界变换（skeleton.boneOrder 保证父先算）。
+ *
+ * 继承模式（bone.inherit，Spine Transform Mode 等价）决定本骨骼如何继承父级变换：
+ *   normal         继承父级位移+旋转+缩放（默认，历史行为）
+ *   noScale        继承父级位移+旋转，不继承父级缩放（父级缩放不改变本骨尺寸与子骨间距）
+ *   noRotation     继承父级位移+缩放，不继承父级旋转（局部偏移不随父级旋转）
+ *   translationOnly 只继承父级位移（局部偏移不随父级旋转/缩放）
+ *
  * @returns {Map(boneId -> { x, y, rot, sx, sy, rad })} rad 为世界旋转弧度（渲染直用）
  */
 export function composeWorldTransforms(skeleton, localPose) {
@@ -133,23 +195,29 @@ export function composeWorldTransforms(skeleton, localPose) {
     const bone = skeleton.bones.get(boneId);
     const local = localPose.get(boneId) || { x: bone.x, y: bone.y, rot: bone.rot, sx: bone.scaleX, sy: bone.scaleY };
     const parent = bone.parent ? world.get(bone.parent) : null;
-    if (!parent) {
-      const rad = local.rot * DEG2RAD;
-      world.set(boneId, { x: local.x, y: local.y, rot: local.rot, sx: local.sx, sy: local.sy, rad });
-      continue;
-    }
-    const parentRad = parent.rad;
-    const cos = Math.cos(parentRad);
-    const sin = Math.sin(parentRad);
-    const x = parent.x + (local.x * cos - local.y * sin) * parent.sx;
-    const y = parent.y + (local.x * sin + local.y * cos) * parent.sy;
-    const rot = parent.rot + local.rot;
-    world.set(boneId, {
-      x, y, rot,
-      sx: parent.sx * local.sx,
-      sy: parent.sy * local.sy,
-      rad: rot * DEG2RAD
-    });
+    world.set(boneId, composeBoneWorld(bone, local, parent));
+  }
+  return world;
+}
+
+/**
+ * 从指定骨骼起重算其自身与全部后代的世界变换（原地更新 world Map）。
+ * IK 迭代求解用：某骨局部朝向被改写后，其子孙的世界变换必须同步，
+ * 否则下一轮 CCD 会拿旧的关节位置迭代而收敛到错误姿势。
+ * @param {Object} skeleton - parseSkeletonAsset 产物
+ * @param {Map} localPose - 局部姿势（Map boneId -> {x,y,rot,sx,sy}）
+ * @param {Map} world - 世界变换（原地更新）
+ * @param {string} boneId - 起算骨骼
+ * @returns {Map} 同一个 world
+ */
+export function composeWorldTransformsFrom(skeleton, localPose, world, boneId) {
+  const bone = skeleton.bones.get(boneId);
+  if (!bone) return world;
+  const local = localPose.get(boneId) || { x: bone.x, y: bone.y, rot: bone.rot, sx: bone.scaleX, sy: bone.scaleY };
+  const parent = bone.parent ? world.get(bone.parent) : null;
+  world.set(boneId, composeBoneWorld(bone, local, parent));
+  for (const childId of bone.children || []) {
+    composeWorldTransformsFrom(skeleton, localPose, world, childId);
   }
   return world;
 }

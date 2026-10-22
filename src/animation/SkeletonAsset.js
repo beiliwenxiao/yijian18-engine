@@ -18,8 +18,11 @@
  *   schemaVersion: 1,
  *   skeletonId: "skeleton.demo",
  *   meta: { width, height },                 // 设计尺寸：根骨骼原点=脚底中心，y 轴向下
- *   bones: [{ id, parent, x, y, rot, scaleX, scaleY, length }],
- *   slots: [{ id, bone, z, attachment: {
+ *   bones: [{ id, parent, x, y, rot, scaleX, scaleY, length,
+ *             inherit: 'normal'|'noScale'|'noRotation'|'translationOnly' }],
+ *   slots: [{ id, bone, z,
+ *             follow: 'noScale'|'bone',                  // 挂图是否跟随骨骼缩放
+ *             attachment: {
  *     type: 'empty' | 'image' | 'slice' | 'sequence',
  *     assetId,                               // image/slice/sequence 的 manifest 稳定图片 ID
  *     sx, sy, sw, sh,                        // slice 源矩形；sequence 每帧源矩形
@@ -33,15 +36,41 @@
  * 严格合法性校验由 SkeletonAssetValidator 负责，本文件只做宽松归一化。
  */
 
+import {
+  SKELETON_DIRECTION_KEYS,
+  resolveDirectionKey
+} from './SkeletonDirection.js';
+
 export const SKELETON_ATTACHMENT_TYPES = Object.freeze(['empty', 'image', 'slice', 'sequence']);
 
-/** 方向偏移覆盖的合法键：编辑器用 down/side/up；运行时斜向键先精确匹配再回退正/背。 */
-export const SKELETON_DIRECTION_KEYS = Object.freeze(['down', 'side', 'up', 'SE', 'SW', 'NE', 'NW']);
-const DIRECTION_MERGE = Object.freeze({ SE: 'down', SW: 'down', NE: 'up', NW: 'up' });
+/** 方向偏移覆盖的合法键：编辑器用 down/side/up + 四个斜向（SE/SW/NE/NW）；运行时斜向先精确匹配再回退正/背。 */
+export { SKELETON_DIRECTION_KEYS, resolveDirectionKey };
 
 /**
- * 解析附件方向偏移：{ down|side|up|...: { x, y, rot, flipX? } }。
+ * 骨骼继承模式（Spine Transform Mode 等价）：决定本骨骼如何继承父级的变换。
+ *   normal         —— 继承父级位移+旋转+缩放（默认，与历史行为一致）
+ *   noScale        —— 继承父级位移+旋转，但不继承父级缩放（父级缩放不再向下传递尺寸）
+ *   noRotation     —— 继承父级位移+缩放，但不继承父级旋转
+ *   translationOnly—— 只继承父级位移（父级旋转与缩放都不传递）
+ * 详见 SkeletonPose.composeWorldTransforms。
+ */
+export const SKELETON_INHERIT_MODES = Object.freeze(['normal', 'noScale', 'noRotation', 'translationOnly']);
+
+/**
+ * 槽位跟随模式：决定挂图是否跟随所在骨骼的缩放。
+ *   noScale —— 挂图只跟随骨骼的位置与旋转，不跟随缩放（骨骼缩放只改变肢体骨架，图片不变形）
+ *   bone    —— 挂图完全跟随骨骼变换（含缩放，用于 squash & stretch 压扁拉伸）
+ * 默认 noScale：拖骨骼缩放不应让绑定图片变形（与 Unity 骨骼=变形、贴图尺寸独立一致）。
+ */
+export const SKELETON_SLOT_FOLLOW_MODES = Object.freeze(['noScale', 'bone']);
+
+/** 槽位跟随模式缺省值。 */
+export const SKELETON_SLOT_FOLLOW_DEFAULT = 'noScale';
+
+/**
+ * 解析附件方向偏移：{ down|side|up|SE|SW|NE|NW: { x, y, rot, flipX?, assetId?, width?, height? } }。
  * 逐字段生效（缺字段回退附件顶层值）；缺省对象 = 全方向共用顶层偏移（零迁移）。
+ * assetId/width/height = **方向形态换图**（正面/侧面/背面/斜前/斜后各用不同部件图）。
  */
 function normalizeDirectionOffsets(raw) {
   if (!raw || typeof raw !== 'object') return null;
@@ -51,36 +80,48 @@ function normalizeDirectionOffsets(raw) {
     if (!value || typeof value !== 'object') continue;
     const entry = { x: num(value.x), y: num(value.y), rot: num(value.rot) };
     if (value.flipX !== undefined) entry.flipX = value.flipX === true;
+    // 形态换图：按方向指定不同部件图与绘制尺寸（斜前/斜后形态）
+    const assetId = str(value.assetId);
+    if (assetId) entry.assetId = assetId;
+    if (num(value.width) > 0) entry.width = num(value.width);
+    if (num(value.height) > 0) entry.height = num(value.height);
     out[key] = entry;
   }
   return Object.keys(out).length > 0 ? out : null;
 }
 
 /**
- * 取附件在指定方向键下的偏移覆盖：先精确匹配（含斜向 SE/SW/NE/NW），
- * 无则按语义回退（斜下→down、斜上→up），仍无返回 null（全字段回退顶层值）。
+ * 规范化一条 transform 约束（挂件跟随挂件）。
+ * @param {Object} raw - 原始约束
+ * @returns {Object|null} 规范化结果；缺关键字段返回 null
+ */
+function normalizeTransformConstraint(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const slot = str(raw.slot);
+  const target = str(raw.target);
+  if (!slot || !target) return null;
+  return {
+    type: 'transform',
+    name: str(raw.name) || `${slot}->${target}`,
+    slot,
+    target,
+    mix: Math.max(0, Math.min(1, Number.isFinite(Number(raw.mix)) ? Number(raw.mix) : 1)),
+    offsetX: num(raw.offsetX),
+    offsetY: num(raw.offsetY),
+    offsetRot: num(raw.offsetRot),
+    followRotation: raw.followRotation !== false
+  };
+}
+
+/**
+ * 取附件在指定形态键下的覆盖：精确匹配该形态（down/side/up/SE/SW/NE/NW）。
+ * 未配置该形态 → 返回 null（调用方逐字段回退顶层正面基准），
+ * 因此「斜向未配形态图 = 沿用正面基准图」，与编辑器预览口径一致。
  */
 export function resolveAttachmentOffset(attachment, directionKey) {
   const offsets = attachment?.directionOffsets;
   if (!offsets || !directionKey) return null;
-  if (offsets[directionKey]) return offsets[directionKey];
-  const merged = DIRECTION_MERGE[directionKey];
-  return merged ? offsets[merged] || null : null;
-}
-
-/**
- * 实体朝向（8 方向字符串）→ 附件方向键：left/right→side、
- * 斜向→SE/SW/NE/NW（与 PlayerSkeletonStateMapper 的 directionKey 对齐）。
- */
-export function resolveDirectionKey(direction) {
-  const value = String(direction || 'down');
-  if (value === 'up') return 'up';
-  if (value === 'left' || value === 'right') return 'side';
-  if (value === 'down-right') return 'SE';
-  if (value === 'down-left') return 'SW';
-  if (value === 'up-right') return 'NE';
-  if (value === 'up-left') return 'NW';
-  return 'down';
+  return offsets[directionKey] || null;
 }
 
 const num = (value, fallback = 0) => (Number.isFinite(Number(value)) ? Number(value) : fallback);
@@ -119,6 +160,10 @@ function normalizeAttachment(raw) {
 
 /**
  * 解析骨骼资产 JSON 为运行时索引结构。
+ *
+ * **不修改入参**：解析产物（骨骼/槽位/附件/关键帧）全部是新对象，
+ * 因此调用方可以直接传原始文档（编辑器热路径每帧重解析，省掉深拷贝）。
+ *
  * @param {Object} doc - 已 JSON.parse 的骨骼资产文档
  * @returns {Object|null} 解析结果；骨架明显不合法（无骨骼）返回 null
  */
@@ -139,6 +184,8 @@ export function parseSkeletonAsset(doc) {
       scaleX: num(raw?.scaleX, 1) || 1,
       scaleY: num(raw?.scaleY, 1) || 1,
       length: num(raw?.length),
+      // 继承模式：如何继承父级变换（缺省 normal = 历史行为）
+      inherit: SKELETON_INHERIT_MODES.includes(raw?.inherit) ? raw.inherit : 'normal',
       children: []
     });
   }
@@ -171,6 +218,8 @@ export function parseSkeletonAsset(doc) {
         id,
         bone: bone || boneOrder[0],
         z: Number.isFinite(Number(raw?.z)) ? Number(raw.z) : index,
+        // 跟随模式：挂图是否跟随所在骨骼的缩放（缺省 noScale = 图片不随骨骼缩放变形）
+        follow: SKELETON_SLOT_FOLLOW_MODES.includes(raw?.follow) ? raw.follow : SKELETON_SLOT_FOLLOW_DEFAULT,
         attachment
       };
     })
@@ -209,6 +258,10 @@ export function parseSkeletonAsset(doc) {
     });
   }
 
+  const constraints = (Array.isArray(doc.constraints) ? doc.constraints : [])
+    .map(raw => normalizeTransformConstraint(raw))
+    .filter(Boolean);
+
   const meta = {
     width: num(doc?.meta?.width) || 0,
     height: num(doc?.meta?.height) || 0
@@ -222,6 +275,7 @@ export function parseSkeletonAsset(doc) {
     boneOrder,
     slots,
     clips,
+    constraints,
     clipNames: [...clips.keys()],
     defaultClip: str(doc?.defaultClip) || clips.keys().next().value || null
   };

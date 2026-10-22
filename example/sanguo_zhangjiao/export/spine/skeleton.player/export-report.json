@@ -1,0 +1,436 @@
+{
+  "warnings": [],
+  "lossy": [
+    {
+      "feature": "slot.follow=noScale",
+      "slot": "spearBack",
+      "reason": "Spine 附件天然跟随骨骼缩放，本引擎「挂图不随骨骼缩放变形」语义在 Spine 侧无法表达"
+    },
+    {
+      "feature": "slot.follow=noScale",
+      "slot": "axeBack",
+      "reason": "Spine 附件天然跟随骨骼缩放，本引擎「挂图不随骨骼缩放变形」语义在 Spine 侧无法表达"
+    },
+    {
+      "feature": "slot.follow=noScale",
+      "slot": "skirtBack",
+      "reason": "Spine 附件天然跟随骨骼缩放，本引擎「挂图不随骨骼缩放变形」语义在 Spine 侧无法表达"
+    },
+    {
+      "feature": "slot.follow=noScale",
+      "slot": "armUR",
+      "reason": "Spine 附件天然跟随骨骼缩放，本引擎「挂图不随骨骼缩放变形」语义在 Spine 侧无法表达"
+    },
+    {
+      "feature": "slot.follow=noScale",
+      "slot": "armFR",
+      "reason": "Spine 附件天然跟随骨骼缩放，本引擎「挂图不随骨骼缩放变形」语义在 Spine 侧无法表达"
+    },
+    {
+      "feature": "slot.follow=noScale",
+      "slot": "armUL",
+      "reason": "Spine 附件天然跟随骨骼缩放，本引擎「挂图不随骨骼缩放变形」语义在 Spine 侧无法表达"
+    },
+    {
+      "feature": "slot.follow=noScale",
+      "slot": "armFL",
+      "reason": "Spine 附件天然跟随骨骼缩放，本引擎「挂图不随骨骼缩放变形」语义在 Spine 侧无法表达"
+    },
+    {
+      "feature": "slot.follow=noScale",
+      "slot": "torsoSlot",
+      "reason": "Spine 附件天然跟随骨骼缩放，本引擎「挂图不随骨骼缩放变形」语义在 Spine 侧无法表达"
+    },
+    {
+      "feature": "slot.follow=noScale",
+      "slot": "skirtFront",
+      "reason": "Spine 附件天然跟随骨骼缩放，本引擎「挂图不随骨骼缩放变形」语义在 Spine 侧无法表达"
+    },
+    {
+      "feature": "slot.follow=noScale",
+      "slot": "headFront",
+      "reason": "Spine 附件天然跟随骨骼缩放，本引擎「挂图不随骨骼缩放变形」语义在 Spine 侧无法表达"
+    },
+    {
+      "feature": "slot.follow=noScale",
+      "slot": "headSide",
+      "reason": "Spine 附件天然跟随骨骼缩放，本引擎「挂图不随骨骼缩放变形」语义在 Spine 侧无法表达"
+    },
+    {
+      "feature": "slot.follow=noScale",
+      "slot": "headBack",
+      "reason": "Spine 附件天然跟随骨骼缩放，本引擎「挂图不随骨骼缩放变形」语义在 Spine 侧无法表达"
+    },
+    {
+      "feature": "slot.follow=noScale",
+      "slot": "hairFront",
+      "reason": "Spine 附件天然跟随骨骼缩放，本引擎「挂图不随骨骼缩放变形」语义在 Spine 侧无法表达"
+    },
+    {
+      "feature": "slot.follow=noScale",
+      "slot": "hairSide",
+      "reason": "Spine 附件天然跟随骨骼缩放，本引擎「挂图不随骨骼缩放变形」语义在 Spine 侧无法表达"
+    },
+    {
+      "feature": "slot.follow=noScale",
+      "slot": "hairBack",
+      "reason": "Spine 附件天然跟随骨骼缩放，本引擎「挂图不随骨骼缩放变形」语义在 Spine 侧无法表达"
+    },
+    {
+      "feature": "slot.follow=noScale",
+      "slot": "legThighR",
+      "reason": "Spine 附件天然跟随骨骼缩放，本引擎「挂图不随骨骼缩放变形」语义在 Spine 侧无法表达"
+    },
+    {
+      "feature": "slot.follow=noScale",
+      "slot": "legThighL",
+      "reason": "Spine 附件天然跟随骨骼缩放，本引擎「挂图不随骨骼缩放变形」语义在 Spine 侧无法表达"
+    },
+    {
+      "feature": "slot.follow=noScale",
+      "slot": "legCalfL",
+      "reason": "Spine 附件天然跟随骨骼缩放，本引擎「挂图不随骨骼缩放变形」语义在 Spine 侧无法表达"
+    },
+    {
+      "feature": "slot.follow=noScale",
+      "slot": "part-calf-r",
+      "reason": "Spine 附件天然跟随骨骼缩放，本引擎「挂图不随骨骼缩放变形」语义在 Spine 侧无法表达"
+    },
+    {
+      "feature": "slot.follow=noScale",
+      "slot": "weaponSpear",
+      "reason": "Spine 附件天然跟随骨骼缩放，本引擎「挂图不随骨骼缩放变形」语义在 Spine 侧无法表达"
+    },
+    {
+      "feature": "slot.follow=noScale",
+      "slot": "weaponSkinningKnife",
+      "reason": "Spine 附件天然跟随骨骼缩放，本引擎「挂图不随骨骼缩放变形」语义在 Spine 侧无法表达"
+    },
+    {
+      "feature": "slot.follow=noScale",
+      "slot": "weaponWolfFang",
+      "reason": "Spine 附件天然跟随骨骼缩放，本引擎「挂图不随骨骼缩放变形」语义在 Spine 侧无法表达"
+    },
+    {
+      "feature": "slot.follow=noScale",
+      "slot": "weaponBow",
+      "reason": "Spine 附件天然跟随骨骼缩放，本引擎「挂图不随骨骼缩放变形」语义在 Spine 侧无法表达"
+    },
+    {
+      "feature": "slot.follow=noScale",
+      "slot": "weaponStaff",
+      "reason": "Spine 附件天然跟随骨骼缩放，本引擎「挂图不随骨骼缩放变形」语义在 Spine 侧无法表达"
+    },
+    {
+      "feature": "slot.follow=noScale",
+      "slot": "weaponAxe",
+      "reason": "Spine 附件天然跟随骨骼缩放，本引擎「挂图不随骨骼缩放变形」语义在 Spine 侧无法表达"
+    },
+    {
+      "feature": "clip.loop 回绕插值",
+      "clips": [
+        "idle_down",
+        "idle_up",
+        "idle_side",
+        "walk_down",
+        "walk_up",
+        "walk_side",
+        "gather",
+        "logging",
+        "mining",
+        "fishing",
+        "climb_back",
+        "sleep",
+        "stretcher",
+        "soul",
+        "walk_SE",
+        "walk_SW",
+        "walk_NE",
+        "walk_NW"
+      ],
+      "reason": "本引擎循环剪辑尾段会向首帧插值回绕，Spine 循环播放直接跳回首帧，尾段表现略有差异"
+    }
+  ],
+  "atlasName": "atlas.png",
+  "boneCount": 12,
+  "slotCount": 26,
+  "animationCount": 21,
+  "skinCount": 8,
+  "regions": [
+    {
+      "name": "player.parts.weapon-spear",
+      "assetId": "player.parts.weapon-spear",
+      "sourcePath": "D:\\yijian18-engine\\example\\sanguo_zhangjiao\\assets\\images\\player\\parts\\weapon-spear.png",
+      "sx": 0,
+      "sy": 0,
+      "width": 64,
+      "height": 64,
+      "xyX": 0,
+      "xyY": 0
+    },
+    {
+      "name": "player.parts.weapon-axe",
+      "assetId": "player.parts.weapon-axe",
+      "sourcePath": "D:\\yijian18-engine\\example\\sanguo_zhangjiao\\assets\\images\\player\\parts\\weapon-axe.png",
+      "sx": 0,
+      "sy": 0,
+      "width": 64,
+      "height": 64,
+      "xyX": 66,
+      "xyY": 0
+    },
+    {
+      "name": "player.parts.skirt-back",
+      "assetId": "player.parts.skirt-back",
+      "sourcePath": "D:\\yijian18-engine\\example\\sanguo_zhangjiao\\assets\\images\\player\\parts\\skirt-back.png",
+      "sx": 0,
+      "sy": 0,
+      "width": 64,
+      "height": 64,
+      "xyX": 132,
+      "xyY": 0
+    },
+    {
+      "name": "player.parts.upper-arm-r",
+      "assetId": "player.parts.upper-arm-r",
+      "sourcePath": "D:\\yijian18-engine\\example\\sanguo_zhangjiao\\assets\\images\\player\\parts\\upper-arm-r.png",
+      "sx": 0,
+      "sy": 0,
+      "width": 64,
+      "height": 64,
+      "xyX": 198,
+      "xyY": 0
+    },
+    {
+      "name": "player.parts.fore-arm-r",
+      "assetId": "player.parts.fore-arm-r",
+      "sourcePath": "D:\\yijian18-engine\\example\\sanguo_zhangjiao\\assets\\images\\player\\parts\\fore-arm-r.png",
+      "sx": 0,
+      "sy": 0,
+      "width": 64,
+      "height": 64,
+      "xyX": 264,
+      "xyY": 0
+    },
+    {
+      "name": "player.parts.upper-arm-l",
+      "assetId": "player.parts.upper-arm-l",
+      "sourcePath": "D:\\yijian18-engine\\example\\sanguo_zhangjiao\\assets\\images\\player\\parts\\upper-arm-l.png",
+      "sx": 0,
+      "sy": 0,
+      "width": 64,
+      "height": 64,
+      "xyX": 330,
+      "xyY": 0
+    },
+    {
+      "name": "player.parts.fore-arm-l",
+      "assetId": "player.parts.fore-arm-l",
+      "sourcePath": "D:\\yijian18-engine\\example\\sanguo_zhangjiao\\assets\\images\\player\\parts\\fore-arm-l.png",
+      "sx": 0,
+      "sy": 0,
+      "width": 64,
+      "height": 64,
+      "xyX": 396,
+      "xyY": 0
+    },
+    {
+      "name": "player.parts.torso",
+      "assetId": "player.parts.torso",
+      "sourcePath": "D:\\yijian18-engine\\example\\sanguo_zhangjiao\\assets\\images\\player\\parts\\torso.png",
+      "sx": 0,
+      "sy": 0,
+      "width": 64,
+      "height": 64,
+      "xyX": 462,
+      "xyY": 0
+    },
+    {
+      "name": "player.parts.skirt-front",
+      "assetId": "player.parts.skirt-front",
+      "sourcePath": "D:\\yijian18-engine\\example\\sanguo_zhangjiao\\assets\\images\\player\\parts\\skirt-front.png",
+      "sx": 0,
+      "sy": 0,
+      "width": 64,
+      "height": 64,
+      "xyX": 528,
+      "xyY": 0
+    },
+    {
+      "name": "player.parts.head-front",
+      "assetId": "player.parts.head-front",
+      "sourcePath": "D:\\yijian18-engine\\example\\sanguo_zhangjiao\\assets\\images\\player\\parts\\head-front.png",
+      "sx": 0,
+      "sy": 0,
+      "width": 64,
+      "height": 64,
+      "xyX": 594,
+      "xyY": 0
+    },
+    {
+      "name": "player.parts.head-side",
+      "assetId": "player.parts.head-side",
+      "sourcePath": "D:\\yijian18-engine\\example\\sanguo_zhangjiao\\assets\\images\\player\\parts\\head-side.png",
+      "sx": 0,
+      "sy": 0,
+      "width": 64,
+      "height": 64,
+      "xyX": 660,
+      "xyY": 0
+    },
+    {
+      "name": "player.parts.head-back",
+      "assetId": "player.parts.head-back",
+      "sourcePath": "D:\\yijian18-engine\\example\\sanguo_zhangjiao\\assets\\images\\player\\parts\\head-back.png",
+      "sx": 0,
+      "sy": 0,
+      "width": 64,
+      "height": 64,
+      "xyX": 726,
+      "xyY": 0
+    },
+    {
+      "name": "player.parts.hair-heroine-front",
+      "assetId": "player.parts.hair-heroine-front",
+      "sourcePath": "D:\\yijian18-engine\\example\\sanguo_zhangjiao\\assets\\images\\player\\parts\\hair-heroine-front.png",
+      "sx": 0,
+      "sy": 0,
+      "width": 51,
+      "height": 64,
+      "xyX": 792,
+      "xyY": 0
+    },
+    {
+      "name": "player.parts.hair-heroine-side",
+      "assetId": "player.parts.hair-heroine-side",
+      "sourcePath": "D:\\yijian18-engine\\example\\sanguo_zhangjiao\\assets\\images\\player\\parts\\hair-heroine-side.png",
+      "sx": 0,
+      "sy": 0,
+      "width": 66,
+      "height": 64,
+      "xyX": 845,
+      "xyY": 0
+    },
+    {
+      "name": "player.parts.hair-heroine-back",
+      "assetId": "player.parts.hair-heroine-back",
+      "sourcePath": "D:\\yijian18-engine\\example\\sanguo_zhangjiao\\assets\\images\\player\\parts\\hair-heroine-back.png",
+      "sx": 0,
+      "sy": 0,
+      "width": 49,
+      "height": 64,
+      "xyX": 913,
+      "xyY": 0
+    },
+    {
+      "name": "player.parts.thigh-r",
+      "assetId": "player.parts.thigh-r",
+      "sourcePath": "D:\\yijian18-engine\\example\\sanguo_zhangjiao\\assets\\images\\player\\parts\\thigh-r.png",
+      "sx": 0,
+      "sy": 0,
+      "width": 64,
+      "height": 64,
+      "xyX": 964,
+      "xyY": 0
+    },
+    {
+      "name": "player.parts.thigh-l",
+      "assetId": "player.parts.thigh-l",
+      "sourcePath": "D:\\yijian18-engine\\example\\sanguo_zhangjiao\\assets\\images\\player\\parts\\thigh-l.png",
+      "sx": 0,
+      "sy": 0,
+      "width": 64,
+      "height": 64,
+      "xyX": 1030,
+      "xyY": 0
+    },
+    {
+      "name": "player.parts.calf-l",
+      "assetId": "player.parts.calf-l",
+      "sourcePath": "D:\\yijian18-engine\\example\\sanguo_zhangjiao\\assets\\images\\player\\parts\\calf-l.png",
+      "sx": 0,
+      "sy": 0,
+      "width": 64,
+      "height": 64,
+      "xyX": 1096,
+      "xyY": 0
+    },
+    {
+      "name": "player.parts.calf-r",
+      "assetId": "player.parts.calf-r",
+      "sourcePath": "D:\\yijian18-engine\\example\\sanguo_zhangjiao\\assets\\images\\player\\parts\\calf-r.png",
+      "sx": 0,
+      "sy": 0,
+      "width": 64,
+      "height": 64,
+      "xyX": 1162,
+      "xyY": 0
+    },
+    {
+      "name": "player.parts.weapon-skinningKnife",
+      "assetId": "player.parts.weapon-skinningKnife",
+      "sourcePath": "D:\\yijian18-engine\\example\\sanguo_zhangjiao\\assets\\images\\player\\parts\\weapon-skinningKnife.png",
+      "sx": 0,
+      "sy": 0,
+      "width": 64,
+      "height": 64,
+      "xyX": 1228,
+      "xyY": 0
+    },
+    {
+      "name": "player.parts.weapon-wolfFang",
+      "assetId": "player.parts.weapon-wolfFang",
+      "sourcePath": "D:\\yijian18-engine\\example\\sanguo_zhangjiao\\assets\\images\\player\\parts\\weapon-wolfFang.png",
+      "sx": 0,
+      "sy": 0,
+      "width": 64,
+      "height": 64,
+      "xyX": 1294,
+      "xyY": 0
+    },
+    {
+      "name": "player.parts.weapon-bow",
+      "assetId": "player.parts.weapon-bow",
+      "sourcePath": "D:\\yijian18-engine\\example\\sanguo_zhangjiao\\assets\\images\\player\\parts\\weapon-bow.png",
+      "sx": 0,
+      "sy": 0,
+      "width": 64,
+      "height": 64,
+      "xyX": 1360,
+      "xyY": 0
+    },
+    {
+      "name": "player.parts.weapon-staff",
+      "assetId": "player.parts.weapon-staff",
+      "sourcePath": "D:\\yijian18-engine\\example\\sanguo_zhangjiao\\assets\\images\\player\\parts\\weapon-staff.png",
+      "sx": 0,
+      "sy": 0,
+      "width": 64,
+      "height": 64,
+      "xyX": 1426,
+      "xyY": 0
+    },
+    {
+      "name": "player.parts.torso-side",
+      "assetId": "player.parts.torso-side",
+      "sourcePath": "D:\\yijian18-engine\\example\\sanguo_zhangjiao\\assets\\images\\player\\parts\\torso-side.png",
+      "sx": 0,
+      "sy": 0,
+      "width": 64,
+      "height": 64,
+      "xyX": 1492,
+      "xyY": 0
+    },
+    {
+      "name": "player.parts.torso-back",
+      "assetId": "player.parts.torso-back",
+      "sourcePath": "D:\\yijian18-engine\\example\\sanguo_zhangjiao\\assets\\images\\player\\parts\\torso-back.png",
+      "sx": 0,
+      "sy": 0,
+      "width": 64,
+      "height": 64,
+      "xyX": 1558,
+      "xyY": 0
+    }
+  ]
+}

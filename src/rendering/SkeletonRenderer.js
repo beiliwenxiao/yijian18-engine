@@ -18,10 +18,12 @@
  *   - 设计尺寸 meta.height 映射到实体 height（等比缩放）
  *   - 槽位按 z 升序绘制；附件类型：image（整图）/ slice（图集源矩形）/
  *     sequence（序列帧当前帧，帧游标由 SkeletonComponent 推进）
+ *   - slot.follow='noScale'（默认）时挂图不跟随骨骼缩放；'bone' 时完全跟随
  *   - flipX 通过整体 x 镜像实现；透明度遵循调用方 ctx.globalAlpha
  */
 
 import { SKELETON_ATTACHMENT_TYPES, resolveAttachmentOffset, resolveDirectionKey } from '../animation/SkeletonAsset.js';
+import { applyTransformConstraints } from '../animation/SkeletonConstraint.js';
 
 const DEG2RAD = Math.PI / 180;
 
@@ -61,21 +63,29 @@ export class SkeletonRenderer {
     ctx.scale(sprite?.flipX ? -scale : scale, scale);
 
     let drewAny = false;
+    // 第一遍：计算所有槽位的锚点（世界坐标 + 朝向）与绘制素材
+    // 两遍是为了支持 transform 约束（挂件跟随挂件）：跟随者要先拿到目标的锚点。
+    const anchors = [];
     for (const slot of asset.slots) {
-      const attachment = slot.attachment;
+      // 附件 = 共享资产 attachment + 实体本地覆盖（头部三态可见性、武器上手/背挂、
+      // 背挂换边、方向帧表）。共享资产全局唯一且只读——运行时状态一律走覆盖层，
+      // 否则同骨架的多个实体会互相改写对方的可见性/翻转。
+      const attachment = skeletonComponent.resolveSlotAttachment?.(slot) || slot.attachment;
       // visible === false：运行时按状态切换显示的部件（如头部三态），渲染跳过
       if (!attachment || attachment.type === 'empty' || attachment.visible === false) continue;
       const boneWorld = worldPose.get(slot.bone);
       if (!boneWorld) continue;
 
-      // 方向性附件偏移（背挂武器等按朝向摆位）：side/up 覆盖缺省时逐字段回退顶层值。
-      // offset.assetId/width/height：按方向整体换部件图（身体三态：正面/侧面/背面），
+      // 方向性附件偏移（背挂武器等按朝向摆位）：side/up/斜向覆盖缺省时逐字段回退顶层值。
+      // offset.assetId/width/height：按方向整体换部件图（形态：正面/侧面/背面/斜前/斜后），
       // 换图时绘制盒以 offset 声明为准，未声明沿用顶层附件盒。
       const directionOverride = resolveAttachmentOffset(attachment, resolveDirectionKey(sprite?.direction));
-      const effectiveAttachment = directionOverride?.assetId
+      const hasFormOverride = !!directionOverride
+        && (!!directionOverride.assetId || directionOverride.width > 0 || directionOverride.height > 0);
+      const effectiveAttachment = hasFormOverride
         ? {
           ...attachment,
-          assetId: directionOverride.assetId,
+          ...(directionOverride.assetId ? { assetId: directionOverride.assetId } : {}),
           ...(directionOverride.width > 0 ? { width: directionOverride.width } : {}),
           ...(directionOverride.height > 0 ? { height: directionOverride.height } : {})
         }
@@ -84,26 +94,67 @@ export class SkeletonRenderer {
       const source = this._resolveAttachmentSource(effectiveAttachment, assetManager, skeletonComponent, slot);
       if (!source) continue;
 
-      ctx.save();
-      ctx.translate(boneWorld.x, boneWorld.y);
-      ctx.rotate(boneWorld.rad);
-      ctx.scale(boneWorld.sx, boneWorld.sy);
-      ctx.translate(directionOverride?.x ?? attachment.x, directionOverride?.y ?? attachment.y);
-      ctx.rotate(((directionOverride?.rot ?? attachment.rot) || 0) * DEG2RAD);
-      if ((directionOverride?.flipX ?? attachment.flipX) === true) ctx.scale(-1, 1);   // 附件水平镜像（背面长矛等视角切换）
+      const anchor = this._attachmentAnchor(boneWorld, effectiveAttachment, directionOverride, slot.follow);
+      anchors.push({
+        slot,
+        attachment: effectiveAttachment,
+        directionOverride,
+        source,
+        boneWorld,
+        x: anchor.x,
+        y: anchor.y,
+        angle: anchor.angle
+      });
+    }
 
-      const drawW = effectiveAttachment.width > 0 ? effectiveAttachment.width : source.sw;
-      const drawH = effectiveAttachment.height > 0 ? effectiveAttachment.height : source.sh;
-      if (source.image && source.sw > 0 && source.sh > 0 && drawW > 0 && drawH > 0) {
-        // 附件盒以骨骼点为中心（脚底类附件可用 attachment.y 下移）
-        ctx.drawImage(source.image, source.sx, source.sy, source.sw, source.sh,
-          -drawW / 2, -drawH / 2, drawW, drawH);
-        drewAny = true;
-      }
+    // transform 约束：挂件跟随挂件（位置 + 可选朝向）
+    applyTransformConstraints(anchors, asset.constraints);
+
+    // 第二遍：绘制
+    for (const entry of anchors) {
+      const { attachment, source, boneWorld } = entry;
+      const drawW = attachment.width > 0 ? attachment.width : source.sw;
+      const drawH = attachment.height > 0 ? attachment.height : source.sh;
+      if (!(source.image && source.sw > 0 && source.sh > 0 && drawW > 0 && drawH > 0)) continue;
+      ctx.save();
+      // 锚点已含挂点偏移与朝向偏移（见 _attachmentAnchor），此处不再重复施加
+      ctx.translate(entry.x, entry.y);
+      ctx.rotate(entry.angle);
+      // 跟随模式 noScale（默认）：挂图只跟随骨骼的位置与旋转，不跟随缩放——
+      // 拖骨骼缩放只改变肢体骨架尺寸，绑定图片保持原大小不变形（Unity 骨骼=变形、贴图独立）。
+      // follow='bone' 时挂图完全跟随骨骼变换（用于 squash & stretch 压扁拉伸）。
+      if (entry.slot.follow === 'bone') ctx.scale(boneWorld.sx, boneWorld.sy);
+      if ((entry.directionOverride?.flipX ?? attachment.flipX) === true) ctx.scale(-1, 1);   // 附件水平镜像（背面长矛等视角切换）
+
+      // 附件盒以锚点为中心（脚底类附件可用 attachment.y 下移）
+      ctx.drawImage(source.image, source.sx, source.sy, source.sw, source.sh,
+        -drawW / 2, -drawH / 2, drawW, drawH);
+      drewAny = true;
       ctx.restore();
     }
     ctx.restore();
     return drewAny || asset.slots.length > 0;
+  }
+
+  /**
+   * 附件锚点（世界坐标 + 朝向）。
+   * @param {Object} boneWorld - 骨骼世界变换
+   * @param {Object} attachment - 有效附件
+   * @param {Object|null} directionOverride - 方向形态覆盖
+   * @param {string} [follow] - 挂件跟随模式（noScale 时挂点偏移不被骨骼缩放放大）
+   * @returns {{x:number, y:number, angle:number}}
+   */
+  _attachmentAnchor(boneWorld, attachment, directionOverride, follow) {
+    const cos = Math.cos(boneWorld.rad);
+    const sin = Math.sin(boneWorld.rad);
+    const scale = follow === 'bone' ? { sx: boneWorld.sx || 1, sy: boneWorld.sy || 1 } : { sx: 1, sy: 1 };
+    const lx = (directionOverride?.x ?? attachment.x ?? 0) * scale.sx;
+    const ly = (directionOverride?.y ?? attachment.y ?? 0) * scale.sy;
+    return {
+      x: boneWorld.x + lx * cos - ly * sin,
+      y: boneWorld.y + lx * sin + ly * cos,
+      angle: boneWorld.rad + ((directionOverride?.rot ?? attachment.rot) || 0) * DEG2RAD
+    };
   }
 
   /** 解析附件的绘制源：统一返回 { image, sx, sy, sw, sh } 或 null。 */

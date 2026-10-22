@@ -24,6 +24,8 @@ import { ValidationCode, makeError } from './ValidationError.js';
 const STABLE_ID_PATTERN = /^[A-Za-z][A-Za-z0-9._-]*$/;
 const ATTACHMENT_TYPES = ['empty', 'image', 'slice', 'sequence'];
 const EASE_TYPES = ['linear', 'easeInOut'];
+const INHERIT_MODES = ['normal', 'noScale', 'noRotation', 'translationOnly'];
+const SLOT_FOLLOW_MODES = ['noScale', 'bone'];
 
 const isObject = value => value !== null && typeof value === 'object' && !Array.isArray(value);
 const isFiniteNumber = value => Number.isFinite(Number(value));
@@ -69,6 +71,10 @@ export function validateSkeletonAsset(doc) {
       errors.push(makeError(ValidationCode.DUPLICATE_ID, `${path}.id`, `重复的骨骼 ID: ${id}`));
     }
     boneIds.add(id);
+    if (bone.inherit !== undefined && !INHERIT_MODES.includes(bone.inherit)) {
+      errors.push(makeError(ValidationCode.TYPE_MISMATCH, `${path}.inherit`,
+        `骨骼继承模式必须是 ${INHERIT_MODES.join('/')} 之一`));
+    }
     if (bone.parent != null && !boneIds.has(String(bone.parent).trim()) ) {
       // 父骨骼可能声明在后：延后统一检查，这里只记录声明
     }
@@ -123,6 +129,10 @@ export function validateSkeletonAsset(doc) {
     if (!boneIds.has(boneId)) {
       errors.push(makeError(ValidationCode.INVALID_REFERENCE, `${path}.bone`, `槽位引用的骨骼不存在: ${boneId}`));
     }
+    if (slot.follow !== undefined && !SLOT_FOLLOW_MODES.includes(slot.follow)) {
+      errors.push(makeError(ValidationCode.TYPE_MISMATCH, `${path}.follow`,
+        `槽位跟随模式必须是 ${SLOT_FOLLOW_MODES.join('/')} 之一`));
+    }
     const attachment = slot.attachment;
     if (!isObject(attachment)) {
       errors.push(makeError(ValidationCode.MISSING_FIELD, `${path}.attachment`, '槽位必须提供 attachment'));
@@ -150,6 +160,28 @@ export function validateSkeletonAsset(doc) {
       if (!isPositive(attachment.fps)) {
         errors.push(makeError(ValidationCode.MISSING_FIELD, `${path}.attachment.fps`, 'sequence 附件必须提供正数 fps'));
       }
+    }
+  }
+
+  // ---- constraints：transform 约束引用的槽位必须存在 ----
+  const constraints = Array.isArray(doc.constraints) ? doc.constraints : [];
+  for (const [index, constraint] of constraints.entries()) {
+    const path = `constraints[${index}]`;
+    if (!isObject(constraint)) {
+      errors.push(makeError(ValidationCode.TYPE_MISMATCH, path, '约束必须是对象'));
+      continue;
+    }
+    if (constraint.type !== 'transform') {
+      errors.push(makeError(ValidationCode.TYPE_MISMATCH, `${path}.type`, '约束类型必须是 transform'));
+      continue;
+    }
+    const followerId = String(constraint.slot || '').trim();
+    const targetId = String(constraint.target || '').trim();
+    if (!slotIds.has(followerId)) {
+      errors.push(makeError(ValidationCode.INVALID_REFERENCE, `${path}.slot`, `约束引用的槽位不存在: ${followerId}`));
+    }
+    if (!slotIds.has(targetId)) {
+      errors.push(makeError(ValidationCode.INVALID_REFERENCE, `${path}.target`, `约束引用的目标槽位不存在: ${targetId}`));
     }
   }
 

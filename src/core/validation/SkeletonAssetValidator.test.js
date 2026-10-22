@@ -139,4 +139,59 @@ describe('validateSkeletonAsset', () => {
     });
     expect(result.ok).toBe(false);
   });
+
+  it('接受：合法的 transform 约束（挂件跟随挂件）', () => {
+    const result = validateSkeletonAsset({
+      ...VALID_DOC,
+      constraints: [{ type: 'transform', slot: 'body', target: 'body', mix: 1 }]
+    });
+    expect(result.ok).toBe(true);
+  });
+
+  it('拒绝：约束引用不存在的槽位 / 非法类型', () => {
+    const result = validateSkeletonAsset({
+      ...VALID_DOC,
+      constraints: [
+        { type: 'transform', slot: 'ghost', target: 'body' },
+        { type: 'transform', slot: 'body', target: 'ghost' },
+        { type: 'weird', slot: 'body', target: 'body' }
+      ]
+    });
+    expect(result.ok).toBe(false);
+    const messages = result.errors.map(error => error.message ?? '');
+    expect(messages.some(message => /约束引用的槽位不存在/.test(message))).toBe(true);
+    expect(messages.some(message => /约束引用的目标槽位不存在/.test(message))).toBe(true);
+    expect(messages.some(message => /约束类型必须是 transform/.test(message))).toBe(true);
+  });
+
+  it('接受：合法的骨骼继承模式与挂件跟随模式', () => {
+    const result = validateSkeletonAsset({
+      ...VALID_DOC,
+      bones: [
+        { id: 'root', parent: null },
+        { id: 'child', parent: 'root', inherit: 'noScale' }
+      ],
+      slots: [
+        { id: 'body', bone: 'child', follow: 'bone', attachment: { type: 'image', assetId: 'img.x', width: 64, height: 88 } }
+      ]
+    });
+    expect(result.ok).toBe(true);
+  });
+
+  it('拒绝：未知的骨骼继承模式 / 挂件跟随模式', () => {
+    const result = validateSkeletonAsset({
+      ...VALID_DOC,
+      bones: [
+        { id: 'root', parent: null },
+        { id: 'child', parent: 'root', inherit: 'weird' }
+      ],
+      slots: [
+        { id: 'body', bone: 'child', follow: 'weird', attachment: { type: 'image', assetId: 'img.x', width: 64, height: 88 } }
+      ]
+    });
+    expect(result.ok).toBe(false);
+    const messages = result.errors.map(error => error.message ?? '');
+    expect(messages.some(message => /继承模式必须是/.test(message))).toBe(true);
+    expect(messages.some(message => /跟随模式必须是/.test(message))).toBe(true);
+  });
 });

@@ -1,0 +1,180 @@
+atlas.png
+size: 1622, 64
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+player.parts.weapon-spear
+  rotate: false
+  xy: 0, 0
+  size: 64, 64
+  orig: 64, 64
+  offset: 0, 0
+  index: -1
+player.parts.weapon-axe
+  rotate: false
+  xy: 66, 0
+  size: 64, 64
+  orig: 64, 64
+  offset: 0, 0
+  index: -1
+player.parts.skirt-back
+  rotate: false
+  xy: 132, 0
+  size: 64, 64
+  orig: 64, 64
+  offset: 0, 0
+  index: -1
+player.parts.upper-arm-r
+  rotate: false
+  xy: 198, 0
+  size: 64, 64
+  orig: 64, 64
+  offset: 0, 0
+  index: -1
+player.parts.fore-arm-r
+  rotate: false
+  xy: 264, 0
+  size: 64, 64
+  orig: 64, 64
+  offset: 0, 0
+  index: -1
+player.parts.upper-arm-l
+  rotate: false
+  xy: 330, 0
+  size: 64, 64
+  orig: 64, 64
+  offset: 0, 0
+  index: -1
+player.parts.fore-arm-l
+  rotate: false
+  xy: 396, 0
+  size: 64, 64
+  orig: 64, 64
+  offset: 0, 0
+  index: -1
+player.parts.torso
+  rotate: false
+  xy: 462, 0
+  size: 64, 64
+  orig: 64, 64
+  offset: 0, 0
+  index: -1
+player.parts.skirt-front
+  rotate: false
+  xy: 528, 0
+  size: 64, 64
+  orig: 64, 64
+  offset: 0, 0
+  index: -1
+player.parts.head-front
+  rotate: false
+  xy: 594, 0
+  size: 64, 64
+  orig: 64, 64
+  offset: 0, 0
+  index: -1
+player.parts.head-side
+  rotate: false
+  xy: 660, 0
+  size: 64, 64
+  orig: 64, 64
+  offset: 0, 0
+  index: -1
+player.parts.head-back
+  rotate: false
+  xy: 726, 0
+  size: 64, 64
+  orig: 64, 64
+  offset: 0, 0
+  index: -1
+player.parts.hair-heroine-front
+  rotate: false
+  xy: 792, 0
+  size: 51, 64
+  orig: 51, 64
+  offset: 0, 0
+  index: -1
+player.parts.hair-heroine-side
+  rotate: false
+  xy: 845, 0
+  size: 66, 64
+  orig: 66, 64
+  offset: 0, 0
+  index: -1
+player.parts.hair-heroine-back
+  rotate: false
+  xy: 913, 0
+  size: 49, 64
+  orig: 49, 64
+  offset: 0, 0
+  index: -1
+player.parts.thigh-r
+  rotate: false
+  xy: 964, 0
+  size: 64, 64
+  orig: 64, 64
+  offset: 0, 0
+  index: -1
+player.parts.thigh-l
+  rotate: false
+  xy: 1030, 0
+  size: 64, 64
+  orig: 64, 64
+  offset: 0, 0
+  index: -1
+player.parts.calf-l
+  rotate: false
+  xy: 1096, 0
+  size: 64, 64
+  orig: 64, 64
+  offset: 0, 0
+  index: -1
+player.parts.calf-r
+  rotate: false
+  xy: 1162, 0
+  size: 64, 64
+  orig: 64, 64
+  offset: 0, 0
+  index: -1
+player.parts.weapon-skinningKnife
+  rotate: false
+  xy: 1228, 0
+  size: 64, 64
+  orig: 64, 64
+  offset: 0, 0
+  index: -1
+player.parts.weapon-wolfFang
+  rotate: false
+  xy: 1294, 0
+  size: 64, 64
+  orig: 64, 64
+  offset: 0, 0
+  index: -1
+player.parts.weapon-bow
+  rotate: false
+  xy: 1360, 0
+  size: 64, 64
+  orig: 64, 64
+  offset: 0, 0
+  index: -1
+player.parts.weapon-staff
+  rotate: false
+  xy: 1426, 0
+  size: 64, 64
+  orig: 64, 64
+  offset: 0, 0
+  index: -1
+player.parts.torso-side
+  rotate: false
+  xy: 1492, 0
+  size: 64, 64
+  orig: 64, 64
+  offset: 0, 0
+  index: -1
+player.parts.torso-back
+  rotate: false
+  xy: 1558, 0
+  size: 64, 64
+  orig: 64, 64
+  offset: 0, 0
+  index: -1

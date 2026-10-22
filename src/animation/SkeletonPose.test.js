@@ -69,6 +69,89 @@ describe('parseSkeletonAsset', () => {
     expect(skeleton.slots.map(slot => slot.id)).toEqual(['near', 'far']);
   });
 
+  it('缺省继承模式=normal、缺省挂件跟随=noScale（拖骨骼缩放不拉伸图片）', () => {
+    const skeleton = parseSkeletonAsset({
+      schemaVersion: 1,
+      skeletonId: 'skeleton.defaults',
+      bones: [{ id: 'a', parent: null }],
+      slots: [{ id: 's', bone: 'a', attachment: { type: 'empty' } }],
+      clips: []
+    });
+    expect(skeleton.bones.get('a').inherit).toBe('normal');
+    expect(skeleton.slots[0].follow).toBe('noScale');
+  });
+
+  it('显式声明的继承模式与跟随模式被解析保留', () => {
+    const skeleton = parseSkeletonAsset({
+      schemaVersion: 1,
+      skeletonId: 'skeleton.explicit',
+      bones: [{ id: 'a', parent: null, inherit: 'translationOnly' }],
+      slots: [{ id: 's', bone: 'a', follow: 'bone', attachment: { type: 'empty' } }],
+      clips: []
+    });
+    expect(skeleton.bones.get('a').inherit).toBe('translationOnly');
+    expect(skeleton.slots[0].follow).toBe('bone');
+  });
+
+  it('方向形态换图字段被保留（assetId/width/height）', () => {
+    const skeleton = parseSkeletonAsset({
+      schemaVersion: 1,
+      skeletonId: 'skeleton.forms',
+      bones: [{ id: 'a', parent: null }],
+      slots: [{
+        id: 's',
+        bone: 'a',
+        attachment: {
+          type: 'image',
+          assetId: 'img.base',
+          x: 0,
+          y: 0,
+          rot: 0,
+          width: 32,
+          height: 32,
+          directionOffsets: {
+            SE: { x: 1, y: 2, rot: 3, assetId: 'img.se', width: 40, height: 44 },
+            NW: { x: 0, y: 0, rot: 0, assetId: 'img.nw' }
+          }
+        }
+      }],
+      clips: []
+    });
+    const offsets = skeleton.slots[0].attachment.directionOffsets;
+    expect(offsets.SE.assetId).toBe('img.se');
+    expect(offsets.SE.width).toBe(40);
+    expect(offsets.SE.height).toBe(44);
+    expect(offsets.NW.assetId).toBe('img.nw');
+    // 未声明尺寸/图的方向：只保留偏移字段
+    expect(offsets.NW.width).toBeUndefined();
+  });
+
+  it('方向形态覆盖缺省字段时回退顶层值', () => {
+    const skeleton = parseSkeletonAsset({
+      schemaVersion: 1,
+      skeletonId: 'skeleton.forms2',
+      bones: [{ id: 'a', parent: null }],
+      slots: [{
+        id: 's',
+        bone: 'a',
+        attachment: {
+          type: 'image',
+          assetId: 'img.base',
+          x: 5,
+          y: 6,
+          rot: 7,
+          width: 32,
+          height: 32,
+          directionOffsets: { side: { x: 1, y: 2, rot: 3 } }
+        }
+      }],
+      clips: []
+    });
+    const side = skeleton.slots[0].attachment.directionOffsets.side;
+    expect(side.x).toBe(1);
+    expect(side.assetId).toBeUndefined();
+  });
+
   it('无骨骼文档返回 null', () => {
     expect(parseSkeletonAsset({ bones: [] })).toBeNull();
     expect(parseSkeletonAsset(null)).toBeNull();
@@ -178,6 +261,78 @@ describe('composeWorldTransforms', () => {
     expect(child.x).toBeCloseTo(0);
     expect(child.y).toBeCloseTo(-50);
     expect(child.rad).toBeCloseTo(Math.PI / 2);
+  });
+});
+
+describe('骨骼继承模式（bone.inherit）', () => {
+  /** 父骨 scale=2 rot=0，子骨局部 (10,0)，用于对比四种继承模式。 */
+  function buildInheritSkeleton(inherit) {
+    return parseSkeletonAsset({
+      schemaVersion: 1,
+      skeletonId: 'skeleton.inherit',
+      bones: [
+        { id: 'root', parent: null, x: 0, y: 0, scaleX: 2, scaleY: 2 },
+        { id: 'child', parent: 'root', x: 10, y: 0, inherit }
+      ],
+      slots: [],
+      clips: []
+    });
+  }
+
+  it('缺省 normal：继承父级位移+旋转+缩放（历史行为不变）', () => {
+    const skeleton = buildInheritSkeleton(undefined);
+    expect(skeleton.bones.get('child').inherit).toBe('normal');
+    const local = createRestLocalPose(skeleton);
+    const world = composeWorldTransforms(skeleton, local);
+    const child = world.get('child');
+    expect(child.x).toBeCloseTo(20);   // 10 × 父缩放 2
+    expect(child.sx).toBeCloseTo(2);
+  });
+
+  it('noScale：继承父级位移+旋转，不继承父级缩放', () => {
+    const skeleton = buildInheritSkeleton('noScale');
+    const local = createRestLocalPose(skeleton);
+    const world = composeWorldTransforms(skeleton, local);
+    const child = world.get('child');
+    expect(child.x).toBeCloseTo(10);   // 局部偏移不被父缩放放大
+    expect(child.sx).toBeCloseTo(1);   // 世界缩放只保留自身
+  });
+
+  it('noRotation：继承父级位移+缩放，不继承父级旋转', () => {
+    const skeleton = buildInheritSkeleton('noRotation');
+    const local = createRestLocalPose(skeleton);
+    local.get('root').rot = 90;
+    local.get('root').sx = 2;
+    local.get('root').sy = 2;
+    const world = composeWorldTransforms(skeleton, local);
+    const child = world.get('child');
+    // 局部 (10,0) 不随父旋转转到 +y，但父缩放仍生效
+    expect(child.x).toBeCloseTo(20);
+    expect(child.y).toBeCloseTo(0);
+    expect(child.rot).toBeCloseTo(0);
+    expect(child.sx).toBeCloseTo(2);
+  });
+
+  it('translationOnly：只继承父级位移，旋转与缩放都不传递', () => {
+    const skeleton = buildInheritSkeleton('translationOnly');
+    const local = createRestLocalPose(skeleton);
+    local.get('root').rot = 90;
+    local.get('root').sx = 2;
+    local.get('root').sy = 2;
+    const world = composeWorldTransforms(skeleton, local);
+    const child = world.get('child');
+    expect(child.x).toBeCloseTo(10);
+    expect(child.y).toBeCloseTo(0);
+    expect(child.rot).toBeCloseTo(0);
+    expect(child.sx).toBeCloseTo(1);
+  });
+
+  it('根骨骼的继承模式不影响自身变换', () => {
+    const skeleton = buildInheritSkeleton('translationOnly');
+    const local = createRestLocalPose(skeleton);
+    const world = composeWorldTransforms(skeleton, local);
+    expect(world.get('root').x).toBeCloseTo(0);
+    expect(world.get('root').sx).toBeCloseTo(2);
   });
 });
 

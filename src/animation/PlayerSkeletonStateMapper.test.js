@@ -13,6 +13,7 @@
 import { describe, it, expect } from 'vitest';
 import { parseSkeletonAsset } from './SkeletonAsset.js';
 import { createPlayerSkeletonStateMapper } from './PlayerSkeletonStateMapper.js';
+import { SkeletonComponent } from '../ecs/components/SkeletonComponent.js';
 
 /** 构造带武器槽位的骨骼：weapon-axe 手持（挂 armFR）、axe-back/spear-back 背挂（挂 back）。 */
 function buildWeaponSkeleton({ extraClips = [] } = {}) {
@@ -38,9 +39,35 @@ function buildWeaponSkeleton({ extraClips = [] } = {}) {
   });
 }
 
+/** 构造带头部三态槽位的骨骼：headFront/headSide/headBack 挂 head，body 挂 root。 */
+function buildHeadSkeleton() {
+  return parseSkeletonAsset({
+    schemaVersion: 1,
+    skeletonId: 'skeleton.head-test',
+    meta: { width: 64, height: 64 },
+    defaultClip: 'idle_down',
+    bones: [
+      { id: 'root', parent: null, x: 0, y: 0 },
+      { id: 'head', parent: 'root', x: 0, y: -20 },
+      { id: 'back', parent: 'root', x: 0, y: -14 }
+    ],
+    slots: [
+      { id: 'headFront', bone: 'head', z: 5, attachment: { type: 'image', assetId: 'player.parts.head-front' } },
+      { id: 'headSide', bone: 'head', z: 4, attachment: { type: 'image', assetId: 'player.parts.head-side' } },
+      { id: 'headBack', bone: 'head', z: 3, attachment: { type: 'image', assetId: 'player.parts.head-back' } },
+      { id: 'spearBack', bone: 'back', z: 1, attachment: { type: 'image', assetId: 'player.parts.weapon-spear' } }
+    ],
+    clips: [
+      { name: 'idle_down', durationMs: 1000, loop: true, tracks: [] },
+      { name: 'idle_up', durationMs: 1000, loop: true, tracks: [] },
+      { name: 'idle_side', durationMs: 1000, loop: true, tracks: [] }
+    ]
+  });
+}
+
 /** 构造实体 mock：sprite/equipment/inventory 三组件 + _weaponDrawn 战斗持握标志。 */
-function buildEntity({ mainhand = null, bag = [], drawn = false } = {}) {
-  const sprite = { direction: 'down', flipX: false, isWalking: false, isStopping: false };
+function buildEntity({ mainhand = null, bag = [], drawn = false, direction = 'down' } = {}) {
+  const sprite = { direction, flipX: false, isWalking: false, isStopping: false };
   const equipment = { getEquipment: slot => (slot === 'mainhand' ? mainhand : null) };
   const inventory = { slots: bag.map(item => ({ item, quantity: 1 })) };
   const entity = {
@@ -56,12 +83,32 @@ function buildEntity({ mainhand = null, bag = [], drawn = false } = {}) {
   return entity;
 }
 
+/** 构造真实 SkeletonComponent：运行时状态落在实体本地覆盖层（共享资产只读）。 */
 function buildSkeletonComponent(asset) {
-  return { skeletonAsset: asset, currentClip: 'idle_down', clipTime: 0, playClip() {} };
+  const component = new SkeletonComponent({ skeletonId: asset.id });
+  component.setSkeletonAsset(asset);
+  component.currentClip = 'idle_down';
+  return component;
 }
 
-function slotVisible(asset, slotId) {
-  return asset.slots.find(slot => slot.id === slotId)?.attachment?.visible;
+/**
+ * 取槽位的最终可见性（共享 attachment + 实体本地覆盖层合并后的结果）。
+ * @param {SkeletonComponent} skeleton
+ * @param {string} slotId
+ */
+function slotVisible(skeleton, slotId) {
+  const slot = skeleton.skeletonAsset.slots.find(candidate => candidate.id === slotId);
+  return skeleton.resolveSlotAttachment(slot)?.visible;
+}
+
+/**
+ * 取槽位的最终水平翻转（共享 attachment + 实体本地覆盖层合并后的结果）。
+ * @param {SkeletonComponent} skeleton
+ * @param {string} slotId
+ */
+function slotFlipX(skeleton, slotId) {
+  const slot = skeleton.skeletonAsset.slots.find(candidate => candidate.id === slotId);
+  return skeleton.resolveSlotAttachment(slot)?.flipX;
 }
 
 describe('武器槽位联动（战斗=手持，非战斗=背挂，采集=手持）', () => {
@@ -69,19 +116,21 @@ describe('武器槽位联动（战斗=手持，非战斗=背挂，采集=手持�
     const asset = buildWeaponSkeleton();
     const entity = buildEntity();
     const hook = createPlayerSkeletonStateMapper(entity, {});
-    hook(buildSkeletonComponent(asset));
-    expect(slotVisible(asset, 'toolHand')).toBe(false);
-    expect(slotVisible(asset, 'axeBack')).toBe(false);
-    expect(slotVisible(asset, 'spearBack')).toBe(false);
+    const skeleton = buildSkeletonComponent(asset);
+    hook(skeleton);
+    expect(slotVisible(skeleton, 'toolHand')).toBe(false);
+    expect(slotVisible(skeleton, 'axeBack')).toBe(false);
+    expect(slotVisible(skeleton, 'spearBack')).toBe(false);
   });
 
   it('背包有 spear 但未装备（非战斗）：spear 背挂显示，手持隐藏', () => {
     const asset = buildWeaponSkeleton();
     const entity = buildEntity({ bag: [{ id: 'weapon.spear', weaponKey: 'spear' }] });
     const hook = createPlayerSkeletonStateMapper(entity, {});
-    hook(buildSkeletonComponent(asset));
-    expect(slotVisible(asset, 'toolHand')).toBe(false);   // axe 手持隐藏
-    expect(slotVisible(asset, 'spearBack')).toBe(true);    // spear 背挂显示
+    const skeleton = buildSkeletonComponent(asset);
+    hook(skeleton);
+    expect(slotVisible(skeleton, 'toolHand')).toBe(false);   // axe 手持隐藏
+    expect(slotVisible(skeleton, 'spearBack')).toBe(true);    // spear 背挂显示
   });
 
   it('非战斗装备 axe（收刀回背）：手持隐藏，axeBack 显示（装备移出背包仍计入背挂来源）', () => {
@@ -91,9 +140,10 @@ describe('武器槽位联动（战斗=手持，非战斗=背挂，采集=手持�
       bag: []
     });
     const hook = createPlayerSkeletonStateMapper(entity, {});
-    hook(buildSkeletonComponent(asset));
-    expect(slotVisible(asset, 'toolHand')).toBe(false);    // 非战斗不持握
-    expect(slotVisible(asset, 'axeBack')).toBe(true);     // 斧头背在背上
+    const skeleton = buildSkeletonComponent(asset);
+    hook(skeleton);
+    expect(slotVisible(skeleton, 'toolHand')).toBe(false);    // 非战斗不持握
+    expect(slotVisible(skeleton, 'axeBack')).toBe(true);     // 斧头背在背上
   });
 
   it('战斗装备 axe（拔出）：手持显示，axeBack 隐藏', () => {
@@ -103,9 +153,10 @@ describe('武器槽位联动（战斗=手持，非战斗=背挂，采集=手持�
       drawn: true                                          // CombatSystem.enterCombat
     });
     const hook = createPlayerSkeletonStateMapper(entity, {});
-    hook(buildSkeletonComponent(asset));
-    expect(slotVisible(asset, 'toolHand')).toBe(true);     // 拿在手上
-    expect(slotVisible(asset, 'axeBack')).toBe(false);    // 背上收起
+    const skeleton = buildSkeletonComponent(asset);
+    hook(skeleton);
+    expect(slotVisible(skeleton, 'toolHand')).toBe(true);     // 拿在手上
+    expect(slotVisible(skeleton, 'axeBack')).toBe(false);    // 背上收起
   });
 
   it('脱战收刀：装备 axe 从战斗转非战斗，手持/背挂翻转', () => {
@@ -117,12 +168,12 @@ describe('武器槽位联动（战斗=手持，非战斗=背挂，采集=手持�
     const hook = createPlayerSkeletonStateMapper(entity, {});
     const skeleton = buildSkeletonComponent(asset);
     hook(skeleton);
-    expect(slotVisible(asset, 'toolHand')).toBe(true);
+    expect(slotVisible(skeleton, 'toolHand')).toBe(true);
 
     entity._weaponDrawn = false;                           // CombatSystem.exitCombat
     hook(skeleton);
-    expect(slotVisible(asset, 'toolHand')).toBe(false);    // 收刀
-    expect(slotVisible(asset, 'axeBack')).toBe(true);      // 回背
+    expect(slotVisible(skeleton, 'toolHand')).toBe(false);    // 收刀
+    expect(slotVisible(skeleton, 'axeBack')).toBe(true);      // 回背
   });
 
   it('非战斗装备 spear：spear 背挂显示（收枪回背）；背包另有 axe 也背挂', () => {
@@ -132,9 +183,10 @@ describe('武器槽位联动（战斗=手持，非战斗=背挂，采集=手持�
       bag: [{ id: 'tool.worn_axe', toolType: 'axe' }]
     });
     const hook = createPlayerSkeletonStateMapper(entity, {});
-    hook(buildSkeletonComponent(asset));
-    expect(slotVisible(asset, 'spearBack')).toBe(true);    // 已装备 spear 非战斗回背
-    expect(slotVisible(asset, 'axeBack')).toBe(true);     // 背包 axe 背挂
+    const skeleton = buildSkeletonComponent(asset);
+    hook(skeleton);
+    expect(slotVisible(skeleton, 'spearBack')).toBe(true);    // 已装备 spear 非战斗回背
+    expect(slotVisible(skeleton, 'axeBack')).toBe(true);     // 背包 axe 背挂
   });
 
   it('战斗装备 spear：spear 背挂隐藏（已上手），axe 手持隐藏', () => {
@@ -145,10 +197,11 @@ describe('武器槽位联动（战斗=手持，非战斗=背挂，采集=手持�
       drawn: true
     });
     const hook = createPlayerSkeletonStateMapper(entity, {});
-    hook(buildSkeletonComponent(asset));
-    expect(slotVisible(asset, 'toolHand')).toBe(false);    // axe 手持隐藏（未装备）
-    expect(slotVisible(asset, 'spearBack')).toBe(false);   // spear 背挂隐藏（已上手）
-    expect(slotVisible(asset, 'axeBack')).toBe(true);      // axe 仍在背上（背包有）
+    const skeleton = buildSkeletonComponent(asset);
+    hook(skeleton);
+    expect(slotVisible(skeleton, 'toolHand')).toBe(false);    // axe 手持隐藏（未装备）
+    expect(slotVisible(skeleton, 'spearBack')).toBe(false);   // spear 背挂隐藏（已上手）
+    expect(slotVisible(skeleton, 'axeBack')).toBe(true);      // axe 仍在背上（背包有）
   });
 
   it('战斗态但主手为空：背包有斧头则自动上手（攻击时手持斧头）', () => {
@@ -158,18 +211,20 @@ describe('武器槽位联动（战斗=手持，非战斗=背挂，采集=手持�
       drawn: true
     });
     const hook = createPlayerSkeletonStateMapper(entity, {});
-    hook(buildSkeletonComponent(asset));
-    expect(slotVisible(asset, 'toolHand')).toBe(true);     // 背包有斧头：攻击时拿在手上
-    expect(slotVisible(asset, 'axeBack')).toBe(false);     // 拿在手上 → 背挂隐藏
+    const skeleton = buildSkeletonComponent(asset);
+    hook(skeleton);
+    expect(slotVisible(skeleton, 'toolHand')).toBe(true);     // 背包有斧头：攻击时拿在手上
+    expect(slotVisible(skeleton, 'axeBack')).toBe(false);     // 拿在手上 → 背挂隐藏
   });
 
   it('战斗态且没有任何武器：手持不显示（不凭空持握）', () => {
     const asset = buildWeaponSkeleton();
     const entity = buildEntity({ bag: [], drawn: true });
     const hook = createPlayerSkeletonStateMapper(entity, {});
-    hook(buildSkeletonComponent(asset));
-    expect(slotVisible(asset, 'toolHand')).toBe(false);    // 无装备无背包武器：不显示
-    expect(slotVisible(asset, 'axeBack')).toBe(false);     // 背包无斧头：背挂也隐藏
+    const skeleton = buildSkeletonComponent(asset);
+    hook(skeleton);
+    expect(slotVisible(skeleton, 'toolHand')).toBe(false);    // 无装备无背包武器：不显示
+    expect(slotVisible(skeleton, 'axeBack')).toBe(false);     // 背包无斧头：背挂也隐藏
   });
 
   it('装备变化驱动状态切换：战斗中卸下 axe 后手持隐藏、背挂显示（武器回背包）', () => {
@@ -190,13 +245,13 @@ describe('武器槽位联动（战斗=手持，非战斗=背挂，采集=手持�
     const skeleton = buildSkeletonComponent(asset);
 
     hook(skeleton);
-    expect(slotVisible(asset, 'toolHand')).toBe(true);     // 战斗中已装备 axe
+    expect(slotVisible(skeleton, 'toolHand')).toBe(true);     // 战斗中已装备 axe
 
     mainhandBox.current = null;                            // 卸下
     bag.push({ item: { id: 'tool.worn_axe', toolType: 'axe' }, quantity: 1 });
     hook(skeleton);
-    expect(slotVisible(asset, 'toolHand')).toBe(false);    // 手持隐藏
-    expect(slotVisible(asset, 'axeBack')).toBe(true);     // 回背包 → 背挂显示
+    expect(slotVisible(skeleton, 'toolHand')).toBe(false);    // 手持隐藏
+    expect(slotVisible(skeleton, 'axeBack')).toBe(true);     // 回背包 → 背挂显示
   });
 
   it('采集自动手持：非战斗下 _handToolOverride 使手持位显示（采集开始）', () => {
@@ -204,9 +259,10 @@ describe('武器槽位联动（战斗=手持，非战斗=背挂，采集=手持�
     const entity = buildEntity({ bag: [{ id: 'tool.worn_axe', toolType: 'axe' }] });
     entity._handToolOverride = 'axe';                      // GatheringSystem.start 设置
     const hook = createPlayerSkeletonStateMapper(entity, {});
-    hook(buildSkeletonComponent(asset));
-    expect(slotVisible(asset, 'toolHand')).toBe(true);     // 手上出现斧头
-    expect(slotVisible(asset, 'axeBack')).toBe(false);    // 背上收起
+    const skeleton = buildSkeletonComponent(asset);
+    hook(skeleton);
+    expect(slotVisible(skeleton, 'toolHand')).toBe(true);     // 手上出现斧头
+    expect(slotVisible(skeleton, 'axeBack')).toBe(false);    // 背上收起
   });
 
   it('采集结束：_handToolOverride 清除后手持隐藏、回背挂（工具消失/装备则回背）', () => {
@@ -216,12 +272,12 @@ describe('武器槽位联动（战斗=手持，非战斗=背挂，采集=手持�
     const hook = createPlayerSkeletonStateMapper(entity, {});
     const skeleton = buildSkeletonComponent(asset);
     hook(skeleton);
-    expect(slotVisible(asset, 'toolHand')).toBe(true);
+    expect(slotVisible(skeleton, 'toolHand')).toBe(true);
 
     entity._handToolOverride = null;                       // _finish 清除
     hook(skeleton);
-    expect(slotVisible(asset, 'toolHand')).toBe(false);    // 手持隐藏
-    expect(slotVisible(asset, 'axeBack')).toBe(true);     // 背包有 axe → 回背挂
+    expect(slotVisible(skeleton, 'toolHand')).toBe(false);    // 手持隐藏
+    expect(slotVisible(skeleton, 'axeBack')).toBe(true);     // 背包有 axe → 回背挂
   });
 
   it('采集 override 优先于战斗收刀：非战斗下 override 压过主手装备判断', () => {
@@ -232,9 +288,10 @@ describe('武器槽位联动（战斗=手持，非战斗=背挂，采集=手持�
     });
     entity._handToolOverride = 'axe';                      // 砍树：手里是斧头不是长矛
     const hook = createPlayerSkeletonStateMapper(entity, {});
-    hook(buildSkeletonComponent(asset));
-    expect(slotVisible(asset, 'toolHand')).toBe(true);     // axe 手持（override）
-    expect(slotVisible(asset, 'spearBack')).toBe(true);   // spear 未持握 → 背挂
+    const skeleton = buildSkeletonComponent(asset);
+    hook(skeleton);
+    expect(slotVisible(skeleton, 'toolHand')).toBe(true);     // axe 手持（override）
+    expect(slotVisible(skeleton, 'spearBack')).toBe(true);   // spear 未持握 → 背挂
   });
 
   it('离散剪辑保持（mapperHold）期间武器联动仍执行：砍伐 logging 剪辑中 override 上手', () => {
@@ -247,14 +304,128 @@ describe('武器槽位联动（战斗=手持，非战斗=背挂，采集=手持�
     const hook = createPlayerSkeletonStateMapper(entity, {});
     const skeleton = buildSkeletonComponent(asset);
     hook(skeleton);
-    expect(slotVisible(asset, 'axeBack')).toBe(true);
+    expect(slotVisible(skeleton, 'axeBack')).toBe(true);
 
     // 开始砍伐：GatheringSystem 设置 override + 播放 logging 离散剪辑（循环保持）
     entity._handToolOverride = 'axe';
     skeleton.currentClip = 'logging';
     skeleton.clipTime = 0;
     hook(skeleton);
-    expect(slotVisible(asset, 'toolHand')).toBe(true);     // mapperHold return 前已上手
-    expect(slotVisible(asset, 'axeBack')).toBe(false);    // 背上收起
+    expect(slotVisible(skeleton, 'toolHand')).toBe(true);     // mapperHold return 前已上手
+    expect(slotVisible(skeleton, 'axeBack')).toBe(false);    // 背上收起
+  });
+});
+
+describe('头部三态可见性（正面/侧面/背面按朝向切换）', () => {
+  it('朝下：headFront 显示，headSide/headBack 隐藏', () => {
+    const asset = buildHeadSkeleton();
+    const entity = buildEntity({ direction: 'down' });
+    const hook = createPlayerSkeletonStateMapper(entity, {});
+    const skeleton = buildSkeletonComponent(asset);
+    hook(skeleton);
+    expect(slotVisible(skeleton, 'headFront')).toBe(true);
+    expect(slotVisible(skeleton, 'headSide')).toBe(false);
+    expect(slotVisible(skeleton, 'headBack')).toBe(false);
+  });
+
+  it('朝上：headBack 显示，headFront/headSide 隐藏', () => {
+    const asset = buildHeadSkeleton();
+    const entity = buildEntity({ direction: 'up' });
+    const hook = createPlayerSkeletonStateMapper(entity, {});
+    const skeleton = buildSkeletonComponent(asset);
+    hook(skeleton);
+    expect(slotVisible(skeleton, 'headBack')).toBe(true);
+    expect(slotVisible(skeleton, 'headFront')).toBe(false);
+    expect(slotVisible(skeleton, 'headSide')).toBe(false);
+  });
+
+  it('朝侧面：headSide 显示，headFront/headBack 隐藏', () => {
+    const asset = buildHeadSkeleton();
+    const entity = buildEntity({ direction: 'right' });
+    const hook = createPlayerSkeletonStateMapper(entity, {});
+    const skeleton = buildSkeletonComponent(asset);
+    hook(skeleton);
+    expect(slotVisible(skeleton, 'headSide')).toBe(true);
+    expect(slotVisible(skeleton, 'headFront')).toBe(false);
+    expect(slotVisible(skeleton, 'headBack')).toBe(false);
+  });
+
+  it('背挂武器随朝向换边：朝上翻转，朝下不翻转', () => {
+    const asset = buildHeadSkeleton();
+    const entity = buildEntity({ direction: 'up' });
+    const hook = createPlayerSkeletonStateMapper(entity, {});
+    const skeleton = buildSkeletonComponent(asset);
+    hook(skeleton);
+    expect(slotFlipX(skeleton, 'spearBack')).toBe(true);
+
+    entity.getComponent('sprite').direction = 'down';
+    hook(skeleton);
+    expect(slotFlipX(skeleton, 'spearBack')).toBe(false);
+  });
+});
+
+describe('多实体隔离：共享资产只读，运行时状态落在实体本地覆盖层', () => {
+  it('两个实体共用同一资产：各自朝向的头部可见性互不干扰', () => {
+    const asset = buildHeadSkeleton();
+    const entityA = buildEntity({ direction: 'down' });
+    const entityB = buildEntity({ direction: 'up' });
+    const hookA = createPlayerSkeletonStateMapper(entityA, {});
+    const hookB = createPlayerSkeletonStateMapper(entityB, {});
+    const skeletonA = buildSkeletonComponent(asset);
+    const skeletonB = buildSkeletonComponent(asset);
+
+    hookA(skeletonA);
+    hookB(skeletonB);
+
+    // 甲朝下 → 正面头；乙朝上 → 背面头
+    expect(slotVisible(skeletonA, 'headFront')).toBe(true);
+    expect(slotVisible(skeletonA, 'headBack')).toBe(false);
+    expect(slotVisible(skeletonB, 'headFront')).toBe(false);
+    expect(slotVisible(skeletonB, 'headBack')).toBe(true);
+  });
+
+  it('两个实体共用同一资产：背挂武器翻转状态互不干扰', () => {
+    const asset = buildHeadSkeleton();
+    const entityA = buildEntity({ direction: 'up' });
+    const entityB = buildEntity({ direction: 'down' });
+    const hookA = createPlayerSkeletonStateMapper(entityA, {});
+    const hookB = createPlayerSkeletonStateMapper(entityB, {});
+    const skeletonA = buildSkeletonComponent(asset);
+    const skeletonB = buildSkeletonComponent(asset);
+
+    hookA(skeletonA);
+    hookB(skeletonB);
+
+    expect(slotFlipX(skeletonA, 'spearBack')).toBe(true);
+    expect(slotFlipX(skeletonB, 'spearBack')).toBe(false);
+  });
+
+  it('两个实体共用同一资产：武器上手/背挂状态互不干扰', () => {
+    const asset = buildWeaponSkeleton();
+    // 甲背包有斧头 → 斧头背挂显示；乙什么都没有 → 斧头背挂隐藏
+    const entityA = buildEntity({ bag: [{ id: 'tool.worn_axe', toolType: 'axe' }] });
+    const entityB = buildEntity({});
+    const hookA = createPlayerSkeletonStateMapper(entityA, {});
+    const hookB = createPlayerSkeletonStateMapper(entityB, {});
+    const skeletonA = buildSkeletonComponent(asset);
+    const skeletonB = buildSkeletonComponent(asset);
+
+    hookA(skeletonA);
+    hookB(skeletonB);
+
+    expect(slotVisible(skeletonA, 'axeBack')).toBe(true);
+    expect(slotVisible(skeletonB, 'axeBack')).toBe(false);
+  });
+
+  it('映射器不改写共享资产本身（attachment 保持原始值）', () => {
+    const asset = buildWeaponSkeleton();
+    const entity = buildEntity({ bag: [{ id: 'tool.worn_axe', toolType: 'axe' }] });
+    const hook = createPlayerSkeletonStateMapper(entity, {});
+    const skeleton = buildSkeletonComponent(asset);
+    hook(skeleton);
+
+    const sharedToolHand = asset.slots.find(slot => slot.id === 'toolHand');
+    expect(sharedToolHand.attachment.visible).toBe(false);   // 共享数据未被改写
+    expect(slotVisible(skeleton, 'axeBack')).toBe(true);     // 实体本地覆盖层生效
   });
 });
