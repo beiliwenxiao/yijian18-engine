@@ -56,9 +56,9 @@ const TEMP = path.join(root, 'Temp');
 const oldDoc = JSON.parse(readFileSync(OLD_FILE, 'utf8'));
 const tplDoc = JSON.parse(readFileSync(TPL_FILE, 'utf8'));
 
-// 防呆：迁移源必须是旧 12 骨骨架（含 torso）——脚本会覆盖写回，重复跑前需 git checkout 恢复
+// 防呆：迁移源必须是旧 12 骨骨架（含 torso）——脚本会覆盖写回，重复跑前需从迁移前提交恢复
 if (!oldDoc.bones.some(b => b.id === 'torso')) {
-  throw new Error('player.json 已是新骨架（迁移产物）。重跑前先恢复旧版：git checkout HEAD -- example/sanguo_zhangjiao/assets/skeletons/player.json');
+  throw new Error('player.json 已是新骨架（迁移产物）。重跑前先恢复旧版：git checkout 0f6a784 -- example/sanguo_zhangjiao/assets/skeletons/player.json（0f6a784=骨架迁移前最后提交）');
 }
 
 /* ---------------- 1. 骨架：新 15 骨 + back ---------------- */
@@ -95,17 +95,23 @@ const NEW_BODY_SLOTS = {
 // 头/发 6 槽 + 裙背：按「内容中心」锚定迁移（部件图透明边大，图几何中心 ≠ 内容中心）。
 // CONTENT = 原图内容中心（px，实测 alpha>32 的 bbox 中心）。
 const CONTENT = {
-  'player.parts.head-front':         { img: [64, 64], c: [32, 13.5] },
-  'player.parts.head-side':          { img: [64, 64], c: [30.5, 13.5] },
-  'player.parts.head-back':          { img: [64, 64], c: [32.5, 15] },
-  'player.parts.hair-heroine-front': { img: [51, 64], c: [25.5, 32] },
-  'player.parts.hair-heroine-side':  { img: [66, 64], c: [32.5, 32] },
-  'player.parts.hair-heroine-back':  { img: [49, 64], c: [24, 31.5] },
+  'player.parts.head-front':         { img: [64, 64], c: [32, 14] },
+  'player.parts.head-side':          { img: [64, 64], c: [31, 14] },
+  'player.parts.head-back':          { img: [64, 64], c: [32, 14] },
+  'player.parts.hair-heroine-front': { img: [64, 64], c: [32, 23] },
+  'player.parts.hair-heroine-side':  { img: [64, 64], c: [31, 25.5] },
+  'player.parts.hair-heroine-back':  { img: [64, 64], c: [32, 27] },
   'player.parts.skirt-back':         { img: [64, 64], c: [31, 13] }
 };
-const K_HEAD = 1.35;   // 旧头内容显示 12.57px → 新头段观感（1.6 时爆炸头过大且发压眼，实测回调）
-const K_SKIRT = 1.15; // 裙背微放大适配新腰臀
-const HAIR_LIFT = -12; // 发系槽相对基准额外上移（旧发图露脸开口偏低；-3/-7 实测仍压眉眼）
+const K_HEAD = 0.85;   // 旧头内容实际显示 24px（HEAD 版头部槽无 width 字段，s=1）→ 新头段 20px 观感
+const K_SKIRT = 0.85; // 裙背（旧图）缩小退到裙摆后侧，避免与新黄裙两层撞色显乱
+// 发图目标显示尺寸（旧发图为满幅爆炸头，原尺寸渲染远大于脸；压到合理发型比例）
+const HAIR_SIZE = {
+  'player.parts.hair-heroine-front': [34, 34],
+  'player.parts.hair-heroine-side':  [33, 33],
+  'player.parts.hair-heroine-back':  [34, 34]
+};
+const HAIR_LIFT = -8;  // 发系槽相对基准额外上移（新发图刘海压眉，上移露额）
 
 /** 旧内容中心相对旧 head 骨起点的局部坐标（rot 均 0，直接加）。 */
 function contentLocal(att) {
@@ -117,19 +123,22 @@ function contentLocal(att) {
   };
 }
 
-/** 头部槽新挂点与显示尺寸：内容中心 = 新头段锚点 + 旧相对偏移 × K（发系额外上移 HAIR_LIFT）。 */
+/** 头部槽新挂点与显示尺寸：头图 64×K_HEAD，发图用 HAIR_SIZE 独立压制；挂点按实际显示 scale 反解。 */
 function headSlotRemount(att, baseLocal) {
   const meta = CONTENT[att.assetId];
-  const s = (att.width || meta.img[0]) / meta.img[0];
-  const old = contentLocal(att);
   const isHair = att.assetId.includes('hair');
+  const [dw, dh] = isHair
+    ? HAIR_SIZE[att.assetId]
+    : [meta.img[0] * K_HEAD, meta.img[1] * K_HEAD];
+  const sx = dw / meta.img[0], sy = dh / meta.img[1];
+  const old = contentLocal(att);
   const lift = isHair ? HAIR_LIFT : 0;
-  const target = { x: (old.x - baseLocal.x) * K_HEAD, y: -7 + lift + (old.y - baseLocal.y) * K_HEAD };
+  const target = { x: (old.x - baseLocal.x) * K_HEAD, y: -5 + lift + (old.y - baseLocal.y) * K_HEAD };
   return {
-    x: Math.round((target.x - (meta.c[0] - meta.img[0] / 2) * s * K_HEAD) * 100) / 100,
-    y: Math.round((target.y - (meta.c[1] - meta.img[1] / 2) * s * K_HEAD) * 100) / 100,
-    width: Math.round((att.width || meta.img[0]) * K_HEAD * 100) / 100,
-    height: Math.round((att.height || meta.img[1]) * K_HEAD * 100) / 100
+    x: Math.round((target.x - (meta.c[0] - meta.img[0] / 2) * sx) * 100) / 100,
+    y: Math.round((target.y - (meta.c[1] - meta.img[1] / 2) * sy) * 100) / 100,
+    width: Math.round(dw * 100) / 100,
+    height: Math.round(dh * 100) / 100
   };
 }
 
@@ -198,10 +207,10 @@ for (const old of oldDoc.slots) {
     continue;
   }
 
-  // —— 手持武器 6 槽：握柄点贴合 forearmR 骨段（旧前臂段 13px → 新 15px，偏移向量按段长比例归一，
+  // —— 手持武器 6 槽：握柄点贴合 forearmR 骨段（旧前臂段 13px → 新 17px，偏移向量按段长比例归一，
   //     避免武器悬空离手；rot/缩放/形态偏移原样保留） ——
   if (old.id.startsWith('weapon') && att.type === 'image') {
-    const k = 15 / 13;
+    const k = 17 / 13;
     slots.push({
       id: old.id, bone: 'forearmR', z: old.z,
       attachment: {
@@ -308,6 +317,98 @@ const clips = oldDoc.clips.map(clip => {
     })
   };
 });
+
+/* ---------------- 3.5 idle 系呼吸剪辑重采样为 4 关键帧（0/450/900/1350，平分时长） ----------------
+ * 循环动画约定：4 组可见关键帧把时长平分为 4 份（1800ms → 每 450ms 一组），第 4 组值回到
+ * 第 1 组（首尾闭合），末尾隐含的循环帧（t=1800）省略不写。ease 统一 easeInOut。 */
+
+const IDLE_KEY_TIMES = [0, 450, 900, 1350];
+for (const clip of clips) {
+  if (!/^idle_/.test(clip.name)) continue;
+  for (const track of clip.tracks) {
+    const src = track.keys;
+    const first = src[0];
+    track.keys = IDLE_KEY_TIMES.map(t => {
+      const base = { ...first, t, ease: t === 0 ? undefined : 'easeInOut' };
+      for (const field of ['x', 'y', 'rot']) {
+        // 第 4 组（1350）回到第 1 组值（循环闭合）；其余按时间线性重采样
+        if (t === IDLE_KEY_TIMES[IDLE_KEY_TIMES.length - 1] && typeof first[field] === 'number') {
+          base[field] = first[field];
+          continue;
+        }
+        const vals = src.filter(k => typeof k[field] === 'number').map(k => [k.t, k[field]]);
+        if (!vals.length) { delete base[field]; continue; }
+        let v;
+        if (t <= vals[0][0]) v = vals[0][1];
+        else if (t >= vals[vals.length - 1][0]) v = vals[vals.length - 1][1];
+        else {
+          let i = 0;
+          while (i < vals.length - 2 && vals[i + 1][0] < t) i++;
+          const [t0, v0] = vals[i];
+          const [t1, v1] = vals[i + 1];
+          v = t1 === t0 ? v1 : v0 + (v1 - v0) * (t - t0) / (t1 - t0);
+        }
+        base[field] = Math.round(v * 100) / 100;
+      }
+      if (base.ease === undefined) delete base.ease;
+      return base;
+    });
+  }
+}
+
+/* ---------------- 3.6 行走动画打磨：躯干起伏 + 手臂对侧摆动 ----------------
+ * 旧 walk 动画只有腿在动，躯干僵直、手臂不摆（观感"溜冰"）。补两件事：
+ *   1. 躯干上下起伏：hips 轨 y 叠加步频起伏（每步 1 周期，幅度 ±1.2px）
+ *   2. 手臂对侧摆动：上臂 rot 与同侧腿反相（右腿前摆时左臂前摆），幅度 ±7°
+ * 走侧面（walk_side）已有 ±30° 大步幅腿摆，沿用其手臂幅度即可。 */
+
+const WALK_CLIP = /^walk_/;
+for (const clip of clips) {
+  if (!WALK_CLIP.test(clip.name)) continue;
+  const duration = clip.durationMs;
+  const isSide = clip.name === 'walk_side';
+  const armSwing = isSide ? 6 : 7;       // 手臂摆幅（度）
+  const bodyBob = isSide ? 0.8 : 1.2;    // 躯干起伏幅度（px）
+
+  // 躯干起伏：给 hips（无轨则建）叠加 4 关键帧的起伏
+  let hipsTrack = clip.tracks.find(t => t.bone === 'hips');
+  if (!hipsTrack) {
+    hipsTrack = { bone: 'hips', keys: [] };
+    clip.tracks.push(hipsTrack);
+  }
+  const hipsKeys = hipsTrack.keys.length ? hipsTrack.keys : [{ t: 0, x: 0, y: -53, rot: 0 }];
+  const bobTimes = [0, Math.round(duration / 4), Math.round(duration / 2), Math.round(duration * 3 / 4)];
+  const bobPattern = [1, -1, 1, -1];       // 每步 1 周期（两腿各 1 次起伏）
+  hipsTrack.keys = hipsKeys.map((k, index) => {
+    const t = bobTimes[index] ?? k.t;
+    const baseY = Number.isFinite(k.y) ? k.y : -53;
+    return { ...k, t, y: Math.round((baseY + bobPattern[index % 4] * bodyBob) * 100) / 100 };
+  });
+
+  // 手臂对侧摆动：重建上臂 rot（与同侧腿反相），保留原 x/y
+  for (const [armBone, phase] of [['upperArmR', 0], ['upperArmL', 1]]) {
+    const track = clip.tracks.find(t => t.bone === armBone);
+    if (!track) continue;
+    const src = track.keys;
+    const mid = (() => {
+      const vals = src.map(k => (typeof k.rot === 'number' ? k.rot : null)).filter(v => v !== null);
+      if (!vals.length) return 0;
+      const sorted = [...vals].sort((a, b) => a - b);
+      return sorted[Math.floor(sorted.length / 2)];
+    })();
+    const times = [0, Math.round(duration / 4), Math.round(duration / 2), Math.round(duration * 3 / 4)];
+    // 与腿反相：右臂（phase 0）初始向后、左臂（phase 1）初始向前
+    const swing = [1, -1, 1, -1].map(v => v * (phase === 0 ? 1 : -1));
+    track.keys = times.map((t, index) => {
+      const srcKey = src[index] || src[src.length - 1] || {};
+      return {
+        ...srcKey,
+        t,
+        rot: Math.round((mid + swing[index] * armSwing) * 100) / 100
+      };
+    });
+  }
+}
 
 /* ---------------- 4. 组装写入 ---------------- */
 

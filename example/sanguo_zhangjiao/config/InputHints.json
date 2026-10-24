@@ -86,15 +86,6 @@
       "padKind": "key",
       "padKey": "q"
     },
-    "dodge": {
-      "pc": {
-        "key": "R",
-        "kind": "key"
-      },
-      "android": "闪避按钮",
-      "padFixed": "B",
-      "padKind": "key"
-    },
     "flight": {
       "pc": {
         "key": "Ctrl",
@@ -321,6 +312,15 @@
       },
       "android": "地图按钮",
       "padKey": "m"
+    },
+    "dodge": {
+      "pc": {
+        "key": "R",
+        "kind": "key"
+      },
+      "android": "闪避按钮",
+      "padFixed": "B",
+      "padKind": "key"
     }
   }
 }
