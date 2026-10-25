@@ -21,8 +21,12 @@
  * 都定义在这里，运行时状态映射器与编辑器预览共用同一份（避免两处漂移）。
  */
 
-/** 形态键（7 形态，顺序即编辑器方向按钮顺序）。 */
-export const SKELETON_DIRECTION_KEYS = Object.freeze(['down', 'side', 'up', 'SE', 'SW', 'NE', 'NW']);
+/**
+ * 形态键（8 形态，顺序即编辑器方向按钮顺序）。
+ * sideL = 左侧面：给「左右两侧各有独立美术」的资产用（如一手刀一手盾，镜像会左右手互换）。
+ * 老资产不配 sideL 时回退到 side + 实体 flipX，行为不变。
+ */
+export const SKELETON_DIRECTION_KEYS = Object.freeze(['down', 'side', 'up', 'SE', 'SW', 'NE', 'NW', 'sideL']);
 
 /** 形态键 → 中文显示名。 */
 export const SKELETON_DIRECTION_LABELS = Object.freeze({
@@ -32,7 +36,8 @@ export const SKELETON_DIRECTION_LABELS = Object.freeze({
   SE: '斜前右',
   SW: '斜前左',
   NE: '斜后右',
-  NW: '斜后左'
+  NW: '斜后左',
+  sideL: '左侧面（免镜像）'
 });
 
 /**
@@ -42,6 +47,7 @@ export const SKELETON_DIRECTION_LABELS = Object.freeze({
 export const SKELETON_HEAD_SLOT_PLAN = Object.freeze({
   down: { headFront: true, headSide: false, headBack: false, hairFront: true, hairSide: false, hairBack: false },
   side: { headFront: false, headSide: true, headBack: false, hairFront: false, hairSide: true, hairBack: false },
+  sideL: { headFront: false, headSide: true, headBack: false, hairFront: false, hairSide: true, hairBack: false },
   up: { headFront: false, headSide: false, headBack: true, hairFront: false, hairSide: false, hairBack: true },
   SE: { headFront: true, headSide: false, headBack: false, hairFront: true, hairSide: false, hairBack: false },
   SW: { headFront: true, headSide: false, headBack: false, hairFront: true, hairSide: false, hairBack: false },
@@ -76,4 +82,16 @@ export function resolveDirectionKey(direction) {
  */
 export function isMirroredFacing(direction) {
   return direction === 'left' || direction === 'down-left' || direction === 'up-left';
+}
+
+/**
+ * 实体朝向 → 附件形态键（用于 directionOffsets 取图/偏移）。
+ * 与 resolveDirectionKey 的唯一区别：left 返回独立的 sideL（便于配置左侧专用美术，彻底免镜像）。
+ * 资产未配 sideL 时由调用方逐字段回退到 side（见 SkeletonAsset.resolveAttachmentOffset 的调用约定）。
+ * @param {string} direction
+ * @returns {string}
+ */
+export function resolveAttachmentFormKey(direction) {
+  if (String(direction || '') === 'left') return 'sideL';
+  return resolveDirectionKey(direction);
 }

@@ -2151,6 +2151,18 @@ export class SkeletonEditor {
       return { element, sx: attachment.sx, sy: attachment.sy, sw: attachment.sw, sh: attachment.sh };
     }
     if (attachment.type === 'sequence') {
+      // 整帧模式（meta.clipFrames）：按当前剪辑 + 预览方向取帧表——编辑器与运行时共用同一事实源
+      const clipFrames = this.runtime?.meta?.clipFrames || this.doc?.meta?.clipFrames || null;
+      const clipEntry = clipFrames && this.currentClip ? clipFrames[this.currentClip] : null;
+      if (clipEntry?.dirs) {
+        const dirKey = this._lpcDirectionKey(this.previewDirection);
+        const dirFrames = clipEntry.dirs[dirKey] || clipEntry.dirs.down || clipEntry.dirs.up;
+        if (Array.isArray(dirFrames) && dirFrames.length > 0) {
+          const slotFrame = this._sequenceFrameIndex(attachment);
+          const rect = dirFrames[slotFrame % dirFrames.length];
+          if (rect) return { element, sx: rect.sx, sy: rect.sy, sw: rect.sw, sh: rect.sh };
+        }
+      }
       let frames = attachment.frames || [];
       if (frames.length === 0) {
         // 运行时由状态映射器按方向行计算帧表：编辑器用 Manifest 网格兜底显示
@@ -2162,6 +2174,13 @@ export class SkeletonEditor {
       return { element, sx: rect.sx, sy: rect.sy, sw: rect.sw, sh: rect.sh };
     }
     return null;
+  }
+
+  /** 编辑器 7 形态预览方向 → 整帧素材的 4 方向（side 不分左右，取 left）。 */
+  _lpcDirectionKey(direction) {
+    if (direction === 'up' || direction === 'NE' || direction === 'NW') return 'up';
+    if (direction === 'side') return 'left';
+    return 'down';
   }
 
   /** sequence 帧表为空时的显示兜底：Manifest grid 首格 → 整图。 */
@@ -3744,7 +3763,8 @@ export class SkeletonEditor {
       walk_down: '行走-下(walk_down)', walk_up: '行走-上(walk_up)', walk_side: '行走-侧(walk_side)',
       walk_SE: '行走-右下(walk_SE)', walk_SW: '行走-左下(walk_SW)',
       walk_NE: '行走-右上(walk_NE)', walk_NW: '行走-左上(walk_NW)',
-      jump: '跳跃(jump)', attack: '攻击(attack)',
+      jump: '跳跃(jump)', jump_down: '跳跃-下(jump_down)', jump_side: '跳跃-侧(jump_side)',
+      jump_up: '跳跃-上(jump_up)', attack: '攻击(attack)',
       gather: '采集(gather)', logging: '砍伐(logging)', mining: '挖矿(mining)', fishing: '钓鱼(fishing)',
       climb_back: '攀爬(climb_back)', sleep: '睡觉(sleep)', stretcher: '担架(stretcher)',
       death: '死亡(death)', soul: '灵魂(soul)',

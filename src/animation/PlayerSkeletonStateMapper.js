@@ -25,6 +25,8 @@
  */
 
 import { weaponKeyOf } from './SkeletonPartResolver.js';
+import { createPlayerLpcFrameMapper } from './PlayerLpcFrameMapper.js';
+import { isJumpClipName, resolveJumpClipName } from './SkeletonJumpClip.js';
 import {
   SKELETON_HEAD_SLOT_PLAN,
   SKELETON_DIAGONAL_FALLBACK,
@@ -36,7 +38,8 @@ const MAPPER_CLIPS = new Set([
   'death', 'soul', 'climb_back',
   'walk_down', 'walk_up', 'walk_side',
   'walk_SE', 'walk_SW', 'walk_NE', 'walk_NW',
-  'idle_down', 'idle_up', 'idle_side'
+  'idle_down', 'idle_up', 'idle_side',
+  'jump_down', 'jump_side', 'jump_up'
 ]);
 
 /** 手持位挂点骨骼（右前臂） */
@@ -120,10 +123,17 @@ export function createPlayerSkeletonStateMapper(entity, { getAssetManager = null
   let lastWeaponState = ''; // 武器槽位联动守卫：heldKey|ownedKeys 签名变化才写覆盖层
   let autoDrawnKey = '';     // 战斗中自动上手的武器（进战斗瞬间主手空 → 背包里挑一把拔出）
   let wasInCombat = false;   // 上一帧是否处于战斗态（用于判定「进战斗瞬间」）
+  let lpcHook = null;        // 整帧模式（LPC）映射器：按资产 meta.frameMode 分流
 
   return (skeletonComponent) => {
     const asset = skeletonComponent.skeletonAsset;
     if (!asset) return;
+    // 整帧模式资产（meta.frameMode）：整张像素帧按状态切帧表，交给 LPC 映射器
+    if (asset.meta?.frameMode === true) {
+      if (!lpcHook) lpcHook = createPlayerLpcFrameMapper(entity);
+      lpcHook(skeletonComponent);
+      return;
+    }
     const sprite = entity.getComponent?.('sprite');
     if (!sprite) return;
 
@@ -157,8 +167,10 @@ export function createPlayerSkeletonStateMapper(entity, { getAssetManager = null
     const applyFacing = () => {
       const facing = sprite?.direction || 'down';
       const key = resolveDirectionKey(facing);
-      // 左系朝向（left / 斜左下 SW / 斜左上 NW）由整体 flipX 镜像
-      const wantFlip = isMirroredFacing(facing);
+      // 左系朝向（left / 斜左下 SW / 斜左上 NW）由整体 flipX 镜像。
+      // 资产声明 meta.noMirrorFacing=true 时改用各形态自己的美术（sideL/SW/NW 切片），不再镜像——
+      // 一手刀一手盾这类左右不对称角色，镜像会把武器换到另一只手。
+      const wantFlip = isMirroredFacing(facing) && asset.meta?.noMirrorFacing !== true;
       if (sprite.flipX !== wantFlip) sprite.flipX = wantFlip;
       // side 键下 left/right 共用剪辑与侧脸头，头的翻转依赖 facing → 守卫需区分两者
       const facingKey = key === 'side' ? `${key}|${facing}` : key;
@@ -199,13 +211,6 @@ export function createPlayerSkeletonStateMapper(entity, { getAssetManager = null
     if (mapperHold) {
       const holdClip = asset.clips.get(mapperHold);
       if (!holdClip || (!holdClip.loop && skeletonComponent.clipTime >= holdClip.durationMs)) {
-        // 非循环离散剪辑播完：仍在跳跃中则保持末帧（人还在空中，不切回待机）；
-        // 落地（JumpSystem 清 _jumping）后回归连续状态映射。
-        // 保持期间仍执行朝向处理——空中改变方向时头部三态/背挂换边跟随
-        if (mapperHold === 'jump' && entity._jumping === true) {
-          applyFacing();
-          return;
-        }
         mapperHold = '';
       } else {
         applyFacing();
@@ -219,22 +224,34 @@ export function createPlayerSkeletonStateMapper(entity, { getAssetManager = null
     if (entity.isDead || entity.isDying) targetClip = 'death';
     else if (entity.isSoulState === true) targetClip = 'soul';
     else if (entity._climbing === true) targetClip = 'climb_back';
+    // 跳跃中：按当前朝向选形态剪辑（jump_down/jump_side/jump_up）——
+    //   单一 jump 剪辑无法同时表达正/侧/背三种身体姿态（侧视膝盖会反关节）。
+    //   剪辑播完后停在末帧（骨架组件对非循环剪辑钳制 clipTime），落地后回归行走/待机。
+    else if (entity._jumping === true) {
+      targetClip = resolveJumpClipName(asset, moveKey) || '';
+    }
     // isStopping（松开方向）立即回待机：骨骼模式下 SpriteComponent 帧归零逻辑不跑
     else if (sprite.isWalking === true && sprite.isStopping !== true) {
       targetClip = `walk_${moveKey}`;
     } else {
       targetClip = `idle_${moveKey}`;
     }
-    if (!asset.clips.has(targetClip)) {
+    if (targetClip && !asset.clips.has(targetClip)) {
       targetClip = `${targetClip.startsWith('walk_') ? 'walk_' : 'idle_'}${SKELETON_DIAGONAL_FALLBACK[moveKey] || moveKey}`;
     }
-    if (!asset.clips.has(targetClip)) {
+    if (!targetClip || !asset.clips.has(targetClip)) {
       targetClip = asset.defaultClip;
       if (!targetClip) return;
     }
 
     if (targetClip !== lastClip) {
+      // 空中改朝向 → 切到对应形态剪辑时按比例保留播放进度（不重播起跳动作）
+      const prev = asset.clips.get(lastClip);
+      const next = asset.clips.get(targetClip);
+      const jumpSwitch = prev && next && isJumpClipName(lastClip) && isJumpClipName(targetClip);
+      const keepTime = jumpSwitch ? skeletonComponent.clipTime : 0;
       skeletonComponent.playClip(targetClip);
+      if (jumpSwitch && next) skeletonComponent.clipTime = Math.min(keepTime, next.durationMs);
       lastClip = targetClip;
       mapperHold = '';
     }

@@ -4,6 +4,7 @@
  ************************************************************/
 
 import { RNG } from '../core/RNG.js';
+import { resolveEntityJumpClipName } from '../animation/SkeletonJumpClip.js';
 
 // 表现层随机：起跳/落地烟雾粒子（非玩法结算，非权威）
 const fxRng = new RNG();
@@ -124,8 +125,13 @@ export class JumpSystem {
     });
     // 离散动作接线：骨骼实体播跳跃剪辑（非循环，播完由状态映射器自动回归行走/待机；
     // 普通帧动画实体无 jump 动画，不播避免警告刷屏）
+    // 部件模式按当前朝向选形态剪辑（jump_down/jump_side/jump_up）——
+    // 单一 jump 剪辑无法同时表达正/侧/背三种身体姿态（侧视膝盖会反关节）。
     const sprite = entity?.getComponent?.('sprite');
-    if (sprite?.isSkeleton) sprite.playAnimation('jump');
+    if (sprite?.isSkeleton) {
+      const clipName = resolveEntityJumpClipName(entity);
+      if (clipName) sprite.playAnimation(clipName);
+    }
     entity._jumping = true;   // 跳跃中标志：mapper 播完 jump 后保持末帧直到落地
     return true;
   }

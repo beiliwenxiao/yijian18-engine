@@ -81,7 +81,9 @@ export class EntityFactory {
       deps: this.animationDeps
     });
     sprite.skeletonDelegate = skeletonComponent;
-    // 角色/生物实体挂状态映射器：连续状态（死亡/灵魂/攀爬/行走/待机）自动驱动剪辑
+    // 角色/生物实体挂状态映射器：连续状态（死亡/灵魂/攀爬/行走/待机）自动驱动剪辑。
+    // 整帧模式资产（meta.frameMode）用 LPC 帧表映射器；资产异步就绪，首帧按部件模式兜底，
+    // 资产到位后 mapper 自行按 meta.frameMode 分流。
     skeletonComponent.stateHook = createPlayerSkeletonStateMapper(entity, this.animationDeps || {});
     entity.addComponent(skeletonComponent);
   }

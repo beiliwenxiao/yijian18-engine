@@ -110,7 +110,7 @@
             ],
             "type": "object"
           },
-          "resultSemantics": "满足领域条件时提交指定状态事务；条��未满足、已提交或场景不适用时成功空操作；事务失败时短路后续步骤。",
+          "resultSemantics": "满足领域条件时提交指定状态事务；条���未满足、已提交或场景不适用时成功空操作；事务失败时短路后续步骤。",
           "value": "commitStoryWhenReady"
         },
         {

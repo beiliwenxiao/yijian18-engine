@@ -22,7 +22,8 @@
  *   - flipX 通过整体 x 镜像实现；透明度遵循调用方 ctx.globalAlpha
  */
 
-import { SKELETON_ATTACHMENT_TYPES, resolveAttachmentOffset, resolveDirectionKey } from '../animation/SkeletonAsset.js';
+import { SKELETON_ATTACHMENT_TYPES, resolveAttachmentOffset } from '../animation/SkeletonAsset.js';
+import { resolveAttachmentFormKey } from '../animation/SkeletonDirection.js';
 import { applyTransformConstraints } from '../animation/SkeletonConstraint.js';
 
 const DEG2RAD = Math.PI / 180;
@@ -79,15 +80,25 @@ export class SkeletonRenderer {
       // 方向性附件偏移（背挂武器等按朝向摆位）：side/up/斜向覆盖缺省时逐字段回退顶层值。
       // offset.assetId/width/height：按方向整体换部件图（形态：正面/侧面/背面/斜前/斜后），
       // 换图时绘制盒以 offset 声明为准，未声明沿用顶层附件盒。
-      const directionOverride = resolveAttachmentOffset(attachment, resolveDirectionKey(sprite?.direction));
+      // 附件形态键：left 走独立 sideL（配了左侧美术的资产可完全免镜像）；
+      // 未配 sideL 的老资产逐字段回退到 side（行为不变）。
+      const formKey = resolveAttachmentFormKey(sprite?.direction);
+      let directionOverride = resolveAttachmentOffset(attachment, formKey);
+      if (!directionOverride && formKey === 'sideL') directionOverride = resolveAttachmentOffset(attachment, 'side');
       const hasFormOverride = !!directionOverride
-        && (!!directionOverride.assetId || directionOverride.width > 0 || directionOverride.height > 0);
+        && (!!directionOverride.assetId || directionOverride.width > 0 || directionOverride.height > 0
+          || directionOverride.sw > 0);
       const effectiveAttachment = hasFormOverride
         ? {
           ...attachment,
           ...(directionOverride.assetId ? { assetId: directionOverride.assetId } : {}),
           ...(directionOverride.width > 0 ? { width: directionOverride.width } : {}),
-          ...(directionOverride.height > 0 ? { height: directionOverride.height } : {})
+          ...(directionOverride.height > 0 ? { height: directionOverride.height } : {}),
+          // 图集切片形态：directionOffsets 可按形态换源矩形（同一张图集里存 正/侧/背 三套部件）
+          ...(directionOverride.sw > 0 ? {
+            sx: directionOverride.sx || 0, sy: directionOverride.sy || 0,
+            sw: directionOverride.sw, sh: directionOverride.sh
+          } : {})
         }
         : attachment;
 

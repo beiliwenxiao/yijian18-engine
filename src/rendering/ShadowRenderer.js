@@ -357,9 +357,9 @@ export class ShadowRenderer {
       const params = this.computeShadowParams(
         position.x, position.y, width, height, position.elevation || 0, light
       );
-      // 物品可调参数（shadowProfile.radius / scale / lift）：
+      // 物品可调参数（shadowProfile.radius / scale / liftPx）：
       // radius=贴地影横半径（px，设置后覆盖按精灵尺寸的自动推导，纵半径按椭圆扁率跟随）；
-      // scale=影子大小倍率（默认 1）；lift=上移量占影高比例（0~1，默认 1/3，仅非人形角色生效）
+      // scale=影子大小倍率（默认 1）；liftPx=上移量（像素，仅非人形角色生效）
       const shadowScale = Number.isFinite(shadowProfile?.scale) && shadowProfile.scale > 0
         ? shadowProfile.scale
         : 1;
@@ -376,13 +376,21 @@ export class ShadowRenderer {
         params.radiusX *= shadowScale;
         params.radiusY *= shadowScale;
       }
+      // 贴地影上移量统一用像素表达（shadowProfile.liftPx）：
+      // 比例会随影高缩放，同数值在不同尺寸物体上位移不同，策划无法直观控制。
+      // 未配置时保持原默认「上移 1/3 影高」（影高=2×radiusY）；旧数据的比例字段 lift 自动折算成像素。
       const isCharacter = CHARACTER_ENTITY_TYPES.includes(entity.type);
-      const liftRatio = isCharacter
-        ? 0
-        : (Number.isFinite(shadowProfile?.lift) ? clamp(shadowProfile.lift, 0, 1) : 1 / 3);
-      if (liftRatio > 0) {
-        params.y -= params.radiusY * 2 * liftRatio; // 上移 lift×影高（影高=2×radiusY）
+      let liftPx = 0;
+      if (!isCharacter) {
+        if (Number.isFinite(shadowProfile?.liftPx)) {
+          liftPx = Math.max(0, shadowProfile.liftPx);
+        } else if (Number.isFinite(shadowProfile?.lift)) {
+          liftPx = params.radiusY * 2 * clamp(shadowProfile.lift, 0, 1);
+        } else {
+          liftPx = params.radiusY * 2 / 3;
+        }
       }
+      if (liftPx > 0) params.y -= liftPx;
       // 长影在下、贴地影在上：长影为卵形旋转绘制（沿火-人连线发散），成本可忽略。
       // long=false → 该实体不产生点光长影（基础影保留）
       if (params.longShadow && shadowProfile?.long !== false) {

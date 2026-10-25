@@ -83,7 +83,8 @@ async function renderFrame(clipName, timeMs) {
     const bone = world.get(s.bone);
     if (!bone) continue;
     const deg = (bone.rad * 180 / Math.PI) + (att.rot ?? 0);
-    let buf = await (deg ? pipe.rotate(-deg, { background: { r: 0, g: 0, b: 0, alpha: 0 } }) : pipe).png().toBuffer();
+    // 引擎是 ctx.rotate(+rad)（canvas y 向下 → 正角顺时针）→ 等价 sharp.rotate(+deg)
+    let buf = await (deg ? pipe.rotate(deg, { background: { r: 0, g: 0, b: 0, alpha: 0 } }) : pipe).png().toBuffer();
     const rm = await sharp(buf).metadata();
     if (att.width && att.height && (Math.abs(att.width - rm.width) > 0.5 || Math.abs(att.height - rm.height) > 0.5)) {
       buf = await sharp(buf).resize(Math.max(1, Math.round(att.width)), Math.max(1, Math.round(att.height))).png().toBuffer();

@@ -6108,7 +6108,8 @@
       "imageId": "skeleton.player",
       "category": "character-skeleton",
       "usage": [
-        "skeleton-demo"
+        "skeleton-demo",
+        "player-skeleton"
       ],
       "sourceFile": "assets/skeletons/player.json",
       "runtime2D": {
@@ -6130,7 +6131,7 @@
       "animations": [],
       "targetPhase": "P1",
       "status": "placeholder",
-      "revision": 84
+      "revision": 87
     },
     {
       "assetId": "skeleton.player-humanoid",
@@ -6159,6 +6160,64 @@
       "animations": [],
       "targetPhase": "P1",
       "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "skeleton.player-lpc",
+      "imageId": "skeleton.player-lpc",
+      "category": "character-skeleton",
+      "usage": [
+        "player-skeleton"
+      ],
+      "sourceFile": "assets/skeletons/player-lpc.json",
+      "runtime2D": {
+        "path": "assets/skeletons/player-lpc.json",
+        "mode": "skeleton"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skeleton.player-lpc"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "third-party-approved",
+      "revision": 1
+    },
+    {
+      "assetId": "player.lpc.frames",
+      "imageId": "player.lpc.frames",
+      "category": "character-sprite",
+      "usage": [
+        "player-frame-sheet"
+      ],
+      "sourceFile": "assets/images/player/lpc/frames.png",
+      "runtime2D": {
+        "path": "assets/images/player/lpc/frames.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player.lpc.frames"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      },
+      "bounds": {
+        "width": 832,
+        "height": 1344
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "third-party-approved",
       "revision": 1
     },
     {
@@ -9086,6 +9145,354 @@
       "status": "ai-generated",
       "animations": [],
       "targetPhase": "P1",
+      "revision": 1
+    },
+    {
+      "assetId": "player.humanoid.foot-down",
+      "imageId": "player.humanoid.foot-down",
+      "category": "character-part",
+      "usage": [
+        "player-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player/parts-humanoid/foot-down.png",
+      "runtime2D": {
+        "path": "assets/images/player/parts-humanoid/foot-down.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player.humanoid.foot-down"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 12,
+        "height": 5
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player.humanoid.foot-up",
+      "imageId": "player.humanoid.foot-up",
+      "category": "character-part",
+      "usage": [
+        "player-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player/parts-humanoid/foot-up.png",
+      "runtime2D": {
+        "path": "assets/images/player/parts-humanoid/foot-up.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player.humanoid.foot-up"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 12,
+        "height": 5
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player.humanoid.chest-side",
+      "imageId": "player.humanoid.chest-side",
+      "category": "character-part",
+      "usage": [
+        "player-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player/parts-humanoid/chest-side.png",
+      "runtime2D": {
+        "path": "assets/images/player/parts-humanoid/chest-side.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player.humanoid.chest-side"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 26,
+        "height": 20
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player.humanoid.chest-up",
+      "imageId": "player.humanoid.chest-up",
+      "category": "character-part",
+      "usage": [
+        "player-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player/parts-humanoid/chest-up.png",
+      "runtime2D": {
+        "path": "assets/images/player/parts-humanoid/chest-up.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player.humanoid.chest-up"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 26,
+        "height": 20
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player.humanoid.waist-side",
+      "imageId": "player.humanoid.waist-side",
+      "category": "character-part",
+      "usage": [
+        "player-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player/parts-humanoid/waist-side.png",
+      "runtime2D": {
+        "path": "assets/images/player/parts-humanoid/waist-side.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player.humanoid.waist-side"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 14,
+        "height": 12
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player.humanoid.waist-up",
+      "imageId": "player.humanoid.waist-up",
+      "category": "character-part",
+      "usage": [
+        "player-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player/parts-humanoid/waist-up.png",
+      "runtime2D": {
+        "path": "assets/images/player/parts-humanoid/waist-up.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player.humanoid.waist-up"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 14,
+        "height": 12
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player.female-hero.frames",
+      "imageId": "player.female-hero.frames",
+      "category": "character-sprite",
+      "usage": [
+        "player-frame-sheet"
+      ],
+      "sourceFile": "assets/images/player/female-hero/sheet.png",
+      "runtime2D": {
+        "path": "assets/images/player/female-hero/sheet.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player.female-hero.frames"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      },
+      "bounds": {
+        "width": 1179,
+        "height": 7056
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "third-party-approved",
+      "revision": 3
+    },
+    {
+      "assetId": "skeleton.female-hero",
+      "imageId": "skeleton.female-hero",
+      "category": "character-skeleton",
+      "usage": [
+        "player-skeleton"
+      ],
+      "sourceFile": "assets/skeletons/female-hero.json",
+      "runtime2D": {
+        "path": "assets/skeletons/female-hero.json",
+        "mode": "skeleton"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skeleton.female-hero"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      },
+      "bounds": {
+        "width": 131,
+        "height": 126
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "third-party-approved",
+      "revision": 3
+    },
+    {
+      "assetId": "player.female.parts",
+      "imageId": "player.female.parts",
+      "category": "character-sprite",
+      "usage": [
+        "player-skeleton"
+      ],
+      "sourceFile": "assets/images/player/female/parts.png",
+      "runtime2D": {
+        "path": "assets/images/player/female/parts.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player.female.parts"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      },
+      "bounds": {
+        "width": 512,
+        "height": 406
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "third-party-approved",
+      "revision": 2
+    },
+    {
+      "assetId": "skeleton.player-female",
+      "imageId": "skeleton.player-female",
+      "category": "character-skeleton",
+      "usage": [
+        "player-skeleton"
+      ],
+      "sourceFile": "assets/skeletons/player-female.json",
+      "runtime2D": {
+        "path": "assets/skeletons/player-female.json",
+        "mode": "skeleton"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skeleton.player-female"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      },
+      "bounds": {
+        "width": 96,
+        "height": 100
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "third-party-approved",
+      "revision": 1
+    },
+    {
+      "assetId": "player.female.sword",
+      "imageId": "player.female.sword",
+      "category": "character-sprite",
+      "usage": [
+        "player-skeleton"
+      ],
+      "sourceFile": "assets/images/player/female/sword.png",
+      "runtime2D": {
+        "path": "assets/images/player/female/sword.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player.female.sword"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "third-party-approved",
+      "revision": 2
+    },
+    {
+      "assetId": "player.female.shield",
+      "imageId": "player.female.shield",
+      "category": "character-sprite",
+      "usage": [
+        "player-skeleton"
+      ],
+      "sourceFile": "assets/images/player/female/shield.png",
+      "runtime2D": {
+        "path": "assets/images/player/female/shield.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player.female.shield"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      },
+      "bounds": {
+        "width": 48,
+        "height": 56
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "third-party-approved",
       "revision": 1
     }
   ]

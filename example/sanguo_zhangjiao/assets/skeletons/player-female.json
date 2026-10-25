@@ -1,0 +1,7239 @@
+{
+  "schemaVersion": 1,
+  "skeletonId": "skeleton.player-female",
+  "meta": {
+    "width": 96,
+    "height": 100,
+    "coordinateSpace": "canonical-v1",
+    "headProportionApplied": true,
+    "noMirrorFacing": true,
+    "placeholderClips": [
+      "sit",
+      "sit_up",
+      "lie",
+      "lie_up"
+    ]
+  },
+  "defaultClip": "idle_down",
+  "bones": [
+    {
+      "id": "hips",
+      "parent": null,
+      "x": 0,
+      "y": -47.71,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 10
+    },
+    {
+      "id": "spine",
+      "parent": "hips",
+      "x": 0,
+      "y": -11.93,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 10
+    },
+    {
+      "id": "chest",
+      "parent": "spine",
+      "x": 0,
+      "y": -13.76,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 8
+    },
+    {
+      "id": "neck",
+      "parent": "chest",
+      "x": 0,
+      "y": -11.01,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 3
+    },
+    {
+      "id": "head",
+      "parent": "neck",
+      "x": 0,
+      "y": 0,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": -15.6
+    },
+    {
+      "id": "upperArmR",
+      "parent": "chest",
+      "x": -14.45,
+      "y": -7.34,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 24.77
+    },
+    {
+      "id": "upperArmL",
+      "parent": "chest",
+      "x": 14.68,
+      "y": -7.34,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 24.77
+    },
+    {
+      "id": "forearmR",
+      "parent": "upperArmR",
+      "x": 0,
+      "y": 24.77,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 19.27
+    },
+    {
+      "id": "forearmL",
+      "parent": "upperArmL",
+      "x": 0,
+      "y": 24.77,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 19.27
+    },
+    {
+      "id": "thighR",
+      "parent": "hips",
+      "x": -7.11,
+      "y": 0,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 19.72
+    },
+    {
+      "id": "thighL",
+      "parent": "hips",
+      "x": 7.11,
+      "y": 0,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 19.72
+    },
+    {
+      "id": "shinR",
+      "parent": "thighR",
+      "x": 0,
+      "y": 19.72,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 22.02
+    },
+    {
+      "id": "shinL",
+      "parent": "thighL",
+      "x": 0,
+      "y": 19.72,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 22.02
+    },
+    {
+      "id": "footR",
+      "parent": "shinR",
+      "x": 0,
+      "y": 22.02,
+      "rot": -90,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 7
+    },
+    {
+      "id": "footL",
+      "parent": "shinL",
+      "x": 0,
+      "y": 22.02,
+      "rot": -90,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 7
+    },
+    {
+      "id": "back",
+      "parent": "spine",
+      "x": 0,
+      "y": -8,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 10
+    }
+  ],
+  "slots": [
+    {
+      "id": "headAll",
+      "bone": "head",
+      "z": 40,
+      "attachment": {
+        "type": "slice",
+        "assetId": "player.female.parts",
+        "sx": 337,
+        "sy": 105,
+        "sw": 50,
+        "sh": 46,
+        "x": 2.29,
+        "y": -4.59,
+        "rot": 0,
+        "width": 22.94,
+        "height": 21.1,
+        "visible": true,
+        "directionOffsets": {
+          "down": {
+            "sx": 337,
+            "sy": 105,
+            "sw": 50,
+            "sh": 46,
+            "x": 2.29,
+            "y": -4.59,
+            "rot": 0,
+            "width": 22.94,
+            "height": 21.1
+          },
+          "side": {
+            "sx": 389,
+            "sy": 105,
+            "sw": 73,
+            "sh": 49,
+            "x": -3.9,
+            "y": -6.19,
+            "rot": 0,
+            "width": 33.49,
+            "height": 22.48
+          },
+          "sideL": {
+            "sx": 2,
+            "sy": 164,
+            "sw": 73,
+            "sh": 49,
+            "x": 5.73,
+            "y": -6.19,
+            "rot": 0,
+            "width": 33.49,
+            "height": 22.48
+          },
+          "up": {
+            "sx": 77,
+            "sy": 164,
+            "sw": 43,
+            "sh": 46,
+            "x": -1.15,
+            "y": -3.67,
+            "rot": 0,
+            "width": 19.72,
+            "height": 21.1
+          },
+          "SE": {
+            "sx": 215,
+            "sy": 105,
+            "sw": 55,
+            "sh": 52,
+            "x": -1.61,
+            "y": -5.96,
+            "rot": 0,
+            "width": 25.23,
+            "height": 23.85
+          },
+          "SW": {
+            "sx": 272,
+            "sy": 105,
+            "sw": 63,
+            "sh": 52,
+            "x": 4.82,
+            "y": -5.96,
+            "rot": 0,
+            "width": 28.9,
+            "height": 23.85
+          },
+          "NE": {
+            "sx": 91,
+            "sy": 105,
+            "sw": 62,
+            "sh": 50,
+            "x": -1.38,
+            "y": -4.59,
+            "rot": 0,
+            "width": 28.44,
+            "height": 22.94
+          },
+          "NW": {
+            "sx": 155,
+            "sy": 105,
+            "sw": 58,
+            "sh": 48,
+            "x": 2.75,
+            "y": -4.13,
+            "rot": 0,
+            "width": 26.61,
+            "height": 22.02
+          }
+        }
+      }
+    },
+    {
+      "id": "chestAll",
+      "bone": "chest",
+      "z": 21,
+      "attachment": {
+        "type": "slice",
+        "assetId": "player.female.parts",
+        "sx": 103,
+        "sy": 2,
+        "sw": 32,
+        "sh": 42,
+        "x": 0.46,
+        "y": 4.59,
+        "rot": 0,
+        "width": 14.68,
+        "height": 19.27,
+        "visible": true,
+        "directionOffsets": {
+          "down": {
+            "sx": 103,
+            "sy": 2,
+            "sw": 32,
+            "sh": 42,
+            "x": 0.46,
+            "y": 4.59,
+            "rot": 0,
+            "width": 14.68,
+            "height": 19.27
+          },
+          "side": {
+            "sx": 137,
+            "sy": 2,
+            "sw": 58,
+            "sh": 42,
+            "x": -7.34,
+            "y": 3.67,
+            "rot": 0,
+            "width": 26.61,
+            "height": 19.27
+          },
+          "sideL": {
+            "sx": 197,
+            "sy": 2,
+            "sw": 57,
+            "sh": 42,
+            "x": 9.4,
+            "y": 3.67,
+            "rot": 0,
+            "width": 26.15,
+            "height": 19.27
+          },
+          "up": {
+            "sx": 256,
+            "sy": 2,
+            "sw": 33,
+            "sh": 42,
+            "x": 0.23,
+            "y": 5.5,
+            "rot": 0,
+            "width": 15.14,
+            "height": 19.27
+          },
+          "SE": {
+            "sx": 50,
+            "sy": 2,
+            "sw": 25,
+            "sh": 42,
+            "x": 1.61,
+            "y": 4.59,
+            "rot": 0,
+            "width": 11.47,
+            "height": 19.27
+          },
+          "SW": {
+            "sx": 77,
+            "sy": 2,
+            "sw": 24,
+            "sh": 42,
+            "x": 1.83,
+            "y": 4.59,
+            "rot": 0,
+            "width": 11.01,
+            "height": 19.27
+          },
+          "NE": {
+            "sx": 2,
+            "sy": 2,
+            "sw": 22,
+            "sh": 42,
+            "x": 1.38,
+            "y": 5.5,
+            "rot": 0,
+            "width": 10.09,
+            "height": 19.27
+          },
+          "NW": {
+            "sx": 26,
+            "sy": 2,
+            "sw": 22,
+            "sh": 42,
+            "x": -0.92,
+            "y": 5.5,
+            "rot": 0,
+            "width": 10.09,
+            "height": 19.27
+          }
+        }
+      }
+    },
+    {
+      "id": "waistAll",
+      "bone": "spine",
+      "z": 22,
+      "attachment": {
+        "type": "slice",
+        "assetId": "player.female.parts",
+        "sx": 206,
+        "sy": 341,
+        "sw": 32,
+        "sh": 41,
+        "x": 0.46,
+        "y": 9.86,
+        "rot": 0,
+        "width": 14.68,
+        "height": 18.81,
+        "visible": true,
+        "directionOffsets": {
+          "down": {
+            "sx": 206,
+            "sy": 341,
+            "sw": 32,
+            "sh": 41,
+            "x": 0.46,
+            "y": 9.86,
+            "rot": 0,
+            "width": 14.68,
+            "height": 18.81
+          },
+          "side": {
+            "sx": 240,
+            "sy": 341,
+            "sw": 30,
+            "sh": 32,
+            "x": -0.92,
+            "y": 6.88,
+            "rot": 0,
+            "width": 13.76,
+            "height": 14.68
+          },
+          "sideL": {
+            "sx": 272,
+            "sy": 341,
+            "sw": 29,
+            "sh": 32,
+            "x": 2.98,
+            "y": 6.88,
+            "rot": 0,
+            "width": 13.3,
+            "height": 14.68
+          },
+          "up": {
+            "sx": 303,
+            "sy": 341,
+            "sw": 33,
+            "sh": 41,
+            "x": 0.23,
+            "y": 10.78,
+            "rot": 0,
+            "width": 15.14,
+            "height": 18.81
+          },
+          "SE": {
+            "sx": 151,
+            "sy": 341,
+            "sw": 25,
+            "sh": 41,
+            "x": 1.61,
+            "y": 9.86,
+            "rot": 0,
+            "width": 11.47,
+            "height": 18.81
+          },
+          "SW": {
+            "sx": 178,
+            "sy": 341,
+            "sw": 26,
+            "sh": 41,
+            "x": 1.83,
+            "y": 9.86,
+            "rot": 0,
+            "width": 11.93,
+            "height": 18.81
+          },
+          "NE": {
+            "sx": 102,
+            "sy": 341,
+            "sw": 22,
+            "sh": 40,
+            "x": 1.38,
+            "y": 10.55,
+            "rot": 0,
+            "width": 10.09,
+            "height": 18.35
+          },
+          "NW": {
+            "sx": 126,
+            "sy": 341,
+            "sw": 23,
+            "sh": 41,
+            "x": -1.15,
+            "y": 10.78,
+            "rot": 0,
+            "width": 10.55,
+            "height": 18.81
+          }
+        }
+      }
+    },
+    {
+      "id": "upperArmR",
+      "bone": "upperArmR",
+      "z": 23,
+      "attachment": {
+        "type": "slice",
+        "assetId": "player.female.parts",
+        "sx": 2,
+        "sy": 341,
+        "sw": 26,
+        "sh": 63,
+        "x": 2.52,
+        "y": 10.78,
+        "rot": 0,
+        "width": 11.93,
+        "height": 28.9,
+        "visible": true,
+        "directionOffsets": {
+          "down": {
+            "sx": 2,
+            "sy": 341,
+            "sw": 26,
+            "sh": 63,
+            "x": 2.52,
+            "y": 10.78,
+            "rot": 0,
+            "width": 11.93,
+            "height": 28.9
+          },
+          "side": {
+            "sx": 30,
+            "sy": 341,
+            "sw": 19,
+            "sh": 63,
+            "x": 22.02,
+            "y": 9.86,
+            "rot": 0,
+            "width": 8.72,
+            "height": 28.9
+          },
+          "sideL": {
+            "sx": 51,
+            "sy": 341,
+            "sw": 19,
+            "sh": 63,
+            "x": 9.17,
+            "y": 9.86,
+            "rot": 0,
+            "width": 8.72,
+            "height": 28.9
+          },
+          "up": {
+            "sx": 72,
+            "sy": 341,
+            "sw": 28,
+            "sh": 61,
+            "x": 27.75,
+            "y": 12.16,
+            "rot": 0,
+            "width": 12.84,
+            "height": 27.98
+          },
+          "SE": {
+            "sx": 426,
+            "sy": 276,
+            "sw": 27,
+            "sh": 63,
+            "x": 5.96,
+            "y": 10.78,
+            "rot": 0,
+            "width": 12.39,
+            "height": 28.9
+          },
+          "SW": {
+            "sx": 455,
+            "sy": 276,
+            "sw": 29,
+            "sh": 63,
+            "x": 26.61,
+            "y": 10.78,
+            "rot": 0,
+            "width": 13.3,
+            "height": 28.9
+          },
+          "NE": {
+            "sx": 363,
+            "sy": 276,
+            "sw": 29,
+            "sh": 63,
+            "x": 5.5,
+            "y": 11.7,
+            "rot": 0,
+            "width": 13.3,
+            "height": 28.9
+          },
+          "NW": {
+            "sx": 394,
+            "sy": 276,
+            "sw": 30,
+            "sh": 63,
+            "x": 23.62,
+            "y": 11.7,
+            "rot": 0,
+            "width": 13.76,
+            "height": 28.9
+          }
+        }
+      }
+    },
+    {
+      "id": "forearmR",
+      "bone": "forearmR",
+      "z": 24,
+      "attachment": {
+        "type": "slice",
+        "assetId": "player.female.parts",
+        "sx": 2,
+        "sy": 105,
+        "sw": 27,
+        "sh": 48,
+        "x": 1.38,
+        "y": 11.47,
+        "rot": 0,
+        "width": 12.39,
+        "height": 22.02,
+        "visible": true,
+        "directionOffsets": {
+          "down": {
+            "sx": 2,
+            "sy": 105,
+            "sw": 27,
+            "sh": 48,
+            "x": 1.38,
+            "y": 11.47,
+            "rot": 0,
+            "width": 12.39,
+            "height": 22.02
+          },
+          "side": {
+            "sx": 31,
+            "sy": 105,
+            "sw": 13,
+            "sh": 57,
+            "x": 23.39,
+            "y": 12.61,
+            "rot": 0,
+            "width": 5.96,
+            "height": 26.15
+          },
+          "sideL": {
+            "sx": 46,
+            "sy": 105,
+            "sw": 11,
+            "sh": 54,
+            "x": 8.26,
+            "y": 11.93,
+            "rot": 0,
+            "width": 5.05,
+            "height": 24.77
+          },
+          "up": {
+            "sx": 59,
+            "sy": 105,
+            "sw": 30,
+            "sh": 47,
+            "x": 29.13,
+            "y": 12.16,
+            "rot": 0,
+            "width": 13.76,
+            "height": 21.56
+          },
+          "SE": {
+            "sx": 448,
+            "sy": 46,
+            "sw": 23,
+            "sh": 48,
+            "x": 5.05,
+            "y": 11.01,
+            "rot": 0,
+            "width": 10.55,
+            "height": 22.02
+          },
+          "SW": {
+            "sx": 473,
+            "sy": 46,
+            "sw": 15,
+            "sh": 37,
+            "x": 25.69,
+            "y": 8.49,
+            "rot": 0,
+            "width": 6.88,
+            "height": 16.97
+          },
+          "NE": {
+            "sx": 406,
+            "sy": 46,
+            "sw": 15,
+            "sh": 29,
+            "x": 7.34,
+            "y": 7.57,
+            "rot": 0,
+            "width": 6.88,
+            "height": 13.3
+          },
+          "NW": {
+            "sx": 423,
+            "sy": 46,
+            "sw": 23,
+            "sh": 49,
+            "x": 23.39,
+            "y": 12.16,
+            "rot": 0,
+            "width": 10.55,
+            "height": 22.48
+          }
+        }
+      }
+    },
+    {
+      "id": "upperArmL",
+      "bone": "upperArmL",
+      "z": 14,
+      "attachment": {
+        "type": "slice",
+        "assetId": "player.female.parts",
+        "sx": 263,
+        "sy": 276,
+        "sw": 27,
+        "sh": 63,
+        "x": -2.06,
+        "y": 10.78,
+        "rot": 0,
+        "width": 12.39,
+        "height": 28.9,
+        "visible": true,
+        "directionOffsets": {
+          "down": {
+            "sx": 263,
+            "sy": 276,
+            "sw": 27,
+            "sh": 63,
+            "x": -2.06,
+            "y": 10.78,
+            "rot": 0,
+            "width": 12.39,
+            "height": 28.9
+          },
+          "side": {
+            "sx": 292,
+            "sy": 276,
+            "sw": 19,
+            "sh": 63,
+            "x": -7.11,
+            "y": 9.86,
+            "rot": 0,
+            "width": 8.72,
+            "height": 28.9
+          },
+          "sideL": {
+            "sx": 313,
+            "sy": 276,
+            "sw": 19,
+            "sh": 63,
+            "x": -19.95,
+            "y": 9.86,
+            "rot": 0,
+            "width": 8.72,
+            "height": 28.9
+          },
+          "up": {
+            "sx": 334,
+            "sy": 276,
+            "sw": 27,
+            "sh": 63,
+            "x": -26.83,
+            "y": 11.7,
+            "rot": 0,
+            "width": 12.39,
+            "height": 28.9
+          },
+          "SE": {
+            "sx": 214,
+            "sy": 276,
+            "sw": 22,
+            "sh": 63,
+            "x": -4.59,
+            "y": 10.78,
+            "rot": 0,
+            "width": 10.09,
+            "height": 28.9
+          },
+          "SW": {
+            "sx": 238,
+            "sy": 276,
+            "sw": 23,
+            "sh": 63,
+            "x": -21.79,
+            "y": 10.78,
+            "rot": 0,
+            "width": 10.55,
+            "height": 28.9
+          },
+          "NE": {
+            "sx": 167,
+            "sy": 276,
+            "sw": 22,
+            "sh": 63,
+            "x": -5.05,
+            "y": 11.7,
+            "rot": 0,
+            "width": 10.09,
+            "height": 28.9
+          },
+          "NW": {
+            "sx": 191,
+            "sy": 276,
+            "sw": 21,
+            "sh": 63,
+            "x": -24.08,
+            "y": 11.7,
+            "rot": 0,
+            "width": 9.63,
+            "height": 28.9
+          }
+        }
+      }
+    },
+    {
+      "id": "forearmL",
+      "bone": "forearmL",
+      "z": 15,
+      "attachment": {
+        "type": "slice",
+        "assetId": "player.female.parts",
+        "sx": 321,
+        "sy": 46,
+        "sw": 26,
+        "sh": 50,
+        "x": -0.92,
+        "y": 11.93,
+        "rot": 0,
+        "width": 11.93,
+        "height": 22.94,
+        "visible": true,
+        "directionOffsets": {
+          "down": {
+            "sx": 321,
+            "sy": 46,
+            "sw": 26,
+            "sh": 50,
+            "x": -0.92,
+            "y": 11.93,
+            "rot": 0,
+            "width": 11.93,
+            "height": 22.94
+          },
+          "side": {
+            "sx": 349,
+            "sy": 46,
+            "sw": 13,
+            "sh": 57,
+            "x": -5.73,
+            "y": 12.61,
+            "rot": 0,
+            "width": 5.96,
+            "height": 26.15
+          },
+          "sideL": {
+            "sx": 364,
+            "sy": 46,
+            "sw": 11,
+            "sh": 54,
+            "x": -20.87,
+            "y": 11.93,
+            "rot": 0,
+            "width": 5.05,
+            "height": 24.77
+          },
+          "up": {
+            "sx": 377,
+            "sy": 46,
+            "sw": 27,
+            "sh": 47,
+            "x": -28.21,
+            "y": 12.16,
+            "rot": 0,
+            "width": 12.39,
+            "height": 21.56
+          },
+          "SE": {
+            "sx": 271,
+            "sy": 46,
+            "sw": 22,
+            "sh": 55,
+            "x": -2.29,
+            "y": 12.61,
+            "rot": 0,
+            "width": 10.09,
+            "height": 25.23
+          },
+          "SW": {
+            "sx": 295,
+            "sy": 46,
+            "sw": 24,
+            "sh": 56,
+            "x": -24.31,
+            "y": 12.84,
+            "rot": 0,
+            "width": 11.01,
+            "height": 25.69
+          },
+          "NE": {
+            "sx": 217,
+            "sy": 46,
+            "sw": 25,
+            "sh": 56,
+            "x": -2.52,
+            "y": 13.76,
+            "rot": 0,
+            "width": 11.47,
+            "height": 25.69
+          },
+          "NW": {
+            "sx": 244,
+            "sy": 46,
+            "sw": 25,
+            "sh": 53,
+            "x": -26.83,
+            "y": 13.07,
+            "rot": 0,
+            "width": 11.47,
+            "height": 24.31
+          }
+        }
+      }
+    },
+    {
+      "id": "thighR",
+      "bone": "thighR",
+      "z": 4,
+      "attachment": {
+        "type": "slice",
+        "assetId": "player.female.parts",
+        "sx": 23,
+        "sy": 276,
+        "sw": 27,
+        "sh": 59,
+        "x": 1.38,
+        "y": 6.65,
+        "rot": 0,
+        "width": 12.39,
+        "height": 27.06,
+        "visible": true,
+        "directionOffsets": {
+          "down": {
+            "sx": 23,
+            "sy": 276,
+            "sw": 27,
+            "sh": 59,
+            "x": 1.38,
+            "y": 6.65,
+            "rot": 0,
+            "width": 12.39,
+            "height": 27.06
+          },
+          "side": {
+            "sx": 52,
+            "sy": 276,
+            "sw": 42,
+            "sh": 50,
+            "x": 8.03,
+            "y": 9.17,
+            "rot": 0,
+            "width": 19.27,
+            "height": 22.94
+          },
+          "sideL": {
+            "sx": 96,
+            "sy": 276,
+            "sw": 38,
+            "sh": 50,
+            "x": 8.94,
+            "y": 9.17,
+            "rot": 0,
+            "width": 17.43,
+            "height": 22.94
+          },
+          "up": {
+            "sx": 136,
+            "sy": 276,
+            "sw": 29,
+            "sh": 59,
+            "x": 13.76,
+            "y": 7.57,
+            "rot": 0,
+            "width": 13.3,
+            "height": 27.06
+          },
+          "SE": {
+            "sx": 478,
+            "sy": 215,
+            "sw": 22,
+            "sh": 55,
+            "x": 2.52,
+            "y": 8.49,
+            "rot": 0,
+            "width": 10.09,
+            "height": 25.23
+          },
+          "SW": {
+            "sx": 2,
+            "sy": 276,
+            "sw": 19,
+            "sh": 55,
+            "x": 14.22,
+            "y": 8.49,
+            "rot": 0,
+            "width": 8.72,
+            "height": 25.23
+          },
+          "NE": {
+            "sx": 428,
+            "sy": 215,
+            "sw": 20,
+            "sh": 51,
+            "x": 2.98,
+            "y": 9.86,
+            "rot": 0,
+            "width": 9.17,
+            "height": 23.39
+          },
+          "NW": {
+            "sx": 450,
+            "sy": 215,
+            "sw": 26,
+            "sh": 52,
+            "x": 12.61,
+            "y": 9.63,
+            "rot": 0,
+            "width": 11.93,
+            "height": 23.85
+          }
+        }
+      }
+    },
+    {
+      "id": "shinR",
+      "bone": "shinR",
+      "z": 11,
+      "attachment": {
+        "type": "slice",
+        "assetId": "player.female.parts",
+        "sx": 26,
+        "sy": 215,
+        "sw": 25,
+        "sh": 48,
+        "x": -0.46,
+        "y": 11.47,
+        "rot": 0,
+        "width": 11.47,
+        "height": 22.02,
+        "visible": true,
+        "directionOffsets": {
+          "down": {
+            "sx": 26,
+            "sy": 215,
+            "sw": 25,
+            "sh": 48,
+            "x": -0.46,
+            "y": 11.47,
+            "rot": 0,
+            "width": 11.47,
+            "height": 22.02
+          },
+          "side": {
+            "sx": 53,
+            "sy": 215,
+            "sw": 46,
+            "sh": 46,
+            "x": 10.78,
+            "y": 11.47,
+            "rot": 0,
+            "width": 21.1,
+            "height": 21.1
+          },
+          "sideL": {
+            "sx": 101,
+            "sy": 215,
+            "sw": 36,
+            "sh": 46,
+            "x": 6.65,
+            "y": 11.47,
+            "rot": 0,
+            "width": 16.51,
+            "height": 21.1
+          },
+          "up": {
+            "sx": 139,
+            "sy": 215,
+            "sw": 26,
+            "sh": 48,
+            "x": 16.28,
+            "y": 12.39,
+            "rot": 0,
+            "width": 11.93,
+            "height": 22.02
+          },
+          "SE": {
+            "sx": 463,
+            "sy": 164,
+            "sw": 26,
+            "sh": 47,
+            "x": 1.61,
+            "y": 11.7,
+            "rot": 0,
+            "width": 11.93,
+            "height": 21.56
+          },
+          "SW": {
+            "sx": 2,
+            "sy": 215,
+            "sw": 22,
+            "sh": 47,
+            "x": 14.91,
+            "y": 11.7,
+            "rot": 0,
+            "width": 10.09,
+            "height": 21.56
+          },
+          "NE": {
+            "sx": 408,
+            "sy": 164,
+            "sw": 22,
+            "sh": 47,
+            "x": 3.44,
+            "y": 12.16,
+            "rot": 0,
+            "width": 10.09,
+            "height": 21.56
+          },
+          "NW": {
+            "sx": 432,
+            "sy": 164,
+            "sw": 29,
+            "sh": 47,
+            "x": 12.84,
+            "y": 12.16,
+            "rot": 0,
+            "width": 13.3,
+            "height": 21.56
+          }
+        }
+      }
+    },
+    {
+      "id": "footR",
+      "bone": "footR",
+      "z": 12,
+      "attachment": {
+        "type": "slice",
+        "assetId": "player.female.parts",
+        "sx": 103,
+        "sy": 46,
+        "sw": 19,
+        "sh": 14,
+        "x": -3.67,
+        "y": -3.67,
+        "rot": 90,
+        "width": 8.72,
+        "height": 6.42,
+        "visible": true,
+        "directionOffsets": {
+          "down": {
+            "sx": 103,
+            "sy": 46,
+            "sw": 19,
+            "sh": 14,
+            "x": -3.67,
+            "y": -3.67,
+            "rot": 90,
+            "width": 8.72,
+            "height": 6.42
+          },
+          "side": {
+            "sx": 124,
+            "sy": 46,
+            "sw": 34,
+            "sh": 15,
+            "x": -3.44,
+            "y": 8.03,
+            "rot": 90,
+            "width": 15.6,
+            "height": 6.88
+          },
+          "sideL": {
+            "sx": 160,
+            "sy": 46,
+            "sw": 34,
+            "sh": 15,
+            "x": -3.44,
+            "y": 5.73,
+            "rot": 90,
+            "width": 15.6,
+            "height": 6.88
+          },
+          "up": {
+            "sx": 196,
+            "sy": 46,
+            "sw": 19,
+            "sh": 13,
+            "x": -4.36,
+            "y": 17.89,
+            "rot": 90,
+            "width": 8.72,
+            "height": 5.96
+          },
+          "SE": {
+            "sx": 53,
+            "sy": 46,
+            "sw": 23,
+            "sh": 14,
+            "x": -3.67,
+            "y": 1.38,
+            "rot": 90,
+            "width": 10.55,
+            "height": 6.42
+          },
+          "SW": {
+            "sx": 78,
+            "sy": 46,
+            "sw": 23,
+            "sh": 14,
+            "x": -3.67,
+            "y": 14.22,
+            "rot": 90,
+            "width": 10.55,
+            "height": 6.42
+          },
+          "NE": {
+            "sx": 23,
+            "sy": 46,
+            "sw": 13,
+            "sh": 2,
+            "x": -1.38,
+            "y": 1.83,
+            "rot": 90,
+            "width": 5.96,
+            "height": 0.92
+          },
+          "NW": {
+            "sx": 38,
+            "sy": 46,
+            "sw": 13,
+            "sh": 3,
+            "x": -1.61,
+            "y": 16.06,
+            "rot": 90,
+            "width": 5.96,
+            "height": 1.38
+          }
+        }
+      }
+    },
+    {
+      "id": "thighL",
+      "bone": "thighL",
+      "z": 5,
+      "attachment": {
+        "type": "slice",
+        "assetId": "player.female.parts",
+        "sx": 289,
+        "sy": 215,
+        "sw": 26,
+        "sh": 59,
+        "x": -0.69,
+        "y": 6.65,
+        "rot": 0,
+        "width": 11.93,
+        "height": 27.06,
+        "visible": true,
+        "directionOffsets": {
+          "down": {
+            "sx": 289,
+            "sy": 215,
+            "sw": 26,
+            "sh": 59,
+            "x": -0.69,
+            "y": 6.65,
+            "rot": 0,
+            "width": 11.93,
+            "height": 27.06
+          },
+          "side": {
+            "sx": 317,
+            "sy": 215,
+            "sw": 42,
+            "sh": 50,
+            "x": -6.19,
+            "y": 9.17,
+            "rot": 0,
+            "width": 19.27,
+            "height": 22.94
+          },
+          "sideL": {
+            "sx": 361,
+            "sy": 215,
+            "sw": 38,
+            "sh": 50,
+            "x": -5.28,
+            "y": 9.17,
+            "rot": 0,
+            "width": 17.43,
+            "height": 22.94
+          },
+          "up": {
+            "sx": 401,
+            "sy": 215,
+            "sw": 25,
+            "sh": 59,
+            "x": -12.84,
+            "y": 7.57,
+            "rot": 0,
+            "width": 11.47,
+            "height": 27.06
+          },
+          "SE": {
+            "sx": 228,
+            "sy": 215,
+            "sw": 28,
+            "sh": 57,
+            "x": -0.23,
+            "y": 8.49,
+            "rot": 0,
+            "width": 12.84,
+            "height": 26.15
+          },
+          "SW": {
+            "sx": 258,
+            "sy": 215,
+            "sw": 29,
+            "sh": 57,
+            "x": -11.01,
+            "y": 8.49,
+            "rot": 0,
+            "width": 13.3,
+            "height": 26.15
+          },
+          "NE": {
+            "sx": 167,
+            "sy": 215,
+            "sw": 30,
+            "sh": 54,
+            "x": 0.23,
+            "y": 9.17,
+            "rot": 0,
+            "width": 13.76,
+            "height": 24.77
+          },
+          "NW": {
+            "sx": 199,
+            "sy": 215,
+            "sw": 27,
+            "sh": 55,
+            "x": -13.3,
+            "y": 9.4,
+            "rot": 0,
+            "width": 12.39,
+            "height": 25.23
+          }
+        }
+      }
+    },
+    {
+      "id": "shinL",
+      "bone": "shinL",
+      "z": 6,
+      "attachment": {
+        "type": "slice",
+        "assetId": "player.female.parts",
+        "sx": 267,
+        "sy": 164,
+        "sw": 25,
+        "sh": 48,
+        "x": 0.92,
+        "y": 11.47,
+        "rot": 0,
+        "width": 11.47,
+        "height": 22.02,
+        "visible": true,
+        "directionOffsets": {
+          "down": {
+            "sx": 267,
+            "sy": 164,
+            "sw": 25,
+            "sh": 48,
+            "x": 0.92,
+            "y": 11.47,
+            "rot": 0,
+            "width": 11.47,
+            "height": 22.02
+          },
+          "side": {
+            "sx": 294,
+            "sy": 164,
+            "sw": 46,
+            "sh": 46,
+            "x": -3.44,
+            "y": 11.47,
+            "rot": 0,
+            "width": 21.1,
+            "height": 21.1
+          },
+          "sideL": {
+            "sx": 342,
+            "sy": 164,
+            "sw": 36,
+            "sh": 46,
+            "x": -7.57,
+            "y": 11.47,
+            "rot": 0,
+            "width": 16.51,
+            "height": 21.1
+          },
+          "up": {
+            "sx": 380,
+            "sy": 164,
+            "sw": 26,
+            "sh": 48,
+            "x": -14.45,
+            "y": 12.39,
+            "rot": 0,
+            "width": 11.93,
+            "height": 22.02
+          },
+          "SE": {
+            "sx": 192,
+            "sy": 164,
+            "sw": 32,
+            "sh": 47,
+            "x": 2.52,
+            "y": 11.7,
+            "rot": 0,
+            "width": 14.68,
+            "height": 21.56
+          },
+          "SW": {
+            "sx": 226,
+            "sy": 164,
+            "sw": 39,
+            "sh": 47,
+            "x": -13.3,
+            "y": 11.7,
+            "rot": 0,
+            "width": 17.89,
+            "height": 21.56
+          },
+          "NE": {
+            "sx": 122,
+            "sy": 164,
+            "sw": 33,
+            "sh": 48,
+            "x": 1.83,
+            "y": 11.93,
+            "rot": 0,
+            "width": 15.14,
+            "height": 22.02
+          },
+          "NW": {
+            "sx": 157,
+            "sy": 164,
+            "sw": 33,
+            "sh": 47,
+            "x": -15.14,
+            "y": 12.16,
+            "rot": 0,
+            "width": 15.14,
+            "height": 21.56
+          }
+        }
+      }
+    },
+    {
+      "id": "footL",
+      "bone": "footL",
+      "z": 12,
+      "attachment": {
+        "type": "slice",
+        "assetId": "player.female.parts",
+        "sx": 415,
+        "sy": 2,
+        "sw": 19,
+        "sh": 14,
+        "x": -3.67,
+        "y": 4.13,
+        "rot": 90,
+        "width": 8.72,
+        "height": 6.42,
+        "visible": true,
+        "directionOffsets": {
+          "down": {
+            "sx": 415,
+            "sy": 2,
+            "sw": 19,
+            "sh": 14,
+            "x": -3.67,
+            "y": 4.13,
+            "rot": 90,
+            "width": 8.72,
+            "height": 6.42
+          },
+          "side": {
+            "sx": 436,
+            "sy": 2,
+            "sw": 34,
+            "sh": 15,
+            "x": -3.44,
+            "y": -6.19,
+            "rot": 90,
+            "width": 15.6,
+            "height": 6.88
+          },
+          "sideL": {
+            "sx": 472,
+            "sy": 2,
+            "sw": 34,
+            "sh": 15,
+            "x": -3.44,
+            "y": -8.49,
+            "rot": 90,
+            "width": 15.6,
+            "height": 6.88
+          },
+          "up": {
+            "sx": 2,
+            "sy": 46,
+            "sw": 19,
+            "sh": 13,
+            "x": -4.36,
+            "y": -16.06,
+            "rot": 90,
+            "width": 8.72,
+            "height": 5.96
+          },
+          "SE": {
+            "sx": 360,
+            "sy": 2,
+            "sw": 17,
+            "sh": 2,
+            "x": -0.92,
+            "y": 5.5,
+            "rot": 90,
+            "width": 7.8,
+            "height": 0.92
+          },
+          "SW": {
+            "sx": 379,
+            "sy": 2,
+            "sw": 34,
+            "sh": 13,
+            "x": -3.44,
+            "y": -13.07,
+            "rot": 90,
+            "width": 15.6,
+            "height": 5.96
+          },
+          "NE": {
+            "sx": 291,
+            "sy": 2,
+            "sw": 32,
+            "sh": 13,
+            "x": -3.9,
+            "y": 3.44,
+            "rot": 90,
+            "width": 14.68,
+            "height": 5.96
+          },
+          "NW": {
+            "sx": 325,
+            "sy": 2,
+            "sw": 33,
+            "sh": 13,
+            "x": -3.9,
+            "y": -16.51,
+            "rot": 90,
+            "width": 15.14,
+            "height": 5.96
+          }
+        }
+      }
+    },
+    {
+      "id": "swordR",
+      "bone": "forearmR",
+      "z": 26,
+      "attachment": {
+        "type": "image",
+        "assetId": "player.female.sword",
+        "x": 0,
+        "y": 12.52,
+        "rot": 0,
+        "width": 56,
+        "height": 56,
+        "visible": true,
+        "directionOffsets": {
+          "down": {
+            "x": 0,
+            "y": 12.52,
+            "rot": 0
+          },
+          "side": {
+            "x": 0,
+            "y": 12.52,
+            "rot": 0
+          },
+          "sideL": {
+            "x": 0,
+            "y": 12.52,
+            "rot": 0
+          },
+          "up": {
+            "x": -29.36,
+            "y": 12.52,
+            "rot": 0
+          },
+          "SE": {
+            "x": 0,
+            "y": 12.52,
+            "rot": 0
+          },
+          "SW": {
+            "x": 0,
+            "y": 12.52,
+            "rot": 0
+          },
+          "NE": {
+            "x": -29.36,
+            "y": 12.52,
+            "rot": 0
+          },
+          "NW": {
+            "x": -29.36,
+            "y": 12.52,
+            "rot": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "shieldL",
+      "bone": "forearmL",
+      "z": 25,
+      "attachment": {
+        "type": "image",
+        "assetId": "player.female.shield",
+        "x": 9,
+        "y": 10.6,
+        "rot": 0,
+        "width": 22,
+        "height": 26,
+        "visible": true,
+        "directionOffsets": {
+          "down": {
+            "x": 9,
+            "y": 10.6,
+            "rot": 0
+          },
+          "side": {
+            "x": 9,
+            "y": 10.6,
+            "rot": 0
+          },
+          "sideL": {
+            "x": 9,
+            "y": 10.6,
+            "rot": 0
+          },
+          "up": {
+            "x": -20.36,
+            "y": 10.6,
+            "rot": 0
+          },
+          "SE": {
+            "x": 9,
+            "y": 10.6,
+            "rot": 0
+          },
+          "SW": {
+            "x": 9,
+            "y": 10.6,
+            "rot": 0
+          },
+          "NE": {
+            "x": -20.36,
+            "y": 10.6,
+            "rot": 0
+          },
+          "NW": {
+            "x": -20.36,
+            "y": 10.6,
+            "rot": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "swordBack",
+      "bone": "back",
+      "z": 2,
+      "attachment": {
+        "type": "image",
+        "assetId": "player.female.sword",
+        "x": -8,
+        "y": -6,
+        "rot": -70,
+        "width": 56,
+        "height": 56,
+        "visible": false,
+        "directionOffsets": {
+          "down": {
+            "x": -8,
+            "y": -6,
+            "rot": -70
+          },
+          "side": {
+            "x": -8,
+            "y": -6,
+            "rot": -70
+          },
+          "sideL": {
+            "x": -8,
+            "y": -6,
+            "rot": -70
+          },
+          "up": {
+            "x": -37.36,
+            "y": -6,
+            "rot": -70
+          },
+          "SE": {
+            "x": -8,
+            "y": -6,
+            "rot": -70
+          },
+          "SW": {
+            "x": -8,
+            "y": -6,
+            "rot": -70
+          },
+          "NE": {
+            "x": -37.36,
+            "y": -6,
+            "rot": -70
+          },
+          "NW": {
+            "x": -37.36,
+            "y": -6,
+            "rot": -70
+          }
+        }
+      }
+    }
+  ],
+  "clips": [
+    {
+      "name": "idle_down",
+      "durationMs": 1800,
+      "loop": true,
+      "tracks": [
+        {
+          "bone": "spine",
+          "keys": [
+            {
+              "t": 0,
+              "x": -0.15,
+              "y": -13.22,
+              "rot": 0
+            },
+            {
+              "t": 450,
+              "x": 0,
+              "y": -10.48,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 900,
+              "x": 0,
+              "y": -10.86,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1350,
+              "x": -0.15,
+              "y": -13.22,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "head",
+          "keys": [
+            {
+              "t": 0,
+              "x": 0,
+              "y": -2.5,
+              "rot": 0,
+              "scaleX": 1,
+              "scaleY": 1
+            },
+            {
+              "t": 450,
+              "x": 0,
+              "y": -0.61,
+              "rot": 2,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 900,
+              "x": 0,
+              "y": -0.61,
+              "rot": 2,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1350,
+              "x": 0,
+              "y": -2.5,
+              "rot": 0,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "upperArmR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 4
+            },
+            {
+              "t": 450,
+              "rot": 5.5,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 900,
+              "rot": 7,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1350,
+              "rot": 4,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "upperArmL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -10
+            },
+            {
+              "t": 450,
+              "rot": -11.5,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 900,
+              "rot": -13,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1350,
+              "rot": -10,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "forearmR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0
+            },
+            {
+              "t": 450,
+              "rot": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 900,
+              "rot": 2,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1350,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "forearmL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -16
+            },
+            {
+              "t": 450,
+              "rot": -17,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 900,
+              "rot": -18,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1350,
+              "rot": -16,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "back",
+          "keys": [
+            {
+              "t": 0,
+              "x": 0,
+              "y": -8,
+              "rot": 0
+            },
+            {
+              "t": 450,
+              "x": 0,
+              "y": -6.76,
+              "rot": 3.3,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 900,
+              "x": 0,
+              "y": -7.42,
+              "rot": 6.6,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1350,
+              "x": 0,
+              "y": -8,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "shinR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0
+            }
+          ]
+        },
+        {
+          "bone": "hips",
+          "keys": [
+            {
+              "t": 0,
+              "x": 0,
+              "y": -47.71,
+              "rot": 0
+            }
+          ]
+        },
+        {
+          "bone": "thighR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0
+            }
+          ]
+        },
+        {
+          "bone": "thighL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0
+            }
+          ]
+        },
+        {
+          "bone": "shinL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0
+            }
+          ]
+        },
+        {
+          "bone": "footR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -90
+            }
+          ]
+        },
+        {
+          "bone": "footL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -90
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "idle_up",
+      "durationMs": 1800,
+      "loop": true,
+      "tracks": [
+        {
+          "bone": "spine",
+          "keys": [
+            {
+              "t": 0,
+              "y": -12
+            },
+            {
+              "t": 450,
+              "y": -12.75,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 900,
+              "y": -13.5,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1350,
+              "y": -12,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "head",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0
+            },
+            {
+              "t": 450,
+              "rot": 2,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 900,
+              "rot": 4,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1350,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "upperArmR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 4
+            },
+            {
+              "t": 450,
+              "rot": 5.5,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 900,
+              "rot": 7,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1350,
+              "rot": 4,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "upperArmL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -10
+            },
+            {
+              "t": 450,
+              "rot": -11.5,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 900,
+              "rot": -13,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1350,
+              "rot": -10,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "forearmR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0
+            },
+            {
+              "t": 450,
+              "rot": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 900,
+              "rot": 2,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1350,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "forearmL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -16
+            },
+            {
+              "t": 450,
+              "rot": -17,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 900,
+              "rot": -18,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1350,
+              "rot": -16,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "thighR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0
+            }
+          ]
+        },
+        {
+          "bone": "thighL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0
+            }
+          ]
+        },
+        {
+          "bone": "hips",
+          "keys": [
+            {
+              "t": 0,
+              "x": 0,
+              "y": -47.71,
+              "rot": 0
+            }
+          ]
+        },
+        {
+          "bone": "shinR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0
+            }
+          ]
+        },
+        {
+          "bone": "footR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -90
+            }
+          ]
+        },
+        {
+          "bone": "shinL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0
+            }
+          ]
+        },
+        {
+          "bone": "footL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -90
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "idle_side",
+      "durationMs": 1800,
+      "loop": true,
+      "tracks": [
+        {
+          "bone": "spine",
+          "keys": [
+            {
+              "t": 0,
+              "y": -12
+            },
+            {
+              "t": 450,
+              "y": -12.75,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 900,
+              "y": -13.5,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1350,
+              "y": -12,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "head",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0
+            },
+            {
+              "t": 450,
+              "rot": 1.5,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 900,
+              "rot": 3,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1350,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "upperArmR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 4
+            },
+            {
+              "t": 450,
+              "rot": 5.5,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 900,
+              "rot": 7,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1350,
+              "rot": 4,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "upperArmL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -10
+            },
+            {
+              "t": 450,
+              "rot": -11.5,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 900,
+              "rot": -13,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1350,
+              "rot": -10,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "forearmR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0
+            },
+            {
+              "t": 450,
+              "rot": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 900,
+              "rot": 2,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1350,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "forearmL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -16
+            },
+            {
+              "t": 450,
+              "rot": -17,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 900,
+              "rot": -18,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1350,
+              "rot": -16,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "thighR",
+          "keys": [
+            {
+              "t": 0
+            },
+            {
+              "t": 900
+            }
+          ]
+        },
+        {
+          "bone": "thighL",
+          "keys": [
+            {
+              "t": 0
+            },
+            {
+              "t": 900
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "walk_down",
+      "durationMs": 620,
+      "loop": true,
+      "tracks": [
+        {
+          "bone": "hips",
+          "keys": [
+            {
+              "t": 0,
+              "x": 0,
+              "y": -47.71,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 155,
+              "x": 0,
+              "y": -47.71,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 310,
+              "x": 0,
+              "y": -47.71,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 465,
+              "x": 0,
+              "y": -47.71,
+              "rot": 0
+            }
+          ]
+        },
+        {
+          "bone": "spine",
+          "keys": [
+            {
+              "t": 0,
+              "x": 0,
+              "y": -13,
+              "rot": -3,
+              "scaleX": 1,
+              "scaleY": 1
+            },
+            {
+              "t": 155,
+              "x": 0,
+              "y": -11,
+              "rot": 0,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 310,
+              "x": 0,
+              "y": -13,
+              "rot": 3,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 465,
+              "x": 0,
+              "y": -11,
+              "rot": 0,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "thighR",
+          "keys": [
+            {
+              "t": 0,
+              "x": -7.11,
+              "y": -2.75,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 155,
+              "x": -7.11,
+              "y": 0,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 310,
+              "x": -7.11,
+              "y": 0,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 465,
+              "x": -7.11,
+              "y": 0,
+              "rot": 0
+            }
+          ]
+        },
+        {
+          "bone": "thighL",
+          "keys": [
+            {
+              "t": 0,
+              "x": 7.11,
+              "y": 0,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 155,
+              "x": 7.11,
+              "y": 0,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 310,
+              "x": 7.11,
+              "y": -2.75,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 465,
+              "x": 7.11,
+              "y": 0,
+              "rot": 0
+            }
+          ]
+        },
+        {
+          "bone": "shinR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 155,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 310,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 465,
+              "rot": 0
+            }
+          ]
+        },
+        {
+          "bone": "shinL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 155,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 310,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 465,
+              "rot": 0
+            }
+          ]
+        },
+        {
+          "bone": "upperArmR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 11
+            },
+            {
+              "t": 155,
+              "rot": -3,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 310,
+              "rot": 11,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 465,
+              "rot": -3,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "upperArmL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -17
+            },
+            {
+              "t": 155,
+              "rot": -3,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 310,
+              "rot": -17,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 465,
+              "rot": -3,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "forearmR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 5
+            },
+            {
+              "t": 155,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 310,
+              "rot": -5,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 465,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "forearmL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -21
+            },
+            {
+              "t": 155,
+              "rot": -16,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 310,
+              "rot": -11,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 465,
+              "rot": -16,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "footR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -90,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 155,
+              "rot": -90,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 310,
+              "rot": -90,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 465,
+              "rot": -90
+            }
+          ]
+        },
+        {
+          "bone": "footL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -90,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 155,
+              "rot": -90,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 310,
+              "rot": -90,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 465,
+              "rot": -90
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "walk_up",
+      "durationMs": 620,
+      "loop": true,
+      "tracks": [
+        {
+          "bone": "hips",
+          "keys": [
+            {
+              "t": 0,
+              "x": 0,
+              "y": -47.71,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 155,
+              "x": 0,
+              "y": -47.71,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 310,
+              "x": 0,
+              "y": -47.71,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 465,
+              "x": 0,
+              "y": -47.71,
+              "rot": 0
+            }
+          ]
+        },
+        {
+          "bone": "spine",
+          "keys": [
+            {
+              "t": 0,
+              "x": 0,
+              "y": -13,
+              "rot": -3,
+              "scaleX": 1,
+              "scaleY": 1
+            },
+            {
+              "t": 155,
+              "x": 0,
+              "y": -11,
+              "rot": 0,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 310,
+              "x": 0,
+              "y": -13,
+              "rot": 3,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 465,
+              "x": 0,
+              "y": -11,
+              "rot": 0,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "thighR",
+          "keys": [
+            {
+              "t": 0,
+              "x": -7.11,
+              "y": -2.75,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 155,
+              "x": -7.11,
+              "y": 0,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 310,
+              "x": -7.11,
+              "y": 0,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 465,
+              "x": -7.11,
+              "y": 0,
+              "rot": 0
+            }
+          ]
+        },
+        {
+          "bone": "thighL",
+          "keys": [
+            {
+              "t": 0,
+              "x": 7.11,
+              "y": 0,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 155,
+              "x": 7.11,
+              "y": 0,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 310,
+              "x": 7.11,
+              "y": -2.75,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 465,
+              "x": 7.11,
+              "y": 0,
+              "rot": 0
+            }
+          ]
+        },
+        {
+          "bone": "shinR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 155,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 310,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 465,
+              "rot": 0
+            }
+          ]
+        },
+        {
+          "bone": "shinL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 155,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 310,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 465,
+              "rot": 0
+            }
+          ]
+        },
+        {
+          "bone": "upperArmR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 11
+            },
+            {
+              "t": 155,
+              "rot": -3,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 310,
+              "rot": 11,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 465,
+              "rot": -3,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "upperArmL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -17
+            },
+            {
+              "t": 155,
+              "rot": -3,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 310,
+              "rot": -17,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 465,
+              "rot": -3,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "forearmR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 5
+            },
+            {
+              "t": 155,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 310,
+              "rot": -5,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 465,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "forearmL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -21
+            },
+            {
+              "t": 155,
+              "rot": -16,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 310,
+              "rot": -11,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 465,
+              "rot": -16,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "footR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -90,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 155,
+              "rot": -90,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 310,
+              "rot": -90,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 465,
+              "rot": -90
+            }
+          ]
+        },
+        {
+          "bone": "footL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -90,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 155,
+              "rot": -90,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 310,
+              "rot": -90,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 465,
+              "rot": -90
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "walk_side",
+      "durationMs": 620,
+      "loop": true,
+      "tracks": [
+        {
+          "bone": "spine",
+          "keys": [
+            {
+              "t": 0,
+              "x": 0.16,
+              "y": -12,
+              "rot": -3
+            },
+            {
+              "t": 145,
+              "x": -0.1,
+              "y": -12,
+              "rot": -0.04,
+              "scaleX": 1,
+              "scaleY": 1
+            },
+            {
+              "t": 155,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 310,
+              "rot": 3,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 465,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "thighR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -18
+            },
+            {
+              "t": 155,
+              "rot": 0
+            },
+            {
+              "t": 310,
+              "rot": 14
+            },
+            {
+              "t": 465,
+              "rot": -24
+            }
+          ]
+        },
+        {
+          "bone": "shinR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 10
+            },
+            {
+              "t": 155,
+              "rot": 2
+            },
+            {
+              "t": 310,
+              "rot": 26
+            },
+            {
+              "t": 465,
+              "rot": 46
+            }
+          ]
+        },
+        {
+          "bone": "thighL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 14
+            },
+            {
+              "t": 155,
+              "rot": -24
+            },
+            {
+              "t": 310,
+              "rot": -18
+            },
+            {
+              "t": 465,
+              "rot": 0
+            }
+          ]
+        },
+        {
+          "bone": "shinL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 26
+            },
+            {
+              "t": 155,
+              "rot": 46
+            },
+            {
+              "t": 310,
+              "rot": 10
+            },
+            {
+              "t": 465,
+              "rot": 2
+            }
+          ]
+        },
+        {
+          "bone": "upperArmR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 12
+            },
+            {
+              "t": 155,
+              "rot": -4
+            },
+            {
+              "t": 310,
+              "rot": 12,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 465,
+              "rot": -4,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "upperArmL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -18
+            },
+            {
+              "t": 155,
+              "rot": -2
+            },
+            {
+              "t": 310,
+              "rot": -18,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 465,
+              "rot": -2,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "forearmR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 5.04
+            },
+            {
+              "t": 145,
+              "rot": 0.07
+            },
+            {
+              "t": 155,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 310,
+              "rot": -5.04,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 465,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "forearmL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -21.04
+            },
+            {
+              "t": 145,
+              "rot": -16.07
+            },
+            {
+              "t": 155,
+              "rot": -16,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 310,
+              "rot": -10.96,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 465,
+              "rot": -16,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "hips",
+          "keys": [
+            {
+              "t": 0,
+              "x": 0,
+              "y": -46.52,
+              "rot": 0
+            },
+            {
+              "t": 155,
+              "x": 0,
+              "y": -47.7,
+              "rot": 0
+            },
+            {
+              "t": 310,
+              "x": 0,
+              "y": -46.52,
+              "rot": 0
+            },
+            {
+              "t": 465,
+              "x": 0,
+              "y": -47.7,
+              "rot": 0
+            }
+          ]
+        },
+        {
+          "bone": "head",
+          "keys": [
+            {
+              "t": 0,
+              "x": 0,
+              "y": -2.5,
+              "rot": 0
+            },
+            {
+              "t": 145,
+              "x": -0.26,
+              "y": -2.5,
+              "rot": 0,
+              "scaleX": 1,
+              "scaleY": 1
+            }
+          ]
+        },
+        {
+          "bone": "back",
+          "keys": [
+            {
+              "t": 0,
+              "x": 0,
+              "y": -8,
+              "rot": 0
+            },
+            {
+              "t": 145,
+              "x": -0.26,
+              "y": -8,
+              "rot": 0,
+              "scaleX": 1,
+              "scaleY": 1
+            }
+          ]
+        },
+        {
+          "bone": "footR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -80
+            },
+            {
+              "t": 155,
+              "rot": -92
+            },
+            {
+              "t": 310,
+              "rot": -102
+            },
+            {
+              "t": 465,
+              "rot": -132
+            }
+          ]
+        },
+        {
+          "bone": "footL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -102
+            },
+            {
+              "t": 155,
+              "rot": -132
+            },
+            {
+              "t": 310,
+              "rot": -80
+            },
+            {
+              "t": 465,
+              "rot": -92
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "attack",
+      "durationMs": 400,
+      "loop": false,
+      "tracks": [
+        {
+          "bone": "spine",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -8
+            },
+            {
+              "t": 160,
+              "rot": 10,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "upperArmR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 74
+            },
+            {
+              "t": 160,
+              "rot": -51,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "rot": 4,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "forearmR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 27
+            },
+            {
+              "t": 160,
+              "rot": -20,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "gather",
+      "durationMs": 900,
+      "loop": true,
+      "tracks": [
+        {
+          "bone": "spine",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0
+            },
+            {
+              "t": 225,
+              "rot": 17,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 450,
+              "rot": 34,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 675,
+              "rot": 17,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "upperArmR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 4
+            },
+            {
+              "t": 225,
+              "rot": -27,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 450,
+              "rot": -58,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 675,
+              "rot": -27,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "forearmR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0
+            },
+            {
+              "t": 225,
+              "rot": -9,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 450,
+              "rot": -18,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 675,
+              "rot": -9,
+              "ease": "easeInOut"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "logging",
+      "durationMs": 1100,
+      "loop": true,
+      "tracks": [
+        {
+          "bone": "spine",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -6
+            },
+            {
+              "t": 275,
+              "rot": 5,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 550,
+              "rot": 16,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 825,
+              "rot": 5,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "upperArmR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 99,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 275,
+              "rot": 16.5,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 550,
+              "rot": -66,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 825,
+              "rot": 16.5,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "forearmR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 20,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 275,
+              "rot": 2.5,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 550,
+              "rot": -15,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 825,
+              "rot": 2.5,
+              "ease": "easeInOut"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "mining",
+      "durationMs": 800,
+      "loop": true,
+      "tracks": [
+        {
+          "bone": "upperArmL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 20
+            },
+            {
+              "t": 200,
+              "rot": 10,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "rot": 10,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "upperArmR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 74
+            },
+            {
+              "t": 200,
+              "rot": 11.5,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "rot": -51,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "rot": 11.5,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "forearmR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 8
+            },
+            {
+              "t": 200,
+              "rot": -2,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "rot": -12,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "rot": -2,
+              "ease": "easeInOut"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "fishing",
+      "durationMs": 2200,
+      "loop": true,
+      "tracks": [
+        {
+          "bone": "spine",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0
+            },
+            {
+              "t": 550,
+              "rot": 2,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1100,
+              "rot": 4,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1650,
+              "rot": 3,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "upperArmR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 44,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 550,
+              "rot": 9,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1100,
+              "rot": -26,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1650,
+              "rot": -5,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "forearmR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 15,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 550,
+              "rot": -2.5,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1100,
+              "rot": -20,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1650,
+              "rot": -10,
+              "ease": "easeInOut"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "climb_back",
+      "durationMs": 700,
+      "loop": true,
+      "tracks": [
+        {
+          "bone": "upperArmR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 174
+            },
+            {
+              "t": 175,
+              "rot": 141.5,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 350,
+              "rot": 109,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 525,
+              "rot": 141.5,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "upperArmL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -115
+            },
+            {
+              "t": 175,
+              "rot": -147.5,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 351,
+              "rot": -180,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 525,
+              "rot": -147.5,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "forearmR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 10
+            },
+            {
+              "t": 175,
+              "rot": 35,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 351,
+              "rot": 60,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 525,
+              "rot": 35,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "forearmL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -83.2
+            },
+            {
+              "t": 175,
+              "rot": -51,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 350,
+              "rot": -26,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 525,
+              "rot": -51,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "thighR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0
+            },
+            {
+              "t": 175,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 350,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 525,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "thighL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0
+            },
+            {
+              "t": 175,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 350,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 525,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "shinR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0
+            },
+            {
+              "t": 175,
+              "rot": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 350,
+              "rot": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 525,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "shinL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -4.8
+            },
+            {
+              "t": 175,
+              "rot": -2.4,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 350,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 525,
+              "rot": -3.17
+            }
+          ]
+        },
+        {
+          "bone": "spine",
+          "keys": [
+            {
+              "t": 0,
+              "x": 0,
+              "y": -12,
+              "rot": 3,
+              "scaleX": 1,
+              "scaleY": 1
+            },
+            {
+              "t": 175,
+              "x": 0,
+              "y": -12,
+              "rot": 0,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 350,
+              "x": 0,
+              "y": -12,
+              "rot": -3,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 525,
+              "x": 0,
+              "y": -12,
+              "rot": 0,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "hips",
+          "keys": [
+            {
+              "t": 0,
+              "x": 0.25,
+              "y": -46.71,
+              "rot": 0,
+              "scaleX": 1,
+              "scaleY": 1
+            },
+            {
+              "t": 175,
+              "x": 0.25,
+              "y": -49.21,
+              "rot": 0,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 350,
+              "x": 0.25,
+              "y": -51.71,
+              "rot": 0,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 525,
+              "x": 0.25,
+              "y": -49.21,
+              "rot": 0,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "sleep",
+      "durationMs": 2400,
+      "loop": true,
+      "tracks": [
+        {
+          "bone": "hips",
+          "keys": [
+            {
+              "t": 0,
+              "y": -2.57,
+              "rot": 85
+            },
+            {
+              "t": 600,
+              "y": -3.07,
+              "rot": 86,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1200,
+              "y": -3.57,
+              "rot": 87,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1800,
+              "y": -3.07,
+              "rot": 86,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "head",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 6
+            },
+            {
+              "t": 600,
+              "rot": 7,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1200,
+              "rot": 8,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1800,
+              "rot": 7,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "thighR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 8
+            }
+          ]
+        },
+        {
+          "bone": "thighL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -6
+            }
+          ]
+        },
+        {
+          "bone": "shinR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -4
+            }
+          ]
+        },
+        {
+          "bone": "shinL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 4
+            }
+          ]
+        },
+        {
+          "bone": "upperArmR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 19
+            }
+          ]
+        },
+        {
+          "bone": "upperArmL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -25
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "stretcher",
+      "durationMs": 1200,
+      "loop": true,
+      "tracks": [
+        {
+          "bone": "hips",
+          "keys": [
+            {
+              "t": 0,
+              "y": -10.57,
+              "rot": 88
+            },
+            {
+              "t": 300,
+              "y": -12.07,
+              "rot": 87,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "y": -13.57,
+              "rot": 86,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 900,
+              "y": -12.07,
+              "rot": 87,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "thighR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 6
+            }
+          ]
+        },
+        {
+          "bone": "thighL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -6
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "death",
+      "durationMs": 520,
+      "loop": false,
+      "tracks": [
+        {
+          "bone": "hips",
+          "keys": [
+            {
+              "t": 0,
+              "y": -47.71,
+              "rot": 0
+            },
+            {
+              "t": 380,
+              "y": -2.57,
+              "rot": 85,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 520,
+              "y": -2.57,
+              "rot": 85
+            }
+          ]
+        },
+        {
+          "bone": "spine",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0
+            },
+            {
+              "t": 260,
+              "rot": 18,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 380,
+              "rot": 4,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 520,
+              "rot": 4
+            }
+          ]
+        },
+        {
+          "bone": "head",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0
+            },
+            {
+              "t": 380,
+              "rot": 16,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 520,
+              "rot": 16
+            }
+          ]
+        },
+        {
+          "bone": "thighR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0
+            },
+            {
+              "t": 380,
+              "rot": 10,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 520,
+              "rot": 10
+            }
+          ]
+        },
+        {
+          "bone": "thighL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0
+            },
+            {
+              "t": 380,
+              "rot": -8,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 520,
+              "rot": -8
+            }
+          ]
+        },
+        {
+          "bone": "upperArmR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 4
+            },
+            {
+              "t": 380,
+              "rot": 34,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 520,
+              "rot": 34
+            }
+          ]
+        },
+        {
+          "bone": "upperArmL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -10
+            },
+            {
+              "t": 380,
+              "rot": -40,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 520,
+              "rot": -40
+            }
+          ]
+        },
+        {
+          "bone": "forearmR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0
+            },
+            {
+              "t": 520,
+              "rot": -10.7,
+              "ease": "linear"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "soul",
+      "durationMs": 2200,
+      "loop": true,
+      "tracks": [
+        {
+          "bone": "spine",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -3
+            },
+            {
+              "t": 550,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1100,
+              "rot": 3,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1650,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "head",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -2
+            },
+            {
+              "t": 550,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1100,
+              "rot": 2,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1650,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "hips",
+          "keys": [
+            {
+              "t": 0,
+              "y": -55.71
+            },
+            {
+              "t": 550,
+              "y": -59.71,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1100,
+              "y": -63.71,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1650,
+              "y": -59.71,
+              "ease": "easeInOut"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "walk_SE",
+      "durationMs": 800,
+      "loop": true,
+      "tracks": [
+        {
+          "bone": "hips",
+          "keys": [
+            {
+              "t": 0,
+              "x": 0,
+              "y": -47.71,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 200,
+              "x": 0,
+              "y": -47.71,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "x": 0,
+              "y": -47.71,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "x": 0,
+              "y": -47.71,
+              "rot": 0
+            }
+          ]
+        },
+        {
+          "bone": "spine",
+          "keys": [
+            {
+              "t": 0,
+              "x": 0,
+              "y": -13,
+              "rot": 4,
+              "scaleX": 1,
+              "scaleY": 1
+            },
+            {
+              "t": 200,
+              "x": 0,
+              "y": -11,
+              "rot": 4,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "x": 0,
+              "y": -13,
+              "rot": 4,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "x": 0,
+              "y": -11,
+              "rot": 4,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "thighL",
+          "keys": [
+            {
+              "t": 0,
+              "x": 7.11,
+              "y": 0,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 200,
+              "x": 7.11,
+              "y": 0,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "x": 7.11,
+              "y": -2.75,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "x": 7.11,
+              "y": 0,
+              "rot": 0
+            }
+          ]
+        },
+        {
+          "bone": "thighR",
+          "keys": [
+            {
+              "t": 0,
+              "x": -7.11,
+              "y": -2.75,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 200,
+              "x": -7.11,
+              "y": 0,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "x": -7.11,
+              "y": 0,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "x": -7.11,
+              "y": 0,
+              "rot": 0
+            }
+          ]
+        },
+        {
+          "bone": "shinL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 200,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "rot": 0
+            }
+          ]
+        },
+        {
+          "bone": "shinR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 200,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "rot": 0
+            }
+          ]
+        },
+        {
+          "bone": "upperArmL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -17
+            },
+            {
+              "t": 200,
+              "rot": -3,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "rot": -17,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "rot": -3,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "upperArmR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 11
+            },
+            {
+              "t": 200,
+              "rot": -3,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "rot": 11,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "rot": -3,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "footR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -90,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 200,
+              "rot": -90,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "rot": -90,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "rot": -90
+            }
+          ]
+        },
+        {
+          "bone": "footL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -90,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 200,
+              "rot": -90,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "rot": -90,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "rot": -90
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "walk_SW",
+      "durationMs": 800,
+      "loop": true,
+      "tracks": [
+        {
+          "bone": "hips",
+          "keys": [
+            {
+              "t": 0,
+              "x": 0,
+              "y": -47.71,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 200,
+              "x": 0,
+              "y": -47.71,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "x": 0,
+              "y": -47.71,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "x": 0,
+              "y": -47.71,
+              "rot": 0
+            }
+          ]
+        },
+        {
+          "bone": "spine",
+          "keys": [
+            {
+              "t": 0,
+              "x": 0,
+              "y": -13,
+              "rot": 4,
+              "scaleX": 1,
+              "scaleY": 1
+            },
+            {
+              "t": 200,
+              "x": 0,
+              "y": -11,
+              "rot": 4,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "x": 0,
+              "y": -13,
+              "rot": 4,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "x": 0,
+              "y": -11,
+              "rot": 4,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "thighL",
+          "keys": [
+            {
+              "t": 0,
+              "x": 7.11,
+              "y": 0,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 200,
+              "x": 7.11,
+              "y": 0,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "x": 7.11,
+              "y": -2.75,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "x": 7.11,
+              "y": 0,
+              "rot": 0
+            }
+          ]
+        },
+        {
+          "bone": "thighR",
+          "keys": [
+            {
+              "t": 0,
+              "x": -7.11,
+              "y": -2.75,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 200,
+              "x": -7.11,
+              "y": 0,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "x": -7.11,
+              "y": 0,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "x": -7.11,
+              "y": 0,
+              "rot": 0
+            }
+          ]
+        },
+        {
+          "bone": "shinL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 200,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "rot": 0
+            }
+          ]
+        },
+        {
+          "bone": "shinR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 200,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "rot": 0
+            }
+          ]
+        },
+        {
+          "bone": "upperArmL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -17
+            },
+            {
+              "t": 200,
+              "rot": -3,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "rot": -17,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "rot": -3,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "upperArmR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 11
+            },
+            {
+              "t": 200,
+              "rot": -3,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "rot": 11,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "rot": -3,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "footR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -90,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 200,
+              "rot": -90,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "rot": -90,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "rot": -90
+            }
+          ]
+        },
+        {
+          "bone": "footL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -90,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 200,
+              "rot": -90,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "rot": -90,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "rot": -90
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "walk_NE",
+      "durationMs": 800,
+      "loop": true,
+      "tracks": [
+        {
+          "bone": "hips",
+          "keys": [
+            {
+              "t": 0,
+              "x": 0,
+              "y": -47.71,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 200,
+              "x": 0,
+              "y": -47.71,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "x": 0,
+              "y": -47.71,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "x": 0,
+              "y": -47.71,
+              "rot": 0
+            }
+          ]
+        },
+        {
+          "bone": "spine",
+          "keys": [
+            {
+              "t": 0,
+              "x": 0,
+              "y": -13,
+              "rot": 4,
+              "scaleX": 1,
+              "scaleY": 1
+            },
+            {
+              "t": 200,
+              "x": 0,
+              "y": -11,
+              "rot": 4,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "x": 0,
+              "y": -13,
+              "rot": 4,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "x": 0,
+              "y": -11,
+              "rot": 4,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "thighL",
+          "keys": [
+            {
+              "t": 0,
+              "x": 7.11,
+              "y": 0,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 200,
+              "x": 7.11,
+              "y": 0,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "x": 7.11,
+              "y": -2.75,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "x": 7.11,
+              "y": 0,
+              "rot": 0
+            }
+          ]
+        },
+        {
+          "bone": "thighR",
+          "keys": [
+            {
+              "t": 0,
+              "x": -7.11,
+              "y": -2.75,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 200,
+              "x": -7.11,
+              "y": 0,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "x": -7.11,
+              "y": 0,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "x": -7.11,
+              "y": 0,
+              "rot": 0
+            }
+          ]
+        },
+        {
+          "bone": "shinL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 200,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "rot": 0
+            }
+          ]
+        },
+        {
+          "bone": "shinR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 200,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "rot": 0
+            }
+          ]
+        },
+        {
+          "bone": "upperArmL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -17
+            },
+            {
+              "t": 200,
+              "rot": -3,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "rot": -17,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "rot": -3,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "upperArmR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 11
+            },
+            {
+              "t": 200,
+              "rot": -3,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "rot": 11,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "rot": -3,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "footR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -90,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 200,
+              "rot": -90,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "rot": -90,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "rot": -90
+            }
+          ]
+        },
+        {
+          "bone": "footL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -90,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 200,
+              "rot": -90,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "rot": -90,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "rot": -90
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "walk_NW",
+      "durationMs": 800,
+      "loop": true,
+      "tracks": [
+        {
+          "bone": "hips",
+          "keys": [
+            {
+              "t": 0,
+              "x": 0,
+              "y": -47.71,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 200,
+              "x": 0,
+              "y": -47.71,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "x": 0,
+              "y": -47.71,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "x": 0,
+              "y": -47.71,
+              "rot": 0
+            }
+          ]
+        },
+        {
+          "bone": "spine",
+          "keys": [
+            {
+              "t": 0,
+              "x": 0,
+              "y": -13,
+              "rot": 4,
+              "scaleX": 1,
+              "scaleY": 1
+            },
+            {
+              "t": 200,
+              "x": 0,
+              "y": -11,
+              "rot": 4,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "x": 0,
+              "y": -13,
+              "rot": 4,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "x": 0,
+              "y": -11,
+              "rot": 4,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "thighL",
+          "keys": [
+            {
+              "t": 0,
+              "x": 7.11,
+              "y": 0,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 200,
+              "x": 7.11,
+              "y": 0,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "x": 7.11,
+              "y": -2.75,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "x": 7.11,
+              "y": 0,
+              "rot": 0
+            }
+          ]
+        },
+        {
+          "bone": "thighR",
+          "keys": [
+            {
+              "t": 0,
+              "x": -7.11,
+              "y": -2.75,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 200,
+              "x": -7.11,
+              "y": 0,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "x": -7.11,
+              "y": 0,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "x": -7.11,
+              "y": 0,
+              "rot": 0
+            }
+          ]
+        },
+        {
+          "bone": "shinL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 200,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "rot": 0
+            }
+          ]
+        },
+        {
+          "bone": "shinR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 200,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "rot": 0
+            }
+          ]
+        },
+        {
+          "bone": "upperArmL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -17
+            },
+            {
+              "t": 200,
+              "rot": -3,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "rot": -17,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "rot": -3,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "upperArmR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 11
+            },
+            {
+              "t": 200,
+              "rot": -3,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "rot": 11,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "rot": -3,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "footR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -90,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 200,
+              "rot": -90,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "rot": -90,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "rot": -90
+            }
+          ]
+        },
+        {
+          "bone": "footL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -90,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 200,
+              "rot": -90,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "rot": -90,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "rot": -90
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "jump_side",
+      "durationMs": 420,
+      "loop": false,
+      "tracks": [
+        {
+          "bone": "hips",
+          "keys": [
+            {
+              "t": 0,
+              "x": 0,
+              "y": -47.71,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 100,
+              "x": 0,
+              "y": -46.71,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 260,
+              "x": 0,
+              "y": -67.71,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 380,
+              "x": 0,
+              "y": -48.71,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 420,
+              "x": 0,
+              "y": -47.71,
+              "rot": 0
+            }
+          ]
+        },
+        {
+          "bone": "upperArmR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -30
+            },
+            {
+              "t": 120,
+              "rot": -118
+            },
+            {
+              "t": 300,
+              "rot": -100
+            },
+            {
+              "t": 420,
+              "rot": -40
+            }
+          ]
+        },
+        {
+          "bone": "upperArmL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -44
+            },
+            {
+              "t": 120,
+              "rot": -114
+            },
+            {
+              "t": 300,
+              "rot": -98
+            },
+            {
+              "t": 420,
+              "rot": -52
+            }
+          ]
+        },
+        {
+          "bone": "thighR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -8
+            },
+            {
+              "t": 120,
+              "rot": -95
+            },
+            {
+              "t": 300,
+              "rot": -45
+            },
+            {
+              "t": 420,
+              "rot": -18
+            }
+          ]
+        },
+        {
+          "bone": "thighL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -8
+            },
+            {
+              "t": 120,
+              "rot": -95
+            },
+            {
+              "t": 300,
+              "rot": -45
+            },
+            {
+              "t": 420,
+              "rot": -18
+            }
+          ]
+        },
+        {
+          "bone": "shinR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 14
+            },
+            {
+              "t": 120,
+              "rot": 95
+            },
+            {
+              "t": 300,
+              "rot": 27
+            },
+            {
+              "t": 420,
+              "rot": 12
+            }
+          ]
+        },
+        {
+          "bone": "shinL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 14
+            },
+            {
+              "t": 120,
+              "rot": 95
+            },
+            {
+              "t": 300,
+              "rot": 27
+            },
+            {
+              "t": 420,
+              "rot": 12
+            }
+          ]
+        },
+        {
+          "bone": "footR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -96
+            },
+            {
+              "t": 120,
+              "rot": -90
+            },
+            {
+              "t": 300,
+              "rot": -47
+            },
+            {
+              "t": 420,
+              "rot": -74
+            }
+          ]
+        },
+        {
+          "bone": "footL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -96
+            },
+            {
+              "t": 120,
+              "rot": -90
+            },
+            {
+              "t": 300,
+              "rot": -47
+            },
+            {
+              "t": 420,
+              "rot": -74
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "jump_down",
+      "durationMs": 420,
+      "loop": false,
+      "tracks": [
+        {
+          "bone": "hips",
+          "keys": [
+            {
+              "t": 0,
+              "x": 0,
+              "y": -47.71,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 100,
+              "x": 0,
+              "y": -46.71,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 260,
+              "x": 0,
+              "y": -67.71,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 380,
+              "x": 0,
+              "y": -48.71,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 420,
+              "x": 0,
+              "y": -47.71,
+              "rot": 0
+            }
+          ]
+        },
+        {
+          "bone": "upperArmR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 12
+            },
+            {
+              "t": 120,
+              "rot": 165
+            },
+            {
+              "t": 300,
+              "rot": 172
+            },
+            {
+              "t": 420,
+              "rot": 14
+            }
+          ]
+        },
+        {
+          "bone": "upperArmL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 2
+            },
+            {
+              "t": 120,
+              "rot": 189
+            },
+            {
+              "t": 300,
+              "rot": 182
+            },
+            {
+              "t": 420,
+              "rot": 4
+            }
+          ]
+        },
+        {
+          "bone": "thighR",
+          "keys": [
+            {
+              "t": 0,
+              "x": -7.11,
+              "y": 0,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 120,
+              "x": -7.11,
+              "y": -2.75,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 300,
+              "x": -7.11,
+              "y": -1.83,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 420,
+              "x": -7.11,
+              "y": 0,
+              "rot": 0
+            }
+          ]
+        },
+        {
+          "bone": "thighL",
+          "keys": [
+            {
+              "t": 0,
+              "x": 7.11,
+              "y": 0,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 120,
+              "x": 7.11,
+              "y": -2.75,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 300,
+              "x": 7.11,
+              "y": -1.83,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 420,
+              "x": 7.11,
+              "y": 0,
+              "rot": 0
+            }
+          ]
+        },
+        {
+          "bone": "shinR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 120,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 300,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 420,
+              "rot": 0
+            }
+          ]
+        },
+        {
+          "bone": "shinL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 120,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 300,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 420,
+              "rot": 0
+            }
+          ]
+        },
+        {
+          "bone": "footR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -90,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 120,
+              "rot": -90,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 300,
+              "rot": -90,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 420,
+              "rot": -90
+            }
+          ]
+        },
+        {
+          "bone": "footL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -90,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 120,
+              "rot": -90,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 300,
+              "rot": -90,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 420,
+              "rot": -90
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "jump_up",
+      "durationMs": 420,
+      "loop": false,
+      "tracks": [
+        {
+          "bone": "hips",
+          "keys": [
+            {
+              "t": 0,
+              "x": 0,
+              "y": -47.71,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 100,
+              "x": 0,
+              "y": -46.71,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 260,
+              "x": 0,
+              "y": -67.71,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 380,
+              "x": 0,
+              "y": -48.71,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 420,
+              "x": 0,
+              "y": -47.71,
+              "rot": 0
+            }
+          ]
+        },
+        {
+          "bone": "upperArmR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 8
+            },
+            {
+              "t": 120,
+              "rot": 195
+            },
+            {
+              "t": 300,
+              "rot": 188
+            },
+            {
+              "t": 420,
+              "rot": 10
+            }
+          ]
+        },
+        {
+          "bone": "upperArmL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 6
+            },
+            {
+              "t": 120,
+              "rot": 159
+            },
+            {
+              "t": 300,
+              "rot": 166
+            },
+            {
+              "t": 420,
+              "rot": 8
+            }
+          ]
+        },
+        {
+          "bone": "thighR",
+          "keys": [
+            {
+              "t": 0,
+              "x": -7.11,
+              "y": 0,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 120,
+              "x": -7.11,
+              "y": -2.75,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 300,
+              "x": -7.11,
+              "y": -1.83,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 420,
+              "x": -7.11,
+              "y": 0,
+              "rot": 0
+            }
+          ]
+        },
+        {
+          "bone": "thighL",
+          "keys": [
+            {
+              "t": 0,
+              "x": 7.11,
+              "y": 0,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 120,
+              "x": 7.11,
+              "y": -2.75,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 300,
+              "x": 7.11,
+              "y": -1.83,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 420,
+              "x": 7.11,
+              "y": 0,
+              "rot": 0
+            }
+          ]
+        },
+        {
+          "bone": "shinR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 120,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 300,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 420,
+              "rot": 0
+            }
+          ]
+        },
+        {
+          "bone": "shinL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 120,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 300,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 420,
+              "rot": 0
+            }
+          ]
+        },
+        {
+          "bone": "footR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -90,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 120,
+              "rot": -90,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 300,
+              "rot": -90,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 420,
+              "rot": -90
+            }
+          ]
+        },
+        {
+          "bone": "footL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -90,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 120,
+              "rot": -90,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 300,
+              "rot": -90,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 420,
+              "rot": -90
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "sit",
+      "durationMs": 480,
+      "loop": false,
+      "tracks": [
+        {
+          "bone": "hips",
+          "keys": [
+            {
+              "t": 0,
+              "x": 0,
+              "y": -47.71,
+              "rot": 0
+            },
+            {
+              "t": 480,
+              "x": 0,
+              "y": -8,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "spine",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0
+            },
+            {
+              "t": 480,
+              "rot": 8,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "chest",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0
+            },
+            {
+              "t": 480,
+              "rot": 2,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "head",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0
+            },
+            {
+              "t": 480,
+              "rot": -3,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "upperArmR",
+          "keys": [
+            {
+              "t": 0,
+              "x": -14.449541284403669,
+              "rot": 0
+            },
+            {
+              "t": 480,
+              "x": -14.449541284403669,
+              "rot": 16,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "upperArmL",
+          "keys": [
+            {
+              "t": 0,
+              "x": 14.678899082568806,
+              "rot": 0
+            },
+            {
+              "t": 480,
+              "x": 14.678899082568806,
+              "rot": 16,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "thighR",
+          "keys": [
+            {
+              "t": 0,
+              "x": -7.110091743119265,
+              "rot": 0
+            },
+            {
+              "t": 480,
+              "x": -7.110091743119265,
+              "rot": -84,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "thighL",
+          "keys": [
+            {
+              "t": 0,
+              "x": 7.110091743119265,
+              "rot": 0
+            },
+            {
+              "t": 480,
+              "x": 7.110091743119265,
+              "rot": -84,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "shinR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0
+            },
+            {
+              "t": 480,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "shinL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0
+            },
+            {
+              "t": 480,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "footR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -90
+            },
+            {
+              "t": 480,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "footL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -90
+            },
+            {
+              "t": 480,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "sit_up",
+      "durationMs": 480,
+      "loop": false,
+      "tracks": [
+        {
+          "bone": "hips",
+          "keys": [
+            {
+              "t": 0,
+              "x": 0,
+              "y": -8,
+              "rot": 0
+            },
+            {
+              "t": 480,
+              "x": 0,
+              "y": -47.71,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "spine",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 8
+            },
+            {
+              "t": 480,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "chest",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 2
+            },
+            {
+              "t": 480,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "head",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -3
+            },
+            {
+              "t": 480,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "upperArmR",
+          "keys": [
+            {
+              "t": 0,
+              "x": -14.449541284403669,
+              "rot": 16
+            },
+            {
+              "t": 480,
+              "x": -14.449541284403669,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "upperArmL",
+          "keys": [
+            {
+              "t": 0,
+              "x": 14.678899082568806,
+              "rot": 16
+            },
+            {
+              "t": 480,
+              "x": 14.678899082568806,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "thighR",
+          "keys": [
+            {
+              "t": 0,
+              "x": -7.110091743119265,
+              "rot": -84
+            },
+            {
+              "t": 480,
+              "x": -7.110091743119265,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "thighL",
+          "keys": [
+            {
+              "t": 0,
+              "x": 7.110091743119265,
+              "rot": -84
+            },
+            {
+              "t": 480,
+              "x": 7.110091743119265,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "shinR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0
+            },
+            {
+              "t": 480,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "shinL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0
+            },
+            {
+              "t": 480,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "footR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0
+            },
+            {
+              "t": 480,
+              "rot": -90,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "footL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0
+            },
+            {
+              "t": 480,
+              "rot": -90,
+              "ease": "easeInOut"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "lie",
+      "durationMs": 640,
+      "loop": false,
+      "tracks": [
+        {
+          "bone": "hips",
+          "keys": [
+            {
+              "t": 0,
+              "x": 0,
+              "y": -47.71,
+              "rot": 0
+            },
+            {
+              "t": 320,
+              "x": 0,
+              "y": -30,
+              "rot": -45,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 640,
+              "x": 0,
+              "y": -7,
+              "rot": -90,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "spine",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0
+            },
+            {
+              "t": 320,
+              "rot": 10,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 640,
+              "rot": 10,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "chest",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0
+            },
+            {
+              "t": 320,
+              "rot": 2,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 640,
+              "rot": 2,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "head",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0
+            },
+            {
+              "t": 320,
+              "rot": 4,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 640,
+              "rot": 4,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "upperArmR",
+          "keys": [
+            {
+              "t": 0,
+              "x": -14.449541284403669,
+              "rot": 0
+            },
+            {
+              "t": 320,
+              "x": -14.449541284403669,
+              "rot": -14,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 640,
+              "x": -14.449541284403669,
+              "rot": -14,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "upperArmL",
+          "keys": [
+            {
+              "t": 0,
+              "x": 14.678899082568806,
+              "rot": 0
+            },
+            {
+              "t": 320,
+              "x": 14.678899082568806,
+              "rot": -14,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 640,
+              "x": 14.678899082568806,
+              "rot": -14,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "thighR",
+          "keys": [
+            {
+              "t": 0,
+              "x": -7.110091743119265,
+              "rot": 0
+            },
+            {
+              "t": 320,
+              "x": -7.110091743119265,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 640,
+              "x": -7.110091743119265,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "thighL",
+          "keys": [
+            {
+              "t": 0,
+              "x": 7.110091743119265,
+              "rot": 0
+            },
+            {
+              "t": 320,
+              "x": 7.110091743119265,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 640,
+              "x": 7.110091743119265,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "shinR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0
+            },
+            {
+              "t": 320,
+              "rot": 8,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 640,
+              "rot": 8,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "shinL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0
+            },
+            {
+              "t": 320,
+              "rot": 8,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 640,
+              "rot": 8,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "footR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -90
+            },
+            {
+              "t": 320,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 640,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "footL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -90
+            },
+            {
+              "t": 320,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 640,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "lie_up",
+      "durationMs": 640,
+      "loop": false,
+      "tracks": [
+        {
+          "bone": "hips",
+          "keys": [
+            {
+              "t": 0,
+              "x": 0,
+              "y": -7,
+              "rot": -90
+            },
+            {
+              "t": 320,
+              "x": 0,
+              "y": -30,
+              "rot": -45,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 640,
+              "x": 0,
+              "y": -47.71,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "spine",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 10
+            },
+            {
+              "t": 320,
+              "rot": 10,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 640,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "chest",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 2
+            },
+            {
+              "t": 320,
+              "rot": 2,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 640,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "head",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 4
+            },
+            {
+              "t": 320,
+              "rot": 4,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 640,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "upperArmR",
+          "keys": [
+            {
+              "t": 0,
+              "x": -14.449541284403669,
+              "rot": -14
+            },
+            {
+              "t": 320,
+              "x": -14.449541284403669,
+              "rot": -14,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 640,
+              "x": -14.449541284403669,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "upperArmL",
+          "keys": [
+            {
+              "t": 0,
+              "x": 14.678899082568806,
+              "rot": -14
+            },
+            {
+              "t": 320,
+              "x": 14.678899082568806,
+              "rot": -14,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 640,
+              "x": 14.678899082568806,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "thighR",
+          "keys": [
+            {
+              "t": 0,
+              "x": -7.110091743119265,
+              "rot": 0
+            },
+            {
+              "t": 320,
+              "x": -7.110091743119265,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 640,
+              "x": -7.110091743119265,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "thighL",
+          "keys": [
+            {
+              "t": 0,
+              "x": 7.110091743119265,
+              "rot": 0
+            },
+            {
+              "t": 320,
+              "x": 7.110091743119265,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 640,
+              "x": 7.110091743119265,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "shinR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 8
+            },
+            {
+              "t": 320,
+              "rot": 8,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 640,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "shinL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 8
+            },
+            {
+              "t": 320,
+              "rot": 8,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 640,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "footR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0
+            },
+            {
+              "t": 320,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 640,
+              "rot": -90,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "footL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0
+            },
+            {
+              "t": 320,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 640,
+              "rot": -90,
+              "ease": "easeInOut"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

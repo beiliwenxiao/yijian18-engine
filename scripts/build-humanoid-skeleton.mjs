@@ -13,29 +13,32 @@
 /**
  * build-humanoid-skeleton.mjs —— 规范人形骨骼模板 + 配套人形部件图生成。
  *
- * ## 背景（2026-10-23 用户裁定）
+ * ## 背景（2026-10-23 用户裁定；2026-10-24 v2 按 itch「Female Hero」比例与造型语言重画）
  *   旧 player.json 骨架是「hips 直挂两臂两腿」的简化树（无脊柱分段/无肩/无颈/无脚），
  *   加剪纸式部件图，观感不像人。本脚本按业界标准人形 2D 骨骼拓扑
- *   （Spine / Unity Humanoid 同款约定）+ 7.5 头身真人比例重建：
+ *   （Spine / Unity Humanoid 同款约定）重建：
  *
  *     hips(骨盆) ── spine(腰) ── chest(胸) ── neck(颈) ── head(头)
  *        │              └──────┴── upperArmR/L ── forearmR/L
  *        └── thighR/L ── shinR/L ── footR/L
  *
- * ## 比例（身高 H=110px，7.5 头身，head height h=14.7）
- *   头顶-110 / 颏-95.3 / 肩线-90 / 肘-69.3 / 腕-53.4 / 髋-53 / 膝-31.4 / 踝-4.4
- *   腿长占 48%、上肢(肩→腕) 33%、头:颈:躯干 ≈ 1 : 0.36 : 2.5
+ * ## 比例 v2（7 头身写实女性，身高 H=100px，head unit u≈14.3）
+ *   头顶-100 / 颏-86 / 颈根-83.5 / 肩线-82 / 胸中-74 / 腰-62 / 髋-50 / 膝-24 / 踝-5 / 底 0
+ *   头:颈:躯干 ≈ 1 : 0.2 : 2.5；腿长（髋→底）占 50%；肩宽 17px≈1.2 头宽（女性窄肩）；
+ *   腰围 9px < 髋宽 15px（女性廓形）；上臂围 5px / 大腿围 8px（纤细四肢）。
+ *   头部部件按目标尺寸 1:1 绘制（迁移时 K_HEAD=1，内容中心锚定 (32,32)）。
  *
- * ## 部件图
- *   程序化像素生成（sharp 合成），配色从现有部件图中心采样（保持角色一致）。
- *   输出 assets/images/player/parts-humanoid/，骨架 skeletons/player-humanoid.json。
- *   本脚本为独立验证版：不动 player.json，验收后再替换并迁移剪辑。
+ * ## 部件图（Female Hero 造型语言）
+ *   统一深描边 + 每材质 2-3 阶明暗 + 皮革/金属点缀（护肩/袖带/护腕/腰带金扣）。
+ *   程序化像素生成（sharp 合成）。输出 assets/images/player/parts-humanoid/，
+ *   并重画 parts/ 下头部三态 6 张（迁移后的 player.json 实际引用这些）。
+ *   骨架输出 skeletons/player-humanoid.json（模板，迁移脚本消费）。
  *
  * 用法：node scripts/build-humanoid-skeleton.mjs
  */
 
 import sharp from 'sharp';
-import { writeFileSync, mkdirSync } from 'node:fs';
+import { writeFileSync, mkdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { parseSkeletonAsset } from '../src/animation/SkeletonAsset.js';
@@ -49,7 +52,7 @@ const TEMP = path.join(root, 'Temp');
 mkdirSync(OUT_PARTS, { recursive: true });
 mkdirSync(TEMP, { recursive: true });
 
-/* ---------------- 1. 从现有部件图采样配色 ---------------- */
+/* ---------------- 1. 配色（延续角色既有色彩身份 + Female Hero 式材质点缀） ---------------- */
 
 const C = {
   skin: '#e8b48c',
@@ -60,7 +63,11 @@ const C = {
   waist: '#c9a84c',
   pants: '#4a5a72',
   pantsDark: '#333e50',
-  boot: '#6a5a4a'
+  boot: '#6a5a4a',
+  leather: '#7a5236',      // 护肩/护腕/腰带（皮革）
+  leatherDark: '#54371f',
+  metal: '#b8bcc4',        // 金属扣/铆钉
+  metalDark: '#767c86'
 };
 const darken = (hex, k = 0.78) => {
   const n = parseInt(hex.slice(1), 16);
@@ -181,176 +188,301 @@ function line(c, x0, y0, x1, y1, color) {
   }
 }
 
-const OUTLINE = '#241a12';       // 统一深描边（比旧 #1f1812 略暖）
+const OUTLINE = '#241a12';       // 统一深描边
 const OUTLINE_SOFT = '#3a2a1e';  // 次级描边（发丝/布料折痕）
 
-// 头（脸+发，正面）：24×26 画布 —— 规整脸型 + 清晰五官 + 收束发髻（不再是爆炸发堆）
+/* ---- 头（模板自用；游戏实际引用 parts/ 三态头图，见 2.5 节）16×18 ---- */
 {
-  const c = canvas(24, 26);
-  const cx = 12;
-
-  // 后发（底）：收窄的椭圆 + 两侧鬓发
-  c.ellipse(cx, 9.5, 9, 6.5, C.hair);
-  c.ellipse(cx - 8, 13, 2.6, 4.5, C.hair);
-  c.ellipse(cx + 8, 13, 2.6, 4.5, C.hair);
-
-  // 发髻（顶）：小而端正的圆髻 + 高光 + 束带
-  c.ellipse(cx, 2.5, 4, 2.8, C.hair);
-  c.ellipse(cx - 1.2, 1.6, 1.6, 1.2, C.hairLight);
-  hline(c, cx - 4, cx + 4, 4.6, C.hairLight);
-
-  // 脸：外描边 + 内肤色（先深后浅两层做轮廓）
-  c.ellipse(cx, 16.5, 7.6, 8.2, OUTLINE);
-  c.ellipse(cx, 16.2, 6.9, 7.6, C.skin);
-  c.rect(cx - 6, 16, 12, 6, C.skin);
-  // 右侧脸阴影（受光在左）
-  c.ellipse(cx + 4.2, 17.5, 2.2, 5.2, C.skinDark);
-  c.ellipse(cx + 5, 19, 1.2, 2.6, darken(C.skinDark, 0.9));
-
+  const c = canvas(16, 18);
+  const cx = 8;
+  // 后发
+  c.ellipse(cx, 8, 6.2, 5, C.hair);
+  // 脸
+  c.ellipse(cx, 10.5, 4.8, 6, OUTLINE);
+  c.ellipse(cx, 10.3, 4.1, 5.3, C.skin);
+  c.rect(cx - 3.6, 9.4, 7.2, 4.6, C.skin);
   // 耳
-  c.ellipse(cx - 6.6, 16.5, 1.2, 1.8, C.skin);
-  c.ellipse(cx + 6.6, 16.5, 1.2, 1.8, C.skin);
-
-  // 眉（两段短线）
-  hline(c, cx - 5, cx - 2, 12.4, C.hair);
-  hline(c, cx + 2, cx + 5, 12.4, C.hair);
-  pixel(c, cx - 5, 13.2, C.hair);
-  pixel(c, cx + 5, 13.2, C.hair);
-
-  // 眼：眼白 + 深瞳 + 高光（每眼 2×2 起）
-  c.rect(cx - 4.5, 14.6, 2, 2, '#f4ece2');
-  c.rect(cx + 2.5, 14.6, 2, 2, '#f4ece2');
-  pixel(c, cx - 3.6, 15.2, '#241c16');
-  pixel(c, cx + 3.6, 15.2, '#241c16');
-  pixel(c, cx - 4, 14.8, '#ffffff');
-  pixel(c, cx + 3.2, 14.8, '#ffffff');
-  // 上眼睑压线
-  hline(c, cx - 4.6, cx - 2.6, 14.2, C.hair);
-  hline(c, cx + 2.6, cx + 4.6, 14.2, C.hair);
-
-  // 鼻（短线阴影 + 鼻尖亮点）
-  vline(c, cx + 0.4, 16.6, 18.2, darken(C.skinDark, 0.92));
-  pixel(c, cx - 0.2, 18.4, C.skin);
-
-  // 嘴（微抿的弧）
-  hline(c, cx - 1.6, cx + 1.6, 20.2, darken(C.skinDark, 0.8));
-  pixel(c, cx - 1.9, 19.8, darken(C.skinDark, 0.86));
-  pixel(c, cx + 1.9, 19.8, darken(C.skinDark, 0.86));
-
-  // 刘海：三缕弧形，压住额头但留出眉眼
-  c.ellipse(cx - 4.6, 10.6, 4.2, 3, C.hair);
-  c.ellipse(cx + 4.6, 10.6, 4.2, 3, C.hair);
-  c.ellipse(cx, 9.8, 5.4, 2.8, C.hair);
-  // 发丝高光
-  line(c, cx - 6, 9, cx - 2, 11, C.hairLight);
-  line(c, cx + 6, 9, cx + 2, 11, C.hairLight);
+  c.ellipse(cx - 4.4, 10.5, 0.9, 1.4, C.skin);
+  c.ellipse(cx + 4.4, 10.5, 0.9, 1.4, C.skin);
+  // 眉
+  hline(c, cx - 3, cx - 1.4, 8.3, C.hair);
+  hline(c, cx + 1.4, cx + 3, 8.3, C.hair);
+  // 眼（2×2：眼白+瞳+高光+上睑）
+  c.rect(cx - 2.6, 9.4, 1.6, 1.6, '#f4ece2');
+  c.rect(cx + 1, 9.4, 1.6, 1.6, '#f4ece2');
+  pixel(c, cx - 1.8, 10.1, '#241c16');
+  pixel(c, cx + 1.8, 10.1, '#241c16');
+  pixel(c, cx - 2.3, 9.6, '#ffffff');
+  pixel(c, cx + 1.1, 9.6, '#ffffff');
+  hline(c, cx - 2.7, cx - 1, 9.1, C.hair);
+  hline(c, cx + 1, cx + 2.7, 9.1, C.hair);
+  // 鼻 / 嘴
+  vline(c, cx + 0.3, 11.2, 12.2, darken(C.skinDark, 0.92));
+  pixel(c, cx - 0.2, 12.5, C.skin);
+  hline(c, cx - 1.2, cx + 1.2, 13.6, darken(C.skinDark, 0.8));
+  // 刘海（三缕弧形）+ 顶部发髻
+  c.ellipse(cx - 3.2, 7.4, 2.6, 2, C.hair);
+  c.ellipse(cx + 3.2, 7.4, 2.6, 2, C.hair);
+  c.ellipse(cx, 6.8, 3.4, 2, C.hair);
+  c.ellipse(cx, 2, 2.6, 1.9, C.hair);
+  pixel(c, cx - 0.8, 1.4, C.hairLight);
+  hline(c, cx - 2.4, cx + 2.4, 3.6, C.hairLight);
+  line(c, cx - 4.4, 6, cx - 1.6, 7.8, C.hairLight);
   PARTS['head.png'] = c;
 }
 
-// 颈：肤色短柱 + 颌下阴影
+/* ---- 颈 6×6：肤色短柱 + 颌下阴影 ---- */
 {
-  const c = canvas(8, 8);
-  c.rect(2.4, 0, 3.4, 8, C.skin);
-  c.rect(4.4, 0, 1.4, 8, C.skinDark);
-  hline(c, 2.4, 5.8, 0.6, darken(C.skinDark, 0.8));   // 颌下投影
+  const c = canvas(6, 6);
+  c.rect(1.7, 0, 2.6, 6, C.skin);
+  c.rect(3.3, 0, 1, 6, C.skinDark);
+  hline(c, 1.7, 4.3, 0.5, darken(C.skinDark, 0.8));
   PARTS['neck.png'] = c;
 }
 
-// 胸（肩+胸衣）：28×24 —— 锁骨线 + 抹胸上提覆盖胸腹 + 肩弧（肩部只此一处画，上臂不再画肩球）
+/* ---- 胸 26×20：小护肩（皮革）+ 抹胸 + 收腰 —— img y0=世界-85，cy10=世界-75 ---- */
 {
-  const c = canvas(28, 24);
-  const cy = 7;
+  const c = canvas(26, 20);
+  const cx = 13;
 
-  // 肩部三角肌（肤色弧，顶面亮）——全角色唯一的肩
-  c.ellipse(4.6, cy, 4.4, 4, C.skin);
-  c.ellipse(23.4, cy, 4.4, 4, C.skin);
-  c.ellipse(4.6, cy - 1, 3.4, 2.4, lighten(C.skin, 1.08));
-  c.ellipse(23.4, cy - 1, 3.4, 2.4, lighten(C.skin, 1.08));
-  c.ellipse(25.4, cy + 1.5, 2, 2.8, C.skinDark);
+  // 躯干：窄肩细腰（女性廓形）——胸宽 10 → 腰 9（先画躯干，护肩压在臂顶上方）
+  c.ellipse(cx, 11.5, 5.8, 7.8, OUTLINE_SOFT);
+  c.ellipse(cx, 11.3, 5, 7.2, C.skin);
+  c.rect(8.4, 8, 9.2, 13, C.skin);
+  // 体侧描边
+  vline(c, 8.2, 9, 17, OUTLINE_SOFT);
+  vline(c, 17.8, 9, 17, OUTLINE_SOFT);
 
-  // 躯干主体（肤色）+ 弱描边（避免与手臂重叠处形成黑洞）
-  c.ellipse(14, cy + 3.5, 8.6, 7.4, OUTLINE_SOFT);
-  c.ellipse(14, cy + 3, 7.8, 6.8, C.skin);
-  c.rect(6.6, cy + 2, 14.8, 9, C.skin);
+  // 锁骨（两段短斜线）
+  line(c, 10.2, 7.4, 12, 8.2, darken(C.skinDark, 0.9));
+  line(c, 15.8, 7.4, 14, 8.2, darken(C.skinDark, 0.9));
 
-  // 锁骨线（两段斜线）
-  line(c, 7.5, cy + 2.4, 11.5, cy + 4, darken(C.skinDark, 0.9));
-  line(c, 20.5, cy + 2.4, 16.5, cy + 4, darken(C.skinDark, 0.9));
+  // 抹胸：与躯干同宽 + V 领 + 胸部两团弱阴影 + 下缘
+  c.rect(8.2, 9.4, 9.6, 7.6, C.cloth);
+  c.rect(8.2, 9.4, 9.6, 1, lighten(C.cloth, 1.12));
+  line(c, cx, 9.6, 11.6, 12, darken(C.cloth, 0.9));
+  line(c, cx, 9.6, 14.4, 12, darken(C.cloth, 0.9));
+  c.ellipse(10.8, 12, 1.6, 1.3, darken(C.cloth, 0.93));
+  c.ellipse(15.2, 12, 1.6, 1.3, darken(C.cloth, 0.93));
+  hline(c, 8.2, 17.8, 16.8, darken(C.cloth, 0.8));
 
-  // 抹胸/胸衣：上提至锁骨线，覆盖胸腹（消除大片裸肤）
-  c.rect(6.8, cy + 3.2, 14.4, 13.8, C.cloth);
-  c.rect(6.8, cy + 3.2, 14.4, 1.8, lighten(C.cloth, 1.22));   // 上缘高光
-  vline(c, 10.2, cy + 5, cy + 16, darken(C.cloth, 0.88));     // 褶皱
-  vline(c, 17.8, cy + 5, cy + 16, darken(C.cloth, 0.88));
-  line(c, 14, cy + 3.4, 11.4, cy + 7, darken(C.cloth, 0.9));  // 领口交叠（V 领）
-  line(c, 14, cy + 3.4, 16.6, cy + 7, darken(C.cloth, 0.9));
-  hline(c, 6.8, 21.2, cy + 16, darken(C.cloth, 0.8));         // 下缘
+  // 腰腹露肤（y17-20 = 世界-68..-65，下接腰裙图的上缘皮肤）
+  c.rect(8.6, 16.8, 8.8, 3.4, C.skin);
+  pixel(c, cx, 18.6, darken(C.skinDark, 0.9));
+  c.rect(15.6, 16.8, 1.6, 3.2, C.skinDark);
 
-  // 腰线阴影（衣下缘到腰）
-  c.rect(7.2, cy + 16.4, 13.6, 1.6, C.skinDark);
+  // 皮革护肩（肩关节 ±8.5 → img x 4.5/21.5，肩线 y3=世界-82；外移半格避开臂柱正盖）
+  for (const sx of [3.9, 22.1]) {
+    c.ellipse(sx, 3.2, 3.3, 2.8, OUTLINE);
+    c.ellipse(sx, 3.1, 2.7, 2.2, C.leather);
+    c.ellipse(sx - (sx < cx ? 0.7 : -0.7), 2.2, 1.5, 1.1, lighten(C.leather, 1.3));
+    pixel(c, sx, 3.3, C.metal);
+  }
   PARTS['chest.png'] = c;
 }
 
-// 腰/骨盆（腰裙）：20×14 —— 腰带 + 裙褶
+/* ---- 腰 14×12：腰带（皮革+金扣）+ 裙褶 —— img y0=世界-64，挂 spine(-62) 偏移 +4 ---- */
 {
-  const c = canvas(20, 14);
-  c.rect(3, 0, 14, 5, C.skin);                    // 腹部露出
-  c.rect(3, 0, 14, 1.8, C.skinDark);
-  c.ellipse(10, 8.6, 8.6, 5.6, OUTLINE_SOFT);
-  c.ellipse(10, 8.4, 8, 5.2, C.waist);
-  c.rect(2, 5.6, 16, 6, C.waist);
-  c.rect(2, 5.6, 16, 1.6, lighten(C.waist, 1.3));  // 腰带高光
-  vline(c, 6.4, 7.6, 12.4, darken(C.waist, 0.86)); // 裙褶
-  vline(c, 13.6, 7.6, 12.4, darken(C.waist, 0.86));
+  const c = canvas(14, 12);
+  // 上缘露肤衔接
+  c.rect(3.5, 0, 7, 1.4, C.skin);
+  // 腰带
+  c.rect(1.4, 1.2, 11.2, 2.8, OUTLINE);
+  c.rect(1.6, 1.4, 10.8, 2.2, C.leather);
+  c.rect(1.6, 1.4, 10.8, 0.9, lighten(C.leather, 1.28));
+  c.rect(6.1, 1.5, 1.8, 1.9, C.waist);          // 金扣
+  pixel(c, 6.5, 1.9, C.metal);
+  // 裙摆（微外扩的女性髋部廓形）
+  c.ellipse(7, 8.6, 6.7, 3.9, OUTLINE_SOFT);
+  c.ellipse(7, 8.4, 6, 3.5, C.waist);
+  c.rect(2.2, 3.9, 9.6, 7.6, C.waist);
+  c.rect(2.2, 3.9, 9.6, 1, lighten(C.waist, 1.3));
+  vline(c, 4.6, 5.2, 10.8, darken(C.waist, 0.86));
+  vline(c, 9.4, 5.2, 10.8, darken(C.waist, 0.86));
+  hline(c, 2.2, 11.8, 10.9, darken(C.waist, 0.78));
   PARTS['waist.png'] = c;
 }
 
-// 上臂：不再画肩球（肩由 chest 图唯一负责，避免双肩分离）+ 二头肌体积 + 肘收窄
+/* ---- 上臂 7×17：臂带（皮革）+ 二头肌体积 + 肘收窄 ---- */
 {
-  const c = limb(9, 21, 7.2, 5.2, C.skin, C.skinDark);
-  c.ellipse(4.5, 1.6, 3.2, 1.8, C.skin);             // 顶部与肩衔接的小圆角
-  c.ellipse(4.5, 17.6, 2.5, 2.4, C.skin);          // 肘
-  vline(c, 5.8, 6, 14, darken(C.skin, 0.93));       // 内侧暗线（体积，弱化避免黑洞）
-  line(c, 2.4, 5, 2.4, 13, lighten(C.skin, 1.07)); // 外侧亮线
+  const c = limb(7, 17, 5, 4, C.skin, C.skinDark);
+  c.ellipse(3.5, 1.4, 2.6, 1.6, C.skin);
+  c.rect(1.2, 0.6, 4.6, 2.6, OUTLINE);
+  c.rect(1.4, 0.8, 4.2, 2, C.leather);           // 臂带
+  hline(c, 1.4, 5.6, 1, lighten(C.leather, 1.25));
+  c.ellipse(3.5, 15.6, 2.1, 1.7, C.skin);
+  vline(c, 4.9, 4, 12, darken(C.skin, 0.93));
+  vline(c, 2.1, 3, 12, lighten(C.skin, 1.07));
   PARTS['upper-arm.png'] = c;
 }
 
-// 前臂+手：收窄腕部 + 手掌 + 手指暗示
+/* ---- 前臂+手 7×19：护腕（皮革+绑带）+ 手掌 ---- */
 {
-  const c = limb(8, 17, 5.6, 4.4, C.skin, C.skinDark);
-  c.ellipse(4, 14.2, 3, 3.4, C.skin);              // 手掌
-  c.rect(2.6, 15.4, 3.4, 1.4, C.skin);
-  vline(c, 3.2, 15.2, 16.6, darken(C.skin, 0.9));  // 指缝暗示
-  vline(c, 4.8, 15.2, 16.6, darken(C.skin, 0.9));
-  c.ellipse(5.2, 9, 1.2, 3.4, C.skinDark);         // 内侧暗
+  const c = limb(7, 14, 4.4, 3.6, C.skin, C.skinDark);
+  c.rect(1.3, 7.2, 4.4, 6.8, OUTLINE);
+  c.rect(1.5, 7.4, 4, 6.2, C.leather);           // 护腕
+  c.rect(1.5, 7.4, 4, 1, lighten(C.leather, 1.2));
+  hline(c, 1.5, 5.5, 9.4, C.leatherDark);        // 绑带两道
+  hline(c, 1.5, 5.5, 11.6, C.leatherDark);
+  // 手（y14-19）
+  c.rect(2.1, 14, 2.8, 1.6, C.skin);
+  c.ellipse(3.5, 16.4, 2.3, 2.6, C.skin);
+  c.rect(2.2, 17.6, 2.8, 1.2, C.skin);
+  vline(c, 3.4, 16.8, 18.6, darken(C.skin, 0.9));
+  vline(c, 4.6, 15.2, 16.4, C.skinDark);
   PARTS['forearm.png'] = c;
 }
 
-// 大腿：裤（外扩股肌 + 膝收窄 + 褶线）
+/* ---- 大腿 9×26：裤（腰部收窄带 + 股肌体积 + 膝） ---- */
 {
-  const c = limb(11, 24, 9, 7, C.pants, C.pantsDark);
-  vline(c, 3.2, 3, 18, darken(C.pants, 0.88));      // 裤褶
-  vline(c, 7.6, 4, 16, darken(C.pants, 0.92));
+  const c = limb(9, 26, 8, 5.5, C.pants, C.pantsDark);
+  c.rect(1, 0.2, 7, 2, darken(C.pants, 0.7));    // 裤腰衔接带
+  vline(c, 2.6, 4, 19, darken(C.pants, 0.88));
+  vline(c, 6.2, 5, 17, darken(C.pants, 0.92));
+  c.ellipse(4.5, 24.2, 2.4, 1.8, C.pants);
   PARTS['thigh.png'] = c;
 }
 
-// 小腿：裤 + 小腿肚 + 踝部靴口
+/* ---- 小腿 8×21：裤 + 小腿肚高光 + 靴（皮带扣风） ---- */
 {
-  const c = limb(9, 28, 7, 4.4, C.pants, C.pantsDark);
-  c.ellipse(4.5, 7, 2.6, 4.4, lighten(C.pants, 1.1)); // 小腿肚高光
-  c.rect(2.4, 24.6, 4.6, 3.2, C.boot);             // 靴口
-  c.rect(2.4, 24.6, 4.6, 1, lighten(C.boot, 1.2));
+  const c = limb(8, 21, 5.5, 3.6, C.pants, C.pantsDark);
+  c.ellipse(3.2, 5.5, 1.8, 3, lighten(C.pants, 1.1));
+  c.rect(1.4, 12, 5.2, 9, OUTLINE);
+  c.rect(1.6, 12.2, 4.8, 8.6, C.boot);           // 靴筒
+  c.rect(1.6, 12.2, 4.8, 1.2, lighten(C.boot, 1.25));
+  pixel(c, 4, 13.6, C.metal);                    // 靴扣
+  c.rect(1.6, 19.4, 4.8, 1.6, darken(C.boot, 0.7));
   PARTS['shin.png'] = c;
 }
 
-// 脚（朝 +x 鞋）：鞋面高光 + 鞋底暗线
+/* ---- 脚 12×5（side 形态，朝 +x 侧影）：踝孔顶边贴图像上沿（踝关节点 = 图内 (3.2, 0)），
+ *      鞋底暗条占满图像底边（图内 y=5）→ 踝到鞋底 = 5px = 世界踝(-5) 到地面(0) ---- */
 {
-  const c = canvas(14, 7);
-  c.ellipse(5, 3.5, 4.5, 3.4, C.boot);
-  c.rect(4, 1, 9, 5, C.boot);
-  c.rect(4, 1, 8, 1.4, lighten(C.boot, 1.22));
-  c.rect(4, 4.6, 9.5, 1.6, darken(C.boot, 0.7));
+  const c = canvas(12, 5);
+  c.ellipse(3.2, 2.5, 2.9, 2.5, OUTLINE);
+  c.ellipse(3.2, 2.5, 2.3, 1.9, C.boot);
+  c.rect(2.6, 0.6, 8.6, 3.6, C.boot);
+  c.rect(2.6, 0.6, 8, 1, lighten(C.boot, 1.22));
+  c.rect(2.2, 3.6, 9.2, 1.4, darken(C.boot, 0.7));
   PARTS['foot.png'] = c;
+}
+
+/* ---- 脚 12×5 正面（down 形态）：脚尖朝观察者 → 图内朝下 ----
+ * 锚点约定（与 side 形态统一）：踝关节点 = 图内 (6,0)，鞋底 = 图像底边 y=5（落差 5px） ---- */
+{
+  const c = canvas(12, 5);
+  c.rect(4.2, 0, 3.6, 2.2, OUTLINE);           // 靴口（踝孔）
+  c.rect(4.4, 0.2, 3.2, 2, C.boot);
+  c.ellipse(6, 3.2, 3.6, 1.9, OUTLINE);          // 鞋头（朝下）
+  c.ellipse(6, 3.2, 3.1, 1.5, C.boot);
+  c.rect(3, 3.2, 6, 0.9, lighten(C.boot, 1.18));
+  c.rect(2.6, 4.1, 6.8, 0.9, darken(C.boot, 0.7));  // 鞋底（接地行）
+  PARTS['foot-down.png'] = c;
+}
+
+/* ---- 脚 12×5 背面（up 形态）：脚跟朝观察者 → 图内朝下 ---- */
+{
+  const c = canvas(12, 5);
+  c.rect(4.4, 0, 3.2, 2, OUTLINE);
+  c.rect(4.6, 0.2, 2.8, 1.8, darken(C.boot, 0.9));
+  c.ellipse(6, 3.3, 2.9, 1.7, OUTLINE);            // 鞋跟
+  c.ellipse(6, 3.3, 2.5, 1.3, C.boot);
+  c.rect(3.5, 4.2, 5, 0.8, darken(C.boot, 0.72));
+  PARTS['foot-up.png'] = c;
+}
+
+/* ---- 胸 26×20 侧面（side 形态）：身体侧影窄，胸口朝 +x，近侧单护肩 ---- */
+{
+  const c = canvas(26, 20);
+  const cx = 13;
+  // 躯干侧影（窄）
+  c.ellipse(cx, 11.5, 4.6, 7.6, OUTLINE_SOFT);
+  c.ellipse(cx, 11.3, 3.9, 7, C.skin);
+  c.rect(cx - 3.9, 8, 7.8, 13, C.skin);
+  // 胸前凸（朝 +x）
+  c.ellipse(cx + 3.2, 12.2, 2.1, 1.9, OUTLINE_SOFT);
+  c.ellipse(cx + 3.2, 12.2, 1.7, 1.5, C.skin);
+  // 侧面抹胸（斜挂带）
+  c.rect(cx - 4.2, 9.6, 8.4, 7.2, C.cloth);
+  c.rect(cx - 4.2, 9.6, 8.4, 1, lighten(C.cloth, 1.12));
+  line(c, cx - 3.6, 10, cx + 3.6, 13.4, darken(C.cloth, 0.88));
+  line(c, cx + 3.6, 10, cx - 3.6, 13.4, darken(C.cloth, 0.88));
+  hline(c, cx - 4.2, cx + 4.2, 16.6, darken(C.cloth, 0.8));
+  // 腰腹露肤
+  c.rect(cx - 3.8, 16.8, 7.6, 3.2, C.skin);
+  c.rect(cx + 2.2, 16.8, 1.6, 3.2, C.skinDark);
+  // 近侧护肩（臂在侧视收拢到体轴附近）
+  c.ellipse(cx - 2.6, 3.2, 3.2, 2.7, OUTLINE);
+  c.ellipse(cx - 2.6, 3.1, 2.6, 2.1, C.leather);
+  c.ellipse(cx - 3.2, 2.2, 1.4, 1, lighten(C.leather, 1.3));
+  pixel(c, cx - 2.6, 3.3, C.metal);
+  PARTS['chest-side.png'] = c;
+}
+
+/* ---- 胸 26×20 背面（up 形态）：宽肩、无胸口开口，背部皮革束带 ---- */
+{
+  const c = canvas(26, 20);
+  const cx = 13;
+  c.ellipse(cx, 11.5, 5.8, 7.8, OUTLINE_SOFT);
+  c.ellipse(cx, 11.3, 5, 7.2, C.skin);
+  c.rect(8.4, 8, 9.2, 13, C.skin);
+  vline(c, 8.2, 9, 17, OUTLINE_SOFT);
+  vline(c, 17.8, 9, 17, OUTLINE_SOFT);
+  // 背部斜方肌 + 皮革 Y 型束带（取代正面的抹胸开口）
+  line(c, 10.2, 7.6, 12.4, 10.4, darken(C.skinDark, 0.9));
+  line(c, 15.8, 7.6, 13.6, 10.4, darken(C.skinDark, 0.9));
+  line(c, 12.4, 10.2, 11.2, 17, C.leather);
+  line(c, 13.6, 10.2, 14.8, 17, C.leather);
+  hline(c, 8.4, 17.6, 13.2, C.leather);
+  hline(c, 8.4, 17.6, 14.4, darken(C.leather, 0.8));
+  // 腰背露肤
+  c.rect(8.6, 16.8, 8.8, 3.2, C.skin);
+  c.rect(15.6, 16.8, 1.6, 3.2, C.skinDark);
+  // 双护肩
+  for (const sx of [3.9, 22.1]) {
+    c.ellipse(sx, 3.2, 3.3, 2.8, OUTLINE);
+    c.ellipse(sx, 3.1, 2.7, 2.2, C.leather);
+    c.ellipse(sx - (sx < cx ? 0.7 : -0.7), 2.2, 1.5, 1.1, lighten(C.leather, 1.3));
+    pixel(c, sx, 3.3, C.metal);
+  }
+  PARTS['chest-up.png'] = c;
+}
+
+/* ---- 腰 14×12 侧面（side 形态）：窄腰侧影 + 单侧胯部 ---- */
+{
+  const c = canvas(14, 12);
+  c.rect(4, 0, 6, 1.4, C.skin);
+  c.rect(3, 1.2, 8.4, 2.8, OUTLINE);
+  c.rect(3.2, 1.4, 8, 2.2, C.leather);
+  c.rect(3.2, 1.4, 8, 0.9, lighten(C.leather, 1.28));
+  c.rect(4, 1.6, 1.6, 1.8, C.waist);           // 侧扣
+  pixel(c, 4.6, 2, C.metal);
+  c.ellipse(7, 8.6, 5.2, 3.9, OUTLINE_SOFT);    // 胯/裙侧影
+  c.ellipse(7, 8.4, 4.6, 3.5, C.waist);
+  c.rect(2.8, 3.9, 8.4, 7.6, C.waist);
+  c.rect(2.8, 3.9, 8.4, 1, lighten(C.waist, 1.3));
+  vline(c, 5.4, 5.2, 10.8, darken(C.waist, 0.86));
+  hline(c, 2.8, 11.2, 10.9, darken(C.waist, 0.78));
+  PARTS['waist-side.png'] = c;
+}
+
+/* ---- 腰 14×12 背面（up 形态）：无前扣，后腰封边 + 双裙瓣 ---- */
+{
+  const c = canvas(14, 12);
+  c.rect(3.5, 0, 7, 1.4, C.skin);
+  c.rect(1.4, 1.2, 11.2, 2.8, OUTLINE);
+  c.rect(1.6, 1.4, 10.8, 2.2, C.leather);
+  c.rect(1.6, 1.4, 10.8, 0.9, lighten(C.leather, 1.28));
+  c.rect(5.9, 1.5, 2.2, 1.9, darken(C.leather, 0.86));  // 后腰扣（无金扣高光）
+  c.ellipse(7, 8.6, 6.7, 3.9, OUTLINE_SOFT);
+  c.ellipse(7, 8.4, 6, 3.5, C.waist);
+  c.rect(2.2, 3.9, 9.6, 7.6, C.waist);
+  c.rect(2.2, 3.9, 9.6, 1, lighten(C.waist, 1.3));
+  vline(c, 4.8, 5.2, 10.8, darken(C.waist, 0.86));
+  vline(c, 9.2, 5.2, 10.8, darken(C.waist, 0.86));
+  vline(c, 7, 4.2, 10.8, darken(C.waist, 0.8));    // 臀缝
+  hline(c, 2.2, 11.8, 10.9, darken(C.waist, 0.78));
+  PARTS['waist-up.png'] = c;
 }
 
 // 背挂（斧，简化，配色随旧斧）
@@ -364,116 +496,150 @@ PARTS['axe.png'] = (() => {
 
 /* ---------------- 2.5 旧资产重画：玩家头部三态（迁移后的 player.json 实际引用这些） ----------------
  * player.json 的头/发槽位引用 parts/ 下的旧资产（player.parts.head-front / hair-heroine-*），
- * 新图的 headSlot 并不被游戏使用——三态机制要求脸/发分件，故这里重画旧资产。
- * 统一 64×64 坐标系（脸内容 x22-42 / y2-25），让脸与发同心；发图中部椭圆镂空露出脸。
+ * 新图 headSlot 并不被游戏使用——三态机制要求脸/发分件，故这里重画旧资产。
+ * 统一 64×64 画布、内容按 7 头身目标尺寸 1:1 绘制且内容中心对齐画布中心 (32,32)
+ * （迁移脚本实测 alpha bbox 中心做锚定，同心绘制保证脸/发相对位置正确）。
  * 输出仍为原文件名（parts/ 目录），manifest 登记的 assetId 不变。 */
 
 const LEGACY_DIR = path.join(root, 'example/sanguo_zhangjiao/assets/images/player/parts');
 
-/** 脸（正面）：64×64，内容区 x22-42 / y2-25 */
+/** 脸（正面）：内容 12×14 居中 (32,32) —— 对应世界脸中心 = head 骨 origin-86 上方 7px */
 function legacyFaceFront() {
   const c = canvas(64, 64, LEGACY_DIR);
-  const cx = 32, cy = 13.5;
-  c.ellipse(cx, cy, 10.5, 11.5, OUTLINE);       // 外描边
-  c.ellipse(cx, cy, 9.6, 10.6, C.skin);          // 脸
-  c.rect(cx - 9, cy - 2, 18, 10, C.skin);
-  c.ellipse(cx + 5.4, cy + 1, 2.2, 5.6, darken(C.skin, 0.9));  // 右侧暗部（弱化）
-  c.ellipse(cx + 6.2, cy + 2.6, 1.2, 2.6, darken(C.skinDark, 0.92));
-  c.ellipse(cx - 9.6, cy - 0.5, 1.4, 2.4, C.skin); // 耳
-  c.ellipse(cx + 9.6, cy - 0.5, 1.4, 2.4, C.skin);
-  hline(c, cx - 7, cx - 3, cy - 4.4, C.hair);     // 眉
-  hline(c, cx + 3, cx + 7, cy - 4.4, C.hair);
-  c.rect(cx - 6, cy - 2, 3, 2.4, '#f4ece2');      // 眼白
-  c.rect(cx + 3, cy - 2, 3, 2.4, '#f4ece2');
-  pixel(c, cx - 5, cy - 1, '#241c16');            // 瞳
-  pixel(c, cx + 5, cy - 1, '#241c16');
-  pixel(c, cx - 5.4, cy - 1.8, '#ffffff');        // 高光
-  pixel(c, cx + 4.6, cy - 1.8, '#ffffff');
-  hline(c, cx - 6.4, cx - 3, cy - 2.6, C.hair);   // 上睑
-  hline(c, cx + 3, cx + 6.4, cy - 2.6, C.hair);
-  vline(c, cx + 0.4, cy + 0.5, cy + 2.8, darken(C.skinDark, 0.9)); // 鼻
-  hline(c, cx - 2, cx + 2, cy + 5, darken(C.skinDark, 0.8));       // 嘴
-  pixel(c, cx - 2.4, cy + 4.6, darken(C.skinDark, 0.86));
-  pixel(c, cx + 2.4, cy + 4.6, darken(C.skinDark, 0.86));
+  const cx = 32, cy = 32;
+  // 脸型：外描边 + 内肤色（尖下巴的女性脸）
+  c.ellipse(cx, cy + 0.4, 6.2, 7.4, OUTLINE);
+  c.ellipse(cx, cy + 0.2, 5.5, 6.7, C.skin);
+  c.rect(cx - 5, cy - 2.4, 10, 7, C.skin);
+  // 右侧脸阴影（受光在左）
+  c.ellipse(cx + 3.6, cy + 0.8, 1.7, 4.8, C.skinDark);
+  pixel(c, cx + 4.6, cy + 2.4, darken(C.skinDark, 0.9));
+  // 耳
+  c.ellipse(cx - 5.8, cy + 0.4, 1, 1.6, C.skin);
+  c.ellipse(cx + 5.8, cy + 0.4, 1, 1.6, C.skin);
+  // 眉（2px 短线）
+  hline(c, cx - 3.6, cx - 1.6, cy - 3.4, C.hair);
+  hline(c, cx + 1.6, cx + 3.6, cy - 3.4, C.hair);
+  // 眼（2×2：眼白+瞳+高光+上睑压线）
+  c.rect(cx - 3.2, cy - 2.4, 2, 2, '#f4ece2');
+  c.rect(cx + 1.2, cy - 2.4, 2, 2, '#f4ece2');
+  pixel(c, cx - 2.4, cy - 1.6, '#241c16');
+  pixel(c, cx + 2.4, cy - 1.6, '#241c16');
+  pixel(c, cx - 2.9, cy - 2.1, '#ffffff');
+  pixel(c, cx + 1.7, cy - 2.1, '#ffffff');
+  hline(c, cx - 3.3, cx - 1.4, cy - 2.9, C.hair);
+  hline(c, cx + 1.4, cx + 3.3, cy - 2.9, C.hair);
+  // 鼻（短线阴影+鼻尖亮点）
+  vline(c, cx + 0.4, cy + 0.4, cy + 1.8, darken(C.skinDark, 0.92));
+  pixel(c, cx - 0.2, cy + 2.1, C.skin);
+  // 嘴（微抿短弧）
+  hline(c, cx - 1.3, cx + 1.3, cy + 4, darken(C.skinDark, 0.8));
+  pixel(c, cx - 1.7, cy + 3.6, darken(C.skinDark, 0.86));
+  pixel(c, cx + 1.7, cy + 3.6, darken(C.skinDark, 0.86));
   return c;
 }
 
-/** 侧脸：鼻梁朝左，含单眼与侧发轮廓 */
+/** 侧脸：鼻梁朝左，含单眼与耳 */
 function legacyFaceSide() {
   const c = canvas(64, 64, LEGACY_DIR);
-  const cx = 31, cy = 13.5;
-  c.ellipse(cx, cy, 9.6, 11, OUTLINE);
-  c.ellipse(cx, cy, 8.6, 10, C.skin);
-  c.rect(cx - 8, cy - 2, 16, 9, C.skin);
-  c.ellipse(cx + 5.6, cy + 1, 2.6, 6.4, C.skinDark);
-  c.ellipse(cx - 8.2, cy + 0.5, 1.6, 2.6, C.skin);  // 耳（后侧）
-  pixel(c, cx - 8.4, cy + 0.5, darken(C.skinDark, 0.9));
-  hline(c, cx - 7, cx - 3.4, cy - 4.2, C.hair);      // 眉
-  c.rect(cx - 6.6, cy - 2, 2.8, 2.2, '#f4ece2');     // 眼
-  pixel(c, cx - 5.8, cy - 1, '#241c16');
-  pixel(c, cx - 6.2, cy - 1.8, '#ffffff');
-  hline(c, cx - 7, cx - 4, cy - 2.6, C.hair);
-  vline(c, cx - 5.6, cy + 0.5, cy + 3, darken(C.skinDark, 0.9)); // 鼻梁
-  hline(c, cx - 6.4, cx - 3.4, cy + 4.6, darken(C.skinDark, 0.8)); // 嘴
+  const cx = 31.5, cy = 32;
+  c.ellipse(cx, cy + 0.4, 5.8, 7, OUTLINE);
+  c.ellipse(cx + 0.3, cy + 0.2, 5.1, 6.3, C.skin);
+  c.rect(cx - 4.4, cy - 2.4, 9.4, 6.6, C.skin);
+  // 鼻梁（左侧凸出）
+  c.ellipse(cx - 5.6, cy + 1, 1, 1.3, C.skin);
+  pixel(c, cx - 6.4, cy + 0.8, OUTLINE);
+  // 下巴阴影
+  c.ellipse(cx + 3.4, cy + 1, 1.8, 4.6, C.skinDark);
+  // 耳（后侧）
+  c.ellipse(cx + 4.2, cy + 0.4, 1.2, 1.8, C.skin);
+  pixel(c, cx + 4.2, cy + 0.5, darken(C.skinDark, 0.9));
+  // 眉 + 单眼（偏脸前部）
+  hline(c, cx - 4.4, cx - 2.4, cy - 3.2, C.hair);
+  c.rect(cx - 4, cy - 2.3, 1.9, 1.9, '#f4ece2');
+  pixel(c, cx - 3.3, cy - 1.5, '#241c16');
+  pixel(c, cx - 3.7, cy - 2, '#ffffff');
+  hline(c, cx - 4.1, cx - 2.2, cy - 2.8, C.hair);
+  // 鼻底阴影 + 嘴
+  pixel(c, cx - 5.2, cy + 2.3, darken(C.skinDark, 0.9));
+  hline(c, cx - 4.8, cx - 2.8, cy + 3.8, darken(C.skinDark, 0.8));
   return c;
 }
 
 /** 后脑：只有头型与耳廓，无五官 */
 function legacyFaceBack() {
   const c = canvas(64, 64, LEGACY_DIR);
-  const cx = 32, cy = 14;
-  c.ellipse(cx, cy, 10.5, 11.5, OUTLINE);
-  c.ellipse(cx, cy, 9.6, 10.6, C.skin);
-  c.rect(cx - 9, cy - 2, 18, 9, C.skin);
-  c.ellipse(cx + 5.4, cy + 1, 3, 6.6, C.skinDark);
-  c.ellipse(cx - 9.6, cy - 0.5, 1.4, 2.4, C.skin);
-  c.ellipse(cx + 9.6, cy - 0.5, 1.4, 2.4, C.skin);
+  const cx = 32, cy = 32;
+  c.ellipse(cx, cy + 0.4, 6.2, 7.2, OUTLINE);
+  c.ellipse(cx, cy + 0.2, 5.5, 6.5, C.skin);
+  c.rect(cx - 5, cy - 2.4, 10, 7, C.skin);
+  c.ellipse(cx + 3.4, cy + 0.8, 2, 5, C.skinDark);
+  c.ellipse(cx - 5.8, cy + 0.4, 1, 1.6, C.skin);
+  c.ellipse(cx + 5.8, cy + 0.4, 1, 1.6, C.skin);
   return c;
 }
 
-/** 前发：顶部发块 + 两侧垂发 + 顶部发髻，中部椭圆镂空露脸 */
+/** 前发：crown 顶从 y≈23.4 起（脸顶上方 1.6px，7 头身发量）+ 三缕刘海 + 两侧垂发，中部镂空露脸 */
 function legacyHairFront() {
   const c = canvas(64, 64, LEGACY_DIR);
   const cx = 32;
-  c.ellipse(cx, 18, 15, 17, C.hair);            // 顶部发块
-  c.rect(cx - 15, 14, 30, 12, C.hair);
-  c.ellipse(cx - 14, 30, 4, 16, C.hair);         // 左侧垂发
-  c.ellipse(cx + 14, 30, 4, 16, C.hair);         // 右侧垂发
-  c.ellipse(cx, 4, 8, 5, C.hair);                // 发髻
-  c.ellipse(cx - 2.4, 2.6, 3, 2, C.hairLight);   // 髻高光
-  hline(c, cx - 8, cx + 8, 8.4, C.hairLight);     // 束带
-  line(c, cx - 12, 12, cx - 6, 18, C.hairLight);  // 发丝高光
-  line(c, cx + 12, 12, cx + 6, 18, C.hairLight);
-  c.clearEllipse(cx, 18, 12, 12.5);               // 镂空露脸
+  // 后层 bulk（垂到颌下）
+  c.ellipse(cx, 35, 6.8, 6.2, C.hair);
+  // crown（顶 y23.4）
+  c.ellipse(cx, 28.2, 7.6, 4.8, C.hair);
+  c.rect(cx - 7.6, 26, 15.2, 3.4, C.hair);
+  hline(c, cx - 3.4, cx + 3.4, 24.6, C.hairLight);   // 束发带高光
+  // 三缕刘海（压额到 y≈28.5，不过眉线 y28.6）
+  c.ellipse(cx - 4.2, 27.2, 3.3, 2, C.hair);
+  c.ellipse(cx + 4.2, 27.2, 3.3, 2, C.hair);
+  c.ellipse(cx, 26.8, 4.3, 2, C.hair);
+  // 两侧垂发（贴脸到颌 y38.6）
+  c.ellipse(cx - 6.4, 32.8, 1.6, 5.8, C.hair);
+  c.ellipse(cx + 6.4, 32.8, 1.6, 5.8, C.hair);
+  // 发丝高光
+  line(c, cx - 5.4, 25, cx - 2.6, 27.2, C.hairLight);
+  line(c, cx + 5.4, 25, cx + 2.6, 27.2, C.hairLight);
+  // 镂空露脸（y28.9-38.9：眉眼口全露出）
+  c.clearEllipse(cx, 33.9, 5.5, 5);
   return c;
 }
 
-/** 侧发：偏向一边的刘海 + 后脑发 + 鬓角 */
+/** 侧发：脸朝左 → 前刘海在左、后脑长发+低马尾在右；镂空露侧脸 */
 function legacyHairSide() {
   const c = canvas(64, 64, LEGACY_DIR);
-  const cx = 31;
-  c.ellipse(cx, 18, 14, 17, C.hair);
-  c.rect(cx - 14, 14, 28, 12, C.hair);
-  c.ellipse(cx + 12, 32, 4.5, 18, C.hair);       // 后脑长发
-  c.ellipse(cx - 13, 28, 3.4, 14, C.hair);       // 前鬓
-  c.ellipse(cx + 1, 5, 7, 4.4, C.hair);
-  line(c, cx - 10, 12, cx - 4, 18, C.hairLight);
-  c.clearEllipse(cx - 2, 18, 10, 12);             // 镂空露侧脸
+  const cx = 31.5;
+  // crown（顶 y23.4，略偏右盖住后颅）
+  c.ellipse(cx + 0.5, 28.2, 7.4, 4.8, C.hair);
+  c.rect(cx - 6.9, 26, 15.8, 3.6, C.hair);
+  hline(c, cx - 3, cx + 4, 24.6, C.hairLight);
+  // 前刘海（左）
+  c.ellipse(cx - 4.6, 27.4, 3.2, 2, C.hair);
+  c.ellipse(cx - 0.6, 26.8, 3.6, 2, C.hair);
+  // 鬓角
+  c.ellipse(cx - 5.8, 31.6, 1.3, 3.6, C.hair);
+  // 后脑长发 + 低马尾（右，垂到 y46）
+  c.ellipse(cx + 6.6, 34.5, 3, 6.5, C.hair);
+  c.ellipse(cx + 7.4, 42.5, 2.2, 4, C.hair);
+  // 发丝高光
+  line(c, cx - 5, 25, cx - 2.2, 27.4, C.hairLight);
+  line(c, cx + 5.4, 27, cx + 7, 33, C.hairLight);
+  // 镂空露侧脸（脸前部偏左下）
+  c.clearEllipse(cx - 1.6, 33.9, 4.8, 5);
   return c;
 }
 
-/** 后发：整片后脑发（无镂空） */
+/** 后发：整片后脑发（无镂空），crown 顶 y23.4，中缝线 + 垂发两缕到 y43 */
 function legacyHairBack() {
   const c = canvas(64, 64, LEGACY_DIR);
   const cx = 32;
-  c.ellipse(cx, 20, 15, 18, C.hair);
-  c.rect(cx - 15, 16, 30, 16, C.hair);
-  c.ellipse(cx - 13, 36, 5, 18, C.hair);
-  c.ellipse(cx + 13, 36, 5, 18, C.hair);
-  c.ellipse(cx, 4, 8, 5, C.hair);
-  c.ellipse(cx - 2.4, 2.6, 3, 2, C.hairLight);
-  line(c, cx - 10, 14, cx - 5, 22, C.hairLight);
-  line(c, cx + 10, 14, cx + 5, 22, C.hairLight);
+  c.ellipse(cx, 28.4, 7.6, 5, C.hair);
+  c.rect(cx - 7.6, 26, 15.2, 6, C.hair);
+  hline(c, cx - 3.4, cx + 3.4, 24.6, C.hairLight);
+  c.ellipse(cx - 5.8, 38.5, 2.6, 5, C.hair);
+  c.ellipse(cx + 5.8, 38.5, 2.6, 5, C.hair);
+  vline(c, cx, 26, 33, darken(C.hair, 0.8));       // 中缝
+  line(c, cx - 5.2, 26.5, cx - 2.6, 33, C.hairLight);
+  line(c, cx + 5.2, 26.5, cx + 2.6, 33, C.hairLight);
   return c;
 }
 
@@ -491,10 +657,50 @@ console.log(`旧资产重画: ${Object.keys(LEGACY_PARTS).length} 个 → ${path
 for (const [file, c] of Object.entries(PARTS)) await c.save(file);
 console.log(`部件图生成: ${Object.keys(PARTS).length} 个 → ${path.relative(root, OUT_PARTS)}`);
 
-/* ---------------- 3. 骨架 JSON 组装 ---------------- */
+/* ---------------- 2.6 manifest 登记（parts-humanoid 全部部件图，幂等） ----------------
+ * 形态变体图（chest-side/chest-up/waist-side/waist-up/foot-down/foot-up）也要登记：
+ * 运行时靠 attachment.directionOffsets[form].assetId 换图，未登记 = 加载失败 = 空白。 */
+{
+  const MANIFEST_PREFIX = 'player.humanoid.';
+  const manifestPath = path.join(root, 'example/sanguo_zhangjiao/assets/manifests/assets.json');
+  const raw = readFileSync(manifestPath, 'utf8');
+  const manifest = JSON.parse(raw.replace(/^\uFEFF/, ''));
+  const eol = raw.includes('\r\n') ? '\r\n' : '\n';
+  const known = new Set(manifest.assets.map(a => a.assetId));
+  let added = 0;
+  for (const [file] of Object.entries(PARTS)) {
+    const id = MANIFEST_PREFIX + file.replace(/\.png$/, '');
+    if (known.has(id)) continue;
+    const meta = await sharp(path.join(OUT_PARTS, file)).metadata();
+    manifest.assets.push({
+      assetId: id,
+      imageId: id,
+      category: 'character-part',
+      usage: ['player-skeleton-part'],
+      sourceFile: `assets/images/player/parts-humanoid/${file}`,
+      runtime2D: { path: `assets/images/player/parts-humanoid/${file}`, mode: 'image' },
+      runtime3D: { mode: 'billboard', sourceAssetId: id },
+      pivot: { x: 0.5, y: 0.5 },
+      bounds: { width: meta.width, height: meta.height },
+      animations: [],
+      targetPhase: 'P1',
+      status: 'ai-generated',
+      revision: 1
+    });
+    added++;
+  }
+  if (added) {
+    writeFileSync(manifestPath, JSON.stringify(manifest, null, 2).replace(/\n/g, eol) + eol, 'utf8');
+    console.log(`manifest 登记: 新增 ${added} 个部件图条目`);
+  } else {
+    console.log('manifest 登记: 全部已存在，跳过');
+  }
+}
+
+/* ---------------- 3. 骨架 JSON 组装（7 头身，脚底 = y0，头顶 = y-100） ---------------- */
 
 const P = 'player.humanoid.';
-// 部件图用原尺寸渲染（不写 width/height，运行时回退 img 原尺寸）——写 64 会放大 2.67 倍出棋盘缝
+// 部件图用原尺寸渲染（不写 width/height，运行时回退 img 原尺寸）
 const slot = (id, bone, z, part, x, y) => ({
   id, bone, z,
   attachment: { type: 'image', assetId: P + part, partId: 'part.humanoid.' + part.replace('.png', ''), x, y, rot: 0, visible: true }
@@ -507,38 +713,38 @@ const doc = {
   meta: { width: 96, height: 96, coordinateSpace: 'canonical-v1', headProportionApplied: true },
   defaultClip: 'idle_down',
   bones: [
-    { id: 'hips', parent: null, x: 0, y: -53, rot: 0, scaleX: 1, scaleY: 1, length: 12 },
-    { id: 'spine', parent: 'hips', x: 0, y: 1, rot: 0, scaleX: 1, scaleY: 1, length: 19 },
-    { id: 'chest', parent: 'spine', x: 0, y: -19, rot: 0, scaleX: 1, scaleY: 1, length: 17 },
-    { id: 'neck', parent: 'chest', x: 0, y: -17, rot: 0, scaleX: 1, scaleY: 1, length: 5 },
-    { id: 'head', parent: 'neck', x: 0, y: -5, rot: 0, scaleX: 1, scaleY: 1, length: 15 },
-    { id: 'upperArmR', parent: 'chest', x: -11, y: -14, rot: 4, scaleX: 1, scaleY: 1, length: 20 },
-    { id: 'upperArmL', parent: 'chest', x: 11, y: -14, rot: -4, scaleX: 1, scaleY: 1, length: 20 },
-    { id: 'forearmR', parent: 'upperArmR', x: 0, y: 20, rot: 0, scaleX: 1, scaleY: 1, length: 17 },
-    { id: 'forearmL', parent: 'upperArmL', x: 0, y: 20, rot: 0, scaleX: 1, scaleY: 1, length: 17 },
-    { id: 'thighR', parent: 'hips', x: -5.5, y: 1, rot: 0, scaleX: 1, scaleY: 1, length: 22 },
-    { id: 'thighL', parent: 'hips', x: 5.5, y: 1, rot: 0, scaleX: 1, scaleY: 1, length: 22 },
-    { id: 'shinR', parent: 'thighR', x: 0, y: 22, rot: 0, scaleX: 1, scaleY: 1, length: 26 },
-    { id: 'shinL', parent: 'thighL', x: 0, y: 22, rot: 0, scaleX: 1, scaleY: 1, length: 26 },
-    { id: 'footR', parent: 'shinR', x: 0, y: 26, rot: -90, scaleX: 1, scaleY: 1, length: 7 },
-    { id: 'footL', parent: 'shinL', x: 0, y: 26, rot: -90, scaleX: 1, scaleY: 1, length: 7 }
+    { id: 'hips', parent: null, x: 0, y: -50, rot: 0, scaleX: 1, scaleY: 1, length: 12 },
+    { id: 'spine', parent: 'hips', x: 0, y: -12, rot: 0, scaleX: 1, scaleY: 1, length: 12 },
+    { id: 'chest', parent: 'spine', x: 0, y: -12, rot: 0, scaleX: 1, scaleY: 1, length: 9 },
+    { id: 'neck', parent: 'chest', x: 0, y: -9.5, rot: 0, scaleX: 1, scaleY: 1, length: 3 },
+    { id: 'head', parent: 'neck', x: 0, y: -2.5, rot: 0, scaleX: 1, scaleY: 1, length: 14 },
+    { id: 'upperArmR', parent: 'chest', x: -8.5, y: -8, rot: 4, scaleX: 1, scaleY: 1, length: 17 },
+    { id: 'upperArmL', parent: 'chest', x: 8.5, y: -8, rot: -4, scaleX: 1, scaleY: 1, length: 17 },
+    { id: 'forearmR', parent: 'upperArmR', x: 0, y: 17, rot: 0, scaleX: 1, scaleY: 1, length: 15 },
+    { id: 'forearmL', parent: 'upperArmL', x: 0, y: 17, rot: 0, scaleX: 1, scaleY: 1, length: 15 },
+    { id: 'thighR', parent: 'hips', x: -3.5, y: 0, rot: 0, scaleX: 1, scaleY: 1, length: 26 },
+    { id: 'thighL', parent: 'hips', x: 3.5, y: 0, rot: 0, scaleX: 1, scaleY: 1, length: 26 },
+    { id: 'shinR', parent: 'thighR', x: 0, y: 26, rot: 0, scaleX: 1, scaleY: 1, length: 19 },
+    { id: 'shinL', parent: 'thighL', x: 0, y: 26, rot: 0, scaleX: 1, scaleY: 1, length: 19 },
+    { id: 'footR', parent: 'shinR', x: 0, y: 19, rot: -90, scaleX: 1, scaleY: 1, length: 7 },
+    { id: 'footL', parent: 'shinL', x: 0, y: 19, rot: -90, scaleX: 1, scaleY: 1, length: 7 }
   ],
   slots: [
-    slot('axeBack', 'chest', 1, 'axe.png', -15, -8),
-    slot('armUR', 'upperArmR', 3, 'upper-arm.png', 0, 2),
-    slot('armUL', 'upperArmL', 4, 'upper-arm.png', 0, 2),
-    slot('legThighR', 'thighR', 5, 'thigh.png', 0, 10),
-    slot('legThighL', 'thighL', 6, 'thigh.png', 0, 10),
-    slot('legShinR', 'shinR', 7, 'shin.png', 0, 12),
-    slot('legShinL', 'shinL', 8, 'shin.png', 0, 12),
-    slot('footR', 'footR', 9, 'foot.png', -2, -1),
-    slot('footL', 'footL', 10, 'foot.png', 2, -1),
-    slot('waist', 'spine', 12, 'waist.png', 0, -14),
-    slot('chestSlot', 'chest', 14, 'chest.png', 0, -8),
-    slot('armFR', 'forearmR', 16, 'forearm.png', 0, 1),
-    slot('armFL', 'forearmL', 17, 'forearm.png', 0, 1),
-    slot('neckSlot', 'neck', 19, 'neck.png', 0, -2),
-    slot('headSlot', 'head', 21, 'head.png', 0, -6)
+    slot('axeBack', 'chest', 1, 'axe.png', -13, -6),
+    slot('armUR', 'upperArmR', 3, 'upper-arm.png', 0, 8),
+    slot('armUL', 'upperArmL', 4, 'upper-arm.png', 0, 8),
+    slot('legThighR', 'thighR', 5, 'thigh.png', 0, 13),
+    slot('legThighL', 'thighL', 6, 'thigh.png', 0, 13),
+    slot('legShinR', 'shinR', 7, 'shin.png', 0, 10),
+    slot('legShinL', 'shinL', 8, 'shin.png', 0, 10),
+    slot('footR', 'footR', 9, 'foot.png', -2, 2.5),
+    slot('footL', 'footL', 10, 'foot.png', 2, 2.5),
+    slot('waist', 'spine', 12, 'waist.png', 0, 4),
+    slot('chestSlot', 'chest', 14, 'chest.png', 0, -1),
+    slot('armFR', 'forearmR', 16, 'forearm.png', 0, 9),
+    slot('armFL', 'forearmL', 17, 'forearm.png', 0, 9),
+    slot('neckSlot', 'neck', 19, 'neck.png', 0, -1),
+    slot('headSlot', 'head', 21, 'head.png', 0, -7)
   ],
   clips: [
     {
@@ -551,55 +757,55 @@ const doc = {
         {
           bone: 'chest',
           keys: [
-            { t: 0, x: 0, y: -19, rot: 0 },
-            { t: 450, x: 0, y: -18.3, rot: 0.7, ease: 'easeInOut' },
-            { t: 900, x: 0, y: -18.4, rot: 0.7, ease: 'easeInOut' },
-            { t: 1350, x: 0, y: -19, rot: 0, ease: 'easeInOut' }
+            { t: 0, x: 0, y: -12, rot: 0 },
+            { t: 450, x: 0, y: -11.3, rot: 0.7, ease: 'easeInOut' },
+            { t: 900, x: 0, y: -11.4, rot: 0.7, ease: 'easeInOut' },
+            { t: 1350, x: 0, y: -12, rot: 0, ease: 'easeInOut' }
           ]
         },
         {
           bone: 'head',
           keys: [
-            { t: 0, x: 0, y: -5, rot: 0 },
-            { t: 450, x: 0, y: -4.8, rot: 1.4, ease: 'easeInOut' },
-            { t: 900, x: 0, y: -4.8, rot: 1.4, ease: 'easeInOut' },
-            { t: 1350, x: 0, y: -5, rot: 0, ease: 'easeInOut' }
+            { t: 0, x: 0, y: -2.5, rot: 0 },
+            { t: 450, x: 0, y: -2.3, rot: 1.4, ease: 'easeInOut' },
+            { t: 900, x: 0, y: -2.3, rot: 1.4, ease: 'easeInOut' },
+            { t: 1350, x: 0, y: -2.5, rot: 0, ease: 'easeInOut' }
           ]
         },
         {
           bone: 'upperArmR',
           keys: [
-            { t: 0, x: -11, y: -14, rot: 3 },
-            { t: 450, x: -11, y: -14, rot: 4.5, ease: 'easeInOut' },
-            { t: 900, x: -11, y: -14, rot: 4, ease: 'easeInOut' },
-            { t: 1350, x: -11, y: -14, rot: 3, ease: 'easeInOut' }
+            { t: 0, x: -8.5, y: -8, rot: 3 },
+            { t: 450, x: -8.5, y: -8, rot: 4.5, ease: 'easeInOut' },
+            { t: 900, x: -8.5, y: -8, rot: 4, ease: 'easeInOut' },
+            { t: 1350, x: -8.5, y: -8, rot: 3, ease: 'easeInOut' }
           ]
         },
         {
           bone: 'upperArmL',
           keys: [
-            { t: 0, x: 11, y: -14, rot: -3 },
-            { t: 450, x: 11, y: -14, rot: -4.5, ease: 'easeInOut' },
-            { t: 900, x: 11, y: -14, rot: -4, ease: 'easeInOut' },
-            { t: 1350, x: 11, y: -14, rot: -3, ease: 'easeInOut' }
+            { t: 0, x: 8.5, y: -8, rot: -3 },
+            { t: 450, x: 8.5, y: -8, rot: -4.5, ease: 'easeInOut' },
+            { t: 900, x: 8.5, y: -8, rot: -4, ease: 'easeInOut' },
+            { t: 1350, x: 8.5, y: -8, rot: -3, ease: 'easeInOut' }
           ]
         },
         {
           bone: 'forearmR',
           keys: [
-            { t: 0, x: 0, y: 20, rot: 0 },
-            { t: 450, x: 0, y: 20, rot: -1, ease: 'easeInOut' },
-            { t: 900, x: 0, y: 20, rot: -0.5, ease: 'easeInOut' },
-            { t: 1350, x: 0, y: 20, rot: 0, ease: 'easeInOut' }
+            { t: 0, x: 0, y: 17, rot: 0 },
+            { t: 450, x: 0, y: 17, rot: -1, ease: 'easeInOut' },
+            { t: 900, x: 0, y: 17, rot: -0.5, ease: 'easeInOut' },
+            { t: 1350, x: 0, y: 17, rot: 0, ease: 'easeInOut' }
           ]
         },
         {
           bone: 'forearmL',
           keys: [
-            { t: 0, x: 0, y: 20, rot: 0 },
-            { t: 450, x: 0, y: 20, rot: 1, ease: 'easeInOut' },
-            { t: 900, x: 0, y: 20, rot: 0.5, ease: 'easeInOut' },
-            { t: 1350, x: 0, y: 20, rot: 0, ease: 'easeInOut' }
+            { t: 0, x: 0, y: 17, rot: 0 },
+            { t: 450, x: 0, y: 17, rot: 1, ease: 'easeInOut' },
+            { t: 900, x: 0, y: 17, rot: 0.5, ease: 'easeInOut' },
+            { t: 1350, x: 0, y: 17, rot: 0, ease: 'easeInOut' }
           ]
         }
       ]
@@ -615,14 +821,9 @@ console.log(`骨架: ${path.relative(root, OUT_SKELETON)}（${doc.bones.length} 
 const asset = parseSkeletonAsset(doc);
 const rest = createRestLocalPose(asset);
 const world0 = composeWorldTransforms(asset, sampleClip(asset.clips.get('idle_down'), 0, rest));
-const headTop = Math.min(...['headSlot'].map(id => {
-  const s = asset.slots.find(x => x.id === id);
-  return world0.get(s.bone).y + (s.attachment.y ?? 0);
-}));
-console.log(`校验: 头骨世界 y=${r(world0.get('head').y)}  脚踝骨 y=${r(world0.get('footR').y)}（≈-4）`);
+console.log(`校验: 头骨世界 y=${r(world0.get('head').y)}（颏-86）  脚踝骨 y=${r(world0.get('footR').y)}（≈-5）`);
 function r(v) { return Math.round(v * 100) / 100; }
 
-// 渲染 idle_down 3 帧（简版合成：各部件按骨位姿贴图）
 const partImgs = new Map();
 for (const file of Object.keys(PARTS)) {
   partImgs.set(file, await sharp(path.join(OUT_PARTS, file)).ensureAlpha().raw().toBuffer({ resolveWithObject: true }));

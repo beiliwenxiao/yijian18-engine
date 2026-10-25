@@ -285,13 +285,16 @@ export class SceneRenderPipeline {
     campfire?.appendRenderItems?.(queue, ctx, campfireRuntime);
     // 短时世界动作呈现（烤肉/制皮等）：以锚点实体（工作台）脚底 y 参与 Y-sort——
     // 玩家在工作台前（y 更大）时角色盖住动作，在工作台后时动作盖住角色。
-    // sortPriority 1 与火焰同档：同 y 时先入队的火焰先画、肉后画（肉在火焰之上）。
+    // 排序基线再加 0.5px：工作台本体是与锚点同 y 的实体（sortPriority 2），
+    // 同 y 时它会后画把肉挡住；抬 0.5px 让动作排在工作台之后、玩家（站位在其前方，
+    // y 至少大 1px）之前——「肉叠在烤架上一层，但仍被站在架前的角色遮住」。
+    const WORLD_ACTION_SORT_BIAS = 0.5;
     const worldAction = context?.presentation?.worldAction || null;
     const worldActionSortY = worldAction?.getSortY?.();
     if (Number.isFinite(worldActionSortY)) {
       const worldActionCtx = ctx;
       queue.push({
-        type: 'worldAction', y: worldActionSortY, sortPriority: 1,
+        type: 'worldAction', y: worldActionSortY + WORLD_ACTION_SORT_BIAS, sortPriority: 1,
         render: () => worldAction.render(worldActionCtx)
       });
     }

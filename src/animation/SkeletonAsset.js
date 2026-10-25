@@ -85,6 +85,13 @@ function normalizeDirectionOffsets(raw) {
     if (assetId) entry.assetId = assetId;
     if (num(value.width) > 0) entry.width = num(value.width);
     if (num(value.height) > 0) entry.height = num(value.height);
+    // 图集切片形态：同一张图集内按形态换源矩形（女骑士正/侧/背三套部件）
+    if (num(value.sw) > 0 && num(value.sh) > 0) {
+      entry.sx = num(value.sx);
+      entry.sy = num(value.sy);
+      entry.sw = num(value.sw);
+      entry.sh = num(value.sh);
+    }
     out[key] = entry;
   }
   return Object.keys(out).length > 0 ? out : null;
@@ -262,7 +269,11 @@ export function parseSkeletonAsset(doc) {
     .map(raw => normalizeTransformConstraint(raw))
     .filter(Boolean);
 
+  // meta 保留自定义扩展字段（frameMode / clipFrames / lpcActions 等）：
+  // 整帧模式（meta.frameMode=true）由运行时映射器与编辑器预览共用 meta.clipFrames 帧表，
+  // 只透传 width/height 会让这些字段在解析后丢失（整帧模式失效）。
   const meta = {
+    ...(doc?.meta && typeof doc.meta === 'object' ? doc.meta : {}),
     width: num(doc?.meta?.width) || 0,
     height: num(doc?.meta?.height) || 0
   };

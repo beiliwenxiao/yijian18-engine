@@ -228,25 +228,34 @@ describe('ShadowRenderer renderEntityShadows', () => {
     expect(corpseCall[2] + corpseCall[4]).toBeGreaterThan(500);
   });
 
-  it('shadowProfile.scale/lift 调节物品影子大小与上移量', () => {
+  it('shadowProfile.scale/liftPx 调节物品影子大小与上移量', () => {
     const renderer = new ShadowRenderer({ createCanvas: createFakeCanvasFactory() });
     const mk = (id, profile) => {
       const entity = createEntity({ id, type: 'prop', components: new Map([['sprite', spriteComponent()], ['transform', transformComponent()]]) });
       entity.shadowProfile = profile;
       return entity;
     };
-    // 基准：prop 默认 lift=1/3（中心上移到脚底上方）
+    // 基准：prop 未配置时默认上移 1/3 影高（中心上移到脚底上方）
     const ctxBase = createFakeCtx();
     renderer.renderEntityShadows(ctxBase, [mk('base', undefined)], { viewBounds: null, lighting: null });
     const base = ctxBase.drawCalls[0];
     expect(base[2] + base[4] / 2).toBeLessThan(500);
-    // scale=2：影子宽高翻倍；lift=0：不上移（中心回到脚底南方）
+    // scale=2：影子宽高翻倍；liftPx=0：不上移（中心回到脚底南方）
     const ctxBig = createFakeCtx();
-    renderer.renderEntityShadows(ctxBig, [mk('big', { scale: 2, lift: 0 })], { viewBounds: null, lighting: null });
+    renderer.renderEntityShadows(ctxBig, [mk('big', { scale: 2, liftPx: 0 })], { viewBounds: null, lighting: null });
     const big = ctxBig.drawCalls[0];
     expect(big[3]).toBeCloseTo(base[3] * 2, 5);
     expect(big[4]).toBeCloseTo(base[4] * 2, 5);
     expect(big[2] + big[4] / 2).toBeGreaterThan(500);
+    // liftPx 是像素值：上移量固定，不随影子大小缩放（scale=2 时中心位移仍是 10px）
+    const ctxLift = createFakeCtx();
+    renderer.renderEntityShadows(ctxLift, [mk('lift', { scale: 2, liftPx: 10 })], { viewBounds: null, lighting: null });
+    const lifted = ctxLift.drawCalls[0];
+    expect((base[2] + base[4] / 2) - (lifted[2] + lifted[4] / 2)).toBeCloseTo(10 - base[4] / 6, 5);
+    // 旧数据兼容：比例字段 lift 仍按影高折算
+    const ctxLegacy = createFakeCtx();
+    renderer.renderEntityShadows(ctxLegacy, [mk('legacy', { lift: 0 })], { viewBounds: null, lighting: null });
+    expect(ctxLegacy.drawCalls[0][2]).toBeCloseTo(base[0], 5);
     // radius=60：横半径直接替换（直径 120），纵半径按椭圆扁率跟随
     const ctxFixed = createFakeCtx();
     renderer.renderEntityShadows(ctxFixed, [mk('fixed', { radius: 60 })], { viewBounds: null, lighting: null });

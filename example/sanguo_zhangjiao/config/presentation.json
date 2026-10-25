@@ -24,7 +24,7 @@
   "actors": {
     "directionMode": 8,
     "player": {
-      "visual": { "width": 64, "height": 64 },
+      "visual": { "width": 96, "height": 96 },
       "footprint": { "width": 28, "height": 18 },
       "colliderRadius": 14,
       "collisionOffset": { "offsetX": 0, "offsetY": -12 },
