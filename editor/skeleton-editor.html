@@ -69,6 +69,11 @@
         .se-img-item img { width: 26px; height: 26px; object-fit: contain; background: #0d1226; border: 1px solid #26355c; border-radius: 3px; flex: none; }
         .se-img-item .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #9aa5c0; }
         .se-img-item button { padding: 2px 5px; font-size: 10px; }
+        /* 绑骨：关节采集列表行 */
+        .se-bind-joint { display: flex; align-items: center; gap: 4px; padding: 2px 6px; border-radius: 4px; cursor: pointer; font-size: 11px; margin-bottom: 1px; }
+        .se-bind-joint:hover { background: #1a2440; }
+        .se-bind-joint.picked { color: #8fd0a8; }
+        .se-bind-joint.pending { background: #2a4a3e; outline: 1px solid #4CAF50; }
         /* 槽位列表拖拽排序：插入位置指示线（inset 阴影不挤占布局） */
         .se-slot-item.drop-above { box-shadow: inset 0 2px 0 #4CAF50; }
         .se-slot-item.drop-below { box-shadow: inset 0 -2px 0 #4CAF50; }
@@ -161,6 +166,7 @@
                 <button id="se-tab-parts" class="primary" style="flex:none;font-size:11px;padding:2px 8px;">部件库</button>
                 <button id="se-tab-assets" style="flex:none;font-size:11px;padding:2px 8px;">素材</button>
                 <button id="se-tab-presets" style="flex:none;font-size:11px;padding:2px 8px;" title="动作模板：点击套用（深拷贝写入轨道，与预设无关联）">动作</button>
+                <button id="se-tab-bind" style="flex:none;font-size:11px;padding:2px 8px;" title="绑骨：导入设计图截图 → 在画布上点关节 → 切图并生成骨骼动画资产（首期单形态）">🧷 绑骨</button>
                 <span style="flex:1;"></span>
                 <button id="se-image-import" title="导入外部图片（三方向设定图等）：自动转 PNG 落盘并登记 manifest" style="flex:none;font-size:11px;padding:2px 6px;">📥</button>
                 <input type="file" id="se-image-import-file" accept="image/png,image/jpeg,image/webp" style="display:none;">
@@ -168,6 +174,28 @@
             <div id="se-part-lib"></div>
             <div id="se-image-lib" style="display:none;"></div>
             <div id="se-preset-lib" style="display:none;"></div>
+            <div id="se-bind-lib" style="display:none;">
+                <div style="display:flex;gap:4px;align-items:center;margin-bottom:6px;">
+                    <label>源图</label>
+                    <select id="se-bind-source" style="flex:1;min-width:0;"><option value="">选择源图…</option></select>
+                    <button id="se-bind-import" style="flex:none;font-size:11px;padding:2px 6px;" title="导入设计图截图（png/jpg/webp）：自动转 PNG 落盘并登记 manifest">📥 导入截图</button>
+                    <input type="file" id="se-bind-import-file" accept="image/png,image/jpeg,image/webp" style="display:none;">
+                </div>
+                <div id="se-bind-joints" style="max-height:190px;overflow:auto;margin-bottom:6px;"></div>
+                <div style="display:flex;gap:4px;align-items:center;margin-bottom:4px;flex-wrap:wrap;">
+                    <label title="源图像素 ÷ 骨骼设计单位；默认按源图角色内容高 ÷ 设计高度推算，可手改">像素/单位</label>
+                    <input type="number" id="se-bind-pxperunit" min="0.01" step="0.01" placeholder="自动">
+                    <label title="图集行宽（像素）">图集宽</label>
+                    <input type="number" id="se-bind-atlas-width" min="64" step="64" value="512" style="width:56px;">
+                </div>
+                <div style="display:flex;gap:4px;align-items:center;margin-bottom:6px;">
+                    <label title="颈线以上像素一律归头（源图像素 y；留空则取 neck 关节 y）">颈线 y</label>
+                    <input type="number" id="se-bind-head-cutoff" step="1" placeholder="可选">
+                </div>
+                <button id="se-bind-run" class="primary" style="width:100%;">🪄 生成骨骼动画资产</button>
+                <div id="se-bind-status" style="font-size:11px;color:#9aa5c0;margin-top:6px;min-height:16px;word-break:break-all;"></div>
+                <div style="font-size:10px;color:#5a6a90;margin-top:4px;">首期仅处理单个形态（当前方向的一张站立图），不做 8 形态。</div>
+            </div>
         </div>
 
         <div class="se-resizer vertical" id="se-resizer-left" role="separator" aria-orientation="vertical" title="左右拖动调整左栏宽度；双击恢复默认"></div>

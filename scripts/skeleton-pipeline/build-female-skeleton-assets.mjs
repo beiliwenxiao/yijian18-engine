@@ -35,6 +35,7 @@ import sharp from 'sharp';
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { pathToFileURL, fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { partitionSheet, packBlocks, composeAtlasPixels } from './lib/sheet-partition.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const SRC = 'D:/游戏资源/Female_Hero_Pixel_Art_v1.1/Stand';
@@ -160,16 +161,7 @@ function segmentsOf(j) {
   };
 }
 
-function distToSeg(px, py, a, b) {
-  const [ax, ay] = a, [bx, by] = b;
-  const dx = bx - ax, dy = by - ay;
-  const len2 = dx * dx + dy * dy;
-  let t = len2 > 0 ? ((px - ax) * dx + (py - ay) * dy) / len2 : 0;
-  t = Math.max(0, Math.min(1, t));
-  return Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
-}
-
-/* ---------------- 1. 分区切片 ---------------- */
+/* ---------------- 1. 分区切片（复用 sheet-partition 纯函数库） ---------------- */
 const pieces = {};   // `${part}|${form}` -> { px, w, h, x0, y0 }
 for (const [form, file] of Object.entries(FORM_FILES)) {
   const { data, info } = await sharp(path.join(SRC, file)).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
@@ -177,78 +169,52 @@ for (const [form, file] of Object.entries(FORM_FILES)) {
   const parts = SHARED_LIMBS[form]
     ? Object.keys(segs).filter(n => !/L$/.test(n))
     : Object.keys(segs);
-  const neckY = JOINTS[form].neck[1];
-  const assign = new Int16Array(info.width * info.height).fill(-1);
-  const bounds = new Map(parts.map(p => [p, { x0: 1e9, y0: 1e9, x1: -1, y1: -1 }]));
-  for (let y = 0; y < info.height; y++) {
-    for (let x = 0; x < info.width; x++) {
-      const idx = y * info.width + x;
-      if (data[idx * 4 + 3] < 16) continue;
-      let best, bestD = Infinity;
-      if (y < neckY) best = 'headAll';
-      else {
-        for (const p of parts) {
-          const d = distToSeg(x, y, segs[p][0], segs[p][1]);
-          if (d < bestD) { bestD = d; best = p; }
-        }
-      }
-      const pi = parts.indexOf(best);
-      if (pi < 0) continue;
-      assign[idx] = pi;
-      const b = bounds.get(best);
-      if (x < b.x0) b.x0 = x; if (x > b.x1) b.x1 = x;
-      if (y < b.y0) b.y0 = y; if (y > b.y1) b.y1 = y;
-    }
-  }
-  for (let pi = 0; pi < parts.length; pi++) {
-    const part = parts[pi];
-    const b = bounds.get(part);
-    if (b.x1 < b.x0) continue;
-    const w = b.x1 - b.x0 + 1, h = b.y1 - b.y0 + 1;
-    const buf = Buffer.alloc(w * h * 4);
-    for (let y = 0; y < h; y++) {
-      for (let x = 0; x < w; x++) {
-        const src = (b.y0 + y) * info.width + (b.x0 + x);
-        if (assign[src] !== pi) continue;
-        const dst = (y * w + x) * 4;
-        buf[dst] = data[src * 4]; buf[dst + 1] = data[src * 4 + 1];
-        buf[dst + 2] = data[src * 4 + 2]; buf[dst + 3] = data[src * 4 + 3];
-      }
-    }
+  // 骨段坐标从「关节对」转成库要求的 { key, a, b } 形态
+  const segments = parts.map(part => ({
+    key: part,
+    a: { x: segs[part][0][0], y: segs[part][0][1] },
+    b: { x: segs[part][1][0], y: segs[part][1][1] }
+  }));
+  const partitioned = partitionSheet({
+    pixels: { data, width: info.width, height: info.height },
+    segments,
+    headCutoffY: JOINTS[form].neck[1],
+    headKey: 'headAll',
+    atlasWidth: 512,
+    pad: 2
+  });
+  for (const block of partitioned.blocks) {
     const emit = (name) => {
-      pieces[`${name}|${form}`] = { buf, w, h, x0: b.x0, y0: b.y0 };
+      pieces[`${name}|${form}`] = { buf: block.pixels, w: block.w, h: block.h, x0: block.x, y0: block.y };
     };
-    emit(part);
+    emit(block.key);
     // 共享四肢：L 部位写一份同内容
-    if (SHARED_LIMBS[form] && /R$/.test(part)) emit(part.replace(/R$/, 'L'));
+    if (SHARED_LIMBS[form] && /R$/.test(block.key)) emit(block.key.replace(/R$/, 'L'));
   }
 }
 
-/* ---------------- 2. 打包图集 ---------------- */
+/* ---------------- 2. 打包图集（复用 sheet-partition 的 packBlocks / composeAtlasPixels） ---------------- */
 const SHEET_W = 512;
 const PAD = 2;
 const order = Object.keys(pieces).sort();
-let cx = PAD, cy = PAD, rowH = 0;
+const allBlocks = order.map(key => {
+  const p = pieces[key];
+  return { key, w: p.w, h: p.h, pixels: p.buf };
+});
+const packed = packBlocks(allBlocks, { atlasWidth: SHEET_W, pad: PAD });
+const SHEET_H = packed.atlas.height;
+const sheet = composeAtlasPixels(allBlocks, packed.atlas);
+const placements = new Map(packed.atlas.placements.map(placement => [placement.key, placement]));
 for (const key of order) {
   const p = pieces[key];
-  if (cx + p.w + PAD > SHEET_W) { cx = PAD; cy += rowH + PAD; rowH = 0; }
-  p.sx = cx; p.sy = cy;
-  cx += p.w + PAD;
-  rowH = Math.max(rowH, p.h);
-}
-const SHEET_H = cy + rowH + PAD;
-const sheet = Buffer.alloc(SHEET_W * SHEET_H * 4);
-for (const key of order) {
-  const p = pieces[key];
-  for (let y = 0; y < p.h; y++) {
-    const dstRow = ((p.sy + y) * SHEET_W + p.sx) * 4;
-    p.buf.copy(sheet, dstRow, y * p.w * 4, (y + 1) * p.w * 4);
-  }
+  const placement = placements.get(key);
+  p.sx = placement.sx;
+  p.sy = placement.sy;
 }
 mkdirSync(path.dirname(OUT_ATLAS), { recursive: true });
-await sharp(sheet, { raw: { width: SHEET_W, height: SHEET_H, channels: 4 } })
+await sharp(sheet, { raw: { width: packed.atlas.width, height: SHEET_H, channels: 4 } })
   .png({ compressionLevel: 9 }).toFile(OUT_ATLAS);
-console.log(`部件图集：${SHEET_W}×${SHEET_H}，${order.length} 块 → ${path.relative(root, OUT_ATLAS)}`);
+console.log(`部件图集：${packed.atlas.width}×${SHEET_H}，${order.length} 块 → ${path.relative(root, OUT_ATLAS)}`);
 
 /* ---------------- 3.5 武器部件图（刀 / 盾） ----------------
  * 素材包没有独立武器图，按女骑士配色（钢蓝 #9aa4b4 / 深蓝 #4a5262 / 金 #c9963c / 皮革 #6b4a2f）程序化绘制。

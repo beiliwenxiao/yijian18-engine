@@ -141,6 +141,12 @@ export class SkeletonEditor {
     this._sliceMode = null;      // { assetId, width, height, rect:{x,y,w,h}|null }
     this._sliceSelecting = null; // { startX, startY } 屏幕坐标
     this._slicePanel = null;
+    // 绑骨（会话态，不入文件）：源图 → 图上点关节 → 服务端切图生成槽位。
+    //   assetId=源图；pxPerUnit=源图像素/骨骼单位；joints=骨名→源图像素坐标；pendingBone=待拾取骨
+    this._bindState = { assetId: '', pxPerUnit: 0, headCutoff: null, atlasWidth: 512, pendingBone: null, joints: {} };
+    this._bindAnchorCache = null;   // { key, point } 源图内容底边中心（画布映射的唯一基准）
+    this._bindRunning = false;      // 生成中（防重复提交）
+    this._libTab = 'parts';         // 左栏当前标签（会话态：parts|assets|presets|bind）
   }
 
   /* ---------------- 初始化 ---------------- */
@@ -247,6 +253,40 @@ export class SkeletonEditor {
     $('se-tab-parts').addEventListener('click', () => this._setLibTab('parts'));
     $('se-tab-assets').addEventListener('click', () => this._setLibTab('assets'));
     $('se-tab-presets').addEventListener('click', () => this._setLibTab('presets'));
+    $('se-tab-bind').addEventListener('click', () => this._setLibTab('bind'));
+    // 绑骨面板：源图选择/导入、关节列表、参数、生成（全部会话态，不改既有 tab 逻辑）
+    $('se-bind-import').addEventListener('click', () => $('se-bind-import-file').click());
+    $('se-bind-import-file').addEventListener('change', event => {
+      const file = event.target.files?.[0];
+      event.target.value = '';
+      if (!file) return;
+      this._importImageFromFile(file, {
+        after: imageId => {
+          this._bindState.assetId = imageId;
+          this._bindAnchorCache = null;
+          this._renderBindLib();
+          this._autoBindPxPerUnit();
+        }
+      });
+    });
+    $('se-bind-source').addEventListener('change', event => {
+      this._bindState.assetId = event.target.value || '';
+      this._bindAnchorCache = null;
+      this._renderBindLib();
+      this._autoBindPxPerUnit();
+    });
+    $('se-bind-pxperunit').addEventListener('change', event => {
+      this._bindState.pxPerUnit = Math.max(0.01, Number(event.target.value) || 0);
+      this._renderBindLib();
+    });
+    $('se-bind-atlas-width').addEventListener('change', event => {
+      this._bindState.atlasWidth = Math.max(64, Math.round(Number(event.target.value) || 512));
+    });
+    $('se-bind-head-cutoff').addEventListener('change', event => {
+      const value = Number(event.target.value);
+      this._bindState.headCutoff = Number.isFinite(value) && event.target.value !== '' ? value : null;
+    });
+    $('se-bind-run').addEventListener('click', () => this._generateBoundParts());
     $('se-image-import-file').addEventListener('change', event => {
       const file = event.target.files?.[0];
       event.target.value = ''; // 允许重复导入同一文件
@@ -732,6 +772,15 @@ export class SkeletonEditor {
     this._renderInspector();
     this._refreshClipToolbar();
     this._renderTimeline();
+    // 绑骨会话：骨骼树变化后丢弃已不存在骨的关节，待拾取骨失效则清除
+    if (this._bindState) {
+      const boneIds = new Set((this.doc.bones || []).map(bone => bone.id));
+      for (const key of Object.keys(this._bindState.joints || {})) {
+        if (!boneIds.has(key)) delete this._bindState.joints[key];
+      }
+      if (this._bindState.pendingBone && !boneIds.has(this._bindState.pendingBone)) this._bindState.pendingBone = null;
+      if (this._libTab === 'bind') this._renderBindLib();
+    }
   }
 
   _markDirty() {
@@ -1807,6 +1856,9 @@ export class SkeletonEditor {
     ctx.fillStyle = 'rgba(76,175,80,0.85)';
     ctx.fillText('地平面 y=0', topLeft.x + 4, origin.y - 4);
 
+    // 绑骨参考层：仅绑骨标签页绘制（半透明源图 + 关节标记），对其它模式的绘制流程零影响
+    if (this._libTab === 'bind') this._drawBindReference(ctx);
+
     if (!this.runtime) { ctx.restore(); return; }
     const world = this._boneWorldTransforms();
 
@@ -2383,6 +2435,10 @@ export class SkeletonEditor {
       this._sliceSelecting = { startX: world.x, startY: world.y };
       this._sliceMode.rect = { x: world.x, y: world.y, w: 0, h: 0 };
       return;
+    }
+    // 绑骨拾取：在绑骨标签页且有待拾取骨时，左键直接把点写入关节像素坐标（不进入骨骼/图片手势）
+    if (event.button === 0 && this._libTab === 'bind' && this._bindState.assetId && this._bindState.pendingBone) {
+      if (this._bindPickJoint(mx, my)) return;
     }
     if (!this.runtime) return;
     // IK 目标点命中优先（启用 IK 工具时）：拖目标点 = 实时求解并烘焙 FK
@@ -4043,8 +4099,12 @@ export class SkeletonEditor {
     this._toast(`已创建切片槽位 ${slotId} → ${boneId}${directionHidden ? '（side/back 方向默认隐藏）' : ''}（可拖动微调挂点）`);
   }
 
-  /** 导入外部图片（三方向设定图等）：统一转 PNG 落盘 + manifest 事务登记 + 图片库刷新。 */
-  async _importImageFromFile(file) {
+  /**
+   * 导入外部图片（三方向设定图等）：统一转 PNG 落盘 + manifest 事务登记 + 图片库刷新。
+   * @param {File} file 用户选择的图片
+   * @param {{after?: (imageId: string) => void}} [options] after=登记完成后的回调（绑骨面板复用本通道）
+   */
+  async _importImageFromFile(file, { after } = {}) {
     if (!file || !this.projectPath) { this._toast('未加载项目，无法导入', true); return; }
     const baseName = (file.name.replace(/\.[^.]+$/, '') || 'character')
       .toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '') || 'character';
@@ -4086,8 +4146,327 @@ export class SkeletonEditor {
       if (!registered?.ok) { this._toast(`Manifest 登记失败：${registered?.error || registered?.message || ''}`, true); return; }
       await this._loadManifest();
       this._toast(`已导入 ${imageId}（${canvas.width}×${canvas.height}），可在切件模式中装配`);
+      if (typeof after === 'function') after(imageId);
     } catch (error) {
       this._toast(`导入失败：${error.message}`, true);
+    }
+  }
+
+  /* ---------------- 绑骨：源图点关节 → 切图生成部件槽位 ---------------- */
+
+  /** 绑骨关节采集顺序：按层级深度排序（父在前），便于从上到下顺次点关节。 */
+  _bindBoneRows() {
+    const bones = this.doc?.bones || [];
+    const depthOf = bone => {
+      let depth = 0;
+      let current = bone;
+      const guard = new Set();
+      while (current?.parent && !guard.has(current.id)) {
+        guard.add(current.id);
+        current = this._boneById(current.parent);
+        depth += 1;
+      }
+      return depth;
+    };
+    return bones
+      .map((bone, order) => ({ bone, order, depth: depthOf(bone) }))
+      .sort((a, b) => a.depth - b.depth || a.order - b.order)
+      .map(row => row.bone);
+  }
+
+  /** 源图非透明内容包围盒（右开区间）；扫描一次结果按资源缓存。 */
+  _bindContentBounds(image) {
+    const key = `${this._bindState.assetId}|${image.naturalWidth}x${image.naturalHeight}`;
+    if (this._bindAnchorCache?.boundsKey === key) return this._bindAnchorCache.bounds;
+    const canvas = document.createElement('canvas');
+    canvas.width = image.naturalWidth;
+    canvas.height = image.naturalHeight;
+    const context = canvas.getContext('2d', { willReadFrequently: true });
+    context.drawImage(image, 0, 0);
+    const data = context.getImageData(0, 0, canvas.width, canvas.height).data;
+    let x0 = canvas.width;
+    let y0 = canvas.height;
+    let x1 = 0;
+    let y1 = 0;
+    for (let y = 0; y < canvas.height; y += 1) {
+      for (let x = 0; x < canvas.width; x += 1) {
+        if (data[(y * canvas.width + x) * 4 + 3] < 8) continue;
+        if (x < x0) x0 = x;
+        if (x > x1) x1 = x;
+        if (y < y0) y0 = y;
+        if (y > y1) y1 = y;
+      }
+    }
+    const bounds = x1 >= x0 ? { x0, y0, x1: x1 + 1, y1: y1 + 1 } : { x0: 0, y0: 0, x1: canvas.width, y1: canvas.height };
+    this._bindAnchorCache = { ...(this._bindAnchorCache || {}), boundsKey: key, bounds };
+    return bounds;
+  }
+
+  /** 画布锚点（源图像素）：内容底边中心 ↔ 世界原点（脚底），与拾取换算共用同一基准。 */
+  _bindAnchorPixel(image) {
+    const key = `${this._bindState.assetId}|${image.naturalWidth}x${image.naturalHeight}`;
+    if (this._bindAnchorCache?.pointKey === key) return this._bindAnchorCache.point;
+    const bounds = this._bindContentBounds(image);
+    const point = { x: (bounds.x0 + bounds.x1) / 2, y: bounds.y1 };
+    this._bindAnchorCache = { ...(this._bindAnchorCache || {}), pointKey: key, point };
+    return point;
+  }
+
+  /** 屏幕坐标 → 源图像素坐标（绑骨拾取换算）。 */
+  _bindPixelFromScreen(mx, my) {
+    const image = this._imageElement(this._bindState.assetId);
+    if (!image || !(this._bindState.pxPerUnit > 0)) return null;
+    const anchor = this._bindAnchorPixel(image);
+    const world = this._screenToWorld(mx, my);
+    return { x: world.x * this._bindState.pxPerUnit + anchor.x, y: world.y * this._bindState.pxPerUnit + anchor.y };
+  }
+
+  /** 源图像素 → 屏幕坐标（画参考层与关节标记）。 */
+  _bindPixelToScreen(px, py, anchor) {
+    const per = this._bindState.pxPerUnit;
+    return this._worldToScreen((px - anchor.x) / per, (py - anchor.y) / per);
+  }
+
+  /** 已选源图 + 半透明参考层 + 已采集关节标记（画在部件之前，便于对齐骨架）。 */
+  _drawBindReference(ctx) {
+    const state = this._bindState;
+    if (!state?.assetId || !(state.pxPerUnit > 0)) return;
+    const image = this._imageElement(state.assetId);
+    if (!image) return;
+    const anchor = this._bindAnchorPixel(image);
+    const scale = state.pxPerUnit * this.view.scale;
+    const topLeft = this._bindPixelToScreen(0, 0, anchor);
+    ctx.save();
+    ctx.globalAlpha = 0.5;
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(image, topLeft.x, topLeft.y, image.naturalWidth * scale, image.naturalHeight * scale);
+    ctx.restore();
+    // 关节标记：已采集=绿色实心 + 骨名；待拾取=黄色空心
+    ctx.font = '10px sans-serif';
+    for (const [boneId, joint] of Object.entries(state.joints || {})) {
+      const point = this._bindPixelToScreen(joint.x, joint.y, anchor);
+      ctx.strokeStyle = 'rgba(76,175,80,0.95)';
+      ctx.fillStyle = 'rgba(76,175,80,0.95)';
+      ctx.beginPath();
+      ctx.arc(point.x, point.y, 3.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillText(boneId, point.x + 6, point.y + 3);
+    }
+    if (state.pendingBone) {
+      const joint = state.joints?.[state.pendingBone];
+      if (joint) {
+        const point = this._bindPixelToScreen(joint.x, joint.y, anchor);
+        ctx.strokeStyle = 'rgba(255,212,121,0.95)';
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, 6, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    }
+  }
+
+  /** 绑骨面板渲染：源图下拉 + 关节采集列表 + 参数回填 + 状态保留。 */
+  _renderBindLib() {
+    if (!this.doc) return;
+    const state = this._bindState;
+    const select = document.getElementById('se-bind-source');
+    if (select) {
+      const sourceIds = [...this.imageCatalog.keys()];
+      if (!sourceIds.includes(state.assetId)) state.assetId = '';
+      select.innerHTML = '<option value="">选择源图…</option>'
+        + sourceIds.map(id => `<option value="${id}" ${id === state.assetId ? 'selected' : ''}>${SkeletonEditor._displayName(id)}</option>`).join('');
+    }
+    // 源图选中后预加载：拾取换算与参考层都要用到图片元素
+    if (state.assetId && !this.imageCatalog.get(state.assetId)?.element) {
+      this._ensureImageLoaded(state.assetId).then(image => {
+        if (!image) return;
+        this._bindAnchorCache = null;   // 尺寸已知后重算内容包围盒与锚点
+        if (this._libTab === 'bind') { this._renderBindLib(); this._draw(); }
+      });
+    }
+    const pxInput = document.getElementById('se-bind-pxperunit');
+    if (pxInput && document.activeElement !== pxInput) pxInput.value = state.pxPerUnit > 0 ? state.pxPerUnit : '';
+    const widthInput = document.getElementById('se-bind-atlas-width');
+    if (widthInput && document.activeElement !== widthInput) widthInput.value = String(state.atlasWidth || 512);
+    const cutoffInput = document.getElementById('se-bind-head-cutoff');
+    if (cutoffInput && document.activeElement !== cutoffInput) {
+      cutoffInput.value = Number.isFinite(state.headCutoff) ? String(state.headCutoff) : '';
+    }
+    const jointsEl = document.getElementById('se-bind-joints');
+    if (!jointsEl) return;
+    const bones = this._bindBoneRows();
+    if (bones.length === 0) {
+      jointsEl.innerHTML = '<div class="se-empty">当前骨骼为空：先在骨骼树里加骨或应用人形模板</div>';
+      return;
+    }
+    jointsEl.innerHTML = bones.map(bone => {
+      const joint = state.joints?.[bone.id];
+      const classes = ['se-bind-joint', joint ? 'picked' : '', state.pendingBone === bone.id ? 'pending' : ''].join(' ');
+      const label = joint ? `${Math.round(joint.x)}, ${Math.round(joint.y)}` : (state.pendingBone === bone.id ? '点击画布取点…' : '未取');
+      return `<div class="${classes}" data-bone="${bone.id}" style="padding-left:6px;">
+        <span style="width:84px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${bone.id}</span>
+        <span style="flex:1;text-align:right;color:${joint ? '#8fd0a8' : '#5a6a90'};">${label}</span>
+      </div>`;
+    }).join('');
+    for (const row of jointsEl.querySelectorAll('.se-bind-joint')) {
+      row.addEventListener('click', () => {
+        state.pendingBone = row.dataset.bone;
+        this._renderBindLib();
+        this._draw();
+        this._toast(`请在画布上点击「${row.dataset.bone}」的关节位置（再次点列表行可切换骨骼）`);
+      });
+    }
+  }
+
+  /** 默认像素比例：源图角色内容高 ÷ 骨骼设计高度（可手改）。 */
+  async _autoBindPxPerUnit() {
+    const assetId = this._bindState.assetId;
+    if (!assetId || !this.doc) return;
+    const image = await this._ensureImageLoaded(assetId);
+    if (!image) return;
+    const bounds = this._bindContentBounds(image);
+    const designHeight = Math.max(1, this.doc.meta?.height || 160);
+    this._bindState.pxPerUnit = Math.round(((bounds.y1 - bounds.y0) / designHeight) * 1000) / 1000;
+    this._bindAnchorCache = null;
+    this._renderBindLib();
+    this._draw();
+  }
+
+  _bindStatus(message, isError = false) {
+    const status = document.getElementById('se-bind-status');
+    if (!status) return;
+    status.textContent = message || '';
+    status.style.color = isError ? '#e08080' : '#9aa5c0';
+  }
+
+  /** 画布拾取：把点击点写入待拾取骨的关节像素坐标，并自动跳到下一个未采集骨。 */
+  _bindPickJoint(mx, my) {
+    const state = this._bindState;
+    const boneId = state.pendingBone;
+    if (!boneId) return false;
+    const pixel = this._bindPixelFromScreen(mx, my);
+    if (!pixel) { this._toast('源图未加载或像素比例无效', true); return true; }
+    state.joints[boneId] = { x: Math.round(pixel.x), y: Math.round(pixel.y) };
+    const next = this._bindBoneRows().find(bone => !state.joints[bone.id]);
+    state.pendingBone = next ? next.id : null;
+    this._renderBindLib();
+    this._draw();
+    this._toast(`已记录关节 ${boneId} → (${state.joints[boneId].x}, ${state.joints[boneId].y})${next ? `，下一个：${next.id}` : '，全部采集完成'}`);
+    return true;
+  }
+
+  /**
+   * 生成骨骼动画资产：服务端按骨段切图 → 图集落盘 + manifest 登记 → 重建部件槽位。
+   * 只替换「与本次切块同骨的 slice 槽位」，武器/背挂等非部件槽原样保留。
+   */
+  async _generateBoundParts() {
+    if (this._bindRunning || !this.doc) return;
+    const state = this._bindState;
+    const assetId = state.assetId;
+    if (!assetId || !this.imageCatalog.has(assetId)) { this._toast('先选择源图', true); return; }
+    const sourcePath = this._imageEntryPath(assetId);
+    if (!sourcePath) { this._toast('源图缺少 manifest 路径（sourceFile 为空）', true); return; }
+    if (!(state.pxPerUnit > 0)) { this._toast('像素/单位 必须大于 0', true); return; }
+    if (Object.keys(state.joints || {}).length === 0) {
+      this._toast('至少采集 1 个关节（建议采集 root 与各子骨起点）', true);
+      return;
+    }
+    const bones = this._bindBoneRows().map(bone => ({
+      name: bone.id,
+      parent: bone.parent || null,
+      x: bone.x,
+      y: bone.y,
+      rot: bone.rot || 0,
+      length: bone.length || 0
+    }));
+    this._bindRunning = true;
+    const runButton = document.getElementById('se-bind-run');
+    if (runButton) runButton.disabled = true;
+    this._bindStatus('切图中…');
+    try {
+      const response = await fetch('/api/skeleton-bind', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projectPath: this.projectPath,
+          sourceImagePath: sourcePath,
+          bones,
+          pxPerUnit: state.pxPerUnit,
+          designHeight: this.doc.meta?.height || 160,
+          pxJoints: state.joints,
+          atlasWidth: state.atlasWidth,
+          headCutoff: Number.isFinite(state.headCutoff) ? state.headCutoff : undefined
+        })
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || !result?.ok) throw new Error(result?.error || `HTTP ${response.status}`);
+      const parts = Array.isArray(result.parts) ? result.parts : [];
+      if (parts.length === 0) throw new Error('服务端没有切出任何部件');
+
+      // 图集落盘：复用 /api/save-file 写盘通道（与素材导入同一路径规则）
+      const skeletonId = String(this.doc.skeletonId || 'skeleton');
+      const folder = skeletonId.replace(/^skeleton\./, '').replace(/[^a-z0-9_.-]+/gi, '-') || 'skeleton';
+      const runtimePath = `assets/images/player/${folder}/parts.png`;
+      const imageId = `player.${folder}.parts`;
+      const saved = await fetch('/api/save-file', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: `${this.gameRoot}/${runtimePath}`, content: result.atlasPngBase64, encoding: 'base64' })
+      }).then(data => data.json());
+      if (!saved?.ok) throw new Error(`图集落盘失败：${saved?.error || saved?.message || ''}`);
+      const registered = await fetch('/api/scene-image-asset-transaction', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projectPath: this.projectPath,
+          imageAssets: [{ imageId, runtimePath, sceneId: 'skeleton-editor' }]
+        })
+      }).then(data => data.json());
+      if (!registered?.ok) throw new Error(`Manifest 登记失败：${registered?.error || registered?.message || ''}`);
+
+      // 槽位重建（一次撤销步）：按骨骼层级排序，z 依次上浮到其它槽位之上
+      this._pushHistory();
+      const orderOf = new Map(this._bindBoneRows().map((bone, index) => [bone.id, index]));
+      parts.sort((a, b) => (orderOf.get(a.bone) ?? 0) - (orderOf.get(b.bone) ?? 0));
+      const partBones = new Set(parts.map(part => part.bone));
+      const kept = (this.doc.slots || []).filter(slot =>
+        !(slot.attachment?.type === 'slice' && partBones.has(slot.bone)));
+      const maxZ = kept.reduce((max, slot) => Math.max(max, slot.z || 0), 0);
+      const usedIds = new Set(kept.map(slot => slot.id));
+      const createdIds = [];
+      parts.forEach((part, index) => {
+        let slotId = `bind_${part.bone}`;
+        let suffix = 1;
+        while (usedIds.has(slotId)) slotId = `bind_${part.bone}_${suffix++}`;
+        usedIds.add(slotId);
+        createdIds.push(slotId);
+        kept.push({
+          id: slotId,
+          bone: part.bone,
+          z: maxZ + 1 + index,
+          attachment: {
+            type: 'slice',
+            assetId: imageId,
+            sx: part.atlas.sx, sy: part.atlas.sy, sw: part.atlas.sw, sh: part.atlas.sh,
+            x: part.local.x, y: part.local.y, rot: part.rot,
+            width: part.width, height: part.height,
+            visible: true
+          }
+        });
+      });
+      this.doc.slots = kept;
+      await this._loadManifest();          // 新图集进入 imageCatalog，画布立即可见
+      this.selectedSlot = createdIds[0] || null;
+      this._markDirty();
+      this._afterDocChange();
+      this._setLibTab('parts');            // 生成后回到部件库，方便接着微调
+      this._bindStatus(`已生成 ${parts.length} 块部件（图集 ${result.atlas.width}×${result.atlas.height}）：请检查后保存`);
+      this._toast(`已生成 ${parts.length} 块部件槽位（${imageId}），请检查后保存`);
+    } catch (error) {
+      this._bindStatus(`生成失败：${error.message}`, true);
+      this._toast(`生成失败：${error.message}`, true);
+    } finally {
+      this._bindRunning = false;
+      if (runButton) runButton.disabled = false;
     }
   }
 
@@ -4309,20 +4688,28 @@ export class SkeletonEditor {
   /* ---------------- 部件库 ---------------- */
 
   _setLibTab(tab) {
+    this._libTab = tab;
     const partsEl = document.getElementById('se-part-lib');
     const assetsEl = document.getElementById('se-image-lib');
     const presetsEl = document.getElementById('se-preset-lib');
+    const bindEl = document.getElementById('se-bind-lib');
     const partsBtn = document.getElementById('se-tab-parts');
     const assetsBtn = document.getElementById('se-tab-assets');
     const presetsBtn = document.getElementById('se-tab-presets');
+    const bindBtn = document.getElementById('se-tab-bind');
     if (!partsEl || !assetsEl || !presetsEl) return;
     partsEl.style.display = tab === 'parts' ? '' : 'none';
     assetsEl.style.display = tab === 'assets' ? '' : 'none';
     presetsEl.style.display = tab === 'presets' ? '' : 'none';
+    if (bindEl) bindEl.style.display = tab === 'bind' ? '' : 'none';
     if (partsBtn) partsBtn.style.background = tab === 'parts' ? '#2a4a3e' : '';
     if (assetsBtn) assetsBtn.style.background = tab === 'assets' ? '#2a4a3e' : '';
     if (presetsBtn) presetsBtn.style.background = tab === 'presets' ? '#2a4a3e' : '';
+    if (bindBtn) bindBtn.style.background = tab === 'bind' ? '#2a4a3e' : '';
     if (tab === 'presets') this._renderPresetLib();
+    if (tab === 'bind') this._renderBindLib();
+    // 参考层跟随标签页显隐（离开绑骨即回到常规绘制）
+    this._draw();
   }
 
   /* ---------------- 动作模板（animation presets：套用即深拷贝，零数据关联） ---------------- */

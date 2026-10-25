@@ -21,6 +21,7 @@ import { prepareSharedAtlasTransaction } from './sharedAtlasTransaction.js';
 import { prepareLibraryItemImageTransaction } from './LibraryItemImageTransaction.js';
 import { prepareSceneImageAssetTransaction } from './SceneImageAssetTransaction.js';
 import { prepareSkeletonAssetTransaction, prepareAnimPresetTransaction } from './SkeletonAssetTransaction.js';
+import { bindSkeletonParts } from './SkeletonBindService.js';
 import { normalizeShardDeclaration, findShardFieldDuplication } from '../core/projectShards.js';
 
 const JSON_HEADERS = { 'Content-Type': 'application/json; charset=utf-8' };
@@ -472,6 +473,29 @@ export function editorFileAPIPlugin({ repoRoot, allowedProjectPaths = [] } = {})
               return reply(res, 500, { ...result, error: result.error?.message || '骨骼资产磁盘提交失败' });
             }
             return reply(res, 200, { ...result, manifest: prepared.manifest, skeletons: prepared.skeletons });
+          }
+
+          // 绑骨：设计图截图 → 按骨段分区 + 图集打包 + 挂点换算（只返回 JSON，不写盘）
+          if (req.method === 'POST' && req.url === '/api/skeleton-bind') {
+            const body = await parseBody(req);
+            const projectPath = normalizeRelative(body.projectPath);
+            if (!projects.includes(projectPath)) {
+              return reply(res, 403, { ok: false, committed: false, error: '非当前项目' });
+            }
+            const info = canonicalInfo(projectPath);
+            const sourceRelative = normalizeRelative(body.sourceImagePath);
+            // resolveInside 同时兜住「./../」越权与空路径
+            const sourceAbsolute = resolveInside(root, `${info.projectRoot}/${sourceRelative}`);
+            const result = await bindSkeletonParts({
+              sourceAbsolutePath: sourceAbsolute,
+              bones: body.bones,
+              pxPerUnit: body.pxPerUnit,
+              designHeight: body.designHeight,
+              pxJoints: body.pxJoints,
+              atlasWidth: body.atlasWidth,
+              headCutoff: body.headCutoff
+            });
+            return reply(res, 200, result);
           }
 
           if (req.method === 'POST' && req.url === '/api/library-item-image-transaction') {
