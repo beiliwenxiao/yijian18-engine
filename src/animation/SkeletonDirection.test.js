@@ -21,8 +21,8 @@ import {
 } from './SkeletonDirection.js';
 
 describe('方向形态键集合', () => {
-  it('7 形态：正面/侧面/背面 + 四个斜向', () => {
-    expect(SKELETON_DIRECTION_KEYS).toEqual(['down', 'side', 'up', 'SE', 'SW', 'NE', 'NW']);
+  it('8 形态：正面/侧面/背面 + 四个斜向 + 左侧面（免镜像）', () => {
+    expect(SKELETON_DIRECTION_KEYS).toEqual(['down', 'side', 'up', 'SE', 'SW', 'NE', 'NW', 'sideL']);
   });
 
   it('每个形态键都有显示名', () => {

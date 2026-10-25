@@ -247,15 +247,21 @@ describe('ShadowRenderer renderEntityShadows', () => {
     expect(big[3]).toBeCloseTo(base[3] * 2, 5);
     expect(big[4]).toBeCloseTo(base[4] * 2, 5);
     expect(big[2] + big[4] / 2).toBeGreaterThan(500);
-    // liftPx 是像素值：上移量固定，不随影子大小缩放（scale=2 时中心位移仍是 10px）
+    // liftPx 是像素值：上移量固定，不随影子大小缩放（scale=2 时上移仍是 10px）
     const ctxLift = createFakeCtx();
     renderer.renderEntityShadows(ctxLift, [mk('lift', { scale: 2, liftPx: 10 })], { viewBounds: null, lighting: null });
     const lifted = ctxLift.drawCalls[0];
-    expect((base[2] + base[4] / 2) - (lifted[2] + lifted[4] / 2)).toBeCloseTo(10 - base[4] / 6, 5);
-    // 旧数据兼容：比例字段 lift 仍按影高折算
+    // 基准（无 shadowProfile）默认上移 1/3 影高；liftPx 是像素值，上移量固定不随影子大小缩放
+    expect((base[2] + base[4] / 2) - (lifted[2] + lifted[4] / 2)).toBeCloseTo(10 - base[4] / 3, 5);
+    // 旧数据兼容：比例字段 lift 仍按影高折算（lift:1 = 上移满影高）
+    // 注意椭圆中心本身含光照锚点偏移，故与同尺寸 lift:0 的样本相减后再比影高
+    const ctxZero = createFakeCtx();
+    renderer.renderEntityShadows(ctxZero, [mk('zero', { lift: 0 })], { viewBounds: null, lighting: null });
+    const zero = ctxZero.drawCalls[0];
     const ctxLegacy = createFakeCtx();
-    renderer.renderEntityShadows(ctxLegacy, [mk('legacy', { lift: 0 })], { viewBounds: null, lighting: null });
-    expect(ctxLegacy.drawCalls[0][2]).toBeCloseTo(base[0], 5);
+    renderer.renderEntityShadows(ctxLegacy, [mk('legacy', { lift: 1 })], { viewBounds: null, lighting: null });
+    const legacy = ctxLegacy.drawCalls[0];
+    expect((zero[2] + zero[4] / 2) - (legacy[2] + legacy[4] / 2)).toBeCloseTo(legacy[4], 5);
     // radius=60：横半径直接替换（直径 120），纵半径按椭圆扁率跟随
     const ctxFixed = createFakeCtx();
     renderer.renderEntityShadows(ctxFixed, [mk('fixed', { radius: 60 })], { viewBounds: null, lighting: null });
