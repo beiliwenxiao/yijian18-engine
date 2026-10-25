@@ -1076,12 +1076,16 @@ export class DebugPanel {
   }
 
   /**
-   * 完成任务实例的当前活动目标（任务中心制）：
-   *   - 状态事实目标（eventMatcher.type === 'state.transaction'）：提交真实事务——
-   *     剧情事实落账 → 事务事件回流 → 任务图与目标后触发器同自然流程消费；
+   * 完成任务实例的当前活动目标（任务中心制）——按目标类型派发「真实世界动作」：
+   *   - kill.enemy：先真实击杀场景内敌人（CombatSystem 完整死亡管线：掉落/尸体/击杀回调），
+   *     再幂等补账击杀事实——任务 NPC 该死的真死，击杀事实走自然链路回流；
+   *   - gather.item：物品真实入包（内容库定义 → 玩家背包），再发布采集完成事件——
+   *     任务图/触发器与自然玩法同源消费，奖励随任务完成自动发放；
+   *   - triggerSucceeded：真实执行目标触发器（成功后 triggerSucceeded 由 TriggerSystem
+   *     权威广播）——触发器 once/前置不满足时如实报告拒绝原因，不造假事件；
+   *   - state.transaction（普通事实）：提交真实事务——剧情事实落账 → 事务事件回流；
    *     事务被拒（前置不满足）时报告原因，避免跳过事实留下后续剧情死锁。
-   *   - 事件目标：发布同源 application event（触发器 + 任务图双路消费，与自然玩法一致）。
-   *   - 任务完成时 task.completed 自动广播 → completion 触发器发放奖励/物品。
+   *   - 其余事件目标（classSelected 等 UI 事件）：发布同源 application event。
    */
   async _completeTaskObjective(instance) {
     const graph = this._getTaskGraph();
@@ -1098,23 +1102,76 @@ export class DebugPanel {
     }
     const node = (definition.nodes || []).find(entry => entry.id === nodeId);
     const matcher = node?.eventMatcher || {};
+    const questStep = this._findQuestStep(instance.definitionId, nodeId);
     const scene = this.getScene();
     try {
       if (matcher.type === 'state.transaction' && matcher.payload?.definitionId) {
+        const factId = matcher.payload.definitionId;
+        // 击杀目标：先真实击杀（世界表现全真），再幂等补账事实（真实击杀链路慢一步时兜底）
+        let killNote = '';
+        if (questStep?.objectiveType === 'kill.enemy' || /kill/i.test(factId)) {
+          const killed = this._killOneSceneEnemy(factId);
+          killNote = killed
+            ? `已击杀 ${killed.id}（掉落/尸体/经验走真实管线）；`
+            : '场景内无存活敌人可击杀，仅补账事实；';
+        }
         const gateway = scene?.sceneRuntime?.commandGateway;
         const actorRef = scene?.playerEntity?.id;
         if (!gateway || !actorRef) return this._setTaskStatus('命令网关不可用，无法提交状态事实');
         const result = await gateway.execute({
           intentType: 'state.transaction',
           actorRef,
-          operationId: `debug-fact:${matcher.payload.definitionId}:${Date.now()}`,
-          payload: { definitionId: matcher.payload.definitionId }
+          operationId: `debug-fact:${factId}:${Date.now()}`,
+          payload: { definitionId: factId }
         });
         if (result?.ok === true) {
-          this._setTaskStatus(`✅ 已提交事实 ${matcher.payload.definitionId} → 目标 ${nodeId}（${instance.definitionId}）`);
+          this._setTaskStatus(`✅ ${killNote}已提交事实 ${factId} → 目标 ${nodeId}（${instance.definitionId}）`);
         } else {
           console.warn('[DebugPanel] 状态事实被拒', result);
-          this._setTaskStatus(`❌ 事实 ${matcher.payload.definitionId} 被拒：${result?.error?.message || result?.code || 'preconditionFailed'}`);
+          this._setTaskStatus(`❌ ${killNote}事实 ${factId} 被拒：${result?.error?.message || result?.code || 'preconditionFailed'}`);
+        }
+        return;
+      }
+      if (matcher.type === 'gathering.completed' && matcher.payload?.itemId) {
+        // 采集目标：物品真实入包（内容库定义 → 玩家背包 → 获得表现），再发布采集完成事件——
+        // 事件回显 matcher 全部约束字段（extraPayload 如 resourceType），与自然采集事件同构
+        const itemId = matcher.payload.itemId;
+        const required = Math.max(1, Math.floor(Number(node.requiredCount) || 1));
+        const granted = this._grantItemToInventory(itemId, required);
+        if (granted.accepted <= 0) {
+          return this._setTaskStatus(`❌ 物品 ${itemId} 无法入包（${granted.definition ? '背包已满' : '内容库缺少物品定义'}），目标未推进`);
+        }
+        const result = await scene?.publishApplicationEvent?.('gathering.completed', {
+          ...JSON.parse(JSON.stringify(matcher.payload || {})),
+          accepted: granted.accepted,
+          ok: true,
+          committed: true
+        }, {
+          reason: 'debugPanel',
+          operationId: `application:gathering.completed:debug:${itemId}:${Date.now()}`
+        });
+        if (result?.ok === true || result?.ok === undefined) {
+          this._setTaskStatus(`✅ 已入包 ${itemId}×${granted.accepted} → 目标 ${nodeId}（${instance.definitionId}）`);
+        } else {
+          this._setTaskStatus(`⚠️ 物品已入包 ${itemId}×${granted.accepted}，但采集事件发布失败：${result?.code || 'unknown'}`);
+        }
+        return;
+      }
+      if (matcher.type === 'triggerSucceeded' && matcher.payload?.triggerId) {
+        // 事件目标=触发器成功：真实执行触发器——成功后 triggerSucceeded 由 TriggerSystem
+        // 权威广播，任务图与目标后触发器同自然玩法消费；拒绝时如实报告原因。
+        const triggerId = matcher.payload.triggerId;
+        const triggers = this._getTriggersInfo();
+        const trigger = triggers?.getById?.(triggerId);
+        if (!trigger?.when) {
+          return this._setTaskStatus(`❌ 触发器 ${triggerId} 不存在或缺少 when（可能属于其他场景），目标未推进`);
+        }
+        const accepted = triggers.fireById(triggerId, trigger.when.type, trigger.when.params || {});
+        if (accepted) {
+          this._setTaskStatus(`⚡ 已真实执行触发器 ${triggerId} → 目标 ${nodeId}（${instance.definitionId}）`);
+        } else {
+          const rejection = triggers.describeRejection?.(triggerId, trigger.when.type, trigger.when.params || {}) || {};
+          this._setTaskStatus(`⚠️ 触发器 ${triggerId} 未执行（${rejection.code || 'rejected'}${rejection.if ? `；条件 ${rejection.if} 不满足` : ''}）——当前场景/前置不满足时属预期，可先跳转对应场景`);
         }
         return;
       }
@@ -1136,6 +1193,81 @@ export class DebugPanel {
       console.warn('[DebugPanel] 完成任务目标异常', error);
       this._setTaskStatus(`完成目标异常：${error?.message || error}`);
     }
+  }
+
+  /** 由任务定义 id + 目标节点 id 反查 quest 步骤（objectiveType / target 真实语义）。 */
+  _findQuestStep(definitionId, nodeId) {
+    const quest = this.getScene()?.gameLoader?.project?.quests
+      ?.find(entry => entry?.id === definitionId) || null;
+    if (!quest) return null;
+    return (quest.steps || []).find(step => step?.type === 'objective' && step?.id === nodeId) || null;
+  }
+
+  /**
+   * 真实击杀场景内一名存活敌人：走 CombatSystem.applyDamage 完整死亡管线
+   * （掉落生成 / 尸体保留 / 击杀回调 → 场景 coordinator → enemy.killed 事件 → 事实回流）。
+   * 目标选择：优先击杀与击杀事实 id 语义最相关的敌人
+   * （归一化后最长公共子串评分，如 story.s01.firstWolfKilled ↔ S01-first-wolf-1），
+   * 无命中时回退首个存活敌人。
+   * @param {string} [factId] - 击杀事实定义 id（用于目标匹配）
+   * @returns {Entity|null} 被击杀的敌人；场景无存活敌人时返回 null
+   */
+  _killOneSceneEnemy(factId = '') {
+    const scene = this.getScene();
+    const combat = scene?.combatSystem;
+    const enemies = scene?.entityStore?.enemies;
+    if (!combat?.applyDamage || !Array.isArray(enemies)) return null;
+    const alive = enemies.filter(enemy => {
+      const hp = Number(enemy?.getComponent?.('stats')?.hp);
+      return Number.isFinite(hp) && hp > 0;
+    });
+    if (!alive.length) return null;
+    const normalize = value => String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const factNorm = normalize(factId);
+    const commonLength = (a, b) => {
+      let best = 0;
+      for (let i = 0; i < a.length; i++) {
+        for (let j = 0; j < b.length; j++) {
+          let length = 0;
+          while (i + length < a.length && j + length < b.length && a[i + length] === b[j + length]) length++;
+          if (length > best) best = length;
+        }
+      }
+      return best;
+    };
+    let target = null;
+    if (factNorm) {
+      let bestScore = 0;
+      for (const enemy of alive) {
+        const score = commonLength(factNorm, normalize(enemy.id));
+        if (score > bestScore) { bestScore = score; target = enemy; }
+      }
+      if (bestScore < 6) target = null; // 弱匹配不冒认：宁可回退也不杀错剧情怪
+    }
+    if (!target) target = alive[0];
+    const hp = Number(target.getComponent('stats').hp) || 1;
+    combat.applyDamage(target, hp + 9999, null, null, { attackKind: 'debugPanel' });
+    return target;
+  }
+
+  /**
+   * 真实入包：按内容库物品定义发放到玩家背包（与 giveReward 同源链路），
+   * 入包成功后触发获得表现（FIFO 弹窗）。
+   * @returns {{accepted: number, definition: Object|null}} 实际入包数量与物品定义
+   */
+  _grantItemToInventory(itemId, quantity) {
+    const scene = this.getScene();
+    const player = scene?.playerEntity;
+    const inventory = player?.getComponent?.('inventory');
+    const definition = scene?.gameLoader?.registries?.items?.get?.(itemId) || null;
+    if (!inventory?.addItem || !definition) return { accepted: 0, definition };
+    const item = { ...definition };
+    delete item.instanceId; // 资源类按定义堆叠，不携带实例 id
+    const accepted = inventory.addItem(item, Math.max(1, Math.floor(Number(quantity) || 1)));
+    if (accepted > 0) {
+      try { scene.onItemGained?.({ ...item, quantity: accepted }, player); } catch (error) { /* 获得表现降级不回滚入包 */ }
+    }
+    return { accepted, definition };
   }
 
   /** 下一任务：完成当前（优先当前场景）任务实例的活动目标，奖励随任务完成自动发放。 */
@@ -1321,6 +1453,8 @@ export class DebugPanel {
               errors: JSON.stringify(result.errors || [])
             });
             this._setTaskStatus(`❌ 跳转 ${sceneId} 被拒：${result?.errors?.[0]?.message || result?.code || 'worldTeleportRejected'}`);
+          } else {
+            this._setTaskStatus(`✅ 已跳转到 ${sceneId}（场景触发器/任务门随剧情状态同步生效）`);
           }
         })
         .catch(error => {
