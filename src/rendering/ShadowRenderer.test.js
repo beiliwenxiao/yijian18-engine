@@ -50,11 +50,15 @@ function createFakeCanvasFactory() {
 /** 绘制命令记录用假 ctx。 */
 function createFakeCtx() {
   const drawCalls = [];
+  const translates = [];
   return {
     drawCalls,
+    translates,
     globalAlpha: 1,
     save: vi.fn(),
     restore: vi.fn(),
+    translate: vi.fn((x, y) => translates.push([x, y])),
+    rotate: vi.fn(),
     drawImage: vi.fn((...args) => drawCalls.push(args))
   };
 }
@@ -269,6 +273,55 @@ describe('ShadowRenderer renderEntityShadows', () => {
     expect(fixed[3]).toBeCloseTo(120, 1);
     expect(fixed[4]).toBeLessThan(fixed[3]); // 纵向仍为扁椭圆
     expect(fixed[3]).toBeGreaterThan(base[3]); // 60 > 自动推导的横半径
+  });
+
+  it('点光长影微调随光源方位自动旋转并按椭圆方向半径缩放（标定基准=人物在光源右侧水平站立）', () => {
+    const renderer = new ShadowRenderer({ createCanvas: createFakeCanvasFactory() });
+    const mk = () => {
+      const entity = createEntity({ id: 'p', type: 'enemy', components: new Map([
+        ['sprite', spriteComponent()], ['transform', transformComponent()]
+      ]) });
+      entity.shadowProfile = { longShiftPx: -21, longLiftPx: 3 };
+      return entity;
+    };
+    const mkPlain = () => {
+      const entity = createEntity({ id: 'plain', type: 'enemy', components: new Map([
+        ['sprite', spriteComponent()], ['transform', transformComponent()]
+      ]) });
+      return entity;
+    };
+    // 基准方位：光源在人物正左侧水平方向（标定情况）——偏移 = 原值（along=水平, across=竖直）
+    const lightingRef = {
+      directionX: 0, directionY: 0, elevation: 1, strength: 0.32,
+      pointLights: [{ x: 410, y: 500, radius: 200, strength: 1 }]
+    };
+    const ctxRef = createFakeCtx();
+    renderer.renderEntityShadows(ctxRef, [mk()], { viewBounds: null, lighting: lightingRef });
+    const ctxRefPlain = createFakeCtx();
+    renderer.renderEntityShadows(ctxRefPlain, [mkPlain()], { viewBounds: null, lighting: lightingRef });
+    const [refX, refY] = ctxRef.translates[0];
+    const [refPlainX, refPlainY] = ctxRefPlain.translates[0];
+    expect(refX - refPlainX).toBeCloseTo(21, 5);  // longShiftPx=-21 → 沿连线背离光源（参考=向右）
+    expect(refY - refPlainY).toBeCloseTo(-3, 5);  // longLiftPx=3 → 垂直连线向上
+
+    // 光源在人物正上方（同距离）：偏移自动旋转——along 变竖直且按椭圆方向半径收敛，
+    // across 转为水平并按椭圆横纵比放大；不再直接套用 (-21, 3) 的轴符号量化值。
+    const lightingAbove = {
+      directionX: 0, directionY: 0, elevation: 1, strength: 0.32,
+      pointLights: [{ x: 500, y: 410, radius: 200, strength: 1 }]
+    };
+    const base = renderer.computeShadowParams(500, 500, 48, 64, 0, lightingAbove);
+    const ctxAbove = createFakeCtx();
+    renderer.renderEntityShadows(ctxAbove, [mk()], { viewBounds: null, lighting: lightingAbove });
+    const ctxAbovePlain = createFakeCtx();
+    renderer.renderEntityShadows(ctxAbovePlain, [mkPlain()], { viewBounds: null, lighting: lightingAbove });
+    const [aboveX, aboveY] = ctxAbove.translates[0];
+    const [abovePlainX, abovePlainY] = ctxAbovePlain.translates[0];
+    // 预期：along = -21×(radiusY/radiusX)（竖直方向椭圆半径更短 → 收敛），across = 3×(radiusX/radiusY)
+    expect(aboveY - abovePlainY).toBeCloseTo(21 * (base.radiusY / base.radiusX), 1);
+    expect(aboveX - abovePlainX).toBeCloseTo(3 * (base.radiusX / base.radiusY), 1);
+    // 回归断言：不是旧轴符号行为的直接套用（旧实现此处 y 偏移恒为 -3、x 恒为 0）
+    expect(aboveY - abovePlainY).toBeGreaterThan(10);
   });
 
   it('实体列表为空时不触碰上下文', () => {

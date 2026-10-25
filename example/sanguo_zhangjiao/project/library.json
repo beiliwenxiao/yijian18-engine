@@ -2625,8 +2625,8 @@
       "shadow": {
         "liftPx": 8,
         "longLiftPx": 3,
-        "longShiftPx": -21,
-        "radius": 26,
+        "longShiftPx": -25,
+        "radius": 30,
         "shiftPx": 6
       },
       "skeletonId": "skeleton.female-hero",

@@ -400,17 +400,31 @@ export class ShadowRenderer {
       // 长影在下、贴地影在上：长影为卵形旋转绘制（沿火-人连线发散），成本可忽略。
       // long=false → 该实体不产生点光长影（基础影保留）
       if (params.longShadow && shadowProfile?.long !== false) {
-        // 点光源长影微调（shadowProfile.longLiftPx / longShiftPx）：
-        // 长影随光源方位旋转，偏移按光源方位做对称处理——「上移」=朝光源的竖直一侧，
-        // 「左移」=朝光源的水平一侧（光源在下方则下移、在右侧则右移）。
+        // 点光源长影微调（shadowProfile.longShiftPx / longLiftPx）：
+        // 标定基准 = 人物在点光源右侧、光-人连线水平时的对齐量——
+        // longShiftPx 沿「光-人连线」作用（基准方位下即水平左右），
+        // longLiftPx 沿「连线的垂直方向」作用（基准方位下即屏幕上下，正=向上）。
+        // 其他方位不直接套用数值：偏移向量随光源方位自动旋转，幅度按基础影椭圆
+        // 在对应方向的方向半径比缩放——椭圆各方向半径不同，水平标定值换算到
+        // 斜向/竖向必须按椭圆圈收敛/放大，否则对齐随方位漂移。
         const longLiftPx = Number.isFinite(shadowProfile?.longLiftPx) ? shadowProfile.longLiftPx : 0;
         const longShiftPx = Number.isFinite(shadowProfile?.longShiftPx) ? shadowProfile.longShiftPx : 0;
         if (longLiftPx !== 0 || longShiftPx !== 0) {
-          // longShadow.angle 是「光源→人物」方向，取反得到「人物→光源」朝向
-          const towardX = -Math.cos(params.longShadow.angle);
-          const towardY = -Math.sin(params.longShadow.angle);
-          params.longShadow.x += Math.sign(towardX) * longShiftPx;
-          params.longShadow.y += Math.sign(towardY) * longLiftPx;
+          const ls = params.longShadow;
+          // toward = 人物→光源 单位向量；perp = 其左法线（基准方位光在左时 = 屏幕正上）
+          const towardX = -Math.cos(ls.angle);
+          const towardY = -Math.sin(ls.angle);
+          const perpX = -towardY;
+          const perpY = towardX;
+          const invRx = 1 / Math.max(1e-3, params.radiusX);
+          const invRy = 1 / Math.max(1e-3, params.radiusY);
+          // 椭圆方向半径比：along 的参考基准 = 水平方向半径 radiusX，across 参考 = 竖直半径 radiusY
+          const scaleAlong = invRx / Math.sqrt((towardX * invRx) ** 2 + (towardY * invRy) ** 2);
+          const scaleAcross = invRy / Math.sqrt((perpX * invRx) ** 2 + (perpY * invRy) ** 2);
+          const along = longShiftPx * scaleAlong;
+          const across = longLiftPx * scaleAcross;
+          ls.x += towardX * along + perpX * across;
+          ls.y += towardY * along + perpY * across;
         }
         this.drawConeShadow(ctx, params.longShadow);
       }

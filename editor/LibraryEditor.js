@@ -1075,8 +1075,8 @@ export class LibraryEditor {
       <div class="row"><label title="贴地影横半径（px）：设置后覆盖按精灵尺寸的自动推导；留空=自动">基础半径</label><input type="number" id="l-shadow-radius" step="2" min="4" value="${shadow.radius != null ? shadow.radius : ''}" placeholder="自动"></div>
       <div class="row"><label title="贴地影向上偏移的像素值；角色默认贴脚（0），填写后按像素上移">上移像素</label><input type="number" id="l-shadow-lift" step="1" min="0" value="${shadow.liftPx != null ? shadow.liftPx : ''}" placeholder="角色默认 0"></div>
       <div class="row"><label title="基础阴影水平平移像素：正数左移、负数右移（点光源长影请用下方单独参数）">左移像素</label><input type="number" id="l-shadow-shift" step="1" value="${shadow.shiftPx != null ? shadow.shiftPx : ''}" placeholder="留空=不偏移"></div>
-      <div class="row"><label title="点光源长影沿光源竖直方向微调：光在上方时上移、在下方时下移（按光源方位对称）">点光源长影上移</label><input type="number" id="l-long-shadow-lift" step="1" value="${shadow.longLiftPx != null ? shadow.longLiftPx : ''}" placeholder="留空=不偏移"></div>
-      <div class="row"><label title="点光源长影沿光源水平方向微调：光在左侧时左移、在右侧时右移（按光源方位对称）">点光源长影左移</label><input type="number" id="l-long-shadow-shift" step="1" value="${shadow.longShiftPx != null ? shadow.longShiftPx : ''}" placeholder="留空=不偏移"></div>
+      <div class="row"><label title="点光源长影垂直于光-人连线方向的偏移（人物在光源右侧水平站立时=屏幕上下，正=上）。任意方位自动随光源旋转，幅度按基础影椭圆方向半径缩放">点光源长影上移</label><input type="number" id="l-long-shadow-lift" step="1" value="${shadow.longLiftPx != null ? shadow.longLiftPx : ''}" placeholder="留空=不偏移"></div>
+      <div class="row"><label title="点光源长影沿光-人连线方向的偏移（人物在光源右侧水平站立时标定，正=朝光源）。任意方位自动随光源旋转，幅度按基础影椭圆方向半径缩放">点光源长影左移</label><input type="number" id="l-long-shadow-shift" step="1" value="${shadow.longShiftPx != null ? shadow.longShiftPx : ''}" placeholder="留空=不偏移"></div>
       <hr style="border-color:#2a3a5e;margin:10px 0;">
       <div class="row"><label style="font-weight:bold;">碰撞区域</label><small style="color:#9ab;font-size:11px;">（椭圆，中心 = 脚底锚点 + 偏移）</small></div>
       <div class="row" style="display:flex;gap:8px;">
