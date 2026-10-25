@@ -7,9 +7,9 @@
       "name": "寒风荒野背景",
       "objects": [
         {
-          "edgeFade": 0,
+          "edgeFade": 0.1,
           "editor": {
-            "locked": true
+            "locked": false
           },
           "fill": "#dac2a2",
           "fillMode": "color",
@@ -17,7 +17,7 @@
           "id": "ellipse_1791135626370_982",
           "name": "地形椭圆",
           "opacity": 1,
-          "stroke": "",
+          "stroke": "#dac2a2",
           "strokeWidth": 0,
           "type": "ellipse",
           "width": 2075,
@@ -216,32 +216,32 @@
           "opacity": 0,
           "points": [
             [
-              942,
-              383
+              1051,
+              419
             ],
             [
-              981,
-              424
+              1087,
+              455
             ],
             [
-              1059,
-              377
+              1165,
+              464
             ],
             [
-              1108,
-              344
+              1218,
+              419
             ],
             [
-              1220,
-              399
+              1288,
+              496
             ],
             [
-              1057,
-              474
+              1159,
+              524
             ],
             [
-              1026,
-              460
+              1135,
+              496
             ]
           ],
           "semanticRole": "travelRoute",
@@ -285,192 +285,8 @@
           "semanticRole": "travelCheckpoint",
           "type": "region",
           "width": 133,
-          "x": 980.601406849055,
-          "y": 393.04065043638224
-        },
-        {
-          "climbBounds": {
-            "height": 170,
-            "width": 92,
-            "x": 1090,
-            "y": 20
-          },
-          "climbExit": {
-            "x": 1135,
-            "y": 86
-          },
-          "climbExitRadius": 20,
-          "climbMode": "controlled",
-          "climbSpeed": 84,
-          "climbTarget": {
-            "x": 1135,
-            "y": 86
-          },
-          "climbZones": {
-            "climb": [
-              [
-                14,
-                34
-              ],
-              [
-                77,
-                51
-              ],
-              [
-                99,
-                15
-              ],
-              [
-                110,
-                94
-              ],
-              [
-                180,
-                66
-              ],
-              [
-                198,
-                81
-              ],
-              [
-                125,
-                111
-              ],
-              [
-                109,
-                205
-              ],
-              [
-                166,
-                180
-              ],
-              [
-                188,
-                181
-              ],
-              [
-                66,
-                296
-              ],
-              [
-                63,
-                259
-              ],
-              [
-                2,
-                236
-              ],
-              [
-                24,
-                234
-              ],
-              [
-                80,
-                253
-              ],
-              [
-                74,
-                151
-              ],
-              [
-                13,
-                140
-              ],
-              [
-                4,
-                130
-              ],
-              [
-                28,
-                131
-              ],
-              [
-                76,
-                143
-              ],
-              [
-                86,
-                95
-              ],
-              [
-                82,
-                63
-              ],
-              [
-                20,
-                47
-              ]
-            ],
-            "enter": [
-              [
-                15,
-                291
-              ],
-              [
-                74,
-                278
-              ],
-              [
-                128,
-                293
-              ],
-              [
-                112,
-                302
-              ],
-              [
-                71,
-                313
-              ],
-              [
-                41,
-                302
-              ]
-            ],
-            "exit": [
-              [
-                151,
-                55
-              ],
-              [
-                179,
-                55
-              ],
-              [
-                196,
-                64
-              ],
-              [
-                177,
-                81
-              ],
-              [
-                140,
-                75
-              ]
-            ]
-          },
-          "climbable": true,
-          "collide": false,
-          "depthSort": true,
-          "editor": {
-            "visible": true
-          },
-          "height": 300,
-          "id": "S01-cliff-vine",
-          "imageId": "s01.environment.cliffVine",
-          "name": "逃生藤蔓",
-          "prompt": "{jump}攀上藤蔓，在藤蔓上移动至出口",
-          "radius": 100,
-          "requiresClimbAbility": false,
-          "rotation": 0,
-          "semanticRole": "climbSurface",
-          "sortY": 275.2050190291344,
-          "type": "image",
-          "walkable": false,
-          "width": 200,
-          "x": 1093.4526858494614,
-          "y": 105.2050190291344
+          "x": 1024.1460071604108,
+          "y": 420.1350684078925
         },
         {
           "editor": {
@@ -807,6 +623,43 @@
             [
               924,
               84
+            ]
+          ],
+          "shapeType": "polygon",
+          "stroke": "#5a8a4a",
+          "strokeWidth": 0,
+          "type": "shape",
+          "walkable": false
+        },
+        {
+          "climbable": true,
+          "collide": false,
+          "edgeFade": 0,
+          "fill": "#3a5a2a",
+          "fillMode": "color",
+          "id": "shape_1792948308425_402",
+          "name": "地形多边形",
+          "opacity": 0,
+          "points": [
+            [
+              1355,
+              264
+            ],
+            [
+              1367,
+              265
+            ],
+            [
+              1336,
+              495
+            ],
+            [
+              1227,
+              417
+            ],
+            [
+              1233,
+              194
             ]
           ],
           "shapeType": "polygon",

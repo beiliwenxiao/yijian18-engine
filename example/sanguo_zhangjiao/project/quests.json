@@ -314,7 +314,7 @@
         ],
         "objectiveType": "commit.fact",
         "target": "story.s01.leaveShelter",
-        "title": "离开庇护所并躲避狼群",
+        "title": "离开庇护所",
         "type": "objective"
       },
       {
@@ -366,7 +366,7 @@
         ],
         "objectiveType": "commit.fact",
         "target": "story.s01.cliffReached",
-        "title": "抵达山崖并攀藤撤离",
+        "title": "抵达山崖并攀岩撤离",
         "type": "objective"
       },
       {

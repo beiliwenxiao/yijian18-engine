@@ -29,7 +29,7 @@
  */
 
 import sharp from 'sharp';
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { pathToFileURL, fileURLToPath } from 'node:url';
 import path from 'node:path';
 
@@ -37,6 +37,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const SRC = 'D:/游戏资源/Female_Hero_Pixel_Art_v1.1';
 const OUT_IMG_DIR = path.join(root, 'example/sanguo_zhangjiao/assets/images/player/female-hero');
 const OUT_SKELETON = path.join(root, 'example/sanguo_zhangjiao/assets/skeletons/female-hero.json');
+const MANIFEST = path.join(root, 'example/sanguo_zhangjiao/assets/manifests/assets.json');
 const SKELETON_ID = 'skeleton.female-hero';
 const SHEET_ASSET_ID = 'player.female-hero.frames';
 
@@ -122,9 +123,12 @@ const RAW_W = Math.ceil(halfW * 2);
 const RAW_H = BOTTOM - (uy0 - 2);
 const CROP_X = Math.round(CENTER_X - RAW_W / 2);
 const CROP_Y = BOTTOM - RAW_H;
-// 源码 320×320 全尺寸，角色 ~220px 高；游戏内主角只画到 ~64px 高，
-// 原尺寸整帧大图会到 20M+ 像素（解码慢/占内存），故按 SCALE 预缩。
-const SCALE = 0.5;
+// 原始角色大小：整帧图不做预缩（SCALE=1），帧格就是素材原始像素（262×251，角色 ~220px 高）。
+// 运行时显示尺寸不写死在资产里：由内容库「主角」定义的 display 宽高（library.json players.visual）
+// 决定，SkeletonRenderer 按 scale = 显示高 / meta.height 自动等比缩放，因此资产可以按原图
+// 完整保留细节，策划随时在内容库编辑器改显示大小即可（当前 262×251 ↔ 1:1）。
+// 代价是整帧大图变大（约 33M 像素），解码内存相应增加。
+const SCALE = 1;
 const W = Math.round(RAW_W * SCALE);
 const H = Math.round(RAW_H * SCALE);
 const GROUND_LOCAL = Math.round((GROUND_Y - CROP_Y) * SCALE);
@@ -251,3 +255,19 @@ for (const [clipName, entry] of Object.entries(finalFrames)) {
 }
 console.log(`已写入 ${path.relative(root, OUT_SKELETON)}：${CLIP_NAMES.length} 剪辑 / ${ROWS} 方向组`);
 console.log(`槽位 y=${doc.slots[0].attachment.y}（地面贴 root 原点）`);
+
+/* ---------------- 5. 同步 Asset Manifest 的 bounds（重建后图集/设计尺寸会变） ---------------- */
+if (existsSync(MANIFEST)) {
+  const manifest = JSON.parse(readFileSync(MANIFEST, 'utf8'));
+  const syncBounds = (assetId, width, height) => {
+    const entry = (manifest.assets || []).find(a => a.assetId === assetId);
+    if (!entry) return false;
+    entry.bounds = { width, height };
+    return true;
+  };
+  const sheetSynced = syncBounds(SHEET_ASSET_ID, SHEET_W, SHEET_H);
+  const skeletonSynced = syncBounds(SKELETON_ID, W, H);
+  writeFileSync(MANIFEST, `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
+  console.log(`Manifest bounds 同步：${sheetSynced ? `${SHEET_ASSET_ID} ${SHEET_W}×${SHEET_H}` : '图集未登记'}，`
+    + `${skeletonSynced ? `${SKELETON_ID} ${W}×${H}` : '骨架未登记'}`);
+}

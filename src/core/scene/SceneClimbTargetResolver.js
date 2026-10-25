@@ -42,12 +42,18 @@ export class SceneClimbTargetResolver {
     // 地形层 climbable shape（世界投影坐标）与 climbSurface 放置物一同参评；
     // shape 已含 worldOffset，不再二次偏移。
     const sources = [...localSurfaces, ...this._projectClimbableShapes(climbableShapes)]
+      // 多边形 shape（只有 points、没有 x/y/width/height）先由顶点包围盒补齐几何；
+      // 补不出来的直接剔除——否则中心坐标为 NaN，`distance > radius` 恒为 false，
+      // 任何一次跳跃都会被它抢走当成攀爬（表现为「空格不能跳」）。
+      .map(surface => this._withDerivedGeometry(surface))
+      .filter(Boolean)
       .map(surface => this._normalizeClimbableSource(surface, transform.position));
 
     let best = null;
     for (const surface of sources) {
       const centerX = Number(surface.x) + (Number(surface.width) || 0) / 2;
       const centerY = Number(surface.y) + (Number(surface.height) || 0) / 2;
+      if (!Number.isFinite(centerX) || !Number.isFinite(centerY)) continue;
       const distance = Math.hypot(
         transform.position.x - centerX,
         transform.position.y - centerY
@@ -125,6 +131,38 @@ export class SceneClimbTargetResolver {
       };
     }
     return best;
+  }
+
+  /**
+   * 补齐攀爬源几何：多边形 shape 在场景对象里只存 points（投影后已是世界坐标），
+   * 没有 x/y/width/height —— 用顶点包围盒派生，并标记 climbBoundsWorld（不再叠加 chunk 偏移）。
+   * 既无有效 x/y 又无有效 points 的源返回 null（按无几何数据剔除）。
+   */
+  static _withDerivedGeometry(surface) {
+    if (!surface) return null;
+    if (Number.isFinite(Number(surface.x)) && Number.isFinite(Number(surface.y))) return surface;
+    const points = Array.isArray(surface.points) ? surface.points : null;
+    if (!points || points.length === 0) return null;
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const point of points) {
+      const x = Number(Array.isArray(point) ? point[0] : point?.x);
+      const y = Number(Array.isArray(point) ? point[1] : point?.y);
+      if (!Number.isFinite(x) || !Number.isFinite(y)) continue;
+      if (x < minX) minX = x;
+      if (x > maxX) maxX = x;
+      if (y < minY) minY = y;
+      if (y > maxY) maxY = y;
+    }
+    if (!Number.isFinite(minX) || !Number.isFinite(minY)
+      || !Number.isFinite(maxX) || !Number.isFinite(maxY)) return null;
+    return {
+      ...surface,
+      x: minX,
+      y: minY,
+      width: maxX - minX,
+      height: maxY - minY,
+      climbBoundsWorld: true
+    };
   }
 
   static _projectLocalSurfaces(sceneData, offsetX, offsetY) {

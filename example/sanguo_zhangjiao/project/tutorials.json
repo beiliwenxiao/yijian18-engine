@@ -222,7 +222,7 @@
   },
   {
     "id": "s01.capacity",
-    "title": "攀藤",
+    "title": "攀岩",
     "category": "s01-survival",
     "scope": {
       "sceneIds": [
@@ -232,7 +232,7 @@
     "steps": [
       {
         "id": "s01.capacity.step.capacity",
-        "text": "到达山崖后，{climb}沿藤蔓上去看看。",
+        "text": "到达山崖后，{climb}爬上悬崖去看看。",
         "highlightTarget": false
       }
     ],

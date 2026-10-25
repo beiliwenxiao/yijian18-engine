@@ -10,6 +10,7 @@
 后来因为各种原因，转战电商行业，直到2026年，仍然在做电商相关的工作(小程序：值得爱生活服务)。
 这中间，正好是十八年。作为一个大龄程序员(2026年45岁)，职业生涯已经见底，却无任何可以拿出手的作品。
 而我曾经的同事，却有不少大神级作品。
+（比如：<a href="https://goframe.org/" target="_blank">高性能Go 语言开发框架 GoFrame</a>    <a href="https://www.workerman.net" target="_blank">高性能PHP应用容器 WorkerMan</a> ）
 再加上AI的方便，正好做做以前想做而没空做的项目。游戏正是其中一项。
 年轻时划出一剑，转眼已经过了十八年。于是取名一剑十八年。
 ![闻箫工作室](example/sanguo_zhangjiao/assets/images/闻箫工作室.png)

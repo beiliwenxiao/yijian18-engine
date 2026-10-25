@@ -60,6 +60,9 @@ export class SkeletonRenderer {
     const scale = designHeight > 0 ? height / designHeight : 1;
 
     ctx.save();
+    // 骨骼资产（整帧/部件）都是像素画：关闭插值，缩放到实体尺寸时保持硬边像素，
+    // 否则缩放后会被双线性平滑糊成一片（与 EntityRenderer2D 的精灵绘制一致）。
+    ctx.imageSmoothingEnabled = false;
     ctx.translate(x, y);
     ctx.scale(sprite?.flipX ? -scale : scale, scale);
 

@@ -32,7 +32,8 @@ export class DemoPlayerFactory {
     const selected = SelectedCharacterStore.get();
     this._loadSelectedAsset(scene, selected);
     const actorProfile = scene.presentationProfile?.actors;
-    const visual = actorProfile?.player?.visual || { width: 64, height: 64 };
+    const baseVisual = actorProfile?.player?.visual || { width: 64, height: 64 };
+    const visual = { width: baseVisual.width, height: baseVisual.height };
     const directionMode = actorProfile?.directionMode === 4 ? 4 : 8;
     const directionConfig = directionMode === 4 ? {
       spriteRows: 4,
@@ -128,7 +129,9 @@ export class DemoPlayerFactory {
     const skeletonId = String(definition.skeletonId || '').trim();
     if (skeletonId) scene?.entityFactory?.setSkeletonForEntity?.(player, skeletonId);
 
-    // 显示宽高（屏幕上绘制尺寸）：逐字段覆盖，留空沿用 presentation.json 的 actors.player.visual
+    // 显示宽高（屏幕上绘制尺寸）：内容库主角定义的 visual 是唯一权威，逐字段覆盖；
+    // 骨骼动画按资产设计尺寸自动等比缩放（scale = 显示高 / meta.height），
+    // 不因骨骼资产本身多大而受限。留空沿用 presentation.json 的 actors.player.visual。
     if (definition.visual && typeof definition.visual === 'object') {
       const sprite = player.getComponent?.('sprite');
       const width = Number(definition.visual.width);
