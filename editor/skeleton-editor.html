@@ -236,8 +236,14 @@
         <div class="se-resizer horizontal" id="se-resizer-bottom" role="separator" aria-orientation="horizontal" title="上下拖动调整时间线高度；双击恢复默认"></div>
 
         <div class="se-panel bottom">
-            <div class="se-timeline">
+            <div class="se-timeline" id="se-skeletal-panel">
                 <div class="se-tl-toolbar">
+                    <label>类型</label>
+                    <select id="se-anim-mode" title="骨骼动画：编辑骨骼轨道关键帧；序列帧：查看整帧帧表（整帧模式资产自动选中）">
+                        <option value="skeletal">骨骼动画</option>
+                        <option value="frames">序列帧</option>
+                    </select>
+                    <span style="border-left:1px solid #26355c;height:20px;"></span>
                     <label>剪辑</label>
                     <select id="se-clip-select"></select>
                     <button id="se-clip-add">✚ 剪辑</button>
@@ -262,6 +268,23 @@
                     <span style="color:#5a6a90;font-size:11px;margin-left:4px;" title="框选：在轨道区空白处按住拖出矩形，选中框内所有关键帧（Shift/Ctrl+拖动=追加选区；Alt+拖动同框选）；拖动任一选中帧=整组平移；Ctrl/Shift+点选=逐个加选">框选：空白处拖动（Shift/Ctrl=追加）</span>
                 </div>
                 <div class="se-tl-body" id="se-tl-body"></div>
+            </div>
+
+            <div class="se-timeline" id="se-frames-panel" style="display:none;">
+                <div class="se-tl-toolbar">
+                    <label>剪辑</label>
+                    <select id="se-fr-clip"></select>
+                    <label>方向</label>
+                    <select id="se-fr-dir"></select>
+                    <label>FPS</label>
+                    <input type="number" id="se-fr-fps" min="1" step="1" style="width:64px;" title="每秒帧数（写入 meta.clipFrames，保存后游戏生效）">
+                    <span id="se-fr-info" style="color:#5a6a90;font-size:11px;"></span>
+                    <span style="border-left:1px solid #26355c;height:20px;"></span>
+                    <button id="se-fr-play">▶ 播放</button>
+                    <button id="se-fr-rewind" title="回到第一帧">⏮</button>
+                    <span style="color:#5a6a90;font-size:11px;margin-left:4px;" title="序列帧恒循环播放；点击下方帧格可逐帧查看；方向与顶部预览方向按钮联动">恒循环 · 点帧格逐帧查看</span>
+                </div>
+                <div class="se-tl-body" id="se-fr-strip" style="display:flex;flex-wrap:wrap;gap:6px;padding:8px;align-content:flex-start;"></div>
             </div>
         </div>
     </div>

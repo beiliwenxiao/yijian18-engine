@@ -90,6 +90,13 @@ export class SkeletonEditor {
     this.selectedKey = null;         // { bone, index }
     this._multiSelectedKeys = new Map(); // 时间线关键帧多选：boneId -> Set(index)
     this.currentClip = null;
+    // 底部时间线视图模式：skeletal=骨骼轨道时间线（默认）| frames=序列帧面板（整帧模式资产自动选中）
+    this.animMode = 'skeletal';
+    this._frDir = null;            // 序列帧面板当前方向（meta.clipFrames 的 dirs 键）
+    this._staticFrameIndex = null; // 暂停时点选帧格的静止帧下标（播放时置空走时钟）
+    this._framesStrip = null;      // 帧格元素缓存（播放高亮用）
+    this._framesStripKey = null;   // 帧条重建签名（剪辑|方向|帧数|fps）
+    this._framesStripRetry = null; // 帧图未就绪时的延迟重建定时器
     this.previewTime = 0;
     this.playing = false;
     this._lastFrameAt = 0;
@@ -302,6 +309,28 @@ export class SkeletonEditor {
     this.el.clipLoop.addEventListener('change', () => this._setClipLoop());
     $('se-play').addEventListener('click', () => this._togglePlay());
     $('se-rewind').addEventListener('click', () => { this.previewTime = 0; this._renderTimeline(); });
+    // 动画类型切换：骨骼轨道时间线 ↔ 序列帧面板（整帧资产自动选中序列帧）
+    $('se-anim-mode').addEventListener('change', e => this._setAnimMode(e.target.value));
+    $('se-fr-clip').addEventListener('change', e => {
+      this.currentClip = e.target.value;
+      this._frDir = null;
+      this._staticFrameIndex = null;
+      this._renderFramesPanel();
+    });
+    $('se-fr-dir').addEventListener('change', e => {
+      this._frDir = e.target.value;
+      const map = { down: 'down', left: 'side', right: 'side', up: 'up', SE: 'SE', SW: 'SW', NE: 'NE', NW: 'NW' };
+      if (map[this._frDir]) this.previewDirection = map[this._frDir];
+      this._staticFrameIndex = null;
+      this._renderFramesPanel();
+    });
+    $('se-fr-fps').addEventListener('change', e => this._setFramesClipFps(parseFloat(e.target.value)));
+    $('se-fr-play').addEventListener('click', () => this._togglePlay());
+    $('se-fr-rewind').addEventListener('click', () => {
+      this._previewClock = 0;
+      this._staticFrameIndex = null;
+      this._updateFramesStripHighlight();
+    });
     $('se-mode-setup').addEventListener('click', () => this._setEditMode('setup'));
     $('se-mode-animate').addEventListener('click', () => this._setEditMode('animate'));
     $('se-dir-down').addEventListener('click', () => this._setPreviewDirection('down'));
@@ -673,6 +702,8 @@ export class SkeletonEditor {
     if (this.el.dirty) this.el.dirty.style.display = 'none';
     if (newId) this.doc.skeletonId = newId;
     this._afterDocChange();
+    // 整帧模式资产自动切到序列帧面板（骨骼资产保持骨骼时间线；下拉可手动切换）
+    this._setAnimMode(this.doc?.meta?.frameMode === true ? 'frames' : 'skeletal');
     this.el.skeletonId.value = this.doc.skeletonId || '';
     this.el.metaWidth.value = this.doc.meta?.width ?? 100;
     this.el.metaHeight.value = this.doc.meta?.height ?? 160;
@@ -1604,10 +1635,10 @@ export class SkeletonEditor {
 
   _togglePlay() {
     this.playing = !this.playing;
+    if (this.playing) this._staticFrameIndex = null;
     const clip = this._clip();
     if (this.playing && clip && this.previewTime >= clip.durationMs) this.previewTime = 0;
-    const button = document.getElementById('se-play');
-    if (button) button.textContent = this.playing ? '⏸ 暂停' : '▶ 播放';
+    this._syncPlayButtons();
   }
 
   /**
@@ -2252,9 +2283,163 @@ export class SkeletonEditor {
 
   // 序列帧预览帧游标：预览播放时按 fps 推进（编辑器内独立于运行时状态）
   _sequenceFrameIndex(attachment) {
-    if (!this.playing) return 0;
-    const frameDuration = 1000 / (attachment.fps > 0 ? attachment.fps : 8);
-    return Math.floor(this._previewClock / frameDuration);
+    if (!this.playing) return this._staticFrameIndex ?? 0;
+    const fps = this._framesClipFps() || (attachment.fps > 0 ? attachment.fps : 8);
+    return Math.floor(this._previewClock / (1000 / fps));
+  }
+
+  /* ---------------- 序列帧面板（帧模式资产） ---------------- */
+
+  /** 当前剪辑的帧表 fps（meta.clipFrames 权威，优先于槽位默认值）。 */
+  _framesClipFps() {
+    const clipFrames = this.doc?.meta?.clipFrames || this.runtime?.meta?.clipFrames || null;
+    const entry = clipFrames && this.currentClip ? clipFrames[this.currentClip] : null;
+    return Number(entry?.fps) > 0 ? Number(entry.fps) : null;
+  }
+
+  /** 切换底部时间线视图：skeletal=骨骼轨道时间线 | frames=序列帧面板。 */
+  _setAnimMode(mode) {
+    this.animMode = mode === 'frames' ? 'frames' : 'skeletal';
+    const frames = this.animMode === 'frames';
+    const skeletal = document.getElementById('se-skeletal-panel');
+    const framesPanel = document.getElementById('se-frames-panel');
+    if (skeletal) skeletal.style.display = frames ? 'none' : '';
+    if (framesPanel) framesPanel.style.display = frames ? '' : 'none';
+    const select = document.getElementById('se-anim-mode');
+    if (select) select.value = this.animMode;
+    if (this.playing && frames) this._staticFrameIndex = null;
+    if (frames) this._renderFramesPanel();
+  }
+
+  /** 渲染序列帧面板：剪辑/方向下拉、fps、信息行与帧条。 */
+  _renderFramesPanel() {
+    const clipFrames = this.doc?.meta?.clipFrames || this.runtime?.meta?.clipFrames || null;
+    const names = clipFrames ? Object.keys(clipFrames) : [];
+    const clipSelect = document.getElementById('se-fr-clip');
+    const dirSelect = document.getElementById('se-fr-dir');
+    const fpsInput = document.getElementById('se-fr-fps');
+    const info = document.getElementById('se-fr-info');
+    const strip = document.getElementById('se-fr-strip');
+    if (!clipSelect || !strip) return;
+    if (names.length === 0) {
+      clipSelect.innerHTML = '<option value="">（无序列帧数据）</option>';
+      dirSelect.innerHTML = '';
+      if (info) info.textContent = '该资产没有 meta.clipFrames 帧表';
+      strip.innerHTML = '<span style="color:#5a6a90;font-size:12px;">导入整帧素材后此处显示帧条</span>';
+      return;
+    }
+    if (!this.currentClip || !names.includes(this.currentClip)) this.currentClip = names[0];
+    clipSelect.innerHTML = names
+      .map(name => `<option value="${name}" ${name === this.currentClip ? 'selected' : ''}>${name}</option>`)
+      .join('');
+    const entry = clipFrames[this.currentClip] || null;
+    const dirKeys = entry?.dirs ? Object.keys(entry.dirs) : [];
+    if (!this._frDir || !dirKeys.includes(this._frDir)) {
+      const preferred = this._lpcDirectionKey(this.previewDirection);
+      this._frDir = dirKeys.includes(preferred) ? preferred : (dirKeys[0] || '');
+    }
+    dirSelect.innerHTML = dirKeys
+      .map(key => `<option value="${key}" ${key === this._frDir ? 'selected' : ''}>${key}</option>`)
+      .join('');
+    const dirFrames = entry?.dirs?.[this._frDir] || [];
+    const fps = Number(entry?.fps) > 0 ? Number(entry.fps) : 8;
+    if (document.activeElement !== fpsInput) fpsInput.value = fps;
+    if (info) {
+      info.textContent = `${dirFrames.length} 帧 · ${dirFrames[0] ? `${dirFrames[0].sw}×${dirFrames[0].sh}` : '-'} · 循环 ${Math.round(dirFrames.length / fps * 1000)}ms`;
+    }
+    this._renderFramesStrip(dirFrames, fps);
+  }
+
+  /** 渲染帧条（按签名缓存重建）：每帧一个缩略格，点击定格查看。 */
+  _renderFramesStrip(dirFrames, fps) {
+    const strip = document.getElementById('se-fr-strip');
+    if (!strip) return;
+    const key = `${this.currentClip}|${this._frDir}|${dirFrames.length}|${fps}`;
+    if (this._framesStripKey === key && this._framesStrip) {
+      this._updateFramesStripHighlight();
+      return;
+    }
+    const assetId = this.doc?.meta?.frameAssetId || this.runtime?.meta?.frameAssetId
+      || this.doc?.slots?.find(slot => slot.attachment?.type === 'sequence')?.attachment?.assetId || null;
+    // 帧图元素可能仍在异步加载（_imageElement 首次创建时返回 null）：延迟重试，
+    // 就绪前不消耗重建签名，避免同签名重入被缓存短路
+    const element = assetId ? this._imageElement(assetId) : null;
+    if (!element) {
+      if (!this._framesStripRetry) {
+        this._framesStripRetry = setTimeout(() => {
+          this._framesStripRetry = null;
+          if (this.animMode === 'frames') this._renderFramesPanel();
+        }, 300);
+      }
+      return;
+    }
+    if (this._framesStripRetry) { clearTimeout(this._framesStripRetry); this._framesStripRetry = null; }
+    this._framesStripKey = key;
+    strip.innerHTML = '';
+    this._framesStrip = [];
+    const thumbH = 72;
+    dirFrames.forEach((rect, index) => {
+      const thumbW = Math.max(24, Math.round((rect.sw / Math.max(1, rect.sh)) * thumbH));
+      const wrap = document.createElement('div');
+      wrap.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;';
+      const canvas = document.createElement('canvas');
+      canvas.width = thumbW;
+      canvas.height = thumbH;
+      canvas.style.cssText = 'background:#0d1226;border:1px solid #26355c;border-radius:4px;';
+      canvas.getContext('2d').drawImage(element, rect.sx, rect.sy, rect.sw, rect.sh, 0, 0, thumbW, thumbH);
+      const label = document.createElement('span');
+      label.style.cssText = 'font-size:10px;color:#5a6a90;';
+      label.textContent = `#${index}`;
+      wrap.appendChild(canvas);
+      wrap.appendChild(label);
+      wrap.title = `#${index} · sx=${rect.sx} sy=${rect.sy} ${rect.sw}×${rect.sh}`;
+      wrap.addEventListener('click', () => {
+        this._staticFrameIndex = index;
+        if (this.playing) this._togglePlay();
+        this._updateFramesStripHighlight();
+      });
+      strip.appendChild(wrap);
+      this._framesStrip.push(wrap);
+    });
+    this._updateFramesStripHighlight();
+  }
+
+  /** 帧条高亮当前帧：播放时跟随时钟，暂停时跟随点选的定格帧。 */
+  _updateFramesStripHighlight() {
+    if (!this._framesStrip || this._framesStrip.length === 0) return;
+    const fps = this._framesClipFps() || 8;
+    const total = this._framesStrip.length;
+    const index = this.playing
+      ? Math.floor(this._previewClock / (1000 / fps)) % Math.max(1, total)
+      : (this._staticFrameIndex != null ? Math.min(this._staticFrameIndex, total - 1) : -1);
+    this._framesStrip.forEach((wrap, i) => {
+      const on = i === index;
+      const canvas = wrap.firstChild;
+      if (canvas) {
+        canvas.style.borderColor = on ? '#4CAF50' : '#26355c';
+        canvas.style.outline = on ? '2px solid #4CAF50' : 'none';
+      }
+    });
+  }
+
+  /** 修改当前剪辑的帧表 fps（写入 meta.clipFrames，保存后游戏生效）。 */
+  _setFramesClipFps(value) {
+    const entry = this.doc?.meta?.clipFrames?.[this.currentClip];
+    if (!entry || !(value > 0)) return;
+    this._pushHistory();
+    entry.fps = Math.max(1, Math.round(value));
+    this._markDirty();
+    this._staticFrameIndex = null;
+    this._renderFramesPanel();
+  }
+
+  /** 播放按钮文案同步（骨骼时间线与序列帧面板共用播放态）。 */
+  _syncPlayButtons() {
+    const text = this.playing ? '⏸ 暂停' : '▶ 播放';
+    for (const id of ['se-play', 'se-fr-play']) {
+      const button = document.getElementById(id);
+      if (button) button.textContent = text;
+    }
   }
 
   /* ---------------- IK 工具（摆姿势 → 烘焙 FK） ---------------- */
@@ -3579,6 +3764,12 @@ export class SkeletonEditor {
   _setPreviewDirection(dir) {
     this.previewDirection = dir;
     this._refreshDirectionButtons();
+    // 序列帧面板：方向行与顶部预览方向按钮联动
+    if (this.animMode === 'frames') {
+      this._frDir = this._lpcDirectionKey(dir);
+      this._staticFrameIndex = null;
+      this._renderFramesPanel();
+    }
     this._draw();
   }
 
@@ -6268,17 +6459,18 @@ export class SkeletonEditor {
     this._previewClock = (this._previewClock || 0) + delta;
 
     const clip = this._clip();
-    if (this.playing && clip) {
+    if (this.playing && clip && this.animMode !== 'frames') {
       this.previewTime += delta;
       if (clip.loop !== false) {
         if (this.previewTime > clip.durationMs) this.previewTime %= clip.durationMs;
       } else if (this.previewTime > clip.durationMs) {
         this.previewTime = clip.durationMs;
         this.playing = false;
-        document.getElementById('se-play').textContent = '▶ 播放';
+        this._syncPlayButtons();
       }
       this._renderTimeline();
     }
+    if (this.animMode === 'frames' && this.playing) this._updateFramesStripHighlight();
     this._draw();
     requestAnimationFrame(() => this._loop());
   }

@@ -201,7 +201,9 @@ export function validateSkeletonAsset(doc) {
       errors.push(makeError(ValidationCode.DUPLICATE_ID, `${path}.name`, `重复的剪辑名: ${name}`));
     }
     clipNames.add(name);
-    if (!isPositive(clip.durationMs)) {
+    // 整帧模式（meta.frameMode）剪辑无骨骼轨：时长权威在 meta.clipFrames 的 fps/帧数，
+    // durationMs 允许缺省（构建脚本通常仍会写入推导值供编辑器时间轴显示）
+    if (!isPositive(clip.durationMs) && doc.meta?.frameMode !== true) {
       errors.push(makeError(ValidationCode.OUT_OF_RANGE, `${path}.durationMs`, 'durationMs 必须大于 0'));
     }
     if (!Array.isArray(clip.tracks)) {

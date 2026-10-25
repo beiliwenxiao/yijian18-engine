@@ -202,6 +202,15 @@ for (const [clipName, action] of Object.entries(CLIP_ACTION)) {
   finalFrames[clipName] = { fps: src.fps, action, dirs: src.dirs };
 }
 
+// 剪辑时长由帧表推导（帧数/fps）：帧模式无骨骼轨，运行时按 clipFrames 的 fps 推进，
+// 但编辑器时间轴与骨骼资产校验需要显式 durationMs（>0）
+const clipDurationMs = name => {
+  const entry = finalFrames[name];
+  if (!entry) return 1000;
+  const frames = Math.max(1, ...Object.values(entry.dirs).map(dir => dir.length));
+  return Math.max(1, Math.round((frames / (entry.fps || 8)) * 1000));
+};
+
 const firstRect = finalFrames.idle_down.dirs.down[0];
 const doc = {
   schemaVersion: 1,
@@ -235,7 +244,7 @@ const doc = {
       frames: [firstRect]
     }
   }],
-  clips: CLIP_NAMES.map(name => ({ name, durationMs: null, loop: true, tracks: [] }))
+  clips: CLIP_NAMES.map(name => ({ name, durationMs: clipDurationMs(name), loop: true, tracks: [] }))
 };
 
 writeFileSync(OUT_SKELETON, `${JSON.stringify(doc, null, 2)}\n`, 'utf8');

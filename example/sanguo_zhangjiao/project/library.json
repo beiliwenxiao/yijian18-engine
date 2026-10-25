@@ -2624,8 +2624,8 @@
       "name": "主角",
       "shadow": {
         "liftPx": 8,
-        "longLiftPx": -5,
-        "longShiftPx": -22,
+        "longLiftPx": 3,
+        "longShiftPx": -21,
         "radius": 26,
         "shiftPx": 6
       },
