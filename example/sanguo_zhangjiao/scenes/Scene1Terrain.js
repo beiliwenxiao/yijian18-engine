@@ -594,12 +594,20 @@ export class Scene1Terrain {
     // 加载图片（image 模式）
     let imgEl = null;
     let imgSrc = null;
-    if (fillMode === 'image' && obj.imageSrc) {
-      imgSrc = obj.imageSrc;
-      const idx = imgSrc.indexOf('assets/');
-      if (idx !== -1) imgSrc = imgSrc.substring(idx);
-      imgEl = new Image();
-      imgEl.src = imgSrc;
+    if (fillMode === 'image') {
+      // 优先复用 Manifest/九宫格预载的稳定图片（imageId）——避免同一资源二次解码；
+      // 未登记 Manifest 时回退 obj.imageSrc 直接按路径加载。
+      const preloaded = obj.imageId ? this.getLoadedImage(obj.imageId) : null;
+      if (preloaded && preloaded.complete !== false) {
+        imgEl = preloaded;
+        imgSrc = obj.imageSrc || preloaded.src || null;
+      } else if (obj.imageSrc) {
+        imgSrc = obj.imageSrc;
+        const idx = imgSrc.indexOf('assets/');
+        if (idx !== -1) imgSrc = imgSrc.substring(idx);
+        imgEl = new Image();
+        imgEl.src = imgSrc;
+      }
     }
 
     return {

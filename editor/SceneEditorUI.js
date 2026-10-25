@@ -19,6 +19,7 @@ import {
   sceneObjectSelectorValues
 } from '../src/core/scene/SceneObjectSelector.js';
 import { isSpatialTriggerEvent } from '../src/systems/TriggerCatalog.js';
+import { resolveManifestImageUrl } from './ManifestImageCatalog.js';
 
 const BATTLE_FLOW_FIELD_LABELS = Object.freeze({
   locationName: '地点名称',
@@ -1263,6 +1264,24 @@ export class SceneEditorUI {
           if (prop !== 'enabled') editor.eventFilter?.sanitizeInteractionState();
           editor.layers.updateLayerList();
         }
+
+        // 图片填充形状（椭圆/多边形 fillMode:'image'）：路径变更即时换图——
+        // 按项目根解析 URL 加载并注册画布缓存；同时校正 imageId 绑定（旧稳定 ID
+        // 指向别的文件时会一直盖住新图：渲染查找与运行时预载都优先 imageId）。
+        if (prop === 'imageSrc' && obj.fillMode === 'image' && obj.type !== 'image') {
+          const url = this._resolveSceneAssetUrl(obj.imageSrc);
+          if (url) {
+            const fillImg = new Image();
+            fillImg.onload = () => {
+              editor.loadedImages.set(String(obj.imageSrc || '').trim(), fillImg);
+              editor.render();
+            };
+            fillImg.onerror = () => this.showToast('图片加载失败: ' + url, 'error');
+            fillImg.src = url;
+          }
+          void this._adoptFillImageId(obj);
+        }
+
         editor.render();
       });
     });
@@ -1425,16 +1444,25 @@ export class SceneEditorUI {
       }
     }
 
-    // 加载图片按钮
+    // 加载图片按钮：手动按当前路径重新加载填充图（改图文件后点此生效）
     const loadImgBtn = document.getElementById('editor-load-fill-image');
     if (loadImgBtn) {
       loadImgBtn.addEventListener('click', () => {
-        const src = obj.imageSrc;
+        const src = String(obj.imageSrc || '').trim();
         if (!src) return;
+        // 编辑器页面在 /editor/ 下，裸相对路径会被解析到 /editor/assets/… 而 404，
+        // 必须经项目根解析成 /example/<game>/assets/… 再加载
+        const url = this._resolveSceneAssetUrl(src);
         const img = new Image();
-        img.onload = () => { editor.loadedImages.set(src, img); editor.render(); };
-        img.onerror = () => this.showToast('图片加载失败: ' + src, 'error');
-        img.src = src;
+        img.onload = () => {
+          editor.loadedImages.set(src, img);
+          if (obj.imageId) editor.loadedImages.set(obj.imageId, img);
+          editor.render();
+          this.showToast('图片已加载');
+        };
+        img.onerror = () => this.showToast('图片加载失败: ' + url, 'error');
+        img.src = url;
+        void this._adoptFillImageId(obj);
       });
     }
 
@@ -2866,8 +2894,10 @@ export class SceneEditorUI {
    */
   async _reloadSceneImageAsset(imgObj) {
     const editor = this.editor;
-    const src = editor.sceneData.imageAssets?.[imgObj.imageId]?.src || '';
-    if (!src) return null;
+    const rawSrc = editor.sceneData.imageAssets?.[imgObj.imageId]?.src || '';
+    if (!rawSrc) return null;
+    // 规范相对路径按项目根解析（编辑器页面在 /editor/ 下，裸 assets/… 会 404）
+    const src = this._resolveSceneAssetUrl(rawSrc);
     const bustSrc = /^(https?:|data:)/i.test(src)
       ? src
       : `${src}${src.includes('?') ? '&' : '?'}imgRefresh=${Date.now()}`;
@@ -3004,6 +3034,60 @@ export class SceneEditorUI {
       editor.render();
       close();
     });
+  }
+
+  /**
+   * 把场景对象里的相对资源路径解析为可加载 URL：编辑器页面在 /editor/ 下，
+   * 裸相对路径（assets/…）会被浏览器解析到 /editor/assets/… 而 404。
+   * 旧数据 '../example/<game>/assets/…' 前缀取 assets/ 段落兜底；
+   * 绝对地址（http/data/blob/根路径）原样返回。
+   */
+  _resolveSceneAssetUrl(src) {
+    const value = String(src || '').trim();
+    if (!value) return '';
+    if (/^(https?:|data:|blob:)/i.test(value)) return value;
+    if (value.startsWith('/')) return value;
+    const idx = value.lastIndexOf('assets/');
+    const rel = idx >= 0 ? value.slice(idx) : value.replace(/^(\.\.\/)+/, '');
+    const projectPath = this.editor.options?.getProjectPath?.() || this.editor.projectPath || '';
+    try {
+      return resolveManifestImageUrl({ sourceFile: rel }, projectPath);
+    } catch (error) {
+      return rel;
+    }
+  }
+
+  /**
+   * 图片路径变更后校正形状填充的 imageId：imageId 是 Manifest 稳定 ID，
+   * 渲染查找与运行时预载都优先它——若它仍指向别的文件，会一直盖住新路径。
+   * 按 sourceFile/runtime2D.path 匹配 Manifest 条目换绑；无匹配则清除 imageId
+   * （imageSrc 成为唯一来源；运行时按相对路径自行加载，无需登记也能生效）。
+   */
+  async _adoptFillImageId(obj) {
+    const normalize = value => String(value || '').replace(/\\/g, '/').replace(/^\.\//, '').trim();
+    const src = normalize(obj.imageSrc);
+    if (!src) return;
+    try {
+      await this.editor.assets?._ensureAssetManifest?.();
+      const entries = this.editor.assets?._manifestEntriesById;
+      let matched = null;
+      if (entries) {
+        for (const entry of entries.values()) {
+          if (normalize(entry?.sourceFile) === src || normalize(entry?.runtime2D?.path) === src) {
+            matched = entry;
+            break;
+          }
+        }
+      }
+      const nextId = matched?.assetId || null;
+      if (nextId) {
+        if (obj.imageId !== nextId) obj.imageId = nextId;
+      } else if (obj.imageId) {
+        delete obj.imageId;
+      }
+    } catch (error) {
+      /* Manifest 不可用时保持现有 imageId 原样 */
+    }
   }
 
   /**

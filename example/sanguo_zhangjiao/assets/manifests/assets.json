@@ -5899,6 +5899,37 @@
       "revision": 2
     },
     {
+      "assetId": "img.s01-huangdi3",
+      "imageId": "img.s01-huangdi3",
+      "category": "environment-background",
+      "usage": [
+        "S01",
+        "scene-background",
+        "s01"
+      ],
+      "sourceFile": "assets/images/huangdi3.png",
+      "runtime2D": {
+        "path": "assets/images/huangdi3.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "img.s01-huangdi3"
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0
+      },
+      "bounds": {
+        "width": 600,
+        "height": 600
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "final",
+      "revision": 1
+    },
+    {
       "assetId": "img.s01-shelter_in",
       "imageId": "img.s01-shelter_in",
       "category": "environment-image",
@@ -9493,6 +9524,36 @@
       "animations": [],
       "targetPhase": "P1",
       "status": "third-party-approved",
+      "revision": 1
+    },
+    {
+      "assetId": "img.s01_bg_r3_c2",
+      "imageId": "img.s01_bg_r3_c2",
+      "category": "environment-image",
+      "usage": [
+        "S01",
+        "s01"
+      ],
+      "sourceFile": "assets/images/s01/s01_bg_r3_c2.png",
+      "runtime2D": {
+        "path": "assets/images/s01/s01_bg_r3_c2.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "img.s01_bg_r3_c2"
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0
+      },
+      "bounds": {
+        "width": 1280,
+        "height": 720
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
       "revision": 1
     }
   ]

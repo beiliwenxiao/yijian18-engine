@@ -12,17 +12,19 @@
             "locked": false
           },
           "fill": "#dac2a2",
-          "fillMode": "color",
+          "fillMode": "image",
           "height": 1223,
           "id": "ellipse_1791135626370_982",
+          "imageMode": "tile",
+          "imageSrc": "assets/images/huangdi2.png",
           "name": "地形椭圆",
           "opacity": 1,
           "stroke": "#dac2a2",
           "strokeWidth": 0,
           "type": "ellipse",
           "width": 2075,
-          "x": -334.76988354327386,
-          "y": -280.9356904016254
+          "x": -416.22519162841735,
+          "y": -313.11286666414566
         },
         {
           "editor": {
@@ -57,6 +59,19 @@
           "width": 1542,
           "x": 448.0596510760788,
           "y": -220.83562433456294
+        },
+        {
+          "height": 720,
+          "id": "obj_1792956368383",
+          "imageId": "img.s01_bg_r3_c2",
+          "name": "s01_bg_r3_c2.png",
+          "rotation": 0,
+          "semanticRole": "sceneImage",
+          "type": "image",
+          "visualDescription": "s01_bg_r3_c2.png；请按场景用途补充地貌、建筑或道具说明。",
+          "width": 1280,
+          "x": 0.2913695898111852,
+          "y": 719.036849903398
         }
       ],
       "visible": true
@@ -1536,6 +1551,10 @@
     "img.s01-s01_right": {
       "name": "s01_right.png",
       "src": "../example/sanguo_zhangjiao/assets/images/s01/s01_right.png"
+    },
+    "img.s01_bg_r3_c2": {
+      "name": "s01_bg_r3_c2.png",
+      "src": "assets/images/s01/s01_bg_r3_c2.png"
     },
     "s01.environment.cliffVine": {
       "name": "逃生藤蔓",

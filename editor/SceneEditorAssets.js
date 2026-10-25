@@ -48,6 +48,12 @@ const escapeHtml = value => String(value ?? '')
   .replace(/"/g, '&quot;')
   .replace(/'/g, '&#39;');
 
+/** 资源路径归一化：反斜杠转斜杠、去 ./ 前缀、去首尾空白（用于路径匹配/去重键）。 */
+const normalizeAssetPath = value => String(value || '')
+  .replace(/\\/g, '/')
+  .replace(/^\.\//, '')
+  .trim();
+
 /**
  * SceneEditorAssets - 场景编辑器资源管理模块
  * 负责图集、切片、精灵拖放等资源相关功能
@@ -365,6 +371,29 @@ export class SceneEditorAssets {
     return resolveManifestImageUrl(entry, projectPath);
   }
 
+  /**
+   * 把 imageAssets 里存的资源路径解析为编辑器可加载 URL：
+   * 规范存储是项目相对路径（assets/images/…），而编辑器页面在 /editor/ 下，
+   * 裸相对路径会被浏览器解析到 /editor/assets/… 而 404；旧数据可能存
+   * '../example/<game>/assets/…' 这类页面相对前缀，统一取 assets/ 段落之后解析。
+   * 绝对地址（http/data/blob/根路径）原样返回。
+   */
+  _resolveGameAssetUrl(src) {
+    const value = String(src || '').trim();
+    if (!value || /^(https?:|data:|blob:)/i.test(value)) return value;
+    if (value.startsWith('/')) return value;
+    const idx = value.lastIndexOf('assets/');
+    const rel = idx >= 0 ? value.slice(idx) : value.replace(/^(\.\.\/)+/, '');
+    const projectPath = this._placementProjectPath
+      || this.editor?.options?.getProjectPath?.()
+      || '';
+    try {
+      return resolveManifestImageUrl({ sourceFile: rel }, projectPath);
+    } catch (error) {
+      return rel;
+    }
+  }
+
   _positiveNumber(...values) {
     for (const value of values) {
       const number = Number(value);
@@ -587,14 +616,24 @@ export class SceneEditorAssets {
           addTask(request?.imageId, request?.url, request?.manifestEntry || null);
         }
       }
-      // 普通图片对象（image/imageSrc 键），路径取场景 imageAssets 或对象自带 src
+      // 普通图片对象（image/imageSrc 键），路径取场景 imageAssets 或对象自带 src；
+      // 图片填充形状（fillMode:'image'）回退 Manifest 条目或对象自带 imageSrc。
       for (const key of ['imageId', 'imageSrc']) {
         const id = typeof obj?.[key] === 'string' ? obj[key].trim() : '';
         if (!id || tasks.has(id)) continue;
         const assetSrc = editor.sceneData.imageAssets?.[id]?.src;
-        const url = (typeof assetSrc === 'string' && assetSrc.trim())
-          || (typeof obj?.src === 'string' ? obj.src : '');
-        addTask(id, url, null);
+        let url = (assetSrc ? this._resolveGameAssetUrl(assetSrc) : '')
+          || (typeof obj?.src === 'string' && obj.src ? this._resolveGameAssetUrl(obj.src) : '');
+        let manifestEntry = null;
+        if (!url && obj?.fillMode === 'image') {
+          manifestEntry = this._manifestEntriesById.get(id) || null;
+          if (manifestEntry) {
+            url = this._resolveManifestImageUrl(manifestEntry);
+          } else if (typeof obj.imageSrc === 'string' && obj.imageSrc.trim()) {
+            url = this._resolveManifestImageUrl({ sourceFile: obj.imageSrc.trim() });
+          }
+        }
+        addTask(id, url, manifestEntry);
       }
     }
     if (tasks.size === 0) return { reloaded: 0, failed: 0 };
@@ -1428,19 +1467,8 @@ export class SceneEditorAssets {
   addImageAsset(file) {
     const editor = this.editor;
     return new Promise((resolve, reject) => {
-      // 用户需先将图片放到项目 assets/images/ 目录下（含子文件夹）
-      // 让用户输入图片在 assets/images/ 下的相对路径
-      const defaultPath = file.webkitRelativePath || file.name;
-      const subPath = prompt(
-        `请输入图片在 assets/images/ 下的路径：\n（如 scene1/bg.png 或直接 bg.png）`,
-        defaultPath
-      );
-      if (!subPath || !subPath.trim()) { reject(new Error('取消')); return; }
-      
-      const game = window._editorCurrentGame;
-      const gamePath = (game && game.path) ? game.path : '../example/sanguo_zhangjiao/';
-      const relativeSrc = gamePath + 'assets/images/' + subPath.trim();
-      const semanticPart = subPath.trim()
+      // 稳定 imageId（默认按文件名推导，可自定义）
+      const semanticPart = normalizeAssetPath(file.name)
         .replace(/\.[^.]+$/, '')
         .replace(/[^A-Za-z0-9._-]+/g, '-')
         .replace(/^-+|-+$/g, '') || 'asset';
@@ -1461,18 +1489,43 @@ export class SceneEditorAssets {
         return;
       }
 
-      const img = new Image();
-      img.onload = () => {
+      (async () => {
+        editor.ui.showToast?.('正在查找/导入图片…');
+        // 找或拷：项目里已有同名图片直接引用；没有就把选中文件上传进项目。
+        // 不再要求用户先把文件手动放进 assets/images/，也无需知道子文件夹结构。
+        let manifestPath = null;
+        try {
+          manifestPath = await this._locateOrImportImageFile(file);
+        } catch (error) {
+          editor.ui.showToast?.(`图片导入失败: ${error.message}`, 'error');
+          reject(error);
+          return;
+        }
+
+        const url = this._resolveGameAssetUrl(manifestPath);
+        const img = await new Promise((resolveLoad, rejectLoad) => {
+          const image = new Image();
+          image.onload = () => resolveLoad(image);
+          image.onerror = () => rejectLoad(new Error(`加载 ${url} 失败`));
+          image.src = url;
+        }).catch(error => {
+          editor.ui.showToast?.(error.message, 'error');
+          reject(error);
+          return null;
+        });
+        if (!img) return;
+
         editor.loadedImages.set(id, img);
 
+        // imageAssets 统一存规范相对路径（assets/images/…）：保存场景时 src 剥离、
+        // 路径权威在 Manifest；其它场景经全局图片库合并后也直接拿到正确相对路径
         if (!editor.sceneData.imageAssets) editor.sceneData.imageAssets = {};
-        editor.sceneData.imageAssets[id] = { src: relativeSrc, name: file.name };
+        editor.sceneData.imageAssets[id] = { src: manifestPath, name: file.name };
         // 登记到全局图片库缓存，使其成为库资源（切换场景/保存清理时不丢失）
-        addGlobalImage(id, { src: relativeSrc, name: file.name });
+        addGlobalImage(id, { src: manifestPath, name: file.name });
 
         // 导入即登记 Manifest：运行时只按 assets.json 解析稳定 ID，不登记会在游戏里
         // 退化为 Missing Asset 占位块。异步执行不阻塞导入，失败仅告警（图片仍可编辑器预览）。
-        const manifestPath = 'assets/images/' + subPath.trim().replace(/\\/g, '/');
         this._upsertManifestAsset({ imageId: id, assetPath: manifestPath })
           .then(result => {
             editor.ui.showToast?.(result.created
@@ -1490,19 +1543,60 @@ export class SceneEditorAssets {
         item.draggable = true;
         item.dataset.id = id;
         item.innerHTML = `
-          <div class="asset-preview"><img src="${relativeSrc}" alt="${file.name}"></div>
+          <div class="asset-preview"><img src="${url}" alt="${file.name}"></div>
           <span>${file.name.substring(0, 8)}</span>
         `;
         assetList.appendChild(item);
         this._bindImageItemClick(item, id);
+        editor.ui.showToast?.(`已添加图片：${manifestPath}`);
         resolve(id);
-      };
-      img.onerror = () => {
-        alert(`图片加载失败！请确保文件已放入：\n${relativeSrc}\n\n支持子文件夹，如 assets/images/scene1/bg.png`);
-        reject(new Error('图片不在项目目录中'));
-      };
-      img.src = relativeSrc;
+      })();
     });
+  }
+
+  /**
+   * 找到或导入选中的图片文件：
+   *   1. 在项目 assets/images/（含子文件夹）按文件名查找——已放入的直接引用，不重复拷贝；
+   *   2. 找不到 → 读文件内容经 /api/save-file 写入 assets/images/<文件名>（自动建目录）。
+   * 返回规范相对路径（assets/images/…）。查找失败只告警并继续走上传，不阻塞导入。
+   */
+  async _locateOrImportImageFile(file) {
+    const gameRoot = `example/${this._contentGameId()}`;
+    const imageDir = `${gameRoot}/assets/images`;
+    const baseName = String(file.name || '').toLowerCase();
+    try {
+      const files = await this._listFilesRecursive(
+        imageDir,
+        path => /\.(png|jpe?g|webp|gif|bmp|svg|avif)$/i.test(path)
+      );
+      const matches = files
+        .filter(path => path.split('/').pop().toLowerCase() === baseName)
+        .sort((a, b) => a.split('/').length - b.split('/').length);
+      if (matches.length > 0) {
+        // 取最浅匹配，返回 assets/images/ 之后的相对路径
+        return `assets/images/${matches[0].slice(imageDir.length + 1)}`;
+      }
+    } catch (error) {
+      console.warn('[SceneEditorAssets] 项目图片列表获取失败，改为直接上传', error);
+    }
+    // 上传：二进制 → base64 → /api/save-file（服务端自动建目录）
+    const target = `${imageDir}/${file.name}`;
+    const buffer = new Uint8Array(await file.arrayBuffer());
+    const CHUNK = 0x8000;
+    let binary = '';
+    for (let i = 0; i < buffer.length; i += CHUNK) {
+      binary += String.fromCharCode(...buffer.subarray(i, i + CHUNK));
+    }
+    const response = await fetch('/api/save-file', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path: target, content: btoa(binary), encoding: 'base64' })
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok || result.ok !== true) {
+      throw new Error(result.error || `HTTP ${response.status}`);
+    }
+    return target.slice(gameRoot.length + 1);
   }
 
   /**
@@ -1841,7 +1935,7 @@ export class SceneEditorAssets {
         item.dataset.id = id;
         const displayName = (data.name || id).substring(0, 10);
         item.innerHTML = `
-          <div class="asset-preview"><img src="${data.src}" alt="${displayName}" style="width:100%;height:100%;object-fit:contain;"></div>
+          <div class="asset-preview"><img src="${this._resolveGameAssetUrl(data.src)}" alt="${displayName}" style="width:100%;height:100%;object-fit:contain;"></div>
           <span>${displayName}</span>
         `;
         list.appendChild(item);
@@ -3743,7 +3837,8 @@ export class SceneEditorAssets {
         sources.set(id, {
           aliases: [id],
           sceneId: sceneData.id || sceneData.name || '<unknown>',
-          src
+          // 规范相对路径（assets/…）按项目根解析；旧数据 '../example/…' 前缀由 helper 兜底
+          src: this._resolveGameAssetUrl(src)
         });
       }
     }
@@ -3755,17 +3850,35 @@ export class SceneEditorAssets {
       for (const sceneData of scenes) {
         for (const layer of sceneData.layers || []) {
           for (const object of layer?.objects || []) {
-            if (object?.type !== 'image' || typeof object.imageId !== 'string') continue;
-            const imageId = object.imageId.trim();
-            if (!imageId || sources.has(imageId)) continue;
-            const entry = manifestEntries.get(imageId);
-            const src = entry ? this._resolveManifestImageUrl(entry, projectPath) : '';
+            // 图片对象 + 图片填充形状（椭圆/多边形 fillMode:'image'）都以图片填充；
+            // 两种来源一并收集，否则形状填充在编辑器永远命中不了 loadedImages（回退纯色）。
+            const isImageObject = object?.type === 'image' && typeof object.imageId === 'string';
+            const hasFillImageId = object?.fillMode === 'image' && typeof object.imageId === 'string';
+            const hasFillImageSrc = object?.fillMode === 'image'
+              && typeof object.imageSrc === 'string' && object.imageSrc.trim();
+            if (!isImageObject && !hasFillImageId && !hasFillImageSrc) continue;
+            // 有稳定 imageId 走 Manifest 解析；仅有 imageSrc 的形状按路径键收集
+            const sourceKey = hasFillImageId ? object.imageId.trim() : `path:${normalizeAssetPath(object.imageSrc)}`;
+            // 路径键为空（imageSrc 空白的脏数据）无从加载，静默跳过
+            if (!sourceKey || sourceKey === 'path:' || sources.has(sourceKey)) continue;
+            const entry = hasFillImageId ? manifestEntries.get(sourceKey) : null;
+            // 形状填充未登记 Manifest 时回退对象自带 imageSrc（与运行时 Scene1Terrain 同语义）
+            const src = entry
+              ? this._resolveManifestImageUrl(entry, projectPath)
+              : (hasFillImageSrc
+                ? resolveManifestImageUrl({ sourceFile: object.imageSrc.trim() }, projectPath)
+                : '');
             if (!src) {
-              console.warn(`[SceneEditorAssets] 场景图片缺少可加载 Manifest 资源: ${imageId}`);
+              console.warn(`[SceneEditorAssets] 场景图片缺少可加载 Manifest 资源: ${sourceKey} (对象 ${object.id || '无ID'})`);
               continue;
             }
-            sources.set(imageId, {
-              aliases: [imageId, entry.imageId, entry.assetId].filter(Boolean),
+            const aliases = [sourceKey, entry?.imageId, entry?.assetId];
+            // 渲染查找是 loadedImages.get(imageId) || get(imageSrc)，路径键也注册为别名
+            if (hasFillImageSrc) {
+              aliases.push(object.imageSrc.trim());
+            }
+            sources.set(sourceKey, {
+              aliases,
               sceneId: sceneData.id || sceneData.name || '<unknown>',
               src
             });
