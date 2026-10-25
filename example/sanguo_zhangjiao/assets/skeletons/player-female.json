@@ -1602,9 +1602,9 @@
       "attachment": {
         "type": "image",
         "assetId": "player.female.sword",
-        "x": 0,
-        "y": 12.52,
-        "rot": 0,
+        "x": 0.8,
+        "y": 28.5,
+        "rot": 176.4,
         "width": 56,
         "height": 56,
         "visible": true,

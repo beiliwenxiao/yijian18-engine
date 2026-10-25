@@ -1607,7 +1607,7 @@
           "overrides": {
             "shadow": {
               "ground": true,
-              "liftPx": 14,
+              "liftPx": 33,
               "long": false,
               "radius": 14
             }

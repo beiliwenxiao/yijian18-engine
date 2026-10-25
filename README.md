@@ -18,17 +18,21 @@
 
 ![地图编辑器](editor/map_editor.png)
 
+感谢元宝！
+有大量图片由元宝AI生成。
 
 感谢以下图片来源：
 
-感谢元宝！
-有大量图片由元宝AI生成。
+图片来源：https://itch.io/profile/elie-automata
+https://elie-automata.itch.io/female-hero-free-2d-pixel-art-knight/comments
 
 图片来源：https://opengameart.org
 
 https://opengameart.org/content/2d-lost-garden-zelda-style-tiles-resized-to-32x32-with-additions
 
 图标来源：ravenmore.itch.io
+
+
 
 ## 🎮 立即开始
 
