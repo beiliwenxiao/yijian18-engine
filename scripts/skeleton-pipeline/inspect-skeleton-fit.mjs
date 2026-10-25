@@ -20,17 +20,17 @@
  *      b. 端点覆盖：手（forearm 末端）/脚（shin 末端）世界点是否落在某槽图矩形内（悬空=绑定缺失）
  *      c. 槽位偏离：图中心 vs 所挂骨段中点 >15px 的槽（过滤已知构图性偏心：武器/大图发）
  *
- * 用法：node scripts/inspect-skeleton-fit.mjs
+ * 用法：node scripts/skeleton-pipeline/inspect-skeleton-fit.mjs
  */
 
 import sharp from 'sharp';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
-import { parseSkeletonAsset } from '../src/animation/SkeletonAsset.js';
-import { createRestLocalPose, composeWorldTransforms, sampleClip } from '../src/animation/SkeletonPose.js';
+import { parseSkeletonAsset } from '../../src/animation/SkeletonAsset.js';
+import { createRestLocalPose, composeWorldTransforms, sampleClip } from '../../src/animation/SkeletonPose.js';
 
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const FILE = path.join(root, 'example/sanguo_zhangjiao/assets/skeletons/player.json');
 const PARTS_OLD = path.join(root, 'example/sanguo_zhangjiao/assets/images/player/parts');
 const PARTS_NEW = path.join(root, 'example/sanguo_zhangjiao/assets/images/player/parts-humanoid');

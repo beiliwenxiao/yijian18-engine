@@ -34,7 +34,7 @@ export const CharactersConfig = [
     // 骨骼驱动（整帧模式）：skeleton.female-hero 走 Manifest mode='skeleton'，
     // 素材为 320×320 像素女骑士（约 85×220、7 头身），idle/walk 有 8 向手绘帧，
     // jump/attack/death/climb 4 向；PlayerLpcFrameMapper 按状态 + 朝向切帧表。
-    // 整帧大图由 scripts/build-female-hero-assets.mjs 生成。
+    // 整帧大图由 scripts/skeleton-pipeline/build-female-hero-assets.mjs 生成。
     spriteSheet: 'skeleton.female-hero',
     spriteConfig: null,
   },
@@ -48,7 +48,7 @@ export const CharactersConfig = [
     // 全套动作按朝向拆剪辑（walk/idle/jump × down/side/up + 斜向），由
     // PlayerSkeletonStateMapper 按 sprite.direction 选剪辑；
     // 头部三态槽位切显隐、躯干/腰/脚按形态换图（directionOffsets）、侧向左向由 sprite.flipX 镜像。
-    // 动作数据由 scripts/rebuild-player-legs.mjs 保证腿脚落点（膝角/贴地）。
+    // 动作数据由 scripts/skeleton-pipeline/rebuild-player-legs.mjs 保证腿脚落点（膝角/贴地）。
     spriteSheet: 'skeleton.player',
     spriteConfig: null, // 为空表示使用 EntityFactory 默认动画精灵配置
   },

@@ -47,7 +47,7 @@
  * ## 已知限制
  *   LPC 整帧内不含武器/背挂/职业装饰 → 部件骨骼模式的武器槽联动与背挂在整帧模式下不生效。
  *
- * 用法：node scripts/build-lpc-frame-assets.mjs
+ * 用法：node scripts/skeleton-pipeline/build-lpc-frame-assets.mjs
  */
 
 import sharp from 'sharp';
@@ -55,7 +55,7 @@ import { readFileSync, writeFileSync, mkdirSync, copyFileSync, existsSync } from
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const SOURCE = path.join(root, 'Temp/lpc/male_full.png');
 const LPC_DIR = path.join(root, 'example/sanguo_zhangjiao/assets/images/player/lpc');
 const SKELETON_DIR = path.join(root, 'example/sanguo_zhangjiao/assets/skeletons');

@@ -22,7 +22,7 @@
  * ## 判定
  *   脚底像素行（格内 GROUND_Y=61）映射到屏幕后的 y 应等于锚点 y（= 地平线）。
  *
- * 用法：node scripts/verify-lpc-ground-align.mjs
+ * 用法：node scripts/skeleton-pipeline/verify-lpc-ground-align.mjs
  */
 
 import sharp from 'sharp';
@@ -30,7 +30,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const SKELETON = path.join(root, 'example/sanguo_zhangjiao/assets/skeletons/player-lpc.json');
 const SHEET = path.join(root, 'example/sanguo_zhangjiao/assets/images/player/lpc/frames.png');
 const CELL = 64;

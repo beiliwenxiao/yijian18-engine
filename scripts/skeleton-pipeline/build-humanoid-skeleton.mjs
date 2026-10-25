@@ -34,17 +34,17 @@
  *   并重画 parts/ 下头部三态 6 张（迁移后的 player.json 实际引用这些）。
  *   骨架输出 skeletons/player-humanoid.json（模板，迁移脚本消费）。
  *
- * 用法：node scripts/build-humanoid-skeleton.mjs
+ * 用法：node scripts/skeleton-pipeline/build-humanoid-skeleton.mjs
  */
 
 import sharp from 'sharp';
 import { writeFileSync, mkdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
-import { parseSkeletonAsset } from '../src/animation/SkeletonAsset.js';
-import { createRestLocalPose, composeWorldTransforms, sampleClip } from '../src/animation/SkeletonPose.js';
+import { parseSkeletonAsset } from '../../src/animation/SkeletonAsset.js';
+import { createRestLocalPose, composeWorldTransforms, sampleClip } from '../../src/animation/SkeletonPose.js';
 
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const OLD_PARTS = path.join(root, 'example/sanguo_zhangjiao/assets/images/player/parts');
 const OUT_PARTS = path.join(root, 'example/sanguo_zhangjiao/assets/images/player/parts-humanoid');
 const OUT_SKELETON = path.join(root, 'example/sanguo_zhangjiao/assets/skeletons/player-humanoid.json');

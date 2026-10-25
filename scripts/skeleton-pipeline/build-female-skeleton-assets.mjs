@@ -28,7 +28,7 @@
  * 剪辑数据来源：player.json（同拓扑），只保留 rot；四肢 x/y 布局归新骨架的 rest，
  * 腿部按「脚贴地 + 整腿平移抬脚」重算（与 rebuild-player-legs.mjs 同款模型）。
  *
- * 用法：node scripts/build-female-skeleton-assets.mjs
+ * 用法：node scripts/skeleton-pipeline/build-female-skeleton-assets.mjs
  */
 
 import sharp from 'sharp';
@@ -36,7 +36,7 @@ import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { pathToFileURL, fileURLToPath } from 'node:url';
 import path from 'node:path';
 
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const SRC = 'D:/游戏资源/Female_Hero_Pixel_Art_v1.1/Stand';
 const NOUNCE = path.join(root, 'example/sanguo_zhangjiao');
 const OUT_ATLAS = path.join(NOUNCE, 'assets/images/player/female/parts.png');

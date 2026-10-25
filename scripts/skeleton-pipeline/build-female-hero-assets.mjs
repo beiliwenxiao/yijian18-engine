@@ -25,7 +25,7 @@
  *   - 离散动作：jump / attack / death / climb_back（4 向，斜向回退正/背视）
  *   - 无对应素材的剪辑（gather/logging/mining/fishing/sleep/stretcher/soul）复用 Stand 帧占位
  *
- * 用法：node scripts/build-female-hero-assets.mjs
+ * 用法：node scripts/skeleton-pipeline/build-female-hero-assets.mjs
  */
 
 import sharp from 'sharp';
@@ -33,7 +33,7 @@ import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { pathToFileURL, fileURLToPath } from 'node:url';
 import path from 'node:path';
 
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const SRC = 'D:/游戏资源/Female_Hero_Pixel_Art_v1.1';
 const OUT_IMG_DIR = path.join(root, 'example/sanguo_zhangjiao/assets/images/player/female-hero');
 const OUT_SKELETON = path.join(root, 'example/sanguo_zhangjiao/assets/skeletons/female-hero.json');

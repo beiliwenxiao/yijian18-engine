@@ -36,18 +36,18 @@
  *   armFR→forearmR  armFL→forearmL  thighR→thighR  thighL→thighL
  *   calfR→shinR  calfL→shinL  back→back
  *
- * 用法：node scripts/migrate-player-to-humanoid.mjs
+ * 用法：node scripts/skeleton-pipeline/migrate-player-to-humanoid.mjs
  */
 
 import sharp from 'sharp';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
-import { parseSkeletonAsset } from '../src/animation/SkeletonAsset.js';
-import { createRestLocalPose, composeWorldTransforms, sampleClip } from '../src/animation/SkeletonPose.js';
-import { SKELETON_HEAD_SLOT_PLAN } from '../src/animation/SkeletonDirection.js';
+import { parseSkeletonAsset } from '../../src/animation/SkeletonAsset.js';
+import { createRestLocalPose, composeWorldTransforms, sampleClip } from '../../src/animation/SkeletonPose.js';
+import { SKELETON_HEAD_SLOT_PLAN } from '../../src/animation/SkeletonDirection.js';
 
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const OLD_FILE = path.join(root, 'example/sanguo_zhangjiao/assets/skeletons/player.json');
 const TPL_FILE = path.join(root, 'example/sanguo_zhangjiao/assets/skeletons/player-humanoid.json');
 const PARTS_OLD = path.join(root, 'example/sanguo_zhangjiao/assets/images/player/parts');

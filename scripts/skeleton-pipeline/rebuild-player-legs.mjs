@@ -38,14 +38,14 @@
  * 幂等：每次都整体重写目标轨道，可反复运行。
  * 必须跑在 migrate-player-to-humanoid.mjs 之后（迁移脚本会重建整个 player.json）。
  *
- * 用法：node scripts/rebuild-player-legs.mjs
+ * 用法：node scripts/skeleton-pipeline/rebuild-player-legs.mjs
  */
 
 import { readFileSync, writeFileSync } from 'node:fs';
 import { pathToFileURL, fileURLToPath } from 'node:url';
 import path from 'node:path';
 
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const FILE = path.join(root, 'example/sanguo_zhangjiao/assets/skeletons/player.json');
 
 const L1 = 26;               // 大腿骨长
