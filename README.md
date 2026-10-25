@@ -19,9 +19,9 @@
 ![游戏截图](example/sanguo_zhangjiao/assets/images/game_01.png)
 
 ![地图编辑器](editor/map_editor.png)
-( example/sanguo_zhangjiao/assets/images/editor_01.png)
-( example/sanguo_zhangjiao/assets/images/editor_02.png)
-( example/sanguo_zhangjiao/assets/images/editor_03.png)
+![地图编辑器截图](example/sanguo_zhangjiao/assets/images/editor_01.png)
+![地图编辑器截图](example/sanguo_zhangjiao/assets/images/editor_02.png)
+![地图编辑器截图](example/sanguo_zhangjiao/assets/images/editor_03.png)
 
 感谢元宝！
 有大量图片由元宝AI生成。
