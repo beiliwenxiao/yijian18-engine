@@ -2622,6 +2622,14 @@
       },
       "id": "player",
       "name": "主角",
+      "shadow": {
+        "liftPx": 8,
+        "longLiftPx": -1,
+        "longShiftPx": -10,
+        "radius": 26,
+        "shiftPx": 6
+      },
+      "skeletonId": "skeleton.female-hero",
       "sprite": {
         "cols": 4,
         "frameHeight": 64,
@@ -2629,7 +2637,11 @@
         "rows": 4,
         "src": ""
       },
-      "useSkeletonAnimation": true
+      "useSkeletonAnimation": true,
+      "visual": {
+        "height": 96,
+        "width": 96
+      }
     }
   ],
   "skeletonParts": [

@@ -1013,13 +1013,30 @@ export class LibraryEditor {
   }
 
   /**
-   * 渲染 玩家 序列帧编辑面板（sprite.src sheet + animations + baseStats）。
+   * 渲染 玩家 编辑面板（骨骼资产 + 显示宽高 + 阴影 / 碰撞区域 + 序列帧 + baseStats）。
+   * 骨骼/尺寸/阴影/碰撞与场景编辑器选中物体后的属性类型对齐；运行时由 DemoPlayerFactory
+   * 在内容库就绪后消费（skeletonId → 骨骼渲染，visual → 显示宽高，shadow → shadowProfile，
+   * collision → 碰撞椭圆）。
    * 仅 players 分类使用——npcs/enemies 真实数据是 imageId + 静态 sprite，走 _renderNpcDetail。
    */
   _renderSheetSpriteDetail(panel, e, cat) {
     const sprite = e.sprite || {};
     const anims = e.animations || {};
     const baseStatsView = e.baseStats || {};
+    const skeletonId = String(e.skeletonId || '').trim();
+    // 旧数据只有 useSkeletonAnimation=true 没有 skeletonId：运行时沿用角色配置的骨骼资产
+    const legacySkeleton = e.useSkeletonAnimation === true && !skeletonId;
+    const skeletonOptions = this._manifestImageOptions.filter(option => option.mode === 'skeleton');
+    const hasCurrentSkeleton = skeletonOptions.some(option => option.imageId === skeletonId);
+    const shadow = e.shadow && typeof e.shadow === 'object' ? e.shadow : {};
+    const collision = e.collision && typeof e.collision === 'object' ? e.collision : {};
+    const visual = e.visual && typeof e.visual === 'object' ? e.visual : {};
+    const skeletonSelectOptions = [
+      `<option value="" ${!skeletonId && !legacySkeleton ? 'selected' : ''}>（不使用骨骼：走下方序列帧配置）</option>`,
+      legacySkeleton ? '<option value="__legacy__" selected>（未指定 · 沿用角色配置的骨骼资产）</option>' : '',
+      !hasCurrentSkeleton && skeletonId ? `<option value="${escapeHtml(skeletonId)}" selected>当前骨骼 ID 无效：${escapeHtml(skeletonId)}</option>` : '',
+      ...skeletonOptions.map(option => `<option value="${escapeHtml(option.imageId)}" ${option.imageId === skeletonId ? 'selected' : ''}>${escapeHtml(option.imageId)} · ${escapeHtml(option.path)}</option>`)
+    ].join('');
 
     let animRows = '';
     for (const [name, anim] of Object.entries(anims)) {
@@ -1040,13 +1057,37 @@ export class LibraryEditor {
     // 玩家序列帧表单不再承担敌人/NPC 编辑（真实 schema 走 _renderNpcDetail）
 
     panel.innerHTML = `
-      <div class="row"><label>ID（库主键）</label><input type="text" id="l-id" value="${e.id || ''}"></div>
-      <div class="row"><label>名称</label><input type="text" id="l-name" value="${e.name || ''}"></div>
-      <div class="row" style="display:flex;align-items:center;gap:8px;">
-        <label style="font-weight:bold;flex:none;">骨骼动画 useSkeletonAnimation</label>
-        <input type="checkbox" id="l-use-skeleton" ${e.useSkeletonAnimation === true ? 'checked' : ''}>
-        <small style="color:#9ab;">勾选 = 运行时用骨骼动画（skeleton.player）渲染本角色，忽略下方序列帧配置</small>
+      <div class="row"><label>ID（库主键）</label><input type="text" id="l-id" value="${escapeHtml(e.id || '')}"></div>
+      <div class="row"><label>名称</label><input type="text" id="l-name" value="${escapeHtml(e.name || '')}"></div>
+      <div class="row"><label style="font-weight:bold;">骨骼资产（Manifest 稳定 ID）</label><select id="l-skeleton-id">${skeletonSelectOptions}</select></div>
+      <div class="row"><small style="color:#9ab;font-size:11px;line-height:1.45;">选择骨骼资产 = 运行时以骨骼动画渲染本角色（useSkeletonAnimation 自动开启），忽略下方序列帧配置${skeletonOptions.length ? `；当前工程可选 ${skeletonOptions.length} 个骨骼` : ''}。骨骼本身在「骨骼」编辑器中维护，此处只引用稳定 ID。</small></div>
+      <hr style="border-color:#2a3a5e;margin:10px 0;">
+      <div class="row"><label style="font-weight:bold;">显示宽高</label><small style="color:#9ab;font-size:11px;">（屏幕上绘制尺寸，px；留空沿用 presentation.json 的 actors.player.visual）</small></div>
+      <div class="row" style="display:flex;gap:8px;">
+        <div style="flex:1;"><label>宽度</label><input type="number" id="l-visual-width" min="1" step="1" value="${visual.width != null ? visual.width : ''}" placeholder="沿用配置" style="width:100%;"></div>
+        <div style="flex:1;"><label>高度</label><input type="number" id="l-visual-height" min="1" step="1" value="${visual.height != null ? visual.height : ''}" placeholder="沿用配置" style="width:100%;"></div>
       </div>
+      <hr style="border-color:#2a3a5e;margin:10px 0;">
+      <div class="row"><label style="font-weight:bold;">阴影</label><small style="color:#9ab;font-size:11px;">（默认全开；仅与场景编辑器同源的运行时实体阴影配置）</small></div>
+      <div class="row"><label title="贴地椭圆基础影（跟随全局光照方向）">基础阴影</label><input type="checkbox" id="l-shadow-ground" ${shadow.ground !== false ? 'checked' : ''}></div>
+      <div class="row"><label title="靠近营火等点光源时背光拉出的长影">点光源长影</label><input type="checkbox" id="l-shadow-long" ${shadow.long !== false ? 'checked' : ''}></div>
+      <div class="row"><label title="贴地影大小倍率，1=默认（按精灵尺寸推导），0.5=减半，2=翻倍">大小倍率</label><input type="number" id="l-shadow-scale" step="0.1" min="0.1" value="${shadow.scale != null ? shadow.scale : ''}" placeholder="1=默认"></div>
+      <div class="row"><label title="贴地影横半径（px）：设置后覆盖按精灵尺寸的自动推导；留空=自动">基础半径</label><input type="number" id="l-shadow-radius" step="2" min="4" value="${shadow.radius != null ? shadow.radius : ''}" placeholder="自动"></div>
+      <div class="row"><label title="贴地影向上偏移的像素值；角色默认贴脚（0），填写后按像素上移">上移像素</label><input type="number" id="l-shadow-lift" step="1" min="0" value="${shadow.liftPx != null ? shadow.liftPx : ''}" placeholder="角色默认 0"></div>
+      <div class="row"><label title="基础阴影水平平移像素：正数左移、负数右移（点光源长影请用下方单独参数）">左移像素</label><input type="number" id="l-shadow-shift" step="1" value="${shadow.shiftPx != null ? shadow.shiftPx : ''}" placeholder="留空=不偏移"></div>
+      <div class="row"><label title="点光源长影沿光源竖直方向微调：光在上方时上移、在下方时下移（按光源方位对称）">点光源长影上移</label><input type="number" id="l-long-shadow-lift" step="1" value="${shadow.longLiftPx != null ? shadow.longLiftPx : ''}" placeholder="留空=不偏移"></div>
+      <div class="row"><label title="点光源长影沿光源水平方向微调：光在左侧时左移、在右侧时右移（按光源方位对称）">点光源长影左移</label><input type="number" id="l-long-shadow-shift" step="1" value="${shadow.longShiftPx != null ? shadow.longShiftPx : ''}" placeholder="留空=不偏移"></div>
+      <hr style="border-color:#2a3a5e;margin:10px 0;">
+      <div class="row"><label style="font-weight:bold;">碰撞区域</label><small style="color:#9ab;font-size:11px;">（椭圆，中心 = 脚底锚点 + 偏移）</small></div>
+      <div class="row" style="display:flex;gap:8px;">
+        <div style="flex:1;"><label>半径 X</label><input type="number" id="l-collision-radius-x" min="1" step="1" value="${collision.radiusX != null ? collision.radiusX : ''}" placeholder="沿用配置" style="width:100%;"></div>
+        <div style="flex:1;"><label>半径 Y</label><input type="number" id="l-collision-radius-y" min="1" step="1" value="${collision.radiusY != null ? collision.radiusY : ''}" placeholder="沿用配置" style="width:100%;"></div>
+      </div>
+      <div class="row" style="display:flex;gap:8px;">
+        <div style="flex:1;"><label>偏移 X</label><input type="number" id="l-collision-offset-x" step="1" value="${collision.offsetX != null ? collision.offsetX : ''}" placeholder="沿用配置" style="width:100%;"></div>
+        <div style="flex:1;"><label>偏移 Y</label><input type="number" id="l-collision-offset-y" step="1" value="${collision.offsetY != null ? collision.offsetY : ''}" placeholder="沿用配置" style="width:100%;"></div>
+      </div>
+      <div class="row"><small style="color:#9ab;font-size:11px;line-height:1.45;">留空 = 沿用 presentation.json 的 actors.player 碰撞椭圆；仅在本角色需要特别占地时填写。</small></div>
       <hr style="border-color:#2a3a5e;margin:10px 0;">
       <div class="row"><label style="font-weight:bold;">序列帧（Sprite Sheet）</label></div>
       <div class="row"><label>图片路径</label><input type="text" id="l-sprite-src" value="${sprite.src || ''}" placeholder="assets/images/player.png"></div>
@@ -2064,8 +2105,24 @@ export class LibraryEditor {
   }
 
   _commitSheetSpriteDetail(panel, e) {
-    const skeletonEl = panel.querySelector('#l-use-skeleton');
-    if (skeletonEl) e.useSkeletonAnimation = skeletonEl.checked === true;
+    const skeletonEl = panel.querySelector('#l-skeleton-id');
+    if (skeletonEl) {
+      const value = String(skeletonEl.value || '').trim();
+      if (value === '__legacy__') {
+        // 旧数据形态：保留 useSkeletonAnimation，运行时沿用角色配置的骨骼资产
+        e.useSkeletonAnimation = true;
+        delete e.skeletonId;
+      } else if (value) {
+        e.useSkeletonAnimation = true;
+        e.skeletonId = value;
+      } else {
+        e.useSkeletonAnimation = false;
+        delete e.skeletonId;
+      }
+    }
+    this._commitPlayerVisual(panel, e);
+    this._commitPlayerShadow(panel, e);
+    this._commitPlayerCollision(panel, e);
     const srcEl = panel.querySelector('#l-sprite-src');
     if (srcEl) {
       e.sprite = {
@@ -2094,6 +2151,79 @@ export class LibraryEditor {
       baseStatsView[input.dataset.stat] = parseFloat(input.value) || 0;
     });
     e.baseStats = baseStatsView;
+  }
+
+  /**
+   * 玩家显示宽高提交：只写有效的正数，空块删除字段
+   * （运行时 SpriteComponent 尺寸，留空沿用 presentation.json 的 actors.player.visual）。
+   */
+  _commitPlayerVisual(panel, e) {
+    const widthEl = panel.querySelector('#l-visual-width');
+    const heightEl = panel.querySelector('#l-visual-height');
+    if (!widthEl && !heightEl) return;
+    const visual = {};
+    const width = parseFloat(widthEl?.value);
+    if (Number.isFinite(width) && width > 0) visual.width = width;
+    const height = parseFloat(heightEl?.value);
+    if (Number.isFinite(height) && height > 0) visual.height = height;
+    if (Object.keys(visual).length > 0) e.visual = visual;
+    else delete e.visual;
+  }
+
+  /**
+   * 玩家阴影块提交：默认全开（ground/long 勾选即不写字段），只落非默认值；
+   * 空块删除字段，保持库 JSON 干净（与场景编辑器 overrides.shadow 同语义）。
+   */
+  _commitPlayerShadow(panel, e) {
+    const ground = panel.querySelector('#l-shadow-ground');
+    const long = panel.querySelector('#l-shadow-long');
+    const scale = panel.querySelector('#l-shadow-scale');
+    const radius = panel.querySelector('#l-shadow-radius');
+    const lift = panel.querySelector('#l-shadow-lift');
+    const shift = panel.querySelector('#l-shadow-shift');
+    const longLift = panel.querySelector('#l-long-shadow-lift');
+    const longShift = panel.querySelector('#l-long-shadow-shift');
+    if (!ground && !long && !scale && !radius && !lift && !shift && !longLift && !longShift) return;
+    const shadow = {};
+    if (ground && ground.checked !== true) shadow.ground = false;
+    if (long && long.checked !== true) shadow.long = false;
+    const scaleValue = parseFloat(scale?.value);
+    if (Number.isFinite(scaleValue) && scaleValue > 0) shadow.scale = scaleValue;
+    const radiusValue = parseFloat(radius?.value);
+    if (Number.isFinite(radiusValue) && radiusValue > 0) shadow.radius = radiusValue;
+    const liftValue = parseFloat(lift?.value);
+    if (Number.isFinite(liftValue) && liftValue >= 0) shadow.liftPx = liftValue;
+    const shiftValue = parseFloat(shift?.value);
+    if (Number.isFinite(shiftValue)) shadow.shiftPx = shiftValue;
+    const longLiftValue = parseFloat(longLift?.value);
+    if (Number.isFinite(longLiftValue)) shadow.longLiftPx = longLiftValue;
+    const longShiftValue = parseFloat(longShift?.value);
+    if (Number.isFinite(longShiftValue)) shadow.longShiftPx = longShiftValue;
+    if (Object.keys(shadow).length > 0) e.shadow = shadow;
+    else delete e.shadow;
+  }
+
+  /**
+   * 玩家碰撞椭圆提交：半径 > 0 / 偏移为有效数字才写；空块删除字段
+   * （运行时 CollisionComponent 沿用 presentation.json 的 actors.player 配置）。
+   */
+  _commitPlayerCollision(panel, e) {
+    const radiusX = panel.querySelector('#l-collision-radius-x');
+    const radiusY = panel.querySelector('#l-collision-radius-y');
+    const offsetX = panel.querySelector('#l-collision-offset-x');
+    const offsetY = panel.querySelector('#l-collision-offset-y');
+    if (!radiusX && !radiusY && !offsetX && !offsetY) return;
+    const collision = {};
+    const rx = parseFloat(radiusX?.value);
+    if (Number.isFinite(rx) && rx > 0) collision.radiusX = rx;
+    const ry = parseFloat(radiusY?.value);
+    if (Number.isFinite(ry) && ry > 0) collision.radiusY = ry;
+    const ox = parseFloat(offsetX?.value);
+    if (Number.isFinite(ox)) collision.offsetX = ox;
+    const oy = parseFloat(offsetY?.value);
+    if (Number.isFinite(oy)) collision.offsetY = oy;
+    if (Object.keys(collision).length > 0) e.collision = collision;
+    else delete e.collision;
   }
 
   /**

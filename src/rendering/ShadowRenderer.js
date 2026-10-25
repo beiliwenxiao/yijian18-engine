@@ -357,9 +357,9 @@ export class ShadowRenderer {
       const params = this.computeShadowParams(
         position.x, position.y, width, height, position.elevation || 0, light
       );
-      // 物品可调参数（shadowProfile.radius / scale / liftPx）：
+      // 可调参数（shadowProfile.radius / scale / liftPx / shiftPx）：
       // radius=贴地影横半径（px，设置后覆盖按精灵尺寸的自动推导，纵半径按椭圆扁率跟随）；
-      // scale=影子大小倍率（默认 1）；liftPx=上移量（像素，仅非人形角色生效）
+      // scale=影子大小倍率（默认 1）；liftPx=上移量（像素）；shiftPx=水平平移（正数左移）
       const shadowScale = Number.isFinite(shadowProfile?.scale) && shadowProfile.scale > 0
         ? shadowProfile.scale
         : 1;
@@ -376,15 +376,21 @@ export class ShadowRenderer {
         params.radiusX *= shadowScale;
         params.radiusY *= shadowScale;
       }
+      // 基础影水平位置微调（shadowProfile.shiftPx）：正数左移、负数右移。
+      // 用于校正精灵锚点不在脚底正中导致的阴影中心偏移；只作用于贴地基础影，
+      // 点光源长影的偏移由 longShiftPx / longLiftPx 单独控制。
+      const shiftPx = Number.isFinite(shadowProfile?.shiftPx) ? shadowProfile.shiftPx : 0;
+      if (shiftPx !== 0) params.x -= shiftPx;
       // 贴地影上移量统一用像素表达（shadowProfile.liftPx）：
       // 比例会随影高缩放，同数值在不同尺寸物体上位移不同，策划无法直观控制。
-      // 未配置时保持原默认「上移 1/3 影高」（影高=2×radiusY）；旧数据的比例字段 lift 自动折算成像素。
+      // 显式 liftPx 对所有实体生效（可用于手动校准角色影子）；未配置时角色贴脚，
+      // 物品/采集点默认上移 1/3 影高（旧数据的比例字段 lift 自动折算成像素）。
       const isCharacter = CHARACTER_ENTITY_TYPES.includes(entity.type);
       let liftPx = 0;
-      if (!isCharacter) {
-        if (Number.isFinite(shadowProfile?.liftPx)) {
-          liftPx = Math.max(0, shadowProfile.liftPx);
-        } else if (Number.isFinite(shadowProfile?.lift)) {
+      if (Number.isFinite(shadowProfile?.liftPx)) {
+        liftPx = Math.max(0, shadowProfile.liftPx);
+      } else if (!isCharacter) {
+        if (Number.isFinite(shadowProfile?.lift)) {
           liftPx = params.radiusY * 2 * clamp(shadowProfile.lift, 0, 1);
         } else {
           liftPx = params.radiusY * 2 / 3;
@@ -394,6 +400,18 @@ export class ShadowRenderer {
       // 长影在下、贴地影在上：长影为卵形旋转绘制（沿火-人连线发散），成本可忽略。
       // long=false → 该实体不产生点光长影（基础影保留）
       if (params.longShadow && shadowProfile?.long !== false) {
+        // 点光源长影微调（shadowProfile.longLiftPx / longShiftPx）：
+        // 长影随光源方位旋转，偏移按光源方位做对称处理——「上移」=朝光源的竖直一侧，
+        // 「左移」=朝光源的水平一侧（光源在下方则下移、在右侧则右移）。
+        const longLiftPx = Number.isFinite(shadowProfile?.longLiftPx) ? shadowProfile.longLiftPx : 0;
+        const longShiftPx = Number.isFinite(shadowProfile?.longShiftPx) ? shadowProfile.longShiftPx : 0;
+        if (longLiftPx !== 0 || longShiftPx !== 0) {
+          // longShadow.angle 是「光源→人物」方向，取反得到「人物→光源」朝向
+          const towardX = -Math.cos(params.longShadow.angle);
+          const towardY = -Math.sin(params.longShadow.angle);
+          params.longShadow.x += Math.sign(towardX) * longShiftPx;
+          params.longShadow.y += Math.sign(towardY) * longLiftPx;
+        }
         this.drawConeShadow(ctx, params.longShadow);
       }
       ctx.globalAlpha = params.alpha;

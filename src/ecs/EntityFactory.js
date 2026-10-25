@@ -101,6 +101,36 @@ export class EntityFactory {
     return sprite.isSkeleton === true;
   }
 
+  /**
+   * 运行时替换实体骨骼资产（内容库主角定义的 skeletonId）：
+   * 重建 SkeletonComponent + 状态映射器，渲染器按新稳定 ID 懒加载资产后接管。
+   * @param {Entity} entity
+   * @param {string} stableSpriteId
+   * @returns {boolean} 是否完成替换（非骨骼资产/无精灵组件返回 false）
+   */
+  setSkeletonForEntity(entity, stableSpriteId) {
+    if (!entity || !stableSpriteId || !this.manifestReader) return false;
+    const sprite = entity.getComponent?.('sprite');
+    if (!sprite) return false;
+    const entry = this.manifestReader(stableSpriteId);
+    if (entry?.runtime2D?.mode !== 'skeleton') return false;
+    const previous = entity.getComponent?.('skeleton') || null;
+    if (previous?.skeletonId === stableSpriteId) return true;
+    const skeletonComponent = new SkeletonComponent({
+      skeletonId: stableSpriteId,
+      deps: this.animationDeps
+    });
+    // 换资产必须重建状态映射器：整帧映射器按「剪辑|方向」缓存签名，
+    // 沿用旧映射器会在同签名下跳过写覆盖层，导致新资产的帧表不生效。
+    skeletonComponent.stateHook = createPlayerSkeletonStateMapper(entity, this.animationDeps || {});
+    sprite.spriteSheet = stableSpriteId;
+    sprite.isSkeleton = true;
+    sprite.animations.clear();
+    sprite.skeletonDelegate = skeletonComponent;
+    entity.addComponent(skeletonComponent);
+    return true;
+  }
+
   setItemRuntimeFactory(itemRuntimeFactory) {
     if (!itemRuntimeFactory?.createDeathDropProjection) {
       throw new TypeError('EntityFactory requires ItemRuntimeFactory');

@@ -1758,7 +1758,10 @@ export class SceneEditorUI {
     html += `<div class="property-row"><label title="靠近营火等点光源时背光拉出的长影">点光源长影:</label><input type="checkbox" ${ovShadow.long !== false ? 'checked' : ''} data-prop="overrides.shadow.long"></div>`;
     html += `<div class="property-row"><label title="贴地影大小倍率，1=默认（按精灵尺寸推导），0.5=减半，2=翻倍">大小倍率:</label><input type="number" step="0.1" min="0.1" value="${ovShadow.scale != null ? ovShadow.scale : ''}" data-prop="overrides.shadow.scale" placeholder="1=默认"></div>`;
     html += `<div class="property-row"><label title="贴地影横半径（px）：设置后覆盖按精灵尺寸的自动推导，纵半径按椭圆扁率跟随；留空=自动">基础半径:</label><input type="number" step="2" min="4" value="${ovShadow.radius != null ? ovShadow.radius : ''}" data-prop="overrides.shadow.radius" placeholder="自动"></div>`;
-    html += `<div class="property-row"><label title="贴地影向上偏移的像素值；仅对物品/采集点等非人形实体生效（角色影子贴脚）。留空=默认上移 1/3 影高，0=贴脚">上移像素:</label><input type="number" step="1" min="0" value="${ovShadow.liftPx != null ? ovShadow.liftPx : ''}" data-prop="overrides.shadow.liftPx" placeholder="留空=默认"></div>`;
+    html += `<div class="property-row"><label title="贴地影向上偏移的像素值；留空=角色贴脚、物品/采集点默认上移 1/3 影高；填写后按像素上移（对角色也生效）">上移像素:</label><input type="number" step="1" min="0" value="${ovShadow.liftPx != null ? ovShadow.liftPx : ''}" data-prop="overrides.shadow.liftPx" placeholder="留空=默认"></div>`;
+    html += `<div class="property-row"><label title="基础阴影水平平移像素：正数左移、负数右移（点光源长影请用下方单独参数）">左移像素:</label><input type="number" step="1" value="${ovShadow.shiftPx != null ? ovShadow.shiftPx : ''}" data-prop="overrides.shadow.shiftPx" placeholder="留空=不偏移"></div>`;
+    html += `<div class="property-row"><label title="点光源长影沿光源竖直方向微调：光在上方时上移、在下方时下移（按光源方位对称）">点光源长影上移:</label><input type="number" step="1" value="${ovShadow.longLiftPx != null ? ovShadow.longLiftPx : ''}" data-prop="overrides.shadow.longLiftPx" placeholder="留空=不偏移"></div>`;
+    html += `<div class="property-row"><label title="点光源长影沿光源水平方向微调：光在左侧时左移、在右侧时右移（按光源方位对称）">点光源长影左移:</label><input type="number" step="1" value="${ovShadow.longShiftPx != null ? ovShadow.longShiftPx : ''}" data-prop="overrides.shadow.longShiftPx" placeholder="留空=不偏移"></div>`;
     return html;
   }
 

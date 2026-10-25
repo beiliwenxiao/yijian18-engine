@@ -107,6 +107,67 @@ export class DemoPlayerFactory {
   }
 
   /**
+   * 应用内容库主角定义（game.project.library.players）：
+   *   skeletonId → 运行时骨骼资产（Manifest mode:'skeleton'）
+   *   visual     → 屏幕显示宽高（SpriteComponent 尺寸）
+   *   shadow     → 实体 shadowProfile（基础影 / 点光源长影 / 倍率 / 半径 / 上移）
+   *   collision  → CollisionComponent 椭圆覆盖（缺省字段沿用 presentation.json）
+   * 玩家实体创建早于内容库/Manifest 就绪，故由 SanguoGameLoaderCoordinator 在 ready 后调用；
+   * 字段缺省 = 零回归（继续沿用角色配置与 presentationProfile）。
+   */
+  applyLibraryDefinition(scene, player, gameLoader) {
+    if (!player) return false;
+    const players = gameLoader?.project?.library?.players;
+    if (!Array.isArray(players) || players.length === 0) return false;
+    // 角色配置 ID 命中优先（多主角扩展），否则回退默认主角定义 id='player'
+    const definition = players.find(entry => entry?.id === player.id)
+      || players.find(entry => entry?.id === 'player')
+      || null;
+    if (!definition) return false;
+
+    const skeletonId = String(definition.skeletonId || '').trim();
+    if (skeletonId) scene?.entityFactory?.setSkeletonForEntity?.(player, skeletonId);
+
+    // 显示宽高（屏幕上绘制尺寸）：逐字段覆盖，留空沿用 presentation.json 的 actors.player.visual
+    if (definition.visual && typeof definition.visual === 'object') {
+      const sprite = player.getComponent?.('sprite');
+      const width = Number(definition.visual.width);
+      const height = Number(definition.visual.height);
+      if (sprite) {
+        const nextWidth = Number.isFinite(width) && width > 0 ? width : sprite.width;
+        const nextHeight = Number.isFinite(height) && height > 0 ? height : sprite.height;
+        if (sprite.width !== nextWidth || sprite.height !== nextHeight) {
+          sprite.width = nextWidth;
+          sprite.height = nextHeight;
+          scene?.entityRenderer2D?.clearCaches?.();
+        }
+      }
+    }
+
+    if (definition.shadow && typeof definition.shadow === 'object') {
+      player.shadowProfile = { ...definition.shadow };
+    }
+
+    if (definition.collision && typeof definition.collision === 'object') {
+      const source = definition.collision;
+      let collision = player.getComponent?.('collision') || null;
+      if (!collision) {
+        collision = new CollisionComponent({});
+        player.addComponent(collision);
+      }
+      for (const key of ['offsetX', 'offsetY']) {
+        const value = Number(source[key]);
+        if (source[key] != null && Number.isFinite(value)) collision[key] = value;
+      }
+      for (const key of ['radiusX', 'radiusY']) {
+        const value = Number(source[key]);
+        if (Number.isFinite(value) && value > 0) collision[key] = value;
+      }
+    }
+    return true;
+  }
+
+  /**
    * 将 canonical 职业投影为玩家基础动画之上的可替换外观叠层。
    * 领域事实仍由 ClassSystem/StoryState 持有，SpriteComponent 只持表现引用。
    */

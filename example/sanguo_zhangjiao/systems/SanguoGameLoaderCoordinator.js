@@ -145,7 +145,9 @@ function initializeGameLoader() {
         this._rejectAssetManifestReady = null;
         Logger.log('[DDScene][Assets] Manifest 索引完成，等待九宫格按需加载', manifestResult);
         this.entityRenderer2D?.clearCaches?.();
-        // 玩家实体创建早于 Manifest 就绪（enter 同步创建），骨骼资产判定此刻才可完成——补挂
+        // 玩家实体创建早于 Manifest/内容库就绪（enter 同步创建），此处统一应用内容库
+        // 主角定义（骨骼资产/阴影/碰撞椭圆），再按角色配置补挂骨骼兜底
+        this._playerFactory?.applyLibraryDefinition?.(this.$scene, this.playerEntity, gameLoader);
         const playerSprite = this.playerEntity?.getComponent?.('sprite');
         if (playerSprite && playerSprite.isSkeleton !== true) {
           this.entityFactory.attachSkeletonForEntity(this.playerEntity, playerSprite.spriteSheet);
