@@ -217,10 +217,14 @@ await sharp(sheet, { raw: { width: packed.atlas.width, height: SHEET_H, channels
 console.log(`部件图集：${packed.atlas.width}×${SHEET_H}，${order.length} 块 → ${path.relative(root, OUT_ATLAS)}`);
 
 /* ---------------- 3.5 武器部件图（刀 / 盾） ----------------
+ * ⚠️ 2026-10-26 起 sword.png / shield.png 已替换为 AI 生成像素图（美术资源），
+ *    重跑本脚本会用下方的程序化绘制覆盖它们——如需保留美术图，重跑后请用 git 恢复：
+ *    git checkout HEAD -- example/sanguo_zhangjiao/assets/images/player/female/sword.png
+ *                                              .../shield.png
  * 素材包没有独立武器图，按女骑士配色（钢蓝 #9aa4b4 / 深蓝 #4a5262 / 金 #c9963c / 皮革 #6b4a2f）程序化绘制。
  * 画布 64×64，握把在画布中心：挂到 forearmR/forearmL 后刀柄正落在手上。
  * 刀槽 id `weapon-sword` / 盾槽 id `weapon-shield` 均由 PlayerSkeletonStateMapper 按装备联动管理：
- * 刀跟主手/背包（战斗拔出、非战斗回背），盾跟副手（offhand 装备即持握）。
+ * 刀跟主手/背包（战斗拔出、非战斗回背腰挂），盾跟副手（战斗持握、非战斗背挂）。
  */
 const SWORD_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64">
   <g shape-rendering="crispEdges">
