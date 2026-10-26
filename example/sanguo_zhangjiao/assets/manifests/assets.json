@@ -6956,6 +6956,216 @@
       "revision": 1
     },
     {
+      "assetId": "chibi.parts.head",
+      "imageId": "chibi.parts.head",
+      "category": "character-part",
+      "usage": [
+        "chibi-skeleton-part"
+      ],
+      "sourceFile": "assets/images/chibi/parts/head.png",
+      "runtime2D": {
+        "path": "assets/images/chibi/parts/head.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "chibi.parts.head"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.71875
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "chibi.parts.torso",
+      "imageId": "chibi.parts.torso",
+      "category": "character-part",
+      "usage": [
+        "chibi-skeleton-part"
+      ],
+      "sourceFile": "assets/images/chibi/parts/torso.png",
+      "runtime2D": {
+        "path": "assets/images/chibi/parts/torso.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "chibi.parts.torso"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.71875
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "chibi.parts.arm-l",
+      "imageId": "chibi.parts.arm-l",
+      "category": "character-part",
+      "usage": [
+        "chibi-skeleton-part"
+      ],
+      "sourceFile": "assets/images/chibi/parts/arm-l.png",
+      "runtime2D": {
+        "path": "assets/images/chibi/parts/arm-l.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "chibi.parts.arm-l"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.28125
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "chibi.parts.arm-r",
+      "imageId": "chibi.parts.arm-r",
+      "category": "character-part",
+      "usage": [
+        "chibi-skeleton-part"
+      ],
+      "sourceFile": "assets/images/chibi/parts/arm-r.png",
+      "runtime2D": {
+        "path": "assets/images/chibi/parts/arm-r.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "chibi.parts.arm-r"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.28125
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "chibi.parts.leg-l",
+      "imageId": "chibi.parts.leg-l",
+      "category": "character-part",
+      "usage": [
+        "chibi-skeleton-part"
+      ],
+      "sourceFile": "assets/images/chibi/parts/leg-l.png",
+      "runtime2D": {
+        "path": "assets/images/chibi/parts/leg-l.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "chibi.parts.leg-l"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.28125
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "chibi.parts.leg-r",
+      "imageId": "chibi.parts.leg-r",
+      "category": "character-part",
+      "usage": [
+        "chibi-skeleton-part"
+      ],
+      "sourceFile": "assets/images/chibi/parts/leg-r.png",
+      "runtime2D": {
+        "path": "assets/images/chibi/parts/leg-r.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "chibi.parts.leg-r"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.28125
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
       "assetId": "player.parts.head-front",
       "imageId": "player.parts.head-front",
       "category": "character-part",
