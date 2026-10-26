@@ -36,6 +36,15 @@ import { SkeletonEditorHistory } from './SkeletonEditorHistory.js';
 import { upsertKey, appendLoopTieKey } from './SkeletonEditorKeyframes.js';
 import { followScale, boneLengthTipWorld, anchorWorldForOffset } from './SkeletonEditorGeometry.js';
 import { buildIkChain, defaultIkTarget, collectIkRotations } from './SkeletonEditorIk.js';
+import {
+  findFollowerConstraint,
+  listConstraintsTargeting,
+  addFollowerConstraint,
+  updateFollowerConstraint,
+  removeFollowerConstraint,
+  renameSlotConstraintRefs,
+  pruneSlotConstraints
+} from './SkeletonEditorConstraints.js';
 
 const DEG2RAD = Math.PI / 180;
 
@@ -1127,10 +1136,14 @@ export class SkeletonEditor {
     this._pushHistory();
     const removed = this._slotById(this.selectedSlot);
     this.doc.slots = this.doc.slots.filter(slot => slot.id !== this.selectedSlot);
+    // 引用完整性：清掉以该槽位为跟随者/目标的约束
+    const pruned = pruneSlotConstraints(this.doc, this.selectedSlot);
     this.selectedSlot = null;
     this._markDirty();
     this._afterDocChange();
-    if (removed) this._toast(`已删除槽位 ${removed.id}（不保存即可恢复）`);
+    if (removed) {
+      this._toast(`已删除槽位 ${removed.id}（不保存即可恢复）${pruned > 0 ? `，同步清理 ${pruned} 条跟随约束` : ''}`);
+    }
   }
 
   /* ---------------- 剪辑 / 轨道 / 关键帧 ---------------- */
@@ -2015,6 +2028,9 @@ export class SkeletonEditor {
     // IK 工具 gizmo（目标点 + 链高亮）
     this._drawIkGizmo(ctx, world);
 
+    // transform 约束 gizmo（跟随者 → 目标虚线；端点为约束修正后的最终锚点）
+    this._drawConstraintGizmos(ctx, world, constraintFixes);
+
     // 仅骨架模式：骨骼名标注（骨条中点），方便按名字找骨调动
     if (this.displayMode === 'bones') {
       ctx.font = '10px sans-serif';
@@ -2524,6 +2540,26 @@ export class SkeletonEditor {
   }
 
   /**
+   * 算「有附件槽位」的锚点原位（约束求解前的基准），供约束修正与 gizmo 共用。
+   * 与运行时渲染器同一口径：锚点 = 骨骼世界变换 + 附件偏移。
+   * @param {Map} world - 骨骼世界变换
+   * @returns {Map<string, {x:number, y:number, angle:number}>}
+   */
+  _constraintSlotAnchors(world) {
+    const origins = new Map();
+    for (const slot of this.runtime?.slots || []) {
+      const attachment = slot.attachment;
+      if (!attachment || attachment.type === 'empty') continue;
+      const boneWorld = world.get(slot.bone);
+      if (!boneWorld) continue;
+      const anchorWorld = this._attachmentAnchorWorld(boneWorld, attachment, slot.follow);
+      const angle = boneWorld.rad + (this._effectiveAttachmentOffset(attachment).rot || 0) * DEG2RAD;
+      origins.set(slot.id, { x: anchorWorld.x, y: anchorWorld.y, angle });
+    }
+    return origins;
+  }
+
+  /**
    * 算 transform 约束（挂件跟随挂件）对各槽位锚点的修正量。
    * 复用运行时同一求解内核（SkeletonConstraint.applyTransformConstraints），
    * 这里返回「相对原锚点的差值」供绘制时叠加。
@@ -2534,17 +2570,12 @@ export class SkeletonEditor {
     const fixes = new Map();
     const constraints = this.runtime?.constraints || [];
     if (!constraints.length) return fixes;
-    const origins = new Map();
+    const origins = this._constraintSlotAnchors(world);
     const list = [];
     for (const slot of this.runtime?.slots || []) {
-      const attachment = slot.attachment;
-      if (!attachment || attachment.type === 'empty') continue;
-      const boneWorld = world.get(slot.bone);
-      if (!boneWorld) continue;
-      const anchorWorld = this._attachmentAnchorWorld(boneWorld, attachment, slot.follow);
-      const angle = boneWorld.rad + (this._effectiveAttachmentOffset(attachment).rot || 0) * DEG2RAD;
-      origins.set(slot.id, { x: anchorWorld.x, y: anchorWorld.y, angle });
-      list.push({ slot, x: anchorWorld.x, y: anchorWorld.y, angle });
+      const origin = origins.get(slot.id);
+      if (!origin) continue;
+      list.push({ slot, x: origin.x, y: origin.y, angle: origin.angle });
     }
     applyTransformConstraints(list, constraints);
     for (const entry of list) {
@@ -2557,6 +2588,54 @@ export class SkeletonEditor {
       });
     }
     return fixes;
+  }
+
+  /**
+   * 画布绘制 transform 约束 gizmo：跟随者锚点 → 目标锚点的虚线 + 目标端标记。
+   * 端点用「约束修正后」的最终锚点（与挂件实际绘制位置一致）；跟随者或目标被选中时高亮。
+   * @param {CanvasRenderingContext2D} ctx
+   * @param {Map} world - 骨骼世界变换
+   * @param {Map<string, {dx:number, dy:number}>} constraintFixes - 约束修正量
+   */
+  _drawConstraintGizmos(ctx, world, constraintFixes) {
+    if (this.displayMode === 'bones') return; // 骨架模式挂件隐藏，约束 gizmo 一并跳过
+    const constraints = this.runtime?.constraints || [];
+    if (!constraints.length) return;
+    const origins = this._constraintSlotAnchors(world);
+    const fixOf = slotId => {
+      const fix = constraintFixes.get(slotId);
+      const origin = origins.get(slotId);
+      return origin ? { x: origin.x + (fix?.dx || 0), y: origin.y + (fix?.dy || 0) } : null;
+    };
+    for (const constraint of constraints) {
+      const follower = fixOf(constraint.slot);
+      const target = fixOf(constraint.target);
+      if (!follower || !target) continue;
+      const from = this._worldToScreen(follower.x, follower.y);
+      const to = this._worldToScreen(target.x, target.y);
+      const active = this.selectedSlot === constraint.slot || this.selectedSlot === constraint.target;
+      ctx.strokeStyle = active ? 'rgba(126,200,255,0.95)' : 'rgba(126,200,255,0.4)';
+      ctx.lineWidth = active ? 2 : 1.2;
+      ctx.setLineDash([6, 4]);
+      ctx.beginPath();
+      ctx.moveTo(from.x, from.y);
+      ctx.lineTo(to.x, to.y);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      // 目标端标记：小圆环（约束作用点），跟随端画实心点
+      ctx.beginPath();
+      ctx.arc(to.x, to.y, active ? 6 : 4.5, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.fillStyle = active ? '#7ec8ff' : 'rgba(126,200,255,0.55)';
+      ctx.beginPath();
+      ctx.arc(from.x, from.y, 3, 0, Math.PI * 2);
+      ctx.fill();
+      if (active) {
+        ctx.font = '10px sans-serif';
+        ctx.fillStyle = 'rgba(126,200,255,0.95)';
+        ctx.fillText(`mix ${constraint.mix ?? 1}`, (from.x + to.x) / 2 + 6, (from.y + to.y) / 2 - 5);
+      }
+    }
   }
 
   /** 画布绘制 IK gizmo：链骨高亮 + 末骨到目标的虚线 + 目标点（黄圈十字）。 */
@@ -5786,17 +5865,88 @@ export class SkeletonEditor {
         </div>
         <div class="se-empty" style="text-align:left;">按图片行优先切出 ${attachment.frames?.length || 0} 帧（等分整图）</div>` : ''}
       </div>
+      ${(() => {
+        // transform 约束（挂件跟随挂件）：本槽位作为跟随者 → 可编辑；作为目标 → 反向展示跟随者
+        const constraint = findFollowerConstraint(this.doc, slot.id);
+        const followers = listConstraintsTargeting(this.doc, slot.id);
+        const targetOptions = (this.doc.slots || [])
+          .filter(candidate => candidate.id !== slot.id)
+          .map(candidate => `<option value="${candidate.id}" ${constraint?.target === candidate.id ? 'selected' : ''}>${SkeletonEditor._displayName(candidate.id)}</option>`)
+          .join('');
+        const followerRows = followers.map(entry => `<div class="row"><label>跟随者</label>
+          <span style="flex:1;min-width:0;font-size:11px;color:#7ec8ff;">${SkeletonEditor._displayName(entry.slot)}</span>
+          <span style="flex:none;font-size:11px;color:#9aa5c0;">mix ${entry.mix ?? 1}</span></div>`).join('');
+        return `<div class="se-attachment-box" id="se-constraint-box">
+        <div style="font-size:12px;color:#7ec8ff;margin-bottom:4px;">跟随约束（挂件跟随挂件）</div>
+        ${constraint ? `
+        <div class="row"><label title="本槽位挂件的锚点被拉向目标槽位挂件的锚点（+偏移）">目标</label>
+          <select id="se-cst-target">${targetOptions}</select></div>
+        <div class="row"><label title="0=不跟随，1=完全跟随（锚点重合）">混合 mix</label>
+          <input type="number" id="se-cst-mix" min="0" max="1" step="0.05" value="${constraint.mix ?? 1}"></div>
+        <div class="row"><label>偏移X</label><input type="number" id="se-cst-offset-x" step="1" value="${constraint.offsetX ?? 0}"></div>
+        <div class="row"><label>偏移Y</label><input type="number" id="se-cst-offset-y" step="1" value="${constraint.offsetY ?? 0}"></div>
+        <div class="row"><label title="跟随朝向时的额外角度（度）">朝向偏移°</label><input type="number" id="se-cst-offset-rot" step="1" value="${constraint.offsetRot ?? 0}"></div>
+        <div class="row"><label title="勾选后挂件朝向跟随目标朝向（叠加朝向偏移）">
+          <input type="checkbox" id="se-cst-follow-rot" ${constraint.followRotation !== false ? 'checked' : ''}> 跟随朝向</label></div>
+        <div class="row"><label></label><button id="se-cst-delete" style="color:#ff8a80;">删除约束</button></div>`
+          : `<div class="row"><label></label><button id="se-cst-add" ${targetOptions ? '' : 'disabled'}>本槽位跟随其他挂件…</button></div>`}
+        ${followerRows}
+        <div class="se-empty" style="text-align:left;">跟随者的画布锚点会向目标锚点+偏移靠拢（mix 控制比例）；保存后游戏运行时同规则生效。</div>
+        </div>`;
+      })()}
       <div class="se-empty" style="text-align:left;">画布：拖动图片=改绑定点偏移（黄菱形，即与骨骼的相对位置）/ 右键=切 移动·旋转·缩放 模式 / Shift+拖图片=拖到骨点换绑 / 偏移X·Y·旋转=精确数值 / 「跟随缩放」=图片是否随骨骼缩放变形（默认不跟随）/ Alt+点击=穿透选骨骼 / Ctrl+点击=加选 / 方向键=微移</div>
     `;
     const $ = id => document.getElementById(id);
     $('se-slot-id').addEventListener('change', event => {
       const next = event.target.value.trim();
       if (next && !this._slotById(next)) {
+        const previous = slot.id;
         slot.id = next;
+        // 约束引用同步：跟随者/目标引用改名，避免悬挂引用
+        renameSlotConstraintRefs(this.doc, previous, next);
         this.selectedSlot = next;
         this._markDirty();
         this._afterDocChange();
       }
+    });
+    // transform 约束（挂件跟随挂件）：编辑面板（目标/混合/偏移/朝向跟随/删除）
+    $('se-cst-add')?.addEventListener('click', () => {
+      this._pushHistory();
+      const created = addFollowerConstraint(this.doc, slot.id);
+      if (!created) { this._toast('没有可用的目标槽位', true); return; }
+      this._markDirty();
+      this._afterDocChange();
+      this._toast(`已添加跟随约束 → ${created.target}`);
+    });
+    $('se-cst-delete')?.addEventListener('click', () => {
+      this._pushHistory();
+      removeFollowerConstraint(this.doc, slot.id);
+      this._markDirty();
+      this._afterDocChange();
+    });
+    $('se-cst-target')?.addEventListener('change', event => {
+      this._pushHistory();
+      updateFollowerConstraint(this.doc, slot.id, { target: event.target.value });
+      this._markDirty();
+      this._afterDocChange();
+    });
+    const bindConstraintNumber = (id, field) => {
+      $(id)?.addEventListener('change', event => {
+        this._pushHistory();
+        updateFollowerConstraint(this.doc, slot.id, { [field]: Number(event.target.value) || 0 });
+        this._markDirty();
+        this._afterDocChange();
+      });
+    };
+    bindConstraintNumber('se-cst-mix', 'mix');
+    bindConstraintNumber('se-cst-offset-x', 'offsetX');
+    bindConstraintNumber('se-cst-offset-y', 'offsetY');
+    bindConstraintNumber('se-cst-offset-rot', 'offsetRot');
+    $('se-cst-follow-rot')?.addEventListener('change', event => {
+      this._pushHistory();
+      updateFollowerConstraint(this.doc, slot.id, { followRotation: event.target.checked });
+      this._markDirty();
+      this._afterDocChange();
     });
     // 换绑骨骼（下拉/‹›快捷）统一保持部件世界位置不变
     const rotateSlotBone = direction => {
