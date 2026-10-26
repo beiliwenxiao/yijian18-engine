@@ -245,6 +245,21 @@ export function validateSkeletonAsset(doc) {
         if (key.ease !== undefined && !EASE_TYPES.includes(key.ease)) {
           errors.push(makeError(ValidationCode.TYPE_MISMATCH, `${keyPath}.ease`, '缓动必须是 linear/easeInOut'));
         }
+        // 贝塞尔控制点（schema v2）：必须是 {x,y} 数值对象且 x∈[0,1]（时间单调）；
+        // y 不设范围——overshoot（回弹/预备动作）是合法曲线形态。
+        for (const which of ['in', 'out']) {
+          if (key[which] === undefined) continue;
+          if (!isObject(key[which]) || !isFiniteNumber(key[which].x) || !isFiniteNumber(key[which].y)) {
+            errors.push(makeError(ValidationCode.TYPE_MISMATCH, `${keyPath}.${which}`,
+              '贝塞尔控制点必须是含数值 x/y 的对象'));
+          } else if (key[which].x < 0 || key[which].x > 1) {
+            errors.push(makeError(ValidationCode.OUT_OF_RANGE, `${keyPath}.${which}.x`,
+              '贝塞尔控制点 x 必须在 [0,1] 内（保证时间单调）'));
+          }
+        }
+        if (key.hold !== undefined && typeof key.hold !== 'boolean') {
+          errors.push(makeError(ValidationCode.TYPE_MISMATCH, `${keyPath}.hold`, 'hold 必须是布尔值'));
+        }
       }
     }
   }

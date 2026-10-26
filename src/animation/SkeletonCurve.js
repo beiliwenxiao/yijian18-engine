@@ -105,12 +105,17 @@ function solveBezierParam(u, x1, x2) {
 
 /**
  * 段 A→B 的插值：返回归一化进度 [0,1]（已含缓动/贝塞尔形变）。
+ *
+ * 本函数是「段插值语义」的单一来源：hold → 贝塞尔 → 命名缓动 → 线性。
+ * SkeletonPose.sampleField 与编辑器曲线面板都必须复用它（或经 sampleNumericCurve
+ * 间接复用），禁止另写一份插值——语义漂移会导致编辑器预览与运行时表现不一致。
+ *
  * @param {Object} keyA - 起始键
  * @param {Object} keyB - 结束键
  * @param {number} u - 段内归一化时间 [0,1]
  * @returns {number}
  */
-function segmentProgress(keyA, keyB, u) {
+export function segmentProgress(keyA, keyB, u) {
   if (keyA?.hold === true) return 0; // 保持插值：值恒为 A.v
   const hasHandles = !!(keyA?.out || keyB?.in);
   if (hasHandles) {

@@ -45,6 +45,16 @@ import {
   renameSlotConstraintRefs,
   pruneSlotConstraints
 } from './SkeletonEditorConstraints.js';
+import {
+  CURVE_PROPERTIES,
+  HANDLE_PRESETS,
+  listPropertyKeys,
+  computeValueRange,
+  keyHandlePoints,
+  applyHandleDrag,
+  applyOutPreset,
+  sampleCurvePolyline
+} from './SkeletonEditorCurve.js';
 
 const DEG2RAD = Math.PI / 180;
 
@@ -109,6 +119,9 @@ export class SkeletonEditor {
     this.previewTime = 0;
     this.playing = false;
     this._lastFrameAt = 0;
+    // 曲线编辑面板（会话态）：open=面板开关，field=当前查看的属性分轨（x/y/rot/scaleX/scaleY）
+    this._curvePanel = { open: false, field: 'rot' };
+    this._curveView = null;  // 曲线画布坐标映射缓存（渲染时写入，命中测试读取）
 
     // 画布视图
     this.view = { scale: 1, ox: 0, oy: 0 };
@@ -237,7 +250,10 @@ export class SkeletonEditor {
       inspectorTitle: $('se-inspector-title'), inspectorBody: $('se-inspector-body'),
       canvas: $('se-canvas'),
       clipSelect: $('se-clip-select'), clipDuration: $('se-clip-duration'), clipLoop: $('se-clip-loop'),
-      tlBody: $('se-tl-body'), trackBoneSelect: $('se-track-bone-select')
+      tlBody: $('se-tl-body'), trackBoneSelect: $('se-track-bone-select'),
+      curvePanel: $('se-curve-panel'), curveCanvas: $('se-curve-canvas'),
+      curveBone: $('se-curve-bone'), curveProps: $('se-curve-props'),
+      curvePresets: $('se-curve-presets'), curveHint: $('se-curve-hint')
     };
 
     this.el.assetSelect.addEventListener('change', () => this._onAssetSelect());
@@ -404,6 +420,16 @@ export class SkeletonEditor {
     $('se-key-del').addEventListener('click', () => this._deleteSelectedKey());
     $('se-track-add').addEventListener('click', () => this._addTrack());
     $('se-track-del').addEventListener('click', () => this._removeTrack());
+    // 曲线编辑面板：开关 + 画布拖拽交互（手柄/键值/扫动）
+    $('se-curve-toggle').addEventListener('click', () => {
+      this._curvePanel.open = !this._curvePanel.open;
+      this._renderCurvePanel();
+    });
+    $('se-curve-close').addEventListener('click', () => {
+      this._curvePanel.open = false;
+      this._renderCurvePanel();
+    });
+    this._bindCurveCanvasEvents();
 
     // 检查器输入开始编辑前记录历史快照（focusin 冒泡委托，innerHTML 重建不影响）。
     // 快照采用延迟提交（见 _pushHistory）：点进输入框却没改值时不会占用撤销步。
@@ -6305,6 +6331,321 @@ export class SkeletonEditor {
     // 当前时间输入框同步
     const timeInput = document.getElementById('se-time-input');
     if (timeInput && document.activeElement !== timeInput) timeInput.value = Math.round(this.previewTime);
+    // 曲线面板联动（关键帧位置/选中态/播放头变化都要反映到曲线）
+    if (this._curvePanel.open) this._renderCurvePanel();
+  }
+
+  /* ---------------- 曲线编辑面板（按属性分轨 + 贝塞尔手柄） ---------------- */
+
+  /** 选中键在当前属性分轨里的 entry（与 dope sheet 的 selectedKey 联动）。 */
+  _selectedCurveEntry(entries) {
+    if (!this.selectedKey || this.selectedKey.bone !== this.selectedBone) return null;
+    return entries.find(entry => entry.index === this.selectedKey.index) || null;
+  }
+
+  /** 当前剪辑里选中骨骼的轨道（曲线面板数据源）。 */
+  _selectedBoneTrack() {
+    const clip = this._clip();
+    if (!clip || !this.selectedBone) return null;
+    return (clip.tracks || []).find(track => track.bone === this.selectedBone) || null;
+  }
+
+  _renderCurvePanel() {
+    this.el.curvePanel.style.display = this._curvePanel.open ? '' : 'none';
+    const toggle = document.getElementById('se-curve-toggle');
+    if (toggle) toggle.classList.toggle('active', this._curvePanel.open);
+    if (!this._curvePanel.open) return;
+    const track = this._selectedBoneTrack();
+    this.el.curveBone.textContent = this.selectedBone
+      ? SkeletonEditor._displayName(this.selectedBone)
+      : '（未选中骨骼）';
+    // 属性 chips：只列出该轨道实际有键的属性（半字段键——如缩放手柄只写 scale——不会出现空分轨）
+    const available = CURVE_PROPERTIES.filter(
+      prop => track && (track.keys || []).some(key => key[prop.field] != null)
+    );
+    if (!available.length) {
+      this.el.curveProps.innerHTML = '<span style="color:#5a6a90;font-size:11px;">该骨骼轨道无关键帧（先打关键帧建轨道）</span>';
+      this.el.curvePresets.innerHTML = '';
+      this.el.curveHint.textContent = '';
+      this._drawCurveCanvas(null);
+      return;
+    }
+    if (!available.some(prop => prop.field === this._curvePanel.field)) {
+      this._curvePanel.field = available[0].field;
+    }
+    this.el.curveProps.innerHTML = available.map(prop =>
+      `<button data-field="${prop.field}" class="${prop.field === this._curvePanel.field ? 'active' : ''}"`
+      + ` style="border-color:${prop.color};" title="查看 ${prop.label} 分轨">${prop.label}</button>`
+    ).join('');
+    for (const button of this.el.curveProps.querySelectorAll('button')) {
+      button.addEventListener('click', () => {
+        this._curvePanel.field = button.dataset.field;
+        this._renderCurvePanel();
+      });
+    }
+    const entries = listPropertyKeys(track, this._curvePanel.field);
+    const selectedEntry = this._selectedCurveEntry(entries);
+    this.el.curvePresets.innerHTML = HANDLE_PRESETS.map(preset =>
+      `<button data-preset="${preset.id}" title="${preset.title}" ${selectedEntry ? '' : 'disabled'}>${preset.label}</button>`
+    ).join('');
+    for (const button of this.el.curvePresets.querySelectorAll('button')) {
+      button.addEventListener('click', () => this._applyCurvePreset(button.dataset.preset));
+    }
+    this.el.curveHint.textContent = selectedEntry
+      ? `选中键 t=${selectedEntry.t}ms · 拖圆点手柄改曲线形状 · 拖菱形改数值`
+      : '点击曲线上的菱形选中关键帧';
+    this._drawCurveCanvas({ clip: this._clip(), track, entries });
+  }
+
+  _drawCurveCanvas(data) {
+    const canvas = this.el.curveCanvas;
+    const body = document.getElementById('se-curve-body');
+    if (!canvas || !body) return;
+    const width = body.clientWidth || 600;
+    const height = body.clientHeight || 170;
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.max(1, Math.round(width * dpr));
+    canvas.height = Math.max(1, Math.round(height * dpr));
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, width, height);
+    if (!data || !data.entries.length) {
+      this._curveView = null;
+      return;
+    }
+    const { clip, entries } = data;
+    const prop = CURVE_PROPERTIES.find(candidate => candidate.field === this._curvePanel.field) || CURVE_PROPERTIES[0];
+    const padL = 46;
+    const padR = 12;
+    const padT = 10;
+    const padB = 16;
+    const duration = clip.durationMs;
+    const range = computeValueRange(entries);
+    const xOf = t => padL + (t / duration) * (width - padL - padR);
+    const yOf = v => padT + (1 - (v - range.min) / (range.max - range.min)) * (height - padT - padB);
+    // 横向网格 + 值轴刻度（4 等分）
+    ctx.strokeStyle = '#1a2440';
+    ctx.fillStyle = '#5a6a90';
+    ctx.font = '10px sans-serif';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    for (let i = 0; i <= 4; i += 1) {
+      const value = range.min + ((range.max - range.min) * i) / 4;
+      const y = yOf(value);
+      ctx.beginPath();
+      ctx.moveTo(padL, y);
+      ctx.lineTo(width - padR, y);
+      ctx.stroke();
+      ctx.fillText(String(Number(value.toFixed(1))), padL - 4, y);
+    }
+    // 纵向时间刻度（8 等分，与 dope sheet 观感一致）
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    for (let i = 0; i <= 8; i += 1) {
+      const t = (duration * i) / 8;
+      const x = xOf(t);
+      ctx.strokeStyle = i === 0 ? '#26355c' : '#141d33';
+      ctx.beginPath();
+      ctx.moveTo(x, padT);
+      ctx.lineTo(x, height - padB);
+      ctx.stroke();
+      ctx.fillText(String(Math.round(t)), x, height - padB + 2);
+    }
+    // 曲线折线：复用引擎 sampleNumericCurve（预览=运行时同一插值语义）
+    const polyline = sampleCurvePolyline(entries, duration, clip.loop !== false);
+    ctx.strokeStyle = prop.color;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let i = 0; i < polyline.length; i += 1) {
+      const x = xOf(polyline[i].t);
+      const y = yOf(polyline[i].v);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    ctx.lineWidth = 1;
+    // 贝塞尔手柄：键→控制点连线 + 空心圆点（可拖拽）
+    for (let i = 0; i < entries.length; i += 1) {
+      const handles = keyHandlePoints(entries, i);
+      for (const which of ['in', 'out']) {
+        const point = handles[which];
+        if (!point) continue;
+        ctx.strokeStyle = '#7f8db0';
+        ctx.beginPath();
+        ctx.moveTo(xOf(entries[i].t), yOf(entries[i].v));
+        ctx.lineTo(xOf(point.t), yOf(point.v));
+        ctx.stroke();
+        ctx.fillStyle = '#0e1526';
+        ctx.beginPath();
+        ctx.arc(xOf(point.t), yOf(point.v), 4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#ffd479';
+        ctx.stroke();
+      }
+    }
+    // 关键帧菱形
+    for (const entry of entries) {
+      const selected = this.selectedKey?.bone === this.selectedBone && this.selectedKey?.index === entry.index;
+      ctx.save();
+      ctx.translate(xOf(entry.t), yOf(entry.v));
+      ctx.rotate(Math.PI / 4);
+      ctx.fillStyle = selected ? '#ff9a3c' : prop.color;
+      ctx.strokeStyle = selected ? '#ffffff' : '#8a6a1c';
+      ctx.fillRect(-4, -4, 8, 8);
+      ctx.strokeRect(-4, -4, 8, 8);
+      ctx.restore();
+    }
+    // 播放头
+    ctx.strokeStyle = '#ff5a5a';
+    ctx.beginPath();
+    ctx.moveTo(xOf(this.previewTime), padT);
+    ctx.lineTo(xOf(this.previewTime), height - padB);
+    ctx.stroke();
+    this._curveView = { xOf, yOf, padL, padR, padT, padB, width, height, duration, range };
+  }
+
+  _bindCurveCanvasEvents() {
+    const canvas = this.el.curveCanvas;
+    if (!canvas) return;
+    canvas.addEventListener('mousedown', event => {
+      if (!this._curvePanel.open || event.button !== 0) return;
+      const view = this._curveView;
+      if (!view) return;
+      const track = this._selectedBoneTrack();
+      if (!track) return;
+      const entries = listPropertyKeys(track, this._curvePanel.field);
+      if (!entries.length) return;
+      const rect = canvas.getBoundingClientRect();
+      const mx = event.clientX - rect.left;
+      const my = event.clientY - rect.top;
+      const toTime = x => ((x - view.padL) / (view.width - view.padL - view.padR)) * view.duration;
+      const toValue = y => view.range.min
+        + (1 - (y - view.padT) / (view.height - view.padT - view.padB)) * (view.range.max - view.range.min);
+      // 1) 手柄命中（半径 7px，优先于键——手柄常出现在键附近）
+      let hitHandle = null;
+      for (let i = 0; i < entries.length && !hitHandle; i += 1) {
+        const handles = keyHandlePoints(entries, i);
+        for (const which of ['in', 'out']) {
+          const point = handles[which];
+          if (!point) continue;
+          const dx = mx - view.xOf(point.t);
+          const dy = my - view.yOf(point.v);
+          if (dx * dx + dy * dy <= 49) {
+            hitHandle = { i, which };
+            break;
+          }
+        }
+      }
+      if (hitHandle) {
+        this._beginCurveHandleDrag(entries, hitHandle, toTime, toValue);
+        return;
+      }
+      // 2) 键命中（菱形包围盒）
+      let hitKey = null;
+      for (const entry of entries) {
+        if (Math.abs(mx - view.xOf(entry.t)) <= 7 && Math.abs(my - view.yOf(entry.v)) <= 8) {
+          hitKey = entry;
+          break;
+        }
+      }
+      if (hitKey) {
+        this._beginCurveKeyDrag(entries, hitKey, toValue);
+        return;
+      }
+      // 3) 空白 = 定位播放头（与 dope sheet 扫动一致）
+      this.previewTime = Math.max(0, Math.min(view.duration, toTime(mx)));
+      this._renderTimeline();
+    });
+  }
+
+  _beginCurveHandleDrag(entries, hit, toTime, toValue) {
+    const anchor = hit.which === 'out' ? entries[hit.i] : entries[hit.i - 1];
+    const end = hit.which === 'out' ? entries[hit.i + 1] : entries[hit.i];
+    if (!anchor || !end) return;
+    this.selectedKey = { bone: this.selectedBone, index: entries[hit.i].index };
+    this._multiSelectedKeys.clear();
+    document.getElementById('se-key-del').disabled = false;
+    let pushed = false;
+    const onMove = moveEvent => {
+      const rect = this.el.curveCanvas.getBoundingClientRect();
+      if (!pushed) {
+        pushed = true;
+        this._pushHistory();
+      }
+      applyHandleDrag(anchor, end, hit.which, toTime(moveEvent.clientX - rect.left), toValue(moveEvent.clientY - rect.top));
+      // 手柄数据进运行时 → 预览即时反映曲线形状
+      this.runtime = parseSkeletonAsset(this.doc);
+      this._drawCurveCanvas({ clip: this._clip(), track: this._selectedBoneTrack(), entries });
+    };
+    const onUp = () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+      if (!pushed) {
+        this._renderTimeline(); // 纯点击（未拖动）：同步选中态到 dope sheet 与面板
+        return;
+      }
+      this._markDirty();
+      this._renderTimeline();
+      this._renderCurvePanel();
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  }
+
+  _beginCurveKeyDrag(entries, entry, toValue) {
+    this.selectedKey = { bone: this.selectedBone, index: entry.index };
+    this._multiSelectedKeys.clear();
+    document.getElementById('se-key-del').disabled = false;
+    this._renderCurvePanel();
+    let pushed = false;
+    const onMove = moveEvent => {
+      const rect = this.el.curveCanvas.getBoundingClientRect();
+      const value = toValue(moveEvent.clientY - rect.top);
+      if (!pushed) {
+        pushed = true;
+        this._pushHistory();
+      }
+      entry.key[this._curvePanel.field] = value;
+      entry.v = value;
+      this.runtime = parseSkeletonAsset(this.doc);
+      this._drawCurveCanvas({ clip: this._clip(), track: this._selectedBoneTrack(), entries });
+    };
+    const onUp = () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+      if (!pushed) {
+        this._renderTimeline(); // 纯点击（未拖动）：同步选中态到 dope sheet 与面板
+        return;
+      }
+      this._markDirty();
+      this._renderTimeline();
+      this._renderCurvePanel();
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  }
+
+  _applyCurvePreset(presetId) {
+    const track = this._selectedBoneTrack();
+    if (!track) return;
+    const entries = listPropertyKeys(track, this._curvePanel.field);
+    const entry = this._selectedCurveEntry(entries);
+    if (!entry) {
+      this._toast('先在曲线上点击选中一个关键帧', true);
+      return;
+    }
+    const next = entries[entries.indexOf(entry) + 1] || null;
+    const preset = HANDLE_PRESETS.find(candidate => candidate.id === presetId);
+    if (['easeIn', 'easeOut', 'easeInOut'].includes(presetId) && !next) {
+      this._toast('该键是属性最后一帧（无出向段），缓动预设不适用', true);
+      return;
+    }
+    this._pushHistory();
+    applyOutPreset(entry, next, presetId);
+    this._markDirty();
+    this.runtime = parseSkeletonAsset(this.doc);
+    this._renderTimeline();
+    this._toast(`已应用预设：${preset?.label || presetId}`);
   }
 
   /**

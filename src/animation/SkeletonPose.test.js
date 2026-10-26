@@ -344,3 +344,60 @@ describe('applyEase', () => {
     expect(applyEase('easeInOut', 0.75)).toBeGreaterThan(0.75);
   });
 });
+
+describe('sampleClip 贝塞尔手柄与 hold（schema v2 段插值）', () => {
+  /** 单轨单字段骨架：child.rot 从 0 → 90。 */
+  function buildHandleSkeleton(keys) {
+    return parseSkeletonAsset({
+      schemaVersion: 1,
+      skeletonId: 'skeleton.curve',
+      bones: [{ id: 'child', parent: null }],
+      slots: [],
+      clips: [{ name: 'turn', durationMs: 1000, loop: false, tracks: [{ bone: 'child', keys }] }]
+    });
+  }
+
+  it('parse 保留合法的 in/out 控制点与 hold；非法控制点剥离', () => {
+    const skeleton = buildHandleSkeleton([
+      { t: 0, rot: 0, out: { x: 0.42, y: 0 }, hold: true },
+      { t: 1000, rot: 90, in: { x: 1.5, y: 0.3 } } // x 越界 → 剥离
+    ]);
+    const keys = skeleton.clips.get('turn').tracks.get('child');
+    expect(keys[0].out).toEqual({ x: 0.42, y: 0 });
+    expect(keys[0].hold).toBe(true);
+    expect(keys[1].in).toBeUndefined(); // 非法控制点不进运行时
+  });
+
+  it('easeInOut 手柄：中点值=线性中点，四分点滞后于线性（慢起）', () => {
+    const skeleton = buildHandleSkeleton([
+      { t: 0, rot: 0, out: { x: 0.42, y: 0 } },
+      { t: 1000, rot: 90, in: { x: 0.42, y: 0 } }
+    ]);
+    const clip = skeleton.clips.get('turn');
+    const restPose = createRestLocalPose(skeleton);
+    const middle = sampleClip(clip, 500, restPose).get('child').rot;
+    const quarter = sampleClip(clip, 250, restPose).get('child').rot;
+    expect(middle).toBeCloseTo(45, 3); // 对称曲线：中点=值域中点
+    expect(quarter).toBeLessThan(22.5); // 慢起：进度落后于时间
+  });
+
+  it('hold 阶跃：段内恒为起始键值，到终点键才跳变', () => {
+    const skeleton = buildHandleSkeleton([
+      { t: 0, rot: 0, hold: true },
+      { t: 1000, rot: 90 }
+    ]);
+    const clip = skeleton.clips.get('turn');
+    const restPose = createRestLocalPose(skeleton);
+    expect(sampleClip(clip, 500, restPose).get('child').rot).toBe(0);
+    expect(sampleClip(clip, 999, restPose).get('child').rot).toBe(0);
+    expect(sampleClip(clip, 1000, restPose).get('child').rot).toBe(90);
+  });
+
+  it('无手柄的存量数据行为不变（命名缓动/线性零回归）', () => {
+    const skeleton = buildHandleSkeleton([{ t: 0, rot: 0 }, { t: 1000, rot: 90, ease: 'easeInOut' }]);
+    const clip = skeleton.clips.get('turn');
+    const restPose = createRestLocalPose(skeleton);
+    expect(sampleClip(clip, 500, restPose).get('child').rot).toBeCloseTo(45);
+    expect(sampleClip(clip, 250, restPose).get('child').rot).toBeLessThan(22.5);
+  });
+});

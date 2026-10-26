@@ -101,6 +101,12 @@
         .se-tl-key-ghost { background: transparent; border: 1px dashed #ffd479; cursor: default; pointer-events: none; transform: translate(-50%, -50%) rotate(45deg); }
         .se-tl-loop-tie { position: absolute; top: 50%; height: 0; border-top: 1px dashed rgba(255, 212, 121, 0.45); pointer-events: none; right: 0; }
         #se-tl-playhead { position: absolute; top: 0; bottom: 0; width: 2px; background: #ff5a5a; pointer-events: none; }
+        #se-curve-panel { border-bottom: 1px solid #26355c; display: flex; flex-direction: column; }
+        .se-curve-toolbar { display: flex; align-items: center; gap: 6px; padding: 3px 6px; border-bottom: 1px solid #1a2440; flex-wrap: wrap; }
+        .se-curve-toolbar button.active { border-color: #ffd479; color: #ffd479; }
+        .se-curve-toolbar button:disabled { opacity: 0.4; cursor: default; }
+        .se-curve-body { position: relative; height: 170px; margin-left: 100px; overflow: hidden; }
+        #se-curve-canvas { width: 100%; height: 100%; display: block; cursor: crosshair; }
         .se-empty { color: #5a6a90; font-size: 12px; padding: 8px; text-align: center; }
     </style>
 </head>
@@ -261,11 +267,25 @@
                     <button id="se-keyframe" title="在当前时间记录选中骨骼的姿态">🔑 打关键帧(K)</button>
                     <button id="se-loop-tie" title="在剪辑结尾为所有轨道补一帧循环闭合帧（姿态=各自首帧）：先做前半段动作（如迈左脚、交叉脚），补尾帧后再摆后半段动作（迈右脚），结尾与开头姿态一致即无缝循环">⟲ 补循环尾帧</button>
                     <button id="se-key-del" class="danger" disabled>🗑 删除关键帧</button>
+                    <button id="se-curve-toggle" title="曲线编辑：按属性分轨查看选中骨骼的动画曲线，拖动贝塞尔手柄调整缓动形状（与运行时同一采样语义）">📈 曲线</button>
                     <label>轨道骨骼</label>
                     <select id="se-track-bone-select"></select>
                     <button id="se-track-add">✚ 轨道</button>
                     <button id="se-track-del" class="danger">🗑 轨道</button>
                     <span style="color:#5a6a90;font-size:11px;margin-left:4px;" title="框选：在轨道区空白处按住拖出矩形，选中框内所有关键帧（Shift/Ctrl+拖动=追加选区；Alt+拖动同框选）；拖动任一选中帧=整组平移；Ctrl/Shift+点选=逐个加选">框选：空白处拖动（Shift/Ctrl=追加）</span>
+                </div>
+                <div id="se-curve-panel" style="display:none;">
+                    <div class="se-curve-toolbar">
+                        <span style="color:#ffd479;font-size:12px;font-weight:bold;">📈 曲线</span>
+                        <span id="se-curve-bone" style="color:#9aa5c0;font-size:11px;"></span>
+                        <div id="se-curve-props" style="display:flex;gap:4px;flex-wrap:wrap;"></div>
+                        <span style="border-left:1px solid #26355c;height:20px;"></span>
+                        <span style="color:#5a6a90;font-size:11px;">预设（出向段）</span>
+                        <div id="se-curve-presets" style="display:flex;gap:4px;"></div>
+                        <span id="se-curve-hint" style="color:#5a6a90;font-size:10px;margin-left:auto;"></span>
+                        <button id="se-curve-close" title="关闭曲线面板">✕</button>
+                    </div>
+                    <div class="se-curve-body" id="se-curve-body"><canvas id="se-curve-canvas"></canvas></div>
                 </div>
                 <div class="se-tl-body" id="se-tl-body"></div>
             </div>

@@ -244,16 +244,32 @@ export function parseSkeletonAsset(doc) {
       // null/undefined 一律解析为 null（采样时回退骨骼 rest）；
       // 注意 Number(null)===0，不能用 Number.isFinite(Number(v)) 判空——会把缺省缩放解析成 0（骨骼塌缩）。
       const nullableNum = value => (value == null || !Number.isFinite(Number(value))) ? null : Number(value);
+      // 贝塞尔控制点（schema v2，Unity 切线约定）：x∈[0,1]（时间单调）、y 任意（允许 overshoot）。
+      // 非法/缺省剥离（不保留半残对象）；y 坐标不越界钳制——overshoot（ anticipation/follow-through）是合法曲线形态。
+      const normalizeHandle = raw => {
+        if (!raw || typeof raw !== 'object') return null;
+        const x = Number(raw.x);
+        const y = Number(raw.y);
+        if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+        return { x: Math.max(0, Math.min(1, x)), y };
+      };
       const keys = (Array.isArray(track?.keys) ? track.keys : [])
-        .map(key => ({
-          t: Math.max(0, num(key?.t)),
-          x: nullableNum(key?.x),
-          y: nullableNum(key?.y),
-          rot: nullableNum(key?.rot),
-          scaleX: nullableNum(key?.scaleX),
-          scaleY: nullableNum(key?.scaleY),
-          ease: key?.ease === 'easeInOut' ? 'easeInOut' : 'linear'
-        }))
+        .map(key => {
+          const inHandle = normalizeHandle(key?.in);
+          const outHandle = normalizeHandle(key?.out);
+          return {
+            t: Math.max(0, num(key?.t)),
+            x: nullableNum(key?.x),
+            y: nullableNum(key?.y),
+            rot: nullableNum(key?.rot),
+            scaleX: nullableNum(key?.scaleX),
+            scaleY: nullableNum(key?.scaleY),
+            ease: key?.ease === 'easeInOut' ? 'easeInOut' : 'linear',
+            ...(inHandle ? { in: inHandle } : {}),
+            ...(outHandle ? { out: outHandle } : {}),
+            ...(key?.hold === true ? { hold: true } : {})
+          };
+        })
         .sort((a, b) => a.t - b.t);
       if (keys.length > 0) tracks.set(boneId, keys);
     }

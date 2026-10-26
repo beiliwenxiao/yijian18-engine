@@ -184,6 +184,25 @@ inclusion: always
 - 烘焙取值**必须复用引擎自己的 `sampleClip`**（别另写一份插值，语义会漂移）。
 - 字段名坑：局部姿势对象是 `sx/sy`，烘焙表列名是 `scaleX/scaleY`（写错会静默失效）。
 
+### 时间轴曲线编辑器（贝塞尔手柄 / 按属性分轨）
+
+- **数据**：关键帧键可带 `in:{x,y}` / `out:{x,y}`（Unity 切线约定，两切线都按正向时间表达；
+  x∈[0,1] 保证时间单调，y 允许 ±2 overshoot 做预备/跟随）与 `hold:true`（该键→下一键阶跃）。
+  「按属性分轨」= x/y/rot/scaleX/scaleY 各自独立成曲线，键字段非 null 即该属性有键。
+- **段插值单一来源 = `SkeletonCurve.segmentProgress`**（hold → 贝塞尔 → 命名缓动 → 线性）：
+  `SkeletonPose.sampleField` 与编辑器曲线面板（折线经 `sampleNumericCurve`）都复用它，
+  **禁止另写插值**——编辑器预览必须=运行时表现。
+- `parseSkeletonAsset` 保留合法 `in/out/hold`（非法/半残对象剥离，静默丢弃不报错）；
+  `SkeletonAssetValidator` 校验控制点必须是 {x,y} 数值且 x∈[0,1]。
+- 编辑器纯函数在 `editor/SkeletonEditorCurve.js`（分轨提取/控制点几何/拖拽写回/预设/折线采样，
+  配 SkeletonEditorCurve.test.js）；UI 是时间轴工具条「📈 曲线」面板：属性 chips 分轨切换 +
+  手柄拖拽 + 键值垂直拖拽 + 缓动预设（线性/缓入/缓出/缓入缓出/保持/清除）。
+- **符号坑**：in 侧 y 与 out 侧相反——out.y=(pointV−a.v)/delta，in.y=(b.v−pointV)/delta
+  （控制点公式 p2 = B − in·(span,delta) 反解所致，写反了拖拽方向会镜像跳变）。
+- **水平段坑**：delta≈0 时 y 无效果（整段斜率恒 0），拖拽只改 x、保留原 y。
+- 拖拽结束/预设应用后要 `parseSkeletonAsset` 重建运行时（曲线手柄进采样）+ `_markDirty()`；
+  撤销走既有延迟提交 `_pushHistory`（拖拽首次移动才压栈）。
+
 ### 骨骼导出（Spine 格式）
 
 - 导出器 `src/dev/SkeletonSpineExporter.js`（纯函数）+ `scripts/export-skeleton-spine.mjs`

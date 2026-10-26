@@ -25,6 +25,8 @@
  *   wrot = pr + lrot；wsx = psx·lsx；wsy = psy·lsy
  */
 
+import { segmentProgress } from './SkeletonCurve.js';
+
 const DEG2RAD = Math.PI / 180;
 
 /** 静止局部姿态：Map(boneId -> { x, y, rot, sx, sy })。 */
@@ -48,6 +50,8 @@ function lerp(a, b, t) {
 
 /**
  * 单字段插值：两键都缺省返回 null（由调用方回退静止姿态）。
+ * 段插值语义统一委托给 SkeletonCurve.segmentProgress（hold → 贝塞尔手柄 →
+ * 命名缓动 → 线性，单一来源），本函数只负责「按属性分列」的 null 回退。
  * loop=true 时尾段（最后关键帧 → durationMs）与第一关键帧插值（Unity 式自动环绕：
  * 隐式把首帧姿态复制到 t=durationMs），循环回绕点两侧姿态一致，消除循环跳变；
  * loop=false 保持 hold 最后一帧（攻击停格等一次性动作语义）。
@@ -61,7 +65,7 @@ function sampleField(keys, timeMs, field, loop, durationMs) {
     if (!shouldWrap) return last[field];
     const span = durationMs - last.t;
     const ratio = span > 0 ? (timeMs - last.t) / span : 0;
-    const eased = applyEase(first.ease, Math.max(0, Math.min(1, ratio)));
+    const eased = segmentProgress(last, first, Math.max(0, Math.min(1, ratio)));
     const va = last[field];
     const vb = first[field];
     if (va === null && vb === null) return null;
@@ -76,7 +80,7 @@ function sampleField(keys, timeMs, field, loop, durationMs) {
   const b = keys[upper];
   const span = b.t - a.t;
   const ratio = span > 0 ? (timeMs - a.t) / span : 0;
-  const eased = applyEase(b.ease || a.ease, Math.max(0, Math.min(1, ratio)));
+  const eased = segmentProgress(a, b, ratio);
   const va = a[field];
   const vb = b[field];
   if (va === null && vb === null) return null;
