@@ -842,7 +842,8 @@
       "stats": {
         "attack": 5
       },
-      "subType": "weapon"
+      "subType": "weapon",
+      "weaponKey": "sword"
     },
     {
       "id": "weapon.wolf_fang",
@@ -909,7 +910,8 @@
         "attack": 14,
         "speed": 2
       },
-      "subType": "weapon"
+      "subType": "weapon",
+      "weaponKey": "sword"
     },
     {
       "id": "equipment.s04.fire_hardened_armor",
@@ -962,7 +964,8 @@
         "attack": 13,
         "speed": 5
       },
-      "subType": "weapon"
+      "subType": "weapon",
+      "weaponKey": "spear"
     },
     {
       "id": "weapon.s10.talisman_staff",
@@ -980,7 +983,8 @@
         "attack": 10,
         "maxMp": 25
       },
-      "subType": "weapon"
+      "subType": "weapon",
+      "weaponKey": "staff"
     },
     {
       "id": "equipment.s11.breakthrough_armor",
@@ -1034,7 +1038,8 @@
         "attack": 3,
         "defense": 7
       },
-      "subType": "shield"
+      "subType": "shield",
+      "weaponKey": "shield"
     },
     {
       "id": "wooden_shield",
@@ -1050,7 +1055,8 @@
       "stats": {
         "defense": 2
       },
-      "subType": "shield"
+      "subType": "shield",
+      "weaponKey": "shield"
     },
     {
       "id": "short_bow",

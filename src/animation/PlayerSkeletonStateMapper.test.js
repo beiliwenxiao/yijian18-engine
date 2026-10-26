@@ -66,9 +66,9 @@ function buildHeadSkeleton() {
 }
 
 /** 构造实体 mock：sprite/equipment/inventory 三组件 + _weaponDrawn 战斗持握标志。 */
-function buildEntity({ mainhand = null, bag = [], drawn = false, direction = 'down' } = {}) {
+function buildEntity({ mainhand = null, offhand = null, bag = [], drawn = false, direction = 'down' } = {}) {
   const sprite = { direction, flipX: false, isWalking: false, isStopping: false };
-  const equipment = { getEquipment: slot => (slot === 'mainhand' ? mainhand : null) };
+  const equipment = { getEquipment: slot => (slot === 'mainhand' ? mainhand : slot === 'offhand' ? offhand : null) };
   const inventory = { slots: bag.map(item => ({ item, quantity: 1 })) };
   const entity = {
     isDead: false, isDying: false, isSoulState: false, _climbing: false,
@@ -313,6 +313,178 @@ describe('武器槽位联动（战斗=手持，非战斗=背挂，采集=手持�
     hook(skeleton);
     expect(slotVisible(skeleton, 'toolHand')).toBe(true);     // mapperHold return 前已上手
     expect(slotVisible(skeleton, 'axeBack')).toBe(false);    // 背上收起
+  });
+});
+
+/**
+ * 构造女骑士式骨架（槽位约定与 player-female.json 一致）：
+ * weapon-sword 手持刀（armFR）、weapon-shield 手持盾（armFL）、
+ * weapon-sword-waist 腰挂刀（hips，单手短兵器收纳）、weapon-shield-back 背挂盾（back，盾牌收纳）。
+ */
+function buildFemaleWeaponSkeleton() {
+  return parseSkeletonAsset({
+    schemaVersion: 1,
+    skeletonId: 'skeleton.female-weapon-test',
+    meta: { width: 64, height: 64 },
+    defaultClip: 'idle_down',
+    bones: [
+      { id: 'hips', parent: null, x: 0, y: 0 },
+      { id: 'armFR', parent: 'hips', x: 7, y: -16 },
+      { id: 'armFL', parent: 'hips', x: -7, y: -16 },
+      { id: 'back', parent: 'hips', x: 0, y: -14 }
+    ],
+    slots: [
+      { id: 'weapon-sword', bone: 'armFR', z: 3, attachment: { type: 'image', assetId: 'player.female.sword', visible: true } },
+      { id: 'weapon-shield', bone: 'armFL', z: 3, attachment: { type: 'image', assetId: 'player.female.shield', visible: true } },
+      { id: 'weapon-sword-waist', bone: 'hips', z: 2, attachment: { type: 'image', assetId: 'player.female.sword', visible: false } },
+      { id: 'weapon-shield-back', bone: 'back', z: 1, attachment: { type: 'image', assetId: 'player.female.shield', visible: false } }
+    ],
+    clips: [
+      { name: 'idle_down', durationMs: 1000, loop: true, tracks: [] }
+    ]
+  });
+}
+
+describe('副手（盾）装备联动：战斗上手、非战斗收背挂，不参与战斗拔刀', () => {
+  it('战斗 offhand 装盾：盾上手；主手无刀时刀槽/腰挂隐藏', () => {
+    const asset = buildFemaleWeaponSkeleton();
+    const entity = buildEntity({ offhand: { id: 'wooden_shield', weaponKey: 'shield', subType: 'shield' }, drawn: true });
+    const hook = createPlayerSkeletonStateMapper(entity, {});
+    const skeleton = buildSkeletonComponent(asset);
+    hook(skeleton);
+    expect(slotVisible(skeleton, 'weapon-shield')).toBe(true);      // 战斗中盾上手
+    expect(slotVisible(skeleton, 'weapon-shield-back')).toBe(false);// 不在背上
+    expect(slotVisible(skeleton, 'weapon-sword')).toBe(false);      // 没有刀
+    expect(slotVisible(skeleton, 'weapon-sword-waist')).toBe(false);// 背包也没刀
+  });
+
+  it('非战斗 offhand 装盾：盾收背挂（战斗才上手）', () => {
+    const asset = buildFemaleWeaponSkeleton();
+    const entity = buildEntity({ offhand: { id: 'wooden_shield', weaponKey: 'shield', subType: 'shield' } });
+    const hook = createPlayerSkeletonStateMapper(entity, {});
+    const skeleton = buildSkeletonComponent(asset);
+    hook(skeleton);
+    expect(slotVisible(skeleton, 'weapon-shield')).toBe(false);     // 手上没盾
+    expect(slotVisible(skeleton, 'weapon-shield-back')).toBe(true); // 盾背在背上
+  });
+
+  it('非战斗主手刀 + offhand 盾：刀收腰挂、盾收背挂', () => {
+    const asset = buildFemaleWeaponSkeleton();
+    const entity = buildEntity({
+      mainhand: { id: 'iron_sword', weaponKey: 'sword' },
+      offhand: { id: 'wooden_shield', weaponKey: 'shield', subType: 'shield' }
+    });
+    const hook = createPlayerSkeletonStateMapper(entity, {});
+    const skeleton = buildSkeletonComponent(asset);
+    hook(skeleton);
+    expect(slotVisible(skeleton, 'weapon-sword')).toBe(false);       // 手上没刀
+    expect(slotVisible(skeleton, 'weapon-sword-waist')).toBe(true);  // 刀挂腰间
+    expect(slotVisible(skeleton, 'weapon-shield')).toBe(false);      // 手上没盾
+    expect(slotVisible(skeleton, 'weapon-shield-back')).toBe(true);  // 盾背在背上
+  });
+
+  it('战斗中卸下盾（卸入背包）：手持盾隐、盾回背挂', () => {
+    const asset = buildFemaleWeaponSkeleton();
+    const offhandBox = { current: { id: 'wooden_shield', weaponKey: 'shield', subType: 'shield' } };
+    const bagBox = { slots: [] };
+    const equipment = { getEquipment: slot => (slot === 'offhand' ? offhandBox.current : null) };
+    const entity = {
+      isDead: false, isDying: false, isSoulState: false, _climbing: false,
+      getComponent(name) {
+        if (name === 'sprite') return { direction: 'down', flipX: false, isWalking: false, isStopping: false };
+        if (name === 'equipment') return equipment;
+        if (name === 'inventory') return bagBox;
+        return null;
+      }
+    };
+    entity._weaponDrawn = true;                                      // 战斗中
+    const hook = createPlayerSkeletonStateMapper(entity, {});
+    const skeleton = buildSkeletonComponent(asset);
+    hook(skeleton);
+    expect(slotVisible(skeleton, 'weapon-shield')).toBe(true);
+    expect(slotVisible(skeleton, 'weapon-shield-back')).toBe(false);
+
+    offhandBox.current = null;                                       // unequipItem → 卸入背包
+    bagBox.slots = [{ item: { id: 'wooden_shield', weaponKey: 'shield', subType: 'shield' }, quantity: 1 }];
+    hook(skeleton);
+    expect(slotVisible(skeleton, 'weapon-shield')).toBe(false);      // 手上没盾了
+    expect(slotVisible(skeleton, 'weapon-shield-back')).toBe(true);  // 盾收回背上
+  });
+
+  it('盾在背包未装备：盾槽隐藏、回背挂，且不会被战斗自动上手（拔刀不含盾）', () => {
+    const asset = buildFemaleWeaponSkeleton();
+    const entity = buildEntity({
+      offhand: null,
+      bag: [{ id: 'wooden_shield', weaponKey: 'shield', subType: 'shield' }],
+      drawn: true                                                // 进战斗，主手空
+    });
+    const hook = createPlayerSkeletonStateMapper(entity, {});
+    const skeleton = buildSkeletonComponent(asset);
+    hook(skeleton);
+    expect(slotVisible(skeleton, 'weapon-shield')).toBe(false);      // 盾不是拔出对象
+    expect(slotVisible(skeleton, 'weapon-shield-back')).toBe(true);  // 盾挂在背上
+    expect(slotVisible(skeleton, 'weapon-sword')).toBe(false);
+  });
+
+  it('主手刀 + offhand 盾（战斗）：刀上手、盾同持、刀腰挂隐藏', () => {
+    const asset = buildFemaleWeaponSkeleton();
+    const entity = buildEntity({
+      mainhand: { id: 'iron_sword', weaponKey: 'sword' },
+      offhand: { id: 'wooden_shield', weaponKey: 'shield', subType: 'shield' },
+      drawn: true
+    });
+    const hook = createPlayerSkeletonStateMapper(entity, {});
+    const skeleton = buildSkeletonComponent(asset);
+    hook(skeleton);
+    expect(slotVisible(skeleton, 'weapon-sword')).toBe(true);        // 刀拔出
+    expect(slotVisible(skeleton, 'weapon-shield')).toBe(true);       // 盾持握（双持表现）
+    expect(slotVisible(skeleton, 'weapon-sword-waist')).toBe(false); // 刀已上手不挂腰
+  });
+
+  it('非战斗主手空 + 背包有刀 + offhand 盾：刀回腰挂、盾回背挂', () => {
+    const asset = buildFemaleWeaponSkeleton();
+    const entity = buildEntity({
+      offhand: { id: 'wooden_shield', weaponKey: 'shield', subType: 'shield' },
+      bag: [{ id: 'iron_sword', weaponKey: 'sword' }]
+    });
+    const hook = createPlayerSkeletonStateMapper(entity, {});
+    const skeleton = buildSkeletonComponent(asset);
+    hook(skeleton);
+    expect(slotVisible(skeleton, 'weapon-sword')).toBe(false);       // 非战斗收刀
+    expect(slotVisible(skeleton, 'weapon-sword-waist')).toBe(true);  // 刀挂腰间
+    expect(slotVisible(skeleton, 'weapon-shield')).toBe(false);      // 非战斗盾不持握
+    expect(slotVisible(skeleton, 'weapon-shield-back')).toBe(true);  // 盾背在背上
+  });
+
+  it('长兵器（spear）非战斗：回背挂而非腰挂', () => {
+    const asset = parseSkeletonAsset({
+      schemaVersion: 1,
+      skeletonId: 'skeleton.spear-test',
+      meta: { width: 64, height: 64 },
+      defaultClip: 'idle_down',
+      bones: [{ id: 'hips', parent: null, x: 0, y: 0 }, { id: 'armFR', parent: 'hips', x: 7, y: -16 }, { id: 'back', parent: 'hips', x: 0, y: -14 }],
+      slots: [
+        { id: 'weapon-spear', bone: 'armFR', z: 3, attachment: { type: 'image', assetId: 'player.parts.weapon-spear', visible: true } },
+        { id: 'weapon-spear-back', bone: 'back', z: 1, attachment: { type: 'image', assetId: 'player.parts.weapon-spear', visible: false } },
+        { id: 'weapon-spear-waist', bone: 'hips', z: 2, attachment: { type: 'image', assetId: 'player.parts.weapon-spear', visible: false } }
+      ],
+      clips: [{ name: 'idle_down', durationMs: 1000, loop: true, tracks: [] }]
+    });
+    const entity = buildEntity({ bag: [{ id: 'weapon.s07.pursuit_spear', weaponKey: 'spear' }] });
+    const hook = createPlayerSkeletonStateMapper(entity, {});
+    const skeleton = buildSkeletonComponent(asset);
+    hook(skeleton);
+    expect(slotVisible(skeleton, 'weapon-spear-back')).toBe(true);   // 长兵器挂背
+    expect(slotVisible(skeleton, 'weapon-spear-waist')).toBe(false); // 不挂腰
+  });
+
+  it('offhand 装无 weaponKey 的物品（法符等）：盾槽不亮', () => {
+    const asset = buildFemaleWeaponSkeleton();
+    const entity = buildEntity({ offhand: { id: 'equipment.s12.taiping_scripture', subType: 'talisman' } });
+    const hook = createPlayerSkeletonStateMapper(entity, {});
+    const skeleton = buildSkeletonComponent(asset);
+    hook(skeleton);
+    expect(slotVisible(skeleton, 'weapon-shield')).toBe(false);
   });
 });
 

@@ -49,24 +49,43 @@ const WEAPON_BACK_BONE = 'back';
 
 /**
  * 解析武器槽位的 weaponKey 与位置。
- * 约定：assetId 或槽位 id 含 weapon-{key}；位置由槽位 id 的 -back 后缀或挂 back 骨骼判定。
- * @returns {{key:string, pos:'hand'|'back'}|null} 非武器槽位返回 null
+ * 约定：assetId 或槽位 id 含 weapon-{key}；
+ *   手持位 `weapon-{key}` / 背挂位 `weapon-{key}-back`（或挂 back 骨骼）/ 腰挂位 `weapon-{key}-waist`。
+ * @returns {{key:string, pos:'hand'|'back'|'waist'}|null} 非武器槽位返回 null
  */
 function parseWeaponSlot(slot) {
   const assetId = slot?.attachment?.assetId || '';
   const slotId = slot?.id || '';
-  const match = assetId.match(/weapon-([a-z0-9_]+)/i) || slotId.match(/weapon-([a-z0-9_]+?)(-back)?$/i);
+  const match = assetId.match(/weapon-([a-z0-9_]+)/i) || slotId.match(/weapon-([a-z0-9_]+?)(-back|-waist)?$/i);
   if (!match) return null;
   const key = match[1];
+  const isWaist = /-waist$/i.test(slotId);
   const isBack = /-back$/i.test(slotId) || slot?.bone === WEAPON_BACK_BONE;
-  return { key, pos: isBack ? 'back' : 'hand' };
+  return { key, pos: isWaist ? 'waist' : isBack ? 'back' : 'hand' };
 }
 
-/** 收集背包中所有武器的 weaponKey 集合（weaponKey 取自已装备的武器定义）。 */
+/**
+ * weaponKey → 收纳位（未持握时挂哪）：
+ *   单手短兵器（剑/刀/匕首）腰挂 waist；双手/长兵器与盾牌背挂 back。
+ * 骨架未提供对应收纳槽时收纳态隐藏（与无槽现状一致，零回归）。
+ */
+const WEAPON_CARRY = {
+  sword: 'waist',
+  skinningKnife: 'waist',
+  wolfFang: 'waist',
+  axe: 'back',
+  spear: 'back',
+  staff: 'back',
+  bow: 'back',
+  shield: 'back'
+};
+
+/** 收集背包中所有武器的 weaponKey 集合（盾走 offhand 通道，不进主手武器集合）。 */
 function collectInventoryWeaponKeys(entity) {
   const keys = new Set();
   const inventory = entity?.getComponent?.('inventory');
   for (const stack of inventory?.slots || []) {
+    if (stack?.item?.subType === 'shield') continue; // 盾不能被「战斗自动上手」拔出
     const key = weaponKeyOf(stack?.item);
     if (key) keys.add(key);
   }
@@ -74,19 +93,29 @@ function collectInventoryWeaponKeys(entity) {
 }
 
 /**
- * 解析武器来源（主手装备 + 背包库存）。
+ * 解析武器来源（主手/副手装备 + 背包库存）。
  * - mainhandKey：主手装备的武器 key（未装备为空）
- * - bagKeys：背包武器 key 列表（背包槽顺序，确定性）
- * - ownedKeys：背挂来源 = 背包武器 + 已装备主手武器（装备时物品移出背包，需补回，
- *   否则非战斗时已装备武器无处可挂）
+ * - offhandKey：副手装备的 key（盾类，用于盾槽联动）
+ * - bagKeys：背包武器 key 列表（背包槽顺序，确定性，不含盾——盾不能被拔出）
+ * - ownedKeys：收纳来源 = 背包武器 + 背包盾 + 已装备主手/副手武器
+ *   （装备时物品移出背包，需补回，否则未持握时无处可挂）
  */
 function resolveWeaponInventory(entity) {
-  const mainhand = entity?.getComponent?.('equipment')?.getEquipment?.('mainhand');
+  const equipment = entity?.getComponent?.('equipment');
+  const mainhand = equipment?.getEquipment?.('mainhand');
   const mainhandKey = weaponKeyOf(mainhand) || '';
+  const offhandKey = weaponKeyOf(equipment?.getEquipment?.('offhand')) || '';
   const bagKeys = [...collectInventoryWeaponKeys(entity)];
   const ownedKeys = new Set(bagKeys);
   if (mainhandKey) ownedKeys.add(mainhandKey);
-  return { mainhandKey, bagKeys, ownedKeys };
+  if (offhandKey) ownedKeys.add(offhandKey);
+  const inventory = entity?.getComponent?.('inventory');
+  for (const stack of inventory?.slots || []) {
+    if (stack?.item?.subType !== 'shield') continue; // 盾的收纳来源单独补（bagKeys 已排除）
+    const key = weaponKeyOf(stack?.item);
+    if (key) ownedKeys.add(key);
+  }
+  return { mainhandKey, offhandKey, bagKeys, ownedKeys };
 }
 
 /**
@@ -97,16 +126,21 @@ function resolveWeaponInventory(entity) {
  * @param {Object} skeletonComponent - 覆盖层宿主
  * @param {Object} asset - parseSkeletonAsset 产物（只读）
  * @param {string} heldKey - 当前应手持的武器 key（空=不持握）
- * @param {Set<string>} ownedKeys - 背挂来源武器 key 集合
+ * @param {Set<string>} ownedKeys - 收纳来源武器 key 集合（背包武器/盾 + 已装备主/副手）
+ * @param {string} offhandHeldKey - 持握中的副手盾 key（战斗中；空串=盾已收纳背挂）
  */
-function updateWeaponSlots(entity, skeletonComponent, asset, heldKey, ownedKeys) {
+function updateWeaponSlots(entity, skeletonComponent, asset, heldKey, ownedKeys, offhandHeldKey) {
   for (const slot of asset.slots) {
     const parsed = parseWeaponSlot(slot);
     if (!parsed) continue;
     if (!slot.attachment) continue;
     const visible = parsed.pos === 'hand'
-      ? parsed.key === heldKey
-      : parsed.key !== heldKey && ownedKeys.has(parsed.key);
+      // 手持位：主手武器（战斗拔出/采集工具）或战斗中的副手盾（非战斗盾收背挂）
+      ? parsed.key === heldKey || (offhandHeldKey !== '' && parsed.key === offhandHeldKey)
+      // 收纳位：未持握 + 确实拥有 + 类别匹配（单手短兵器→腰挂；双手/长兵器/盾→背挂）
+      : parsed.key !== heldKey && parsed.key !== offhandHeldKey
+        && ownedKeys.has(parsed.key)
+        && WEAPON_CARRY[parsed.key] === parsed.pos;
     skeletonComponent.setSlotOverride?.(slot.id, { visible });
   }
 }
@@ -139,7 +173,7 @@ export function createPlayerSkeletonStateMapper(entity, { getAssetManager = null
 
     // 武器槽位联动：必须先于离散剪辑保持（mapperHold）执行——
     // 采集（logging/gather）/攻击（attack）等离散动作播放期间，斧头也要正确上手/回背
-    const { mainhandKey, bagKeys, ownedKeys } = resolveWeaponInventory(entity);
+    const { mainhandKey, offhandKey, bagKeys, ownedKeys } = resolveWeaponInventory(entity);
     // 战斗中背包有武器未装备 → 自动上手（拔出）。
     // 只在「进战斗瞬间」评估一次并锁定到本次战斗结束：
     //   - 进战斗时主手为空 → 从背包取第一把武器上手；
@@ -156,10 +190,12 @@ export function createPlayerSkeletonStateMapper(entity, { getAssetManager = null
     const heldKey = entity._handToolOverride
       || (inCombat ? combatHeldKey : '')
       || '';
-    const weaponState = `${heldKey}|${[...ownedKeys].sort().join(',')}`;
+    // 副手盾与主手武器同规则：战斗才持握，非战斗收纳到背挂（offhandHeldKey 空串=盾已收纳）
+    const offhandHeldKey = inCombat ? offhandKey : '';
+    const weaponState = `${heldKey}|${offhandHeldKey}|${[...ownedKeys].sort().join(',')}`;
     if (weaponState !== lastWeaponState) {
       lastWeaponState = weaponState;
-      updateWeaponSlots(entity, skeletonComponent, asset, heldKey, ownedKeys);
+      updateWeaponSlots(entity, skeletonComponent, asset, heldKey, ownedKeys, offhandHeldKey);
     }
 
     // 头部槽位切换 + 侧向镜像 + 背挂换边（方向键变化时才写覆盖层，避免每帧触碰）。

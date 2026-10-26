@@ -1596,7 +1596,7 @@
       }
     },
     {
-      "id": "swordR",
+      "id": "weapon-sword",
       "bone": "forearmR",
       "z": 26,
       "attachment": {
@@ -1653,7 +1653,7 @@
       }
     },
     {
-      "id": "shieldL",
+      "id": "weapon-shield",
       "bone": "forearmL",
       "z": 25,
       "attachment": {
@@ -1710,59 +1710,52 @@
       }
     },
     {
-      "id": "swordBack",
+      "id": "weapon-sword-waist",
+      "bone": "hips",
+      "z": 24,
+      "attachment": {
+        "type": "image",
+        "assetId": "player.female.sword",
+        "x": 10,
+        "y": -2,
+        "rot": 165,
+        "width": 40,
+        "height": 40,
+        "visible": false,
+        "directionOffsets": {
+          "down": { "x": 10, "y": -2, "rot": 165 },
+          "side": { "x": 10, "y": -2, "rot": 165 },
+          "sideL": { "x": 10, "y": -2, "rot": 165 },
+          "up": { "x": -10, "y": -2, "rot": -165 },
+          "SE": { "x": 10, "y": -2, "rot": 165 },
+          "SW": { "x": 10, "y": -2, "rot": 165 },
+          "NE": { "x": -10, "y": -2, "rot": -165 },
+          "NW": { "x": -10, "y": -2, "rot": -165 }
+        }
+      }
+    },
+    {
+      "id": "weapon-shield-back",
       "bone": "back",
       "z": 2,
       "attachment": {
         "type": "image",
-        "assetId": "player.female.sword",
-        "x": -8,
-        "y": -6,
-        "rot": -70,
-        "width": 56,
-        "height": 56,
+        "assetId": "player.female.shield",
+        "x": 0,
+        "y": -2,
+        "rot": 0,
+        "width": 24,
+        "height": 28,
         "visible": false,
         "directionOffsets": {
-          "down": {
-            "x": -8,
-            "y": -6,
-            "rot": -70
-          },
-          "side": {
-            "x": -8,
-            "y": -6,
-            "rot": -70
-          },
-          "sideL": {
-            "x": -8,
-            "y": -6,
-            "rot": -70
-          },
-          "up": {
-            "x": -37.36,
-            "y": -6,
-            "rot": -70
-          },
-          "SE": {
-            "x": -8,
-            "y": -6,
-            "rot": -70
-          },
-          "SW": {
-            "x": -8,
-            "y": -6,
-            "rot": -70
-          },
-          "NE": {
-            "x": -37.36,
-            "y": -6,
-            "rot": -70
-          },
-          "NW": {
-            "x": -37.36,
-            "y": -6,
-            "rot": -70
-          }
+          "down": { "x": 0, "y": -2, "rot": 0 },
+          "side": { "x": 0, "y": -2, "rot": 0 },
+          "sideL": { "x": 0, "y": -2, "rot": 0 },
+          "up": { "x": 0, "y": -2, "rot": 0 },
+          "SE": { "x": 0, "y": -2, "rot": 0 },
+          "SW": { "x": 0, "y": -2, "rot": 0 },
+          "NE": { "x": 0, "y": -2, "rot": 0 },
+          "NW": { "x": 0, "y": -2, "rot": 0 }
         }
       }
     }

@@ -219,8 +219,8 @@ console.log(`部件图集：${packed.atlas.width}×${SHEET_H}，${order.length} 
 /* ---------------- 3.5 武器部件图（刀 / 盾） ----------------
  * 素材包没有独立武器图，按女骑士配色（钢蓝 #9aa4b4 / 深蓝 #4a5262 / 金 #c9963c / 皮革 #6b4a2f）程序化绘制。
  * 画布 64×64，握把在画布中心：挂到 forearmR/forearmL 后刀柄正落在手上。
- * 刀槽 id `weapon-sword` 会被 PlayerSkeletonStateMapper 当武器管理（只有装备时才显示）；
- * 盾槽 id `shieldL` 不含 weapon- 前缀 → 不受武器逻辑管理，恒定挂在左手。
+ * 刀槽 id `weapon-sword` / 盾槽 id `weapon-shield` 均由 PlayerSkeletonStateMapper 按装备联动管理：
+ * 刀跟主手/背包（战斗拔出、非战斗回背），盾跟副手（offhand 装备即持握）。
  */
 const SWORD_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64">
   <g shape-rendering="crispEdges">
@@ -387,31 +387,55 @@ const weaponDirOffsets = (base) => {
 /** 盾外挂偏移：从小臂轴线往外推，避免挡在胸前。 */
 const SHIELD_OUT = 9;
 const SHIELD_Y = r2(forearmLen * 0.55);
-// 刀：槽 id 与 assetId 都不含 weapon- → 不受武器槽显隐逻辑管理，恒持握（要接装备系统时改回 weapon- 前缀）
+// 刀：槽 id 符合 weapon-{key} 约定 → 跟主手装备/背包武器联动（战斗拔出、非战斗回背）
 slots.push({
-  id: 'swordR', bone: 'forearmR', z: 26,
+  id: 'weapon-sword', bone: 'forearmR', z: 26,
   attachment: {
     type: 'image', assetId: 'player.female.sword',
     x: 0, y: HAND_Y, rot: 0, width: 56, height: 56, visible: true,
     directionOffsets: weaponDirOffsets({ x: 0, y: HAND_Y, rot: 0 })
   }
 });
-// 盾：左手恒挂（盾不是背包武器）
+// 盾：槽 id 符合 weapon-{key} 约定 → 跟副手（offhand）装备联动，装备即持握
 slots.push({
-  id: 'shieldL', bone: 'forearmL', z: 25,
+  id: 'weapon-shield', bone: 'forearmL', z: 25,
   attachment: {
     type: 'image', assetId: 'player.female.shield',
     x: SHIELD_OUT, y: SHIELD_Y, rot: 0, width: 22, height: 26, visible: true,
     directionOffsets: weaponDirOffsets({ x: SHIELD_OUT, y: SHIELD_Y, rot: 0 })
   }
 });
-// 背挂位：留给后续「收刀」状态
+// 刀腰挂（单手短兵器收纳）：挂 hips 骨骼右腰侧，刀斜插刃朝下、柄朝上露出一截；
+// 槽 id `weapon-{key}-waist` → PlayerSkeletonStateMapper 按「单手短兵器收纳位」管理（未持握时显示）。
+// 背/斜后视角色右手落在画面左侧 → x 取反镜像（不复用手持武器镜像公式，腰挂是相对髋部的固定偏移）。
+const WAIST_X = 10, WAIST_Y = -2, WAIST_ROT = 165;
 slots.push({
-  id: 'swordBack', bone: 'back', z: 2,
+  id: 'weapon-sword-waist', bone: 'hips', z: 24,
   attachment: {
     type: 'image', assetId: 'player.female.sword',
-    x: -8, y: -6, rot: -70, width: 56, height: 56, visible: false,
-    directionOffsets: weaponDirOffsets({ x: -8, y: -6, rot: -70 })
+    x: WAIST_X, y: WAIST_Y, rot: WAIST_ROT, width: 40, height: 40, visible: false,
+    directionOffsets: (() => {
+      const out = {};
+      for (const form of FORM_KEYS) {
+        const mirror = form === 'up' || form === 'NE' || form === 'NW';
+        out[form] = { x: mirror ? r2(-WAIST_X) : WAIST_X, y: WAIST_Y, rot: mirror ? r2(-WAIST_ROT) : WAIST_ROT };
+      }
+      return out;
+    })()
+  }
+});
+// 盾背挂（盾牌收纳）：挂 back 骨骼背部中央，正/背对视角被躯干遮挡属物理遮挡；
+// 槽 id `weapon-{key}-back` → mapper 按「盾牌收纳位」管理；背面视角 flipX 由 applyFacing 自动处理
+slots.push({
+  id: 'weapon-shield-back', bone: 'back', z: 2,
+  attachment: {
+    type: 'image', assetId: 'player.female.shield',
+    x: 0, y: -2, rot: 0, width: 24, height: 28, visible: false,
+    directionOffsets: (() => {
+      const out = {};
+      for (const form of FORM_KEYS) out[form] = { x: 0, y: -2, rot: 0 };
+      return out;
+    })()
   }
 });
 
