@@ -28,14 +28,14 @@
 
 感谢以下图片来源：
 
-图片来源：https://itch.io/profile/elie-automata
-https://elie-automata.itch.io/female-hero-free-2d-pixel-art-knight/comments
+图片来源：<a href="https://itch.io/profile/elie-automata" target="_blank">https://itch.io/profile/elie-automata</a>
+<a href="https://elie-automata.itch.io/female-hero-free-2d-pixel-art-knight/comments" target="_blank">https://elie-automata.itch.io/female-hero-free-2d-pixel-art-knight/comments</a>
 
-图片来源：https://opengameart.org
+图片来源：<a href="https://opengameart.org" target="_blank">https://opengameart.org</a>
 
-https://opengameart.org/content/2d-lost-garden-zelda-style-tiles-resized-to-32x32-with-additions
+<a href="https://opengameart.org/content/2d-lost-garden-zelda-style-tiles-resized-to-32x32-with-additions" target="_blank">https://opengameart.org/content/2d-lost-garden-zelda-style-tiles-resized-to-32x32-with-additions</a>
 
-图标来源：ravenmore.itch.io
+图标来源：<a href="https://ravenmore.itch.io" target="_blank">ravenmore.itch.io</a>
 
 
 
