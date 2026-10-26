@@ -7170,16 +7170,51 @@
       "imageId": "wolf.parts.body",
       "category": "character-part",
       "usage": [
-        "wolf-skeleton-part"
+        "skeleton-part"
       ],
-      "sourceFile": "assets/images/wolf/parts/body.png",
+      "sourceFile": "assets/images/units/parts/wolf-body.png",
       "runtime2D": {
-        "path": "assets/images/wolf/parts/body.png",
+        "path": "assets/images/units/parts/wolf-body.png",
         "mode": "image"
       },
       "runtime3D": {
         "mode": "billboard",
         "sourceAssetId": "wolf.parts.body"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 96,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 96,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "wolf.parts.head",
+      "imageId": "wolf.parts.head",
+      "category": "character-part",
+      "usage": [
+        "skeleton-part"
+      ],
+      "sourceFile": "assets/images/units/parts/wolf-head.png",
+      "runtime2D": {
+        "path": "assets/images/units/parts/wolf-head.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "wolf.parts.head"
       },
       "pivot": {
         "x": 0.5,
@@ -7197,42 +7232,7 @@
       },
       "animations": [],
       "targetPhase": "P1",
-      "status": "ai-generated",
-      "revision": 1
-    },
-    {
-      "assetId": "wolf.parts.head",
-      "imageId": "wolf.parts.head",
-      "category": "character-part",
-      "usage": [
-        "wolf-skeleton-part"
-      ],
-      "sourceFile": "assets/images/wolf/parts/head.png",
-      "runtime2D": {
-        "path": "assets/images/wolf/parts/head.png",
-        "mode": "image"
-      },
-      "runtime3D": {
-        "mode": "billboard",
-        "sourceAssetId": "wolf.parts.head"
-      },
-      "pivot": {
-        "x": 0.53125,
-        "y": 0.65625
-      },
-      "bounds": {
-        "width": 64,
-        "height": 64
-      },
-      "grid": {
-        "columns": 1,
-        "rows": 1,
-        "cellWidth": 64,
-        "cellHeight": 64
-      },
-      "animations": [],
-      "targetPhase": "P1",
-      "status": "ai-generated",
+      "status": "placeholder",
       "revision": 1
     },
     {
@@ -7240,11 +7240,11 @@
       "imageId": "wolf.parts.tail",
       "category": "character-part",
       "usage": [
-        "wolf-skeleton-part"
+        "skeleton-part"
       ],
-      "sourceFile": "assets/images/wolf/parts/tail.png",
+      "sourceFile": "assets/images/units/parts/wolf-tail.png",
       "runtime2D": {
-        "path": "assets/images/wolf/parts/tail.png",
+        "path": "assets/images/units/parts/wolf-tail.png",
         "mode": "image"
       },
       "runtime3D": {
@@ -7252,7 +7252,7 @@
         "sourceAssetId": "wolf.parts.tail"
       },
       "pivot": {
-        "x": 0.5625,
+        "x": 0.5,
         "y": 0.5
       },
       "bounds": {
@@ -7267,7 +7267,7 @@
       },
       "animations": [],
       "targetPhase": "P1",
-      "status": "ai-generated",
+      "status": "placeholder",
       "revision": 1
     },
     {
@@ -7791,41 +7791,6 @@
       "revision": 1
     },
     {
-      "assetId": "wolf.parts.body",
-      "imageId": "wolf.parts.body",
-      "category": "character-part",
-      "usage": [
-        "skeleton-part"
-      ],
-      "sourceFile": "assets/images/units/parts/wolf-body.png",
-      "runtime2D": {
-        "path": "assets/images/units/parts/wolf-body.png",
-        "mode": "image"
-      },
-      "runtime3D": {
-        "mode": "billboard",
-        "sourceAssetId": "wolf.parts.body"
-      },
-      "pivot": {
-        "x": 0.5,
-        "y": 0.5
-      },
-      "bounds": {
-        "width": 96,
-        "height": 64
-      },
-      "grid": {
-        "columns": 1,
-        "rows": 1,
-        "cellWidth": 96,
-        "cellHeight": 64
-      },
-      "animations": [],
-      "targetPhase": "P1",
-      "status": "placeholder",
-      "revision": 1
-    },
-    {
       "assetId": "wolf.parts.neck",
       "imageId": "wolf.parts.neck",
       "category": "character-part",
@@ -7861,41 +7826,6 @@
       "revision": 1
     },
     {
-      "assetId": "wolf.parts.head",
-      "imageId": "wolf.parts.head",
-      "category": "character-part",
-      "usage": [
-        "skeleton-part"
-      ],
-      "sourceFile": "assets/images/units/parts/wolf-head.png",
-      "runtime2D": {
-        "path": "assets/images/units/parts/wolf-head.png",
-        "mode": "image"
-      },
-      "runtime3D": {
-        "mode": "billboard",
-        "sourceAssetId": "wolf.parts.head"
-      },
-      "pivot": {
-        "x": 0.5,
-        "y": 0.5
-      },
-      "bounds": {
-        "width": 64,
-        "height": 64
-      },
-      "grid": {
-        "columns": 1,
-        "rows": 1,
-        "cellWidth": 64,
-        "cellHeight": 64
-      },
-      "animations": [],
-      "targetPhase": "P1",
-      "status": "placeholder",
-      "revision": 1
-    },
-    {
       "assetId": "wolf.parts.jaw",
       "imageId": "wolf.parts.jaw",
       "category": "character-part",
@@ -7910,41 +7840,6 @@
       "runtime3D": {
         "mode": "billboard",
         "sourceAssetId": "wolf.parts.jaw"
-      },
-      "pivot": {
-        "x": 0.5,
-        "y": 0.5
-      },
-      "bounds": {
-        "width": 64,
-        "height": 64
-      },
-      "grid": {
-        "columns": 1,
-        "rows": 1,
-        "cellWidth": 64,
-        "cellHeight": 64
-      },
-      "animations": [],
-      "targetPhase": "P1",
-      "status": "placeholder",
-      "revision": 1
-    },
-    {
-      "assetId": "wolf.parts.tail",
-      "imageId": "wolf.parts.tail",
-      "category": "character-part",
-      "usage": [
-        "skeleton-part"
-      ],
-      "sourceFile": "assets/images/units/parts/wolf-tail.png",
-      "runtime2D": {
-        "path": "assets/images/units/parts/wolf-tail.png",
-        "mode": "image"
-      },
-      "runtime3D": {
-        "mode": "billboard",
-        "sourceAssetId": "wolf.parts.tail"
       },
       "pivot": {
         "x": 0.5,
@@ -9939,6 +9834,706 @@
       "animations": [],
       "targetPhase": "P1",
       "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "refugee-child.parts.head",
+      "imageId": "refugee-child.parts.head",
+      "category": "character-part",
+      "usage": [
+        "refugee-child-skeleton-part"
+      ],
+      "sourceFile": "assets/images/refugee-child/parts/head.png",
+      "runtime2D": {
+        "path": "assets/images/refugee-child/parts/head.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "refugee-child.parts.head"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.84375
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "refugee-child.parts.torso",
+      "imageId": "refugee-child.parts.torso",
+      "category": "character-part",
+      "usage": [
+        "refugee-child-skeleton-part"
+      ],
+      "sourceFile": "assets/images/refugee-child/parts/torso.png",
+      "runtime2D": {
+        "path": "assets/images/refugee-child/parts/torso.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "refugee-child.parts.torso"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.84375
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "refugee-child.parts.arm",
+      "imageId": "refugee-child.parts.arm",
+      "category": "character-part",
+      "usage": [
+        "refugee-child-skeleton-part"
+      ],
+      "sourceFile": "assets/images/refugee-child/parts/arm.png",
+      "runtime2D": {
+        "path": "assets/images/refugee-child/parts/arm.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "refugee-child.parts.arm"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.09375
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "refugee-child.parts.leg",
+      "imageId": "refugee-child.parts.leg",
+      "category": "character-part",
+      "usage": [
+        "refugee-child-skeleton-part"
+      ],
+      "sourceFile": "assets/images/refugee-child/parts/leg.png",
+      "runtime2D": {
+        "path": "assets/images/refugee-child/parts/leg.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "refugee-child.parts.leg"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.09375
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "refugee-man.parts.head",
+      "imageId": "refugee-man.parts.head",
+      "category": "character-part",
+      "usage": [
+        "refugee-man-skeleton-part"
+      ],
+      "sourceFile": "assets/images/refugee-man/parts/head.png",
+      "runtime2D": {
+        "path": "assets/images/refugee-man/parts/head.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "refugee-man.parts.head"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.84375
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "refugee-man.parts.torso",
+      "imageId": "refugee-man.parts.torso",
+      "category": "character-part",
+      "usage": [
+        "refugee-man-skeleton-part"
+      ],
+      "sourceFile": "assets/images/refugee-man/parts/torso.png",
+      "runtime2D": {
+        "path": "assets/images/refugee-man/parts/torso.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "refugee-man.parts.torso"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.84375
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "refugee-man.parts.arm",
+      "imageId": "refugee-man.parts.arm",
+      "category": "character-part",
+      "usage": [
+        "refugee-man-skeleton-part"
+      ],
+      "sourceFile": "assets/images/refugee-man/parts/arm.png",
+      "runtime2D": {
+        "path": "assets/images/refugee-man/parts/arm.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "refugee-man.parts.arm"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.09375
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "refugee-man.parts.leg",
+      "imageId": "refugee-man.parts.leg",
+      "category": "character-part",
+      "usage": [
+        "refugee-man-skeleton-part"
+      ],
+      "sourceFile": "assets/images/refugee-man/parts/leg.png",
+      "runtime2D": {
+        "path": "assets/images/refugee-man/parts/leg.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "refugee-man.parts.leg"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.09375
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "refugee-woman.parts.head",
+      "imageId": "refugee-woman.parts.head",
+      "category": "character-part",
+      "usage": [
+        "refugee-woman-skeleton-part"
+      ],
+      "sourceFile": "assets/images/refugee-woman/parts/head.png",
+      "runtime2D": {
+        "path": "assets/images/refugee-woman/parts/head.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "refugee-woman.parts.head"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.84375
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "refugee-woman.parts.torso",
+      "imageId": "refugee-woman.parts.torso",
+      "category": "character-part",
+      "usage": [
+        "refugee-woman-skeleton-part"
+      ],
+      "sourceFile": "assets/images/refugee-woman/parts/torso.png",
+      "runtime2D": {
+        "path": "assets/images/refugee-woman/parts/torso.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "refugee-woman.parts.torso"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.84375
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "refugee-woman.parts.arm",
+      "imageId": "refugee-woman.parts.arm",
+      "category": "character-part",
+      "usage": [
+        "refugee-woman-skeleton-part"
+      ],
+      "sourceFile": "assets/images/refugee-woman/parts/arm.png",
+      "runtime2D": {
+        "path": "assets/images/refugee-woman/parts/arm.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "refugee-woman.parts.arm"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.09375
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "refugee-woman.parts.leg",
+      "imageId": "refugee-woman.parts.leg",
+      "category": "character-part",
+      "usage": [
+        "refugee-woman-skeleton-part"
+      ],
+      "sourceFile": "assets/images/refugee-woman/parts/leg.png",
+      "runtime2D": {
+        "path": "assets/images/refugee-woman/parts/leg.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "refugee-woman.parts.leg"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.09375
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "refugee-elder-man.parts.head",
+      "imageId": "refugee-elder-man.parts.head",
+      "category": "character-part",
+      "usage": [
+        "refugee-elder-man-skeleton-part"
+      ],
+      "sourceFile": "assets/images/refugee-elder-man/parts/head.png",
+      "runtime2D": {
+        "path": "assets/images/refugee-elder-man/parts/head.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "refugee-elder-man.parts.head"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.84375
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "refugee-elder-man.parts.torso",
+      "imageId": "refugee-elder-man.parts.torso",
+      "category": "character-part",
+      "usage": [
+        "refugee-elder-man-skeleton-part"
+      ],
+      "sourceFile": "assets/images/refugee-elder-man/parts/torso.png",
+      "runtime2D": {
+        "path": "assets/images/refugee-elder-man/parts/torso.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "refugee-elder-man.parts.torso"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.84375
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "refugee-elder-man.parts.arm",
+      "imageId": "refugee-elder-man.parts.arm",
+      "category": "character-part",
+      "usage": [
+        "refugee-elder-man-skeleton-part"
+      ],
+      "sourceFile": "assets/images/refugee-elder-man/parts/arm.png",
+      "runtime2D": {
+        "path": "assets/images/refugee-elder-man/parts/arm.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "refugee-elder-man.parts.arm"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.09375
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "refugee-elder-man.parts.leg",
+      "imageId": "refugee-elder-man.parts.leg",
+      "category": "character-part",
+      "usage": [
+        "refugee-elder-man-skeleton-part"
+      ],
+      "sourceFile": "assets/images/refugee-elder-man/parts/leg.png",
+      "runtime2D": {
+        "path": "assets/images/refugee-elder-man/parts/leg.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "refugee-elder-man.parts.leg"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.09375
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "refugee-elder-woman.parts.head",
+      "imageId": "refugee-elder-woman.parts.head",
+      "category": "character-part",
+      "usage": [
+        "refugee-elder-woman-skeleton-part"
+      ],
+      "sourceFile": "assets/images/refugee-elder-woman/parts/head.png",
+      "runtime2D": {
+        "path": "assets/images/refugee-elder-woman/parts/head.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "refugee-elder-woman.parts.head"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.84375
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "refugee-elder-woman.parts.torso",
+      "imageId": "refugee-elder-woman.parts.torso",
+      "category": "character-part",
+      "usage": [
+        "refugee-elder-woman-skeleton-part"
+      ],
+      "sourceFile": "assets/images/refugee-elder-woman/parts/torso.png",
+      "runtime2D": {
+        "path": "assets/images/refugee-elder-woman/parts/torso.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "refugee-elder-woman.parts.torso"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.84375
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "refugee-elder-woman.parts.arm",
+      "imageId": "refugee-elder-woman.parts.arm",
+      "category": "character-part",
+      "usage": [
+        "refugee-elder-woman-skeleton-part"
+      ],
+      "sourceFile": "assets/images/refugee-elder-woman/parts/arm.png",
+      "runtime2D": {
+        "path": "assets/images/refugee-elder-woman/parts/arm.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "refugee-elder-woman.parts.arm"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.09375
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "refugee-elder-woman.parts.leg",
+      "imageId": "refugee-elder-woman.parts.leg",
+      "category": "character-part",
+      "usage": [
+        "refugee-elder-woman-skeleton-part"
+      ],
+      "sourceFile": "assets/images/refugee-elder-woman/parts/leg.png",
+      "runtime2D": {
+        "path": "assets/images/refugee-elder-woman/parts/leg.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "refugee-elder-woman.parts.leg"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.09375
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
       "revision": 1
     }
   ]
