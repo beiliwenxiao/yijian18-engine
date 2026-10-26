@@ -192,7 +192,8 @@ inclusion: always
 - **段插值单一来源 = `SkeletonCurve.segmentProgress`**（hold → 贝塞尔 → 命名缓动 → 线性）：
   `SkeletonPose.sampleField` 与编辑器曲线面板（折线经 `sampleNumericCurve`）都复用它，
   **禁止另写插值**——编辑器预览必须=运行时表现。
-- `parseSkeletonAsset` 保留合法 `in/out/hold`（非法/半残对象剥离，静默丢弃不报错）；
+- `parseSkeletonAsset` 保留合法 `in/out/hold`（非数值/半残对象剥离，静默丢弃不报错；
+  越界 x 钳制回 [0,1]——保留手柄方向意图并保证求解器单调域，源头报错由校验器负责）；
   `SkeletonAssetValidator` 校验控制点必须是 {x,y} 数值且 x∈[0,1]。
 - 编辑器纯函数在 `editor/SkeletonEditorCurve.js`（分轨提取/控制点几何/拖拽写回/预设/折线采样，
   配 SkeletonEditorCurve.test.js）；UI 是时间轴工具条「📈 曲线」面板：属性 chips 分轨切换 +

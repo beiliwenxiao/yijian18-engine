@@ -357,15 +357,15 @@ describe('sampleClip 贝塞尔手柄与 hold（schema v2 段插值）', () => {
     });
   }
 
-  it('parse 保留合法的 in/out 控制点与 hold；非法控制点剥离', () => {
+  it('parse 保留合法的 in/out 控制点与 hold；非数值剥离、越界 x 钳制回 [0,1]', () => {
     const skeleton = buildHandleSkeleton([
       { t: 0, rot: 0, out: { x: 0.42, y: 0 }, hold: true },
-      { t: 1000, rot: 90, in: { x: 1.5, y: 0.3 } } // x 越界 → 剥离
+      { t: 1000, rot: 90, in: { x: 1.5, y: 0.3 } } // x 越界 → 钳制到 1（保单调，方向意图保留）
     ]);
     const keys = skeleton.clips.get('turn').tracks.get('child');
     expect(keys[0].out).toEqual({ x: 0.42, y: 0 });
     expect(keys[0].hold).toBe(true);
-    expect(keys[1].in).toBeUndefined(); // 非法控制点不进运行时
+    expect(keys[1].in).toEqual({ x: 1, y: 0.3 }); // 钳制归一化；源头报错由校验器负责
   });
 
   it('easeInOut 手柄：中点值=线性中点，四分点滞后于线性（慢起）', () => {
