@@ -211,7 +211,11 @@ inclusion: always
 - 输出 **Spine 3.8 格式**（兼容性最广：spine-canvas / Spine Unity / cocos-spine）。
 - 映射要点：Spine transform ↔ 本引擎 `inherit`；**Spine 时间轴是相对 setup 的增量/比例**
   （导出必须转差值/比值）；缺省帧在本引擎是「取下一有效值」的阶跃，导出要补阶跃关键帧；
-  命名缓动映射为贝塞尔控制点（easeInOut → [0.42,0,0.58,1]，属近似）。
+  **曲线段语义对齐 `segmentProgress`（hold → 贝塞尔 → 命名缓动 → 线性）**：
+  hold → "stepped"；`out/in` 手柄 → curve 数组 `[out.x, out.y, 1-in.x, 1-in.y]` 1:1 无损
+  （两端同为段归一化控制点，缺省侧补 1/3）；ease 作用于**结束于本键**的段（A→B 取
+  B.ease||A.ease），写在 Spine A 键的 curve 上——Spine curve 描述「本键→下一键」段，
+  旧实现写在 B 键行导致缓动晚一段生效（已修）；末键无后继段不写 curve（循环回绕另有 lossy）。
 - **方向形态 → 一形态一个 skin**（skin 名 = 形态键），目标端按方向 `setSkin` 切换。
 - 有损项必须写进 `export-report.json`（`report.lossy`）：`inherit=noRotation`、`slot.follow=noScale`
   （Spine 附件天然跟随骨骼缩放）、sequence 附件、循环回绕插值、transform 约束。

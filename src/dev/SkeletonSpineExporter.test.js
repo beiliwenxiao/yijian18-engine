@@ -197,16 +197,103 @@ describe('exportSkeletonToSpine · 动画时间轴（与本引擎采样等价）
     }
   });
 
-  it('easeInOut 缓动导出为 Spine 贝塞尔曲线控制点', () => {
+  it('easeInOut 缓动导出为 Spine 贝塞尔曲线控制点（写在段起点 A 键上）', () => {
     const keys = [
       { t: 0, x: 0, y: 0, rot: 0, scaleX: null, scaleY: null, ease: 'linear' },
       { t: 500, x: 10, y: 0, rot: 0, scaleX: null, scaleY: null, ease: 'easeInOut' }
     ];
     const { json } = exportSkeletonToSpine(buildClipDoc(keys));
     const rotate = json.animations.walk.bones.bone.rotate;
-    expect(rotate[1][2]).toEqual([0.42, 0, 0.58, 1]);
+    // 引擎语义：ease 作用于「结束于本键」的段 → 段 A→B 取 B.ease，Spine curve 描述
+    // 「本键→下一键」段 → 写在 A 键行（旧实现写在 B 键行导致缓动晚一段生效）
+    expect(rotate[0][2]).toEqual([0.42, 0, 0.58, 1]);
+    expect(rotate[1].length).toBe(2);
+  });
+
+  it('hold 阶跃导出为 Spine "stepped"（写在段起点 A 键上）', () => {
+    const keys = [
+      { t: 0, x: 0, y: 0, rot: 0, scaleX: null, scaleY: null, hold: true },
+      { t: 500, x: 10, y: 0, rot: 0, scaleX: null, scaleY: null }
+    ];
+    const { json } = exportSkeletonToSpine(buildClipDoc(keys));
+    const rotate = json.animations.walk.bones.bone.rotate;
+    expect(rotate[0][2]).toBe('stepped');
+    expect(rotate[1].length).toBe(2);
+  });
+
+  it('原生贝塞尔手柄 1:1 映射为 Spine curve 数组（无损）', () => {
+    const keys = [
+      { t: 0, x: 0, y: 0, rot: 0, scaleX: null, scaleY: null, out: { x: 0.2, y: 0.4 } },
+      { t: 500, x: 10, y: 0, rot: 0, scaleX: null, scaleY: null, in: { x: 0.3, y: 0.6 } }
+    ];
+    const { json } = exportSkeletonToSpine(buildClipDoc(keys));
+    const rotate = json.animations.walk.bones.bone.rotate;
+    // c1 = A.out；c2 = (1-B.in.x, 1-B.in.y)
+    expect(rotate[0][2]).toEqual([0.2, 0.4, 0.7, 0.4]);
+  });
+
+  it('手柄段逐点对拍：本引擎采样 == Spine 曲线重建（独立采样器，10ms 步长）', () => {
+    const keys = [
+      { t: 0, x: 0, y: 0, rot: 0, scaleX: null, scaleY: null, out: { x: 0.25, y: 0.1 } },
+      { t: 400, x: 30, y: 0, rot: 0, scaleX: null, scaleY: null, in: { x: 0.3, y: 0.5 }, out: { x: 0.5, y: -0.2 }, hold: false },
+      { t: 1000, x: 60, y: 0, rot: 0, scaleX: null, scaleY: null }
+    ];
+    const doc = buildClipDoc(keys);
+    const { json } = exportSkeletonToSpine(doc);
+    const translate = json.animations.walk.bones.bone.translate;
+    expect(translate[0][3]).toEqual([0.25, 0.1, 0.7, 0.5]);  // 段1：out(0.25,0.1) + in(0.3,0.5)
+    expect(translate[1][3]).toEqual([0.5, -0.2, 0.666667, 0.666667]); // 段2：out(0.5,-0.2) + 缺省 in
+
+    // 独立实现 Spine 曲线语义（stepped + 贝塞尔二分反解），与引擎 sampleClip 对拍
+    // （translate 为相对 setup 的偏移：bone setup x=10，重建 = 10 + 偏移）
+    const skeleton = parseSkeletonAsset(doc);
+    const rest = createRestLocalPose(skeleton);
+    const clip = { name: 'walk', durationMs: 1000, loop: false, tracks: new Map([['bone', keys]]) };
+    for (let time = 0; time <= 1000; time += 10) {
+      const pose = sampleClip(clip, time, rest).get('bone');
+      expect(pose.x).toBeCloseTo(10 + sampleSpineCurved(translate, time, 1, 3), 4);
+    }
   });
 });
+
+/**
+ * Spine 曲线语义采样（独立实现，用于与引擎插值交叉验证）：
+ * curve 缺省/linear → 线性；"stepped" → 保持 A 值；数组 → 段归一化贝塞尔
+ * （u 二分反解参数 s，再求 y 分量——与 Spine 运行时重建同式）。
+ * @param {number} index - 值分量下标（rotate 行 [t,v,curve?] 为 1；translate/scale 行 [t,x,y,curve?] 为 1 或 2）
+ * @param {number} curveIndex - curve 字段下标（rotate 行为 2；translate/scale 行为 3）
+ */
+function sampleSpineCurved(timeline, time, index = 1, curveIndex = 2) {
+  if (!timeline || !timeline.length) return 0;
+  if (time <= timeline[0][0]) return timeline[0][index];
+  const last = timeline[timeline.length - 1];
+  if (time >= last[0]) return last[index];
+  let i = 1;
+  while (i < timeline.length && timeline[i][0] < time) i += 1;
+  const a = timeline[i - 1];
+  const b = timeline[i];
+  const span = b[0] - a[0];
+  const u = span > 0 ? (time - a[0]) / span : 0;
+  const curve = a[curveIndex];
+  if (curve === 'stepped') return a[index];
+  if (Array.isArray(curve)) {
+    const [cx1, cy1, cx2, cy2] = curve;
+    let low = 0;
+    let high = 1;
+    for (let k = 0; k < 24; k += 1) {
+      const mid = (low + high) / 2;
+      const ms = 1 - mid;
+      const x = 3 * ms * ms * mid * cx1 + 3 * ms * mid * mid * cx2 + mid * mid * mid;
+      if (x < u) low = mid;
+      else high = mid;
+    }
+    const s = (low + high) / 2;
+    const ms = 1 - s;
+    const y = 3 * ms * ms * s * cy1 + 3 * ms * s * s * cy2 + s * s * s;
+    return a[index] + (b[index] - a[index]) * y;
+  }
+  return a[index] + (b[index] - a[index]) * u;
+}
 
 describe('exportSkeletonToSpine · 有损项报告', () => {
   it('序列帧附件：只导出静态图并记有损', () => {

@@ -99,11 +99,48 @@ export function buildSpineTimeline(keys, field, toSpine, curveOf) {
   });
 }
 
-/** 取该时刻关键帧的 Spine 曲线（命名缓动 → 贝塞尔控制点）。 */
+/** 贝塞尔控制点分量保留 6 位小数（避免二进制浮点噪声进 JSON，误差远低于像素级）。 */
+const roundCurve = value => Math.round(value * 1000000) / 1000000;
+/** 手柄 x 钳制 [0,1]（与 parseSkeletonAsset 归一化同口径，保证段内时间单调）。 */
+const clamp01 = value => Math.max(0, Math.min(1, value));
+
+/**
+ * 取该时刻关键帧的 Spine 曲线（段插值语义与引擎 SkeletonCurve.segmentProgress 对齐，
+ * hold → 贝塞尔手柄 → 命名缓动 → 线性）：
+ *   1. A.hold → "stepped"（阶跃段，Spine 保持本键值到下一键）；
+ *   2. A.out 或 B.in 存在 → [out.x, out.y, 1-in.x, 1-in.y]——本引擎与 Spine 3.8 的
+ *      curve 数组同为「段归一化贝塞尔控制点」，1:1 无损；缺省侧按 (1/3,1/3) 补齐；
+ *   3. 命名缓动按引擎语义作用于「结束于本键」的段：段 A→B 取 B.ease || A.ease，
+ *      写在 Spine A 键的 curve 上（Spine curve 描述「本键→下一键」段——旧实现取
+ *      A.ease 导致缓动晚一段生效，已修正）；
+ *   4. 都没有 → 不写 curve（Spine 缺省线性）。
+ */
 function makeCurveResolver(keys) {
+  const ordered = (keys || [])
+    .map(key => ({ t: num(key?.t), key }))
+    .sort((a, b) => a.t - b.t);
   const byTime = new Map();
-  for (const key of keys || []) byTime.set(num(key?.t), key?.ease);
-  return time => CURVE_MAP[byTime.get(time)] || null;
+  ordered.forEach((entry, index) => {
+    byTime.set(entry.t, { key: entry.key, next: ordered[index + 1]?.key || null });
+  });
+  return time => {
+    const entry = byTime.get(time);
+    if (!entry) return null;
+    const { key, next } = entry;
+    if (!next) return null; // 末键在 Spine 无后继段（循环回绕插值已记 report.lossy）
+    if (key?.hold === true) return 'stepped';
+    const outHandle = key?.out;
+    const inHandle = next?.in;
+    if (outHandle || inHandle) {
+      return [
+        roundCurve(clamp01(num(outHandle?.x, 1 / 3))),
+        roundCurve(num(outHandle?.y, 1 / 3)),
+        roundCurve(1 - clamp01(num(inHandle?.x, 1 / 3))),
+        roundCurve(1 - num(inHandle?.y, 1 / 3))
+      ];
+    }
+    return CURVE_MAP[next?.ease || key?.ease] || null;
+  };
 }
 
 /**
