@@ -20,6 +20,8 @@
  *   4. 骨骼静止姿态下所有块拼回原图，动画时各块绕各自关节转动。
  *   规则：颈线以上一律归头（马尾/发冠离头骨线很远，按最近段会误判）。
  *   侧视两腿/双臂在画面里重叠，只切一套（R），L 复用同一份切片。
+ *   分区前先擦除原图左髋的剑鞘/皮袋（见 SCABBARD_ERASE）：最近邻分区会把它误归入手臂切片，
+ *   摆臂时整条甩出（装备表现由 weapon-sword-waist/weapon-shield 槽承担）。
  *
  * ## 产物
  *   assets/images/player/female/parts.png    部件图集（正/侧/背 三套切片）
@@ -161,10 +163,56 @@ function segmentsOf(j) {
   };
 }
 
+/* ---------------- 0.5 剑鞘/皮袋擦除（2026-10-26 实机验证「异常绑定图」修复） ----------------
+ * 美术站立帧髋部挂有剑鞘/皮袋（皮革棕）。最近邻分区时这些像素被误归入手臂切片
+ * （upperArmL/forearmL），摆臂时整条鞘被甩出体外。装备表现由 weapon-sword-waist /
+ * weapon-shield 槽承担（PlayerSkeletonStateMapper 联动），原图混画属于重复——
+ * 分区前按「矩形 + 皮革色判定」把鞘从原图擦除（矩形限域防止误伤腰带/头发/裙摆，
+ * 蓝甲 B / 银甲 S / 亮金 G / 高亮发色 H 均不在判定区间）。
+ * 矩形按 8 张站立帧逐一标定（diag-color-map/diag-arm-crops 两个标定脚本可复核）。
+ * up 视角的袋子落在躯干切片（随腰微动、不甩臂）——保留不擦。
+ */
+const SCABBARD_ERASE = {
+  down:  { rect: [177, 147, 200, 170], test: 'brown' },  // 左髋皮袋 + 带尾流苏（x184-198 y152-165）
+  SE:    { rect: [177, 136, 194, 168], test: 'brown' },  // 皮袋带体 x178-190 y143-152 + 垂带 x189-192
+  side:  { rect: [171, 141, 184, 149], test: 'navy' },   // 剑鞘上端残段（主体经 forearm 重定向不再绘制；金扣 x≤170 在判定外）
+  NE:    { rect: [171, 155, 193, 181], test: 'brown' },  // 背斜视皮袋 x174-186 y160-178
+  NW:    { rect: [126, 157, 142, 176], test: 'brown' },  // NE 镜像
+  sideL: { rect: [138, 141, 151, 147], test: 'brown' },  // side 镜像（剑带残段；圆扣 y≥148 在判定外）
+  SW:    { rect: [146, 136, 158, 168], test: 'brown' }   // SE 镜像（亮金高光 r>195 判定外，残留读作腰带饰扣）
+};
+/** 色判定：brown=皮革棕（暖棕 r>g>b）；navy=深钢蓝剑鞘/金边（b−r≥10 或金 trim）——
+ * 正/斜视的腰甲、腰带与侧视金扣都是中性/暖色，均不命中。 */
+const SCABBARD_TESTS = {
+  brown: (r, g, b) => r > g && g > b && r - b >= 12 && r >= 30 && r <= 200 && b <= 150,
+  navy: (r, g, b) => (b - r >= 10 && b >= 30) || (r > 150 && g > 100 && b < 130 && r - b > 60)
+};
+
+function eraseScabbard(data, info, form) {
+  const cfg = SCABBARD_ERASE[form];
+  if (!cfg) return;
+  const [x0, y0, x1, y1] = cfg.rect;
+  const test = SCABBARD_TESTS[cfg.test];
+  let erased = 0;
+  for (let y = y0; y <= y1; y++) {
+    for (let x = x0; x <= x1; x++) {
+      const i = (y * info.width + x) * 4;
+      if (data[i + 3] === 0) continue;
+      if (test(data[i], data[i + 1], data[i + 2])) {
+        data[i + 3] = 0;
+        erased++;
+      }
+    }
+  }
+  if (erased === 0) console.warn(`[scabbard] ${form}: 矩形内未擦除任何像素，请校准 SCABBARD_ERASE`);
+  else console.log(`[scabbard] ${form}: 擦除 ${erased} px`);
+}
+
 /* ---------------- 1. 分区切片（复用 sheet-partition 纯函数库） ---------------- */
 const pieces = {};   // `${part}|${form}` -> { px, w, h, x0, y0 }
 for (const [form, file] of Object.entries(FORM_FILES)) {
   const { data, info } = await sharp(path.join(SRC, file)).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  eraseScabbard(data, info, form);
   const segs = segmentsOf(JOINTS[form]);
   const parts = SHARED_LIMBS[form]
     ? Object.keys(segs).filter(n => !/L$/.test(n))
@@ -191,6 +239,13 @@ for (const [form, file] of Object.entries(FORM_FILES)) {
     // 共享四肢：L 部位写一份同内容
     if (SHARED_LIMBS[form] && /R$/.test(block.key)) emit(block.key.replace(/R$/, 'L'));
   }
+}
+
+// 斜向视野里被近侧腿遮挡的远脚只切到 2~3px 高的碎条（渲染成漂浮碎片）：置空不再绘制
+const SLIVER_ZERO = new Set(['footL|SE', 'footR|NE', 'footR|NW']);
+for (const key of SLIVER_ZERO) {
+  const p = pieces[key];
+  if (p) p.buf.fill(0);
 }
 
 /* ---------------- 2. 打包图集（复用 sheet-partition 的 packBlocks / composeAtlasPixels） ---------------- */
@@ -352,11 +407,16 @@ for (const part of Object.keys(PART_BONE)) {
     directionOffsets: {}
   };
   for (const form of forms) {
-    const p = pieces[`${part}|${form}`] || base;
-    const o = localOffset(p);
+    // 侧视（side/sideL）前臂：east/west 站立帧的「前臂」区域画的其实是剑鞘/剑带
+    // （真实手臂藏在身后，美术未画）——源矩形换用正面手臂切片，但**保留原侧视偏移**
+    //（侧视画位相对正面骨骼 rest 整体右移，用正面偏移会让手臂漂出体外）。
+    const sidePiece = pieces[`${part}|${form}`];
+    const useDown = part.startsWith('forearm') && (form === 'side' || form === 'sideL') && sidePiece;
+    const p = useDown ? base : (sidePiece || base);
+    const o = localOffset(useDown ? sidePiece : p);
     att.directionOffsets[form] = {
-      ...rectOf(p), x: o.x, y: o.y, rot: -(REST_ROT[bone] || 0),
-      width: r2(p.w / PX_PER_UNIT), height: r2(p.h / PX_PER_UNIT)
+      ...(useDown ? rectOf(base) : rectOf(p)), x: o.x, y: o.y, rot: -(REST_ROT[bone] || 0),
+      width: r2((useDown ? base : p).w / PX_PER_UNIT), height: r2((useDown ? base : p).h / PX_PER_UNIT)
     };
   }
   slots.push({ id: part, bone, z: zOf(part), attachment: att });
@@ -472,15 +532,29 @@ const clips = baseDoc.clips.map(clip => ({
   }))
 }));
 
-/** 重写一条腿的三节轨（正/背视：整腿平移抬脚，膝角恒 0）。 */
-function putLeg(clip, side, hipX, frames) {
+/** 重写一条腿的三节轨。lift=整腿平移抬脚（px→骨骼单位）；thigh/shin/foot 可选每帧
+ * 髋/膝/踝角，缺省 thigh 0 / shin 0 / foot −90（站姿直腿）。
+ * 2026-10-26 起背向/斜向行走不再与正向共用同一套节奏。 */
+function putLimb(clip, side, hipX, frames) {
   const set = (bone, keys) => {
     const tr = clip.tracks.find(t => t.bone === bone);
     if (tr) tr.keys = keys; else clip.tracks.push({ bone, keys });
   };
-  set(`thigh${side}`, frames.map((f, i) => ({ t: f.t, x: r2(hipX), y: r2(-f.lift), rot: 0, ease: i === frames.length - 1 ? undefined : 'easeInOut' })));
-  set(`shin${side}`, frames.map((f, i) => ({ t: f.t, rot: 0, ease: i === frames.length - 1 ? undefined : 'easeInOut' })));
-  set(`foot${side}`, frames.map((f, i) => ({ t: f.t, rot: -90, ease: i === frames.length - 1 ? undefined : 'easeInOut' })));
+  set(`thigh${side}`, frames.map((f, i) => ({ t: f.t, x: r2(hipX), y: r2(-f.lift), rot: f.thigh ?? 0, ease: i === frames.length - 1 ? undefined : 'easeInOut' })));
+  set(`shin${side}`, frames.map((f, i) => ({ t: f.t, rot: f.shin ?? 0, ease: i === frames.length - 1 ? undefined : 'easeInOut' })));
+  set(`foot${side}`, frames.map((f, i) => ({ t: f.t, rot: f.foot ?? -90, ease: i === frames.length - 1 ? undefined : 'easeInOut' })));
+}
+
+/** 重写/新增手臂与头颈轨（缺轨自动补；rot 值为最终值——本函数在 SHIELD_ARM 叠加之后调用，
+ * 左臂取值需自行含持盾外展偏移）。vals 对齐 times 逐帧。 */
+function putRotTracks(clip, times, values) {
+  const set = (bone, keys) => {
+    const tr = clip.tracks.find(t => t.bone === bone);
+    if (tr) tr.keys = keys; else clip.tracks.push({ bone, keys });
+  };
+  for (const [bone, vals] of Object.entries(values)) {
+    set(bone, times.map((t, i) => ({ t, rot: vals[i], ease: i === times.length - 1 ? undefined : 'easeInOut' })));
+  }
 }
 
 const getClip = n => clips.find(c => c.name === n);
@@ -497,30 +571,105 @@ for (const clip of clips) {
 }
 
 const LIFT = 6 / PX_PER_UNIT;
-// 正/背/斜视行走：交替抬脚（单支撑）。腿的横向位置恒用 rest（∓hipX）——
-// 背/斜视的左右镜像由切片的 directionOffsets 偏移承担，若这里再交换一次会双重镜像（腿被甩到体外）。
-for (const [name, times] of [
-  ['walk_down', [0, 155, 310, 465]],
-  ['walk_up', [0, 155, 310, 465]],
-  ['walk_SE', [0, 200, 400, 600]],
-  ['walk_SW', [0, 200, 400, 600]],
-  ['walk_NE', [0, 200, 400, 600]],
-  ['walk_NW', [0, 200, 400, 600]]
-]) {
+const JUMP_LIFTS = [0, 6 / PX_PER_UNIT, 4 / PX_PER_UNIT, 0];   // 起跳蹬地→收腿→下落预备→贴地
+/* 行走剪辑（2026-10-26 重设计：正/背/斜各自动作独立，不再互为换皮）：
+ *   walk_down 正视：交替抬脚 LIFT≈2.18，摆臂 ±11（沿用原节奏）。
+ *   walk_up   背向：相位翻转（L 先抬）+ 抬脚更高（8px）+ 屈膝/落脚趾 + 躯干反扭 + 头部摆动
+ *             ——背向行走是独立的动作设计，不是正向动画换贴图。
+ *   walk_SE/SW/NE/NW 斜向：中幅抬脚（7px）+ 屈膝 + 小幅摆臂（斜视角摆臂被躯干遮挡大半）。
+ * 腿的横向位置恒用 rest（∓hipX）——背/斜视的左右镜像由切片的 directionOffsets 偏移承担，
+ * 若这里再交换一次会双重镜像（腿被甩到体外）。
+ */
+// 正视：沿用原节奏
+for (const name of ['walk_down']) {
   const clip = getClip(name);
   if (!clip) continue;
-  const liftR = [LIFT, 0, 0, 0];
-  const liftL = [0, 0, LIFT, 0];
-  putLeg(clip, 'R', hipX_R, times.map((t, i) => ({ t, lift: liftR[i] })));
-  putLeg(clip, 'L', hipX_L, times.map((t, i) => ({ t, lift: liftL[i] })));
+  const times = [0, 155, 310, 465];
+  putLimb(clip, 'R', hipX_R, times.map((t, i) => ({ t, lift: [LIFT, 0, 0, 0][i] })));
+  putLimb(clip, 'L', hipX_L, times.map((t, i) => ({ t, lift: [0, 0, LIFT, 0][i] })));
 }
-// 正/背视跳跃：起落贴地 + 空中收腿
+// 背向：独立动作（相位翻转 + 高抬腿屈膝 + 躯干/头部反向摆）
+{
+  const clip = getClip('walk_up');
+  if (clip) {
+    const times = [0, 155, 310, 465];
+    const LIFT_UP = 8 / PX_PER_UNIT;
+    // R 腿在 t310 抬起，L 腿在 t0 抬起（与正视相反相位）
+    putLimb(clip, 'R', hipX_R, [
+      { t: 0, lift: 0 }, { t: 155, lift: 0 },
+      { t: 310, lift: LIFT_UP, shin: 14, foot: -78 }, { t: 465, lift: 0 }]);
+    putLimb(clip, 'L', hipX_L, [
+      { t: 0, lift: LIFT_UP, shin: 14, foot: -78 }, { t: 155, lift: 0 },
+      { t: 310, lift: 0 }, { t: 465, lift: 0 }]);
+    // 手臂相位与正视相反；左臂已含持盾外展 −6/前臂 −16
+    putRotTracks(clip, times, {
+      spine: [-3, 0, 3, 0],
+      head: [-2, 0, 2, 0],
+      upperArmR: [-12, 4, -12, 4],
+      upperArmL: [6, -10, 6, -10],
+      forearmR: [10, -2, 10, -2],
+      forearmL: [-26, -14, -26, -14]
+    });
+  }
+}
+// 斜向：中幅抬脚屈膝 + 小摆臂
+for (const [name, firstIsR] of [['walk_SE', true], ['walk_SW', true], ['walk_NE', true], ['walk_NW', true]]) {
+  const clip = getClip(name);
+  if (!clip) continue;
+  const times = [0, 200, 400, 600];
+  const LIFT_D = 7 / PX_PER_UNIT;
+  const fR = firstIsR
+    ? [{ t: 0, lift: LIFT_D, shin: 12, foot: -80 }, { t: 200, lift: 0 }, { t: 400, lift: 0 }, { t: 600, lift: 0 }]
+    : [{ t: 0, lift: 0 }, { t: 200, lift: 0 }, { t: 400, lift: LIFT_D, shin: 12, foot: -80 }, { t: 600, lift: 0 }];
+  const fL = firstIsR
+    ? [{ t: 0, lift: 0 }, { t: 200, lift: 0 }, { t: 400, lift: LIFT_D, shin: 12, foot: -80 }, { t: 600, lift: 0 }]
+    : [{ t: 0, lift: LIFT_D, shin: 12, foot: -80 }, { t: 200, lift: 0 }, { t: 400, lift: 0 }, { t: 600, lift: 0 }];
+  putLimb(clip, 'R', hipX_R, fR);
+  putLimb(clip, 'L', hipX_L, fL);
+  putRotTracks(clip, times, {
+    upperArmR: [8, -2, 8, -2],
+    upperArmL: [-14, -4, -14, -4],
+    forearmR: [5, -1, 5, -1],
+    forearmL: [-21, -15, -21, -15]
+  });
+}
+// 正/背视跳跃：起落贴地 + 空中收腿 + 手臂上摆（原 base 手臂 rot 高达 172°/−195° 甩到体外，全轨重写）
 for (const name of ['jump_down', 'jump_up']) {
   const clip = getClip(name);
   if (!clip) continue;
-  const frames = [{ t: 0, lift: 0 }, { t: 120, lift: 6 / PX_PER_UNIT }, { t: 300, lift: 4 / PX_PER_UNIT }, { t: 420, lift: 0 }];
-  putLeg(clip, 'R', hipX_R, frames);
-  putLeg(clip, 'L', hipX_L, frames);
+  const times = [0, 120, 300, 420];
+  putLimb(clip, 'R', hipX_R, times.map((t, i) => ({ t, lift: JUMP_LIFTS[i] })));
+  putLimb(clip, 'L', hipX_L, times.map((t, i) => ({ t, lift: JUMP_LIFTS[i] })));
+  putRotTracks(clip, times, {
+    upperArmR: [14, -40, -46, 6],
+    upperArmL: [-20, 34, 40, -12],
+    forearmR: [6, -12, -14, 2],
+    forearmL: [-22, -4, -2, -18]
+  });
+}
+// 侧视跳跃：腿部全轨重写（原 base thigh rot 深收 −95° 致腿骨断裂）——
+// 空中前后开合收腿：前腿屈膝前抬、后腿微后摆，落地伸直。rot 负=前摆（面朝右）。
+{
+  const clip = getClip('jump_side');
+  if (clip) {
+    const times = [0, 120, 300, 420];
+    putLimb(clip, 'R', hipX_R, [
+      { t: 0, lift: 0, foot: -90 },
+      { t: 120, lift: 6 / PX_PER_UNIT, thigh: -26, shin: 22, foot: -70 },
+      { t: 300, lift: 4 / PX_PER_UNIT, thigh: -16, shin: 12, foot: -80 },
+      { t: 420, lift: 0, foot: -90 }]);
+    putLimb(clip, 'L', hipX_L, [
+      { t: 0, lift: 0, foot: -90 },
+      { t: 120, lift: 6 / PX_PER_UNIT, thigh: 12, shin: 8, foot: -85 },
+      { t: 300, lift: 4 / PX_PER_UNIT, thigh: 6, shin: 4, foot: -88 },
+      { t: 420, lift: 0, foot: -90 }]);
+    putRotTracks(clip, times, {
+      upperArmR: [18, -52, -44, 0],
+      upperArmL: [-24, 46, 38, -6],
+      forearmR: [8, -16, -12, 2],
+      forearmL: [-24, 0, -4, -18]
+    });
+  }
 }
 
 /* ---------------- 4.5 坐下 / 起身 / 躺下 / 起身（占位剪辑，待美术补图） ----------------
