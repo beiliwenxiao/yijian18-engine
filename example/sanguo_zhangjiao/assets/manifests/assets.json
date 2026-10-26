@@ -10465,6 +10465,216 @@
       "targetPhase": "P1",
       "status": "ai-generated",
       "revision": 1
+    },
+    {
+      "assetId": "rabbit.parts.body",
+      "imageId": "rabbit.parts.body",
+      "category": "character-part",
+      "usage": [
+        "rabbit-skeleton-part"
+      ],
+      "sourceFile": "assets/images/rabbit/parts/body.png",
+      "runtime2D": {
+        "path": "assets/images/rabbit/parts/body.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "rabbit.parts.body"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "rabbit.parts.head",
+      "imageId": "rabbit.parts.head",
+      "category": "character-part",
+      "usage": [
+        "rabbit-skeleton-part"
+      ],
+      "sourceFile": "assets/images/rabbit/parts/head.png",
+      "runtime2D": {
+        "path": "assets/images/rabbit/parts/head.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "rabbit.parts.head"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "rabbit.parts.ears",
+      "imageId": "rabbit.parts.ears",
+      "category": "character-part",
+      "usage": [
+        "rabbit-skeleton-part"
+      ],
+      "sourceFile": "assets/images/rabbit/parts/ears.png",
+      "runtime2D": {
+        "path": "assets/images/rabbit/parts/ears.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "rabbit.parts.ears"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "rabbit.parts.tail",
+      "imageId": "rabbit.parts.tail",
+      "category": "character-part",
+      "usage": [
+        "rabbit-skeleton-part"
+      ],
+      "sourceFile": "assets/images/rabbit/parts/tail.png",
+      "runtime2D": {
+        "path": "assets/images/rabbit/parts/tail.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "rabbit.parts.tail"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "rabbit.parts.leg-hind",
+      "imageId": "rabbit.parts.leg-hind",
+      "category": "character-part",
+      "usage": [
+        "rabbit-skeleton-part"
+      ],
+      "sourceFile": "assets/images/rabbit/parts/leg-hind.png",
+      "runtime2D": {
+        "path": "assets/images/rabbit/parts/leg-hind.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "rabbit.parts.leg-hind"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "rabbit.parts.leg-fore",
+      "imageId": "rabbit.parts.leg-fore",
+      "category": "character-part",
+      "usage": [
+        "rabbit-skeleton-part"
+      ],
+      "sourceFile": "assets/images/rabbit/parts/leg-fore.png",
+      "runtime2D": {
+        "path": "assets/images/rabbit/parts/leg-fore.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "rabbit.parts.leg-fore"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
     }
   ]
 }

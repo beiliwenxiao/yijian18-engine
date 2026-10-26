@@ -1,0 +1,984 @@
+{
+  "schemaVersion": 1,
+  "skeletonId": "skeleton.rabbit",
+  "meta": {
+    "width": 64,
+    "height": 72
+  },
+  "defaultClip": "idle_side",
+  "bones": [
+    {
+      "id": "root",
+      "parent": null,
+      "x": 0,
+      "y": 0,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 12
+    },
+    {
+      "id": "body",
+      "parent": "root",
+      "x": 0,
+      "y": -24,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 20
+    },
+    {
+      "id": "head",
+      "parent": "body",
+      "x": -12,
+      "y": -8,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 16
+    },
+    {
+      "id": "ear",
+      "parent": "head",
+      "x": 1,
+      "y": -8,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 22
+    },
+    {
+      "id": "tail",
+      "parent": "body",
+      "x": 18,
+      "y": 1,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 8
+    },
+    {
+      "id": "legHL",
+      "parent": "body",
+      "x": 12,
+      "y": 4,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 18
+    },
+    {
+      "id": "legHR",
+      "parent": "body",
+      "x": 10,
+      "y": 4,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 18
+    },
+    {
+      "id": "legFL",
+      "parent": "body",
+      "x": -15,
+      "y": 8,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 14
+    },
+    {
+      "id": "legFR",
+      "parent": "body",
+      "x": -12,
+      "y": 8,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 14
+    }
+  ],
+  "slots": [
+    {
+      "id": "shadow",
+      "bone": "root",
+      "z": 0,
+      "attachment": {
+        "type": "empty"
+      }
+    },
+    {
+      "id": "legHR",
+      "bone": "legHR",
+      "z": 2,
+      "attachment": {
+        "type": "image",
+        "assetId": "rabbit.parts.leg-hind",
+        "x": 6,
+        "y": 13,
+        "rot": 0,
+        "width": 64,
+        "height": 64,
+        "visible": true
+      }
+    },
+    {
+      "id": "legFR",
+      "bone": "legFR",
+      "z": 2,
+      "attachment": {
+        "type": "image",
+        "assetId": "rabbit.parts.leg-fore",
+        "x": 0,
+        "y": 18,
+        "rot": 0,
+        "width": 64,
+        "height": 64,
+        "visible": true
+      }
+    },
+    {
+      "id": "bodySlot",
+      "bone": "body",
+      "z": 3,
+      "attachment": {
+        "type": "image",
+        "assetId": "rabbit.parts.body",
+        "x": 0,
+        "y": 0,
+        "rot": 0,
+        "width": 64,
+        "height": 64,
+        "visible": true
+      }
+    },
+    {
+      "id": "tail",
+      "bone": "tail",
+      "z": 3,
+      "attachment": {
+        "type": "image",
+        "assetId": "rabbit.parts.tail",
+        "x": 0,
+        "y": 0,
+        "rot": 0,
+        "width": 64,
+        "height": 64,
+        "visible": true
+      }
+    },
+    {
+      "id": "legHL",
+      "bone": "legHL",
+      "z": 4,
+      "attachment": {
+        "type": "image",
+        "assetId": "rabbit.parts.leg-hind",
+        "x": 6,
+        "y": 13,
+        "rot": 0,
+        "width": 64,
+        "height": 64,
+        "visible": true
+      }
+    },
+    {
+      "id": "legFL",
+      "bone": "legFL",
+      "z": 4,
+      "attachment": {
+        "type": "image",
+        "assetId": "rabbit.parts.leg-fore",
+        "x": 0,
+        "y": 18,
+        "rot": 0,
+        "width": 64,
+        "height": 64,
+        "visible": true
+      }
+    },
+    {
+      "id": "headSlot",
+      "bone": "head",
+      "z": 5,
+      "attachment": {
+        "type": "image",
+        "assetId": "rabbit.parts.head",
+        "x": -1,
+        "y": -8,
+        "rot": 0,
+        "width": 64,
+        "height": 64,
+        "visible": true
+      }
+    },
+    {
+      "id": "ears",
+      "bone": "ear",
+      "z": 6,
+      "attachment": {
+        "type": "image",
+        "assetId": "rabbit.parts.ears",
+        "x": 0,
+        "y": -12,
+        "rot": 0,
+        "width": 64,
+        "height": 64,
+        "visible": true
+      }
+    }
+  ],
+  "clips": [
+    {
+      "name": "idle_side",
+      "durationMs": 2600,
+      "loop": true,
+      "tracks": [
+        {
+          "bone": "body",
+          "keys": [
+            {
+              "t": 0,
+              "y": -24
+            },
+            {
+              "t": 867,
+              "y": -25.2,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1733,
+              "y": -24,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "head",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0
+            },
+            {
+              "t": 433,
+              "rot": 4,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 867,
+              "rot": 3,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1300,
+              "rot": -3,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1733,
+              "rot": -4,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 2167,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "ear",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0
+            },
+            {
+              "t": 650,
+              "rot": 5,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1300,
+              "rot": -4,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1950,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "tail",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -4
+            },
+            {
+              "t": 289,
+              "rot": 4
+            },
+            {
+              "t": 578,
+              "rot": -4
+            },
+            {
+              "t": 867,
+              "rot": 4
+            },
+            {
+              "t": 1156,
+              "rot": -4
+            },
+            {
+              "t": 1444,
+              "rot": 4
+            },
+            {
+              "t": 1733,
+              "rot": -4
+            },
+            {
+              "t": 2022,
+              "rot": 4
+            },
+            {
+              "t": 2311,
+              "rot": -4
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "hop_side",
+      "durationMs": 480,
+      "loop": true,
+      "tracks": [
+        {
+          "bone": "root",
+          "keys": [
+            {
+              "t": 0,
+              "y": 0
+            },
+            {
+              "t": 120,
+              "y": -12,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 240,
+              "y": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 360,
+              "y": 0
+            }
+          ]
+        },
+        {
+          "bone": "legHL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 10
+            },
+            {
+              "t": 120,
+              "rot": -28,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 240,
+              "rot": 18,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 360,
+              "rot": 10,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "legHR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 10
+            },
+            {
+              "t": 120,
+              "rot": -28,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 240,
+              "rot": 18,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 360,
+              "rot": 10,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "legFL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0
+            },
+            {
+              "t": 120,
+              "rot": 18,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 240,
+              "rot": -8,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 360,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "legFR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0
+            },
+            {
+              "t": 120,
+              "rot": 18,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 240,
+              "rot": -8,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 360,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "ear",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0
+            },
+            {
+              "t": 120,
+              "rot": -20,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 240,
+              "rot": 6,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 360,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "body",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "scaleX": 1,
+              "scaleY": 1
+            },
+            {
+              "t": 120,
+              "rot": -6,
+              "scaleX": 1.08,
+              "scaleY": 0.94,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 240,
+              "rot": 4,
+              "scaleX": 0.94,
+              "scaleY": 1.05,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 360,
+              "rot": 0,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "flee_side",
+      "durationMs": 320,
+      "loop": true,
+      "tracks": [
+        {
+          "bone": "root",
+          "keys": [
+            {
+              "t": 0,
+              "y": 0
+            },
+            {
+              "t": 80,
+              "y": -16,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 160,
+              "y": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 240,
+              "y": 0
+            }
+          ]
+        },
+        {
+          "bone": "legHL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 12
+            },
+            {
+              "t": 80,
+              "rot": -40,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 160,
+              "rot": 22,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 240,
+              "rot": 12,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "legHR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 12
+            },
+            {
+              "t": 80,
+              "rot": -40,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 160,
+              "rot": 22,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 240,
+              "rot": 12,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "legFL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0
+            },
+            {
+              "t": 80,
+              "rot": 24,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 160,
+              "rot": -10,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 240,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "legFR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0
+            },
+            {
+              "t": 80,
+              "rot": 24,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 160,
+              "rot": -10,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 240,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "ear",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -6
+            },
+            {
+              "t": 80,
+              "rot": -36,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 160,
+              "rot": -10,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 240,
+              "rot": -6,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "body",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -4,
+              "scaleX": 1.02,
+              "scaleY": 1
+            },
+            {
+              "t": 80,
+              "rot": -8,
+              "scaleX": 1.12,
+              "scaleY": 0.9,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 160,
+              "rot": -2,
+              "scaleX": 0.96,
+              "scaleY": 1.04,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 240,
+              "rot": -4,
+              "scaleX": 1.02,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "hurt",
+      "durationMs": 260,
+      "loop": false,
+      "tracks": [
+        {
+          "bone": "body",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "scaleX": 1,
+              "scaleY": 1
+            },
+            {
+              "t": 90,
+              "rot": -13,
+              "scaleX": 0.92,
+              "scaleY": 1.04,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 260,
+              "rot": -3,
+              "scaleX": 1,
+              "scaleY": 1,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "ear",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0
+            },
+            {
+              "t": 90,
+              "rot": -30,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 260,
+              "rot": -6,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "head",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0
+            },
+            {
+              "t": 90,
+              "rot": -9,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 260,
+              "rot": -2,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "root",
+          "keys": [
+            {
+              "t": 0,
+              "x": 0
+            },
+            {
+              "t": 90,
+              "x": -3,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 260,
+              "x": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "tail",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0
+            },
+            {
+              "t": 90,
+              "rot": 14,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 260,
+              "rot": 2,
+              "ease": "easeInOut"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "death",
+      "durationMs": 560,
+      "loop": false,
+      "tracks": [
+        {
+          "bone": "body",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "y": -24
+            },
+            {
+              "t": 420,
+              "rot": 85,
+              "y": -8,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 560,
+              "rot": 85,
+              "y": -8
+            }
+          ]
+        },
+        {
+          "bone": "legHL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 10
+            },
+            {
+              "t": 420,
+              "rot": 46,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 560,
+              "rot": 46
+            }
+          ]
+        },
+        {
+          "bone": "legHR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 10
+            },
+            {
+              "t": 420,
+              "rot": 34,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 560,
+              "rot": 34
+            }
+          ]
+        },
+        {
+          "bone": "legFL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0
+            },
+            {
+              "t": 420,
+              "rot": -26,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 560,
+              "rot": -26
+            }
+          ]
+        },
+        {
+          "bone": "legFR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0
+            },
+            {
+              "t": 420,
+              "rot": -18,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 560,
+              "rot": -18
+            }
+          ]
+        },
+        {
+          "bone": "ear",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0
+            },
+            {
+              "t": 420,
+              "rot": -70,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 560,
+              "rot": -70
+            }
+          ]
+        },
+        {
+          "bone": "head",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0
+            },
+            {
+              "t": 420,
+              "rot": 12,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 560,
+              "rot": 12
+            }
+          ]
+        },
+        {
+          "bone": "tail",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0
+            },
+            {
+              "t": 420,
+              "rot": 16,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 560,
+              "rot": 16
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
