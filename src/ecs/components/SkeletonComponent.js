@@ -153,8 +153,15 @@ export class SkeletonComponent extends Component {
       state.frameTime += deltaMs;
       while (state.frameTime >= frameDuration) {
         state.frameTime -= frameDuration;
-        state.frame += 1;
-        if (state.frame >= attachment.frames.length) state.frame = 0; // 附件序列恒循环
+        if (state.frame >= attachment.frames.length - 1) {
+          // 末帧：默认恒循环；loop=false（如跳跃序列）停在末帧
+          state.frame = attachment.loop === false
+            ? attachment.frames.length - 1
+            : 0;
+          if (attachment.loop === false) state.frameTime = 0;
+        } else {
+          state.frame += 1;
+        }
       }
     }
   }
@@ -261,11 +268,15 @@ export class SkeletonComponent extends Component {
   /**
    * 写实体本地槽位覆盖（不触碰共享资产）。
    * @param {string} slotId
-   * @param {Object} patch - { visible?, flipX?, frames?, fps? }；字段为 undefined 表示不改
+   * @param {Object} patch - { visible?, flipX?, frames?, fps?, loop?, keepFrameRatio? }；字段为 undefined 表示不改
+   *   loop=false：序列播完停在末帧（默认恒循环）；keepFrameRatio=true：帧表变化时按新旧表
+   *   长度比例保留帧游标（跳跃空中换向不重播起跳动作）
    */
   setSlotOverride(slotId, patch) {
     if (!slotId || !patch) return;
     const current = this.slotOverrides.get(slotId) || {};
+    const prevFrames = current.frames;                       // 旧帧表（合并前引用）
+    const prevState = this.slotFrameState.get(slotId);
     let changed = false;
     for (const [key, value] of Object.entries(patch)) {
       if (value === undefined) continue;
@@ -275,8 +286,20 @@ export class SkeletonComponent extends Component {
     }
     if (!changed) return;
     this.slotOverrides.set(slotId, current);
-    // 帧表变了 → 帧游标重置（否则按旧表长度取模会越界）
-    if (patch.frames !== undefined) this.slotFrameState.delete(slotId);
+    // 帧表变了 → 帧游标重置（否则按旧表长度取模会越界）；
+    // keepFrameRatio 时按新旧表长度比例换算游标（跳跃空中换向保持播放进度，不重播起跳）
+    if (patch.frames !== undefined && prevFrames !== patch.frames) {
+      if (patch.keepFrameRatio === true && prevState
+        && Array.isArray(prevFrames) && Array.isArray(patch.frames)) {
+        const ratio = Math.min(1, prevState.frame / Math.max(1, prevFrames.length));
+        this.slotFrameState.set(slotId, {
+          frame: Math.min(patch.frames.length - 1, Math.round(ratio * (patch.frames.length - 1))),
+          frameTime: prevState.frameTime
+        });
+        return;
+      }
+      this.slotFrameState.delete(slotId);
+    }
   }
 
   /**

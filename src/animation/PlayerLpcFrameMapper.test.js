@@ -37,6 +37,7 @@ function makeFixture() {
         walk_SW: { fps: 12, action: 'walk', dirs: dirsFor(6) },
         walk_NE: { fps: 12, action: 'walk', dirs: dirsFor(6) },
         walk_NW: { fps: 12, action: 'walk', dirs: dirsFor(6) },
+        jump: { fps: 10, action: 'jump', dirs: dirsFor(10) },
         attack: { fps: 12, action: 'slash', dirs: dirsFor(18) }
       }
     }
@@ -116,6 +117,41 @@ describe('PlayerLpcFrameMapper（整帧角色模式）', () => {
     hook(f.skeletonComponent);
     expect(f.played).not.toContain('idle_down');
     expect(f.overrides[0].patch.frames[0].sy).toBe(18 * 64);
+  });
+
+  it('跳跃：entity._jumping 切 jump 剪辑，写非循环帧表（停末帧）', () => {
+    const f = makeFixture();
+    f.entity._jumping = true;
+    const hook = createPlayerLpcFrameMapper(f.entity);
+    hook(f.skeletonComponent);
+    expect(f.played).toContain('jump');
+    expect(f.overrides[0].patch.fps).toBe(10);
+    expect(f.overrides[0].patch.frames[0].sy).toBe(10 * 64);  // jump 的 down 方向行 10
+    expect(f.overrides[0].patch.loop).toBe(false);            // 播完停末帧不循环
+    expect(f.overrides[0].patch.keepFrameRatio).toBe(true);   // 空中换向保留游标
+  });
+
+  it('跳跃中改朝向：切 jump 帧表到对应方向', () => {
+    const f = makeFixture();
+    f.entity._jumping = true;
+    f.sprite.direction = 'up';
+    const hook = createPlayerLpcFrameMapper(f.entity);
+    hook(f.skeletonComponent);
+    expect(f.overrides[0].patch.frames[0].sy).toBe(9 * 64);   // up 方向行 9
+  });
+
+  it('落地（_jumping 清除）：从 jump 回归待机，不再停留跳跃帧', () => {
+    const f = makeFixture();
+    f.entity._jumping = true;
+    const hook = createPlayerLpcFrameMapper(f.entity);
+    hook(f.skeletonComponent);
+    expect(f.skeletonComponent.currentClip).toBe('jump');
+
+    f.entity._jumping = false;                                // 落地
+    hook(f.skeletonComponent);
+    expect(f.played).toContain('idle_down');
+    expect(f.overrides.at(-1).patch.frames[0].sy).toBe(2 * 64);
+    expect(f.overrides.at(-1).patch.loop).toBeUndefined();    // 恢复恒循环
   });
 
   it('状态不变时不重复写覆盖层', () => {
