@@ -552,28 +552,42 @@ export class CandidateRuleValidator {
           (typeof trigger?.flowGroupId === 'string' && trigger.flowGroupId.trim())
           || (typeof trigger?.sceneEventId === 'string' && trigger.sceneEventId.trim())
         );
-        trigger.do.forEach((action, actionIndex) => {
-          const actionPath = `${path}.do[${actionIndex}]`;
-          rejectExecutableContent(action, actionPath, errors);
-          if (typeof action?.action !== 'string' || !action.action.trim()) {
-            errors.push(makeError(ValidationCode.MISSING_FIELD, `${actionPath}.action`, 'action 必须是非空字符串'));
-          }
-          if (own(action, 'params') && !isObject(action.params)) {
-            errors.push(makeError(ValidationCode.TYPE_MISMATCH, `${actionPath}.params`, 'action.params 必须为对象'));
-          }
-          const stepId = typeof action?.stepId === 'string' ? action.stepId.trim() : '';
-          if (requiresStableSteps && !stepId) {
-            errors.push(makeError(ValidationCode.MISSING_FIELD, `${actionPath}.stepId`, '已归属 FlowGroup(SceneEvent) 的动作必须声明稳定 stepId'));
-          } else if (stepId && stepIds.has(stepId)) {
-            errors.push(makeError(ValidationCode.DUPLICATE_ID, `${actionPath}.stepId`, `重复的 stepId: ${stepId}`));
-          }
-          if (stepId) stepIds.add(stepId);
-          if (requiresStableSteps && own(action, 'await')) {
-            errors.push(makeError('legacyAwaitNotAllowed', `${actionPath}.await`, 'await 已废弃；TriggerSystem 始终严格串行等待并在失败时短路'));
-          } else if (own(action, 'await') && typeof action.await !== 'boolean') {
-            errors.push(makeError(ValidationCode.TYPE_MISMATCH, `${actionPath}.await`, 'action.await 必须为布尔值'));
-          }
-        });
+        // branch[] 分支容器：自身无 action（TriggerSystem._selectBranch 按 when/otherwise 选一执行），
+        // 递归校验每个分支的子动作；stepId 去重池跨层级共享、stepId/await 守卫照常生效
+        // （语义对齐 TriggerSystem._validateStepList 与任务图链路的 validateActionSteps）
+        const validateTriggerSteps = (steps, stepsPath) => {
+          steps.forEach((action, actionIndex) => {
+            const actionPath = `${stepsPath}.do[${actionIndex}]`;
+            rejectExecutableContent(action, actionPath, errors);
+            if (Array.isArray(action?.branch)) {
+              action.branch.forEach((branch, bIndex) => {
+                if (!Array.isArray(branch?.do)) {
+                  errors.push(makeError(ValidationCode.TYPE_MISMATCH, `${actionPath}.branch[${bIndex}].do`, 'branch[].do 必须为数组'));
+                  return;
+                }
+                validateTriggerSteps(branch.do, `${actionPath}.branch[${bIndex}]`);
+              });
+            } else if (typeof action?.action !== 'string' || !action.action.trim()) {
+              errors.push(makeError(ValidationCode.MISSING_FIELD, `${actionPath}.action`, 'action 必须是非空字符串'));
+            }
+            if (own(action, 'params') && !isObject(action.params)) {
+              errors.push(makeError(ValidationCode.TYPE_MISMATCH, `${actionPath}.params`, 'action.params 必须为对象'));
+            }
+            const stepId = typeof action?.stepId === 'string' ? action.stepId.trim() : '';
+            if (requiresStableSteps && !stepId) {
+              errors.push(makeError(ValidationCode.MISSING_FIELD, `${actionPath}.stepId`, '已归属 FlowGroup(SceneEvent) 的动作必须声明稳定 stepId'));
+            } else if (stepId && stepIds.has(stepId)) {
+              errors.push(makeError(ValidationCode.DUPLICATE_ID, `${actionPath}.stepId`, `重复的 stepId: ${stepId}`));
+            }
+            if (stepId) stepIds.add(stepId);
+            if (requiresStableSteps && own(action, 'await')) {
+              errors.push(makeError('legacyAwaitNotAllowed', `${actionPath}.await`, 'await 已废弃；TriggerSystem 始终严格串行等待并在失败时短路'));
+            } else if (own(action, 'await') && typeof action.await !== 'boolean') {
+              errors.push(makeError(ValidationCode.TYPE_MISMATCH, `${actionPath}.await`, 'action.await 必须为布尔值'));
+            }
+          });
+        };
+        validateTriggerSteps(trigger.do, path);
       }
       if (own(trigger, 'cooldown') && (typeof trigger.cooldown !== 'number' || trigger.cooldown < 0)) {
         errors.push(makeError(ValidationCode.OUT_OF_RANGE, `${path}.cooldown`, 'cooldown 必须为非负数'));
