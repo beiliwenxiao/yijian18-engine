@@ -75,19 +75,27 @@ export function createPlayerLpcFrameMapper(entity) {
     const sprite = entity?.getComponent?.('sprite');
     if (!sprite) return;
 
-    // 动作：离散剪辑优先（外部 playClip 触发），否则按连续状态选待机/行走/跳跃剪辑。
+    // 动作：离散剪辑优先（外部 playClip 触发），否则按连续状态选待机/行走/攀爬/跳跃剪辑。
+    // 攀爬（entity._climbing，ClimbSystem 置位）：硬状态，覆盖连续剪辑——
+    //   优先级与部件模式 mapper 一致（攀爬 > 跳跃 > 行走 > 待机）；
+    //   climb_back 用整帧资产的 8 向攀爬帧表，攀爬结束后从 climb_back 回归行走/待机。
     // 跳跃（entity._jumping，JumpSystem 置位）：硬状态，覆盖连续剪辑——
     //   整帧资产单一 jump 剪辑（meta.clipFrames.jump.dirs 8 向独立帧表），方向由下方 dirKey 选择；
     //   落地（_jumping 清除）后 jump 视为可覆盖剪辑，自然回归行走/待机。
     const key = resolveDirectionKey(sprite.direction || 'down');
     let clip = skeletonComponent.currentClip;
     const jumping = entity?._jumping === true;
-    if (!clip || CONTINUOUS_CLIPS.has(clip) || (clip === 'jump' && !jumping)) {
-      clip = jumping
-        ? 'jump'
-        : (sprite.isWalking === true && sprite.isStopping !== true
-          ? (WALK_CLIPS[key] || 'walk_down')
-          : (IDLE_CLIPS[key] || 'idle_down'));
+    const climbing = entity?._climbing === true;
+    if (!clip || CONTINUOUS_CLIPS.has(clip)
+      || (clip === 'jump' && !jumping)
+      || (clip === 'climb_back' && !climbing)) {
+      clip = climbing
+        ? 'climb_back'
+        : (jumping
+          ? 'jump'
+          : (sprite.isWalking === true && sprite.isStopping !== true
+            ? (WALK_CLIPS[key] || 'walk_down')
+            : (IDLE_CLIPS[key] || 'idle_down')));
       if (clip !== skeletonComponent.currentClip) skeletonComponent.playClip?.(clip);
     }
 
