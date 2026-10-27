@@ -638,6 +638,13 @@
           "definitionId": "reward.s01.survivalKit"
         },
         "stepId": "reward-s01-survival-kit"
+      },
+      {
+        "action": "showTip",
+        "params": {
+          "text": "崖壁上垂着藤蔓。{jump}跃向崖壁抓住它，攀到顶部翻越山崖，就能逃往废弃营地。"
+        },
+        "stepId": "hint-vine-climb"
       }
     ],
     "id": "trg_s01_cliff_reached",

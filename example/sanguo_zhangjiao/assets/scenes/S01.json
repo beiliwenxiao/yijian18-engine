@@ -647,13 +647,24 @@
           "walkable": false
         },
         {
+          "climbMode": "controlled",
+          "climbExit": {
+            "x": 1250,
+            "y": 220
+          },
+          "climbExitRadius": 26,
+          "climbSpeed": 84,
+          "climbTarget": {
+            "x": 1290,
+            "y": 340
+          },
           "climbable": true,
           "collide": false,
           "edgeFade": 0,
           "fill": "#3a5a2a",
           "fillMode": "color",
-          "id": "shape_1792948308425_402",
-          "name": "地形多边形",
+          "id": "S01-cliff-vine",
+          "name": "逃生攀爬面",
           "opacity": 0,
           "points": [
             [
@@ -677,6 +688,9 @@
               194
             ]
           ],
+          "prompt": "{jump}跃向崖壁抓住藤蔓，向上攀爬翻越山崖",
+          "radius": 220,
+          "requiresClimbAbility": false,
           "shapeType": "polygon",
           "stroke": "#5a8a4a",
           "strokeWidth": 0,

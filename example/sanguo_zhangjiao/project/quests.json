@@ -371,6 +371,12 @@
       },
       {
         "id": "escape",
+        "mapTargets": [
+          {
+            "sceneId": "S01",
+            "targetId": "S01-cliff-vine"
+          }
+        ],
         "objectiveType": "commit.fact",
         "target": "story.s01.complete",
         "title": "逃往废弃营地",
