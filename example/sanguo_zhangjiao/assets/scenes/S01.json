@@ -647,12 +647,12 @@
           "walkable": false
         },
         {
-          "climbMode": "controlled",
           "climbExit": {
             "x": 1250,
             "y": 220
           },
           "climbExitRadius": 26,
+          "climbMode": "controlled",
           "climbSpeed": 84,
           "climbTarget": {
             "x": 1290,
@@ -1299,8 +1299,8 @@
           "triggerId": "trg_s01_enter_shelter",
           "type": "trigger",
           "width": 55,
-          "x": 373.80893928837946,
-          "y": 473.06232235709297
+          "x": 459.3132398601438,
+          "y": 460.28989571566757
         },
         {
           "activeWhen": {

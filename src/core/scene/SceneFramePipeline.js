@@ -177,6 +177,13 @@ export class SceneFramePipeline {
           y: transform.position.y - spriteHeight / 2
         };
         weaponRenderer.updateMouseAngle(mouseWorldPos, playerCenter, currentTime);
+        // 攻击扇形以碰撞中心为锚点（与 MeleeAttackSystem 指示器/命中判定一致）；
+        // 武器摆动仍用精灵盒中心。
+        const collision = player.getComponent('collision');
+        const playerAttackCenter = {
+          x: transform.position.x + (Number(collision?.offsetX) || 0),
+          y: transform.position.y + (Number(collision?.offsetY) || 0)
+        };
 
         // PC：按下 Ctrl 进入轻功瞄准、Shift 进入投掷瞄准（随后左键确认）
         if (!playerActionLocked && !worldInputBlocked && !scene.isMobileLayout) {
@@ -197,7 +204,7 @@ export class SceneFramePipeline {
           // 拾取已由 SceneInputFlow/InputActionRouter 在攻击优先级之前统一分发。
           meleeAttackSystem?.setPlayerEntity?.(player);
           meleeAttackSystem?.setEntities?.(entities);
-          meleeAttackSystem?.update?.(mouseWorldPos, playerCenter, currentTime);
+          meleeAttackSystem?.update?.(mouseWorldPos, playerAttackCenter, currentTime);
         }
       }
     }

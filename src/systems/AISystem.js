@@ -490,13 +490,14 @@ class DefensiveAI extends AIController {
     const transform = entity.getComponent('transform');
     const movement = entity.getComponent('movement');
     if (!transform || !movement) return;
-    const targetTransform = targetOrPosition?.getComponent?.('transform')
+    // 统一归一化为位置：实体取其 transform.position，裸位置快照（_lastHurtFrom {x,y}）直接用
+    const targetPosition = targetOrPosition?.getComponent?.('transform')?.position
       || (targetOrPosition && typeof targetOrPosition.x === 'number' ? targetOrPosition : null);
-    if (!targetTransform) return;
+    if (!targetPosition) return;
 
     // 计算反方向
-    const dx = transform.position.x - targetTransform.position.x;
-    const dy = transform.position.y - targetTransform.position.y;
+    const dx = transform.position.x - targetPosition.x;
+    const dy = transform.position.y - targetPosition.y;
     const distance = Math.sqrt(dx * dx + dy * dy);
 
     if (distance > 0) {

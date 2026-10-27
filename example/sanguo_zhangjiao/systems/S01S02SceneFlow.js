@@ -2309,13 +2309,6 @@ export class S01S02Coordinator {
     const campfire = this.scene._campfireService.getPosition();
     return { x: campfire.x + 48, y: campfire.y + 64, label: '已点燃的火堆旁' };
   }
-
-  allowsTutorialBasicAttack() {
-    if (this.scene.currentSceneId !== 'S01') return false;
-    const survival = this._story().s01Survival || {};
-    return this.scene._tutorialFlow?.isCurrent?.('s01.attack') === true
-      || (survival.firstWolfSpotted === true && survival.firstWolfKilled !== true);
-  }
 }
 
 export default S01S02Coordinator;

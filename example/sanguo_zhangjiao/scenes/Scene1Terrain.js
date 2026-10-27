@@ -1485,22 +1485,40 @@ export class Scene1Terrain {
    * 攀爬区域调试显示（调试面板「显示攀爬区域」开关，由 renderPostPipeline 后期管线调用，
    * 绘制在所有实体之上，避免被树冠等贴图遮挡）：
    *   - 地形 climbable shape：半透明青绿填充 + 描边；
-   *   - 可攀爬物件（藤蔓/树等）：三区多边形（进入/跌落=橙、攀爬=绿、离开=蓝）。
+   *   - 可攀爬物件（切片/藤蔓/树等非 shape）：无多边形顶点，用锚点包围盒示意攀爬范围；
+   *   - 三区多边形（进入/跌落=橙、攀爬=绿、离开=蓝）。
    * @param {CanvasRenderingContext2D} ctx
    */
   renderClimbZonesDebug(ctx) {
     if (this.debugShowClimbableZones === false) return;
     const resolver = this._editorShapeResolver();
     for (const shape of this._climbableShapes || []) {
-      if (shape.type !== 'shape') continue;
-      ShapeRenderer.render(ctx, {
-        ...shape,
-        fillMode: 'color',
-        fill: 'rgba(90, 200, 140, 0.3)',
-        edgeFade: 0,
-        stroke: 'rgba(90, 220, 150, 0.75)',
-        strokeWidth: 2
-      }, resolver);
+      if (shape.type === 'shape') {
+        ShapeRenderer.render(ctx, {
+          ...shape,
+          fillMode: 'color',
+          fill: 'rgba(90, 200, 140, 0.3)',
+          // 原形状常设 opacity:0（透明攀爬面），必须在展开后显式覆盖，
+          // 否则调试层跟随原透明度不可见（与 renderCollisionShapesDebug 同款处理）
+          opacity: 1,
+          edgeFade: 0,
+          stroke: 'rgba(90, 220, 150, 0.75)',
+          strokeWidth: 2
+        }, resolver);
+        continue;
+      }
+      // 切片/贴图类攀爬面：没有 points 多边形，用锚点包围盒（x/y 为左上角，
+      // 与 climbZones 顶点相对锚点的约定一致）示意攀爬范围。
+      const width = Number(shape.width) || 0;
+      const height = Number(shape.height) || 0;
+      if (width <= 0 || height <= 0) continue;
+      ctx.beginPath();
+      ctx.rect(Number(shape.x) || 0, Number(shape.y) || 0, width, height);
+      ctx.fillStyle = 'rgba(90, 200, 140, 0.18)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(90, 220, 150, 0.75)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
     }
     const zoneStyles = [
       ['enter', 'rgba(255, 159, 67, 0.25)', 'rgba(255, 159, 67, 0.85)'],

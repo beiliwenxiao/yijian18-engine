@@ -1142,14 +1142,14 @@
             ]
           }
         ],
+        "stepId": "recruit-tick-branch",
         "when": {
-          "op": "not",
           "arg": {
-            "op": "var",
-            "name": "story.s02RecruitDone"
-          }
-        },
-        "stepId": "recruit-tick-branch"
+            "name": "story.s02RecruitDone",
+            "op": "var"
+          },
+          "op": "not"
+        }
       },
       {
         "branch": [
@@ -1198,24 +1198,24 @@
             ]
           }
         ],
+        "stepId": "recruit-done-branch",
         "when": {
-          "op": "and",
           "args": [
             {
               "op": ">=",
-              "var": "story.s02RecruitCount",
-              "value": 50
+              "value": 50,
+              "var": "story.s02RecruitCount"
             },
             {
-              "op": "not",
               "arg": {
-                "op": "var",
-                "name": "story.s02RecruitDone"
-              }
+                "name": "story.s02RecruitDone",
+                "op": "var"
+              },
+              "op": "not"
             }
-          ]
-        },
-        "stepId": "recruit-done-branch"
+          ],
+          "op": "and"
+        }
       },
       {
         "branch": [
@@ -1231,24 +1231,24 @@
             ]
           }
         ],
+        "stepId": "recruit-progress-branch",
         "when": {
-          "op": "and",
           "args": [
             {
               "op": "<",
-              "var": "story.s02RecruitCount",
-              "value": 50
+              "value": 50,
+              "var": "story.s02RecruitCount"
             },
             {
-              "op": "not",
               "arg": {
-                "op": "var",
-                "name": "story.s02RecruitDone"
-              }
+                "name": "story.s02RecruitDone",
+                "op": "var"
+              },
+              "op": "not"
             }
-          ]
-        },
-        "stepId": "recruit-progress-branch"
+          ],
+          "op": "and"
+        }
       }
     ],
     "id": "trg_s02_recruit",
@@ -1372,20 +1372,20 @@
           }
         ],
         "when": {
-          "op": "and",
           "args": [
             {
-              "op": "var",
-              "name": "story.s02CampLaid"
+              "name": "story.s02CampLaid",
+              "op": "var"
             },
             {
-              "op": "not",
               "arg": {
-                "op": "var",
-                "name": "story.s02RaidRepeled"
-              }
+                "name": "story.s02RaidRepeled",
+                "op": "var"
+              },
+              "op": "not"
             }
-          ]
+          ],
+          "op": "and"
         }
       }
     ],
@@ -1446,20 +1446,20 @@
           }
         ],
         "when": {
-          "op": "and",
           "args": [
             {
-              "op": "var",
-              "name": "story.s02CampLaid"
+              "name": "story.s02CampLaid",
+              "op": "var"
             },
             {
-              "op": "not",
               "arg": {
-                "op": "var",
-                "name": "story.s02RaidRepeled"
-              }
+                "name": "story.s02RaidRepeled",
+                "op": "var"
+              },
+              "op": "not"
             }
-          ]
+          ],
+          "op": "and"
         }
       }
     ],
@@ -1553,20 +1553,20 @@
           }
         ],
         "when": {
-          "op": "and",
           "args": [
             {
-              "op": "var",
-              "name": "story.s02RaidFight"
+              "name": "story.s02RaidFight",
+              "op": "var"
             },
             {
-              "op": "not",
               "arg": {
-                "op": "var",
-                "name": "story.s02RaidRepeled"
-              }
+                "name": "story.s02RaidRepeled",
+                "op": "var"
+              },
+              "op": "not"
             }
-          ]
+          ],
+          "op": "and"
         }
       }
     ],
@@ -1598,24 +1598,24 @@
           }
         ],
         "when": {
-          "op": "and",
           "args": [
             {
-              "op": "var",
-              "name": "story.s02CampLaid"
+              "name": "story.s02CampLaid",
+              "op": "var"
             },
             {
-              "op": "var",
-              "name": "story.s02OvernightDone"
+              "name": "story.s02OvernightDone",
+              "op": "var"
             },
             {
-              "op": "not",
               "arg": {
-                "op": "var",
-                "name": "story.s02RaidRepeled"
-              }
+                "name": "story.s02RaidRepeled",
+                "op": "var"
+              },
+              "op": "not"
             }
-          ]
+          ],
+          "op": "and"
         }
       }
     ],
@@ -3538,32 +3538,32 @@
                 "params": {
                   "items": [
                     {
-                      "id": "resource.food",
-                      "all": true
+                      "all": true,
+                      "id": "resource.food"
                     },
                     {
-                      "id": "resource.wild_berry",
-                      "all": true
+                      "all": true,
+                      "id": "resource.wild_berry"
                     },
                     {
-                      "id": "resource.apple",
-                      "all": true
+                      "all": true,
+                      "id": "resource.apple"
                     },
                     {
-                      "id": "resource.raw_wolf_meat",
-                      "all": true
+                      "all": true,
+                      "id": "resource.raw_wolf_meat"
                     },
                     {
-                      "id": "resource.raw_rabbit_meat",
-                      "all": true
+                      "all": true,
+                      "id": "resource.raw_rabbit_meat"
                     },
                     {
-                      "id": "food.roasted_wolf_meat",
-                      "all": true
+                      "all": true,
+                      "id": "food.roasted_wolf_meat"
                     },
                     {
-                      "id": "food.roasted_rabbit_meat",
-                      "all": true
+                      "all": true,
+                      "id": "food.roasted_rabbit_meat"
                     }
                   ],
                   "strict": false
@@ -3579,9 +3579,9 @@
               }
             ],
             "when": {
-              "op": "hasItem",
+              "count": 20,
               "item": "resource.wild_berry",
-              "count": 20
+              "op": "hasItem"
             }
           },
           {
@@ -3611,32 +3611,32 @@
                 "params": {
                   "items": [
                     {
-                      "id": "resource.food",
-                      "all": true
+                      "all": true,
+                      "id": "resource.food"
                     },
                     {
-                      "id": "resource.wild_berry",
-                      "all": true
+                      "all": true,
+                      "id": "resource.wild_berry"
                     },
                     {
-                      "id": "resource.apple",
-                      "all": true
+                      "all": true,
+                      "id": "resource.apple"
                     },
                     {
-                      "id": "resource.raw_wolf_meat",
-                      "all": true
+                      "all": true,
+                      "id": "resource.raw_wolf_meat"
                     },
                     {
-                      "id": "resource.raw_rabbit_meat",
-                      "all": true
+                      "all": true,
+                      "id": "resource.raw_rabbit_meat"
                     },
                     {
-                      "id": "food.roasted_wolf_meat",
-                      "all": true
+                      "all": true,
+                      "id": "food.roasted_wolf_meat"
                     },
                     {
-                      "id": "food.roasted_rabbit_meat",
-                      "all": true
+                      "all": true,
+                      "id": "food.roasted_rabbit_meat"
                     }
                   ],
                   "strict": false
@@ -3652,9 +3652,9 @@
               }
             ],
             "when": {
-              "op": "hasItem",
+              "count": 5,
               "item": "resource.raw_wolf_meat",
-              "count": 5
+              "op": "hasItem"
             }
           }
         ],
@@ -3701,8 +3701,8 @@
               }
             ],
             "when": {
-              "op": "var",
-              "name": "s02BegPaid"
+              "name": "s02BegPaid",
+              "op": "var"
             }
           }
         ],
@@ -3728,11 +3728,11 @@
               }
             ],
             "when": {
-              "op": "not",
               "arg": {
-                "op": "var",
-                "name": "s02BegPaid"
-              }
+                "name": "s02BegPaid",
+                "op": "var"
+              },
+              "op": "not"
             }
           }
         ],
@@ -3756,32 +3756,32 @@
         "params": {
           "items": [
             {
-              "id": "resource.food",
-              "all": true
+              "all": true,
+              "id": "resource.food"
             },
             {
-              "id": "resource.wild_berry",
-              "all": true
+              "all": true,
+              "id": "resource.wild_berry"
             },
             {
-              "id": "resource.apple",
-              "all": true
+              "all": true,
+              "id": "resource.apple"
             },
             {
-              "id": "resource.raw_wolf_meat",
-              "all": true
+              "all": true,
+              "id": "resource.raw_wolf_meat"
             },
             {
-              "id": "resource.raw_rabbit_meat",
-              "all": true
+              "all": true,
+              "id": "resource.raw_rabbit_meat"
             },
             {
-              "id": "food.roasted_wolf_meat",
-              "all": true
+              "all": true,
+              "id": "food.roasted_wolf_meat"
             },
             {
-              "id": "food.roasted_rabbit_meat",
-              "all": true
+              "all": true,
+              "id": "food.roasted_rabbit_meat"
             }
           ],
           "strict": false
@@ -3973,11 +3973,11 @@
       }
     ],
     "id": "trg_s02_beg_fight_lose",
-    "name": "荒村：还手打输（被打晕，殊途同归昏迷）",
-    "once": true,
     "if": {
       "var": "story.s02BegFight"
     },
+    "name": "荒村：还手打输（被打晕，殊途同归昏迷）",
+    "once": true,
     "when": {
       "params": {
         "sceneId": "S02"
@@ -4006,8 +4006,8 @@
       {
         "action": "scenario.command",
         "params": {
-          "operation": "army.march",
           "armyId": "army.s02.column",
+          "operation": "army.march",
           "scenarioId": "scenario.command.army.march",
           "waypoints": [
             {
@@ -4059,11 +4059,11 @@
               }
             ],
             "when": {
-              "op": "not",
               "arg": {
-                "op": "var",
-                "name": "story.s02ZhangjiaoChoice"
-              }
+                "name": "story.s02ZhangjiaoChoice",
+                "op": "var"
+              },
+              "op": "not"
             }
           }
         ],
@@ -4098,8 +4098,8 @@
               {
                 "action": "scenario.command",
                 "params": {
-                  "operation": "army.march",
                   "armyId": "army.s02.column",
+                  "operation": "army.march",
                   "scenarioId": "scenario.command.army.march",
                   "waypoints": [
                     {
@@ -4120,20 +4120,20 @@
               }
             ],
             "when": {
-              "op": "and",
               "args": [
                 {
-                  "op": "var",
-                  "name": "story.s02BegFainted"
+                  "name": "story.s02BegFainted",
+                  "op": "var"
                 },
                 {
-                  "op": "not",
                   "arg": {
-                    "op": "var",
-                    "name": "story.s02ZhangjiaoChoice"
-                  }
+                    "name": "story.s02ZhangjiaoChoice",
+                    "op": "var"
+                  },
+                  "op": "not"
                 }
-              ]
+              ],
+              "op": "and"
             }
           }
         ],

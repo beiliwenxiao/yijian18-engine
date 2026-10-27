@@ -174,8 +174,10 @@ const commandMethods = {
   },
 
   canPerformBasicAttack() {
+    // 战斗非硬锁（引擎设计）：非战斗（猎捕中立生物、挥空）与战斗中均可普攻；
+    // 是否进战由 CombatSystem.applyDamage 命中结算决定。S14 武器席优先消费指针攻击。
     if (this.s11s14SceneCoordinator.handlePointerBasicAttack()) return false;
-    return this.canPerformDefaultBasicAttack() || this._s01s02Coordinator.allowsTutorialBasicAttack();
+    return true;
   },
 
   handleIrreversibleChoice(command = {}) {

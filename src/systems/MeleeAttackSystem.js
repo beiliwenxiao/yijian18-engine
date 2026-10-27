@@ -646,11 +646,14 @@ export class MeleeAttackSystem {
   renderCombatAlertCircle(ctx, camera) {
     const transform = this.playerEntity.getComponent('transform');
     if (!transform) return;
-    
+
     const sprite = this.playerEntity.getComponent('sprite');
     const spriteHeight = sprite?.height || 64;
-    const cx = transform.position.x;
-    const cy = transform.position.y - spriteHeight / 2;
+    // 扇形以玩家碰撞中心为锚点（transform 脚点 + collision 偏移），与命中判定同源；
+    // 不再用精灵盒中心（spriteHeight/2 会随立绘高度漂移，视觉上扇形悬空）。
+    const collision = this.playerEntity.getComponent('collision');
+    const cx = transform.position.x + (Number(collision?.offsetX) || 0);
+    const cy = transform.position.y + (Number(collision?.offsetY) || 0);
     
     ctx.save();
     

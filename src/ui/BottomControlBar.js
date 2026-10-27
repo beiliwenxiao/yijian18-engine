@@ -231,6 +231,15 @@ export class BottomControlBar extends UIElement {
   }
 
   /**
+   * 攻击提示槽在 PC 方案下不上技能条：PC 攻击无热键（鼠标左键直出），
+   * 空槽位会误导玩家去技能栏找攻击键——教学横幅的「点击鼠标左键反击」提示已足够。
+   * 手柄（RT）/触屏（攻击按钮）保留原提示槽。
+   */
+  _isAttackHintSlotOnPc(slot) {
+    return (slot.onboardingHintAction || slot.hintAction) === 'attack' && InputHints.scheme === 'pc';
+  }
+
+  /**
    * 更新控制栏
    * @param {number} deltaTime - 帧间隔时间
    */
@@ -609,10 +618,11 @@ export class BottomControlBar extends UIElement {
     for (let i = 0; i < this.skillSlots.length; i++) {
       const slot = this.skillSlots[i];
       if (slot.visible === false) continue;
+      if (this._isAttackHintSlotOnPc(slot)) continue;
       const slotX = this.x + slot.x;
       const slotY = this.y + slot.y;
       const halfSize = slot.size / 2;
-      
+
       const isHovered = this.hoveredSlot === i;
       
       // 槽位背景
@@ -852,6 +862,7 @@ export class BottomControlBar extends UIElement {
     for (let i = 0; i < this.skillSlots.length; i++) {
       const slot = this.skillSlots[i];
       if (slot.visible === false || slot.enabled === false) continue;
+      if (this._isAttackHintSlotOnPc(slot)) continue;
       const slotX = this.x + slot.x;
       const slotY = this.y + slot.y;
       const halfSize = slot.size / 2;
@@ -877,6 +888,7 @@ export class BottomControlBar extends UIElement {
     for (let i = 0; i < this.skillSlots.length; i++) {
       const slot = this.skillSlots[i];
       if (slot.visible === false || slot.enabled === false) continue;
+      if (this._isAttackHintSlotOnPc(slot)) continue;
       const slotX = this.x + slot.x;
       const slotY = this.y + slot.y;
       const halfSize = slot.size / 2;

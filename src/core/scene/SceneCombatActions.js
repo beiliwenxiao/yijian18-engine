@@ -85,16 +85,18 @@ export class SceneCombatActions {
     if (!scene.playerEntity || !scene.meleeAttackSystem || !this._canAttack()) return false;
     const transform = scene.playerEntity.getComponent('transform');
     if (!transform) return;
-    const spriteHeight = scene.playerEntity.getComponent('sprite')?.height || 64;
+    // 扇形以碰撞中心为锚点（transform 脚点 + collision 偏移），与指示器/命中判定一致
+    const collision = scene.playerEntity.getComponent('collision');
+    const attackOrigin = {
+      x: transform.position.x + (Number(collision?.offsetX) || 0),
+      y: transform.position.y + (Number(collision?.offsetY) || 0)
+    };
     const melee = scene.meleeAttackSystem;
     melee.setPlayerEntity(scene.playerEntity);
     melee.setEntities(scene.entities);
     melee.sectorDirection = Math.atan2(direction.y, direction.x);
     melee.sectorIsRanged = melee.checkIsRangedWeapon();
-    return melee.performSectorAttack(
-      { x: transform.position.x, y: transform.position.y - spriteHeight / 2 },
-      performance.now() / 1000
-    );
+    return melee.performSectorAttack(attackOrigin, performance.now() / 1000);
   }
 
   attackByDirection(dirX, dirY, distRatio, intentDetails = {}) {
@@ -118,7 +120,12 @@ export class SceneCombatActions {
     const transform = scene.playerEntity.getComponent('transform');
     if (!transform) return;
     const melee = scene.meleeAttackSystem;
-    const spriteHeight = scene.playerEntity.getComponent('sprite')?.height || 64;
+    // 扇形以碰撞中心为锚点（transform 脚点 + collision 偏移），与指示器/命中判定一致
+    const collision = scene.playerEntity.getComponent('collision');
+    const attackOrigin = {
+      x: transform.position.x + (Number(collision?.offsetX) || 0),
+      y: transform.position.y + (Number(collision?.offsetY) || 0)
+    };
     melee.setPlayerEntity(scene.playerEntity);
     melee.setEntities(scene.entities);
     melee.sectorDirection = Math.atan2(direction.y, direction.x);
@@ -132,7 +139,7 @@ export class SceneCombatActions {
       if (mainhand?.attackDistance != null) weaponDistance = mainhand.attackDistance;
       const ratio = distRatio !== undefined && distRatio > 0 ? Math.min(distRatio, 1) : 1;
       return melee.performSectorAttack(
-        { x: transform.position.x, y: transform.position.y - spriteHeight / 2 },
+        attackOrigin,
         performance.now() / 1000,
         Math.round(weaponDistance * ratio)
       );

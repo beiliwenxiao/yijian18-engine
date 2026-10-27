@@ -110,14 +110,9 @@ export class BaseGameSceneGameplayHooks extends BaseGameSceneBehaviors {
     return true;
   }
 
-  /** 基础攻击默认只在战斗状态开放；具体场景可覆盖以支持训练或可破坏物。 */
+  /** 基础攻击不与战斗态挂钩（战斗非硬锁）；死亡/灵魂等硬锁由 isPlayerActionLocked 统一拒绝。 */
   canPerformBasicAttack() {
-    return this.canPerformDefaultBasicAttack();
-  }
-
-  /** 供内容 coordinator 组合训练、载具等规则时调用的框架默认攻击许可。 */
-  canPerformDefaultBasicAttack() {
-    return this.combatSystem?.isInCombat?.() === true;
+    return true;
   }
 
   /** 播放玩家骨骼/精灵动画（骨骼实体转发 playClip，普通实体走帧动画）。 */

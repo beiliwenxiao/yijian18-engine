@@ -176,6 +176,10 @@
   {
     "id": "dialogue.s02.beggarConfront",
     "nodes": {
+      "drawWeapon": {
+        "speaker": "旁白",
+        "text": "刀锋出鞘的寒光让围拢的人群顿了一顿，随即更加疯狂地扑了上来。"
+      },
       "start": {
         "choices": [
           {
@@ -191,10 +195,6 @@
         ],
         "speaker": "旁白",
         "text": "棍棒和拳脚雨点般落下。这些人已经饿疯了——你要怎么办？"
-      },
-      "drawWeapon": {
-        "speaker": "旁白",
-        "text": "刀锋出鞘的寒光让围拢的人群顿了一顿，随即更加疯狂地扑了上来。"
       },
       "takeBeating": {
         "speaker": "旁白",
@@ -230,16 +230,16 @@
   {
     "id": "dialogue.s02.porridgeStart",
     "nodes": {
+      "light": {
+        "nextNode": "vow",
+        "speaker": "旁白",
+        "text": "士兵们七手八脚抬锅垒灶，柴火噼啪作响。远处的土路上，灾民们拖家带口，循着炊烟与粥香走来。"
+      },
       "order": {
         "nextNode": "light",
         "portrait": "zhangjiao",
         "speaker": "张角",
         "text": "传令下去，把村里那口大锅支起来，熬符水分与百姓。再把招兵旗立在村东——愿随我走的，喝完符水来旗下领牌！"
-      },
-      "light": {
-        "nextNode": "vow",
-        "speaker": "旁白",
-        "text": "士兵们七手八脚抬锅垒灶，柴火噼啪作响。远处的土路上，灾民们拖家带口，循着炊烟与粥香走来。"
       },
       "start": {
         "nextNode": "order",
@@ -263,15 +263,15 @@
   {
     "id": "dialogue.s02.recruitDone",
     "nodes": {
+      "camp": {
+        "speaker": "旁白",
+        "text": "士兵们清点人手、划分营地。破败的荒村因为这一百号人，头一回有了几分生气。"
+      },
       "order": {
         "nextNode": "camp",
         "portrait": "zhangjiao",
         "speaker": "张角",
         "text": "好！五十新募义从，加上我本部五十人——百人成军！传令：伐木垒灶，就在这片荒村扎营休整！"
-      },
-      "camp": {
-        "speaker": "旁白",
-        "text": "士兵们清点人手、划分营地。破败的荒村因为这一百号人，头一回有了几分生气。"
       },
       "start": {
         "nextNode": "order",
@@ -285,15 +285,15 @@
   {
     "id": "dialogue.s02.overnight",
     "nodes": {
-      "dawn": {
-        "nextNode": "alarm",
-        "speaker": "旁白",
-        "text": "翌日清晨。霜白铺满荒村，哨探连滚带爬冲进营地——界河渡口一夜之间多了无数营帐，旌旗如林！"
-      },
       "alarm": {
         "portrait": "zhangjiao",
         "speaker": "张角",
         "text": "卢植的兵，来得比老夫算的还快。百人精锐已围村——都别慌，列阵！"
+      },
+      "dawn": {
+        "nextNode": "alarm",
+        "speaker": "旁白",
+        "text": "翌日清晨。霜白铺满荒村，哨探连滚带爬冲进营地——界河渡口一夜之间多了无数营帐，旌旗如林！"
       },
       "night": {
         "nextNode": "dawn",
@@ -334,14 +334,14 @@
   {
     "id": "dialogue.s02.raidDefeat",
     "nodes": {
+      "retreat": {
+        "speaker": "旁白",
+        "text": "张角当机立断，鸣金收兵。全军且战且退，撤回营地死守。官军亦折损不小，暂行退去，稍候必将卷土重来。"
+      },
       "start": {
         "nextNode": "retreat",
         "speaker": "旁白",
         "text": "兵败如山倒。官军锋锐远超预料，黄巾阵线节节溃退——"
-      },
-      "retreat": {
-        "speaker": "旁白",
-        "text": "张角当机立断，鸣金收兵。全军且战且退，撤回营地死守。官军亦折损不小，暂行退去，稍候必将卷土重来。"
       }
     },
     "startNode": "start",
@@ -632,7 +632,7 @@
     "nodes": {
       "start": {
         "speaker": "旁白",
-        "text": "尘埃落定。精山的战火熄了，天下人都在传颂——或诅咒——黄巾的名字。而你走过的每一步，都把命运推向了它最终的模样。前方，就是结局之地。"
+        "text": "尘埃落定。精��的战火熄了，天下人都在传颂——或诅咒——黄巾的名字。而你走过的每一步，都把命运推向了它最终的模样。前方，就是结局之地。"
       }
     },
     "startNode": "start",
@@ -712,15 +712,15 @@
   {
     "id": "dialogue.s01.dawn",
     "nodes": {
-      "start": {
-        "nextNode": "end",
-        "speaker": "旁白",
-        "text": "风从棚子的缝里灌了一夜。天蒙蒙亮，火堆只剩一小撮红。手指冻得伸不直，膝盖上的旧伤又开始发木。"
-      },
       "end": {
         "portrait": "player",
         "speaker": "你",
         "text": "……火快灭了。今天得翻过山去。"
+      },
+      "start": {
+        "nextNode": "end",
+        "speaker": "旁白",
+        "text": "风从棚子的缝里灌了一夜。天蒙蒙亮，火堆只剩一小撮红。手指冻得伸不直，膝盖上的旧伤又开始发木。"
       }
     },
     "startNode": "start",
@@ -729,15 +729,15 @@
   {
     "id": "dialogue.s01.shelterBuilt",
     "nodes": {
-      "start": {
-        "nextNode": "end",
-        "speaker": "旁白",
-        "text": "最后一捆枯草压上棚顶。木棍歪歪扭扭，四面漏风。你捶了捶发酸的腰。"
-      },
       "end": {
         "portrait": "player",
         "speaker": "你",
         "text": "……歪是歪了点。能住。"
+      },
+      "start": {
+        "nextNode": "end",
+        "speaker": "旁白",
+        "text": "最后一捆枯草压上棚顶。木棍歪歪扭扭，四面漏风。你捶了捶发酸的腰。"
       }
     },
     "startNode": "start",
@@ -746,15 +746,15 @@
   {
     "id": "dialogue.s01.shelterIn",
     "nodes": {
-      "start": {
-        "nextNode": "end",
-        "speaker": "旁白",
-        "text": "棚里没别的家当，就一堆干草铺的床。风从枝条缝里灌进来，带着枯草味。"
-      },
       "end": {
         "portrait": "player",
         "speaker": "你",
         "text": "……能挡风就行。"
+      },
+      "start": {
+        "nextNode": "end",
+        "speaker": "旁白",
+        "text": "棚里没别的家当，就一堆干草铺的床。风从枝条缝里灌进来，带着枯草味。"
       }
     },
     "startNode": "start",
