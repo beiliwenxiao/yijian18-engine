@@ -26,13 +26,13 @@
         "await": true,
         "dialogueId": "dialogue.s01.wake",
         "id": "step.1.1",
-        "title": "开场旁白",
+        "title": "醒来",
         "type": "dialogue"
       },
       {
         "await": true,
         "id": "step.1.2",
-        "title": "寒风中醒来",
+        "title": "站起身来",
         "tutorialId": "s01.move",
         "type": "tutorial"
       },
@@ -61,12 +61,12 @@
         "params": {
           "operation": "openBerryGathering"
         },
-        "title": "开放野果采集",
+        "title": "找点能吃的",
         "type": "action"
       },
       {
         "id": "after.lightCampfire.2",
-        "title": "显示采集教程",
+        "title": "采些野果",
         "tutorialId": "s01.gather",
         "type": "tutorial"
       },
@@ -87,7 +87,7 @@
       {
         "id": "after.gatherBerries.1",
         "operation": "showStep",
-        "title": "提示使用野果",
+        "title": "咬一口酸果",
         "tutorialId": "s01.gather",
         "tutorialStepId": "s01.gather-step-001",
         "type": "tutorial"
@@ -96,7 +96,7 @@
         "id": "eatBerry",
         "objectiveType": "commit.fact",
         "target": "story.s01.berryEaten",
-        "title": "食用酸果恢复体力",
+        "title": "吃下酸果",
         "type": "objective"
       },
       {
@@ -105,19 +105,19 @@
         "params": {
           "operation": "dropWornAxe"
         },
-        "title": "投放破旧斧头",
+        "title": "脚边有把旧斧头",
         "type": "action"
       },
       {
         "id": "after.eatBerry.1",
         "operation": "complete",
-        "title": "完成吃野果教程",
+        "title": "把果子咽下去",
         "tutorialId": "tutorial-001",
         "type": "tutorial"
       },
       {
         "id": "after.eatBerry.4",
-        "title": "显示拾取教程",
+        "title": "拾起斧头",
         "tutorialId": "s01.pickup",
         "type": "tutorial"
       },
@@ -137,14 +137,14 @@
       {
         "id": "after.findAxe.1",
         "operation": "complete",
-        "title": "完成拾取教程",
+        "title": "握紧斧柄",
         "tutorialId": "s01.pickup",
         "type": "tutorial"
       },
       {
         "await": true,
         "id": "after.eatBerry.2",
-        "title": "显示砍柴教程",
+        "title": "砍些干柴",
         "tutorialId": "s01.chopWood",
         "type": "tutorial"
       },
@@ -184,7 +184,7 @@
         ],
         "objectiveType": "commit.fact",
         "target": "story.s01.refuelCampfire",
-        "title": "为火堆添柴并应对野狼",
+        "title": "给火堆添柴",
         "type": "objective"
       },
       {
@@ -198,7 +198,7 @@
           "operation": "commitStoryWhenReady",
           "storyPath": "s01Survival.campfireRefuelCount"
         },
-        "title": "提交首狼出现事实",
+        "title": "火堆边有响动",
         "type": "action"
       },
       {
@@ -207,12 +207,12 @@
         "params": {
           "operation": "ensureFirstWolf"
         },
-        "title": "生成并激活教学狼",
+        "title": "饿狼来了",
         "type": "action"
       },
       {
         "id": "after.spotWolf.3",
-        "title": "显示攻击教程",
+        "title": "迎上去",
         "tutorialId": "s01.attack",
         "type": "tutorial"
       },
@@ -220,7 +220,7 @@
         "id": "killWolf",
         "objectiveType": "kill.enemy",
         "target": "story.s01.firstWolfKilled",
-        "title": "击杀教学野狼",
+        "title": "杀死饿狼",
         "type": "objective"
       },
       {
@@ -233,14 +233,14 @@
         ],
         "objectiveType": "commit.fact",
         "target": "story.s01.skinningKnifeFound",
-        "title": "在火堆附近发现剥皮刀",
+        "title": "找到剥皮刀",
         "type": "objective"
       },
       {
         "id": "skinWolf",
         "objectiveType": "commit.fact",
         "target": "story.s01.wolfSkinned",
-        "title": "剥取一次狼皮",
+        "title": "剥下狼皮",
         "type": "objective"
       },
       {
@@ -249,7 +249,7 @@
         "params": {
           "operation": "afterWolfSkinned"
         },
-        "title": "提示烤制狼肉",
+        "title": "处理猎物",
         "type": "action"
       },
       {
@@ -327,7 +327,7 @@
         ],
         "objectiveType": "commit.fact",
         "target": "story.s01.wolfPackCleared",
-        "title": "踏入狼群领地，击退狼群",
+        "title": "穿过枯树林",
         "type": "objective"
       },
       {
@@ -340,7 +340,7 @@
         ],
         "objectiveType": "commit.fact",
         "target": "story.s01.wolfKingDefeated",
-        "title": "讨斩狼王",
+        "title": "杀死狼王",
         "type": "objective"
       },
       {
@@ -366,20 +366,7 @@
         ],
         "objectiveType": "commit.fact",
         "target": "story.s01.cliffReached",
-        "title": "抵达山崖并攀岩撤离",
-        "type": "objective"
-      },
-      {
-        "id": "escape",
-        "mapTargets": [
-          {
-            "sceneId": "S01",
-            "targetId": "S01-cliff-vine"
-          }
-        ],
-        "objectiveType": "commit.fact",
-        "target": "story.s01.complete",
-        "title": "逃往废弃营地",
+        "title": "攀上崖壁，逃往营地",
         "type": "objective"
       }
     ],

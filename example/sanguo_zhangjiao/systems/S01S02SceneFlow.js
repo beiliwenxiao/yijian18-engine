@@ -33,6 +33,12 @@ const RECIPE_ACTIONS = Object.freeze({
     outputItemId: 'food.roasted_wolf_meat',
     inputSize: Object.freeze({ width: 42, height: 34 }), outputSize: Object.freeze({ width: 44, height: 36 })
   }),
+  's01.roastedRabbitMeat': Object.freeze({
+    workstationId: 's01.cookingRack', placementId: 'S01-prop-cooking-rack', duration: 2,
+    kind: 'cooking', inputImageId: 's01.item.rawWolfMeat', outputImageId: 's01.food.roastedWolfMeat',
+    outputItemId: 'food.roasted_rabbit_meat',
+    inputSize: Object.freeze({ width: 34, height: 26 }), outputSize: Object.freeze({ width: 36, height: 28 })
+  }),
   's01.wolfHideVest': Object.freeze({
     workstationId: 's01.tanningRack', placementId: 'S01-prop-tanning-rack', duration: 3,
     kind: 'tanning', inputImageId: 's01.item.wolfHide', outputImageId: 's01.equipment.wolfHideVest',
@@ -1517,6 +1523,19 @@ export class S01S02Coordinator {
           : '篝火尚未点燃，先点燃篝火再烤制。',
         materials: [
           { name: '生狼肉', available: count('resource.raw_wolf_meat'), quantity: 1 }
+        ]
+      },
+      {
+        id: 's01.roastedRabbitMeat',
+        name: '烤兔肉',
+        description: '恢复生命 25 点。',
+        summary: '兔肉 ×1（需篝火点燃）',
+        enabled: count('resource.raw_rabbit_meat') >= 1 && this._isCampfireLit(),
+        disabledReason: count('resource.raw_rabbit_meat') < 1
+          ? '需要生兔肉 1 块。'
+          : '篝火尚未点燃，先点燃篝火再烤制。',
+        materials: [
+          { name: '生兔肉', available: count('resource.raw_rabbit_meat'), quantity: 1 }
         ]
       }]
       : [

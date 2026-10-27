@@ -1018,6 +1018,78 @@
           "y": 630.6536326741781
         },
         {
+          "group": "S01-rabbits",
+          "id": "S01-rabbit-1",
+          "kind": "enemy",
+          "ref": "enemy.s01_rabbit",
+          "spawnWhen": {
+            "blackboardKey": "storyState",
+            "equals": true,
+            "path": "s01Survival.campfireLit"
+          },
+          "tags": [
+            "rabbit",
+            "small-game"
+          ],
+          "type": "ref",
+          "x": 700,
+          "y": 640
+        },
+        {
+          "group": "S01-rabbits",
+          "id": "S01-rabbit-2",
+          "kind": "enemy",
+          "ref": "enemy.s01_rabbit",
+          "spawnWhen": {
+            "blackboardKey": "storyState",
+            "equals": true,
+            "path": "s01Survival.campfireLit"
+          },
+          "tags": [
+            "rabbit",
+            "small-game"
+          ],
+          "type": "ref",
+          "x": 300,
+          "y": 690
+        },
+        {
+          "group": "S01-rabbits",
+          "id": "S01-rabbit-3",
+          "kind": "enemy",
+          "ref": "enemy.s01_rabbit",
+          "spawnWhen": {
+            "blackboardKey": "storyState",
+            "equals": true,
+            "path": "s01Survival.campfireLit"
+          },
+          "tags": [
+            "rabbit",
+            "small-game"
+          ],
+          "type": "ref",
+          "x": 645,
+          "y": 305
+        },
+        {
+          "group": "S01-rabbits",
+          "id": "S01-rabbit-4",
+          "kind": "enemy",
+          "ref": "enemy.s01_rabbit",
+          "spawnWhen": {
+            "blackboardKey": "storyState",
+            "equals": true,
+            "path": "s01Survival.campfireLit"
+          },
+          "tags": [
+            "rabbit",
+            "small-game"
+          ],
+          "type": "ref",
+          "x": 760,
+          "y": 430
+        },
+        {
           "editor": {
             "locked": false,
             "visible": true
