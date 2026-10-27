@@ -196,7 +196,9 @@ export class ShadowRenderer {
       radiusX: radiusX * air,
       radiusY: radiusY * air,
       alpha,
-      longShadow
+      longShadow,
+      // 跳跃缩小系数：调用方用自定义半径/缩放覆盖 radius 后需乘回，否则跳跃缩小丢失
+      air
     };
   }
 
@@ -367,10 +369,13 @@ export class ShadowRenderer {
         ? shadowProfile.radius
         : null;
       if (customRadius != null) {
-        // 指定半径：横半径直接替换，纵半径保持原椭圆扁率
+        // 指定半径：横半径直接替换，纵半径保持原椭圆扁率。
+        // 自定义半径覆盖的是"贴地基准尺寸"，跳跃缩小系数（params.air）必须乘回，
+        // 否则跳跃时影子尺寸固定不变（只余 alpha 变淡），高度感丢失。
+        const air = Number.isFinite(params.air) ? params.air : 1;
         const ratio = params.radiusY / params.radiusX;
-        params.radiusX = customRadius;
-        params.radiusY = customRadius * ratio;
+        params.radiusX = customRadius * air;
+        params.radiusY = customRadius * ratio * air;
       }
       if (shadowScale !== 1) {
         params.radiusX *= shadowScale;

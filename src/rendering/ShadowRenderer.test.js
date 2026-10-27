@@ -275,6 +275,32 @@ describe('ShadowRenderer renderEntityShadows', () => {
     expect(fixed[3]).toBeGreaterThan(base[3]); // 60 > 自动推导的横半径
   });
 
+  it('自定义半径（shadowProfile.radius）在跳跃时仍按高度缩小（回归：覆盖曾丢失 air 系数）', () => {
+    const renderer = new ShadowRenderer({ createCanvas: createFakeCanvasFactory() });
+    const mk = (id, elevation) => {
+      const entity = createEntity({ id, type: 'player', components: new Map([
+        ['sprite', spriteComponent()],
+        ['transform', transformComponent({ position: { x: 500, y: 500, elevation } })]
+      ]) });
+      entity.shadowProfile = { radius: 30 };   // 主角 library 定义即此配置
+      return entity;
+    };
+    const ctxGround = createFakeCtx();
+    renderer.renderEntityShadows(ctxGround, [mk('g', 0)], { viewBounds: null, lighting: null });
+    const ctxAir = createFakeCtx();
+    renderer.renderEntityShadows(ctxAir, [mk('a', 80)], { viewBounds: null, lighting: null });
+    const ground = ctxGround.drawCalls[0];
+    const air = ctxAir.drawCalls[0];
+    // 绘制参数：[blob, x, y, width, height]
+    // 贴地：直径 = 自定义半径 30 × 2 = 60
+    expect(ground[3]).toBeCloseTo(60, 1);
+    // 跳起：同一自定义半径必须同步缩小（影子留在地面，尺寸变小）
+    expect(air[1] + air[3] / 2).toBeCloseTo(ground[1] + ground[3] / 2, 5); // 中心 x 不动
+    expect(air[2] + air[4] / 2).toBeCloseTo(ground[2] + ground[4] / 2, 5); // 中心 y 不动（贴地）
+    expect(air[3]).toBeLessThan(ground[3]);
+    expect(air[4]).toBeLessThan(ground[4]);
+  });
+
   it('点光长影微调随光源方位自动旋转并按椭圆方向半径缩放（标定基准=人物在光源右侧水平站立）', () => {
     const renderer = new ShadowRenderer({ createCanvas: createFakeCanvasFactory() });
     const mk = () => {
