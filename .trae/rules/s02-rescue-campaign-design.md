@@ -180,9 +180,84 @@
 | ⑨ | 昏迷后到军队入画之间 | 黑屏过渡+短旁白（约 2-3 秒），军队行军入画本身就是过场 |
 | ⑩ | 还手打赢的战斗强度 | 灾民 3 人（villagers-hostile 现有配置），玩家 S01 结束强度（狼牙+12）可打——数值待实测调 |
 
-## 9. 风险
+## 10. M3.5 追加需求：施粥招兵 + 场景重构 + 官兵规模（2026-10-27 用户原话定案）
 
-1. **possession 切换**是引擎级新能力（M3 关键路径），若复杂可先降级 B 方案保 M3 交付。
+> M1（f51b3d0）/M2/M3 已交付基础上的第四轮修订。用户原话（权威）：
+> ①官兵 **100 精锐压阵，后续跟进 1000 官兵**攻击；②主角进村时**村民 50 人**，有些在屋子里、有些挖草根；
+> ③张角只带 50 人，救援后**支大锅施粥（符水）**，陆续来 **200 村民**从远处走来排队喝符水，喝了**直接离开或排队等招募**，主角帮忙**招募 50 人凑够 100 人**；④**之后第二天起来才发现官兵围城**；
+> ⑤S02 任务与事件位置**放到场景中间**，背景改**破旧空地**，**周围大树/小树/草地灯围一圈**，中间装饰**破烂村庄**感，守城/发粥发钱都在这里；⑥**S09 是军营，与 S02 破村庄/临时营地区分**。
+
+### 10.1 第四幕时序修订（过夜跳跃插入）
+
+```
+救援苏醒（不变）→ farewell → 大锅施粥 → 200 村民分批来喝（滚动刷/喝完离场/部分留招募队列）
+→ 招募交互凑 50（每次 interact +10，5 次满，新兵实体入列）→ 凑满 100 → 扎营（不变）
+→ 【过夜：黑屏旁白「翌日清晨」】→ 次日发现官兵围城 → wave1 精锐压阵 → wave2 千人后续+傅燮 → 胜利（不变）
+```
+
+- 过夜载体：`startDialogue` 黑屏旁白对话（dialogue.s02.overnight）+ 事务 `story.s02.overnight.done`；**不用** s01Survival（S01 专属 6 秒演出）。
+- trg_s02_camp_laid 拆两半：扎营完成只发事实+装饰；围剿预警挪到 overnight.done 后（新触发器 trg_s02_raid_dawn）。
+- 读档恢复：possession 恢复触发器门控补 `overnight.done`（camp.laid && overnight.done && !raid.repeled）。
+
+### 10.2 规模与性能裁剪（决策点③同款：代表性实体+编成数字）
+
+| 叙事规模 | 在场实体 | 表现手段 |
+|---|---|---|
+| 进村村民 50 | 10-12 | 静态分布（屋旁站立/草根点蹲坐）+ 旁白/对话文本「五十余口」 |
+| 喝粥村民 200 | 滚动 4-6×5-6 批 | 每批从场景边缘沿路点走向粥锅→停留→despawn（喝了离开）或留在招募队列；showTip 计数「已有 XXX 村民喝过符水」 |
+| 招募 50 | 交互 5 次×10 | 招兵旗下 interact→对话→计数事务（s02RecruitCount gte 50）→新兵 placement 分批入列（6-8 实体挂 SquadMember） |
+| 官兵精锐 100 | wave1 12-14 | 「百人精锐压阵」旁白+多点位围城圈 |
+| 官兵后续 1000 | wave2 10-12+傅燮 | 「千人后续压境」旁白+傅燮压阵（isBoss 不变） |
+
+### 10.3 场景重构（S02.json 全面改排）
+
+- **中心化**：以 (640,360) 为圆心重排——玩家出生(640,600 村口南)、乞讨区中部、施粥区(600,330 中心)、招兵旗(760,330)、救援苏醒区(600,400)、扎营点(560,390)、守城战场=全村。
+- **背景**：换 `s02.environment.wastelandGround`（新图：破旧空地/荒村地皮）。
+- **四周树圈**：新素材 bigTree/smallTree/grassLamp 沿边缘 20-28 株围圈（type:image + depthSort），缺口留村口（南）与东西小径。
+- **中间破村庄**：新素材 brokenHut（破草棚×3-4）+ 复用 s09.environment.brokenSupplyCart（破车）/ refugeeShelter（难民棚，破旧感非军营）+ 木箱草垛装饰。
+- **施粥装饰**：新素材 porridgeCauldron（大锅）story.s02.porridge_cauldron（worldProp），扎营段篝火保留、**军帐删除**。
+
+### 10.4 S02/S09 视觉区分（用户硬性要求）
+
+| 素材 | S02 破村庄/临时营地 | S09 军营 |
+|---|---|---|
+| 帐篷 | ❌ 禁用 yellowTurbanTent（M3 的 camp_tent 军帐撤换为 brokenHut 破草棚） | ✅ 军帐×2 保留 |
+| 地貌 | wastelandGround 破旧空地（新） | campGround 军营夯实地面 |
+| 建筑 | 破草棚/断墙/破车/草垛 | 伤兵棚/粮仓/粥棚/战旗 |
+
+### 10.5 新增素材清单（ai-generated，注册 assets.json + images/s02/）
+
+| imageId | 用途 | library 挂载 |
+|---|---|---|
+| s02.environment.wastelandGround | 场景背景·破旧空地 | （背景层直接引用） |
+| s02.prop.bigTree | 周界大树 | —（场景装饰） |
+| s02.prop.smallTree | 周界小树 | —（场景装饰） |
+| s02.prop.grassLamp | 草地灯 | —（场景装饰） |
+| s02.prop.brokenHut | 破草棚（替代军帐） | story.s02.broken_hut（worldProp） |
+| s02.prop.porridgeCauldron | 施粥大锅 | story.s02.porridge_cauldron（worldProp） |
+
+### 10.6 新增触发器/事务/对话
+
+| 类型 | id | 说明 |
+|---|---|---|
+| 事务 | story.s02.porridge.laid | 大锅支起（喝粥段开启） |
+| 事务 | story.s02.overnight.done | 过夜完成（次日） |
+| 触发器 | trg_s02_porridge_start | farewell 后：支锅对话+porridge.laid+第一批村民 |
+| 触发器 | trg_s02_porridge_batch(1-5) | 前批 despawn/waveCleared → 刷下批+计数 tip |
+| 触发器 | trg_s02_recruit | 招兵旗 interact：计数+10、tip、满 50 → 新兵入列+凑满 100 |
+| 触发器 | trg_s02_overnight | 凑满 100（recruit done）→ 黑屏旁白 → overnight.done |
+| 触发器 | trg_s02_raid_dawn | overnight.done → 次日围城旁白 → wave1+possess+教程（原 camp_laid 内容后移） |
+| 对话 | dialogue.s02.porridgeStart / s02.recruit / s02.overnight / s02.raidDawn（campAlert 改语义） | |
+| 任务 | task.s02.summons 步骤改 5 步：acceptSummons→porridge→recruit→camp→repelRaid | |
+
+### 10.7 风险补充
+
+5. **村民滚动刷性能**：批间 despawn 与 spawnPlacements 幂等（story 门控+组名分批）须实测；despawn 用 tombstone 链先例。
+6. **招募入列**：新兵 placement 挂 SquadMemberComponent 走 army kind 展开链（_expandArmyPlacement 先例）；注意 spawnMode story 与 armyCommandSystem._syncUnits 注册时序。
+7. **场景重排回归**：乞讨链绑定区/beg 触发器坐标、rescue goal(590,345)、camp(590,368)、S01S02SceneFlow 复活点同步更新，防「绑定还在旧位」断链。
+
+## 11. 既有风险清单（M3 原文保留）
+
 2. **50 人军团性能**（安卓）：寻路+阵型+AI 同屏，需 M2 实测；降级方案见决策点③。
 3. **打输拦截死亡弹窗**：注意 IrreversibleChoiceView 是全局确认复活窗，拦截必须限定在 S02 剧情战斗上下文，不影响其他场景死亡流程。
 4. **存档/读档**：昏迷中/行军中途/围剿战中三处状态要能完整恢复（事实入档+实体重建惯例沿用）。

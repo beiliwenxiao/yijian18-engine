@@ -121,7 +121,7 @@ export class EntityRenderer2D {
       const skipPlayerBar = entity.type === 'player'
         && this.isPlayerInCombat(entity) !== true;
       if (!skipPlayerBar) {
-        this._renderHealthBar(ctx, stats, npc, x, y, height);
+        this._renderHealthBar(ctx, entity, stats, npc, x, y, height);
       }
     }
   }
@@ -618,7 +618,7 @@ export class EntityRenderer2D {
     ctx.restore();
   }
 
-  _renderHealthBar(ctx, stats, npc, x, y, height) {
+  _renderHealthBar(ctx, entity, stats, npc, x, y, height) {
     // 与场景原逻辑保持一致：明确非敌对的 NPC 不显示血条。
     if (!stats || stats.maxHp <= 0 || (npc && npc.faction !== 'hostile')) return;
 
@@ -630,7 +630,12 @@ export class EntityRenderer2D {
 
     ctx.fillStyle = '#333333';
     ctx.fillRect(barX, barY, barWidth, barHeight);
-    ctx.fillStyle = hpRatio > 0.5 ? '#00ff00' : hpRatio > 0.2 ? '#ffaa00' : '#ff0000';
+    // 中立生物（faction=neutral，如野兔）：血条恒定黄色以示「非敌对」；敌对按血量绿→黄→红渐变
+    if (entity?.faction === 'neutral') {
+      ctx.fillStyle = '#ffdd33';
+    } else {
+      ctx.fillStyle = hpRatio > 0.5 ? '#00ff00' : hpRatio > 0.2 ? '#ffaa00' : '#ff0000';
+    }
     ctx.fillRect(barX, barY, barWidth * hpRatio, barHeight);
     ctx.strokeStyle = '#ffffff';
     ctx.lineWidth = 1;

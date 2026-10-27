@@ -1,6 +1,6 @@
 {
   "id": "S02",
-  "name": "S02·废弃营地",
+  "name": "S02·荒村破营地",
   "width": 1280,
   "height": 720,
   "backgroundColor": "#4b4337",
@@ -9,11 +9,12 @@
   "presentationProfile": "sanguo-zhangjiao-presentation-v1",
   "composition": {
     "complexity": "low",
-    "focalPoint": "S02-camp-center",
+    "focalPoint": "S02-porridge-center",
     "primaryRoute": [
       "S02-spawn-player",
-      "S02-supply-zone",
-      "S02-npc-messenger"
+      "S02-zone-porridge",
+      "S02-zone-recruit",
+      "S02-zone-camp-rescue"
     ],
     "cameraFrame": {
       "width": 1280,
@@ -42,87 +43,51 @@
           "width": 1280,
           "height": 720,
           "rotation": 0,
-          "imageId": "s02.environment.abandonedCampGround",
-          "name": "S02 废弃营地地貌",
+          "imageId": "s02.environment.wastelandGround",
+          "name": "S02 荒村破旧空地",
           "semanticRole": "sceneBackground",
-          "state": "greybox-detailed",
-          "visualDescription": "废弃黄巾营地与物资搜寻区；必须表现：破帐、散落物资、倒旗、拾荒者警戒区、东北出口。正式替换图不得烘焙文字或业务碰撞。"
+          "state": "ai-generated",
+          "visualDescription": "荒村破旧空地；必须表现：干裂荒地、枯黄杂草、踩踏土径、散落破烂、破败村庄氛围。正式替换图不得烘焙文字或业务碰撞。"
         }
       ]
     },
     {
       "id": "layer_fill",
-      "name": "废弃营地主路",
+      "name": "村中主路",
       "visible": true,
       "locked": false,
       "objects": [
         {
-          "id": "S02-camp-center",
+          "id": "S02-village-center",
           "type": "shape",
           "shapeType": "polygon",
-          "name": "营地中心",
+          "name": "村中空地",
           "points": [
             [
-              300,
-              180
+              260,
+              160
             ],
             [
-              980,
-              180
+              1020,
+              160
             ],
             [
               1100,
               600
             ],
             [
-              220,
+              200,
               600
             ]
           ],
           "fillMode": "color",
           "fill": "#75634c",
-          "opacity": 0.5,
+          "opacity": 0.35,
           "stroke": "#a78d64",
           "strokeWidth": 2,
           "walkable": true,
           "semanticRole": "travelRoute",
-          "visualDescription": "营地中心；代表玩家可通行的地貌动线。"
-        },
-        {
-          "id": "S02-primary-route",
-          "type": "shape",
-          "shapeType": "polygon",
-          "name": "物资搜寻动线",
-          "points": [
-            [
-              560,
-              720
-            ],
-            [
-              720,
-              720
-            ],
-            [
-              860,
-              260
-            ],
-            [
-              730,
-              210
-            ],
-            [
-              520,
-              430
-            ]
-          ],
-          "fillMode": "color",
-          "fill": "#8a7657",
-          "opacity": 0.35,
-          "stroke": "#b59b70",
-          "strokeWidth": 2,
-          "walkable": true,
-          "semanticRole": "travelRoute",
-          "visualDescription": "物资搜寻动线；代表玩家可通行的地貌动线。"
+          "visualDescription": "村中空地；玩家主要活动与守城战场。"
         }
       ]
     },
@@ -133,35 +98,504 @@
       "locked": false,
       "objects": [
         {
-          "id": "S02-supply-zone",
-          "type": "shape",
-          "shapeType": "polygon",
-          "name": "废弃物资区",
-          "points": [
-            [
-              350,
-              290
-            ],
-            [
-              585,
-              260
-            ],
-            [
-              620,
-              435
-            ],
-            [
-              330,
-              455
-            ]
-          ],
-          "fillMode": "color",
-          "fill": "#8b6b3f",
-          "opacity": 0.25,
-          "stroke": "#d1a45c",
-          "strokeWidth": 2,
-          "semanticRole": "gameplayZone",
-          "visualDescription": "废弃物资区；代表编辑器中的地貌、建筑占地或玩法构图区。"
+          "id": "S02-tree-big-1",
+          "type": "image",
+          "imageId": "s02.prop.bigTree",
+          "name": "界树·西北老树",
+          "x": 60,
+          "y": 0,
+          "width": 260,
+          "height": 235,
+          "rotation": 0,
+          "depthSort": true,
+          "sortY": 235,
+          "semanticRole": "landmarkBuilding",
+          "visualDescription": "界树·西北老树；荒村周界大树。"
+        },
+        {
+          "id": "S02-tree-big-2",
+          "type": "image",
+          "imageId": "s02.prop.bigTree",
+          "name": "界树·正北老树",
+          "x": 390,
+          "y": 15,
+          "width": 260,
+          "height": 235,
+          "rotation": 0,
+          "depthSort": true,
+          "sortY": 250,
+          "semanticRole": "landmarkBuilding",
+          "visualDescription": "界树·正北老树；荒村周界大树。"
+        },
+        {
+          "id": "S02-tree-big-3",
+          "type": "image",
+          "imageId": "s02.prop.bigTree",
+          "name": "界树·东北老树",
+          "x": 760,
+          "y": 5,
+          "width": 260,
+          "height": 235,
+          "rotation": 0,
+          "depthSort": true,
+          "sortY": 240,
+          "semanticRole": "landmarkBuilding",
+          "visualDescription": "界树·东北老树；荒村周界大树。"
+        },
+        {
+          "id": "S02-tree-big-4",
+          "type": "image",
+          "imageId": "s02.prop.bigTree",
+          "name": "界树·东角老树",
+          "x": 1080,
+          "y": 30,
+          "width": 260,
+          "height": 235,
+          "rotation": 0,
+          "depthSort": true,
+          "sortY": 265,
+          "semanticRole": "landmarkBuilding",
+          "visualDescription": "界树·东角老树；荒村周界大树。"
+        },
+        {
+          "id": "S02-tree-big-5",
+          "type": "image",
+          "imageId": "s02.prop.bigTree",
+          "name": "界树·西上老树",
+          "x": 0,
+          "y": 120,
+          "width": 260,
+          "height": 235,
+          "rotation": 0,
+          "depthSort": true,
+          "sortY": 355,
+          "semanticRole": "landmarkBuilding",
+          "visualDescription": "界树·西上老树；荒村周界大树，西侧留出山道路口。"
+        },
+        {
+          "id": "S02-tree-big-6",
+          "type": "image",
+          "imageId": "s02.prop.bigTree",
+          "name": "界树·西下老树",
+          "x": 0,
+          "y": 480,
+          "width": 260,
+          "height": 235,
+          "rotation": 0,
+          "depthSort": true,
+          "sortY": 715,
+          "semanticRole": "landmarkBuilding",
+          "visualDescription": "界树·西下老树；荒村周界大树。"
+        },
+        {
+          "id": "S02-tree-big-7",
+          "type": "image",
+          "imageId": "s02.prop.bigTree",
+          "name": "界树·东南老树",
+          "x": 1150,
+          "y": 590,
+          "width": 260,
+          "height": 235,
+          "rotation": 0,
+          "depthSort": true,
+          "sortY": 825,
+          "semanticRole": "landmarkBuilding",
+          "visualDescription": "界树·东南老树；荒村周界大树。"
+        },
+        {
+          "id": "S02-tree-big-8",
+          "type": "image",
+          "imageId": "s02.prop.bigTree",
+          "name": "界树·西南老树",
+          "x": 300,
+          "y": 610,
+          "width": 260,
+          "height": 235,
+          "rotation": 0,
+          "depthSort": true,
+          "sortY": 845,
+          "semanticRole": "landmarkBuilding",
+          "visualDescription": "界树·西南老树；荒村周界大树，南侧村口留缺。"
+        },
+        {
+          "id": "S02-tree-small-1",
+          "type": "image",
+          "imageId": "s02.prop.smallTree",
+          "name": "界树·北小树一",
+          "x": 250,
+          "y": 30,
+          "width": 100,
+          "height": 138,
+          "rotation": 0,
+          "depthSort": true,
+          "sortY": 168,
+          "semanticRole": "landmarkBuilding",
+          "visualDescription": "界树·小树；荒村周界植被。"
+        },
+        {
+          "id": "S02-tree-small-2",
+          "type": "image",
+          "imageId": "s02.prop.smallTree",
+          "name": "界树·北小树二",
+          "x": 600,
+          "y": 20,
+          "width": 100,
+          "height": 138,
+          "rotation": 0,
+          "depthSort": true,
+          "sortY": 158,
+          "semanticRole": "landmarkBuilding",
+          "visualDescription": "界树·小树；荒村周界植被。"
+        },
+        {
+          "id": "S02-tree-small-3",
+          "type": "image",
+          "imageId": "s02.prop.smallTree",
+          "name": "界树·北小树三",
+          "x": 950,
+          "y": 40,
+          "width": 100,
+          "height": 138,
+          "rotation": 0,
+          "depthSort": true,
+          "sortY": 178,
+          "semanticRole": "landmarkBuilding",
+          "visualDescription": "界树·小树；荒村周界植被。"
+        },
+        {
+          "id": "S02-tree-small-4",
+          "type": "image",
+          "imageId": "s02.prop.smallTree",
+          "name": "界树·西小树一",
+          "x": 10,
+          "y": 130,
+          "width": 100,
+          "height": 138,
+          "rotation": 0,
+          "depthSort": true,
+          "sortY": 268,
+          "semanticRole": "landmarkBuilding",
+          "visualDescription": "界树·小树；荒村周界植被。"
+        },
+        {
+          "id": "S02-tree-small-5",
+          "type": "image",
+          "imageId": "s02.prop.smallTree",
+          "name": "界树·西小树二",
+          "x": 30,
+          "y": 470,
+          "width": 100,
+          "height": 138,
+          "rotation": 0,
+          "depthSort": true,
+          "sortY": 608,
+          "semanticRole": "landmarkBuilding",
+          "visualDescription": "界树·小树；荒村周界植被，西侧留出山道路口。"
+        },
+        {
+          "id": "S02-tree-small-6",
+          "type": "image",
+          "imageId": "s02.prop.smallTree",
+          "name": "界树·南小树一",
+          "x": 120,
+          "y": 620,
+          "width": 100,
+          "height": 138,
+          "rotation": 0,
+          "depthSort": true,
+          "sortY": 758,
+          "semanticRole": "landmarkBuilding",
+          "visualDescription": "界树·小树；荒村周界植被。"
+        },
+        {
+          "id": "S02-tree-small-7",
+          "type": "image",
+          "imageId": "s02.prop.smallTree",
+          "name": "界树·村口左小树",
+          "x": 450,
+          "y": 640,
+          "width": 100,
+          "height": 138,
+          "rotation": 0,
+          "depthSort": true,
+          "sortY": 778,
+          "semanticRole": "landmarkBuilding",
+          "visualDescription": "界树·村口左小树；南村口分列。"
+        },
+        {
+          "id": "S02-tree-small-8",
+          "type": "image",
+          "imageId": "s02.prop.smallTree",
+          "name": "界树·村口右小树",
+          "x": 740,
+          "y": 645,
+          "width": 100,
+          "height": 138,
+          "rotation": 0,
+          "depthSort": true,
+          "sortY": 783,
+          "semanticRole": "landmarkBuilding",
+          "visualDescription": "界树·村口右小树；南村口分列。"
+        },
+        {
+          "id": "S02-tree-small-9",
+          "type": "image",
+          "imageId": "s02.prop.smallTree",
+          "name": "界树·南小树二",
+          "x": 880,
+          "y": 630,
+          "width": 100,
+          "height": 138,
+          "rotation": 0,
+          "depthSort": true,
+          "sortY": 768,
+          "semanticRole": "landmarkBuilding",
+          "visualDescription": "界树·小树；荒村周界植被。"
+        },
+        {
+          "id": "S02-tree-small-10",
+          "type": "image",
+          "imageId": "s02.prop.smallTree",
+          "name": "界树·东小树一",
+          "x": 1210,
+          "y": 280,
+          "width": 100,
+          "height": 138,
+          "rotation": 0,
+          "depthSort": true,
+          "sortY": 418,
+          "semanticRole": "landmarkBuilding",
+          "visualDescription": "界树·东小树；东侧缺口上缘。"
+        },
+        {
+          "id": "S02-tree-small-11",
+          "type": "image",
+          "imageId": "s02.prop.smallTree",
+          "name": "界树·东小树二",
+          "x": 1215,
+          "y": 430,
+          "width": 100,
+          "height": 138,
+          "rotation": 0,
+          "depthSort": true,
+          "sortY": 568,
+          "semanticRole": "landmarkBuilding",
+          "visualDescription": "界树·东小树；东侧缺口下缘，缺口通往 S09。"
+        },
+        {
+          "id": "S02-lamp-1",
+          "type": "image",
+          "imageId": "s02.prop.grassLamp",
+          "name": "草地灯·北一",
+          "x": 330,
+          "y": 60,
+          "width": 40,
+          "height": 142,
+          "rotation": 0,
+          "depthSort": true,
+          "sortY": 202,
+          "semanticRole": "landmarkBuilding",
+          "visualDescription": "草地灯；荒村周界照明。"
+        },
+        {
+          "id": "S02-lamp-2",
+          "type": "image",
+          "imageId": "s02.prop.grassLamp",
+          "name": "草地灯·北二",
+          "x": 860,
+          "y": 70,
+          "width": 40,
+          "height": 142,
+          "rotation": 0,
+          "depthSort": true,
+          "sortY": 212,
+          "semanticRole": "landmarkBuilding",
+          "visualDescription": "草地灯；荒村周界照明。"
+        },
+        {
+          "id": "S02-lamp-3",
+          "type": "image",
+          "imageId": "s02.prop.grassLamp",
+          "name": "草地灯·西",
+          "x": 160,
+          "y": 300,
+          "width": 40,
+          "height": 142,
+          "rotation": 0,
+          "depthSort": true,
+          "sortY": 442,
+          "semanticRole": "landmarkBuilding",
+          "visualDescription": "草地灯；荒村周界照明。"
+        },
+        {
+          "id": "S02-lamp-4",
+          "type": "image",
+          "imageId": "s02.prop.grassLamp",
+          "name": "草地灯·东",
+          "x": 1130,
+          "y": 240,
+          "width": 40,
+          "height": 142,
+          "rotation": 0,
+          "depthSort": true,
+          "sortY": 382,
+          "semanticRole": "landmarkBuilding",
+          "visualDescription": "草地灯；荒村周界照明。"
+        },
+        {
+          "id": "S02-lamp-5",
+          "type": "image",
+          "imageId": "s02.prop.grassLamp",
+          "name": "草地灯·南一",
+          "x": 170,
+          "y": 560,
+          "width": 40,
+          "height": 142,
+          "rotation": 0,
+          "depthSort": true,
+          "sortY": 702,
+          "semanticRole": "landmarkBuilding",
+          "visualDescription": "草地灯；荒村周界照明。"
+        },
+        {
+          "id": "S02-lamp-6",
+          "type": "image",
+          "imageId": "s02.prop.grassLamp",
+          "name": "草地灯·南二",
+          "x": 1050,
+          "y": 540,
+          "width": 40,
+          "height": 142,
+          "rotation": 0,
+          "depthSort": true,
+          "sortY": 682,
+          "semanticRole": "landmarkBuilding",
+          "visualDescription": "草地灯；荒村周界照明。"
+        },
+        {
+          "id": "S02-hut-west",
+          "type": "image",
+          "imageId": "s02.prop.brokenHut",
+          "name": "破草棚·西",
+          "x": 250,
+          "y": 250,
+          "width": 240,
+          "height": 144,
+          "rotation": 0,
+          "depthSort": true,
+          "sortY": 394,
+          "semanticRole": "landmarkBuilding",
+          "visualDescription": "破草棚·西；灾民栖身之所，棚旁站村民。"
+        },
+        {
+          "id": "S02-hut-north",
+          "type": "image",
+          "imageId": "s02.prop.brokenHut",
+          "name": "破草棚·东北",
+          "x": 920,
+          "y": 180,
+          "width": 240,
+          "height": 144,
+          "rotation": 0,
+          "depthSort": true,
+          "sortY": 324,
+          "semanticRole": "landmarkBuilding",
+          "visualDescription": "破草棚·东北；灾民栖身之所，棚旁站村民。"
+        },
+        {
+          "id": "S02-hut-south",
+          "type": "image",
+          "imageId": "s02.prop.brokenHut",
+          "name": "破草棚·西南",
+          "x": 330,
+          "y": 500,
+          "width": 240,
+          "height": 144,
+          "rotation": 0,
+          "depthSort": true,
+          "sortY": 644,
+          "semanticRole": "landmarkBuilding",
+          "visualDescription": "破草棚·西南；灾民栖身之所，棚旁站村民。"
+        },
+        {
+          "id": "S02-cart-broken",
+          "type": "image",
+          "imageId": "s09.environment.brokenSupplyCart",
+          "name": "破烂推车",
+          "x": 700,
+          "y": 470,
+          "width": 200,
+          "height": 130,
+          "rotation": 0,
+          "depthSort": true,
+          "sortY": 600,
+          "semanticRole": "landmarkBuilding",
+          "visualDescription": "破烂推车；荒村破烂村庄感装饰。"
+        },
+        {
+          "id": "S02-recruit-flag",
+          "type": "image",
+          "imageId": "s09.flag.warrior",
+          "name": "招兵旗",
+          "x": 850,
+          "y": 300,
+          "width": 80,
+          "height": 120,
+          "rotation": 0,
+          "depthSort": true,
+          "sortY": 420,
+          "semanticRole": "landmarkBuilding",
+          "visualDescription": "黄巾招兵旗；施粥招兵段招募交互点。"
+        },
+        {
+          "id": "S02-zone-s09-exit",
+          "type": "region",
+          "name": "前往广宗大营出口",
+          "regionId": "S02-s09-exit",
+          "x": 1150,
+          "y": 300,
+          "width": 120,
+          "height": 100
+        },
+        {
+          "id": "S02-zone-village-beg",
+          "type": "region",
+          "name": "荒村乞讨区",
+          "regionId": "S02-village-beg",
+          "x": 480,
+          "y": 360,
+          "width": 340,
+          "height": 160
+        },
+        {
+          "id": "S02-zone-camp-rescue",
+          "type": "region",
+          "name": "救援苏醒区",
+          "regionId": "S02-camp-rescue",
+          "x": 470,
+          "y": 250,
+          "width": 340,
+          "height": 210
+        },
+        {
+          "id": "S02-zone-porridge",
+          "type": "region",
+          "name": "施粥区",
+          "regionId": "S02-porridge",
+          "x": 520,
+          "y": 240,
+          "width": 260,
+          "height": 180
+        },
+        {
+          "id": "S02-zone-recruit",
+          "type": "region",
+          "name": "招兵区",
+          "regionId": "S02-recruit",
+          "x": 780,
+          "y": 300,
+          "width": 180,
+          "height": 150
         },
         {
           "id": "S02-danger-zone",
@@ -170,20 +604,20 @@
           "name": "拾荒者警戒区",
           "points": [
             [
-              760,
-              250
+              980,
+              420
             ],
             [
-              1050,
-              230
+              1240,
+              410
             ],
             [
-              1080,
-              470
+              1260,
+              620
             ],
             [
-              790,
-              490
+              1000,
+              630
             ]
           ],
           "fillMode": "color",
@@ -192,37 +626,7 @@
           "stroke": "#b95748",
           "strokeWidth": 2,
           "semanticRole": "gameplayZone",
-          "visualDescription": "拾荒者警戒区；代表编辑器中的地貌、建筑占地或玩法构图区。"
-        },
-        {
-          "id": "S02-zone-s09-exit",
-          "type": "region",
-          "name": "前往粥棚营地出口",
-          "regionId": "S02-s09-exit",
-          "x": 1020,
-          "y": 60,
-          "width": 180,
-          "height": 110
-        },
-        {
-          "id": "S02-zone-village-beg",
-          "type": "region",
-          "name": "荒村乞讨区",
-          "regionId": "S02-village-beg",
-          "x": 450,
-          "y": 430,
-          "width": 360,
-          "height": 170
-        },
-        {
-          "id": "S02-zone-camp-rescue",
-          "type": "region",
-          "name": "救援苏醒区",
-          "regionId": "S02-camp-rescue",
-          "x": 420,
-          "y": 230,
-          "width": 340,
-          "height": 230
+          "visualDescription": "拾荒者警戒区；东南侧危险区（支线不动，随场景重排移位）。"
         }
       ]
     },
@@ -244,7 +648,7 @@
           "type": "spawn",
           "ref": "player",
           "x": 640,
-          "y": 610
+          "y": 600
         },
         {
           "id": "S02-supply-wood",
@@ -256,8 +660,8 @@
             "supply",
             "abandoned"
           ],
-          "x": 405,
-          "y": 380,
+          "x": 500,
+          "y": 300,
           "overrides": {
             "quantity": 18
           }
@@ -272,26 +676,10 @@
             "villager"
           ],
           "type": "ref",
-          "x": 500,
-          "y": 530,
+          "x": 330,
+          "y": 400,
           "overrides": {
             "aiActive": false
-          }
-        },
-        {
-          "group": "S02-scavenger-elites",
-          "id": "S02-scavenger-chief",
-          "kind": "enemy",
-          "ref": "enemy.s02_scavenger_chief",
-          "tags": [
-            "scavenger",
-            "boss"
-          ],
-          "type": "ref",
-          "x": 950,
-          "y": 360,
-          "overrides": {
-            "aiActive": true
           }
         },
         {
@@ -304,8 +692,8 @@
             "villager"
           ],
           "type": "ref",
-          "x": 545,
-          "y": 555,
+          "x": 355,
+          "y": 420,
           "overrides": {
             "aiActive": false
           }
@@ -320,10 +708,234 @@
             "villager"
           ],
           "type": "ref",
-          "x": 475,
-          "y": 560,
+          "x": 960,
+          "y": 335,
           "overrides": {
             "aiActive": false
+          }
+        },
+        {
+          "group": "S02-villagers-calm",
+          "id": "S02-villager-calm-4",
+          "kind": "enemy",
+          "ref": "enemy.s02_plague_villager",
+          "tags": [
+            "story",
+            "villager"
+          ],
+          "type": "ref",
+          "x": 985,
+          "y": 355,
+          "overrides": {
+            "aiActive": false
+          }
+        },
+        {
+          "group": "S02-villagers-calm",
+          "id": "S02-villager-calm-5",
+          "kind": "enemy",
+          "ref": "enemy.s02_plague_villager",
+          "tags": [
+            "story",
+            "villager"
+          ],
+          "type": "ref",
+          "x": 420,
+          "y": 565,
+          "overrides": {
+            "aiActive": false
+          }
+        },
+        {
+          "group": "S02-villagers-calm",
+          "id": "S02-villager-calm-6",
+          "kind": "enemy",
+          "ref": "enemy.s02_plague_villager",
+          "tags": [
+            "story",
+            "villager"
+          ],
+          "type": "ref",
+          "x": 445,
+          "y": 585,
+          "overrides": {
+            "aiActive": false
+          }
+        },
+        {
+          "group": "S02-villagers-calm",
+          "id": "S02-villager-dig-1",
+          "kind": "enemy",
+          "ref": "enemy.s02_plague_villager",
+          "tags": [
+            "story",
+            "villager",
+            "digging"
+          ],
+          "type": "ref",
+          "x": 560,
+          "y": 470,
+          "overrides": {
+            "aiActive": true,
+            "ai": {
+              "detectionRange": 1,
+              "pursuitRange": 1,
+              "leashRange": 9999,
+              "patrol": {
+                "enabled": true,
+                "mode": "pingpong",
+                "points": [
+                  [
+                    40,
+                    0
+                  ],
+                  [
+                    -30,
+                    25
+                  ],
+                  [
+                    10,
+                    -20
+                  ]
+                ]
+              }
+            }
+          }
+        },
+        {
+          "group": "S02-villagers-calm",
+          "id": "S02-villager-dig-2",
+          "kind": "enemy",
+          "ref": "enemy.s02_plague_villager",
+          "tags": [
+            "story",
+            "villager",
+            "digging"
+          ],
+          "type": "ref",
+          "x": 720,
+          "y": 450,
+          "overrides": {
+            "aiActive": true,
+            "ai": {
+              "detectionRange": 1,
+              "pursuitRange": 1,
+              "leashRange": 9999,
+              "patrol": {
+                "enabled": true,
+                "mode": "pingpong",
+                "points": [
+                  [
+                    -35,
+                    10
+                  ],
+                  [
+                    25,
+                    30
+                  ],
+                  [
+                    0,
+                    -25
+                  ]
+                ]
+              }
+            }
+          }
+        },
+        {
+          "group": "S02-villagers-calm",
+          "id": "S02-villager-dig-3",
+          "kind": "enemy",
+          "ref": "enemy.s02_plague_villager",
+          "tags": [
+            "story",
+            "villager",
+            "digging"
+          ],
+          "type": "ref",
+          "x": 560,
+          "y": 230,
+          "overrides": {
+            "aiActive": true,
+            "ai": {
+              "detectionRange": 1,
+              "pursuitRange": 1,
+              "leashRange": 9999,
+              "patrol": {
+                "enabled": true,
+                "mode": "pingpong",
+                "points": [
+                  [
+                    30,
+                    15
+                  ],
+                  [
+                    -25,
+                    -10
+                  ],
+                  [
+                    5,
+                    35
+                  ]
+                ]
+              }
+            }
+          }
+        },
+        {
+          "group": "S02-villagers-calm",
+          "id": "S02-villager-dig-4",
+          "kind": "enemy",
+          "ref": "enemy.s02_plague_villager",
+          "tags": [
+            "story",
+            "villager",
+            "digging"
+          ],
+          "type": "ref",
+          "x": 760,
+          "y": 215,
+          "overrides": {
+            "aiActive": true,
+            "ai": {
+              "detectionRange": 1,
+              "pursuitRange": 1,
+              "leashRange": 9999,
+              "patrol": {
+                "enabled": true,
+                "mode": "pingpong",
+                "points": [
+                  [
+                    -20,
+                    25
+                  ],
+                  [
+                    35,
+                    -5
+                  ],
+                  [
+                    0,
+                    30
+                  ]
+                ]
+              }
+            }
+          }
+        },
+        {
+          "group": "S02-scavenger-elites",
+          "id": "S02-scavenger-chief",
+          "kind": "enemy",
+          "ref": "enemy.s02_scavenger_chief",
+          "tags": [
+            "scavenger",
+            "boss"
+          ],
+          "type": "ref",
+          "x": 1080,
+          "y": 500,
+          "overrides": {
+            "aiActive": true
           }
         },
         {
@@ -336,8 +948,8 @@
             "beggar"
           ],
           "type": "ref",
-          "x": 520,
-          "y": 505,
+          "x": 600,
+          "y": 430,
           "overrides": {
             "aiActive": false
           }
@@ -352,8 +964,8 @@
             "beggar"
           ],
           "type": "ref",
-          "x": 505,
-          "y": 545,
+          "x": 585,
+          "y": 465,
           "overrides": {
             "aiActive": false
           }
@@ -368,8 +980,8 @@
             "beggar"
           ],
           "type": "ref",
-          "x": 530,
-          "y": 575,
+          "x": 620,
+          "y": 490,
           "overrides": {
             "aiActive": false
           }
@@ -384,8 +996,8 @@
             "villager"
           ],
           "type": "ref",
-          "x": 500,
-          "y": 530,
+          "x": 600,
+          "y": 430,
           "overrides": {
             "aiActive": true
           }
@@ -400,8 +1012,8 @@
             "villager"
           ],
           "type": "ref",
-          "x": 545,
-          "y": 555,
+          "x": 585,
+          "y": 465,
           "overrides": {
             "aiActive": true
           }
@@ -416,8 +1028,8 @@
             "villager"
           ],
           "type": "ref",
-          "x": 475,
-          "y": 560,
+          "x": 620,
+          "y": 490,
           "overrides": {
             "aiActive": true
           }
@@ -432,8 +1044,8 @@
             "supply",
             "abandoned"
           ],
-          "x": 485,
-          "y": 350,
+          "x": 545,
+          "y": 330,
           "overrides": {
             "quantity": 12
           }
@@ -448,7 +1060,7 @@
             "supply",
             "capacity-pressure"
           ],
-          "x": 445,
+          "x": 520,
           "y": 415,
           "overrides": {
             "quantity": 8
@@ -464,8 +1076,8 @@
             "supply",
             "capacity-pressure"
           ],
-          "x": 520,
-          "y": 430,
+          "x": 680,
+          "y": 425,
           "overrides": {
             "quantity": 8
           }
@@ -481,8 +1093,8 @@
             "abandoned",
             "relief"
           ],
-          "x": 585,
-          "y": 415,
+          "x": 590,
+          "y": 395,
           "overrides": {
             "quantity": 24
           }
@@ -498,7 +1110,7 @@
             "tool"
           ],
           "x": 555,
-          "y": 395,
+          "y": 360,
           "overrides": {
             "instanceId": "S02-tool-axe-1",
             "durability": 5,
@@ -515,27 +1127,1320 @@
             "story",
             "summons"
           ],
-          "x": 710,
-          "y": 235
+          "x": 760,
+          "y": 250
         },
         {
-          "id": "S02-army-guard",
+          "id": "S02-army-column",
           "type": "ref",
           "kind": "army",
-          "ref": "army.s02.guard",
-          "group": "S02-army",
+          "ref": "army.s02.column",
+          "group": "S02-army-column",
           "faction": "ally",
           "tags": [
             "army",
-            "yellow-turban"
+            "yellow-turban",
+            "marching-column"
           ],
-          "x": 425,
-          "y": 315,
+          "x": 100,
+          "y": 430,
           "spawnWhen": {
             "blackboardKey": "storyState",
-            "path": "s02ZhangjiaoChoice",
-            "equals": "save"
+            "path": "s02BegFainted",
+            "equals": true
           }
+        },
+        {
+          "id": "S02-porridge-cauldron",
+          "type": "ref",
+          "kind": "item",
+          "ref": "story.s02.porridge_cauldron",
+          "group": "S02-porridge-decor",
+          "name": "施粥大锅",
+          "x": 620,
+          "y": 320,
+          "spawnWhen": {
+            "blackboardKey": "storyState",
+            "path": "s02PorridgeLaid",
+            "equals": true
+          }
+        },
+        {
+          "id": "S02-porridge-queue-1",
+          "type": "ref",
+          "kind": "enemy",
+          "ref": "enemy.s02_plague_villager",
+          "group": "S02-porridge-batch-1",
+          "name": "喝粥村民",
+          "x": 590,
+          "y": 700,
+          "overrides": {
+            "aiActive": true,
+            "ai": {
+              "detectionRange": 1,
+              "pursuitRange": 1,
+              "leashRange": 9999,
+              "patrol": {
+                "enabled": true,
+                "mode": "loop",
+                "points": [
+                  [
+                    0,
+                    -180
+                  ],
+                  [
+                    -25,
+                    -290
+                  ],
+                  [
+                    -35,
+                    -330
+                  ]
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": "S02-porridge-queue-2",
+          "type": "ref",
+          "kind": "enemy",
+          "ref": "enemy.s02_plague_villager",
+          "group": "S02-porridge-batch-1",
+          "name": "喝粥村民",
+          "x": 640,
+          "y": 705,
+          "overrides": {
+            "aiActive": true,
+            "ai": {
+              "detectionRange": 1,
+              "pursuitRange": 1,
+              "leashRange": 9999,
+              "patrol": {
+                "enabled": true,
+                "mode": "loop",
+                "points": [
+                  [
+                    0,
+                    -185
+                  ],
+                  [
+                    10,
+                    -300
+                  ],
+                  [
+                    5,
+                    -340
+                  ]
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": "S02-porridge-queue-3",
+          "type": "ref",
+          "kind": "enemy",
+          "ref": "enemy.s02_plague_villager",
+          "group": "S02-porridge-batch-1",
+          "name": "喝粥村民",
+          "x": 690,
+          "y": 700,
+          "overrides": {
+            "aiActive": true,
+            "ai": {
+              "detectionRange": 1,
+              "pursuitRange": 1,
+              "leashRange": 9999,
+              "patrol": {
+                "enabled": true,
+                "mode": "loop",
+                "points": [
+                  [
+                    0,
+                    -180
+                  ],
+                  [
+                    30,
+                    -290
+                  ],
+                  [
+                    40,
+                    -330
+                  ]
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": "S02-porridge-queue-4",
+          "type": "ref",
+          "kind": "enemy",
+          "ref": "enemy.s02_plague_villager",
+          "group": "S02-porridge-batch-1",
+          "name": "喝粥村民",
+          "x": 740,
+          "y": 695,
+          "overrides": {
+            "aiActive": true,
+            "ai": {
+              "detectionRange": 1,
+              "pursuitRange": 1,
+              "leashRange": 9999,
+              "patrol": {
+                "enabled": true,
+                "mode": "loop",
+                "points": [
+                  [
+                    0,
+                    -175
+                  ],
+                  [
+                    55,
+                    -285
+                  ],
+                  [
+                    70,
+                    -320
+                  ]
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": "S02-porridge-queue-5",
+          "type": "ref",
+          "kind": "enemy",
+          "ref": "enemy.s02_plague_villager",
+          "group": "S02-porridge-batch-1",
+          "name": "喝粥村民",
+          "x": 540,
+          "y": 695,
+          "overrides": {
+            "aiActive": true,
+            "ai": {
+              "detectionRange": 1,
+              "pursuitRange": 1,
+              "leashRange": 9999,
+              "patrol": {
+                "enabled": true,
+                "mode": "loop",
+                "points": [
+                  [
+                    0,
+                    -175
+                  ],
+                  [
+                    -50,
+                    -280
+                  ],
+                  [
+                    -60,
+                    -315
+                  ]
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": "S02-porridge-queue-6",
+          "type": "ref",
+          "kind": "enemy",
+          "ref": "enemy.s02_plague_villager",
+          "group": "S02-porridge-batch-2",
+          "name": "喝粥村民",
+          "x": 1150,
+          "y": 380,
+          "overrides": {
+            "aiActive": true,
+            "ai": {
+              "detectionRange": 1,
+              "pursuitRange": 1,
+              "leashRange": 9999,
+              "patrol": {
+                "enabled": true,
+                "mode": "loop",
+                "points": [
+                  [
+                    -160,
+                    -20
+                  ],
+                  [
+                    -330,
+                    -60
+                  ],
+                  [
+                    -420,
+                    -70
+                  ]
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": "S02-porridge-queue-7",
+          "type": "ref",
+          "kind": "enemy",
+          "ref": "enemy.s02_plague_villager",
+          "group": "S02-porridge-batch-2",
+          "name": "喝粥村民",
+          "x": 1160,
+          "y": 420,
+          "overrides": {
+            "aiActive": true,
+            "ai": {
+              "detectionRange": 1,
+              "pursuitRange": 1,
+              "leashRange": 9999,
+              "patrol": {
+                "enabled": true,
+                "mode": "loop",
+                "points": [
+                  [
+                    -170,
+                    -40
+                  ],
+                  [
+                    -340,
+                    -90
+                  ],
+                  [
+                    -435,
+                    -105
+                  ]
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": "S02-porridge-queue-8",
+          "type": "ref",
+          "kind": "enemy",
+          "ref": "enemy.s02_plague_villager",
+          "group": "S02-porridge-batch-2",
+          "name": "喝粥村民",
+          "x": 1155,
+          "y": 460,
+          "overrides": {
+            "aiActive": true,
+            "ai": {
+              "detectionRange": 1,
+              "pursuitRange": 1,
+              "leashRange": 9999,
+              "patrol": {
+                "enabled": true,
+                "mode": "loop",
+                "points": [
+                  [
+                    -165,
+                    -60
+                  ],
+                  [
+                    -335,
+                    -120
+                  ],
+                  [
+                    -425,
+                    -145
+                  ]
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": "S02-porridge-queue-9",
+          "type": "ref",
+          "kind": "enemy",
+          "ref": "enemy.s02_plague_villager",
+          "group": "S02-porridge-batch-2",
+          "name": "喝粥村民",
+          "x": 1165,
+          "y": 500,
+          "overrides": {
+            "aiActive": true,
+            "ai": {
+              "detectionRange": 1,
+              "pursuitRange": 1,
+              "leashRange": 9999,
+              "patrol": {
+                "enabled": true,
+                "mode": "loop",
+                "points": [
+                  [
+                    -175,
+                    -80
+                  ],
+                  [
+                    -345,
+                    -150
+                  ],
+                  [
+                    -445,
+                    -185
+                  ]
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": "S02-porridge-queue-10",
+          "type": "ref",
+          "kind": "enemy",
+          "ref": "enemy.s02_plague_villager",
+          "group": "S02-porridge-batch-2",
+          "name": "喝粥村民",
+          "x": 1150,
+          "y": 540,
+          "overrides": {
+            "aiActive": true,
+            "ai": {
+              "detectionRange": 1,
+              "pursuitRange": 1,
+              "leashRange": 9999,
+              "patrol": {
+                "enabled": true,
+                "mode": "loop",
+                "points": [
+                  [
+                    -160,
+                    -100
+                  ],
+                  [
+                    -330,
+                    -180
+                  ],
+                  [
+                    -415,
+                    -225
+                  ]
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": "S02-porridge-queue-11",
+          "type": "ref",
+          "kind": "enemy",
+          "ref": "enemy.s02_plague_villager",
+          "group": "S02-porridge-batch-3",
+          "name": "喝粥村民",
+          "x": 570,
+          "y": 710,
+          "overrides": {
+            "aiActive": true,
+            "ai": {
+              "detectionRange": 1,
+              "pursuitRange": 1,
+              "leashRange": 9999,
+              "patrol": {
+                "enabled": true,
+                "mode": "loop",
+                "points": [
+                  [
+                    10,
+                    -190
+                  ],
+                  [
+                    -15,
+                    -300
+                  ],
+                  [
+                    -30,
+                    -345
+                  ]
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": "S02-porridge-queue-12",
+          "type": "ref",
+          "kind": "enemy",
+          "ref": "enemy.s02_plague_villager",
+          "group": "S02-porridge-batch-3",
+          "name": "喝粥村民",
+          "x": 620,
+          "y": 715,
+          "overrides": {
+            "aiActive": true,
+            "ai": {
+              "detectionRange": 1,
+              "pursuitRange": 1,
+              "leashRange": 9999,
+              "patrol": {
+                "enabled": true,
+                "mode": "loop",
+                "points": [
+                  [
+                    0,
+                    -195
+                  ],
+                  [
+                    5,
+                    -305
+                  ],
+                  [
+                    0,
+                    -350
+                  ]
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": "S02-porridge-queue-13",
+          "type": "ref",
+          "kind": "enemy",
+          "ref": "enemy.s02_plague_villager",
+          "group": "S02-porridge-batch-3",
+          "name": "喝粥村民",
+          "x": 665,
+          "y": 710,
+          "overrides": {
+            "aiActive": true,
+            "ai": {
+              "detectionRange": 1,
+              "pursuitRange": 1,
+              "leashRange": 9999,
+              "patrol": {
+                "enabled": true,
+                "mode": "loop",
+                "points": [
+                  [
+                    0,
+                    -190
+                  ],
+                  [
+                    25,
+                    -300
+                  ],
+                  [
+                    35,
+                    -345
+                  ]
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": "S02-porridge-queue-14",
+          "type": "ref",
+          "kind": "enemy",
+          "ref": "enemy.s02_plague_villager",
+          "group": "S02-porridge-batch-3",
+          "name": "喝粥村民",
+          "x": 715,
+          "y": 705,
+          "overrides": {
+            "aiActive": true,
+            "ai": {
+              "detectionRange": 1,
+              "pursuitRange": 1,
+              "leashRange": 9999,
+              "patrol": {
+                "enabled": true,
+                "mode": "loop",
+                "points": [
+                  [
+                    0,
+                    -185
+                  ],
+                  [
+                    45,
+                    -295
+                  ],
+                  [
+                    60,
+                    -335
+                  ]
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": "S02-porridge-queue-15",
+          "type": "ref",
+          "kind": "enemy",
+          "ref": "enemy.s02_plague_villager",
+          "group": "S02-porridge-batch-3",
+          "name": "喝粥村民",
+          "x": 525,
+          "y": 705,
+          "overrides": {
+            "aiActive": true,
+            "ai": {
+              "detectionRange": 1,
+              "pursuitRange": 1,
+              "leashRange": 9999,
+              "patrol": {
+                "enabled": true,
+                "mode": "loop",
+                "points": [
+                  [
+                    0,
+                    -185
+                  ],
+                  [
+                    -40,
+                    -290
+                  ],
+                  [
+                    -50,
+                    -330
+                  ]
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": "S02-porridge-queue-16",
+          "type": "ref",
+          "kind": "enemy",
+          "ref": "enemy.s02_plague_villager",
+          "group": "S02-porridge-batch-4",
+          "name": "喝粥村民",
+          "x": 1145,
+          "y": 360,
+          "overrides": {
+            "aiActive": true,
+            "ai": {
+              "detectionRange": 1,
+              "pursuitRange": 1,
+              "leashRange": 9999,
+              "patrol": {
+                "enabled": true,
+                "mode": "loop",
+                "points": [
+                  [
+                    -150,
+                    -10
+                  ],
+                  [
+                    -320,
+                    -50
+                  ],
+                  [
+                    -410,
+                    -55
+                  ]
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": "S02-porridge-queue-17",
+          "type": "ref",
+          "kind": "enemy",
+          "ref": "enemy.s02_plague_villager",
+          "group": "S02-porridge-batch-4",
+          "name": "喝粥村民",
+          "x": 1155,
+          "y": 400,
+          "overrides": {
+            "aiActive": true,
+            "ai": {
+              "detectionRange": 1,
+              "pursuitRange": 1,
+              "leashRange": 9999,
+              "patrol": {
+                "enabled": true,
+                "mode": "loop",
+                "points": [
+                  [
+                    -160,
+                    -30
+                  ],
+                  [
+                    -330,
+                    -80
+                  ],
+                  [
+                    -425,
+                    -90
+                  ]
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": "S02-porridge-queue-18",
+          "type": "ref",
+          "kind": "enemy",
+          "ref": "enemy.s02_plague_villager",
+          "group": "S02-porridge-batch-4",
+          "name": "喝粥村民",
+          "x": 1150,
+          "y": 440,
+          "overrides": {
+            "aiActive": true,
+            "ai": {
+              "detectionRange": 1,
+              "pursuitRange": 1,
+              "leashRange": 9999,
+              "patrol": {
+                "enabled": true,
+                "mode": "loop",
+                "points": [
+                  [
+                    -155,
+                    -50
+                  ],
+                  [
+                    -325,
+                    -110
+                  ],
+                  [
+                    -415,
+                    -130
+                  ]
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": "S02-porridge-queue-19",
+          "type": "ref",
+          "kind": "enemy",
+          "ref": "enemy.s02_plague_villager",
+          "group": "S02-porridge-batch-4",
+          "name": "喝粥村民",
+          "x": 1160,
+          "y": 480,
+          "overrides": {
+            "aiActive": true,
+            "ai": {
+              "detectionRange": 1,
+              "pursuitRange": 1,
+              "leashRange": 9999,
+              "patrol": {
+                "enabled": true,
+                "mode": "loop",
+                "points": [
+                  [
+                    -165,
+                    -70
+                  ],
+                  [
+                    -335,
+                    -140
+                  ],
+                  [
+                    -435,
+                    -170
+                  ]
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": "S02-porridge-queue-20",
+          "type": "ref",
+          "kind": "enemy",
+          "ref": "enemy.s02_plague_villager",
+          "group": "S02-porridge-batch-4",
+          "name": "喝粥村民",
+          "x": 1145,
+          "y": 520,
+          "overrides": {
+            "aiActive": true,
+            "ai": {
+              "detectionRange": 1,
+              "pursuitRange": 1,
+              "leashRange": 9999,
+              "patrol": {
+                "enabled": true,
+                "mode": "loop",
+                "points": [
+                  [
+                    -150,
+                    -90
+                  ],
+                  [
+                    -320,
+                    -170
+                  ],
+                  [
+                    -405,
+                    -210
+                  ]
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": "S02-porridge-queue-21",
+          "type": "ref",
+          "kind": "enemy",
+          "ref": "enemy.s02_plague_villager",
+          "group": "S02-porridge-batch-5",
+          "name": "喝粥村民",
+          "x": 580,
+          "y": 715,
+          "overrides": {
+            "aiActive": true,
+            "ai": {
+              "detectionRange": 1,
+              "pursuitRange": 1,
+              "leashRange": 9999,
+              "patrol": {
+                "enabled": true,
+                "mode": "loop",
+                "points": [
+                  [
+                    15,
+                    -195
+                  ],
+                  [
+                    -10,
+                    -310
+                  ],
+                  [
+                    -25,
+                    -355
+                  ]
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": "S02-porridge-queue-22",
+          "type": "ref",
+          "kind": "enemy",
+          "ref": "enemy.s02_plague_villager",
+          "group": "S02-porridge-batch-5",
+          "name": "喝粥村民",
+          "x": 630,
+          "y": 710,
+          "overrides": {
+            "aiActive": true,
+            "ai": {
+              "detectionRange": 1,
+              "pursuitRange": 1,
+              "leashRange": 9999,
+              "patrol": {
+                "enabled": true,
+                "mode": "loop",
+                "points": [
+                  [
+                    0,
+                    -200
+                  ],
+                  [
+                    10,
+                    -310
+                  ],
+                  [
+                    5,
+                    -360
+                  ]
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": "S02-porridge-queue-23",
+          "type": "ref",
+          "kind": "enemy",
+          "ref": "enemy.s02_plague_villager",
+          "group": "S02-porridge-batch-5",
+          "name": "喝粥村民",
+          "x": 675,
+          "y": 715,
+          "overrides": {
+            "aiActive": true,
+            "ai": {
+              "detectionRange": 1,
+              "pursuitRange": 1,
+              "leashRange": 9999,
+              "patrol": {
+                "enabled": true,
+                "mode": "loop",
+                "points": [
+                  [
+                    0,
+                    -195
+                  ],
+                  [
+                    30,
+                    -305
+                  ],
+                  [
+                    45,
+                    -350
+                  ]
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": "S02-porridge-queue-24",
+          "type": "ref",
+          "kind": "enemy",
+          "ref": "enemy.s02_plague_villager",
+          "group": "S02-porridge-batch-5",
+          "name": "喝粥村民",
+          "x": 725,
+          "y": 710,
+          "overrides": {
+            "aiActive": true,
+            "ai": {
+              "detectionRange": 1,
+              "pursuitRange": 1,
+              "leashRange": 9999,
+              "patrol": {
+                "enabled": true,
+                "mode": "loop",
+                "points": [
+                  [
+                    0,
+                    -190
+                  ],
+                  [
+                    50,
+                    -300
+                  ],
+                  [
+                    65,
+                    -340
+                  ]
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": "S02-porridge-queue-25",
+          "type": "ref",
+          "kind": "enemy",
+          "ref": "enemy.s02_plague_villager",
+          "group": "S02-porridge-batch-5",
+          "name": "喝粥村民",
+          "x": 535,
+          "y": 710,
+          "overrides": {
+            "aiActive": true,
+            "ai": {
+              "detectionRange": 1,
+              "pursuitRange": 1,
+              "leashRange": 9999,
+              "patrol": {
+                "enabled": true,
+                "mode": "loop",
+                "points": [
+                  [
+                    0,
+                    -190
+                  ],
+                  [
+                    -45,
+                    -295
+                  ],
+                  [
+                    -55,
+                    -335
+                  ]
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": "S02-recruit-queue-1",
+          "type": "ref",
+          "kind": "enemy",
+          "ref": "enemy.s02_plague_villager",
+          "group": "S02-recruit-queue",
+          "name": "候募村民",
+          "x": 800,
+          "y": 400,
+          "overrides": {
+            "aiActive": false
+          }
+        },
+        {
+          "id": "S02-recruit-queue-2",
+          "type": "ref",
+          "kind": "enemy",
+          "ref": "enemy.s02_plague_villager",
+          "group": "S02-recruit-queue",
+          "name": "候募村民",
+          "x": 830,
+          "y": 420,
+          "overrides": {
+            "aiActive": false
+          }
+        },
+        {
+          "id": "S02-recruit-queue-3",
+          "type": "ref",
+          "kind": "enemy",
+          "ref": "enemy.s02_plague_villager",
+          "group": "S02-recruit-queue",
+          "name": "候募村民",
+          "x": 860,
+          "y": 440,
+          "overrides": {
+            "aiActive": false
+          }
+        },
+        {
+          "id": "S02-recruit-queue-4",
+          "type": "ref",
+          "kind": "enemy",
+          "ref": "enemy.s02_plague_villager",
+          "group": "S02-recruit-queue",
+          "name": "候募村民",
+          "x": 890,
+          "y": 460,
+          "overrides": {
+            "aiActive": false
+          }
+        },
+        {
+          "id": "S02-army-recruits",
+          "type": "ref",
+          "kind": "army",
+          "ref": "army.s02.recruits",
+          "group": "S02-army-recruits",
+          "faction": "ally",
+          "tags": [
+            "army",
+            "yellow-turban",
+            "recruits"
+          ],
+          "x": 900,
+          "y": 380,
+          "spawnWhen": {
+            "blackboardKey": "storyState",
+            "path": "s02RecruitDone",
+            "equals": true
+          }
+        },
+        {
+          "id": "S02-camp-fire",
+          "type": "ref",
+          "kind": "item",
+          "ref": "story.s01.campfire",
+          "group": "S02-camp-decor",
+          "name": "营地火堆",
+          "x": 520,
+          "y": 430,
+          "spawnWhen": {
+            "blackboardKey": "storyState",
+            "path": "s02CampLaid",
+            "equals": true
+          }
+        },
+        {
+          "id": "S02-camp-hut-1",
+          "type": "ref",
+          "kind": "item",
+          "ref": "story.s02.broken_hut",
+          "group": "S02-camp-decor",
+          "name": "军中破草棚",
+          "x": 430,
+          "y": 320,
+          "spawnWhen": {
+            "blackboardKey": "storyState",
+            "path": "s02CampLaid",
+            "equals": true
+          }
+        },
+        {
+          "id": "S02-raid-vanguard-1",
+          "type": "ref",
+          "kind": "soldier",
+          "ref": "enemy.s02_lu_mainforce",
+          "group": "S02-raid-vanguard",
+          "name": "官军精锐·一",
+          "x": 40,
+          "y": 180,
+          "spawnMode": "story"
+        },
+        {
+          "id": "S02-raid-vanguard-2",
+          "type": "ref",
+          "kind": "soldier",
+          "ref": "enemy.s02_lu_mainforce",
+          "group": "S02-raid-vanguard",
+          "name": "官军精锐·二",
+          "x": 60,
+          "y": 262,
+          "spawnMode": "story"
+        },
+        {
+          "id": "S02-raid-vanguard-3",
+          "type": "ref",
+          "kind": "soldier",
+          "ref": "enemy.s02_lu_mainforce",
+          "group": "S02-raid-vanguard",
+          "name": "官军精锐·三",
+          "x": 80,
+          "y": 120,
+          "spawnMode": "story"
+        },
+        {
+          "id": "S02-raid-vanguard-4",
+          "type": "ref",
+          "kind": "soldier",
+          "ref": "enemy.s02_lu_mainforce",
+          "group": "S02-raid-vanguard",
+          "name": "官军精锐·四",
+          "x": 30,
+          "y": 340,
+          "spawnMode": "story"
+        },
+        {
+          "id": "S02-raid-vanguard-5",
+          "type": "ref",
+          "kind": "soldier",
+          "ref": "enemy.s02_lu_mainforce",
+          "group": "S02-raid-vanguard",
+          "name": "官军精锐·五",
+          "x": 120,
+          "y": 80,
+          "spawnMode": "story"
+        },
+        {
+          "id": "S02-raid-vanguard-6",
+          "type": "ref",
+          "kind": "soldier",
+          "ref": "enemy.s02_lu_mainforce",
+          "group": "S02-raid-vanguard",
+          "name": "官军精锐·六",
+          "x": 100,
+          "y": 430,
+          "spawnMode": "story"
+        },
+        {
+          "id": "S02-raid-vanguard-7",
+          "type": "ref",
+          "kind": "soldier",
+          "ref": "enemy.s02_lu_mainforce",
+          "group": "S02-raid-vanguard",
+          "name": "官军精锐·七",
+          "x": 40,
+          "y": 520,
+          "spawnMode": "story"
+        },
+        {
+          "id": "S02-raid-vanguard-8",
+          "type": "ref",
+          "kind": "soldier",
+          "ref": "enemy.s02_lu_mainforce",
+          "group": "S02-raid-vanguard",
+          "name": "官军精锐·八",
+          "x": 160,
+          "y": 620,
+          "spawnMode": "story"
+        },
+        {
+          "id": "S02-raid-vanguard-9",
+          "type": "ref",
+          "kind": "soldier",
+          "ref": "enemy.s02_lu_mainforce",
+          "group": "S02-raid-vanguard",
+          "name": "官军精锐·九",
+          "x": 240,
+          "y": 690,
+          "spawnMode": "story"
+        },
+        {
+          "id": "S02-raid-vanguard-10",
+          "type": "ref",
+          "kind": "soldier",
+          "ref": "enemy.s02_lu_mainforce",
+          "group": "S02-raid-vanguard",
+          "name": "官军精锐·十",
+          "x": 420,
+          "y": 700,
+          "spawnMode": "story"
+        },
+        {
+          "id": "S02-raid-vanguard-11",
+          "type": "ref",
+          "kind": "soldier",
+          "ref": "enemy.s02_lu_mainforce",
+          "group": "S02-raid-vanguard",
+          "name": "官军精锐·十一",
+          "x": 780,
+          "y": 690,
+          "spawnMode": "story"
+        },
+        {
+          "id": "S02-raid-vanguard-12",
+          "type": "ref",
+          "kind": "soldier",
+          "ref": "enemy.s02_lu_mainforce",
+          "group": "S02-raid-vanguard",
+          "name": "官军精锐·十二",
+          "x": 940,
+          "y": 680,
+          "spawnMode": "story"
+        },
+        {
+          "id": "S02-raid-main-1",
+          "type": "ref",
+          "kind": "soldier",
+          "ref": "enemy.s02_lu_vanguard",
+          "group": "S02-raid-mainforce",
+          "name": "官军后队·一",
+          "x": 60,
+          "y": 200,
+          "spawnMode": "story"
+        },
+        {
+          "id": "S02-raid-main-2",
+          "type": "ref",
+          "kind": "soldier",
+          "ref": "enemy.s02_lu_vanguard",
+          "group": "S02-raid-mainforce",
+          "name": "官军后队·二",
+          "x": 90,
+          "y": 300,
+          "spawnMode": "story"
+        },
+        {
+          "id": "S02-raid-main-3",
+          "type": "ref",
+          "kind": "soldier",
+          "ref": "enemy.s02_lu_vanguard",
+          "group": "S02-raid-mainforce",
+          "name": "官军后队·三",
+          "x": 50,
+          "y": 380,
+          "spawnMode": "story"
+        },
+        {
+          "id": "S02-raid-main-4",
+          "type": "ref",
+          "kind": "soldier",
+          "ref": "enemy.s02_lu_vanguard",
+          "group": "S02-raid-mainforce",
+          "name": "官军后队·四",
+          "x": 140,
+          "y": 140,
+          "spawnMode": "story"
+        },
+        {
+          "id": "S02-raid-main-5",
+          "type": "ref",
+          "kind": "soldier",
+          "ref": "enemy.s02_lu_vanguard",
+          "group": "S02-raid-mainforce",
+          "name": "官军后队·五",
+          "x": 130,
+          "y": 240,
+          "spawnMode": "story"
+        },
+        {
+          "id": "S02-raid-main-6",
+          "type": "ref",
+          "kind": "soldier",
+          "ref": "enemy.s02_lu_vanguard",
+          "group": "S02-raid-mainforce",
+          "name": "官军后队·六",
+          "x": 110,
+          "y": 470,
+          "spawnMode": "story"
+        },
+        {
+          "id": "S02-raid-main-7",
+          "type": "ref",
+          "kind": "soldier",
+          "ref": "enemy.s02_lu_vanguard",
+          "group": "S02-raid-mainforce",
+          "name": "官军后队·七",
+          "x": 160,
+          "y": 60,
+          "spawnMode": "story"
+        },
+        {
+          "id": "S02-raid-main-8",
+          "type": "ref",
+          "kind": "soldier",
+          "ref": "enemy.s02_lu_vanguard",
+          "group": "S02-raid-mainforce",
+          "name": "官军后队·八",
+          "x": 150,
+          "y": 330,
+          "spawnMode": "story"
+        },
+        {
+          "id": "S02-raid-main-9",
+          "type": "ref",
+          "kind": "soldier",
+          "ref": "enemy.s02_lu_vanguard",
+          "group": "S02-raid-mainforce",
+          "name": "官军后队·九",
+          "x": 260,
+          "y": 30,
+          "spawnMode": "story"
+        },
+        {
+          "id": "S02-raid-main-10",
+          "type": "ref",
+          "kind": "soldier",
+          "ref": "enemy.s02_lu_vanguard",
+          "group": "S02-raid-mainforce",
+          "name": "官军后队·十",
+          "x": 700,
+          "y": 25,
+          "spawnMode": "story"
+        },
+        {
+          "id": "S02-raid-main-11",
+          "type": "ref",
+          "kind": "soldier",
+          "ref": "enemy.s02_lu_vanguard",
+          "group": "S02-raid-mainforce",
+          "name": "官军后队·十一",
+          "x": 1000,
+          "y": 120,
+          "spawnMode": "story"
+        },
+        {
+          "id": "S02-raid-main-12",
+          "type": "ref",
+          "kind": "soldier",
+          "ref": "enemy.s02_lu_vanguard",
+          "group": "S02-raid-mainforce",
+          "name": "官军后队·十二",
+          "x": 1100,
+          "y": 450,
+          "spawnMode": "story"
+        },
+        {
+          "id": "S02-raid-commander",
+          "type": "ref",
+          "kind": "soldier",
+          "ref": "enemy.s02_lu_commander",
+          "group": "S02-raid-mainforce",
+          "name": "傅燮",
+          "x": 100,
+          "y": 270,
+          "spawnMode": "story"
         }
       ]
     },
@@ -550,8 +2455,8 @@
           "type": "trigger",
           "name": "接受张角召见",
           "triggerId": "trg_s02_zhangjiao_summons",
-          "x": 690,
-          "y": 215,
+          "x": 760,
+          "y": 250,
           "width": 40,
           "height": 40,
           "event": "interact",
@@ -564,28 +2469,28 @@
         {
           "id": "S02-binding-travel-s09",
           "type": "trigger",
-          "name": "前往粥棚营地",
+          "name": "前往广宗大营",
           "triggerId": "trg_s02_travel_s09",
-          "x": 1020,
-          "y": 60,
-          "width": 180,
-          "height": 110,
+          "x": 1150,
+          "y": 300,
+          "width": 120,
+          "height": 100,
           "event": "interact",
           "targetMode": "id",
           "target": "S02-zone-s09-exit",
           "radius": 110,
           "pointerRadius": 60,
-          "prompt": "{interact}前往粥棚营地"
+          "prompt": "{interact}前往广宗大营"
         },
         {
           "id": "S02-binding-village-beg",
           "type": "trigger",
           "name": "荒村乞讨区：孩童乞讨",
           "triggerId": "trg_s02_beg_children_enter",
-          "x": 450,
-          "y": 430,
-          "width": 360,
-          "height": 170,
+          "x": 480,
+          "y": 360,
+          "width": 340,
+          "height": 160,
           "event": "enter",
           "targetMode": "id",
           "target": "S02-zone-village-beg"
@@ -595,13 +2500,29 @@
           "type": "trigger",
           "name": "拾荒者警戒区：头目遭遇",
           "triggerId": "trg_s02_scavenger_chief_encounter",
-          "x": 760,
-          "y": 250,
-          "width": 320,
-          "height": 240,
+          "x": 980,
+          "y": 410,
+          "width": 280,
+          "height": 220,
           "event": "enter",
           "targetMode": "id",
           "target": "S02-danger-zone"
+        },
+        {
+          "id": "S02-binding-recruit",
+          "type": "trigger",
+          "name": "招兵旗：招募灾民入伍",
+          "triggerId": "trg_s02_recruit",
+          "x": 780,
+          "y": 300,
+          "width": 180,
+          "height": 150,
+          "event": "interact",
+          "targetMode": "id",
+          "target": "S02-zone-recruit",
+          "radius": 110,
+          "pointerRadius": 60,
+          "prompt": "{interact}招募灾民入伍"
         }
       ]
     }
@@ -612,9 +2533,9 @@
   "sceneType": "worldChunk",
   "worldMap": "mainland",
   "imageAssets": {
-    "s02.environment.abandonedCampGround": {
-      "name": "S02 废弃营地地貌"
+    "s02.environment.wastelandGround": {
+      "name": "S02 荒村破旧空地"
     }
   },
-  "updatedAt": "2026-08-12T00:00:00.000Z"
+  "updatedAt": "2026-10-27T00:00:00.000Z"
 }

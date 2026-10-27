@@ -381,7 +381,7 @@
       }
     },
     "category": "main",
-    "description": "荒村冲突后，黄巾信使引你去见张角。接受召见并前往粥棚营地。",
+    "description": "张角要求你执掌中军：扎营驻守，击退官兵围剿，随后随军北上广宗。",
     "id": "task.s02.summons",
     "rewards": [
       {
@@ -406,14 +406,35 @@
         "type": "objective"
       },
       {
-        "id": "travel",
+        "id": "porridge",
         "objectiveType": "commit.fact",
-        "target": "story.s02.travel",
-        "title": "前往粥棚营地",
+        "target": "story.s02.porridge.laid",
+        "title": "支锅施粥赈济灾民",
+        "type": "objective"
+      },
+      {
+        "id": "recruit",
+        "objectiveType": "commit.fact",
+        "target": "story.s02.recruit.done",
+        "title": "招募灾民凑齐百人",
+        "type": "objective"
+      },
+      {
+        "id": "camp",
+        "objectiveType": "commit.fact",
+        "target": "story.s02.camp.laid",
+        "title": "指挥全军扎营",
+        "type": "objective"
+      },
+      {
+        "id": "repelRaid",
+        "objectiveType": "commit.fact",
+        "target": "story.s02.raid.repeled",
+        "title": "击退官兵围剿",
         "type": "objective"
       }
     ],
-    "title": "废营召见"
+    "title": "随军抗敌"
   },
   {
     "category": "main",

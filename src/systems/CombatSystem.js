@@ -142,7 +142,7 @@ export class CombatSystem {
       lastCombatTime: 0,
       combatExitTimer: 0,
       combatExitDelay: 5,  // 脱离战斗延迟（秒）
-      combatRange: 300     // 战斗检测范围（像素）
+      combatRange: 240     // 战斗检测范围（像素）——进入战斗态的敌意接近半径（240 < 常规怪索敌 260，贴脸才拉战）
     };
     
     // 战斗状态回调
@@ -1293,6 +1293,25 @@ export class CombatSystem {
       if (finalized) return false;
       finalized = true;
       if (appliedDamage > 0) {
+        // 战斗态即时刷新：命中瞬间进战/续战，不依赖 240px 距离判定——
+        // 玩家攻击中立单位（如野兔）的一瞬间进入战斗；追击拉远时命中也续战。
+        if (sourceEntity === this.playerEntity && target.type === 'enemy') {
+          this.combatState.lastCombatTime = this.now() / 1000;
+          if (!this.combatState.inCombat) this.enterCombat();
+          else this.combatState.combatExitTimer = this.combatState.combatExitDelay;
+        }
+        // 玩家被命中：正在交战，刷新脱战倒数（与距离无关）
+        if (target === this.playerEntity) {
+          this.combatState.lastCombatTime = this.now() / 1000;
+          if (!this.combatState.inCombat) this.enterCombat();
+          else this.combatState.combatExitTimer = this.combatState.combatExitDelay;
+        }
+        // 受击记忆：供 DefensiveAI 等实现「挨打后逃离」反应（毫秒时钟，与 AI 一致）
+        target._lastHurtAt = this.now();
+        const sourceTransform = sourceEntity?.getComponent?.('transform');
+        if (sourceTransform?.position) {
+          target._lastHurtFrom = { x: sourceTransform.position.x, y: sourceTransform.position.y };
+        }
         if (this.onDamageCallback) {
           try { this.onDamageCallback(damageEvent); }
           catch (error) { console.warn('CombatSystem: 受伤回调执行失败', error); }
@@ -3913,7 +3932,9 @@ export class CombatSystem {
       if (entity.type !== 'enemy' || entity.isDead || entity.isDying) continue;
       // 友军单位（placement 士兵 faction=ally / 工程物 friendly）不是玩家威胁，
       // 不计入战斗态判定——避免军团士兵驻场导致战斗态常驻、采集被禁（M4）。
-      if (entity.faction === 'ally' || entity.faction === 'friendly') continue;
+      // 中立单位（faction=neutral，如野兔）不主动敌对，同样不拖玩家进战斗；
+      // 玩家主动攻击命中时由 applyDamage 即时进入战斗态。
+      if (entity.faction === 'ally' || entity.faction === 'friendly' || entity.faction === 'neutral') continue;
 
       const et = entity.getComponent('transform');
       const es = entity.getComponent('stats');

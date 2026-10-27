@@ -844,3 +844,103 @@ describe('ArmyCommandSystem 军队直接驾驶（WASD/左摇杆接管，M6）', 
     expect(normal.getComponent('movement').velocity).toEqual({ x: 0, y: 0 });
   });
 });
+
+describe('ArmyCommandSystem 剧情行军（scenario army.march）', () => {
+  let system;
+
+  beforeEach(() => {
+    system = new ArmyCommandSystem({});
+  });
+
+  it('无路径点/无单位拒绝；正常行军全军指向首路点并切 hold 姿态', () => {
+    const u1 = makeUnit('u1', { x: 100, y: 100, armyId: 'army.s02.column', squadId: 'qian' });
+    const u2 = makeUnit('u2', { x: 120, y: 100, armyId: 'army.s02.column', squadId: 'hou' });
+    system.registerUnit(u1, { armyId: 'army.s02.column', squadId: 'qian' });
+    system.registerUnit(u2, { armyId: 'army.s02.column', squadId: 'hou' });
+
+    expect(system.startMarch({})).toEqual({ ok: false, code: 'noWaypoints' });
+    expect(system.startMarch({ armyId: 'army.nobody', waypoints: [{ x: 1, y: 1 }] }).code).toBe('noUnits');
+
+    const result = system.startMarch({
+      armyId: 'army.s02.column',
+      waypoints: [{ x: 220, y: 340 }, { x: 430, y: 360 }, { x: 620, y: 398 }]
+    });
+    expect(result.ok).toBe(true);
+    expect(result.count).toBe(2);
+    expect(result.segments).toBe(3);
+    for (const unit of [u1, u2]) {
+      const command = unit.getComponent('commandState');
+      expect(command.stance).toBe('hold');
+      expect(Number.isFinite(command.goal?.x)).toBe(true);
+      expect(Number.isFinite(command.goal?.y)).toBe(true);
+    }
+  });
+
+  it('全员抵达推进下一段；末段抵达回调 onMarchComplete（幂等不重复）', () => {
+    const u1 = makeUnit('u1', { x: 100, y: 100, armyId: 'army.s02.column', squadId: 'qian' });
+    const u2 = makeUnit('u2', { x: 120, y: 100, armyId: 'army.s02.column', squadId: 'hou' });
+    system.registerUnit(u1, { armyId: 'army.s02.column', squadId: 'qian' });
+    system.registerUnit(u2, { armyId: 'army.s02.column', squadId: 'hou' });
+    system.startMarch({ armyId: 'army.s02.column', waypoints: [{ x: 220, y: 340 }, { x: 620, y: 398 }] });
+
+    const onMarchComplete = vi.fn();
+    system.onMarchComplete = onMarchComplete;
+
+    // 模拟第一段全员抵达（MovementSystem 会清 goal）：推进第二段
+    u1.getComponent('commandState').goal = null;
+    u2.getComponent('commandState').goal = null;
+    system.update(0.016);
+    expect(u1.getComponent('commandState').goal).not.toBeNull(); // 已指向下一段
+
+    // 模拟末段全员抵达：触发完成回调
+    u1.getComponent('commandState').goal = null;
+    u2.getComponent('commandState').goal = null;
+    system.update(0.016);
+    expect(onMarchComplete).toHaveBeenCalledTimes(1);
+    expect(onMarchComplete).toHaveBeenCalledWith({ armyId: 'army.s02.column' });
+
+    // 幂等：重复 update 不再回调
+    system.update(0.016);
+    expect(onMarchComplete).toHaveBeenCalledTimes(1);
+  });
+
+  it('行军单位全灭提前完成回调；非本军单位不受影响', () => {
+    const mine = makeUnit('u1', { x: 0, y: 0, armyId: 'army.s02.column', squadId: 'qian' });
+    const other = makeUnit('u2', { x: 0, y: 0, armyId: 'army.s99.other', squadId: 'qian' });
+    system.registerUnit(mine, { armyId: 'army.s02.column', squadId: 'qian' });
+    system.registerUnit(other, { armyId: 'army.s99.other', squadId: 'qian' });
+    const onMarchComplete = vi.fn();
+    system.onMarchComplete = onMarchComplete;
+
+    system.startMarch({ armyId: 'army.s02.column', waypoints: [{ x: 500, y: 300 }] });
+    mine.isDead = true; // 全灭（other 不属于本军不算）
+    system.update(0.016);
+    expect(onMarchComplete).toHaveBeenCalledTimes(1);
+    expect(other.getComponent('commandState').goal).toBeNull(); // 未被卷入行军
+  });
+
+  it('搬运中/阵亡单位不入行军队列；cancelMarch 中断后不再回调', () => {
+    const carrier = makeUnit('u1', { x: 0, y: 0, armyId: 'army.s02.column', squadId: 'qian' });
+    const dead = makeUnit('u2', { x: 0, y: 0, armyId: 'army.s02.column', squadId: 'hou' });
+    system.registerUnit(carrier, { armyId: 'army.s02.column', squadId: 'qian' });
+    system.registerUnit(dead, { armyId: 'army.s02.column', squadId: 'hou' });
+    carrier.getComponent('commandState').carryState = 'carrying';
+    dead.isDead = true;
+
+    const result = system.startMarch({ armyId: 'army.s02.column', waypoints: [{ x: 500, y: 300 }] });
+    expect(result.ok).toBe(false); // 无可入列单位
+    expect(result.code).toBe('noUnits');
+
+    // 正常开始后取消：update 不回调
+    dead.isDead = false;
+    dead.getComponent('commandState').carryState = null;
+    system.startMarch({ armyId: 'army.s02.column', waypoints: [{ x: 500, y: 300 }] });
+    const onMarchComplete = vi.fn();
+    system.onMarchComplete = onMarchComplete;
+    system.cancelMarch();
+    system.update(0.016);
+    expect(onMarchComplete).not.toHaveBeenCalled();
+    // 取消只清任务：单位保持当前目标走完（不僵在原地），但不再推进后续段
+    expect(dead.getComponent('commandState').goal).toEqual({ x: 500, y: 300 });
+  });
+});

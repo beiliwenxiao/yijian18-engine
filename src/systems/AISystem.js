@@ -419,6 +419,15 @@ class DefensiveAI extends AIController {
     const transform = entity.getComponent('transform');
     if (!combat || !transform) return;
 
+    // 受击逃离：挨打后 2.5 秒内全速远离伤害来源（「挨打时逃跑」反应，优先级高于索敌/徘徊）；
+    // 窗口取 2.5s：野兔 104 速 vs 玩家 100 速——逃得开但追得上，也不会一头窜进远处的狼群领地。
+    if (entity._lastHurtAt && performance.now() - entity._lastHurtAt < 2500 && entity._lastHurtFrom) {
+      this.clearIdleWander();
+      combat.clearTarget();
+      this.fleeFrom(entity, entity._lastHurtFrom);
+      return;
+    }
+
     // 查找最近的敌人（使用预计算的敌对列表消除重复 filter）
     const nearestEnemy = this.findNearestEnemy(entity, allEntities, 300, hostileCache);
 
@@ -462,11 +471,28 @@ class DefensiveAI extends AIController {
    * @param {Entity} target - 目标
    */
   retreatFrom(entity, target) {
-    const transform = entity.getComponent('transform');
-    const targetTransform = target.getComponent('transform');
-    const movement = entity.getComponent('movement');
+    this._moveAwayFrom(entity, target, 1);
+  }
 
-    if (!transform || !targetTransform || !movement) return;
+  /**
+   * 受击逃离：以加速（1.3×）全速远离伤害来源位置
+   * @param {Entity} entity - 实体
+   * @param {{x:number, y:number}} fromPosition - 伤害来源位置快照
+   */
+  fleeFrom(entity, fromPosition) {
+    this._moveAwayFrom(entity, fromPosition, 1.3);
+  }
+
+  /**
+   * 远离目标/位置移动（retreat/flee 共用）
+   */
+  _moveAwayFrom(entity, targetOrPosition, speedScale = 1) {
+    const transform = entity.getComponent('transform');
+    const movement = entity.getComponent('movement');
+    if (!transform || !movement) return;
+    const targetTransform = targetOrPosition?.getComponent?.('transform')
+      || (targetOrPosition && typeof targetOrPosition.x === 'number' ? targetOrPosition : null);
+    if (!targetTransform) return;
 
     // 计算反方向
     const dx = transform.position.x - targetTransform.position.x;
@@ -478,10 +504,10 @@ class DefensiveAI extends AIController {
       const dirX = dx / distance;
       const dirY = dy / distance;
 
-      // 设置移动速度（后退）
-      movement.velocity.x = dirX * movement.speed;
-      movement.velocity.y = dirY * movement.speed;
-      
+      // 设置移动速度（后退/逃离，可加速）
+      movement.velocity.x = dirX * movement.speed * speedScale;
+      movement.velocity.y = dirY * movement.speed * speedScale;
+
       // 播放移动动画
       const sprite = entity.getComponent('sprite');
       if (sprite && sprite.currentAnimation !== 'walk') {

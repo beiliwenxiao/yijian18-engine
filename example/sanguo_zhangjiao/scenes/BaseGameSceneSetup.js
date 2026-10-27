@@ -498,7 +498,9 @@ export class BaseGameSceneSetup extends Scene {
 
   /** 采集可序列化的通用游戏状态，供 SnapshotManager 原子存档。 */
   captureSaveState({ includeAuthority = true, snapshotMeta = null } = {}) {
-    const player = this.playerEntity;
+    // possession（剧情附身，如 S02 操控张角）期间 scene.playerEntity 会临时切换为被附身实体；
+    // 存档玩家段必须始终采集主角本体（context.player.entity 为 ScenePlayerLifecycle 持有的稳定引用）。
+    const player = this.context?.player?.entity || this.playerEntity;
     const transform = player?.getComponent?.('transform');
     const stats = player?.getComponent?.('stats');
     const inventory = player?.getComponent?.('inventory');

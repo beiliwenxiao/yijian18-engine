@@ -1293,6 +1293,358 @@
   },
   {
     "commandType": "state.transaction",
+    "id": "story.s02.beg.fainted",
+    "name": "荒村：乞讨冲突落幕，主角昏迷（不还手/打赢/打输殊途同归）",
+    "transaction": {
+      "when": {
+        "all": [
+          {
+            "equals": "S02",
+            "path": "story.currentSceneId"
+          },
+          {
+            "notEquals": true,
+            "path": "story.s02BegFainted"
+          }
+        ]
+      },
+      "writes": [
+        {
+          "path": "s02BegFainted",
+          "target": "story",
+          "value": true
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s02.camp.laid",
+    "name": "荒村：军团扎营完成",
+    "transaction": {
+      "when": {
+        "all": [
+          {
+            "equals": "S02",
+            "path": "story.currentSceneId"
+          },
+          {
+            "notEquals": true,
+            "path": "story.s02CampLaid"
+          }
+        ]
+      },
+      "writes": [
+        {
+          "path": "s02CampLaid",
+          "target": "story",
+          "value": true
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s02.porridge.laid",
+    "name": "荒村：支起大锅施粥（喝粥招兵段开启）",
+    "transaction": {
+      "when": {
+        "all": [
+          {
+            "equals": "S02",
+            "path": "story.currentSceneId"
+          },
+          {
+            "notEquals": true,
+            "path": "story.s02PorridgeLaid"
+          }
+        ]
+      },
+      "writes": [
+        {
+          "path": "s02PorridgeLaid",
+          "target": "story",
+          "value": true
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s02.recruit.tick",
+    "name": "荒村：招募灾民入伍（每次 +10，上限 50）",
+    "transaction": {
+      "when": {
+        "all": [
+          {
+            "equals": "S02",
+            "path": "story.currentSceneId"
+          },
+          {
+            "equals": true,
+            "path": "story.s02PorridgeLaid"
+          },
+          {
+            "lte": 40,
+            "path": "story.s02RecruitCount"
+          }
+        ]
+      },
+      "writes": [
+        {
+          "path": "s02RecruitCount",
+          "target": "story",
+          "value": {
+            "$add": [
+              {
+                "$get": "story.s02RecruitCount",
+                "default": 0
+              },
+              10
+            ]
+          }
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s02.recruit.done",
+    "name": "荒村：招募凑满 50、百人成军",
+    "transaction": {
+      "when": {
+        "all": [
+          {
+            "equals": "S02",
+            "path": "story.currentSceneId"
+          },
+          {
+            "gte": 50,
+            "path": "story.s02RecruitCount"
+          },
+          {
+            "notEquals": true,
+            "path": "story.s02RecruitDone"
+          }
+        ]
+      },
+      "writes": [
+        {
+          "path": "s02RecruitDone",
+          "target": "story",
+          "value": true
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s02.overnight.done",
+    "name": "荒村：过夜完成（翌日清晨——官兵围城发现）",
+    "transaction": {
+      "when": {
+        "all": [
+          {
+            "equals": "S02",
+            "path": "story.currentSceneId"
+          },
+          {
+            "equals": true,
+            "path": "story.s02CampLaid"
+          },
+          {
+            "notEquals": true,
+            "path": "story.s02OvernightDone"
+          }
+        ]
+      },
+      "writes": [
+        {
+          "path": "s02OvernightDone",
+          "target": "story",
+          "value": true
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s02.raid.fight.prepare",
+    "name": "荒村：围剿战·特殊昏迷武装（兵败不弹复活窗）",
+    "transaction": {
+      "when": {
+        "all": [
+          {
+            "equals": "S02",
+            "path": "story.currentSceneId"
+          },
+          {
+            "notEquals": true,
+            "path": "story.s02RaidFight"
+          }
+        ]
+      },
+      "writes": [
+        {
+          "path": "s02RaidFight",
+          "target": "story",
+          "value": true
+        },
+        {
+          "path": "pendingDefeatResolution",
+          "target": "story",
+          "value": "specialFaint"
+        },
+        {
+          "path": "specialFaintRescueType",
+          "target": "story",
+          "value": "commander"
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s02.raid.fight.clear",
+    "name": "荒村：围剿战·特殊昏迷解除",
+    "transaction": {
+      "when": {
+        "all": [
+          {
+            "equals": "S02",
+            "path": "story.currentSceneId"
+          },
+          {
+            "equals": true,
+            "path": "story.s02RaidFight"
+          }
+        ]
+      },
+      "writes": [
+        {
+          "path": "s02RaidFight",
+          "target": "story",
+          "value": false
+        },
+        {
+          "path": "pendingDefeatResolution",
+          "target": "story",
+          "value": null
+        },
+        {
+          "path": "specialFaintRescueType",
+          "target": "story",
+          "value": null
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s02.raid.wave2",
+    "name": "荒村：围剿战·傅燮主力压阵",
+    "transaction": {
+      "when": {
+        "all": [
+          {
+            "equals": "S02",
+            "path": "story.currentSceneId"
+          },
+          {
+            "notEquals": true,
+            "path": "story.s02RaidWave2"
+          }
+        ]
+      },
+      "writes": [
+        {
+          "path": "s02RaidWave2",
+          "target": "story",
+          "value": true
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s02.raid.repeled",
+    "name": "荒村：围剿战·官兵被击退",
+    "transaction": {
+      "when": {
+        "all": [
+          {
+            "equals": "S02",
+            "path": "story.currentSceneId"
+          },
+          {
+            "notEquals": true,
+            "path": "story.s02RaidRepeled"
+          }
+        ]
+      },
+      "writes": [
+        {
+          "path": "s02RaidRepeled",
+          "target": "story",
+          "value": true
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s02.raid.failed",
+    "name": "荒村：围剿战·兵败溃退（整军再战）",
+    "transaction": {
+      "when": {
+        "all": [
+          {
+            "equals": "S02",
+            "path": "story.currentSceneId"
+          },
+          {
+            "notEquals": true,
+            "path": "story.s02RaidFailed"
+          }
+        ]
+      },
+      "writes": [
+        {
+          "path": "s02RaidFailed",
+          "target": "story",
+          "value": true
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s02.beg.armyArrived",
+    "name": "荒村：张角军队行军抵达村口",
+    "transaction": {
+      "when": {
+        "all": [
+          {
+            "equals": "S02",
+            "path": "story.currentSceneId"
+          },
+          {
+            "notEquals": true,
+            "path": "story.s02ArmyArrived"
+          }
+        ]
+      },
+      "writes": [
+        {
+          "path": "s02ArmyArrived",
+          "target": "story",
+          "value": true
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
     "id": "story.s09.enlist",
     "name": "加入黄巾军",
     "transaction": {

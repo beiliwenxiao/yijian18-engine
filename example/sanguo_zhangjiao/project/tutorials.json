@@ -323,5 +323,30 @@
     "priority": 0,
     "beginText": "人手够了。让他们抬起担架。",
     "endText": "担架启程，山道尽头就是营地。"
+  },
+  {
+    "id": "s02.command.stance",
+    "title": "军团迎战",
+    "category": "s02-rescue",
+    "scope": {
+      "sceneIds": [
+        "S02"
+      ]
+    },
+    "steps": [
+      {
+        "id": "s02.command.stance.step",
+        "text": "你现在是大贤良师张角。右键点敌=进攻，右键点地=驻守，编组按钮切换指挥对象；击退全部官军即胜。",
+        "highlightTarget": false
+      }
+    ],
+    "completionPolicy": "allSteps",
+    "pauseGame": false,
+    "canSkip": true,
+    "autoTrigger": false,
+    "autoAdvance": false,
+    "priority": 0,
+    "beginText": "全军听令——迎敌！",
+    "endText": "打得漂亮！"
   }
 ]

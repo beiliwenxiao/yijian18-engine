@@ -809,19 +809,10 @@
         "stepId": "start-s02-rescue-task"
       },
       {
-        "action": "spawnPlacements",
-        "params": {
-          "selector": {
-            "group": "S02-army"
-          }
-        },
-        "stepId": "trg_s02_choice_save.step.spawn-army"
-      },
-      {
         "action": "scenario.command",
         "params": {
-          "goalX": 590,
-          "goalY": 345,
+          "goalX": 620,
+          "goalY": 350,
           "operation": "army.rescue.begin",
           "regionId": "S02-camp-rescue",
           "scenarioId": "scenario.command.army.rescue.begin"
@@ -932,22 +923,710 @@
   {
     "do": [
       {
+        "action": "startDialogue",
+        "params": {
+          "id": "dialogue.s02.porridgeStart"
+        },
+        "stepId": "porridge-start-dialogue"
+      },
+      {
+        "action": "state.transaction",
+        "params": {
+          "definitionId": "story.s02.porridge.laid"
+        },
+        "stepId": "porridge-laid-commit"
+      },
+      {
+        "action": "spawnPlacements",
+        "params": {
+          "selector": {
+            "group": "S02-porridge-decor"
+          }
+        },
+        "stepId": "porridge-cauldron-spawn"
+      },
+      {
+        "action": "spawnPlacements",
+        "params": {
+          "selector": {
+            "group": "S02-porridge-batch-1"
+          }
+        },
+        "stepId": "porridge-batch-1-spawn"
+      },
+      {
+        "action": "wait",
+        "params": {
+          "seconds": 10
+        },
+        "stepId": "porridge-batch-1-wait"
+      },
+      {
         "action": "despawnPlacements",
         "params": {
           "selector": {
-            "group": "S02-army"
+            "group": "S02-porridge-batch-1"
           }
-        }
+        },
+        "stepId": "porridge-batch-1-despawn"
+      },
+      {
+        "action": "showTip",
+        "params": {
+          "text": "已有 40 名村民喝过符水离开。村外的土路上又出现了一队人影……"
+        },
+        "stepId": "porridge-batch-1-tip"
+      },
+      {
+        "action": "spawnPlacements",
+        "params": {
+          "selector": {
+            "group": "S02-porridge-batch-2"
+          }
+        },
+        "stepId": "porridge-batch-2-spawn"
+      },
+      {
+        "action": "wait",
+        "params": {
+          "seconds": 10
+        },
+        "stepId": "porridge-batch-2-wait"
+      },
+      {
+        "action": "despawnPlacements",
+        "params": {
+          "selector": {
+            "group": "S02-porridge-batch-2"
+          }
+        },
+        "stepId": "porridge-batch-2-despawn"
+      },
+      {
+        "action": "showTip",
+        "params": {
+          "text": "已有 80 名村民喝过符水。大锅见了底，士兵们又添了一担水。"
+        },
+        "stepId": "porridge-batch-2-tip"
+      },
+      {
+        "action": "spawnPlacements",
+        "params": {
+          "selector": {
+            "group": "S02-porridge-batch-3"
+          }
+        },
+        "stepId": "porridge-batch-3-spawn"
+      },
+      {
+        "action": "wait",
+        "params": {
+          "seconds": 10
+        },
+        "stepId": "porridge-batch-3-wait"
+      },
+      {
+        "action": "despawnPlacements",
+        "params": {
+          "selector": {
+            "group": "S02-porridge-batch-3"
+          }
+        },
+        "stepId": "porridge-batch-3-despawn"
+      },
+      {
+        "action": "showTip",
+        "params": {
+          "text": "已有 120 名村民喝过符水。有人当场磕头，有人默默抹泪离去。"
+        },
+        "stepId": "porridge-batch-3-tip"
+      },
+      {
+        "action": "spawnPlacements",
+        "params": {
+          "selector": {
+            "group": "S02-porridge-batch-4"
+          }
+        },
+        "stepId": "porridge-batch-4-spawn"
+      },
+      {
+        "action": "wait",
+        "params": {
+          "seconds": 10
+        },
+        "stepId": "porridge-batch-4-wait"
+      },
+      {
+        "action": "despawnPlacements",
+        "params": {
+          "selector": {
+            "group": "S02-porridge-batch-4"
+          }
+        },
+        "stepId": "porridge-batch-4-despawn"
+      },
+      {
+        "action": "showTip",
+        "params": {
+          "text": "已有 160 名村民喝过符水。日头偏西，村口还有人源源不断地赶来。"
+        },
+        "stepId": "porridge-batch-4-tip"
+      },
+      {
+        "action": "spawnPlacements",
+        "params": {
+          "selector": {
+            "group": "S02-porridge-batch-5"
+          }
+        },
+        "stepId": "porridge-batch-5-spawn"
+      },
+      {
+        "action": "wait",
+        "params": {
+          "seconds": 10
+        },
+        "stepId": "porridge-batch-5-wait"
+      },
+      {
+        "action": "despawnPlacements",
+        "params": {
+          "selector": {
+            "group": "S02-porridge-batch-5"
+          }
+        },
+        "stepId": "porridge-batch-5-despawn"
+      },
+      {
+        "action": "showTip",
+        "params": {
+          "text": "两百余村民陆续喝过符水散去。有十余名青壮没有走——他们在招兵旗下排起了队。"
+        },
+        "stepId": "porridge-batch-5-tip"
+      },
+      {
+        "action": "spawnPlacements",
+        "params": {
+          "selector": {
+            "group": "S02-recruit-queue"
+          }
+        },
+        "stepId": "recruit-queue-spawn"
       }
     ],
     "id": "trg_s02_farewell",
-    "name": "黄巾军一行离开废营",
+    "name": "苏醒对话落幕：支大锅施粥，两百余村民分批来喝（M3.5）",
     "once": true,
     "when": {
       "params": {
         "id": "dialogue.s02.awakening"
       },
       "type": "dialogueEnd"
+    }
+  },
+  {
+    "cooldown": 0.5,
+    "do": [
+      {
+        "branch": [
+          {
+            "do": [
+              {
+                "action": "state.transaction",
+                "params": {
+                  "definitionId": "story.s02.recruit.tick"
+                },
+                "stepId": "recruit-tick"
+              }
+            ]
+          }
+        ],
+        "when": {
+          "op": "not",
+          "arg": {
+            "op": "var",
+            "name": "story.s02RecruitDone"
+          }
+        },
+        "stepId": "recruit-tick-branch"
+      },
+      {
+        "branch": [
+          {
+            "do": [
+              {
+                "action": "state.transaction",
+                "params": {
+                  "definitionId": "story.s02.recruit.done"
+                },
+                "stepId": "recruit-done-commit"
+              },
+              {
+                "action": "spawnPlacements",
+                "params": {
+                  "selector": {
+                    "group": "S02-army-recruits"
+                  }
+                },
+                "stepId": "recruit-army-spawn"
+              },
+              {
+                "action": "showTip",
+                "params": {
+                  "text": "五十名新募义从换上黄巾入列——加上张角本部五十人，百人成军！"
+                },
+                "stepId": "recruit-done-tip"
+              },
+              {
+                "action": "startDialogue",
+                "params": {
+                  "id": "dialogue.s02.recruitDone"
+                },
+                "stepId": "recruit-done-dialogue"
+              },
+              {
+                "action": "scenario.command",
+                "params": {
+                  "operation": "army.camp",
+                  "scenarioId": "scenario.command.army.camp",
+                  "x": 560,
+                  "y": 400
+                },
+                "stepId": "camp-after-recruit"
+              }
+            ]
+          }
+        ],
+        "when": {
+          "op": "and",
+          "args": [
+            {
+              "op": ">=",
+              "var": "story.s02RecruitCount",
+              "value": 50
+            },
+            {
+              "op": "not",
+              "arg": {
+                "op": "var",
+                "name": "story.s02RecruitDone"
+              }
+            }
+          ]
+        },
+        "stepId": "recruit-done-branch"
+      },
+      {
+        "branch": [
+          {
+            "do": [
+              {
+                "action": "showTip",
+                "params": {
+                  "text": "十名灾民喝了符水、领了兵牌，入伍义从！（募兵进度 +10）"
+                },
+                "stepId": "recruit-progress-tip"
+              }
+            ]
+          }
+        ],
+        "when": {
+          "op": "and",
+          "args": [
+            {
+              "op": "<",
+              "var": "story.s02RecruitCount",
+              "value": 50
+            },
+            {
+              "op": "not",
+              "arg": {
+                "op": "var",
+                "name": "story.s02RecruitDone"
+              }
+            }
+          ]
+        },
+        "stepId": "recruit-progress-branch"
+      }
+    ],
+    "id": "trg_s02_recruit",
+    "name": "荒村：招兵旗招募（每次 +10，满 50 入列、百人成军、随即扎营）",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "state.transaction",
+        "params": {
+          "definitionId": "story.s02.camp.laid"
+        },
+        "stepId": "camp-laid-commit"
+      },
+      {
+        "action": "spawnPlacements",
+        "params": {
+          "selector": {
+            "group": "S02-camp-decor"
+          }
+        },
+        "stepId": "camp-decor-spawn"
+      },
+      {
+        "action": "showTip",
+        "params": {
+          "text": "营地扎立完成。张角令全军休整——当夜无事。"
+        },
+        "stepId": "camp-laid-tip"
+      },
+      {
+        "action": "startDialogue",
+        "params": {
+          "id": "dialogue.s02.overnight"
+        },
+        "stepId": "overnight-dialogue"
+      },
+      {
+        "action": "state.transaction",
+        "params": {
+          "definitionId": "story.s02.overnight.done"
+        },
+        "stepId": "overnight-done-commit"
+      },
+      {
+        "action": "state.transaction",
+        "params": {
+          "definitionId": "story.s02.raid.fight.prepare"
+        },
+        "stepId": "raid-fight-prepare"
+      },
+      {
+        "action": "spawnPlacements",
+        "params": {
+          "selector": {
+            "group": "S02-raid-vanguard"
+          }
+        },
+        "stepId": "raid-vanguard-spawn"
+      },
+      {
+        "action": "scenario.command",
+        "params": {
+          "operation": "army.possess",
+          "scenarioId": "scenario.command.army.possess"
+        },
+        "stepId": "army-possess"
+      },
+      {
+        "action": "tutorial.command",
+        "params": {
+          "operation": "show",
+          "tutorialId": "s02.command.stance"
+        },
+        "stepId": "show-tutorial-s02-command-stance"
+      }
+    ],
+    "id": "trg_s02_camp_laid",
+    "name": "荒村：扎营完成 → 当夜过夜 → 翌日清晨发现官兵百人精锐围城 → 附身张角迎战（M3.5）",
+    "once": true,
+    "when": {
+      "params": {},
+      "type": "armyCampLaid"
+    }
+  },
+  {
+    "do": [
+      {
+        "branch": [
+          {
+            "do": [
+              {
+                "action": "showTip",
+                "params": {
+                  "text": "傅燮亲率千人大军后续压境，将破村团团围住——决战时刻！"
+                },
+                "stepId": "raid-wave2-tip"
+              },
+              {
+                "action": "spawnPlacements",
+                "params": {
+                  "selector": {
+                    "group": "S02-raid-mainforce"
+                  }
+                },
+                "stepId": "raid-mainforce-spawn"
+              },
+              {
+                "action": "state.transaction",
+                "params": {
+                  "definitionId": "story.s02.raid.wave2"
+                },
+                "stepId": "raid-wave2-commit"
+              }
+            ]
+          }
+        ],
+        "when": {
+          "op": "and",
+          "args": [
+            {
+              "op": "var",
+              "name": "story.s02CampLaid"
+            },
+            {
+              "op": "not",
+              "arg": {
+                "op": "var",
+                "name": "story.s02RaidRepeled"
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "id": "trg_s02_raid_wave2",
+    "name": "荒村：官兵前锋覆灭 → 傅燮主力压阵（兵败重开后由 reattack 一波流接管）",
+    "once": false,
+    "when": {
+      "params": {
+        "group": "S02-raid-vanguard"
+      },
+      "type": "waveCleared"
+    }
+  },
+  {
+    "do": [
+      {
+        "branch": [
+          {
+            "do": [
+              {
+                "action": "state.transaction",
+                "params": {
+                  "definitionId": "story.s02.raid.repeled"
+                },
+                "stepId": "raid-repeled-commit"
+              },
+              {
+                "action": "state.transaction",
+                "params": {
+                  "definitionId": "story.s02.raid.fight.clear"
+                },
+                "stepId": "raid-fight-clear"
+              },
+              {
+                "action": "startDialogue",
+                "params": {
+                  "id": "dialogue.s02.raidRepelled"
+                },
+                "stepId": "raid-repeled-dialogue"
+              },
+              {
+                "action": "scenario.command",
+                "params": {
+                  "operation": "army.possess.release",
+                  "scenarioId": "scenario.command.army.possess.release"
+                },
+                "stepId": "army-possess-release"
+              },
+              {
+                "action": "tutorial.command",
+                "params": {
+                  "operation": "complete",
+                  "tutorialId": "s02.command.stance"
+                },
+                "stepId": "complete-tutorial-s02-command-stance"
+              }
+            ]
+          }
+        ],
+        "when": {
+          "op": "and",
+          "args": [
+            {
+              "op": "var",
+              "name": "story.s02CampLaid"
+            },
+            {
+              "op": "not",
+              "arg": {
+                "op": "var",
+                "name": "story.s02RaidRepeled"
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "id": "trg_s02_raid_repeled",
+    "name": "荒村：围剿胜利 → 旁白 + 解除附身（M4 行军段再切张角）",
+    "once": false,
+    "when": {
+      "params": {
+        "group": "S02-raid-mainforce"
+      },
+      "type": "waveCleared"
+    }
+  },
+  {
+    "do": [
+      {
+        "branch": [
+          {
+            "do": [
+              {
+                "action": "state.transaction",
+                "params": {
+                  "definitionId": "story.s02.raid.failed"
+                },
+                "stepId": "raid-failed-commit"
+              },
+              {
+                "action": "startDialogue",
+                "params": {
+                  "id": "dialogue.s02.raidDefeat"
+                },
+                "stepId": "raid-defeat-dialogue"
+              },
+              {
+                "action": "scenario.command",
+                "params": {
+                  "operation": "army.raid.defeat",
+                  "regroupX": 560,
+                  "regroupY": 400,
+                  "scenarioId": "scenario.command.army.raid.defeat"
+                },
+                "stepId": "raid-defeat-regroup"
+              },
+              {
+                "action": "state.transaction",
+                "params": {
+                  "definitionId": "story.s02.raid.fight.clear"
+                },
+                "stepId": "raid-defeat-fight-clear"
+              },
+              {
+                "action": "wait",
+                "params": {
+                  "seconds": 8
+                },
+                "stepId": "raid-defeat-wait"
+              },
+              {
+                "action": "state.transaction",
+                "params": {
+                  "definitionId": "story.s02.raid.fight.prepare"
+                },
+                "stepId": "raid-reattack-fight-prepare"
+              },
+              {
+                "action": "spawnPlacements",
+                "params": {
+                  "selector": {
+                    "group": "S02-raid-vanguard"
+                  }
+                },
+                "stepId": "raid-reattack-vanguard-spawn"
+              },
+              {
+                "action": "spawnPlacements",
+                "params": {
+                  "selector": {
+                    "group": "S02-raid-mainforce"
+                  }
+                },
+                "stepId": "raid-reattack-mainforce-spawn"
+              },
+              {
+                "action": "showTip",
+                "params": {
+                  "text": "官军卷土重来——这一次傅燮倾巢而出，全军死守营地！"
+                },
+                "stepId": "raid-reattack-tip"
+              }
+            ]
+          }
+        ],
+        "when": {
+          "op": "and",
+          "args": [
+            {
+              "op": "var",
+              "name": "story.s02RaidFight"
+            },
+            {
+              "op": "not",
+              "arg": {
+                "op": "var",
+                "name": "story.s02RaidRepeled"
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "id": "trg_s02_raid_defeat",
+    "name": "荒村：兵败溃退 → 整军重整 → 8 秒后官军倾巢再战",
+    "once": false,
+    "when": {
+      "params": {
+        "sceneId": "S02"
+      },
+      "type": "playerSpecialFaint"
+    }
+  },
+  {
+    "do": [
+      {
+        "branch": [
+          {
+            "do": [
+              {
+                "action": "scenario.command",
+                "params": {
+                  "operation": "army.possess",
+                  "scenarioId": "scenario.command.army.possess"
+                },
+                "stepId": "possession-restore"
+              }
+            ]
+          }
+        ],
+        "when": {
+          "op": "and",
+          "args": [
+            {
+              "op": "var",
+              "name": "story.s02CampLaid"
+            },
+            {
+              "op": "var",
+              "name": "story.s02OvernightDone"
+            },
+            {
+              "op": "not",
+              "arg": {
+                "op": "var",
+                "name": "story.s02RaidRepeled"
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "id": "trg_s02_possession_restore",
+    "name": "荒村：读档恢复——过夜后围剿未胜时重新附身张角（幂等）",
+    "once": false,
+    "when": {
+      "params": {
+        "sceneId": "S02"
+      },
+      "type": "sceneEnter"
     }
   },
   {
@@ -974,45 +1653,16 @@
         "params": {
           "definitionId": "story.s02.summons.accept"
         }
-      },
-      {
-        "action": "state.transaction",
-        "params": {
-          "definitionId": "story.s02.travel"
-        }
       }
     ],
     "id": "trg_s02_accept_summons",
+    "name": "召见对话落幕：接受召见（随军转移步骤由 task.s02.summons 新链驱动）",
     "once": true,
     "when": {
       "params": {
         "id": "dialogue.s02.zhangjiaoSummons"
       },
       "type": "dialogueEnd"
-    }
-  },
-  {
-    "cooldown": 1,
-    "do": [
-      {
-        "action": "state.transaction",
-        "params": {
-          "definitionId": "story.s02.travel"
-        }
-      },
-      {
-        "action": "state.transaction",
-        "params": {
-          "definitionId": "reward.s02.rationGift"
-        },
-        "stepId": "reward-s02-ration-gift"
-      }
-    ],
-    "id": "trg_s02_travel_s09",
-    "once": false,
-    "when": {
-      "params": {},
-      "type": "interact"
     }
   },
   {
@@ -3036,11 +3686,18 @@
                 "stepId": "beg-adults-robbed-faint"
               },
               {
-                "action": "startDialogue",
+                "action": "wait",
                 "params": {
-                  "id": "dialogue.s02.prologue"
+                  "seconds": 2.5
                 },
-                "stepId": "beg-adults-robbed-prologue"
+                "stepId": "beg-adults-robbed-fade-wait"
+              },
+              {
+                "action": "state.transaction",
+                "params": {
+                  "definitionId": "story.s02.beg.fainted"
+                },
+                "stepId": "beg-adults-robbed-fainted"
               }
             ],
             "when": {
@@ -3147,11 +3804,18 @@
         "stepId": "beg-pacifist-faint"
       },
       {
-        "action": "startDialogue",
+        "action": "wait",
         "params": {
-          "id": "dialogue.s02.prologue"
+          "seconds": 2.5
         },
-        "stepId": "beg-pacifist-prologue"
+        "stepId": "beg-pacifist-fade-wait"
+      },
+      {
+        "action": "state.transaction",
+        "params": {
+          "definitionId": "story.s02.beg.fainted"
+        },
+        "stepId": "beg-pacifist-fainted"
       }
     ],
     "id": "trg_s02_beg_pacifist",
@@ -3236,11 +3900,18 @@
         "stepId": "beg-fight-win-faint"
       },
       {
-        "action": "startDialogue",
+        "action": "wait",
         "params": {
-          "id": "dialogue.s02.prologue"
+          "seconds": 2.5
         },
-        "stepId": "beg-fight-win-prologue"
+        "stepId": "beg-fight-win-fade-wait"
+      },
+      {
+        "action": "state.transaction",
+        "params": {
+          "definitionId": "story.s02.beg.fainted"
+        },
+        "stepId": "beg-fight-win-fainted"
       }
     ],
     "id": "trg_s02_beg_fight_win",
@@ -3287,11 +3958,18 @@
         "stepId": "beg-fight-lose-faint"
       },
       {
-        "action": "startDialogue",
+        "action": "wait",
         "params": {
-          "id": "dialogue.s02.prologue"
+          "seconds": 2.5
         },
-        "stepId": "beg-fight-lose-prologue"
+        "stepId": "beg-fight-lose-fade-wait"
+      },
+      {
+        "action": "state.transaction",
+        "params": {
+          "definitionId": "story.s02.beg.fainted"
+        },
+        "stepId": "beg-fight-lose-fainted"
       }
     ],
     "id": "trg_s02_beg_fight_lose",
@@ -3305,6 +3983,171 @@
         "sceneId": "S02"
       },
       "type": "playerSpecialFaint"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "showTip",
+        "params": {
+          "text": "不知过了多久，一阵整齐的脚步声由远及近，旗帜猎猎——一支黄巾军队正沿山道行来。"
+        },
+        "stepId": "army-dispatch-tip"
+      },
+      {
+        "action": "spawnPlacements",
+        "params": {
+          "selector": {
+            "group": "S02-army-column"
+          }
+        },
+        "stepId": "army-dispatch-spawn"
+      },
+      {
+        "action": "scenario.command",
+        "params": {
+          "operation": "army.march",
+          "armyId": "army.s02.column",
+          "scenarioId": "scenario.command.army.march",
+          "waypoints": [
+            {
+              "x": 220,
+              "y": 420
+            },
+            {
+              "x": 430,
+              "y": 400
+            },
+            {
+              "x": 620,
+              "y": 398
+            }
+          ]
+        },
+        "stepId": "army-dispatch-march"
+      }
+    ],
+    "id": "trg_s02_army_dispatch",
+    "name": "荒村：张角军队路过（50 人行军入画，抵达村口后进入抉择）",
+    "once": true,
+    "when": {
+      "params": {
+        "definitionId": "story.s02.beg.fainted"
+      },
+      "type": "state.transaction"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "state.transaction",
+        "params": {
+          "definitionId": "story.s02.beg.armyArrived"
+        },
+        "stepId": "army-arrival-fact"
+      },
+      {
+        "branch": [
+          {
+            "do": [
+              {
+                "action": "startDialogue",
+                "params": {
+                  "id": "dialogue.s02.prologue"
+                },
+                "stepId": "army-arrival-prologue"
+              }
+            ],
+            "when": {
+              "op": "not",
+              "arg": {
+                "op": "var",
+                "name": "story.s02ZhangjiaoChoice"
+              }
+            }
+          }
+        ],
+        "stepId": "army-arrival-prologue-branch"
+      }
+    ],
+    "id": "trg_s02_army_arrival",
+    "name": "荒村：军队抵达村口（黄巾斥候发现昏倒的主角 → 张角抉择）",
+    "once": true,
+    "when": {
+      "params": {
+        "armyId": "army.s02.column"
+      },
+      "type": "armyMarchArrived"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "spawnPlacements",
+        "params": {
+          "selector": {
+            "group": "S02-army-column"
+          }
+        },
+        "stepId": "army-redispatch-spawn"
+      },
+      {
+        "branch": [
+          {
+            "do": [
+              {
+                "action": "scenario.command",
+                "params": {
+                  "operation": "army.march",
+                  "armyId": "army.s02.column",
+                  "scenarioId": "scenario.command.army.march",
+                  "waypoints": [
+                    {
+                      "x": 220,
+                      "y": 420
+                    },
+                    {
+                      "x": 430,
+                      "y": 400
+                    },
+                    {
+                      "x": 620,
+                      "y": 398
+                    }
+                  ]
+                },
+                "stepId": "army-redispatch-march"
+              }
+            ],
+            "when": {
+              "op": "and",
+              "args": [
+                {
+                  "op": "var",
+                  "name": "story.s02BegFainted"
+                },
+                {
+                  "op": "not",
+                  "arg": {
+                    "op": "var",
+                    "name": "story.s02ZhangjiaoChoice"
+                  }
+                }
+              ]
+            }
+          }
+        ],
+        "stepId": "army-redispatch-branch"
+      }
+    ],
+    "id": "trg_s02_army_redispatch",
+    "name": "荒村：读档恢复——昏迷后未抉择时军队重新行军入画",
+    "once": true,
+    "when": {
+      "params": {
+        "sceneId": "S02"
+      },
+      "type": "sceneEnter"
     }
   },
   {

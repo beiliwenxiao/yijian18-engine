@@ -155,6 +155,10 @@ export class ArmyCommandSystem {
     this.squadPresets = { qian: 'escort', zuo: 'escort', zhong: 'escort', you: 'escort', hou: 'escort' };
     /** 战斗态中预设是否已应用（战斗结束回 escort 时清位） */
     this.presetsActive = false;
+    /** @type {null|{armyId:string, waypoints:Array<{x,y}>, index:number, done:boolean}} 剧情行军任务（scenario army.march） */
+    this.marchMission = null;
+    /** 行军抵达终点回调：({armyId}) => void，由场景注入（fire armyMarchArrived 剧情事件） */
+    this.onMarchComplete = null;
   }
 
   setCombatSystem(combatSystem) { this.combatSystem = combatSystem || null; }
@@ -407,11 +411,102 @@ export class ArmyCommandSystem {
     return { ok: true, count: units.length };
   }
 
-  /** 帧更新：搬运编排 + 姿态机 + 命令达成判定 + 建造作业。 */
+  /** 帧更新：搬运编排 + 姿态机 + 命令达成判定 + 建造作业 + 剧情行军。 */
   update(deltaTime = 0, now = this.now()) {
     this.updateStances(now, deltaTime);
     this.updateOrderProgress(deltaTime);
     this.updateConstruction(deltaTime);
+    this.updateMarch();
+  }
+
+  // ─── 剧情行军（scenario army.march：沿路径点行军入画，到点停并回调） ──
+
+  /**
+   * 开始剧情行军：按路径点序列逐段推进（阵型偏移跟随），全程 hold 姿态
+   * （到点驻守、接战自保但不脱队追击）。waypoints 为世界坐标（由场景投影）。
+   * @param {{armyId?: string, waypoints?: Array<{x:number,y:number}>}} params
+   * @returns {{ok: boolean, code?: string, count?: number, segments?: number}}
+   */
+  startMarch({ armyId = '', waypoints = [] } = {}) {
+    const points = (Array.isArray(waypoints) ? waypoints : [])
+      .map(point => ({ x: Number(point?.x), y: Number(point?.y) }))
+      .filter(point => Number.isFinite(point.x) && Number.isFinite(point.y));
+    if (!points.length) return { ok: false, code: 'noWaypoints' };
+    const units = this._marchUnits(armyId);
+    if (!units.length) return { ok: false, code: 'noUnits' };
+    this.marchMission = { armyId: armyId || '', waypoints: points, index: 0, done: false };
+    this._applyMarchWaypoint();
+    return { ok: true, count: units.length, segments: points.length };
+  }
+
+  /** 行军单位集：armyId 过滤，排除阵亡/搬运中/建造中单位（搬运与施工任务优先）。 */
+  _marchUnits(armyId = '') {
+    const job = this.constructionJob;
+    return [...this.units.values()]
+      .filter(unit => {
+        if (armyId && unit.armyId !== armyId) return false;
+        const entity = unit.entity;
+        if (!entity || entity.isDead === true || entity.isDying === true) return false;
+        if (entity.getComponent?.('commandState')?.carryState === 'carrying') return false;
+        if (job && !job.done && job.builders.includes(entity.id)) return false;
+        return true;
+      })
+      .map(unit => unit.entity);
+  }
+
+  /** 应用当前路点：全军阵型偏移目标（hold 姿态，到点驻守）。 */
+  _applyMarchWaypoint() {
+    const mission = this.marchMission;
+    if (!mission) return;
+    const goal = mission.waypoints[mission.index];
+    const units = this._marchUnits(mission.armyId);
+    const points = this._formationPoints(goal, units);
+    units.forEach((entity, index) => {
+      const command = entity.getComponent?.('commandState');
+      if (!command) return;
+      command.stance = 'hold';
+      command.carryState = null;
+      const point = points[index] || goal;
+      command.goal = { x: point.x, y: point.y };
+    });
+    this.activeOrder = { goal: { ...goal }, unitIds: units.map(entity => entity.id), done: false };
+  }
+
+  /** 行军帧推进：全员抵达当前路点 → 下一段；末段抵达（或单位全灭）→ onMarchComplete。 */
+  updateMarch() {
+    const mission = this.marchMission;
+    if (!mission || mission.done) return;
+    const units = this._marchUnits(mission.armyId);
+    if (!units.length) {
+      this._completeMarch();
+      return;
+    }
+    const allArrived = units.every(entity => !entity.getComponent?.('commandState')?.goal);
+    if (!allArrived) return;
+    if (mission.index < mission.waypoints.length - 1) {
+      mission.index += 1;
+      this._applyMarchWaypoint();
+      return;
+    }
+    this._completeMarch();
+  }
+
+  /** 行军完成：置 done 并通知场景（重复到达/重入幂等：done 后不再回调）。 */
+  _completeMarch() {
+    const mission = this.marchMission;
+    if (mission && mission.done) return;
+    if (mission) mission.done = true;
+    this.marchMission = null;
+    try {
+      this.onMarchComplete?.({ armyId: mission?.armyId || '' });
+    } catch (error) {
+      console.warn('[ArmyCommandSystem] onMarchComplete failed', error?.message || error);
+    }
+  }
+
+  /** 取消行军（剧情中断用）：清任务，单位保持当前姿态目标不变。 */
+  cancelMarch() {
+    this.marchMission = null;
   }
 
   // ─── 语义化意图指令（M5：点敌=进攻 / 点地=移动驻守 / 点武将=集结回归跟随） ──

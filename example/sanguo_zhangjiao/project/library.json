@@ -584,6 +584,57 @@
       "worldProp": true
     },
     {
+      "id": "story.s02.camp_tent",
+      "name": "黄巾军帐",
+      "type": "story",
+      "imageId": "s09.environment.yellowTurbanTent",
+      "height": 96,
+      "maxStack": 1,
+      "showName": false,
+      "sprite": {
+        "height": 96,
+        "isStatic": true,
+        "width": 128
+      },
+      "subType": "worldProp",
+      "width": 128,
+      "worldProp": true
+    },
+    {
+      "id": "story.s02.porridge_cauldron",
+      "name": "施粥大锅",
+      "type": "story",
+      "imageId": "s02.prop.porridgeCauldron",
+      "height": 130,
+      "maxStack": 1,
+      "showName": false,
+      "sprite": {
+        "height": 130,
+        "isStatic": true,
+        "width": 150
+      },
+      "subType": "worldProp",
+      "width": 150,
+      "worldProp": true
+    },
+    {
+      "id": "story.s02.broken_hut",
+      "name": "破草棚",
+      "type": "story",
+      "imageId": "s02.prop.brokenHut",
+      "height": 114,
+      "maxStack": 1,
+      "showName": false,
+      "sprite": {
+        "height": 114,
+        "isStatic": true,
+        "width": 190
+      },
+      "subType": "worldProp",
+      "width": 190,
+      "worldProp": true
+    },
+    {
       "id": "salvage.torn_cloth",
       "name": "破损帐布",
       "type": "material",
@@ -1231,6 +1282,7 @@
       "aiType": "defensive",
       "attackRange": 0,
       "experience": 3,
+      "faction": "neutral",
       "id": "enemy.s01_rabbit",
       "imageId": "skeleton.rabbit",
       "level": 1,
@@ -1253,7 +1305,7 @@
       "stats": {
         "attack": 0,
         "defense": 0,
-        "maxHp": 8,
+        "maxHp": 16,
         "speed": 80
       },
       "templateId": "small_game"
@@ -1546,6 +1598,122 @@
         "speed": 70
       },
       "templateId": "beggar_child"
+    },
+    {
+      "aiType": "aggressive",
+      "attackRange": 40,
+      "experience": 18,
+      "factionId": "han_government",
+      "id": "enemy.s02_lu_vanguard",
+      "imageId": "s03.unit.hanSoldier",
+      "level": 2,
+      "lootTable": [
+        {
+          "chance": 0.25,
+          "itemId": "resource.food",
+          "maxQuantity": 2,
+          "minQuantity": 1
+        }
+      ],
+      "name": "官军前锋",
+      "npcType": "enemy",
+      "sprite": {
+        "height": 64,
+        "isStatic": true,
+        "width": 48
+      },
+      "stats": {
+        "attack": 9,
+        "defense": 4,
+        "maxHp": 72,
+        "speed": 58
+      },
+      "templateId": "han_soldier"
+    },
+    {
+      "aiType": "aggressive",
+      "attackRange": 40,
+      "experience": 26,
+      "factionId": "han_government",
+      "id": "enemy.s02_lu_mainforce",
+      "imageId": "s03.unit.hanSoldier",
+      "level": 3,
+      "lootTable": [
+        {
+          "chance": 0.3,
+          "itemId": "resource.food",
+          "maxQuantity": 2,
+          "minQuantity": 1
+        },
+        {
+          "chance": 0.2,
+          "itemId": "resource.iron",
+          "maxQuantity": 2,
+          "minQuantity": 1
+        }
+      ],
+      "name": "官军精锐",
+      "npcType": "enemy",
+      "sprite": {
+        "height": 66,
+        "isStatic": true,
+        "width": 50
+      },
+      "stats": {
+        "attack": 11,
+        "defense": 5,
+        "maxHp": 90,
+        "speed": 60
+      },
+      "templateId": "han_elite"
+    },
+    {
+      "ai": {
+        "detectionRange": 460,
+        "leashRange": 1400,
+        "pursuitRange": 900,
+        "telegraph": {
+          "shape": "circle",
+          "windupMs": 900
+        }
+      },
+      "aiActive": true,
+      "aiType": "aggressive",
+      "attackRange": 90,
+      "experience": 90,
+      "factionId": "han_government",
+      "id": "enemy.s02_lu_commander",
+      "imageId": "s03.unit.hanSoldier",
+      "isBoss": true,
+      "level": 5,
+      "lootTable": [
+        {
+          "chance": 1,
+          "itemId": "weapon.s03.han_ring_blade",
+          "maxQuantity": 1,
+          "minQuantity": 1
+        },
+        {
+          "chance": 1,
+          "itemId": "resource.iron",
+          "maxQuantity": 6,
+          "minQuantity": 3
+        }
+      ],
+      "name": "傅燮",
+      "npcType": "monster_boss",
+      "sprite": {
+        "height": 86,
+        "isStatic": true,
+        "width": 60
+      },
+      "stats": {
+        "attack": 12,
+        "defense": 5,
+        "maxHp": 160,
+        "speed": 68
+      },
+      "templateId": "han_elite"
     },
     {
       "aiType": "aggressive",
@@ -2663,19 +2831,46 @@
   ],
   "armies": [
     {
-      "commander": {
-        "type": "player"
-      },
-      "defaultStance": "escort",
-      "id": "army.s02.guard",
-      "name": "张角亲卫队",
+      "defaultStance": "hold",
+      "id": "army.s02.column",
+      "name": "张角行军纵队",
       "squads": [
         {
           "id": "qian",
           "name": "前军",
           "units": [
             {
-              "count": 1,
+              "count": 10,
+              "ref": "enemy.s02_yellow_turban_soldier"
+            }
+          ]
+        },
+        {
+          "id": "zuo",
+          "name": "左军",
+          "units": [
+            {
+              "count": 10,
+              "ref": "enemy.s02_yellow_turban_soldier"
+            }
+          ]
+        },
+        {
+          "id": "zhong",
+          "name": "中军",
+          "units": [
+            {
+              "count": 10,
+              "ref": "enemy.s02_yellow_turban_soldier"
+            }
+          ]
+        },
+        {
+          "id": "you",
+          "name": "右军",
+          "units": [
+            {
+              "count": 10,
               "ref": "enemy.s02_yellow_turban_soldier"
             }
           ]
@@ -2685,7 +2880,34 @@
           "name": "后军",
           "units": [
             {
-              "count": 1,
+              "count": 10,
+              "ref": "enemy.s02_yellow_turban_soldier"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "defaultStance": "hold",
+      "id": "army.s02.recruits",
+      "name": "荒村新募义从",
+      "squads": [
+        {
+          "id": "qian",
+          "name": "前军",
+          "units": [
+            {
+              "count": 5,
+              "ref": "enemy.s02_yellow_turban_soldier"
+            }
+          ]
+        },
+        {
+          "id": "hou",
+          "name": "后军",
+          "units": [
+            {
+              "count": 5,
               "ref": "enemy.s02_yellow_turban_soldier"
             }
           ]

@@ -591,6 +591,16 @@ export class BaseGameSceneBehaviors extends BaseGameSceneSetup {  /**
     return dirMap[sprite?.direction] || { x: 1, y: 0 };
   }
 
+  /**
+   * 基础攻击资格：不与战斗态挂钩（硬锁由 isPlayerActionLocked 统一拒绝，
+   * 见 SceneCombatActions._canAttack 的场景决策优先语义）。
+   * 非战斗（如猎捕中立野兔、挥空）与战斗中均可挥击；是否进入战斗由
+   * CombatSystem.applyDamage 的命中结算决定，而非攻击动作本身。
+   */
+  canPerformBasicAttack() {
+    return true;
+  }
+
   /** 触屏：按角色朝向发起一次扇形攻击。 */
   attackByFacing() {
     if (this.isPlayerActionLocked()) return false;

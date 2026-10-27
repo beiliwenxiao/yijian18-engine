@@ -228,6 +228,126 @@
     "title": "营地苏醒"
   },
   {
+    "id": "dialogue.s02.porridgeStart",
+    "nodes": {
+      "order": {
+        "nextNode": "light",
+        "portrait": "zhangjiao",
+        "speaker": "张角",
+        "text": "传令下去，把村里那口大锅支起来，熬符水分与百姓。再把招兵旗立在村东——愿随我走的，喝完符水来旗下领牌！"
+      },
+      "light": {
+        "nextNode": "vow",
+        "speaker": "旁白",
+        "text": "士兵们七手八脚抬锅垒灶，柴火噼啪作响。远处的土路上，灾民们拖家带口，循着炊烟与粥香走来。"
+      },
+      "start": {
+        "nextNode": "order",
+        "speaker": "旁白",
+        "text": "苏醒的伤者与黄巾将士相视无言。张角环视这片破败的荒村，缓缓开口。"
+      },
+      "tip": {
+        "speaker": "旁白",
+        "text": "（两百余村民将从村口与东侧小径分批前来排队喝符水。喝完的人多数会散去——留下来的人，需要你在招兵旗下招募入伍。）"
+      },
+      "vow": {
+        "nextNode": "tip",
+        "portrait": "zhangjiao",
+        "speaker": "张角",
+        "text": "苍天已死，黄天当立。这碗符水救得了他们今天的命，救不了世道——要想活命，就得自己拿起刀。"
+      }
+    },
+    "startNode": "start",
+    "title": "支锅施粥"
+  },
+  {
+    "id": "dialogue.s02.recruitDone",
+    "nodes": {
+      "order": {
+        "nextNode": "camp",
+        "portrait": "zhangjiao",
+        "speaker": "张角",
+        "text": "好！五十新募义从，加上我本部五十人——百人成军！传令：伐木垒灶，就在这片荒村扎营休整！"
+      },
+      "camp": {
+        "speaker": "旁白",
+        "text": "士兵们清点人手、划分营地。破败的荒村因为这一百号人，头一回有了几分生气。"
+      },
+      "start": {
+        "nextNode": "order",
+        "speaker": "旁白",
+        "text": "最后一名青壮领了兵牌。招兵旗下，五十名新募义从换上黄巾，列成两队。"
+      }
+    },
+    "startNode": "start",
+    "title": "百人成军"
+  },
+  {
+    "id": "dialogue.s02.overnight",
+    "nodes": {
+      "dawn": {
+        "nextNode": "alarm",
+        "speaker": "旁白",
+        "text": "翌日清晨。霜白铺满荒村，哨探连滚带爬冲进营地——界河渡口一夜之间多了无数营帐，旌旗如林！"
+      },
+      "alarm": {
+        "portrait": "zhangjiao",
+        "speaker": "张角",
+        "text": "卢植的兵，来得比老夫算的还快。百人精锐已围村——都别慌，列阵！"
+      },
+      "night": {
+        "nextNode": "dawn",
+        "speaker": "旁白",
+        "text": "当夜无事。篝火明灭，伤民与士卒相枕而眠。远处偶尔传来几声狼嚎。"
+      },
+      "start": {
+        "nextNode": "night",
+        "speaker": "旁白",
+        "text": "夜幕落下。荒村四周的草地灯次第亮起，营地里弥漫着符水与草木灰的味道。"
+      }
+    },
+    "startNode": "start",
+    "title": "荒村过夜"
+  },
+  {
+    "id": "dialogue.s02.raidRepelled",
+    "nodes": {
+      "after": {
+        "nextNode": "order",
+        "portrait": "zhangjiao",
+        "speaker": "张角",
+        "text": "广宗大营还聚着数万教众，粮药两缺。收拾行装——全军开拔，随我北上去广宗。"
+      },
+      "order": {
+        "speaker": "旁白",
+        "text": "傅燮收拢残部退回界河东岸，暂不敢再犯。张角立于辕门前，望着满地狼藉沉吟良久。"
+      },
+      "start": {
+        "nextNode": "order",
+        "speaker": "旁白",
+        "text": "最后一名官军倒下。营地外的黄巾士卒爆出一阵欢呼——围剿被击退了。"
+      }
+    },
+    "startNode": "start",
+    "title": "围剿击退"
+  },
+  {
+    "id": "dialogue.s02.raidDefeat",
+    "nodes": {
+      "start": {
+        "nextNode": "retreat",
+        "speaker": "旁白",
+        "text": "兵败如山倒。官军锋锐远超预料，黄巾阵线节节溃退——"
+      },
+      "retreat": {
+        "speaker": "旁白",
+        "text": "张角当机立断，鸣金收兵。全军且战且退，撤回营地死守。官军亦折损不小，暂行退去，稍候必将卷土重来。"
+      }
+    },
+    "startNode": "start",
+    "title": "兵败溃退"
+  },
+  {
     "id": "dialogue.s09.enlistment",
     "nodes": {
       "answer": {

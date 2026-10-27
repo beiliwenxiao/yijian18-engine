@@ -2300,6 +2300,11 @@ export class S01S02Coordinator {
   }
 
   resolveRespawnPosition() {
+    // S02 围剿兵败（rescueType 'commander'）：张角在营地中心复活整军再战
+    if (this.scene.currentSceneId === 'S02' && this._story().s02CampLaid === true) {
+      const offset = this.scene._worldLoadResult?.worldIndex?.getOffset?.('S02') || { x: 0, y: 0 };
+      return { x: 560 + (offset.x || 0), y: 400 + (offset.y || 0), label: '营地中军' };
+    }
     if (this.scene.currentSceneId !== 'S01' || !this.scene._campfireService?.isLit?.()) return null;
     const campfire = this.scene._campfireService.getPosition();
     return { x: campfire.x + 48, y: campfire.y + 64, label: '已点燃的火堆旁' };

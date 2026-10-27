@@ -3109,6 +3109,226 @@
       "replacesPlaceholderId": "graybox.naturalTerrain"
     },
     {
+      "assetId": "s02.environment.wastelandGround",
+      "imageId": "s02.environment.wastelandGround",
+      "category": "environment-background",
+      "usage": [
+        "S02",
+        "scene-background",
+        "terrain"
+      ],
+      "sourceFile": "assets/images/s02/wasteland-ground.png",
+      "runtime2D": {
+        "path": "assets/images/s02/wasteland-ground.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "s02.environment.wastelandGround"
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0
+      },
+      "bounds": {
+        "width": 1280,
+        "height": 720
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1,
+      "displayName": "S02 荒村破旧空地",
+      "replacementBrief": {
+        "sceneIds": [
+          "S02"
+        ],
+        "subject": "荒村破旧空地（M3.5 场景重构）",
+        "mustShow": [
+          "干裂荒地",
+          "枯黄杂草",
+          "踩踏土径",
+          "散落破烂木片",
+          "破败村庄氛围"
+        ],
+        "mustPreserve": [
+          "1280×720 场景坐标对齐",
+          "地貌纹理不烘焙建筑与文字",
+          "碰撞与业务状态继续由场景对象定义"
+        ],
+        "camera": "top-down-oblique-2d, full 1280×720 chunk",
+        "palette": [
+          "#6f6048",
+          "#6b6760",
+          "#8a7657",
+          "#5a5142"
+        ],
+        "textPolicy": "no-baked-text",
+        "replacesPlaceholderId": "graybox.naturalTerrain"
+      },
+      "replacesPlaceholderId": "graybox.naturalTerrain"
+    },
+    {
+      "assetId": "s02.prop.bigTree",
+      "imageId": "s02.prop.bigTree",
+      "category": "environment-module",
+      "usage": [
+        "S02",
+        "tree",
+        "village-border"
+      ],
+      "sourceFile": "assets/images/s02/big-tree.png",
+      "runtime2D": {
+        "path": "assets/images/s02/big-tree.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "s02.prop.bigTree"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      },
+      "bounds": {
+        "width": 465,
+        "height": 420
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1,
+      "displayName": "S02 界树·老树"
+    },
+    {
+      "assetId": "s02.prop.smallTree",
+      "imageId": "s02.prop.smallTree",
+      "category": "environment-module",
+      "usage": [
+        "S02",
+        "tree",
+        "village-border"
+      ],
+      "sourceFile": "assets/images/s02/small-tree.png",
+      "runtime2D": {
+        "path": "assets/images/s02/small-tree.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "s02.prop.smallTree"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      },
+      "bounds": {
+        "width": 138,
+        "height": 190
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1,
+      "displayName": "S02 界树·小树"
+    },
+    {
+      "assetId": "s02.prop.grassLamp",
+      "imageId": "s02.prop.grassLamp",
+      "category": "environment-module",
+      "usage": [
+        "S02",
+        "lamp",
+        "village-border"
+      ],
+      "sourceFile": "assets/images/s02/grass-lamp.png",
+      "runtime2D": {
+        "path": "assets/images/s02/grass-lamp.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "s02.prop.grassLamp"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      },
+      "bounds": {
+        "width": 59,
+        "height": 210
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1,
+      "displayName": "S02 草地灯"
+    },
+    {
+      "assetId": "s02.prop.brokenHut",
+      "imageId": "s02.prop.brokenHut",
+      "category": "environment-module",
+      "usage": [
+        "S02",
+        "hut",
+        "ruined-village"
+      ],
+      "sourceFile": "assets/images/s02/broken-hut.png",
+      "runtime2D": {
+        "path": "assets/images/s02/broken-hut.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "s02.prop.brokenHut"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      },
+      "bounds": {
+        "width": 317,
+        "height": 190
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1,
+      "displayName": "S02 破草棚"
+    },
+    {
+      "assetId": "s02.prop.porridgeCauldron",
+      "imageId": "s02.prop.porridgeCauldron",
+      "category": "environment-module",
+      "usage": [
+        "S02",
+        "porridge",
+        "relief"
+      ],
+      "sourceFile": "assets/images/s02/porridge-cauldron.png",
+      "runtime2D": {
+        "path": "assets/images/s02/porridge-cauldron.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "s02.prop.porridgeCauldron"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      },
+      "bounds": {
+        "width": 150,
+        "height": 130
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1,
+      "displayName": "S02 施粥大锅"
+    },
+    {
       "assetId": "s03.environment.yingchuanBattlefieldGround",
       "imageId": "s03.environment.yingchuanBattlefieldGround",
       "category": "environment-background",

@@ -239,15 +239,24 @@ describe('QuestRuntime Quest v2 编译器', () => {
 describe('阶段③ S01 迁移契约：quest 编译产物与手写任务图逐节点等价', () => {
   const compiledGraph = compileQuestProject(project).taskGraphs.find(graph => graph.id === 'task.s01.survival');
 
-  it('s02 迁移契约：接受召见 → 前往粥棚营地 线性链（state.transaction 事实驱动）', () => {
+  it('s02 迁移契约：接受召见 → 施粥 → 招募 → 扎营 → 击退围剿 线性链（state.transaction 事实驱动，M3.5 随军抗敌）', () => {
     const s02Graph = compileQuestProject(project).taskGraphs.find(graph => graph.id === 'task.s02.summons');
     expect(s02Graph.entryNodeId).toBe('start');
-    expect(s02Graph.nodes.filter(node => node.type === 'objective').map(node => node.id)).toEqual(['acceptSummons', 'travel']);
+    expect(s02Graph.nodes.filter(node => node.type === 'objective').map(node => node.id)).toEqual(['acceptSummons', 'porridge', 'recruit', 'camp', 'repelRaid']);
     expect(s02Graph.nodes.find(node => node.id === 'acceptSummons').eventMatcher).toEqual({
       type: 'state.transaction', payload: { definitionId: 'story.s02.summons.accept' }
     });
-    expect(s02Graph.nodes.find(node => node.id === 'travel').eventMatcher).toEqual({
-      type: 'state.transaction', payload: { definitionId: 'story.s02.travel' }
+    expect(s02Graph.nodes.find(node => node.id === 'porridge').eventMatcher).toEqual({
+      type: 'state.transaction', payload: { definitionId: 'story.s02.porridge.laid' }
+    });
+    expect(s02Graph.nodes.find(node => node.id === 'recruit').eventMatcher).toEqual({
+      type: 'state.transaction', payload: { definitionId: 'story.s02.recruit.done' }
+    });
+    expect(s02Graph.nodes.find(node => node.id === 'camp').eventMatcher).toEqual({
+      type: 'state.transaction', payload: { definitionId: 'story.s02.camp.laid' }
+    });
+    expect(s02Graph.nodes.find(node => node.id === 'repelRaid').eventMatcher).toEqual({
+      type: 'state.transaction', payload: { definitionId: 'story.s02.raid.repeled' }
     });
   });
 
