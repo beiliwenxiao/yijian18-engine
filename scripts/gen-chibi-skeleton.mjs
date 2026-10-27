@@ -15,11 +15,12 @@
 // 比例：总高 96px ≈ 3 头身（头 34 / 躯干 32 / 腿 30）。
 // 配色对齐 config/presentation.json palette（黄巾 #d8aa32 / 描边 #2d2412）。
 import { deflateSync } from 'node:zlib';
-import { writeFileSync, mkdirSync } from 'node:fs';
+import { writeFileSync, mkdirSync, readFileSync } from 'node:fs';
 
 const SIZE = 64;
 const IMG_DIR = 'example/sanguo_zhangjiao/assets/images/chibi/parts';
 const OUT_DIR = 'example/sanguo_zhangjiao/assets/skeletons';
+const MANIFEST = 'example/sanguo_zhangjiao/assets/manifests/assets.json';
 
 /* ---------------- PNG 编码（与 gen-skill-icons.mjs 同款） ---------------- */
 
@@ -316,5 +317,31 @@ for (const part of PARTS) {
 }
 
 const doc = buildChibiSkeleton();
-writeFileSync(`${OUT_DIR}/chibi.json`, `${JSON.stringify(doc, null, 2)}\n`);
-console.log(`written: ${OUT_DIR}/chibi.json (bones=${doc.bones.length} slots=${doc.slots.length} clips=${doc.clips.length})`);
+writeFileSync(`${OUT_DIR}/skeleton.chibi.json`, `${JSON.stringify(doc, null, 2)}\n`);
+console.log(`written: ${OUT_DIR}/skeleton.chibi.json (bones=${doc.bones.length} slots=${doc.slots.length} clips=${doc.clips.length})`);
+
+// 骨骼资产 manifest 登记（幂等 upsert；编辑器资产下拉列表 = Manifest 中 runtime2D.mode==='skeleton' 的条目）
+{
+  const manifest = JSON.parse(readFileSync(MANIFEST, 'utf8'));
+  if (!Array.isArray(manifest.assets)) throw new Error('manifest.assets 缺失');
+  const entry = {
+    assetId: 'skeleton.chibi',
+    imageId: 'skeleton.chibi',
+    category: 'character-skeleton',
+    usage: ['chibi-skeleton'],
+    sourceFile: 'assets/skeletons/skeleton.chibi.json',
+    runtime2D: { path: 'assets/skeletons/skeleton.chibi.json', mode: 'skeleton' },
+    runtime3D: { mode: 'billboard', sourceAssetId: 'skeleton.chibi' },
+    pivot: { x: 0.5, y: 1 },
+    bounds: { width: doc.meta.width, height: doc.meta.height },
+    animations: [],
+    targetPhase: 'P1',
+    status: 'ai-generated',
+    revision: 1
+  };
+  const byId = new Map(manifest.assets.map(asset => [asset.assetId, asset]));
+  byId.set(entry.assetId, entry);
+  manifest.assets = [...byId.values()];
+  writeFileSync(MANIFEST, `${JSON.stringify(manifest, null, 2)}\n`);
+  console.log('manifest upserted: skeleton.chibi');
+}

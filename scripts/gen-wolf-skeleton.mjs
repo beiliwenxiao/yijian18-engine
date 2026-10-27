@@ -17,9 +17,10 @@
 // 锚点约定：各部件预摆图（共享画布）包围盒反推关节锚点，attachment 偏移 = pivot − 锚点，
 // 内容锚点像素 = 骨点（部件随骨运动，预摆图只用于读关节相对位置）。
 // 动作：idle_side / walk_side / run_side / attack_side（jaw 咬合）/ hurt / death。
-import { writeFileSync } from 'node:fs';
+import { writeFileSync, readFileSync } from 'node:fs';
 
-const OUT = 'example/sanguo_zhangjiao/assets/skeletons/wolf.json';
+const OUT = 'example/sanguo_zhangjiao/assets/skeletons/skeleton.wolf.json';
+const MANIFEST = 'example/sanguo_zhangjiao/assets/manifests/assets.json';
 
 const img = (assetId, x, y, width = 64, height = 64) => (
   { type: 'image', assetId, x, y, rot: 0, width, height, visible: true }
@@ -220,5 +221,32 @@ function buildWolfDoc() {
   };
 }
 
-writeFileSync(OUT, `${JSON.stringify(buildWolfDoc(), null, 2)}\n`);
-console.log(`written: ${OUT} (bones=11 slots=14 clips=6, parts from units/parts 7-件套)`);
+const doc = buildWolfDoc();
+writeFileSync(OUT, `${JSON.stringify(doc, null, 2)}\n`);
+console.log(`written: ${OUT} (bones=14 slots=14 clips=6, parts from units/parts 7-件套)`);
+
+// 骨骼资产 manifest 登记（幂等 upsert；编辑器资产下拉列表 = Manifest 中 runtime2D.mode==='skeleton' 的条目）
+{
+  const manifest = JSON.parse(readFileSync(MANIFEST, 'utf8'));
+  if (!Array.isArray(manifest.assets)) throw new Error('manifest.assets 缺失');
+  const entry = {
+    assetId: 'skeleton.wolf',
+    imageId: 'skeleton.wolf',
+    category: 'character-skeleton',
+    usage: ['wolf-skeleton'],
+    sourceFile: 'assets/skeletons/skeleton.wolf.json',
+    runtime2D: { path: 'assets/skeletons/skeleton.wolf.json', mode: 'skeleton' },
+    runtime3D: { mode: 'billboard', sourceAssetId: 'skeleton.wolf' },
+    pivot: { x: 0.5, y: 1 },
+    bounds: { width: doc.meta.width, height: doc.meta.height },
+    animations: [],
+    targetPhase: 'P1',
+    status: 'ai-generated',
+    revision: 1
+  };
+  const byId = new Map(manifest.assets.map(asset => [asset.assetId, asset]));
+  byId.set(entry.assetId, entry);
+  manifest.assets = [...byId.values()];
+  writeFileSync(MANIFEST, `${JSON.stringify(manifest, null, 2)}\n`);
+  console.log('manifest upserted: skeleton.wolf');
+}

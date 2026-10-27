@@ -10675,6 +10675,93 @@
       "targetPhase": "P1",
       "status": "ai-generated",
       "revision": 1
+    },
+    {
+      "assetId": "skeleton.chibi",
+      "imageId": "skeleton.chibi",
+      "category": "character-skeleton",
+      "usage": [
+        "chibi-skeleton"
+      ],
+      "sourceFile": "assets/skeletons/skeleton.chibi.json",
+      "runtime2D": {
+        "path": "assets/skeletons/skeleton.chibi.json",
+        "mode": "skeleton"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skeleton.chibi"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      },
+      "bounds": {
+        "width": 64,
+        "height": 96
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "skeleton.wolf",
+      "imageId": "skeleton.wolf",
+      "category": "character-skeleton",
+      "usage": [
+        "wolf-skeleton"
+      ],
+      "sourceFile": "assets/skeletons/skeleton.wolf.json",
+      "runtime2D": {
+        "path": "assets/skeletons/skeleton.wolf.json",
+        "mode": "skeleton"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skeleton.wolf"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      },
+      "bounds": {
+        "width": 96,
+        "height": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "skeleton.rabbit",
+      "imageId": "skeleton.rabbit",
+      "category": "character-skeleton",
+      "usage": [
+        "rabbit-skeleton"
+      ],
+      "sourceFile": "assets/skeletons/skeleton.rabbit.json",
+      "runtime2D": {
+        "path": "assets/skeletons/skeleton.rabbit.json",
+        "mode": "skeleton"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skeleton.rabbit"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      },
+      "bounds": {
+        "width": 64,
+        "height": 72
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
     }
   ]
 }
