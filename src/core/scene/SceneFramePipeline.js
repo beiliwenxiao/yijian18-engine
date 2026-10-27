@@ -467,16 +467,24 @@ export class SceneFramePipeline {
     // 处理敌人选中
     scene.handleEnemySelection();
 
+    // 对话/旁白演出期间冻结战斗与 AI：怪物不索敌、不决策、不移动、不结算攻击
+    // （含扑击冲刺/击飞滑行/伤害数字推进），战斗态维持对话前状态——既不会被附近
+    // 敌人拉入战斗（对话一结束就"已在战斗中"），也不会推进脱战倒计时。
+    // 对话框关闭后世界恢复运转（与玩家侧 SceneCombatActions 的对话守卫对称）。
+    const dialogueActive = scene.dialogueSystem?.isDialogueActive?.() === true;
+
     // 更新AI系统（使用节流）
-    if (scene.performanceOptimizer.shouldUpdate('ai')) {
+    if (!dialogueActive && scene.performanceOptimizer.shouldUpdate('ai')) {
       aiSystem.update(deltaTime, entities, combatSystem);
     }
 
     // 更新战斗系统
-    combatSystem.update(deltaTime, entities);
+    if (!dialogueActive) {
+      combatSystem.update(deltaTime, entities);
 
-    // 更新战斗状态（通过 CombatSystem）
-    combatSystem.updateCombatState(deltaTime, entities);
+      // 更新战斗状态（通过 CombatSystem）
+      combatSystem.updateCombatState(deltaTime, entities);
+    }
 
     // 更新打坐状态（通过冥想系统）
     meditationSystem.update(deltaTime, player);
