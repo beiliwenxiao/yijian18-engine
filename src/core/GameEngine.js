@@ -155,9 +155,10 @@ export class GameEngine {
      * 初始化子系统
      */
     async initSystems() {
-        // 初始化资源管理器
+        // 初始化资源管理器（皮肤优先级：调用方 options > URL ?skin= > localStorage；项目级默认由加载流程兜底）
         this.assetManager = new AssetManager({
-            assetBasePath: this.options?.assetBasePath || ''
+            assetBasePath: this.options?.assetBasePath || '',
+            assetSkin: this.options?.assetSkin ?? AssetManager.resolveStartupSkin()
         });
         Logger.log('GameEngine: AssetManager initialized');
         

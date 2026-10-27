@@ -15,6 +15,10 @@ import { PlaceholderAssets } from './PlaceholderAssets.js';
 import { AudioManager } from './AudioManager.js';
 import { parseSkeletonAsset } from '../animation/SkeletonAsset.js';
 
+// 模块级活动皮肤根（如 'assets_001/'）：启动时由 setSkinRoot 置定（一次性，不支持热切换），
+// 供少量不走 AssetManager 实例的 DOM 直连路径（登录背景等）经 AssetManager.skinPath 查询。
+let activeSkinRoot = '';
+
 /**
  * 资源管理器
  * 负责加载和管理游戏资源（图片、音频等）
@@ -61,6 +65,83 @@ export class AssetManager {
         // 资源基础路径（默认空字符串，所有路径相对于 HTML 页面）
         this.assetBasePath = '';
         this.setAssetBasePath(config.assetBasePath || '');
+
+        // 皮肤根目录（换肤）：'001' → 'assets_001/'；为空 = 使用默认 assets/
+        this.skinRoot = '';
+        if (config.assetSkin) this.setSkinRoot(config.assetSkin);
+    }
+
+    /**
+     * 设置皮肤根目录（启动期一次性，不支持热切换）
+     * @param {string} skin - 皮肤名，如 '001'；或完整目录名 'assets_001'；空值清除回默认
+     */
+    setSkinRoot(skin) {
+        AssetManager.activateSkin(skin);
+        this.skinRoot = activeSkinRoot;
+        if (this.skinRoot) {
+            Logger.log(`AssetManager: 皮肤根目录 = ${this.skinRoot}`);
+        }
+    }
+
+    /**
+     * 仅置定模块级活动皮肤根（不动实例）：供先于游戏 boot 渲染的 DOM 直连路径
+     * （登录背景等）在 AssetManager 实例创建前激活换肤。
+     * @param {string} skin - 皮肤名，如 '001'；或完整目录名 'assets_001'；空值清除回默认
+     */
+    static activateSkin(skin) {
+        const raw = String(skin ?? '').trim().replace(/\/+$/, '');
+        if (!raw || raw === 'assets') {
+            activeSkinRoot = '';
+            return;
+        }
+        activeSkinRoot = raw.startsWith('assets') ? `${raw}/` : `assets_${raw}/`;
+    }
+
+    /**
+     * 皮肤重写：把以 'assets/' 开头的工程路径替换为当前皮肤根（如 'assets_001/images/x.png'）。
+     * 皮肤未启用时原样返回。
+     * @param {string} path - 形如 'assets/images/x.png' 的工程路径或已解析 URL
+     * @returns {string}
+     */
+    static skinPath(path) {
+        if (!path || !activeSkinRoot) return path;
+        const str = String(path);
+        // 已带基础目录前缀的完整 URL（如 'example/game/assets/images/x.png'）只重写末段 'assets/'
+        const idx = str.lastIndexOf('assets/');
+        if (idx === -1) return str;
+        return str.slice(0, idx) + activeSkinRoot + str.slice(idx + 'assets/'.length);
+    }
+
+    /**
+     * 从启动环境解析皮肤配置（优先级：URL ?skin= > localStorage）。
+     * 项目级默认（game.project.json system.assetSkin）由加载流程在两者未命中时兜底。
+     * @returns {string|null}
+     */
+    static resolveStartupSkin() {
+        try {
+            if (typeof window !== 'undefined' && window.location?.search) {
+                const urlSkin = new URLSearchParams(window.location.search).get('skin');
+                if (urlSkin) return urlSkin;
+            }
+            if (typeof localStorage !== 'undefined') {
+                const stored = localStorage.getItem('yijian18.skin');
+                if (stored) return stored;
+            }
+        } catch { /* 非浏览器环境忽略 */ }
+        return null;
+    }
+
+    /**
+     * 计算皮肤加载失败的回退 URL：皮肤根段换回默认 'assets/'（皮肤包允许只覆盖部分图）。
+     * 非皮肤路径返回 null。
+     * @param {string} url - 已解析的资源 URL
+     * @returns {string|null}
+     */
+    getSkinFallbackUrl(url) {
+        if (!this.skinRoot || !url) return null;
+        const idx = String(url).indexOf(this.skinRoot);
+        if (idx === -1) return null;
+        return `${url.slice(0, idx)}assets/${url.slice(idx + this.skinRoot.length)}`;
     }
 
     /**
@@ -78,14 +159,25 @@ export class AssetManager {
 
     /**
      * 拼接资源完整路径。若 Manifest 已给出带基础目录的工程路径，不重复拼接。
+     * 启用皮肤时把路径中的 'assets/' 根段重写为皮肤根（如 'assets_001/images/x.png'），
+     * 兼容 assetBasePath='assets/'（路径自带前缀）与 basePath 为空（引擎补前缀）两种约定。
      * @param {string} relativePath - 相对路径
      * @returns {string} 完整路径
      */
     resolveAssetPath(relativePath) {
         if (!relativePath) return relativePath;
         if (/^(https?:|data:|blob:|\/)/.test(relativePath)) return relativePath;
-        if (this.assetBasePath && relativePath.startsWith(this.assetBasePath)) return relativePath;
-        return this.assetBasePath + relativePath;
+        let path = relativePath;
+        if (this.assetBasePath && !path.startsWith(this.assetBasePath)) {
+            path = this.assetBasePath + path;
+        }
+        if (this.skinRoot) {
+            const idx = path.indexOf('assets/');
+            if (idx !== -1) {
+                path = path.slice(0, idx) + this.skinRoot + path.slice(idx + 'assets/'.length);
+            }
+        }
+        return path;
     }
 
     /**
@@ -444,8 +536,11 @@ export class AssetManager {
         if (existing) return existing;
 
         const generation = this._loadGeneration;
+        // 皮肤缺图回退：皮肤根下加载失败时自动重试默认 assets/ 同名路径（皮肤包允许只覆盖部分图）
+        const skinFallbackUrl = this.getSkinFallbackUrl(url);
         const promise = new Promise((resolve, reject) => {
             const img = new Image();
+            let triedSkinFallback = false;
 
             img.onload = () => {
                 if (generation !== this._loadGeneration) {
@@ -457,6 +552,12 @@ export class AssetManager {
             };
 
             img.onerror = () => {
+                if (skinFallbackUrl && !triedSkinFallback) {
+                    triedSkinFallback = true;
+                    Logger.log(`AssetManager: 皮肤缺图回退 ${url} -> ${skinFallbackUrl}`);
+                    img.src = skinFallbackUrl;
+                    return;
+                }
                 reject(new Error(`Failed to load image: ${url}`));
             };
 

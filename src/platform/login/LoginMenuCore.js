@@ -14,6 +14,7 @@
 import { PlatformProfile } from '../../core/PlatformProfile.js';
 import { GamepadManager } from '../../core/input/GamepadManager.js';
 import { PadButton, SETTINGS_ACTION } from '../../core/input/Xbox360Profile.js';
+import { AssetManager } from '../../core/AssetManager.js';
 
 export function createLoginMenuCore(shell) {
 const loginScreen = document.getElementById('login-screen');
@@ -125,7 +126,8 @@ function applyLoginConfig(config = {}) {
     if (config.backgroundColor) loginScreen.style.backgroundColor = config.backgroundColor;
     if (config.backgroundImage) {
         const safeUrl = String(config.backgroundImage).replace(/["'()]/g, '');
-        loginScreen.style.backgroundImage = `url("${safeUrl}")`;
+        // 直连 DOM 的路径也走皮肤重写（setSkinRoot 启动期已置定模块级活动皮肤根）
+        loginScreen.style.backgroundImage = `url("${AssetManager.skinPath(safeUrl)}")`;
     } else {
         loginScreen.style.backgroundImage = 'none';
     }
@@ -579,6 +581,9 @@ window.addEventListener('pageshow', event => {
 
 async function bootGameMenu() {
     const project = await loadProjectConfig();
+    // 换肤：登录页先于游戏 boot 渲染，此处按 URL/localStorage > 项目默认（system.assetSkin）提前置定活动皮肤根
+    const startupSkin = AssetManager.resolveStartupSkin() ?? project.system?.assetSkin;
+    if (startupSkin) AssetManager.activateSkin(startupSkin);
     applyLoginConfig(project.system?.login || {});
     await applyLoginLayout();
     const rawCommand = sessionStorage.getItem('yijian18:boot-command');

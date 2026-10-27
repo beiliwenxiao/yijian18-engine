@@ -139,6 +139,11 @@ function initializeGameLoader() {
         if (!this.assetManager?.registerManifest) {
           throw new Error('场景 AssetManager 不支持稳定资源 Manifest');
         }
+        // 换肤兜底：URL/localStorage 未指定皮肤时，应用项目级默认（game.project.json system.assetSkin）
+        const projectSkin = gameLoader.project?.system?.assetSkin;
+        if (projectSkin && !this.assetManager.skinRoot) {
+          this.assetManager.setSkinRoot(projectSkin);
+        }
         const manifestResult = this.assetManager.registerManifest(gameLoader.project.assetManifest);
         this._resolveAssetManifestReady?.(manifestResult);
         this._resolveAssetManifestReady = null;
