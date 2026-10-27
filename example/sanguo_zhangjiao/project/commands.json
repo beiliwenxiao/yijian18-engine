@@ -1165,6 +1165,134 @@
   },
   {
     "commandType": "state.transaction",
+    "id": "story.s02.beg.children",
+    "name": "荒村：孩童乞讨已发生",
+    "transaction": {
+      "when": {
+        "all": [
+          {
+            "equals": "S02",
+            "path": "story.currentSceneId"
+          },
+          {
+            "notEquals": true,
+            "path": "story.s02BegChildren"
+          }
+        ]
+      },
+      "writes": [
+        {
+          "path": "s02BegChildren",
+          "target": "story",
+          "value": true
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s02.beg.adults",
+    "name": "荒村：大人乞讨阶段已开启",
+    "transaction": {
+      "when": {
+        "all": [
+          {
+            "equals": "S02",
+            "path": "story.currentSceneId"
+          },
+          {
+            "equals": true,
+            "path": "story.s02BegChildren"
+          },
+          {
+            "notEquals": true,
+            "path": "story.s02BegAdults"
+          }
+        ]
+      },
+      "writes": [
+        {
+          "path": "s02BegAdults",
+          "target": "story",
+          "value": true
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s02.beg.fight.prepare",
+    "name": "荒村：还手战斗·特殊昏迷武装",
+    "transaction": {
+      "when": {
+        "all": [
+          {
+            "equals": "S02",
+            "path": "story.currentSceneId"
+          },
+          {
+            "notEquals": true,
+            "path": "story.s02BegFight"
+          }
+        ]
+      },
+      "writes": [
+        {
+          "path": "s02BegFight",
+          "target": "story",
+          "value": true
+        },
+        {
+          "path": "pendingDefeatResolution",
+          "target": "story",
+          "value": "specialFaint"
+        },
+        {
+          "path": "specialFaintRescueType",
+          "target": "story",
+          "value": "villager"
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s02.beg.fight.clear",
+    "name": "荒村：还手战斗·特殊昏迷解除",
+    "transaction": {
+      "when": {
+        "all": [
+          {
+            "equals": "S02",
+            "path": "story.currentSceneId"
+          },
+          {
+            "equals": true,
+            "path": "story.s02BegFight"
+          }
+        ]
+      },
+      "writes": [
+        {
+          "path": "s02BegFight",
+          "target": "story",
+          "value": false
+        },
+        {
+          "path": "pendingDefeatResolution",
+          "target": "story",
+          "value": null
+        },
+        {
+          "path": "specialFaintRescueType",
+          "target": "story",
+          "value": null
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
     "id": "story.s09.enlist",
     "name": "加入黄巾军",
     "transaction": {

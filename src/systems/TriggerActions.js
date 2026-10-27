@@ -27,7 +27,7 @@ import { InputHints } from '../core/input/InputHints.js';
 /** 稳定的内置 action 契约，供 canonical 候选引用校验复用。 */
 export const DEFAULT_TRIGGER_ACTION_IDS = Object.freeze([
   'setVar', 'addVar', 'setFlag', 'toggleFlag', 'startDialogue', 'switchScene',
-  'loadRegion', 'teleportToChunk', 'giveReward', 'heal', 'startQuest',
+  'loadRegion', 'teleportToChunk', 'giveReward', 'takeReward', 'heal', 'startQuest',
   'completeQuest', 'showTip', 'playSound', 'playBgm', 'spawnEnemy', 'wait',
   'parallel', 'battleWin', 'battleLose', 'mount',
   'rescue.command', 'battle.command', 'construction.command', 'vehicle.command',
@@ -153,6 +153,41 @@ export function registerDefaultActions(triggerSystem) {
         try { ctx.onItemGained?.(item, player); } catch (error) { /* 表现降级不回滚已提交奖励 */ }
       }
       return true;
+    },
+
+    // ---- 扣取物品 ----
+    // takeReward{ items, strict }：从玩家背包扣除物品（giveReward 的镜像）。
+    //   items 每项 { id, quantity?, all? }：quantity=固定数量；all=true 扣光该物品全部持有量。
+    //   strict=true（默认）全或无：任一项不足则整体回滚并返回 { ok:false, code:'insufficientItems' }；
+    //   strict=false 尽量扣：有多少扣多少，永不失败（哄抢/搜身类剧情用）。
+    //   返回 taken 明细供诊断；表现层由触发器自身的 showTip 负责。
+    takeReward: (p, ctx) => {
+      const player = ctx.player;
+      const inventory = player?.getComponent?.('inventory');
+      if (!inventory?.getItemCount || !inventory.removeItem) return false;
+
+      const requestedItems = Array.isArray(p?.items) ? p.items : [];
+      const strict = p?.strict !== false;
+      const inventoryBefore = inventory.exportItems?.();
+      const taken = [];
+      try {
+        for (const raw of requestedItems) {
+          const itemId = String(raw?.id || '').trim();
+          if (!itemId) throw Object.assign(new Error('take item id missing'), { code: 'takeItemIdMissing' });
+          const available = Math.max(0, Math.floor(inventory.getItemCount(itemId)) || 0);
+          if (available === 0) continue; // 未持有/已扣空：直接跳过（all/strict 均视为无事发生）
+          const wanted = raw?.all === true ? available : Math.max(0, Math.floor(Number(raw?.quantity) || 0));
+          if (strict && available < wanted) {
+            throw Object.assign(new Error(`take item insufficient: ${itemId}`), { code: 'insufficientItems' });
+          }
+          const removed = wanted > 0 ? inventory.removeItem(itemId, Math.min(wanted, available)) : 0;
+          if (removed > 0) taken.push({ id: itemId, quantity: removed });
+        }
+      } catch (error) {
+        if (inventoryBefore && inventory?.loadItems) inventory.loadItems(inventoryBefore);
+        return { ok: false, committed: false, code: error.code || 'takeRewardFailed', error };
+      }
+      return { ok: true, taken };
     },
 
     // ---- 治疗 / 恢复 ----

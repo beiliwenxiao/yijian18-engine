@@ -86,41 +86,123 @@
     "title": "荒村抉择"
   },
   {
-    "id": "dialogue.s02.villageBeg",
+    "id": "dialogue.s02.beggarChildren",
     "nodes": {
+      "more": {
+        "speaker": "旁白",
+        "text": "果子刚递出去，断墙后又不声不响地探出好几张小脸，一双双眼睛盯着你的行囊。"
+      },
       "start": {
         "choices": [
           {
             "id": "give",
-            "nextNode": "turn",
-            "text": "把干粮分给他们"
+            "nextNode": "more",
+            "text": "把果子分给这孩子"
           },
           {
             "id": "refuse",
-            "nextNode": "turn",
-            "text": "摇头拒绝"
-          },
-          {
-            "id": "pacify",
-            "nextNode": "swarm",
-            "text": "握紧武器，但先不动手"
+            "nextNode": "more",
+            "text": "摇头，什么也没给"
           }
         ],
         "portrait": "refugee_woman",
-        "speaker": "老妇",
-        "text": "行行好……给口吃的吧……村里人三天没粮了，孩子饿得直哭……"
-      },
-      "swarm": {
-        "speaker": "旁白",
-        "text": "你握着武器没有拔。拳脚和木棍雨点般落下，眼前一次次发黑……"
-      },
-      "turn": {
-        "speaker": "旁白",
-        "text": "干粮还没递到一半，更多村民从破屋里涌了出来。他们眼里的光浑浊了——不是讨，是抢。"
+        "speaker": "乞讨孩童",
+        "text": "叔叔……行行好……俺三天没吃东西了……"
       }
     },
     "startNode": "start",
-    "title": "荒村乞讨"
+    "title": "孩童乞讨"
+  },
+  {
+    "id": "dialogue.s02.beggarChildrenMore",
+    "nodes": {
+      "scatter": {
+        "speaker": "旁白",
+        "text": "孩子们叽叽喳喳了一阵，终究一哄而散，钻回断墙后的破屋里去了。"
+      },
+      "start": {
+        "choices": [
+          {
+            "id": "give5",
+            "nextNode": "scatter",
+            "text": "再给（5颗野果）"
+          },
+          {
+            "id": "refuse5",
+            "nextNode": "scatter",
+            "text": "实在没有了"
+          }
+        ],
+        "portrait": "refugee_woman",
+        "speaker": "乞讨孩童",
+        "text": "还饿……求求你了……"
+      }
+    },
+    "startNode": "start",
+    "title": "孩童乞讨（更多孩子）"
+  },
+  {
+    "id": "dialogue.s02.beggarAdults",
+    "nodes": {
+      "anger": {
+        "speaker": "旁白",
+        "text": "人群静了一瞬。浑浊的眼睛里最后一点光熄灭了，他们抄起木棍和锄头，一步一步围拢过来。"
+      },
+      "hand": {
+        "speaker": "旁白",
+        "text": "食物刚脱手，人群便哄然失控了——不是讨，是抢。无数只手朝你的行囊抓来。"
+      },
+      "start": {
+        "choices": [
+          {
+            "id": "giveAdults",
+            "nextNode": "hand",
+            "text": "把食物分给他们"
+          },
+          {
+            "id": "refuseAdults",
+            "nextNode": "anger",
+            "text": "摇头不给"
+          }
+        ],
+        "portrait": "refugee_woman",
+        "speaker": "灾民",
+        "text": "大人行行好……全村人都快饿死了……给口吃的吧……"
+      }
+    },
+    "startNode": "start",
+    "title": "灾民乞讨"
+  },
+  {
+    "id": "dialogue.s02.beggarConfront",
+    "nodes": {
+      "start": {
+        "choices": [
+          {
+            "id": "pacify",
+            "nextNode": "takeBeating",
+            "text": "护住要害，不还手"
+          },
+          {
+            "id": "fight",
+            "nextNode": "drawWeapon",
+            "text": "拔刀还击"
+          }
+        ],
+        "speaker": "旁白",
+        "text": "棍棒和拳脚雨点般落下。这些人已经饿疯了——你要怎么办？"
+      },
+      "drawWeapon": {
+        "speaker": "旁白",
+        "text": "刀锋出鞘的寒光让围拢的人群顿了一顿，随即更加疯狂地扑了上来。"
+      },
+      "takeBeating": {
+        "speaker": "旁白",
+        "text": "你抱头蜷缩。拳脚和木棍雨点般落在身上，行囊被粗暴地撕开，眼前一次次发黑……"
+      }
+    },
+    "startNode": "start",
+    "title": "灾民围攻"
   },
   {
     "id": "dialogue.s02.awakening",
@@ -468,44 +550,161 @@
     "nodes": {
       "end": {
         "speaker": "旁白",
-        "text": "狼王仰天长啸，声震林野——扑击，开始了。"
+        "text": "它低吼一声，前爪压低——没有等你答话。"
       },
       "player": {
         "nextNode": "end",
         "portrait": "player",
         "speaker": "你",
-        "text": "篝火是你掀的，弟兄是你咬的……荒原之王，记住这笔账的不止你一个。今天，做个了断。"
+        "text": "……来吧。"
       },
       "start": {
         "nextNode": "player",
         "speaker": "旁白",
-        "text": "巨狼踏出阴影——足有寻常野狼两倍大，肩背的旧疤层层叠叠，双眼在暮色里烧着磷火。它没有立刻扑上来，而是绕着你缓缓踱步，像在掂量：这个手持破斧的两脚兽，值不值得它亮出獠牙。"
+        "text": "巨狼从枯木后走出来，比昨夜那几头大出一圈，肩背上的旧疤叠着旧疤。它在几步外停住，鼻子贴地嗅了嗅，又抬起头看你。"
       }
     },
     "startNode": "start",
-    "title": "荒原之王"
+    "title": "枯木后"
   },
   {
     "id": "dialogue.s01.wolfKingAftermath",
     "nodes": {
       "end": {
         "speaker": "旁白",
-        "text": "你取下狼王最锋利的那枚獠牙。粗糙的骨面上还带着余温——荒原的第一件战利品，也是第一件武器。前路畅通了。"
+        "text": "你用斧刃撬下它最尖的那颗。骨面还温着。前路通了。"
       },
       "player": {
         "nextNode": "end",
         "portrait": "player",
         "speaker": "你",
-        "text": "你咬碎过我的篝火，也逼我学会了在黑夜里不闭眼……你的牙跟了我吧。往后的路，替我一起往前走。"
+        "text": "……这颗牙，我拿走了。"
       },
       "start": {
         "nextNode": "player",
         "speaker": "旁白",
-        "text": "狼王庞大的身躯轰然侧倒，荒原忽然安静得可怕。风穿过林间，吹散了缠斗扬起的尘土——你赢了。这个念头落地的那一刻，握斧的手才开始发抖。"
+        "text": "狼王倒下去的时候，你还在挥。过了两息，才听见自己的喘气。荒原很静。握斧的手抖得厉害。"
       }
     },
     "startNode": "start",
-    "title": "狼牙为誓"
+    "title": "狼牙"
+  },
+  {
+    "id": "dialogue.s01.dawn",
+    "nodes": {
+      "start": {
+        "nextNode": "end",
+        "speaker": "旁白",
+        "text": "风从棚子的缝里灌了一夜。天蒙蒙亮，火堆只剩一小撮红。手指冻得伸不直，膝盖上的旧伤又开始发木。"
+      },
+      "end": {
+        "portrait": "player",
+        "speaker": "你",
+        "text": "……火快灭了。今天得翻过山去。"
+      }
+    },
+    "startNode": "start",
+    "title": "天光"
+  },
+  {
+    "id": "dialogue.s01.shelterBuilt",
+    "nodes": {
+      "start": {
+        "nextNode": "end",
+        "speaker": "旁白",
+        "text": "最后一捆枯草压上棚顶。木棍歪歪扭扭，四面漏风。你捶了捶发酸的腰。"
+      },
+      "end": {
+        "portrait": "player",
+        "speaker": "你",
+        "text": "……歪是歪了点。能住。"
+      }
+    },
+    "startNode": "start",
+    "title": "窝棚"
+  },
+  {
+    "id": "dialogue.s01.shelterIn",
+    "nodes": {
+      "start": {
+        "nextNode": "end",
+        "speaker": "旁白",
+        "text": "棚里没别的家当，就一堆干草铺的床。风从枝条缝里灌进来，带着枯草味。"
+      },
+      "end": {
+        "portrait": "player",
+        "speaker": "你",
+        "text": "……能挡风就行。"
+      }
+    },
+    "startNode": "start",
+    "title": "睡前"
+  },
+  {
+    "id": "dialogue.s01.stepOut",
+    "nodes": {
+      "end": {
+        "speaker": "旁白",
+        "text": "坡下的草动了动。一只野兔探出半个脑袋，看了你一眼，又钻了回去。"
+      },
+      "start": {
+        "nextNode": "tracks",
+        "speaker": "旁白",
+        "text": "雾没散。钻出窝棚，泥地上有几行新鲜的爪印，从棚边一直绕到坡下。"
+      },
+      "tracks": {
+        "nextNode": "end",
+        "portrait": "player",
+        "speaker": "你",
+        "text": "……夜里有什么东西在外头转。"
+      }
+    },
+    "startNode": "start",
+    "title": "爪印"
+  },
+  {
+    "id": "dialogue.s01.wolfPackAmbush",
+    "nodes": {
+      "end": {
+        "speaker": "旁白",
+        "text": "枯木后面亮起一双眼睛。接着是第二双、第三双。它们没叫，只是慢慢围上来。"
+      },
+      "eyes": {
+        "nextNode": "end",
+        "portrait": "player",
+        "speaker": "你",
+        "text": "……不对。"
+      },
+      "start": {
+        "nextNode": "eyes",
+        "speaker": "旁白",
+        "text": "枯树林里静得反常。风停了，连虫声都没有。"
+      }
+    },
+    "startNode": "start",
+    "title": "枯树林"
+  },
+  {
+    "id": "dialogue.s01.summit",
+    "nodes": {
+      "end": {
+        "speaker": "旁白",
+        "text": "山坳里升起一缕炊烟，细细的，升得很直。"
+      },
+      "smoke": {
+        "nextNode": "end",
+        "portrait": "player",
+        "speaker": "你",
+        "text": "……有烟。"
+      },
+      "start": {
+        "nextNode": "smoke",
+        "speaker": "旁白",
+        "text": "手指先摸到崖顶的草，人才跟着爬上来。风很硬，吹得眼睛发酸。"
+      }
+    },
+    "startNode": "start",
+    "title": "崖上"
   },
   {
     "id": "dialogue.s03.afterBattle",

@@ -516,6 +516,14 @@ export class SceneGameplaySystemAssembler {
         || { type: 'normalDeath' };
       const deathId = `player-death-${scene.playerDefeatService.nextDeathSequence}`;
       if (resolution.type === 'specialFaint') {
+        // 数据侧钩子：剧情昏迷（如 S01 狼群/商队、S02 乞讨被打晕）广播为触发器事件，
+        // 让内容以 trigger(playerSpecialFaint) 承接后续编排（旁白/军队路过等），引擎不写死剧情。
+        try {
+          scene.gameLoader?.triggerSystem?.fire?.('playerSpecialFaint', {
+            rescueType: resolution.rescueType || 'passerby',
+            sceneId: scene.currentSceneId
+          });
+        } catch (error) { /* 事件广播失败不阻断昏迷结算 */ }
         void Promise.resolve(executePlayerDeath({ player, deathId, resolution })).catch(error => {
           console.warn('SceneGameplaySystemAssembler: 特殊昏迷结算失败', error);
         });

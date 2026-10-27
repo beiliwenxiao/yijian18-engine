@@ -327,6 +327,54 @@
           }
         },
         {
+          "group": "S02-beg-children",
+          "id": "S02-beg-child-1",
+          "kind": "enemy",
+          "ref": "enemy.s02_beggar_child",
+          "tags": [
+            "story",
+            "beggar"
+          ],
+          "type": "ref",
+          "x": 520,
+          "y": 505,
+          "overrides": {
+            "aiActive": false
+          }
+        },
+        {
+          "group": "S02-beg-children-more",
+          "id": "S02-beg-child-2",
+          "kind": "enemy",
+          "ref": "enemy.s02_beggar_child",
+          "tags": [
+            "story",
+            "beggar"
+          ],
+          "type": "ref",
+          "x": 505,
+          "y": 545,
+          "overrides": {
+            "aiActive": false
+          }
+        },
+        {
+          "group": "S02-beg-children-more",
+          "id": "S02-beg-child-3",
+          "kind": "enemy",
+          "ref": "enemy.s02_beggar_child",
+          "tags": [
+            "story",
+            "beggar"
+          ],
+          "type": "ref",
+          "x": 530,
+          "y": 575,
+          "overrides": {
+            "aiActive": false
+          }
+        },
+        {
           "group": "S02-villagers-hostile",
           "id": "S02-villager-hostile-1",
           "kind": "enemy",
@@ -532,8 +580,8 @@
         {
           "id": "S02-binding-village-beg",
           "type": "trigger",
-          "name": "荒村乞讨区：村民乞讨",
-          "triggerId": "trg_s02_village_beg",
+          "name": "荒村乞讨区：孩童乞讨",
+          "triggerId": "trg_s02_beg_children_enter",
           "x": 450,
           "y": 430,
           "width": 360,

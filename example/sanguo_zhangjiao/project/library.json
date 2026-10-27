@@ -175,6 +175,18 @@
       "subType": "food"
     },
     {
+      "id": "resource.raw_rabbit_meat",
+      "name": "生兔肉",
+      "type": "material",
+      "imageId": "s01.item.rawWolfMeat",
+      "maxStack": 10,
+      "sprite": {
+        "height": 26,
+        "width": 34
+      },
+      "subType": "food"
+    },
+    {
       "id": "resource.wolf_hide",
       "name": "狼皮",
       "type": "material",
@@ -276,6 +288,28 @@
       "sprite": {
         "height": 36,
         "width": 44
+      },
+      "subType": "food",
+      "usable": true
+    },
+    {
+      "id": "food.roasted_rabbit_meat",
+      "name": "烤兔肉",
+      "type": "consumable",
+      "imageId": "s01.food.roastedWolfMeat",
+      "capabilities": [
+        {
+          "id": "consumable"
+        }
+      ],
+      "effect": {
+        "type": "heal",
+        "value": 25
+      },
+      "maxStack": 5,
+      "sprite": {
+        "height": 28,
+        "width": 36
       },
       "subType": "food",
       "usable": true
@@ -1181,6 +1215,50 @@
   "equipment": [],
   "enemies": [
     {
+      "ai": {
+        "detectionRange": 40,
+        "leashRange": 120,
+        "patrol": {
+          "enabled": true,
+          "mode": "pingpong",
+          "points": []
+        },
+        "pursuitRange": 0,
+        "telegraph": {
+          "windupMs": 0
+        }
+      },
+      "aiType": "defensive",
+      "attackRange": 0,
+      "experience": 3,
+      "id": "enemy.s01_rabbit",
+      "imageId": "skeleton.rabbit",
+      "level": 1,
+      "lootTable": [
+        {
+          "chance": 1,
+          "itemId": "resource.raw_rabbit_meat",
+          "maxQuantity": 2,
+          "minQuantity": 1
+        }
+      ],
+      "maxDamage": 1,
+      "name": "野兔",
+      "npcType": "monster",
+      "sprite": {
+        "height": 28,
+        "isStatic": false,
+        "width": 36
+      },
+      "stats": {
+        "attack": 0,
+        "defense": 0,
+        "maxHp": 8,
+        "speed": 80
+      },
+      "templateId": "small_game"
+    },
+    {
       "aiType": "aggressive",
       "attackRange": 50,
       "corpse": {
@@ -1445,6 +1523,29 @@
         "speed": 55
       },
       "templateId": "plague_villager"
+    },
+    {
+      "aiType": "aggressive",
+      "attackRange": 24,
+      "experience": 0,
+      "faction": "friendly",
+      "id": "enemy.s02_beggar_child",
+      "imageId": "s09.character.woundedSoldier",
+      "level": 1,
+      "name": "乞讨孩童",
+      "npcType": "enemy",
+      "sprite": {
+        "height": 44,
+        "isStatic": true,
+        "width": 34
+      },
+      "stats": {
+        "attack": 2,
+        "defense": 0,
+        "maxHp": 12,
+        "speed": 70
+      },
+      "templateId": "beggar_child"
     },
     {
       "aiType": "aggressive",

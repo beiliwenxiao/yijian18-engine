@@ -149,8 +149,20 @@ function validateKnownReferences(indexes, errors, actionIds) {
   };
   for (const [kind, definitions] of Object.entries(indexes)) {
     for (const definition of Object.values(definitions)) {
-      const actionLists = kind === 'triggers' ? list(definition.do) : [];
-      actionLists.forEach((action, index) => {
+      const actionLists = kind === 'triggers' ? [list(definition.do)] : [];
+      // branch[] 分支容器是 _runSteps 的一等步骤类型：递归校验每条子路径的 do 动作引用
+      const actionSteps = [];
+      const collectSteps = steps => {
+        for (const step of steps) {
+          if (Array.isArray(step?.branch)) {
+            step.branch.forEach(alternative => collectSteps(list(alternative?.do)));
+            continue;
+          }
+          actionSteps.push(step);
+        }
+      };
+      actionLists.forEach(collectSteps);
+      actionSteps.forEach((action, index) => {
         if (typeof action?.action !== 'string' || !actionIds.has(action.action)) {
           errors.push(makeError(ValidationCode.INVALID_REFERENCE, `${kind}.${definition.id}.do[${index}].action`, `未知 action: ${String(action?.action)}`));
           return;

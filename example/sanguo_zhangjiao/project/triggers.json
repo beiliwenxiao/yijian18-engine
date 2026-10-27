@@ -499,6 +499,13 @@
           "operation": "shelterCompleted"
         },
         "stepId": "shelter-completed"
+      },
+      {
+        "action": "startDialogue",
+        "params": {
+          "id": "dialogue.s01.shelterBuilt"
+        },
+        "stepId": "shelter-built-dialogue"
       }
     ],
     "editorScope": {
@@ -525,6 +532,13 @@
           "operation": "enterShelter"
         },
         "stepId": "enter-shelter"
+      },
+      {
+        "action": "startDialogue",
+        "params": {
+          "id": "dialogue.s01.shelterIn"
+        },
+        "stepId": "shelter-in-dialogue"
       }
     ],
     "id": "trg_s01_enter_shelter",
@@ -608,6 +622,7 @@
       }
     ],
     "id": "trg_s01_river_crossed",
+    "name": "跳石过河：推进撤离目标",
     "once": false,
     "when": {
       "params": {},
@@ -645,13 +660,61 @@
           "text": "崖壁上垂着藤蔓。{jump}跃向崖壁抓住它，攀到顶部翻越山崖，就能逃往废弃营地。"
         },
         "stepId": "hint-vine-climb"
+      },
+      {
+        "action": "startDialogue",
+        "params": {
+          "id": "dialogue.s01.summit"
+        },
+        "stepId": "summit-dialogue"
       }
     ],
     "id": "trg_s01_cliff_reached",
+    "name": "抵达山崖：攀岩教学、求生包与登崖对话",
     "once": false,
     "when": {
       "params": {},
       "type": "interact"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "startDialogue",
+        "params": {
+          "id": "dialogue.s01.dawn"
+        },
+        "stepId": "dawn-dialogue"
+      }
+    ],
+    "id": "trg_s01_dawn",
+    "name": "荒原：过夜醒来（第一夜的尽头）",
+    "once": true,
+    "when": {
+      "params": {
+        "definitionId": "story.s01.overnight"
+      },
+      "type": "state.transaction"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "startDialogue",
+        "params": {
+          "id": "dialogue.s01.stepOut"
+        },
+        "stepId": "step-out-dialogue"
+      }
+    ],
+    "id": "trg_s01_step_out",
+    "name": "荒原：走出庇护所（狼嚎与野兔）",
+    "once": true,
+    "when": {
+      "params": {
+        "definitionId": "story.s01.leaveShelter"
+      },
+      "type": "state.transaction"
     }
   },
   {
@@ -673,14 +736,22 @@
         }
       },
       {
+        "action": "spawnPlacements",
+        "params": {
+          "selector": {
+            "group": "S02-beg-children"
+          }
+        }
+      },
+      {
         "action": "showTip",
         "params": {
-          "text": "山道旁的荒村飘着炊烟。几个村民蹲在路边，朝你招手。"
+          "text": "山道旁的荒村炊烟零落。田埂上有灾民跪着挖树根，妇女们剥草皮充饥，几个孩子蹲在路旁朝你张望。"
         }
       }
     ],
     "id": "trg_s02_spawn_initial",
-    "name": "进入S02：荒村乞讨者",
+    "name": "进入S02：荒村惨状",
     "once": true,
     "when": {
       "params": {
@@ -2655,12 +2726,12 @@
       {
         "action": "startDialogue",
         "params": {
-          "id": "dialogue.s02.villageBeg"
+          "id": "dialogue.s02.beggarChildren"
         }
       }
     ],
-    "id": "trg_s02_village_beg",
-    "name": "荒村：村民乞讨",
+    "id": "trg_s02_beg_children_enter",
+    "name": "荒村：孩童乞讨（进入乞讨区）",
     "once": true,
     "when": {
       "params": {},
@@ -2670,12 +2741,440 @@
   {
     "do": [
       {
+        "action": "takeReward",
+        "params": {
+          "items": [
+            {
+              "id": "resource.wild_berry",
+              "quantity": 2
+            }
+          ]
+        },
+        "stepId": "beg-children-first-give"
+      },
+      {
+        "action": "state.transaction",
+        "params": {
+          "definitionId": "story.s02.beg.children"
+        },
+        "stepId": "beg-children-fact"
+      },
+      {
+        "action": "spawnPlacements",
+        "params": {
+          "selector": {
+            "group": "S02-beg-children-more"
+          }
+        },
+        "stepId": "beg-children-more-spawn"
+      }
+    ],
+    "id": "trg_s02_beg_children_round1",
+    "name": "荒村：孩童乞讨·第一轮（给果子则扣2野果，更多孩子围上）",
+    "once": true,
+    "when": {
+      "params": {
+        "id": "dialogue.s02.beggarChildren"
+      },
+      "type": "dialogueChoice"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "takeReward",
+        "params": {
+          "items": [
+            {
+              "id": "resource.wild_berry",
+              "quantity": 5
+            }
+          ]
+        },
+        "stepId": "beg-children-second-give"
+      }
+    ],
+    "id": "trg_s02_beg_children_round2",
+    "name": "荒村：孩童乞讨·第二轮（给5野果或不给，孩子都散去）",
+    "once": true,
+    "when": {
+      "params": {
+        "id": "dialogue.s02.beggarChildrenMore"
+      },
+      "type": "dialogueChoice"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "despawnPlacements",
+        "params": {
+          "selector": {
+            "group": "S02-beg-children"
+          }
+        },
+        "stepId": "beg-children-despawn"
+      },
+      {
+        "action": "despawnPlacements",
+        "params": {
+          "selector": {
+            "group": "S02-beg-children-more"
+          }
+        },
+        "stepId": "beg-children-more-despawn"
+      },
+      {
+        "action": "state.transaction",
+        "params": {
+          "definitionId": "story.s02.beg.adults"
+        },
+        "stepId": "beg-adults-fact"
+      },
+      {
+        "action": "startDialogue",
+        "params": {
+          "id": "dialogue.s02.beggarAdults"
+        },
+        "stepId": "beg-adults-dialogue"
+      }
+    ],
+    "id": "trg_s02_beg_children_scatter",
+    "name": "荒村：孩子散去，大人围上乞讨",
+    "once": true,
+    "when": {
+      "params": {
+        "id": "dialogue.s02.beggarChildrenMore"
+      },
+      "type": "dialogueEnd"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "setVar",
+        "params": {
+          "key": "s02BegPaid",
+          "value": false
+        },
+        "stepId": "beg-adults-paid-init"
+      },
+      {
+        "branch": [
+          {
+            "do": [
+              {
+                "action": "setVar",
+                "params": {
+                  "key": "s02BegPaid",
+                  "value": true
+                },
+                "stepId": "beg-adults-paid-berry-mark"
+              },
+              {
+                "action": "takeReward",
+                "params": {
+                  "items": [
+                    {
+                      "id": "resource.wild_berry",
+                      "quantity": 20
+                    }
+                  ]
+                },
+                "stepId": "beg-adults-paid-berry-take"
+              },
+              {
+                "action": "takeReward",
+                "params": {
+                  "items": [
+                    {
+                      "id": "resource.food",
+                      "all": true
+                    },
+                    {
+                      "id": "resource.wild_berry",
+                      "all": true
+                    },
+                    {
+                      "id": "resource.apple",
+                      "all": true
+                    },
+                    {
+                      "id": "resource.raw_wolf_meat",
+                      "all": true
+                    },
+                    {
+                      "id": "resource.raw_rabbit_meat",
+                      "all": true
+                    },
+                    {
+                      "id": "food.roasted_wolf_meat",
+                      "all": true
+                    },
+                    {
+                      "id": "food.roasted_rabbit_meat",
+                      "all": true
+                    }
+                  ],
+                  "strict": false
+                },
+                "stepId": "beg-adults-rob-all-berry"
+              },
+              {
+                "action": "showTip",
+                "params": {
+                  "text": "食物刚递出去，人群便哄然失控——他们抢走了你行囊里所有能吃的东西！"
+                },
+                "stepId": "beg-adults-rob-tip-berry"
+              }
+            ],
+            "when": {
+              "op": "hasItem",
+              "item": "resource.wild_berry",
+              "count": 20
+            }
+          },
+          {
+            "do": [
+              {
+                "action": "setVar",
+                "params": {
+                  "key": "s02BegPaid",
+                  "value": true
+                },
+                "stepId": "beg-adults-paid-meat-mark"
+              },
+              {
+                "action": "takeReward",
+                "params": {
+                  "items": [
+                    {
+                      "id": "resource.raw_wolf_meat",
+                      "quantity": 5
+                    }
+                  ]
+                },
+                "stepId": "beg-adults-paid-meat-take"
+              },
+              {
+                "action": "takeReward",
+                "params": {
+                  "items": [
+                    {
+                      "id": "resource.food",
+                      "all": true
+                    },
+                    {
+                      "id": "resource.wild_berry",
+                      "all": true
+                    },
+                    {
+                      "id": "resource.apple",
+                      "all": true
+                    },
+                    {
+                      "id": "resource.raw_wolf_meat",
+                      "all": true
+                    },
+                    {
+                      "id": "resource.raw_rabbit_meat",
+                      "all": true
+                    },
+                    {
+                      "id": "food.roasted_wolf_meat",
+                      "all": true
+                    },
+                    {
+                      "id": "food.roasted_rabbit_meat",
+                      "all": true
+                    }
+                  ],
+                  "strict": false
+                },
+                "stepId": "beg-adults-rob-all-meat"
+              },
+              {
+                "action": "showTip",
+                "params": {
+                  "text": "狼肉刚递出去，人群便哄然失控——他们抢走了你行囊里所有能吃的东西！"
+                },
+                "stepId": "beg-adults-rob-tip-meat"
+              }
+            ],
+            "when": {
+              "op": "hasItem",
+              "item": "resource.raw_wolf_meat",
+              "count": 5
+            }
+          }
+        ],
+        "stepId": "beg-adults-pay-branch"
+      }
+    ],
+    "id": "trg_s02_beg_adults_choice",
+    "name": "荒村：大人乞讨抉择（给20野果或5狼肉则被哄抢，不给则酝酿围攻）",
+    "once": true,
+    "when": {
+      "params": {
+        "id": "dialogue.s02.beggarAdults"
+      },
+      "type": "dialogueChoice"
+    }
+  },
+  {
+    "do": [
+      {
+        "branch": [
+          {
+            "do": [
+              {
+                "action": "scenario.command",
+                "params": {
+                  "operation": "army.rescue.faint",
+                  "scenarioId": "scenario.command.army.rescue.faint"
+                },
+                "stepId": "beg-adults-robbed-faint"
+              },
+              {
+                "action": "startDialogue",
+                "params": {
+                  "id": "dialogue.s02.prologue"
+                },
+                "stepId": "beg-adults-robbed-prologue"
+              }
+            ],
+            "when": {
+              "op": "var",
+              "name": "s02BegPaid"
+            }
+          }
+        ],
+        "stepId": "beg-adults-robbed-branch"
+      },
+      {
+        "branch": [
+          {
+            "do": [
+              {
+                "action": "showTip",
+                "params": {
+                  "text": "人群静了一瞬。浑浊的眼睛里最后一点光熄灭了，他们抄起木棍和锄头，一步一步围拢过来……"
+                },
+                "stepId": "beg-adults-escalate-tip"
+              },
+              {
+                "action": "startDialogue",
+                "params": {
+                  "id": "dialogue.s02.beggarConfront"
+                },
+                "stepId": "beg-adults-confront-dialogue"
+              }
+            ],
+            "when": {
+              "op": "not",
+              "arg": {
+                "op": "var",
+                "name": "s02BegPaid"
+              }
+            }
+          }
+        ],
+        "stepId": "beg-adults-escalate-branch"
+      }
+    ],
+    "id": "trg_s02_beg_adults_end",
+    "name": "荒村：乞讨对话收尾（给过→被抢后昏迷；没给→村民转敌对）",
+    "once": true,
+    "when": {
+      "params": {
+        "id": "dialogue.s02.beggarAdults"
+      },
+      "type": "dialogueEnd"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "takeReward",
+        "params": {
+          "items": [
+            {
+              "id": "resource.food",
+              "all": true
+            },
+            {
+              "id": "resource.wild_berry",
+              "all": true
+            },
+            {
+              "id": "resource.apple",
+              "all": true
+            },
+            {
+              "id": "resource.raw_wolf_meat",
+              "all": true
+            },
+            {
+              "id": "resource.raw_rabbit_meat",
+              "all": true
+            },
+            {
+              "id": "food.roasted_wolf_meat",
+              "all": true
+            },
+            {
+              "id": "food.roasted_rabbit_meat",
+              "all": true
+            }
+          ],
+          "strict": false
+        },
+        "stepId": "beg-pacifist-rob-all"
+      },
+      {
+        "action": "showTip",
+        "params": {
+          "text": "食物被抢得一颗不剩。拳脚和木棍雨点般落在身上，你护住头蜷缩在地，眼前一次次发黑……"
+        },
+        "stepId": "beg-pacifist-tip"
+      },
+      {
+        "action": "scenario.command",
+        "params": {
+          "operation": "army.rescue.faint",
+          "scenarioId": "scenario.command.army.rescue.faint"
+        },
+        "stepId": "beg-pacifist-faint"
+      },
+      {
+        "action": "startDialogue",
+        "params": {
+          "id": "dialogue.s02.prologue"
+        },
+        "stepId": "beg-pacifist-prologue"
+      }
+    ],
+    "id": "trg_s02_beg_pacifist",
+    "name": "荒村：不还手（食物被抢光，被打昏迷，村民保持友善）",
+    "once": true,
+    "when": {
+      "params": {
+        "choiceId": "pacify",
+        "id": "dialogue.s02.beggarConfront"
+      },
+      "type": "dialogueChoice"
+    }
+  },
+  {
+    "do": [
+      {
         "action": "despawnPlacements",
         "params": {
           "selector": {
             "group": "S02-villagers-calm"
           }
-        }
+        },
+        "stepId": "beg-fight-calm-despawn"
       },
       {
         "action": "spawnPlacements",
@@ -2683,22 +3182,31 @@
           "selector": {
             "group": "S02-villagers-hostile"
           }
-        }
+        },
+        "stepId": "beg-fight-hostile-spawn"
       },
       {
         "action": "showTip",
         "params": {
-          "text": "粮食没能递出去。村民们眼里的光浑浊了，嘶吼着围拢上来——"
-        }
+          "text": "刀锋出鞘的寒光让人群顿了一顿，随即更加疯狂地扑了上来！"
+        },
+        "stepId": "beg-fight-tip"
+      },
+      {
+        "action": "state.transaction",
+        "params": {
+          "definitionId": "story.s02.beg.fight.prepare"
+        },
+        "stepId": "beg-fight-prepare"
       }
     ],
-    "id": "trg_s02_village_escalate",
-    "name": "荒村：村民转为敌对",
+    "id": "trg_s02_beg_fight",
+    "name": "荒村：还手（村民转红参战，武装特殊昏迷——打输不弹复活窗）",
     "once": true,
     "when": {
       "params": {
-        "choiceId": "confront",
-        "id": "dialogue.s02.villageBeg"
+        "choiceId": "fight",
+        "id": "dialogue.s02.beggarConfront"
       },
       "type": "dialogueChoice"
     }
@@ -2706,74 +3214,97 @@
   {
     "do": [
       {
-        "action": "despawnPlacements",
+        "action": "state.transaction",
         "params": {
-          "selector": {
-            "group": "S02-villagers-calm"
-          }
-        }
+          "definitionId": "story.s02.beg.fight.clear"
+        },
+        "stepId": "beg-fight-win-clear"
       },
       {
         "action": "showTip",
         "params": {
-          "text": "你握紧了武器，却没有拔出来。拳脚和木棍雨点般落在身上，眼前一次次发黑……"
-        }
+          "text": "灾民们散开了。力竭的你扶着断墙滑坐在地，眼前一黑——"
+        },
+        "stepId": "beg-fight-win-tip"
       },
       {
         "action": "scenario.command",
         "params": {
           "operation": "army.rescue.faint",
           "scenarioId": "scenario.command.army.rescue.faint"
-        }
+        },
+        "stepId": "beg-fight-win-faint"
       },
       {
         "action": "startDialogue",
         "params": {
           "id": "dialogue.s02.prologue"
-        }
+        },
+        "stepId": "beg-fight-win-prologue"
       }
     ],
-    "id": "trg_s02_village_pacifist",
-    "name": "荒村：不动手被打晕",
-    "once": true,
-    "when": {
-      "params": {
-        "choiceId": "pacify",
-        "id": "dialogue.s02.villageBeg"
-      },
-      "type": "dialogueChoice"
-    }
-  },
-  {
-    "do": [
-      {
-        "action": "showTip",
-        "params": {
-          "text": "村民们散开了。力竭的你扶着断墙滑坐在地，眼前一黑——"
-        }
-      },
-      {
-        "action": "scenario.command",
-        "params": {
-          "operation": "army.rescue.faint",
-          "scenarioId": "scenario.command.army.rescue.faint"
-        }
-      },
-      {
-        "action": "startDialogue",
-        "params": {
-          "id": "dialogue.s02.prologue"
-        }
-      }
-    ],
-    "id": "trg_s02_village_cleared",
-    "name": "荒村：力竭昏迷",
+    "id": "trg_s02_beg_fight_win",
+    "name": "荒村：还手打赢（力竭昏迷）",
     "once": true,
     "when": {
       "params": {
         "group": "S02-villagers-hostile"
       },
       "type": "waveCleared"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "state.transaction",
+        "params": {
+          "definitionId": "story.s02.beg.fight.clear"
+        },
+        "stepId": "beg-fight-lose-clear"
+      },
+      {
+        "action": "showTip",
+        "params": {
+          "text": "你被打晕了——"
+        },
+        "stepId": "beg-fight-lose-tip"
+      },
+      {
+        "action": "despawnPlacements",
+        "params": {
+          "selector": {
+            "group": "S02-villagers-hostile"
+          }
+        },
+        "stepId": "beg-fight-lose-despawn"
+      },
+      {
+        "action": "scenario.command",
+        "params": {
+          "operation": "army.rescue.faint",
+          "scenarioId": "scenario.command.army.rescue.faint"
+        },
+        "stepId": "beg-fight-lose-faint"
+      },
+      {
+        "action": "startDialogue",
+        "params": {
+          "id": "dialogue.s02.prologue"
+        },
+        "stepId": "beg-fight-lose-prologue"
+      }
+    ],
+    "id": "trg_s02_beg_fight_lose",
+    "name": "荒村：还手打输（被打晕，殊途同归昏迷）",
+    "once": true,
+    "if": {
+      "var": "story.s02BegFight"
+    },
+    "when": {
+      "params": {
+        "sceneId": "S02"
+      },
+      "type": "playerSpecialFaint"
     }
   },
   {
@@ -2861,10 +3392,11 @@
         "stepId": "spawn-wolf-pack"
       },
       {
-        "action": "showTip",
+        "action": "startDialogue",
         "params": {
-          "text": "林间的阴影里竖起了耳朵——狼群压低身子，围拢过来。"
-        }
+          "id": "dialogue.s01.wolfPackAmbush"
+        },
+        "stepId": "wolf-pack-ambush-dialogue"
       }
     ],
     "editorScope": {
