@@ -26,7 +26,7 @@ import { mergeShardedProject } from '../src/core/projectShards.js';
 
 // 页面注册表：页面 ID → HTML 文件名
 export const EDITOR_PAGES = Object.freeze({
-  'game-list': 'index.html',
+  'game-list': 'game-list.html',
   'scene-workflow': 'scene-workflow.html',
   'quest-editor': 'quest-editor.html',
   'storyline-editor': 'storyline-editor.html',
@@ -38,7 +38,8 @@ export const EDITOR_PAGES = Object.freeze({
   'world-map-editor': 'world-map-editor.html',
   'panel-editor': 'panel-editor.html',
   'system-editor': 'system-editor.html',
-  'skeleton-editor': 'skeleton-editor.html'
+  'skeleton-editor': 'skeleton-editor.html',
+  'transaction-editor': 'transaction-editor.html'
 });
 
 // 导航项定义（分组即显示分组，组间渲染分隔线）。

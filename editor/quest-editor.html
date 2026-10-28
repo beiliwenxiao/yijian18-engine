@@ -42,6 +42,7 @@
             const editor = new QuestWizardEditor(document.getElementById('quest-wizard-container'), {
                 canonicalSession: ctx._canonicalEditorSession('project'),
                 projectPath: ctx._canonicalProjectPath(),
+                gameId,
                 getSceneList: () => ctx.dataManager.getGameScenes(gameId),
                 getSceneDocuments: () => ctx.getSceneDocuments(),
                 // 场景出生条件联动：任务编辑器内一键把联动计划写回场景文件（与场景编辑器同一 canonical 命令通道）

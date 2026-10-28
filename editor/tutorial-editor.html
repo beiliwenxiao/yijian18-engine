@@ -47,6 +47,10 @@
                 allowedTargets: ['tutorials']
             });
             await editor.init();
+
+            // 支持从任务向导等入口跳转定位：tutorial-editor.html?gameId=X#<tutorialId>
+            const hashId = decodeURIComponent(window.location.hash.slice(1) || '');
+            if (hashId) editor.selectById?.(hashId, 'tutorials');
         })().catch(error => {
             console.error('[TutorialEditorPage] 初始化失败', error);
             const container = document.getElementById('tutorial-editor-container');

@@ -48,6 +48,10 @@
                 canonicalSession: ctx._canonicalEditorSession('project')
             });
             await editor.init();
+
+            // 支持从任务向导等入口跳转定位：dialogue-editor.html?gameId=X#<dialogId>
+            const hashId = decodeURIComponent(window.location.hash.slice(1) || '');
+            if (hashId) editor.selectById?.(hashId);
         })().catch(error => {
             console.error('[DialogueGraphEditor] 初始化失败', error);
             const container = document.getElementById('dialogue-editor-container');

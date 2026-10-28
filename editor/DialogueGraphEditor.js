@@ -149,6 +149,38 @@ export class DialogueGraphEditor {
 
   // ---- 数据辅助 ----
   _dlg() { return this.dialogues[this.selectedIndex]; }
+
+  /** 按 ID 选中对话（deep-link 定位入口，如任务向导「🔗 对话图编辑」跳转），未找到返回 false */
+  selectById(id) {
+    const key = String(id ?? '').trim();
+    if (!key) return false;
+    const index = this.dialogues.findIndex(dialogue => String(dialogue?.id || '') === key);
+    if (index < 0) return false;
+    this._commitDetail();
+    this.selectedIndex = index;
+    this._renderList();
+    this._renderDetail();
+    return true;
+  }
+
+  /** 任务引用标注映射：dialogueId → 引用它的任务名列表（quests[].steps 的 dialogue 步骤 + giver 接取对话） */
+  _questReferenceLabels() {
+    const refs = new Map();
+    for (const quest of (Array.isArray(this.project?.quests) ? this.project.quests : [])) {
+      const label = quest?.title || quest?.id || '';
+      if (!label) continue;
+      const dialogueIds = new Set();
+      if (quest?.giver?.dialogueId) dialogueIds.add(String(quest.giver.dialogueId));
+      for (const step of (Array.isArray(quest?.steps) ? quest.steps : [])) {
+        if (step?.type === 'dialogue' && step?.dialogueId) dialogueIds.add(String(step.dialogueId));
+      }
+      for (const dialogueId of dialogueIds) {
+        if (!refs.has(dialogueId)) refs.set(dialogueId, []);
+        refs.get(dialogueId).push(label);
+      }
+    }
+    return refs;
+  }
   _nodeIds() {
     const d = this._dlg();
     return d && d.nodes ? Object.keys(d.nodes) : [];
@@ -226,6 +258,7 @@ export class DialogueGraphEditor {
       .dlg-item.disabled{opacity:0.45;}
       .dlg-item .di-title{font-weight:bold;font-size:13px;}
       .dlg-item .di-id{font-size:11px;color:#9ab;}
+      .dlg-item .di-ref{font-size:11px;color:#7ec8a0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
       .dlg-detail{flex:1;padding:16px;overflow-y:auto;}
       .dlg-detail .row{margin-bottom:10px;}
       .dlg-detail label{display:block;font-size:12px;color:#9ab;margin-bottom:3px;}
@@ -308,6 +341,7 @@ export class DialogueGraphEditor {
     }
 
     list.innerHTML = '';
+    const questRefs = this._questReferenceLabels();
     filtered.forEach((d) => {
       const i = this.dialogues.indexOf(d);
       const item = document.createElement('div');
@@ -316,11 +350,13 @@ export class DialogueGraphEditor {
       const cnt = d.nodes ? Object.keys(d.nodes).length : 0;
       const statusIcon = disabled ? '⏸' : '▶';
       const sceneLabel = d.scene || d.act || '';
+      const refLabel = questRefs.get(String(d.id || ''))?.join('、') || '';
       item.innerHTML = `<div style="display:flex;align-items:center;gap:6px;">
           <span class="dlg-status-icon" data-toggle="${i}" title="启用/停用" style="cursor:pointer;flex-shrink:0;">${statusIcon}</span>
           <div style="flex:1;overflow:hidden;">
             <div class="di-title">${this._esc(d.title || d.id || '(未命名)')}</div>
             <div class="di-id">${this._esc(d.id || '')} · ${cnt} 节点${sceneLabel ? ' · ' + this._esc(sceneLabel) : ''}</div>
+            ${refLabel ? `<div class="di-ref" title="被任务引用：修改会影响这些任务的步骤">📋 ${this._esc(refLabel)}</div>` : ''}
           </div>
         </div>`;
       // 状态图标点击切换启用/停用

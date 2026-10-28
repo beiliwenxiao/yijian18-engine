@@ -26,6 +26,7 @@ import {
   applyConditionSyncPlan,
   conditionSyncPlanSignature
 } from './QuestSceneConditionSync.js';
+import { buildPageUrl } from './EditorShared.js';
 
 const clone = value => structuredClone(value);
 const list = value => Array.isArray(value) ? value : [];
@@ -56,13 +57,14 @@ const ACCEPT_SOURCES = Object.freeze([
  * 保存契约：validateQuestDefinition 全部通过后才允许提交（产物由运行时编译器二次校验）。
  */
 export class QuestWizardEditor {
-  constructor(container, { canonicalSession, projectPath = '', getSceneList = () => [], getSceneDocuments = () => [], saveSceneDocument = null, openScenePlacement = null } = {}) {
+  constructor(container, { canonicalSession, projectPath = '', gameId = '', getSceneList = () => [], getSceneDocuments = () => [], saveSceneDocument = null, openScenePlacement = null } = {}) {
     if (!(container instanceof HTMLElement)) throw new TypeError('QuestWizardEditor requires a container element');
     if (!canonicalSession) throw new TypeError('QuestWizardEditor requires a shared CanonicalEditorSession');
     this.container = container;
     this.canonicalSession = canonicalSession;
     this.deps = { saveSceneDocument, openScenePlacement };
     this.projectPath = projectPath || canonicalSession.sourceUri;
+    this.gameId = gameId; // 用于 deep-link 跳转（如对话步骤 → 对话图编辑器）
     this.getSceneList = typeof getSceneList === 'function' ? getSceneList : () => [];
     this.getSceneDocuments = typeof getSceneDocuments === 'function' ? getSceneDocuments : () => [];
     this.project = null;
@@ -534,6 +536,7 @@ export class QuestWizardEditor {
         <div class="qwe-field qwe-check-row"><label class="qwe-check"><input type="checkbox" data-step-field="await" ${step.await === true ? 'checked' : ''}>等待对话完成后再继续</label></div>
         <div class="qwe-field full">
           <button type="button" data-action="toggle-dlg-edit" data-dlg-id="${this._escape(step.dialogueId || '')}">${expanded ? '▲ 收起对话编辑' : '▼ 就地编辑对话内容'}</button>
+          ${step.dialogueId ? `<button type="button" data-action="open-dlg-graph" data-dlg-id="${this._escape(step.dialogueId)}" title="在新窗口打开「💬 对话」图编辑器并定位该对话">🔗 对话图编辑</button>` : ''}
           ${expanded ? this._dialogueEditHtml(dialogue) : ''}
         </div>`;
     } else if (type === 'tutorial') {
@@ -872,6 +875,13 @@ export class QuestWizardEditor {
       if (this._expandedDlgSteps.has(dlgId)) this._expandedDlgSteps.delete(dlgId);
       else this._expandedDlgSteps.add(dlgId);
       this._renderDetail();
+    });
+    // 对话图编辑：deep-link 跳转「💬 对话」页并定位该对话（分支/条件等完整编辑在那里）
+    card.querySelector('[data-action="open-dlg-graph"]')?.addEventListener('click', event => {
+      const dlgId = event.currentTarget.dataset.dlgId;
+      if (!dlgId) return;
+      if (!this.gameId) return this._toast('缺少 gameId，无法跳转', 'error');
+      window.open(`${buildPageUrl('dialogue-editor', { gameId: this.gameId })}#${encodeURIComponent(dlgId)}`, '_blank');
     });
     const dialogue = this._getDialogue(step.dialogueId);
     if (dialogue) this._bindDialogueEdit(card, dialogue);

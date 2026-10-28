@@ -39,6 +39,14 @@ const text = v => String(v ?? '').trim();
 let WHEN_TYPES = getTriggerEvents();
 let ACTION_TYPES = getTriggerActions();
 
+// 可编辑目标全集与按钮文案（多入口分工：allowedTargets 限定入口可见视图，数据同源不变）
+const TRIGGER_EDITOR_TARGETS = Object.freeze(['storyline', 'triggers', 'tutorials']);
+const TRIGGER_EDITOR_TARGET_LABELS = Object.freeze({
+  storyline: '📖 剧情线总览',
+  triggers: 'Trigger 业务规则',
+  tutorials: 'Tutorial 教学步骤'
+});
+
 export class TriggerEditor {
   /**
    * @param {HTMLElement} container
@@ -61,9 +69,15 @@ export class TriggerEditor {
     this.triggers = [];
     this.selectedIndex = -1;
     // 全 Trigger 化：可编辑目标收敛为 storyline / triggers / tutorials（flowGroups 已删除）
-    this.target = ['storyline', 'triggers', 'tutorials'].includes(options.target)
+    // 多入口分工：allowedTargets 限定本入口可见/可切的视图（缺省全部三视图，壳页传子集实现聚焦）
+    const targetGate = Array.isArray(options.allowedTargets) && options.allowedTargets.length
+      ? options.allowedTargets
+      : TRIGGER_EDITOR_TARGETS;
+    this.allowedTargets = TRIGGER_EDITOR_TARGETS.filter(t => targetGate.includes(t));
+    if (this.allowedTargets.length === 0) this.allowedTargets = [...TRIGGER_EDITOR_TARGETS]; // 非法门控回退全视图
+    this.target = TRIGGER_EDITOR_TARGETS.includes(options.target) && this.allowedTargets.includes(options.target)
       ? options.target
-      : 'triggers';
+      : this.allowedTargets[0];
     this.tutorialPanel = new TutorialEditorPanel(this);
     // Trigger 执行轨迹面板（运行时轨迹 + 事件探针，只读调试）
     this.triggerTracePanel = new TriggerTracePanel(this);
@@ -178,9 +192,15 @@ export class TriggerEditor {
     )).join('');
   }
 
+  /** 目标归一化：非法名或不在本入口 allowedTargets 内时回退到首个允许视图 */
+  _normalizeTarget(target) {
+    if (TRIGGER_EDITOR_TARGETS.includes(target) && this.allowedTargets.includes(target)) return target;
+    return this.allowedTargets[0];
+  }
+
   /** 切换编辑目标（storyline 总览 ↔ triggers ↔ tutorials） */
   _switchTarget(target) {
-    const normalized = ['storyline', 'triggers', 'tutorials'].includes(target) ? target : 'triggers';
+    const normalized = this._normalizeTarget(target);
     if (normalized === this.target) return;
     this._commitDetail();
     if (this.target !== 'storyline') this.project[this.target] = this.triggers; // 回写当前（storyline 无独立数据）
@@ -308,7 +328,7 @@ export class TriggerEditor {
   getTriggerById(id) { return this.getTriggers().find(trigger => trigger.id === id) || null; }
 
   selectById(id, target = 'triggers') {
-    const normalized = ['storyline', 'triggers', 'tutorials'].includes(target) ? target : 'triggers';
+    const normalized = this._normalizeTarget(target);
     if (!id || !this.project) return false;
     if (this.target !== normalized) this._switchTarget(normalized);
     const index = this.triggers.findIndex(definition => definition.id === id);
@@ -396,9 +416,7 @@ export class TriggerEditor {
     this.container.innerHTML = `
       <div class="trg-root">
         <div class="trg-target-tabs" id="trg-target-tabs">
-          <button data-target="storyline">📖 剧情线总览</button>
-          <button data-target="triggers">Trigger 业务规则</button>
-          <button data-target="tutorials">Tutorial 教学步骤</button>
+          ${this.allowedTargets.map(t => `<button data-target="${t}">${TRIGGER_EDITOR_TARGET_LABELS[t]}</button>`).join('')}
         </div>
         <div class="trg-toolbar">
           <select id="trg-filter-enabled" title="筛选启用/停用" style="padding:4px;background:#26304e;color:#fff;border:1px solid #3a4a7e;border-radius:3px;font-size:12px;">
