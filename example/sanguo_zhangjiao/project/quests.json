@@ -344,12 +344,21 @@
         "type": "objective"
       },
       {
-        "id": "reachCliff",
+        "id": "crossRiver",
         "mapTargets": [
           {
             "sceneId": "S01",
             "targetId": "S01-river-far-bank"
-          },
+          }
+        ],
+        "objectiveType": "commit.fact",
+        "target": "story.s01.riverCrossed",
+        "title": "跳石过河",
+        "type": "objective"
+      },
+      {
+        "id": "reachCliff",
+        "mapTargets": [
           {
             "sceneId": "S01",
             "targetId": "S01-cliff-base"
@@ -357,7 +366,7 @@
         ],
         "objectiveType": "commit.fact",
         "target": "story.s01.cliffReached",
-        "title": "翻越天堑，逃往村庄",
+        "title": "攀上崖壁，逃往村庄",
         "type": "objective"
       }
     ],
