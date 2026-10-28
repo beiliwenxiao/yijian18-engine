@@ -35,11 +35,12 @@ export class TaskGraphProjectionView {
     for (const task of tasks.slice(0, 3)) {
       const taskRequiredCount = Math.max(0, Math.floor(Number(task.requiredCount) || 0));
       const taskCurrentCount = Math.min(taskRequiredCount, Math.max(0, Math.floor(Number(task.currentCount) || 0)));
+      // 任务标题行不显示总步数计数——多目标剧情链的 x/N 总进度是噪声，总览留给任务面板
       lines.push({
         text: task.title,
         accent: true,
         strong: false,
-        progress: taskRequiredCount > 0 ? `${taskCurrentCount}/${taskRequiredCount}` : null,
+        progress: null,
         completed: taskRequiredCount > 0 && taskCurrentCount >= taskRequiredCount
       });
       for (const node of task.nodes.slice(0, 3)) {
@@ -49,7 +50,8 @@ export class TaskGraphProjectionView {
           text: `• ${node.label || node.nodeId}`,
           accent: false,
           strong: false,
-          progress: node.isObjective === false ? null : `${currentCount}/${requiredCount}`,
+          // 仅计数型目标（requiredCount > 1）显示 x/y；requiredCount=1 的剧情步只靠完成变绿反馈
+          progress: node.isObjective && requiredCount > 1 ? `${currentCount}/${requiredCount}` : null,
           completed: currentCount >= requiredCount
         });
       }

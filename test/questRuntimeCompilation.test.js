@@ -260,7 +260,7 @@ describe('阶段③ S01 迁移契约：quest 编译产物与手写任务图逐�
     });
   });
 
-  it('任务图结构：18 objective 线性链 + 裸 start/complete 节点（存档 nodeStates 寻址兼容）', () => {
+  it('任务图结构：17 objective 线性链 + 裸 start/complete 节点（存档 nodeStates 寻址兼容）', () => {
     expect(compiledGraph, 'quests[] 迁移后应能编译出 task.s01.survival').toBeTruthy();
     expect(compiledGraph.entryNodeId).toBe('start');
     expect(compiledGraph.title).toBe('荒原求生');
@@ -270,7 +270,7 @@ describe('阶段③ S01 迁移契约：quest 编译产物与手写任务图逐�
       'lightCampfire', 'gatherBerries', 'eatBerry', 'findAxe', 'gatherWood',
       'spotWolf', 'killWolf', 'findSkinningKnife', 'skinWolf', 'cookMeat', 'craftGear',
       'buildShelter', 'stayOvernight', 'leaveShelter', 'defeatWolfPack', 'defeatWolfKing',
-      'crossRiver', 'reachCliff'
+      'reachCliff'
     ]);
     expect(compiledGraph.nodes.at(-1)).toEqual({ id: 'complete', type: 'complete' });
     // 线性链：前一个 objective 的 next 恰好指向后一个

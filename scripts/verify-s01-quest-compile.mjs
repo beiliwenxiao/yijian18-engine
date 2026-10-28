@@ -17,7 +17,7 @@
  * 1. quests[] 编译出的 task.s01.survival 任务图含 defeatWolfPack / defeatWolfKing；
  * 2. 两个步骤的 target 事实存在于 commands[] 派生的事实目录；
  * 3. 编译产物通过 TaskGraphSystem 唯一校验器；
- * 4. 步骤链顺序正确（leaveShelter → defeatWolfPack → defeatWolfKing → crossRiver）。
+ * 4. 步骤链顺序正确（leaveShelter → defeatWolfPack → defeatWolfKing → reachCliff）。
  */
 import { readFileSync } from 'node:fs';
 import { compileQuestProject } from '../src/systems/quest/QuestRuntime.js';
@@ -48,7 +48,7 @@ if (survival) {
   const ids = objectives.map(n => n.id);
   check(ids.includes('defeatWolfPack'), '步骤 defeatWolfPack 存在', ids.join(','));
   check(ids.includes('defeatWolfKing'), '步骤 defeatWolfKing 存在');
-  const order = ['leaveShelter', 'defeatWolfPack', 'defeatWolfKing', 'crossRiver'];
+  const order = ['leaveShelter', 'defeatWolfPack', 'defeatWolfKing', 'reachCliff'];
   const positions = order.map(id => ids.indexOf(id));
   check(positions.every(p => p >= 0), '关键步骤均在链上', JSON.stringify(positions));
   check(positions.every((p, i) => i === 0 || p > positions[i - 1]), '步骤顺序正确', JSON.stringify(positions));
