@@ -369,6 +369,12 @@ export class PlacementSpawner {
         if (data.shadow && typeof data.shadow === 'object') {
           entity.shadowProfile = { ...data.shadow };
         }
+        // 发光配置（库定义/场景 overrides 的 glow 块，mergeOverrides 已合成）：
+        // { color, radius, intensity, flicker, yOffset }——radius>0 才发光；
+        // SceneRenderPipeline 据此注入阴影点光源并绘制光晕（LightGlowRenderer）
+        if (data.glow && typeof data.glow === 'object') {
+          entity.glowProfile = { ...data.glow };
+        }
         // 地面可拾取物与装备同样可以声明稳定 imageId，需要一起预载图片。
         if (['npc', 'enemy', 'resourceNode', 'item', 'equipment'].includes(kind)) {
           this._preloadEntityImage(kind, data, entity, instance);

@@ -550,6 +550,125 @@
       "worldProp": true
     },
     {
+      "id": "prop.candle",
+      "name": "蜡烛",
+      "type": "light",
+      "maxStack": 99,
+      "renderStyle": "candle",
+      "glow": {
+        "color": "#ffca7a",
+        "radius": 110,
+        "intensity": 0.5,
+        "flicker": "fire",
+        "yOffset": -26
+      },
+      "height": 36,
+      "showName": false,
+      "sprite": {
+        "height": 36,
+        "isStatic": true,
+        "width": 20
+      },
+      "subType": "lightSource",
+      "width": 20,
+      "worldProp": true
+    },
+    {
+      "id": "prop.torch",
+      "name": "火把",
+      "type": "light",
+      "maxStack": 99,
+      "renderStyle": "torch",
+      "glow": {
+        "color": "#ff9a3e",
+        "radius": 150,
+        "intensity": 0.58,
+        "flicker": "fire",
+        "yOffset": -36
+      },
+      "height": 56,
+      "showName": false,
+      "sprite": {
+        "height": 56,
+        "isStatic": true,
+        "width": 24
+      },
+      "subType": "lightSource",
+      "width": 24,
+      "worldProp": true
+    },
+    {
+      "id": "prop.campfire",
+      "name": "火堆",
+      "type": "light",
+      "maxStack": 1,
+      "renderStyle": "campfire_lit",
+      "glow": {
+        "color": "#ff8c2e",
+        "radius": 240,
+        "intensity": 0.62,
+        "flicker": "fire",
+        "yOffset": -10
+      },
+      "height": 48,
+      "showName": false,
+      "sprite": {
+        "height": 48,
+        "isStatic": true,
+        "width": 72
+      },
+      "subType": "lightSource",
+      "width": 72,
+      "worldProp": true
+    },
+    {
+      "id": "prop.campfire.unlit",
+      "name": "熄灭的火堆",
+      "type": "light",
+      "maxStack": 1,
+      "renderStyle": "campfire_unlit",
+      "glow": {
+        "color": "#c8452a",
+        "radius": 46,
+        "intensity": 0.14,
+        "yOffset": -6
+      },
+      "height": 48,
+      "showName": false,
+      "sprite": {
+        "height": 48,
+        "isStatic": true,
+        "width": 72
+      },
+      "subType": "lightSource",
+      "width": 72,
+      "worldProp": true
+    },
+    {
+      "id": "prop.firefly",
+      "name": "萤火虫",
+      "type": "light",
+      "maxStack": 99,
+      "renderStyle": "firefly",
+      "glow": {
+        "color": "#a8ff9e",
+        "radius": 90,
+        "intensity": 0.42,
+        "flicker": "breathe",
+        "yOffset": -18
+      },
+      "height": 18,
+      "showName": false,
+      "sprite": {
+        "height": 18,
+        "isStatic": true,
+        "width": 18
+      },
+      "subType": "lightSource",
+      "width": 18,
+      "worldProp": true
+    },
+    {
       "id": "story.s01.small_shelter",
       "name": "小庇护所",
       "type": "story",

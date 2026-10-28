@@ -12,8 +12,12 @@
 
 import { Logger } from '../Logger.js';
 import { GroundMarkerRenderer } from '../../rendering/GroundMarkerRenderer.js';
+import { LightGlowRenderer } from '../../rendering/LightGlowRenderer.js';
 import { OcclusionFadeController } from '../../rendering/OcclusionFade.js';
 import { ShadowRenderer } from '../../rendering/ShadowRenderer.js';
+
+/** 物品发光源单帧上限（光晕 + 阴影点光源共用，防滥用拖垮阴影批量 pass）。 */
+const MAX_GLOW_SOURCES = 32;
 
 const WORLD_PHASE_NAMES = Object.freeze([
   'renderBackground', 'renderGroundMarkers', 'renderPickups', 'renderWorldObjects', 'renderWorldEffects'
@@ -155,6 +159,9 @@ export class SceneRenderPipeline {
       directionX: -0.6, directionY: -0.8, elevation: 0.72, strength: 0.9,
       pointLights: []
     };
+    /** 物品发光源（实体 glowProfile + 拾取物 glow）：每帧复用缓冲，
+     * 同时供阴影点光源注入与光晕绘制 pass 消费。 */
+    this._glowSources = [];
   }
 
   render(ctx) {
@@ -276,6 +283,10 @@ export class SceneRenderPipeline {
       lighting: this._shadowLightingRuntime
     });
     if (frameProfile) frameProfile.shadowEntities = performance.now() - entityShadowStartedAt;
+    // 物品光晕 pass：消费 _assembleShadowLighting 收集的同一批发光源（贴地层，Y-sort 之前）
+    const glowStartedAt = frameProfile ? performance.now() : 0;
+    this._renderGlowHalos(ctx);
+    if (frameProfile) frameProfile.glowHalos = performance.now() - glowStartedAt;
     const campfire = context?.services?.campfire || null;
     const campfireRuntime = this._campfireRenderRuntime;
     campfireRuntime.particleSystem = particleSystem;
@@ -417,6 +428,80 @@ export class SceneRenderPipeline {
         x: fire.x, y: fire.y,
         radius: radius > 32 ? radius : 220,
         strength: 0.85
+      });
+    }
+    // 物品发光（glow 块）：worldProp 静物与地面拾取物声明 glow 时自动成为点光源
+    for (const source of this._collectGlowSources(context)) {
+      lights.push({
+        x: source.x, y: source.y,
+        radius: source.radius,
+        strength: source.intensity
+      });
+    }
+  }
+
+  /**
+   * 收集本帧物品发光源（实体 glowProfile + 未拾取的地面物品 glow），复用缓冲零分配。
+   * 供 _assembleShadowLighting（注入阴影点光源）与 _renderGlowHalos（画光晕）共用；
+   * 光源顺序稳定（实体在前、拾取物在后），超上限截断。@private
+   */
+  _collectGlowSources(context) {
+    const sources = this._glowSources;
+    sources.length = 0;
+    const bounds = this._viewBounds || null;
+    const pushSource = (x, y, glow) => {
+      if (sources.length >= MAX_GLOW_SOURCES) return;
+      const normalized = LightGlowRenderer.normalize(glow);
+      if (!normalized) return;
+      // 视口剔除：光晕/点光影响范围完全在视野外时跳过
+      if (bounds &&
+        (x < bounds.left - normalized.radius || x > bounds.right + normalized.radius ||
+         y < bounds.top - normalized.radius || y > bounds.bottom + normalized.radius)) {
+        return;
+      }
+      sources.push({ x, y, ...normalized });
+    };
+    // worldProp 静物等实体（PlacementSpawner 注入的 glowProfile）
+    const entities = context?.entities?.all;
+    if (Array.isArray(entities)) {
+      for (let i = 0; i < entities.length; i++) {
+        const entity = entities[i];
+        if (!entity || entity.active === false || !entity.glowProfile) continue;
+        const position = entity.getComponent?.('transform')?.position;
+        if (!position || !Number.isFinite(position.x) || !Number.isFinite(position.y)) continue;
+        pushSource(position.x, position.y, entity.glowProfile);
+      }
+    }
+    // 地面拾取物（物品/装备定义展开天然携带 glow；拾取后不再发光）
+    const store = this.scene?.entityStore || null;
+    const pickupLists = [store?.pickups, store?.equipmentItems];
+    for (const list of pickupLists) {
+      if (!Array.isArray(list)) continue;
+      for (let i = 0; i < list.length; i++) {
+        const item = list[i];
+        if (!item || item.picked || !item.glow) continue;
+        if (!Number.isFinite(item.x) || !Number.isFinite(item.y)) continue;
+        pushSource(item.x, item.y, item.glow);
+      }
+    }
+    return sources;
+  }
+
+  /**
+   * 物品光晕 pass：阴影之后、Y-sort 实体队列之前绘制（贴地层——
+   * 'lighter' 合成光斑，实体从光前走过遮挡关系正确）。@private
+   */
+  _renderGlowHalos(ctx) {
+    const sources = this._glowSources;
+    if (sources.length === 0) return;
+    const time = performance.now();
+    for (let i = 0; i < sources.length; i++) {
+      const source = sources[i];
+      LightGlowRenderer.draw(ctx, {
+        x: source.x, y: source.y,
+        radius: source.radius, color: source.color,
+        intensity: source.intensity, flicker: source.flicker,
+        yOffset: source.yOffset, time
       });
     }
   }

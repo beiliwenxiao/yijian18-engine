@@ -34,7 +34,8 @@ const ITEM_TYPE_LABELS = Object.freeze({
   resource: '资源',
   currency: '货币',
   key: '钥匙',
-  miscellaneous: '杂项'
+  miscellaneous: '杂项',
+  light: '点光源'
 });
 
 function itemTypeLabel(type) {
