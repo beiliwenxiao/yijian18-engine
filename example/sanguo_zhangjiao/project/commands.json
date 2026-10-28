@@ -1371,8 +1371,98 @@
   },
   {
     "commandType": "state.transaction",
+    "id": "story.s02.coin.gifted",
+    "name": "荒村：分发铜钱剑送钱（合法性讲明）",
+    "transaction": {
+      "when": {
+        "all": [
+          {
+            "equals": "S02",
+            "path": "story.currentSceneId"
+          },
+          {
+            "equals": true,
+            "path": "story.s02PorridgeLaid"
+          },
+          {
+            "notEquals": true,
+            "path": "story.s02CoinGifted"
+          }
+        ]
+      },
+      "writes": [
+        {
+          "path": "s02CoinGifted",
+          "target": "story",
+          "value": true
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s02.wounded.severe",
+    "name": "荒村：主角重伤（苏醒起带伤，M4 行军段赠药后转轻伤）",
+    "transaction": {
+      "when": {
+        "all": [
+          {
+            "equals": "S02",
+            "path": "story.currentSceneId"
+          },
+          {
+            "notEquals": "severe",
+            "path": "story.s02Wounded"
+          },
+          {
+            "notEquals": "light",
+            "path": "story.s02Wounded"
+          },
+          {
+            "notEquals": "treated",
+            "path": "story.s02Wounded"
+          }
+        ]
+      },
+      "writes": [
+        {
+          "path": "s02Wounded",
+          "target": "story",
+          "value": "severe"
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s09.treatment",
+    "name": "广宗大营：军医治疗，伤势痊愈（debuff 解除）",
+    "transaction": {
+      "when": {
+        "all": [
+          {
+            "equals": "S09",
+            "path": "story.currentSceneId"
+          },
+          {
+            "notEquals": "treated",
+            "path": "story.s02Wounded"
+          }
+        ]
+      },
+      "writes": [
+        {
+          "path": "s02Wounded",
+          "target": "story",
+          "value": "treated"
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
     "id": "story.s02.recruit.tick",
-    "name": "荒村：招募灾民入伍（每次 +10，上限 50）",
+    "name": "荒村：招募信众入道（每次 +10，上限 50）",
     "transaction": {
       "when": {
         "all": [
@@ -1410,7 +1500,7 @@
   {
     "commandType": "state.transaction",
     "id": "story.s02.recruit.done",
-    "name": "荒村：招募凑满 50、百人成军",
+    "name": "荒村：招募信众满 50、七十人入道",
     "transaction": {
       "when": {
         "all": [

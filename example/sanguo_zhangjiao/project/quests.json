@@ -416,7 +416,7 @@
         "id": "recruit",
         "objectiveType": "commit.fact",
         "target": "story.s02.recruit.done",
-        "title": "招募灾民凑齐百人",
+        "title": "布道招募信众凑齐七十人",
         "type": "objective"
       },
       {

@@ -66,6 +66,8 @@ export class SanguoDomainCommandFacade {
       ['scenario.command', 'army.possess', () => scene.s02ArmyRescueCoordinator.possessCommander()],
       ['scenario.command', 'army.possess.release', () => scene.s02ArmyRescueCoordinator.releaseCommander()],
       ['scenario.command', 'army.raid.defeat', p => scene.s02ArmyRescueCoordinator.handleRaidDefeat(p)],
+      ['scenario.command', 'player.wound.apply', () => scene.s02ArmyRescueCoordinator.applyWoundModifiers()],
+      ['scenario.command', 'player.wound.treat', () => scene.s02ArmyRescueCoordinator.treatWound()],
       ['construction.command', 'construction.start.s01', p => scene._s01s02Coordinator.startShelterConstruction(p)],
       ['construction.command', 'construction.start.s06', p => scene.s06SceneCoordinator.startS06FieldConstruction(p)],
       ['construction.command', 'construction.start.s10', p => scene.s10ConstructionCoordinator.startS10Construction(p)]

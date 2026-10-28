@@ -923,6 +923,21 @@
   {
     "do": [
       {
+        "action": "state.transaction",
+        "params": {
+          "definitionId": "story.s02.wounded.severe"
+        },
+        "stepId": "wound-severe-commit"
+      },
+      {
+        "action": "scenario.command",
+        "params": {
+          "operation": "player.wound.apply",
+          "scenarioId": "scenario.command.player.wound.apply"
+        },
+        "stepId": "wound-modifiers-apply"
+      },
+      {
         "action": "startDialogue",
         "params": {
           "id": "dialogue.s02.porridgeStart"
@@ -1101,9 +1116,23 @@
       {
         "action": "showTip",
         "params": {
-          "text": "两百余村民陆续喝过符水散去。有十余名青壮没有走——他们在招兵旗下排起了队。"
+          "text": "两百余村民陆续喝过符水散去。张角令信众抬出木箱——铜钱剑一户一串，当场发放。"
         },
         "stepId": "porridge-batch-5-tip"
+      },
+      {
+        "action": "startDialogue",
+        "params": {
+          "id": "dialogue.s02.coinGift"
+        },
+        "stepId": "coin-gift-dialogue"
+      },
+      {
+        "action": "state.transaction",
+        "params": {
+          "definitionId": "story.s02.coin.gifted"
+        },
+        "stepId": "coin-gift-commit"
       },
       {
         "action": "spawnPlacements",
@@ -1116,7 +1145,7 @@
       }
     ],
     "id": "trg_s02_farewell",
-    "name": "苏醒对话落幕：支大锅施粥，两百余村民分批来喝（M3.5）",
+    "name": "苏醒对话落幕：支大锅施粥+铜钱剑送钱，两百余村民分批来喝（M3.6）",
     "once": true,
     "when": {
       "params": {
@@ -1174,7 +1203,7 @@
               {
                 "action": "showTip",
                 "params": {
-                  "text": "五十名新募义从换上黄巾入列——加上张角本部五十人，百人成军！"
+                  "text": "五十名新募信众领了符牌入列——加上张角带来的二十人，七十人同入太平道！"
                 },
                 "stepId": "recruit-done-tip"
               },
@@ -1224,7 +1253,7 @@
               {
                 "action": "showTip",
                 "params": {
-                  "text": "十名灾民喝了符水、领了兵牌，入伍义从！（募兵进度 +10）"
+                  "text": "十名灾民喝了符水、领了符牌，入道为信众！（募众进度 +10）"
                 },
                 "stepId": "recruit-progress-tip"
               }
@@ -1252,7 +1281,7 @@
       }
     ],
     "id": "trg_s02_recruit",
-    "name": "荒村：招兵旗招募（每次 +10，满 50 入列、百人成军、随即扎营）",
+    "name": "荒村：招众旗招募信众（每次 +10，满 50 入列、七十人入道、随即扎营）",
     "once": false,
     "when": {
       "params": {},
@@ -1621,6 +1650,28 @@
     ],
     "id": "trg_s02_possession_restore",
     "name": "荒村：读档恢复——过夜后围剿未胜时重新附身张角（幂等）",
+    "once": false,
+    "when": {
+      "params": {
+        "sceneId": "S02"
+      },
+      "type": "sceneEnter"
+    }
+  },
+  {
+    "cooldown": 1,
+    "do": [
+      {
+        "action": "scenario.command",
+        "params": {
+          "operation": "player.wound.apply",
+          "scenarioId": "scenario.command.player.wound.apply"
+        },
+        "stepId": "wound-restore-apply"
+      }
+    ],
+    "id": "trg_s02_wound_restore",
+    "name": "荒村：读档恢复——按 s02Wounded 档位重放受伤 debuff（无档位时方法自幂等跳过）",
     "once": false,
     "when": {
       "params": {
@@ -3990,7 +4041,7 @@
       {
         "action": "showTip",
         "params": {
-          "text": "不知过了多久，一阵整齐的脚步声由远及近，旗帜猎猎——一支黄巾军队正沿山道行来。"
+          "text": "不知过了多久，一阵车轮碾地声由远及近——张角带着二十名黄巾信众，推着几辆装满粮食的推车，沿山道行来。"
         },
         "stepId": "army-dispatch-tip"
       },
@@ -4002,6 +4053,15 @@
           }
         },
         "stepId": "army-dispatch-spawn"
+      },
+      {
+        "action": "spawnPlacements",
+        "params": {
+          "selector": {
+            "group": "S02-believer-train"
+          }
+        },
+        "stepId": "grain-cart-spawn"
       },
       {
         "action": "scenario.command",
@@ -4306,10 +4366,32 @@
         "params": {
           "id": "dialogue.s09.arrival"
         }
+      },
+      {
+        "action": "state.transaction",
+        "params": {
+          "definitionId": "story.s09.treatment"
+        },
+        "stepId": "s09-treatment-commit"
+      },
+      {
+        "action": "scenario.command",
+        "params": {
+          "operation": "player.wound.treat",
+          "scenarioId": "scenario.command.player.wound.treat"
+        },
+        "stepId": "s09-treatment-apply"
+      },
+      {
+        "action": "showTip",
+        "params": {
+          "text": "军医为重伤的你敷药包扎——多日来的伤势终于痊愈了。"
+        },
+        "stepId": "s09-treatment-tip"
       }
     ],
     "id": "trg_s09_opening_dialogue",
-    "name": "进入 S09：初入广宗大营开场对话",
+    "name": "进入 S09：初入广宗大营开场对话 + 军医治疗痊愈（M3.6 伤势终点）",
     "once": true,
     "when": {
       "params": {

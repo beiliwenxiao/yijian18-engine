@@ -250,7 +250,16 @@
 | 对话 | dialogue.s02.porridgeStart / s02.recruit / s02.overnight / s02.raidDawn（campAlert 改语义） | |
 | 任务 | task.s02.summons 步骤改 5 步：acceptSummons→porridge→recruit→camp→repelRaid | |
 
-### 10.7 风险补充
+### 10.7 主角受伤 debuff 分档（M3.6 用户裁定：不做身份选择，围剿战强制张角）
+
+- **字段**：`storyState.s02Wounded = 'severe' | 'light' | 'treated'`（分档而非布尔，M4 赠药/包扎逐档转换）。
+- **档位**：severe（HP 上限 ×0.75、移速 ×0.85）→ light（HP 上限 ×0.9、移速不变）→ treated（无）。**只削生存不削输出**——行军遭遇战难度由「军团护航（escort 既有语义）+ 逐档恢复」消化。
+- **窗口**：苏醒对话落幕（farewell 链头提交 severe）→ S09 开场对话后军医治疗（treated）。M4 行军段两恢复节点：森林段尾张角赠药（→light）、山地段尾包扎（→痊愈前）。
+- **实现**：S02ArmyRescueCoordinator.applyWoundModifiers/treatWound（基准值快照 `entity._woundBaseStats` 幂等重放）；scenario 命令 `player.wound.apply/treat`；事务 story.s02.wounded.severe / story.s09.treatment；读档恢复 trg_s02_wound_restore（sceneEnter 重放，无档位自跳过）。
+- **围剿战表现**：主角 plotDowned 观战 + 卧床摆位（挪至营地破草棚旁 470,360 播 stretcher 循环，释放回 idle 原地起身）。
+- 测试 test/s02WoundDebuff.test.js 6 例；探针 wound-severe-applied / wound-persists-after-raid。
+
+### 10.8 风险补充
 
 5. **村民滚动刷性能**：批间 despawn 与 spawnPlacements 幂等（story 门控+组名分批）须实测；despawn 用 tombstone 链先例。
 6. **招募入列**：新兵 placement 挂 SquadMemberComponent 走 army kind 展开链（_expandArmyPlacement 先例）；注意 spawnMode story 与 armyCommandSystem._syncUnits 注册时序。

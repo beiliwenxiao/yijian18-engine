@@ -635,6 +635,23 @@
       "worldProp": true
     },
     {
+      "id": "story.s02.grain_cart",
+      "name": "满载粮车",
+      "type": "story",
+      "imageId": "s02.prop.grainCart",
+      "height": 150,
+      "maxStack": 1,
+      "showName": false,
+      "sprite": {
+        "height": 150,
+        "isStatic": true,
+        "width": 225
+      },
+      "subType": "worldProp",
+      "width": 225,
+      "worldProp": true
+    },
+    {
       "id": "salvage.torn_cloth",
       "name": "破损帐布",
       "type": "material",
@@ -1550,7 +1567,7 @@
       "aiType": "aggressive",
       "attackRange": 40,
       "experience": 10,
-      "id": "enemy.s02_plague_villager",
+      "id": "enemy.s02_villager",
       "imageId": "s09.character.woundedSoldier",
       "level": 1,
       "lootTable": [
@@ -1561,7 +1578,7 @@
           "minQuantity": 1
         }
       ],
-      "name": "染疫村民",
+      "name": "饥民村民",
       "npcType": "enemy",
       "sprite": {
         "height": 68,
@@ -2005,6 +2022,29 @@
         "speed": 90
       },
       "templateId": "yellow_turban_soldier"
+    },
+    {
+      "aiType": "defensive",
+      "experience": 0,
+      "faction": "ally",
+      "factionId": "yellow_turban",
+      "id": "enemy.s02_believer",
+      "imageId": "s03.unit.yellowTurbanSoldier",
+      "level": 1,
+      "name": "黄巾信众",
+      "npcType": "enemy",
+      "sprite": {
+        "height": 52,
+        "isStatic": true,
+        "width": 40
+      },
+      "stats": {
+        "attack": 4,
+        "defense": 2,
+        "maxHp": 40,
+        "speed": 90
+      },
+      "templateId": "believer"
     },
     {
       "aiProfile": {
@@ -2833,15 +2873,15 @@
     {
       "defaultStance": "hold",
       "id": "army.s02.column",
-      "name": "张角行军纵队",
+      "name": "张角信众队",
       "squads": [
         {
           "id": "qian",
           "name": "前军",
           "units": [
             {
-              "count": 10,
-              "ref": "enemy.s02_yellow_turban_soldier"
+              "count": 4,
+              "ref": "enemy.s02_believer"
             }
           ]
         },
@@ -2850,8 +2890,8 @@
           "name": "左军",
           "units": [
             {
-              "count": 10,
-              "ref": "enemy.s02_yellow_turban_soldier"
+              "count": 4,
+              "ref": "enemy.s02_believer"
             }
           ]
         },
@@ -2860,8 +2900,8 @@
           "name": "中军",
           "units": [
             {
-              "count": 10,
-              "ref": "enemy.s02_yellow_turban_soldier"
+              "count": 4,
+              "ref": "enemy.s02_believer"
             }
           ]
         },
@@ -2870,8 +2910,8 @@
           "name": "右军",
           "units": [
             {
-              "count": 10,
-              "ref": "enemy.s02_yellow_turban_soldier"
+              "count": 4,
+              "ref": "enemy.s02_believer"
             }
           ]
         },
@@ -2880,8 +2920,8 @@
           "name": "后军",
           "units": [
             {
-              "count": 10,
-              "ref": "enemy.s02_yellow_turban_soldier"
+              "count": 4,
+              "ref": "enemy.s02_believer"
             }
           ]
         }
@@ -2890,7 +2930,7 @@
     {
       "defaultStance": "hold",
       "id": "army.s02.recruits",
-      "name": "荒村新募义从",
+      "name": "荒村新募信众",
       "squads": [
         {
           "id": "qian",
@@ -2898,7 +2938,7 @@
           "units": [
             {
               "count": 5,
-              "ref": "enemy.s02_yellow_turban_soldier"
+              "ref": "enemy.s02_believer"
             }
           ]
         },
@@ -2908,7 +2948,7 @@
           "units": [
             {
               "count": 5,
-              "ref": "enemy.s02_yellow_turban_soldier"
+              "ref": "enemy.s02_believer"
             }
           ]
         }

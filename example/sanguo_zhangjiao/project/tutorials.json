@@ -276,7 +276,7 @@
   },
   {
     "id": "s02.command.move",
-    "title": "指挥士兵",
+    "title": "指挥信众",
     "category": "s02-rescue",
     "scope": {
       "sceneIds": [
@@ -286,7 +286,7 @@
     "steps": [
       {
         "id": "s02.command.move.step",
-        "text": "昏迷中你仍可调遣黄巾士兵：{interact} 靠近士兵下达移动指令，让他们靠近你的位置。",
+        "text": "昏迷中你仍可调遣黄巾信众：{interact} 靠近信众下达移动指令，让他们靠近你的位置。",
         "highlightTarget": false
       }
     ],
@@ -296,8 +296,8 @@
     "autoTrigger": false,
     "autoAdvance": false,
     "priority": 0,
-    "beginText": "你还动不了，但士兵听你号令。",
-    "endText": "士兵就位了。"
+    "beginText": "你还动不了，但信众听你号令。",
+    "endText": "信众就位了。"
   },
   {
     "id": "s02.command.carry",
@@ -311,7 +311,7 @@
     "steps": [
       {
         "id": "s02.command.carry.step",
-        "text": "士兵到位后，{interact} 下令抬起担架，沿山道把你送回营地。",
+        "text": "信众到位后，{interact} 下令抬起担架，沿山道把你送回营地。",
         "highlightTarget": false
       }
     ],

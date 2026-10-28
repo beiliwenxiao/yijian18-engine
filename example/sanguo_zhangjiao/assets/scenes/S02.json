@@ -670,7 +670,7 @@
           "group": "S02-villagers-calm",
           "id": "S02-villager-calm-1",
           "kind": "enemy",
-          "ref": "enemy.s02_plague_villager",
+          "ref": "enemy.s02_villager",
           "tags": [
             "story",
             "villager"
@@ -686,7 +686,7 @@
           "group": "S02-villagers-calm",
           "id": "S02-villager-calm-2",
           "kind": "enemy",
-          "ref": "enemy.s02_plague_villager",
+          "ref": "enemy.s02_villager",
           "tags": [
             "story",
             "villager"
@@ -702,7 +702,7 @@
           "group": "S02-villagers-calm",
           "id": "S02-villager-calm-3",
           "kind": "enemy",
-          "ref": "enemy.s02_plague_villager",
+          "ref": "enemy.s02_villager",
           "tags": [
             "story",
             "villager"
@@ -718,7 +718,7 @@
           "group": "S02-villagers-calm",
           "id": "S02-villager-calm-4",
           "kind": "enemy",
-          "ref": "enemy.s02_plague_villager",
+          "ref": "enemy.s02_villager",
           "tags": [
             "story",
             "villager"
@@ -734,7 +734,7 @@
           "group": "S02-villagers-calm",
           "id": "S02-villager-calm-5",
           "kind": "enemy",
-          "ref": "enemy.s02_plague_villager",
+          "ref": "enemy.s02_villager",
           "tags": [
             "story",
             "villager"
@@ -750,7 +750,7 @@
           "group": "S02-villagers-calm",
           "id": "S02-villager-calm-6",
           "kind": "enemy",
-          "ref": "enemy.s02_plague_villager",
+          "ref": "enemy.s02_villager",
           "tags": [
             "story",
             "villager"
@@ -760,166 +760,6 @@
           "y": 585,
           "overrides": {
             "aiActive": false
-          }
-        },
-        {
-          "group": "S02-villagers-calm",
-          "id": "S02-villager-dig-1",
-          "kind": "enemy",
-          "ref": "enemy.s02_plague_villager",
-          "tags": [
-            "story",
-            "villager",
-            "digging"
-          ],
-          "type": "ref",
-          "x": 560,
-          "y": 470,
-          "overrides": {
-            "aiActive": true,
-            "ai": {
-              "detectionRange": 1,
-              "pursuitRange": 1,
-              "leashRange": 9999,
-              "patrol": {
-                "enabled": true,
-                "mode": "pingpong",
-                "points": [
-                  [
-                    40,
-                    0
-                  ],
-                  [
-                    -30,
-                    25
-                  ],
-                  [
-                    10,
-                    -20
-                  ]
-                ]
-              }
-            }
-          }
-        },
-        {
-          "group": "S02-villagers-calm",
-          "id": "S02-villager-dig-2",
-          "kind": "enemy",
-          "ref": "enemy.s02_plague_villager",
-          "tags": [
-            "story",
-            "villager",
-            "digging"
-          ],
-          "type": "ref",
-          "x": 720,
-          "y": 450,
-          "overrides": {
-            "aiActive": true,
-            "ai": {
-              "detectionRange": 1,
-              "pursuitRange": 1,
-              "leashRange": 9999,
-              "patrol": {
-                "enabled": true,
-                "mode": "pingpong",
-                "points": [
-                  [
-                    -35,
-                    10
-                  ],
-                  [
-                    25,
-                    30
-                  ],
-                  [
-                    0,
-                    -25
-                  ]
-                ]
-              }
-            }
-          }
-        },
-        {
-          "group": "S02-villagers-calm",
-          "id": "S02-villager-dig-3",
-          "kind": "enemy",
-          "ref": "enemy.s02_plague_villager",
-          "tags": [
-            "story",
-            "villager",
-            "digging"
-          ],
-          "type": "ref",
-          "x": 560,
-          "y": 230,
-          "overrides": {
-            "aiActive": true,
-            "ai": {
-              "detectionRange": 1,
-              "pursuitRange": 1,
-              "leashRange": 9999,
-              "patrol": {
-                "enabled": true,
-                "mode": "pingpong",
-                "points": [
-                  [
-                    30,
-                    15
-                  ],
-                  [
-                    -25,
-                    -10
-                  ],
-                  [
-                    5,
-                    35
-                  ]
-                ]
-              }
-            }
-          }
-        },
-        {
-          "group": "S02-villagers-calm",
-          "id": "S02-villager-dig-4",
-          "kind": "enemy",
-          "ref": "enemy.s02_plague_villager",
-          "tags": [
-            "story",
-            "villager",
-            "digging"
-          ],
-          "type": "ref",
-          "x": 760,
-          "y": 215,
-          "overrides": {
-            "aiActive": true,
-            "ai": {
-              "detectionRange": 1,
-              "pursuitRange": 1,
-              "leashRange": 9999,
-              "patrol": {
-                "enabled": true,
-                "mode": "pingpong",
-                "points": [
-                  [
-                    -20,
-                    25
-                  ],
-                  [
-                    35,
-                    -5
-                  ],
-                  [
-                    0,
-                    30
-                  ]
-                ]
-              }
-            }
           }
         },
         {
@@ -990,7 +830,7 @@
           "group": "S02-villagers-hostile",
           "id": "S02-villager-hostile-1",
           "kind": "enemy",
-          "ref": "enemy.s02_plague_villager",
+          "ref": "enemy.s02_villager",
           "tags": [
             "story",
             "villager"
@@ -1000,13 +840,14 @@
           "y": 430,
           "overrides": {
             "aiActive": true
-          }
+          },
+          "spawnMode": "story"
         },
         {
           "group": "S02-villagers-hostile",
           "id": "S02-villager-hostile-2",
           "kind": "enemy",
-          "ref": "enemy.s02_plague_villager",
+          "ref": "enemy.s02_villager",
           "tags": [
             "story",
             "villager"
@@ -1016,13 +857,14 @@
           "y": 465,
           "overrides": {
             "aiActive": true
-          }
+          },
+          "spawnMode": "story"
         },
         {
           "group": "S02-villagers-hostile",
           "id": "S02-villager-hostile-3",
           "kind": "enemy",
-          "ref": "enemy.s02_plague_villager",
+          "ref": "enemy.s02_villager",
           "tags": [
             "story",
             "villager"
@@ -1032,7 +874,8 @@
           "y": 490,
           "overrides": {
             "aiActive": true
-          }
+          },
+          "spawnMode": "story"
         },
         {
           "id": "S02-supply-herb",
@@ -1169,7 +1012,7 @@
           "id": "S02-porridge-queue-1",
           "type": "ref",
           "kind": "enemy",
-          "ref": "enemy.s02_plague_villager",
+          "ref": "enemy.s02_villager",
           "group": "S02-porridge-batch-1",
           "name": "喝粥村民",
           "x": 590,
@@ -1199,13 +1042,14 @@
                 ]
               }
             }
-          }
+          },
+          "spawnMode": "story"
         },
         {
           "id": "S02-porridge-queue-2",
           "type": "ref",
           "kind": "enemy",
-          "ref": "enemy.s02_plague_villager",
+          "ref": "enemy.s02_villager",
           "group": "S02-porridge-batch-1",
           "name": "喝粥村民",
           "x": 640,
@@ -1235,13 +1079,14 @@
                 ]
               }
             }
-          }
+          },
+          "spawnMode": "story"
         },
         {
           "id": "S02-porridge-queue-3",
           "type": "ref",
           "kind": "enemy",
-          "ref": "enemy.s02_plague_villager",
+          "ref": "enemy.s02_villager",
           "group": "S02-porridge-batch-1",
           "name": "喝粥村民",
           "x": 690,
@@ -1271,13 +1116,14 @@
                 ]
               }
             }
-          }
+          },
+          "spawnMode": "story"
         },
         {
           "id": "S02-porridge-queue-4",
           "type": "ref",
           "kind": "enemy",
-          "ref": "enemy.s02_plague_villager",
+          "ref": "enemy.s02_villager",
           "group": "S02-porridge-batch-1",
           "name": "喝粥村民",
           "x": 740,
@@ -1307,13 +1153,14 @@
                 ]
               }
             }
-          }
+          },
+          "spawnMode": "story"
         },
         {
           "id": "S02-porridge-queue-5",
           "type": "ref",
           "kind": "enemy",
-          "ref": "enemy.s02_plague_villager",
+          "ref": "enemy.s02_villager",
           "group": "S02-porridge-batch-1",
           "name": "喝粥村民",
           "x": 540,
@@ -1343,13 +1190,14 @@
                 ]
               }
             }
-          }
+          },
+          "spawnMode": "story"
         },
         {
           "id": "S02-porridge-queue-6",
           "type": "ref",
           "kind": "enemy",
-          "ref": "enemy.s02_plague_villager",
+          "ref": "enemy.s02_villager",
           "group": "S02-porridge-batch-2",
           "name": "喝粥村民",
           "x": 1150,
@@ -1379,13 +1227,14 @@
                 ]
               }
             }
-          }
+          },
+          "spawnMode": "story"
         },
         {
           "id": "S02-porridge-queue-7",
           "type": "ref",
           "kind": "enemy",
-          "ref": "enemy.s02_plague_villager",
+          "ref": "enemy.s02_villager",
           "group": "S02-porridge-batch-2",
           "name": "喝粥村民",
           "x": 1160,
@@ -1415,13 +1264,14 @@
                 ]
               }
             }
-          }
+          },
+          "spawnMode": "story"
         },
         {
           "id": "S02-porridge-queue-8",
           "type": "ref",
           "kind": "enemy",
-          "ref": "enemy.s02_plague_villager",
+          "ref": "enemy.s02_villager",
           "group": "S02-porridge-batch-2",
           "name": "喝粥村民",
           "x": 1155,
@@ -1451,13 +1301,14 @@
                 ]
               }
             }
-          }
+          },
+          "spawnMode": "story"
         },
         {
           "id": "S02-porridge-queue-9",
           "type": "ref",
           "kind": "enemy",
-          "ref": "enemy.s02_plague_villager",
+          "ref": "enemy.s02_villager",
           "group": "S02-porridge-batch-2",
           "name": "喝粥村民",
           "x": 1165,
@@ -1487,13 +1338,14 @@
                 ]
               }
             }
-          }
+          },
+          "spawnMode": "story"
         },
         {
           "id": "S02-porridge-queue-10",
           "type": "ref",
           "kind": "enemy",
-          "ref": "enemy.s02_plague_villager",
+          "ref": "enemy.s02_villager",
           "group": "S02-porridge-batch-2",
           "name": "喝粥村民",
           "x": 1150,
@@ -1523,13 +1375,14 @@
                 ]
               }
             }
-          }
+          },
+          "spawnMode": "story"
         },
         {
           "id": "S02-porridge-queue-11",
           "type": "ref",
           "kind": "enemy",
-          "ref": "enemy.s02_plague_villager",
+          "ref": "enemy.s02_villager",
           "group": "S02-porridge-batch-3",
           "name": "喝粥村民",
           "x": 570,
@@ -1559,13 +1412,14 @@
                 ]
               }
             }
-          }
+          },
+          "spawnMode": "story"
         },
         {
           "id": "S02-porridge-queue-12",
           "type": "ref",
           "kind": "enemy",
-          "ref": "enemy.s02_plague_villager",
+          "ref": "enemy.s02_villager",
           "group": "S02-porridge-batch-3",
           "name": "喝粥村民",
           "x": 620,
@@ -1595,13 +1449,14 @@
                 ]
               }
             }
-          }
+          },
+          "spawnMode": "story"
         },
         {
           "id": "S02-porridge-queue-13",
           "type": "ref",
           "kind": "enemy",
-          "ref": "enemy.s02_plague_villager",
+          "ref": "enemy.s02_villager",
           "group": "S02-porridge-batch-3",
           "name": "喝粥村民",
           "x": 665,
@@ -1631,13 +1486,14 @@
                 ]
               }
             }
-          }
+          },
+          "spawnMode": "story"
         },
         {
           "id": "S02-porridge-queue-14",
           "type": "ref",
           "kind": "enemy",
-          "ref": "enemy.s02_plague_villager",
+          "ref": "enemy.s02_villager",
           "group": "S02-porridge-batch-3",
           "name": "喝粥村民",
           "x": 715,
@@ -1667,13 +1523,14 @@
                 ]
               }
             }
-          }
+          },
+          "spawnMode": "story"
         },
         {
           "id": "S02-porridge-queue-15",
           "type": "ref",
           "kind": "enemy",
-          "ref": "enemy.s02_plague_villager",
+          "ref": "enemy.s02_villager",
           "group": "S02-porridge-batch-3",
           "name": "喝粥村民",
           "x": 525,
@@ -1703,13 +1560,14 @@
                 ]
               }
             }
-          }
+          },
+          "spawnMode": "story"
         },
         {
           "id": "S02-porridge-queue-16",
           "type": "ref",
           "kind": "enemy",
-          "ref": "enemy.s02_plague_villager",
+          "ref": "enemy.s02_villager",
           "group": "S02-porridge-batch-4",
           "name": "喝粥村民",
           "x": 1145,
@@ -1739,13 +1597,14 @@
                 ]
               }
             }
-          }
+          },
+          "spawnMode": "story"
         },
         {
           "id": "S02-porridge-queue-17",
           "type": "ref",
           "kind": "enemy",
-          "ref": "enemy.s02_plague_villager",
+          "ref": "enemy.s02_villager",
           "group": "S02-porridge-batch-4",
           "name": "喝粥村民",
           "x": 1155,
@@ -1775,13 +1634,14 @@
                 ]
               }
             }
-          }
+          },
+          "spawnMode": "story"
         },
         {
           "id": "S02-porridge-queue-18",
           "type": "ref",
           "kind": "enemy",
-          "ref": "enemy.s02_plague_villager",
+          "ref": "enemy.s02_villager",
           "group": "S02-porridge-batch-4",
           "name": "喝粥村民",
           "x": 1150,
@@ -1811,13 +1671,14 @@
                 ]
               }
             }
-          }
+          },
+          "spawnMode": "story"
         },
         {
           "id": "S02-porridge-queue-19",
           "type": "ref",
           "kind": "enemy",
-          "ref": "enemy.s02_plague_villager",
+          "ref": "enemy.s02_villager",
           "group": "S02-porridge-batch-4",
           "name": "喝粥村民",
           "x": 1160,
@@ -1847,13 +1708,14 @@
                 ]
               }
             }
-          }
+          },
+          "spawnMode": "story"
         },
         {
           "id": "S02-porridge-queue-20",
           "type": "ref",
           "kind": "enemy",
-          "ref": "enemy.s02_plague_villager",
+          "ref": "enemy.s02_villager",
           "group": "S02-porridge-batch-4",
           "name": "喝粥村民",
           "x": 1145,
@@ -1883,13 +1745,14 @@
                 ]
               }
             }
-          }
+          },
+          "spawnMode": "story"
         },
         {
           "id": "S02-porridge-queue-21",
           "type": "ref",
           "kind": "enemy",
-          "ref": "enemy.s02_plague_villager",
+          "ref": "enemy.s02_villager",
           "group": "S02-porridge-batch-5",
           "name": "喝粥村民",
           "x": 580,
@@ -1919,13 +1782,14 @@
                 ]
               }
             }
-          }
+          },
+          "spawnMode": "story"
         },
         {
           "id": "S02-porridge-queue-22",
           "type": "ref",
           "kind": "enemy",
-          "ref": "enemy.s02_plague_villager",
+          "ref": "enemy.s02_villager",
           "group": "S02-porridge-batch-5",
           "name": "喝粥村民",
           "x": 630,
@@ -1955,13 +1819,14 @@
                 ]
               }
             }
-          }
+          },
+          "spawnMode": "story"
         },
         {
           "id": "S02-porridge-queue-23",
           "type": "ref",
           "kind": "enemy",
-          "ref": "enemy.s02_plague_villager",
+          "ref": "enemy.s02_villager",
           "group": "S02-porridge-batch-5",
           "name": "喝粥村民",
           "x": 675,
@@ -1991,13 +1856,14 @@
                 ]
               }
             }
-          }
+          },
+          "spawnMode": "story"
         },
         {
           "id": "S02-porridge-queue-24",
           "type": "ref",
           "kind": "enemy",
-          "ref": "enemy.s02_plague_villager",
+          "ref": "enemy.s02_villager",
           "group": "S02-porridge-batch-5",
           "name": "喝粥村民",
           "x": 725,
@@ -2027,13 +1893,14 @@
                 ]
               }
             }
-          }
+          },
+          "spawnMode": "story"
         },
         {
           "id": "S02-porridge-queue-25",
           "type": "ref",
           "kind": "enemy",
-          "ref": "enemy.s02_plague_villager",
+          "ref": "enemy.s02_villager",
           "group": "S02-porridge-batch-5",
           "name": "喝粥村民",
           "x": 535,
@@ -2063,59 +1930,64 @@
                 ]
               }
             }
-          }
+          },
+          "spawnMode": "story"
         },
         {
           "id": "S02-recruit-queue-1",
           "type": "ref",
           "kind": "enemy",
-          "ref": "enemy.s02_plague_villager",
+          "ref": "enemy.s02_villager",
           "group": "S02-recruit-queue",
           "name": "候募村民",
           "x": 800,
           "y": 400,
           "overrides": {
             "aiActive": false
-          }
+          },
+          "spawnMode": "story"
         },
         {
           "id": "S02-recruit-queue-2",
           "type": "ref",
           "kind": "enemy",
-          "ref": "enemy.s02_plague_villager",
+          "ref": "enemy.s02_villager",
           "group": "S02-recruit-queue",
           "name": "候募村民",
           "x": 830,
           "y": 420,
           "overrides": {
             "aiActive": false
-          }
+          },
+          "spawnMode": "story"
         },
         {
           "id": "S02-recruit-queue-3",
           "type": "ref",
           "kind": "enemy",
-          "ref": "enemy.s02_plague_villager",
+          "ref": "enemy.s02_villager",
           "group": "S02-recruit-queue",
           "name": "候募村民",
           "x": 860,
           "y": 440,
           "overrides": {
             "aiActive": false
-          }
+          },
+          "spawnMode": "story"
         },
         {
           "id": "S02-recruit-queue-4",
           "type": "ref",
           "kind": "enemy",
-          "ref": "enemy.s02_plague_villager",
+          "ref": "enemy.s02_villager",
           "group": "S02-recruit-queue",
           "name": "候募村民",
           "x": 890,
           "y": 460,
           "overrides": {
             "aiActive": false
-          }
+          },
+          "spawnMode": "story"
         },
         {
           "id": "S02-army-recruits",
@@ -2170,7 +2042,7 @@
         {
           "id": "S02-raid-vanguard-1",
           "type": "ref",
-          "kind": "soldier",
+          "kind": "enemy",
           "ref": "enemy.s02_lu_mainforce",
           "group": "S02-raid-vanguard",
           "name": "官军精锐·一",
@@ -2181,7 +2053,7 @@
         {
           "id": "S02-raid-vanguard-2",
           "type": "ref",
-          "kind": "soldier",
+          "kind": "enemy",
           "ref": "enemy.s02_lu_mainforce",
           "group": "S02-raid-vanguard",
           "name": "官军精锐·二",
@@ -2192,7 +2064,7 @@
         {
           "id": "S02-raid-vanguard-3",
           "type": "ref",
-          "kind": "soldier",
+          "kind": "enemy",
           "ref": "enemy.s02_lu_mainforce",
           "group": "S02-raid-vanguard",
           "name": "官军精锐·三",
@@ -2203,7 +2075,7 @@
         {
           "id": "S02-raid-vanguard-4",
           "type": "ref",
-          "kind": "soldier",
+          "kind": "enemy",
           "ref": "enemy.s02_lu_mainforce",
           "group": "S02-raid-vanguard",
           "name": "官军精锐·四",
@@ -2214,7 +2086,7 @@
         {
           "id": "S02-raid-vanguard-5",
           "type": "ref",
-          "kind": "soldier",
+          "kind": "enemy",
           "ref": "enemy.s02_lu_mainforce",
           "group": "S02-raid-vanguard",
           "name": "官军精锐·五",
@@ -2225,7 +2097,7 @@
         {
           "id": "S02-raid-vanguard-6",
           "type": "ref",
-          "kind": "soldier",
+          "kind": "enemy",
           "ref": "enemy.s02_lu_mainforce",
           "group": "S02-raid-vanguard",
           "name": "官军精锐·六",
@@ -2236,7 +2108,7 @@
         {
           "id": "S02-raid-vanguard-7",
           "type": "ref",
-          "kind": "soldier",
+          "kind": "enemy",
           "ref": "enemy.s02_lu_mainforce",
           "group": "S02-raid-vanguard",
           "name": "官军精锐·七",
@@ -2247,7 +2119,7 @@
         {
           "id": "S02-raid-vanguard-8",
           "type": "ref",
-          "kind": "soldier",
+          "kind": "enemy",
           "ref": "enemy.s02_lu_mainforce",
           "group": "S02-raid-vanguard",
           "name": "官军精锐·八",
@@ -2258,7 +2130,7 @@
         {
           "id": "S02-raid-vanguard-9",
           "type": "ref",
-          "kind": "soldier",
+          "kind": "enemy",
           "ref": "enemy.s02_lu_mainforce",
           "group": "S02-raid-vanguard",
           "name": "官军精锐·九",
@@ -2269,7 +2141,7 @@
         {
           "id": "S02-raid-vanguard-10",
           "type": "ref",
-          "kind": "soldier",
+          "kind": "enemy",
           "ref": "enemy.s02_lu_mainforce",
           "group": "S02-raid-vanguard",
           "name": "官军精锐·十",
@@ -2280,7 +2152,7 @@
         {
           "id": "S02-raid-vanguard-11",
           "type": "ref",
-          "kind": "soldier",
+          "kind": "enemy",
           "ref": "enemy.s02_lu_mainforce",
           "group": "S02-raid-vanguard",
           "name": "官军精锐·十一",
@@ -2291,7 +2163,7 @@
         {
           "id": "S02-raid-vanguard-12",
           "type": "ref",
-          "kind": "soldier",
+          "kind": "enemy",
           "ref": "enemy.s02_lu_mainforce",
           "group": "S02-raid-vanguard",
           "name": "官军精锐·十二",
@@ -2302,7 +2174,7 @@
         {
           "id": "S02-raid-main-1",
           "type": "ref",
-          "kind": "soldier",
+          "kind": "enemy",
           "ref": "enemy.s02_lu_vanguard",
           "group": "S02-raid-mainforce",
           "name": "官军后队·一",
@@ -2313,7 +2185,7 @@
         {
           "id": "S02-raid-main-2",
           "type": "ref",
-          "kind": "soldier",
+          "kind": "enemy",
           "ref": "enemy.s02_lu_vanguard",
           "group": "S02-raid-mainforce",
           "name": "官军后队·二",
@@ -2324,7 +2196,7 @@
         {
           "id": "S02-raid-main-3",
           "type": "ref",
-          "kind": "soldier",
+          "kind": "enemy",
           "ref": "enemy.s02_lu_vanguard",
           "group": "S02-raid-mainforce",
           "name": "官军后队·三",
@@ -2335,7 +2207,7 @@
         {
           "id": "S02-raid-main-4",
           "type": "ref",
-          "kind": "soldier",
+          "kind": "enemy",
           "ref": "enemy.s02_lu_vanguard",
           "group": "S02-raid-mainforce",
           "name": "官军后队·四",
@@ -2346,7 +2218,7 @@
         {
           "id": "S02-raid-main-5",
           "type": "ref",
-          "kind": "soldier",
+          "kind": "enemy",
           "ref": "enemy.s02_lu_vanguard",
           "group": "S02-raid-mainforce",
           "name": "官军后队·五",
@@ -2357,7 +2229,7 @@
         {
           "id": "S02-raid-main-6",
           "type": "ref",
-          "kind": "soldier",
+          "kind": "enemy",
           "ref": "enemy.s02_lu_vanguard",
           "group": "S02-raid-mainforce",
           "name": "官军后队·六",
@@ -2368,7 +2240,7 @@
         {
           "id": "S02-raid-main-7",
           "type": "ref",
-          "kind": "soldier",
+          "kind": "enemy",
           "ref": "enemy.s02_lu_vanguard",
           "group": "S02-raid-mainforce",
           "name": "官军后队·七",
@@ -2379,7 +2251,7 @@
         {
           "id": "S02-raid-main-8",
           "type": "ref",
-          "kind": "soldier",
+          "kind": "enemy",
           "ref": "enemy.s02_lu_vanguard",
           "group": "S02-raid-mainforce",
           "name": "官军后队·八",
@@ -2390,7 +2262,7 @@
         {
           "id": "S02-raid-main-9",
           "type": "ref",
-          "kind": "soldier",
+          "kind": "enemy",
           "ref": "enemy.s02_lu_vanguard",
           "group": "S02-raid-mainforce",
           "name": "官军后队·九",
@@ -2401,7 +2273,7 @@
         {
           "id": "S02-raid-main-10",
           "type": "ref",
-          "kind": "soldier",
+          "kind": "enemy",
           "ref": "enemy.s02_lu_vanguard",
           "group": "S02-raid-mainforce",
           "name": "官军后队·十",
@@ -2412,7 +2284,7 @@
         {
           "id": "S02-raid-main-11",
           "type": "ref",
-          "kind": "soldier",
+          "kind": "enemy",
           "ref": "enemy.s02_lu_vanguard",
           "group": "S02-raid-mainforce",
           "name": "官军后队·十一",
@@ -2423,7 +2295,7 @@
         {
           "id": "S02-raid-main-12",
           "type": "ref",
-          "kind": "soldier",
+          "kind": "enemy",
           "ref": "enemy.s02_lu_vanguard",
           "group": "S02-raid-mainforce",
           "name": "官军后队·十二",
@@ -2434,13 +2306,43 @@
         {
           "id": "S02-raid-commander",
           "type": "ref",
-          "kind": "soldier",
+          "kind": "enemy",
           "ref": "enemy.s02_lu_commander",
           "group": "S02-raid-mainforce",
           "name": "傅燮",
           "x": 100,
           "y": 270,
           "spawnMode": "story"
+        },
+        {
+          "id": "S02-grain-cart-1",
+          "type": "ref",
+          "kind": "item",
+          "ref": "story.s02.grain_cart",
+          "group": "S02-believer-train",
+          "name": "信众粮车·一",
+          "x": 480,
+          "y": 360,
+          "spawnWhen": {
+            "blackboardKey": "storyState",
+            "path": "s02BegFainted",
+            "equals": true
+          }
+        },
+        {
+          "id": "S02-grain-cart-2",
+          "type": "ref",
+          "kind": "item",
+          "ref": "story.s02.grain_cart",
+          "group": "S02-believer-train",
+          "name": "信众粮车·二",
+          "x": 540,
+          "y": 470,
+          "spawnWhen": {
+            "blackboardKey": "storyState",
+            "path": "s02BegFainted",
+            "equals": true
+          }
         }
       ]
     },
@@ -2511,7 +2413,7 @@
         {
           "id": "S02-binding-recruit",
           "type": "trigger",
-          "name": "招兵旗：招募灾民入伍",
+          "name": "招众旗：布道招募信众",
           "triggerId": "trg_s02_recruit",
           "x": 780,
           "y": 300,
@@ -2522,7 +2424,7 @@
           "target": "S02-zone-recruit",
           "radius": 110,
           "pointerRadius": 60,
-          "prompt": "{interact}招募灾民入伍"
+          "prompt": "{interact}聆听布道，招募信众"
         }
       ]
     }

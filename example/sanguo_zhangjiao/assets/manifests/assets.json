@@ -3329,6 +3329,38 @@
       "displayName": "S02 施粥大锅"
     },
     {
+      "assetId": "s02.prop.grainCart",
+      "imageId": "s02.prop.grainCart",
+      "category": "environment-module",
+      "usage": [
+        "S02",
+        "grain-cart",
+        "relief"
+      ],
+      "sourceFile": "assets/images/s02/grain-cart.png",
+      "runtime2D": {
+        "path": "assets/images/s02/grain-cart.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "s02.prop.grainCart"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      },
+      "bounds": {
+        "width": 225,
+        "height": 150
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1,
+      "displayName": "S02 粮车"
+    },
+    {
       "assetId": "s03.environment.yingchuanBattlefieldGround",
       "imageId": "s03.environment.yingchuanBattlefieldGround",
       "category": "environment-background",

@@ -26,12 +26,22 @@
  * 搬运完成由 ArmyCommandSystem.onRescueComplete 回调驱动本类触发
  * enterRegion 剧情事件（regionId 归触发器数据所有）。
  */
+/**
+ * 受伤 debuff 分档（M3.6）：只削生存不削输出。
+ * M4 行军段赠药（severe→light）/包扎（light→痊愈）逐档恢复；story.s09.treatment 终点痊愈。
+ */
+const S02_WOUND_TIERS = {
+  severe: { maxHpMul: 0.75, speedMul: 0.85, label: '重伤在身' },
+  light: { maxHpMul: 0.9, speedMul: 1, label: '伤势减轻' }
+};
+
 export class S02ArmyRescueCoordinator {
   constructor(scene) {
     if (!scene) throw new TypeError('S02ArmyRescueCoordinator requires scene');
     this.scene = scene;
     this._regionId = null;
     this._active = false;
+    this._woundTier = null;
   }
 
   /** 主角昏倒：置位倒地状态（对话锁输入之外的长效操作禁用）并开启剧情保护（敌人停止索敌）。 */
@@ -78,7 +88,7 @@ export class S02ArmyRescueCoordinator {
     system.onCarryStart = () => this._handleCarryStart();
     system.onCarryEnd = () => this._handleCarryEnd();
     scene._showScreenTip?.(
-      '指挥士兵走近伤员周围的触发框，两人将自动抬起担架；随后由你亲自驾驶担架返回营地。',
+      '指挥信众走近伤员周围的触发框，两人将自动抬起担架；随后由你亲自驾驶担架返回营地。',
       { title: '军团指挥' }
     );
     return { ok: true, regionId: this._regionId, goal };
@@ -116,6 +126,70 @@ export class S02ArmyRescueCoordinator {
     }
     scene.armyCommandFlow?.system?.clearRescueTarget?.();
     this._active = false;
+    return { ok: true };
+  }
+
+  /**
+   * 受伤 debuff（M3.6）：按 storyState.s02Wounded 档位修正主角生存属性。
+   * 分档：severe（HP 上限 ×0.75、移速 ×0.85）→ light（HP 上限 ×0.9）→ treated（无）。
+   * 只削生存不削输出——行军段遭遇战难度由「军团护航 + 逐档恢复」消化（M4 赠药/包扎节点）。
+   * 幂等：首次应用快照基准值到实体 _woundBaseStats，重入先还原再按档重乘；
+   * 档位是 storyState 事实（自动入档），读档后由 trg_s02_wound_restore 重放本方法。
+   */
+  applyWoundModifiers() {
+    const scene = this.scene;
+    const player = scene.playerEntity;
+    if (!player) return { ok: false, code: 'playerUnavailable' };
+    const tier = scene.gameLoader?.blackboard?.get?.('storyState')?.s02Wounded;
+    const def = S02_WOUND_TIERS[tier];
+    if (!def) return { ok: true, idempotent: true, tier: tier || null };
+    const stats = player.getComponent?.('stats');
+    if (!stats) return { ok: false, code: 'statsUnavailable' };
+    if (!player._woundBaseStats) {
+      player._woundBaseStats = { maxHp: stats.maxHp, speed: stats.speed };
+    }
+    const base = player._woundBaseStats;
+    stats.maxHp = Math.max(1, Math.round(base.maxHp * def.maxHpMul));
+    stats.speed = Math.round(base.speed * def.speedMul);
+    if (Number.isFinite(stats.hp) && stats.hp > stats.maxHp) stats.hp = stats.maxHp;
+    this._woundTier = tier;
+    const position = player.getComponent?.('transform')?.position;
+    scene.floatingTextManager?.add?.({
+      x: position?.x || 0,
+      y: (position?.y || 0) - 60,
+      text: `【${def.label}】`,
+      fontSize: 14,
+      duration: 2600,
+      velocity: { x: 0, y: -18 },
+      fadeStart: 1600
+    });
+    return { ok: true, tier, maxHp: stats.maxHp, speed: stats.speed };
+  }
+
+  /** 伤势痊愈（story.s09.treatment / M4 包扎节点复用）：还原基准属性并清除快照。 */
+  treatWound() {
+    const scene = this.scene;
+    const player = scene.playerEntity;
+    const base = player?._woundBaseStats;
+    if (player && base) {
+      const stats = player.getComponent?.('stats');
+      if (stats) {
+        stats.maxHp = base.maxHp;
+        stats.speed = base.speed;
+      }
+      player._woundBaseStats = null;
+      const position = player.getComponent?.('transform')?.position;
+      scene.floatingTextManager?.add?.({
+        x: position?.x || 0,
+        y: (position?.y || 0) - 60,
+        text: '【伤势痊愈】',
+        fontSize: 14,
+        duration: 2600,
+        velocity: { x: 0, y: -18 },
+        fadeStart: 1600
+      });
+    }
+    this._woundTier = null;
     return { ok: true };
   }
 
@@ -244,6 +318,14 @@ export class S02ArmyRescueCoordinator {
       movement.velocity.x = 0;
       movement.velocity.y = 0;
     }
+    // 主角卧营养伤（M3.6 摆位增强）：挪到营地破草棚旁躺卧（stretcher 循环剪辑），战罢原地起身
+    const campOffset = scene._worldLoadResult?.worldIndex?.getOffset?.(scene.currentSceneId) || { x: 0, y: 0 };
+    const protagonistTransform = protagonist.getComponent?.('transform');
+    if (protagonistTransform?.position) {
+      protagonistTransform.position.x = 470 + (campOffset.x || 0);
+      protagonistTransform.position.y = 360 + (campOffset.y || 0);
+    }
+    protagonist.getComponent?.('sprite')?.playAnimation?.('stretcher');
     layout.bindPlayer(zhangjiao, { syncCameraPosition: true, log: false });
     scene.meleeAttackSystem?.setPlayerEntity?.(zhangjiao);
     this._possession = { protagonist, zhangjiao };
@@ -272,6 +354,7 @@ export class S02ArmyRescueCoordinator {
       protagonist.plotDowned = false;
       layout?.bindPlayer?.(protagonist, { syncCameraPosition: true, log: false });
       scene.meleeAttackSystem?.setPlayerEntity?.(protagonist);
+      protagonist.getComponent?.('sprite')?.playAnimation?.('idle');
     }
     // 张角留驻营地（M4 行军段复用；兵败重开时 _ensureZhangjiaoEntity 幂等重建）
     if (zhangjiao) {

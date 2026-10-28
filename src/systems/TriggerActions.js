@@ -23,6 +23,7 @@
  */
 
 import { InputHints } from '../core/input/InputHints.js';
+import { setTimeoutFn } from '../core/Timers.js';
 
 /** 稳定的内置 action 契约，供 canonical 候选引用校验复用。 */
 export const DEFAULT_TRIGGER_ACTION_IDS = Object.freeze([

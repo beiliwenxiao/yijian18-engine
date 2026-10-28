@@ -94,4 +94,5 @@ await processProp('small-tree-raw.jpg', 'small-tree.png', 190);
 await processProp('grass-lamp-raw.jpg', 'grass-lamp.png', 210);
 await processProp('broken-hut-raw.jpg', 'broken-hut.png', 190);
 await processProp('porridge-cauldron-raw.jpg', 'porridge-cauldron.png', 130);
+await processProp('grain-cart-raw.jpg', 'grain-cart.png', 150);
 console.log('S02 村庄素材处理完成');
