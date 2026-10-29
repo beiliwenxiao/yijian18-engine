@@ -553,16 +553,16 @@
       "id": "prop.candle",
       "name": "蜡烛",
       "type": "light",
-      "maxStack": 99,
-      "renderStyle": "candle",
       "glow": {
         "color": "#ffca7a",
-        "radius": 110,
-        "intensity": 0.5,
         "flicker": "fire",
+        "intensity": 0.5,
+        "radius": 110,
         "yOffset": -26
       },
       "height": 36,
+      "maxStack": 99,
+      "renderStyle": "candle",
       "showName": false,
       "sprite": {
         "height": 36,
@@ -577,16 +577,16 @@
       "id": "prop.torch",
       "name": "火把",
       "type": "light",
-      "maxStack": 99,
-      "renderStyle": "torch",
       "glow": {
         "color": "#ff9a3e",
-        "radius": 150,
-        "intensity": 0.58,
         "flicker": "fire",
+        "intensity": 0.58,
+        "radius": 150,
         "yOffset": -36
       },
       "height": 56,
+      "maxStack": 99,
+      "renderStyle": "torch",
       "showName": false,
       "sprite": {
         "height": 56,
@@ -601,16 +601,16 @@
       "id": "prop.campfire",
       "name": "火堆",
       "type": "light",
-      "maxStack": 1,
-      "renderStyle": "campfire_lit",
       "glow": {
         "color": "#ff8c2e",
-        "radius": 240,
-        "intensity": 0.62,
         "flicker": "fire",
+        "intensity": 0.62,
+        "radius": 240,
         "yOffset": -10
       },
       "height": 48,
+      "maxStack": 1,
+      "renderStyle": "campfire_lit",
       "showName": false,
       "sprite": {
         "height": 48,
@@ -625,15 +625,15 @@
       "id": "prop.campfire.unlit",
       "name": "熄灭的火堆",
       "type": "light",
-      "maxStack": 1,
-      "renderStyle": "campfire_unlit",
       "glow": {
         "color": "#c8452a",
-        "radius": 46,
         "intensity": 0.14,
+        "radius": 46,
         "yOffset": -6
       },
       "height": 48,
+      "maxStack": 1,
+      "renderStyle": "campfire_unlit",
       "showName": false,
       "sprite": {
         "height": 48,
@@ -648,16 +648,16 @@
       "id": "prop.firefly",
       "name": "萤火虫",
       "type": "light",
-      "maxStack": 99,
-      "renderStyle": "firefly",
       "glow": {
         "color": "#a8ff9e",
-        "radius": 90,
-        "intensity": 0.42,
         "flicker": "breathe",
+        "intensity": 0.42,
+        "radius": 90,
         "yOffset": -18
       },
       "height": 18,
+      "maxStack": 99,
+      "renderStyle": "firefly",
       "showName": false,
       "sprite": {
         "height": 18,

@@ -1746,6 +1746,16 @@ export class S01S02Coordinator {
       this.scene._showScreenTip('烤狼肉完成，已放入背包。', { title: '烤制完成' });
       return { ...result, crafted: true };
     }
+    if (session.recipeId === 's01.roastedRabbitMeat') {
+      const result = await this._submit(
+        'craft.s01.roastedRabbitMeat',
+        {},
+        `${session.operationId}:cook`
+      );
+      if (result.ok !== true) return result;
+      this.scene._showScreenTip('烤兔肉完成，已放入背包。', { title: '烤制完成' });
+      return { ...result, crafted: true };
+    }
 
     const recipeLabels = {
       's01.wolfHideVest': '狼皮背心',

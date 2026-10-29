@@ -661,6 +661,28 @@
   },
   {
     "commandType": "state.transaction",
+    "id": "craft.s01.roastedRabbitMeat",
+    "name": "兑换烤兔肉",
+    "transaction": {
+      "inventory": {
+        "addEntries": [
+          {
+            "itemId": "food.roasted_rabbit_meat",
+            "quantity": 1
+          }
+        ],
+        "removeEntries": [
+          {
+            "itemId": "resource.raw_rabbit_meat",
+            "quantity": 1
+          }
+        ],
+        "type": "batchExchange"
+      }
+    }
+  },
+  {
+    "commandType": "state.transaction",
     "id": "craft.s01.wolfHideVest",
     "name": "兑换狼皮背心",
     "transaction": {

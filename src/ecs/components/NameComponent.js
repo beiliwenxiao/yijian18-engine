@@ -33,6 +33,9 @@ export class NameComponent extends Component {
     this.color = options.color || '#ffffff';
     this.fontSize = options.fontSize || 14;
     this.offsetY = options.offsetY || -10;
+    // 靠近才显示：玩家距离超过 showDistance（px）时隐藏头顶名字；
+    // null = 使用渲染器引擎默认距离（EntityRenderer2D.labelShowDistance）
+    this.showDistance = Number.isFinite(options.showDistance) ? options.showDistance : null;
   }
 
   /**

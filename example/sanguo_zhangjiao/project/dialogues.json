@@ -230,16 +230,16 @@
   {
     "id": "dialogue.s02.porridgeStart",
     "nodes": {
-      "light": {
-        "nextNode": "vow",
-        "speaker": "旁白",
-        "text": "信众们七手八脚抬锅垒灶，柴火噼啪作响。远处的土路上，灾民们拖家带口，循着炊烟与粥香走来。"
-      },
       "law": {
         "nextNode": "light",
         "portrait": "zhangjiao",
         "speaker": "张角",
         "text": "有人嚼舌根，说符水是妖法。胡说。神农尝百草，扁鹊施针石——行医施药、济人疾苦，自古就是王法许的事。符水治的也是病，救的也是命，哪一条触了汉律？"
+      },
+      "light": {
+        "nextNode": "vow",
+        "speaker": "旁白",
+        "text": "信众们七手八脚抬锅垒灶，柴火噼啪作响。远处的土路上，灾民们拖家带口，循着炊烟与粥香走来。"
       },
       "order": {
         "nextNode": "law",
@@ -307,17 +307,17 @@
         "speaker": "张角",
         "text": "好！五十名新募信众，加上我带来的二十人——七十人，都是苍天底下讨活命的人！"
       },
-      "speech": {
-        "nextNode": "slogan",
-        "portrait": "zhangjiao",
-        "speaker": "张角",
-        "text": "乡亲们！跟着我，有饭吃、有钱花，病了有符水，死了有黄天接引！"
-      },
       "slogan": {
         "nextNode": "camp",
         "portrait": "zhangjiao",
         "speaker": "张角",
         "text": "记住八个字——岁在甲子，天下大吉！"
+      },
+      "speech": {
+        "nextNode": "slogan",
+        "portrait": "zhangjiao",
+        "speaker": "张角",
+        "text": "乡亲们！跟着我，有饭吃、有钱花，病了有符水，死了有黄天接引！"
       },
       "start": {
         "nextNode": "order",
@@ -341,6 +341,12 @@
         "speaker": "旁白",
         "text": "哨探连滚带爬冲进营地——村外烟尘滚滚，官军百余精锐列成阵势，将破村三面围死！为首军士高声喊话。"
       },
+      "callup": {
+        "nextNode": "fight",
+        "portrait": "zhangjiao",
+        "speaker": "张角",
+        "text": "我们只是为了活命，吃口饭，发放符水有什么错？凭什么抓捕我们的信众？！黄巾信众听令——苍天既不容我们活，黄天便与我们同在。起兵，自卫！"
+      },
       "dawn": {
         "nextNode": "alarm",
         "speaker": "旁白",
@@ -352,20 +358,14 @@
         "speaker": "张角",
         "text": "回你们的话——施粥赈济，是周穷救急；符水治病，是行医施药；铜钱剑是道家法器，送的是平安。汉律四十九条，条条我都遵守。告发我造反的人，让他拿出证据来！"
       },
+      "fight": {
+        "speaker": "旁白",
+        "text": "官军前锋已经扑进村口。张角把符法借你一用，替他坐镇中军，指挥信众迎敌！"
+      },
       "interrupt": {
         "nextNode": "callup",
         "speaker": "官军军士",
         "text": "少废话！上头有令，太平道妖言惑众，就地清剿——给我杀！"
-      },
-      "callup": {
-        "nextNode": "fight",
-        "portrait": "zhangjiao",
-        "speaker": "张角",
-        "text": "我们只是为了活命，吃口饭，发放符水有什么错？凭什么抓捕我们的信众？！黄巾信众听令——苍天既不容我们活，黄天便与我们同在。起兵，自卫！"
-      },
-      "fight": {
-        "speaker": "旁白",
-        "text": "官军前锋已经扑进村口。张角把符法借你一用，替他坐镇中军，指挥信众迎敌！"
       },
       "night": {
         "nextNode": "dawn",

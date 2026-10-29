@@ -104,8 +104,8 @@
       "attachment": {
         "type": "image",
         "assetId": "chibi.parts.arm-l",
-        "x": 0,
-        "y": 14,
+        "x": -6.2,
+        "y": 34.5,
         "rot": 0,
         "width": 64,
         "height": 64,
@@ -119,8 +119,8 @@
       "attachment": {
         "type": "image",
         "assetId": "chibi.parts.arm-r",
-        "x": 0,
-        "y": 14,
+        "x": 7.3,
+        "y": 36,
         "rot": 0,
         "width": 64,
         "height": 64,
@@ -179,8 +179,8 @@
       "attachment": {
         "type": "image",
         "assetId": "chibi.parts.head",
-        "x": 0,
-        "y": -14,
+        "x": -0.4,
+        "y": -14.3,
         "rot": 0,
         "width": 64,
         "height": 64,

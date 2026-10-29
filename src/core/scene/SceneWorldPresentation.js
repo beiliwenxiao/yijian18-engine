@@ -4,6 +4,7 @@
  ************************************************************/
 
 import { ItemSpriteRenderer } from '../../rendering/ItemSpriteRenderer.js';
+import { EntityRenderer2D } from '../../rendering/EntityRenderer2D.js';
 
 /** 通用世界背景、掉落物和战斗空间表现。 */
 export class SceneWorldPresentation {
@@ -64,6 +65,9 @@ export class SceneWorldPresentation {
   }
 
   _renderPickupList(ctx, items) {
+    // 名称标签距离门控：玩家靠近才显示掉落物名字，远处隐藏（与实体标签同一默认距离）
+    const playerPosition = this.scene.playerEntity?.getComponent?.('transform')?.position || null;
+    const showDistance = EntityRenderer2D.LABEL_SHOW_DISTANCE;
     for (const item of items) {
       if (item.picked) continue;
       const offset = this.getRenderOffset(item) || { x: 0, y: 0 };
@@ -76,6 +80,10 @@ export class SceneWorldPresentation {
         ctx.beginPath();
         ctx.arc(x, y - 5, 10, 0, Math.PI * 2);
         ctx.fill();
+      }
+      if (!playerPosition
+        || (x - playerPosition.x) ** 2 + (y - playerPosition.y) ** 2 > showDistance * showDistance) {
+        continue;
       }
       ctx.fillStyle = '#ffffff';
       ctx.font = '12px Arial';
