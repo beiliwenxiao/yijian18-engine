@@ -1286,6 +1286,9 @@
     "when": {
       "params": {},
       "type": "interact"
+    },
+    "if": {
+      "var": "story.s02SummonsAccepted"
     }
   },
   {
@@ -1695,6 +1698,9 @@
     "when": {
       "params": {},
       "type": "interact"
+    },
+    "if": {
+      "var": "story.s02Rescued"
     }
   },
   {

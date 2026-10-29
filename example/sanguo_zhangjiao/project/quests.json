@@ -399,17 +399,17 @@
     ],
     "steps": [
       {
-        "id": "acceptSummons",
-        "objectiveType": "commit.fact",
-        "target": "story.s02.summons.accept",
-        "title": "接受张角召见",
-        "type": "objective"
-      },
-      {
         "id": "porridge",
         "objectiveType": "commit.fact",
         "target": "story.s02.porridge.laid",
         "title": "支锅施粥赈济灾民",
+        "type": "objective"
+      },
+      {
+        "id": "acceptSummons",
+        "objectiveType": "commit.fact",
+        "target": "story.s02.summons.accept",
+        "title": "接受张角召见",
         "type": "objective"
       },
       {

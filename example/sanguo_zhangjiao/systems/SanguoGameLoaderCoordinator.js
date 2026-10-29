@@ -52,6 +52,14 @@ async function fireSceneEnterTriggers() {
     return { ok: false, code: 'sceneEnterTriggerFailed', records: sceneEnterResult.records };
   }
   Logger.log('%c[DDScene][GameLoader] sceneEnter 触发器已执行:', 'color:#4CAF50', sceneId);
+  // 任务事实对账：sceneEnter 触发器可能启动任务实例；对「StoryState 已成立但节点未计数」
+  // 的事实补喂合成事件（eventId 固定幂等），消除「事实先于节点成立 → 事件被丢弃 →
+  // 节点永久等待」的乱序死锁。失败不阻断进入（下次进场重试）。
+  try {
+    await this.reconcileTaskFacts?.();
+  } catch (error) {
+    console.warn('[DDScene][GameLoader] 任务事实对账失败:', sceneId, error);
+  }
   return { ok: true, ...sceneEnterResult };
 }
 

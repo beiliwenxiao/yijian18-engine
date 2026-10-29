@@ -299,6 +299,12 @@ async function forwardCommittedSceneEnter(sceneId) {
   if (!result.ok) {
     console.warn(`[SanguoWorldRuntimeCoordinator] sceneEnter 触发器执行失败: ${sceneId}`, result.records);
   }
+  // 跨块旅行进场同样做任务事实对账（同 fireSceneEnterTriggers：幂等补喂，失败不阻断）。
+  try {
+    await this.reconcileTaskFacts?.();
+  } catch (error) {
+    console.warn('[SanguoWorldRuntimeCoordinator] 任务事实对账失败:', sceneId, error);
+  }
   return result.ok;
 }
 
