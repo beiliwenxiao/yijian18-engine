@@ -16,7 +16,8 @@ import { validateSharedAtlasCatalog } from '../core/validation/SharedAtlasCatalo
 import { createContentValidator } from '../core/validation/ContentSchemas.js';
 import { ValidationCode, makeError } from '../core/validation/ValidationError.js';
 
-const CANONICAL_SCENE_FILE = /^S(?:0[1-9]|1[0-4])(?:-C\d{2})?\.json$/;
+// SXX(-CNN) + 大地图坐标走廊块 s_行_列（如 s_5_8）均为 canonical 场景文件
+const CANONICAL_SCENE_FILE = /^(?:S(?:0[1-9]|1[0-4])(?:-C\d{2})?|s_\d{1,2}_\d{1,2})\.json$/;
 const ATLAS_ASSET_ROOT = /^assets\/(?:images|atlases)\//;
 const json = value => `${JSON.stringify(value, null, 2)}\n`;
 

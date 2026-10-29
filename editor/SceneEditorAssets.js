@@ -1620,7 +1620,8 @@ export class SceneEditorAssets {
     this.editor.ui.showToast?.('正在扫描磁盘资产与 canonical 场景引用…');
 
     try {
-      const canonicalSceneFile = file => /\/S\d{2}(?:-C\d{2})?\.json$/i.test(file.replace(/\\/g, '/'));
+      // canonical 场景文件：SXX(-CNN) + 大地图坐标走廊块 s_行_列（如 s_5_8）
+      const canonicalSceneFile = file => /\/(?:S\d{2}(?:-C\d{2})?|s_\d{1,2}_\d{1,2})\.json$/i.test(file.replace(/\\/g, '/'));
       const [manifest, imageFiles, sceneFiles, audioConfig, audioFiles] = await Promise.all([
         this._fetchJson(`/${gameRoot}/assets/manifests/assets.json`),
         this._listFilesRecursive(`${gameRoot}/assets/images`, file => /\.(png|jpe?g|webp|gif|bmp|svg|avif)$/i.test(file)),

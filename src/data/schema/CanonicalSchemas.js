@@ -527,7 +527,8 @@ export const CHECKPOINT_SCHEMA = {
     endingState: { type: FieldType.OBJECT, required: true }
   },
   validate(checkpoint) {
-    if (/^S(?:0[1-9]|1[0-4])(?:-C\d{2})?$/.test(checkpoint.currentSceneId)) {
+    // S01-S14（及 SXX-CNN）+ 大地图坐标走廊块 s_行_列（如 s_5_8）
+    if (/^(?:S(?:0[1-9]|1[0-4])(?:-C\d{2})?|s_\d{1,2}_\d{1,2})$/.test(checkpoint.currentSceneId)) {
       return { ok: true, errors: [] };
     }
     return {

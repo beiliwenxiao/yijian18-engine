@@ -13,7 +13,8 @@
 import { getWorldMapCellSceneId } from '../../../src/core/WorldMapCell.js';
 
 const CAMPAIGN_ID = 'sanguo-zhangjiao-s01-s14';
-const CANONICAL_SCENE_ID = /^S(?:0[1-9]|1[0-4])(?:-C\d{2})?$/;
+// canonical 场景 ID：S01-S14（大战场附属 chunk SXX-CNN）+ 大地图坐标走廊块 s_行_列（如 s_5_8）
+const CANONICAL_SCENE_ID = /^(?:S(?:0[1-9]|1[0-4])(?:-C\d{2})?|s_\d{1,2}_\d{1,2})$/;
 const LEGACY_SCENE_ID = /^(?:s\d+-\d+|scene_Prologue)$/i;
 const LEGACY_ACT_VALUE = /(?:^|[_-])act\d/i;
 

@@ -14,7 +14,8 @@ import { ProjectWorldIndex } from './ProjectWorldIndex.js';
 import { LoadedChunk } from './LoadedChunk.js';
 
 const STREAMING_SCHEMA_VERSION = 2;
-const CANONICAL_CHUNK_ID = /^S\d{2}(?:-C\d{2})?$/;
+// canonical chunk：SXX（大战场附属 chunk SXX-CNN）+ 大地图坐标走廊块 s_行_列（如 s_5_8，单 chunk 自为命名空间）
+const CANONICAL_CHUNK_ID = /^(?:S\d{2}(?:-C\d{2})?|s_\d{1,2}_\d{1,2})$/;
 
 function cloneValue(value) {
   if (value === undefined) return undefined;

@@ -233,7 +233,8 @@ export function editorFileAPIPlugin({ repoRoot, allowedProjectPaths = [] } = {})
       const notifiedRevisions = new Map();
       const sceneCommitEvent = 'yijian18:canonical-scene-commit';
       const projectCommitEvent = 'yijian18:canonical-project-commit';
-      const canonicalSceneId = /^S(?:0[1-9]|1[0-4])(?:-C\d{2})?$/;
+      // SXX(-CNN) + 大地图坐标走廊块 s_行_列（如 s_5_8）均可热同步
+      const canonicalSceneId = /^(?:S(?:0[1-9]|1[0-4])(?:-C\d{2})?|s_\d{1,2}_\d{1,2})$/;
       const logger = server.config?.logger || console;
       const resolveProjectCommit = filePath => {
         const absolutePath = path.resolve(String(filePath || ''));
