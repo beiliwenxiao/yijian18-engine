@@ -1,10 +1,14 @@
 {
   "gameId": "sanguo_zhangjiao",
-  "order": ["S01", "S02", "S09", "S03", "S04", "S05", "S06", "S07", "S08", "S10", "S11", "S12", "S13", "S14"],
+  "order": ["S01", "S02", "s_5_8", "s_5_9", "s_5_10", "s_5_11", "S09", "S03", "S04", "S05", "S06", "S07", "S08", "S10", "S11", "S12", "S13", "S14"],
   "scenes": {
     "S01": { "name": "S01 寒风荒野求生", "type": "terrain", "sceneType": "worldChunk", "worldMap": "mainland" },
     "S01-C01": { "name": "S01·小庇护所内", "type": "terrain", "sceneType": "worldChunk", "worldMap": "s01-shelter", "productionState": "playable", "previewOnly": false },
     "S02": { "name": "S02·废弃营地", "type": "terrain", "sceneType": "worldChunk", "worldMap": "mainland", "productionState": "playable" },
+    "s_5_8": { "name": "林间小径", "type": "terrain", "sceneType": "worldChunk", "worldMap": "mainland", "productionState": "playable", "previewOnly": false },
+    "s_5_9": { "name": "山脊隘口", "type": "terrain", "sceneType": "worldChunk", "worldMap": "mainland", "productionState": "playable", "previewOnly": false },
+    "s_5_10": { "name": "涉水浅滩", "type": "terrain", "sceneType": "worldChunk", "worldMap": "mainland", "productionState": "playable", "previewOnly": false },
+    "s_5_11": { "name": "官道平原", "type": "terrain", "sceneType": "worldChunk", "worldMap": "mainland", "productionState": "playable", "previewOnly": false },
     "S09": { "name": "S09·粥棚营地", "type": "terrain", "sceneType": "worldChunk", "worldMap": "mainland", "productionState": "playable", "previewOnly": false },
     "S03": { "name": "S03·颍川首战", "type": "terrain", "sceneType": "worldChunk", "worldMap": "mainland", "productionState": "playable", "previewOnly": false },
     "S04": { "name": "S04·长社战场", "type": "terrain", "sceneType": "worldChunk", "worldMap": "mainland", "productionState": "playable", "previewOnly": false },

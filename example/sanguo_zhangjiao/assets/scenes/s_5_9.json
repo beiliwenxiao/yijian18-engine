@@ -1,0 +1,320 @@
+{
+  "id": "s_5_9",
+  "name": "山脊隘口",
+  "width": 1280,
+  "height": 720,
+  "backgroundColor": "#4a443c",
+  "type": "terrain",
+  "sceneType": "worldChunk",
+  "worldMap": "mainland",
+  "productionState": "playable",
+  "previewOnly": false,
+  "presentationProfile": "sanguo-zhangjiao-presentation-v1",
+  "composition": {
+    "complexity": "low",
+    "focalPoint": "s59-pass-cairn",
+    "primaryRoute": [
+      "s59-spawn-west",
+      "s59-pass-gate",
+      "s59-pass-cairn",
+      "s59-spawn-east"
+    ],
+    "cameraFrame": { "width": 1280, "height": 720 }
+  },
+  "assetBudget": {
+    "environmentModules": 4,
+    "actorVariants": 0,
+    "interactiveProps": 1,
+    "vfx": 0,
+    "audioLayers": 1
+  },
+  "layers": [
+    {
+      "id": "layer_bg",
+      "name": "山体地面",
+      "visible": true,
+      "locked": false,
+      "objects": [
+        {
+          "id": "s59-bg-mountain-ground",
+          "type": "image",
+          "x": 0,
+          "y": 0,
+          "width": 1280,
+          "height": 720,
+          "rotation": 0,
+          "imageId": "graybox.naturalTerrain",
+          "name": "山脊碎石坡面",
+          "semanticRole": "sceneBackground",
+          "state": "content",
+          "visualDescription": "山脊隘口地面；灰褐碎石坡与风蚀山道，南北两侧山体压顶，仅中部隘口可通行。正式替换图不得烘焙文字或业务碰撞。"
+        }
+      ]
+    },
+    {
+      "id": "layer_fill",
+      "name": "山道与山体阻挡",
+      "visible": true,
+      "locked": false,
+      "objects": [
+        {
+          "id": "s59-path-pass",
+          "type": "shape",
+          "shapeType": "polygon",
+          "name": "隘口山道",
+          "points": [
+            [0, 380],
+            [340, 330],
+            [560, 330],
+            [760, 390],
+            [1280, 350],
+            [1280, 500],
+            [740, 530],
+            [540, 480],
+            [320, 470],
+            [0, 520]
+          ],
+          "fillMode": "color",
+          "fill": "#9a8b6e",
+          "opacity": 0.3,
+          "stroke": "#b09a72",
+          "strokeWidth": 2,
+          "walkable": true,
+          "semanticRole": "travelRoute",
+          "visualDescription": "隘口山道；穿行南北山体之间的唯一通路。"
+        },
+        {
+          "id": "s59-ridge-north",
+          "type": "shape",
+          "shapeType": "polygon",
+          "name": "北岭山体",
+          "points": [
+            [0, 0],
+            [1280, 0],
+            [1280, 240],
+            [1000, 300],
+            [760, 300],
+            [520, 260],
+            [260, 280],
+            [0, 220]
+          ],
+          "fillMode": "color",
+          "fill": "#5b564e",
+          "opacity": 0.6,
+          "stroke": "#7a7266",
+          "strokeWidth": 3,
+          "collide": true,
+          "climbable": false,
+          "semanticRole": "gameplayZone",
+          "visualDescription": "北岭山体；陡坡不可攀越。"
+        },
+        {
+          "id": "s59-ridge-south",
+          "type": "shape",
+          "shapeType": "polygon",
+          "name": "南岭山体",
+          "points": [
+            [0, 720],
+            [1280, 720],
+            [1280, 520],
+            [1020, 560],
+            [740, 590],
+            [480, 540],
+            [240, 590],
+            [0, 560]
+          ],
+          "fillMode": "color",
+          "fill": "#5b564e",
+          "opacity": 0.6,
+          "stroke": "#7a7266",
+          "strokeWidth": 3,
+          "collide": true,
+          "climbable": false,
+          "semanticRole": "gameplayZone",
+          "visualDescription": "南岭山体；陡坡不可攀越。"
+        },
+        {
+          "id": "s59-rock-fall-west",
+          "type": "shape",
+          "shapeType": "polygon",
+          "name": "西口塌方乱石",
+          "points": [
+            [300, 330],
+            [420, 350],
+            [430, 470],
+            [310, 460]
+          ],
+          "fillMode": "color",
+          "fill": "#6a6156",
+          "opacity": 0.5,
+          "stroke": "#8a7f6f",
+          "strokeWidth": 2,
+          "collide": true,
+          "climbable": false,
+          "semanticRole": "gameplayZone",
+          "visualDescription": "西口塌方乱石；山道收窄。"
+        }
+      ]
+    },
+    {
+      "id": "layer_deco",
+      "name": "山石与路标",
+      "visible": true,
+      "locked": false,
+      "objects": [
+        {
+          "id": "s59-rock-pile-1",
+          "type": "image",
+          "imageId": "s05.environment.mineCollapse",
+          "name": "塌方石堆·西",
+          "x": 300,
+          "y": 300,
+          "width": 140,
+          "height": 90,
+          "rotation": 0,
+          "depthSort": true,
+          "sortY": 390,
+          "semanticRole": "prop",
+          "visualDescription": "塌方石堆；山道险要点缀。"
+        },
+        {
+          "id": "s59-rock-pile-2",
+          "type": "image",
+          "imageId": "s05.environment.mineCollapse",
+          "name": "塌方石堆·东",
+          "x": 820,
+          "y": 480,
+          "width": 140,
+          "height": 90,
+          "rotation": 0,
+          "depthSort": true,
+          "sortY": 570,
+          "semanticRole": "prop",
+          "visualDescription": "塌方石堆；山道险要点缀。"
+        },
+        {
+          "id": "s59-rock-pile-3",
+          "type": "image",
+          "imageId": "s05.environment.mineCollapse",
+          "name": "崩落碎石·北",
+          "x": 1020,
+          "y": 220,
+          "width": 120,
+          "height": 80,
+          "rotation": 0,
+          "depthSort": true,
+          "sortY": 300,
+          "semanticRole": "prop",
+          "visualDescription": "崩落碎石；北岭坡脚点缀。"
+        },
+        {
+          "id": "s59-pass-cairn",
+          "type": "image",
+          "imageId": "s10.construction.siteMarker",
+          "name": "隘口石标",
+          "x": 640,
+          "y": 330,
+          "width": 60,
+          "height": 70,
+          "rotation": 0,
+          "depthSort": true,
+          "sortY": 400,
+          "semanticRole": "storyMarker",
+          "visualDescription": "隘口石标；商旅堆砌的认路记号。"
+        }
+      ]
+    },
+    {
+      "id": "layer_placement",
+      "name": "出入口出生点",
+      "visible": true,
+      "locked": false,
+      "objects": [
+        {
+          "id": "s59-spawn-west",
+          "type": "spawn",
+          "name": "西口·林间方向",
+          "ref": "player",
+          "x": 70,
+          "y": 430
+        },
+        {
+          "id": "s59-spawn-east",
+          "type": "spawn",
+          "name": "东口·河谷方向",
+          "ref": "player",
+          "x": 1210,
+          "y": 420
+        }
+      ]
+    },
+    {
+      "id": "layer_logic",
+      "name": "出入口交互",
+      "visible": true,
+      "locked": false,
+      "objects": [
+        {
+          "id": "s59-zone-exit-west",
+          "type": "region",
+          "name": "西口折返区",
+          "regionId": "s59-exit-west",
+          "x": 0,
+          "y": 350,
+          "width": 110,
+          "height": 160
+        },
+        {
+          "id": "s59-zone-exit-east",
+          "type": "region",
+          "name": "东口前行区",
+          "regionId": "s59-exit-east",
+          "x": 1170,
+          "y": 330,
+          "width": 110,
+          "height": 160
+        },
+        {
+          "id": "s59-binding-exit-west",
+          "type": "trigger",
+          "name": "折返林间小径",
+          "triggerId": "trg_s59_travel_west",
+          "x": 0,
+          "y": 350,
+          "width": 110,
+          "height": 160,
+          "event": "interact",
+          "targetMode": "id",
+          "target": "s59-zone-exit-west",
+          "radius": 90,
+          "pointerRadius": 54,
+          "prompt": "{interact}折返林间小径"
+        },
+        {
+          "id": "s59-binding-exit-east",
+          "type": "trigger",
+          "name": "东行下到河谷",
+          "triggerId": "trg_s59_travel_east",
+          "x": 1170,
+          "y": 330,
+          "width": 110,
+          "height": 160,
+          "event": "interact",
+          "targetMode": "id",
+          "target": "s59-zone-exit-east",
+          "radius": 90,
+          "pointerRadius": 54,
+          "prompt": "{interact}东行下到河谷"
+        }
+      ]
+    }
+  ],
+  "decorations": [],
+  "colliders": [],
+  "imageAssets": {
+    "graybox.naturalTerrain": { "name": "山脊碎石坡面" },
+    "s05.environment.mineCollapse": { "name": "塌方石堆" },
+    "s10.construction.siteMarker": { "name": "隘口石标" }
+  },
+  "updatedAt": "2026-10-29T00:00:00.000Z"
+}

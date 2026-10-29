@@ -1062,15 +1062,19 @@
               "terrain": "yellowRiver"
             },
             {
+              "sceneId": "s_5_8",
+              "terrain": "forest"
+            },
+            {
+              "sceneId": "s_5_9",
+              "terrain": "mountain"
+            },
+            {
+              "sceneId": "s_5_10",
               "terrain": "yellowRiver"
             },
             {
-              "terrain": "yellowRiver"
-            },
-            {
-              "terrain": "plain"
-            },
-            {
+              "sceneId": "s_5_11",
               "terrain": "plain"
             },
             {
@@ -2114,6 +2118,42 @@
     {
       "height": 720,
       "id": "S14",
+      "previewOnly": false,
+      "productionState": "playable",
+      "width": 1280,
+      "worldMap": "mainland"
+    },
+    {
+      "height": 720,
+      "id": "s_5_8",
+      "name": "林间小径",
+      "previewOnly": false,
+      "productionState": "playable",
+      "width": 1280,
+      "worldMap": "mainland"
+    },
+    {
+      "height": 720,
+      "id": "s_5_9",
+      "name": "山脊隘口",
+      "previewOnly": false,
+      "productionState": "playable",
+      "width": 1280,
+      "worldMap": "mainland"
+    },
+    {
+      "height": 720,
+      "id": "s_5_10",
+      "name": "涉水浅滩",
+      "previewOnly": false,
+      "productionState": "playable",
+      "width": 1280,
+      "worldMap": "mainland"
+    },
+    {
+      "height": 720,
+      "id": "s_5_11",
+      "name": "官道平原",
       "previewOnly": false,
       "productionState": "playable",
       "width": 1280,

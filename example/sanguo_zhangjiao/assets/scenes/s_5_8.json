@@ -1,0 +1,377 @@
+{
+  "id": "s_5_8",
+  "name": "林间小径",
+  "width": 1280,
+  "height": 720,
+  "backgroundColor": "#3c4032",
+  "type": "terrain",
+  "sceneType": "worldChunk",
+  "worldMap": "mainland",
+  "productionState": "playable",
+  "previewOnly": false,
+  "presentationProfile": "sanguo-zhangjiao-presentation-v1",
+  "composition": {
+    "complexity": "low",
+    "focalPoint": "s58-crossroad-stump",
+    "primaryRoute": [
+      "s58-spawn-west",
+      "s58-path-east-leg",
+      "s58-crossroad-stump",
+      "s58-spawn-east"
+    ],
+    "cameraFrame": { "width": 1280, "height": 720 }
+  },
+  "assetBudget": {
+    "environmentModules": 4,
+    "actorVariants": 0,
+    "interactiveProps": 2,
+    "vfx": 0,
+    "audioLayers": 1
+  },
+  "layers": [
+    {
+      "id": "layer_bg",
+      "name": "林间地面",
+      "visible": true,
+      "locked": false,
+      "objects": [
+        {
+          "id": "s58-bg-forest-ground",
+          "type": "image",
+          "x": 0,
+          "y": 0,
+          "width": 1280,
+          "height": 720,
+          "rotation": 0,
+          "imageId": "graybox.naturalTerrain",
+          "name": "林间土径地面",
+          "semanticRole": "sceneBackground",
+          "state": "content",
+          "visualDescription": "森林小径地面；褐色泥土地与浅色兽径贯穿东西，两侧密林仅以树影示意。正式替换图不得烘焙文字或业务碰撞。"
+        }
+      ]
+    },
+    {
+      "id": "layer_fill",
+      "name": "兽径与密林阻挡",
+      "visible": true,
+      "locked": false,
+      "objects": [
+        {
+          "id": "s58-path-east-leg",
+          "type": "shape",
+          "shapeType": "polygon",
+          "name": "林间兽径",
+          "points": [
+            [0, 340],
+            [420, 320],
+            [760, 400],
+            [1280, 360],
+            [1280, 520],
+            [740, 540],
+            [400, 470],
+            [0, 480]
+          ],
+          "fillMode": "color",
+          "fill": "#8a795a",
+          "opacity": 0.3,
+          "stroke": "#a78d64",
+          "strokeWidth": 2,
+          "walkable": true,
+          "semanticRole": "travelRoute",
+          "visualDescription": "林间兽径；西口贯通东口的迁徙主路。"
+        },
+        {
+          "id": "s58-thicket-north",
+          "type": "shape",
+          "shapeType": "polygon",
+          "name": "北密林",
+          "points": [
+            [0, 0],
+            [1280, 0],
+            [1280, 150],
+            [980, 220],
+            [620, 170],
+            [300, 230],
+            [0, 180]
+          ],
+          "fillMode": "color",
+          "fill": "#2f3a26",
+          "opacity": 0.55,
+          "stroke": "#46543a",
+          "strokeWidth": 2,
+          "collide": true,
+          "climbable": false,
+          "semanticRole": "gameplayZone",
+          "visualDescription": "北密林；灌木过密不可穿行。"
+        },
+        {
+          "id": "s58-thicket-south",
+          "type": "shape",
+          "shapeType": "polygon",
+          "name": "南密林",
+          "points": [
+            [0, 720],
+            [1280, 720],
+            [1280, 600],
+            [900, 640],
+            [520, 600],
+            [220, 650],
+            [0, 610]
+          ],
+          "fillMode": "color",
+          "fill": "#2f3a26",
+          "opacity": 0.55,
+          "stroke": "#46543a",
+          "strokeWidth": 2,
+          "collide": true,
+          "climbable": false,
+          "semanticRole": "gameplayZone",
+          "visualDescription": "南密林；灌木过密不可穿行。"
+        },
+        {
+          "id": "s58-thicket-mid",
+          "type": "shape",
+          "shapeType": "polygon",
+          "name": "中段倒木灌丛",
+          "points": [
+            [430, 330],
+            [620, 360],
+            [660, 560],
+            [430, 540]
+          ],
+          "fillMode": "color",
+          "fill": "#3a4030",
+          "opacity": 0.45,
+          "stroke": "#54604a",
+          "strokeWidth": 2,
+          "collide": true,
+          "climbable": false,
+          "semanticRole": "gameplayZone",
+          "visualDescription": "中段倒木灌丛；迫使兽径向南绕行。"
+        }
+      ]
+    },
+    {
+      "id": "layer_deco",
+      "name": "林木与路标",
+      "visible": true,
+      "locked": false,
+      "objects": [
+        {
+          "id": "s58-tree-north-1",
+          "type": "image",
+          "imageId": "s02.prop.bigTree",
+          "name": "密林大树·西北",
+          "x": 90,
+          "y": -30,
+          "width": 260,
+          "height": 235,
+          "rotation": 0,
+          "depthSort": true,
+          "sortY": 205,
+          "semanticRole": "landmarkBuilding",
+          "visualDescription": "密林大树；北侧林冠。"
+        },
+        {
+          "id": "s58-tree-north-2",
+          "type": "image",
+          "imageId": "s02.prop.bigTree",
+          "name": "密林大树·北中",
+          "x": 480,
+          "y": -20,
+          "width": 260,
+          "height": 235,
+          "rotation": 0,
+          "depthSort": true,
+          "sortY": 215,
+          "semanticRole": "landmarkBuilding",
+          "visualDescription": "密林大树；北侧林冠。"
+        },
+        {
+          "id": "s58-tree-north-3",
+          "type": "image",
+          "imageId": "s02.prop.bigTree",
+          "name": "密林大树·东北",
+          "x": 920,
+          "y": -30,
+          "width": 260,
+          "height": 235,
+          "rotation": 0,
+          "depthSort": true,
+          "sortY": 205,
+          "semanticRole": "landmarkBuilding",
+          "visualDescription": "密林大树；北侧林冠。"
+        },
+        {
+          "id": "s58-tree-south-1",
+          "type": "image",
+          "imageId": "s02.prop.bigTree",
+          "name": "密林大树·西南",
+          "x": 210,
+          "y": 500,
+          "width": 260,
+          "height": 235,
+          "rotation": 0,
+          "depthSort": true,
+          "sortY": 735,
+          "semanticRole": "landmarkBuilding",
+          "visualDescription": "密林大树；南侧林冠。"
+        },
+        {
+          "id": "s58-tree-south-2",
+          "type": "image",
+          "imageId": "s02.prop.bigTree",
+          "name": "密林大树·东南",
+          "x": 780,
+          "y": 510,
+          "width": 260,
+          "height": 235,
+          "rotation": 0,
+          "depthSort": true,
+          "sortY": 745,
+          "semanticRole": "landmarkBuilding",
+          "visualDescription": "密林大树；南侧林冠。"
+        },
+        {
+          "id": "s58-tree-small-1",
+          "type": "image",
+          "imageId": "s02.prop.smallTree",
+          "name": "幼树·路北",
+          "x": 700,
+          "y": 150,
+          "width": 120,
+          "height": 110,
+          "rotation": 0,
+          "depthSort": true,
+          "sortY": 260,
+          "semanticRole": "prop",
+          "visualDescription": "幼树；林缘点缀。"
+        },
+        {
+          "id": "s58-tree-small-2",
+          "type": "image",
+          "imageId": "s02.prop.smallTree",
+          "name": "幼树·路南",
+          "x": 330,
+          "y": 470,
+          "width": 120,
+          "height": 110,
+          "rotation": 0,
+          "depthSort": true,
+          "sortY": 580,
+          "semanticRole": "prop",
+          "visualDescription": "幼树；林缘点缀。"
+        },
+        {
+          "id": "s58-crossroad-stump",
+          "type": "image",
+          "imageId": "s01.resource.dryWoodNode",
+          "name": "岔口枯木",
+          "x": 1000,
+          "y": 420,
+          "width": 90,
+          "height": 80,
+          "rotation": 0,
+          "depthSort": true,
+          "sortY": 500,
+          "semanticRole": "storyMarker",
+          "visualDescription": "岔口枯木；东行前的认路标记。"
+        }
+      ]
+    },
+    {
+      "id": "layer_placement",
+      "name": "出入口出生点",
+      "visible": true,
+      "locked": false,
+      "objects": [
+        {
+          "id": "s58-spawn-west",
+          "type": "spawn",
+          "name": "西口·荒村方向",
+          "ref": "player",
+          "x": 70,
+          "y": 400
+        },
+        {
+          "id": "s58-spawn-east",
+          "type": "spawn",
+          "name": "东口·山脊方向",
+          "ref": "player",
+          "x": 1210,
+          "y": 440
+        }
+      ]
+    },
+    {
+      "id": "layer_logic",
+      "name": "出入口交互",
+      "visible": true,
+      "locked": false,
+      "objects": [
+        {
+          "id": "s58-zone-exit-west",
+          "type": "region",
+          "name": "西口折返区",
+          "regionId": "s58-exit-west",
+          "x": 0,
+          "y": 320,
+          "width": 110,
+          "height": 160
+        },
+        {
+          "id": "s58-zone-exit-east",
+          "type": "region",
+          "name": "东口前行区",
+          "regionId": "s58-exit-east",
+          "x": 1170,
+          "y": 340,
+          "width": 110,
+          "height": 160
+        },
+        {
+          "id": "s58-binding-exit-west",
+          "type": "trigger",
+          "name": "折返废弃营地",
+          "triggerId": "trg_s58_travel_west",
+          "x": 0,
+          "y": 320,
+          "width": 110,
+          "height": 160,
+          "event": "interact",
+          "targetMode": "id",
+          "target": "s58-zone-exit-west",
+          "radius": 90,
+          "pointerRadius": 54,
+          "prompt": "{interact}折返废弃营地"
+        },
+        {
+          "id": "s58-binding-exit-east",
+          "type": "trigger",
+          "name": "东行翻越山脊",
+          "triggerId": "trg_s58_travel_east",
+          "x": 1170,
+          "y": 340,
+          "width": 110,
+          "height": 160,
+          "event": "interact",
+          "targetMode": "id",
+          "target": "s58-zone-exit-east",
+          "radius": 90,
+          "pointerRadius": 54,
+          "prompt": "{interact}东行翻越山脊"
+        }
+      ]
+    }
+  ],
+  "decorations": [],
+  "colliders": [],
+  "imageAssets": {
+    "graybox.naturalTerrain": { "name": "林间土径地面" },
+    "s02.prop.bigTree": { "name": "密林大树" },
+    "s02.prop.smallTree": { "name": "幼树" },
+    "s01.resource.dryWoodNode": { "name": "岔口枯木" }
+  },
+  "updatedAt": "2026-10-29T00:00:00.000Z"
+}

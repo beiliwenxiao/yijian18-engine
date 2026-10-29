@@ -1,0 +1,311 @@
+{
+  "id": "s_5_10",
+  "name": "涉水浅滩",
+  "width": 1280,
+  "height": 720,
+  "backgroundColor": "#4d4a40",
+  "type": "terrain",
+  "sceneType": "worldChunk",
+  "worldMap": "mainland",
+  "productionState": "playable",
+  "previewOnly": false,
+  "presentationProfile": "sanguo-zhangjiao-presentation-v1",
+  "composition": {
+    "complexity": "low",
+    "focalPoint": "s10-ford-shallows",
+    "primaryRoute": [
+      "s510-spawn-west",
+      "s510-south-bank",
+      "s10-ford-shallows",
+      "s510-north-bank",
+      "s510-spawn-east"
+    ],
+    "cameraFrame": { "width": 1280, "height": 720 }
+  },
+  "assetBudget": {
+    "environmentModules": 4,
+    "actorVariants": 0,
+    "interactiveProps": 1,
+    "vfx": 0,
+    "audioLayers": 2
+  },
+  "layers": [
+    {
+      "id": "layer_bg",
+      "name": "河谷地面",
+      "visible": true,
+      "locked": false,
+      "objects": [
+        {
+          "id": "s510-bg-river-ground",
+          "type": "image",
+          "x": 0,
+          "y": 0,
+          "width": 1280,
+          "height": 720,
+          "rotation": 0,
+          "imageId": "s10.environment.creekCampGround",
+          "name": "河谷浅滩地面",
+          "semanticRole": "sceneBackground",
+          "state": "content",
+          "visualDescription": "河谷浅滩地面；河流自西向东斜贯，南北两岸滩涂可通行，中段有涉水浅滩。正式替换图不得烘焙文字或业务碰撞。"
+        }
+      ]
+    },
+    {
+      "id": "layer_fill",
+      "name": "河道阻挡与浅滩",
+      "visible": true,
+      "locked": false,
+      "objects": [
+        {
+          "id": "s510-river-water",
+          "type": "shape",
+          "shapeType": "polygon",
+          "name": "河道深水",
+          "points": [
+            [0, 430],
+            [170, 470],
+            [340, 440],
+            [520, 380],
+            [700, 290],
+            [880, 200],
+            [1080, 130],
+            [1280, 90],
+            [1280, 250],
+            [1090, 290],
+            [900, 360],
+            [720, 450],
+            [540, 540],
+            [340, 580],
+            [160, 610],
+            [0, 580]
+          ],
+          "fillMode": "color",
+          "fill": "#3d6b7d",
+          "opacity": 0.55,
+          "stroke": "#5d92a5",
+          "strokeWidth": 2,
+          "collide": true,
+          "climbable": false,
+          "semanticRole": "gameplayZone",
+          "visualDescription": "河道深水；水深处不可通行，仅浅滩可涉渡。"
+        },
+        {
+          "id": "s10-ford-shallows",
+          "type": "shape",
+          "shapeType": "polygon",
+          "name": "涉水浅滩",
+          "points": [
+            [850, 210],
+            [1080, 150],
+            [1150, 330],
+            [930, 390]
+          ],
+          "fillMode": "color",
+          "fill": "#7fa8b5",
+          "opacity": 0.35,
+          "stroke": "#a8ccd6",
+          "strokeWidth": 2,
+          "walkable": true,
+          "semanticRole": "travelRoute",
+          "visualDescription": "涉水浅滩；河水没踝的渡河点，连接南北两岸。"
+        },
+        {
+          "id": "s510-south-bank",
+          "type": "shape",
+          "shapeType": "polygon",
+          "name": "南岸滩涂",
+          "points": [
+            [0, 600],
+            [340, 590],
+            [560, 550],
+            [760, 470],
+            [950, 400],
+            [1280, 350],
+            [1280, 720],
+            [0, 720]
+          ],
+          "fillMode": "color",
+          "fill": "#8a795a",
+          "opacity": 0.22,
+          "stroke": "#a78d64",
+          "strokeWidth": 2,
+          "walkable": true,
+          "semanticRole": "travelRoute",
+          "visualDescription": "南岸滩涂；西口通往浅滩的沿岸通路。"
+        },
+        {
+          "id": "s510-north-bank",
+          "type": "shape",
+          "shapeType": "polygon",
+          "name": "北岸滩涂",
+          "points": [
+            [0, 400],
+            [200, 430],
+            [420, 400],
+            [640, 320],
+            [860, 170],
+            [1080, 90],
+            [1280, 40],
+            [1280, 0],
+            [0, 0]
+          ],
+          "fillMode": "color",
+          "fill": "#8a795a",
+          "opacity": 0.22,
+          "stroke": "#a78d64",
+          "strokeWidth": 2,
+          "walkable": true,
+          "semanticRole": "travelRoute",
+          "visualDescription": "北岸滩涂；浅滩通往东口的沿岸通路。"
+        }
+      ]
+    },
+    {
+      "id": "layer_deco",
+      "name": "滩石与植被",
+      "visible": true,
+      "locked": false,
+      "objects": [
+        {
+          "id": "s510-rock-bank-1",
+          "type": "image",
+          "imageId": "s05.environment.mineCollapse",
+          "name": "岸滩石堆·南",
+          "x": 260,
+          "y": 600,
+          "width": 130,
+          "height": 85,
+          "rotation": 0,
+          "depthSort": true,
+          "sortY": 685,
+          "semanticRole": "prop",
+          "visualDescription": "岸滩石堆；南岸点缀。"
+        },
+        {
+          "id": "s510-rock-bank-2",
+          "type": "image",
+          "imageId": "s05.environment.mineCollapse",
+          "name": "岸滩石堆·北",
+          "x": 640,
+          "y": 120,
+          "width": 130,
+          "height": 85,
+          "rotation": 0,
+          "depthSort": true,
+          "sortY": 205,
+          "semanticRole": "prop",
+          "visualDescription": "岸滩石堆；北岸点缀。"
+        },
+        {
+          "id": "s510-tree-bank",
+          "type": "image",
+          "imageId": "s02.prop.smallTree",
+          "name": "岸柳·东滩",
+          "x": 1060,
+          "y": 380,
+          "width": 120,
+          "height": 110,
+          "rotation": 0,
+          "depthSort": true,
+          "sortY": 490,
+          "semanticRole": "prop",
+          "visualDescription": "岸柳；东滩渡口标记。"
+        }
+      ]
+    },
+    {
+      "id": "layer_placement",
+      "name": "出入口出生点",
+      "visible": true,
+      "locked": false,
+      "objects": [
+        {
+          "id": "s510-spawn-west",
+          "type": "spawn",
+          "name": "西口·南岸",
+          "ref": "player",
+          "x": 70,
+          "y": 630
+        },
+        {
+          "id": "s510-spawn-east",
+          "type": "spawn",
+          "name": "东口·北岸",
+          "ref": "player",
+          "x": 1210,
+          "y": 130
+        }
+      ]
+    },
+    {
+      "id": "layer_logic",
+      "name": "出入口交互",
+      "visible": true,
+      "locked": false,
+      "objects": [
+        {
+          "id": "s510-zone-exit-west",
+          "type": "region",
+          "name": "西口折返区",
+          "regionId": "s510-exit-west",
+          "x": 0,
+          "y": 560,
+          "width": 110,
+          "height": 150
+        },
+        {
+          "id": "s510-zone-exit-east",
+          "type": "region",
+          "name": "东口前行区",
+          "regionId": "s510-exit-east",
+          "x": 1170,
+          "y": 60,
+          "width": 110,
+          "height": 150
+        },
+        {
+          "id": "s510-binding-exit-west",
+          "type": "trigger",
+          "name": "折返山脊隘口",
+          "triggerId": "trg_s510_travel_west",
+          "x": 0,
+          "y": 560,
+          "width": 110,
+          "height": 150,
+          "event": "interact",
+          "targetMode": "id",
+          "target": "s510-zone-exit-west",
+          "radius": 90,
+          "pointerRadius": 54,
+          "prompt": "{interact}折返山脊隘口"
+        },
+        {
+          "id": "s510-binding-exit-east",
+          "type": "trigger",
+          "name": "东行踏上平原",
+          "triggerId": "trg_s510_travel_east",
+          "x": 1170,
+          "y": 60,
+          "width": 110,
+          "height": 150,
+          "event": "interact",
+          "targetMode": "id",
+          "target": "s510-zone-exit-east",
+          "radius": 90,
+          "pointerRadius": 54,
+          "prompt": "{interact}东行踏上平原"
+        }
+      ]
+    }
+  ],
+  "decorations": [],
+  "colliders": [],
+  "imageAssets": {
+    "s10.environment.creekCampGround": { "name": "河谷浅滩地面" },
+    "s05.environment.mineCollapse": { "name": "岸滩石堆" },
+    "s02.prop.smallTree": { "name": "岸柳" }
+  },
+  "updatedAt": "2026-10-29T00:00:00.000Z"
+}

@@ -2247,5 +2247,165 @@
         }
       ]
     }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s58.travel.east",
+    "name": "林间小径：东行翻越山脊",
+    "transaction": {
+      "travel": {
+        "sceneId": "s_5_9",
+        "spawnRef": "s59-spawn-west",
+        "transition": "fadeBlack"
+      },
+      "when": {
+        "all": [
+          {
+            "equals": "s_5_8",
+            "path": "story.currentSceneId"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s58.travel.west",
+    "name": "林间小径：折返废弃营地",
+    "transaction": {
+      "travel": {
+        "sceneId": "S02",
+        "spawnRef": "player",
+        "transition": "fadeBlack"
+      },
+      "when": {
+        "all": [
+          {
+            "equals": "s_5_8",
+            "path": "story.currentSceneId"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s59.travel.east",
+    "name": "山脊隘口：东行下到河谷",
+    "transaction": {
+      "travel": {
+        "sceneId": "s_5_10",
+        "spawnRef": "s510-spawn-west",
+        "transition": "fadeBlack"
+      },
+      "when": {
+        "all": [
+          {
+            "equals": "s_5_9",
+            "path": "story.currentSceneId"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s59.travel.west",
+    "name": "山脊隘口：折返林间小径",
+    "transaction": {
+      "travel": {
+        "sceneId": "s_5_8",
+        "spawnRef": "s58-spawn-east",
+        "transition": "fadeBlack"
+      },
+      "when": {
+        "all": [
+          {
+            "equals": "s_5_9",
+            "path": "story.currentSceneId"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s510.travel.east",
+    "name": "涉水浅滩：东行踏上平原",
+    "transaction": {
+      "travel": {
+        "sceneId": "s_5_11",
+        "spawnRef": "s511-spawn-west",
+        "transition": "fadeBlack"
+      },
+      "when": {
+        "all": [
+          {
+            "equals": "s_5_10",
+            "path": "story.currentSceneId"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s510.travel.west",
+    "name": "涉水浅滩：折返山脊隘口",
+    "transaction": {
+      "travel": {
+        "sceneId": "s_5_9",
+        "spawnRef": "s59-spawn-east",
+        "transition": "fadeBlack"
+      },
+      "when": {
+        "all": [
+          {
+            "equals": "s_5_10",
+            "path": "story.currentSceneId"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s511.travel.east",
+    "name": "官道平原：东行前往粥棚营地",
+    "transaction": {
+      "travel": {
+        "sceneId": "S09",
+        "spawnRef": "player",
+        "transition": "fadeBlack"
+      },
+      "when": {
+        "all": [
+          {
+            "equals": "s_5_11",
+            "path": "story.currentSceneId"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s511.travel.west",
+    "name": "官道平原：折返涉水浅滩",
+    "transaction": {
+      "travel": {
+        "sceneId": "s_5_10",
+        "spawnRef": "s510-spawn-east",
+        "transition": "fadeBlack"
+      },
+      "when": {
+        "all": [
+          {
+            "equals": "s_5_11",
+            "path": "story.currentSceneId"
+          }
+        ]
+      }
+    }
   }
 ]

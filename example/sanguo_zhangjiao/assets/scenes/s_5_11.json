@@ -1,0 +1,302 @@
+{
+  "id": "s_5_11",
+  "name": "官道平原",
+  "width": 1280,
+  "height": 720,
+  "backgroundColor": "#4b4337",
+  "type": "terrain",
+  "sceneType": "worldChunk",
+  "worldMap": "mainland",
+  "productionState": "playable",
+  "previewOnly": false,
+  "presentationProfile": "sanguo-zhangjiao-presentation-v1",
+  "composition": {
+    "complexity": "low",
+    "focalPoint": "s511-road-milestone",
+    "primaryRoute": [
+      "s511-spawn-west",
+      "s511-open-field",
+      "s511-road-milestone",
+      "s511-spawn-east"
+    ],
+    "cameraFrame": { "width": 1280, "height": 720 }
+  },
+  "assetBudget": {
+    "environmentModules": 3,
+    "actorVariants": 0,
+    "interactiveProps": 1,
+    "vfx": 0,
+    "audioLayers": 1
+  },
+  "layers": [
+    {
+      "id": "layer_bg",
+      "name": "平原地面",
+      "visible": true,
+      "locked": false,
+      "objects": [
+        {
+          "id": "s511-bg-plain-ground",
+          "type": "image",
+          "x": 0,
+          "y": 0,
+          "width": 1280,
+          "height": 720,
+          "rotation": 0,
+          "imageId": "s02.environment.wastelandGround",
+          "name": "旱塬官道地面",
+          "semanticRole": "sceneBackground",
+          "state": "content",
+          "visualDescription": "官道平原地面；干裂黄土塬与斜贯的踩踏官道，视野开阔直通东口。正式替换图不得烘焙文字或业务碰撞。"
+        }
+      ]
+    },
+    {
+      "id": "layer_fill",
+      "name": "官道与阻隔",
+      "visible": true,
+      "locked": false,
+      "objects": [
+        {
+          "id": "s511-open-field",
+          "type": "shape",
+          "shapeType": "polygon",
+          "name": "塬上坦途",
+          "points": [
+            [0, 330],
+            [400, 300],
+            [820, 320],
+            [1280, 300],
+            [1280, 520],
+            [840, 520],
+            [420, 540],
+            [0, 520]
+          ],
+          "fillMode": "color",
+          "fill": "#9a8b6e",
+          "opacity": 0.25,
+          "stroke": "#b09a72",
+          "strokeWidth": 2,
+          "walkable": true,
+          "semanticRole": "travelRoute",
+          "visualDescription": "塬上坦途；西口贯通东口的官道主路。"
+        },
+        {
+          "id": "s511-gully-south",
+          "type": "shape",
+          "shapeType": "polygon",
+          "name": "南断沟",
+          "points": [
+            [0, 720],
+            [1280, 720],
+            [1280, 640],
+            [860, 660],
+            [520, 630],
+            [200, 670],
+            [0, 640]
+          ],
+          "fillMode": "color",
+          "fill": "#5a4a38",
+          "opacity": 0.55,
+          "stroke": "#75634c",
+          "strokeWidth": 2,
+          "collide": true,
+          "climbable": false,
+          "semanticRole": "gameplayZone",
+          "visualDescription": "南断沟；雨水冲刷的深沟不可通行。"
+        },
+        {
+          "id": "s511-ridge-north",
+          "type": "shape",
+          "shapeType": "polygon",
+          "name": "北土塬坎",
+          "points": [
+            [0, 0],
+            [1280, 0],
+            [1280, 180],
+            [940, 220],
+            [560, 170],
+            [260, 210],
+            [0, 170]
+          ],
+          "fillMode": "color",
+          "fill": "#5a4a38",
+          "opacity": 0.55,
+          "stroke": "#75634c",
+          "strokeWidth": 2,
+          "collide": true,
+          "climbable": false,
+          "semanticRole": "gameplayZone",
+          "visualDescription": "北土塬坎；高出塬面的土坎不可通行。"
+        },
+        {
+          "id": "s511-rock-outcrop",
+          "type": "shape",
+          "shapeType": "polygon",
+          "name": "中段露岩",
+          "points": [
+            [560, 320],
+            [700, 340],
+            [720, 520],
+            [570, 500]
+          ],
+          "fillMode": "color",
+          "fill": "#6a6156",
+          "opacity": 0.5,
+          "stroke": "#8a7f6f",
+          "strokeWidth": 2,
+          "collide": true,
+          "climbable": false,
+          "semanticRole": "gameplayZone",
+          "visualDescription": "中段露岩；官道绕行的巨岩。"
+        }
+      ]
+    },
+    {
+      "id": "layer_deco",
+      "name": "路标与零星植被",
+      "visible": true,
+      "locked": false,
+      "objects": [
+        {
+          "id": "s511-road-milestone",
+          "type": "image",
+          "imageId": "s10.environment.relocationSign",
+          "name": "官道里程碑",
+          "x": 880,
+          "y": 350,
+          "width": 70,
+          "height": 90,
+          "rotation": 0,
+          "depthSort": true,
+          "sortY": 440,
+          "semanticRole": "storyMarker",
+          "visualDescription": "官道里程碑；指引广宗大营方向的立牌。"
+        },
+        {
+          "id": "s511-tree-lone",
+          "type": "image",
+          "imageId": "s02.prop.smallTree",
+          "name": "孤树·塬上",
+          "x": 300,
+          "y": 350,
+          "width": 120,
+          "height": 110,
+          "rotation": 0,
+          "depthSort": true,
+          "sortY": 460,
+          "semanticRole": "prop",
+          "visualDescription": "孤树；平原唯一树荫。"
+        },
+        {
+          "id": "s511-rock-plain-1",
+          "type": "image",
+          "imageId": "s05.environment.mineCollapse",
+          "name": "露岩石堆",
+          "x": 580,
+          "y": 400,
+          "width": 130,
+          "height": 85,
+          "rotation": 0,
+          "depthSort": true,
+          "sortY": 485,
+          "semanticRole": "prop",
+          "visualDescription": "露岩石堆；与中段露岩阻挡呼应。"
+        }
+      ]
+    },
+    {
+      "id": "layer_placement",
+      "name": "出入口出生点",
+      "visible": true,
+      "locked": false,
+      "objects": [
+        {
+          "id": "s511-spawn-west",
+          "type": "spawn",
+          "name": "西口·河谷方向",
+          "ref": "player",
+          "x": 70,
+          "y": 420
+        },
+        {
+          "id": "s511-spawn-east",
+          "type": "spawn",
+          "name": "东口·粥棚方向",
+          "ref": "player",
+          "x": 1210,
+          "y": 400
+        }
+      ]
+    },
+    {
+      "id": "layer_logic",
+      "name": "出入口交互",
+      "visible": true,
+      "locked": false,
+      "objects": [
+        {
+          "id": "s511-zone-exit-west",
+          "type": "region",
+          "name": "西口折返区",
+          "regionId": "s511-exit-west",
+          "x": 0,
+          "y": 340,
+          "width": 110,
+          "height": 160
+        },
+        {
+          "id": "s511-zone-exit-east",
+          "type": "region",
+          "name": "东口前行区",
+          "regionId": "s511-exit-east",
+          "x": 1170,
+          "y": 320,
+          "width": 110,
+          "height": 160
+        },
+        {
+          "id": "s511-binding-exit-west",
+          "type": "trigger",
+          "name": "折返涉水浅滩",
+          "triggerId": "trg_s511_travel_west",
+          "x": 0,
+          "y": 340,
+          "width": 110,
+          "height": 160,
+          "event": "interact",
+          "targetMode": "id",
+          "target": "s511-zone-exit-west",
+          "radius": 90,
+          "pointerRadius": 54,
+          "prompt": "{interact}折返涉水浅滩"
+        },
+        {
+          "id": "s511-binding-exit-east",
+          "type": "trigger",
+          "name": "东行前往粥棚营地",
+          "triggerId": "trg_s511_travel_east",
+          "x": 1170,
+          "y": 320,
+          "width": 110,
+          "height": 160,
+          "event": "interact",
+          "targetMode": "id",
+          "target": "s511-zone-exit-east",
+          "radius": 90,
+          "pointerRadius": 54,
+          "prompt": "{interact}东行前往粥棚营地"
+        }
+      ]
+    }
+  ],
+  "decorations": [],
+  "colliders": [],
+  "imageAssets": {
+    "s02.environment.wastelandGround": { "name": "旱塬官道地面" },
+    "s10.environment.relocationSign": { "name": "官道里程碑" },
+    "s02.prop.smallTree": { "name": "孤树" },
+    "s05.environment.mineCollapse": { "name": "露岩石堆" }
+  },
+  "updatedAt": "2026-10-29T00:00:00.000Z"
+}

@@ -4619,5 +4619,149 @@
       },
       "type": "sceneEnter"
     }
+  },
+  {
+    "id": "trg_s58_travel_east",
+    "name": "林间小径：东行翻越山脊",
+    "once": false,
+    "when": {
+      "type": "interact",
+      "params": {}
+    },
+    "do": [
+      {
+        "action": "state.transaction",
+        "params": {
+          "definitionId": "story.s58.travel.east"
+        },
+        "stepId": "travel"
+      }
+    ]
+  },
+  {
+    "id": "trg_s58_travel_west",
+    "name": "林间小径：折返废弃营地",
+    "once": false,
+    "when": {
+      "type": "interact",
+      "params": {}
+    },
+    "do": [
+      {
+        "action": "state.transaction",
+        "params": {
+          "definitionId": "story.s58.travel.west"
+        },
+        "stepId": "travel"
+      }
+    ]
+  },
+  {
+    "id": "trg_s59_travel_east",
+    "name": "山脊隘口：东行下到河谷",
+    "once": false,
+    "when": {
+      "type": "interact",
+      "params": {}
+    },
+    "do": [
+      {
+        "action": "state.transaction",
+        "params": {
+          "definitionId": "story.s59.travel.east"
+        },
+        "stepId": "travel"
+      }
+    ]
+  },
+  {
+    "id": "trg_s59_travel_west",
+    "name": "山脊隘口：折返林间小径",
+    "once": false,
+    "when": {
+      "type": "interact",
+      "params": {}
+    },
+    "do": [
+      {
+        "action": "state.transaction",
+        "params": {
+          "definitionId": "story.s59.travel.west"
+        },
+        "stepId": "travel"
+      }
+    ]
+  },
+  {
+    "id": "trg_s510_travel_east",
+    "name": "涉水浅滩：东行踏上平原",
+    "once": false,
+    "when": {
+      "type": "interact",
+      "params": {}
+    },
+    "do": [
+      {
+        "action": "state.transaction",
+        "params": {
+          "definitionId": "story.s510.travel.east"
+        },
+        "stepId": "travel"
+      }
+    ]
+  },
+  {
+    "id": "trg_s510_travel_west",
+    "name": "涉水浅滩：折返山脊隘口",
+    "once": false,
+    "when": {
+      "type": "interact",
+      "params": {}
+    },
+    "do": [
+      {
+        "action": "state.transaction",
+        "params": {
+          "definitionId": "story.s510.travel.west"
+        },
+        "stepId": "travel"
+      }
+    ]
+  },
+  {
+    "id": "trg_s511_travel_east",
+    "name": "官道平原：东行前往粥棚营地",
+    "once": false,
+    "when": {
+      "type": "interact",
+      "params": {}
+    },
+    "do": [
+      {
+        "action": "state.transaction",
+        "params": {
+          "definitionId": "story.s511.travel.east"
+        },
+        "stepId": "travel"
+      }
+    ]
+  },
+  {
+    "id": "trg_s511_travel_west",
+    "name": "官道平原：折返涉水浅滩",
+    "once": false,
+    "when": {
+      "type": "interact",
+      "params": {}
+    },
+    "do": [
+      {
+        "action": "state.transaction",
+        "params": {
+          "definitionId": "story.s511.travel.west"
+        },
+        "stepId": "travel"
+      }
+    ]
   }
 ]
