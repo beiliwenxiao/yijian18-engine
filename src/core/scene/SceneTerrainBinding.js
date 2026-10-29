@@ -97,7 +97,18 @@ export class SceneTerrainBinding {
     const terrains = scene._terrains?.length ? scene._terrains : (scene.terrain ? [scene.terrain] : []);
     if (terrains.length === 0 || !this.SceneTerrainCollision) return;
     if (!scene._terrainCollision) scene._terrainCollision = new this.SceneTerrainCollision({ entityRadius: 12 });
-    if (scene.jumpSystem) scene._terrainCollision.setJumpSystem?.(scene.jumpSystem);
+    if (scene.jumpSystem) {
+      scene._terrainCollision.setJumpSystem?.(scene.jumpSystem);
+      // 跳跃路径探针：JumpSystem 每帧扫描剩余路径——可落脚提前落地 / 可阻挡跳跃撞墙弹回
+      // （terrain 列表动态读取，流式加载替换数组后探针仍指向当前 chunk 集合）
+      if (!scene._jumpPathProbe) {
+        scene._jumpPathProbe = (fromX, fromY, dirX, dirY, maxDistance) => {
+          const list = scene._terrains?.length ? scene._terrains : (scene.terrain ? [scene.terrain] : []);
+          return scene._terrainCollision?.scanEntityJumpPath?.(list, fromX, fromY, dirX, dirY, maxDistance) || null;
+        };
+      }
+      scene.jumpSystem.setPathProbe?.(scene._jumpPathProbe);
+    }
     // 攀爬中的实体跳过地形碰撞（攀爬区间常与树冠碰撞体重叠）
     const climbSystem = scene.locomotionSystem?.climbSystem;
     if (climbSystem) scene._terrainCollision.setClimbSystem?.(climbSystem);

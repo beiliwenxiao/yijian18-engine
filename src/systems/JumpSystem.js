@@ -32,6 +32,20 @@ export class JumpSystem {
     this._active = new Map();
     /** 落地追踪：entity -> { startX, startY, dirX, dirY }（落地帧供地形碰撞回退用） */
     this._lastLanding = new Map();
+    /**
+     * 跳跃路径探针（可选，场景经 setPathProbe 注入）：
+     * 每帧对剩余跳跃路径扫描一次，返回 { landAt, blockAt }——
+     *   landAt：路径上可落脚地形（编辑器 walkable shape）的进入距离 → 跳跃提前收束落在这里；
+     *   blockAt：「可阻挡跳跃」地形的命中距离 → 贴墙反向弹回。
+     * 未注入时跳跃行为与旧版一致（飞满全程，仅落地帧修正）。
+     */
+    this._pathProbe = null;
+  }
+
+  /** 注入跳跃路径探针：(fromX, fromY, dirX, dirY, maxDistance) => { landAt, blockAt } | null。 */
+  setPathProbe(fn) {
+    this._pathProbe = typeof fn === 'function' ? fn : null;
+    return this;
   }
 
   setParticleSystem(particleSystem) {
@@ -256,6 +270,7 @@ export class JumpSystem {
   }
 
   update(deltaTime) {
+    const wallBounces = [];
     for (const [entity, data] of this._active) {
       const transform = entity?.getComponent?.('transform');
       if (!transform) {
@@ -271,7 +286,34 @@ export class JumpSystem {
       const progress = Math.min(1, airborneElapsed / data.duration);
       // easeOutQuad：起跳立即开始前移，不保留起步预备缓动；落地自然减速。
       const horizontal = 1 - (1 - progress) * (1 - progress);
-      const step = (horizontal - data.horizontalProgress) * data.distance;
+      let step = (horizontal - data.horizontalProgress) * data.distance;
+      // 路径探测（先于位移推进）：可落脚地形提前收束 / 跳跃阻挡撞墙弹回。
+      if (this._pathProbe && data.distance > 0 && data.horizontalProgress < 1) {
+        const probeHit = this._pathProbe(
+          transform.position.x, transform.position.y,
+          data.direction.x, data.direction.y,
+          Math.max(step, (1 - horizontal) * data.distance)
+        );
+        const blockAt = Number.isFinite(probeHit?.blockAt) ? probeHit.blockAt : null;
+        const landAt = Number.isFinite(probeHit?.landAt) ? probeHit.landAt : null;
+        const wallFirst = blockAt != null && (landAt == null || blockAt < landAt);
+        if (wallFirst && blockAt <= step + 1) {
+          // 本帧撞上「可阻挡跳跃」地形：贴墙反向弹回。延后到遍历结束执行，
+          // 避免迭代中删除/重建 _active 条目导致新段被同一帧重复推进。
+          wallBounces.push({
+            entity, data,
+            wallX: transform.position.x + data.direction.x * Math.max(0, blockAt - 2),
+            wallY: transform.position.y + data.direction.y * Math.max(0, blockAt - 2)
+          });
+          this._active.delete(entity);
+          continue;
+        }
+        if (!wallFirst && landAt != null
+          && this._clampJumpToDistance(data, data.horizontalProgress * data.distance + landAt + 2)) {
+          // 路径上有可落脚地形：把本次跳跃截断为「落到该处」，弧线形状不变、整体提前收束。
+          step = (horizontal - data.horizontalProgress) * data.distance;
+        }
+      }
       // 落点由起跳瞬间的方向与距离锁定，滞空期间不再调整位置。
       transform.position.x += data.direction.x * step;
       transform.position.y += data.direction.y * step;
@@ -311,6 +353,46 @@ export class JumpSystem {
         });
       }
     }
+    // 撞墙弹回统一在遍历结束后执行（startJump 会重建 _active 条目）
+    for (const bounce of wallBounces) this._bounceOffWall(bounce);
+  }
+
+  /**
+   * 把当前跳跃截断为「总水平距离 = targetTotal」（路径上遇到可落脚地形时提前落地）。
+   * 时长同比例压缩 + elapsed 同步重映射，保持 progress 连续——弧线形状不变、整体提前收束。
+   * @returns {boolean} 是否发生截断
+   * @private
+   */
+  _clampJumpToDistance(data, targetTotal) {
+    const target = Math.max(0, Number(targetTotal) || 0);
+    if (!Number.isFinite(target) || target >= data.distance) return false;
+    const scale = target / Math.max(1e-6, data.distance);
+    data.elapsed *= scale;
+    data.chargeDuration *= scale;
+    data.duration *= scale;
+    data.distance = target;
+    return true;
+  }
+
+  /**
+   * 撞墙弹回（「可阻挡跳跃」地形）：位置贴到墙前，剩余距离反向起一段小跳——
+   * 从当前空中高度续跳回落（relocate 语义），落回墙的这一侧。
+   * @private
+   */
+  _bounceOffWall({ entity, data, wallX, wallY }) {
+    const transform = entity?.getComponent?.('transform');
+    if (!transform) return;
+    transform.position.x = wallX;
+    transform.position.y = wallY;
+    const remainingDistance = Math.max(0, (1 - data.horizontalProgress) * data.distance);
+    const bounceDistance = Math.min(48, Math.max(14, remainingDistance * 0.45));
+    this.startJump(entity, { x: -data.direction.x, y: -data.direction.y }, {
+      distance: bounceDistance,
+      baseElevation: data.baseElevation,
+      startElevationOffset: Math.max(0, (transform.position.elevation || 0) - data.baseElevation),
+      relocate: true,
+      mode: data.mode
+    });
   }
 
   cleanup() {

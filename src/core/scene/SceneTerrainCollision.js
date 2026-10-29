@@ -289,6 +289,91 @@ export class SceneTerrainCollision {
   }
 
   /**
+   * 跳跃路径扫描（只读，供 JumpSystem 路径探针每帧调用）。
+   * 沿跳跃方向从 (fromX, fromY) 起按 4px 步长采样，返回路径上最先遇到的：
+   *   - landAt：可落脚地形（编辑器 walkable shape）的进入距离——跳跃应提前收束落在这里；
+   *   - blockAt：「可阻挡跳跃」shape（jumpBlock 标记或独立 jumpBlock 区）的命中距离——撞墙弹回点。
+   * 起点所在的可落脚 shape 会被排除（站在踏石上起跳不算立即落地）；
+   * 起点已在跳跃阻挡 shape 内时不报 blockAt（只拦「进入」，不困已在其内者）。
+   * 树木/水池不参与（跳跃本就越过它们）。
+   * @param {Array} terrains - terrain 实例数组
+   * @param {number} fromX - 扫描起点（当前空中位置）
+   * @param {number} fromY
+   * @param {number} dirX - 跳跃方向（不必归一化）
+   * @param {number} dirY
+   * @param {number} maxDistance - 剩余跳跃距离
+   * @returns {{landAt:number|null, blockAt:number|null}|null} 无命中返回 null
+   */
+  scanEntityJumpPath(terrains, fromX, fromY, dirX, dirY, maxDistance) {
+    const length = Math.hypot(dirX || 0, dirY || 0);
+    if (!(length > 1e-6) || !Number.isFinite(maxDistance) || maxDistance <= 0) return null;
+    const ux = dirX / length;
+    const uy = dirY / length;
+    const step = 4;
+    let landAt = null;
+    let blockAt = null;
+    for (const terrain of terrains || []) {
+      if (!terrain) continue;
+      const trees = terrain.getTreeColliders ? terrain.getTreeColliders() : [];
+      const shapes = terrain._collisionShapes || [];
+      const walkables = terrain._walkableShapes || [];
+      const ponds = terrain.waterPatches || [];
+      const jumpBlocks = terrain._jumpBlockShapes || [];
+      // 半径用默认实体半径（与 resolveEntities 常规路径一致）：空间索引按 radius 缓存，
+      // 传 0 会与常规解算互相挤掉缓存逐帧重建；点命中判定不受索引 padding 影响。
+      const spatial = this._getSpatialIndex(terrain, trees, shapes, walkables, ponds, this.entityRadius);
+      // 起点排除：所在可落脚 shape 不算落地；起点已在跳跃阻挡区内则不再拦（只拦进入）
+      const excludedWalkables = new Set();
+      for (const shape of this._querySpatial(spatial.walkables, fromX, fromY)) {
+        if (this._pointInShape(shape, fromX, fromY)) excludedWalkables.add(shape);
+      }
+      for (const shape of spatial.unboundedWalkables) {
+        if (this._pointInShape(shape, fromX, fromY)) excludedWalkables.add(shape);
+      }
+      const originJumpBlocked = this._isJumpBlockHit(spatial, jumpBlocks, fromX, fromY);
+      for (let distance = step; distance <= maxDistance; distance += step) {
+        if (landAt != null && blockAt != null) break;
+        const x = fromX + ux * distance;
+        const y = fromY + uy * distance;
+        if (blockAt == null && !originJumpBlocked && this._isJumpBlockHit(spatial, jumpBlocks, x, y)) {
+          blockAt = distance;
+          continue;
+        }
+        if (landAt == null && this._isWalkableLandingPoint(spatial, excludedWalkables, x, y)) {
+          landAt = distance;
+        }
+      }
+    }
+    if (landAt == null && blockAt == null) return null;
+    return { landAt, blockAt };
+  }
+
+  /** @private 判定点是否可作为跳跃提前落点：位于未排除的可落脚 shape 内。 */
+  _isWalkableLandingPoint(spatial, excluded, x, y) {
+    const nearby = this._querySpatial(spatial.walkables, x, y);
+    for (let i = 0; i < nearby.length; i++) {
+      if (!excluded.has(nearby[i]) && this._pointInShape(nearby[i], x, y)) return true;
+    }
+    for (let i = 0; i < spatial.unboundedWalkables.length; i++) {
+      const shape = spatial.unboundedWalkables[i];
+      if (!excluded.has(shape) && this._pointInShape(shape, x, y)) return true;
+    }
+    return false;
+  }
+
+  /** @private 判定点是否命中「可阻挡跳跃」地形：独立 jumpBlock 区或带 jumpBlock 标记的碰撞 shape。 */
+  _isJumpBlockHit(spatial, jumpBlocks, x, y) {
+    for (let i = 0; i < jumpBlocks.length; i++) {
+      if (this._pointInShape(jumpBlocks[i], x, y)) return true;
+    }
+    const nearby = this._querySpatial(spatial.shapes, x, y);
+    for (let i = 0; i < nearby.length; i++) {
+      if (nearby[i]?.jumpBlock === true && this._pointInShape(nearby[i], x, y)) return true;
+    }
+    return false;
+  }
+
+  /**
    * 获取或重建 terrain 静态碰撞空间索引。
    * 数组替换（异步场景加载）或数量/半径变化时自动失效。
    * @private
@@ -592,14 +677,16 @@ export class SceneTerrainCollision {
   }
 
   /**
-   * @private 跳跃落点非法时，沿跳跃路径回溯出「最后一个站得住的点」。
+   * @private 跳跃落点非法时，沿跳跃路径回溯出「离落点最近的可站立点」。
    *
    * 场景：玩家从河岸跳向对岸踏石，落点仍落在河道可碰撞 shape 内（跳得不够远）。
    * 旧的兜底分支用 previous（跳跃前的旧位置）回退，会把玩家传送回出发点，
    * 视觉上就是「明明跳过去了却被弹回来」。
    *
-   * 正确行为：沿跳跃方向从落点往回找，找到最后一个**不在任何可碰撞 shape 内**的
-   * 位置——即玩家「刚好能站住」的那一点（可能是河岸、也可能是踏石）。
+   * 正确行为：从落点沿跳跃路径往回（朝起跳点方向）逐点回溯，找到第一个
+   * 「站得住」的位置——即离落点最近的可落脚点（可能是河岸、踏石，
+   * 也可能是已越过的障碍物边缘），而**不是**起跳原位。
+   * 「站得住」= 不在任何可碰撞 shape 内，或落在可落脚 shape 内（踏石/桥面）。
    *
    * @param {Object} spatial - 静态碰撞空间索引
    * @param {{startX:number,startY:number,dirX:number,dirY:number}} landing - 跳跃起跳点与方向
@@ -614,18 +701,19 @@ export class SceneTerrainCollision {
     if (length < 1e-6) return null;
     const ux = dirX / length;
     const uy = dirY / length;
-    // 回溯步长：细到能贴住边界，粗到步数可控
+    // 回溯步长：细到能贴住边界，粗到步数可控；从落点（distance=0）向起跳点方向推进
     const step = 4;
     const total = Math.hypot(landingPos.x - landing.startX, landingPos.y - landing.startY);
     const maxSteps = Math.min(256, Math.ceil(total / step) + 1);
     let best = null;
     for (let i = 0; i <= maxSteps; i++) {
-      const distance = total - i * step;
-      if (distance < 0) break;
+      const distance = i * step;
+      if (distance > total) break;
       const x = landingPos.x - ux * distance;
       const y = landingPos.y - uy * distance;
-      if (!this._isPositionInsideAnyShape(spatial, x, y)) {
-        best = { x, y };   // 已站得住（不在任何阻挡 shape 内）
+      if (!this._isPositionInsideAnyShape(spatial, x, y)
+        || this._isPositionInAnyWalkable(spatial, x, y)) {
+        best = { x, y };   // 离落点最近的可站立点
         break;
       }
     }

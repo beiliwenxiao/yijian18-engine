@@ -1331,6 +1331,23 @@ export class SceneEditorUI {
       });
     }
 
+    // ref 放置物「可阻挡跳跃」：写入 collision.jumpBlock（运行时随动态碰撞体透传给跳跃探针）
+    const refJumpBlock = document.getElementById('editor-ref-jump-block');
+    if (refJumpBlock && obj.type === 'ref') {
+      refJumpBlock.addEventListener('change', () => {
+        if (!isObjectEditable()) {
+          this.showToast('此对象已隐藏或锁定，无法修改', 'warn');
+          this.updateObjectProperties();
+          return;
+        }
+        if (!obj.collision) return;
+        editor.history?.saveHistory?.();
+        if (refJumpBlock.checked) obj.collision.jumpBlock = true;
+        else delete obj.collision.jumpBlock;
+        editor.render();
+      });
+    }
+
     const triggerPicker = document.getElementById('editor-trigger-picker');
     if (triggerPicker && obj.type === 'trigger') {
       triggerPicker.addEventListener('change', () => {
@@ -1646,6 +1663,9 @@ export class SceneEditorUI {
     if (collisionMode !== 'none') {
       html += `<div class="property-row"><label>形状:</label><input value="五点多边形（${Array.isArray(collision?.points) ? collision.points.length : 0} 点）" disabled title="拖动画布上的方形手柄可调整顶点；右键顶点或边可插入、删除顶点"></div>`;
       html += '<div class="property-row"><label>编辑:</label><span style="color:#9ab;font-size:11px;">顶点相对脚底锚点；拖动手柄调整，右键可增删（至少 3 点）</span></div>';
+      if (collisionMode === 'block') {
+        html += `<div class="property-row"><label>可阻挡跳跃:</label><input type="checkbox" id="editor-ref-jump-block" ${collision?.jumpBlock ? 'checked' : ''} title="跳跃（滞空）碰到该物体碰撞区直接撞墙弹回（如城墙/围栏）"></div>`;
+      }
     }
     html += `<div class="property-row"><label>名称:</label><input value="${obj.name || ''}" disabled></div>`;
     html += `<div class="property-row"><label title="触发器可按组名批量放置同组物品">组名:</label><input type="text" value="${obj.group || ''}" data-prop="group" placeholder="如 act1_pickups"></div>`;
@@ -2810,6 +2830,7 @@ export class SceneEditorUI {
     html += `<div class="property-row"><label>边框色:</label><input type="color" value="${obj.stroke || '#5a8a4a'}" data-prop="stroke"></div>`;
     html += `<div class="property-row"><label>边框宽:</label><input type="number" value="${obj.strokeWidth || 0}" min="0" step="1" data-prop="strokeWidth"></div>`;
     html += `<div class="property-row"><label>可碰撞:</label><input type="checkbox" ${obj.collide ? 'checked' : ''} data-prop="collide" title="不可通行区域（与'可落脚'/'可攀爬'互斥）"></div>`;
+    html += `<div class="property-row"><label>可阻挡跳跃:</label><input type="checkbox" ${obj.jumpBlock ? 'checked' : ''} data-prop="jumpBlock" title="跳跃（滞空）碰到该区域直接撞墙弹回；通常与'可碰撞'同用（如城墙/围栏），也可单独勾选仅拦跳跃不拦行走"></div>`;
     html += `<div class="property-row"><label>可落脚:</label><input type="checkbox" ${obj.walkable ? 'checked' : ''} data-prop="walkable" title="可行走区域（与'可碰撞'/'可攀爬'互斥）"></div>`;
     html += `<div class="property-row"><label>可攀爬:</label><input type="checkbox" ${obj.climbable ? 'checked' : ''} data-prop="climbable" title="可攀爬区域：跳跃进入受控攀爬，攀爬中按跳跃随时脱离（与'可碰撞'/'可落脚'互斥）"></div>`;
     if (obj.climbable) {

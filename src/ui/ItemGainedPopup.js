@@ -211,7 +211,15 @@ export class ItemGainedPopup extends UIElement {
       if (!isTouchInput) return pointerConsumed;
     }
 
-    if (InputHints.scheme !== 'gamepad') return pointerConsumed;
+    if (InputHints.scheme !== 'gamepad') {
+      // PC/键盘：按 E 立刻执行第一个选项（未选中焦点时 activateSelected 回退到 actions[0]）。
+      // 返回 true 让 SceneInputFlow 记 _popupConsumed，阻断同一帧 E 键继续路由到世界拾取。
+      if (inputManager?.isKeyboardKeyPressed?.('e') === true) {
+        this.activateSelected();
+        return true;
+      }
+      return pointerConsumed;
+    }
     if (!this._selectedActionId) this._selectedActionId = this._defaultActionId;
 
     const padPressed = button => gamepad?.isButtonPressed?.(button) === true;
@@ -339,8 +347,13 @@ export class ItemGainedPopup extends UIElement {
     const btnX = x + 12;
     const btnW = (width - 24 - gap * Math.max(0, actions.length - 1)) / Math.max(1, actions.length);
     actions.forEach((action, index) => {
+      let label = this._actionLabel(action);
+      // PC 小字提示：按 E 立刻执行第一个选项（已有自动入包倒计时副行时让位）
+      if (index === 0 && InputHints.scheme !== 'gamepad' && !label.includes('\n')) {
+        label = `${label}\n按 ${InputHints.key('pickup') || 'E'} 立刻执行`;
+      }
       this._drawButton(ctx, btnX + index * (btnW + gap), btnY, btnW, BTN_H,
-        this._actionLabel(action), action.color || '#4a4a55', action);
+        label, action.color || '#4a4a55', action);
     });
 
     ctx.restore();

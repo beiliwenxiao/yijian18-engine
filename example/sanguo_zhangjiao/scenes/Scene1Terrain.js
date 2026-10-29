@@ -204,6 +204,9 @@ export class Scene1Terrain {
     // 编辑器中标记 collide 的 shape（多边形/矩形/椭圆碰撞区）
     this._collisionShapes = [];
 
+    // 编辑器中标记 jumpBlock 的独立 shape（仅拦跳跃不拦行走；通常与 collide 同用时随 _collisionShapes 走）
+    this._jumpBlockShapes = [];
+
     // 编辑器中的可渲染 shape（多边形/矩形/圆等，非地形椭圆），用 ShapeRenderer 绘制
     this._editorShapes = [];
     this._shapeImages = new Map();  // shape 图片填充的图片缓存（key=imageSrc）
@@ -356,6 +359,7 @@ export class Scene1Terrain {
     this._bgImageCache = null;
     this._collisionShapes = [];
     this._walkableShapes = [];  // walkable 可落脚区域：内部即使有碰撞区也不阻塞
+    this._jumpBlockShapes = []; // jumpBlock 可阻挡跳跃：滞空碰到直接撞墙弹回
     this._climbableShapes = []; // climbable 可攀爬区域：跳入受控攀爬、跳跃随时脱离
     this._editorShapes = [];
     this._atlasRegistry.setSources(this._sharedAtlases, scene.atlases || []);
@@ -374,6 +378,11 @@ export class Scene1Terrain {
             this._collisionShapes.push(projectedObj);
           } else if (obj.type === 'shape' && obj.climbable) {
             this._climbableShapes.push(projectedObj);
+          }
+          // jumpBlock 可阻挡跳跃：与 collide/walkable 同用时标记随投影对象进入对应数组，
+          // 由探针直接读取 shape.jumpBlock；独立存在（不拦行走、只拦跳跃）时单独收集。
+          if (obj.type === 'shape' && obj.jumpBlock && !obj.collide && !obj.walkable) {
+            this._jumpBlockShapes.push(projectedObj);
           }
           // 非 shape 物件（藤蔓/树/石头等贴图或放置物）勾选「可攀爬」同样成为攀爬面。
           // 保留原锚点：三区多边形 climbZones 的顶点相对物件锚点存储，不能移动锚点。

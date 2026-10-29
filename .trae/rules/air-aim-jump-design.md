@@ -1,11 +1,38 @@
 # 按下即跳跳跃系统设计（大跳 / 空中换向跳 / 空中轻推转向）
 
+> v3.3（2026-10-29 落点三规则）：①**可落脚优先落地**——跳跃路径每帧探针扫描（JumpSystem
+> setPathProbe ← SceneTerrainBinding.checkTerrainCollision 注入，SceneTerrainCollision.
+> scanEntityJumpPath 4px 步长采样），路径遇到编辑器「可落脚」walkable shape 即把本次跳跃
+> 截断为「落到该处」（_clampJumpToDistance：距离+时长同比例压缩，progress 连续弧线不变），
+> 路径上无可落脚地形才按原距离跳完；②**非法落点就近修正**——落地掉进阻挡 shape 时
+> `_findLastWalkableAlongJump` 修复扫描方向 bug：从落点沿路径**往回**找最近可站立点
+> （不在阻挡 shape 内或落在 walkable 内），不再退回起跳原位（可能已跳过障碍物）；
+> ③**可阻挡跳跃（jumpBlock）**——shape/placement 碰撞新属性（编辑器「可碰撞」下的勾选），
+> 滞空碰到直接贴墙反向弹回（_bounceOffWall：剩余距离×0.45 反向续跳 relocate 段，14~48px），
+> 只拦「进入」（起点已在区内不拦），独立 jumpBlock 区（不勾可碰撞）仅拦跳跃不拦行走。
 > v3.2（2026-10-18 触发方式调整）：**二段跳改回按键触发**——滞空中再次按下跳跃键触发
 > （每次腾空限一次），方向取当前输入（无输入则沿当前跳跃方向）；「方向明显改变自动换向」废弃。
 > v3.1（2026-10-18 语义修正）：起跳永远原地跳，方向全部在滞空中生效——首次输入方向=
 > launchJump 跳出；持续同向 ≥300ms=大跳；微调走轻推。
 > v3（2026-10-18）：大跳与换向改由方向输入驱动，小跳置空 0.5s、大跳 1s；
 > v2.2（2026-10-16）：恢复滞空方向控制（轻推+惯性）；v2.1：滞空微调废弃；v2：取消 v1 的「按住悬停瞄准 + 子弹时间」整链。
+
+## 0. v3.3 落点三规则（2026-10-29 实施记录）
+
+| 规则 | 语义 | 实现落点 |
+|------|------|----------|
+| 可落脚优先落地 | 跳跃路径遇 walkable shape（踏石/桥面/坡台）即提前落在该处；无可落脚地形按原距离跳 | JumpSystem.update 路径探针 → `_clampJumpToDistance`（距离+时长同比例压缩，elapsed 重映射保 progress 连续） |
+| 非法落点就近修正 | 落点掉进阻挡 shape：从落点沿路径往回找**最近**可站立点，不回起跳原位 | SceneTerrainCollision._findLastWalkableAlongJump（修复原扫描方向 bug：原实现从起跳点起扫，等价永远弹回原位） |
+| 可阻挡跳跃弹回 | 滞空碰到 jumpBlock 地形：贴墙（命中点前 2px）+ 剩余距离×0.45 反向续跳 | JumpSystem._bounceOffWall（弹回段延后到 update 遍历结束执行，防迭代中重建条目） |
+
+- **探针接线**：SceneTerrainBinding.checkTerrainCollision 每帧 `jumpSystem.setPathProbe(scene._jumpPathProbe)`；
+  探针动态读 `scene._terrains`（流式加载替换数组后仍指向当前 chunk）。未接线时行为与旧版一致。
+- **jumpBlock 数据链**：①编辑器 shape 面板「可碰撞」下勾选 → `obj.jumpBlock`；与 collide/walkable
+  同用时随投影对象进入 `_collisionShapes`/`_walkableShapes`（探针读 `shape.jumpBlock`），
+  独立勾选（不拦行走）由 Scene1Terrain 收集进 `terrain._jumpBlockShapes`；
+  ②ref 放置物碰撞（block 模式）勾选 → `collision.jumpBlock` → ScenePlacementRuntime 动态碰撞体透传。
+- **互不干扰**：树木/水池不参与路径扫描（跳跃本就越过）；二段跳/跳出/大跳升级后的新段照常探针；
+  撞墙弹回落点由落地修正兜底。
 
 ## 1. 背景与诉求（2026-10-16 用户原话）
 

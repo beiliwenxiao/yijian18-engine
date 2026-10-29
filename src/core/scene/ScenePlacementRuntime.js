@@ -1122,6 +1122,7 @@ export class ScenePlacementRuntime {
           id: placementId,
           type: 'shape',
           shapeType: 'polygon',
+          jumpBlock: collision.jumpBlock === true,
           points: collision.points.map(point => [localX + point[0], localY + point[1]])
         }
       });
