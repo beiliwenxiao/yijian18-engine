@@ -424,6 +424,7 @@ export class S02ArmyRescueCoordinator {
     const scene = this.scene;
     // 实体级缓存（独立于 _possession）：release 后留驻营地，再附身复用同一实体
     if (this._zhangjiaoEntity && this._zhangjiaoEntity.isDead !== true && this._zhangjiaoEntity.isDying !== true) {
+      this._syncZhangjiaoSkills(protagonist, this._zhangjiaoEntity);
       return this._zhangjiaoEntity;
     }
     if (!scene.entityFactory?.createPlayer) return null;
@@ -457,9 +458,43 @@ export class S02ArmyRescueCoordinator {
     // 椭碰撞规格与主角同源（presentationProfile.actors.player，DemoPlayerFactory.configurePlayer）
     scene._playerFactory?.configurePlayer?.(scene, zhangjiao);
     zhangjiao.name = '张角';
+    // 桃木杖（M3.6 用户要求）：mainhand 法杖，攻击 +2（近战挥杖与技能流不冲突）。
+    // 走 EquipmentSystem.equipItem 让加成差量同步进 live stats（直调组件只改 bonusStats）。
+    const peachwoodStaff = {
+      id: 'weapon.peachwood_staff',
+      name: '桃木杖',
+      type: 'equipment',
+      subType: 'weapon',
+      stats: { attack: 2 },
+      description: '大贤良师的桃木法杖，杖身刻有太平道符文。'
+    };
+    if (scene.equipmentSystem?.equipItem) scene.equipmentSystem.equipItem(zhangjiao, 'mainhand', peachwoodStaff);
+    else zhangjiao.getComponent?.('equipment')?.equip?.('mainhand', peachwoodStaff);
     scene.context?.entities?.add?.(zhangjiao);
     this._zhangjiaoEntity = zhangjiao;
+    this._syncZhangjiaoSkills(protagonist, zhangjiao);
     return zhangjiao;
+  }
+
+  /**
+   * 张角继承主角已解锁技能（M3.6 用户要求：烈焰掌/火焰掌/寒冰指等测试解锁集全量可用）。
+   * combat.skills 技能视图逐项浅拷贝（冷却表独立重置）；快捷栏装配与可用集同步主角；
+   * 排除打坐/疗伤（heal/meditation 语义绑定主角本体）。
+   * 新建与缓存复用两条路径都调用——主角中途解锁新技能时，再次附身即时跟进。
+   */
+  _syncZhangjiaoSkills(protagonist, zhangjiao) {
+    const from = protagonist?.getComponent?.('combat');
+    const to = zhangjiao?.getComponent?.('combat');
+    if (!from || !to) return false;
+    to.skills = (from.skills || [])
+      .filter(skill => skill?.id && skill.id !== 'meditation' && skill.id !== 'heal')
+      .map(skill => ({ ...skill }));
+    to.skillCooldowns = new Map();
+    to.skillLoadout = Array.isArray(from.skillLoadout) ? [...from.skillLoadout] : null;
+    zhangjiao.availableSkillIds = Array.isArray(protagonist.availableSkillIds)
+      ? [...protagonist.availableSkillIds]
+      : [];
+    return true;
   }
 }
 

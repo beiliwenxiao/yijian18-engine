@@ -1116,6 +1116,22 @@
       "subType": "armor"
     },
     {
+      "id": "weapon.peachwood_staff",
+      "name": "桃木杖",
+      "description": "大贤良师的桃木法杖，杖身刻有太平道符文。攻击 +2。",
+      "type": "equipment",
+      "maxStack": 1,
+      "rarity": 1,
+      "sprite": {
+        "height": 48,
+        "width": 48
+      },
+      "stats": {
+        "attack": 2
+      },
+      "subType": "weapon"
+    },
+    {
       "id": "weapon.s03.han_ring_blade",
       "name": "北军环首刀",
       "description": "北军督尉的佩刀，刀身淬过百战之铁。官军的精良，此刻为你所用。",

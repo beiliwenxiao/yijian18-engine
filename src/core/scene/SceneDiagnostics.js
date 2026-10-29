@@ -108,6 +108,7 @@ export class SceneDiagnostics {
     if (scene.debugPanel?.visible !== true) {
       scene.debugShowCollisionPolygons = false;
       scene.debugShowActorCollisionEdge = false;
+      scene.debugShowAttackRange = false;
     }
     if (!scene.debugPanel) {
       scene.debugPanel = new DebugPanel({

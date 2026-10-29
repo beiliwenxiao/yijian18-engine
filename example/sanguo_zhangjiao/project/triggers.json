@@ -1168,17 +1168,17 @@
                 },
                 "stepId": "recruit-tick"
               }
-            ]
+            ],
+            "when": {
+              "arg": {
+                "name": "story.s02RecruitDone",
+                "op": "var"
+              },
+              "op": "not"
+            }
           }
         ],
-        "stepId": "recruit-tick-branch",
-        "when": {
-          "arg": {
-            "name": "story.s02RecruitDone",
-            "op": "var"
-          },
-          "op": "not"
-        }
+        "stepId": "recruit-tick-branch"
       },
       {
         "branch": [
@@ -1224,27 +1224,27 @@
                 },
                 "stepId": "camp-after-recruit"
               }
-            ]
+            ],
+            "when": {
+              "args": [
+                {
+                  "op": ">=",
+                  "value": 50,
+                  "var": "story.s02RecruitCount"
+                },
+                {
+                  "arg": {
+                    "name": "story.s02RecruitDone",
+                    "op": "var"
+                  },
+                  "op": "not"
+                }
+              ],
+              "op": "and"
+            }
           }
         ],
-        "stepId": "recruit-done-branch",
-        "when": {
-          "args": [
-            {
-              "op": ">=",
-              "value": 50,
-              "var": "story.s02RecruitCount"
-            },
-            {
-              "arg": {
-                "name": "story.s02RecruitDone",
-                "op": "var"
-              },
-              "op": "not"
-            }
-          ],
-          "op": "and"
-        }
+        "stepId": "recruit-done-branch"
       },
       {
         "branch": [
@@ -1257,27 +1257,27 @@
                 },
                 "stepId": "recruit-progress-tip"
               }
-            ]
+            ],
+            "when": {
+              "args": [
+                {
+                  "op": "<",
+                  "value": 50,
+                  "var": "story.s02RecruitCount"
+                },
+                {
+                  "arg": {
+                    "name": "story.s02RecruitDone",
+                    "op": "var"
+                  },
+                  "op": "not"
+                }
+              ],
+              "op": "and"
+            }
           }
         ],
-        "stepId": "recruit-progress-branch",
-        "when": {
-          "args": [
-            {
-              "op": "<",
-              "value": 50,
-              "var": "story.s02RecruitCount"
-            },
-            {
-              "arg": {
-                "name": "story.s02RecruitDone",
-                "op": "var"
-              },
-              "op": "not"
-            }
-          ],
-          "op": "and"
-        }
+        "stepId": "recruit-progress-branch"
       }
     ],
     "id": "trg_s02_recruit",
@@ -1400,25 +1400,26 @@
                 },
                 "stepId": "raid-wave2-commit"
               }
-            ]
+            ],
+            "when": {
+              "args": [
+                {
+                  "name": "story.s02CampLaid",
+                  "op": "var"
+                },
+                {
+                  "arg": {
+                    "name": "story.s02RaidRepeled",
+                    "op": "var"
+                  },
+                  "op": "not"
+                }
+              ],
+              "op": "and"
+            }
           }
         ],
-        "when": {
-          "args": [
-            {
-              "name": "story.s02CampLaid",
-              "op": "var"
-            },
-            {
-              "arg": {
-                "name": "story.s02RaidRepeled",
-                "op": "var"
-              },
-              "op": "not"
-            }
-          ],
-          "op": "and"
-        }
+        "stepId": "raid-wave2-branch"
       }
     ],
     "id": "trg_s02_raid_wave2",
@@ -1474,25 +1475,26 @@
                 },
                 "stepId": "complete-tutorial-s02-command-stance"
               }
-            ]
+            ],
+            "when": {
+              "args": [
+                {
+                  "name": "story.s02CampLaid",
+                  "op": "var"
+                },
+                {
+                  "arg": {
+                    "name": "story.s02RaidRepeled",
+                    "op": "var"
+                  },
+                  "op": "not"
+                }
+              ],
+              "op": "and"
+            }
           }
         ],
-        "when": {
-          "args": [
-            {
-              "name": "story.s02CampLaid",
-              "op": "var"
-            },
-            {
-              "arg": {
-                "name": "story.s02RaidRepeled",
-                "op": "var"
-              },
-              "op": "not"
-            }
-          ],
-          "op": "and"
-        }
+        "stepId": "raid-repeled-branch"
       }
     ],
     "id": "trg_s02_raid_repeled",
@@ -1581,25 +1583,26 @@
                 },
                 "stepId": "raid-reattack-tip"
               }
-            ]
+            ],
+            "when": {
+              "args": [
+                {
+                  "name": "story.s02RaidFight",
+                  "op": "var"
+                },
+                {
+                  "arg": {
+                    "name": "story.s02RaidRepeled",
+                    "op": "var"
+                  },
+                  "op": "not"
+                }
+              ],
+              "op": "and"
+            }
           }
         ],
-        "when": {
-          "args": [
-            {
-              "name": "story.s02RaidFight",
-              "op": "var"
-            },
-            {
-              "arg": {
-                "name": "story.s02RaidRepeled",
-                "op": "var"
-              },
-              "op": "not"
-            }
-          ],
-          "op": "and"
-        }
+        "stepId": "raid-defeat-branch"
       }
     ],
     "id": "trg_s02_raid_defeat",
@@ -1626,33 +1629,38 @@
                 },
                 "stepId": "possession-restore"
               }
-            ]
+            ],
+            "when": {
+              "args": [
+                {
+                  "name": "story.s02CampLaid",
+                  "op": "var"
+                },
+                {
+                  "name": "story.s02OvernightDone",
+                  "op": "var"
+                },
+                {
+                  "name": "story.s02RaidFight",
+                  "op": "var"
+                },
+                {
+                  "arg": {
+                    "name": "story.s02RaidRepeled",
+                    "op": "var"
+                  },
+                  "op": "not"
+                }
+              ],
+              "op": "and"
+            }
           }
         ],
-        "when": {
-          "args": [
-            {
-              "name": "story.s02CampLaid",
-              "op": "var"
-            },
-            {
-              "name": "story.s02OvernightDone",
-              "op": "var"
-            },
-            {
-              "arg": {
-                "name": "story.s02RaidRepeled",
-                "op": "var"
-              },
-              "op": "not"
-            }
-          ],
-          "op": "and"
-        }
+        "stepId": "possession-restore-branch"
       }
     ],
     "id": "trg_s02_possession_restore",
-    "name": "荒村：读档恢复——过夜后围剿未胜时重新附身张角（幂等）",
+    "name": "荒村：读档恢复——仅围剿战进行中（fight 已开打未分胜负）时重新附身张角，进村逛街不再附身",
     "once": false,
     "when": {
       "params": {

@@ -100,6 +100,17 @@ const phaseA = await page.evaluate(async () => {
 for (const c of phaseA.checks) step('A:' + c.name, `${c.pass ? 'PASS' : 'FAIL'} ${c.detail}`);
 
 /* ============ B 军队路过 + 抉择 ============ */
+step('B:accept-summons', await page.evaluate(async () => {
+  const scene = window.__ddScene;
+  // 真实链路由信使交互触发 acceptSummons；探针捷径直接提交事务（recruit 触发器 if 守卫依赖它）
+  const r = await scene.sceneRuntime?.commandGateway?.execute({
+    intentType: 'state.transaction',
+    actorRef: scene.playerEntity?.id,
+    operationId: 'probe:summons-accept',
+    payload: { definitionId: 'story.s02.summons.accept' }
+  });
+  return JSON.stringify({ ok: r?.ok, code: r?.code || null });
+}));
 step('B:commit-fainted', await page.evaluate(async () => {
   const scene = window.__ddScene;
   const r = await scene.sceneRuntime?.commandGateway?.execute({
@@ -200,6 +211,13 @@ const recruit = await page.evaluate(async () => {
   const check = (name, pass, detail) => out.checks.push({ name, pass, detail });
 
   // 玩家走进招兵区（区域内交互才能命中绑定）；每轮钉回位置（批组村民碰撞挤推会顶出区域）
+  // M3.6：先为主角灌测试技能集（模拟 progression 解锁的烈焰掌/寒冰指/火焰掌），验证张角附身继承
+  const pCombat = scene.playerEntity?.getComponent?.('combat');
+  if (pCombat) {
+    pCombat.skills = ['flame_palm', 'ice_finger', 'inferno_palm'].map(id => ({ id, name: id, range: 300, manaCost: 10 }));
+    pCombat.skillLoadout = ['flame_palm', 'ice_finger', 'inferno_palm'];
+    scene.playerEntity.availableSkillIds = ['flame_palm', 'ice_finger', 'inferno_palm'];
+  }
   const pinRecruitZone = async () => {
     t.position.x = 850 + (offset.x || 0);
     t.position.y = 370 + (offset.y || 0);
@@ -262,6 +280,14 @@ const raid = await page.evaluate(async () => {
   }
   check('wave1-12-spawned', wave1Peak >= 12, `peak=${wave1Peak}`);
   check('possess-zhangjiao', scene.playerEntity?.id === 'zhangjiao-possessed', String(scene.playerEntity?.id));
+  // M3.6：张角继承主角全部攻击技能（烈焰掌/火焰掌/寒冰指），冷却独立
+  const zSkills = (scene.playerEntity?.getComponent?.('combat')?.skills || []).map(s => s.id);
+  check('zhangjiao-inherits-attack-skills', ['flame_palm', 'ice_finger', 'inferno_palm'].every(id => zSkills.includes(id)), JSON.stringify(zSkills));
+  // M3.6：桃木杖 mainhand（EquipmentSystem 同步 live stats：基础 10 + 2 = 12）
+  const zEq = scene.playerEntity?.getComponent?.('equipment');
+  const zMain = zEq?.getEquipment?.('mainhand');
+  check('zhangjiao-peachwood-staff', zMain?.id === 'weapon.peachwood_staff' && scene.playerEntity?.getComponent?.('stats')?.attack === 12,
+    `mainhand=${zMain?.id || null} attack=${scene.playerEntity?.getComponent?.('stats')?.attack}`);
   check('protagonist-spectating', scene.playerDowned === true || (scene.entityStore?.all || []).some(e => e?.id === 'female-hero' && e?.plotDowned === true), `playerDowned=${scene.playerDowned}`);
   const w1 = wave1Ids.map(id => groupEntities(id)[0]).filter(Boolean);
   killAll(w1);

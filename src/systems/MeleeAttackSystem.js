@@ -639,9 +639,11 @@ export class MeleeAttackSystem {
   }
 
   /**
-   * 渲染战斗警示圆圈
+   * 渲染战斗 HUD（武器冷却条 + 远程箭矢数）。
+   * 攻击范围扇形已统一为 debug 专用显示（renderSectorRangeDebug，debugMode 门控），
+   * 此处不再绘制第二套扇形。
    * @param {CanvasRenderingContext2D} ctx
-   * @param {Object} camera - 相机对象（用于获取鼠标世界坐标）
+   * @param {Object} camera - 相机对象（保留参数兼容既有调用）
    */
   renderCombatAlertCircle(ctx, camera) {
     const transform = this.playerEntity.getComponent('transform');
@@ -649,68 +651,12 @@ export class MeleeAttackSystem {
 
     const sprite = this.playerEntity.getComponent('sprite');
     const spriteHeight = sprite?.height || 64;
-    // 扇形以玩家碰撞中心为锚点（transform 脚点 + collision 偏移），与命中判定同源；
-    // 不再用精灵盒中心（spriteHeight/2 会随立绘高度漂移，视觉上扇形悬空）。
+    // 冷却条/箭矢数以玩家碰撞中心为水平锚点（transform 脚点 + collision 偏移）
     const collision = this.playerEntity.getComponent('collision');
     const cx = transform.position.x + (Number(collision?.offsetX) || 0);
-    const cy = transform.position.y + (Number(collision?.offsetY) || 0);
-    
+
     ctx.save();
-    
-    const dir = this.sectorDirection;
-    const time = performance.now() / 1000;
-    const dashOffset = (time * 20) % 20;
-    
-    // 从武器数据获取攻击范围和距离
-    let weaponAttackRange = this.sectorAngle;
-    let weaponAttackDistance = this.sliceAttackRange;
-    const equipComp = this.playerEntity.getComponent('equipment');
-    if (equipComp) {
-      const mainhand = equipComp.getEquipment('mainhand');
-      if (mainhand) {
-        if (mainhand.attackRange != null) {
-          weaponAttackRange = mainhand.attackRange * Math.PI / 180;
-        }
-        if (mainhand.attackDistance != null) {
-          weaponAttackDistance = mainhand.attackDistance;
-        }
-      }
-    }
-    const halfAngle = weaponAttackRange / 2;
-    const r = weaponAttackDistance;
-    
-    // 攻击闪光效果
-    const flashAlpha = Math.max(0, this.sectorAttackFlash / 0.2);
-    
-    if (this.sectorIsRanged) {
-      // 远程：不再显示椭圆瞄准框（由攻击按钮的技能预览虚线框替代）
-    } else if (this.hideSectorWhenIdle && !this.sectorDirectionLocked && !this._sectorAutoAimActive) {
-      // 移动端近战：空闲且无软锁定目标时隐藏；软锁定（自动瞄准敌人）或拖动瞄准时显示
-    } else {
-      // 近战扇形
-      ctx.beginPath();
-      ctx.moveTo(cx, cy);
-      ctx.arc(cx, cy, r, dir - halfAngle, dir + halfAngle);
-      ctx.closePath();
-      if (flashAlpha > 0) {
-        ctx.fillStyle = `rgba(100, 255, 100, ${0.12 + flashAlpha * 0.4})`;
-      } else {
-        ctx.fillStyle = 'rgba(100, 255, 100, 0.12)';
-      }
-      ctx.fill();
-      
-      ctx.beginPath();
-      ctx.moveTo(cx, cy);
-      ctx.arc(cx, cy, r, dir - halfAngle, dir + halfAngle);
-      ctx.closePath();
-      ctx.strokeStyle = flashAlpha > 0 ? `rgba(150, 255, 150, ${0.6 + flashAlpha * 0.4})` : 'rgba(100, 255, 100, 0.6)';
-      ctx.lineWidth = 1.5;
-      ctx.setLineDash([8, 5]);
-      ctx.lineDashOffset = -dashOffset;
-      ctx.stroke();
-      ctx.setLineDash([]);
-    }
-    
+
     // 武器冷却时间条
     const currentTime = performance.now() / 1000;
     const timeSinceLastAttack = currentTime - this.sliceLastAttackTime;
@@ -756,7 +702,68 @@ export class MeleeAttackSystem {
         ctx.fillText(`${arrowCount}`, cx, transform.position.y - spriteHeight - 24);
       }
     }
-    
+
+    ctx.restore();
+  }
+
+  /**
+   * 攻击范围扇形（唯一显示，debug 模式专用）：贴合 2.5D 椭圆的定向扇形——外弧沿
+   * Y 压扁 0.5 的地面椭圆（与 GroundMarker/renderCircleIndicator 同款俯视透视），
+   * 方向/张角/半径与 performSectorAttack 命中判定（isPointInSector）同源同参，
+   * 看到的扇形即实际攻击区域。战斗警示扇形已移除（原与套扇形叠加且 debug 关闭时残留），
+   * 攻击闪光（sectorAttackFlash）并入本扇形提亮。仅 debugMode 开启时由
+   * SceneRenderPipeline 调用，正式画面不受影响。
+   * @param {CanvasRenderingContext2D} ctx - 已应用相机变换的世界通道上下文
+   */
+  renderSectorRangeDebug(ctx) {
+    const transform = this.playerEntity?.getComponent?.('transform');
+    if (!transform) return;
+    // 与命中判定同款锚点：碰撞中心（脚点 + collision 偏移）
+    const collision = this.playerEntity.getComponent('collision');
+    const cx = transform.position.x + (Number(collision?.offsetX) || 0);
+    const cy = transform.position.y + (Number(collision?.offsetY) || 0);
+    const dir = this.sectorDirection;
+    let spread = this.sectorAngle;
+    let radius = this.sliceAttackRange;
+    const mainhand = this.playerEntity.getComponent('equipment')?.getEquipment?.('mainhand');
+    if (mainhand) {
+      if (mainhand.attackRange != null) spread = mainhand.attackRange * Math.PI / 180;
+      if (mainhand.attackDistance != null) radius = mainhand.attackDistance;
+    }
+    const halfAngle = spread / 2;
+    if (!(radius > 0) || !(halfAngle > 0)) return;
+
+    // 攻击闪光：出招瞬间扇形提亮（原战斗警示扇形的反馈表现并入此处）
+    const flashAlpha = Math.max(0, this.sectorAttackFlash / 0.2);
+    const dashOffset = (performance.now() * 0.02) % 20;
+    ctx.save();
+    // 先旋转到攻击朝向、再整体 Y 压扁——扇形外弧落在水平主轴的椭圆上（贴合地面透视）
+    ctx.translate(cx, cy);
+    ctx.scale(1, 0.5);
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.arc(0, 0, radius, dir - halfAngle, dir + halfAngle);
+    ctx.closePath();
+    ctx.fillStyle = `rgba(77, 216, 255, ${(0.12 + flashAlpha * 0.35).toFixed(3)})`;
+    ctx.fill();
+    ctx.strokeStyle = `rgba(140, 232, 255, ${(0.75 + flashAlpha * 0.25).toFixed(3)})`;
+    ctx.lineWidth = 2;
+    ctx.setLineDash([8, 5]);
+    ctx.lineDashOffset = -dashOffset;
+    ctx.stroke();
+    ctx.restore();
+
+    // 标签在 restore 后绘制，避免跟随压扁/旋转变形；带出实际半径（px）便于调参
+    const rangeLabel = `攻击范围 ${Math.round(radius)}px`;
+    ctx.save();
+    ctx.font = 'bold 12px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.85)';
+    ctx.strokeText(rangeLabel, cx, cy - radius * 0.5 - 6);
+    ctx.fillStyle = '#4dd8ff';
+    ctx.fillText(rangeLabel, cx, cy - radius * 0.5 - 6);
     ctx.restore();
   }
 

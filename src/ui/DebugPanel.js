@@ -76,6 +76,7 @@ export class DebugPanel {
     scene.debugShowActorCollisionEdge = enabled;
     scene.debugShowCollisionPolygons = enabled;
     scene.debugShowClimbableZones = enabled;
+    scene.debugShowAttackRange = enabled;
     return enabled;
   }
 
@@ -364,6 +365,10 @@ export class DebugPanel {
           <label class="dp-check-row">
             <input type="checkbox" id="dp-show-climbable-zones" ${this.getScene()?.debugShowClimbableZones !== false ? 'checked' : ''}>
             显示攀爬区域
+          </label>
+          <label class="dp-check-row">
+            <input type="checkbox" id="dp-show-attack-range" ${this.getScene()?.debugShowAttackRange ? 'checked' : ''}>
+            显示攻击范围扇形
           </label>
         </div>
         <div class="dp-section dp-actions">
@@ -668,6 +673,12 @@ export class DebugPanel {
       scene.debugShowClimbableZones = event.target.checked;
       Logger.log('[DebugPanel] 攀爬区域显示:', event.target.checked ? '开启' : '关闭');
     });
+    el.querySelector('#dp-show-attack-range').addEventListener('change', (event) => {
+      const scene = this.getScene();
+      if (!scene) return;
+      scene.debugShowAttackRange = event.target.checked;
+      Logger.log('[DebugPanel] 攻击范围扇形显示:', event.target.checked ? '开启' : '关闭');
+    });
     el.querySelector('#dp-gamepad-panel').addEventListener('click', () => {
       const scene = this.getScene();
       if (!scene || !scene.gamepadPanel) {
@@ -910,6 +921,8 @@ export class DebugPanel {
     if (triggerHotspotToggle) triggerHotspotToggle.checked = scene.debugShowTriggerHotspots === true;
     const climbableZoneToggle = this._el.querySelector('#dp-show-climbable-zones');
     if (climbableZoneToggle) climbableZoneToggle.checked = scene.debugShowClimbableZones !== false;
+    const attackRangeToggle = this._el.querySelector('#dp-show-attack-range');
+    if (attackRangeToggle) attackRangeToggle.checked = scene.debugShowAttackRange === true;
 
     // 触发器事件
     const gl = scene.gameLoader;
