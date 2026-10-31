@@ -403,6 +403,9 @@ export class CombatSystem {
 
   /**
    * 查找指定位置的敌人
+   * 命中判定：脚点 30px 容差，或点击落在精灵盒内（脚点向上一个身高、水平 ±半宽，
+   * 外扩 30px 容差）——大体型敌人（狼王等）点身体也能命中。用于左键攻击门控、
+   * 目标选择与武器投掷的统一"点中敌人"语义。
    * @param {Object} position - 位置 {x, y}
    * @param {Array<Entity>} entities - 实体列表
    * @returns {Entity|null}
@@ -410,34 +413,46 @@ export class CombatSystem {
   findEnemyAtPosition(position, entities) {
     // 点击检测半径
     const clickRadius = 30;
-    
+
     // 查找所有敌人
     const enemies = entities.filter(e => e.type === 'enemy'
       && e.faction !== 'friendly' && e.faction !== 'ally');
-    
+
     // 查找最近的敌人
     let closestEnemy = null;
     let closestDistance = Infinity;
-    
+
     for (const enemy of enemies) {
       const transform = enemy.getComponent('transform');
       if (!transform) {
         console.warn(`Enemy ${enemy.id} has no transform component`);
         continue;
       }
-      
-      // 计算距离
+
+      // 计算距离（transform.position 为脚点）
       const dx = transform.position.x - position.x;
       const dy = transform.position.y - position.y;
       const distance = Math.sqrt(dx * dx + dy * dy);
-      
-      // 如果在点击范围内且更近
-      if (distance <= clickRadius && distance < closestDistance) {
+
+      let hit = distance <= clickRadius;
+      if (!hit) {
+        const sprite = enemy.getComponent?.('sprite');
+        const halfWidth = (Number(sprite?.width) || 0) / 2;
+        const height = Number(sprite?.height) || 0;
+        if (halfWidth > 0 && height > 0) {
+          hit = Math.abs(dx) <= halfWidth + clickRadius
+            && dy >= -clickRadius
+            && dy <= height + clickRadius;
+        }
+      }
+
+      // 如果命中且更近
+      if (hit && distance < closestDistance) {
         closestDistance = distance;
         closestEnemy = enemy;
       }
     }
-    
+
     return closestEnemy;
   }
 

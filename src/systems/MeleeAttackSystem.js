@@ -205,13 +205,27 @@ export class MeleeAttackSystem {
       return;
     }
 
-    // 鼠标左键按住 / 手指触摸屏幕即触发攻击（无需点到敌人）
-    // 移动端攻击由触屏按钮瞄准释放处理，不通过此处自动触发
+    // 鼠标左键按住触发攻击——PC 语义（2026-10-31 裁定）：指针命中可被攻击目标才出招，
+    // 点空地不再挥击；长按在目标身上可持续进攻（冷却结算在 performSectorAttack）。
+    // 移动端攻击由触屏按钮瞄准释放处理（disableAutoAttack），不通过此处自动触发
     if (!this.disableAutoAttack &&
         this.inputManager.isMouseButtonDown(0) &&
-        !this.inputManager.isMouseClickHandled()) {
+        !this.inputManager.isMouseClickHandled() &&
+        this._pointerOnAttackableTarget(mouseWorldPos)) {
       this.performSectorAttack(playerCenter, currentTime);
     }
+  }
+
+  /**
+   * PC 左键攻击门控：指针是否命中可被攻击目标（敌人）。
+   * 复用 CombatSystem.findEnemyAtPosition（与目标选择/武器投掷同款命中语义：
+   * 脚点 30px 容差 + 精灵盒扩展）；未命中（点空地）返回 false。
+   * @param {Object} mouseWorldPos - 鼠标世界坐标
+   * @returns {boolean} 指针下是否存在可被攻击目标
+   */
+  _pointerOnAttackableTarget(mouseWorldPos) {
+    return !!mouseWorldPos
+      && this.combatSystem?.findEnemyAtPosition?.(mouseWorldPos, this.entities) != null;
   }
 
   /**
@@ -640,7 +654,7 @@ export class MeleeAttackSystem {
 
   /**
    * 渲染战斗 HUD（武器冷却条 + 远程箭矢数）。
-   * 攻击范围扇形由 renderSectorRange 常态绘制（SceneRenderPipeline 世界通道调用）。
+   * 攻击范围扇形由 renderSectorRange 战斗中绘制（SceneRenderPipeline 世界通道调用）。
    * @param {CanvasRenderingContext2D} ctx
    * @param {Object} camera - 相机对象（保留参数兼容既有调用）
    */
@@ -706,11 +720,12 @@ export class MeleeAttackSystem {
   }
 
   /**
-   * 攻击范围扇形（常态显示）：贴合 2.5D 椭圆的定向扇形——外弧沿 Y 压扁 0.5 的地面
+   * 攻击范围扇形（仅战斗中显示）：贴合 2.5D 椭圆的定向扇形——外弧沿 Y 压扁 0.5 的地面
    * 椭圆（与 GroundMarker/renderCircleIndicator 同款俯视透视），方向/张角/半径与
    * performSectorAttack 命中判定（isPointInSector）同源同参，看到的扇形即实际攻击区域。
    * 攻击闪光（sectorAttackFlash）并入扇形提亮。
-   * 门控语义：默认显示；hideSectorWhenIdle（移动端）空闲且无软锁定时隐藏；
+   * 门控语义：由调用方（SceneRenderPipeline）限定战斗中（isInCombat）才调用——
+   * 开场/脱战后不画；hideSectorWhenIdle（移动端）空闲且无软锁定时隐藏；
    * 远程武器不画常态扇形（由攻击按钮的技能预览虚线框替代）。
    * 调试面板可用 debugShowAttackRange 关闭；「攻击范围 Npx」标签仅 debugMode 显示。
    * @param {CanvasRenderingContext2D} ctx - 已应用相机变换的世界通道上下文
