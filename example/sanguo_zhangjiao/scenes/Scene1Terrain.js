@@ -507,7 +507,11 @@ export class Scene1Terrain {
           const idx = src.indexOf('assets/');
           if (idx !== -1) src = src.substring(idx);
           const img = new Image();
-          img.onload = () => { this._combinedGroundCache = null; };
+          img.onload = () => {
+            this._combinedGroundCache = null;
+            // shape 整层离屏缓存可能已在图片就绪前构建（兜底色块），必须失效重建
+            this._editorShapesCacheCanvas = null;
+          };
           img.src = src;
           this._shapeImages.set(sh.imageSrc, img);
         }
@@ -1475,12 +1479,23 @@ export class Scene1Terrain {
   /**
    * 渲染编辑器中具有表现的 shape，并复用已投影的可落脚区域。
    * （可攀爬调试显示已移至 renderClimbZonesDebug，由调试面板开关控制、在后期管线顶层绘制）
+   * shape 在运行时静态不变：整层缓存到离屏画布，每帧一次 drawImage——
+   * 原实现每帧逐 shape clip/fill/edgeFade，几十个多边形就是数毫秒的固定开销。
    * @param {CanvasRenderingContext2D} ctx
    */
   _renderEditorShapes(ctx) {
     const editorShapes = this._editorShapes || [];
     const walkableShapes = this._walkableShapes || [];
     if (editorShapes.length === 0 && walkableShapes.length === 0) return;
+    if (this._isEditorShapesCacheValid(editorShapes, walkableShapes)) {
+      ctx.drawImage(this._editorShapesCacheCanvas, this._editorShapesCacheX, this._editorShapesCacheY);
+      return;
+    }
+    if (this._buildEditorShapesCache(editorShapes, walkableShapes)) {
+      ctx.drawImage(this._editorShapesCacheCanvas, this._editorShapesCacheX, this._editorShapesCacheY);
+      return;
+    }
+    // 缓存不可用（shape 总包围盒超限）：回退逐个直接绘制
     const resolver = this._editorShapeResolver();
     for (const shape of editorShapes) {
       ShapeRenderer.render(ctx, shape, resolver);
@@ -1488,6 +1503,65 @@ export class Scene1Terrain {
     for (const shape of walkableShapes) {
       ShapeRenderer.render(ctx, shape, resolver);
     }
+  }
+
+  /**
+   * 离屏缓存有效性：shape 集合引用逐项比对（投影/动态碰撞体会换数组或增删条目，
+   * 引用身份变化即失效）+ 显式版本号（SceneTerrainBinding.setDynamicCollider 递增）。
+   * @private
+   */
+  _isEditorShapesCacheValid(editorShapes, walkableShapes) {
+    if (!this._editorShapesCacheCanvas) return false;
+    if (this._editorShapesCacheVersion !== (this._editorShapesVersion || 0)) return false;
+    const refs = this._editorShapesCacheRefs;
+    if (!refs) return false;
+    const total = editorShapes.length + walkableShapes.length;
+    if (refs.length !== total) return false;
+    for (let i = 0; i < editorShapes.length; i++) {
+      if (refs[i] !== editorShapes[i]) return false;
+    }
+    for (let i = 0; i < walkableShapes.length; i++) {
+      if (refs[editorShapes.length + i] !== walkableShapes[i]) return false;
+    }
+    return true;
+  }
+
+  /**
+   * 构建 shape 整层离屏缓存（全部 shape 的世界包围盒并集，上限 4096）。
+   * 成功返回 true 并写入缓存字段；失败（超限）返回 false 走直接绘制。
+   * @private
+   */
+  _buildEditorShapesCache(editorShapes, walkableShapes) {
+    const shapes = editorShapes.concat(walkableShapes);
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const shape of shapes) {
+      const bb = ShapeRenderer.getBBox(shape);
+      if (!Number.isFinite(bb.x) || !Number.isFinite(bb.y)) continue;
+      const pad = (Number(shape.strokeWidth) || 0) / 2 + 4;
+      minX = Math.min(minX, bb.x - pad);
+      minY = Math.min(minY, bb.y - pad);
+      maxX = Math.max(maxX, bb.x + bb.w + pad);
+      maxY = Math.max(maxY, bb.y + bb.h + pad);
+    }
+    if (!Number.isFinite(minX)) return false;
+    const width = Math.ceil(maxX - minX) + 2;
+    const height = Math.ceil(maxY - minY) + 2;
+    if (width > 4096 || height > 4096) return false;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const gctx = canvas.getContext('2d');
+    const resolver = this._editorShapeResolver();
+    for (const shape of shapes) {
+      ShapeRenderer.render(gctx, shape, resolver);
+    }
+    this._editorShapesCacheCanvas = canvas;
+    this._editorShapesCacheX = minX - 1;
+    this._editorShapesCacheY = minY - 1;
+    this._editorShapesCacheVersion = this._editorShapesVersion || 0;
+    this._editorShapesCacheRefs = shapes;
+    return true;
   }
 
   /**

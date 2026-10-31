@@ -38,6 +38,23 @@ export class SkeletonRenderer {
     this.resolveAtlasSlice = typeof options.resolveAtlasSlice === 'function'
       ? options.resolveAtlasSlice
       : null;
+    // 每帧复用缓冲：锚点收集数组（两遍绘制间消费即弃，容量只增不减）
+    this._anchorsBuffer = [];
+    // 附件绘制源缓存：WeakMap<attachment, {image,sx,sy,sw,sh}|null>——
+    // 附件对象随共享资产常驻，源图解析（getImage/图集切片）每帧逐槽查表是纯重复劳动。
+    this._sourceCache = new WeakMap();
+    // 序列帧附件的「帧索引→源」数组缓存（帧游标每帧推进，矩形随帧查表）。
+    this._sequenceSourceCache = new WeakMap();
+    // 形态合并附件缓存：WeakMap<attachment, Map<formKey, mergedObject>>——
+    // directionOffsets 是共享资产只读数据，按 (attachment, formKey) 合并结果恒定可缓存。
+    this._formCache = new WeakMap();
+  }
+
+  /** 资源热重载后清空源解析缓存（附件→图片映射可能已变化）。 */
+  clearCaches() {
+    this._sourceCache = new WeakMap();
+    this._sequenceSourceCache = new WeakMap();
+    this._formCache = new WeakMap();
   }
 
   /**
@@ -69,7 +86,11 @@ export class SkeletonRenderer {
     let drewAny = false;
     // 第一遍：计算所有槽位的锚点（世界坐标 + 朝向）与绘制素材
     // 两遍是为了支持 transform 约束（挂件跟随挂件）：跟随者要先拿到目标的锚点。
-    const anchors = [];
+    // 缓冲与合并结果全部复用（见构造函数），渲染热路径零分配。
+    const anchors = this._anchorsBuffer;
+    let anchorCount = 0;
+    const sourceCache = this._sourceCache;
+    const formCache = this._formCache;
     for (const slot of asset.slots) {
       // 附件 = 共享资产 attachment + 实体本地覆盖（头部三态可见性、武器上手/背挂、
       // 背挂换边、方向帧表）。共享资产全局唯一且只读——运行时状态一律走覆盖层，
@@ -85,43 +106,58 @@ export class SkeletonRenderer {
       // 换图时绘制盒以 offset 声明为准，未声明沿用顶层附件盒。
       // 附件形态键：left 走独立 sideL（配了左侧美术的资产可完全免镜像）；
       // 未配 sideL 的老资产逐字段回退到 side（行为不变）。
+      // 合并结果按 (attachment, formKey) 缓存（directionOffsets 只读恒定）。
       const formKey = resolveAttachmentFormKey(sprite?.direction);
       let directionOverride = resolveAttachmentOffset(attachment, formKey);
       if (!directionOverride && formKey === 'sideL') directionOverride = resolveAttachmentOffset(attachment, 'side');
-      const hasFormOverride = !!directionOverride
+      let effectiveAttachment = attachment;
+      if (directionOverride
         && (!!directionOverride.assetId || directionOverride.width > 0 || directionOverride.height > 0
-          || directionOverride.sw > 0);
-      const effectiveAttachment = hasFormOverride
-        ? {
-          ...attachment,
-          ...(directionOverride.assetId ? { assetId: directionOverride.assetId } : {}),
-          ...(directionOverride.width > 0 ? { width: directionOverride.width } : {}),
-          ...(directionOverride.height > 0 ? { height: directionOverride.height } : {}),
-          // 图集切片形态：directionOffsets 可按形态换源矩形（同一张图集里存 正/侧/背 三套部件）
-          ...(directionOverride.sw > 0 ? {
-            sx: directionOverride.sx || 0, sy: directionOverride.sy || 0,
-            sw: directionOverride.sw, sh: directionOverride.sh
-          } : {})
+          || directionOverride.sw > 0)) {
+        let mergedByForm = formCache.get(attachment);
+        if (!mergedByForm) {
+          mergedByForm = new Map();
+          formCache.set(attachment, mergedByForm);
         }
-        : attachment;
+        effectiveAttachment = mergedByForm.get(formKey);
+        if (!effectiveAttachment) {
+          effectiveAttachment = {
+            ...attachment,
+            ...(directionOverride.assetId ? { assetId: directionOverride.assetId } : {}),
+            ...(directionOverride.width > 0 ? { width: directionOverride.width } : {}),
+            ...(directionOverride.height > 0 ? { height: directionOverride.height } : {}),
+            // 图集切片形态：directionOffsets 可按形态换源矩形（同一张图集里存 正/侧/背 三套部件）
+            ...(directionOverride.sw > 0 ? {
+              sx: directionOverride.sx || 0, sy: directionOverride.sy || 0,
+              sw: directionOverride.sw, sh: directionOverride.sh
+            } : {})
+          };
+          mergedByForm.set(formKey, effectiveAttachment);
+        }
+      }
 
-      const source = this._resolveAttachmentSource(effectiveAttachment, assetManager, skeletonComponent, slot);
+      const source = this._resolveAttachmentSource(effectiveAttachment, assetManager, skeletonComponent, slot, sourceCache);
       if (!source) continue;
 
       const anchor = this._attachmentAnchor(boneWorld, effectiveAttachment, directionOverride, slot.follow);
-      anchors.push({
-        slot,
-        attachment: effectiveAttachment,
-        directionOverride,
-        source,
-        boneWorld,
-        x: anchor.x,
-        y: anchor.y,
-        angle: anchor.angle
-      });
+      let entry = anchors[anchorCount];
+      if (!entry) {
+        entry = { slot: null, attachment: null, directionOverride: null, source: null, boneWorld: null, x: 0, y: 0, angle: 0 };
+        anchors.push(entry);
+      }
+      anchorCount++;
+      entry.slot = slot;
+      entry.attachment = effectiveAttachment;
+      entry.directionOverride = directionOverride;
+      entry.source = source;
+      entry.boneWorld = boneWorld;
+      entry.x = anchor.x;
+      entry.y = anchor.y;
+      entry.angle = anchor.angle;
     }
 
     // transform 约束：挂件跟随挂件（位置 + 可选朝向）
+    anchors.length = anchorCount;
     applyTransformConstraints(anchors, asset.constraints);
 
     // 第二遍：绘制
@@ -171,33 +207,51 @@ export class SkeletonRenderer {
     };
   }
 
-  /** 解析附件的绘制源：统一返回 { image, sx, sy, sw, sh } 或 null。 */
-  _resolveAttachmentSource(attachment, assetManager, skeletonComponent, slot) {
+  /**
+   * 解析附件的绘制源：统一返回 { image, sx, sy, sw, sh } 或 null。
+   * image/slice：结果按附件对象缓存（WeakMap）——附件与源图映射随共享资产常驻，
+   * 每帧逐槽重查 getImage/图集切片是纯重复劳动；热重载走 clearCaches。
+   * sequence：帧游标每帧推进，按附件缓存「帧索引→源」数组后查表（O(1) 零分配）。
+   */
+  _resolveAttachmentSource(attachment, assetManager, skeletonComponent, slot, sourceCache = this._sourceCache) {
     if (!attachment || !SKELETON_ATTACHMENT_TYPES.includes(attachment.type)) return null;
-    if (attachment.type === 'image') {
-      const image = assetManager?.getImage?.(attachment.assetId) || null;
-      return image
-        ? { image, sx: 0, sy: 0, sw: image.naturalWidth || image.width, sh: image.naturalHeight || image.height }
-        : null;
-    }
-    if (attachment.type === 'slice') {
-      // 优先内联源矩形（编辑器从图集切片写入）；可选注入共享图集注册表解析
-      if (attachment.sw > 0 && attachment.sh > 0) {
-        const image = assetManager?.getImage?.(attachment.assetId) || null;
-        return image ? { image, sx: attachment.sx, sy: attachment.sy, sw: attachment.sw, sh: attachment.sh } : null;
-      }
-      const resolved = this.resolveAtlasSlice?.(attachment.assetId, attachment.sliceKey);
-      return resolved || null;
-    }
     if (attachment.type === 'sequence') {
       const frames = Array.isArray(attachment.frames) ? attachment.frames : [];
       if (frames.length === 0) return null;
-      const frame = frames[skeletonComponent.getSlotFrame(slot.id) % frames.length];
-      const image = assetManager?.getImage?.(attachment.assetId || attachment.spriteSheet) || null;
-      if (!image || !frame || !(frame.sw > 0) || !(frame.sh > 0)) return null;
-      return { image, sx: frame.sx, sy: frame.sy, sw: frame.sw, sh: frame.sh };
+      const seqCache = this._sequenceSourceCache;
+      if (!seqCache.has(attachment)) {
+        const image = assetManager?.getImage?.(attachment.assetId || attachment.spriteSheet) || null;
+        // 图片未就绪不缓存（按需补载后下一帧自然命中），只本帧走 null
+        if (!image) return null;
+        seqCache.set(attachment, frames.map(frame => (frame && frame.sw > 0 && frame.sh > 0)
+          ? { image, sx: frame.sx, sy: frame.sy, sw: frame.sw, sh: frame.sh }
+          : null));
+      }
+      const sources = seqCache.get(attachment);
+      if (!sources) return null;
+      return sources[skeletonComponent.getSlotFrame(slot.id) % sources.length] || null;
     }
-    return null;
+    if (sourceCache.has(attachment)) return sourceCache.get(attachment) || null;
+    let source = null;
+    if (attachment.type === 'image') {
+      const image = assetManager?.getImage?.(attachment.assetId) || null;
+      // 图片未就绪不缓存（按需补载后下一帧自然命中）
+      source = image
+        ? { image, sx: 0, sy: 0, sw: image.naturalWidth || image.width, sh: image.naturalHeight || image.height }
+        : null;
+      if (!image) return null;
+    } else if (attachment.type === 'slice') {
+      // 优先内联源矩形（编辑器从图集切片写入）；可选注入共享图集注册表解析
+      if (attachment.sw > 0 && attachment.sh > 0) {
+        const image = assetManager?.getImage?.(attachment.assetId) || null;
+        if (!image) return null;
+        source = { image, sx: attachment.sx, sy: attachment.sy, sw: attachment.sw, sh: attachment.sh };
+      } else {
+        source = this.resolveAtlasSlice?.(attachment.assetId, attachment.sliceKey) || null;
+      }
+    }
+    sourceCache.set(attachment, source);
+    return source;
   }
 }
 

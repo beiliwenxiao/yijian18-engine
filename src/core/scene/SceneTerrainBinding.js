@@ -148,6 +148,9 @@ export class SceneTerrainBinding {
       }
     }
     scene._terrainCollision?.invalidate?.(terrain);
+    // 编辑器 shape 表现层缓存（Scene1Terrain._renderEditorShapes 离屏缓存）失效：
+    // 动态碰撞体会增删 walkable/collision 集合条目
+    terrain._editorShapesVersion = (terrain._editorShapesVersion || 0) + 1;
     if (!enabled) return true;
     if (!shape || typeof shape !== 'object') return false;
 

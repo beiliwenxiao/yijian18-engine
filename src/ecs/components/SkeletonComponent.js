@@ -20,7 +20,7 @@
  */
 
 import { Component } from '../Component.js';
-import { evaluateSkeletonPose, createRestLocalPose, composeWorldTransforms } from '../../animation/SkeletonPose.js';
+import { evaluateSkeletonPose, createRestLocalPose, composeWorldTransformsInto } from '../../animation/SkeletonPose.js';
 import { evaluatePoseWithIk } from '../../animation/SkeletonIk.js';
 import { bakeClip, sampleBakedClip } from '../../animation/SkeletonBake.js';
 
@@ -48,6 +48,10 @@ export class SkeletonComponent extends Component {
     // 必须落在实体本地覆盖层——直接改写共享 attachment 会让同骨架的多个
     // 实体互相覆盖（甲朝下写的 headFront.visible 被乙朝上写回覆盖）。
     this.slotOverrides = new Map();
+    // 合并附件缓存：Map(slotId -> { override, merged })——resolveSlotAttachment 的
+    // 「共享 attachment + 本地覆盖」spread 结果。override 对象会被 setSlotOverride
+    // 原地改写，所以改写时必须同步失效（见 setSlotOverride）。
+    this._mergedAttachmentCache = new Map();
     // IK 约束（实体本地）：运行时 IK 修正（脚部贴地/瞄准/骑乘）。
     // 结构 { id, type:'aim'|'twoBone', bones:[...], target:{x,y}, mix, offsetAngle, iterations }，
     // target 为骨骼资产坐标系（design space）的世界坐标。
@@ -70,9 +74,12 @@ export class SkeletonComponent extends Component {
     this.slotFrameState.clear();
     // 换资产 = 槽位 id 集合可能变化，旧覆盖层的 slotId 不再对应 → 清空
     this.slotOverrides.clear();
+    this._mergedAttachmentCache.clear();
     // 换资产 = 骨骼/剪辑全变 → 烘焙表与静止姿态缓存失效
     this._bakedClips.clear();
     this._bakedRestPose = null;
+    this._fkWorldPose = null;
+    this._worldPose = null;
     // 当前剪辑名失效时回退默认剪辑
     if (!this.currentClip || !asset.clips.has(this.currentClip)) {
       this.currentClip = (this.defaultClipOverride && asset.clips.has(this.defaultClipOverride))
@@ -169,6 +176,8 @@ export class SkeletonComponent extends Component {
   /**
    * 取当前世界姿态（缓存：仅脏时重算）。
    * 存在 IK 约束时：FK 采样 → IK 求解 → 最终世界变换。
+   * FK 世界变换走复用缓冲（composeWorldTransformsInto），每帧重算零分配；
+   * IK 命中时返回 IK 产物（内部克隆，不复用）。消费方须当帧读毕。
    * @returns {Map(boneId -> {x,y,rot,sx,sy,rad})|null}
    */
   getWorldPose() {
@@ -177,11 +186,13 @@ export class SkeletonComponent extends Component {
     if (!this._worldPose || this._poseDirty) {
       const clip = asset.clips.get(this.currentClip) || null;
       const local = this._sampleLocalPose(clip);
-      let world = composeWorldTransforms(asset, local);
+      const fkWorld = this._fkWorldPose || (this._fkWorldPose = new Map());
+      composeWorldTransformsInto(asset, local, fkWorld);
       if (this.ikConstraints.length > 0) {
-        world = evaluatePoseWithIk(asset, local, world, this.ikConstraints).world;
+        this._worldPose = evaluatePoseWithIk(asset, local, fkWorld, this.ikConstraints).world;
+      } else {
+        this._worldPose = fkWorld;
       }
-      this._worldPose = world;
       this._poseDirty = false;
     }
     return this._worldPose;
@@ -286,6 +297,7 @@ export class SkeletonComponent extends Component {
     }
     if (!changed) return;
     this.slotOverrides.set(slotId, current);
+    this._mergedAttachmentCache.delete(slotId);
     // 帧表变了 → 帧游标重置（否则按旧表长度取模会越界）；
     // keepFrameRatio 时按新旧表长度比例换算游标（跳跃空中换向保持播放进度，不重播起跳）
     if (patch.frames !== undefined && prevFrames !== patch.frames) {
@@ -314,6 +326,8 @@ export class SkeletonComponent extends Component {
   /**
    * 取槽位的最终附件（共享 attachment + 实体本地覆盖合并）。
    * 渲染与状态映射统一走这里，保证「共享资产只读 + 实体态叠加」单一口径。
+   * 合并结果按覆盖层状态缓存（渲染每帧逐槽调用，spread 每帧新建对象既费 CPU
+   * 又让下游渲染器的附件级缓存失效）；setSlotOverride/setSlotFrames/换资产时失效。
    * @param {Object} slot - parseSkeletonAsset 产物的 slot
    * @returns {Object|null}
    */
@@ -321,7 +335,12 @@ export class SkeletonComponent extends Component {
     if (!slot?.attachment) return null;
     const override = this.slotOverrides.get(slot.id);
     if (!override) return slot.attachment;
-    return { ...slot.attachment, ...override };
+    let cache = this._mergedAttachmentCache.get(slot.id);
+    if (!cache || cache.override !== override) {
+      cache = { override, merged: { ...slot.attachment, ...override } };
+      this._mergedAttachmentCache.set(slot.id, cache);
+    }
+    return cache.merged;
   }
 
   /**

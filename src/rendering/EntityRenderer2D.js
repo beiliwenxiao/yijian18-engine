@@ -523,6 +523,7 @@ export class EntityRenderer2D {
     this._renderStyleCache.clear();
     this._nameMeasureCache = new WeakMap();
     this._promptMeasureCache = new WeakMap();
+    this.skeletonRenderer?.clearCaches?.();
   }
 
   _imageWidth(image) {

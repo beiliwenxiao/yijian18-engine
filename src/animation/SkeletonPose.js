@@ -128,16 +128,21 @@ export function sampleClip(clip, timeMs, restPose) {
 }
 
 /**
- * 单骨世界变换组合（继承模式在此生效）。
+ * 单骨世界变换组合（继承模式在此生效），结果写入 out（复用对象）。
  * @param {Object} bone - 骨骼定义（含 inherit）
  * @param {Object} local - 局部变换 { x, y, rot, sx, sy }
  * @param {Object|null} parent - 父骨世界变换
- * @returns {{x:number, y:number, rot:number, sx:number, sy:number, rad:number}}
+ * @param {Object} out - 写入目标 { x, y, rot, sx, sy, rad }
  */
-function composeBoneWorld(bone, local, parent) {
+function composeBoneWorldInto(bone, local, parent, out) {
   if (!parent) {
-    const rad = local.rot * DEG2RAD;
-    return { x: local.x, y: local.y, rot: local.rot, sx: local.sx, sy: local.sy, rad };
+    out.x = local.x;
+    out.y = local.y;
+    out.rot = local.rot;
+    out.sx = local.sx;
+    out.sy = local.sy;
+    out.rad = local.rot * DEG2RAD;
+    return out;
   }
   const inherit = bone.inherit || 'normal';
   let x;
@@ -179,7 +184,24 @@ function composeBoneWorld(bone, local, parent) {
     sx = parent.sx * local.sx;
     sy = parent.sy * local.sy;
   }
-  return { x, y, rot, sx, sy, rad: rot * DEG2RAD };
+  out.x = x;
+  out.y = y;
+  out.rot = rot;
+  out.sx = sx;
+  out.sy = sy;
+  out.rad = rot * DEG2RAD;
+  return out;
+}
+
+/**
+ * 单骨世界变换组合（继承模式在此生效）。
+ * @param {Object} bone - 骨骼定义（含 inherit）
+ * @param {Object} local - 局部变换 { x, y, rot, sx, sy }
+ * @param {Object|null} parent - 父骨世界变换
+ * @returns {{x:number, y:number, rot:number, sx:number, sy:number, rad:number}}
+ */
+function composeBoneWorld(bone, local, parent) {
+  return composeBoneWorldInto(bone, local, parent, {});
 }
 
 /**
@@ -202,6 +224,41 @@ export function composeWorldTransforms(skeleton, localPose) {
     world.set(boneId, composeBoneWorld(bone, local, parent));
   }
   return world;
+}
+
+/** 缺省局部姿态的复用草稿（composeWorldTransformsInto 内即时读即弃）。 */
+const FALLBACK_LOCAL = { x: 0, y: 0, rot: 0, sx: 1, sy: 1 };
+
+/**
+ * composeWorldTransforms 的复用变体：世界变换 Map 与每骨对象跨帧复用，
+ * 供 SkeletonComponent.getWorldPose 每帧重算时零分配。消费方须当帧读毕
+ * （现有消费方：渲染器同帧读、IK 内部克隆后用——均满足）。
+ * @param {Object} skeleton - parseSkeletonAsset 产物
+ * @param {Map} localPose - 局部姿势
+ * @param {Map} worldOut - 复用的世界变换 Map（boneId -> 对象，字段就地覆写）
+ * @returns {Map} 同 worldOut
+ */
+export function composeWorldTransformsInto(skeleton, localPose, worldOut) {
+  for (const boneId of skeleton.boneOrder) {
+    const bone = skeleton.bones.get(boneId);
+    let local = localPose.get(boneId);
+    if (!local) {
+      FALLBACK_LOCAL.x = bone.x;
+      FALLBACK_LOCAL.y = bone.y;
+      FALLBACK_LOCAL.rot = bone.rot;
+      FALLBACK_LOCAL.sx = bone.scaleX;
+      FALLBACK_LOCAL.sy = bone.scaleY;
+      local = FALLBACK_LOCAL;
+    }
+    const parent = bone.parent ? worldOut.get(bone.parent) : null;
+    let entry = worldOut.get(boneId);
+    if (!entry) {
+      entry = { x: 0, y: 0, rot: 0, sx: 1, sy: 1, rad: 0 };
+      worldOut.set(boneId, entry);
+    }
+    composeBoneWorldInto(bone, local, parent, entry);
+  }
+  return worldOut;
 }
 
 /**
