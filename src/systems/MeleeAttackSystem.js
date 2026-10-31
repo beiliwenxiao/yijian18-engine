@@ -727,11 +727,10 @@ export class MeleeAttackSystem {
    * 门控语义：由调用方（SceneRenderPipeline）限定战斗中（isInCombat）才调用——
    * 开场/脱战后不画；hideSectorWhenIdle（移动端）空闲且无软锁定时隐藏；
    * 远程武器不画常态扇形（由攻击按钮的技能预览虚线框替代）。
-   * 调试面板可用 debugShowAttackRange 关闭；「攻击范围 Npx」标签仅 debugMode 显示。
+   * 调试面板可用 debugShowAttackRange 关闭；不绘制半径文字标签（2026-10-31 移除）。
    * @param {CanvasRenderingContext2D} ctx - 已应用相机变换的世界通道上下文
-   * @param {{showLabel?: boolean}} [options] - showLabel：半径标签（调试调参用）
    */
-  renderSectorRange(ctx, { showLabel = false } = {}) {
+  renderSectorRange(ctx) {
     const transform = this.playerEntity?.getComponent?.('transform');
     if (!transform) return;
     // 远程武器：常态不画扇形（由攻击按钮的技能预览虚线框替代）
@@ -771,20 +770,6 @@ export class MeleeAttackSystem {
     ctx.setLineDash([8, 5]);
     ctx.lineDashOffset = -dashOffset;
     ctx.stroke();
-    ctx.restore();
-
-    if (showLabel !== true) return;
-    // 标签在 restore 后绘制，避免跟随压扁/旋转变形；带出实际半径（px）便于调参
-    const rangeLabel = `攻击范围 ${Math.round(radius)}px`;
-    ctx.save();
-    ctx.font = 'bold 12px Arial';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'bottom';
-    ctx.lineWidth = 3;
-    ctx.strokeStyle = 'rgba(0, 0, 0, 0.85)';
-    ctx.strokeText(rangeLabel, cx, cy - radius * 0.5 - 6);
-    ctx.fillStyle = '#4dd8ff';
-    ctx.fillText(rangeLabel, cx, cy - radius * 0.5 - 6);
     ctx.restore();
   }
 

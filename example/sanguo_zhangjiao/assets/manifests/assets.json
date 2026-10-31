@@ -5491,6 +5491,37 @@
       "revision": 1
     },
     {
+      "assetId": "inventory.equipment.peachwoodStaff",
+      "imageId": "inventory.equipment.peachwoodStaff",
+      "category": "inventory-icon",
+      "usage": [
+        "inventory",
+        "equipment",
+        "weapon"
+      ],
+      "sourceFile": "assets/images/items/equipment-peachwood-staff.png",
+      "runtime2D": {
+        "path": "assets/images/items/equipment-peachwood-staff.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "inventory.equipment.peachwoodStaff"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "animations": [],
+      "targetPhase": "P2",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
       "assetId": "inventory.equipment.breakthroughArmor",
       "imageId": "inventory.equipment.breakthroughArmor",
       "category": "inventory-icon",

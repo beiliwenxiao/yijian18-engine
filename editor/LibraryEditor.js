@@ -320,8 +320,8 @@ export class LibraryEditor {
   /** 保存回工程文件（保留其它字段） */
   async save() {
     if (this._validateDetailJson()) {
-      this._toast('JSON 格式错误，请修正后再保存（红框处）', 'error');
-      this._status('❌ JSON 格式错误，未保存', 'err');
+      // 具体问题（JSON 红框 / 条目 ID / 类型与图片）已由 _validateDetailJson 直接
+      // toast + 状态栏给出——这里不再发通用提示覆盖它。
       return { ok: false, committed: false, status: 'rejected', code: 'invalidJson' };
     }
     this._commitDetail();
@@ -358,7 +358,8 @@ export class LibraryEditor {
       }
     }
     if (this._validateItemLibrary()) {
-      this._toast('物品定义校验失败，请修正后再保存', 'error');
+      // 具体问题（哪个物品/缺什么字段/图片未登记 Manifest）已由 _validateItemLibrary
+      // 的 toast（含首个问题）与状态栏（全量清单）给出——这里不再发通用提示覆盖它。
       return { ok: false, committed: false, status: 'rejected', code: 'invalidItemDefinition' };
     }
     this.project.library = this.library;
@@ -2317,6 +2318,10 @@ export class LibraryEditor {
   }
 
   _validateDetailJson() {
+    // 未选中条目（详情面板为占位文案、无输入控件）时无可校验内容——直接放行。
+    // 全量物品校验由保存时的 _validateItemLibrary 兜底（失败提示含具体物品名）。
+    const current = this._current()[this.selectedIndex];
+    if (!current) return false;
     const el = this.container.querySelector('#l-props');
     if (el) {
       const value = el.value.trim();
@@ -2326,6 +2331,8 @@ export class LibraryEditor {
           if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new TypeError('专属属性必须是 JSON 对象');
         } catch (error) {
           el.style.borderColor = '#e05252';
+          this._status('❌ 专属属性 JSON 格式错误，未保存', 'err');
+          this._toast('JSON 格式错误，请修正后再保存（红框处）', 'error');
           return true;
         }
       }
@@ -2333,10 +2340,10 @@ export class LibraryEditor {
     if (this.activeCategory !== 'items') return false;
     const panel = this.container.querySelector('#lib-detail');
     const id = String(panel?.querySelector('#l-id')?.value || '').trim();
-    const current = this._current()[this.selectedIndex];
     const imageId = String(panel?.querySelector('#l-image-id')?.value || '').trim();
     if (!STABLE_ID_PATTERN.test(id) || id.startsWith('draft.items.') || this._current().some(item => item !== current && item?.id === id)) {
       this._status('❌ 条目 ID 必须为未重复的稳定 ID，不能保留草稿 ID', 'err');
+      this._toast('保存失败：条目 ID 无效、重复或为空', 'error');
       return true;
     }
     // 装备条目没有 #l-item-type；物品才校验类型字段
@@ -2344,6 +2351,7 @@ export class LibraryEditor {
       const type = String(panel?.querySelector('#l-item-type')?.value || '').trim();
       if (!type || !this._manifestImageOption(imageId)) {
         this._status('❌ 物品必须选择有效的类型和 Manifest 图片资源', 'err');
+        this._toast('保存失败：当前物品缺少有效类型或 Manifest 图片资源', 'error');
         return true;
       }
     }

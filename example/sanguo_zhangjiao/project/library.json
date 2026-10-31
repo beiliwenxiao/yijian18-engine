@@ -553,6 +553,8 @@
       "id": "prop.candle",
       "name": "蜡烛",
       "type": "light",
+      "imageId": "s01.prop.candle",
+      "assetId": "s01.prop.candle",
       "glow": {
         "color": "#ffca7a",
         "flicker": "fire",
@@ -561,8 +563,6 @@
         "yOffset": -26
       },
       "height": 36,
-      "imageId": "s01.prop.candle",
-      "assetId": "s01.prop.candle",
       "maxStack": 99,
       "renderStyle": "candle",
       "showName": false,
@@ -579,6 +579,8 @@
       "id": "prop.torch",
       "name": "火把",
       "type": "light",
+      "imageId": "s01.prop.torch",
+      "assetId": "s01.prop.torch",
       "glow": {
         "color": "#ff9a3e",
         "flicker": "fire",
@@ -587,8 +589,6 @@
         "yOffset": -36
       },
       "height": 56,
-      "imageId": "s01.prop.torch",
-      "assetId": "s01.prop.torch",
       "maxStack": 99,
       "renderStyle": "torch",
       "showName": false,
@@ -605,6 +605,8 @@
       "id": "prop.campfire",
       "name": "火堆",
       "type": "light",
+      "imageId": "s01.prop.campfireLit",
+      "assetId": "s01.prop.campfireLit",
       "glow": {
         "color": "#ff8c2e",
         "flicker": "fire",
@@ -613,8 +615,6 @@
         "yOffset": -10
       },
       "height": 48,
-      "imageId": "s01.prop.campfireLit",
-      "assetId": "s01.prop.campfireLit",
       "maxStack": 1,
       "renderStyle": "campfire_lit",
       "showName": false,
@@ -631,6 +631,8 @@
       "id": "prop.campfire.unlit",
       "name": "熄灭的火堆",
       "type": "light",
+      "imageId": "s01.prop.campfireUnlit",
+      "assetId": "s01.prop.campfireUnlit",
       "glow": {
         "color": "#c8452a",
         "intensity": 0.14,
@@ -638,8 +640,6 @@
         "yOffset": -6
       },
       "height": 48,
-      "imageId": "s01.prop.campfireUnlit",
-      "assetId": "s01.prop.campfireUnlit",
       "maxStack": 1,
       "renderStyle": "campfire_unlit",
       "showName": false,
@@ -656,6 +656,8 @@
       "id": "prop.firefly",
       "name": "萤火虫",
       "type": "light",
+      "imageId": "s01.prop.firefly",
+      "assetId": "s01.prop.firefly",
       "glow": {
         "color": "#a8ff9e",
         "flicker": "breathe",
@@ -664,8 +666,6 @@
         "yOffset": -18
       },
       "height": 18,
-      "imageId": "s01.prop.firefly",
-      "assetId": "s01.prop.firefly",
       "maxStack": 99,
       "renderStyle": "firefly",
       "showName": false,
@@ -1130,6 +1130,8 @@
       "name": "桃木杖",
       "description": "大贤良师的桃木法杖，杖身刻有太平道符文。攻击 +2。",
       "type": "equipment",
+      "imageId": "inventory.equipment.peachwoodStaff",
+      "assetId": "inventory.equipment.peachwoodStaff",
       "maxStack": 1,
       "rarity": 1,
       "sprite": {
