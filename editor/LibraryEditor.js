@@ -233,8 +233,14 @@ export class LibraryEditor {
     this._skillsError = null;
     this._skillsLoadPromise = null;
     this._skillDraftSequence = 0;
-    // 营火组合图层编辑（_renderItemDetail 内嵌画布）：拖拽状态与图层图片缓存
+    // 营火组合图层编辑（_renderItemDetail 内嵌画布）：拖拽/平移/框选状态、视图变换、多选集与图层图片缓存
     this._campfireDrag = null;
+    this._campfirePan = null;
+    this._campfireBand = null;
+    this._campfireView = null;
+    this._campfireSelection = new Set();
+    this._campfirePrimary = null;
+    this._campfireResizeObserver = null;
     this._campfireImageCache = new Map();
   }
 
@@ -357,9 +363,9 @@ export class LibraryEditor {
         return { ok: false, committed: false, status: 'failed', error };
       }
     }
-    if (this._validateItemLibrary()) {
+    if (this._validateItemLibrary().blocked) {
       // 具体问题（哪个物品/缺什么字段/图片未登记 Manifest）已由 _validateItemLibrary
-      // 的 toast（含首个问题）与状态栏（全量清单）给出——这里不再发通用提示覆盖它。
+      // 的 toast + 状态栏给出——这里不再发通用提示覆盖它。其它物品的问题不阻塞保存。
       return { ok: false, committed: false, status: 'rejected', code: 'invalidItemDefinition' };
     }
     this.project.library = this.library;
@@ -378,8 +384,14 @@ export class LibraryEditor {
           this._status('⚠️ ' + warning, 'warn');
           this._toast(warning, 'warn');
         } else {
-          this._status('✅ 已保存到 ' + this.projectPath, 'ok');
-          this._toast('保存成功（' + this._catLabel() + ' ' + n + ' 条）', 'success');
+          // 方案一：其它物品的问题不阻塞保存——成功后附加警告（列表同步标 ⚠）
+          const others = this._otherProblemItems || [];
+          this._otherProblemItems = null;
+          const warning = others.length > 0
+            ? `；注意：另有 ${others.length} 个物品定义存在问题（列表已标 ⚠）`
+            : '';
+          this._status('✅ 已保存到 ' + this.projectPath + warning, warning ? 'warn' : 'ok');
+          this._toast('保存成功（' + this._catLabel() + ' ' + n + ' 条）' + warning, warning ? 'warn' : 'success');
         }
         // 通知宿主（如场景编辑器）失效其内容库缓存，场景内组合物品预览与本次保存保持一致
         this.options?.onLibraryCommitted?.();
@@ -700,7 +712,8 @@ export class LibraryEditor {
     }
   }
 
-  /** 列表行 HTML：合并分类与有图分类显示缩略图 + 类型徽标；无图回退分类小图标。 */
+  /** 列表行 HTML：合并分类与有图分类显示缩略图 + 类型徽标；无图回退分类小图标。
+   *  物品分类下，校验存在问题的条目名称后标红 ⚠（悬停看具体问题；不阻塞保存）。 */
   _listItemHtml(e) {
     const section = this._sectionOf(e);
     const thumbIcon = LIST_THUMB_ICONS[this.activeCategory] || '';
@@ -716,8 +729,14 @@ export class LibraryEditor {
       if (e.type) metaParts.push(itemTypeLabel(e.type));
     }
     const metaHtml = metaParts.length ? `<div class="li-meta">${escapeHtml(metaParts.join(' · '))}</div>` : '';
+    const problems = this.activeCategory === 'items'
+      ? this._itemProblems(e, this._itemAllIds())
+      : [];
+    const warnHtml = problems.length > 0
+      ? `<span title="${escapeHtml(problems.join('；'))}" style="color:#ff7a7a;font-size:11px;font-weight:normal;"> ⚠</span>`
+      : '';
     if (!showsThumb) {
-      return `<div class="li-name">${escapeHtml(e.name || '(未命名)')}</div><div class="li-id">${escapeHtml(e.id || '')}</div>${metaHtml}`;
+      return `<div class="li-name">${escapeHtml(e.name || '(未命名)')}${warnHtml}</div><div class="li-id">${escapeHtml(e.id || '')}</div>${metaHtml}`;
     }
     const imageId = String(e.imageId || e.assetId || '').trim();
     const image = this._manifestImageOption(imageId);
@@ -726,7 +745,7 @@ export class LibraryEditor {
       : (thumbIcon
         ? `<div class="li-preview" style="display:flex;align-items:center;justify-content:center;font-size:18px;" title="未配置图片，显示分类图标">${thumbIcon}</div>`
         : `<div class="li-preview" style="display:flex;align-items:center;justify-content:center;color:#ff9a9a;font-size:10px;">缺图</div>`);
-    return `<div class="li-item-row">${preview}<div style="min-width:0;flex:1;"><div class="li-name">${escapeHtml(e.name || '(未命名)')}</div><div class="li-id">${escapeHtml(e.id || '')}</div>${metaHtml}</div></div>`;
+    return `<div class="li-item-row">${preview}<div style="min-width:0;flex:1;"><div class="li-name">${escapeHtml(e.name || '(未命名)')}${warnHtml}</div><div class="li-id">${escapeHtml(e.id || '')}</div>${metaHtml}</div></div>`;
   }
 
   _renderDetail() {
@@ -822,66 +841,55 @@ export class LibraryEditor {
   }
 
   /**
-   * 营火组合图层编辑区（多图组合物品）：内嵌画布预览三图层合成效果（与场景编辑器所见一致），
-   * 下方按图层分组给出 图片/宽/高/偏移X/偏移Y 数值域。所有改动直接写 entry 草稿，
-   * 保存（保存到工程）时经 _commitDetail 的 JSON 域一并提交。
+   * 营火组合图层编辑区（多图组合物品 · 简化场景编辑器）：
+   * 左侧画布（撑满详情面板宽、半屏高，滚轮缩放 / 中键平移 / 拖层移动 / 手柄改宽高 /
+   * 空白拖拽框选（Ctrl 追加）/ 方向键微移选中层），画布叠加标准基线十字标（图片底部锚点）；
+   * 最右侧宽面板 = 图层列表（▲▼ 调整叠加顺序，写 campfirePresentation.layerOrder）
+   * + 选中图层属性表单（图片/宽/高/偏移X/偏移Y，多选时显示首个选中层）。
+   * 所有改动直接写 entry 草稿，保存（保存到工程）时经 _commitDetail 的 JSON 域一并提交。
    */
   _campfireCompositeSectionHtml(entry) {
     const presentation = entry.campfirePresentation;
     const lightRadius = presentation?.presentation?.lightRadius;
-    const layerGroups = [
-      { key: 'base', label: '底座（最底层）' },
-      { key: 'stoneRing', label: '石圈（中层）' },
-      { key: 'logs', label: '柴堆/交叉木头（最上层）' }
-    ];
-    const imageOptions = this._manifestImageOptions;
-    const layerHtml = layerGroups.map(({ key, label }) => {
-      const layer = presentation[key];
-      if (!layer || typeof layer !== 'object') return '';
-      const layerImageId = String(layer.imageId || '').trim();
-      const hasLayerImage = imageOptions.some(option => option.imageId === layerImageId);
-      const num = (field, value, step, allowAnySign) => `<input type="number" id="l-cf-${key}-${field}" step="${step}" ${allowAnySign ? '' : 'min="8"'} value="${value != null ? value : (allowAnySign ? 0 : '')}" data-cf="${key}.${field}">`;
-      return `
-      <div class="row" style="border-top:1px dashed #3a4a6e;margin-top:8px;padding-top:8px;">
-        <label style="color:#8cf;">${escapeHtml(label)}</label>
-        <select id="l-cf-${key}-image" ${imageOptions.length ? '' : 'disabled'}>${!hasLayerImage && layerImageId ? `<option value="${escapeHtml(layerImageId)}" selected>当前 ID 无效：${escapeHtml(layerImageId)}</option>` : `<option value="">（未指定图层图片）</option>`}${imageOptions
-          .map(option => `<option value="${escapeHtml(option.imageId)}" ${option.imageId === layerImageId ? 'selected' : ''}>${escapeHtml(option.imageId)} · ${escapeHtml(option.path)}</option>`)
-          .join('')}</select>
-        <div style="display:flex;gap:6px;margin-top:6px;">
-          <label style="flex:none;align-self:center;">宽</label>${num('width', layer.width, 1, false)}
-          <label style="flex:none;align-self:center;">高</label>${num('height', layer.height, 1, false)}
-        </div>
-        <div style="display:flex;gap:6px;margin-top:6px;">
-          <label style="flex:none;align-self:center;">偏移X</label>${num('offsetx', layer.offsetX, 1, true)}
-          <label style="flex:none;align-self:center;">偏移Y</label>${num('offsety', layer.offsetY, 1, true)}
-        </div>
-      </div>`;
-    }).join('');
     return `
       <div class="row" style="border-top:1px dashed #3a4a6e;margin-top:10px;padding-top:8px;">
-        <label style="color:#8cf;">组合图层（多图组合物品 · 与场景编辑器所见一致）</label>
-        <canvas id="l-campfire-canvas" width="280" height="180" style="display:block;width:280px;height:180px;background:#0d1526;border:1px solid #2a3a5e;border-radius:4px;"></canvas>
-        <small style="display:block;margin-top:4px;color:#9ab;font-size:11px;line-height:1.45;">绘制顺序：底座→石圈→柴堆（柴堆最上层）。画布内拖层=移动，右缘手柄=改宽，顶缘手柄=改高；改动实时同步到数值与「专属属性」JSON。</small>
+        <label style="color:#8cf;">组合图层（多图组合物品 · 简化场景编辑器）</label>
+        <div style="display:flex;gap:8px;align-items:stretch;margin-top:4px;">
+          <canvas id="l-campfire-canvas" width="640" height="360" tabindex="0" style="flex:1 1 auto;min-width:0;width:100%;height:50vh;background:#0d1526;border:1px solid #2a3a5e;border-radius:4px;display:block;outline:none;"></canvas>
+          <div id="l-campfire-layers" style="flex:none;width:240px;display:flex;flex-direction:column;background:#0d1526;border:1px solid #2a3a5e;border-radius:4px;padding:8px;box-sizing:border-box;"></div>
+        </div>
+        <small style="display:block;margin-top:4px;color:#9ab;font-size:11px;line-height:1.45;">滚轮=缩放（以指针为中心），中键拖动=平移；画布内拖层=移动（多选一起动），右缘手柄=改宽，顶缘手柄=改高；空白处拖拽=框选（Ctrl=追加，点空白=取消）；方向键=微移选中层（Shift=10px）；右侧：▲▼ 调整叠加顺序（顶=最上层）、点选图层编辑属性；改动实时同步「专属属性」JSON。</small>
       </div>
       <div class="row"><label>光源半径（px，火光/长影触发范围）</label><input type="number" id="l-cf-radius" min="32" step="10" value="${lightRadius != null ? lightRadius : ''}"></div>
-      ${layerHtml}
     `;
   }
 
-  /** 营火组合图层：图层世界包围盒（与运行时 drawVisualLayer 同公式，锚点在画布底部中心）。 */
-  _campfireLayerRects(entry, canvas) {
+  /** 地面图层绘制顺序：读 campfirePresentation.layerOrder（base/stoneRing/logs 各一次），缺省/非法回退默认序（与运行时 normalizeLayerOrder 同语义）。 */
+  _campfireLayerOrder(entry) {
     const presentation = entry?.campfirePresentation;
-    if (!presentation || typeof presentation !== 'object' || !canvas) return null;
-    const anchorX = Math.round(canvas.width / 2);
-    const anchorY = canvas.height - 30;
-    const groups = [
-      { key: 'base', label: '底座', color: '#ffd54f' },
-      { key: 'stoneRing', label: '石圈', color: '#7fd7ff' },
-      { key: 'logs', label: '柴堆', color: '#a8ff9e' }
-    ];
+    const GROUND_KEYS = ['base', 'stoneRing', 'logs'];
+    const order = Array.isArray(presentation?.layerOrder)
+      ? presentation.layerOrder.map(key => String(key || '').trim()).filter(key => GROUND_KEYS.includes(key))
+      : [];
+    const unique = [...new Set(order)];
+    return unique.length === GROUND_KEYS.length ? unique : GROUND_KEYS;
+  }
+
+  /**
+   * 营火组合图层：图层世界包围盒（与运行时 drawVisualLayer 同公式）。
+   * 世界坐标以锚点（物品脚底）为原点；屏幕映射由视图变换（_campfireView 缩放/平移）完成。
+   */
+  _campfireLayerRects(entry) {
+    const presentation = entry?.campfirePresentation;
+    if (!presentation || typeof presentation !== 'object') return null;
+    const meta = {
+      base: { label: '底座', color: '#ffd54f' },
+      stoneRing: { label: '石圈', color: '#7fd7ff' },
+      logs: { label: '柴堆', color: '#a8ff9e' }
+    };
     const rects = [];
-    for (const group of groups) {
-      const layer = presentation[group.key];
+    for (const key of this._campfireLayerOrder(entry)) {
+      const layer = presentation[key];
       if (!layer || typeof layer !== 'object') continue;
       const width = Number(layer.width);
       const height = Number(layer.height);
@@ -891,9 +899,9 @@ export class LibraryEditor {
       const offsetX = Number.isFinite(Number(layer.offsetX)) ? Number(layer.offsetX) : 0;
       const offsetY = Number.isFinite(Number(layer.offsetY)) ? Number(layer.offsetY) : 0;
       rects.push({
-        ...group,
-        x: anchorX - width * pivotX + offsetX,
-        y: anchorY - height * pivotY + offsetY,
+        key, ...meta[key],
+        x: -width * pivotX + offsetX,
+        y: -height * pivotY + offsetY,
         width, height, pivotX, pivotY, offsetX, offsetY
       });
     }
@@ -904,21 +912,31 @@ export class LibraryEditor {
     return { x: event.offsetX, y: event.offsetY };
   }
 
-  /** 命中营火图层：手柄优先（右缘=改宽/顶缘=改高），层体其次（移动），按视觉层级逆序检测。 */
+  /** 屏幕坐标 → 世界坐标（视图变换逆映射）。 */
+  _campfireWorldPos(pos) {
+    const view = this._campfireView || { zoom: 1, offsetX: 0, offsetY: 0 };
+    return { x: (pos.x - view.offsetX) / view.zoom, y: (pos.y - view.offsetY) / view.zoom };
+  }
+
+  /** 命中营火图层：手柄优先（右缘=改宽/顶缘=改高，屏幕 10px 容差，仅单选层可缩放），层体其次（移动/框选），按视觉层级逆序检测。 */
   _campfireHitTest(entry, canvas, pos) {
-    const rects = this._campfireLayerRects(entry, canvas);
+    const rects = this._campfireLayerRects(entry);
     if (!rects) return null;
-    const r = 10;
-    for (const rect of [...rects].reverse()) {
-      if (Math.hypot(pos.x - (rect.x + rect.width), pos.y - (rect.y + rect.height / 2)) <= r) {
-        return { key: rect.key, mode: 'resize-w' };
-      }
-      if (Math.hypot(pos.x - (rect.x + rect.width / 2), pos.y - rect.y) <= r) {
-        return { key: rect.key, mode: 'resize-h' };
+    const world = this._campfireWorldPos(pos);
+    const r = 10 / this._campfireView.zoom;
+    if (this._campfireSelection.size === 1) {
+      for (const rect of [...rects].reverse()) {
+        if (!this._campfireSelection.has(rect.key)) continue;
+        if (Math.hypot(world.x - (rect.x + rect.width), world.y - (rect.y + rect.height / 2)) <= r) {
+          return { key: rect.key, mode: 'resize-w' };
+        }
+        if (Math.hypot(world.x - (rect.x + rect.width / 2), world.y - rect.y) <= r) {
+          return { key: rect.key, mode: 'resize-h' };
+        }
       }
     }
     for (const rect of [...rects].reverse()) {
-      if (pos.x >= rect.x && pos.x <= rect.x + rect.width && pos.y >= rect.y && pos.y <= rect.y + rect.height) {
+      if (world.x >= rect.x && world.x <= rect.x + rect.width && world.y >= rect.y && world.y <= rect.y + rect.height) {
         return { key: rect.key, mode: 'move' };
       }
     }
@@ -945,33 +963,57 @@ export class LibraryEditor {
     return cached.loaded ? cached.image : null;
   }
 
-  /** 重绘营火组合预览画布（图片未就绪时画占位框，加载完成回调重绘）。 */
+  /** 重置组合画布视图：锚点（世界原点）居中于画布下半部，缩放归一。 */
+  _campfireResetView(canvas) {
+    this._campfireView = {
+      zoom: 1,
+      offsetX: Math.round(canvas.width / 2),
+      offsetY: canvas.height - 40
+    };
+    return this._campfireView;
+  }
+
+  /** 画布尺寸自适应：按 CSS 尺寸同步属性分辨率；尺寸变化时锚点重新居中（保留缩放倍率）。 */
+  _sizeCampfireCanvas(canvas) {
+    if (!canvas) return false;
+    const width = Math.max(64, Math.round(canvas.clientWidth || canvas.width));
+    const height = Math.max(64, Math.round(canvas.clientHeight || canvas.height));
+    if (canvas.width !== width || canvas.height !== height) {
+      canvas.width = width;
+      canvas.height = height;
+      this._campfireResetView(canvas);
+      return true;
+    }
+    return false;
+  }
+
+  /** 重绘营火组合预览画布（图片未就绪时画占位框，加载完成回调重绘）。视图变换：世界坐标 + 缩放/平移。 */
   _drawCampfireComposite(panel, entry) {
     const canvas = panel?.querySelector('#l-campfire-canvas');
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     const presentation = entry?.campfirePresentation;
+    const view = this._campfireView || this._campfireResetView(canvas);
+    const inv = 1 / view.zoom;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = '#0d1526';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    const anchorX = Math.round(canvas.width / 2);
-    const anchorY = canvas.height - 30;
-    // 锚点（脚底）十字与地面基线
-    ctx.strokeStyle = 'rgba(140,160,200,0.5)';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(anchorX - 6, anchorY);
-    ctx.lineTo(anchorX + 6, anchorY);
-    ctx.moveTo(anchorX, anchorY - 6);
-    ctx.lineTo(anchorX, anchorY + 6);
-    ctx.stroke();
+    ctx.setTransform(view.zoom, 0, 0, view.zoom, view.offsetX, view.offsetY);
+    // 可视世界范围（基线画满视口）
+    const worldLeft = -view.offsetX * inv;
+    const worldRight = (canvas.width - view.offsetX) * inv;
+    // 地面基线（标准基线 y=0，即游戏/场景编辑器中图片底部所贴的地面线）
     ctx.strokeStyle = 'rgba(140,160,200,0.25)';
     ctx.beginPath();
-    ctx.moveTo(10, anchorY);
-    ctx.lineTo(canvas.width - 10, anchorY);
+    ctx.moveTo(worldLeft + 10 * inv, 0);
+    ctx.lineTo(worldRight - 10 * inv, 0);
     ctx.stroke();
-    const rects = this._campfireLayerRects(entry, canvas);
-    if (!rects) return;
+    const rects = this._campfireLayerRects(entry);
+    if (!rects) {
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      return;
+    }
     const redraw = () => {
       if (panel.isConnected) this._drawCampfireComposite(panel, entry);
     };
@@ -984,28 +1026,68 @@ export class LibraryEditor {
         ctx.fillStyle = 'rgba(255,255,255,0.06)';
         ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
       }
-      const dragging = this._campfireDrag?.key === rect.key;
-      ctx.setLineDash(dragging ? [] : [5, 4]);
+      const selected = this._campfireSelection.has(rect.key);
+      const dragging = this._campfireDrag?.key === rect.key || (this._campfireDrag?.keys || []).includes(rect.key);
+      ctx.setLineDash(!dragging && !selected ? [5 * inv, 4 * inv] : []);
       ctx.strokeStyle = rect.color;
-      ctx.lineWidth = dragging ? 1.8 : 1.2;
+      ctx.lineWidth = (dragging || selected ? 1.8 : 1.2) * inv;
       ctx.strokeRect(rect.x, rect.y, rect.width, rect.height);
-      // 右缘中点手柄（改宽）+ 顶缘中点手柄（改高）
-      ctx.setLineDash([]);
+      // 缩放手柄仅单选层绘制（多选只平移）：右缘中点=改宽、顶缘中点=改高，按屏幕像素恒定大小
+      if (selected && this._campfireSelection.size === 1) {
+        ctx.setLineDash([]);
+        ctx.fillStyle = rect.color;
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1 * inv;
+        const hs = 5 * inv;
+        const rx = rect.x + rect.width;
+        const ry = rect.y + rect.height / 2;
+        const tx = rect.x + rect.width / 2;
+        const ty = rect.y;
+        ctx.fillRect(rx - hs, ry - hs, hs * 2, hs * 2);
+        ctx.strokeRect(rx - hs, ry - hs, hs * 2, hs * 2);
+        ctx.fillRect(tx - hs, ty - hs, hs * 2, hs * 2);
+        ctx.strokeRect(tx - hs, ty - hs, hs * 2, hs * 2);
+      }
       ctx.fillStyle = rect.color;
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 1;
-      const rx = rect.x + rect.width;
-      const ry = rect.y + rect.height / 2;
-      const tx = rect.x + rect.width / 2;
-      const ty = rect.y;
-      ctx.fillRect(rx - 5, ry - 5, 10, 10);
-      ctx.strokeRect(rx - 5, ry - 5, 10, 10);
-      ctx.fillRect(tx - 5, ty - 5, 10, 10);
-      ctx.strokeRect(tx - 5, ty - 5, 10, 10);
-      ctx.fillStyle = rect.color;
-      ctx.font = '11px sans-serif';
+      ctx.font = `${11 * inv}px sans-serif`;
       ctx.textBaseline = 'bottom';
-      ctx.fillText(rect.label, rect.x, rect.y - 2);
+      ctx.fillText(rect.label, rect.x, rect.y - 2 * inv);
+    }
+    // 标准基线十字标（世界原点 = 场景编辑器/游戏中图片最底部的锚点位置，洋红，屏幕像素恒定大小）
+    {
+      const arm = 12 * inv;
+      const gap = 3 * inv;
+      ctx.strokeStyle = '#ff7ad9';
+      ctx.lineWidth = 1.6 * inv;
+      ctx.setLineDash([]);
+      ctx.beginPath();
+      ctx.moveTo(-arm, 0);
+      ctx.lineTo(-gap, 0);
+      ctx.moveTo(gap, 0);
+      ctx.lineTo(arm, 0);
+      ctx.moveTo(0, -arm);
+      ctx.lineTo(0, -gap);
+      ctx.moveTo(0, gap);
+      ctx.lineTo(0, arm);
+      ctx.stroke();
+      ctx.fillStyle = '#ff7ad9';
+      ctx.fillRect(-1.5 * inv, -1.5 * inv, 3 * inv, 3 * inv);
+    }
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    // 框选矩形（屏幕坐标虚线框）
+    if (this._campfireBand) {
+      const band = this._campfireBand;
+      const x = Math.min(band.startX, band.curX);
+      const y = Math.min(band.startY, band.curY);
+      const width = Math.abs(band.curX - band.startX);
+      const height = Math.abs(band.curY - band.startY);
+      ctx.setLineDash([5, 4]);
+      ctx.strokeStyle = '#9fc6ff';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(x + 0.5, y + 0.5, width, height);
+      ctx.fillStyle = 'rgba(159,198,255,0.08)';
+      ctx.fillRect(x, y, width, height);
+      ctx.setLineDash([]);
     }
   }
 
@@ -1038,17 +1120,183 @@ export class LibraryEditor {
     }
   }
 
-  /** 绑定营火组合图层编辑区：画布拖拽 + 数值/图片域直改 entry 草稿。 */
-  _bindCampfireComposite(panel, entry) {
+  /**
+   * 渲染最右侧宽面板：上部图层列表（自上而下 = 叠加自上，最上层在最上；点行选中，
+   * Ctrl+点行追加/移除，▲▼ 调整叠加顺序写 campfirePresentation.layerOrder），
+   * 下部主选图层属性表单（图片/宽/高/偏移X/偏移Y；多选显示主选层并提示已选数量）。
+   */
+  _renderCampfireLayerList(panel, entry) {
+    const host = panel.querySelector('#l-campfire-layers');
+    if (!host) return;
     const presentation = entry.campfirePresentation;
     if (!presentation || typeof presentation !== 'object') return;
-    const canvas = panel.querySelector('#l-campfire-canvas');
-    const redraw = () => this._drawCampfireComposite(panel, entry);
-    const syncAll = () => {
-      this._syncCampfireInputs(panel, entry);
-      this._syncCampfireJson(panel, entry);
-      redraw();
+    const order = this._campfireLayerOrder(entry);
+    const meta = {
+      base: { label: '底座', color: '#ffd54f' },
+      stoneRing: { label: '石圈', color: '#7fd7ff' },
+      logs: { label: '柴堆', color: '#a8ff9e' }
     };
+    // 主选层：优先记住的主选，其次选中集中按绘制顺序最上层
+    const primary = this._campfireSelection.has(this._campfirePrimary)
+      ? this._campfirePrimary
+      : order.find(key => this._campfireSelection.has(key)) || null;
+    if (primary && primary !== this._campfirePrimary) this._campfirePrimary = primary;
+    // 列表显示顺序 = 绘制顺序倒序（最上层在最上）
+    const visual = [...order].reverse();
+    const rows = visual.map((key, index) => {
+      const selected = this._campfireSelection.has(key);
+      return `
+      <div data-layer-row="${key}" style="display:flex;align-items:center;gap:6px;padding:6px;margin-bottom:4px;border-radius:4px;cursor:pointer;box-sizing:border-box;border:1px solid ${selected ? meta[key].color : '#2a3a5e'};background:${selected ? 'rgba(255,255,255,0.07)' : 'transparent'};">
+        <span style="width:10px;height:10px;border-radius:2px;background:${meta[key].color};flex:none;"></span>
+        <span style="flex:1;min-width:0;font-size:12px;color:#dfe8ff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeHtml(meta[key].label)}">${escapeHtml(meta[key].label)}</span>
+        <button type="button" data-layer-up="${key}" ${index === 0 ? 'disabled' : ''} style="flex:none;width:22px;height:22px;padding:0;background:#1b2946;border:1px solid #2a3a5e;border-radius:3px;color:#9fc6ff;cursor:pointer;font-size:11px;line-height:1;" title="上移一层（更靠上）">▲</button>
+        <button type="button" data-layer-down="${key}" ${index === visual.length - 1 ? 'disabled' : ''} style="flex:none;width:22px;height:22px;padding:0;background:#1b2946;border:1px solid #2a3a5e;border-radius:3px;color:#9fc6ff;cursor:pointer;font-size:11px;line-height:1;" title="下移一层（更靠下）">▼</button>
+      </div>`;
+    }).join('');
+    // 属性表单（主选层）：与原下方分组表单同 ID（l-cf-{key}-*），同步函数无需改动
+    let propsHtml = '<div style="font-size:11px;color:#68789c;line-height:1.5;">点选图层后在此编辑属性</div>';
+    if (primary) {
+      const layer = presentation[primary] || {};
+      const layerImageId = String(layer.imageId || '').trim();
+      const imageOptions = this._manifestImageOptions;
+      const hasLayerImage = imageOptions.some(option => option.imageId === layerImageId);
+      const num = (field, value, step, allowAnySign) => `<input type="number" id="l-cf-${primary}-${field}" step="${step}" ${allowAnySign ? '' : 'min="8"'} value="${value != null ? value : (allowAnySign ? 0 : '')}" style="width:100%;box-sizing:border-box;">`;
+      const extraCount = this._campfireSelection.size > 1 ? `（已选 ${this._campfireSelection.size} 层，方向键/拖动同步移动）` : '';
+      propsHtml = `
+        <div style="font-size:11px;color:#8cf;margin:8px 0 4px;flex:none;">图层属性 · ${escapeHtml(meta[primary].label)}${escapeHtml(extraCount)}</div>
+        <select id="l-cf-${primary}-image" ${imageOptions.length ? '' : 'disabled'} style="width:100%;box-sizing:border-box;">${!hasLayerImage && layerImageId ? `<option value="${escapeHtml(layerImageId)}" selected>当前 ID 无效：${escapeHtml(layerImageId)}</option>` : `<option value="">（未指定图层图片）</option>`}${imageOptions
+          .map(option => `<option value="${escapeHtml(option.imageId)}" ${option.imageId === layerImageId ? 'selected' : ''}>${escapeHtml(option.imageId)}</option>`)
+          .join('')}</select>
+        <div style="display:flex;gap:6px;margin-top:6px;">
+          <div style="flex:1;min-width:0;"><label style="font-size:11px;color:#9ab;">宽</label>${num('width', layer.width, 1, false)}</div>
+          <div style="flex:1;min-width:0;"><label style="font-size:11px;color:#9ab;">高</label>${num('height', layer.height, 1, false)}</div>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:6px;">
+          <div style="flex:1;min-width:0;"><label style="font-size:11px;color:#9ab;">偏移X</label>${num('offsetx', layer.offsetX, 1, true)}</div>
+          <div style="flex:1;min-width:0;"><label style="font-size:11px;color:#9ab;">偏移Y</label>${num('offsety', layer.offsetY, 1, true)}</div>
+        </div>
+      `;
+    }
+    host.innerHTML = `
+      <div style="font-size:11px;color:#8cf;margin-bottom:6px;flex:none;">图层（顶 = 最上层）</div>
+      <div style="flex:none;">${rows}</div>
+      <div style="flex:1 1 auto;min-height:0;overflow-y:auto;border-top:1px dashed #3a4a6e;margin-top:4px;padding-top:4px;">${propsHtml}</div>
+      <div style="flex:none;font-size:10px;color:#68789c;margin-top:6px;line-height:1.4;">▲▼ 调整叠加顺序（同步运行时与场景编辑器预览）；Ctrl+点行=多选</div>
+    `;
+    const refreshCanvas = () => this._drawCampfireComposite(panel, entry);
+    const applyOrder = listOrder => {
+      // 保存提交会重建 campfirePresentation（引用更换）——实时读取，禁止写旧对象
+      const presentation = entry.campfirePresentation;
+      if (!presentation || typeof presentation !== 'object') return;
+      presentation.layerOrder = [...listOrder].reverse();
+      this._renderCampfireLayerList(panel, entry);
+      this._syncCampfireJson(panel, entry);
+      refreshCanvas();
+    };
+    for (const key of visual) {
+      const rowIndex = visual.indexOf(key);
+      host.querySelector(`[data-layer-row="${key}"]`)?.addEventListener('click', event => {
+        if (event.target.closest('button')) return;
+        if (event.ctrlKey || event.metaKey) {
+          if (this._campfireSelection.has(key)) this._campfireSelection.delete(key);
+          else this._campfireSelection.add(key);
+          if (this._campfireSelection.has(key)) this._campfirePrimary = key;
+          else if (!this._campfireSelection.has(this._campfirePrimary)) {
+            this._campfirePrimary = [...this._campfireSelection][0] || null;
+          }
+        } else {
+          this._campfireSelection = new Set([key]);
+          this._campfirePrimary = key;
+        }
+        this._renderCampfireLayerList(panel, entry);
+        refreshCanvas();
+      });
+      // 右键图层行：快捷菜单（刷新图片——重载磁盘上修改后的 PNG）
+      host.querySelector(`[data-layer-row="${key}"]`)?.addEventListener('contextmenu', event => {
+        event.preventDefault();
+        this._showCampfireLayerMenu(panel, entry, key, event.clientX, event.clientY);
+      });
+      host.querySelector(`[data-layer-up="${key}"]`)?.addEventListener('click', () => {
+        if (rowIndex <= 0) return;
+        const next = [...visual];
+        [next[rowIndex - 1], next[rowIndex]] = [next[rowIndex], next[rowIndex - 1]];
+        applyOrder(next);
+      });
+      host.querySelector(`[data-layer-down="${key}"]`)?.addEventListener('click', () => {
+        if (rowIndex >= visual.length - 1) return;
+        const next = [...visual];
+        [next[rowIndex + 1], next[rowIndex]] = [next[rowIndex], next[rowIndex + 1]];
+        applyOrder(next);
+      });
+    }
+    if (primary) this._bindCampfireLayerFields(panel, entry, primary);
+  }
+
+  /** 图层行右键菜单（简化场景编辑器）：刷新图片等快捷操作。 */
+  _showCampfireLayerMenu(panel, entry, key, clientX, clientY) {
+    document.getElementById('l-campfire-layer-menu')?.remove();
+    const menu = document.createElement('div');
+    menu.id = 'l-campfire-layer-menu';
+    menu.style.cssText = 'position:fixed;z-index:100001;background:#1b2946;border:1px solid #2a3a5e;border-radius:6px;padding:4px;box-shadow:0 4px 16px rgba(0,0,0,0.5);';
+    const refreshItem = document.createElement('div');
+    refreshItem.textContent = '🔄 刷新图片';
+    refreshItem.title = '清除编辑器图片缓存，绕过 HTTP 缓存重载磁盘上修改后的 PNG';
+    refreshItem.style.cssText = 'padding:6px 14px;font-size:12px;color:#dfe8ff;cursor:pointer;border-radius:4px;white-space:nowrap;';
+    refreshItem.addEventListener('mouseenter', () => { refreshItem.style.background = '#24365c'; });
+    refreshItem.addEventListener('mouseleave', () => { refreshItem.style.background = 'transparent'; });
+    refreshItem.addEventListener('click', () => {
+      menu.remove();
+      this._refreshCampfireLayerImage(panel, entry, key);
+    });
+    menu.appendChild(refreshItem);
+    document.body.appendChild(menu);
+    const bounds = menu.getBoundingClientRect();
+    menu.style.left = `${Math.max(4, Math.min(clientX, window.innerWidth - bounds.width - 8))}px`;
+    menu.style.top = `${Math.max(4, Math.min(clientY, window.innerHeight - bounds.height - 8))}px`;
+    const close = event => {
+      if (menu.contains(event.target)) return;
+      menu.remove();
+      document.removeEventListener('mousedown', close, true);
+    };
+    document.addEventListener('mousedown', close, true);
+  }
+
+  /** 刷新图层图片：清编辑器缓存并以时间戳参数绕过 HTTP 缓存，重载磁盘上修改后的 PNG。 */
+  _refreshCampfireLayerImage(panel, entry, key) {
+    const presentation = entry.campfirePresentation;
+    const layer = presentation && typeof presentation === 'object' ? presentation[key] : null;
+    const imageId = String(layer?.imageId || '').trim();
+    if (!imageId) {
+      this._toast('该图层未指定图片资源，无需刷新', 'warn');
+      return;
+    }
+    const display = this._imageDisplay(imageId);
+    if (!display.url) {
+      this._toast(`未找到图片资源：${imageId}`, 'error');
+      return;
+    }
+    this._campfireImageCache.delete(imageId);
+    const url = display.url + (display.url.includes('?') ? '&' : '?') + 'r=' + Date.now();
+    const image = new Image();
+    image.onload = () => {
+      this._campfireImageCache.set(imageId, { image, loaded: true });
+      if (panel.isConnected) this._drawCampfireComposite(panel, entry);
+      this._toast(`已刷新图片：${imageId}`, 'success');
+    };
+    image.onerror = () => this._toast(`刷新失败（图片加载出错）：${imageId}`, 'error');
+    image.src = url;
+  }
+
+  /** 绑定主选图层的属性表单（图片/宽/高/偏移X/偏移Y 直改 entry 草稿；面板重渲染后重新绑定）。
+   * 保存提交会用 JSON 域重建 campfirePresentation（引用更换）——所有处理器必须实时读取，禁止闭包捕获旧对象。 */
+  _bindCampfireLayerFields(panel, entry, key) {
+    const getLayer = () => {
+      const presentation = entry.campfirePresentation;
+      const layer = presentation && typeof presentation === 'object' ? presentation[key] : null;
+      return layer && typeof layer === 'object' ? layer : null;
+    };
+    if (!getLayer()) return;
+    const redraw = () => this._drawCampfireComposite(panel, entry);
     const bindNumber = (selector, get, apply, allowAnySign) => {
       const input = panel.querySelector(selector);
       if (!input) return;
@@ -1063,25 +1311,56 @@ export class LibraryEditor {
         redraw();
       });
     };
-    for (const key of ['base', 'stoneRing', 'logs']) {
-      const layer = presentation[key];
-      if (!layer || typeof layer !== 'object') continue;
-      const imageSelect = panel.querySelector(`#l-cf-${key}-image`);
-      imageSelect?.addEventListener('change', event => {
-        const value = String(event.target.value || '').trim();
-        if (!value) return;
-        layer.imageId = value;
-        this._syncCampfireJson(panel, entry);
-        redraw();
+    const imageSelect = panel.querySelector(`#l-cf-${key}-image`);
+    imageSelect?.addEventListener('change', event => {
+      const value = String(event.target.value || '').trim();
+      if (!value) return;
+      const layer = getLayer();
+      if (!layer) return;
+      layer.imageId = value;
+      this._syncCampfireJson(panel, entry);
+      redraw();
+    });
+    bindNumber(`#l-cf-${key}-width`, () => getLayer()?.width ?? '', num => { const layer = getLayer(); if (layer) layer.width = num; }, false);
+    bindNumber(`#l-cf-${key}-height`, () => getLayer()?.height ?? '', num => { const layer = getLayer(); if (layer) layer.height = num; }, false);
+    bindNumber(`#l-cf-${key}-offsetx`, () => getLayer()?.offsetX ?? 0, num => { const layer = getLayer(); if (layer) layer.offsetX = num; }, true);
+    bindNumber(`#l-cf-${key}-offsety`, () => getLayer()?.offsetY ?? 0, num => { const layer = getLayer(); if (layer) layer.offsetY = num; }, true);
+  }
+
+  /** 绑定营火组合图层编辑区：画布拖拽/滚轮缩放/中键平移 + 图层面板。
+   * 保存提交会用 JSON 域重建 campfirePresentation（引用更换）——处理器统一经 getPresentation() 实时读取。 */
+  _bindCampfireComposite(panel, entry) {
+    const getPresentation = () => (entry.campfirePresentation && typeof entry.campfirePresentation === 'object'
+      ? entry.campfirePresentation : null);
+    if (!getPresentation()) return;
+    const canvas = panel.querySelector('#l-campfire-canvas');
+    this._campfireSelection = new Set();
+    this._campfirePrimary = null;
+    this._campfirePan = null;
+    this._campfireBand = null;
+    this._renderCampfireLayerList(panel, entry);
+    this._sizeCampfireCanvas(canvas);
+    const redraw = () => this._drawCampfireComposite(panel, entry);
+    // 画布 CSS 尺寸变化（窗口缩放/面板开合）→ 同步分辨率并重绘
+    this._campfireResizeObserver?.disconnect();
+    if (typeof ResizeObserver !== 'undefined' && canvas) {
+      this._campfireResizeObserver = new ResizeObserver(() => {
+        if (!canvas.isConnected) return;
+        if (this._sizeCampfireCanvas(canvas)) redraw();
       });
-      bindNumber(`#l-cf-${key}-width`, () => layer.width ?? '', num => { layer.width = num; }, false);
-      bindNumber(`#l-cf-${key}-height`, () => layer.height ?? '', num => { layer.height = num; }, false);
-      bindNumber(`#l-cf-${key}-offsetx`, () => layer.offsetX ?? 0, num => { layer.offsetX = num; }, true);
-      bindNumber(`#l-cf-${key}-offsety`, () => layer.offsetY ?? 0, num => { layer.offsetY = num; }, true);
+      this._campfireResizeObserver.observe(canvas);
     }
+    // 改动后统一同步：数值表单 + 专属属性 JSON + 重绘
+    const syncAll = () => {
+      this._syncCampfireInputs(panel, entry);
+      this._syncCampfireJson(panel, entry);
+      redraw();
+    };
     const radiusInput = panel.querySelector('#l-cf-radius');
     radiusInput?.addEventListener('change', () => {
       const num = Number(radiusInput.value);
+      const presentation = getPresentation();
+      if (!presentation) return;
       if (!Number.isFinite(num) || num <= 0) {
         radiusInput.value = presentation.presentation?.lightRadius ?? '';
         return;
@@ -1092,61 +1371,215 @@ export class LibraryEditor {
       this._syncCampfireJson(panel, entry);
     });
     if (!canvas) return;
-    canvas.addEventListener('mousedown', event => {
+    // 右键画布图层：与右侧面板行同款快捷菜单（刷新图片）；空白处仅屏蔽浏览器默认菜单
+    canvas.addEventListener('contextmenu', event => {
+      event.preventDefault();
       const pos = this._campfireCanvasPos(canvas, event);
       const hit = this._campfireHitTest(entry, canvas, pos);
       if (!hit) return;
+      this._showCampfireLayerMenu(panel, entry, hit.key, event.clientX, event.clientY);
+    });
+    // 滚轮缩放（以指针为中心，0.3x~4x）；阻止面板滚动
+    canvas.addEventListener('wheel', event => {
+      event.preventDefault();
+      const view = this._campfireView || this._campfireResetView(canvas);
+      const pos = this._campfireCanvasPos(canvas, event);
+      const world = this._campfireWorldPos(pos);
+      const factor = event.deltaY < 0 ? 1.12 : 1 / 1.12;
+      const zoom = Math.min(4, Math.max(0.3, view.zoom * factor));
+      if (zoom === view.zoom) return;
+      view.zoom = zoom;
+      view.offsetX = pos.x - world.x * zoom;
+      view.offsetY = pos.y - world.y * zoom;
+      redraw();
+    }, { passive: false });
+    // 方向键微移选中层（Shift=10px）；画布可聚焦（tabindex）后生效
+    canvas.addEventListener('keydown', event => {
+      const steps = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
+      const step = steps[event.key];
+      if (!step) return;
+      event.preventDefault();
+      if (this._campfireSelection.size === 0) return;
+      const presentation = getPresentation();
+      if (!presentation) return;
+      const distance = event.shiftKey ? 10 : 1;
+      for (const key of this._campfireSelection) {
+        const layer = presentation[key];
+        if (!layer || typeof layer !== 'object') continue;
+        layer.offsetX = Math.round((Number.isFinite(Number(layer.offsetX)) ? Number(layer.offsetX) : 0) + step[0] * distance);
+        layer.offsetY = Math.round((Number.isFinite(Number(layer.offsetY)) ? Number(layer.offsetY) : 0) + step[1] * distance);
+      }
+      syncAll();
+    });
+    canvas.addEventListener('mousedown', event => {
+      const pos = this._campfireCanvasPos(canvas, event);
+      // 中键拖动 = 平移视图（简化场景编辑器）；不与图层拖拽混用
+      if (event.button === 1) {
+        const view = this._campfireView || this._campfireResetView(canvas);
+        this._campfirePan = { startX: pos.x, startY: pos.y, offsetX: view.offsetX, offsetY: view.offsetY };
+        canvas.style.cursor = 'grabbing';
+        event.preventDefault();
+        return;
+      }
+      if (event.button !== 0) return;
+      const additive = event.ctrlKey || event.metaKey;
+      const hit = this._campfireHitTest(entry, canvas, pos);
+      if (!hit) {
+        // 空白处按下：开始框选（Ctrl=追加模式；松开时位移过小视为点空白=清选）
+        this._campfireBand = { startX: pos.x, startY: pos.y, curX: pos.x, curY: pos.y, additive };
+        event.preventDefault();
+        return;
+      }
+      if (hit.mode === 'move' && this._campfireSelection.has(hit.key) && this._campfireSelection.size > 1) {
+        // 点击已多选层：整组一起拖（不改选区）
+      } else if (hit.mode === 'move' && additive) {
+        if (this._campfireSelection.has(hit.key)) this._campfireSelection.delete(hit.key);
+        else this._campfireSelection.add(hit.key);
+        this._campfirePrimary = this._campfireSelection.has(hit.key) ? hit.key : this._campfirePrimary;
+        this._renderCampfireLayerList(panel, entry);
+      } else {
+        // 单击未选层（含手柄）：单选该层（Ctrl+手柄不改变选区）
+        if (!(additive && hit.mode !== 'move')) {
+          this._campfireSelection = new Set([hit.key]);
+          this._campfirePrimary = hit.key;
+          this._renderCampfireLayerList(panel, entry);
+        }
+      }
+      const presentation = getPresentation();
+      if (!presentation) return;
       const layer = presentation[hit.key];
       if (!layer || typeof layer !== 'object') return;
+      // 拖拽组：当前选区（含点击层）；记录每层起始值，组移动共用同一 dx/dy
+      const keys = hit.mode === 'move'
+        ? (this._campfireSelection.has(hit.key) ? [...this._campfireSelection] : [hit.key])
+        : [hit.key];
+      const starts = {};
+      for (const key of keys) {
+        const entry2 = presentation[key];
+        if (!entry2 || typeof entry2 !== 'object') continue;
+        starts[key] = {
+          width: Number(entry2.width) || 0,
+          height: Number(entry2.height) || 0,
+          offsetX: Number.isFinite(Number(entry2.offsetX)) ? Number(entry2.offsetX) : 0,
+          offsetY: Number.isFinite(Number(entry2.offsetY)) ? Number(entry2.offsetY) : 0,
+          pivotX: Number.isFinite(Number(entry2.pivot?.x)) ? Number(entry2.pivot.x) : 0.5,
+          pivotY: Number.isFinite(Number(entry2.pivot?.y)) ? Number(entry2.pivot.y) : 1
+        };
+      }
       this._campfireDrag = {
         key: hit.key,
+        keys,
         mode: hit.mode,
         startX: pos.x,
         startY: pos.y,
-        start: {
-          width: Number(layer.width) || 0,
-          height: Number(layer.height) || 0,
-          offsetX: Number.isFinite(Number(layer.offsetX)) ? Number(layer.offsetX) : 0,
-          offsetY: Number.isFinite(Number(layer.offsetY)) ? Number(layer.offsetY) : 0,
-          pivotX: Number.isFinite(Number(layer.pivot?.x)) ? Number(layer.pivot.x) : 0.5,
-          pivotY: Number.isFinite(Number(layer.pivot?.y)) ? Number(layer.pivot.y) : 1
-        }
+        starts
       };
       event.preventDefault();
       redraw();
     });
     canvas.addEventListener('mousemove', event => {
       const pos = this._campfireCanvasPos(canvas, event);
+      // 平移中：视图偏移随指针移动（屏幕像素 → 直接加到 offset）
+      if (this._campfirePan) {
+        const view = this._campfireView;
+        const pan = this._campfirePan;
+        view.offsetX = pan.offsetX + (pos.x - pan.startX);
+        view.offsetY = pan.offsetY + (pos.y - pan.startY);
+        redraw();
+        return;
+      }
+      // 框选中：更新橡皮筋矩形（屏幕坐标）
+      if (this._campfireBand) {
+        this._campfireBand.curX = pos.x;
+        this._campfireBand.curY = pos.y;
+        redraw();
+        return;
+      }
       const drag = this._campfireDrag;
       if (!drag) {
         const hit = this._campfireHitTest(entry, canvas, pos);
         canvas.style.cursor = hit ? (hit.mode === 'move' ? 'move' : 'nwse-resize') : 'default';
         return;
       }
-      const layer = presentation[drag.key];
-      if (!layer || typeof layer !== 'object') {
+      const presentation = getPresentation();
+      if (!presentation) {
         this._campfireDrag = null;
         return;
       }
-      const dx = pos.x - drag.startX;
-      const dy = pos.y - drag.startY;
+      // 拖拽位移按屏幕像素换算回世界像素（缩放感知）
+      const view = this._campfireView || this._campfireResetView(canvas);
+      const dx = (pos.x - drag.startX) / view.zoom;
+      const dy = (pos.y - drag.startY) / view.zoom;
+      const primaryStart = drag.starts[drag.key];
+      if (!primaryStart) {
+        this._campfireDrag = null;
+        return;
+      }
       if (drag.mode === 'resize-w') {
-        const width = Math.max(8, drag.start.width + Math.round(dx));
+        const layer = presentation[drag.key];
+        if (!layer || typeof layer !== 'object') { this._campfireDrag = null; return; }
+        const width = Math.max(8, primaryStart.width + Math.round(dx));
         layer.width = width;
-        layer.offsetX = Math.round(drag.start.offsetX + (width - drag.start.width) * drag.start.pivotX);
+        layer.offsetX = Math.round(primaryStart.offsetX + (width - primaryStart.width) * primaryStart.pivotX);
       } else if (drag.mode === 'resize-h') {
-        const height = Math.max(8, drag.start.height - Math.round(dy));
+        const layer = presentation[drag.key];
+        if (!layer || typeof layer !== 'object') { this._campfireDrag = null; return; }
+        const height = Math.max(8, primaryStart.height - Math.round(dy));
         layer.height = height;
-        layer.offsetY = Math.round(drag.start.offsetY + (drag.start.height - height) * (1 - drag.start.pivotY));
+        layer.offsetY = Math.round(primaryStart.offsetY + (primaryStart.height - height) * (1 - primaryStart.pivotY));
       } else {
-        layer.offsetX = Math.round(drag.start.offsetX + dx);
-        layer.offsetY = Math.round(drag.start.offsetY + dy);
+        // 组移动：选中各层共享同一位移
+        for (const key of drag.keys) {
+          const layer = presentation[key];
+          const start = drag.starts[key];
+          if (!layer || typeof layer !== 'object' || !start) continue;
+          layer.offsetX = Math.round(start.offsetX + dx);
+          layer.offsetY = Math.round(start.offsetY + dy);
+        }
       }
       syncAll();
     });
     const endDrag = () => {
-      if (!this._campfireDrag) return;
+      // 框选结束：按世界矩形选层（位移 <4px 视为点空白——Ctrl 保持原选区，普通点击清选）
+      if (this._campfireBand) {
+        const band = this._campfireBand;
+        this._campfireBand = null;
+        const moved = Math.hypot(band.curX - band.startX, band.curY - band.startY) >= 4;
+        if (moved) {
+          const worldA = this._campfireWorldPos({ x: band.startX, y: band.startY });
+          const worldB = this._campfireWorldPos({ x: band.curX, y: band.curY });
+          const left = Math.min(worldA.x, worldB.x);
+          const right = Math.max(worldA.x, worldB.x);
+          const top = Math.min(worldA.y, worldB.y);
+          const bottom = Math.max(worldA.y, worldB.y);
+          const rects = this._campfireLayerRects(entry) || [];
+          const hits = rects
+            .filter(rect => rect.x < right && rect.x + rect.width > left && rect.y < bottom && rect.y + rect.height > top)
+            .map(rect => rect.key);
+          const nextSelection = band.additive ? new Set([...this._campfireSelection, ...hits]) : new Set(hits);
+          if (nextSelection.size > 0) {
+            this._campfireSelection = nextSelection;
+            if (!this._campfireSelection.has(this._campfirePrimary)) {
+              // 主选取命中中最上层（rects 为绘制序，末位最上）
+              this._campfirePrimary = hits.length > 0 ? hits[hits.length - 1] : [...nextSelection][0];
+            }
+          } else if (!band.additive) {
+            this._campfireSelection = new Set();
+            this._campfirePrimary = null;
+          }
+          this._renderCampfireLayerList(panel, entry);
+        } else if (!band.additive) {
+          this._campfireSelection = new Set();
+          this._campfirePrimary = null;
+          this._renderCampfireLayerList(panel, entry);
+        }
+        redraw();
+        return;
+      }
+      if (!this._campfireDrag && !this._campfirePan) return;
       this._campfireDrag = null;
+      this._campfirePan = null;
+      canvas.style.cursor = 'default';
       redraw();
     };
     canvas.addEventListener('mouseup', endDrag);
@@ -2358,34 +2791,54 @@ export class LibraryEditor {
     return false;
   }
 
-  _validateItemLibrary() {
-    const ids = new Set();
+  /** 全库物品 ID 列表（查重用）。 */
+  _itemAllIds() {
+    return (this.library?.items || []).map(item => String(item?.id || '').trim());
+  }
+
+  /** 单物品校验：返回问题列表（含物品名前缀）；allIds 提供时做全库 ID 查重。 */
+  _itemProblems(item, allIds = null) {
+    const id = String(item?.id || '').trim();
+    const name = String(item?.name || '').trim();
+    const type = String(item?.type || '').trim();
+    const label = `${name || '（未命名）'}（${id || '（无ID）'}）`;
     const problems = [];
-    for (const item of this.library?.items || []) {
-      const id = String(item?.id || '').trim();
-      const name = String(item?.name || '').trim();
-      const type = String(item?.type || '').trim();
-      const label = `${name || '（未命名）'}（${id || '（无ID）'}）`;
-      if (!STABLE_ID_PATTERN.test(id) || id.startsWith('draft.items.') || ids.has(id)) {
-        problems.push(`${label} 的 ID 无效或重复`);
-      }
-      ids.add(id);
-      if (!name) problems.push(`${label} 缺少名称`);
-      if (!type) problems.push(`${label} 缺少物品类型`);
-      const imageId = String(item?.imageId || item?.assetId || '').trim();
-      if (!imageId) {
-        problems.push(`${label} 未指定图片资源（imageId 为空），图片不存在`);
-      } else if (!this._manifestImageOption(imageId)) {
-        problems.push(`${label} 的图片「${imageId}」未登记 Manifest，图片不存在`);
-      }
+    if (!STABLE_ID_PATTERN.test(id) || id.startsWith('draft.items.')) problems.push(`${label} 的 ID 无效`);
+    if (Array.isArray(allIds) && allIds.filter(candidate => candidate === id).length > 1) {
+      problems.push(`${label} 的 ID 重复`);
     }
-    if (problems.length > 0) {
-      const detail = problems.join('；');
-      this._status(`❌ ${problems.length} 个物品校验失败：${detail}`, 'err');
-      this._toast(`保存失败：${problems[0]}${problems.length > 1 ? `（等 ${problems.length} 个问题，见状态栏）` : ''}`, 'error');
-      return true;
+    if (!name) problems.push(`${label} 缺少名称`);
+    if (!type) problems.push(`${label} 缺少物品类型`);
+    const imageId = String(item?.imageId || item?.assetId || '').trim();
+    if (!imageId) problems.push(`${label} 未指定图片资源（imageId 为空），图片不存在`);
+    else if (!this._manifestImageOption(imageId)) problems.push(`${label} 的图片「${imageId}」未登记 Manifest，图片不存在`);
+    return problems;
+  }
+
+  /**
+   * 物品保存校验（方案一：只阻塞当前编辑的物品，坏物品不再卡全量保存）。
+   * 当前物品有问题 → toast/状态栏具体提示，blocked=true；
+   * 其它物品有问题 → 不阻塞，otherProblemItems 供保存成功后警告 + 列表标红（⚠）。
+   */
+  _validateItemLibrary() {
+    const items = this.library?.items || [];
+    // 「当前编辑的物品」仅在物品分类下有意义；其它分类（NPC/资源点等）不因物品问题阻塞
+    const current = this.activeCategory === 'items' ? items[this.selectedIndex] : null;
+    const allIds = this._itemAllIds();
+    const otherProblemItems = [];
+    for (const item of items) {
+      if (item === current) continue;
+      if (this._itemProblems(item, allIds).length > 0) otherProblemItems.push(item);
     }
-    return false;
+    const currentProblems = current ? this._itemProblems(current, allIds) : [];
+    if (currentProblems.length > 0) {
+      this._status(`❌ 当前物品校验失败：${currentProblems.join('；')}`, 'err');
+      this._toast(`保存失败：${currentProblems[0]}${currentProblems.length > 1 ? `（等 ${currentProblems.length} 个问题，见状态栏）` : ''}`, 'error');
+      this._otherProblemItems = otherProblemItems;
+      return { blocked: true, otherProblemItems };
+    }
+    this._otherProblemItems = otherProblemItems;
+    return { blocked: false, otherProblemItems };
   }
 
   /** 战斗技能保存前校验：ID 稳定唯一、名称非空、skill 型编排引用的技能存在。 */

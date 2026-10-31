@@ -49,6 +49,10 @@ export class SceneHudUpdater {
     this._enemyPositions = null;
     this._taskMarkers = [];
     this._taskMarkerKeys = new Set();
+    // 任务标记缓存：目标集签名不变时跳过逐帧 inspectPlacement/findProjectedObject 全量扫描
+    //（updateUiCleanupMinimap 长帧元凶），位置按 1s 周期刷新以兼容跟随类目标。
+    this._taskMarkerCache = null;
+    this._taskMarkerCacheTtl = 1000;
     this._panelBuffer = [null, null, null, null];
     this._updatedPanels = new Set();
   }
@@ -141,6 +145,29 @@ export class SceneHudUpdater {
     const context = this.getContext() || {};
     const services = context.services || {};
     const projection = services.taskGraph?.getProjection?.(player?.id || null) || [];
+    // 目标集签名：仅由 mapTargets 的 sceneId:targetId 组成（廉价）。签名不变且未过期时，
+    // 直接复用上次解析结果——placements/worldQuery/triggerBindings 的逐帧全量扫描是长帧元凶。
+    let signature = '';
+    for (const task of projection) {
+      for (const node of task?.nodes || []) {
+        const targets = Array.isArray(node?.mapTargets) && node.mapTargets.length > 0
+          ? node.mapTargets
+          : (node?.mapTarget ? [node.mapTarget] : []);
+        for (const target of targets) {
+          if (!target) continue;
+          signature += `${target.sceneId}:${target.targetId || ''};`;
+        }
+      }
+    }
+    const nowMs = performance.now();
+    const cached = this._taskMarkerCache;
+    if (cached && cached.signature === signature
+      && (nowMs - cached.resolvedAt) < this._taskMarkerCacheTtl) {
+      // 缓冲 this._taskMarkers 仍持有上次解析的等价标记（信标链路继续可用），不交换引用
+      minimap.setTaskMarkers?.(cached.markers);
+      return;
+    }
+
     const markers = this._taskMarkers;
     const keys = this._taskMarkerKeys;
     markers.length = 0;
@@ -170,6 +197,11 @@ export class SceneHudUpdater {
         }
       }
     }
+    this._taskMarkerCache = {
+      signature,
+      markers: markers.map(marker => ({ ...marker })),
+      resolvedAt: nowMs
+    };
     minimap.setTaskMarkers?.(markers);
   }
 

@@ -422,8 +422,14 @@ export class SceneEditorAssets {
     const presentation = definition?.campfirePresentation;
     if (!presentation || typeof presentation !== 'object') return [];
 
-    // 绘制顺序与运行时 renderCampfireBottom 一致：底座（最底层）→ 石圈 → 柴堆（最上层）
-    return ['base', 'stoneRing', 'logs'].flatMap(key => {
+    // 绘制顺序与运行时 renderCampfireBottom 一致：layerOrder 数据驱动，缺省 底座→石圈→柴堆
+    const GROUND_KEYS = ['base', 'stoneRing', 'logs'];
+    let order = Array.isArray(presentation.layerOrder)
+      ? presentation.layerOrder.map(key => String(key || '').trim()).filter(key => GROUND_KEYS.includes(key))
+      : [];
+    order = [...new Set(order)];
+    if (order.length !== GROUND_KEYS.length) order = GROUND_KEYS;
+    return order.flatMap(key => {
       const source = presentation[key];
       if (!source || typeof source !== 'object') return [];
       const resource = this._resolveManifestVisualImage(source.imageId);

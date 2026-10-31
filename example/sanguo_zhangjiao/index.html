@@ -1744,9 +1744,22 @@
                 const leafDetailText = leafHotDetails.length > 0
                     ? leafHotDetails.map(item => `${item.name}=${item.value.toFixed(2)}ms`).join('，')
                     : '无';
+                // worldQueueDraw 按队列项类型的分解（SceneRenderPipeline debugMode 注入）+ 世界规模计数
+                const queueBreakdown = sample.worldQueueDrawByType && typeof sample.worldQueueDrawByType === 'object'
+                    ? '；队列绘制 ' + Object.entries(sample.worldQueueDrawByType)
+                        .filter(([, value]) => typeof value === 'number' && value > 0.01)
+                        .sort((left, right) => right[1] - left[1])
+                        .slice(0, 6)
+                        .map(([name, value]) => `${name}=${Number(value).toFixed(2)}ms`)
+                        .join('，')
+                    : '';
+                const worldScaleText = `实体=${sample.visibleEntityCount ?? '?'} 队列=${sample.worldQueueLength ?? '?'} 深度粒子=${sample.worldDepthParticleCount ?? '?'}`;
+                const entityTop3 = typeof sample.worldQueueDrawByType?.entityTop3 === 'string'
+                    ? `；实体Top3 ${sample.worldQueueDrawByType.entityTop3}`
+                    : '';
                 const sceneId = targetScene?.currentSceneId || targetScene?.name;
                 console.warn(
-                    `[DDScene][FrameProfile][长帧] ${sceneId} ${sample.total.toFixed(2)}ms；顶层 ${topLevelText}；聚合热点 ${detailText}；叶子热点 ${leafDetailText}；未归因=${unattributed.toFixed(2)}ms`,
+                    `[DDScene][FrameProfile][长帧] ${sceneId} ${sample.total.toFixed(2)}ms；顶层 ${topLevelText}；聚合热点 ${detailText}；叶子热点 ${leafDetailText}${queueBreakdown}${entityTop3}；规模 ${worldScaleText}；未归因=${unattributed.toFixed(2)}ms`,
                     {
                         sceneId,
                         milliseconds: Number(sample.total.toFixed(2)),

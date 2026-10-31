@@ -152,6 +152,8 @@ export class SceneRenderPipeline {
     this._campfireRenderRuntime = { particleSystem: null, width: 0, height: 0 };
     /** 大物件遮挡玩家渐隐：每帧复用的候选缓冲 + 控制器 */
     this._occluderBuffer = [];
+    this._occluderPool = [];
+    this._occlusionPlayer = null;
     this._occlusionFade = new OcclusionFadeController();
     /** 参数化贴地阴影：实体批量 pass + 光照运行时（scene.lighting + 营火点光源） */
     this._shadowRenderer = new ShadowRenderer();
@@ -377,10 +379,15 @@ export class SceneRenderPipeline {
     const playerEntity = context?.player?.entity || null;
     this._updateOcclusionFade(playerEntity, queue);
     const queueDrawStartedAt = frameProfile ? performance.now() : 0;
+    // 长帧诊断：按队列项类型分解绘制耗时（仅 debugMode 开销），定位 worldQueueDraw 光栅化元凶；
+    // entity 额外记录最贵的前 3 个（名称+耗时），单个实体 ~1ms 级时直接点名。
+    const typeTimes = frameProfile ? {} : null;
+    const entityCosts = frameProfile ? [] : null;
     for (let i = 0, len = queue.length; i < len; i++) {
       const item = queue[i];
       const itemKey = item.type === 'entity' ? item.entity : item;
       const occlusionAlpha = this._occlusionFade.alphaFor(itemKey);
+      const itemStartedAt = typeTimes ? performance.now() : 0;
       if (occlusionAlpha < 1) {
         ctx.save();
         ctx.globalAlpha *= Math.max(0.05, occlusionAlpha);
@@ -389,8 +396,24 @@ export class SceneRenderPipeline {
         ctx.restore();
       } else if (item.type === 'entity') scene.renderEntity(ctx, item.entity);
       else item.render?.();
+      if (typeTimes) {
+        const cost = performance.now() - itemStartedAt;
+        typeTimes[item.type] = (typeTimes[item.type] || 0) + cost;
+        if (item.type === 'entity' && item.entity) {
+          entityCosts.push({ name: item.entity.name || item.entity.id || '?', cost });
+        }
+      }
     }
-    if (frameProfile) frameProfile.worldQueueDraw = performance.now() - queueDrawStartedAt;
+    if (frameProfile) {
+      frameProfile.worldQueueDraw = performance.now() - queueDrawStartedAt;
+      if (entityCosts.length > 0) {
+        entityCosts.sort((left, right) => right.cost - left.cost);
+        typeTimes.entityTop3 = entityCosts.slice(0, 3)
+          .map(entry => `${entry.name}:${entry.cost.toFixed(1)}ms`)
+          .join('，');
+      }
+      frameProfile.worldQueueDrawByType = typeTimes;
+    }
 
     if (terrains.length === 0) return;
     for (const terrain of terrains) terrain.renderCliffs?.(ctx);
@@ -513,7 +536,9 @@ export class SceneRenderPipeline {
    */
   _updateOcclusionFade(playerEntity, queue) {
     const occluders = this._occluderBuffer;
-    occluders.length = 0;
+    // 对象池零分配：occluder/player 对象跨帧复用（本帧 _occlusionFade.update 内消费即弃）
+    const pool = this._occluderPool;
+    let occluderCount = 0;
     let player = null;
     for (let i = 0, len = queue.length; i < len; i++) {
       const item = queue[i];
@@ -525,12 +550,11 @@ export class SceneRenderPipeline {
           const position = entity.getComponent?.('transform')?.position;
           const sprite = entity.getComponent?.('sprite');
           if (position) {
-            player = {
-              x: position.x,
-              yFeet: position.y,
-              height: (sprite?.height || 48) * (sprite?.scale || 1),
-              sortY: item.y
-            };
+            player = this._occlusionPlayer || (this._occlusionPlayer = {});
+            player.x = position.x;
+            player.yFeet = position.y;
+            player.height = (sprite?.height || 48) * (sprite?.scale || 1);
+            player.sortY = item.y;
           }
           continue;
         }
@@ -542,21 +566,40 @@ export class SceneRenderPipeline {
         if (width * height < this._occlusionFade.minArea || height < this._occlusionFade.minHeight) continue;
         const position = entity.getComponent?.('transform')?.position;
         if (!position) continue;
-        occluders.push({
-          key: entity,
-          left: position.x - width / 2, right: position.x + width / 2,
-          top: item.y - height, bottom: item.y,
-          sortY: item.y
-        });
+        let occluder = pool[occluderCount];
+        if (!occluder) {
+          occluder = { key: null, left: 0, right: 0, top: 0, bottom: 0, sortY: 0 };
+          pool[occluderCount] = occluder;
+        }
+        occluderCount++;
+        occluder.key = entity;
+        occluder.left = position.x - width / 2;
+        occluder.right = position.x + width / 2;
+        occluder.top = item.y - height;
+        occluder.bottom = item.y;
+        occluder.sortY = item.y;
       } else {
         // 场景装饰/图片队列项（含 left/right/top/bottom 世界包围盒；ground cache 无 bounds 跳过）
         if (item.left === undefined) continue;
         const width = item.right - item.left;
         const height = item.bottom - item.top;
         if (width * height < this._occlusionFade.minArea || height < this._occlusionFade.minHeight) continue;
-        occluders.push({ key: item, left: item.left, right: item.right, top: item.top, bottom: item.bottom, sortY: item.y });
+        let occluder = pool[occluderCount];
+        if (!occluder) {
+          occluder = { key: null, left: 0, right: 0, top: 0, bottom: 0, sortY: 0 };
+          pool[occluderCount] = occluder;
+        }
+        occluderCount++;
+        occluder.key = item;
+        occluder.left = item.left;
+        occluder.right = item.right;
+        occluder.top = item.top;
+        occluder.bottom = item.bottom;
+        occluder.sortY = item.y;
       }
     }
+    occluders.length = occluderCount;
+    for (let i = 0; i < occluderCount; i++) occluders[i] = pool[i];
     this._occlusionFade.update(player, occluders);
   }
 

@@ -91,6 +91,25 @@ function normalizeVisualLayers(source = {}) {
   });
 }
 
+/** 地面组合图层键（flame 是点燃态覆盖层，不参与层级调整）。 */
+const GROUND_LAYER_KEYS = ['base', 'stoneRing', 'logs'];
+const DEFAULT_LAYER_ORDER = Object.freeze(['base', 'stoneRing', 'logs']);
+
+/**
+ * 地面图层绘制顺序：可选 layerOrder 数组（base/stoneRing/logs 各出现一次）；
+ * 缺省或非法（缺项/重复）回退默认序——零回归。
+ */
+function normalizeLayerOrder(source = {}) {
+  const order = Array.isArray(source.layerOrder) ? source.layerOrder : null;
+  if (!order) return DEFAULT_LAYER_ORDER;
+  const keys = [];
+  for (const entry of order) {
+    const key = String(entry || '').trim();
+    if (GROUND_LAYER_KEYS.includes(key) && !keys.includes(key)) keys.push(key);
+  }
+  return keys.length === GROUND_LAYER_KEYS.length ? Object.freeze(keys) : DEFAULT_LAYER_ORDER;
+}
+
 function drawVisualLayer(ctx, layer, image, x, y) {
   if (!layer || !image) return false;
   ctx.drawImage(
@@ -374,10 +393,10 @@ const campfireFeatureMethods = {
     const x = this.campfire.x;
     const y = this.campfire.y;
     if (this.visualLayers?.base) {
-      // 绘制顺序：底座（最底层）→ 石圈 → 柴堆（最上层），石圈压住底座边缘
-      drawVisualLayer(ctx, this.visualLayers.base, this.layerImages.base, x, y);
-      drawVisualLayer(ctx, this.visualLayers.stoneRing, this.layerImages.stoneRing, x, y);
-      drawVisualLayer(ctx, this.visualLayers.logs, this.layerImages.logs, x, y);
+      // 绘制顺序数据驱动：库定义 layerOrder 可调（编辑器图层面板），缺省 底座→石圈→柴堆
+      for (const key of this.visualLayerOrder || DEFAULT_LAYER_ORDER) {
+        drawVisualLayer(ctx, this.visualLayers[key], this.layerImages[key], x, y);
+      }
       if (this.campfire.lit) {
         const flame = this.visualLayers.flame;
         const glowY = y - flame.height * 0.42 + flame.offsetY;
@@ -726,6 +745,7 @@ export class SceneCampfireService {
     this.labels = Object.freeze({});
     this.presentation = Object.freeze({ lightRadius: 1, fireWidth: 1, fireHeight: 1, collisionWidth: 1, collisionHeight: 1 });
     this.visualLayers = Object.freeze({});
+    this.visualLayerOrder = normalizeLayerOrder();
     this.layerImages = Object.create(null);
     this.embers = Object.freeze({ color: '#ffb04a', radius: 1, frequency: 1, minAlpha: 0, maxAlpha: 1, offsetX: 0, offsetY: 0, offsets: [] });
     this.configView = null;
@@ -779,6 +799,7 @@ export class SceneCampfireService {
 
     const next = deepFreeze(cloneCanonicalValue(source));
     const visualLayers = normalizeVisualLayers(next);
+    const visualLayerOrder = normalizeLayerOrder(next);
     const ember = next.embers || {};
     if (!Array.isArray(ember.offsets) || ember.offsets.length === 0) {
       throw new TypeError('campfire.embers.offsets must contain at least one ember');
@@ -863,6 +884,7 @@ export class SceneCampfireService {
     const previousLayers = this.visualLayers;
     const previousImages = this.layerImages;
     this.visualLayers = visualLayers;
+    this.visualLayerOrder = visualLayerOrder;
     this.embers = emberState;
     campfireFeatureMethods._stopEmberParticles.call(this);
     if (!this.campfire.lit && this.campfire.hasBeenIgnited) {
@@ -1142,6 +1164,7 @@ export class SceneCampfireService {
     this.campfire.imageLoaded = false;
     this.configView = null;
     this.visualLayers = Object.freeze({});
+    this.visualLayerOrder = normalizeLayerOrder();
     this.layerImages = Object.create(null);
     this._atmosphereCanvas = null;
     this._atmosphereContext = null;

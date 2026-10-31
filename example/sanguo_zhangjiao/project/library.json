@@ -100,6 +100,7 @@
       "description": "从树上摘下的鲜苹果，清脆多汁。",
       "type": "consumable",
       "imageId": "s01.resource.apple",
+      "assetId": "s01.resource.apple",
       "capabilities": [
         {
           "id": "consumable"
@@ -319,6 +320,7 @@
       "name": "保存好的火种",
       "type": "story",
       "imageId": "s01.story.firestarter",
+      "assetId": "s01.story.firestarter",
       "maxStack": 1,
       "questBound": true,
       "sprite": {
@@ -369,8 +371,8 @@
         "base": {
           "height": 53,
           "imageId": "s01.prop.campfireBase",
-          "offsetX": 0,
-          "offsetY": 0,
+          "offsetX": 2,
+          "offsetY": 10,
           "pivot": {
             "x": 0.5,
             "y": 1
@@ -440,16 +442,21 @@
           "ignite": "{interact}点燃",
           "unlit": "熄灭的火堆"
         },
+        "layerOrder": [
+          "base",
+          "stoneRing",
+          "logs"
+        ],
         "logs": {
-          "height": 38,
+          "height": 37,
           "imageId": "s01.prop.campfireLogs",
-          "offsetX": 0,
-          "offsetY": -2,
+          "offsetX": 1,
+          "offsetY": 3,
           "pivot": {
             "x": 0.5,
             "y": 1
           },
-          "width": 68
+          "width": 58
         },
         "particlePresets": [
           {
@@ -524,15 +531,15 @@
           "lightRadius": 260
         },
         "stoneRing": {
-          "height": 38,
+          "height": 53,
           "imageId": "s01.prop.campfireStoneRing",
-          "offsetX": 0,
-          "offsetY": 2,
+          "offsetX": 1,
+          "offsetY": 8,
           "pivot": {
             "x": 0.5,
             "y": 1
           },
-          "width": 90
+          "width": 87
         }
       },
       "height": 36,

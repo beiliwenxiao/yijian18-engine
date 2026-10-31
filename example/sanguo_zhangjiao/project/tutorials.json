@@ -167,7 +167,7 @@
     "steps": [
       {
         "id": "s01.durability.step.tools",
-        "text": "{harvest}用剥皮刀剥取狼皮。",
+        "text": "{harvest}用剥皮刀剥��狼皮。",
         "highlightTarget": false
       }
     ],

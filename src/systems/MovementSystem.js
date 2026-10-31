@@ -489,13 +489,16 @@ export class MovementSystem {
     // 处理键盘移动输入
     this.handleKeyboardInput(entities, deltaTime);
     
-    // 处理点击移动（性能探针：右键卡顿定位——超 8ms 的调用打印明细）
+    // 处理点击移动（性能探针：右键卡顿定位——超 8ms 的调用打印明细与分段分解）
     const clickMoveStart = performance.now();
     this.handleClickMovement(entities);
     const clickMoveCost = performance.now() - clickMoveStart;
     if (clickMoveCost > 8) {
       const clickPos = this.inputManager ? this.inputManager.getMousePosition() : { x: -1, y: -1 };
-      console.warn(`[MoveProbe] handleClickMovement ${clickMoveCost.toFixed(1)}ms mouse=(${clickPos.x},${clickPos.y})`);
+      const breakdown = this._clickMoveBreakdown
+        ? ` breakdown=${JSON.stringify(this._clickMoveBreakdown)}`
+        : ' breakdown=null（未进入处理分支，疑似 GC/JIT 停顿）';
+      console.warn(`[MoveProbe] handleClickMovement ${clickMoveCost.toFixed(1)}ms mouse=(${clickPos.x},${clickPos.y})${breakdown}`);
     }
     
     // 更新所有实体的移动
@@ -623,6 +626,10 @@ export class MovementSystem {
   handleClickMovement(entities) {
     if (!this.inputManager) return;
     if (!this.inputManager.isMouseClicked()) return;
+    // 分段探针：超 8ms 的点击帧在 update 侧输出各子步骤耗时（存 this._clickMoveBreakdown）
+    const probeStart = performance.now();
+    const probeMark = () => performance.now() - probeStart;
+    this._clickMoveBreakdown = null;
     // 早退原因探针（右键丢命令定位）：点击被吞时也给出原因，避免「完全无响应」无从排查。
     const probeBlocked = reason => {
       const mp = this.inputManager.getMousePosition();
@@ -644,7 +651,10 @@ export class MovementSystem {
     };
 
     // 军团指挥接管：编组选择激活时，右键 = 对选中分队下达移动命令（不动玩家）
-    if (this.armyCommandSystem?.tryHandleMoveOrder?.(this.camera)) { probe('army-move-order'); return; }
+    const armyStart = probeMark();
+    const armyTaken = this.armyCommandSystem?.tryHandleMoveOrder?.(this.camera) === true;
+    this._clickMoveBreakdown = { army: probeMark() - armyStart };
+    if (armyTaken) { probe('army-move-order'); return; }
 
     const playerEntity = this.playerEntity || entities.find(e => e.type === 'player');
     if (!playerEntity) { probe('no-player'); return; }
@@ -661,7 +671,9 @@ export class MovementSystem {
       this.inputManager.markMouseClickHandled();
       return;
     }
+    const resolveStart = probeMark();
     const target = this._resolveMoveTarget(playerEntity, { type: 'move', source: 'pointer' });
+    this._clickMoveBreakdown.resolve = probeMark() - resolveStart;
     const { entity, movement, sprite, routedToVehicle } = target;
     if (!movement || movement.enabled === false
       || (!routedToVehicle && this.isMovementLocked(playerEntity))) { probe('movement-unavailable'); return; }
@@ -676,7 +688,11 @@ export class MovementSystem {
     const clickPos = this.camera
       ? this.camera.screenToWorld(mouseScreen.x, mouseScreen.y)
       : this.inputManager.getMouseWorldPosition();
-    if (this.findEnemyAtPosition(clickPos, entities)) { probe('enemy-selected'); return; }
+    const enemyStart = probeMark();
+    const enemyHit = this.findEnemyAtPosition(clickPos, entities);
+    this._clickMoveBreakdown.enemyScan = probeMark() - enemyStart;
+    this._clickMoveBreakdown.total = probeMark();
+    if (enemyHit) { probe('enemy-selected'); return; }
 
     if (routedToVehicle) this._cancelNavigationIntent(playerEntity);
     else this._setPointerNavigationIntent(entity, clickPos);
