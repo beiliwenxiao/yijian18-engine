@@ -422,7 +422,8 @@ export class SceneEditorAssets {
     const presentation = definition?.campfirePresentation;
     if (!presentation || typeof presentation !== 'object') return [];
 
-    return ['stoneRing', 'base', 'logs'].flatMap(key => {
+    // 绘制顺序与运行时 renderCampfireBottom 一致：底座（最底层）→ 石圈 → 柴堆（最上层）
+    return ['base', 'stoneRing', 'logs'].flatMap(key => {
       const source = presentation[key];
       if (!source || typeof source !== 'object') return [];
       const resource = this._resolveManifestVisualImage(source.imageId);
@@ -583,6 +584,17 @@ export class SceneEditorAssets {
 
   refreshPlacementVisuals() {
     return this.loadPlacementVisualImages();
+  }
+
+  /**
+   * 内容库在其他编辑器（如「内容存库」页）提交后调用：
+   * 清空本编辑器的内容库缓存（_ensureContentLibrary 重新拉取共享模型），
+   * 并刷新场景放置物预览，保证场景内组合物品（如火堆）与最新库定义一致。
+   */
+  invalidateContentLibrary() {
+    this._contentLib = null;
+    this._contentLibraryPromise = null;
+    void this.refreshPlacementVisuals();
   }
 
   /**

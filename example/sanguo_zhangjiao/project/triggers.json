@@ -1281,14 +1281,14 @@
       }
     ],
     "id": "trg_s02_recruit",
+    "if": {
+      "var": "story.s02SummonsAccepted"
+    },
     "name": "荒村：招众旗招募信众（每次 +10，满 50 入列、七十人入道、随即扎营）",
     "once": false,
     "when": {
       "params": {},
       "type": "interact"
-    },
-    "if": {
-      "var": "story.s02SummonsAccepted"
     }
   },
   {
@@ -1702,13 +1702,13 @@
       }
     ],
     "id": "trg_s02_zhangjiao_summons",
+    "if": {
+      "var": "story.s02Rescued"
+    },
     "once": true,
     "when": {
       "params": {},
       "type": "interact"
-    },
-    "if": {
-      "var": "story.s02Rescued"
     }
   },
   {
@@ -4635,13 +4635,6 @@
     }
   },
   {
-    "id": "trg_s58_travel_east",
-    "name": "林间小径：东行翻越山脊",
-    "once": false,
-    "when": {
-      "type": "interact",
-      "params": {}
-    },
     "do": [
       {
         "action": "state.transaction",
@@ -4650,16 +4643,16 @@
         },
         "stepId": "travel"
       }
-    ]
-  },
-  {
-    "id": "trg_s58_travel_west",
-    "name": "林间小径：折返废弃营地",
+    ],
+    "id": "trg_s58_travel_east",
+    "name": "林间小径：东行翻越山脊",
     "once": false,
     "when": {
-      "type": "interact",
-      "params": {}
-    },
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
     "do": [
       {
         "action": "state.transaction",
@@ -4668,16 +4661,16 @@
         },
         "stepId": "travel"
       }
-    ]
-  },
-  {
-    "id": "trg_s59_travel_east",
-    "name": "山脊隘口：东行下到河谷",
+    ],
+    "id": "trg_s58_travel_west",
+    "name": "林间小径：折返废弃营地",
     "once": false,
     "when": {
-      "type": "interact",
-      "params": {}
-    },
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
     "do": [
       {
         "action": "state.transaction",
@@ -4686,16 +4679,16 @@
         },
         "stepId": "travel"
       }
-    ]
-  },
-  {
-    "id": "trg_s59_travel_west",
-    "name": "山脊隘口：折返林间小径",
+    ],
+    "id": "trg_s59_travel_east",
+    "name": "山脊隘口：东行下到河谷",
     "once": false,
     "when": {
-      "type": "interact",
-      "params": {}
-    },
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
     "do": [
       {
         "action": "state.transaction",
@@ -4704,16 +4697,16 @@
         },
         "stepId": "travel"
       }
-    ]
-  },
-  {
-    "id": "trg_s510_travel_east",
-    "name": "涉水浅滩：东行踏上平原",
+    ],
+    "id": "trg_s59_travel_west",
+    "name": "山脊隘口：折返林间小径",
     "once": false,
     "when": {
-      "type": "interact",
-      "params": {}
-    },
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
     "do": [
       {
         "action": "state.transaction",
@@ -4722,16 +4715,16 @@
         },
         "stepId": "travel"
       }
-    ]
-  },
-  {
-    "id": "trg_s510_travel_west",
-    "name": "涉水浅滩：折返山脊隘口",
+    ],
+    "id": "trg_s510_travel_east",
+    "name": "涉水浅滩：东行踏上平原",
     "once": false,
     "when": {
-      "type": "interact",
-      "params": {}
-    },
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
     "do": [
       {
         "action": "state.transaction",
@@ -4740,16 +4733,16 @@
         },
         "stepId": "travel"
       }
-    ]
-  },
-  {
-    "id": "trg_s511_travel_east",
-    "name": "官道平原：东行前往粥棚营地",
+    ],
+    "id": "trg_s510_travel_west",
+    "name": "涉水浅滩：折返山脊隘口",
     "once": false,
     "when": {
-      "type": "interact",
-      "params": {}
-    },
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
     "do": [
       {
         "action": "state.transaction",
@@ -4758,16 +4751,16 @@
         },
         "stepId": "travel"
       }
-    ]
-  },
-  {
-    "id": "trg_s511_travel_west",
-    "name": "官道平原：折返涉水浅滩",
+    ],
+    "id": "trg_s511_travel_east",
+    "name": "官道平原：东行前往粥棚营地",
     "once": false,
     "when": {
-      "type": "interact",
-      "params": {}
-    },
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
     "do": [
       {
         "action": "state.transaction",
@@ -4776,6 +4769,13 @@
         },
         "stepId": "travel"
       }
-    ]
+    ],
+    "id": "trg_s511_travel_west",
+    "name": "官道平原：折返涉水浅滩",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
   }
 ]

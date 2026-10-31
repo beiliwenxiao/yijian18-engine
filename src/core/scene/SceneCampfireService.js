@@ -374,8 +374,9 @@ const campfireFeatureMethods = {
     const x = this.campfire.x;
     const y = this.campfire.y;
     if (this.visualLayers?.base) {
-      drawVisualLayer(ctx, this.visualLayers.stoneRing, this.layerImages.stoneRing, x, y);
+      // 绘制顺序：底座（最底层）→ 石圈 → 柴堆（最上层），石圈压住底座边缘
       drawVisualLayer(ctx, this.visualLayers.base, this.layerImages.base, x, y);
+      drawVisualLayer(ctx, this.visualLayers.stoneRing, this.layerImages.stoneRing, x, y);
       drawVisualLayer(ctx, this.visualLayers.logs, this.layerImages.logs, x, y);
       if (this.campfire.lit) {
         const flame = this.visualLayers.flame;

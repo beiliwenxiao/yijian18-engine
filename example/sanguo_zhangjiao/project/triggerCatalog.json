@@ -692,7 +692,7 @@
             ],
             "type": "object"
           },
-          "resultSemantics": "由当前 Trigger 事件显式完成指定 Tutorial；不按定义顺序主动展示下一项。",
+          "resultSemantics": "由当前 Trigger 事件显式完成指定 Tutorial���������不按定义顺序主动展示下一项。",
           "value": "complete"
         }
       ],

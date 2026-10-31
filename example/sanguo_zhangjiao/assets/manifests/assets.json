@@ -1552,6 +1552,161 @@
       "revision": 1
     },
     {
+      "assetId": "s01.prop.candle",
+      "imageId": "s01.prop.candle",
+      "category": "item-world",
+      "usage": [
+        "S01",
+        "light-source",
+        "icon"
+      ],
+      "sourceFile": "assets/images/s01/prop-candle.png",
+      "runtime2D": {
+        "path": "assets/images/s01/prop-candle.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "s01.prop.candle"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      },
+      "bounds": {
+        "width": 40,
+        "height": 72
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "s01.prop.torch",
+      "imageId": "s01.prop.torch",
+      "category": "item-world",
+      "usage": [
+        "S01",
+        "light-source",
+        "icon"
+      ],
+      "sourceFile": "assets/images/s01/prop-torch.png",
+      "runtime2D": {
+        "path": "assets/images/s01/prop-torch.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "s01.prop.torch"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      },
+      "bounds": {
+        "width": 44,
+        "height": 112
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "s01.prop.campfireLit",
+      "imageId": "s01.prop.campfireLit",
+      "category": "item-world",
+      "usage": [
+        "S01",
+        "light-source",
+        "icon"
+      ],
+      "sourceFile": "assets/images/s01/prop-campfire-lit.png",
+      "runtime2D": {
+        "path": "assets/images/s01/prop-campfire-lit.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "s01.prop.campfireLit"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      },
+      "bounds": {
+        "width": 144,
+        "height": 96
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "s01.prop.campfireUnlit",
+      "imageId": "s01.prop.campfireUnlit",
+      "category": "item-world",
+      "usage": [
+        "S01",
+        "light-source",
+        "icon"
+      ],
+      "sourceFile": "assets/images/s01/prop-campfire-unlit.png",
+      "runtime2D": {
+        "path": "assets/images/s01/prop-campfire-unlit.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "s01.prop.campfireUnlit"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      },
+      "bounds": {
+        "width": 144,
+        "height": 96
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "s01.prop.firefly",
+      "imageId": "s01.prop.firefly",
+      "category": "item-world",
+      "usage": [
+        "S01",
+        "light-source",
+        "icon"
+      ],
+      "sourceFile": "assets/images/s01/prop-firefly.png",
+      "runtime2D": {
+        "path": "assets/images/s01/prop-firefly.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "s01.prop.firefly"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      },
+      "bounds": {
+        "width": 36,
+        "height": 36
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
       "assetId": "s01.tool.wornAxe",
       "imageId": "s01.tool.wornAxe",
       "category": "item-world",

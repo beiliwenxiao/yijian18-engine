@@ -114,6 +114,7 @@
           "fill": "#405b62",
           "fillMode": "color",
           "id": "S01-river",
+          "jumpBlock": true,
           "name": "寒冷河道",
           "opacity": 0.72,
           "points": [
@@ -778,6 +779,9 @@
           "y": 499.6821464744241
         },
         {
+          "editor": {
+            "visible": true
+          },
           "group": "S01-initial",
           "id": "S01-spawn-campfire",
           "kind": "item",
@@ -1082,7 +1086,7 @@
         {
           "editor": {
             "locked": false,
-            "visible": true
+            "visible": false
           },
           "group": "S01-cooking-rack",
           "id": "S01-prop-cooking-rack",

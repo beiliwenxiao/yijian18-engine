@@ -809,10 +809,10 @@ export class SceneRenderPipeline {
     combatSystem?.renderSkillRangeIndicators(ctx);
     // Boss 攻击预警（telegraph）：世界坐标虚线框，与玩家技能指示器同通道（相机变换已应用）
     combatSystem?.renderAttackTelegraphs(ctx);
-    // Debug 模式：攻击范围定向扇形（贴合 2.5D 椭圆，与近战命中判定同参）。
-    // 跟随调试面板开关（debugShowAttackRange 由 DebugPanel 可见性同步，面板关即隐藏），
-    // 与碰撞/攀爬调试显示同一门禁惯例，正式画面不受影响。
-    if (scene.debugShowAttackRange === true) meleeAttackSystem?.renderSectorRangeDebug?.(ctx);
+    // 攻击范围定向扇形（常态显示，贴合 2.5D 椭圆，与近战命中判定同参）。
+    // 默认显示；调试面板 debugShowAttackRange 可关闭（默认勾选），
+    // 「攻击范围 Npx」半径标签仅 debugMode 显示。
+    if (scene.debugShowAttackRange !== false) meleeAttackSystem?.renderSectorRange?.(ctx, { showLabel: scene.debugMode === true });
     if (services.worldInteraction) {
       services.worldInteraction.renderClickRings(ctx);
       services.worldInteraction.renderPickupFocusHint?.(ctx);

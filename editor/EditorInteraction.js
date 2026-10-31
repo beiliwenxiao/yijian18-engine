@@ -246,7 +246,12 @@ export class GameEditor extends EditorInteractionScene {            // 清理本
                     if (!this.libraryEditor) {
                         this.libraryEditor = new LibraryEditor(
                             document.getElementById('library-editor-container'),
-                            { gameId: this.currentGameId || 'sanguo_zhangjiao', canonicalSession: this._canonicalEditorSession('project') }
+                            {
+                                gameId: this.currentGameId || 'sanguo_zhangjiao',
+                                canonicalSession: this._canonicalEditorSession('project'),
+                                // 内容库保存后失效场景编辑器的库缓存，场景内火堆等组合物品预览同步刷新
+                                onLibraryCommitted: () => this.sceneEditor?.assets?.invalidateContentLibrary?.()
+                            }
                         );
                     }
                     void this.libraryEditor.init().catch(error => console.error('LibraryEditor 初始化失败:', error));

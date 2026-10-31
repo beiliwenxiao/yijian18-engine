@@ -185,17 +185,14 @@ async function configureWorldRuntimeFromLoad(options = {}) {
     if (!Array.isArray(itemDefinitions)) {
       return { ok: false, code: 'invalidProjectLibrary', message: '项目内容库缺少 library.items' };
     }
+    // 记录最新内容库快照：冷加载路径（场景进入）优先于启动注册表，
+    // 编辑器保存后即使当时不在火堆场景，之后再进 S01 也能取到新值。
+    this._latestProjectLibrary = structuredClone(projectCommit.library);
     const campfireRefs = new Set();
-    let campfireLightRadiusOverride = null;
     for (const layer of sceneData.layers) {
       for (const placement of layer?.objects || []) {
         if (placement?.type === 'ref' && placement.kind === 'item' && placement.ref) {
           campfireRefs.add(placement.ref);
-          // placement 级光源半径覆盖（overrides.lightRadius）：同库定义多处放置可各调各的光照范围
-          const overrideRadius = Number(placement?.overrides?.lightRadius);
-          if (Number.isFinite(overrideRadius) && overrideRadius > 0) {
-            campfireLightRadiusOverride = overrideRadius;
-          }
         }
       }
     }
@@ -209,13 +206,7 @@ async function configureWorldRuntimeFromLoad(options = {}) {
       this._campfireService.dispose();
       return { ok: true, applied: false, cleared: true };
     }
-    const baseCampfireConfig = campfireDefinition.campfirePresentation;
-    const campfireConfig = campfireLightRadiusOverride != null && baseCampfireConfig
-      ? {
-        ...baseCampfireConfig,
-        presentation: { ...baseCampfireConfig.presentation, lightRadius: campfireLightRadiusOverride }
-      }
-      : baseCampfireConfig;
+    const campfireConfig = campfireDefinition.campfirePresentation;
     if (!campfireConfig || typeof campfireConfig !== 'object') {
       return {
         ok: false,
@@ -270,7 +261,15 @@ async function configureWorldRuntimeFromLoad(options = {}) {
   nextWeatherSystem.setSunbeamImages(sunbeamImages);
   const nextTimeSystem = new TimeSystem(this.gameLoader?.runtimeConfigSnapshot?.system?.time || {});
   const sceneData = this._worldLoadSession?.getSceneData?.(this.currentSceneId);
-  const campfireDefinition = findSceneCampfireDefinition(sceneData, this.gameLoader?.registries);
+  const registryDefinition = findSceneCampfireDefinition(sceneData, this.gameLoader?.registries);
+  // GameLoader 注册表是启动时快照；编辑器保存过内容库时优先取最新提交快照里的同 id 定义
+  let campfireDefinition = registryDefinition;
+  if (registryDefinition?.id && Array.isArray(this._latestProjectLibrary?.items)) {
+    const fresh = this._latestProjectLibrary.items.find(item => item?.id === registryDefinition.id) || null;
+    if (fresh?.worldProp === true && fresh?.semanticRole === 'campfire' && fresh?.campfirePresentation) {
+      campfireDefinition = fresh;
+    }
+  }
   const campfireConfig = campfireDefinition?.campfirePresentation || null;
   if (campfireConfig) {
     const validationService = new SceneCampfireService({ configView: campfireConfig });

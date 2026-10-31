@@ -640,8 +640,7 @@ export class MeleeAttackSystem {
 
   /**
    * 渲染战斗 HUD（武器冷却条 + 远程箭矢数）。
-   * 攻击范围扇形已统一为 debug 专用显示（renderSectorRangeDebug，debugMode 门控），
-   * 此处不再绘制第二套扇形。
+   * 攻击范围扇形由 renderSectorRange 常态绘制（SceneRenderPipeline 世界通道调用）。
    * @param {CanvasRenderingContext2D} ctx
    * @param {Object} camera - 相机对象（保留参数兼容既有调用）
    */
@@ -707,17 +706,23 @@ export class MeleeAttackSystem {
   }
 
   /**
-   * 攻击范围扇形（唯一显示，debug 模式专用）：贴合 2.5D 椭圆的定向扇形——外弧沿
-   * Y 压扁 0.5 的地面椭圆（与 GroundMarker/renderCircleIndicator 同款俯视透视），
-   * 方向/张角/半径与 performSectorAttack 命中判定（isPointInSector）同源同参，
-   * 看到的扇形即实际攻击区域。战斗警示扇形已移除（原与套扇形叠加且 debug 关闭时残留），
-   * 攻击闪光（sectorAttackFlash）并入本扇形提亮。仅 debugMode 开启时由
-   * SceneRenderPipeline 调用，正式画面不受影响。
+   * 攻击范围扇形（常态显示）：贴合 2.5D 椭圆的定向扇形——外弧沿 Y 压扁 0.5 的地面
+   * 椭圆（与 GroundMarker/renderCircleIndicator 同款俯视透视），方向/张角/半径与
+   * performSectorAttack 命中判定（isPointInSector）同源同参，看到的扇形即实际攻击区域。
+   * 攻击闪光（sectorAttackFlash）并入扇形提亮。
+   * 门控语义：默认显示；hideSectorWhenIdle（移动端）空闲且无软锁定时隐藏；
+   * 远程武器不画常态扇形（由攻击按钮的技能预览虚线框替代）。
+   * 调试面板可用 debugShowAttackRange 关闭；「攻击范围 Npx」标签仅 debugMode 显示。
    * @param {CanvasRenderingContext2D} ctx - 已应用相机变换的世界通道上下文
+   * @param {{showLabel?: boolean}} [options] - showLabel：半径标签（调试调参用）
    */
-  renderSectorRangeDebug(ctx) {
+  renderSectorRange(ctx, { showLabel = false } = {}) {
     const transform = this.playerEntity?.getComponent?.('transform');
     if (!transform) return;
+    // 远程武器：常态不画扇形（由攻击按钮的技能预览虚线框替代）
+    if (this.sectorIsRanged) return;
+    // 移动端近战：空闲且无软锁定目标时隐藏；软锁定（自动瞄准敌人）或拖动瞄准时显示
+    if (this.hideSectorWhenIdle && !this.sectorDirectionLocked && !this._sectorAutoAimActive) return;
     // 与命中判定同款锚点：碰撞中心（脚点 + collision 偏移）
     const collision = this.playerEntity.getComponent('collision');
     const cx = transform.position.x + (Number(collision?.offsetX) || 0);
@@ -733,7 +738,7 @@ export class MeleeAttackSystem {
     const halfAngle = spread / 2;
     if (!(radius > 0) || !(halfAngle > 0)) return;
 
-    // 攻击闪光：出招瞬间扇形提亮（原战斗警示扇形的反馈表现并入此处）
+    // 攻击闪光：出招瞬间扇形提亮
     const flashAlpha = Math.max(0, this.sectorAttackFlash / 0.2);
     const dashOffset = (performance.now() * 0.02) % 20;
     ctx.save();
@@ -753,6 +758,7 @@ export class MeleeAttackSystem {
     ctx.stroke();
     ctx.restore();
 
+    if (showLabel !== true) return;
     // 标签在 restore 后绘制，避免跟随压扁/旋转变形；带出实际半径（px）便于调参
     const rangeLabel = `攻击范围 ${Math.round(radius)}px`;
     ctx.save();

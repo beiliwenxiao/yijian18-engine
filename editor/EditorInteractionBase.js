@@ -241,40 +241,15 @@ export class EditorInteractionBase {
                     saveContentLibrary: async (library) => {
                         const projectPath = this._canonicalProjectPath();
                         const session = this._canonicalEditorSession('project');
-                        const expectedCampfirePresentation = structuredClone(
-                            library?.items?.find(item => item?.id === 'story.s01.campfire')?.campfirePresentation?.presentation || null
-                        );
-                        console.info('[EditorInteraction][ContentLibrarySave] patch-before', {
-                            projectPath,
-                            expectedCampfirePresentation,
-                            candidateBefore: this.documentService.requireProject(projectPath)
-                                .getCandidate().project?.library?.items
-                                ?.find(item => item?.id === 'story.s01.campfire')?.campfirePresentation?.presentation || null
-                        });
                         session.patch('library', structuredClone(library));
-                        console.info('[EditorInteraction][ContentLibrarySave] patch-after', {
-                            projectPath,
-                            candidateAfter: session.model.getCandidate().project?.library?.items
-                                ?.find(item => item?.id === 'story.s01.campfire')?.campfirePresentation?.presentation || null
-                        });
                         const result = await session.save();
-                        console.info('[EditorInteraction][ContentLibrarySave] session-save-result', {
-                            projectPath,
-                            ok: result?.ok,
-                            committed: result?.committed,
-                            code: result?.code,
-                            transactionId: result?.transactionId,
-                            changes: result?.changes?.map(change => ({ operation: change.operation, path: change.path }))
-                        });
                         if (result?.ok !== true || result.committed !== true) return result;
                         try {
-                            const project = await this._readCanonicalJson(projectPath);
-                            console.info('[EditorInteraction][ContentLibrarySave] disk-readback', {
-                                projectPath,
-                                expectedCampfirePresentation,
-                                committedCampfirePresentation: project.library?.items
-                                    ?.find(item => item?.id === 'story.s01.campfire')?.campfirePresentation?.presentation || null
-                            });
+                            const mainProject = await this._readCanonicalJson(projectPath);
+                            // shards 分片：主文件已剥离 library 等大字段，回读必须并回分片才能完整校验，
+                            // 且 acceptExternalProjectCommit 需要完整合并快照（否则模型候选丢失全部分片字段）。
+                            const root = projectPath.slice(0, -'/game.project.json'.length);
+                            const project = await mergeShardedProject(mainProject, rel => this._readCanonicalJson(`${root}/${rel}`));
                             session.acceptExternalProjectCommit(project, {
                                 snapshotRevision: result.snapshotRevision
                             });

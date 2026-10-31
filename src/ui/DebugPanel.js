@@ -367,7 +367,7 @@ export class DebugPanel {
             显示攀爬区域
           </label>
           <label class="dp-check-row">
-            <input type="checkbox" id="dp-show-attack-range" ${this.getScene()?.debugShowAttackRange ? 'checked' : ''}>
+            <input type="checkbox" id="dp-show-attack-range" ${this.getScene()?.debugShowAttackRange !== false ? 'checked' : ''}>
             显示攻击范围扇形
           </label>
         </div>
@@ -922,7 +922,7 @@ export class DebugPanel {
     const climbableZoneToggle = this._el.querySelector('#dp-show-climbable-zones');
     if (climbableZoneToggle) climbableZoneToggle.checked = scene.debugShowClimbableZones !== false;
     const attackRangeToggle = this._el.querySelector('#dp-show-attack-range');
-    if (attackRangeToggle) attackRangeToggle.checked = scene.debugShowAttackRange === true;
+    if (attackRangeToggle) attackRangeToggle.checked = scene.debugShowAttackRange !== false;
 
     // 触发器事件
     const gl = scene.gameLoader;

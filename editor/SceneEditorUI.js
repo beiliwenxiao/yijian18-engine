@@ -1647,14 +1647,7 @@ export class SceneEditorUI {
     html += `<div class="property-row"><label>类型:</label><input value="${obj.kind || ''}" disabled></div>`;
     html += `<div class="property-row"><label>引用定义ID:</label><input value="${obj.ref || ''}" disabled title="明细在内容库中编辑"></div>`;
     if (obj.kind === 'item') {
-      html += '<div class="property-row"><label>物品属性:</label><span style="color:#9ab;font-size:11px;">在左侧「物品」列表点击此定义，可编辑图片、尺寸和世界物件表现</span></div>';
-      // 营火类物品：本处可覆盖点光源半径（overrides.lightRadius，运行时覆盖库定义 lightRadius）
-      const itemLibDef = this._getCachedLibraryDef(obj.ref);
-      if (!itemLibDef && obj.ref) this._loadLibraryDefAsync(obj.ref);
-      if (itemLibDef?.campfirePresentation || Number.isFinite(Number(obj.overrides?.lightRadius))) {
-        const radiusOverride = obj.overrides?.lightRadius;
-        html += `<div class="property-row"><label title="营火点光源半径（px）：影响阴影长影触发范围与火光覆盖范围。写入本处覆盖，留空=用库定义 lightRadius">光源半径:</label><input type="number" min="32" step="10" value="${radiusOverride != null ? radiusOverride : ''}" data-prop="overrides.lightRadius" placeholder="留空=用库定义"></div>`;
-      }
+      html += '<div class="property-row"><label>物品属性:</label><span style="color:#9ab;font-size:11px;">组合图层等定义级属性在顶部「内容存库」编辑该定义（如熄灭的火堆）</span></div>';
     }
     const collision = obj.collision && typeof obj.collision === 'object' ? obj.collision : null;
     const collisionMode = collision?.mode === 'walkable' ? 'walkable' : (collision?.mode === 'block' ? 'block' : 'none');
@@ -1829,7 +1822,12 @@ export class SceneEditorUI {
     try {
       const library = await this.editor.assets?._ensureContentLibrary?.();
       if (!library || this._libraryDefLoadingId !== refId) return;
-      const pool = [...(library.enemies || []), ...(library.npcs || []), ...(library.armies || [])];
+      const pool = [
+        ...(library.items || []),
+        ...(library.enemies || []),
+        ...(library.npcs || []),
+        ...(library.armies || [])
+      ];
       const def = pool.find(entry => entry && entry.id === refId) || null;
       this._libraryDefCache = { id: refId, def };
       const selected = this.editor.selectedObjects?.[0];
