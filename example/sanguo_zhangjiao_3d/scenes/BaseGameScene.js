@@ -261,12 +261,36 @@ export class BaseGameScene extends PrologueScene {
       this.usePotionFromHotbar(potionType);
     };
     
-    // 设置掉落回调
+    // 设置掉落回调（S01 修复：PickupSystem 无生成 API，直接生成地面拾取物）
     this.combatSystem.setLootDropCallback((position, lootItems) => {
-      const lootEntities = this.pickupSystem.spawnLootItems(position, lootItems);
-      for (const entity of lootEntities) {
-        this.entities.push(entity);
-        this.equipmentItems.push(entity);
+      for (const loot of (lootItems || [])) {
+        if (loot.itemId) {
+          // lootTable 形状：{ itemId, name, quantity }
+          this.pickupItems.push({
+            id: loot.itemId,
+            name: loot.name || loot.itemId,
+            type: 'material',
+            x: position.x + (Math.random() - 0.5) * 60,
+            y: position.y + (Math.random() - 0.5) * 60,
+            quantity: loot.quantity || 1,
+            maxStack: 99,
+            picked: false
+          });
+        } else if (loot.type === 'health_potion' || loot.type === 'mana_potion') {
+          // 旧场景兜底形状：红瓶/蓝瓶
+          const isHp = loot.type === 'health_potion';
+          this.pickupItems.push({
+            id: loot.type,
+            name: loot.name,
+            type: 'consumable',
+            x: position.x + (Math.random() - 0.5) * 60,
+            y: position.y + (Math.random() - 0.5) * 60,
+            usable: true,
+            effect: isHp ? { type: 'heal', value: loot.value || 50 } : { type: 'mana', value: loot.value || 30 },
+            maxStack: 10,
+            picked: false
+          });
+        }
       }
     });
     
@@ -386,6 +410,33 @@ export class BaseGameScene extends PrologueScene {
       .then(data => {
         this.actData = data;
         Logger.log(`BaseGameScene: 加载幕数据成功 Act${actNumber}`, data);
+        
+        // S01：火堆位置随数据到达同步（数据晚于实体创建，需纠正已创建对象）
+        if (data.campfire?.position && this.campfire) {
+          const newX = data.campfire.position.x;
+          const newY = data.campfire.position.y;
+          if (this.campfire.x !== newX || this.campfire.y !== newY) {
+            this.campfire.x = newX;
+            this.campfire.y = newY;
+            
+            // 重建 3D 火堆（旧组可能已按旧位置创建）
+            const oldCampfire3D = this._3dObjects?.campfire;
+            if (oldCampfire3D?.group && this.renderBackend?.scene) {
+              this.renderBackend.scene.remove(oldCampfire3D.group);
+            }
+            if (this._3dObjects) this._3dObjects.campfire = null;
+            
+            // 玩家传送到新火堆旁（仅在数据早前已创建玩家时补一次）
+            const transform = this.playerEntity?.getComponent?.('transform');
+            if (transform && !this._playerSpawnSynced) {
+              this._playerSpawnSynced = true;
+              transform.position.x = newX + 40;
+              transform.position.y = newY + 45;
+            }
+            
+            Logger.log(`BaseGameScene: 火堆位置同步为 (${newX}, ${newY})`);
+          }
+        }
       })
       .catch(error => {
         console.warn(`BaseGameScene: 加载幕数据失败 Act${actNumber}`, error);
@@ -456,6 +507,32 @@ export class BaseGameScene extends PrologueScene {
       visible: false,
       onItemUse: (item, healAmount, manaAmount) => {
         this.onItemUsed(item, healAmount, manaAmount);
+      },
+      // 物品使用意图（InventoryPanel.useItem 新契约走 onIntent；缺省时
+      // 点击物品/快捷栏药水全部静默失效——实测背包无法使用任何物品）
+      onIntent: (intentType, payload) => {
+        if (intentType !== 'item.use' || !this.playerEntity) return false;
+        const inventory = this.playerEntity.getComponent('inventory');
+        if (!inventory) return false;
+        const entry = (inventory.getAllItems() || []).find(({ slot }) =>
+          slot?.item && slot.item.id === payload?.itemId &&
+          (payload?.instanceId ? slot.item.instanceId === payload.instanceId : true));
+        if (!entry) return false;
+        const used = inventory.useItem(entry.index, payload?.quantity || 1);
+        if (!used) return false;
+        const item = used.item;
+        let healAmount = 0, manaAmount = 0;
+        const stats = this.playerEntity.getComponent('stats');
+        if (item?.effect?.type === 'heal' && stats) {
+          healAmount = item.effect.value || 0;
+          stats.hp = Math.min(stats.maxHp ?? stats.hp, stats.hp + healAmount);
+        }
+        if (item?.effect?.type === 'mana' && stats) {
+          manaAmount = item.effect.value || 0;
+          stats.mp = Math.min(stats.maxMp ?? stats.mp, stats.mp + manaAmount);
+        }
+        this.onItemUsed(item, healAmount, manaAmount);
+        return true;
       },
       onEquipmentChange: (messages) => {
         this.onEquipmentChanged(messages);
@@ -761,9 +838,9 @@ export class BaseGameScene extends PrologueScene {
    * 创建玩家实体 - 子类可覆盖
    */
   createPlayerEntity() {
-    // 玩家初始位置在火堆附近（火堆位置是 350, 250）
-    const startX = 420;  // 火堆x + 70
-    const startY = 330;  // 火堆y + 80
+    // 玩家初始位置在火堆附近（跟随 campfire 配置位置）
+    const startX = (this.campfire ? this.campfire.x : 420) + 40;
+    const startY = (this.campfire ? this.campfire.y : 330) + 45;
     
     this.playerEntity = this.entityFactory.createPlayer({
       name: '玩家',
@@ -1121,7 +1198,9 @@ export class BaseGameScene extends PrologueScene {
     // 更新鼠标悬停状态
     this.updatePanelHover();
     
-    // 检查拾取（使用拾取系统）
+    // 检查拾取（3D 宿主：PickupSystem 未接线 inputManager/commandGateway 依赖，
+    // 永远返回空结果——掉落的狼皮/生狼肉无法拾取，实测；改为走近身自动拾取）
+    this._collectNearbyLoot();
     const pickupResult = this.pickupSystem.update(
       this.playerEntity, this.pickupItems, this.equipmentItems, this.entities
     );
@@ -2450,11 +2529,65 @@ export class BaseGameScene extends PrologueScene {
   }
 
   /**
+   * 3D 宿主近身自动拾取：走进掉落物半径内直接入包（plain-object 掉落，
+   * 与 gatherNode/pickupPlacement 同一套 inventory.addItem 字段口径）
+   */
+  _collectNearbyLoot() {
+    if (!this.playerEntity) return;
+    const position = this.playerEntity.getComponent('transform')?.position;
+    const inventory = this.playerEntity.getComponent('inventory');
+    if (!position || !inventory) return;
+    for (const item of (this.pickupItems || [])) {
+      if (!item || item.picked) continue;
+      if (!Number.isFinite(item.x) || !Number.isFinite(item.y)) continue;
+      if (Math.hypot(item.x - position.x, item.y - position.y) > 60) continue;
+      const quantity = Math.max(1, Math.floor(Number(item.quantity) || 1));
+      if (item.type === 'equipment' || item.stats || item.capabilities) {
+        // 装备/工具：完整字段入包
+        inventory.addItem({
+          id: item.id,
+          name: item.name,
+          type: item.type || 'equipment',
+          subType: item.subType,
+          description: item.description || '',
+          rarity: item.rarity || 0,
+          maxStack: item.maxStack || 1,
+          stats: item.stats ? { ...item.stats } : {},
+          capabilities: item.capabilities,
+          usable: item.usable || !!item.effect ||
+            (item.capabilities || []).some(c => c?.id === 'consumable'),
+          effect: item.effect || null
+        }, 1);
+      } else {
+        inventory.addItem({
+          id: item.id,
+          name: item.name,
+          type: item.type || 'material',
+          description: item.description || '',
+          usable: item.usable || !!item.effect,
+          effect: item.effect || null,
+          maxStack: item.maxStack || 99
+        }, quantity);
+      }
+      item.picked = true;
+      if (this.floatingTextManager) {
+        this.floatingTextManager.addText(position.x, position.y - 60, `拾取 ${item.name || item.id} ×${quantity}`, '#8BC34A');
+      }
+    }
+  }
+
+  /**
    * 3D 模式下确保场景中有火堆、拾取物等 3D 对象
    */
   _ensure3DSceneObjects(backend) {
     if (!backend || !backend.scene) return;
     if (!this._3dObjects) this._3dObjects = {};
+    
+    // S01 3D 地面与场景道具（子类注入 s01Ground3D；其他幕保持默认地面）
+    if (this.s01Ground3D) {
+      this.s01Ground3D.ensure(backend);
+      this.s01Ground3D.update(backend);
+    }
     
     // 火堆 3D 对象
     if (this.campfire && !this._3dObjects.campfire) {
@@ -2609,9 +2742,10 @@ export class BaseGameScene extends PrologueScene {
           }
         }
         
-        // 点光源闪烁
+        // 点光源闪烁（S01：添柴后火势增强）
         const t = Date.now() * 0.004;
-        light.intensity = 1.8 + Math.sin(t * 3) * 0.4;
+        const fuelBoost = this.campfire.refueled ? 1.5 : 1.0;
+        light.intensity = (1.8 + Math.sin(t * 3) * 0.4) * fuelBoost;
         
         // 更新 3D 粒子
         if (points && points.geometry) {
@@ -2703,6 +2837,7 @@ export class BaseGameScene extends PrologueScene {
   
   /**
    * 用离屏 canvas 绘制物品图标，生成 THREE.Texture
+   * S01：优先使用 2D 游戏美术原图（异步加载后重绘同一 canvas）
    */
   _createItemIconTexture(item, THREE) {
     const size = 64;
@@ -2718,6 +2853,100 @@ export class BaseGameScene extends PrologueScene {
     ctx.save();
     ctx.translate(size / 2, size / 2);
     
+    const drewArt = this._drawS01ItemArt(ctx, item, size);
+    
+    if (!drewArt) {
+      this._drawFallbackItemIcon(ctx, item);
+    }
+    
+    ctx.restore();
+    
+    const tex = new THREE.Texture(canvas);
+    tex.magFilter = THREE.NearestFilter;
+    tex.minFilter = THREE.NearestFilter;
+    tex.needsUpdate = true;
+    
+    // 原图未就绪：绑定回调，图片加载完成后重绘同一 canvas
+    if (!drewArt) {
+      this._bindPendingItemArt(item, tex, size);
+    }
+    
+    return tex;
+  }
+
+  // S01 物品 → 2D 游戏美术原图路径（assets.json manifest）
+  static S01_ITEM_ART = {
+    'resource.wild_berry': '../sanguo_zhangjiao/assets/images/s01/wild-berry-node.png',
+    'tool.worn_axe': '../sanguo_zhangjiao/assets/images/scene1/RavenmoreIconPack.02.2014/128/axe.png',
+    'resource.wood': '../sanguo_zhangjiao/assets/images/s01/dry-wood-node.png',
+    'resource.raw_wolf_meat': '../sanguo_zhangjiao/assets/images/s01/raw-wolf-meat.png',
+    'resource.wolf_hide': '../sanguo_zhangjiao/assets/images/s01/wolf-hide.png',
+    'tool.skinning_knife': '../sanguo_zhangjiao/assets/images/s01/skinning-knife.png'
+  };
+
+  /**
+   * 尝试把 2D 原图绘制进图标 canvas（等比缩放适配）
+   * @returns {boolean} 是否已绘制（图片已就绪）
+   */
+  _drawS01ItemArt(ctx, item, size) {
+    const src = BaseGameScene.S01_ITEM_ART?.[item.id];
+    if (!src) return false;
+
+    if (!this._itemArtImages) this._itemArtImages = new Map();
+    let img = this._itemArtImages.get(item.id);
+    if (!img) {
+      img = new Image();
+      this._itemArtImages.set(item.id, img);
+      img.src = src;
+    }
+
+    if (img.complete && img.naturalWidth > 0) {
+      this._blitContain(ctx, img, size);
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * 原图异步就绪后重绘已生成的纹理（canvas 即纹理 image）
+   */
+  _bindPendingItemArt(item, tex, size) {
+    if (!this._itemArtImages || !BaseGameScene.S01_ITEM_ART?.[item.id]) return;
+    const img = this._itemArtImages.get(item.id);
+    if (!img) return;
+
+    const repaint = () => {
+      const c = tex.image && tex.image.getContext ? tex.image.getContext('2d') : null;
+      if (!c) return;
+      c.clearRect(0, 0, size, size);
+      c.save();
+      c.translate(size / 2, size / 2);
+      this._blitContain(c, img, size);
+      c.restore();
+      tex.needsUpdate = true;
+    };
+
+    if (img.complete && img.naturalWidth > 0) {
+      repaint();
+    } else {
+      img.addEventListener('load', repaint, { once: true });
+    }
+  }
+
+  /**
+   * 等比缩放把图片画进 size×size 区域
+   */
+  _blitContain(ctx, img, size) {
+    const scale = Math.min(size / img.naturalWidth, size / img.naturalHeight);
+    const w = img.naturalWidth * scale;
+    const h = img.naturalHeight * scale;
+    ctx.drawImage(img, -w / 2, -h / 2, w, h);
+  }
+
+  /**
+   * 原 canvas 手绘图标（2D 原图不可用时的兜底）
+   */
+  _drawFallbackItemIcon(ctx, item) {
     if (item.id === 'leftover_food') {
       // 碗 + 食物
       ctx.fillStyle = '#8B7355';
@@ -2785,6 +3014,109 @@ export class BaseGameScene extends PrologueScene {
       ctx.beginPath();
       ctx.moveTo(-3, 12); ctx.lineTo(0, 8); ctx.lineTo(3, 12);
       ctx.fill();
+    } else if (item.id === 'resource.wild_berry') {
+      // 荒野酸果（S01）：一簇红色浆果
+      ctx.fillStyle = '#2E7D32';
+      ctx.fillRect(-2, 2, 4, 12);           // 枝条
+      ctx.fillStyle = '#4CAF50';
+      ctx.beginPath();
+      ctx.ellipse(8, 6, 7, 4, -0.6, 0, Math.PI * 2);
+      ctx.fill();                            // 叶子
+      const berries = [
+        { x: -8, y: -2, r: 6 }, { x: 2, y: -8, r: 6 },
+        { x: 8, y: 0, r: 6 }, { x: -2, y: 4, r: 6 }
+      ];
+      for (const b of berries) {
+        ctx.fillStyle = '#C62828';
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#E57373';
+        ctx.beginPath();
+        ctx.arc(b.x - b.r * 0.3, b.y - b.r * 0.3, b.r * 0.3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    } else if (item.id === 'tool.worn_axe') {
+      // 破旧斧头（S01）
+      ctx.save();
+      ctx.rotate(0.6);
+      ctx.fillStyle = '#6D4C41';             // 木柄
+      ctx.fillRect(-2.5, -6, 5, 26);
+      ctx.fillStyle = '#90A4AE';             // 斧刃
+      ctx.beginPath();
+      ctx.moveTo(-3, -6);
+      ctx.lineTo(-3, -20);
+      ctx.quadraticCurveTo(10, -18, 12, -8);
+      ctx.quadraticCurveTo(5, -4, -3, -6);
+      ctx.fill();
+      ctx.strokeStyle = '#546E7A';
+      ctx.lineWidth = 1;
+      ctx.beginPath();                        // 磨损裂纹
+      ctx.moveTo(0, -8); ctx.lineTo(4, -14);
+      ctx.stroke();
+      ctx.restore();
+    } else if (item.id === 'resource.wood') {
+      // 干柴（S01）：两根交叉木柴
+      ctx.save();
+      ctx.rotate(-0.4);
+      ctx.fillStyle = '#795548';
+      ctx.fillRect(-18, -4, 36, 8);
+      ctx.fillStyle = '#5D4037';
+      ctx.fillRect(-18, -4, 36, 3);
+      ctx.restore();
+      ctx.save();
+      ctx.rotate(0.5);
+      ctx.fillStyle = '#8D6E63';
+      ctx.fillRect(-18, -4, 36, 8);
+      ctx.restore();
+    } else if (item.id === 'resource.raw_wolf_meat') {
+      // 生狼肉（S01）
+      ctx.fillStyle = '#C21858';
+      ctx.beginPath();
+      ctx.ellipse(2, 0, 13, 9, 0.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#E91E63';
+      ctx.beginPath();
+      ctx.ellipse(4, -2, 7, 4, 0.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#F5F5F5';              // 骨柄
+      ctx.fillRect(-16, 8, 10, 3);
+      ctx.beginPath();
+      ctx.arc(-17, 8, 2.5, 0, Math.PI * 2);
+      ctx.arc(-17, 11, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (item.id === 'resource.wolf_hide') {
+      // 狼皮（S01）
+      ctx.fillStyle = '#616161';
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 15, 12, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#757575';
+      ctx.beginPath();
+      ctx.ellipse(0, 8, 6, 8, 0, 0, Math.PI * 2);
+      ctx.fill();                              // 尾
+      ctx.strokeStyle = '#424242';
+      ctx.lineWidth = 1.5;
+      for (let i = -2; i <= 2; i++) {          // 毛纹
+        ctx.beginPath();
+        ctx.moveTo(i * 6, -10);
+        ctx.lineTo(i * 6 + 2, 8);
+        ctx.stroke();
+      }
+    } else if (item.id === 'tool.skinning_knife') {
+      // 旧剥皮刀（S01）
+      ctx.save();
+      ctx.rotate(-0.7);
+      ctx.fillStyle = '#5D4037';              // 刀柄
+      ctx.fillRect(-2.5, 2, 5, 14);
+      ctx.fillStyle = '#B0BEC5';              // 刀刃
+      ctx.beginPath();
+      ctx.moveTo(-3, 2);
+      ctx.lineTo(0, -18);
+      ctx.lineTo(4, 0);
+      ctx.quadraticCurveTo(0, 4, -3, 2);
+      ctx.fill();
+      ctx.restore();
     } else {
       // 默认：金色圆形
       ctx.fillStyle = '#FFD700';
@@ -2795,14 +3127,11 @@ export class BaseGameScene extends PrologueScene {
       ctx.lineWidth = 2;
       ctx.stroke();
     }
-    
+
     ctx.restore();
-    
-    const tex = new THREE.Texture(canvas);
-    tex.magFilter = THREE.NearestFilter;
-    tex.minFilter = THREE.NearestFilter;
-    tex.needsUpdate = true;
-    return tex;
+    // 注意：此处只负责绘制，纹理由调用方 _createItemIconTexture 统一创建——
+    // 之前残留的 new THREE.Texture(...) 引用未定义的全局 THREE，
+    // 兜底图标每次绘制都抛 ReferenceError（狼皮/生狼肉掉落实测）
   }
   
   _getThree(backend) {

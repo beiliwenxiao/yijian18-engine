@@ -12,12 +12,13 @@
 
 export class ProgressiveTipsConditions {
   /**
-   * 提示1 - 醒来
+   * 提示1 - 醒来（S01：等开场对话播完后再提示，避免与旁白框重叠）
    * @param {Object} scene - 场景实例
    * @returns {boolean}
    */
   static progressive_tip_1_trigger(scene) {
     return scene.tutorialPhase === 'character_creation' && 
+           scene.wakeDialogueDone &&
            !scene.tutorialsCompleted.progressive_tip_1;
   }
 
@@ -131,20 +132,39 @@ export class ProgressiveTipsConditions {
   }
 
   /**
-   * 提示10 - 查看装备
+   * 提示10 - 砍些干柴（S01：装备斧头后进入砍柴阶段）
    * @param {Object} scene - 场景实例
    * @returns {boolean}
    */
   static progressive_tip_10_trigger(scene) {
-    const equipment = scene.playerEntity?.getComponent('equipment');
-    // 必须装备两件物品（武器和护甲）
-    const equippedCount = equipment && equipment.slots ? 
-      Object.keys(equipment.slots).filter(slot => equipment.slots[slot]).length : 0;
-    return equippedCount >= 2 && !scene.tutorialsCompleted.progressive_tip_10;
+    return scene.tutorialPhase === 'chop_wood' && 
+           !scene.tutorialsCompleted.progressive_tip_10;
   }
 
   /**
-   * 提示11 - 按N键进入下一幕（野狗打完后）
+   * 提示10.5 - 给火堆添柴（S01：拾到干柴后进入添柴阶段）
+   * @param {Object} scene - 场景实例
+   * @returns {boolean}
+   */
+  static progressive_tip_10_5_trigger(scene) {
+    return scene.tutorialPhase === 'refuel' && 
+           !scene.tutorialsCompleted.progressive_tip_10_5;
+  }
+
+  /**
+   * 提示10.6 - 饿狼来了（S01：添柴完成，饿狼已刷出）
+   * @param {Object} scene - 场景实例
+   * @returns {boolean}
+   */
+  static progressive_tip_10_6_trigger(scene) {
+    return scene.tutorialPhase === 'combat' && 
+           scene.combatWave === 0 && 
+           scene.enemyEntities && scene.enemyEntities.length > 0 &&
+           !scene.tutorialsCompleted.progressive_tip_10_6;
+  }
+
+  /**
+   * 提示11 - 按N键穿过枯树林（饿狼打完后）
    * @param {Object} scene - 场景实例
    * @returns {boolean}
    */

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>张角黄巾起义序章 - 第一幕</title>
+    <title>张角黄巾起义 - S01 寒风荒野求生</title>
     <style>
         * {
             margin: 0;
@@ -189,6 +189,64 @@
         
         #debug-panel div {
             margin: 2px 0;
+        }
+
+        /* S01 任务追踪面板（右上角） */
+        #quest-panel {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            min-width: 180px;
+            max-width: 240px;
+            background: rgba(0, 0, 0, 0.75);
+            border: 2px solid rgba(255, 193, 7, 0.55);
+            border-radius: 10px;
+            padding: 10px 14px;
+            pointer-events: none;
+            font-size: 13px;
+        }
+
+        #quest-panel h3 {
+            color: #ffc107;
+            font-size: 15px;
+            margin-bottom: 8px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid rgba(255, 193, 7, 0.3);
+        }
+
+        #quest-panel h3.quest-done {
+            color: #8BC34A;
+        }
+
+        #quest-panel ul {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        #quest-panel li {
+            color: #777;
+            padding: 2px 0;
+            line-height: 1.5;
+        }
+
+        #quest-panel li.quest-active {
+            color: #fff;
+            font-weight: bold;
+        }
+
+        #quest-panel li.quest-active::before {
+            content: '➤ ';
+            color: #ffc107;
+        }
+
+        #quest-panel li.quest-done {
+            color: #8BC34A;
+            text-decoration: line-through;
+        }
+
+        #quest-panel li.quest-done::before {
+            content: '✓ ';
         }
 
         /* 摄像头控制面板 */
@@ -473,6 +531,12 @@
                 <div>阶段: <span id="phase">-</span></div>
                 <div>敌人: <span id="enemies">0</span></div>
             </div>
+
+            <!-- S01 任务追踪面板 -->
+            <div id="quest-panel">
+                <h3 id="quest-title">荒原求生</h3>
+                <ul id="quest-steps"></ul>
+            </div>
             
             <!-- 摄像头控制面板 -->
             <div id="camera-control">
@@ -527,8 +591,8 @@
         </div>
         
         <div id="loading-screen">
-            <h1>张角黄巾起义序章</h1>
-            <h2>第一幕：绝望的开始</h2>
+            <h1>张角黄巾起义</h1>
+            <h2>S01：寒风荒野求生</h2>
             <div class="progress-bar">
                 <div class="progress-fill" id="progress-fill"></div>
             </div>
@@ -538,6 +602,7 @@
     
     <script type="module">
         import { Act1SceneECS } from './scenes/Act1SceneECS.js';
+        import { Scene3DHostScene } from './scenes/Scene3DHostScene.js';
         import { Act2Scene } from './scenes/Act2Scene.js';
         import { Act3Scene } from './scenes/Act3Scene.js';
         import { Act4Scene } from './scenes/Act4Scene.js';
@@ -786,8 +851,8 @@
             forceAllowSoftware = true;
             const loadingScreen = document.getElementById('loading-screen');
             loadingScreen.innerHTML = `
-                <h1 style="color:#4CAF50;">张角黄巾起义序章</h1>
-                <h2>第一幕：绝望的开始</h2>
+                <h1 style="color:#4CAF50;">张角黄巾起义</h1>
+                <h2>S01：寒风荒野求生</h2>
                 <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
                 <p id="loading-text">加载中（软件渲染模式）...</p>
             `;
@@ -849,7 +914,13 @@
                 await sleep(300);
                 
                 updateLoading(60, '注册场景...');
-                // 创建并注册第一幕场景（传入 backend）
+                // 创建并注册 S01 数据驱动 3D 宿主（M0：工程数据 + 3D 渲染）
+                const hostScene = new Scene3DHostScene();
+                hostScene.assetManager = assetManager;
+                hostScene.renderBackend = backend;  // 注入 3D 后端
+                sceneManager.registerScene('S01Host', hostScene);
+
+                // 创建并注册第一幕场景（保留对照，入口已切至宿主）
                 const act1Scene = new Act1SceneECS();
                 act1Scene.assetManager = assetManager;
                 act1Scene.renderBackend = backend;  // 注入 3D 后端
@@ -882,6 +953,7 @@
                 sceneManager.registerScene('Act6Scene', act6Scene);
                 
                 // 设置场景管理器引用
+                hostScene.setSceneManager(sceneManager);
                 act1Scene.setSceneManager(sceneManager);
                 act2Scene.setSceneManager(sceneManager);
                 act3Scene.setSceneManager(sceneManager);
@@ -896,25 +968,22 @@
                     maxNotifications: 5
                 });
                 
-                // 注册场景后直接进入第一幕
-                scene = act1Scene;
+                // 注册场景后直接进入 S01 数据驱动宿主
+                scene = hostScene;
                 await sleep(300);
                 
-                updateLoading(90, '进入第一幕...');
-                sceneManager.switchTo('Act1Scene');
+                updateLoading(90, '进入 S01 宿主场景...');
+                sceneManager.switchTo('S01Host');
                 await sleep(300);
                 
                 // 场景进入后设置教程回调
                 console.log('设置教程回调...');
+                setupSceneCallbacks(hostScene);
                 setupSceneCallbacks(act1Scene);
                 setupSceneCallbacks(act2Scene);
                 setupSceneCallbacks(act3Scene);
                 
-                // 重新触发第一个教程显示
-                if (act1Scene.tutorialSystem && !act1Scene.tutorialsCompleted.progressive_tip_1) {
-                    act1Scene.tutorialSystem.currentTutorial = null;
-                    act1Scene.tutorialSystem.showTutorial('progressive_tip_1');
-                }
+                // S01：tip_1（醒来提示）由触发条件驱动（开场对话播完后显示），不再强制弹出
                 
                 updateLoading(100, '完成！');
                 await sleep(500);
@@ -1145,8 +1214,45 @@
                 enemiesElement.textContent = '0';
             }
             
+            // 更新 S01 任务追踪面板
+            updateQuestPanel();
+            
             // 更新技能栏
             updateSkillBar();
+        }
+        
+        // 更新 S01 任务追踪面板（读场景 getQuestState）
+        let lastQuestSignature = '';
+        function updateQuestPanel() {
+            const questPanel = document.getElementById('quest-panel');
+            if (!questPanel) return;
+            
+            // 第二幕之后隐藏任务面板
+            if (!scene.getQuestState) {
+                questPanel.style.display = 'none';
+                return;
+            }
+            questPanel.style.display = 'block';
+            
+            const quest = scene.getQuestState();
+            const signature = quest.stepIndex + '|' + quest.completed + '|' +
+                quest.steps.map(s => s.title).join(',');
+            if (signature === lastQuestSignature) return;  // 状态未变不重绘
+            lastQuestSignature = signature;
+            
+            const titleEl = document.getElementById('quest-title');
+            const stepsEl = document.getElementById('quest-steps');
+            if (titleEl) {
+                titleEl.textContent = quest.completed ? `${quest.title}（已完成）` : quest.title;
+                titleEl.classList.toggle('quest-done', quest.completed);
+            }
+            if (stepsEl) {
+                stepsEl.innerHTML = quest.steps.map(step => {
+                    const cls = step.state === 'done' ? 'quest-done' : 
+                                step.state === 'active' ? 'quest-active' : '';
+                    return `<li class="${cls}">${step.title}</li>`;
+                }).join('');
+            }
         }
         
         // 更新技能栏显示
@@ -1211,10 +1317,15 @@
         // 键盘快捷键
         document.addEventListener('keydown', (e) => {
             // 空格键 - 继续对话
-            if (e.code === 'Space' && dialogueBox && dialogueBox.visible) {
-                e.preventDefault();
-                dialogueBox.continueDialogue();
-                return;
+            // S01 修复：setupSceneCallbacks 会把共享 dialogueBox 重绑到后续幕的
+            // DialogueSystem，空格必须优先走当前场景自己的对话框（与渲染中的实例一致）
+            if (e.code === 'Space') {
+                const activeBox = (scene?.dialogueBox && scene.dialogueBox.visible) ? scene.dialogueBox : dialogueBox;
+                if (activeBox && activeBox.visible) {
+                    e.preventDefault();
+                    activeBox.continueDialogue();
+                    return;
+                }
             }
             
             // K键 - 打开技能树
@@ -1393,8 +1504,10 @@
                 }
             }
             
-            if (dialogueBox && dialogueBox.visible) {
-                dialogueBox.handleMouseClick(mouseX, mouseY);
+            // 对话框点击（S01：同空格键，优先走当前场景自己的对话框）
+            const activeBox = (scene?.dialogueBox && scene.dialogueBox.visible) ? scene.dialogueBox : dialogueBox;
+            if (activeBox && activeBox.visible) {
+                activeBox.handleMouseClick(mouseX, mouseY);
             }
         });
         

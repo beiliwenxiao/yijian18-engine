@@ -1,9 +1,27 @@
 {
   "act": 1,
-  "title": "第一幕：绝望的开始",
-  "description": "在乱世中挣扎求生",
+  "title": "S01：寒风荒野求生",
+  "description": "在干旱荒原活过第一夜，并逃往废弃营地。",
+  "quest": {
+    "id": "task.s01.survival",
+    "title": "荒原求生",
+    "description": "在干旱荒原活过第一夜，并逃往废弃营地。",
+    "steps": [
+      "醒来",
+      "站起身来",
+      "点燃火堆",
+      "采些野果",
+      "吃下酸果",
+      "拾起斧头",
+      "砍些干柴",
+      "给火堆添柴",
+      "杀死饿狼",
+      "穿过枯树林",
+      "杀死狼王"
+    ]
+  },
   "initialState": {
-    "playerPosition": { "x": 200, "y": 300 },
+    "playerPosition": { "x": 408, "y": 625 },
     "playerStats": {
       "hp": 30,
       "maxHp": 100,
@@ -14,7 +32,7 @@
     }
   },
   "campfire": {
-    "position": { "x": 350, "y": 250 },
+    "position": { "x": 461, "y": 588 },
     "interactionRadius": 60,
     "fireImagePath": "assets/images/fire.webp",
     "frameConfig": {
@@ -28,12 +46,42 @@
   },
   "pickupItems": [
     {
-      "id": "leftover_food",
-      "name": "残羹",
+      "id": "resource.wild_berry",
+      "name": "荒野酸果",
       "type": "consumable",
-      "position": { "x": 250, "y": 330 },
+      "position": { "x": 462, "y": 662 },
       "heal": 20,
-      "description": "剩余的食物，可以恢复少量生命值",
+      "description": "荒原酸涩的野果，可以恢复少量生命值",
+      "rarity": 0,
+      "maxStack": 10,
+      "usable": true,
+      "effect": {
+        "type": "heal",
+        "value": 20
+      }
+    },
+    {
+      "id": "resource.wild_berry",
+      "name": "荒野酸果",
+      "type": "consumable",
+      "position": { "x": 512, "y": 668 },
+      "heal": 20,
+      "description": "荒原酸涩的野果，可以恢复少量生命值",
+      "rarity": 0,
+      "maxStack": 10,
+      "usable": true,
+      "effect": {
+        "type": "heal",
+        "value": 20
+      }
+    },
+    {
+      "id": "resource.wild_berry",
+      "name": "荒野酸果",
+      "type": "consumable",
+      "position": { "x": 487, "y": 702 },
+      "heal": 20,
+      "description": "荒原酸涩的野果，可以恢复少量生命值",
       "rarity": 0,
       "maxStack": 10,
       "usable": true,
@@ -45,211 +93,137 @@
   ],
   "equipmentItems": [
     {
-      "id": "ragged_clothes",
-      "name": "破旧衣服",
+      "id": "tool.worn_axe",
+      "name": "破旧斧头",
       "type": "equipment",
-      "subType": "armor",
-      "position": { "x": 220, "y": 350 },
+      "subType": "tool",
+      "position": { "x": 525, "y": 703 },
+      "attackSpeed": 2.0,
+      "attackRange": 90,
+      "attackDistance": 100,
       "stats": {
-        "defense": 2
+        "attack": 10
       },
-      "description": "破旧的衣服，聊胜于无",
-      "rarity": 0,
+      "description": "斧刃钝化、木柄裂纹遍布的旧斧。攻击 +10。持有即可砍伐树木。",
+      "rarity": 1,
       "maxStack": 1
+    }
+  ],
+  "woodNodes": [
+    { "position": { "x": 116.6, "y": 394.3 } },
+    { "position": { "x": 245.6, "y": 348.2 } },
+    { "position": { "x": 639.8, "y": 636.4 } }
+  ],
+  "combatWaves": [
+    {
+      "wave": 0,
+      "name": "饿狼来袭",
+      "enemies": [
+        {
+          "name": "虚弱的狼",
+          "templateId": "wild_dog",
+          "level": 1,
+          "stats": {
+            "maxHp": 24,
+            "attack": 3,
+            "defense": 1
+          },
+          "position": { "x": 414, "y": 360 }
+        }
+      ]
     },
     {
-      "id": "wooden_sword",
-      "name": "木剑",
+      "wave": 1,
+      "name": "狼群压境",
+      "enemies": [
+        {
+          "name": "追逐野狼",
+          "templateId": "wild_dog",
+          "level": 1,
+          "stats": {
+            "maxHp": 32,
+            "attack": 5,
+            "defense": 1
+          },
+          "position": { "x": 60, "y": 679 }
+        },
+        {
+          "name": "追逐野狼",
+          "templateId": "wild_dog",
+          "level": 1,
+          "stats": {
+            "maxHp": 32,
+            "attack": 5,
+            "defense": 1
+          },
+          "position": { "x": 71, "y": 557 }
+        },
+        {
+          "name": "追逐野狼",
+          "templateId": "wild_dog",
+          "level": 1,
+          "stats": {
+            "maxHp": 32,
+            "attack": 5,
+            "defense": 1
+          },
+          "position": { "x": 169, "y": 697 }
+        },
+        {
+          "name": "狼王",
+          "templateId": "wild_dog",
+          "level": 2,
+          "isBoss": true,
+          "stats": {
+            "maxHp": 110,
+            "attack": 9,
+            "defense": 2
+          },
+          "position": { "x": 63, "y": 630 }
+        }
+      ]
+    }
+  ],
+  "wolfLoot": [
+    {
+      "id": "resource.raw_wolf_meat",
+      "name": "生狼肉",
+      "type": "material",
+      "description": "新鲜的生狼肉，烤熟后可以食用",
+      "rarity": 0,
+      "maxStack": 99,
+      "quantity": 2
+    },
+    {
+      "id": "resource.wolf_hide",
+      "name": "狼皮",
+      "type": "material",
+      "description": "剥下的完整狼皮，可以制作御寒衣物",
+      "rarity": 0,
+      "maxStack": 99,
+      "quantity": 1
+    },
+    {
+      "id": "tool.skinning_knife",
+      "name": "旧剥皮刀",
       "type": "equipment",
-      "subType": "mainhand",
-      "position": { "x": 280, "y": 360 },
+      "subType": "tool",
       "attackSpeed": 2.0,
       "attackRange": 90,
       "attackDistance": 100,
       "stats": {
         "attack": 5
       },
-      "description": "简陋的木剑，可以用来防身",
-      "rarity": 0,
+      "description": "刃口磨损的旧剥皮刀。攻击 +5。用于剥取兽皮和处理猎物。",
+      "rarity": 1,
       "maxStack": 1
-    },
-    {
-      "id": "wooden_bow",
-      "name": "木弓",
-      "type": "equipment",
-      "subType": "mainhand",
-      "ranged": true,
-      "position": { "x": 260, "y": 380 },
-      "attackSpeed": 1.0,
-      "attackRange": 15,
-      "attackDistance": 300,
-      "pierce": 2,
-      "multishot": 2,
-      "stats": {
-        "attack": 7
-      },
-      "description": "简陋的木弓，可以远程攻击",
-      "rarity": 0,
-      "maxStack": 1
-    },
-    {
-      "id": "wooden_arrow",
-      "name": "木箭",
-      "type": "equipment",
-      "subType": "ammo",
-      "position": { "x": 290, "y": 340 },
-      "stats": {},
-      "description": "粗糙的木箭，配合弓使用",
-      "rarity": 0,
-      "maxStack": 99,
-      "quantity": 30
-    }
-  ],
-  "combatWaves": [
-    {
-      "wave": 0,
-      "name": "野狗袭击",
-      "enemies": [
-        {
-          "name": "野狗",
-          "templateId": "wild_dog",
-          "level": 1,
-          "stats": {
-            "maxHp": 30,
-            "attack": 5,
-            "defense": 2
-          },
-          "position": { "x": 500, "y": 300 }
-        },
-        {
-          "name": "野狗",
-          "templateId": "wild_dog",
-          "level": 1,
-          "stats": {
-            "maxHp": 30,
-            "attack": 5,
-            "defense": 2
-          },
-          "position": { "x": 600, "y": 300 }
-        }
-      ]
-    },
-    {
-      "wave": 1,
-      "name": "官府士兵",
-      "enemies": [
-        {
-          "name": "官府士兵",
-          "templateId": "soldier",
-          "level": 2,
-          "stats": {
-            "maxHp": 50,
-            "attack": 8,
-            "defense": 5
-          },
-          "position": { "x": 450, "y": 250 }
-        },
-        {
-          "name": "官府士兵",
-          "templateId": "soldier",
-          "level": 2,
-          "stats": {
-            "maxHp": 50,
-            "attack": 8,
-            "defense": 5
-          },
-          "position": { "x": 550, "y": 300 }
-        },
-        {
-          "name": "官府士兵",
-          "templateId": "soldier",
-          "level": 2,
-          "stats": {
-            "maxHp": 50,
-            "attack": 8,
-            "defense": 5
-          },
-          "position": { "x": 650, "y": 350 }
-        }
-      ]
-    },
-    {
-      "wave": 2,
-      "name": "土匪",
-      "enemies": [
-        {
-          "name": "土匪",
-          "templateId": "bandit",
-          "level": 3,
-          "stats": {
-            "maxHp": 60,
-            "attack": 10,
-            "defense": 6
-          },
-          "position": { "x": 500, "y": 250 }
-        },
-        {
-          "name": "土匪",
-          "templateId": "bandit",
-          "level": 3,
-          "stats": {
-            "maxHp": 60,
-            "attack": 10,
-            "defense": 6
-          },
-          "position": { "x": 600, "y": 250 }
-        },
-        {
-          "name": "土匪",
-          "templateId": "bandit",
-          "level": 3,
-          "stats": {
-            "maxHp": 60,
-            "attack": 10,
-            "defense": 6
-          },
-          "position": { "x": 500, "y": 350 }
-        },
-        {
-          "name": "土匪",
-          "templateId": "bandit",
-          "level": 3,
-          "stats": {
-            "maxHp": 60,
-            "attack": 10,
-            "defense": 6
-          },
-          "position": { "x": 600, "y": 350 }
-        }
-      ]
-    },
-    {
-      "wave": 3,
-      "name": "饥民围困",
-      "circularFormation": {
-        "center": { "x": 400, "y": 300 },
-        "radius": 150,
-        "count": 10
-      },
-      "enemies": [
-        {
-          "name": "饥民",
-          "templateId": "starving",
-          "level": 2,
-          "stats": {
-            "maxHp": 40,
-            "attack": 6,
-            "defense": 3
-          }
-        }
-      ]
     }
   ],
   "transition": {
-    "type": "death",
+    "type": "quest_complete",
     "blackScreenDuration": 2.0,
-    "textDisplayDuration": 3.0,
-    "text": "你死了...但这不是结局",
+    "textDisplayDuration": 3.5,
+    "text": "狼王倒下了。你穿过枯树林，向着村庄的方向逃去……",
     "nextAct": 2
   }
 }

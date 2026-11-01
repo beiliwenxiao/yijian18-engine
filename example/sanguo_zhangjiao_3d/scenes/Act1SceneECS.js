@@ -17,6 +17,7 @@ import { TutorialConfig } from '../config/TutorialConfig.js';
 import { TutorialConditions } from '../conditions/TutorialConditions.js';
 import { ProgressiveTipsConfig } from '../config/ProgressiveTipsConfig.js';
 import { ProgressiveTipsConditions } from '../conditions/ProgressiveTipsConditions.js';
+import { S01Ground3D } from './S01Ground3D.js';
 import { Entity } from '../../../src/ecs/Entity.js';
 import { TransformComponent } from '../../../src/ecs/components/TransformComponent.js';
 import { SpriteComponent } from '../../../src/ecs/components/SpriteComponent.js';
@@ -62,34 +63,54 @@ export class Act1SceneECS extends BaseGameScene {
       frameDuration: 0.16
     };
     
-    // 第一幕特有：战斗状态
+    // S01 生存任务：战斗状态
     this.combatWave = 0;
     this.combatComplete = false;
-    this.starvingWaveTriggered = false;
+    this.wolfPackTriggered = false;
     this.waveSpawned = false;
-    
-    // 第一幕特有：饥民逐渐生成器
-    this.starvingSpawner = {
+
+    // S01 生存任务：狼群逐渐生成器（N 键触发后从边缘逼近）
+    this.wolfSpawner = {
       active: false,
-      totalCount: 18,
+      totalCount: 4,       // 3 只追逐野狼 + 1 只狼王
       spawnedCount: 0,
-      spawnInterval: 0.6,  // 每0.6秒生成一个
+      spawnInterval: 0.9,  // 每0.9秒生成一只
       spawnTimer: 0
     };
-    
-    // 第一幕特有：气泡对话
+
+    // S01 生存任务：气泡对话（狼嚎）
     this.speechBubbles = [];  // [{entityId, text, x, y, age, maxAge}]
-    this.STARVING_PHRASES = [
-      '好饿...', '饿死了...', '有吃的吗...', '救命...', 
-      '三天没吃了...', '谁有粮食...', '活不下去了...',
-      '肚子好饿...', '求求你...', '给口吃的吧...',
-      '饿得头晕...', '快饿死了...', '好冷好饿...',
-      '有没有人...', '太饿了...'
+    this.WOLF_PHRASES = [
+      '嗷呜——', '呜…', '嗷！', '(低吼)', '呲牙低吼…',
+      '嗷呜……', '(嗅着气味靠近)', '呜嗷！'
     ];
-    this.DOG_PHRASES = [
-      '汪汪！', '汪！', '呜...', '嗷呜~',
-      '汪汪汪！', '呜呜...', '嗷！', '汪~'
+
+    // S01 生存任务：任务追踪（对应 2D task.s01.survival「荒原求生」）
+    this.questStepIndex = 0;
+    this.questStepTitles = [
+      '醒来',
+      '站起身来',
+      '点燃火堆',
+      '采些野果',
+      '吃下酸果',
+      '拾起斧头',
+      '砍些干柴',
+      '给火堆添柴',
+      '杀死饿狼',
+      '穿过枯树林',
+      '杀死狼王'
     ];
+    this.questCompleted = false;
+
+    // S01 生存任务：醒来对话状态
+    this.wakeDialogueStarted = false;
+    this.wakeDialogueDone = false;
+
+    // S01 生存任务：吃酸果基线（吃掉任意一颗即完成）
+    this.berryCountBaseline = null;
+
+    // S01 美术：2D 地图大图铺 3D 地面 + 场景资源节点 billboard
+    this.s01Ground3D = new S01Ground3D();
     
     // 第一幕特有：死亡和过渡
     this.playerDied = false;
@@ -147,6 +168,12 @@ export class Act1SceneECS extends BaseGameScene {
     // 第一幕特有：显示角色创建
     this.showCharacterCreation();
     
+    // S01 生存任务：播「寒风中醒来」开场对话（移植自 2D dialogue.s01.wake）
+    this.registerWakeDialogue();
+    
+    // S01 美术：预加载 2D 狼图（战斗开始前就绪，实体创建时直接可用）
+    this.loadWolfArtwork();
+    
     Logger.log('Act1SceneECS: 进入第一幕 - 绝望的开始');
   }
 
@@ -178,6 +205,229 @@ export class Act1SceneECS extends BaseGameScene {
     // 不在这里显示教程，等待回调设置后再显示
     // 教程会在 index.html 的 initGame 中设置回调后显示
     Logger.log('Act1SceneECS: showCharacterCreation 完成，等待教程回调设置');
+  }
+
+  /**
+   * S01 生存任务：注册并播「寒风中醒来」开场对话
+   * 文本移植自 2D 项目 dialogues.json 的 dialogue.s01.wake
+   */
+  registerWakeDialogue() {
+    if (!this.dialogueSystem) return;
+
+    this.dialogueSystem.registerDialogue('dialogue.s01.wake', {
+      title: '寒风中醒来',
+      startNode: 'start',
+      presentation: { boxType: 'narration' },
+      nodes: {
+        start: {
+          speaker: '旁白',
+          portrait: null,
+          text: '寒风卷过龟裂的荒原。你从熄灭的火堆旁醒来，四肢冻得僵硬，远处只有枯草与河水的声响。',
+          nextNode: 'move'
+        },
+        move: {
+          speaker: '旁白',
+          portrait: null,
+          text: '先起身活动僵硬的身体，再靠近熄灭的篝火设法重新点火。',
+          nextNode: null
+        }
+      }
+    });
+
+    // 对话播完 → 任务第一步「醒来」完成
+    this.dialogueSystem.onEnd((dialogue) => {
+      if (dialogue && dialogue.id === 'dialogue.s01.wake') {
+        this.wakeDialogueDone = true;
+        this.advanceQuest();
+      }
+    });
+
+    // 延迟起播，等场景与 UI 就绪
+    setTimeout(() => {
+      if (this.isActive && !this.wakeDialogueStarted) {
+        this.wakeDialogueStarted = true;
+        this.dialogueSystem.startDialogue('dialogue.s01.wake');
+        Logger.log('Act1SceneECS: 播放开场对话 dialogue.s01.wake');
+      }
+    }, 800);
+  }
+
+  /**
+   * S01 生存任务：推进任务追踪（HUD 由 index.html 读取 getQuestState 渲染）
+   */
+  advanceQuest() {
+    if (this.questCompleted) return;
+    if (this.questStepIndex < this.questStepTitles.length) {
+      this.questStepIndex++;
+      Logger.log(`Act1SceneECS: 任务推进 → ${this.questStepTitles[this.questStepIndex] || '全部完成'}`);
+    }
+    if (this.questStepIndex >= this.questStepTitles.length) {
+      this.questCompleted = true;
+      Logger.log('Act1SceneECS: 主任务「荒原求生」完成！');
+    }
+  }
+
+  /**
+   * S01 生存任务：供 HUD 查询任务状态
+   */
+  getQuestState() {
+    return {
+      id: 'task.s01.survival',
+      title: '荒原求生',
+      completed: this.questCompleted,
+      stepIndex: this.questStepIndex,
+      steps: this.questStepTitles.map((title, i) => ({
+        title,
+        state: i < this.questStepIndex ? 'done' : (i === this.questStepIndex ? 'active' : 'locked')
+      }))
+    };
+  }
+
+  /**
+   * S01 美术：把 2D 狼原图注册进 assetManager（key: s01_wolf_static）
+   * 尺寸取自 2D assets.json：s01.enemy.wolf → 68×48
+   */
+  loadWolfArtwork() {
+    if (!this.assetManager || !this.assetManager.images) return;
+    const img = new Image();
+    img.onload = () => {
+      this.assetManager.images.set('s01_wolf_static', img);
+      Logger.log('Act1SceneECS: 2D 狼美术加载完成 (s01_wolf_static)');
+    };
+    img.onerror = () => {
+      console.warn('Act1SceneECS: 2D 狼美术加载失败，回退占位符');
+    };
+    img.src = '../sanguo_zhangjiao/assets/images/s01/wild-wolf.png';
+  }
+
+  /**
+   * S01 美术：把狼实体精灵切换为 2D 原图 static billboard
+   * （关闭 4×8 序列帧 UV 驱动，整图显示；狼王放大到 2D 狼王尺寸 96×64）
+   */
+  applyWolfArtwork(enemy, isBoss = false) {
+    if (!enemy) return;
+    const sprite = enemy.getComponent && enemy.getComponent('sprite');
+    if (!sprite) return;
+    sprite.spriteSheet = 's01_wolf_static';
+    sprite.spriteColumns = 1;
+    sprite.spriteRows = 1;
+    sprite.useAnimatedSprite = false;
+    sprite.width = isBoss ? 96 : 68;
+    sprite.height = isBoss ? 64 : 48;
+  }
+
+  /**
+   * S01 生存任务：统计背包中某物品数量
+   */
+  countInventoryItem(inventory, itemId) {
+    if (!inventory || !inventory.getAllItems) return 0;
+    let count = 0;
+    for (const { slot } of inventory.getAllItems()) {
+      if (slot && slot.item && slot.item.id === itemId) {
+        count += slot.quantity || 1;
+      }
+    }
+    return count;
+  }
+
+  /**
+   * S01 生存任务：装备斧头后生成枯木柴（对应 2D 砍些干柴 / gatherWood）
+   */
+  spawnWoodPickups() {
+    const nodes = (this.actData && this.actData.woodNodes) || [
+      { position: { x: 480, y: 330 } },
+      { position: { x: 540, y: 420 } },
+      { position: { x: 300, y: 440 } }
+    ];
+    for (const node of nodes) {
+      this.pickupItems.push({
+        id: 'resource.wood',
+        name: '干柴',
+        type: 'material',
+        x: node.position.x,
+        y: node.position.y,
+        description: '从枯木上砍下的柴火，可以给火堆添柴',
+        rarity: 0,
+        maxStack: 99,
+        picked: false
+      });
+    }
+    Logger.log('Act1SceneECS: 生成枯木柴拾取物', this.pickupItems.length);
+  }
+
+  /**
+   * S01 生存任务：给火堆添柴（对应 2D spotWolf / story.s01.refuelCampfire）
+   * 火堆旁按 E 且背包有柴 → 消耗 1 柴，火势增强
+   */
+  checkRefuelCampfire() {
+    if (this.tutorialPhase !== 'refuel') return;
+    if (this.campfire.refueled) return;
+    if (!this.campfire.lit) return;
+
+    const ePressed = this.inputManager.isKeyDown('e') || this.inputManager.isKeyDown('E');
+    if (!ePressed) return;
+
+    const inventory = this.playerEntity?.getComponent('inventory');
+    if (!inventory || !inventory.hasItem('resource.wood', 1)) {
+      const now = Date.now();
+      if (!this.lastRefuelHintTime || now - this.lastRefuelHintTime > 1500) {
+        this.lastRefuelHintTime = now;
+        const t = this.playerEntity.getComponent('transform');
+        this.floatingTextManager.addText(
+          t.position.x,
+          t.position.y - 50,
+          '没有柴火，先去砍些干柴',
+          '#ffaa44'
+        );
+      }
+      return;
+    }
+
+    const transform = this.playerEntity.getComponent('transform');
+    const dx = this.campfire.x - transform.position.x;
+    const dy = (this.campfire.y - 15) - transform.position.y;
+    if (Math.sqrt(dx * dx + dy * dy) > 80) return;
+
+    inventory.removeItem('resource.wood', 1);
+    this.campfire.refueled = true;
+    this.campfireRefuelCount = (this.campfireRefuelCount || 0) + 1;
+
+    this.floatingTextManager.addText(
+      transform.position.x,
+      transform.position.y - 40,
+      '添了柴，火烧得更旺了',
+      '#ffcc44'
+    );
+
+    Logger.log('Act1SceneECS: 给火堆添柴完成，火势增强');
+  }
+
+  /**
+   * S01 生存任务：饿狼死后掉落猎物（对应 2D 狼皮/生狼肉/剥皮刀）
+   */
+  spawnWolfLoot() {
+    const lootDefs = (this.actData && this.actData.wolfLoot) || [];
+    if (lootDefs.length === 0) return;
+
+    // 以第一只狼的尸体位置为掉落中心
+    let cx = 500, cy = 300;
+    const dead = this.enemyEntities.find(e => e.getComponent && e.getComponent('transform'));
+    if (dead) {
+      const t = dead.getComponent('transform');
+      if (t) { cx = t.position.x; cy = t.position.y; }
+    }
+
+    lootDefs.forEach((loot, i) => {
+      const angle = (i / lootDefs.length) * Math.PI * 2;
+      this.pickupItems.push({
+        ...loot,
+        x: cx + Math.cos(angle) * 45,
+        y: cy + Math.sin(angle) * 45,
+        picked: false
+      });
+    });
+
+    Logger.log('Act1SceneECS: 生成狼掉落物', lootDefs.map(l => l.name));
   }
 
   /**
@@ -298,17 +548,17 @@ export class Act1SceneECS extends BaseGameScene {
         y: item.position ? item.position.y : item.y
       }));
     } else {
-      // fallback：数据未加载时使用默认值
+      // fallback：数据未加载时使用默认值（S01 荒野酸果）
       console.warn('Act1SceneECS: actData未加载，使用默认物品数据');
       items = [
         { 
-          id: 'leftover_food', 
-          name: '残羹', 
+          id: 'resource.wild_berry', 
+          name: '荒野酸果', 
           type: 'consumable', 
           x: 250, 
-          y: 300, 
+          y: 340, 
           heal: 20,
-          description: '剩余的食物，可以恢复少量生命值',
+          description: '荒原酸涩的野果，可以恢复少量生命值',
           rarity: 0,
           maxStack: 10,
           usable: true,
@@ -341,32 +591,20 @@ export class Act1SceneECS extends BaseGameScene {
         y: item.position ? item.position.y : item.y
       }));
     } else {
-      // fallback：数据未加载时使用默认值
+      // fallback：数据未加载时使用默认值（S01 破旧斧头）
       console.warn('Act1SceneECS: actData未加载，使用默认装备数据');
       items = [
         { 
-          id: 'ragged_clothes', 
-          name: '破旧衣服', 
+          id: 'tool.worn_axe', 
+          name: '破旧斧头', 
           type: 'equipment',
-          subType: 'armor',
-          x: 200, 
-          y: 200,
-          stats: { defense: 2 },
-          description: '破旧的衣服，聊胜于无',
-          rarity: 0,
-          maxStack: 1
-        },
-        { 
-          id: 'wooden_sword', 
-          name: '木剑', 
-          type: 'equipment',
-          subType: 'mainhand',
-          x: 300, 
-          y: 250,
-          attackSpeed: 1.0,
-          stats: { attack: 5 },
-          description: '简陋的木棍，可以用来防身',
-          rarity: 0,
+          subType: 'tool',
+          x: 260, 
+          y: 380,
+          attackSpeed: 2.0,
+          stats: { attack: 10 },
+          description: '斧刃钝化、木柄裂纹遍布的旧斧。持有即可砍伐树木。',
+          rarity: 1,
           maxStack: 1
         }
       ];
@@ -446,7 +684,7 @@ export class Act1SceneECS extends BaseGameScene {
   }
 
   /**
-   * 生成战斗波次
+   * 生成战斗波次（S01：数据驱动，来自 Act1Data.combatWaves）
    */
   spawnCombatWave(waveIndex) {
     Logger.log(`Act1SceneECS: 生成第${waveIndex + 1}波敌人`);
@@ -462,28 +700,18 @@ export class Act1SceneECS extends BaseGameScene {
     }
     this.enemyEntities = [];
     
-    // 生成新敌人
-    const waves = [
-      // 第一波：野狗
-      [
-        { name: '野狗', templateId: 'wild_dog', level: 1, stats: { maxHp: 30, attack: 5, defense: 2 }, x: 500, y: 300 },
-        { name: '野狗', templateId: 'wild_dog', level: 1, stats: { maxHp: 30, attack: 5, defense: 2 }, x: 600, y: 300 }
-      ],
-      // 第二波：饥民围困
-      []
-    ];
-    
-    // 第二波特殊处理（饥民逐渐从四面八方进入）
+    // S01：狼群波次走逐渐生成器（N 键触发时已启动，这里不再重复）
     if (waveIndex === 1) {
-      // 启动逐渐生成模式，不在这里一次性生成
-      this.starvingSpawner.active = true;
-      this.starvingSpawner.spawnedCount = 0;
-      this.starvingSpawner.spawnTimer = 0;
-      Logger.log('Act1SceneECS: 启动饥民逐渐生成模式，总数:', this.starvingSpawner.totalCount);
-      return; // 不走下面的批量生成逻辑
+      Logger.log('Act1SceneECS: 狼群波次由 wolfSpawner 逐只生成');
+      return;
     }
     
-    const waveData = waves[waveIndex] || [];
+    // 从 actData 读取波次（回退内置饿狼数据）
+    const waveConfig = this.actData?.combatWaves?.find(w => w.wave === waveIndex);
+    const waveData = (waveConfig?.enemies || [
+      { name: '虚弱的狼', templateId: 'wild_dog', level: 1, stats: { maxHp: 24, attack: 3, defense: 1 }, x: 520, y: 280 }
+    ]).map(e => ({ ...e, x: e.position ? e.position.x : e.x, y: e.position ? e.position.y : e.y }));
+    
     for (const enemyData of waveData) {
       const enemy = this.entityFactory.createEnemy({
         name: enemyData.name,
@@ -494,9 +722,8 @@ export class Act1SceneECS extends BaseGameScene {
         aiType: 'aggressive'
       });
       
-      // 调试：检查名字组件
-      const nameComp = enemy.getComponent('name');
-      Logger.log(`创建敌人: ${enemy.name}, 名字组件:`, nameComp);
+      // S01 美术：狼用 2D 原图 static billboard（狼王放大）
+      this.applyWolfArtwork(enemy, !!enemyData.isBoss);
       
       this.entities.push(enemy);
       this.enemyEntities.push(enemy);
@@ -504,12 +731,9 @@ export class Act1SceneECS extends BaseGameScene {
       // 注册AI控制器（让敌人主动攻击）
       this.aiSystem.registerAI(enemy, 'aggressive');
       
-      // 野狗生成时给初始气泡
-      if (enemyData.templateId === 'wild_dog') {
-        this.addSpeechBubble(enemy);
-      }
+      // 狼生成时给初始气泡
+      this.addSpeechBubble(enemy);
       
-      // 调试：确认敌人属性
       Logger.log(`敌人 ${enemy.name} 已创建:`, {
         id: enemy.id,
         type: enemy.type,
@@ -520,11 +744,6 @@ export class Act1SceneECS extends BaseGameScene {
     }
     
     Logger.log(`Act1SceneECS: 生成了 ${waveData.length} 个敌人，已注册AI`);
-    Logger.log(`玩家信息:`, {
-      id: this.playerEntity?.id,
-      type: this.playerEntity?.type,
-      faction: this.playerEntity?.faction
-    });
   }
 
   /**
@@ -551,19 +770,27 @@ export class Act1SceneECS extends BaseGameScene {
     // 更新火焰帧动画（第一幕特有）
     this.updateCampfireAnimation(deltaTime);
     
-    // 第一幕特有：检查N键触发饥民围困（必须在super.update之前，因为super.update末尾会清除keysPressed）
-    if (this.combatComplete && !this.starvingWaveTriggered && this.inputManager && 
+    // S01 生存任务：检查N键引来狼群（必须在super.update之前，因为super.update末尾会清除keysPressed）
+    if (this.combatComplete && !this.wolfPackTriggered && this.inputManager && 
         (this.inputManager.isKeyPressed('n') || this.inputManager.isKeyPressed('N'))) {
-      this.starvingWaveTriggered = true;
+      this.wolfPackTriggered = true;
       this.combatComplete = false;
       // 标记 tip_11 完成
       this.tutorialsCompleted.progressive_tip_11 = true;
       if (this.tutorialSystem) {
         this.tutorialSystem.completeTutorial('progressive_tip_11');
       }
-      // 切回 combat 阶段，让 checkWaveCompletion 能检测第二波完成
+      // S01：穿过枯树林 → 杀死狼王
+      this.advanceQuest();
+      // 切回 combat 阶段，让 checkWaveCompletion 能检测狼群波次完成
       this.tutorialPhase = 'combat';
-      this.spawnCombatWave(1);
+      this.combatWave = 1;
+      this.waveSpawned = true;
+      // 启动狼群逐渐生成（3 只追逐野狼 + 狼王压轴）
+      this.wolfSpawner.active = true;
+      this.wolfSpawner.spawnedCount = 0;
+      this.wolfSpawner.spawnTimer = 0;
+      Logger.log('Act1SceneECS: 狼群来袭，启动狼群生成模式');
     }
     
     // 调用父类的 update
@@ -575,11 +802,14 @@ export class Act1SceneECS extends BaseGameScene {
     // 第一幕特有：检查点燃火堆
     this.checkCampfire();
     
+    // S01 生存任务：检查给火堆添柴
+    this.checkRefuelCampfire();
+    
     // 第一幕特有：检查波次完成
     this.checkWaveCompletion();
     
-    // 第一幕特有：逐渐生成饥民
-    this.updateStarvingSpawner(deltaTime);
+    // S01 生存任务：逐渐生成狼群
+    this.updateWolfSpawner(deltaTime);
     
     // 第一幕特有：更新气泡对话
     this.updateSpeechBubbles(deltaTime);
@@ -648,7 +878,8 @@ export class Act1SceneECS extends BaseGameScene {
     this.tutorialPhaseHandlers = {
       'character_creation': {
         check: () => {
-          // 检查是否按下任意键
+          // S01：先等「寒风中醒来」对话播完，再按任意键起身
+          if (!this.wakeDialogueDone) return false;
           const anyPressed = this.inputManager.isAnyKeyPressed();
           
           if (anyPressed) {
@@ -685,6 +916,7 @@ export class Act1SceneECS extends BaseGameScene {
         onComplete: () => {
           this.completeTutorial('movement');
           this.tutorialPhase = 'campfire';
+          this.advanceQuest();  // S01：站起身来 → 点燃火堆
           Logger.log('Act1SceneECS: 等待点燃火堆');
         }
       },
@@ -694,6 +926,7 @@ export class Act1SceneECS extends BaseGameScene {
         onComplete: () => {
           this.tutorialsCompleted.campfire = true;
           Logger.log('Act1SceneECS: 火堆已点燃');
+          this.advanceQuest();  // S01：点燃火堆 → 采些野果
           
           if (!this.tutorialsCompleted.progressive_tip_3) {
             this.completeTutorial('progressive_tip_3');
@@ -716,15 +949,17 @@ export class Act1SceneECS extends BaseGameScene {
       
       'pickup': {
         check: () => {
+          // S01：采集野果（3 颗荒野酸果全部拾取）
           const pickedCount = this.pickupItems.filter(item => item.picked).length;
-          return pickedCount >= 1 && !this.tutorialsCompleted.pickup;
+          return pickedCount >= 3 && !this.tutorialsCompleted.pickup;
         },
         onComplete: () => {
           this.completeTutorial('pickup');
+          this.advanceQuest();  // S01：采些野果 → 吃下酸果
           
           if (!this.tutorialsCompleted.progressive_tip_4) {
             this.completeTutorial('progressive_tip_4');
-            Logger.log('Act1SceneECS: 完成tip_4 - 拾取物品');
+            Logger.log('Act1SceneECS: 完成tip_4 - 采集野果');
           }
           
           this.tutorialPhase = 'view_inventory';
@@ -735,8 +970,11 @@ export class Act1SceneECS extends BaseGameScene {
       'view_inventory': {
         check: () => this.tutorialsCompleted.progressive_tip_5,
         onComplete: () => {
+          // S01：记录吃果前的浆果数量基线（吃掉任意一颗即完成）
+          const inventory = this.playerEntity.getComponent('inventory');
+          this.berryCountBaseline = this.countInventoryItem(inventory, 'resource.wild_berry');
           this.tutorialPhase = 'consumable';
-          Logger.log('Act1SceneECS: 进入消耗品使用阶段');
+          Logger.log('Act1SceneECS: 进入消耗品使用阶段，浆果基线:', this.berryCountBaseline);
         }
       },
       
@@ -745,20 +983,20 @@ export class Act1SceneECS extends BaseGameScene {
           const inventory = this.playerEntity.getComponent('inventory');
           if (!inventory) return false;
           
-          const items = inventory.getAllItems();
-          const hasConsumable = items.some(({ slot }) => 
-            slot.item.type === 'consumable' && slot.item.id === 'leftover_food'
-          );
-          
-          return !hasConsumable && !this.tutorialsCompleted.consumable;
+          // S01：吃掉任意一颗荒野酸果（数量少于基线）
+          const count = this.countInventoryItem(inventory, 'resource.wild_berry');
+          return this.berryCountBaseline != null && 
+                 count < this.berryCountBaseline && 
+                 !this.tutorialsCompleted.consumable;
         },
         onComplete: () => {
           this.tutorialsCompleted.consumable = true;
+          this.advanceQuest();  // S01：吃下酸果 → 拾起斧头
           Logger.log('Act1SceneECS: 完成消耗品使用阶段');
           
           if (!this.tutorialsCompleted.progressive_tip_7) {
             this.completeTutorial('progressive_tip_7');
-            Logger.log('Act1SceneECS: 完成tip_7 - 使用消耗品');
+            Logger.log('Act1SceneECS: 完成tip_7 - 吃下酸果');
           }
           
           this.tutorialPhase = 'close_panels';
@@ -779,7 +1017,7 @@ export class Act1SceneECS extends BaseGameScene {
         onComplete: () => {
           if (this.equipmentItems.length === 0) {
             this.spawnEquipmentItems();
-            Logger.log('Act1SceneECS: 生成第二批物品（装备）');
+            Logger.log('Act1SceneECS: 脚边出现破旧斧头');
           }
           
           this.tutorialPhase = 'pickup_equipment';
@@ -790,12 +1028,12 @@ export class Act1SceneECS extends BaseGameScene {
       'pickup_equipment': {
         check: () => {
           const pickedCount = this.equipmentItems.filter(item => item.picked).length;
-          return pickedCount >= 2;
+          return pickedCount >= 1;
         },
         onComplete: () => {
           if (!this.tutorialsCompleted.progressive_tip_8) {
             this.completeTutorial('progressive_tip_8');
-            Logger.log('Act1SceneECS: 完成tip_8 - 拾取装备');
+            Logger.log('Act1SceneECS: 完成tip_8 - 拾取斧头');
           }
           
           this.startEquipmentTutorial();
@@ -808,19 +1046,52 @@ export class Act1SceneECS extends BaseGameScene {
           const equippedCount = equipment && equipment.slots ? 
             Object.keys(equipment.slots).filter(slot => equipment.slots[slot]).length : 0;
           
-          return equippedCount >= 2 && !this.tutorialsCompleted.equipment;
+          return equippedCount >= 1 && !this.tutorialsCompleted.equipment;
         },
         onComplete: () => {
           this.completeTutorial('equipment');
+          this.advanceQuest();  // S01：拾起斧头 → 砍些干柴
           
           if (!this.tutorialsCompleted.progressive_tip_9) {
             this.completeTutorial('progressive_tip_9');
-            Logger.log('Act1SceneECS: 完成tip_9 - 装备物品');
+            Logger.log('Act1SceneECS: 完成tip_9 - 装备斧头');
           }
+          
+          // S01：装备斧头后，枯木柴出现在附近（砍些干柴）
+          if (!this.pickupItems.some(item => item.id === 'resource.wood')) {
+            this.spawnWoodPickups();
+          }
+          this.tutorialPhase = 'chop_wood';
+          Logger.log('Act1SceneECS: 进入砍柴阶段');
+        }
+      },
+      
+      'chop_wood': {
+        check: () => {
+          // S01：拾取 1 个干柴（对应 gatherWood requiredCount 1）
+          return this.pickupItems.some(item => item.id === 'resource.wood' && item.picked);
+        },
+        onComplete: () => {
+          this.advanceQuest();  // S01：砍些干柴 → 给火堆添柴
           
           if (!this.tutorialsCompleted.progressive_tip_10) {
             this.completeTutorial('progressive_tip_10');
-            Logger.log('Act1SceneECS: 完成tip_10 - 查看装备');
+            Logger.log('Act1SceneECS: 完成tip_10 - 砍些干柴');
+          }
+          
+          this.tutorialPhase = 'refuel';
+          Logger.log('Act1SceneECS: 进入添柴阶段');
+        }
+      },
+      
+      'refuel': {
+        check: () => this.campfire.refueled,
+        onComplete: () => {
+          this.advanceQuest();  // S01：给火堆添柴 → 杀死饿狼
+          
+          if (!this.tutorialsCompleted.progressive_tip_10_5) {
+            this.completeTutorial('progressive_tip_10_5');
+            Logger.log('Act1SceneECS: 完成tip_10.5 - 给火堆添柴');
           }
           
           this.startCombatTutorial();
@@ -829,7 +1100,7 @@ export class Act1SceneECS extends BaseGameScene {
       
       'combat': {
         check: () => {
-          // 检查是否完成了战斗（第一波野狗）
+          // 检查是否完成了战斗（第一波饿狼）
           return this.tutorialsCompleted.combat && !this.tutorialsCompleted.progressive_tip_11;
         },
         onComplete: () => {
@@ -1250,59 +1521,82 @@ export class Act1SceneECS extends BaseGameScene {
   }
 
   /**
-   * 逐渐生成饥民
+   * S01 生存任务：逐渐生成狼群
    */
-  updateStarvingSpawner(deltaTime) {
-    if (!this.starvingSpawner.active) return;
-    if (this.starvingSpawner.spawnedCount >= this.starvingSpawner.totalCount) return;
+  updateWolfSpawner(deltaTime) {
+    if (!this.wolfSpawner.active) return;
+    if (this.wolfSpawner.spawnedCount >= this.wolfSpawner.totalCount) return;
     
-    this.starvingSpawner.spawnTimer += deltaTime;
-    if (this.starvingSpawner.spawnTimer >= this.starvingSpawner.spawnInterval) {
-      this.starvingSpawner.spawnTimer -= this.starvingSpawner.spawnInterval;
-      this.spawnSingleStarving();
+    this.wolfSpawner.spawnTimer += deltaTime;
+    if (this.wolfSpawner.spawnTimer >= this.wolfSpawner.spawnInterval) {
+      this.wolfSpawner.spawnTimer -= this.wolfSpawner.spawnInterval;
+      this.spawnSingleWolf();
     }
   }
 
   /**
-   * 从画面边缘随机位置生成一个饥民
+   * S01 生存任务：按 wave1 配置逐只生成狼（3 只追逐野狼 → 狼王压轴）
    */
-  spawnSingleStarving() {
+  spawnSingleWolf() {
+    // 从 wave1 配置取敌人定义（actData 优先，回退内置狼群数据）
+    const packWave = this.actData?.combatWaves?.find(w => w.wave === 1);
+    const pack = packWave?.enemies || [
+      { name: '追逐野狼', templateId: 'wild_dog', level: 1, stats: { maxHp: 32, attack: 5, defense: 1 } },
+      { name: '追逐野狼', templateId: 'wild_dog', level: 1, stats: { maxHp: 32, attack: 5, defense: 1 } },
+      { name: '追逐野狼', templateId: 'wild_dog', level: 1, stats: { maxHp: 32, attack: 5, defense: 1 } },
+      { name: '狼王', templateId: 'wild_dog', level: 2, stats: { maxHp: 110, attack: 9, defense: 2 } }
+    ];
+    
+    const index = Math.min(this.wolfSpawner.spawnedCount, pack.length - 1);
+    const wolfData = pack[index];
+    
     // 获取玩家位置作为中心参考
     const playerTransform = this.playerEntity?.getComponent('transform');
     const centerX = playerTransform ? playerTransform.position.x : 400;
     const centerY = playerTransform ? playerTransform.position.y : 300;
     
-    // 从画面四面八方生成（距离中心 150-250 像素，更靠近火堆）
-    const spawnDistance = 150 + Math.random() * 100;
+    // 从画面四面八方生成（距离中心 150-250 像素，狼王稍远）
+    const spawnDistance = (wolfData.isBoss ? 220 : 150) + Math.random() * 100;
     const angle = Math.random() * Math.PI * 2;
     const x = centerX + Math.cos(angle) * spawnDistance;
     const y = centerY + Math.sin(angle) * spawnDistance;
     
     const enemy = this.entityFactory.createEnemy({
-      name: '饥民',
-      templateId: 'starving',
-      level: 2,
+      name: wolfData.name,
+      templateId: wolfData.templateId,
+      level: wolfData.level,
       position: { x, y },
-      stats: { maxHp: 40, attack: 6, defense: 3 },
+      stats: wolfData.stats,
       aiType: 'aggressive'
     });
+    
+    // S01 美术：狼用 2D 原图 static billboard（狼王放大）
+    this.applyWolfArtwork(enemy, !!wolfData.isBoss);
     
     this.entities.push(enemy);
     this.enemyEntities.push(enemy);
     this.aiSystem.registerAI(enemy, 'aggressive');
     
-    this.starvingSpawner.spawnedCount++;
+    this.wolfSpawner.spawnedCount++;
     
-    // 生成时立即给一个气泡
+    // 生成时立即给一个气泡（狼嚎）
     this.addSpeechBubble(enemy);
+    
+    // 狼王登场提示
+    if (wolfData.isBoss) {
+      const t = playerTransform;
+      if (t && this.floatingTextManager) {
+        this.floatingTextManager.addText(t.position.x, t.position.y - 70, '狼王出现了！', '#ff4444');
+      }
+      Logger.log('Act1SceneECS: 狼王登场');
+    }
   }
 
   /**
-   * 给实体添加气泡对话
+   * 给实体添加气泡对话（S01：狼嚎）
    */
   addSpeechBubble(entity) {
-    const phrases = entity.name === '野狗' ? this.DOG_PHRASES : this.STARVING_PHRASES;
-    const text = phrases[Math.floor(Math.random() * phrases.length)];
+    const text = this.WOLF_PHRASES[Math.floor(Math.random() * this.WOLF_PHRASES.length)];
     this.speechBubbles.push({
       entityId: entity.id,
       text,
@@ -1327,7 +1621,7 @@ export class Act1SceneECS extends BaseGameScene {
     if (this.enemyEntities.length > 0) {
       for (const enemy of this.enemyEntities) {
         if (enemy.isDead || enemy.isDying) continue;
-        if (enemy.name !== '饥民' && enemy.name !== '野狗') continue;
+        if (!enemy.name || !enemy.name.includes('狼')) continue;
         
         // 检查该实体是否已有气泡
         const hasBubble = this.speechBubbles.some(b => b.entityId === enemy.id);
@@ -1342,13 +1636,14 @@ export class Act1SceneECS extends BaseGameScene {
   }
 
   /**
-   * 检查波次完成
+   * 检查波次完成（S01：饿狼→掉落猎物；狼王→任务完成转场）
    */
   checkWaveCompletion() {
     if (this.tutorialPhase !== 'combat') return;
     if (this.combatComplete) return; // 已完成则不再检查
     
     if (!this.waveSpawned) return; // 还没生成过敌人
+    if (this.enemyEntities.length === 0) return; // 狼群尚未刷出
     
     // 检查所有敌人是否都已死亡（hp <= 0）
     const hasAliveEnemy = this.enemyEntities.some(enemy => {
@@ -1360,18 +1655,47 @@ export class Act1SceneECS extends BaseGameScene {
       Logger.log(`Act1SceneECS: 第${this.combatWave + 1}波完成, enemyEntities.length=${this.enemyEntities.length}`);
       
       if (this.combatWave === 0) {
-        // 野狗打完，标记战斗完成
+        // 饿狼被杀：掉落猎物（生狼肉/狼皮/旧剥皮刀）
+        this.spawnWolfLoot();
         this.tutorialsCompleted.combat = true;
         this.combatComplete = true;
+        this.completeTutorial('progressive_tip_10_6');  // S01：迎上去/杀死饿狼提示完成
+        this.advanceQuest();  // S01：杀死饿狼 → 穿过枯树林
         Logger.log('Act1SceneECS: combatComplete=true, 等待 updateTutorialPhase 触发 onComplete');
       } else if (this.combatWave === 1) {
-        // 饥民波次：所有饥民都已生成且全部死亡后触发死亡
-        if (this.starvingSpawner.spawnedCount >= this.starvingSpawner.totalCount) {
-          this.starvingSpawner.active = false;
-          setTimeout(() => this.triggerPlayerDeath(), 5000);
+        // 狼王被杀：狼群全灭 → S01 主任务完成
+        if (this.wolfSpawner.spawnedCount >= this.wolfSpawner.totalCount) {
+          this.wolfSpawner.active = false;
+          this.completeQuestAndTransition();
         }
       }
     }
+  }
+
+  /**
+   * S01 生存任务：狼王被杀 → 任务完成，转场去下一幕
+   */
+  completeQuestAndTransition() {
+    if (this.questCompleted) return;
+    
+    this.combatComplete = true;
+    this.advanceQuest();  // 杀死狼王 → 全部完成
+    
+    // 屏幕提示：主任务完成
+    const transform = this.playerEntity?.getComponent('transform');
+    if (transform && this.floatingTextManager) {
+      this.floatingTextManager.addText(
+        transform.position.x,
+        transform.position.y - 70,
+        '主任务「荒原求生」完成！',
+        '#ffd700'
+      );
+    }
+    
+    // 播 S01 结尾转场（替代原「死亡进第二幕」）
+    const transition = (this.actData && this.actData.transition) || {};
+    const text = transition.text || '狼王倒下了。你穿过枯树林，向着村庄的方向逃去……';
+    setTimeout(() => this.startTransition(text), 1500);
   }
 
   /**
