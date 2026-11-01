@@ -105,13 +105,121 @@ export class Scene3DHostScene extends BaseGameScene {
         completed: false
       };
 
-      // 场景进入事件 → task.start + 装配初始场景 + presentEntry（2D 同链）
-      this.triggerRunner.fire('sceneEnter', { sceneId: 'S01' });
+      // M5 存档：有档恢复（跳过开场链），无档走 sceneEnter 触发链
+      if (this.loadSave()) {
+        this.spawnGatedPlacements();
+        Logger.log('Scene3DHostScene: 已从存档恢复');
+      } else {
+        // 场景进入事件 → task.start + 装配初始场景 + presentEntry（2D 同链）
+        this.triggerRunner.fire('sceneEnter', { sceneId: 'S01' });
+      }
 
       Logger.log('Scene3DHostScene: 工程数据装载完成');
     } catch (err) {
       console.error('Scene3DHostScene: 工程数据装载失败', err);
     }
+  }
+
+  // ============ M5 存档（localStorage 自动存读） ============
+
+  static SAVE_KEY = 's01-3d-host-save-v1';
+
+  queueSave() {
+    if (this._saveTimer) return;
+    this._saveTimer = setTimeout(() => {
+      this._saveTimer = null;
+      this.saveToStorage();
+    }, 800);
+  }
+
+  saveToStorage() {
+    try {
+      if (typeof localStorage === 'undefined' || !this.quest?.started) return;
+      const transform = this.playerEntity?.getComponent('transform');
+      const stats = this.playerEntity?.getComponent('stats');
+      const inventory = this.playerEntity?.getComponent('inventory');
+      const save = {
+        version: 1,
+        savedAt: Date.now(),
+        facts: [...this.storyFlags.keys()],
+        counters: Object.fromEntries(this.counters),
+        tutorials: [...this.tutorialFlags.keys()],
+        clearedWaves: [...(this._clearedWaves || [])],
+        campfireLit: !!this._campfireLit,
+        quest: {
+          index: this.quest.index,
+          started: this.quest.started,
+          completed: this.quest.completed
+        },
+        player: {
+          x: transform?.position.x, y: transform?.position.y,
+          hp: stats?.hp, maxHp: stats?.maxHp
+        },
+        inventory: (inventory?.getAllItems?.() || []).map(({ slot }) => ({
+          item: slot?.item, quantity: slot?.quantity || 1
+        })).filter(e => e.item)
+      };
+      localStorage.setItem(Scene3DHostScene.SAVE_KEY, JSON.stringify(save));
+      Logger.log('Scene3DHostScene: 自动存档完成');
+    } catch (err) {
+      console.warn('Scene3DHostScene: 存档失败', err);
+    }
+  }
+
+  /**
+   * 读档恢复：事实/计数/教程/任务步/玩家/背包。
+   * 恢复后 activateStep(index) 借助追认机制对齐（objective/tutorial 已满足即推进）；
+   * dialogue/action 步副作用均幂等（对话重播一次可接受，spawn 幂等）。
+   */
+  loadSave() {
+    try {
+      if (typeof localStorage === 'undefined') return false;
+      const raw = localStorage.getItem(Scene3DHostScene.SAVE_KEY);
+      if (!raw) return false;
+      const save = JSON.parse(raw);
+      if (save.version !== 1 || !save.quest?.started) return false;
+
+      for (const fact of save.facts || []) this.storyFlags.set(fact, true);
+      for (const [k, v] of Object.entries(save.counters || {})) this.counters.set(k, v);
+      for (const id of save.tutorials || []) this.tutorialFlags.set(id, true);
+      if (save.clearedWaves) this._clearedWaves = new Set(save.clearedWaves);
+      this._campfireLit = !!save.campfireLit;
+      if (this._campfireLit) this.s01World?.setCampfireLit(true);
+
+      this.quest.started = save.quest.started;
+      this.quest.completed = save.quest.completed;
+
+      // 玩家状态
+      if (save.player) {
+        const transform = this.playerEntity?.getComponent('transform');
+        if (transform && Number.isFinite(save.player.x)) {
+          transform.position.x = save.player.x;
+          transform.position.y = save.player.y;
+        }
+        const stats = this.playerEntity?.getComponent('stats');
+        if (stats && Number.isFinite(save.player.hp)) stats.hp = save.player.hp;
+      }
+      if (save.inventory?.length) {
+        const inventory = this.playerEntity?.getComponent('inventory');
+        for (const entry of save.inventory) {
+          if (entry?.item) inventory?.addItem({ ...entry.item }, entry.quantity);
+        }
+      }
+
+      // 门控放置物 + 任务步对齐（追认机制跨过已满足步）
+      this.spawnGatedPlacements();
+      if (this.quest.index >= 0) {
+        this.activateStep(this.quest.index);
+      }
+      return true;
+    } catch (err) {
+      console.warn('Scene3DHostScene: 读档失败，按新档开始', err);
+      return false;
+    }
+  }
+
+  static clearSave() {
+    try { localStorage.removeItem(Scene3DHostScene.SAVE_KEY); } catch (_) { /* noop */ }
   }
 
   // ============ 玩家美术（2D 主角 LPC） ============

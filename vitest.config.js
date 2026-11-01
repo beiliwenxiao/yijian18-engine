@@ -8,6 +8,9 @@ export default defineConfig({
     hookTimeout: 20000,
     // editor 套件 17 个 jsdom 文件并发时（内存/CPU 高压）出现跨文件漂移的偶发失败
     //（localStorage/vi 未定义、超时——单跑全部稳定），改顺序跑文件消除压力竞态。
-    fileParallelism: false
+    fileParallelism: false,
+    // Temp/ 存放历史基线快照副本（如 baseline-wt），其过时测试副本不应被 vitest
+    // 子串匹配收集（曾导致 HostBackendDefaults 等以旧版断言误报失败）。
+    exclude: ['**/node_modules/**', '**/Temp/**', '**/dist/**', '**/waitdel/**']
   }
 });
