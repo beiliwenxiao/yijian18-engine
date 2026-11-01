@@ -601,7 +601,6 @@
     </div>
     
     <script type="module">
-        import { Act1SceneECS } from './scenes/Act1SceneECS.js';
         import { Scene3DHostScene } from './scenes/Scene3DHostScene.js';
         import { Act2Scene } from './scenes/Act2Scene.js';
         import { Act3Scene } from './scenes/Act3Scene.js';
@@ -919,13 +918,7 @@
                 hostScene.assetManager = assetManager;
                 hostScene.renderBackend = backend;  // 注入 3D 后端
                 sceneManager.registerScene('S01Host', hostScene);
-
-                // 创建并注册第一幕场景（保留对照，入口已切至宿主）
-                const act1Scene = new Act1SceneECS();
-                act1Scene.assetManager = assetManager;
-                act1Scene.renderBackend = backend;  // 注入 3D 后端
-                sceneManager.registerScene('Act1Scene', act1Scene);
-                sceneManager.registerScene('Act1SceneECS', act1Scene); // 兼容旧名称
+                sceneManager.registerScene('S01HostScene', hostScene); // 兼容别名
                 
                 // 创建并注册第二幕场景
                 const act2Scene = new Act2Scene();
@@ -954,7 +947,6 @@
                 
                 // 设置场景管理器引用
                 hostScene.setSceneManager(sceneManager);
-                act1Scene.setSceneManager(sceneManager);
                 act2Scene.setSceneManager(sceneManager);
                 act3Scene.setSceneManager(sceneManager);
                 act4Scene.setSceneManager(sceneManager);
@@ -979,7 +971,6 @@
                 // 场景进入后设置教程回调
                 console.log('设置教程回调...');
                 setupSceneCallbacks(hostScene);
-                setupSceneCallbacks(act1Scene);
                 setupSceneCallbacks(act2Scene);
                 setupSceneCallbacks(act3Scene);
                 
