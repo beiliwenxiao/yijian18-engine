@@ -90,7 +90,6 @@ export class SkeletonRenderer {
     const anchors = this._anchorsBuffer;
     let anchorCount = 0;
     const sourceCache = this._sourceCache;
-    const formCache = this._formCache;
     for (const slot of asset.slots) {
       // 附件 = 共享资产 attachment + 实体本地覆盖（头部三态可见性、武器上手/背挂、
       // 背挂换边、方向帧表）。共享资产全局唯一且只读——运行时状态一律走覆盖层，
@@ -102,58 +101,54 @@ export class SkeletonRenderer {
       if (!boneWorld) continue;
 
       // 方向性附件偏移（背挂武器等按朝向摆位）：side/up/斜向覆盖缺省时逐字段回退顶层值。
-      // offset.assetId/width/height：按方向整体换部件图（形态：正面/侧面/背面/斜前/斜后），
-      // 换图时绘制盒以 offset 声明为准，未声明沿用顶层附件盒。
       // 附件形态键：left 走独立 sideL（配了左侧美术的资产可完全免镜像）；
       // 未配 sideL 的老资产逐字段回退到 side（行为不变）。
-      // 合并结果按 (attachment, formKey) 缓存（directionOffsets 只读恒定）。
       const formKey = resolveAttachmentFormKey(sprite?.direction);
-      let directionOverride = resolveAttachmentOffset(attachment, formKey);
-      if (!directionOverride && formKey === 'sideL') directionOverride = resolveAttachmentOffset(attachment, 'side');
-      let effectiveAttachment = attachment;
-      if (directionOverride
-        && (!!directionOverride.assetId || directionOverride.width > 0 || directionOverride.height > 0
-          || directionOverride.sw > 0)) {
-        let mergedByForm = formCache.get(attachment);
-        if (!mergedByForm) {
-          mergedByForm = new Map();
-          formCache.set(attachment, mergedByForm);
+      // 转身过渡（分层转身 + 交叉淡化）：形态变化后按各槽位 turnDelayMs/turnFadeMs
+      // 计算局部进度——延迟期内画旧形态，交叉期双形态叠画（旧淡出新淡入），其余画新形态。
+      // 常态（无过渡/槽位未配置）turnPhase='to' = 原路径，零额外开销。
+      skeletonComponent.syncDirectionTransition?.(formKey);
+      const transition = skeletonComponent.getDirectionTransition?.() || null;
+      const turnDelay = slot.turnDelayMs || 0;
+      const turnFade = slot.turnFadeMs || 0;
+      let turnPhase = 'to';
+      let turnT = 1;
+      if (transition && (turnDelay > 0 || turnFade > 0)) {
+        const local = (transition.nowMs - transition.startedAtMs) - turnDelay;
+        if (local < 0) {
+          turnPhase = 'from';
+        } else if (local < turnFade) {
+          turnPhase = 'cross';
+          turnT = turnFade > 0 ? local / turnFade : 1;
         }
-        effectiveAttachment = mergedByForm.get(formKey);
-        if (!effectiveAttachment) {
-          effectiveAttachment = {
-            ...attachment,
-            ...(directionOverride.assetId ? { assetId: directionOverride.assetId } : {}),
-            ...(directionOverride.width > 0 ? { width: directionOverride.width } : {}),
-            ...(directionOverride.height > 0 ? { height: directionOverride.height } : {}),
-            // 图集切片形态：directionOffsets 可按形态换源矩形（同一张图集里存 正/侧/背 三套部件）
-            ...(directionOverride.sw > 0 ? {
-              sx: directionOverride.sx || 0, sy: directionOverride.sy || 0,
-              sw: directionOverride.sw, sh: directionOverride.sh
-            } : {})
-          };
-          mergedByForm.set(formKey, effectiveAttachment);
+      }
+
+      const toForm = this._mergedFormAttachment(attachment, formKey);
+      let effectiveAttachment = toForm.effective;
+      let directionOverride = toForm.override;
+      let entryAlpha = 1;
+
+      if (turnPhase === 'from') {
+        // 延迟期：本槽位仍画旧形态
+        const fromForm = this._mergedFormAttachment(attachment, transition.fromForm);
+        effectiveAttachment = fromForm.effective;
+        directionOverride = fromForm.override;
+      } else if (turnPhase === 'cross') {
+        // 交叉期：旧形态淡出（先收 entry），新形态淡出随主 entry（turnT）
+        const fromForm = this._mergedFormAttachment(attachment, transition.fromForm);
+        const fromSource = this._resolveAttachmentSource(fromForm.effective, assetManager, skeletonComponent, slot, sourceCache);
+        if (fromSource) {
+          const fromAnchor = this._attachmentAnchor(boneWorld, fromForm.effective, fromForm.override, slot.follow);
+          anchorCount = this._pushAnchor(anchors, anchorCount, slot, fromForm.effective, fromForm.override, fromSource, boneWorld, fromAnchor, 1 - turnT);
         }
+        entryAlpha = turnT;
       }
 
       const source = this._resolveAttachmentSource(effectiveAttachment, assetManager, skeletonComponent, slot, sourceCache);
       if (!source) continue;
 
       const anchor = this._attachmentAnchor(boneWorld, effectiveAttachment, directionOverride, slot.follow);
-      let entry = anchors[anchorCount];
-      if (!entry) {
-        entry = { slot: null, attachment: null, directionOverride: null, source: null, boneWorld: null, x: 0, y: 0, angle: 0 };
-        anchors.push(entry);
-      }
-      anchorCount++;
-      entry.slot = slot;
-      entry.attachment = effectiveAttachment;
-      entry.directionOverride = directionOverride;
-      entry.source = source;
-      entry.boneWorld = boneWorld;
-      entry.x = anchor.x;
-      entry.y = anchor.y;
-      entry.angle = anchor.angle;
+      anchorCount = this._pushAnchor(anchors, anchorCount, slot, effectiveAttachment, directionOverride, source, boneWorld, anchor, entryAlpha);
     }
 
     // transform 约束：挂件跟随挂件（位置 + 可选朝向）
@@ -162,6 +157,7 @@ export class SkeletonRenderer {
 
     // 第二遍：绘制
     for (const entry of anchors) {
+      if (entry.alpha <= 0) continue; // 交叉期已完全透明的形态不画（省一次 drawImage）
       const { attachment, source, boneWorld } = entry;
       const drawW = attachment.width > 0 ? attachment.width : source.sw;
       const drawH = attachment.height > 0 ? attachment.height : source.sh;
@@ -170,6 +166,8 @@ export class SkeletonRenderer {
       // 锚点已含挂点偏移与朝向偏移（见 _attachmentAnchor），此处不再重复施加
       ctx.translate(entry.x, entry.y);
       ctx.rotate(entry.angle);
+      // 转身交叉淡化：旧形态淡出 / 新形态淡入（调用方 globalAlpha 之上叠加）
+      if (entry.alpha < 1) ctx.globalAlpha = ctx.globalAlpha * entry.alpha;
       // 跟随模式 noScale（默认）：挂图只跟随骨骼的位置与旋转，不跟随缩放——
       // 拖骨骼缩放只改变肢体骨架尺寸，绑定图片保持原大小不变形（Unity 骨骼=变形、贴图独立）。
       // follow='bone' 时挂图完全跟随骨骼变换（用于 squash & stretch 压扁拉伸）。
@@ -205,6 +203,69 @@ export class SkeletonRenderer {
       y: boneWorld.y + lx * sin + ly * cos,
       angle: boneWorld.rad + ((directionOverride?.rot ?? attachment.rot) || 0) * DEG2RAD
     };
+  }
+
+  /**
+   * 形态合并（含 sideL→side 逐字段回退；结果按 (attachment, formKey) 缓存）。
+   * directionOffsets 是共享资产只读数据——合并结果恒定可缓存（热路径零分配）。
+   * @param {Object} attachment - 实体合并后的槽位附件
+   * @param {string} formKey - 方向形态键（down/side/sideL/up/SE/SW/NE/NW）
+   * @returns {{effective: Object, override: Object|null}} effective=无覆盖时即原附件对象
+   */
+  _mergedFormAttachment(attachment, formKey) {
+    let override = resolveAttachmentOffset(attachment, formKey);
+    if (!override && formKey === 'sideL') override = resolveAttachmentOffset(attachment, 'side');
+    if (!(override
+      && (!!override.assetId || override.width > 0 || override.height > 0 || override.sw > 0))) {
+      return { effective: attachment, override: override || null };
+    }
+    const formCache = this._formCache;
+    let mergedByForm = formCache.get(attachment);
+    if (!mergedByForm) {
+      mergedByForm = new Map();
+      formCache.set(attachment, mergedByForm);
+    }
+    let effective = mergedByForm.get(formKey);
+    if (!effective) {
+      effective = {
+        ...attachment,
+        ...(override.assetId ? { assetId: override.assetId } : {}),
+        ...(override.width > 0 ? { width: override.width } : {}),
+        ...(override.height > 0 ? { height: override.height } : {}),
+        // 图集切片形态：directionOffsets 可按形态换源矩形（同一张图集里存 正/侧/背 三套部件）
+        ...(override.sw > 0 ? {
+          sx: override.sx || 0, sy: override.sy || 0,
+          sw: override.sw, sh: override.sh
+        } : {})
+      };
+      mergedByForm.set(formKey, effective);
+    }
+    return { effective, override };
+  }
+
+  /**
+   * 收集一个绘制 entry（复用缓冲槽位，零分配）。
+   * @param {Array} anchors - entry 缓冲
+   * @param {number} anchorCount - 当前已用数量
+   * @param {number} alpha - 绘制透明度（转身交叉淡化；常态 1）
+   * @returns {number} 新的已用数量
+   */
+  _pushAnchor(anchors, anchorCount, slot, attachment, directionOverride, source, boneWorld, anchor, alpha) {
+    let entry = anchors[anchorCount];
+    if (!entry) {
+      entry = { slot: null, attachment: null, directionOverride: null, source: null, boneWorld: null, x: 0, y: 0, angle: 0, alpha: 1 };
+      anchors.push(entry);
+    }
+    entry.slot = slot;
+    entry.attachment = attachment;
+    entry.directionOverride = directionOverride;
+    entry.source = source;
+    entry.boneWorld = boneWorld;
+    entry.x = anchor.x;
+    entry.y = anchor.y;
+    entry.angle = anchor.angle;
+    entry.alpha = alpha;
+    return anchorCount + 1;
   }
 
   /**

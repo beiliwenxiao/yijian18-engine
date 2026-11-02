@@ -133,6 +133,13 @@ export function validateSkeletonAsset(doc) {
       errors.push(makeError(ValidationCode.TYPE_MISMATCH, `${path}.follow`,
         `槽位跟随模式必须是 ${SLOT_FOLLOW_MODES.join('/')} 之一`));
     }
+    // 转身过渡：提供时必须是非负数（负值/字符串会导致运行时分层延迟计算失真）
+    for (const turnField of ['turnDelayMs', 'turnFadeMs']) {
+      if (slot[turnField] !== undefined && !(isFiniteNumber(slot[turnField]) && slot[turnField] >= 0)) {
+        errors.push(makeError(ValidationCode.TYPE_MISMATCH, `${path}.${turnField}`,
+          `槽位 ${turnField} 必须是非负数（毫秒）`));
+      }
+    }
     const attachment = slot.attachment;
     if (!isObject(attachment)) {
       errors.push(makeError(ValidationCode.MISSING_FIELD, `${path}.attachment`, '槽位必须提供 attachment'));

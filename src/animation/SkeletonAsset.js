@@ -227,6 +227,11 @@ export function parseSkeletonAsset(doc) {
         z: Number.isFinite(Number(raw?.z)) ? Number(raw.z) : index,
         // 跟随模式：挂图是否跟随所在骨骼的缩放（缺省 noScale = 图片不随骨骼缩放变形）
         follow: SKELETON_SLOT_FOLLOW_MODES.includes(raw?.follow) ? raw.follow : SKELETON_SLOT_FOLLOW_DEFAULT,
+        // 转身过渡（分层转身，全缺省 = 瞬切零回归）：
+        //   turnDelayMs —— 方向变化后本槽位延迟多久开始切换（头 0 → 躯干 60 → 腿 120，跟随感）
+        //   turnFadeMs  —— 新旧形态交叉淡化时长（0 = 瞬切）
+        turnDelayMs: Math.max(0, num(raw?.turnDelayMs)),
+        turnFadeMs: Math.max(0, num(raw?.turnFadeMs)),
         attachment
       };
     })
@@ -301,6 +306,8 @@ export function parseSkeletonAsset(doc) {
     bones,
     boneOrder,
     slots,
+    // 转身过渡总时长（最大 delay+fade）：组件判定方向过渡何时结束用；全缺省 = 0（无过渡）
+    maxTurnMs: slots.reduce((max, slot) => Math.max(max, (slot.turnDelayMs || 0) + (slot.turnFadeMs || 0)), 0),
     clips,
     constraints,
     clipNames: [...clips.keys()],

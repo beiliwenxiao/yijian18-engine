@@ -65,6 +65,11 @@ export class SkeletonComponent extends Component {
     this._localPoseOut = new Map();
     this._worldPose = null;
     this._poseDirty = true;
+    // 转身过渡（分层转身/交叉淡化）：方向形态键变化时记录 from/to/startedAtMs，
+    // 渲染器按各槽位 turnDelayMs/turnFadeMs 计算局部进度交叉绘制。全缺省 = 无过渡（瞬切）。
+    this._clockMs = 0;          // 组件累计时钟（update 推进，暂停时仍走——过渡独立于播放状态）
+    this._lastFormKey = null;   // 上一帧方向形态键（渲染器每帧 sync）
+    this._dirTransition = null; // { fromForm, toForm, startedAtMs, nowMs } | null
   }
 
   /** 注入解析后的骨骼资产（AssetManager 懒加载完成后调用）。 */
@@ -80,6 +85,9 @@ export class SkeletonComponent extends Component {
     this._bakedRestPose = null;
     this._fkWorldPose = null;
     this._worldPose = null;
+    // 换资产 = 槽位 turnDelay/turnFade 配置全变 → 转身过渡状态失效
+    this._dirTransition = null;
+    this._lastFormKey = null;
     // 当前剪辑名失效时回退默认剪辑
     if (!this.currentClip || !asset.clips.has(this.currentClip)) {
       this.currentClip = (this.defaultClipOverride && asset.clips.has(this.defaultClipOverride))
@@ -126,6 +134,8 @@ export class SkeletonComponent extends Component {
   update(deltaTime) {
     const asset = this.skeletonAsset;
     if (!asset) return;
+    // 组件时钟：转身过渡的时间基准（暂停/未播放也推进——过渡完成不依赖剪辑播放）
+    this._clockMs += Math.max(0, Number(deltaTime) || 0) * 1000;
     this.stateHook?.(this, deltaTime);
     if (!this.playing) return;
     const deltaMs = Math.max(0, Number(deltaTime) || 0) * 1000 * this.speed;
@@ -269,6 +279,38 @@ export class SkeletonComponent extends Component {
   /** 标记姿态缓存失效（IK 目标或外部状态变化后调用）。 */
   markPoseDirty() {
     this._poseDirty = true;
+  }
+
+  /**
+   * 同步方向形态键（渲染器每帧调用）：形态变化时启动转身过渡，超时自动清除。
+   * @param {string} formKey - 当前方向形态键（resolveAttachmentFormKey 产物）
+   */
+  syncDirectionTransition(formKey) {
+    if (this._lastFormKey === null) {
+      this._lastFormKey = formKey;
+      return;
+    }
+    if (formKey !== this._lastFormKey) {
+      // 形态切换：过渡中再切换 = 从当前形态直接开新过渡（旧过渡作废，不叠影）
+      this._dirTransition = {
+        fromForm: this._lastFormKey,
+        toForm: formKey,
+        startedAtMs: this._clockMs,
+        nowMs: this._clockMs
+      };
+      this._lastFormKey = formKey;
+    } else if (this._dirTransition) {
+      this._dirTransition.nowMs = this._clockMs;
+      const maxTurn = this.skeletonAsset?.maxTurnMs || 0;
+      if (this._dirTransition.nowMs - this._dirTransition.startedAtMs >= maxTurn) {
+        this._dirTransition = null;
+      }
+    }
+  }
+
+  /** 取活跃的转身过渡（渲染器用；null = 无过渡）。 */
+  getDirectionTransition() {
+    return this._dirTransition;
   }
 
   /** 取槽位序列帧游标（渲染用）。 */
