@@ -1,4 +1,15 @@
 <!DOCTYPE html>
+<!--/************************************************************
+  * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
+  *
+  * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+  * @author    刘枭 (beiliwenxiao)
+  * @email     beiliwenxiao@qq.com
+  * @date      2026-01-14
+  * @blog      https://blog.csdn.net/beiliwenxiao
+  * @repo      https://github.com/beiliwenxiao/yijian18-engine
+  *            https://gitee.com/coderaaa/yijian18-engine
+  ************************************************************/-->
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
@@ -612,9 +623,6 @@
         import { DialogueBox } from '../../src/ui/DialogueBox.js';
         import { SkillTreePanel } from '../../src/ui/SkillTreePanel.js';
         import { NotificationSystem } from '../../src/ui/NotificationSystem.js';
-        import { InventoryPanel } from '../../src/ui/InventoryPanel.js';
-        import { AttributePanel } from '../../src/ui/AttributePanel.js';
-        import { PlayerInfoPanel } from '../../src/ui/PlayerInfoPanel.js';
         import { PortraitsConfig } from './data/PortraitsConfig.js';
         import { ThreeBackend } from '../../src/rendering/backends/ThreeBackend.js';
         
@@ -629,9 +637,6 @@
         let dialogueBox = null;
         let skillTreePanel = null;
         let notificationSystem = null;
-        let inventoryPanel = null;
-        let attributePanel = null;
-        let playerInfoPanel = null;
         
         // 游戏状态
         let scene = null;
@@ -1105,18 +1110,6 @@
                     notificationSystem.render(hudCtx);
                 }
                 
-                // 背包面板
-                if (inventoryPanel && hudCtx && (!scene || !scene.inventoryPanel)) {
-                    inventoryPanel.update(deltaTime);
-                    inventoryPanel.render(hudCtx);
-                }
-                
-                // 角色信息面板
-                if (playerInfoPanel && hudCtx && (!scene || !scene.playerInfoPanel)) {
-                    playerInfoPanel.update(deltaTime);
-                    playerInfoPanel.render(hudCtx);
-                }
-                
                 // 获取当前场景
                 const currentScene = sceneManager.getCurrentScene();
                 
@@ -1132,24 +1125,10 @@
                             scene.setPlayerEntity(scene.playerEntity);
                         }
                         
-                        // 更新背包面板的实体引用
-                        if (inventoryPanel && scene.playerEntity) {
-                            inventoryPanel.setEntity(scene.playerEntity);
-                        }
-                        
-                        // 重置技能树面板和属性面板（因为不同场景可能有不同的系统实例）
+                        // 重置技能树面板（因为不同场景可能有不同的系统实例）
                         if (skillTreePanel) {
                             skillTreePanel.hide();
                             skillTreePanel = null;
-                        }
-                        if (attributePanel) {
-                            attributePanel.hide();
-                            attributePanel = null;
-                        }
-                        // 重置全局角色信息面板（因为不同场景可能有不同的玩家实体）
-                        if (playerInfoPanel) {
-                            playerInfoPanel.hide();
-                            playerInfoPanel = null;
                         }
                     }
                 }
@@ -1344,88 +1323,18 @@
                 return;
             }
             
-            // B键 - 打开背包
+            // B键 - 打开组合背包面板（场景面板接管，与 2D 一致）
             if (e.code === 'KeyB') {
-                // 如果场景有自己的背包面板，让场景自己处理（通过 inputManager）
-                // 这里不做任何处理，避免重复切换
-                if (scene && scene.inventoryPanel) {
-                    // 场景会通过 checkInventoryToggle 处理
-                    // 更新全局引用以便其他地方使用
-                    inventoryPanel = scene.inventoryPanel;
-                    return;
-                }
-                
-                // 只有场景没有背包面板时才在这里处理
-                if (inventoryPanel) {
-                    inventoryPanel.toggle();
-                } else if (scene && scene.playerEntity) {
-                    // 创建新的背包面板
-                    inventoryPanel = new InventoryPanel({
-                        x: canvas.width - 370 - 10,
-                        y: canvas.height - 100 - 350,
-                        visible: true,
-                        onItemUse: (item, healAmount, manaAmount) => {
-                            console.log('物品使用:', item.name);
-                            // 通知场景物品已使用
-                            if (scene && scene.onTalismanWaterUsed) {
-                                scene.onTalismanWaterUsed(item, healAmount);
-                            }
-                            // 显示恢复通知
-                            if (notificationSystem && healAmount > 0) {
-                                notificationSystem.addNotification(`恢复了 ${healAmount} 点生命值`, 'success');
-                            }
-                        }
-                    });
-                    inventoryPanel.setEntity(scene.playerEntity);
+                if (scene?.backpackPanel) {
+                    scene.backpackPanel.toggle();
                 }
                 return;
             }
             
-            // C键 - 打开角色信息面板（PlayerInfoPanel）
+            // C键 - 打开角色信息面板（组合背包面板三别名之一，与 2D 一致）
             if (e.code === 'KeyC') {
-                // 如果场景有自己的角色信息面板，让场景自己处理（通过 inputManager）
-                if (scene && scene.playerInfoPanel) {
-                    // 场景会通过 checkPlayerInfoToggle 处理
-                    return;
-                }
-                
-                // 场景没有角色信息面板时，使用全局的
-                if (scene && scene.playerEntity) {
-                    if (playerInfoPanel) {
-                        playerInfoPanel.toggle();
-                    } else {
-                        // 创建全局角色信息面板
-                        playerInfoPanel = new PlayerInfoPanel({
-                            x: 10,
-                            y: canvas.height - 100 - 320,
-                            width: 280,
-                            height: 320,
-                            visible: true,
-                            onAttributeAllocate: (player) => {
-                                console.log('全局 PlayerInfoPanel: 属性加点按钮被点击');
-                                // 获取场景的属性系统
-                                const currentAttributeSystem = scene?.attributeSystem || scene?.getAttributeSystem?.();
-                                if (currentAttributeSystem && player) {
-                                    if (attributePanel) {
-                                        if (attributePanel.isOpen()) {
-                                            attributePanel.hide();
-                                        } else {
-                                            attributePanel.show(player.id);
-                                        }
-                                    } else {
-                                        // 创建属性面板
-                                        attributePanel = new AttributePanel(document.body, currentAttributeSystem);
-                                        attributePanel.show(player.id);
-                                    }
-                                } else {
-                                    console.log('属性系统不可用');
-                                }
-                            }
-                        });
-                        playerInfoPanel.setPlayer(scene.playerEntity);
-                    }
-                } else {
-                    console.log('当前场景没有玩家实体');
+                if (scene?.backpackPanel) {
+                    scene.backpackPanel.toggle();
                 }
                 return;
             }
@@ -1452,18 +1361,6 @@
             if (dialogueBox && dialogueBox.visible) {
                 dialogueBox.handleMouseMove(mouseX, mouseY);
             }
-            
-            // 背包面板的鼠标移动由场景处理
-            // 只有当场景没有背包面板时才处理全局的
-            if (inventoryPanel && inventoryPanel.visible && (!scene || !scene.inventoryPanel)) {
-                inventoryPanel.handleMouseMove(mouseX, mouseY);
-            }
-            
-            // 角色信息面板的鼠标移动由场景处理
-            // 只有当场景没有角色信息面板时才处理全局的
-            if (playerInfoPanel && playerInfoPanel.visible && (!scene || !scene.playerInfoPanel)) {
-                playerInfoPanel.handleMouseMove(mouseX, mouseY);
-            }
         });
         
         // 鼠标点击事件
@@ -1471,22 +1368,6 @@
             const rect = canvas.getBoundingClientRect();
             const mouseX = e.clientX - rect.left;
             const mouseY = e.clientY - rect.top;
-            
-            // 背包面板的点击由场景处理
-            // 只有当场景没有背包面板时才处理全局的
-            if (inventoryPanel && inventoryPanel.visible && (!scene || !scene.inventoryPanel)) {
-                if (inventoryPanel.handleMouseClick(mouseX, mouseY, 'left')) {
-                    return;
-                }
-            }
-            
-            // 角色信息面板的点击由场景处理
-            // 只有当场景没有角色信息面板时才处理全局的
-            if (playerInfoPanel && playerInfoPanel.visible && (!scene || !scene.playerInfoPanel)) {
-                if (playerInfoPanel.handleMouseClick(mouseX, mouseY, 'left')) {
-                    return;
-                }
-            }
             
             // 优先处理技能树面板点击
             if (skillTreePanel && skillTreePanel.isVisible) {
@@ -1502,22 +1383,17 @@
             }
         });
         
-        // 右键菜单事件（用于背包）
+        // 右键菜单事件（抑制浏览器菜单；组合面板右键由场景自己的输入链处理）
         canvas.addEventListener('contextmenu', (e) => {
             e.preventDefault();
-            const rect = canvas.getBoundingClientRect();
-            const mouseX = e.clientX - rect.left;
-            const mouseY = e.clientY - rect.top;
-            
-            // 背包面板的右键由场景处理
-            // 只有当场景没有背包面板时才处理全局的
-            if (inventoryPanel && inventoryPanel.visible && (!scene || !scene.inventoryPanel)) {
-                inventoryPanel.handleMouseClick(mouseX, mouseY, 'right');
-            }
         });
         
         // 启动游戏
         initGame();
+        
+        // 调试句柄（与 2D demo 调试惯例一致：控制台 sceneManager.getCurrentScene()）。
+        // initGame 为异步初始化，这里必须用 getter 实时取引用，不能快照赋值。
+        Object.defineProperty(window, 'sceneManager', { get: () => sceneManager });
         
         // ===== 摄像头控制面板逻辑 =====
         (function setupCameraControl() {

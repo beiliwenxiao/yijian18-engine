@@ -1,3 +1,15 @@
+/************************************************************
+ * Copyright (c) 2026 Liu Xiao (beiliwenxiao)
+ *
+ * @project   YiJian18-Engine - 跨平台2D/3D ARPG游戏引擎
+ * @author    刘枭 (beiliwenxiao)
+ * @email     beiliwenxiao@qq.com
+ * @date      2026-01-14
+ * @blog      https://blog.csdn.net/beiliwenxiao
+ * @repo      https://github.com/beiliwenxiao/yijian18-engine
+ *            https://gitee.com/coderaaa/yijian18-engine
+ ************************************************************/
+
 /**
  * BaseGameScene - 游戏场景基类
  * 
@@ -28,8 +40,7 @@ import { QuestSystem } from '../../../src/systems/QuestSystem.js';
 import { IsometricRenderer } from '../../../src/rendering/IsometricRenderer.js';
 import { CombatEffects } from '../../../src/rendering/CombatEffects.js';
 import { SkillEffects } from '../../../src/rendering/SkillEffects.js';
-import { InventoryPanel } from '../../../src/ui/InventoryPanel.js';
-import { PlayerInfoPanel } from '../../../src/ui/PlayerInfoPanel.js';
+import { BackpackPanel } from '../../../src/ui/BackpackPanel.js';
 import { BottomControlBar } from '../../../src/ui/BottomControlBar.js';
 import { DialogueBox } from '../../../src/ui/DialogueBox.js';
 import { FloatingTextManager } from '../../../src/ui/FloatingText.js';
@@ -115,9 +126,8 @@ export class BaseGameScene extends PrologueScene {
     this.dialogueSystem = new DialogueSystem();
     this.questSystem = new QuestSystem();
     
-    // UI 面板
-    this.inventoryPanel = null;
-    this.playerInfoPanel = null;
+    // UI 面板（组合背包面板 + 三别名，与 2D ScenePanelLayout 同约定）
+    this.backpackPanel = null;
     this.bottomControlBar = null;
     this.dialogueBox = null;
     
@@ -377,16 +387,9 @@ export class BaseGameScene extends PrologueScene {
    * 注册通用快捷键
    */
   registerHotkeys() {
-    // 人物信息面板切换 (C)
-    this.inputManager.registerHotkey('toggle_playerinfo', ['c', 'C'], () => {
-      this.playerInfoPanel.toggle();
-    }, { cooldown: 300 });
-    
-    // 背包面板切换 (B)
-    this.inputManager.registerHotkey('toggle_inventory', ['b', 'B'], () => {
-      this.inventoryPanel.toggle();
-    }, { cooldown: 300 });
-    
+    // B/C 面板热键由 index.html 统一处理（window keydown 单一所有权，
+    // 避免与 InputManager 热键双路 toggle 互相抵消）
+
     // 性能监控切换 (P)
     this.inputManager.registerHotkey('toggle_performance', ['p', 'P'], () => {
       this.performanceMonitor.toggle();
@@ -466,78 +469,37 @@ export class BaseGameScene extends PrologueScene {
    * 初始化 UI 面板
    */
   initializeUIPanels() {
-    // 角色信息面板（包含装备）- 左下角，底部控制栏上方
-    this.playerInfoPanel = new PlayerInfoPanel({
-      x: 10,
-      y: this.logicalHeight - 100 - 580,
-      width: 320,
-      height: 580,
+    // 统一组合背包面板（与 2D ScenePanelLayout.composeHud 同款）：
+    // 左侧角色属性+装备槽，右侧背包网格+tooltip+物品操作菜单
+    this.backpackPanel = new BackpackPanel({
+      x: Math.round((this.logicalWidth - 900) / 2),
+      y: Math.max(10, this.logicalHeight - 100 - 520),
+      width: 900,
+      height: 520,
       visible: false,
-      onAttributeAllocate: (player) => {
+      inventoryOptions: { showTooltip: true },
+      onAttributeAllocate: () => {
         Logger.log('BaseGameScene: 属性加点按钮被点击');
       },
-      onEquipmentClick: (slotType, button) => {
-        Logger.log('BaseGameScene: 装备槽被点击', slotType, button);
-        // 右键点击卸下装备
-        if (button === 'right' && this.playerEntity) {
-          const equipment = this.playerEntity.getComponent('equipment');
-          if (equipment && equipment.slots[slotType]) {
-            this.equipmentSystem.unequip(this.playerEntity, slotType);
-            // 显示卸下装备的提示
-            const transform = this.playerEntity.getComponent('transform');
-            if (transform) {
-              this.floatingTextManager.addText(
-                transform.position.x,
-                transform.position.y - 30,
-                `卸下 ${equipment.slots[slotType].name}`,
-                '#ffff00'
-              );
-            }
-          }
-        }
-      }
-    });
-    
-    // 背包面板 - 右下角，底部控制栏上方
-    this.inventoryPanel = new InventoryPanel({
-      x: this.logicalWidth - 370 - 10,
-      y: this.logicalHeight - 100 - 350,
-      width: 370,
-      height: 350,
-      visible: false,
+      // 装备槽左键=卸下（右键/移动端由面板内部物品菜单承接，不落场景回调）
+      onEquipmentClick: (slotType, button) => this._handleEquipmentSlotClick(slotType, button),
       onItemUse: (item, healAmount, manaAmount) => {
         this.onItemUsed(item, healAmount, manaAmount);
       },
-      // 物品使用意图（InventoryPanel.useItem 新契约走 onIntent；缺省时
-      // 点击物品/快捷栏药水全部静默失效——实测背包无法使用任何物品）
-      onIntent: (intentType, payload) => {
-        if (intentType !== 'item.use' || !this.playerEntity) return false;
-        const inventory = this.playerEntity.getComponent('inventory');
-        if (!inventory) return false;
-        const entry = (inventory.getAllItems() || []).find(({ slot }) =>
-          slot?.item && slot.item.id === payload?.itemId &&
-          (payload?.instanceId ? slot.item.instanceId === payload.instanceId : true));
-        if (!entry) return false;
-        const used = inventory.useItem(entry.index, payload?.quantity || 1);
-        if (!used) return false;
-        const item = used.item;
-        let healAmount = 0, manaAmount = 0;
-        const stats = this.playerEntity.getComponent('stats');
-        if (item?.effect?.type === 'heal' && stats) {
-          healAmount = item.effect.value || 0;
-          stats.hp = Math.min(stats.maxHp ?? stats.hp, stats.hp + healAmount);
-        }
-        if (item?.effect?.type === 'mana' && stats) {
-          manaAmount = item.effect.value || 0;
-          stats.mp = Math.min(stats.maxMp ?? stats.mp, stats.mp + manaAmount);
-        }
-        this.onItemUsed(item, healAmount, manaAmount);
-        return true;
-      },
       onEquipmentChange: (messages) => {
         this.onEquipmentChanged(messages);
-      }
+      },
+      canUseItem: () => true,
+      // 物品菜单意图（使用/装备/丢弃）——组合面板契约要求返回 Promise
+      onIntent: (intentType, payload) => this.handleItemIntent(intentType, payload),
+      getProjection: () => null
     });
+    // 保持旧场景与快捷栏的调用兼容：三个入口均控制同一组合面板（与 2D 同约定）
+    this.inventoryPanel = this.backpackPanel;
+    this.playerInfoPanel = this.backpackPanel;
+    this.equipmentPanel = this.backpackPanel;
+    // 输入管理器注入（背包滚动条拖拽等内部交互依赖）
+    this.backpackPanel.setInputManager?.(this.inputManager);
     
     // 底部控制栏
     this.bottomControlBar = new BottomControlBar({
@@ -571,17 +533,145 @@ export class BaseGameScene extends PrologueScene {
       }
     });
     
-    // 注册 UI 元素到 UIClickHandler
-    this.uiClickHandler.registerElement(this.inventoryPanel);
-    this.uiClickHandler.registerElement(this.playerInfoPanel);
+    // 注册 UI 元素到 UIClickHandler（组合面板单实例）
+    this.uiClickHandler.registerElement(this.backpackPanel);
     this.uiClickHandler.registerElement(this.bottomControlBar);
     this.uiClickHandler.registerElement(this.dialogueBox);
     
     // 注册面板到 UISystem（统一管理悬停等）
-    this.uiSystem.registerPanel('inventory', this.inventoryPanel);
-    this.uiSystem.registerPanel('playerInfo', this.playerInfoPanel);
+    this.uiSystem.registerPanel('backpack', this.backpackPanel);
     this.uiSystem.registerPanel('bottomControl', this.bottomControlBar);
     this.uiSystem.registerPanel('dialogue', this.dialogueBox);
+  }
+
+  /**
+   * 装备槽点击（组合面板契约）：左键=卸下装备，右键/移动端由面板内部物品菜单承接
+   * @param {string} slotType - 装备槽位
+   * @param {string} button - 'left' | 'right'
+   */
+  _handleEquipmentSlotClick(slotType, button) {
+    Logger.log('BaseGameScene: 装备槽被点击', slotType, button);
+    if (button !== 'left' || !this.playerEntity) return { ok: false };
+    const equipment = this.playerEntity.getComponent('equipment');
+    const equipped = equipment?.slots[slotType];
+    if (!equipped) return { ok: false };
+    const inventory = this.playerEntity.getComponent('inventory');
+    const unequipped = this.equipmentSystem.unequipItem(this.playerEntity, slotType);
+    if (!unequipped) return { ok: false, code: 'unequipFailed' };
+    if (inventory) {
+      inventory.addItem(unequipped, 1);
+    }
+    const transform = this.playerEntity.getComponent('transform');
+    if (transform) {
+      this.floatingTextManager.addText(
+        transform.position.x,
+        transform.position.y - 30,
+        `卸下 ${unequipped.name}`,
+        '#ffff00'
+      );
+    }
+    return { ok: true };
+  }
+
+  /**
+   * 物品菜单意图统一入口（组合面板 BackpackPanel 契约：必须返回 Promise）
+   * 与 2D ScenePanelLayout.submitItemIntent 同一套意图语义
+   * @param {string} intentType - 'item.use' | 'item.equip' | 'item.drop'
+   * @param {Object} payload - { itemId, instanceId?, quantity? }
+   */
+  handleItemIntent(intentType, payload) {
+    const fail = code => Promise.resolve({ ok: false, code });
+    const player = this.playerEntity;
+    if (!player) return fail('noPlayer');
+    const inventory = player.getComponent('inventory');
+    if (!inventory) return fail('noInventory');
+
+    const entry = (inventory.getAllItems() || []).find(({ slot }) =>
+      slot?.item && slot.item.id === payload?.itemId &&
+      (payload?.instanceId ? slot.item.instanceId === payload.instanceId : true));
+    if (!entry) return fail('itemNotFound');
+    const item = entry.slot.item;
+    const transform = player.getComponent('transform');
+    const quantity = Math.max(1, Math.floor(Number(payload?.quantity) || 1));
+
+    if (intentType === 'item.use') {
+      const used = inventory.useItem(entry.index, quantity);
+      if (!used) return fail('useFailed');
+      const usedItem = used.item;
+      let healAmount = 0, manaAmount = 0;
+      const stats = player.getComponent('stats');
+      if (usedItem?.effect?.type === 'heal' && stats) {
+        healAmount = usedItem.effect.value || 0;
+        stats.hp = Math.min(stats.maxHp ?? stats.hp, stats.hp + healAmount);
+      }
+      if (usedItem?.effect?.type === 'mana' && stats) {
+        manaAmount = usedItem.effect.value || 0;
+        stats.mp = Math.min(stats.maxMp ?? stats.mp, stats.mp + manaAmount);
+      }
+      this.onItemUsed(usedItem, healAmount, manaAmount);
+      return Promise.resolve({ ok: true });
+    }
+
+    if (intentType === 'item.equip') {
+      if (!this.equipmentSystem) return fail('noEquipmentSystem');
+      // 槽位推断：武器→主手，护甲→身体，其余→饰品
+      const slotType = item?.subType === 'weapon' ? 'mainhand'
+        : item?.subType === 'armor' ? 'body' : 'accessory';
+      // 先穿戴拿回被替换装备，再移除背包中的新装备，最后旧装备回包（保证中途失败不丢件）
+      const previous = this.equipmentSystem.equipItem(player, slotType, item);
+      const removed = inventory.removeFromSlot(entry.index, 1);
+      if (!removed) {
+        // 移除失败则回滚穿戴，保持背包与槽位一致
+        this.equipmentSystem.unequipItem(player, slotType);
+        return fail('removeFailed');
+      }
+      if (previous) {
+        inventory.addItem(previous, 1);
+      }
+      if (transform) {
+        this.floatingTextManager.addText(
+          transform.position.x,
+          transform.position.y - 30,
+          `装备 ${item.name || item.id}`,
+          '#00ff00'
+        );
+      }
+      return Promise.resolve({ ok: true });
+    }
+
+    if (intentType === 'item.drop') {
+      const removed = inventory.removeFromSlot(entry.index, quantity);
+      if (!removed) return fail('removeFailed');
+      // 丢弃到玩家脚边（与 _collectNearbyLoot 同一地面拾取物投影）
+      this.pickupItems.push({
+        id: item.id,
+        name: item.name,
+        type: item.type || 'material',
+        subType: item.subType,
+        description: item.description || '',
+        rarity: item.rarity || 0,
+        maxStack: item.maxStack || (item.stats || item.capabilities ? 1 : 99),
+        stats: item.stats ? { ...item.stats } : undefined,
+        capabilities: item.capabilities,
+        usable: item.usable || !!item.effect,
+        effect: item.effect || null,
+        x: (transform?.position?.x ?? 0) + (Math.random() - 0.5) * 40,
+        y: (transform?.position?.y ?? 0) + (Math.random() - 0.5) * 40,
+        quantity,
+        picked: false
+      });
+      if (transform) {
+        this.floatingTextManager.addText(
+          transform.position.x,
+          transform.position.y - 30,
+          `丢弃 ${item.name || item.id} ×${quantity}`,
+          '#ff6666'
+        );
+      }
+      return Promise.resolve({ ok: true });
+    }
+
+    return fail('unsupportedIntent');
   }
 
   /**
@@ -785,16 +875,11 @@ export class BaseGameScene extends PrologueScene {
       this.bottomControlBar.mpOrb.x = slotsRightEdge + orbGap + orbRadius;
     }
     
-    // 更新角色信息面板位置（左下角，底部控制栏上方）
-    if (this.playerInfoPanel) {
-      this.playerInfoPanel.x = 10;
-      this.playerInfoPanel.y = height - 100 - this.playerInfoPanel.height;
-    }
-    
-    // 更新背包面板位置（右下角，底部控制栏上方）
-    if (this.inventoryPanel) {
-      this.inventoryPanel.x = width - this.inventoryPanel.width - 10;
-      this.inventoryPanel.y = height - 100 - this.inventoryPanel.height;
+    // 组合背包面板：水平居中、底部控制栏上方（与 2D ScenePanelLayout 同口径）
+    if (this.backpackPanel) {
+      this.backpackPanel.x = Math.round((width - 900) / 2);
+      this.backpackPanel.y = Math.max(10, height - 100 - this.backpackPanel.height);
+      this.backpackPanel.layout?.();
     }
   }
 
@@ -952,8 +1037,7 @@ export class BaseGameScene extends PrologueScene {
     // 设置各系统的玩家实体
     this.combatSystem.setPlayerEntity(this.playerEntity);
     this.movementSystem.setPlayerEntity(this.playerEntity);
-    this.inventoryPanel.setEntity(this.playerEntity);
-    this.playerInfoPanel.setPlayer(this.playerEntity);
+    this.backpackPanel?.setEntity(this.playerEntity);
     this.bottomControlBar.setEntity(this.playerEntity);
     
     Logger.log('BaseGameScene: 创建玩家实体', this.playerEntity);
@@ -980,11 +1064,8 @@ export class BaseGameScene extends PrologueScene {
     if (this.movementSystem) {
       this.movementSystem.setPlayerEntity(this.playerEntity);
     }
-    if (this.inventoryPanel) {
-      this.inventoryPanel.setEntity(this.playerEntity);
-    }
-    if (this.playerInfoPanel) {
-      this.playerInfoPanel.setPlayer(this.playerEntity);
+    if (this.backpackPanel) {
+      this.backpackPanel.setEntity(this.playerEntity);
     }
     if (this.bottomControlBar) {
       this.bottomControlBar.setEntity(this.playerEntity);
@@ -1179,8 +1260,7 @@ export class BaseGameScene extends PrologueScene {
     
     // 更新面板（使用节流）
     if (this.performanceOptimizer.shouldUpdate('ui')) {
-      this.inventoryPanel.update(deltaTime);
-      this.playerInfoPanel.update(deltaTime);
+      this.backpackPanel?.update(deltaTime);
       this.bottomControlBar.update(deltaTime);
     }
     
@@ -1310,6 +1390,11 @@ export class BaseGameScene extends PrologueScene {
       const uiHandled = this.uiClickHandler.handleClick(mousePos.x, mousePos.y, button);
       
       if (uiHandled) {
+        this.inputManager.markMouseClickHandled();
+      } else if (button === 'left' && this.backpackPanel?.visible) {
+        // 组合面板打开时点击空白处：左键关闭面板（与 2D SceneWorldInteraction 同语义），
+        // 不穿透触发攻击
+        this.backpackPanel.hide();
         this.inputManager.markMouseClickHandled();
       } else if (button === 'left') {
         // UI 没有处理点击
@@ -1618,6 +1703,14 @@ export class BaseGameScene extends PrologueScene {
   updatePanelHover() {
     const mousePos = this.inputManager.getMousePosition();
     this.uiSystem.updateHover(mousePos.x, mousePos.y);
+    // 组合面板内部悬停（背包格 tooltip / 装备槽提示）
+    if (this.backpackPanel?.visible) {
+      this.backpackPanel.handleMouseMove(mousePos.x, mousePos.y);
+    }
+    // 滚动条拖拽兜底：鼠标已松开但拖拽态残留时释放（与 2D ScenePanelLayout 同口径）
+    if (!this.inputManager.isMouseButtonDown?.(0) && this.backpackPanel?.scrollbarDragging) {
+      this.backpackPanel.endScrollbarDrag();
+    }
   }
 
   /**
@@ -1723,8 +1816,7 @@ export class BaseGameScene extends PrologueScene {
     if (this.tutorialSystem) this.tutorialSystem.render(ctx);
     if (this.dialogueBox) this.dialogueBox.render(ctx);
     if (this.combatSystem) this.combatSystem.render(ctx);
-    if (this.playerInfoPanel) this.playerInfoPanel.render(ctx);
-    if (this.inventoryPanel) this.inventoryPanel.render(ctx);
+    if (this.backpackPanel) this.backpackPanel.render(ctx);
     if (this.bottomControlBar) this.bottomControlBar.render(ctx);
     this.renderCombatStateUI(ctx);
     if (this.isTransitioning) this.renderTransition(ctx);
