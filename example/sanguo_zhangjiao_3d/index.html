@@ -260,6 +260,63 @@
             content: '✓ ';
         }
 
+        /* ===== 触屏虚拟摇杆（复用框架 VirtualJoystickCore） ===== */
+        #joystick-zone {
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            width: 30%;
+            max-width: 280px;
+            height: 55%;
+            pointer-events: auto;
+            touch-action: none;
+            -webkit-user-select: none;
+            user-select: none;
+            z-index: 30;
+        }
+
+        /* 摇杆绘制层：覆盖整个游戏容器，只读指针坐标不拦事件 */
+        #joystick-overlay {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 600;
+        }
+
+        /* 触屏功能按钮：右下竖排（tap 派发对应按键，复用既有键盘处理路径） */
+        #touch-buttons {
+            position: absolute;
+            right: 16px;
+            bottom: 18px;
+            display: none;
+            flex-direction: column;
+            gap: 14px;
+            z-index: 30;
+        }
+
+        #touch-buttons .touch-btn {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            border: 2px solid rgba(76, 175, 80, 0.55);
+            background: rgba(30, 30, 30, 0.65);
+            color: #fff;
+            font-size: 26px;
+            line-height: 52px;
+            text-align: center;
+            pointer-events: auto;
+            touch-action: manipulation;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        #touch-buttons .touch-btn:active {
+            background: rgba(76, 175, 80, 0.4);
+        }
+
         /* 摄像头控制面板 */
         #camera-control {
             position: absolute;
@@ -609,6 +666,15 @@
             </div>
             <p id="loading-text">加载中...</p>
         </div>
+
+        <!-- 触屏虚拟摇杆：方向热区 + 扇形指示绘制层（仅触屏设备由 JS 启用） -->
+        <canvas id="joystick-overlay"></canvas>
+        <div id="joystick-zone"></div>
+        <div id="touch-buttons">
+            <div class="touch-btn" data-key="c" title="角色">🧙</div>
+            <div class="touch-btn" data-key="b" title="背包">🎒</div>
+            <div class="touch-btn" data-key="e" title="交互">✋</div>
+        </div>
     </div>
     
     <script type="module">
@@ -625,6 +691,7 @@
         import { NotificationSystem } from '../../src/ui/NotificationSystem.js';
         import { PortraitsConfig } from './data/PortraitsConfig.js';
         import { ThreeBackend } from '../../src/rendering/backends/ThreeBackend.js';
+        import { setupVirtualJoystick } from '../../src/platform/touch/VirtualJoystickCore.js';
         
         // 渲染后端（3D）
         let backend = null;
@@ -1394,6 +1461,32 @@
         // 调试句柄（与 2D demo 调试惯例一致：控制台 sceneManager.getCurrentScene()）。
         // initGame 为异步初始化，这里必须用 getter 实时取引用，不能快照赋值。
         Object.defineProperty(window, 'sceneManager', { get: () => sceneManager });
+
+        // ===== 触屏控制：虚拟摇杆 + 功能按钮（复用框架 VirtualJoystickCore） =====
+        // 摇杆把方向换算为方向键事件派发到 window，InputManager（window 级监听）
+        // 与 MovementSystem 采集层天然复用；功能按钮 tap 派发对应按键，
+        // 复用既有键盘处理路径（B/C 面板切换、E 交互）。仅触屏设备启用。
+        (function setupTouchControls() {
+            const isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+            if (!isTouch) return;
+
+            document.getElementById('touch-buttons').style.display = 'flex';
+
+            const pressKey = (key, code) => window.dispatchEvent(new KeyboardEvent('keydown', { key, code, bubbles: true }));
+            const releaseKey = (key, code) => window.dispatchEvent(new KeyboardEvent('keyup', { key, code, bubbles: true }));
+            setupVirtualJoystick(pressKey, releaseKey, { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight' });
+
+            // 合成键盘事件必须带 code：3D 的 B/C 分支按 e.code（KeyB/KeyC）路由
+            const KEY_CODES = { b: 'KeyB', c: 'KeyC', e: 'KeyE' };
+            document.querySelectorAll('#touch-buttons .touch-btn').forEach(btn => {
+                btn.addEventListener('touchstart', (ev) => {
+                    ev.preventDefault();
+                    const key = btn.dataset.key;
+                    pressKey(key, KEY_CODES[key] || '');
+                    setTimeout(() => releaseKey(key, KEY_CODES[key] || ''), 160);
+                }, { passive: false });
+            });
+        })();
         
         // ===== 摄像头控制面板逻辑 =====
         (function setupCameraControl() {
