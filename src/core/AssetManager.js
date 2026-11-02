@@ -548,6 +548,9 @@ export class AssetManager {
                     return;
                 }
                 this.images.set(resolvedKey, img);
+                // 异步预解码：下载完成≠像素就绪，首次 drawImage 才同步解码会造成
+                // 实体首绘 40ms+ 尖峰；decode() 在后台完成解码供后续绘制直接使用
+                this._predecodeImage(img);
                 resolve(img);
             };
 
@@ -913,6 +916,7 @@ export class AssetManager {
         // 尝试加载真实图片
         const img = new Image();
         img.onload = () => {
+            this._predecodeImage(img);
             this.images.set(key, img);
             Logger.log(`AssetManager: 成功加载真实精灵图 ${key} (${img.width}x${img.height})`);
         };
@@ -935,6 +939,7 @@ export class AssetManager {
         // 尝试加载真实图片
         const img = new Image();
         img.onload = () => {
+            this._predecodeImage(img);
             this.images.set(key, img);
             Logger.log(`AssetManager: 成功加载动画精灵图 ${key} (${img.width}x${img.height})`);
         };
@@ -942,6 +947,20 @@ export class AssetManager {
             Logger.log(`AssetManager: 无法加载 ${imagePath}，使用占位符渲染`);
         };
         img.src = imagePath;
+    }
+
+    /**
+     * 触发浏览器异步解码（预热）。decode 失败静默——个别浏览器/图源不支持时
+     * 退回原有首次绘制解码行为，无副作用。
+     * @param {HTMLImageElement} img - 已完成加载的图片
+     */
+    _predecodeImage(img) {
+        try {
+            const decoding = typeof img.decode === 'function' ? img.decode() : null;
+            if (decoding && typeof decoding.catch === 'function') decoding.catch(() => {});
+        } catch {
+            // 预解码是纯优化，任何异常都静默忽略
+        }
     }
 
     /**
