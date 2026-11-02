@@ -3447,7 +3447,13 @@
     ],
     "id": "trg_s02_beg_children_enter",
     "name": "荒村：孩童乞讨（进入乞讨区）",
-    "once": true,
+    "once": false,
+    "if": {
+      "op": "not",
+      "arg": {
+        "var": "story.s02BegAdults"
+      }
+    },
     "when": {
       "params": {},
       "type": "enter"
@@ -4366,10 +4372,36 @@
     ],
     "id": "trg_s02_scavenger_chief_encounter",
     "name": "S02：拾荒者警戒区头目遭遇对话",
-    "once": true,
+    "once": false,
+    "if": {
+      "op": "not",
+      "arg": {
+        "var": "story.s02ScavengerEncountered"
+      }
+    },
     "when": {
       "params": {},
       "type": "enter"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "state.transaction",
+        "params": {
+          "definitionId": "story.s02.scavenger.encounter"
+        },
+        "stepId": "scavenger-encounter-fact"
+      }
+    ],
+    "id": "trg_s02_scavenger_chief_dialogue_end",
+    "name": "S02：拾荒者头目遭遇对话结束（收口入档）",
+    "once": true,
+    "when": {
+      "params": {
+        "id": "dialogue.s02.scavengerChiefEncounter"
+      },
+      "type": "dialogueEnd"
     }
   },
   {

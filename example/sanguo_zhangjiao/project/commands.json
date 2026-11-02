@@ -1243,6 +1243,32 @@
   },
   {
     "commandType": "state.transaction",
+    "id": "story.s02.scavenger.encounter",
+    "name": "S02：拾荒者头目遭遇已发生",
+    "transaction": {
+      "when": {
+        "all": [
+          {
+            "equals": "S02",
+            "path": "story.currentSceneId"
+          },
+          {
+            "notEquals": true,
+            "path": "story.s02ScavengerEncountered"
+          }
+        ]
+      },
+      "writes": [
+        {
+          "path": "s02ScavengerEncountered",
+          "target": "story",
+          "value": true
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
     "id": "story.s02.beg.fight.prepare",
     "name": "荒村：还手战斗·特殊昏迷武装",
     "transaction": {
