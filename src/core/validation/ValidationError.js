@@ -26,7 +26,9 @@ export const ValidationCode = {
   INVALID_REFERENCE: 'invalidReference',
   DUPLICATE_ID: 'duplicateId',
   VERSION_UNSUPPORTED: 'versionUnsupported',
-  UNKNOWN_FIELD: 'unknownField'
+  UNKNOWN_FIELD: 'unknownField',
+  UNREACHABLE_DIALOGUE: 'unreachableDialogue',
+  UNFILTERED_DIALOGUE_CHOICE: 'unfilteredDialogueChoice'
 };
 
 /**

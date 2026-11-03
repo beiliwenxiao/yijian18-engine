@@ -100,7 +100,134 @@ function validateReferenceArray(indexes, targetKind, values, path, errors) {
   list(values).forEach((id, index) => addReferenceError(indexes, targetKind, id, `${path}[${index}]`, errors));
 }
 
-function validateKnownReferences(indexes, errors, actionIds) {
+/** 递归收集触发步骤（branch[] 分支容器是一等步骤类型：展开每条子路径的 do 动作）。 */
+function collectActionSteps(steps) {
+  const actionSteps = [];
+  const walk = candidates => {
+    for (const step of candidates) {
+      if (Array.isArray(step?.branch)) {
+        step.branch.forEach(alternative => walk(list(alternative?.do)));
+        continue;
+      }
+      actionSteps.push(step);
+    }
+  };
+  walk(list(steps));
+  return actionSteps;
+}
+
+/** 收集对话定义全部选项 id（跨所有节点；触发器 choiceId 声明校验用）。 */
+function collectDialogueChoiceIds(definition) {
+  const ids = new Set();
+  const nodes = isObject(definition?.nodes) ? definition.nodes : {};
+  for (const node of Object.values(nodes)) {
+    for (const choice of list(node?.choices)) {
+      if (typeof choice?.id === 'string' && choice.id) ids.add(choice.id);
+    }
+  }
+  return ids;
+}
+
+/**
+ * 收集对话启动来源（孤儿对话告警用）：触发器 startDialogue / dialogue.command(start)
+ * 步骤 + quest 步骤 dialogueId（编译触发器运行时注册、不在 snapshot 里，须扫 quest 原定义）
+ * + quest/scenario 的 dialogueRefs。值为首个来源路径，便于告警定位。
+ */
+function collectDialogueStartSources(indexes) {
+  const sources = new Map();
+  const mark = (id, path) => {
+    if (typeof id !== 'string' || !id || sources.has(id)) return;
+    sources.set(id, path);
+  };
+  for (const definition of Object.values(indexes.triggers || {})) {
+    collectActionSteps(list(definition?.do)).forEach((action, index) => {
+      const base = `triggers.${definition.id}.do[${index}]`;
+      if (action?.action === 'startDialogue') mark(action?.params?.id, `${base}.params.id`);
+      if (action?.action === 'dialogue.command') {
+        const operation = action?.params?.operation;
+        if (!operation || operation === 'start') mark(action?.params?.dialogueId, `${base}.params.dialogueId`);
+      }
+    });
+  }
+  for (const quest of Object.values(indexes.quests || {})) {
+    list(quest?.dialogueRefs).forEach((id, index) => mark(id, `quests.${quest.id}.dialogueRefs[${index}]`));
+    list(quest?.steps).forEach((step, index) => {
+      if (step?.type === 'dialogue') mark(step?.dialogueId, `quests.${quest.id}.steps[${index}].dialogueId`);
+    });
+  }
+  for (const scenario of Object.values(indexes.scenarios || {})) {
+    list(scenario?.dialogueRefs).forEach((id, index) => mark(id, `scenarios.${scenario.id}.dialogueRefs[${index}]`));
+  }
+  return sources;
+}
+
+/**
+ * 对话图静态校验（接线完整性，2026-11-03 乞讨链断链事故沉淀）：
+ * - 错误（阻断）：对话内节点引用悬空（choice/node nextNode、startNode）、
+ *   dialogueChoice/dialogueEnd 触发器引用不存在的对话、声明的 choiceId 不属于该对话任何选项；
+ * - 告警（不阻断，经 repository.warnings 浮出）：孤儿对话（无任何启动来源）、
+ *   多选项对话的 dialogueChoice 触发器未声明 choiceId（将对所有选项生效——2026-10-29 乞讨链
+ *   摇头误扣野果即此类）；被引擎代码直接启动的对话在定义上声明 runtimeStarted: true 豁免。
+ */
+function validateDialogueGraph(indexes, errors, warnings) {
+  const dialogues = indexes.dialogues;
+  if (!dialogues) return;
+  const startedBy = collectDialogueStartSources(indexes);
+  for (const definition of Object.values(dialogues)) {
+    const basePath = `dialogues.${definition.id}`;
+    const nodes = isObject(definition.nodes) ? definition.nodes : {};
+    if (typeof definition.startNode === 'string' && definition.startNode && !nodes[definition.startNode]) {
+      errors.push(makeError(ValidationCode.INVALID_REFERENCE, `${basePath}.startNode`, `startNode 指向不存在的节点: ${definition.startNode}`));
+    }
+    for (const [nodeId, node] of Object.entries(nodes)) {
+      const nodePath = `${basePath}.nodes.${nodeId}`;
+      if (typeof node?.nextNode === 'string' && node.nextNode && !nodes[node.nextNode]) {
+        errors.push(makeError(ValidationCode.INVALID_REFERENCE, `${nodePath}.nextNode`, `节点 nextNode 指向不存在的节点: ${node.nextNode}`));
+      }
+      list(node?.choices).forEach((choice, index) => {
+        if (typeof choice?.nextNode === 'string' && choice.nextNode && !nodes[choice.nextNode]) {
+          errors.push(makeError(ValidationCode.INVALID_REFERENCE, `${nodePath}.choices[${index}].nextNode`, `选项 nextNode 指向不存在的节点: ${choice.nextNode}`));
+        }
+      });
+    }
+    if (definition.runtimeStarted !== true && !startedBy.has(definition.id)) {
+      warnings.push(makeError(ValidationCode.UNREACHABLE_DIALOGUE, basePath,
+        '对话无任何启动来源（startDialogue/dialogue.command/quest 步骤/dialogueRefs）；若由引擎代码直接启动，请在对话定义上声明 runtimeStarted: true'));
+    }
+  }
+  for (const definition of Object.values(indexes.triggers || {})) {
+    const when = definition?.when;
+    const type = when?.type;
+    if (type !== 'dialogueChoice' && type !== 'dialogueEnd') continue;
+    const dialogueId = when?.params?.id;
+    const idPath = `triggers.${definition.id}.when.params.id`;
+    if (typeof dialogueId !== 'string' || !dialogueId) {
+      warnings.push(makeError(ValidationCode.MISSING_FIELD, idPath, `${type} 触发器未声明对话 id（when.params.id），将对所有对话生效`));
+      continue;
+    }
+    const dialogue = dialogues[dialogueId];
+    if (!dialogue) {
+      errors.push(makeError(ValidationCode.INVALID_REFERENCE, idPath, `悬空引用 dialogues:${dialogueId}`));
+      continue;
+    }
+    if (type !== 'dialogueChoice') continue;
+    const choiceIds = collectDialogueChoiceIds(dialogue);
+    const declared = when?.params?.choiceId;
+    if (typeof declared !== 'string' || !declared) {
+      if (choiceIds.size > 0) {
+        warnings.push(makeError(ValidationCode.UNFILTERED_DIALOGUE_CHOICE, `triggers.${definition.id}.when.params.choiceId`,
+          `对话 ${dialogueId} 存在选项但触发器未声明 choiceId，将对所有选项生效；有副作用的选项请按 choiceId 过滤`));
+      }
+      continue;
+    }
+    if (!choiceIds.has(declared)) {
+      errors.push(makeError(ValidationCode.INVALID_REFERENCE, `triggers.${definition.id}.when.params.choiceId`,
+        `choiceId 不属于对话 ${dialogueId} 的任何选项: ${declared}`));
+    }
+  }
+}
+
+function validateKnownReferences(indexes, errors, actionIds, warnings = []) {
   for (const [index, definition] of Object.values(indexes.resourceNodes || {}).entries()) {
     if (Object.prototype.hasOwnProperty.call(definition, 'itemId')) {
       addReferenceError(indexes, 'items', definition.itemId, `library.resourceNodes[${index}].itemId`, errors);
@@ -144,6 +271,7 @@ function validateKnownReferences(indexes, errors, actionIds) {
     'world.teleport': ['sceneId', 'scenes'],
     'ending.command': ['endingId', 'endings'],
     'dialogue.command': ['dialogueId', 'dialogues'],
+    'startDialogue': ['id', 'dialogues'],
     'tutorial.command': ['tutorialId', 'tutorials'],
     'state.transaction': ['definitionId', 'commands']
   };
@@ -151,17 +279,7 @@ function validateKnownReferences(indexes, errors, actionIds) {
     for (const definition of Object.values(definitions)) {
       const actionLists = kind === 'triggers' ? [list(definition.do)] : [];
       // branch[] 分支容器是 _runSteps 的一等步骤类型：递归校验每条子路径的 do 动作引用
-      const actionSteps = [];
-      const collectSteps = steps => {
-        for (const step of steps) {
-          if (Array.isArray(step?.branch)) {
-            step.branch.forEach(alternative => collectSteps(list(alternative?.do)));
-            continue;
-          }
-          actionSteps.push(step);
-        }
-      };
-      actionLists.forEach(collectSteps);
+      const actionSteps = collectActionSteps(actionLists.flatMap(list));
       actionSteps.forEach((action, index) => {
         if (typeof action?.action !== 'string' || !actionIds.has(action.action)) {
           errors.push(makeError(ValidationCode.INVALID_REFERENCE, `${kind}.${definition.id}.do[${index}].action`, `未知 action: ${String(action?.action)}`));
@@ -175,6 +293,7 @@ function validateKnownReferences(indexes, errors, actionIds) {
       });
     }
   }
+  validateDialogueGraph(indexes, errors, warnings);
 }
 
 export class DefinitionRevisionLock {
@@ -190,13 +309,17 @@ export class DefinitionRevisionLock {
 
 /** 由单个 CanonicalSnapshot 派生的只读定义索引。 */
 export class DefinitionRepository {
-  constructor(snapshot, indexes) {
+  constructor(snapshot, indexes, warnings = []) {
     this.snapshot = snapshot;
     this.revision = snapshot.definitionRevision ?? snapshot.revision;
     this.definitionRevision = this.revision;
     this._indexes = indexes;
+    this._warnings = Object.freeze([...warnings]);
     Object.freeze(this);
   }
+
+  /** 最近一次构建的非阻断告警（孤儿对话/未过滤选项触发器等接线问题）。 */
+  get warnings() { return this._warnings; }
 
   static empty(revision = 0) {
     return new DefinitionRepository(Object.freeze({ revision, definitionRevision: revision }), Object.freeze(Object.create(null)));
@@ -283,11 +406,12 @@ export class DefinitionRepository {
       if (id) actionIds.add(id);
     }
     for (const id of Object.keys(indexes.actions || {})) actionIds.add(id);
-    validateKnownReferences(indexes, errors, actionIds);
+    const warnings = [];
+    validateKnownReferences(indexes, errors, actionIds, warnings);
 
     if (errors.length > 0) throw new DefinitionRepositoryValidationError(errors);
     for (const index of Object.values(indexes)) deepFreeze(index);
-    return new DefinitionRepository(snapshot, deepFreeze(indexes));
+    return new DefinitionRepository(snapshot, deepFreeze(indexes), warnings);
   }
 
   get(kind, id) { return this._indexes[kind]?.[id] || null; }

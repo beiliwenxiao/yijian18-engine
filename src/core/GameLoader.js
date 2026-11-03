@@ -117,6 +117,8 @@ export class GameLoader {
     });
     /** 最近一次装配的校验错误，供错误提示界面读取 */
     this.lastValidationErrors = [];
+    /** 最近一次装配的非阻断内容接线告警（孤儿对话/未过滤选项触发器等），随 DefinitionRepository.warnings 浮出 */
+    this.lastValidationWarnings = [];
 
     // 战斗集成只允许一个结果源；默认在有效工程装配时创建。
     this.battleTransport = null;
@@ -626,6 +628,13 @@ export class GameLoader {
       throw this._createValidationError(errors);
     }
     this.lastValidationErrors = [];
+    // 非阻断内容接线告警（DefinitionRepository.validateDialogueGraph）：孤儿对话、
+    // 多选项对话未声明 choiceId 的 dialogueChoice 触发器等——不阻断运行，控制台可见。
+    this.lastValidationWarnings = result.repository?.warnings || [];
+    if (this.lastValidationWarnings.length > 0) {
+      console.warn(`[GameLoader] 内容接线告警 ${this.lastValidationWarnings.length} 条（不阻断运行）:\n`
+        + formatErrors(this.lastValidationWarnings));
+    }
     return result.snapshot.project;
   }
 

@@ -116,6 +116,114 @@ describe('CanonicalSnapshot 与 DefinitionRepository', () => {
   });
 });
 
+describe('DefinitionRepository 对话图静态校验（接线完整性）', () => {
+  const WAKE = {
+    id: 'dialogue.test.wake',
+    nodes: {
+      start: { speaker: '旁白', text: '醒来', nextNode: 'end' },
+      end: { speaker: '旁白', text: '结束' }
+    },
+    startNode: 'start'
+  };
+
+  it('选项 nextNode / 节点 nextNode / startNode 悬空 → 阻断性 INVALID_REFERENCE', () => {
+    const canonical = snapshot({
+      dialogues: [{
+        id: 'dialogue.test.broken',
+        startNode: 'missing-start',
+        nodes: {
+          start: {
+            speaker: '旁白', text: '起点',
+            nextNode: 'missing-node',
+            choices: [{ id: 'go', text: '走', nextNode: 'missing-choice-target' }]
+          }
+        }
+      }]
+    });
+    let error;
+    try { DefinitionRepository.fromSnapshot(canonical); } catch (caught) { error = caught; }
+    expect(error).toBeInstanceOf(DefinitionRepositoryValidationError);
+    const paths = error.errors.map(entry => entry.path);
+    expect(paths).toContain('dialogues.dialogue.test.broken.startNode');
+    expect(paths).toContain('dialogues.dialogue.test.broken.nodes.start.nextNode');
+    expect(paths).toContain('dialogues.dialogue.test.broken.nodes.start.choices[0].nextNode');
+  });
+
+  it('startDialogue / dialogueChoice / dialogueEnd 引用不存在的对话 → 阻断性 INVALID_REFERENCE', () => {
+    const canonical = snapshot({
+      dialogues: [WAKE],
+      triggers: [
+        { id: 'trg_start', when: { type: 'sceneEnter', params: {} }, do: [{ action: 'startDialogue', params: { id: 'dialogue.missing' } }] },
+        { id: 'trg_choice', when: { type: 'dialogueChoice', params: { id: 'dialogue.missing' } }, do: [] },
+        { id: 'trg_end', when: { type: 'dialogueEnd', params: { id: 'dialogue.missing' } }, do: [] }
+      ]
+    });
+    let error;
+    try { DefinitionRepository.fromSnapshot(canonical); } catch (caught) { error = caught; }
+    expect(error).toBeInstanceOf(DefinitionRepositoryValidationError);
+    const paths = error.errors.map(entry => entry.path);
+    expect(paths).toContain('triggers.trg_start.do[0].params.id');
+    expect(paths).toContain('triggers.trg_choice.when.params.id');
+    expect(paths).toContain('triggers.trg_end.when.params.id');
+  });
+
+  it('声明的 choiceId 不属于对话任何选项 → 阻断性 INVALID_REFERENCE（防选项改名后触发器静默失效）', () => {
+    const canonical = snapshot({
+      dialogues: [{
+        id: 'dialogue.test.judge',
+        startNode: 'start',
+        nodes: { start: { speaker: '张角', text: '怎么处置？', choices: [{ id: 'save', text: '救他' }, { id: 'kill', text: '杀了' }] } }
+      }],
+      triggers: [{ id: 'trg_judge', when: { type: 'dialogueChoice', params: { id: 'dialogue.test.judge', choiceId: 'sve' } }, do: [] }]
+    });
+    let error;
+    try { DefinitionRepository.fromSnapshot(canonical); } catch (caught) { error = caught; }
+    expect(error).toBeInstanceOf(DefinitionRepositoryValidationError);
+    expect(error.errors.some(entry => entry.path === 'triggers.trg_judge.when.params.choiceId')).toBe(true);
+  });
+
+  it('孤儿对话（无启动来源）→ 非阻断告警；quest 步骤/runtimeStarted 豁免 → 无告警', () => {
+    const canonical = snapshot({
+      dialogues: [
+        { id: 'dialogue.test.orphan', startNode: 'start', nodes: { start: { speaker: '旁白', text: '无人知晓' } } },
+        { id: 'dialogue.test.by-quest', startNode: 'start', nodes: { start: { speaker: '旁白', text: '任务启动' } } },
+        { id: 'dialogue.test.by-code', runtimeStarted: true, startNode: 'start', nodes: { start: { speaker: '旁白', text: '代码启动' } } }
+      ],
+      quests: [{
+        id: 'task.test',
+        steps: [{ id: 'step.1', type: 'dialogue', dialogueId: 'dialogue.test.by-quest', await: true }]
+      }]
+    });
+    const repository = DefinitionRepository.fromSnapshot(canonical);
+    const orphanPaths = repository.warnings.filter(entry => entry.code === 'unreachableDialogue').map(entry => entry.path);
+    expect(orphanPaths).toEqual(['dialogues.dialogue.test.orphan']);
+  });
+
+  it('多选项对话的 dialogueChoice 触发器未声明 choiceId → 非阻断告警', () => {
+    const canonical = snapshot({
+      dialogues: [{
+        id: 'dialogue.test.judge',
+        startNode: 'start',
+        nodes: { start: { speaker: '张角', text: '怎么处置？', choices: [{ id: 'save', text: '救他' }, { id: 'kill', text: '杀了' }] } }
+      }],
+      triggers: [
+        { id: 'trg_unfiltered', when: { type: 'dialogueChoice', params: { id: 'dialogue.test.judge' } }, do: [] },
+        { id: 'trg_filtered', when: { type: 'dialogueChoice', params: { id: 'dialogue.test.judge', choiceId: 'save' } }, do: [] }
+      ]
+    });
+    const repository = DefinitionRepository.fromSnapshot(canonical);
+    const unfiltered = repository.warnings.filter(entry => entry.code === 'unfilteredDialogueChoice');
+    expect(unfiltered.map(entry => entry.path)).toEqual(['triggers.trg_unfiltered.when.params.choiceId']);
+  });
+
+  it('真实 Demo 工程全量装配：对话图零告警（存量接线已收敛）', () => {
+    const repository = DefinitionRepository.fromSnapshot(
+      CanonicalSnapshot.fromProject(loadResolvedDemoProject(), { revision: 1 })
+    );
+    expect(repository.warnings).toEqual([]);
+  });
+});
+
 describe('GameLoader immutable shadow publication', () => {
   it('合法 Demo（含任务中心 quests）一次发布，并保持 Registry 查询', () => {
     const loader = new GameLoader();
