@@ -14,9 +14,11 @@
  * probe-s02-mission-chain.mjs —— S02 M3.5 系列任务实机走链探针。
  *
  * 前置：本地 dev server 在 3000 端口提供 example/sanguo_zhangjiao/index.html
- * 链路：进村惨状 → 军队路过（seed 昏迷）→ 抉择救人 → 救援抵营 → 施粥五批
- *       → 招兵旗招募（区域内交互）→ 百人成军扎营 → 过夜 → 翌日围城 wave1
- *       → wave2+傅燮 → 击退释放
+ * 链路：进村惨状 → 乞讨链真实选项走链（摇头→大人摇头→围攻不还手→昏迷）
+ *       → 军队路过 → 抉择救人 → 救援抵营 → 张角召见（真实 interact）
+ *       → 施粥五批 → 招兵旗招募（区域内交互）→ 百人成军扎营 → 过夜
+ *       → 翌日围城 wave1 → wave2+傅燮 → 击退释放
+ * 注：给果子/追问分支（choices give/give5 路径）由 probe-s02-beg-branches.mjs 常驻覆盖。
  *
  * 用法：node scripts/probe-s02-mission-chain.mjs
  */
@@ -114,28 +116,73 @@ const phaseA = await page.evaluate(async () => {
 });
 for (const c of phaseA.checks) step('A:' + c.name, `${c.pass ? 'PASS' : 'FAIL'} ${c.detail}`);
 
-/* ============ B 军队路过 + 抉择 ============ */
-step('B:accept-summons', await page.evaluate(async () => {
+/* ============ B 乞讨链（真实选项走链）→ 军队路过 + 抉择 ============ */
+// 不再捷径提交 state.transaction：逐选项真实走对话（2026-11-03 乞讨链断链事故后，
+// 主回归必须覆盖选项→触发器→下一对话的真实接线）。
+// 主链走「摇头」分支：孩童摇头 → 大人摇头 → 围攻不还手（无战斗随机性、无物品依赖）；
+// 给果子/追问分支由 probe-s02-beg-branches.mjs 常驻覆盖。
+const beg = await page.evaluate(async () => {
   const scene = window.__ddScene;
-  // 真实链路由信使交互触发 acceptSummons；探针捷径直接提交事务（recruit 触发器 if 守卫依赖它）
-  const r = await scene.sceneRuntime?.commandGateway?.execute({
-    intentType: 'state.transaction',
-    actorRef: scene.playerEntity?.id,
-    operationId: 'probe:summons-accept',
-    payload: { definitionId: 'story.s02.summons.accept' }
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const story = () => scene.gameLoader?.blackboard?.get?.('storyState') || {};
+  const offset = scene._worldLoadResult?.worldIndex?.getOffset?.('S02') || { x: 0, y: 0 };
+  const t = scene.playerEntity?.getComponent?.('transform');
+  const dialogue = () => ({
+    id: scene.dialogueSystem?.currentDialogue?.id || null,
+    node: scene.dialogueSystem?.currentNode?.id || null
   });
-  return JSON.stringify({ ok: r?.ok, code: r?.code || null });
-}));
-step('B:commit-fainted', await page.evaluate(async () => {
-  const scene = window.__ddScene;
-  const r = await scene.sceneRuntime?.commandGateway?.execute({
-    intentType: 'state.transaction',
-    actorRef: scene.playerEntity?.id,
-    operationId: 'probe:beg-fainted',
-    payload: { definitionId: 'story.s02.beg.fainted' }
-  });
-  return JSON.stringify({ ok: r?.ok, code: r?.code || null });
-}));
+  const waitDialogue = async id => {
+    for (let i = 0; i < 25; i++) {
+      await sleep(400);
+      if (!id && scene.dialogueSystem?.isDialogueActive?.()) return true;
+      if (id && scene.dialogueSystem?.currentDialogue?.id === id) return true;
+    }
+    return false;
+  };
+  const choose = async index => {
+    const choices = scene.dialogueSystem?.currentNode?.choices || [];
+    const chosen = choices[index]?.id || null;
+    // selectChoice 返回 Promise（选项经 fireAndWait 派发后提交）——await 提交完成再读回复节点
+    const accepted = await scene.dialogueSystem?.selectChoice(index);
+    return { ok: accepted !== false, choiceId: chosen, node: scene.dialogueSystem?.currentNode?.id || null };
+  };
+  const end = () => scene.dialogueSystem?.endDialogue();
+  const out = { checks: [] };
+  const check = (name, pass, detail) => out.checks.push({ name, pass, detail });
+
+  // 停掉对话自动推进：乞讨链逐选项真实走（苏醒/召见等后续对话在链尾恢复自动推进）
+  clearInterval(window.__k);
+
+  // ① 孩童乞讨：摇头（专属回复、不扣物、不引来更多孩子——收尾路由直达大人）
+  t.position.x = 650 + (offset.x || 0);
+  t.position.y = 440 + (offset.y || 0);
+  check('children-dialogue', await waitDialogue('dialogue.s02.beggarChildren'), JSON.stringify(dialogue()));
+  const childrenChoice = await choose(1); // 摇头，什么也没给
+  check('children-refuse', childrenChoice.ok && childrenChoice.choiceId === 'refuse' && childrenChoice.node === 'refused', JSON.stringify(childrenChoice));
+  const moreChildren = (scene.entityStore?.all || []).filter(e => String(e?.placementId || '').startsWith('S02-beg-child-')).length;
+  check('children-refuse-no-more-kids', moreChildren === 3, String(moreChildren));
+  end();
+  // ② 收尾路由：摇头 → 孩子散去直达大人乞讨
+  check('adults-dialogue-started', await waitDialogue('dialogue.s02.beggarAdults'), JSON.stringify(dialogue()));
+  // ③ 大人乞讨：摇头不给 → 村民转围攻
+  const adultsChoice = await choose(1); // 摇头不给
+  check('adults-refuse', adultsChoice.ok && adultsChoice.choiceId === 'refuseAdults' && adultsChoice.node === 'anger', JSON.stringify(adultsChoice));
+  end();
+  // ④ 围攻：护住要害不还手 → 食物被抢光 + 被打昏迷（pacifist 链无战斗随机性）
+  check('confront-dialogue', await waitDialogue('dialogue.s02.beggarConfront'), JSON.stringify(dialogue()));
+  const pacifyChoice = await choose(0); // 护住要害，不还手
+  check('pacify-choice', pacifyChoice.ok && pacifyChoice.choiceId === 'pacify' && pacifyChoice.node === 'takeBeating', JSON.stringify(pacifyChoice));
+  end();
+  // ⑤ 昏迷事实落库（pacifist 链内含 2.5s 淡出等待）
+  let fainted = false;
+  for (let i = 0; i < 25 && !fainted; i++) { await sleep(400); fainted = story().s02BegFainted === true; }
+  check('beg-fainted', fainted, String(story().s02BegFainted ?? null));
+  check('player-downed', scene.playerDowned === true || scene.playerEntity?.plotDowned === true, String(scene.playerDowned));
+  // 恢复对话自动推进（苏醒/召见等后续对话自动走）
+  window.__k = setInterval(() => { try { if (scene.dialogueSystem?.isDialogueActive?.()) scene.dialogueSystem.endDialogue(); } catch (e) {} }, 500);
+  return out;
+});
+for (const c of beg.checks) step('B:' + c.name, `${c.pass ? 'PASS' : 'FAIL'} ${c.detail}`);
 await page.waitForTimeout(2500);
 const armySpawn = await page.evaluate(() => {
   const scene = window.__ddScene;
@@ -171,6 +218,29 @@ step('C:goto-goal', await page.evaluate(async () => {
   return JSON.stringify({ rescued: !!scene.gameLoader?.blackboard?.get?.('storyState')?.s02Rescued });
 }));
 await page.waitForTimeout(4000); // 苏醒对话（自动）→ farewell 施粥链
+
+/* ============ C2 张角召见（真实 interact：救援后接召见对话 → 接受） ============ */
+// 真实链：救援苏醒后与信使交互（trg_s02_zhangjiao_summons if s02Rescued）→ 召见对话
+// → dialogueEnd 提交 story.s02.summons.accept（s02SummonsAccepted 门控 E 阶段招募）
+step('C2:summons-accept', await page.evaluate(async () => {
+  const scene = window.__ddScene;
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const offset = scene._worldLoadResult?.worldIndex?.getOffset?.('S02') || { x: 0, y: 0 };
+  const t = scene.playerEntity?.getComponent?.('transform');
+  t.position.x = 760 + (offset.x || 0);
+  t.position.y = 285 + (offset.y || 0);
+  await sleep(800);
+  const r = scene._sceneTriggerBindings?.executeInteractBinding?.('S02-binding-zhangjiao-summons');
+  // 召见对话由 __k 自动推进收尾 → dialogueEnd → accept 事实落库
+  const deadline = Date.now() + 15000;
+  while (Date.now() < deadline) {
+    await sleep(400);
+    if (scene.gameLoader?.blackboard?.get?.('storyState')?.s02SummonsAccepted === true) {
+      return JSON.stringify({ ok: true, handled: r?.handled ?? null });
+    }
+  }
+  return JSON.stringify({ ok: false, handled: r?.handled ?? null, accepted: r?.accepted ?? null });
+}));
 
 /* ============ D 施粥五批 ============ */
 const porridge = await page.evaluate(async () => {
@@ -330,7 +400,7 @@ const raid = await page.evaluate(async () => {
 for (const c of raid.checks) step('F:' + c.name, `${c.pass ? 'PASS' : 'FAIL'} ${c.detail}`);
 
 /* ============ 汇总 ============ */
-const all = [...phaseA.checks, ...porridge.checks, ...recruit.checks, ...raid.checks];
+const all = [...beg.checks, ...phaseA.checks, ...porridge.checks, ...recruit.checks, ...raid.checks];
 const failed = all.filter(c => !c.pass);
 step('protagonist-baseline', phaseA.protagonistId || 'unknown');
 step('pageerrors', String(pageErrors.length) + (pageErrors.length ? ' -> ' + pageErrors.slice(0, 3).join(' | ') : ''));
