@@ -26,7 +26,7 @@
  * 通过 Vite dev server 的 /api/read-file、/api/canonical-transaction 读写。
  */
 
-import { DialogueChainView, buildDialogueWiring } from './DialogueChainView.js';
+import { DialogueChainView, buildDialogueWiring, collectActionSteps } from './DialogueChainView.js';
 
 export class DialogueGraphEditor {
   /**
@@ -81,8 +81,14 @@ export class DialogueGraphEditor {
     this.project.dialogues = this.dialogues;
     try {
       this.canonicalSession.patch('dialogues', this.dialogues);
+      // id 改名级联更新过触发器/任务 → 一并提交对应分片（一次 save 多分片落盘）
+      if (this._idCascadeTouched) {
+        this.canonicalSession.patch('triggers', this.project.triggers);
+        this.canonicalSession.patch('quests', this.project.quests);
+      }
       const data = await this.canonicalSession.save();
       if (data?.ok === true && data.committed === true) {
+        this._idCascadeTouched = false;
         if (data.degraded) {
           const warning = '磁盘已提交，但缓存/通知同步降级';
           this._status('⚠️ ' + warning, 'warn');
@@ -185,6 +191,72 @@ export class DialogueGraphEditor {
     }
     return refs;
   }
+
+  /**
+   * 扫描工程内指向某对话 id 的全部引用（改名级联用）。
+   * 覆盖：触发器 dialogueChoice/dialogueEnd 的 when.params.id、do 内（含 branch 容器）
+   * startDialogue/dialogue.command 启动、quest 步骤/dialogueRefs/giver、scenarios 引用。
+   * 每个引用点返回 { kind, label, apply(newId) } —— apply 原地更新工程数据。
+   */
+  _dialogueReferenceSites(oldId) {
+    const sites = [];
+    const project = this.project || {};
+    const triggers = Array.isArray(project.triggers) ? project.triggers : [];
+
+    for (const trigger of triggers) {
+      const triggerId = String(trigger?.id || '?');
+      const whenType = trigger?.when?.type;
+      if ((whenType === 'dialogueChoice' || whenType === 'dialogueEnd') && trigger?.when?.params?.id === oldId) {
+        sites.push({
+          kind: 'trigger', label: `触发器 ${triggerId}（${whenType} 监听）`,
+          apply: newId => { trigger.when.params.id = newId; }
+        });
+      }
+      collectActionSteps(trigger?.do).forEach((action, index) => {
+        if (action?.action === 'startDialogue' && action?.params?.id === oldId) {
+          sites.push({
+            kind: 'trigger', label: `触发器 ${triggerId}（startDialogue 启动）`,
+            apply: newId => { action.params.id = newId; }
+          });
+        }
+        if (action?.action === 'dialogue.command' && action?.params?.dialogueId === oldId) {
+          sites.push({
+            kind: 'trigger', label: `触发器 ${triggerId}（dialogue.command 编排）`,
+            apply: newId => { action.params.dialogueId = newId; }
+          });
+        }
+      });
+    }
+
+    for (const quest of (Array.isArray(project.quests) ? project.quests : [])) {
+      const label = `任务 ${quest?.title || quest?.id || '?'}`;
+      (Array.isArray(quest?.steps) ? quest.steps : []).forEach((step, index) => {
+        if (step?.type === 'dialogue' && step?.dialogueId === oldId) {
+          sites.push({ kind: 'quest', label: `${label} 步骤 ${step?.id || index}`, apply: newId => { step.dialogueId = newId; } });
+        }
+      });
+      if (Array.isArray(quest?.dialogueRefs)) {
+        quest.dialogueRefs.forEach((ref, index) => {
+          if (String(ref) === oldId) {
+            sites.push({ kind: 'quest', label: `${label} dialogueRefs[${index}]`, apply: newId => { quest.dialogueRefs[index] = newId; } });
+          }
+        });
+      }
+      if (quest?.giver?.dialogueId === oldId) {
+        sites.push({ kind: 'quest', label: `${label} 接取对话`, apply: newId => { quest.giver.dialogueId = newId; } });
+      }
+    }
+
+    for (const scenario of (Array.isArray(project.scenarios) ? project.scenarios : [])) {
+      if (!Array.isArray(scenario?.dialogueRefs)) continue;
+      scenario.dialogueRefs.forEach((ref, index) => {
+        if (String(ref) === oldId) {
+          sites.push({ kind: 'scenario', label: `剧情 ${scenario?.title || scenario?.id || '?'}`, apply: newId => { scenario.dialogueRefs[index] = newId; } });
+        }
+      });
+    }
+    return sites;
+  }
   _nodeIds() {
     const d = this._dlg();
     return d && d.nodes ? Object.keys(d.nodes) : [];
@@ -232,6 +304,8 @@ export class DialogueGraphEditor {
       onSelectDialogue: id => this._showDialogueInEditor(id)
     });
     this._chainMode = false;
+    /** 对话 id 改名级联触碰过 triggers/quests 分片：保存时需一并提交。 */
+    this._idCascadeTouched = false;
   }
 
   /** 对话链视图开关：跨对话接线总览（来源/监听触发器/去向 + 断链高亮）。 */
@@ -545,9 +619,12 @@ export class DialogueGraphEditor {
       btn.addEventListener('click', (e) => {
         const nid = e.target.closest('.dlg-node').dataset.nid;
         this._commitDetail();
+        // 级联清理指向被删节点的引用，防止留下悬空 nextNode（链视图/加载期校验会暴露的那类）
+        const cleaned = this._cleanupNodeReferences(d, nid);
         delete d.nodes[nid];
         if (d.startNode === nid) d.startNode = Object.keys(d.nodes)[0] || 'start';
         this._renderDetail();
+        if (cleaned > 0) this._toast(`已清理 ${cleaned} 处指向节点「${nid}」的引用`, 'warn');
       });
     });
 
@@ -587,13 +664,57 @@ export class DialogueGraphEditor {
     return 'node' + i;
   }
 
+  /**
+   * 删除节点前的级联清理：把同对话内其他节点指向被删节点的引用置空
+   * （单跳 nextNode 与 choices[].nextNode）。返回清理处数。
+   */
+  _cleanupNodeReferences(d, removedNodeId) {
+    let cleaned = 0;
+    for (const [nodeId, node] of Object.entries(d?.nodes || {})) {
+      if (nodeId === removedNodeId) continue;
+      if (node?.nextNode === removedNodeId) {
+        node.nextNode = null;
+        cleaned++;
+      }
+      for (const choice of Array.isArray(node?.choices) ? node.choices : []) {
+        if (choice?.nextNode === removedNodeId) {
+          choice.nextNode = null;
+          cleaned++;
+        }
+      }
+    }
+    return cleaned;
+  }
+
   /** 把详情表单写回当前对话数据 */
   _commitDetail() {
     const d = this._dlg();
     const panel = this.container.querySelector('#dlg-detail');
     if (!d || !panel || !panel.querySelector('#d-id')) return;
 
-    d.id = panel.querySelector('#d-id').value.trim() || d.id;
+    // 对话 id 改名级联：有触发器/任务引用时确认后同步更新（取消则恢复原 id），
+    // 防止改名留下悬空引用（链视图「悬空监听」/加载期校验会暴露的那类）。
+    const idEl = panel.querySelector('#d-id');
+    const newId = idEl.value.trim();
+    if (newId && newId !== d.id) {
+      const sites = this._dialogueReferenceSites(d.id);
+      if (sites.length === 0) {
+        d.id = newId;
+      } else {
+        const okRename = window.confirm(
+          `对话 id 由「${d.id}」改为「${newId}」将同步更新 ${sites.length} 处引用：\n\n`
+          + sites.map(site => `· ${site.label}`).join('\n')
+          + '\n\n确定执行级联更新？（取消则恢复原 id）'
+        );
+        if (!okRename) {
+          idEl.value = d.id;
+        } else {
+          sites.forEach(site => site.apply(newId));
+          this._idCascadeTouched = true;
+          d.id = newId;
+        }
+      }
+    }
     d.title = panel.querySelector('#d-title').value.trim();
     // 所属场景（场景 ID，如 s1-1）
     const sceneEl = panel.querySelector('#d-scene');
