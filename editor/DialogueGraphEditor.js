@@ -22,8 +22,11 @@
  * choice.if = ExpressionEngine 条件（JSON，可空）；choice.do = 动作序列（JSON，可空）。
  *
  * 提供「导入 DialogueData.json」把现有对话数据迁移进 dialogues[]（P3-2）。
+ * 提供「对话链视图」跨对话接线总览（DialogueChainView，方案 3）。
  * 通过 Vite dev server 的 /api/read-file、/api/canonical-transaction 读写。
  */
+
+import { DialogueChainView, buildDialogueWiring } from './DialogueChainView.js';
 
 export class DialogueGraphEditor {
   /**
@@ -88,6 +91,7 @@ export class DialogueGraphEditor {
           this._status('✅ 已保存到 ' + this.projectPath + '（对话 ' + this.dialogues.length + ' 条）', 'ok');
           this._toast('保存成功（对话 ' + this.dialogues.length + ' 条）', 'success');
         }
+        if (this._chainMode) this._renderChain();
         return data;
       }
       const firstError = data?.errors?.[0];
@@ -202,6 +206,7 @@ export class DialogueGraphEditor {
           <button id="dlg-add">+ 新增对话</button>
           <button id="dlg-del">🗑 删除对话</button>
           <button id="dlg-import">⬇ 导入 DialogueData</button>
+          <button id="dlg-chain">🔗 对话链</button>
           <button id="dlg-save" class="primary">💾 保存到工程</button>
           <span class="dlg-hint">数据 → ${this.projectPath} · dialogues</span>
         </div>
@@ -209,6 +214,7 @@ export class DialogueGraphEditor {
           <div class="dlg-list" id="dlg-list"></div>
           <div class="dlg-detail" id="dlg-detail"></div>
         </div>
+        <div class="dlg-chain" id="dlg-chain-view" style="display:none;"></div>
         <div class="dlg-status" id="dlg-status"></div>
       </div>`;
     this.container.querySelector('#dlg-add').addEventListener('click', () => this._addDialogue());
@@ -216,11 +222,43 @@ export class DialogueGraphEditor {
     this.container.querySelector('#dlg-import').addEventListener('click', async () => {
       await this.importLegacy();
     });
+    this.container.querySelector('#dlg-chain').addEventListener('click', () => this._toggleChainView());
     this.container.querySelector('#dlg-save').addEventListener('click', async () => {
       await this.save();
     });
     this.container.querySelector('#dlg-filter-enabled').addEventListener('change', () => this._renderList());
     this.container.querySelector('#dlg-filter-scene').addEventListener('change', () => this._renderList());
+    this._chainView = new DialogueChainView(this.container.querySelector('#dlg-chain-view'), {
+      onSelectDialogue: id => this._showDialogueInEditor(id)
+    });
+    this._chainMode = false;
+  }
+
+  /** 对话链视图开关：跨对话接线总览（来源/监听触发器/去向 + 断链高亮）。 */
+  _toggleChainView() {
+    this._chainMode = !this._chainMode;
+    this.container.querySelector('.dlg-main').style.display = this._chainMode ? 'none' : 'flex';
+    this.container.querySelector('#dlg-chain-view').style.display = this._chainMode ? 'block' : 'none';
+    this.container.querySelector('#dlg-chain').classList.toggle('primary', this._chainMode);
+    this.container.querySelector('#dlg-chain').textContent = this._chainMode ? '📋 返回编辑' : '🔗 对话链';
+    if (this._chainMode) this._renderChain();
+  }
+
+  /** 渲染对话链（接线模型镜像加载期 validateDialogueGraph 规则，双端同步维护）。 */
+  _renderChain() {
+    this._commitDetail();
+    const wiring = buildDialogueWiring({
+      dialogues: this.dialogues,
+      triggers: Array.isArray(this.project?.triggers) ? this.project.triggers : [],
+      quests: Array.isArray(this.project?.quests) ? this.project.quests : []
+    });
+    this._chainView.render(wiring);
+  }
+
+  /** 从链视图卡片跳回对话编辑（切回列表视图并选中）。 */
+  _showDialogueInEditor(id) {
+    if (this._chainMode) this._toggleChainView();
+    this.selectById(id);
   }
 
   /** 动态更新场景/幕筛选下拉（从对话 act 字段收集） */
@@ -251,6 +289,7 @@ export class DialogueGraphEditor {
       .dlg-toolbar button.primary{background:#4CAF50;color:#000;font-weight:bold;}
       .dlg-hint{margin-left:auto;color:#8aa;font-size:12px;}
       .dlg-main{flex:1;display:flex;overflow:hidden;}
+      .dlg-chain{flex:1;display:none;overflow:hidden;}
       .dlg-list{width:220px;background:#111a30;border-right:1px solid #2a3a5e;overflow-y:auto;}
       .dlg-item{padding:9px 14px;border-bottom:1px solid #1e2b47;cursor:pointer;}
       .dlg-item:hover{background:#1a2540;}
@@ -650,6 +689,7 @@ export class DialogueGraphEditor {
     this.selectedIndex = Math.min(this.selectedIndex, this.dialogues.length - 1);
     this._renderList();
     this._renderDetail();
+    if (this._chainMode) this._renderChain();
   }
 
   // ---- JSON 校验 ----
