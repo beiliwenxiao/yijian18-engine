@@ -59,8 +59,23 @@ const step = (name, detail) => { log.push({ name, detail }); console.log(`[${nam
 /* ============ 进入 S02 ============ */
 step('teleport', await page.evaluate(async () => {
   const scene = window.__ddScene;
-  const r = await scene.teleportToChunk({ scene: 'S02', spawnRef: 'player', operationId: 'probe:s02-enter' });
-  return JSON.stringify({ ok: r?.ok, code: r?.code || r?.errors?.[0]?.code || null });
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  // 传送可能与 S01 开场触发器链的命令并发而被网关拒绝（保护性），重试直到场景事实落库
+  let last = null;
+  for (let attempt = 1; attempt <= 5; attempt += 1) {
+    last = await scene.teleportToChunk({ scene: 'S02', spawnRef: 'player', operationId: `probe:s02-enter-${attempt}` });
+    if (last?.ok !== false) {
+      const deadline = Date.now() + 15000;
+      while (Date.now() < deadline) {
+        await sleep(400);
+        if (scene.gameLoader?.blackboard?.get?.('storyState')?.currentSceneId === 'S02') {
+          return JSON.stringify({ ok: true, attempt });
+        }
+      }
+    }
+    await sleep(1500);
+  }
+  return JSON.stringify({ ok: false, code: last?.code || last?.errors?.[0]?.code || null });
 }));
 await page.waitForTimeout(3000);
 

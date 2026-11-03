@@ -130,7 +130,7 @@ describe('PlacementSpawner count 展开', () => {
   });
 });
 
-function createRuntime({ storyState = {} } = {}) {
+function createRuntime({ storyState = {}, registries: registriesOverride = null } = {}) {
   const store = {
     enemies: [], all: [], pickups: [], equipmentItems: [],
     addEnemy: entity => {
@@ -154,7 +154,7 @@ function createRuntime({ storyState = {} } = {}) {
       getComponent: key => (key === 'transform' ? { position: { x: data.position?.x, y: data.position?.y } } : null)
     }) },
     aiSystem: { registerAI: () => {}, deactivateAI: () => {}, unregisterAI: () => {} },
-    getRegistries: () => registries,
+    getRegistries: () => registriesOverride || registries,
     getConditionRoot: key => (key === 'storyState' ? storyState : undefined),
     validatePlacementReferences: () => ({ ok: true, errors: [] }),
     getWorldPromise: () => Promise.resolve({ ok: true })
@@ -219,5 +219,53 @@ describe('ScenePlacementRuntime count 模板的 tombstone 与派生 id', () => {
     expect(runtime._findPlacement('S01-unknown-9')).toBeNull();
     runtime.setProjection([{ ...TEMPLATE, id: 'S01-single', count: undefined }]);
     expect(runtime._findPlacement('S01-single-2')).toBeNull();
+  });
+});
+
+describe('ScenePlacementRuntime army 编制的重建', () => {
+  const ARMY_TEMPLATE = {
+    id: 'S02-army-column', sceneId: 'S02', type: 'ref', kind: 'army', ref: 'army.s02.column',
+    group: 'S02-army-column', faction: 'ally', x: 100, y: 430,
+    spawnWhen: { blackboardKey: 'storyState', path: 's02BegFainted', equals: true }
+  };
+  const armyRegistries = {
+    armies: {
+      get: ref => (ref === 'army.s02.column' ? {
+        id: 'army.s02.column',
+        squads: [
+          { id: 'qian', name: '前军', units: [{ ref: 'enemy.s02_yellow_turban_soldier', count: 2 }] },
+          { id: 'hou', name: '后军', units: [{ ref: 'enemy.s02_yellow_turban_soldier', count: 1 }] }
+        ]
+      } : null)
+    },
+    enemies: { get: ref => (ref === 'enemy.s02_yellow_turban_soldier' ? { id: 'enemy.s02_yellow_turban_soldier', hp: 40 } : null) }
+  };
+
+  it('rebuild 覆盖 army 编制虚拟实例：旧士兵回收重建，不报 missingOutcome', async () => {
+    const runtime = createRuntime({ storyState: { s02BegFainted: true }, registries: armyRegistries });
+    runtime.setProjection([ARMY_TEMPLATE]);
+    await runtime.spawn({ group: 'S02-army-column' });
+    expect(runtime._store.enemies).toHaveLength(3);
+
+    // 读档重建：army 的虚拟实例 id（`{placementId}-{squadId}-{n}`）必须纳入回收与
+    // 校验范围（旧实现漏掉会报 missingOutcome 且重建整体回滚）
+    const rebuilt = runtime.rebuild('S02');
+    expect(rebuilt.ok, JSON.stringify(rebuilt.errors || null)).toBe(true);
+    expect(runtime._store.enemies).toHaveLength(3);
+    expect(runtime._store.enemies.map(entity => entity.id).sort())
+      .toEqual(['S02-army-column-hou-1', 'S02-army-column-qian-1', 'S02-army-column-qian-2']);
+    expect(rebuilt.outcomes.filter(outcome => outcome.status === 'spawned')).toHaveLength(3);
+  });
+
+  it('rebuild 时 army 门控为假：逐虚拟实例 conditionFalse，不报错', async () => {
+    const runtime = createRuntime({ storyState: { s02BegFainted: false }, registries: armyRegistries });
+    runtime.setProjection([ARMY_TEMPLATE]);
+    await runtime.spawn({ group: 'S02-army-column' });
+    expect(runtime._store.enemies).toHaveLength(0);
+
+    const rebuilt = runtime.rebuild('S02');
+    expect(rebuilt.ok, JSON.stringify(rebuilt.errors || null)).toBe(true);
+    expect(rebuilt.outcomes.filter(outcome => outcome.status === 'conditionFalse')).toHaveLength(3);
+    expect(runtime._store.enemies).toHaveLength(0);
   });
 });

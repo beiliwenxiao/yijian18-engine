@@ -617,9 +617,17 @@ export class ScenePlacementRuntime {
     const placementIds = new Set([...retiredIds, ...activeIds]);
     // count 模板：把派生实例 id 一并纳入重建范围——旧实体按派生 id 登记（placementId），
     // spawner 生成账本也记派生 id；漏掉会导致旧实体不回收、生成被 alreadySpawned 短路。
+    // army 编制同理：soldier 虚拟实例 id（`{placementId}-{squadId}-{n}`）一并纳入。
     for (const id of [...activeIds, ...retiredIds]) {
       const template = this.placements.find(placement => placement?.id === id);
-      if (!template || template.count == null) continue;
+      if (!template) continue;
+      if (template.kind === 'army') {
+        for (const instance of this.spawner.expandArmyPlacement(template, this.getRegistries())) {
+          placementIds.add(instance.id);
+        }
+        continue;
+      }
+      if (template.count == null) continue;
       const instanceCount = resolveInstanceCount(template, this.getConditionRoot);
       for (let index = 1; index <= instanceCount; index += 1) {
         placementIds.add(expandPlacement(template, index, { deriveFirst: true }).id);
@@ -756,9 +764,20 @@ export class ScenePlacementRuntime {
       outcomesById.get(outcome.placementId).push(outcome);
     }
     const outcomeErrors = [];
-    // 校验目标按实例展开：count 模板的 outcomes/entities/pending 状态全部以派生实例 id 记录
+    // 校验目标按实例展开：count 模板与 army 编制的 outcomes/entities/pending 状态全部以
+    // 派生实例 id 记录；army 展开为空（定义缺失/空编制）时保留原 placement 校验——
+    // 失败结果记录在原 id 上，不致被吞掉。
     const verifyTargets = [];
     for (const placement of activePlacements) {
+      if (placement.kind === 'army') {
+        const instances = this.spawner.expandArmyPlacement(placement, this.getRegistries());
+        if (instances.length > 0) {
+          verifyTargets.push(...instances);
+        } else {
+          verifyTargets.push(placement);
+        }
+        continue;
+      }
       if (placement.count == null) {
         verifyTargets.push(placement);
         continue;

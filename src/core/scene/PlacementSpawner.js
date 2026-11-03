@@ -305,6 +305,15 @@ export class PlacementSpawner {
   }
 
   /**
+   * army placement 展开的公开包装（重建范围/校验用）：返回按 squads×units 派生的
+   * soldier 虚拟 placement 数组（id `{placementId}-{squadId}-{n}`）。定义缺失或空编制
+   * 返回 []，由调用方回退校验原 placement（失败结果记录在原 id 上）。
+   */
+  expandArmyPlacement(placement, registries) {
+    return this._expandArmyPlacement(placement, registries, () => {}, () => {});
+  }
+
+  /**
    * 生成单条 placement 实例（count 展开 + 定义合并 + 工厂生成 + 预载 + onSpawn 回调）。
    * army 展开的 soldier 虚拟 placement 也走此路径（count 已被清除，不二次展开）。
    * @private

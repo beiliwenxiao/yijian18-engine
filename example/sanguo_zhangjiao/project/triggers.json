@@ -3468,17 +3468,62 @@
   {
     "do": [
       {
-        "action": "takeReward",
-        "params": {
-          "items": [
-            {
-              "id": "resource.wild_berry",
-              "quantity": 2
+        "branch": [
+          {
+            "do": [
+              {
+                "action": "takeReward",
+                "params": {
+                  "items": [
+                    {
+                      "id": "resource.wild_berry",
+                      "quantity": 2
+                    }
+                  ]
+                },
+                "stepId": "beg-children-first-give"
+              },
+              {
+                "action": "setVar",
+                "params": {
+                  "key": "s02BegChildrenGave",
+                  "value": true
+                },
+                "stepId": "beg-children-gave-mark"
+              },
+              {
+                "action": "spawnPlacements",
+                "params": {
+                  "selector": {
+                    "group": "S02-beg-children-more"
+                  }
+                },
+                "stepId": "beg-children-more-spawn"
+              }
+            ],
+            "when": {
+              "count": 2,
+              "item": "resource.wild_berry",
+              "op": "hasItem"
             }
-          ]
-        },
-        "stepId": "beg-children-first-give"
+          }
+        ],
+        "stepId": "beg-children-give-branch"
+      }
+    ],
+    "id": "trg_s02_beg_children_round1",
+    "name": "荒村：孩童乞讨·第一轮（仅「给果子」且袋里有2野果才扣果并引来更多孩子）",
+    "once": true,
+    "when": {
+      "params": {
+        "id": "dialogue.s02.beggarChildren",
+        "choiceId": "give"
       },
+      "type": "dialogueChoice"
+    }
+  },
+  {
+    "do": [
       {
         "action": "state.transaction",
         "params": {
@@ -3487,23 +3532,82 @@
         "stepId": "beg-children-fact"
       },
       {
-        "action": "spawnPlacements",
-        "params": {
-          "selector": {
-            "group": "S02-beg-children-more"
+        "branch": [
+          {
+            "do": [
+              {
+                "action": "startDialogue",
+                "params": {
+                  "id": "dialogue.s02.beggarChildrenMore"
+                },
+                "stepId": "beg-children-more-dialogue"
+              }
+            ],
+            "when": {
+              "name": "s02BegChildrenGave",
+              "op": "var"
+            }
           }
-        },
-        "stepId": "beg-children-more-spawn"
+        ],
+        "stepId": "beg-children-more-branch"
+      },
+      {
+        "branch": [
+          {
+            "do": [
+              {
+                "action": "despawnPlacements",
+                "params": {
+                  "selector": {
+                    "group": "S02-beg-children"
+                  }
+                },
+                "stepId": "beg-children-despawn"
+              },
+              {
+                "action": "despawnPlacements",
+                "params": {
+                  "selector": {
+                    "group": "S02-beg-children-more"
+                  }
+                },
+                "stepId": "beg-children-more-despawn"
+              },
+              {
+                "action": "state.transaction",
+                "params": {
+                  "definitionId": "story.s02.beg.adults"
+                },
+                "stepId": "beg-adults-fact"
+              },
+              {
+                "action": "startDialogue",
+                "params": {
+                  "id": "dialogue.s02.beggarAdults"
+                },
+                "stepId": "beg-adults-dialogue"
+              }
+            ],
+            "when": {
+              "arg": {
+                "name": "s02BegChildrenGave",
+                "op": "var"
+              },
+              "op": "not"
+            }
+          }
+        ],
+        "stepId": "beg-children-refuse-branch"
       }
     ],
-    "id": "trg_s02_beg_children_round1",
-    "name": "荒村：孩童乞讨·第一轮（给果子则扣2野果，更多孩子围上）",
+    "id": "trg_s02_beg_children_after",
+    "name": "荒村：孩童乞讨收尾（给过→更多孩子追问；摇头没给→孩子散去、大人围上）",
     "once": true,
     "when": {
       "params": {
         "id": "dialogue.s02.beggarChildren"
       },
-      "type": "dialogueChoice"
+      "type": "dialogueEnd"
     }
   },
   {
@@ -3522,11 +3626,12 @@
       }
     ],
     "id": "trg_s02_beg_children_round2",
-    "name": "荒村：孩童乞讨·第二轮（给5野果或不给，孩子都散去）",
+    "name": "荒村：孩童乞讨·第二轮（仅「再给」扣5野果，给不给孩子都散去）",
     "once": true,
     "when": {
       "params": {
-        "id": "dialogue.s02.beggarChildrenMore"
+        "id": "dialogue.s02.beggarChildrenMore",
+        "choiceId": "give5"
       },
       "type": "dialogueChoice"
     }
@@ -3739,11 +3844,12 @@
       }
     ],
     "id": "trg_s02_beg_adults_choice",
-    "name": "荒村：大人乞讨抉择（给20野果或5狼肉则被哄抢，不给则酝酿围攻）",
+    "name": "荒村：大人乞讨抉择（仅「给食物」按库存扣20野果或5狼肉并被哄抢；摇头不给则酝酿围攻）",
     "once": true,
     "when": {
       "params": {
-        "id": "dialogue.s02.beggarAdults"
+        "id": "dialogue.s02.beggarAdults",
+        "choiceId": "giveAdults"
       },
       "type": "dialogueChoice"
     }
