@@ -137,7 +137,7 @@ export class SceneArmyCommandFlow {
     this._handleCombatEdge();
     this._handleTabCycle();
     this.system.update(deltaTime);
-    this._syncUnits();
+    this.syncUnits();
     this._handlePointer();
     this._handleGamepad();
   }
@@ -221,8 +221,8 @@ export class SceneArmyCommandFlow {
     ctx.restore();
   }
 
-  /** 扫描实体仓库，把带 SquadMemberComponent 的未注册实体登记进编组。 */
-  _syncUnits() {
+  /** 扫描实体仓库，把带 SquadMemberComponent 的未注册实体登记进编组（幂等，可外部提前调用）。 */
+  syncUnits() {
     const entities = this.scene.entityStore?.all || [];
     for (const entity of entities) {
       const member = entity?.getComponent?.('squadMember');

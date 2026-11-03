@@ -919,6 +919,44 @@ describe('ArmyCommandSystem 剧情行军（scenario army.march）', () => {
     expect(other.getComponent('commandState').goal).toBeNull(); // 未被卷入行军
   });
 
+  it('行军看门狗：段内卡住无进展超时强制推进；末段超时就地驻守完成', () => {
+    const stuck = makeUnit('u1', { x: 100, y: 100, armyId: 'army.s02.column', squadId: 'qian' });
+    const arrived = makeUnit('u2', { x: 120, y: 100, armyId: 'army.s02.column', squadId: 'hou' });
+    system.registerUnit(stuck, { armyId: 'army.s02.column', squadId: 'qian' });
+    system.registerUnit(arrived, { armyId: 'army.s02.column', squadId: 'hou' });
+    const onMarchComplete = vi.fn();
+    system.onMarchComplete = onMarchComplete;
+
+    let clock = 0;
+    system.now = () => clock;
+    system.startMarch({ armyId: 'army.s02.column', waypoints: [{ x: 220, y: 340 }, { x: 620, y: 398 }] });
+
+    // 第一段：arrived 抵达（有进展重置看门狗），stuck 永远到不了（人群互挤模拟）
+    clock += 1000;
+    arrived.getComponent('commandState').goal = null;
+    system.update(0.016);
+    expect(stuck.getComponent('commandState').goal).not.toBeNull(); // 仍有进展窗口，不推进
+    clock += 5000; // 超过容忍窗口无新进展
+    system.update(0.016);
+    expect(onMarchComplete).not.toHaveBeenCalled();
+    expect(stuck.getComponent('commandState').goal).not.toBeNull();
+    // 强制推进到末段：goal 重新围绕末段路点生成
+    const forcedGoal = stuck.getComponent('commandState').goal;
+    expect(forcedGoal.x).toBeGreaterThan(220); // 已指向第二段区域
+
+    // 末段：stuck 继续卡住 → 看门狗超时就地驻守完成（剧情链不断）
+    clock += 5000;
+    system.update(0.016);
+    expect(onMarchComplete).toHaveBeenCalledTimes(1);
+    expect(stuck.getComponent('commandState').goal).toBeNull(); // 残留目标清空
+    expect(stuck.getComponent('commandState').post).not.toBeNull(); // 原地驻守
+
+    // 幂等：完成后 update 不再回调
+    clock += 5000;
+    system.update(0.016);
+    expect(onMarchComplete).toHaveBeenCalledTimes(1);
+  });
+
   it('搬运中/阵亡单位不入行军队列；cancelMarch 中断后不再回调', () => {
     const carrier = makeUnit('u1', { x: 0, y: 0, armyId: 'army.s02.column', squadId: 'qian' });
     const dead = makeUnit('u2', { x: 0, y: 0, armyId: 'army.s02.column', squadId: 'hou' });

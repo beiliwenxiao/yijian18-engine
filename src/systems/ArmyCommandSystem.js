@@ -45,6 +45,8 @@ export const ARMY_SELECTION_SLOTS = Object.freeze([
 const FORMATION_SPACING_X = 44;
 const FORMATION_SPACING_Y = 28;   // 2.5D y 压缩
 const ARRIVE_RADIUS = 26;
+/** 行军看门狗：段内无任何单位抵达进展的容忍窗口（人群互挤/障碍卡位时强制推进，保剧情链）。 */
+const MARCH_STALL_MS = 5000;
 const PICK_RADIUS = 30;
 const SOLDIER_BASE_SPEED = 90;    // 士兵 stats.speed 缺省回退基准（搬运/姿态机速度用）
 
@@ -434,7 +436,7 @@ export class ArmyCommandSystem {
     if (!points.length) return { ok: false, code: 'noWaypoints' };
     const units = this._marchUnits(armyId);
     if (!units.length) return { ok: false, code: 'noUnits' };
-    this.marchMission = { armyId: armyId || '', waypoints: points, index: 0, done: false };
+    this.marchMission = { armyId: armyId || '', waypoints: points, index: 0, done: false, pending: null, stallSince: null };
     this._applyMarchWaypoint();
     return { ok: true, count: units.length, segments: points.length };
   }
@@ -470,9 +472,13 @@ export class ArmyCommandSystem {
       command.goal = { x: point.x, y: point.y };
     });
     this.activeOrder = { goal: { ...goal }, unitIds: units.map(entity => entity.id), done: false };
+    mission.pending = units.length;
+    mission.stallSince = this.now();
   }
 
-  /** 行军帧推进：全员抵达当前路点 → 下一段；末段抵达（或单位全灭）→ onMarchComplete。 */
+  /** 行军帧推进：全员抵达当前路点 → 下一段；末段抵达（或单位全灭）→ onMarchComplete。
+   *  看门狗：直线寻的遇人群互挤/障碍可能让个别单位永远到不了格点——段内若超过
+   *  MARCH_STALL_MS 无任何单位抵达进展，强制推进下一段（末段视为抵达并就地驻守完成）。 */
   updateMarch() {
     const mission = this.marchMission;
     if (!mission || mission.done) return;
@@ -481,21 +487,46 @@ export class ArmyCommandSystem {
       this._completeMarch();
       return;
     }
-    const allArrived = units.every(entity => !entity.getComponent?.('commandState')?.goal);
-    if (!allArrived) return;
-    if (mission.index < mission.waypoints.length - 1) {
-      mission.index += 1;
-      this._applyMarchWaypoint();
+    const pending = units.reduce((count, entity) => (
+      count + (entity.getComponent?.('commandState')?.goal ? 1 : 0)
+    ), 0);
+    if (pending < mission.pending) {
+      // 有单位新抵达 = 有进展，重置看门狗
+      mission.pending = pending;
+      mission.stallSince = this.now();
+    }
+    if (!pending) {
+      if (mission.index < mission.waypoints.length - 1) {
+        mission.index += 1;
+        this._applyMarchWaypoint();
+        return;
+      }
+      this._completeMarch();
       return;
     }
-    this._completeMarch();
+    if (this.now() - mission.stallSince >= MARCH_STALL_MS) {
+      if (mission.index < mission.waypoints.length - 1) {
+        mission.index += 1;
+        this._applyMarchWaypoint();
+        return;
+      }
+      this._completeMarch();
+    }
   }
 
-  /** 行军完成：置 done 并通知场景（重复到达/重入幂等：done 后不再回调）。 */
+  /** 行军完成：全军就地驻守（清残留目标），置 done 并通知场景（重复到达/重入幂等：done 后不再回调）。 */
   _completeMarch() {
     const mission = this.marchMission;
     if (mission && mission.done) return;
     if (mission) mission.done = true;
+    for (const entity of this._marchUnits(mission?.armyId || '')) {
+      const command = entity.getComponent?.('commandState');
+      if (!command) continue;
+      if (!command.goal) continue;
+      const transform = entity.getComponent?.('transform');
+      command.goal = null;
+      command.post = transform ? { x: transform.position.x, y: transform.position.y } : command.post;
+    }
     this.marchMission = null;
     try {
       this.onMarchComplete?.({ armyId: mission?.armyId || '' });

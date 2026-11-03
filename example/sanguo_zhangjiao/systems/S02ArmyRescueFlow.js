@@ -222,6 +222,11 @@ export class S02ArmyRescueCoordinator {
     const scene = this.scene;
     const system = scene.armyCommandFlow?.system;
     if (!system?.startMarch) return { ok: false, code: 'armyCommandUnavailable' };
+    // 同帧竞态防护：触发器序列里 spawnPlacements 与 army.march 同帧先后执行，
+    // 编组注册（SceneArmyCommandFlow.syncUnits）原本要等下一帧扫描——此时 startMarch
+    // 会因 units 为空返回 noUnits 且步骤抛错，armyMarchArrived 永不触发（任务卡死）。
+    // spawn 全程同步（实体已在 entityStore），此处先补一次注册再起行军，确定性消除竞态。
+    scene.armyCommandFlow?.syncUnits?.();
     const offset = scene._worldLoadResult?.worldIndex?.getOffset?.(scene.currentSceneId) || { x: 0, y: 0 };
     const worldWaypoints = (Array.isArray(waypoints) ? waypoints : [])
       .filter(point => Number.isFinite(Number(point?.x)) && Number.isFinite(Number(point?.y)))

@@ -42,9 +42,9 @@ function makeScene(entities, armyDefinitions) {
   };
 }
 
-/** 走一次编组同步（等价 flow.update 里的 _syncUnits 调用）。 */
+/** 走一次编组同步（等价 flow.update 里的 syncUnits 调用）。 */
 function sync(flow) {
-  flow._syncUnits();
+  flow.syncUnits();
 }
 
 describe('军团指挥：内容库 defaultStance → 战前预设', () => {
