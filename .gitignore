@@ -100,3 +100,6 @@ sanguo_zhangjiao_*.apk
 example/sanguo_zhangjiao/art-source/
 # Kiro hook 运行产物（kiro 已废弃，归档于 .kiro_old）
 .kiro_old/hooks/post-task-knowledge-summary.json
+# 编辑器/调试本地产物
+.screenshots/
+.spec/
