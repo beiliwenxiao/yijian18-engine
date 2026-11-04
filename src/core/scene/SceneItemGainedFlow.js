@@ -36,7 +36,10 @@ export class SceneItemGainedFlow {
     this.disposed = false;
   }
 
-  /** 将一件已入背包的物品加入待处理队列（所有类型都弹窗，材料/资源同样提示）。 */
+  /**
+   * 将一件已入背包的物品加入待处理队列。
+   * 武器/装备类与药品/药水类（可用消耗品）弹窗决策；其余物品仅发通知，不再弹确认。
+   */
   onItemGained(item, player = null) {
     if (this.disposed || !item) return;
 
@@ -47,7 +50,9 @@ export class SceneItemGainedFlow {
       item.type === 'equipment' ? 'info' : 'success'
     );
 
-    if (!scene.itemGainedPopup) return;
+    const needsDecision = item.type === 'equipment'
+      || (item.type === 'consumable' && item.usable);
+    if (!scene.itemGainedPopup || !needsDecision) return;
     this.queue.push({ item, player: player || scene.playerEntity });
     if (!scene.itemGainedPopup.visible) this.showNext();
   }
@@ -87,14 +92,8 @@ export class SceneItemGainedFlow {
       autoTriggerSeconds: 5,
       onClick: () => advance()
     });
-    actions.push({
-      id: 'drop',
-      label: '丢弃',
-      color: '#864040',
-      onClick: () => advance(() => this._drop(item))
-    });
 
-    // 用户约定：默认选项=立即装备/立即使用（手柄焦点默认落在这里）；纯材料无 primary 仍默认放入背包。
+    // 用户约定：默认选项=立即装备/立即使用（手柄焦点默认落在这里）。
     // 5 秒自动入包兜底保留（防弹窗久挂，不自动换装）。
     const defaultActionId = primaryLabel ? 'primary' : 'store';
     popup.show({
@@ -125,18 +124,6 @@ export class SceneItemGainedFlow {
     this.disposed = true;
     this.scene = null;
     return true;
-  }
-
-  /** 丢弃本次已提交获得的数量；实际地面实体与事件由 item.drop 权威事务生成。 */
-  _drop(item) {
-    if (!this.executeIntent) return Promise.resolve({ ok: false, code: 'unavailable' });
-    const quantity = item.instanceId ? 1 : Math.max(1, Math.floor(Number(item.quantity) || 1));
-    return Promise.resolve(this.executeIntent('item.drop', {
-      itemId: item.id,
-      instanceId: item.instanceId || null,
-      quantity,
-      reason: 'itemGainedPopup'
-    }));
   }
 
   /** 保留给场景兼容入口的装备预览计算。 */
