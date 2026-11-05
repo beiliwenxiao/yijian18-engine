@@ -96,6 +96,10 @@ export function renderEditorNav(currentPageId, containerId = 'editor-nav') {
       .editor-nav .nav-group-label { font-size: 11px; color: #6a7a9e; margin-right: -2px; align-self: center; white-space: nowrap; flex-shrink: 0; }
       .game-selector { padding: 6px 12px; background: #2a3a5e; border: 1px solid #4CAF50; border-radius: 4px; color: #fff; font-size: 13px; margin-left: 12px; }
       .game-selector-label { color: #aaa; font-size: 12px; margin-right: 4px; }
+      /* 深色主题下拉展开列表：option 继承白字但弹出层用系统白底 → 白底白字视觉空白；
+         显式给 option 深色底，全部编辑器页面的下拉（含原生展开列表）可读。 */
+      select option { background: #16213e; color: #fff; }
+      select optgroup { background: #16213e; color: #fff; }
     `;
     document.head.appendChild(style);
   }
