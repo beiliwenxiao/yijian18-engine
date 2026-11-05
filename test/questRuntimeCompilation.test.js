@@ -195,8 +195,8 @@ describe('QuestRuntime Quest v2 编译器', () => {
     // S03-S08/S10-S14 薄任务串接），共 15 条 quest 定义
     expect(compiled.taskGraphs.map(graph => graph.id)).toEqual([
       'task.s01.survival',
-      'task.s02.summons',
       'task.s02.rescue',
+      'task.s02.summons',
       'task.s09.joinYellowTurban',
       'task.s03.yingchuanBattle',
       'task.s04.changsheDefense',
@@ -221,7 +221,8 @@ describe('QuestRuntime Quest v2 编译器', () => {
     // 方案 B 编排步骤化：S01 目标后段由步骤编译；编辑器重排后目标链为
     // lightCampfire → gatherBerries → eatBerry → findAxe → gatherWood…，
     // 编排段随步骤归属移动（after.eatBerry.2 现归属 findAxe 段）。
-    // 新基线：全集 34 个（s01 编排 7 个 + s01 complete 1 个 + S02-S14 任务化 accept/complete 26 个），s01 七个仍居首
+    // 新基线：全集 53 个（s01 编排 7 个 + s01 complete 1 个 + S02-S14 任务化 accept/complete 26 个
+    // + s02 编排 5 个 + S03-S13/S09 开场段与目标后段 19 个），s01 八个仍居首
     expect(compiled.triggers.slice(0, 7).map(trigger => trigger.id)).toEqual([
       'trg_task.s01.survival_intro',
       'trg_task.s01.survival_after_lightCampfire',
@@ -258,6 +259,44 @@ describe('阶段③ S01 迁移契约：quest 编译产物与手写任务图逐�
     expect(s02Graph.nodes.find(node => node.id === 'repelRaid').eventMatcher).toEqual({
       type: 'state.transaction', payload: { definitionId: 'story.s02.raid.repeled' }
     });
+  });
+
+  it('s02 编排步骤化：rescue 教学开场/苏醒段 + summons 招募/扎营/退敌目标后段由步骤编译', () => {
+    const triggers = compileQuestProject(project).triggers.filter(trigger => trigger.id.startsWith('trg_task.s02.'));
+    const byId = new Map(triggers.map(trigger => [trigger.id, trigger]));
+    // rescue 开场段：两条指挥教学（choice_save 触发器不再手写）
+    const rescueIntro = byId.get('trg_task.s02.rescue_intro');
+    expect(rescueIntro).toBeTruthy();
+    expect(rescueIntro.when).toEqual({ type: 'task.started', params: { definitionId: 'task.s02.rescue' } });
+    expect(rescueIntro.do.map(action => action.action)).toEqual(['tutorial.command', 'tutorial.command']);
+    expect(rescueIntro.do[0].params).toEqual({ operation: 'show', tutorialId: 's02.command.move' });
+    expect(rescueIntro.do[1].params).toEqual({ operation: 'show', tutorialId: 's02.command.carry' });
+    // rescue 目标后段：教学收尾 → 苏醒对话（await）→ 信使提示 → 赠符水
+    const rescueAfter = byId.get('trg_task.s02.rescue_after_carryToCamp');
+    expect(rescueAfter).toBeTruthy();
+    expect(rescueAfter.when).toEqual({ type: 'state.transaction', params: { definitionId: 'story.s02.rescue.done' } });
+    expect(rescueAfter.once).toBe(true);
+    expect(rescueAfter.do.map(action => action.action)).toEqual([
+      'tutorial.command', 'tutorial.command', 'dialogue.command', 'showTip', 'state.transaction'
+    ]);
+    expect(rescueAfter.do[2].params).toEqual({ dialogueId: 'dialogue.s02.awakening', operation: 'start', await: true });
+    expect(rescueAfter.do[4].params).toEqual({ definitionId: 'reward.s02.rescueGift' });
+    // summons 目标后三段：招募（提示+对话）/ 扎营（提示+过夜对话+迎战教学）/ 退敌（胜利旁白+教学收尾）
+    const summonsAfter = [
+      'trg_task.s02.summons_after_recruit',
+      'trg_task.s02.summons_after_camp',
+      'trg_task.s02.summons_after_repelRaid'
+    ].map(id => byId.get(id));
+    for (const trigger of summonsAfter) {
+      expect(trigger, `${trigger?.id} 存在`).toBeTruthy();
+      expect(trigger.once).toBe(true);
+    }
+    expect(summonsAfter[0].when).toEqual({ type: 'state.transaction', params: { definitionId: 'story.s02.recruit.done' } });
+    expect(summonsAfter[0].do.map(action => action.action)).toEqual(['showTip', 'dialogue.command']);
+    expect(summonsAfter[1].do.map(action => action.action)).toEqual(['showTip', 'dialogue.command', 'tutorial.command']);
+    expect(summonsAfter[1].do[1].params).toEqual({ dialogueId: 'dialogue.s02.overnight', operation: 'start', await: true });
+    expect(summonsAfter[2].do.map(action => action.action)).toEqual(['dialogue.command', 'tutorial.command']);
+    expect(summonsAfter[2].do[0].params).toEqual({ dialogueId: 'dialogue.s02.raidRepelled', operation: 'start', await: true });
   });
 
   it('任务图结构：18 objective 线性链 + 裸 start/complete 节点（存档 nodeStates 寻址兼容）', () => {
@@ -314,9 +353,9 @@ describe('阶段③ S01 迁移契约：quest 编译产物与手写任务图逐�
     // 方案 B 编排步骤化：开场段 + 6 个目标后段由步骤编译（lightCampfire/gatherBerries/eatBerry/findAxe/spotWolf/skinWolf）；
     // 交互/机制类触发器（拾斧、添柴交互、sceneEnter 装配等）仍由 triggers[] 手写承担。
     // 新基线：S02-S14 任务化 accept 13 个 + complete 13 个（含 s02.rescue 无 accept、s01 complete 奖励），
-    // 编译触发器全集 = s01 编排 7 个 + s01 complete 1 个 + S02-S14 26 个 = 34。
+    // 编译触发器全集 = s01 编排 7 个 + s01 complete 1 个 + S02-S14 26 个 + s02 编排 5 个 + S03-S13 收编编排 19 个 = 53。
     const triggers = compileQuestProject(project).triggers;
-    expect(triggers.length).toBe(34);
+    expect(triggers.length).toBe(53);
     expect(triggers.slice(0, 7).map(trigger => trigger.id)).toEqual([
       'trg_task.s01.survival_intro',
       'trg_task.s01.survival_after_lightCampfire',

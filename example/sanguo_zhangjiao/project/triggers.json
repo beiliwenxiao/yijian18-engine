@@ -817,26 +817,10 @@
           "regionId": "S02-camp-rescue",
           "scenarioId": "scenario.command.army.rescue.begin"
         }
-      },
-      {
-        "action": "tutorial.command",
-        "params": {
-          "operation": "show",
-          "tutorialId": "s02.command.move"
-        },
-        "stepId": "show-tutorial-s02-command-move"
-      },
-      {
-        "action": "tutorial.command",
-        "params": {
-          "operation": "show",
-          "tutorialId": "s02.command.carry"
-        },
-        "stepId": "show-tutorial-s02-command-carry"
       }
     ],
     "id": "trg_s02_choice_save",
-    "name": "张角选择：救他（开放搬运玩法）",
+    "name": "张角选择：救他（开放搬运玩法；指挥教学由 task.s02.rescue 开场步骤编译）",
     "once": true,
     "when": {
       "params": {
@@ -860,28 +844,6 @@
           "operation": "army.rescue.awaken",
           "scenarioId": "scenario.command.army.rescue.awaken"
         }
-      },
-      {
-        "action": "tutorial.command",
-        "params": {
-          "operation": "complete",
-          "tutorialId": "s02.command.move"
-        },
-        "stepId": "complete-tutorial-s02-command-move"
-      },
-      {
-        "action": "tutorial.command",
-        "params": {
-          "operation": "complete",
-          "tutorialId": "s02.command.carry"
-        },
-        "stepId": "complete-tutorial-s02-command-carry"
-      },
-      {
-        "action": "startDialogue",
-        "params": {
-          "id": "dialogue.s02.awakening"
-        }
       }
     ],
     "id": "trg_s02_camp_arrival",
@@ -891,39 +853,13 @@
       },
       "op": "not"
     },
-    "name": "伤者抵达营地：苏醒过场",
+    "name": "伤者抵达营地：提交救援事实+苏醒演出（苏醒对话/教学收尾/赠礼由 task.s02.rescue 目标后步骤编译）",
     "once": false,
     "when": {
       "params": {
         "regionId": "S02-camp-rescue"
       },
       "type": "enterRegion"
-    }
-  },
-  {
-    "do": [
-      {
-        "action": "showTip",
-        "params": {
-          "text": "黄巾军一行朝粥棚方向离开了。信使示意你跟上——张角要见你。"
-        }
-      },
-      {
-        "action": "state.transaction",
-        "params": {
-          "definitionId": "reward.s02.rescueGift"
-        },
-        "stepId": "reward-s02-rescue-gift"
-      }
-    ],
-    "id": "trg_s02_awakening_done",
-    "name": "苏醒完毕：张角赠符水，召见在即",
-    "once": true,
-    "when": {
-      "params": {
-        "id": "dialogue.s02.awakening"
-      },
-      "type": "dialogueEnd"
     }
   },
   {
@@ -1207,20 +1143,6 @@
                 "stepId": "recruit-army-spawn"
               },
               {
-                "action": "showTip",
-                "params": {
-                  "text": "五十名新募信众领了符牌入列——加上张角带来的二十人，七十人同入太平道！"
-                },
-                "stepId": "recruit-done-tip"
-              },
-              {
-                "action": "startDialogue",
-                "params": {
-                  "id": "dialogue.s02.recruitDone"
-                },
-                "stepId": "recruit-done-dialogue"
-              },
-              {
                 "action": "scenario.command",
                 "params": {
                   "operation": "army.camp",
@@ -1316,20 +1238,6 @@
         "stepId": "camp-decor-spawn"
       },
       {
-        "action": "showTip",
-        "params": {
-          "text": "营地扎立完成。张角令全军休整——当夜无事。"
-        },
-        "stepId": "camp-laid-tip"
-      },
-      {
-        "action": "startDialogue",
-        "params": {
-          "id": "dialogue.s02.overnight"
-        },
-        "stepId": "overnight-dialogue"
-      },
-      {
         "action": "state.transaction",
         "params": {
           "definitionId": "story.s02.overnight.done"
@@ -1359,18 +1267,10 @@
           "scenarioId": "scenario.command.army.possess"
         },
         "stepId": "army-possess"
-      },
-      {
-        "action": "tutorial.command",
-        "params": {
-          "operation": "show",
-          "tutorialId": "s02.command.stance"
-        },
-        "stepId": "show-tutorial-s02-command-stance"
       }
     ],
     "id": "trg_s02_camp_laid",
-    "name": "荒村：扎营完成 → 当夜过夜 → 翌日清晨发现官兵百人精锐围城 → 附身张角迎战（M3.5）",
+    "name": "荒村：扎营完成 → 提交事实+装饰+当夜/翌日围剿武装（扎营提示/过夜对话/迎战教学由 task.s02.summons 目标后步骤编译）",
     "once": true,
     "when": {
       "params": {},
@@ -1459,27 +1359,12 @@
                 "stepId": "raid-fight-clear"
               },
               {
-                "action": "startDialogue",
-                "params": {
-                  "id": "dialogue.s02.raidRepelled"
-                },
-                "stepId": "raid-repeled-dialogue"
-              },
-              {
                 "action": "scenario.command",
                 "params": {
                   "operation": "army.possess.release",
                   "scenarioId": "scenario.command.army.possess.release"
                 },
                 "stepId": "army-possess-release"
-              },
-              {
-                "action": "tutorial.command",
-                "params": {
-                  "operation": "complete",
-                  "tutorialId": "s02.command.stance"
-                },
-                "stepId": "complete-tutorial-s02-command-stance"
               }
             ],
             "when": {
@@ -1504,7 +1389,7 @@
       }
     ],
     "id": "trg_s02_raid_repeled",
-    "name": "荒村：围剿胜利 → 旁白 + 解除附身（M4 行军段再切张角）",
+    "name": "荒村：围剿胜利 → 提交事实+解除附身（胜利旁白/教学收尾由 task.s02.summons 目标后步骤编译）",
     "once": false,
     "when": {
       "params": {
@@ -1745,12 +1630,6 @@
             "group": "S09-initial"
           }
         }
-      },
-      {
-        "action": "showTip",
-        "params": {
-          "text": "先与张角交谈加入黄巾，再到三面军旗下确认职业。"
-        }
       }
     ],
     "id": "trg_s09_spawn_initial",
@@ -1864,29 +1743,6 @@
     }
   },
   {
-    "do": [
-      {
-        "action": "showTip",
-        "params": {
-          "text": "职业已固定，初始装备和能力已发放。北侧军令旗现可通往颍川首战。"
-        }
-      },
-      {
-        "action": "state.transaction",
-        "params": {
-          "definitionId": "reward.s09.classGift"
-        },
-        "stepId": "reward-s09-class-gift"
-      }
-    ],
-    "id": "trg_s09_class_selected_feedback",
-    "once": true,
-    "when": {
-      "params": {},
-      "type": "classSelected"
-    }
-  },
-  {
     "cooldown": 1,
     "do": [
       {
@@ -1920,12 +1776,6 @@
           "selector": {
             "group": "S03-han-army"
           }
-        }
-      },
-      {
-        "action": "showTip",
-        "params": {
-          "text": "前往中央军令旗选择观战或介入；选择一经确认不可更改。"
         }
       }
     ],
@@ -2020,12 +1870,6 @@
           "selector": {
             "group": "S04-herbs"
           }
-        }
-      },
-      {
-        "action": "showTip",
-        "params": {
-          "text": "先在中央军令旗选择观战或介入；只有介入可在西侧残旗下启动波才救援���"
         }
       }
     ],
@@ -2331,12 +2175,6 @@
             "group": "S07-han-army"
           }
         }
-      },
-      {
-        "action": "showTip",
-        "params": {
-          "text": "先在军令旗选择观战或介入；介入后依次提交 north、center、south 三线阻滞点并保存残部。"
-        }
       }
     ],
     "id": "trg_s07_spawn_initial",
@@ -2459,24 +2297,6 @@
     }
   },
   {
-    "do": [
-      {
-        "action": "showTip",
-        "params": {
-          "text": "检查泥泞马车，在决策军令旗下决定残部撤退方案，再前往召回出口。"
-        }
-      }
-    ],
-    "id": "trg_s08_enter",
-    "once": true,
-    "when": {
-      "params": {
-        "sceneId": "S08"
-      },
-      "type": "sceneEnter"
-    }
-  },
-  {
     "cooldown": 0.5,
     "do": [
       {
@@ -2528,24 +2348,6 @@
     "when": {
       "params": {},
       "type": "interact"
-    }
-  },
-  {
-    "do": [
-      {
-        "action": "showTip",
-        "params": {
-          "text": "先进入病帐确认张角病逝，再检查临时营地，最后沿溪拔营。"
-        }
-      }
-    ],
-    "id": "trg_s10_enter",
-    "once": true,
-    "when": {
-      "params": {
-        "sceneId": "S10"
-      },
-      "type": "sceneEnter"
     }
   },
   {
@@ -2757,12 +2559,6 @@
           "selector": {
             "group": "S11-zhang-liang-rescue"
           }
-        }
-      },
-      {
-        "action": "showTip",
-        "params": {
-          "text": "先在军令旗选择观战或介入；介入后按烽火、六名卫兵、三波刺客、西门突围的顺序救援张梁。"
         }
       }
     ],
@@ -3021,12 +2817,6 @@
             "group": "S12-zhang-liang-reinforcements"
           }
         }
-      },
-      {
-        "action": "showTip",
-        "params": {
-          "text": "先选择下曲��战役模式；介入后确认救援路线，守门六十秒，再开启密道并护送张宝撤离。"
-        }
       }
     ],
     "id": "trg_s12_spawn_initial",
@@ -3212,12 +3002,6 @@
             "group": "S13-han-army"
           }
         }
-      },
-      {
-        "action": "showTip",
-        "params": {
-          "text": "在军令旗下选择观战或投入最后资源介入精山；战果冻结后从东北撤离旗进入结局之地。"
-        }
       }
     ],
     "id": "trg_s13_spawn_initial",
@@ -3399,16 +3183,10 @@
         "params": {
           "definitionId": "story.s03.vanguardBroken"
         }
-      },
-      {
-        "action": "showTip",
-        "params": {
-          "text": "朱儁前锋溃退——这是你投军后的第一战。"
-        }
       }
     ],
     "id": "trg_s03_vanguard_broken",
-    "name": "颍川玩家初战：击退朱儁前锋",
+    "name": "颍川玩家初战：击退朱儁前锋（提示由 task.s03 目标后步骤编译）",
     "once": true,
     "when": {
       "params": {
@@ -3424,16 +3202,10 @@
         "params": {
           "definitionId": "story.s13.sunXiaDefeated"
         }
-      },
-      {
-        "action": "showTip",
-        "params": {
-          "text": "孙夏已伏诛，精山残部士气大振。"
-        }
       }
     ],
     "id": "trg_s13_sun_xia_defeated",
-    "name": "精山决战：讨斩敌将孙夏",
+    "name": "精山决战：讨斩敌将孙夏（提示由 task.s13 目标后步骤编译）",
     "once": true,
     "when": {
       "params": {
@@ -4526,12 +4298,6 @@
     "cooldown": 1,
     "do": [
       {
-        "action": "startDialogue",
-        "params": {
-          "id": "dialogue.s09.arrival"
-        }
-      },
-      {
         "action": "state.transaction",
         "params": {
           "definitionId": "story.s09.treatment"
@@ -4555,211 +4321,11 @@
       }
     ],
     "id": "trg_s09_opening_dialogue",
-    "name": "进入 S09：初入广宗大营开场对话 + 军医治疗痊愈（M3.6 伤势终点）",
+    "name": "进入 S09：军医治疗痊愈（M3.6 伤势终点；开场对话由 task.s09.joinYellowTurban intro 步骤编译）",
     "once": true,
     "when": {
       "params": {
         "sceneId": "S09"
-      },
-      "type": "sceneEnter"
-    }
-  },
-  {
-    "cooldown": 1,
-    "do": [
-      {
-        "action": "startDialogue",
-        "params": {
-          "id": "dialogue.s03.opening"
-        }
-      }
-    ],
-    "id": "trg_s03_opening_dialogue",
-    "name": "进入 S03：颍川烟尘开场对话",
-    "once": true,
-    "when": {
-      "params": {
-        "sceneId": "S03"
-      },
-      "type": "sceneEnter"
-    }
-  },
-  {
-    "cooldown": 1,
-    "do": [
-      {
-        "action": "startDialogue",
-        "params": {
-          "id": "dialogue.s04.opening"
-        }
-      }
-    ],
-    "id": "trg_s04_opening_dialogue",
-    "name": "进入 S04：长社风急开场对话",
-    "once": true,
-    "when": {
-      "params": {
-        "sceneId": "S04"
-      },
-      "type": "sceneEnter"
-    }
-  },
-  {
-    "cooldown": 1,
-    "do": [
-      {
-        "action": "startDialogue",
-        "params": {
-          "id": "dialogue.s05.opening"
-        }
-      }
-    ],
-    "id": "trg_s05_opening_dialogue",
-    "name": "进入 S05：宛城矿尘开场对话",
-    "once": true,
-    "when": {
-      "params": {
-        "sceneId": "S05"
-      },
-      "type": "sceneEnter"
-    }
-  },
-  {
-    "cooldown": 1,
-    "do": [
-      {
-        "action": "startDialogue",
-        "params": {
-          "id": "dialogue.s06.opening"
-        }
-      }
-    ],
-    "id": "trg_s06_opening_dialogue",
-    "name": "进入 S06：宛城备御开场对话",
-    "once": true,
-    "when": {
-      "params": {
-        "sceneId": "S06"
-      },
-      "type": "sceneEnter"
-    }
-  },
-  {
-    "cooldown": 1,
-    "do": [
-      {
-        "action": "startDialogue",
-        "params": {
-          "id": "dialogue.s07.opening"
-        }
-      }
-    ],
-    "id": "trg_s07_opening_dialogue",
-    "name": "进入 S07：西华迟滞开场对话",
-    "once": true,
-    "when": {
-      "params": {
-        "sceneId": "S07"
-      },
-      "type": "sceneEnter"
-    }
-  },
-  {
-    "cooldown": 1,
-    "do": [
-      {
-        "action": "startDialogue",
-        "params": {
-          "id": "dialogue.s08.opening"
-        }
-      }
-    ],
-    "id": "trg_s08_opening_dialogue",
-    "name": "进入 S08：西华残道开场对话",
-    "once": true,
-    "when": {
-      "params": {
-        "sceneId": "S08"
-      },
-      "type": "sceneEnter"
-    }
-  },
-  {
-    "cooldown": 1,
-    "do": [
-      {
-        "action": "startDialogue",
-        "params": {
-          "id": "dialogue.s10.opening"
-        }
-      }
-    ],
-    "id": "trg_s10_opening_dialogue",
-    "name": "进入 S10：病帐秋声开场对话",
-    "once": true,
-    "when": {
-      "params": {
-        "sceneId": "S10"
-      },
-      "type": "sceneEnter"
-    }
-  },
-  {
-    "cooldown": 1,
-    "do": [
-      {
-        "action": "startDialogue",
-        "params": {
-          "id": "dialogue.s11.opening"
-        }
-      }
-    ],
-    "id": "trg_s11_opening_dialogue",
-    "name": "进入 S11：广宗烽火开场对话",
-    "once": true,
-    "when": {
-      "params": {
-        "sceneId": "S11"
-      },
-      "type": "sceneEnter"
-    }
-  },
-  {
-    "cooldown": 1,
-    "do": [
-      {
-        "action": "startDialogue",
-        "params": {
-          "id": "dialogue.s12.opening"
-        }
-      }
-    ],
-    "id": "trg_s12_opening_dialogue",
-    "name": "进入 S12：下曲阳暮色开场对话",
-    "once": true,
-    "when": {
-      "params": {
-        "sceneId": "S12"
-      },
-      "type": "sceneEnter"
-    }
-  },
-  {
-    "cooldown": 1,
-    "do": [
-      {
-        "action": "startDialogue",
-        "params": {
-          "id": "dialogue.s13.opening"
-        }
-      }
-    ],
-    "id": "trg_s13_opening_dialogue",
-    "name": "进入 S13：精山残阳开场对话",
-    "once": true,
-    "when": {
-      "params": {
-        "sceneId": "S13"
       },
       "type": "sceneEnter"
     }

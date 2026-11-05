@@ -373,6 +373,92 @@
     "title": "荒原求生"
   },
   {
+    "category": "main",
+    "description": "张角下令救人。指挥黄巾士兵把晕倒的主角抬回营地。",
+    "id": "task.s02.rescue",
+    "rewards": [
+      {
+        "items": [
+          {
+            "count": 2,
+            "itemId": "resource.herb"
+          },
+          {
+            "count": 2,
+            "itemId": "resource.food"
+          }
+        ],
+        "type": "items"
+      }
+    ],
+    "scenes": [
+      "S02"
+    ],
+    "steps": [
+      {
+        "id": "intro.commandMove",
+        "operation": "show",
+        "title": "学会指挥士兵移动",
+        "tutorialId": "s02.command.move",
+        "type": "tutorial"
+      },
+      {
+        "id": "intro.commandCarry",
+        "operation": "show",
+        "title": "学会指挥士兵搬运",
+        "tutorialId": "s02.command.carry",
+        "type": "tutorial"
+      },
+      {
+        "id": "carryToCamp",
+        "objectiveType": "commit.fact",
+        "target": "story.s02.rescue.done",
+        "title": "把伤者抬回营地",
+        "type": "objective"
+      },
+      {
+        "id": "after.carryToCamp.1",
+        "operation": "complete",
+        "title": "救援完成，教学收尾",
+        "tutorialId": "s02.command.move",
+        "type": "tutorial"
+      },
+      {
+        "id": "after.carryToCamp.2",
+        "operation": "complete",
+        "title": "搬运教学收尾",
+        "tutorialId": "s02.command.carry",
+        "type": "tutorial"
+      },
+      {
+        "await": true,
+        "dialogueId": "dialogue.s02.awakening",
+        "id": "after.carryToCamp.3",
+        "title": "伤者在营地苏醒",
+        "type": "dialogue"
+      },
+      {
+        "action": "showTip",
+        "id": "after.carryToCamp.4",
+        "params": {
+          "text": "黄巾军一行朝粥棚方向离开了。信使示意你跟上——张角要见你。"
+        },
+        "title": "信使引路",
+        "type": "action"
+      },
+      {
+        "action": "state.transaction",
+        "id": "after.carryToCamp.5",
+        "params": {
+          "definitionId": "reward.s02.rescueGift"
+        },
+        "title": "张角赠符水",
+        "type": "action"
+      }
+    ],
+    "title": "山道救援"
+  },
+  {
     "accept": {
       "mode": "auto",
       "when": {
@@ -420,6 +506,22 @@
         "type": "objective"
       },
       {
+        "action": "showTip",
+        "id": "after.recruit.1",
+        "params": {
+          "text": "五十名新募信众领了符牌入列——加上张角带来的二十人，七十人同入太平道！"
+        },
+        "title": "新兵入列",
+        "type": "action"
+      },
+      {
+        "await": true,
+        "dialogueId": "dialogue.s02.recruitDone",
+        "id": "after.recruit.2",
+        "title": "张角检阅新募信众",
+        "type": "dialogue"
+      },
+      {
         "id": "camp",
         "objectiveType": "commit.fact",
         "target": "story.s02.camp.laid",
@@ -427,47 +529,51 @@
         "type": "objective"
       },
       {
+        "action": "showTip",
+        "id": "after.camp.1",
+        "params": {
+          "text": "营地扎立完成。张角令全军休整——当夜无事。"
+        },
+        "title": "扎营完成",
+        "type": "action"
+      },
+      {
+        "await": true,
+        "dialogueId": "dialogue.s02.overnight",
+        "id": "after.camp.2",
+        "title": "当夜安营休整",
+        "type": "dialogue"
+      },
+      {
+        "id": "after.camp.3",
+        "operation": "show",
+        "title": "学会姿态指挥迎战",
+        "tutorialId": "s02.command.stance",
+        "type": "tutorial"
+      },
+      {
         "id": "repelRaid",
         "objectiveType": "commit.fact",
         "target": "story.s02.raid.repeled",
         "title": "击退官兵围剿",
         "type": "objective"
+      },
+      {
+        "await": true,
+        "dialogueId": "dialogue.s02.raidRepelled",
+        "id": "after.repelRaid.1",
+        "title": "围剿击退",
+        "type": "dialogue"
+      },
+      {
+        "id": "after.repelRaid.2",
+        "operation": "complete",
+        "title": "战斗教学收尾",
+        "tutorialId": "s02.command.stance",
+        "type": "tutorial"
       }
     ],
     "title": "随军抗敌"
-  },
-  {
-    "category": "main",
-    "description": "张角下令救人。指挥黄巾士兵把晕倒的主角抬回营地。",
-    "id": "task.s02.rescue",
-    "rewards": [
-      {
-        "items": [
-          {
-            "count": 2,
-            "itemId": "resource.herb"
-          },
-          {
-            "count": 2,
-            "itemId": "resource.food"
-          }
-        ],
-        "type": "items"
-      }
-    ],
-    "scenes": [
-      "S02"
-    ],
-    "steps": [
-      {
-        "id": "carryToCamp",
-        "objectiveType": "commit.fact",
-        "target": "story.s02.rescue.done",
-        "title": "把伤者抬回营地",
-        "type": "objective"
-      }
-    ],
-    "title": "山道救援"
   },
   {
     "accept": {
@@ -503,6 +609,22 @@
     ],
     "steps": [
       {
+        "await": true,
+        "dialogueId": "dialogue.s09.arrival",
+        "id": "intro.opening",
+        "title": "初入广宗大营",
+        "type": "dialogue"
+      },
+      {
+        "action": "showTip",
+        "id": "intro.guidance",
+        "params": {
+          "text": "先与张角交谈加入黄巾，再到三面军旗下确认职业。"
+        },
+        "title": "初入营伍",
+        "type": "action"
+      },
+      {
         "id": "enlist",
         "objectiveType": "commit.fact",
         "target": "story.s09.enlist",
@@ -517,6 +639,24 @@
         "objectiveType": "custom.event",
         "title": "在军旗前选定职业方向",
         "type": "objective"
+      },
+      {
+        "action": "showTip",
+        "id": "after.chooseClass.1",
+        "params": {
+          "text": "职业已固定，初始装备和能力已发放。北侧军令旗现可通往颍川首战。"
+        },
+        "title": "职业已定",
+        "type": "action"
+      },
+      {
+        "action": "state.transaction",
+        "id": "after.chooseClass.2",
+        "params": {
+          "definitionId": "reward.s09.classGift"
+        },
+        "title": "领取职业馈赠",
+        "type": "action"
       },
       {
         "eventMatcher": {
@@ -567,6 +707,22 @@
     ],
     "steps": [
       {
+        "await": true,
+        "dialogueId": "dialogue.s03.opening",
+        "id": "intro.opening",
+        "title": "颍川烟尘",
+        "type": "dialogue"
+      },
+      {
+        "action": "showTip",
+        "id": "intro.guidance",
+        "params": {
+          "text": "前往中央军令旗选择观战或介入；选择一经确认不可更改。"
+        },
+        "title": "初至颍川",
+        "type": "action"
+      },
+      {
         "eventMatcher": {
           "payload": {
             "triggerId": "trg_s03_choose_battle_mode"
@@ -589,6 +745,15 @@
         "objectiveType": "custom.event",
         "title": "击退朱儁前锋",
         "type": "objective"
+      },
+      {
+        "action": "showTip",
+        "id": "after.vanguardBroken.1",
+        "params": {
+          "text": "朱儁前锋溃退——这是你投军后的第一战。"
+        },
+        "title": "首战告捷",
+        "type": "action"
       },
       {
         "eventMatcher": {
@@ -638,6 +803,22 @@
       "S04"
     ],
     "steps": [
+      {
+        "await": true,
+        "dialogueId": "dialogue.s04.opening",
+        "id": "intro.opening",
+        "title": "长社风急",
+        "type": "dialogue"
+      },
+      {
+        "action": "showTip",
+        "id": "intro.guidance",
+        "params": {
+          "text": "先在中央军令旗选择观战或介入；只有介入可在西侧残旗下启动波才救援。"
+        },
+        "title": "驰援长社",
+        "type": "action"
+      },
       {
         "eventMatcher": {
           "payload": {
@@ -718,6 +899,13 @@
       "S05"
     ],
     "steps": [
+      {
+        "await": true,
+        "dialogueId": "dialogue.s05.opening",
+        "id": "intro.opening",
+        "title": "宛城矿尘",
+        "type": "dialogue"
+      },
       {
         "eventMatcher": {
           "payload": {
@@ -827,6 +1015,13 @@
     ],
     "steps": [
       {
+        "await": true,
+        "dialogueId": "dialogue.s06.opening",
+        "id": "intro.opening",
+        "title": "宛城备御",
+        "type": "dialogue"
+      },
+      {
         "eventMatcher": {
           "payload": {
             "triggerId": "trg_s06_defense_choice"
@@ -898,6 +1093,22 @@
       "S07"
     ],
     "steps": [
+      {
+        "await": true,
+        "dialogueId": "dialogue.s07.opening",
+        "id": "intro.opening",
+        "title": "西华迟滞",
+        "type": "dialogue"
+      },
+      {
+        "action": "showTip",
+        "id": "intro.guidance",
+        "params": {
+          "text": "先在军令旗选择观战或介入；介入后依次提交 north、center、south 三线阻滞点并保存残部。"
+        },
+        "title": "迟滞官军",
+        "type": "action"
+      },
       {
         "eventMatcher": {
           "payload": {
@@ -995,6 +1206,22 @@
     ],
     "steps": [
       {
+        "await": true,
+        "dialogueId": "dialogue.s08.opening",
+        "id": "intro.opening",
+        "title": "西华残道",
+        "type": "dialogue"
+      },
+      {
+        "action": "showTip",
+        "id": "intro.guidance",
+        "params": {
+          "text": "检查泥泞马车，在决策军令旗下决定残部撤退方案，再前往召回出口。"
+        },
+        "title": "西华残营",
+        "type": "action"
+      },
+      {
         "eventMatcher": {
           "payload": {
             "triggerId": "trg_s08_retreat_choice"
@@ -1054,6 +1281,22 @@
       "S10"
     ],
     "steps": [
+      {
+        "await": true,
+        "dialogueId": "dialogue.s10.opening",
+        "id": "intro.opening",
+        "title": "病帐秋声",
+        "type": "dialogue"
+      },
+      {
+        "action": "showTip",
+        "id": "intro.guidance",
+        "params": {
+          "text": "先进入病帐确认张角病逝，再检查临时营地，最后沿溪拔营。"
+        },
+        "title": "广城失守",
+        "type": "action"
+      },
       {
         "eventMatcher": {
           "payload": {
@@ -1186,6 +1429,22 @@
       "S11"
     ],
     "steps": [
+      {
+        "await": true,
+        "dialogueId": "dialogue.s11.opening",
+        "id": "intro.opening",
+        "title": "广宗烽火",
+        "type": "dialogue"
+      },
+      {
+        "action": "showTip",
+        "id": "intro.guidance",
+        "params": {
+          "text": "先在军令旗选择观战或介入；介入后按烽火、六名卫兵、三波刺客、西门突围的顺序救援张梁。"
+        },
+        "title": "广宗围城",
+        "type": "action"
+      },
       {
         "eventMatcher": {
           "payload": {
@@ -1343,6 +1602,22 @@
     ],
     "steps": [
       {
+        "await": true,
+        "dialogueId": "dialogue.s12.opening",
+        "id": "intro.opening",
+        "title": "下曲阳暮色",
+        "type": "dialogue"
+      },
+      {
+        "action": "showTip",
+        "id": "intro.guidance",
+        "params": {
+          "text": "先选择下曲阳战役模式；介入后确认救援路线，守门六十秒，再开启密道并护送张宝撤离。"
+        },
+        "title": "下曲阳驰援",
+        "type": "action"
+      },
+      {
         "eventMatcher": {
           "payload": {
             "triggerId": "trg_s12_choose_battle_mode"
@@ -1463,6 +1738,22 @@
     ],
     "steps": [
       {
+        "await": true,
+        "dialogueId": "dialogue.s13.opening",
+        "id": "intro.opening",
+        "title": "精山残阳",
+        "type": "dialogue"
+      },
+      {
+        "action": "showTip",
+        "id": "intro.guidance",
+        "params": {
+          "text": "在军令旗下选择观战或投入最后资源介入精山；战果冻结后从东北撤离旗进入结局之地。"
+        },
+        "title": "精山决战",
+        "type": "action"
+      },
+      {
         "eventMatcher": {
           "payload": {
             "triggerId": "trg_s13_choose_final_battle_mode"
@@ -1485,6 +1776,15 @@
         "objectiveType": "custom.event",
         "title": "讨斩敌将孙夏",
         "type": "objective"
+      },
+      {
+        "action": "showTip",
+        "id": "after.sunXiaDefeated.1",
+        "params": {
+          "text": "孙夏已伏诛，精山残部士气大振。"
+        },
+        "title": "敌将伏诛",
+        "type": "action"
       },
       {
         "eventMatcher": {
