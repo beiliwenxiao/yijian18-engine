@@ -131,6 +131,56 @@ export class EntityFactory {
     return true;
   }
 
+  /**
+   * 运行时切换实体动画实现（骨骼 ⇄ 序列帧自由切换）。
+   * 动作×方向抽象在两种实现上保持一致：系统侧 sprite.playAnimation(action) 调用不变
+   * （骨骼=状态映射器选片，序列帧= animations 表 + directionRowMap 行列）。
+   * @param {Entity} entity
+   * @param {'skeleton'|'sprite'} mode - 'skeleton'=骨骼资产（整帧 meta.frameMode 亦走此路，
+   *        映射器自动分流 LPC）；'sprite'=纯序列帧（4x9/旧格式图集）
+   * @param {string} stableSpriteId - 目标资产稳定 ID（'skeleton' 需为 manifest 骨骼资产；
+   *        'sprite' 为图集稳定 ID，可省略沿用当前 spriteSheet）
+   * @returns {boolean} 是否完成切换
+   * @example
+   * // 场景一：剧情演出把主角切回序列帧（回忆/剪影等低成本表现），演完切回骨骼
+   * factory.setAnimationModeForEntity(player, 'sprite', 'player_lpc_memory');
+   * // 演出结束后换回骨骼资产（换资产必须带稳定 ID）
+   * factory.setAnimationModeForEntity(player, 'skeleton', 'player.skeleton.female');
+   *
+   * @example
+   * // 场景二：沿用当前 spriteSheet 只摘骨骼（图集不换，恢复标准动作表）
+   * factory.setAnimationModeForEntity(entity, 'sprite');
+   *
+   * @example
+   * // 系统侧调用在两种实现上完全一致——切换前后 playAnimation 无需任何改动
+   * entity.getComponent('sprite').playAnimation('attack'); // 骨骼=映射器选片；序列帧=animations 表
+   */
+  setAnimationModeForEntity(entity, mode, stableSpriteId) {
+    if (mode === 'skeleton') return this.setSkeletonForEntity(entity, stableSpriteId);
+    if (mode === 'sprite') return this._detachSkeletonForFrame(entity, stableSpriteId);
+    return false;
+  }
+
+  /**
+   * 摘除骨骼组件，回落纯序列帧实现。
+   * 挂骨骼时 sprite.animations 被清空——恢复 addCharacterAnimations 标准动作表并复位待机首帧。
+   * 依赖骨骼槽位的表现（武器挂点/头部三态）随实现切换自然失效，由渲染器按序列帧路径接管。
+   */
+  _detachSkeletonForFrame(entity, stableSpriteId) {
+    const sprite = entity?.getComponent?.('sprite');
+    if (!sprite) return false;
+    if (stableSpriteId) sprite.spriteSheet = stableSpriteId;
+    if (entity.getComponent?.('skeleton')) entity.removeComponent('skeleton');
+    sprite.isSkeleton = false;
+    sprite.skeletonDelegate = null;
+    sprite.animations.clear();
+    this.addCharacterAnimations(sprite);
+    sprite.currentAnimation = 'idle';
+    sprite.frame = 0;
+    sprite.frameTime = 0;
+    return true;
+  }
+
   setItemRuntimeFactory(itemRuntimeFactory) {
     if (!itemRuntimeFactory?.createDeathDropProjection) {
       throw new TypeError('EntityFactory requires ItemRuntimeFactory');

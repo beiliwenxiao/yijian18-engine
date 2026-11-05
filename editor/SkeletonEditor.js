@@ -24,8 +24,11 @@ import { parseSkeletonAsset } from '../src/animation/SkeletonAsset.js';
 import {
   SKELETON_DIRECTION_KEYS,
   SKELETON_DIRECTION_LABELS,
-  SKELETON_HEAD_SLOT_PLAN
+  SKELETON_HEAD_SLOT_PLAN,
+  SKELETON_DIAGONAL_FALLBACK,
+  SKELETON_DIRECTION_ARROWS
 } from '../src/animation/SkeletonDirection.js';
+import { stripFormSuffix } from '../src/animation/AnimationActionResolver.js';
 import { evaluateSkeletonPose } from '../src/animation/SkeletonPose.js';
 import { applyIkConstraints } from '../src/animation/SkeletonIk.js';
 import { applyTransformConstraints } from '../src/animation/SkeletonConstraint.js';
@@ -352,6 +355,22 @@ export class SkeletonEditor {
       this._renderFramesPanel();
     });
     $('se-fr-fps').addEventListener('change', e => this._setFramesClipFps(parseFloat(e.target.value)));
+    // 动作覆盖条点击直达：亮绿徽章=该方向有实现，点击切换到对应剪辑/帧表
+    for (const id of ['se-action-coverage', 'se-fr-coverage']) {
+      document.getElementById(id)?.addEventListener('click', event => {
+        const name = event.target?.dataset?.clip;
+        if (!name) return;
+        if (this.animMode === 'frames') {
+          this.currentClip = name;
+          this._frDir = null;
+          this._staticFrameIndex = null;
+          this._renderFramesPanel();
+        } else {
+          this._selectClip(name);
+        }
+        this._draw();
+      });
+    }
     $('se-fr-play').addEventListener('click', () => this._togglePlay());
     $('se-fr-rewind').addEventListener('click', () => {
       this._previewClock = 0;
@@ -1216,7 +1235,8 @@ export class SkeletonEditor {
 
   _addClip() {
     this._pushHistory();
-    const name = prompt('剪辑名称（如 idle/walk/attack）：');
+    // 命名约定 = 运行时动作×方向解析契约：动作为主键、方向为次键
+    const name = prompt('剪辑名称（动作为主、方向为次：\n  多方向动作_形态，如 walk_down / walk_side / attack_side\n  单方向动作裸名，如 attack / death / climb_back）：');
     if (!name || !name.trim()) return;
     const trimmed = name.trim();
     if (this.doc.clips.some(clip => clip.name === trimmed)) { this._toast('剪辑名已存在', true); return; }
@@ -1259,14 +1279,24 @@ export class SkeletonEditor {
 
   _refreshClipToolbar() {
     const select = this.el.clipSelect;
-    // 按方向分组（down/up/side/无方向）：策划一眼看清六向剪辑缺哪个
-    const groups = [['down', '正面'], ['up', '背面'], ['side', '侧面'], ['', '通用']];
+    // 动作为主键、方向为次键：一级组=动作（剥离方向后缀），组内按方向顺序排列——
+    // 策划一眼看清每个动作有哪些方向变体、缺哪个形态
     const clips = this.doc.clips || [];
-    select.innerHTML = groups.map(([key, label]) => {
-      const list = key === ''
-        ? clips.filter(clip => !this._directionFromClip(clip.name))
-        : clips.filter(clip => this._directionFromClip(clip.name) === key);
-      if (!list.length) return '';
+    const groups = new Map();
+    for (const clip of clips) {
+      const action = stripFormSuffix(clip.name);
+      if (!groups.has(action)) groups.set(action, []);
+      groups.get(action).push(clip);
+    }
+    const dirOrder = ['down', 'up', 'side', 'SE', 'SW', 'NE', 'NW'];
+    select.innerHTML = [...groups.entries()].map(([action, list]) => {
+      list.sort((a, b) => {
+        const da = this._directionFromClip(a.name);
+        const db = this._directionFromClip(b.name);
+        return (da ? dirOrder.indexOf(da) : -1) - (db ? dirOrder.indexOf(db) : -1);
+      });
+      const isDirectional = list.some(clip => this._directionFromClip(clip.name));
+      const label = isDirectional ? action : `${action}（单方向）`;
       return `<optgroup label="${label}">`
         + list.map(clip => `<option value="${clip.name}">${SkeletonEditor._displayName(clip.name)}</option>`).join('')
         + '</optgroup>';
@@ -1275,9 +1305,61 @@ export class SkeletonEditor {
     const clip = this._clip();
     this.el.clipDuration.value = clip?.durationMs ?? 1000;
     this.el.clipLoop.checked = clip?.loop !== false;
+    // 动作覆盖条：当前动作的方向变体覆盖 + 回退链 + 实现标识
+    this._renderActionCoverage('se-action-coverage', {
+      has: name => clips.some(candidate => candidate.name === name),
+      currentClipName: this.currentClip,
+      implLabel: '骨骼剪辑'
+    });
     // 轨道骨骼下拉：所有骨骼
     this.el.trackBoneSelect.innerHTML = (this.doc.bones || [])
       .map(bone => `<option value="${bone.id}">${SkeletonEditor._displayName(bone.id)}</option>`).join('');
+  }
+
+  /**
+   * 动作×方向覆盖条：把「动作（主键）→ 方向（次键）→ 实现」的关系可视化。
+   * 与运行时 AnimationActionResolver 同一语义（stripFormSuffix/SKELETON_DIAGONAL_FALLBACK）：
+   *   - 亮绿徽章 = 该方向有实现（可点击直达该剪辑/帧表）
+   *   - 灰徽章（SE→down）= 缺失但运行时按回退链命中目标形态
+   *   - 暗红徽章 = 完全缺失且无回退目标
+   *   - 仅裸剪辑（attack/death 这类单方向动作）= 「单方向」提示
+   * @param {string} elId - 覆盖条容器 id（骨骼模式 se-action-coverage / 帧模式 se-fr-coverage）
+   * @param {{has:(name:string)=>boolean, currentClipName:string, implLabel:string}} opts
+   */
+  _renderActionCoverage(elId, { has, currentClipName, implLabel }) {
+    const bar = document.getElementById(elId);
+    if (!bar) return;
+    const base = stripFormSuffix(String(currentClipName || ''));
+    if (!base || !this.doc) { bar.innerHTML = ''; return; }
+    const FORMS = ['down', 'side', 'up', 'SE', 'SW', 'NE', 'NW'];
+    // 斜向显示用箭头（↘↙↗↖），正面/侧面/背面保持文字
+    const labelOf = form => SKELETON_DIRECTION_ARROWS[form] || form;
+    const bare = has(base);
+    const directionalForms = FORMS.filter(form => has(`${base}_${form}`));
+    const ok = 'background:#2a4a3e;color:#9fe6b8;border:1px solid #3d6b52;';
+    const fallback = 'background:#1a2238;color:#5a6a90;border:1px solid #26355c;';
+    const missing = 'background:#2a1a1a;color:#a05a5a;border:1px solid #5a3232;';
+    const pill = (text, style, clipName) => clipName
+      ? `<span data-clip="${clipName}" style="cursor:pointer;border-radius:10px;padding:1px 8px;font-size:11px;${style}">${text}</span>`
+      : `<span style="border-radius:10px;padding:1px 8px;font-size:11px;${style}">${text}</span>`;
+    const badges = [];
+    // 通用（裸动作）：单方向动作的载体；多方向动作缺失裸版时运行时不会用到，标灰即可
+    badges.push(pill(directionalForms.length ? '通用' : '单方向', bare ? ok : fallback, bare ? base : null));
+    for (const form of FORMS) {
+      const name = `${base}_${form}`;
+      if (has(name)) { badges.push(pill(labelOf(form), ok, name)); continue; }
+      const fb = SKELETON_DIAGONAL_FALLBACK[form];
+      if (fb && has(`${base}_${fb}`)) { badges.push(pill(`${labelOf(form)}→${labelOf(fb)}`, fallback, null)); continue; }
+      if (!fb && bare) { badges.push(pill(`${labelOf(form)}→通用`, fallback, null)); continue; }
+      badges.push(pill(labelOf(form), missing, null));
+    }
+    const hint = directionalForms.length
+      ? `缺斜向形态时运行时自动回退（↘/↙→正面、↗/↖→背面）`
+      : `单方向动作：方向由镜像（flipX）或帧表表达，无需按形态拆分`;
+    bar.innerHTML = `<span style="color:#9aa5c0;font-size:11px;">动作 <b style="color:#ffd479;">${base}</b></span>`
+      + badges.join('')
+      + `<span style="color:#5a6a90;font-size:10px;">${hint}</span>`
+      + `<span style="margin-left:auto;color:#5a6a90;font-size:11px;">实现：${implLabel}</span>`;
   }
 
   _addTrack() {
@@ -2466,13 +2548,26 @@ export class SkeletonEditor {
       clipSelect.innerHTML = '<option value="">（无序列帧数据）</option>';
       dirSelect.innerHTML = '';
       if (info) info.textContent = '该资产没有 meta.clipFrames 帧表';
+      const emptyBar = document.getElementById('se-fr-coverage');
+      if (emptyBar) emptyBar.innerHTML = '';
       strip.innerHTML = '<span style="color:#5a6a90;font-size:12px;">导入整帧素材后此处显示帧条</span>';
       return;
     }
     if (!this.currentClip || !names.includes(this.currentClip)) this.currentClip = names[0];
-    clipSelect.innerHTML = names
-      .map(name => `<option value="${name}" ${name === this.currentClip ? 'selected' : ''}>${name}</option>`)
-      .join('');
+    // 剪辑下拉按动作分组（动作为主键、方向为次键——与骨骼模式同语义）
+    const groups = new Map();
+    for (const name of names) {
+      const action = stripFormSuffix(name);
+      if (!groups.has(action)) groups.set(action, []);
+      groups.get(action).push(name);
+    }
+    clipSelect.innerHTML = [...groups.entries()].map(([action, list]) => {
+      const isDirectional = list.some(name => name !== action);
+      const label = isDirectional ? action : `${action}（单方向）`;
+      return `<optgroup label="${label}">`
+        + list.map(name => `<option value="${name}" ${name === this.currentClip ? 'selected' : ''}>${name}</option>`).join('')
+        + '</optgroup>';
+    }).join('');
     const entry = clipFrames[this.currentClip] || null;
     const dirKeys = entry?.dirs ? Object.keys(entry.dirs) : [];
     if (!this._frDir || !dirKeys.includes(this._frDir)) {
@@ -2480,8 +2575,14 @@ export class SkeletonEditor {
       this._frDir = dirKeys.includes(preferred) ? preferred : (dirKeys[0] || '');
     }
     dirSelect.innerHTML = dirKeys
-      .map(key => `<option value="${key}" ${key === this._frDir ? 'selected' : ''}>${key}</option>`)
+      .map(key => `<option value="${key}" ${key === this._frDir ? 'selected' : ''}>${SKELETON_DIRECTION_ARROWS[key] || key}</option>`)
       .join('');
+    // 动作覆盖条：帧表实现下每个动作的方向帧表覆盖（dirs 键即方向）
+    this._renderActionCoverage('se-fr-coverage', {
+      has: name => Object.keys(clipFrames[name]?.dirs || {}).length > 0,
+      currentClipName: this.currentClip,
+      implLabel: '整帧帧表（meta.clipFrames）'
+    });
     const dirFrames = entry?.dirs?.[this._frDir] || [];
     const fps = Number(entry?.fps) > 0 ? Number(entry.fps) : 8;
     if (document.activeElement !== fpsInput) fpsInput.value = fps;

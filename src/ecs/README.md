@@ -293,6 +293,37 @@ function gameLoop(deltaTime) {
 }
 ```
 
+### 动画实现切换（骨骼 ⇄ 序列帧）
+
+`setAnimationModeForEntity` 在运行时切换实体的动画实现。动作×方向抽象在两种实现上
+保持一致——系统侧 `sprite.playAnimation(action)` 调用零改动（骨骼=状态映射器按朝向选片，
+序列帧= animations 表 + directionRowMap 行列）。
+
+```javascript
+import { EntityFactory } from './ecs/EntityFactory.js';
+
+const factory = new EntityFactory();
+const player = factory.createPlayer({ /* ... */ });
+
+// 场景一：剧情演出切回序列帧（回忆/剪影等低成本表现），演完换回骨骼资产
+factory.setAnimationModeForEntity(player, 'sprite', 'player_lpc_memory');
+// 演出结束后换回骨骼资产（换资产必须带稳定 ID，需为 manifest 骨骼资产）
+factory.setAnimationModeForEntity(player, 'skeleton', 'player.skeleton.female');
+
+// 场景二：沿用当前 spriteSheet 只摘骨骼（图集不换，恢复标准动作表）
+factory.setAnimationModeForEntity(entity, 'sprite');
+
+// 场景三：低端机降级——整帧 LPC 资产同样走 'skeleton' 模式（映射器自动分流帧表）
+factory.setAnimationModeForEntity(player, 'skeleton', 'player.lpc.whole_frame');
+```
+
+注意：
+
+1. `'sprite'` 模式会摘除 SkeletonComponent，依赖骨骼槽位的表现（武器挂点、头部三态）
+   随之自然失效，切回 `'skeleton'` 后自动恢复。
+2. 切换后实体继续沿用既有动作名播放：`playAnimation('walk'/'attack'/...)` 在两种实现上
+   都成立，且多方向动作（如 `attack_side`）由统一解析器按朝向择优，无需调用方关心实现。
+
 ## 测试
 
 访问 `test-ecs.html` 页面可以运行ECS系统的测试。
