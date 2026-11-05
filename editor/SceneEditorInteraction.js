@@ -878,6 +878,29 @@ export class SceneEditorInteraction {
       });
     }
 
+    // 隐藏对象：与右侧图层列表「仅在编辑器中隐藏此物品」等价（仅编辑器状态，不入游戏数据）
+    if (editor.selectedObjects.length > 0) {
+      items.push({ separator: true });
+      items.push({
+        label: '隐藏对象',
+        action: () => {
+          const hiddenCount = editor.selectedObjects
+            .filter(object => editor.layers.setObjectEditorState(object, 'visible', false))
+            .length;
+          if (hiddenCount === 0) {
+            editor.ui.showToast('对象已处于隐藏状态', 'warn');
+            return;
+          }
+          editor.history.saveHistory();
+          editor.layers.sanitizeObjectInteractionState();
+          editor.ui.updateObjectProperties();
+          editor.render();
+          editor.layers.updateLayerList();
+          editor.ui.showToast(hiddenCount > 1 ? `已隐藏 ${hiddenCount} 个对象` : '已隐藏对象（图层列表中可恢复显示）');
+        }
+      });
+    }
+
     items.push({ label: '删除对象', action: () => editor.ui.deleteSelectedObjects() });
 
     // ─── 多边形/Buff 多边形/ref 碰撞/可攀爬区顶点编辑 ─────────────────
