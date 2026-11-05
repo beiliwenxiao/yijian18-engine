@@ -28,17 +28,24 @@
  */
 export const SKELETON_DIRECTION_KEYS = Object.freeze(['down', 'side', 'up', 'SE', 'SW', 'NE', 'NW', 'sideL']);
 
-/** 形态键 → 中文显示名。 */
+/** 形态键 → 中文显示名（斜向带方向箭头，编辑器标识直观）。 */
 export const SKELETON_DIRECTION_LABELS = Object.freeze({
   down: '正面（基准）',
   side: '侧面',
   up: '背面',
-  SE: '斜前右',
-  SW: '斜前左',
-  NE: '斜后右',
-  NW: '斜后左',
+  SE: '↘ 斜前右',
+  SW: '↙ 斜前左',
+  NE: '↗ 斜后右',
+  NW: '↖ 斜后左',
   sideL: '左侧面（免镜像）'
 });
+
+/**
+ * 斜向形态键 → 方向箭头（直观显示标识）。
+ * SE=斜前右↘ / SW=斜前左↙ / NE=斜后右↗ / NW=斜后左↖；
+ * 正面/侧面/背面无箭头（调用方回退原键名）。
+ */
+export const SKELETON_DIRECTION_ARROWS = Object.freeze({ SE: '↘', SW: '↙', NE: '↗', NW: '↖' });
 
 /**
  * 形态键 → 头部/发型三态槽位可见性。

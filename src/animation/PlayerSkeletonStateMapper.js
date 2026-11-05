@@ -27,9 +27,9 @@
 import { weaponKeyOf } from './SkeletonPartResolver.js';
 import { createPlayerLpcFrameMapper } from './PlayerLpcFrameMapper.js';
 import { isJumpClipName, resolveJumpClipName } from './SkeletonJumpClip.js';
+import { resolveActionClip, resolveDiscreteClip } from './AnimationActionResolver.js';
 import {
   SKELETON_HEAD_SLOT_PLAN,
-  SKELETON_DIAGONAL_FALLBACK,
   resolveDirectionKey,
   isMirroredFacing
 } from './SkeletonDirection.js';
@@ -238,14 +238,28 @@ export function createPlayerSkeletonStateMapper(entity, { getAssetManager = null
     };
 
     // 外部 playClip（系统触发的离散动作：attack/gather/sleep/stretcher…）：
-    //   循环剪辑保持到下一次外部切换；非循环剪辑播完自动回归连续状态映射
+    //   循环剪辑保持到下一次外部切换；非循环剪辑播完自动回归连续状态映射。
+    //   离散动作支持方向变体：进入保持时按当前朝向经统一解析器择优
+    //   （资产有 attack_side 播方向版，只有裸 attack 播裸版）——保持期内锁朝向不跟随，
+    //   连续状态（walk/idle）仍逐帧跟向。裸 walk/idle（AI/移动系统对骨骼实体的
+    //   冗余触发）直接放行给连续映射接管，不进保持（避免方向升级后循环剪辑卡死转向）。
     const current = skeletonComponent.currentClip;
     if (current !== lastClip) {
       lastClip = current;
-      mapperHold = MAPPER_CLIPS.has(current) ? '' : current;
+      if (MAPPER_CLIPS.has(current) || current === 'walk' || current === 'idle') {
+        mapperHold = '';
+      } else {
+        mapperHold = current;
+        const discrete = resolveDiscreteClip(asset, current, sprite?.direction || 'down');
+        if (discrete && discrete.clip !== current) {
+          skeletonComponent.playClip(discrete.clip);
+          lastClip = discrete.clip;
+        }
+      }
     }
     if (mapperHold) {
-      const holdClip = asset.clips.get(mapperHold);
+      // 保持时长按实际播放的剪辑查（方向变体与裸名时长可能不同）
+      const holdClip = asset.clips.get(lastClip);
       if (!holdClip || (!holdClip.loop && skeletonComponent.clipTime >= holdClip.durationMs)) {
         mapperHold = '';
       } else {
@@ -254,26 +268,24 @@ export function createPlayerSkeletonStateMapper(entity, { getAssetManager = null
       }
     }
 
-    // 连续状态 → 剪辑名（优先级从上到下）；斜向回退：对角 idle 复用正/背待机，剪辑缺失回退基本向
-    let targetClip;
-    const moveKey = resolveDirectionKey(sprite?.direction || 'down');
-    if (entity.isDead || entity.isDying) targetClip = 'death';
-    else if (entity.isSoulState === true) targetClip = 'soul';
-    else if (entity._climbing === true) targetClip = 'climb_back';
-    // 跳跃中：按当前朝向选形态剪辑（jump_down/jump_side/jump_up）——
+    // 连续状态 → 剪辑名（优先级从上到下）；剪辑名统一经 AnimationActionResolver 解析
+    // （动作为主键、方向为次键：walk_SE 缺失回退 walk_down，再回退裸动作）。
+    // 跳跃沿用 SkeletonJumpClip（jump_形态 → 裸 jump → null，与解析器回退链同构）——
     //   单一 jump 剪辑无法同时表达正/侧/背三种身体姿态（侧视膝盖会反关节）。
     //   剪辑播完后停在末帧（骨架组件对非循环剪辑钳制 clipTime），落地后回归行走/待机。
+    const rawDirection = sprite?.direction || 'down';
+    let targetClip;
+    if (entity.isDead || entity.isDying) targetClip = resolveActionClip(asset, 'death', rawDirection)?.clip || '';
+    else if (entity.isSoulState === true) targetClip = resolveActionClip(asset, 'soul', rawDirection)?.clip || '';
+    else if (entity._climbing === true) targetClip = resolveActionClip(asset, 'climb_back', rawDirection)?.clip || '';
     else if (entity._jumping === true) {
-      targetClip = resolveJumpClipName(asset, moveKey) || '';
+      targetClip = resolveJumpClipName(asset, resolveDirectionKey(rawDirection)) || '';
     }
     // isStopping（松开方向）立即回待机：骨骼模式下 SpriteComponent 帧归零逻辑不跑
     else if (sprite.isWalking === true && sprite.isStopping !== true) {
-      targetClip = `walk_${moveKey}`;
+      targetClip = resolveActionClip(asset, 'walk', rawDirection)?.clip || '';
     } else {
-      targetClip = `idle_${moveKey}`;
-    }
-    if (targetClip && !asset.clips.has(targetClip)) {
-      targetClip = `${targetClip.startsWith('walk_') ? 'walk_' : 'idle_'}${SKELETON_DIAGONAL_FALLBACK[moveKey] || moveKey}`;
+      targetClip = resolveActionClip(asset, 'idle', rawDirection)?.clip || '';
     }
     if (!targetClip || !asset.clips.has(targetClip)) {
       targetClip = asset.defaultClip;

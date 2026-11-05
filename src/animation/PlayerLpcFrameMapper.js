@@ -32,6 +32,7 @@
  */
 
 import { resolveDirectionKey } from './SkeletonDirection.js';
+import { resolveActionClip } from './AnimationActionResolver.js';
 
 /** 引擎朝向 → LPC 4 方向。 */
 const DIRECTION_MAP = {
@@ -89,13 +90,15 @@ export function createPlayerLpcFrameMapper(entity) {
     if (!clip || CONTINUOUS_CLIPS.has(clip)
       || (clip === 'jump' && !jumping)
       || (clip === 'climb_back' && !climbing)) {
-      clip = climbing
-        ? 'climb_back'
-        : (jumping
-          ? 'jump'
-          : (sprite.isWalking === true && sprite.isStopping !== true
-            ? (WALK_CLIPS[key] || 'walk_down')
-            : (IDLE_CLIPS[key] || 'idle_down')));
+      if (climbing || jumping) {
+        clip = climbing ? 'climb_back' : 'jump';
+      } else {
+        // 剪辑名统一经 AnimationActionResolver（与部件模式同回退链：
+        // walk_SE 缺失 → walk_down → 裸 walk）；解析不出保留旧兜底名
+        const action = (sprite.isWalking === true && sprite.isStopping !== true) ? 'walk' : 'idle';
+        clip = resolveActionClip(asset, action, sprite.direction || 'down')?.clip
+          || (action === 'walk' ? 'walk_down' : 'idle_down');
+      }
       if (clip !== skeletonComponent.currentClip) skeletonComponent.playClip?.(clip);
     }
 
