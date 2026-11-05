@@ -885,14 +885,14 @@
       }
     ],
     "id": "trg_s02_camp_arrival",
-    "name": "伤者抵达营地：苏醒过场",
-    "once": false,
     "if": {
-      "op": "not",
       "arg": {
         "var": "story.s02Rescued"
-      }
+      },
+      "op": "not"
     },
+    "name": "伤者抵达营地：苏醒过场",
+    "once": false,
     "when": {
       "params": {
         "regionId": "S02-camp-rescue"
@@ -3452,14 +3452,14 @@
       }
     ],
     "id": "trg_s02_beg_children_enter",
-    "name": "荒村：孩童乞讨（进入乞讨区）",
-    "once": false,
     "if": {
-      "op": "not",
       "arg": {
         "var": "story.s02BegAdults"
-      }
+      },
+      "op": "not"
     },
+    "name": "荒村：孩童乞讨（进入乞讨区）",
+    "once": false,
     "when": {
       "params": {},
       "type": "enter"
@@ -3516,8 +3516,8 @@
     "once": true,
     "when": {
       "params": {
-        "id": "dialogue.s02.beggarChildren",
-        "choiceId": "give"
+        "choiceId": "give",
+        "id": "dialogue.s02.beggarChildren"
       },
       "type": "dialogueChoice"
     }
@@ -3630,8 +3630,8 @@
     "once": true,
     "when": {
       "params": {
-        "id": "dialogue.s02.beggarChildrenMore",
-        "choiceId": "give5"
+        "choiceId": "give5",
+        "id": "dialogue.s02.beggarChildrenMore"
       },
       "type": "dialogueChoice"
     }
@@ -3848,8 +3848,8 @@
     "once": true,
     "when": {
       "params": {
-        "id": "dialogue.s02.beggarAdults",
-        "choiceId": "giveAdults"
+        "choiceId": "giveAdults",
+        "id": "dialogue.s02.beggarAdults"
       },
       "type": "dialogueChoice"
     }
@@ -4440,14 +4440,14 @@
       ]
     },
     "id": "trg_s01_wolf_region_enter",
-    "name": "荒原：踏入狼群领地，狼群战开启",
-    "once": false,
     "if": {
-      "op": "not",
       "arg": {
         "var": "story.s01Survival.wolfPackCleared"
-      }
+      },
+      "op": "not"
     },
+    "name": "荒原：踏入狼群领地，狼群战开启",
+    "once": false,
     "when": {
       "params": {},
       "type": "enter"
@@ -4489,14 +4489,14 @@
       }
     ],
     "id": "trg_s02_scavenger_chief_encounter",
-    "name": "S02：拾荒者警戒区头目遭遇对话",
-    "once": false,
     "if": {
-      "op": "not",
       "arg": {
         "var": "story.s02ScavengerEncountered"
-      }
+      },
+      "op": "not"
     },
+    "name": "S02：拾荒者警戒区头目遭遇对话",
+    "once": false,
     "when": {
       "params": {},
       "type": "enter"

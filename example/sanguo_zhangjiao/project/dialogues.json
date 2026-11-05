@@ -1,7 +1,6 @@
 [
   {
     "id": "dialogue.s01.wake",
-    "runtimeStarted": true,
     "nodes": {
       "move": {
         "speaker": "旁白",
@@ -15,6 +14,7 @@
     "presentation": {
       "boxType": "narration"
     },
+    "runtimeStarted": true,
     "startNode": "start",
     "title": "寒风中醒来"
   },

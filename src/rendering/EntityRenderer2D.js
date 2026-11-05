@@ -20,7 +20,7 @@ import { SkeletonRenderer } from './SkeletonRenderer.js';
  * 均通过构造函数注入，避免耦合具体游戏或 Demo。
  */
 export class EntityRenderer2D {
-  /** 场景文字标签（名字/资源数量）默认显示距离：玩家靠近才显示，远处隐藏。 */
+  /** 掉落物名字标签显示距离：玩家靠近才显示（实体头顶文字已改为恒显示，不再使用此门控）。 */
   static LABEL_SHOW_DISTANCE = 280;
 
   /**
@@ -33,11 +33,6 @@ export class EntityRenderer2D {
     this.getRenderOffset = options.getRenderOffset || (() => ({ x: 0, y: 0 }));
     // 玩家战斗状态回调：玩家头顶血条仅战斗状态显示（非战斗隐藏），敌对 NPC 不受影响
     this.isPlayerInCombat = typeof options.isPlayerInCombat === 'function' ? options.isPlayerInCombat : () => false;
-    // 标签距离门控：返回玩家位置（世界坐标），null 时跳过距离剔除（安全兜底恒显示）
-    this.getPlayerPosition = typeof options.getPlayerPosition === 'function' ? options.getPlayerPosition : () => null;
-    this.labelShowDistance = Number.isFinite(options.labelShowDistance)
-      ? options.labelShowDistance
-      : EntityRenderer2D.LABEL_SHOW_DISTANCE;
     this.skeletonRenderer = options.skeletonRenderer || new SkeletonRenderer(options.skeletonRendererOptions || {});
     this._readyImageCache = new Map();
     this._renderStyleCache = new Map();
@@ -121,14 +116,9 @@ export class EntityRenderer2D {
       }
     }
 
-    const labelNearby = this._isLabelNearby(entity, position);
-    if (labelNearby) {
-      this._renderResourceAmount(ctx, entity.getComponent?.('resourceNode'), x, y, height);
-    }
+    this._renderResourceAmount(ctx, entity.getComponent?.('resourceNode'), x, y, height);
     if (!isCorpse) {
-      if (labelNearby) {
-        this._renderName(ctx, entity, npc, x, y, height);
-      }
+      this._renderName(ctx, entity, npc, x, y, height);
       this._renderInteractionPrompt(ctx, npc, x, y);
       // 玩家头顶血条仅战斗状态显示（非战斗隐藏）；敌对/其他实体维持原有显示规则
       const skipPlayerBar = entity.type === 'player'
@@ -564,22 +554,8 @@ export class EntityRenderer2D {
   }
 
   /**
-   * 场景文字标签（名字/资源数量）距离门控：玩家靠近才显示，远处隐藏。
-   * 允许 NameComponent.showDistance 按实体覆盖（如需要远看的路牌）；无玩家位置时恒显示。
+   * 场景文字标签（名字/资源数量）恒显示：有文字就一直画，无距离门控。
    */
-  _isLabelNearby(entity, position) {
-    const playerPosition = this.getPlayerPosition();
-    if (!playerPosition
-      || !Number.isFinite(playerPosition.x) || !Number.isFinite(playerPosition.y)
-      || !position) return true;
-    const name = entity?.getComponent?.('name');
-    const showDistance = Number.isFinite(name?.showDistance) ? name.showDistance : this.labelShowDistance;
-    if (showDistance < 0) return true;
-    const dx = position.x - playerPosition.x;
-    const dy = position.y - playerPosition.y;
-    return dx * dx + dy * dy <= showDistance * showDistance;
-  }
-
   _renderResourceAmount(ctx, node, x, y, height) {
     if (!node || !Number.isFinite(node.maxRemaining) || node.maxRemaining < 0) return;
     const remaining = Math.max(0, Math.floor(Number(node.remaining) || 0));

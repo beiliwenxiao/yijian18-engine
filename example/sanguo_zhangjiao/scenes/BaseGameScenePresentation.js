@@ -312,9 +312,7 @@ export class BaseGameScenePresentation extends BaseGameSceneGameplayHooks {
         getRenderOffset: entity => this.context?.presentation?.worldItemEvents?.getRenderOffset?.(entity)
           || { x: 0, y: 0 },
         // 玩家头顶血条仅战斗状态显示（CombatSystem 统一战斗状态）
-        isPlayerInCombat: () => this.combatSystem?.isInCombat() === true,
-        // 场景文字标签（名字/资源数量）靠近才显示：提供玩家位置供距离门控
-        getPlayerPosition: () => this.playerEntity?.getComponent?.('transform')?.position || null
+        isPlayerInCombat: () => this.combatSystem?.isInCombat() === true
       });
     }
     return this.entityRenderer2D;
