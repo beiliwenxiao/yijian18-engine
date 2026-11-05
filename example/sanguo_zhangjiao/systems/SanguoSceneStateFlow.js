@@ -173,6 +173,12 @@ async function handleApplicationEvent(event = {}) {
   if (!this.gameLoader) {
     return { ok: true, ignored: true, code: 'gameLoaderUnavailable' };
   }
+  // 防环（TriggerSystem._publishWhenEvent 双保险之一）：when 事件桥发布的事件
+  // 已在事件源处由 triggerSystem.fire 本地匹配过手写触发器，此处跳过回流，
+  // 只留给 bridge 的 questSystem.consumeTaskEvent 消费任务目标。
+  if (event.payload?.dispatchedViaTriggerFire === true) {
+    return { ok: true, eventType: event.type, triggerLoopSuppressed: true };
+  }
   if (event.type !== 'item.picked') {
     const dispatch = await this.gameLoader.triggerSystem.fireCoordinated(event.type, {
       ...(event.payload || {}),

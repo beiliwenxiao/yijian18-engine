@@ -477,6 +477,7 @@ export class GameLoader {
       operationIdFactory: deps.triggerOperationIdFactory,
       eventJournal: deps.eventJournal || deps.services?.eventJournal || null,
       applicationEventPublisher: deps.triggerApplicationEventPublisher,
+      whenApplicationEventTypes: deps.triggerWhenApplicationEventTypes,
       serviceReferenceResolver: deps.triggerServiceReferenceResolver,
       bindingReferenceResolver: deps.triggerBindingReferenceResolver,
       operationFingerprintValidator: deps.triggerOperationFingerprintValidator,

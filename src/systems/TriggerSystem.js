@@ -31,6 +31,7 @@ const DEFAULT_BENIGN_RESULT_CODES = new Set([
 ]);
 const hasText = value => typeof value === 'string' && value.trim().length > 0;
 const clone = value => value === undefined ? undefined : JSON.parse(JSON.stringify(value));
+const isObject = value => value !== null && typeof value === 'object' && !Array.isArray(value);
 
 function getRestoredOperationSequence(ledger = null) {
   let sequence = 0;
@@ -132,6 +133,10 @@ export class TriggerSystem {
     ));
     this.eventJournal = config.eventJournal || null;
     this.applicationEventPublisher = config.applicationEventPublisher || null;
+    // when 事件→application event 桥的白名单（缺省空=桥关闭；见 _publishWhenEvent 注释）
+    this.whenApplicationEventTypes = Array.isArray(config.whenApplicationEventTypes)
+      ? config.whenApplicationEventTypes.map(value => String(value).trim()).filter(hasText)
+      : [];
     this.definitionRevision = config.definitionRevision ?? 0;
     this.serviceReferenceResolver = config.serviceReferenceResolver || null;
     this.bindingReferenceResolver = config.bindingReferenceResolver || null;
@@ -265,6 +270,7 @@ export class TriggerSystem {
   }
 
   async fireAndWait(whenType, params = {}) {
+    this._publishWhenEvent(whenType, params);
     const requests = [];
     for (const trigger of this.triggers) {
       if (trigger.when?.type !== whenType) continue;
@@ -287,6 +293,7 @@ export class TriggerSystem {
    * 未配置 coordination 的 trigger 各自作为 broadcast 候选，行为保持兼容。
    */
   async fireCoordinated(whenType, params = {}) {
+    this._publishWhenEvent(whenType, params);
     const matched = this.triggers
       .map((trigger, index) => ({ trigger, index, coordination: coordinationOf(trigger) }))
       .filter(candidate => candidate.trigger.when?.type === whenType
@@ -363,6 +370,7 @@ export class TriggerSystem {
   }
 
   fire(whenType, params = {}) {
+    this._publishWhenEvent(whenType, params);
     let accepted = 0;
     for (const trigger of this.triggers) {
       if (trigger.when?.type !== whenType) continue;
@@ -370,6 +378,66 @@ export class TriggerSystem {
       if (this._tryRun(trigger, { type: whenType, params })) accepted++;
     }
     return accepted;
+  }
+
+  /**
+   * when 事件 → application event 桥（任务中心制事件源）。
+   *
+   * 背景：任务图 objective 的 eventMatcher 经 questSystem.consumeTaskEvent 消费
+   * application event（SceneApplicationEventBridge）；而 triggerSystem.fire 的
+   * 直连事件（interact/dialogueChoice/dialogueEnd/classSelected 等）此前只有
+   * 手写触发器一条消费路，任务目标永远收不到。本桥把白名单内的 when 事件
+   * 以 application event 形状发布（装配层经 commandGateway scene.applicationEvent
+   * 提交，回到 PostCommitNotificationBus 统一分发）。
+   *
+   * 防环约定（双保险）：
+   * 1. 发布的 payload 带 dispatchedViaTriggerFire 标记——内容层
+   *    handleApplicationEvent 见标记跳过 fireCoordinated 回流（手写触发器已由
+   *    本地 fire 匹配过，回流会双触发）；
+   * 2. 回流事件（application event → fireCoordinated）自带 sourceEventType，
+   *    本桥见标记不再转发。
+   *
+   * whenApplicationEventTypes 缺省为空数组 = 桥关闭（零默认回归）；
+   * 装配层按项目需要显式开启事件类型白名单。
+   */
+  _publishWhenEvent(whenType, params = {}) {
+    const types = this.whenApplicationEventTypes;
+    if (!Array.isArray(types) || types.length === 0 || !types.includes(whenType)) return;
+    if (isObject(params) && (params.sourceEventType || params.dispatchedViaTriggerFire)) return;
+    const publisher = this.applicationEventPublisher;
+    if (!publisher) return;
+    const safeParams = {};
+    for (const [key, value] of Object.entries(isObject(params) ? params : {})) {
+      const kind = typeof value;
+      if (value == null || kind === 'string' || kind === 'number' || kind === 'boolean') {
+        safeParams[key] = value;
+        continue;
+      }
+      // 实体引用等不可序列化/循环引用字段安全剥离（如 interact 的 targetObject）
+      try { safeParams[key] = JSON.parse(JSON.stringify(value)); } catch { /* 跳过不可序列化字段 */ }
+    }
+    const sequence = ++this._eventSequence;
+    const logicalTime = this.logicalClock?.now
+      ? Math.max(0, Math.floor(this.logicalClock.now()))
+      : Math.max(0, Math.floor(this.monotonicClock.now()));
+    const event = Object.freeze({
+      eventId: `trigger-when:${sequence}`,
+      eventSequence: sequence,
+      stateId: `trigger-when:${whenType}`,
+      stateType: 'triggerWhenEvent',
+      stateRevision: 0,
+      operationId: (hasText(safeParams.operationId)) ? safeParams.operationId : `trigger-when:${whenType}:${sequence}`,
+      logicalTime,
+      type: whenType,
+      payload: Object.freeze({ ...safeParams, dispatchedViaTriggerFire: true })
+    });
+    try {
+      assertCommandContract(CommandContractKind.APPLICATION_EVENT, event);
+      const published = typeof publisher === 'function'
+        ? publisher(event)
+        : publisher?.publishApplicationEvent?.(event) ?? publisher?.publish?.(event);
+      if (published?.catch) published.catch(() => { /* 事件桥失败不影响本地触发器执行 */ });
+    } catch { /* 发布失败不影响本地触发器执行 */ }
   }
 
   fireById(id, eventType, params = {}) {

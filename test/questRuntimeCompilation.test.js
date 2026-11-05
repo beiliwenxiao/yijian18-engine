@@ -52,6 +52,108 @@ describe('QuestRuntime Quest v2 编译器', () => {
     expect(compileQuestProject(null)).toEqual({ taskGraphs: [], triggers: [] });
   });
 
+  it('choice 步骤编译：分支选项目标并列解锁，任一分支链走到 complete 即任务完成', () => {
+    const CHOICE_QUEST = {
+      id: 'quest.test.verdict',
+      title: '抉择',
+      steps: [
+        { id: 'prologue', type: 'dialogue', dialogueId: 'dlg.verdict', await: true },
+        {
+          id: 'makeVerdict',
+          type: 'choice',
+          dialogueId: 'dlg.verdict',
+          title: '张角的抉择',
+          options: [
+            {
+              choice: 'save',
+              title: '救他',
+              steps: [
+                { type: 'action', action: 'scenario.command', params: { operation: 'army.rescue.begin' } },
+                { id: 'carry', type: 'objective', objectiveType: 'interact.entity', target: 'S02-camp-rescue', title: '抬回营地' }
+              ]
+            },
+            {
+              choice: 'kill',
+              title: '杀了',
+              steps: [
+                { type: 'action', action: 'ending.command', params: { endingId: 'ending.s02.heartless' } }
+              ]
+            }
+          ]
+        }
+      ]
+    };
+    const { taskGraph, triggers } = compileQuest(CHOICE_QUEST, project);
+    const byId = new Map(taskGraph.nodes.map(node => [node.id, node]));
+    // 分支选项目标：start 并列解锁两个选项 objective
+    expect(byId.get('start').next).toEqual(['makeVerdict.save', 'makeVerdict.kill']);
+    expect(byId.get('makeVerdict.save').eventMatcher).toEqual({
+      type: 'dialogueChoice', payload: { id: 'dlg.verdict', choiceId: 'save' }
+    });
+    expect(byId.get('makeVerdict.save').title).toBe('救他');
+    expect(byId.get('makeVerdict.kill').eventMatcher).toEqual({
+      type: 'dialogueChoice', payload: { id: 'dlg.verdict', choiceId: 'kill' }
+    });
+    // save 分支含子链 objective；kill 分支无子链直接到 complete
+    expect(byId.get('makeVerdict.save').next).toEqual(['makeVerdict.save.carry']);
+    expect(byId.get('makeVerdict.kill').next).toEqual(['complete']);
+    expect(byId.get('makeVerdict.save.carry').eventMatcher).toEqual({
+      type: 'interact', payload: { target: 'S02-camp-rescue' }
+    });
+    expect(byId.get('makeVerdict.save.carry').next).toEqual(['complete']);
+    // intro 对话进开场触发器；选项段各自进 after 触发器（选项步骤选择后执行）
+    const intro = triggers.find(trigger => trigger.id === 'trg_quest.test.verdict_intro');
+    expect(intro.do.map(action => action.action)).toEqual(['dialogue.command']);
+    const saveAfter = triggers.find(trigger => trigger.id === 'trg_quest.test.verdict_after_makeVerdict.save');
+    expect(saveAfter.when).toEqual({ type: 'dialogueChoice', params: { id: 'dlg.verdict', choiceId: 'save' } });
+    expect(saveAfter.do.map(action => action.action)).toEqual(['scenario.command']);
+    const killAfter = triggers.find(trigger => trigger.id === 'trg_quest.test.verdict_after_makeVerdict.kill');
+    expect(killAfter.do.map(action => action.action)).toEqual(['ending.command']);
+  });
+
+  it('commitFact：objective 声明事实提交时生成 commit 触发器（同事件 once 提交状态事务）', () => {
+    const COMMIT_QUEST = {
+      id: 'quest.test.commit',
+      title: '事实提交',
+      steps: [
+        {
+          id: 'arrive',
+          type: 'objective',
+          objectiveType: 'custom.event',
+          eventMatcher: { type: 'enterRegion', payload: { regionId: 'S02-camp-rescue' } },
+          commitFact: 'story.test.arrived',
+          title: '抵达营地'
+        }
+      ]
+    };
+    const { triggers } = compileQuest(COMMIT_QUEST, project);
+    const commit = triggers.find(trigger => trigger.id === 'trg_quest.test.commit_commit_arrive');
+    expect(commit).toBeTruthy();
+    expect(commit.when).toEqual({ type: 'enterRegion', params: { regionId: 'S02-camp-rescue' } });
+    expect(commit.once).toBe(true);
+    expect(commit.do).toEqual([{
+      action: 'state.transaction',
+      params: { definitionId: 'story.test.arrived' },
+      stepId: 'commit.arrive'
+    }]);
+  });
+
+  it('validateQuestDefinition：choice 缺 dialogueId/options/选项重名与 commitFact 空值报错', () => {
+    const errors = validateQuestDefinition({
+      id: 'quest.test.bad', title: '坏例子',
+      steps: [
+        { id: 'c1', type: 'choice', options: [{ choice: 'a' }] },
+        { id: 'c2', type: 'choice', dialogueId: 'dlg.x', options: [] },
+        { id: 'c3', type: 'choice', dialogueId: 'dlg.x', options: [{ choice: 'a' }, { choice: 'a' }] },
+        { id: 'o1', type: 'objective', objectiveType: 'commit.fact', target: 'story.x', commitFact: '  ' }
+      ]
+    });
+    expect(errors.some(error => error.includes('steps[0].dialogueId'))).toBe(true);
+    expect(errors.some(error => error.includes('steps[1].options'))).toBe(true);
+    expect(errors.some(error => error.includes('steps[2].options[1].choice 重复'))).toBe(true);
+    expect(errors.some(error => error.includes('steps[3].commitFact'))).toBe(true);
+  });
+
   it('taskGraph 编译：objective 直连成链（裸 nodeId 与手写任务图寻址一致），matcher 由目标类型目录生成', () => {
     const { taskGraph } = compileQuest(SAMPLE_QUEST, project);
     expect(taskGraph.id).toBe('quest.test.survival');
@@ -191,10 +293,11 @@ describe('QuestRuntime Quest v2 编译器', () => {
     const loader = new GameLoader();
     expect(loader.questTaskDefinitions).toEqual([]);
     const compiled = compileQuestProject(project);
-    // 新基线：S02-S14 主线全部任务化（S02 rescue/summons、S09 joinYellowTurban、
-    // S03-S08/S10-S14 薄任务串接），共 15 条 quest 定义
+    // 新基线：S02-S14 主线全部任务化（S02 verdict/rescue/summons、S09 joinYellowTurban、
+    // S03-S08/S10-S14 薄任务串接），共 16 条 quest 定义
     expect(compiled.taskGraphs.map(graph => graph.id)).toEqual([
       'task.s01.survival',
+      'task.s02.verdict',
       'task.s02.rescue',
       'task.s02.summons',
       'task.s09.joinYellowTurban',
@@ -221,8 +324,10 @@ describe('QuestRuntime Quest v2 编译器', () => {
     // 方案 B 编排步骤化：S01 目标后段由步骤编译；编辑器重排后目标链为
     // lightCampfire → gatherBerries → eatBerry → findAxe → gatherWood…，
     // 编排段随步骤归属移动（after.eatBerry.2 现归属 findAxe 段）。
-    // 新基线：全集 53 个（s01 编排 7 个 + s01 complete 1 个 + S02-S14 任务化 accept/complete 26 个
-    // + s02 编排 5 个 + S03-S13/S09 开场段与目标后段 19 个），s01 八个仍居首
+    // 新基线：全集 58 个（s01 编排 7 个 + s01 complete 1 个 + S02-S14 任务化 accept/complete 26 个
+    // + s02 编排 5 个 + S03-S13/S09 开场段与目标后段 19 个 + verdict 抉择 3 个 + rescue 事件化增量 2 个），
+    // s01 八个仍居首
+    // 注意：verdict（accept/after save/after kill）在 s01 之后、rescue 之前——slice(0,7) 是 s01 编排段不受影响
     expect(compiled.triggers.slice(0, 7).map(trigger => trigger.id)).toEqual([
       'trg_task.s01.survival_intro',
       'trg_task.s01.survival_after_lightCampfire',
@@ -274,13 +379,19 @@ describe('阶段③ S01 迁移契约：quest 编译产物与手写任务图逐�
     // rescue 目标后段：教学收尾 → 苏醒对话（await）→ 信使提示 → 赠符水
     const rescueAfter = byId.get('trg_task.s02.rescue_after_carryToCamp');
     expect(rescueAfter).toBeTruthy();
-    expect(rescueAfter.when).toEqual({ type: 'state.transaction', params: { definitionId: 'story.s02.rescue.done' } });
+    expect(rescueAfter.when).toEqual({ type: 'enterRegion', params: { regionId: 'S02-camp-rescue' } });
     expect(rescueAfter.once).toBe(true);
     expect(rescueAfter.do.map(action => action.action)).toEqual([
-      'tutorial.command', 'tutorial.command', 'dialogue.command', 'showTip', 'state.transaction'
+      'scenario.command', 'tutorial.command', 'tutorial.command', 'dialogue.command', 'showTip', 'state.transaction'
     ]);
-    expect(rescueAfter.do[2].params).toEqual({ dialogueId: 'dialogue.s02.awakening', operation: 'start', await: true });
-    expect(rescueAfter.do[4].params).toEqual({ definitionId: 'reward.s02.rescueGift' });
+    expect(rescueAfter.do[0].params).toEqual({ operation: 'army.rescue.awaken', scenarioId: 'scenario.command.army.rescue.awaken' });
+    expect(rescueAfter.do[3].params).toEqual({ dialogueId: 'dialogue.s02.awakening', operation: 'start', await: true });
+    expect(rescueAfter.do[5].params).toEqual({ definitionId: 'reward.s02.rescueGift' });
+    // 缺口 C：carryToCamp 目标直连 enterRegion 事件并自动提交救援事实（camp_arrival 手写触发器已删除）
+    const commitTrigger = triggers.find(trigger => trigger.id === 'trg_task.s02.rescue_commit_carryToCamp');
+    expect(commitTrigger).toBeTruthy();
+    expect(commitTrigger.when).toEqual({ type: 'enterRegion', params: { regionId: 'S02-camp-rescue' } });
+    expect(commitTrigger.do[0].params).toEqual({ definitionId: 'story.s02.rescue.done' });
     // summons 目标后三段：招募（提示+对话）/ 扎营（提示+过夜对话+迎战教学）/ 退敌（胜利旁白+教学收尾）
     const summonsAfter = [
       'trg_task.s02.summons_after_recruit',
@@ -353,9 +464,10 @@ describe('阶段③ S01 迁移契约：quest 编译产物与手写任务图逐�
     // 方案 B 编排步骤化：开场段 + 6 个目标后段由步骤编译（lightCampfire/gatherBerries/eatBerry/findAxe/spotWolf/skinWolf）；
     // 交互/机制类触发器（拾斧、添柴交互、sceneEnter 装配等）仍由 triggers[] 手写承担。
     // 新基线：S02-S14 任务化 accept 13 个 + complete 13 个（含 s02.rescue 无 accept、s01 complete 奖励），
-    // 编译触发器全集 = s01 编排 7 个 + s01 complete 1 个 + S02-S14 26 个 + s02 编排 5 个 + S03-S13 收编编排 19 个 = 53。
+    // 编译触发器全集 = s01 编排 7 个 + s01 complete 1 个 + S02-S14 26 个 + s02 编排 5 个
+    //   + S03-S13 收编编排 19 个 + verdict 抉择 3 个（accept/after save/after kill）+ rescue 事件化增量 2 个 = 58
     const triggers = compileQuestProject(project).triggers;
-    expect(triggers.length).toBe(53);
+    expect(triggers.length).toBe(58);
     expect(triggers.slice(0, 7).map(trigger => trigger.id)).toEqual([
       'trg_task.s01.survival_intro',
       'trg_task.s01.survival_after_lightCampfire',
@@ -367,6 +479,8 @@ describe('阶段③ S01 迁移契约：quest 编译产物与手写任务图逐�
     ]);
     const acceptIds = triggers.filter(trigger => trigger.id.endsWith('_accept')).map(trigger => trigger.id);
     expect(acceptIds).toEqual([
+      'trg_task.s02.verdict_accept',
+      'trg_task.s02.rescue_accept',
       'trg_task.s02.summons_accept',
       'trg_task.s09.joinYellowTurban_accept',
       'trg_task.s03.yingchuanBattle_accept',
@@ -381,6 +495,17 @@ describe('阶段③ S01 迁移契约：quest 编译产物与手写任务图逐�
       'trg_task.s13.jingshanBattle_accept',
       'trg_task.s14.finalCommit_accept'
     ]);
+    // S02 抉择链任务化：verdict 由「军队抵达」事实接取；rescue 由「选择救他」选项事件接取
+    expect(triggers.find(trigger => trigger.id === 'trg_task.s02.verdict_accept').when)
+      .toEqual({ type: 'state.transaction', params: { definitionId: 'story.s02.beg.armyArrived' } });
+    expect(triggers.find(trigger => trigger.id === 'trg_task.s02.rescue_accept').when)
+      .toEqual({ type: 'dialogueChoice', params: { id: 'dialogue.s02.prologue', choiceId: 'save' } });
+    // verdict 分支选项目标 + 选项段（judgement/结局由任务步骤编译，choice_kill/save 手写触发器已删除）
+    const saveAfter = triggers.find(trigger => trigger.id === 'trg_task.s02.verdict_after_makeVerdict.save');
+    expect(saveAfter.when).toEqual({ type: 'dialogueChoice', params: { id: 'dialogue.s02.prologue', choiceId: 'save' } });
+    expect(saveAfter.do.map(action => action.action)).toEqual(['state.transaction', 'scenario.command']);
+    const killAfter = triggers.find(trigger => trigger.id === 'trg_task.s02.verdict_after_makeVerdict.kill');
+    expect(killAfter.do.map(action => action.action)).toEqual(['state.transaction', 'ending.command']);
     expect(triggers.find(trigger => trigger.id === 'trg_task.s02.summons_accept').when)
       .toEqual({ type: 'task.completed', params: { definitionId: 'task.s02.rescue' } });
     expect(triggers.find(trigger => trigger.id === 'trg_task.s03.yingchuanBattle_accept').when)

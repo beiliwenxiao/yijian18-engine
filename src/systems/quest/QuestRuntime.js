@@ -50,12 +50,15 @@ export function validateQuestDefinition(quest) {
     return errors;
   }
   const seen = new Set();
-  quest.steps.forEach((step, index) => {
-    const stepPath = `${path}.steps[${index}]`;
+  const checkStepId = (stepId, stepPath) => {
+    if (!text(stepId)) { errors.push(`${stepPath}.id 不能为空`); return false; }
+    if (seen.has(stepId)) { errors.push(`${stepPath}.id 重复: ${stepId}`); return false; }
+    seen.add(stepId);
+    return true;
+  };
+  const validateStep = (step, stepPath) => {
     if (!isObject(step)) { errors.push(`${stepPath} 必须是对象`); return; }
-    if (!text(step.id)) { errors.push(`${stepPath}.id 不能为空`); return; }
-    if (seen.has(step.id)) errors.push(`${stepPath}.id 重复: ${step.id}`);
-    seen.add(step.id);
+    if (!checkStepId(step.id, stepPath)) return;
     if (isObjectiveStep(step)) {
       if (!text(step.objectiveType)) errors.push(`${stepPath}.objectiveType 不能为空`);
       else if (!getObjectiveTypeDescriptor(step.objectiveType)) errors.push(`${stepPath}.objectiveType 未在目标类型目录登记: ${step.objectiveType}`);
@@ -65,16 +68,35 @@ export function validateQuestDefinition(quest) {
       if (step.requiredCount !== undefined && (!Number.isInteger(step.requiredCount) || step.requiredCount < 1)) {
         errors.push(`${stepPath}.requiredCount 必须为正整数`);
       }
+      if (step.commitFact !== undefined && !text(step.commitFact)) {
+        errors.push(`${stepPath}.commitFact 必须为非空状态事务 ID`);
+      }
     } else if (step.type === 'dialogue') {
       if (!text(step.dialogueId)) errors.push(`${stepPath}.dialogueId 不能为空`);
     } else if (step.type === 'tutorial') {
       if (!text(step.tutorialId)) errors.push(`${stepPath}.tutorialId 不能为空`);
     } else if (step.type === 'action') {
       if (!text(step.action)) errors.push(`${stepPath}.action 不能为空`);
+    } else if (step.type === 'choice') {
+      if (!text(step.dialogueId)) errors.push(`${stepPath}.dialogueId 不能为空（分支选项事件来源）`);
+      if (!Array.isArray(step.options) || step.options.length === 0) {
+        errors.push(`${stepPath}.options 必须是非空数组`);
+        return;
+      }
+      const choices = new Set();
+      step.options.forEach((option, optionIndex) => {
+        const optionPath = `${stepPath}.options[${optionIndex}]`;
+        if (!isObject(option)) { errors.push(`${optionPath} 必须是对象`); return; }
+        if (!text(option.choice)) { errors.push(`${optionPath}.choice 不能为空`); return; }
+        if (choices.has(option.choice)) errors.push(`${optionPath}.choice 重复: ${option.choice}`);
+        choices.add(option.choice);
+        if (Array.isArray(option.steps)) option.steps.forEach((subStep, subIndex) => validateStep(subStep, `${optionPath}.steps[${subIndex}]`));
+      });
     } else {
-      errors.push(`${stepPath}.type 不支持: ${step.type || '(空)'}（仅 dialogue/tutorial/objective/action）`);
+      errors.push(`${stepPath}.type 不支持: ${step.type || '(空)'}（仅 dialogue/tutorial/objective/action/choice）`);
     }
-  });
+  };
+  (quest.steps || []).forEach((step, index) => validateStep(step, `${path}.steps[${index}]`));
   const accept = quest.accept;
   if (accept !== undefined) {
     if (!isObject(accept)) errors.push(`${path}.accept 必须是对象`);
@@ -106,26 +128,49 @@ export function compileQuest(quest, project = null) {
   return { taskGraph: compileQuestTaskGraph(quest, project), triggers: compileQuestTriggers(quest, project) };
 }
 
-/** Quest → taskGraph 定义：仅 start + objective 节点 + complete（非 objective 步骤进触发器 do 链）。
+/** choice 步骤的分支选项 objective 节点 id：`${choice步骤id}.${choiceId}`（图内唯一）。 */
+const choiceOptionNodeId = (choiceStep, option, prefix) => (
+  `${prefix ? `${prefix}.` : ''}${text(choiceStep.id)}.${text(option.choice)}`
+);
+
+/** choice 选项 → dialogueChoice eventMatcher（与手写触发器 when params 同形）。 */
+const choiceOptionMatcher = (choiceStep, option) => ({
+  type: 'dialogueChoice',
+  payload: { id: text(choiceStep.dialogueId), choiceId: text(option.choice) }
+});
+
+/**
+ * Quest → taskGraph 定义：start + objective 节点链 + complete（非 objective 步骤进触发器 do 链）。
+ *
+ * choice 步骤（分支路由，任务系统分支语义）展开规则：
+ *   - 每个选项生成一个 objective 节点（eventMatcher = dialogueChoice{id, choiceId}），
+ *     「做出选择」即该目标完成；前驱节点 next 并列解锁全部选项（UI 呈现为并列分支目标）；
+ *   - 选项内 steps 递归编译为该选项的后续链（可继续含 objective），链尾接后继主线节点或 complete；
+ *   - 任一分支链走到 complete 即任务完成（complete 节点被任一前驱解锁即生效）。
+ *
+ * objective 可选 commitFact：目标完成的同时提交一条状态事务（见 compileQuestTriggers 的
+ * commit 触发器），用于替代「外部触发器提交事实 + 目标监听事实」的旧双件套。
+ *
  * 节点 id 采用裸命名（'start'/'complete' + step.id，图内唯一）——与手写任务图及既有测试的
- * nodeId 寻址约定一致，迁移时编译产物可逐节点等价替换手写定义（存档 nodeStates 兼容）。 */
+ * nodeId 寻址约定一致，迁移时编译产物可逐节点等价替换手写定义（存档 nodeStates 兼容）。
+ */
 export function compileQuestTaskGraph(quest, project = null) {
   const questId = text(quest.id);
   const startId = 'start';
   const completeId = 'complete';
-  const objectives = (quest.steps || []).filter(isObjectiveStep);
-  const nodeIds = objectives.map(step => text(step.id));
-  const nodes = [{
-    id: startId,
-    type: 'start',
-    next: [nodeIds[0] || completeId]
-  }];
-  objectives.forEach((step, index) => {
+  const nodes = [];
+  const nodeById = new Map();
+  const addNode = node => { nodes.push(node); nodeById.set(node.id, node); return node; };
+  const link = (fromId, toId) => {
+    const from = nodeById.get(fromId);
+    if (from && !from.next.includes(toId)) from.next.push(toId);
+  };
+  const buildObjectiveNode = (step, nodeId) => {
     const node = {
-      id: nodeIds[index],
+      id: nodeId,
       type: 'objective',
-      title: text(step.title) || step.id,
-      next: [nodeIds[index + 1] || completeId]
+      title: text(step.title) || nodeId,
+      next: []
     };
     const matcher = compileObjectiveEventMatcher(step, project);
     if (matcher) node.eventMatcher = matcher;
@@ -137,8 +182,59 @@ export function compileQuestTaskGraph(quest, project = null) {
     const progressBy = step.progressBy !== undefined ? step.progressBy : descriptor?.progressBy;
     if (text(progressBy)) node.progressBy = text(progressBy);
     node.requiredCount = Math.max(1, Math.floor(Number(step.requiredCount) || 1));
-    nodes.push(node);
+    return node;
+  };
+
+  /**
+   * 编译一段线性步骤序列（顶层主线或 choice 选项内）。
+   * 返回 { heads: 无前驱的首目标 ids, tails: 链尾目标 ids（待调用方链接后继） }。
+   */
+  const emitSequence = (chainSteps, prefix) => {
+    const heads = [];
+    let prevTails = null;
+    for (const step of Array.isArray(chainSteps) ? chainSteps : []) {
+      if (isObjectiveStep(step)) {
+        const node = addNode(buildObjectiveNode(step, prefix ? `${prefix}.${text(step.id)}` : text(step.id)));
+        if (prevTails) prevTails.forEach(tailId => link(tailId, node.id));
+        else heads.push(node.id);
+        prevTails = [node.id];
+      } else if (step.type === 'choice' && Array.isArray(step.options)) {
+        const optionHeads = [];
+        const optionTails = [];
+        for (const option of step.options) {
+          if (!isObject(option) || !text(option.choice)) continue;
+          const optionNodeId = choiceOptionNodeId(step, option, prefix);
+          const optionNode = addNode({
+            id: optionNodeId,
+            type: 'objective',
+            title: text(option.title) || optionNodeId,
+            eventMatcher: choiceOptionMatcher(step, option),
+            next: [],
+            requiredCount: 1
+          });
+          optionHeads.push(optionNode.id);
+          const sub = emitSequence(option.steps, optionNodeId);
+          sub.heads.forEach(headId => link(optionNode.id, headId));
+          if (sub.heads.length === 0) optionTails.push(optionNode.id);
+          else optionTails.push(...sub.tails);
+        }
+        if (prevTails) prevTails.forEach(tailId => optionHeads.forEach(headId => link(tailId, headId)));
+        else heads.push(...optionHeads);
+        prevTails = optionTails;
+      }
+      // 其余非 objective 步骤（dialogue/tutorial/action）进触发器 do 链，不产生节点
+    }
+    return { heads, tails: prevTails || [] };
+  };
+
+  const chain = emitSequence(quest.steps, null);
+  // start 节点居首（与旧产物节点顺序一致，保证编译产物确定性）
+  nodes.unshift({
+    id: startId,
+    type: 'start',
+    next: chain.heads.length > 1 ? [...chain.heads] : [chain.heads[0] || completeId]
   });
+  chain.tails.forEach(tailId => link(tailId, completeId));
   nodes.push({ id: completeId, type: 'complete' });
   return {
     id: questId,
@@ -195,22 +291,33 @@ export function compileQuestTriggers(quest, project = null) {
     }));
   }
 
-  // ② 段划分：首个 objective 前为开场段；每个 objective 后为其后续段
+  // ② 段划分（含 choice 选项子链递归）：首个 objective 前为开场段；每个 objective 后为其后续段。
+  // choice 选项内 steps 的非 objective 前置步骤并入选项 objective 的段（选择完成后执行）。
   const introSegment = [];
-  const segmentsByObjective = new Map();
-  let currentObjective = null;
-  let hasObjective = false;
-  for (const step of steps) {
-    if (isObjectiveStep(step)) {
-      hasObjective = true;
-      currentObjective = step;
-      segmentsByObjective.set(step.id, []);
-    } else if (hasObjective) {
-      segmentsByObjective.get(currentObjective.id).push(step);
-    } else {
-      introSegment.push(step);
+  const segmentGroups = []; // { nodeId, step, matcher, segment[] }（step=objective 原步骤；选项组 step=null）
+  const walkSegments = (chainSteps, prefix, sink) => {
+    let current = null;
+    for (const step of Array.isArray(chainSteps) ? chainSteps : []) {
+      if (isObjectiveStep(step)) {
+        const nodeId = prefix ? `${prefix}.${text(step.id)}` : text(step.id);
+        current = { nodeId, step, matcher: null, segment: [] };
+        segmentGroups.push(current);
+      } else if (step.type === 'choice' && Array.isArray(step.options)) {
+        current = null;
+        for (const option of step.options) {
+          if (!isObject(option) || !text(option.choice)) continue;
+          const optionNodeId = choiceOptionNodeId(step, option, prefix);
+          const optionGroup = { nodeId: optionNodeId, step: null, matcher: choiceOptionMatcher(step, option), segment: [] };
+          segmentGroups.push(optionGroup);
+          // 选项子链递归：sink=选项 objective 的段（子链开头的非 objective 步骤选择后立即执行）
+          walkSegments(option.steps, optionNodeId, optionGroup.segment);
+        }
+      } else {
+        (current ? current.segment : sink).push(step);
+      }
     }
-  }
+  };
+  walkSegments(steps, null, introSegment);
 
   // ③ 开场编排触发器：task.started 驱动首段非 objective 步骤
   if (introSegment.length) {
@@ -223,19 +330,34 @@ export function compileQuestTriggers(quest, project = null) {
     }));
   }
 
-  // ④ 目标后编排触发器：objective 的 eventMatcher 兼作 when（任务图消费同一事件）
-  for (const [objectiveId, segment] of segmentsByObjective) {
-    if (!segment.length) continue;
-    const objectiveStep = steps.find(step => isObjectiveStep(step) && step.id === objectiveId);
-    const matcher = compileObjectiveEventMatcher(objectiveStep, project);
+  // ④ 目标后编排触发器：objective 的 eventMatcher 兼作 when（任务图消费同一事件）。
+  //    同时为声明 commitFact 的目标生成事实提交触发器（目标完成同刻提交状态事务，
+  //    替代「外部触发器提交事实 + 目标监听事实」旧双件套）。
+  for (const group of segmentGroups) {
+    const matcher = group.matcher || compileObjectiveEventMatcher(group.step, project);
     if (!matcher?.type) continue;
-    triggers.push(withScope({
-      id: `trg_${questId}_after_${objectiveId}`,
-      name: `目标完成后续：${objectiveId}`,
-      when: { type: matcher.type, params: clone(matcher.payload || {}) },
-      do: segment.map(compileStepAction),
-      once: true
-    }));
+    if (group.segment.length) {
+      triggers.push(withScope({
+        id: `trg_${questId}_after_${group.nodeId}`,
+        name: `目标完成后续：${group.nodeId}`,
+        when: { type: matcher.type, params: clone(matcher.payload || {}) },
+        do: group.segment.map(compileStepAction),
+        once: true
+      }));
+    }
+    if (group.step && text(group.step.commitFact)) {
+      triggers.push(withScope({
+        id: `trg_${questId}_commit_${group.nodeId}`,
+        name: `目标事实提交：${group.nodeId}`,
+        when: { type: matcher.type, params: clone(matcher.payload || {}) },
+        do: [{
+          action: 'state.transaction',
+          params: { definitionId: text(group.step.commitFact) },
+          stepId: `commit.${group.nodeId}`
+        }],
+        once: true
+      }));
+    }
   }
 
   // ⑤ completion 触发器：task.completed 驱动奖励发放

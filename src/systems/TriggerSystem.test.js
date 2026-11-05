@@ -747,6 +747,64 @@ describe('全 Trigger 化：flowGroupId 仅为兼容标签，不再门控', () =
   });
 });
 
+describe('TriggerSystem when 事件→application event 桥（任务中心制事件源）', () => {
+  function buildBridgedSystem({ types, fireParams }) {
+    const published = [];
+    const system = new TriggerSystem({
+      monotonicClock: new MonotonicClock(100),
+      applicationEventPublisher: event => {
+        published.push(event);
+        return Promise.resolve({ ok: true });
+      },
+      whenApplicationEventTypes: types
+    });
+    system.register({
+      id: 'trg.interact.echo',
+      once: false,
+      when: { type: 'interact', params: {} },
+      do: [{ action: 'noop', stepId: 'echo' }]
+    });
+    return { system, published };
+  }
+
+  it('白名单内的 fire 事件以 application event 形状发布（带防环标记与完整契约字段）', () => {
+    const { system, published } = buildBridgedSystem({ types: ['interact'] });
+    system.fire('interact', { target: 'S02-flag', targetObject: { id: 'ent-1', parent: null } });
+    expect(published).toHaveLength(1);
+    const event = published[0];
+    expect(event.type).toBe('interact');
+    expect(event.stateId).toBe('trigger-when:interact');
+    expect(event.stateType).toBe('triggerWhenEvent');
+    expect(event.eventId).toMatch(/^trigger-when:\d+$/);
+    expect(event.payload.dispatchedViaTriggerFire).toBe(true);
+    expect(event.payload.target).toBe('S02-flag');
+    // 不可序列化的实体引用被安全剥离
+    expect(event.payload.targetObject).toEqual({ id: 'ent-1', parent: null });
+  });
+
+  it('白名单外类型不发布；回流事件（sourceEventType/防环标记）不再转发', () => {
+    const { system, published } = buildBridgedSystem({ types: ['interact'] });
+    system.fire('dialogueChoice', { id: 'dlg.x', choiceId: 'save' });
+    expect(published).toHaveLength(0);
+    // application event 回流（内容层 fireCoordinated 带 sourceEventType）不二次发布
+    system.fire('interact', { target: 'S02-flag', sourceEventType: 'interact' });
+    expect(published).toHaveLength(0);
+    // 已带防环标记的事件不二次发布
+    system.fire('interact', { target: 'S02-flag', dispatchedViaTriggerFire: true });
+    expect(published).toHaveLength(0);
+  });
+
+  it('缺省（未配置白名单）桥关闭——零默认回归', () => {
+    const published = [];
+    const system = new TriggerSystem({
+      monotonicClock: new MonotonicClock(100),
+      applicationEventPublisher: event => published.push(event)
+    });
+    system.fire('interact', { target: 'x' });
+    expect(published).toHaveLength(0);
+  });
+});
+
 describe('多路径进程：步骤级 if + branch[] 分支 + 多教程串行', () => {
   function buildSystem(triggerOverrides = {}, initialBlackboard = {}) {
     const calls = [];

@@ -80,7 +80,30 @@ function initializeGameLoader() {
         audioManager: this.audioManager || null,
         floatingText: this.floatingTextManager,
         scene: this.$scene,
-        sceneDiagnostics: this._diagnostics
+        sceneDiagnostics: this._diagnostics,
+        // when 事件→任务图桥：trigger 事件经 scene.applicationEvent 权威提交回
+        // PostCommitNotificationBus，由 SceneApplicationEventBridge 双分发
+        // （手写触发器回流 + questSystem.consumeTaskEvent）。防环约定见
+        // TriggerSystem._publishWhenEvent / SanguoSceneStateFlow.handleApplicationEvent。
+        triggerApplicationEventPublisher: event => {
+          const gateway = this.sceneRuntime?.commandGateway;
+          if (!gateway) return Promise.resolve({ ok: false, code: 'commandGatewayUnavailable' });
+          const payload = event.payload || {};
+          return gateway.execute({
+            intentType: 'scene.applicationEvent',
+            actorRef: payload.actorRef || this.playerEntity?.id || 'system',
+            operationId: event.operationId || null,
+            payload: {
+              eventType: event.type,
+              payload,
+              sceneId: payload.sceneId || null
+            }
+          });
+        },
+        triggerWhenApplicationEventTypes: [
+          'interact', 'dialogueChoice', 'dialogueEnd', 'classSelected',
+          'enterRegion', 'waveCleared', 'armyCampLaid', 'armyMarchArrived'
+        ]
       },
       onShowTip: text => this._showScreenTip(text || ''),
       onItemGained: (item, player) => this.onItemGained(item, player || this.playerEntity),

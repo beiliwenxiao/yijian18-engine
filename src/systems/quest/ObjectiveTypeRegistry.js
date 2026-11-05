@@ -78,6 +78,17 @@ const DEFAULT_OBJECTIVE_TYPES = Object.freeze([
     defaultCount: 1
   }),
   Object.freeze({
+    type: 'interact.entity',
+    label: '与目标交互',
+    description: '与指定目标对象交互后完成（E 键/点击空间绑定）；配置目标数量可表达累计交互（如招募 N 次）',
+    matcherType: 'interact',
+    identityFields: Object.freeze([
+      Object.freeze({ name: 'target', label: '目标对象 ID', required: true })
+    ]),
+    progressBy: null,
+    defaultCount: 1
+  }),
+  Object.freeze({
     type: CUSTOM_EVENT_TYPE,
     label: '自定义事件',
     description: '从事件目录自由选择完成事件与身份限定',

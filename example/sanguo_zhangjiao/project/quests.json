@@ -373,6 +373,96 @@
     "title": "荒原求生"
   },
   {
+    "accept": {
+      "when": {
+        "fact": "story.s02.beg.armyArrived",
+        "type": "fact"
+      }
+    },
+    "category": "main",
+    "description": "黄巾军队路过荒村。张角在你昏迷时发现了你——乱世之中，他做出了抉择。",
+    "id": "task.s02.verdict",
+    "scenes": [
+      "S02"
+    ],
+    "steps": [
+      {
+        "dialogueId": "dialogue.s02.prologue",
+        "id": "makeVerdict",
+        "options": [
+          {
+            "choice": "save",
+            "steps": [
+              {
+                "action": "state.transaction",
+                "id": "save.judgement",
+                "params": {
+                  "definitionId": "story.s02.judgement.save"
+                },
+                "title": "张角决意救人",
+                "type": "action"
+              },
+              {
+                "action": "scenario.command",
+                "id": "save.rescueBegin",
+                "params": {
+                  "goalX": 620,
+                  "goalY": 350,
+                  "operation": "army.rescue.begin",
+                  "regionId": "S02-camp-rescue",
+                  "scenarioId": "scenario.command.army.rescue.begin"
+                },
+                "title": "开放救援搬运",
+                "type": "action"
+              }
+            ],
+            "title": "救他"
+          },
+          {
+            "choice": "kill",
+            "steps": [
+              {
+                "action": "state.transaction",
+                "id": "kill.judgement",
+                "params": {
+                  "definitionId": "story.s02.judgement.kill"
+                },
+                "title": "乱世草芥",
+                "type": "action"
+              },
+              {
+                "action": "ending.command",
+                "id": "kill.ending",
+                "params": {
+                  "checkpointId": "checkpoint.S02.ending.chaosWeed",
+                  "endingId": "sanguo-zhangjiao-endings-v1",
+                  "endingKey": "chaos-weed",
+                  "operation": "commit"
+                },
+                "title": "达成结局：乱世草芥",
+                "type": "action"
+              }
+            ],
+            "title": "杀了"
+          }
+        ],
+        "title": "张角的抉择",
+        "type": "choice"
+      }
+    ],
+    "title": "荒村抉择"
+  },
+  {
+    "accept": {
+      "when": {
+        "event": "dialogueChoice",
+        "params": {
+          "choiceId": "save",
+          "id": "dialogue.s02.prologue"
+        },
+        "type": "event"
+      }
+    },
     "category": "main",
     "description": "张角下令救人。指挥黄巾士兵把晕倒的主角抬回营地。",
     "id": "task.s02.rescue",
@@ -410,11 +500,27 @@
         "type": "tutorial"
       },
       {
+        "commitFact": "story.s02.rescue.done",
+        "eventMatcher": {
+          "payload": {
+            "regionId": "S02-camp-rescue"
+          },
+          "type": "enterRegion"
+        },
         "id": "carryToCamp",
-        "objectiveType": "commit.fact",
-        "target": "story.s02.rescue.done",
+        "objectiveType": "custom.event",
         "title": "把伤者抬回营地",
         "type": "objective"
+      },
+      {
+        "action": "scenario.command",
+        "id": "after.carryToCamp.0",
+        "params": {
+          "operation": "army.rescue.awaken",
+          "scenarioId": "scenario.command.army.rescue.awaken"
+        },
+        "title": "苏醒演出",
+        "type": "action"
       },
       {
         "id": "after.carryToCamp.1",
@@ -609,6 +715,17 @@
     ],
     "steps": [
       {
+        "action": "spawnPlacements",
+        "id": "intro.spawn",
+        "params": {
+          "selector": {
+            "group": "S09-initial"
+          }
+        },
+        "title": "广宗大营展开",
+        "type": "action"
+      },
+      {
         "await": true,
         "dialogueId": "dialogue.s09.arrival",
         "id": "intro.opening",
@@ -707,6 +824,28 @@
     ],
     "steps": [
       {
+        "action": "spawnPlacements",
+        "id": "intro.spawn",
+        "params": {
+          "selector": {
+            "group": "S03-yellow-turban"
+          }
+        },
+        "title": "黄巾军阵地展开",
+        "type": "action"
+      },
+      {
+        "action": "spawnPlacements",
+        "id": "intro.spawn.2",
+        "params": {
+          "selector": {
+            "group": "S03-han-army"
+          }
+        },
+        "title": "官军阵地展开",
+        "type": "action"
+      },
+      {
         "await": true,
         "dialogueId": "dialogue.s03.opening",
         "id": "intro.opening",
@@ -803,6 +942,50 @@
       "S04"
     ],
     "steps": [
+      {
+        "action": "spawnPlacements",
+        "id": "intro.spawn",
+        "params": {
+          "selector": {
+            "group": "S04-yellow-turban"
+          }
+        },
+        "title": "黄巾军阵地展开",
+        "type": "action"
+      },
+      {
+        "action": "spawnPlacements",
+        "id": "intro.spawn.2",
+        "params": {
+          "selector": {
+            "group": "S04-han-army"
+          }
+        },
+        "title": "官军阵地展开",
+        "type": "action"
+      },
+      {
+        "action": "spawnPlacements",
+        "id": "intro.spawn.3",
+        "params": {
+          "selector": {
+            "group": "S04-bocai-rescue"
+          }
+        },
+        "title": "波才残部救援点就位",
+        "type": "action"
+      },
+      {
+        "action": "spawnPlacements",
+        "id": "intro.spawn.4",
+        "params": {
+          "selector": {
+            "group": "S04-herbs"
+          }
+        },
+        "title": "草药散落战场",
+        "type": "action"
+      },
       {
         "await": true,
         "dialogueId": "dialogue.s04.opening",
@@ -1093,6 +1276,28 @@
       "S07"
     ],
     "steps": [
+      {
+        "action": "spawnPlacements",
+        "id": "intro.spawn",
+        "params": {
+          "selector": {
+            "group": "S07-yellow-turban"
+          }
+        },
+        "title": "黄巾军阵地展开",
+        "type": "action"
+      },
+      {
+        "action": "spawnPlacements",
+        "id": "intro.spawn.2",
+        "params": {
+          "selector": {
+            "group": "S07-han-army"
+          }
+        },
+        "title": "官军阵地展开",
+        "type": "action"
+      },
       {
         "await": true,
         "dialogueId": "dialogue.s07.opening",
@@ -1430,6 +1635,39 @@
     ],
     "steps": [
       {
+        "action": "spawnPlacements",
+        "id": "intro.spawn",
+        "params": {
+          "selector": {
+            "group": "S11-yellow-turban"
+          }
+        },
+        "title": "黄巾军阵地展开",
+        "type": "action"
+      },
+      {
+        "action": "spawnPlacements",
+        "id": "intro.spawn.2",
+        "params": {
+          "selector": {
+            "group": "S11-han-army"
+          }
+        },
+        "title": "官军阵地展开",
+        "type": "action"
+      },
+      {
+        "action": "spawnPlacements",
+        "id": "intro.spawn.3",
+        "params": {
+          "selector": {
+            "group": "S11-zhang-liang-rescue"
+          }
+        },
+        "title": "张梁救援点就位",
+        "type": "action"
+      },
+      {
         "await": true,
         "dialogueId": "dialogue.s11.opening",
         "id": "intro.opening",
@@ -1602,6 +1840,61 @@
     ],
     "steps": [
       {
+        "action": "spawnPlacements",
+        "id": "intro.spawn",
+        "params": {
+          "selector": {
+            "group": "S12-yellow-turban"
+          }
+        },
+        "title": "黄巾军阵地展开",
+        "type": "action"
+      },
+      {
+        "action": "spawnPlacements",
+        "id": "intro.spawn.2",
+        "params": {
+          "selector": {
+            "group": "S12-han-army"
+          }
+        },
+        "title": "官军阵地展开",
+        "type": "action"
+      },
+      {
+        "action": "spawnPlacements",
+        "id": "intro.spawn.3",
+        "params": {
+          "selector": {
+            "group": "S12-zhang-bao-rescue"
+          }
+        },
+        "title": "张宝救援点就位",
+        "type": "action"
+      },
+      {
+        "action": "spawnPlacements",
+        "id": "intro.spawn.4",
+        "params": {
+          "selector": {
+            "group": "S12-bocai-allies"
+          }
+        },
+        "title": "波才友军就位",
+        "type": "action"
+      },
+      {
+        "action": "spawnPlacements",
+        "id": "intro.spawn.5",
+        "params": {
+          "selector": {
+            "group": "S12-zhang-liang-reinforcements"
+          }
+        },
+        "title": "张梁援军就位",
+        "type": "action"
+      },
+      {
         "await": true,
         "dialogueId": "dialogue.s12.opening",
         "id": "intro.opening",
@@ -1737,6 +2030,28 @@
       "S13"
     ],
     "steps": [
+      {
+        "action": "spawnPlacements",
+        "id": "intro.spawn",
+        "params": {
+          "selector": {
+            "group": "S13-yellow-turban"
+          }
+        },
+        "title": "黄巾军阵地展开",
+        "type": "action"
+      },
+      {
+        "action": "spawnPlacements",
+        "id": "intro.spawn.2",
+        "params": {
+          "selector": {
+            "group": "S13-han-army"
+          }
+        },
+        "title": "官军阵地展开",
+        "type": "action"
+      },
       {
         "await": true,
         "dialogueId": "dialogue.s13.opening",

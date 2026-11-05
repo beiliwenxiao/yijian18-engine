@@ -1,13 +1,15 @@
 /************************************************************
  * S02 张角抉择选项链路集成诊断测试。
  *
- * 用真实工程数据（project/dialogues.json、project/triggers.json、
- * project/commands.json、project/quests.json）复盘
- * dialogue.s02.prologue judge 节点的两个选项：
- *   selectChoice → dialogueChoice fireAndWait → state.transaction /
- *   task.command / ending.command / scenario.command。
+ * 用真实工程数据（project/dialogues.json、project/quests.json、
+ * project/commands.json）复盘 dialogue.s02.prologue judge 节点的两个选项：
+ *   selectChoice → dialogueChoice fireAndWait →
+ *   trg_task.s02.verdict_after_makeVerdict.{save,kill}（quest choice 编译触发器）
+ *   → state.transaction(judgement) / scenario.command(救援开启) / ending.command。
  * 任一动作失败都会让 TriggerSystem.fireAndWait 返回 ok:false，
  * DialogueSystem.selectChoice 静默不提交（症状=选项无反应）。
+ * 任务化后：judgement/结局/救援开启由 task.s02.verdict 的选项步骤编译承担，
+ * 手写 trg_s02_choice_kill/save 触发器已删除。
  ************************************************************/
 
 import { describe, it, expect } from 'vitest';
@@ -42,30 +44,37 @@ function commandResult(operationId, overrides = {}) {
 }
 
 async function buildChoiceChain({ storyStateOverrides = {} } = {}) {
-  const triggers = readProjectJson('project/triggers.json');
   const dialogues = readProjectJson('project/dialogues.json');
   const commands = readProjectJson('project/commands.json');
   const quests = readProjectJson('project/quests.json');
   const tutorials = readProjectJson('project/tutorials.json');
 
   const prologue = dialogues.find(dialogue => dialogue?.id === 'dialogue.s02.prologue');
-  const choiceTriggers = triggers.filter(trigger => (
-    ['trg_s02_choice_kill', 'trg_s02_choice_save'].includes(trigger?.id)
-  ));
+  const verdictQuest = quests.find(quest => quest?.id === 'task.s02.verdict');
+  const rescueQuest = quests.find(quest => quest?.id === 'task.s02.rescue');
   const judgementCommands = commands.filter(command => (
     ['story.s02.judgement.kill', 'story.s02.judgement.save'].includes(command?.id)
   ));
-  const rescueQuest = quests.find(quest => quest?.id === 'task.s02.rescue');
-  // choice_save 的教学位引用两条指挥教程：最小快照必须带全，否则定义库校验报悬空引用
+  // rescue intro 教学位引用两条指挥教程：最小快照必须带全，否则定义库校验报悬空引用
   const choiceTutorials = tutorials.filter(tutorial => (
     ['s02.command.move', 's02.command.carry'].includes(tutorial?.id)
   ));
 
   expect(prologue, 'dialogue.s02.prologue 存在').toBeTruthy();
-  expect(choiceTriggers, '两个 S02 选项触发器存在').toHaveLength(2);
-  expect(judgementCommands, '两个裁决事务定义存在').toHaveLength(2);
+  expect(verdictQuest, 'task.s02.verdict 定义存在').toBeTruthy();
   expect(rescueQuest, 'task.s02.rescue 定义存在').toBeTruthy();
+  expect(judgementCommands, '两个裁决事务定义存在').toHaveLength(2);
   expect(choiceTutorials, '两条指挥教程定义存在').toHaveLength(2);
+
+  // 任务化抉择链：选项段触发器由 quest choice 步骤编译
+  const compiledQuests = compileQuestProject({ quests: [verdictQuest, rescueQuest] });
+  const choiceTriggers = compiledQuests.triggers.filter(trigger => (
+    [
+      'trg_task.s02.verdict_after_makeVerdict.save',
+      'trg_task.s02.verdict_after_makeVerdict.kill'
+    ].includes(trigger?.id)
+  ));
+  expect(choiceTriggers, '两个选项段编译触发器存在').toHaveLength(2);
 
   const project = {
     schemaVersion: 1,
@@ -75,9 +84,9 @@ async function buildChoiceChain({ storyStateOverrides = {} } = {}) {
     dialogues: [prologue],
     triggers: choiceTriggers,
     commands: judgementCommands,
-    quests: [rescueQuest],
+    quests: [verdictQuest, rescueQuest],
     // 任务中心制：quests[] 编译出 taskGraph 定义，供 task.command 引用校验
-    taskGraphs: compileQuestProject({ quests: [rescueQuest] }).taskGraphs || [],
+    taskGraphs: compiledQuests.taskGraphs || [],
     triggerCatalog: { actions: ['spawnPlacements'] },
     variables: {}
   };

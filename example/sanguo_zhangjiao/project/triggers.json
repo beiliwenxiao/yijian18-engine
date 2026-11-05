@@ -751,115 +751,13 @@
       }
     ],
     "id": "trg_s02_spawn_initial",
-    "name": "进入S02：荒村惨状",
+    "name": "进入S02：荒村惨状（进村引导；任务链自乞讨/军队事件起由 task.s02.* 承担）",
     "once": true,
     "when": {
       "params": {
         "sceneId": "S02"
       },
       "type": "sceneEnter"
-    }
-  },
-  {
-    "do": [
-      {
-        "action": "state.transaction",
-        "params": {
-          "definitionId": "story.s02.judgement.kill"
-        }
-      },
-      {
-        "action": "ending.command",
-        "params": {
-          "checkpointId": "checkpoint.S02.ending.chaosWeed",
-          "endingId": "sanguo-zhangjiao-endings-v1",
-          "endingKey": "chaos-weed",
-          "operation": "commit"
-        },
-        "stepId": "trg_s02_choice_kill.step.ending"
-      }
-    ],
-    "id": "trg_s02_choice_kill",
-    "name": "张角选择：杀了（乱世草芥结局）",
-    "once": true,
-    "when": {
-      "params": {
-        "choiceId": "kill",
-        "id": "dialogue.s02.prologue"
-      },
-      "type": "dialogueChoice"
-    }
-  },
-  {
-    "do": [
-      {
-        "action": "state.transaction",
-        "params": {
-          "definitionId": "story.s02.judgement.save"
-        }
-      },
-      {
-        "action": "task.command",
-        "params": {
-          "definitionId": "task.s02.rescue",
-          "instanceId": "task.s02.rescue.main",
-          "operation": "task.start",
-          "tracking": true
-        },
-        "stepId": "start-s02-rescue-task"
-      },
-      {
-        "action": "scenario.command",
-        "params": {
-          "goalX": 620,
-          "goalY": 350,
-          "operation": "army.rescue.begin",
-          "regionId": "S02-camp-rescue",
-          "scenarioId": "scenario.command.army.rescue.begin"
-        }
-      }
-    ],
-    "id": "trg_s02_choice_save",
-    "name": "张角选择：救他（开放搬运玩法；指挥教学由 task.s02.rescue 开场步骤编译）",
-    "once": true,
-    "when": {
-      "params": {
-        "choiceId": "save",
-        "id": "dialogue.s02.prologue"
-      },
-      "type": "dialogueChoice"
-    }
-  },
-  {
-    "do": [
-      {
-        "action": "state.transaction",
-        "params": {
-          "definitionId": "story.s02.rescue.done"
-        }
-      },
-      {
-        "action": "scenario.command",
-        "params": {
-          "operation": "army.rescue.awaken",
-          "scenarioId": "scenario.command.army.rescue.awaken"
-        }
-      }
-    ],
-    "id": "trg_s02_camp_arrival",
-    "if": {
-      "arg": {
-        "var": "story.s02Rescued"
-      },
-      "op": "not"
-    },
-    "name": "伤者抵达营地：提交救援事实+苏醒演出（苏醒对话/教学收尾/赠礼由 task.s02.rescue 目标后步骤编译）",
-    "once": false,
-    "when": {
-      "params": {
-        "regionId": "S02-camp-rescue"
-      },
-      "type": "enterRegion"
     }
   },
   {
@@ -1622,26 +1520,6 @@
     }
   },
   {
-    "do": [
-      {
-        "action": "spawnPlacements",
-        "params": {
-          "selector": {
-            "group": "S09-initial"
-          }
-        }
-      }
-    ],
-    "id": "trg_s09_spawn_initial",
-    "once": true,
-    "when": {
-      "params": {
-        "sceneId": "S09"
-      },
-      "type": "sceneEnter"
-    }
-  },
-  {
     "cooldown": 1,
     "do": [
       {
@@ -1761,34 +1639,6 @@
     }
   },
   {
-    "do": [
-      {
-        "action": "spawnPlacements",
-        "params": {
-          "selector": {
-            "group": "S03-yellow-turban"
-          }
-        }
-      },
-      {
-        "action": "spawnPlacements",
-        "params": {
-          "selector": {
-            "group": "S03-han-army"
-          }
-        }
-      }
-    ],
-    "id": "trg_s03_spawn_initial",
-    "once": true,
-    "when": {
-      "params": {
-        "sceneId": "S03"
-      },
-      "type": "sceneEnter"
-    }
-  },
-  {
     "cooldown": 0.5,
     "do": [
       {
@@ -1836,50 +1686,6 @@
     "when": {
       "params": {},
       "type": "interact"
-    }
-  },
-  {
-    "do": [
-      {
-        "action": "spawnPlacements",
-        "params": {
-          "selector": {
-            "group": "S04-yellow-turban"
-          }
-        }
-      },
-      {
-        "action": "spawnPlacements",
-        "params": {
-          "selector": {
-            "group": "S04-han-army"
-          }
-        }
-      },
-      {
-        "action": "spawnPlacements",
-        "params": {
-          "selector": {
-            "group": "S04-bocai-rescue"
-          }
-        }
-      },
-      {
-        "action": "spawnPlacements",
-        "params": {
-          "selector": {
-            "group": "S04-herbs"
-          }
-        }
-      }
-    ],
-    "id": "trg_s04_spawn_initial",
-    "once": true,
-    "when": {
-      "params": {
-        "sceneId": "S04"
-      },
-      "type": "sceneEnter"
     }
   },
   {
@@ -2156,34 +1962,6 @@
     "when": {
       "params": {},
       "type": "interact"
-    }
-  },
-  {
-    "do": [
-      {
-        "action": "spawnPlacements",
-        "params": {
-          "selector": {
-            "group": "S07-yellow-turban"
-          }
-        }
-      },
-      {
-        "action": "spawnPlacements",
-        "params": {
-          "selector": {
-            "group": "S07-han-army"
-          }
-        }
-      }
-    ],
-    "id": "trg_s07_spawn_initial",
-    "once": true,
-    "when": {
-      "params": {
-        "sceneId": "S07"
-      },
-      "type": "sceneEnter"
     }
   },
   {
@@ -2536,42 +2314,6 @@
     }
   },
   {
-    "do": [
-      {
-        "action": "spawnPlacements",
-        "params": {
-          "selector": {
-            "group": "S11-yellow-turban"
-          }
-        }
-      },
-      {
-        "action": "spawnPlacements",
-        "params": {
-          "selector": {
-            "group": "S11-han-army"
-          }
-        }
-      },
-      {
-        "action": "spawnPlacements",
-        "params": {
-          "selector": {
-            "group": "S11-zhang-liang-rescue"
-          }
-        }
-      }
-    ],
-    "id": "trg_s11_spawn_initial",
-    "once": true,
-    "when": {
-      "params": {
-        "sceneId": "S11"
-      },
-      "type": "sceneEnter"
-    }
-  },
-  {
     "cooldown": 0.5,
     "do": [
       {
@@ -2777,58 +2519,6 @@
     }
   },
   {
-    "do": [
-      {
-        "action": "spawnPlacements",
-        "params": {
-          "selector": {
-            "group": "S12-yellow-turban"
-          }
-        }
-      },
-      {
-        "action": "spawnPlacements",
-        "params": {
-          "selector": {
-            "group": "S12-han-army"
-          }
-        }
-      },
-      {
-        "action": "spawnPlacements",
-        "params": {
-          "selector": {
-            "group": "S12-zhang-bao-rescue"
-          }
-        }
-      },
-      {
-        "action": "spawnPlacements",
-        "params": {
-          "selector": {
-            "group": "S12-bocai-allies"
-          }
-        }
-      },
-      {
-        "action": "spawnPlacements",
-        "params": {
-          "selector": {
-            "group": "S12-zhang-liang-reinforcements"
-          }
-        }
-      }
-    ],
-    "id": "trg_s12_spawn_initial",
-    "once": true,
-    "when": {
-      "params": {
-        "sceneId": "S12"
-      },
-      "type": "sceneEnter"
-    }
-  },
-  {
     "cooldown": 0.5,
     "do": [
       {
@@ -2983,34 +2673,6 @@
     "when": {
       "params": {},
       "type": "interact"
-    }
-  },
-  {
-    "do": [
-      {
-        "action": "spawnPlacements",
-        "params": {
-          "selector": {
-            "group": "S13-yellow-turban"
-          }
-        }
-      },
-      {
-        "action": "spawnPlacements",
-        "params": {
-          "selector": {
-            "group": "S13-han-army"
-          }
-        }
-      }
-    ],
-    "id": "trg_s13_spawn_initial",
-    "once": true,
-    "when": {
-      "params": {
-        "sceneId": "S13"
-      },
-      "type": "sceneEnter"
     }
   },
   {
