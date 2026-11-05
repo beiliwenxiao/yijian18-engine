@@ -119,6 +119,13 @@ function gateLabel(entry) {
  *         expectedPath|null, clearExpected, status, changedByReorder, reason? }
  * status：match（已一致）/ mismatch（待写回）/ unresolved（前序目标无可解析事实或对象缺失）/ manual（复合条件）
  */
+
+/** 步骤的场景对象引用集合（统一形态）：mapTargets 地图导航点 + gates 交互门/场景对象引用。 */
+const stepRefs = step => [
+  ...list(step?.mapTargets).map(target => ({ sceneId: text(target?.sceneId), targetId: text(target?.targetId) })),
+  ...list(step?.gates).map(gate => ({ sceneId: text(gate?.sceneId), targetId: text(gate?.placementId) }))
+];
+
 export function computeConditionSyncPlan({ quest, project = null, sceneDocs = [], previousSteps = null } = {}) {
   const steps = list(quest?.steps);
   const factIndex = buildFactPathIndex(project);
@@ -139,21 +146,26 @@ export function computeConditionSyncPlan({ quest, project = null, sceneDocs = []
         if (!objectiveTitleByFact.has(path)) objectiveTitleByFact.set(path, text(step.title) || text(step.id));
         if (!objectiveRefsByFact.has(path)) objectiveRefsByFact.set(path, new Set());
       }
-      for (const mapTarget of list(step.mapTargets)) {
-        const refKey = `${text(mapTarget?.sceneId)}::${text(mapTarget?.targetId)}`;
+      for (const ref of stepRefs(step)) {
+        const refKey = `${text(ref?.sceneId)}::${text(ref?.targetId)}`;
         for (const path of factPaths) objectiveRefsByFact.get(path)?.add(refKey);
       }
     }
     // 统一规则：目标步骤（对象须在前序目标完成后即可交互）与非目标步骤（对象在其段
     // 驱动目标完成时出现）的期望门控，同为「数组中最近前序目标提交的事实」。
-    const mapTargets = list(step.mapTargets);
+    // 引用域 = mapTargets（地图导航点）+ gates（交互门/场景对象引用），同一期望规则。
+    const mapTargets = stepRefs(step);
     if (!mapTargets.length) continue;
+    const seenRef = new Set();
     const reordered = changedByReorder(steps, previousSteps, text(step.id));
     for (const mapTarget of mapTargets) {
       const sceneId = text(mapTarget?.sceneId);
       const targetId = text(mapTarget?.targetId);
       if (!sceneId || !targetId) continue;
-      referencedPlacements.add(`${sceneId}::${targetId}`);
+      const refKey = `${sceneId}::${targetId}`;
+      if (seenRef.has(refKey)) continue;
+      seenRef.add(refKey);
+      referencedPlacements.add(refKey);
       const found = placementIndex.get(`${sceneId}::${targetId}`) || null;
       if (!found) {
         links.push({

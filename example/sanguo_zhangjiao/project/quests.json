@@ -293,6 +293,13 @@
       },
       {
         "id": "stayOvernight",
+        "gates": [
+          {
+            "bindingId": "S01-binding-enter-shelter",
+            "placementId": "S01-shelter-site-firewood",
+            "sceneId": "S01"
+          }
+        ],
         "mapTargets": [
           {
             "sceneId": "S01",
@@ -448,6 +455,849 @@
         ],
         "title": "张角的抉择",
         "type": "choice"
+      },
+      {
+        "id": "armyDispatch",
+        "type": "event",
+        "title": "张角军队入画行军",
+        "eventMatcher": {
+          "type": "state.transaction",
+          "params": {
+            "definitionId": "story.s02.beg.fainted"
+          }
+        },
+        "once": true,
+        "steps": [
+          {
+            "action": "showTip",
+            "params": {
+              "text": "不知过了多久，一阵车轮碾地声由远及近——张角带着二十名黄巾信众，推着几辆装满粮食的推车，沿山道行来。"
+            },
+            "stepId": "army-dispatch-tip"
+          },
+          {
+            "action": "spawnPlacements",
+            "params": {
+              "selector": {
+                "group": "S02-army-column"
+              }
+            },
+            "stepId": "army-dispatch-spawn"
+          },
+          {
+            "action": "spawnPlacements",
+            "params": {
+              "selector": {
+                "group": "S02-believer-train"
+              }
+            },
+            "stepId": "grain-cart-spawn"
+          },
+          {
+            "action": "scenario.command",
+            "params": {
+              "armyId": "army.s02.column",
+              "operation": "army.march",
+              "scenarioId": "scenario.command.army.march",
+              "waypoints": [
+                {
+                  "x": 220,
+                  "y": 420
+                },
+                {
+                  "x": 430,
+                  "y": 400
+                },
+                {
+                  "x": 620,
+                  "y": 398
+                }
+              ]
+            },
+            "stepId": "army-dispatch-march"
+          }
+        ]
+      },
+      {
+        "id": "armyArrival",
+        "type": "event",
+        "title": "军队抵达村口（未抉择则开启张角对话）",
+        "eventMatcher": {
+          "type": "armyMarchArrived",
+          "params": {
+            "armyId": "army.s02.column"
+          }
+        },
+        "once": true,
+        "steps": [
+          {
+            "action": "state.transaction",
+            "params": {
+              "definitionId": "story.s02.beg.armyArrived"
+            },
+            "stepId": "army-arrival-fact"
+          },
+          {
+            "branch": [
+              {
+                "do": [
+                  {
+                    "action": "startDialogue",
+                    "params": {
+                      "id": "dialogue.s02.prologue"
+                    },
+                    "stepId": "army-arrival-prologue"
+                  }
+                ],
+                "when": {
+                  "arg": {
+                    "name": "story.s02ZhangjiaoChoice",
+                    "op": "var"
+                  },
+                  "op": "not"
+                }
+              }
+            ],
+            "stepId": "army-arrival-prologue-branch"
+          }
+        ]
+      },
+      {
+        "id": "begChildrenEnter",
+        "type": "event",
+        "title": "孩童乞讨：走近开启对话",
+        "eventMatcher": {
+          "type": "enter",
+          "params": {}
+        },
+        "once": false,
+        "if": {
+          "arg": {
+            "var": "story.s02BegAdults"
+          },
+          "op": "not"
+        },
+        "steps": [
+          {
+            "action": "startDialogue",
+            "params": {
+              "id": "dialogue.s02.beggarChildren"
+            }
+          }
+        ]
+      },
+      {
+        "id": "begChildrenRound1",
+        "type": "event",
+        "title": "孩童乞讨：第一轮选择",
+        "eventMatcher": {
+          "type": "dialogueChoice",
+          "params": {
+            "choiceId": "give",
+            "id": "dialogue.s02.beggarChildren"
+          }
+        },
+        "once": true,
+        "steps": [
+          {
+            "branch": [
+              {
+                "do": [
+                  {
+                    "action": "takeReward",
+                    "params": {
+                      "items": [
+                        {
+                          "id": "resource.wild_berry",
+                          "quantity": 2
+                        }
+                      ]
+                    },
+                    "stepId": "beg-children-first-give"
+                  },
+                  {
+                    "action": "setVar",
+                    "params": {
+                      "key": "s02BegChildrenGave",
+                      "value": true
+                    },
+                    "stepId": "beg-children-gave-mark"
+                  },
+                  {
+                    "action": "spawnPlacements",
+                    "params": {
+                      "selector": {
+                        "group": "S02-beg-children-more"
+                      }
+                    },
+                    "stepId": "beg-children-more-spawn"
+                  }
+                ],
+                "when": {
+                  "count": 2,
+                  "item": "resource.wild_berry",
+                  "op": "hasItem"
+                }
+              }
+            ],
+            "stepId": "beg-children-give-branch"
+          }
+        ]
+      },
+      {
+        "id": "begChildrenAfter",
+        "type": "event",
+        "title": "孩童乞讨：对话收尾",
+        "eventMatcher": {
+          "type": "dialogueEnd",
+          "params": {
+            "id": "dialogue.s02.beggarChildren"
+          }
+        },
+        "once": true,
+        "steps": [
+          {
+            "action": "state.transaction",
+            "params": {
+              "definitionId": "story.s02.beg.children"
+            },
+            "stepId": "beg-children-fact"
+          },
+          {
+            "branch": [
+              {
+                "do": [
+                  {
+                    "action": "startDialogue",
+                    "params": {
+                      "id": "dialogue.s02.beggarChildrenMore"
+                    },
+                    "stepId": "beg-children-more-dialogue"
+                  }
+                ],
+                "when": {
+                  "name": "s02BegChildrenGave",
+                  "op": "var"
+                }
+              }
+            ],
+            "stepId": "beg-children-more-branch"
+          },
+          {
+            "branch": [
+              {
+                "do": [
+                  {
+                    "action": "despawnPlacements",
+                    "params": {
+                      "selector": {
+                        "group": "S02-beg-children"
+                      }
+                    },
+                    "stepId": "beg-children-despawn"
+                  },
+                  {
+                    "action": "despawnPlacements",
+                    "params": {
+                      "selector": {
+                        "group": "S02-beg-children-more"
+                      }
+                    },
+                    "stepId": "beg-children-more-despawn"
+                  },
+                  {
+                    "action": "state.transaction",
+                    "params": {
+                      "definitionId": "story.s02.beg.adults"
+                    },
+                    "stepId": "beg-adults-fact"
+                  },
+                  {
+                    "action": "startDialogue",
+                    "params": {
+                      "id": "dialogue.s02.beggarAdults"
+                    },
+                    "stepId": "beg-adults-dialogue"
+                  }
+                ],
+                "when": {
+                  "arg": {
+                    "name": "s02BegChildrenGave",
+                    "op": "var"
+                  },
+                  "op": "not"
+                }
+              }
+            ],
+            "stepId": "beg-children-refuse-branch"
+          }
+        ]
+      },
+      {
+        "id": "begChildrenRound2",
+        "type": "event",
+        "title": "孩童乞讨：第二轮选择",
+        "eventMatcher": {
+          "type": "dialogueChoice",
+          "params": {
+            "choiceId": "give5",
+            "id": "dialogue.s02.beggarChildrenMore"
+          }
+        },
+        "once": true,
+        "steps": [
+          {
+            "action": "takeReward",
+            "params": {
+              "items": [
+                {
+                  "id": "resource.wild_berry",
+                  "quantity": 5
+                }
+              ]
+            },
+            "stepId": "beg-children-second-give"
+          }
+        ]
+      },
+      {
+        "id": "begChildrenScatter",
+        "type": "event",
+        "title": "孩童乞讨：散场编排",
+        "eventMatcher": {
+          "type": "dialogueEnd",
+          "params": {
+            "id": "dialogue.s02.beggarChildrenMore"
+          }
+        },
+        "once": true,
+        "steps": [
+          {
+            "action": "despawnPlacements",
+            "params": {
+              "selector": {
+                "group": "S02-beg-children"
+              }
+            },
+            "stepId": "beg-children-despawn"
+          },
+          {
+            "action": "despawnPlacements",
+            "params": {
+              "selector": {
+                "group": "S02-beg-children-more"
+              }
+            },
+            "stepId": "beg-children-more-despawn"
+          },
+          {
+            "action": "state.transaction",
+            "params": {
+              "definitionId": "story.s02.beg.adults"
+            },
+            "stepId": "beg-adults-fact"
+          },
+          {
+            "action": "startDialogue",
+            "params": {
+              "id": "dialogue.s02.beggarAdults"
+            },
+            "stepId": "beg-adults-dialogue"
+          }
+        ]
+      },
+      {
+        "id": "begAdultsChoice",
+        "type": "event",
+        "title": "成人乞讨：选择编排",
+        "eventMatcher": {
+          "type": "dialogueChoice",
+          "params": {
+            "choiceId": "giveAdults",
+            "id": "dialogue.s02.beggarAdults"
+          }
+        },
+        "once": true,
+        "steps": [
+          {
+            "action": "setVar",
+            "params": {
+              "key": "s02BegPaid",
+              "value": false
+            },
+            "stepId": "beg-adults-paid-init"
+          },
+          {
+            "branch": [
+              {
+                "do": [
+                  {
+                    "action": "setVar",
+                    "params": {
+                      "key": "s02BegPaid",
+                      "value": true
+                    },
+                    "stepId": "beg-adults-paid-berry-mark"
+                  },
+                  {
+                    "action": "takeReward",
+                    "params": {
+                      "items": [
+                        {
+                          "id": "resource.wild_berry",
+                          "quantity": 20
+                        }
+                      ]
+                    },
+                    "stepId": "beg-adults-paid-berry-take"
+                  },
+                  {
+                    "action": "takeReward",
+                    "params": {
+                      "items": [
+                        {
+                          "all": true,
+                          "id": "resource.food"
+                        },
+                        {
+                          "all": true,
+                          "id": "resource.wild_berry"
+                        },
+                        {
+                          "all": true,
+                          "id": "resource.apple"
+                        },
+                        {
+                          "all": true,
+                          "id": "resource.raw_wolf_meat"
+                        },
+                        {
+                          "all": true,
+                          "id": "resource.raw_rabbit_meat"
+                        },
+                        {
+                          "all": true,
+                          "id": "food.roasted_wolf_meat"
+                        },
+                        {
+                          "all": true,
+                          "id": "food.roasted_rabbit_meat"
+                        }
+                      ],
+                      "strict": false
+                    },
+                    "stepId": "beg-adults-rob-all-berry"
+                  },
+                  {
+                    "action": "showTip",
+                    "params": {
+                      "text": "食物刚递出去，人群便哄然失控——他们抢走了你行囊里所有能吃的东西！"
+                    },
+                    "stepId": "beg-adults-rob-tip-berry"
+                  }
+                ],
+                "when": {
+                  "count": 20,
+                  "item": "resource.wild_berry",
+                  "op": "hasItem"
+                }
+              },
+              {
+                "do": [
+                  {
+                    "action": "setVar",
+                    "params": {
+                      "key": "s02BegPaid",
+                      "value": true
+                    },
+                    "stepId": "beg-adults-paid-meat-mark"
+                  },
+                  {
+                    "action": "takeReward",
+                    "params": {
+                      "items": [
+                        {
+                          "id": "resource.raw_wolf_meat",
+                          "quantity": 5
+                        }
+                      ]
+                    },
+                    "stepId": "beg-adults-paid-meat-take"
+                  },
+                  {
+                    "action": "takeReward",
+                    "params": {
+                      "items": [
+                        {
+                          "all": true,
+                          "id": "resource.food"
+                        },
+                        {
+                          "all": true,
+                          "id": "resource.wild_berry"
+                        },
+                        {
+                          "all": true,
+                          "id": "resource.apple"
+                        },
+                        {
+                          "all": true,
+                          "id": "resource.raw_wolf_meat"
+                        },
+                        {
+                          "all": true,
+                          "id": "resource.raw_rabbit_meat"
+                        },
+                        {
+                          "all": true,
+                          "id": "food.roasted_wolf_meat"
+                        },
+                        {
+                          "all": true,
+                          "id": "food.roasted_rabbit_meat"
+                        }
+                      ],
+                      "strict": false
+                    },
+                    "stepId": "beg-adults-rob-all-meat"
+                  },
+                  {
+                    "action": "showTip",
+                    "params": {
+                      "text": "狼肉刚递出去，人群便哄然失控——他们抢走了你行囊里所有能吃的东西！"
+                    },
+                    "stepId": "beg-adults-rob-tip-meat"
+                  }
+                ],
+                "when": {
+                  "count": 5,
+                  "item": "resource.raw_wolf_meat",
+                  "op": "hasItem"
+                }
+              }
+            ],
+            "stepId": "beg-adults-pay-branch"
+          }
+        ]
+      },
+      {
+        "id": "begAdultsEnd",
+        "type": "event",
+        "title": "成人乞讨：对话收尾",
+        "eventMatcher": {
+          "type": "dialogueEnd",
+          "params": {
+            "id": "dialogue.s02.beggarAdults"
+          }
+        },
+        "once": true,
+        "steps": [
+          {
+            "branch": [
+              {
+                "do": [
+                  {
+                    "action": "scenario.command",
+                    "params": {
+                      "operation": "army.rescue.faint",
+                      "scenarioId": "scenario.command.army.rescue.faint"
+                    },
+                    "stepId": "beg-adults-robbed-faint"
+                  },
+                  {
+                    "action": "wait",
+                    "params": {
+                      "seconds": 2.5
+                    },
+                    "stepId": "beg-adults-robbed-fade-wait"
+                  },
+                  {
+                    "action": "state.transaction",
+                    "params": {
+                      "definitionId": "story.s02.beg.fainted"
+                    },
+                    "stepId": "beg-adults-robbed-fainted"
+                  }
+                ],
+                "when": {
+                  "name": "s02BegPaid",
+                  "op": "var"
+                }
+              }
+            ],
+            "stepId": "beg-adults-robbed-branch"
+          },
+          {
+            "branch": [
+              {
+                "do": [
+                  {
+                    "action": "showTip",
+                    "params": {
+                      "text": "人群静了一瞬。浑浊的眼睛里最后一点光熄灭了，他们抄起木棍和锄头，一步一步围拢过来……"
+                    },
+                    "stepId": "beg-adults-escalate-tip"
+                  },
+                  {
+                    "action": "startDialogue",
+                    "params": {
+                      "id": "dialogue.s02.beggarConfront"
+                    },
+                    "stepId": "beg-adults-confront-dialogue"
+                  }
+                ],
+                "when": {
+                  "arg": {
+                    "name": "s02BegPaid",
+                    "op": "var"
+                  },
+                  "op": "not"
+                }
+              }
+            ],
+            "stepId": "beg-adults-escalate-branch"
+          }
+        ]
+      },
+      {
+        "id": "begPacifist",
+        "type": "event",
+        "title": "不还手路线：围攻与昏迷",
+        "eventMatcher": {
+          "type": "dialogueChoice",
+          "params": {
+            "choiceId": "pacify",
+            "id": "dialogue.s02.beggarConfront"
+          }
+        },
+        "once": true,
+        "steps": [
+          {
+            "action": "takeReward",
+            "params": {
+              "items": [
+                {
+                  "all": true,
+                  "id": "resource.food"
+                },
+                {
+                  "all": true,
+                  "id": "resource.wild_berry"
+                },
+                {
+                  "all": true,
+                  "id": "resource.apple"
+                },
+                {
+                  "all": true,
+                  "id": "resource.raw_wolf_meat"
+                },
+                {
+                  "all": true,
+                  "id": "resource.raw_rabbit_meat"
+                },
+                {
+                  "all": true,
+                  "id": "food.roasted_wolf_meat"
+                },
+                {
+                  "all": true,
+                  "id": "food.roasted_rabbit_meat"
+                }
+              ],
+              "strict": false
+            },
+            "stepId": "beg-pacifist-rob-all"
+          },
+          {
+            "action": "showTip",
+            "params": {
+              "text": "食物被抢得一颗不剩。拳脚和木棍雨点般落在身上，你护住头蜷缩在地，眼前一次次发黑……"
+            },
+            "stepId": "beg-pacifist-tip"
+          },
+          {
+            "action": "scenario.command",
+            "params": {
+              "operation": "army.rescue.faint",
+              "scenarioId": "scenario.command.army.rescue.faint"
+            },
+            "stepId": "beg-pacifist-faint"
+          },
+          {
+            "action": "wait",
+            "params": {
+              "seconds": 2.5
+            },
+            "stepId": "beg-pacifist-fade-wait"
+          },
+          {
+            "action": "state.transaction",
+            "params": {
+              "definitionId": "story.s02.beg.fainted"
+            },
+            "stepId": "beg-pacifist-fainted"
+          }
+        ]
+      },
+      {
+        "id": "begFight",
+        "type": "event",
+        "title": "反抗路线：围攻开战",
+        "eventMatcher": {
+          "type": "dialogueChoice",
+          "params": {
+            "choiceId": "fight",
+            "id": "dialogue.s02.beggarConfront"
+          }
+        },
+        "once": true,
+        "steps": [
+          {
+            "action": "despawnPlacements",
+            "params": {
+              "selector": {
+                "group": "S02-villagers-calm"
+              }
+            },
+            "stepId": "beg-fight-calm-despawn"
+          },
+          {
+            "action": "spawnPlacements",
+            "params": {
+              "selector": {
+                "group": "S02-villagers-hostile"
+              }
+            },
+            "stepId": "beg-fight-hostile-spawn"
+          },
+          {
+            "action": "showTip",
+            "params": {
+              "text": "刀锋出鞘的寒光让人群顿了一顿，随即更加疯狂地扑了上来！"
+            },
+            "stepId": "beg-fight-tip"
+          },
+          {
+            "action": "state.transaction",
+            "params": {
+              "definitionId": "story.s02.beg.fight.prepare"
+            },
+            "stepId": "beg-fight-prepare"
+          }
+        ]
+      },
+      {
+        "id": "begFightWin",
+        "type": "event",
+        "title": "反抗路线：战胜利好",
+        "eventMatcher": {
+          "type": "waveCleared",
+          "params": {
+            "group": "S02-villagers-hostile"
+          }
+        },
+        "once": true,
+        "steps": [
+          {
+            "action": "state.transaction",
+            "params": {
+              "definitionId": "story.s02.beg.fight.clear"
+            },
+            "stepId": "beg-fight-win-clear"
+          },
+          {
+            "action": "showTip",
+            "params": {
+              "text": "灾民们散开了。力竭的你扶着断墙滑坐在地，眼前一黑——"
+            },
+            "stepId": "beg-fight-win-tip"
+          },
+          {
+            "action": "scenario.command",
+            "params": {
+              "operation": "army.rescue.faint",
+              "scenarioId": "scenario.command.army.rescue.faint"
+            },
+            "stepId": "beg-fight-win-faint"
+          },
+          {
+            "action": "wait",
+            "params": {
+              "seconds": 2.5
+            },
+            "stepId": "beg-fight-win-fade-wait"
+          },
+          {
+            "action": "state.transaction",
+            "params": {
+              "definitionId": "story.s02.beg.fainted"
+            },
+            "stepId": "beg-fight-win-fainted"
+          }
+        ]
+      },
+      {
+        "id": "begFightLose",
+        "type": "event",
+        "title": "反抗路线：战败昏迷",
+        "eventMatcher": {
+          "type": "playerSpecialFaint",
+          "params": {
+            "sceneId": "S02"
+          }
+        },
+        "once": true,
+        "if": {
+          "var": "story.s02BegFight"
+        },
+        "steps": [
+          {
+            "action": "state.transaction",
+            "params": {
+              "definitionId": "story.s02.beg.fight.clear"
+            },
+            "stepId": "beg-fight-lose-clear"
+          },
+          {
+            "action": "showTip",
+            "params": {
+              "text": "你被打晕了——"
+            },
+            "stepId": "beg-fight-lose-tip"
+          },
+          {
+            "action": "despawnPlacements",
+            "params": {
+              "selector": {
+                "group": "S02-villagers-hostile"
+              }
+            },
+            "stepId": "beg-fight-lose-despawn"
+          },
+          {
+            "action": "scenario.command",
+            "params": {
+              "operation": "army.rescue.faint",
+              "scenarioId": "scenario.command.army.rescue.faint"
+            },
+            "stepId": "beg-fight-lose-faint"
+          },
+          {
+            "action": "wait",
+            "params": {
+              "seconds": 2.5
+            },
+            "stepId": "beg-fight-lose-fade-wait"
+          },
+          {
+            "action": "state.transaction",
+            "params": {
+              "definitionId": "story.s02.beg.fainted"
+            },
+            "stepId": "beg-fight-lose-fainted"
+          }
+        ]
       }
     ],
     "title": "荒村抉择"
@@ -560,6 +1410,241 @@
         },
         "title": "张角赠符水",
         "type": "action"
+      },
+      {
+        "id": "porridgeWaves",
+        "type": "event",
+        "title": "施粥赈济五批与送别编排",
+        "eventMatcher": {
+          "type": "dialogueEnd",
+          "params": {
+            "id": "dialogue.s02.awakening"
+          }
+        },
+        "once": true,
+        "steps": [
+          {
+            "action": "state.transaction",
+            "params": {
+              "definitionId": "story.s02.wounded.severe"
+            },
+            "stepId": "wound-severe-commit"
+          },
+          {
+            "action": "scenario.command",
+            "params": {
+              "operation": "player.wound.apply",
+              "scenarioId": "scenario.command.player.wound.apply"
+            },
+            "stepId": "wound-modifiers-apply"
+          },
+          {
+            "action": "startDialogue",
+            "params": {
+              "id": "dialogue.s02.porridgeStart"
+            },
+            "stepId": "porridge-start-dialogue"
+          },
+          {
+            "action": "state.transaction",
+            "params": {
+              "definitionId": "story.s02.porridge.laid"
+            },
+            "stepId": "porridge-laid-commit"
+          },
+          {
+            "action": "spawnPlacements",
+            "params": {
+              "selector": {
+                "group": "S02-porridge-decor"
+              }
+            },
+            "stepId": "porridge-cauldron-spawn"
+          },
+          {
+            "action": "spawnPlacements",
+            "params": {
+              "selector": {
+                "group": "S02-porridge-batch-1"
+              }
+            },
+            "stepId": "porridge-batch-1-spawn"
+          },
+          {
+            "action": "wait",
+            "params": {
+              "seconds": 10
+            },
+            "stepId": "porridge-batch-1-wait"
+          },
+          {
+            "action": "despawnPlacements",
+            "params": {
+              "selector": {
+                "group": "S02-porridge-batch-1"
+              }
+            },
+            "stepId": "porridge-batch-1-despawn"
+          },
+          {
+            "action": "showTip",
+            "params": {
+              "text": "已有 40 名村民喝过符水离开。村外的土路上又出现了一队人影……"
+            },
+            "stepId": "porridge-batch-1-tip"
+          },
+          {
+            "action": "spawnPlacements",
+            "params": {
+              "selector": {
+                "group": "S02-porridge-batch-2"
+              }
+            },
+            "stepId": "porridge-batch-2-spawn"
+          },
+          {
+            "action": "wait",
+            "params": {
+              "seconds": 10
+            },
+            "stepId": "porridge-batch-2-wait"
+          },
+          {
+            "action": "despawnPlacements",
+            "params": {
+              "selector": {
+                "group": "S02-porridge-batch-2"
+              }
+            },
+            "stepId": "porridge-batch-2-despawn"
+          },
+          {
+            "action": "showTip",
+            "params": {
+              "text": "已有 80 名村民喝过符水。大锅见了底，士兵们又添了一担水。"
+            },
+            "stepId": "porridge-batch-2-tip"
+          },
+          {
+            "action": "spawnPlacements",
+            "params": {
+              "selector": {
+                "group": "S02-porridge-batch-3"
+              }
+            },
+            "stepId": "porridge-batch-3-spawn"
+          },
+          {
+            "action": "wait",
+            "params": {
+              "seconds": 10
+            },
+            "stepId": "porridge-batch-3-wait"
+          },
+          {
+            "action": "despawnPlacements",
+            "params": {
+              "selector": {
+                "group": "S02-porridge-batch-3"
+              }
+            },
+            "stepId": "porridge-batch-3-despawn"
+          },
+          {
+            "action": "showTip",
+            "params": {
+              "text": "已有 120 名村民喝过符水。有人当场磕头，有人默默抹泪离去。"
+            },
+            "stepId": "porridge-batch-3-tip"
+          },
+          {
+            "action": "spawnPlacements",
+            "params": {
+              "selector": {
+                "group": "S02-porridge-batch-4"
+              }
+            },
+            "stepId": "porridge-batch-4-spawn"
+          },
+          {
+            "action": "wait",
+            "params": {
+              "seconds": 10
+            },
+            "stepId": "porridge-batch-4-wait"
+          },
+          {
+            "action": "despawnPlacements",
+            "params": {
+              "selector": {
+                "group": "S02-porridge-batch-4"
+              }
+            },
+            "stepId": "porridge-batch-4-despawn"
+          },
+          {
+            "action": "showTip",
+            "params": {
+              "text": "已有 160 名村民喝过符水。日头偏西，村口还有人源源不断地赶来。"
+            },
+            "stepId": "porridge-batch-4-tip"
+          },
+          {
+            "action": "spawnPlacements",
+            "params": {
+              "selector": {
+                "group": "S02-porridge-batch-5"
+              }
+            },
+            "stepId": "porridge-batch-5-spawn"
+          },
+          {
+            "action": "wait",
+            "params": {
+              "seconds": 10
+            },
+            "stepId": "porridge-batch-5-wait"
+          },
+          {
+            "action": "despawnPlacements",
+            "params": {
+              "selector": {
+                "group": "S02-porridge-batch-5"
+              }
+            },
+            "stepId": "porridge-batch-5-despawn"
+          },
+          {
+            "action": "showTip",
+            "params": {
+              "text": "两百余村民陆续喝过符水散去。张角令信众抬出木箱——铜钱剑一户一串，当场发放。"
+            },
+            "stepId": "porridge-batch-5-tip"
+          },
+          {
+            "action": "startDialogue",
+            "params": {
+              "id": "dialogue.s02.coinGift"
+            },
+            "stepId": "coin-gift-dialogue"
+          },
+          {
+            "action": "state.transaction",
+            "params": {
+              "definitionId": "story.s02.coin.gifted"
+            },
+            "stepId": "coin-gift-commit"
+          },
+          {
+            "action": "spawnPlacements",
+            "params": {
+              "selector": {
+                "group": "S02-recruit-queue"
+              }
+            },
+            "stepId": "recruit-queue-spawn"
+          }
+        ]
       }
     ],
     "title": "山道救援"
@@ -599,12 +1684,25 @@
       },
       {
         "id": "acceptSummons",
-        "objectiveType": "commit.fact",
-        "target": "story.s02.summons.accept",
+        "objectiveType": "custom.event",
         "title": "接受张角召见",
-        "type": "objective"
+        "type": "objective",
+        "eventMatcher": {
+          "type": "dialogueEnd",
+          "payload": {
+            "id": "dialogue.s02.zhangjiaoSummons"
+          }
+        },
+        "commitFact": "story.s02.summons.accept"
       },
       {
+        "gates": [
+          {
+            "bindingId": "S02-binding-recruit",
+            "placementId": "S02-recruit-flag",
+            "sceneId": "S02"
+          }
+        ],
         "id": "recruit",
         "objectiveType": "commit.fact",
         "target": "story.s02.recruit.done",
@@ -677,6 +1775,177 @@
         "title": "战斗教学收尾",
         "tutorialId": "s02.command.stance",
         "type": "tutorial"
+      },
+      {
+        "id": "raidWave2",
+        "type": "event",
+        "title": "围剿第二波与傅燮入场",
+        "eventMatcher": {
+          "type": "waveCleared",
+          "params": {
+            "group": "S02-raid-vanguard"
+          }
+        },
+        "once": false,
+        "steps": [
+          {
+            "branch": [
+              {
+                "do": [
+                  {
+                    "action": "showTip",
+                    "params": {
+                      "text": "傅燮亲率千人大军后续压境，将破村团团围住——决战时刻！"
+                    },
+                    "stepId": "raid-wave2-tip"
+                  },
+                  {
+                    "action": "spawnPlacements",
+                    "params": {
+                      "selector": {
+                        "group": "S02-raid-mainforce"
+                      }
+                    },
+                    "stepId": "raid-mainforce-spawn"
+                  },
+                  {
+                    "action": "state.transaction",
+                    "params": {
+                      "definitionId": "story.s02.raid.wave2"
+                    },
+                    "stepId": "raid-wave2-commit"
+                  }
+                ],
+                "when": {
+                  "args": [
+                    {
+                      "name": "story.s02CampLaid",
+                      "op": "var"
+                    },
+                    {
+                      "arg": {
+                        "name": "story.s02RaidRepeled",
+                        "op": "var"
+                      },
+                      "op": "not"
+                    }
+                  ],
+                  "op": "and"
+                }
+              }
+            ],
+            "stepId": "raid-wave2-branch"
+          }
+        ]
+      },
+      {
+        "id": "raidDefeat",
+        "type": "event",
+        "title": "围剿战败重整再战",
+        "eventMatcher": {
+          "type": "playerSpecialFaint",
+          "params": {
+            "sceneId": "S02"
+          }
+        },
+        "once": false,
+        "steps": [
+          {
+            "branch": [
+              {
+                "do": [
+                  {
+                    "action": "state.transaction",
+                    "params": {
+                      "definitionId": "story.s02.raid.failed"
+                    },
+                    "stepId": "raid-failed-commit"
+                  },
+                  {
+                    "action": "startDialogue",
+                    "params": {
+                      "id": "dialogue.s02.raidDefeat"
+                    },
+                    "stepId": "raid-defeat-dialogue"
+                  },
+                  {
+                    "action": "scenario.command",
+                    "params": {
+                      "operation": "army.raid.defeat",
+                      "regroupX": 560,
+                      "regroupY": 400,
+                      "scenarioId": "scenario.command.army.raid.defeat"
+                    },
+                    "stepId": "raid-defeat-regroup"
+                  },
+                  {
+                    "action": "state.transaction",
+                    "params": {
+                      "definitionId": "story.s02.raid.fight.clear"
+                    },
+                    "stepId": "raid-defeat-fight-clear"
+                  },
+                  {
+                    "action": "wait",
+                    "params": {
+                      "seconds": 8
+                    },
+                    "stepId": "raid-defeat-wait"
+                  },
+                  {
+                    "action": "state.transaction",
+                    "params": {
+                      "definitionId": "story.s02.raid.fight.prepare"
+                    },
+                    "stepId": "raid-reattack-fight-prepare"
+                  },
+                  {
+                    "action": "spawnPlacements",
+                    "params": {
+                      "selector": {
+                        "group": "S02-raid-vanguard"
+                      }
+                    },
+                    "stepId": "raid-reattack-vanguard-spawn"
+                  },
+                  {
+                    "action": "spawnPlacements",
+                    "params": {
+                      "selector": {
+                        "group": "S02-raid-mainforce"
+                      }
+                    },
+                    "stepId": "raid-reattack-mainforce-spawn"
+                  },
+                  {
+                    "action": "showTip",
+                    "params": {
+                      "text": "官军卷土重来——这一次傅燮倾巢而出，全军死守营地！"
+                    },
+                    "stepId": "raid-reattack-tip"
+                  }
+                ],
+                "when": {
+                  "args": [
+                    {
+                      "name": "story.s02RaidFight",
+                      "op": "var"
+                    },
+                    {
+                      "arg": {
+                        "name": "story.s02RaidRepeled",
+                        "op": "var"
+                      },
+                      "op": "not"
+                    }
+                  ],
+                  "op": "and"
+                }
+              }
+            ],
+            "stepId": "raid-defeat-branch"
+          }
+        ]
       }
     ],
     "title": "随军抗敌"
@@ -2135,6 +3404,13 @@
       "S14"
     ],
     "steps": [
+      {
+        "await": true,
+        "dialogueId": "dialogue.s14.opening",
+        "id": "intro.opening",
+        "title": "尘埃落定",
+        "type": "dialogue"
+      },
       {
         "eventMatcher": {
           "payload": {

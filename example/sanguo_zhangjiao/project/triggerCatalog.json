@@ -779,6 +779,36 @@
       "value": "toggleFlag"
     },
     {
+      "label": "条件分支",
+      "paramsSchema": {
+        "additionalProperties": true,
+        "properties": {},
+        "type": "object"
+      },
+      "v": "branch",
+      "value": "branch"
+    },
+    {
+      "label": "等待",
+      "paramsSchema": {
+        "additionalProperties": true,
+        "properties": {},
+        "type": "object"
+      },
+      "v": "wait",
+      "value": "wait"
+    },
+    {
+      "label": "发放奖励",
+      "paramsSchema": {
+        "additionalProperties": true,
+        "properties": {},
+        "type": "object"
+      },
+      "v": "takeReward",
+      "value": "takeReward"
+    },
+    {
       "label": "新行为",
       "paramsSchema": {
         "additionalProperties": true,

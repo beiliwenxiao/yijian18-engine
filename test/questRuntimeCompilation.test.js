@@ -154,6 +154,58 @@ describe('QuestRuntime Quest v2 编译器', () => {
     expect(errors.some(error => error.includes('steps[3].commitFact'))).toBe(true);
   });
 
+  it('event 编排步骤：编译为独立触发器（when 事件→动作链），不占任务目标节点', () => {
+    const EVENT_QUEST = {
+      id: 'quest.test.directed',
+      title: '编排',
+      steps: [
+        {
+          id: 'porridgeWaves',
+          type: 'event',
+          title: '施粥五批',
+          eventMatcher: { type: 'dialogueEnd', params: { id: 'dialogue.s02.awakening' } },
+          steps: [
+            { id: 'lay', type: 'action', action: 'state.transaction', params: { definitionId: 'story.s02.porridge.laid' } },
+            { id: 'spawn', type: 'action', action: 'spawnPlacements', params: { selector: { group: 'S02-porridge-batch-1' } } }
+          ]
+        },
+        { id: 'goal', type: 'objective', objectiveType: 'commit.fact', target: 'story.s02.porridge.laid', title: '施粥赈济' }
+      ]
+    };
+    const { taskGraph, triggers } = compileQuest(EVENT_QUEST, project);
+    // event 步骤不产生节点：start → goal → complete
+    expect(taskGraph.nodes.map(node => node.id)).toEqual(['start', 'goal', 'complete']);
+    const eventTrigger = triggers.find(trigger => trigger.id === 'trg_quest.test.directed_event_porridgeWaves');
+    expect(eventTrigger).toBeTruthy();
+    expect(eventTrigger.once).toBe(true);
+    expect(eventTrigger.when).toEqual({ type: 'dialogueEnd', params: { id: 'dialogue.s02.awakening' } });
+    expect(eventTrigger.do.map(action => action.action)).toEqual(['state.transaction', 'spawnPlacements']);
+  });
+
+  it('gates 附属字段：objective 原样带入任务图节点供编辑器反向查询与定位', () => {
+    const GATE_QUEST = {
+      id: 'quest.test.gate',
+      title: '门引用',
+      steps: [
+        {
+          id: 'enter',
+          type: 'objective',
+          objectiveType: 'commit.fact',
+          target: 'story.test.inside',
+          title: '进庇护所',
+          gates: [
+            { sceneId: 'S01', placementId: 'S01-shelter-door', bindingId: 'S01-binding-shelter-enter' }
+          ]
+        }
+      ]
+    };
+    const { taskGraph } = compileQuest(GATE_QUEST, project);
+    const node = taskGraph.nodes.find(candidate => candidate.id === 'enter');
+    expect(node.gates).toEqual([
+      { sceneId: 'S01', placementId: 'S01-shelter-door', bindingId: 'S01-binding-shelter-enter' }
+    ]);
+  });
+
   it('taskGraph 编译：objective 直连成链（裸 nodeId 与手写任务图寻址一致），matcher 由目标类型目录生成', () => {
     const { taskGraph } = compileQuest(SAMPLE_QUEST, project);
     expect(taskGraph.id).toBe('quest.test.survival');
@@ -352,8 +404,9 @@ describe('阶段③ S01 迁移契约：quest 编译产物与手写任务图逐�
     expect(s02Graph.nodes.find(node => node.id === 'porridge').eventMatcher).toEqual({
       type: 'state.transaction', payload: { definitionId: 'story.s02.porridge.laid' }
     });
+    // 召见目标直连对话结束事件（dialogueEnd），事实由 commitFact 自动提交（accept_summons 手写触发器已删除）
     expect(s02Graph.nodes.find(node => node.id === 'acceptSummons').eventMatcher).toEqual({
-      type: 'state.transaction', payload: { definitionId: 'story.s02.summons.accept' }
+      type: 'dialogueEnd', payload: { id: 'dialogue.s02.zhangjiaoSummons' }
     });
     expect(s02Graph.nodes.find(node => node.id === 'recruit').eventMatcher).toEqual({
       type: 'state.transaction', payload: { definitionId: 'story.s02.recruit.done' }
@@ -408,6 +461,25 @@ describe('阶段③ S01 迁移契约：quest 编译产物与手写任务图逐�
     expect(summonsAfter[1].do[1].params).toEqual({ dialogueId: 'dialogue.s02.overnight', operation: 'start', await: true });
     expect(summonsAfter[2].do.map(action => action.action)).toEqual(['dialogue.command', 'tutorial.command']);
     expect(summonsAfter[2].do[0].params).toEqual({ dialogueId: 'dialogue.s02.raidRepelled', operation: 'start', await: true });
+    // 事件编排收编：施粥五批/波次/战败/军队入画/乞讨链由任务 event 步骤编译（手写编排触发器已删除）
+    const porridge = triggers.find(trigger => trigger.id === 'trg_task.s02.rescue_event_porridgeWaves');
+    expect(porridge).toBeTruthy();
+    expect(porridge.when).toEqual({ type: 'dialogueEnd', params: { id: 'dialogue.s02.awakening' } });
+    expect(porridge.do[0]).toMatchObject({ action: 'state.transaction', stepId: 'wound-severe-commit' });
+    const raidWave2 = triggers.find(trigger => trigger.id === 'trg_task.s02.summons_event_raidWave2');
+    expect(raidWave2.when).toEqual({ type: 'waveCleared', params: { group: 'S02-raid-vanguard' } });
+    // 原样触发器动作对象（branch 分支容器）透传保留
+    expect(Array.isArray(raidWave2.do[0]?.branch)).toBe(true);
+    const armyArrival = triggers.find(trigger => trigger.id === 'trg_task.s02.verdict_event_armyArrival');
+    expect(armyArrival.when).toEqual({ type: 'armyMarchArrived', params: { armyId: 'army.s02.column' } });
+    expect(Array.isArray(armyArrival.do[1]?.branch)).toBe(true);
+    const begEnter = triggers.find(trigger => trigger.id === 'trg_task.s02.verdict_event_begChildrenEnter');
+    // 编排条件守卫（防重入 if）原样透传
+    expect(begEnter.if).toBeTruthy();
+    // accept_summons 改造：召见目标直连 dialogueEnd 事件 + commitFact 提交事实
+    const summonsGraph = compileQuestProject(project).taskGraphs.find(graph => graph.id === 'task.s02.summons');
+    const acceptNode = summonsGraph.nodes.find(node => node.id === 'acceptSummons');
+    expect(acceptNode.eventMatcher).toEqual({ type: 'dialogueEnd', payload: { id: 'dialogue.s02.zhangjiaoSummons' } });
   });
 
   it('任务图结构：18 objective 线性链 + 裸 start/complete 节点（存档 nodeStates 寻址兼容）', () => {
@@ -464,10 +536,10 @@ describe('阶段③ S01 迁移契约：quest 编译产物与手写任务图逐�
     // 方案 B 编排步骤化：开场段 + 6 个目标后段由步骤编译（lightCampfire/gatherBerries/eatBerry/findAxe/spotWolf/skinWolf）；
     // 交互/机制类触发器（拾斧、添柴交互、sceneEnter 装配等）仍由 triggers[] 手写承担。
     // 新基线：S02-S14 任务化 accept 13 个 + complete 13 个（含 s02.rescue 无 accept、s01 complete 奖励），
-    // 编译触发器全集 = s01 编排 7 个 + s01 complete 1 个 + S02-S14 26 个 + s02 编排 5 个
-    //   + S03-S13 收编编排 19 个 + verdict 抉择 3 个（accept/after save/after kill）+ rescue 事件化增量 2 个 = 58
+    // 编译触发器全集 = 上一基线 58 + 事件编排收编 16（verdict 13 / rescue 施粥 1 / summons 波次与战败 2）
+    //   + acceptSummons 改造增量 2（dialogueEnd 直连目标的 commit 触发器）= 76
     const triggers = compileQuestProject(project).triggers;
-    expect(triggers.length).toBe(58);
+    expect(triggers.length).toBe(76);
     expect(triggers.slice(0, 7).map(trigger => trigger.id)).toEqual([
       'trg_task.s01.survival_intro',
       'trg_task.s01.survival_after_lightCampfire',

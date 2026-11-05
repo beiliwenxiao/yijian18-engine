@@ -290,12 +290,11 @@ export class SceneEditorEventFilter {
     this.editor.render();
   }
 
-  /** 反向查询：该场景对象被哪些流程事件引用（binding 目标 + 动作 selector 全闭包）。 */
+  /** 反向查询：该场景对象被哪些流程事件引用（binding 目标 + 动作 selector 全闭包 + 任务 gates 引用）。 */
   getFlowsForObject(object) {
     if (!object) return [];
     const records = this.flowIndex.get(object);
-    if (!records) return [];
-    return records.map(event => ({
+    const flows = (records || []).map(event => ({
       bindingId: event.id,
       triggerId: event.definition?.id || event.binding?.triggerId || '',
       name: eventLabel(event),
@@ -303,6 +302,19 @@ export class SceneEditorEventFilter {
       enabled: event.binding.enabled !== false,
       quest: this.questByTriggerId.get(event.definition?.id) || null
     }));
+    // 任务 gates 引用：任务步骤显式引用的场景对象（即使没有空间绑定也可反查到所属任务）
+    const gate = this.questGateByPlacement?.get(String(object?.id || ''));
+    if (gate) {
+      flows.push({
+        bindingId: gate.bindingId || '',
+        triggerId: '',
+        name: '🚪 任务门引用',
+        definitionName: `${gate.questTitle} · ${gate.stepTitle}`,
+        enabled: true,
+        quest: { questId: gate.questId, questTitle: gate.questTitle, stepId: gate.stepId, stepTitle: gate.stepTitle }
+      });
+    }
+    return flows;
   }
 
   _applySelection() {
@@ -399,10 +411,32 @@ export class SceneEditorEventFilter {
   _rebuildQuestGroups() {
     this.questGroups = [];
     this.questByTriggerId = new Map();
+    // 任务 gates 引用索引：placementId → 任务步骤标注（任务对交互门/场景对象的显式引用）
+    this.questGateByPlacement = new Map();
     const quests = this.editor.getProjectDefinitions?.()?.quests;
     if (!Array.isArray(quests) || !quests.length) return;
+    const collectGates = (quest, step) => {
+      for (const gate of Array.isArray(step?.gates) ? step.gates : []) {
+        const placementId = text(gate?.placementId);
+        if (!placementId) continue;
+        this.questGateByPlacement.set(placementId, {
+          questId: text(quest?.id), questTitle: text(quest?.title) || text(quest?.id),
+          stepId: text(step?.id), stepTitle: text(step?.title) || placementId,
+          sceneId: text(gate?.sceneId), bindingId: text(gate?.bindingId)
+        });
+      }
+    };
+    const walkSteps = (quest, steps) => {
+      for (const step of Array.isArray(steps) ? steps : []) {
+        collectGates(quest, step);
+        for (const option of Array.isArray(step?.options) ? step.options : []) {
+          walkSteps(quest, option?.steps);
+        }
+      }
+    };
     const groups = [];
     for (const quest of quests) {
+      walkSteps(quest, quest?.steps);
       const steps = [];
       for (const step of Array.isArray(quest?.steps) ? quest.steps : []) {
         const fact = text(step?.target);

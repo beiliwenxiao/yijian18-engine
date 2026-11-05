@@ -321,13 +321,8 @@ export function validateTriggerDefinition(trigger, project = null) {
   const validateStepList = (actions, path) => {
     for (const [index, action] of (actions || []).entries()) {
       const stepPath = `${path}[${index}]`;
-      if (!known.has(action?.action)) errors.push(`${stepPath}.action 未登记: ${action?.action || ''}`);
-      const stepId = text(action?.stepId);
-      if (requiresStableSteps && !stepId) errors.push(`${stepPath}.stepId 不能为空`);
-      if (stepId && stepIds.has(stepId)) errors.push(`${stepPath}.stepId 重复: ${stepId}`);
-      if (stepId) stepIds.add(stepId);
       if (Array.isArray(action?.branch)) {
-        // 分支容器：递归校验各分支条件与子步骤（单 Trigger 多路径/多教程）
+        // 分支容器：无 action 键，递归校验各分支条件与子步骤（单 Trigger 多路径/多教程）
         action.branch.forEach((branch, bIndex) => {
           const branchPath = `${stepPath}.branch[${bIndex}]`;
           if (branch?.otherwise === true && branch?.when != null) {
@@ -340,6 +335,11 @@ export function validateTriggerDefinition(trigger, project = null) {
           }
         });
       } else {
+        if (!known.has(action?.action)) errors.push(`${stepPath}.action 未登记: ${action?.action || ''}`);
+        const stepId = text(action?.stepId);
+        if (requiresStableSteps && !stepId) errors.push(`${stepPath}.stepId 不能为空`);
+        if (stepId && stepIds.has(stepId)) errors.push(`${stepPath}.stepId 重复: ${stepId}`);
+        if (stepId) stepIds.add(stepId);
         if (requiresStableSteps && Object.prototype.hasOwnProperty.call(action || {}, 'await')) {
           errors.push(`${stepPath}.await 已废弃；TriggerSystem 始终严格串行等待并在失败时短路`);
         }

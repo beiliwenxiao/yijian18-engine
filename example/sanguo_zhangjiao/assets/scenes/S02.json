@@ -2363,7 +2363,7 @@
           "name": "荒村乞讨区：孩童乞讨",
           "target": "S02-zone-village-beg",
           "targetMode": "id",
-          "triggerId": "trg_s02_beg_children_enter",
+          "triggerId": "trg_task.s02.verdict_event_begChildrenEnter",
           "type": "trigger",
           "width": 340,
           "x": 526.6911469345746,

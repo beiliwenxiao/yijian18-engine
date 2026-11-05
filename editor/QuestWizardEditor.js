@@ -37,7 +37,9 @@ const STEP_TYPES = Object.freeze([
   ['dialogue', '对话'],
   ['tutorial', '教程'],
   ['objective', '目标'],
-  ['action', '动作']
+  ['action', '动作'],
+  ['choice', '分支'],
+  ['event', '事件编排']
 ]);
 const CATEGORIES = Object.freeze([
   ['main', '主线任务'], ['side', '支线任务'], ['event', '事件任务'], ['tutorial', '教学任务']
@@ -565,6 +567,21 @@ export class QuestWizardEditor {
         <div class="qwe-field"><label>目标数量</label><select data-step-field="requiredCount">${this._countOptions(Math.max(1, Math.floor(Number(step.requiredCount) || 1)))}</select></div>
         <div class="qwe-field full"><small>数量累计：${descriptor?.progressBy ? `按「${this._escape(descriptor.progressBy)}」份数累计${step.progressBy === null ? '（本目标已显式关闭）' : ''}` : '按事件次数累计'}${descriptor?.description ? ` · ${this._escape(descriptor.description)}` : ''}</small></div>
         ${links.length ? this._stepLinkHtml(links) : ''}`;
+    } else if (type === 'event') {
+      // 事件编排：when 事件 → 动作链（编译为独立触发器；不占任务目标节点）
+      const matcherText = this._escape(JSON.stringify(step.eventMatcher || { type: '', params: {} }, null, 2));
+      const stepsText = this._escape(JSON.stringify(step.steps || [], null, 2));
+      typeFields = `
+        <div class="qwe-field full"><label>触发事件（eventMatcher：type + params/payload 身份限定）</label><textarea data-step-field="eventMatcher" rows="3">${matcherText}</textarea>
+          <small>例：{"type":"dialogueEnd","params":{"id":"dialogue.s02.awakening"}} —— 编排由该事件驱动，不产生任务目标</small></div>
+        <div class="qwe-field qwe-check-row"><label class="qwe-check"><input type="checkbox" data-step-field="once" ${step.once !== false ? 'checked' : ''}>仅触发一次</label></div>
+        <div class="qwe-field full"><label>编排动作链（steps：dialogue/tutorial/action 数组）</label><textarea data-step-field="eventSteps" rows="6">${stepsText}</textarea></div>`;
+    } else if (type === 'choice') {
+      const optionsText = this._escape(JSON.stringify(step.options || [], null, 2));
+      typeFields = `
+        <div class="qwe-field"><label>选项对话</label><select data-step-field="dialogueId">${this._optionList(this._dialogueOptions(), step.dialogueId, '选择分支对话')}</select></div>
+        <div class="qwe-field full"><label>分支选项（options：choice/title/steps 数组）</label><textarea data-step-field="choiceOptions" rows="8">${optionsText}</textarea>
+          <small>每个选项编译为并列 dialogueChoice 目标；选项内步骤在做出选择后执行；任一分支走到终点即任务完成</small></div>`;
     } else {
       const paramsText = this._escape(JSON.stringify(step.params || {}, null, 2));
       const paramsErrors = validateTriggerActionParams({ action: step.action, params: step.params || {} }, this.project, 'params');
@@ -588,8 +605,30 @@ export class QuestWizardEditor {
           <div class="qwe-field"><label>步骤类型</label><select data-step-field="type">${STEP_TYPES.map(([value, label]) => `<option value="${value}" ${value === type ? 'selected' : ''}>${label}</option>`).join('')}</select></div>
           <div class="qwe-field"><label>步骤 ID</label><input data-step-field="id" value="${this._escape(step.id || '')}" placeholder="英文稳定标识"></div>
           ${typeFields}
+          ${this._gatesHtml(step)}
         </div>
       </article>`;
+  }
+
+  /**
+   * 交互门/场景对象引用（gates 附属字段，全步骤通用）：
+   * 徽章显示门的对象 ID，点击「定位」跳转场景编辑器聚焦该物品（复用 openScenePlacement 通道）；
+   * 引用同时纳入场景编辑器反向查询（对象→任务标注）与步骤顺序→条件联动域。
+   */
+  _gatesHtml(step) {
+    const gates = list(step.gates);
+    const locateReady = typeof this.deps.openScenePlacement === 'function';
+    const badges = gates.map((gate, gateIndex) => `
+      <span class="qwe-gate-badge" data-gate-index="${gateIndex}">
+        🚪 <code>${this._escape(gate.placementId || '?')}</code><small>@${this._escape(gate.sceneId || '?')}${gate.bindingId ? ` · ${this._escape(gate.bindingId)}` : ''}</small>
+        <button type="button" data-action="sync-open-placement" data-open-scene="${this._escape(gate.sceneId || '')}" data-open-placement="${this._escape(gate.placementId || '')}" ${locateReady ? '' : 'disabled title="当前页面未接入场景编辑器定位通道"'}>定位</button>
+      </span>`).join('');
+    return `
+      <div class="qwe-field full"><label>交互门 / 场景对象引用（gates）</label>
+        ${badges ? `<div class="qwe-gate-list">${badges}</div>` : '<small class="qwe-muted">未引用交互门</small>'}
+        <textarea data-step-field="gates" rows="3" placeholder='[{"sceneId":"S01","placementId":"S01-shelter-door","bindingId":"S01-binding-shelter-enter"}]'>${this._escape(JSON.stringify(gates, null, 0))}</textarea>
+        <small>本步骤用到的门/交互对象——场景编辑器中该对象会反向标注所属任务；其出现/开放条件参与步骤顺序联动</small>
+      </div>`;
   }
 
   _rewardCard(reward, index) {
@@ -1107,6 +1146,31 @@ export class QuestWizardEditor {
     if (field === 'await') {
       if (control.checked) step.await = true;
       else delete step.await;
+      return;
+    }
+    if (field === 'once') {
+      if (control.checked) delete step.once;
+      else step.once = false;
+      return;
+    }
+    if (field === 'eventMatcher' || field === 'eventSteps' || field === 'choiceOptions' || field === 'gates') {
+      const targetField = field === 'eventSteps' ? 'steps'
+        : field === 'choiceOptions' ? 'options'
+          : field === 'gates' ? 'gates' : 'eventMatcher';
+      try {
+        const parsed = JSON.parse(control.value || (targetField === 'eventMatcher' ? '{}' : '[]'));
+        if (parsed && (typeof parsed !== 'object' || Array.isArray(parsed) !== (targetField !== 'eventMatcher'))) {
+          // 对象字段接受对象、数组字段接受数组，类型不符按解析失败处理
+          if (targetField === 'eventMatcher' ? Array.isArray(parsed) : !Array.isArray(parsed)) throw new Error('shape');
+        }
+        step[targetField] = parsed;
+        if (targetField === 'gates' && (!Array.isArray(parsed) || parsed.length === 0)) delete step.gates;
+        control.classList.remove('invalid');
+      } catch {
+        control.classList.add('invalid');
+        return;
+      }
+      this._renderDetail();
       return;
     }
     if (field === 'requiredCount') {

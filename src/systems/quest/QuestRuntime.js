@@ -59,6 +59,16 @@ export function validateQuestDefinition(quest) {
   const validateStep = (step, stepPath) => {
     if (!isObject(step)) { errors.push(`${stepPath} 必须是对象`); return; }
     if (!checkStepId(step.id, stepPath)) return;
+    // gates 附属字段（全步骤通用）：任务对交互门/场景对象的显式引用（编辑器跳转+条件联动域）
+    if (step.gates !== undefined) {
+      if (!Array.isArray(step.gates)) errors.push(`${stepPath}.gates 必须是数组`);
+      else step.gates.forEach((gate, gateIndex) => {
+        const gatePath = `${stepPath}.gates[${gateIndex}]`;
+        if (!isObject(gate)) { errors.push(`${gatePath} 必须是对象`); return; }
+        if (!text(gate.sceneId)) errors.push(`${gatePath}.sceneId 不能为空`);
+        if (!text(gate.placementId)) errors.push(`${gatePath}.placementId 不能为空`);
+      });
+    }
     if (isObjectiveStep(step)) {
       if (!text(step.objectiveType)) errors.push(`${stepPath}.objectiveType 不能为空`);
       else if (!getObjectiveTypeDescriptor(step.objectiveType)) errors.push(`${stepPath}.objectiveType 未在目标类型目录登记: ${step.objectiveType}`);
@@ -77,6 +87,30 @@ export function validateQuestDefinition(quest) {
       if (!text(step.tutorialId)) errors.push(`${stepPath}.tutorialId 不能为空`);
     } else if (step.type === 'action') {
       if (!text(step.action)) errors.push(`${stepPath}.action 不能为空`);
+    } else if (step.type === 'event') {
+      // 事件编排步骤：when 事件 → 动作链（编译为独立触发器；不占任务目标节点）。
+      // steps 支持 compileStepAction 兼容步骤（dialogue/tutorial/action，需 id）与
+      // 原样触发器动作对象（branch 等复杂结构，无 type 键、原样透传）。
+      if (!isObject(step.eventMatcher) || !text(step.eventMatcher.type)) {
+        errors.push(`${stepPath}.eventMatcher.type 不能为空`);
+      }
+      if (Array.isArray(step.steps)) {
+        step.steps.forEach((subStep, subIndex) => {
+          const subPath = `${stepPath}.steps[${subIndex}]`;
+          if (!isObject(subStep)) { errors.push(`${subPath} 必须是对象`); return; }
+          if (!text(subStep.type)) {
+            // 原样触发器动作对象（如 branch/复合动作）：交由 TriggerCatalog 运行时校验
+            if (!text(subStep.action) && !text(subStep.branch) && !Array.isArray(subStep.branch)) {
+              errors.push(`${subPath} 缺少动作定义（type 或 action/branch）`);
+            }
+            return;
+          }
+          if (!text(subStep.id)) errors.push(`${subPath}.id 不能为空`);
+          if (isObjectiveStep(subStep) || subStep.type === 'choice' || subStep.type === 'event') {
+            errors.push(`${subPath} 事件编排内不支持 ${subStep.type || 'objective'} 步骤（仅 dialogue/tutorial/action）`);
+          }
+        });
+      }
     } else if (step.type === 'choice') {
       if (!text(step.dialogueId)) errors.push(`${stepPath}.dialogueId 不能为空（分支选项事件来源）`);
       if (!Array.isArray(step.options) || step.options.length === 0) {
@@ -178,6 +212,8 @@ export function compileQuestTaskGraph(quest, project = null) {
     // 供 SceneHudUpdater 解析世界坐标（小地图任务点 + 任务点粒子信标共用）。
     if (isObject(step.mapTarget)) node.mapTarget = clone(step.mapTarget);
     if (Array.isArray(step.mapTargets)) node.mapTargets = step.mapTargets.filter(isObject).map(clone);
+    // 交互门/场景对象引用：原样带入节点供编辑器反向查询与定位（运行时无消费）
+    if (Array.isArray(step.gates)) node.gates = step.gates.filter(isObject).map(clone);
     const descriptor = getObjectiveTypeDescriptor(step.objectiveType, project);
     const progressBy = step.progressBy !== undefined ? step.progressBy : descriptor?.progressBy;
     if (text(progressBy)) node.progressBy = text(progressBy);
@@ -198,6 +234,8 @@ export function compileQuestTaskGraph(quest, project = null) {
         if (prevTails) prevTails.forEach(tailId => link(tailId, node.id));
         else heads.push(node.id);
         prevTails = [node.id];
+      } else if (step.type === 'event') {
+        // 事件编排步骤：编译为独立触发器（见 compileQuestTriggers），不产生任务图节点
       } else if (step.type === 'choice' && Array.isArray(step.options)) {
         const optionHeads = [];
         const optionTails = [];
@@ -293,7 +331,9 @@ export function compileQuestTriggers(quest, project = null) {
 
   // ② 段划分（含 choice 选项子链递归）：首个 objective 前为开场段；每个 objective 后为其后续段。
   // choice 选项内 steps 的非 objective 前置步骤并入选项 objective 的段（选择完成后执行）。
+  // event 编排步骤单独收集（编译为独立触发器；不进段、不占任务节点）。
   const introSegment = [];
+  const questEvents = []; // { step, id }（id 含 choice 前缀，与节点寻址同构）
   const segmentGroups = []; // { nodeId, step, matcher, segment[] }（step=objective 原步骤；选项组 step=null）
   const walkSegments = (chainSteps, prefix, sink) => {
     let current = null;
@@ -302,6 +342,8 @@ export function compileQuestTriggers(quest, project = null) {
         const nodeId = prefix ? `${prefix}.${text(step.id)}` : text(step.id);
         current = { nodeId, step, matcher: null, segment: [] };
         segmentGroups.push(current);
+      } else if (step.type === 'event') {
+        questEvents.push({ step, id: prefix ? `${prefix}.${text(step.id)}` : text(step.id) });
       } else if (step.type === 'choice' && Array.isArray(step.options)) {
         current = null;
         for (const option of step.options) {
@@ -360,7 +402,30 @@ export function compileQuestTriggers(quest, project = null) {
     }
   }
 
-  // ⑤ completion 触发器：task.completed 驱动奖励发放
+  // ⑤ 事件编排触发器：when=eventMatcher → do=编排动作链（once 缺省 true）。
+  //    事件驱动剧情（波次推进/施粥批次/军队入画等）收编形态——运行行为与手写
+  //    触发器完全一致（编译产物），但定义归属任务文件、任务编辑器可见。
+  for (const { step, id } of questEvents) {
+    const matcher = step.eventMatcher;
+    if (!isObject(matcher) || !text(matcher.type)) continue;
+    // 身份限定兼容 TaskGraph 契约（payload）与手写触发器（params）两种书写习惯
+    const identity = isObject(matcher.payload) ? matcher.payload : (isObject(matcher.params) ? matcher.params : {});
+    const doActions = (Array.isArray(step.steps) ? step.steps : []).map(subStep => (
+      // 原样触发器动作对象（无 type、含 action/branch 等键）直接透传；其余走 compileStepAction
+      isObject(subStep) && !text(subStep.type) ? clone(subStep) : compileStepAction(subStep)
+    ));
+    triggers.push(withScope({
+      id: `trg_${questId}_event_${id}`,
+      name: `剧情编排：${text(step.title) || id}`,
+      when: { type: text(matcher.type), params: clone(identity) },
+      // 条件守卫（编排类触发器的防重入 if）原样透传
+      ...(isObject(step.if) ? { if: clone(step.if) } : {}),
+      do: doActions,
+      once: step.once !== false
+    }));
+  }
+
+  // ⑥ completion 触发器：task.completed 驱动奖励发放
   const rewardActions = compileRewardActions(quest, questId);
   if (rewardActions.length) {
     triggers.push(withScope({
