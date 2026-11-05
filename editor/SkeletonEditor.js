@@ -355,6 +355,48 @@ export class SkeletonEditor {
       this._renderFramesPanel();
     });
     $('se-fr-fps').addEventListener('change', e => this._setFramesClipFps(parseFloat(e.target.value)));
+    // 帧模式：挂点快速切换——选中挂点后属性面板/画布聚焦该挂点
+    $('se-fr-slot')?.addEventListener('change', event => {
+      const slotId = event.target.value;
+      const slot = slotId ? this._slotById(slotId) : null;
+      if (!slot) return;
+      this.selectedSlot = slot.id;
+      this.selectedBone = slot.bone;
+      this._renderBoneTree();
+      this._renderSlotList();
+      this._renderInspector();
+      this._draw();
+      this._toast(`已聚焦挂点 ${slot.id}`);
+    });
+    // 帧模式：帧图切换（写入 meta.frameAssetId）——帧条重建签名不含 assetId，显式失效缓存
+    $('se-fr-frame-asset')?.addEventListener('change', event => {
+      if (!this.doc) return;
+      this.doc.meta = this.doc.meta || {};
+      if (event.target.value) this.doc.meta.frameAssetId = event.target.value;
+      else delete this.doc.meta.frameAssetId;
+      this._framesStripKey = null;
+      this._markDirty();
+      this._afterDocChange();
+      this._renderFramesPanel();
+      this._draw();
+    });
+    // 帧模式：按路径改帧图——源文件路径匹配图片库（未登记提示先导入）
+    $('se-fr-frame-path')?.addEventListener('change', event => {
+      const hit = this._findAssetIdBySourceFile(event.target.value);
+      if (!hit) {
+        this._toast('路径未登记：请先在「图片库」导入该图，或从「帧图」下拉选择已登记图', true);
+        return;
+      }
+      if (!this.doc) return;
+      this.doc.meta = this.doc.meta || {};
+      this.doc.meta.frameAssetId = hit;
+      this._framesStripKey = null;
+      this._markDirty();
+      this._afterDocChange();
+      this._renderFramesPanel();
+      this._draw();
+      this._toast(`帧图已切换：${hit}`);
+    });
     // 动作覆盖条点击直达：亮绿徽章=该方向有实现，点击切换到对应剪辑/帧表
     for (const id of ['se-action-coverage', 'se-fr-coverage']) {
       document.getElementById(id)?.addEventListener('click', event => {
@@ -2547,9 +2589,13 @@ export class SkeletonEditor {
     if (names.length === 0) {
       clipSelect.innerHTML = '<option value="">（无序列帧数据）</option>';
       dirSelect.innerHTML = '';
-      if (info) info.textContent = '该资产没有 meta.clipFrames 帧表';
       const emptyBar = document.getElementById('se-fr-coverage');
       if (emptyBar) emptyBar.innerHTML = '';
+      document.getElementById('se-fr-slot')?.replaceChildren(new Option('（无序列帧挂点）', ''));
+      document.getElementById('se-fr-frame-asset')?.replaceChildren(new Option('（未设置）', ''));
+      const emptyPath = document.getElementById('se-fr-frame-path');
+      if (emptyPath) emptyPath.value = '';
+      if (info) info.textContent = '该资产没有 meta.clipFrames 帧表';
       strip.innerHTML = '<span style="color:#5a6a90;font-size:12px;">导入整帧素材后此处显示帧条</span>';
       return;
     }
@@ -2577,6 +2623,33 @@ export class SkeletonEditor {
     dirSelect.innerHTML = dirKeys
       .map(key => `<option value="${key}" ${key === this._frDir ? 'selected' : ''}>${SKELETON_DIRECTION_ARROWS[key] || key}</option>`)
       .join('');
+    // 挂点快速切换：列出所有序列帧挂点，选中即聚焦属性面板/画布——
+    // 不同挂点的序列帧无需在左侧列表里逐个翻找
+    const seqSlots = (this.doc?.slots || []).filter(candidate => candidate.attachment?.type === 'sequence');
+    const slotSelect = document.getElementById('se-fr-slot');
+    if (slotSelect) {
+      slotSelect.innerHTML = seqSlots.length
+        ? seqSlots.map(candidate =>
+          `<option value="${candidate.id}" ${candidate.id === this.selectedSlot ? 'selected' : ''}>${SkeletonEditor._displayName(candidate.id)}（${candidate.attachment.frames?.length || 0}帧）</option>`
+        ).join('')
+        : '<option value="">（无序列帧挂点）</option>';
+    }
+    // 帧图（meta.frameAssetId）：路径可见可改——下拉选已登记图 / 路径输入按路径匹配
+    const firstSeqAssetId = seqSlots[0]?.attachment?.assetId || null;
+    const effectiveFrameAssetId = this.doc?.meta?.frameAssetId
+      || this.runtime?.meta?.frameAssetId || firstSeqAssetId || '';
+    const frameAssetSelect = document.getElementById('se-fr-frame-asset');
+    if (frameAssetSelect) {
+      frameAssetSelect.innerHTML = '<option value="">（未设置）</option>'
+        + [...this.imageCatalog.keys()].map(id =>
+          `<option value="${id}" ${id === effectiveFrameAssetId ? 'selected' : ''}>${SkeletonEditor._displayName(id)}</option>`
+        ).join('');
+    }
+    const framePathInput = document.getElementById('se-fr-frame-path');
+    if (framePathInput) {
+      framePathInput.value = effectiveFrameAssetId
+        ? (this.imageCatalog.get(effectiveFrameAssetId)?.entry?.sourceFile || '') : '';
+    }
     // 动作覆盖条：帧表实现下每个动作的方向帧表覆盖（dirs 键即方向）
     this._renderActionCoverage('se-fr-coverage', {
       has: name => Object.keys(clipFrames[name]?.dirs || {}).length > 0,
@@ -4432,6 +4505,26 @@ export class SkeletonEditor {
     return this.imageCatalog.get(assetId)?.entry?.sourceFile || '';
   }
 
+  /**
+   * 按源文件路径反查已登记图片 ID（路径编辑的落地方式：资产须先在图片库登记 manifest）。
+   * 匹配规则：①sourceFile 精确相等；②唯一后缀命中（允许只输入尾部短路径）。
+   * @param {string} path - 用户输入的路径（正反斜杠均兼容）
+   * @returns {string|null} 命中的 assetId；未命中/多义命中返回 null
+   */
+  _findAssetIdBySourceFile(path) {
+    const value = String(path || '').trim().replace(/\\/g, '/');
+    if (!value) return null;
+    for (const [assetId, item] of this.imageCatalog.entries()) {
+      if (String(item.entry?.sourceFile || '').replace(/\\/g, '/') === value) return assetId;
+    }
+    const suffixHits = [];
+    for (const [assetId, item] of this.imageCatalog.entries()) {
+      const source = String(item.entry?.sourceFile || '').replace(/\\/g, '/');
+      if (source.endsWith(value)) suffixHits.push(assetId);
+    }
+    return suffixHits.length === 1 ? suffixHits[0] : null;
+  }
+
   /* ---------------- 半自动装配：切件模式 ---------------- */
 
   /** 命名 → 骨骼自动映射（人形装配约定；匹配不到回落当前选中骨骼）。 */
@@ -6220,7 +6313,7 @@ export class SkeletonEditor {
         </div>
         ${attachment.type === 'empty' ? '' : `
         <div class="row"><label>图片ID</label><select id="se-att-asset">${imageOptions}</select></div>
-        <div class="row"><label>路径</label><span id="se-att-path" title="${seAttPath}" style="flex:1;min-width:0;font-size:11px;color:#9aa5c0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${seAttPath || '(未登记路径)'}</span></div>
+        <div class="row"><label>路径</label><input type="text" id="se-att-path" title="已登记图片的源文件路径：改成其他已登记路径即切换图片（按路径匹配图片库；未登记的请先在图片库导入）" style="flex:1;min-width:0;font-size:11px;color:#cdd6ee;" value="${seAttPath || ''}" placeholder="(未登记路径)"></div>
         ${(() => {
           const offset = this._effectiveAttachmentOffset(attachment);
           const dirLabel = SKELETON_DIRECTION_LABELS[this.previewDirection] || '正面';
@@ -6451,6 +6544,20 @@ export class SkeletonEditor {
       if (slot.attachment.type === 'sequence') slot.attachment.frames = [];
       this._markDirty();
       this._afterDocChange();
+    });
+    // 路径直接编辑：按源文件路径匹配已登记图片即切换（序列帧换帧图会清空帧表重新切帧）
+    const pathInput = $('se-att-path');
+    if (pathInput) pathInput.addEventListener('change', event => {
+      const hit = this._findAssetIdBySourceFile(event.target.value);
+      if (!hit) {
+        this._toast('路径未登记：请先在「图片库」导入该图，或从「图片ID」下拉选择已登记图', true);
+        return;
+      }
+      slot.attachment.assetId = hit;
+      if (slot.attachment.type === 'sequence') slot.attachment.frames = [];
+      this._markDirty();
+      this._afterDocChange();
+      this._toast(`已按路径切换图片：${hit}`);
     });
     bindAttachment('se-att-x', 'x');
     bindAttachment('se-att-y', 'y');

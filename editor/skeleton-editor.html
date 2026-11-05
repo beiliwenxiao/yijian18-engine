@@ -293,6 +293,13 @@
 
             <div class="se-timeline" id="se-frames-panel" style="display:none;">
                 <div class="se-tl-toolbar">
+                    <label>挂点</label>
+                    <select id="se-fr-slot" title="序列帧挂点快速切换：选中后属性面板/画布聚焦该挂点，直接编辑其序列帧"></select>
+                    <span style="border-left:1px solid #26355c;height:20px;"></span>
+                    <label>帧图</label>
+                    <select id="se-fr-frame-asset" title="整帧素材图（写入 meta.frameAssetId，帧条与画布共用）"></select>
+                    <input type="text" id="se-fr-frame-path" title="帧图源文件路径：改成其他已登记路径即切换帧图（按路径匹配图片库）" style="width:150px;font-size:11px;" placeholder="帧图路径">
+                    <span style="border-left:1px solid #26355c;height:20px;"></span>
                     <label>剪辑</label>
                     <select id="se-fr-clip"></select>
                     <label>方向</label>

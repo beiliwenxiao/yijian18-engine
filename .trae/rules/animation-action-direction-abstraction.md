@@ -104,6 +104,8 @@ setAnimationModeForEntity(entity, mode, stableSpriteId)
 | 动作覆盖条（新 DOM） | 骨骼模式 `se-action-coverage` / 帧模式 `se-fr-coverage`：当前动作 8 形态徽章——**亮绿**=该方向有实现（点击直达）、**灰（SE→down）**=缺失但运行时按回退链命中、**暗红**=完全缺失无回退；单方向动作显示「单方向」+ 镜像/帧表提示 |
 | 实现标识 | 覆盖条尾「实现：骨骼剪辑 / 整帧帧表（meta.clipFrames）」——帧模式方向帧表覆盖按 dirs 键判定 |
 | _addClip 提示语 | 带动作_方向命名约定（多方向 `walk_side`/单方向裸名 `attack`），命名即运行时解析契约 |
+| 帧面板挂点快速切换 | 「挂点」下拉列出全部 sequence 挂点（含帧数），选中即聚焦属性面板/画布——不同挂点序列帧免翻找 |
+| 序列帧路径可见可改 | ①挂点属性「路径」行改输入框（原只读）：按源文件路径匹配图片库即切换（精确 + 唯一后缀命中），序列帧换图自动清帧表重切；②帧模式「帧图」下拉 + 路径输入写 `meta.frameAssetId`（帧条重建签名显式失效） |
 
 - 编辑器与运行时共用 `AnimationActionResolver.stripFormSuffix` + `SkeletonDirection.SKELETON_DIAGONAL_FALLBACK`，
   保证「编辑器所见 = 运行时所得」（同一回退语义，无两处漂移）。
