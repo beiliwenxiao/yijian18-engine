@@ -93,6 +93,8 @@ scripts/migrateRuntimeImages.mjs
 scripts/runJavaScriptAudit.mjs
 # 截图/文档/安装包等本地文件
 BandiView_2-12.jpg
+# 本地测试产物
+.test-results.json
 START_HERE.md
 事件任务教程等的关系.docx
 sanguo_zhangjiao_*.apk
