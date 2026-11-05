@@ -259,6 +259,8 @@ export class QuestWizardEditor {
       return;
     }
     const scenes = this._sceneOptions();
+    // 门控所见即所得索引：本次渲染内的场景对象缓存（场景放置物 + 触发器绑定下拉数据源）
+    this._sceneIndex = this._buildSceneIndex();
     const accept = quest.accept || {};
     // 三态：external（accept 缺省，由现有触发器接取）/ auto（运行时自动）/ manual（NPC 触发器接取）
     const acceptMode = quest.accept ? (text(accept.mode) || 'auto') : 'external';
@@ -611,23 +613,31 @@ export class QuestWizardEditor {
   }
 
   /**
-   * 交互门/场景对象引用（gates 附属字段，全步骤通用）：
-   * 徽章显示门的对象 ID，点击「定位」跳转场景编辑器聚焦该物品（复用 openScenePlacement 通道）；
-   * 引用同时纳入场景编辑器反向查询（对象→任务标注）与步骤顺序→条件联动域。
+   * 交互门/场景对象引用（gates 附属字段，全步骤通用）——所见即所得结构化编辑：
+   * 场景/对象/触发器绑定三个下拉直读场景文档（场景放置物 type:ref 与触发器绑定 type:trigger），
+   * 不再手写 JSON；「定位」跳转场景编辑器聚焦该物品（复用 openScenePlacement 通道）；
+   * 引用同时纳入场景编辑器反向查询（对象→🚪 任务门角标与标注）与步骤顺序→条件联动域。
    */
   _gatesHtml(step) {
     const gates = list(step.gates);
     const locateReady = typeof this.deps.openScenePlacement === 'function';
-    const badges = gates.map((gate, gateIndex) => `
-      <span class="qwe-gate-badge" data-gate-index="${gateIndex}">
-        🚪 <code>${this._escape(gate.placementId || '?')}</code><small>@${this._escape(gate.sceneId || '?')}${gate.bindingId ? ` · ${this._escape(gate.bindingId)}` : ''}</small>
-        <button type="button" data-action="sync-open-placement" data-open-scene="${this._escape(gate.sceneId || '')}" data-open-placement="${this._escape(gate.placementId || '')}" ${locateReady ? '' : 'disabled title="当前页面未接入场景编辑器定位通道"'}>定位</button>
-      </span>`).join('');
+    const sceneOptions = this._sceneOptions().map(([value, label]) => ({ value, label: `${label}（${value}）` }));
+    const rows = gates.map((gate, gateIndex) => {
+      const sceneId = text(gate.sceneId);
+      return `
+      <div class="qwe-gate-row" data-gate-index="${gateIndex}">
+        <select data-gate-field="sceneId" title="所属场景">${this._optionList(sceneOptions, sceneId, '选择场景')}</select>
+        <select data-gate-field="placementId" title="门对象（场景里的放置物）">${this._optionList(this._sceneGatePlacements(sceneId), text(gate.placementId), '选择对象')}</select>
+        <select data-gate-field="bindingId" title="触发器绑定（可选）">${this._optionList(this._sceneGateBindings(sceneId), text(gate.bindingId), '-- 无绑定 --')}</select>
+        <button type="button" data-action="sync-open-placement" data-open-scene="${this._escape(sceneId)}" data-open-placement="${this._escape(gate.placementId || '')}" ${locateReady && gate.placementId ? '' : 'disabled title="选择对象后可定位到场景编辑器"'}>定位</button>
+        <button type="button" class="danger" data-action="gate-remove" data-gate-index="${gateIndex}" title="移除此门">✕</button>
+      </div>`;
+    }).join('');
     return `
       <div class="qwe-field full"><label>交互门 / 场景对象引用（gates）</label>
-        ${badges ? `<div class="qwe-gate-list">${badges}</div>` : '<small class="qwe-muted">未引用交互门</small>'}
-        <textarea data-step-field="gates" rows="3" placeholder='[{"sceneId":"S01","placementId":"S01-shelter-door","bindingId":"S01-binding-shelter-enter"}]'>${this._escape(JSON.stringify(gates, null, 0))}</textarea>
-        <small>本步骤用到的门/交互对象——场景编辑器中该对象会反向标注所属任务；其出现/开放条件参与步骤顺序联动</small>
+        <div class="qwe-gate-list">${rows || '<small class="qwe-muted">未引用交互门</small>'}</div>
+        <button type="button" data-action="gate-add">+ 添加门</button>
+        <small>从场景对象中直接选择门——对象下拉即场景里的放置物；场景编辑器中该对象显示 🚪 任务门角标（选中可反查所属任务步骤），其出现/开放条件参与步骤顺序联动</small>
       </div>`;
   }
 
@@ -897,6 +907,15 @@ export class QuestWizardEditor {
     card.querySelectorAll('[data-step-field]').forEach(control => control.addEventListener('change', () => {
       this._updateStepField(quest, index, control.dataset.stepField, control);
     }));
+    // 门控行（gates 所见即所得）：场景/对象/绑定下拉写回 + 行增删（定位复用 sync-open-placement 通道）
+    card.querySelectorAll('[data-gate-field]').forEach(control => control.addEventListener('change', () => {
+      const gateIndex = Number(control.closest('[data-gate-index]')?.dataset.gateIndex);
+      this._updateGateField(quest, index, gateIndex, control.dataset.gateField, control);
+    }));
+    card.querySelector('[data-action="gate-add"]')?.addEventListener('click', () => this._addGate(quest, index));
+    card.querySelectorAll('[data-action="gate-remove"]').forEach(button => button.addEventListener('click', () => {
+      this._removeGate(quest, index, Number(button.dataset.gateIndex));
+    }));
     // 教程内嵌编辑：展开/收起 + 步骤文案就地写回 tutorials[]（保存时随任务一并提交）
     card.querySelector('[data-action="toggle-tut-edit"]')?.addEventListener('click', event => {
       const tutId = event.currentTarget.dataset.tutId;
@@ -1153,10 +1172,9 @@ export class QuestWizardEditor {
       else step.once = false;
       return;
     }
-    if (field === 'eventMatcher' || field === 'eventSteps' || field === 'choiceOptions' || field === 'gates') {
+    if (field === 'eventMatcher' || field === 'eventSteps' || field === 'choiceOptions') {
       const targetField = field === 'eventSteps' ? 'steps'
-        : field === 'choiceOptions' ? 'options'
-          : field === 'gates' ? 'gates' : 'eventMatcher';
+        : field === 'choiceOptions' ? 'options' : 'eventMatcher';
       try {
         const parsed = JSON.parse(control.value || (targetField === 'eventMatcher' ? '{}' : '[]'));
         if (parsed && (typeof parsed !== 'object' || Array.isArray(parsed) !== (targetField !== 'eventMatcher'))) {
@@ -1164,7 +1182,6 @@ export class QuestWizardEditor {
           if (targetField === 'eventMatcher' ? Array.isArray(parsed) : !Array.isArray(parsed)) throw new Error('shape');
         }
         step[targetField] = parsed;
-        if (targetField === 'gates' && (!Array.isArray(parsed) || parsed.length === 0)) delete step.gates;
         control.classList.remove('invalid');
       } catch {
         control.classList.add('invalid');
@@ -1192,6 +1209,75 @@ export class QuestWizardEditor {
     step[field] = control.value;
     // objectiveType 联动身份字段；tutorialId/dialogueId 联动内嵌编辑入口（toggle 按钮携带的 ID 需同步）
     if (field === 'objectiveType' || field === 'tutorialId' || field === 'dialogueId') this._renderDetail();
+  }
+
+  /** 门控索引：sceneId → { placements, bindings }（场景文档 layers[].objects——trigger 对象归绑定，其余对象均可作门）。 */
+  _buildSceneIndex() {
+    const typeLabels = { ref: '放置物', image: '图像', shape: '地形', region: '区域', spawn: '出生点', slice: '切片' };
+    const index = new Map();
+    let docs = [];
+    try { docs = list(this.getSceneDocuments()); } catch { docs = []; }
+    for (const doc of docs) {
+      if (!doc?.id) continue;
+      const objects = list(doc.layers).flatMap(layer => list(layer?.objects)).filter(object => object?.id);
+      index.set(String(doc.id), {
+        placements: objects.filter(object => object.type !== 'trigger')
+          .map(object => ({ value: String(object.id), label: `${object.name || object.ref || object.id}（${object.id} · ${typeLabels[object.type] || object.type}）` })),
+        bindings: objects.filter(object => object.type === 'trigger')
+          .map(object => ({ value: String(object.id), label: `${object.name || object.triggerId || object.id}（${object.id}）` }))
+      });
+    }
+    return index;
+  }
+
+  _sceneGatePlacements(sceneId) {
+    return this._sceneIndex?.get(String(sceneId))?.placements || [];
+  }
+
+  _sceneGateBindings(sceneId) {
+    return this._sceneIndex?.get(String(sceneId))?.bindings || [];
+  }
+
+  _addGate(quest, index) {
+    const step = list(quest.steps)[index];
+    if (!step) return;
+    if (!Array.isArray(step.gates)) step.gates = [];
+    // 默认落在任务的第一个场景、该场景的第一个放置物——添加即合法，策划再就地调整
+    const defaultScene = text(list(quest.scenes)[0]) || (this._sceneOptions()[0]?.[0] ?? '');
+    const placements = this._sceneGatePlacements(defaultScene);
+    step.gates.push({ sceneId: defaultScene, placementId: placements[0]?.value || '' });
+    this._renderDetail();
+  }
+
+  _removeGate(quest, index, gateIndex) {
+    const step = list(quest.steps)[index];
+    if (!step || !Array.isArray(step.gates)) return;
+    step.gates.splice(gateIndex, 1);
+    if (step.gates.length === 0) delete step.gates;
+    this._renderDetail();
+  }
+
+  _updateGateField(quest, index, gateIndex, field, control) {
+    const step = list(quest.steps)[index];
+    const gate = list(step?.gates)[gateIndex];
+    if (!gate) return;
+    if (field === 'sceneId') {
+      gate.sceneId = control.value;
+      // 换场景后原对象/绑定不再可信：对象重置为该场景首个放置物，绑定清空
+      delete gate.bindingId;
+      gate.placementId = this._sceneGatePlacements(gate.sceneId)[0]?.value || '';
+      this._renderDetail();
+      return;
+    }
+    if (field === 'placementId') {
+      gate.placementId = control.value;
+      this._renderDetail(); // 刷新定位按钮可用态
+      return;
+    }
+    if (field === 'bindingId') {
+      if (control.value) gate.bindingId = control.value;
+      else delete gate.bindingId;
+    }
   }
 
   _updateRewardField(quest, index, field, control) {
@@ -1366,7 +1452,7 @@ export class QuestWizardEditor {
     const style = document.createElement('style');
     style.id = 'qwe-styles';
     style.textContent = `
-      .qwe-root{height:100%;display:flex;flex-direction:column;background:#0d1326;color:#fff;font-size:13px}.qwe-toolbar{display:flex;align-items:center;gap:8px;padding:10px 16px;background:#16213e;border-bottom:1px solid #2a3a5e}.qwe-toolbar button,.qwe-node-toolbar button{padding:7px 12px;border:0;border-radius:4px;background:#3a4a7e;color:#fff;cursor:pointer}.qwe-toolbar .primary{background:#4caf50;color:#102010;font-weight:bold}.qwe-toolbar .danger,.qwe-step .danger{background:#7e3a3a}.qwe-hint{margin-left:auto;color:#8aa;font-size:12px}.qwe-main{min-height:0;flex:1;display:flex;overflow:hidden}.qwe-list{width:240px;flex:none;overflow:auto;background:#111a30}.qwe-quest{display:flex;width:100%;flex-direction:column;gap:3px;padding:10px 13px;text-align:left;color:#fff;background:transparent;border:0;border-bottom:1px solid #1e2b47;cursor:pointer}.qwe-quest:hover{background:#1a2540}.qwe-quest.active{background:#2a3a6e}.qwe-quest small{color:#9ab}.qwe-detail{min-width:0;flex:1;overflow:auto;padding:16px}.qwe-note{margin-bottom:12px;padding:10px 12px;border:1px solid #3b6b54;border-radius:5px;background:#10251e;color:#a9d8bc}.qwe-graph{margin-bottom:14px;overflow:auto;border:1px solid #2a3a5e;border-radius:6px;background:#091020;max-height:380px}.qwe-graph svg{display:block}.qwe-graph-edges path{fill:none;stroke:#6d84c7;stroke-width:2}.qwe-graph-node{cursor:pointer}.qwe-graph-node rect{fill:#17264a;stroke:#7d98db;stroke-width:1.5}.qwe-graph-node:hover rect{fill:#294078;stroke:#b9ceff}.qwe-graph-node text{fill:#fff;font-size:11px;pointer-events:none}.qwe-graph-node text.type{fill:#8fa7d8;font-size:10px}.qwe-graph-node.start rect{stroke:#4caf50}.qwe-graph-node.complete rect{stroke:#c9a227}.qwe-graph-node.objective rect{fill:#1a2f55}.qwe-block{margin-bottom:14px;padding:10px 14px;border:1px solid #2a3a5e;border-radius:6px;background:#0f1830}.qwe-block legend{padding:0 8px;color:#8fa7d8;font-weight:bold}.qwe-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.qwe-field{min-width:0}.qwe-field.full{grid-column:1/-1}.qwe-field label{display:block;margin-bottom:4px;color:#9ab;font-size:12px}.qwe-field input,.qwe-field select,.qwe-field textarea{width:100%;padding:7px;border:1px solid #2a3a5e;border-radius:3px;background:#0a1020;color:#fff;font:inherit}.qwe-field textarea{resize:vertical;font-family:Consolas,monospace;font-size:12px}.qwe-field textarea.invalid{border-color:#e66;box-shadow:0 0 0 1px #e66}.qwe-field small{display:block;margin-top:4px;color:#789;font-size:11px}.qwe-checks{display:flex;flex-wrap:wrap;gap:10px}.qwe-check{display:inline-flex;align-items:center;gap:5px;color:#cdd;font-size:12px}.qwe-check input{width:auto}.qwe-check-row{display:flex;align-items:center}.qwe-node-toolbar{display:flex;align-items:center;justify-content:space-between;margin:16px 0 10px}.qwe-node-toolbar h3{font-size:14px}.qwe-step{margin-bottom:12px;padding:12px;border:1px solid #2a3a5e;border-radius:6px;background:#0f1830}.qwe-step-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}.qwe-step-actions{display:flex;gap:6px}.qwe-step-actions button{padding:4px 8px;border:0;border-radius:3px;background:#3a4a7e;color:#fff;cursor:pointer}.qwe-step-actions button:disabled{opacity:.35;cursor:default}.qwe-rewards{margin-bottom:8px}.qwe-reward{margin-bottom:8px;padding:8px;border:1px dashed #2a3a5e;border-radius:4px}.qwe-tut-edit{margin-top:8px;padding:10px;border:1px solid #3a4a7e;border-radius:5px;background:#0a1020;display:flex;flex-direction:column;gap:8px}.qwe-tut-step{padding:8px;border:1px solid #223055;border-radius:4px}.qwe-tut-step-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;color:#8fa7d8;font-size:11px}.qwe-tut-step textarea{width:100%;padding:6px;border:1px solid #2a3a5e;border-radius:3px;background:#0a1020;color:#fff;font:inherit;resize:vertical}.qwe-dlg-edit{margin-top:8px;padding:10px;border:1px solid #3a4a7e;border-radius:5px;background:#0a1020;display:flex;flex-direction:column;gap:8px}.qwe-dlg-node{padding:8px;border:1px solid #223055;border-radius:4px;display:flex;flex-direction:column;gap:6px}.qwe-dlg-node input,.qwe-dlg-node textarea{width:100%;padding:6px;border:1px solid #2a3a5e;border-radius:3px;background:#0a1020;color:#fff;font:inherit;resize:vertical}.qwe-dlg-node textarea{font-family:Consolas,monospace;font-size:12px}.qwe-muted{color:#789}.qwe-error{color:#e66}.qwe-ok{color:#6c6}.qwe-preview{font-size:12px;color:#9ab}.qwe-preview ul{margin:6px 0 0 18px}.qwe-empty{padding:38px 16px;color:#789;text-align:center;line-height:1.7}.qwe-empty.compact{padding:18px}.qwe-steps-nav{width:200px;flex:none;overflow:auto;background:#111a30;padding:10px 8px;display:flex;flex-direction:column;gap:6px}.qwe-steps-nav h4{margin:0 2px 4px;color:#8fa7d8;font-size:12px;font-weight:bold;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.qwe-snav-hint{color:#678;font-size:10px;text-align:center;margin-top:2px}.qwe-snav{display:flex;flex-direction:column;gap:3px;padding:8px 10px;border:1px solid transparent;border-radius:5px;color:#fff;text-align:left;cursor:grab;font:inherit}.qwe-snav:active{cursor:grabbing}.qwe-snav .t{font-size:10px;opacity:.9}.qwe-snav small{font-size:11px;color:rgba(255,255,255,.85);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.qwe-snav small.sid{color:rgba(255,255,255,.45);font-size:10px}.qwe-snav.type-objective{background:#1a2f55;border-color:#3a5a9e}.qwe-snav.type-dialogue{background:#3a2a5e;border-color:#7a5abE}.qwe-snav.type-tutorial{background:#1d4a30;border-color:#3a7e54}.qwe-snav.type-action{background:#5e4a1d;border-color:#9e8a3a}.qwe-snav.type-choice{background:#4a2a5e;border-color:#9e5a9e}.qwe-snav.type-event{background:#1d3a4a;border-color:#3a7e9e}.qwe-snav.active{outline:2px solid #c9a227}.qwe-snav.drag-over{outline:2px dashed #7d98db;outline-offset:-2px}.qwe-divider{width:6px;flex:none;cursor:col-resize;background:#16213e}.qwe-divider:hover,.qwe-divider.dragging{background:#3a5a9e}.qwe-ctx-menu{position:fixed;z-index:100001;display:flex;flex-direction:column;min-width:132px;padding:4px;border:1px solid #3a4a7e;border-radius:5px;background:#16213e;box-shadow:0 6px 18px #000a}.qwe-ctx-menu button{padding:6px 10px;border:0;border-radius:3px;background:transparent;color:#fff;text-align:left;cursor:pointer;font:inherit;white-space:nowrap}.qwe-ctx-menu button:hover{background:#2a3a6e}.qwe-ctx-menu button.danger{color:#e88}.qwe-ctx-menu button:disabled{opacity:.35;cursor:default}.qwe-ctx-menu button:disabled:hover{background:transparent}.qwe-status{min-height:30px;padding:7px 16px;background:#0a1020;color:#9ab}.qwe-status.ok{color:#6c6}.qwe-status.warn{color:#e6bd5d}.qwe-status.error{color:#e66}.qwe-toast{position:fixed;top:58px;left:50%;z-index:100000;max-width:min(600px,90vw);padding:10px 18px;border-radius:6px;background:#2e7d32;color:#fff;box-shadow:0 4px 16px #0008;opacity:0;pointer-events:none;transform:translate(-50%,-8px);transition:opacity .2s,transform .2s}.qwe-toast[data-type="error"]{background:#c62828}.qwe-toast[data-type="warn"]{background:#9a6700}.qwe-toast.visible{opacity:1;transform:translate(-50%,0)}.qwe-sync{margin-bottom:12px;padding:10px 12px;border:1px solid #9e8a3a;border-radius:6px;background:#241f0d}.qwe-sync-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.qwe-sync-head strong{color:#e6c85d}.qwe-sync-head small{color:#9a8f6a}.qwe-sync-actions{margin-left:auto;display:flex;gap:6px}.qwe-sync-actions button{padding:4px 10px;border:0;border-radius:3px;background:#3a4a7e;color:#fff;cursor:pointer;font:inherit}.qwe-sync-actions button:disabled{opacity:.4;cursor:default}.qwe-sync ul{margin:8px 0 0 18px;color:#cdd;font-size:12px;display:flex;flex-direction:column;gap:4px}.qwe-sync code{color:#e6c85d;font-family:Consolas,monospace}.qwe-links{display:flex;flex-wrap:wrap;gap:8px}.qwe-link.ok{color:#6c6}.qwe-link.warn{color:#e6bd5d}.qwe-link.muted{color:#789}@media (max-width:800px){.qwe-list{width:150px}.qwe-steps-nav{width:150px}.qwe-grid{grid-template-columns:1fr}.qwe-field.full{grid-column:auto}.qwe-hint{display:none}}
+      .qwe-root{height:100%;display:flex;flex-direction:column;background:#0d1326;color:#fff;font-size:13px}.qwe-toolbar{display:flex;align-items:center;gap:8px;padding:10px 16px;background:#16213e;border-bottom:1px solid #2a3a5e}.qwe-toolbar button,.qwe-node-toolbar button{padding:7px 12px;border:0;border-radius:4px;background:#3a4a7e;color:#fff;cursor:pointer}.qwe-toolbar .primary{background:#4caf50;color:#102010;font-weight:bold}.qwe-toolbar .danger,.qwe-step .danger{background:#7e3a3a}.qwe-hint{margin-left:auto;color:#8aa;font-size:12px}.qwe-main{min-height:0;flex:1;display:flex;overflow:hidden}.qwe-list{width:240px;flex:none;overflow:auto;background:#111a30}.qwe-quest{display:flex;width:100%;flex-direction:column;gap:3px;padding:10px 13px;text-align:left;color:#fff;background:transparent;border:0;border-bottom:1px solid #1e2b47;cursor:pointer}.qwe-quest:hover{background:#1a2540}.qwe-quest.active{background:#2a3a6e}.qwe-quest small{color:#9ab}.qwe-detail{min-width:0;flex:1;overflow:auto;padding:16px}.qwe-note{margin-bottom:12px;padding:10px 12px;border:1px solid #3b6b54;border-radius:5px;background:#10251e;color:#a9d8bc}.qwe-graph{margin-bottom:14px;overflow:auto;border:1px solid #2a3a5e;border-radius:6px;background:#091020;max-height:380px}.qwe-graph svg{display:block}.qwe-graph-edges path{fill:none;stroke:#6d84c7;stroke-width:2}.qwe-graph-node{cursor:pointer}.qwe-graph-node rect{fill:#17264a;stroke:#7d98db;stroke-width:1.5}.qwe-graph-node:hover rect{fill:#294078;stroke:#b9ceff}.qwe-graph-node text{fill:#fff;font-size:11px;pointer-events:none}.qwe-graph-node text.type{fill:#8fa7d8;font-size:10px}.qwe-graph-node.start rect{stroke:#4caf50}.qwe-graph-node.complete rect{stroke:#c9a227}.qwe-graph-node.objective rect{fill:#1a2f55}.qwe-block{margin-bottom:14px;padding:10px 14px;border:1px solid #2a3a5e;border-radius:6px;background:#0f1830}.qwe-block legend{padding:0 8px;color:#8fa7d8;font-weight:bold}.qwe-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.qwe-field{min-width:0}.qwe-field.full{grid-column:1/-1}.qwe-field label{display:block;margin-bottom:4px;color:#9ab;font-size:12px}.qwe-field input,.qwe-field select,.qwe-field textarea{width:100%;padding:7px;border:1px solid #2a3a5e;border-radius:3px;background:#0a1020;color:#fff;font:inherit}.qwe-field textarea{resize:vertical;font-family:Consolas,monospace;font-size:12px}.qwe-field textarea.invalid{border-color:#e66;box-shadow:0 0 0 1px #e66}.qwe-field small{display:block;margin-top:4px;color:#789;font-size:11px}.qwe-checks{display:flex;flex-wrap:wrap;gap:10px}.qwe-check{display:inline-flex;align-items:center;gap:5px;color:#cdd;font-size:12px}.qwe-check input{width:auto}.qwe-check-row{display:flex;align-items:center}.qwe-node-toolbar{display:flex;align-items:center;justify-content:space-between;margin:16px 0 10px}.qwe-node-toolbar h3{font-size:14px}.qwe-step{margin-bottom:12px;padding:12px;border:1px solid #2a3a5e;border-radius:6px;background:#0f1830}.qwe-step-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}.qwe-step-actions{display:flex;gap:6px}.qwe-step-actions button{padding:4px 8px;border:0;border-radius:3px;background:#3a4a7e;color:#fff;cursor:pointer}.qwe-step-actions button:disabled{opacity:.35;cursor:default}.qwe-rewards{margin-bottom:8px}.qwe-reward{margin-bottom:8px;padding:8px;border:1px dashed #2a3a5e;border-radius:4px}.qwe-tut-edit{margin-top:8px;padding:10px;border:1px solid #3a4a7e;border-radius:5px;background:#0a1020;display:flex;flex-direction:column;gap:8px}.qwe-tut-step{padding:8px;border:1px solid #223055;border-radius:4px}.qwe-tut-step-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;color:#8fa7d8;font-size:11px}.qwe-tut-step textarea{width:100%;padding:6px;border:1px solid #2a3a5e;border-radius:3px;background:#0a1020;color:#fff;font:inherit;resize:vertical}.qwe-dlg-edit{margin-top:8px;padding:10px;border:1px solid #3a4a7e;border-radius:5px;background:#0a1020;display:flex;flex-direction:column;gap:8px}.qwe-dlg-node{padding:8px;border:1px solid #223055;border-radius:4px;display:flex;flex-direction:column;gap:6px}.qwe-dlg-node input,.qwe-dlg-node textarea{width:100%;padding:6px;border:1px solid #2a3a5e;border-radius:3px;background:#0a1020;color:#fff;font:inherit;resize:vertical}.qwe-dlg-node textarea{font-family:Consolas,monospace;font-size:12px}.qwe-muted{color:#789}.qwe-error{color:#e66}.qwe-ok{color:#6c6}.qwe-preview{font-size:12px;color:#9ab}.qwe-preview ul{margin:6px 0 0 18px}.qwe-empty{padding:38px 16px;color:#789;text-align:center;line-height:1.7}.qwe-empty.compact{padding:18px}.qwe-steps-nav{width:200px;flex:none;overflow:auto;background:#111a30;padding:10px 8px;display:flex;flex-direction:column;gap:6px}.qwe-steps-nav h4{margin:0 2px 4px;color:#8fa7d8;font-size:12px;font-weight:bold;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.qwe-snav-hint{color:#678;font-size:10px;text-align:center;margin-top:2px}.qwe-snav{display:flex;flex-direction:column;gap:3px;padding:8px 10px;border:1px solid transparent;border-radius:5px;color:#fff;text-align:left;cursor:grab;font:inherit}.qwe-snav:active{cursor:grabbing}.qwe-snav .t{font-size:10px;opacity:.9}.qwe-snav small{font-size:11px;color:rgba(255,255,255,.85);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.qwe-snav small.sid{color:rgba(255,255,255,.45);font-size:10px}.qwe-snav.type-objective{background:#1a2f55;border-color:#3a5a9e}.qwe-snav.type-dialogue{background:#3a2a5e;border-color:#7a5abE}.qwe-snav.type-tutorial{background:#1d4a30;border-color:#3a7e54}.qwe-snav.type-action{background:#5e4a1d;border-color:#9e8a3a}.qwe-snav.type-choice{background:#4a2a5e;border-color:#9e5a9e}.qwe-snav.type-event{background:#1d3a4a;border-color:#3a7e9e}.qwe-snav.active{outline:2px solid #c9a227}.qwe-snav.drag-over{outline:2px dashed #7d98db;outline-offset:-2px}.qwe-divider{width:6px;flex:none;cursor:col-resize;background:#16213e}.qwe-divider:hover,.qwe-divider.dragging{background:#3a5a9e}.qwe-ctx-menu{position:fixed;z-index:100001;display:flex;flex-direction:column;min-width:132px;padding:4px;border:1px solid #3a4a7e;border-radius:5px;background:#16213e;box-shadow:0 6px 18px #000a}.qwe-ctx-menu button{padding:6px 10px;border:0;border-radius:3px;background:transparent;color:#fff;text-align:left;cursor:pointer;font:inherit;white-space:nowrap}.qwe-ctx-menu button:hover{background:#2a3a6e}.qwe-ctx-menu button.danger{color:#e88}.qwe-ctx-menu button:disabled{opacity:.35;cursor:default}.qwe-ctx-menu button:disabled:hover{background:transparent}.qwe-status{min-height:30px;padding:7px 16px;background:#0a1020;color:#9ab}.qwe-status.ok{color:#6c6}.qwe-status.warn{color:#e6bd5d}.qwe-status.error{color:#e66}.qwe-toast{position:fixed;top:58px;left:50%;z-index:100000;max-width:min(600px,90vw);padding:10px 18px;border-radius:6px;background:#2e7d32;color:#fff;box-shadow:0 4px 16px #0008;opacity:0;pointer-events:none;transform:translate(-50%,-8px);transition:opacity .2s,transform .2s}.qwe-toast[data-type="error"]{background:#c62828}.qwe-toast[data-type="warn"]{background:#9a6700}.qwe-toast.visible{opacity:1;transform:translate(-50%,0)}.qwe-sync{margin-bottom:12px;padding:10px 12px;border:1px solid #9e8a3a;border-radius:6px;background:#241f0d}.qwe-sync-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.qwe-sync-head strong{color:#e6c85d}.qwe-sync-head small{color:#9a8f6a}.qwe-sync-actions{margin-left:auto;display:flex;gap:6px}.qwe-sync-actions button{padding:4px 10px;border:0;border-radius:3px;background:#3a4a7e;color:#fff;cursor:pointer;font:inherit}.qwe-sync-actions button:disabled{opacity:.4;cursor:default}.qwe-sync ul{margin:8px 0 0 18px;color:#cdd;font-size:12px;display:flex;flex-direction:column;gap:4px}.qwe-sync code{color:#e6c85d;font-family:Consolas,monospace}.qwe-links{display:flex;flex-wrap:wrap;gap:8px}.qwe-link.ok{color:#6c6}.qwe-link.warn{color:#e6bd5d}.qwe-link.muted{color:#789}.qwe-gate-list{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}.qwe-gate-row{display:flex;gap:6px;align-items:center;padding:6px 8px;border:1px solid #223055;border-radius:5px;background:#0a1020}.qwe-gate-row select{flex:1;min-width:0;padding:5px;border:1px solid #2a3a5e;border-radius:3px;background:#16213e;color:#fff;font:inherit;font-size:12px}.qwe-gate-row button{padding:5px 9px;border:0;border-radius:3px;background:#3a4a7e;color:#fff;cursor:pointer;font:inherit;white-space:nowrap}.qwe-gate-row button.danger{background:#7e3a3a}@media (max-width:800px){.qwe-list{width:150px}.qwe-steps-nav{width:150px}.qwe-grid{grid-template-columns:1fr}.qwe-field.full{grid-column:auto}.qwe-hint{display:none}}
     `;
     document.head.appendChild(style);
   }

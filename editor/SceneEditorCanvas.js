@@ -84,6 +84,9 @@ export class SceneEditorCanvas {
     // 火堆碰撞是编辑期辅助几何，必须在所有对象后绘制，避免被出生点等预览覆盖。
     this._renderCampfireCollisionOverlays(ctx, data.layers);
 
+    // 任务门角标：被任务步骤 gates 引用的对象上方常显 🚪 徽标（门控所见即所得另一半）
+    this._renderQuestGateBadges(ctx, data.layers);
+
     // 绘制网格和辅助方框（在所有图层之上）
     if (editor.options.showGrid) this._renderGrid(ctx, sceneX, sceneY, sceneW, sceneH);
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
@@ -93,6 +96,42 @@ export class SceneEditorCanvas {
     ctx.restore();
     this._renderTriggerLinks();
     this._renderSelection();
+  }
+
+  /**
+   * 任务门角标：被任务步骤 gates 引用的放置物上方常显 🚪 徽标（引用详情选中对象后在事件栏查看）。
+   * 索引来自事件过滤器的 questGateByPlacement（placementId → 任务/步骤标注）。
+   */
+  _renderQuestGateBadges(ctx, layers) {
+    const gateIndex = this.editor.eventFilter?.questGateByPlacement;
+    if (!gateIndex || gateIndex.size === 0) return;
+    ctx.save();
+    ctx.font = '11px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    for (const layer of layers) {
+      if (!layer?.visible) continue;
+      for (const object of layer.objects || []) {
+        if (!this.editor.layers.isObjectVisible(layer, object)) continue;
+        const gate = gateIndex.get(String(object?.id || ''));
+        if (!gate) continue;
+        const label = `🚪 ${gate.questTitle || gate.questId || '任务门'}`;
+        const cx = object.x || 0;
+        const cy = (object.y || 0) - 26;
+        const w = ctx.measureText(label).width + 10;
+        ctx.fillStyle = 'rgba(201, 162, 39, 0.92)';
+        ctx.strokeStyle = '#ffe08a';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(cx - w / 2, cy - 9, w, 18, 9);
+        else ctx.rect(cx - w / 2, cy - 9, w, 18);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = '#1a1408';
+        ctx.fillText(label, cx, cy);
+      }
+    }
+    ctx.restore();
   }
 
   _renderCampfireCollisionOverlays(ctx, layers) {

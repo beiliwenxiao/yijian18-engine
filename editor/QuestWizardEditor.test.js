@@ -23,7 +23,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const readJson = relative => JSON.parse(fs.readFileSync(path.join(ROOT, relative), 'utf8'));
 const project = await loadProjectWithShards();
 
-function buildEditor(questsOverride = null) {
+function buildEditor(questsOverride = null, deps = {}) {
     const container = document.createElement('div');
     document.body.appendChild(container);
     const quests = questsOverride ?? cloneQuests();
@@ -34,7 +34,7 @@ function buildEditor(questsOverride = null) {
         patch: (key, value) => { patched[key] = value; },
         save: async () => ({ ok: true, committed: true })
     };
-    const editor = new QuestWizardEditor(container, { canonicalSession });
+    const editor = new QuestWizardEditor(container, { canonicalSession, ...deps });
     editor.project = { ...project, quests };
     editor.quests = structuredClone(quests);
     editor.selectedId = editor.quests[0]?.id || null;
@@ -252,6 +252,49 @@ describe('QuestWizardEditor 任务向导', () => {
         navAfter[2].click();
         expect(navAfter[2].classList.contains('active')).toBe(true);
         expect(editor._activeStepNavId).toBe(editor.quests[0].steps[2].id);
+    });
+
+    it('门控所见即所得：结构化门行（场景/对象/绑定下拉直读场景文档）增删改写回 step.gates', () => {
+        const sceneDocs = [{
+            id: 'S01', name: '荒原',
+            layers: [{ id: 'layer_placement', objects: [
+                { type: 'ref', id: 'S01-shelter-site-firewood', name: '庇护所柴堆', ref: 'resource.firewood' },
+                { type: 'ref', id: 'S01-shelter-door', name: '庇护所门', ref: 'prop.door' },
+                { type: 'trigger', id: 'S01-binding-enter-shelter', name: '进入庇护所', triggerId: 'trg_s01_enter_shelter' }
+            ] }]
+        }];
+        const deps = {
+            getSceneList: () => [{ id: 'S01', name: '荒原' }, { id: 'S02', name: '废弃营地' }],
+            getSceneDocuments: () => sceneDocs,
+            openScenePlacement: () => {}
+        };
+        const { editor } = buildEditor(null, deps);
+        const quest = editor.quests.find(item => item.id === 'task.s01.survival');
+        const stepIndex = quest.steps.findIndex(step => step.id === 'stayOvernight');
+        expect(stepIndex).toBeGreaterThan(-1);
+        const stepCard = () => detail(editor).querySelector(`[data-step-index="${stepIndex}"]`);
+        // 既有门渲染为结构化行：对象下拉显示场景里的真实对象名（非裸 ID 的 JSON 文本域）
+        let row = stepCard().querySelector('[data-gate-index="0"]');
+        expect(row).toBeTruthy();
+        const placementSelect = row.querySelector('[data-gate-field="placementId"]');
+        expect(placementSelect.selectedOptions[0].textContent).toContain('庇护所柴堆');
+        expect(placementSelect.selectedOptions[0].textContent).toContain('S01-shelter-site-firewood');
+        // 绑定下拉来自场景 trigger 对象
+        expect(row.querySelector('[data-gate-field="bindingId"]').textContent).toContain('进入庇护所');
+        // 换对象写回 step.gates
+        placementSelect.value = 'S01-shelter-door';
+        placementSelect.dispatchEvent(new Event('change'));
+        expect(quest.steps[stepIndex].gates[0].placementId).toBe('S01-shelter-door');
+        // 添加门：默认任务的第一个场景 + 该场景首个放置物（添加即合法）
+        stepCard().querySelector('[data-action="gate-add"]').click();
+        expect(quest.steps[stepIndex].gates.length).toBe(2);
+        expect(quest.steps[stepIndex].gates[1]).toEqual({ sceneId: 'S01', placementId: 'S01-shelter-site-firewood' });
+        // 逐行删除；删空后 gates 字段整体移除
+        const cards = () => stepCard().querySelectorAll('[data-action="gate-remove"]');
+        cards()[1].click();
+        expect(quest.steps[stepIndex].gates.length).toBe(1);
+        stepCard().querySelector('[data-action="gate-remove"]').click();
+        expect(quest.steps[stepIndex].gates).toBeUndefined();
     });
 
     it('列宽拖动：竖线手柄 mousedown+mousemove 调整相邻列宽，mouseup 持久化且停止响应', () => {
