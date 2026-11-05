@@ -47,7 +47,7 @@ export class EditorInteractionBase {
                 this.currentGameId = null;
                 this.currentSceneId = null;
                 this._gameContextGeneration = 0;
-                this._projectDefinitions = { triggers: [], tutorials: [] };
+                this._projectDefinitions = { triggers: [], tutorials: [], quests: [] };
                 this._projectTriggers = [];
                 this._projectBattles = [];
                 this._presentationProfile = null;
@@ -299,7 +299,8 @@ export class EditorInteractionBase {
                     }
                     this._projectDefinitions = {
                         triggers: Array.isArray(project?.triggers) ? project.triggers : [],
-                        tutorials: Array.isArray(project?.tutorials) ? project.tutorials : []
+                        tutorials: Array.isArray(project?.tutorials) ? project.tutorials : [],
+                        quests: Array.isArray(project?.quests) ? project.quests : []
                     };
                     this._projectTriggers = this._projectDefinitions.triggers;
                     const battleEntries = Array.isArray(project?.battles) ? project.battles : [];
@@ -326,7 +327,7 @@ export class EditorInteractionBase {
                     }
                 } catch (error) {
                     console.warn('[Editor] 加载项目触发器/战役/表现规格失败', error);
-                    this._projectDefinitions = { triggers: [], tutorials: [] };
+                    this._projectDefinitions = { triggers: [], tutorials: [], quests: [] };
                     this._projectTriggers = this._projectDefinitions.triggers;
                     this._projectBattles = [];
                     this._presentationProfile = null;

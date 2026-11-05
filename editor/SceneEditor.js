@@ -201,11 +201,16 @@ export class SceneEditor {
     try {
       const definitions = this.options.getProjectDefinitions?.();
       if (definitions && typeof definitions === 'object') return definitions;
-      return { triggers: this.options.getProjectTriggers?.() || [], tutorials: [] };
+      return { triggers: this.options.getProjectTriggers?.() || [], tutorials: [], quests: [] };
     } catch (error) {
       console.warn('SceneEditor: 获取项目事件定义失败', error);
-      return { triggers: [], tutorials: [] };
+      return { triggers: [], tutorials: [], quests: [] };
     }
+  }
+
+  getProjectQuests() {
+    const values = this.getProjectDefinitions().quests;
+    return Array.isArray(values) ? values : [];
   }
 
   getProjectTriggers() {

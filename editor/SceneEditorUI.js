@@ -889,8 +889,8 @@ export class SceneEditorUI {
       panel.querySelectorAll('input[data-prop], select[data-prop], textarea[data-prop], button, #editor-trigger-picker, #editor-image-id, #editor-image-src, #editor-related-object-ids').forEach(control => {
         control.disabled = true;
       });
-      // 关联跳转只改变编辑器选中态，不修改受锁对象，保留只读查看链路。
-      panel.querySelectorAll('button[data-editor-select-object-id]').forEach(control => {
+      // 关联跳转/流程聚焦只改变编辑器选中态，不修改受锁对象，保留只读查看链路。
+      panel.querySelectorAll('button[data-editor-select-object-id], button[data-editor-focus-trigger]').forEach(control => {
         control.disabled = false;
       });
     }
@@ -2293,20 +2293,45 @@ export class SceneEditorUI {
   _buildObjectRelationshipProperties(obj) {
     if (!obj?.id) return '';
 
-    const reverseTriggers = this._getReverseTriggerBindings(obj);
     const objectEntries = this._getSceneObjectEntries();
     const objectsById = new Map(objectEntries.map(entry => [entry.object.id, entry]));
     const relatedIds = this._getEditorRelatedObjectIds(obj);
     const relatedObjects = relatedIds.map(id => ({ id, entry: objectsById.get(id) }));
-    const triggerRows = reverseTriggers.length
-      ? reverseTriggers.map(({ object: trigger }) => {
-        const triggerName = this._getSceneObjectDisplayName(trigger);
-        const triggerId = String(trigger.triggerId || '').trim() || '未绑定项目行为';
-        const prompt = String(trigger.prompt || '').trim();
-        const status = trigger.enabled === false ? ' · 已禁用' : ' · 已启用';
-        const title = [triggerId, prompt, trigger.target ? `${trigger.targetMode || 'auto'}:${trigger.target}` : '未设目标']
-          .filter(Boolean).join('\n');
-        return `<button type="button" data-editor-select-object-id="${escapeHtml(trigger.id)}" title="${escapeHtml(title)}" style="width:100%;margin:2px 0;padding:4px 6px;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">↗ ${escapeHtml(triggerName)} · ${escapeHtml(triggerId)}${escapeHtml(status)}</button>`;
+    // 参与流程（全闭包）：binding 直接目标 + 动作 selector（spawnPlacements 组等）。
+    // 事件筛选器缺席时退回旧逻辑（仅 binding 直接目标）。
+    const flows = this.editor.eventFilter?.getFlowsForObject
+      ? this.editor.eventFilter.getFlowsForObject(obj)
+      : this._getReverseTriggerBindings(obj).map(({ object: trigger }) => ({
+        bindingId: trigger.id,
+        triggerId: String(trigger.triggerId || '').trim(),
+        name: this._getSceneObjectDisplayName(trigger),
+        definitionName: '',
+        enabled: trigger.enabled !== false,
+        quest: null
+      }));
+    // 同一 Trigger 多个 binding 指向同一对象时合并展示
+    const flowsByTrigger = new Map();
+    for (const flow of flows) {
+      const key = flow.triggerId || flow.bindingId;
+      if (!flowsByTrigger.has(key)) flowsByTrigger.set(key, { ...flow, bindingIds: [flow.bindingId] });
+      else flowsByTrigger.get(key).bindingIds.push(flow.bindingId);
+    }
+    const flowEntries = [...flowsByTrigger.values()];
+    const triggerRows = flowEntries.length
+      ? flowEntries.map(flow => {
+        const status = flow.enabled ? '' : ' · 已禁用';
+        const questLine = flow.quest
+          ? `<small style="display:block;color:#ffe7ad;">任务：${escapeHtml(flow.quest.questTitle)} · ${escapeHtml(flow.quest.stepTitle)}</small>`
+          : '<small style="display:block;color:#8ea4c9;">场景级 / 未归属任务</small>';
+        const title = [flow.triggerId || '未绑定项目行为', flow.definitionName,
+          `bindings: ${flow.bindingIds.join(', ')}`].filter(Boolean).join('\n');
+        const focusButton = flow.triggerId
+          ? `<button type="button" data-editor-focus-trigger="${escapeHtml(flow.triggerId)}" title="聚焦该流程：画布压暗/隔离无关对象，只看参与对象" style="margin:2px 0;padding:4px 8px;flex:0 0 auto;">◎ 聚焦</button>`
+          : '';
+        return `<div style="display:flex;align-items:stretch;gap:4px;margin:2px 0;">
+            <button type="button" data-editor-select-object-id="${escapeHtml(flow.bindingIds[0])}" title="${escapeHtml(title)}" style="flex:1;min-width:0;margin:2px 0;padding:4px 6px;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">↗ ${escapeHtml(flow.name)} · ${escapeHtml(flow.triggerId || '未绑定')}${escapeHtml(status)}</button>
+            ${focusButton}
+          </div>${questLine}`;
       }).join('')
       : '<small style="color:#8ea4c9;">没有场景 Trigger 以当前 selector 规则指向此对象。</small>';
     const relatedRows = relatedObjects.length
@@ -2333,7 +2358,7 @@ export class SceneEditorUI {
 
     return `
       <div class="property-row" style="border-top:1px solid #4a5a8e;margin-top:8px;padding-top:7px;"><label style="width:auto;color:#e8c46a;font-weight:bold;">编辑器关联</label></div>
-      <div class="property-row" style="display:block;"><label style="display:block;width:auto;margin-bottom:3px;">哪些 Trigger 指向我（${reverseTriggers.length}）</label>${triggerRows}</div>
+      <div class="property-row" style="display:block;"><label style="display:block;width:auto;margin-bottom:3px;">参与流程（${flowEntries.length}）</label>${triggerRows}</div>
       <div class="property-row"><label style="width:72px;">关联对象 ID:</label><input id="editor-related-object-ids" value="${escapeHtml(relatedIds.join(', '))}" placeholder="以逗号分隔场景对象 ID" title="关联施工前视觉、完成后放置点或其他编排对象；仅保存到 editor.relatedObjectIds"></div>
       <div class="property-row"><small style="color:#8ea4c9;">保存时会校验对象存在、去重且不允许关联自身；点击条目可定位到对象所在图层。</small></div>
       <div class="property-row" style="display:block;"><label style="display:block;width:auto;margin-bottom:3px;">关联表现对象（${relatedObjects.length}）</label>${relatedRows}</div>`;
@@ -2347,6 +2372,15 @@ export class SceneEditorUI {
     panel.querySelectorAll('button[data-editor-select-object-id]').forEach(button => {
       button.addEventListener('click', () => {
         this._selectSceneObjectById(button.dataset.editorSelectObjectId);
+      });
+    });
+    // 参与流程 → 聚焦：切换事件视图到该 Trigger 并压暗/隔离无关对象
+    panel.querySelectorAll('button[data-editor-focus-trigger]').forEach(button => {
+      button.addEventListener('click', () => {
+        const triggerId = button.dataset.editorFocusTrigger;
+        if (!triggerId) return;
+        this.editor.eventFilter?.selectTrigger(triggerId);
+        this.showToast(`已聚焦流程：${triggerId}`, 'success');
       });
     });
 

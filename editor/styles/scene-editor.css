@@ -197,6 +197,14 @@
 .scene-event-filter-event-entry { display: inline-flex; align-items: center; gap: 3px; flex: 0 0 auto; }
 .scene-event-filter-event-entry > input { margin: 0; cursor: pointer; }
 .scene-event-filter-event-entry > input:disabled { opacity: .45; cursor: not-allowed; }
+/* Trigger 聚焦条目：勾选框 + Trigger 按钮（点击=单独聚焦，勾选=纳入并集） */
+.scene-event-filter-trigger-entry { display: inline-flex; align-items: center; gap: 3px; flex: 0 0 auto; padding-left: 10px; }
+.scene-event-filter-trigger-entry > input { margin: 0; cursor: pointer; }
+/* 任务分组头：按 quests.json 步骤事实归属的 Trigger 分组皮 */
+.scene-event-filter-quest-header { display: inline-flex; align-items: center; gap: 3px; flex: 0 0 auto; border-left: 2px solid #96733c; padding-left: 5px; }
+.scene-event-filter-quest-header > input { margin: 0; cursor: pointer; }
+.scene-event-filter-item.quest { background: #4d3d22; border-color: #96733c; color: #ffe7ad; font-weight: 700; }
+.scene-event-filter-item.quest:disabled { opacity: .65; cursor: default; }
 .scene-event-filter-status { flex-shrink: 0; min-width: 42px; color: #8fa3ca; font-size: 10px; white-space: nowrap; text-align: right; }
 
 /* 事件条使用固定容器和独立拖动轨道，内容再多也不增加编辑器宽度 */
@@ -225,6 +233,10 @@
 }
 .scene-event-filter-scroll::-webkit-scrollbar { display: none; }
 .scene-event-filter-related { grid-column: 4; grid-row: 1; align-self: center; }
+.scene-event-filter-focus-level { grid-column: 4; grid-row: 1; align-self: center; display: inline-flex; align-items: center; gap: 3px; flex-shrink: 0; }
+.scene-event-filter-focus-level-button { padding: 4px 8px; border: 1px solid #40517f; border-radius: 10px; background: #26365f; color: #dbe4ff; cursor: pointer; font-size: 11px; white-space: nowrap; }
+.scene-event-filter-focus-level-button:hover { background: #354a80; border-color: #6683c5; }
+.scene-event-filter-focus-level-button.active { background: #3d6b46; border-color: #7ee483; color: #c9ffd1; font-weight: 700; }
 .scene-event-filter-status { grid-column: 5; grid-row: 1; align-self: center; }
 .scene-event-filter-drag-track {
   grid-column: 1 / -1;

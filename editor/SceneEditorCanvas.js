@@ -68,9 +68,16 @@ export class SceneEditorCanvas {
       }
       // 遮罩层不再自动画森林环带椭圆：边缘透明由地形椭圆 shape 的 edgeFade 提供
 
-      // 渲染该图层的当前视图对象
+      // 渲染该图层的当前视图对象（聚焦压暗模式下闭包外对象低透明度）
       for (const obj of layer.objects) {
-        if (editor.layers.isObjectVisible(layer, obj)) this._renderObject(ctx, obj);
+        if (!editor.layers.isObjectVisible(layer, obj)) continue;
+        if (editor.eventFilter?.isObjectDimmed(obj)) {
+          ctx.globalAlpha = 0.16;
+          this._renderObject(ctx, obj);
+          ctx.globalAlpha = 1;
+        } else {
+          this._renderObject(ctx, obj);
+        }
       }
     }
 
