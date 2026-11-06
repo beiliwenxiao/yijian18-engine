@@ -292,6 +292,12 @@ export class SceneEditorInteraction {
    * 相对锚点存储、开放路径，运行时 AISystem.stepPatrol 消费。
    */
   getPolygonWorldPoints(obj) {
+    // 场景剧情路径伪对象（{__scenePath:true, points}）：绝对坐标直接返回，无锚点偏移
+    if (obj?.__scenePath === true) {
+      return (Array.isArray(obj.points) ? obj.points : [])
+        .filter(point => Array.isArray(point) && Number.isFinite(point[0]) && Number.isFinite(point[1]))
+        .map(point => [point[0], point[1]]);
+    }
     // 技能范围编辑态：正五边形由半径即时换算（不是存储数据），拖顶点在 handleMouseMove 里改半径
     const skillRangePoints = this.getSkillRangeWorldPoints(obj);
     if (skillRangePoints) return skillRangePoints;
@@ -319,9 +325,134 @@ export class SceneEditorInteraction {
     return Array.isArray(obj?.points) ? obj.points : [];
   }
 
+  /**
+   * 取当前编辑态的场景剧情路径伪对象（{__scenePath:true, points, _scenePathRef}）。
+   * points 引用真实存储数组供读；写回经 setPolygonWorldPoints → _scenePathRef 防断链。
+   * @private
+   */
+  _getEditingScenePath() {
+    const editor = this.editor;
+    const id = editor?.ui?._editingScenePathId;
+    if (!id) return null;
+    const paths = Array.isArray(editor.sceneData.paths) ? editor.sceneData.paths : [];
+    const path = paths.find(p => p?.id === id);
+    if (!path || !Array.isArray(path.points) || path.points.length === 0) return null;
+    return { __scenePath: true, points: path.points, _scenePathRef: path };
+  }
+
+  /**
+   * 命中场景剧情路径折线（开放路径逐段测距，6px 阈值）：无对象点击时的兜底选中。
+   * @private
+   */
+  _hitScenePathPolyline(x, y) {
+    const editor = this.editor;
+    const paths = Array.isArray(editor.sceneData.paths) ? editor.sceneData.paths : [];
+    const threshold = 6 / (editor.viewport.scale || 1);
+    for (const path of paths) {
+      const points = (Array.isArray(path.points) ? path.points : [])
+        .filter(p => Array.isArray(p) && Number.isFinite(p[0]) && Number.isFinite(p[1]));
+      for (let i = 0; i + 1 < points.length; i++) {
+        if (this._distToSegment(x, y, points[i][0], points[i][1], points[i + 1][0], points[i + 1][1]) <= threshold) {
+          return path;
+        }
+      }
+    }
+    return null;
+  }
+
+  /**
+   * 场景剧情路径编辑态的右键菜单：顶点删除 / 顶点后插入 / 边中间插入。
+   * 开放路径（点序=行进序），最少 2 点；末段→首点的闭合假边不提供插入。
+   * 命中并弹出菜单返回 true（调用方短路），未命中/非编辑态返回 false 走对象菜单。
+   * @private
+   */
+  _buildScenePathContextMenu(e, pos) {
+    const editor = this.editor;
+    const path = this._getEditingScenePath();
+    if (!path || path.points.length < 2) return false;
+    const vertexPoints = path.points;
+    const hitVertex = this.getVertexAt(path, pos.x, pos.y);
+    const rawEdge = hitVertex === -1 ? this._getEdgeAt(path, pos.x, pos.y) : -1;
+    const hitEdge = rawEdge !== -1 && rawEdge < vertexPoints.length - 1 ? rawEdge : -1;
+    if (hitVertex === -1 && hitEdge === -1) return false;
+
+    const items = [];
+    const commitPoints = (points, message) => {
+      path._scenePathRef.points = points.map(point => [Math.round(point[0]), Math.round(point[1])]);
+      editor.history.saveHistory();
+      editor.ui.updateScenePathsPanel?.();
+      editor.render();
+      editor.ui.showToast(message);
+    };
+
+    if (hitVertex !== -1) {
+      items.push({
+        label: `🔴 删除顶点 #${hitVertex}`,
+        disabled: vertexPoints.length <= 2,
+        action: () => {
+          if (vertexPoints.length <= 2) return;
+          const next = vertexPoints.filter((_point, index) => index !== hitVertex).map(point => [...point]);
+          commitPoints(next, `已删除顶点 #${hitVertex}，剩余 ${next.length} 个`);
+        }
+      });
+      items.push({
+        label: `➕ 在顶点 #${hitVertex} 后插入`,
+        action: () => {
+          const next = vertexPoints.map(point => [...point]);
+          const current = next[hitVertex];
+          const nextPoint = next[Math.min(hitVertex + 1, next.length - 1)];
+          next.splice(hitVertex + 1, 0, [
+            Math.round((current[0] + nextPoint[0]) / 2),
+            Math.round((current[1] + nextPoint[1]) / 2)
+          ]);
+          commitPoints(next, `已在 #${hitVertex} 后插入顶点，共 ${next.length} 个`);
+        }
+      });
+    } else {
+      items.push({
+        label: `➕ 在边 #${hitEdge}→#${hitEdge + 1} 中间插入顶点`,
+        action: () => {
+          const next = vertexPoints.map(point => [...point]);
+          const a = next[hitEdge];
+          const b = next[hitEdge + 1];
+          next.splice(hitEdge + 1, 0, [
+            Math.round((a[0] + b[0]) / 2),
+            Math.round((a[1] + b[1]) / 2)
+          ]);
+          commitPoints(next, `已在边上插入顶点，共 ${next.length} 个`);
+        }
+      });
+    }
+
+    const menu = document.createElement('div');
+    menu.id = 'editor-context-menu';
+    menu.style.cssText = `position:fixed;left:${e.clientX}px;top:${e.clientY}px;background:#16213e;border:1px solid #3a4a7e;border-radius:4px;padding:4px 0;z-index:99999;box-shadow:0 4px 12px rgba(0,0,0,0.4);font-size:13px;min-width:140px;`;
+    for (const item of items) {
+      const el = document.createElement('div');
+      el.textContent = item.label;
+      el.style.cssText = `padding:6px 16px;cursor:${item.disabled ? 'default' : 'pointer'};color:${item.disabled ? '#666' : '#fff'};white-space:nowrap;`;
+      if (!item.disabled) {
+        el.addEventListener('mouseenter', () => el.style.background = '#3a4a7e');
+        el.addEventListener('mouseleave', () => el.style.background = 'transparent');
+        el.addEventListener('click', () => { item.action(); this.removeContextMenu(); });
+      }
+      menu.appendChild(el);
+    }
+    document.body.appendChild(menu);
+    return true;
+  }
+
   /** 将画布世界坐标写回可编辑多边形；ref 转回脚底锚点相对坐标，攀爬区转回物件锚点相对坐标。 */
   setPolygonWorldPoints(obj, points) {
     if (!Array.isArray(points)) return false;
+    // 场景剧情路径伪对象：写回真实路径（_scenePathRef 指向 sceneData.paths[] 条目，防断链）
+    if (obj?.__scenePath === true) {
+      const next = points.map(point => [Math.round(point[0]), Math.round(point[1])]);
+      const target = obj._scenePathRef && Array.isArray(obj._scenePathRef.points) ? obj._scenePathRef : null;
+      if (target) target.points = next;
+      obj.points = next;
+      return true;
+    }
     // 技能范围五边形不是存储数据：拖顶点改半径走 handleMouseMove 专用分支，此处拒绝写入
     if (this._isSkillRangeEditing(obj)) return false;
     if (this.editor?.ui?._editingPatrolRoute === true && obj?.type === 'ref' && obj?.kind === 'enemy') {
@@ -458,6 +589,17 @@ export class SceneEditorInteraction {
     }
 
     if (editor.interaction.mode === 'select') {
+      // 场景剧情路径编辑态：顶点拖拽优先路由到路径顶点（照巡逻路线编辑同约定）
+      const editingScenePath = this._getEditingScenePath();
+      if (editingScenePath) {
+        const scenePathVertex = this.getVertexAt(editingScenePath, pos.x, pos.y);
+        if (scenePathVertex !== -1) {
+          editor.interaction.isDragging = true;
+          editor.interaction.draggingVertex = { obj: editingScenePath, index: scenePathVertex };
+          editor.interaction.dragStart = { x: pos.x, y: pos.y };
+          return;
+        }
+      }
       // 选中单个多边形/路径/buffZone时，优先检测顶点拖拽
       if (editor.selectedObjects.length === 1) {
         const sel = editor.selectedObjects[0];
@@ -570,6 +712,17 @@ export class SceneEditorInteraction {
           editor.interaction.pointsStart = null;
         }
       } else {
+        // 场景剧情路径编辑态：空白处不框选不清选择（编辑经面板「完成路线编辑」退出）
+        if (this._getEditingScenePath()) return;
+        // 无对象命中：兜底命中剧情路径折线 → 选中（面板高亮显示 routeId）
+        const hitScenePath = this._hitScenePathPolyline(pos.x, pos.y);
+        if (hitScenePath) {
+          editor.ui._selectedScenePathId = hitScenePath.id;
+          editor.ui._editingScenePathId = null;
+          editor.ui.updateScenePathsPanel?.();
+          editor.render();
+          return;
+        }
         // 空白处按下：开始框选
         if (!e.shiftKey) editor.selectedObjects = [];
         editor.interaction.isDragging = true;
@@ -786,6 +939,8 @@ export class SceneEditorInteraction {
     const clicked = this.getObjectAt(pos.x, pos.y);
 
     this.removeContextMenu();
+    // 场景剧情路径编辑态：右键顶点删除/边插入（路径不是 layers 对象，独立菜单短路）
+    if (this._buildScenePathContextMenu(e, pos)) return;
     if (!clicked) return;
 
     // 如果右键点击的对象不在当前选中集合中，则替换选中为该对象

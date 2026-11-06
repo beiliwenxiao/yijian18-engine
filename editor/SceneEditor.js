@@ -590,6 +590,7 @@ export class SceneEditor {
     if (widthInput) widthInput.value = this.sceneData.width;
     if (heightInput) heightInput.value = this.sceneData.height;
     this.ui.refreshBattleFlowFields();
+    this.ui.updateScenePathsPanel?.();
 
     // 更新画布尺寸
     const canvas = document.getElementById('editor-canvas');

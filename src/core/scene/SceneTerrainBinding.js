@@ -12,6 +12,7 @@
 
 import { Logger } from '../Logger.js';
 import { SceneObjectProjector } from './SceneObjectProjector.js';
+import { ScenePathLibrary } from './ScenePathLibrary.js';
 
 /**
  * SceneTerrainBinding - 将已由世界流式会话创建的 terrain 绑定到通用场景生命周期。
@@ -90,6 +91,24 @@ export class SceneTerrainBinding {
       if (!scene._buffZones || scene._buffZones.length === 0) return;
     }
     this.SceneTerrainCollision.renderBuffZones(ctx, scene._buffZones, debugMode);
+  }
+
+  /**
+   * 收集场景剧情路径（顶层 paths）到 scene._scenePaths / _scenePathMap。
+   * 延迟收集同 buffZone：terrain 异步加载完成后由帧管线触发，集齐后置位守卫。
+   * 消费方（army.march routeId 等）用 _scenePathMap.get(id) 取世界坐标路径点。
+   */
+  collectScenePaths() {
+    const scene = this.scene;
+    const terrains = scene._terrains || (scene.terrain ? [scene.terrain] : []);
+    if (terrains.length === 0) return;
+
+    const { paths, loadedCount, total } = ScenePathLibrary.collectPaths(terrains);
+    if (loadedCount > 0) {
+      scene._scenePaths = paths;
+      scene._scenePathMap = new Map(paths.map(path => [path.id, path]));
+      if (loadedCount >= total) scene._scenePathsCollected = true;
+    }
   }
 
   checkTerrainCollision() {

@@ -255,6 +255,11 @@ export class BaseGameScenePresentation extends BaseGameSceneGameplayHooks {
     return this._terrainBinding.collectBuffZones();
   }
 
+  /** 场景剧情路径（顶层 paths）延迟收集：army.march routeId 等消费 _scenePathMap。 */
+  _collectScenePaths() {
+    return this._terrainBinding.collectScenePaths();
+  }
+
   _renderBuffZones(ctx) {
     return this._terrainBinding.renderBuffZones(ctx);
   }

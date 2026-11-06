@@ -1,5 +1,13 @@
 {
   "id": "S02",
+  "paths": [
+    {
+      "color": "#b48cff",
+      "id": "path.s02.column.entry",
+      "name": "黄巾军入场·右进左落",
+      "points": [[1070, 480], [950, 340], [820, 290], [620, 398]]
+    }
+  ],
   "layers": [
     {
       "id": "layer_bg",
@@ -962,8 +970,8 @@
             "marching-column"
           ],
           "type": "ref",
-          "x": 100,
-          "y": 430
+          "x": 1070,
+          "y": 480
         },
         {
           "group": "S02-porridge-decor",

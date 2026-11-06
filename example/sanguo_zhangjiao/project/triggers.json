@@ -2474,21 +2474,8 @@
                 "params": {
                   "armyId": "army.s02.column",
                   "operation": "army.march",
-                  "scenarioId": "scenario.command.army.march",
-                  "waypoints": [
-                    {
-                      "x": 220,
-                      "y": 420
-                    },
-                    {
-                      "x": 430,
-                      "y": 400
-                    },
-                    {
-                      "x": 620,
-                      "y": 398
-                    }
-                  ]
+                  "routeId": "path.s02.column.entry",
+                  "scenarioId": "scenario.command.army.march"
                 },
                 "stepId": "army-redispatch-march"
               }

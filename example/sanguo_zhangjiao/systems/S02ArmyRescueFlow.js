@@ -213,12 +213,13 @@ export class S02ArmyRescueCoordinator {
 
   /**
    * 军团剧情行军（army.march）：沿路径点行军入画，到点停。
-   * waypoints 为场景局部坐标（触发器数据），此处投影到世界坐标后交给
-   * ArmyCommandSystem 剧情行军原语；抵达终点后 fire armyMarchArrived
-   * 剧情事件（prologue 等后续链由触发器数据接管）。
-   * @param {{armyId?: string, waypoints?: Array<{x:number,y:number}>}} params
+   * 路线来源二选一：显式 waypoints（场景局部坐标，一次性剧情覆盖）优先；
+   * 否则按 routeId 查场景剧情路径库（scene._scenePathMap，场景 JSON 顶层 paths，
+   * 已投影世界坐标）。抵达终点后 fire armyMarchArrived 剧情事件（prologue 等
+   * 后续链由触发器数据接管）。
+   * @param {{armyId?: string, routeId?: string, waypoints?: Array<{x:number,y:number}>}} params
    */
-  marchArmy({ armyId = '', waypoints = [] } = {}) {
+  marchArmy({ armyId = '', routeId = '', waypoints = [] } = {}) {
     const scene = this.scene;
     const system = scene.armyCommandFlow?.system;
     if (!system?.startMarch) return { ok: false, code: 'armyCommandUnavailable' };
@@ -227,10 +228,21 @@ export class S02ArmyRescueCoordinator {
     // 会因 units 为空返回 noUnits 且步骤抛错，armyMarchArrived 永不触发（任务卡死）。
     // spawn 全程同步（实体已在 entityStore），此处先补一次注册再起行军，确定性消除竞态。
     scene.armyCommandFlow?.syncUnits?.();
+    // routeId 路线未收集时补一次（spawn 同帧调用确定性；帧管线有守卫不重复收集）
+    if (waypoints?.length === 0 && routeId && !scene._scenePathsCollected) {
+      scene._collectScenePaths?.();
+    }
+    const pathPoints = (waypoints?.length === 0 && routeId)
+      ? scene._scenePathMap?.get(routeId)?.points || null
+      : null;
+    if (waypoints?.length === 0 && routeId && !pathPoints) {
+      return { ok: false, code: 'unknownRoute', routeId };
+    }
     const offset = scene._worldLoadResult?.worldIndex?.getOffset?.(scene.currentSceneId) || { x: 0, y: 0 };
-    const worldWaypoints = (Array.isArray(waypoints) ? waypoints : [])
+    // 显式 waypoints 为场景局部坐标需加 offset；routeId 路径点已是世界坐标直接用
+    const worldWaypoints = (pathPoints || (Array.isArray(waypoints) ? waypoints : []))
       .filter(point => Number.isFinite(Number(point?.x)) && Number.isFinite(Number(point?.y)))
-      .map(point => ({ x: Number(point.x) + (offset.x || 0), y: Number(point.y) + (offset.y || 0) }));
+      .map(point => ({ x: Number(point.x) + (pathPoints ? 0 : (offset.x || 0)), y: Number(point.y) + (pathPoints ? 0 : (offset.y || 0)) }));
     const result = system.startMarch({ armyId, waypoints: worldWaypoints });
     if (result.ok) {
       system.onMarchComplete = payload => {

@@ -505,6 +505,11 @@ export class SceneFramePipeline {
       zoneEffectSystem.update(deltaTime, entities);
     }
 
+    // 延迟收集场景剧情路径（顶层 paths，army.march routeId 等消费 _scenePathMap）
+    if (!scene._scenePathsCollected) {
+      scene._collectScenePaths?.();
+    }
+
     // 更新装备系统
     equipmentSystem.update(deltaTime, entities);
     if (frameProfile) {

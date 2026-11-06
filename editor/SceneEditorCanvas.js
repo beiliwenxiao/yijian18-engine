@@ -87,6 +87,9 @@ export class SceneEditorCanvas {
     // 任务门角标：被任务步骤 gates 引用的对象上方常显 🚪 徽标（门控所见即所得另一半）
     this._renderQuestGateBadges(ctx, data.layers);
 
+    // 场景剧情路径：虚线折线 + 起终点标注 + 终点方向箭头（编辑态画顶点手柄）
+    this._renderScenePaths(ctx, data);
+
     // 绘制网格和辅助方框（在所有图层之上）
     if (editor.options.showGrid) this._renderGrid(ctx, sceneX, sceneY, sceneW, sceneH);
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
@@ -96,6 +99,84 @@ export class SceneEditorCanvas {
     ctx.restore();
     this._renderTriggerLinks();
     this._renderSelection();
+  }
+
+  /**
+   * 场景剧情路径（sceneData.paths）：虚线折线 + 起点○/终点▶方向箭头 + 名称标注。
+   * 选中态加粗；编辑态（ui._editingScenePathId）画顶点手柄——所见即行进序，
+   * 与运行时 ScenePathLibrary.collectPaths 同一份数据，无第二套换算。
+   */
+  _renderScenePaths(ctx, data) {
+    const editor = this.editor;
+    const paths = Array.isArray(data.paths) ? data.paths : [];
+    if (paths.length === 0) return;
+    const vpScale = editor.viewport.scale || 1;
+    const handleSize = 8 / vpScale;
+
+    for (const path of paths) {
+      const points = (Array.isArray(path.points) ? path.points : [])
+        .filter(p => Array.isArray(p) && Number.isFinite(p[0]) && Number.isFinite(p[1]));
+      if (points.length === 0) continue;
+      const selected = editor.ui?._selectedScenePathId === path.id;
+      const editing = editor.ui?._editingScenePathId === path.id;
+      const color = path.color || '#b48cff';
+
+      // 折线本体
+      ctx.beginPath();
+      ctx.moveTo(points[0][0], points[0][1]);
+      for (let i = 1; i < points.length; i++) ctx.lineTo(points[i][0], points[i][1]);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = (selected || editing ? 2.5 : 1.5) / vpScale;
+      ctx.globalAlpha = selected || editing ? 1 : 0.75;
+      ctx.setLineDash([6 / vpScale, 4 / vpScale]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.globalAlpha = 1;
+
+      // 起点：空心圆；终点：方向箭头（点序=行进序，箭头即"走到哪停"）
+      const [sx, sy] = points[0];
+      const [ex, ey] = points[points.length - 1];
+      ctx.beginPath();
+      ctx.arc(sx, sy, handleSize * 0.8, 0, Math.PI * 2);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.5 / vpScale;
+      ctx.stroke();
+      const prev = points.length > 1 ? points[points.length - 2] : [ex - 1, ey];
+      const ang = Math.atan2(ey - prev[1], ex - prev[0]);
+      ctx.save();
+      ctx.translate(ex, ey);
+      ctx.rotate(ang);
+      ctx.beginPath();
+      ctx.moveTo(handleSize, 0);
+      ctx.lineTo(-handleSize * 0.7, handleSize * 0.6);
+      ctx.lineTo(-handleSize * 0.7, -handleSize * 0.6);
+      ctx.closePath();
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.restore();
+
+      // 名称标注（首点上方）
+      if (path.name || path.id) {
+        ctx.fillStyle = color;
+        ctx.font = `${11 / vpScale}px sans-serif`;
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'bottom';
+        ctx.fillText(`${editing ? '✎ ' : ''}${path.name || path.id}`, sx + 6 / vpScale, sy - 8 / vpScale);
+      }
+
+      // 编辑态：顶点圆形手柄（拖动改 points，右键增删）
+      if (editing) {
+        ctx.fillStyle = color;
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.5 / vpScale;
+        for (const point of points) {
+          ctx.beginPath();
+          ctx.arc(point[0], point[1], handleSize * 0.7, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+        }
+      }
+    }
   }
 
   /**

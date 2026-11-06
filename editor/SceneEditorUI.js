@@ -252,6 +252,14 @@ export class SceneEditorUI {
                     </div>
                   </div>
                 </details>
+                <details id="editor-scene-paths-panel" style="margin-top:8px;">
+                  <summary style="cursor:pointer;color:#e8c46a;">剧情路径（行军/事件路线）</summary>
+                  <div style="margin-top:8px;">
+                    <div id="editor-scene-paths-list"></div>
+                    <button id="editor-scene-path-add" type="button" style="width:100%;margin-top:4px;" title="新建场景级剧情路径">+ 新建路径</button>
+                    <small style="display:block;margin-top:5px;color:#9aa7bd;">点序=行进序。选中路径后「编辑路线」：画布拖动圆点调整，右键顶点/边增删；触发器 army.march 用路径 ID（routeId）引用。</small>
+                  </div>
+                </details>
               </div>
             </div>
           </div>
@@ -264,6 +272,7 @@ export class SceneEditorUI {
     this._addStyles();
     editor.layers.updateLayerList();
     this._initAssetTabs();
+    this._initScenePathsPanel();
     this._initResizers();
     // 事件条会占用画布区域高度，必须先完成其 DOM 投影，再读取 Canvas 容器尺寸。
     editor.eventFilter?.bindUI();
@@ -309,6 +318,131 @@ export class SceneEditorUI {
     }
     const panel = document.getElementById('editor-battle-flow-panel');
     if (panel && gameplay.battleId) panel.open = true;
+  }
+
+  /**
+   * 初始化剧情路径面板（场景信息区）：新建按钮绑定 + 状态复位。
+   * 路径列表渲染由 updateScenePathsPanel 完成（loadScene / 路径增删改后调用）。
+   * @private
+   */
+  _initScenePathsPanel() {
+    this._selectedScenePathId = null;
+    this._editingScenePathId = null;
+    const addBtn = document.getElementById('editor-scene-path-add');
+    if (addBtn) {
+      addBtn.addEventListener('click', () => this.addScenePath());
+    }
+    this.updateScenePathsPanel();
+  }
+
+  /**
+   * 渲染剧情路径列表：名称/点数 + 选中显示 routeId + 编辑/删除按钮。
+   * 点击行选中路径；「编辑路线」开关进入画布顶点编辑态（_editingScenePathId）。
+   */
+  updateScenePathsPanel() {
+    const editor = this.editor;
+    const listEl = document.getElementById('editor-scene-paths-list');
+    if (!listEl) return;
+    const paths = Array.isArray(editor.sceneData.paths) ? editor.sceneData.paths : [];
+    // 编辑/选中态的路径被删除后自动复位
+    if (this._editingScenePathId && !paths.some(p => p?.id === this._editingScenePathId)) {
+      this._editingScenePathId = null;
+    }
+    if (this._selectedScenePathId && !paths.some(p => p?.id === this._selectedScenePathId)) {
+      this._selectedScenePathId = null;
+    }
+
+    if (paths.length === 0) {
+      listEl.innerHTML = '<div style="color:#66708a;font-size:11px;">暂无路径</div>';
+      return;
+    }
+
+    listEl.innerHTML = paths.map(path => {
+      const selected = this._selectedScenePathId === path.id;
+      const editing = this._editingScenePathId === path.id;
+      const pointCount = Array.isArray(path.points) ? path.points.length : 0;
+      return `<div data-scene-path-row="${path.id}" style="border:1px solid ${selected ? '#e8c46a' : '#2a3a5e'};border-radius:4px;padding:4px 6px;margin-bottom:4px;background:${selected ? 'rgba(232,196,106,0.08)' : 'transparent'};">
+        <div style="display:flex;align-items:center;gap:5px;">
+          <span style="color:${path.color || '#b48cff'};font-size:10px;">●</span>
+          <span data-scene-path-select="${path.id}" style="flex:1;font-size:11px;cursor:pointer;color:${selected ? '#e8c46a' : '#cdd6e4'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${path.id}">${path.name || path.id}（${pointCount}点）</span>
+        </div>
+        ${selected ? `<div style="font-size:10px;color:#9aa7bd;margin:2px 0 0 15px;">ID: ${path.id}</div>` : ''}
+        <div style="display:flex;gap:4px;margin-top:3px;">
+          <button data-scene-path-edit="${path.id}" style="flex:1;font-size:10px;padding:2px 0;${editing ? 'background:#2a6a4a;' : ''}">${editing ? '完成路线编辑' : '编辑路线'}</button>
+          <button data-scene-path-delete="${path.id}" style="font-size:10px;padding:2px 6px;" title="删除此路径">🗑</button>
+        </div>
+      </div>`;
+    }).join('');
+
+    for (const el of listEl.querySelectorAll('[data-scene-path-select]')) {
+      el.addEventListener('click', () => {
+        this._selectedScenePathId = el.dataset.scenePathSelect;
+        this.updateScenePathsPanel();
+        this.editor.render();
+      });
+    }
+    for (const el of listEl.querySelectorAll('[data-scene-path-edit]')) {
+      el.addEventListener('click', () => {
+        const pathId = el.dataset.scenePathEdit;
+        this._selectedScenePathId = pathId;
+        this._editingScenePathId = this._editingScenePathId === pathId ? null : pathId;
+        this.updateScenePathsPanel();
+        this.editor.render();
+        if (this._editingScenePathId) {
+          this.showToast?.('路线编辑中：画布拖动圆点调整，右键顶点/边增删，完成后点「完成路线编辑」');
+        }
+      });
+    }
+    for (const el of listEl.querySelectorAll('[data-scene-path-delete]')) {
+      el.addEventListener('click', () => this.deleteScenePath(el.dataset.scenePathDelete));
+    }
+  }
+
+  /**
+   * 新建剧情路径：默认两点横线（画布中央），自动进入选中+编辑态。
+   * ID 自动编号避免冲突（path.1 / path.2 ...）；点序即行进序。
+   */
+  addScenePath() {
+    const editor = this.editor;
+    editor.sceneData.paths = Array.isArray(editor.sceneData.paths) ? editor.sceneData.paths : [];
+    let index = editor.sceneData.paths.length + 1;
+    let id = `path.${index}`;
+    while (editor.sceneData.paths.some(p => p?.id === id)) {
+      index++;
+      id = `path.${index}`;
+    }
+    editor.history.saveHistory();
+    const cx = Math.round((editor.sceneData.width || 1280) / 2);
+    const cy = Math.round((editor.sceneData.height || 720) / 2);
+    const path = {
+      id,
+      name: `剧情路径 ${index}`,
+      points: [[cx - 240, cy], [cx + 240, cy]],
+      color: '#b48cff'
+    };
+    editor.sceneData.paths.push(path);
+    this._selectedScenePathId = id;
+    this._editingScenePathId = id;
+    const panel = document.getElementById('editor-scene-paths-panel');
+    if (panel) panel.open = true;
+    this.updateScenePathsPanel();
+    editor.render();
+    this.showToast?.(`已新建 ${path.name}，画布拖动圆点调整路线`);
+  }
+
+  /** 删除剧情路径（历史可撤销）；清理选中/编辑态。 */
+  deleteScenePath(pathId) {
+    const editor = this.editor;
+    const paths = Array.isArray(editor.sceneData.paths) ? editor.sceneData.paths : [];
+    const index = paths.findIndex(p => p?.id === pathId);
+    if (index === -1) return;
+    editor.history.saveHistory();
+    const [removed] = paths.splice(index, 1);
+    if (this._editingScenePathId === pathId) this._editingScenePathId = null;
+    if (this._selectedScenePathId === pathId) this._selectedScenePathId = null;
+    this.updateScenePathsPanel();
+    editor.render();
+    this.showToast?.(`已删除路径 ${removed?.name || pathId}`);
   }
 
   /**
