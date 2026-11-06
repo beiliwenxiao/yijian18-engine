@@ -281,6 +281,9 @@ describe('QuestWizardEditor 任务向导', () => {
         expect(placementSelect.selectedOptions[0].textContent).toContain('S01-shelter-site-firewood');
         // 绑定下拉来自场景 trigger 对象
         expect(row.querySelector('[data-gate-field="bindingId"]').textContent).toContain('进入庇护所');
+        // 可视化表单：卡头回显对象名；步骤标题行显示门数徽章
+        expect(row.querySelector('.qwe-gate-object').textContent).toBe('庇护所柴堆');
+        expect(stepCard().querySelector('.qwe-step-title .qwe-gate-badge').textContent).toContain('🚪 1');
         // 换对象写回 step.gates
         placementSelect.value = 'S01-shelter-door';
         placementSelect.dispatchEvent(new Event('change'));
@@ -295,6 +298,48 @@ describe('QuestWizardEditor 任务向导', () => {
         expect(quest.steps[stepIndex].gates.length).toBe(1);
         stepCard().querySelector('[data-action="gate-remove"]').click();
         expect(quest.steps[stepIndex].gates).toBeUndefined();
+        // 删空后：步骤头部徽章消失，门控区块显示空态卡
+        expect(stepCard().querySelector('.qwe-step-title .qwe-gate-badge')).toBeNull();
+        expect(stepCard().querySelector('.qwe-gate-empty').textContent).toContain('未引用交互门');
+    });
+
+    it('门控可视化表单状态：悬空/不完整引用红框警示，跨步骤重复引用信息提示', () => {
+        const sceneDocs = [{
+            id: 'S01', name: '荒原',
+            layers: [{ id: 'layer_placement', objects: [
+                { type: 'ref', id: 'S01-shelter-site-firewood', name: '庇护所柴堆', ref: 'resource.firewood' }
+            ] }]
+        }];
+        const deps = {
+            getSceneList: () => [{ id: 'S01', name: '荒原' }],
+            getSceneDocuments: () => sceneDocs,
+            openScenePlacement: () => {}
+        };
+        const { editor } = buildEditor(null, deps);
+        const quest = editor.quests.find(item => item.id === 'task.s01.survival');
+        const stepIndex = quest.steps.findIndex(step => step.id === 'stayOvernight');
+        const stepCard = () => detail(editor).querySelector(`[data-step-index="${stepIndex}"]`);
+
+        // 悬空：对象在场景文档中不存在 → 红框 + 警示文案
+        quest.steps[stepIndex].gates = [{ sceneId: 'S01', placementId: 'S01-ghost' }];
+        editor._renderDetail();
+        let card = stepCard().querySelector('.qwe-gate-card');
+        expect(card.className).toContain('dangling');
+        expect(card.textContent).toContain('场景文档中不存在');
+
+        // 不完整：未选对象 → 红框 + 补选提示
+        quest.steps[stepIndex].gates = [{ sceneId: 'S01', placementId: '' }];
+        editor._renderDetail();
+        card = stepCard().querySelector('.qwe-gate-card');
+        expect(card.className).toContain('incomplete');
+        expect(card.textContent).toContain('门引用不完整');
+
+        // 跨步骤重复引用：前置步骤亦引用同一对象 → 信息提示（不阻断）；自身有效引用无状态类
+        quest.steps[0].gates = [{ sceneId: 'S01', placementId: 'S01-shelter-site-firewood' }];
+        quest.steps[stepIndex].gates = [{ sceneId: 'S01', placementId: 'S01-shelter-site-firewood' }];
+        editor._renderDetail();
+        expect(stepCard().querySelector('.qwe-gate-dup').textContent).toContain('亦被第 1 步引用');
+        expect(stepCard().querySelector('.qwe-gate-card').className).toBe('qwe-gate-card');
     });
 
     it('列宽拖动：竖线手柄 mousedown+mousemove 调整相邻列宽，mouseup 持久化且停止响应', () => {
