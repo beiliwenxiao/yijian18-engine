@@ -84,6 +84,27 @@ const CORE_EVENTS = [
   ...(CORE_EVENT_PARAMS[value] ? { paramsSchema: CORE_EVENT_PARAMS[value] } : {})
 }));
 
+const CORE_ACTION_PARAMS = Object.freeze({
+  'panorama.command': {
+    type: 'object',
+    additionalProperties: true,
+    properties: {
+      operation: { type: 'string', title: '操作', enum: ['show', 'hide'], default: 'show' },
+      assetId: { type: 'string', title: '全景资产 ID（assets.json）' },
+      path: { type: 'string', title: '直接路径（可选，免清单）' },
+      kind: { type: 'string', title: '媒体类型', enum: ['auto', 'image', 'video'], default: 'auto' },
+      durationMs: { type: 'number', title: '停留时长(ms，0=手动)' },
+      fadeMs: { type: 'number', title: '淡入淡出(ms)' },
+      loop: { type: 'boolean', title: '循环播放' },
+      skippable: { type: 'boolean', title: '可跳过' },
+      pan: { type: 'boolean', title: '图片可拖动查看' },
+      autoPan: { type: 'number', title: '自动平移(px/s)' },
+      muted: { type: 'boolean', title: '视频静音' },
+      await: { type: 'boolean', title: '等待播放结束再执行后续步骤' }
+    }
+  }
+});
+
 const CORE_ACTIONS = [
   ['setVar', '设置变量'], ['addVar', '变量累加'], ['setFlag', '设置标记'], ['toggleFlag', '切换标记'],
   ['startDialogue', '开始对话'], ['teleportToChunk', '大地图传送'], ['switchScene', '切换场景'],
@@ -91,8 +112,13 @@ const CORE_ACTIONS = [
   ['startQuest', '开始任务'], ['completeQuest', '完成任务'], ['showTip', '显示提示'],
   ['playSound', '播放音效'], ['playBgm', '播放 BGM'], ['spawnEnemy', '生成敌人'], ['wait', '等待'],
   ['parallel', '并行执行'], ['battleWin', '战斗胜利'], ['battleLose', '战斗失败'],
-  ['mount', '上载具/骑乘']
-].map(([value, label]) => Object.freeze({ value, v: value, label }));
+  ['mount', '上载具/骑乘'], ['panorama.command', '全景 / 过场播放']
+].map(([value, label]) => Object.freeze({
+  value,
+  v: value,
+  label,
+  ...(CORE_ACTION_PARAMS[value] ? { paramsSchema: CORE_ACTION_PARAMS[value] } : {})
+}));
 
 const STANDARD_ACTION_LABELS = Object.freeze({
   'rescue.command': '救援命令',

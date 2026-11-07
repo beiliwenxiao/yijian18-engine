@@ -212,6 +212,8 @@ function updateAfterBase(deltaTime) {
   this.s05SceneCoordinator._updateS05ZhangManchengRescue(deltaTime);
   this.s11s14SceneCoordinator._updateS11S12Runtime();
   this.endingPresentationView?.update?.(deltaTime * 1000);
+  // 全景/过场覆盖层：独立于场景实体，播放期间持续更新淡入淡出与视频时间轴。
+  this.panoramaOverlay?.update?.(deltaTime * 1000);
   if (frameProfile) {
     const now = performance.now();
     frameProfile.updateAfterScenarioRuntimes = now - phaseStartedAt;
@@ -326,6 +328,15 @@ function observeTutorialEventSources() {
 }
 
 function handleModalInput({ inputManager, gamepad } = {}) {
+  // 全景覆盖层最高优先级：播放期间吞掉下层 HUD/场景输入。
+  if (this.panoramaOverlay?.visible) {
+    return this.panoramaOverlay.handleInput({
+      inputManager,
+      gamepad,
+      viewWidth: this.logicalWidth,
+      viewHeight: this.logicalHeight
+    });
+  }
   if (this.endingPresentationView?.visible) {
     return this.endingPresentationView.handleInput(
       this.s11s14SceneCoordinator._createEndingInputContext({ inputManager, gamepad })
@@ -412,6 +423,9 @@ function disposeEnteredRuntime() {
   this.irreversibleChoiceView?.close?.();
   this.recipeSelectionView?.close?.();
   this.cargoTransferView?.close?.();
+  // 全景覆盖层随场景生命周期释放（章节切换不经过此函数，不打断播放）。
+  this.panoramaOverlay?.dispose?.();
+  this.panoramaOverlay = null;
   this._cargoTransferBusy = false;
   this._cargoTransferPendingOperation = null;
   this.rescueSystem = null;
@@ -531,6 +545,8 @@ function renderPostPipeline(ctx) {
   this.recipeSelectionView?.render?.(ctx, this.logicalWidth, this.logicalHeight);
   this.cargoTransferView?.render?.(ctx, this.logicalWidth, this.logicalHeight);
   this.endingPresentationView?.render?.(ctx, this.logicalWidth, this.logicalHeight);
+  // 全景覆盖层最后绘制：压住 HUD、对话与结算面板。
+  this.panoramaOverlay?.render?.(ctx, this.logicalWidth, this.logicalHeight);
 }
 
 export default SanguoSceneLifecycleCoordinator;

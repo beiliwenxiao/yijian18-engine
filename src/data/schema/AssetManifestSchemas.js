@@ -38,7 +38,8 @@ export const ASSET_RUNTIME_2D_SCHEMA = {
     mode: {
       type: FieldType.STRING,
       required: true,
-      enum: ['image', 'atlas', 'skeleton']
+      // video：全景/过场视频，运行期按需懒加载为 HTMLVideoElement（不参与预载）
+      enum: ['image', 'atlas', 'skeleton', 'video']
     }
   }
 };

@@ -27,6 +27,8 @@ export class AssetManager {
     constructor(config = {}) {
         // 资源缓存
         this.images = new Map();
+        // 视频缓存（全景/过场）：key -> HTMLVideoElement，仅内存持有，不插入 DOM
+        this.videos = new Map();
         this.audio = new Map();
 
         // 加载队列
@@ -210,13 +212,15 @@ export class AssetManager {
             // 'atlas' 条目（共享图集）本体同样是一张图：登记 descriptor 后
             // getImage/getAsset 可按需补载（Scene1Terrain 等图集消费者依赖）。
             const mode2d = entry.runtime2D?.mode;
-            if ((mode2d !== 'image' && mode2d !== 'atlas') || !entry.runtime2D.path) continue;
+            const isVideo = mode2d === 'video';
+            if ((mode2d !== 'image' && mode2d !== 'atlas' && !isVideo) || !entry.runtime2D.path) continue;
             const rawPath = `${basePath || ''}${entry.runtime2D.path}`;
             const url = this.resolveAssetPath(rawPath);
-            const descriptor = { name: key, key, type: 'image', url, backends: ['2d', '3d'], manifestEntry: entry };
+            const descriptor = { name: key, key, type: isVideo ? 'video' : 'image', url, backends: ['2d', '3d'], manifestEntry: entry };
             for (const id of ids) this._multiBackendAssets.set(id, [descriptor]);
 
-            if (!enqueueImages) continue;
+            // 视频体积大，永不进预加载队列：仅在 getVideo/loadAsset 时懒加载。
+            if (isVideo || !enqueueImages) continue;
             const alreadyQueued = this._manifestQueuedKeys.has(key)
                 || this.loadQueue.some(asset => asset.type === 'image' && asset.key === key);
             if (!this.images.has(key) && !alreadyQueued) {
@@ -397,7 +401,11 @@ export class AssetManager {
         if (signal?.aborted) throw new Error(`AssetManager: 资源加载已取消 ${descriptor.key}`);
 
         const key = this.manifestAliases.get(descriptor.key) || descriptor.key;
-        const cached = descriptor.type === 'audio' ? this.audio.get(key) : this.images.get(key);
+        const cached = descriptor.type === 'audio'
+            ? this.audio.get(key)
+            : descriptor.type === 'video'
+                ? this.videos.get(key)
+                : this.images.get(key);
         if (cached) return cached;
 
         const inflightKey = `${descriptor.type}:${key}`;
@@ -409,6 +417,7 @@ export class AssetManager {
                 }
                 if (descriptor.type === 'skeleton') return this.loadSkeletonAsset(key, descriptor.url);
                 if (descriptor.type === 'audio') return this.loadAudioFile(key, descriptor.url);
+                if (descriptor.type === 'video') return this.loadVideo(key, descriptor.url);
                 throw new Error(`AssetManager: 不支持按需加载类型 ${descriptor.type}`);
             })();
             this._inflightAssets.set(inflightKey, promise);
@@ -633,6 +642,67 @@ export class AssetManager {
     }
 
     /**
+     * 加载视频资源（全景/过场）。返回尚未插入 DOM 的 HTMLVideoElement，
+     * 由调用方（PanoramaOverlay）drawImage 绘制到画布。
+     * @param {string} key - 资源键名
+     * @param {string} url - 视频 URL
+     * @returns {Promise<HTMLVideoElement>}
+     */
+    loadVideo(key, url) {
+        const resolvedKey = this.manifestAliases.get(key) || key;
+        const cached = this.videos.get(resolvedKey);
+        if (cached) return Promise.resolve(cached);
+        const existing = this._inflightVideos?.get(resolvedKey);
+        if (existing) return existing;
+
+        if (!this._inflightVideos) this._inflightVideos = new Map();
+        const promise = new Promise((resolve, reject) => {
+            const video = document.createElement('video');
+            video.playsInline = true;
+            video.preload = 'auto';
+            video.loop = false;
+            video.muted = true;
+            video.crossOrigin = 'anonymous';
+            const cleanup = () => {
+                video.removeEventListener('loadeddata', onLoaded);
+                video.removeEventListener('error', onError);
+            };
+            const onLoaded = () => {
+                cleanup();
+                this.videos.set(resolvedKey, video);
+                resolve(video);
+            };
+            const onError = () => {
+                cleanup();
+                reject(new Error(`Failed to load video: ${url}`));
+            };
+            video.addEventListener('loadeddata', onLoaded);
+            video.addEventListener('error', onError);
+            video.src = url;
+            video.load();
+        });
+        this._inflightVideos.set(resolvedKey, promise);
+        promise.finally(() => {
+            if (this._inflightVideos.get(resolvedKey) === promise) this._inflightVideos.delete(resolvedKey);
+        }).catch(() => {});
+        return promise;
+    }
+
+    /**
+     * 获取视频资源；未加载时发起懒加载并返回 null（调用方下一帧重试或 await loadAsset）。
+     * @param {string} key - 资源键名
+     * @returns {HTMLVideoElement|null}
+     */
+    getVideo(key) {
+        const resolvedKey = this.manifestAliases.get(key) || key;
+        const cached = this.videos.get(resolvedKey);
+        if (cached) return cached;
+        const descriptor = this._multiBackendAssets?.get(resolvedKey)?.find(entry => entry?.type === 'video' && entry?.url);
+        if (descriptor) this.loadVideo(resolvedKey, descriptor.url).catch(() => {});
+        return null;
+    }
+
+    /**
      * 获取骨骼动画资产（parseSkeletonAsset 产物）。
      * 未加载时触发异步加载，本帧返回 null（渲染走兜底，到位后自然显示）。
      * @param {string} assetIdOrImageId - 骨骼资产稳定 ID
@@ -797,6 +867,10 @@ export class AssetManager {
      */
     clear() {
         this.images.clear();
+        for (const video of this.videos.values()) {
+            try { video.pause(); } catch { /* ignore */ }
+        }
+        this.videos.clear();
         this.audio.clear();
         this.spriteSheets.clear();
         this.manifestEntries.clear();
@@ -805,6 +879,7 @@ export class AssetManager {
         this._loadGeneration++;
         this._inflightAssets.clear();
         this._inflightImages.clear();
+        this._inflightVideos?.clear?.();
         this._activeLoadBatches = 0;
         this.isLoading = false;
         this._multiBackendAssets?.clear?.();
@@ -823,6 +898,13 @@ export class AssetManager {
     remove(key) {
         const resolvedKey = this.manifestAliases.get(key) || key;
         this.images.delete(resolvedKey);
+        const video = this.videos.get(resolvedKey);
+        if (video) {
+            try { video.pause(); } catch { /* ignore */ }
+            video.removeAttribute?.('src');
+            video.load?.();
+        }
+        this.videos.delete(resolvedKey);
         this.audio.delete(key);
         this.spriteSheets.delete(key);
         this._manifestQueuedKeys.delete(resolvedKey);

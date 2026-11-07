@@ -33,7 +33,8 @@ export const DEFAULT_TRIGGER_ACTION_IDS = Object.freeze([
   'parallel', 'battleWin', 'battleLose', 'mount',
   'rescue.command', 'battle.command', 'construction.command', 'vehicle.command',
   'quest.command', 'task.command', 'world.teleport', 'checkpoint.request', 'ending.command',
-  'dialogue.command', 'tutorial.command', 'state.transaction', 'scenario.command'
+  'dialogue.command', 'tutorial.command', 'state.transaction', 'scenario.command',
+  'panorama.command'
 ]);
 
 export function registerDefaultActions(triggerSystem) {
@@ -96,6 +97,27 @@ export function registerDefaultActions(triggerSystem) {
         return (await ctx.sceneManager.switchTo(p.region, { at: p.at })) !== false;
       }
       return false;
+    },
+
+    // ---- 全景 / 过场播放（全屏覆盖层；await 缺省 true，任务步骤等待播放结束/跳过）----
+    'panorama.command': (p, ctx) => {
+      const overlay = ctx.panorama
+        || ctx.scene?.panoramaOverlay
+        || (typeof ctx.scene?.getPanoramaOverlay === 'function' ? ctx.scene.getPanoramaOverlay() : null)
+        || ctx.services?.panorama;
+      if (!overlay) {
+        console.warn('[TriggerActions] panorama.command: 当前场景未接入 PanoramaOverlay');
+        return false;
+      }
+      const operation = p?.operation || p?.op || 'show';
+      if (operation === 'hide' || operation === 'close' || operation === 'stop') {
+        overlay.hide?.('trigger');
+        return true;
+      }
+      if (typeof overlay.show !== 'function') return false;
+      const promise = overlay.show(p);
+      // await:false = 播放与后续步骤并行（例如全景淡入后再切场景）。
+      return p?.await === false ? true : promise;
     },
 
     // ---- 大地图内传送（同 region 内 chunk 间移动）----

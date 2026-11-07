@@ -46,6 +46,7 @@ import { CanonicalStateTransactionService } from '../../../src/systems/Canonical
 import { SanguoDomainCommandFacade } from '../systems/SanguoDomainCommandFacade.js';
 import { CargoTransferView } from '../../../src/ui/CargoTransferView.js';
 import { RecipeSelectionView } from '../../../src/ui/RecipeSelectionView.js';
+import { PanoramaOverlay } from '../../../src/ui/PanoramaOverlay.js';
 import { SanguoProgressionPresentationCoordinator } from '../systems/SanguoProgressionPresentationCoordinator.js';
 import { SanguoProgressionStatsFlow } from '../systems/SanguoProgressionStatsFlow.js';
 import { SanguoExperienceFlow } from '../systems/SanguoExperienceFlow.js';
@@ -101,6 +102,20 @@ function awaitWithAbort(promise, signal, message) {
 export class DataDrivenPrologueScene extends BaseGameScene {
   // 显式空钩子：terrain 只能由 SceneStreamingRuntime 使用 canonical chunk 数据创建。
   _initEditorTerrain() { /* 由世界流式管线代替 */ }
+
+  /**
+   * 全景/过场播放层（屏幕空间覆盖层，不参与场景实体管线）。
+   * 触发器 `panorama.command` 经本方法取用；覆盖层持有于场景对象，
+   * 因此章节内的场景切换不会打断正在播放的全景。
+   */
+  getPanoramaOverlay() {
+    if (!this.panoramaOverlay) {
+      this.panoramaOverlay = new PanoramaOverlay({ assetManager: this.assetManager });
+    } else {
+      this.panoramaOverlay.assetManager = this.assetManager;
+    }
+    return this.panoramaOverlay;
+  }
 
   constructor() {
     super({
@@ -396,6 +411,7 @@ export class DataDrivenPrologueScene extends BaseGameScene {
     this._cargoTransferBusy = false;
     this._cargoTransferPendingOperation = null;
     this._cargoTransferSequence = 0;
+    this.panoramaOverlay = null;
     this.endingPresentationView = null;
     this.endingSystem = null;
     this.s04RouteCoordinator = null;
