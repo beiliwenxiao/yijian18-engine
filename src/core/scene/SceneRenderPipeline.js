@@ -852,13 +852,13 @@ export class SceneRenderPipeline {
     combatSystem?.renderSkillRangeIndicators(ctx);
     // Boss 攻击预警（telegraph）：世界坐标虚线框，与玩家技能指示器同通道（相机变换已应用）
     combatSystem?.renderAttackTelegraphs(ctx);
-    // 攻击范围定向扇形（仅战斗中显示，贴合 2.5D 椭圆，与近战命中判定同参）——
-    // 开场/脱战后不画，进入战斗（附近有敌人或交战命中）才显示；
-    // 例外：移动端拖动攻击键主动瞄准（sectorDirectionLocked）时保留瞄准反馈。
-    // 调试面板 debugShowAttackRange 可关闭；不绘制半径文字标签。
-    if (scene.debugShowAttackRange !== false
-      && (combatSystem?.isInCombat?.() === true || meleeAttackSystem?.sectorDirectionLocked === true)) {
-      meleeAttackSystem?.renderSectorRange?.(ctx);
+    // 攻击范围定向扇形（战斗中显示的游戏 HUD，贴合 2.5D 椭圆，与近战命中判定同参）——
+    // 开场/脱战后不画，进入战斗（附近有敌人或交战命中）即显示；
+    // 例外：移动端拖动攻击键主动瞄准（sectorDirectionLocked）时保留瞄准反馈；
+    // debugShowAttackRange 为 true 时脱战也常显（开发调参用，不再是显示的前提条件）。
+    const inCombat = combatSystem?.isInCombat?.() === true;
+    if (inCombat || meleeAttackSystem?.sectorDirectionLocked === true || scene.debugShowAttackRange === true) {
+      meleeAttackSystem?.renderSectorRange?.(ctx, { inCombat });
     }
     if (services.worldInteraction) {
       services.worldInteraction.renderClickRings(ctx);

@@ -105,10 +105,10 @@ export class SceneDiagnostics {
   _ensureDebugPanel() {
     const scene = this.scene;
     // 面板尚未显示时，碰撞调试不得残留在正式场景画面中。
+    // （攻击范围扇形属于战斗 HUD，战斗中自动显示，不在此重置。）
     if (scene.debugPanel?.visible !== true) {
       scene.debugShowCollisionPolygons = false;
       scene.debugShowActorCollisionEdge = false;
-      scene.debugShowAttackRange = false;
     }
     if (!scene.debugPanel) {
       scene.debugPanel = new DebugPanel({

@@ -720,23 +720,26 @@ export class MeleeAttackSystem {
   }
 
   /**
-   * 攻击范围扇形（仅战斗中显示）：贴合 2.5D 椭圆的定向扇形——外弧沿 Y 压扁 0.5 的地面
-   * 椭圆（与 GroundMarker/renderCircleIndicator 同款俯视透视），方向/张角/半径与
+   * 攻击范围扇形（战斗中显示的游戏 HUD）：贴合 2.5D 椭圆的定向扇形——外弧沿 Y 压扁 0.5
+   * 的地面椭圆（与 GroundMarker/renderCircleIndicator 同款俯视透视），方向/张角/半径与
    * performSectorAttack 命中判定（isPointInSector）同源同参，看到的扇形即实际攻击区域。
    * 攻击闪光（sectorAttackFlash）并入扇形提亮。
    * 门控语义：由调用方（SceneRenderPipeline）限定战斗中（isInCombat）才调用——
-   * 开场/脱战后不画；hideSectorWhenIdle（移动端）空闲且无软锁定时隐藏；
-   * 远程武器不画常态扇形（由攻击按钮的技能预览虚线框替代）。
-   * 调试面板可用 debugShowAttackRange 关闭；不绘制半径文字标签（2026-10-31 移除）。
+   * 开场/脱战后不画；远程武器不画常态扇形（由攻击按钮的技能预览虚线框替代）。
+   * 战斗中不受移动端「空闲隐藏」影响（inCombat 放行），保证进战即见虚线框。
+   * 调试面板 debugShowAttackRange 仅作脱战常显的开发开关。
    * @param {CanvasRenderingContext2D} ctx - 已应用相机变换的世界通道上下文
+   * @param {{inCombat?: boolean}} [options] - inCombat=true 时忽略移动端空闲隐藏
    */
-  renderSectorRange(ctx) {
+  renderSectorRange(ctx, options = {}) {
     const transform = this.playerEntity?.getComponent?.('transform');
     if (!transform) return;
     // 远程武器：常态不画扇形（由攻击按钮的技能预览虚线框替代）
     if (this.sectorIsRanged) return;
-    // 移动端近战：空闲且无软锁定目标时隐藏；软锁定（自动瞄准敌人）或拖动瞄准时显示
-    if (this.hideSectorWhenIdle && !this.sectorDirectionLocked && !this._sectorAutoAimActive) return;
+    // 移动端近战：空闲且无软锁定目标时隐藏；软锁定（自动瞄准敌人）或拖动瞄准时显示。
+    // 战斗中（inCombat）始终显示——攻击范围是战斗 HUD，不随空闲态消失。
+    if (options.inCombat !== true
+      && this.hideSectorWhenIdle && !this.sectorDirectionLocked && !this._sectorAutoAimActive) return;
     // 与命中判定同款锚点：碰撞中心（脚点 + collision 偏移）
     const collision = this.playerEntity.getComponent('collision');
     const cx = transform.position.x + (Number(collision?.offsetX) || 0);

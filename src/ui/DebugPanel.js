@@ -76,7 +76,8 @@ export class DebugPanel {
     scene.debugShowActorCollisionEdge = enabled;
     scene.debugShowCollisionPolygons = enabled;
     scene.debugShowClimbableZones = enabled;
-    scene.debugShowAttackRange = enabled;
+    // 攻击范围扇形是战斗 HUD（战斗中自动显示），不随面板可见性联动；
+    // debugShowAttackRange 仅作「脱战常显」的开发开关，由复选框独立控制。
     return enabled;
   }
 
@@ -367,8 +368,8 @@ export class DebugPanel {
             显示攀爬区域
           </label>
           <label class="dp-check-row">
-            <input type="checkbox" id="dp-show-attack-range" ${this.getScene()?.debugShowAttackRange !== false ? 'checked' : ''}>
-            显示攻击范围扇形
+            <input type="checkbox" id="dp-show-attack-range" ${this.getScene()?.debugShowAttackRange === true ? 'checked' : ''}>
+            攻击范围脱战常显
           </label>
         </div>
         <div class="dp-section dp-actions">
@@ -922,7 +923,7 @@ export class DebugPanel {
     const climbableZoneToggle = this._el.querySelector('#dp-show-climbable-zones');
     if (climbableZoneToggle) climbableZoneToggle.checked = scene.debugShowClimbableZones !== false;
     const attackRangeToggle = this._el.querySelector('#dp-show-attack-range');
-    if (attackRangeToggle) attackRangeToggle.checked = scene.debugShowAttackRange !== false;
+    if (attackRangeToggle) attackRangeToggle.checked = scene.debugShowAttackRange === true;
 
     // 触发器事件
     const gl = scene.gameLoader;
