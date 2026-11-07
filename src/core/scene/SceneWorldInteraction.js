@@ -102,6 +102,13 @@ export class SceneWorldInteraction {
     if (!input.isMouseButtonDown(0) || !input.isMouseClicked() || input.isMouseClickHandled()) return false;
     const pos = input.getMousePosition();
     if (!(minimap.visible && minimap.containsPoint(pos.x, pos.y))) return false;
+    // 右上角「M」按钮：走 handleUIClick 的点击通道（打开大地图），不进入拖动定位；
+    // 但本帧仍吞掉按住态，避免攻击系统把点按钮当成按住左键攻击。
+    if (minimap.isMapButtonHit?.(pos.x, pos.y)) {
+      minimap.handleClick(pos.x, pos.y);
+      input.markMouseClickHandled();
+      return true;
+    }
     // 轻功飞行期间相机由飞行系统管理：吞掉点击但不进入定位
     if (scene.flightSystem?.isPlayerFlying?.() === true) {
       input.markMouseClickHandled();

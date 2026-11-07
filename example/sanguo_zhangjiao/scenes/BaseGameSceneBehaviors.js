@@ -43,6 +43,7 @@ import { IconButton } from '../../../src/ui/IconButton.js';
 import { createUIStrategy } from '../../../src/ui/strategies/index.js';
 import { DialogueBox } from '../../../src/ui/DialogueBox.js';
 import { Minimap } from '../../../src/ui/Minimap.js';
+import { WorldMapPanel } from '../../../src/ui/WorldMapPanel.js';
 import { FloatingTextManager } from '../../../src/ui/FloatingText.js';
 import { NotificationSystem } from '../../../src/ui/NotificationSystem.js';
 import { ItemGainedPopup } from '../../../src/ui/ItemGainedPopup.js';
@@ -450,6 +451,7 @@ export class BaseGameSceneBehaviors extends BaseGameSceneSetup {  /**
         GamepadCombatController,
         SkillWheelOverlay,
         Minimap,
+        WorldMapPanel,
         SelectedCharacterStore,
         PortraitsConfig
       });

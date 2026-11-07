@@ -87,6 +87,7 @@ export class ScenePanelLayout {
       GamepadCombatController,
       SkillWheelOverlay,
       Minimap,
+      WorldMapPanel,
       SelectedCharacterStore,
       PortraitsConfig
     } = { ...this.hudDependencies, ...hudDependencies };
@@ -348,6 +349,23 @@ export class ScenePanelLayout {
     // PC 功能按钮初始居中（随屏幕宽度自动对齐）
     this.layoutPCFunctionButtons(scene.logicalWidth, scene.logicalHeight);
 
+    // 大地图（M 键）：全屏模态覆盖层，数据全部惰性拉取，避免缓存世界/玩家引用。
+    scene.worldMapPanel = new WorldMapPanel({
+      x: 0,
+      y: 0,
+      width: scene.logicalWidth,
+      height: scene.logicalHeight,
+      visible: false
+    });
+    scene.worldMapPanel.setDataProviders({
+      getWorldIndex: () => scene._worldIndex || scene.context?.world?.worldIndex || null,
+      getRegionId: () => scene._worldRegion?.id || scene.context?.world?.region?.id || null,
+      getPlayer: () => scene.playerEntity?.getComponent?.('transform')?.position || null,
+      getSceneId: () => scene.currentSceneId || null,
+      getCityStates: () => scene.gameLoader?.blackboard?.get?.('cityStates') || [],
+      getProject: () => scene.gameLoader?.project || null
+    });
+
     // 右侧小地图（以真实地图为基础，缩小到10%）
     const minimapSize = 150;
     scene.minimap = new Minimap({
@@ -357,6 +375,8 @@ export class ScenePanelLayout {
       height: minimapSize,
       scale: 0.1,
       visible: true,
+      // 右上角「M」按钮：打开大地图
+      onOpenWorldMap: () => scene.worldMapPanel?.open(),
       // 小地图点击定位：相机移动到对应世界位置（视野框随动）；玩家移动后由 SceneHudUpdater 释放并平滑回到跟随
       onSeekWorldPosition: position => {
         const camera = scene.camera;
@@ -698,6 +718,11 @@ export class ScenePanelLayout {
 
     const minimapX = Number.isFinite(minimap?.x) ? minimap.x : width - 160;
     const minimapY = Number.isFinite(minimap?.y) ? minimap.y : 10;
+    // 大地图是全屏覆盖层：随逻辑分辨率同步尺寸并夹紧滚动。
+    if (scene.worldMapPanel) {
+      scene.worldMapPanel.setSize(width, height);
+      scene.worldMapPanel.refreshLayout();
+    }
     this._screenHudRects.timeWeatherBadge = loader?.getRect?.('timeWeatherBadge', width, height) || {
       x: minimapX - 160,
       y: minimapY,

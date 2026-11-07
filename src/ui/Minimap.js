@@ -63,6 +63,12 @@ export class Minimap extends UIElement {
     // 定位开始时的玩家位置锚点（SceneHudUpdater 用来判断玩家是否已移动）
     this.seekPlayerAnchor = null;
 
+    // 右上角「M」按钮：点击等同按 M 打开大地图（不触发小地图点击定位）
+    this.onOpenWorldMap = typeof options.onOpenWorldMap === 'function'
+      ? options.onOpenWorldMap
+      : null;
+    this.mapButtonSize = options.mapButtonSize || 16;
+
     // 地形实例列表
     this._terrains = [];
     // 项目世界索引是边界和 chunk 尺寸的唯一来源。
@@ -506,6 +512,28 @@ export class Minimap extends UIElement {
     // 左下角 +/- 缩放按钮
     // (已移除；点击小地图改为定位观察)
 
+    // 右上角「M」按钮：打开大地图（点击热区见 handleClick）
+    this._renderMapButton(ctx);
+
+    ctx.restore();
+  }
+
+  /** 绘制右上角「M」按钮。 */
+  _renderMapButton(ctx) {
+    const button = this._mapButtonRect();
+    ctx.save();
+    ctx.fillStyle = 'rgba(20, 15, 10, 0.85)';
+    this._roundRect(ctx, button.x, button.y, button.w, button.h, 3);
+    ctx.fill();
+    ctx.strokeStyle = '#8B7355';
+    ctx.lineWidth = 1;
+    this._roundRect(ctx, button.x, button.y, button.w, button.h, 3);
+    ctx.stroke();
+    ctx.fillStyle = '#f0d9a8';
+    ctx.font = 'bold 11px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('M', button.x + button.w / 2, button.y + button.h / 2 + 0.5);
     ctx.restore();
   }
 
@@ -600,14 +628,46 @@ export class Minimap extends UIElement {
   }
 
   /**
+   * 右上角「M」按钮热区（屏幕坐标）。
+   * @returns {{x: number, y: number, w: number, h: number}}
+   */
+  _mapButtonRect() {
+    const size = this.mapButtonSize;
+    return {
+      x: this.x + this.width - this.padding - size,
+      y: this.y + this.padding,
+      w: size,
+      h: size
+    };
+  }
+
+  /**
+   * 指针是否落在右上角「M」按钮热区内（屏幕坐标）。
+   * 拖动定位入口（SceneWorldInteraction.handleMinimapDrag）据此让路，
+   * 避免点按钮被当成小地图拖动而吞掉开关动作。
+   */
+  isMapButtonHit(x, y) {
+    if (!this.visible) return false;
+    const button = this._mapButtonRect();
+    return x >= button.x && x <= button.x + button.w
+      && y >= button.y && y <= button.y + button.h;
+  }
+
+  /**
    * 处理点击事件：点击小地图把视野框与相机定位到对应世界位置
    *（兼容入口；按住拖动请走 beginSeekDrag/moveSeekDrag/endSeekDrag）。
+   * 右上角「M」按钮点击改为打开大地图。
    * @param {number} x - 屏幕坐标
    * @param {number} y - 屏幕坐标
    * @returns {boolean} 是否消费了点击
    */
   handleClick(x, y) {
     if (!this.visible || !this.containsPoint(x, y)) return false;
+    // 右上角「M」按钮优先：打开大地图，不进入点击定位
+    if (this.isMapButtonHit(x, y)) {
+      this.onOpenWorldMap?.();
+      return true;
+    }
     // 地图未就绪：吞掉点击，避免穿透到世界移动
     if (!this._mapCache) return true;
     this.beginSeekDrag(x, y);

@@ -13,6 +13,7 @@ export class SceneInputBindings {
     configUrl = 'config/gamepad.json',
     toggleBackpack,
     toggleSettings,
+    toggleWorldMap,
     toggleArmyCommand,
     performDodge,
     togglePerformance,
@@ -27,6 +28,7 @@ export class SceneInputBindings {
     this.configUrl = configUrl;
     this.toggleBackpack = toggleBackpack;
     this.toggleSettings = toggleSettings;
+    this.toggleWorldMap = toggleWorldMap;
     this.toggleArmyCommand = toggleArmyCommand;
     this.performDodge = performDodge;
     this.togglePerformance = togglePerformance;
@@ -47,6 +49,9 @@ export class SceneInputBindings {
     this.inputManager.registerHotkey('toggle_equipment', ['v', 'V'], toggleBackpack, { cooldown: 300 });
     this.inputManager.registerHotkey(
       'toggle_system_settings', ['escape', 'Escape', 'settings'], () => this.toggleSettings?.(), { cooldown: 300 });
+    // 大地图：PC 热键 M（小地图右上角「M」按钮等效入口）
+    this.inputManager.registerHotkey(
+      'toggle_world_map', ['m', 'M'], () => this.toggleWorldMap?.(), { cooldown: 250 });
     // 军队操作条开关：PC 热键 F（fight）+ 手柄 LS（armyCommand 动作）；B 已让给闪避
     this.inputManager.registerHotkey(
       'toggle_army_command', ['f', 'F', ARMY_COMMAND_ACTION], () => this.toggleArmyCommand?.(), { cooldown: 300 });

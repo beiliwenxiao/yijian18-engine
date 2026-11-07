@@ -383,6 +383,15 @@ export class BaseGameSceneSetup extends Scene {
     return hud.visible;
   }
 
+  /** 大地图（M 键 / 小地图右上角「M」按钮）：可见时关闭，否则在非对话/非硬锁时打开。 */
+  toggleWorldMap() {
+    const panel = this.worldMapPanel;
+    if (!panel) return false;
+    if (panel.visible) return panel.close();
+    if (this.dialogueSystem?.isDialogueActive?.() || this.isPlayerActionLocked?.()) return false;
+    return panel.open();
+  }
+
   setSaveGameService(service) {
     this._saveGameService = service || null;
   }
@@ -1169,7 +1178,9 @@ export class BaseGameSceneSetup extends Scene {
       inputManager: this.inputManager,
       resourceScope: this.resourceScope,
       toggleBackpack: () => this.backpackPanel?.toggle(),
-      toggleSettings: () => this.openSystemMenu(),
+      // ESC 优先级：大地图打开时先关地图，再走系统菜单
+      toggleSettings: () => (this.worldMapPanel?.visible ? this.worldMapPanel.close() : this.openSystemMenu()),
+      toggleWorldMap: () => this.toggleWorldMap(),
       toggleArmyCommand: () => this.toggleArmyCommandHud?.(),
       performDodge: () => this.dodgeByPointer?.(),
       togglePerformance: () => this._diagnostics.togglePerformance(),

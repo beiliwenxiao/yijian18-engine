@@ -342,6 +342,15 @@ function handleModalInput({ inputManager, gamepad } = {}) {
       this.s11s14SceneCoordinator._createEndingInputContext({ inputManager, gamepad })
     );
   }
+  // 大地图：模态吞掉世界输入（移动/攻击/交互/点击寻路），并处理拖拽与面板按钮。
+  if (this.worldMapPanel?.visible) {
+    return this.worldMapPanel.handleInput({
+      inputManager,
+      gamepad,
+      viewWidth: this.logicalWidth,
+      viewHeight: this.logicalHeight
+    });
+  }
   if (this.recipeSelectionView?.visible) {
     return this.recipeSelectionView.handleInput({
       inputManager,
@@ -545,6 +554,8 @@ function renderPostPipeline(ctx) {
   this.recipeSelectionView?.render?.(ctx, this.logicalWidth, this.logicalHeight);
   this.cargoTransferView?.render?.(ctx, this.logicalWidth, this.logicalHeight);
   this.endingPresentationView?.render?.(ctx, this.logicalWidth, this.logicalHeight);
+  // 大地图：压在 HUD/结算层之上；全景过场仍保持最顶层。
+  this.worldMapPanel?.render?.(ctx);
   // 全景覆盖层最后绘制：压住 HUD、对话与结算面板。
   this.panoramaOverlay?.render?.(ctx, this.logicalWidth, this.logicalHeight);
 }

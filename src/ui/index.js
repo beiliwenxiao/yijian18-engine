@@ -19,6 +19,7 @@ export { HealthBar } from './HealthBar.js';
 export { ManaBar } from './ManaBar.js';
 export { SkillBar } from './SkillBar.js';
 export { Minimap } from './Minimap.js';
+export { WorldMapPanel } from './WorldMapPanel.js';
 export { NotificationSystem } from './NotificationSystem.js';
 export { BattleModeView } from './BattleModeView.js';
 export { BattleHudView } from './BattleHudView.js';
