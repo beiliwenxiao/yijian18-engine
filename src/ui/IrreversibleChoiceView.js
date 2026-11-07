@@ -43,9 +43,11 @@ export class IrreversibleChoiceView extends UIElement {
   open(snapshot = {}) {
     this.snapshot = clone(snapshot);
     const choices = this.snapshot?.choices || [];
-    this.selectedId = choices.some(choice => choice.id === snapshot.selectedId)
-      ? snapshot.selectedId
-      : choices[0]?.id || null;
+    // 焦点解析：selectedId → focusId → 首个非 cancel 选项 → 首项。保证永不默认停在「取消」。
+    const focusId = snapshot?.selectedId ?? snapshot?.focusId;
+    this.selectedId = choices.some(choice => choice.id === focusId)
+      ? focusId
+      : (choices.find(choice => choice.id !== 'cancel')?.id ?? choices[0]?.id ?? null);
     this.busy = false;
     this.visible = choices.length > 0;
     this._keyNavArmed = false;
@@ -63,6 +65,11 @@ export class IrreversibleChoiceView extends UIElement {
     this._keyNavDirection = 0;
     this._leftStickNavArmed = false;
     this._leftStickDirection = 0;
+  }
+
+  /** 当前焦点选项 id（焦点即 selectedId，无第二套焦点环）。 */
+  get focusedChoiceId() {
+    return this.selectedId;
   }
 
   setBusy(value) { this.busy = value === true; }
