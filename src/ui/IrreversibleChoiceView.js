@@ -13,11 +13,9 @@
 import { UIElement } from './UIElement.js';
 import { InputHints } from '../core/input/InputHints.js';
 import { PadButton } from '../core/input/Xbox360Profile.js';
+import { UiNavStickReader } from '../core/input/UiNavStickReader.js';
 
 const clone = value => value == null ? null : JSON.parse(JSON.stringify(value));
-
-/** 左摇杆导航死区阈值：超过该偏移视为一次方向输入（与 InteractionChoiceView 一致）。 */
-const LEFT_STICK_NAV_THRESHOLD = 0.5;
 
 /** 只消费不可变显示快照并发出命令；领域层拥有不可逆选择。 */
 export class IrreversibleChoiceView extends UIElement {
@@ -33,11 +31,11 @@ export class IrreversibleChoiceView extends UIElement {
     this.snapshot = null;
     this.selectedId = null;
     this.busy = false;
-    // 键盘/左摇杆导航的边沿触发状态：回中（松键）后重新武装，防止按住连发切换
+    // 键盘导航的边沿触发状态：回中（松键）后重新武装，防止按住连发切换
     this._keyNavArmed = false;
     this._keyNavDirection = 0;
-    this._leftStickNavArmed = false;
-    this._leftStickDirection = 0;
+    // 手柄方向统一走左摇杆（十字键不参与方向切换）
+    this._navReader = new UiNavStickReader();
   }
 
   open(snapshot = {}) {
@@ -52,8 +50,9 @@ export class IrreversibleChoiceView extends UIElement {
     this.visible = choices.length > 0;
     this._keyNavArmed = false;
     this._keyNavDirection = 0;
-    this._leftStickNavArmed = false;
-    this._leftStickDirection = 0;
+    // 打开即复位基线：灵魂复活弹窗允许移动，玩家通常推着摇杆等倒计时结束，
+    // 偏置摇杆只作基线，不会立即触发切换。
+    this._navReader.reset();
   }
 
   close() {
@@ -63,8 +62,7 @@ export class IrreversibleChoiceView extends UIElement {
     this.busy = false;
     this._keyNavArmed = false;
     this._keyNavDirection = 0;
-    this._leftStickNavArmed = false;
-    this._leftStickDirection = 0;
+    this._navReader.reset();
   }
 
   /** 当前焦点选项 id（焦点即 selectedId，无第二套焦点环）。 */
@@ -122,19 +120,10 @@ export class IrreversibleChoiceView extends UIElement {
         this._keyNavDirection = keyDirection;
       }
 
-      // 手柄左摇杆左右导航（死区阈值 + 边沿触发），十字键左右同样可用。
-      // 紧凑复活确认（compact）同样启用：手柄玩家用左摇杆在 取消/复活 间切换。
-      const stickX = Number(gamepad?.leftStick?.x) || 0;
-      const padLeft = gamepad?.isButtonPressed?.(PadButton.DPAD_LEFT) === true;
-      const padRight = gamepad?.isButtonPressed?.(PadButton.DPAD_RIGHT) === true;
-      const stickDirection = (stickX <= -LEFT_STICK_NAV_THRESHOLD || padLeft) ? -1
-        : ((stickX >= LEFT_STICK_NAV_THRESHOLD || padRight) ? 1 : 0);
-      if (!this._leftStickNavArmed) {
-        if (stickDirection === 0) this._leftStickNavArmed = true;
-      } else if (stickDirection !== 0 && stickDirection !== this._leftStickDirection) {
-        this.moveSelection(stickDirection);
-      }
-      this._leftStickDirection = stickDirection;
+      // 手柄方向统一走左摇杆（UiNavStickReader：死区内不放行、方向变化沿触发），
+      // 十字键不参与方向切换。紧凑复活确认（compact）同样启用。
+      const stickDirection = this._navReader.read(gamepad, { horizontal: true, vertical: false }).x;
+      if (stickDirection !== 0) this.moveSelection(stickDirection);
     }
 
     const clicked = inputManager.isMouseClicked?.() === true

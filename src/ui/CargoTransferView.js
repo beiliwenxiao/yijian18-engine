@@ -13,6 +13,7 @@
 import { UIElement } from './UIElement.js';
 import { InputHints } from '../core/input/InputHints.js';
 import { PadButton } from '../core/input/Xbox360Profile.js';
+import { UiNavStickReader } from '../core/input/UiNavStickReader.js';
 
 const GRID_COLUMNS = 6;
 const clone = value => value == null ? null : JSON.parse(JSON.stringify(value));
@@ -36,12 +37,15 @@ export class CargoTransferView extends UIElement {
     this.selectedItemId = null;
     this.quantity = 1;
     this.busy = false;
+    // 手柄方向统一走左摇杆（十字键不参与方向切换）
+    this._navReader = new UiNavStickReader();
   }
 
   open(snapshot = {}) {
     this.direction = snapshot.direction === 'toInventory' ? 'toInventory' : 'toCargo';
     this.busy = false;
     this.visible = true;
+    this._navReader.reset();
     this.setSnapshot(snapshot, { preserveSelection: false });
   }
 
@@ -61,6 +65,7 @@ export class CargoTransferView extends UIElement {
     this.selectedItemId = null;
     this.quantity = 1;
     this.busy = false;
+    this._navReader.reset();
   }
 
   setBusy(value) { this.busy = value === true; }
@@ -160,16 +165,17 @@ export class CargoTransferView extends UIElement {
     if (!this.visible) return false;
     if (this.busy || !inputManager) return true;
 
-    const left = inputManager.isKeyPressed?.('arrowleft')
-      || gamepad?.isButtonPressed?.(PadButton.DPAD_LEFT) === true;
-    const right = inputManager.isKeyPressed?.('arrowright')
-      || gamepad?.isButtonPressed?.(PadButton.DPAD_RIGHT) === true;
+    // 方向输入：键盘方向键 + 手柄左摇杆（UiNavStickReader，死区内不放行、方向变化沿触发）。
+    // 十字键不参与方向切换；同一轴只可能产生一个方向，不存在同帧双执行。
+    const stick = this._navReader.read(gamepad);
+    const left = inputManager.isKeyPressed?.('arrowleft') === true || stick.x < 0;
+    const right = inputManager.isKeyPressed?.('arrowright') === true || stick.x > 0;
     if (left) this._setDirection('toCargo');
     if (right) this._setDirection('toInventory');
-    if (inputManager.isKeyPressed?.('arrowup') || gamepad?.isButtonPressed?.(PadButton.DPAD_UP)) {
+    if (inputManager.isKeyPressed?.('arrowup') === true || stick.y < 0) {
       this._moveSelection(-GRID_COLUMNS);
     }
-    if (inputManager.isKeyPressed?.('arrowdown') || gamepad?.isButtonPressed?.(PadButton.DPAD_DOWN)) {
+    if (inputManager.isKeyPressed?.('arrowdown') === true || stick.y > 0) {
       this._moveSelection(GRID_COLUMNS);
     }
     if (inputManager.isKeyPressed?.('-') || gamepad?.isButtonPressed?.(PadButton.LB)) this._adjustQuantity(-1);

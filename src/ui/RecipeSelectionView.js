@@ -13,8 +13,8 @@
 import { UIElement } from './UIElement.js';
 import { InputHints } from '../core/input/InputHints.js';
 import { PadButton } from '../core/input/Xbox360Profile.js';
+import { UiNavStickReader } from '../core/input/UiNavStickReader.js';
 
-const LEFT_STICK_NAV_THRESHOLD = 0.5;
 const clone = value => value == null ? null : JSON.parse(JSON.stringify(value));
 const inside = (point, box) => point.x >= box.x && point.x <= box.x + box.width
   && point.y >= box.y && point.y <= box.y + box.height;
@@ -33,8 +33,8 @@ export class RecipeSelectionView extends UIElement {
     this.snapshot = null;
     this.selectedRecipeId = null;
     this.busy = false;
-    this._leftStickNavArmed = false;
-    this._leftStickDirection = 0;
+    // 手柄方向统一走左摇杆（十字键不参与方向切换）
+    this._navReader = new UiNavStickReader();
   }
 
   open(snapshot = {}) {
@@ -64,22 +64,7 @@ export class RecipeSelectionView extends UIElement {
   setBusy(value) { this.busy = value === true; }
 
   _resetLeftStickNavigation() {
-    this._leftStickNavArmed = false;
-    this._leftStickDirection = 0;
-  }
-
-  _getLeftStickNavigationOffset(gamepad) {
-    const y = Number(gamepad?.leftStick?.y) || 0;
-    const direction = y <= -LEFT_STICK_NAV_THRESHOLD ? -1
-      : (y >= LEFT_STICK_NAV_THRESHOLD ? 1 : 0);
-    if (!this._leftStickNavArmed) {
-      if (direction === 0) this._leftStickNavArmed = true;
-      this._leftStickDirection = direction;
-      return 0;
-    }
-    const offset = direction !== 0 && direction !== this._leftStickDirection ? direction : 0;
-    this._leftStickDirection = direction;
-    return offset;
+    this._navReader.reset();
   }
 
   _recipes() { return Array.isArray(this.snapshot?.recipes) ? this.snapshot.recipes : []; }
@@ -114,11 +99,12 @@ export class RecipeSelectionView extends UIElement {
   handleInput({ inputManager, gamepad, viewWidth = 1280, viewHeight = 720 } = {}) {
     if (!this.visible) return false;
     if (this.busy || !inputManager) return true;
-    const up = inputManager.isKeyPressed?.('arrowup')
-      || gamepad?.isButtonPressed?.(PadButton.DPAD_UP) === true;
-    const down = inputManager.isKeyPressed?.('arrowdown')
-      || gamepad?.isButtonPressed?.(PadButton.DPAD_DOWN) === true;
-    const navigationOffset = up ? -1 : (down ? 1 : this._getLeftStickNavigationOffset(gamepad));
+    // 方向输入：键盘方向键 + 手柄左摇杆（UiNavStickReader，死区内不放行、方向变化沿触发）。
+    // 十字键不参与方向切换。
+    const stickY = this._navReader.read(gamepad, { horizontal: false, vertical: true }).y;
+    const up = inputManager.isKeyPressed?.('arrowup') === true || stickY < 0;
+    const down = inputManager.isKeyPressed?.('arrowdown') === true || stickY > 0;
+    const navigationOffset = up && !down ? -1 : (down && !up ? 1 : 0);
     if (navigationOffset) this._moveSelection(navigationOffset);
     const layout = this._layout(viewWidth, viewHeight);
     this._handlePointer(inputManager, layout);

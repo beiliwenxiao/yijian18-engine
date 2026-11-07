@@ -11,6 +11,7 @@
 
 import { InputHints } from '../core/input/InputHints.js';
 import { PadButton } from '../core/input/Xbox360Profile.js';
+import { UiNavStickReader } from '../core/input/UiNavStickReader.js';
 
 /**
  * DialogueChoiceBox - 对话选项弹窗（框架级）
@@ -51,10 +52,12 @@ export class DialogueChoiceBox {
     this.onSelect = options.onSelect || null;
 
     this.hoveredChoiceIndex = -1;
-    // 手柄/键盘焦点：弹窗出现时聚焦第一项，方向键或左摇杆上下切换，A/E 确认
+    // 手柄/键盘焦点：弹窗出现时聚焦第一项，键盘方向键或左摇杆上下切换，A/E 确认
     this.focusedIndex = 0;
     this._focusedNodeId = null;
     this._navDirectionActive = false;
+    // 手柄方向统一走左摇杆（十字键不参与方向切换）
+    this._navReader = new UiNavStickReader();
   }
 
   /** 应用 UI 编辑器保存的选项弹窗矩形。 */
@@ -188,14 +191,12 @@ export class DialogueChoiceBox {
     const choices = this.currentChoices();
     if (choices.length === 0) return false;
 
-    // 焦点导航：键盘方向/WASD（虚拟 up/down）+ 手柄直读（左摇杆虚拟键已并入；十字键
-    // 默认绑定红/蓝药水，必须直读按钮才能用于导航——参照 IrreversibleChoiceView 模式）
+    // 焦点导航：键盘方向键 + 手柄左摇杆（共用 UiNavStickReader）。
+    // 手柄方向只认左摇杆，十字键不参与方向切换（其上/下保留为红/蓝药水绑定）。
     const gamepad = input.gamepad || null;
-    const padUp = gamepad?.isButtonPressed?.(PadButton.DPAD_UP) === true;
-    const padDown = gamepad?.isButtonPressed?.(PadButton.DPAD_DOWN) === true;
-    const stickY = Number(gamepad?.leftStick?.y) || 0;
-    const up = input.isKeyDown?.('up') === true || padUp || stickY < -0.5;
-    const down = input.isKeyDown?.('down') === true || padDown || stickY > 0.5;
+    const stickY = this._navReader.read(gamepad, { horizontal: false, vertical: true }).y;
+    const up = input.isKeyDown?.('up') === true || stickY < 0;
+    const down = input.isKeyDown?.('down') === true || stickY > 0;
     const direction = up === down ? 0 : (up ? -1 : 1);
     if (direction !== 0 && this._navDirectionActive !== true) {
       this.focusedIndex = (this.focusedIndex + direction + choices.length) % choices.length;
@@ -257,6 +258,7 @@ export class DialogueChoiceBox {
   show() {
     this.visible = true;
     this.canInteract = true;
+    this._navReader.reset();
   }
 
   hide() {

@@ -13,8 +13,8 @@
 import { UIElement } from './UIElement.js';
 import { InputHints } from '../core/input/InputHints.js';
 import { PadButton } from '../core/input/Xbox360Profile.js';
+import { UiNavStickReader } from '../core/input/UiNavStickReader.js';
 
-const LEFT_STICK_NAV_THRESHOLD = 0.5;
 const PANEL_PADDING = 12;
 const BUTTON_GAP = 8;
 const BUTTON_HEIGHT = 44;
@@ -42,8 +42,7 @@ export class InteractionChoiceView extends UIElement {
     this.allowCancel = true;
     this.busy = false;
     this.onCancel = null;
-    this._leftStickNavArmed = false;
-    this._leftStickDirection = 0;
+    this._navReader = new UiNavStickReader();
     this._keyNavArmed = false;
     this._keyNavDirection = 0;
   }
@@ -98,8 +97,7 @@ export class InteractionChoiceView extends UIElement {
   }
 
   _resetLeftStickNavigation() {
-    this._leftStickNavArmed = false;
-    this._leftStickDirection = 0;
+    this._navReader.reset();
   }
 
   _applyViewport(viewWidth, viewHeight) {
@@ -161,16 +159,9 @@ export class InteractionChoiceView extends UIElement {
     }
     this._keyNavDirection = keyDirection;
 
-    const stickX = Number(gamepad?.leftStick?.x) || 0;
-    const stickDirection = stickX <= -LEFT_STICK_NAV_THRESHOLD
-      ? -1
-      : (stickX >= LEFT_STICK_NAV_THRESHOLD ? 1 : 0);
-    if (!this._leftStickNavArmed) {
-      if (stickDirection === 0) this._leftStickNavArmed = true;
-    } else if (stickDirection !== 0 && stickDirection !== this._leftStickDirection) {
-      this.moveSelection(stickDirection);
-    }
-    this._leftStickDirection = stickDirection;
+    // 手柄方向只认左摇杆（UiNavStickReader，死区内不放行、方向变化沿触发），十字键不参与。
+    const stickDirection = this._navReader.read(gamepad, { horizontal: true, vertical: false }).x;
+    if (stickDirection !== 0) this.moveSelection(stickDirection);
 
     if (inputManager.isMouseClicked?.() && !inputManager.isMouseClickHandled?.()) {
       const point = inputManager.getMousePosition?.() || { x: -1, y: -1 };

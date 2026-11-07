@@ -348,7 +348,8 @@ export class GamepadManager {
 
   /**
    * 左摇杆移动向量。
-   * 十字键不参与移动（仅用于 UI 列表导航），移动方向只认左摇杆模拟量。
+   * 十字键不参与移动，也不参与 UI 方向切换（上/下保留为红/蓝药水绑定）；
+   * 移动与所有 UI 方向控制都只认左摇杆模拟量（UI 侧统一走 UiNavStickReader）。
    * @returns {{x:number, y:number, magnitude:number}}
    */
   getMoveVector() {

@@ -14,8 +14,8 @@ import { UIElement } from './UIElement.js';
 import { PlayerInfoPanel } from './PlayerInfoPanel.js';
 import { InventoryPanel } from './InventoryPanel.js';
 import { PadButton } from '../core/input/Xbox360Profile.js';
+import { UiNavStickReader } from '../core/input/UiNavStickReader.js';
 
-const LEFT_STICK_NAV_THRESHOLD = 0.5;
 const RARITY_COLORS = ['#ffffff', '#1eff00', '#0070dd', '#a335ee', '#ff8000'];
 
 /**
@@ -59,8 +59,7 @@ export class BackpackPanel extends UIElement {
     // 详情菜单只保存稳定身份，所有业务写入仍经既有原子命令。
     this._itemActionMenu = this._createItemActionMenu();
     this._gamepadFocus = { area: 'inventory', slotIndex: 0, slotType: 'accessory' };
-    this._leftStickNavArmed = false;
-    this._leftStickDirection = null;
+    this._navReader = new UiNavStickReader();
 
     this.playerInfoContent = new PlayerInfoPanel({
       x: this.x,
@@ -497,28 +496,21 @@ export class BackpackPanel extends UIElement {
     return true;
   }
 
+  /**
+   * 手柄方向只认左摇杆（UiNavStickReader，死区内不放行、方向变化沿触发），十字键不参与。
+   * 双轴同时越死区时只取偏转更大的那一轴，保证一帧只走一格。
+   */
   _readLeftStickDirection(gamepad) {
-    const stick = gamepad?.leftStick || { x: 0, y: 0 };
-    const x = Number(stick.x) || 0;
-    const y = Number(stick.y) || 0;
-    let direction = null;
-    if (Math.abs(x) >= LEFT_STICK_NAV_THRESHOLD || Math.abs(y) >= LEFT_STICK_NAV_THRESHOLD) {
-      if (Math.abs(x) >= Math.abs(y)) direction = x < 0 ? 'left' : 'right';
-      else direction = y < 0 ? 'up' : 'down';
-    }
-    if (!this._leftStickNavArmed) {
-      if (!direction) this._leftStickNavArmed = true;
-      this._leftStickDirection = direction;
-      return null;
-    }
-    const step = direction && direction !== this._leftStickDirection ? direction : null;
-    this._leftStickDirection = direction;
-    return step;
+    const { x, y } = this._navReader.read(gamepad, { dominant: true });
+    if (x < 0) return 'left';
+    if (x > 0) return 'right';
+    if (y < 0) return 'up';
+    if (y > 0) return 'down';
+    return null;
   }
 
   _resetLeftStickNavigation() {
-    this._leftStickNavArmed = false;
-    this._leftStickDirection = null;
+    this._navReader.reset();
   }
 
   _moveMenuSelection(direction) {

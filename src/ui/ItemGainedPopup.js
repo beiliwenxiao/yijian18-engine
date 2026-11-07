@@ -30,6 +30,7 @@ import { UIElement } from './UIElement.js';
 import { ItemIconRenderer } from './ItemIconRenderer.js';
 import { InputHints } from '../core/input/InputHints.js';
 import { PadButton } from '../core/input/Xbox360Profile.js';
+import { UiNavStickReader } from '../core/input/UiNavStickReader.js';
 
 // 用户约定：涨红跌绿
 const COLOR_UP = '#ff4d4d';   // 属性增加：红
@@ -42,7 +43,6 @@ const ICON_SIZE = 48; // 图标框边长
 const ROW_H = 18;     // 属性对比行高
 const BTN_H = 44;     // 按钮高度（为自动入包倒计时保留第二行）
 const AUTO_STORE_SECONDS = 5;
-const LEFT_STICK_NAV_THRESHOLD = 0.5;
 
 export class ItemGainedPopup extends UIElement {
   constructor(options = {}) {
@@ -68,8 +68,7 @@ export class ItemGainedPopup extends UIElement {
     this._autoStoreAction = null;
     this._autoStoreRemaining = 0;
     this._actionPending = false;
-    this._leftStickNavArmed = false;
-    this._leftStickDirection = 0;
+    this._navReader = new UiNavStickReader();
     // 底部锚点：设置后 show() 会把弹窗底边对齐到 anchorBottom 上方（紧贴底部控制栏）
     this.anchorBottom = options.anchorBottom || null;
     this.anchorGap = options.anchorGap != null ? options.anchorGap : 8;
@@ -159,8 +158,7 @@ export class ItemGainedPopup extends UIElement {
   }
 
   _resetLeftStickNavigation() {
-    this._leftStickNavArmed = false;
-    this._leftStickDirection = 0;
+    this._navReader.reset();
   }
 
   _actionLabel(action) {
@@ -224,20 +222,8 @@ export class ItemGainedPopup extends UIElement {
 
     const padPressed = button => gamepad?.isButtonPressed?.(button) === true;
 
-    // 使用 GamepadManager 已经过径向死区的纯左摇杆快照，避免 getMoveVector() 回退 D-pad。
-    const stickX = Number(gamepad?.leftStick?.x) || 0;
-    const stickDirection = stickX <= -LEFT_STICK_NAV_THRESHOLD
-      ? -1
-      : (stickX >= LEFT_STICK_NAV_THRESHOLD ? 1 : 0);
-    let stickStep = 0;
-    if (!this._leftStickNavArmed) {
-      // 弹窗打开后必须先归中，不能继承玩家仍推住的世界移动方向。
-      if (stickDirection === 0) this._leftStickNavArmed = true;
-    } else if (stickDirection !== 0 && stickDirection !== this._leftStickDirection) {
-      stickStep = stickDirection;
-    }
-    this._leftStickDirection = stickDirection;
-
+    // 手柄方向只认左摇杆（UiNavStickReader，死区内不放行、方向变化沿触发），十字键不参与。
+    const stickStep = this._navReader.read(gamepad, { horizontal: true, vertical: false }).x;
     if (stickStep !== 0) this.moveSelection(stickStep);
     if (padPressed(PadButton.A)) this.activateSelected();
     return true;

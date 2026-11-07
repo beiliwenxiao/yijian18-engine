@@ -83,6 +83,15 @@ describe('IrreversibleChoiceView 灵魂复活焦点与摇杆导航', () => {
     expect(view.focusedChoiceId).toBe('cancel');
   });
 
+  it('十字键不参与方向切换（方向只认左摇杆）', () => {
+    const { view } = createView({ selectedId: 'revive' });
+    tick(view, { gamepad: createGamepad({ x: 0 }) });
+    tick(view, { gamepad: createGamepad({ pressed: [PadButton.DPAD_RIGHT] }) });
+    expect(view.focusedChoiceId).toBe('revive');
+    tick(view, { gamepad: createGamepad({ pressed: [PadButton.DPAD_LEFT] }) });
+    expect(view.focusedChoiceId).toBe('revive');
+  });
+
   it('A 键确认当前焦点，B 键在 allowCancel 下取消', () => {
     const { view, onCommand } = createView({ selectedId: 'revive' });
     tick(view, { gamepad: createGamepad({ pressed: [PadButton.A] }) });

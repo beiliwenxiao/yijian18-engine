@@ -135,13 +135,13 @@ describe('GamepadManager 摇杆', () => {
     expect(mv.magnitude).toBeCloseTo(1, 5);
   });
 
-  it('摇杆归中时十字键接管移动，magnitude 记为 1', () => {
+  it('十字键不驱动移动：摇杆归中时移动向量保持 0', () => {
     pad.axes = [0, 0, 0, 0];
     pad.buttons[PadButton.DPAD_RIGHT] = { pressed: true, value: 1 };
     gm.poll();
     const mv = gm.getMoveVector();
-    expect(mv.x).toBeCloseTo(1, 5);
-    expect(mv.magnitude).toBe(1);
+    expect(mv.x).toBe(0);
+    expect(mv.magnitude).toBe(0);
   });
 });
 

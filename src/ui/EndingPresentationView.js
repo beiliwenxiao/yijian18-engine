@@ -16,6 +16,7 @@
 
 import { UIElement } from './UIElement.js';
 import { InputHints } from '../core/input/InputHints.js';
+import { UiNavStickReader } from '../core/input/UiNavStickReader.js';
 
 const DEFAULT_TITLE_DURATION = 2600;
 const DEFAULT_SHOT_DURATION = 5000;
@@ -64,6 +65,8 @@ export class EndingPresentationView extends UIElement {
     this.notice = null;
     this.noticeDeadline = 0;
     this.preSaveCheckpointId = null;
+    // 手柄方向统一走左摇杆（十字键不参与方向切换）
+    this._navReader = new UiNavStickReader();
   }
 
   /**
@@ -93,6 +96,7 @@ export class EndingPresentationView extends UIElement {
     this.noticeDeadline = 0;
     this.preSaveCheckpointId = payload.preSaveCheckpointId || null;
     this.imageCache.clear();
+    this._navReader.reset();
     this.visible = true;
     this._changeMusic(this.ending.musicId || null);
   }
@@ -111,6 +115,7 @@ export class EndingPresentationView extends UIElement {
     this.noticeDeadline = 0;
     this.preSaveCheckpointId = null;
     this.imageCache.clear();
+    this._navReader.reset();
     this._changeMusic(null, true);
   }
 
@@ -316,8 +321,12 @@ export class EndingPresentationView extends UIElement {
 
   _handleNavigation(context) {
     if (this.phase !== 'review') return;
-    const previous = this._actionPressed(context, 'left') || this._actionPressed(context, 'previous');
-    const next = this._actionPressed(context, 'right') || this._actionPressed(context, 'next');
+    // 手柄方向统一走左摇杆（UiNavStickReader）：十字键不参与方向切换。
+    const stickX = this._navReader.read(context.gamepad, { horizontal: true, vertical: false }).x;
+    const previous = this._actionPressed(context, 'left') || this._actionPressed(context, 'previous')
+      || stickX < 0;
+    const next = this._actionPressed(context, 'right') || this._actionPressed(context, 'next')
+      || stickX > 0;
     if (previous) this.selectedAction = (this.selectedAction - 1 + ACTIONS.length) % ACTIONS.length;
     if (next) this.selectedAction = (this.selectedAction + 1) % ACTIONS.length;
   }

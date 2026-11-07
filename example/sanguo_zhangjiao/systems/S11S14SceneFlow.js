@@ -1685,10 +1685,12 @@ const s13s14Methods = {
           dialogueContinue: () => key('e') || key('enter') || button(PadButton.A) || button(PadButton.X),
           modalCancel: () => key('escape') || button(PadButton.B) || button(PadButton.RS),
           skip: () => key('space') || key('tab') || button(PadButton.Y),
-          left: () => key('left') || button(PadButton.DPAD_LEFT),
-          previous: () => key('left') || button(PadButton.DPAD_LEFT),
-          right: () => key('right') || button(PadButton.DPAD_RIGHT),
-          next: () => key('right') || button(PadButton.DPAD_RIGHT)
+          // 方向切换只认键盘方向键；手柄方向由 EndingPresentationView 统一读左摇杆
+          // （UiNavStickReader），十字键不参与方向切换。
+          left: () => key('left'),
+          previous: () => key('left'),
+          right: () => key('right'),
+          next: () => key('right')
         };
         return actions[action]?.() === true;
       }
