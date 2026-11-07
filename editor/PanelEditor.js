@@ -158,6 +158,9 @@ const DEFAULT_PANELS = [
   }
 ];
 
+// 军队操作 HUD 面板（运行时 ArmyCommandHUD 消费；编辑器提供选择/恢复入口）
+const ARMY_PANEL_ID = 'armyCommandHud';
+
 // 部件类型注册表（用于新增部件时的选项）
 const PART_TYPES = {
   'text': { label: '文本', defaults: { text: '文本', fontSize: 14, color: '#ffffff', align: 'left', fontWeight: 'normal' } },
@@ -205,12 +208,68 @@ export class PanelEditor {
     // 画布缩放
     this.scale = 1;
 
+    // 显隐/锁定为编辑器状态：按 gameId 存 localStorage，不写入 PanelLayout.json
+    this._editorStateKey = `yijian18.pe.editorState.${this.gameId}`;
+    // 编辑器里删除过的内置面板 id：避免下次加载被「补齐默认面板」重新加回
+    this._removedPanelIds = new Set();
+
     this._initialized = false;
   }
 
   /** 获取当前激活的面板 */
   get activePanel() {
     return this.panels[this.activePanelIndex] || null;
+  }
+
+  // ─── 显隐/锁定状态持久化（localStorage，与 UI 编辑器同模式） ─────────────
+
+  /** 读取原始编辑器状态记录；无法解析时返回 null。 */
+  _readEditorState() {
+    try {
+      const state = JSON.parse(localStorage.getItem(this._editorStateKey) || 'null');
+      return state && typeof state === 'object' ? state : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /** 把持久化状态应用到当前面板部件的 editorHidden/editorLocked（存储为唯一事实来源）。 */
+  _applyEditorState(state = this._readEditorState()) {
+    const panelState = state?.panels;
+    if (!panelState || typeof panelState !== 'object') return;
+    for (const panel of this.panels) {
+      const partsState = panelState[panel.id];
+      for (const part of panel.parts || []) {
+        delete part.editorHidden;
+        delete part.editorLocked;
+        const flags = partsState?.[part.id];
+        if (!flags) continue;
+        if (flags.hidden === true) part.editorHidden = true;
+        if (flags.locked === true) part.editorLocked = true;
+      }
+    }
+  }
+
+  /** 写入部件显隐/锁定 + 已删除内置面板记录。 */
+  _saveEditorState() {
+    const panels = {};
+    for (const panel of this.panels) {
+      const partsState = {};
+      for (const part of panel.parts || []) {
+        if (part.editorHidden !== true && part.editorLocked !== true) continue;
+        partsState[part.id] = {
+          ...(part.editorHidden === true ? { hidden: true } : {}),
+          ...(part.editorLocked === true ? { locked: true } : {})
+        };
+      }
+      panels[panel.id] = partsState;
+    }
+    const state = { panels, removedPanels: [...this._removedPanelIds] };
+    try {
+      localStorage.setItem(this._editorStateKey, JSON.stringify(state));
+    } catch (e) {
+      // 隐私模式/存储满等情况忽略：显隐锁定降级为本次会话有效
+    }
   }
 
   _createHistorySnapshot() {
@@ -248,6 +307,8 @@ export class PanelEditor {
     this._dragState = null;
     this._clearArrowKeyHolds(false);
     this._clearSelection();
+    // 显隐/锁定不参与撤销历史，恢复后仍以持久化状态为准
+    this._applyEditorState();
     this._render();
   }
 
@@ -276,7 +337,10 @@ export class PanelEditor {
   async init() {
     if (this._initialized) return;
     this._initialized = true;
+    const editorState = this._readEditorState();
+    this._removedPanelIds = new Set(Array.isArray(editorState?.removedPanels) ? editorState.removedPanels : []);
     await this._loadFromFile();
+    this._applyEditorState(editorState);
     this.resetHistory();
     this._buildUI();
     this._render();
@@ -291,10 +355,11 @@ export class PanelEditor {
       if (data && data.ok && data.content) {
         const parsed = JSON.parse(data.content);
         if (Array.isArray(parsed.panels) && parsed.panels.length > 0) {
-          // 以文件为准，并补齐默认面板中文件缺失的项（如「军队操作」管理面板）
+          // 以文件为准，并补齐默认面板中文件缺失的项（如「军队操作」管理面板）；
+          // 编辑器里主动删除过的内置面板不再补回
           const savedIds = new Set(parsed.panels.map(panel => panel?.id).filter(Boolean));
           const missing = DEFAULT_PANELS
-            .filter(definition => !savedIds.has(definition.id))
+            .filter(definition => !savedIds.has(definition.id) && !this._removedPanelIds.has(definition.id))
             .map(definition => JSON.parse(JSON.stringify(definition)));
           this.panels = [...parsed.panels, ...missing];
         }
@@ -329,6 +394,7 @@ export class PanelEditor {
             <button id="pe-undo" title="撤销 (Ctrl/⌘+Z)">↶ 撤销</button>
             <button id="pe-redo" title="重做 (Ctrl/⌘+Shift+Z 或 Ctrl+Y)">↷ 重做</button>
             <button id="pe-add-panel" title="新增面板">＋面板</button>
+            <button id="pe-army-panel" title="选择「军队操作」面板；已删除时按默认定义恢复">🎖 军队面板</button>
           </div>
           <div class="pe-tabs" id="pe-tabs"></div>
         </div>
@@ -405,6 +471,8 @@ export class PanelEditor {
       .pe-props h4 { color:#4CAF50; margin-bottom:10px; }
       .pe-prop-empty { color:#778; font-size:13px; }
       .pe-prop-hint { font-size:11px; color:#7a8ca8; line-height:1.5; margin-top:4px; }
+      .pe-prop-button { margin-top:8px; width:100%; padding:6px 10px; background:#3a4a7e; border:none; border-radius:4px; color:#fff; cursor:pointer; font-size:12px; }
+      .pe-prop-button:hover { background:#4a5a9e; }
       .pe-prop-row input:disabled { opacity:0.6; cursor:not-allowed; }
       .pe-prop-section { margin-bottom:12px; border-bottom:1px solid #2a3a5e; padding-bottom:8px; }
       .pe-prop-section-title { font-size:11px; color:#6a8; margin-bottom:6px; text-transform:uppercase; }
@@ -435,6 +503,8 @@ export class PanelEditor {
     this.container.querySelector('#pe-redo').addEventListener('click', () => this.redo());
     // 新增面板
     this.container.querySelector('#pe-add-panel').addEventListener('click', () => this._addPanel());
+    // 军队操作面板：选中 / 恢复
+    this.container.querySelector('#pe-army-panel').addEventListener('click', () => this._ensureArmyPanel());
     // 新增部件
     this.container.querySelector('#pe-add-part').addEventListener('click', () => this._addPart());
     // 删除部件
@@ -503,8 +573,10 @@ export class PanelEditor {
               this.selectedPartId = this._getSelectedParts().slice(-1)[0]?.id || null;
             }
           }
+          this._saveEditorState();
         } else if (action === 'lock') {
           part.editorLocked = part.editorLocked !== true;
+          this._saveEditorState();
         } else {
           this._setSelection([part], part.id);
         }
@@ -844,6 +916,12 @@ export class PanelEditor {
             <div class="pe-prop-section-title">部件列表 (${panel.parts.length})</div>
             ${panel.parts.map(p => `<div style="font-size:11px;color:#aaa;padding:2px 0;cursor:pointer;" data-select-part="${p.id}">• ${p.label || p.id} <span style="color:#666">(${p.type})</span></div>`).join('')}
           </div>
+          ${panel.id === ARMY_PANEL_ID ? `
+          <div class="pe-prop-section">
+            <div class="pe-prop-section-title">军队操作（运行时联动）</div>
+            <div class="pe-prop-hint">「编组条 / 合并行 / 姿态面板」三个部件的高度驱动运行时 ArmyCommandHUD 行高，钳制 16~96px；宽度始终与 HUD 外框一致，外框位置在 UI 编辑器 armyCommandHud 中调整。</div>
+            <button type="button" class="pe-prop-button" id="pe-army-reset">↺ 恢复默认行高</button>
+          </div>` : ''}
         `;
         // 面板属性输入
         propsEl.querySelectorAll('[data-panel-key]').forEach(input => {
@@ -868,6 +946,7 @@ export class PanelEditor {
             this._renderProps();
           });
         });
+        propsEl.querySelector('#pe-army-reset')?.addEventListener('click', () => this._resetArmyPanel());
       } else {
         propsEl.innerHTML = '<h4>属性</h4><div class="pe-prop-empty">无面板</div>';
       }
@@ -1366,15 +1445,56 @@ export class PanelEditor {
       this._showToast('至少保留一个面板', true);
       return;
     }
-    if (!confirm(`确认删除面板「${this.panels[idx].name}」？`)) return;
+    const panel = this.panels[idx];
+    if (!confirm(`确认删除面板「${panel.name}」？`)) return;
     const snapshot = this._createHistorySnapshot();
     this.panels.splice(idx, 1);
+    // 内置面板记录删除，避免下次加载「补齐默认面板」又加回来
+    if (DEFAULT_PANELS.some(definition => definition.id === panel.id)) {
+      this._removedPanelIds.add(panel.id);
+    }
     if (this.activePanelIndex >= this.panels.length) {
       this.activePanelIndex = this.panels.length - 1;
     }
     this._clearSelection();
     this._commitHistorySnapshot(snapshot);
+    this._saveEditorState();
     this._render();
+  }
+
+  /** 选中「军队操作」面板；已被删除时按默认定义恢复（清掉删除记录）。 */
+  _ensureArmyPanel() {
+    let index = this.panels.findIndex(panel => panel.id === ARMY_PANEL_ID);
+    if (index < 0) {
+      const definition = DEFAULT_PANELS.find(panel => panel.id === ARMY_PANEL_ID);
+      if (!definition) return;
+      const snapshot = this._createHistorySnapshot();
+      this.panels.push(JSON.parse(JSON.stringify(definition)));
+      index = this.panels.length - 1;
+      this._removedPanelIds.delete(ARMY_PANEL_ID);
+      this._commitHistorySnapshot(snapshot);
+      this._applyEditorState();
+      this._showToast('已恢复「军队操作」面板');
+    }
+    this.activePanelIndex = index;
+    this._clearSelection();
+    this._saveEditorState();
+    this._render();
+  }
+
+  /** 把「军队操作」面板恢复为默认行高定义（部件类型/高度）。 */
+  _resetArmyPanel() {
+    const index = this.panels.findIndex(panel => panel.id === ARMY_PANEL_ID);
+    const definition = DEFAULT_PANELS.find(panel => panel.id === ARMY_PANEL_ID);
+    if (index < 0 || !definition) return;
+    const snapshot = this._createHistorySnapshot();
+    this.panels[index] = JSON.parse(JSON.stringify(definition));
+    this._clearSelection();
+    this._commitHistorySnapshot(snapshot);
+    this._applyEditorState();
+    this._saveEditorState();
+    this._render();
+    this._showToast('已恢复「军队操作」默认行高');
   }
 
   // ─── 部件管理 ─────────────────────────────────────────
@@ -1424,6 +1544,7 @@ export class PanelEditor {
     panel.parts = panel.parts.filter(part => !selectedIds.has(part.id));
     this._clearSelection();
     this._commitHistorySnapshot(snapshot);
+    this._saveEditorState();
     this._render();
   }
 
