@@ -675,7 +675,9 @@ export class SceneEditorEventFilter {
     allButton.title = '显示完整场景，关闭事件视图过滤';
     scroll.appendChild(allButton);
 
-    const appendTriggerEntry = (trigger, flowIndex, stepOrder = -1) => {
+    // T 编号 = 流程条显示序（跨任务分组全局连续），与任务步骤序、未归属定义序一致
+    let displaySeq = 0;
+    const appendTriggerEntry = (trigger, flowIndex) => {
       const entry = document.createElement('div');
       entry.className = 'scene-event-filter-trigger-entry';
       const focusCheck = document.createElement('input');
@@ -691,7 +693,7 @@ export class SceneEditorEventFilter {
       triggerButton.className = `scene-event-filter-item trigger${this.state.focusedTriggerIds.has(trigger.id) ? ' active' : ''}`;
       const priority = Number(trigger.coordination?.priority) || 0;
       const questInfo = this.questByTriggerId.get(trigger.id);
-      triggerButton.textContent = `${stepOrder >= 0 ? `T${stepOrder + 1}` : `T${flowIndex + 1}`} · ${trigger.name || trigger.id} · do[${(trigger.do || []).length}]`;
+      triggerButton.textContent = `T${++displaySeq} · ${trigger.name || trigger.id} · do[${(trigger.do || []).length}]`;
       triggerButton.title = `Trigger ${trigger.id}\nwhen: ${trigger.when?.type || '?'}\n协调组: ${trigger.coordination?.group || '独立'}\npriority: ${priority}\n定义顺序: ${this.projectIndex.triggers.indexOf(trigger) + 1}`
         + (questInfo ? `\n任务步骤: ${questInfo.stepTitle}（${questInfo.questTitle}）` : '\n未归属任务（场景级/跨步骤流程）')
         + '\n双击打开定义';
@@ -729,11 +731,6 @@ export class SceneEditorEventFilter {
       const assigned = new Set(this.questGroups.flatMap(group => group.steps.flatMap(step => step.triggerIds)));
       for (const group of this.questGroups) {
         const questTriggerIds = [...new Set(group.steps.flatMap(step => step.triggerIds))];
-        // T 编号与任务步骤序对齐：组内触发器按其所属步骤在任务中的显示序编号（未归属保持定义序）
-        const stepOrderById = new Map();
-        group.steps.forEach((step, stepIndex) => {
-          for (const id of step.triggerIds) if (!stepOrderById.has(id)) stepOrderById.set(id, stepIndex);
-        });
         const header = document.createElement('div');
         header.className = 'scene-event-filter-quest-header';
         const questCheck = document.createElement('input');
@@ -756,7 +753,7 @@ export class SceneEditorEventFilter {
         for (const triggerId of questTriggerIds) {
           const flowIndex = this.triggers.findIndex(trigger => trigger.id === triggerId);
           if (flowIndex >= 0) {
-            appendTriggerEntry(this.triggers[flowIndex], flowIndex, stepOrderById.get(triggerId) ?? -1);
+            appendTriggerEntry(this.triggers[flowIndex], flowIndex);
           }
         }
       }

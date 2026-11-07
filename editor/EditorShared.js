@@ -481,7 +481,9 @@ export class EditorPageContext {
       }
       this._projectDefinitions = {
         triggers: Array.isArray(project?.triggers) ? project.triggers : [],
-        tutorials: Array.isArray(project?.tutorials) ? project.tutorials : []
+        tutorials: Array.isArray(project?.tutorials) ? project.tutorials : [],
+        // 任务定义：场景编辑器的 Trigger 流程条依赖它（任务步骤归组 / trg_task.* 编译产物投影）
+        quests: Array.isArray(project?.quests) ? project.quests : []
       };
       this._projectTriggers = this._projectDefinitions.triggers;
       const battleEntries = Array.isArray(project?.battles) ? project.battles : [];
@@ -508,7 +510,7 @@ export class EditorPageContext {
       }
     } catch (error) {
       console.warn('[Editor] 加载项目触发器/战役/表现规格失败', error);
-      this._projectDefinitions = { triggers: [], tutorials: [] };
+      this._projectDefinitions = { triggers: [], tutorials: [], quests: [] };
       this._projectTriggers = this._projectDefinitions.triggers;
       this._projectBattles = [];
       this._presentationProfile = null;

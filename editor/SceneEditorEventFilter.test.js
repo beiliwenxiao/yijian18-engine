@@ -254,7 +254,7 @@ describe('SceneEditorEventFilter 编译产物投影与显示序', () => {
     expect(filter.editor.getProjectDefinitions().triggers.some(trigger => trigger.id.startsWith('trg_task.'))).toBe(false);
   });
 
-  it('T 编号按任务步骤序（非触发器定义序）', () => {
+  it('T 编号按流程条显示序连续（组内保持任务步骤序）', () => {
     const bar = document.createElement('div');
     bar.id = 'editor-scene-event-filter';
     document.body.appendChild(bar);
@@ -277,11 +277,17 @@ describe('SceneEditorEventFilter 编译产物投影与显示序', () => {
         });
       }
     });
-    const labelById = new Map(
-      [...bar.querySelectorAll('button[data-trigger-id]')].map(button => [button.dataset.triggerId, button.textContent])
+    const seqById = new Map(
+      [...bar.querySelectorAll('button[data-trigger-id]')].map(button => [
+        button.dataset.triggerId,
+        Number((button.textContent.match(/^T(\d+)/) || [])[1])
+      ])
     );
-    expect(labelById.get('trg.first').startsWith('T1 · ')).toBe(true);
-    expect(labelById.get('trg.second').startsWith('T2 · ')).toBe(true);
+    // 整条流程条连续编号 T1..TN（跨任务分组不重复起号）
+    const seqs = [...seqById.values()];
+    expect(seqs).toEqual(seqs.map((_, index) => index + 1));
+    // 组内仍按任务步骤序：first 在 second 之前（定义序相反不影响）
+    expect(seqById.get('trg.first')).toBeLessThan(seqById.get('trg.second'));
     bar.remove();
     expect(filter.questGroups.find(item => item.id === 'task.rev').steps.map(step => step.id)).toEqual(['first', 'second']);
   });
