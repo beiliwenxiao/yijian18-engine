@@ -189,6 +189,8 @@ export class UIEditor {
     // 属性输入连续编辑期间的历史快照（focus 捕获、change 提交）
     this._propHistorySnapshot = null;
 
+    // 显隐/锁定为编辑器状态：按 gameId 存 localStorage，不写入布局 JSON 污染运行时配置
+    this._editorStateKey = `yijian18.uie.editorState.${this.gameId}`;
     this._dragState = null;
     this._initialized = false;
     this._loginBackgroundImage = '';
@@ -207,6 +209,54 @@ export class UIEditor {
   _cloneDefault(platform) {
     const defaultPlatform = LOGIN_LAYOUT_PLATFORMS.has(platform) ? 'login' : platform;
     return JSON.parse(JSON.stringify(DEFAULT_COMPONENTS[defaultPlatform]));
+  }
+
+  // ─── 显隐/锁定状态持久化（localStorage，按 gameId+平台隔离） ─────────────
+
+  /** 从 localStorage 还原各平台控件的 editorHidden/editorLocked。 */
+  _loadEditorState() {
+    let state = null;
+    try {
+      state = JSON.parse(localStorage.getItem(this._editorStateKey) || 'null');
+    } catch (e) {
+      return;
+    }
+    if (!state || typeof state !== 'object') return;
+    for (const platform of EDITABLE_LAYOUT_PLATFORMS) {
+      const platformState = state[platform];
+      const layout = this.layouts[platform];
+      if (!platformState || !Array.isArray(layout?.components)) continue;
+      for (const comp of layout.components) {
+        // 持久化状态为唯一事实来源：先清空再从存储还原（避免快照历史带回旧标记）
+        delete comp.editorHidden;
+        delete comp.editorLocked;
+        const flags = platformState[comp.id];
+        if (!flags) continue;
+        if (flags.hidden === true) comp.editorHidden = true;
+        if (flags.locked === true) comp.editorLocked = true;
+      }
+    }
+  }
+
+  /** 把各平台控件的 editorHidden/editorLocked 写入 localStorage。 */
+  _saveEditorState() {
+    const state = {};
+    for (const platform of EDITABLE_LAYOUT_PLATFORMS) {
+      const platformState = {};
+      for (const comp of this.layouts[platform]?.components || []) {
+        if (comp.editorHidden !== true && comp.editorLocked !== true) continue;
+        platformState[comp.id] = {
+          ...(comp.editorHidden === true ? { hidden: true } : {}),
+          ...(comp.editorLocked === true ? { locked: true } : {})
+        };
+      }
+      state[platform] = platformState;
+    }
+    try {
+      localStorage.setItem(this._editorStateKey, JSON.stringify(state));
+    } catch (e) {
+      // 隐私模式/存储满等情况忽略：显隐锁定降级为本次会话有效
+    }
   }
 
   // ─── 快照历史（后退=撤销 / 前进=重做，与场景/面板编辑器同模式） ───────────
@@ -237,6 +287,8 @@ export class UIEditor {
     this.selectedId = null;
     this.selectedPanelPart = null;
     this._dragState = null;
+    // 显隐/锁定不参与撤销历史，恢复后仍以持久化状态为准
+    this._loadEditorState();
     this._render();
   }
 
@@ -287,6 +339,7 @@ export class UIEditor {
     this._initialized = true;
     this._buildUI();
     await this._loadFromFiles();
+    this._loadEditorState();
     await this._loadLoginBackgroundConfig();
     await this._loadPanelLayout();
     // 面板的内外框比例由面板编辑器维护，这里先把历史数据规范到该比例
@@ -569,6 +622,7 @@ export class UIEditor {
     this.container.querySelector('#uie-undo').addEventListener('click', () => this.undo());
     this.container.querySelector('#uie-redo').addEventListener('click', () => this.redo());
     this._bindHistoryShortcuts();
+    this._updateHistoryButtons();
     this._setupResizer(this.container.querySelector('#uie-resizer-left'), this.container.querySelector('#uie-list'), 160, 420);
     this._setupResizer(this.container.querySelector('#uie-resizer-right'), this.container.querySelector('#uie-props'), 200, 440);
 
@@ -609,6 +663,7 @@ export class UIEditor {
         this.layouts[this.platform] = this._cloneDefault(this.platform);
         this.selectedId = null;
         this.selectedPanelPart = null;
+        this._saveEditorState(); // 当前平台显隐/锁定一并复位
         this._commitHistorySnapshot(snapshot);
         this._render();
       }
@@ -751,8 +806,10 @@ export class UIEditor {
         if (action === 'visibility') {
           comp.editorHidden = comp.editorHidden !== true;
           if (comp.editorHidden && this.selectedId === comp.id) this.selectedId = null;
+          this._saveEditorState();
         } else if (action === 'lock') {
           comp.editorLocked = comp.editorLocked !== true;
+          this._saveEditorState();
         } else {
           this.selectedId = comp.id;
           this.selectedPanelPart = null;
