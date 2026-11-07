@@ -55,6 +55,8 @@ export class SanguoDomainCommandFacade {
       ['battle.command', 'battle.open.s11', () => scene.s03s14BattleCoordinator.open('S11')],
       ['battle.command', 'battle.open.s12', () => scene.s03s14BattleCoordinator.open('S12')],
       ['battle.command', 'battle.open.s13', () => scene.s03s14BattleCoordinator.open('S13')],
+      // P1：战果结算命令化（update 只挂起，领域提交由此命令触发）
+      ['battle.command', 'battle.settle', p => scene.s03s14BattleCoordinator.settle(p)],
       ['rescue.command', 'rescue.start.s04', () => scene.s03s08Coordinator.startS04BocaiRescue()],
       ['rescue.command', 'rescue.advance.s04', () => scene.s03s08Coordinator.completeS04BocaiEvacuation()],
       ['rescue.command', 'rescue.start.s05', () => scene.s05SceneCoordinator.startS05ZhangManchengRescue()],

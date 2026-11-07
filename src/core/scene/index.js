@@ -44,6 +44,7 @@ export { SceneItemGainedFlow } from './SceneItemGainedFlow.js';
 export { SceneGameLoaderBridge } from './SceneGameLoaderBridge.js';
 export { SceneCityWarStateBridge } from './SceneCityWarStateBridge.js';
 export { SceneBattleRuntime } from './SceneBattleRuntime.js';
+export { BattleSessionFacade } from './BattleSessionFacade.js';
 export { registerSceneTriggerActions } from './SceneTriggerActionProvider.js';
 export { SceneAimPresentation } from './SceneAimPresentation.js';
 export { SceneGameplaySystemAssembler } from './SceneGameplaySystemAssembler.js';

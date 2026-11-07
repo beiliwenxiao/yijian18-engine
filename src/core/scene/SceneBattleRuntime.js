@@ -45,6 +45,9 @@ export class SceneBattleRuntime {
     this.activeDefinition = null;
     this.busy = false;
     this.disposed = false;
+    // P1：战果发现后先挂起，等 battle.settle 命令触发领域结算（不在此处直接提交）
+    this.pendingSettlement = null;
+    this._settlePromise = null;
     this._generation = 0;
     this._previousEffectFilter = null;
     this._createOwnedRuntime(config);
@@ -206,6 +209,12 @@ export class SceneBattleRuntime {
       });
       return true;
     }
+    if (this.battleSystem.state === BattleState.RESOLVED && frozenResult) {
+      // P1：战果已冻结但尚未提交结算——不重新开模式，补发结算命令
+      const pending = this.getPendingSettlement();
+      if (pending) this.hooks.settlementRequired?.({ ...pending, runtime: this });
+      return true;
+    }
     if (this.battleSystem.state === BattleState.ACTIVE && this.battlefieldRuntime.active) {
       this.showTip(flow.activeMessage, { title: '战役进行中' });
       return true;
@@ -254,7 +263,7 @@ export class SceneBattleRuntime {
       }
       const frozenResult = this.battleSystem.getState().result;
       if (frozenResult) {
-        await this.settleResult(frozenResult, this.battlefieldRuntime.getSnapshot());
+        await this.settleFrozenResult({ resultId: frozenResult.resultId });
         this.modeView.close();
         return true;
       }
@@ -315,17 +324,67 @@ export class SceneBattleRuntime {
     const updated = this.battlefieldRuntime.update(deltaTime, this.getEntities());
     if (updated?.snapshot) this.hudView.setSnapshot(updated.snapshot);
     if (!updated?.resolved || !updated.result) return updated;
-    this.busy = true;
-    const generation = this._generation;
-    void this.settleResult(updated.result, updated.snapshot)
-      .catch(error => this.showTip(
-        `战果检查点未提交：${error?.message || error}。可在军令旗处重试。`,
-        { title: '结算失败' }
-      ))
-      .finally(() => {
-        if (generation === this._generation && !this.disposed) this.busy = false;
-      });
+    // P1：update 只负责“发现战果并挂起”，真正的领域结算由 battle.settle 命令触发。
+    this.pendingSettlement = {
+      result: clone(updated.result),
+      snapshot: clone(updated.snapshot || this.battlefieldRuntime.getSnapshot())
+    };
+    this.hooks.settlementRequired?.({
+      result: clone(this.pendingSettlement.result),
+      battleSnapshot: clone(this.pendingSettlement.snapshot),
+      runtime: this
+    });
     return updated;
+  }
+
+  hasPendingSettlement() {
+    if (this.pendingSettlement) return true;
+    return this.getPendingSettlement() != null;
+  }
+
+  getPendingSettlement() {
+    if (this.pendingSettlement) return clone(this.pendingSettlement);
+    const result = this.battleSystem.getState().result;
+    if (!result || this._isResultApplied(result.resultId)) return null;
+    return { result: clone(result), snapshot: clone(this.battlefieldRuntime.getSnapshot()) };
+  }
+
+  _isResultApplied(resultId) {
+    if (!resultId) return false;
+    try {
+      return (this.getAppliedResultIds() || []).includes(resultId);
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * 以冻结战果为唯一输入执行领域结算。
+   * 幂等键固定为 settle:${resultId}（见 settleResult），重复命令返回 idempotent。
+   */
+  async settleFrozenResult({ resultId = null } = {}) {
+    if (this.disposed) return { ok: false, code: 'battleRuntimeUnavailable' };
+    const frozen = this.battleSystem.getState().result;
+    if (!frozen) return { ok: false, code: 'battleResultNotFrozen' };
+    if (resultId && frozen.resultId !== resultId) {
+      return { ok: false, code: 'battleResultMismatch', message: `battleResultMismatch:${resultId}` };
+    }
+    if (this._isResultApplied(frozen.resultId)) {
+      this.pendingSettlement = null;
+      return { ok: true, idempotent: true, resultId: frozen.resultId };
+    }
+    if (this._settlePromise) return this._settlePromise;
+    const snapshot = this.pendingSettlement?.result?.resultId === frozen.resultId
+      ? this.pendingSettlement.snapshot
+      : this.battlefieldRuntime.getSnapshot();
+    const generation = this._generation;
+    this._settlePromise = this.settleResult(frozen, snapshot)
+      .then(() => {
+        if (generation === this._generation) this.pendingSettlement = null;
+        return { ok: true, idempotent: false, resultId: frozen.resultId };
+      })
+      .finally(() => { this._settlePromise = null; });
+    return this._settlePromise;
   }
 
   async grantProgressionRewards(flow, result) {
@@ -490,6 +549,9 @@ export class SceneBattleRuntime {
   }
 
   _restoreValidated(data = {}) {
+    // 挂起态是内存瞬态，读档后按快照重建（由控制层补发 battle.settle）
+    this.pendingSettlement = null;
+    this._settlePromise = null;
     if (data.battleState) {
       const restored = this.battleSystem.deserialize(data.battleState);
       if (!restored.ok) return { ...restored, path: 'battleState' };

@@ -13,6 +13,7 @@
  ************************************************************/
 
 import { SceneBattleRuntime } from '../../../src/core/scene/SceneBattleRuntime.js';
+import { BattleSessionFacade } from '../../../src/core/scene/BattleSessionFacade.js';
 import { BattleMode, BattleState } from '../../../src/systems/BattleSystem.js';
 import { RescueSystem } from '../../../src/systems/RescueSystem.js';
 import { EndingSystem } from '../../../src/systems/EndingSystem.js';
@@ -56,6 +57,9 @@ export class S03S14BattleCoordinator {
     this.definitions = new Map();
     this.rescueDefinitions = new Map();
     this._detachFrameUpdate = null;
+    this._settleCommandInFlight = false;
+    this._settleRetryTicks = 0;
+    this._settleAttempt = 0;
     this.initialized = false;
   }
 
@@ -99,7 +103,7 @@ export class S03S14BattleCoordinator {
       this.definitions.get(S12_BATTLE_ID), 'S12'
     ));
 
-    this.runtime = new SceneBattleRuntime({
+    const runtime = new SceneBattleRuntime({
       battleClient: gameLoader.battleClient,
       validator: gameLoader.contentValidator,
       combatSystem: this.scene.combatSystem,
@@ -138,6 +142,8 @@ export class S03S14BattleCoordinator {
       },
       hooks: this._createRuntimeHooks(gameLoader)
     });
+    // P0：内容层只与门面交互；后续 P2/P3 的视图/输入/快照改造收口在门面内部
+    this.runtime = new BattleSessionFacade({ runtime });
     try {
       this.runtime.registerDefinitions([...this.definitions.values()]);
       this._detachFrameUpdate = this.scene.sceneRuntime?.onFramePhase?.(
@@ -194,6 +200,8 @@ export class S03S14BattleCoordinator {
         }
       },
       settleResult: context => this._settleSpecialResult(context),
+      // P1：战果发现后不直接结算，由 battle.settle 命令经权威端口提交
+      settlementRequired: context => { this._requestSettlementCommand(context); },
       afterDomainSettlement: context => this._settleUnavailableRescue(context),
       afterSettlement: async ({ result }) => {
         // 战果冻结时收束个人决斗目标：介入亲手击杀的组已真实 waveCleared（once 幂等），
@@ -398,9 +406,71 @@ export class S03S14BattleCoordinator {
     return true;
   }
 
+  /**
+   * P1：battle.settle 命令的领域入口（由 SanguoDomainCommandFacade 路由）。
+   * 幂等键由运行时固定为 settle:${resultId}，重复命令返回 idempotent。
+   */
+  async settle(payload = {}) {
+    if (!this.runtime) throw new Error('battleRuntimeUnavailable');
+    const resultId = payload?.resultId || null;
+    return this.runtime.settleFrozenResult({ resultId });
+  }
+
+  _requestSettlementCommand({ result } = {}) {
+    if (this._settleCommandInFlight) return;
+    const resultId = result?.resultId;
+    if (!resultId) return;
+    const gateway = this.scene.sceneRuntime?.commandGateway;
+    if (!gateway?.execute) {
+      this.scene._showScreenTip(
+        '结算命令通道不可用，战果将在下次进入时补提交。', { title: '结算失败' }
+      );
+      return;
+    }
+    this._settleCommandInFlight = true;
+    this._settleRetryTicks = 0;
+    this._settleAttempt += 1;
+    Promise.resolve(gateway.execute({
+      intentType: 'battle.command',
+      actorRef: this.scene.playerEntity?.id || 'battle',
+      // 命令级 operationId 每次尝试递增：失败可重试，成功后的重复结算由域内 settle:${resultId} 幂等兜底
+      operationId: `battle-settle:${resultId}:${this._settleAttempt}`,
+      payload: {
+        operation: 'battle.settle',
+        resultId,
+        battleId: result.battleId || null,
+        sceneId: this.scene.currentSceneId
+      }
+    })).then(outcome => {
+      if (outcome?.ok === false) {
+        throw new Error(outcome?.error?.message || outcome?.code || 'battleSettleRejected');
+      }
+      return outcome;
+    }).catch(error => {
+      this.scene._showScreenTip(
+        `战果检查点未提交：${error?.message || error}。稍后自动重试。`,
+        { title: '结算失败' }
+      );
+    }).finally(() => {
+      this._settleCommandInFlight = false;
+    });
+  }
+
   open(sceneId) { return this.runtime?.openByScene(sceneId) || false; }
   selectMode(mode, sceneId) { return this.runtime?.selectMode(mode, sceneId) || false; }
-  update(deltaTime) { return this.runtime?.update(deltaTime); }
+  update(deltaTime) {
+    const updated = this.runtime?.update(deltaTime);
+    // 读档后或命令失败时，待结算战果仍可补发；30 帧退避避免每帧刷提示
+    const pending = this.runtime?.getPendingSettlement?.();
+    if (pending && !this._settleCommandInFlight) {
+      this._settleRetryTicks += 1;
+      if (this._settleRetryTicks >= 30) {
+        this._settleRetryTicks = 0;
+        this._requestSettlementCommand(pending);
+      }
+    }
+    return updated;
+  }
   getDefinition(battleId) { return this.runtime?.getDefinition(battleId) || null; }
   getRescueDefinition(definitionId) { return clone(this.rescueDefinitions.get(definitionId) || null); }
   hasRescueDefinition(definitionId) { return this.rescueDefinitions.has(definitionId); }
@@ -425,7 +495,13 @@ export class S03S14BattleCoordinator {
   leaveBattleScene(options) { this.runtime?.leaveBattleScene(options); }
   capture() { return this.runtime?.capture() || {}; }
   validateSnapshot(data) { return this.runtime?.validateSnapshot(data) || { ok: false, code: 'battleRuntimeUnavailable' }; }
-  restore(data) { return this.runtime?.restore(data) || { ok: false, code: 'battleRuntimeUnavailable' }; }
+  restore(data) {
+    const restored = this.runtime?.restore(data)
+      || { ok: false, code: 'battleRuntimeUnavailable' };
+    // 读档后的未结算冻结战果：下一帧由 update 补发 battle.settle
+    if (restored?.ok !== false) this._settleRetryTicks = 30;
+    return restored;
+  }
 
   setRescueObjectiveTitle(definitionId) {
     const title = RESCUE_TITLE_BY_ID[definitionId];
