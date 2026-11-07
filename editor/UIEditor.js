@@ -568,9 +568,9 @@ export class UIEditor {
             <button data-platform="desktop">🖥️ PC UI</button>
             <button data-platform="loginDesktop">🖥️ PC UI 登录页面</button>
             <button data-platform="loginMobile">📱 Android UI 登录页面</button>
-            <button data-platform="gamepad">🎮 手柄</button>
-            <button data-platform="hints">💬 提示文案</button>
-            <button data-platform="onboarding">🪜 引导显示</button>
+            <button data-platform="gamepad">🎮 手柄按键配置</button>
+            <button data-platform="hints">💬 按键提示文案</button>
+            <button data-platform="onboarding">🪜 按键引导显示</button>
           </div>
           <div class="uie-actions">
             <div class="uie-mobile-button-actions" id="uie-mobile-button-actions" hidden>
@@ -978,9 +978,30 @@ export class UIEditor {
     }
   }
 
+  /**
+   * 布局类页签显示左侧控件列表与左右分隔条；非布局页签
+   * （手柄按键配置 / 按键提示文案 / 按键引导显示）隐藏并清空列表。
+   * 判定只看 platform id，页签显示名改名不影响命中。
+   */
+  _setLayoutPanelsVisible(active) {
+    const listPanel = this.container.querySelector('#uie-list');
+    const leftResizer = this.container.querySelector('#uie-resizer-left');
+    const rightResizer = this.container.querySelector('#uie-resizer-right');
+    if (listPanel) listPanel.style.display = active ? '' : 'none';
+    if (leftResizer) leftResizer.style.display = active ? '' : 'none';
+    if (rightResizer) rightResizer.style.display = active ? '' : 'none';
+    if (!active) {
+      const items = this.container.querySelector('#uie-list-items');
+      if (items) items.innerHTML = '';
+    }
+  }
+
   /** 渲染当前平台的舞台和组件 */
   _render() {
     this._updateMobileButtonControls();
+    // 控件列表/左右分隔条仅在布局类页签显示：按 platform id 判定（不依赖页签显示名，改名不影响）
+    const layoutEditorActive = EDITABLE_LAYOUT_PLATFORMS.includes(this.platform);
+    this._setLayoutPanelsVisible(layoutEditorActive);
     if (this.platform === 'hints') {
       this._renderHintsEditor();
       return;
@@ -996,14 +1017,6 @@ export class UIEditor {
     const layout = this.layouts[this.platform];
     const stage = this.container.querySelector('#uie-stage');
     if (!stage) return;
-    // 控件列表/左右分隔条仅在布局类标签显示（手柄/文案/引导标签无画布布局）
-    const layoutEditorActive = EDITABLE_LAYOUT_PLATFORMS.includes(this.platform);
-    const listPanel = this.container.querySelector('#uie-list');
-    const leftResizer = this.container.querySelector('#uie-resizer-left');
-    const rightResizer = this.container.querySelector('#uie-resizer-right');
-    if (listPanel) listPanel.style.display = layoutEditorActive ? '' : 'none';
-    if (leftResizer) leftResizer.style.display = layoutEditorActive ? '' : 'none';
-    if (rightResizer) rightResizer.style.display = layoutEditorActive ? '' : 'none';
     this._renderComponentList();
     const isLoginPreview = LOGIN_LAYOUT_PLATFORMS.has(this.platform);
     stage.classList.toggle('login-stage', isLoginPreview);
