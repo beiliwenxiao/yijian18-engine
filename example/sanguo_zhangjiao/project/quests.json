@@ -292,7 +292,6 @@
         "type": "objective"
       },
       {
-        "id": "stayOvernight",
         "gates": [
           {
             "bindingId": "S01-binding-enter-shelter",
@@ -300,6 +299,7 @@
             "sceneId": "S01"
           }
         ],
+        "id": "stayOvernight",
         "mapTargets": [
           {
             "sceneId": "S01",
@@ -394,20 +394,18 @@
     ],
     "steps": [
       {
-        "id": "begChildrenEnter",
-        "type": "event",
-        "title": "孩童乞讨：走近开启对话",
         "eventMatcher": {
-          "type": "enter",
-          "params": {}
+          "params": {},
+          "type": "enter"
         },
-        "once": false,
+        "id": "begChildrenEnter",
         "if": {
           "arg": {
             "var": "story.s02BegAdults"
           },
           "op": "not"
         },
+        "once": false,
         "steps": [
           {
             "action": "startDialogue",
@@ -415,19 +413,19 @@
               "id": "dialogue.s02.beggarChildren"
             }
           }
-        ]
+        ],
+        "title": "孩童乞讨：走近开启对话",
+        "type": "event"
       },
       {
-        "id": "begChildrenRound1",
-        "type": "event",
-        "title": "孩童乞讨：第一轮选择",
         "eventMatcher": {
-          "type": "dialogueChoice",
           "params": {
             "choiceId": "give",
             "id": "dialogue.s02.beggarChildren"
-          }
+          },
+          "type": "dialogueChoice"
         },
+        "id": "begChildrenRound1",
         "once": true,
         "steps": [
           {
@@ -473,18 +471,18 @@
             ],
             "stepId": "beg-children-give-branch"
           }
-        ]
+        ],
+        "title": "孩童乞讨：第一轮选择",
+        "type": "event"
       },
       {
-        "id": "begChildrenAfter",
-        "type": "event",
-        "title": "孩童乞讨：对话收尾",
         "eventMatcher": {
-          "type": "dialogueEnd",
           "params": {
             "id": "dialogue.s02.beggarChildren"
-          }
+          },
+          "type": "dialogueEnd"
         },
+        "id": "begChildrenAfter",
         "once": true,
         "steps": [
           {
@@ -562,19 +560,19 @@
             ],
             "stepId": "beg-children-refuse-branch"
           }
-        ]
+        ],
+        "title": "孩童乞讨：对话收尾",
+        "type": "event"
       },
       {
-        "id": "begChildrenRound2",
-        "type": "event",
-        "title": "孩童乞讨：第二轮选择",
         "eventMatcher": {
-          "type": "dialogueChoice",
           "params": {
             "choiceId": "give5",
             "id": "dialogue.s02.beggarChildrenMore"
-          }
+          },
+          "type": "dialogueChoice"
         },
+        "id": "begChildrenRound2",
         "once": true,
         "steps": [
           {
@@ -589,18 +587,18 @@
             },
             "stepId": "beg-children-second-give"
           }
-        ]
+        ],
+        "title": "孩童乞讨：第二轮选择",
+        "type": "event"
       },
       {
-        "id": "begChildrenScatter",
-        "type": "event",
-        "title": "孩童乞讨：散场编排",
         "eventMatcher": {
-          "type": "dialogueEnd",
           "params": {
             "id": "dialogue.s02.beggarChildrenMore"
-          }
+          },
+          "type": "dialogueEnd"
         },
+        "id": "begChildrenScatter",
         "once": true,
         "steps": [
           {
@@ -635,19 +633,19 @@
             },
             "stepId": "beg-adults-dialogue"
           }
-        ]
+        ],
+        "title": "孩童乞讨：散场编排",
+        "type": "event"
       },
       {
-        "id": "begAdultsChoice",
-        "type": "event",
-        "title": "成人乞讨：选择编排",
         "eventMatcher": {
-          "type": "dialogueChoice",
           "params": {
             "choiceId": "giveAdults",
             "id": "dialogue.s02.beggarAdults"
-          }
+          },
+          "type": "dialogueChoice"
         },
+        "id": "begAdultsChoice",
         "once": true,
         "steps": [
           {
@@ -809,18 +807,18 @@
             ],
             "stepId": "beg-adults-pay-branch"
           }
-        ]
+        ],
+        "title": "成人乞讨：选择编排",
+        "type": "event"
       },
       {
-        "id": "begAdultsEnd",
-        "type": "event",
-        "title": "成人乞讨：对话收尾",
         "eventMatcher": {
-          "type": "dialogueEnd",
           "params": {
             "id": "dialogue.s02.beggarAdults"
-          }
+          },
+          "type": "dialogueEnd"
         },
+        "id": "begAdultsEnd",
         "once": true,
         "steps": [
           {
@@ -888,19 +886,19 @@
             ],
             "stepId": "beg-adults-escalate-branch"
           }
-        ]
+        ],
+        "title": "成人乞讨：对话收尾",
+        "type": "event"
       },
       {
-        "id": "begPacifist",
-        "type": "event",
-        "title": "不还手路线：围攻与昏迷",
         "eventMatcher": {
-          "type": "dialogueChoice",
           "params": {
             "choiceId": "pacify",
             "id": "dialogue.s02.beggarConfront"
-          }
+          },
+          "type": "dialogueChoice"
         },
+        "id": "begPacifist",
         "once": true,
         "steps": [
           {
@@ -969,19 +967,19 @@
             },
             "stepId": "beg-pacifist-fainted"
           }
-        ]
+        ],
+        "title": "不还手路线：围攻与昏迷",
+        "type": "event"
       },
       {
-        "id": "begFight",
-        "type": "event",
-        "title": "反抗路线：围攻开战",
         "eventMatcher": {
-          "type": "dialogueChoice",
           "params": {
             "choiceId": "fight",
             "id": "dialogue.s02.beggarConfront"
-          }
+          },
+          "type": "dialogueChoice"
         },
+        "id": "begFight",
         "once": true,
         "steps": [
           {
@@ -1016,18 +1014,18 @@
             },
             "stepId": "beg-fight-prepare"
           }
-        ]
+        ],
+        "title": "反抗路线：围攻开战",
+        "type": "event"
       },
       {
-        "id": "begFightWin",
-        "type": "event",
-        "title": "反抗路线：战胜利好",
         "eventMatcher": {
-          "type": "waveCleared",
           "params": {
             "group": "S02-villagers-hostile"
-          }
+          },
+          "type": "waveCleared"
         },
+        "id": "begFightWin",
         "once": true,
         "steps": [
           {
@@ -1066,22 +1064,22 @@
             },
             "stepId": "beg-fight-win-fainted"
           }
-        ]
+        ],
+        "title": "反抗路线：战胜利好",
+        "type": "event"
       },
       {
-        "id": "begFightLose",
-        "type": "event",
-        "title": "反抗路线：战败昏迷",
         "eventMatcher": {
-          "type": "playerSpecialFaint",
           "params": {
             "sceneId": "S02"
-          }
+          },
+          "type": "playerSpecialFaint"
         },
-        "once": true,
+        "id": "begFightLose",
         "if": {
           "var": "story.s02BegFight"
         },
+        "once": true,
         "steps": [
           {
             "action": "state.transaction",
@@ -1128,18 +1126,18 @@
             },
             "stepId": "beg-fight-lose-fainted"
           }
-        ]
+        ],
+        "title": "反抗路线：战败昏迷",
+        "type": "event"
       },
       {
-        "id": "armyDispatch",
-        "type": "event",
-        "title": "张角军队入画行军",
         "eventMatcher": {
-          "type": "state.transaction",
           "params": {
             "definitionId": "story.s02.beg.fainted"
-          }
+          },
+          "type": "state.transaction"
         },
+        "id": "armyDispatch",
         "once": true,
         "steps": [
           {
@@ -1177,18 +1175,18 @@
             },
             "stepId": "army-dispatch-march"
           }
-        ]
+        ],
+        "title": "张角军队入画行军",
+        "type": "event"
       },
       {
-        "id": "armyArrival",
-        "type": "event",
-        "title": "军队抵达村口（未抉择则开启张角对话）",
         "eventMatcher": {
-          "type": "armyMarchArrived",
           "params": {
             "armyId": "army.s02.column"
-          }
+          },
+          "type": "armyMarchArrived"
         },
+        "id": "armyArrival",
         "once": true,
         "steps": [
           {
@@ -1221,7 +1219,9 @@
             ],
             "stepId": "army-arrival-prologue-branch"
           }
-        ]
+        ],
+        "title": "军队抵达村口（未抉择则开启张角对话）",
+        "type": "event"
       },
       {
         "dialogueId": "dialogue.s02.prologue",
@@ -1399,15 +1399,13 @@
         "type": "action"
       },
       {
-        "id": "porridgeWaves",
-        "type": "event",
-        "title": "施粥赈济五批与送别编排",
         "eventMatcher": {
-          "type": "dialogueEnd",
           "params": {
             "id": "dialogue.s02.awakening"
-          }
+          },
+          "type": "dialogueEnd"
         },
+        "id": "porridgeWaves",
         "once": true,
         "steps": [
           {
@@ -1631,7 +1629,9 @@
             },
             "stepId": "recruit-queue-spawn"
           }
-        ]
+        ],
+        "title": "施粥赈济五批与送别编排",
+        "type": "event"
       }
     ],
     "title": "山道救援"
@@ -1663,6 +1663,50 @@
     ],
     "steps": [
       {
+        "eventMatcher": {
+          "params": {
+            "sceneId": "S02"
+          },
+          "type": "sceneEnter"
+        },
+        "id": "spawnInitial",
+        "once": true,
+        "steps": [
+          {
+            "action": "spawnPlacements",
+            "params": {
+              "selector": {
+                "group": "S02-initial"
+              }
+            }
+          },
+          {
+            "action": "spawnPlacements",
+            "params": {
+              "selector": {
+                "group": "S02-villagers-calm"
+              }
+            }
+          },
+          {
+            "action": "spawnPlacements",
+            "params": {
+              "selector": {
+                "group": "S02-beg-children"
+              }
+            }
+          },
+          {
+            "action": "showTip",
+            "params": {
+              "text": "山道旁的荒村炊烟零落。田埂上有灾民跪着挖树根，妇女们剥草皮充饥，几个孩子蹲在路旁朝你张望。"
+            }
+          }
+        ],
+        "title": "进入荒村：灾民惨状呈现",
+        "type": "event"
+      },
+      {
         "id": "porridge",
         "objectiveType": "commit.fact",
         "target": "story.s02.porridge.laid",
@@ -1670,17 +1714,163 @@
         "type": "objective"
       },
       {
+        "cooldown": 1,
+        "eventMatcher": {
+          "params": {},
+          "type": "interact"
+        },
+        "id": "acceptSummonsInteract",
+        "if": {
+          "var": "story.s02Rescued"
+        },
+        "once": true,
+        "steps": [
+          {
+            "action": "startDialogue",
+            "params": {
+              "id": "dialogue.s02.zhangjiaoSummons"
+            }
+          }
+        ],
+        "title": "信使引路：走近开启召见对话",
+        "type": "event"
+      },
+      {
+        "commitFact": "story.s02.summons.accept",
+        "eventMatcher": {
+          "payload": {
+            "id": "dialogue.s02.zhangjiaoSummons"
+          },
+          "type": "dialogueEnd"
+        },
         "id": "acceptSummons",
         "objectiveType": "custom.event",
         "title": "接受张角召见",
-        "type": "objective",
+        "type": "objective"
+      },
+      {
+        "cooldown": 0.5,
         "eventMatcher": {
-          "type": "dialogueEnd",
-          "payload": {
-            "id": "dialogue.s02.zhangjiaoSummons"
-          }
+          "params": {},
+          "type": "interact"
         },
-        "commitFact": "story.s02.summons.accept"
+        "id": "recruitInteract",
+        "if": {
+          "var": "story.s02SummonsAccepted"
+        },
+        "once": false,
+        "steps": [
+          {
+            "branch": [
+              {
+                "do": [
+                  {
+                    "action": "state.transaction",
+                    "params": {
+                      "definitionId": "story.s02.recruit.tick"
+                    },
+                    "stepId": "recruit-tick"
+                  }
+                ],
+                "when": {
+                  "arg": {
+                    "name": "story.s02RecruitDone",
+                    "op": "var"
+                  },
+                  "op": "not"
+                }
+              }
+            ],
+            "stepId": "recruit-tick-branch"
+          },
+          {
+            "branch": [
+              {
+                "do": [
+                  {
+                    "action": "state.transaction",
+                    "params": {
+                      "definitionId": "story.s02.recruit.done"
+                    },
+                    "stepId": "recruit-done-commit"
+                  },
+                  {
+                    "action": "spawnPlacements",
+                    "params": {
+                      "selector": {
+                        "group": "S02-army-recruits"
+                      }
+                    },
+                    "stepId": "recruit-army-spawn"
+                  },
+                  {
+                    "action": "scenario.command",
+                    "params": {
+                      "operation": "army.camp",
+                      "scenarioId": "scenario.command.army.camp",
+                      "x": 560,
+                      "y": 400
+                    },
+                    "stepId": "camp-after-recruit"
+                  }
+                ],
+                "when": {
+                  "args": [
+                    {
+                      "op": ">=",
+                      "value": 50,
+                      "var": "story.s02RecruitCount"
+                    },
+                    {
+                      "arg": {
+                        "name": "story.s02RecruitDone",
+                        "op": "var"
+                      },
+                      "op": "not"
+                    }
+                  ],
+                  "op": "and"
+                }
+              }
+            ],
+            "stepId": "recruit-done-branch"
+          },
+          {
+            "branch": [
+              {
+                "do": [
+                  {
+                    "action": "showTip",
+                    "params": {
+                      "text": "十名灾民喝了符水、领了符牌，入道为信众！（募众进度 +10）"
+                    },
+                    "stepId": "recruit-progress-tip"
+                  }
+                ],
+                "when": {
+                  "args": [
+                    {
+                      "op": "<",
+                      "value": 50,
+                      "var": "story.s02RecruitCount"
+                    },
+                    {
+                      "arg": {
+                        "name": "story.s02RecruitDone",
+                        "op": "var"
+                      },
+                      "op": "not"
+                    }
+                  ],
+                  "op": "and"
+                }
+              }
+            ],
+            "stepId": "recruit-progress-branch"
+          }
+        ],
+        "title": "招众旗招募信众（每次 +10，满 50 入列、七十人入道、随即扎营）",
+        "type": "event"
       },
       {
         "gates": [
@@ -1711,6 +1901,65 @@
         "id": "after.recruit.2",
         "title": "张角检阅新募信众",
         "type": "dialogue"
+      },
+      {
+        "eventMatcher": {
+          "params": {},
+          "type": "armyCampLaid"
+        },
+        "id": "campComplete",
+        "once": true,
+        "steps": [
+          {
+            "action": "state.transaction",
+            "params": {
+              "definitionId": "story.s02.camp.laid"
+            },
+            "stepId": "camp-laid-commit"
+          },
+          {
+            "action": "spawnPlacements",
+            "params": {
+              "selector": {
+                "group": "S02-camp-decor"
+              }
+            },
+            "stepId": "camp-decor-spawn"
+          },
+          {
+            "action": "state.transaction",
+            "params": {
+              "definitionId": "story.s02.overnight.done"
+            },
+            "stepId": "overnight-done-commit"
+          },
+          {
+            "action": "state.transaction",
+            "params": {
+              "definitionId": "story.s02.raid.fight.prepare"
+            },
+            "stepId": "raid-fight-prepare"
+          },
+          {
+            "action": "spawnPlacements",
+            "params": {
+              "selector": {
+                "group": "S02-raid-vanguard"
+              }
+            },
+            "stepId": "raid-vanguard-spawn"
+          },
+          {
+            "action": "scenario.command",
+            "params": {
+              "operation": "army.possess",
+              "scenarioId": "scenario.command.army.possess"
+            },
+            "stepId": "army-possess"
+          }
+        ],
+        "title": "扎营完成：提交事实+装饰+当夜与翌日围剿武装",
+        "type": "event"
       },
       {
         "id": "camp",
@@ -1764,15 +2013,13 @@
         "type": "tutorial"
       },
       {
-        "id": "raidWave2",
-        "type": "event",
-        "title": "围剿第二波与傅燮入场",
         "eventMatcher": {
-          "type": "waveCleared",
           "params": {
             "group": "S02-raid-vanguard"
-          }
+          },
+          "type": "waveCleared"
         },
+        "id": "raidWave2",
         "once": false,
         "steps": [
           {
@@ -1823,18 +2070,79 @@
             ],
             "stepId": "raid-wave2-branch"
           }
-        ]
+        ],
+        "title": "围剿第二波与傅燮入场",
+        "type": "event"
       },
       {
-        "id": "raidDefeat",
-        "type": "event",
-        "title": "围剿战败重整再战",
         "eventMatcher": {
-          "type": "playerSpecialFaint",
+          "params": {
+            "group": "S02-raid-mainforce"
+          },
+          "type": "waveCleared"
+        },
+        "id": "raidVictory",
+        "once": false,
+        "steps": [
+          {
+            "branch": [
+              {
+                "do": [
+                  {
+                    "action": "state.transaction",
+                    "params": {
+                      "definitionId": "story.s02.raid.repeled"
+                    },
+                    "stepId": "raid-repeled-commit"
+                  },
+                  {
+                    "action": "state.transaction",
+                    "params": {
+                      "definitionId": "story.s02.raid.fight.clear"
+                    },
+                    "stepId": "raid-fight-clear"
+                  },
+                  {
+                    "action": "scenario.command",
+                    "params": {
+                      "operation": "army.possess.release",
+                      "scenarioId": "scenario.command.army.possess.release"
+                    },
+                    "stepId": "army-possess-release"
+                  }
+                ],
+                "when": {
+                  "args": [
+                    {
+                      "name": "story.s02CampLaid",
+                      "op": "var"
+                    },
+                    {
+                      "arg": {
+                        "name": "story.s02RaidRepeled",
+                        "op": "var"
+                      },
+                      "op": "not"
+                    }
+                  ],
+                  "op": "and"
+                }
+              }
+            ],
+            "stepId": "raid-repeled-branch"
+          }
+        ],
+        "title": "围剿胜利：提交事实+解除附身",
+        "type": "event"
+      },
+      {
+        "eventMatcher": {
           "params": {
             "sceneId": "S02"
-          }
+          },
+          "type": "playerSpecialFaint"
         },
+        "id": "raidDefeat",
         "once": false,
         "steps": [
           {
@@ -1932,7 +2240,75 @@
             ],
             "stepId": "raid-defeat-branch"
           }
-        ]
+        ],
+        "title": "围剿战败重整再战",
+        "type": "event"
+      },
+      {
+        "cooldown": 1,
+        "eventMatcher": {
+          "params": {},
+          "type": "enter"
+        },
+        "id": "scavengerEncounter",
+        "if": {
+          "arg": {
+            "var": "story.s02ScavengerEncountered"
+          },
+          "op": "not"
+        },
+        "once": false,
+        "steps": [
+          {
+            "action": "startDialogue",
+            "params": {
+              "id": "dialogue.s02.scavengerChiefEncounter"
+            },
+            "stepId": "scavenger-chief-encounter-dialogue"
+          }
+        ],
+        "title": "拾荒者警戒区：头目遭遇对话",
+        "type": "event"
+      },
+      {
+        "eventMatcher": {
+          "params": {
+            "id": "dialogue.s02.scavengerChiefEncounter"
+          },
+          "type": "dialogueEnd"
+        },
+        "id": "scavengerEncounterEnd",
+        "once": true,
+        "steps": [
+          {
+            "action": "state.transaction",
+            "params": {
+              "definitionId": "story.s02.scavenger.encounter"
+            },
+            "stepId": "scavenger-encounter-fact"
+          }
+        ],
+        "title": "拾荒者头目对话结束（收口入档）",
+        "type": "event"
+      },
+      {
+        "cooldown": 1,
+        "eventMatcher": {
+          "params": {},
+          "type": "interact"
+        },
+        "id": "travelToS09",
+        "once": false,
+        "steps": [
+          {
+            "action": "state.transaction",
+            "params": {
+              "definitionId": "story.s02.travel"
+            }
+          }
+        ],
+        "title": "随军北上广宗（出口传送）",
+        "type": "event"
       }
     ],
     "title": "随军抗敌"

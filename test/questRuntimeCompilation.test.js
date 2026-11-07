@@ -536,10 +536,10 @@ describe('阶段③ S01 迁移契约：quest 编译产物与手写任务图逐�
     // 方案 B 编排步骤化：开场段 + 6 个目标后段由步骤编译（lightCampfire/gatherBerries/eatBerry/findAxe/spotWolf/skinWolf）；
     // 交互/机制类触发器（拾斧、添柴交互、sceneEnter 装配等）仍由 triggers[] 手写承担。
     // 新基线：S02-S14 任务化 accept 13 个 + complete 13 个（含 s02.rescue 无 accept、s01 complete 奖励），
-    // 编译触发器全集 = 上一基线 58 + 事件编排收编 16（verdict 13 / rescue 施粥 1 / summons 波次与战败 2）
-    //   + acceptSummons 改造增量 2（dialogueEnd 直连目标的 commit 触发器）= 76
+    // 编译触发器全集 = 上一基线 76 + S02 summons 召见线全量收编 8（进场装配/召见对话/招募/扎营/
+    //   围剿胜利/拾荒者遭遇×2/北上广宗出口，手写 trg_s02_* 七个已删除）= 84
     const triggers = compileQuestProject(project).triggers;
-    expect(triggers.length).toBe(76);
+    expect(triggers.length).toBe(84);
     expect(triggers.slice(0, 7).map(trigger => trigger.id)).toEqual([
       'trg_task.s01.survival_intro',
       'trg_task.s01.survival_after_lightCampfire',
@@ -594,6 +594,34 @@ describe('阶段③ S01 迁移契约：quest 编译产物与手写任务图逐�
     expect(findAxeAfter.do[1].params).toEqual({ operation: 'show', tutorialId: 's01.chopWood', await: true });
     const spotWolfAfter = triggers.find(trigger => trigger.id === 'trg_task.s01.survival_after_spotWolf');
     expect(spotWolfAfter.do.map(action => action.params.operation)).toEqual(['commitStoryWhenReady', 'ensureFirstWolf', 'show']);
+    // S02 summons 召见线全量收编：8 个手写 trg_s02_* → event 步骤编译产物（id 契约 + 关键语义抽查）
+    const summonsEventIds = [
+      'trg_task.s02.summons_event_spawnInitial',
+      'trg_task.s02.summons_event_acceptSummonsInteract',
+      'trg_task.s02.summons_event_recruitInteract',
+      'trg_task.s02.summons_event_campComplete',
+      'trg_task.s02.summons_event_raidVictory',
+      'trg_task.s02.summons_event_scavengerEncounter',
+      'trg_task.s02.summons_event_scavengerEncounterEnd',
+      'trg_task.s02.summons_event_travelToS09'
+    ];
+    for (const id of summonsEventIds) {
+      expect(triggers.find(trigger => trigger.id === id)).toBeTruthy();
+    }
+    // 手写触发器的防连点 cooldown / 条件守卫 / branch 结构随收编透传
+    const recruitCompiled = triggers.find(trigger => trigger.id === 'trg_task.s02.summons_event_recruitInteract');
+    expect(recruitCompiled.cooldown).toBe(0.5);
+    expect(recruitCompiled.if).toEqual({ var: 'story.s02SummonsAccepted' });
+    expect(recruitCompiled.once).toBe(false);
+    expect(recruitCompiled.do).toHaveLength(3);
+    expect(recruitCompiled.do.every(item => Array.isArray(item.branch))).toBe(true);
+    expect(triggers.find(trigger => trigger.id === 'trg_task.s02.summons_event_acceptSummonsInteract').cooldown).toBe(1);
+    expect(triggers.find(trigger => trigger.id === 'trg_task.s02.summons_event_spawnInitial').when)
+      .toEqual({ type: 'sceneEnter', params: { sceneId: 'S02' } });
+    // 手写 trg_s02_* 七个已删除（收编后零重复定义）
+    for (const goneId of ['trg_s02_spawn_initial', 'trg_s02_recruit', 'trg_s02_camp_laid', 'trg_s02_raid_repeled', 'trg_s02_zhangjiao_summons', 'trg_s02_scavenger_chief_encounter', 'trg_s02_scavenger_chief_dialogue_end']) {
+      expect(project.triggers.find(trigger => trigger.id === goneId)).toBeUndefined();
+    }
   });
 
   it('编译产物通过唯一校验器', () => {

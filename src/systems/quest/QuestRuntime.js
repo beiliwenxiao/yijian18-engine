@@ -420,6 +420,8 @@ export function compileQuestTriggers(quest, project = null) {
       when: { type: text(matcher.type), params: clone(identity) },
       // 条件守卫（编排类触发器的防重入 if）原样透传
       ...(isObject(step.if) ? { if: clone(step.if) } : {}),
+      // 冷却（可重复交互防连点，如招募 0.5s / 场景交互 1s）原样透传
+      ...(Number.isFinite(step.cooldown) ? { cooldown: step.cooldown } : {}),
       do: doActions,
       once: step.once !== false
     }));
