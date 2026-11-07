@@ -15,6 +15,7 @@ import {
   resolveSceneObjects
 } from '../src/core/scene/SceneObjectSelector.js';
 import { TriggerProjectIndex } from './TriggerProjectIndex.js';
+import { compileQuestProject } from '../src/systems/quest/QuestRuntime.js';
 
 const SELECTOR_MODES = ['id', 'group', 'tag', 'name', 'type', 'ref'];
 
@@ -124,7 +125,7 @@ export class SceneEditorEventFilter {
     this.sceneData = this.editor.sceneData;
     const previousTriggerId = preserveSelection ? this.state.selectedTriggerId : '';
     const previousBindingId = preserveSelection ? this.state.selectedBindingId : '';
-    const project = this.editor.getProjectDefinitions?.() || {};
+    const project = this._projectWithCompiledTriggers(this.editor.getProjectDefinitions?.() || {});
     this.projectIndex = new TriggerProjectIndex(project, {
       sceneDocuments: this.sceneData ? [this.sceneData] : []
     });
@@ -169,6 +170,35 @@ export class SceneEditorEventFilter {
     this._recomputeProjection();
     this.renderBar();
     if (notify) this._notifyViewChanged();
+  }
+
+  /**
+   * 编译产物投影：场景 binding 引用 trg_task.* 编译触发器而 project.triggers 无定义时
+   * （任务触发器由 QuestRuntime 编译、不落 triggers.json），从 quests 编译产物取虚拟定义
+   * 并入只读投影——编辑器流程条可显示/选中这些触发器，文件层零写入。
+   * 缓存：同一 project 引用只编译一次（project 对象在定义重载/保存时更换）。
+   */
+  _projectWithCompiledTriggers(project) {
+    const referenced = new Set();
+    for (const layer of this.sceneData?.layers || []) {
+      for (const object of layer.objects || []) {
+        if (object?.type !== 'trigger') continue;
+        const id = text(object.triggerId);
+        if (id.startsWith('trg_task.')) referenced.add(id);
+      }
+    }
+    const known = new Set((project.triggers || []).map(trigger => trigger.id));
+    const missing = [...referenced].filter(id => !known.has(id));
+    if (!missing.length) return project;
+    if (this._compiledProjectRef !== project) {
+      this._compiledProjectRef = project;
+      this._compiledTriggersById = new Map(
+        compileQuestProject(project).triggers.map(trigger => [trigger.id, trigger])
+      );
+    }
+    const virtual = missing.map(id => this._compiledTriggersById.get(id)).filter(Boolean);
+    if (!virtual.length) return project;
+    return { ...project, triggers: [...(project.triggers || []), ...virtual] };
   }
 
   getState() {
@@ -439,21 +469,29 @@ export class SceneEditorEventFilter {
       walkSteps(quest, quest?.steps);
       const steps = [];
       for (const step of Array.isArray(quest?.steps) ? quest.steps : []) {
+        const stepId = text(step?.id);
         const fact = text(step?.target);
-        if (!fact) continue;
+        // 事件编排步骤（type:event）：编译触发器 id 契约 trg_${questId}_event_${stepId} 直接
+        // 归组——event 步骤不提交 target 事实，事实匹配通道对它天然失效。
+        const eventTriggerId = step?.type === 'event' && stepId && text(quest?.id)
+          ? `trg_${text(quest?.id)}_event_${stepId}`
+          : '';
         const triggerIds = [];
         for (const trigger of this.triggers) {
-          if (!triggerCommittedFacts(trigger).includes(fact)) continue;
+          const hit = eventTriggerId
+            ? trigger.id === eventTriggerId
+            : (fact ? triggerCommittedFacts(trigger).includes(fact) : false);
+          if (!hit) continue;
           triggerIds.push(trigger.id);
           if (!this.questByTriggerId.has(trigger.id)) {
             this.questByTriggerId.set(trigger.id, {
               questId: text(quest?.id), questTitle: text(quest?.title) || text(quest?.id),
-              stepId: text(step?.id), stepTitle: text(step?.title) || fact
+              stepId, stepTitle: text(step?.title) || fact || eventTriggerId
             });
           }
         }
         if (triggerIds.length) steps.push({
-          id: text(step?.id), title: text(step?.title) || fact, fact, triggerIds
+          id: stepId, title: text(step?.title) || fact || eventTriggerId, fact, triggerIds
         });
       }
       if (!steps.length) continue;
@@ -637,7 +675,7 @@ export class SceneEditorEventFilter {
     allButton.title = '显示完整场景，关闭事件视图过滤';
     scroll.appendChild(allButton);
 
-    const appendTriggerEntry = (trigger, flowIndex) => {
+    const appendTriggerEntry = (trigger, flowIndex, stepOrder = -1) => {
       const entry = document.createElement('div');
       entry.className = 'scene-event-filter-trigger-entry';
       const focusCheck = document.createElement('input');
@@ -653,7 +691,7 @@ export class SceneEditorEventFilter {
       triggerButton.className = `scene-event-filter-item trigger${this.state.focusedTriggerIds.has(trigger.id) ? ' active' : ''}`;
       const priority = Number(trigger.coordination?.priority) || 0;
       const questInfo = this.questByTriggerId.get(trigger.id);
-      triggerButton.textContent = `T${flowIndex + 1} · ${trigger.name || trigger.id} · do[${(trigger.do || []).length}]`;
+      triggerButton.textContent = `${stepOrder >= 0 ? `T${stepOrder + 1}` : `T${flowIndex + 1}`} · ${trigger.name || trigger.id} · do[${(trigger.do || []).length}]`;
       triggerButton.title = `Trigger ${trigger.id}\nwhen: ${trigger.when?.type || '?'}\n协调组: ${trigger.coordination?.group || '独立'}\npriority: ${priority}\n定义顺序: ${this.projectIndex.triggers.indexOf(trigger) + 1}`
         + (questInfo ? `\n任务步骤: ${questInfo.stepTitle}（${questInfo.questTitle}）` : '\n未归属任务（场景级/跨步骤流程）')
         + '\n双击打开定义';
@@ -691,6 +729,11 @@ export class SceneEditorEventFilter {
       const assigned = new Set(this.questGroups.flatMap(group => group.steps.flatMap(step => step.triggerIds)));
       for (const group of this.questGroups) {
         const questTriggerIds = [...new Set(group.steps.flatMap(step => step.triggerIds))];
+        // T 编号与任务步骤序对齐：组内触发器按其所属步骤在任务中的显示序编号（未归属保持定义序）
+        const stepOrderById = new Map();
+        group.steps.forEach((step, stepIndex) => {
+          for (const id of step.triggerIds) if (!stepOrderById.has(id)) stepOrderById.set(id, stepIndex);
+        });
         const header = document.createElement('div');
         header.className = 'scene-event-filter-quest-header';
         const questCheck = document.createElement('input');
@@ -712,7 +755,9 @@ export class SceneEditorEventFilter {
         scroll.appendChild(header);
         for (const triggerId of questTriggerIds) {
           const flowIndex = this.triggers.findIndex(trigger => trigger.id === triggerId);
-          if (flowIndex >= 0) appendTriggerEntry(this.triggers[flowIndex], flowIndex);
+          if (flowIndex >= 0) {
+            appendTriggerEntry(this.triggers[flowIndex], flowIndex, stepOrderById.get(triggerId) ?? -1);
+          }
         }
       }
       const unassigned = this.triggers

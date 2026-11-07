@@ -66,11 +66,13 @@ function project() {
   };
 }
 
-function buildFilter({ withQuests = true } = {}) {
+function buildFilter({ withQuests = true, customize = null } = {}) {
   const definitions = project();
   if (!withQuests) delete definitions.quests;
+  const scene = sceneData();
+  if (customize) customize({ definitions, scene });
   const editor = {
-    sceneData: sceneData(),
+    sceneData: scene,
     getProjectDefinitions: () => definitions,
     selectedObjects: [],
     interaction: {},
@@ -211,6 +213,77 @@ describe('SceneEditorEventFilter 任务分组投影', () => {
     expect(filter.state.focusedTriggerIds.size).toBe(0);
     filter.selectTrigger('trg.a');
     expect(filter.state.focusedTriggerIds.has('trg.a')).toBe(true);
+  });
+});
+
+describe('SceneEditorEventFilter 编译产物投影与显示序', () => {
+  /** 场景 binding 引用任务编译产物（trg_task.*），triggers.json 无该定义。 */
+  const withCompiledBinding = ({ definitions, scene }) => {
+    scene.layers[3].objects.push({
+      type: 'trigger', id: 'bind-task', name: '任务绑定',
+      triggerId: 'trg_task.foo_event_spawnIntro', target: 'zone-a', targetMode: 'id', event: 'sceneEnter'
+    });
+    definitions.quests.push({
+      id: 'task.foo', title: '投影任务', category: 'main', scenes: ['S02'], steps: [
+        {
+          id: 'spawnIntro',
+          type: 'event',
+          title: '进场装配',
+          eventMatcher: { type: 'sceneEnter', params: { sceneId: 'S02' } },
+          steps: [{ action: 'showTip', params: { text: '村民围了上来。' } }]
+        },
+        { id: 'goal', type: 'objective', target: 'story.foo.goal', title: '安抚村民' }
+      ]
+    });
+  };
+
+  it('场景引用的 trg_task.* 从任务编译产物投影为虚拟定义并归入任务步骤', () => {
+    const filter = buildFilter({ customize: withCompiledBinding });
+    const projected = filter.triggers.find(trigger => trigger.id === 'trg_task.foo_event_spawnIntro');
+    expect(projected).toBeTruthy();
+    expect(projected.when).toEqual({ type: 'sceneEnter', params: { sceneId: 'S02' } });
+    expect(projected.do).toHaveLength(1);
+    const group = filter.questGroups.find(item => item.id === 'task.foo');
+    expect(group.steps.map(step => step.id)).toEqual(['spawnIntro']); // event 步骤无 target 事实也能归组
+    expect(group.steps[0].title).toBe('进场装配');
+    expect(group.steps[0].triggerIds).toEqual(['trg_task.foo_event_spawnIntro']);
+    expect(filter.questByTriggerId.get('trg_task.foo_event_spawnIntro')).toMatchObject({
+      questId: 'task.foo', stepId: 'spawnIntro'
+    });
+    // 投影只读：不写回项目定义
+    expect(filter.editor.getProjectDefinitions().triggers.some(trigger => trigger.id.startsWith('trg_task.'))).toBe(false);
+  });
+
+  it('T 编号按任务步骤序（非触发器定义序）', () => {
+    const bar = document.createElement('div');
+    bar.id = 'editor-scene-event-filter';
+    document.body.appendChild(bar);
+    const filter = buildFilter({
+      customize: ({ definitions, scene }) => {
+        // 定义序：trg.second 先于 trg.first；步骤序：first → second（两者相反才能验证编号来源）
+        definitions.triggers.push(
+          { id: 'trg.second', name: '第二步触发器', when: { type: 'enter' }, do: [{ action: 'state.transaction', params: { definitionId: 'story.rev.second' } }] },
+          { id: 'trg.first', name: '第一步触发器', when: { type: 'enter' }, do: [{ action: 'state.transaction', params: { definitionId: 'story.rev.first' } }] }
+        );
+        scene.layers[3].objects.push(
+          { type: 'trigger', id: 'bind-first', triggerId: 'trg.first', target: 'zone-a', targetMode: 'id', event: 'enter' },
+          { type: 'trigger', id: 'bind-second', triggerId: 'trg.second', target: 'zone-a', targetMode: 'id', event: 'enter' }
+        );
+        definitions.quests.push({
+          id: 'task.rev', title: '倒序任务', category: 'main', scenes: ['S02'], steps: [
+            { id: 'first', type: 'objective', target: 'story.rev.first', title: '第一步' },
+            { id: 'second', type: 'objective', target: 'story.rev.second', title: '第二步' }
+          ]
+        });
+      }
+    });
+    const labelById = new Map(
+      [...bar.querySelectorAll('button[data-trigger-id]')].map(button => [button.dataset.triggerId, button.textContent])
+    );
+    expect(labelById.get('trg.first').startsWith('T1 · ')).toBe(true);
+    expect(labelById.get('trg.second').startsWith('T2 · ')).toBe(true);
+    bar.remove();
+    expect(filter.questGroups.find(item => item.id === 'task.rev').steps.map(step => step.id)).toEqual(['first', 'second']);
   });
 });
 
