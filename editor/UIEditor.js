@@ -137,6 +137,67 @@ const MOBILE_TOUCH_BUTTON_IDS = new Set([
   'act-flight', 'act-jump', 'act-interact', 'act-throw', 'act-axe',
   'hb-hp', 'hb-mp', 'hb-bag', 'hb-settings', 'hb-skill6', 'hb-skill7'
 ]);
+// ─── 快捷控件类型体系（uiType 是类型主键；旧数据缺失时按 id/kind 推断） ───────
+// kind 决定运行时消费方式：button=可点击热区，component=纯展示/绑定型控件。
+const UI_COMPONENT_TYPES = {
+  button: {
+    label: '快捷按键', short: '按键', badge: '⌨️', kind: 'button',
+    defaults: { width: 56, height: 56 },
+    fields: ['label', 'icon', 'imageId', 'skillId', 'action']
+  },
+  avatar: {
+    label: '头像', short: '头像', badge: '🙂', kind: 'component',
+    defaults: { width: 56, height: 56 },
+    fields: ['label', 'imageId', 'icon', 'frameColor']
+  },
+  healthbar: {
+    label: '血条', short: '血条', badge: '❤️', kind: 'component',
+    defaults: { width: 140, height: 14 },
+    fields: ['label', 'value', 'valueMax', 'barColor', 'showText']
+  },
+  manabar: {
+    label: '蓝条', short: '蓝条', badge: '🔷', kind: 'component',
+    defaults: { width: 140, height: 14 },
+    fields: ['label', 'value', 'valueMax', 'barColor', 'showText']
+  },
+  skill: {
+    label: '技能位', short: '技能', badge: '⚡', kind: 'component',
+    defaults: { width: 56, height: 56 },
+    fields: ['label', 'skillId', 'icon', 'imageId', 'cooldownMask']
+  },
+  deco: {
+    label: '装饰/图片', short: '装饰', badge: '🖼️', kind: 'component',
+    defaults: { width: 64, height: 64 },
+    fields: ['label', 'imageId', 'icon']
+  }
+};
+
+// 字段定义：属性面板按类型 fields 顺序动态生成，避免每种类型写一套 DOM。
+const UI_COMPONENT_FIELD_DEFS = {
+  label: { label: '名称', type: 'text' },
+  icon: { label: '图标（emoji/短文本）', type: 'text', hint: '≤4 字符优先作为图标；图片请填 imageId' },
+  imageId: { label: '图片 imageId', type: 'image', hint: '来自 assets.json 的图片资源 id' },
+  skillId: { label: '绑定技能', type: 'skill', hint: '来自 config/skills.json' },
+  action: { label: '按键行为 id', type: 'text', hint: '运行时可识别的行为标识（如 attack / jump / bag）' },
+  value: { label: '当前值', type: 'number', min: 0 },
+  valueMax: { label: '最大值', type: 'number', min: 1 },
+  barColor: { label: '条颜色', type: 'color' },
+  showText: { label: '显示数值', type: 'checkbox' },
+  frameColor: { label: '边框颜色', type: 'color' },
+  cooldownMask: { label: '显示冷却遮罩', type: 'checkbox' }
+};
+
+/** 组件类型解析：显式 uiType 优先，其次按 kind/id 推断（保证旧布局零迁移）。 */
+function resolveComponentType(component) {
+  if (component?.uiType && UI_COMPONENT_TYPES[component.uiType]) return component.uiType;
+  const id = String(component?.id || '');
+  if (component?.kind === 'button') return /skill/i.test(id) ? 'skill' : 'button';
+  if (/avatar|portrait/i.test(id)) return 'avatar';
+  if (/hp|health|blood/i.test(id)) return 'healthbar';
+  if (/mp|mana/i.test(id)) return 'manabar';
+  return 'deco';
+}
+
 const EDITABLE_PANEL_PART_IDS = new Set(['bagTitle', 'bagSeparator']);
 // 外框不锁比例的面板：armyCommandHud 的高度由内部行高堆叠决定，与 PanelLayout 面板比例无关
 const ASPECT_FREE_PANEL_IDS = new Set(['armyCommandHud']);
@@ -197,6 +258,10 @@ export class UIEditor {
     this._panelLayoutDocument = null;
     this._panelLayouts = {};
     this._onboardingUiDocument = null;
+    // 快捷控件的数据来源：技能表 config/skills.json、图片表 assets/manifests/assets.json（均为现有配置）
+    this._skillCatalog = [];
+    this._imageCatalog = [];
+    this._componentFilter = 'all';
 
     // 手柄绑定编辑器数据（与 Xbox360Profile.DEFAULT_BINDINGS 同构）
     this._defaultGamepadBindings = null; // 异步加载
@@ -347,6 +412,7 @@ export class UIEditor {
     await this._loadGamepadConfig();
     await this._loadHintsConfig();
     await this._loadOnboardingUiConfig();
+    await this._loadEditorCatalogs();
     this._render();
   }
 
@@ -587,7 +653,27 @@ export class UIEditor {
         <div class="uie-main">
           <div class="uie-list" id="uie-list">
             <h4>控件列表</h4>
+            <div class="uie-list-tools">
+              <select id="uie-component-filter" title="按类型筛选控件列表">
+                <option value="all">全部类型</option>
+                ${Object.entries(UI_COMPONENT_TYPES).map(([type, def]) =>
+                  `<option value="${type}">${def.badge} ${def.label}</option>`).join('')}
+              </select>
+            </div>
             <div class="uie-list-items" id="uie-list-items"></div>
+            <div class="uie-add-comp">
+              <select id="uie-add-type" title="新控件的类型">
+                ${Object.entries(UI_COMPONENT_TYPES).map(([type, def]) =>
+                  `<option value="${type}">${def.badge} ${def.label}</option>`).join('')}
+              </select>
+              <input id="uie-add-label" type="text" placeholder="名称（可空）">
+              <button id="uie-add-comp" type="button">＋ 新增控件</button>
+            </div>
+            <h4 class="uie-skill-title">技能列表 <span id="uie-skill-count"></span></h4>
+            <div class="uie-skill-tools">
+              <input id="uie-skill-search" type="text" placeholder="搜索技能 / id">
+            </div>
+            <div class="uie-skill-list" id="uie-skill-list"></div>
           </div>
           <div class="uie-resizer" id="uie-resizer-left" title="拖动调整控件列表宽度"></div>
           <div class="uie-stage-wrap">
@@ -619,6 +705,12 @@ export class UIEditor {
 
     this.container.querySelector('#uie-mobile-button-add').addEventListener('click', () => this._addMobileTouchButton());
     this.container.querySelector('#uie-mobile-button-delete').addEventListener('click', () => this._deleteSelectedMobileTouchButton());
+    this.container.querySelector('#uie-component-filter').addEventListener('change', (e) => {
+      this._componentFilter = e.target.value || 'all';
+      this._renderComponentList();
+    });
+    this.container.querySelector('#uie-add-comp').addEventListener('click', () => this._addQuickComponent());
+    this.container.querySelector('#uie-skill-search').addEventListener('input', () => this._renderSkillList());
     this.container.querySelector('#uie-undo').addEventListener('click', () => this.undo());
     this.container.querySelector('#uie-redo').addEventListener('click', () => this.redo());
     this._bindHistoryShortcuts();
@@ -738,6 +830,203 @@ export class UIEditor {
     this._render();
   }
 
+  // ─── 快捷控件：类型 / 新增 / 技能绑定 ───────────────────────────────────
+
+  /** 按类型创建快捷控件（id 派生 quick-<type>-<n>，稳定唯一），返回新组件。 */
+  _createQuickComponent(layout, type, label, extra = {}) {
+    const def = UI_COMPONENT_TYPES[type];
+    let index = 1;
+    let id = '';
+    do {
+      id = `quick-${type}-${index++}`;
+    } while (layout.components.some(component => component.id === id));
+    const component = {
+      id,
+      label: label || def.label,
+      kind: def.kind,
+      uiType: type,
+      anchor: 'topleft',
+      x: Math.max(0, Math.round((layout.canvas.width - def.defaults.width) / 2)),
+      y: Math.max(0, Math.round((layout.canvas.height - def.defaults.height) / 2)),
+      width: def.defaults.width,
+      height: def.defaults.height,
+      ...(type === 'healthbar' ? { value: 100, valueMax: 100, barColor: '#e74c3c', showText: false } : {}),
+      ...(type === 'manabar' ? { value: 100, valueMax: 100, barColor: '#3d8bfd', showText: false } : {}),
+      ...(type === 'avatar' ? { frameColor: '#c9a227' } : {}),
+      ...extra
+    };
+    layout.components.push(component);
+    return component;
+  }
+
+  /** 左下「＋ 新增控件」：类型来自下拉，名称可空。 */
+  _addQuickComponent() {
+    const layout = this.layouts[this.platform];
+    if (!layout || !Array.isArray(layout.components)) {
+      this._setStatus('当前页签不支持新增控件', true);
+      return;
+    }
+    const type = this.container.querySelector('#uie-add-type')?.value || 'button';
+    const def = UI_COMPONENT_TYPES[type];
+    if (!def) return;
+    const labelInput = this.container.querySelector('#uie-add-label');
+    const label = String(labelInput?.value || '').trim();
+    const snapshot = this._createHistorySnapshot();
+    let extra = {};
+    if (type === 'skill' && this._skillCatalog[0]) {
+      extra = {
+        skillId: this._skillCatalog[0].id,
+        ...(this._skillCatalog[0].icon ? { icon: this._skillCatalog[0].icon } : {})
+      };
+    }
+    const component = this._createQuickComponent(layout, type, label, extra);
+    this.selectedId = component.id;
+    this.selectedPanelPart = null;
+    if (labelInput) labelInput.value = '';
+    this._commitHistorySnapshot(snapshot);
+    this._setStatus(`已新增${def.label}：${component.id}（未保存）`);
+    this._render();
+  }
+
+  /**
+   * 切换控件类型：几何/名称/图标/imageId 等通用属性保留；
+   * 目标类型不支持的专属字段丢弃（可点「后退」撤销）。
+   */
+  _changeComponentType(component, nextType) {
+    const def = UI_COMPONENT_TYPES[nextType];
+    if (!component || !def) return;
+    if (resolveComponentType(component) === nextType && component.uiType === nextType) return;
+    const snapshot = this._createHistorySnapshot();
+    component.uiType = nextType;
+    component.kind = def.kind;
+    if (!Number.isFinite(component.width) || component.width <= 0) component.width = def.defaults.width;
+    if (!Number.isFinite(component.height) || component.height <= 0) component.height = def.defaults.height;
+    if (nextType === 'healthbar' || nextType === 'manabar') {
+      if (!Number.isFinite(component.valueMax)) {
+        component.valueMax = 100;
+        component.value = Number.isFinite(component.value) ? component.value : 100;
+      }
+      if (!component.barColor) component.barColor = nextType === 'healthbar' ? '#e74c3c' : '#3d8bfd';
+    }
+    const keep = new Set(def.fields);
+    for (const key of ['skillId', 'action', 'value', 'valueMax', 'barColor', 'showText', 'frameColor', 'cooldownMask']) {
+      if (!keep.has(key)) delete component[key];
+    }
+    this._commitHistorySnapshot(snapshot);
+    this._setStatus(`控件 ${component.id} 类型改为${def.label}（未保存）`);
+    this._render();
+  }
+
+  _findSkill(skillId) {
+    return this._skillCatalog.find(skill => skill.id === skillId) || null;
+  }
+
+  /**
+   * 点击技能列表：选中控件支持 skillId 则绑定；否则新建技能位并绑定。
+   */
+  _assignSkillToSelected(skillId) {
+    const skill = this._findSkill(skillId);
+    const layout = this.layouts[this.platform];
+    if (!skill || !layout) return;
+    const component = layout.components.find(candidate => candidate.id === this.selectedId);
+    const type = component ? resolveComponentType(component) : null;
+    const supportsSkill = type && UI_COMPONENT_TYPES[type].fields.includes('skillId');
+    const snapshot = this._createHistorySnapshot();
+    if (component && supportsSkill) {
+      component.skillId = skillId;
+      if (!component.icon && skill.icon) component.icon = skill.icon;
+      this._commitHistorySnapshot(snapshot);
+      this._setStatus(`已把技能「${skill.name}」绑定到 ${component.id}（未保存）`);
+      this._render();
+      return;
+    }
+    const created = this._createQuickComponent(layout, 'skill', skill.name, {
+      skillId,
+      ...(skill.icon ? { icon: skill.icon } : {})
+    });
+    this.selectedId = created.id;
+    this.selectedPanelPart = null;
+    this._commitHistorySnapshot(snapshot);
+    this._setStatus(`已新建技能位并绑定「${skill.name}」：${created.id}（未保存）`);
+    this._render();
+  }
+
+  /** 技能列表：数据来自 config/skills.json；图片来自 assets.json 的 imageId。 */
+  _renderSkillList() {
+    const listEl = this.container.querySelector('#uie-skill-list');
+    const countEl = this.container.querySelector('#uie-skill-count');
+    if (!listEl) return;
+    if (!EDITABLE_LAYOUT_PLATFORMS.includes(this.platform)) {
+      listEl.innerHTML = '';
+      if (countEl) countEl.textContent = '';
+      return;
+    }
+    if (countEl) countEl.textContent = `(${this._skillCatalog.length})`;
+    if (!this._skillCatalog.length) {
+      listEl.innerHTML = '<div class="uie-list-empty">未读到 config/skills.json</div>';
+      return;
+    }
+    const keyword = String(this.container.querySelector('#uie-skill-search')?.value || '').trim().toLowerCase();
+    const skills = this._skillCatalog.filter(skill =>
+      !keyword || skill.name.toLowerCase().includes(keyword) || skill.id.toLowerCase().includes(keyword));
+    if (!skills.length) {
+      listEl.innerHTML = '<div class="uie-list-empty">没有匹配的技能</div>';
+      return;
+    }
+    listEl.innerHTML = skills.map(skill => {
+      const iconText = skill.icon && skill.icon.length <= 4 ? skill.icon : '⚡';
+      return `
+        <div class="uie-skill-item" data-skill-id="${escapeHtml(skill.id)}" title="点击绑定到选中控件；未选中则新建技能位">
+          <span class="uie-skill-icon">${escapeHtml(iconText)}</span>
+          <span class="uie-skill-name">${escapeHtml(skill.name)}</span>
+          <span class="uie-skill-id">${escapeHtml(skill.id)}</span>
+        </div>`;
+    }).join('');
+    listEl.querySelectorAll('.uie-skill-item').forEach(item => {
+      item.addEventListener('click', () => this._assignSkillToSelected(item.dataset.skillId));
+    });
+  }
+
+  /** 读取技能表与图片表（项目现有配置）；失败只降级为空列表，不阻塞编辑器。 */
+  async _loadEditorCatalogs() {
+    this._skillCatalog = [];
+    this._imageCatalog = [];
+    try {
+      const res = await fetch('/api/read-file?path=' + encodeURIComponent(this.configBase + 'skills.json'));
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.ok && data.content) {
+          const doc = JSON.parse(data.content);
+          this._skillCatalog = (Array.isArray(doc?.skills) ? doc.skills : [])
+            .map(skill => ({
+              id: String(skill?.id || ''),
+              name: String(skill?.name || skill?.id || ''),
+              icon: typeof skill?.icon === 'string' ? skill.icon : ''
+            }))
+            .filter(skill => skill.id);
+        }
+      }
+    } catch (e) {
+      console.warn('UIEditor: config/skills.json 加载失败', e);
+    }
+    try {
+      const manifestFile = `example/${this.gameId}/assets/manifests/assets.json`;
+      const res = await fetch('/api/read-file?path=' + encodeURIComponent(manifestFile));
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.ok && data.content) {
+          const doc = JSON.parse(data.content);
+          const assets = (Array.isArray(doc?.assets) ? doc.assets : []).filter(asset => asset?.imageId);
+          const uiAssets = assets.filter(asset => /^ui/i.test(String(asset.category || '')));
+          const source = uiAssets.length ? uiAssets : assets;
+          this._imageCatalog = [...new Set(source.map(asset => String(asset.imageId)))].slice(0, 500);
+        }
+      }
+    } catch (e) {
+      console.warn('UIEditor: assets.json 加载失败', e);
+    }
+  }
+
   // ─── 左右面板宽度拖拽（左列表 / 右属性，仿场景编辑器 resizer） ───────────
 
   _setupResizer(resizer, panel, minWidth, maxWidth) {
@@ -785,18 +1074,22 @@ export class UIEditor {
       listEl.innerHTML = '<div class="uie-list-empty">当前标签无控件列表</div>';
       return;
     }
-    listEl.innerHTML = layout.components.map(comp => {
-      const hidden = comp.editorHidden === true;
-      const locked = comp.editorLocked === true;
-      const selected = comp.id === this.selectedId;
-      return `
+    listEl.innerHTML = layout.components
+      .filter(comp => this._componentFilter === 'all' || resolveComponentType(comp) === this._componentFilter)
+      .map(comp => {
+        const hidden = comp.editorHidden === true;
+        const locked = comp.editorLocked === true;
+        const selected = comp.id === this.selectedId;
+        const typeDef = UI_COMPONENT_TYPES[resolveComponentType(comp)];
+        return `
         <div class="uie-list-item${selected ? ' selected' : ''}${hidden ? ' hidden' : ''}" data-list-id="${escapeHtml(comp.id)}">
           <button class="uie-list-btn visibility${hidden ? ' off' : ''}" data-list-action="visibility" title="${hidden ? '在编辑器中显示' : '在编辑器中隐藏'}">${hidden ? '🚫' : '👁'}</button>
           <button class="uie-list-btn lock${locked ? ' on' : ''}" data-list-action="lock" title="${locked ? '已锁定，点击解锁' : '未锁定，点击锁定'}">${locked ? '🔒' : '🔓'}</button>
+          <span class="uie-list-type" title="类型：${typeDef.label}">${typeDef.badge}</span>
           <span class="uie-list-name" title="${escapeHtml(comp.id)}">${escapeHtml(comp.label || comp.id)}</span>
           <span class="uie-list-id">${escapeHtml(comp.id)}</span>
         </div>`;
-    }).join('');
+      }).join('');
 
     listEl.querySelectorAll('.uie-list-item').forEach(item => {
       item.addEventListener('click', (e) => {
@@ -847,6 +1140,22 @@ export class UIEditor {
       .uie-list-btn.lock.on { background:#5a2a2a; border-color:#c0504a; }
       .uie-list-name { flex-shrink:0; max-width:96px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#cfe3ff; }
       .uie-list-id { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#667; font-size:10px; text-align:right; }
+      /* 快捷控件：类型筛选、新增区、技能列表 */
+      .uie-list-tools { margin-bottom:6px; }
+      .uie-list-tools select, .uie-add-comp select, .uie-add-comp input, .uie-skill-tools input { width:100%; box-sizing:border-box; background:#0a1020; border:1px solid #2a3a5e; border-radius:4px; color:#fff; padding:5px; font-size:12px; }
+      .uie-list-type { flex-shrink:0; font-size:11px; }
+      .uie-add-comp { display:flex; flex-direction:column; gap:5px; margin:10px 0 4px; padding-top:8px; border-top:1px dashed #2a3a5e; }
+      .uie-add-comp button { padding:6px; background:#3a4a7e; border:none; border-radius:4px; color:#fff; cursor:pointer; font-size:12px; }
+      .uie-add-comp button:hover { background:#4a5f9e; }
+      .uie-skill-title { margin-top:12px; }
+      .uie-skill-title span { color:#778; font-size:11px; font-weight:normal; }
+      .uie-skill-tools { margin-bottom:4px; }
+      .uie-skill-list { max-height:220px; overflow-y:auto; }
+      .uie-skill-item { display:flex; align-items:center; gap:5px; padding:3px 4px; margin:1px 0; border-radius:3px; cursor:pointer; font-size:12px; background:#141d33; }
+      .uie-skill-item:hover { background:#1d2a49; }
+      .uie-skill-icon { flex-shrink:0; width:16px; text-align:center; }
+      .uie-skill-name { flex-shrink:0; max-width:96px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#dbe7ff; }
+      .uie-skill-id { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#667; font-size:10px; text-align:right; }
       .uie-resizer { flex-shrink:0; width:6px; cursor:col-resize; background:#16213e; }
       .uie-resizer:hover, .uie-resizer.active { background:#4CAF50; }
       .uie-stage-wrap { flex:1; display:flex; align-items:center; justify-content:center; overflow:auto; padding:20px; background:#070b18; }
@@ -856,6 +1165,12 @@ export class UIEditor {
       .uie-comp { position:absolute; box-sizing:border-box; border:1.5px solid rgba(120,180,255,0.8); background:rgba(80,140,255,0.18); color:#cfe3ff; font-size:11px; display:flex; align-items:center; justify-content:center; cursor:move; user-select:none; overflow:hidden; }
       .uie-comp.zone { border-style:dashed; background:rgba(255,200,80,0.12); border-color:rgba(255,200,80,0.7); color:#ffe7a8; }
       .uie-comp.button { border-radius:50%; }
+      /* 快捷控件预览：头像圆形、血条/蓝条底色条、技能位圆角 */
+      .uie-comp.quick-avatar { border-radius:50%; }
+      .uie-comp.quick-bar { background:rgba(0,0,0,0.45); border-radius:3px; }
+      .uie-comp.quick-bar.healthbar { border-color:rgba(231,76,60,0.9); }
+      .uie-comp.quick-bar.manabar { border-color:rgba(61,139,253,0.9); }
+      .uie-comp.quick-skill { border-radius:6px; }
       .uie-comp.login-panel { border:1.5px dashed rgba(231,199,120,0.7); border-radius:12px; background:transparent; color:#f0d997; box-shadow:none; }
       .uie-comp.login-title { border-color:rgba(231,199,120,0.8); background:rgba(25,15,8,0.25); color:#f0d997; font-size:13px; font-weight:bold; }
       .uie-comp.login-subtitle, .uie-comp.login-description { border-color:rgba(255,255,255,0.5); background:rgba(0,0,0,0.2); color:#eee; }
@@ -888,6 +1203,8 @@ export class UIEditor {
       .uie-prop-row { display:flex; align-items:center; margin-bottom:8px; }
       .uie-prop-row label { width:50px; font-size:12px; color:#9ab; }
       .uie-prop-row input { flex:1; background:#0a1020; border:1px solid #2a3a5e; color:#fff; padding:5px; border-radius:3px; width:60px; }
+      .uie-prop-row select { flex:1; min-width:0; background:#0a1020; border:1px solid #2a3a5e; color:#fff; padding:5px; border-radius:3px; font-size:12px; }
+      .uie-prop-row input[type="checkbox"] { flex:0 0 auto; width:auto; }
       .uie-prop-name { font-weight:bold; color:#fff; margin-bottom:12px; font-size:14px; }
       .uie-status { padding:6px 16px; font-size:12px; color:#8aa; background:#0a1020; min-height:24px; }
       .uie-save-feedback { position:absolute; z-index:100; top:64px; left:50%; max-width:min(640px, calc(100% - 48px)); padding:12px 20px; border:1px solid #63d471; border-radius:6px; background:rgba(18,72,38,0.96); color:#eaffee; font-size:14px; font-weight:bold; text-align:center; box-shadow:0 8px 28px rgba(0,0,0,0.45); opacity:0; pointer-events:none; transform:translate(-50%, -12px); transition:opacity 160ms ease, transform 160ms ease; }
@@ -1018,6 +1335,7 @@ export class UIEditor {
     const stage = this.container.querySelector('#uie-stage');
     if (!stage) return;
     this._renderComponentList();
+    this._renderSkillList();
     const isLoginPreview = LOGIN_LAYOUT_PLATFORMS.has(this.platform);
     stage.classList.toggle('login-stage', isLoginPreview);
     stage.classList.toggle('no-bg', this.platform === 'gamepad' || this.platform === 'hints');
@@ -1045,6 +1363,12 @@ export class UIEditor {
       if (comp.editorHidden === true) continue;
       const el = document.createElement('div');
       el.className = 'uie-comp ' + (comp.kind || '');
+      // 快捷控件按 uiType 加预览样式（不改变运行时 kind 语义）
+      const uiType = resolveComponentType(comp);
+      el.dataset.uiType = uiType;
+      if (uiType === 'avatar') el.classList.add('quick-avatar');
+      else if (uiType === 'healthbar' || uiType === 'manabar') el.classList.add('quick-bar', uiType);
+      else if (uiType === 'skill') el.classList.add('quick-skill');
       if (comp.id === this.selectedId) el.classList.add('selected');
       el.style.left = (comp.x * this.scale) + 'px';
       el.style.top = (comp.y * this.scale) + 'px';
@@ -1397,62 +1721,139 @@ export class UIEditor {
       props.innerHTML = '<h4>属性</h4><div class="uie-prop-empty">选择一个组件或背包内部虚线框</div>';
       return;
     }
-    const propertyDefinitions = [
-      { key: 'x', label: 'x' },
-      { key: 'y', label: 'y' },
-      { key: 'width', label: 'width' },
-      { key: 'height', label: 'height' }
-    ];
-    if (BADGE_TEXT_LAYOUT_IDS.has(comp.id)) {
-      propertyDefinitions.push(
-        { key: 'fontSize', label: '字号', min: 0, title: '0 表示按徽章尺寸自动计算' },
-        { key: 'textOffsetX', label: '文字 X', title: '文字相对徽章默认位置的水平偏移' },
-        { key: 'textOffsetY', label: '文字 Y', title: '文字相对徽章默认位置的垂直偏移' }
-      );
-    }
+    const type = resolveComponentType(comp);
+    const typeDef = UI_COMPONENT_TYPES[type];
+    const geometryFields = ['x', 'y', 'width', 'height'];
+    const badgeFields = BADGE_TEXT_LAYOUT_IDS.has(comp.id) ? BADGE_TEXT_LAYOUT_FIELDS : [];
+    const typeFields = typeDef.fields.filter(key => !geometryFields.includes(key) && !badgeFields.includes(key));
     props.innerHTML = `
       <h4>属性</h4>
-      <div class="uie-prop-name">${comp.label} <span style="color:#778;font-size:11px">(${comp.id})</span></div>
-      ${propertyDefinitions.map(({ key, label, min, title }) => `
-        <div class="uie-prop-row"${title ? ` title="${title}"` : ''}>
-          <label>${label}</label>
-          <input type="number" data-k="${key}" value="${Number.isFinite(comp[key]) ? comp[key] : 0}"${min !== undefined ? ` min="${min}"` : ''}>
+      <div class="uie-prop-name">${escapeHtml(comp.label || comp.id)} <span style="color:#778;font-size:11px">(${escapeHtml(comp.id)})</span></div>
+      <div class="uie-prop-row">
+        <label>类型</label>
+        <select data-component-type>
+          ${Object.entries(UI_COMPONENT_TYPES).map(([key, def]) =>
+            `<option value="${key}"${key === type ? ' selected' : ''}>${def.badge} ${def.label}</option>`).join('')}
+        </select>
+      </div>
+      ${geometryFields.map(key => `
+        <div class="uie-prop-row">
+          <label>${key}</label>
+          <input type="number" data-k="${key}" value="${Number.isFinite(comp[key]) ? comp[key] : 0}">
         </div>
       `).join('')}
-      ${BADGE_TEXT_LAYOUT_IDS.has(comp.id)
+      ${badgeFields.map(key => `
+        <div class="uie-prop-row" title="${key === 'fontSize' ? '0 表示按徽章尺寸自动计算' : '文字相对徽章默认位置的偏移'}">
+          <label>${key === 'fontSize' ? '字号' : (key === 'textOffsetX' ? '文字 X' : '文字 Y')}</label>
+          <input type="number" data-k="${key}" value="${Number.isFinite(comp[key]) ? comp[key] : 0}"${key === 'fontSize' ? ' min="0"' : ''}>
+        </div>
+      `).join('')}
+      ${typeFields.map(key => this._renderPropFieldRow(comp, key)).join('')}
+      ${badgeFields.length
         ? '<div class="uie-prop-empty" style="margin-top:6px">字号设为 0 时沿用运行时自动字号；文字 X/Y 只移动框内文字，不改变徽章位置。</div>'
         : ''}
       ${this._getLockedAspect(comp)
         ? '<div class="uie-prop-empty" style="margin-top:6px">比例由面板编辑器维护，仅支持等比缩放（改宽或高会自动联动）。</div>'
         : ''}
-      <div class="uie-prop-empty" style="margin-top:10px">画布: ${layout.canvas.width}×${layout.canvas.height}</div>
+      <div class="uie-prop-empty" style="margin-top:10px">类型：${typeDef.label} · 画布: ${layout.canvas.width}×${layout.canvas.height}</div>
+      <datalist id="uie-image-id-options">
+        ${this._imageCatalog.map(imageId => `<option value="${escapeHtml(imageId)}"></option>`).join('')}
+      </datalist>
     `;
-    props.querySelectorAll('input[data-k]').forEach(input => {
+
+    props.querySelector('[data-component-type]')?.addEventListener('change', (e) => {
+      this._commitHistorySnapshot(this._propHistorySnapshot);
+      this._propHistorySnapshot = null;
+      this._changeComponentType(comp, e.target.value);
+    });
+
+    props.querySelectorAll('input[data-k], select[data-k]').forEach(input => {
+      const key = input.dataset.k;
+      const fieldDef = UI_COMPONENT_FIELD_DEFS[key] || { type: 'number' };
+      const isNumber = fieldDef.type === 'number';
+      const applyValue = () => {
+        const aspect = this._getLockedAspect(comp);
+        if (isNumber) {
+          const v = Number(input.value);
+          if (!Number.isFinite(v)) return;
+          if (aspect && key === 'width') {
+            comp.width = v;
+            comp.height = Math.max(16, Math.round(v / aspect));
+          } else if (aspect && key === 'height') {
+            comp.height = v;
+            comp.width = Math.max(16, Math.round(v * aspect));
+          } else {
+            comp[key] = key === 'fontSize' ? Math.max(0, v) : v;
+          }
+          return;
+        }
+        if (fieldDef.type === 'checkbox') {
+          comp[key] = input.checked === true;
+          return;
+        }
+        comp[key] = input.value;
+        // 绑定技能时若图标为空，自动带出技能自带图标
+        if (key === 'skillId' && input.value && !comp.icon) {
+          const icon = this._findSkill(input.value)?.icon;
+          if (icon) comp.icon = icon;
+        }
+      };
       // 历史：focus 捕获编辑前快照，change（提交/失焦）入栈
       input.addEventListener('focus', () => {
         this._propHistorySnapshot = this._createHistorySnapshot();
       });
       input.addEventListener('input', () => {
-        const k = input.dataset.k;
-        const v = Number(input.value);
-        if (!Number.isFinite(v)) return;
-        const aspect = this._getLockedAspect(comp);
-        if (aspect && k === 'width') {
-          comp.width = v;
-          comp.height = Math.max(16, Math.round(v / aspect));
-        } else if (aspect && k === 'height') {
-          comp.height = v;
-          comp.width = Math.max(16, Math.round(v * aspect));
-        } else {
-          comp[k] = k === 'fontSize' ? Math.max(0, v) : v;
+        if (!this._propHistorySnapshot) this._propHistorySnapshot = this._createHistorySnapshot();
+        applyValue();
+        if (isNumber) {
+          this._commitHistorySnapshot(this._propHistorySnapshot);
+          this._propHistorySnapshot = this._createHistorySnapshot();
+          this._render();
         }
-        this._render();
       });
       input.addEventListener('change', () => {
+        if (!this._propHistorySnapshot) this._propHistorySnapshot = this._createHistorySnapshot();
+        applyValue();
         this._commitHistorySnapshot(this._propHistorySnapshot);
         this._propHistorySnapshot = null;
+        if (!isNumber) this._render();
       });
     });
+  }
+
+  /** 属性面板的单字段行（按字段类型渲染 text/number/color/checkbox/select/image）。 */
+  _renderPropFieldRow(comp, key) {
+    const def = UI_COMPONENT_FIELD_DEFS[key];
+    if (!def) return '';
+    const raw = comp[key];
+    const hint = def.hint ? ` title="${escapeHtml(def.hint)}"` : '';
+    if (def.type === 'number') {
+      const value = Number.isFinite(raw) ? raw : (key === 'valueMax' ? 100 : 0);
+      return `<div class="uie-prop-row"${hint}><label>${def.label}</label>
+        <input type="number" data-k="${key}" value="${value}"${def.min !== undefined ? ` min="${def.min}"` : ''}></div>`;
+    }
+    if (def.type === 'checkbox') {
+      return `<div class="uie-prop-row"${hint}><label>${def.label}</label>
+        <input type="checkbox" data-k="${key}"${raw === true ? ' checked' : ''}></div>`;
+    }
+    if (def.type === 'color') {
+      return `<div class="uie-prop-row"${hint}><label>${def.label}</label>
+        <input type="color" data-k="${key}" value="${escapeHtml(raw || '#ffffff')}"></div>`;
+    }
+    if (def.type === 'image') {
+      return `<div class="uie-prop-row"${hint}><label>${def.label}</label>
+        <input type="text" data-k="${key}" list="uie-image-id-options" value="${escapeHtml(raw || '')}" placeholder="选择或填写 imageId"></div>`;
+    }
+    if (def.type === 'skill') {
+      const options = ['<option value="">（未绑定）</option>'].concat(
+        this._skillCatalog.map(skill =>
+          `<option value="${escapeHtml(skill.id)}"${skill.id === raw ? ' selected' : ''}>${escapeHtml(skill.name)}（${escapeHtml(skill.id)}）</option>`)
+      );
+      return `<div class="uie-prop-row"${hint}><label>${def.label}</label>
+        <select data-k="${key}">${options.join('')}</select></div>`;
+    }
+    return `<div class="uie-prop-row"${hint}><label>${def.label}</label>
+      <input type="text" data-k="${key}" value="${escapeHtml(raw ?? '')}"></div>`;
   }
 
   _setStatus(msg, isError = false) {
@@ -1719,6 +2120,18 @@ export class UIEditor {
               textOffsetX: Number.isFinite(c.textOffsetX) ? c.textOffsetX : 0,
               textOffsetY: Number.isFinite(c.textOffsetY) ? c.textOffsetY : 0
             } : {}),
+            // 快捷控件字段：仅在存在时写出，旧布局保存后不新增任何键
+            ...(c.uiType ? { uiType: c.uiType } : {}),
+            ...(typeof c.icon === 'string' && c.icon ? { icon: c.icon } : {}),
+            ...(typeof c.imageId === 'string' && c.imageId ? { imageId: c.imageId } : {}),
+            ...(typeof c.skillId === 'string' && c.skillId ? { skillId: c.skillId } : {}),
+            ...(typeof c.action === 'string' && c.action ? { action: c.action } : {}),
+            ...(Number.isFinite(c.value) ? { value: c.value } : {}),
+            ...(Number.isFinite(c.valueMax) ? { valueMax: c.valueMax } : {}),
+            ...(typeof c.barColor === 'string' && c.barColor ? { barColor: c.barColor } : {}),
+            ...(typeof c.frameColor === 'string' && c.frameColor ? { frameColor: c.frameColor } : {}),
+            ...(c.showText === true ? { showText: true } : {}),
+            ...(c.cooldownMask === true ? { cooldownMask: true } : {}),
             xPct: +(c.x / cw).toFixed(5),
             yPct: +(c.y / ch).toFixed(5),
             wPct: +(c.width / cw).toFixed(5),
