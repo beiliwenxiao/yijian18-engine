@@ -2211,8 +2211,9 @@ export class S01S02Coordinator {
         this._showShelterConstructionProgress(shelterTerminal.ok === true ? 'completed' : 'interrupted');
         this.shelterConstructionProgressActive = false;
       }
-      // 工人生灭与施工 pending 严格同步（含存档读回后按 pending 自动重建）
-      if (pending?.status === 'active') {
+      // 工人生灭与施工 pending 严格同步（含存档读回后按 pending 自动重建）；
+      // pending 是 update 前的快照，本帧已结算终态时不再重建，保证完成瞬间工人即消失。
+      if (pending?.status === 'active' && !shelterTerminal) {
         this._ensureShelterConstructionFx();
       } else {
         this._clearShelterConstructionFx();
