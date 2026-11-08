@@ -227,7 +227,8 @@ export class SceneGameplaySystemAssembler {
     scene.combatSystem.setOnCorpseCreateCallback(entity => scene.corpseRuntime.retain(entity));
     scene.sceneRuntime?.onFramePhase?.(
       FramePhase.AFTER_SCENE,
-      deltaTime => scene.corpseRuntime?.update?.(deltaTime)
+      deltaTime => scene.corpseRuntime?.update?.(deltaTime),
+      'corpseRuntime'
     );
 
     const inventoryTransactionsOwned = !scene.inventoryTransactions;
@@ -366,7 +367,8 @@ export class SceneGameplaySystemAssembler {
     });
     scene.sceneRuntime?.onFramePhase?.(
       FramePhase.AFTER_SCENE,
-      deltaTime => scene.playerDeathCountdown?.update(deltaTime)
+      deltaTime => scene.playerDeathCountdown?.update(deltaTime),
+      'playerDeathCountdown'
     );
     scene.sceneRuntime?.addDisposer?.(
       () => {
@@ -425,7 +427,8 @@ export class SceneGameplaySystemAssembler {
     });
     scene.sceneRuntime?.onFramePhase?.(
       FramePhase.AFTER_SCENE,
-      deltaTime => scene.playerSoulRespawn?.update(deltaTime)
+      deltaTime => scene.playerSoulRespawn?.update(deltaTime),
+      'playerSoulRespawn'
     );
     scene.sceneRuntime?.addDisposer?.(() => scene.playerSoulRespawn?.dispose?.(), 'player-soul-respawn');
 

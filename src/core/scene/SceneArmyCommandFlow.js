@@ -34,6 +34,7 @@ const GAMEPAD_CYCLE_FORWARD = 4;   // LB：按下沿=循环切换编组；按住
 const GAMEPAD_CYCLE_BACKWARD = 5;  // RB：指挥态下循环切换命令（跟随+4 战术）
 const GAMEPAD_CONFIRM = 0;         // A：指挥态下确认下达待确认命令
 const TAB_CYCLE_KEY = 'tab';       // Tab：循环选择 武将→全军→前→左→中→右→后（与手柄 LB 同序列；InputManager 归一化小写）
+const GAMEPAD_IDLE_POLL_INTERVAL = 8; // 无手柄在线时的轮询间隔（帧）：键鼠玩家不再每帧调 Gamepad API
 
 export class SceneArmyCommandFlow {
   /**
@@ -49,7 +50,11 @@ export class SceneArmyCommandFlow {
       dragState: this.dragState
     });
     this._prevLeftHeld = false;
-    this._prevPadButtons = new Set();
+    /** 上一轮采样到的手柄按钮位掩码（按下沿检测；避免每帧 Set 分配） */
+    this._prevPadMask = 0;
+    /** 上一轮是否检测到手柄在线；false 时降频轮询 Gamepad API */
+    this._padActive = false;
+    this._padIdlePollTick = 0;
     this._prevTabDown = false;
     this._prevInCombat = false;
     /** 已套用内容库 defaultStance 的分队（避免每帧覆盖玩家在 HUD 改过的预设）。 */
@@ -73,7 +78,7 @@ export class SceneArmyCommandFlow {
     this.onResize(scene.logicalWidth || 1280, scene.logicalHeight || 720);
     scene.uiClickHandler?.registerElement?.(this.hud);
     scene.movementSystem && (scene.movementSystem.armyCommandSystem = this.system);
-    scene.sceneRuntime?.onFramePhase?.(FramePhase.AFTER_SCENE, deltaTime => this.update(deltaTime));
+    scene.sceneRuntime?.onFramePhase?.(FramePhase.AFTER_SCENE, deltaTime => this.update(deltaTime), 'armyCommand');
     return this;
   }
 
@@ -323,15 +328,34 @@ export class SceneArmyCommandFlow {
    * - 左摇杆移动武将不受影响（ARPG 自主权）
    */
   _handleGamepad() {
-    const gamepads = typeof navigator !== 'undefined' && navigator.getGamepads
-      ? navigator.getGamepads()
-      : [];
-    const pad = [...gamepads].find(candidate => candidate?.connected);
+    if (typeof navigator === 'undefined' || typeof navigator.getGamepads !== 'function') return;
+    // 降频轮询：上一轮没有手柄在线时按 GAMEPAD_IDLE_POLL_INTERVAL 帧采样
+    // （键鼠玩家不再每帧付 Gamepad API + 分配成本）；一旦检测到手柄则保持每帧采样，
+    // 保证 LB/RB/A 的按下沿不被漏采。
+    if (this._padActive !== true) {
+      this._padIdlePollTick = ((this._padIdlePollTick || 0) + 1) % GAMEPAD_IDLE_POLL_INTERVAL;
+      if (this._padIdlePollTick !== 0) return;
+    }
+    const gamepads = navigator.getGamepads();
+    let pad = null;
+    if (gamepads) {
+      for (const candidate of gamepads) {
+        if (candidate?.connected) { pad = candidate; break; }
+      }
+    }
+    this._padActive = Boolean(pad);
     if (!pad) { this.hud.gamepadCommanding = false; return; }
-    const pressed = new Set();
-    pad.buttons.forEach((button, index) => { if (button?.pressed) pressed.add(index); });
-    const lbHeld = pressed.has(GAMEPAD_CYCLE_FORWARD);
-    const lbWasHeld = this._prevPadButtons.has(GAMEPAD_CYCLE_FORWARD);
+    // 按钮状态用位掩码表示（按钮数上限 32），免去每帧 Set 分配与遍历
+    let mask = 0;
+    const buttons = pad.buttons || [];
+    for (let index = 0; index < buttons.length && index < 32; index++) {
+      if (buttons[index]?.pressed) mask |= (1 << index);
+    }
+    const previousMask = this._prevPadMask || 0;
+    const wasPressed = bit => (previousMask & (1 << bit)) !== 0;
+    const isPressed = bit => (mask & (1 << bit)) !== 0;
+    const lbHeld = isPressed(GAMEPAD_CYCLE_FORWARD);
+    const lbWasHeld = wasPressed(GAMEPAD_CYCLE_FORWARD);
     // LB 按下沿：循环切换选择（含武将，§5 切换单位键）。
     // 操作条被军队按钮/LS 收起时，指挥按键自动亮出（指挥需要 HUD 反馈可见）。
     if (lbHeld && !lbWasHeld) {
@@ -340,17 +364,17 @@ export class SceneArmyCommandFlow {
     }
     // 按住 LB = 指挥态：RB 循环切换命令（可见 5 姿态）
     if (lbHeld && this.system.hasSquadSelection()
-      && pressed.has(GAMEPAD_CYCLE_BACKWARD) && !this._prevPadButtons.has(GAMEPAD_CYCLE_BACKWARD)) {
+      && isPressed(GAMEPAD_CYCLE_BACKWARD) && !wasPressed(GAMEPAD_CYCLE_BACKWARD)) {
       this.system.cycleCommandStance(1);
     }
     // 按住 LB = 指挥态：A 确认下达待确认命令（成功后自动回武将）
     if (lbHeld && this.system.hasSquadSelection() && this.system.pendingStance
-      && pressed.has(GAMEPAD_CONFIRM) && !this._prevPadButtons.has(GAMEPAD_CONFIRM)) {
+      && isPressed(GAMEPAD_CONFIRM) && !wasPressed(GAMEPAD_CONFIRM)) {
       this.system.applyStance(this.system.pendingStance);
     }
     this.gamepadCommanding = lbHeld;
     this.hud.gamepadCommanding = lbHeld;
-    this._prevPadButtons = pressed;
+    this._prevPadMask = mask;
   }
 }
 

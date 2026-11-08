@@ -614,7 +614,8 @@ export class SceneFramePipeline {
     }
 
     // 输入清帧必须保持在原有的正常帧末尾；转场提前返回路径只 releaseFrame。
-    runtime?.runFramePhase?.(FramePhase.AFTER_SCENE, deltaTime, { scene, frameToken });
+    // 采样时传帧画像：Runtime 会逐钩子计时写入 frameProfile.afterSceneHooks（长帧归因用）。
+    runtime?.runFramePhase?.(FramePhase.AFTER_SCENE, deltaTime, { scene, frameToken, profile: frameProfile });
     if (inputFlow) inputFlow.flush();
     else if (runtime) runtime.flushInput({ frameToken });
     else inputManager.update();

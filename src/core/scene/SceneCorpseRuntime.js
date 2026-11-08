@@ -118,10 +118,11 @@ export class SceneCorpseRuntime {
     const current = entity.corpseDecay;
     if (current?.startedByOperationId === operationId) return { ok: true, idempotent: true };
     if (current?.remainingSeconds > 0) return { ok: true, active: true };
-    entity.corpseDecay = Object.freeze({
+    // 衰减对象创建一次、逐帧原地改写（热路径零分配；只读消费方见 capture）
+    entity.corpseDecay = {
       remainingSeconds: seconds,
       startedByOperationId: operationId || null
-    });
+    };
     return { ok: true };
   }
 
@@ -129,18 +130,28 @@ export class SceneCorpseRuntime {
   update(deltaTime) {
     if (this.disposed || !this.retirePlacement) return 0;
     const elapsed = Math.max(0, Number(deltaTime) || 0);
-    let retired = 0;
-    for (const entity of [...(this.entityStore?.all || [])]) {
+    const all = this.entityStore?.all || [];
+    // 零分配热路径：按索引遍历（不再每帧拷贝实体数组），衰减字段原地递减；
+    // 到期的先收集再统一下架——下架（tombstone）会改写实体集合，不能在遍历中执行。
+    let expired = null;
+    for (let index = 0; index < all.length; index++) {
+      const entity = all[index];
       const decay = entity?.corpseDecay;
       if (entity?.isCorpse !== true || !decay || !(decay.remainingSeconds > 0)) continue;
       const remainingSeconds = Math.max(0, decay.remainingSeconds - elapsed);
-      entity.corpseDecay = Object.freeze({ ...decay, remainingSeconds });
+      decay.remainingSeconds = remainingSeconds;
       if (remainingSeconds > 0) continue;
+      (expired || (expired = [])).push(entity);
+    }
+    if (!expired) return 0;
+    let retired = 0;
+    for (const entity of expired) {
+      const decay = entity.corpseDecay;
       const result = this.retirePlacement(entity, {
         kind: 'corpse',
         removed: true,
         decayExpired: true,
-        decayStartedByOperationId: decay.startedByOperationId || null
+        decayStartedByOperationId: decay?.startedByOperationId || null
       });
       if (result?.ok === true) retired += 1;
     }
@@ -159,10 +170,10 @@ export class SceneCorpseRuntime {
     if (node && state.resourceNode) node.deserialize?.(state.resourceNode);
     const decay = state.decay;
     if (decay && Number.isFinite(decay.remainingSeconds) && decay.remainingSeconds > 0) {
-      entity.corpseDecay = Object.freeze({
+      entity.corpseDecay = {
         remainingSeconds: decay.remainingSeconds,
         startedByOperationId: decay.startedByOperationId || null
-      });
+      };
     }
   }
 

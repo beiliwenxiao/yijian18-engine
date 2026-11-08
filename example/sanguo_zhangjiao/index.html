@@ -1759,14 +1759,24 @@
                     ? `；实体Top3 ${sample.worldQueueDrawByType.entityTop3}`
                     : '';
                 const sceneId = targetScene?.currentSceneId || targetScene?.name;
+                // AFTER_SCENE 分钩子分解（SceneFramePipeline 采样时由 GameSceneRuntime 写入）
+                const afterSceneHooks = Array.isArray(sample.afterSceneHooks) ? sample.afterSceneHooks : null;
+                const afterSceneText = afterSceneHooks && afterSceneHooks.length > 0
+                    ? '；AFTER_SCENE 分解 ' + afterSceneHooks
+                        .filter(item => item && Number(item.ms) > 1)
+                        .sort((left, right) => right.ms - left.ms)
+                        .map(item => `${item.name}=${Number(item.ms).toFixed(2)}ms`)
+                        .join('，')
+                    : '';
                 console.warn(
-                    `[DDScene][FrameProfile][长帧] ${sceneId} ${sample.total.toFixed(2)}ms；顶层 ${topLevelText}；聚合热点 ${detailText}；叶子热点 ${leafDetailText}${queueBreakdown}${entityTop3}；规模 ${worldScaleText}；未归因=${unattributed.toFixed(2)}ms`,
+                    `[DDScene][FrameProfile][长帧] ${sceneId} ${sample.total.toFixed(2)}ms；顶层 ${topLevelText}；聚合热点 ${detailText}；叶子热点 ${leafDetailText}${queueBreakdown}${entityTop3}${afterSceneText}；规模 ${worldScaleText}；未归因=${unattributed.toFixed(2)}ms`,
                     {
                         sceneId,
                         milliseconds: Number(sample.total.toFixed(2)),
                         dominant,
                         hotDetails,
                         leafHotDetails,
+                        afterSceneHooks,
                         unattributed: Number(unattributed.toFixed(2)),
                         loop: { generation: gameLoopGeneration, starts: gameLoopStartCount },
                         phases

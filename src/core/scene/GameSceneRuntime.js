@@ -396,7 +396,7 @@ export class GameSceneRuntime {
             ok: false,
             errors: [{ code: 'streamingUpdateFailed', path: '', message: error?.message || String(error) }]
           })));
-      })
+      }, 'worldStreaming')
       : () => {};
     return () => {
       offUpdate();
@@ -436,12 +436,19 @@ export class GameSceneRuntime {
     return this;
   }
 
-  onFramePhase(phase, hook) {
+  /**
+   * 注册帧阶段钩子。
+   * @param {string} phase
+   * @param {Function} hook
+   * @param {string} [name] 钩子名——仅用于长帧画像归因（AFTER_SCENE 分解），不影响执行语义
+   */
+  onFramePhase(phase, hook, name = '') {
     const hooks = this._phaseHooks.get(phase);
     if (!hooks || typeof hook !== 'function') return () => {};
-    hooks.push(hook);
+    const entry = { hook, name: name ? String(name) : '' };
+    hooks.push(entry);
     const off = () => {
-      const index = hooks.indexOf(hook);
+      const index = hooks.indexOf(entry);
       if (index !== -1) hooks.splice(index, 1);
     };
     const unregister = this.addDisposer(off, `phase:${phase}`);
@@ -482,12 +489,36 @@ export class GameSceneRuntime {
       frameToken,
       scene: options.scene || null
     });
-    for (const hook of [...(this._phaseHooks.get(phase) || [])]) {
+    // 长帧归因：仅当调用方传入帧画像（= scene.debugMode 且正在采样）时逐钩子计时，
+    // 结果写入 profile.afterSceneHooks（数组，不参与数值聚合）。未采样时零额外开销。
+    const hookTimings = options.profile ? (options.profile.afterSceneHooks = []) : null;
+    const hooks = this._phaseHooks.get(phase) || [];
+    // 按长度快照索引遍历（替代每帧 [...hooks] 拷贝）：钩子自注销时最多漏跑一帧，
+    // 由下一帧补齐——换取热路径零数组分配。
+    const hookCount = hooks.length;
+    for (let index = 0; index < hookCount; index++) {
+      const entry = hooks[index];
+      if (!entry) continue;
+      const hook = typeof entry === 'function' ? entry : entry.hook;
+      if (typeof hook !== 'function') continue;
+      if (!hookTimings) {
+        try {
+          hook(deltaTime, context);
+        } catch (error) {
+          console.warn(`GameSceneRuntime: ${phase} 阶段钩子出错`, error);
+        }
+        continue;
+      }
+      const hookStartedAt = performance.now();
       try {
         hook(deltaTime, context);
       } catch (error) {
         console.warn(`GameSceneRuntime: ${phase} 阶段钩子出错`, error);
       }
+      hookTimings.push({
+        name: entry.name || `hook#${index}`,
+        ms: performance.now() - hookStartedAt
+      });
     }
     return true;
   }
