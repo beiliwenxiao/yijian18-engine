@@ -194,4 +194,69 @@ describe('validateSkeletonAsset', () => {
     expect(messages.some(message => /继承模式必须是/.test(message))).toBe(true);
     expect(messages.some(message => /跟随模式必须是/.test(message))).toBe(true);
   });
+
+  it('接受：方向形态覆盖（down 基准 + side/up/SE/NE 变体）', () => {
+    const result = validateSkeletonAsset({
+      ...VALID_DOC,
+      slots: [{
+        id: 'body',
+        bone: 'child',
+        attachment: {
+          type: 'image',
+          assetId: 'char.torso-front',
+          width: 64,
+          height: 64,
+          directionOffsets: {
+            side: { assetId: 'char.torso-side', x: 1, y: 0, rot: 0, width: 64, height: 64 },
+            up: { assetId: 'char.torso-back' },
+            SE: { assetId: 'char.torso-se' },
+            NE: { assetId: 'char.torso-ne' }
+          }
+        }
+      }]
+    });
+    expect(result.ok).toBe(true);
+    expect(result.warnings).toEqual([]);
+  });
+
+  it('告警（非致命）：SW/NW 单独配图会被运行时整体镜像', () => {
+    const result = validateSkeletonAsset({
+      ...VALID_DOC,
+      slots: [{
+        id: 'body',
+        bone: 'child',
+        attachment: {
+          type: 'image',
+          assetId: 'char.torso-front',
+          directionOffsets: {
+            SE: { assetId: 'char.torso-se' },
+            SW: { assetId: 'char.torso-sw' }
+          }
+        }
+      }]
+    });
+    expect(result.ok).toBe(true);
+    expect(result.warnings.some(warning => /整体镜像/.test(warning.message ?? ''))).toBe(true);
+  });
+
+  it('拒绝：方向形态覆盖字段非数字 / 形态键未知仅告警', () => {
+    const bad = validateSkeletonAsset({
+      ...VALID_DOC,
+      slots: [{
+        id: 'body', bone: 'child',
+        attachment: { type: 'image', assetId: 'img.x', directionOffsets: { side: { x: 'oops' } } }
+      }]
+    });
+    expect(bad.ok).toBe(false);
+
+    const unknown = validateSkeletonAsset({
+      ...VALID_DOC,
+      slots: [{
+        id: 'body', bone: 'child',
+        attachment: { type: 'image', assetId: 'img.x', directionOffsets: { sideways: { assetId: 'img.y' } } }
+      }]
+    });
+    expect(unknown.ok).toBe(true);
+    expect(unknown.warnings.some(warning => /未知的方向形态键/.test(warning.message ?? ''))).toBe(true);
+  });
 });

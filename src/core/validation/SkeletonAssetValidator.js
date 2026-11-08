@@ -17,9 +17,13 @@
  * 关键帧时间单调且不越界、附件类型与必需字段。磁盘文件存在性与 Manifest
  * 引用解析由事务层（SkeletonAssetTransaction）负责。
  * 返回 { ok, errors, value }；ok=true 时 value 为规范化后的文档。
+ * 另附 warnings（非致命）：不影响 ok，但提示「能跑但多半不是你想要的」的配置，
+ * 例如同时配置了 SW/NW 形态图——这两个形态在运行时会被整体镜像（flipX），
+ * 独立配图必须与 SE/NE 同源（朝右美术），否则方向会反向。
  */
 
 import { ValidationCode, makeError } from './ValidationError.js';
+import { SKELETON_DIRECTION_KEYS } from '../../animation/SkeletonDirection.js';
 
 const STABLE_ID_PATTERN = /^[A-Za-z][A-Za-z0-9._-]*$/;
 const ATTACHMENT_TYPES = ['empty', 'image', 'slice', 'sequence'];
@@ -38,8 +42,14 @@ const isPositive = value => isFiniteNumber(value) && Number(value) > 0;
  */
 export function validateSkeletonAsset(doc) {
   const errors = [];
+  const warnings = [];
   if (!isObject(doc)) {
-    return { ok: false, errors: [makeError(ValidationCode.TYPE_MISMATCH, '', '骨骼资产必须是对象')], value: null };
+    return {
+      ok: false,
+      errors: [makeError(ValidationCode.TYPE_MISMATCH, '', '骨骼资产必须是对象')],
+      warnings,
+      value: null
+    };
   }
   if (doc.schemaVersion !== 1) {
     errors.push(makeError(ValidationCode.VERSION_UNSUPPORTED, 'schemaVersion', '骨骼资产 schemaVersion 必须为 1'));
@@ -56,7 +66,7 @@ export function validateSkeletonAsset(doc) {
   const boneIds = new Set();
   if (!Array.isArray(doc.bones) || doc.bones.length === 0) {
     errors.push(makeError(ValidationCode.MISSING_FIELD, 'bones', 'bones 必须是非空数组'));
-    return { ok: false, errors, value: null };
+    return { ok: false, errors, warnings, value: null };
   }
   for (const [index, bone] of doc.bones.entries()) {
     const path = `bones[${index}]`;
@@ -153,6 +163,7 @@ export function validateSkeletonAsset(doc) {
     if (attachment.type !== 'empty' && !String(attachment.assetId || '').trim()) {
       errors.push(makeError(ValidationCode.MISSING_FIELD, `${path}.attachment.assetId`, '非 empty 附件必须提供 assetId'));
     }
+    validateDirectionOffsets(attachment.directionOffsets, `${path}.attachment.directionOffsets`, errors, warnings);
     if (attachment.type === 'slice' && !(isFiniteNumber(attachment.sw) && isFiniteNumber(attachment.sh))) {
       errors.push(makeError(ValidationCode.MISSING_FIELD, `${path}.attachment.sw/sh`, 'slice 附件必须提供源矩形 sw/sh'));
     }
@@ -271,8 +282,48 @@ export function validateSkeletonAsset(doc) {
     }
   }
 
-  if (errors.length > 0) return { ok: false, errors, value: null };
-  return { ok: true, errors: [], value: doc };
+  if (errors.length > 0) return { ok: false, errors, warnings, value: null };
+  return { ok: true, errors: [], warnings, value: doc };
+}
+
+/**
+ * 方向形态覆盖（directionOffsets）校验 + 镜像形态警告。
+ *
+ * 形态键必须是 8 个已知方向之一（down/side/up/SE/SW/NE/NW/sideL）；
+ * 每项数值字段可选，但给了就必须是数字（否则运行时偏移计算失真）。
+ * SW/NW 在运行时会被整体镜像（flipX），因此单独配图时必须与 SE/NE 同源
+ * （朝右美术）——这是一条 warning 而非 error：能跑，但配错了方向就反。
+ */
+function validateDirectionOffsets(offsets, path, errors, warnings) {
+  if (offsets === undefined) return;
+  if (!isObject(offsets)) {
+    errors.push(makeError(ValidationCode.TYPE_MISMATCH, path, 'directionOffsets 必须是对象'));
+    return;
+  }
+  for (const [formKey, form] of Object.entries(offsets)) {
+    if (!SKELETON_DIRECTION_KEYS.includes(formKey)) {
+      warnings.push(makeError(ValidationCode.TYPE_MISMATCH, `${path}.${formKey}`,
+        `未知的方向形态键 ${formKey}（可用：${SKELETON_DIRECTION_KEYS.join('/')}），运行时会被忽略`));
+      continue;
+    }
+    if (!isObject(form)) {
+      errors.push(makeError(ValidationCode.TYPE_MISMATCH, `${path}.${formKey}`, '方向形态覆盖必须是对象'));
+      continue;
+    }
+    for (const field of ['x', 'y', 'rot', 'width', 'height', 'sx', 'sy', 'sw', 'sh']) {
+      if (form[field] !== undefined && !isFiniteNumber(form[field])) {
+        errors.push(makeError(ValidationCode.TYPE_MISMATCH, `${path}.${formKey}.${field}`,
+          `方向形态覆盖的 ${field} 必须是数字`));
+      }
+    }
+    if ((formKey === 'SW' || formKey === 'NW') && String(form.assetId || '').trim()) {
+      const counterpart = formKey === 'SW' ? 'SE' : 'NE';
+      warnings.push(makeError(ValidationCode.TYPE_MISMATCH, `${path}.${formKey}`,
+        `形态 ${formKey} 单独配了图，但该形态在运行时会被整体镜像（flipX）：`
+        + `图必须与 ${counterpart} 同源（朝右美术）；只想靠镜像复用的话请留空，`
+        + `引擎会自动回退到 ${formKey === 'SW' ? 'down（正面镜像）' : 'up（背面镜像）'}`));
+    }
+  }
 }
 
 export default { validateSkeletonAsset };

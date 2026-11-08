@@ -11200,6 +11200,910 @@
       "targetPhase": "P1",
       "status": "ai-generated",
       "revision": 1
+    },
+    {
+      "assetId": "skirt-girl.parts.head-front",
+      "imageId": "skirt-girl.parts.head-front",
+      "category": "character-part",
+      "usage": [
+        "skirt-girl-skeleton-part"
+      ],
+      "sourceFile": "assets/images/skirt-girl/parts/head-front.png",
+      "runtime2D": {
+        "path": "assets/images/skirt-girl/parts/head-front.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skirt-girl.parts.head-front"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "skirt-girl.parts.head-side",
+      "imageId": "skirt-girl.parts.head-side",
+      "category": "character-part",
+      "usage": [
+        "skirt-girl-skeleton-part"
+      ],
+      "sourceFile": "assets/images/skirt-girl/parts/head-side.png",
+      "runtime2D": {
+        "path": "assets/images/skirt-girl/parts/head-side.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skirt-girl.parts.head-side"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "skirt-girl.parts.head-se",
+      "imageId": "skirt-girl.parts.head-se",
+      "category": "character-part",
+      "usage": [
+        "skirt-girl-skeleton-part"
+      ],
+      "sourceFile": "assets/images/skirt-girl/parts/head-se.png",
+      "runtime2D": {
+        "path": "assets/images/skirt-girl/parts/head-se.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skirt-girl.parts.head-se"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "skirt-girl.parts.head-ne",
+      "imageId": "skirt-girl.parts.head-ne",
+      "category": "character-part",
+      "usage": [
+        "skirt-girl-skeleton-part"
+      ],
+      "sourceFile": "assets/images/skirt-girl/parts/head-ne.png",
+      "runtime2D": {
+        "path": "assets/images/skirt-girl/parts/head-ne.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skirt-girl.parts.head-ne"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "skirt-girl.parts.torso-front",
+      "imageId": "skirt-girl.parts.torso-front",
+      "category": "character-part",
+      "usage": [
+        "skirt-girl-skeleton-part"
+      ],
+      "sourceFile": "assets/images/skirt-girl/parts/torso-front.png",
+      "runtime2D": {
+        "path": "assets/images/skirt-girl/parts/torso-front.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skirt-girl.parts.torso-front"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "skirt-girl.parts.torso-side",
+      "imageId": "skirt-girl.parts.torso-side",
+      "category": "character-part",
+      "usage": [
+        "skirt-girl-skeleton-part"
+      ],
+      "sourceFile": "assets/images/skirt-girl/parts/torso-side.png",
+      "runtime2D": {
+        "path": "assets/images/skirt-girl/parts/torso-side.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skirt-girl.parts.torso-side"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "skirt-girl.parts.torso-se",
+      "imageId": "skirt-girl.parts.torso-se",
+      "category": "character-part",
+      "usage": [
+        "skirt-girl-skeleton-part"
+      ],
+      "sourceFile": "assets/images/skirt-girl/parts/torso-se.png",
+      "runtime2D": {
+        "path": "assets/images/skirt-girl/parts/torso-se.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skirt-girl.parts.torso-se"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "skirt-girl.parts.torso-ne",
+      "imageId": "skirt-girl.parts.torso-ne",
+      "category": "character-part",
+      "usage": [
+        "skirt-girl-skeleton-part"
+      ],
+      "sourceFile": "assets/images/skirt-girl/parts/torso-ne.png",
+      "runtime2D": {
+        "path": "assets/images/skirt-girl/parts/torso-ne.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skirt-girl.parts.torso-ne"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "skirt-girl.parts.skirt-front",
+      "imageId": "skirt-girl.parts.skirt-front",
+      "category": "character-part",
+      "usage": [
+        "skirt-girl-skeleton-part"
+      ],
+      "sourceFile": "assets/images/skirt-girl/parts/skirt-front.png",
+      "runtime2D": {
+        "path": "assets/images/skirt-girl/parts/skirt-front.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skirt-girl.parts.skirt-front"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "skirt-girl.parts.skirt-side",
+      "imageId": "skirt-girl.parts.skirt-side",
+      "category": "character-part",
+      "usage": [
+        "skirt-girl-skeleton-part"
+      ],
+      "sourceFile": "assets/images/skirt-girl/parts/skirt-side.png",
+      "runtime2D": {
+        "path": "assets/images/skirt-girl/parts/skirt-side.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skirt-girl.parts.skirt-side"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "skirt-girl.parts.skirt-se",
+      "imageId": "skirt-girl.parts.skirt-se",
+      "category": "character-part",
+      "usage": [
+        "skirt-girl-skeleton-part"
+      ],
+      "sourceFile": "assets/images/skirt-girl/parts/skirt-se.png",
+      "runtime2D": {
+        "path": "assets/images/skirt-girl/parts/skirt-se.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skirt-girl.parts.skirt-se"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "skirt-girl.parts.skirt-ne",
+      "imageId": "skirt-girl.parts.skirt-ne",
+      "category": "character-part",
+      "usage": [
+        "skirt-girl-skeleton-part"
+      ],
+      "sourceFile": "assets/images/skirt-girl/parts/skirt-ne.png",
+      "runtime2D": {
+        "path": "assets/images/skirt-girl/parts/skirt-ne.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skirt-girl.parts.skirt-ne"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "skirt-girl.parts.arm-front",
+      "imageId": "skirt-girl.parts.arm-front",
+      "category": "character-part",
+      "usage": [
+        "skirt-girl-skeleton-part"
+      ],
+      "sourceFile": "assets/images/skirt-girl/parts/arm-front.png",
+      "runtime2D": {
+        "path": "assets/images/skirt-girl/parts/arm-front.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skirt-girl.parts.arm-front"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "skirt-girl.parts.arm-side",
+      "imageId": "skirt-girl.parts.arm-side",
+      "category": "character-part",
+      "usage": [
+        "skirt-girl-skeleton-part"
+      ],
+      "sourceFile": "assets/images/skirt-girl/parts/arm-side.png",
+      "runtime2D": {
+        "path": "assets/images/skirt-girl/parts/arm-side.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skirt-girl.parts.arm-side"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "skirt-girl.parts.arm-se",
+      "imageId": "skirt-girl.parts.arm-se",
+      "category": "character-part",
+      "usage": [
+        "skirt-girl-skeleton-part"
+      ],
+      "sourceFile": "assets/images/skirt-girl/parts/arm-se.png",
+      "runtime2D": {
+        "path": "assets/images/skirt-girl/parts/arm-se.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skirt-girl.parts.arm-se"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "skirt-girl.parts.arm-ne",
+      "imageId": "skirt-girl.parts.arm-ne",
+      "category": "character-part",
+      "usage": [
+        "skirt-girl-skeleton-part"
+      ],
+      "sourceFile": "assets/images/skirt-girl/parts/arm-ne.png",
+      "runtime2D": {
+        "path": "assets/images/skirt-girl/parts/arm-ne.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skirt-girl.parts.arm-ne"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "skirt-girl.parts.leg-front",
+      "imageId": "skirt-girl.parts.leg-front",
+      "category": "character-part",
+      "usage": [
+        "skirt-girl-skeleton-part"
+      ],
+      "sourceFile": "assets/images/skirt-girl/parts/leg-front.png",
+      "runtime2D": {
+        "path": "assets/images/skirt-girl/parts/leg-front.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skirt-girl.parts.leg-front"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "skirt-girl.parts.leg-side",
+      "imageId": "skirt-girl.parts.leg-side",
+      "category": "character-part",
+      "usage": [
+        "skirt-girl-skeleton-part"
+      ],
+      "sourceFile": "assets/images/skirt-girl/parts/leg-side.png",
+      "runtime2D": {
+        "path": "assets/images/skirt-girl/parts/leg-side.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skirt-girl.parts.leg-side"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "skirt-girl.parts.leg-se",
+      "imageId": "skirt-girl.parts.leg-se",
+      "category": "character-part",
+      "usage": [
+        "skirt-girl-skeleton-part"
+      ],
+      "sourceFile": "assets/images/skirt-girl/parts/leg-se.png",
+      "runtime2D": {
+        "path": "assets/images/skirt-girl/parts/leg-se.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skirt-girl.parts.leg-se"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "skirt-girl.parts.leg-ne",
+      "imageId": "skirt-girl.parts.leg-ne",
+      "category": "character-part",
+      "usage": [
+        "skirt-girl-skeleton-part"
+      ],
+      "sourceFile": "assets/images/skirt-girl/parts/leg-ne.png",
+      "runtime2D": {
+        "path": "assets/images/skirt-girl/parts/leg-ne.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skirt-girl.parts.leg-ne"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "skeleton.skirt-girl",
+      "imageId": "skeleton.skirt-girl",
+      "category": "character-skeleton",
+      "usage": [
+        "npc"
+      ],
+      "sourceFile": "assets/skeletons/skirt-girl.json",
+      "runtime2D": {
+        "path": "assets/skeletons/skirt-girl.json",
+        "mode": "skeleton"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skeleton.skirt-girl"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      },
+      "bounds": {
+        "width": 64,
+        "height": 76
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "skirt-girl.parts.head-up",
+      "imageId": "skirt-girl.parts.head-up",
+      "category": "character-part",
+      "usage": [
+        "skirt-girl-skeleton-part"
+      ],
+      "sourceFile": "assets/images/skirt-girl/parts/head-up.png",
+      "runtime2D": {
+        "path": "assets/images/skirt-girl/parts/head-up.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skirt-girl.parts.head-up"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "skirt-girl.parts.torso-up",
+      "imageId": "skirt-girl.parts.torso-up",
+      "category": "character-part",
+      "usage": [
+        "skirt-girl-skeleton-part"
+      ],
+      "sourceFile": "assets/images/skirt-girl/parts/torso-up.png",
+      "runtime2D": {
+        "path": "assets/images/skirt-girl/parts/torso-up.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skirt-girl.parts.torso-up"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "skirt-girl.parts.skirt-up",
+      "imageId": "skirt-girl.parts.skirt-up",
+      "category": "character-part",
+      "usage": [
+        "skirt-girl-skeleton-part"
+      ],
+      "sourceFile": "assets/images/skirt-girl/parts/skirt-up.png",
+      "runtime2D": {
+        "path": "assets/images/skirt-girl/parts/skirt-up.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skirt-girl.parts.skirt-up"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "skirt-girl.parts.arm-up",
+      "imageId": "skirt-girl.parts.arm-up",
+      "category": "character-part",
+      "usage": [
+        "skirt-girl-skeleton-part"
+      ],
+      "sourceFile": "assets/images/skirt-girl/parts/arm-up.png",
+      "runtime2D": {
+        "path": "assets/images/skirt-girl/parts/arm-up.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skirt-girl.parts.arm-up"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "skirt-girl.parts.leg-up",
+      "imageId": "skirt-girl.parts.leg-up",
+      "category": "character-part",
+      "usage": [
+        "skirt-girl-skeleton-part"
+      ],
+      "sourceFile": "assets/images/skirt-girl/parts/leg-up.png",
+      "runtime2D": {
+        "path": "assets/images/skirt-girl/parts/leg-up.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skirt-girl.parts.leg-up"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
     }
   ]
 }

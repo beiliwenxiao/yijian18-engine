@@ -106,9 +106,29 @@ setAnimationModeForEntity(entity, mode, stableSpriteId)
 | _addClip 提示语 | 带动作_方向命名约定（多方向 `walk_side`/单方向裸名 `attack`），命名即运行时解析契约 |
 | 帧面板挂点快速切换 | 「挂点」下拉列出全部 sequence 挂点（含帧数），选中即聚焦属性面板/画布——不同挂点序列帧免翻找 |
 | 序列帧路径可见可改 | ①挂点属性「路径」行改输入框（原只读）：按源文件路径匹配图片库即切换（精确 + 唯一后缀命中），序列帧换图自动清帧表重切；②帧模式「帧图」下拉 + 路径输入写 `meta.frameAssetId`（帧条重建签名显式失效） |
+| 方向形态批量导入（2026-11-08） | 槽位属性「方向图 → 批量导入方向图…」：一次多选整套图，按 `角色.部件-方向.png` 后缀自动写 `directionOffsets`——`-front`=基准图（down，写 attachment 本体）/ `-side` / `-up`（`-back` 同义）/ `-se` / `-sw` / `-ne` / `-nw`；主干匹配支持完整 ID（`skirt-girl.parts.torso`）或唯一后缀（`torso-side.png` 亦可）；写入图片 ID 一律归一为主干+方向后缀，同一张图不会产生两个 ID；只改图片与绘制尺寸，保留已有 x/y/rot 手工微调 |
+| 绑定清单缺向提示（2026-11-08） | 装配模式时间轴区改渲染「骨骼 → 挂件」绑定清单（`_renderSetupBindings`），每块已绑挂件标注 A 方案最少集覆盖度：`方向 5/5` 或 `方向 N/5 缺 side/up/SE/NE`；点骨骼行/挂件 chip 与左栏骨骼树、槽位列表、检查器联动 |
+| 方向配置校验告警（2026-11-08） | `SkeletonAssetValidator` 返回值新增 `warnings`（非致命，`ok` 仍为 true）：①未知方向形态键；②`SW`/`NW` 单独配图——这两个形态在运行时被 `isMirroredFacing` 整体镜像，配图必须与 `SE`/`NE` 同源朝右美术，否则应留空走回退。保存时 toast 摘要 + `console.warn` 明细 |
 
 - 编辑器与运行时共用 `AnimationActionResolver.stripFormSuffix` + `SkeletonDirection.SKELETON_DIAGONAL_FALLBACK`，
   保证「编辑器所见 = 运行时所得」（同一回退语义，无两处漂移）。
+
+### 3.6 示例资产：skirt-girl（A 方案最小集参考实现，2026-11-08）
+
+七方向「一套骨骼 + 按形态换贴图」的参考实现，同时是批量导入/缺向提示的验收素材：
+
+| 项 | 内容 |
+|----|------|
+| 骨骼 JSON | `example/sanguo_zhangjiao/assets/skeletons/skirt-girl.json`（9 骨 / 8 槽 / 7 剪辑：`idle_down`/`idle_side`/`walk_down`/`walk_side`/`attack_down`/`hurt`/`death`，`defaultClip: idle_down`） |
+| 图层 z | shadow 0 / legR 2 / legL 3 / torso 4 / skirt 6 / armL 7 / armR 8 / head 9（裙在衣外，故 z 高于上衣） |
+| 方向图 | 每部件 `-front`(down) 基准 + `-side`/`-up`/`-se`/`-ne` 四形态写入 `directionOffsets`；**SW/NW 不配**，由 `isMirroredFacing` 镜像得到 |
+| 图片路径 | `example/sanguo_zhangjiao/assets/images/skirt-girl/parts/<part>-<view>.png`（part ∈ head/torso/skirt/arm/leg，view ∈ front/side/up/se/ne），基准 64×64 |
+| 资产 ID | 与文件名同构：`skirt-girl.parts.head-front` 等（manifest `category: character-part` / `runtime2D.mode: skeleton`） |
+| 可重复生成 | `node scripts/gen-skirt-girl-skeleton.mjs`（程序化占位美术 + JSON + manifest 幂等 upsert，并清理历史 `-back` 命名残留） |
+| 美术约定 | 图片**中心 = 骨骼挂点**（`SkeletonRenderer` 居中绘制，不吃 manifest pivot）；head 内容 y10~40、torso y16~44、skirt y32~48、arm y32~53、leg y32~62（64×64 画布内） |
+
+替换真美术时保持上表文件名与画布对齐即可零改 JSON（`assets/images/` 在 `.gitignore` 中，
+本地放入后编辑器图片库自动可见）。
 
 ## 4. 不变式（零回归承诺）
 

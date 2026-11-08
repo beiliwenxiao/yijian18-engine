@@ -240,6 +240,7 @@ export class SkeletonEditor {
     this._loop();
     // 初始化按钮高亮状态
     this._refreshModeButtons();
+    this._applyModeChrome(); // 默认装配模式：底部只留绑定关系，无帧概念
     this._refreshDirectionButtons();
     this._setLibTab('parts'); // 默认显示部件库
   }
@@ -819,6 +820,8 @@ export class SkeletonEditor {
     if (this.el.dirty) this.el.dirty.style.display = 'none';
     if (newId) this.doc.skeletonId = newId;
     this._afterDocChange();
+    // 换文档后按模式刷新底部面板装饰（装配态隐藏动画控件，只留绑定关系）
+    this._applyModeChrome();
     // 整帧模式资产自动切到序列帧面板（骨骼资产保持骨骼时间线；下拉可手动切换）
     this._setAnimMode(this.doc?.meta?.frameMode === true ? 'frames' : 'skeletal');
     this.el.skeletonId.value = this.doc.skeletonId || '';
@@ -1433,6 +1436,10 @@ export class SkeletonEditor {
 
   /** 在当前时间 upsert 选中骨骼的关键帧（记录当前采样姿态）。 */
   _keySelectedBone() {
+    if (this._isSetupBindMode()) {
+      this._toast('装配模式（绑定态）不打关键帧——切「🎬 动画」后按 K 打帧');
+      return;
+    }
     this._pushHistory();
     const clip = this._clip();
     const boneId = this.selectedBone;
@@ -1582,6 +1589,8 @@ export class SkeletonEditor {
   /* ---------------- 预览采样 ---------------- */
 
   _currentClipRuntime() {
+    // 装配模式（绑定态）预览的是静止姿态：没有帧/时间概念，采样也不读剪辑
+    if (this._isSetupBindMode()) return null;
     return this.runtime?.clips.get(this.currentClip) || null;
   }
 
@@ -1824,6 +1833,10 @@ export class SkeletonEditor {
   }
 
   _togglePlay() {
+    if (this._isSetupBindMode()) {
+      this._toast('装配模式（绑定态）不播放动画——切「🎬 动画」后播放');
+      return;
+    }
     this.playing = !this.playing;
     if (this.playing) this._staticFrameIndex = null;
     const clip = this._clip();
@@ -2564,6 +2577,10 @@ export class SkeletonEditor {
 
   /** 切换底部时间线视图：skeletal=骨骼轨道时间线 | frames=序列帧面板。 */
   _setAnimMode(mode) {
+    if (mode === 'frames' && this._isSetupBindMode()) {
+      this._toast('装配模式（绑定态）只有「骨骼 ↔ 图片」绑定关系，没有帧——切「🎬 动画」后再看帧');
+      mode = 'skeletal';
+    }
     this.animMode = mode === 'frames' ? 'frames' : 'skeletal';
     const frames = this.animMode === 'frames';
     const skeletal = document.getElementById('se-skeletal-panel');
@@ -4286,6 +4303,7 @@ export class SkeletonEditor {
     if (this.editMode === mode) return;
     this.editMode = mode;
     this._refreshModeButtons();
+    this._applyModeChrome(); // 装配态隐藏底部动画控件（无帧概念）
     if (this.editMode === 'setup') {
       this._toast('装配模式（绑定态）：编辑的是所有动画共用的基准——骨骼静止姿态 + 挂点绑定');
     } else if (!this._clip()) {
@@ -4302,6 +4320,44 @@ export class SkeletonEditor {
     const animate = $('se-mode-animate');
     if (setup) setup.style.background = this.editMode === 'setup' ? '#2a4a3e' : '';
     if (animate) animate.style.background = this.editMode === 'animate' ? '#2a4a3e' : '';
+  }
+
+  /** 是否整帧（序列帧）模式资产：这类资产只有帧表、没有骨骼绑定，装配/动画双模式语义不适用。 */
+  _isFrameModeAsset() {
+    return this.doc?.meta?.frameMode === true;
+  }
+
+  /** 是否为「装配（绑定态）」：底部不出现任何帧/时间轴 UI；整帧模式资产不受此限（它只有帧）。 */
+  _isSetupBindMode() {
+    return this.editMode === 'setup' && !this._isFrameModeAsset();
+  }
+
+  /**
+   * 模式切换后的界面装饰：装配模式下隐藏底部全部动画控件（类型/剪辑/播放/关键帧/轨道/曲线入口），
+   * 时间轴区改为「骨骼 ↔ 基础图片」绑定关系清单——装配只有绑定，没有帧概念。
+   */
+  _applyModeChrome() {
+    const bindMode = this._isSetupBindMode();
+    const tools = document.getElementById('se-anim-tools');
+    if (tools) tools.style.display = bindMode ? 'none' : 'contents';
+    // 装配态工具栏全空：连工具条一起隐藏，避免留一条空条
+    const toolbar = tools?.parentElement;
+    if (toolbar) toolbar.style.display = bindMode ? 'none' : '';
+    // 动作×方向覆盖条属于剪辑（帧）视图，装配态一并隐藏——绑定关系统一由下方清单表达
+    const coverage = document.getElementById('se-action-coverage');
+    if (coverage) coverage.style.display = bindMode ? 'none' : 'flex';
+    const panel = document.getElementById('se-skeletal-panel');
+    const framesPanel = document.getElementById('se-frames-panel');
+    if (bindMode) {
+      // 装配态强制骨骼视图：序列帧视图属于动画录制，不在此模式出现
+      this.animMode = 'skeletal';
+      this.playing = false;
+      this._syncPlayButtons();
+      if (panel) panel.style.display = '';
+      if (framesPanel) framesPanel.style.display = 'none';
+      const select = document.getElementById('se-anim-mode');
+      if (select) select.value = 'skeletal';
+    }
   }
 
   _setPreviewDirection(dir) {
@@ -4866,8 +4922,22 @@ export class SkeletonEditor {
     const nameInput = prompt('登记图片 ID（图片库标识；建议带角色名，如 wanderer-girl）：', baseName);
     if (!nameInput?.trim()) return;
     const imageId = nameInput.trim().replace(/\s+/g, '-');
+    const result = await this._saveImageFile(file, imageId);
+    if (!result.ok) return;
+    this._toast(`已导入 ${imageId}（${result.width}×${result.height}），可在切件模式中装配`);
+    if (typeof after === 'function') after(imageId);
+  }
+
+  /**
+   * 图片落盘 + manifest 登记（导入单张与「批量导入方向图」共用）。
+   * 统一转 PNG 写 assets/images/characters/<imageId>.png，再走 scene-image-asset-transaction。
+   * @param {File} file
+   * @param {string} imageId 图片库标识（= 资产 ID）
+   * @returns {Promise<{ok:boolean, width?:number, height?:number}>}
+   */
+  async _saveImageFile(file, imageId) {
+    if (!file || !this.projectPath) { this._toast('未加载项目，无法导入', true); return { ok: false }; }
     try {
-      // 解码并统一转 PNG（登记端点校验 .png 后缀与 PNG 头）
       const dataUrl = await new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => resolve(reader.result);
@@ -4890,7 +4960,7 @@ export class SkeletonEditor {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ path: `${this.gameRoot}/${runtimePath}`, content: pngBase64, encoding: 'base64' })
       }).then(response => response.json());
-      if (!saved?.ok) { this._toast(`图片落盘失败：${saved?.error || saved?.message || ''}`, true); return; }
+      if (!saved?.ok) { this._toast(`图片落盘失败：${saved?.error || saved?.message || ''}`, true); return { ok: false }; }
       const registered = await fetch('/api/scene-image-asset-transaction', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -4898,12 +4968,101 @@ export class SkeletonEditor {
           imageAssets: [{ imageId, runtimePath, sceneId: 'skeleton-editor' }]
         })
       }).then(response => response.json());
-      if (!registered?.ok) { this._toast(`Manifest 登记失败：${registered?.error || registered?.message || ''}`, true); return; }
+      if (!registered?.ok) { this._toast(`Manifest 登记失败：${registered?.error || registered?.message || ''}`, true); return { ok: false }; }
       await this._loadManifest();
-      this._toast(`已导入 ${imageId}（${canvas.width}×${canvas.height}），可在切件模式中装配`);
-      if (typeof after === 'function') after(imageId);
+      return { ok: true, width: canvas.width, height: canvas.height };
     } catch (error) {
       this._toast(`导入失败：${error.message}`, true);
+      return { ok: false };
+    }
+  }
+
+  /* ---------------- 批量导入方向图（A 方案：一套骨骼 + 按形态换图） ---------------- */
+
+  /**
+   * 从文件名解析方向形态：`<部件主干>-<方向>.png`。
+   * 方向后缀：front（= down 基准图）| side | up（别名 back）| se | sw | ne | nw。
+   * @param {string} baseName 去扩展名的文件名（小写）
+   * @returns {{stem: string, form: string|null, suffix: string}} suffix=归一化方向键（front/side/up/se…）
+   */
+  _parseDirectionFormName(baseName) {
+    const match = /^(.*?)-(front|side|up|back|se|sw|ne|nw)$/.exec(baseName);
+    if (!match) return { stem: baseName, form: null, suffix: 'front' };
+    const aliases = { front: 'front', side: 'side', up: 'up', back: 'up', se: 'se', sw: 'sw', ne: 'ne', nw: 'nw' };
+    const forms = { front: null, side: 'side', up: 'up', se: 'SE', sw: 'SW', ne: 'NE', nw: 'NW' };
+    const suffix = aliases[match[2]];
+    return { stem: match[1], form: forms[suffix], suffix };
+  }
+
+  /** 弹多选文件框，批量导入方向图（按文件名后缀自动写 directionOffsets）。 */
+  _pickDirectionForms() {
+    if (!this.doc) return;
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.multiple = true;
+    input.onchange = () => {
+      const files = [...(input.files || [])];
+      if (files.length > 0) this._importDirectionForms(files);
+    };
+    input.click();
+  }
+
+  /**
+   * 批量导入方向图：文件名 `角色.部件-<方向>.png`（如 `skirt-girl.parts.torso-side.png`）。
+   *
+   * 命名即契约——按「主干」（去掉 -方向 后缀）匹配槽位的基准图 assetId 主干：
+   *   -front / 无后缀 → 写入 attachment 基准图（down）
+   *   -side/-up(back)/-se/-sw/-ne/-nw → 写入 attachment.directionOffsets[形态].assetId
+   * 主干既支持完整 ID（`skirt-girl.parts.torso`），也支持唯一后缀（`torso`）——后者便于
+   * 美术只按部件名交图。写入的图片 ID 一律规范为主干 + 方向后缀，同一张图不会有两个 ID。
+   * 只改图片 ID 与绘制尺寸，保留已有的 x/y/rot 手工微调。
+   */
+  async _importDirectionForms(files) {
+    const slots = this.doc?.slots || [];
+    const stripForm = assetId => String(assetId || '').replace(/-(front|side|up|se|sw|ne|nw)$/i, '');
+    let applied = 0;
+    const unmatched = [];
+    for (const file of files) {
+      const baseName = (file.name.replace(/\.[^.]+$/, '') || '')
+        .toLowerCase().replace(/[^a-z0-9.-]+/g, '-').replace(/^-+|-+$/g, '');
+      if (!baseName) continue;
+      const { stem, form, suffix } = this._parseDirectionFormName(baseName);
+      // 主干匹配：完整 ID 相等优先；否则按 `.主干` 后缀唯一命中（美术只交 `torso-side.png` 也能对上）
+      let targets = slots.filter(slot => stripForm(slot.attachment?.assetId).toLowerCase() === stem);
+      if (targets.length === 0) {
+        targets = slots.filter(slot => stripForm(slot.attachment?.assetId).toLowerCase().endsWith(`.${stem}`));
+      }
+      if (targets.length === 0) { unmatched.push(file.name); continue; }
+      const imageId = `${stripForm(targets[0].attachment?.assetId).toLowerCase()}-${suffix}`;
+      const saved = await this._saveImageFile(file, imageId);
+      if (!saved.ok) continue;
+      for (const slot of targets) {
+        const attachment = slot.attachment;
+        const width = saved.width || attachment.width || 64;
+        const height = saved.height || attachment.height || 64;
+        if (!form) {
+          attachment.assetId = imageId;
+          attachment.width = width;
+          attachment.height = height;
+        } else {
+          const offsets = attachment.directionOffsets || (attachment.directionOffsets = {});
+          offsets[form] = { ...(offsets[form] || {}), assetId: imageId, width, height };
+        }
+        applied += 1;
+      }
+    }
+    if (applied > 0) {
+      this._pushHistory();
+      this._markDirty();
+      this._renderImageLib();
+      this._renderInspector();
+      this._draw();
+      this._toast(`方向图已导入：${applied} 处槽位已按文件名写入（基准图/方向形态）`);
+    }
+    if (unmatched.length > 0) {
+      this._toast(`有 ${unmatched.length} 张图没有匹配到槽位（主干需与基准图 assetId 一致）：${unmatched.slice(0, 3).join('、')}`
+        + (unmatched.length > 3 ? ' …' : ''), true);
     }
   }
 
@@ -6314,6 +6473,10 @@ export class SkeletonEditor {
         ${attachment.type === 'empty' ? '' : `
         <div class="row"><label>图片ID</label><select id="se-att-asset">${imageOptions}</select></div>
         <div class="row"><label>路径</label><input type="text" id="se-att-path" title="已登记图片的源文件路径：改成其他已登记路径即切换图片（按路径匹配图片库；未登记的请先在图片库导入）" style="flex:1;min-width:0;font-size:11px;color:#cdd6ee;" value="${seAttPath || ''}" placeholder="(未登记路径)"></div>
+        <div class="row"><label style="min-width:auto;">方向图</label>
+          <button id="se-att-import-forms" title="一次多选整套方向图，按文件名后缀自动写各槽位的形态图：-front 基准 / -side / -up（-back 同义）/ -se / -sw / -ne / -nw">批量导入方向图…</button>
+        </div>
+        <div class="row"><span style="font-size:11px;color:#9aa5c0;">命名：角色.部件-方向.png（主干 = 基准图 assetId 去方向后缀，也可只写部件名如 torso-side.png）</span></div>
         ${(() => {
           const offset = this._effectiveAttachmentOffset(attachment);
           const dirLabel = SKELETON_DIRECTION_LABELS[this.previewDirection] || '正面';
@@ -6569,6 +6732,9 @@ export class SkeletonEditor {
     bindAttachment('se-att-sw', 'sw');
     bindAttachment('se-att-sh', 'sh');
     bindAttachment('se-att-fps', 'fps');
+    // 批量导入方向图：一次多选，按文件名后缀写入各槽位（基准图 + 形态覆盖）
+    const importForms = $('se-att-import-forms');
+    if (importForms) importForms.addEventListener('click', () => this._pickDirectionForms());
     const generate = $('se-seq-generate');
     if (generate) generate.addEventListener('click', () => {
       const columns = Math.max(1, Number($('se-seq-columns').value) || 1);
@@ -6590,19 +6756,90 @@ export class SkeletonEditor {
 
   /* ---------------- 时间轴 ---------------- */
 
+  /**
+   * 装配模式（绑定态）底部面板：只列「骨骼 ↔ 基础图片」绑定关系。
+   * 不出现剪辑/帧/关键帧/播放等任何帧概念 UI（装配只有绑定，没有帧）。
+   */
+  _renderSetupBindings(body) {
+    const slotsByBone = new Map();
+    for (const slot of this.doc?.slots || []) {
+      if (!slot?.bone) continue;
+      if (!slotsByBone.has(slot.bone)) slotsByBone.set(slot.bone, []);
+      slotsByBone.get(slot.bone).push(slot);
+    }
+    const ordered = [];
+    const walkTree = node => {
+      ordered.push(node.bone);
+      for (const child of node.children) walkTree(child);
+    };
+    for (const root of this._buildBoneTree()) walkTree(root);
+    const chipOf = slot => {
+      const att = slot.attachment || {};
+      let label;
+      if (att.type === 'sequence') label = `序列帧 ${att.frames?.length || 0} 帧`;
+      else if (att.type === 'slice') label = `图集切片 ${att.assetId || ''}`;
+      else if (!att.assetId) label = '（空挂点）';
+      else label = att.assetId;
+      // A 方案的最少美术集：down（基准）+ side/up/SE/NE 四张变体；SW/NW 靠运行时镜像
+      const offsets = att.directionOffsets || null;
+      const required = ['side', 'up', 'SE', 'NE'];
+      const missing = att.assetId ? required.filter(key => !(offsets?.[key]?.assetId)) : [];
+      const covered = att.assetId ? required.length - missing.length : 0;
+      const formsTag = att.assetId
+        ? (missing.length === 0
+          ? ` <span style="color:#7ec8ff;" title="down/side/up/SE/NE 均已配图，SW/NW 由引擎镜像">方向 5/5</span>`
+          : ` <span style="color:#ffb454;" title="缺方向：${missing.join('、')}（斜向缺图会回退正面/背面基准图）">方向 ${covered}/5 缺 ${missing.join('/')}</span>`)
+        : '';
+      return `<span class="se-bind-chip" data-slot="${slot.id}" title="点击选中该挂件（与左栏联动）"`
+        + ` style="cursor:pointer;padding:2px 8px;border:1px solid #2a3c66;border-radius:10px;`
+        + `background:#131b30;font-size:12px;">${label}${formsTag}</span>`;
+    };
+    const rows = ordered.map(bone => {
+      const slots = slotsByBone.get(bone.id) || [];
+      const cells = slots.length
+        ? slots.map(chipOf).join('')
+        : '<span style="color:#5a6a90;font-size:12px;">（未绑定图片）</span>';
+      return `<div class="se-tl-row se-bind-row" data-bone="${bone.id}">
+        <div class="label" title="点击选中该骨骼">${SkeletonEditor._displayName(bone.id)}</div>
+        <div class="lane" style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:3px 0;">${cells}</div>
+      </div>`;
+    }).join('');
+    body.innerHTML = '<div style="padding:6px 10px;margin-bottom:6px;background:rgba(42,74,62,0.35);'
+      + 'border:1px solid #2a4a3e;border-radius:6px;font-size:12px;color:#b8d8c8;">'
+      + '🧩 装配模式（绑定态）：这里只有「骨骼 ↔ 基础图片」的绑定关系，没有帧/时间轴；'
+      + '录制动作请切「🎬 动画」</div>'
+      + (rows || '<div class="se-empty">骨骼树为空</div>');
+    for (const row of body.querySelectorAll('.se-bind-row')) {
+      const boneId = row.dataset.bone;
+      const select = slotId => {
+        this.selectedBone = boneId;
+        this.selectedSlot = slotId;
+        this._renderBoneTree();
+        this._renderSlotList();
+        this._renderInspector();
+        this._draw();
+      };
+      row.querySelector('.label').addEventListener('click', () => {
+        select(this._primarySlotOfBone(boneId)?.id || null);
+      });
+      for (const chip of row.querySelectorAll('.se-bind-chip')) {
+        chip.addEventListener('click', () => select(chip.dataset.slot || null));
+      }
+    }
+  }
+
   _renderTimeline() {
     const body = this.el.tlBody;
+    // 装配模式（绑定态）：底部没有帧/时间轴，只列「骨骼 ↔ 基础图片」绑定关系
+    if (this._isSetupBindMode()) {
+      this._renderSetupBindings(body);
+      return;
+    }
     const clip = this._clip();
     if (!clip) {
       body.innerHTML = '<div class="se-empty">无剪辑——点击上方「＋新建剪辑」开始录制动画</div>';
       return;
     }
-    // 模式提示条：装配=绑定态（时间轴只读预览）；动画=录制态。消除「调了这里、哪里对不上」的模式混淆
-    const modeBanner = this.editMode === 'setup'
-      ? '<div style="padding:6px 10px;margin-bottom:6px;background:rgba(42,74,62,0.35);'
-        + 'border:1px solid #2a4a3e;border-radius:6px;font-size:12px;color:#b8d8c8;">'
-        + '🧩 装配模式（绑定态）：编辑的是所有动画共用的基准姿态与挂点绑定；录制关键帧请切「🎬 动画」</div>'
-      : '';
     // 全量轨道：按骨骼树顺序列出所有骨骼——没打过关键帧的骨骼也显示（置灰空行），
     // 与左侧骨骼树一一对应，避免「时间轴看起来比骨骼树少腿」；双击空行 = 建轨道并以当前姿态打关键帧
     const trackByBone = new Map((clip.tracks || []).map(track => [track.bone, track]));
@@ -6638,7 +6875,7 @@ export class SkeletonEditor {
         <div class="lane">${loopTie}${keys}<div id="se-tl-playhead" style="left:${(this.previewTime / clip.durationMs) * 100}%"></div></div>
       </div>`;
     }).join('');
-    body.innerHTML = modeBanner + (rows || '<div class="se-empty">骨骼树为空</div>');
+    body.innerHTML = rows || '<div class="se-empty">骨骼树为空</div>';
     const duration = clip.durationMs;
 
     for (const row of body.querySelectorAll('.se-tl-row')) {
@@ -7447,6 +7684,11 @@ export class SkeletonEditor {
       alert(`骨骼资产校验失败：\n${messages}`);
       return;
     }
+    // 非致命告警（如 SW/NW 独立配图的镜像重复）：照常保存，但把首条提示到 toast，其余进控制台
+    const warnings = validation.warnings || [];
+    if (warnings.length > 0) {
+      console.warn('骨骼资产告警：\n' + warnings.map(w => `${w.path || ''}: ${w.message || ''}`).join('\n'));
+    }
     this.el.save.disabled = true;
     try {
       // 模板编辑态：写回 assets/skeletons/templates/，不动 Manifest（改模板不影响已创建对象）
@@ -7464,7 +7706,12 @@ export class SkeletonEditor {
           });
           this._refreshAssetSelect();
         }
-        this._toast(this.editingTemplate ? '模板已写回 templates/（不影响已创建的骨骼资产）' : '已保存：骨骼 JSON + Manifest 已落盘');
+        const savedText = this.editingTemplate
+          ? '模板已写回 templates/（不影响已创建的骨骼资产）'
+          : '已保存：骨骼 JSON + Manifest 已落盘';
+        this._toast(warnings.length > 0
+          ? `${savedText}（${warnings.length} 条告警：${warnings[0].message || ''}）`
+          : savedText, warnings.length > 0);
       } else {
         this._toast(`保存失败：${result.error || '未知错误'}`, true);
       }
