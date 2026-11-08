@@ -71,7 +71,9 @@ export class BackpackPanel extends UIElement {
       showEquipmentSection: true,
       onAttributeAllocate: options.onAttributeAllocate,
       onEquipmentClick: (slotType, button) => this._handleEquipmentSlotClick(slotType, button),
-      getProjection: options.getProjection
+      getProjection: options.getProjection,
+      // 角色立绘渲染器（场景注入，数据驱动布局中的 portrait 部件使用）
+      renderPortrait: options.renderPortrait
     });
     this.inventoryContent = new InventoryPanel({
       x: this.x + this._inventoryBounds.x,

@@ -38,6 +38,7 @@ export class StatsComponent extends Component {
    * @param {Object} stats.elementAttack - 元素攻击力 {elementType: value}
    * @param {Object} stats.elementDefense - 元素防御力 {elementType: value}
    * @param {number} stats.unitType - 兵种类型
+   * @param {Object} stats.attributes - 个人/武将属性覆盖（力量/敏捷/耐力/智力/精神/武力/政治/统御）
    */
   constructor(stats = {}) {
     super('stats');
@@ -74,6 +75,25 @@ export class StatsComponent extends Component {
     
     // 兵种属性
     this.unitType = stats.unitType || 0; // 默认刀盾步兵
+
+    // 个人属性（背包「个人属性」区块）：力量/敏捷/耐力/智力/精神
+    // 数据源：角色配置（CharactersConfig.attributes）> 内容库 players[].attributes > 默认 10
+    // 注意：武将属性（武力/政治/统御）缺失时保持 null，面板显示「—」而不是 0。
+    const attributes = stats.attributes && typeof stats.attributes === 'object' ? stats.attributes : {};
+    const pickAttribute = (key, fallback) => {
+      const raw = attributes[key] !== undefined ? attributes[key] : stats[key];
+      if (raw === null || raw === undefined || raw === '') return fallback;
+      const value = Number(raw);
+      return Number.isFinite(value) ? value : fallback;
+    };
+    this.strength = pickAttribute('strength', 10);
+    this.agility = pickAttribute('agility', 10);
+    this.endurance = pickAttribute('endurance', 10);
+    this.intelligence = pickAttribute('intelligence', 10);
+    this.spirit = pickAttribute('spirit', 10);
+    this.might = pickAttribute('might', null);
+    this.politics = pickAttribute('politics', null);
+    this.leadership = pickAttribute('leadership', null);
     
     // 金币
     this.gold = stats.gold || 0;

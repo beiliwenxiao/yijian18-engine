@@ -65,7 +65,10 @@ export class DemoPlayerFactory {
         defense: 0,
         // 显式基础移动速度（世界单位/秒）。旧值 0 会被 EntityFactory 的 `|| 100` 兜底，
         // 视口改为跟随窗口后视野更大，需要更高速度才不显得拖沓。
-        speed: 100
+        speed: 100,
+        // 个人属性/武将属性初始值来自角色配置（CharactersConfig.attributes），
+        // 内容库 players[].attributes 可在 ready 后覆盖（见 applyLibraryDefinition）。
+        attributes: selected?.attributes
       },
       skills: createDefaultSkills(),
       equipment: {},
@@ -149,6 +152,19 @@ export class DemoPlayerFactory {
 
     if (definition.shadow && typeof definition.shadow === 'object') {
       player.shadowProfile = { ...definition.shadow };
+    }
+
+    // 个人属性/武将属性：内容库声明优先于角色配置；未声明字段保持不变。
+    if (definition.attributes && typeof definition.attributes === 'object') {
+      const stats = player.getComponent?.('stats');
+      if (stats) {
+        for (const key of ['strength', 'agility', 'endurance', 'intelligence', 'spirit', 'might', 'politics', 'leadership']) {
+          const raw = definition.attributes[key];
+          if (raw === null || raw === undefined || raw === '') continue;
+          const value = Number(raw);
+          if (Number.isFinite(value)) stats[key] = value;
+        }
+      }
     }
 
     if (definition.collision && typeof definition.collision === 'object') {

@@ -41,7 +41,7 @@ const DEFAULT_COMPONENTS = {
       { id: 'combatStateBadge', label: '战斗/灵魂状态', x: 1030, y: 72, width: 80, height: 30, fontSize: 0, textOffsetX: 0, textOffsetY: 0, anchor: 'topleft', kind: 'panel' },
       { id: 'taskTracker', label: '任务追踪', x: 18, y: 86, width: 340, height: 150, anchor: 'topleft', kind: 'panel' },
       // 统一背包外框（属性、装备和物品栏的内部部件由 PanelEditor 编辑）
-      { id: 'backpackPanel', label: '背包', x: 190, y: 100, width: 900, height: 520, anchor: 'topleft', kind: 'panel' },
+      { id: 'backpackPanel', label: '背包', x: 140, y: 140, width: 1000, height: 440, anchor: 'topleft', kind: 'panel' },
       // 底部控制栏拆分为独立小控件（血球/蓝球/2药水/5技能）
       { id: 'pc-hp-orb', label: '血球', x: 397, y: 625, width: 70, height: 70, anchor: 'topleft', kind: 'button' },
       { id: 'pc-potion1', label: '红瓶', x: 482, y: 640, width: 40, height: 40, anchor: 'topleft', kind: 'button' },
@@ -81,7 +81,7 @@ const DEFAULT_COMPONENTS = {
       { id: 'timeWeatherBadge', label: '时间/天气', x: 960, y: 10, width: 150, height: 54, fontSize: 0, textOffsetX: 0, textOffsetY: 0, anchor: 'topleft', kind: 'panel' },
       { id: 'combatStateBadge', label: '战斗/灵魂状态', x: 1030, y: 72, width: 80, height: 30, fontSize: 0, textOffsetX: 0, textOffsetY: 0, anchor: 'topleft', kind: 'panel' },
       { id: 'taskTracker', label: '任务追踪', x: 18, y: 82, width: 340, height: 140, anchor: 'topleft', kind: 'panel' },
-      { id: 'backpackPanel', label: '背包', x: 190, y: 40, width: 900, height: 500, anchor: 'topleft', kind: 'panel' },
+      { id: 'backpackPanel', label: '背包', x: 100, y: 150, width: 1080, height: 475, anchor: 'topleft', kind: 'panel' },
       { id: 'joystick', label: '摇杆区', x: 0, y: 270, width: 384, height: 330, anchor: 'topleft', kind: 'zone' },
       { id: 'hud-avatar', label: 'HUD头像', x: 10, y: 10, width: 56, height: 56, anchor: 'topleft', kind: 'button' },
       { id: 'hud-name', label: 'HUD昵称', x: 78, y: 10, width: 140, height: 20, anchor: 'topleft', kind: 'panel' },
@@ -2295,6 +2295,31 @@ export class UIEditor {
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
           ctx.fillText(part.label || '图片', x + width / 2, y + height / 2);
+          ctx.textAlign = 'left';
+          break;
+        case 'portrait':
+          // 角色立绘占位：运行时由场景渲染玩家实时外观（含装备），编辑器只示意范围
+          ctx.fillStyle = part.bgColor || 'rgba(18,24,32,0.55)';
+          ctx.fillRect(x, y, width, height);
+          ctx.strokeStyle = part.borderColor || 'rgba(74,158,255,0.45)';
+          ctx.lineWidth = 1;
+          ctx.strokeRect(x, y, width, height);
+          ctx.fillStyle = 'rgba(150,180,210,0.45)';
+          ctx.beginPath();
+          ctx.arc(x + width / 2, y + height * 0.18, Math.min(width, height) * 0.09, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.beginPath();
+          ctx.moveTo(x + width * 0.32, y + height * 0.82);
+          ctx.lineTo(x + width * 0.36, y + height * 0.3);
+          ctx.lineTo(x + width * 0.64, y + height * 0.3);
+          ctx.lineTo(x + width * 0.68, y + height * 0.82);
+          ctx.closePath();
+          ctx.fill();
+          ctx.fillStyle = 'rgba(190, 210, 235, 0.8)';
+          ctx.font = '10px Arial';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'bottom';
+          ctx.fillText(part.label || '角色立绘', x + width / 2, y + height - 6);
           ctx.textAlign = 'left';
           break;
       }

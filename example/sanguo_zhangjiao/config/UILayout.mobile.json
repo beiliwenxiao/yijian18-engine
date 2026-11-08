@@ -71,14 +71,14 @@
       "label": "背包",
       "kind": "panel",
       "anchor": "topleft",
-      "x": 123,
-      "y": 123,
-      "width": 837,
-      "height": 362,
-      "xPct": 0.09609,
-      "yPct": 0.205,
-      "wPct": 0.65391,
-      "hPct": 0.60333
+      "x": 100,
+      "y": 150,
+      "width": 1080,
+      "height": 475,
+      "xPct": 0.07813,
+      "yPct": 0.20833,
+      "wPct": 0.84375,
+      "hPct": 0.65972
     },
     {
       "id": "joystick",

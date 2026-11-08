@@ -41,6 +41,48 @@ export class EntityRenderer2D {
   }
 
   /**
+   * 在 UI 面板矩形内绘制角色立绘（只画精灵与外观层，不画名字/血条）。
+   * 复用世界渲染管线，因此已装备的武器/头部/躯干外观层会随当前装备同步显示。
+   * @param {CanvasRenderingContext2D} ctx
+   * @param {object} entity ECS 实体（玩家）
+   * @param {{x:number,y:number,width:number,height:number}} rect 面板内的立绘框
+   * @param {{padding?:number,zoom?:number}} [options]
+   * @returns {boolean} 是否完成绘制
+   */
+  renderPortrait(ctx, entity, rect, options = {}) {
+    const transform = entity?.getComponent?.('transform');
+    const sprite = entity?.getComponent?.('sprite');
+    if (!transform?.position || !sprite || !rect) return false;
+    const spriteWidth = sprite.width || 32;
+    const spriteHeight = sprite.height || 32;
+    if (spriteWidth <= 0 || spriteHeight <= 0) return false;
+
+    const padding = Number.isFinite(options.padding) ? options.padding : 10;
+    const zoom = Number.isFinite(options.zoom) && options.zoom > 0 ? options.zoom : 1;
+    const availWidth = Math.max(1, rect.width - padding * 2);
+    const availHeight = Math.max(1, rect.height - padding * 2);
+    const scale = Math.min(availWidth / spriteWidth, availHeight / spriteHeight) * zoom;
+    const anchorX = rect.x + rect.width / 2;
+    const anchorY = rect.y + rect.height - padding;
+    const elevation = transform.position.elevation || 0;
+    const worldX = transform.position.x;
+    const worldY = transform.position.y - elevation;
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(rect.x, rect.y, rect.width, rect.height);
+    ctx.clip();
+    ctx.translate(anchorX, anchorY);
+    ctx.scale(scale, scale);
+    ctx.translate(-worldX, -worldY);
+    const npc = entity.getComponent?.('npc');
+    this._renderSprite(ctx, entity, sprite, npc, worldX, worldY, spriteWidth, spriteHeight);
+    this._renderAppearanceLayers(ctx, sprite, worldX, worldY);
+    ctx.restore();
+    return true;
+  }
+
+  /**
    * 渲染实体及其世界空间标签。
    * @param {CanvasRenderingContext2D} ctx
    * @param {object} entity ECS 实体

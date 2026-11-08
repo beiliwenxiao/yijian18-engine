@@ -233,7 +233,8 @@ export class EntityFactory {
       mainElement: stats.mainElement || 0,
       elementAttack: stats.elementAttack || {},
       elementDefense: stats.elementDefense || {},
-      unitType: stats.unitType || 0
+      unitType: stats.unitType || 0,
+      attributes: stats.attributes || characterData.attributes
     }));
     
     // 添加精灵组件（默认使用4x8动画精灵，可由 characterData 覆盖）

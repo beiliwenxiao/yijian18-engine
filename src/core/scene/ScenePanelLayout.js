@@ -120,7 +120,9 @@ export class ScenePanelLayout {
         return allowed;
       },
       onIntent: (intentType, payload, options) => scene.submitItemIntent(intentType, payload, options),
-      getProjection: () => scene.getItemLifecycleProjection?.()
+      getProjection: () => scene.getItemLifecycleProjection?.(),
+      // 立绘部件由场景渲染（2D 场景注入；其他场景缺省时面板画占位剪影）
+      renderPortrait: (ctx, rect, entity) => scene.renderCharacterPortrait?.(ctx, rect, entity) === true
     });
     // 保持旧场景和物品弹窗的调用兼容：三个入口均控制同一个组合面板。
     scene.inventoryPanel = scene.backpackPanel;

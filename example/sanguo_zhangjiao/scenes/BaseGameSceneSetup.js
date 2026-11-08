@@ -519,6 +519,7 @@ export class BaseGameSceneSetup extends Scene {
       'baseMaxHp', 'baseMaxMp', 'baseMaxStamina', 'baseStaminaRegen', 'baseAttack', 'baseDefense', 'baseSpeed',
       'maxHp', 'hp', 'maxMp', 'mp', 'maxStamina', 'stamina', 'staminaRegen', 'attack', 'defense', 'speed', 'level', 'exp',
       'mainElement', 'elementAttack', 'elementDefense', 'unitType', 'gold', 'attributeEffects',
+      'strength', 'agility', 'endurance', 'intelligence', 'spirit', 'might', 'politics', 'leadership',
       'class', 'skillPoints'
     ];
     const statsData = {};

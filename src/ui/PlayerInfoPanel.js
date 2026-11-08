@@ -41,6 +41,8 @@ export class PlayerInfoPanel extends UIElement {
     this._playerSource = options.player || null;
     this.player = options.player || null;
     this.getProjection = typeof options.getProjection === 'function' ? options.getProjection : () => null;
+    // 角色立绘渲染器（场景注入）：(ctx, rect, player) => boolean，返回 true 表示已绘制
+    this.renderPortrait = typeof options.renderPortrait === 'function' ? options.renderPortrait : null;
     this.backgroundColor = options.backgroundColor || 'rgba(0, 0, 0, 0.85)';
     this.borderColor = options.borderColor || '#4a9eff';
     this.textColor = options.textColor || '#ffffff';
@@ -248,6 +250,15 @@ export class PlayerInfoPanel extends UIElement {
             case '攻击': value = `${stats.attack}`; break;
             case '防御': value = `${stats.defense}`; break;
             case '速度': value = `${stats.speed}`; break;
+            // 个人属性（力量/敏捷/耐力/智力/精神）与武将属性（武力/政治/统御）
+            case '力量': value = this._formatAttribute(stats.strength); break;
+            case '敏捷': value = this._formatAttribute(stats.agility); break;
+            case '耐力': value = this._formatAttribute(stats.endurance); break;
+            case '智力': value = this._formatAttribute(stats.intelligence); break;
+            case '精神': value = this._formatAttribute(stats.spirit); break;
+            case '武力': value = this._formatAttribute(stats.might); break;
+            case '政治': value = this._formatAttribute(stats.politics); break;
+            case '统御': value = this._formatAttribute(stats.leadership); break;
             default: value = '0';
           }
           ctx.fillStyle = part.labelColor || '#aaaaaa';
@@ -257,6 +268,20 @@ export class PlayerInfoPanel extends UIElement {
           ctx.fillStyle = part.attrColor || '#ffffff';
           // 标签与数值的间距随面板缩放（组合背包会按比例注入 valueOffsetX）
           ctx.fillText(value, px + (part.valueOffsetX ?? 60), py);
+          break;
+        }
+        case 'portrait': {
+          // 角色立绘：由场景注入渲染器绘制当前角色外观（含已装备外观层），
+          // 无渲染器时退化为占位剪影，保证布局编辑器与旧场景不空白。
+          ctx.fillStyle = part.bgColor || 'rgba(18, 24, 32, 0.6)';
+          ctx.fillRect(px, py, pw, ph);
+          ctx.strokeStyle = part.borderColor || 'rgba(74, 158, 255, 0.45)';
+          ctx.lineWidth = 1;
+          ctx.strokeRect(px, py, pw, ph);
+          const rendered = this.renderPortrait
+            ? this.renderPortrait(ctx, { x: px, y: py, width: pw, height: ph }, this.player) === true
+            : false;
+          if (!rendered) this._drawPortraitPlaceholder(ctx, px, py, pw, ph);
           break;
         }
         case 'slot-grid': {
@@ -286,6 +311,46 @@ export class PlayerInfoPanel extends UIElement {
     if (this.showEquipmentSection && equipment) {
       this.renderEquipmentTooltip(ctx, equipment);
     }
+  }
+
+  /**
+   * 属性值格式化：缺失（null/undefined/NaN）显示「—」，避免误读为 0。
+   * @param {number|null|undefined} value
+   * @returns {string}
+   */
+  _formatAttribute(value) {
+    if (value === null || value === undefined) return '—';
+    const numeric = Number(value);
+    return Number.isFinite(numeric) ? String(numeric) : '—';
+  }
+
+  /**
+   * 立绘占位剪影（无场景渲染器或玩家无精灵时兜底）。
+   */
+  _drawPortraitPlaceholder(ctx, px, py, pw, ph) {
+    const cx = px + pw / 2;
+    const headR = Math.max(6, Math.min(pw, ph) * 0.08);
+    const bodyTop = py + ph * 0.28;
+    const bodyBottom = py + ph * 0.82;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(150, 180, 210, 0.45)';
+    ctx.fillStyle = 'rgba(150, 180, 210, 0.18)';
+    ctx.lineWidth = 1.5;
+    // 头
+    ctx.beginPath();
+    ctx.arc(cx, bodyTop - headR, headR, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    // 身体
+    ctx.beginPath();
+    ctx.moveTo(cx - pw * 0.16, bodyBottom);
+    ctx.lineTo(cx - pw * 0.13, bodyTop);
+    ctx.lineTo(cx + pw * 0.13, bodyTop);
+    ctx.lineTo(cx + pw * 0.16, bodyBottom);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
   }
 
   /**
@@ -414,7 +479,14 @@ export class PlayerInfoPanel extends UIElement {
       { label: 'MP', value: `${Math.round(stats.mp)}/${stats.maxMp}`, color: '#4444ff' },
       { label: '攻击', value: stats.attack, color: '#ffaa00' },
       { label: '防御', value: stats.defense, color: '#00aaff' },
-      { label: '速度', value: stats.speed, color: '#00ff00' }
+      { label: '力量', value: this._formatAttribute(stats.strength), color: '#ff9f6b' },
+      { label: '敏捷', value: this._formatAttribute(stats.agility), color: '#9be36b' },
+      { label: '耐力', value: this._formatAttribute(stats.endurance), color: '#e3c46b' },
+      { label: '智力', value: this._formatAttribute(stats.intelligence), color: '#6bb8e3' },
+      { label: '精神', value: this._formatAttribute(stats.spirit), color: '#c46be3' },
+      { label: '武力', value: this._formatAttribute(stats.might), color: '#ff6b6b' },
+      { label: '政治', value: this._formatAttribute(stats.politics), color: '#8fa8ff' },
+      { label: '统御', value: this._formatAttribute(stats.leadership), color: '#ffd166' }
     ];
     ctx.font = '12px Arial';
     for (const attr of attributes) {
@@ -613,41 +685,12 @@ export class PlayerInfoPanel extends UIElement {
       this.equipSlots = {}; // 不显示装备时清空槽位，避免误点击
     }
 
-    // 绘制属性标题、加点按钮和属性列表（属性区）
+    // 绘制个人属性标题和属性列表（属性区）
     if (this.showAttributeSection) {
       ctx.fillStyle = this.borderColor;
       ctx.font = 'bold 14px Arial';
-      ctx.fillText('属性', this.x + this.padding, currentY);
-
-      // 绘制属性加点按钮 [+]
-      const buttonX = this.x + this.padding + 50;
-      const buttonY = currentY - 12;
-      const buttonWidth = 24;
-      const buttonHeight = 16;
-
-      // 保存按钮位置用于点击检测
-      this.attributeButtonRect = {
-        x: buttonX,
-        y: buttonY,
-        width: buttonWidth,
-        height: buttonHeight
-      };
-
-      // 按钮背景
-      ctx.fillStyle = this.attributeButtonHovered ? '#4a9eff' : '#2a5a8f';
-      ctx.fillRect(buttonX, buttonY, buttonWidth, buttonHeight);
-
-      // 按钮边框
-      ctx.strokeStyle = this.borderColor;
-      ctx.lineWidth = 1;
-      ctx.strokeRect(buttonX, buttonY, buttonWidth, buttonHeight);
-
-      // 按钮文字
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 12px Arial';
-      ctx.textAlign = 'center';
-      ctx.fillText('+', buttonX + buttonWidth / 2, buttonY + 12);
-      ctx.textAlign = 'left';
+      ctx.fillText('个人属性', this.x + this.padding, currentY);
+      this.attributeButtonRect = null;
 
       currentY += this.lineHeight;
 
@@ -657,7 +700,14 @@ export class PlayerInfoPanel extends UIElement {
         { label: 'MP', value: `${Math.round(stats.mp)}/${stats.maxMp}`, color: '#4444ff' },
         { label: '攻击', value: stats.attack, color: '#ffaa00' },
         { label: '防御', value: stats.defense, color: '#00aaff' },
-        { label: '速度', value: stats.speed, color: '#00ff00' }
+        { label: '力量', value: this._formatAttribute(stats.strength), color: '#ff9f6b' },
+        { label: '敏捷', value: this._formatAttribute(stats.agility), color: '#9be36b' },
+        { label: '耐力', value: this._formatAttribute(stats.endurance), color: '#e3c46b' },
+        { label: '智力', value: this._formatAttribute(stats.intelligence), color: '#6bb8e3' },
+        { label: '精神', value: this._formatAttribute(stats.spirit), color: '#c46be3' },
+        { label: '武力', value: this._formatAttribute(stats.might), color: '#ff6b6b' },
+        { label: '政治', value: this._formatAttribute(stats.politics), color: '#8fa8ff' },
+        { label: '统御', value: this._formatAttribute(stats.leadership), color: '#ffd166' }
       ];
 
       ctx.font = '13px Arial';

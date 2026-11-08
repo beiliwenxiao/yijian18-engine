@@ -37,6 +37,12 @@ export const CharactersConfig = [
     // 整帧大图由 scripts/skeleton-pipeline/build-female-hero-assets.mjs 生成。
     spriteSheet: 'skeleton.female-hero',
     spriteConfig: null,
+    // 个人属性（力量/敏捷/耐力/智力/精神）+ 武将属性（武力/政治/统御）
+    // 运行时进入 StatsComponent，随存档 stats 字段持久化；缺字段时面板显示「—」。
+    attributes: {
+      strength: 14, agility: 12, endurance: 13, intelligence: 10, spirit: 10,
+      might: 72, politics: 42, leadership: 60
+    }
   },
   {
     id: 'refugee',
@@ -51,6 +57,10 @@ export const CharactersConfig = [
     // 动作数据由 scripts/skeleton-pipeline/rebuild-player-legs.mjs 保证腿脚落点（膝角/贴地）。
     spriteSheet: 'skeleton.player',
     spriteConfig: null, // 为空表示使用 EntityFactory 默认动画精灵配置
+    attributes: {
+      strength: 8, agility: 12, endurance: 9, intelligence: 14, spirit: 13,
+      might: 18, politics: 55, leadership: 25
+    }
   },
   {
     id: 'female-hero-skeletal',
@@ -62,6 +72,10 @@ export const CharactersConfig = [
     // 静止姿态与素材像素级一致，动作沿用玩家骨架的剪辑（腿按贴地模型重算）。
     spriteSheet: 'skeleton.player-female',
     spriteConfig: null,
+    attributes: {
+      strength: 13, agility: 13, endurance: 12, intelligence: 10, spirit: 10,
+      might: 68, politics: 45, leadership: 58
+    }
   },
 ];
 

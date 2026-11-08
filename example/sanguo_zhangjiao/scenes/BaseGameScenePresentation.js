@@ -327,6 +327,18 @@ export class BaseGameScenePresentation extends BaseGameSceneGameplayHooks {
     this._ensureEntityRenderer().render(ctx, entity);
   }
 
+  /**
+   * 背包立绘：把当前玩家实体（含已装备外观层）画进面板矩形。
+   * @param {CanvasRenderingContext2D} ctx
+   * @param {{x:number,y:number,width:number,height:number}} rect
+   * @param {object} [entity] 默认使用当前玩家实体
+   * @returns {boolean}
+   */
+  renderCharacterPortrait(ctx, rect, entity = this.playerEntity) {
+    if (!ctx || !entity) return false;
+    return this._ensureEntityRenderer().renderPortrait(ctx, entity, rect);
+  }
+
   setHintCallbacks(showCallback, hideCallback) {
     return this._hintPresenter?.setCallbacks(showCallback, hideCallback);
   }
