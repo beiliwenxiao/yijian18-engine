@@ -14,6 +14,14 @@ import { Logger } from '../Logger.js';
 import { SceneObjectProjector } from './SceneObjectProjector.js';
 import { ScenePathLibrary } from './ScenePathLibrary.js';
 
+/** 逐索引比较两个 terrain 引用列表是否不同（模块级函数，热路径零闭包分配）。 */
+function terrainListDiffers(left, right) {
+  for (let index = 0; index < left.length; index++) {
+    if (left[index] !== right[index]) return true;
+  }
+  return false;
+}
+
 /**
  * SceneTerrainBinding - 将已由世界流式会话创建的 terrain 绑定到通用场景生命周期。
  *
@@ -195,12 +203,25 @@ export class SceneTerrainBinding {
   updateMinimap(minimap) {
     const scene = this.scene;
     if (!minimap) return;
-    const sourceTerrains = scene._terrains?.length > 0
-      ? scene._terrains
-      : (scene.terrain ? [scene.terrain] : []);
+    // 兜底单地形缓冲：流式场景 _terrains 为空时复用（仅 scene.terrain 引用变化时重建），
+    // 免每帧 [scene.terrain] 与比较闭包分配
+    let sourceTerrains = scene._terrains;
+    if (!(sourceTerrains?.length > 0)) {
+      if (scene.terrain) {
+        let fallback = this._minimapTerrainFallback;
+        if (!fallback || fallback[0] !== scene.terrain) {
+          fallback = [scene.terrain];
+          this._minimapTerrainFallback = fallback;
+        }
+        sourceTerrains = fallback;
+      } else {
+        sourceTerrains = this._minimapTerrainEmpty
+          || (this._minimapTerrainEmpty = []);
+      }
+    }
     const currentTerrains = Array.isArray(minimap._terrains) ? minimap._terrains : [];
     const terrainSetChanged = sourceTerrains.length !== currentTerrains.length
-      || sourceTerrains.some((terrain, index) => terrain !== currentTerrains[index]);
+      || terrainListDiffers(sourceTerrains, currentTerrains);
     if (terrainSetChanged) minimap.setTerrains(sourceTerrains);
   }
 }

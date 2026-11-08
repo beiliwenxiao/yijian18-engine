@@ -164,6 +164,31 @@ export class SceneRenderPipeline {
     /** 物品发光源（实体 glowProfile + 拾取物 glow）：每帧复用缓冲，
      * 同时供阴影点光源注入与光晕绘制 pass 消费。 */
     this._glowSources = [];
+    /** 发光源/点光源条目池（容量只增不减）：_glowSources 与 pointLights 每帧
+     * 截断重建但引用存于池中，热路径零对象分配。 */
+    this._glowSourcePool = [];
+    this._pointLightPool = [];
+    this._glowSourceCount = 0;
+    /** 短时世界动作 / 施工表现队列项：预分配 + 构造期闭包（render 读实例字段，
+     * 帧内只更新字段值，不再每帧创建闭包对象）。 */
+    this._activeWorldAction = null;
+    this._worldActionCtx = null;
+    this._worldActionQueueItem = {
+      type: 'worldAction', y: 0, sortPriority: 1,
+      render: () => {
+        const action = this._activeWorldAction;
+        if (action) action.render(this._worldActionCtx);
+      }
+    };
+    this._activeConstructionFx = null;
+    this._constructionFxCtx = null;
+    this._constructionFxQueueItem = {
+      type: 'constructionFx', y: 0, sortPriority: 2,
+      render: () => {
+        const fx = this._activeConstructionFx;
+        if (fx) fx.render(this._constructionFxCtx);
+      }
+    };
   }
 
   render(ctx) {
@@ -304,12 +329,13 @@ export class SceneRenderPipeline {
     const WORLD_ACTION_SORT_BIAS = 0.5;
     const worldAction = context?.presentation?.worldAction || null;
     const worldActionSortY = worldAction?.getSortY?.();
+    // 短时世界动作（架桥/施工等）：预分配队列项 + 构造期闭包，帧内仅更新字段
     if (Number.isFinite(worldActionSortY)) {
-      const worldActionCtx = ctx;
-      queue.push({
-        type: 'worldAction', y: worldActionSortY + WORLD_ACTION_SORT_BIAS, sortPriority: 1,
-        render: () => worldAction.render(worldActionCtx)
-      });
+      this._activeWorldAction = worldAction;
+      this._worldActionCtx = ctx;
+      const worldActionItem = this._worldActionQueueItem;
+      worldActionItem.y = worldActionSortY + WORLD_ACTION_SORT_BIAS;
+      queue.push(worldActionItem);
     }
     for (const terrain of terrains) terrain.collectDecorations?.(queue, ctx, this._viewBounds);
     particleSystem?.collectDepthSorted?.(queue, ctx, camera, this._viewBounds);
@@ -353,12 +379,12 @@ export class SceneRenderPipeline {
     // 玩家走近/走远时与工人正确前后遮挡；闭包绘制与营火/地形装饰队列项同款。
     const constructionFx = scene.shelterConstructionFx;
     if (constructionFx?.x != null && constructionFx?.render) {
-      queue.push({
-        type: 'constructionFx',
-        y: Number(constructionFx.sortY) || Number(constructionFx.y) || 0,
-        sortPriority: 2,
-        render: () => constructionFx.render(ctx)
-      });
+      // 预分配队列项 + 构造期闭包（同 worldAction）
+      this._activeConstructionFx = constructionFx;
+      this._constructionFxCtx = ctx;
+      const constructionFxItem = this._constructionFxQueueItem;
+      constructionFxItem.y = Number(constructionFx.sortY) || Number(constructionFx.y) || 0;
+      queue.push(constructionFxItem);
     }
 
     if (frameProfile) {
@@ -435,10 +461,16 @@ export class SceneRenderPipeline {
     runtime.strength = Number.isFinite(config?.strength) ? config.strength : 0.9;
     const lights = runtime.pointLights;
     lights.length = 0;
+    const lightPool = this._pointLightPool;
+    // 场景配置点光源（池化条目：写入字段，不新建对象）
     if (Array.isArray(config?.pointLights)) {
       for (const light of config.pointLights) {
         if (light && Number.isFinite(light.x) && Number.isFinite(light.y) && light.radius > 0) {
-          lights.push({ x: light.x, y: light.y, radius: light.radius, strength: light.strength ?? 0.8 });
+          let entry = lightPool[lights.length];
+          if (!entry) { entry = {}; lightPool[lights.length] = entry; }
+          entry.x = light.x; entry.y = light.y;
+          entry.radius = light.radius; entry.strength = light.strength ?? 0.8;
+          lights.push(entry);
         }
       }
     }
@@ -447,19 +479,20 @@ export class SceneRenderPipeline {
     const fire = campfire?.campfire;
     if (fire?.lit === true && Number.isFinite(fire.x) && Number.isFinite(fire.y)) {
       const radius = Number(campfire.presentation?.lightRadius);
-      lights.push({
-        x: fire.x, y: fire.y,
-        radius: radius > 32 ? radius : 220,
-        strength: 0.85
-      });
+      let entry = lightPool[lights.length];
+      if (!entry) { entry = {}; lightPool[lights.length] = entry; }
+      entry.x = fire.x; entry.y = fire.y;
+      entry.radius = radius > 32 ? radius : 220;
+      entry.strength = 0.85;
+      lights.push(entry);
     }
     // 物品发光（glow 块）：worldProp 静物与地面拾取物声明 glow 时自动成为点光源
     for (const source of this._collectGlowSources(context)) {
-      lights.push({
-        x: source.x, y: source.y,
-        radius: source.radius,
-        strength: source.intensity
-      });
+      let entry = lightPool[lights.length];
+      if (!entry) { entry = {}; lightPool[lights.length] = entry; }
+      entry.x = source.x; entry.y = source.y;
+      entry.radius = source.radius; entry.strength = source.intensity;
+      lights.push(entry);
     }
   }
 
@@ -471,19 +504,8 @@ export class SceneRenderPipeline {
   _collectGlowSources(context) {
     const sources = this._glowSources;
     sources.length = 0;
+    this._glowSourceCount = 0;
     const bounds = this._viewBounds || null;
-    const pushSource = (x, y, glow) => {
-      if (sources.length >= MAX_GLOW_SOURCES) return;
-      const normalized = LightGlowRenderer.normalize(glow);
-      if (!normalized) return;
-      // 视口剔除：光晕/点光影响范围完全在视野外时跳过
-      if (bounds &&
-        (x < bounds.left - normalized.radius || x > bounds.right + normalized.radius ||
-         y < bounds.top - normalized.radius || y > bounds.bottom + normalized.radius)) {
-        return;
-      }
-      sources.push({ x, y, ...normalized });
-    };
     // worldProp 静物等实体（PlacementSpawner 注入的 glowProfile）
     const entities = context?.entities?.all;
     if (Array.isArray(entities)) {
@@ -492,22 +514,61 @@ export class SceneRenderPipeline {
         if (!entity || entity.active === false || !entity.glowProfile) continue;
         const position = entity.getComponent?.('transform')?.position;
         if (!position || !Number.isFinite(position.x) || !Number.isFinite(position.y)) continue;
-        pushSource(position.x, position.y, entity.glowProfile);
+        this._pushGlowSource(position.x, position.y, entity.glowProfile, bounds);
       }
     }
     // 地面拾取物（物品/装备定义展开天然携带 glow；拾取后不再发光）
+    // 显式两段循环，替代每帧 [pickups, equipmentItems] 数组分配
     const store = this.scene?.entityStore || null;
-    const pickupLists = [store?.pickups, store?.equipmentItems];
-    for (const list of pickupLists) {
-      if (!Array.isArray(list)) continue;
-      for (let i = 0; i < list.length; i++) {
-        const item = list[i];
+    const pickups = store?.pickups;
+    if (Array.isArray(pickups)) {
+      for (let i = 0; i < pickups.length; i++) {
+        const item = pickups[i];
         if (!item || item.picked || !item.glow) continue;
         if (!Number.isFinite(item.x) || !Number.isFinite(item.y)) continue;
-        pushSource(item.x, item.y, item.glow);
+        this._pushGlowSource(item.x, item.y, item.glow, bounds);
+      }
+    }
+    const equipmentItems = store?.equipmentItems;
+    if (Array.isArray(equipmentItems)) {
+      for (let i = 0; i < equipmentItems.length; i++) {
+        const item = equipmentItems[i];
+        if (!item || item.picked || !item.glow) continue;
+        if (!Number.isFinite(item.x) || !Number.isFinite(item.y)) continue;
+        this._pushGlowSource(item.x, item.y, item.glow, bounds);
       }
     }
     return sources;
+  }
+
+  /**
+   * 发光源收集的单条写入：池化条目（容量只增不减）+ normalizeCached（glow 定义
+   * 跨帧稳定，归一化结果按对象引用缓存，免每帧对象与颜色串分配）。@private
+   */
+  _pushGlowSource(x, y, glow, bounds) {
+    if (this._glowSourceCount >= MAX_GLOW_SOURCES) return;
+    const normalized = LightGlowRenderer.normalizeCached(glow);
+    if (!normalized) return;
+    // 视口剔除：光晕/点光影响范围完全在视野外时跳过
+    if (bounds &&
+      (x < bounds.left - normalized.radius || x > bounds.right + normalized.radius ||
+       y < bounds.top - normalized.radius || y > bounds.bottom + normalized.radius)) {
+      return;
+    }
+    const index = this._glowSourceCount++;
+    const pool = this._glowSourcePool;
+    let entry = pool[index];
+    if (!entry) {
+      entry = { x: 0, y: 0, color: '', radius: 0, intensity: 0, flicker: '', yOffset: 0 };
+      pool[index] = entry;
+    }
+    entry.x = x; entry.y = y;
+    entry.color = normalized.color;
+    entry.radius = normalized.radius;
+    entry.intensity = normalized.intensity;
+    entry.flicker = normalized.flicker;
+    entry.yOffset = normalized.yOffset;
+    this._glowSources.push(entry);
   }
 
   /**
@@ -520,12 +581,9 @@ export class SceneRenderPipeline {
     const time = performance.now();
     for (let i = 0; i < sources.length; i++) {
       const source = sources[i];
-      LightGlowRenderer.draw(ctx, {
-        x: source.x, y: source.y,
-        radius: source.radius, color: source.color,
-        intensity: source.intensity, flicker: source.flicker,
-        yOffset: source.yOffset, time
-      });
+      // 池化条目直传（含 time 字段），免每源一次包装对象分配
+      source.time = time;
+      LightGlowRenderer.draw(ctx, source);
     }
   }
 

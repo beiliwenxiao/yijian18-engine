@@ -20,6 +20,9 @@
  *
  * 全部为静态方法：调用方每帧传入世界坐标与时间，本类不持有任何游戏状态。
  */
+/** normalizeCached 的按 glow 对象缓存（glow 定义跨帧稳定，热路径免每帧对象+颜色串分配）。 */
+const NORMALIZED_CACHE = new WeakMap();
+
 export class LightGlowRenderer {
   /**
    * 归一化 glow 定义：非法/未配置（radius<=0）返回 null。
@@ -37,6 +40,20 @@ export class LightGlowRenderer {
       flicker: glow.flicker === 'fire' || glow.flicker === 'breathe' ? glow.flicker : '',
       yOffset: Number.isFinite(glow.yOffset) ? glow.yOffset : 0
     };
+  }
+
+  /**
+   * normalize 的热路径版本：按 glow 对象引用缓存归一化结果（WeakMap，随 glow 定义回收）。
+   * glow 块来自物品定义/场景覆盖，跨帧稳定且不被原地修改——每帧重复归一化
+   * （对象 + 颜色字符串分配）在发光物较多的场景会持续喂 GC。
+   * 非法 glow 返回 null 但不缓存（与 normalize 语义一致，null 是合法瞬时结果）。
+   */
+  static normalizeCached(glow) {
+    if (!glow || typeof glow !== 'object') return null;
+    if (NORMALIZED_CACHE.has(glow)) return NORMALIZED_CACHE.get(glow);
+    const normalized = LightGlowRenderer.normalize(glow);
+    if (normalized) NORMALIZED_CACHE.set(glow, normalized);
+    return normalized;
   }
 
   /**

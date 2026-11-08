@@ -68,6 +68,10 @@ export class ShadowRenderer {
       };
     /** 预烘焙的软椭圆贴图（正圆径向渐变，绘制时压扁成任意比例椭圆）。 */
     this._blob = null;
+    // 影子参数对象池：renderEntityShadows 逐实体复用（params 在同一次迭代内消费完即弃，
+    // 池化后热路径零分配；公开 API computeShadowParams 保持每次新对象不变）。
+    this._shadowParams = { x: 0, y: 0, radiusX: 0, radiusY: 0, alpha: 0, air: 1, longShadow: null };
+    this._shadowLong = { x: 0, y: 0, angle: 0, length: 0, height: 0, alpha: 0 };
   }
 
   /**
@@ -119,6 +123,20 @@ export class ShadowRenderer {
    */
   computeShadowParams(footX, footY, width, height, elevation = 0, lighting = null) {
     const light = lighting?.pointLights ? lighting : this.resolveLighting(lighting);
+    return this._computeShadowParamsInto(
+      footX, footY, width, height, elevation, light,
+      { x: 0, y: 0, radiusX: 0, radiusY: 0, alpha: 0, air: 1, longShadow: null },
+      { x: 0, y: 0, angle: 0, length: 0, height: 0, alpha: 0 }
+    );
+  }
+
+  /**
+   * computeShadowParams 的热路径核心：结果写入传入的 params/longShadow 对象（零分配）。
+   * 仅 renderEntityShadows 使用——params 与 longShadow 在同一次迭代内消费完（立即绘制），
+   * 调用方持有一对池化对象跨帧复用。字段语义与 computeShadowParams 完全一致。
+   * @private
+   */
+  _computeShadowParamsInto(footX, footY, width, height, elevation, light, params, longShadow) {
     // 仰角越低，影子水平偏移越长；正头顶（elevation=1）几乎无偏移
     const horizontal = 1 - light.elevation;
     // 影子方向 = 光源来向的反方向
@@ -128,7 +146,9 @@ export class ShadowRenderer {
     // 同时记录最大点光权重与该点光的纯方向（决定贴地影变淡幅度与长影朝向）。
     // 光源本体（火堆等与光心重合的实体）跳过：不混方向、不产生长影，只保留基础影。
     let pointWeight = 0;
-    let bestLight = null;
+    let bestDdx = 0;
+    let bestDdy = 0;
+    let bestDist = 0;
     if (light.pointLights.length > 0) {
       for (let i = 0; i < light.pointLights.length; i++) {
         const pl = light.pointLights[i];
@@ -143,7 +163,9 @@ export class ShadowRenderer {
         dy += (ddy / dist) * weight;
         if (weight > pointWeight) {
           pointWeight = weight;
-          bestLight = { ddx, ddy, dist };
+          bestDdx = ddx;
+          bestDdy = ddy;
+          bestDist = dist;
         }
       }
     }
@@ -171,35 +193,33 @@ export class ShadowRenderer {
     // 背光长影：只在点光明显时出现。方向严格取最强点光的"光源→人物"连线方向
     // （不与全局光混合）；卵形贴图旋转绘制：近脚窄、远离光源和人时发散，
     // 长度按身高拉出（贴火时 ≈ 2.1~2.3 倍身高）。
-    let longShadow = null;
-    if (pointWeight > 0.05 && height > 0 && bestLight) {
+    let longShadowRef = null;
+    if (pointWeight > 0.05 && height > 0 && bestDist > 0) {
       const lengthB = height * 3.4 * pointWeight * air;
       // 整体向点光源方向平移，但近端（朝光侧）不越过基础影中心 65% 半径：
       // 长影从基础影内部"长出来"，与基础影无缝衔接，不会在人物和基础影之间露出空隙。
       // 平移上限按基础影沿光-人连线方向的椭圆半径 × 0.65 计算。
-      const backX = bestLight.ddx / bestLight.dist;
-      const backY = bestLight.ddy / bestLight.dist;
+      const backX = bestDdx / bestDist;
+      const backY = bestDdy / bestDist;
       const dirRadius = 1 / Math.sqrt((backX / radiusX) ** 2 + (backY / radiusY) ** 2);
       const shift = Math.min(height * 0.5, dirRadius * 0.65);
-      longShadow = {
-        x: footX - backX * shift,
-        y: footY - backY * shift,
-        angle: Math.atan2(bestLight.ddy, bestLight.ddx),
-        length: lengthB,
-        height: lengthB * 1.2, // 卵形发散高与长度等比锁定（近端窄、远端宽）
-        alpha: clamp(light.strength * 0.85 * pointWeight * air, 0.05, 1)
-      };
+      longShadow.x = footX - backX * shift;
+      longShadow.y = footY - backY * shift;
+      longShadow.angle = Math.atan2(bestDdy, bestDdx);
+      longShadow.length = lengthB;
+      longShadow.height = lengthB * 1.2; // 卵形发散高与长度等比锁定（近端窄、远端宽）
+      longShadow.alpha = clamp(light.strength * 0.85 * pointWeight * air, 0.05, 1);
+      longShadowRef = longShadow;
     }
-    return {
-      x: footX + unitX * anchor,
-      y: footY + unitY * anchor * 0.72,
-      radiusX: radiusX * air,
-      radiusY: radiusY * air,
-      alpha,
-      longShadow,
-      // 跳跃缩小系数：调用方用自定义半径/缩放覆盖 radius 后需乘回，否则跳跃缩小丢失
-      air
-    };
+    params.x = footX + unitX * anchor;
+    params.y = footY + unitY * anchor * 0.72;
+    params.radiusX = radiusX * air;
+    params.radiusY = radiusY * air;
+    params.alpha = alpha;
+    params.longShadow = longShadowRef;
+    // 跳跃缩小系数：调用方用自定义半径/缩放覆盖 radius 后需乘回，否则跳跃缩小丢失
+    params.air = air;
+    return params;
   }
 
   /** 获取（必要时烘焙）软椭圆贴图。 @private */
@@ -331,7 +351,14 @@ export class ShadowRenderer {
     if (!Array.isArray(entities) || entities.length === 0) return;
     const blob = this._ensureBlob();
     if (!blob) return;
-    const light = this.resolveLighting(options.lighting);
+    // 已解析光照（管线 _shadowLightingRuntime）直接透传——resolveLighting 每帧重建
+    // 对象+点光数组是纯浪费；与 computeShadowParams 的透传守卫同款。
+    const light = options.lighting?.pointLights
+      ? options.lighting
+      : this.resolveLighting(options.lighting);
+    // 逐实体复用的参数对象（消费在同一次迭代内完成：读字段→立即绘制→下一实体覆写）
+    const params = this._shadowParams;
+    const longShadow = this._shadowLong;
     const viewBounds = options.viewBounds || null;
     const pad = 160; // 阴影可能外扩的余量
     ctx.save();
@@ -356,8 +383,8 @@ export class ShadowRenderer {
       const scale = sprite.scale || 1;
       const width = (sprite.width || 32) * scale;
       const height = (sprite.height || 48) * scale;
-      const params = this.computeShadowParams(
-        position.x, position.y, width, height, position.elevation || 0, light
+      this._computeShadowParamsInto(
+        position.x, position.y, width, height, position.elevation || 0, light, params, longShadow
       );
       // 可调参数（shadowProfile.radius / scale / liftPx / shiftPx）：
       // radius=贴地影横半径（px，设置后覆盖按精灵尺寸的自动推导，纵半径按椭圆扁率跟随）；

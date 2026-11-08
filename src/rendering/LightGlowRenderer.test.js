@@ -69,6 +69,26 @@ describe('LightGlowRenderer.normalize', () => {
   });
 });
 
+describe('LightGlowRenderer.normalizeCached', () => {
+  it('同一 glow 对象命中缓存（返回同一结果引用），与 normalize 结果一致', () => {
+    const glow = { color: '#ff8c2e', radius: 240, intensity: 0.7, flicker: 'breathe', yOffset: -10 };
+    const first = LightGlowRenderer.normalizeCached(glow);
+    const second = LightGlowRenderer.normalizeCached(glow);
+    expect(second).toBe(first);
+    expect(second).toEqual(LightGlowRenderer.normalize(glow));
+  });
+
+  it('非法 glow 返回 null 且不缓存（按需补载后下一帧可自然发光）', () => {
+    const glow = { radius: 0 };
+    expect(LightGlowRenderer.normalizeCached(glow)).toBeNull();
+    expect(LightGlowRenderer.normalizeCached('glow')).toBeNull();
+    expect(LightGlowRenderer.normalizeCached(null)).toBeNull();
+    // radius 修复后立即生效（null 未被缓存）
+    glow.radius = 120;
+    expect(LightGlowRenderer.normalizeCached(glow)?.radius).toBe(120);
+  });
+});
+
 describe('LightGlowRenderer.flickerFactor', () => {
   it('fire：双正弦抖动，因子恒在 (0.6, 1] 内且随时间变化', () => {
     let sawDifferent = false;
