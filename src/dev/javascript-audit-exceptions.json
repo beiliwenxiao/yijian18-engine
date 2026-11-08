@@ -139,11 +139,11 @@
         "line-limit-or-invalid-exception"
       ],
       "evidence": "历史大文件，拆分列入架构治理计划：拆一个移一个，修改本文件前需重新审批；2026-09-27 已将登录/存档/摇杆/触控核心整段拆入 src/platform（login/LoginMenuCore、save/SavePickerCore、save/SaveStorageCore、save/AutoSaveCore、touch/VirtualJoystickCore、touch/TouchControlsCore、touch/SkillAimTouchCore），剩余为宿主装配、游戏循环与 UI 编排",
-      "lines": 1368,
+      "lines": 1409,
       "responsibility": "assembly",
       "owner": "beiliwenxiao",
-      "date": "2026-09-27",
-      "contentHash": "de42079c83c350618702bbd7f228d65e0f02de21968cc9e969dd5564e26b535a"
+      "date": "2026-11-08",
+      "contentHash": "d7be0ecdd20d5dfef7fe13714af7e55f40114c9d0f501caccd6c4836be53a04d"
     },
     {
       "file": "example/sanguo_zhangjiao/scenes/BaseGameSceneSetup.js",

@@ -10,8 +10,8 @@
  *            `https://gitee.com/coderaaa/yijian18-engine`
  ************************************************************/
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { Logger, LogLevel } from './Logger.js';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { Logger, LogLevel, IS_TEST, setTestMode } from './Logger.js';
 
 describe('Logger', () => {
     let logger;
@@ -184,5 +184,77 @@ describe('Logger', () => {
         logger.info('other message');
 
         expect(logger.logs).toHaveLength(2);
+    });
+});
+
+describe('Logger IS_TEST 全局开关', () => {
+    const originalSwitch = Logger.IS_TEST;
+
+    afterEach(() => {
+        Logger.IS_TEST = originalSwitch;
+        vi.restoreAllMocks();
+    });
+
+    it('关闭时调试日志零输出，且延迟参数不求值', () => {
+        const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+        const debugSpy = vi.spyOn(console, 'debug').mockImplementation(() => {});
+        const infoSpy = vi.spyOn(console, 'info').mockImplementation(() => {});
+        const buildArgs = vi.fn(() => ['延迟构造']);
+
+        Logger.IS_TEST = false;
+
+        Logger.log('log');
+        Logger.debug('debug');
+        Logger.info('info');
+        Logger.logLazy(buildArgs);
+        Logger.debugLazy(buildArgs);
+        Logger.infoLazy(buildArgs);
+
+        expect(logSpy).not.toHaveBeenCalled();
+        expect(debugSpy).not.toHaveBeenCalled();
+        expect(infoSpy).not.toHaveBeenCalled();
+        expect(buildArgs).not.toHaveBeenCalled();
+    });
+
+    it('开启时调试日志正常输出，延迟参数只求值一次', () => {
+        const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+        const debugSpy = vi.spyOn(console, 'debug').mockImplementation(() => {});
+        const infoSpy = vi.spyOn(console, 'info').mockImplementation(() => {});
+        const buildArgs = vi.fn(() => ['a', 1]);
+
+        Logger.IS_TEST = true;
+
+        Logger.log('log');
+        Logger.debug('debug');
+        Logger.info('info');
+        Logger.logLazy(buildArgs);
+
+        expect(logSpy).toHaveBeenNthCalledWith(1, 'log');
+        expect(logSpy).toHaveBeenNthCalledWith(2, 'a', 1);
+        expect(debugSpy).toHaveBeenCalledWith('debug');
+        expect(infoSpy).toHaveBeenCalledWith('info');
+        expect(buildArgs).toHaveBeenCalledTimes(1);
+    });
+
+    it('warn/error 代表真实异常，不受开关影响', () => {
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+        Logger.IS_TEST = false;
+
+        Logger.warn('warn');
+        Logger.error('error');
+
+        expect(warnSpy).toHaveBeenCalledWith('warn');
+        expect(errorSpy).toHaveBeenCalledWith('error');
+    });
+
+    it('Logger.IS_TEST 与 setTestMode、模块导出的 IS_TEST 同源', () => {
+        setTestMode(false);
+        expect(Logger.IS_TEST).toBe(false);
+        expect(IS_TEST).toBe(false);
+
+        Logger.IS_TEST = true;
+        expect(IS_TEST).toBe(true);
     });
 });

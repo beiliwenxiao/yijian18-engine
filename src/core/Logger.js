@@ -22,40 +22,126 @@ export const LogLevel = {
 };
 
 /**
- * 全局调试日志开关
- * - true：输出日志（开发/调试用）
- * - false：静默；日志调用代码可永久保留在代码中，不影响正式运行
- * 通过 Logger.log() 等静态方法使用，也可在运行时修改 Logger.IS_TEST 切换
+ * 把外部传入的开关值归一化为布尔值；无法识别时返回 null（交给下一级来源）。
  */
-export const IS_TEST = true;
+function normalizeSwitch(value) {
+    if (typeof value === 'boolean') return value;
+    if (typeof value === 'number') return value !== 0;
+    if (typeof value === 'string') return !/^(?:0|false|off|no|none)$/i.test(value.trim());
+    return null;
+}
+
+/**
+ * 解析 IS_TEST 初始值，优先级：运行时全局 > 构建期配置 > 默认 true。
+ * - 运行时：`window.__YJ18_IS_TEST__ = false`（或 globalThis，模块加载前设置）
+ * - 构建期：打包器 define 注入 `__YJ18_IS_TEST__`，或 Vite 的 env（YJ18_IS_TEST / VITE_IS_TEST）
+ */
+function resolveInitialSwitch() {
+    if (typeof globalThis !== 'undefined') {
+        const override = normalizeSwitch(globalThis.__YJ18_IS_TEST__);
+        if (override !== null) return override;
+    }
+    if (typeof __YJ18_IS_TEST__ !== 'undefined') {
+        const buildFlag = normalizeSwitch(__YJ18_IS_TEST__);
+        if (buildFlag !== null) return buildFlag;
+    }
+    try {
+        const env = import.meta?.env;
+        const envFlag = normalizeSwitch(env?.YJ18_IS_TEST ?? env?.VITE_IS_TEST);
+        if (envFlag !== null) return envFlag;
+    } catch (_error) {
+        // 非 ESM 或受限宿主没有 import.meta.env，忽略
+    }
+    return true;
+}
+
+/**
+ * 全局调试日志开关（唯一开关，模块级 live binding）
+ * - true：输出调试日志（开发/调试用）
+ * - false：调试日志零输出；日志调用代码可永久保留在代码中，不影响正式运行
+ *
+ * 三种切换方式效果等价：
+ * 1. 控制台运行时：`Logger.IS_TEST = false` 或 `setTestMode(false)`
+ * 2. 宿主页加载前：`window.__YJ18_IS_TEST__ = false`
+ * 3. 打包期：define 注入 `__YJ18_IS_TEST__` / Vite env `YJ18_IS_TEST`
+ *
+ * 取舍：log/debug/info 属于调试信息，受开关控制；warn/error 代表真实异常
+ * （崩溃、资源加载失败等），**始终输出**，不受开关影响。
+ */
+export let IS_TEST = resolveInitialSwitch();
+
+/**
+ * 切换调试日志开关（返回切换后的值）。
+ * @param {boolean} enabled
+ * @returns {boolean}
+ */
+export function setTestMode(enabled) {
+    IS_TEST = enabled === true;
+    return IS_TEST;
+}
 
 /**
  * 日志系统
  * 提供分级日志记录、过滤和导出功能
  */
 export class Logger {
-    /** 全局调试开关（运行时可改，如控制台执行 Logger.IS_TEST = false） */
-    static IS_TEST = IS_TEST;
+    /** 全局调试开关（运行时读写，与控制台 `Logger.IS_TEST = false` 等价） */
+    static get IS_TEST() {
+        return IS_TEST;
+    }
 
-    /** 以下静态日志方法受 IS_TEST 控制：true 时输出，false 时不输出，调用代码可永久保留 */
+    static set IS_TEST(value) {
+        setTestMode(value);
+    }
+
+    /** 调试日志是否开启；热路径可先用它守卫，避免无谓的参数构造 */
+    static get isTestEnabled() {
+        return IS_TEST;
+    }
+
+    /** 以下静态调试方法受 IS_TEST 控制：true 时输出，false 时不输出，调用代码可永久保留 */
     static log(...args) {
-        if (Logger.IS_TEST) console.log(...args);
+        if (IS_TEST) console.log(...args);
     }
 
     static debug(...args) {
-        if (Logger.IS_TEST) console.debug(...args);
+        if (IS_TEST) console.debug(...args);
     }
 
     static info(...args) {
-        if (Logger.IS_TEST) console.info(...args);
+        if (IS_TEST) console.info(...args);
     }
 
+    /**
+     * 延迟构造参数的调试日志：开关关闭时 buildArgs 完全不执行（零参数求值开销）。
+     * @param {Function} buildArgs - 返回参数数组或单值的函数，仅在开关开启时调用
+     */
+    static logLazy(buildArgs) {
+        if (IS_TEST) Logger._emit('log', buildArgs);
+    }
+
+    static debugLazy(buildArgs) {
+        if (IS_TEST) Logger._emit('debug', buildArgs);
+    }
+
+    static infoLazy(buildArgs) {
+        if (IS_TEST) Logger._emit('info', buildArgs);
+    }
+
+    /** 真实异常/告警：不受 IS_TEST 影响，始终输出 */
     static warn(...args) {
-        if (Logger.IS_TEST) console.warn(...args);
+        console.warn(...args);
     }
 
     static error(...args) {
-        if (Logger.IS_TEST) console.error(...args);
+        console.error(...args);
+    }
+
+    static _emit(method, buildArgs) {
+        const payload = typeof buildArgs === 'function' ? buildArgs() : buildArgs;
+        if (payload === undefined || payload === null) return;
+        if (Array.isArray(payload)) console[method](...payload);
+        else console[method](payload);
     }
 
     constructor(options = {}) {

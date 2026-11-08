@@ -941,6 +941,7 @@
     <script type="module">
         import { DataDrivenPrologueScene } from './scenes/DataDrivenPrologueScene.js';
         import { SceneManager } from '../../src/core/SceneManager.js';
+        import { Logger } from '../../src/core/Logger.js';
         import { AssetManager } from '../../src/core/AssetManager.js';
         import { InputHints } from '../../src/core/input/InputHints.js';
         import { DialogueBox } from '../../src/ui/DialogueBox.js';
@@ -1114,7 +1115,7 @@
                 return;
             }
             
-            console.log('setupSceneCallbacks: 为场景设置回调');
+            Logger.log('setupSceneCallbacks: 为场景设置回调');
             
             // 设置对话系统回调（如果有）
             if (sceneInstance.dialogueSystem) {
@@ -1321,15 +1322,15 @@
                     }
                     // 读档后任务图事实对账：StoryState 已成立但任务节点未计数的事实补喂合成事件，
                     // 消除旧档在任务节点修复/顺序变化后的中间态死锁。
-                    console.log('[init-debug] before reconcileTaskFacts');
+                    Logger.log('[init-debug] before reconcileTaskFacts');
                     await scene.reconcileTaskFacts?.();
-                    console.log('[init-debug] after reconcileTaskFacts');
+                    Logger.log('[init-debug] after reconcileTaskFacts');
                 }
 
                 await nextStep(); // 步骤 6（完成）
-                console.log('[init-debug] before gameStarted=true');
+                Logger.log('[init-debug] before gameStarted=true');
                 gameStarted = true;
-                console.log('[init-debug] gameStarted=true, starting loop');
+                Logger.log('[init-debug] gameStarted=true, starting loop');
 
                 // 先启动唯一游戏循环，等待首个完整渲染帧后才创建新游戏初始存档，避免透明 Canvas 被 JPEG 编码为黑图。
                 startGameLoop();
@@ -1350,7 +1351,7 @@
                 // fire-and-forget：编排在后台推进，玩家正常看到并交互开场对话/教程。
                 void scene.fireSceneEnterTriggers?.();
 
-                console.log('游戏初始化完成，游戏循环已启动');
+                Logger.log('游戏初始化完成，游戏循环已启动');
             } catch (error) {
                 console.error('游戏初始化失败:', error);
                 loadingText.textContent = '加载失败: ' + error.message;
@@ -2005,7 +2006,7 @@
                 
                 // 如果场景切换了，设置新场景的回调
                 if (currentScene !== scene) {
-                    console.log('场景切换检测到，设置新场景回调');
+                    Logger.log('场景切换检测到，设置新场景回调');
                     scene = currentScene;
                     if (scene) {
                         setupSceneCallbacks(scene);
@@ -2158,7 +2159,7 @@
                     });
                     skillTreePanel.show();
                 } else {
-                    console.log('技能树系统或玩家数据不可用');
+                    Logger.log('技能树系统或玩家数据不可用');
                 }
                 return;
             }
@@ -2184,7 +2185,7 @@
                         y: canvas.height - 100 - 350,
                         visible: true,
                         onItemUse: (item, healAmount, manaAmount) => {
-                            console.log('物品使用:', item.name);
+                            Logger.log('物品使用:', item.name);
                             // 通知场景物品已使用
                             if (scene && scene.onTalismanWaterUsed) {
                                 scene.onTalismanWaterUsed(item, healAmount);
@@ -2221,7 +2222,7 @@
                             height: 320,
                             visible: true,
                             onAttributeAllocate: (player) => {
-                                console.log('全局 PlayerInfoPanel: 属性加点按钮被点击');
+                                Logger.log('全局 PlayerInfoPanel: 属性加点按钮被点击');
                                 // 获取场景的属性系统
                                 const currentAttributeSystem = scene?.attributeSystem || scene?.getAttributeSystem?.();
                                 if (currentAttributeSystem && player) {
@@ -2239,14 +2240,14 @@
                                         attributePanel.show(player.id);
                                     }
                                 } else {
-                                    console.log('属性系统不可用');
+                                    Logger.log('属性系统不可用');
                                 }
                             }
                         });
                         playerInfoPanel.setPlayer(scene.playerEntity);
                     }
                 } else {
-                    console.log('当前场景没有玩家实体');
+                    Logger.log('当前场景没有玩家实体');
                 }
                 return;
             }

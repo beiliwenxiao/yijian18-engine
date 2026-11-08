@@ -685,6 +685,7 @@
         import { Act5Scene } from './scenes/Act5Scene.js';
         import { Act6Scene } from './scenes/Act6Scene.js';
         import { SceneManager } from '../../src/core/SceneManager.js';
+        import { Logger } from '../../src/core/Logger.js';
         import { AssetManager } from '../../src/core/AssetManager.js';
         import { DialogueBox } from '../../src/ui/DialogueBox.js';
         import { SkillTreePanel } from '../../src/ui/SkillTreePanel.js';
@@ -788,11 +789,11 @@
                 return;
             }
             
-            console.log('setupSceneCallbacks: 为场景设置回调');
+            Logger.log('setupSceneCallbacks: 为场景设置回调');
             
             // 设置教程回调
             sceneInstance.tutorialSystem.onShow((data) => {
-                console.log('index.html: onShow 回调被触发');
+                Logger.log('index.html: onShow 回调被触发');
                 currentTutorialData = data;
                 
                 // 判断是渐进式提示还是基础教程
@@ -938,7 +939,7 @@
                 
                 // 预检 WebGL 硬件加速
                 const probe = ThreeBackend.probeWebGL();
-                console.log('WebGL 检测结果:', probe);
+                Logger.log('WebGL 检测结果:', probe);
                 
                 if (!probe.supported) {
                     showWebGLError('您的浏览器不支持 WebGL，无法运行 3D 模式。');
@@ -967,7 +968,7 @@
                     gameHeight: canvas.height,
                     allowSoftwareWebGL: forceAllowSoftware
                 });
-                console.log('ThreeBackend 初始化完成');
+                Logger.log('ThreeBackend 初始化完成');
                 await sleep(300);
                 
                 updateLoading(25, '加载核心系统...');
@@ -1041,7 +1042,7 @@
                 await sleep(300);
                 
                 // 场景进入后设置教程回调
-                console.log('设置教程回调...');
+                Logger.log('设置教程回调...');
                 setupSceneCallbacks(hostScene);
                 setupSceneCallbacks(act2Scene);
                 setupSceneCallbacks(act3Scene);
@@ -1054,12 +1055,12 @@
                 // 隐藏加载屏幕
                 loadingScreen.style.display = 'none';
                 
-                console.log('准备启动游戏循环...');
+                Logger.log('准备启动游戏循环...');
                 
                 // 开始游戏循环
                 requestAnimationFrame(gameLoop);
                 
-                console.log('游戏初始化完成，游戏循环已启动');
+                Logger.log('游戏初始化完成，游戏循环已启动');
             } catch (error) {
                 console.error('游戏初始化失败:', error);
                 loadingText.textContent = '加载失败: ' + error.message;
@@ -1182,7 +1183,7 @@
                 
                 // 如果场景切换了，设置新场景的回调
                 if (currentScene !== scene) {
-                    console.log('场景切换检测到，设置新场景回调');
+                    Logger.log('场景切换检测到，设置新场景回调');
                     scene = currentScene;
                     if (scene) {
                         setupSceneCallbacks(scene);
@@ -1385,7 +1386,7 @@
                     });
                     skillTreePanel.show();
                 } else {
-                    console.log('技能树系统或玩家数据不可用');
+                    Logger.log('技能树系统或玩家数据不可用');
                 }
                 return;
             }
