@@ -134,9 +134,9 @@ export class SceneCombatActions {
     melee.sectorIsRanged = melee.checkIsRangedWeapon();
 
     try {
-      let weaponDistance = melee.sliceAttackRange;
       const mainhand = scene.playerEntity.getComponent('equipment')?.getEquipment('mainhand');
-      if (mainhand?.attackDistance != null) weaponDistance = mainhand.attackDistance;
+      // 与命中判定/战斗扇形显示同源：武器 attackDistance 优先，否则近战默认/远程缺省
+      const weaponDistance = melee.getAttackDistance(mainhand, melee.sectorIsRanged);
       const ratio = distRatio !== undefined && distRatio > 0 ? Math.min(distRatio, 1) : 1;
       return melee.performSectorAttack(
         attackOrigin,

@@ -99,7 +99,11 @@ export class SceneAimPresentation {
       return {
         id: 'ranged_attack',
         name: '远程攻击',
-        range: mainhand?.attackDistance ?? scene.meleeAttackSystem.sliceAttackRange ?? 100,
+        // 远程瞄准预览射程：武器 attackDistance 优先，否则远程缺省射程（不随近战默认射程翻倍）
+        range: mainhand?.attackDistance
+          ?? scene.meleeAttackSystem.rangedAttackRange
+          ?? scene.meleeAttackSystem.sliceAttackRange
+          ?? 100,
         aoeRadius: 20
       };
     }

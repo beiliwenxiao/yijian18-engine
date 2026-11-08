@@ -69,6 +69,19 @@ export class CombatSystem {
     
     // 玩家实体引用
     this.playerEntity = null;
+
+    // 闪避系统引用（受击反馈判断「闪避中不打断」，由场景装配注入）
+    this.dodgeSystem = config.dodgeSystem || null;
+
+    // 玩家受击反馈（被近战/撕咬命中）：轻微后仰——短促位移 + 滑行期间抑制自身移动。
+    // 约束：闪避中跳过；已有击飞滑行时跳过（不叠加位移）；两次触发有最小间隔，
+    // 避免连续被咬时停顿累积成「被怪锁住动不了」。
+    this.playerHitReaction = {
+      distance: config.playerHitReaction?.distance ?? 16,
+      durationMs: config.playerHitReaction?.durationMs ?? 140,
+      cooldownMs: config.playerHitReaction?.cooldownMs ?? 300
+    };
+    this._lastPlayerHitReactionAt = -Infinity;
     
     // 当前选中的目标
     this.selectedTarget = null;
@@ -1028,11 +1041,57 @@ export class CombatSystem {
       const attackType = this.getAttackText(attacker);
       this.applyDamage(target, damage, null, attackType, { sourceEntity: attacker });
 
+      // 玩家被敌人近战/撕咬命中：轻微后仰反馈（闪避/跳跃/已有击飞时自动跳过）
+      if (attacker.type === 'enemy') this._applyPlayerHitReaction(attacker, target);
+
       // 冲撞击退已在冲刺落地瞬间生效（_pounceTargetOnLanding），这里仅清理条目
       this._consumePounceKnockback(attacker.id);
 
       this._logThrottled(`${attacker.name || attacker.id} 攻击 ${target.name || target.id}，造成 ${damage} 点伤害`);
     }
+  }
+
+  /**
+   * 玩家受击反馈（被敌人近战/撕咬命中）：朝受击方向轻微后仰——
+   * 极短位移 + 滑行期间抑制自身移动（读作「被打得一晃」），不是击飞。
+   * 约束：
+   *  ①不打断闪避——闪避位移优先级更高，闪避中跳过；
+   *  ②不与既有击飞/冲撞叠加——已有滑行条目时跳过，避免位移翻倍；
+   *  ③不累积成「被怪锁住」——两次触发至少间隔 cooldownMs，单次仅 durationMs，
+   *    且攻击/闪避的输入状态不被消费，停顿结束后立即可动。
+   * @param {Entity} attacker - 攻击者（敌人）
+   * @param {Entity} target - 受击者
+   * @returns {boolean} 是否触发了后仰
+   */
+  _applyPlayerHitReaction(attacker, target) {
+    if (!this.playerEntity || target !== this.playerEntity) return false;
+    if (target.isDead || target.isDying) return false;
+    if (target._jumping === true) return false; // 跳跃位移由 JumpSystem 接管
+    if (this.dodgeSystem?.isDodging?.(target) === true) return false; // 闪避中不打断
+    if (this.knockbackFlights.has(target.id)) return false; // 不叠加强位移（如狼王冲撞）
+
+    const reaction = this.playerHitReaction;
+    const now = this.now();
+    if (now - this._lastPlayerHitReactionAt < reaction.cooldownMs) return false;
+
+    const targetTransform = target.getComponent('transform');
+    const attackerTransform = attacker?.getComponent?.('transform');
+    if (!targetTransform || !attackerTransform) return false;
+
+    const dx = targetTransform.position.x - attackerTransform.position.x;
+    const dy = targetTransform.position.y - attackerTransform.position.y;
+    const dist = Math.hypot(dx, dy);
+    // 几乎重叠时受击方向不可信，跳过而不是硬塞一个假方向
+    if (dist < 1) return false;
+
+    this._lastPlayerHitReactionAt = now;
+    this.applyKnockbackFlight(
+      target, { x: dx / dist, y: dy / dist }, reaction.distance, reaction.durationMs
+    );
+    // 标记为「受击后仰」滑行：玩家随后按闪避时立即让位（见 _updateKnockbackFlights）
+    const flight = this.knockbackFlights.get(target.id);
+    if (flight) flight.hitReaction = true;
+    return true;
   }
 
   /**
@@ -1162,6 +1221,12 @@ export class CombatSystem {
     for (const [entityId, flight] of this.knockbackFlights) {
       const transform = flight.entityRef?.getComponent?.('transform');
       if (!transform) { this.knockbackFlights.delete(entityId); continue; }
+      // 受击后仰让位闪避：玩家在这 100 多毫秒内按下闪避时立刻取消后仰滑行，
+      // 否则两套位移会互相覆盖（闪避输入看起来被打断）。
+      if (flight.hitReaction && this.dodgeSystem?.isDodging?.(flight.entityRef) === true) {
+        this.knockbackFlights.delete(entityId);
+        continue;
+      }
       const progress = Math.min(1, (now - flight.startedAt) / flight.duration);
       // ease-out：起手最快，随滑行衰减——被撞飞的观感
       const eased = 1 - (1 - progress) * (1 - progress);

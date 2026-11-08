@@ -16,8 +16,12 @@ import { RNG } from '../core/RNG.js';
 const fxRng = new RNG();
 
 const DEFAULT_CONFIG = Object.freeze({
-  // 闪避距离：3 个身位（玩家精灵宽 64px × 3）
-  distance: 192,
+  // 闪避距离 = bodyCount 个「身位」。身位不写死，运行时由实体碰撞体推导：
+  // 身位 = max(碰撞椭圆 radiusX, radiusY) × 2（玩家 12×2=24px，与军团指挥的
+  // 「身位≈士兵碰撞体 24-30px」口径一致）；无碰撞体时退回实体精灵尺寸。
+  bodyCount: 3,
+  // 既无碰撞体也无精灵尺寸时的兜底身位宽度（px，框架默认，正常实体不会走到）
+  fallbackBodySize: 32,
   // 位移时长（秒）：快速滑步，短促干脆
   duration: 0.25,
   // 冷却时间（毫秒）：与主动格挡一致（CombatSystem._activeBlock.cooldownMs = 8000）
@@ -33,7 +37,7 @@ const DEFAULT_CONFIG = Object.freeze({
 /**
  * DodgeSystem - 闪避系统
  *
- * 玩家向指定方向快速滑出一段固定距离（地面位移，逐帧增量推进，
+ * 玩家向指定方向快速滑出一段按身位推导的距离（地面位移，逐帧增量推进，
  * 与 JumpSystem 同模式——由现有碰撞系统逐帧修正，不穿静态障碍）。
  * 冷却与主动格挡一致；触发时头顶显示「闪避」飘字。
  *
@@ -59,7 +63,36 @@ export class DodgeSystem {
   }
 
   /**
-   * 开始闪避：向方向单位向量滑出 config.distance。
+   * 解析实体「身位」宽度（px）：碰撞椭圆直径优先，缺碰撞体时退回精灵尺寸。
+   * @param {Entity} entity
+   * @returns {number}
+   */
+  resolveBodySize(entity) {
+    const collision = entity?.getComponent?.('collision');
+    const radiusX = Number(collision?.radiusX);
+    const radiusY = Number(collision?.radiusY);
+    const collisionBody = Math.max(radiusX > 0 ? radiusX : 0, radiusY > 0 ? radiusY : 0) * 2;
+    if (collisionBody > 0) return collisionBody;
+
+    const sprite = entity?.getComponent?.('sprite');
+    const visual = Math.max(Number(sprite?.width) || 0, Number(sprite?.height) || 0);
+    return visual > 0 ? visual : this.config.fallbackBodySize;
+  }
+
+  /**
+   * 解析本次闪避距离：显式 config.distance（关卡自定义）优先，否则 bodyCount × 身位。
+   * @param {Entity} entity
+   * @returns {number}
+   */
+  resolveDodgeDistance(entity) {
+    const explicit = Number(this.config.distance);
+    if (explicit > 0) return explicit;
+    const bodyCount = Number(this.config.bodyCount) > 0 ? Number(this.config.bodyCount) : 3;
+    return this.resolveBodySize(entity) * bodyCount;
+  }
+
+  /**
+   * 开始闪避：向方向单位向量滑出按身位推导的距离。
    * @param {Entity} entity
    * @param {{x:number,y:number}} direction - 单位方向（调用方保证非零）
    * @returns {boolean} 是否成功触发（冷却中/已在闪避中返回 false）
@@ -74,7 +107,7 @@ export class DodgeSystem {
 
     const startX = transform.position.x;
     const startY = transform.position.y;
-    const ratio = this.config.distance / magnitude;
+    const ratio = this.resolveDodgeDistance(entity) / magnitude;
     entity.getComponent?.('movement')?.stop?.();
 
     this._active.set(entity, {

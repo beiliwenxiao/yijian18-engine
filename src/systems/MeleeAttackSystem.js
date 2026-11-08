@@ -25,7 +25,8 @@ import { setTimeoutFn } from '../core/Timers.js';
 export class MeleeAttackSystem {
   /**
    * @param {Object} config - 配置参数
-   * @param {number} [config.sliceAttackRange=100] - 近战攻击距离
+   * @param {number} [config.sliceAttackRange=200] - 近战攻击距离（默认，可由武器 attackDistance 覆盖）
+   * @param {number} [config.rangedAttackRange=100] - 远程武器缺省射程（远程不受近战距离调整影响）
    * @param {number} [config.sliceHitRadius=40] - 命中半径
    * @param {number} [config.sliceGlobalCooldown=3.0] - 全局武器冷却（秒）
    * @param {number} [config.sectorAngle=Math.PI/3] - 扇形张角（弧度）
@@ -38,8 +39,11 @@ export class MeleeAttackSystem {
     this.isSlicing = false;
     this.slicedEnemies = new Set();
     
-    // 攻击参数
-    this.sliceAttackRange = config.sliceAttackRange ?? 100;
+    // 攻击参数：近战默认射程与远程缺省射程分开——
+    // 近战默认翻倍（命中判定与战斗扇形显示共用本值），远程武器缺省值保持原样，
+    // 避免「默认攻击范围翻倍」误伤远程（远程仅由武器 attackDistance 决定射程）。
+    this.sliceAttackRange = config.sliceAttackRange ?? 200;
+    this.rangedAttackRange = config.rangedAttackRange ?? 100;
     this.sliceHitRadius = config.sliceHitRadius ?? 40;
     this.sliceCooldowns = new Map();
     this.sliceCooldownTime = config.sliceCooldownTime ?? 0.5;
@@ -274,6 +278,19 @@ export class MeleeAttackSystem {
   }
 
   /**
+   * 解析当前攻击距离（命中判定、刀光特效、战斗扇形显示共用同一来源）。
+   * 优先级：武器 attackDistance（近战/远程都可用）＞ 远程缺省射程 ＞ 近战默认射程。
+   * @param {Object|null} [mainhand] - 主手武器（缺省从玩家装备读取）
+   * @param {boolean} [isRanged] - 是否远程（缺省取当前帧判定结果）
+   * @returns {number} 攻击距离（世界像素）
+   */
+  getAttackDistance(mainhand = null, isRanged = this.sectorIsRanged === true) {
+    const weapon = mainhand || this.playerEntity?.getComponent?.('equipment')?.getEquipment?.('mainhand') || null;
+    if (weapon?.attackDistance != null) return Number(weapon.attackDistance);
+    return isRanged ? this.rangedAttackRange : this.sliceAttackRange;
+  }
+
+  /**
    * 执行扇形攻击
    * @param {Object} playerCenter - 玩家中心坐标
    * @param {number} currentTime - 当前时间（秒）
@@ -338,20 +355,14 @@ export class MeleeAttackSystem {
     // 计算扇形参数
     const dir = this.sectorDirection;
     let weaponAttackRange = this.sectorAngle;
-    let weaponAttackDistance = this.sliceAttackRange;
 
     const equipComp = this.playerEntity.getComponent('equipment');
-    if (equipComp) {
-      const mainhand = equipComp.getEquipment('mainhand');
-      if (mainhand) {
-        if (mainhand.attackRange != null) {
-          weaponAttackRange = mainhand.attackRange * Math.PI / 180;
-        }
-        if (mainhand.attackDistance != null) {
-          weaponAttackDistance = mainhand.attackDistance;
-        }
-      }
+    const mainhand = equipComp ? equipComp.getEquipment('mainhand') : null;
+    if (mainhand && mainhand.attackRange != null) {
+      weaponAttackRange = mainhand.attackRange * Math.PI / 180;
     }
+    // 命中距离与战斗扇形显示同源（getAttackDistance），远程仍走远程缺省/武器配置
+    const weaponAttackDistance = this.getAttackDistance(mainhand, this.sectorIsRanged);
     
     const sectorCenterX = playerCenter.x;
     const sectorCenterY = playerCenter.y;
@@ -422,10 +433,12 @@ export class MeleeAttackSystem {
     if (type === 'slash') {
       const playerStats = this.playerEntity.getComponent('stats');
       const baseDmg = playerStats ? (playerStats.attack || 15) : 15;
+      // 刀光半径 = 扇形显示半径（不再 ×0.8）——刀光扫到的位置就是画出来的攻击圈边缘，
+      // 命中判定在 updateSectorSlashEffects 里也以该半径为上限，三者同源。
       this.sectorSlashEffects.push({
         cx: sectorCenterX,
         cy: sectorCenterY,
-        radius: sectorRadius * 0.8,
+        radius: sectorRadius,
         dir: dir,
         halfAngle: halfAngle,
         age: 0,
@@ -482,10 +495,9 @@ export class MeleeAttackSystem {
       const e = this.sectorSlashEffects[i];
       e.age += deltaTime;
       
-      // 剑光碰撞检测
+      // 剑光碰撞检测：命中判定直接用扇形显示半径 e.radius（出招当帧判定整个扇形），
+      // 刀光由内向外扫动只是表现——保证「看到的圈 = 实际打到」且命中无延迟。
       if (e.type === 'slash' && e.damage && this.combatSystem) {
-        const progress = e.age / e.maxAge;
-        const sweepRadius = e.radius * (0.3 + progress * 0.7);
         for (const entity of this.entities) {
           if (entity.type !== 'enemy') continue;
           if (entity.isDead || entity.isDying) continue;
@@ -494,25 +506,23 @@ export class MeleeAttackSystem {
           const targetTransform = entity.getComponent('transform');
           const targetStats = entity.getComponent('stats');
           if (!targetTransform || !targetStats || targetStats.hp <= 0) continue;
+
+          // 与扇形显示同一投影平面：取目标碰撞中心（无碰撞体时即脚点），
+          // 不再上抬 32px——否则「画出来的扇形」与「实际判定圈」在上下方向会错位。
+          const targetCollision = entity.getComponent('collision');
+          const ex = targetTransform.position.x + (Number(targetCollision?.offsetX) || 0);
+          const ey = targetTransform.position.y + (Number(targetCollision?.offsetY) || 0);
           
-          const ex = targetTransform.position.x;
-          const ey = targetTransform.position.y - 32;
-          
-          if (this.isPointInSector(ex, ey, e.cx, e.cy, sweepRadius + 25, e.dir, e.halfAngle)) {
-            const dx = ex - e.cx;
-            const dy = ey - e.cy;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            if (dist >= sweepRadius - 25) {
-              const finalDamage = Math.max(1, Math.floor(e.damage * (0.8 + this._rng() * 0.4)));
-              this.combatSystem.applyDamage(entity, finalDamage, null, '斩击', {
-                sourceEntity: this.playerEntity,
-                attackKind: 'melee'
-              });
-              if (this.combatSystem.createSliceEffect) {
-                this.combatSystem.createSliceEffect(targetTransform.position);
-              }
-              if (e.hitEntities) e.hitEntities.push(entity);
+          if (this.isPointInSector(ex, ey, e.cx, e.cy, e.radius, e.dir, e.halfAngle)) {
+            const finalDamage = Math.max(1, Math.floor(e.damage * (0.8 + this._rng() * 0.4)));
+            this.combatSystem.applyDamage(entity, finalDamage, null, '斩击', {
+              sourceEntity: this.playerEntity,
+              attackKind: 'melee'
+            });
+            if (this.combatSystem.createSliceEffect) {
+              this.combatSystem.createSliceEffect(targetTransform.position);
             }
+            if (e.hitEntities) e.hitEntities.push(entity);
           }
         }
       }
@@ -746,12 +756,10 @@ export class MeleeAttackSystem {
     const cy = transform.position.y + (Number(collision?.offsetY) || 0);
     const dir = this.sectorDirection;
     let spread = this.sectorAngle;
-    let radius = this.sliceAttackRange;
     const mainhand = this.playerEntity.getComponent('equipment')?.getEquipment?.('mainhand');
-    if (mainhand) {
-      if (mainhand.attackRange != null) spread = mainhand.attackRange * Math.PI / 180;
-      if (mainhand.attackDistance != null) radius = mainhand.attackDistance;
-    }
+    if (mainhand?.attackRange != null) spread = mainhand.attackRange * Math.PI / 180;
+    // 半径与 performSectorAttack / 刀光同源（getAttackDistance）：扇形画多大就打到多远
+    const radius = this.getAttackDistance(mainhand, false);
     const halfAngle = spread / 2;
     if (!(radius > 0) || !(halfAngle > 0)) return;
 

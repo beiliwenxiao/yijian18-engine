@@ -79,7 +79,7 @@ export class SceneGameplaySystemAssembler {
       now
     });
     scene.jumpSystem = new JumpSystem({ particleSystem: scene.particleSystem });
-    // 闪避：向输入方向快速滑出 3 个身位（冷却与格挡一致，头顶「闪避」飘字）
+    // 闪避：向输入方向快速滑出 3 个身位（身位由碰撞体推导；冷却与格挡一致，头顶「闪避」飘字）
     scene.dodgeSystem = new DodgeSystem({
       particleSystem: scene.particleSystem,
       floatingTextManager: scene.floatingTextManager,
@@ -156,6 +156,8 @@ export class SceneGameplaySystemAssembler {
       weaponRenderer: scene.weaponRenderer,
       enemyWeaponRenderer: scene.enemyWeaponRenderer,
       floatingTextManager: scene.floatingTextManager,
+      // 受击反馈判定「闪避中不打断」
+      dodgeSystem: scene.dodgeSystem,
       now
     });
     scene.combatSystem.onMeditationSkill = skill => scene.onSkillClicked(skill);
