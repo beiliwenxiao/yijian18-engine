@@ -37,6 +37,15 @@ const IMG_ROOT = 'example/sanguo_zhangjiao/assets/images';
 const OUT_DIR = 'example/sanguo_zhangjiao/assets/skeletons';
 const MANIFEST = 'example/sanguo_zhangjiao/assets/manifests/assets.json';
 
+// 真美术保护：parts 目录存在 .real-art 标记（slice-skirt-girl-art.mjs 成功切图后自动写入）
+// 时整脚本跳过——防止重跑占位生成把真美术部件图与骨骼 JSON 的枢轴/附件尺寸校正冲回占位默认。
+// 要回到占位美术：删除标记文件再跑本脚本；要复切真美术：node scripts/slice-skirt-girl-art.mjs。
+const REAL_ART_MARKER = `${IMG_ROOT}/${ID}/parts/.real-art`;
+if (existsSync(REAL_ART_MARKER)) {
+  console.log(`检测到真美术标记 ${REAL_ART_MARKER}，跳过占位美术生成（复切真美术请跑 scripts/slice-skirt-girl-art.mjs）`);
+  process.exit(0);
+}
+
 /* ---------------- PNG 编码（与 gen-refugee-skeletons.mjs 同款） ---------------- */
 
 const CRC_TABLE = (() => {
@@ -253,10 +262,12 @@ function drawLeg(pixels, view) {
 
 /* ---------------- 骨骼资产 ---------------- */
 
-/** 视角 → 形态键（down 为基准图，不写入 directionOffsets）。 */
+/** 视角 → 形态键（down 为基准图，不写入 directionOffsets）。
+ * 注意 view 名同时构成 assetId/文件名后缀——up 形态必须用 'up'（历史上误用 'back'
+ * 导致 directionOffsets.up 指向不存在的 -back 资产，背面躯干/裙丢图）。 */
 const VIEW_FORMS = [
   { view: 'side', form: 'side' },
-  { view: 'back', form: 'up' },
+  { view: 'up', form: 'up' },
   { view: 'se', form: 'SE' },
   { view: 'ne', form: 'NE' }
 ];

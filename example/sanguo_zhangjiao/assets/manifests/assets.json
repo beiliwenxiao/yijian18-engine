@@ -12104,6 +12104,181 @@
       "targetPhase": "P1",
       "status": "ai-generated",
       "revision": 1
+    },
+    {
+      "assetId": "skirt-girl.parts.armL-front",
+      "imageId": "skirt-girl.parts.armL-front",
+      "category": "character-part",
+      "usage": [
+        "skirt-girl-skeleton-part"
+      ],
+      "sourceFile": "assets/images/skirt-girl/parts/armL-front.png",
+      "runtime2D": {
+        "path": "assets/images/skirt-girl/parts/armL-front.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skirt-girl.parts.armL-front"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "skirt-girl.parts.armL-side",
+      "imageId": "skirt-girl.parts.armL-side",
+      "category": "character-part",
+      "usage": [
+        "skirt-girl-skeleton-part"
+      ],
+      "sourceFile": "assets/images/skirt-girl/parts/armL-side.png",
+      "runtime2D": {
+        "path": "assets/images/skirt-girl/parts/armL-side.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skirt-girl.parts.armL-side"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "skirt-girl.parts.armL-up",
+      "imageId": "skirt-girl.parts.armL-up",
+      "category": "character-part",
+      "usage": [
+        "skirt-girl-skeleton-part"
+      ],
+      "sourceFile": "assets/images/skirt-girl/parts/armL-up.png",
+      "runtime2D": {
+        "path": "assets/images/skirt-girl/parts/armL-up.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skirt-girl.parts.armL-up"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "skirt-girl.parts.armL-se",
+      "imageId": "skirt-girl.parts.armL-se",
+      "category": "character-part",
+      "usage": [
+        "skirt-girl-skeleton-part"
+      ],
+      "sourceFile": "assets/images/skirt-girl/parts/armL-se.png",
+      "runtime2D": {
+        "path": "assets/images/skirt-girl/parts/armL-se.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skirt-girl.parts.armL-se"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "skirt-girl.parts.armL-ne",
+      "imageId": "skirt-girl.parts.armL-ne",
+      "category": "character-part",
+      "usage": [
+        "skirt-girl-skeleton-part"
+      ],
+      "sourceFile": "assets/images/skirt-girl/parts/armL-ne.png",
+      "runtime2D": {
+        "path": "assets/images/skirt-girl/parts/armL-ne.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skirt-girl.parts.armL-ne"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
     }
   ]
 }
