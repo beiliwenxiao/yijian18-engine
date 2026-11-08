@@ -27,6 +27,19 @@ import { resolveSkillArea, isPointInSkillArea } from './SkillArea.js';
 // 表现层随机：爆炸/碎片/飘血粒子（非玩法结算，非权威；结算随机走 combatRng）
 const fxRng = new RNG();
 
+// 8 向朝向 → 单位向量（与 sprite.direction 字符串一致，格挡判定与半圆遮罩共用）
+const FACING_VECTORS = Object.freeze({
+  up: Object.freeze({ x: 0, y: -1 }),
+  down: Object.freeze({ x: 0, y: 1 }),
+  left: Object.freeze({ x: -1, y: 0 }),
+  right: Object.freeze({ x: 1, y: 0 }),
+  'up-left': Object.freeze({ x: -Math.SQRT1_2, y: -Math.SQRT1_2 }),
+  'up-right': Object.freeze({ x: Math.SQRT1_2, y: -Math.SQRT1_2 }),
+  'down-left': Object.freeze({ x: -Math.SQRT1_2, y: Math.SQRT1_2 }),
+  'down-right': Object.freeze({ x: Math.SQRT1_2, y: Math.SQRT1_2 })
+});
+const DEFAULT_FACING = FACING_VECTORS.right;
+
 /**
  * 战斗系统
  * 处理目标选择、攻击范围检测、伤害计算等
@@ -115,13 +128,21 @@ export class CombatSystem {
     // Map<enemyId, { blocked: boolean, time: number }>
     this.blockedAttacks = new Map();
     
-    // 主动格挡状态
+    // 主动格挡状态（只挡角色朝向的一面：正面半圆）
     this._activeBlock = {
       active: false,       // 是否正在格挡
       startTime: 0,        // 格挡开始时间（ms）
       duration: 1000,      // 格挡持续时间（ms）
       cooldownMs: 8000,    // 冷却时间（ms）
-      lastUseTime: 0       // 上次使用时间（ms）
+      lastUseTime: 0,      // 上次使用时间（ms）
+      // 判定几何：与半圆遮罩同源（getBlockGeometry 唯一出口）——
+      // 半径 110px 覆盖普通近战攻击距离（怪物 attackRange≈90），半角 90°=正面半圆
+      range: 110,
+      halfAngle: Math.PI / 2
+    };
+    // 格挡几何复用缓冲（渲染/判定每帧读取，避免逐帧分配）
+    this._blockGeometry = {
+      active: false, x: 0, y: 0, dirX: 1, dirY: 0, radius: 110, halfAngle: Math.PI / 2
     };
     
     // 武器碰撞冷却：防止同一次攻击重复触发碰撞
@@ -325,7 +346,7 @@ export class CombatSystem {
   }
 
   /**
-   * 激活主动格挡（持续1秒挡住所有攻击）
+   * 激活主动格挡（持续 1 秒，只挡角色朝向的正面半圆——几何见 getBlockGeometry）
    * @returns {boolean} 是否成功激活
    */
   activateBlock() {
@@ -372,6 +393,57 @@ export class CombatSystem {
       return false;
     }
     return true;
+  }
+
+  /**
+   * 解析当前格挡几何（判定与半圆遮罩的唯一数据源）。
+   * 锚点 = 玩家物理中心（transform + collision 偏移，与近战扇形同源），
+   * 方向 = 角色 8 向朝向；半径/半角 = _activeBlock.range/halfAngle。
+   * 返回复用对象，调用方读完即用、不要长期持有。
+   * @returns {{active:boolean,x:number,y:number,dirX:number,dirY:number,radius:number,halfAngle:number}}
+   */
+  getBlockGeometry() {
+    const geometry = this._blockGeometry;
+    geometry.active = this.isBlocking();
+    const player = this.playerEntity;
+    const transform = player?.getComponent?.('transform');
+    if (!transform) {
+      geometry.active = false;
+      return geometry;
+    }
+    const collision = player.getComponent('collision');
+    geometry.x = transform.position.x + (Number(collision?.offsetX) || 0);
+    geometry.y = transform.position.y + (Number(collision?.offsetY) || 0);
+    const facing = FACING_VECTORS[player.getComponent('sprite')?.direction] || DEFAULT_FACING;
+    geometry.dirX = facing.x;
+    geometry.dirY = facing.y;
+    geometry.radius = this._activeBlock.range;
+    geometry.halfAngle = this._activeBlock.halfAngle;
+    return geometry;
+  }
+
+  /**
+   * 攻击是否落在格挡的正面半圆内（判定与遮罩同参）。
+   * 距离取双方物理中心（无碰撞体即脚点），与近战命中判定同一投影平面。
+   * @param {Entity} attacker
+   * @returns {boolean}
+   */
+  _isAttackBlockedByFacing(attacker) {
+    const geometry = this.getBlockGeometry();
+    if (!geometry.active) return false;
+    const attackerTransform = attacker?.getComponent?.('transform');
+    if (!attackerTransform) return false;
+    const attackerCollision = attacker.getComponent('collision');
+    const ax = attackerTransform.position.x + (Number(attackerCollision?.offsetX) || 0);
+    const ay = attackerTransform.position.y + (Number(attackerCollision?.offsetY) || 0);
+    const dx = ax - geometry.x;
+    const dy = ay - geometry.y;
+    const dist = Math.hypot(dx, dy);
+    // 超出遮罩半径不挡（远处攻击本来也够不到；贴身/重叠视为正面）
+    if (dist > geometry.radius) return false;
+    if (dist < 1) return true;
+    const cosLimit = Math.cos(geometry.halfAngle);
+    return (dx / dist) * geometry.dirX + (dy / dist) * geometry.dirY >= cosLimit;
   }
 
   /**
@@ -960,9 +1032,10 @@ export class CombatSystem {
 
     // 检查敌人攻击是否被格挡
     if (attacker.type === 'enemy' && target.type === 'player') {
-      // 主动格挡检查（优先级最高）
+      // 主动格挡检查（优先级最高）：只挡角色朝向的一面（正面半圆，几何与遮罩同源）
       const now = this.now();
-      if (this._activeBlock.active && (now - this._activeBlock.startTime < this._activeBlock.duration)) {
+      if (this._activeBlock.active && (now - this._activeBlock.startTime < this._activeBlock.duration)
+        && this._isAttackBlockedByFacing(attacker)) {
         // 主动格挡生效
         if (targetTransform && this.floatingTextManager) {
           this.floatingTextManager.addText(

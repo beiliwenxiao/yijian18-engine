@@ -135,52 +135,66 @@ export class SceneWorldPresentation {
     ctx.restore();
   }
 
+  /**
+   * 格挡半圆遮罩：跟随角色朝向，只覆盖正面半圆。
+   * 圆心/半径/半角/朝向全部取自 combatSystem.getBlockGeometry()——与格挡判定同一数据源，
+   * 且与近战扇形一致：以玩家碰撞中心为锚点、按 1:0.5 压扁贴合地面的 2.5D 投影。
+   */
   renderBlockShield(ctx) {
     const scene = this.scene;
-    if (!scene.combatSystem?.isBlocking() || !scene.playerEntity) return;
-    const transform = scene.playerEntity.getComponent('transform');
-    if (!transform) return;
-    const height = scene.playerEntity.getComponent('sprite')?.height || 64;
-    const cx = transform.position.x;
-    const cy = transform.position.y - height / 2;
-    const now = performance.now();
-    const activeBlock = scene.combatSystem._activeBlock;
-    const progress = Math.min(1, (now - activeBlock.startTime) / activeBlock.duration);
-    const alpha = progress > 0.7 ? (1 - (progress - 0.7) / 0.3) * 0.6 : 0.6;
-    const radius = 36 * (1 + Math.sin(now / 120) * 0.05);
+    const combatSystem = scene.combatSystem;
+    const geometry = combatSystem?.getBlockGeometry?.();
+    if (!geometry?.active) return;
+
+    // 时钟必须与格挡状态同源（simulationClock，暂停时不走表）：
+    // 旧实现用 performance.now() 对 startTime 求进度，场景暂停累计超过 300ms 后
+    // 进度会被算成 1 → 透明度归零，遮罩看起来「完全没画出来」。
+    const now = Number(combatSystem.now()) || 0;
+    const activeBlock = combatSystem._activeBlock || {};
+    const duration = Number(activeBlock.duration) || 0;
+    const elapsed = Math.max(0, now - (Number(activeBlock.startTime) || 0));
+    const progress = duration > 0 ? Math.min(1, elapsed / duration) : 1;
+    const fade = progress > 0.7 ? 1 - (progress - 0.7) / 0.3 : 1; // 末段 30% 淡出
+    const pulse = 1 + Math.sin(now / 120) * 0.05;
+    const radius = Math.max(1, geometry.radius * pulse);
+    const dirAngle = Math.atan2(geometry.dirY, geometry.dirX);
+    const start = dirAngle - geometry.halfAngle;
+    const end = dirAngle + geometry.halfAngle;
+    const alpha = Math.max(0, Math.min(1, fade)) * 0.6;
+    const solid = (value) => Math.max(0, Math.min(1, value)).toFixed(3);
 
     ctx.save();
+    ctx.setLineDash([]);
+    ctx.translate(geometry.x, geometry.y);
+    ctx.scale(1, 0.5);
+
+    // 正面半圆填充遮罩
+    const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, radius);
+    gradient.addColorStop(0, `rgba(100, 200, 255, ${solid(alpha * 0.18)})`);
+    gradient.addColorStop(0.65, `rgba(60, 160, 240, ${solid(alpha * 0.34)})`);
+    gradient.addColorStop(1, `rgba(30, 120, 220, ${solid(alpha * 0.55)})`);
     ctx.beginPath();
-    ctx.arc(cx, cy, radius + 4, 0, Math.PI * 2);
-    ctx.strokeStyle = `rgba(100, 200, 255, ${alpha * 0.8})`;
-    ctx.lineWidth = 2;
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-    const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
-    gradient.addColorStop(0, `rgba(100, 200, 255, ${alpha * 0.15})`);
-    gradient.addColorStop(0.6, `rgba(60, 160, 240, ${alpha * 0.3})`);
-    gradient.addColorStop(1, `rgba(30, 120, 220, ${alpha * 0.5})`);
+    ctx.moveTo(0, 0);
+    ctx.arc(0, 0, radius, start, end);
+    ctx.closePath();
     ctx.fillStyle = gradient;
     ctx.fill();
+
+    // 半圆轮廓（弧 + 直径弦）
     ctx.beginPath();
-    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-    ctx.strokeStyle = `rgba(180, 230, 255, ${alpha})`;
+    ctx.arc(0, 0, radius, start, end);
+    ctx.closePath();
+    ctx.strokeStyle = `rgba(180, 230, 255, ${solid(alpha * 1.15)})`;
     ctx.lineWidth = 2.5;
     ctx.stroke();
+
+    // 内层弧：强化「护盾面」层次
     ctx.beginPath();
-    const innerRadius = radius * 0.55;
-    for (let index = 0; index < 6; index++) {
-      const angle = Math.PI * 2 / 6 * index - Math.PI / 2;
-      const x = cx + Math.cos(angle) * innerRadius;
-      const y = cy + Math.sin(angle) * innerRadius;
-      if (index === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    }
-    ctx.closePath();
-    ctx.strokeStyle = `rgba(150, 220, 255, ${alpha * 0.6})`;
+    ctx.arc(0, 0, radius * 0.62, start, end);
+    ctx.strokeStyle = `rgba(150, 220, 255, ${solid(alpha * 0.7)})`;
     ctx.lineWidth = 1.5;
     ctx.stroke();
+
     ctx.restore();
   }
 }
