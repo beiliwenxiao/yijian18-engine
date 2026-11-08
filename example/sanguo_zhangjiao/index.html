@@ -1045,7 +1045,11 @@
         saveGames.setCheckpointLoadExecutor(options => shell.loadCheckpointAutoSave(options));
         // 获取元素
         const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
+        // alpha:false（不透明主画布）：帧内每帧都会整屏铺满背景，画布不存在需要
+        // 透出页面底色的区域；带 alpha 的 canvas 要按像素与背板混合，实测把它关掉
+        // 后合成/光栅成本显著下降（S01 同机 A/B：rAF 均帧 31.8ms → 24.4ms，
+        // >33.3ms 帧 158 → 62 / 378 帧）。
+        const ctx = canvas.getContext('2d', { alpha: false });
         const gameContainer = document.getElementById('game-container');
         const displayScaler = new CanvasDisplayScaler(canvas, {
             logicalWidth: logicalResolution.width,

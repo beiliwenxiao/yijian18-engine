@@ -35,6 +35,12 @@ const SKILL_EMOJI_MAP = Object.freeze({
 const SKILL_LONG_PRESS_MS = 500;
 
 /**
+ * 控制栏离屏缓存四周外扩像素（设备像素）：技能槽激活态有 shadowBlur=10 的辉光，
+ * 缓存按包围盒开时必须留出外扩，否则贴回后辉光会被裁成硬边。
+ */
+const OFFSCREEN_PADDING_DEVICE = 12;
+
+/**
  * 底部控制栏
  */
 export class BottomControlBar extends UIElement {
@@ -290,12 +296,29 @@ export class BottomControlBar extends UIElement {
     this._prepareHotkeyLabels();
 
     // 离屏缓存：状态签名未变化时整帧贴图，跳过血蓝球/技能槽的全量重绘。
+    // 离屏尺寸只取控制栏自身包围盒（原实现按整张主画布开，每帧贴回一整屏
+    // 几乎全透明的像素——实测 S01 每帧因此多 0.92Mpx 的 source-over 混合）。
     const canvas = ctx.canvas;
-    if (!this._offscreenCanvas || this._offscreenCanvas.width !== canvas.width
-      || this._offscreenCanvas.height !== canvas.height) {
+    const matrix = typeof ctx.getTransform === 'function' ? ctx.getTransform() : null;
+    const isPureScaleTranslate = !matrix || (Math.abs(matrix.b) < 1e-6 && Math.abs(matrix.c) < 1e-6);
+    const scaleX = matrix?.a ?? 1;
+    const scaleY = matrix?.d ?? 1;
+    const offsetX = matrix?.e ?? 0;
+    const offsetY = matrix?.f ?? 0;
+    const deviceX = isPureScaleTranslate ? Math.floor(this.x * scaleX + offsetX) - OFFSCREEN_PADDING_DEVICE : 0;
+    const deviceY = isPureScaleTranslate ? Math.floor(this.y * scaleY + offsetY) - OFFSCREEN_PADDING_DEVICE : 0;
+    const deviceWidth = isPureScaleTranslate
+      ? Math.max(1, Math.ceil(this.width * scaleX) + OFFSCREEN_PADDING_DEVICE * 2) : canvas.width;
+    const deviceHeight = isPureScaleTranslate
+      ? Math.max(1, Math.ceil(this.height * scaleY) + OFFSCREEN_PADDING_DEVICE * 2) : canvas.height;
+    if (!this._offscreenCanvas || this._offscreenCanvas.width !== deviceWidth
+      || this._offscreenCanvas.height !== deviceHeight
+      || this._offscreenOriginX !== deviceX || this._offscreenOriginY !== deviceY) {
       this._offscreenCanvas = document.createElement('canvas');
-      this._offscreenCanvas.width = canvas.width;
-      this._offscreenCanvas.height = canvas.height;
+      this._offscreenCanvas.width = deviceWidth;
+      this._offscreenCanvas.height = deviceHeight;
+      this._offscreenOriginX = deviceX;
+      this._offscreenOriginY = deviceY;
       this._renderSignature = null;
     }
     const signature = this._buildRenderSignature();
@@ -303,11 +326,12 @@ export class BottomControlBar extends UIElement {
       this._renderSignature = signature;
       const offCtx = this._offscreenCanvas.getContext('2d');
       offCtx.setTransform(1, 0, 0, 1, 0, 0);
-      offCtx.clearRect(0, 0, this._offscreenCanvas.width, this._offscreenCanvas.height);
-      // 与主画布保持同一变换（含 dpr 缩放），离屏像素与主画布逐像素对齐
-      if (typeof ctx.getTransform === 'function') {
-        const m = ctx.getTransform();
-        offCtx.setTransform(m.a, m.b, m.c, m.d, m.e, m.f);
+      offCtx.clearRect(0, 0, deviceWidth, deviceHeight);
+      // 与主画布保持同一变换（含 dpr 缩放），再平移到离屏自身原点；
+      // 离屏像素与主画布逐像素对齐。
+      if (matrix) {
+        offCtx.setTransform(matrix.a, matrix.b, matrix.c, matrix.d,
+          matrix.e - deviceX, matrix.f - deviceY);
       }
       this._renderAll(offCtx);
       this._offscreenReady = true;
@@ -316,7 +340,7 @@ export class BottomControlBar extends UIElement {
     // 贴回主画布：恒等变换按物理像素 1:1，避免二次缩放模糊
     ctx.save();
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.drawImage(this._offscreenCanvas, 0, 0);
+    ctx.drawImage(this._offscreenCanvas, deviceX, deviceY);
     ctx.restore();
   }
 

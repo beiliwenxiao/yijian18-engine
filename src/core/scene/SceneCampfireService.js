@@ -319,50 +319,55 @@ const campfireFeatureMethods = {
       atmosphereCtx.fillStyle = 'rgba(0, 0, 0, 0)';
       atmosphereCtx.fillRect(0, 0, atmosphereWidth, atmosphereHeight);
       atmosphereCtx.globalCompositeOperation = 'source-over';
-      this.timeSystem.render(atmosphereCtx, atmosphereWidth, atmosphereHeight);
+      // TimeSystem 自己会判断「夜色透明度」与「色调」是否有内容；两者都为空
+      // （如清晨/白天）时返回 false。此时透光洞与整屏上采样合成都无意义，
+      // 整段跳过——省掉每帧一次的 640×360 → 全屏双线性混合。
+      const atmospherePainted = this.timeSystem.render(
+        atmosphereCtx, atmosphereWidth, atmosphereHeight);
+      if (atmospherePainted) {
+        atmosphereCtx.globalCompositeOperation = 'destination-out';
+        const yScale = 0.6;
+        const playerTransform = this.playerEntity?.getComponent?.('transform');
+        if (playerTransform) {
+          const playerScreenX = (playerTransform.position.x - viewBounds.left) * renderScale;
+          const playerScreenY = (playerTransform.position.y - viewBounds.top) * renderScale;
+          const respawnRadius = campfireConfigured && this.campfire.respawnCountdownSeconds
+            ? Math.max(0, Number(this.campfire.respawnApproachRadius) || 0)
+            : 0;
+          const playerLightRadius = Math.max(150, respawnRadius) * renderScale;
+          const playerMask = this._getAtmosphereMask('player', playerLightRadius, yScale);
+          atmosphereCtx.drawImage(
+            playerMask,
+            playerScreenX - playerMask.width / 2,
+            playerScreenY - playerMask.height / 2
+          );
+        }
 
-      atmosphereCtx.globalCompositeOperation = 'destination-out';
-      const yScale = 0.6;
-      const playerTransform = this.playerEntity?.getComponent?.('transform');
-      if (playerTransform) {
-        const playerScreenX = (playerTransform.position.x - viewBounds.left) * renderScale;
-        const playerScreenY = (playerTransform.position.y - viewBounds.top) * renderScale;
-        const respawnRadius = campfireConfigured && this.campfire.respawnCountdownSeconds
-          ? Math.max(0, Number(this.campfire.respawnApproachRadius) || 0)
-          : 0;
-        const playerLightRadius = Math.max(150, respawnRadius) * renderScale;
-        const playerMask = this._getAtmosphereMask('player', playerLightRadius, yScale);
-        atmosphereCtx.drawImage(
-          playerMask,
-          playerScreenX - playerMask.width / 2,
-          playerScreenY - playerMask.height / 2
+        const showCampfireOpening = campfireConfigured
+          && (this.campfire.lit || this.campfire.respawnCountdownSeconds !== null);
+        if (showCampfireOpening) {
+          const campScreenX = (this.campfire.x - viewBounds.left) * renderScale;
+          const campScreenY = (this.campfire.y - viewBounds.top) * renderScale;
+          const campLightRadius = Math.max(
+            Number(this.presentation.lightRadius) || 0,
+            Number(this.campfire.respawnApproachRadius) || 0,
+            1
+          ) * renderScale;
+          const campMask = this._getAtmosphereMask('campfire', campLightRadius, yScale);
+          atmosphereCtx.drawImage(
+            campMask,
+            campScreenX - campMask.width / 2,
+            campScreenY - campMask.height / 2
+          );
+        }
+
+        atmosphereCtx.globalCompositeOperation = 'source-over';
+        ctx.drawImage(
+          this._atmosphereCanvas,
+          0, 0, atmosphereWidth, atmosphereHeight,
+          0, 0, width, height
         );
       }
-
-      const showCampfireOpening = campfireConfigured
-        && (this.campfire.lit || this.campfire.respawnCountdownSeconds !== null);
-      if (showCampfireOpening) {
-        const campScreenX = (this.campfire.x - viewBounds.left) * renderScale;
-        const campScreenY = (this.campfire.y - viewBounds.top) * renderScale;
-        const campLightRadius = Math.max(
-          Number(this.presentation.lightRadius) || 0,
-          Number(this.campfire.respawnApproachRadius) || 0,
-          1
-        ) * renderScale;
-        const campMask = this._getAtmosphereMask('campfire', campLightRadius, yScale);
-        atmosphereCtx.drawImage(
-          campMask,
-          campScreenX - campMask.width / 2,
-          campScreenY - campMask.height / 2
-        );
-      }
-
-      atmosphereCtx.globalCompositeOperation = 'source-over';
-      ctx.drawImage(
-        this._atmosphereCanvas,
-        0, 0, atmosphereWidth, atmosphereHeight,
-        0, 0, width, height
-      );
     }
 
     // 火堆点燃时在透光洞上叠加柔和光晕，使周围一圈仍有暖色层次。

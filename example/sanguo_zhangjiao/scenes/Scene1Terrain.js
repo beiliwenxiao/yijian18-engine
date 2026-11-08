@@ -1428,16 +1428,27 @@ export class Scene1Terrain {
       // 流式九宫格在发布 projection 前已生成静态缓存；这里只保留非流式兼容调度。
       if (!this._staticCachePrepared) this._scheduleTerrainCacheBuild({ combined: false });
       this._renderWaterPatches(ctx);
+      // 背景图片与 shape 已烘焙进同一张缓存：每帧一次 blit（原实现两次，
+      // 填充普查里相当于每帧多覆盖约 1Mpx 的半透明像素）。
+      if (this._bgImageCache) {
+        ctx.drawImage(this._bgImageCache, this._bgImageCacheX, this._bgImageCacheY);
+        if (this._areGroundShapesBaked()) return;
+        // shape 集合变了（投影替换/动态碰撞体）→ 本帧回退补画并安排重烘焙。
+        this._renderEditorShapes(ctx);
+        this._invalidateGroundBake({ combined: false });
+        return;
+      }
       this._renderEditorBackgroundImages(ctx);
       this._renderEditorShapes(ctx);   // shape 在背景图片之上，可遮挡底层图片
       return;
     }
 
-    // 使用合并的地面缓存（椭圆草地 + 背景图，一张图搞定）
-    // shape（多边形/椭圆等）每帧单独画在缓存之上，可遮挡底层图片
+    // 使用合并的地面缓存（椭圆草地 + 背景图 + shape，一张图搞定）
     if (this._combinedGroundCache) {
       ctx.drawImage(this._combinedGroundCache, this._combinedGroundCacheX, this._combinedGroundCacheY);
+      if (this._areGroundShapesBaked()) return;
       this._renderEditorShapes(ctx);
+      this._invalidateGroundBake({ combined: true });
       return;
     }
 
@@ -1454,6 +1465,86 @@ export class Scene1Terrain {
     this._renderEditorShapes(ctx);
   }
 
+  /**
+   * 地面缓存是否已经把 shape 层烘焙进去（引用逐项 + 版本号一致才可省掉本帧
+   * 独立的一次 shape blit）。
+   * @private
+   */
+  _areGroundShapesBaked() {
+    const editorShapes = this._editorShapes || [];
+    const walkableShapes = this._walkableShapes || [];
+    if (editorShapes.length === 0 && walkableShapes.length === 0) return true;
+    if (this._groundShapesBakedVersion !== (this._editorShapesVersion || 0)) return false;
+    const refs = this._groundShapesBakedRefs;
+    if (!refs || refs.length !== editorShapes.length + walkableShapes.length) return false;
+    for (let index = 0; index < editorShapes.length; index++) {
+      if (refs[index] !== editorShapes[index]) return false;
+    }
+    for (let index = 0; index < walkableShapes.length; index++) {
+      if (refs[editorShapes.length + index] !== walkableShapes[index]) return false;
+    }
+    return true;
+  }
+
+  /** 丢弃地面缓存的 shape 烘焙并安排重建（仅在 shape 集合真的变化时发生）。 @private */
+  _invalidateGroundBake({ combined = true } = {}) {
+    this._groundShapesBakedVersion = -1;
+    this._groundShapesBakedRefs = null;
+    if (combined) this._combinedGroundCache = null;
+    else this._bgImageCache = null;
+    this._scheduleTerrainCacheBuild({ combined });
+  }
+
+  /** shape 整层烘焙所需的世界包围盒（含描边外扩）；无 shape 返回 null。 @private */
+  _computeEditorShapesBakeBounds() {
+    const editorShapes = this._editorShapes || [];
+    const walkableShapes = this._walkableShapes || [];
+    if (editorShapes.length === 0 && walkableShapes.length === 0) return null;
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const shape of editorShapes.concat(walkableShapes)) {
+      const bb = ShapeRenderer.getBBox(shape);
+      if (!Number.isFinite(bb.x) || !Number.isFinite(bb.y)) continue;
+      const pad = (Number(shape.strokeWidth) || 0) / 2 + 4;
+      minX = Math.min(minX, bb.x - pad);
+      minY = Math.min(minY, bb.y - pad);
+      maxX = Math.max(maxX, bb.x + bb.w + pad);
+      maxY = Math.max(maxY, bb.y + bb.h + pad);
+    }
+    if (!Number.isFinite(minX)) return null;
+    return { minX, minY, maxX, maxY };
+  }
+
+  /**
+   * 把 shape 整层缓存烘焙进地面缓存画布。
+   * @param {CanvasRenderingContext2D} gctx 地面缓存的上下文
+   * @param {number} ctxOffsetX 该上下文已平移的世界原点的 X（合并缓存为 0，背景图缓存为其 cacheX）
+   * @param {number} ctxOffsetY 同上
+   * @returns {boolean} 是否成功烘焙（失败时本帧仍需独立绘制 shape 层）
+   * @private
+   */
+  _bakeEditorShapesInto(gctx, ctxOffsetX = 0, ctxOffsetY = 0) {
+    const editorShapes = this._editorShapes || [];
+    const walkableShapes = this._walkableShapes || [];
+    if (editorShapes.length === 0 && walkableShapes.length === 0) {
+      this._groundShapesBakedVersion = -1;
+      this._groundShapesBakedRefs = null;
+      return true;
+    }
+    if (!this._buildEditorShapesCache(editorShapes, walkableShapes)) {
+      this._groundShapesBakedVersion = -1;
+      this._groundShapesBakedRefs = null;
+      return false;
+    }
+    gctx.drawImage(
+      this._editorShapesCacheCanvas,
+      this._editorShapesCacheX - ctxOffsetX,
+      this._editorShapesCacheY - ctxOffsetY
+    );
+    this._groundShapesBakedVersion = this._editorShapesVersion || 0;
+    this._groundShapesBakedRefs = editorShapes.concat(walkableShapes);
+    return true;
+  }
+
   /** 将一次性离屏缓存构建移出渲染帧，未完成前继续使用直接绘制回退。 @private */
   _scheduleTerrainCacheBuild({ combined = true } = {}) {
     // 无地形椭圆的场景只需草地装饰缓存，不能因为延迟任务反向生成默认椭圆。
@@ -1466,6 +1557,7 @@ export class Scene1Terrain {
       const buildCombined = this._terrainCacheBuildCombined === true;
       this._terrainCacheBuildScheduled = false;
       this._terrainCacheBuildCombined = false;
+      this._buildBackgroundImageCache();
       this._buildGroundDecoCache();
       if (buildCombined) this._buildCombinedGroundCache();
     };
@@ -1533,19 +1625,10 @@ export class Scene1Terrain {
    */
   _buildEditorShapesCache(editorShapes, walkableShapes) {
     const shapes = editorShapes.concat(walkableShapes);
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-    for (const shape of shapes) {
-      const bb = ShapeRenderer.getBBox(shape);
-      if (!Number.isFinite(bb.x) || !Number.isFinite(bb.y)) continue;
-      const pad = (Number(shape.strokeWidth) || 0) / 2 + 4;
-      minX = Math.min(minX, bb.x - pad);
-      minY = Math.min(minY, bb.y - pad);
-      maxX = Math.max(maxX, bb.x + bb.w + pad);
-      maxY = Math.max(maxY, bb.y + bb.h + pad);
-    }
-    if (!Number.isFinite(minX)) return false;
-    const width = Math.ceil(maxX - minX) + 2;
-    const height = Math.ceil(maxY - minY) + 2;
+    const bounds = this._computeEditorShapesBakeBounds();
+    if (!bounds) return false;
+    const width = Math.ceil(bounds.maxX - bounds.minX) + 2;
+    const height = Math.ceil(bounds.maxY - bounds.minY) + 2;
     if (width > 4096 || height > 4096) return false;
 
     const canvas = document.createElement('canvas');
@@ -1557,8 +1640,8 @@ export class Scene1Terrain {
       ShapeRenderer.render(gctx, shape, resolver);
     }
     this._editorShapesCacheCanvas = canvas;
-    this._editorShapesCacheX = minX - 1;
-    this._editorShapesCacheY = minY - 1;
+    this._editorShapesCacheX = bounds.minX - 1;
+    this._editorShapesCacheY = bounds.minY - 1;
     this._editorShapesCacheVersion = this._editorShapesVersion || 0;
     this._editorShapesCacheRefs = shapes;
     return true;
@@ -1787,6 +1870,15 @@ export class Scene1Terrain {
       maxY = Math.max(maxY, y + height);
     }
 
+    // shape 层一并烘焙进这张缓存：先把包围盒扩到 shape 的并集，避免烘焙后被裁切。
+    const shapesBounds = this._computeEditorShapesBakeBounds();
+    if (shapesBounds) {
+      minX = Math.min(minX, shapesBounds.minX);
+      minY = Math.min(minY, shapesBounds.minY);
+      maxX = Math.max(maxX, shapesBounds.maxX);
+      maxY = Math.max(maxY, shapesBounds.maxY);
+    }
+
     const offsetX = Math.floor(minX) - 1;
     const offsetY = Math.floor(minY) - 1;
     const cacheW = Math.ceil(maxX - offsetX) + 1;
@@ -1816,6 +1908,8 @@ export class Scene1Terrain {
         gctx.restore();
       }
     }
+    // 画 shape 层（原实现每帧在缓存之上再单独 blit 一次；烘焙后每帧只剩一次整图 blit）
+    this._bakeEditorShapesInto(gctx, 0, 0);
 
     this._combinedGroundCache = canvas;
     this._combinedGroundCacheX = offsetX;
@@ -1863,6 +1957,14 @@ export class Scene1Terrain {
       maxX = Math.max(maxX, bg.x + bg.width);
       maxY = Math.max(maxY, bg.y + bg.height);
     }
+    // shape 层一并烘焙：扩大包围盒到 shape 并集，避免烘焙后被裁切。
+    const shapesBounds = this._computeEditorShapesBakeBounds();
+    if (shapesBounds) {
+      minX = Math.min(minX, shapesBounds.minX);
+      minY = Math.min(minY, shapesBounds.minY);
+      maxX = Math.max(maxX, shapesBounds.maxX);
+      maxY = Math.max(maxY, shapesBounds.maxY);
+    }
     const cacheW = Math.ceil(maxX - minX) + 2;
     const cacheH = Math.ceil(maxY - minY) + 2;
     if (cacheW > 4096 || cacheH > 4096) return;
@@ -1888,6 +1990,8 @@ export class Scene1Terrain {
     this._bgImageCache = canvas;
     this._bgImageCacheX = offsetX;
     this._bgImageCacheY = offsetY;
+    // shape 层烘焙（该缓存上下文未做世界原点平移，需按 offsetX/Y 换算）
+    this._bakeEditorShapesInto(gctx, offsetX, offsetY);
     this._bgImageCacheSignature = this._editorBackgroundImages
       .map(bg => `${bg.imageId || bg.src}|${bg.width}x${bg.height}|${bg.opacity ?? 1}`)
       .join(';');
