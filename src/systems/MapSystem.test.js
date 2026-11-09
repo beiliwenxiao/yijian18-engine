@@ -10,6 +10,8 @@
  *            `https://gitee.com/coderaaa/yijian18-engine`
  ************************************************************/
 
+// @vitest-environment jsdom
+
 /**
  * MapSystem.test.js
  * 地图系统单元测试

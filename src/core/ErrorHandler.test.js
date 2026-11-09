@@ -10,6 +10,8 @@
  *            `https://gitee.com/coderaaa/yijian18-engine`
  ************************************************************/
 
+// @vitest-environment jsdom
+
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ErrorHandler } from './ErrorHandler.js';
 

@@ -11,6 +11,17 @@ export default defineConfig({
     fileParallelism: false,
     // Temp/ 存放历史基线快照副本（如 baseline-wt），其过时测试副本不应被 vitest
     // 子串匹配收集（曾导致 HostBackendDefaults 等以旧版断言误报失败）。
-    exclude: ['**/node_modules/**', '**/Temp/**', '**/dist/**', '**/waitdel/**']
+    // 末尾三条是 node:test 套件（import { describe, it } from 'node:test'），
+    // 与 vitest 的收集器不兼容（收集到会报「测试套件为空」），它们用
+    // `node --test test/s02*.test.js` 单独运行。
+    exclude: [
+      '**/node_modules/**',
+      '**/Temp/**',
+      '**/dist/**',
+      '**/waitdel/**',
+      'test/s02ArmyPossession.test.js',
+      'test/s02WoundDebuff.test.js',
+      'test/s02ZhangjiaoSkills.test.js'
+    ]
   }
 });

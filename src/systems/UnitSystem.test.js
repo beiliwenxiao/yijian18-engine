@@ -10,11 +10,14 @@
  *            `https://gitee.com/coderaaa/yijian18-engine`
  ************************************************************/
 
+// @vitest-environment jsdom
+
 /**
  * UnitSystem.test.js
  * 兵种系统单元测试
  */
 
+import { describe, it, test, expect, beforeEach } from 'vitest';
 import { UnitSystem, UnitTypes, UnitNames, UnitCounters } from './UnitSystem.js';
 
 describe('UnitSystem', () => {
