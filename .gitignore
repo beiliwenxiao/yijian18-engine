@@ -91,6 +91,9 @@ tmp_dl_sdk.ps1
 vite.config.js.timestamp-*.mjs
 scripts/migrateRuntimeImages.mjs
 scripts/runJavaScriptAudit.mjs
+# 美术探针临时产物（一次性截图/脚本；正式生成器 scripts/gen-skirt-girl-skeleton.mjs 已入库）
+.tmp-*.png
+scripts/tmp-*.mjs
 # 截图/文档/安装包等本地文件
 BandiView_2-12.jpg
 # 本地测试产物
