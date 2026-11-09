@@ -17,6 +17,7 @@
 
 import { FieldType } from '../../core/validation/ContentValidator.js';
 import { ValidationCode, makeError } from '../../core/validation/ValidationError.js';
+import { RESOURCE_NODE_TYPES } from '../ResourceIds.js';
 import {
   DEFAULT_WORLD_MAP_REGION_TYPE,
   WORLD_MAP_REGION_TYPES
@@ -80,6 +81,34 @@ export const UNIT_SCHEMA = {
     stats: { type: FieldType.OBJECT, valueType: FieldType.NUMBER },
     equipmentIds: { type: FieldType.ARRAY, itemType: FieldType.STRING },
     skillIds: { type: FieldType.ARRAY, itemType: FieldType.STRING },
+    tags: { type: FieldType.ARRAY, itemType: FieldType.STRING },
+    // M0：兵种克制/升级线的可选扩面（无该字段 = 旧数据语义不变）
+    class: { type: FieldType.STRING, enum: ['melee', 'cavalry', 'ranged'] },
+    tier: { type: FieldType.INTEGER, min: 1 },
+    upgradeFrom: { type: FieldType.ARRAY, itemType: FieldType.STRING },
+    dealMultiplier: { type: FieldType.OBJECT, valueType: FieldType.NUMBER },
+    damageTakenFrom: { type: FieldType.OBJECT, valueType: FieldType.NUMBER }
+  }
+};
+
+/**
+ * 内容库兵种定义（library.unitTypes[]）。
+ * 与 UNIT_SCHEMA（场景里的具体单位实例）区分：这里是"兵种模板 + 克制表"。
+ */
+export const UNIT_TYPE_SCHEMA = {
+  id: 'unitType',
+  fields: {
+    schemaVersion: versionField(),
+    id: idField(),
+    name: { type: FieldType.STRING, required: true, minLength: 1 },
+    class: { type: FieldType.STRING, enum: ['melee', 'cavalry', 'ranged'] },
+    tier: { type: FieldType.INTEGER, min: 1 },
+    upgradeFrom: { type: FieldType.ARRAY, itemType: FieldType.STRING },
+    stats: { type: FieldType.OBJECT, valueType: FieldType.NUMBER },
+    /** 攻方视角倍率：{ [defenderUnitTypeId]: multiplier }，未列出即 1.0 */
+    dealMultiplier: { type: FieldType.OBJECT, valueType: FieldType.NUMBER },
+    /** 守方视角覆盖：{ [attackerUnitTypeId]: multiplier }，默认空（避免与 dealMultiplier 双乘） */
+    damageTakenFrom: { type: FieldType.OBJECT, valueType: FieldType.NUMBER },
     tags: { type: FieldType.ARRAY, itemType: FieldType.STRING }
   }
 };
@@ -94,6 +123,8 @@ export const HERO_SCHEMA = {
     classId: idField(),
     factionId: idField(),
     level: { type: FieldType.INTEGER, min: 1 },
+    /** M0：统率走 stats.command；rankId 指向 library.ranks[]（纯军职，无爵位维度） */
+    rankId: { type: FieldType.STRING, minLength: 1 },
     stats: { type: FieldType.OBJECT, valueType: FieldType.NUMBER },
     skillIds: { type: FieldType.ARRAY, itemType: FieldType.STRING },
     tags: { type: FieldType.ARRAY, itemType: FieldType.STRING }
@@ -110,7 +141,44 @@ export const FORMATION_SCHEMA = {
     leaderHeroId: { type: FieldType.STRING, minLength: 1 },
     rows: { type: FieldType.INTEGER, min: 1 },
     columns: { type: FieldType.INTEGER, min: 1 },
-    strategy: { type: FieldType.STRING }
+    strategy: { type: FieldType.STRING },
+    /** M0：阵法只给加成（attack/defense 等），不含任何兵种克制（克制只在 unitTypes.dealMultiplier） */
+    modifiers: { type: FieldType.OBJECT, valueType: FieldType.NUMBER },
+    tags: { type: FieldType.ARRAY, itemType: FieldType.STRING }
+  }
+};
+
+/** 生产配方（library.recipes[]）；M1 的工位×配方×作业消费，M0 只建 schema 与空数据。 */
+export const RECIPE_SCHEMA = {
+  id: 'recipe',
+  fields: {
+    schemaVersion: versionField(),
+    id: idField(),
+    name: { type: FieldType.STRING, required: true, minLength: 1 },
+    station: { type: FieldType.STRING, required: true, minLength: 1 },
+    inputs: { type: FieldType.ARRAY, required: true, itemType: FieldType.OBJECT },
+    outputs: { type: FieldType.ARRAY, required: true, itemType: FieldType.OBJECT },
+    duration: { type: FieldType.NUMBER, min: 0 },
+    experience: { type: FieldType.OBJECT, valueType: FieldType.NUMBER },
+    requiredProficiency: { type: FieldType.OBJECT, valueType: FieldType.NUMBER },
+    wage: { type: FieldType.OBJECT, valueType: FieldType.NUMBER },
+    kind: { type: FieldType.STRING, enum: ['craft', 'forge', 'repair'] },
+    quality: { type: FieldType.OBJECT },
+    failure: { type: FieldType.OBJECT },
+    tags: { type: FieldType.ARRAY, itemType: FieldType.STRING }
+  }
+};
+
+/** 官职阶梯（library.ranks[]）：纯军职，kind 固定 post（没有爵位维度）。 */
+export const RANK_SCHEMA = {
+  id: 'rank',
+  fields: {
+    schemaVersion: versionField(),
+    id: idField(),
+    title: { type: FieldType.STRING, required: true, minLength: 1 },
+    value: { type: FieldType.INTEGER, required: true, min: 0, max: 100 },
+    kind: { type: FieldType.STRING, enum: ['post'], default: 'post' },
+    name: { type: FieldType.STRING }
   }
 };
 
@@ -141,7 +209,7 @@ export const RESOURCE_NODE_SCHEMA = {
     resourceType: {
       type: FieldType.STRING,
       required: true,
-      enum: ['wood', 'iron', 'food', 'herb', 'stone']
+      enum: [...RESOURCE_NODE_TYPES]
     },
     remaining: nonNegativeInteger(true),
     refreshDays: nonNegativeInteger(true),
@@ -192,7 +260,7 @@ export const RESOURCE_NODE_DEFINITION_SCHEMA = {
     resourceType: {
       type: FieldType.STRING,
       required: true,
-      enum: ['wood', 'iron', 'food', 'herb', 'stone']
+      enum: [...RESOURCE_NODE_TYPES]
     },
     itemId: idField(),
     remaining: nonNegativeInteger(true),
@@ -813,7 +881,13 @@ export const GAME_PROJECT_LIBRARY_SCHEMA = {
     skills: { type: FieldType.ARRAY },
     vehicles: { type: FieldType.ARRAY },
     buildings: { type: FieldType.ARRAY },
-    resourceNodes: { type: FieldType.ARRAY, itemSchema: 'resourceNodeDefinition' }
+    resourceNodes: { type: FieldType.ARRAY, itemSchema: 'resourceNodeDefinition' },
+    // M0 新增五类内容库（缺省即为空，旧项目零改动）
+    recipes: { type: FieldType.ARRAY, itemSchema: 'recipe' },
+    unitTypes: { type: FieldType.ARRAY, itemSchema: 'unitType' },
+    formations: { type: FieldType.ARRAY, itemSchema: 'formation' },
+    heroes: { type: FieldType.ARRAY, itemSchema: 'hero' },
+    ranks: { type: FieldType.ARRAY, itemSchema: 'rank' }
   }
 };
 
@@ -890,8 +964,11 @@ export const GAME_PROJECT_SCHEMA = {
 export const CANONICAL_SCHEMAS = [
   POSITION_SCHEMA,
   UNIT_SCHEMA,
+  UNIT_TYPE_SCHEMA,
   HERO_SCHEMA,
   FORMATION_SCHEMA,
+  RECIPE_SCHEMA,
+  RANK_SCHEMA,
   ARMY_SCHEMA,
   RESOURCE_NODE_SCHEMA,
   RESOURCE_NODE_RISK_EVENT_SCHEMA,

@@ -294,6 +294,44 @@ function validateKnownReferences(indexes, errors, actionIds, warnings = []) {
     }
   }
   validateDialogueGraph(indexes, errors, warnings);
+  validateM0CrossReferences(indexes, warnings);
+}
+
+/**
+ * M0 底座跨库引用校验（2026-11-09）——**只告警、不阻断**。
+ *
+ * 为什么是 warn：battles 的 formationIds/commanderHeroId 在 M0 之前就存在且从未被校验，
+ * 直接改成错误会让现有战役配置加载失败；M0 的职责只是把悬空引用**暴露出来**，
+ * 由 M3/M5 接线时逐条补实数（或删除多余引用）。
+ *
+ * 覆盖：battles → formations/heroes；formations → unitTypes/heroes；heroes → ranks。
+ */
+function validateM0CrossReferences(indexes, warnings) {
+  const warn = (path, message) => warnings.push(makeError(ValidationCode.INVALID_REFERENCE, path, message));
+  const known = (kind, id) => typeof id === 'string' && !!indexes[kind]?.[id];
+
+  for (const [index, battle] of Object.values(indexes.battles || {}).entries()) {
+    list(battle?.formationIds).forEach((id, i) => {
+      if (!known('formations', id)) warn(`battles[${index}].formationIds[${i}]`, `悬空引用 formations:${String(id)}（M0 仅告警）`);
+    });
+    const heroId = battle?.commanderHeroId;
+    if (heroId && !known('heroes', heroId)) warn(`battles[${index}].commanderHeroId`, `悬空引用 heroes:${String(heroId)}（M0 仅告警）`);
+  }
+
+  for (const [index, formation] of Object.values(indexes.formations || {}).entries()) {
+    list(formation?.unitIds).forEach((id, i) => {
+      if (!known('unitTypes', id)) warn(`library.formations[${index}].unitIds[${i}]`, `悬空引用 unitTypes:${String(id)}（M0 仅告警）`);
+    });
+    const leaderId = formation?.leaderHeroId;
+    if (leaderId && !known('heroes', leaderId)) {
+      warn(`library.formations[${index}].leaderHeroId`, `悬空引用 heroes:${String(leaderId)}（M0 仅告警）`);
+    }
+  }
+
+  for (const [index, hero] of Object.values(indexes.heroes || {}).entries()) {
+    const rankId = hero?.rankId;
+    if (rankId && !known('ranks', rankId)) warn(`library.heroes[${index}].rankId`, `悬空引用 ranks:${String(rankId)}（M0 仅告警）`);
+  }
 }
 
 export class DefinitionRevisionLock {

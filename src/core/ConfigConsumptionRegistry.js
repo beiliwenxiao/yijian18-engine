@@ -320,6 +320,12 @@ export function createStandardConfigConsumptionRegistry(
     .registerPath({ id: 'runtime.equipment', pathPattern: 'library.equipment[*].**', descriptor: observable('equipment', 'equipmentDefinition'), consume: passThrough })
     .registerPath({ id: 'runtime.resourceNodes', pathPattern: 'library.resourceNodes[*].**', descriptor: observable('resourceNodes', 'resourceNodeDefinition'), consume: passThrough })
     .registerPath({ id: 'runtime.vehicles', pathPattern: 'library.vehicles[*].**', descriptor: observable('vehicles', 'vehicleDefinition'), consume: passThrough })
+    // M0 新增五类内容库（空数组时零条目，不触发覆盖校验）
+    .registerPath({ id: 'runtime.recipes', pathPattern: 'library.recipes[*].**', descriptor: observable('recipes', 'recipeDefinition'), consume: passThrough })
+    .registerPath({ id: 'runtime.unitTypes', pathPattern: 'library.unitTypes[*].**', descriptor: observable('unitTypes', 'unitTypeDefinition'), consume: passThrough })
+    .registerPath({ id: 'runtime.formations', pathPattern: 'library.formations[*].**', descriptor: observable('formations', 'formationDefinition'), consume: passThrough })
+    .registerPath({ id: 'runtime.heroes', pathPattern: 'library.heroes[*].**', descriptor: observable('heroes', 'heroDefinition'), consume: passThrough })
+    .registerPath({ id: 'runtime.ranks', pathPattern: 'library.ranks[*].**', descriptor: observable('ranks', 'rankDefinition'), consume: passThrough })
     .registerPath({ id: 'runtime.tutorial', pathPattern: 'tutorials[*].**', descriptor: observable('tutorial', 'tutorialDefinition'), consume: passThrough })
     .registerPath({ id: 'runtime.scenario', pathPattern: 'scenarios[*].**', descriptor: observable('scenario', 'scenarioDefinition'), consume: passThrough })
     .registerPath({ id: 'runtime.trigger', pathPattern: 'triggers[*].**', descriptor: observable('trigger', 'triggerDefinition'), consume: passThrough })

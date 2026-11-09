@@ -3966,5 +3966,486 @@
       "width": 64
     }
   ],
-  "talents": []
+  "talents": [],
+  "unitTypes": [
+    {
+      "schemaVersion": 2,
+      "id": "unit.spear",
+      "name": "枪兵",
+      "class": "melee",
+      "tier": 1,
+      "stats": { "attack": 10, "defense": 7, "speed": 100 },
+      "dealMultiplier": {
+        "unit.shield": 1.15,
+        "unit.heavy": 0.85,
+        "unit.light_cav": 1.3,
+        "unit.heavy_cav": 1.3,
+        "unit.horse_archer": 1.3
+      },
+      "tags": ["m0.placeholder"]
+    },
+    {
+      "schemaVersion": 2,
+      "id": "unit.shield",
+      "name": "刀盾兵",
+      "class": "melee",
+      "tier": 1,
+      "stats": { "attack": 8, "defense": 12, "speed": 95 },
+      "dealMultiplier": {
+        "unit.spear": 0.85,
+        "unit.heavy": 0.85,
+        "unit.light_cav": 0.8,
+        "unit.heavy_cav": 0.8,
+        "unit.horse_archer": 0.8
+      },
+      "tags": ["m0.placeholder"]
+    },
+    {
+      "schemaVersion": 2,
+      "id": "unit.heavy",
+      "name": "重甲兵",
+      "class": "melee",
+      "tier": 2,
+      "upgradeFrom": ["unit.shield"],
+      "stats": { "attack": 12, "defense": 14, "speed": 85 },
+      "dealMultiplier": {
+        "unit.spear": 1.2,
+        "unit.shield": 1.2,
+        "unit.light_cav": 0.9,
+        "unit.heavy_cav": 0.9,
+        "unit.horse_archer": 0.9
+      },
+      "tags": ["m0.placeholder"]
+    },
+    {
+      "schemaVersion": 2,
+      "id": "unit.archer",
+      "name": "弓箭兵",
+      "class": "ranged",
+      "tier": 1,
+      "stats": { "attack": 9, "defense": 4, "speed": 100 },
+      "dealMultiplier": {
+        "unit.heavy": 0.9,
+        "unit.light_cav": 0.7,
+        "unit.heavy_cav": 0.7,
+        "unit.horse_archer": 0.7
+      },
+      "tags": ["m0.placeholder"]
+    },
+    {
+      "schemaVersion": 2,
+      "id": "unit.light_cav",
+      "name": "轻骑兵",
+      "class": "cavalry",
+      "tier": 1,
+      "stats": { "attack": 12, "defense": 6, "speed": 140 },
+      "dealMultiplier": {
+        "unit.shield": 1.3,
+        "unit.heavy": 1.1,
+        "unit.archer": 1.4,
+        "unit.spear": 0.8,
+        "unit.horse_archer": 1.3
+      },
+      "tags": ["m0.placeholder"]
+    },
+    {
+      "schemaVersion": 2,
+      "id": "unit.heavy_cav",
+      "name": "重骑兵",
+      "class": "cavalry",
+      "tier": 2,
+      "upgradeFrom": ["unit.light_cav"],
+      "stats": { "attack": 18, "defense": 12, "speed": 115 },
+      "dealMultiplier": {
+        "unit.shield": 1.4,
+        "unit.heavy": 1.2,
+        "unit.archer": 1.4,
+        "unit.spear": 0.8,
+        "unit.light_cav": 1.2,
+        "unit.horse_archer": 1.25
+      },
+      "tags": ["m0.placeholder"]
+    },
+    {
+      "schemaVersion": 2,
+      "id": "unit.horse_archer",
+      "name": "弓骑兵",
+      "class": "cavalry",
+      "tier": 2,
+      "upgradeFrom": ["unit.light_cav"],
+      "stats": { "attack": 11, "defense": 6, "speed": 145 },
+      "dealMultiplier": {
+        "unit.shield": 1.1,
+        "unit.heavy": 1.05,
+        "unit.archer": 1.0,
+        "unit.spear": 0.8,
+        "unit.light_cav": 0.8,
+        "unit.heavy_cav": 0.8
+      },
+      "tags": ["m0.placeholder"]
+    }
+  ],
+  "formations": [
+    {
+      "schemaVersion": 2,
+      "id": "formation.s03.yellow_turban.vanguard",
+      "name": "黄巾先军·锋矢",
+      "unitIds": ["unit.spear", "unit.shield", "unit.archer"],
+      "leaderHeroId": "hero.zhangjiao",
+      "rows": 3,
+      "columns": 3,
+      "strategy": "wedge",
+      "modifiers": { "attack": 1.15, "defense": 0.95 },
+      "tags": ["m0.placeholder"]
+    },
+    {
+      "schemaVersion": 2,
+      "id": "formation.s03.han_garrison.line",
+      "name": "汉军守备·横阵",
+      "unitIds": ["unit.spear", "unit.shield", "unit.archer"],
+      "leaderHeroId": "hero.s03.han_commander",
+      "rows": 3,
+      "columns": 4,
+      "strategy": "line",
+      "modifiers": { "attack": 1.0, "defense": 1.15 },
+      "tags": ["m0.placeholder"]
+    },
+    {
+      "schemaVersion": 2,
+      "id": "formation.s04.yellow_turban",
+      "name": "黄巾波才军·圆阵",
+      "unitIds": ["unit.shield", "unit.spear", "unit.archer"],
+      "leaderHeroId": "hero.bocai",
+      "rows": 4,
+      "columns": 4,
+      "strategy": "circle",
+      "modifiers": { "attack": 1.1, "defense": 1.05 },
+      "tags": ["m0.placeholder"]
+    },
+    {
+      "schemaVersion": 2,
+      "id": "formation.s04.han",
+      "name": "汉军司马部·横阵",
+      "unitIds": ["unit.spear", "unit.shield", "unit.archer", "unit.light_cav"],
+      "leaderHeroId": "hero.s04.han_commander",
+      "rows": 3,
+      "columns": 4,
+      "strategy": "line",
+      "modifiers": { "attack": 1.05, "defense": 1.1 },
+      "tags": ["m0.placeholder"]
+    },
+    {
+      "schemaVersion": 2,
+      "id": "formation.s05.yellow_turban.vanguard",
+      "name": "黄巾张曼成军·锋矢",
+      "unitIds": ["unit.spear", "unit.shield", "unit.heavy", "unit.archer"],
+      "leaderHeroId": "hero.zhang_mancheng",
+      "rows": 3,
+      "columns": 3,
+      "strategy": "wedge",
+      "modifiers": { "attack": 1.15, "defense": 0.95 },
+      "tags": ["m0.placeholder"]
+    },
+    {
+      "schemaVersion": 2,
+      "id": "formation.s05.han.ambush",
+      "name": "汉军秦颉部·伏兵",
+      "unitIds": ["unit.light_cav", "unit.archer", "unit.spear"],
+      "leaderHeroId": "hero.qin_jie",
+      "rows": 2,
+      "columns": 4,
+      "strategy": "ambush",
+      "modifiers": { "attack": 1.2, "defense": 0.9 },
+      "tags": ["m0.placeholder"]
+    },
+    {
+      "schemaVersion": 2,
+      "id": "formation.s07.yellow_turban.delay_lines",
+      "name": "黄巾渠帅·缠斗横阵",
+      "unitIds": ["unit.spear", "unit.shield"],
+      "leaderHeroId": "hero.s07.yellow_turban_captain",
+      "rows": 2,
+      "columns": 4,
+      "strategy": "line",
+      "modifiers": { "attack": 1.0, "defense": 1.15 },
+      "tags": ["m0.placeholder"]
+    },
+    {
+      "schemaVersion": 2,
+      "id": "formation.s07.han.pursuit",
+      "name": "汉军骑都尉·追击",
+      "unitIds": ["unit.light_cav", "unit.horse_archer"],
+      "leaderHeroId": "hero.s07.han_commander",
+      "rows": 2,
+      "columns": 3,
+      "strategy": "pursuit",
+      "modifiers": { "attack": 1.2, "defense": 0.9 },
+      "tags": ["m0.placeholder"]
+    },
+    {
+      "schemaVersion": 2,
+      "id": "formation.s11.yellow_turban.three_lanes",
+      "name": "黄巾三路纵队",
+      "unitIds": ["unit.spear", "unit.shield", "unit.heavy", "unit.archer", "unit.light_cav"],
+      "leaderHeroId": "hero.zhang_liang",
+      "rows": 3,
+      "columns": 5,
+      "strategy": "three_lanes",
+      "modifiers": { "attack": 1.1, "defense": 1.0 },
+      "tags": ["m0.placeholder"]
+    },
+    {
+      "schemaVersion": 2,
+      "id": "formation.s11.han.three_lanes",
+      "name": "汉军三路纵队",
+      "unitIds": ["unit.spear", "unit.shield", "unit.heavy", "unit.archer", "unit.light_cav"],
+      "leaderHeroId": "hero.s11.han_commander",
+      "rows": 3,
+      "columns": 5,
+      "strategy": "three_lanes",
+      "modifiers": { "attack": 1.1, "defense": 1.0 },
+      "tags": ["m0.placeholder"]
+    },
+    {
+      "schemaVersion": 2,
+      "id": "formation.s12.han.siege",
+      "name": "汉军围城·攻城阵",
+      "unitIds": ["unit.heavy", "unit.spear", "unit.shield", "unit.archer"],
+      "leaderHeroId": "hero.s12.han_commander",
+      "rows": 4,
+      "columns": 3,
+      "strategy": "siege",
+      "modifiers": { "attack": 1.15, "defense": 0.95 },
+      "tags": ["m0.placeholder"]
+    },
+    {
+      "schemaVersion": 2,
+      "id": "formation.s12.yellow_turban.yamen",
+      "name": "黄巾张宝·衙门口坚守",
+      "unitIds": ["unit.shield", "unit.spear", "unit.archer", "unit.heavy"],
+      "leaderHeroId": "hero.zhang_bao",
+      "rows": 3,
+      "columns": 3,
+      "strategy": "hold",
+      "modifiers": { "attack": 0.95, "defense": 1.2 },
+      "tags": ["m0.placeholder"]
+    },
+    {
+      "schemaVersion": 2,
+      "id": "formation.s13.yellow_turban.retreat",
+      "name": "黄巾孙夏·撤退纵队",
+      "unitIds": ["unit.spear", "unit.shield", "unit.archer"],
+      "leaderHeroId": "hero.sun_xia",
+      "rows": 2,
+      "columns": 4,
+      "strategy": "retreat",
+      "modifiers": { "attack": 0.9, "defense": 1.1 },
+      "tags": ["m0.placeholder"]
+    },
+    {
+      "schemaVersion": 2,
+      "id": "formation.s13.han.pursuit",
+      "name": "汉军追将·追击",
+      "unitIds": ["unit.light_cav", "unit.heavy_cav", "unit.horse_archer"],
+      "leaderHeroId": "hero.s13.han_commander",
+      "rows": 2,
+      "columns": 3,
+      "strategy": "pursuit",
+      "modifiers": { "attack": 1.2, "defense": 0.9 },
+      "tags": ["m0.placeholder"]
+    }
+  ],
+  "heroes": [
+    {
+      "schemaVersion": 2,
+      "id": "hero.zhangjiao",
+      "name": "张角",
+      "unitId": "unit.spear",
+      "classId": "commander",
+      "factionId": "yellow_turban",
+      "level": 6,
+      "rankId": "rank.piaoqi",
+      "stats": { "command": 88 },
+      "tags": ["m0.placeholder"]
+    },
+    {
+      "schemaVersion": 2,
+      "id": "hero.s03.han_commander",
+      "name": "汉军都尉",
+      "unitId": "unit.shield",
+      "classId": "commander",
+      "factionId": "han",
+      "level": 3,
+      "rankId": "rank.pianjiangjun",
+      "stats": { "command": 55 },
+      "tags": ["m0.placeholder"]
+    },
+    {
+      "schemaVersion": 2,
+      "id": "hero.bocai",
+      "name": "波才",
+      "unitId": "unit.shield",
+      "classId": "commander",
+      "factionId": "yellow_turban",
+      "level": 4,
+      "rankId": "rank.sizhen",
+      "stats": { "command": 70 },
+      "tags": ["m0.placeholder"]
+    },
+    {
+      "schemaVersion": 2,
+      "id": "hero.s04.han_commander",
+      "name": "汉军司马",
+      "unitId": "unit.spear",
+      "classId": "commander",
+      "factionId": "han",
+      "level": 3,
+      "rankId": "rank.yamenjiang",
+      "stats": { "command": 48 },
+      "tags": ["m0.placeholder"]
+    },
+    {
+      "schemaVersion": 2,
+      "id": "hero.zhang_mancheng",
+      "name": "张曼成",
+      "unitId": "unit.spear",
+      "classId": "commander",
+      "factionId": "yellow_turban",
+      "level": 4,
+      "rankId": "rank.sizhen",
+      "stats": { "command": 72 },
+      "tags": ["m0.placeholder"]
+    },
+    {
+      "schemaVersion": 2,
+      "id": "hero.qin_jie",
+      "name": "秦颉",
+      "unitId": "unit.light_cav",
+      "classId": "commander",
+      "factionId": "han",
+      "level": 4,
+      "rankId": "rank.pijiangjun",
+      "stats": { "command": 66 },
+      "tags": ["m0.placeholder"]
+    },
+    {
+      "schemaVersion": 2,
+      "id": "hero.s07.yellow_turban_captain",
+      "name": "黄巾渠帅",
+      "unitId": "unit.spear",
+      "classId": "commander",
+      "factionId": "yellow_turban",
+      "level": 3,
+      "rankId": "rank.yamenjiang",
+      "stats": { "command": 45 },
+      "tags": ["m0.placeholder"]
+    },
+    {
+      "schemaVersion": 2,
+      "id": "hero.s07.han_commander",
+      "name": "汉军骑都尉",
+      "unitId": "unit.light_cav",
+      "classId": "commander",
+      "factionId": "han",
+      "level": 3,
+      "rankId": "rank.pianjiangjun",
+      "stats": { "command": 58 },
+      "tags": ["m0.placeholder"]
+    },
+    {
+      "schemaVersion": 2,
+      "id": "hero.zhang_liang",
+      "name": "张梁",
+      "unitId": "unit.heavy",
+      "classId": "commander",
+      "factionId": "yellow_turban",
+      "level": 5,
+      "rankId": "rank.cheqi",
+      "stats": { "command": 82 },
+      "tags": ["m0.placeholder"]
+    },
+    {
+      "schemaVersion": 2,
+      "id": "hero.s11.han_commander",
+      "name": "汉军三路督将",
+      "unitId": "unit.heavy",
+      "classId": "commander",
+      "factionId": "han",
+      "level": 4,
+      "rankId": "rank.pijiangjun",
+      "stats": { "command": 58 },
+      "tags": ["m0.placeholder"]
+    },
+    {
+      "schemaVersion": 2,
+      "id": "hero.s12.han_commander",
+      "name": "汉军围城将军",
+      "unitId": "unit.heavy",
+      "classId": "commander",
+      "factionId": "han",
+      "level": 5,
+      "rankId": "rank.sifang",
+      "stats": { "command": 76 },
+      "tags": ["m0.placeholder"]
+    },
+    {
+      "schemaVersion": 2,
+      "id": "hero.zhang_bao",
+      "name": "张宝",
+      "unitId": "unit.shield",
+      "classId": "commander",
+      "factionId": "yellow_turban",
+      "level": 5,
+      "rankId": "rank.weijiangjun",
+      "stats": { "command": 80 },
+      "tags": ["m0.placeholder"]
+    },
+    {
+      "schemaVersion": 2,
+      "id": "hero.sun_xia",
+      "name": "孙夏",
+      "unitId": "unit.archer",
+      "classId": "commander",
+      "factionId": "yellow_turban",
+      "level": 3,
+      "rankId": "rank.sian",
+      "stats": { "command": 62 },
+      "tags": ["m0.placeholder"]
+    },
+    {
+      "schemaVersion": 2,
+      "id": "hero.s13.han_commander",
+      "name": "汉军追将",
+      "unitId": "unit.light_cav",
+      "classId": "commander",
+      "factionId": "han",
+      "level": 4,
+      "rankId": "rank.sian",
+      "stats": { "command": 64 },
+      "tags": ["m0.placeholder"]
+    }
+  ],
+  "ranks": [
+    { "schemaVersion": 2, "id": "rank.wusheng", "title": "白身", "value": 0, "kind": "post" },
+    { "schemaVersion": 2, "id": "rank.wuzhang", "title": "伍长", "value": 5, "kind": "post" },
+    { "schemaVersion": 2, "id": "rank.shizhang", "title": "什长", "value": 10, "kind": "post" },
+    { "schemaVersion": 2, "id": "rank.dubo", "title": "都伯", "value": 15, "kind": "post" },
+    { "schemaVersion": 2, "id": "rank.tunzhang", "title": "屯长", "value": 20, "kind": "post" },
+    { "schemaVersion": 2, "id": "rank.junhou", "title": "军侯", "value": 25, "kind": "post" },
+    { "schemaVersion": 2, "id": "rank.quzhang", "title": "曲长", "value": 30, "kind": "post" },
+    { "schemaVersion": 2, "id": "rank.xiaowei", "title": "校尉", "value": 35, "kind": "post" },
+    { "schemaVersion": 2, "id": "rank.zhonglangjiang", "title": "中郎将", "value": 40, "kind": "post" },
+    { "schemaVersion": 2, "id": "rank.yamenjiang", "title": "牙门将", "value": 45, "kind": "post" },
+    { "schemaVersion": 2, "id": "rank.pianjiangjun", "title": "偏将军", "value": 50, "kind": "post" },
+    { "schemaVersion": 2, "id": "rank.pijiangjun", "title": "裨将军", "value": 55, "kind": "post" },
+    { "schemaVersion": 2, "id": "rank.zaohao", "title": "杂号将军", "value": 60, "kind": "post" },
+    { "schemaVersion": 2, "id": "rank.sian", "title": "四安将军", "value": 65, "kind": "post" },
+    { "schemaVersion": 2, "id": "rank.sizhen", "title": "四镇将军", "value": 70, "kind": "post" },
+    { "schemaVersion": 2, "id": "rank.sizheng", "title": "四征将军", "value": 75, "kind": "post" },
+    { "schemaVersion": 2, "id": "rank.sifang", "title": "四方将军", "value": 80, "kind": "post" },
+    { "schemaVersion": 2, "id": "rank.weijiangjun", "title": "卫将军", "value": 85, "kind": "post" },
+    { "schemaVersion": 2, "id": "rank.cheqi", "title": "车骑将军", "value": 90, "kind": "post" },
+    { "schemaVersion": 2, "id": "rank.piaoqi", "title": "骠骑将军", "value": 95, "kind": "post" },
+    { "schemaVersion": 2, "id": "rank.dajiangjun", "title": "大将军", "value": 100, "kind": "post" }
+  ]
 }
