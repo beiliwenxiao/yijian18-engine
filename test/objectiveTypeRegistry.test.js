@@ -23,12 +23,17 @@ const project = await loadProjectWithShards();
 const compiledTaskGraphs = compileQuestProject(project).taskGraphs;
 
 describe('ObjectiveTypeRegistry 目标类型注册目录', () => {
-  it('内置目录首批登记四类：gather.item / kill.enemy / commit.fact / custom.event', () => {
+  it('内置目录登记：gather.item / kill.enemy / commit.fact / craft.item / interact.entity / custom.event', () => {
     const types = getObjectiveTypes();
-    expect(types.map(item => item.type)).toEqual(['gather.item', 'kill.enemy', 'commit.fact', 'custom.event']);
+    expect(types.map(item => item.type)).toEqual([
+      'gather.item', 'kill.enemy', 'commit.fact', 'craft.item', 'interact.entity', 'custom.event'
+    ]);
     expect(getObjectiveTypeDescriptor('gather.item').progressBy).toBe('accepted');
     expect(getObjectiveTypeDescriptor('kill.enemy').progressBy).toBeNull();
     expect(getObjectiveTypeDescriptor('kill.enemy').factHint).toBeInstanceOf(RegExp);
+    expect(getObjectiveTypeDescriptor('craft.item')).toMatchObject({
+      matcherType: 'production.completed', progressBy: 'quantity'
+    });
   });
 
   it('buildEventMatcher：身份字段写入 payload，空值剔除，extraPayload 合并', () => {

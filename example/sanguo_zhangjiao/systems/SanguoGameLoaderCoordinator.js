@@ -329,6 +329,13 @@ function configureSharedClassEffects(gameLoader) {
         return { ok: true };
       }
     },
+    production: {
+      recipes: gameLoader?.getRegistry?.('recipes')?.all?.() || [],
+      itemResolver: itemId => cloneData(itemRegistry?.get?.(itemId) || null),
+      createCheckpoint: checkpoint => this.s10ConstructionCoordinator._checkpointConstructionRepair(checkpoint),
+      createEventId: createConstructionEventId,
+      onEvent: (event, data) => trigger('production', event, data)
+    },
     vehicles: {
       resolveEntity: id => this.entityStore?.all?.find?.(entity => entity?.id === id) || null,
       getInventoryOwnerId: inventory => this.sanguoWorldRuntimeCoordinator.resolveVehicleInventoryOwnerId(inventory),

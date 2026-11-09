@@ -1374,6 +1374,39 @@
       "subType": "ammo"
     },
     {
+      "id": "equipment.workshop.wooden_shield",
+      "name": "木盾",
+      "type": "equipment",
+      "imageId": "inventory.equipment.ironSword",
+      "maxStack": 1,
+      "rarity": 1,
+      "sprite": {
+        "height": 48,
+        "width": 48
+      },
+      "stats": {
+        "defense": 6
+      },
+      "subType": "armor",
+      "durabilityMax": 120,
+      "durabilityPerUse": 0,
+      "durabilityPerHit": 1,
+      "brokenMultiplier": 0.5
+    },
+    {
+      "id": "currency.copper",
+      "name": "铜钱",
+      "type": "currency",
+      "imageId": "inventory.equipment.ironSword",
+      "maxStack": 9999,
+      "sprite": {
+        "height": 32,
+        "width": 32
+      },
+      "stats": {},
+      "subType": "copper"
+    },
+    {
       "id": "strategist_talisman_staff",
       "name": "符杖",
       "type": "equipment",
@@ -3967,6 +4000,42 @@
     }
   ],
   "talents": [],
+  "recipes": [
+    {
+      "schemaVersion": 1,
+      "id": "recipe.wood_arrow",
+      "name": "削制木箭",
+      "station": "station.workshop.carpenter",
+      "kind": "craft",
+      "duration": 6,
+      "inputs": [
+        { "itemId": "resource.wood", "quantity": 1 }
+      ],
+      "outputs": [
+        { "itemId": "wooden_arrow", "quantity": 10 }
+      ],
+      "wage": { "copper": 2 },
+      "experience": { "craft": 3 },
+      "requiredProficiency": { "craft": 0 }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "recipe.wooden_shield",
+      "name": "拼装木盾",
+      "station": "station.workshop.carpenter",
+      "kind": "craft",
+      "duration": 12,
+      "inputs": [
+        { "itemId": "resource.wood", "quantity": 4 }
+      ],
+      "outputs": [
+        { "itemId": "equipment.workshop.wooden_shield", "quantity": 1 }
+      ],
+      "wage": { "copper": 5 },
+      "experience": { "craft": 5 },
+      "requiredProficiency": { "craft": 1 }
+    }
+  ],
   "unitTypes": [
     {
       "schemaVersion": 2,

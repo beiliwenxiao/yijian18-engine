@@ -151,6 +151,9 @@ describe('M0 · 真实内容库数据', () => {
     expect(library.heroes).toHaveLength(14);
     expect(library.unitTypes).toHaveLength(7);
     expect(library.ranks).toHaveLength(21);
+    // M1 起 recipes 由真实配方填充（M0 阶段为空占位）
+    expect(Array.isArray(library.recipes)).toBe(true);
+    expect(library.recipes.length).toBeGreaterThanOrEqual(2);
   });
 
   it('占位数据已标注（tags 含 m0.placeholder）', () => {

@@ -2455,5 +2455,37 @@
         ]
       }
     }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "craft.production.recipe.wood_arrow",
+    "name": "工坊产出：木箭 ×10",
+    "transaction": {
+      "inventory": {
+        "addEntries": [
+          {
+            "itemId": "wooden_arrow",
+            "quantity": 10
+          }
+        ],
+        "type": "batchAdd"
+      }
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "craft.production.recipe.wooden_shield",
+    "name": "工坊产出：木盾 ×1",
+    "transaction": {
+      "inventory": {
+        "addEntries": [
+          {
+            "itemId": "equipment.workshop.wooden_shield",
+            "quantity": 1
+          }
+        ],
+        "type": "batchAdd"
+      }
+    }
   }
 ]

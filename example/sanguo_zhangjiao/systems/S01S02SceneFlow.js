@@ -64,6 +64,7 @@ const RECIPE_ACTIONS = Object.freeze({
     inputSize: Object.freeze({ width: 48, height: 38 }), outputSize: Object.freeze({ width: 42, height: 34 })
   })
 });
+const LEGACY_WORKSTATIONS = new Set(Object.values(RECIPE_ACTIONS).map(action => action.workstationId));
 const FIRST_WOLF_PREFIX = 'S01-first-wolf-';
 const FIRST_WOLF_CORPSE_RETRY_INTERVAL_SECONDS = 0.1;
 const FIRST_WOLF_CORPSE_MAX_ATTEMPTS = 30;
@@ -92,6 +93,10 @@ export class S01S02Coordinator {
     this.shelterConstructionProgressActive = false;
     this.recipeActionInFlight = null;
     this.recipeActionProgress = null;
+    // 生产工位（ProductionSystem）在本场景的进行中会话；null = 无生产。
+    this.productionProgressStationId = null;
+    this.productionCollectInFlight = false;
+    this.productionRetryElapsed = 0;
     this.pendingAxeDiscovery = false;
     this.initialToolRevealPending = false;
     this.initialToolRevealRetryElapsed = 0;
@@ -1508,6 +1513,9 @@ export class S01S02Coordinator {
   }
 
   _createRecipeSnapshot(workstationId, { statusMessage = '', statusType = 'info' } = {}) {
+    if (!LEGACY_WORKSTATIONS.has(workstationId)) {
+      return this._createProductionSnapshot(workstationId, { statusMessage, statusType });
+    }
     const survival = this._story().s01Survival || {};
     const inventory = this.scene.playerEntity?.getComponent?.('inventory');
     const count = itemId => Math.max(0, Number(inventory?.getItemCount?.(itemId)) || 0);
@@ -1582,6 +1590,65 @@ export class S01S02Coordinator {
       actionLabel: workstationId === 's01.cookingRack' ? '烤制' : '制作',
       statusMessage,
       statusType,
+      recipes: Object.freeze(recipes.map(recipe => Object.freeze({
+        ...recipe,
+        materials: Object.freeze(recipe.materials.map(material => Object.freeze({ ...material })))
+      })))
+    });
+  }
+
+  /** 数据驱动工位：从 ProductionSystem 生成 UI 快照（与 legacy 快照同构）。 */
+  _createProductionSnapshot(workstationId, { statusMessage = '', statusType = 'info' } = {}) {
+    const system = this.scene.productionSystem;
+    const inventory = this.scene.playerEntity?.getComponent?.('inventory') || null;
+    const characterId = this.scene.playerEntity?.id || null;
+    const itemRegistry = this.scene.gameLoader?.getRegistry?.('items');
+    const itemName = itemId => itemRegistry?.get?.(itemId)?.name || itemId;
+    const count = itemId => Math.max(0, Number(inventory?.getItemCount?.(itemId)) || 0);
+    const view = system?.getStationRecipes?.(workstationId, { characterId, inventory })
+      || { ok: false, code: 'stationUnavailable', recipes: [] };
+    const reasonText = code => {
+      if (!code) return '当前不能制作该物品。';
+      if (code === 'stationUnavailable') return '工位尚未建成或已损毁。';
+      if (code === 'stationBusy') return '工位正在作业中，等这一件做完。';
+      if (code === 'materialsRequired') return '材料不足。';
+      if (code === 'proficiencyRequired') return '熟练度不足，先做几件简单的。';
+      if (code === 'recipeNotAllowed') return '该工位不支持此配方。';
+      return `当前不能制作该物品（${code}）。`;
+    };
+    const recipes = (view.recipes || []).map(entry => {
+      const materials = entry.inputs.map(input => ({
+        name: itemName(input.itemId),
+        available: count(input.itemId),
+        quantity: input.quantity
+      }));
+      if (Number(entry.wage?.copper) > 0) {
+        materials.push({
+          name: itemName('currency.copper'),
+          available: count('currency.copper'),
+          quantity: Math.floor(Number(entry.wage.copper))
+        });
+      }
+      const outputs = entry.outputs
+        .map(output => `${itemName(output.itemId)} ×${output.quantity}`)
+        .join('、');
+      return {
+        id: entry.recipeId,
+        name: entry.name,
+        description: `产出：${outputs}。`,
+        summary: materials.map(material => `${material.name} ×${material.quantity}`).join(' + '),
+        enabled: entry.enabled === true,
+        disabledReason: entry.enabled ? '' : reasonText(entry.disabledReason),
+        materials
+      };
+    });
+    const unavailableMessage = view.ok === false ? reasonText(view.code) : statusMessage;
+    return Object.freeze({
+      title: view.station?.name || '生产工位',
+      workstationId,
+      actionLabel: '制作',
+      statusMessage: unavailableMessage || '',
+      statusType: view.ok === false ? 'error' : statusType,
       recipes: Object.freeze(recipes.map(recipe => Object.freeze({
         ...recipe,
         materials: Object.freeze(recipe.materials.map(material => Object.freeze({ ...material })))
@@ -1861,6 +1928,10 @@ export class S01S02Coordinator {
     if (command.type !== 'selectRecipe' || !workstationId || !recipeId) {
       return { ok: false, code: 'recipeCommandInvalid' };
     }
+    // 旧工位（烤肉架/制皮架）走原路径；其余工位交给 ProductionSystem。
+    if (!LEGACY_WORKSTATIONS.has(workstationId)) {
+      return this._handleProductionCommand(workstationId, recipeId);
+    }
     const recipe = this._createRecipeSnapshot(workstationId).recipes.find(entry => entry.id === recipeId);
     if (!recipe?.enabled) {
       this._refreshRecipeView(workstationId, { statusMessage: recipe?.disabledReason || '当前不能制作该物品。', statusType: 'error' });
@@ -1878,6 +1949,139 @@ export class S01S02Coordinator {
     return result;
   }
 
+  async _handleProductionCommand(workstationId, recipeId) {
+    const snapshot = this._createRecipeSnapshot(workstationId);
+    const recipe = snapshot.recipes.find(entry => entry.id === recipeId);
+    if (!recipe?.enabled) {
+      this._refreshRecipeView(workstationId, {
+        statusMessage: recipe?.disabledReason || '当前不能制作该物品。',
+        statusType: 'error'
+      });
+      return { ok: true, status: 'blocked' };
+    }
+    const result = this._startProductionAction(workstationId, recipeId);
+    if (result.ok !== true) {
+      this._refreshRecipeView(workstationId, {
+        statusMessage: `无法开始制作：${result.code || 'unknown'}。`,
+        statusType: 'error'
+      });
+      return { ok: true, status: 'blocked', code: result.code };
+    }
+    this.scene.recipeSelectionView?.close?.();
+    return result;
+  }
+
+  _startProductionAction(workstationId, recipeId) {
+    const system = this.scene.productionSystem;
+    const actor = this.scene.playerEntity;
+    if (!system) return { ok: false, code: 'productionUnavailable' };
+    if (!actor) return { ok: false, code: 'actorUnavailable' };
+    if (this.productionProgressStationId) {
+      return {
+        ok: false,
+        code: system.pending?.has?.(this.productionProgressStationId) ? 'stationBusy' : 'productionActive'
+      };
+    }
+    if (this.recipeActionInFlight) return { ok: false, code: 'recipeActionActive' };
+    if (this.scene.gatheringSystem?.isActiveFor?.(actor)) return { ok: false, code: 'playerBusy' };
+    const result = system.start({
+      characterId: actor.id,
+      inventory: actor.getComponent?.('inventory'),
+      stationId: workstationId,
+      recipeId,
+      operationId: `s01:production:${recipeId}:${++this.sequence}`
+    });
+    if (result.ok !== true) return result;
+    this.productionProgressStationId = workstationId;
+    this.productionRetryElapsed = 0;
+    this._showRecipeActionProgress('started', { actor }, 0);
+    return { ok: true, status: 'started', stationId: workstationId, recipeId };
+  }
+
+  _updateProductionProgress(deltaTime) {
+    const stationId = this.productionProgressStationId;
+    if (!stationId) return;
+    const system = this.scene.productionSystem;
+    const pending = system?.pending?.get?.(stationId);
+    const actor = this.scene.playerEntity;
+    if (!pending) {
+      this.productionProgressStationId = null;
+      this._showRecipeActionProgress('interrupted', { actor });
+      return;
+    }
+    const dt = Math.max(0, Number(deltaTime) || 0);
+    const progress = pending.duration > 0 ? Math.min(1, pending.elapsed / pending.duration) : 1;
+    this._showRecipeActionProgress('progress', { actor }, progress);
+    if (pending.status !== 'ready' || this.productionCollectInFlight) return;
+    this.productionRetryElapsed += dt;
+    if (this.productionRetryElapsed < 1.2) return;
+    this.productionRetryElapsed = 0;
+    void this._collectProduction(stationId);
+  }
+
+  async _collectProduction(stationId) {
+    const system = this.scene.productionSystem;
+    const pending = system?.pending?.get?.(stationId);
+    if (!pending || this.productionCollectInFlight) return;
+    this.productionCollectInFlight = true;
+    try {
+      const result = await this._submit(
+        `craft.production.${pending.recipeId}`,
+        {},
+        `${pending.operationId}:output`
+      );
+      if (result?.ok !== true) {
+        system.commitOutput(stationId, { ok: false, code: result?.code || 'outputCommitFailed' });
+        void this.scene.publishApplicationEvent?.('production.failed', {
+          stationId,
+          recipeId: pending.recipeId,
+          reason: result?.code || 'outputCommitFailed'
+        }, { operationId: `${pending.operationId}:failed` });
+        this.scene._showScreenTip(
+          `成品入库失败：${result?.code || 'unknown'}，稍后自动重试。`,
+          { title: '制作完成' }
+        );
+        return;
+      }
+      const committed = system.commitOutput(stationId, result);
+      if (committed?.ok !== true) return;
+      this._publishProductionCompleted(stationId, pending, committed);
+      const itemRegistry = this.scene.gameLoader?.getRegistry?.('items');
+      const labels = (committed.outputs || [])
+        .map(output => itemRegistry?.get?.(output.itemId)?.name || output.itemId);
+      this.productionProgressStationId = null;
+      this._showRecipeActionProgress('completed', { actor: this.scene.playerEntity }, 1);
+      this.scene._showScreenTip(
+        `${labels.join('、') || '物品'}制作完成，已放入背包。`,
+        { title: '制作完成' }
+      );
+    } catch (error) {
+      console.warn('[S01S02] 生产结算异常', { stationId, error });
+      this.scene._showScreenTip('制作结算异常，成品保留在工位上，稍后自动重试。', { title: '制作失败' });
+    } finally {
+      this.productionCollectInFlight = false;
+    }
+  }
+
+  /**
+   * 产出入库成功后发布 `production.completed`（每件产出一条，payload 带 itemId/quantity），
+   * 供任务目标 `craft.item` 按数量累计；事件名与 ObjectiveTypeRegistry 的 matcherType 对齐。
+   */
+  _publishProductionCompleted(stationId, pending, committed) {
+    const publish = this.scene.publishApplicationEvent;
+    if (typeof publish !== 'function') return;
+    (committed.outputs || []).forEach((output, index) => {
+      void publish.call(this.scene, 'production.completed', {
+        stationId,
+        recipeId: pending.recipeId,
+        itemId: output.itemId,
+        quantity: Math.max(1, Math.floor(Number(output.quantity) || 1)),
+        outputs: committed.outputs,
+        source: 'craft'
+      }, { operationId: `${pending.operationId}:completed:${output.itemId}:${index}` });
+    });
+  }
+
   async handleAction(params = {}, eventData = {}) {
     const operation = params.operation || params.type;
     if (operation === 'openCookingRecipes' || operation === 'cookMeat') {
@@ -1885,6 +2089,11 @@ export class S01S02Coordinator {
     }
     if (operation === 'openTanningRecipes' || operation === 'craftWolfGear') {
       return this.openRecipeSelection('s01.tanningRack');
+    }
+    if (operation === 'openProductionStation') {
+      const stationId = params.stationId || eventData.stationId;
+      if (!stationId) return { ok: false, code: 'stationUnavailable' };
+      return this.openRecipeSelection(stationId);
     }
     if (operation === 'commitStoryWhenReady') {
       return this._commitStoryWhenReady(params, eventData);
@@ -2111,6 +2320,7 @@ export class S01S02Coordinator {
     const dt = Math.max(0, Number(deltaTime) || 0);
     this._updateRefuelProgress(dt);
     this._updateRecipeActionProgress(dt);
+    this._updateProductionProgress(dt);
     const survival = this._story().s01Survival || {};
     this._applyS01WeatherPhase(survival);
     this._updateFirstWolfCorpseCommit(dt);

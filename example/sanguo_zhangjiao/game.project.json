@@ -411,6 +411,74 @@
         "warEffects": {
           "friendlyCasualtyMultiplier": 0.85
         }
+      },
+      {
+        "costs": [
+          {
+            "itemId": "resource.wood",
+            "quantity": 12
+          },
+          {
+            "itemId": "resource.iron",
+            "quantity": 4
+          }
+        ],
+        "duration": 40,
+        "experience": 20,
+        "id": "construction.workshop",
+        "manned": false,
+        "maxDurability": 160,
+        "name": "工坊",
+        "requiredProficiency": 0,
+        "requiredToolType": null,
+        "stations": [
+          {
+            "id": "station.workshop.carpenter",
+            "name": "木作台",
+            "kind": "craft",
+            "workerSlots": 1,
+            "recipes": [
+              "recipe.wood_arrow",
+              "recipe.wooden_shield"
+            ]
+          }
+        ]
+      },
+      {
+        "costs": [
+          {
+            "itemId": "resource.wood",
+            "quantity": 8
+          },
+          {
+            "itemId": "resource.iron",
+            "quantity": 12
+          }
+        ],
+        "duration": 60,
+        "experience": 30,
+        "id": "construction.forge",
+        "manned": false,
+        "maxDurability": 220,
+        "name": "铁匠铺",
+        "requiredProficiency": 1,
+        "requiredToolType": null,
+        "stations": [
+          {
+            "id": "station.forge.anvil",
+            "name": "铁砧",
+            "kind": "forge",
+            "workerSlots": 1,
+            "recipes": []
+          },
+          {
+            "id": "station.forge.repair",
+            "name": "修复台",
+            "kind": "repair",
+            "workerSlots": 1,
+            "recipes": []
+          }
+        ]
       }
     ],
     "maxOperations": 256,

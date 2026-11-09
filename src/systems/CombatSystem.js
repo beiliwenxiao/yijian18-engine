@@ -1086,6 +1086,13 @@ export class CombatSystem {
     
     // 执行攻击（更新冷却时间）
     if (combat.attack(currentTime)) {
+      // P16：箭矢消耗——声明 ammo 的武器每次出手扣弹；不足则本次攻击不结算（冷却已推进，防卡死）。
+      // 未声明 ammo 的旧武器/旧怪恒 skipped，零回归。
+      const ammo = this._consumeAttackAmmo(attacker);
+      if (ammo && ammo.ok !== true) {
+        this._logThrottled(`${attacker.name || attacker.id} 箭矢不足，本次攻击不结算`);
+        return;
+      }
       // 播放攻击动画
       if (sprite) {
         sprite.playAnimation('attack');
@@ -1114,6 +1121,9 @@ export class CombatSystem {
       const attackType = this.getAttackText(attacker);
       this.applyDamage(target, damage, null, attackType, { sourceEntity: attacker });
 
+      // P17：出手扣耐久（仅声明耐久配置的装备会真正扣减；旧装备零变化）
+      this.equipmentSystem?.consumeDurability?.(attacker, 'use');
+
       // 玩家被敌人近战/撕咬命中：轻微后仰反馈（闪避/跳跃/已有击飞时自动跳过）
       if (attacker.type === 'enemy') this._applyPlayerHitReaction(attacker, target);
 
@@ -1122,6 +1132,23 @@ export class CombatSystem {
 
       this._logThrottled(`${attacker.name || attacker.id} 攻击 ${target.name || target.id}，造成 ${damage} 点伤害`);
     }
+  }
+
+  /**
+   * P16：出手前扣减弹药。
+   * 仅在武器声明 `ammo` 时生效（玩家从背包扣、NPC 从 ammoCount 扣）；
+   * 返回 null 表示「未配置弹药」（旧武器/旧怪零变化），返回 ok=false 表示无弹。
+   * @param {Entity} attacker
+   * @returns {{ok:boolean, skipped?:boolean, code?:string}|null}
+   */
+  _consumeAttackAmmo(attacker) {
+    const ammoService = this.ammoService;
+    if (!ammoService?.peek) return null;
+    const probe = ammoService.peek(attacker);
+    if (probe?.configured !== true) return null;
+    if (probe.ok !== true) return probe;
+    this._ammoSequence = (this._ammoSequence || 0) + 1;
+    return ammoService.consume(attacker, `ammo:${attacker.id}:${this._ammoSequence}`);
   }
 
   /**
@@ -1445,6 +1472,8 @@ export class CombatSystem {
     const finalize = () => {
       if (finalized) return false;
       finalized = true;
+      // P17：受击扣耐久（先于伤亡/事件结算，属性折损当帧生效）
+      if (appliedDamage > 0) this.equipmentSystem?.consumeDurability?.(target, 'hit');
       if (appliedDamage > 0) {
         // 战斗态即时刷新：命中瞬间进战/续战，不依赖 240px 距离判定——
         // 玩家攻击中立单位（如野兔）的一瞬间进入战斗；追击拉远时命中也续战。

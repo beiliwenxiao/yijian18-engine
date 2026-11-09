@@ -278,6 +278,44 @@ export class EquipmentSystem {
   }
 
   /**
+   * 按使用 / 受击扣减装备耐久（P17）。
+   * 仅作用于声明了耐久配置（durabilityMax / durabilityPerUse / durabilityPerHit）的装备，
+   * 未声明的旧装备完全不受影响。耐久归零后由 EquipmentComponent 折损加成。
+   * @param {Entity} entity
+   * @param {'use'|'hit'} kind - use=出手/使用；hit=受击
+   * @param {number|null} amount - 显式扣减量；省略时按装备配置
+   * @returns {Array<{slotType:string, equipment:Object, broken:boolean}>}
+   */
+  consumeDurability(entity, kind = 'use', amount = null) {
+    const equipmentComponent = entity?.getComponent?.('equipment');
+    if (!equipmentComponent) return [];
+    const allEquipment = equipmentComponent.getAllEquipment?.() || {};
+    const previousBonusStats = this._getEquipmentBonusSnapshot(equipmentComponent);
+    const changed = [];
+    for (const slotType in allEquipment) {
+      const equipment = allEquipment[slotType];
+      if (!equipment) continue;
+      const perUse = Number(equipment.durabilityPerUse) || 0;
+      const perHit = Number(equipment.durabilityPerHit) || 0;
+      const configured = Number(equipment.durabilityMax) > 0 || perUse > 0 || perHit > 0;
+      if (!configured) continue;
+      const configuredAmount = amount != null
+        ? Number(amount)
+        : (kind === 'hit' ? perHit : perUse);
+      if (!Number.isFinite(configuredAmount) || configuredAmount <= 0) continue;
+      const before = Number(equipment.durability);
+      if (!Number.isFinite(before) || before <= 0) continue;
+      equipment.durability = Math.max(0, before - configuredAmount);
+      changed.push({ slotType, equipment, broken: equipment.durability === 0 });
+    }
+    if (changed.length > 0) {
+      equipmentComponent.recalculateBonusStats?.();
+      this.updateEntityStats(entity, previousBonusStats);
+    }
+    return changed;
+  }
+
+  /**
    * 损坏装备（战斗中使用）
    * @param {Entity} entity - 实体
    * @param {number} damageAmount - 损坏量

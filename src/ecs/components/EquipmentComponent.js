@@ -191,22 +191,42 @@ export class EquipmentComponent extends Component {
     for (const slotType in this.slots) {
       const equipment = this.slots[slotType];
       if (equipment && equipment.stats) {
-        this.addEquipmentStats(equipment.stats);
+        this.addEquipmentStats(equipment.stats, this._equipmentStatMultiplier(equipment));
       }
     }
   }
 
   /**
+   * 装备损坏折损系数：仅在装备声明了耐久配置（durabilityMax / perUse / perHit）
+   * 且当前耐久为 0 时，把该槽位加成按 brokenMultiplier（默认 0.5）折算。
+   * 未声明耐久的装备恒为 1，保证旧装备零变化。
+   * @param {Object} equipment
+   * @returns {number}
+   */
+  _equipmentStatMultiplier(equipment) {
+    if (!equipment) return 1;
+    const declared = Number(equipment.durabilityMax) > 0
+      || Number(equipment.durabilityPerUse) > 0
+      || Number(equipment.durabilityPerHit) > 0;
+    if (!declared) return 1;
+    if (Number(equipment.durability) > 0) return 1;
+    const multiplier = Number(equipment.brokenMultiplier);
+    return Number.isFinite(multiplier) && multiplier >= 0 ? multiplier : 0.5;
+  }
+
+  /**
    * 添加装备属性到加成中
    * @param {Object} stats - 装备属性
+   * @param {number} multiplier - 属性折损系数（损坏装备 < 1）
    */
-  addEquipmentStats(stats) {
+  addEquipmentStats(stats, multiplier = 1) {
+    const scale = Number.isFinite(multiplier) && multiplier >= 0 ? multiplier : 1;
     // 基础属性加成
-    if (stats.attack) this.bonusStats.attack += stats.attack;
-    if (stats.defense) this.bonusStats.defense += stats.defense;
-    if (stats.maxHp) this.bonusStats.maxHp += stats.maxHp;
-    if (stats.maxMp) this.bonusStats.maxMp += stats.maxMp;
-    if (stats.speed) this.bonusStats.speed += stats.speed;
+    if (stats.attack) this.bonusStats.attack += stats.attack * scale;
+    if (stats.defense) this.bonusStats.defense += stats.defense * scale;
+    if (stats.maxHp) this.bonusStats.maxHp += stats.maxHp * scale;
+    if (stats.maxMp) this.bonusStats.maxMp += stats.maxMp * scale;
+    if (stats.speed) this.bonusStats.speed += stats.speed * scale;
 
     // 元素攻击力加成
     if (stats.elementAttack) {
@@ -214,7 +234,7 @@ export class EquipmentComponent extends Component {
         if (!this.bonusStats.elementAttack[elementType]) {
           this.bonusStats.elementAttack[elementType] = 0;
         }
-        this.bonusStats.elementAttack[elementType] += stats.elementAttack[elementType];
+        this.bonusStats.elementAttack[elementType] += stats.elementAttack[elementType] * scale;
       }
     }
 
@@ -224,7 +244,7 @@ export class EquipmentComponent extends Component {
         if (!this.bonusStats.elementDefense[elementType]) {
           this.bonusStats.elementDefense[elementType] = 0;
         }
-        this.bonusStats.elementDefense[elementType] += stats.elementDefense[elementType];
+        this.bonusStats.elementDefense[elementType] += stats.elementDefense[elementType] * scale;
       }
     }
   }

@@ -20,6 +20,7 @@ import { CombatSystem } from '../../systems/CombatSystem.js';
 import { MovementSystem } from '../../systems/MovementSystem.js';
 import { PathfindingSystem } from '../../systems/PathfindingSystem.js';
 import { EquipmentSystem } from '../../systems/EquipmentSystem.js';
+import { AmmoService } from '../../systems/AmmoService.js';
 import { AISystem } from '../../systems/AISystem.js';
 import { CollisionSystem } from '../../systems/CollisionSystem.js';
 import { PickupSystem } from '../../systems/PickupSystem.js';
@@ -35,6 +36,7 @@ import { FramePhase } from './GameSceneRuntime.js';
 import { SceneCorpseRuntime } from './SceneCorpseRuntime.js';
 import { ItemLifecycleService, ITEM_LIFECYCLE_COMMANDS } from '../../systems/ItemLifecycleService.js';
 import { ToolRepairService } from '../../systems/ToolRepairService.js';
+import { EquipmentRepairService } from '../../systems/EquipmentRepairService.js';
 import { MeditationSystem } from '../../systems/MeditationSystem.js';
 import { MeleeAttackSystem } from '../../systems/MeleeAttackSystem.js';
 import { ZoneEffectSystem } from '../../systems/ZoneEffectSystem.js';
@@ -45,6 +47,7 @@ import { AirAimController } from './AirAimController.js';
 import { LocomotionSystem } from '../../systems/LocomotionSystem.js';
 import { ClassSystem } from '../../systems/ClassSystem.js';
 import { ConstructionSystem } from '../../systems/ConstructionSystem.js';
+import { ProductionSystem } from '../../systems/ProductionSystem.js';
 import { VehicleSystem } from '../../systems/VehicleSystem.js';
 import { VehicleLogisticsSystem } from '../../systems/VehicleLogisticsSystem.js';
 import { MannedStructureAdapter } from '../../systems/MannedStructureAdapter.js';
@@ -216,6 +219,11 @@ export class SceneGameplaySystemAssembler {
     scene.armyCommandFlow = new SceneArmyCommandFlow(scene);
     scene.armyCommandFlow.attach();
     scene.equipmentSystem = new EquipmentSystem();
+    // P17：战斗结算需要按出手/受击扣减装备耐久
+    if (scene.combatSystem) scene.combatSystem.equipmentSystem = scene.equipmentSystem;
+    // P16：远程攻击前扣箭矢（武器声明 ammo 才生效；旧武器/旧怪零变化）
+    scene.ammoService = new AmmoService({ inventoryTransactions: scene.inventoryTransactions });
+    if (scene.combatSystem) scene.combatSystem.ammoService = scene.ammoService;
     scene.aiSystem = new AISystem();
     scene.collisionSystem = new CollisionSystem();
     scene.corpseRuntime = new SceneCorpseRuntime({
@@ -486,19 +494,37 @@ export class SceneGameplaySystemAssembler {
       onItemUsed: ({ item, heal, mana }) => scene.onItemUsed?.(item, heal, mana),
       onItemGained: (item, player) => scene.onItemGained?.(item, player)
     });
+    const resolveItemDefinition = id => scene.itemRuntimeFactory?.resolveDefinition?.(id)
+      || scene.gameLoader?.definitionRepository?.get?.('items', id)
+      || scene.gameLoader?.definitionRepository?.get?.('equipment', id)
+      || scene.gameLoader?.registries?.items?.get?.(id)
+      || null;
     scene.toolRepairService = new ToolRepairService({
       inventoryTransactions: scene.inventoryTransactions,
       resolveActor: id => resolveEntity(id),
-      resolveDefinition: id => scene.itemRuntimeFactory?.resolveDefinition?.(id)
-        || scene.gameLoader?.definitionRepository?.get?.('items', id)
-        || scene.gameLoader?.definitionRepository?.get?.('equipment', id)
-        || scene.gameLoader?.registries?.items?.get?.(id)
-        || null,
+      resolveDefinition: resolveItemDefinition,
       createCheckpoint: checkpoint => scene.requestAutoSave?.({
         reason: 'checkpoint', checkpointId: checkpoint.checkpointId, sceneId: scene.currentSceneId
       })
     });
-    scene.sceneRuntime?.registerCommandHandler?.('item.repair', scene.toolRepairService);
+    scene.equipmentRepairService = new EquipmentRepairService({
+      inventoryTransactions: scene.inventoryTransactions,
+      resolveActor: id => resolveEntity(id),
+      resolveDefinition: resolveItemDefinition,
+      resolveStation: (stationId, options) => this._resolveConstructionStation(scene.constructionSystem, stationId),
+      createCheckpoint: checkpoint => scene.requestAutoSave?.({
+        reason: 'checkpoint', checkpointId: checkpoint.checkpointId, sceneId: scene.currentSceneId
+      })
+    });
+    // P17：item.repair 外层按 payload.kind 分流——装备修复走新服务，工具修复链零改动。
+    scene.sceneRuntime?.registerCommandHandler?.('item.repair', {
+      execute: (command, context) => {
+        const kind = command?.payload?.kind;
+        return kind === 'equipment'
+          ? scene.equipmentRepairService.execute(command, context)
+          : scene.toolRepairService.execute(command, context);
+      }
+    });
     for (const commandType of Object.values(ITEM_LIFECYCLE_COMMANDS)) {
       scene.sceneRuntime?.registerCommandHandler?.(commandType, scene.itemLifecycleService);
     }
@@ -755,6 +781,27 @@ export class SceneGameplaySystemAssembler {
       throw new Error(`Shared gameplay construction config invalid: ${registered.code || `missingProficiency:${requiredProficiency}`}`);
     }
 
+    const productionConfig = config.production || {};
+    const productionSystem = new ProductionSystem({
+      inventoryTransactions: scene.inventoryTransactions,
+      proficiencySystem,
+      itemResolver: productionConfig.itemResolver,
+      resolveStation: typeof productionConfig.resolveStation === 'function'
+        ? productionConfig.resolveStation
+        : stationId => this._resolveConstructionStation(constructionSystem, stationId),
+      createCheckpoint: productionConfig.createCheckpoint,
+      createEventId: productionConfig.createEventId,
+      onEvent: productionConfig.onEvent,
+      rng: productionConfig.rng,
+      maxOperations: productionConfig.maxOperations
+    });
+    if (Array.isArray(productionConfig.recipes) && productionConfig.recipes.length > 0) {
+      const recipesRegistered = productionSystem.registerRecipes(productionConfig.recipes);
+      if (!recipesRegistered.ok) {
+        throw new Error(`Shared gameplay production config invalid: ${recipesRegistered.code}`);
+      }
+    }
+
     const vehicleConfig = config.vehicles || {};
     const vehicleSystem = new VehicleSystem({
       resolveEntity: vehicleConfig.resolveEntity,
@@ -782,6 +829,7 @@ export class SceneGameplaySystemAssembler {
     scene.classSystem = classSystem;
     scene.proficiencySystem = proficiencySystem;
     scene.constructionSystem = constructionSystem;
+    scene.productionSystem = productionSystem;
     scene.vehicleSystem = vehicleSystem;
     scene.vehicleLogisticsSystem = vehicleLogisticsSystem;
     scene.mannedStructureAdapter = mannedStructureAdapter;
@@ -790,6 +838,7 @@ export class SceneGameplaySystemAssembler {
       classSystem,
       proficiencySystem,
       constructionSystem,
+      productionSystem,
       vehicleSystem,
       vehicleLogisticsSystem,
       mannedStructureAdapter
@@ -803,6 +852,19 @@ export class SceneGameplaySystemAssembler {
       { name: 'gameplay.classes', instance: classSystem, options: { order: 500, updateHook: false, disposeHook: false, ownership: 'OWNED' } },
       { name: 'gameplay.proficiency', instance: proficiencySystem, options: { order: 501, updateHook: false, disposeHook: false, ownership: 'OWNED' } },
       { name: 'gameplay.construction', instance: constructionSystem, options: { order: 502, updateHook: false, disposeHook: false, ownership: 'OWNED' } },
+      {
+        name: 'gameplay.production',
+        instance: productionSystem,
+        options: {
+          order: 506,
+          updateHook: deltaTime => productionSystem.update(deltaTime),
+          disposeHook: () => {
+            productionSystem.pending?.clear?.();
+            productionSystem.onEvent = () => {};
+          },
+          ownership: 'OWNED'
+        }
+      },
       {
         name: 'gameplay.mannedStructure',
         instance: mannedStructureAdapter,
@@ -847,6 +909,7 @@ export class SceneGameplaySystemAssembler {
     ];
     const fields = {
       classes: 'classSystem', proficiency: 'proficiencySystem', construction: 'constructionSystem',
+      production: 'productionSystem',
       vehicle: 'vehicleSystem', vehicleLogistics: 'vehicleLogisticsSystem',
       mannedStructure: 'mannedStructureAdapter'
     };
@@ -892,6 +955,31 @@ export class SceneGameplaySystemAssembler {
       if (movementSystem.canMoveTo(x, y, rider)) return { x, y };
     }
     return fallback;
+  }
+
+  /**
+   * 默认工位解析：只在「已建成且耐久 > 0」的营建结构上找 station。
+   * 未接线时生产系统按 stationUnavailable 返回（零回归）。
+   * @private
+   */
+  _resolveConstructionStation(constructionSystem, stationId) {
+    const stationKey = typeof stationId === 'string' ? stationId.trim() : '';
+    if (!stationKey || !constructionSystem) return { ok: false, code: 'stationUnavailable' };
+    for (const structure of constructionSystem.structures.values()) {
+      if (!structure || structure.status !== 'completed' || Number(structure.durability) <= 0) continue;
+      const definition = constructionSystem.definitions.get(structure.definitionId);
+      const station = (definition?.stations || []).find(entry => entry.id === stationKey);
+      if (station) {
+        return {
+          ok: true,
+          station,
+          definitionId: definition.id,
+          entityId: structure.siteId,
+          durability: structure.durability
+        };
+      }
+    }
+    return { ok: false, code: 'stationUnavailable' };
   }
 }
 

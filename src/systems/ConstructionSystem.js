@@ -15,6 +15,7 @@
  ************************************************************/
 
 const SNAPSHOT_VERSION = 1;
+const STATION_KINDS = new Set(['craft', 'forge', 'repair']);
 const clone = value => value == null ? value : JSON.parse(JSON.stringify(value));
 const normalizeId = value => typeof value === 'string' ? value.trim() : '';
 
@@ -613,6 +614,10 @@ export class ConstructionSystem {
     if (costs.some(entry => !entry.itemId || entry.quantity <= 0)) {
       return { ok: false, code: 'invalidCost', id };
     }
+    const stations = this._normalizeStations(source.stations);
+    if (stations && !stations.ok) {
+      return { ok: false, code: stations.code, id };
+    }
     return {
       ok: true,
       value: {
@@ -628,9 +633,41 @@ export class ConstructionSystem {
         imageId: normalizeId(source.imageId) || null,
         warEffects: source.warEffects && typeof source.warEffects === 'object'
           ? clone(source.warEffects)
-          : null
+          : null,
+        stations: stations ? stations.value : null
       }
     };
+  }
+
+  /**
+   * 工位规范化：id 定义内唯一、kind ∈ {craft,forge,repair}、workerSlots ≥ 1。
+   * 未声明 stations 的建筑返回 null（旧定义行为不变）。
+   */
+  _normalizeStations(source) {
+    if (source == null) return null;
+    if (!Array.isArray(source)) return { ok: false, code: 'invalidStations' };
+    const seen = new Set();
+    const value = [];
+    for (const entry of source) {
+      const stationId = normalizeId(entry?.id);
+      if (!stationId || seen.has(stationId)) return { ok: false, code: 'invalidStations' };
+      seen.add(stationId);
+      const kind = normalizeId(entry?.kind) || 'craft';
+      if (!STATION_KINDS.has(kind)) return { ok: false, code: 'invalidStationKind' };
+      value.push({
+        id: stationId,
+        name: entry?.name || stationId,
+        kind,
+        workerSlots: Math.max(1, Math.floor(Number(entry?.workerSlots) || 1)),
+        recipes: Array.isArray(entry?.recipes)
+          ? entry.recipes.map(item => normalizeId(item)).filter(Boolean)
+          : [],
+        allowedTools: Array.isArray(entry?.allowedTools)
+          ? entry.allowedTools.map(item => normalizeId(item)).filter(Boolean)
+          : []
+      });
+    }
+    return { ok: true, value };
   }
 
   _remember(operationId, fingerprint, result) {

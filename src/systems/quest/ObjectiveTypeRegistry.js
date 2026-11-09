@@ -78,6 +78,17 @@ const DEFAULT_OBJECTIVE_TYPES = Object.freeze([
     defaultCount: 1
   }),
   Object.freeze({
+    type: 'craft.item',
+    label: '制作物品',
+    description: '工坊/铁匠产出指定物品达到目标份数（按实际入库数量累计）',
+    matcherType: 'production.completed',
+    identityFields: Object.freeze([
+      Object.freeze({ name: 'itemId', label: '产出物品', source: 'libraryItems', required: true })
+    ]),
+    progressBy: 'quantity',
+    defaultCount: 1
+  }),
+  Object.freeze({
     type: 'interact.entity',
     label: '与目标交互',
     description: '与指定目标对象交互后完成（E 键/点击空间绑定）；配置目标数量可表达累计交互（如招募 N 次）',
