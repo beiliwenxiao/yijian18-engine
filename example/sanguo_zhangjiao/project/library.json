@@ -4516,5 +4516,16 @@
     { "schemaVersion": 2, "id": "rank.cheqi", "title": "车骑将军", "value": 90, "kind": "post" },
     { "schemaVersion": 2, "id": "rank.piaoqi", "title": "骠骑将军", "value": 95, "kind": "post" },
     { "schemaVersion": 2, "id": "rank.dajiangjun", "title": "大将军", "value": 100, "kind": "post" }
+  ],
+  "convoys": [
+    {
+      "schemaVersion": 2,
+      "id": "convoy.light_cart",
+      "name": "轻车押运队",
+      "vehicleRef": "vehicle.s14.lastCart",
+      "escort": { "count": 2, "ref": "enemy.s02_yellow_turban_soldier" },
+      "speed": { "base": 90, "loadedMultiplier": 0.7 },
+      "cargoCapacity": 80
+    }
   ]
 }

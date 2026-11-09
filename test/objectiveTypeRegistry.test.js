@@ -23,10 +23,11 @@ const project = await loadProjectWithShards();
 const compiledTaskGraphs = compileQuestProject(project).taskGraphs;
 
 describe('ObjectiveTypeRegistry 目标类型注册目录', () => {
-  it('内置目录登记：gather.item / kill.enemy / commit.fact / craft.item / interact.entity / custom.event', () => {
+  it('内置目录登记：gather.item / kill.enemy / commit.fact / craft.item / supply.* / interact.entity / custom.event', () => {
     const types = getObjectiveTypes();
     expect(types.map(item => item.type)).toEqual([
-      'gather.item', 'kill.enemy', 'commit.fact', 'craft.item', 'interact.entity', 'custom.event'
+      'gather.item', 'kill.enemy', 'commit.fact', 'craft.item',
+      'supply.requisition', 'supply.escort', 'interact.entity', 'custom.event'
     ]);
     expect(getObjectiveTypeDescriptor('gather.item').progressBy).toBe('accepted');
     expect(getObjectiveTypeDescriptor('kill.enemy').progressBy).toBeNull();

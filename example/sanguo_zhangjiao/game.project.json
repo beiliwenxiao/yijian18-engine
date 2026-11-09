@@ -516,6 +516,82 @@
       }
     ]
   },
+  "supply": {
+    "playerFactionId": "yellow_turban",
+    "quotaMode": "rank",
+    "quotaRefresh": "daily",
+    "carryLimits": {
+      "personalMaxWeight": 10
+    },
+    "resourceItems": {
+      "food": "resource.food",
+      "wood": "resource.wood",
+      "iron": "resource.iron",
+      "herb": "resource.herb"
+    },
+    "resourceWeights": {
+      "food": 1,
+      "wood": 2,
+      "iron": 3,
+      "herb": 1
+    },
+    "quotas": [
+      {
+        "rank": 1,
+        "daily": {
+          "food": 6,
+          "wood": 4,
+          "iron": 2,
+          "herb": 1
+        }
+      },
+      {
+        "rank": 3,
+        "daily": {
+          "food": 10,
+          "wood": 6,
+          "iron": 4,
+          "herb": 2
+        }
+      },
+      {
+        "rank": 5,
+        "daily": {
+          "food": 16,
+          "wood": 10,
+          "iron": 8,
+          "herb": 3
+        }
+      },
+      {
+        "rank": 7,
+        "daily": {
+          "food": 24,
+          "wood": 16,
+          "iron": 12,
+          "herb": 5
+        }
+      }
+    ],
+    "cityModifiers": {
+      "buildingLevelBonus": 0.1,
+      "buildingLevelBonusCap": 0.5,
+      "lowMoraleThreshold": 30,
+      "lowMoraleMultiplier": 0.7
+    },
+    "ambush": {
+      "baseChance": 0.35,
+      "escortMitigation": 0.4,
+      "escortThreshold": 3,
+      "fleeLossRatio": 0.3,
+      "defeatLossRatio": 0.5,
+      "vehicleDestroyChance": 0.3,
+      "recoverableRatio": 0.25,
+      "lootDropRatio": 0.5,
+      "recoveryWindowDays": 2
+    },
+    "firstConvoySafe": true
+  },
   "battles": [
     {
       "$ref": "config/battles/S03.json",

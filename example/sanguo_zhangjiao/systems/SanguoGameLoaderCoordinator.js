@@ -261,18 +261,50 @@ function configureSharedClassEffects(gameLoader) {
     }
     return triggerSystem?.fire?.(eventType, payload) || 0;
   };
-  const createConstructionEventId = ({ eventType, payload }) => {
+  const createJournalEventId = kind => ({ eventType, payload }) => {
     const triggerSystem = this.gameLoader?.triggerSystem;
     const eventJournal = triggerSystem?.eventJournal || triggerSystem?._ensureEventJournal?.();
     if (!eventJournal?.create) return null;
     return eventJournal.create({
       type: eventType,
-      source: { kind: 'construction', operationId: payload?.operationId || null },
+      source: { kind, operationId: payload?.operationId || null },
       actorRef: this.playerEntity?.id || null,
       sceneId: this.currentSceneId || null,
       payload: cloneData(payload)
     }).eventId;
   };
+  const createConstructionEventId = createJournalEventId('construction');
+  const createSupplyEventId = createJournalEventId('supply');
+  const createConvoyEventId = createJournalEventId('convoy');
+  const publishGameplayEvent = (reason, event, data) => {
+    const published = this.publishApplicationEvent?.(event, data, { reason });
+    published?.catch?.(error => console.warn(`[Sanguo][${reason}] 发布 ${event} 失败:`, error));
+  };
+  const projectSupply = gameLoader?.project?.supply || null;
+  const supplySystemConfig = projectSupply ? {
+    config: projectSupply,
+    readCities: () => cloneData(gameLoader?.blackboard?.get?.('cityStates') || []),
+    commitCities: draft => {
+      gameLoader?.blackboard?.set?.('cityStates', cloneData(draft));
+      return true;
+    },
+    itemResolver: itemId => cloneData(itemRegistry?.get?.(itemId) || null),
+    getDay: () => this.timeSystem?.getCurrentDay?.() || 1,
+    createEventId: createSupplyEventId,
+    onEvent: (event, data) => publishGameplayEvent('supply', event, data)
+  } : null;
+  const convoySystemConfig = projectSupply ? {
+    itemResolver: itemId => cloneData(itemRegistry?.get?.(itemId) || null),
+    resolveTemplate: templateId => cloneData(gameLoader?.getRegistry?.('convoys')?.get?.(templateId) || null),
+    resolveStash: stashId => this.context?.services?.containerInventories?.resolve?.(stashId) || null,
+    getDay: () => this.timeSystem?.getCurrentDay?.() || 1,
+    ambushConfig: {
+      ...(projectSupply.ambush || {}),
+      firstConvoySafe: projectSupply.firstConvoySafe === true
+    },
+    createEventId: createConvoyEventId,
+    onEvent: (event, data) => publishGameplayEvent('convoy', event, data)
+  } : null;
   const sharedPlan = this._gameplaySystemAssembler.configureSharedSystems({
     effectResolver,
     skillRegistry: gameLoader.skillRegistry,
@@ -336,6 +368,8 @@ function configureSharedClassEffects(gameLoader) {
       createEventId: createConstructionEventId,
       onEvent: (event, data) => trigger('production', event, data)
     },
+    supply: supplySystemConfig,
+    convoy: convoySystemConfig,
     vehicles: {
       resolveEntity: id => this.entityStore?.all?.find?.(entity => entity?.id === id) || null,
       getInventoryOwnerId: inventory => this.sanguoWorldRuntimeCoordinator.resolveVehicleInventoryOwnerId(inventory),

@@ -51,7 +51,9 @@ export const STANDARD_REGISTRY_KINDS = Object.freeze([
   'npcs', 'enemies', 'items', 'equipment', 'shops', 'classes', 'skills',
   'vehicles', 'buildings', 'resourceNodes', 'armies',
   // M0 底座：生产/兵种/阵法/武将/官职五类内容库（纯数据，M1~M5 消费）
-  'recipes', 'unitTypes', 'formations', 'heroes', 'ranks'
+  'recipes', 'unitTypes', 'formations', 'heroes', 'ranks',
+  // M2：押运队模板（装配时绑定载具/护卫/容量）
+  'convoys'
 ]);
 
 /** 创建委托同一只读 repository revision 的标准 Registry Facade。 */

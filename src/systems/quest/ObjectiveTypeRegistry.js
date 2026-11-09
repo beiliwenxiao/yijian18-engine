@@ -89,6 +89,28 @@ const DEFAULT_OBJECTIVE_TYPES = Object.freeze([
     defaultCount: 1
   }),
   Object.freeze({
+    type: 'supply.requisition',
+    label: '领取军需',
+    description: '在配给所领用军需达到目标数量（按领用条目数量累计，可限定城池）',
+    matcherType: 'supply.requisitioned',
+    identityFields: Object.freeze([
+      Object.freeze({ name: 'cityId', label: '城池（留空=任意）', required: false })
+    ]),
+    progressBy: 'quantity',
+    defaultCount: 1
+  }),
+  Object.freeze({
+    type: 'supply.escort',
+    label: '押运到达',
+    description: '押运队抵达并卸货后完成（可限定目标寨仓）',
+    matcherType: 'convoy.arrived',
+    identityFields: Object.freeze([
+      Object.freeze({ name: 'stashId', label: '目标寨仓（留空=任意）', required: false })
+    ]),
+    progressBy: null,
+    defaultCount: 1
+  }),
+  Object.freeze({
     type: 'interact.entity',
     label: '与目标交互',
     description: '与指定目标对象交互后完成（E 键/点击空间绑定）；配置目标数量可表达累计交互（如招募 N 次）',

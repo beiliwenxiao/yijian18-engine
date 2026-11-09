@@ -48,6 +48,8 @@ import { LocomotionSystem } from '../../systems/LocomotionSystem.js';
 import { ClassSystem } from '../../systems/ClassSystem.js';
 import { ConstructionSystem } from '../../systems/ConstructionSystem.js';
 import { ProductionSystem } from '../../systems/ProductionSystem.js';
+import { SupplySystem } from '../../systems/SupplySystem.js';
+import { ConvoySystem } from '../../systems/ConvoySystem.js';
 import { VehicleSystem } from '../../systems/VehicleSystem.js';
 import { VehicleLogisticsSystem } from '../../systems/VehicleLogisticsSystem.js';
 import { MannedStructureAdapter } from '../../systems/MannedStructureAdapter.js';
@@ -802,6 +804,52 @@ export class SceneGameplaySystemAssembler {
       }
     }
 
+    const supplyConfig = config.supply || null;
+    const convoyConfig = config.convoy || null;
+    let supplySystem = null;
+    let convoySystem = null;
+    if (supplyConfig) {
+      supplySystem = new SupplySystem({
+        readCities: supplyConfig.readCities,
+        commitCities: supplyConfig.commitCities,
+        inventoryTransactions: scene.inventoryTransactions,
+        itemResolver: supplyConfig.itemResolver,
+        getDay: supplyConfig.getDay,
+        config: supplyConfig.config || {},
+        createEventId: supplyConfig.createEventId,
+        onEvent: supplyConfig.onEvent,
+        maxOperations: supplyConfig.maxOperations,
+        maxOrders: supplyConfig.maxOrders
+      });
+    }
+    if (convoyConfig) {
+      convoySystem = new ConvoySystem({
+        inventoryTransactions: scene.inventoryTransactions,
+        itemResolver: convoyConfig.itemResolver,
+        resolveTemplate: convoyConfig.resolveTemplate,
+        resolveOrder: typeof convoyConfig.resolveOrder === 'function'
+          ? convoyConfig.resolveOrder
+          : (orderId => supplySystem ? supplySystem.getOrder(orderId) : null),
+        notifyOrder: typeof convoyConfig.notifyOrder === 'function'
+          ? convoyConfig.notifyOrder
+          : (supplySystem
+            ? (orderId, status, details) => supplySystem.transitionOrder(orderId, status, details)
+            : null),
+        resolveStash: convoyConfig.resolveStash,
+        resolveCargo: typeof convoyConfig.resolveCargo === 'function'
+          ? convoyConfig.resolveCargo
+          : id => this._resolveInventory(id),
+        onLootDrop: convoyConfig.onLootDrop,
+        onEvent: convoyConfig.onEvent,
+        createEventId: convoyConfig.createEventId,
+        rng: convoyConfig.rng,
+        getDay: convoyConfig.getDay || supplyConfig?.getDay,
+        ambushConfig: convoyConfig.ambushConfig || {},
+        maxOperations: convoyConfig.maxOperations,
+        maxConvoys: convoyConfig.maxConvoys
+      });
+    }
+
     const vehicleConfig = config.vehicles || {};
     const vehicleSystem = new VehicleSystem({
       resolveEntity: vehicleConfig.resolveEntity,
@@ -833,17 +881,23 @@ export class SceneGameplaySystemAssembler {
     scene.vehicleSystem = vehicleSystem;
     scene.vehicleLogisticsSystem = vehicleLogisticsSystem;
     scene.mannedStructureAdapter = mannedStructureAdapter;
+    if (supplySystem) scene.supplySystem = supplySystem;
+    if (convoySystem) scene.convoySystem = convoySystem;
 
     const sharedSystems = Object.freeze({
       classSystem,
       proficiencySystem,
       constructionSystem,
       productionSystem,
+      supplySystem,
+      convoySystem,
       vehicleSystem,
       vehicleLogisticsSystem,
       mannedStructureAdapter
     });
     const facade = Object.freeze({ getSystems: () => sharedSystems });
+    if (supplySystem) this._registerSupplyCommands(supplySystem);
+    if (convoySystem) this._registerConvoyCommands(convoySystem);
     const abilityPlan = this.configureAbilities({
       skillRegistry: config.skillRegistry,
       effectResolver
@@ -905,18 +959,53 @@ export class SceneGameplaySystemAssembler {
           ownership: 'OWNED'
         }
       },
+      ...(supplySystem
+        ? [{
+          name: 'gameplay.supply',
+          instance: supplySystem,
+          options: {
+            order: 507,
+            updateHook: false,
+            disposeHook: () => {
+              supplySystem.onEvent = () => {};
+              supplySystem.orders?.clear?.();
+              supplySystem.operations?.clear?.();
+            },
+            ownership: 'OWNED'
+          }
+        }]
+        : []),
+      ...(convoySystem
+        ? [{
+          name: 'gameplay.convoy',
+          instance: convoySystem,
+          options: {
+            order: 508,
+            updateHook: false,
+            disposeHook: () => {
+              convoySystem.onEvent = () => {};
+              convoySystem.convoys?.clear?.();
+              convoySystem.operations?.clear?.();
+            },
+            ownership: 'OWNED'
+          }
+        }]
+        : []),
       ...(abilityPlan?.registrations || [])
     ];
     const fields = {
       classes: 'classSystem', proficiency: 'proficiencySystem', construction: 'constructionSystem',
       production: 'productionSystem',
+      supply: 'supplySystem', convoy: 'convoySystem',
       vehicle: 'vehicleSystem', vehicleLogistics: 'vehicleLogisticsSystem',
       mannedStructure: 'mannedStructureAdapter'
     };
     const projections = [];
     for (const [contextKey, sceneKey] of Object.entries(fields)) {
-      projections.push({ target: scene.context?.systems, key: contextKey, instance: scene[sceneKey] });
-      projections.push({ target: scene, key: sceneKey, instance: scene[sceneKey] });
+      const instance = scene[sceneKey];
+      if (!instance) continue;
+      projections.push({ target: scene.context?.systems, key: contextKey, instance });
+      projections.push({ target: scene, key: sceneKey, instance });
     }
     projections.push(...(abilityPlan?.projections || []));
     projections.push({ target: scene.context?.services, key: 'sharedGameplay', instance: facade });
@@ -980,6 +1069,88 @@ export class SceneGameplaySystemAssembler {
       }
     }
     return { ok: false, code: 'stationUnavailable' };
+  }
+
+  /**
+   * 配给命令：UI 与触发器共用同一入口，handler 只做参数取用与背包解析。
+   * @private
+   */
+  _registerSupplyCommands(supplySystem) {
+    const scene = this.scene;
+    const register = (type, handler) => scene.sceneRuntime?.registerCommandHandler?.(type, {
+      execute: command => handler(command?.payload || {})
+    });
+    register('supply.open', payload => supplySystem.open({
+      cityId: payload.cityId,
+      characterId: payload.characterId || scene.playerEntity?.id,
+      rank: payload.rank
+    }));
+    register('supply.requisition', payload => {
+      const characterId = payload.characterId || scene.playerEntity?.id;
+      return supplySystem.requisition({
+        cityId: payload.cityId,
+        characterId,
+        rank: payload.rank,
+        items: payload.items,
+        destination: payload.destination || 'personal',
+        inventory: this._resolveInventory(payload.inventoryId || `${characterId}:inventory`),
+        operationId: payload.operationId
+      });
+    });
+    register('supply.cancel', payload => supplySystem.cancel({
+      orderId: payload.orderId,
+      operationId: payload.operationId
+    }));
+  }
+
+  /**
+   * 押运命令：装配/装车/出发/指令/卸货/伏击结算/追回。
+   * @private
+   */
+  _registerConvoyCommands(convoySystem) {
+    const scene = this.scene;
+    const register = (type, handler) => scene.sceneRuntime?.registerCommandHandler?.(type, {
+      execute: command => handler(command?.payload || {})
+    });
+    register('convoy.assemble', payload => convoySystem.assemble({
+      templateId: payload.templateId,
+      convoyId: payload.convoyId,
+      vehicleEntityId: payload.vehicleEntityId,
+      cargoId: payload.cargoId || (payload.vehicleEntityId ? `${payload.vehicleEntityId}:cargo` : null),
+      escortIds: payload.escortIds,
+      operationId: payload.operationId
+    }));
+    register('convoy.load', payload => convoySystem.load(payload));
+    register('convoy.dispatch', payload => convoySystem.dispatch(payload));
+    register('convoy.order', payload => convoySystem.setOrder(payload));
+    register('convoy.resolveAmbush', payload => convoySystem.resolveAmbush(payload));
+    register('convoy.recover', payload => convoySystem.recover(payload));
+    register('convoy.unload', payload => {
+      const characterId = payload.characterId || scene.playerEntity?.id;
+      const inventory = payload.target === 'stash'
+        ? null
+        : this._resolveInventory(payload.inventoryId || `${characterId}:inventory`);
+      return convoySystem.unload({ ...payload, inventory });
+    });
+  }
+
+  /**
+   * 背包容器解析（供配给/押运命令使用，与 initialize 内的同款解析保持一致）。
+   * @private
+   */
+  _resolveInventory(id) {
+    const scene = this.scene;
+    if (!id) return null;
+    const containerInventory = scene.context?.services?.containerInventories?.resolve?.(id);
+    if (containerInventory) return containerInventory;
+    if (id === `${scene.playerEntity?.id}:inventory` || id === scene.playerEntity?.id) {
+      return scene.playerEntity?.getComponent?.('inventory') || null;
+    }
+    const suffix = id.endsWith(':cargo') ? 'cargo' : (id.endsWith(':inventory') ? 'inventory' : null);
+    const entityId = suffix ? id.slice(0, -(suffix.length + 1)) : id;
+    const entity = scene.entityStore?.all?.find?.(item => item?.id === entityId)
+      || (scene.playerEntity?.id === entityId ? scene.playerEntity : null);
+    return entity?.getComponent?.(suffix || 'inventory') || null;
   }
 }
 

@@ -169,6 +169,21 @@ export const RECIPE_SCHEMA = {
   }
 };
 
+/** 押运队模板（library.convoys[]）；M2 只做装配/装车/结算，载具与护卫物理生成归 M3/M4。 */
+export const CONVOY_SCHEMA = {
+  id: 'convoy',
+  fields: {
+    schemaVersion: versionField(),
+    id: idField(),
+    name: { type: FieldType.STRING, required: true, minLength: 1 },
+    vehicleRef: { type: FieldType.STRING, required: true, minLength: 1 },
+    escort: { type: FieldType.OBJECT },
+    speed: { type: FieldType.OBJECT, valueType: FieldType.NUMBER },
+    cargoCapacity: { type: FieldType.INTEGER, min: 0 },
+    tags: { type: FieldType.ARRAY, itemType: FieldType.STRING }
+  }
+};
+
 /** 官职阶梯（library.ranks[]）：纯军职，kind 固定 post（没有爵位维度）。 */
 export const RANK_SCHEMA = {
   id: 'rank',
@@ -887,7 +902,9 @@ export const GAME_PROJECT_LIBRARY_SCHEMA = {
     unitTypes: { type: FieldType.ARRAY, itemSchema: 'unitType' },
     formations: { type: FieldType.ARRAY, itemSchema: 'formation' },
     heroes: { type: FieldType.ARRAY, itemSchema: 'hero' },
-    ranks: { type: FieldType.ARRAY, itemSchema: 'rank' }
+    ranks: { type: FieldType.ARRAY, itemSchema: 'rank' },
+    // M2：押运队模板（引用 vehicles / enemies）
+    convoys: { type: FieldType.ARRAY, itemSchema: 'convoy' }
   }
 };
 
@@ -938,6 +955,8 @@ export const GAME_PROJECT_SCHEMA = {
     system: { type: FieldType.OBJECT },
     progression: { type: FieldType.OBJECT, schema: 'progressionConfig' },
     construction: { type: FieldType.OBJECT },
+    // M2：配给额度 / 负重 / 押运损失表；缺省则配给与押运系统不启用
+    supply: { type: FieldType.OBJECT },
     battles: { type: FieldType.ARRAY },
     rescues: { type: FieldType.ARRAY },
     scenarios: { type: FieldType.ARRAY },
@@ -968,6 +987,7 @@ export const CANONICAL_SCHEMAS = [
   HERO_SCHEMA,
   FORMATION_SCHEMA,
   RECIPE_SCHEMA,
+  CONVOY_SCHEMA,
   RANK_SCHEMA,
   ARMY_SCHEMA,
   RESOURCE_NODE_SCHEMA,
