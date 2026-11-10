@@ -5,6 +5,13 @@
 
 import { BattleMode, BattleState } from './BattleSystem.js';
 import { CANONICAL_SCHEMA_VERSION } from '../data/schema/CanonicalSchemas.js';
+import {
+  DEPLOY_ROLES,
+  resolveFormation,
+  buildDeploySlots,
+  assignDeploySlots,
+  resolveStanceForRole
+} from './FormationResolver.js';
 
 const clone = value => value == null ? value : JSON.parse(JSON.stringify(value));
 const isAlive = entity => {
@@ -33,9 +40,12 @@ export class BattlefieldRuntimeSystem {
     this.playerEntity = null;
     this.playerRestore = null;
     this.lastSnapshot = null;
+    /** 各阵营本场部署（formationId / strategy / commanderSlot / slots），无军阵时为空对象 */
+    this.deployments = {};
+    this.deploymentWarnings = [];
   }
 
-  start({ entities = [], playerEntity = null, playerFactionId = null } = {}) {
+  start({ entities = [], playerEntity = null, playerFactionId = null, formations = null, deployments = null } = {}) {
     if (this.active) return { ok: true, idempotent: true, snapshot: this.getSnapshot() };
     if (this.battleSystem?.state !== BattleState.ACTIVE || !this.battleSystem?.mode) {
       return { ok: false, code: 'battleNotActive' };
@@ -52,6 +62,7 @@ export class BattlefieldRuntimeSystem {
       const stats = entity.getComponent('stats');
       return { id: entity.id, factionId: entity.factionId, maxHp: Math.max(1, Number(stats?.maxHp) || 1) };
     });
+    this._applyDeployments(definition, candidates, formations, deployments);
     this.initialFactions = this._createInitialFactions(definition, candidates);
     this.playerEntity = playerEntity;
     if (this.battleSystem.mode === BattleMode.INTERVENE) this._attachPlayer(playerEntity, playerFactionId);
@@ -102,6 +113,7 @@ export class BattlefieldRuntimeSystem {
       participants: clone(this.participants),
       initialFactions: clone(this.initialFactions),
       playerRestore: clone(this.playerRestore),
+      deployments: clone(this.deployments),
       lastSnapshot: clone(this.lastSnapshot)
     };
   }
@@ -131,6 +143,7 @@ export class BattlefieldRuntimeSystem {
     this.participants = clone(snapshot.participants);
     this.initialFactions = clone(snapshot.initialFactions);
     this.playerRestore = clone(snapshot.playerRestore);
+    this.deployments = clone(snapshot.deployments) || {};
     this.lastSnapshot = clone(snapshot.lastSnapshot);
     this.playerEntity = playerEntity;
     if (this.active) {
@@ -148,6 +161,64 @@ export class BattlefieldRuntimeSystem {
   dispose(entities = []) {
     this.stop({ entities });
     this.reset();
+  }
+
+  /**
+   * 战前部署（5B）：按军阵定义给参战实体打槽位 + 记录本场部署。
+   * 没有 formations 时直接返回（既有战斗行为零变化）。
+   */
+  _applyDeployments(definition, entities, formations, deployments) {
+    this.deployments = {};
+    this.deploymentWarnings = [];
+    const lookup = new Map();
+    if (Array.isArray(formations)) {
+      for (const formation of formations) if (formation?.id) lookup.set(String(formation.id), formation);
+    } else if (formations instanceof Map) {
+      for (const [id, formation] of formations) lookup.set(String(id), formation);
+    } else if (formations && typeof formations === 'object') {
+      for (const [id, formation] of Object.entries(formations)) lookup.set(String(id), formation);
+    }
+    if (lookup.size === 0) return;
+
+    const create = definition.createParams || {};
+    const armies = [create.attackerArmy, create.defenderArmy].filter(Boolean);
+    const overrides = deployments && typeof deployments === 'object' ? deployments : {};
+    for (const factionId of definition.participantFactionIds || []) {
+      const members = entities.filter(entity => entity.factionId === factionId);
+      const army = armies.find(entry => entry?.factionId === factionId) || null;
+      const override = overrides[factionId] && typeof overrides[factionId] === 'object' ? overrides[factionId] : {};
+      const formationId = override.formationId
+        || (Array.isArray(army?.formationIds) ? army.formationIds[0] : null);
+      if (!formationId) continue;
+      const formation = lookup.get(String(formationId));
+      if (!formation) {
+        this.deploymentWarnings.push({ code: 'formationMissing', factionId, formationId: String(formationId) });
+        continue;
+      }
+      const roster = Array.isArray(override.roster?.unitIds) && override.roster.unitIds.length > 0
+        ? override.roster.unitIds
+        : null;
+      const resolved = resolveFormation(formation, roster ? { unitIds: roster } : { unitCount: Math.max(1, members.length) });
+      const slots = buildDeploySlots(resolved);
+      for (const item of assignDeploySlots(slots, members)) {
+        item.entity.deploySlot = item.slot ? { ...item.slot } : null;
+        item.entity.formationStance = item.slot ? resolveStanceForRole(resolved, item.slot.role) : null;
+      }
+      this.deployments[factionId] = {
+        armyId: army?.id || factionId,
+        formationId: resolved.id || String(formationId),
+        strategy: resolved.strategy,
+        rows: resolved.rows.length,
+        columns: resolved.columns,
+        commanderSlot: DEPLOY_ROLES.includes(override.commanderSlot) ? override.commanderSlot : 'mid',
+        deputySlots: Array.isArray(override.deputySlots)
+          ? override.deputySlots.filter(slot => DEPLOY_ROLES.includes(slot))
+          : [],
+        combat: { ...resolved.combat },
+        slots: slots.length,
+        warnings: resolved.warnings
+      };
+    }
   }
 
   _createInitialFactions(definition, entities) {
@@ -205,6 +276,15 @@ export class BattlefieldRuntimeSystem {
         hpRatio: initial.totalHp > 0 ? Math.max(0, Math.min(1, hp / initial.totalHp)) : 0,
         morale
       };
+      // 5B：有部署才补字段，无军阵战斗的 snapshot 结构保持原样
+      const deployment = this.deployments?.[factionId];
+      if (deployment) {
+        factions[factionId].formation = {
+          id: deployment.formationId,
+          strategy: deployment.strategy,
+          commanderSlot: deployment.commanderSlot
+        };
+      }
     }
     return {
       battleId: this.battleSystem?.definition?.battleId || null,
