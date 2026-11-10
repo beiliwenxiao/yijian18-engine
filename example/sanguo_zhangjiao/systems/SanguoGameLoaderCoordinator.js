@@ -338,6 +338,13 @@ function configureSharedClassEffects(gameLoader) {
     ),
     onEvent: (event, data) => publishGameplayEvent('armyOrder', event, data)
   } : null;
+  // 倒地掉落（M3 3D）：1~3 件/零损耗/已穿戴排除/2 游戏日归属；NPC 拾取走敌对判定
+  const downedDropConfig = gameLoader?.project?.downedDrop || null;
+  const downedDropSystemConfig = downedDropConfig ? {
+    config: downedDropConfig,
+    getDay: () => Number(gameLoader?.blackboard?.get?.('storyState')?.day) || 1,
+    itemResolver: itemId => cloneData(itemRegistry?.get?.(itemId) || null)
+  } : null;
   const sharedPlan = this._gameplaySystemAssembler.configureSharedSystems({
     effectResolver,
     skillRegistry: gameLoader.skillRegistry,
@@ -405,6 +412,7 @@ function configureSharedClassEffects(gameLoader) {
     convoy: convoySystemConfig,
     companion: companionSystemConfig,
     armyOrder: armyOrderSystemConfig,
+    downedDrop: downedDropSystemConfig,
     vehicles: {
       resolveEntity: id => this.entityStore?.all?.find?.(entity => entity?.id === id) || null,
       getInventoryOwnerId: inventory => this.sanguoWorldRuntimeCoordinator.resolveVehicleInventoryOwnerId(inventory),

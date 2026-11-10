@@ -180,6 +180,73 @@
 > - **M6 预期行为**：新增 `BattleMode.SUPPORT`（或 `BattleIdentity.support`）后，在同一函数内加 `support → 'support'` 分支，并把 `ARMY_BATTLE_ORDERS` 的允许集合从 `['takeover']` 改为 `['takeover','support']`（`support` 仅允许**折半执行**的将令，具体折半系数由 M6 的 `battleOrders.supportScale` 提供；M3 不预留该字段、不写死系数）。
 > - **TODO 文本**：`// TODO(M6): 新增 support 身份时，在此加 support → 'support' 映射，并在 ARMY_BATTLE_ORDERS.support 允许集合内放宽（折半系数由 M6 配置提供）`。
 
+## 12. 3D 可执行细化（2026-11-10，取代 §7 第 3 项的粗粒度描述）
+
+> 3A（`8cce967`）/ 3B（`0d81ad5`）已交付；本节只写 3D 的精确落点、签名、验证与待拍板项。
+
+### 12.1.1 新增文件
+
+| 文件 | 公开 API | 职责 |
+|---|---|---|
+| `src/systems/DownedDropService.js` | `constructor({ inventoryTransactions, getInventory, getEquipment, createGroundDrop, removeGroundDrop, publishEvent, getDay, rng, config })`；`dropAll({ player, cause, position })`；`recover({ player, entries })`；`expire({ day, drops })` | 倒地抽取 1~3 件、从背包移除、生成带归属/时限的地面掉落；夺回部分入包；到期清理 |
+| `src/systems/ai/LootPickupBehavior.js` | `constructor({ radius, maxCarried, now, publishEvent, isHostile })`；`update({ npcs, groundItems, removeGroundItem })`；`carriedLootOf(npc)` | 敌对 NPC 靠近玩家掉落→拾取→挂 `_carriedLoot` + 写回 `lootTable`（击杀经既有 `generateLoot` 返还） |
+| `src/systems/DownedDropService.test.js` | — | 见 §8 3D 行 |
+| `src/systems/ai/LootPickupBehavior.test.js` | — | 见 §8 3D 行 |
+| `src/core/M3DownedDropIntegration.test.js` | — | 钩子→掉落→拾取→击杀返还 的端到端纯逻辑链（假场景，不依赖 jsdom） |
+
+### 12.1.2 改动文件
+
+| 文件 | 精确改动 |
+|---|---|
+| `src/systems/CombatSystem.js` | 新增 `setDownedDropCallback(cb)`；`handlePlayerDeath()` 内 `player.isDead = true` 之后、`onPlayerDeathCallback` 之前调用一次 `this.onDownedDrop?.({ player, deathEvent })`（`checkDeath` 的 `!isDying && !isDead` 保证每次倒地只进一次） |
+| `src/core/scene/SceneGameplaySystemAssembler.js` | ①构造 `DownedDropService`（config 来自 `config.downedDrop`，`createGroundDrop` 复用 `itemRuntimeFactory.createGroundDropProjection` + `entityStore.add/addEquipmentItem`）；②`combatSystem.setDownedDropCallback` 接线（`cause`：`player.plotCause==='story' || deathEvent?.cause==='story'` → `'story'`，否则 `'combat'`）；③注册命令 `inventory.dropAll`；④注册 `gameplay.downedDrop`(511)/`gameplay.lootPickup`(512)：帧驱动到期清理 + NPC 拾取；⑤`armyOrderSystem` 存在时注册**可选** `gameplay.armyStrategic` 快照 provider（`required:false`，见 11.1.5） |
+| `example/sanguo_zhangjiao/game.project.json` | 新增 `downedDrop: { minItems:1, maxItems:3, lossRatio:0, includeCurrency:false, plotExempt:true, ownerExpiryDays:2, npcPickupRadius:90 }` |
+| `src/data/schema/CanonicalSchemas.js` | `GAME_PROJECT_SCHEMA` 增 `downedDrop`（OBJECT） |
+| `src/core/M3Content.test.js` | 3D 内容校验：`downedDrop` 数值区间 + `lossRatio===0` |
+
+### 12.1.3 掉落语义（与 P8 对齐）
+
+1. 候选 = `InventoryComponent.slots` 非空条目，**排除**：`EquipmentComponent` 各槽位已穿戴的同一实例/定义、`currency.*`（`includeCurrency:false`）、任务/剧情标记物品（`item.questItem===true`）。
+2. 抽取 = `count = clamp(minItems, maxItems, 候选数)`；**装备优先**（`weapon/armor/helmet/boots/gloves/accessory/equipment`），不足用材料补；`rng` 注入（测试固定序列），同一次倒地不重复抽同一槽位。
+3. 损耗 = `lossRatio` 默认 0（P8 定稿：零损耗）；`>0` 时按数量比例向下取整，不足 1 视为整件不移除。
+4. 移除 = `inventoryTransactions.commit({ type:'remove'|'batchRemove', inventory, entries })`；失败（`operationId` 重复/背包漂移）整次回滚，不产生掉落。
+5. 地面投影 = 每件一个实体，`entityId='downed-drop-{playerId}-{day}-{seq}'`；位置 = 倒地位置 + 半径 12px 环形散布；`entity.ownerId=player.id`、`entity.downedDrop=true`、`entity.droppedAtDay=day`、`entity.expiresAtDay=day+ownerExpiryDays`。
+6. 事件 = `player.downedDropped { playerId, cause, items:[{definitionId,quantity,entityId}] }`；`story` 豁免直接 `{ok:true, exempt:true}` 不发事件。
+7. 到期 = 帧驱动（`getDay()` 变化时才扫描），`day > expiresAtDay` 的实体 `removeGroundDrop`；不依赖新系统。
+
+### 12.1.4 NPC 拾取与击杀返还
+
+- 目标筛选：`entity.downedDrop===true` 且 `entity.ownerId!==npc.id`；`isHostile(npc)`（`FactionRules` 敌对判定）；距离 ≤ `npcPickupRadius`；`entity.picked!==true`。
+- 拾取：移出 `entityStore.equipmentItems`，条目并入 `npc._carriedLoot`（同 `definitionId` 合数量），并 upsert 到 `npc.lootTable`（`{ itemId, chance:1, minQuantity:qty, maxQuantity:qty }`）——击杀时由既有 `CombatSystem.generateLoot` 原样掉落，无需改 `generateLoot`。
+- 上限：`maxCarried`（默认 6 条），达到后不再拾取。
+- 事件：`npc.lootPicked { npcId, items }`。
+- `player.lootRecovered`：仅当玩家通过 `item.pickup` 拾回 `downedDrop` 实体时发；由 `LootPickupBehavior` 不负责，装配器在 `inventory.dropAll` 的对称回调 `recover` 中发（显式命令触发），不监听底层 pickup 事件。
+
+### 12.1.5 `gameplay.armyStrategic` 可选 provider
+
+- 注册点：`SceneGameplaySystemAssembler`（`armyOrderSystem` 存在时），`scene.sceneRuntime?.registerSnapshotProvider?.('gameplay.armyStrategic', { snapshot, validate, restore, required:false })`。
+- `snapshot()` = `{ schemaVersion:1, armyStates: armyOrderSystem.serialize(), companionSquad: companionSquadSystem?.serialize?.() ?? null }`。
+- `validate()` = 空/旧档返回 `{ok:true}`；`restore()` = **仅当** `blackboard.get('armyStates')` 为空时写回（避免与 3B 的黑板路径双写打架，见待拍板 D2）。
+- 未注册（无 `sceneRuntime` 或无 `armyOrderSystem`）时零副作用。
+
+### 12.1.6 验证
+
+- 单测：`DownedDropService.test.js`（1~3 件固定 rng / 装备优先 / 已穿戴不掉 / `story` 豁免 / `ownerId`+2 天 / `recover` 部分入包 / 移除失败回滚）；`LootPickupBehavior.test.js`（最近目标 / 半径 / 敌对过滤 / 上限 / `_carriedLoot` 合并 / `lootTable` upsert / 击杀 `generateLoot` 返还）。
+- 集成：`M3DownedDropIntegration.test.js`（CombatSystem 假实体 → 掉落 → NPC 拾取 → 击杀返还）。
+- 回归：`CombatSystem` 相关既有测试 + 3A/3B 全量（98 例）；不改 `vitest.config.js` 与测试环境声明。
+- 实机验收（脚本，不新增运行时依赖）：S01 场景内让玩家被狼击杀 → 地面出现 1~3 件、NPC 拾取、击杀 NPC 返还；S02 剧情昏倒不掉落；读档后 `armyStates` 仍在、可继续下令。
+
+### 12.1.7 待拍板（3D 开工前需确认）
+
+| # | 问题 | 建议 | 备选 |
+|---|---|---|---|
+| D5 | 掉落触发点：`CombatSystem.handlePlayerDeath`（唯一战斗死亡入口） vs `PlayerDefeatService._resolveNormalDeath`（该文件注释写明"死亡不掉落，已按产品决策移除"） | **A：CombatSystem 钩子**，`PlayerDefeatService` 不动；`story` 由 `plotCause/deathEvent.cause` 豁免 | B：改 `PlayerDefeatService`（要推翻其既有注释与 `drop:null` 断言，影响面更大） |
+| D6 | `gameplay.armyStrategic` 与 3B `blackboard.armyStates` 的关系 | **A：可选补偿**——provider 只在黑板为空时 restore，平时以黑板为准（零双写） | B：provider 为唯一事实源，删除黑板路径（推翻 3B 已验证行为）；C：不注册 provider（记录为文档偏差） |
+| D7 | NPC 拾取范围 | **A：只拾玩家倒地掉落（`downedDrop`）**，不动既有怪物战利品 | B：任何地面掉落都拾（会改变现有拾取体验与测试） |
+| D8 | 2 天时限的推进口径 | **A：`storyState.currentDay` 日界变化时清理**（与 M2 休整/日结同源） | B：实时毫秒计时（与"游戏日"语义不符） |
+
+> 若 D5～D8 全部取建议值，按本规格直接实施；任一改选需回写本节后再动代码。
+
 ## 11. 明确不做
 
 - 3C 关卡封锁/军营驻扎/招募三路径/兵力日结（顺延）。

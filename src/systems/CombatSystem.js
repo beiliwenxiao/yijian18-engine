@@ -185,6 +185,7 @@ export class CombatSystem {
     this.onDamageCallback = null;
     this._damageListeners = new Set();
     this.onPlayerDeathCallback = null;
+    this.onDownedDropCallback = null;
     this.isPlayerInputLocked = typeof config.isPlayerInputLocked === 'function'
       ? config.isPlayerInputLocked
       : () => false;
@@ -2945,6 +2946,14 @@ export class CombatSystem {
     Logger.log('玩家死亡，进入统一失败结算');
     this.clearTarget();
     player.isDead = true;
+    // 倒地旁路结算（掉落等）：独立于死亡结算，异常不阻断后续流程。
+    if (this.onDownedDropCallback) {
+      try {
+        this.onDownedDropCallback({ player, deathEvent });
+      } catch (error) {
+        console.warn('CombatSystem: 玩家倒地钩子执行失败', error);
+      }
+    }
     if (this.onPlayerDeathCallback) {
       try {
         const handled = this.onPlayerDeathCallback({ player, deathEvent });
@@ -4208,6 +4217,14 @@ export class CombatSystem {
   /** 设置玩家死亡的唯一领域结算回调。 */
   setOnPlayerDeathCallback(callback) {
     this.onPlayerDeathCallback = typeof callback === 'function' ? callback : null;
+  }
+
+  /**
+   * 设置玩家倒地钩子（M3 3D）：单次触发点，供倒地掉落等旁路结算。
+   * 与 `onPlayerDeathCallback` 相互独立——掉落失败不阻断死亡结算。
+   */
+  setDownedDropCallback(callback) {
+    this.onDownedDropCallback = typeof callback === 'function' ? callback : null;
   }
 
   /**

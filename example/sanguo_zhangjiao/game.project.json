@@ -626,6 +626,17 @@
       { "key": "camp", "label": "扎营", "executor": "camp", "requiresTarget": false, "persistent": false }
     ]
   },
+  "downedDrop": {
+    "minItems": 1,
+    "maxItems": 3,
+    "lossRatio": 0,
+    "includeCurrency": false,
+    "plotExempt": true,
+    "ownerExpiryDays": 2,
+    "spreadRadius": 12,
+    "npcPickupRadius": 90,
+    "npcMaxCarried": 6
+  },
   "battles": [
     {
       "$ref": "config/battles/S03.json",

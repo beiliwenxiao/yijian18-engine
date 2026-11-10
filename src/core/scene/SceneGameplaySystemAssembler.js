@@ -54,6 +54,9 @@ import { CompanionSquadSystem } from '../../systems/CompanionSquadSystem.js';
 import { SceneCompanionSquadFlow } from './SceneCompanionSquadFlow.js';
 import { ArmyOrderSystem } from '../../systems/ArmyOrderSystem.js';
 import { SceneArmyOrderFlow } from './SceneArmyOrderFlow.js';
+import { DownedDropService } from '../../systems/DownedDropService.js';
+import { LootPickupBehavior } from '../../systems/ai/LootPickupBehavior.js';
+import { isHostileTarget } from '../FactionRules.js';
 import { SquadMemberComponent } from '../../ecs/components/SquadMemberComponent.js';
 import { CommandStateComponent } from '../../ecs/components/CommandStateComponent.js';
 import { VehicleSystem } from '../../systems/VehicleSystem.js';
@@ -73,6 +76,8 @@ export class SceneGameplaySystemAssembler {
     // 灵魂状态的表现层钩子（body class 切换等）由表现层注入，装配器自身不触 DOM。
     this.onSoulStateVisual = typeof config.onSoulStateVisual === 'function' ? config.onSoulStateVisual : null;
     this._lootSequence = 0;
+    this._downedTick = 0;
+    this._downedDropDay = null;
   }
 
   initialize({ zoneCallbacks = {} } = {}) {
@@ -905,6 +910,42 @@ export class SceneGameplaySystemAssembler {
       scene.armyOrderFlow = armyOrderFlow;
     }
 
+    // 倒地掉落 + 敌对 NPC 拾取（M3 3D）：CombatSystem 单点钩子触发，掉落/夺回/到期为纯领域服务。
+    const downedDropConfig = config.downedDrop || null;
+    let downedDropService = null;
+    let lootPickupBehavior = null;
+    if (downedDropConfig) {
+      const pickupConfig = downedDropConfig.config || downedDropConfig;
+      downedDropService = new DownedDropService({
+        config: pickupConfig,
+        rng: downedDropConfig.rng,
+        getDay: downedDropConfig.getDay || (() => Number(scene.gameLoader?.blackboard?.get?.('storyState')?.day) || 1),
+        resolveItem: downedDropConfig.itemResolver || downedDropConfig.resolveItem,
+        createGroundDrop: request => this._createDownedGroundDrop(request),
+        removeGroundDrop: entity => scene.entityStore?.remove?.(entity),
+        publishEvent: (event, payload, options) => scene.publishApplicationEvent?.(event, payload, options)
+      });
+      lootPickupBehavior = new LootPickupBehavior({
+        radius: Number(pickupConfig.npcPickupRadius) || undefined,
+        maxCarried: Number(pickupConfig.npcMaxCarried) || undefined,
+        isHostile: npc => isHostileTarget(scene.playerEntity, npc),
+        publishEvent: (event, payload, operationId) => scene.publishApplicationEvent?.(event, payload, operationId ? { operationId } : undefined)
+      });
+      scene.downedDropService = downedDropService;
+      scene.lootPickupBehavior = lootPickupBehavior;
+      this._downedDropService = downedDropService;
+      this._lootPickupBehavior = lootPickupBehavior;
+      scene.combatSystem.setDownedDropCallback(({ player, deathEvent }) => {
+        const cause = player?.plotCause === 'story'
+          || deathEvent?.cause === 'story'
+          || scene.isPlayerDowned?.() === true
+          ? 'story'
+          : 'combat';
+        return downedDropService.dropAll({ player, cause });
+      });
+      this._registerDownedDropCommands(downedDropService);
+    }
+
     const vehicleConfig = config.vehicles || {};
     const vehicleSystem = new VehicleSystem({
       resolveEntity: vehicleConfig.resolveEntity,
@@ -1089,6 +1130,38 @@ export class SceneGameplaySystemAssembler {
           }
         }]
         : []),
+      ...(downedDropService
+        ? [{
+          name: 'gameplay.downedDrop',
+          instance: downedDropService,
+          options: {
+            order: 511,
+            updateHook: deltaTime => this._updateDownedDrop(deltaTime),
+            disposeHook: () => {
+              downedDropService.createGroundDrop = null;
+              downedDropService.removeGroundDrop = null;
+              downedDropService.publishEvent = null;
+              scene.combatSystem?.setDownedDropCallback?.(null);
+            },
+            ownership: 'OWNED'
+          }
+        }]
+        : []),
+      ...(lootPickupBehavior
+        ? [{
+          name: 'gameplay.lootPickup',
+          instance: lootPickupBehavior,
+          options: {
+            order: 512,
+            updateHook: false,
+            disposeHook: () => {
+              lootPickupBehavior.publishEvent = null;
+              lootPickupBehavior.isHostile = () => false;
+            },
+            ownership: 'OWNED'
+          }
+        }]
+        : []),
       ...(abilityPlan?.registrations || [])
     ];
     const fields = {
@@ -1096,6 +1169,7 @@ export class SceneGameplaySystemAssembler {
       production: 'productionSystem',
       supply: 'supplySystem', convoy: 'convoySystem', companionSquad: 'companionSquadSystem',
       armyOrder: 'armyOrderSystem',
+      downedDrop: 'downedDropService', lootPickup: 'lootPickupBehavior',
       vehicle: 'vehicleSystem', vehicleLogistics: 'vehicleLogisticsSystem',
       mannedStructure: 'mannedStructureAdapter'
     };
@@ -1108,6 +1182,23 @@ export class SceneGameplaySystemAssembler {
     }
     projections.push(...(abilityPlan?.projections || []));
     projections.push({ target: scene.context?.services, key: 'sharedGameplay', instance: facade });
+
+    // 3D 可选快照：旧档缺该 provider 时 required:false 放行；恢复只补偿黑板空态，避免双写。
+    if (armyOrderSystem && typeof scene.sceneRuntime?.registerSnapshotProvider === 'function') {
+      scene.sceneRuntime.registerSnapshotProvider('gameplay.armyStrategic', {
+        required: false,
+        snapshot: () => ({ schemaVersion: 1, armyStates: armyOrderSystem.serialize() }),
+        validate: data => (data === undefined || data === null || typeof data === 'object'
+          ? { ok: true }
+          : { ok: false, code: 'invalidArmyStrategic' }),
+        restore: data => {
+          const board = scene.gameLoader?.blackboard;
+          if (board?.get?.('armyStates')) return { ok: true, skipped: true };
+          const snapshot = data?.armyStates;
+          return snapshot ? armyOrderSystem.restore(snapshot) : { ok: true };
+        }
+      });
+    }
 
     return Object.freeze({
       id: 'gameplay-shared',
@@ -1126,6 +1217,77 @@ export class SceneGameplaySystemAssembler {
         }
       }])
     });
+  }
+
+  /**
+   * 倒地掉落命令（M3 3D）：`inventory.dropAll`。剧情脚本人为触发时传 `cause:'story'` 走豁免。
+   * @private
+   */
+  _registerDownedDropCommands(downedDropService) {
+    const scene = this.scene;
+    scene.sceneRuntime?.registerCommandHandler?.('inventory.dropAll', {
+      execute: command => {
+        const payload = command?.payload || {};
+        return downedDropService.dropAll({
+          player: scene.playerEntity || null,
+          cause: payload.cause === 'story' ? 'story' : 'combat',
+          position: payload.position || null
+        });
+      }
+    });
+  }
+
+  /**
+   * 3D 帧驱动（250ms 节流）：日界变化清理过期掉落 + 敌对 NPC 拾取玩家掉落。
+   * 未接线时不产生任何副作用。
+   * @private
+   */
+  _updateDownedDrop(deltaTime) {
+    const service = this._downedDropService;
+    const behavior = this._lootPickupBehavior;
+    if (!service || !behavior) return;
+    this._downedTick += Math.max(0, Number(deltaTime) || 0);
+    if (this._downedTick < 0.25) return;
+    this._downedTick = 0;
+    const scene = this.scene;
+    const groundItems = scene.entityStore?.equipmentItems || [];
+    const day = Number(service.getDay()) || 0;
+    if (day !== this._downedDropDay) {
+      this._downedDropDay = day;
+      service.expire({ day, drops: groundItems.filter(entity => entity?.downedDrop === true) });
+    }
+    behavior.update({
+      npcs: scene.entityStore?.enemies || [],
+      groundItems,
+      removeGroundItem: entity => scene.entityStore?.remove?.(entity)
+    });
+  }
+
+  /**
+   * 倒地掉落地面投影：复用物品运行时投影链（与战斗战利品同管线），额外发布 item.dropped 供任务/表现消费。
+   * @private
+   */
+  _createDownedGroundDrop({ entityId, runtimeState, transform }) {
+    const scene = this.scene;
+    let entity = null;
+    try {
+      entity = scene.itemRuntimeFactory?.createGroundDropProjection?.({ entityId, runtimeState, transform });
+    } catch (error) {
+      console.warn('SceneGameplaySystemAssembler: 倒地掉落投影失败', error);
+      return null;
+    }
+    if (!entity) return null;
+    scene.entityStore?.add?.(entity);
+    scene.entityStore?.addEquipmentItem?.(entity);
+    void scene.publishApplicationEvent?.('item.dropped', {
+      entityId: entity.id,
+      groundId: entity.id,
+      definitionId: runtimeState?.definitionId || null,
+      quantity: Math.max(1, Math.floor(Number(runtimeState?.quantity) || 1)),
+      position: { x: transform?.x || 0, y: transform?.y || 0 },
+      reason: 'downedDrop'
+    }, { operationId: `downed-drop-revealed:${entity.id}` });
+    return entity;
   }
 
   /** 默认在载具四周寻找首个可通行下车点；具体导航策略仍可由调用方覆盖。 @private */

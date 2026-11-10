@@ -90,6 +90,21 @@ describe('M3 3A · 随行/军团运行态 schema', () => {
   });
 });
 
+describe('M3 3D · 倒地掉落与 NPC 拾取', () => {
+  it('downedDrop 声明 1~3 件 / 零损耗 / 剧情豁免 / 2 游戏日归属 / NPC 拾取半径', () => {
+    const config = project.downedDrop;
+    expect(config).toBeTruthy();
+    expect(config.minItems).toBe(1);
+    expect(config.maxItems).toBe(3);
+    expect(config.lossRatio).toBe(0);
+    expect(config.includeCurrency).toBe(false);
+    expect(config.plotExempt).toBe(true);
+    expect(config.ownerExpiryDays).toBe(2);
+    expect(config.npcPickupRadius).toBeGreaterThan(0);
+    expect(GAME_PROJECT_SCHEMA.fields.downedDrop).toBeTruthy();
+  });
+});
+
 describe('M3 3B · 武装单位战略指令', () => {
   it('armyOrders 声明 500ms 战略刻 / 战术撤军士气 / 五指令执行器', () => {
     const config = project.armyOrders;

@@ -1000,6 +1000,8 @@ export const GAME_PROJECT_SCHEMA = {
     // M3：随行小队规则（容量/士气/补位）与军团指令（将令解锁/折半系数，M6 扩展）
     companionRule: { type: FieldType.OBJECT },
     armyOrders: { type: FieldType.OBJECT },
+    // M3 3D：倒地掉落（1~3 件/零损耗/2 游戏日归属）与 NPC 拾取参数
+    downedDrop: { type: FieldType.OBJECT },
     battles: { type: FieldType.ARRAY },
     rescues: { type: FieldType.ARRAY },
     scenarios: { type: FieldType.ARRAY },

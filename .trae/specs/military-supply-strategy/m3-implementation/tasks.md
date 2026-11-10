@@ -34,11 +34,29 @@
 
 ## D. 3D 存档与倒地掉落（第 3 批）
 
-- [ ] 快照 provider `gameplay.armyStrategic`（**可选**，旧档缺省空态）
-- [ ] `DownedDropService.js` + `inventory.dropAll`（1~3 件/穿戴 excl/`cause:'story'` 豁免/`ownerId`+2 天/夺回）
-- [ ] `LootPickupBehavior.js`（NPC 拾取 + `_carriedLoot` + 击杀返还）
-- [ ] `CombatSystem` 倒地入口单点钩子
-- [ ] `DownedDropService.test.js` / `LootPickupBehavior.test.js`
+> 细化规格见 [spec.md](spec.md) §12。**D5～D8 已拍板 = 全部建议值（2026-11-10）**，按 §12 直接实施。
+>
+> **进度锚点（2026-11-10，已收尾）**：3A 已提交 `8cce967`、3B 已提交 `0d81ad5`；
+> 3D 代码与测试已完成（见下方实施记录 · 3D），待单独提交。
+> 3D 新文件：`DownedDropService.js` / `ai/LootPickupBehavior.js` + 三测试；
+> 3D 改动：`CombatSystem` / 装配器 / `game.project.json` / `CanonicalSchemas` / `M3Content.test.js` /
+> `SanguoGameLoaderCoordinator`。
+
+- [x] **D5 拍板**：掉落触发点 = `CombatSystem.handlePlayerDeath` 单点钩子（不改 `PlayerDefeatService`）
+- [x] **D6 拍板**：`gameplay.armyStrategic` 为可选补偿 provider，仅黑板空时 restore
+- [x] **D7 拍板**：NPC 只拾玩家倒地掉落（`downedDrop`），不碰既有战利品
+- [x] **D8 拍板**：2 天时限按 `storyState.currentDay` 日界清理
+- [x] `DownedDropService.js`：`dropAll/recover/expire`（1~3 件/装备优先/穿戴 excl/`story` 豁免/`ownerId`+2 天/零损耗）
+- [x] `inventory.dropAll` 命令（装配器注册，`cause` 由 `plotCause/deathEvent.cause` 解析）
+- [x] `LootPickupBehavior.js`（敌对 NPC 拾取 + `_carriedLoot` + `lootTable` upsert + 击杀返还）
+- [x] `CombatSystem.setDownedDropCallback` + `handlePlayerDeath` 单点调用（`isDead=true` 之后、`onPlayerDeathCallback` 之前）
+- [x] 装配器：`gameplay.downedDrop`(511)/`gameplay.lootPickup`(512) + 帧驱动到期清理 + dispose
+- [x] 装配器：可选 `sceneRuntime.registerSnapshotProvider('gameplay.armyStrategic', {required:false})`
+- [x] `game.project.json.downedDrop` + `CanonicalSchemas.GAME_PROJECT_SCHEMA.downedDrop`
+- [x] `DownedDropService.test.js` / `LootPickupBehavior.test.js` / `M3DownedDropIntegration.test.js`
+- [x] `M3Content.test.js` 3D 用例（`minItems/maxItems/lossRatio===0`）
+- [ ] 场景集成实机验收：S01 战斗倒地掉 1~3 件 → NPC 拾取 → 击杀返还；S02 剧情昏倒不掉；读档后 `armyStates` 恢复且可继续下令
+      （纯逻辑端到端已由 `M3DownedDropIntegration.test.js` 覆盖；浏览器实机需人工点验，本会话无浏览器环境）
 
 ## E. 内容与接线
 
@@ -92,3 +110,23 @@
   成功即 `registerUnit` 接管；倒地成员实体消失只保留名册待 8s 补位，不入 dismiss。
 - 已知遗留：`_resolveBattleIdentity` 目前按 BattleMode 推断（takeover/observe/unknown），
   M6 落地 support 身份时按文件内 TODO(M6) 三处改动；场景集成（读档后继续下令的实机验收）随 3D。
+
+### 3D（2026-11-10，已完成代码与测试，待提交）
+
+- 拍板：D5＝`CombatSystem.handlePlayerDeath` 单点钩子（`PlayerDefeatService` 未改）；
+  D6＝可选补偿 provider（仅在黑板 `armyStates` 为空时 restore）；
+  D7＝NPC 只拾 `downedDrop` 玩家掉落；D8＝按 `getDay()` 日界清理 2 日归属。
+- 新增：`src/systems/DownedDropService.js`（装备优先抽 1~3 件/穿戴与货币任务物品排除/
+  `story` 豁免/零损耗/实例物品保留 instanceId+mutable/投影失败回滚/`recover` 部分入包/
+  `expire` 到期清理）、`src/systems/ai/LootPickupBehavior.js`（敌对 NPC 最近目标/
+  `_carriedLoot` 合并/`lootTable` upsert/携带上限）、三个测试。
+- 改：`CombatSystem`（`setDownedDropCallback` + `handlePlayerDeath` 单点调用，异常不阻断死亡结算）、
+  `SceneGameplaySystemAssembler`（`gameplay.downedDrop`(511)/`gameplay.lootPickup`(512)、
+  `inventory.dropAll`、250ms 帧驱动、可选 `gameplay.armyStrategic` provider、fields/dispose）、
+  `SanguoGameLoaderCoordinator`（`downedDrop` 配置 + 日号 + 物品定义解析）、
+  `game.project.json.downedDrop`、`CanonicalSchemas.GAME_PROJECT_SCHEMA.downedDrop`、
+  `M3Content.test.js`（3D 一例）。
+- 测试：3D 28 例全绿（DownedDrop 9 / LootPickup 7 / 端到端 3 / M3Content 9）；
+  回归 14 文件 135 例全绿；未改 `vitest.config.js` 与测试环境声明。
+- 未完成/遗留：浏览器实机点验（S01 战斗倒地→拾取→击杀返还、S02 剧情昏倒豁免、
+  读档后继续下令）需人工执行；纯逻辑端到端已由 `M3DownedDropIntegration.test.js` 覆盖。
