@@ -535,7 +535,12 @@ export const CITY_SCHEMA = {
     damageRatio: ratioField(true),
     buildingDamage: { type: FieldType.OBJECT },
     morale: nonNegativeInteger(),
-    damagePausedUntilDay: nonNegativeInteger()
+    damagePausedUntilDay: nonNegativeInteger(),
+    // M7（可选块，旧城池数据零改动）：人口/当日产出快照/日结幂等标记/围城状态
+    population: { type: FieldType.OBJECT },
+    production: { type: FieldType.OBJECT },
+    settledDay: nonNegativeInteger(),
+    status: { type: FieldType.STRING }
   },
   validate(city) {
     const errors = validateNonNegativeIntegerMap(city.resources, 'resources');
