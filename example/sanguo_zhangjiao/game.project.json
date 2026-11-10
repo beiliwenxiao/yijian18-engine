@@ -592,6 +592,40 @@
     },
     "firstConvoySafe": true
   },
+  "companionRule": {
+    "heroId": "hero.zhangjiao",
+    "initialRankId": "rank.wusheng",
+    "capacityMax": 100,
+    "reinforceDelayMs": 8000,
+    "chargeDurationMs": 4000,
+    "morale": {
+      "initial": 60,
+      "deathPenalty": 2,
+      "deathCapPerBattle": 10,
+      "victoryBonus": 5,
+      "fleePenalty": 5,
+      "restBonus": 3,
+      "campBonus": 2,
+      "idleDaysBeforeDecay": 3,
+      "decayPerDay": 3,
+      "floor": 5,
+      "ceiling": 100,
+      "lowThreshold": 10
+    }
+  },
+  "armyOrders": {
+    "tickMs": 500,
+    "tacticalRetreatMorale": 3,
+    "marchSpeed": 120,
+    "arrivalRadius": 24,
+    "orders": [
+      { "key": "attack", "label": "进攻", "executor": "march", "requiresTarget": true, "persistent": false },
+      { "key": "defend", "label": "防守", "executor": "defend", "requiresTarget": false, "persistent": true },
+      { "key": "transport", "label": "运输", "executor": "transport", "requiresTarget": true, "persistent": false },
+      { "key": "move", "label": "移动", "executor": "march", "requiresTarget": true, "persistent": false },
+      { "key": "camp", "label": "扎营", "executor": "camp", "requiresTarget": false, "persistent": false }
+    ]
+  },
   "battles": [
     {
       "$ref": "config/battles/S03.json",

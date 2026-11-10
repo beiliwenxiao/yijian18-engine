@@ -215,6 +215,46 @@ export const ARMY_SCHEMA = {
   }
 };
 
+/** 军团姿态枚举（含随行 escort 与冲锋 charge；CommandStateComponent.ARMY_STANCES 同源）。 */
+const ARMY_STANCE_KEYS = ['escort', 'assault', 'hold', 'advance', 'charge', 'retreat', 'rescue', 'flee', 'garrison'];
+
+/** 随行小队存档快照（storyState.companionSquad）。 */
+export const COMPANION_SQUAD_SCHEMA = {
+  id: 'companionSquad',
+  fields: {
+    unitIds: { type: FieldType.ARRAY, required: true, itemType: FieldType.STRING },
+    stance: { type: FieldType.STRING, enum: ARMY_STANCE_KEYS },
+    morale: { type: FieldType.NUMBER, min: 0, max: 100 },
+    moraleLedger: { type: FieldType.OBJECT },
+    armyPool: { type: FieldType.OBJECT },
+    members: { type: FieldType.ARRAY },
+    startDay: { type: FieldType.INTEGER, min: 0 }
+  }
+};
+
+/** 军团运行态（blackboard.armyStates[armyId]）：类别/名册/部署/指令 + 姿态 + 士气。 */
+export const ARMY_STATE_SCHEMA = {
+  id: 'armyState',
+  fields: {
+    id: { type: FieldType.STRING, minLength: 1 },
+    kind: { type: FieldType.STRING, enum: ['army', 'city', 'pass', 'camp'] },
+    factionId: { type: FieldType.STRING, nullable: true },
+    sceneId: { type: FieldType.STRING, nullable: true },
+    position: { type: FieldType.OBJECT },
+    roster: { type: FieldType.OBJECT },
+    commanderHeroId: { type: FieldType.STRING, nullable: true },
+    formationId: { type: FieldType.STRING, nullable: true },
+    deployment: { type: FieldType.OBJECT },
+    order: { type: FieldType.OBJECT, nullable: true },
+    battleDeployment: { type: FieldType.OBJECT },
+    battleOrder: { type: FieldType.OBJECT, nullable: true },
+    supply: { type: FieldType.OBJECT },
+    stance: { type: FieldType.STRING, enum: ARMY_STANCE_KEYS },
+    morale: { type: FieldType.NUMBER, min: 0, max: 100 },
+    updatedDay: { type: FieldType.INTEGER, min: 0 }
+  }
+};
+
 
 export const RESOURCE_NODE_SCHEMA = {
   id: 'resourceNode',
@@ -957,6 +997,9 @@ export const GAME_PROJECT_SCHEMA = {
     construction: { type: FieldType.OBJECT },
     // M2：配给额度 / 负重 / 押运损失表；缺省则配给与押运系统不启用
     supply: { type: FieldType.OBJECT },
+    // M3：随行小队规则（容量/士气/补位）与军团指令（将令解锁/折半系数，M6 扩展）
+    companionRule: { type: FieldType.OBJECT },
+    armyOrders: { type: FieldType.OBJECT },
     battles: { type: FieldType.ARRAY },
     rescues: { type: FieldType.ARRAY },
     scenarios: { type: FieldType.ARRAY },
@@ -990,6 +1033,8 @@ export const CANONICAL_SCHEMAS = [
   CONVOY_SCHEMA,
   RANK_SCHEMA,
   ARMY_SCHEMA,
+  COMPANION_SQUAD_SCHEMA,
+  ARMY_STATE_SCHEMA,
   RESOURCE_NODE_SCHEMA,
   RESOURCE_NODE_RISK_EVENT_SCHEMA,
   RESOURCE_NODE_HARVEST_YIELD_RANGE_SCHEMA,

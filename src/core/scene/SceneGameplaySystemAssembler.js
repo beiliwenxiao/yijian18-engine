@@ -50,6 +50,12 @@ import { ConstructionSystem } from '../../systems/ConstructionSystem.js';
 import { ProductionSystem } from '../../systems/ProductionSystem.js';
 import { SupplySystem } from '../../systems/SupplySystem.js';
 import { ConvoySystem } from '../../systems/ConvoySystem.js';
+import { CompanionSquadSystem } from '../../systems/CompanionSquadSystem.js';
+import { SceneCompanionSquadFlow } from './SceneCompanionSquadFlow.js';
+import { ArmyOrderSystem } from '../../systems/ArmyOrderSystem.js';
+import { SceneArmyOrderFlow } from './SceneArmyOrderFlow.js';
+import { SquadMemberComponent } from '../../ecs/components/SquadMemberComponent.js';
+import { CommandStateComponent } from '../../ecs/components/CommandStateComponent.js';
 import { VehicleSystem } from '../../systems/VehicleSystem.js';
 import { VehicleLogisticsSystem } from '../../systems/VehicleLogisticsSystem.js';
 import { MannedStructureAdapter } from '../../systems/MannedStructureAdapter.js';
@@ -839,6 +845,13 @@ export class SceneGameplaySystemAssembler {
         resolveCargo: typeof convoyConfig.resolveCargo === 'function'
           ? convoyConfig.resolveCargo
           : id => this._resolveInventory(id),
+        // 载具物理生成薄适配（M3 3A）：落点校验走场景可通行判定，生成走 EntityFactory
+        resolveSpawnPosition: typeof convoyConfig.resolveSpawnPosition === 'function'
+          ? convoyConfig.resolveSpawnPosition
+          : (candidate, radius) => this._resolveVehicleSpawnPosition(candidate, radius),
+        spawnVehicleEntity: typeof convoyConfig.spawnVehicleEntity === 'function'
+          ? convoyConfig.spawnVehicleEntity
+          : request => this._spawnConvoyVehicle(request),
         onLootDrop: convoyConfig.onLootDrop,
         onEvent: convoyConfig.onEvent,
         createEventId: convoyConfig.createEventId,
@@ -848,6 +861,48 @@ export class SceneGameplaySystemAssembler {
         maxOperations: convoyConfig.maxOperations,
         maxConvoys: convoyConfig.maxConvoys
       });
+    }
+
+    // 随行小队（M3 3A）：容量/士气/五档/补位领域系统 + 场景装配流（HUD、1-5 键、姿态转发、入档）
+    const companionConfig = config.companion || null;
+    let companionSystem = null;
+    let companionFlow = null;
+    if (companionConfig) {
+      companionSystem = new CompanionSquadSystem({
+        rule: companionConfig.rule || {},
+        now: companionConfig.now,
+        getCommand: companionConfig.getCommand,
+        getRankValue: companionConfig.getRankValue,
+        onEvent: companionConfig.onEvent
+      });
+      companionFlow = new SceneCompanionSquadFlow(scene, { system: companionSystem });
+      companionFlow.attach();
+      scene.companionSquadSystem = companionSystem;
+      scene.companionSquadFlow = companionFlow;
+      // 3A 补位实体重生成：同名实体已被清理时按蓝图重建（EntityFactory 友军管线）
+      scene.spawnCompanionMember = request => this._spawnCompanionMember(request);
+    }
+
+    // 武装单位战略指令（M3 3B）：armyStates + 五指令 + 500ms 战略刻 + 部署锁 + 将令
+    const armyOrderConfig = config.armyOrder || null;
+    let armyOrderSystem = null;
+    let armyOrderFlow = null;
+    if (armyOrderConfig) {
+      armyOrderSystem = new ArmyOrderSystem({
+        armyOrders: armyOrderConfig.armyOrders || armyOrderConfig.config || {},
+        now: armyOrderConfig.now,
+        getDay: armyOrderConfig.getDay,
+        battleAgent: armyOrderConfig.battleAgent,
+        formationExists: armyOrderConfig.formationExists,
+        resolveTargetPoint: armyOrderConfig.resolveTargetPoint,
+        executors: armyOrderConfig.executors,
+        encounterDetector: armyOrderConfig.encounterDetector,
+        onEvent: armyOrderConfig.onEvent
+      });
+      armyOrderFlow = new SceneArmyOrderFlow(scene, { system: armyOrderSystem });
+      armyOrderFlow.attach();
+      scene.armyOrderSystem = armyOrderSystem;
+      scene.armyOrderFlow = armyOrderFlow;
     }
 
     const vehicleConfig = config.vehicles || {};
@@ -883,6 +938,8 @@ export class SceneGameplaySystemAssembler {
     scene.mannedStructureAdapter = mannedStructureAdapter;
     if (supplySystem) scene.supplySystem = supplySystem;
     if (convoySystem) scene.convoySystem = convoySystem;
+    if (companionSystem) scene.companionSquadSystem = companionSystem;
+    if (armyOrderSystem) scene.armyOrderSystem = armyOrderSystem;
 
     const sharedSystems = Object.freeze({
       classSystem,
@@ -891,6 +948,8 @@ export class SceneGameplaySystemAssembler {
       productionSystem,
       supplySystem,
       convoySystem,
+      companionSquadSystem: companionSystem,
+      armyOrderSystem,
       vehicleSystem,
       vehicleLogisticsSystem,
       mannedStructureAdapter
@@ -898,6 +957,8 @@ export class SceneGameplaySystemAssembler {
     const facade = Object.freeze({ getSystems: () => sharedSystems });
     if (supplySystem) this._registerSupplyCommands(supplySystem);
     if (convoySystem) this._registerConvoyCommands(convoySystem);
+    if (companionSystem) this._registerCompanionCommands(companionSystem);
+    if (armyOrderSystem) this._registerArmyOrderCommands(armyOrderSystem);
     const abilityPlan = this.configureAbilities({
       skillRegistry: config.skillRegistry,
       effectResolver
@@ -991,12 +1052,50 @@ export class SceneGameplaySystemAssembler {
           }
         }]
         : []),
+      ...(companionSystem
+        ? [{
+          name: 'gameplay.companion',
+          instance: companionSystem,
+          options: {
+            order: 509,
+            updateHook: false,
+            disposeHook: () => {
+              companionSystem.onEvent = () => {};
+              companionSystem.spawnMember = null;
+              companionSystem.reinforcements = [];
+              if (companionFlow) {
+                companionFlow.hud.visible = false;
+                companionFlow.system = null;
+              }
+            },
+            ownership: 'OWNED'
+          }
+        }]
+        : []),
+      ...(armyOrderSystem
+        ? [{
+          name: 'gameplay.armyOrder',
+          instance: armyOrderSystem,
+          options: {
+            order: 510,
+            updateHook: false,
+            disposeHook: () => {
+              armyOrderSystem.onEvent = () => {};
+              armyOrderSystem.states?.clear?.();
+              armyOrderSystem.deployLocks?.clear?.();
+              if (armyOrderFlow) armyOrderFlow.system = null;
+            },
+            ownership: 'OWNED'
+          }
+        }]
+        : []),
       ...(abilityPlan?.registrations || [])
     ];
     const fields = {
       classes: 'classSystem', proficiency: 'proficiencySystem', construction: 'constructionSystem',
       production: 'productionSystem',
-      supply: 'supplySystem', convoy: 'convoySystem',
+      supply: 'supplySystem', convoy: 'convoySystem', companionSquad: 'companionSquadSystem',
+      armyOrder: 'armyOrderSystem',
       vehicle: 'vehicleSystem', vehicleLogistics: 'vehicleLogisticsSystem',
       mannedStructure: 'mannedStructureAdapter'
     };
@@ -1118,6 +1217,10 @@ export class SceneGameplaySystemAssembler {
       vehicleEntityId: payload.vehicleEntityId,
       cargoId: payload.cargoId || (payload.vehicleEntityId ? `${payload.vehicleEntityId}:cargo` : null),
       escortIds: payload.escortIds,
+      vehicleDefinitionId: payload.vehicleDefinitionId,
+      position: payload.position,
+      spawnPosition: payload.spawnPosition,
+      vehicleRadius: payload.vehicleRadius,
       operationId: payload.operationId
     }));
     register('convoy.load', payload => convoySystem.load(payload));
@@ -1132,6 +1235,207 @@ export class SceneGameplaySystemAssembler {
         : this._resolveInventory(payload.inventoryId || `${characterId}:inventory`);
       return convoySystem.unload({ ...payload, inventory });
     });
+  }
+
+  /**
+   * 随行小队命令（模块 3 3A）：编入/遣返/五档/休整/驻扎/阵亡上报。
+   * 士气与档位的最终裁决在 CompanionSquadSystem；本层只做命令转译与入档触发。
+   * @private
+   */
+  _registerCompanionCommands(companionSystem) {
+    const scene = this.scene;
+    const register = (type, handler) => scene.sceneRuntime?.registerCommandHandler?.(type, {
+      execute: command => handler(command?.payload || {})
+    });
+    const persist = () => scene.companionSquadFlow?.requestPersist?.();
+    register('companion.assign', payload => {
+      const result = companionSystem.assign(payload.unitIds || [], { morale: payload.morale });
+      if (result.ok) persist();
+      return result;
+    });
+    register('companion.dismiss', payload => {
+      const result = companionSystem.dismiss(payload.unitIds || []);
+      if (result.ok) persist();
+      return result;
+    });
+    register('companion.stance', payload => {
+      const result = companionSystem.setStance(payload.stance);
+      if (result.ok) persist();
+      return result;
+    });
+    register('companion.rest', payload => {
+      const result = companionSystem.rest(payload.day);
+      if (result.ok) persist();
+      return result;
+    });
+    register('companion.camp', payload => {
+      const result = companionSystem.camp(payload.day);
+      if (result.ok) persist();
+      return result;
+    });
+    register('companion.reportDowned', payload => {
+      const result = companionSystem.reportMemberDowned(payload.unitId, {
+        battleId: payload.battleId,
+        hpRatio: payload.hpRatio
+      });
+      if (result.ok) persist();
+      return result;
+    });
+    register('companion.battleResult', payload => companionSystem.reportBattleResult({
+      battleId: payload.battleId,
+      victory: payload.victory
+    }));
+  }
+
+  /**
+   * 武装单位战略指令命令桥（M3 3B）：unit.order / unit.order.cancel / unit.setFormation /
+   * army.deploy.commit / army.deploy.temp / battle.deploy.lock / unit.battleOrder /
+   * army.form / army.disband。全部透传 operationId（幂等由领域层记账）。
+   * @private
+   */
+  _registerArmyOrderCommands(armyOrderSystem) {
+    const scene = this.scene;
+    const register = (type, handler) => scene.sceneRuntime?.registerCommandHandler?.(type, {
+      execute: command => handler(command?.payload || {})
+    });
+    const persist = result => {
+      if (result?.ok) scene.armyOrderFlow?.requestPersist?.();
+      return result;
+    };
+    register('unit.order', payload => persist(armyOrderSystem.issueOrder({
+      unitId: payload.unitId || payload.armyId,
+      order: payload.order,
+      target: payload.target ?? null,
+      issuedDay: payload.issuedDay ?? null,
+      operationId: payload.operationId ?? null
+    })));
+    register('unit.order.cancel', payload => persist(armyOrderSystem.cancelOrder({
+      unitId: payload.unitId || payload.armyId,
+      operationId: payload.operationId ?? null
+    })));
+    register('unit.setFormation', payload => persist(armyOrderSystem.setFormation({
+      unitId: payload.unitId || payload.armyId,
+      formationId: payload.formationId,
+      battleId: payload.battleId ?? null,
+      operationId: payload.operationId ?? null
+    })));
+    register('army.deploy.commit', payload => persist(armyOrderSystem.commitDeployment({
+      unitId: payload.unitId || payload.armyId,
+      roster: payload.roster ?? null,
+      formationId: payload.formationId,
+      commanderSlot: payload.commanderSlot,
+      deputySlots: payload.deputySlots,
+      battleId: payload.battleId ?? null,
+      operationId: payload.operationId ?? null
+    })));
+    register('army.deploy.temp', payload => persist(armyOrderSystem.applyTempDeployment({
+      battleId: payload.battleId ?? null,
+      unitId: payload.unitId || payload.armyId,
+      roster: payload.roster ?? null,
+      formationId: payload.formationId,
+      commanderSlot: payload.commanderSlot,
+      deputySlots: payload.deputySlots,
+      setAsDefault: payload.setAsDefault === true,
+      operationId: payload.operationId ?? null
+    })));
+    register('battle.deploy.lock', payload => persist(armyOrderSystem.lockDeployment({
+      battleId: payload.battleId ?? null,
+      unitIds: payload.unitIds ?? null,
+      operationId: payload.operationId ?? null
+    })));
+    register('unit.battleOrder', payload => persist(armyOrderSystem.issueBattleOrder({
+      unitId: payload.unitId || payload.armyId,
+      battleId: payload.battleId ?? null,
+      kind: payload.kind || 'stance',
+      stance: payload.stance ?? null,
+      targetId: payload.targetId ?? null,
+      operationId: payload.operationId ?? null
+    })));
+    register('army.form', payload => persist(armyOrderSystem.registerUnit(payload)));
+    register('army.disband', payload => persist(armyOrderSystem.disbandUnit(
+      payload.unitId || payload.armyId
+    )));
+  }
+
+  /**
+   * 3A 补位实体重生成适配器：随行成员实体被清理后，按首次登记时缓存的蓝图
+   * （enemies 定义 id + 阵营 + 编组）经 EntityFactory 重建友军实体。
+   * 定义/工厂缺失时返回 null（领域层保留待补位并记账，不抛错）。
+   * @private
+   */
+  _spawnCompanionMember({ unitId, blueprint, position } = {}) {
+    const scene = this.scene;
+    if (!unitId) return null;
+    const definition = blueprint?.definitionId
+      ? scene.gameLoader?.getRegistry?.('enemies')?.get?.(blueprint.definitionId)
+      : null;
+    const factory = scene.entityFactory;
+    if (!definition || typeof factory?.createEnemy !== 'function') return null;
+    const entity = factory.createEnemy({
+      ...JSON.parse(JSON.stringify(definition)),
+      id: unitId,
+      contentId: definition.id,
+      templateId: definition.templateId || definition.id,
+      position: position ? { x: position.x, y: position.y } : { x: 0, y: 0 },
+      faction: blueprint.faction || 'ally'
+    });
+    if (!entity) return null;
+    entity.faction = blueprint.faction || 'ally';
+    entity.addComponent?.(new SquadMemberComponent({
+      armyId: blueprint.squadMember?.armyId || 'companion',
+      squadId: blueprint.squadMember?.squadId || 'companion',
+      formationIndex: blueprint.squadMember?.formationIndex ?? 0
+    }));
+    entity.addComponent?.(new CommandStateComponent());
+    if (typeof scene.entityStore?.addEnemy === 'function') scene.entityStore.addEnemy(entity);
+    else scene.entityStore?.add?.(entity);
+    return entity;
+  }
+
+  /**
+   * 载具落点校验适配器（模块 3 §6.1）：复用移动系统的地形可通行判定
+   * （map bounds / 楼层碰撞 / walkable shape，与跳跃落点修复同源）。
+   * 无移动系统（纯测试/无地形场景）时原样放行。
+   * @private
+   */
+  _resolveVehicleSpawnPosition(candidate, radius) {
+    if (!candidate) return null;
+    const movementSystem = this.scene.context?.systems?.movement || this.scene.movementSystem;
+    if (typeof movementSystem?.canMoveTo !== 'function') return { x: candidate.x, y: candidate.y };
+    return movementSystem.canMoveTo(candidate.x, candidate.y, null)
+      ? { x: candidate.x, y: candidate.y }
+      : null;
+  }
+
+  /**
+   * 载具实体生成适配器（模块 3 3A 薄适配）：按 vehicles 定义经 EntityFactory 生成，
+   * 挂入实体仓库与 VehicleSystem（货舱由定义 cargo 字段生成 CargoComponent）。
+   * @private
+   */
+  _spawnConvoyVehicle({ definitionId, position, convoyId } = {}) {
+    const scene = this.scene;
+    const definition = scene.gameLoader?.getRegistry?.('vehicles')?.get?.(definitionId);
+    if (!definition) return { ok: false, code: 'unknownVehicle' };
+    const factory = scene.entityFactory;
+    if (typeof factory?.createVehicle !== 'function') return { ok: false, code: 'vehicleSpawnUnavailable' };
+    const entityId = `${convoyId}:vehicle`;
+    const entity = factory.createVehicle({
+      ...JSON.parse(JSON.stringify(definition)),
+      id: entityId,
+      position: { x: position.x, y: position.y },
+      team: 'friendly'
+    });
+    if (!entity) return { ok: false, code: 'vehicleSpawnUnavailable' };
+    entity.vehicleDefinitionId = definitionId;
+    entity.sceneId = scene.currentSceneId || scene.sceneId || null;
+    scene.entityStore?.add?.(entity);
+    scene.context?.systems?.vehicle?.registerVehicle?.(entity);
+    return {
+      ok: true,
+      vehicleEntityId: entity.id,
+      cargoId: `${entity.id}:cargo`,
+      position: { x: position.x, y: position.y }
+    };
   }
 
   /**

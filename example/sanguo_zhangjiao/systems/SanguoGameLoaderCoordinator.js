@@ -305,6 +305,39 @@ function configureSharedClassEffects(gameLoader) {
     createEventId: createConvoyEventId,
     onEvent: (event, data) => publishGameplayEvent('convoy', event, data)
   } : null;
+  // 随行小队（M3 3A）：capacity = floor((统率 + 官职值) / 2)，统率取 heroes，官职值取 storyState.playerRank / ranks
+  const companionRule = gameLoader?.project?.companionRule || null;
+  const companionSystemConfig = companionRule ? {
+    rule: companionRule,
+    getCommand: () => Number(
+      gameLoader?.getRegistry?.('heroes')?.get?.(companionRule.heroId)?.stats?.command
+    ) || 0,
+    getRankValue: () => {
+      const story = gameLoader?.blackboard?.get?.('storyState') || {};
+      const rank = story.playerRank;
+      if (rank && Number.isFinite(Number(rank.value))) return Number(rank.value);
+      const rankId = rank?.rankId || companionRule.initialRankId;
+      return Number(gameLoader?.getRegistry?.('ranks')?.get?.(rankId)?.value) || 0;
+    },
+    onEvent: (event, data) => publishGameplayEvent('companion', event, data)
+  } : null;
+  // 武装单位战略指令（M3 3B）：五指令/500ms 战略刻/部署锁/将令；身份按 BattleMode 推断（M6 support 见 TODO）
+  const armyOrdersConfig = gameLoader?.project?.armyOrders || null;
+  const armyOrderSystemConfig = armyOrdersConfig ? {
+    armyOrders: armyOrdersConfig,
+    getDay: () => Number(gameLoader?.blackboard?.get?.('storyState')?.day) || 1,
+    battleAgent: {
+      getActiveBattleId: () => this.scene?.battleSystem?.definition?.battleId || null,
+      getBattleState: battleId => {
+        const state = this.scene?.battleSystem?.getState?.() || null;
+        return state && (!battleId || state.battleId === battleId) ? state : null;
+      }
+    },
+    formationExists: formationId => Boolean(
+      gameLoader?.getRegistry?.('formations')?.get?.(formationId)
+    ),
+    onEvent: (event, data) => publishGameplayEvent('armyOrder', event, data)
+  } : null;
   const sharedPlan = this._gameplaySystemAssembler.configureSharedSystems({
     effectResolver,
     skillRegistry: gameLoader.skillRegistry,
@@ -370,6 +403,8 @@ function configureSharedClassEffects(gameLoader) {
     },
     supply: supplySystemConfig,
     convoy: convoySystemConfig,
+    companion: companionSystemConfig,
+    armyOrder: armyOrderSystemConfig,
     vehicles: {
       resolveEntity: id => this.entityStore?.all?.find?.(entity => entity?.id === id) || null,
       getInventoryOwnerId: inventory => this.sanguoWorldRuntimeCoordinator.resolveVehicleInventoryOwnerId(inventory),
