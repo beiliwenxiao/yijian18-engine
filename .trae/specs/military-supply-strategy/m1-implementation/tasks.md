@@ -33,6 +33,9 @@
 ## 后续里程碑锚点（2026-11-10）
 
 - 步骤 1 已推 gitee：`c0bfd1b`(M2) / `8cce967`(3A) / `0d81ad5`(3B) / `dde1105`(3D)，fast-forward 无分叉。
-- 步骤 2（本节补丁）已提交，哈希见回报。
-- 步骤 3 = **M4 大地图指挥**，仅出范围与实施计划（[04-worldmap-command.md](../04-worldmap-command.md)），**等用户确认后再写代码**；进度锚点写在 `.trae/specs/military-supply-strategy/m4-implementation/`（计划文档产出前该目录不存在）。
+- 步骤 2（本节补丁）已提交 `2181ce9a`（本地，未推送）。
+- 步骤 3 = **M4 大地图指挥**，**仅出计划、未写代码**：见
+  [m4-implementation/spec.md](../m4-implementation/spec.md)（范围/文件/schema/接线/测试/风险 + §11 D1–D10 待拍板）
+  与 [m4-implementation/tasks.md](../m4-implementation/tasks.md)（4A/4B/4C 清单 + 进度锚点）。
+  用户确认 D1–D10 后才从 4A 开工。
 
