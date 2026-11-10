@@ -365,7 +365,23 @@ export class ScenePanelLayout {
       getPlayer: () => scene.playerEntity?.getComponent?.('transform')?.position || null,
       getSceneId: () => scene.currentSceneId || null,
       getCityStates: () => scene.gameLoader?.blackboard?.get?.('cityStates') || [],
-      getProject: () => scene.gameLoader?.project || null
+      getProject: () => scene.gameLoader?.project || null,
+      // 4A：逻辑路径层（唯一通行判定 + 派生投影）与军团状态
+      getArmyStates: () => scene.armyOrderSystem?.listUnits?.() || [],
+      getWorldLogic: () => scene.worldRouteLayer?.logic || null,
+      getRoutePreview: region => scene.worldRouteLayer?.buildPreview?.(region) || null,
+      getOrderDefinitions: () => scene.armyOrderSystem?.orderDefinitions || null,
+      // 4C：撞见遭遇时的四选确认（逻辑判定已在场景层暂停，面板只负责展示与回传选择）
+      getPendingEncounter: () => scene.armyOrderFlow?.getPendingEncounter?.() || null
+    });
+    scene.worldMapPanel.setHandlers({
+      onSelect: marker => {
+        scene.selectedWorldMarker = marker;
+      },
+      // 指令环 → 权威命令网关（unit.order）；面板只提供目标坐标，不判定通行。
+      onCommand: command => this._issueWorldCommand(scene, command),
+      // 四选 → SceneArmyOrderFlow.decideEncounter（唯一写 armyStates 的入口）
+      onEncounterDecide: payload => scene.armyOrderFlow?.decideEncounter?.(payload)
     });
 
     // 右侧小地图（以真实地图为基础，缩小到10%）
@@ -526,6 +542,35 @@ export class ScenePanelLayout {
       button.y = y;
       x += buttonWidth + gap;
     }
+  }
+
+  /**
+   * 大地图指令环 → 权威命令（unit.order）。只做载荷整形；
+   * 路线规划与通行判定全部由 ArmyOrderSystem/WorldRouteLayer 在执行时承担。
+   */
+  _issueWorldCommand(scene, command) {
+    if (!command || command.tab !== 'orders' || !command.marker) return null;
+    const unitId = command.marker.id;
+    if (!unitId) return null;
+    const targetMarker = command.targetMarker || null;
+    const target = command.target ? { ...command.target } : null;
+    // 城池卡「攻击」别名：target.cityId 与逻辑节点互认（WorldRouteLayer.resolveTarget 归一）
+    if (target && targetMarker?.kind === 'city' && targetMarker.id) {
+      target.cityId = targetMarker.id;
+    }
+    scene._worldOrderSequence = (Number(scene._worldOrderSequence) || 0) + 1;
+    const gateway = scene.sceneRuntime?.commandGateway;
+    if (!gateway?.execute) return null;
+    return gateway.execute({
+      intentType: 'unit.order',
+      actorRef: scene.playerEntity?.id || 'world-map',
+      operationId: `world-order:${scene.currentSceneId || 'map'}:${scene._worldOrderSequence}`,
+      payload: {
+        unitId,
+        order: command.key,
+        target
+      }
+    });
   }
 
   /** 返回只读使用的屏幕 HUD 像素矩形；矩形只在布局加载或 resize 时更新。 */

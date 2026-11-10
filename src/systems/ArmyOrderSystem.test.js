@@ -109,7 +109,7 @@ describe('ArmyOrderSystem 战略指令（M3 3B）', () => {
     expect(system.getUnit('army.s02.guard').position.x).toBeCloseTo(300);
   });
 
-  it('遭遇：encounterDetector 命中只发一次 unit.encounterResolved', () => {
+  it('遭遇：encounterDetector 命中只发一次 unit.encounterPending，结算事件由确认层发', () => {
     const { system: encounterSystem, events: encounterEvents } = makeSystem({
       encounterDetector: () => ({ type: 'battle', enemyCount: 3 })
     });
@@ -117,7 +117,11 @@ describe('ArmyOrderSystem 战略指令（M3 3B）', () => {
     encounterSystem.issueOrder({ unitId: 'army.s02.guard', order: 'move', target: { x: 300, y: 0 } });
     encounterSystem.tick(500);
     encounterSystem.tick(500);
-    expect(encounterEvents.filter(entry => entry.event === 'unit.encounterResolved').length).toBe(1);
+    expect(encounterEvents.filter(entry => entry.event === 'unit.encounterPending').length).toBe(1);
+    expect(encounterSystem.getUnit('army.s02.guard').order.pendingEncounter)
+      .toMatchObject({ type: 'battle', enemyCount: 3 });
+    // 4C 四选确认：检测层只登记待决，unit.encounterResolved 由 SceneArmyOrderFlow.decideEncounter 结算后发
+    expect(encounterEvents.filter(entry => entry.event === 'unit.encounterResolved').length).toBe(0);
   });
 
   it('取消指令：ok 后回到无指令；重复取消 noOrder', () => {
@@ -291,5 +295,124 @@ describe('ArmyOrderSystem 战略指令（M3 3B）', () => {
     expect(state.order.target).toEqual({ x: 100, y: 0 });
     expect(restored.isDeployLocked('army.s02.guard', 'battle.s02')).toBe(true);
     expect(restored.restore({ schemaVersion: 9 }).code).toBe('unsupportedVersion');
+  });
+});
+
+describe('ArmyOrderSystem · M4 4A 逻辑路径接线', () => {
+  const route = () => ({
+    nodeIds: ['node.a', 'node.b', 'node.c'],
+    edgeIds: ['edge.ab', 'edge.bc'],
+    points: [{ x: 0, y: 0 }, { x: 300, y: 0 }, { x: 300, y: 400 }],
+    totalDistance: 700,
+    revision: 3
+  });
+
+  it('routePlanner 命中 → 写入 state.route，order.totalDistance 用路线总长', () => {
+    const { system } = makeSystem({ routePlanner: () => ({ ok: true, ...route() }) });
+    registerArmy(system);
+    const result = system.issueOrder({ unitId: 'army.s02.guard', order: 'move', target: { nodeId: 'node.c' } });
+    expect(result.ok).toBe(true);
+    expect(result.route.nodeIds).toEqual(['node.a', 'node.b', 'node.c']);
+    expect(result.order.totalDistance).toBe(700);
+    const state = system.getUnit('army.s02.guard');
+    expect(state.route.index).toBe(1);
+    expect(state.route.travelled).toBe(0);
+    expect(state.route.status).toBe('marching');
+  });
+
+  it('planner 返回 ok:false → 拒绝下令（不写 order、不扣士气）', () => {
+    const { system } = makeSystem({ routePlanner: () => ({ ok: false, code: 'passBlocked' }) });
+    registerArmy(system);
+    const before = system.getUnit('army.s02.guard').morale;
+    const result = system.issueOrder({ unitId: 'army.s02.guard', order: 'move', target: { nodeId: 'node.x' } });
+    expect(result).toMatchObject({ ok: false, code: 'passBlocked' });
+    expect(system.getUnit('army.s02.guard').order).toBeNull();
+    expect(system.getUnit('army.s02.guard').morale).toBe(before);
+  });
+
+  it('planner 返回 null（无逻辑图）→ 直线兜底，route 为 null', () => {
+    const { system } = makeSystem({ routePlanner: () => null });
+    registerArmy(system);
+    const result = system.issueOrder({ unitId: 'army.s02.guard', order: 'move', target: { x: 300, y: 400 } });
+    expect(result.ok).toBe(true);
+    expect(result.route).toBeNull();
+    expect(system.getUnit('army.s02.guard').route).toBeNull();
+    expect(result.order.totalDistance).toBeCloseTo(500);
+  });
+
+  it('cancelOrder 清 route；非 march 指令也清掉旧 route', () => {
+    const { system } = makeSystem({ routePlanner: () => ({ ok: true, ...route() }) });
+    registerArmy(system);
+    system.issueOrder({ unitId: 'army.s02.guard', order: 'move', target: { nodeId: 'node.c' } });
+    expect(system.getUnit('army.s02.guard').route).not.toBeNull();
+    const cancelled = system.cancelOrder({ unitId: 'army.s02.guard' });
+    expect(cancelled.cancelledRoute.nodeIds).toHaveLength(3);
+    expect(system.getUnit('army.s02.guard').route).toBeNull();
+
+    system.issueOrder({ unitId: 'army.s02.guard', order: 'move', target: { nodeId: 'node.c' } });
+    system.issueOrder({ unitId: 'army.s02.guard', order: 'defend' });
+    expect(system.getUnit('army.s02.guard').route).toBeNull();
+  });
+
+  it('pendingEncounter 暂停战略刻；清除后恢复推进', () => {
+    const march = vi.fn(() => ({ status: 'executing', progress: 0.5 }));
+    const { system } = makeSystem({
+      routePlanner: () => ({ ok: true, ...route() }),
+      executors: { march }
+    });
+    registerArmy(system);
+    system.issueOrder({ unitId: 'army.s02.guard', order: 'move', target: { nodeId: 'node.c' } });
+    system.getUnit('army.s02.guard').order.pendingEncounter = { enemyId: 'enemy.wolf' };
+
+    system.tick(500);
+    expect(march).not.toHaveBeenCalled();
+
+    delete system.getUnit('army.s02.guard').order.pendingEncounter;
+    system.tick(500);
+    expect(march).toHaveBeenCalledTimes(1);
+    expect(system.getUnit('army.s02.guard').order.progress).toBeCloseTo(0.5);
+  });
+
+  it('执行器 routeBlocked → 清 route 并发 unit.routeBlocked', () => {
+    const { system, events } = makeSystem({
+      routePlanner: () => ({ ok: true, ...route() }),
+      executors: { march: () => ({ status: 'failed', code: 'routeBlocked', edgeId: 'edge.bc' }) }
+    });
+    registerArmy(system);
+    system.issueOrder({ unitId: 'army.s02.guard', order: 'move', target: { nodeId: 'node.c' } });
+    events.length = 0;
+    system.tick(500);
+    expect(system.getUnit('army.s02.guard').route).toBeNull();
+    expect(events.filter(entry => entry.event === 'unit.orderFailed')).toHaveLength(1);
+    expect(events.filter(entry => entry.event === 'unit.routeBlocked')).toHaveLength(1);
+  });
+
+  it('serialize/restore 保留 route；旧档无 route 容忍', () => {
+    const { system } = makeSystem({ routePlanner: () => ({ ok: true, ...route() }) });
+    registerArmy(system);
+    system.issueOrder({ unitId: 'army.s02.guard', order: 'move', target: { nodeId: 'node.c' } });
+    const snapshot = system.serialize();
+    expect(snapshot.units[0].route.nodeIds).toEqual(['node.a', 'node.b', 'node.c']);
+
+    const restored = new ArmyOrderSystem({ now: () => 1000 });
+    expect(restored.restore(snapshot).ok).toBe(true);
+    expect(restored.getUnit('army.s02.guard').route.totalDistance).toBe(700);
+
+    const legacy = system.serialize();
+    delete legacy.units[0].route;
+    const restoredLegacy = new ArmyOrderSystem({ now: () => 1000 });
+    expect(restoredLegacy.restore(legacy).ok).toBe(true);
+    expect(restoredLegacy.getUnit('army.s02.guard').route).toBeNull();
+  });
+
+  it('commitDeployment 补发 deployment.committed 事件', () => {
+    const { system, events } = makeSystem();
+    registerArmy(system);
+    events.length = 0;
+    const committed = system.commitDeployment({ unitId: 'army.s02.guard', formationId: 'line' });
+    expect(committed.ok).toBe(true);
+    const emitted = events.filter(entry => entry.event === 'deployment.committed');
+    expect(emitted).toHaveLength(1);
+    expect(emitted[0].payload.unitId).toBe('army.s02.guard');
   });
 });

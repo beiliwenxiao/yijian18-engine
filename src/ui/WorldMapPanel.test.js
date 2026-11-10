@@ -10,7 +10,7 @@
  *            https://gitee.com/coderaaa/yijian18-engine
  ************************************************************/
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { WorldMapPanel } from './WorldMapPanel.js';
 
 const S09_ANCHOR = {
@@ -111,5 +111,74 @@ describe('WorldMapPanel', () => {
     expect(panel.handleInput({ inputManager })).toBe(false);
     panel.open();
     expect(panel.handleInput({ inputManager })).toBe(true);
+  });
+});
+
+describe('WorldMapPanel 遭遇四选确认框（4C）', () => {
+  const makeCtx = () => new Proxy({}, {
+    get: (target, key) => {
+      if (key in target) return target[key];
+      if (key === 'measureText') return () => ({ width: 40 });
+      return () => {};
+    },
+    set: (target, key, value) => {
+      target[key] = value;
+      return true;
+    }
+  });
+
+  const card = { x: 0, y: 0, w: 1000, h: 700 };
+  const makeEncounter = (available = {}) => ({
+    id: 'enc.1',
+    unitId: 'army.player',
+    kind: 'city',
+    nodeId: 'S09',
+    createdAt: 0,
+    expiresAt: 8000,
+    remainingMs: 4000,
+    available: { ambush: true, detour: false, fight: true, retreat: true, ...available }
+  });
+
+  it('渲染四个按钮，不可用项置灰并标注当前不可用', () => {
+    const panel = makePanel({ getPendingEncounter: () => makeEncounter() });
+    panel._renderEncounter(makeCtx(), card);
+    expect(panel._encounterRects).toHaveLength(4);
+    expect(panel._encounterRects.map(rect => rect.choice)).toEqual(['ambush', 'detour', 'fight', 'retreat']);
+    expect(panel._encounterRects.find(rect => rect.choice === 'detour').enabled).toBe(false);
+    expect(panel._encounterRects.filter(rect => rect.enabled)).toHaveLength(3);
+  });
+
+  it('点击可用按钮回调 { unitId, encounterId, choice }', () => {
+    const decide = vi.fn();
+    const panel = makePanel({ getPendingEncounter: () => makeEncounter() });
+    panel.setHandlers({ onEncounterDecide: decide });
+    panel.open();
+    panel._renderEncounter(makeCtx(), card);
+    const rect = panel._encounterRects.find(entry => entry.choice === 'ambush');
+
+    expect(panel.handleMouseClick(rect.x + rect.w / 2, rect.y + rect.h / 2)).toBe(true);
+    expect(decide).toHaveBeenCalledWith({ unitId: 'army.player', encounterId: 'enc.1', choice: 'ambush' });
+  });
+
+  it('点击置灰按钮只吞输入、不回调', () => {
+    const decide = vi.fn();
+    const panel = makePanel({ getPendingEncounter: () => makeEncounter() });
+    panel.setHandlers({ onEncounterDecide: decide });
+    panel.open();
+    panel._renderEncounter(makeCtx(), card);
+    const rect = panel._encounterRects.find(entry => entry.choice === 'detour');
+
+    expect(panel.handleMouseClick(rect.x + rect.w / 2, rect.y + rect.h / 2)).toBe(true);
+    expect(decide).not.toHaveBeenCalled();
+  });
+
+  it('无待决遭遇：按钮表为空且不回调', () => {
+    const decide = vi.fn();
+    const panel = makePanel({ getPendingEncounter: () => null });
+    panel.setHandlers({ onEncounterDecide: decide });
+    panel._renderEncounter(makeCtx(), card);
+    expect(panel._encounterRects).toEqual([]);
+    panel.handleMouseClick(500, 350);
+    expect(decide).not.toHaveBeenCalled();
   });
 });

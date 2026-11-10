@@ -107,6 +107,16 @@ function normalizeRoster(roster) {
   return next;
 }
 
+/** 遭遇冷却（撤退/结算后该边或节点免遭遇 N 刻）。 */
+function normalizeCooldown(value) {
+  if (!value || typeof value !== 'object') return null;
+  const edgeId = value.edgeId != null ? String(value.edgeId) : null;
+  const nodeId = value.nodeId != null ? String(value.nodeId) : null;
+  const remainingTicks = Math.max(0, Math.floor(Number(value.remainingTicks) || 0));
+  if ((!edgeId && !nodeId) || remainingTicks <= 0) return null;
+  return { edgeId, nodeId, remainingTicks };
+}
+
 /**
  * 战略指令系统。
  */
@@ -121,6 +131,7 @@ export class ArmyOrderSystem {
    * @param {Function|null} [config.resolveTargetPoint] - target => {x,y}|null（目标引用解析）
    * @param {Object} [config.executors] - { march, defend, transport, camp } 执行器覆盖
    * @param {Function|null} [config.encounterDetector] - (state, order) => encounter|null
+   * @param {Function|null} [config.routePlanner] - ({unitId,state,order,target,point}) => route|null|{ok:false,code}
    * @param {Function|null} [config.onEvent] - (event, payload) => void
    */
   constructor({
@@ -132,6 +143,7 @@ export class ArmyOrderSystem {
     resolveTargetPoint = null,
     executors = null,
     encounterDetector = null,
+    routePlanner = null,
     onEvent = null
   } = {}) {
     this.config = this._mergeConfig(armyOrders || {});
@@ -141,6 +153,7 @@ export class ArmyOrderSystem {
     this.formationExists = typeof formationExists === 'function' ? formationExists : null;
     this.resolveTargetPoint = typeof resolveTargetPoint === 'function' ? resolveTargetPoint : null;
     this.encounterDetector = typeof encounterDetector === 'function' ? encounterDetector : null;
+    this.routePlanner = typeof routePlanner === 'function' ? routePlanner : null;
     this.onEvent = typeof onEvent === 'function' ? onEvent : null;
 
     /** @type {Map<string, Object>} armyId → 运行态（spec §3 表） */
@@ -256,6 +269,8 @@ export class ArmyOrderSystem {
         lockedBattleId: deployment.lockedBattleId != null ? String(deployment.lockedBattleId) : null
       },
       order: this._normalizeOrder(input.order),
+      route: this._normalizeRoute(input.route),
+      encounterCooldown: normalizeCooldown(input.encounterCooldown),
       morale: input.morale != null ? clampMorale(input.morale) : 80,
       supply: input.supply && typeof input.supply === 'object' ? clone(input.supply) : {},
       battleDeployment: input.battleDeployment && typeof input.battleDeployment === 'object'
@@ -274,7 +289,46 @@ export class ArmyOrderSystem {
       state: ['executing', 'completed', 'failed'].includes(order.state) ? order.state : 'executing',
       progress: clamp01(order.progress),
       totalDistance: Number.isFinite(Number(order.totalDistance)) ? Number(order.totalDistance) : null,
-      issuedAt: Number.isFinite(Number(order.issuedAt)) ? Number(order.issuedAt) : this.now()
+      issuedAt: Number.isFinite(Number(order.issuedAt)) ? Number(order.issuedAt) : this.now(),
+      pendingEncounter: order.pendingEncounter && typeof order.pendingEncounter === 'object'
+        ? clone(order.pendingEncounter)
+        : null,
+      encounterResolvedAt: Number.isFinite(Number(order.encounterResolvedAt))
+        ? Number(order.encounterResolvedAt)
+        : null
+    };
+  }
+
+  /**
+   * 逻辑路径（WorldRouteLayer.shortestPath 的产物）：节点链 + 边链 + 进度。
+   * 缺省/非法返回 null（旧档无 route 走直线兜底）。
+   */
+  _normalizeRoute(route) {
+    if (!route || typeof route !== 'object') return null;
+    const nodeIds = Array.isArray(route.nodeIds) ? route.nodeIds.filter(id => id != null).map(String) : [];
+    if (nodeIds.length < 2) return null;
+    const edgeIds = Array.isArray(route.edgeIds) ? route.edgeIds.filter(id => id != null).map(String) : [];
+    const points = Array.isArray(route.points)
+      ? route.points.map(entry => normalizePoint(entry)).filter(Boolean)
+      : [];
+    const maxIndex = nodeIds.length - 1;
+    const rawIndex = Number(route.index);
+    const index = Number.isFinite(rawIndex)
+      ? Math.min(maxIndex, Math.max(1, Math.floor(rawIndex)))
+      : 1;
+    const totalDistance = Number(route.totalDistance);
+    const travelled = Number(route.travelled);
+    return {
+      nodeIds,
+      edgeIds,
+      points,
+      index,
+      totalDistance: Number.isFinite(totalDistance) && totalDistance > 0 ? totalDistance : null,
+      travelled: Number.isFinite(travelled) && travelled > 0 ? travelled : 0,
+      progress: clamp01(route.progress),
+      revision: Number.isFinite(Number(route.revision)) ? Number(route.revision) : null,
+      status: route.status != null ? String(route.status) : 'marching',
+      blockedReason: route.blockedReason != null ? String(route.blockedReason) : null
     };
   }
 
@@ -313,13 +367,34 @@ export class ArmyOrderSystem {
       }
       const requiresTarget = definition ? definition.requiresTarget : true;
       if (requiresTarget && !target) return { ok: false, code: 'targetRequired', order: type };
+      const point = this._resolvePoint(target);
+      // 选路：只有 march 类执行器走逻辑图；planner 返回 null = 无逻辑图，直线兜底；
+      // 返回 {ok:false} = 不可达，拒绝下令（不写 order、不扣士气）。
+      let route = null;
+      if (this.routePlanner && definition && definition.executor === 'march') {
+        let planned = null;
+        try {
+          planned = this.routePlanner({ unitId: state.id, state, order: { type, target }, target, point });
+        } catch (error) {
+          planned = { ok: false, code: 'routePlannerError' };
+        }
+        if (planned && planned.ok === false) {
+          return {
+            ok: false,
+            code: planned.code || 'noPath',
+            unitId: state.id,
+            order: type,
+            detail: clone(planned)
+          };
+        }
+        if (planned && planned.ok === true) route = this._normalizeRoute(planned);
+      }
       if (isRetreat && this.config.tacticalRetreatMorale > 0) {
         state.morale = clampMorale(state.morale - this.config.tacticalRetreatMorale);
       }
-      const point = this._resolvePoint(target);
-      const distance = point
-        ? Math.hypot(point.x - state.position.x, point.y - state.position.y)
-        : null;
+      const distance = route?.totalDistance != null
+        ? route.totalDistance
+        : (point ? Math.hypot(point.x - state.position.x, point.y - state.position.y) : null);
       const replaced = state.order != null;
       state.order = {
         type,
@@ -330,9 +405,15 @@ export class ArmyOrderSystem {
         totalDistance: distance,
         issuedAt: this.now()
       };
+      state.route = route;
       const payloadOrder = clone(state.order);
-      this._emit('unit.orderIssued', { unitId: state.id, order: payloadOrder, morale: state.morale });
-      return { ok: true, unitId: state.id, order: payloadOrder, replaced };
+      this._emit('unit.orderIssued', {
+        unitId: state.id,
+        order: payloadOrder,
+        route: clone(route),
+        morale: state.morale
+      });
+      return { ok: true, unitId: state.id, order: payloadOrder, route: clone(route), replaced };
     });
   }
 
@@ -344,8 +425,10 @@ export class ArmyOrderSystem {
       if (!state) return { ok: false, code: 'unknownUnit', unitId: id };
       if (!state.order) return { ok: false, code: 'noOrder', unitId: state.id };
       const cancelled = clone(state.order);
+      const cancelledRoute = clone(state.route);
       state.order = null;
-      return { ok: true, unitId: state.id, cancelled };
+      state.route = null;
+      return { ok: true, unitId: state.id, cancelled, cancelledRoute };
     });
   }
 
@@ -387,6 +470,7 @@ export class ArmyOrderSystem {
       }
       deployment.committed = true;
       deployment.committedAt = this.now();
+      this._emit('deployment.committed', { unitId: state.id, deployment: clone(deployment) });
       return { ok: true, unitId: state.id, deployment: clone(deployment) };
     });
   }
@@ -621,17 +705,35 @@ export class ArmyOrderSystem {
     return { steps };
   }
 
+  /** 遭遇冷却按战略刻递减（撤退后该边免遭遇）。 */
+  _tickEncounterCooldown(state) {
+    const cooldown = state.encounterCooldown;
+    if (!cooldown) return;
+    cooldown.remainingTicks = Math.max(0, Number(cooldown.remainingTicks) - 1);
+    if (cooldown.remainingTicks <= 0) state.encounterCooldown = null;
+  }
+
   _strategicStep(stepMs) {
     for (const state of this.states.values()) {
       const order = state.order;
       if (!order || order.state !== 'executing') continue;
+      this._tickEncounterCooldown(state);
+      // 待决遭遇（4C）：暂停该单位战略刻，等玩家四选；其余单位照常推进。
+      if (order.pendingEncounter) continue;
       if (this.encounterDetector) {
-        const encounter = this.encounterDetector(state, order);
-        if (encounter && order.encounterResolvedAt == null) {
-          order.encounterResolvedAt = this.now();
-          this._emit('unit.encounterResolved', {
+        let encounter = null;
+        try {
+          encounter = this.encounterDetector(state, order);
+        } catch (error) {
+          encounter = null;
+        }
+        if (encounter) {
+          order.pendingEncounter = clone(encounter);
+          this._emit('unit.encounterPending', {
             unitId: state.id, encounter: clone(encounter), order: clone(order)
           });
+          // 本刻不推进（spec §6.2：消耗 1 个战略刻 = 本刻不推进）
+          continue;
         }
       }
       const definition = this._orderDefs.get(order.type);
@@ -659,11 +761,12 @@ export class ArmyOrderSystem {
       if (point) state.position = point;
     }
     if (result.progress !== undefined) order.progress = clamp01(result.progress);
-    if (result.encounter && order.encounterResolvedAt == null) {
-      order.encounterResolvedAt = this.now();
-      this._emit('unit.encounterResolved', {
+    if (result.encounter) {
+      order.pendingEncounter = clone(result.encounter);
+      this._emit('unit.encounterPending', {
         unitId: state.id, encounter: clone(result.encounter), order: clone(order)
       });
+      return;
     }
     if (result.status === 'completed') {
       this._completeOrder(state, result);
@@ -679,6 +782,7 @@ export class ArmyOrderSystem {
     order.progress = 1;
     const payload = clone(order);
     state.order = null;
+    state.route = null;
     this._emit('unit.orderCompleted', { unitId: state.id, order: payload, code: extra.code || null });
   }
 
@@ -688,7 +792,12 @@ export class ArmyOrderSystem {
     order.state = 'failed';
     const payload = clone(order);
     state.order = null;
+    state.route = null;
     this._emit('unit.orderFailed', { unitId: state.id, order: payload, code, detail: clone(detail) });
+    // 行军途中路径失效（敌占关隘/封路）单独发事件，供面板提示并触发重规划。
+    if (code === 'routeBlocked') {
+      this._emit('unit.routeBlocked', { unitId: state.id, order: payload, code, detail: clone(detail) });
+    }
   }
 
   /** 缺省行军执行器：按 marchSpeed 向目标点直线推进，到达即完成。 */
@@ -752,6 +861,8 @@ export class ArmyOrderSystem {
         formationId: state.formationId,
         deployment: state.deployment,
         order: state.order,
+        route: state.route,
+        encounterCooldown: state.encounterCooldown,
         morale: state.morale,
         supply: state.supply,
         battleDeployment: state.battleDeployment,

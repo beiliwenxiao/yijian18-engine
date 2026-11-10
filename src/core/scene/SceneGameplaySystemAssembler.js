@@ -54,6 +54,10 @@ import { CompanionSquadSystem } from '../../systems/CompanionSquadSystem.js';
 import { SceneCompanionSquadFlow } from './SceneCompanionSquadFlow.js';
 import { ArmyOrderSystem } from '../../systems/ArmyOrderSystem.js';
 import { SceneArmyOrderFlow } from './SceneArmyOrderFlow.js';
+import { WorldRouteLayer } from '../world/WorldRouteLayer.js';
+import { WorldMarchExecutor } from '../world/WorldMarchExecutor.js';
+import { EncounterResolver } from '../../systems/world/EncounterResolver.js';
+import { PassTariffSystem } from '../../systems/world/PassTariffSystem.js';
 import { DownedDropService } from '../../systems/DownedDropService.js';
 import { LootPickupBehavior } from '../../systems/ai/LootPickupBehavior.js';
 import { isHostileTarget } from '../FactionRules.js';
@@ -923,6 +927,73 @@ export class SceneGameplaySystemAssembler {
     let armyOrderSystem = null;
     let armyOrderFlow = null;
     if (armyOrderConfig) {
+      // 4A：独立世界逻辑路径层（唯一通行判定 + 派生投影 + Dijkstra）
+      const worldLogic = armyOrderConfig.worldLogic
+        || config.worldLogic
+        || scene.gameLoader?.project?.worldLogic
+        || null;
+      const worldRouteLayer = worldLogic
+        ? new WorldRouteLayer({
+          logic: worldLogic,
+          getDay: armyOrderConfig.getDay,
+          getOwnership: armyOrderConfig.getOwnership
+            || (nodeId => this._worldNodeFaction(scene, nodeId)),
+          moverFactionId: armyOrderConfig.factionId || null
+        })
+        : null;
+      const worldMarchExecutor = worldRouteLayer
+        ? new WorldMarchExecutor({
+          layer: worldRouteLayer,
+          marchSpeed: armyOrderConfig.worldMarchSpeed
+        })
+        : null;
+      const routePlanner = worldRouteLayer
+        ? ({ state, target, point }) => this._planWorldRoute(worldRouteLayer, { state, target, point })
+        : null;
+      // 4C：遭遇四选（探测/公式）+ 关隘关税（经过计税 / 日结入城）
+      const unitTypeRegistry = scene.gameLoader?.registries?.unitTypes;
+      const heroRegistry = scene.gameLoader?.registries?.heroes;
+      const formationRegistry = scene.gameLoader?.registries?.formations;
+      const encounterResolver = worldRouteLayer
+        ? new EncounterResolver({
+          combat: worldLogic?.combat || null,
+          rng: armyOrderConfig.rng,
+          resolveUnitType: unitTypeId => unitTypeRegistry?.get?.(unitTypeId) || null,
+          resolveHero: heroId => heroRegistry?.get?.(heroId) || null,
+          resolveFormation: formationId => formationRegistry?.get?.(formationId) || null,
+          getCityState: cityId => (scene.gameLoader?.blackboard?.get?.('cityStates') || [])
+            .find(city => city && String(city.id) === String(cityId)) || null,
+          now: armyOrderConfig.now
+        })
+        : null;
+      const passTariffSystem = new PassTariffSystem({
+        tariff: worldLogic?.tariff || null,
+        listPasses: () => armyOrderSystem.listUnits().filter(unit => unit.kind === 'pass'),
+        getPass: passId => armyOrderSystem.getUnit(passId),
+        updatePassToll: (passId, total) => {
+          const pass = armyOrderSystem.getUnit(passId);
+          if (!pass) return;
+          pass.supply = { ...(pass.supply || {}), toll: Math.max(0, Math.floor(Number(total) || 0)) };
+        },
+        // 归属方最近城池：同阵营逻辑城池节点绑定的 cityStates id
+        resolveCityForPass: (passId, ownerFactionId) => {
+          if (!worldRouteLayer || ownerFactionId == null) return null;
+          const passNode = worldRouteLayer.getNode(passId);
+          if (!passNode) return null;
+          let best = null;
+          for (const node of worldRouteLayer.nodes.values()) {
+            if (!node || node.kind !== 'city') continue;
+            if (String(worldRouteLayer.getOwner(node.id) ?? '') !== String(ownerFactionId)) continue;
+            const distance = Math.hypot(
+              Number(node.position?.x) - Number(passNode.position?.x),
+              Number(node.position?.y) - Number(passNode.position?.y)
+            );
+            if (!best || distance < best.distance) best = { cityId: node.ref?.id || node.id, distance };
+          }
+          return best ? best.cityId : null;
+        },
+        onEvent: (event, payload) => armyOrderSystem._emit?.(event, payload)
+      });
       armyOrderSystem = new ArmyOrderSystem({
         armyOrders: armyOrderConfig.armyOrders || armyOrderConfig.config || {},
         now: armyOrderConfig.now,
@@ -932,12 +1003,38 @@ export class SceneGameplaySystemAssembler {
         resolveTargetPoint: armyOrderConfig.resolveTargetPoint,
         executors: armyOrderConfig.executors,
         encounterDetector: armyOrderConfig.encounterDetector,
-        onEvent: armyOrderConfig.onEvent
+        onEvent: armyOrderConfig.onEvent,
+        routePlanner
       });
-      armyOrderFlow = new SceneArmyOrderFlow(scene, { system: armyOrderSystem });
+      armyOrderFlow = new SceneArmyOrderFlow(scene, {
+        system: armyOrderSystem,
+        marchExecutor: worldMarchExecutor,
+        encounterResolver,
+        passTariffSystem,
+        applyBattleResult: result => {
+          const cityWar = scene.cityWarSystem
+            || scene.battleSession?.runtime?.cityWarSystem
+            || scene.sceneBattleRuntime?.cityWarSystem
+            || null;
+          if (cityWar?.applyBattleResult) {
+            return cityWar.applyBattleResult({ result, operationId: result?.resultId });
+          }
+          return scene.publishApplicationEvent?.('city.battleResult', result) || null;
+        },
+        now: armyOrderConfig.now
+      });
       armyOrderFlow.attach();
+      // WorldMarchExecutor 进入节点回调 → 关隘计税（经过即计，日结入城）
+      if (worldMarchExecutor) {
+        worldMarchExecutor.onEnterNode = payload => armyOrderFlow.handleEnterNode?.(payload);
+      }
       scene.armyOrderSystem = armyOrderSystem;
       scene.armyOrderFlow = armyOrderFlow;
+      if (worldRouteLayer) {
+        scene.worldRouteLayer = worldRouteLayer;
+        scene.worldMarchExecutor = worldMarchExecutor;
+        this._registerWorldRouteCommands(worldRouteLayer);
+      }
     }
 
     // 倒地掉落 + 敌对 NPC 拾取（M3 3D）：CombatSystem 单点钩子触发，掉落/夺回/到期为纯领域服务。
@@ -1154,7 +1251,13 @@ export class SceneGameplaySystemAssembler {
               armyOrderSystem.onEvent = () => {};
               armyOrderSystem.states?.clear?.();
               armyOrderSystem.deployLocks?.clear?.();
-              if (armyOrderFlow) armyOrderFlow.system = null;
+              if (armyOrderFlow) {
+                armyOrderFlow.system = null;
+                armyOrderFlow.marchExecutor = null;
+              }
+              // 4A：逻辑路径层与执行器随场景释放（快照/预览缓存一并失效）
+              scene.worldRouteLayer = null;
+              scene.worldMarchExecutor = null;
             },
             ownership: 'OWNED'
           }
@@ -1486,6 +1589,102 @@ export class SceneGameplaySystemAssembler {
       battleId: payload.battleId,
       victory: payload.victory
     }));
+  }
+
+  /**
+   * 世界逻辑路径规划（4A）：起点=军团当前位置最近节点，终点=指令目标吸附节点。
+   * 只读 `WorldRouteLayer` 快照，任何不可达以 `{ok:false, code}` 拒绝下令（不扣士气）。
+   * @private
+   */
+  _planWorldRoute(layer, { state, target, point }) {
+    const origin = layer.findNearestNode(state?.position, { maxDistance: 320 });
+    if (!origin) return { ok: false, code: 'unknownNode' };
+    const destinationId = layer.resolveTarget(target ?? point ?? null, { maxSnapDistance: 320 });
+    if (!destinationId) return { ok: false, code: 'unknownNode' };
+    const path = layer.shortestPath(origin.nodeId, destinationId);
+    if (!path?.ok) return { ok: false, code: path?.code || 'noPath' };
+    const points = path.nodeIds
+      .map(nodeId => layer.getNode(nodeId)?.position)
+      .filter(Boolean)
+      .map(position => ({ x: Number(position.x), y: Number(position.y) }));
+    let totalDistance = 0;
+    for (let index = 1; index < points.length; index++) {
+      totalDistance += Math.hypot(
+        points[index].x - points[index - 1].x,
+        points[index].y - points[index - 1].y
+      );
+    }
+    return {
+      ok: true,
+      nodeIds: path.nodeIds,
+      edgeIds: path.edgeIds,
+      points,
+      totalDistance,
+      revision: layer.revision
+    };
+  }
+
+  /** 节点控制方：cityStates（ref.id 绑定）→ armyStates kind='pass' → 定义归属。 */
+  _worldNodeFaction(scene, nodeId) {
+    const logic = scene.worldRouteLayer?.logic;
+    const nodes = Array.isArray(logic?.nodes) ? logic.nodes : [];
+    const node = nodes.find(entry => String(entry?.id) === String(nodeId)) || null;
+    if (!node) return null;
+    const refId = node.ref?.id != null
+      ? String(node.ref.id)
+      : (node.kind === 'city' ? String(nodeId) : null);
+    const cityStates = scene.gameLoader?.blackboard?.get?.('cityStates');
+    const city = refId && Array.isArray(cityStates)
+      ? cityStates.find(entry => String(entry?.id) === refId)
+      : null;
+    if (city?.factionId != null) return String(city.factionId);
+    if (node.kind === 'pass') {
+      const passState = scene.armyOrderSystem?.getUnit?.(String(nodeId));
+      if (passState?.factionId != null) return String(passState.factionId);
+    }
+    return node.ownerFactionId != null ? String(node.ownerFactionId) : null;
+  }
+
+  /**
+   * 世界逻辑层命令桥（4A）：world.route.preview / world.route.invalidate / world.teleport。
+   * 预览与失效都只落到 `WorldRouteLayer`，UI 端不持有第二份通行判定。
+   * @private
+   */
+  _registerWorldRouteCommands(layer) {
+    const scene = this.scene;
+    const register = (type, handler) => scene.sceneRuntime?.registerCommandHandler?.(type, {
+      execute: command => handler(command?.payload || {})
+    });
+    register('world.route.preview', payload => ({
+      ok: true,
+      preview: layer.buildPreview(payload.region || {}),
+      revision: layer.revision
+    }));
+    register('world.route.invalidate', payload => {
+      const revision = layer.invalidate(payload.reason || 'command');
+      scene.armyOrderFlow?.requestPersist?.();
+      return { ok: true, revision };
+    });
+    register('world.teleport', payload => {
+      const nodeId = layer.resolveTarget(payload.nodeId ?? payload.target ?? null, {
+        maxSnapDistance: payload.maxSnapDistance
+      });
+      if (!nodeId) return { ok: false, code: 'unknownNode' };
+      const position = layer.getNode(nodeId)?.position || null;
+      const state = payload.unitId ? scene.armyOrderSystem?.getUnit?.(payload.unitId) : null;
+      if (state && position) {
+        state.position = { x: Number(position.x), y: Number(position.y) };
+        scene.armyOrderFlow?.requestPersist?.();
+      }
+      return { ok: true, nodeId, position };
+    });
+    // 4C：四选确认（撞见后由玩家/UI 明确选择才结算）
+    register('world.encounter.decide', payload => scene.armyOrderFlow?.decideEncounter?.({
+      unitId: payload.unitId,
+      encounterId: payload.encounterId ?? null,
+      choice: payload.choice,
+      reason: payload.reason || 'command'
+    }) || { ok: false, code: 'encounterUnavailable' });
   }
 
   /**

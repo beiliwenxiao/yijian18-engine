@@ -325,6 +325,10 @@ function configureSharedClassEffects(gameLoader) {
   const armyOrdersConfig = gameLoader?.project?.armyOrders || null;
   const armyOrderSystemConfig = armyOrdersConfig ? {
     armyOrders: armyOrdersConfig,
+    // M4 4A：世界逻辑路径层（唯一通行判定 + 派生投影）；行军方=黄巾阵营
+    worldLogic: gameLoader?.project?.worldLogic || null,
+    factionId: 'yellow_turban',
+    worldMarchSpeed: 260,
     getDay: () => Number(gameLoader?.blackboard?.get?.('storyState')?.day) || 1,
     battleAgent: {
       getActiveBattleId: () => this.scene?.battleSystem?.definition?.battleId || null,

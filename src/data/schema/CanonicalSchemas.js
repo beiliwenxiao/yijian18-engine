@@ -246,12 +246,37 @@ export const ARMY_STATE_SCHEMA = {
     formationId: { type: FieldType.STRING, nullable: true },
     deployment: { type: FieldType.OBJECT },
     order: { type: FieldType.OBJECT, nullable: true },
+    // M4 4A：逻辑行军路线（节点序列/索引/进度/阻塞原因）；旧档无此字段 = 直线兜底
+    route: { type: FieldType.OBJECT, nullable: true },
+    // M4 4C：遭遇冷却（撤退后该边免遭遇 N 刻；旧档无此字段 = 无冷却）
+    encounterCooldown: { type: FieldType.OBJECT, nullable: true },
+    // M4：痕迹 T1 预留（D9 本期 trace.enabled:false，不落数据）
+    trace: { type: FieldType.OBJECT, nullable: true },
     battleDeployment: { type: FieldType.OBJECT },
     battleOrder: { type: FieldType.OBJECT, nullable: true },
     supply: { type: FieldType.OBJECT },
     stance: { type: FieldType.STRING, enum: ARMY_STANCE_KEYS },
     morale: { type: FieldType.NUMBER, min: 0, max: 100 },
     updatedDay: { type: FieldType.INTEGER, min: 0 }
+  }
+};
+
+/**
+ * M4 世界逻辑路径层（game.project.json `worldLogic`）。
+ * 结构只做粗校验；节点/边的语义校验在 WorldRouteLayer.validateWorldLogic
+ * （重复 id / 未知端点 / 非法 mode / crossing 目标不存在等）。
+ */
+export const WORLD_LOGIC_SCHEMA = {
+  id: 'worldLogic',
+  fields: {
+    nodes: { type: FieldType.ARRAY, required: true },
+    edges: { type: FieldType.ARRAY, required: true },
+    // D5：遭遇结算数值全量可配（缺省由 EncounterResolver 内置默认）
+    combat: { type: FieldType.OBJECT },
+    // D7/N6：关隘关税（税率/日结目标）
+    tariff: { type: FieldType.OBJECT },
+    // D9：痕迹 T1 预留，enabled:false 时不产生数据
+    trace: { type: FieldType.OBJECT }
   }
 };
 
@@ -1002,6 +1027,8 @@ export const GAME_PROJECT_SCHEMA = {
     armyOrders: { type: FieldType.OBJECT },
     // M3 3D：倒地掉落（1~3 件/零损耗/2 游戏日归属）与 NPC 拾取参数
     downedDrop: { type: FieldType.OBJECT },
+    // M4 4A：世界逻辑路径层（节点/边/通行条件/城池关隘；唯一通行判定数据源）
+    worldLogic: { type: FieldType.OBJECT, schema: 'worldLogic' },
     battles: { type: FieldType.ARRAY },
     rescues: { type: FieldType.ARRAY },
     scenarios: { type: FieldType.ARRAY },
@@ -1037,6 +1064,7 @@ export const CANONICAL_SCHEMAS = [
   ARMY_SCHEMA,
   COMPANION_SQUAD_SCHEMA,
   ARMY_STATE_SCHEMA,
+  WORLD_LOGIC_SCHEMA,
   RESOURCE_NODE_SCHEMA,
   RESOURCE_NODE_RISK_EVENT_SCHEMA,
   RESOURCE_NODE_HARVEST_YIELD_RANGE_SCHEMA,

@@ -626,6 +626,227 @@
       { "key": "camp", "label": "扎营", "executor": "camp", "requiresTarget": false, "persistent": false }
     ]
   },
+  "worldLogic": {
+    "nodes": [
+      {
+        "id": "city.s09",
+        "name": "广宗粥棚营地",
+        "kind": "city",
+        "ref": { "id": "city.s09_guangzong_camp" },
+        "position": { "x": 16000, "y": 4680 },
+        "ownerFactionId": "yellow_turban"
+      },
+      {
+        "id": "city.s10",
+        "name": "广城溪畔营地",
+        "kind": "city",
+        "ref": { "id": "city.s10_guangcheng_camp" },
+        "position": { "x": 17280, "y": 4680 },
+        "ownerFactionId": "yellow_turban"
+      },
+      {
+        "id": "city.s03",
+        "name": "颍川官军屯城",
+        "kind": "city",
+        "ref": { "id": "city.s03_yingchuan" },
+        "position": { "x": 16000, "y": 11160 },
+        "ownerFactionId": "han_government"
+      },
+      {
+        "id": "city.s04",
+        "name": "长社官军营垒",
+        "kind": "city",
+        "ref": { "id": "city.s04_changshe" },
+        "position": { "x": 17280, "y": 11160 },
+        "ownerFactionId": "han_government"
+      },
+      {
+        "id": "city.s05",
+        "name": "宛城",
+        "kind": "city",
+        "ref": { "id": "city.s05_wancheng" },
+        "position": { "x": 17280, "y": 11880 },
+        "ownerFactionId": "han_government"
+      },
+      {
+        "id": "city.s07",
+        "name": "西华",
+        "kind": "city",
+        "ref": { "id": "city.s07_xihua" },
+        "position": { "x": 19840, "y": 12600 },
+        "ownerFactionId": "han_government"
+      },
+      {
+        "id": "bridge.yingchuan",
+        "name": "颍川桥",
+        "kind": "bridge",
+        "position": { "x": 16640, "y": 4680 }
+      },
+      {
+        "id": "pass.yique",
+        "name": "伊阙关",
+        "kind": "pass",
+        "position": { "x": 16000, "y": 7920 },
+        "ownerFactionId": "han_government",
+        "level": 1,
+        "tollRate": 0.05
+      },
+      {
+        "id": "ferry.changshe",
+        "name": "长社渡",
+        "kind": "ferry",
+        "position": { "x": 18560, "y": 12240 }
+      },
+      {
+        "id": "junction.crossroads",
+        "name": "十字坡",
+        "kind": "junction",
+        "position": { "x": 16640, "y": 7920 }
+      }
+    ],
+    "edges": [
+      {
+        "id": "edge.s09_bridge",
+        "from": "city.s09",
+        "to": "bridge.yingchuan",
+        "mode": "road",
+        "weight": 640
+      },
+      {
+        "id": "edge.bridge_s10",
+        "from": "bridge.yingchuan",
+        "to": "city.s10",
+        "mode": "bridge",
+        "weight": 640,
+        "crossingNodeId": "bridge.yingchuan"
+      },
+      {
+        "id": "edge.s09_pass",
+        "from": "city.s09",
+        "to": "pass.yique",
+        "mode": "road",
+        "weight": 3240
+      },
+      {
+        "id": "edge.pass_s03",
+        "from": "pass.yique",
+        "to": "city.s03",
+        "mode": "mountainPath",
+        "weight": 3240,
+        "crossingNodeId": "pass.yique"
+      },
+      {
+        "id": "edge.s10_junction",
+        "from": "city.s10",
+        "to": "junction.crossroads",
+        "mode": "road",
+        "weight": 3240
+      },
+      {
+        "id": "edge.junction_pass",
+        "from": "junction.crossroads",
+        "to": "pass.yique",
+        "mode": "road",
+        "weight": 640
+      },
+      {
+        "id": "edge.junction_s04",
+        "from": "junction.crossroads",
+        "to": "city.s04",
+        "mode": "road",
+        "weight": 3240
+      },
+      {
+        "id": "edge.s03_s04",
+        "from": "city.s03",
+        "to": "city.s04",
+        "mode": "road",
+        "weight": 1280
+      },
+      {
+        "id": "edge.s04_s05",
+        "from": "city.s04",
+        "to": "city.s05",
+        "mode": "road",
+        "weight": 720
+      },
+      {
+        "id": "edge.s05_ferry",
+        "from": "city.s05",
+        "to": "ferry.changshe",
+        "mode": "road",
+        "weight": 1280
+      },
+      {
+        "id": "edge.ferry_s07",
+        "from": "ferry.changshe",
+        "to": "city.s07",
+        "mode": "ferry",
+        "weight": 1280,
+        "crossingNodeId": "ferry.changshe"
+      }
+    ],
+    "combat": {
+      "baseStrength": 100,
+      "unitStrengthScale": 10,
+      "attackerBonus": 0.1,
+      "attackerModifier": 0.1,
+      "commanderWeight": 0.25,
+      "armyCountWeight": 0.15,
+      "militiaWeight": 0.2,
+      "winThreshold": 1,
+      "lossRatio": 0.35,
+      "retreatLossRatio": 0.1,
+      "defeatLossRatio": 0.3,
+      "victorLossRatio": 0.12,
+      "spoilsRatio": 0.15,
+      "heroScale": 100,
+      "moraleBase": 0.8,
+      "moraleScale": 0.4,
+      "routMorale": 20,
+      "routMoraleFloor": 15,
+      "cityDefensePerLevel": 0.35,
+      "passDefensePerLevel": 0.15,
+      "garrisonPerLevel": 1,
+      "defenderInFort": 1.25,
+      "defenderField": 1,
+      "stackBonus": 0.15,
+      "stackLimit": 3,
+      "stackPenalty": 0.9,
+      "ambushBonus": 0.25,
+      "engageRadius": 120,
+      "autoPolicy": "fight",
+      "decisionTimeoutMs": 8000,
+      "decisionHoldTicks": 1,
+      "terrainModifiers": {
+        "bridge": { "attacker": 0.85 },
+        "ferry": { "attacker": 0.85 },
+        "mountainPath": { "defender": 1.15 },
+        "fortified": { "defender": 1.1 }
+      },
+      "terrainDefense": {
+        "plain": 1,
+        "forest": 1.1,
+        "mountain": 1.35,
+        "yellowRiver": 1.2
+      },
+      "retreat": {
+        "moraleCost": 10,
+        "cooldownTicks": 4
+      }
+    },
+    "tariff": {
+      "rate": 0.05,
+      "defaultRate": 0.05,
+      "resource": "food",
+      "defaultCargoValue": 100,
+      "sweepToCity": true,
+      "destination": "city"
+    },
+    "trace": {
+      "enabled": false
+    }
+  },
   "downedDrop": {
     "minItems": 1,
     "maxItems": 3,
