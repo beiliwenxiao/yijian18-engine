@@ -189,3 +189,24 @@ npx vitest run
 ## 7. 提交边界
 
 只纳入 M1 相关文件：`src/systems/ProductionSystem*`、`EquipmentRepairService*`、`ConstructionSystem.js`、`EquipmentSystem.js`、`EquipmentComponent.js`、`CombatSystem.js`、`SceneGameplaySystemAssembler.js`、`ObjectiveTypeRegistry.js`、`S01S02SceneFlow.js`、`SanguoGameLoaderCoordinator.js`、`game.project.json`、`library.json`、新增测试，以及 `M0Foundation.test.js`（Step 1 断言同步）。**不纳入**工作区其他进行中改动（`.tmp-*`、`scripts/tmp-*`、动画/裙装相关文件）。不擅自 commit。
+
+---
+
+## 8. 补丁记录 · 生产快照接线（2026-11-10）
+
+T05 的"快照含 pending"此前只有 `serialize/deserialize` 实现，没有注册进场景快照链路（`createCheckpoint` 也是死字段）。本次补洞：
+
+| 落点 | 改动 |
+|---|---|
+| `SceneGameplaySystemAssembler.js` | 新增导出 `createProductionSnapshotProvider(system, { resolveInventory })`；`configureSharedSystems` 末尾以 **`required:false`** 注册 `gameplay.production` |
+| `ProductionSystem.js` | 开工 / 完成 / 取消退料三处状态变更后 `_requestCheckpoint(...)`（fire-and-forget，失败只告警不回滚已扣材料） |
+| `S01S02SceneFlow.js` | `_adoptPendingProductionStation`：读档后把恢复的 pending 重新纳入本场景进度会话（否则工位永久 busy、成品无人领取） |
+
+**读档边界（不重复扣料 / 不重复产出）**
+1. `deserialize` 只重建 `pending`（工单进度、`reservedCosts/reservedItems` 凭证、`stationId` 占用）与 `operations` 账本，**不重放 `batchRemove`**——背包里的预扣结果已由存档携带。
+2. 成品入库仍由场景 `craft.production.<recipeId>` 事务提交，成功后才 `commitOutput` 删 pending；同一工单第二次提交返回 `noPendingProduction`。
+3. `operations` 随快照恢复，旧 `operationId` 重开会命中账本幂等（不二次扣料）。
+4. 段缺失/不可用一律**降级跳过**（`required:false` + validate 容忍 + restore 告警跳过），旧档不被拒。
+
+**已知窄窗口**：自动存档若恰好落在「场景事务已入库、`commitOutput` 尚未执行」之间，读档后该 ready 工单会被再领取一次。当前存档时机只由状态变更（开工/完成/退料）触发，正常路径不进入该窗口；如需彻底消除，应在 `InventoryTransactionService` 账本入档后由 `_collectProduction` 以幂等 `operationId` 重放（账本目前未入快照，另立条目）。
+

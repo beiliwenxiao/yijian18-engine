@@ -224,6 +224,8 @@ export class ProductionSystem {
     };
     this._remember(opId, fingerprint, result);
     this._emit('productionStarted', result);
+    // 预扣材料已落到背包：立刻请求一次检查点，保证「存档→读档」能看到这条工单。
+    this._requestCheckpoint('started', pending);
     return clone(result);
   }
 
@@ -277,6 +279,8 @@ export class ProductionSystem {
     };
     this._remember(pending.operationId, pending.operationFingerprint, result);
     this._emit('productionCompleted', result);
+    // 工单关闭 + 成品已由场景事务入库：检查点必须反映「已提交」，读档后不会重复产出。
+    this._requestCheckpoint('completed', pending);
     return clone(result);
   }
 
@@ -425,6 +429,8 @@ export class ProductionSystem {
     };
     this._remember(pending.operationId, pending.operationFingerprint, result);
     this._emit(eventName, result);
+    // 退料已回到背包（或失败只退部分）：检查点同步「工单关闭 + 退料」。
+    this._requestCheckpoint('closed', pending);
     return clone(result);
   }
 
@@ -596,6 +602,29 @@ export class ProductionSystem {
       if (operationId) operations.set(operationId, { fingerprint: source.fingerprint, result: clone(source.result) });
     });
     return { ok: true, pending, operations, errors };
+  }
+
+  /**
+   * 请求检查点：生产状态（工单/预扣/工位占用）变更后立刻落一次存档。
+   * 检查点失败不影响生产结果——下一次存档会带着最新状态重试，避免为此回滚已扣材料。
+   */
+  _requestCheckpoint(reason, pending) {
+    if (!this.createCheckpoint) return;
+    const payload = {
+      checkpointId: `checkpoint.production.${pending?.stationId || 'station'}.${reason}`,
+      operationId: pending?.operationId || null,
+      stationId: pending?.stationId || null,
+      recipeId: pending?.recipeId || null,
+      reason
+    };
+    try {
+      const result = this.createCheckpoint(payload);
+      if (result && typeof result.then === 'function') {
+        result.then(undefined, error => console.warn('[ProductionSystem] 生产检查点失败', { reason, error }));
+      }
+    } catch (error) {
+      console.warn('[ProductionSystem] 生产检查点失败', { reason, error });
+    }
   }
 
   _createEventId(eventType, payload) {

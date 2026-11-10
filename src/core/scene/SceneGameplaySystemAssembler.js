@@ -70,6 +70,36 @@ import { EnemyWeaponRenderer } from '../../rendering/EnemyWeaponRenderer.js';
 import { GatheringProgressPresenter } from '../../ui/GatheringProgressPresenter.js';
 import { WorldActionPresentation } from './WorldActionPresentation.js';
 
+/**
+ * 生产系统场景快照 provider（`gameplay.production`）。
+ *
+ * - `required:false`：旧档没有这一段时 SnapshotManager 直接放行，不拒档。
+ * - 读档语义：`deserialize` 只重建 pending/operations（工单进度、预扣材料凭证、工位占用），
+ *   **不重放扣料事务**；成品入库仍由场景在 `productionReady` 后经 `craft.production.*`
+ *   提交，`commitOutput` 会删掉 pending，因此同一工单不会被重复结算。
+ * - 段存在但内容不可用时告警并跳过，避免一条脏数据把整档拒掉。
+ */
+export function createProductionSnapshotProvider(productionSystem, { resolveInventory = null } = {}) {
+  if (!productionSystem?.serialize || !productionSystem?.deserialize) return null;
+  return {
+    required: false,
+    snapshot: () => productionSystem.serialize(),
+    validate: data => {
+      if (data == null || typeof data !== 'object') return { ok: true };
+      const check = productionSystem.validateSerialized(data, { resolveInventory });
+      // 段不可用按「降级跳过」处理：宁可丢掉一条工单，也不让整档读不进来。
+      return check?.ok === true ? check : { ok: true, degraded: true };
+    },
+    restore: data => {
+      if (data == null) return { ok: true, skipped: true };
+      const result = productionSystem.deserialize(data, { resolveInventory });
+      if (result?.ok === true) return result;
+      console.warn('[SceneGameplaySystemAssembler] 生产快照恢复失败，已跳过该段', result?.errors);
+      return { ok: true, skipped: true, errors: result?.errors || [] };
+    }
+  };
+}
+
 export class SceneGameplaySystemAssembler {
   constructor(scene, config = {}) {
     this.scene = scene;
@@ -1198,6 +1228,15 @@ export class SceneGameplaySystemAssembler {
           return snapshot ? armyOrderSystem.restore(snapshot) : { ok: true };
         }
       });
+    }
+
+    // 生产快照：可选 provider——旧档缺 `gameplay.production` 段不拒档；
+    // 有该段时恢复工单/预扣凭证/工位占用，成品入库仍由场景事务完成（不重复扣料、不重复产出）。
+    if (typeof scene.sceneRuntime?.registerSnapshotProvider === 'function') {
+      const productionProvider = createProductionSnapshotProvider(productionSystem, { resolveInventory });
+      if (productionProvider) {
+        scene.sceneRuntime.registerSnapshotProvider('gameplay.production', productionProvider);
+      }
     }
 
     return Object.freeze({

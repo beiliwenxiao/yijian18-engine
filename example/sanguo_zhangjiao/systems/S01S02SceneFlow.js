@@ -1998,8 +1998,28 @@ export class S01S02Coordinator {
     return { ok: true, status: 'started', stationId: workstationId, recipeId };
   }
 
+  /**
+   * 读档后接管先前会话的生产工单：`ProductionSystem.pending` 随 `gameplay.production`
+   * 快照恢复，但本场景的进度会话（`productionProgressStationId`）是运行时字段——
+   * 不接管则工位一直 busy、成品也没人领取。只接管玩家本人发起、且工位仍可用的工单。
+   */
+  _adoptPendingProductionStation() {
+    const system = this.scene.productionSystem;
+    const actor = this.scene.playerEntity;
+    if (!system?.pending?.size || !actor) return null;
+    for (const [stationId, pending] of system.pending) {
+      if (pending?.characterId !== actor.id) continue;
+      const station = system.resolveStation?.(stationId, { characterId: actor.id });
+      if (!station || station.ok === false) continue;
+      this.productionProgressStationId = stationId;
+      this.productionRetryElapsed = 0;
+      return stationId;
+    }
+    return null;
+  }
+
   _updateProductionProgress(deltaTime) {
-    const stationId = this.productionProgressStationId;
+    const stationId = this.productionProgressStationId || this._adoptPendingProductionStation();
     if (!stationId) return;
     const system = this.scene.productionSystem;
     const pending = system?.pending?.get?.(stationId);

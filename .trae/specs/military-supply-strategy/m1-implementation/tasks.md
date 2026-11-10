@@ -21,3 +21,18 @@
 
 ## 提交边界
 只纳入 M1 文件（见 spec §7）；不纳入 `.tmp-*`、`scripts/tmp-*`、动画/裙装等并行改动；未经确认不 commit。
+
+## 补丁记录 · 生产快照接线（2026-11-10）
+
+- [x] `createProductionSnapshotProvider` + `gameplay.production`（`required:false`）注册（装配器导出）
+- [x] `ProductionSystem`：开工/完成/取消退料后请求检查点
+- [x] `S01S02SceneFlow._adoptPendingProductionStation`：读档后接管恢复的工单
+- [x] `ProductionSystem.snapshot.test.js`：5 例（存档→读档→继续同一工单 / 旧档缺段 / 段不可用降级 / SnapshotManager 往返 / 检查点触发与失败不阻断）
+- 细节与已知窄窗口见 [spec.md](spec.md) §8。回归：core 43 文件 446 例、生产 17 例、S01 场景流 11 例全绿（唯一失败为存量 `DefinitionRepository` unreachableDialogue）。
+
+## 后续里程碑锚点（2026-11-10）
+
+- 步骤 1 已推 gitee：`c0bfd1b`(M2) / `8cce967`(3A) / `0d81ad5`(3B) / `dde1105`(3D)，fast-forward 无分叉。
+- 步骤 2（本节补丁）已提交，哈希见回报。
+- 步骤 3 = **M4 大地图指挥**，仅出范围与实施计划（[04-worldmap-command.md](../04-worldmap-command.md)），**等用户确认后再写代码**；进度锚点写在 `.trae/specs/military-supply-strategy/m4-implementation/`（计划文档产出前该目录不存在）。
+
