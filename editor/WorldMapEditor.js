@@ -32,6 +32,7 @@ import {
 } from '../src/core/WorldMapCell.js';
 import { WorldLogicEditor } from './WorldLogicEditor.js';
 import { resolveEdgeConditions, validateWorldLogic } from '../src/core/world/WorldRouteLayer.js';
+import { extractWorldLogic } from '../src/core/world/WorldMapExtractor.js';
 
 const WORLD_MAP_TERRAIN_LABELS = Object.freeze({
   mountain: '山地',
@@ -95,6 +96,8 @@ export class WorldMapEditor {
     this.draftWorldMap = { entrySceneId: null, regions: [] };
     this.draftWorldLogic = null;
     this.logicEditor = null;
+    this._autoLayer = null;
+    this._autoRevision = 0;
     this.selectedRegionId = null;
     this._draftIndex = null;
     this._renderGeneration = 0;
@@ -153,6 +156,7 @@ export class WorldMapEditor {
       this.worldIndex = null;
       this.draftWorldMap = { entrySceneId: null, regions: [] };
       this.draftWorldLogic = null;
+      this._autoLayer = null;
       this.logicEditor?.setLogic({ nodes: [], edges: [] }, { factions: [] });
       this.selectedRegionId = null;
       this._draftIndex = null;
@@ -235,6 +239,7 @@ export class WorldMapEditor {
       ? previousSelectedRegionId
       : (regionIds.has(entryRegionId) ? entryRegionId : draftWorldMap.regions[0]?.id);
     this._commitDraftState({ draftWorldMap, worldIndex: draftIndex, selectedRegionId });
+    this._refreshAutoLayer();
     this._syncLogicEditor();
     this._populateRegionSelect();
     this._syncRegionControls();
@@ -255,11 +260,18 @@ export class WorldMapEditor {
   }
 
   /**
-   * 自动层（run-time 不读）：由地图抽取器生成，编辑器只做对比。
-   * 4D 批次抽取器未接入，先返回外部注入的 `this._autoLayer`（测试/后续批次用）。
+   * 自动层（run-time 不读）：由地图抽取器从当前 project 生成，编辑器只做对比。
+   * 每次重新载入工程递增 revision，差异面板据此失效缓存。
    */
   _provideAutoLayer() {
     return this._autoLayer || null;
+  }
+
+  /** 按当前 project 重抽自动层（4E：cityStates → city → cell.poi → 关隘/渡口 → roadEdges → 边）。 */
+  _refreshAutoLayer() {
+    this._autoRevision = (this._autoRevision || 0) + 1;
+    this._autoLayer = extractWorldLogic(this.project, { revision: this._autoRevision });
+    return this._autoLayer;
   }
 
   /** 节点 → 场景：cityState 前缀 → 场景 id；否则按坐标找最近场景格。 */
