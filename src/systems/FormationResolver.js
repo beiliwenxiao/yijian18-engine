@@ -212,11 +212,14 @@ export function resolveFormation(definition, options = {}) {
     ? options.unitCount
     : (unitIds.length || 1));
 
-  const hasExplicitRows = Array.isArray(def.rows) && def.rows.length > 0;
+  const explicitRowList = Array.isArray(def.rows) && def.rows.length > 0
+    ? def.rows
+    : (Array.isArray(def.rowSlots) && def.rowSlots.length > 0 ? def.rowSlots : null);
+  const hasExplicitRows = !!explicitRowList;
   // 兵种表就是编制的槽位表；只有完全没有编制时才按实际人数铺模板
   const layoutCount = unitIds.length > 0 ? unitIds.length : unitCount;
   let rows;
-  if (hasExplicitRows) rows = normalizeExplicitRows(def.rows);
+  if (hasExplicitRows) rows = normalizeExplicitRows(explicitRowList);
   else if (positiveInt(def.rows) && unitIds.length > 0) rows = legacyFillRows(unitIds, positiveInt(def.rows));
   else rows = buildRowsFromTemplate(normalized.strategy, layoutCount, unitIds.length > 0 ? unitIds : ['unknown']);
   if (rows.length === 0) rows = buildRowsFromTemplate(normalized.strategy, layoutCount, unitIds.length > 0 ? unitIds : ['unknown']);

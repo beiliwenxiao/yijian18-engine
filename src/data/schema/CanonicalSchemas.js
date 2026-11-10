@@ -127,7 +127,10 @@ export const HERO_SCHEMA = {
     rankId: { type: FieldType.STRING, minLength: 1 },
     stats: { type: FieldType.OBJECT, valueType: FieldType.NUMBER },
     skillIds: { type: FieldType.ARRAY, itemType: FieldType.STRING },
-    tags: { type: FieldType.ARRAY, itemType: FieldType.STRING }
+    tags: { type: FieldType.ARRAY, itemType: FieldType.STRING },
+    // M5：主将光环（{ radius, modifiers }）与入场位置；缺省 deploySlot=mid
+    aura: { type: FieldType.OBJECT },
+    deploySlot: { type: FieldType.STRING, enum: ['front', 'mid', 'rear'] }
   }
 };
 
@@ -144,7 +147,15 @@ export const FORMATION_SCHEMA = {
     strategy: { type: FieldType.STRING },
     /** M0：阵法只给加成（attack/defense 等），不含任何兵种克制（克制只在 unitTypes.dealMultiplier） */
     modifiers: { type: FieldType.OBJECT, valueType: FieldType.NUMBER },
-    tags: { type: FieldType.ARRAY, itemType: FieldType.STRING }
+    tags: { type: FieldType.ARRAY, itemType: FieldType.STRING },
+    // M5：场景标签 / 地形偏好 / 按角色姿态 / 行距列距 / 来源（auto|manual）
+    // 结构化行定义走 rowSlots（rows 保持 INTEGER 以兼容 M0 内容：number + unitIds 铺行）
+    sceneTags: { type: FieldType.ARRAY, itemType: FieldType.STRING },
+    terrainPreference: { type: FieldType.OBJECT },
+    stanceByRole: { type: FieldType.OBJECT, valueType: FieldType.STRING },
+    stackOffsets: { type: FieldType.OBJECT, valueType: FieldType.NUMBER },
+    rowSlots: { type: FieldType.ARRAY, itemType: FieldType.OBJECT },
+    source: { type: FieldType.STRING }
   }
 };
 

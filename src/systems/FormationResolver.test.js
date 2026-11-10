@@ -52,6 +52,17 @@ describe('FormationResolver.resolveFormation', () => {
     expect(resolved.warnings).toEqual([]);
   });
 
+  it('rowSlots 与 rows 数组同义（schema 里 rows 仍是 INTEGER）', () => {
+    const resolved = resolveFormation({
+      id: 'f1b',
+      strategy: 'line',
+      unitIds: ['unit.spear'],
+      rowSlots: [{ line: 0, role: 'front', slots: ['unit.spear', 'unit.archer'] }]
+    });
+    expect(resolved.rows).toHaveLength(1);
+    expect(resolved.columns).toBe(2);
+  });
+
   it('显式 rows 数组优先于 unitIds', () => {
     const resolved = resolveFormation({
       id: 'f1',

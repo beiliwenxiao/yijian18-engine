@@ -113,7 +113,23 @@ const CATEGORIES = [
   { key: 'combatSkills', label: '战斗技能', tpl: { name: '新战斗技能', skillType: 'combat', cooldown: 3, castTime: 0, manaCost: 10, damage: 0, element: 0, range: 100 } },
   { key: 'gatherSkills', label: '采集技能', tpl: { name: '新采集技能', skillType: 'gather', resource: '', gatherTime: 2, level: 1, yield: 1 } },
   { key: 'craftSkills', label: '生产技能', tpl: { name: '新生产技能', skillType: 'craft', product: '', materials: [], craftTime: 3, level: 1 } },
-  { key: 'talents', label: '天赋', tpl: { name: '新天赋', tier: 1, maxRank: 3, effects: [] } }
+  { key: 'talents', label: '天赋', tpl: { name: '新天赋', tier: 1, maxRank: 3, effects: [] } },
+  // ==== 军需体系（M5）：兵种 / 军阵 / 武将 ====
+  { key: 'unitTypes', label: '兵种', tpl: {
+    schemaVersion: 1, name: '新兵种', class: 'melee', tier: 1,
+    stats: { maxHp: 100, attack: 5, defense: 1, speed: 70 },
+    dealMultiplier: {}, damageTakenFrom: {}, tags: []
+  }},
+  { key: 'formations', label: '军阵', tpl: {
+    schemaVersion: 1, name: '新军阵', strategy: 'line', unitIds: [], leaderHeroId: '',
+    modifiers: { attack: 1, defense: 1 },
+    stanceByRole: { front: 'assault', mid: 'hold', rear: 'escort' },
+    sceneTags: ['balanced'], terrainPreference: { fit: [], miss: [] }, source: 'manual'
+  }},
+  { key: 'heroes', label: '武将', tpl: {
+    schemaVersion: 1, name: '新武将', unitId: '', classId: '', rankId: '',
+    stats: { command: 60 }, skillIds: [], aura: null, deploySlot: 'mid', tags: []
+  }}
 ];
 
 // 无图条目的列表占位小图标（有 Manifest 图片则显示真实缩略图）。
