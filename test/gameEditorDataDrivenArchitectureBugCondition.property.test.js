@@ -634,5 +634,6 @@ describe('Property 1: Bug Condition - Modular Canonical Architecture and Unified
     const counterexamples = [...byPhase.values()];
     const report = `Property 1 pre-fix counterexamples (fixedSeed=${FIXED_SEED}):\n${JSON.stringify(counterexamples, null, 2)}`;
     expect(counterexamples, report).toEqual([]);
-  }, 15000);
+  // 审计探针需遍历 689 个受管单元，实测约 15s 且随负载波动，原 15000ms 阈值擦边误红
+  }, 120000);
 });
