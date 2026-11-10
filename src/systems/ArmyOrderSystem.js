@@ -144,12 +144,15 @@ export class ArmyOrderSystem {
     executors = null,
     encounterDetector = null,
     routePlanner = null,
+    battleIdentityProvider = null,
     onEvent = null
   } = {}) {
     this.config = this._mergeConfig(armyOrders || {});
     this.now = typeof now === 'function' ? now : (() => Date.now());
     this.getDay = typeof getDay === 'function' ? getDay : (() => 1);
     this.battleAgent = battleAgent || null;
+    /** M6：入场身份权威来源（BattleEntryService.getIdentity）；缺省回落 BattleMode 推断 */
+    this.battleIdentityProvider = typeof battleIdentityProvider === 'function' ? battleIdentityProvider : null;
     this.formationExists = typeof formationExists === 'function' ? formationExists : null;
     this.resolveTargetPoint = typeof resolveTargetPoint === 'function' ? resolveTargetPoint : null;
     this.encounterDetector = typeof encounterDetector === 'function' ? encounterDetector : null;
@@ -659,20 +662,24 @@ export class ArmyOrderSystem {
   /**
    * 将令身份单点解析（唯一判定点）。
    *
-   * 当前行为（M3，临时耦合）：按 BattleSystem 的 BattleMode 推断——
+   * M6 起优先读 `battleIdentityProvider`（BattleEntryService.getIdentity，三种身份
+   * takeover / support / observe 的权威来源）；未接线时回落到 M3 的 BattleMode 推断，
+   * 保证旧战斗零变化：
    * - INTERVENE（接管）→ 'takeover'（可将令）
    * - OBSERVE（观战）  → 'observe'（不可将令）
    * - 其他/无战斗      → 'unknown'（不可将令）
    *
-   * TODO(M6 · support 身份)：M6 引入支援战（强度折半、不可完全接管）后，
-   *  1. 在本函数加 `if (mode === BattleMode.SUPPORT) return 'support';`
-   *  2. 把 `ARMY_BATTLE_ORDERS`（本文件顶部常量）放开为 `['takeover', 'support']`
-   *  3. 预期行为：support 身份也将令受理，但折半系数由 M6 的 battleOrders.supportScale
-   *     提供（M3 不写死折半数值），其余判定点不变。
+   * `support` 身份**不可发将令**（06 §3.6：只指挥自己的亲卫小队），
+   * 因此 `ARMY_BATTLE_ORDERS` 仍只含 'takeover'。
    * @param {string|null} battleId
-   * @returns {'takeover'|'observe'|'unknown'}
+   * @returns {'takeover'|'support'|'observe'|'unknown'}
    */
   _resolveBattleIdentity(battleId = null) {
+    if (typeof this.battleIdentityProvider === 'function') {
+      const provided = this.battleIdentityProvider(battleId || null);
+      if (provided === 'command') return 'takeover';
+      if (provided === 'takeover' || provided === 'support' || provided === 'observe') return provided;
+    }
     const id = battleId || this.battleAgent?.getActiveBattleId?.() || null;
     const battleState = id ? this.battleAgent?.getBattleState?.(id) : null;
     const mode = battleState?.mode ?? null;

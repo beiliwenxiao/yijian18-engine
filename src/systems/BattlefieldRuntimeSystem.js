@@ -12,6 +12,7 @@ import {
   assignDeploySlots,
   resolveStanceForRole
 } from './FormationResolver.js';
+import { aggregateHeroAuras, buildCommanderEntry } from './HeroAuraResolver.js';
 
 const clone = value => value == null ? value : JSON.parse(JSON.stringify(value));
 const isAlive = entity => {
@@ -43,9 +44,20 @@ export class BattlefieldRuntimeSystem {
     /** 各阵营本场部署（formationId / strategy / commanderSlot / slots），无军阵时为空对象 */
     this.deployments = {};
     this.deploymentWarnings = [];
+    /** 各阵营本场主将（6C：主将一律下场，光环常驻）；无主将时为空对象 */
+    this.commanders = {};
+    /** 各阵营光环聚合（CombatModifierPipeline.auras 输入），无主将时为空对象 */
+    this.auras = {};
   }
 
-  start({ entities = [], playerEntity = null, playerFactionId = null, formations = null, deployments = null } = {}) {
+  start({
+    entities = [],
+    playerEntity = null,
+    playerFactionId = null,
+    formations = null,
+    deployments = null,
+    commanders = null
+  } = {}) {
     if (this.active) return { ok: true, idempotent: true, snapshot: this.getSnapshot() };
     if (this.battleSystem?.state !== BattleState.ACTIVE || !this.battleSystem?.mode) {
       return { ok: false, code: 'battleNotActive' };
@@ -63,6 +75,7 @@ export class BattlefieldRuntimeSystem {
       return { id: entity.id, factionId: entity.factionId, maxHp: Math.max(1, Number(stats?.maxHp) || 1) };
     });
     this._applyDeployments(definition, candidates, formations, deployments);
+    this._applyCommanders(commanders);
     this.initialFactions = this._createInitialFactions(definition, candidates);
     this.playerEntity = playerEntity;
     if (this.battleSystem.mode === BattleMode.INTERVENE) this._attachPlayer(playerEntity, playerFactionId);
@@ -114,6 +127,8 @@ export class BattlefieldRuntimeSystem {
       initialFactions: clone(this.initialFactions),
       playerRestore: clone(this.playerRestore),
       deployments: clone(this.deployments),
+      commanders: clone(this.commanders),
+      auras: clone(this.auras),
       lastSnapshot: clone(this.lastSnapshot)
     };
   }
@@ -144,6 +159,8 @@ export class BattlefieldRuntimeSystem {
     this.initialFactions = clone(snapshot.initialFactions);
     this.playerRestore = clone(snapshot.playerRestore);
     this.deployments = clone(snapshot.deployments) || {};
+    this.commanders = clone(snapshot.commanders) || {};
+    this.auras = clone(snapshot.auras) || {};
     this.lastSnapshot = clone(snapshot.lastSnapshot);
     this.playerEntity = playerEntity;
     if (this.active) {
@@ -221,6 +238,78 @@ export class BattlefieldRuntimeSystem {
     }
   }
 
+  /**
+   * 主将入场（6C/6D）：`commanders` 可为数组或 { factionId: entry } 映射。
+   * 未传时零变化（老战斗无主将实体）。
+   */
+  _applyCommanders(commanders) {
+    this.commanders = {};
+    this.auras = {};
+    if (!commanders) return;
+    const entries = [];
+    if (Array.isArray(commanders)) {
+      for (const entry of commanders) if (entry) entries.push(entry);
+    } else if (typeof commanders === 'object') {
+      for (const [factionId, value] of Object.entries(commanders)) {
+        if (Array.isArray(value)) {
+          for (const entry of value) if (entry) entries.push({ ...entry, factionId: entry.factionId ?? factionId });
+        } else if (value && typeof value === 'object') {
+          entries.push({ ...value, factionId: value.factionId ?? factionId });
+        }
+      }
+    }
+    const auraEntriesByFaction = new Map();
+    for (const raw of entries) {
+      const factionId = raw.factionId != null ? String(raw.factionId) : null;
+      if (!factionId) continue;
+      const normalized = raw.hero && !raw.heroId
+        ? buildCommanderEntry({
+            hero: raw.hero,
+            deployment: raw.deployment || null,
+            factionId,
+            onField: raw.onField !== false
+          })
+        : {
+            factionId,
+            heroId: raw.heroId != null ? String(raw.heroId) : null,
+            name: raw.name != null ? String(raw.name) : null,
+            slot: DEPLOY_ROLES.includes(raw.slot) ? raw.slot : (DEPLOY_ROLES.includes(raw.deploySlot) ? raw.deploySlot : 'mid'),
+            deploySlot: DEPLOY_ROLES.includes(raw.deploySlot) ? raw.deploySlot : (DEPLOY_ROLES.includes(raw.slot) ? raw.slot : 'mid'),
+            aura: raw.aura && typeof raw.aura === 'object' ? { ...raw.aura } : null,
+            onField: raw.onField !== false
+          };
+      const commander = {
+        ...normalized,
+        controlled: raw.controlled === true,
+        aiTakeover: raw.controlled === true ? false : raw.aiTakeover !== false
+      };
+      this.commanders[factionId] = commander;
+      if (commander.onField !== false) {
+        const list = auraEntriesByFaction.get(factionId) || [];
+        list.push({ hero: { id: commander.heroId, aura: commander.aura }, onField: true });
+        auraEntriesByFaction.set(factionId, list);
+      }
+      if (this.deployments[factionId]) {
+        this.deployments[factionId].commander = {
+          heroId: commander.heroId,
+          slot: commander.slot,
+          controlled: commander.controlled
+        };
+      }
+    }
+    for (const [factionId, list] of auraEntriesByFaction.entries()) {
+      const aggregated = aggregateHeroAuras(list);
+      if (aggregated.activeHeroes.length > 0) {
+        this.auras[factionId] = {
+          attack: aggregated.attack,
+          defense: aggregated.defense,
+          radius: aggregated.radius,
+          heroes: aggregated.activeHeroes
+        };
+      }
+    }
+  }
+
   _createInitialFactions(definition, entities) {
     const create = definition.createParams || {};
     const armies = [create.attackerArmy, create.defenderArmy].filter(Boolean);
@@ -285,6 +374,18 @@ export class BattlefieldRuntimeSystem {
           commanderSlot: deployment.commanderSlot
         };
       }
+      // 6C/6D：有主将才补字段（光环常驻，阵亡/离场由 onField 表达）
+      const commander = this.commanders?.[factionId];
+      if (commander) {
+        factions[factionId].commander = {
+          heroId: commander.heroId,
+          slot: commander.slot,
+          controlled: commander.controlled,
+          onField: commander.onField !== false
+        };
+      }
+      const aura = this.auras?.[factionId];
+      if (aura) factions[factionId].aura = { ...aura };
     }
     return {
       battleId: this.battleSystem?.definition?.battleId || null,
