@@ -41,6 +41,60 @@ export function isReservedWorldMapCell(cell) {
   return Boolean(cell && typeof cell === 'object' && !Array.isArray(cell) && cell.reserved === true);
 }
 
+/**
+ * 地图格可声明的 POI 落点类型（4E 抽取器只读这一层，不按地形臆测）。
+ * pass=关隘、ferry=渡口；桥不单列，用 road 格 + 端点表达。
+ */
+export const WORLD_MAP_POI_TYPES = Object.freeze(['pass', 'ferry']);
+
+/** 判断 poi 是否为 canonical 落点类型。 */
+export function isWorldMapPoi(poi) {
+  return typeof poi === 'string' && WORLD_MAP_POI_TYPES.includes(poi);
+}
+
+/** 读取地图格的 POI 落点类型；未声明或非法值返回 null（缺省即无 POI）。 */
+export function getWorldMapCellPoi(cell) {
+  if (!cell || typeof cell !== 'object' || Array.isArray(cell)) return null;
+  return isWorldMapPoi(cell.poi) ? cell.poi : null;
+}
+
+/** 判断地图格是否声明为道路格（抽取器只有道路格才可能出边）。 */
+export function isWorldMapRoadCell(cell) {
+  if (!cell || typeof cell !== 'object' || Array.isArray(cell)) return false;
+  return cell.road === true;
+}
+
+function isWorldMapCellCoord(value) {
+  return Array.isArray(value)
+    && value.length === 2
+    && Number.isInteger(value[0])
+    && Number.isInteger(value[1])
+    && value[0] >= 0
+    && value[1] >= 0;
+}
+
+/**
+ * 归一化 Region 级道路连接声明：`[[row, col], [row, col]]`（两个格坐标成对）。
+ * 非法项与重复边（含反向）静默丢弃；旧地图无此字段时返回空数组，加载不受影响。
+ */
+export function normalizeWorldMapRoadEdges(roadEdges) {
+  if (!Array.isArray(roadEdges)) return [];
+  const result = [];
+  for (const item of roadEdges) {
+    if (!Array.isArray(item) || item.length !== 2) continue;
+    const [a, b] = item;
+    if (!isWorldMapCellCoord(a) || !isWorldMapCellCoord(b)) continue;
+    if (a[0] === b[0] && a[1] === b[1]) continue;
+    const duplicated = result.some(([x, y]) => (
+      (x[0] === a[0] && x[1] === a[1] && y[0] === b[0] && y[1] === b[1])
+      || (x[0] === b[0] && x[1] === b[1] && y[0] === a[0] && y[1] === a[1])
+    ));
+    if (duplicated) continue;
+    result.push([[a[0], a[1]], [b[0], b[1]]]);
+  }
+  return result;
+}
+
 /** 读取地图单元的地形；字符串场景锚点和空单元不隐式伪造地形。 */
 export function getWorldMapCellTerrain(cell) {
   if (!cell || typeof cell !== 'object' || Array.isArray(cell)) return null;

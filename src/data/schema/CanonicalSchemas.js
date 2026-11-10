@@ -989,7 +989,9 @@ export const GAME_PROJECT_WORLD_MAP_REGION_SCHEMA = {
     cols: { type: FieldType.INTEGER, required: true, min: 1 },
     chunkWidth: { type: FieldType.NUMBER, required: true, min: Number.MIN_VALUE },
     chunkHeight: { type: FieldType.NUMBER, required: true, min: Number.MIN_VALUE },
-    grid: { type: FieldType.ARRAY, required: true, minItems: 1, itemType: FieldType.ARRAY }
+    grid: { type: FieldType.ARRAY, required: true, minItems: 1, itemType: FieldType.ARRAY },
+    // 4E：道路连接声明 [[row, col], [row, col]]；缺省=无道路，旧地图不受影响。
+    roadEdges: { type: FieldType.ARRAY, nullable: true }
   }
 };
 

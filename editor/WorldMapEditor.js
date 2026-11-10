@@ -18,11 +18,15 @@ import { CanonicalSceneRepository } from '../src/core/scene/CanonicalSceneReposi
 import { FetchDiskSceneAdapter, LocalStorageSceneCacheAdapter } from '../src/core/scene/CanonicalSceneAdapters.js';
 import {
   DEFAULT_WORLD_MAP_REGION_TYPE,
+  getWorldMapCellPoi,
   getWorldMapCellSceneId,
   getWorldMapCellTerrain,
   isReservedWorldMapCell,
   isWorldMapRegionType,
+  isWorldMapPoi,
+  isWorldMapRoadCell,
   isWorldMapTerrain,
+  WORLD_MAP_POI_TYPES,
   WORLD_MAP_REGION_TYPES,
   WORLD_MAP_TERRAINS
 } from '../src/core/WorldMapCell.js';
@@ -1208,6 +1212,8 @@ export class WorldMapEditor {
     const isAnchor = Boolean(sceneId && coverage?.isAnchor);
     const terrain = this._cellTerrain(raw);
     const reserved = isReservedWorldMapCell(raw);
+    const road = isWorldMapRoadCell(raw);
+    const poi = getWorldMapCellPoi(raw);
     const emptyLabel = region.mapType === 'sceneGrid' ? '(空)' : terrain;
     const label = isCoverage && anchor
       ? `${sceneId} · 覆盖 ← (${anchor.row},${anchor.col})`
@@ -1226,6 +1232,15 @@ export class WorldMapEditor {
     const terrainControl = region.mapType === 'terrainGrid'
       ? `<label style="font-size:10px;color:#ddd;display:grid;gap:2px;width:94%;">地形
           <select class="wme-terrain-select" data-r="${row}" data-c="${col}" style="font-size:10px;background:#222;color:#eee;">${terrainOptions.replace(`value="${this._escapeHtml(terrain)}"`, `value="${this._escapeHtml(terrain)}" selected`)}</select>
+        </label>
+        <label style="font-size:10px;color:#ddd;display:flex;align-items:center;gap:4px;width:94%;">道路格
+          <input type="checkbox" class="wme-road-toggle" data-r="${row}" data-c="${col}"${road ? ' checked' : ''}>
+        </label>
+        <label style="font-size:10px;color:#ddd;display:grid;gap:2px;width:94%;">POI 类型
+          <select class="wme-poi-select" data-r="${row}" data-c="${col}" style="font-size:10px;background:#222;color:#eee;">
+            <option value=""${poi ? '' : ' selected'}>无</option>
+            ${WORLD_MAP_POI_TYPES.map(type => `<option value="${type}"${poi === type ? ' selected' : ''}>${type === 'pass' ? '关隘' : '渡口'}</option>`).join('')}
+          </select>
         </label>`
       : '';
     const control = isCoverage
@@ -1248,7 +1263,7 @@ export class WorldMapEditor {
   }
 
   _handleMainlandCellChange(event) {
-    const target = event.target.closest?.('.wme-terrain-select, .wme-scene-select');
+    const target = event.target.closest?.('.wme-terrain-select, .wme-scene-select, .wme-road-toggle, .wme-poi-select');
     if (!target || !this._draftIndex) return;
     const row = Number(target.dataset.r);
     const col = Number(target.dataset.c);
@@ -1264,6 +1279,12 @@ export class WorldMapEditor {
     const selectedSceneId = target.classList.contains('wme-scene-select')
       ? (target.value || null)
       : previousSceneId;
+    const road = target.classList.contains('wme-road-toggle')
+      ? target.checked === true
+      : isWorldMapRoadCell(previous);
+    const poi = target.classList.contains('wme-poi-select')
+      ? (target.value || null)
+      : getWorldMapCellPoi(previous);
     const candidateRegion = structuredClone(this.region);
 
     try {
@@ -1271,7 +1292,8 @@ export class WorldMapEditor {
         previous,
         candidateRegion.mapType,
         terrain,
-        selectedSceneId
+        selectedSceneId,
+        { road, poi }
       );
     } catch (error) {
       this._restoreCellControl(target, previous, previousSceneId);
@@ -1317,12 +1339,14 @@ export class WorldMapEditor {
     this._requestMainlandViewportSync();
   }
 
-  _buildEditedRegionCell(previous, mapType, terrain, sceneId) {
+  _buildEditedRegionCell(previous, mapType, terrain, sceneId, { road = false, poi = null } = {}) {
     if (mapType === 'sceneGrid') {
       if (!sceneId) return null;
       if (!previous || typeof previous !== 'object' || Array.isArray(previous)) return sceneId;
       const next = { ...previous, sceneId };
       delete next.terrain;
+      delete next.road;
+      delete next.poi;
       const metadataKeys = Object.keys(next).filter(key => key !== 'sceneId');
       return metadataKeys.length > 0 ? next : sceneId;
     }
@@ -1337,10 +1361,22 @@ export class WorldMapEditor {
       delete next.sceneId;
       delete next.reserved;
     }
+    if (road) next.road = true;
+    else delete next.road;
+    if (isWorldMapPoi(poi)) next.poi = poi;
+    else delete next.poi;
     return next;
   }
 
   _restoreCellControl(target, previous, previousSceneId) {
+    if (target.classList.contains('wme-road-toggle')) {
+      target.checked = isWorldMapRoadCell(previous);
+      return;
+    }
+    if (target.classList.contains('wme-poi-select')) {
+      target.value = getWorldMapCellPoi(previous) || '';
+      return;
+    }
     target.value = target.classList.contains('wme-terrain-select')
       ? this._cellTerrain(previous)
       : (previousSceneId || '');
