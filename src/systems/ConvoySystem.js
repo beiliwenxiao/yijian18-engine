@@ -15,8 +15,9 @@
  * 被抢按比例损失（胜 0 / 逃 30% / 败 50% / 载具毁 100%）、
  * 掉落投影与限时追回。
  *
- * 物理载具与护卫生成归 M3/M4：本系统只做业务状态，货舱库存与
- * 目标容器全部由注入适配器提供（引擎不依赖场景实体）。
+ * 物理载具与护卫生成（M3 3A 薄适配）：本系统仍只持有业务状态——载具实体生成与
+ * 地形落点校验经注入适配器（spawnVehicleEntity / resolveSpawnPosition）完成，
+ * 引擎不依赖场景实体；货舱库存与目标容器全部由注入适配器提供。
  * 货物在「领用单 → 货舱 → 目标容器」之间只存一份，转移一律走
  * InventoryTransactionService。
  ************************************************************/
@@ -26,6 +27,12 @@ const CONVOY_ORDERS = ['follow', 'hold', 'flee'];
 const TERMINAL_STATUSES = new Set(['DELIVERED', 'LOST', 'DESTROYED']);
 const clone = value => value == null ? value : JSON.parse(JSON.stringify(value));
 const normalizeId = value => typeof value === 'string' ? value.trim() : '';
+const isPoint = value => !!value && Number.isFinite(Number(value.x)) && Number.isFinite(Number(value.y));
+const VEHICLE_SPAWN_RADIUS = 24;
+/** 非法落点就近采样：48px 内 8 方向 × 2 圈（内圈 24 / 外圈 48，2.5D 纵向压缩）。 */
+const SPAWN_SAMPLE_RINGS = Object.freeze([24, 48]);
+const SPAWN_SAMPLE_DIRECTIONS = 8;
+const SPAWN_SAMPLE_Y_SQUASH = 0.75;
 const clamp01 = value => Math.max(0, Math.min(1, Number(value) || 0));
 const positiveQuantity = value => {
   const number = Math.floor(Number(value) || 0);
@@ -35,6 +42,7 @@ const positiveQuantity = value => {
 export class ConvoySystem {
   constructor({ inventoryTransactions, itemResolver = null, resolveTemplate = null,
     resolveOrder = null, notifyOrder = null, resolveStash = null, resolveCargo = null,
+    resolveSpawnPosition = null, spawnVehicleEntity = null,
     onLootDrop = null, onEvent = null, createEventId = null, rng = null, getDay = () => 1,
     ambushConfig = {}, maxOperations = 256, maxConvoys = 128 } = {}) {
     if (!inventoryTransactions) throw new TypeError('ConvoySystem requires inventoryTransactions');
@@ -45,6 +53,10 @@ export class ConvoySystem {
     this.notifyOrder = typeof notifyOrder === 'function' ? notifyOrder : null;
     this.resolveStash = typeof resolveStash === 'function' ? resolveStash : () => null;
     this.resolveCargo = typeof resolveCargo === 'function' ? resolveCargo : () => null;
+    /** 场景侧落点校验适配器：(candidate, radius) => {x,y}|null|{ok,position}（模块 3 §6.1） */
+    this.resolveSpawnPosition = typeof resolveSpawnPosition === 'function' ? resolveSpawnPosition : null;
+    /** 场景侧载具生成适配器：({definitionId, position, convoyId, template}) => {ok, vehicleEntityId, cargoId} */
+    this.spawnVehicleEntity = typeof spawnVehicleEntity === 'function' ? spawnVehicleEntity : null;
     this.onLootDrop = typeof onLootDrop === 'function' ? onLootDrop : null;
     this.onEvent = typeof onEvent === 'function' ? onEvent : () => {};
     this.createEventId = typeof createEventId === 'function' ? createEventId : null;
@@ -61,9 +73,12 @@ export class ConvoySystem {
 
   /**
    * 装配：绑定模板与载具货舱，进入 STAGING 等装车。
+   * 可选载具物理生成（模块 3 §6.1）：给 vehicleDefinitionId 时先生成载具实体，
+   * 落点经 resolveSpawnPosition 校验（非法则就近 48px 内找可站立点），
+   * 校验失败返回 {ok:false, code:'vehicleSpawnBlocked'}，不创建车队、不记住 operationId。
    */
   assemble({ templateId, convoyId, vehicleEntityId, cargoInventory, cargoId, escortIds,
-    operationId } = {}) {
+    vehicleDefinitionId, position, spawnPosition, vehicleRadius, operationId } = {}) {
     const templateKey = normalizeId(templateId);
     const opId = normalizeId(operationId);
     const template = this._resolveTemplate(templateKey);
@@ -72,7 +87,12 @@ export class ConvoySystem {
     const normalizedVehicleId = normalizeId(vehicleEntityId);
     const normalizedCargoId = normalizeId(cargoId)
       || (normalizedVehicleId ? `${normalizedVehicleId}:cargo` : '');
-    const fingerprint = JSON.stringify(['assemble', templateKey, normalizedVehicleId, normalizedCargoId]);
+    const vehicleDefId = normalizeId(vehicleDefinitionId);
+    const spawnAnchor = isPoint(position) ? position : (isPoint(spawnPosition) ? spawnPosition : null);
+    const fingerprint = JSON.stringify([
+      'assemble', templateKey, normalizedVehicleId, normalizedCargoId, vehicleDefId,
+      spawnAnchor ? [Math.round(spawnAnchor.x), Math.round(spawnAnchor.y)] : null
+    ]);
     const known = this.operations.get(opId);
     if (known) {
       return known.fingerprint === fingerprint
@@ -85,15 +105,36 @@ export class ConvoySystem {
         ? { ok: true, convoyId: id, status: existing.status, idempotent: true }
         : { ok: false, code: 'duplicateConvoy', convoyId: id };
     }
+
+    let resolvedVehicleId = normalizedVehicleId;
+    let resolvedCargoId = normalizedCargoId;
+    let resolvedSpawnPosition = null;
+    if (!resolvedVehicleId && vehicleDefId) {
+      const spawned = this._assembleVehicle({
+        template,
+        definitionId: vehicleDefId,
+        convoyId: id,
+        position,
+        markerPosition: spawnPosition,
+        radius: vehicleRadius
+      });
+      if (!spawned.ok) return spawned;
+      resolvedVehicleId = spawned.vehicleEntityId;
+      resolvedCargoId = resolvedCargoId || spawned.cargoId || '';
+      resolvedSpawnPosition = spawned.position || null;
+    }
+
     const cargo = cargoInventory
-      || (normalizedCargoId && typeof this.resolveCargo === 'function' ? this.resolveCargo(normalizedCargoId) : null);
+      || (resolvedCargoId && typeof this.resolveCargo === 'function' ? this.resolveCargo(resolvedCargoId) : null);
     if (!cargo) return { ok: false, code: 'cargoUnavailable', convoyId: id };
 
     const convoy = {
       convoyId: id,
       templateId: templateKey,
-      vehicleEntityId: normalizedVehicleId || null,
-      cargoId: normalizedCargoId || null,
+      vehicleEntityId: resolvedVehicleId || null,
+      vehicleDefinitionId: vehicleDefId || null,
+      spawnPosition: resolvedSpawnPosition,
+      cargoId: resolvedCargoId || null,
       cargoInventory: cargo,
       escortIds: (Array.isArray(escortIds) ? escortIds : []).map(normalizeId).filter(Boolean),
       status: 'STAGING',
@@ -110,6 +151,80 @@ export class ConvoySystem {
     this._remember(opId, fingerprint, result);
     this._emit('convoy.assembled', { convoyId: id, templateId: templateKey });
     return clone(result);
+  }
+
+  /**
+   * 生成载具并校验落点（模块 3 §6.1）。
+   * 失败返回明确 code：vehicleSpawnBlocked（落点非法/无候选点）或 vehicleSpawnUnavailable（缺生成适配器）。
+   * @private
+   */
+  _assembleVehicle({ template, definitionId, convoyId, position, markerPosition, radius } = {}) {
+    const resolved = this._resolveVehicleSpawnPoint(position, markerPosition, radius);
+    if (!resolved.ok) return resolved;
+    if (!this.spawnVehicleEntity) return { ok: false, code: 'vehicleSpawnUnavailable' };
+    try {
+      const spawned = this.spawnVehicleEntity({
+        definitionId,
+        position: resolved.position,
+        convoyId,
+        template
+      });
+      if (!spawned || spawned.ok === false || !spawned.vehicleEntityId) {
+        return { ok: false, code: spawned?.code || 'vehicleSpawnUnavailable' };
+      }
+      return {
+        ok: true,
+        vehicleEntityId: normalizeId(spawned.vehicleEntityId),
+        cargoId: normalizeId(spawned.cargoId) || `${spawned.vehicleEntityId}:cargo`,
+        position: resolved.position
+      };
+    } catch (error) {
+      return { ok: false, code: 'vehicleSpawnUnavailable', message: error?.message || '' };
+    }
+  }
+
+  /**
+   * 落点解析：候选点优先 position（调用方指定）→ markerPosition（放置点），
+   * 逐个过 resolveSpawnPosition；全部非法时以最后一个候选点为圆心就近采样 8 方向 × 2 圈。
+   * @private
+   */
+  _resolveVehicleSpawnPoint(position, markerPosition, radius = VEHICLE_SPAWN_RADIUS) {
+    const candidates = [];
+    if (isPoint(position)) candidates.push({ x: Number(position.x), y: Number(position.y) });
+    if (isPoint(markerPosition)) candidates.push({ x: Number(markerPosition.x), y: Number(markerPosition.y) });
+    if (candidates.length === 0) return { ok: false, code: 'vehicleSpawnBlocked' };
+    // 未注入地形适配器：无地形场景按调用方落点原样放行（行为与旧版一致）
+    if (!this.resolveSpawnPosition) return { ok: true, position: candidates[0] };
+    for (const candidate of candidates) {
+      const point = this._trySpawnPoint(candidate, radius);
+      if (point) return { ok: true, position: point };
+    }
+    const origin = candidates[candidates.length - 1];
+    for (const ring of SPAWN_SAMPLE_RINGS) {
+      for (let i = 0; i < SPAWN_SAMPLE_DIRECTIONS; i += 1) {
+        const angle = (Math.PI * 2 * i) / SPAWN_SAMPLE_DIRECTIONS;
+        const point = this._trySpawnPoint({
+          x: origin.x + Math.cos(angle) * ring,
+          y: origin.y + Math.sin(angle) * ring * SPAWN_SAMPLE_Y_SQUASH
+        }, radius);
+        if (point) return { ok: true, position: point };
+      }
+    }
+    return { ok: false, code: 'vehicleSpawnBlocked' };
+  }
+
+  /** @private 单点校验：适配器返回 true/point/{ok,position} 视为可用，null/{ok:false} 视为阻挡。 */
+  _trySpawnPoint(candidate, radius) {
+    try {
+      const result = this.resolveSpawnPosition({ x: candidate.x, y: candidate.y }, radius);
+      if (result === true) return { x: candidate.x, y: candidate.y };
+      if (!result || result.ok === false) return null;
+      if (isPoint(result.position)) return { x: Number(result.position.x), y: Number(result.position.y) };
+      if (isPoint(result)) return { x: Number(result.x), y: Number(result.y) };
+      return null;
+    } catch (error) {
+      return null;
+    }
   }
 
   /**

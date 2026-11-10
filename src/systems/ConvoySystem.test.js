@@ -329,3 +329,105 @@ describe('M2 · ConvoySystem 卸货与快照', () => {
     expect(fresh.stash.getItemCount('resource.food')).toBe(8);
   });
 });
+
+describe('M3 3A · ConvoySystem 载具物理生成与落点校验（§6.1）', () => {
+  function createSpawnHarness({ blocked = () => false, spawnFails = false } = {}) {
+    const inventoryTransactions = new InventoryTransactionService();
+    const cargo = createInventory();
+    const spawned = [];
+    const checks = [];
+    const system = new ConvoySystem({
+      inventoryTransactions,
+      itemResolver: id => clone(ITEM_DEFS[id] || null),
+      resolveTemplate: id => clone(TEMPLATES[id] || null),
+      resolveCargo: id => (id === 'convoy-1:vehicle:cargo' ? cargo : null),
+      resolveSpawnPosition: (candidate, radius) => {
+        checks.push({ candidate: clone(candidate), radius });
+        return blocked(candidate) ? null : candidate;
+      },
+      spawnVehicleEntity: ({ definitionId, position, convoyId }) => {
+        if (spawnFails) return { ok: false, code: 'unknownVehicle' };
+        spawned.push({ definitionId, position: clone(position), convoyId });
+        return { ok: true, vehicleEntityId: `${convoyId}:vehicle`, cargoId: `${convoyId}:vehicle:cargo` };
+      },
+      getDay: () => 1
+    });
+    return { system, cargo, spawned, checks };
+  }
+
+  it('给 vehicleDefinitionId 时先生成载具再装配，落点写入 spawnPosition', () => {
+    const { system, spawned } = createSpawnHarness();
+    const result = system.assemble({
+      templateId: 'convoy.light_cart',
+      convoyId: 'convoy-1',
+      vehicleDefinitionId: 'vehicle.s14.lastCart',
+      position: { x: 120, y: 80 },
+      operationId: 'spawn-1'
+    });
+    expect(result).toMatchObject({ ok: true, convoyId: 'convoy-1', status: 'STAGING' });
+    expect(spawned).toEqual([{ definitionId: 'vehicle.s14.lastCart', position: { x: 120, y: 80 }, convoyId: 'convoy-1' }]);
+    expect(system.getConvoy('convoy-1')).toMatchObject({
+      vehicleEntityId: 'convoy-1:vehicle',
+      vehicleDefinitionId: 'vehicle.s14.lastCart',
+      spawnPosition: { x: 120, y: 80 }
+    });
+  });
+
+  it('指定点非法时从 marker 落点取可用点，并在 48px 内就近采样', () => {
+    const markerOnly = createSpawnHarness({ blocked: candidate => candidate.x !== 300 });
+    expect(markerOnly.system.assemble({
+      templateId: 'convoy.light_cart',
+      convoyId: 'convoy-1',
+      vehicleDefinitionId: 'vehicle.s14.lastCart',
+      position: { x: 100, y: 100 },
+      spawnPosition: { x: 300, y: 100 },
+      operationId: 'spawn-2'
+    }).ok).toBe(true);
+    expect(markerOnly.spawned[0].position).toEqual({ x: 300, y: 100 });
+
+    // 全阻挡 → 以最后候选点为圆心 8 方向 × 2 圈采样，第一圈 24px
+    const sampled = createSpawnHarness({ blocked: () => true });
+    const sampledBlocked = createSpawnHarness({
+      blocked: candidate => {
+        const distance = Math.hypot(candidate.x - 100, candidate.y - 100);
+        return distance < 10 || distance > 30;
+      }
+    });
+    expect(sampled.system.assemble({
+      templateId: 'convoy.light_cart', convoyId: 'convoy-1',
+      vehicleDefinitionId: 'vehicle.s14.lastCart', position: { x: 100, y: 100 }, operationId: 'spawn-3'
+    })).toMatchObject({ ok: false, code: 'vehicleSpawnBlocked' });
+    expect(sampled.spawned).toHaveLength(0);
+    expect(sampledBlocked.system.assemble({
+      templateId: 'convoy.light_cart', convoyId: 'convoy-1',
+      vehicleDefinitionId: 'vehicle.s14.lastCart', position: { x: 100, y: 100 }, operationId: 'spawn-4'
+    }).ok).toBe(true);
+    expect(sampledBlocked.checks.length).toBeGreaterThan(1);
+  });
+
+  it('校验失败不创建车队、不消耗 operationId；生成失败给出明确 code', () => {
+    const blockedHarness = createSpawnHarness({ blocked: () => true });
+    const failed = blockedHarness.system.assemble({
+      templateId: 'convoy.light_cart',
+      convoyId: 'convoy-1',
+      vehicleDefinitionId: 'vehicle.s14.lastCart',
+      position: { x: 10, y: 10 },
+      operationId: 'spawn-fail'
+    });
+    expect(failed).toMatchObject({ ok: false, code: 'vehicleSpawnBlocked' });
+    expect(blockedHarness.system.getConvoy('convoy-1')).toBeNull();
+    // 失败不消耗 operationId：同一 operationId 在可用落点仍可成功装配
+    const retryHarness = createSpawnHarness();
+    expect(retryHarness.system.assemble({
+      templateId: 'convoy.light_cart', convoyId: 'convoy-1',
+      vehicleDefinitionId: 'vehicle.s14.lastCart', position: { x: 10, y: 10 }, operationId: 'spawn-fail'
+    })).toMatchObject({ ok: true, convoyId: 'convoy-1' });
+
+    const spawnFailHarness = createSpawnHarness({ spawnFails: true });
+    expect(spawnFailHarness.system.assemble({
+      templateId: 'convoy.light_cart', convoyId: 'convoy-1',
+      vehicleDefinitionId: 'vehicle.s14.lastCart', position: { x: 1, y: 1 }, operationId: 'spawn-5'
+    })).toMatchObject({ ok: false, code: 'unknownVehicle' });
+    expect(spawnFailHarness.system.getConvoy('convoy-1')).toBeNull();
+  });
+});

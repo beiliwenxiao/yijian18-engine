@@ -30,6 +30,7 @@
  */
 import { SquadMemberComponent } from '../ecs/components/SquadMemberComponent.js';
 import { CommandStateComponent, ARMY_STANCES } from '../ecs/components/CommandStateComponent.js';
+import { COMPANION_ARMY_ID } from './CompanionSquadSystem.js';
 
 /** 选择槽位（编组条顺序，手柄循环切换顺序与此一致）。 */
 export const ARMY_SELECTION_SLOTS = Object.freeze([
@@ -81,6 +82,7 @@ const STANCE_PROFILES = Object.freeze({
   assault: { speedMultiplier: 1.25, aggroRadius: Infinity, leashRadius: Infinity, engageWhileMove: false },
   hold:    { speedMultiplier: 1.0,  aggroRadius: 220,       leashRadius: 320,       engageWhileMove: false },
   advance: { speedMultiplier: 0.6,  aggroRadius: 260,       leashRadius: Infinity,  engageWhileMove: false },
+  charge:  { speedMultiplier: 1.6,  aggroRadius: Infinity,  leashRadius: Infinity,  engageWhileMove: false },
   retreat: { speedMultiplier: 0.8,  aggroRadius: 160,       leashRadius: Infinity,  engageWhileMove: true },
   rescue:  { speedMultiplier: 0.9,  aggroRadius: 160,       leashRadius: Infinity,  engageWhileMove: false },
   garrison: { speedMultiplier: 1.0, aggroRadius: 260,       leashRadius: 480,       engageWhileMove: false },
@@ -90,6 +92,24 @@ const STANCE_PROFILES = Object.freeze({
 
 /** Tab/手柄 循环选择序列（用户裁定含武将：军队无命令时快速切回武将本身；§5 手柄切换单位键同序列）。 */
 export const SQUAD_SELECTION_CYCLE = Object.freeze(['commander', 'all', 'qian', 'zuo', 'zhong', 'you', 'hou']);
+
+/**
+ * 随行小队 10×10 网格偏移（模块 3 §4.1：随行上限 100 = 10×10 网格）。
+ * 纯函数供 HUD 与阵型复用：索引按行优先展开，x 以列中心对齐，y 逐行下移（2.5D 压缩）。
+ * @param {number} index - 0 起的成员序号
+ * @param {number} [cols=10] - 列数（缺省 10）
+ * @returns {{x:number, y:number}} 相对网格中心的局部偏移
+ */
+export function getCompanionGridOffset(index, cols = 10) {
+  const safeCols = Math.max(1, Math.floor(Number(cols) || 10));
+  const safeIndex = Math.max(0, Math.floor(Number(index) || 0));
+  const row = Math.floor(safeIndex / safeCols);
+  const col = safeIndex % safeCols;
+  return {
+    x: (col - (safeCols - 1) / 2) * FORMATION_SPACING_X,
+    y: row * FORMATION_SPACING_Y
+  };
+}
 
 /** 意图指令的"集结"判定半径：右键点武将附近 = 回归跟随。 */
 const INTENT_REGROUP_RADIUS = 80;
@@ -235,14 +255,22 @@ export class ArmyCommandSystem {
 
   isCustomSelection() { return !!this.customSelection?.size; }
 
-  /** 当前选中的单位实体列表（武将槽位返回空数组）。 */
+  /** 当前选中的单位实体列表（武将槽位返回空数组；随行小队不进军团选择，避免双源）。 */
   getSelectedUnits() {
+    const visible = unit => unit.armyId !== COMPANION_ARMY_ID;
     if (this.customSelection) {
-      return [...this.customSelection].map(id => this.units.get(id)?.entity).filter(Boolean);
+      return [...this.customSelection]
+        .map(id => this.units.get(id))
+        .filter(unit => unit && visible(unit))
+        .map(unit => unit.entity);
     }
     if (this.selectionSlot === 'commander') return [];
-    if (this.selectionSlot === 'all') return [...this.units.values()].map(unit => unit.entity);
-    return [...this.units.values()].filter(unit => unit.squadId === this.selectionSlot).map(unit => unit.entity);
+    if (this.selectionSlot === 'all') {
+      return [...this.units.values()].filter(visible).map(unit => unit.entity);
+    }
+    return [...this.units.values()]
+      .filter(unit => unit.squadId === this.selectionSlot && visible(unit))
+      .map(unit => unit.entity);
   }
 
   /** 是否存在可受命的非武将选择。 */
@@ -279,11 +307,44 @@ export class ArmyCommandSystem {
     return { ok: true, count: units.length, stance: stanceKey };
   }
 
-  /** 点选单位：命中半径内最近的军团单位（无则 null）。 */
+  /**
+   * 整军姿态（随行小队用，无选择槽语义）：对某 armyId 的全部存活单位应用姿态。
+   * 与 applyStance 的区别是不依赖选中单位、不清空选择（随行队 HUD 五档即走此入口）。
+   * @param {string} armyId
+   * @param {string} stanceKey
+   * @returns {{ok:boolean, code?:string, count?:number, stance?:string}}
+   */
+  applyStanceToArmy(armyId, stanceKey) {
+    if (!STANCE_PROFILES[stanceKey]) return { ok: false, code: 'unknownStance' };
+    const key = String(armyId || '');
+    if (!key) return { ok: false, code: 'unknownArmy' };
+    let count = 0;
+    for (const unit of this.units.values()) {
+      if (unit.armyId !== key) continue;
+      const entity = unit.entity;
+      if (!entity || entity.isDead === true) continue;
+      const command = entity.getComponent?.('commandState');
+      if (!command) continue;
+      command.stance = stanceKey;
+      if (stanceKey === 'hold') {
+        const transform = entity.getComponent?.('transform');
+        command.post = transform ? { x: transform.position.x, y: transform.position.y } : null;
+        command.goal = null;
+      } else if (stanceKey === 'escort') {
+        command.goal = null;
+        command.post = null;
+      }
+      count++;
+    }
+    return { ok: true, count, stance: stanceKey };
+  }
+
+  /** 点选单位：命中半径内最近的军团单位（随行小队不可点选；无则 null）。 */
   pickUnitAt(worldPos, radius = PICK_RADIUS) {
     let best = null;
     let bestDist = Infinity;
     for (const unit of this.units.values()) {
+      if (unit.armyId === COMPANION_ARMY_ID) continue;
       const transform = unit.entity.getComponent?.('transform');
       if (!transform) continue;
       const dist = Math.hypot(transform.position.x - worldPos.x, transform.position.y - worldPos.y);
@@ -1155,8 +1216,8 @@ export class ArmyCommandSystem {
         this._performAttackIfReady(entity, target, now);
         return;
       }
-      // 警戒范围内但未接敌：assault/advance 主动追击
-      if (stance === 'assault' || stance === 'advance') {
+      // 警戒范围内但未接敌：assault/advance/charge 主动追击
+      if (stance === 'assault' || stance === 'advance' || stance === 'charge') {
         const chaseGoal = targetTransform.position;
         this._moveTowards(entity, chaseGoal, profile.speedMultiplier);
         return;
@@ -1169,7 +1230,7 @@ export class ArmyCommandSystem {
       this._moveTowards(entity, command.goal, profile.speedMultiplier);
       return;
     }
-    if (stance === 'assault' || stance === 'advance') {
+    if (stance === 'assault' || stance === 'advance' || stance === 'charge') {
       // 无敌无目标：原地待命
       this._stop(entity);
       return;

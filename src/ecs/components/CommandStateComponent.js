@@ -19,7 +19,10 @@ export const ARMY_STANCES = Object.freeze([
   { key: 'advance', label: '缓慢推进' },
   { key: 'retreat', label: '稳步撤退' },
   { key: 'rescue', label: '抢救伤员' },
-  { key: 'flee', label: '快速逃命' }
+  { key: 'flee', label: '快速逃命' },
+  // M3 3A：随行小队五档用（escort 跟随 / charge 冲锋；charge 4s 后自动转 assault）
+  { key: 'escort', label: '跟随' },
+  { key: 'charge', label: '冲锋' }
 ]);
 
 /**
