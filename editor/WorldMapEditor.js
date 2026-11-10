@@ -26,6 +26,8 @@ import {
   WORLD_MAP_REGION_TYPES,
   WORLD_MAP_TERRAINS
 } from '../src/core/WorldMapCell.js';
+import { WorldLogicEditor } from './WorldLogicEditor.js';
+import { resolveEdgeConditions, validateWorldLogic } from '../src/core/world/WorldRouteLayer.js';
 
 const WORLD_MAP_TERRAIN_LABELS = Object.freeze({
   mountain: '山地',
@@ -87,6 +89,8 @@ export class WorldMapEditor {
     this.project = null;
     this.worldIndex = null;
     this.draftWorldMap = { entrySceneId: null, regions: [] };
+    this.draftWorldLogic = null;
+    this.logicEditor = null;
     this.selectedRegionId = null;
     this._draftIndex = null;
     this._renderGeneration = 0;
@@ -144,6 +148,8 @@ export class WorldMapEditor {
       this.project = null;
       this.worldIndex = null;
       this.draftWorldMap = { entrySceneId: null, regions: [] };
+      this.draftWorldLogic = null;
+      this.logicEditor?.setLogic({ nodes: [], edges: [] }, { factions: [] });
       this.selectedRegionId = null;
       this._draftIndex = null;
       this.region = {
@@ -173,6 +179,16 @@ export class WorldMapEditor {
     this.container.innerHTML = '';
     this.container.appendChild(this._el);
     this._bindEvents();
+    this.logicEditor = new WorldLogicEditor({
+      toolbarHost: this._el.querySelector('.wme-logic-toolbar'),
+      panelHost: this._el.querySelector('.wme-logic-panel'),
+      diffHost: this._el.querySelector('.wme-logic-diff'),
+      autoLayer: this._provideAutoLayer(),
+      autoLayerProvider: null,
+      sceneResolver: node => this._resolveNodeScene(node),
+      openScene: sceneId => this._openSceneEditor(sceneId),
+      getDay: () => 1
+    });
     await this.loadFromProject();
   }
 
@@ -215,9 +231,87 @@ export class WorldMapEditor {
       ? previousSelectedRegionId
       : (regionIds.has(entryRegionId) ? entryRegionId : draftWorldMap.regions[0]?.id);
     this._commitDraftState({ draftWorldMap, worldIndex: draftIndex, selectedRegionId });
+    this._syncLogicEditor();
     this._populateRegionSelect();
     this._syncRegionControls();
     this._render();
+  }
+
+  /** 把工程里的 worldLogic 草稿交给逻辑编辑器（保留 source/autoRevision 等扩展字段）。 */
+  _syncLogicEditor() {
+    this.draftWorldLogic = this.project?.worldLogic && typeof this.project.worldLogic === 'object'
+      ? structuredClone(this.project.worldLogic)
+      : null;
+    if (!this.logicEditor) return;
+    this.logicEditor.setAutoLayer(this._provideAutoLayer());
+    this.logicEditor.setLogic(this.draftWorldLogic || { nodes: [], edges: [] }, {
+      factions: this._collectFactions(),
+      moverFactionId: this._defaultMoverFaction()
+    });
+  }
+
+  /**
+   * 自动层（run-time 不读）：由地图抽取器生成，编辑器只做对比。
+   * 4D 批次抽取器未接入，先返回外部注入的 `this._autoLayer`（测试/后续批次用）。
+   */
+  _provideAutoLayer() {
+    return this._autoLayer || null;
+  }
+
+  /** 节点 → 场景：cityState 前缀 → 场景 id；否则按坐标找最近场景格。 */
+  _resolveNodeScene(node) {
+    if (!node) return null;
+    if (node.sceneId) return String(node.sceneId);
+    const token = String(node.ref?.id || node.id || '').match(/^city\.([a-z0-9]+)/i);
+    if (token) {
+      const wanted = token[1].toLowerCase();
+      const scene = (this.project?.scenes || []).find(item => String(item.id).toLowerCase() === wanted);
+      if (scene) return String(scene.id);
+    }
+    const x = Number(node.position?.x);
+    const y = Number(node.position?.y);
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+    let bestId = null;
+    let bestDistance = Infinity;
+    for (const scene of this.project?.scenes || []) {
+      const location = this.worldIndex?.findScene?.(scene.id) || this._draftIndex?.findScene?.(scene.id);
+      if (!location) continue;
+      const centerX = location.offset.x + location.worldWidth / 2;
+      const centerY = location.offset.y + location.worldHeight / 2;
+      const distance = Math.hypot(centerX - x, centerY - y);
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        bestId = scene.id;
+      }
+    }
+    return bestId && bestDistance <= 1920 ? String(bestId) : null;
+  }
+
+  /** 打开场景编辑器（新标签页），落到对应场景。 */
+  _openSceneEditor(sceneId) {
+    if (!sceneId || typeof window === 'undefined' || typeof window.open !== 'function') return false;
+    const url = `scene-workflow.html?gameId=${encodeURIComponent(this.gameId)}&sceneId=${encodeURIComponent(sceneId)}`;
+    window.open(url, '_blank', 'noopener');
+    return true;
+  }
+
+  /** 阵营候选项（节点归属 + 边白名单 + 城池运行态），只用于下拉，不参与判定。 */
+  _collectFactions() {
+    const factions = new Set();
+    const add = id => { if (id != null && id !== '') factions.add(String(id)); };
+    for (const node of this.draftWorldLogic?.nodes || []) add(node.ownerFactionId);
+    for (const edge of this.draftWorldLogic?.edges || []) {
+      const conditions = resolveEdgeConditions(edge);
+      for (const id of conditions.factionIds || []) add(id);
+    }
+    for (const city of this.project?.variables?.cityStates || []) add(city.factionId);
+    return [...factions].sort();
+  }
+
+  _defaultMoverFaction() {
+    const factions = this._collectFactions();
+    if (factions.includes('yellow_turban')) return 'yellow_turban';
+    return factions[0] || null;
   }
 
   _getDraftRegion(regionId = this.selectedRegionId, worldMap = this.draftWorldMap) {
@@ -439,8 +533,28 @@ export class WorldMapEditor {
       return { ok: false, committed: false, status: 'rejected', errors: error?.errors || [], error };
     }
 
+    // 逻辑路径与大地图同一份 commit：只在有 worldLogic 或本轮改过时提交，
+    // 避免给旧工程凭空写入空 worldLogic。
+    let logicSnapshot = null;
+    if (this.logicEditor && (this.project.worldLogic || this.logicEditor.isDirty())) {
+      logicSnapshot = this.logicEditor.getLogic();
+      const knownFactions = new Set(this._collectFactions());
+      for (const node of logicSnapshot.nodes || []) {
+        if (node?.ownerFactionId != null) knownFactions.add(String(node.ownerFactionId));
+      }
+      const logicResult = validateWorldLogic(logicSnapshot, {
+        knownFactions: knownFactions.size > 0 ? knownFactions : null
+      });
+      if (!logicResult.ok) {
+        const message = logicResult.errors[0]?.message || '结构非法';
+        this._showToast(`逻辑路径校验失败: ${message}`, 'error');
+        return { ok: false, committed: false, status: 'rejected', errors: logicResult.errors };
+      }
+    }
+
     try {
       this.canonicalSession.patch('worldMap', structuredClone(normalizedWorldMap));
+      if (logicSnapshot) this.canonicalSession.patch('worldLogic', logicSnapshot);
       const result = await this.canonicalSession.save();
       if (result?.ok !== true || result.committed !== true) {
         const firstError = result?.errors?.[0];
@@ -464,8 +578,10 @@ export class WorldMapEditor {
         worldIndex: committedIndex,
         selectedRegionId
       });
+      this._syncLogicEditor();
       this._populateRegionSelect();
       this._syncRegionControls();
+      this._render();
       this._showToast(
         result.degraded ? '大地图已提交，但缓存/通知同步降级' : '大地图已保存 ✓',
         result.degraded ? 'warn' : 'success'
@@ -582,6 +698,7 @@ export class WorldMapEditor {
         </label>
         <button type="button" class="wme-apply-size">应用结构</button>
         <button type="button" class="wme-focus-used">定位场景</button>
+        <span class="wme-logic-toolbar" style="display:contents;"></span>
       </div>
       <div class="wme-new-region-overlay" hidden
            style="position:fixed;inset:0;z-index:10000;align-items:center;justify-content:center;padding:20px;background:rgba(5,10,25,.72);">
@@ -617,6 +734,8 @@ export class WorldMapEditor {
         </form>
       </div>
       <div class="wme-grid-container" style="position:relative;"></div>
+      <div class="wme-logic-panel"></div>
+      <div class="wme-logic-diff"></div>
       <div class="wme-toast" style="display:none;"></div>
     `;
   }
@@ -1054,6 +1173,7 @@ export class WorldMapEditor {
     });
 
     this._bindMainlandMinimapNavigation(gc);
+    this.logicEditor?.render(region, { gridEl: gc, ...metrics, gap: 2 });
     requestAnimationFrame(() => {
       if (!this._isActiveMapRender({ generation, selectedRegionId, worldIndex: draftIndex, gc })) return;
       this._renderMainlandMinimap(gc, draftIndex);
