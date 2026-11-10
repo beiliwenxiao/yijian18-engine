@@ -207,17 +207,62 @@
   WorldMapEditor 条目**未**写入本次提交（其 hash 指向未提交的 M4 源码，提交会造成中间态不一致），
   建议 M4 源码提交后统一重批，或按当前 HEAD 内容一次性生成整表 lines/hash。
 
+### D.7 第 2 步：地图格数据层执行记录（2026-11-11，提交 `9c40e7bf`）
+
+**口径裁定（推导，无需再拍板）**
+
+1. `cell.road: true` / `cell.poi: 'pass' | 'ferry'` 是**显式声明**，缺省即无道路、无落点——
+   读取函数对 `null` / 字符串格 / 缺字段一律返回缺省，旧地图与旧存档加载路径零改动。
+2. `region.roadEdges` 用**格对** `[[row, col], [row, col]]` 表达跨格连接：连接是格与格之间的关系，
+   放 region 级才不会让同一段路在两端各写一半；cell 只声明本格属性（地形/场景/道路/落点）。
+3. POI 只收 `pass`（关隘）/ `ferry`（渡口）。`bridge` 不单列为 POI——桥要么与城市同格，
+   要么由 `road` 格 + 两端边表达；`junction` 是人工层独有的汇合点语义，不进 POI 枚举。
+4. 编辑器只做地形格属性的两条控件（道路格勾选 / POI 下拉），`sceneGrid` 不承载道路语义
+   （写回时剥离 `road/poi`）；改地形不清除既有 `road/poi`。
+
+**内容同步（示例项目 mainland region）**
+
+- `roadEdges` 10 条（人工层 11 条边换算）：`(6,12)-(6,13)`、`(6,12)-(11,12)`、`(11,12)-(15,12)`、
+  `(6,13)-(11,13)`、`(11,13)-(11,12)`、`(11,13)-(15,13)`、`(15,12)-(15,13)`、`(15,13)-(16,13)`、
+  `(16,13)-(17,14)`、`(17,14)-(17,15)`。
+- 道路格 9 个：`(6,12) (6,13) (11,12) (11,13) (15,12) (15,13) (16,13) (17,14) (17,15)`；
+  POI 2 个：`(11,12)=pass`（pass.yique）、`(17,14)=ferry`（ferry.changshe）。
+
+**已知差距（留给第 3 步验收对照，不算数据缺陷）**
+
+| 人工层 | 地图格表现 | 抽取器可读性 |
+|--------|-----------|--------------|
+| `bridge.yingchuan` | 与 `city.s10` 同格 `(6,13)` | 无法产出独立节点；`edge.s09_bridge` 会退化为 `s09→s10`，`edge.bridge_s10` 退化为同格无边 |
+| `junction.crossroads` | 格 `(11,13)` 只有 `road`，无 POI 类型 | 无法产出节点；与该格相关的 3 条边端点无处落名 |
+| `pass.yique` / `ferry.changshe` | POI 可读 | 节点 id 按格派生（`poi.pass@11,12` 形式），与人工 `pass.yique` 命名不同→算端点匹配不算节点同名 |
+
+**验证**
+
+- 新增 `src/core/WorldMapCell.test.js` **7 例**（POI 枚举/缺省读取/道路判定/roadEdges 归一化与去重/旧格兼容）。
+- 新增 `editor/WorldMapEditor.test.js` **6 例**（道路勾选写回与清理、POI 写回与清理、改地形保留、
+  sceneGrid 剥离、非法 POI 不写入、控件还原）。
+- 回归：GOLDEN `4/4`、`ProjectWorldIndex` `9/9`、`WorldMapPanel` `9/9` 全绿。
+
 ## E. 收尾
 
 - [ ] 全量回归，存量失败 6 文件不新增
 - [ ] 单独提交，只含本批文件（不带 `vitest.config.js`）
 - [ ] 回报 D/N 最终取值 + 理由 + 推翻代价
 
-## 进度锚点（2026-11-11 · 4C + 差异面板完成，未提交）
+## 进度锚点（2026-11-11 · 地图格数据层完成，提交 `9c40e7bf`）
 
-- 已提交：M1 `2181ce9a`、M2 `c0bfd1b`、3A `8cce967`、3B `0d81ad5`、3D `dde1105`（已推 gitee）。
-- 工作区 `M vitest.config.js`（并行会话，禁提交/推送/改测试环境声明）。
-- **M4 当前进度 = 4A + 4B + 4C + 4D 差异面板完成（均未提交）；下一批 = 地图抽取器（auto 层）。**
+- 已提交：M1 `2181ce9a`、M2 `c0bfd1b`、3A `8cce967`、3B `0d81ad5`、3D `dde1105`（已推 gitee）；
+  M4 运行时 4A+4C `cf7fa9ef`、M4 编辑器 4B+4D `4a00f639`、M1 锚点 docs `11f8692e`、
+  M4 文档 `7de3b96e`、基线校正 `b1f19dc8`、地图格数据层 `9c40e7bf`。
+- 工作区 `M vitest.config.js` 与 `M editor/EditorShared.js`、`M editor/SceneEditorEventFilter.js`、
+  若干 `.trae/specs` 文档为并行会话改动，禁提交。
+- **M4 当前进度 = 4A+4B+4C+4D 已提交；地图格数据层已提交（§D.7）；下一步 = 第 3 步抽取器（auto 层）。**
+- 抽取器读取顺序（用户定稿）：`cityStates → city 节点 → cell.poi → 关隘/渡口 → road/roadEdges → 边`；
+  无道路标记不出边；全部 `source:'auto'` 进「新增待确认」，永不直接生效。
+- 抽取器验收口径：与人工层 10 节点/11 边对照，节点差 ≤ 2、边端点匹配 ≥ 80%、无凭空多出的关隘/渡口；
+  达不到就报差距，**不调口径凑数**。§D.7「已知差距」三条是预期差距来源。
+- 第 4 步（例外清单整表重批）在第 3 步提交后、工作区干净时一次性执行；
+  `editor/WorldMapEditor.js` 单列一条 + 拆分建议（现约 1985 行）。
 - 4C 新增文件：`src/systems/world/EncounterResolver.js`（+test 21）、
   `src/systems/world/PassTariffSystem.js`（+test 10）、
   `src/core/scene/SceneArmyOrderFlow.encounter.test.js`（12）。
