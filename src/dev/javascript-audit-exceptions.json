@@ -10,7 +10,7 @@
       "responsibility": "editorInteraction",
       "owner": "beiliwenxiao",
       "date": "2026-11-11",
-      "contentHash": "0259b550aad70432f31765492e880b965d0b7c89f9c048e835c6221d2ac2c493"
+      "contentHash": "2b866c80e45b88f955bc9bd9d034be9dfc9d409af9e1ad16e571803fde153fe3"
     },
     {
       "file": "editor/ImageSlicer.js",
@@ -22,7 +22,7 @@
       "responsibility": "editorInteraction",
       "owner": "beiliwenxiao",
       "date": "2026-11-11",
-      "contentHash": "2f084cd75c8c938a501c94a14768251ba1ea29ce27c987612a28dd34b5ea5611"
+      "contentHash": "9566435f8e8624873d78eceb5ef07db834513a19c843cd5fa0d74199c6374346"
     },
     {
       "file": "editor/PanelEditor.js",
@@ -34,7 +34,7 @@
       "responsibility": "editorInteraction",
       "owner": "beiliwenxiao",
       "date": "2026-11-11",
-      "contentHash": "7347b7202b3fae0ce0047bf1889d98bf1f023593e863253735e54000792ad5a0"
+      "contentHash": "79e9fd9e8d131a2ec6e8eed4e789f836ec21940f01b0df19df276ba6a64974e1"
     },
     {
       "file": "editor/QuestWizardEditor.js",
@@ -59,7 +59,7 @@
       "responsibility": "editorInteraction",
       "owner": "beiliwenxiao",
       "date": "2026-11-11",
-      "contentHash": "866370202c4a569cd6dcaa9f07b971a948755ca08557abc6947ca47d90cc984b"
+      "contentHash": "c60c31594e5fb51cf7e042830e4904c933ceb6c04692582044fed02e19ae522e"
     },
     {
       "file": "editor/SceneEditorCanvas.js",
@@ -71,7 +71,7 @@
       "responsibility": "editorInteraction",
       "owner": "beiliwenxiao",
       "date": "2026-11-11",
-      "contentHash": "88e9b03a9735e98c83ef5a9515def9751e1872a6b95514a5f4a4388cd54855c5"
+      "contentHash": "462902d6122f56e74ecab2fefc1780c0dc3b64a0999eab6052c39478e95c5326"
     },
     {
       "file": "editor/SceneEditorInteraction.js",
@@ -83,7 +83,7 @@
       "responsibility": "editorInteraction",
       "owner": "beiliwenxiao",
       "date": "2026-11-11",
-      "contentHash": "01f48b0915e56477f9eb9226519da3f2ac0c25dc841d3958aa6d071f42116e4b"
+      "contentHash": "26bc66ae4dc30d912a846f863fdb394debcc4a9b34cded06959e5ed9f229dc98"
     },
     {
       "file": "editor/SceneEditorUI.js",
@@ -95,7 +95,7 @@
       "responsibility": "editorInteraction",
       "owner": "beiliwenxiao",
       "date": "2026-11-11",
-      "contentHash": "78617200c9e6b1fdcdb05296bbb670ab46ffbc2ec13f0172bb7fde49d83115d9"
+      "contentHash": "09eb2397af751a5016394f97c86284392b5b861841fd6450a296936a00251bf8"
     },
     {
       "file": "editor/TriggerEditor.js",
@@ -107,7 +107,7 @@
       "responsibility": "editorInteraction",
       "owner": "beiliwenxiao",
       "date": "2026-11-11",
-      "contentHash": "120706d9bbf2f21d61b66892d3d148fac28508ecc818e9fd04c58c1a7f0b7a10"
+      "contentHash": "ced77258ed6c036c03f3ee8f18543e2cc6b75987c172fdf63b1be2b06c6cb998"
     },
     {
       "file": "editor/UIEditor.js",
@@ -119,7 +119,7 @@
       "responsibility": "editorInteraction",
       "owner": "beiliwenxiao",
       "date": "2026-11-11",
-      "contentHash": "268e8ffa6589debfe135543d2a8d5c9e0b26cc23c9dfbc627dfaf7fd29c01ca1"
+      "contentHash": "20df5cdde9caf21fbd4e39ade9b47dd433fcf580ae48cc887e43a8a4f757ff23"
     },
     {
       "file": "editor/WorldMapEditor.js",
@@ -143,7 +143,7 @@
       "responsibility": "assembly",
       "owner": "beiliwenxiao",
       "date": "2026-11-11",
-      "contentHash": "bc0b7848695fc67c9302b91803f368cf7f71bd9951edc27ef154954746a71713"
+      "contentHash": "a1b21a29abf568bd945a94b3eb7538d05ba541dcc1108fc670614e9b809007f4"
     },
     {
       "file": "example/sanguo_zhangjiao/scenes/BaseGameSceneSetup.js",
@@ -155,7 +155,7 @@
       "responsibility": "presentation",
       "owner": "beiliwenxiao",
       "date": "2026-11-11",
-      "contentHash": "6880a09a6cb11d21f48949ab601759dcc73c69c8b2b1610ee4067d514609e703"
+      "contentHash": "54f6ef273ac4b3af981160832fa9478692cf575e21ac680bb66a78909a05c5d4"
     },
     {
       "file": "example/sanguo_zhangjiao/scenes/DataDrivenPrologueScene.js",
@@ -168,7 +168,7 @@
       "responsibility": "businessLogic",
       "owner": "beiliwenxiao",
       "date": "2026-11-11",
-      "contentHash": "5d784cc48dc6c3c37ebf1112ef1a21de1ac42ddd78e1c9b8c768d10bc1b6fdcc"
+      "contentHash": "1a45b735353d47d89ff15c167ea9b03205bf5e91d82b749f73461f5a4fe08630"
     },
     {
       "file": "example/sanguo_zhangjiao/scenes/Scene1Terrain.js",
@@ -181,7 +181,7 @@
       "responsibility": "businessLogic",
       "owner": "beiliwenxiao",
       "date": "2026-11-11",
-      "contentHash": "a42ec5f017ef4d16283dcc8e828fdcbfb8fbeb79c9f52446d5e62a1dc0c8c6fd"
+      "contentHash": "30cec66484174b2e4c2e4b128f8578119ace40ab9d1096a9626566e605bed68c"
     },
     {
       "file": "example/sanguo_zhangjiao/systems/S01S02SceneFlow.js",
@@ -194,7 +194,7 @@
       "responsibility": "businessLogic",
       "owner": "beiliwenxiao",
       "date": "2026-11-11",
-      "contentHash": "1681ab21538f55b33c478b0c1ce01dd0829ee9ca59b6f522097e87563572c338"
+      "contentHash": "ec2837273194548cdc4d8da73dc15e9ed48bb8c3a7e87762f751d55c68b002a6"
     },
     {
       "file": "example/sanguo_zhangjiao/systems/S02ArmyRescueFlow.js",
@@ -206,7 +206,7 @@
       "responsibility": "businessLogic",
       "owner": "beiliwenxiao",
       "date": "2026-11-11",
-      "contentHash": "f04ad18e3db0c8b50078a7cbfabf1deb58227ae5018f94e6511629d3e647111f"
+      "contentHash": "96fc16dff661d72f432fd2d090a83d5d448fbd3746240c1d4c0c131f1b25926c"
     },
     {
       "file": "example/sanguo_zhangjiao/systems/S03S08SceneFlow.js",
@@ -218,7 +218,7 @@
       "responsibility": "businessLogic",
       "owner": "beiliwenxiao",
       "date": "2026-11-11",
-      "contentHash": "82773e69f2a3d44b289a3ea9f71f71f2a9095a28549e2d9d62bf19b448fc0cc4"
+      "contentHash": "af036b254ad3f57cd52464a2eaa8f4577ed694dcc8413f7c949835cfa9295000"
     },
     {
       "file": "example/sanguo_zhangjiao/systems/S03S14BattleCoordinator.js",
@@ -231,7 +231,7 @@
       "responsibility": "businessLogic",
       "owner": "beiliwenxiao",
       "date": "2026-11-11",
-      "contentHash": "3f6e80900aa1ce450c680150e2c74e119d6c9c8af38b94d53917eb479ef56561"
+      "contentHash": "4d26d139839e35edef5295465a691ba52a3a61d6e950839ddb40229e2180373c"
     },
     {
       "file": "example/sanguo_zhangjiao/systems/S04RouteCoordinator.js",
@@ -243,7 +243,7 @@
       "responsibility": "businessLogic",
       "owner": "beiliwenxiao",
       "date": "2026-11-11",
-      "contentHash": "0983caa8ac1c938e2d7cfc0475ab260a73842fad8a01a94ae9146e48aaa50e4d"
+      "contentHash": "efb4af81ae8f5f9630a57bcb4b46038bf4d76c4e87165a499ddcec5c27ba92d6"
     },
     {
       "file": "example/sanguo_zhangjiao/systems/S05SceneFlow.js",
@@ -255,7 +255,7 @@
       "responsibility": "businessLogic",
       "owner": "beiliwenxiao",
       "date": "2026-11-11",
-      "contentHash": "fecfc31b8a2e50e29ea8ab472f43d1ebd377b4b55725148b20a679b319c86edb"
+      "contentHash": "bec56fe9dedeb152cbc777d1b22e8af6dc14e06351086b68a67cfc13a4d3410c"
     },
     {
       "file": "example/sanguo_zhangjiao/systems/S06SceneFlow.js",
@@ -267,7 +267,7 @@
       "responsibility": "businessLogic",
       "owner": "beiliwenxiao",
       "date": "2026-11-11",
-      "contentHash": "8ae777989a0367c62adad364ff4d1b20fb01df2d6c9f4942dae12442421e23e9"
+      "contentHash": "d4f7ec7e327a7fd83c380b69fdc0c579ef3575106d7d13d847b528a57e661f45"
     },
     {
       "file": "example/sanguo_zhangjiao/systems/S07S08SceneFlow.js",
@@ -279,7 +279,7 @@
       "responsibility": "businessLogic",
       "owner": "beiliwenxiao",
       "date": "2026-11-11",
-      "contentHash": "c2292c5c210258b6e6c337d9a5e651fd3b1d10550f4ba2d7a105e3cddc93d8c4"
+      "contentHash": "50347ba9aca4186baa2fa3046ae104b2b8d9d1d2398b57f66ca2389ec6222893"
     },
     {
       "file": "example/sanguo_zhangjiao/systems/S09AudioDirector.js",
@@ -292,7 +292,7 @@
       "responsibility": "businessLogic",
       "owner": "beiliwenxiao",
       "date": "2026-11-11",
-      "contentHash": "16335346088bdf94be2aab810766aeed4535c64615edf3ccd1011c6c282c1413"
+      "contentHash": "97a93ddd6d32fd9b8fb05e1a223da703da111cd38623df5f7da8cd1e2ee87242"
     },
     {
       "file": "example/sanguo_zhangjiao/systems/S09ClassSelectionFlow.js",
@@ -304,7 +304,7 @@
       "responsibility": "businessLogic",
       "owner": "beiliwenxiao",
       "date": "2026-11-11",
-      "contentHash": "45b1188cbb2b36bce2c2f6f9fcfa7939a097e3a0c618d8e22025de0e820c3c3f"
+      "contentHash": "7eb04db76d58290ffb1f3d52c49f01719bbfbb91e783c2133b7440eecbfda2da"
     },
     {
       "file": "example/sanguo_zhangjiao/systems/S09RefugeeFlow.js",
@@ -316,7 +316,7 @@
       "responsibility": "businessLogic",
       "owner": "beiliwenxiao",
       "date": "2026-11-11",
-      "contentHash": "7745809724aae9ecb9b31503e5d2ac1cd07b0ffb79be518d5e5f60a97bebdd6e"
+      "contentHash": "ad0b152ab82dcc347ce6f0cbeb00027bc8c4b60ade7d4e92a80f917ced0b9890"
     },
     {
       "file": "example/sanguo_zhangjiao/systems/S10ConstructionFlow.js",
@@ -328,7 +328,7 @@
       "responsibility": "businessLogic",
       "owner": "beiliwenxiao",
       "date": "2026-11-11",
-      "contentHash": "8451fb70f011614480fb51f85489b7f603383bbc97c37e1191b50b60ab18c170"
+      "contentHash": "e10a202eb7a77621e2092283e488d41e1ca86cc81b7e31d028a441fe27a3d5ab"
     },
     {
       "file": "example/sanguo_zhangjiao/systems/S10StoryFlow.js",
@@ -340,7 +340,7 @@
       "responsibility": "businessLogic",
       "owner": "beiliwenxiao",
       "date": "2026-11-11",
-      "contentHash": "e345d2565ae6e64440c81282ba6a0161afd536aa6190c975c922b2c56a4285b8"
+      "contentHash": "a85a2c517ac8def5e99806c23ed69e0d22c4405a93c12283fc95a4839cf54474"
     },
     {
       "file": "example/sanguo_zhangjiao/systems/S11S12Coordinator.js",
@@ -353,7 +353,7 @@
       "responsibility": "businessLogic",
       "owner": "beiliwenxiao",
       "date": "2026-11-11",
-      "contentHash": "53bb373215e465fe9dc8535f5f60878a1573e0b962eca7859b8248c5ca2092c6"
+      "contentHash": "40d9f840b90f1b003f18737ff8780fbdbcfad4eac3a6ba4fcaa2a44e8dd1305c"
     },
     {
       "file": "example/sanguo_zhangjiao/systems/S11S14SceneFlow.js",
@@ -366,7 +366,7 @@
       "responsibility": "businessLogic",
       "owner": "beiliwenxiao",
       "date": "2026-11-11",
-      "contentHash": "374b6a460b93f0e61613976ee88d915ff52a28f489c0cabbaf063c8f3f53afe0"
+      "contentHash": "a3fafb433fa4dd1670cb5fbdf56b3e6ef9e75045c0eb268316a494df833443df"
     },
     {
       "file": "example/sanguo_zhangjiao/systems/S13S14Coordinator.js",
@@ -378,7 +378,7 @@
       "responsibility": "businessLogic",
       "owner": "beiliwenxiao",
       "date": "2026-11-11",
-      "contentHash": "69e7738a903a90fefdfeb25c45f43bb907b863defa448ddb7370ccf029b69b2e"
+      "contentHash": "b2a9767c66bc3df6629acd45704cf5d28ec3a9b4432ea827a40bd5ef3ebb0713"
     },
     {
       "file": "example/sanguo_zhangjiao/systems/SanguoGameLoaderCoordinator.js",
@@ -390,7 +390,7 @@
       "responsibility": "businessLogic",
       "owner": "beiliwenxiao",
       "date": "2026-11-11",
-      "contentHash": "57c1a74c1c0d66e86983a34d434d05f5fc8aabc8cd2c5b4fba2287887b343684"
+      "contentHash": "d32d9853b7ce95f7e4aa19ea30dfd1c39860c97af82d6b123c6b16f2cc97a3b6"
     },
     {
       "file": "example/sanguo_zhangjiao/systems/SanguoSceneNavigationFlow.js",
@@ -402,7 +402,7 @@
       "responsibility": "businessLogic",
       "owner": "beiliwenxiao",
       "date": "2026-11-11",
-      "contentHash": "fc62cd667c4f80267eb5425beb9f929ef491ac868dec9500d063b474fd6ab942"
+      "contentHash": "0d2d1c3a44d77aa823a89e14593ed819b192fbb48979f59a74b2bb469891a305"
     },
     {
       "file": "example/sanguo_zhangjiao/systems/SanguoWorldRuntimeCoordinator.js",
@@ -414,7 +414,7 @@
       "responsibility": "businessLogic",
       "owner": "beiliwenxiao",
       "date": "2026-11-11",
-      "contentHash": "e118fe063da2517941b8e3f14de0e31e6ccacfbcaba300b8d53cc09e66ada98a"
+      "contentHash": "0f381a280041c828b5aac4c723589f72cf7f82b14cd9df38df5bca655e76abc3"
     },
     {
       "file": "src/core/PlaceholderAssets.js",
@@ -426,7 +426,7 @@
       "responsibility": "platformInfra",
       "owner": "beiliwenxiao",
       "date": "2026-11-11",
-      "contentHash": "6f940e0e80b1613be7a9c80f5c5a63e7053b7f88aa7f8f53a5ca2af90da98020"
+      "contentHash": "d93dedddf7ba7f395bd919dff73e3cbd2d39d508785b3db059b328f6908d0523"
     },
     {
       "file": "src/core/scene/SceneCampfireService.js",
@@ -439,7 +439,7 @@
       "responsibility": "businessLogic",
       "owner": "beiliwenxiao",
       "date": "2026-11-11",
-      "contentHash": "8db93886d580192905a4427791dfe0ba1a66e2053d833c7d470050908dd64586"
+      "contentHash": "907a07a632211c60d373b9b1263d878e2eb4fcbbb0210e76cedacd50649b4162"
     },
     {
       "file": "src/core/scene/ScenePlacementRuntime.js",
@@ -451,7 +451,7 @@
       "responsibility": "assembly",
       "owner": "beiliwenxiao",
       "date": "2026-11-11",
-      "contentHash": "4865bc955d0fcd74b3a85b35f4978b438c4a4fefd8a4a8661444f06f5069da39"
+      "contentHash": "7449b61c7db7d35c80a04ff4a3e0bef38ae730f33549cf0a029a93d598c19d5a"
     },
     {
       "file": "src/core/WorldStreamingManager.js",
@@ -463,7 +463,7 @@
       "responsibility": "businessLogic",
       "owner": "beiliwenxiao",
       "date": "2026-11-11",
-      "contentHash": "3d25e1b8854fb4c10f34d60a62b3eabec0b6363db79774ea9d4946b489c3cf76"
+      "contentHash": "f74f7bc94277f67327c08754c76f8a163e29a37f51a68aa0f66d622a1301381c"
     },
     {
       "file": "src/rendering/SkillEffects.js",
@@ -475,7 +475,7 @@
       "responsibility": "presentation",
       "owner": "beiliwenxiao",
       "date": "2026-11-11",
-      "contentHash": "f313f71f683326db4e50303e323f3354cc82fcde223522d050851ba110408cd9"
+      "contentHash": "8a016b6e32f08b54c17967dc8f601cee331df9e7d84cbe3f475135905acd3d34"
     },
     {
       "file": "src/rendering/WeaponRenderer.js",
@@ -487,7 +487,7 @@
       "responsibility": "presentation",
       "owner": "beiliwenxiao",
       "date": "2026-11-11",
-      "contentHash": "a6abe69a2428797708b2a9dff9366566117d1f6a6cec442a3b28bf8725c255c2"
+      "contentHash": "6e84f437fb99c7ff8dd35728447ac224c7c6e8bf6c8faad2c8a3968cfb92e073"
     },
     {
       "file": "src/systems/ArmyCommandSystem.js",
@@ -499,7 +499,7 @@
       "responsibility": "businessLogic",
       "owner": "beiliwenxiao",
       "date": "2026-11-11",
-      "contentHash": "1d3c43053ac0540961958a8110fb507ab1379e8dd94df1f540776c4c024c1534"
+      "contentHash": "1b6b008c2347f6e8b6b83aaeccfe9ac220b442a3b81a296b8fb1e3fa51b2cb08"
     },
     {
       "file": "src/systems/CombatSystem.js",
@@ -511,7 +511,7 @@
       "responsibility": "businessLogic",
       "owner": "beiliwenxiao",
       "date": "2026-11-11",
-      "contentHash": "239eae3fd6b1095f4292db99ef1f224d3335dc1f8fbb5fe881c26ffe63724ad9"
+      "contentHash": "f131debc833c6fbfdf199bcdc05b7c4f1877ef5c2b5e390df4519d09bf4e1c69"
     },
     {
       "file": "src/systems/GuildSystem.js",
@@ -523,7 +523,7 @@
       "responsibility": "businessLogic",
       "owner": "beiliwenxiao",
       "date": "2026-11-11",
-      "contentHash": "b0defb07ee344cff7f911e371caade59ac13a5efc1d375e36f76144ea77fb34c"
+      "contentHash": "2bb843476109b719cbeeb16f90d28db53c3eacc59b7f952d651f25092c4a3aa7"
     },
     {
       "file": "src/systems/TeamSystem.js",
@@ -535,7 +535,7 @@
       "responsibility": "businessLogic",
       "owner": "beiliwenxiao",
       "date": "2026-11-11",
-      "contentHash": "e41148e53a0eff54ec8ac6755a3074086a3e8849274738d3ce113c3352521fc4"
+      "contentHash": "6625adb263ff94290ba24e7c7a491f1864a45c4d29c121eb7290c6865f221122"
     },
     {
       "file": "src/systems/TriggerSystem.js",
@@ -547,7 +547,7 @@
       "responsibility": "businessLogic",
       "owner": "beiliwenxiao",
       "date": "2026-11-11",
-      "contentHash": "f00f82fdfc32cecc3bec7ebfc6582d539b905fa121008434850d3f2c8a492059"
+      "contentHash": "649282fd9ec01c7d5871797b5e636eb28e4def899a0b16a85c8a1e10dccccc8b"
     },
     {
       "file": "src/ui/DebugPanel.js",
@@ -559,7 +559,7 @@
       "responsibility": "presentation",
       "owner": "beiliwenxiao",
       "date": "2026-11-11",
-      "contentHash": "d8a6b7f9e024f6f65191e6d76b28c0c90cd5f2362236b5249e659c1273d57bf0"
+      "contentHash": "4f277f400405416c03a9fc57f5cbe4193f3c9e08609b87bf18650b052db90d04"
     },
     {
       "file": "src/ui/InventoryPanel.js",
@@ -571,7 +571,7 @@
       "responsibility": "presentation",
       "owner": "beiliwenxiao",
       "date": "2026-11-11",
-      "contentHash": "d4e7716bba016160f15a9159660673da6fb61e23f1e6d51515852a2095fa2e25"
+      "contentHash": "3931b9e1d6ea2b15a624f0fe84ba0456861a2afd7e5666e158ffd2be1a6c2151"
     },
     {
       "file": "src/ui/PlayerInfoPanel.js",
@@ -583,7 +583,7 @@
       "responsibility": "presentation",
       "owner": "beiliwenxiao",
       "date": "2026-11-11",
-      "contentHash": "53ecfff3e409b7acbf22349047bd90ee3d240b45232994f0920c1640187e7d8b"
+      "contentHash": "c5bd28073882be0a22fd213f05932f02d37cf426566204400fc889d83e97ff5c"
     },
     {
       "file": "src/core/scene/SceneDiagnostics.js",
@@ -595,7 +595,7 @@
       "responsibility": "businessLogic",
       "owner": "beiliwenxiao",
       "date": "2026-11-11",
-      "contentHash": "d5ba3ad1129884bd7ce0b66e1040ac359ced6824dfcc16acbe714090276833a0"
+      "contentHash": "8cd810224fd67303a1604ce0a7b5189591aad6c271adb19d6d68a7af7de62761"
     }
   ]
 }
