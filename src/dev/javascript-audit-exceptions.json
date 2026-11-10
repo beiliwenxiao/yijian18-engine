@@ -127,11 +127,11 @@
         "line-limit-or-invalid-exception"
       ],
       "evidence": "历史大文件，拆分列入架构治理计划：拆一个移一个，修改本文件前需重新审批",
-      "lines": 1854,
+      "lines": 2022,
       "responsibility": "editorInteraction",
       "owner": "beiliwenxiao",
-      "date": "2026-09-27",
-      "contentHash": "1918040681e8d4fbba3f83194ec2943a9e9381ca24395f2b9327c9ff82b14768"
+      "date": "2026-11-11",
+      "contentHash": "1bab8f0790fc550a5685b86995b52445785e29a31441dd8b8ecf1d820098729d"
     },
     {
       "file": "example/sanguo_zhangjiao/index.html#script:1",
