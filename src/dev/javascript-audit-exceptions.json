@@ -543,11 +543,11 @@
         "line-limit-or-invalid-exception"
       ],
       "evidence": "历史大文件，拆分列入架构治理计划：拆一个移一个，修改本文件前需重新审批",
-      "lines": 1583,
+      "lines": 1651,
       "responsibility": "businessLogic",
       "owner": "beiliwenxiao",
-      "date": "2026-10-20",
-      "contentHash": "302c4c23f16a8f6939f6be19384670b1deade4c50aeea7ad514b08498865a8d4"
+      "date": "2026-11-11",
+      "contentHash": "649282fd9ec01c7d5871797b5e636eb28e4def899a0b16a85c8a1e10dccccc8b"
     },
     {
       "file": "src/ui/DebugPanel.js",
