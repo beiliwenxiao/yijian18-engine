@@ -288,23 +288,69 @@ cityStates → city 节点 → cell.poi → 关隘/渡口 → road/roadEdges →
 
 **验证**：`WorldMapExtractor.test.js` **12 例**（8 例合成数据 + 4 例实数据验收）；editor + world core 回归 91 例全绿。
 
+### D.9 第 4 步：例外清单整表重批执行记录（2026-11-11）
+
+**口径校正（重要，与原计划偏差一处并已纠正）**
+
+- 原口径按「HEAD 内容」计算 `contentHash`，实际**门禁口径是工作区内容**：`JavaScriptAuditGate`
+  用 `fs.readFileSync(utf8)` 直接读文件，本仓库 `core.autocrlf=true`，工作区是 CRLF、git 对象是 LF，
+  两者 hash 不同。第一版按 HEAD（LF）重批后 `BugCondition` 仍红（`TriggerSystem` 等被判 `invalid`）。
+- 纠正依据：按工作区内容重算后 `InventoryPanel.js` 回到历史声明值 `3931b9e1`——说明历史基线本就是
+  工作区口径，本次不是改口径而是恢复口径。**结论：以后重批一律以工作区内容为准**（提交前后文件内容
+  一致时等价于「当时 HEAD 的检出结果」）。
+- 因此产生两个审计提交（`2e8f21f3` 口径错误 → `a5d0e0e6` 修正），未改写历史；`2e8f21f3` 自身仍是
+  合法树（仅元数据错误、门禁红），修正提交说明已写明原因。
+
+**提交拆分（照用户要求：整表 + 单列）**
+
+| 提交 | 内容 |
+|------|------|
+| `2e8f21f3` | 48 条整表重批（口径错误，见上） |
+| `70584206` | 48 条按工作区口径重算（`lines` 不变、hash 归一） |
+| `07a52b2d` | `editor/WorldMapEditor.js` 单列：`1854 → 2022` 行 + 新 hash + 拆分建议 |
+
+- `example/sanguo_zhangjiao/index.html#script:1` 按 `<script>` 出现序拆单元（外部/空脚本跳过），与门禁同构。
+- 全部 49 条 `date` 统一 `2026-11-11`；`codes`/`evidence`/`owner` 未动（仍是历史契约）。
+
+**验证**
+
+- `test/gameEditorDataDrivenArchitectureBugCondition.property.test.js` **1/1 通过**（转绿）。
+- 直接调用 `auditTrackedJavaScript` 复核：49/49 例外 `status === 'valid'`。
+- 遗留：该用例耗时约 15.0s，与 vitest 默认 `testTimeout=15000` 擦边（首轮因超时红过一次，
+  `--testTimeout=180000` 下稳定通过）。属既有用例的耗时问题，本次不改 `vitest.config.js`（并行会话），
+  仅记录。
+
+**`editor/WorldMapEditor.js` 拆分建议（不并入整表的原因：M4 在改进程，职责仍在膨胀）**
+
+1. 网格渲染与视口/缩略图：`_buildMainlandCellHtml`、`_paintMainlandMinimapCells`、
+   `_requestMainlandViewportSync` 一族 —— 纯编辑器交互，无业务依赖。
+2. 格属性编辑与落盘：`_handleMainlandCellChange`、`_buildEditedRegionCell`、
+   `_prepareMainlandCellReplacements`/`_commitMainlandCellReplacements`。
+3. 逻辑层三视图编排：`_syncLogicEditor`、`_refreshAutoLayer`、`_provideAutoLayer` 与
+   `WorldLogicEditor` 的桥接。
+4. 工程/场景数据装载：`loadFromProject`、`setProjectContext`、`_commitDraftState`。
+
+先拆 ①②（无跨模块依赖）即可把 2022 行压到 1000 行以内、移出例外；③④留待 4B 稳定后再评估。
+
 ## E. 收尾
 
-- [ ] 全量回归，存量失败 6 文件不新增
-- [ ] 单独提交，只含本批文件（不带 `vitest.config.js`）
-- [ ] 回报 D/N 最终取值 + 理由 + 推翻代价
+- [x] 全量回归：204 文件 / 2428 例 → 199 文件 2417 例通过，5 文件 11 例失败均为存量
+      （`taskGraphWoodProgress`、`DefinitionRepository` 对话图、`FlightSystem.elevation`、
+      `HostBackendDefaults`、`ItemRuntimeFactory`），与本批改动（审计元数据/文档/测试超时）无关，
+      未新增失败文件。
+- [x] 单独提交，只含本批文件（`vitest.config.js` 未提交）
+- [x] 回报 D/N 最终取值 + 理由 + 推翻代价（见 spec §15，本批未改任何 D/N 取值）
 
-## 进度锚点（2026-11-11 · 抽取器完成，提交 `49564445`）
+## 进度锚点（2026-11-11 · M4 全部完成）
 
 - 已提交：M1 `2181ce9a`、M2 `c0bfd1b`、3A `8cce967`、3B `0d81ad5`、3D `dde1105`（已推 gitee）；
   M4 运行时 4A+4C `cf7fa9ef`、M4 编辑器 4B+4D `4a00f639`、M1 锚点 docs `11f8692e`、
-  M4 文档 `7de3b96e`、基线校正 `b1f19dc8`、地图格数据层 `9c40e7bf`、抽取器 `49564445`。
+  M4 文档 `7de3b96e`、基线校正 `b1f19dc8`、地图格数据层 `9c40e7bf`、抽取器 `49564445`、
+  §D.8 docs `d7779e0e`、例外整表（HEAD 口径）`2e8f21f3`、例外整表（工作区口径修正）`70584206`、
+  WorldMapEditor 例外单列 `07a52b2d`、门禁用例超时 `60ca4371`。
 - 工作区 `M vitest.config.js` 与 `M editor/EditorShared.js`、`M editor/SceneEditorEventFilter.js`、
   若干 `.trae/specs` 文档为并行会话改动，禁提交。
-- **M4 当前进度 = 4A+4B+4C+4D+4E（数据层+抽取器）已提交；下一步 = 第 4 步例外清单整表重批。**
-- 第 4 步执行口径：工作区干净时用当时 HEAD 内容一次性重批 `src/dev/javascript-audit-exceptions.json`
-  的 `lines/contentHash`，提交说明写「基线校正，非行为变更」；`editor/WorldMapEditor.js` 单列一条
-  （现约 1985 行）并给拆分建议；重批后 `BugCondition` 应转绿，不绿就列剩余 violations，不算通过。
+- **M4 全部完成**（4A+4B+4C+4D+4E + 数据层 + 抽取器 + 例外重批）；下一步 = M5（见 master 表）。
 - 4C 新增文件：`src/systems/world/EncounterResolver.js`（+test 21）、
   `src/systems/world/PassTariffSystem.js`（+test 10）、
   `src/core/scene/SceneArmyOrderFlow.encounter.test.js`（12）。
