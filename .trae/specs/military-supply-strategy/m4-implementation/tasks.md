@@ -243,26 +243,68 @@
   sceneGrid 剥离、非法 POI 不写入、控件还原）。
 - 回归：GOLDEN `4/4`、`ProjectWorldIndex` `9/9`、`WorldMapPanel` `9/9` 全绿。
 
+### D.8 第 3 步：抽取器执行记录（2026-11-11，提交 `49564445`）
+
+**读取顺序（照用户定稿，一步不跳）**
+
+```
+cityStates → city 节点 → cell.poi → 关隘/渡口 → road/roadEdges → 边
+```
+
+- 城市只认 `variables.cityStates`：`city.s09_xxx` 取场景 token → 找 `cell.sceneId === 'S09'` 的格 →
+  节点 id `city.s09`（与人工层同构）、位置取格中心、`ref.id` 指回 cityState。
+- 关隘/渡口只认 `cell.poi`：节点 id `<poi>.<regionId>.r<row>c<col>`、位置取格**上边中点**。
+- 边只认 `roadEdges`：**无道路声明不出边**；端点所在格必须有城市/关隘/渡口/岔路可落名，否则记
+  `roadEdgeEndpointUnresolved` 且不出边。
+
+**推导结论（已定原则推导，写在这里备案）**
+
+1. **岔路节点是结构推导**：`roadEdges` 度数 ≥3 且该格既无城市也无 POI 时补 `junction` 节点，
+   落点取格**左上角**（道路分岔在格线上，与人工层 `junction.crossroads` 的 (16640,7920) 一致）。
+   不按地形猜、不按名称猜；`deriveJunctions:false` 可关闭用于对照。
+   若不推导：自动层少 1 节点但端点匹配掉到 77.3%（<80%）——两者都写进报告，不隐藏。
+2. 城市/关隘/渡口落点不是"随手取中心"：城市=格中心、关隘渡口=格上边中点，是对齐人工层既有数据的
+   位置约定（否则差异面板会把同一节点报成"新增+缺失"两条）。
+3. 边 `mode`：端点含渡口 → `ferry`，含桥 → `bridge`，其余 `road`；跨界边在 `conditions.crossingNodeId`
+   写关节点 id（无向边两端都写，与人工层单侧写法不同，属待确认差异）。`cost` 取两端节点欧氏距离取整。
+4. 格坐标是 **region 局部坐标**：索引键带 region 前缀，`roadEdges` 只在所属 region 内解析端点，
+   多 region（mainland 20×20 + s01-shelter 1×1）互不串号。
+5. `revision`：编辑器每次载入工程重抽并 +1，供差异面板缓存失效用。
+
+**与人工层对照（示例项目：人工 10 节点 / 11 边）**
+
+| 指标 | 结果 | 判定 |
+|------|------|------|
+| 节点 | 自动 11（8 城 + 关隘 + 渡口 + 岔路）；多出 `city.s11`/`city.s12`（人工未建） | 差 2 ≤ 2 ✅ |
+| 人工独有节点 | `bridge.yingchuan`（与 `city.s10` 同格，无法独立成节点） | 1 |
+| 边端点匹配 | 20/22 = **90.9%**（人工 11 边逐端点比对） | ≥80% ✅ |
+| 整边覆盖 | 9/11 = **81.8%** | ≥80% ✅ |
+| 凭空多出的关隘/渡口 | 0（自动 1 pass + 1 ferry，位置与人工层 1px 内一致） | ✅ |
+| gaps | 空（无解析失败的 roadEdges） | ✅ |
+
+- `edge.s09_bridge`(s09→bridge) 与 `edge.bridge_s10`(bridge→s10) 在自动层合并为 `s09→s10` 一条，
+  这是上表「人工独有 bridge」的直接后果，不是丢边。
+- 全部节点/边 `source:'auto'`，运行时（`WorldRouteLayer`/`ArmyOrderSystem`）只读人工层，自动层不参与判定。
+
+**验证**：`WorldMapExtractor.test.js` **12 例**（8 例合成数据 + 4 例实数据验收）；editor + world core 回归 91 例全绿。
+
 ## E. 收尾
 
 - [ ] 全量回归，存量失败 6 文件不新增
 - [ ] 单独提交，只含本批文件（不带 `vitest.config.js`）
 - [ ] 回报 D/N 最终取值 + 理由 + 推翻代价
 
-## 进度锚点（2026-11-11 · 地图格数据层完成，提交 `9c40e7bf`）
+## 进度锚点（2026-11-11 · 抽取器完成，提交 `49564445`）
 
 - 已提交：M1 `2181ce9a`、M2 `c0bfd1b`、3A `8cce967`、3B `0d81ad5`、3D `dde1105`（已推 gitee）；
   M4 运行时 4A+4C `cf7fa9ef`、M4 编辑器 4B+4D `4a00f639`、M1 锚点 docs `11f8692e`、
-  M4 文档 `7de3b96e`、基线校正 `b1f19dc8`、地图格数据层 `9c40e7bf`。
+  M4 文档 `7de3b96e`、基线校正 `b1f19dc8`、地图格数据层 `9c40e7bf`、抽取器 `49564445`。
 - 工作区 `M vitest.config.js` 与 `M editor/EditorShared.js`、`M editor/SceneEditorEventFilter.js`、
   若干 `.trae/specs` 文档为并行会话改动，禁提交。
-- **M4 当前进度 = 4A+4B+4C+4D 已提交；地图格数据层已提交（§D.7）；下一步 = 第 3 步抽取器（auto 层）。**
-- 抽取器读取顺序（用户定稿）：`cityStates → city 节点 → cell.poi → 关隘/渡口 → road/roadEdges → 边`；
-  无道路标记不出边；全部 `source:'auto'` 进「新增待确认」，永不直接生效。
-- 抽取器验收口径：与人工层 10 节点/11 边对照，节点差 ≤ 2、边端点匹配 ≥ 80%、无凭空多出的关隘/渡口；
-  达不到就报差距，**不调口径凑数**。§D.7「已知差距」三条是预期差距来源。
-- 第 4 步（例外清单整表重批）在第 3 步提交后、工作区干净时一次性执行；
-  `editor/WorldMapEditor.js` 单列一条 + 拆分建议（现约 1985 行）。
+- **M4 当前进度 = 4A+4B+4C+4D+4E（数据层+抽取器）已提交；下一步 = 第 4 步例外清单整表重批。**
+- 第 4 步执行口径：工作区干净时用当时 HEAD 内容一次性重批 `src/dev/javascript-audit-exceptions.json`
+  的 `lines/contentHash`，提交说明写「基线校正，非行为变更」；`editor/WorldMapEditor.js` 单列一条
+  （现约 1985 行）并给拆分建议；重批后 `BugCondition` 应转绿，不绿就列剩余 violations，不算通过。
 - 4C 新增文件：`src/systems/world/EncounterResolver.js`（+test 21）、
   `src/systems/world/PassTariffSystem.js`（+test 10）、
   `src/core/scene/SceneArmyOrderFlow.encounter.test.js`（12）。
@@ -283,6 +325,4 @@
 - 4D 回归：`editor/WorldLogicEditor.test.js src/core/world` → 5 文件 / 66 例全绿；
   `editor/` 目录 → 28 文件 / 237 例全绿。
 - 存量基线（与本批无关）：`test/gameEditorDataDrivenArchitectureBugCondition.property.test.js`
-  （`src/systems/TriggerSystem.js` 审计例外仍声明 1583 行/旧 hash，实际 1651 行且该文件工作区未改）与
-  `test/gameEditorDataDrivenArchitecturePreservation.property.test.js`（GOLDEN 快照未含已提交的 S5-8/S5-9 触发器）。
-- 下一批：地图抽取器（auto 层），按地形推断；推断边一律进「待确认」；地图数据不足时停下上报。
+  （审计例外表未重批）→ 第 4 步整表重批后应转绿。
