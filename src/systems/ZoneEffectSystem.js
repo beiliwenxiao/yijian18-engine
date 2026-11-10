@@ -17,8 +17,14 @@
  *   4. periodic + countdown：每隔 interval 秒生效，离开后倒计时内继续，到时停止
  *   5. delayed：进入后倒计时，到时触发一次效果
  *
+ * 另支持 `effect.kind === 'terrainCombat'`（5C 地势战斗加成）：不做逐帧状态，
+ * 由 `resolveTerrainCombat(x, y, context)` 按点击/交战位置临时求值，供
+ * TerrainCombatResolver 与 CombatModifierPipeline 使用。
+ *
  * authority: 'server' (将来服务器权威裁决)
  */
+import { resolveTerrainCombatModifiers, isTerrainCombatEffect } from './TerrainCombatResolver.js';
+
 export class ZoneEffectSystem {
   constructor() {
     // 活跃效果: Map<entityId, Map<zoneId, EffectState>>
@@ -33,6 +39,25 @@ export class ZoneEffectSystem {
    */
   setZones(zones) {
     this._zones = zones || [];
+  }
+
+  /**
+   * 地势战斗修正（5C）：求某点所在 terrainCombat 区域的合并修正。
+   * 纯查询、不产生逐帧状态，可在交战/命中时按需调用。
+   *
+   * @param {number} x
+   * @param {number} y
+   * @param {{unitTypeId?:string, side?:string, ranged?:boolean}} [context]
+   * @returns {{attack:number, defense:number, range:number, speed:number, sources:string[]}}
+   */
+  resolveTerrainCombat(x, y, context = {}) {
+    const hits = [];
+    for (const zone of this._zones || []) {
+      if (!zone || !isTerrainCombatEffect(zone.effect)) continue;
+      if (!this._pointInPolygon(x, y, zone.points)) continue;
+      hits.push(zone);
+    }
+    return resolveTerrainCombatModifiers(hits, context);
   }
 
   /**
@@ -70,6 +95,8 @@ export class ZoneEffectSystem {
 
       for (const zone of this._zones) {
         if (!zone.effect) continue;
+        // 地势战斗区不参与逐帧状态机（由 resolveTerrainCombat 按位置求值）
+        if (isTerrainCombatEffect(zone.effect)) continue;
         const zid = zone.id;
         const eff = zone.effect;
 

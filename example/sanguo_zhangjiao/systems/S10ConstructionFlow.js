@@ -14,6 +14,7 @@
 
 import { SceneFlowCoordinator } from '../../../src/core/scene/SceneFlowCoordinator.js';
 import { BuildingType } from '../../../src/ecs/components/BuildingComponent.js';
+import { aggregateWarEffects } from '../../../src/systems/WarEffectAggregator.js';
 import { S06_FIELD_CONSTRUCTION_SITE_ID } from './S06SceneFlow.js';
 
 const cloneData = value => value == null ? value : JSON.parse(JSON.stringify(value));
@@ -508,36 +509,12 @@ const s10ConstructionMethods = {
     return { ok: true };
   },
   _deriveS10ConstructionEffects() {
-    const effects = {
-      moraleBonus: 0,
-      hungerDrainMultiplier: 1,
-      enemyAdvanceSpeedMultiplier: 1,
-      friendlyCasualtyMultiplier: 1,
-      friendlyDefenseMultiplier: 1
-    };
-    for (const structure of this.constructionSystem?.getStructures?.() || []) {
-      const definition = this.constructionSystem.getDefinition(structure.definitionId);
-      const configured = definition?.warEffects || {};
-      const alive = Number(structure.durability) > 0;
-      if (alive) {
-        effects.moraleBonus += Number(configured.moraleBonus) || 0;
-        if (Number.isFinite(Number(configured.hungerDrainMultiplier))) {
-          effects.hungerDrainMultiplier *= Number(configured.hungerDrainMultiplier);
-        }
-        if (Number.isFinite(Number(configured.enemyAdvanceSpeedMultiplier))) {
-          effects.enemyAdvanceSpeedMultiplier *= Number(configured.enemyAdvanceSpeedMultiplier);
-        }
-        if (Number.isFinite(Number(configured.friendlyCasualtyMultiplier))) {
-          effects.friendlyCasualtyMultiplier *= Number(configured.friendlyCasualtyMultiplier);
-        }
-        if (Number.isFinite(Number(configured.friendlyDefenseMultiplier))) {
-          effects.friendlyDefenseMultiplier *= Number(configured.friendlyDefenseMultiplier);
-        }
-      } else if (Number.isFinite(Number(configured.destroyedDefenseMultiplier))) {
-        effects.friendlyDefenseMultiplier *= Number(configured.destroyedDefenseMultiplier);
-      }
-    }
-    return effects;
+    // 5C：聚合口径提为引擎纯函数 WarEffectAggregator（行为与本文件旧实现逐条等价）
+    const entries = (this.constructionSystem?.getStructures?.() || []).map(structure => ({
+      warEffects: this.constructionSystem.getDefinition?.(structure.definitionId)?.warEffects,
+      alive: Number(structure.durability) > 0
+    }));
+    return aggregateWarEffects(entries);
   },
 
   async _checkpointConstructionRepair(checkpoint = {}) {
