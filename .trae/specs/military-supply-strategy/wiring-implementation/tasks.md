@@ -27,6 +27,14 @@
 - `SanguoGameLoaderCoordinator`：读取 `project.logistics`；构建五套系统配置 + 黑板 `warState` 读写适配（`battleLedgers`/`supplyCaches`）。
 - 测试：`WarLogisticsAdapters.test.js` 6 例全绿；五个领域服务 82 例全绿。
 
-## 批次 2~5
+## 批次 2：存档落点 `checkpoint.warState`（已完成）
+
+- `WarLogisticsSnapshot.js`：`createWarLogisticsSnapshot` / `applyWarLogisticsSnapshot` / `readWarLogistics` / `writeWarLogistics`。
+- 落点：黑板 `warState.logistics`（`schemaVersion + foodLedger/cityAdmin/battleSettlement/reputation`），随 `checkpoint.warState` 落盘；`SceneCityWarStateBridge` 的 project/write 原样透传，不覆盖 `battles/casualties`。
+- 恢复：装配完成即从黑板回灌；`gameplay.warLogistics` provider（`required:false`）在恢复顺序不确定时用自己的段兜底。
+- 旧档兼容：无 `warState.logistics` → 空态放行、不拒档；`CHECKPOINT_SCHEMA` 零改动。
+- 测试：`WarLogisticsSnapshot.test.js` 6 例全绿（含真实 `FoodLedgerSystem` 往返）。
+
+## 批次 3~5
 
 （执行中补充记录）
