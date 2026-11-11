@@ -16,7 +16,7 @@ export class CityStateSummaryPanel extends UIElement {
       x: options.x || 12,
       y: options.y || 12,
       width: options.width || 250,
-      height: options.height || 154,
+      height: options.height || (options.compact === true ? 144 : 176),
       visible: options.visible === true,
       zIndex: options.zIndex || 45
     });
@@ -92,6 +92,17 @@ export class CityStateSummaryPanel extends UIElement {
       this.x + pad + (storyHasIcon ? iconSize + 3 : 0),
       y
     );
+
+    // 城况行：仅新数据提供时渲染，旧调用（S09 等）布局零变化。
+    if (data.siegeStatus || data.stockDays != null) {
+      y += lineHeight;
+      const statusText = data.siegeStatus === 'captured'
+        ? '已占领'
+        : data.siegeStatus === 'siege' ? '围城中' : '安定';
+      ctx.fillStyle = data.siegeStatus === 'siege' ? '#e8a35a' : '#eee4cf';
+      const stockText = data.stockDays == null ? '' : ` · 存粮 ${data.stockDays} 日`;
+      ctx.fillText(`城况：${statusText}${stockText}`, this.x + pad, y);
+    }
     ctx.restore();
   }
 }

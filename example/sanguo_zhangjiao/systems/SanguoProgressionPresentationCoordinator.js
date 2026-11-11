@@ -68,6 +68,7 @@ function installProgressionUI(gameLoader) {
   this.progressionViewModel = viewModel;
   this.progressionPanel = panel;
   this.s09RefugeeCoordinator.installCitySummaryUI(gameLoader);
+  this.s09RefugeeCoordinator.installSupplyStatusUI(gameLoader);
 
   this.resourceScope?.track(() => {
     this.inputManager?.unregisterHotkey?.(hotkeyId);

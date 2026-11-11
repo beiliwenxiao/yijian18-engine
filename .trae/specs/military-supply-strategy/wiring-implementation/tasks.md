@@ -35,6 +35,14 @@
 - 旧档兼容：无 `warState.logistics` → 空态放行、不拒档；`CHECKPOINT_SCHEMA` 零改动。
 - 测试：`WarLogisticsSnapshot.test.js` 6 例全绿（含真实 `FoodLedgerSystem` 往返）。
 
-## 批次 3~5
+## 批次 3：UI 批次 A（粮草条 + 城池卡）（已完成）
+
+- 新增 `src/ui/SupplyStatusBar.js`：canvas 只读 HUD；`normalizeSupplyEntries/resolveSupplyTone/formatSupplyText` 为纯函数。军团显示「还剩 N 日」（∞ → 粮草充足），军营显示「存粮 N」；`<3 日` 或 `state !== normal` 转红（军营空库存转红）。
+- `CityStateSummaryPanel`：默认高度按内容调整（非 compact 176 / compact 144）；`setSnapshot` 新增 `siegeStatus`、`stockDays`，仅在提供时渲染「城况」行，旧调用布局零变化。
+- 接线：`S09RefugeeFlow.installSupplyStatusUI/updateSupplyStatus` 从 `FoodLedgerSystem` 投影（`queryDays` + camps）；`SanguoProgressionPresentationCoordinator` 与城市摘要并列安装；城市摘要读取 `cityAdministrationService.getCity` 的围城/存粮字段。
+- 偏差：军营条目展示「存粮 N」而非「还剩 N 日」——`queryDays` 只对军团编制有意义，军营没有消耗主体；<3 日红色阈值沿用军团语义。
+- 测试：`SupplyStatusBar.test.js` 5 例全绿（含城况行零变化）。
+
+## 批次 4~5
 
 （执行中补充记录）

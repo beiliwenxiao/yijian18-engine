@@ -12,6 +12,7 @@
 
 import { SceneFlowCoordinator } from '../../../src/core/scene/SceneFlowCoordinator.js';
 import { CityStateSummaryPanel } from '../../../src/ui/CityStateSummaryPanel.js';
+import { SupplyStatusBar } from '../../../src/ui/SupplyStatusBar.js';
 
 export const CITY_SCENE_ID = 'S09';
 
@@ -102,6 +103,75 @@ export class S09RefugeeCoordinator extends SceneFlowCoordinator {
     return true;
   }
 
+  /**
+   * 粮草条 HUD：军团「还剩 N 日」/ 军营「存粮 N」；只读 FoodLedgerSystem，不写领域状态。
+   * 与城市摘要并列安装，随场景资源域释放。
+   */
+  installSupplyStatusUI(gameLoader) {
+    const scene = this.scene;
+    if (!gameLoader?.blackboard || !scene.uiSystem) return false;
+    if (scene.supplyStatusBar) return true;
+    const compact = scene.isMobileLayout === true;
+    const width = compact ? Math.min(224, scene.logicalWidth - 24) : 232;
+    const panel = new SupplyStatusBar({
+      x: compact ? 12 : scene.logicalWidth - width - 16,
+      y: compact ? 132 : 196,
+      width,
+      height: compact ? 132 : 150,
+      compact,
+      visible: false,
+      zIndex: 46
+    });
+    scene.uiSystem.registerPanel('warSupply', panel);
+    Object.assign(scene.context.ui, { warSupply: panel });
+    scene.supplyStatusBar = panel;
+    this.updateSupplyStatus(gameLoader);
+    scene.resourceScope?.track(() => {
+      scene.uiSystem?.unregisterPanel?.('warSupply');
+      if (scene.context.ui.warSupply === panel) scene.context.ui.warSupply = null;
+      if (scene.supplyStatusBar === panel) scene.supplyStatusBar = null;
+    });
+    return true;
+  }
+
+  /** 从粮草账本投影条目；无账本/无条目时隐藏。 */
+  updateSupplyStatus(gameLoader = this.scene.gameLoader) {
+    const scene = this.scene;
+    const panel = scene.supplyStatusBar;
+    const ledger = scene.foodLedgerSystem || scene.context?.systems?.logistics || null;
+    if (!panel || !ledger) {
+      panel?.hide?.();
+      return false;
+    }
+    const entries = [];
+    for (const army of ledger.armies?.values?.() || []) {
+      const query = ledger.queryDays(army.id);
+      if (!query?.ok) continue;
+      entries.push({
+        kind: 'army',
+        armyId: army.id,
+        name: army.name || army.id,
+        days: query.days,
+        state: query.state
+      });
+    }
+    for (const camp of ledger.camps?.values?.() || []) {
+      const stock = camp?.stock;
+      const food = stock && typeof stock === 'object' ? stock.food : stock;
+      entries.push({
+        kind: 'camp',
+        campId: camp.campId,
+        name: camp.name || camp.campId,
+        stock: Number(food) || 0
+      });
+    }
+    panel.setEntries(entries);
+    if (entries.length) panel.show();
+    else panel.hide();
+    return entries.length > 0;
+  }
+
+
   updateCitySummary() {
     const scene = this.scene;
     const panel = scene.cityStateSummaryPanel;
@@ -115,6 +185,7 @@ export class S09RefugeeCoordinator extends SceneFlowCoordinator {
       panel.hide();
       return false;
     }
+    const adminCity = scene.cityAdministrationService?.getCity?.(context.city.id) || null;
     panel.setSnapshot({
       cityName: context.city.name,
       resources: context.city.resources,
@@ -123,6 +194,8 @@ export class S09RefugeeCoordinator extends SceneFlowCoordinator {
       reputation: context.blackboard.get('reputation'),
       currentDay: scene.timeSystem?.getCurrentDay?.() || context.storyState.currentDay || 1,
       refugeeStatus: '饥民事已在山道了结',
+      siegeStatus: adminCity?.siegeStatus || adminCity?.siege?.state || context.city.siegeStatus || null,
+      stockDays: adminCity?.stockDays ?? null,
       icons: {
         morale: 's09.ui.morale',
         reputation: 's09.ui.reputation',
@@ -130,6 +203,7 @@ export class S09RefugeeCoordinator extends SceneFlowCoordinator {
       }
     });
     panel.show();
+    this.updateSupplyStatus();
     return true;
   }
 
