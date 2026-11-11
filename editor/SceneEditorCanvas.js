@@ -429,9 +429,26 @@ export class SceneEditorCanvas {
     };
     const color = colors[obj.kind] || '#8888aa';
     const visual = this.editor.assets.resolvePlacementVisual?.(obj);
-    const label = (obj.name || visual?.definition?.name || obj.ref) + (obj.group ? ` [${obj.group}]` : '');
+    const countValue = obj.count != null && typeof obj.count !== 'object'
+      ? Math.max(1, Math.floor(Number(obj.count) || 1))
+      : 1;
+    const label = (obj.name || visual?.definition?.name || obj.ref)
+      + (obj.group ? ` [${obj.group}]` : '')
+      + (countValue > 1 ? ` ×${countValue}` : '');
 
     ctx.save();
+    // 数量 > 1：画散布示意圈（与运行时环形散布半径 70px 同源），提示这是一组而非一个
+    if (countValue > 1) {
+      ctx.beginPath();
+      ctx.ellipse(obj.x, obj.y, 70, 42, 0, 0, Math.PI * 2);
+      ctx.setLineDash([5, 4]);
+      ctx.strokeStyle = color;
+      ctx.globalAlpha = 0.7;
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.globalAlpha = 1;
+    }
     const layers = Array.isArray(visual?.layers) ? visual.layers : [];
     const hasCompositeLayer = layers.some(layer => layer?.image && layer?.bounds);
     if ((visual?.image && visual.bounds) || hasCompositeLayer) {

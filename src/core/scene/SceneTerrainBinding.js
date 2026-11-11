@@ -119,6 +119,23 @@ export class SceneTerrainBinding {
     }
   }
 
+  /**
+   * 收集当前所有地形的阻挡碰撞多边形（世界坐标），供批量刷出避障探测使用。
+   * 只返回带 points 的多边形形状；无地形/未加载时返回空数组。
+   */
+  getCollisionShapes() {
+    const scene = this.scene;
+    const terrains = scene?._terrains?.length ? scene._terrains : (scene?.terrain ? [scene.terrain] : []);
+    const shapes = [];
+    for (const terrain of terrains) {
+      const list = Array.isArray(terrain?._collisionShapes) ? terrain._collisionShapes : [];
+      for (const shape of list) {
+        if (Array.isArray(shape?.points) && shape.points.length >= 3) shapes.push(shape);
+      }
+    }
+    return shapes;
+  }
+
   checkTerrainCollision() {
     const scene = this.scene;
     const terrains = scene._terrains?.length ? scene._terrains : (scene.terrain ? [scene.terrain] : []);

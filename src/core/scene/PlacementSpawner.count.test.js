@@ -11,7 +11,14 @@
  ************************************************************/
 
 import { describe, expect, it } from 'vitest';
-import { PlacementSpawner, expandPlacement } from './PlacementSpawner.js';
+import {
+  PlacementSpawner,
+  expandPlacement,
+  resolveDerivedPosition,
+  isPointBlockedByShapes,
+  MAX_PLACEMENT_INSTANCE_COUNT,
+  DEFAULT_INSTANCE_SPACING
+} from './PlacementSpawner.js';
 import { ScenePlacementRuntime, getPlacementSignature } from './ScenePlacementRuntime.js';
 
 const TEMPLATE = {
@@ -22,7 +29,7 @@ const TEMPLATE = {
   x: 100, y: 200
 };
 
-function createSpawner({ storyState = {}, shouldSpawn = null } = {}) {
+function createSpawner({ storyState = {}, shouldSpawn = null, isSpawnPointBlocked = null, minInstanceSpacing } = {}) {
   const store = {
     enemies: [], all: [], pickups: [], equipmentItems: [],
     addEnemy: entity => store.enemies.push(entity),
@@ -34,7 +41,9 @@ function createSpawner({ storyState = {}, shouldSpawn = null } = {}) {
     entityStore: store,
     aiSystem: { registerAI: () => {}, deactivateAI: () => {}, unregisterAI: () => {} },
     getConditionRoot: key => (key === 'storyState' ? storyState : undefined),
-    shouldSpawn
+    shouldSpawn,
+    isSpawnPointBlocked,
+    minInstanceSpacing
   });
   spawner._store = store;
   return spawner;
@@ -97,7 +106,7 @@ describe('PlacementSpawner count 展开', () => {
   });
 
   it.each([
-    ['静态数字 9999 不设上限', { count: 9999 }, 9999],
+    ['静态数字 9999 钳制到上限（同屏 2000 的 10%）', { count: 9999 }, MAX_PLACEMENT_INSTANCE_COUNT],
     ['静态 0 钳制为 1', { count: 0 }, 1],
     ['动态负数钳制为 1', { count: { blackboardKey: 'storyState', path: 's01Survival.firstWolfCount' } }, 1],
     ['动态非法值回退 1', { count: { blackboardKey: 'storyState', path: 's01Survival.missing' } }, 1]
@@ -130,7 +139,53 @@ describe('PlacementSpawner count 展开', () => {
   });
 });
 
-function createRuntime({ storyState = {}, registries: registriesOverride = null } = {}) {
+describe('PlacementSpawner 数量散布：避障与最小间距', () => {
+  it('无阻挡时与旧版环形坐标完全一致（零回归）', () => {
+    const spawner = createSpawner();
+    const result = spawner.spawnMatching({
+      placements: [{ ...TEMPLATE, count: 5 }], registries, selector: { group: 'S01-first-wolf' }
+    });
+    expect(result.entities.map(entity => entity.position))
+      .toEqual([1, 2, 3, 4, 5].map(index => {
+        const instance = expandPlacement({ ...TEMPLATE, count: 5 }, index, { deriveFirst: true });
+        return { x: instance.x, y: instance.y };
+      }));
+  });
+
+  it('首选环形位置被阻挡时改用其它候选，落点不在阻挡体内', () => {
+    // 模板在 (100,200)：把 x>100 全判为阻挡，实例只能落在左侧或更远
+    const spawner = createSpawner({ isSpawnPointBlocked: x => x > 100 });
+    const result = spawner.spawnMatching({
+      placements: [{ ...TEMPLATE, count: 6 }], registries, selector: { group: 'S01-first-wolf' }
+    });
+    expect(result.counts.enemy).toBe(6);
+    for (const entity of result.entities) {
+      expect(entity.position.x).toBeLessThanOrEqual(100);
+    }
+    const positions = result.entities.map(entity => entity.position);
+    positions.forEach((a, i) => positions.forEach((b, j) => {
+      if (i >= j) return;
+      expect(Math.hypot(a.x - b.x, a.y - b.y)).toBeGreaterThanOrEqual(DEFAULT_INSTANCE_SPACING);
+    }));
+  });
+
+  it('resolveDerivedPosition 候选耗尽时回退旧版环形位置，绝不丢刷怪位', () => {
+    const blocked = { x: 100, y: 200, id: 'S01-first-wolf', count: 3 };
+    const position = resolveDerivedPosition(blocked, 2, { isBlocked: () => true });
+    const fallback = expandPlacement(blocked, 2);
+    expect(position).toEqual({ x: fallback.x, y: fallback.y });
+  });
+
+  it('isPointBlockedByShapes 判定多边形内外（世界坐标）', () => {
+    const shapes = [{ points: [[0, 0], [10, 0], [10, 10], [0, 10]] }];
+    expect(isPointBlockedByShapes(5, 5, shapes)).toBe(true);
+    expect(isPointBlockedByShapes(15, 5, shapes)).toBe(false);
+    expect(isPointBlockedByShapes(5, 5, [])).toBe(false);
+  });
+});
+
+
+function createRuntime({ storyState = {}, registries: registriesOverride = null, getCollisionShapes = null } = {}) {
   const store = {
     enemies: [], all: [], pickups: [], equipmentItems: [],
     addEnemy: entity => {
@@ -157,7 +212,8 @@ function createRuntime({ storyState = {}, registries: registriesOverride = null 
     getRegistries: () => registriesOverride || registries,
     getConditionRoot: key => (key === 'storyState' ? storyState : undefined),
     validatePlacementReferences: () => ({ ok: true, errors: [] }),
-    getWorldPromise: () => Promise.resolve({ ok: true })
+    getWorldPromise: () => Promise.resolve({ ok: true }),
+    getCollisionShapes
   });
   runtime._store = store;
   return runtime;
@@ -219,6 +275,27 @@ describe('ScenePlacementRuntime count 模板的 tombstone 与派生 id', () => {
     expect(runtime._findPlacement('S01-unknown-9')).toBeNull();
     runtime.setProjection([{ ...TEMPLATE, id: 'S01-single', count: undefined }]);
     expect(runtime._findPlacement('S01-single-2')).toBeNull();
+  });
+});
+
+describe('ScenePlacementRuntime 批量刷出避障与重建一致性', () => {
+  it('注入碰撞探测时派生实例避开阻挡体，重建坐标与生成一致', async () => {
+    // 模板 (100,200)：右侧 x>100 全部为阻挡多边形
+    const shapes = [{ points: [[100, 0], [600, 0], [600, 400], [100, 400]] }];
+    const runtime = createRuntime({
+      storyState: { s01Survival: { firstWolfSpotted: true, firstWolfCount: 4 } },
+      getCollisionShapes: () => shapes
+    });
+    runtime.setProjection([TEMPLATE]);
+    await runtime.spawn({ group: 'S01-first-wolf' });
+    const positions = runtime._store.enemies.map(entity => entity.position);
+    expect(positions).toHaveLength(4);
+    for (const position of positions) expect(position.x).toBeLessThanOrEqual(100);
+
+    // 重建（读档链路）沿用同一避障算法：坐标必须与生成时一致，否则会报 coordinateMismatch
+    const rebuilt = runtime.rebuild('S01');
+    expect(rebuilt.ok, JSON.stringify(rebuilt.errors || null)).toBe(true);
+    expect(runtime._store.enemies.map(entity => entity.position)).toEqual(positions);
   });
 });
 

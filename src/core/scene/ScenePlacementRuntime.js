@@ -10,7 +10,14 @@
  *            https://gitee.com/coderaaa/yijian18-engine
  ************************************************************/
 
-import { PlacementSpawner, expandPlacement, parseDerivedPlacementId, resolveInstanceCount } from './PlacementSpawner.js';
+import {
+  PlacementSpawner,
+  expandPlacement,
+  parseDerivedPlacementId,
+  resolveInstanceCount,
+  isPointBlockedByShapes,
+  DEFAULT_INSTANCE_SPACING
+} from './PlacementSpawner.js';
 
 function copyEntries(entries = []) {
   return entries.map(([id, state]) => [id, state == null ? state : JSON.parse(JSON.stringify(state))]);
@@ -117,6 +124,15 @@ export class ScenePlacementRuntime {
     this.onRemove = config.onRemove || null;
     this.setDynamicCollider = config.setDynamicCollider || null;
     this.activeDynamicColliders = new Map();
+    // 批量刷出避障：宿主注入返回阻挡碰撞多边形数组（世界坐标）的探测器；
+    // 未注入时退化为纯环形散布（与旧版一致）。
+    this.getCollisionShapes = typeof config.getCollisionShapes === 'function' ? config.getCollisionShapes : null;
+    this.minInstanceSpacing = Number(config.minInstanceSpacing) > 0
+      ? Number(config.minInstanceSpacing)
+      : DEFAULT_INSTANCE_SPACING;
+    this._spawnPointBlocked = (x, y) => this._isSpawnPointBlocked(x, y);
+    // 避障形状单批缓存：spawn/rebuild 开始时刷新，批内复用（200 实例 × 多候选不重复建表）
+    this._collisionShapesCache = null;
     this.logger = config.logger || console;
 
 
@@ -133,12 +149,49 @@ export class ScenePlacementRuntime {
       onNpcImageError: config.onNpcImageError,
       shouldSpawn: ({ placement }) => this.shouldSpawn(placement),
       onSpawn: detail => this._handleSpawn(detail),
-      getConditionRoot: key => this.getConditionRoot(key)
+      getConditionRoot: key => this.getConditionRoot(key),
+      isSpawnPointBlocked: this._spawnPointBlocked,
+      minInstanceSpacing: this.minInstanceSpacing
     });
+  }
+
+  /** 批量刷出避障判定：点是否落在场景阻挡碰撞体内（未注入探测器时恒 false）。 */
+  _isSpawnPointBlocked(x, y) {
+    if (!this.getCollisionShapes) return false;
+    if (!this._collisionShapesCache) {
+      try {
+        this._collisionShapesCache = this.getCollisionShapes() || [];
+      } catch (error) {
+        this._collisionShapesCache = [];
+      }
+    }
+    const shapes = this._collisionShapesCache;
+    return Array.isArray(shapes) && shapes.length > 0 && isPointBlockedByShapes(x, y, shapes);
+  }
+
+  /**
+   * 按模板 count 顺序展开派生实例（与 PlacementSpawner 生成时同一坐标算法：
+   * 环形散布 + 避障 + 最小间距）。实例 1 保持模板坐标；派生寻址/重建/签名共用此结果。
+   */
+  _expandCountInstances(template, count = resolveInstanceCount(template, this.getConditionRoot)) {
+    const occupied = [];
+    const instances = [];
+    for (let index = 1; index <= count; index += 1) {
+      const instance = expandPlacement(template, index, {
+        deriveFirst: true,
+        occupied,
+        isBlocked: this._spawnPointBlocked,
+        minSpacing: this.minInstanceSpacing
+      });
+      occupied.push({ x: Number(instance.x) || 0, y: Number(instance.y) || 0 });
+      instances.push(instance);
+    }
+    return instances;
   }
 
   setProjection(placements = []) {
     this.placements = Array.isArray(placements) ? placements : [];
+    this._collisionShapesCache = null;
     return this.placements;
   }
 
@@ -390,6 +443,7 @@ export class ScenePlacementRuntime {
 
   async spawn(selector = {}) {
     if (!this._isActive()) return { ok: false, errors: [{ code: 'placementRuntimeDisposed', path: 'placements', message: '场景放置运行时已释放' }] };
+    this._collisionShapesCache = null;
     const scope = this.scope;
     try {
       await this.getWorldPromise();
@@ -588,6 +642,7 @@ export class ScenePlacementRuntime {
     if (this.disposed || !this.spawner || !this.entityStore) {
       return { ok: false, errors: [{ code: 'placementRuntimeUnavailable', path: 'placementStates', message: '场景放置运行时尚未就绪' }] };
     }
+    this._collisionShapesCache = null;
     const selection = Array.isArray(placementIdSelection) ? new Set(placementIdSelection.filter(Boolean)) : null;
     const retiredIds = new Set((retiredPlacementIds || []).filter(Boolean));
     const activePlacements = this.placements.filter(placement => (
@@ -628,9 +683,8 @@ export class ScenePlacementRuntime {
         continue;
       }
       if (template.count == null) continue;
-      const instanceCount = resolveInstanceCount(template, this.getConditionRoot);
-      for (let index = 1; index <= instanceCount; index += 1) {
-        placementIds.add(expandPlacement(template, index, { deriveFirst: true }).id);
+      for (const instance of this._expandCountInstances(template)) {
+        placementIds.add(instance.id);
       }
     }
     if (placementIds.size === 0) {
@@ -782,10 +836,7 @@ export class ScenePlacementRuntime {
         verifyTargets.push(placement);
         continue;
       }
-      const instanceCount = resolveInstanceCount(placement, this.getConditionRoot);
-      for (let index = 1; index <= instanceCount; index += 1) {
-        verifyTargets.push(expandPlacement(placement, index, { deriveFirst: true }));
-      }
+      verifyTargets.push(...this._expandCountInstances(placement));
     }
     for (const placement of verifyTargets) {
       const outcomes = outcomesById.get(placement.id) || [];
@@ -1064,7 +1115,7 @@ export class ScenePlacementRuntime {
     if (!template || template.count == null) return null;
     const instanceCount = resolveInstanceCount(template, this.getConditionRoot);
     if (derived.index > Math.max(1, instanceCount)) return null;
-    return expandPlacement(template, derived.index, { deriveFirst: true });
+    return this._expandCountInstances(template, derived.index)[derived.index - 1] || null;
   }
 
   _containsValue(value) {

@@ -242,12 +242,33 @@ export class GameLoader {
     };
     const errors = [];
     for (const [index, placement] of (placements || []).entries()) {
+      const key = placement?.id || index;
+      // 数量参数（批量刷出）：缺省=1；数字须为 ≥1 的整数（上限由运行时钳制），
+      // 或 { blackboardKey, path } 动态条件对象。
+      if (placement?.type === 'ref' && placement.count != null) {
+        const count = placement.count;
+        const isCondition = typeof count === 'object' && !Array.isArray(count);
+        if (isCondition) {
+          if (typeof count.path !== 'string' || !count.path.trim()) {
+            errors.push({
+              code: 'invalidPlacementCount',
+              path: `placements[${key}].count`,
+              message: '动态数量必须声明 path（storyState 事实路径）'
+            });
+          }
+        } else if (!Number.isInteger(Number(count)) || Number(count) < 1) {
+          errors.push({
+            code: 'invalidPlacementCount',
+            path: `placements[${key}].count`,
+            message: '放置点数量必须为 ≥1 的整数，或 { blackboardKey, path } 动态条件对象'
+          });
+        }
+      }
       if (placement?.type !== 'ref' || !placement.kind) continue;
       const registryName = registryNames[placement.kind];
       if (!registryName) continue;
       const registry = this.registries[registryName];
       if (registry?.get?.(placement.ref)) continue;
-      const key = placement.id || index;
       errors.push({
         code: 'invalidReference',
         path: `placements[${key}].ref`,

@@ -1356,6 +1356,8 @@ export class DataDrivenPrologueScene extends BaseGameScene {
       }),
       onSpawn: detail => this._placementCoordinator.handleSpawn(detail),
       onRemove: values => this._placementCoordinator.removeValues(values),
+      // 批量刷出避障：派生实例按场景阻挡碰撞体探测，避开城墙/围栏等（无地形时退化为纯环形散布）
+      getCollisionShapes: () => this._terrainBinding?.getCollisionShapes?.() || [],
       setDynamicCollider: options => this._terrainBinding.setDynamicCollider(options),
       logger: console
     });

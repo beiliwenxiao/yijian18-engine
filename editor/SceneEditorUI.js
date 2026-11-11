@@ -19,7 +19,11 @@ import {
   sceneObjectSelectorValues
 } from '../src/core/scene/SceneObjectSelector.js';
 import { isSpatialTriggerEvent } from '../src/systems/TriggerCatalog.js';
+import { MAX_PLACEMENT_INSTANCE_COUNT } from '../src/core/scene/PlacementSpawner.js';
 import { resolveManifestImageUrl } from './ManifestImageCatalog.js';
+
+/** 支持「数量」批量刷出的 placement 类型：怪物/士兵/NPC（军队走 armies 编制，物品/建筑不适用）。 */
+const BATCHABLE_PLACEMENT_KINDS = new Set(['enemy', 'soldier', 'npc']);
 
 const BATTLE_FLOW_FIELD_LABELS = Object.freeze({
   locationName: '地点名称',
@@ -1217,6 +1221,17 @@ export class SceneEditorUI {
           return;
         }
 
+        // 批量刷出数量（type:'ref' 的敌人/NPC/士兵）：1=单个不写字段（旧数据零回归），>1 钳制到上限
+        if (prop === 'count' && obj.type === 'ref') {
+          editor.history?.saveHistory?.();
+          const parsed = Math.floor(Number(value));
+          if (!Number.isFinite(parsed) || parsed <= 1) delete obj.count;
+          else obj.count = Math.min(MAX_PLACEMENT_INSTANCE_COUNT, parsed);
+          this.updateObjectProperties();
+          editor.render();
+          return;
+        }
+
         if (prop === 'gradientColor0' || prop === 'gradientColor1') {
           if (!obj.gradientStops) {
             obj.gradientStops = [{ offset: 0, color: '#000000' }, { offset: 1, color: '#333333' }];
@@ -1797,6 +1812,24 @@ export class SceneEditorUI {
     html += `<div class="property-row"><label>名称:</label><input value="${obj.name || ''}" disabled></div>`;
     html += `<div class="property-row"><label title="触发器可按组名批量放置同组物品">组名:</label><input type="text" value="${obj.group || ''}" data-prop="group" placeholder="如 act1_pickups"></div>`;
     html += `<div class="property-row"><label title="多个标签用英文逗号分隔；触发器可按标签批量放置物品">标签:</label><input type="text" value="${tags}" data-prop="tags" placeholder="如 教程, 食物"></div>`;
+
+    // ── 批量刷出数量：敌人/NPC/士兵只放一个，运行时按数量实例化 N 个（环形散布、避碰撞）
+    if (BATCHABLE_PLACEMENT_KINDS.has(obj.kind)) {
+      const rawCount = obj.count;
+      const dynamicCount = rawCount != null && typeof rawCount === 'object';
+      const countValue = rawCount != null && !dynamicCount
+        ? Math.min(MAX_PLACEMENT_INSTANCE_COUNT, Math.max(1, Math.floor(Number(rawCount) || 1)))
+        : '';
+      html += '<div class="property-row" style="border-top:1px solid #333;margin-top:6px;padding-top:6px;">' +
+        '<label style="color:#7cf;font-weight:bold;" title="只放一个刷怪点，运行时按数量生成 N 个；重进场景/读档按实例 id 恢复，不会翻倍">批量刷出</label></div>';
+      html += `<div class="property-row"><label title="1=单个（默认，不写字段）；大于 1 时以本点为中心环形散布（半径 70px 起，黄金角错开），自动避开碰撞体与最小间距。上限 ${MAX_PLACEMENT_INSTANCE_COUNT}：引擎同屏实体上限 2000，单点最多占 10%，避免一个刷怪点挤占整屏预算">数量:</label>` +
+        `<input type="number" min="1" max="${MAX_PLACEMENT_INSTANCE_COUNT}" step="1" value="${countValue}" data-prop="count" placeholder="${dynamicCount ? '动态（黑板）' : '1=单个'}"></div>`;
+      if (dynamicCount) {
+        html += `<div class="property-row"><label>说明:</label><span style="color:#9ab;font-size:11px;flex:1;">当前数量由剧情黑板动态读取（${escapeHtml(JSON.stringify(rawCount))}）；输入数字将改为固定数量</span></div>`;
+      } else if (countValue > 1) {
+        html += `<div class="property-row"><label>预览:</label><span style="color:#7cf;font-size:11px;flex:1;">×${countValue} 个（画布显示散布圈）</span></div>`;
+      }
+    }
 
     // ── 生成模式：常驻（无条件进场景即生成）/ 条件门控（spawnWhen）/ 剧情生成（触发器权威生成 + 生成账本）
     const sw = obj.spawnWhen && typeof obj.spawnWhen === 'object' ? obj.spawnWhen : null;

@@ -18,6 +18,13 @@ const REGISTRY_KEYS = Object.freeze({
   resourceNode: 'resourceNodes'
 });
 
+/**
+ * 单条 placement 的实例数上限。
+ * 依据：引擎同屏实体预算 2000；一个刷怪点最多占 10%（200）——既覆盖大波次需求
+ * （常见 5~50），又避免单个点挤占整屏预算导致帧率塌陷。超出按上限钳制。
+ */
+export const MAX_PLACEMENT_INSTANCE_COUNT = 200;
+
 function isPlainObject(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
   const prototype = Object.getPrototypeOf(value);
@@ -87,28 +94,104 @@ function placementMatches(placement, selector) {
   return true;
 }
 
-/**
- * 把带 count 的模板 placement 展开为第 index 个实例（1 基）。
- * `deriveFirst`（count>1 时为 true）：实例 1 使用派生 id `base-1` 且保持模板坐标，
- * 保证旧档 placementStates/ledger 的 `base-1` 键继续命中；index>=2 按黄金角环形散布
- * （2.5D y 压缩 0.6）。坐标只依赖 index 不依赖 count，保证实例位置跨数量变化与跨会话稳定。
- * count<=1 时不展开（返回模板本身），行为与旧数据完全一致。count 不设上限。
- */
-function expandPlacement(placement, index, { deriveFirst = false } = {}) {
-  if (!placement) return placement;
-  if (index <= 1) return deriveFirst ? { ...placement, id: `${placement.id}-1` } : placement;
+/** 散布参数：黄金角环形（2.5D 椭圆，y 压缩 0.6）。与编辑器画布散布圈（半径 70）同源。 */
+const GOLDEN_ANGLE_RAD = 137.508 * Math.PI / 180;
+const SPREAD_BASE_RADIUS = 70;
+const SPREAD_RADIUS_STEP = 55;
+const SPREAD_RING_SIZE = 10;
+const SPREAD_CANDIDATE_RADIUS_STEP = 28;
+const SPREAD_CANDIDATE_SLOTS = 8;
+const SPREAD_MAX_ATTEMPTS = 16;
+/** 同组实例最小中心间距（px）：约两个角色身位，避免叠在一起。 */
+export const DEFAULT_INSTANCE_SPACING = 40;
+
+/** 点是否落在阻挡碰撞多边形内（世界坐标，points 支持 [x,y] / {x,y}）。 */
+export function isPointBlockedByShapes(x, y, shapes = []) {
+  for (const shape of shapes || []) {
+    const points = Array.isArray(shape?.points) ? shape.points : null;
+    if (!points || points.length < 3) continue;
+    let inside = false;
+    for (let i = 0, j = points.length - 1; i < points.length; j = i, i += 1) {
+      const xi = Number(points[i]?.[0] ?? points[i]?.x);
+      const yi = Number(points[i]?.[1] ?? points[i]?.y);
+      const xj = Number(points[j]?.[0] ?? points[j]?.x);
+      const yj = Number(points[j]?.[1] ?? points[j]?.y);
+      if (![xi, yi, xj, yj].every(Number.isFinite)) continue;
+      const intersects = ((yi > y) !== (yj > y))
+        && (x < ((xj - xi) * (y - yi)) / ((yj - yi) || Number.EPSILON) + xi);
+      if (intersects) inside = !inside;
+    }
+    if (inside) return true;
+  }
+  return false;
+}
+
+/** 第 index 个实例的第 attempt 个候选坐标：attempt=0 即旧版黄金角环形位置。 */
+function spreadCandidate(placement, index, attempt = 0) {
   const ringIndex = index - 2;
-  const angle = ringIndex * 137.508 * Math.PI / 180;
-  const radius = 70 + Math.floor(ringIndex / 10) * 55;
+  const baseRadius = SPREAD_BASE_RADIUS + Math.floor(ringIndex / SPREAD_RING_SIZE) * SPREAD_RADIUS_STEP;
+  const baseAngle = ringIndex * GOLDEN_ANGLE_RAD;
+  const ring = attempt === 0 ? 0 : Math.ceil(attempt / SPREAD_CANDIDATE_SLOTS);
+  const slot = attempt === 0 ? 0 : attempt % SPREAD_CANDIDATE_SLOTS;
+  const radius = baseRadius + ring * SPREAD_CANDIDATE_RADIUS_STEP;
+  const angle = baseAngle + slot * (Math.PI * 2 / SPREAD_CANDIDATE_SLOTS);
   return {
-    ...placement,
-    id: `${placement.id}-${index}`,
     x: Math.round(((Number(placement.x) || 0) + Math.cos(angle) * radius) * 100) / 100,
     y: Math.round(((Number(placement.y) || 0) + Math.sin(angle) * radius * 0.6) * 100) / 100
   };
 }
 
-/** 解析模板 count：数字直接钳制下限；对象经 getConditionRoot 动态读取；缺省/非法回退 1。 */
+/**
+ * 计算派生实例坐标：环形散布 + 避碰撞 + 最小间距。
+ * - occupied：同模板先前实例坐标（数组），用于间距校验；
+ * - isBlocked(x,y)：阻挡探测（运行时注入地形碰撞多边形判定）；
+ * - 坐标只依赖 index 与 occupied，同一份场景数据下跨会话稳定（读档/重建一致）；
+ * - 候选全部失败时回退旧版环形位置，绝不丢刷怪位。
+ */
+export function resolveDerivedPosition(placement, index, {
+  occupied = [],
+  isBlocked = null,
+  minSpacing = DEFAULT_INSTANCE_SPACING
+} = {}) {
+  const spacing = Number(minSpacing) > 0 ? Number(minSpacing) : 0;
+  for (let attempt = 0; attempt < SPREAD_MAX_ATTEMPTS; attempt += 1) {
+    const candidate = spreadCandidate(placement, index, attempt);
+    const blocked = typeof isBlocked === 'function' && isBlocked(candidate.x, candidate.y) === true;
+    if (blocked) continue;
+    const tooClose = spacing > 0 && (occupied || []).some(entry => (
+      Math.hypot(Number(entry?.x) - candidate.x, Number(entry?.y) - candidate.y) < spacing
+    ));
+    if (tooClose) continue;
+    return candidate;
+  }
+  return spreadCandidate(placement, index, 0);
+}
+
+/**
+ * 把带 count 的模板 placement 展开为第 index 个实例（1 基）。
+ * `deriveFirst`（count>1 时为 true）：实例 1 使用派生 id `base-1` 且保持模板坐标，
+ * 保证旧档 placementStates/ledger 的 `base-1` 键继续命中；index>=2 按黄金角环形散布
+ * （2.5D y 压缩 0.6），并可按注入的阻挡探测/最小间距避障（见 resolveDerivedPosition）。
+ * count<=1 时不展开（返回模板本身），行为与旧数据完全一致。
+ */
+function expandPlacement(placement, index, {
+  deriveFirst = false,
+  occupied = [],
+  isBlocked = null,
+  minSpacing = DEFAULT_INSTANCE_SPACING
+} = {}) {
+  if (!placement) return placement;
+  if (index <= 1) return deriveFirst ? { ...placement, id: `${placement.id}-1` } : placement;
+  const position = resolveDerivedPosition(placement, index, { occupied, isBlocked, minSpacing });
+  return {
+    ...placement,
+    id: `${placement.id}-${index}`,
+    x: position.x,
+    y: position.y
+  };
+}
+
+/** 解析模板 count：数字直接钳制到 [1, MAX_PLACEMENT_INSTANCE_COUNT]；对象经 getConditionRoot 动态读取；缺省/非法回退 1。 */
 function resolveInstanceCount(placement, getConditionRoot) {
   const raw = placement?.count;
   if (raw == null) return 1;
@@ -122,7 +205,7 @@ function resolveInstanceCount(placement, getConditionRoot) {
   }
   const parsed = Math.floor(Number(value));
   if (!Number.isFinite(parsed)) return 1;
-  return Math.max(1, parsed);
+  return Math.min(MAX_PLACEMENT_INSTANCE_COUNT, Math.max(1, parsed));
 }
 
 /** 派生实例 id 反查：`base-N` → { base, index }；无数字后缀返回 null。 */
@@ -143,7 +226,9 @@ export class PlacementSpawner {
     onNpcImageError = null,
     onSpawn = null,
     shouldSpawn = null,
-    getConditionRoot = null
+    getConditionRoot = null,
+    isSpawnPointBlocked = null,
+    minInstanceSpacing = DEFAULT_INSTANCE_SPACING
   } = {}) {
     this.entityFactory = entityFactory;
     this.entityStore = entityStore;
@@ -154,6 +239,8 @@ export class PlacementSpawner {
     this.onSpawn = onSpawn;
     this.shouldSpawn = typeof shouldSpawn === 'function' ? shouldSpawn : null;
     this.getConditionRoot = typeof getConditionRoot === 'function' ? getConditionRoot : null;
+    this.isSpawnPointBlocked = typeof isSpawnPointBlocked === 'function' ? isSpawnPointBlocked : null;
+    this.minInstanceSpacing = Number(minInstanceSpacing) > 0 ? Number(minInstanceSpacing) : DEFAULT_INSTANCE_SPACING;
     this.spawnedPlacementIds = new Set();
   }
 
@@ -330,10 +417,19 @@ export class PlacementSpawner {
       recordOutcome(placement, 'failed', 'definitionNotFound');
       return;
     }
+    // 同模板已占位坐标：逐个实例累计，用于最小间距校验（坐标只依赖 index 与占位，
+    // 与 ScenePlacementRuntime 的派生寻址/重算保持同构）。
+    const occupiedPositions = [];
     for (let index = 1; index <= instanceCount; index += 1) {
       const instance = hasCount
-        ? expandPlacement(placement, index, { deriveFirst: true })
+        ? expandPlacement(placement, index, {
+          deriveFirst: true,
+          occupied: occupiedPositions,
+          isBlocked: this.isSpawnPointBlocked,
+          minSpacing: this.minInstanceSpacing
+        })
         : placement;
+      occupiedPositions.push({ x: Number(instance.x) || 0, y: Number(instance.y) || 0 });
       if (instance.id && this.spawnedPlacementIds.has(instance.id)) {
         recordOutcome(instance, 'alreadySpawned');
         continue;
