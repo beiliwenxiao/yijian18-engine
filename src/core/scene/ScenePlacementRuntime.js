@@ -1165,7 +1165,12 @@ export class ScenePlacementRuntime {
         });
         continue;
       }
-      if (collision.shapeType !== 'polygon' || !Array.isArray(collision.points) || collision.points.length < 3) {
+      // polygons（一个 placement 多块碰撞体，如营门两根门柱）优先；缺省回退单 points 旧格式。
+      const polygons = Array.isArray(collision.polygons) && collision.polygons.length
+        ? collision.polygons
+        : [collision.points];
+      if (collision.shapeType !== 'polygon'
+        || polygons.some(points => !Array.isArray(points) || points.length < 3)) {
         errors.push({
           code: 'placementColliderShapeInvalid',
           path: `placements.${placementId}.collision`,
@@ -1176,7 +1181,9 @@ export class ScenePlacementRuntime {
       const localX = Number.isFinite(placement._localX) ? placement._localX : placement.x;
       const localY = Number.isFinite(placement._localY) ? placement._localY : placement.y;
       if (!Number.isFinite(localX) || !Number.isFinite(localY)
-        || collision.points.some(point => !Array.isArray(point) || !Number.isFinite(point[0]) || !Number.isFinite(point[1]))) {
+        || polygons.some(points => points.some(point => (
+          !Array.isArray(point) || !Number.isFinite(point[0]) || !Number.isFinite(point[1])
+        )))) {
         errors.push({
           code: 'placementColliderCoordinatesInvalid',
           path: `placements.${placementId}.collision.points`,
@@ -1184,17 +1191,19 @@ export class ScenePlacementRuntime {
         });
         continue;
       }
+      const shapes = polygons.map(points => ({
+        id: placementId,
+        type: 'shape',
+        shapeType: 'polygon',
+        jumpBlock: collision.jumpBlock === true,
+        points: points.map(point => [localX + point[0], localY + point[1]])
+      }));
       operations.push({
         id: placementId,
         sceneId: placement.sceneId,
         mode: collision.mode,
-        shape: {
-          id: placementId,
-          type: 'shape',
-          shapeType: 'polygon',
-          jumpBlock: collision.jumpBlock === true,
-          points: collision.points.map(point => [localX + point[0], localY + point[1]])
-        }
+        shape: shapes[0],
+        shapes
       });
     }
     return { ok: errors.length === 0, operations, errors };

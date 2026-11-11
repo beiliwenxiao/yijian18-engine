@@ -5,7 +5,24 @@
       "color": "#b48cff",
       "id": "path.s02.column.entry",
       "name": "黄巾军入场·右进左落",
-      "points": [[1070, 480], [950, 340], [820, 290], [620, 398]]
+      "points": [
+        [
+          1070,
+          480
+        ],
+        [
+          950,
+          340
+        ],
+        [
+          820,
+          290
+        ],
+        [
+          620,
+          398
+        ]
+      ]
     }
   ],
   "layers": [
@@ -67,7 +84,7 @@
           "strokeWidth": 2,
           "type": "shape",
           "visualDescription": "村中空地；玩家主要活动与守城战场。",
-          "walkable": true
+          "walkable": false
         }
       ],
       "visible": true
@@ -578,6 +595,36 @@
           "y": 300
         },
         {
+          "height": 140,
+          "id": "S02-zone-camp-forge",
+          "name": "军营铁匠铺与军械工坊区",
+          "regionId": "S02-camp-forge",
+          "type": "region",
+          "width": 360,
+          "x": 350,
+          "y": 200
+        },
+        {
+          "height": 120,
+          "id": "S02-zone-camp-recruit",
+          "name": "军营征召处",
+          "regionId": "S02-camp-recruit",
+          "type": "region",
+          "width": 165,
+          "x": 665,
+          "y": 218
+        },
+        {
+          "height": 128,
+          "id": "S02-zone-camp-granary",
+          "name": "军营粮仓",
+          "regionId": "S02-camp-granary",
+          "type": "region",
+          "width": 140,
+          "x": 795,
+          "y": 205
+        },
+        {
           "fill": "#6d3630",
           "fillMode": "color",
           "id": "S02-danger-zone",
@@ -647,102 +694,6 @@
           "y": 300
         },
         {
-          "group": "S02-villagers-calm",
-          "id": "S02-villager-calm-1",
-          "kind": "enemy",
-          "overrides": {
-            "aiActive": false
-          },
-          "ref": "enemy.s02_villager",
-          "tags": [
-            "story",
-            "villager"
-          ],
-          "type": "ref",
-          "x": 330,
-          "y": 400
-        },
-        {
-          "group": "S02-villagers-calm",
-          "id": "S02-villager-calm-2",
-          "kind": "enemy",
-          "overrides": {
-            "aiActive": false
-          },
-          "ref": "enemy.s02_villager",
-          "tags": [
-            "story",
-            "villager"
-          ],
-          "type": "ref",
-          "x": 355,
-          "y": 420
-        },
-        {
-          "group": "S02-villagers-calm",
-          "id": "S02-villager-calm-3",
-          "kind": "enemy",
-          "overrides": {
-            "aiActive": false
-          },
-          "ref": "enemy.s02_villager",
-          "tags": [
-            "story",
-            "villager"
-          ],
-          "type": "ref",
-          "x": 960,
-          "y": 335
-        },
-        {
-          "group": "S02-villagers-calm",
-          "id": "S02-villager-calm-4",
-          "kind": "enemy",
-          "overrides": {
-            "aiActive": false
-          },
-          "ref": "enemy.s02_villager",
-          "tags": [
-            "story",
-            "villager"
-          ],
-          "type": "ref",
-          "x": 985,
-          "y": 355
-        },
-        {
-          "group": "S02-villagers-calm",
-          "id": "S02-villager-calm-5",
-          "kind": "enemy",
-          "overrides": {
-            "aiActive": false
-          },
-          "ref": "enemy.s02_villager",
-          "tags": [
-            "story",
-            "villager"
-          ],
-          "type": "ref",
-          "x": 420,
-          "y": 565
-        },
-        {
-          "group": "S02-villagers-calm",
-          "id": "S02-villager-calm-6",
-          "kind": "enemy",
-          "overrides": {
-            "aiActive": false
-          },
-          "ref": "enemy.s02_villager",
-          "tags": [
-            "story",
-            "villager"
-          ],
-          "type": "ref",
-          "x": 445,
-          "y": 585
-        },
-        {
           "group": "S02-scavenger-elites",
           "id": "S02-scavenger-chief",
           "kind": "enemy",
@@ -750,6 +701,11 @@
             "aiActive": true
           },
           "ref": "enemy.s02_scavenger_chief",
+          "spawnWhen": {
+            "blackboardKey": "storyState",
+            "equals": true,
+            "path": "s02RevoltConfirmed"
+          },
           "tags": [
             "scavenger",
             "boss"
@@ -757,105 +713,6 @@
           "type": "ref",
           "x": 1080,
           "y": 500
-        },
-        {
-          "group": "S02-beg-children",
-          "id": "S02-beg-child-1",
-          "kind": "enemy",
-          "overrides": {
-            "aiActive": false
-          },
-          "ref": "enemy.s02_beggar_child",
-          "tags": [
-            "story",
-            "beggar"
-          ],
-          "type": "ref",
-          "x": 600,
-          "y": 430
-        },
-        {
-          "group": "S02-beg-children-more",
-          "id": "S02-beg-child-2",
-          "kind": "enemy",
-          "overrides": {
-            "aiActive": false
-          },
-          "ref": "enemy.s02_beggar_child",
-          "tags": [
-            "story",
-            "beggar"
-          ],
-          "type": "ref",
-          "x": 585,
-          "y": 465
-        },
-        {
-          "group": "S02-beg-children-more",
-          "id": "S02-beg-child-3",
-          "kind": "enemy",
-          "overrides": {
-            "aiActive": false
-          },
-          "ref": "enemy.s02_beggar_child",
-          "tags": [
-            "story",
-            "beggar"
-          ],
-          "type": "ref",
-          "x": 620,
-          "y": 490
-        },
-        {
-          "group": "S02-villagers-hostile",
-          "id": "S02-villager-hostile-1",
-          "kind": "enemy",
-          "overrides": {
-            "aiActive": true
-          },
-          "ref": "enemy.s02_villager",
-          "spawnMode": "story",
-          "tags": [
-            "story",
-            "villager"
-          ],
-          "type": "ref",
-          "x": 600,
-          "y": 430
-        },
-        {
-          "group": "S02-villagers-hostile",
-          "id": "S02-villager-hostile-2",
-          "kind": "enemy",
-          "overrides": {
-            "aiActive": true
-          },
-          "ref": "enemy.s02_villager",
-          "spawnMode": "story",
-          "tags": [
-            "story",
-            "villager"
-          ],
-          "type": "ref",
-          "x": 585,
-          "y": 465
-        },
-        {
-          "group": "S02-villagers-hostile",
-          "id": "S02-villager-hostile-3",
-          "kind": "enemy",
-          "overrides": {
-            "aiActive": true
-          },
-          "ref": "enemy.s02_villager",
-          "spawnMode": "story",
-          "tags": [
-            "story",
-            "villager"
-          ],
-          "type": "ref",
-          "x": 620,
-          "y": 490
         },
         {
           "group": "S02-initial",
@@ -945,6 +802,11 @@
           "id": "S02-npc-messenger",
           "kind": "npc",
           "ref": "npc.s02_messenger",
+          "spawnWhen": {
+            "blackboardKey": "storyState",
+            "equals": true,
+            "path": "s02ControlReturned"
+          },
           "tags": [
             "story",
             "summons"
@@ -962,7 +824,7 @@
           "spawnWhen": {
             "blackboardKey": "storyState",
             "equals": true,
-            "path": "s02BegFainted"
+            "path": "s02RevoltFight"
           },
           "tags": [
             "army",
@@ -974,7 +836,7 @@
           "y": 480
         },
         {
-          "group": "S02-porridge-decor",
+          "group": "S02-relief-site",
           "id": "S02-porridge-cauldron",
           "kind": "item",
           "name": "施粥大锅",
@@ -982,1012 +844,748 @@
           "spawnWhen": {
             "blackboardKey": "storyState",
             "equals": true,
-            "path": "s02PorridgeLaid"
+            "path": "s02RitualLearned"
           },
           "type": "ref",
-          "x": 606.0326340041295,
-          "y": 316.1201761122582
+          "x": 520,
+          "y": 430
         },
         {
-          "group": "S02-porridge-batch-1",
-          "id": "S02-porridge-queue-1",
-          "kind": "enemy",
-          "name": "喝粥村民",
-          "overrides": {
-            "ai": {
-              "detectionRange": 1,
-              "leashRange": 9999,
-              "patrol": {
-                "enabled": true,
-                "mode": "loop",
-                "points": [
-                  [
-                    0,
-                    -180
-                  ],
-                  [
-                    -25,
-                    -290
-                  ],
-                  [
-                    -35,
-                    -330
-                  ]
-                ]
-              },
-              "pursuitRange": 1
-            },
-            "aiActive": true
-          },
-          "ref": "enemy.s02_villager",
-          "spawnMode": "story",
-          "type": "ref",
-          "x": 590,
-          "y": 700
-        },
-        {
-          "group": "S02-porridge-batch-1",
-          "id": "S02-porridge-queue-2",
-          "kind": "enemy",
-          "name": "喝粥村民",
-          "overrides": {
-            "ai": {
-              "detectionRange": 1,
-              "leashRange": 9999,
-              "patrol": {
-                "enabled": true,
-                "mode": "loop",
-                "points": [
-                  [
-                    0,
-                    -185
-                  ],
-                  [
-                    10,
-                    -300
-                  ],
-                  [
-                    5,
-                    -340
-                  ]
-                ]
-              },
-              "pursuitRange": 1
-            },
-            "aiActive": true
-          },
-          "ref": "enemy.s02_villager",
-          "spawnMode": "story",
-          "type": "ref",
-          "x": 640,
-          "y": 705
-        },
-        {
-          "group": "S02-porridge-batch-1",
-          "id": "S02-porridge-queue-3",
-          "kind": "enemy",
-          "name": "喝粥村民",
-          "overrides": {
-            "ai": {
-              "detectionRange": 1,
-              "leashRange": 9999,
-              "patrol": {
-                "enabled": true,
-                "mode": "loop",
-                "points": [
-                  [
-                    0,
-                    -180
-                  ],
-                  [
-                    30,
-                    -290
-                  ],
-                  [
-                    40,
-                    -330
-                  ]
-                ]
-              },
-              "pursuitRange": 1
-            },
-            "aiActive": true
-          },
-          "ref": "enemy.s02_villager",
-          "spawnMode": "story",
-          "type": "ref",
-          "x": 690,
-          "y": 700
-        },
-        {
-          "group": "S02-porridge-batch-1",
-          "id": "S02-porridge-queue-4",
-          "kind": "enemy",
-          "name": "喝粥村民",
-          "overrides": {
-            "ai": {
-              "detectionRange": 1,
-              "leashRange": 9999,
-              "patrol": {
-                "enabled": true,
-                "mode": "loop",
-                "points": [
-                  [
-                    0,
-                    -175
-                  ],
-                  [
-                    55,
-                    -285
-                  ],
-                  [
-                    70,
-                    -320
-                  ]
-                ]
-              },
-              "pursuitRange": 1
-            },
-            "aiActive": true
-          },
-          "ref": "enemy.s02_villager",
-          "spawnMode": "story",
-          "type": "ref",
-          "x": 740,
-          "y": 695
-        },
-        {
-          "group": "S02-porridge-batch-1",
-          "id": "S02-porridge-queue-5",
-          "kind": "enemy",
-          "name": "喝粥村民",
-          "overrides": {
-            "ai": {
-              "detectionRange": 1,
-              "leashRange": 9999,
-              "patrol": {
-                "enabled": true,
-                "mode": "loop",
-                "points": [
-                  [
-                    0,
-                    -175
-                  ],
-                  [
-                    -50,
-                    -280
-                  ],
-                  [
-                    -60,
-                    -315
-                  ]
-                ]
-              },
-              "pursuitRange": 1
-            },
-            "aiActive": true
-          },
-          "ref": "enemy.s02_villager",
-          "spawnMode": "story",
-          "type": "ref",
-          "x": 540,
-          "y": 695
-        },
-        {
-          "group": "S02-porridge-batch-2",
-          "id": "S02-porridge-queue-6",
-          "kind": "enemy",
-          "name": "喝粥村民",
-          "overrides": {
-            "ai": {
-              "detectionRange": 1,
-              "leashRange": 9999,
-              "patrol": {
-                "enabled": true,
-                "mode": "loop",
-                "points": [
-                  [
-                    -160,
-                    -20
-                  ],
-                  [
-                    -330,
-                    -60
-                  ],
-                  [
-                    -420,
-                    -70
-                  ]
-                ]
-              },
-              "pursuitRange": 1
-            },
-            "aiActive": true
-          },
-          "ref": "enemy.s02_villager",
-          "spawnMode": "story",
-          "type": "ref",
-          "x": 1150,
-          "y": 380
-        },
-        {
-          "group": "S02-porridge-batch-2",
-          "id": "S02-porridge-queue-7",
-          "kind": "enemy",
-          "name": "喝粥村民",
-          "overrides": {
-            "ai": {
-              "detectionRange": 1,
-              "leashRange": 9999,
-              "patrol": {
-                "enabled": true,
-                "mode": "loop",
-                "points": [
-                  [
-                    -170,
-                    -40
-                  ],
-                  [
-                    -340,
-                    -90
-                  ],
-                  [
-                    -435,
-                    -105
-                  ]
-                ]
-              },
-              "pursuitRange": 1
-            },
-            "aiActive": true
-          },
-          "ref": "enemy.s02_villager",
-          "spawnMode": "story",
-          "type": "ref",
-          "x": 1160,
-          "y": 420
-        },
-        {
-          "group": "S02-porridge-batch-2",
-          "id": "S02-porridge-queue-8",
-          "kind": "enemy",
-          "name": "喝粥村民",
-          "overrides": {
-            "ai": {
-              "detectionRange": 1,
-              "leashRange": 9999,
-              "patrol": {
-                "enabled": true,
-                "mode": "loop",
-                "points": [
-                  [
-                    -165,
-                    -60
-                  ],
-                  [
-                    -335,
-                    -120
-                  ],
-                  [
-                    -425,
-                    -145
-                  ]
-                ]
-              },
-              "pursuitRange": 1
-            },
-            "aiActive": true
-          },
-          "ref": "enemy.s02_villager",
-          "spawnMode": "story",
-          "type": "ref",
-          "x": 1155,
-          "y": 460
-        },
-        {
-          "group": "S02-porridge-batch-2",
-          "id": "S02-porridge-queue-9",
-          "kind": "enemy",
-          "name": "喝粥村民",
-          "overrides": {
-            "ai": {
-              "detectionRange": 1,
-              "leashRange": 9999,
-              "patrol": {
-                "enabled": true,
-                "mode": "loop",
-                "points": [
-                  [
-                    -175,
-                    -80
-                  ],
-                  [
-                    -345,
-                    -150
-                  ],
-                  [
-                    -445,
-                    -185
-                  ]
-                ]
-              },
-              "pursuitRange": 1
-            },
-            "aiActive": true
-          },
-          "ref": "enemy.s02_villager",
-          "spawnMode": "story",
-          "type": "ref",
-          "x": 1165,
-          "y": 500
-        },
-        {
-          "group": "S02-porridge-batch-2",
-          "id": "S02-porridge-queue-10",
-          "kind": "enemy",
-          "name": "喝粥村民",
-          "overrides": {
-            "ai": {
-              "detectionRange": 1,
-              "leashRange": 9999,
-              "patrol": {
-                "enabled": true,
-                "mode": "loop",
-                "points": [
-                  [
-                    -160,
-                    -100
-                  ],
-                  [
-                    -330,
-                    -180
-                  ],
-                  [
-                    -415,
-                    -225
-                  ]
-                ]
-              },
-              "pursuitRange": 1
-            },
-            "aiActive": true
-          },
-          "ref": "enemy.s02_villager",
-          "spawnMode": "story",
-          "type": "ref",
-          "x": 1150,
-          "y": 540
-        },
-        {
-          "group": "S02-porridge-batch-3",
-          "id": "S02-porridge-queue-11",
-          "kind": "enemy",
-          "name": "喝粥村民",
-          "overrides": {
-            "ai": {
-              "detectionRange": 1,
-              "leashRange": 9999,
-              "patrol": {
-                "enabled": true,
-                "mode": "loop",
-                "points": [
-                  [
-                    10,
-                    -190
-                  ],
-                  [
-                    -15,
-                    -300
-                  ],
-                  [
-                    -30,
-                    -345
-                  ]
-                ]
-              },
-              "pursuitRange": 1
-            },
-            "aiActive": true
-          },
-          "ref": "enemy.s02_villager",
-          "spawnMode": "story",
-          "type": "ref",
-          "x": 570,
-          "y": 710
-        },
-        {
-          "group": "S02-porridge-batch-3",
-          "id": "S02-porridge-queue-12",
-          "kind": "enemy",
-          "name": "喝粥村民",
-          "overrides": {
-            "ai": {
-              "detectionRange": 1,
-              "leashRange": 9999,
-              "patrol": {
-                "enabled": true,
-                "mode": "loop",
-                "points": [
-                  [
-                    0,
-                    -195
-                  ],
-                  [
-                    5,
-                    -305
-                  ],
-                  [
-                    0,
-                    -350
-                  ]
-                ]
-              },
-              "pursuitRange": 1
-            },
-            "aiActive": true
-          },
-          "ref": "enemy.s02_villager",
-          "spawnMode": "story",
-          "type": "ref",
-          "x": 620,
-          "y": 715
-        },
-        {
-          "group": "S02-porridge-batch-3",
-          "id": "S02-porridge-queue-13",
-          "kind": "enemy",
-          "name": "喝粥村民",
-          "overrides": {
-            "ai": {
-              "detectionRange": 1,
-              "leashRange": 9999,
-              "patrol": {
-                "enabled": true,
-                "mode": "loop",
-                "points": [
-                  [
-                    0,
-                    -190
-                  ],
-                  [
-                    25,
-                    -300
-                  ],
-                  [
-                    35,
-                    -345
-                  ]
-                ]
-              },
-              "pursuitRange": 1
-            },
-            "aiActive": true
-          },
-          "ref": "enemy.s02_villager",
-          "spawnMode": "story",
-          "type": "ref",
-          "x": 665,
-          "y": 710
-        },
-        {
-          "group": "S02-porridge-batch-3",
-          "id": "S02-porridge-queue-14",
-          "kind": "enemy",
-          "name": "喝粥村民",
-          "overrides": {
-            "ai": {
-              "detectionRange": 1,
-              "leashRange": 9999,
-              "patrol": {
-                "enabled": true,
-                "mode": "loop",
-                "points": [
-                  [
-                    0,
-                    -185
-                  ],
-                  [
-                    45,
-                    -295
-                  ],
-                  [
-                    60,
-                    -335
-                  ]
-                ]
-              },
-              "pursuitRange": 1
-            },
-            "aiActive": true
-          },
-          "ref": "enemy.s02_villager",
-          "spawnMode": "story",
-          "type": "ref",
-          "x": 715,
-          "y": 705
-        },
-        {
-          "group": "S02-porridge-batch-3",
-          "id": "S02-porridge-queue-15",
-          "kind": "enemy",
-          "name": "喝粥村民",
-          "overrides": {
-            "ai": {
-              "detectionRange": 1,
-              "leashRange": 9999,
-              "patrol": {
-                "enabled": true,
-                "mode": "loop",
-                "points": [
-                  [
-                    0,
-                    -185
-                  ],
-                  [
-                    -40,
-                    -290
-                  ],
-                  [
-                    -50,
-                    -330
-                  ]
-                ]
-              },
-              "pursuitRange": 1
-            },
-            "aiActive": true
-          },
-          "ref": "enemy.s02_villager",
-          "spawnMode": "story",
-          "type": "ref",
-          "x": 525,
-          "y": 705
-        },
-        {
-          "group": "S02-porridge-batch-4",
-          "id": "S02-porridge-queue-16",
-          "kind": "enemy",
-          "name": "喝粥村民",
-          "overrides": {
-            "ai": {
-              "detectionRange": 1,
-              "leashRange": 9999,
-              "patrol": {
-                "enabled": true,
-                "mode": "loop",
-                "points": [
-                  [
-                    -150,
-                    -10
-                  ],
-                  [
-                    -320,
-                    -50
-                  ],
-                  [
-                    -410,
-                    -55
-                  ]
-                ]
-              },
-              "pursuitRange": 1
-            },
-            "aiActive": true
-          },
-          "ref": "enemy.s02_villager",
-          "spawnMode": "story",
-          "type": "ref",
-          "x": 1145,
-          "y": 360
-        },
-        {
-          "group": "S02-porridge-batch-4",
-          "id": "S02-porridge-queue-17",
-          "kind": "enemy",
-          "name": "喝粥村民",
-          "overrides": {
-            "ai": {
-              "detectionRange": 1,
-              "leashRange": 9999,
-              "patrol": {
-                "enabled": true,
-                "mode": "loop",
-                "points": [
-                  [
-                    -160,
-                    -30
-                  ],
-                  [
-                    -330,
-                    -80
-                  ],
-                  [
-                    -425,
-                    -90
-                  ]
-                ]
-              },
-              "pursuitRange": 1
-            },
-            "aiActive": true
-          },
-          "ref": "enemy.s02_villager",
-          "spawnMode": "story",
-          "type": "ref",
-          "x": 1155,
-          "y": 400
-        },
-        {
-          "group": "S02-porridge-batch-4",
-          "id": "S02-porridge-queue-18",
-          "kind": "enemy",
-          "name": "喝粥村民",
-          "overrides": {
-            "ai": {
-              "detectionRange": 1,
-              "leashRange": 9999,
-              "patrol": {
-                "enabled": true,
-                "mode": "loop",
-                "points": [
-                  [
-                    -155,
-                    -50
-                  ],
-                  [
-                    -325,
-                    -110
-                  ],
-                  [
-                    -415,
-                    -130
-                  ]
-                ]
-              },
-              "pursuitRange": 1
-            },
-            "aiActive": true
-          },
-          "ref": "enemy.s02_villager",
-          "spawnMode": "story",
-          "type": "ref",
-          "x": 1150,
-          "y": 440
-        },
-        {
-          "group": "S02-porridge-batch-4",
-          "id": "S02-porridge-queue-19",
-          "kind": "enemy",
-          "name": "喝粥村民",
-          "overrides": {
-            "ai": {
-              "detectionRange": 1,
-              "leashRange": 9999,
-              "patrol": {
-                "enabled": true,
-                "mode": "loop",
-                "points": [
-                  [
-                    -165,
-                    -70
-                  ],
-                  [
-                    -335,
-                    -140
-                  ],
-                  [
-                    -435,
-                    -170
-                  ]
-                ]
-              },
-              "pursuitRange": 1
-            },
-            "aiActive": true
-          },
-          "ref": "enemy.s02_villager",
-          "spawnMode": "story",
-          "type": "ref",
-          "x": 1160,
-          "y": 480
-        },
-        {
-          "group": "S02-porridge-batch-4",
-          "id": "S02-porridge-queue-20",
-          "kind": "enemy",
-          "name": "喝粥村民",
-          "overrides": {
-            "ai": {
-              "detectionRange": 1,
-              "leashRange": 9999,
-              "patrol": {
-                "enabled": true,
-                "mode": "loop",
-                "points": [
-                  [
-                    -150,
-                    -90
-                  ],
-                  [
-                    -320,
-                    -170
-                  ],
-                  [
-                    -405,
-                    -210
-                  ]
-                ]
-              },
-              "pursuitRange": 1
-            },
-            "aiActive": true
-          },
-          "ref": "enemy.s02_villager",
-          "spawnMode": "story",
-          "type": "ref",
-          "x": 1145,
-          "y": 520
-        },
-        {
-          "group": "S02-porridge-batch-5",
-          "id": "S02-porridge-queue-21",
-          "kind": "enemy",
-          "name": "喝粥村民",
-          "overrides": {
-            "ai": {
-              "detectionRange": 1,
-              "leashRange": 9999,
-              "patrol": {
-                "enabled": true,
-                "mode": "loop",
-                "points": [
-                  [
-                    15,
-                    -195
-                  ],
-                  [
-                    -10,
-                    -310
-                  ],
-                  [
-                    -25,
-                    -355
-                  ]
-                ]
-              },
-              "pursuitRange": 1
-            },
-            "aiActive": true
-          },
-          "ref": "enemy.s02_villager",
-          "spawnMode": "story",
-          "type": "ref",
-          "x": 580,
-          "y": 715
-        },
-        {
-          "group": "S02-porridge-batch-5",
-          "id": "S02-porridge-queue-22",
-          "kind": "enemy",
-          "name": "喝粥村民",
-          "overrides": {
-            "ai": {
-              "detectionRange": 1,
-              "leashRange": 9999,
-              "patrol": {
-                "enabled": true,
-                "mode": "loop",
-                "points": [
-                  [
-                    0,
-                    -200
-                  ],
-                  [
-                    10,
-                    -310
-                  ],
-                  [
-                    5,
-                    -360
-                  ]
-                ]
-              },
-              "pursuitRange": 1
-            },
-            "aiActive": true
-          },
-          "ref": "enemy.s02_villager",
-          "spawnMode": "story",
-          "type": "ref",
-          "x": 630,
-          "y": 710
-        },
-        {
-          "group": "S02-porridge-batch-5",
-          "id": "S02-porridge-queue-23",
-          "kind": "enemy",
-          "name": "喝粥村民",
-          "overrides": {
-            "ai": {
-              "detectionRange": 1,
-              "leashRange": 9999,
-              "patrol": {
-                "enabled": true,
-                "mode": "loop",
-                "points": [
-                  [
-                    0,
-                    -195
-                  ],
-                  [
-                    30,
-                    -305
-                  ],
-                  [
-                    45,
-                    -350
-                  ]
-                ]
-              },
-              "pursuitRange": 1
-            },
-            "aiActive": true
-          },
-          "ref": "enemy.s02_villager",
-          "spawnMode": "story",
-          "type": "ref",
-          "x": 675,
-          "y": 715
-        },
-        {
-          "group": "S02-porridge-batch-5",
-          "id": "S02-porridge-queue-24",
-          "kind": "enemy",
-          "name": "喝粥村民",
-          "overrides": {
-            "ai": {
-              "detectionRange": 1,
-              "leashRange": 9999,
-              "patrol": {
-                "enabled": true,
-                "mode": "loop",
-                "points": [
-                  [
-                    0,
-                    -190
-                  ],
-                  [
-                    50,
-                    -300
-                  ],
-                  [
-                    65,
-                    -340
-                  ]
-                ]
-              },
-              "pursuitRange": 1
-            },
-            "aiActive": true
-          },
-          "ref": "enemy.s02_villager",
-          "spawnMode": "story",
-          "type": "ref",
-          "x": 725,
-          "y": 710
-        },
-        {
-          "group": "S02-porridge-batch-5",
-          "id": "S02-porridge-queue-25",
-          "kind": "enemy",
-          "name": "喝粥村民",
-          "overrides": {
-            "ai": {
-              "detectionRange": 1,
-              "leashRange": 9999,
-              "patrol": {
-                "enabled": true,
-                "mode": "loop",
-                "points": [
-                  [
-                    0,
-                    -190
-                  ],
-                  [
-                    -45,
-                    -295
-                  ],
-                  [
-                    -55,
-                    -335
-                  ]
-                ]
-              },
-              "pursuitRange": 1
-            },
-            "aiActive": true
-          },
-          "ref": "enemy.s02_villager",
-          "spawnMode": "story",
-          "type": "ref",
-          "x": 535,
-          "y": 710
-        },
-        {
-          "group": "S02-recruit-queue",
-          "id": "S02-recruit-queue-1",
-          "kind": "enemy",
-          "name": "候募村民",
-          "overrides": {
-            "aiActive": false
-          },
-          "ref": "enemy.s02_villager",
-          "spawnMode": "story",
-          "type": "ref",
-          "x": 800,
-          "y": 400
-        },
-        {
-          "group": "S02-recruit-queue",
-          "id": "S02-recruit-queue-2",
-          "kind": "enemy",
-          "name": "候募村民",
-          "overrides": {
-            "aiActive": false
-          },
-          "ref": "enemy.s02_villager",
-          "spawnMode": "story",
-          "type": "ref",
-          "x": 830,
-          "y": 420
-        },
-        {
-          "group": "S02-recruit-queue",
-          "id": "S02-recruit-queue-3",
-          "kind": "enemy",
-          "name": "候募村民",
-          "overrides": {
-            "aiActive": false
-          },
-          "ref": "enemy.s02_villager",
-          "spawnMode": "story",
-          "type": "ref",
-          "x": 860,
-          "y": 440
-        },
-        {
-          "group": "S02-recruit-queue",
-          "id": "S02-recruit-queue-4",
-          "kind": "enemy",
-          "name": "候募村民",
-          "overrides": {
-            "aiActive": false
-          },
-          "ref": "enemy.s02_villager",
-          "spawnMode": "story",
-          "type": "ref",
-          "x": 890,
-          "y": 460
-        },
-        {
-          "faction": "ally",
-          "group": "S02-army-recruits",
-          "id": "S02-army-recruits",
-          "kind": "army",
-          "ref": "army.s02.recruits",
+          "group": "S02-camp-buildings",
+          "id": "S02-building-smithy",
+          "kind": "building",
+          "name": "铁匠铺",
+          "ref": "building.s02.smithy",
           "spawnWhen": {
             "blackboardKey": "storyState",
             "equals": true,
-            "path": "s02RecruitDone"
+            "path": "s02RevoltConfirmed"
           },
-          "tags": [
-            "army",
-            "yellow-turban",
-            "recruits"
-          ],
           "type": "ref",
-          "x": 900,
-          "y": 380
+          "x": 610,
+          "y": 325
+        },
+        {
+          "group": "S02-camp-buildings",
+          "id": "S02-building-workshop",
+          "kind": "building",
+          "name": "军械工坊",
+          "ref": "building.s02.workshop",
+          "spawnWhen": {
+            "blackboardKey": "storyState",
+            "equals": true,
+            "path": "s02RevoltConfirmed"
+          },
+          "type": "ref",
+          "x": 445,
+          "y": 330
+        },
+        {
+          "group": "S02-camp-buildings",
+          "id": "S02-building-recruit-post",
+          "kind": "building",
+          "name": "征召处",
+          "ref": "building.s02.recruitPost",
+          "spawnWhen": {
+            "blackboardKey": "storyState",
+            "equals": true,
+            "path": "s02RevoltConfirmed"
+          },
+          "type": "ref",
+          "x": 745,
+          "y": 325
+        },
+        {
+          "group": "S02-camp-buildings",
+          "id": "S02-building-granary",
+          "kind": "building",
+          "name": "粮仓",
+          "ref": "building.s02.granary",
+          "spawnWhen": {
+            "blackboardKey": "storyState",
+            "equals": true,
+            "path": "s02RevoltConfirmed"
+          },
+          "type": "ref",
+          "x": 865,
+          "y": 325
+        },
+        {
+          "group": "S02-camp-buildings",
+          "id": "S02-building-barracks",
+          "kind": "building",
+          "name": "兵营",
+          "ref": "building.s02.barracks",
+          "spawnWhen": {
+            "blackboardKey": "storyState",
+            "equals": true,
+            "path": "s02RevoltConfirmed"
+          },
+          "type": "ref",
+          "x": 760,
+          "y": 470
+        },
+        {
+          "group": "S02-camp-buildings",
+          "id": "S02-wall-north-1",
+          "kind": "building",
+          "name": "营栅",
+          "ref": "building.s02.wall",
+          "collision": {
+            "jumpBlock": true,
+            "mode": "block",
+            "points": [
+              [
+                -58,
+                -16
+              ],
+              [
+                58,
+                -16
+              ],
+              [
+                58,
+                -2
+              ],
+              [
+                -58,
+                -2
+              ]
+            ],
+            "shapeType": "polygon"
+          },
+          "spawnWhen": {
+            "blackboardKey": "storyState",
+            "equals": true,
+            "path": "s02RevoltConfirmed"
+          },
+          "type": "ref",
+          "x": 380,
+          "y": 252
+        },
+        {
+          "group": "S02-camp-buildings",
+          "id": "S02-wall-north-2",
+          "kind": "building",
+          "name": "营栅",
+          "ref": "building.s02.wall",
+          "collision": {
+            "jumpBlock": true,
+            "mode": "block",
+            "points": [
+              [
+                -58,
+                -16
+              ],
+              [
+                58,
+                -16
+              ],
+              [
+                58,
+                -2
+              ],
+              [
+                -58,
+                -2
+              ]
+            ],
+            "shapeType": "polygon"
+          },
+          "spawnWhen": {
+            "blackboardKey": "storyState",
+            "equals": true,
+            "path": "s02RevoltConfirmed"
+          },
+          "type": "ref",
+          "x": 500,
+          "y": 252
+        },
+        {
+          "group": "S02-camp-buildings",
+          "id": "S02-wall-north-3",
+          "kind": "building",
+          "name": "营栅",
+          "ref": "building.s02.wall",
+          "collision": {
+            "jumpBlock": true,
+            "mode": "block",
+            "points": [
+              [
+                -58,
+                -16
+              ],
+              [
+                58,
+                -16
+              ],
+              [
+                58,
+                -2
+              ],
+              [
+                -58,
+                -2
+              ]
+            ],
+            "shapeType": "polygon"
+          },
+          "spawnWhen": {
+            "blackboardKey": "storyState",
+            "equals": true,
+            "path": "s02RevoltConfirmed"
+          },
+          "type": "ref",
+          "x": 620,
+          "y": 252
+        },
+        {
+          "group": "S02-camp-buildings",
+          "id": "S02-wall-north-4",
+          "kind": "building",
+          "name": "营栅",
+          "ref": "building.s02.wall",
+          "collision": {
+            "jumpBlock": true,
+            "mode": "block",
+            "points": [
+              [
+                -58,
+                -16
+              ],
+              [
+                58,
+                -16
+              ],
+              [
+                58,
+                -2
+              ],
+              [
+                -58,
+                -2
+              ]
+            ],
+            "shapeType": "polygon"
+          },
+          "spawnWhen": {
+            "blackboardKey": "storyState",
+            "equals": true,
+            "path": "s02RevoltConfirmed"
+          },
+          "type": "ref",
+          "x": 740,
+          "y": 252
+        },
+        {
+          "group": "S02-camp-buildings",
+          "id": "S02-wall-north-5",
+          "kind": "building",
+          "name": "营栅",
+          "ref": "building.s02.wall",
+          "collision": {
+            "jumpBlock": true,
+            "mode": "block",
+            "points": [
+              [
+                -58,
+                -16
+              ],
+              [
+                58,
+                -16
+              ],
+              [
+                58,
+                -2
+              ],
+              [
+                -58,
+                -2
+              ]
+            ],
+            "shapeType": "polygon"
+          },
+          "spawnWhen": {
+            "blackboardKey": "storyState",
+            "equals": true,
+            "path": "s02RevoltConfirmed"
+          },
+          "type": "ref",
+          "x": 860,
+          "y": 252
+        },
+        {
+          "group": "S02-camp-buildings",
+          "id": "S02-wall-south-1",
+          "kind": "building",
+          "name": "营栅",
+          "ref": "building.s02.wall",
+          "collision": {
+            "jumpBlock": true,
+            "mode": "block",
+            "points": [
+              [
+                -58,
+                -16
+              ],
+              [
+                58,
+                -16
+              ],
+              [
+                58,
+                -2
+              ],
+              [
+                -58,
+                -2
+              ]
+            ],
+            "shapeType": "polygon"
+          },
+          "spawnWhen": {
+            "blackboardKey": "storyState",
+            "equals": true,
+            "path": "s02RevoltConfirmed"
+          },
+          "type": "ref",
+          "x": 370,
+          "y": 528
+        },
+        {
+          "group": "S02-camp-buildings",
+          "id": "S02-wall-south-2",
+          "kind": "building",
+          "name": "营栅",
+          "ref": "building.s02.wall",
+          "collision": {
+            "jumpBlock": true,
+            "mode": "block",
+            "points": [
+              [
+                -58,
+                -16
+              ],
+              [
+                58,
+                -16
+              ],
+              [
+                58,
+                -2
+              ],
+              [
+                -58,
+                -2
+              ]
+            ],
+            "shapeType": "polygon"
+          },
+          "spawnWhen": {
+            "blackboardKey": "storyState",
+            "equals": true,
+            "path": "s02RevoltConfirmed"
+          },
+          "type": "ref",
+          "x": 480,
+          "y": 528
+        },
+        {
+          "group": "S02-camp-buildings",
+          "id": "S02-wall-south-3",
+          "kind": "building",
+          "name": "营栅",
+          "ref": "building.s02.wall",
+          "collision": {
+            "jumpBlock": true,
+            "mode": "block",
+            "points": [
+              [
+                -58,
+                -16
+              ],
+              [
+                58,
+                -16
+              ],
+              [
+                58,
+                -2
+              ],
+              [
+                -58,
+                -2
+              ]
+            ],
+            "shapeType": "polygon"
+          },
+          "spawnWhen": {
+            "blackboardKey": "storyState",
+            "equals": true,
+            "path": "s02RevoltConfirmed"
+          },
+          "type": "ref",
+          "x": 720,
+          "y": 528
+        },
+        {
+          "group": "S02-camp-buildings",
+          "id": "S02-wall-south-4",
+          "kind": "building",
+          "name": "营栅",
+          "ref": "building.s02.wall",
+          "collision": {
+            "jumpBlock": true,
+            "mode": "block",
+            "points": [
+              [
+                -58,
+                -16
+              ],
+              [
+                58,
+                -16
+              ],
+              [
+                58,
+                -2
+              ],
+              [
+                -58,
+                -2
+              ]
+            ],
+            "shapeType": "polygon"
+          },
+          "spawnWhen": {
+            "blackboardKey": "storyState",
+            "equals": true,
+            "path": "s02RevoltConfirmed"
+          },
+          "type": "ref",
+          "x": 830,
+          "y": 528
+        },
+        {
+          "group": "S02-camp-buildings",
+          "id": "S02-wall-south-5",
+          "kind": "building",
+          "name": "营栅",
+          "ref": "building.s02.wall",
+          "collision": {
+            "jumpBlock": true,
+            "mode": "block",
+            "points": [
+              [
+                -58,
+                -16
+              ],
+              [
+                58,
+                -16
+              ],
+              [
+                58,
+                -2
+              ],
+              [
+                -58,
+                -2
+              ]
+            ],
+            "shapeType": "polygon"
+          },
+          "spawnWhen": {
+            "blackboardKey": "storyState",
+            "equals": true,
+            "path": "s02RevoltConfirmed"
+          },
+          "type": "ref",
+          "x": 925,
+          "y": 528
+        },
+        {
+          "group": "S02-camp-buildings",
+          "id": "S02-wall-west-1",
+          "kind": "building",
+          "name": "营栅",
+          "ref": "building.s02.wall",
+          "collision": {
+            "jumpBlock": true,
+            "mode": "block",
+            "points": [
+              [
+                -58,
+                -16
+              ],
+              [
+                58,
+                -16
+              ],
+              [
+                58,
+                -2
+              ],
+              [
+                -58,
+                -2
+              ]
+            ],
+            "shapeType": "polygon"
+          },
+          "spawnWhen": {
+            "blackboardKey": "storyState",
+            "equals": true,
+            "path": "s02RevoltConfirmed"
+          },
+          "type": "ref",
+          "x": 318,
+          "y": 350
+        },
+        {
+          "group": "S02-camp-buildings",
+          "id": "S02-wall-west-2",
+          "kind": "building",
+          "name": "营栅",
+          "ref": "building.s02.wall",
+          "collision": {
+            "jumpBlock": true,
+            "mode": "block",
+            "points": [
+              [
+                -58,
+                -16
+              ],
+              [
+                58,
+                -16
+              ],
+              [
+                58,
+                -2
+              ],
+              [
+                -58,
+                -2
+              ]
+            ],
+            "shapeType": "polygon"
+          },
+          "spawnWhen": {
+            "blackboardKey": "storyState",
+            "equals": true,
+            "path": "s02RevoltConfirmed"
+          },
+          "type": "ref",
+          "x": 318,
+          "y": 450
+        },
+        {
+          "group": "S02-camp-buildings",
+          "id": "S02-wall-east-1",
+          "kind": "building",
+          "name": "营栅",
+          "ref": "building.s02.wall",
+          "collision": {
+            "jumpBlock": true,
+            "mode": "block",
+            "points": [
+              [
+                -58,
+                -16
+              ],
+              [
+                58,
+                -16
+              ],
+              [
+                58,
+                -2
+              ],
+              [
+                -58,
+                -2
+              ]
+            ],
+            "shapeType": "polygon"
+          },
+          "spawnWhen": {
+            "blackboardKey": "storyState",
+            "equals": true,
+            "path": "s02RevoltConfirmed"
+          },
+          "type": "ref",
+          "x": 940,
+          "y": 350
+        },
+        {
+          "group": "S02-camp-buildings",
+          "id": "S02-wall-east-2",
+          "kind": "building",
+          "name": "营栅",
+          "ref": "building.s02.wall",
+          "collision": {
+            "jumpBlock": true,
+            "mode": "block",
+            "points": [
+              [
+                -58,
+                -16
+              ],
+              [
+                58,
+                -16
+              ],
+              [
+                58,
+                -2
+              ],
+              [
+                -58,
+                -2
+              ]
+            ],
+            "shapeType": "polygon"
+          },
+          "spawnWhen": {
+            "blackboardKey": "storyState",
+            "equals": true,
+            "path": "s02RevoltConfirmed"
+          },
+          "type": "ref",
+          "x": 940,
+          "y": 450
+        },
+        {
+          "group": "S02-camp-buildings",
+          "id": "S02-camp-gate",
+          "kind": "building",
+          "name": "营门",
+          "ref": "building.s02.gate",
+          "collision": {
+            "jumpBlock": true,
+            "mode": "block",
+            "polygons": [
+              [
+                [
+                  -75,
+                  -16
+                ],
+                [
+                  -45,
+                  -16
+                ],
+                [
+                  -45,
+                  -2
+                ],
+                [
+                  -75,
+                  -2
+                ]
+              ],
+              [
+                [
+                  45,
+                  -16
+                ],
+                [
+                  75,
+                  -16
+                ],
+                [
+                  75,
+                  -2
+                ],
+                [
+                  45,
+                  -2
+                ]
+              ],
+              [
+                [
+                  -340,
+                  -292
+                ],
+                [
+                  -224,
+                  -292
+                ],
+                [
+                  -224,
+                  -16
+                ],
+                [
+                  -340,
+                  -16
+                ]
+              ],
+              [
+                [
+                  282,
+                  -292
+                ],
+                [
+                  398,
+                  -292
+                ],
+                [
+                  398,
+                  -16
+                ],
+                [
+                  282,
+                  -16
+                ]
+              ],
+              [
+                [
+                  -340,
+                  -16
+                ],
+                [
+                  -62,
+                  -16
+                ],
+                [
+                  -62,
+                  -2
+                ],
+                [
+                  -340,
+                  -2
+                ]
+              ],
+              [
+                [
+                  45,
+                  -16
+                ],
+                [
+                  398,
+                  -16
+                ],
+                [
+                  398,
+                  -2
+                ],
+                [
+                  45,
+                  -2
+                ]
+              ]
+            ],
+            "shapeType": "polygon"
+          },
+          "spawnWhen": {
+            "blackboardKey": "storyState",
+            "equals": true,
+            "path": "s02RevoltConfirmed"
+          },
+          "type": "ref",
+          "x": 600,
+          "y": 528
         },
         {
           "group": "S02-camp-decor",
@@ -2016,283 +1614,8 @@
             "path": "s02CampLaid"
           },
           "type": "ref",
-          "x": 381.81621730522124,
-          "y": 289.3375928305953
-        },
-        {
-          "group": "S02-raid-vanguard",
-          "id": "S02-raid-vanguard-1",
-          "kind": "enemy",
-          "name": "官军精锐·一",
-          "ref": "enemy.s02_lu_mainforce",
-          "spawnMode": "story",
-          "type": "ref",
-          "x": 40,
-          "y": 180
-        },
-        {
-          "group": "S02-raid-vanguard",
-          "id": "S02-raid-vanguard-2",
-          "kind": "enemy",
-          "name": "官军精锐·二",
-          "ref": "enemy.s02_lu_mainforce",
-          "spawnMode": "story",
-          "type": "ref",
-          "x": 60,
-          "y": 262
-        },
-        {
-          "group": "S02-raid-vanguard",
-          "id": "S02-raid-vanguard-3",
-          "kind": "enemy",
-          "name": "官军精锐·三",
-          "ref": "enemy.s02_lu_mainforce",
-          "spawnMode": "story",
-          "type": "ref",
-          "x": 80,
-          "y": 120
-        },
-        {
-          "group": "S02-raid-vanguard",
-          "id": "S02-raid-vanguard-4",
-          "kind": "enemy",
-          "name": "官军精锐·四",
-          "ref": "enemy.s02_lu_mainforce",
-          "spawnMode": "story",
-          "type": "ref",
-          "x": 30,
-          "y": 340
-        },
-        {
-          "group": "S02-raid-vanguard",
-          "id": "S02-raid-vanguard-5",
-          "kind": "enemy",
-          "name": "官军精锐·五",
-          "ref": "enemy.s02_lu_mainforce",
-          "spawnMode": "story",
-          "type": "ref",
-          "x": 120,
-          "y": 80
-        },
-        {
-          "group": "S02-raid-vanguard",
-          "id": "S02-raid-vanguard-6",
-          "kind": "enemy",
-          "name": "官军精锐·六",
-          "ref": "enemy.s02_lu_mainforce",
-          "spawnMode": "story",
-          "type": "ref",
-          "x": 100,
-          "y": 430
-        },
-        {
-          "group": "S02-raid-vanguard",
-          "id": "S02-raid-vanguard-7",
-          "kind": "enemy",
-          "name": "官军精锐·七",
-          "ref": "enemy.s02_lu_mainforce",
-          "spawnMode": "story",
-          "type": "ref",
-          "x": 40,
-          "y": 520
-        },
-        {
-          "group": "S02-raid-vanguard",
-          "id": "S02-raid-vanguard-8",
-          "kind": "enemy",
-          "name": "官军精锐·八",
-          "ref": "enemy.s02_lu_mainforce",
-          "spawnMode": "story",
-          "type": "ref",
-          "x": 160,
-          "y": 620
-        },
-        {
-          "group": "S02-raid-vanguard",
-          "id": "S02-raid-vanguard-9",
-          "kind": "enemy",
-          "name": "官军精锐·九",
-          "ref": "enemy.s02_lu_mainforce",
-          "spawnMode": "story",
-          "type": "ref",
-          "x": 240,
-          "y": 690
-        },
-        {
-          "group": "S02-raid-vanguard",
-          "id": "S02-raid-vanguard-10",
-          "kind": "enemy",
-          "name": "官军精锐·十",
-          "ref": "enemy.s02_lu_mainforce",
-          "spawnMode": "story",
-          "type": "ref",
-          "x": 420,
-          "y": 700
-        },
-        {
-          "group": "S02-raid-vanguard",
-          "id": "S02-raid-vanguard-11",
-          "kind": "enemy",
-          "name": "官军精锐·十一",
-          "ref": "enemy.s02_lu_mainforce",
-          "spawnMode": "story",
-          "type": "ref",
-          "x": 780,
-          "y": 690
-        },
-        {
-          "group": "S02-raid-vanguard",
-          "id": "S02-raid-vanguard-12",
-          "kind": "enemy",
-          "name": "官军精锐·十二",
-          "ref": "enemy.s02_lu_mainforce",
-          "spawnMode": "story",
-          "type": "ref",
-          "x": 940,
-          "y": 680
-        },
-        {
-          "group": "S02-raid-mainforce",
-          "id": "S02-raid-main-1",
-          "kind": "enemy",
-          "name": "官军后队·一",
-          "ref": "enemy.s02_lu_vanguard",
-          "spawnMode": "story",
-          "type": "ref",
-          "x": 60,
-          "y": 200
-        },
-        {
-          "group": "S02-raid-mainforce",
-          "id": "S02-raid-main-2",
-          "kind": "enemy",
-          "name": "官军后队·二",
-          "ref": "enemy.s02_lu_vanguard",
-          "spawnMode": "story",
-          "type": "ref",
-          "x": 90,
-          "y": 300
-        },
-        {
-          "group": "S02-raid-mainforce",
-          "id": "S02-raid-main-3",
-          "kind": "enemy",
-          "name": "官军后队·三",
-          "ref": "enemy.s02_lu_vanguard",
-          "spawnMode": "story",
-          "type": "ref",
-          "x": 50,
-          "y": 380
-        },
-        {
-          "group": "S02-raid-mainforce",
-          "id": "S02-raid-main-4",
-          "kind": "enemy",
-          "name": "官军后队·四",
-          "ref": "enemy.s02_lu_vanguard",
-          "spawnMode": "story",
-          "type": "ref",
-          "x": 140,
-          "y": 140
-        },
-        {
-          "group": "S02-raid-mainforce",
-          "id": "S02-raid-main-5",
-          "kind": "enemy",
-          "name": "官军后队·五",
-          "ref": "enemy.s02_lu_vanguard",
-          "spawnMode": "story",
-          "type": "ref",
-          "x": 130,
-          "y": 240
-        },
-        {
-          "group": "S02-raid-mainforce",
-          "id": "S02-raid-main-6",
-          "kind": "enemy",
-          "name": "官军后队·六",
-          "ref": "enemy.s02_lu_vanguard",
-          "spawnMode": "story",
-          "type": "ref",
-          "x": 110,
-          "y": 470
-        },
-        {
-          "group": "S02-raid-mainforce",
-          "id": "S02-raid-main-7",
-          "kind": "enemy",
-          "name": "官军后队·七",
-          "ref": "enemy.s02_lu_vanguard",
-          "spawnMode": "story",
-          "type": "ref",
-          "x": 160,
-          "y": 60
-        },
-        {
-          "group": "S02-raid-mainforce",
-          "id": "S02-raid-main-8",
-          "kind": "enemy",
-          "name": "官军后队·八",
-          "ref": "enemy.s02_lu_vanguard",
-          "spawnMode": "story",
-          "type": "ref",
-          "x": 150,
-          "y": 330
-        },
-        {
-          "group": "S02-raid-mainforce",
-          "id": "S02-raid-main-9",
-          "kind": "enemy",
-          "name": "官军后队·九",
-          "ref": "enemy.s02_lu_vanguard",
-          "spawnMode": "story",
-          "type": "ref",
-          "x": 260,
-          "y": 30
-        },
-        {
-          "group": "S02-raid-mainforce",
-          "id": "S02-raid-main-10",
-          "kind": "enemy",
-          "name": "官军后队·十",
-          "ref": "enemy.s02_lu_vanguard",
-          "spawnMode": "story",
-          "type": "ref",
-          "x": 700,
-          "y": 25
-        },
-        {
-          "group": "S02-raid-mainforce",
-          "id": "S02-raid-main-11",
-          "kind": "enemy",
-          "name": "官军后队·十一",
-          "ref": "enemy.s02_lu_vanguard",
-          "spawnMode": "story",
-          "type": "ref",
-          "x": 1000,
-          "y": 120
-        },
-        {
-          "group": "S02-raid-mainforce",
-          "id": "S02-raid-main-12",
-          "kind": "enemy",
-          "name": "官军后队·十二",
-          "ref": "enemy.s02_lu_vanguard",
-          "spawnMode": "story",
-          "type": "ref",
-          "x": 1100,
-          "y": 450
-        },
-        {
-          "group": "S02-raid-mainforce",
-          "id": "S02-raid-commander",
-          "kind": "enemy",
-          "name": "傅燮",
-          "ref": "enemy.s02_lu_commander",
-          "spawnMode": "story",
-          "type": "ref",
-          "x": 100,
-          "y": 270
+          "x": 285,
+          "y": 230
         },
         {
           "group": "S02-believer-train",
@@ -2300,11 +1623,6 @@
           "kind": "item",
           "name": "信众粮车·一",
           "ref": "story.s02.grain_cart",
-          "spawnWhen": {
-            "blackboardKey": "storyState",
-            "equals": true,
-            "path": "s02BegFainted"
-          },
           "type": "ref",
           "x": 960.8229631743974,
           "y": 259.7515931552366
@@ -2315,14 +1633,254 @@
           "kind": "item",
           "name": "信众粮车·二",
           "ref": "story.s02.grain_cart",
-          "spawnWhen": {
-            "blackboardKey": "storyState",
-            "equals": true,
-            "path": "s02BegFainted"
-          },
           "type": "ref",
           "x": 787.0660574937292,
           "y": 267.32961245537126
+        },
+        {
+          "group": "S02-relief-site",
+          "id": "S02-relief-child",
+          "kind": "enemy",
+          "overrides": {
+            "aiActive": false
+          },
+          "ref": "enemy.s02_beggar_child",
+          "tags": [
+            "story",
+            "s02"
+          ],
+          "type": "ref",
+          "x": 565,
+          "y": 458,
+          "spawnWhen": {
+            "blackboardKey": "storyState",
+            "equals": true,
+            "path": "s02RitualLearned"
+          }
+        },
+        {
+          "group": "S02-relief-site",
+          "id": "S02-relief-villager-1",
+          "kind": "enemy",
+          "overrides": {
+            "aiActive": false
+          },
+          "ref": "enemy.s02_villager",
+          "tags": [
+            "story",
+            "s02"
+          ],
+          "type": "ref",
+          "x": 526,
+          "y": 490,
+          "spawnWhen": {
+            "blackboardKey": "storyState",
+            "equals": true,
+            "path": "s02RitualLearned"
+          }
+        },
+        {
+          "group": "S02-relief-site",
+          "id": "S02-relief-villager-2",
+          "kind": "enemy",
+          "overrides": {
+            "aiActive": false
+          },
+          "ref": "enemy.s02_villager",
+          "tags": [
+            "story",
+            "s02"
+          ],
+          "type": "ref",
+          "x": 552,
+          "y": 474,
+          "spawnWhen": {
+            "blackboardKey": "storyState",
+            "equals": true,
+            "path": "s02RitualLearned"
+          }
+        },
+        {
+          "group": "S02-relief-site",
+          "id": "S02-relief-villager-3",
+          "kind": "enemy",
+          "overrides": {
+            "aiActive": false
+          },
+          "ref": "enemy.s02_villager",
+          "tags": [
+            "story",
+            "s02"
+          ],
+          "type": "ref",
+          "x": 578,
+          "y": 490,
+          "spawnWhen": {
+            "blackboardKey": "storyState",
+            "equals": true,
+            "path": "s02RitualLearned"
+          }
+        },
+        {
+          "group": "S02-relief-site",
+          "id": "S02-relief-villager-4",
+          "kind": "enemy",
+          "overrides": {
+            "aiActive": false
+          },
+          "ref": "enemy.s02_villager",
+          "tags": [
+            "story",
+            "s02"
+          ],
+          "type": "ref",
+          "x": 604,
+          "y": 474,
+          "spawnWhen": {
+            "blackboardKey": "storyState",
+            "equals": true,
+            "path": "s02RitualLearned"
+          }
+        },
+        {
+          "group": "S02-relief-site",
+          "id": "S02-relief-villager-5",
+          "kind": "enemy",
+          "overrides": {
+            "aiActive": false
+          },
+          "ref": "enemy.s02_villager",
+          "tags": [
+            "story",
+            "s02"
+          ],
+          "type": "ref",
+          "x": 630,
+          "y": 490,
+          "spawnWhen": {
+            "blackboardKey": "storyState",
+            "equals": true,
+            "path": "s02RitualLearned"
+          }
+        },
+        {
+          "group": "S02-revolt-county",
+          "id": "S02-revolt-county",
+          "kind": "enemy",
+          "overrides": {
+            "aiActive": false
+          },
+          "ref": "enemy.s02_county_guard",
+          "spawnWhen": {
+            "blackboardKey": "storyState",
+            "equals": true,
+            "path": "s02RevoltFight"
+          },
+          "tags": [
+            "story",
+            "s02"
+          ],
+          "type": "ref",
+          "x": 120,
+          "y": 300,
+          "count": 100
+        },
+        {
+          "group": "S02-revolt-leader",
+          "id": "S02-revolt-captain",
+          "kind": "enemy",
+          "overrides": {
+            "aiActive": false
+          },
+          "ref": "enemy.s02_county_captain",
+          "spawnWhen": {
+            "blackboardKey": "storyState",
+            "equals": true,
+            "path": "s02RevoltFight"
+          },
+          "tags": [
+            "story",
+            "s02"
+          ],
+          "type": "ref",
+          "x": 70,
+          "y": 300
+        },
+        {
+          "group": "S02-raid-legion",
+          "id": "S02-raid-legion",
+          "kind": "enemy",
+          "overrides": {
+            "aiActive": false
+          },
+          "ref": "enemy.s02_lu_mainforce",
+          "spawnWhen": {
+            "blackboardKey": "storyState",
+            "equals": true,
+            "path": "s02RaidFight"
+          },
+          "tags": [
+            "story",
+            "s02"
+          ],
+          "type": "ref",
+          "x": 80,
+          "y": 280,
+          "count": 100
+        },
+        {
+          "group": "S02-army-yellow80",
+          "id": "S02-army-yellow80",
+          "kind": "army",
+          "ref": "army.s02.yellow80",
+          "spawnWhen": {
+            "blackboardKey": "storyState",
+            "gte": 1,
+            "path": "s02RecruitYellow"
+          },
+          "tags": [
+            "story",
+            "army"
+          ],
+          "type": "ref",
+          "x": 1070,
+          "y": 470
+        },
+        {
+          "group": "S02-army-guard",
+          "id": "S02-army-guard",
+          "kind": "army",
+          "ref": "army.player.escort",
+          "spawnWhen": {
+            "blackboardKey": "storyState",
+            "gte": 1,
+            "path": "s02RecruitGuard"
+          },
+          "tags": [
+            "story",
+            "army"
+          ],
+          "type": "ref",
+          "x": 1010,
+          "y": 470
+        },
+        {
+          "group": "S02-relief-site",
+          "id": "S02-coin-cart",
+          "kind": "item",
+          "ref": "story.s02.grain_cart",
+          "spawnWhen": {
+            "blackboardKey": "storyState",
+            "equals": true,
+            "path": "s02RitualLearned"
+          },
+          "tags": [
+            "story",
+            "s02"
+          ],
+          "type": "ref",
+          "x": 610,
+          "y": 432
         }
       ],
       "visible": true
@@ -2405,6 +1963,82 @@
           "width": 180,
           "x": 793.1410316440305,
           "y": 320.4416047796031
+        },
+        {
+          "activeWhen": {
+            "blackboardKey": "storyState",
+            "equals": true,
+            "path": "s02Uprising"
+          },
+          "id": "S02-binding-camp-forge",
+          "name": "军营铁匠铺：打制兵器",
+          "pointerRadius": 60,
+          "prompt": "{interact}使用铁砧，打制兵器",
+          "radius": 110,
+          "target": "S02-zone-camp-forge",
+          "targetMode": "id",
+          "triggerId": "trg_s02_camp_forge",
+          "type": "trigger",
+          "width": 200,
+          "x": 610,
+          "y": 300
+        },
+        {
+          "activeWhen": {
+            "blackboardKey": "storyState",
+            "equals": true,
+            "path": "s02Uprising"
+          },
+          "id": "S02-binding-camp-workshop",
+          "name": "军营军械工坊：木作台",
+          "pointerRadius": 60,
+          "prompt": "{interact}使用木作台，制作军械",
+          "radius": 110,
+          "target": "S02-zone-camp-forge",
+          "targetMode": "id",
+          "triggerId": "trg_s02_camp_workshop",
+          "type": "trigger",
+          "width": 200,
+          "x": 445,
+          "y": 296
+        },
+        {
+          "activeWhen": {
+            "blackboardKey": "storyState",
+            "equals": true,
+            "path": "s02Uprising"
+          },
+          "id": "S02-binding-camp-recruit-post",
+          "name": "军营征召处：检阅军团",
+          "pointerRadius": 60,
+          "prompt": "{interact}征召处：检阅军团、下达军令",
+          "radius": 110,
+          "target": "S02-zone-camp-recruit",
+          "targetMode": "id",
+          "triggerId": "trg_s02_camp_recruit_post",
+          "type": "trigger",
+          "width": 150,
+          "x": 745,
+          "y": 300
+        },
+        {
+          "activeWhen": {
+            "blackboardKey": "storyState",
+            "equals": true,
+            "path": "s02Uprising"
+          },
+          "id": "S02-binding-camp-granary",
+          "name": "军营粮仓：调配军粮",
+          "pointerRadius": 60,
+          "prompt": "{interact}开启粮仓，调配军粮",
+          "radius": 110,
+          "target": "S02-zone-camp-granary",
+          "targetMode": "id",
+          "triggerId": "trg_s02_camp_granary",
+          "type": "trigger",
+          "width": 120,
+          "x": 865,
+          "y": 300
         }
       ],
       "visible": true

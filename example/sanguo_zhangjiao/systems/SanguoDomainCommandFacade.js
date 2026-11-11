@@ -67,9 +67,25 @@ export class SanguoDomainCommandFacade {
       ['scenario.command', 'army.camp', p => scene.s02ArmyRescueCoordinator.campArmy(p)],
       // 军营粮草面板入口（M9 9B）：剧本/交互可打开「军团 ↔ 军营」存粮面板
       ['scenario.command', 'camp.openTransfer', p => scene.s02ArmyRescueCoordinator.openCampSupply(p)],
+      // 张角举事：破旧村落升级为军营（粮草容器升级 + 铁匠铺/军械工坊完工态结构播种）
+      ['scenario.command', 's02.uprising', () => scene.s02ArmyRescueCoordinator.upgradeCamp()],
+      // 征召处：打开军团指挥 HUD（征兵/编组/命令）
+      ['scenario.command', 's02.openArmyOrders', () => scene.s02ArmyRescueCoordinator.openArmyOrders()],
       ['scenario.command', 'army.possess', () => scene.s02ArmyRescueCoordinator.possessCommander()],
       ['scenario.command', 'army.possess.release', () => scene.s02ArmyRescueCoordinator.releaseCommander()],
       ['scenario.command', 'army.raid.defeat', p => scene.s02ArmyRescueCoordinator.handleRaidDefeat(p)],
+      // v3 任务链：符水六步交互 / ⑨ 起事 / 分叉招兵 / 围剿补员
+      ['scenario.command', 's02.ritual.step', () => scene.s02ArmyRescueCoordinator.ritualStep()],
+      ['scenario.command', 's02.accusation.start', () => scene.s02ArmyRescueCoordinator.startAccusation()],
+      ['scenario.command', 's02.revolt.start', () => scene.s02ArmyRescueCoordinator.startRevolt()],
+      ['scenario.command', 's02.revolt.finish', () => scene.s02ArmyRescueCoordinator.finishRevolt()],
+      ['scenario.command', 's02.recruit.yellow', () => scene.s02ArmyRescueCoordinator.recruitYellow()],
+      ['scenario.command', 's02.recruit.guard', () => scene.s02ArmyRescueCoordinator.recruitGuard()],
+      ['scenario.command', 's02.raid.start', p => scene.s02ArmyRescueCoordinator.startRaid(p)],
+      ['scenario.command', 's02.raid.resume', () => scene.s02ArmyRescueCoordinator.resumeRaid()],
+      ['scenario.command', 's02.raid.defeat', () => scene.s02ArmyRescueCoordinator.defeatRaid()],
+      ['scenario.command', 's02.steward.craft', () => scene.s02ArmyRescueCoordinator.markSteward('story.s02.steward.craft')],
+      ['scenario.command', 's02.steward.depart', () => scene.s02ArmyRescueCoordinator.departNow()],
       ['scenario.command', 'player.wound.apply', () => scene.s02ArmyRescueCoordinator.applyWoundModifiers()],
       ['scenario.command', 'player.wound.treat', () => scene.s02ArmyRescueCoordinator.treatWound()],
       ['construction.command', 'construction.start.s01', p => scene._s01s02Coordinator.startShelterConstruction(p)],

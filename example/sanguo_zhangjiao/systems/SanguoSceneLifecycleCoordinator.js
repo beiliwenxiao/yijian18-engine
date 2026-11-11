@@ -172,6 +172,9 @@ function updateAfterBase(deltaTime) {
   // coordinator.update 内部对非 S01 主场景有各自的早退保护。
   if (this.currentSceneId === 'S01' || this.currentSceneId === 'S01-C01') {
     this._s01s02Coordinator.update(deltaTime);
+  } else if (this.currentSceneId === 'S02') {
+    // v3 任务链：S02 围剿战的占位补员/斩将判定走每帧 tick
+    this.s02ArmyRescueCoordinator?.update?.(deltaTime);
   } else if (this.currentSceneId === 'S06' || this.currentSceneId === 'S10') {
     this.s10ConstructionCoordinator._updateConstructionRuntime(deltaTime);
   }

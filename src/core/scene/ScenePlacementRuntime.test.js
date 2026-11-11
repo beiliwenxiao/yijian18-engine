@@ -74,6 +74,71 @@ describe('ScenePlacementRuntime placement definition signatures', () => {
   });
 });
 
+describe('ScenePlacementRuntime 放置碰撞体（dynamic collider）', () => {
+  function createColliderRuntime(placement) {
+    const calls = [];
+    const entity = { placementId: placement.id };
+    const runtime = new ScenePlacementRuntime({
+      entityStore: {
+        all: [entity], pickups: [], equipmentItems: [],
+        removeMany: values => values
+      },
+      setDynamicCollider: operation => {
+        calls.push(operation);
+        return true;
+      }
+    });
+    runtime.setProjection([placement]);
+    return { runtime, calls, entity };
+  }
+
+  it('collision.polygons 一次注册多块碰撞体，移除时一次清理', () => {
+    const gate = {
+      id: 'S02-camp-gate', sceneId: 'S02', type: 'ref', kind: 'building',
+      ref: 'building.s02.gate', x: 600, y: 528, _localX: 600, _localY: 528,
+      collision: {
+        mode: 'block', shapeType: 'polygon', jumpBlock: true,
+        polygons: [
+          [[-75, -16], [-45, -16], [-45, -2], [-75, -2]],
+          [[45, -16], [75, -16], [75, -2], [45, -2]]
+        ]
+      }
+    };
+    const { runtime, calls, entity } = createColliderRuntime(gate);
+
+    const result = runtime._syncDynamicColliders([entity]);
+
+    expect(result.ok).toBe(true);
+    expect(calls).toHaveLength(1);
+    expect(calls[0]).toMatchObject({ id: 'S02-camp-gate', sceneId: 'S02', mode: 'block', enabled: true });
+    expect(calls[0].shapes).toHaveLength(2);
+    expect(calls[0].shapes[0].points[0]).toEqual([525, 512]);
+    expect(calls[0].shapes[1].points[0]).toEqual([645, 512]);
+    expect(calls[0].shapes.every(item => item.jumpBlock === true)).toBe(true);
+    expect(calls[0].shape).toBe(calls[0].shapes[0]);
+
+    expect(runtime._removeDynamicCollider('S02-camp-gate')).toBe(true);
+    expect(calls[1]).toMatchObject({ id: 'S02-camp-gate', enabled: false });
+  });
+
+  it('旧 collision.points 单多边形仍按单碰撞体注册', () => {
+    const wall = {
+      id: 'S02-wall-south-1', sceneId: 'S02', type: 'ref', kind: 'building',
+      ref: 'building.s02.wall', x: 480, y: 528, _localX: 480, _localY: 528,
+      collision: {
+        mode: 'block', shapeType: 'polygon',
+        points: [[-58, -16], [58, -16], [58, -2], [-58, -2]]
+      }
+    };
+    const { runtime, calls, entity } = createColliderRuntime(wall);
+
+    runtime._syncDynamicColliders([entity]);
+
+    expect(calls[0].shapes).toHaveLength(1);
+    expect(calls[0].shapes[0].points[0]).toEqual([422, 512]);
+  });
+});
+
 describe('ScenePlacementRuntime story 生成模式（生成账本 spawnLedger）', () => {
   const storyPlacement = () => ({
     id: 'S01-wolf-pack-1', sceneId: 'S01', type: 'ref', kind: 'item',

@@ -806,6 +806,11 @@ export class S01S02Coordinator {
 
   resolve() {
     const story = this._story();
+    // v3 任务链：⑨ 起事（张角主控）与围剿（张角/主角）中的倒下走剧情昏迷，
+    // 让触发器承接结局（expedition-failed）或围剿失败处理，不生成真实掉落。
+    if (story.s02RevoltFight === true || story.s02RaidFight === true) {
+      return { type: 'specialFaint', rescueType: 'battlefield' };
+    }
     return story.pendingDefeatResolution === 'specialFaint'
       ? { type: 'specialFaint', rescueType: story.specialFaintRescueType || 'passerby' }
       : { type: 'normalDeath' };

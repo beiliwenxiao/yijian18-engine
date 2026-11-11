@@ -62,6 +62,45 @@ export class ConstructionSystem {
   getStructures() { return [...this.structures.values()].map(clone); }
 
   /**
+   * 播种已完工结构（剧情前置建筑，如举事后军营里的铁匠铺/工坊工位）。
+   * 幂等：同 siteId 已存在则跳过；不扣材料、不产生检查点，
+   * 由调用方随后的 state.transaction 检查点持久化。
+   * @param {Array<{siteId:string, definitionId:string, operationId?:string}>} entries
+   */
+  seedStructures(entries = []) {
+    const seeded = [];
+    const skipped = [];
+    for (const entry of Array.isArray(entries) ? entries : []) {
+      const siteId = normalizeId(entry?.siteId);
+      const definitionId = normalizeId(entry?.definitionId);
+      const definition = this.definitions.get(definitionId);
+      if (!siteId || !definition) {
+        skipped.push({ siteId, definitionId, reason: 'definitionMissing' });
+        continue;
+      }
+      if (this.structures.has(siteId)) {
+        skipped.push({ siteId, definitionId, reason: 'structureExists' });
+        continue;
+      }
+      const maxDurability = Math.max(1, Math.floor(Number(definition.maxDurability) || 100));
+      const structure = {
+        schemaVersion: 1,
+        id: `${definitionId}:${siteId}`,
+        siteId,
+        definitionId,
+        status: 'completed',
+        maxDurability,
+        durability: maxDurability,
+        manned: definition.manned === true,
+        operationId: normalizeId(entry?.operationId) || `seed:${siteId}`
+      };
+      this.structures.set(siteId, structure);
+      seeded.push(clone(structure));
+    }
+    return { ok: true, structures: seeded, skipped };
+  }
+
+  /**
    * 将外部 ECS 建筑耐久同步回营建领域镜像，不创建检查点。
    * 调用方必须以 BuildingComponent 为运行时事实源，并在维修事务开始前调用。
    */

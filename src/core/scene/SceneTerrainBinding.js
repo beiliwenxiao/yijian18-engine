@@ -176,7 +176,7 @@ export class SceneTerrainBinding {
    * 动态工事、ref 世界物件等表现可以与静态场景共用同一碰撞解算器，且 worldOffset 只应用一次。
    * block 与 walkable 互斥；可落脚形状按 SceneTerrainCollision 既有优先级先于阻挡形状判定。
    */
-  setDynamicCollider({ sceneId = null, id, shape = null, enabled = true, mode = 'block' } = {}) {
+  setDynamicCollider({ sceneId = null, id, shape = null, shapes = null, enabled = true, mode = 'block' } = {}) {
     if (!id) return false;
     if (mode !== 'block' && mode !== 'walkable') return false;
     const scene = this.scene;
@@ -196,19 +196,21 @@ export class SceneTerrainBinding {
     // 动态碰撞体会增删 walkable/collision 集合条目
     terrain._editorShapesVersion = (terrain._editorShapesVersion || 0) + 1;
     if (!enabled) return true;
-    if (!shape || typeof shape !== 'object') return false;
+    // shapes 数组支持一个 placement 注册多块碰撞体（如营门两根门柱）；缺省回退单 shape 旧入参。
+    const list = Array.isArray(shapes) && shapes.length ? shapes : (shape ? [shape] : []);
+    if (list.length === 0 || list.some(item => !item || typeof item !== 'object')) return false;
 
     const offset = terrain.worldOffset || { x: 0, y: 0 };
-    const projected = this.projector.project({
-      ...shape,
-      id: shape.id || id,
-      type: shape.type || 'shape',
+    const projectedList = list.map(item => this.projector.project({
+      ...item,
+      id: item.id || id,
+      type: item.type || 'shape',
       __dynamicColliderId: marker,
       collide: mode === 'block',
       walkable: mode === 'walkable'
-    }, offset);
+    }, offset));
     const target = mode === 'walkable' ? terrain._walkableShapes : terrain._collisionShapes;
-    target.push(projected);
+    target.push(...projectedList);
     scene._terrainCollision?.invalidate?.(terrain);
     return true;
   }

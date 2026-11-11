@@ -481,7 +481,7 @@ export class PlacementSpawner {
           entity.glowProfile = { ...data.glow };
         }
         // 地面可拾取物与装备同样可以声明稳定 imageId，需要一起预载图片。
-        if (['npc', 'enemy', 'resourceNode', 'item', 'equipment'].includes(kind)) {
+        if (['npc', 'enemy', 'resourceNode', 'item', 'equipment', 'building'].includes(kind)) {
           this._preloadEntityImage(kind, data, entity, instance);
         }
         if (typeof this.onSpawn === 'function') {
