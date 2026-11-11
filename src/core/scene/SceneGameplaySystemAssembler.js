@@ -1108,7 +1108,11 @@ export class SceneGameplaySystemAssembler {
         }
       };
       // 军营粮草容器：配置声明的军营先入库，再同步进容器注册表（易失，不参与旧档校验）。
-      for (const camp of Array.isArray(logisticsConfig.camps) ? logisticsConfig.camps : []) {
+      // 军营种子既可写在装配段（logistics.camps），也可写在项目军需配置里（logistics.config.camps）。
+      const campSeeds = Array.isArray(logisticsConfig.camps)
+        ? logisticsConfig.camps
+        : (Array.isArray(logisticsConfig.config?.camps) ? logisticsConfig.config.camps : []);
+      for (const camp of campSeeds) {
         if (camp?.campId != null && !foodLedgerSystem.camps.has(String(camp.campId))) {
           foodLedgerSystem.registerCamp(camp);
         }

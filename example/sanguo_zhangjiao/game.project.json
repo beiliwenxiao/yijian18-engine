@@ -434,13 +434,13 @@
         "stations": [
           {
             "id": "station.workshop.carpenter",
-            "name": "木作台",
             "kind": "craft",
-            "workerSlots": 1,
+            "name": "木作台",
             "recipes": [
               "recipe.wood_arrow",
               "recipe.wooden_shield"
-            ]
+            ],
+            "workerSlots": 1
           }
         ]
       },
@@ -466,17 +466,19 @@
         "stations": [
           {
             "id": "station.forge.anvil",
-            "name": "铁砧",
             "kind": "forge",
-            "workerSlots": 1,
-            "recipes": []
+            "name": "铁砧",
+            "recipes": [
+              "recipe.iron_axe"
+            ],
+            "workerSlots": 1
           },
           {
             "id": "station.forge.repair",
-            "name": "修复台",
             "kind": "repair",
-            "workerSlots": 1,
-            "recipes": []
+            "name": "修复台",
+            "recipes": [],
+            "workerSlots": 1
           }
         ]
       }
@@ -513,398 +515,443 @@
         "definitionId": "construction.arrow_tower",
         "id": "site.s10.arrow_tower",
         "sceneId": "S10"
+      },
+      {
+        "definitionId": "construction.forge",
+        "id": "site.s02.forge",
+        "sceneId": "S02"
+      },
+      {
+        "definitionId": "construction.workshop",
+        "id": "site.s02.workshop",
+        "sceneId": "S02"
       }
     ]
   },
   "supply": {
-    "playerFactionId": "yellow_turban",
-    "quotaMode": "rank",
-    "quotaRefresh": "daily",
-    "carryLimits": {
-      "personalMaxWeight": 10
-    },
-    "resourceItems": {
-      "food": "resource.food",
-      "wood": "resource.wood",
-      "iron": "resource.iron",
-      "herb": "resource.herb"
-    },
-    "resourceWeights": {
-      "food": 1,
-      "wood": 2,
-      "iron": 3,
-      "herb": 1
-    },
-    "quotas": [
-      {
-        "rank": 1,
-        "daily": {
-          "food": 6,
-          "wood": 4,
-          "iron": 2,
-          "herb": 1
-        }
-      },
-      {
-        "rank": 3,
-        "daily": {
-          "food": 10,
-          "wood": 6,
-          "iron": 4,
-          "herb": 2
-        }
-      },
-      {
-        "rank": 5,
-        "daily": {
-          "food": 16,
-          "wood": 10,
-          "iron": 8,
-          "herb": 3
-        }
-      },
-      {
-        "rank": 7,
-        "daily": {
-          "food": 24,
-          "wood": 16,
-          "iron": 12,
-          "herb": 5
-        }
-      }
+    "alliedFactionIds": [
+      "yellow_turban"
     ],
-    "cityModifiers": {
-      "buildingLevelBonus": 0.1,
-      "buildingLevelBonusCap": 0.5,
-      "lowMoraleThreshold": 30,
-      "lowMoraleMultiplier": 0.7
-    },
     "ambush": {
       "baseChance": 0.35,
+      "defeatLossRatio": 0.5,
       "escortMitigation": 0.4,
       "escortThreshold": 3,
       "fleeLossRatio": 0.3,
-      "defeatLossRatio": 0.5,
-      "vehicleDestroyChance": 0.3,
-      "recoverableRatio": 0.25,
       "lootDropRatio": 0.5,
-      "recoveryWindowDays": 2
+      "recoverableRatio": 0.25,
+      "recoveryWindowDays": 2,
+      "vehicleDestroyChance": 0.3
     },
-    "firstConvoySafe": true
-  },
-  "logistics": {
-    "personDayFactor": {
-      "melee": 0.8,
-      "archer": 0.8,
-      "cavalry": 2.4
+    "carryLimits": {
+      "personalMaxWeight": 10
     },
-    "armyBaseUpkeep": 0,
-    "storageSpoilPerDay": 0.003,
-    "moraleDrain": {
-      "tight": 3,
-      "empty": 8,
-      "collapse": 15
+    "cityModifiers": {
+      "buildingLevelBonus": 0.1,
+      "buildingLevelBonusCap": 0.5,
+      "lowMoraleMultiplier": 0.7,
+      "lowMoraleThreshold": 30
     },
-    "desertion": {
-      "startDay": 3,
-      "baseRate": 0.02,
-      "rateStep": 0.015,
-      "maxRate": 0.08,
-      "floorRatio": 0.3
+    "firstConvoySafe": true,
+    "playerFactionId": "player",
+    "quotaMode": "rank",
+    "quotaRefresh": "daily",
+    "quotas": [
+      {
+        "daily": {
+          "food": 6,
+          "herb": 1,
+          "iron": 2,
+          "wood": 4
+        },
+        "rank": 1
+      },
+      {
+        "daily": {
+          "food": 10,
+          "herb": 2,
+          "iron": 4,
+          "wood": 6
+        },
+        "rank": 3
+      },
+      {
+        "daily": {
+          "food": 16,
+          "herb": 3,
+          "iron": 8,
+          "wood": 10
+        },
+        "rank": 5
+      },
+      {
+        "daily": {
+          "food": 24,
+          "herb": 5,
+          "iron": 12,
+          "wood": 16
+        },
+        "rank": 7
+      }
+    ],
+    "resourceItems": {
+      "food": "resource.food",
+      "herb": "resource.herb",
+      "iron": "resource.iron",
+      "wood": "resource.wood"
     },
-    "moraleRecoverPerDay": 5,
-    "regroupWindowDays": 30,
-    "maxCatchUpDays": 7,
-    "raze": {
-      "base": 0.6,
-      "night": 0.9,
-      "defended": 0.3,
-      "recoverRatio": 0.2,
-      "requiresFireSource": true
-    },
-    "famineMoralePenalty": {
-      "min": 1,
-      "max": 4
-    },
-    "famineThresholdDays": 3,
-    "forage": {
-      "yieldRatio": 0.6,
-      "moraleCost": 6,
-      "renownCost": 3,
-      "alertChance": 0.25
-    },
-    "aiSupplyEfficiency": 1.0,
-    "campStorage": {
-      "base": 500,
-      "perLevel": 250,
-      "max": 2000
+    "resourceWeights": {
+      "food": 1,
+      "herb": 1,
+      "iron": 3,
+      "wood": 2
     }
   },
   "companionRule": {
+    "capacityMax": 100,
+    "chargeDurationMs": 4000,
     "heroId": "hero.zhangjiao",
     "initialRankId": "rank.wusheng",
-    "capacityMax": 100,
-    "reinforceDelayMs": 8000,
-    "chargeDurationMs": 4000,
     "morale": {
-      "initial": 60,
-      "deathPenalty": 2,
-      "deathCapPerBattle": 10,
-      "victoryBonus": 5,
-      "fleePenalty": 5,
-      "restBonus": 3,
       "campBonus": 2,
-      "idleDaysBeforeDecay": 3,
-      "decayPerDay": 3,
-      "floor": 5,
       "ceiling": 100,
-      "lowThreshold": 10
-    }
+      "deathCapPerBattle": 10,
+      "deathPenalty": 2,
+      "decayPerDay": 3,
+      "fleePenalty": 5,
+      "floor": 5,
+      "idleDaysBeforeDecay": 3,
+      "initial": 60,
+      "lowThreshold": 10,
+      "restBonus": 3,
+      "victoryBonus": 5
+    },
+    "reinforceDelayMs": 8000
   },
   "armyOrders": {
-    "tickMs": 500,
-    "tacticalRetreatMorale": 3,
-    "marchSpeed": 120,
     "arrivalRadius": 24,
+    "marchSpeed": 120,
     "orders": [
-      { "key": "attack", "label": "进攻", "executor": "march", "requiresTarget": true, "persistent": false },
-      { "key": "defend", "label": "防守", "executor": "defend", "requiresTarget": false, "persistent": true },
-      { "key": "transport", "label": "运输", "executor": "transport", "requiresTarget": true, "persistent": false },
-      { "key": "move", "label": "移动", "executor": "march", "requiresTarget": true, "persistent": false },
-      { "key": "camp", "label": "扎营", "executor": "camp", "requiresTarget": false, "persistent": false }
-    ]
+      {
+        "executor": "march",
+        "key": "attack",
+        "label": "进攻",
+        "persistent": false,
+        "requiresTarget": true
+      },
+      {
+        "executor": "defend",
+        "key": "defend",
+        "label": "防守",
+        "persistent": true,
+        "requiresTarget": false
+      },
+      {
+        "executor": "transport",
+        "key": "transport",
+        "label": "运输",
+        "persistent": false,
+        "requiresTarget": true
+      },
+      {
+        "executor": "march",
+        "key": "move",
+        "label": "移动",
+        "persistent": false,
+        "requiresTarget": true
+      },
+      {
+        "executor": "camp",
+        "key": "camp",
+        "label": "扎营",
+        "persistent": false,
+        "requiresTarget": false
+      }
+    ],
+    "tacticalRetreatMorale": 3,
+    "tickMs": 500
+  },
+  "downedDrop": {
+    "includeCurrency": false,
+    "lossRatio": 0,
+    "maxItems": 3,
+    "minItems": 1,
+    "npcMaxCarried": 6,
+    "npcPickupRadius": 90,
+    "ownerExpiryDays": 2,
+    "plotExempt": true,
+    "spreadRadius": 12
   },
   "worldLogic": {
     "nodes": [
       {
         "id": "city.s09",
-        "name": "广宗粥棚营地",
         "kind": "city",
-        "ref": { "id": "city.s09_guangzong_camp" },
-        "position": { "x": 16000, "y": 4680 },
-        "ownerFactionId": "yellow_turban"
+        "name": "广宗粥棚营地",
+        "ownerFactionId": "yellow_turban",
+        "position": {
+          "x": 16000,
+          "y": 4680
+        },
+        "ref": {
+          "id": "city.s09_guangzong_camp"
+        }
       },
       {
         "id": "city.s10",
-        "name": "广城溪畔营地",
         "kind": "city",
-        "ref": { "id": "city.s10_guangcheng_camp" },
-        "position": { "x": 17280, "y": 4680 },
-        "ownerFactionId": "yellow_turban"
+        "name": "广城溪畔营地",
+        "ownerFactionId": "yellow_turban",
+        "position": {
+          "x": 17280,
+          "y": 4680
+        },
+        "ref": {
+          "id": "city.s10_guangcheng_camp"
+        }
       },
       {
         "id": "city.s03",
-        "name": "颍川官军屯城",
         "kind": "city",
-        "ref": { "id": "city.s03_yingchuan" },
-        "position": { "x": 16000, "y": 11160 },
-        "ownerFactionId": "han_government"
+        "name": "颍川官军屯城",
+        "ownerFactionId": "han_government",
+        "position": {
+          "x": 16000,
+          "y": 11160
+        },
+        "ref": {
+          "id": "city.s03_yingchuan"
+        }
       },
       {
         "id": "city.s04",
-        "name": "长社官军营垒",
         "kind": "city",
-        "ref": { "id": "city.s04_changshe" },
-        "position": { "x": 17280, "y": 11160 },
-        "ownerFactionId": "han_government"
+        "name": "长社官军营垒",
+        "ownerFactionId": "han_government",
+        "position": {
+          "x": 17280,
+          "y": 11160
+        },
+        "ref": {
+          "id": "city.s04_changshe"
+        }
       },
       {
         "id": "city.s05",
-        "name": "宛城",
         "kind": "city",
-        "ref": { "id": "city.s05_wancheng" },
-        "position": { "x": 17280, "y": 11880 },
-        "ownerFactionId": "han_government"
+        "name": "宛城",
+        "ownerFactionId": "han_government",
+        "position": {
+          "x": 17280,
+          "y": 11880
+        },
+        "ref": {
+          "id": "city.s05_wancheng"
+        }
       },
       {
         "id": "city.s07",
-        "name": "西华",
         "kind": "city",
-        "ref": { "id": "city.s07_xihua" },
-        "position": { "x": 19840, "y": 12600 },
-        "ownerFactionId": "han_government"
+        "name": "西华",
+        "ownerFactionId": "han_government",
+        "position": {
+          "x": 19840,
+          "y": 12600
+        },
+        "ref": {
+          "id": "city.s07_xihua"
+        }
       },
       {
         "id": "bridge.yingchuan",
-        "name": "颍川桥",
         "kind": "bridge",
-        "position": { "x": 16640, "y": 4680 }
+        "name": "颍川桥",
+        "position": {
+          "x": 16640,
+          "y": 4680
+        }
       },
       {
         "id": "pass.yique",
-        "name": "伊阙关",
         "kind": "pass",
-        "position": { "x": 16000, "y": 7920 },
-        "ownerFactionId": "han_government",
         "level": 1,
+        "name": "伊阙关",
+        "ownerFactionId": "han_government",
+        "position": {
+          "x": 16000,
+          "y": 7920
+        },
         "tollRate": 0.05
       },
       {
         "id": "ferry.changshe",
-        "name": "长社渡",
         "kind": "ferry",
-        "position": { "x": 18560, "y": 12240 }
+        "name": "长社渡",
+        "position": {
+          "x": 18560,
+          "y": 12240
+        }
       },
       {
         "id": "junction.crossroads",
-        "name": "十字坡",
         "kind": "junction",
-        "position": { "x": 16640, "y": 7920 }
+        "name": "十字坡",
+        "position": {
+          "x": 16640,
+          "y": 7920
+        }
       }
     ],
     "edges": [
       {
+        "from": "city.s09",
         "id": "edge.s09_bridge",
-        "from": "city.s09",
+        "mode": "road",
         "to": "bridge.yingchuan",
-        "mode": "road",
         "weight": 640
       },
       {
-        "id": "edge.bridge_s10",
+        "crossingNodeId": "bridge.yingchuan",
         "from": "bridge.yingchuan",
-        "to": "city.s10",
+        "id": "edge.bridge_s10",
         "mode": "bridge",
-        "weight": 640,
-        "crossingNodeId": "bridge.yingchuan"
-      },
-      {
-        "id": "edge.s09_pass",
-        "from": "city.s09",
-        "to": "pass.yique",
-        "mode": "road",
-        "weight": 3240
-      },
-      {
-        "id": "edge.pass_s03",
-        "from": "pass.yique",
-        "to": "city.s03",
-        "mode": "mountainPath",
-        "weight": 3240,
-        "crossingNodeId": "pass.yique"
-      },
-      {
-        "id": "edge.s10_junction",
-        "from": "city.s10",
-        "to": "junction.crossroads",
-        "mode": "road",
-        "weight": 3240
-      },
-      {
-        "id": "edge.junction_pass",
-        "from": "junction.crossroads",
-        "to": "pass.yique",
-        "mode": "road",
+        "to": "city.s10",
         "weight": 640
       },
       {
-        "id": "edge.junction_s04",
-        "from": "junction.crossroads",
-        "to": "city.s04",
+        "from": "city.s09",
+        "id": "edge.s09_pass",
         "mode": "road",
+        "to": "pass.yique",
         "weight": 3240
       },
       {
-        "id": "edge.s03_s04",
-        "from": "city.s03",
-        "to": "city.s04",
+        "crossingNodeId": "pass.yique",
+        "from": "pass.yique",
+        "id": "edge.pass_s03",
+        "mode": "mountainPath",
+        "to": "city.s03",
+        "weight": 3240
+      },
+      {
+        "from": "city.s10",
+        "id": "edge.s10_junction",
         "mode": "road",
+        "to": "junction.crossroads",
+        "weight": 3240
+      },
+      {
+        "from": "junction.crossroads",
+        "id": "edge.junction_pass",
+        "mode": "road",
+        "to": "pass.yique",
+        "weight": 640
+      },
+      {
+        "from": "junction.crossroads",
+        "id": "edge.junction_s04",
+        "mode": "road",
+        "to": "city.s04",
+        "weight": 3240
+      },
+      {
+        "from": "city.s03",
+        "id": "edge.s03_s04",
+        "mode": "road",
+        "to": "city.s04",
         "weight": 1280
       },
       {
-        "id": "edge.s04_s05",
         "from": "city.s04",
-        "to": "city.s05",
+        "id": "edge.s04_s05",
         "mode": "road",
+        "to": "city.s05",
         "weight": 720
       },
       {
-        "id": "edge.s05_ferry",
         "from": "city.s05",
-        "to": "ferry.changshe",
+        "id": "edge.s05_ferry",
         "mode": "road",
+        "to": "ferry.changshe",
         "weight": 1280
       },
       {
-        "id": "edge.ferry_s07",
+        "crossingNodeId": "ferry.changshe",
         "from": "ferry.changshe",
-        "to": "city.s07",
+        "id": "edge.ferry_s07",
         "mode": "ferry",
-        "weight": 1280,
-        "crossingNodeId": "ferry.changshe"
+        "to": "city.s07",
+        "weight": 1280
       }
     ],
     "combat": {
-      "baseStrength": 100,
-      "unitStrengthScale": 10,
+      "ambushBonus": 0.25,
+      "armyCountWeight": 0.15,
       "attackerBonus": 0.1,
       "attackerModifier": 0.1,
+      "autoPolicy": "fight",
+      "baseStrength": 100,
+      "cityDefensePerLevel": 0.35,
       "commanderWeight": 0.25,
-      "armyCountWeight": 0.15,
-      "militiaWeight": 0.2,
-      "winThreshold": 1,
-      "lossRatio": 0.35,
-      "retreatLossRatio": 0.1,
+      "decisionHoldTicks": 1,
+      "decisionTimeoutMs": 8000,
       "defeatLossRatio": 0.3,
-      "victorLossRatio": 0.12,
-      "spoilsRatio": 0.15,
+      "defenderField": 1,
+      "defenderInFort": 1.25,
+      "engageRadius": 120,
+      "garrisonPerLevel": 1,
       "heroScale": 100,
+      "lossRatio": 0.35,
+      "militiaWeight": 0.2,
       "moraleBase": 0.8,
       "moraleScale": 0.4,
+      "passDefensePerLevel": 0.15,
+      "retreat": {
+        "cooldownTicks": 4,
+        "moraleCost": 10
+      },
+      "retreatLossRatio": 0.1,
       "routMorale": 20,
       "routMoraleFloor": 15,
-      "cityDefensePerLevel": 0.35,
-      "passDefensePerLevel": 0.15,
-      "garrisonPerLevel": 1,
-      "defenderInFort": 1.25,
-      "defenderField": 1,
+      "spoilsRatio": 0.15,
       "stackBonus": 0.15,
       "stackLimit": 3,
       "stackPenalty": 0.9,
-      "ambushBonus": 0.25,
-      "engageRadius": 120,
-      "autoPolicy": "fight",
-      "decisionTimeoutMs": 8000,
-      "decisionHoldTicks": 1,
-      "terrainModifiers": {
-        "bridge": { "attacker": 0.85 },
-        "ferry": { "attacker": 0.85 },
-        "mountainPath": { "defender": 1.15 },
-        "fortified": { "defender": 1.1 }
-      },
       "terrainDefense": {
-        "plain": 1,
         "forest": 1.1,
         "mountain": 1.35,
+        "plain": 1,
         "yellowRiver": 1.2
       },
-      "retreat": {
-        "moraleCost": 10,
-        "cooldownTicks": 4
-      }
+      "terrainModifiers": {
+        "bridge": {
+          "attacker": 0.85
+        },
+        "ferry": {
+          "attacker": 0.85
+        },
+        "fortified": {
+          "defender": 1.1
+        },
+        "mountainPath": {
+          "defender": 1.15
+        }
+      },
+      "unitStrengthScale": 10,
+      "victorLossRatio": 0.12,
+      "winThreshold": 1
     },
     "tariff": {
-      "rate": 0.05,
-      "defaultRate": 0.05,
-      "resource": "food",
       "defaultCargoValue": 100,
-      "sweepToCity": true,
-      "destination": "city"
+      "defaultRate": 0.05,
+      "destination": "city",
+      "rate": 0.05,
+      "resource": "food",
+      "sweepToCity": true
     },
     "trace": {
       "enabled": false
     }
-  },
-  "downedDrop": {
-    "minItems": 1,
-    "maxItems": 3,
-    "lossRatio": 0,
-    "includeCurrency": false,
-    "plotExempt": true,
-    "ownerExpiryDays": 2,
-    "spreadRadius": 12,
-    "npcPickupRadius": 90,
-    "npcMaxCarried": 6
   },
   "battles": [
     {
@@ -1181,18 +1228,6 @@
         "cols": 20,
         "chunkWidth": 1280,
         "chunkHeight": 720,
-        "roadEdges": [
-          [[6, 12], [6, 13]],
-          [[6, 12], [11, 12]],
-          [[11, 12], [15, 12]],
-          [[6, 13], [11, 13]],
-          [[11, 13], [11, 12]],
-          [[11, 13], [15, 13]],
-          [[15, 12], [15, 13]],
-          [[15, 13], [16, 13]],
-          [[16, 13], [17, 14]],
-          [[17, 14], [17, 15]]
-        ],
         "grid": [
           [
             {
@@ -1610,14 +1645,14 @@
               "terrain": "plain"
             },
             {
+              "road": true,
               "sceneId": "S09",
-              "terrain": "plain",
-              "road": true
+              "terrain": "plain"
             },
             {
+              "road": true,
               "sceneId": "S10",
-              "terrain": "plain",
-              "road": true
+              "terrain": "plain"
             },
             {
               "terrain": "plain"
@@ -1926,13 +1961,13 @@
               "terrain": "yellowRiver"
             },
             {
-              "terrain": "forest",
+              "poi": "pass",
               "road": true,
-              "poi": "pass"
+              "terrain": "forest"
             },
             {
-              "terrain": "forest",
-              "road": true
+              "road": true,
+              "terrain": "forest"
             },
             {
               "terrain": "forest"
@@ -2177,14 +2212,14 @@
               "terrain": "plain"
             },
             {
+              "road": true,
               "sceneId": "S03",
-              "terrain": "plain",
-              "road": true
+              "terrain": "plain"
             },
             {
+              "road": true,
               "sceneId": "S04",
-              "terrain": "plain",
-              "road": true
+              "terrain": "plain"
             },
             {
               "terrain": "plain"
@@ -2246,9 +2281,9 @@
               "terrain": "plain"
             },
             {
+              "road": true,
               "sceneId": "S05",
-              "terrain": "plain",
-              "road": true
+              "terrain": "plain"
             },
             {
               "sceneId": "S06",
@@ -2314,14 +2349,14 @@
               "terrain": "plain"
             },
             {
-              "terrain": "plain",
+              "poi": "ferry",
               "road": true,
-              "poi": "ferry"
+              "terrain": "plain"
             },
             {
+              "road": true,
               "sceneId": "S07",
-              "terrain": "plain",
-              "road": true
+              "terrain": "plain"
             },
             {
               "sceneId": "S08",
@@ -2462,6 +2497,108 @@
             {
               "terrain": "mountain"
             }
+          ]
+        ],
+        "roadEdges": [
+          [
+            [
+              6,
+              12
+            ],
+            [
+              6,
+              13
+            ]
+          ],
+          [
+            [
+              6,
+              12
+            ],
+            [
+              11,
+              12
+            ]
+          ],
+          [
+            [
+              11,
+              12
+            ],
+            [
+              15,
+              12
+            ]
+          ],
+          [
+            [
+              6,
+              13
+            ],
+            [
+              11,
+              13
+            ]
+          ],
+          [
+            [
+              11,
+              13
+            ],
+            [
+              11,
+              12
+            ]
+          ],
+          [
+            [
+              11,
+              13
+            ],
+            [
+              15,
+              13
+            ]
+          ],
+          [
+            [
+              15,
+              12
+            ],
+            [
+              15,
+              13
+            ]
+          ],
+          [
+            [
+              15,
+              13
+            ],
+            [
+              16,
+              13
+            ]
+          ],
+          [
+            [
+              16,
+              13
+            ],
+            [
+              17,
+              14
+            ]
+          ],
+          [
+            [
+              17,
+              14
+            ],
+            [
+              17,
+              15
+            ]
           ]
         ]
       },
@@ -2652,6 +2789,67 @@
         "schemaVersion": 1
       }
     }
+  },
+  "logistics": {
+    "aiSupplyEfficiency": 1,
+    "armyBaseUpkeep": 0,
+    "campStorage": {
+      "base": 500,
+      "max": 2000,
+      "perLevel": 250
+    },
+    "camps": [
+      {
+        "campId": "camp.s02.field",
+        "level": 2,
+        "ownerArmyId": "army.player.escort",
+        "ownerFactionId": "player",
+        "stock": {
+          "food": 20,
+          "iron": 8,
+          "wood": 6
+        }
+      }
+    ],
+    "desertion": {
+      "baseRate": 0.02,
+      "floorRatio": 0.3,
+      "maxRate": 0.08,
+      "rateStep": 0.015,
+      "startDay": 3
+    },
+    "famineMoralePenalty": {
+      "max": 4,
+      "min": 1
+    },
+    "famineThresholdDays": 3,
+    "forage": {
+      "alertChance": 0.25,
+      "moraleCost": 6,
+      "renownCost": 3,
+      "yieldRatio": 0.6
+    },
+    "maxCatchUpDays": 7,
+    "moraleDrain": {
+      "collapse": 15,
+      "empty": 8,
+      "tight": 3
+    },
+    "moraleRecoverPerDay": 5,
+    "personDayFactor": {
+      "archer": 0.8,
+      "cavalry": 2.4,
+      "melee": 0.8
+    },
+    "raze": {
+      "base": 0.6,
+      "defended": 0.3,
+      "night": 0.9,
+      "recoverRatio": 0.2,
+      "requiresFireSource": true
+    },
+    "regroupWindowDays": 30,
+    "storageSpoilPerDay": 0.003
   },
   "shards": {
     "commands": "project/commands.json",

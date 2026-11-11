@@ -26,6 +26,9 @@
  * 搬运完成由 ArmyCommandSystem.onRescueComplete 回调驱动本类触发
  * enterRegion 剧情事件（regionId 归触发器数据所有）。
  */
+import { S02RitualFlow } from './S02RitualFlow.js';
+import { S02BattleFlow } from './S02BattleFlow.js';
+
 /**
  * 受伤 debuff 分档（M3.6）：只削生存不削输出。
  * M4 行军段赠药（severe→light）/包扎（light→痊愈）逐档恢复；story.s09.treatment 终点痊愈。
@@ -42,6 +45,157 @@ export class S02ArmyRescueCoordinator {
     this._regionId = null;
     this._active = false;
     this._woundTier = null;
+    this._factSequence = 0;
+    this._stewardPending = new Set();
+    this._stewardAccumulator = 0;
+    this._departNotified = false;
+    // v3 任务链：符水/铜钱剑交互与两场战斗（⑨ 起事 / 围剿）子系统
+    this.ritual = new S02RitualFlow(scene);
+    this.battle = new S02BattleFlow(scene);
+  }
+
+  /** 每帧 tick（SanguoSceneLifecycleCoordinator 的 S02 分支调用）：推进围剿补员与斩将判定。 */
+  update(deltaTime) {
+    this.battle.update(deltaTime);
+    this._tickSteward(deltaTime);
+  }
+
+  /** 锅边/木箱交互推进（trg_s02_ritual_serve → s02.ritual.step）。 */
+  ritualStep() {
+    return this.ritual.step();
+  }
+
+  /** ⑨ 起事开战（100 兵单波整组入场，无补员）。 */
+  startRevolt() {
+    return this.battle.startRevolt();
+  }
+
+  /** ⑨ 收尾：县尉逃走。 */
+  finishRevolt() {
+    return this.battle.finishRevolt();
+  }
+
+  /** 围剿开战：总池 1000 / 同屏 100 / 占位补员。 */
+  startRaid(params = {}) {
+    return this.battle.startRaid(params);
+  }
+
+  /** 围剿读档恢复（不重置兵力池）。 */
+  resumeRaid() {
+    return this.battle.resumeRaid();
+  }
+
+  /** 围剿失败收尾：停补员、清场。 */
+  defeatRaid() {
+    return this.battle.defeat();
+  }
+
+  /** 递告一段落：县尉入场（兵由 trg_s02_accusation_spawn 生成）。 */
+  startAccusation() {
+    this.scene._showScreenTip?.('县尉踹翻了大锅。四条罪状，一条条砸了下来。', { title: '县尉问罪' });
+    return { ok: true };
+  }
+
+  /** 加入线：一次招募 80 黄巾。 */
+  async recruitYellow() {
+    if (this._storyFact('s02RecruitDone') === true) return { ok: true, idempotent: true };
+    // 先落事实再出兵：出兵点 spawnWhen 门控读 s02RecruitYellow，事务未提交前出兵会被门挡下
+    const result = await this._submitFact('story.s02.recruit.yellow');
+    this.scene.context?.services?.placements?.spawn?.({ group: 'S02-army-yellow80', authoritative: true });
+    this.scene._showScreenTip?.('八十名黄巾信众当场入列。', { title: '招兵' });
+    return result;
+  }
+
+  /** 不加入线：一次招募亲卫（上限 10 + floor(command/10)，封顶 80）。 */
+  async recruitGuard() {
+    if (this._storyFact('s02RecruitDone') === true) return { ok: true, idempotent: true };
+    const stats = this.scene.playerEntity?.getComponent?.('stats');
+    const command = Number(stats?.command ?? stats?.getStat?.('command')) || 0;
+    const cap = Math.max(10, Math.min(80, 10 + Math.floor(command / 10)));
+    // 先落事实再出兵（同 recruitYellow：spawnWhen 门控读 s02RecruitGuard）
+    const result = await this._submitFact('story.s02.recruit.guard', { cap });
+    this.scene.context?.services?.placements?.spawn?.({ group: 'S02-army-guard', authoritative: true });
+    this.scene._showScreenTip?.(`亲卫一次入列（上限 ${cap} 人，由统率与官职决定）。`, { title: '招兵' });
+    return result;
+  }
+
+  _storyFact(key) {
+    return this.scene.gameLoader?.blackboard?.get?.('storyState')?.[key];
+  }
+
+  _submitFact(definitionId, payload = {}) {
+    const gateway = this.scene.sceneRuntime?.commandGateway;
+    const actorRef = this.scene.playerEntity?.id;
+    if (!gateway || !actorRef) return { ok: false, code: 'commandGatewayUnavailable' };
+    return gateway.execute({
+      intentType: 'state.transaction',
+      actorRef,
+      operationId: `story:${definitionId}:s02flow:${++this._factSequence}`,
+      payload: { definitionId, ...payload }
+    });
+  }
+
+  // ─── 发展段 N0~N6（营地到手后的留守经营） ─────────────────────────────────
+
+  /** 里程碑提交（幂等：storyState 已写或本帧已提交则跳过）。 */
+  markSteward(definitionId) {
+    const key = String(definitionId).split('.').pop();
+    const flags = { store: 's02StewardStore', craft: 's02StewardCraft', muster: 's02StewardMuster', supply: 's02StewardSupply' };
+    const flag = flags[key];
+    if (!flag) return;
+    if (this._storyFact(flag) === true || this._stewardPending.has(flag)) return;
+    this._stewardPending.add(flag);
+    this._submitFact(definitionId);
+  }
+
+  /** 即刻启程：营门交互直接跳过经营（0 日），写 N5 急报事实。 */
+  departNow() {
+    const story = this._storyFact('s02CampHandover');
+    if (story == null && this._storyFact('s02CampHandover') !== 'joined' && this._storyFact('s02CampHandover') !== 'independent') {
+      return { ok: false, code: 'campNotHandedOver' };
+    }
+    if (this._storyFact('s02StewardshipReady') === true) return { ok: true, idempotent: true };
+    const transform = this.scene.playerEntity?.getComponent?.('transform');
+    if (!transform) return { ok: false, code: 'playerUnavailable' };
+    const offset = this.scene._worldLoadResult?.worldIndex?.getOffset?.(this.scene.currentSceneId) || { x: 0, y: 0 };
+    const gate = { x: 640 + (offset.x || 0), y: 236 + (offset.y || 0) };
+    const dx = Number(transform.position?.x) - gate.x;
+    const dy = Number(transform.position?.y) - gate.y;
+    if (dx * dx + dy * dy > 130 * 130) return { ok: false, code: 'notNearGate' };
+    this._submitFact('story.s02.stewardship.ready');
+    this.scene._showScreenTip?.('你放下营中事务，命亲卫整队——即刻南下。', { title: '即刻启程' });
+    return { ok: true };
+  }
+
+  _tickSteward(deltaTime) {
+    const handover = this._storyFact('s02CampHandover');
+    if (handover !== 'joined' && handover !== 'independent') return;
+    if (this._storyFact('s02StewardshipReady') === true) return;
+    this._stewardAccumulator += Number(deltaTime) || 0;
+    if (this._stewardAccumulator < 0.5) return;
+    this._stewardAccumulator = 0;
+    // 围剿失败：营地残破，跳过 N1~N4，只留急报与应召
+    if (this._storyFact('s02RaidFailed') === true && !this._departNotified) {
+      this._departNotified = true;
+      this._submitFact('story.s02.stewardship.ready');
+      this.scene._showScreenTip?.('营地残破，仓廪一空。信使来报：广宗告急，即刻南下。', { title: '急报' });
+      return;
+    }
+    const units = [...(this.scene.armyCommandFlow?.system?.units?.values?.() || [])];
+    const guards = units.filter(unit => {
+      const entity = unit?.entity;
+      if (!entity || entity.isDead === true) return false;
+      return String(entity.faction || entity.factionId || '') === 'player';
+    }).length;
+    if (guards >= 5) this.markSteward('story.s02.steward.muster');
+    const camp = this.scene.foodLedgerSystem?.getCamp?.('camp.s02.field');
+    if ((Number(camp?.stock?.food) || 0) >= 15) this.markSteward('story.s02.steward.supply');
+    const flags = ['s02StewardStore', 's02StewardCraft', 's02StewardMuster', 's02StewardSupply'];
+    const done = flags.filter(key => this._storyFact(key) === true || this._stewardPending.has(key)).length;
+    if (done >= 2) {
+      this._submitFact('story.s02.stewardship.ready');
+      this.scene._showScreenTip?.('营中事务已上手。一骑快马冲进营门：广宗告急！', { title: '急报' });
+    }
   }
 
   /** 主角昏倒：置位倒地状态（对话锁输入之外的长效操作禁用）并开启剧情保护（敌人停止索敌）。 */
@@ -316,6 +470,50 @@ export class S02ArmyRescueCoordinator {
   }
 
   /**
+   * 张角举事：破旧村落升级为扎营军营（scenario.command: s02.uprising）。
+   *
+   * 幂等：粮草营地容器升级为 2 级 + 铁匠铺/军械工坊播种「已完工」结构——
+   * 建造系统 structures 是 productionSystem.getStationRecipes 解析工位的唯一依据，
+   * 播种后 station.forge.anvil / station.workshop.carpenter 可直接出配方。
+   * 军营建筑实体（铁匠铺/工坊/征召处/粮仓/兵营/营栅/营门）由任务步骤
+   * spawnPlacements(S02-camp-buildings) 生成，避免建筑外观与工位数据双写。
+   */
+  upgradeCamp() {
+    const scene = this.scene;
+    const campId = this._campSupplyCampId || 'camp.s02.field';
+    const ledger = scene.foodLedgerSystem;
+    if (ledger?.registerCamp) {
+      ledger.registerCamp({ campId, level: 2, stock: null, ownerArmyId: 'army.player.escort', ownerFactionId: 'player' });
+      this._campSupplyCampId = campId;
+      if (!this._campSupplyPosition) this._campSupplyPosition = { x: 560, y: 400 };
+    }
+    const construction = scene.constructionSystem;
+    const seeded = construction?.seedStructures?.([
+      { siteId: 'site.s02.forge', definitionId: 'construction.forge' },
+      { siteId: 'site.s02.workshop', definitionId: 'construction.workshop' }
+    ]) || { structures: [], skipped: [] };
+    scene.syncCampContainers?.();
+    scene.syncWarLogisticsState?.();
+    return { ok: true, campId, structures: seeded.structures, skipped: seeded.skipped };
+  }
+
+  /** 打开军团指挥 HUD（征召处交互：征兵/编组/下达命令统一入口）。 */
+  openArmyOrders() {
+    const scene = this.scene;
+    const flow = scene.armyCommandFlow;
+    if (!flow?.system) {
+      scene._showScreenTip?.('军团尚未成军。', { title: '征召处' });
+      return { ok: false, code: 'armyCommandUnavailable' };
+    }
+    if (!flow.system.hasAliveUnits?.()) {
+      scene._showScreenTip?.('营中暂无可用兵马。', { title: '征召处' });
+      return { ok: false, code: 'noUnits' };
+    }
+    if (flow.hud?.visible !== true) scene.toggleArmyCommandHud?.();
+    return { ok: true };
+  }
+
+  /**
    * 营地落成 → 军营粮草容器入库（M9 9B）。
    * 权威库存在 FoodLedgerSystem 的营账上，容器注册表只提供易失适配器。
    */
@@ -324,7 +522,14 @@ export class S02ArmyRescueCoordinator {
     const ledger = scene.foodLedgerSystem;
     if (!ledger) return null;
     const campId = this._campSupplyCampId || 'camp.s02.field';
-    const result = ledger.registerCamp({ campId, level: 1, stock: null });
+    const result = ledger.registerCamp({
+      campId,
+      level: 1,
+      stock: null,
+      // V3：营归玩家（ownerArmyId 优先，不靠 faction 判定）
+      ownerArmyId: 'army.player.escort',
+      ownerFactionId: 'player'
+    });
     this._campSupplyCampId = campId;
     if (pos) this._campSupplyPosition = { x: pos.x, y: pos.y };
     scene.syncCampContainers?.();
@@ -332,10 +537,16 @@ export class S02ArmyRescueCoordinator {
     return result;
   }
 
-  /** 玩家/剧本可操作的军团（黄巾、非 AI）——军营存取的对象。 */
-  _resolveSupplyArmy() {
+  /** 玩家/剧本可操作的军团（V3：营地 ownerArmyId 优先，再退回旧 faction 过滤）。 */
+  _resolveSupplyArmy(campId = null) {
     const ledger = this.scene.foodLedgerSystem;
     const armies = ledger?.armies instanceof Map ? [...ledger.armies.values()] : [];
+    const camp = ledger?.getCamp?.(campId || this._campSupplyCampId || 'camp.s02.field');
+    const ownerArmyId = camp?.ownerArmyId ? String(camp.ownerArmyId) : '';
+    if (ownerArmyId) {
+      const owner = armies.find(army => String(army?.id || '') === ownerArmyId);
+      if (owner) return owner;
+    }
     return armies.find(army => String(army?.factionId || '') === 'yellow_turban' && army?.control !== 'ai')
       || armies.find(army => army?.control !== 'ai')
       || null;
@@ -354,7 +565,7 @@ export class S02ArmyRescueCoordinator {
       scene._showScreenTip?.('军营粮草暂不可访问。', { title: '军营' });
       return { ok: false, code: 'campUnavailable', campId: resolvedCampId };
     }
-    const army = this._resolveSupplyArmy();
+    const army = this._resolveSupplyArmy(resolvedCampId);
     if (!army) {
       scene._showScreenTip?.('没有可调度的军团粮草。', { title: '军营' });
       return { ok: false, code: 'armyUnavailable', campId: resolvedCampId };
@@ -386,6 +597,7 @@ export class S02ArmyRescueCoordinator {
     if (result?.ok) {
       scene.syncFoodLedgerArmies?.();
       scene.syncWarLogisticsState?.();
+      this.markSteward('story.s02.steward.store');
     }
     const army = ledger?.getArmy?.(context.armyId) || null;
     const failureText = {

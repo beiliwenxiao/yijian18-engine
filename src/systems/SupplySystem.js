@@ -445,6 +445,28 @@ export class SupplySystem {
     return factionId === this.config.playerFactionId || this.config.alliedFactionIds.includes(factionId);
   }
 
+  /**
+   * 营地归属（V3）：显式 ownerFactionId / ownerArmyId 优先，不靠旧 faction 过滤。
+   * @param {{ownerFactionId?: string, ownerArmyId?: string}} camp
+   */
+  _ownsCamp(camp) {
+    const ownerFactionId = normalizeId(camp?.ownerFactionId);
+    if (ownerFactionId) {
+      return ownerFactionId === this.config.playerFactionId || this.config.alliedFactionIds.includes(ownerFactionId);
+    }
+    return Boolean(normalizeId(camp?.ownerArmyId));
+  }
+
+  /**
+   * 势力成立（P2）：己方城 ≥1 或己方军营 ≥1。
+   * @param {Array} [camps] - FoodLedgerSystem.camps 的数组形态
+   */
+  hasPlayerStronghold(camps = []) {
+    const cities = this.readCities();
+    if (Array.isArray(cities) && cities.some(city => this._ownsCity(city))) return true;
+    return Array.isArray(camps) && camps.some(camp => this._ownsCamp(camp));
+  }
+
   _quotaFor(city, rank) {
     const quotas = this.config.quotas;
     if (quotas.length === 0) return { rank: 0, daily: {}, multiplier: 1 };

@@ -229,9 +229,13 @@ export class SceneArmyCommandFlow {
   /** 扫描实体仓库，把带 SquadMemberComponent 的未注册实体登记进编组（幂等，可外部提前调用）。 */
   syncUnits() {
     const entities = this.scene.entityStore?.all || [];
+    const armies = this.scene.gameLoader?.registries?.armies;
     for (const entity of entities) {
       const member = entity?.getComponent?.('squadMember');
       if (!member) continue;
+      // 归属过滤：owner 缺省＝玩家军；显式声明非 player 的编制（如张角亲军）不进入玩家指挥
+      const owner = armies?.get?.(member.armyId)?.owner;
+      if (typeof owner === 'string' && owner !== 'player') continue;
       this.system.registerUnit(entity, member);
     }
     this._applyArmyDefaultStances();

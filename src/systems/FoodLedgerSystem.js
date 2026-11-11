@@ -468,7 +468,7 @@ export class FoodLedgerSystem {
 
   // ─── 9B：军营容器（最小集） ─────────────────────────────
 
-  registerCamp({ campId = null, level = 1, stock = null } = {}) {
+  registerCamp({ campId = null, level = 1, stock = null, ownerArmyId = null, ownerFactionId = null } = {}) {
     const id = campId != null ? String(campId) : null;
     if (!id) return { ok: false, code: 'campIdRequired' };
     const existing = this.camps.get(id) || {};
@@ -480,7 +480,14 @@ export class FoodLedgerSystem {
     for (const [resource, amount] of Object.entries(stock && typeof stock === 'object' ? stock : {})) {
       mergedStock[resource] = Math.max(0, Math.floor(num(amount, 0)));
     }
-    this.camps.set(id, { campId: id, level: Math.max(1, Math.floor(num(level, 1))), capacity, stock: mergedStock });
+    this.camps.set(id, {
+      campId: id,
+      level: Math.max(1, Math.floor(num(level, 1))),
+      capacity,
+      stock: mergedStock,
+      ownerArmyId: ownerArmyId != null ? String(ownerArmyId) : (existing.ownerArmyId || null),
+      ownerFactionId: ownerFactionId != null ? String(ownerFactionId) : (existing.ownerFactionId || null)
+    });
     return { ok: true, camp: clone(this.camps.get(id)) };
   }
 
@@ -570,7 +577,9 @@ export class FoodLedgerSystem {
           campId: String(camp.campId),
           level: Math.max(1, Math.floor(num(camp.level, 1))),
           capacity: Math.max(0, num(camp.capacity, this.config.campStorage.base)),
-          stock: { ...(camp.stock || {}) }
+          stock: { ...(camp.stock || {}) },
+          ownerArmyId: camp.ownerArmyId != null ? String(camp.ownerArmyId) : null,
+          ownerFactionId: camp.ownerFactionId != null ? String(camp.ownerFactionId) : null
         });
       }
     }
