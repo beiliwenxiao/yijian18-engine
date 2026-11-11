@@ -397,89 +397,68 @@ describe('QuestRuntime Quest v2 编译器', () => {
 describe('阶段③ S01 迁移契约：quest 编译产物与手写任务图逐节点等价', () => {
   const compiledGraph = compileQuestProject(project).taskGraphs.find(graph => graph.id === 'task.s01.survival');
 
-  it('s02 迁移契约：施粥 → 接受召见 → 招募 → 扎营 → 击退围剿 线性链（state.transaction 事实驱动，M3.5 随军抗敌）', () => {
-    const s02Graph = compileQuestProject(project).taskGraphs.find(graph => graph.id === 'task.s02.summons');
-    expect(s02Graph.entryNodeId).toBe('start');
-    expect(s02Graph.nodes.filter(node => node.type === 'objective').map(node => node.id)).toEqual(['porridge', 'acceptSummons', 'recruit', 'camp', 'repelRaid']);
-    expect(s02Graph.nodes.find(node => node.id === 'porridge').eventMatcher).toEqual({
-      type: 'state.transaction', payload: { definitionId: 'story.s02.porridge.laid' }
+  it('s02 迁移契约：符水/铜钱剑/诬告/⑨起事 → 交权 → 分叉 → 招兵 → 整备 → 扎营 → 围剿 → 交代（v3 任务链）', () => {
+    const compiled = compileQuestProject(project);
+    const verdictGraph = compiled.taskGraphs.find(graph => graph.id === 'task.s02.verdict');
+    const rescueGraph = compiled.taskGraphs.find(graph => graph.id === 'task.s02.rescue');
+    const summonsGraph = compiled.taskGraphs.find(graph => graph.id === 'task.s02.summons');
+    expect(verdictGraph.entryNodeId).toBe('start');
+    expect(verdictGraph.nodes.filter(node => node.type === 'objective').map(node => node.id))
+      .toEqual(['zhangjiaoChoice.save', 'zhangjiaoChoice.ignore', 'awakeningDone']);
+    expect(rescueGraph.nodes.filter(node => node.type === 'objective').map(node => node.id))
+      .toEqual(['servePorridge', 'coinSword', 'accusationReady', 'revoltVictory']);
+    expect(summonsGraph.nodes.filter(node => node.type === 'objective').map(node => node.id)).toEqual([
+      'allegianceChoice.joined', 'allegianceChoice.independent', 'recruit',
+      'prepare', 'camp', 'raidVictory', 'aftermath', 'stewardship', 'summonsUrgent', 'travelToS09'
+    ]);
+    const matcherOf = (graph, id) => graph.nodes.find(node => node.id === id).eventMatcher;
+    expect(matcherOf(rescueGraph, 'servePorridge')).toEqual({
+      type: 'state.transaction', payload: { definitionId: 'story.s02.porridge.served' }
     });
-    // 召见目标直连对话结束事件（dialogueEnd），事实由 commitFact 自动提交（accept_summons 手写触发器已删除）
-    expect(s02Graph.nodes.find(node => node.id === 'acceptSummons').eventMatcher).toEqual({
-      type: 'dialogueEnd', payload: { id: 'dialogue.s02.zhangjiaoSummons' }
+    expect(matcherOf(rescueGraph, 'coinSword')).toEqual({
+      type: 'state.transaction', payload: { definitionId: 'story.s02.coins.given' }
     });
-    expect(s02Graph.nodes.find(node => node.id === 'recruit').eventMatcher).toEqual({
+    expect(matcherOf(rescueGraph, 'revoltVictory')).toEqual({
+      type: 'state.transaction', payload: { definitionId: 'story.s02.revolt.confirmed' }
+    });
+    expect(matcherOf(summonsGraph, 'recruit')).toEqual({
       type: 'state.transaction', payload: { definitionId: 'story.s02.recruit.done' }
     });
-    expect(s02Graph.nodes.find(node => node.id === 'camp').eventMatcher).toEqual({
-      type: 'state.transaction', payload: { definitionId: 'story.s02.camp.laid' }
-    });
-    expect(s02Graph.nodes.find(node => node.id === 'repelRaid').eventMatcher).toEqual({
+    expect(matcherOf(summonsGraph, 'raidVictory')).toEqual({
       type: 'state.transaction', payload: { definitionId: 'story.s02.raid.repeled' }
+    });
+    expect(matcherOf(summonsGraph, 'aftermath')).toEqual({
+      type: 'dialogueEnd', payload: { id: 'dialogue.s02.debrief' }
     });
   });
 
-  it('s02 编排步骤化：rescue 教学开场/苏醒段 + summons 招募/扎营/退敌目标后段由步骤编译', () => {
+  it('s02 编排步骤化：符水/问罪/⑨起事/交权/围剿开战均由 event 步骤编译，分支与围剿控制权透传', () => {
     const triggers = compileQuestProject(project).triggers.filter(trigger => trigger.id.startsWith('trg_task.s02.'));
     const byId = new Map(triggers.map(trigger => [trigger.id, trigger]));
-    // rescue 开场段：两条指挥教学（choice_save 触发器不再手写）
     const rescueIntro = byId.get('trg_task.s02.rescue_intro');
     expect(rescueIntro).toBeTruthy();
     expect(rescueIntro.when).toEqual({ type: 'task.started', params: { definitionId: 'task.s02.rescue' } });
-    expect(rescueIntro.do.map(action => action.action)).toEqual(['tutorial.command', 'tutorial.command']);
-    expect(rescueIntro.do[0].params).toEqual({ operation: 'show', tutorialId: 's02.command.move' });
-    expect(rescueIntro.do[1].params).toEqual({ operation: 'show', tutorialId: 's02.command.carry' });
-    // rescue 目标后段：教学收尾 → 苏醒对话（await）→ 信使提示 → 赠符水
-    const rescueAfter = byId.get('trg_task.s02.rescue_after_carryToCamp');
-    expect(rescueAfter).toBeTruthy();
-    expect(rescueAfter.when).toEqual({ type: 'enterRegion', params: { regionId: 'S02-camp-rescue' } });
-    expect(rescueAfter.once).toBe(true);
-    expect(rescueAfter.do.map(action => action.action)).toEqual([
-      'scenario.command', 'tutorial.command', 'tutorial.command', 'dialogue.command', 'showTip', 'state.transaction'
-    ]);
-    expect(rescueAfter.do[0].params).toEqual({ operation: 'army.rescue.awaken', scenarioId: 'scenario.command.army.rescue.awaken' });
-    expect(rescueAfter.do[3].params).toEqual({ dialogueId: 'dialogue.s02.awakening', operation: 'start', await: true });
-    expect(rescueAfter.do[5].params).toEqual({ definitionId: 'reward.s02.rescueGift' });
-    // 缺口 C：carryToCamp 目标直连 enterRegion 事件并自动提交救援事实（camp_arrival 手写触发器已删除）
-    const commitTrigger = triggers.find(trigger => trigger.id === 'trg_task.s02.rescue_commit_carryToCamp');
-    expect(commitTrigger).toBeTruthy();
-    expect(commitTrigger.when).toEqual({ type: 'enterRegion', params: { regionId: 'S02-camp-rescue' } });
-    expect(commitTrigger.do[0].params).toEqual({ definitionId: 'story.s02.rescue.done' });
-    // summons 目标后三段：招募（提示+对话）/ 扎营（提示+过夜对话+迎战教学）/ 退敌（胜利旁白+教学收尾）
-    const summonsAfter = [
-      'trg_task.s02.summons_after_recruit',
-      'trg_task.s02.summons_after_camp',
-      'trg_task.s02.summons_after_repelRaid'
-    ].map(id => byId.get(id));
-    for (const trigger of summonsAfter) {
-      expect(trigger, `${trigger?.id} 存在`).toBeTruthy();
-      expect(trigger.once).toBe(true);
-    }
-    expect(summonsAfter[0].when).toEqual({ type: 'state.transaction', params: { definitionId: 'story.s02.recruit.done' } });
-    expect(summonsAfter[0].do.map(action => action.action)).toEqual(['showTip', 'dialogue.command']);
-    expect(summonsAfter[1].do.map(action => action.action)).toEqual(['showTip', 'dialogue.command', 'tutorial.command']);
-    expect(summonsAfter[1].do[1].params).toEqual({ dialogueId: 'dialogue.s02.overnight', operation: 'start', await: true });
-    expect(summonsAfter[2].do.map(action => action.action)).toEqual(['dialogue.command', 'tutorial.command']);
-    expect(summonsAfter[2].do[0].params).toEqual({ dialogueId: 'dialogue.s02.raidRepelled', operation: 'start', await: true });
-    // 事件编排收编：施粥五批/波次/战败/军队入画/乞讨链由任务 event 步骤编译（手写编排触发器已删除）
-    const porridge = triggers.find(trigger => trigger.id === 'trg_task.s02.rescue_event_porridgeWaves');
-    expect(porridge).toBeTruthy();
-    expect(porridge.when).toEqual({ type: 'dialogueEnd', params: { id: 'dialogue.s02.awakening' } });
-    expect(porridge.do[0]).toMatchObject({ action: 'state.transaction', stepId: 'wound-severe-commit' });
-    const raidWave2 = triggers.find(trigger => trigger.id === 'trg_task.s02.summons_event_raidWave2');
-    expect(raidWave2.when).toEqual({ type: 'waveCleared', params: { group: 'S02-raid-vanguard' } });
-    // 原样触发器动作对象（branch 分支容器）透传保留
-    expect(Array.isArray(raidWave2.do[0]?.branch)).toBe(true);
-    const armyArrival = triggers.find(trigger => trigger.id === 'trg_task.s02.verdict_event_armyArrival');
-    expect(armyArrival.when).toEqual({ type: 'armyMarchArrived', params: { armyId: 'army.s02.column' } });
-    expect(Array.isArray(armyArrival.do[1]?.branch)).toBe(true);
-    const begEnter = triggers.find(trigger => trigger.id === 'trg_task.s02.verdict_event_begChildrenEnter');
-    // 编排条件守卫（防重入 if）原样透传
-    expect(begEnter.if).toBeTruthy();
-    // accept_summons 改造：召见目标直连 dialogueEnd 事件 + commitFact 提交事实
-    const summonsGraph = compileQuestProject(project).taskGraphs.find(graph => graph.id === 'task.s02.summons');
-    const acceptNode = summonsGraph.nodes.find(node => node.id === 'acceptSummons');
-    expect(acceptNode.eventMatcher).toEqual({ type: 'dialogueEnd', payload: { id: 'dialogue.s02.zhangjiaoSummons' } });
+    expect(rescueIntro.do[0]).toMatchObject({ action: 'startDialogue', params: { id: 'dialogue.s02.ritualIntro' } });
+    const ritualDone = byId.get('trg_task.s02.rescue_event_ritualIntroDone');
+    expect(ritualDone.when).toEqual({ type: 'dialogueEnd', params: { id: 'dialogue.s02.ritualIntro' } });
+    expect(ritualDone.do.map(action => action.action)).toEqual(['state.transaction', 'spawnPlacements', 'showTip']);
+    const accusationDone = byId.get('trg_task.s02.rescue_event_accusationDone');
+    expect(accusationDone.when).toEqual({ type: 'dialogueEnd', params: { id: 'dialogue.s02.accusation' } });
+    expect(accusationDone.do[0].params).toEqual({ definitionId: 'story.s02.accused' });
+    const revoltStart = byId.get('trg_task.s02.rescue_event_revoltStart');
+    expect(revoltStart.when).toEqual({ type: 'dialogueEnd', params: { id: 'dialogue.s02.revoltSpeech' } });
+    expect(revoltStart.do.map(action => action.action)).toEqual(['state.transaction', 'spawnPlacements', 'scenario.command']);
+    expect(revoltStart.do[2].params).toEqual({ operation: 's02.revolt.start', scenarioId: 'scenario.command.s02.revolt.start' });
+    const controlReturn = byId.get('trg_task.s02.rescue_event_controlReturn');
+    expect(controlReturn.when).toEqual({ type: 'state.transaction', params: { definitionId: 'story.s02.revolt.confirmed' } });
+    expect(controlReturn.do[0].params).toEqual({ operation: 'army.possess.release', scenarioId: 'scenario.command.army.possess.release' });
+    const campComplete = byId.get('trg_task.s02.summons_event_campComplete');
+    expect(campComplete.when).toEqual({ type: 'armyCampLaid', params: {} });
+    expect(Array.isArray(campComplete.do.at(-1)?.branch)).toBe(true);
+    const assistAccept = byId.get('trg_task.s02.summons_event_raidAssistAccept');
+    expect(assistAccept.when).toEqual({
+      type: 'dialogueChoice', params: { id: 'dialogue.s02.raidAssist', choiceId: 'assist' }
+    });
   });
 
   it('任务图结构：18 objective 线性链 + 裸 start/complete 节点（存档 nodeStates 寻址兼容）', () => {
@@ -538,8 +517,9 @@ describe('阶段③ S01 迁移契约：quest 编译产物与手写任务图逐�
     // 新基线：S02-S14 任务化 accept 13 个 + complete 13 个（含 s02.rescue 无 accept、s01 complete 奖励），
     // 编译触发器全集 = 上一基线 76 + S02 summons 召见线全量收编 8（进场装配/召见对话/招募/扎营/
     //   围剿胜利/拾荒者遭遇×2/北上广宗出口，手写 trg_s02_* 七个已删除）= 84
+    //   + S02 举事步骤 uprising（张角举事、荒村转军营）= 85
     const triggers = compileQuestProject(project).triggers;
-    expect(triggers.length).toBe(84);
+    expect(triggers.length).toBe(78);
     expect(triggers.slice(0, 7).map(trigger => trigger.id)).toEqual([
       'trg_task.s01.survival_intro',
       'trg_task.s01.survival_after_lightCampfire',
@@ -567,19 +547,17 @@ describe('阶段③ S01 迁移契约：quest 编译产物与手写任务图逐�
       'trg_task.s13.jingshanBattle_accept',
       'trg_task.s14.finalCommit_accept'
     ]);
-    // S02 抉择链任务化：verdict 由「军队抵达」事实接取；rescue 由「选择救他」选项事件接取
+    // S02 v3 任务链：verdict 由场景进入接取；rescue/summons 由前置任务完成接取
     expect(triggers.find(trigger => trigger.id === 'trg_task.s02.verdict_accept').when)
-      .toEqual({ type: 'state.transaction', params: { definitionId: 'story.s02.beg.armyArrived' } });
+      .toEqual({ type: 'sceneEnter', params: { sceneId: 'S02' } });
     expect(triggers.find(trigger => trigger.id === 'trg_task.s02.rescue_accept').when)
-      .toEqual({ type: 'dialogueChoice', params: { id: 'dialogue.s02.prologue', choiceId: 'save' } });
-    // verdict 分支选项目标 + 选项段（judgement/结局由任务步骤编译，choice_kill/save 手写触发器已删除）
-    const saveAfter = triggers.find(trigger => trigger.id === 'trg_task.s02.verdict_after_makeVerdict.save');
+      .toEqual({ type: 'task.completed', params: { definitionId: 'task.s02.verdict' } });
+    // verdict 分支选项目标 + 选项段（救/不管由任务步骤编译）
+    const saveAfter = triggers.find(trigger => trigger.id === 'trg_task.s02.verdict_after_zhangjiaoChoice.save');
     expect(saveAfter.when).toEqual({ type: 'dialogueChoice', params: { id: 'dialogue.s02.prologue', choiceId: 'save' } });
-    expect(saveAfter.do.map(action => action.action)).toEqual(['state.transaction', 'scenario.command']);
-    const killAfter = triggers.find(trigger => trigger.id === 'trg_task.s02.verdict_after_makeVerdict.kill');
-    expect(killAfter.do.map(action => action.action)).toEqual(['state.transaction', 'ending.command']);
-    expect(triggers.find(trigger => trigger.id === 'trg_task.s02.summons_accept').when)
-      .toEqual({ type: 'task.completed', params: { definitionId: 'task.s02.rescue' } });
+    expect(saveAfter.do.map(action => action.action)).toEqual(['state.transaction', 'state.transaction']);
+    const ignoreAfter = triggers.find(trigger => trigger.id === 'trg_task.s02.verdict_after_zhangjiaoChoice.ignore');
+    expect(ignoreAfter.do.map(action => action.action)).toEqual(['state.transaction', 'state.transaction']);
     expect(triggers.find(trigger => trigger.id === 'trg_task.s03.yingchuanBattle_accept').when)
       .toEqual({ type: 'sceneEnter', params: { sceneId: 'S03' } });
     // 目标后段语义抽查（编辑器重排后）：eatBerry 段 = 投斧 + 完成吃教程 + 拾取教程；
@@ -594,32 +572,30 @@ describe('阶段③ S01 迁移契约：quest 编译产物与手写任务图逐�
     expect(findAxeAfter.do[1].params).toEqual({ operation: 'show', tutorialId: 's01.chopWood', await: true });
     const spotWolfAfter = triggers.find(trigger => trigger.id === 'trg_task.s01.survival_after_spotWolf');
     expect(spotWolfAfter.do.map(action => action.params.operation)).toEqual(['commitStoryWhenReady', 'ensureFirstWolf', 'show']);
-    // S02 summons 召见线全量收编：8 个手写 trg_s02_* → event 步骤编译产物（id 契约 + 关键语义抽查）
+    // S02 v3 任务链：符水/问罪/起事/交权 + 分叉/招兵/围剿编排全部由 quest 步骤编译
     const summonsEventIds = [
-      'trg_task.s02.summons_event_spawnInitial',
-      'trg_task.s02.summons_event_acceptSummonsInteract',
-      'trg_task.s02.summons_event_recruitInteract',
+      'trg_task.s02.verdict_event_spawnInitial',
+      'trg_task.s02.rescue_event_ritualIntroDone',
+      'trg_task.s02.rescue_event_accusationDone',
+      'trg_task.s02.rescue_event_arrestDone',
       'trg_task.s02.summons_event_campComplete',
-      'trg_task.s02.summons_event_raidVictory',
-      'trg_task.s02.summons_event_scavengerEncounter',
-      'trg_task.s02.summons_event_scavengerEncounterEnd',
-      'trg_task.s02.summons_event_travelToS09'
+      'trg_task.s02.rescue_event_revoltStart',
+      'trg_task.s02.rescue_event_controlReturn',
+      'trg_task.s02.summons_event_recruitYellowIntro',
+      'trg_task.s02.summons_event_recruitGuardIntro',
     ];
     for (const id of summonsEventIds) {
       expect(triggers.find(trigger => trigger.id === id)).toBeTruthy();
     }
-    // 手写触发器的防连点 cooldown / 条件守卫 / branch 结构随收编透传
-    const recruitCompiled = triggers.find(trigger => trigger.id === 'trg_task.s02.summons_event_recruitInteract');
-    expect(recruitCompiled.cooldown).toBe(0.5);
-    expect(recruitCompiled.if).toEqual({ var: 'story.s02SummonsAccepted' });
-    expect(recruitCompiled.once).toBe(false);
-    expect(recruitCompiled.do).toHaveLength(3);
-    expect(recruitCompiled.do.every(item => Array.isArray(item.branch))).toBe(true);
-    expect(triggers.find(trigger => trigger.id === 'trg_task.s02.summons_event_acceptSummonsInteract').cooldown).toBe(1);
-    expect(triggers.find(trigger => trigger.id === 'trg_task.s02.summons_event_spawnInitial').when)
-      .toEqual({ type: 'sceneEnter', params: { sceneId: 'S02' } });
-    // 手写 trg_s02_* 七个已删除（收编后零重复定义）
-    for (const goneId of ['trg_s02_spawn_initial', 'trg_s02_recruit', 'trg_s02_camp_laid', 'trg_s02_raid_repeled', 'trg_s02_zhangjiao_summons', 'trg_s02_scavenger_chief_encounter', 'trg_s02_scavenger_chief_dialogue_end']) {
+    // 围剿开战分支与斩将收尾由 branch 结构透传
+    const campCompiled = triggers.find(trigger => trigger.id === 'trg_task.s02.summons_event_campComplete');
+    expect(campCompiled.do.at(-1)?.branch).toBeTruthy();
+    const raidStart = triggers.find(trigger => trigger.id === 'trg_task.s02.summons_event_raidAssistAccept');
+    expect(raidStart.do.at(-1).params).toEqual({
+      operation: 's02.raid.start', scenarioId: 'scenario.command.s02.raid.start', branch: 'independent', assist: true
+    });
+    // 手写旧乞讨/举事触发器已删除（新链不再有乞讨/求饶/打晕段）
+    for (const goneId of ['trg_s02_beg_children_enter', 'trg_s02_beg_confront_choice', 'trg_s02_recruit']) {
       expect(project.triggers.find(trigger => trigger.id === goneId)).toBeUndefined();
     }
   });

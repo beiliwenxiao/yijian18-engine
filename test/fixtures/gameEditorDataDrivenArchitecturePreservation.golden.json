@@ -195,7 +195,11 @@
       "trg_task.s02.summons_event_travelToS09",
       "trg_task.s02.verdict_event_begChildrenEnter",
       "trg_task.s02.summons_event_scavengerEncounter",
-      "trg_task.s02.summons_event_recruitInteract"
+      "trg_task.s02.summons_event_recruitInteract",
+      "trg_s02_camp_forge",
+      "trg_s02_camp_workshop",
+      "trg_s02_camp_recruit_post",
+      "trg_s02_camp_granary"
     ],
     "s_5_8": [
       "trg_s58_travel_west",
@@ -295,6 +299,7 @@
     ]
   },
   "endingPriority": [
+    "expedition-failed",
     "chaos-weed",
     "scorched-earth",
     "observer",

@@ -1510,7 +1510,7 @@
   {
     "commandType": "state.transaction",
     "id": "story.s02.recruit.tick",
-    "name": "荒村：招募信众入道（每次 +10，上限 50）",
+    "name": "荒村：一次招募信众入道（直接成军 50 人）",
     "transaction": {
       "when": {
         "all": [
@@ -1523,7 +1523,7 @@
             "path": "story.s02PorridgeLaid"
           },
           {
-            "lte": 40,
+            "lte": 49,
             "path": "story.s02RecruitCount"
           }
         ]
@@ -1532,15 +1532,7 @@
         {
           "path": "s02RecruitCount",
           "target": "story",
-          "value": {
-            "$add": [
-              {
-                "$get": "story.s02RecruitCount",
-                "default": 0
-              },
-              10
-            ]
-          }
+          "value": 50
         }
       ]
     }
@@ -1550,6 +1542,20 @@
     "id": "story.s02.recruit.done",
     "name": "荒村：招募信众满 50、七十人入道",
     "transaction": {
+      "writes": [
+        {
+          "path": "s02RecruitDone",
+          "target": "story",
+          "value": true
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s02.uprising",
+    "name": "荒村：张角举事、破旧村落转为黄巾军营",
+    "transaction": {
       "when": {
         "all": [
           {
@@ -1557,18 +1563,18 @@
             "path": "story.currentSceneId"
           },
           {
-            "gte": 50,
-            "path": "story.s02RecruitCount"
+            "equals": true,
+            "path": "story.s02RecruitDone"
           },
           {
             "notEquals": true,
-            "path": "story.s02RecruitDone"
+            "path": "story.s02Uprising"
           }
         ]
       },
       "writes": [
         {
-          "path": "s02RecruitDone",
+          "path": "s02Uprising",
           "target": "story",
           "value": true
         }
@@ -1706,7 +1712,7 @@
   {
     "commandType": "state.transaction",
     "id": "story.s02.raid.repeled",
-    "name": "荒村：围剿战·官兵被击退",
+    "name": "围剿：斩将击退（余部溃散）",
     "transaction": {
       "when": {
         "all": [
@@ -1725,6 +1731,16 @@
           "path": "s02RaidRepeled",
           "target": "story",
           "value": true
+        },
+        {
+          "path": "s02RaidFight",
+          "target": "story",
+          "value": false
+        },
+        {
+          "path": "s02RaidPool",
+          "target": "story",
+          "value": 0
         }
       ]
     }
@@ -2474,6 +2490,22 @@
   },
   {
     "commandType": "state.transaction",
+    "id": "craft.production.recipe.iron_axe",
+    "name": "铁匠铺产出：铁斧 ×1",
+    "transaction": {
+      "inventory": {
+        "addEntries": [
+          {
+            "itemId": "tool.worn_axe",
+            "quantity": 1
+          }
+        ],
+        "type": "batchAdd"
+      }
+    }
+  },
+  {
+    "commandType": "state.transaction",
     "id": "craft.production.recipe.wooden_shield",
     "name": "工坊产出：木盾 ×1",
     "transaction": {
@@ -2486,6 +2518,765 @@
         ],
         "type": "batchAdd"
       }
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s02.spawned",
+    "name": "荒村：场景进入，主角昏倒（起事链起点）",
+    "transaction": {
+      "writes": [
+        {
+          "path": "s02Spawned",
+          "target": "story",
+          "value": true
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s02.rescued.byZhangjiao",
+    "name": "荒村：张角选择救人",
+    "transaction": {
+      "writes": [
+        {
+          "path": "s02ZhangjiaoChoice",
+          "target": "story",
+          "value": "save"
+        },
+        {
+          "path": "s02Rescued",
+          "target": "story",
+          "value": true
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s02.ignored",
+    "name": "荒村：张角选择不管（村民捡走伤者）",
+    "transaction": {
+      "writes": [
+        {
+          "path": "s02ZhangjiaoChoice",
+          "target": "story",
+          "value": "ignore"
+        },
+        {
+          "path": "s02Ignored",
+          "target": "story",
+          "value": true
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s02.pickedByVillagers",
+    "name": "荒村：伤者被村民捡回（不管分支）",
+    "transaction": {
+      "writes": [
+        {
+          "path": "s02PickedByVillagers",
+          "target": "story",
+          "value": true
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s02.ritual.learned",
+    "name": "荒村：符水仪式交托（撕符/点火/投锅问答）",
+    "transaction": {
+      "writes": [
+        {
+          "path": "s02RitualLearned",
+          "target": "story",
+          "value": true
+        },
+        {
+          "path": "s02SummonsAccepted",
+          "target": "story",
+          "value": true
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s02.porridge.served",
+    "name": "荒村：递出一碗符水（上限 50，记录受粥者）",
+    "transaction": {
+      "writes": [
+        {
+          "path": "s02PorridgeServed",
+          "target": "story",
+          "value": {
+            "$min": [
+              50,
+              {
+                "$add": [
+                  {
+                    "$get": "story.s02PorridgeServed",
+                    "default": 0
+                  },
+                  1
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "path": "s02ServedIds",
+          "target": "story",
+          "value": {
+            "$appendUnique": {
+              "source": {
+                "$get": "story.s02ServedIds",
+                "default": []
+              },
+              "values": [
+                {
+                  "$get": "payload.villagerId",
+                  "default": "S02-relief-child"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s02.coins.given",
+    "name": "荒村：递出一串铜钱剑（上限 7）",
+    "transaction": {
+      "writes": [
+        {
+          "path": "s02CoinsGiven",
+          "target": "story",
+          "value": {
+            "$min": [
+              7,
+              {
+                "$add": [
+                  {
+                    "$get": "story.s02CoinsGiven",
+                    "default": 0
+                  },
+                  1
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "path": "s02CoinsForged",
+          "target": "story",
+          "value": {
+            "$min": [
+              7,
+              {
+                "$add": [
+                  {
+                    "$get": "story.s02CoinsGiven",
+                    "default": 0
+                  },
+                  1
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s02.accused",
+    "name": "荒村：县尉踹锅宣读四条罪状",
+    "transaction": {
+      "writes": [
+        {
+          "path": "s02Accused",
+          "target": "story",
+          "value": true
+        },
+        {
+          "path": "s02AccusationEvidence",
+          "target": "story",
+          "value": [
+            "越权赈济：私设粥棚，僭行官府专营之赈",
+            "聚众二百余口：以符水聚拢流民，啸聚荒村",
+            "收买人心：散财施食，蛊惑百姓只知有张角",
+            "私铸兵刃：七枚铜钱缠作剑形，形同私铸"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s02.arrest.child",
+    "name": "荒村：官兵抓捕张角亲手递粥的孩子",
+    "transaction": {
+      "writes": [
+        {
+          "path": "s02ArrestChild",
+          "target": "story",
+          "value": true
+        },
+        {
+          "path": "s02ArrestChildId",
+          "target": "story",
+          "value": {
+            "$get": "payload.childId",
+            "default": "S02-relief-child"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s02.revolt.confirmed",
+    "name": "荒村：⑨ 起事击退县尉，坐实起事",
+    "transaction": {
+      "writes": [
+        {
+          "path": "s02RevoltConfirmed",
+          "target": "story",
+          "value": true
+        },
+        {
+          "path": "s02RevoltFight",
+          "target": "story",
+          "value": false
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s02.control.returned",
+    "name": "荒村：⑨ 结束，操控权交回年轻人",
+    "transaction": {
+      "writes": [
+        {
+          "path": "s02ControlReturned",
+          "target": "story",
+          "value": true
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s02.allegiance.joined",
+    "name": "分叉：加入黄巾（简单）",
+    "transaction": {
+      "writes": [
+        {
+          "path": "s02AllegianceJoined",
+          "target": "story",
+          "value": true
+        },
+        {
+          "path": "s02AllegianceIndependent",
+          "target": "story",
+          "value": false
+        },
+        {
+          "path": "factionAlignment",
+          "target": "story",
+          "value": "yellow_turban"
+        },
+        {
+          "path": "runDifficulty",
+          "target": "story",
+          "value": "easy"
+        },
+        {
+          "path": "faction.reputation.yellow_turban",
+          "target": "blackboard",
+          "value": 20
+        },
+        {
+          "path": "faction.reputation.han",
+          "target": "blackboard",
+          "value": -10
+        },
+        {
+          "path": "alignment",
+          "target": "blackboard",
+          "value": "yellow_turban"
+        },
+        {
+          "path": "run.difficulty",
+          "target": "blackboard",
+          "value": "easy"
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s02.allegiance.independent",
+    "name": "分叉：暂时还不行（困难）",
+    "transaction": {
+      "writes": [
+        {
+          "path": "s02AllegianceIndependent",
+          "target": "story",
+          "value": true
+        },
+        {
+          "path": "s02AllegianceJoined",
+          "target": "story",
+          "value": false
+        },
+        {
+          "path": "factionAlignment",
+          "target": "story",
+          "value": "independent"
+        },
+        {
+          "path": "runDifficulty",
+          "target": "story",
+          "value": "hard"
+        },
+        {
+          "path": "faction.reputation.yellow_turban",
+          "target": "blackboard",
+          "value": 5
+        },
+        {
+          "path": "alignment",
+          "target": "blackboard",
+          "value": "independent"
+        },
+        {
+          "path": "run.difficulty",
+          "target": "blackboard",
+          "value": "hard"
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s02.recruit.yellow",
+    "name": "加入线：一次招募 80 黄巾军",
+    "transaction": {
+      "writes": [
+        {
+          "path": "s02RecruitYellow",
+          "target": "story",
+          "value": 80
+        },
+        {
+          "path": "s02RecruitCount",
+          "target": "story",
+          "value": 80
+        },
+        {
+          "path": "s02RecruitDone",
+          "target": "story",
+          "value": true
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s02.recruit.guard",
+    "name": "不加入线：一次招募亲卫（数量=统率上限）",
+    "transaction": {
+      "writes": [
+        {
+          "path": "s02RecruitGuard",
+          "target": "story",
+          "value": {
+            "$get": "payload.cap",
+            "default": 10
+          }
+        },
+        {
+          "path": "s02GuardCap",
+          "target": "story",
+          "value": {
+            "$get": "payload.cap",
+            "default": 10
+          }
+        },
+        {
+          "path": "s02RecruitCount",
+          "target": "story",
+          "value": {
+            "$get": "payload.cap",
+            "default": 10
+          }
+        },
+        {
+          "path": "s02RecruitDone",
+          "target": "story",
+          "value": true
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s02.prepared",
+    "name": "整备完成（编组/装备/补给与姿态教程）",
+    "transaction": {
+      "writes": [
+        {
+          "path": "s02Prepared",
+          "target": "story",
+          "value": true
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s02.raid.prepare",
+    "name": "围剿开战：单一兵力池 1000、同屏 100",
+    "transaction": {
+      "writes": [
+        {
+          "path": "s02RaidFight",
+          "target": "story",
+          "value": true
+        },
+        {
+          "path": "s02RaidTotal",
+          "target": "story",
+          "value": 1000
+        },
+        {
+          "path": "s02RaidPool",
+          "target": "story",
+          "value": 900
+        },
+        {
+          "path": "s02RaidDefeated",
+          "target": "story",
+          "value": 0
+        },
+        {
+          "path": "s02RaidBossSpawned",
+          "target": "story",
+          "value": false
+        },
+        {
+          "path": "s02RaidRouted",
+          "target": "story",
+          "value": 0
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s02.raid.assist",
+    "name": "围剿：不加入线玩家选择是否以援军参战",
+    "transaction": {
+      "writes": [
+        {
+          "path": "s02RaidAssist",
+          "target": "story",
+          "value": {
+            "$get": "payload.assist",
+            "default": false
+          }
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s02.raid.boss.spawned",
+    "name": "围剿：击破 500，傅燮登场（一次性）",
+    "transaction": {
+      "writes": [
+        {
+          "path": "s02RaidBossSpawned",
+          "target": "story",
+          "value": true
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s02.raid.defeat",
+    "name": "围剿：全军溃退（营地被破，主线继续）",
+    "transaction": {
+      "writes": [
+        {
+          "path": "s02RaidFailed",
+          "target": "story",
+          "value": true
+        },
+        {
+          "path": "s02RaidFight",
+          "target": "story",
+          "value": false
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s02.zhangjiao.fallen",
+    "name": "围剿（不加入线）：张角重伤退场，不判负",
+    "transaction": {
+      "writes": [
+        {
+          "path": "s02ZhangjiaoFallen",
+          "target": "story",
+          "value": true
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s02.revolt.fight.prepare",
+    "name": "荒村：⑨ 起事开战（张角 + 20 黄巾 vs 县尉 100 兵单波）",
+    "transaction": {
+      "writes": [
+        {
+          "path": "s02RevoltFight",
+          "target": "story",
+          "value": true
+        },
+        {
+          "path": "s02RevoltEnemyTotal",
+          "target": "story",
+          "value": 100
+        },
+        {
+          "path": "s02RevoltEnemyDefeated",
+          "target": "story",
+          "value": 0
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s02.accusation.ready",
+    "name": "荒村：施粥/铜钱达阈值，县尉入场问罪",
+    "transaction": {
+      "writes": [
+        {
+          "path": "s02AccusationReady",
+          "target": "story",
+          "value": true
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s02.camp.handover",
+    "name": "营地交接（V3）：营归玩家、军归张角",
+    "transaction": {
+      "writes": [
+        {
+          "path": "s02CampHandover",
+          "target": "story",
+          "value": {
+            "$if": [
+              {
+                "$get": "story.s02AllegianceJoined",
+                "default": false
+              },
+              "joined",
+              "independent"
+            ]
+          }
+        },
+        {
+          "path": "campOwner",
+          "target": "story",
+          "value": "player"
+        },
+        {
+          "path": "campOwnerArmyId",
+          "target": "story",
+          "value": "army.player.escort"
+        },
+        {
+          "path": "campOwnerFactionId",
+          "target": "story",
+          "value": "player"
+        },
+        {
+          "path": "playerStronghold",
+          "target": "story",
+          "value": {
+            "campId": "camp.s02.field",
+            "cityId": null
+          }
+        },
+        {
+          "path": "player.stronghold",
+          "target": "blackboard",
+          "value": {
+            "campId": "camp.s02.field",
+            "cityId": null
+          }
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s02.steward.store",
+    "name": "发展段 N1：军营仓/军团粮完成一次存取",
+    "transaction": {
+      "writes": [
+        {
+          "path": "s02StewardStore",
+          "target": "story",
+          "value": true
+        },
+        {
+          "path": "s02StewardCount",
+          "target": "story",
+          "value": {
+            "$add": [
+              {
+                "$get": "story.s02StewardCount",
+                "default": 0
+              },
+              1
+            ]
+          }
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s02.steward.craft",
+    "name": "发展段 N2：工位产出一件物品",
+    "transaction": {
+      "writes": [
+        {
+          "path": "s02StewardCraft",
+          "target": "story",
+          "value": true
+        },
+        {
+          "path": "s02StewardCount",
+          "target": "story",
+          "value": {
+            "$add": [
+              {
+                "$get": "story.s02StewardCount",
+                "default": 0
+              },
+              1
+            ]
+          }
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s02.steward.muster",
+    "name": "发展段 N3：亲卫人数达到下限",
+    "transaction": {
+      "writes": [
+        {
+          "path": "s02StewardMuster",
+          "target": "story",
+          "value": true
+        },
+        {
+          "path": "s02StewardCount",
+          "target": "story",
+          "value": {
+            "$add": [
+              {
+                "$get": "story.s02StewardCount",
+                "default": 0
+              },
+              1
+            ]
+          }
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s02.steward.supply",
+    "name": "发展段 N4：营仓粮达到阈值",
+    "transaction": {
+      "writes": [
+        {
+          "path": "s02StewardSupply",
+          "target": "story",
+          "value": true
+        },
+        {
+          "path": "s02StewardCount",
+          "target": "story",
+          "value": {
+            "$add": [
+              {
+                "$get": "story.s02StewardCount",
+                "default": 0
+              },
+              1
+            ]
+          }
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s02.stewardship.ready",
+    "name": "发展段 N5：里程碑达成数 ≥2 或即刻启程",
+    "transaction": {
+      "writes": [
+        {
+          "path": "s02StewardshipReady",
+          "target": "story",
+          "value": true
+        },
+        {
+          "path": "s02SummonsUrgent",
+          "target": "story",
+          "value": true
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s02.summons.urgent",
+    "name": "发展段 N5：广宗告急，应召南下",
+    "transaction": {
+      "writes": [
+        {
+          "path": "s02SummonsUrgent",
+          "target": "story",
+          "value": true
+        }
+      ]
     }
   }
 ]

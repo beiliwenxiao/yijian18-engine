@@ -33,6 +33,7 @@
         "text": "你终于到了。张角正在粥棚营地召集仍愿救民的人。"
       }
     },
+    "runtimeStarted": true,
     "startNode": "start",
     "title": "张角召见"
   },
@@ -42,234 +43,83 @@
       "collapse": {
         "nextNode": "report",
         "speaker": "旁白",
-        "text": "耳边传来脚步声与压低的交谈——有人发现了他。"
+        "text": "不知过了多久，车轮声与脚步声由远及近——一支推着粮车的黄巾队伍停在了村口。"
+      },
+      "ignoreOrder": {
+        "portrait": "zhangjiao",
+        "speaker": "张角",
+        "text": "「各人有各人的命。车别停，先进村支锅。」断墙后的村民犹豫片刻，还是把昏倒的人拖进了破屋。"
       },
       "judge": {
         "choices": [
           {
-            "id": "kill",
-            "nextNode": "killOrder",
-            "text": "杀了：乱世自有一套规矩"
-          },
-          {
             "id": "save",
             "nextNode": "saveOrder",
-            "text": "救他：黄巾不杀无辜之人"
+            "text": "救他：抬进粥棚，喂一口符水"
+          },
+          {
+            "id": "ignore",
+            "nextNode": "ignoreOrder",
+            "text": "不管：由村里人自己处置"
           }
         ],
         "portrait": "zhangjiao",
         "speaker": "张角",
-        "text": "乱世之人，死生各由天命。这个人——怎么处置？这个选择无法撤回。"
+        "text": "乱世之人，死生各由天命。这个人如何处置——你替苍天做个主。"
       },
       "killOrder": {
         "portrait": "zhangjiao",
         "speaker": "张角",
-        "text": "「留下他的药囊。人，就不用留了。」乱世草芥，荒村外又添一具无名尸骸。"
+        "text": "「留下他的药囊。人，就不用留了。」（废弃分支，保留数据不可达）"
       },
       "report": {
         "nextNode": "judge",
         "portrait": "huangjin_scout",
         "speaker": "黄巾斥候",
-        "text": "主公！村口那边躺着个昏倒的人，像是被围殴打晕的，随身还带着伤药，像是翻山逃难来的。"
+        "text": "主公！村口躺着个昏倒的人，浑身是伤，像是翻山逃难来的。救，还是不管？"
       },
       "saveOrder": {
         "portrait": "zhangjiao",
         "speaker": "张角",
-        "text": "「苍天已死，黄天当立——立的就该是让这样的人活下去。你们两个，把他抬回营地去，小心他的伤。」"
+        "text": "「苍天已死，黄天当立——立的就该是让这样的人活下去。把他抬到锅边去，先喂口符水吊住命。」"
       },
       "start": {
         "nextNode": "collapse",
         "speaker": "旁白",
-        "text": "视线模糊前，你最后看到的是围上来的村民影子。再睁眼时，你已倒在荒村外的山道旁，饥渴与伤痛把天地搅成一片昏黑。"
+        "text": "视线一阵阵发黑。你从山道上一头栽倒，最后看见的是荒村断墙后几张探头张望的脸。"
       }
     },
+    "runtimeStarted": true,
     "startNode": "start",
     "title": "荒村抉择"
-  },
-  {
-    "id": "dialogue.s02.beggarChildren",
-    "nodes": {
-      "more": {
-        "speaker": "旁白",
-        "text": "果子刚递出去，断墙后又不声不响地探出好几张小脸，一双双眼睛盯着你的行囊。"
-      },
-      "refused": {
-        "speaker": "旁白",
-        "text": "你按住行囊没有动。孩子眼里的光一点点暗下去，默默退回断墙的阴影里。"
-      },
-      "start": {
-        "choices": [
-          {
-            "id": "give",
-            "nextNode": "more",
-            "text": "把果子分给这孩子"
-          },
-          {
-            "id": "refuse",
-            "nextNode": "refused",
-            "text": "摇头，什么也没给"
-          }
-        ],
-        "portrait": "refugee_woman",
-        "speaker": "乞讨孩童",
-        "text": "叔叔……行行好……俺三天没吃东西了……"
-      }
-    },
-    "startNode": "start",
-    "title": "孩童乞讨"
-  },
-  {
-    "id": "dialogue.s02.beggarChildrenMore",
-    "nodes": {
-      "scatter": {
-        "speaker": "旁白",
-        "text": "孩子们叽叽喳喳了一阵，终究一哄而散，钻回断墙后的破屋里去了。"
-      },
-      "start": {
-        "choices": [
-          {
-            "id": "give5",
-            "nextNode": "scatter",
-            "text": "再给（5颗野果）"
-          },
-          {
-            "id": "refuse5",
-            "nextNode": "scatter",
-            "text": "实在没有了"
-          }
-        ],
-        "portrait": "refugee_woman",
-        "speaker": "乞讨孩童",
-        "text": "还饿……求求你了……"
-      }
-    },
-    "startNode": "start",
-    "title": "孩童乞讨（更多孩子）"
-  },
-  {
-    "id": "dialogue.s02.beggarAdults",
-    "nodes": {
-      "anger": {
-        "speaker": "旁白",
-        "text": "人群静了一瞬。浑浊的眼睛里最后一点光熄灭了，他们抄起木棍和锄头，一步一步围拢过来。"
-      },
-      "hand": {
-        "speaker": "旁白",
-        "text": "食物刚脱手，人群便哄然失控了——不是讨，是抢。无数只手朝你的行囊抓来。"
-      },
-      "start": {
-        "choices": [
-          {
-            "id": "giveAdults",
-            "nextNode": "hand",
-            "text": "把食物分给他们"
-          },
-          {
-            "id": "refuseAdults",
-            "nextNode": "anger",
-            "text": "摇头不给"
-          }
-        ],
-        "portrait": "refugee_woman",
-        "speaker": "灾民",
-        "text": "大人行行好……全村人都快饿死了……给口吃的吧……"
-      }
-    },
-    "startNode": "start",
-    "title": "灾民乞讨"
-  },
-  {
-    "id": "dialogue.s02.beggarConfront",
-    "nodes": {
-      "drawWeapon": {
-        "speaker": "旁白",
-        "text": "刀锋出鞘的寒光让围拢的人群顿了一顿，随即更加疯狂地扑了上来。"
-      },
-      "start": {
-        "choices": [
-          {
-            "id": "pacify",
-            "nextNode": "takeBeating",
-            "text": "护住要害，不还手"
-          },
-          {
-            "id": "fight",
-            "nextNode": "drawWeapon",
-            "text": "拔刀还击"
-          }
-        ],
-        "speaker": "旁白",
-        "text": "棍棒和拳脚雨点般落下。这些人已经饿疯了——你要怎么办？"
-      },
-      "takeBeating": {
-        "speaker": "旁白",
-        "text": "你抱头蜷缩。拳脚和木棍雨点般落在身上，行囊被粗暴地撕开，眼前一次次发黑……"
-      }
-    },
-    "startNode": "start",
-    "title": "灾民围攻"
   },
   {
     "id": "dialogue.s02.awakening",
     "nodes": {
       "bestow": {
+        "nextNode": "weak",
         "portrait": "zhangjiao",
         "speaker": "张角",
-        "text": "这瓶符水收好。伤了渴了饮上一口，能吊住一条命。"
+        "text": "你伤得重，站在旁边看着就好。撕符、点火、投锅、盛粥、递碗——看明白了，再说别的。"
       },
       "greet": {
         "nextNode": "bestow",
         "portrait": "zhangjiao",
         "speaker": "张角",
-        "text": "醒了？荒村的疫气冲昏了那些人的头，你能活着被抬回来，命硬得��。我是张角。这世道饿殍遍野、官军肆虐——你若愿意，可在此收拾歇息，随我们同走一条路。"
+        "text": "醒了？我是张角。这世道饿殍遍野，你既还有一口气，就先看着——看这锅符水怎么救活一个村子。"
       },
       "wake": {
         "nextNode": "greet",
         "speaker": "旁白",
-        "text": "篝火的暖意渗进衣衫。你在营地中缓缓睁开眼，几名黄巾信众正守在担架旁。"
+        "text": "灶火的暖意渗进衣衫。你在粥棚边缓缓睁眼，一个披黄巾、执桃木杖的高大身影正俯视着你。"
+      },
+      "weak": {
+        "speaker": "旁白",
+        "text": "你想开口，喉咙却只发出一声干哑的气音。手脚发软，连站直都费劲。"
       }
     },
     "startNode": "wake",
     "title": "营地苏醒"
-  },
-  {
-    "id": "dialogue.s02.porridgeStart",
-    "nodes": {
-      "law": {
-        "nextNode": "light",
-        "portrait": "zhangjiao",
-        "speaker": "张角",
-        "text": "有人嚼舌根，说符水是妖法。胡说。神农尝百草，扁鹊施针石——行医施药、济人疾苦，自古就是王法许的事。符水治的也是病，救的也是命，哪一条触了汉律？"
-      },
-      "light": {
-        "nextNode": "vow",
-        "speaker": "旁白",
-        "text": "信众们七手八脚抬锅垒灶，柴火噼啪作响。远处的土路上，灾民们拖家带口，循着炊烟与粥香走来。"
-      },
-      "order": {
-        "nextNode": "law",
-        "portrait": "zhangjiao",
-        "speaker": "张角",
-        "text": "传令下去，把村里那口大锅支起来，熬符水分与百姓。信众推来的几车粮食，今日全部赈出去——再把招众旗立在村东，愿入道的，来旗下登记。"
-      },
-      "start": {
-        "nextNode": "order",
-        "speaker": "旁白",
-        "text": "苏醒的伤者与黄巾信众相视无言。张角环视这片破败的荒村，缓缓开口。"
-      },
-      "tip": {
-        "speaker": "旁白",
-        "text": "（两百余村民将从村口与东侧小径分批前来排队喝符水。喝完的人多数会散去——愿意入道的人，需要你在招众旗下招募。）"
-      },
-      "vow": {
-        "nextNode": "tip",
-        "portrait": "zhangjiao",
-        "speaker": "张角",
-        "text": "苍天已死，黄天当立——这话不是让谁造反，是让活下去的人心里有个盼头。施粥施药，光明磊落。"
-      }
-    },
-    "startNode": "start",
-    "title": "支锅施粥"
   },
   {
     "id": "dialogue.s02.coinGift",
@@ -278,26 +128,26 @@
         "nextNode": "queue",
         "portrait": "zhangjiao",
         "speaker": "张角",
-        "text": "再有人问，就把话说明白：铜钱串成剑形，是道家的法器，镇宅辟邪，送的是平安。周穷救急，圣王之道；散财济民，不犯王法。汉律哪一条写了接济穷人要治罪？"
+        "text": "有人问就说明白：这是道家的镇宅法器，送的是平安。周穷救急，圣王之道。汉律哪一条写了接济穷人要治罪？"
       },
       "queue": {
         "nextNode": "tip",
         "speaker": "旁白",
-        "text": "信众抬出几口木箱，里面码着串好的铜钱剑。村民一人一串，攥在手里，有人在哭，有人在磕头。"
+        "text": "信众抬出木箱。七枚铜钱用麻线缠成小小的剑形，村民一人一串，攥在手心里，有人哭，有人磕头。"
       },
       "start": {
         "nextNode": "law",
         "portrait": "zhangjiao",
         "speaker": "张角",
-        "text": "光给碗粥，救不了明天。传令——开箱，取铜钱剑来，一户一串。"
+        "text": "光给一碗粥，救不了明天。开箱，取铜钱来——七枚一串，缠成剑形，一户一串。"
       },
       "tip": {
         "speaker": "旁白",
-        "text": "（张角当众分发了符水与铜钱剑，并向百姓讲明：施药济贫皆合汉律。愿意入道的村民，已在招众旗下排队。）"
+        "text": "（箱中铜钱剑共七串。递出一串，记一户。发完七串，或施粥满二十碗，村外就会有动静。）"
       }
     },
     "startNode": "start",
-    "title": "铜钱剑送钱"
+    "title": "铜钱剑"
   },
   {
     "id": "dialogue.s02.recruitDone",
@@ -393,7 +243,7 @@
         "nextNode": "order",
         "portrait": "zhangjiao",
         "speaker": "张角",
-        "text": "广宗大营还聚着数万教众，粮药两缺。收拾行装——全军开拔，随我北上去广宗。"
+        "text": "广宗大营还聚着数万教众，粮药两缺。收拾行装——全军开拔，随我南下广宗。"
       },
       "order": {
         "speaker": "旁白",
@@ -421,6 +271,7 @@
         "text": "兵败如山倒。官军锋锐远超预料，黄巾阵线节节溃退——"
       }
     },
+    "runtimeStarted": true,
     "startNode": "start",
     "title": "兵败溃退"
   },
@@ -739,6 +590,7 @@
         "text": "拾荒者警戒区。塌了半边的帐篷之间挂着风干的肉条和不知谁的衣物——都被明码标价地分了类。一个疤脸汉子从最大的帐篷里钻出来，手里的柴刀还在滴着不知道谁的血。"
       }
     },
+    "runtimeStarted": true,
     "startNode": "start",
     "title": "秃鹫之王"
   },
@@ -1167,5 +1019,443 @@
     },
     "startNode": "start",
     "title": "黄天之问"
+  },
+  {
+    "id": "dialogue.s02.ritualIntro",
+    "nodes": {
+      "how": {
+        "nextNode": "teach",
+        "portrait": "zhangjiao",
+        "speaker": "张角",
+        "text": "看好了：先接符纸，撕下一角；凑到灶火点着；投进锅里；搅匀，盛一碗；双手递给乡亲。一锅一次，莫乱。"
+      },
+      "oath": {
+        "nextNode": "tip",
+        "portrait": "zhangjiao",
+        "speaker": "张角",
+        "text": "「苍天已死，黄天当立。今日这碗符水，敬的是活人。」——开始吧。"
+      },
+      "start": {
+        "nextNode": "why",
+        "portrait": "zhangjiao",
+        "speaker": "张角",
+        "text": "官府不许私人赈济。施粥叫聚众，发钱叫收买人心——可人总要活。所以我们不叫它粥。"
+      },
+      "teach": {
+        "nextNode": "oath",
+        "speaker": "旁白",
+        "text": "信众抬来一摞黄纸符箓，灶膛里柴火噼啪。锅边已排起了第一批面黄肌瘦的村民。"
+      },
+      "tip": {
+        "speaker": "旁白",
+        "text": "（走近锅边按提示交互：接符纸→撕一角→点着→投锅→盛粥→递碗。每完成一碗记一人，最多五十碗。）"
+      },
+      "why": {
+        "nextNode": "how",
+        "portrait": "zhangjiao",
+        "speaker": "张角",
+        "text": "这是符水：一锅粥，撕一角符纸烧了投进去。粥还是粥，叫法却成了治病驱邪的符水。官府要问，就说我们在施药。"
+      }
+    },
+    "startNode": "start",
+    "title": "交托符水"
+  },
+  {
+    "id": "dialogue.s02.serveLine",
+    "nodes": {
+      "child": {
+        "speaker": "旁白",
+        "text": "你把碗递过去。孩子接过，先低头把碗沿那角没烧尽的焦纸捞出来，小心地搁在碗边，这才捧起来一口口喝。"
+      },
+      "paper": {
+        "speaker": "旁白",
+        "text": "焦纸在碗沿留下一道黑痕。他喝完，把碗底舔得干干净净，才抬头看你。"
+      },
+      "start": {
+        "nextNode": "child",
+        "portrait": "zhangjiao",
+        "speaker": "张角",
+        "text": "先给那个孩子。他排在最前头，眼睛一直盯着锅。"
+      }
+    },
+    "startNode": "start",
+    "title": "符水第一碗"
+  },
+  {
+    "id": "dialogue.s02.accusation",
+    "nodes": {
+      "charge1": {
+        "nextNode": "charge2",
+        "portrait": "county_lieutenant",
+        "speaker": "县尉",
+        "text": "荒村聚起二百余口，只知有你张角，不知有朝廷——第二条，聚众！"
+      },
+      "charge2": {
+        "nextNode": "charge3",
+        "portrait": "county_lieutenant",
+        "speaker": "县尉",
+        "text": "散财施食，收买人心——第三条，蛊惑百姓！"
+      },
+      "charge3": {
+        "nextNode": "charge4",
+        "portrait": "county_lieutenant",
+        "speaker": "县尉",
+        "text": "还有这个——七枚铜钱缠作剑形，形同私铸兵刃！第四条，私铸！"
+      },
+      "charge4": {
+        "nextNode": "parallel",
+        "speaker": "旁白",
+        "text": "（四条罪状一条条砸下来。围观的村民越退越远，有人手里的铜钱剑掉在了地上。）"
+      },
+      "end": {
+        "speaker": "旁白",
+        "text": "官军刀锋出鞘。张角没有退，只是缓缓抬起了手。"
+      },
+      "kick": {
+        "nextNode": "charge1",
+        "portrait": "county_lieutenant",
+        "speaker": "县尉",
+        "text": "张角！你私设粥棚，僭行官府赈济——这是第一条，越权赈济！"
+      },
+      "order": {
+        "nextNode": "end",
+        "portrait": "county_lieutenant",
+        "speaker": "县尉",
+        "text": "把这些乱民的首领拿下！谁敢拦，以同罪论处！"
+      },
+      "parallel": {
+        "nextNode": "order",
+        "speaker": "旁白",
+        "text": "「越制、聚众、妖言、私铸」——每一个字都不提造反，可每一个字都在把张角往死路上推。"
+      },
+      "start": {
+        "nextNode": "kick",
+        "speaker": "旁白",
+        "text": "土路尽头忽然响起马蹄与甲叶声。一队官军踏碎炊烟，当先的县尉一脚踹翻了灶上的大锅。"
+      }
+    },
+    "startNode": "start",
+    "title": "县尉诬告"
+  },
+  {
+    "id": "dialogue.s02.arrest",
+    "nodes": {
+      "child": {
+        "nextNode": "zhangjiao",
+        "speaker": "旁白",
+        "text": "孩子手里还攥着那只碗，碗沿上留着一道焦黑。他看向张角，又看向你。"
+      },
+      "childLine": {
+        "nextNode": "child",
+        "portrait": "refugee_woman",
+        "speaker": "被抓的孩子",
+        "text": "叔……叔叔……碗我还给你……别抓我……"
+      },
+      "end": {
+        "speaker": "旁白",
+        "text": "县尉冷笑一声，刀尖指向张角。张角把桃木杖往地上一顿，漫天黄纸符箓被风吹起。"
+      },
+      "grab": {
+        "nextNode": "motherLine",
+        "speaker": "旁白",
+        "text": "两名官军越过人群，一把揪住那个刚喝完符水的孩子，把他从母亲怀里拖了出来。"
+      },
+      "motherLine": {
+        "nextNode": "childLine",
+        "portrait": "refugee_woman",
+        "speaker": "孩子的母亲",
+        "text": "他什么都不知道！他只是喝了你们一碗粥啊——！"
+      },
+      "start": {
+        "nextNode": "grab",
+        "speaker": "旁白",
+        "text": "县尉抬了抬下巴。两名官军刀锋一收，朝人群中走去。"
+      },
+      "zhangjiao": {
+        "nextNode": "end",
+        "portrait": "zhangjiao",
+        "speaker": "张角",
+        "text": "放开他。粥是我煮的，符纸是我烧的，铜钱剑是我缠的——与他一个孩子何干。"
+      }
+    },
+    "startNode": "start",
+    "title": "抓人"
+  },
+  {
+    "id": "dialogue.s02.revoltSpeech",
+    "nodes": {
+      "call": {
+        "nextNode": "end",
+        "speaker": "旁白",
+        "text": "二十名黄巾信众齐声应和，抄起锄头、柴刀与削尖的木棍。官军的刀阵压了上来。"
+      },
+      "confess": {
+        "nextNode": "confess2",
+        "portrait": "zhangjiao",
+        "speaker": "张角",
+        "text": "聚众二百余口——我认。他们不是聚众，是活人。"
+      },
+      "confess2": {
+        "nextNode": "confess3",
+        "portrait": "zhangjiao",
+        "speaker": "张角",
+        "text": "收买人心、私铸兵刃——我也认。人心不是买来的，是一碗一碗粥换来的。"
+      },
+      "confess3": {
+        "nextNode": "slogan",
+        "portrait": "zhangjiao",
+        "speaker": "张角",
+        "text": "可你们要抓的，不是张角，是这个村子里每一个还想活下去的人。"
+      },
+      "end": {
+        "speaker": "旁白",
+        "text": "（你操控张角，带领二十名黄巾迎战县尉的一百官兵。这一战，没有退路。）"
+      },
+      "slogan": {
+        "nextNode": "call",
+        "portrait": "zhangjiao",
+        "speaker": "张角",
+        "text": "苍天已死，黄天当立！岁在甲子，天下大吉！"
+      },
+      "start": {
+        "nextNode": "confess",
+        "portrait": "zhangjiao",
+        "speaker": "张角",
+        "text": "越权赈济——我认。官府不赈，我赈。"
+      }
+    },
+    "startNode": "start",
+    "title": "苍天已死"
+  },
+  {
+    "id": "dialogue.s02.allegiance",
+    "nodes": {
+      "choose": {
+        "choices": [
+          {
+            "id": "joined",
+            "nextNode": "joinedText",
+            "text": "加入黄巾（简单：有张角军团掩护）"
+          },
+          {
+            "id": "independent",
+            "nextNode": "independentText",
+            "text": "暂时还不行（困难：只能带自己的亲卫）"
+          }
+        ],
+        "portrait": "zhangjiao",
+        "speaker": "张角",
+        "text": "若你不入伙，就得自己带人守下这一阵——这一仗，会难得多。"
+      },
+      "independentEnd": {
+        "speaker": "旁白",
+        "text": "（你保持独立。围剿时你操控自己与亲卫，可选是否以援军参战。）"
+      },
+      "independentText": {
+        "nextNode": "independentEnd",
+        "portrait": "zhangjiao",
+        "speaker": "张角",
+        "text": "我不勉强。你护住村子，我护住你——但这一阵，你得靠自己的亲卫。"
+      },
+      "joinedEnd": {
+        "speaker": "旁白",
+        "text": "（你成为黄巾一员。围剿时将由你直接操控张角与黄巾军团。）"
+      },
+      "joinedText": {
+        "nextNode": "joinedEnd",
+        "portrait": "zhangjiao",
+        "speaker": "张角",
+        "text": "好。从今日起，你我同奉黄天。你替我再去招八十个愿意活命的人来。"
+      },
+      "offer": {
+        "nextNode": "choose",
+        "portrait": "zhangjiao",
+        "speaker": "张角",
+        "text": "你看见了：一碗粥能救人，也能招来刀兵。跟我走，这仗我替你扛。"
+      },
+      "start": {
+        "nextNode": "offer",
+        "speaker": "旁白",
+        "text": "县尉带着残兵逃了。村子安静下来，张角走到你面前，看着你这双还端不稳碗的手。"
+      }
+    },
+    "startNode": "start",
+    "title": "张角的邀请"
+  },
+  {
+    "id": "dialogue.s02.recruitYellow",
+    "nodes": {
+      "order": {
+        "speaker": "旁白",
+        "text": "（走到招众旗下交互一次：八十名黄巾信众当场入列。）"
+      },
+      "start": {
+        "nextNode": "order",
+        "portrait": "zhangjiao",
+        "speaker": "张角",
+        "text": "招众旗还在村东立着。去旗下振臂一呼——愿入道的，一次都给我招来，不必拖泥带水。"
+      }
+    },
+    "startNode": "start",
+    "title": "再招八十"
+  },
+  {
+    "id": "dialogue.s02.recruitGuard",
+    "nodes": {
+      "order": {
+        "speaker": "旁白",
+        "text": "（走到招众旗下交互一次：亲卫一次入列。人数上限由你的统率与官职决定。）"
+      },
+      "start": {
+        "nextNode": "order",
+        "portrait": "zhangjiao",
+        "speaker": "张角",
+        "text": "你不入黄巾，我也不拦。但守营得有自己的人——去旗下立个名册，愿跟你走的，一次招齐。"
+      }
+    },
+    "startNode": "start",
+    "title": "招亲卫"
+  },
+  {
+    "id": "dialogue.s02.prepare",
+    "nodes": {
+      "start": {
+        "nextNode": "teach",
+        "portrait": "zhangjiao",
+        "speaker": "张角",
+        "text": "兵有了，还得会用。铁匠铺补兵器，粮仓清点存粮，征召处整编——然后学会一句话：原地防守、缓慢推进、全速进攻。"
+      },
+      "teach": {
+        "nextNode": "tip",
+        "speaker": "旁白",
+        "text": "（打开军团指挥 HUD 练习三种姿态，然后指挥全军扎营。）"
+      },
+      "tip": {
+        "speaker": "旁白",
+        "text": "（营栅已立，营门是唯一通路。扎营完成后，傅燮的千人大军就会压上来。）"
+      }
+    },
+    "startNode": "start",
+    "title": "整备"
+  },
+  {
+    "id": "dialogue.s02.debrief",
+    "nodes": {
+      "end": {
+        "speaker": "旁白",
+        "text": "（营地成为据点。你可以随张角去广宗，或留下整备。）"
+      },
+      "part": {
+        "nextNode": "end",
+        "portrait": "zhangjiao",
+        "speaker": "张角",
+        "text": "官军大营扎在广宗北边，我从北往南压过去，正好踹他的后营。到广宗找我——路上若遇官军，别说你认识张角，说你是自己活下来的。"
+      },
+      "request": {
+        "nextNode": "part",
+        "portrait": "zhangjiao",
+        "speaker": "张角",
+        "text": "傅燮退了，可卢植还在广宗。我得带人去驰援——这处村子，就立为据点，交给你。"
+      },
+      "start": {
+        "nextNode": "request",
+        "speaker": "旁白",
+        "text": "官军退去，营地烟火重新升起。张角收起桃木杖，望向南方的山道。"
+      }
+    },
+    "startNode": "start",
+    "title": "战后交代"
+  },
+  {
+    "id": "dialogue.s02.raidAssist",
+    "nodes": {
+      "assistText": {
+        "speaker": "旁白",
+        "text": "你握紧兵器，带亲卫从侧翼压上。张角的黄巾军团与你的旗号在阵前汇合。"
+      },
+      "declineText": {
+        "speaker": "旁白",
+        "text": "你令亲卫守住村口与粮仓。远处喊杀震天，张角的黄巾军团独自迎上了傅燮。"
+      },
+      "start": {
+        "choices": [
+          {
+            "id": "assist",
+            "nextNode": "assistText",
+            "text": "率亲卫从侧翼入场（援军参战）"
+          },
+          {
+            "id": "decline",
+            "nextNode": "declineText",
+            "text": "留下守村，护住村民（不参战）"
+          }
+        ],
+        "speaker": "旁白",
+        "text": "傅燮的大军已压到营外。你的亲卫在营门口列队，等你一句话。"
+      }
+    },
+    "startNode": "start",
+    "title": "是否以援军参战"
+  },
+  {
+    "id": "dialogue.s02.campHandover",
+    "nodes": {
+      "end": {
+        "speaker": "旁白",
+        "text": "（营地已交接：军营仓、军团粮、工位与征召处向你开放。经营几日，或随时应召南下。）"
+      },
+      "joinedLine": {
+        "nextNode": "joinedLineNext",
+        "portrait": "zhangjiao",
+        "speaker": "张角",
+        "text": "黄巾军随我走——他们是黄巾的兵，不是你的私兵。营地、营栅、粮仓、工位与征召处，都留给你。"
+      },
+      "joinedLineNext": {
+        "nextNode": "end",
+        "speaker": "旁白",
+        "text": "（营归你，军归张角——册簿上写得明白。）"
+      },
+      "offer": {
+        "nextNode": "joinedLine",
+        "portrait": "zhangjiao",
+        "speaker": "张角",
+        "text": "我要带人南下广宗。这处营地，从今日起归你——营栅、粮仓、铁匠铺、征召处，都是你的。"
+      },
+      "start": {
+        "nextNode": "offer",
+        "speaker": "旁白",
+        "text": "官军退去后的第三日，张角命人把营地册簿、仓钥与征召名册一并搬到营门前。"
+      }
+    },
+    "startNode": "start",
+    "title": "营地交接"
+  },
+  {
+    "id": "dialogue.s02.urgent",
+    "nodes": {
+      "end": {
+        "speaker": "旁白",
+        "text": "（广宗在南。应召启程：从营门出发，南下驰援。）"
+      },
+      "order": {
+        "nextNode": "end",
+        "portrait": "zhangjiao",
+        "speaker": "张角（口信）",
+        "text": "营地交给你的第一天，我就要你南下。不必带全部家当——带上能打的人，走。"
+      },
+      "report": {
+        "nextNode": "order",
+        "portrait": "huangjin_scout",
+        "speaker": "黄巾信使",
+        "text": "广宗……广宗被围了！张角主公被官军困在城外，粮道断了，请您即刻发兵！"
+      },
+      "start": {
+        "nextNode": "report",
+        "speaker": "旁白",
+        "text": "一名黄巾信使跌跌撞撞冲进营门，甲上还带着血。"
+      }
+    },
+    "startNode": "start",
+    "title": "广宗告急"
   }
 ]

@@ -366,6 +366,31 @@
           "value": "openCookingRecipes"
         },
         {
+          "id": "openProductionStation",
+          "label": "使用生产工位",
+          "paramsSchema": {
+            "additionalProperties": false,
+            "properties": {
+              "operation": {
+                "enum": [
+                  "openProductionStation"
+                ],
+                "type": "string"
+              },
+              "stationId": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "operation",
+              "stationId"
+            ],
+            "type": "object"
+          },
+          "resultSemantics": "打开建造系统工位（铁砧/木作台等）的配方选择；工位须由已完工结构解析，选中配方后以生产系统既有事务扣料产出。",
+          "value": "openProductionStation"
+        },
+        {
           "id": "buildShelter",
           "label": "开始搭建庇护所",
           "paramsSchema": {

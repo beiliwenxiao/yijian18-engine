@@ -657,7 +657,7 @@
       {
         "action": "showTip",
         "params": {
-          "text": "崖壁上垂着藤蔓。{jump}跃向崖壁抓住它，攀到顶部翻越山崖，就能逃往废弃营地。"
+          "text": "崖壁上垂着藤蔓。{jump}跃向崖壁抓住它，攀���顶部翻越山崖，就能逃往废弃营地。"
         },
         "stepId": "hint-vine-climb"
       },
@@ -791,6 +791,189 @@
         "sceneId": "S02"
       },
       "type": "sceneEnter"
+    }
+  },
+  {
+    "do": [
+      {
+        "branch": [
+          {
+            "do": [
+              {
+                "action": "scenario.command",
+                "params": {
+                  "operation": "s02.uprising",
+                  "scenarioId": "scenario.command.s02.uprising"
+                },
+                "stepId": "uprising-restore-seed-structures"
+              },
+              {
+                "action": "spawnPlacements",
+                "params": {
+                  "selector": {
+                    "group": "S02-camp-buildings"
+                  }
+                },
+                "stepId": "uprising-restore-buildings"
+              },
+              {
+                "branch": [
+                  {
+                    "do": [
+                      {
+                        "action": "spawnPlacements",
+                        "params": {
+                          "selector": {
+                            "group": "S02-army-yellow80"
+                          }
+                        },
+                        "stepId": "uprising-restore-yellow80"
+                      },
+                      {
+                        "action": "scenario.command",
+                        "params": {
+                          "operation": "army.camp",
+                          "scenarioId": "scenario.command.army.camp",
+                          "x": 560,
+                          "y": 400
+                        },
+                        "stepId": "uprising-restore-camp-joined"
+                      }
+                    ],
+                    "when": {
+                      "name": "story.s02AllegianceJoined",
+                      "op": "var"
+                    }
+                  },
+                  {
+                    "do": [
+                      {
+                        "action": "spawnPlacements",
+                        "params": {
+                          "selector": {
+                            "group": "S02-army-guard"
+                          }
+                        },
+                        "stepId": "uprising-restore-guard"
+                      },
+                      {
+                        "action": "scenario.command",
+                        "params": {
+                          "operation": "army.camp",
+                          "scenarioId": "scenario.command.army.camp",
+                          "x": 560,
+                          "y": 400
+                        },
+                        "stepId": "uprising-restore-camp-independent"
+                      }
+                    ],
+                    "when": {
+                      "name": "story.s02AllegianceIndependent",
+                      "op": "var"
+                    }
+                  }
+                ],
+                "stepId": "uprising-restore-army-branch"
+              }
+            ],
+            "when": {
+              "name": "story.s02RevoltConfirmed",
+              "op": "var"
+            }
+          }
+        ],
+        "stepId": "uprising-restore-branch"
+      }
+    ],
+    "id": "trg_s02_uprising_restore",
+    "name": "荒村：读档恢复——已起事时补齐军营建筑与按阵营恢复军队",
+    "once": false,
+    "when": {
+      "params": {
+        "sceneId": "S02"
+      },
+      "type": "sceneEnter"
+    }
+  },
+  {
+    "cooldown": 1,
+    "do": [
+      {
+        "action": "s01Survival",
+        "params": {
+          "operation": "openProductionStation",
+          "stationId": "station.forge.anvil"
+        },
+        "stepId": "open-forge-anvil"
+      }
+    ],
+    "id": "trg_s02_camp_forge",
+    "name": "军营铁匠铺：打开铁砧配方（打制铁斧）",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "cooldown": 1,
+    "do": [
+      {
+        "action": "s01Survival",
+        "params": {
+          "operation": "openProductionStation",
+          "stationId": "station.workshop.carpenter"
+        },
+        "stepId": "open-workshop-carpenter"
+      }
+    ],
+    "id": "trg_s02_camp_workshop",
+    "name": "军营军械工坊：打开木作台配方（木箭/木盾）",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "cooldown": 1,
+    "do": [
+      {
+        "action": "scenario.command",
+        "params": {
+          "operation": "s02.openArmyOrders",
+          "scenarioId": "scenario.command.s02.openArmyOrders"
+        },
+        "stepId": "open-army-orders"
+      }
+    ],
+    "id": "trg_s02_camp_recruit_post",
+    "name": "军营征召处：打开军团指挥 HUD（征兵/编组/军令）",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "cooldown": 1,
+    "do": [
+      {
+        "action": "scenario.command",
+        "params": {
+          "campId": "camp.s02.field",
+          "operation": "camp.openTransfer",
+          "scenarioId": "scenario.command.camp.openTransfer"
+        },
+        "stepId": "open-camp-granary"
+      }
+    ],
+    "id": "trg_s02_camp_granary",
+    "name": "军营粮仓：打开军团 ↔ 军营存粮面板",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
     }
   },
   {
@@ -2516,6 +2699,448 @@
     ],
     "id": "trg_s511_travel_west",
     "name": "官道平原：折返涉水浅滩",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "cooldown": 0.3,
+    "do": [
+      {
+        "branch": [
+          {
+            "do": [
+              {
+                "action": "scenario.command",
+                "params": {
+                  "operation": "s02.ritual.step",
+                  "scenarioId": "scenario.command.s02.ritual.step"
+                },
+                "stepId": "ritual-step"
+              }
+            ],
+            "when": {
+              "name": "story.s02RitualLearned",
+              "op": "var"
+            }
+          }
+        ],
+        "stepId": "ritual-branch"
+      }
+    ],
+    "id": "trg_s02_ritual_serve",
+    "name": "荒村：锅边交互——接符纸→撕角→点灶→投锅→盛粥→递碗",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "spawnPlacements",
+        "params": {
+          "selector": {
+            "group": "S02-revolt-county"
+          }
+        },
+        "stepId": "accusation-spawn-county"
+      },
+      {
+        "action": "scenario.command",
+        "params": {
+          "operation": "s02.accusation.start",
+          "scenarioId": "scenario.command.s02.accusation.start"
+        },
+        "stepId": "accusation-start"
+      },
+      {
+        "action": "showTip",
+        "params": {
+          "text": "灶边忽然安静下来。土路尽头，一队官军踏碎炊烟而来，当先的县尉一脚踹翻了那口大锅。"
+        },
+        "stepId": "accusation-tip"
+      }
+    ],
+    "id": "trg_s02_accusation_spawn",
+    "name": "荒村：施粥/铜钱达阈值——县尉率兵入场、踹锅问罪",
+    "once": true,
+    "when": {
+      "params": {
+        "definitionId": "story.s02.accusation.ready"
+      },
+      "type": "state.transaction"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "state.transaction",
+        "params": {
+          "definitionId": "story.s02.revolt.confirmed"
+        },
+        "stepId": "revolt-confirmed"
+      },
+      {
+        "action": "despawnPlacements",
+        "params": {
+          "selector": {
+            "group": "S02-revolt-county"
+          }
+        },
+        "stepId": "revolt-despawn-county"
+      },
+      {
+        "action": "scenario.command",
+        "params": {
+          "operation": "s02.uprising",
+          "scenarioId": "scenario.command.s02.uprising"
+        },
+        "stepId": "revolt-camp-seed"
+      },
+      {
+        "action": "spawnPlacements",
+        "params": {
+          "selector": {
+            "group": "S02-camp-buildings"
+          }
+        },
+        "stepId": "revolt-camp-buildings"
+      },
+      {
+        "action": "scenario.command",
+        "params": {
+          "operation": "s02.revolt.finish",
+          "scenarioId": "scenario.command.s02.revolt.finish"
+        },
+        "stepId": "revolt-finish"
+      },
+      {
+        "action": "showTip",
+        "params": {
+          "text": "县尉拨马便走，丢下一句「你们等着」。一百官兵横七竖八倒在村口——荒村，被一群饥民守住了。"
+        },
+        "stepId": "revolt-win-tip"
+      }
+    ],
+    "id": "trg_s02_revolt_win",
+    "name": "⑨ 起事：县尉 100 兵全灭——坐实起事、县尉逃走",
+    "once": true,
+    "when": {
+      "params": {
+        "group": "S02-revolt-county"
+      },
+      "type": "waveCleared"
+    }
+  },
+  {
+    "do": [
+      {
+        "branch": [
+          {
+            "do": [
+              {
+                "action": "ending.command",
+                "params": {
+                  "checkpointId": "checkpoint.S02.ending.expeditionFailed",
+                  "endingId": "sanguo-zhangjiao-endings-v1",
+                  "endingKey": "expedition-failed",
+                  "operation": "commit"
+                },
+                "stepId": "revolt-defeat-ending"
+              }
+            ],
+            "when": {
+              "args": [
+                {
+                  "name": "story.s02RevoltFight",
+                  "op": "var"
+                },
+                {
+                  "arg": {
+                    "name": "story.s02RevoltConfirmed",
+                    "op": "var"
+                  },
+                  "op": "not"
+                }
+              ],
+              "op": "and"
+            }
+          }
+        ],
+        "stepId": "revolt-defeat-branch"
+      }
+    ],
+    "id": "trg_s02_revolt_defeat",
+    "name": "⑨ 起事：张角阵亡——出师未捷身先死（剧情专属结局）",
+    "once": true,
+    "when": {
+      "params": {
+        "sceneId": "S02"
+      },
+      "type": "playerSpecialFaint"
+    }
+  },
+  {
+    "cooldown": 1,
+    "do": [
+      {
+        "branch": [
+          {
+            "do": [
+              {
+                "action": "scenario.command",
+                "params": {
+                  "operation": "s02.recruit.yellow",
+                  "scenarioId": "scenario.command.s02.recruit.yellow"
+                },
+                "stepId": "recruit-yellow"
+              }
+            ],
+            "when": {
+              "args": [
+                {
+                  "name": "story.s02AllegianceJoined",
+                  "op": "var"
+                },
+                {
+                  "arg": {
+                    "name": "story.s02RecruitDone",
+                    "op": "var"
+                  },
+                  "op": "not"
+                }
+              ],
+              "op": "and"
+            }
+          }
+        ],
+        "stepId": "recruit-yellow-branch"
+      }
+    ],
+    "id": "trg_s02_recruit_yellow",
+    "name": "加入线：招众旗下一次招募 80 黄巾",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "cooldown": 1,
+    "do": [
+      {
+        "branch": [
+          {
+            "do": [
+              {
+                "action": "scenario.command",
+                "params": {
+                  "operation": "s02.recruit.guard",
+                  "scenarioId": "scenario.command.s02.recruit.guard"
+                },
+                "stepId": "recruit-guard"
+              }
+            ],
+            "when": {
+              "args": [
+                {
+                  "name": "story.s02AllegianceIndependent",
+                  "op": "var"
+                },
+                {
+                  "arg": {
+                    "name": "story.s02RecruitDone",
+                    "op": "var"
+                  },
+                  "op": "not"
+                }
+              ],
+              "op": "and"
+            }
+          }
+        ],
+        "stepId": "recruit-guard-branch"
+      }
+    ],
+    "id": "trg_s02_recruit_guard",
+    "name": "不加入线：招众旗下一次招募亲卫",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "do": [
+      {
+        "branch": [
+          {
+            "do": [
+              {
+                "action": "scenario.command",
+                "params": {
+                  "operation": "army.possess",
+                  "scenarioId": "scenario.command.army.possess"
+                },
+                "stepId": "story-possess-restore"
+              }
+            ],
+            "when": {
+              "args": [
+                {
+                  "name": "story.s02Spawned",
+                  "op": "var"
+                },
+                {
+                  "arg": {
+                    "name": "story.s02ControlReturned",
+                    "op": "var"
+                  },
+                  "op": "not"
+                }
+              ],
+              "op": "and"
+            }
+          }
+        ],
+        "stepId": "story-possess-restore-branch"
+      }
+    ],
+    "id": "trg_s02_story_possess_restore",
+    "name": "荒村：读档恢复——②~⑨ 前段仍由张角主控",
+    "once": false,
+    "when": {
+      "params": {
+        "sceneId": "S02"
+      },
+      "type": "sceneEnter"
+    }
+  },
+  {
+    "do": [
+      {
+        "branch": [
+          {
+            "do": [
+              {
+                "action": "spawnPlacements",
+                "params": {
+                  "selector": {
+                    "group": "S02-raid-legion"
+                  }
+                },
+                "stepId": "raid-restore-legion"
+              },
+              {
+                "action": "scenario.command",
+                "params": {
+                  "operation": "s02.raid.resume",
+                  "scenarioId": "scenario.command.s02.raid.resume"
+                },
+                "stepId": "raid-restore-resume"
+              }
+            ],
+            "when": {
+              "args": [
+                {
+                  "name": "story.s02RaidFight",
+                  "op": "var"
+                },
+                {
+                  "arg": {
+                    "name": "story.s02RaidRepeled",
+                    "op": "var"
+                  },
+                  "op": "not"
+                }
+              ],
+              "op": "and"
+            }
+          }
+        ],
+        "stepId": "raid-restore-branch"
+      }
+    ],
+    "id": "trg_s02_raid_restore",
+    "name": "荒村：读档恢复——围剿进行中重刷战场与补员",
+    "once": false,
+    "when": {
+      "params": {
+        "sceneId": "S02"
+      },
+      "type": "sceneEnter"
+    }
+  },
+  {
+    "do": [
+      {
+        "branch": [
+          {
+            "do": [
+              {
+                "action": "scenario.command",
+                "params": {
+                  "operation": "s02.steward.craft",
+                  "scenarioId": "scenario.command.s02.steward.craft"
+                },
+                "stepId": "steward-craft"
+              }
+            ],
+            "when": {
+              "name": "s02CampHandover",
+              "op": "var"
+            }
+          }
+        ],
+        "stepId": "steward-craft-branch"
+      }
+    ],
+    "id": "trg_s02_steward_craft",
+    "name": "发展段 N2：工位产出一件物品",
+    "once": true,
+    "when": {
+      "params": {},
+      "type": "production.completed"
+    }
+  },
+  {
+    "cooldown": 1,
+    "do": [
+      {
+        "branch": [
+          {
+            "do": [],
+            "when": {
+              "name": "s02StewardshipReady",
+              "op": "var"
+            }
+          },
+          {
+            "do": [
+              {
+                "action": "scenario.command",
+                "params": {
+                  "operation": "s02.steward.depart",
+                  "scenarioId": "scenario.command.s02.steward.depart"
+                },
+                "stepId": "steward-depart"
+              }
+            ],
+            "when": {
+              "name": "s02CampHandover",
+              "op": "var"
+            }
+          }
+        ],
+        "stepId": "steward-depart-branch"
+      }
+    ],
+    "id": "trg_s02_depart_now",
+    "name": "发展段 N5：营门交互即刻启程（0 日跳过经营）",
     "once": false,
     "when": {
       "params": {},

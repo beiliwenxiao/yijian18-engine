@@ -70,8 +70,8 @@ async function buildChoiceChain({ storyStateOverrides = {} } = {}) {
   const compiledQuests = compileQuestProject({ quests: [verdictQuest, rescueQuest] });
   const choiceTriggers = compiledQuests.triggers.filter(trigger => (
     [
-      'trg_task.s02.verdict_after_makeVerdict.save',
-      'trg_task.s02.verdict_after_makeVerdict.kill'
+      'trg_task.s02.verdict_after_zhangjiaoChoice.save',
+      'trg_task.s02.verdict_after_zhangjiaoChoice.ignore'
     ].includes(trigger?.id)
   ));
   expect(choiceTriggers, '两个选项段编译触发器存在').toHaveLength(2);
@@ -79,11 +79,11 @@ async function buildChoiceChain({ storyStateOverrides = {} } = {}) {
   const project = {
     schemaVersion: 1,
     scenes: [{ id: 'S02' }],
-    battles: [], rescues: [], tutorials: choiceTutorials, library: {},
-    endings: [{ id: 'sanguo-zhangjiao-endings-v1', endings: [{ id: 'chaos-weed' }, { id: 'order-weed' }] }],
-    dialogues: [prologue],
+    battles: [], rescues: [], tutorials: readProjectJson('project/tutorials.json'), library: readProjectJson('project/library.json'),
+    endings: [readProjectJson('config/endings.json')],
+    dialogues,
     triggers: choiceTriggers,
-    commands: judgementCommands,
+    commands,
     quests: [verdictQuest, rescueQuest],
     // 任务中心制：quests[] 编译出 taskGraph 定义，供 task.command 引用校验
     taskGraphs: compiledQuests.taskGraphs || [],
@@ -235,7 +235,7 @@ describe('S02 张角抉择选项链路（真实工程数据）', () => {
     const nodeAtJudge = await startAtJudge(dialogueSystem);
     expect(nodeAtJudge?.id).toBe('judge');
 
-    const result = await dialogueSystem.selectChoice(1);
+    const result = await dialogueSystem.selectChoice(0);
     const nodeAfter = dialogueSystem.getCurrentNode();
 
     expect({ result, node: nodeAfter?.id, intents }, JSON.stringify({ node: nodeAfter?.id, intents })).toMatchObject({
@@ -244,17 +244,17 @@ describe('S02 张角抉择选项链路（真实工程数据）', () => {
     });
   });
 
-  it('选择「杀了」：dialogueChoice 编排成功并推进到 killOrder', async () => {
+  it('选择「不管」：dialogueChoice 编排成功并推进到 ignoreOrder', async () => {
     const { dialogueSystem, intents } = await buildChoiceChain();
     const nodeAtJudge = await startAtJudge(dialogueSystem);
     expect(nodeAtJudge?.id).toBe('judge');
 
-    const result = await dialogueSystem.selectChoice(0);
+    const result = await dialogueSystem.selectChoice(1);
     const nodeAfter = dialogueSystem.getCurrentNode();
 
     expect({ result, node: nodeAfter?.id, intents }, JSON.stringify({ node: nodeAfter?.id, intents })).toMatchObject({
       result: true,
-      node: 'killOrder'
+      node: 'ignoreOrder'
     });
   });
 
@@ -266,7 +266,7 @@ describe('S02 张角抉择选项链路（真实工程数据）', () => {
     const nodeAtJudge = await startAtJudge(dialogueSystem);
     expect(nodeAtJudge?.id).toBe('judge');
 
-    const result = await dialogueSystem.selectChoice(1);
+    const result = await dialogueSystem.selectChoice(0);
     expect(result).toBe(false);
     expect(dialogueSystem.getCurrentNode()?.id).toBe('judge');
   });
