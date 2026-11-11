@@ -81,6 +81,8 @@ export class S01S02Coordinator {
       new InventoryComponent({ maxSlots: 12 })
     );
     this.scene.context.services.containerInventories = this.shelterChestInventories;
+    // 军营粮草容器是易失登记（不参与存档校验）；注册表可能晚于装配创建，这里补一次同步。
+    this.scene.syncCampContainers?.();
     this.shelterChestTransferBusy = false;
     // 启动随机数：操作账本随存档持久化（TTL 24h），重载后递增序号重置会与旧账本条目
     // 同 id 不同 payload 冲突（operationConflict），或同 payload 误重放旧结果。

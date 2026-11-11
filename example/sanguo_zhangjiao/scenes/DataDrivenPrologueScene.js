@@ -397,7 +397,9 @@ export class DataDrivenPrologueScene extends BaseGameScene {
           : null
       ),
       onCommand: command => {
-        if (this._s01s02Coordinator?._isInShelterInterior?.()) {
+        if (this._campSupplyContext) {
+          void this.s02ArmyRescueCoordinator?.handleCampSupplyCommand(command);
+        } else if (this._s01s02Coordinator?._isInShelterInterior?.()) {
           void this._s01s02Coordinator.handleShelterChestCommand(command);
         } else {
           void this.s11s14SceneCoordinator?._handleCargoTransferCommand(command);

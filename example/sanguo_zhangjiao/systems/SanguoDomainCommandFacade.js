@@ -65,6 +65,8 @@ export class SanguoDomainCommandFacade {
       ['scenario.command', 'army.rescue.awaken', () => scene.s02ArmyRescueCoordinator.awakenFromRescue()],
       ['scenario.command', 'army.march', p => scene.s02ArmyRescueCoordinator.marchArmy(p)],
       ['scenario.command', 'army.camp', p => scene.s02ArmyRescueCoordinator.campArmy(p)],
+      // 军营粮草面板入口（M9 9B）：剧本/交互可打开「军团 ↔ 军营」存粮面板
+      ['scenario.command', 'camp.openTransfer', p => scene.s02ArmyRescueCoordinator.openCampSupply(p)],
       ['scenario.command', 'army.possess', () => scene.s02ArmyRescueCoordinator.possessCommander()],
       ['scenario.command', 'army.possess.release', () => scene.s02ArmyRescueCoordinator.releaseCommander()],
       ['scenario.command', 'army.raid.defeat', p => scene.s02ArmyRescueCoordinator.handleRaidDefeat(p)],

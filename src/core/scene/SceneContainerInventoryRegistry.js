@@ -19,6 +19,9 @@ const clone = value => value == null ? value : JSON.parse(JSON.stringify(value))
 export class SceneContainerInventoryRegistry {
   constructor() {
     this.entries = new Map();
+    // 易失容器：可统一 resolve / nextOperationId，但不参与存档校验与序列化
+    // （军营粮草等权威数据在领域服务里，不能追加进旧档的 containerInventories 段）。
+    this.volatile = new Map();
   }
 
   register(id, inventory) {
@@ -31,12 +34,28 @@ export class SceneContainerInventoryRegistry {
     return inventory;
   }
 
+  /**
+   * 注册不参与存档的容器（同一 id 重复注册同实例幂等）。
+   * 与持久容器共享 resolve / nextOperationId，但不出现在 serialize/validate/restore 中，
+   * 旧存档不会因新增易失容器而缺少条目。
+   */
+  registerVolatile(id, inventory) {
+    if (!id || typeof inventory?.exportItems !== 'function' || typeof inventory?.loadItems !== 'function') {
+      throw new TypeError('SceneContainerInventoryRegistry requires a stable id and inventory API');
+    }
+    if (this.entries.has(id)) throw new Error(`Container inventory id already registered as persistent: ${id}`);
+    const existing = this.volatile.get(id);
+    if (existing && existing.inventory !== inventory) throw new Error(`Volatile container inventory already registered: ${id}`);
+    if (!existing) this.volatile.set(id, { inventory, operationSequence: 0 });
+    return inventory;
+  }
+
   resolve(id) {
-    return this.entries.get(id)?.inventory || null;
+    return this.entries.get(id)?.inventory || this.volatile.get(id)?.inventory || null;
   }
 
   nextOperationId(id, prefix = 'container-transfer') {
-    const entry = this.entries.get(id);
+    const entry = this.entries.get(id) || this.volatile.get(id);
     if (!entry) throw new Error(`Unknown container inventory: ${id}`);
     entry.operationSequence += 1;
     return `${prefix}:${id}:${entry.operationSequence}`;

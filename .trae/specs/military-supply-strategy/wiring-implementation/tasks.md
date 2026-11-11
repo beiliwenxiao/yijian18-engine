@@ -51,6 +51,13 @@
 - 决策偏差：散兵/辎重/身份均按玩家军团过滤（战果卡默认操作对象），而非全局；`regroup` 结果读取 `returned` 字段（服务实际返回名）。
 - 测试：`BattleResultView.test.js` 6 例 + `SceneBattleRuntime.resultCommands.test.js` 5 例全绿；`src/ui` + `src/core/scene` 回归 30 文件 / 282 例全绿。
 
-## 批次 5
+## 批次 5：军营粮草容器 + CargoTransferView 对接（已完成）
 
-（执行中补充记录）
+- 新增 `src/core/scene/CampStockContainerAdapter.js`：军营粮草容器适配器。`exportItems/loadItems` 满足容器契约；`buildSnapshot` 产出 CargoTransferView 快照（左「军团粮草」= armysupply.food，右「军营存粮」= camp.stock）；`transfer` 翻译为 `FoodLedgerSystem.deposit/withdraw`；`nextOperationId` 带 boot nonce，避免读档后序号重置撞旧账本。
+- `SceneContainerInventoryRegistry`：新增**易失容器**（`registerVolatile`）——可 `resolve` / `nextOperationId`，但**不参与** `serialize/validate/restore`。这是不破坏旧档的关键：军营粮草权威在 `warState.logistics`，若把军营塞进旧档的 `containerInventories` 段，缺条目会让旧档校验直接失败。
+- `SceneGameplaySystemAssembler`：装配时按 `logistics.camps` 播种军营，`scene.syncCampContainers/resolveCampContainer` 把每个军营注册为易失容器（注册表晚于装配创建时由 S01S02 补同步）；巷道 restore 后补同步；新增命令 `camp.register`、`camp.transfer`。
+- `CargoTransferView`：左栏标题与「取回背包」按钮文案支持 `snapshot.inventoryLabel` 覆盖（缺省仍是「背包」，旧调用零变化）。
+- 内容接线：`S02ArmyRescueFlow` 扎营完成即 `camp.register` 入库，并新增 `openCampSupply/handleCampSupplyCommand`（面板转移 → 账本存取 → 面板即时刷新）；`SanguoDomainCommandFacade` 增 `camp.openTransfer` 场景命令入口；`DataDrivenPrologueScene` 的 `CargoTransferView.onCommand` 增军营分支。
+- 决策：军营面板只开放粮草——`deposit/withdraw` 对非食物资源没有扣减来源，放开会让资源凭空增减；面板左栏代表**军团随身粮**而非玩家背包（军营存取的对手方是军团编制）。
+- 测试：`CampStockContainerAdapter.test.js` 8 例 + `SceneContainerInventoryRegistry.test.js` 4 例全绿。
+- 遗留：`src/systems/items/ItemRuntimeFactory.test.js` 1 例失败为仓库既有问题（并行提交 `d47bf3c2` 的物品 capability 校验，未触碰本批文件），已在回报中标注。

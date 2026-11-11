@@ -304,6 +304,7 @@ export class S02ArmyRescueCoordinator {
     system.onConstructionComplete = (commandKey, builtPos) => {
       if (commandKey !== 'camp') return;
       this._campActive = false;
+      this._registerFieldCamp(builtPos);
       scene._showScreenTip?.('营地扎立完成：篝火燃起，全军就地驻守。', { title: '扎营' });
       try {
         scene.gameLoader?.triggerSystem?.fire?.('armyCampLaid', { x: builtPos?.x, y: builtPos?.y });
@@ -312,6 +313,100 @@ export class S02ArmyRescueCoordinator {
       }
     };
     return { ok: true, count: units.length, pos };
+  }
+
+  /**
+   * 营地落成 → 军营粮草容器入库（M9 9B）。
+   * 权威库存在 FoodLedgerSystem 的营账上，容器注册表只提供易失适配器。
+   */
+  _registerFieldCamp(pos = null) {
+    const scene = this.scene;
+    const ledger = scene.foodLedgerSystem;
+    if (!ledger) return null;
+    const campId = this._campSupplyCampId || 'camp.s02.field';
+    const result = ledger.registerCamp({ campId, level: 1, stock: null });
+    this._campSupplyCampId = campId;
+    if (pos) this._campSupplyPosition = { x: pos.x, y: pos.y };
+    scene.syncCampContainers?.();
+    scene.syncWarLogisticsState?.();
+    return result;
+  }
+
+  /** 玩家/剧本可操作的军团（黄巾、非 AI）——军营存取的对象。 */
+  _resolveSupplyArmy() {
+    const ledger = this.scene.foodLedgerSystem;
+    const armies = ledger?.armies instanceof Map ? [...ledger.armies.values()] : [];
+    return armies.find(army => String(army?.factionId || '') === 'yellow_turban' && army?.control !== 'ai')
+      || armies.find(army => army?.control !== 'ai')
+      || null;
+  }
+
+  /**
+   * 打开军营粮草面板（scenario.command: camp.openTransfer）。
+   * 左「军团粮草」右「军营存粮」，转移走 FoodLedgerSystem.deposit/withdraw。
+   */
+  openCampSupply({ campId = null } = {}) {
+    const scene = this.scene;
+    const view = scene.cargoTransferView;
+    const resolvedCampId = campId || this._campSupplyCampId || 'camp.s02.field';
+    const adapter = scene.resolveCampContainer?.(resolvedCampId) || null;
+    if (!view || !adapter) {
+      scene._showScreenTip?.('军营粮草暂不可访问。', { title: '军营' });
+      return { ok: false, code: 'campUnavailable', campId: resolvedCampId };
+    }
+    const army = this._resolveSupplyArmy();
+    if (!army) {
+      scene._showScreenTip?.('没有可调度的军团粮草。', { title: '军营' });
+      return { ok: false, code: 'armyUnavailable', campId: resolvedCampId };
+    }
+    scene._campSupplyContext = { campId: resolvedCampId, armyId: army.id, adapter };
+    view.open(adapter.buildSnapshot({ army }));
+    return { ok: true, campId: resolvedCampId, armyId: army.id };
+  }
+
+  /** CargoTransferView 命令（军营模式）：仅在面板打开且上下文匹配时处理。 */
+  handleCampSupplyCommand(command = {}) {
+    const scene = this.scene;
+    const context = scene._campSupplyContext;
+    const view = scene.cargoTransferView;
+    if (!context || !view?.visible) return false;
+    if (command.type === 'close') {
+      view.close();
+      scene._campSupplyContext = null;
+      return true;
+    }
+    if (command.type !== 'transfer') return true;
+    const ledger = scene.foodLedgerSystem;
+    const result = context.adapter.transfer({
+      armyId: context.armyId,
+      direction: command.direction,
+      itemId: command.itemId,
+      quantity: command.quantity
+    });
+    if (result?.ok) {
+      scene.syncFoodLedgerArmies?.();
+      scene.syncWarLogisticsState?.();
+    }
+    const army = ledger?.getArmy?.(context.armyId) || null;
+    const failureText = {
+      insufficientSupply: '军团粮草不足。',
+      insufficientCampStock: '军营存粮不足。',
+      campCapacityExceeded: '军营仓容已满。',
+      unknownArmy: '军团不存在。',
+      unknownCamp: '军营不存在。',
+      invalidQuantity: '数量无效。',
+      unsupportedResource: '军营目前只收粮草。'
+    };
+    view.setBusy?.(false);
+    view.setSnapshot?.(context.adapter.buildSnapshot({
+      army,
+      direction: command.direction,
+      statusMessage: result?.ok
+        ? (command.direction === 'toInventory' ? '已从军营取回粮草。' : '已将军团粮草存入军营。')
+        : (failureText[result?.code] || '转移未完成。'),
+      statusType: result?.ok ? 'info' : 'error'
+    }));
+    return true;
   }
 
   /**

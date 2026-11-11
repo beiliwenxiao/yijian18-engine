@@ -76,6 +76,7 @@ import {
   readWarLogistics,
   writeWarLogistics
 } from './WarLogisticsSnapshot.js';
+import { CampStockContainerAdapter } from './CampStockContainerAdapter.js';
 import { isHostileTarget } from '../FactionRules.js';
 import { SquadMemberComponent } from '../../ecs/components/SquadMemberComponent.js';
 import { CommandStateComponent } from '../../ecs/components/CommandStateComponent.js';
@@ -1104,6 +1105,19 @@ export class SceneGameplaySystemAssembler {
           armyLogisticsAdapter.writeArmy(army.id, army);
         }
       };
+      // 军营粮草容器：配置声明的军营先入库，再同步进容器注册表（易失，不参与旧档校验）。
+      for (const camp of Array.isArray(logisticsConfig.camps) ? logisticsConfig.camps : []) {
+        if (camp?.campId != null && !foodLedgerSystem.camps.has(String(camp.campId))) {
+          foodLedgerSystem.registerCamp(camp);
+        }
+      }
+      this._campContainers = new Map();
+      this._campNonce = `camp${Date.now().toString(36)}${Math.floor(Math.random() * 1e6).toString(36)}`;
+      scene.syncCampContainers = () => this._syncCampContainers(foodLedgerSystem);
+      scene.resolveCampContainer = campId => (
+        this._campContainers?.get(`camp:${String(campId ?? '')}`) || null
+      );
+      scene.syncCampContainers();
     }
 
     const cityAdminConfig = config.cityAdmin || null;
@@ -2218,6 +2232,62 @@ export class SceneGameplaySystemAssembler {
       if (result?.ok) sync();
       return result;
     });
+
+    // 7：军营粮草容器（容器注册表只在运行时可见，不写旧档 containerInventories 段）
+    register('camp.register', payload => {
+      const missing = guard(foodLedgerSystem, 'logisticsUnavailable');
+      if (missing) return missing;
+      if (payload?.campId == null) return { ok: false, code: 'campIdRequired' };
+      const result = foodLedgerSystem.registerCamp({
+        campId: payload.campId,
+        level: payload.level ?? 1,
+        stock: payload.stock ?? null
+      });
+      if (result?.ok !== false) {
+        this.scene.syncCampContainers?.();
+        sync();
+      }
+      return result;
+    });
+    register('camp.transfer', payload => {
+      const missing = guard(foodLedgerSystem, 'logisticsUnavailable');
+      if (missing) return missing;
+      const adapter = this.scene.resolveCampContainer?.(payload?.campId);
+      if (!adapter) return { ok: false, code: 'unknownCamp', campId: payload?.campId ?? null };
+      const result = adapter.transfer({
+        armyId: payload.armyId ?? null,
+        direction: payload.direction === 'toInventory' ? 'toInventory' : 'toCargo',
+        itemId: payload.itemId || 'resource.food',
+        quantity: payload.quantity ?? 0,
+        operationId: payload.operationId ?? null
+      });
+      if (result?.ok) sync();
+      return result;
+    });
+  }
+
+  /**
+   * 军营粮草容器同步：账本里的每个军营一个易失容器适配器。
+   * 幂等复用已建适配器；容器注册表可能晚于装配创建，因此每次同步都尝试登记。
+   * @private
+   */
+  _syncCampContainers(foodLedgerSystem) {
+    if (!foodLedgerSystem || !this._campContainers) return this._campContainers || new Map();
+    const registry = this.scene.context?.services?.containerInventories;
+    for (const camp of foodLedgerSystem.camps.values()) {
+      const id = `camp:${camp.campId}`;
+      let adapter = this._campContainers.get(id);
+      if (!adapter) {
+        adapter = new CampStockContainerAdapter({
+          foodLedger: foodLedgerSystem,
+          campId: camp.campId,
+          nonce: this._campNonce
+        });
+        this._campContainers.set(id, adapter);
+      }
+      registry?.registerVolatile?.(id, adapter);
+    }
+    return this._campContainers;
   }
 
   /** 军需四本账 → 黑板 warState.logistics（checkpoint.warState 的正式落点）。 */
@@ -2248,6 +2318,7 @@ export class SceneGameplaySystemAssembler {
     // 装配完成即回灌：覆盖「读档后场景重建、服务是新建实例」的路径。
     const existing = readWarLogistics(scene.gameLoader?.blackboard);
     if (existing) applyWarLogisticsSnapshot(existing, all);
+    scene.syncCampContainers?.();
 
     scene.syncWarLogisticsState = () => this._syncWarLogisticsState(all);
     scene.sceneRuntime.registerSnapshotProvider('gameplay.warLogistics', {
@@ -2264,6 +2335,7 @@ export class SceneGameplaySystemAssembler {
         const payload = fromWarState || (data && typeof data === 'object' ? data : null);
         const result = applyWarLogisticsSnapshot(payload, all);
         if (payload) writeWarLogistics(scene.gameLoader?.blackboard, payload);
+        scene.syncCampContainers?.();
         return { ok: true, ...result };
       }
     });

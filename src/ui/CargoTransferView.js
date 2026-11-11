@@ -242,7 +242,7 @@ export class CargoTransferView extends UIElement {
     ctx.font = 'bold 22px Arial';
     ctx.fillText(this.snapshot.title || storageLabel, layout.x + layout.width / 2, layout.y + 30);
     this._renderStoragePanel(ctx, layout.inventory, layout.inventorySlots, {
-      title: '背包',
+      title: this.snapshot.inventoryLabel || '背包',
       used: this.snapshot.inventory?.usedSlots || 0,
       capacity: this.snapshot.inventory?.maxSlots || 0,
       active: this.direction === 'toCargo'
@@ -262,7 +262,7 @@ export class CargoTransferView extends UIElement {
     this._renderButton(ctx, layout.increase, '+', false);
     this._renderButton(ctx, layout.transfer, this.busy
       ? '正在转移……'
-      : (this.direction === 'toCargo' ? `存入${storageLabel}` : '取回背包'), this.busy);
+      : (this.direction === 'toCargo' ? `存入${storageLabel}` : `取回${this.snapshot.inventoryLabel || '背包'}`), this.busy);
     this._renderButton(ctx, layout.close, '×', false);
     ctx.fillStyle = this.snapshot.statusType === 'error' ? '#ef766d' : '#8fd18f';
     ctx.font = '12px Arial';
