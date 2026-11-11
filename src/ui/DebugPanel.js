@@ -1139,7 +1139,33 @@ export class DebugPanel {
           payload: { definitionId: factId }
         });
         if (result?.ok === true) {
-          this._setTaskStatus(`✅ ${killNote}已提交事实 ${factId} → 目标 ${nodeId}（${instance.definitionId}）`);
+          // 事实已落账，但目标推进依赖 state.transaction 事件回流；Debug 直连网关可能被内容层
+          // 拦截而「只记账不推进」。这里复用读档对账（同一条权威链路）把已成立事实回灌任务图，
+          // 仍不推进时再按任务实例 actor 直连消费一次，保证「直接完成任务」名副其实。
+          const readNodeStatus = () => {
+            const latest = this._getTaskGraph()?.getInstance?.(instance.instanceId)
+              || this._getActiveTaskInstances().find(entry => entry.instanceId === instance.instanceId);
+            return latest?.nodeStates?.[nodeId]?.status || null;
+          };
+          let status = readNodeStatus();
+          try {
+            await scene.reconcileTaskFacts?.();
+            status = readNodeStatus();
+            if (status !== 'succeeded' && status !== 'completed') {
+              await this._getQuestSystem()?.consumeTaskEvent?.({
+                eventId: `debug-fact:${factId}:${Date.now()}`,
+                type: 'state.transaction',
+                payload: { definitionId: factId }
+              }, { actorId: instance.actorId });
+              status = readNodeStatus();
+            }
+          } catch (error) {
+            console.warn('[DebugPanel] 任务事实对账失败', error);
+          }
+          const advanced = status === 'succeeded' || status === 'completed';
+          this._setTaskStatus(advanced
+            ? `✅ ${killNote}已提交事实 ${factId}，目标 ${nodeId} 已推进（${instance.definitionId}）`
+            : `⚠️ ${killNote}已提交事实 ${factId}，但目标 ${nodeId} 仍未推进（${instance.definitionId}）`);
         } else {
           console.warn('[DebugPanel] 状态事实被拒', result);
           this._setTaskStatus(`❌ ${killNote}事实 ${factId} 被拒：${result?.error?.message || result?.code || 'preconditionFailed'}`);
