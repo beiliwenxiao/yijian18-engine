@@ -23,6 +23,22 @@ import { BattleResultView } from '../../ui/BattleResultView.js';
 
 const clone = value => value == null ? value : JSON.parse(JSON.stringify(value));
 
+/** 战果卡操作失败码 → 玩家可读文案（未知码原样显示，便于排查）。 */
+const RESULT_FAILURE_LABELS = Object.freeze({
+  warLogisticsUnavailable: '军需服务未装配',
+  battleEntryUnavailable: '入场服务未装配',
+  unknownArmy: '未找到军团',
+  cacheMissing: '辎重不存在',
+  alreadyRecovered: '辎重已追回',
+  cacheExpired: '辎重已过期',
+  battleIdRequired: '缺少战役标识',
+  rejoinForbidden: '本场禁止重新接管',
+  supportUsed: '本场支援身份已用过',
+  previewDefeated: '预演已判负，只能观战',
+  supportMustArriveInPerson: '随军需本人抵达战场',
+  onsiteRequiresPlayer: '现场接管需本人到场'
+});
+
 /**
  * Owns one active battle session and its generic UI. Historical scene rules are
  * supplied through hooks; this module never depends on canonical Demo scene IDs.
@@ -41,6 +57,7 @@ export class SceneBattleRuntime {
     this.showTip = config.showTip || (() => {});
     this.notify = config.notify || (() => {});
     this.requestCheckpoint = config.requestCheckpoint || (async () => ({ ok: true }));
+    this.warLogistics = config.warLogistics || null;
     this.definitions = new Map();
     this.activeDefinition = null;
     this.busy = false;
@@ -84,7 +101,7 @@ export class SceneBattleRuntime {
     this.hudView = new BattleHudView({ width: Math.min(500, Number(config.viewWidth) - 32 || 500) });
     this.resultView = new BattleResultView({
       width: Math.min(520, Number(config.viewWidth) - 32 || 520),
-      onCommand: command => { if (command.type === 'close') this.resultView.close(); }
+      onCommand: command => { void this.handleResultCommand(command); }
     });
     this.battlefieldRuntime = new BattlefieldRuntimeSystem({
       battleSystem: this.battleSystem,
@@ -99,6 +116,86 @@ export class SceneBattleRuntime {
       (context, amount) => this.battleSystem.filterEffectAmount(context, amount)
     ) || null;
   }
+
+  /**
+   * 战果卡命令：追回辎重 / 收拢散兵 / 接管身份切换。
+   * 领域服务未接线时静默忽略（保持旧行为），成功后即时更新面板快照。
+   */
+  handleResultCommand(command = {}) {
+    if (!command || typeof command !== 'object') return { ok: false, code: 'invalidCommand' };
+    if (command.type === 'close') {
+      this.resultView.close();
+      return { ok: true };
+    }
+    const snapshot = this.resultView.snapshot;
+    const failure = (result, fallback) => {
+      const code = result?.code || fallback;
+      this.notify?.(`操作未完成：${RESULT_FAILURE_LABELS[code] || code}`, 'error');
+      return result || { ok: false, code: fallback };
+    };
+    if (command.type === 'recover') {
+      const result = this.warLogistics?.recoverSupply?.({
+        cacheId: command.cacheId ?? null,
+        army: this._resolveBattleArmy()
+      }) || null;
+      if (result?.ok !== true) return failure(result, 'warLogisticsUnavailable');
+      if (snapshot) {
+        const caches = Array.isArray(snapshot.supplyCaches) ? snapshot.supplyCaches : [];
+        snapshot.supplyCaches = caches.filter(cache => {
+          const id = cache?.cacheId ?? cache?.id ?? null;
+          return id !== command.cacheId;
+        });
+      }
+      this.notify?.('已追回辎重', 'success');
+      return result;
+    }
+    if (command.type === 'regroup') {
+      const result = this.warLogistics?.regroup?.({
+        armyId: this._resolveBattleArmy()?.id ?? null
+      }) || null;
+      if (result?.ok !== true) return failure(result, 'warLogisticsUnavailable');
+      if (snapshot) {
+        const count = Number(snapshot.scattered?.count ?? snapshot.scattered ?? 0);
+        const remaining = Math.max(0, count - (Number(result.returned ?? result.regrouped ?? 0) || 0));
+        snapshot.scattered = { count: remaining };
+      }
+      this.notify?.(`已收拢散兵 ${Number(result.returned) || 0} 人`, 'success');
+      return result;
+    }
+    if (command.type === 'entry') {
+      const result = this.warLogistics?.joinBattle?.({
+        battleId: this.battleSystem?.definition?.battleId || null,
+        identity: command.identity,
+        entry: 'battleResult'
+      }) || null;
+      if (result?.ok !== true) return failure(result, 'battleEntryUnavailable');
+      if (snapshot) snapshot.identity = command.identity;
+      this.notify?.(`已切换为${command.identity === 'support' ? '随军' : command.identity === 'takeover' ? '接管' : '观战'}`, 'info');
+      return result;
+    }
+    return { ok: false, code: 'unknownCommand' };
+  }
+
+  _resolveBattleArmy() {
+    const definition = this.battleSystem?.definition || {};
+    const state = this.battleSystem?.state || {};
+    const armyId = definition.armyId || definition.playerArmyId || state.armyId || null;
+    // 未映射到具体军团时也交给端口决定（内容层可回落到玩家军团）
+    return this.warLogistics?.resolveArmy?.(armyId) || null;
+  }
+
+  /**
+   * 给结果面板快照附加军需数据（两本账/散兵/辎重/身份）。
+   * 领域服务未接线时原样返回，旧行为零变化。
+   */
+  _buildResultSnapshot(snapshot) {
+    if (!snapshot || typeof snapshot !== 'object') return snapshot;
+    const army = this._resolveBattleArmy();
+    const battleId = snapshot.result?.battleId || this.battleSystem?.definition?.battleId || null;
+    const report = this.warLogistics?.describeBattle?.({ battleId, armyId: army?.id ?? null }) || null;
+    return report ? { ...snapshot, ...report } : snapshot;
+  }
+
 
   registerDefinitions(definitions = []) {
     if (!Array.isArray(definitions)) throw new TypeError('battleDefinitions must be an array');
@@ -202,11 +299,11 @@ export class SceneBattleRuntime {
     const frozenResult = this.battleSystem.getState().result;
     const resultApplied = frozenResult && this.getAppliedResultIds().includes(frozenResult.resultId);
     if (this.battleSystem.state === BattleState.RESOLVED && resultApplied) {
-      this.resultView.open({
+      this.resultView.open(this._buildResultSnapshot({
         title: flow.appliedTitle, result: frozenResult, mode: this.battleSystem.mode,
         winnerName: frozenResult?.winnerFactionId, worldChanges: clone(flow.worldChanges),
         message: '该战果已经冻结并写入检查点，不能重新选择参战模式。'
-      });
+      }));
       return true;
     }
     if (this.battleSystem.state === BattleState.RESOLVED && frozenResult) {
@@ -447,11 +544,11 @@ export class SceneBattleRuntime {
     if (!reward?.ok) throw new Error(reward?.message || reward?.code || 'progressionRewardRejected');
     const faction = battleSnapshot?.factions?.[result.winnerFactionId];
     this.hudView.clear();
-    this.resultView.open({
+    this.resultView.open(this._buildResultSnapshot({
       title: flow.resultTitle, result, mode: this.battleSystem.mode,
       winnerName: faction?.name || result.winnerFactionId,
       worldChanges: clone(flow.worldChanges), message: flow.resultMessage
-    });
+    }));
     this.showTip(flow.settlementMessage, { title: '战役结算完成' });
     await this.hooks.afterSettlement?.({ ...context, settled, reward });
     return settled;

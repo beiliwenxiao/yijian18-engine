@@ -43,6 +43,14 @@
 - 偏差：军营条目展示「存粮 N」而非「还剩 N 日」——`queryDays` 只对军团编制有意义，军营没有消耗主体；<3 日红色阈值沿用军团语义。
 - 测试：`SupplyStatusBar.test.js` 5 例全绿（含城况行零变化）。
 
-## 批次 4~5
+## 批次 4：UI 批次 B（战果卡 + 接管身份）（已完成）
+
+- `src/ui/BattleResultView.js`：抽取纯函数 `buildBattleResultLines`（参战方式/接管身份/资源转移/城市损毁/战败账/逃亡账/散兵/辎重/时间推进）与 `buildBattleResultActions`（追回辎重取首个 cacheId、收拢散兵、非当前身份的接管切换）。动态高度与按钮行布局，`handleInput` 点击按钮 → `onCommand({type,...})`，继续按钮仍发 `close`。无军需字段的旧快照行数与文案零变化。
+- `src/core/scene/SceneBattleRuntime.js`：`warLogistics` 端口（`recoverSupply/regroup/joinBattle/resolveArmy/describeBattle`）。`handleResultCommand` 转发到领域服务、成功后即时更新面板快照；失败码转中文提示；服务缺失静默降级。`_buildResultSnapshot` 把 `describeBattle` 的两本账/散兵/辎重/身份并入结果快照（战果冻结与重开两条路径）。`_resolveBattleArmy` 在无 battleId→armyId 映射时把 null 交给端口，内容层回落到玩家军团。
+- `S03S14BattleCoordinator`：注入 `warLogistics` 端口；新增 `_describeBattleResult`（读 BattleSettlement 账本/辎重、FoodLedger 散兵池、BattleEntry 当前身份，身份选项 `takeover/observe`——support 需本人到场，不在战果卡提供）与 `_resolvePlayerArmy`（黄巾、非 AI 优先）。
+- 决策偏差：散兵/辎重/身份均按玩家军团过滤（战果卡默认操作对象），而非全局；`regroup` 结果读取 `returned` 字段（服务实际返回名）。
+- 测试：`BattleResultView.test.js` 6 例 + `SceneBattleRuntime.resultCommands.test.js` 5 例全绿；`src/ui` + `src/core/scene` 回归 30 文件 / 282 例全绿。
+
+## 批次 5
 
 （执行中补充记录）

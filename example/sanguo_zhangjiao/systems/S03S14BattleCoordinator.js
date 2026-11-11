@@ -132,6 +132,14 @@ export class S03S14BattleCoordinator {
         commit: draft => this.scene.cityWarStateBridge.commit(draft),
         restore: before => this.scene.cityWarStateBridge.restore(before)
       },
+      // 战果卡军需入口：两本账/散兵/辎重/接管身份（服务未装配时全部静默降级）
+      warLogistics: {
+        recoverSupply: params => this.scene.battleSettlementService?.recoverSupply?.(params) || null,
+        regroup: params => this.scene.foodLedgerSystem?.regroup?.(params) || null,
+        joinBattle: params => this.scene.battleEntryService?.joinBattle?.(params) || null,
+        resolveArmy: armyId => this.scene.foodLedgerSystem?.getArmy?.(armyId) || this._resolvePlayerArmy(),
+        describeBattle: context => this._describeBattleResult(context)
+      },
       movePlayerTo: entry => {
         const transform = this.scene.playerEntity?.getComponent?.('transform');
         if (!transform) return false;
@@ -160,6 +168,43 @@ export class S03S14BattleCoordinator {
       this.dispose();
       throw error;
     }
+  }
+
+  /** 无 battleId→armyId 映射时回落到玩家（黄巾、非 AI）军团。 */
+  _resolvePlayerArmy() {
+    const ledger = this.scene.foodLedgerSystem;
+    const armies = ledger?.armies instanceof Map ? [...ledger.armies.values()] : [];
+    return armies.find(army => String(army?.factionId || '') === 'yellow_turban' && army?.control !== 'ai')
+      || armies.find(army => army?.control !== 'ai')
+      || null;
+  }
+
+  /** 战果卡军需投影：两本账 / 散兵池 / 可追回辎重 / 当前接管身份。 */
+  _describeBattleResult({ battleId = null, armyId = null } = {}) {
+    const settlement = this.scene.battleSettlementService;
+    const resolved = armyId ? (this.scene.foodLedgerSystem?.getArmy?.(armyId) || null) : this._resolvePlayerArmy();
+    const resolvedArmyId = resolved?.id ?? null;
+    const ledger = battleId ? settlement?.getLedger?.(battleId) : null;
+    const events = ledger?.events || {};
+    const summarize = event => {
+      if (!event || event.applied !== true) return null;
+      const lostSupply = event.lostSupply && typeof event.lostSupply === 'object' ? event.lostSupply : {};
+      const supply = Object.values(lostSupply).reduce((total, amount) => total + (Number(amount) || 0), 0);
+      return {
+        兵力: Math.max(0, Number(event.lostTroops) || 0),
+        粮草: Math.max(0, supply),
+        散兵: Math.max(0, Number(event.scattered) || 0)
+      };
+    };
+    const scattered = this.scene.foodLedgerSystem?.listScattered?.({ armyId: resolvedArmyId }) || [];
+    const supplyCaches = settlement?.listSupplyCaches?.({ armyId: resolvedArmyId }) || [];
+    return {
+      ledgers: { defeat: summarize(events.defeat), fled: summarize(events.fled) },
+      scattered: { count: scattered.reduce((total, entry) => total + (Number(entry?.count) || 0), 0) },
+      supplyCaches,
+      identity: battleId ? (this.scene.battleEntryService?.getIdentity?.(battleId) || null) : null,
+      identityOptions: ['takeover', 'observe']
+    };
   }
 
   _createRuntimeHooks(gameLoader) {
