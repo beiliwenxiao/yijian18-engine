@@ -349,6 +349,51 @@ function configureSharedClassEffects(gameLoader) {
     getDay: () => Number(gameLoader?.blackboard?.get?.('storyState')?.day) || 1,
     itemResolver: itemId => cloneData(itemRegistry?.get?.(itemId) || null)
   } : null;
+  // 军需体系（M6/M7/M9）：粮草账本 / 城镇内政 / 战果结算 / 声望 / 入场身份。
+  // 存档落点统一走黑板 warState.logistics（随 checkpoint.warState 落盘）。
+  const projectLogistics = gameLoader?.project?.logistics || null;
+  const readWarState = () => cloneData(gameLoader?.blackboard?.get?.('warState') || { battles: {}, casualties: {} });
+  const writeWarState = next => {
+    const value = cloneData(next) || { battles: {}, casualties: {} };
+    gameLoader?.blackboard?.set?.('warState', value);
+    return true;
+  };
+  const logisticsSystemConfig = projectLogistics ? {
+    config: projectLogistics,
+    getDay: () => Number(gameLoader?.blackboard?.get?.('storyState')?.day) || 1,
+    // AI 军团 = 非黄巾阵营；M9 遗留的 aiSupplyEfficiency 在此适配器里乘算。
+    isAiArmy: army => String(army?.factionId || '') !== 'yellow_turban',
+    onEvent: (event, data) => publishGameplayEvent('logistics', event, data)
+  } : null;
+  const cityAdminSystemConfig = projectLogistics ? {
+    config: gameLoader?.project?.cityAdmin || {},
+    readCities: () => cloneData(gameLoader?.blackboard?.get?.('cityStates') || []),
+    commitCities: draft => {
+      gameLoader?.blackboard?.set?.('cityStates', cloneData(draft));
+      return true;
+    },
+    constructionDefinitions: constructionConfig.definitions || [],
+    getDay: () => Number(gameLoader?.blackboard?.get?.('storyState')?.day) || 1,
+    onEvent: (event, data) => publishGameplayEvent('cityAdmin', event, data)
+  } : null;
+  const battleSettlementSystemConfig = projectLogistics ? {
+    config: gameLoader?.project?.battleIntervene || {},
+    getDay: () => Number(gameLoader?.blackboard?.get?.('storyState')?.day) || 1,
+    addSupplyCache: entry => {
+      const warState = readWarState();
+      warState.supplyCaches = [...(warState.supplyCaches || []), cloneData(entry)];
+      return writeWarState(warState);
+    },
+    onEvent: (event, data) => publishGameplayEvent('battleSettlement', event, data)
+  } : null;
+  const battleEntrySystemConfig = projectLogistics ? {
+    config: gameLoader?.project?.battleIntervene || {},
+    onEvent: (event, data) => publishGameplayEvent('battleEntry', event, data)
+  } : null;
+  const reputationSystemConfig = projectLogistics ? {
+    config: gameLoader?.project?.reputation || {},
+    onEvent: (event, data) => publishGameplayEvent('reputation', event, data)
+  } : null;
   const sharedPlan = this._gameplaySystemAssembler.configureSharedSystems({
     effectResolver,
     skillRegistry: gameLoader.skillRegistry,
@@ -416,6 +461,12 @@ function configureSharedClassEffects(gameLoader) {
     convoy: convoySystemConfig,
     companion: companionSystemConfig,
     armyOrder: armyOrderSystemConfig,
+    logistics: logisticsSystemConfig,
+    cityAdmin: cityAdminSystemConfig,
+    battleSettlement: battleSettlementSystemConfig,
+    battleEntry: battleEntrySystemConfig,
+    reputation: reputationSystemConfig,
+    warState: { read: readWarState, write: writeWarState },
     downedDrop: downedDropSystemConfig,
     vehicles: {
       resolveEntity: id => this.entityStore?.all?.find?.(entity => entity?.id === id) || null,

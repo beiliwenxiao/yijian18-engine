@@ -592,6 +592,54 @@
     },
     "firstConvoySafe": true
   },
+  "logistics": {
+    "personDayFactor": {
+      "melee": 0.8,
+      "archer": 0.8,
+      "cavalry": 2.4
+    },
+    "armyBaseUpkeep": 0,
+    "storageSpoilPerDay": 0.003,
+    "moraleDrain": {
+      "tight": 3,
+      "empty": 8,
+      "collapse": 15
+    },
+    "desertion": {
+      "startDay": 3,
+      "baseRate": 0.02,
+      "rateStep": 0.015,
+      "maxRate": 0.08,
+      "floorRatio": 0.3
+    },
+    "moraleRecoverPerDay": 5,
+    "regroupWindowDays": 30,
+    "maxCatchUpDays": 7,
+    "raze": {
+      "base": 0.6,
+      "night": 0.9,
+      "defended": 0.3,
+      "recoverRatio": 0.2,
+      "requiresFireSource": true
+    },
+    "famineMoralePenalty": {
+      "min": 1,
+      "max": 4
+    },
+    "famineThresholdDays": 3,
+    "forage": {
+      "yieldRatio": 0.6,
+      "moraleCost": 6,
+      "renownCost": 3,
+      "alertChance": 0.25
+    },
+    "aiSupplyEfficiency": 1.0,
+    "campStorage": {
+      "base": 500,
+      "perLevel": 250,
+      "max": 2000
+    }
+  },
   "companionRule": {
     "heroId": "hero.zhangjiao",
     "initialRankId": "rank.wusheng",

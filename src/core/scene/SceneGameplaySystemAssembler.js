@@ -60,6 +60,22 @@ import { EncounterResolver } from '../../systems/world/EncounterResolver.js';
 import { PassTariffSystem } from '../../systems/world/PassTariffSystem.js';
 import { DownedDropService } from '../../systems/DownedDropService.js';
 import { LootPickupBehavior } from '../../systems/ai/LootPickupBehavior.js';
+import { FoodLedgerSystem } from '../../systems/FoodLedgerSystem.js';
+import { CityAdministrationService } from '../../systems/CityAdministrationService.js';
+import { BattleSettlementService } from '../../systems/BattleSettlementService.js';
+import { BattleEntryService } from '../../systems/BattleEntryService.js';
+import { ReputationSystem } from '../../systems/ReputationSystem.js';
+import {
+  createArmyLogisticsAdapter,
+  createAutoResupplyAdapter,
+  createCityWarAdapters
+} from './WarLogisticsAdapters.js';
+import {
+  createWarLogisticsSnapshot,
+  applyWarLogisticsSnapshot,
+  readWarLogistics,
+  writeWarLogistics
+} from './WarLogisticsSnapshot.js';
 import { isHostileTarget } from '../FactionRules.js';
 import { SquadMemberComponent } from '../../ecs/components/SquadMemberComponent.js';
 import { CommandStateComponent } from '../../ecs/components/CommandStateComponent.js';
@@ -1037,6 +1053,148 @@ export class SceneGameplaySystemAssembler {
       }
     }
 
+    // ─── 军需体系接线（M6/M7/M9）───────────────────────────────────────────
+    // 粮草账本 / 城镇内政 / 战果结算 / 声望 / 入场身份：领域服务保持纯领域，
+    // 这里只负责生命周期、读档适配与命令注册（order 513~517）。
+    const defaultGetDay = () => Number(scene.gameLoader?.blackboard?.get?.('storyState')?.day) || 1;
+    const clockNow = () => scene.simulationClock?.now?.() ?? performance.now();
+    const warAdapters = createCityWarAdapters({
+      readCities: config.cityAdmin?.readCities,
+      commitCities: config.cityAdmin?.commitCities,
+      readArmy: config.battleSettlement?.readArmy,
+      writeArmy: config.battleSettlement?.writeArmy,
+      readWarState: config.warState?.read,
+      writeWarState: config.warState?.write
+    });
+    const armyLogisticsAdapter = createArmyLogisticsAdapter({
+      listUnits: () => (armyOrderSystem ? armyOrderSystem.listUnits() : []),
+      getUnit: armyId => armyOrderSystem?.getUnit?.(armyId) || null,
+      writeUnit: (armyId, patch) => {
+        const unit = armyOrderSystem?.getUnit?.(armyId);
+        if (unit) Object.assign(unit, patch);
+      }
+    });
+    this._armyLogisticsAdapter = armyLogisticsAdapter;
+
+    const logisticsConfig = config.logistics || null;
+    let foodLedgerSystem = null;
+    if (logisticsConfig) {
+      let autoResupply = typeof logisticsConfig.autoResupply === 'function'
+        ? logisticsConfig.autoResupply
+        : null;
+      if (!autoResupply && logisticsConfig.autoResupply !== false) {
+        autoResupply = createAutoResupplyAdapter({
+          resolveArmy: armyId => foodLedgerSystem?.getArmy?.(armyId) || null,
+          isAiArmy: logisticsConfig.isAiArmy,
+          aiSupplyEfficiency: logisticsConfig.aiSupplyEfficiency
+        });
+      }
+      foodLedgerSystem = new FoodLedgerSystem({
+        config: logisticsConfig.config || logisticsConfig,
+        armies: armyLogisticsAdapter.listArmies(),
+        now: logisticsConfig.now || clockNow,
+        getDay: logisticsConfig.getDay || defaultGetDay,
+        rng: logisticsConfig.rng,
+        autoResupply,
+        onEvent: logisticsConfig.onEvent
+      });
+      // 结算/存取后把 supply/morale/manpower 回写到行军单位（单一事实源仍是账本）。
+      scene.syncFoodLedgerArmies = () => {
+        for (const army of foodLedgerSystem.armies.values()) {
+          armyLogisticsAdapter.writeArmy(army.id, army);
+        }
+      };
+    }
+
+    const cityAdminConfig = config.cityAdmin || null;
+    let cityAdministrationService = null;
+    if (cityAdminConfig) {
+      const cityOptions = cityAdminConfig.config || cityAdminConfig;
+      cityAdministrationService = new CityAdministrationService({
+        config: cityOptions,
+        cities: typeof cityOptions.readCities === 'function' ? cityOptions.readCities() : warAdapters.readCities(),
+        constructionDefinitions: cityOptions.constructionDefinitions || constructionConfig.definitions || [],
+        camps: cityOptions.camps || [],
+        playerResources: cityOptions.playerResources || null,
+        now: cityAdminConfig.now || clockNow,
+        getDay: cityAdminConfig.getDay || defaultGetDay,
+        onEvent: cityAdminConfig.onEvent
+      });
+    }
+
+    const reputationConfig = config.reputation || null;
+    const reputationSystem = reputationConfig
+      ? new ReputationSystem({
+        config: reputationConfig.config || reputationConfig,
+        onEvent: reputationConfig.onEvent,
+        state: reputationConfig.state || null
+      })
+      : null;
+
+    const battleSettlementConfig = config.battleSettlement || null;
+    let battleSettlementService = null;
+    if (battleSettlementConfig) {
+      battleSettlementService = new BattleSettlementService({
+        config: battleSettlementConfig.config || battleSettlementConfig,
+        now: battleSettlementConfig.now || clockNow,
+        getDay: battleSettlementConfig.getDay || defaultGetDay,
+        rng: battleSettlementConfig.rng,
+        readArmy: battleSettlementConfig.readArmy
+          || (armyId => foodLedgerSystem?.getArmy?.(armyId) || armyLogisticsAdapter.readArmy(armyId)),
+        writeArmy: battleSettlementConfig.writeArmy || ((armyId, army) => {
+          if (foodLedgerSystem) foodLedgerSystem.registerArmy(army);
+          return armyLogisticsAdapter.writeArmy(armyId, army);
+        }),
+        readLedger: battleSettlementConfig.readLedger || warAdapters.readLedger,
+        writeLedger: battleSettlementConfig.writeLedger || warAdapters.writeLedger,
+        addScattered: battleSettlementConfig.addScattered || (entry => {
+          if (!foodLedgerSystem) return false;
+          const day = Number(entry?.day) || defaultGetDay();
+          foodLedgerSystem.scatteredPool.push({
+            armyId: String(entry?.armyId || ''),
+            count: Math.max(0, Math.floor(Number(entry?.count) || 0)),
+            day,
+            expiresDay: day + Math.max(1, Number(foodLedgerSystem.config.regroupWindowDays) || 30)
+          });
+          return true;
+        }),
+        addSupplyCache: battleSettlementConfig.addSupplyCache || null,
+        adjustReputation: battleSettlementConfig.adjustReputation
+          || (payload => reputationSystem?.adjust?.(payload) || null),
+        onEvent: battleSettlementConfig.onEvent
+      });
+    }
+
+    const battleEntryConfig = config.battleEntry || null;
+    const battleEntryService = battleEntryConfig
+      ? new BattleEntryService({
+        config: battleEntryConfig.config || battleEntryConfig,
+        now: battleEntryConfig.now || clockNow,
+        onEvent: battleEntryConfig.onEvent
+      })
+      : null;
+
+    if (foodLedgerSystem) scene.foodLedgerSystem = foodLedgerSystem;
+    if (cityAdministrationService) scene.cityAdministrationService = cityAdministrationService;
+    if (reputationSystem) scene.reputationSystem = reputationSystem;
+    if (battleSettlementService) scene.battleSettlementService = battleSettlementService;
+    if (battleEntryService) scene.battleEntryService = battleEntryService;
+
+    this._registerWarLogisticsCommands({
+      foodLedgerSystem,
+      cityAdministrationService,
+      battleSettlementService,
+      battleEntryService,
+      reputationSystem
+    });
+    if (foodLedgerSystem && typeof scene.sceneRuntime?.registerSnapshotProvider === 'function') {
+      this._registerWarLogisticsSnapshot(foodLedgerSystem, {
+        cityAdministrationService,
+        battleSettlementService,
+        reputationSystem
+      });
+    }
+
     // 倒地掉落 + 敌对 NPC 拾取（M3 3D）：CombatSystem 单点钩子触发，掉落/夺回/到期为纯领域服务。
     const downedDropConfig = config.downedDrop || null;
     let downedDropService = null;
@@ -1295,6 +1453,96 @@ export class SceneGameplaySystemAssembler {
           }
         }]
         : []),
+      ...(foodLedgerSystem
+        ? [{
+          name: 'gameplay.logistics',
+          instance: foodLedgerSystem,
+          options: {
+            order: 513,
+            updateHook: false,
+            disposeHook: () => {
+              foodLedgerSystem.onEvent = () => {};
+              foodLedgerSystem.autoResupply = null;
+              foodLedgerSystem.armies?.clear?.();
+              foodLedgerSystem.camps?.clear?.();
+              foodLedgerSystem.scatteredPool = [];
+              foodLedgerSystem.appliedOperations?.clear?.();
+              scene.syncFoodLedgerArmies = null;
+            },
+            ownership: 'OWNED'
+          }
+        }]
+        : []),
+      ...(cityAdministrationService
+        ? [{
+          name: 'gameplay.cityAdmin',
+          instance: cityAdministrationService,
+          options: {
+            order: 514,
+            updateHook: false,
+            disposeHook: () => {
+              cityAdministrationService.onEvent = () => {};
+              cityAdministrationService.cities?.clear?.();
+              cityAdministrationService.camps?.clear?.();
+            },
+            ownership: 'OWNED'
+          }
+        }]
+        : []),
+      ...(battleSettlementService
+        ? [{
+          name: 'gameplay.battleSettlement',
+          instance: battleSettlementService,
+          options: {
+            order: 515,
+            updateHook: false,
+            disposeHook: () => {
+              battleSettlementService.onEvent = () => {};
+              battleSettlementService.readArmy = null;
+              battleSettlementService.writeArmy = null;
+              battleSettlementService.readLedger = null;
+              battleSettlementService.writeLedger = null;
+              battleSettlementService.addScattered = null;
+              battleSettlementService.addSupplyCache = null;
+              battleSettlementService.adjustReputation = null;
+              battleSettlementService.ledgers?.clear?.();
+              battleSettlementService.supplyCaches?.clear?.();
+            },
+            ownership: 'OWNED'
+          }
+        }]
+        : []),
+      ...(reputationSystem
+        ? [{
+          name: 'gameplay.reputation',
+          instance: reputationSystem,
+          options: {
+            order: 516,
+            updateHook: false,
+            disposeHook: () => {
+              reputationSystem.onEvent = () => {};
+              reputationSystem.byFaction?.clear?.();
+              reputationSystem.byCity?.clear?.();
+            },
+            ownership: 'OWNED'
+          }
+        }]
+        : []),
+      ...(battleEntryService
+        ? [{
+          name: 'gameplay.battleEntry',
+          instance: battleEntryService,
+          options: {
+            order: 517,
+            updateHook: false,
+            disposeHook: () => {
+              battleEntryService.onEvent = () => {};
+              battleEntryService.sessions?.clear?.();
+            },
+            ownership: 'OWNED'
+          }
+        }]
+        : []),
       ...(abilityPlan?.registrations || [])
     ];
     const fields = {
@@ -1303,6 +1551,9 @@ export class SceneGameplaySystemAssembler {
       supply: 'supplySystem', convoy: 'convoySystem', companionSquad: 'companionSquadSystem',
       armyOrder: 'armyOrderSystem',
       downedDrop: 'downedDropService', lootPickup: 'lootPickupBehavior',
+      logistics: 'foodLedgerSystem', cityAdmin: 'cityAdministrationService',
+      battleSettlement: 'battleSettlementService', reputation: 'reputationSystem',
+      battleEntry: 'battleEntryService',
       vehicle: 'vehicleSystem', vehicleLogistics: 'vehicleLogisticsSystem',
       mannedStructure: 'mannedStructureAdapter'
     };
@@ -1755,6 +2006,267 @@ export class SceneGameplaySystemAssembler {
     register('army.disband', payload => persist(armyOrderSystem.disbandUnit(
       payload.unitId || payload.armyId
     )));
+  }
+
+  /**
+   * 军需体系命令注册（M6/M7/M9）。
+   * 领域服务自身保持纯领域；这里只做「命令 → 服务调用 → 黑板镜像 → 展示回写」。
+   * @private
+   */
+  _registerWarLogisticsCommands({
+    foodLedgerSystem = null,
+    cityAdministrationService = null,
+    battleSettlementService = null,
+    battleEntryService = null,
+    reputationSystem = null
+  } = {}) {
+    const scene = this.scene;
+    const services = {
+      foodLedger: foodLedgerSystem,
+      cityAdmin: cityAdministrationService,
+      battleSettlement: battleSettlementService,
+      reputation: reputationSystem
+    };
+    const register = (type, handler) => scene.sceneRuntime?.registerCommandHandler?.(type, {
+      execute: command => handler(command?.payload || {})
+    });
+    const sync = () => {
+      if (foodLedgerSystem) scene.syncFoodLedgerArmies?.();
+      return this._syncWarLogisticsState(services);
+    };
+    const ensureArmy = armyId => {
+      if (!foodLedgerSystem || !armyId) return false;
+      if (foodLedgerSystem.getArmy(armyId)) return true;
+      const army = this._armyLogisticsAdapter?.readArmy?.(armyId);
+      if (!army) return false;
+      foodLedgerSystem.registerArmy(army);
+      return true;
+    };
+    const guard = (service, code) => (service ? null : { ok: false, code });
+
+    // 9B：军营存取（幂等 operationId 由调用方透传）
+    register('army.supply.deposit', payload => {
+      const missing = guard(foodLedgerSystem, 'logisticsUnavailable');
+      if (missing) return missing;
+      ensureArmy(payload.armyId);
+      const result = foodLedgerSystem.deposit({
+        armyId: payload.armyId,
+        campId: payload.campId,
+        entries: payload.entries ?? null,
+        operationId: payload.operationId ?? null
+      });
+      if (result?.ok) sync();
+      return result;
+    });
+    register('army.supply.withdraw', payload => {
+      const missing = guard(foodLedgerSystem, 'logisticsUnavailable');
+      if (missing) return missing;
+      ensureArmy(payload.armyId);
+      const result = foodLedgerSystem.withdraw({
+        armyId: payload.armyId,
+        campId: payload.campId,
+        entries: payload.entries ?? null,
+        operationId: payload.operationId ?? null
+      });
+      if (result?.ok) sync();
+      return result;
+    });
+    // 9C：烧掠与抢掠
+    register('army.raze', payload => {
+      const missing = guard(foodLedgerSystem, 'logisticsUnavailable');
+      if (missing) return missing;
+      const target = payload.target
+        || (payload.targetId != null ? foodLedgerSystem.camps.get(String(payload.targetId)) : null);
+      const result = foodLedgerSystem.raze({
+        target,
+        night: payload.night === true,
+        defended: payload.defended === true,
+        defenderWins: payload.defenderWins === true,
+        hasFireSource: payload.hasFireSource === true,
+        operationId: payload.operationId ?? null
+      });
+      if (result?.ok) sync();
+      return result;
+    });
+    register('army.forage', payload => {
+      const missing = guard(foodLedgerSystem, 'logisticsUnavailable');
+      if (missing) return missing;
+      const result = foodLedgerSystem.forage({
+        armyId: payload.armyId,
+        operationId: payload.operationId ?? null
+      });
+      if (result?.ok) {
+        const cost = Number(result.renownCost ?? 0);
+        if (cost > 0) reputationSystem?.adjust?.({ delta: -cost, reason: 'forage' });
+        sync();
+      }
+      return result;
+    });
+    register('army.regroup', payload => {
+      const missing = guard(foodLedgerSystem, 'logisticsUnavailable');
+      if (missing) return missing;
+      const result = foodLedgerSystem.regroup({
+        armyId: payload.armyId,
+        day: payload.day ?? null
+      });
+      if (result?.ok) sync();
+      return result;
+    });
+
+    // 7：城镇内政
+    register('city.recruit', payload => {
+      const missing = guard(cityAdministrationService, 'cityAdminUnavailable');
+      if (missing) return missing;
+      return cityAdministrationService.recruit({
+        cityId: payload.cityId,
+        fromCampId: payload.fromCampId ?? null,
+        unitType: payload.unitType ?? null,
+        count: payload.count ?? 0,
+        partySpace: payload.partySpace ?? null
+      });
+    });
+    register('city.attack', payload => {
+      const missing = guard(cityAdministrationService, 'cityAdminUnavailable');
+      if (missing) return missing;
+      return cityAdministrationService.orderAttack({
+        cityId: payload.cityId,
+        target: payload.target ?? null,
+        hasArmy: payload.hasArmy !== false
+      });
+    });
+    register('city.transport', payload => {
+      const missing = guard(cityAdministrationService, 'cityAdminUnavailable');
+      if (missing) return missing;
+      return cityAdministrationService.orderTransport({
+        cityId: payload.cityId,
+        target: payload.target ?? null,
+        items: payload.items ?? null
+      });
+    });
+    register('city.siege.begin', payload => {
+      const missing = guard(cityAdministrationService, 'cityAdminUnavailable');
+      if (missing) return missing;
+      return cityAdministrationService.beginSiege({
+        cityId: payload.cityId,
+        byFactionId: payload.byFactionId ?? null,
+        day: payload.day ?? null
+      });
+    });
+    register('city.capture', payload => {
+      const missing = guard(cityAdministrationService, 'cityAdminUnavailable');
+      if (missing) return missing;
+      const result = cityAdministrationService.captureCity({
+        cityId: payload.cityId,
+        factionId: payload.factionId ?? null,
+        winnerCityId: payload.winnerCityId ?? null
+      });
+      if (result?.ok) sync();
+      return result;
+    });
+
+    // 6：入场身份 / 战果（结算入口由场景战果卡调用）
+    register('battle.entry.join', payload => {
+      const missing = guard(battleEntryService, 'battleEntryUnavailable');
+      if (missing) return missing;
+      return battleEntryService.joinBattle({
+        battleId: payload.battleId,
+        armyId: payload.armyId ?? null,
+        identity: payload.identity ?? null,
+        mode: payload.mode ?? null,
+        entry: payload.entry ?? 'ui',
+        playerOnsite: payload.playerOnsite === true
+      });
+    });
+    register('battle.entry.leave', payload => {
+      const missing = guard(battleEntryService, 'battleEntryUnavailable');
+      if (missing) return missing;
+      return battleEntryService.leaveBattle({
+        battleId: payload.battleId ?? null,
+        reason: payload.reason ?? 'battleEnded',
+        confirmed: payload.confirmed === true,
+        playerOnsite: payload.playerOnsite === true
+      });
+    });
+    register('battle.settle', payload => {
+      const missing = guard(battleSettlementService, 'battleSettlementUnavailable');
+      if (missing) return missing;
+      const result = battleSettlementService.settleBattle(payload || {});
+      if (result?.ok) sync();
+      return result;
+    });
+    register('battle.supply.recover', payload => {
+      const missing = guard(battleSettlementService, 'battleSettlementUnavailable');
+      if (missing) return missing;
+      const result = battleSettlementService.recoverSupply({
+        cacheId: payload.cacheId ?? null,
+        army: payload.army ?? null,
+        armyId: payload.armyId ?? null
+      });
+      if (result?.ok) sync();
+      return result;
+    });
+    register('battle.redeem', payload => {
+      const missing = guard(battleSettlementService, 'battleSettlementUnavailable');
+      if (missing) return missing;
+      const result = battleSettlementService.redeem({
+        army: payload.army ?? null,
+        armyId: payload.armyId ?? null,
+        heroId: payload.heroId ?? null,
+        day: payload.day ?? null,
+        force: payload.force === true
+      });
+      if (result?.ok) sync();
+      return result;
+    });
+  }
+
+  /** 军需四本账 → 黑板 warState.logistics（checkpoint.warState 的正式落点）。 */
+  _syncWarLogisticsState(services = {}) {
+    const blackboard = this.scene.gameLoader?.blackboard;
+    if (!blackboard) return false;
+    return writeWarLogistics(blackboard, createWarLogisticsSnapshot({
+      foodLedger: services.foodLedger || null,
+      cityAdmin: services.cityAdmin || null,
+      battleSettlement: services.battleSettlement || null,
+      reputation: services.reputation || null
+    }));
+  }
+
+  /**
+   * 军需快照 provider：快照时镜像到 `warState.logistics`（随 checkpoint.warState 落盘），
+   * 恢复时优先读黑板；旧档缺该段 → 空态放行，不拒档。
+   * @private
+   */
+  _registerWarLogisticsSnapshot(foodLedgerSystem, services = {}) {
+    const scene = this.scene;
+    const all = {
+      foodLedger: foodLedgerSystem,
+      cityAdmin: services.cityAdministrationService || null,
+      battleSettlement: services.battleSettlementService || null,
+      reputation: services.reputationSystem || null
+    };
+    // 装配完成即回灌：覆盖「读档后场景重建、服务是新建实例」的路径。
+    const existing = readWarLogistics(scene.gameLoader?.blackboard);
+    if (existing) applyWarLogisticsSnapshot(existing, all);
+
+    scene.syncWarLogisticsState = () => this._syncWarLogisticsState(all);
+    scene.sceneRuntime.registerSnapshotProvider('gameplay.warLogistics', {
+      required: false,
+      snapshot: () => {
+        const snapshot = createWarLogisticsSnapshot(all);
+        // 与 game 快照同点采集：先镜像，保证 checkpoint.warState 始终是最新值。
+        writeWarLogistics(scene.gameLoader?.blackboard, snapshot);
+        return snapshot;
+      },
+      validate: data => ({ ok: true, data }),
+      restore: data => {
+        const fromWarState = readWarLogistics(scene.gameLoader?.blackboard);
+        const payload = fromWarState || (data && typeof data === 'object' ? data : null);
+        const result = applyWarLogisticsSnapshot(payload, all);
+        if (payload) writeWarLogistics(scene.gameLoader?.blackboard, payload);
+        return { ok: true, ...result };
+      }
+    });
   }
 
   /**
