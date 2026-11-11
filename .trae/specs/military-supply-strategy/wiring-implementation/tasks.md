@@ -61,3 +61,16 @@
 - 决策：军营面板只开放粮草——`deposit/withdraw` 对非食物资源没有扣减来源，放开会让资源凭空增减；面板左栏代表**军团随身粮**而非玩家背包（军营存取的对手方是军团编制）。
 - 测试：`CampStockContainerAdapter.test.js` 8 例 + `SceneContainerInventoryRegistry.test.js` 4 例全绿。
 - 遗留：`src/systems/items/ItemRuntimeFactory.test.js` 1 例失败为仓库既有问题（并行提交 `d47bf3c2` 的物品 capability 校验，未触碰本批文件），已在回报中标注。
+
+## 批次 6：最终回归与汇总
+
+- 提交序列：`3e11c69b`（系统挂载/命令/AI 适配）→ `f56de73c`（warState.logistics 存档）→ `d09f742c`（粮草条/城池卡）→ `ff3c4116`（战果卡/接管身份）→ `095c9c08`（军营容器/存取面板）。
+- 最终回归：`src/core/scene` + `src/ui` + 五个军需领域服务测试 = **37 文件 / 376 例全绿**。
+- 零回归承诺：`CHECKPOINT_SCHEMA` 未改；旧档缺 `warState.logistics` 子段走空态；`containerInventories` 校验路径未改（军营走易失容器）。`vitest.config.js` 与并行会话文件全程未提交。
+- 偏差清单：
+  1. 军营粮草条展示「存粮 N」而非「还剩 N 日」（军营无消耗主体）。
+  2. 军营存取只开放粮草（非食物资源无扣减来源）。
+  3. 战果卡接管身份只提供「接管/观战」；「随军」需本人到场，不在战果卡提供。
+  4. 军营面板左栏代表「军团随身粮」，不是玩家背包。
+  5. `camp.openTransfer` 目前是场景命令入口（供剧本/交互调用），未新增世界交互按键。
+- 已知仓库既有失败（与本轮无关）：`src/systems/items/ItemRuntimeFactory.test.js > 非法 capability 发布 > DefinitionRepository 在发布前拒绝依赖缺失`。
