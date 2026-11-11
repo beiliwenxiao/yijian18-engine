@@ -98,6 +98,8 @@ export class SceneRenderPipeline {
       (scene, ctx) => scene.settingsButton?.render(ctx),
       (_scene, ctx) => this.context?.ui?.playerStatusHUD?.render?.(ctx),
       (scene, ctx) => scene.minimap?.render(ctx),
+      (_scene, ctx) => this.context?.ui?.cityStateSummary?.render?.(ctx),
+      (_scene, ctx) => this.context?.ui?.warSupply?.render?.(ctx),
       (_scene, ctx) => this.context?.ui?.layout?.isOnboardingComponentVisible?.('timeWeatherBadge') !== false
         && this.renderTimeWeatherBadge(ctx),
       (scene, ctx) => scene.renderCombatStateUI(ctx),
@@ -125,8 +127,11 @@ export class SceneRenderPipeline {
       'renderSettingsButton',
       'renderPlayerHud',
       'renderMinimap',
+      'renderCityStateSummary',
+      'renderWarSupply',
       'renderTimeWeatherBadge',
       'renderCombatState',
+      'renderArmyCommandFlow',
       'renderTransition',
       'renderPerformanceMonitor'
     ]);

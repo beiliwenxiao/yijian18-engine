@@ -129,6 +129,8 @@ export class SceneGameplaySystemAssembler {
     this._lootSequence = 0;
     this._downedTick = 0;
     this._downedDropDay = null;
+    // scene 维度命令登记表：重复装配时先撤旧句柄再注册，避免命令指向重建前的旧系统。
+    this._sceneCommandOffs = new Map();
   }
 
   initialize({ zoneCallbacks = {} } = {}) {
@@ -581,7 +583,7 @@ export class SceneGameplaySystemAssembler {
       })
     });
     // P17：item.repair 外层按 payload.kind 分流——装备修复走新服务，工具修复链零改动。
-    scene.sceneRuntime?.registerCommandHandler?.('item.repair', {
+    this._registerSceneCommand('item.repair', {
       execute: (command, context) => {
         const kind = command?.payload?.kind;
         return kind === 'equipment'
@@ -590,7 +592,7 @@ export class SceneGameplaySystemAssembler {
       }
     });
     for (const commandType of Object.values(ITEM_LIFECYCLE_COMMANDS)) {
-      scene.sceneRuntime?.registerCommandHandler?.(commandType, scene.itemLifecycleService);
+      this._registerSceneCommand(commandType, scene.itemLifecycleService);
     }
     const offItemProjection = scene.sceneRuntime?.projectionStore?.registerReducer?.(
       scene.itemLifecycleService.stateType,
@@ -1601,7 +1603,9 @@ export class SceneGameplaySystemAssembler {
     // 生产快照：可选 provider——旧档缺 `gameplay.production` 段不拒档；
     // 有该段时恢复工单/预扣凭证/工位占用，成品入库仍由场景事务完成（不重复扣料、不重复产出）。
     if (typeof scene.sceneRuntime?.registerSnapshotProvider === 'function') {
-      const productionProvider = createProductionSnapshotProvider(productionSystem, { resolveInventory });
+      const productionProvider = createProductionSnapshotProvider(productionSystem, {
+        resolveInventory: id => this._resolveInventory(id)
+      });
       if (productionProvider) {
         scene.sceneRuntime.registerSnapshotProvider('gameplay.production', productionProvider);
       }
@@ -1632,7 +1636,7 @@ export class SceneGameplaySystemAssembler {
    */
   _registerDownedDropCommands(downedDropService) {
     const scene = this.scene;
-    scene.sceneRuntime?.registerCommandHandler?.('inventory.dropAll', {
+    this._registerSceneCommand('inventory.dropAll', {
       execute: command => {
         const payload = command?.payload || {};
         return downedDropService.dropAll({
@@ -1745,7 +1749,7 @@ export class SceneGameplaySystemAssembler {
    */
   _registerSupplyCommands(supplySystem) {
     const scene = this.scene;
-    const register = (type, handler) => scene.sceneRuntime?.registerCommandHandler?.(type, {
+    const register = (type, handler) => this._registerSceneCommand(type, {
       execute: command => handler(command?.payload || {})
     });
     register('supply.open', payload => supplySystem.open({
@@ -1777,7 +1781,7 @@ export class SceneGameplaySystemAssembler {
    */
   _registerConvoyCommands(convoySystem) {
     const scene = this.scene;
-    const register = (type, handler) => scene.sceneRuntime?.registerCommandHandler?.(type, {
+    const register = (type, handler) => this._registerSceneCommand(type, {
       execute: command => handler(command?.payload || {})
     });
     register('convoy.assemble', payload => convoySystem.assemble({
@@ -1813,7 +1817,7 @@ export class SceneGameplaySystemAssembler {
    */
   _registerCompanionCommands(companionSystem) {
     const scene = this.scene;
-    const register = (type, handler) => scene.sceneRuntime?.registerCommandHandler?.(type, {
+    const register = (type, handler) => this._registerSceneCommand(type, {
       execute: command => handler(command?.payload || {})
     });
     const persist = () => scene.companionSquadFlow?.requestPersist?.();
@@ -1911,13 +1915,36 @@ export class SceneGameplaySystemAssembler {
   }
 
   /**
-   * 世界逻辑层命令桥（4A）：world.route.preview / world.route.invalidate / world.teleport。
+   * scene 维度幂等命令注册（先撤后注册，不跳过）。
+   * 重复装配时撤销本装配器上次登记的句柄，保证命令指向本次重建的系统实例；
+   * 其他 owner 占名时仍由 registerCommandHandler 抛 duplicate，不静默抢占。
+   * @private
+   */
+  _registerSceneCommand(commandType, handler) {
+    const runtime = this.scene?.sceneRuntime;
+    if (typeof runtime?.registerCommandHandler !== 'function') return null;
+    const previous = this._sceneCommandOffs.get(commandType);
+    if (previous) {
+      try {
+        previous();
+      } catch (error) {
+        console.warn(`[SceneGameplaySystemAssembler] 撤销旧命令句柄失败: ${commandType}`, error);
+      }
+      this._sceneCommandOffs.delete(commandType);
+    }
+    const off = runtime.registerCommandHandler(commandType, handler);
+    this._sceneCommandOffs.set(commandType, off);
+    return off;
+  }
+
+  /**
+   * 世界逻辑层命令桥（4A）：world.route.preview / world.route.invalidate / world.unit.teleport。
    * 预览与失效都只落到 `WorldRouteLayer`，UI 端不持有第二份通行判定。
    * @private
    */
   _registerWorldRouteCommands(layer) {
     const scene = this.scene;
-    const register = (type, handler) => scene.sceneRuntime?.registerCommandHandler?.(type, {
+    const register = (type, handler) => this._registerSceneCommand(type, {
       execute: command => handler(command?.payload || {})
     });
     register('world.route.preview', payload => ({
@@ -1930,7 +1957,7 @@ export class SceneGameplaySystemAssembler {
       scene.armyOrderFlow?.requestPersist?.();
       return { ok: true, revision };
     });
-    register('world.teleport', payload => {
+    register('world.unit.teleport', payload => {
       const nodeId = layer.resolveTarget(payload.nodeId ?? payload.target ?? null, {
         maxSnapDistance: payload.maxSnapDistance
       });
@@ -1960,7 +1987,7 @@ export class SceneGameplaySystemAssembler {
    */
   _registerArmyOrderCommands(armyOrderSystem) {
     const scene = this.scene;
-    const register = (type, handler) => scene.sceneRuntime?.registerCommandHandler?.(type, {
+    const register = (type, handler) => this._registerSceneCommand(type, {
       execute: command => handler(command?.payload || {})
     });
     const persist = result => {
@@ -2041,7 +2068,7 @@ export class SceneGameplaySystemAssembler {
       battleSettlement: battleSettlementService,
       reputation: reputationSystem
     };
-    const register = (type, handler) => scene.sceneRuntime?.registerCommandHandler?.(type, {
+    const register = (type, handler) => this._registerSceneCommand(type, {
       execute: command => handler(command?.payload || {})
     });
     const sync = () => {

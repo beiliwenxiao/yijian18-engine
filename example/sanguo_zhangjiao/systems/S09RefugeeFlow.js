@@ -77,7 +77,7 @@ export class S09RefugeeCoordinator extends SceneFlowCoordinator {
   /** S09 只读城市摘要只投影已提交的 Blackboard 状态，不参与领域写入。 */
   installCitySummaryUI(gameLoader) {
     const scene = this.scene;
-    if (!gameLoader?.blackboard || !scene.uiSystem) return false;
+    if (!gameLoader?.blackboard) return false;
     const compact = scene.isMobileLayout === true;
     const width = compact ? Math.min(224, scene.logicalWidth - 24) : 270;
     const height = compact ? 112 : 126;
@@ -91,12 +91,10 @@ export class S09RefugeeCoordinator extends SceneFlowCoordinator {
       zIndex: 45,
       resolveImage: imageId => scene.assetManager?.getAsset?.(imageId) || null
     });
-    scene.uiSystem.registerPanel('cityStateSummary', panel);
     Object.assign(scene.context.ui, { cityStateSummary: panel });
     scene.cityStateSummaryPanel = panel;
     this.updateCitySummary();
     scene.resourceScope?.track(() => {
-      scene.uiSystem?.unregisterPanel?.('cityStateSummary');
       if (scene.context.ui.cityStateSummary === panel) scene.context.ui.cityStateSummary = null;
       if (scene.cityStateSummaryPanel === panel) scene.cityStateSummaryPanel = null;
     });
@@ -109,7 +107,7 @@ export class S09RefugeeCoordinator extends SceneFlowCoordinator {
    */
   installSupplyStatusUI(gameLoader) {
     const scene = this.scene;
-    if (!gameLoader?.blackboard || !scene.uiSystem) return false;
+    if (!gameLoader?.blackboard) return false;
     if (scene.supplyStatusBar) return true;
     const compact = scene.isMobileLayout === true;
     const width = compact ? Math.min(224, scene.logicalWidth - 24) : 232;
@@ -122,12 +120,10 @@ export class S09RefugeeCoordinator extends SceneFlowCoordinator {
       visible: false,
       zIndex: 46
     });
-    scene.uiSystem.registerPanel('warSupply', panel);
     Object.assign(scene.context.ui, { warSupply: panel });
     scene.supplyStatusBar = panel;
     this.updateSupplyStatus(gameLoader);
     scene.resourceScope?.track(() => {
-      scene.uiSystem?.unregisterPanel?.('warSupply');
       if (scene.context.ui.warSupply === panel) scene.context.ui.warSupply = null;
       if (scene.supplyStatusBar === panel) scene.supplyStatusBar = null;
     });

@@ -57,7 +57,8 @@ const GROUP_DEFAULTS = Object.freeze({
     playerStatusHUD: null,
     dialogueBox: null,
     progression: null,
-    cityStateSummary: null
+    cityStateSummary: null,
+    warSupply: null
   }),
   world: Object.freeze({
     terrain: null,
