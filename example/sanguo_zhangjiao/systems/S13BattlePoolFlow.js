@@ -65,7 +65,7 @@ export class S13BattlePoolFlow {
 
   /** 每帧推进（挂在 S13 场景 update 上）。 */
   update(deltaTime) {
-    if (!this.pool || this.routed || this.exhausted) return;
+    if (!this.pool || this.routed) return;
     this.accumulator += Number(deltaTime) || 0;
     if (this.accumulator < 0.2) return;
     this.accumulator = 0;
@@ -81,6 +81,8 @@ export class S13BattlePoolFlow {
     if (alive < this.lastAlive) recordPoolDeaths(this.pool, this.lastAlive - alive);
     this.lastAlive = alive;
 
+    // 总池打空后不再补员，只剩孙夏亲兵；胜负仍由斩将决定
+    if (this.exhausted) return;
     const spawnCount = planRefill(this.pool, alive);
     if (spawnCount > 0) {
       for (let index = 0; index < spawnCount; index += 1) this._spawnSoldier(this.pool.defeated + index);
@@ -89,8 +91,7 @@ export class S13BattlePoolFlow {
 
     if (isPoolExhausted(this.pool)) {
       this.exhausted = true;
-      this.scene._showScreenTip?.('六百汉军尽没，精山阵线崩溃。', { title: '精山战果' });
-      this.scene.gameLoader?.triggerSystem?.fire?.('waveCleared', { group: HAN_GROUP });
+      this.scene._showScreenTip?.('汉军后援已尽，阵前只剩孙夏亲兵。', { title: '精山战况' });
     }
   }
 
