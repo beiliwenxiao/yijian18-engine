@@ -2614,7 +2614,7 @@
       "isBoss": true,
       "level": 3,
       "name": "县尉",
-      "npcType": "monster_elite",
+      "npcType": "enemy_boss",
       "sprite": {
         "height": 64,
         "isStatic": true,
