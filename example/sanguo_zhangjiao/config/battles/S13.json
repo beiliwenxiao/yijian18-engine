@@ -5,6 +5,7 @@
   "description": "精山暮雨中的最后一场可选战役。观战保留终局物资；介入会投入粮、药与木料，为残部争取退路。",
   "participantFactionIds": ["yellow_turban", "han_government"],
   "playerEntityId": "$runtime.player",
+  "scale": { "pool": 600, "screen": 100 },
   "createParams": {
     "battleId": "battle.s13.jingshan",
     "terrainId": "terrain.s13.jingshan",

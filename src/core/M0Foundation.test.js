@@ -148,18 +148,36 @@ describe('M0 · 真实内容库数据', () => {
 
   it('五类数据量与文档一致', () => {
     expect(library.formations).toHaveLength(14);
-    // B1 起新增 hero.player（玩家本体，亲卫统率绑定），文档计数 14 → 15
-    expect(library.heroes).toHaveLength(15);
-    expect(library.unitTypes).toHaveLength(7);
+    // B1 新增 hero.player（玩家本体，亲卫统率绑定）；B5 新增 hero.fu_xie（傅燮，S02 围剿主将）
+    expect(library.heroes).toHaveLength(16);
+    // B5 补 unit.melee（hero.player 的通用近战兵种）
+    expect(library.unitTypes).toHaveLength(8);
     expect(library.ranks).toHaveLength(21);
     // M1 起 recipes 由真实配方填充（M0 阶段为空占位）
     expect(Array.isArray(library.recipes)).toBe(true);
     expect(library.recipes.length).toBeGreaterThanOrEqual(2);
   });
 
-  it('占位数据已标注（tags 含 m0.placeholder）', () => {
-    for (const entry of [...library.formations, ...library.heroes, ...library.unitTypes]) {
+  it('占位数据已标注；已补真实数值的武将不再占位且带基础战斗值', () => {
+    for (const entry of [...library.formations, ...library.unitTypes]) {
       expect(entry.tags).toContain('m0.placeholder');
+    }
+    // B5：仅玩家本体保留占位标注（数值由玩家实体/成长系统提供）
+    expect(library.heroes.filter(hero => hero.tags?.includes('m0.placeholder')).map(hero => hero.id))
+      .toEqual(['hero.player']);
+    for (const hero of library.heroes.filter(hero => !hero.tags?.includes('m0.placeholder'))) {
+      for (const stat of ['attack', 'defense', 'maxHp', 'speed']) {
+        expect(hero.stats?.[stat], `${hero.id}.${stat}`).toBeGreaterThan(0);
+      }
+    }
+    // S09~S13 实际出场武将必须已补真实数值
+    const cast = ['hero.zhang_liang', 'hero.zhang_bao', 'hero.sun_xia', 'hero.s11.han_commander',
+      'hero.s12.han_commander', 'hero.s13.han_commander', 'hero.fu_xie'];
+    for (const id of cast) {
+      const hero = library.heroes.find(entry => entry.id === id);
+      expect(hero, id).toBeTruthy();
+      expect(hero.tags || []).not.toContain('m0.placeholder');
+      expect(hero.stats.attack).toBeGreaterThan(0);
     }
   });
 
@@ -179,7 +197,7 @@ describe('M0 · 真实内容库数据', () => {
     expect(missing).toEqual([]);
   });
 
-  it('formations→unitTypes、heroes→ranks 引用完整', () => {
+  it('formations→unitTypes、heroes→ranks/unitTypes 引用完整', () => {
     const unitTypes = new Set(library.unitTypes.map(entry => entry.id));
     const ranks = new Set(library.ranks.map(entry => entry.id));
     const heroes = new Set(library.heroes.map(entry => entry.id));
@@ -189,6 +207,7 @@ describe('M0 · 真实内容库数据', () => {
     }
     for (const hero of library.heroes) {
       if (hero.rankId) expect(ranks.has(hero.rankId)).toBe(true);
+      if (hero.unitId) expect(unitTypes.has(hero.unitId)).toBe(true);
     }
   });
 

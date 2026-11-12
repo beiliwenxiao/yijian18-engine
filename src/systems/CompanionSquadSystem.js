@@ -40,6 +40,21 @@ export const COMPANION_STANCES = Object.freeze([
 /** 随行小队在 ArmyCommandSystem 中的 armyId（整体一队，无分队）。 */
 export const COMPANION_ARMY_ID = 'companion';
 
+/**
+ * B5 亲卫上限唯一口径：floor((统率 + 官职值) / 2)，封顶 100。
+ * 旧写法 `10 + floor(command/10)`（封顶 80）作废；需要兼容读的场景直接调本函数。
+ * @param {{command?:number, rankValue?:number, capacityMax?:number}} values
+ * @returns {number}
+ */
+export function resolveCompanionCapacity({ command = 0, rankValue = 0, capacityMax = 100 } = {}) {
+  const cap = Number.isFinite(Number(capacityMax))
+    ? Math.max(1, Math.min(100, Math.floor(Number(capacityMax))))
+    : 100;
+  const commandValue = Math.max(0, Math.floor(Number(command) || 0));
+  const rankValueNumber = Math.max(0, Math.floor(Number(rankValue) || 0));
+  return Math.max(0, Math.min(Math.floor((commandValue + rankValueNumber) / 2), cap));
+}
+
 const STANCE_KEYS = new Set(COMPANION_STANCES.map(stance => stance.key));
 
 const DEFAULT_MORALE_RULE = Object.freeze({
@@ -58,7 +73,6 @@ const DEFAULT_MORALE_RULE = Object.freeze({
 });
 
 const clampNumber = (value, min, max) => Math.min(max, Math.max(min, value));
-const clampStat = value => clampNumber(Math.floor(Number(value) || 0), 0, 100);
 const clone = value => value == null ? value : JSON.parse(JSON.stringify(value));
 
 /** 成员姓氏首字（HUD 方格用）：取 id 最后一段的首字符。 */
@@ -124,11 +138,13 @@ export class CompanionSquadSystem {
 
   // ─── 容量 ────────────────────────────────────────────────
 
-  /** 随行上限 = floor((统率 + 官职) / 2)，封顶 100（模块 3 §4.1）。 */
+  /** 随行上限 = floor((统率 + 官职) / 2)，封顶 100（模块 3 §4.1；唯一口径）。 */
   getCapacity() {
-    const command = clampStat(this.getCommand());
-    const rankValue = clampStat(this.getRankValue());
-    return clampNumber(Math.floor((command + rankValue) / 2), 0, this.rule.capacityMax);
+    return resolveCompanionCapacity({
+      command: this.getCommand(),
+      rankValue: this.getRankValue(),
+      capacityMax: this.rule.capacityMax
+    });
   }
 
   /** 当前成员数（含倒地未补位；阵亡待补位仍占位）。 */

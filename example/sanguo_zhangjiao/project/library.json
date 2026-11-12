@@ -3392,6 +3392,21 @@
   "unitTypes": [
     {
       "schemaVersion": 2,
+      "id": "unit.melee",
+      "name": "近战兵",
+      "class": "melee",
+      "tier": 1,
+      "stats": {
+        "attack": 9,
+        "defense": 6,
+        "speed": 100
+      },
+      "tags": [
+        "m0.placeholder"
+      ]
+    },
+    {
+      "schemaVersion": 2,
       "id": "unit.spear",
       "name": "枪兵",
       "class": "melee",
@@ -3868,11 +3883,13 @@
       "level": 6,
       "rankId": "rank.piaoqi",
       "stats": {
-        "command": 88
+        "command": 88,
+        "attack": 24,
+        "defense": 16,
+        "maxHp": 460,
+        "speed": 64
       },
-      "tags": [
-        "m0.placeholder"
-      ]
+      "tags": []
     },
     {
       "schemaVersion": 2,
@@ -3884,11 +3901,13 @@
       "level": 3,
       "rankId": "rank.pianjiangjun",
       "stats": {
-        "command": 55
+        "command": 55,
+        "attack": 16,
+        "defense": 12,
+        "maxHp": 260,
+        "speed": 62
       },
-      "tags": [
-        "m0.placeholder"
-      ]
+      "tags": []
     },
     {
       "schemaVersion": 2,
@@ -3900,11 +3919,13 @@
       "level": 4,
       "rankId": "rank.sizhen",
       "stats": {
-        "command": 70
+        "command": 70,
+        "attack": 20,
+        "defense": 10,
+        "maxHp": 320,
+        "speed": 64
       },
-      "tags": [
-        "m0.placeholder"
-      ]
+      "tags": []
     },
     {
       "schemaVersion": 2,
@@ -3916,11 +3937,13 @@
       "level": 3,
       "rankId": "rank.yamenjiang",
       "stats": {
-        "command": 48
+        "command": 48,
+        "attack": 14,
+        "defense": 11,
+        "maxHp": 240,
+        "speed": 64
       },
-      "tags": [
-        "m0.placeholder"
-      ]
+      "tags": []
     },
     {
       "schemaVersion": 2,
@@ -3932,11 +3955,13 @@
       "level": 4,
       "rankId": "rank.sizhen",
       "stats": {
-        "command": 72
+        "command": 72,
+        "attack": 21,
+        "defense": 10,
+        "maxHp": 330,
+        "speed": 63
       },
-      "tags": [
-        "m0.placeholder"
-      ]
+      "tags": []
     },
     {
       "schemaVersion": 2,
@@ -3948,11 +3973,13 @@
       "level": 4,
       "rankId": "rank.pijiangjun",
       "stats": {
-        "command": 66
+        "command": 66,
+        "attack": 19,
+        "defense": 9,
+        "maxHp": 300,
+        "speed": 70
       },
-      "tags": [
-        "m0.placeholder"
-      ]
+      "tags": []
     },
     {
       "schemaVersion": 2,
@@ -3964,11 +3991,13 @@
       "level": 3,
       "rankId": "rank.yamenjiang",
       "stats": {
-        "command": 45
+        "command": 45,
+        "attack": 14,
+        "defense": 8,
+        "maxHp": 230,
+        "speed": 64
       },
-      "tags": [
-        "m0.placeholder"
-      ]
+      "tags": []
     },
     {
       "schemaVersion": 2,
@@ -3980,11 +4009,13 @@
       "level": 3,
       "rankId": "rank.pianjiangjun",
       "stats": {
-        "command": 58
+        "command": 58,
+        "attack": 17,
+        "defense": 9,
+        "maxHp": 250,
+        "speed": 72
       },
-      "tags": [
-        "m0.placeholder"
-      ]
+      "tags": []
     },
     {
       "schemaVersion": 2,
@@ -3996,11 +4027,13 @@
       "level": 5,
       "rankId": "rank.cheqi",
       "stats": {
-        "command": 82
+        "command": 82,
+        "attack": 23,
+        "defense": 15,
+        "maxHp": 420,
+        "speed": 63
       },
-      "tags": [
-        "m0.placeholder"
-      ]
+      "tags": []
     },
     {
       "schemaVersion": 2,
@@ -4012,11 +4045,13 @@
       "level": 4,
       "rankId": "rank.pijiangjun",
       "stats": {
-        "command": 58
+        "command": 58,
+        "attack": 18,
+        "defense": 13,
+        "maxHp": 300,
+        "speed": 62
       },
-      "tags": [
-        "m0.placeholder"
-      ]
+      "tags": []
     },
     {
       "schemaVersion": 2,
@@ -4028,11 +4063,13 @@
       "level": 5,
       "rankId": "rank.sifang",
       "stats": {
-        "command": 76
+        "command": 76,
+        "attack": 22,
+        "defense": 15,
+        "maxHp": 380,
+        "speed": 62
       },
-      "tags": [
-        "m0.placeholder"
-      ]
+      "tags": []
     },
     {
       "schemaVersion": 2,
@@ -4044,27 +4081,49 @@
       "level": 5,
       "rankId": "rank.weijiangjun",
       "stats": {
-        "command": 80
+        "command": 80,
+        "attack": 21,
+        "defense": 14,
+        "maxHp": 400,
+        "speed": 62
       },
-      "tags": [
-        "m0.placeholder"
-      ]
+      "tags": []
+    },
+    {
+      "schemaVersion": 2,
+      "id": "hero.fu_xie",
+      "name": "傅燮",
+      "unitId": "unit.shield",
+      "classId": "commander",
+      "factionId": "han",
+      "level": 5,
+      "rankId": "rank.zhonglangjiang",
+      "stats": {
+        "command": 74,
+        "attack": 21,
+        "defense": 16,
+        "maxHp": 380,
+        "speed": 60
+      },
+      "tags": []
     },
     {
       "schemaVersion": 2,
       "id": "hero.sun_xia",
       "name": "孙夏",
-      "unitId": "unit.heavy",
+      "unitId": "unit.light_cav",
       "classId": "commander",
       "factionId": "han_government",
       "level": 3,
       "rankId": "rank.sian",
       "stats": {
-        "command": 62
+        "command": 62,
+        "attack": 18,
+        "defense": 8,
+        "maxHp": 260,
+        "speed": 74
       },
-      "tags": [
-        "m0.placeholder"
-      ]
+      "tags": []
     },
     {
       "schemaVersion": 2,
@@ -4076,11 +4135,13 @@
       "level": 4,
       "rankId": "rank.sian",
       "stats": {
-        "command": 64
+        "command": 64,
+        "attack": 19,
+        "defense": 9,
+        "maxHp": 290,
+        "speed": 74
       },
-      "tags": [
-        "m0.placeholder"
-      ]
+      "tags": []
     },
     {
       "schemaVersion": 2,

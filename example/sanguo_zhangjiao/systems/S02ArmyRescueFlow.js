@@ -29,6 +29,8 @@
 import { S02RitualFlow } from './S02RitualFlow.js';
 import { S02BattleFlow } from './S02BattleFlow.js';
 
+import { resolveCompanionCapacity } from '../../../src/systems/CompanionSquadSystem.js';
+
 /**
  * 受伤 debuff 分档（M3.6）：只削生存不削输出。
  * M4 行军段赠药（severe→light）/包扎（light→痊愈）逐档恢复；story.s09.treatment 终点痊愈。
@@ -106,12 +108,20 @@ export class S02ArmyRescueCoordinator {
     return result;
   }
 
-  /** 不加入线：一次招募亲卫（上限 10 + floor(command/10)，封顶 80）。 */
+  /** 不加入线：一次招募亲卫（B5 唯一口径：floor((统率+官职)/2)，封顶 100）。 */
   async recruitGuard() {
     if (this._storyFact('s02RecruitDone') === true) return { ok: true, idempotent: true };
     const stats = this.scene.playerEntity?.getComponent?.('stats');
     const command = Number(stats?.command ?? stats?.getStat?.('command')) || 0;
-    const cap = Math.max(10, Math.min(80, 10 + Math.floor(command / 10)));
+    const squad = this.scene.companionSquadSystem || null;
+    const squadCapacity = Number(squad?.getCapacity?.());
+    const cap = Number.isFinite(squadCapacity) && squadCapacity > 0
+      ? squadCapacity
+      : resolveCompanionCapacity({
+        command,
+        rankValue: this._guardRankValue(),
+        capacityMax: this.scene.gameLoader?.project?.companionRule?.capacityMax || 100
+      });
     // 先落事实再出兵（同 recruitYellow：spawnWhen 门控读 s02RecruitGuard）
     const result = await this._submitFact('story.s02.recruit.guard', { cap });
     this.scene.context?.services?.placements?.spawn?.({ group: 'S02-army-guard', authoritative: true });
@@ -121,6 +131,16 @@ export class S02ArmyRescueCoordinator {
 
   _storyFact(key) {
     return this.scene.gameLoader?.blackboard?.get?.('storyState')?.[key];
+  }
+
+  /** 官职值：story.playerRank.value > ranks[rankId].value > 白身 0。 */
+  _guardRankValue() {
+    const loader = this.scene.gameLoader;
+    const story = loader?.blackboard?.get?.('storyState') || {};
+    const rank = story.playerRank;
+    if (rank && Number.isFinite(Number(rank.value))) return Number(rank.value);
+    const rankId = rank?.rankId || loader?.project?.companionRule?.initialRankId;
+    return Number(loader?.getRegistry?.('ranks')?.get?.(rankId)?.value) || 0;
   }
 
   _submitFact(definitionId, payload = {}) {

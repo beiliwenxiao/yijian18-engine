@@ -7,7 +7,7 @@
  ************************************************************/
 
 import { describe, expect, it } from 'vitest';
-import { CompanionSquadSystem, COMPANION_STANCES } from './CompanionSquadSystem.js';
+import { CompanionSquadSystem, COMPANION_STANCES, resolveCompanionCapacity } from './CompanionSquadSystem.js';
 
 function createSystem(overrides = {}) {
   let now = 0;
@@ -39,6 +39,15 @@ describe('M3 3A · CompanionSquadSystem 容量', () => {
       getRankValue: () => 100
     });
     expect(clamped.system.getCapacity()).toBe(30);
+  });
+
+  it('纯函数口径唯一：封顶 100、非负、旧写法 10+floor(command/10) 不再生效', () => {
+    expect(resolveCompanionCapacity({ command: 20, rankValue: 0 })).toBe(10);
+    expect(resolveCompanionCapacity({ command: 88, rankValue: 0 })).toBe(44);
+    expect(resolveCompanionCapacity({ command: 100, rankValue: 100 })).toBe(100);
+    expect(resolveCompanionCapacity({ command: 100, rankValue: 100, capacityMax: 80 })).toBe(80);
+    expect(resolveCompanionCapacity({ command: 80, rankValue: 0 })).toBe(40);
+    expect(resolveCompanionCapacity({ command: -10, rankValue: -10 })).toBe(0);
   });
 
   it('超出上限的名册/编入被拒绝（不静默截断）', () => {

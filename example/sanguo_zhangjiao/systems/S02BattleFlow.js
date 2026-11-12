@@ -23,9 +23,17 @@
  * 不写入 canonical placement 账本——补员单位是战斗运行态，不入档。
  */
 
+import { normalizeBattleScale } from '../../../src/systems/BattleScale.js';
+
+/**
+ * 围剿规模：走全局 scale 语义（pool/screen），S02 自实现仍按 1000 池 / 同屏 100。
+ * 与 S13 `battle.scale` 共用同一套归一规则，只是 S02 不走 battle 定义。
+ */
+const RAID_SCALE = normalizeBattleScale({ pool: 1000, screen: 100 });
+
 const RAID = {
-  total: 1000,
-  screenCap: 100,
+  total: RAID_SCALE.pool,
+  screenCap: RAID_SCALE.screen,
   bossThreshold: 500,
   bossId: 'S02-raid-boss',
   guardPrefix: 'S02-raid-boss-guard',
