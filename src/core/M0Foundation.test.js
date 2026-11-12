@@ -148,7 +148,8 @@ describe('M0 · 真实内容库数据', () => {
 
   it('五类数据量与文档一致', () => {
     expect(library.formations).toHaveLength(14);
-    expect(library.heroes).toHaveLength(14);
+    // B1 起新增 hero.player（玩家本体，亲卫统率绑定），文档计数 14 → 15
+    expect(library.heroes).toHaveLength(15);
     expect(library.unitTypes).toHaveLength(7);
     expect(library.ranks).toHaveLength(21);
     // M1 起 recipes 由真实配方填充（M0 阶段为空占位）
