@@ -4039,9 +4039,9 @@
       "schemaVersion": 2,
       "id": "hero.sun_xia",
       "name": "孙夏",
-      "unitId": "unit.archer",
+      "unitId": "unit.heavy",
       "classId": "commander",
-      "factionId": "yellow_turban",
+      "factionId": "han_government",
       "level": 3,
       "rankId": "rank.sian",
       "stats": {
