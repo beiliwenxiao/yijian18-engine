@@ -1884,6 +1884,20 @@
   },
   {
     "commandType": "state.transaction",
+    "id": "story.s13.hanReserveExhausted",
+    "name": "精山汉军后援耗尽（状态事实，不参与胜负）",
+    "transaction": {
+      "writes": [
+        {
+          "path": "s13.hanReserveExhausted",
+          "target": "story",
+          "value": true
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
     "id": "story.s01.wolfPackCleared",
     "name": "狼群清空，狼王现身",
     "transaction": {

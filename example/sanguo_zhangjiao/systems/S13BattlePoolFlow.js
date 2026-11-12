@@ -91,8 +91,23 @@ export class S13BattlePoolFlow {
 
     if (isPoolExhausted(this.pool)) {
       this.exhausted = true;
+      // 状态事实：供台词/HUD 读取「后援已尽」，不参与胜负判定（胜负仍由斩将/战果冻结决定）
+      this._submit('story.s13.hanReserveExhausted');
       this.scene._showScreenTip?.('汉军后援已尽，阵前只剩孙夏亲兵。', { title: '精山战况' });
     }
+  }
+
+  /** 提交状态事实：沿用既有一事一命令与 operationId 幂等，不自建账本。 */
+  _submit(definitionId) {
+    const gateway = this.scene.sceneRuntime?.commandGateway;
+    const actorRef = this.scene.playerEntity?.id;
+    if (!gateway?.execute || !actorRef) return { ok: false, code: 'commandGatewayUnavailable' };
+    return gateway.execute({
+      intentType: 'state.transaction',
+      actorRef,
+      operationId: `story:${definitionId}:s13battle:1`,
+      payload: { definitionId }
+    });
   }
 
   _fillToScreen(alive) {
