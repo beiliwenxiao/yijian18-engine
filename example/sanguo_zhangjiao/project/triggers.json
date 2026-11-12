@@ -657,7 +657,7 @@
       {
         "action": "showTip",
         "params": {
-          "text": "崖壁上垂着藤蔓。{jump}跃向崖壁抓住它，攀到顶部翻越山崖，就能逃往废弃营地。"
+          "text": "崖壁上垂着藤蔓。{jump}跃向崖壁抓住它，攀登到顶部翻越山崖，就能逃往废弃营地。"
         },
         "stepId": "hint-vine-climb"
       },
