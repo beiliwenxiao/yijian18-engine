@@ -148,6 +148,7 @@
   },
   {
     "id": "dialogue.s02.coinGift",
+    "runtimeStarted": true,
     "nodes": {
       "law": {
         "nextNode": "queue",
@@ -176,6 +177,7 @@
   },
   {
     "id": "dialogue.s02.recruitDone",
+    "runtimeStarted": true,
     "nodes": {
       "camp": {
         "speaker": "旁白",
@@ -210,6 +212,7 @@
   },
   {
     "id": "dialogue.s02.overnight",
+    "runtimeStarted": true,
     "nodes": {
       "accuse": {
         "nextNode": "defend",
@@ -263,6 +266,7 @@
   },
   {
     "id": "dialogue.s02.raidRepelled",
+    "runtimeStarted": true,
     "nodes": {
       "after": {
         "nextNode": "order",
@@ -1047,6 +1051,7 @@
   },
   {
     "id": "dialogue.s02.ritualIntro",
+    "runtimeStarted": true,
     "nodes": {
       "how": {
         "nextNode": "teach",
@@ -1087,6 +1092,7 @@
   },
   {
     "id": "dialogue.s02.serveLine",
+    "runtimeStarted": true,
     "nodes": {
       "child": {
         "speaker": "旁白",
@@ -1108,6 +1114,7 @@
   },
   {
     "id": "dialogue.s02.accusation",
+    "runtimeStarted": true,
     "nodes": {
       "charge1": {
         "nextNode": "charge2",
@@ -1164,6 +1171,7 @@
   },
   {
     "id": "dialogue.s02.arrest",
+    "runtimeStarted": true,
     "nodes": {
       "child": {
         "nextNode": "zhangjiao",
@@ -1208,6 +1216,7 @@
   },
   {
     "id": "dialogue.s02.revoltSpeech",
+    "runtimeStarted": true,
     "nodes": {
       "call": {
         "nextNode": "end",
@@ -1254,6 +1263,7 @@
   },
   {
     "id": "dialogue.s02.allegiance",
+    "runtimeStarted": true,
     "nodes": {
       "choose": {
         "choices": [
@@ -1309,6 +1319,7 @@
   },
   {
     "id": "dialogue.s02.recruitYellow",
+    "runtimeStarted": true,
     "nodes": {
       "order": {
         "speaker": "旁白",
@@ -1326,6 +1337,7 @@
   },
   {
     "id": "dialogue.s02.recruitGuard",
+    "runtimeStarted": true,
     "nodes": {
       "order": {
         "speaker": "旁白",
@@ -1343,6 +1355,7 @@
   },
   {
     "id": "dialogue.s02.prepare",
+    "runtimeStarted": true,
     "nodes": {
       "start": {
         "nextNode": "teach",
@@ -1365,6 +1378,7 @@
   },
   {
     "id": "dialogue.s02.debrief",
+    "runtimeStarted": true,
     "nodes": {
       "end": {
         "speaker": "旁白",
@@ -1393,6 +1407,7 @@
   },
   {
     "id": "dialogue.s02.raidAssist",
+    "runtimeStarted": true,
     "nodes": {
       "assistText": {
         "speaker": "旁白",
@@ -1424,6 +1439,7 @@
   },
   {
     "id": "dialogue.s02.campHandover",
+    "runtimeStarted": true,
     "nodes": {
       "end": {
         "speaker": "旁白",
@@ -1457,6 +1473,7 @@
   },
   {
     "id": "dialogue.s02.urgent",
+    "runtimeStarted": true,
     "nodes": {
       "end": {
         "speaker": "旁白",
