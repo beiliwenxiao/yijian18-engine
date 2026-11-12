@@ -3016,6 +3016,21 @@
       "width": 132
     },
     {
+      "buildingType": "generic",
+      "height": 110,
+      "id": "building.s02.porridgeShed",
+      "imageId": "s09.environment.porridgeShelter",
+      "maxHp": 120,
+      "name": "粥棚",
+      "schemaVersion": 1,
+      "tags": [
+        "s02",
+        "relief",
+        "shed"
+      ],
+      "width": 200
+    },
+    {
       "buildingType": "barracks",
       "footprint": {
         "depth": 32,

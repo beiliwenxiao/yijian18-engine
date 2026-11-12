@@ -575,14 +575,14 @@
           "y": 250.82419664189638
         },
         {
-          "height": 180,
+          "height": 90,
           "id": "S02-zone-porridge",
           "name": "施粥区",
           "regionId": "S02-porridge",
           "type": "region",
-          "width": 260,
-          "x": 520,
-          "y": 240.82419664189632
+          "width": 200,
+          "x": 470,
+          "y": 395
         },
         {
           "height": 150,
@@ -849,6 +849,26 @@
           "type": "ref",
           "x": 520,
           "y": 430
+        },
+        {
+          "group": "S02-relief-site",
+          "id": "S02-building-porridge-shed",
+          "kind": "building",
+          "name": "粥棚",
+          "ref": "building.s02.porridgeShed",
+          "spawnWhen": {
+            "blackboardKey": "storyState",
+            "equals": true,
+            "path": "s02RitualLearned"
+          },
+          "tags": [
+            "story",
+            "s02",
+            "relief"
+          ],
+          "type": "ref",
+          "x": 560,
+          "y": 392
         },
         {
           "group": "S02-camp-buildings",
@@ -1963,6 +1983,27 @@
           "width": 180,
           "x": 793.1410316440305,
           "y": 320.4416047796031
+        },
+        {
+          "activeWhen": {
+            "blackboardKey": "storyState",
+            "equals": true,
+            "path": "s02RitualLearned"
+          },
+          "event": "interact",
+          "height": 90,
+          "id": "S02-binding-ritual-site",
+          "name": "施粥锅与铜钱箱：接符纸→递碗",
+          "pointerRadius": 70,
+          "prompt": "{interact}施粥：接符纸、盛粥、递碗",
+          "radius": 110,
+          "target": "S02-zone-porridge",
+          "targetMode": "id",
+          "triggerId": "trg_s02_ritual_serve",
+          "type": "trigger",
+          "width": 200,
+          "x": 470,
+          "y": 395
         },
         {
           "activeWhen": {
