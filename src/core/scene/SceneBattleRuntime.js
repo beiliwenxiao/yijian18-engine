@@ -322,6 +322,15 @@ export class SceneBattleRuntime {
         ? await this.battleSystem.start(definition, { requestId })
         : await this.battleSystem.rehydrate({ requestId });
       if (!started?.ok) throw new Error(started?.code || 'battleStartRejected');
+      // P7 身份化：identityPolicy=auto 的战役不弹模式选择，按战场身份直接决定观战/介入
+      if (definition.identityPolicy === 'auto') {
+        const identity = this.hooks.resolveIdentity?.({
+          sceneId, flow: clone(flow), definition: clone(definition), runtime: this
+        }) || 'observe';
+        return await this.selectMode(
+          identity === 'observe' ? BattleMode.OBSERVE : BattleMode.INTERVENE, sceneId
+        );
+      }
       this.modeView.open({
         ...clone(definition.modeView || {}),
         selectedMode: this.battleSystem.mode || BattleMode.OBSERVE

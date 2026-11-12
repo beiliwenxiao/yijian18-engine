@@ -78,6 +78,9 @@ export function validateQuestDefinition(quest) {
       if (step.requiredCount !== undefined && (!Number.isInteger(step.requiredCount) || step.requiredCount < 1)) {
         errors.push(`${stepPath}.requiredCount 必须为正整数`);
       }
+      if (step.optional !== undefined && typeof step.optional !== 'boolean') {
+        errors.push(`${stepPath}.optional 必须为布尔值`);
+      }
       if (step.commitFact !== undefined && !text(step.commitFact)) {
         errors.push(`${stepPath}.commitFact 必须为非空状态事务 ID`);
       }
@@ -194,6 +197,8 @@ export function compileQuestTaskGraph(quest, project = null) {
   const completeId = 'complete';
   const nodes = [];
   const nodeById = new Map();
+  /** 可选目标：从当前链尾可达、可独立完成，但不阻塞主线推进（用于观战/介入互斥分支）。 */
+  const optionalIds = [];
   const addNode = node => { nodes.push(node); nodeById.set(node.id, node); return node; };
   const link = (fromId, toId) => {
     const from = nodeById.get(fromId);
@@ -231,6 +236,13 @@ export function compileQuestTaskGraph(quest, project = null) {
     for (const step of Array.isArray(chainSteps) ? chainSteps : []) {
       if (isObjectiveStep(step)) {
         const node = addNode(buildObjectiveNode(step, prefix ? `${prefix}.${text(step.id)}` : text(step.id)));
+        if (step.optional === true) {
+          // 旁支目标：挂在当前链尾旁，但主线继续往下走；完成后直接收束到 complete
+          if (prevTails) prevTails.forEach(tailId => link(tailId, node.id));
+          else heads.push(node.id);
+          optionalIds.push(node.id);
+          continue;
+        }
         if (prevTails) prevTails.forEach(tailId => link(tailId, node.id));
         else heads.push(node.id);
         prevTails = [node.id];
@@ -273,6 +285,7 @@ export function compileQuestTaskGraph(quest, project = null) {
     next: chain.heads.length > 1 ? [...chain.heads] : [chain.heads[0] || completeId]
   });
   chain.tails.forEach(tailId => link(tailId, completeId));
+  optionalIds.forEach(optionalId => link(optionalId, completeId));
   nodes.push({ id: completeId, type: 'complete' });
   return {
     id: questId,

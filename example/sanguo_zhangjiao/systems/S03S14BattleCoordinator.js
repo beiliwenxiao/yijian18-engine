@@ -228,9 +228,13 @@ export class S03S14BattleCoordinator {
         if (sceneId === 'S05') this._markS05Visited(gameLoader);
         return { ok: true };
       },
+      resolveIdentity: context => this._resolveBattleIdentity(context),
       beforeSelect: ({ mode, sceneId }) => {
         if (sceneId === 'S05') this._markS05Visited(gameLoader);
         this._retirePersonalDuelGroup(gameLoader, sceneId, mode);
+        if (['S11', 'S12'].includes(sceneId)) {
+          this.scene.s11s12Coordinator?.recordBattleMode?.(sceneId, mode);
+        }
         if (sceneId !== 'S13') return { ok: true };
         return this.scene.s11s14SceneCoordinator.prepareS13Settlement(mode);
       },
@@ -253,7 +257,12 @@ export class S03S14BattleCoordinator {
         // 观战/回避战斗的组按历史结局在此补发，任务目标不会悬空。
         const duelGroup = result.battleId === S03_BATTLE_ID ? PERSONAL_DUEL_GROUPS.S03
           : result.battleId === S13_BATTLE_ID ? PERSONAL_DUEL_GROUPS.S13 : null;
-        if (duelGroup) gameLoader.triggerSystem?.fire?.('waveCleared', { group: duelGroup });
+        if (duelGroup) {
+          // 观战与介入走不同事实：观战是"敌将脱身"，介入才是"斩将"，任务侧各挂一个可选目标。
+          const observed = this.runtime?.getSessionState?.().mode === BattleMode.OBSERVE;
+          const group = observed && result.battleId === S13_BATTLE_ID ? `${duelGroup}-escaped` : duelGroup;
+          gameLoader.triggerSystem?.fire?.('waveCleared', { group });
+        }
         if (result.battleId === S13_BATTLE_ID && this.scene.currentSceneId === 'S13') {
           await this.scene.s11s14SceneCoordinator.checkS13Exit();
         }
@@ -406,12 +415,28 @@ export class S03S14BattleCoordinator {
     return result?.ok === true;
   }
 
+  /**
+   * P7 身份判定（identityPolicy=auto 的战役专用）：
+   * 玩家不在场/已阵亡 → observe；在场且仍握有军队 → takeover；在场但只剩亲卫 → support。
+   * 三种身份都映射到 intervene/observe 两种战果口径，由 recordBattleMode 派生写回。
+   */
+  _resolveBattleIdentity({ sceneId } = {}) {
+    const scene = this.scene;
+    const player = scene?.player || scene?.getPlayer?.() || null;
+    if (!player || player.dead === true) return 'observe';
+    if (!BATTLE_SCENE_IDS.includes(sceneId)) return 'observe';
+    const armyId = scene.playerArmyId || 'army.player.escort';
+    const unit = scene.armyOrderSystem?.getUnit?.(armyId) || null;
+    const troops = Number(unit?.troops ?? unit?.rosterTotal ?? 0);
+    return troops > 0 ? 'takeover' : 'support';
+  }
+
   _resolveS12LowMorale(gameLoader, { sceneId, definition }) {
     if (sceneId !== 'S12') return null;
-    const city = (gameLoader.blackboard?.get?.('cityStates') || [])
-      .find(entry => entry?.id === 'city.s12_xiaquyang');
+    // 军团士气（ArmyOrderSystem 的军队单位），不再借用城池民心
+    const armyUnit = this.scene.armyOrderSystem?.getUnit?.('army.player.escort') || null;
     const morale = Math.max(0, Math.floor(Number(
-      city?.morale ?? definition.realtimeMorale?.yellow_turban
+      armyUnit?.morale ?? definition.realtimeMorale?.yellow_turban
     ) || 0));
     const resolved = this.s11s12Coordinator?.resolveS12PreBattleMorale({ friendlyMorale: morale });
     if (resolved?.battleMayStart !== false) return null;
@@ -448,6 +473,10 @@ export class S03S14BattleCoordinator {
       completedAt: this.rescueSystem?.now?.()
     });
     if (unavailable?.ok === false) throw new Error(unavailable.message || unavailable.code);
+    // 救援未展开（观战/战前崩溃）：补发"战局已定"事件，让任务侧的观战分支目标可达
+    this.scene.gameLoader?.triggerSystem?.fire?.('rescueWatchResolved', {
+      sceneId, reason: result.failureReason === 'friendlyMoraleZero' ? 'friendlyMoraleZero' : 'modeObserved'
+    });
     return true;
   }
 

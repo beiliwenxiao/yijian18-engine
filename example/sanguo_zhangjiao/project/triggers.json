@@ -2336,6 +2336,63 @@
   {
     "do": [
       {
+        "action": "state.transaction",
+        "params": {
+          "definitionId": "story.s13.sunXiaEscaped"
+        }
+      }
+    ],
+    "id": "trg_s13_sun_xia_escaped",
+    "name": "精山决战：观战——孙夏脱身",
+    "once": true,
+    "when": {
+      "params": {
+        "group": "S13-sun-xia-escaped"
+      },
+      "type": "waveCleared"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "state.transaction",
+        "params": {
+          "definitionId": "story.s11.watched"
+        }
+      }
+    ],
+    "id": "trg_s11_watch_outcome",
+    "name": "广宗：观战——战局已定（救援未展开）",
+    "once": true,
+    "when": {
+      "params": {
+        "sceneId": "S11"
+      },
+      "type": "rescueWatchResolved"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "state.transaction",
+        "params": {
+          "definitionId": "story.s12.watched"
+        }
+      }
+    ],
+    "id": "trg_s12_watch_outcome",
+    "name": "下曲阳：观战/战前崩溃——战局已定",
+    "once": true,
+    "when": {
+      "params": {
+        "sceneId": "S12"
+      },
+      "type": "rescueWatchResolved"
+    }
+  },
+  {
+    "do": [
+      {
         "action": "spawnPlacements",
         "params": {
           "selector": {

@@ -3268,5 +3268,47 @@
         }
       ]
     }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s11.watched",
+    "name": "广宗战局已定",
+    "transaction": {
+      "writes": [
+        {
+          "path": "s11Watched",
+          "target": "story",
+          "value": true
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s12.watched",
+    "name": "下曲阳战局已定",
+    "transaction": {
+      "writes": [
+        {
+          "path": "s12Watched",
+          "target": "story",
+          "value": true
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s13.sunXiaEscaped",
+    "name": "孙夏脱身",
+    "transaction": {
+      "writes": [
+        {
+          "path": "s13.sunXiaEscaped",
+          "target": "story",
+          "value": true
+        }
+      ]
+    }
   }
 ]

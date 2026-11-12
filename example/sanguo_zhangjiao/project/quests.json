@@ -2430,7 +2430,7 @@
         "action": "showTip",
         "id": "intro.guidance",
         "params": {
-          "text": "先在军令旗选择观战或介入；介入后按烽火、六名卫兵、三波刺客、西门突围的顺序救援张梁。"
+          "text": "走近军令旗即按当前身份自动参战：亲自到场则介入救援，否则旁观战局；介入后按烽火、六名卫兵、三波刺客、西门突围的顺序救援张梁。"
         },
         "title": "广宗围城",
         "type": "action"
@@ -2444,7 +2444,20 @@
         },
         "id": "chooseBattleMode",
         "objectiveType": "custom.event",
-        "title": "选定广宗参战方式",
+        "title": "进入广宗战场",
+        "type": "objective"
+      },
+      {
+        "eventMatcher": {
+          "payload": {
+            "triggerId": "trg_s11_watch_outcome"
+          },
+          "type": "triggerSucceeded"
+        },
+        "id": "watchOutcome",
+        "objectiveType": "custom.event",
+        "optional": true,
+        "title": "旁观广宗战局",
         "type": "objective"
       },
       {
@@ -2454,6 +2467,7 @@
           },
           "type": "triggerSucceeded"
         },
+        "optional": true,
         "id": "zhangLiangRescue",
         "objectiveType": "custom.event",
         "title": "启动张梁限时救援",
@@ -2466,6 +2480,7 @@
           },
           "type": "triggerSucceeded"
         },
+        "optional": true,
         "id": "lightBeacon",
         "objectiveType": "custom.event",
         "title": "点燃烽火",
@@ -2478,6 +2493,7 @@
           },
           "type": "triggerSucceeded"
         },
+        "optional": true,
         "id": "rallyGuards",
         "objectiveType": "custom.event",
         "title": "集结卫兵",
@@ -2490,6 +2506,7 @@
           },
           "type": "triggerSucceeded"
         },
+        "optional": true,
         "id": "assassinWave1",
         "objectiveType": "custom.event",
         "title": "击退刺客第一波",
@@ -2502,6 +2519,7 @@
           },
           "type": "triggerSucceeded"
         },
+        "optional": true,
         "id": "assassinWave2",
         "objectiveType": "custom.event",
         "title": "击退刺客第二波",
@@ -2514,6 +2532,7 @@
           },
           "type": "triggerSucceeded"
         },
+        "optional": true,
         "id": "assassinsRepelled",
         "objectiveType": "custom.event",
         "title": "击退三波刺客",
@@ -2526,6 +2545,7 @@
           },
           "type": "triggerSucceeded"
         },
+        "optional": true,
         "id": "westGateBreakout",
         "objectiveType": "custom.event",
         "title": "护送张梁西门突围",
@@ -2657,7 +2677,7 @@
         "action": "showTip",
         "id": "intro.guidance",
         "params": {
-          "text": "先选择下曲阳战役模式；介入后确认救援路线，守门六十秒，再开启密道并护送张宝撤离。"
+          "text": "走近军令旗即按当前身份自动参战：亲自到场则介入，守门六十秒后开启密道并护送张宝撤离。"
         },
         "title": "下曲阳驰援",
         "type": "action"
@@ -2671,7 +2691,20 @@
         },
         "id": "chooseBattleMode",
         "objectiveType": "custom.event",
-        "title": "选定下曲阳参战方式",
+        "title": "进入下曲阳战场",
+        "type": "objective"
+      },
+      {
+        "eventMatcher": {
+          "payload": {
+            "triggerId": "trg_s12_watch_outcome"
+          },
+          "type": "triggerSucceeded"
+        },
+        "id": "watchOutcome",
+        "objectiveType": "custom.event",
+        "optional": true,
+        "title": "旁观下曲阳战局",
         "type": "objective"
       },
       {
@@ -2681,6 +2714,7 @@
           },
           "type": "triggerSucceeded"
         },
+        "optional": true,
         "id": "zhangBaoRescue",
         "objectiveType": "custom.event",
         "title": "启动张宝限时救援",
@@ -2693,6 +2727,7 @@
           },
           "type": "triggerSucceeded"
         },
+        "optional": true,
         "id": "secretPassage",
         "objectiveType": "custom.event",
         "title": "打开密道",
@@ -2705,6 +2740,7 @@
           },
           "type": "triggerSucceeded"
         },
+        "optional": true,
         "id": "useLadder",
         "objectiveType": "custom.event",
         "title": "架上云梯",
@@ -2717,6 +2753,7 @@
           },
           "type": "triggerSucceeded"
         },
+        "optional": true,
         "id": "burnLadder",
         "objectiveType": "custom.event",
         "title": "焚毁云梯",
@@ -2729,6 +2766,7 @@
           },
           "type": "triggerSucceeded"
         },
+        "optional": true,
         "id": "zhangBaoEvacuation",
         "objectiveType": "custom.event",
         "title": "护送张宝撤离",
@@ -2815,7 +2853,7 @@
         "action": "showTip",
         "id": "intro.guidance",
         "params": {
-          "text": "在军令旗下选择观战或投入最后资源介入精山；战果冻结后从东北撤离旗进入结局之地。"
+          "text": "走近军令旗即按当前身份自动参战：亲自到场则投入最后资源介入精山，否则旁观战局；战果冻结后从东北撤离旗进入结局之地。"
         },
         "title": "精山决战",
         "type": "action"
@@ -2829,7 +2867,20 @@
         },
         "id": "finalBattleMode",
         "objectiveType": "custom.event",
-        "title": "选定决战参战方式",
+        "title": "进入精山战场",
+        "type": "objective"
+      },
+      {
+        "eventMatcher": {
+          "payload": {
+            "triggerId": "trg_s13_sun_xia_escaped"
+          },
+          "type": "triggerSucceeded"
+        },
+        "id": "sunXiaEscaped",
+        "objectiveType": "custom.event",
+        "optional": true,
+        "title": "孙夏脱身（观战）",
         "type": "objective"
       },
       {
@@ -2839,6 +2890,7 @@
           },
           "type": "triggerSucceeded"
         },
+        "optional": true,
         "id": "sunXiaDefeated",
         "objectiveType": "custom.event",
         "title": "讨斩敌将孙夏",

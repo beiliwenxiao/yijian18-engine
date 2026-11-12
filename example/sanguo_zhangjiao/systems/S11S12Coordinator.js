@@ -144,6 +144,21 @@ export class S11S12Coordinator {
     return this._settleIfTerminal('S11', outcome, before);
   }
 
+  /**
+   * 记录参战身份派生的战果口径（B2）：takeover/support → intervene，observe → observe。
+   * 写入 story.battleModes 供结局投影（battleModeStats）使用，与 S13 的 commit 口径一致。
+   */
+  recordBattleMode(sceneId, mode) {
+    const battleId = sceneId === 'S11' ? S11_BATTLE_ID : sceneId === 'S12' ? S12_BATTLE_ID : null;
+    if (!battleId) return { ok: false, code: 'invalidSceneId' };
+    const battleMode = mode === 'observe' ? 'observe' : 'intervene';
+    const story = this.readStoryState() || {};
+    if (story.battleModes?.[battleId] === battleMode) return { ok: true, idempotent: true, battleMode };
+    const draft = { ...story, battleModes: { ...(story.battleModes || {}), [battleId]: battleMode } };
+    if (this.writeStoryState(clone(draft)) === false) return { ok: false, code: 'storyCommitRejected' };
+    return { ok: true, battleMode };
+  }
+
   /** 士气为 0 时不启动实时战场，直接冻结敌胜事实。 */
   resolveS12PreBattleMorale({ friendlyMorale, result } = {}) {
     const morale = Math.max(0, Math.floor(Number(friendlyMorale) || 0));
