@@ -84,14 +84,16 @@ export class ReputationSystem {
    * @param {Object} [options]
    * @param {Object} [options.config] - game.project.json.reputation
    * @param {Function} [options.onEvent] - (event, payload) => void
+   * @param {Function} [options.legacyReader] - ({factionId, cityId}) => number|null；旧档兼容读
    * @param {Object} [options.state] - { global?:number, byFaction?:{}, byCity?:{} }
    */
-  constructor({ config = null, onEvent = null, state = null } = {}) {
+  constructor({ config = null, onEvent = null, state = null, legacyReader = null } = {}) {
     this.config = { ...DEFAULT_REPUTATION_CONFIG, ...(config || {}) };
     if (!Array.isArray(this.config.tiers) || this.config.tiers.length === 0) {
       this.config.tiers = REPUTATION_TIERS;
     }
     this.onEvent = typeof onEvent === 'function' ? onEvent : null;
+    this.legacyReader = typeof legacyReader === 'function' ? legacyReader : null;
     this.global = 0;
     /** @type {Map<string, {value:number, updatedAt:number|null}>} */
     this.byFaction = new Map();
@@ -138,11 +140,13 @@ export class ReputationSystem {
     return { ok: true, scope, before, value: after, changed };
   }
 
-  /** 读取声望值：城池 override > 势力 > 全局。 */
+  /** 读取声望值：城池 override > 势力 > 旧档键（只读兼容） > 全局。 */
   getValue({ factionId = null, cityId = null } = {}) {
     if (cityId != null) {
       const city = this.byCity.get(String(cityId));
       if (city) return city.value;
+      const legacyCity = this._readLegacy({ factionId, cityId });
+      if (legacyCity !== null) return legacyCity;
       const faction = factionId != null ? this.byFaction.get(String(factionId)) : null;
       if (faction) return faction.value;
       return this.global;
@@ -150,9 +154,23 @@ export class ReputationSystem {
     if (factionId != null) {
       const faction = this.byFaction.get(String(factionId));
       if (faction) return faction.value;
+      const legacy = this._readLegacy({ factionId, cityId: null });
+      if (legacy !== null) return legacy;
       return this.global;
     }
     return this.global;
+  }
+
+  /** B4 旧档兼容：`blackboard.faction.reputation.*` 等旧键仍可读，但不再作为写入目标。 */
+  _readLegacy({ factionId = null, cityId = null } = {}) {
+    if (!this.legacyReader || (factionId == null && cityId == null)) return null;
+    try {
+      const value = this.legacyReader({ factionId, cityId });
+      if (value !== null && value !== undefined && Number.isFinite(Number(value))) return Number(value);
+    } catch (error) {
+      // 旧档键读取失败按「没有旧值」处理，不影响新账
+    }
+    return null;
   }
 
   getAttitude({ factionId = null, cityId = null } = {}) {

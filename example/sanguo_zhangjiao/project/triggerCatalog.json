@@ -578,6 +578,22 @@
       "value": "startDialogue"
     },
     {
+      "label": "声望调整（唯一写入口）",
+      "paramsSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "cityId": { "type": "string" },
+          "delta": { "type": "number" },
+          "factionId": { "type": "string" },
+          "reason": { "type": "string" }
+        },
+        "required": ["delta"],
+        "type": "object"
+      },
+      "v": "reputation.adjust",
+      "value": "reputation.adjust"
+    },
+    {
       "label": "advanceGameDay",
       "value": "advanceGameDay"
     },

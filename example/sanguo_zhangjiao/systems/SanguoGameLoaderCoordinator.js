@@ -392,7 +392,16 @@ function configureSharedClassEffects(gameLoader) {
   } : null;
   const reputationSystemConfig = projectLogistics ? {
     config: gameLoader?.project?.reputation || {},
-    onEvent: (event, data) => publishGameplayEvent('reputation', event, data)
+    onEvent: (event, data) => publishGameplayEvent('reputation', event, data),
+    // B4 兼容读：旧档 `blackboard.faction.reputation.*` 仍可读；新写入只走 reputation.adjust
+    legacyReader: ({ factionId = null, cityId = null } = {}) => {
+      const blackboard = gameLoader?.blackboard;
+      if (!blackboard) return null;
+      const byFaction = blackboard.get?.('faction')?.reputation || {};
+      if (factionId != null && byFaction[factionId] != null) return Number(byFaction[factionId]);
+      if (cityId != null && byFaction[cityId] != null) return Number(byFaction[cityId]);
+      return null;
+    }
   } : null;
   const sharedPlan = this._gameplaySystemAssembler.configureSharedSystems({
     effectResolver,
@@ -516,6 +525,22 @@ function registerGameLoaderActions(triggerSystem) {
     };
   });
   registered.push('s01Survival');
+  // B4：玩家声望唯一写入口（旧键 blackboard.faction.reputation.* 只读兼容，不再直写）
+  triggerSystem.registerAction('reputation.adjust', (params = {}) => {
+    const system = this.context?.services?.reputation || this.scene?.reputationSystem || null;
+    if (!system?.adjust) {
+      return { ok: false, code: 'reputationUnavailable', error: { message: 'ReputationSystem is not configured' } };
+    }
+    const factionId = params.factionId != null ? String(params.factionId) : null;
+    const cityId = params.cityId != null ? String(params.cityId) : null;
+    const delta = Number(params.delta);
+    if (!Number.isFinite(delta) || delta === 0) {
+      return { ok: false, code: 'invalidDelta', error: { message: 'reputation.adjust requires a non-zero delta' } };
+    }
+    const result = system.adjust({ factionId, cityId, delta, reason: params.reason || null });
+    return { ok: true, factionId, cityId, delta, scope: result.scope, value: result.value, changed: result.changed };
+  });
+  registered.push('reputation.adjust');
   return registered;
 }
 

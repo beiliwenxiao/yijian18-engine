@@ -113,3 +113,19 @@ describe('ReputationSystem 存档', () => {
     expect(system.restore(null).ok).toBe(false);
   });
 });
+
+describe('ReputationSystem B4 旧键兼容读', () => {
+  it('新账没有势力值时回落旧键；新账有值时优先新账', () => {
+    const legacy = { yellow_turban: 20, han: -10 };
+    const system = new ReputationSystem({ legacyReader: ({ factionId }) => legacy[factionId] ?? null });
+    expect(system.getValue({ factionId: 'yellow_turban' })).toBe(20);
+    expect(system.getValue({ factionId: 'han' })).toBe(-10);
+    system.adjust({ factionId: 'yellow_turban', delta: 5 });
+    expect(system.getValue({ factionId: 'yellow_turban' })).toBe(5);
+  });
+
+  it('无势力/城池上下文不读旧键，避免与全局 50 混用', () => {
+    const system = new ReputationSystem({ legacyReader: () => 50 });
+    expect(system.getValue()).toBe(0);
+  });
+});

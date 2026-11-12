@@ -2796,16 +2796,6 @@
           "value": "yellow_turban"
         },
         {
-          "path": "faction.reputation.yellow_turban",
-          "target": "blackboard",
-          "value": 20
-        },
-        {
-          "path": "faction.reputation.han",
-          "target": "blackboard",
-          "value": -10
-        },
-        {
           "path": "alignment",
           "target": "blackboard",
           "value": "yellow_turban"
@@ -2838,11 +2828,6 @@
           "path": "factionAlignment",
           "target": "story",
           "value": "independent"
-        },
-        {
-          "path": "faction.reputation.yellow_turban",
-          "target": "blackboard",
-          "value": 5
         },
         {
           "path": "alignment",

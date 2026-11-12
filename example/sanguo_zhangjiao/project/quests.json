@@ -904,6 +904,28 @@
                 },
                 "title": "提交事实",
                 "type": "action"
+              },
+              {
+                "action": "reputation.adjust",
+                "id": "allegiance-reputation-yellow",
+                "params": {
+                  "delta": 20,
+                  "factionId": "yellow_turban",
+                  "reason": "s02.allegiance.joined"
+                },
+                "title": "黄巾声望 +20",
+                "type": "action"
+              },
+              {
+                "action": "reputation.adjust",
+                "id": "allegiance-reputation-han",
+                "params": {
+                  "delta": -10,
+                  "factionId": "han",
+                  "reason": "s02.allegiance.joined"
+                },
+                "title": "汉室声望 -10",
+                "type": "action"
               }
             ],
             "title": "加入黄巾（与张角军团并肩）"
@@ -918,6 +940,17 @@
                   "definitionId": "story.s02.allegiance.independent"
                 },
                 "title": "提交事实",
+                "type": "action"
+              },
+              {
+                "action": "reputation.adjust",
+                "id": "allegiance-reputation-independent",
+                "params": {
+                  "delta": 5,
+                  "factionId": "yellow_turban",
+                  "reason": "s02.allegiance.independent"
+                },
+                "title": "黄巾声望 +5",
                 "type": "action"
               }
             ],
