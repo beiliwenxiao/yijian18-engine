@@ -57,6 +57,7 @@ import { SceneEquipmentFlow } from '../../../src/core/scene/SceneEquipmentFlow.j
 import { SceneTransitionFlow } from '../../../src/core/scene/SceneTransitionFlow.js';
 import { SceneCombatActions } from '../../../src/core/scene/SceneCombatActions.js';
 import { SceneDialogueFlow } from '../../../src/core/scene/SceneDialogueFlow.js';
+import { sceneHasPlayerStronghold } from '../../../src/core/scene/PlayerStronghold.js';
 import { SceneWorldInteraction } from '../../../src/core/scene/SceneWorldInteraction.js';
 import { SceneSkillActions } from '../../../src/core/scene/SceneSkillActions.js';
 import { SceneWorldPresentation } from '../../../src/core/scene/SceneWorldPresentation.js';
@@ -1183,6 +1184,7 @@ export class BaseGameSceneSetup extends Scene {
       toggleSettings: () => (this.worldMapPanel?.visible ? this.worldMapPanel.close() : this.openSystemMenu()),
       toggleWorldMap: () => this.toggleWorldMap(),
       toggleArmyCommand: () => this.toggleArmyCommandHud?.(),
+      canToggleArmyCommand: () => sceneHasPlayerStronghold(this),
       performDodge: () => this.dodgeByPointer?.(),
       togglePerformance: () => this._diagnostics.togglePerformance(),
       onGamepadConnected: (info) => {

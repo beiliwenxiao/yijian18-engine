@@ -2809,6 +2809,11 @@
           "path": "alignment",
           "target": "blackboard",
           "value": "yellow_turban"
+        },
+        {
+          "path": "s09ClassReady",
+          "target": "story",
+          "value": true
         }
       ]
     }
@@ -2843,6 +2848,11 @@
           "path": "alignment",
           "target": "blackboard",
           "value": "independent"
+        },
+        {
+          "path": "s09ClassReady",
+          "target": "story",
+          "value": true
         }
       ]
     }

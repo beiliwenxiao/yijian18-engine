@@ -358,7 +358,7 @@ S11/S12/S13 身份化 + 观战分支 → G 类数据修复。做完这五件事�
 
 | # | 改动 | 落点 | 量级 | 依赖 |
 |---|---|---|---|---|
-| M1 | **阵营键归一**：新增 `state.player.alignment`（`yellow_turban` / `independent`），`joinedYellowTurban` 降级为只读别名；汉方 id 统一 `han_government`（heroes 的 `han` 加别名读） | `S09ClassSelectionFlow`（写）、`S03S08SceneFlow`（读）、`library.heroes`（别名） | **小** | 与 S02 批共用同一事实名 |
+| M1 | **阵营键归一**：读 `blackboard.alignment`（S02 已写），`joinedYellowTurban` 降级为只读别名；汉方 id 统一 `han_government`（heroes 的 `han` 加别名读） | `S09ClassSelectionFlow`（写编制标签）、`S03S08SceneFlow`（读）、`library.heroes`（别名） | **小** | 与 S02 批共用同一事实名 |
 | M2 | **主角英雄 + 亲卫绑定**：新增 `hero.player`（command 20 / `rank.wusheng` / `factionId player`），`companionRule.heroId` 指向它；旧档读 `companionSquad.heroId` 时保留兼容 | `library.heroes`、`game.project.json.companionRule`、`CompanionService`（1 处兼容读） | **小** | M1 的 factionId 口径 |
 | M3 | **S09 分支**：`intro.opening` 后加 `branch`；`independent` 线走"报备立誓"对话（不写 `story.s09.enlist`）；`S03S08SceneFlow` 门控放宽；新增 `armies['army.player.escort']` + S09 组 `S09-player-escort`（`spawnWhen: independent`） | `quests.json task.s09`、`S03S08SceneFlow`、`library.armies`、`S09.json` | **中** | M1；S02 的 `allegiance` 事实（若 S02 未落地，先用 `joinedYellowTurban=false` 兜底判断） |
 | M4 | **S10 根据地**：`trg_s10_complete_relocation` 追加 `city.setFaction {cityId:'city.s10_guangcheng_camp', factionId:'player'}`（wiring 已有 `city.capture`，`setFaction` 需补一条；或直接用 `city.capture`）→ `army.camp`（溪畔坐标）→ `camp.register {campId:'camp.s10.creek', level:2}` | `triggers.json trg_s10_complete_relocation`、`S10StoryFlow`（末尾一次调用）、`game.project.json`（camp 种子可选） | **中** | M2（玩家英雄/势力口径）；`army.camp`/`camp.register` 已实现 || M5 | **身份化 + 观战分支**（S11/S12/S13 三处同批）：删 `modeView`；`trg_s*_choose_*` 改发 `unit.joinBattle{identity:'takeover'\|'observe'}`；任务目标改"选定参战身份"；观战分支把救援/斩将目标设为 `optional` 或换替代目标（S13 写 `story.s13.sunxiaEscaped`）；`battleModeStats` 由身份派生写回 | `config/battles/S11,S12,S13.json`、`quests.json`（3 处）、`S03S14BattleCoordinator`（派生写回）、`S11S12Coordinator`（`_validateStart` 放行 observe） | **大**（三场景同批） | 06/07 已定，M6 已实现 `joinBattle` |
@@ -410,11 +410,23 @@ S02 正在落地，**它产出的键名就是 S09+ 的输入契约**。建议 S0
 
 | 契约 | 唯一写法 | 备注 |
 |---|---|---|
-| 入伙事实 | `state.player.alignment = 'yellow_turban' \| 'independent'` | 同时写旧键 `story.s02.allegiance.*` 供兼容；**唯一分叉依据** |
+| 入伙事实 | **`blackboard.alignment` + `story.factionAlignment`**（`'yellow_turban' \| 'independent'`） | 原拟的 `state.player.alignment` **不采用**；同时写 `story.s02AllegianceJoined` / `story.s02AllegianceIndependent`；**唯一分叉依据** |
+| 定职门槛 | **`story.s09ClassReady`**（两条线都写 true） | B1 新增；S09 定职与 3 条 `trg_s09_class_*` 改读它，`joinedYellowTurban` 降级为"黄巾编制"标签 |
 | 玩家军队 | `armies['army.player.escort']` + `armyStates['army.player.escort']` | 独立线随行，黄巾线不创建 |
 | 亲卫上限 | `story.s02.guard.cap` 写成 P1d 公式结果（不是新公式） | 只写数值，不写公式 |
-| 声望 | `reputation.adjust({factionId, delta})` | 不写 `faction.reputation.*` |
-| 营地 | `camp.s02.field`（`camp.register`） | S10 的 `camp.s10.creek` 同构 |
+| 声望 | `reputation.adjust({factionId, delta})` | 现状仍写 `blackboard.faction.reputation.*`；以 `state.player.reputation` 为准的迁移归 B4，B1 只加只读辅助 |
+| 营地 | `camp.s02.field`（`logistics.camps` 种子：`ownerArmyId:"army.player.escort"`、`ownerFactionId:"player"`） | S10 的 `camp.s10.creek` 同构 |
+| 粮草阵营 | `supply.playerFactionId:"player"` + `alliedFactionIds:["yellow_turban"]` | 玩家军 factionId 为 `player` 时 SupplySystem 才判友方 |
+
+**2026-11-12 核实：以下 4 项 S02 已落地，S09+ 侧只读、不要重做**（免得按旧措辞返工）：
+
+1. `supply.playerFactionId = "player"`、`supply.alliedFactionIds = ["yellow_turban"]`（`game.project.json:556 / :532`）。
+2. `logistics.camps` 已有种子 `camp.s02.field`（`level:2`、`ownerArmyId:"army.player.escort"`、`ownerFactionId:"player"`、`stock:{food:20,iron:8,wood:6}`）。
+3. `library.armies` 已有 `army.player.escort`（qian/zuo/zhong/you/hou 五队）。
+4. 两条分叉事务已写 `story.s02AllegianceJoined/Independent`、`story.factionAlignment`、`blackboard.alignment`、`blackboard.faction.reputation.yellow_turban|han`（`commands.json:2779-2860`）。
+
+> 因此 B1 实际只剩：`hero.player`、`companionRule.heroId`、`s09ClassReady`（写入 + 触发/gate 改读）、
+> `S03S08SceneFlow` 门控放宽、`hasPlayerStronghold()` 及 3 处入口消费。
 
 **顺序建议：S02 实现批先合并，或至少让 S02 与 B1 同批**——S02 若先用 `faction.reputation.*` 落地，
 B1 要多写一层别名适配（可接受但多一笔）。

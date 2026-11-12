@@ -4066,6 +4066,20 @@
       "tags": [
         "m0.placeholder"
       ]
+    },
+    {
+      "schemaVersion": 2,
+      "id": "hero.player",
+      "name": "你",
+      "unitId": "unit.melee",
+      "classId": "commander",
+      "factionId": "player",
+      "level": 1,
+      "rankId": "rank.wusheng",
+      "stats": {
+        "command": 20
+      },
+      "tags": []
     }
   ],
   "ranks": [

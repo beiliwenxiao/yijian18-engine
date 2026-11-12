@@ -12,6 +12,7 @@
 
 // 触控核心：屏幕触控按钮接线/新手引导 DOM 状态/UI 布局应用/竖屏横排与指针变换。抽取自 example/sanguo_zhangjiao/index.html，跨模块状态经 shell 宿主读写。
 import { setupVirtualJoystick } from './VirtualJoystickCore.js';
+import { sceneHasPlayerStronghold } from '../../core/scene/PlayerStronghold.js';
 import { createSkillAimTouchCore, AIM_SKILLS, ATTACK_AIM_INDEX, THROW_AIM_INDEX, FLIGHT_AIM_INDEX } from './SkillAimTouchCore.js';
 
 export function createTouchControlsCore(shell) {
@@ -107,8 +108,8 @@ function setupTouchControls() {
         } else if (btn.dataset.action === 'bag') {
             if (currentScene.inventoryPanel) currentScene.inventoryPanel.toggle();
         } else if (btn.dataset.action === 'army') {
-            // 军队按钮：开关军队操作条（编组/姿态命令 HUD）
-            currentScene.toggleArmyCommandHud?.();
+            // 军队按钮：开关军队操作条（编组/姿态命令 HUD）；无己方据点时不开放
+            if (sceneHasPlayerStronghold(currentScene)) currentScene.toggleArmyCommandHud?.();
         } else if (btn.dataset.action === 'settings') {
             currentScene.openSystemMenu?.();
         } else if (btn.dataset.action === 'char') {

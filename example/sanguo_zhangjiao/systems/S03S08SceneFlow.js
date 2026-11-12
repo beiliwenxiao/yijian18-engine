@@ -31,10 +31,14 @@ const s03s08Methods = {
       return { ok: false, errors: [{ code: 'wrongScene', path: 'currentSceneId', message: '只能从 S09 出征颍川' }] };
     }
     const storyState = this.gameLoader?.blackboard?.get?.('storyState');
-    if (storyState?.joinedYellowTurban !== true || storyState?.classSelectionCommitted !== true) {
-      this._showScreenTip('加入黄巾并确认职业后，才能持军令出征颍川', { title: '出征条件不足' });
+    const blackboard = this.gameLoader?.blackboard;
+    const alignment = blackboard?.get?.('alignment') ?? blackboard?.get?.('factionAlignment')
+      ?? (storyState?.joinedYellowTurban === true ? 'yellow_turban' : null);
+    const alignmentOk = alignment === 'yellow_turban' || alignment === 'independent';
+    if (!alignmentOk || storyState?.classSelectionCommitted !== true) {
+      this._showScreenTip('完成 S09 报名与职业确认后，才能持军令出征颍川', { title: '出征条件不足' });
       return { ok: false, errors: [{
-        code: 's03PrerequisiteMissing', path: 'storyState.classSelectionCommitted', message: 'S03 需要完成入伍和职业确认'
+        code: 's03PrerequisiteMissing', path: 'storyState.classSelectionCommitted', message: 'S03 需要完成 S09 报名与职业确认'
       }] };
     }
     const regionIndex = this._findRegionIndexForScene('S03');

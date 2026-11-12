@@ -610,7 +610,7 @@
   "companionRule": {
     "capacityMax": 100,
     "chargeDurationMs": 4000,
-    "heroId": "hero.zhangjiao",
+    "heroId": "hero.player",
     "initialRankId": "rank.wusheng",
     "morale": {
       "campBonus": 2,

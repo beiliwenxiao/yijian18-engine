@@ -17,6 +17,7 @@ import { ItemIconRenderer } from '../../ui/ItemIconRenderer.js';
 import { InteractionChoiceView } from '../../ui/InteractionChoiceView.js';
 import { DialogueChoiceBox } from '../../ui/DialogueChoiceBox.js';
 import { InputHints } from '../input/InputHints.js';
+import { sceneHasPlayerStronghold } from './PlayerStronghold.js';
 
 /**
  * ScenePanelLayout - 场景 Canvas UI 布局协调器（框架级）
@@ -232,10 +233,11 @@ export class ScenePanelLayout {
         onClick: () => { if (scene.backpackPanel) scene.backpackPanel.toggle(); }
       });
       // 军队：开关军队操作条（编组/姿态命令 HUD）——排在系统设置按钮前面
+      // 入口门控：尚无己方城/营地（据点）时不开放军团层（B1 契约 hasPlayerStronghold）
       scene.armyButton = new IconButton({
         x: 1002, y: 640, width: 50, height: 50,
         icon: 'army', label: '军队',
-        onClick: () => scene.toggleArmyCommandHud?.()
+        onClick: () => { if (sceneHasPlayerStronghold(scene)) scene.toggleArmyCommandHud?.(); }
       });
       scene.settingsButton = new IconButton({
         x: 1058, y: 640, width: 50, height: 50,

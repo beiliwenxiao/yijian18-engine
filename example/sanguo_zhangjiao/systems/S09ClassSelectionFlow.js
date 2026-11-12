@@ -25,6 +25,13 @@ const STARTER_NODES = Object.freeze({
 const STARTER_POINT_TOTALS = Object.freeze({ skill: 8, talent: 4, unit: 4, passive: 4 });
 const clone = value => JSON.parse(JSON.stringify(value));
 
+/**
+ * 定职前置：B1 起由 S02 分叉事务写 `story.s09ClassReady`（两条线都写）；
+ * 旧档无该键时回退 `joinedYellowTurban`（当年加入线专用），避免中期存档卡死。
+ */
+const isClassReady = storyState =>
+  storyState?.s09ClassReady === true || storyState?.joinedYellowTurban === true;
+
 const reject = (scene, message, code) => {
   scene._showScreenTip(message, { title: '无法选择职业' });
   return { ok: false, code, message };
@@ -46,7 +53,7 @@ const methods = {
     const progression = this.gameLoader?.progressionSystem;
     const classSystem = this._ensureClassSystem();
     if (this.currentSceneId !== 'S09' || !playerId || !stats || !inventory || !blackboard
-      || !progression || !classSystem || storyState?.joinedYellowTurban !== true) {
+      || !progression || !classSystem || !isClassReady(storyState)) {
       return reject(this, '职业选择前置状态不完整', 'classSelectionPreconditionFailed');
     }
 
@@ -122,14 +129,17 @@ const methods = {
         if (!allocated.ok) throw new Error(allocated.message || `无法激活 ${initial.passiveStart}`);
       }
       stats.skillPoints = progression.getLedger(playerId).getAvailable('skill');
+      // 编制归属：加入线=true（黄巾编制），不加入线=false（客军）；两者都在此处完成定职。
+      const alignment = blackboard.get?.('alignment') ?? blackboard.get?.('factionAlignment') ?? null;
+      const joinedYellowTurban = alignment === 'yellow_turban';
       blackboard.set('storyState', {
         ...storyState,
-        joinedYellowTurban: true,
+        joinedYellowTurban,
         classSelectionCommitted: true,
         selectedClass: classType,
         lastCheckpointId: 'checkpoint.S09.classSelected'
       });
-      blackboard.set('joinedYellowTurban', true);
+      blackboard.set('joinedYellowTurban', joinedYellowTurban);
       blackboard.set('selectedClass', classType);
       blackboard.set('classSelected', true);
       this._classSelected = true;
@@ -185,8 +195,8 @@ const methods = {
       return false;
     }
     const storyState = this.gameLoader?.blackboard?.get?.('storyState');
-    if (this.currentSceneId !== 'S09' || storyState?.joinedYellowTurban !== true) {
-      this._showScreenTip('先在 S09 与张角交谈并加入黄巾', { title: '尚未入伍' });
+    if (this.currentSceneId !== 'S09' || !isClassReady(storyState)) {
+      this._showScreenTip('先在 S09 与张角交谈，报名后再定职', { title: '尚未报名' });
       return false;
     }
     if (storyState.classSelectionCommitted === true || this._classSelected) {

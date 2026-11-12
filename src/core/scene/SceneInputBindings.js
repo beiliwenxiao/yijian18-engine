@@ -15,6 +15,7 @@ export class SceneInputBindings {
     toggleSettings,
     toggleWorldMap,
     toggleArmyCommand,
+    canToggleArmyCommand,
     performDodge,
     togglePerformance,
     onGamepadConnected,
@@ -30,6 +31,8 @@ export class SceneInputBindings {
     this.toggleSettings = toggleSettings;
     this.toggleWorldMap = toggleWorldMap;
     this.toggleArmyCommand = toggleArmyCommand;
+    /** 军团层入口门控（无己方城/营地时返回 false）；缺省放行。 */
+    this.canToggleArmyCommand = typeof canToggleArmyCommand === 'function' ? canToggleArmyCommand : () => true;
     this.performDodge = performDodge;
     this.togglePerformance = togglePerformance;
     this.onGamepadConnected = onGamepadConnected;
@@ -54,7 +57,8 @@ export class SceneInputBindings {
       'toggle_world_map', ['m', 'M'], () => this.toggleWorldMap?.(), { cooldown: 250 });
     // 军队操作条开关：PC 热键 F（fight）+ 手柄 LS（armyCommand 动作）；B 已让给闪避
     this.inputManager.registerHotkey(
-      'toggle_army_command', ['f', 'F', ARMY_COMMAND_ACTION], () => this.toggleArmyCommand?.(), { cooldown: 300 });
+      'toggle_army_command', ['f', 'F', ARMY_COMMAND_ACTION],
+      () => { if (this.canToggleArmyCommand()) this.toggleArmyCommand?.(); }, { cooldown: 300 });
     // 闪避：PC 热键 R，闪向鼠标方向 3 个身位（手柄 B/触屏按钮走各自输入链）
     this.inputManager.registerHotkey(
       'perform_dodge', ['r', 'R'], () => this.performDodge?.(), { cooldown: 300 });
