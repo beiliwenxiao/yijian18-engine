@@ -44,7 +44,7 @@ function findNode(system, nodeId) {
 }
 
 function runToWoodStage(system) {
-  // 目标链（编辑器重排后）：lightCampfire → gatherBerries → eatBerry → findTools → gatherWood。
+  // 目标链（编辑器重排后）：lightCampfire → gatherBerries → eatBerry → findAxe → gatherWood。
   // 任务图无事件缓冲：每个事实必须在对应目标节点 active 时提交，提前提交会被丢弃。
   commitEvent(system, 1, 'story.s01.campfireLit');
   // gatherBerries 已改为真实采集事件驱动（gathering.completed + itemId）
@@ -54,7 +54,8 @@ function runToWoodStage(system) {
     payload: { itemId: 'resource.wild_berry', accepted: 1, nodeId: 'S01-node-berry-1' }
   });
   commitEvent(system, 4, 'story.s01.berryEaten');
-  commitEvent(system, 2, 'story.s01.initialToolsPicked');
+  // 工具步骤已迁移为「找到破旧斧头」：目标 findAxe 的事件是 story.s01.axeFound
+  commitEvent(system, 2, 'story.s01.axeFound');
 }
 
 describe('S01 采集木材任务进度（真实 task.s01.survival 定义）', () => {
@@ -153,7 +154,9 @@ describe('S01 采集木材任务进度（真实 task.s01.survival 定义）', ()
     });
     expect(reconciled.changes.find(change => change.nodeId === 'killWolf')?.completed).toBe(true);
     expect(findNode(system, 'killWolf')).toBeNull(); // succeeded 退出可见集
-    expect(findNode(system, 'skinWolf')?.status).toBe('active');
+    // 剥皮链按策划插入「找到剥皮刀」：killWolf 之后先激活 findSkinningKnife，skinWolf 仍锁
+    expect(findNode(system, 'findSkinningKnife')?.status).toBe('active');
+    expect(findNode(system, 'skinWolf')).toBeNull();
   });
 
   it('spotWolf 由可重发的添柴事务驱动（firstWolfSpotted 事务不会二次提交，不再死锁）', () => {
