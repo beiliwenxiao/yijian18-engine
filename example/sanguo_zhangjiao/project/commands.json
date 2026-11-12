@@ -2475,7 +2475,7 @@
   {
     "commandType": "state.transaction",
     "id": "craft.production.recipe.wood_arrow",
-    "name": "���坊产出：木箭 ×10",
+    "name": "工坊产出：木箭 ×10",
     "transaction": {
       "inventory": {
         "addEntries": [

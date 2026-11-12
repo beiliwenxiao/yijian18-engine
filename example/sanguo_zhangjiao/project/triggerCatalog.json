@@ -110,7 +110,7 @@
             ],
             "type": "object"
           },
-          "resultSemantics": "满足领域条件时提交指定状态事务；条���未满足、已提交或场景不适用时成功空操作；事务失败时短路后续步骤。",
+          "resultSemantics": "满足领域条件时提交指定状态事务；条件未满足、已提交或场景不适用时成功空操作；事务失败时短路后续步骤。",
           "value": "commitStoryWhenReady"
         },
         {
@@ -717,7 +717,7 @@
             ],
             "type": "object"
           },
-          "resultSemantics": "由当前 Trigger 事件显式完成指定 Tutorial���������不按定义顺序主动展示下一项。",
+          "resultSemantics": "由当前 Trigger 事件显式完成指定 Tutorial；不按定义顺序主动展示下一项。",
           "value": "complete"
         }
       ],
