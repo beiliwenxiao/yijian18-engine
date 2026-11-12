@@ -37,15 +37,20 @@ library.json 物品定义（items[]）新增可选 `glow` 块，**radius > 0 才
 ## 3. 渲染链路（框架级，全部零分配/复用缓冲惯例）
 
 ```
-每帧 renderWorldObjects：
+每帧 renderWorldObjects（世界层）：
   _assembleShadowLighting
     ├─ scene.lighting.pointLights（场景配置）
     ├─ campfire 服务（剧情营火，不变）
     └─ ★ _collectGlowSources：实体 glowProfile + 拾取物 glow → 注入 pointLights
        （radius 内实体影子背光拉长影——烛光/火把照影免费获得）
   renderEntityShadows（不变）
-  ★ _renderGlowHalos：LightGlowRenderer 逐源画光晕
-    （'lighter' 合成径向渐变 + fire/breathe 闪烁；画在 Y-sort 队列之前=贴地层）
+
+  ↓ 之后是屏幕层（screenLayers）
+
+  renderAtmosphere（时间蒙版：夜色/黄昏黑幕 + 玩家/营火透光洞）
+  ★ renderGlowHalos（物品光晕，'lighter' 叠加在蒙版之上）
+     —— 顺序关键：光必须画在夜色蒙版之后，夜里才"打得穿"黑幕、照亮地面；
+        与营火 halo 同层处理（SceneCampfireService.renderAtmosphere 末尾）
 ```
 
 - **LightGlowRenderer**（新，框架级纯静态）：`draw(ctx, {x, y, radius, color, intensity,
@@ -55,6 +60,11 @@ library.json 物品定义（items[]）新增可选 `glow` 块，**radius > 0 才
   拾取物路径 `{...data}` 展开天然携带。
 - 视口剔除：光晕与点光源收集按 `viewBounds + radius` 裁剪；光源总数上限 32（防滥用）。
 - 熄灭的火堆：微弱余烬 glow（radius 46 / intensity 0.14）表达"刚熄灭"，策划可清零关闭。
+
+> **2026-11-12 修正（不发光问题）**：光晕原先画在世界层（Y-sort 之前），会被
+> `TimeSystem` 的夜色蒙版（night 0.65 / dusk·dawn 0.25）盖住 → 暗场景里"点了灯不亮"。
+> 现改为屏幕层 `renderGlowHalos`（紧跟 `renderAtmosphere`，自带 `-viewBounds` 平移），
+> 光晕叠加在蒙版之上；点光源阴影注入仍在世界层，两处共用同一份 `_glowSources` 缓冲。
 
 ## 4. 五个物品定义（worldProp 场景静物，代码绘制样式兜底）
 
@@ -71,10 +81,44 @@ library.json 物品定义（items[]）新增可选 `glow` 块，**radius > 0 才
   后续出专属贴图时补 imageId + manifest 条目，renderStyle 自动让位（有图优先）。
 - 火堆/熄灭的火堆可用 `imageId: "s01.prop.campfireBase"` 换真图（二选一，默认代码画）。
 
-## 5. 编辑器
+## 5. 编辑器与调参（策划使用说明）
 
-- 物品类型标签：`ITEM_TYPE_LABELS` 加 `light: '点光源'`（SceneEditorAssets / LibraryEditor）。
-- glow 属于"专属属性(JSON)"编辑器现有 JSON 域，不另做表单；后续可加可视化调参。
+### 5.1 三种配置入口
+
+| 想改什么 | 在哪改 | 写法 |
+|---|---|---|
+| 某个物品的默认光效（所有场景通用） | 编辑器「内容库」→ 物品 → 选 candle/torch/campfire/… → 专属属性(JSON) | 改 `glow` 块 |
+| 只改本场景里这一根的亮度/半径/颜色 | 场景编辑器选中该物品 placement → 专属属性(JSON) 覆盖 | `overrides.glow.{radius,intensity,color,...}` |
+| 让某个已有物品开始发光 | 同上两处任选其一，加 `glow.radius > 0` | 无 glow 或 radius=0 即不发光 |
+
+物品类型标签 `light`（点光源）仅用于内容库分类筛选，不参与渲染判定——**任何物品**
+带 `glow.radius > 0` 都发光（包括地面掉落物：`glow` 会随定义展开到拾取物上，
+被捡起后自动不再发光）。
+
+### 5.2 可调参数
+
+| 参数 | 范围/默认 | 调它会发生什么 |
+|---|---|---|
+| `radius` | px，默认无（>0 才发光） | 光晕可视范围 + 阴影点光源半径（半径内实体影子会背光拉长）。火堆 240 / 火把 150 / 蜡烛 110 / 萤火虫 90 / 熄灭火堆 46 |
+| `intensity` | 0.05–1，默认 0.55 | 光晕亮度；0.5 左右柔和，>0.75 会明显过曝 |
+| `color` | `#rgb`/`#rrggbb`/`"r,g,b"` | 光色；暖橙 `#ff9a3e`、烛黄 `#ffca7a`、荧绿 `#a8ff9e` |
+| `flicker` | `"fire"`/`"breathe"`/缺省 | 火光高频抖动 / 萤火虫式慢呼吸（≈2.6s）/ 稳定光 |
+| `yOffset` | px，负=上移 | 光心贴合火苗高度（蜡烛 -26、火把 -36、萤火虫 -18），影响光斑与影子的中心位 |
+
+### 5.3 场景里怎么放
+
+1. 左侧「内容库」搜「火把/蜡烛」，拖进场景（生成 `kind: "item"` 的 ref placement）。
+2. 物品是 `worldProp` 静物（不可拾取、不挡路除非另配碰撞），`S01-initial` 等 group
+   由 `trg_s01_spawn_initial` 的 `spawnPlacements` 在进场景时生成。
+3. 想在同一根上微调（比如篝火旁的火把更亮）：选中它 → 专属属性(JSON) 填
+   `"overrides": { "glow": { "radius": 190, "intensity": 0.7 } }`。
+4. **编辑器画布不渲染光晕/夜色蒙版**（编辑器是独立的预览画布，不走 `SceneRenderPipeline`），
+   要确认实际效果请进游戏看。
+
+### 5.4 已放入 S01 的示例（2026-11-12）
+
+`S01-spawns` 层、group `S01-initial`：营火两侧火把 ×2、庇护所门口蜡烛 ×2、
+河岸萤火虫 ×2 —— 进游戏即见；策划可按上面表格直接调数值或删改。
 
 ## 6. 实施落点（已完成）
 

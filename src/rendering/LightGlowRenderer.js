@@ -15,13 +15,36 @@
  *
  * 消费物品定义的 glow 块（library.items[].glow / placement overrides.glow）：
  *   { color, radius, intensity, flicker, yOffset }
- * 在世界层阴影之后、Y-sort 实体队列之前绘制（贴地层光晕，实体从光前走过关系正确）。
- * 同一批光源已由 SceneRenderPipeline 注入阴影点光源（半径内实体影子背光拉长影）。
+ * 由 SceneRenderPipeline 在**时间蒙版（atmosphere）之后**的屏幕层调用（夜里光要
+ * 打穿夜色黑幕才看得见地面被照亮）；同一批光源也已注入阴影点光源（半径内实体
+ * 影子背光拉长影）。
  *
  * 全部为静态方法：调用方每帧传入世界坐标与时间，本类不持有任何游戏状态。
  */
 /** normalizeCached 的按 glow 对象缓存（glow 定义跨帧稳定，热路径免每帧对象+颜色串分配）。 */
 const NORMALIZED_CACHE = new WeakMap();
+
+/**
+ * 光晕贴图烘焙参数：径向渐变 + 炽芯一次性画进 192×192 小图，之后每帧只 drawImage。
+ * 半径按 4px 量化做缓存 key（视觉无差），条目上限 48（颜色×半径组合天然很少）。
+ */
+const SPRITE_SIZE = 192;
+const SPRITE_CACHE_LIMIT = 48;
+const glowSpriteCache = new Map();
+
+/** 创建离屏画布；环境不支持（无 document / 无 OffscreenCanvas）返回 null。 */
+function createGlowSpriteCanvas(size) {
+  if (typeof OffscreenCanvas === 'function') {
+    try { return new OffscreenCanvas(size, size); } catch (_error) { /* 退到 document 分支 */ }
+  }
+  if (typeof document !== 'undefined' && typeof document.createElement === 'function') {
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    return canvas;
+  }
+  return null;
+}
 
 export class LightGlowRenderer {
   /**
@@ -105,7 +128,7 @@ export class LightGlowRenderer {
   }
 
   /**
-   * 绘制一个点光源光晕：'lighter' 合成的径向渐变圆 + 小面积炽芯。
+   * 绘制一个点光源光晕：优先用预烘焙贴图 drawImage（快），无 Canvas 环境回退渐变。
    * @param {CanvasRenderingContext2D} ctx
    * @param {Object} params
    * @param {number} params.x - 光心世界 X
@@ -126,6 +149,26 @@ export class LightGlowRenderer {
     if (alpha <= 0.01) return;
     const cy = y + (Number.isFinite(yOffset) ? yOffset : 0);
 
+    // 首选：烘焙光晕贴图 + drawImage（每帧零渐变对象、零路径填充）
+    const sprite = LightGlowRenderer.getGlowSprite(rgb, radius);
+    if (sprite) {
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.globalAlpha = alpha;
+      ctx.drawImage(sprite, x - radius, cy - radius, radius * 2, radius * 2);
+      ctx.restore();
+      return;
+    }
+
+    // 回退（无 Canvas 环境 / 烘焙失败）：即时径向渐变，行为与旧版一致
+    LightGlowRenderer.paintGradientGlow(ctx, { x, cy, radius, rgb, alpha });
+  }
+
+  /**
+   * 绘制即时渐变光晕（回退路径；视觉与烘焙贴图一致）。
+   * @private
+   */
+  static paintGradientGlow(ctx, { x, cy, radius, rgb, alpha }) {
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
     // 主光晕：径向渐变（中心浓、半径 55% 后快速衰减到透明）
@@ -150,6 +193,45 @@ export class LightGlowRenderer {
       ctx.fill();
     }
     ctx.restore();
+  }
+
+  /**
+   * 取（或烘焙）光晕贴图：192×192 小图内画好「主光晕 + 炽芯」（alpha=1 基准），
+   * 绘制时用 globalAlpha 调节强度/闪烁。半径按 4px 量化做 key，避免浮点半径打爆缓存。
+   * @private
+   */
+  static getGlowSprite(rgb, radius) {
+    const quantized = Math.max(8, Math.round(radius / 4) * 4);
+    const key = `${rgb}|${quantized}`;
+    if (glowSpriteCache.has(key)) return glowSpriteCache.get(key);
+    if (glowSpriteCache.size >= SPRITE_CACHE_LIMIT) glowSpriteCache.clear();
+    const canvas = createGlowSpriteCanvas(SPRITE_SIZE);
+    const spriteCtx = canvas?.getContext?.('2d');
+    if (!spriteCtx || typeof spriteCtx.createRadialGradient !== 'function') {
+      glowSpriteCache.set(key, null);
+      return null;
+    }
+    const center = SPRITE_SIZE / 2;
+    const gradient = spriteCtx.createRadialGradient(center, center, 0, center, center, center);
+    gradient.addColorStop(0, `rgba(${rgb}, 1)`);
+    gradient.addColorStop(0.55, `rgba(${rgb}, 0.32)`);
+    gradient.addColorStop(1, `rgba(${rgb}, 0)`);
+    spriteCtx.fillStyle = gradient;
+    spriteCtx.beginPath();
+    spriteCtx.arc(center, center, center, 0, Math.PI * 2);
+    spriteCtx.fill();
+    // 炽芯：烘焙进贴图，绘制时随 globalAlpha 一起衰减
+    const coreRadius = Math.max(2, center * 0.14);
+    const core = spriteCtx.createRadialGradient(center, center, 0, center, center, coreRadius);
+    core.addColorStop(0, 'rgba(255, 250, 235, 0.75)');
+    core.addColorStop(0.7, `rgba(${rgb}, 0.5)`);
+    core.addColorStop(1, `rgba(${rgb}, 0)`);
+    spriteCtx.fillStyle = core;
+    spriteCtx.beginPath();
+    spriteCtx.arc(center, center, coreRadius, 0, Math.PI * 2);
+    spriteCtx.fill();
+    glowSpriteCache.set(key, canvas);
+    return canvas;
   }
 }
 

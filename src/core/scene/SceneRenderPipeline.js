@@ -74,6 +74,8 @@ export class SceneRenderPipeline {
         runtime.height = scene.logicalHeight;
         return atmosphere.renderAtmosphere(ctx, runtime);
       },
+      // 物品光晕必须画在时间蒙版之后：夜里光要"打穿"黑幕才看得见地面被照亮
+      (_scene, ctx) => this._renderGlowHalos(ctx),
       (scene, ctx) => this.context?.presentation?.skillEffects
         ?.render?.(ctx, this.context?.camera?.instance || null),
       (_scene) => this.context?.presentation?.combatEffects?.render?.(),
@@ -109,6 +111,7 @@ export class SceneRenderPipeline {
     ];
     this.screenLayerNames = config?.screenLayerNames || Object.freeze([
       'renderAtmosphere',
+      'renderGlowHalos',
       'renderSkillEffects',
       'renderCombatEffects',
       'renderFloatingText',
@@ -315,10 +318,8 @@ export class SceneRenderPipeline {
       lighting: this._shadowLightingRuntime
     });
     if (frameProfile) frameProfile.shadowEntities = performance.now() - entityShadowStartedAt;
-    // 物品光晕 pass：消费 _assembleShadowLighting 收集的同一批发光源（贴地层，Y-sort 之前）
-    const glowStartedAt = frameProfile ? performance.now() : 0;
-    this._renderGlowHalos(ctx);
-    if (frameProfile) frameProfile.glowHalos = performance.now() - glowStartedAt;
+    // 物品光晕不在这里画：必须落在时间蒙版之后（见 screenLayers 的 _renderGlowHalos），
+    // 否则夜里会被夜色黑幕压暗，看起来"不发光"。这里只负责收集光源供阴影使用。
     const campfire = context?.services?.campfire || null;
     const campfireRuntime = this._campfireRenderRuntime;
     campfireRuntime.particleSystem = particleSystem;
@@ -577,19 +578,26 @@ export class SceneRenderPipeline {
   }
 
   /**
-   * 物品光晕 pass：阴影之后、Y-sort 实体队列之前绘制（贴地层——
-   * 'lighter' 合成光斑，实体从光前走过遮挡关系正确）。@private
+   * 物品光晕 pass：在**时间蒙版（atmosphere）之后**的屏幕层绘制。
+   * 这一点很关键——蒙版是叠加在世界之上的夜色/黄昏黑幕，若光晕画在世界层
+   * （蒙版之前），夜里会被黑幕压暗 65%，看起来"点了灯却不亮"；放到蒙版之后
+   * 用 'lighter' 叠加，光才真正照亮暗处地面（与营火 halo 的处理一致）。
+   * 屏幕层坐标已复位，这里自行按视口平移回世界坐标。@private
    */
   _renderGlowHalos(ctx) {
     const sources = this._glowSources;
     if (sources.length === 0) return;
     const time = performance.now();
+    const bounds = this._viewBounds;
+    ctx.save();
+    if (bounds) ctx.translate(-bounds.left, -bounds.top);
     for (let i = 0; i < sources.length; i++) {
       const source = sources[i];
       // 池化条目直传（含 time 字段），免每源一次包装对象分配
       source.time = time;
       LightGlowRenderer.draw(ctx, source);
     }
+    ctx.restore();
   }
 
   /**
