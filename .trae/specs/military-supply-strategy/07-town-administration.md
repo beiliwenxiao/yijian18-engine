@@ -197,7 +197,7 @@ TimeSystem.advanceDays(1) → 触发 AdvanceDayPipeline（新，纯顺序执行�
 | 场景约束 | 默认**必须同场景**（军团在哪个场景就在哪个场景招）；跨场景招募需军团先移动到该营地（模块 4 行军） |
 | 营地消亡 | 营地被摧毁/废弃 → 从 `blackboard.camps` 移除；该 campId 的 `fromCampId` 请求随后一律拒绝（不自动回退） |
 
-**S02 映射**：序章无城池 → `campComplete` 立营后注册 `campId: "S02-camp"`；招募触发器发
+**S02 映射**：S02 开场段落无城池 → `campComplete` 立营后注册 `campId: "S02-camp"`；招募触发器发
 `army.recruit { fromCampId: "S02-camp", unitType: <默认步兵>, count: <全部教徒> }`（一次成军，见 [10 文档](10-s02-quest-rework.md) §1.1 #5）。**城内路径不需要出现在 S02 的任何配置里。**
 
 ---
