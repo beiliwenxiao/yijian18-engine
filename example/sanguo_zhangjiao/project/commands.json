@@ -2475,7 +2475,7 @@
   {
     "commandType": "state.transaction",
     "id": "craft.production.recipe.wood_arrow",
-    "name": "工坊产出：木箭 ×10",
+    "name": "���坊产出：木箭 ×10",
     "transaction": {
       "inventory": {
         "addEntries": [
@@ -2777,7 +2777,7 @@
   {
     "commandType": "state.transaction",
     "id": "story.s02.allegiance.joined",
-    "name": "分叉：加入黄巾（简单）",
+    "name": "分叉：加入黄巾（与张角军团并肩）",
     "transaction": {
       "writes": [
         {
@@ -2794,11 +2794,6 @@
           "path": "factionAlignment",
           "target": "story",
           "value": "yellow_turban"
-        },
-        {
-          "path": "runDifficulty",
-          "target": "story",
-          "value": "easy"
         },
         {
           "path": "faction.reputation.yellow_turban",
@@ -2814,11 +2809,6 @@
           "path": "alignment",
           "target": "blackboard",
           "value": "yellow_turban"
-        },
-        {
-          "path": "run.difficulty",
-          "target": "blackboard",
-          "value": "easy"
         }
       ]
     }
@@ -2826,7 +2816,7 @@
   {
     "commandType": "state.transaction",
     "id": "story.s02.allegiance.independent",
-    "name": "分叉：暂时还不行（困难）",
+    "name": "分叉：暂时还不行（带自己的亲卫）",
     "transaction": {
       "writes": [
         {
@@ -2845,11 +2835,6 @@
           "value": "independent"
         },
         {
-          "path": "runDifficulty",
-          "target": "story",
-          "value": "hard"
-        },
-        {
           "path": "faction.reputation.yellow_turban",
           "target": "blackboard",
           "value": 5
@@ -2858,11 +2843,6 @@
           "path": "alignment",
           "target": "blackboard",
           "value": "independent"
-        },
-        {
-          "path": "run.difficulty",
-          "target": "blackboard",
-          "value": "hard"
         }
       ]
     }

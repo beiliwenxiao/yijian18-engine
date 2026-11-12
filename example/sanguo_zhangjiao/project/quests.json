@@ -906,7 +906,7 @@
                 "type": "action"
               }
             ],
-            "title": "加入黄巾（简单）"
+            "title": "加入黄巾（与张角军团并肩）"
           },
           {
             "choice": "independent",
@@ -921,7 +921,7 @@
                 "type": "action"
               }
             ],
-            "title": "暂时还不行（困难）"
+            "title": "暂时还不行（带自己的亲卫）"
           }
         ],
         "title": "张角的邀请：加入 / 暂时还不行",
@@ -1298,7 +1298,7 @@
                     "action": "showTip",
                     "id": "raid-defeat-tip",
                     "params": {
-                      "text": "营地被破了。张角带着残部转移，主线未断——来日再战。"
+                      "text": "主角倒下，亲卫溃退；张角率黄巾收拢残部退出战场——主线未断，来日再战。"
                     },
                     "title": "提示",
                     "type": "action"
@@ -1314,15 +1314,24 @@
                   }
                 ],
                 "when": {
-                  "name": "s02RaidFight",
-                  "op": "var"
+                  "args": [
+                    {
+                      "name": "s02RaidFight",
+                      "op": "var"
+                    },
+                    {
+                      "name": "s02AllegianceIndependent",
+                      "op": "var"
+                    }
+                  ],
+                  "op": "and"
                 }
               }
             ],
             "stepId": "raid-defeat-branch"
           }
         ],
-        "title": "围剿失败：按分支处理（不判死）",
+        "title": "围剿失败：仅不加入线（主角阵亡不判负）；加入线张角阵亡走出师未捷结局",
         "type": "event"
       },
       {

@@ -124,6 +124,7 @@ export class S02BattleFlow {
     this._lastAlive = this._countAlive('S02-raid-legion');
     this._defeatFired = false;
     this._victoryFired = false;
+    this._zhangjiaoFallen = false;
     this._activateGroup('S02-raid-legion');
     const runtime = this.scene.context?.services?.placements;
     if (branch === 'joined') {
@@ -167,6 +168,8 @@ export class S02BattleFlow {
     if (this._accumulator < 0.2) return;
     this._accumulator = 0;
 
+    if (this._victoryFired) return;
+    this._checkZhangjiaoFallen();
     if (this._victoryFired) return;
     const boss = this.scene.entityStore?.getById?.(RAID.bossId) || null;
     // 傅燮死亡后实体可能已从敌人表移除（getById 返回 null），因此「已登场且取不到/已死」即斩将
@@ -295,6 +298,53 @@ export class S02BattleFlow {
       this.scene.aiSystem?.activateAI?.(guard, guard.aiType || 'aggressive');
     }
     return boss;
+  }
+
+  /**
+   * 围剿中张角倒下（①）：加入线走「出师未捷身先死」结局；不加入线重伤退场、不判负。
+   * 主角阵亡走任务 raidDefeat 分支（②），不在此处触发结局。
+   */
+  async _checkZhangjiaoFallen() {
+    if (this._zhangjiaoFallen === true) return;
+    const zhangjiao = this.scene.s02ArmyRescueCoordinator?._zhangjiaoEntity;
+    if (!zhangjiao || (zhangjiao.isDead !== true && zhangjiao.isDying !== true)) return;
+    this._zhangjiaoFallen = true;
+    this._submit('story.s02.zhangjiao.fallen');
+    const joined = this._story().s02AllegianceJoined === true;
+    if (joined) {
+      this._victoryFired = true;
+      if (this.raid) this.raid.active = false;
+      this._clearRaidField();
+      const endingCandidates = [this.scene.s11S14SceneFlow, this.scene.s11s14SceneCoordinator];
+      let committed = false;
+      for (const endingCoordinator of endingCandidates) {
+        if (typeof endingCoordinator?.executeEndingCommand !== 'function') continue;
+        try {
+          committed = await endingCoordinator.executeEndingCommand({
+            endingId: 'sanguo-zhangjiao-endings-v1',
+            endingKey: 'expedition-failed',
+            operation: 'commit',
+            checkpointId: 'checkpoint.S02.ending.expeditionFailed'
+          }) === true;
+        } catch {
+          committed = false;
+        }
+        if (committed) break;
+      }
+      if (!committed) {
+        this.scene.endingFlowCoordinator?.commitEndingById?.('expedition-failed', {
+          checkpointId: 'checkpoint.S02.ending.expeditionFailed'
+        });
+      }
+      this._tip('张角力战而亡——「出师未捷身先死」。', '围剿');
+      return;
+    }
+    // 不加入线：重伤退场，官军仍在压上，主线不判负
+    zhangjiao.plotDowned = true;
+    zhangjiao.getComponent?.('sprite')?.playAnimation?.('stretcher');
+    const movement = zhangjiao.getComponent?.('movement');
+    if (movement) movement.velocity = { x: 0, y: 0 };
+    this._tip('张角力战重伤，被亲兵抬下战场。官军仍在压上——守住营地。', '围剿');
   }
 
   /** 斩将后清场：场上余部（含补员动态生成、不入 placement 账本的单位）一并溃散离场。 */
