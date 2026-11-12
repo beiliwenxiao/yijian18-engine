@@ -21,6 +21,7 @@ import { Entity } from '../../../src/ecs/Entity.js';
 import { TransformComponent } from '../../../src/ecs/components/TransformComponent.js';
 import { BuildingComponent, BuildingType } from '../../../src/ecs/components/BuildingComponent.js';
 import { EndingFlowCoordinator } from './EndingFlowCoordinator.js';
+import { previewWarMaterials, restoreWarLedger, snapshotWarLedger, spendWarMaterials } from './WarSupplyLedger.js';
 
 const clone = value => value == null ? value : JSON.parse(JSON.stringify(value));
 const S11_BATTLE_ID = 'battle.s11.guangzong';
@@ -764,17 +765,16 @@ const s13s14Methods = {
     const choice = this._worldLoadSession?.getSceneData?.('S13')?.gameplay?.choices
       ?.find(entry => entry?.id === mode);
     if (!choice) return { ok: false, code: 's13ChoiceMissing', mode };
-    const inventory = this.playerEntity?.getComponent?.('inventory');
-    if (!inventory || !this.inventoryTransactions) return { ok: false, code: 'inventoryUnavailable' };
+    const ledger = this.scene?.foodLedgerSystem || null;
+    if (!ledger?.previewConsume) return { ok: false, code: 'warLedgerUnavailable' };
     const entries = Object.entries(choice.resourceCost || {}).map(([key, quantity]) => ({
       itemId: RESOURCE_IDS[key] || key,
       quantity: Math.max(0, Math.floor(Number(quantity) || 0))
     })).filter(entry => entry.quantity > 0);
-    for (const entry of entries) {
-      const preview = this.inventoryTransactions.previewRemove(inventory, entry.itemId, entry.quantity);
-      if (preview.remainder > 0) {
-        return { ok: false, code: 'resourceMissing', message: `${entry.itemId} 缺少 ${preview.remainder}` };
-      }
+    const costEntries = Object.fromEntries(entries.map(entry => [entry.itemId, entry.quantity]));
+    const preview = previewWarMaterials(ledger, costEntries);
+    if (!preview.ok) {
+      return { ok: false, code: 'resourceMissing', missing: preview.missing || null, detail: preview.code };
     }
     const operationId = `cost:${S13_BATTLE_ID}:${mode}`;
     this._s13PendingSettlement = {
@@ -794,34 +794,28 @@ const s13s14Methods = {
     if (!battleResult?.resultId || battleResult.battleId !== S13_BATTLE_ID) {
       return { ok: false, code: 's13BattleResultMissing' };
     }
-    const inventory = this.playerEntity?.getComponent?.('inventory');
+    const ledger = this.scene?.foodLedgerSystem || null;
     const battleCoordinator = this.s03s14BattleCoordinator;
-    if (!inventory || !this.inventoryTransactions || !battleCoordinator?.captureCityWarState?.()) {
+    if (!ledger?.consume || !battleCoordinator?.captureCityWarState?.()) {
       return { ok: false, code: 's13SettlementRuntimeUnavailable' };
     }
-    for (const entry of pending.entries) {
-      const preview = this.inventoryTransactions.previewRemove(inventory, entry.itemId, entry.quantity);
-      if (preview.remainder > 0) {
-        return { ok: false, code: 'resourceMissing', itemId: entry.itemId, missing: preview.remainder };
-      }
+    const costEntries = Object.fromEntries((pending.entries || []).map(entry => [entry.itemId, entry.quantity]));
+    const preview = previewWarMaterials(ledger, costEntries);
+    if (!preview.ok) {
+      return { ok: false, code: 'resourceMissing', missing: preview.missing || null, detail: preview.code };
     }
 
-    const inventoryBefore = clone(inventory.exportItems?.() || []);
+    const ledgerBefore = snapshotWarLedger(ledger);
     const cityWarBefore = clone(this.cityWarStateBridge.read());
     const cityWarLedgerBefore = battleCoordinator.captureCityWarState();
     const rollback = async () => {
-      inventory.loadItems?.(clone(inventoryBefore));
-      this.inventoryTransactions.forgetOperation?.(pending.operationId);
+      restoreWarLedger(ledger, ledgerBefore);
       this.cityWarStateBridge.restore(clone(cityWarBefore));
       battleCoordinator.restoreCityWarState(cityWarLedgerBefore);
       return true;
     };
-    if (pending.entries.length > 0) {
-      const removed = this.inventoryTransactions.commit({
-        type: 'batchRemove', inventory, entries: pending.entries, operationId: pending.operationId
-      });
-      if (!removed.ok) return removed;
-    }
+    const spent = spendWarMaterials(ledger, { costs: costEntries, operationId: pending.operationId });
+    if (!spent.ok) return spent;
     const settled = await battleCoordinator.applyBattleResult({
       result: battleResult,
       operationId: `settle:${battleResult.resultId}`,
@@ -1029,6 +1023,9 @@ const s13s14Methods = {
         dropGenerated: cartCargo?.dropGenerated === true
       }
       : clone(persistedCart);
+    // B4 取舍：S14 马车货舱 = 场景内的临时搬运容器（纯表现/搬运），不是战争物资账本。
+    // 战争投入已在 S12/S13 统一走 FoodLedgerSystem；这里只把「随车携带的辎重」计入终局快照，
+    // 不构成第二套权威库存（并入 ledger 需先有 camp 入账 API，留待后续批次）。
     const cargoFood = inventoryQuantity(cartCargo, RESOURCE_IDS.food);
     const cargoHerb = inventoryQuantity(cartCargo, RESOURCE_IDS.herb);
     const resourceState = {

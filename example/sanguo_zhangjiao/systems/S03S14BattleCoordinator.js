@@ -332,8 +332,7 @@ export class S03S14BattleCoordinator {
     });
     const s11s12Coordinator = new S11S12Coordinator({
       rescueSystem,
-      inventoryTransactions: scene.inventoryTransactions,
-      getInventory: () => scene.playerEntity?.getComponent?.('inventory') || null,
+      getLedger: () => scene.foodLedgerSystem || null,
       getBattleSession: () => this.runtime.getSessionState(),
       canUseRescue: () => this.runtime.canUseRescue(),
       readStoryState: () => clone(gameLoader.blackboard?.get?.('storyState') || {}),

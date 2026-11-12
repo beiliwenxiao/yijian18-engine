@@ -550,6 +550,63 @@ export class FoodLedgerSystem {
     return { ok: true, armyId: army.id, campId: camp.campId, entries: items };
   }
 
+  /**
+   * 战争物资核销预演：营地仓优先，食物缺口再走军团随身粮（不写任何状态）。
+   * 非食物资源只认营地仓——军团随身粮只记 food，避免凭空增减。
+   */
+  previewConsume({ campId = null, armyId = null, entries = null } = {}) {
+    const items = this._normalizeResourceEntries(entries);
+    if (!items) return { ok: false, code: 'entriesRequired' };
+    const camp = campId != null ? this.camps.get(String(campId)) : null;
+    const army = armyId != null ? this.armies.get(String(armyId)) : null;
+    const fromCamp = {};
+    const fromArmy = {};
+    const missing = {};
+    for (const [resource, value] of Object.entries(items)) {
+      let remaining = value;
+      const campAvailable = camp ? Math.max(0, num(camp.stock?.[resource], 0)) : 0;
+      const campTake = Math.min(campAvailable, remaining);
+      if (campTake > 0) { fromCamp[resource] = campTake; remaining -= campTake; }
+      if (remaining > 0 && resource === 'food' && army) {
+        const armyTake = Math.min(Math.max(0, num(army.supply?.food, 0)), remaining);
+        if (armyTake > 0) { fromArmy[resource] = armyTake; remaining -= armyTake; }
+      }
+      if (remaining > 0) missing[resource] = remaining;
+    }
+    if (Object.keys(missing).length > 0) {
+      return { ok: false, code: 'insufficientStock', campId: camp?.campId || null, armyId: army?.id || null, entries: items, missing, fromCamp, fromArmy };
+    }
+    return { ok: true, campId: camp?.campId || null, armyId: army?.id || null, entries: items, fromCamp, fromArmy };
+  }
+
+  /** 战争物资核销（幂等 operationId）：同一份物资只从营地仓/军团粮这一本账扣。 */
+  consume({ campId = null, armyId = null, entries = null, operationId = null } = {}) {
+    const operationKey = operationId != null ? String(operationId) : null;
+    if (operationKey && this.appliedOperations.has(operationKey)) {
+      return { ok: true, idempotent: true, operationId: operationKey };
+    }
+    const plan = this.previewConsume({ campId, armyId, entries });
+    if (!plan.ok) return plan;
+    const camp = plan.campId != null ? this.camps.get(String(plan.campId)) : null;
+    const army = plan.armyId != null ? this.armies.get(String(plan.armyId)) : null;
+    if (camp) {
+      for (const [resource, value] of Object.entries(plan.fromCamp)) {
+        camp.stock[resource] = Math.max(0, num(camp.stock[resource], 0) - value);
+      }
+    }
+    if (army) {
+      for (const [resource, value] of Object.entries(plan.fromArmy)) {
+        if (resource === 'food') army.supply.food = Math.max(0, num(army.supply.food, 0) - value);
+      }
+    }
+    if (operationKey) this.appliedOperations.add(operationKey);
+    this._emit('logistics.consumed', {
+      campId: plan.campId, armyId: plan.armyId, entries: plan.entries,
+      fromCamp: plan.fromCamp, fromArmy: plan.fromArmy
+    });
+    return { ok: true, campId: plan.campId, armyId: plan.armyId, entries: plan.entries, fromCamp: plan.fromCamp, fromArmy: plan.fromArmy };
+  }
+
   // ─── 序列化 ────────────────────────────────────────────
 
   serialize() {
@@ -597,6 +654,20 @@ export class FoodLedgerSystem {
       const parsed = Math.floor(num(value, 0));
       if (parsed <= 0) continue;
       next[resource] = parsed;
+    }
+    return Object.keys(next).length > 0 ? next : null;
+  }
+
+  /** 把 `resource.food` 等物品 ID 归一成营地仓/军团粮的资源键。 */
+  _normalizeResourceEntries(entries) {
+    if (!entries || typeof entries !== 'object') return null;
+    const next = {};
+    for (const [key, value] of Object.entries(entries)) {
+      const matched = /^resource\.([a-z_]+)$/i.exec(String(key));
+      const resource = matched ? matched[1].toLowerCase() : String(key);
+      const parsed = Math.floor(num(value, 0));
+      if (parsed <= 0) continue;
+      next[resource] = (next[resource] || 0) + parsed;
     }
     return Object.keys(next).length > 0 ? next : null;
   }

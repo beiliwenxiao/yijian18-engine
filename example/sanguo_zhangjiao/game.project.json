@@ -2806,8 +2806,9 @@
         "ownerFactionId": "player",
         "stock": {
           "food": 20,
+          "herb": 12,
           "iron": 8,
-          "wood": 6
+          "wood": 10
         }
       },
       {
@@ -2816,8 +2817,9 @@
         "ownerArmyId": "army.player.escort",
         "ownerFactionId": "player",
         "stock": {
-          "food": 10,
-          "wood": 8
+          "food": 14,
+          "herb": 8,
+          "wood": 10
         }
       }
     ],

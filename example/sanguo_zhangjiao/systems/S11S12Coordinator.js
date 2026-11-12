@@ -10,6 +10,8 @@
  *            https://gitee.com/coderaaa/yijian18-engine
  ************************************************************/
 
+import { previewWarMaterials, restoreWarLedger, snapshotWarLedger, spendWarMaterials } from './WarSupplyLedger.js';
+
 export const S11_BATTLE_ID = 'battle.s11.guangzong';
 export const S12_BATTLE_ID = 'battle.s12.xiaquyang';
 export const S11_RESCUE_ID = 'rescue.s11.zhangLiang';
@@ -25,8 +27,7 @@ const TERMINAL = new Set(['succeeded', 'failed']);
 export class S11S12Coordinator {
   constructor(config = {}) {
     this.rescueSystem = config.rescueSystem || null;
-    this.inventoryTransactions = config.inventoryTransactions || null;
-    this.getInventory = config.getInventory || (() => null);
+    this.getLedger = config.getLedger || (() => null);
     this.getBattleSession = config.getBattleSession || (() => ({}));
     this.canUseRescue = config.canUseRescue || (() => false);
     this.readStoryState = config.readStoryState || (() => ({}));
@@ -180,26 +181,25 @@ export class S11S12Coordinator {
     const definition = this._definition('S12');
     const available = this._validateStart(definition, options.mode);
     if (!available.ok || available.idempotent) return available;
-    const inventory = this.getInventory();
-    if (!inventory || !this.inventoryTransactions) return { ok: false, code: 'inventoryUnavailable' };
+    const ledger = this.getLedger ? this.getLedger() : null;
+    if (!ledger?.consume) return { ok: false, code: 'warLedgerUnavailable' };
 
     const costs = this._costEntries(definition.costs);
-    for (const entry of costs) {
-      const preview = this.inventoryTransactions.previewRemove(inventory, entry.itemId, entry.quantity);
-      if (preview.remainder > 0) {
-        return { ok: false, code: 'rescueResourceMissing', itemId: entry.itemId,
-          required: entry.quantity, available: preview.accepted, missing: preview.remainder };
-      }
+    const costEntries = Object.fromEntries(costs.map(entry => [entry.itemId, entry.quantity]));
+    const preview = previewWarMaterials(ledger, costEntries);
+    if (!preview.ok) {
+      return { ok: false, code: 'rescueResourceMissing', missing: preview.missing || null,
+        available: { camp: preview.fromCamp || {}, army: preview.fromArmy || {} }, detail: preview.code };
     }
 
     const operationId = options.costOperationId || `cost:${S12_RESCUE_ID}`;
-    const inventoryBefore = clone(inventory.exportItems?.() || []);
+    const ledgerBefore = snapshotWarLedger(ledger);
     const rescueBefore = this.rescueSystem.serialize();
     const storyBefore = clone(this.readStoryState() || {});
     this.busy = true;
     try {
-      const removed = this.inventoryTransactions.commit({ type: 'batchRemove', inventory, entries: costs, operationId });
-      if (!removed.ok) return removed;
+      const spent = spendWarMaterials(ledger, { costs: costEntries, operationId });
+      if (!spent.ok) return spent;
       const started = this.rescueSystem.start(definition, {
         mode: options.mode,
         startedAt: options.startedAt,
@@ -231,8 +231,7 @@ export class S11S12Coordinator {
       this.onEvent('s12RescueStarted', { state: clone(started.state), costs: clone(definition.costs || {}) });
       return started;
     } catch (error) {
-      inventory.loadItems?.(inventoryBefore);
-      this.inventoryTransactions.forgetOperation?.(operationId);
+      restoreWarLedger(ledger, ledgerBefore);
       this.rescueSystem.deserialize(rescueBefore);
       this.writeStoryState(storyBefore);
       this.state.s12 = { gateDeadline: null, secretPassageOpen: false, escortOpen: false, costsCommitted: false, resolved: false };

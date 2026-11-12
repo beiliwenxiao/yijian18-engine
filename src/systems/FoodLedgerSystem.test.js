@@ -338,3 +338,37 @@ describe('FoodLedgerSystem 存档', () => {
     expect(restored.restore(null).code).toBe('invalidSnapshot');
   });
 });
+
+describe('FoodLedgerSystem 战争物资核销（B4）', () => {
+  it('营地仓优先，食物缺口再走军团随身粮；非食物只认营地仓', () => {
+    const { service } = makeSystem({ armies: [{ id: 'a1', roster: { melee: 10 }, supply: { food: 30, cap: 500 } }] });
+    service.registerCamp({ campId: 'camp.a', level: 2, stock: { food: 10, herb: 4, wood: 6 } });
+
+    const plan = service.previewConsume({ campId: 'camp.a', armyId: 'a1', entries: { 'resource.food': 18, 'resource.herb': 3 } });
+    expect(plan.ok).toBe(true);
+    expect(plan.fromCamp).toEqual({ food: 10, herb: 3 });
+    expect(plan.fromArmy).toEqual({ food: 8 });
+
+    const consumed = service.consume({ campId: 'camp.a', armyId: 'a1', entries: { 'resource.food': 18, 'resource.herb': 3 }, operationId: 'cost:test' });
+    expect(consumed.ok).toBe(true);
+    expect(service.getCamp('camp.a').stock).toMatchObject({ food: 0, herb: 1, wood: 6 });
+    expect(service.getArmy('a1').supply.food).toBe(22);
+  });
+
+  it('不足返回 missing；同 operationId 幂等不重复扣', () => {
+    const { service } = makeSystem({ armies: [{ id: 'a1', roster: { melee: 10 }, supply: { food: 5, cap: 500 } }] });
+    service.registerCamp({ campId: 'camp.a', level: 1, stock: { food: 10, herb: 1 } });
+
+    const missing = service.consume({ campId: 'camp.a', armyId: 'a1', entries: { food: 20, herb: 3 } });
+    expect(missing.ok).toBe(false);
+    expect(missing.code).toBe('insufficientStock');
+    expect(missing.missing).toEqual({ food: 5, herb: 2 });
+    expect(service.getCamp('camp.a').stock).toMatchObject({ food: 10, herb: 1 });
+
+    expect(service.consume({ campId: 'camp.a', armyId: 'a1', entries: { food: 12 }, operationId: 'cost:idem' }).ok).toBe(true);
+    const again = service.consume({ campId: 'camp.a', armyId: 'a1', entries: { food: 12 }, operationId: 'cost:idem' });
+    expect(again.idempotent).toBe(true);
+    expect(service.getCamp('camp.a').stock.food).toBe(0);
+    expect(service.getArmy('a1').supply.food).toBe(3);
+  });
+});
