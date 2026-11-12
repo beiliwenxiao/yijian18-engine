@@ -1,5 +1,30 @@
 [
   {
+    "id": "dialogue.s10.campHandover",
+    "nodes": {
+      "start": {
+        "nextNode": "answer",
+        "speaker": "队正",
+        "text": "溪水清，滩地平。张角将军不在了，这营盘往后听谁的？"
+      },
+      "answer": {
+        "nextNode": "end",
+        "speaker": "你",
+        "text": "听我的。愿意留下的，跟我把营盘扎稳。"
+      },
+      "end": {
+        "speaker": "旁白",
+        "text": "篝火在新址升起，粮、木与军械陆续搬进营仓——这是你自己的第一座营。"
+      }
+    },
+    "presentation": {
+      "boxType": "portrait"
+    },
+    "runtimeStarted": true,
+    "startNode": "start",
+    "title": "沿溪立营"
+  },
+  {
     "id": "dialogue.s01.wake",
     "nodes": {
       "move": {

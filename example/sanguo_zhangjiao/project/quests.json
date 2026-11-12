@@ -2339,6 +2339,24 @@
         "type": "objective"
       },
       {
+        "action": "startDialogue",
+        "id": "camp-handover-dialogue",
+        "params": {
+          "id": "dialogue.s10.campHandover"
+        },
+        "title": "沿溪立营交接",
+        "type": "action"
+      },
+      {
+        "action": "state.transaction",
+        "id": "camp-handover-fact",
+        "params": {
+          "definitionId": "story.s10.camp.handover"
+        },
+        "title": "写新营归属",
+        "type": "action"
+      },
+      {
         "eventMatcher": {
           "payload": {
             "triggerId": "trg_s10_exit_s11"

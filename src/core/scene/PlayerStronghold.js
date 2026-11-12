@@ -35,6 +35,11 @@ export function hasPlayerStronghold({ project = null, cityStates = null, camps =
  */
 export function sceneHasPlayerStronghold(scene) {
   const project = scene?.gameLoader?.project || scene?.loader?.project || null;
+  const story = scene?.gameLoader?.blackboard?.get?.('storyState') || null;
+  if (story) {
+    // 有存档上下文时以剧情事实为准：S02 立营（playerStronghold）或 S10 沿溪立营（s10CampHandover）
+    return Boolean(story.playerStronghold || story.s10CampHandover);
+  }
   if (!project) return true;
   return hasPlayerStronghold({ project });
 }

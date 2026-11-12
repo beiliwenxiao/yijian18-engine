@@ -121,7 +121,7 @@ const s10StoryMethods = {
   },
 
   async completeS10CampRelocation() {
-    return this._commitS10StoryCheckpoint({
+    const committed = await this._commitS10StoryCheckpoint({
       checkpointId: 'checkpoint.S10.campRelocation',
       successTitle: '沿溪新址',
       successMessage: '临时营地已经拔除。队伍沿溪找到可长期取水的新址，营建阶段现已开放。',
@@ -145,6 +145,9 @@ const s10StoryMethods = {
               suitableForConstruction: true,
               operationId: 'story:S10:campRelocation'
             },
+            // B3 根据地：沿溪新营归玩家（第二个营，与 S02 的 camp.s02.field 并存）。
+            // 归属事实由任务步骤 state.transaction `story.s10.camp.handover` 写入（单一写入点），
+            // 这里只做运行时登记，保证军营容器与粮草账本立即可用。
             constructionSiteUnlocked: true,
             constructionSiteId: 'site.s10.creekConstruction',
             lastCheckpointId: 'checkpoint.S10.campRelocation'
@@ -152,6 +155,17 @@ const s10StoryMethods = {
         };
       }
     });
+    if (committed !== true) return committed;
+    // 运行时落归属：军营注册进粮草账本，军营段粮草条与军团层入口随之可用（种子已在 logistics.camps）
+    const ledger = this.scene?.foodLedgerSystem;
+    if (ledger?.registerCamp) {
+      ledger.registerCamp({
+        campId: 'camp.s10.creek', level: 1, stock: null,
+        ownerArmyId: 'army.player.escort', ownerFactionId: 'player'
+      });
+    }
+    this.scene?.syncCampContainers?.();
+    return true;
   }
 };
 

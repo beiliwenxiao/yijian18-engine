@@ -518,8 +518,9 @@ describe('阶段③ S01 迁移契约：quest 编译产物与手写任务图逐�
     // 编译触发器全集 = 上一基线 76 + S02 summons 召见线全量收编 8（进场装配/召见对话/招募/扎营/
     //   围剿胜利/拾荒者遭遇×2/北上广宗出口，手写 trg_s02_* 七个已删除）= 84
     //   + S02 举事步骤 uprising（张角举事、荒村转军营）= 85
+    //   + B3 沿溪立营交接动作组（S10 after_completeRelocation：交接对话 + 归属事实）= 79 为新基线
     const triggers = compileQuestProject(project).triggers;
-    expect(triggers.length).toBe(78);
+    expect(triggers.length).toBe(79);
     expect(triggers.slice(0, 7).map(trigger => trigger.id)).toEqual([
       'trg_task.s01.survival_intro',
       'trg_task.s01.survival_after_lightCampfire',

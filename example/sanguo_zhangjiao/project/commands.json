@@ -3310,5 +3310,26 @@
         }
       ]
     }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s10.camp.handover",
+    "name": "沿溪立营：新营归玩家（第二个营，与 S02 营地并存）",
+    "transaction": {
+      "writes": [
+        {
+          "path": "s10CampHandover",
+          "target": "story",
+          "value": {
+            "campId": "camp.s10.creek",
+            "ownerArmyId": "army.player.escort",
+            "ownerFactionId": "player",
+            "level": 1,
+            "siteId": "site.s10.creekConstruction",
+            "operationId": "story:S10:campHandover"
+          }
+        }
+      ]
+    }
   }
 ]

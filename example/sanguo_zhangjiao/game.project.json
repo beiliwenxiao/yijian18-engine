@@ -2809,6 +2809,16 @@
           "iron": 8,
           "wood": 6
         }
+      },
+      {
+        "campId": "camp.s10.creek",
+        "level": 1,
+        "ownerArmyId": "army.player.escort",
+        "ownerFactionId": "player",
+        "stock": {
+          "food": 10,
+          "wood": 8
+        }
       }
     ],
     "desertion": {
