@@ -8,18 +8,18 @@
   "createParams": {
     "battleId": "battle.s13.jingshan",
     "terrainId": "terrain.s13.jingshan",
-    "attackerArmy": { "schemaVersion": 2, "id": "army.s13.yellow_turban", "name": "精山黄巾残部", "factionId": "yellow_turban", "formationIds": ["formation.s13.yellow_turban.retreat"], "commanderHeroId": "hero.sun_xia", "morale": 52, "resources": { "food": 12, "wood": 10, "iron": 2, "herb": 6 } },
+    "attackerArmy": { "schemaVersion": 2, "id": "army.s13.yellow_turban", "name": "精山黄巾残部", "factionId": "yellow_turban", "formationIds": ["formation.s13.yellow_turban.retreat"], "commanderHeroId": "hero.zhang_liang", "morale": 52, "resources": { "food": 12, "wood": 10, "iron": 2, "herb": 6 } },
     "defenderArmy": { "schemaVersion": 2, "id": "army.s13.han", "name": "精山官军追兵", "factionId": "han_government", "formationIds": ["formation.s13.han.pursuit"], "commanderHeroId": "hero.s13.han_commander", "morale": 76, "resources": { "food": 40, "wood": 18, "iron": 16, "herb": 10 } },
     "attackerMorale": 52,
     "defenderMorale": 76,
-    "attackerCommanderId": "hero.sun_xia",
+    "attackerCommanderId": "hero.zhang_liang",
     "defenderCommanderId": "hero.s13.han_commander",
     "weather": "rain",
     "seed": 31301,
     "logicalTime": 390,
-    "affectedCityId": "city.s09_guangzong_camp",
-    "resourceSourceCityId": "city.s09_guangzong_camp",
-    "resourceDestinationCityId": "city.s09_guangzong_camp",
+    "affectedCityId": "city.s12_xiaquyang",
+    "resourceSourceCityId": "city.s12_xiaquyang",
+    "resourceDestinationCityId": "city.s12_xiaquyang",
     "resourceNodeIds": []
   },
   "outcomePriority": [
