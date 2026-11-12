@@ -14,7 +14,7 @@
       "resultTitle": "精山战场·战果",
       "resultMessage": "精山战果与最终资源投入已经冻结。",
       "settlementMessage": "精山战果已写入战争状态与结局输入。",
-      "interventionMessage": "已投入最后资源进入孙夏阵线。",
+      "interventionMessage": "已投入最后资源，加入黄巾残部阵线。",
       "worldChanges": {},
       "resolvedKey": "s13Resolved",
       "winnerKey": "s13WinnerFactionId",
@@ -23,7 +23,7 @@
     "settlementId": "settlement.s13.jingshan", "nextSceneId": "S14", "confirmIrreversible": true,
     "intro": "精山离最后的退路很近。这里花掉的每一份粮、药和木料，都不会带到结局之地。",
     "choices": [
-      { "id": "observe", "label": "观战", "description": "保留物资，让孙夏按历史结果作战。", "resourceCost": {}, "result": { "battleMode": "observe", "cityDamageDelta": 0.08, "warStrengthDelta": -6 } },
+      { "id": "observe", "label": "观战", "description": "保留物资，让精山战局按历史结果收束。", "resourceCost": {}, "result": { "battleMode": "observe", "cityDamageDelta": 0.08, "warStrengthDelta": -6 } },
       { "id": "intervene", "label": "介入", "description": "投入最后的资源，试着为残部多争一条退路。", "resourceCost": { "food": 12, "herb": 6, "wood": 10 }, "result": { "battleMode": "intervene", "cityDamageDelta": -0.05, "warStrengthDelta": 10 } }
     ],
     "confirmation": "本场消耗将进入结局快照，不可撤回。", "checkpointId": "checkpoint.S13.resolved"

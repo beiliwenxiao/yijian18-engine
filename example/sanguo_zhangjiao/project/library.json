@@ -1994,8 +1994,8 @@
       "aiType": "aggressive",
       "attackRange": 60,
       "experience": 18,
-      "faction": "friendly",
-      "factionId": "yellow_turban",
+      "faction": "han_government",
+      "factionId": "han_government",
       "id": "enemy.s09_granary_guard",
       "imageId": "s09.character.granaryGuard",
       "level": 2,
@@ -3802,13 +3802,13 @@
     {
       "schemaVersion": 2,
       "id": "formation.s13.yellow_turban.retreat",
-      "name": "黄巾孙夏·撤退纵队",
+      "name": "黄巾张梁·撤退纵队",
       "unitIds": [
         "unit.spear",
         "unit.shield",
         "unit.archer"
       ],
-      "leaderHeroId": "hero.sun_xia",
+      "leaderHeroId": "hero.zhang_liang",
       "rows": 2,
       "columns": 4,
       "strategy": "retreat",
@@ -3829,7 +3829,7 @@
         "unit.heavy_cav",
         "unit.horse_archer"
       ],
-      "leaderHeroId": "hero.s13.han_commander",
+      "leaderHeroId": "hero.sun_xia",
       "rows": 2,
       "columns": 3,
       "strategy": "pursuit",
