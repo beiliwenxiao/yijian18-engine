@@ -236,7 +236,12 @@ export class S03S14BattleCoordinator {
           this.scene.s11s12Coordinator?.recordBattleMode?.(sceneId, mode);
         }
         if (sceneId !== 'S13') return { ok: true };
-        return this.scene.s11s14SceneCoordinator.prepareS13Settlement(mode);
+        const prepared = this.scene.s11s14SceneCoordinator.prepareS13Settlement(mode);
+        // B6：介入才把精山变成真实兵力池（观战按历史收束，不上兵）
+        if (prepared?.ok !== false && mode === BattleMode.INTERVENE) {
+          this.scene.s13BattlePoolFlow?.start?.();
+        }
+        return prepared;
       },
       resolveBeforeBattlefield: context => this._resolveS12LowMorale(gameLoader, context),
       beforeBattlefieldStart: ({ sceneId, definition }) => {

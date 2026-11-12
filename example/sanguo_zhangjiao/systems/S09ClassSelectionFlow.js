@@ -38,6 +38,23 @@ const reject = (scene, message, code) => {
 };
 
 const methods = {
+  /**
+   * B6：S09 入伍台词按 S02 分叉口吻分档（黄巾编制 / 客军亲卫），任务链仍是同一条。
+   * 加入线走 dialogue.s09.enlistment，不加入线走 .independent。
+   */
+  openEnlistmentDialogue() {
+    const blackboard = this.gameLoader?.blackboard;
+    const storyState = blackboard?.get?.('storyState') || {};
+    const alignment = blackboard?.get?.('alignment') ?? blackboard?.get?.('factionAlignment')
+      ?? storyState.factionAlignment ?? null;
+    const independent = alignment === 'independent';
+    const dialogueId = independent ? 'dialogue.s09.enlistment.independent' : 'dialogue.s09.enlistment';
+    const system = this.scene?.dialogueSystem || this.dialogueSystem || null;
+    if (!system?.startDialogue) return { ok: false, code: 'dialogueSystemUnavailable' };
+    const started = system.startDialogue(dialogueId) !== false;
+    return started ? { ok: true, dialogueId, alignment } : { ok: false, code: 'dialogueStartFailed', dialogueId };
+  },
+
   async selectClass(payload = {}) {
     const classType = payload.classId || payload.class || ClassType.WARRIOR;
     if (!SUPPORTED_CLASSES.includes(classType) || this._classSelectionBusy) {

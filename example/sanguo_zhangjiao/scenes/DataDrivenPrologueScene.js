@@ -54,6 +54,7 @@ import { SanguoSceneLifecycleCoordinator } from '../systems/SanguoSceneLifecycle
 import { SanguoPlacementCoordinator } from '../systems/SanguoPlacementCoordinator.js';
 import { S01S02Coordinator } from '../systems/S01S02SceneFlow.js';
 import { S02ArmyRescueCoordinator } from '../systems/S02ArmyRescueFlow.js';
+import { S13BattlePoolFlow } from '../systems/S13BattlePoolFlow.js';
 import { SceneTutorialFlow } from '../../../src/core/scene/SceneTutorialFlow.js';
 import { OnboardingUiProjection } from '../../../src/core/scene/OnboardingUiProjection.js';
 import { SceneCampfireService } from '../../../src/core/scene/SceneCampfireService.js';
@@ -187,6 +188,9 @@ export class DataDrivenPrologueScene extends BaseGameScene {
     });
     this.s02ArmyRescueCoordinator = new S02ArmyRescueCoordinator(this);
     this.context.services.s02ArmyRescue = this.s02ArmyRescueCoordinator;
+    // B6：S13 精山兵力池（scale.pool / scale.screen 驱动补员）
+    this.s13BattlePoolFlow = new S13BattlePoolFlow(this);
+    this.context.services.s13BattlePool = this.s13BattlePoolFlow;
 
     // 火堆服务只保存运行态；表现参数由当前 canonical scene gameplay consumer 发布后配置。
     this._campfireService = new SceneCampfireService({

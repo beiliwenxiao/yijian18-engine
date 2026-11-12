@@ -24,6 +24,7 @@
  */
 
 import { normalizeBattleScale } from '../../../src/systems/BattleScale.js';
+import { isPoolExhausted, planRefill, recordPoolDeaths } from '../../../src/systems/BattlePoolReserve.js';
 
 /**
  * 围剿规模：走全局 scale 语义（pool/screen），S02 自实现仍按 1000 池 / 同屏 100。
@@ -122,6 +123,7 @@ export class S02BattleFlow {
       branch,
       assist: branch === 'joined' ? true : assist !== false,
       total: RAID.total,
+      screen: RAID.screenCap,
       reserve: RAID.total - RAID.screenCap,
       defeated: 0,
       bossSpawned: false,
@@ -158,6 +160,7 @@ export class S02BattleFlow {
         branch: story.s02AllegianceJoined === true ? 'joined' : 'independent',
         assist: story.s02RaidAssist !== false,
         total: RAID.total,
+        screen: RAID.screenCap,
         reserve: 0,
         defeated: Number(story.s02RaidDefeated) || 0,
         bossSpawned: story.s02RaidBossSpawned === true,
@@ -194,19 +197,19 @@ export class S02BattleFlow {
     if (alive > this._lastAlive) this._lastAlive = alive;
     if (alive < this._lastAlive) {
       const deaths = this._lastAlive - alive;
-      raid.defeated += deaths;
+      recordPoolDeaths(raid, deaths);
       this._lastAlive = alive;
       this._maybeSpawnBoss(raid);
     }
 
     if (raid.reserve > 0 && alive < RAID.screenCap) {
-      const spawnCount = Math.min(RAID.screenCap - alive, raid.reserve);
+      // B6：补员算术与 S13 精山共用 BattlePoolReserve，避免两套上限/余量算法。
+      const spawnCount = planRefill(raid, alive);
       for (let index = 0; index < spawnCount; index += 1) this._spawnSoldier(raid.defeated + index);
-      raid.reserve -= spawnCount;
       this._lastAlive = alive + spawnCount;
     }
 
-    if (raid.defeated >= RAID.total) {
+    if (isPoolExhausted(raid)) {
       this._victory('一千官军尽没');
     }
   }

@@ -980,9 +980,10 @@
     "cooldown": 1,
     "do": [
       {
-        "action": "startDialogue",
+        "action": "scenario.command",
         "params": {
-          "id": "dialogue.s09.enlistment"
+          "operation": "s09.enlistment.open",
+          "scenarioId": "scenario.command.s09.enlistment.open"
         }
       }
     ],
@@ -1007,6 +1008,24 @@
     "when": {
       "params": {
         "id": "dialogue.s09.enlistment"
+      },
+      "type": "dialogueEnd"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "state.transaction",
+        "params": {
+          "definitionId": "story.s09.enlist"
+        }
+      }
+    ],
+    "id": "trg_s09_accept_enlistment_independent",
+    "once": true,
+    "when": {
+      "params": {
+        "id": "dialogue.s09.enlistment.independent"
       },
       "type": "dialogueEnd"
     }

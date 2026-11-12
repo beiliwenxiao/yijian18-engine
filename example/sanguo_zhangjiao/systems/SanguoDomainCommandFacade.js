@@ -28,6 +28,7 @@ export class SanguoDomainCommandFacade {
       ['scenario.command', 'class.select', (p, context) => scene.s09ClassSelectionCoordinator.selectClass({
         ...p, operationId: context.operationId
       })],
+      ['scenario.command', 's09.enlistment.open', () => scene.s09ClassSelectionCoordinator.openEnlistmentDialogue()],
       ['scenario.command', 'yuzhou.travel', () => scene.s03s08Coordinator.travelToS03()],
       ['scenario.command', 'route.choose', () => scene.s03s08Coordinator.openS04RouteChoice()],
       ['scenario.command', 'mine.prepare', () => scene.s05SceneCoordinator.prepareS05Mine()],

@@ -175,6 +175,9 @@ function updateAfterBase(deltaTime) {
   } else if (this.currentSceneId === 'S02') {
     // v3 任务链：S02 围剿战的占位补员/斩将判定走每帧 tick
     this.s02ArmyRescueCoordinator?.update?.(deltaTime);
+  } else if (this.currentSceneId === 'S13') {
+    // B6：精山按 scale.screen 入场、pool 总池补员，斩孙夏后停补转溃逃
+    this.s13BattlePoolFlow?.update?.(deltaTime);
   } else if (this.currentSceneId === 'S06' || this.currentSceneId === 'S10') {
     this.s10ConstructionCoordinator._updateConstructionRuntime(deltaTime);
   }

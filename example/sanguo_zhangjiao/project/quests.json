@@ -1521,7 +1521,7 @@
         "action": "showTip",
         "id": "intro.guidance",
         "params": {
-          "text": "先与张角交谈加入黄巾，再到三面军旗下确认职业。"
+          "text": "先与张角交谈报备入营（黄巾编制或客军均可），再到三面军旗下确认职业。"
         },
         "title": "初入营伍",
         "type": "action"
@@ -1530,7 +1530,7 @@
         "id": "enlist",
         "objectiveType": "commit.fact",
         "target": "story.s09.enlist",
-        "title": "回应张角入伍之邀",
+        "title": "回应张角入营之邀",
         "type": "objective"
       },
       {
@@ -1573,7 +1573,7 @@
         "type": "objective"
       }
     ],
-    "title": "加入黄巾"
+    "title": "入营报备"
   },
   {
     "accept": {

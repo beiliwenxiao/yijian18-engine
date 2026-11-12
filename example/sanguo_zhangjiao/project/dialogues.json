@@ -316,7 +316,7 @@
       "choose": {
         "portrait": "zhangjiao",
         "speaker": "张角",
-        "text": "去看三面军旗。张梁授战士之法，张宝授弓手之法；若愿研习符法军略，便来承军师之责。职业一旦确认，不可更改。"
+        "text": "去看三面军旗。张梁授战士之法，张宝授弓手之法；若愿研习符法军略，便来承军师之责。职业一旦确认，不可更改。入册之后，战后所得按编制入公账，不会少你一份。"
       },
       "start": {
         "nextNode": "answer",
@@ -325,8 +325,34 @@
         "text": "苍生困于饥疫，空有一人之勇救不了天下。你可愿留下，与我们一道护送粮药、救济流民？"
       }
     },
+    "runtimeStarted": true,
     "startNode": "start",
     "title": "加入黄巾"
+  },
+  {
+    "id": "dialogue.s09.enlistment.independent",
+    "nodes": {
+      "answer": {
+        "nextNode": "choose",
+        "portrait": "player",
+        "speaker": "你",
+        "text": "我以客军相助，不穿黄巾号衣；打完这一仗，按斩获分账。"
+      },
+      "choose": {
+        "portrait": "zhangjiao",
+        "speaker": "张角",
+        "text": "客军也授战法。三面军旗照旧：张梁授战士之法，张宝授弓手之法；若愿研习符法军略，也可来问。职业一旦确认，不可更改。客军所得按斩获自取，不必入公账。"
+      },
+      "start": {
+        "nextNode": "answer",
+        "portrait": "zhangjiao",
+        "speaker": "张角",
+        "text": "苍生困于饥疫，空有一人之勇救不了天下。你不入黄巾名册，只带亲卫来助——这份情，我记下。"
+      }
+    },
+    "runtimeStarted": true,
+    "startNode": "start",
+    "title": "客军报备"
   },
   {
     "id": "dialogue.s09.arrival",
@@ -343,7 +369,7 @@
       },
       "tip": {
         "speaker": "旁白",
-        "text": "（走近张角即可交谈入伍；职业确认后不可更改。）"
+        "text": "（走近张角即可交谈报备入营；职业确认后不可更改。）"
       }
     },
     "startNode": "start",
