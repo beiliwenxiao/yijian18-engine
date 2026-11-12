@@ -422,7 +422,7 @@ export class S03S14BattleCoordinator {
    */
   _resolveBattleIdentity({ sceneId } = {}) {
     const scene = this.scene;
-    const player = scene?.player || scene?.getPlayer?.() || null;
+    const player = scene?.playerEntity || scene?.player || scene?.getPlayer?.() || null;
     if (!player || player.dead === true) return 'observe';
     if (!BATTLE_SCENE_IDS.includes(sceneId)) return 'observe';
     const armyId = scene.playerArmyId || 'army.player.escort';
