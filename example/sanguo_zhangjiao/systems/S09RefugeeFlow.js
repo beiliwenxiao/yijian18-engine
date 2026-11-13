@@ -130,13 +130,22 @@ export class S09RefugeeCoordinator extends SceneFlowCoordinator {
     return true;
   }
 
-  /** 从粮草账本投影条目；无账本/无条目时隐藏。 */
+  /** 从粮草账本投影条目；无账本/无条目/场景开关关闭时隐藏。 */
   updateSupplyStatus(gameLoader = this.scene.gameLoader) {
     const scene = this.scene;
     const panel = scene.supplyStatusBar;
     const ledger = scene.foodLedgerSystem || scene.context?.systems?.logistics || null;
     if (!panel || !ledger) {
       panel?.hide?.();
+      return false;
+    }
+    // 场景维度 HUD 开关：场景数据 gameplay.hud.supply === false 时整条隐藏
+    // （S01 荒原求生不显示军需框；判定读场景数据，不在代码里写场景名）
+    const sceneData = scene._worldLoadSession?.getSceneData?.(scene.currentSceneId)
+      || scene._worldLoadSession?.getChunk?.(scene.currentSceneId)?.sceneData
+      || null;
+    if (sceneData?.gameplay?.hud?.supply === false) {
+      panel.hide();
       return false;
     }
     const entries = [];

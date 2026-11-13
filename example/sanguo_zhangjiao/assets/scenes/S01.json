@@ -799,8 +799,8 @@
           "kind": "item",
           "ref": "prop.firefly",
           "type": "ref",
-          "x": 825.7852061811626,
-          "y": 334.10972615896804
+          "x": 246.64606704202356,
+          "y": 386.6422586915006
         },
         {
           "editor": {
@@ -811,8 +811,8 @@
           "kind": "item",
           "ref": "prop.firefly",
           "type": "ref",
-          "x": 838.9,
-          "y": 343.2
+          "x": 135.47657657657658,
+          "y": 470.04684684684685
         },
         {
           "collision": {
@@ -1727,7 +1727,11 @@
     ]
   },
   "decorations": [],
-  "gameplay": {},
+  "gameplay": {
+    "hud": {
+      "supply": false
+    }
+  },
   "height": 720,
   "imageAssets": {
     "img.s01-s01_right": {

@@ -167,6 +167,11 @@
     }
   ],
   "backgroundColor": "#392f24",
+  "gameplay": {
+    "hud": {
+      "supply": false
+    }
+  },
   "height": 720,
   "imageAssets": {
     "img.s01-shelter_in": {
