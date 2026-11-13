@@ -90,7 +90,9 @@ export class WorldMapPanel extends UIElement {
       getWorldLogic: null,
       getRoutePreview: null,
       getOrderDefinitions: null,
-      getPendingEncounter: null
+      getPendingEncounter: null,
+      // 建筑前 NPC：只读 storyState.buildingNpcUnlocked（未解锁由面板置灰）
+      getNpcMarkers: null
     };
 
     // 地图像素尺寸与滚动量（地图坐标系，px）
@@ -107,6 +109,7 @@ export class WorldMapPanel extends UIElement {
     this._cities = [];
     this._logicNodes = [];
     this._armies = [];
+    this._npcs = [];
     this._preview = null;
     this._previewDirty = true;
 
@@ -117,6 +120,8 @@ export class WorldMapPanel extends UIElement {
     this._pendingOrder = null;
     this.onSelect = null;
     this.onCommand = null;
+    /** 建筑 NPC 点选回调（已解锁才打开对话；未解锁只给提示） */
+    this.onNpcSelect = null;
     /** 四选确认回调（4C）：({unitId, encounterId, choice}) => void */
     this.onEncounterDecide = null;
     /** @type {Array<{x:number,y:number,w:number,h:number,choice:string,enabled:boolean}>} */
@@ -128,10 +133,11 @@ export class WorldMapPanel extends UIElement {
   }
 
   /** 选中/下令回调（宿主转 commands）；null 时只显示。 */
-  setHandlers({ onSelect = null, onCommand = null, onEncounterDecide = null } = {}) {
+  setHandlers({ onSelect = null, onCommand = null, onEncounterDecide = null, onNpcSelect = null } = {}) {
     this.onSelect = typeof onSelect === 'function' ? onSelect : null;
     this.onCommand = typeof onCommand === 'function' ? onCommand : null;
     this.onEncounterDecide = typeof onEncounterDecide === 'function' ? onEncounterDecide : null;
+    this.onNpcSelect = typeof onNpcSelect === 'function' ? onNpcSelect : null;
     return this;
   }
 
@@ -153,6 +159,7 @@ export class WorldMapPanel extends UIElement {
     this._refreshCities();
     this._refreshLogicNodes();
     this._refreshArmies();
+    this._refreshNpcs();
     this._previewDirty = true;
     this._rebuildStaticCache();
     this.refreshLayout();
@@ -477,17 +484,39 @@ export class WorldMapPanel extends UIElement {
     }
   }
 
-  _markerScreen(marker) {
-    const map = this.worldToMap(marker.x, marker.y);
+  /** 建筑前 NPC 标记（解锁事实由数据源给出；面板只负责置灰与命中）。 */
+  _refreshNpcs() {
+    const raw = this._providers.getNpcMarkers?.();
+    const list = Array.isArray(raw) ? raw : [];
+    this._npcs = [];
+    for (const marker of list) {
+      const x = Number(marker?.x);
+      const y = Number(marker?.y);
+      if (!Number.isFinite(x) || !Number.isFinite(y)) continue;
+      this._npcs.push({
+        id: String(marker.id || `npc:${marker.npcId || ''}`),
+        npcId: String(marker.npcId || ''),
+        kind: 'npc',
+        name: marker.name || String(marker.npcId || ''),
+        title: marker.title || '',
+        sceneId: marker.sceneId || '',
+        unlocked: marker.unlocked === true,
+        x,
+        y
+      });
+    }
+  }
+
+  _markerScreen(marker) {    const map = this.worldToMap(marker.x, marker.y);
     return this.mapToScreen(map.x, map.y);
   }
 
-  /** 命中标记：军团 > 逻辑节点 > 旧城池推导（14px 半径）。 */
+  /** 命中标记：军团 > 建筑 NPC > 逻辑节点 > 旧城池推导（14px 半径）。 */
   _markerAt(x, y) {
     const legacies = this._logicNodes.length === 0
       ? this._cities.map(city => ({ ...city, kind: 'city' }))
       : [];
-    const candidates = [...this._armies, ...this._logicNodes, ...legacies];
+    const candidates = [...this._armies, ...this._npcs, ...this._logicNodes, ...legacies];
     let best = null;
     for (const marker of candidates) {
       const screen = this._markerScreen(marker);
@@ -503,6 +532,13 @@ export class WorldMapPanel extends UIElement {
    * 否则正常打开指令环。目标坐标只取自标记，不做任何通行/可达判定。
    */
   _handleMarkerClick(marker) {
+    // 建筑 NPC：不打开指令环，直接交给宿主打开同一套对话（未解锁由宿主给提示）。
+    if (marker?.kind === 'npc') {
+      this._ring.close();
+      this._selected = null;
+      this.onNpcSelect?.(marker);
+      return;
+    }
     const pending = this._pendingOrder;
     if (pending) {
       this._pendingOrder = null;
@@ -722,6 +758,7 @@ export class WorldMapPanel extends UIElement {
     this._renderArmyRoutes(ctx);
     this._renderArmyFlags(ctx);
     this._renderLogicMarkers(ctx);
+    this._renderNpcMarkers(ctx);
 
     // 玩家
     const player = this._playerWorldPosition();
@@ -880,6 +917,32 @@ export class WorldMapPanel extends UIElement {
       ctx.font = '11px system-ui, "Microsoft YaHei", sans-serif';
       ctx.textAlign = 'left';
       ctx.fillText(node.name || '', screen.x + half + 3, screen.y - 2);
+      ctx.textAlign = 'center';
+    }
+  }
+
+  /** 建筑 NPC 标记：已解锁实心可点，未解锁置灰（点击由宿主给「先到实地」提示）。 */
+  _renderNpcMarkers(ctx) {
+    for (const npc of this._npcs) {
+      const screen = this._markerScreen(npc);
+      if (!this._inViewport(screen.x, screen.y, 30)) continue;
+      const color = npc.unlocked ? '#ffe9b0' : 'rgba(240, 217, 168, 0.28)';
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(screen.x, screen.y, 5, 0, Math.PI * 2);
+      ctx.stroke();
+      if (npc.unlocked) {
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(screen.x, screen.y, 2.2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.fillStyle = color;
+      ctx.font = '11px system-ui, "Microsoft YaHei", sans-serif';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(npc.name || '', screen.x + 8, screen.y - 2);
       ctx.textAlign = 'center';
     }
   }

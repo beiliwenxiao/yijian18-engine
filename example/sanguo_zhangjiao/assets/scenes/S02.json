@@ -946,6 +946,46 @@
           "y": 470
         },
         {
+          "group": "S02-camp-staff",
+          "id": "S02-npc-recruit-officer",
+          "kind": "npc",
+          "name": "征召官",
+          "ref": "npc.bnp_recruit_officer",
+          "spawnWhen": {
+            "blackboardKey": "storyState",
+            "equals": true,
+            "path": "s02RevoltConfirmed"
+          },
+          "tags": [
+            "camp",
+            "npc",
+            "recruit"
+          ],
+          "type": "ref",
+          "x": 700,
+          "y": 370
+        },
+        {
+          "group": "S02-camp-staff",
+          "id": "S02-npc-muster-officer",
+          "kind": "npc",
+          "name": "收编官",
+          "ref": "npc.bnp_muster_officer",
+          "spawnWhen": {
+            "blackboardKey": "storyState",
+            "equals": true,
+            "path": "s02RevoltConfirmed"
+          },
+          "tags": [
+            "camp",
+            "npc",
+            "muster"
+          ],
+          "type": "ref",
+          "x": 760,
+          "y": 520
+        },
+        {
           "group": "S02-camp-buildings",
           "id": "S02-wall-north-1",
           "kind": "building",
@@ -2061,6 +2101,48 @@
           "width": 150,
           "x": 745,
           "y": 300
+        },
+        {
+          "activeWhen": {
+            "blackboardKey": "storyState",
+            "equals": true,
+            "path": "s02RevoltConfirmed"
+          },
+          "event": "interact",
+          "height": 80,
+          "id": "S02-binding-bnp-recruit",
+          "name": "征召官：招募补员",
+          "pointerRadius": 56,
+          "prompt": "{interact}与征召官交谈（补员）",
+          "radius": 96,
+          "target": "S02-npc-recruit-officer",
+          "targetMode": "id",
+          "triggerId": "trg_bnp_s02_recruit_interact",
+          "type": "trigger",
+          "width": 80,
+          "x": 700,
+          "y": 370
+        },
+        {
+          "activeWhen": {
+            "blackboardKey": "storyState",
+            "equals": true,
+            "path": "s02RevoltConfirmed"
+          },
+          "event": "interact",
+          "height": 80,
+          "id": "S02-binding-bnp-muster",
+          "name": "收编官：收编卫兵",
+          "pointerRadius": 56,
+          "prompt": "{interact}与收编官交谈（收编）",
+          "radius": 96,
+          "target": "S02-npc-muster-officer",
+          "targetMode": "id",
+          "triggerId": "trg_bnp_s02_muster_interact",
+          "type": "trigger",
+          "width": 80,
+          "x": 760,
+          "y": 520
         },
         {
           "activeWhen": {

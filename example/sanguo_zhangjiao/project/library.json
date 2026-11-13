@@ -2823,6 +2823,75 @@
         "width": 56
       },
       "title": "持饼饥民"
+    },
+    {
+      "dialogueId": "",
+      "faction": "friendly",
+      "id": "npc.bnp_recruit_officer",
+      "idleText": "征召官正在核对名册。",
+      "interaction": {
+        "prompt": "{interact}与征召官交谈（补员）",
+        "radius": 84,
+        "trigger": "interact"
+      },
+      "name": "征召官",
+      "npcType": "ally_npc",
+      "portrait": "",
+      "questId": "",
+      "renderStyle": "",
+      "shopId": "",
+      "sprite": {
+        "height": 80,
+        "isStatic": true,
+        "width": 56
+      },
+      "title": "征召处"
+    },
+    {
+      "dialogueId": "",
+      "faction": "friendly",
+      "id": "npc.bnp_muster_officer",
+      "idleText": "收编官望着营外，清点散兵。",
+      "interaction": {
+        "prompt": "{interact}与收编官交谈（收编）",
+        "radius": 84,
+        "trigger": "interact"
+      },
+      "name": "收编官",
+      "npcType": "ally_npc",
+      "portrait": "",
+      "questId": "",
+      "renderStyle": "",
+      "shopId": "",
+      "sprite": {
+        "height": 80,
+        "isStatic": true,
+        "width": 56
+      },
+      "title": "兵营"
+    },
+    {
+      "dialogueId": "",
+      "faction": "friendly",
+      "id": "npc.bnp_rank_officer",
+      "idleText": "军府主簿在灯下誊写官牒。",
+      "interaction": {
+        "prompt": "{interact}与军府主簿交谈（官勋）",
+        "radius": 84,
+        "trigger": "interact"
+      },
+      "name": "军府主簿",
+      "npcType": "ally_npc",
+      "portrait": "",
+      "questId": "",
+      "renderStyle": "",
+      "shopId": "",
+      "sprite": {
+        "height": 80,
+        "isStatic": true,
+        "width": 56
+      },
+      "title": "营府"
     }
   ],
   "shops": [],
@@ -3079,6 +3148,25 @@
         "gate"
       ],
       "width": 150
+    },
+    {
+      "buildingType": "generic",
+      "footprint": {
+        "depth": 30,
+        "width": 120
+      },
+      "height": 120,
+      "id": "building.s10.commandTent",
+      "imageId": "s09.environment.yellowTurbanTent",
+      "maxHp": 180,
+      "name": "军帐",
+      "schemaVersion": 1,
+      "tags": [
+        "s10",
+        "camp",
+        "command"
+      ],
+      "width": 170
     }
   ],
   "resourceNodes": [

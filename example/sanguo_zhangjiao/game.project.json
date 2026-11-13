@@ -628,6 +628,17 @@
     },
     "reinforceDelayMs": 8000
   },
+  "buildingNpc": {
+    "recruit": {
+      "foodPerHead": 1
+    },
+    "muster": {
+      "foodPerHead": 1
+    },
+    "rank": {
+      "foodPerRank": 8
+    }
+  },
   "armyOrders": {
     "arrivalRadius": 24,
     "marchSpeed": 120,

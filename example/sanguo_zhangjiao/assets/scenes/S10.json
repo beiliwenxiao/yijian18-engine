@@ -271,6 +271,66 @@
           "overrides": {
             "quantity": 18
           }
+        },
+        {
+          "group": "S10-new-camp",
+          "id": "S10-building-command-tent",
+          "kind": "building",
+          "name": "军帐",
+          "ref": "building.s10.commandTent",
+          "spawnWhen": {
+            "blackboardKey": "storyState",
+            "equals": true,
+            "path": "s10CampRelocation.completed"
+          },
+          "tags": [
+            "camp",
+            "building",
+            "command"
+          ],
+          "type": "ref",
+          "x": 330,
+          "y": 300
+        },
+        {
+          "group": "S10-camp-staff",
+          "id": "S10-npc-recruit-officer",
+          "kind": "npc",
+          "name": "征召官",
+          "ref": "npc.bnp_recruit_officer",
+          "spawnWhen": {
+            "blackboardKey": "storyState",
+            "equals": true,
+            "path": "s10CampRelocation.completed"
+          },
+          "tags": [
+            "camp",
+            "npc",
+            "recruit"
+          ],
+          "type": "ref",
+          "x": 270,
+          "y": 390
+        },
+        {
+          "group": "S10-camp-staff",
+          "id": "S10-npc-rank-officer",
+          "kind": "npc",
+          "name": "军府主簿",
+          "ref": "npc.bnp_rank_officer",
+          "spawnWhen": {
+            "blackboardKey": "storyState",
+            "equals": true,
+            "path": "s10CampRelocation.completed"
+          },
+          "tags": [
+            "camp",
+            "npc",
+            "rank"
+          ],
+          "type": "ref",
+          "x": 390,
+          "y": 390
         }
       ]
     },
@@ -407,6 +467,48 @@
           "radius": 115,
           "pointerRadius": 64,
           "prompt": "{interact}确认工事状态并前往广宗"
+        },
+        {
+          "activeWhen": {
+            "blackboardKey": "storyState",
+            "equals": true,
+            "path": "s10CampRelocation.completed"
+          },
+          "event": "interact",
+          "height": 80,
+          "id": "S10-binding-bnp-recruit",
+          "name": "征召官：招募补员",
+          "pointerRadius": 56,
+          "prompt": "{interact}与征召官交谈（补员）",
+          "radius": 96,
+          "target": "S10-npc-recruit-officer",
+          "targetMode": "id",
+          "triggerId": "trg_bnp_s02_recruit_interact",
+          "type": "trigger",
+          "width": 80,
+          "x": 270,
+          "y": 390
+        },
+        {
+          "activeWhen": {
+            "blackboardKey": "storyState",
+            "equals": true,
+            "path": "s10CampRelocation.completed"
+          },
+          "event": "interact",
+          "height": 80,
+          "id": "S10-binding-bnp-rank",
+          "name": "军府主簿：官勋成长",
+          "pointerRadius": 56,
+          "prompt": "{interact}与军府主簿交谈（官勋）",
+          "radius": 96,
+          "target": "S10-npc-rank-officer",
+          "targetMode": "id",
+          "triggerId": "trg_bnp_s10_rank_interact",
+          "type": "trigger",
+          "width": 80,
+          "x": 390,
+          "y": 390
         }
       ]
     }

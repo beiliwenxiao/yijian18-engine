@@ -87,6 +87,9 @@ export class SanguoDomainCommandFacade {
       ['scenario.command', 's02.raid.defeat', () => scene.s02ArmyRescueCoordinator.defeatRaid()],
       ['scenario.command', 's02.steward.craft', () => scene.s02ArmyRescueCoordinator.markSteward('story.s02.steward.craft')],
       ['scenario.command', 's02.steward.depart', () => scene.s02ArmyRescueCoordinator.departNow()],
+      // 建筑前 NPC：场景交互与大地图点选共用同一入口/业务
+      ['scenario.command', 'bnp.interact', p => scene.buildingNpcFlow.interact({ ...p, source: p?.source || 'scene' })],
+      ['scenario.command', 'bnp.execute', p => scene.buildingNpcFlow.execute(p)],
       ['scenario.command', 'player.wound.apply', () => scene.s02ArmyRescueCoordinator.applyWoundModifiers()],
       ['scenario.command', 'player.wound.treat', () => scene.s02ArmyRescueCoordinator.treatWound()],
       ['construction.command', 'construction.start.s01', p => scene._s01s02Coordinator.startShelterConstruction(p)],

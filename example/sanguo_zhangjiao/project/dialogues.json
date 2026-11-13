@@ -1525,5 +1525,104 @@
     },
     "startNode": "start",
     "title": "广宗告急"
+  },
+  {
+    "id": "dialogue.bnp.s02.recruit",
+    "nodes": {
+      "start": {
+        "choices": [
+          {
+            "id": "confirm",
+            "nextNode": "done",
+            "text": "补员（耗粮）"
+          },
+          {
+            "id": "cancel",
+            "nextNode": "cancel",
+            "text": "再说"
+          }
+        ],
+        "portrait": "",
+        "speaker": "征召官",
+        "text": "征召官摊开名册，等你回话。"
+      },
+      "done": {
+        "speaker": "征召官",
+        "text": "征召官提笔在名册上添了几笔。"
+      },
+      "cancel": {
+        "speaker": "征召官",
+        "text": "“想好了再来。”征召官把名册收回案上。"
+      }
+    },
+    "runtimeStarted": true,
+    "startNode": "start",
+    "title": "征召处·补员"
+  },
+  {
+    "id": "dialogue.bnp.s02.muster",
+    "nodes": {
+      "start": {
+        "choices": [
+          {
+            "id": "confirm",
+            "nextNode": "done",
+            "text": "收编（耗粮）"
+          },
+          {
+            "id": "cancel",
+            "nextNode": "cancel",
+            "text": "再说"
+          }
+        ],
+        "portrait": "",
+        "speaker": "收编官",
+        "text": "收编官望着营外，等你下令。"
+      },
+      "done": {
+        "speaker": "收编官",
+        "text": "收编官朝营外挥了挥手。"
+      },
+      "cancel": {
+        "speaker": "收编官",
+        "text": "“散兵在外多待一日，就少一人。”收编官没有再多说。"
+      }
+    },
+    "runtimeStarted": true,
+    "startNode": "start",
+    "title": "兵营·收编"
+  },
+  {
+    "id": "dialogue.bnp.s10.rank",
+    "nodes": {
+      "start": {
+        "choices": [
+          {
+            "id": "confirm",
+            "nextNode": "done",
+            "text": "擢升（耗粮）"
+          },
+          {
+            "id": "cancel",
+            "nextNode": "cancel",
+            "text": "再说"
+          }
+        ],
+        "portrait": "",
+        "speaker": "军府主簿",
+        "text": "主簿展开官牒，等你画押。"
+      },
+      "done": {
+        "speaker": "军府主簿",
+        "text": "主簿研墨，准备书写官牒。"
+      },
+      "cancel": {
+        "speaker": "军府主簿",
+        "text": "“官牒先收着，想好了再来。”主簿把印绶放回匣中。"
+      }
+    },
+    "runtimeStarted": true,
+    "startNode": "start",
+    "title": "营府·官勋"
   }
 ]

@@ -3222,5 +3222,137 @@
       "params": {},
       "type": "interact"
     }
+  },
+  {
+    "do": [
+      {
+        "action": "scenario.command",
+        "params": {
+          "npcId": "recruit",
+          "operation": "bnp.interact",
+          "scenarioId": "scenario.command.bnp.interact",
+          "source": "scene"
+        },
+        "stepId": "bnp-recruit-interact"
+      }
+    ],
+    "id": "trg_bnp_s02_recruit_interact",
+    "name": "S02 征召处：与征召官交谈（招募补员）",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "scenario.command",
+        "params": {
+          "npcId": "muster",
+          "operation": "bnp.interact",
+          "scenarioId": "scenario.command.bnp.interact",
+          "source": "scene"
+        },
+        "stepId": "bnp-muster-interact"
+      }
+    ],
+    "id": "trg_bnp_s02_muster_interact",
+    "name": "S02 兵营：与收编官交谈（收编卫兵）",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "scenario.command",
+        "params": {
+          "npcId": "rank",
+          "operation": "bnp.interact",
+          "scenarioId": "scenario.command.bnp.interact",
+          "source": "scene"
+        },
+        "stepId": "bnp-rank-interact"
+      }
+    ],
+    "id": "trg_bnp_s10_rank_interact",
+    "name": "S10 营府：与军府主簿交谈（官勋成长）",
+    "once": false,
+    "when": {
+      "params": {},
+      "type": "interact"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "scenario.command",
+        "params": {
+          "npcId": "recruit",
+          "operation": "bnp.execute",
+          "scenarioId": "scenario.command.bnp.execute"
+        },
+        "stepId": "bnp-recruit-confirm"
+      }
+    ],
+    "id": "trg_bnp_s02_recruit_confirm",
+    "name": "征召处：确认补员（唯一结算是 bnp.execute）",
+    "once": false,
+    "when": {
+      "params": {
+        "choiceId": "confirm",
+        "id": "dialogue.bnp.s02.recruit"
+      },
+      "type": "dialogueChoice"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "scenario.command",
+        "params": {
+          "npcId": "muster",
+          "operation": "bnp.execute",
+          "scenarioId": "scenario.command.bnp.execute"
+        },
+        "stepId": "bnp-muster-confirm"
+      }
+    ],
+    "id": "trg_bnp_s02_muster_confirm",
+    "name": "兵营：确认收编（唯一结算是 bnp.execute）",
+    "once": false,
+    "when": {
+      "params": {
+        "choiceId": "confirm",
+        "id": "dialogue.bnp.s02.muster"
+      },
+      "type": "dialogueChoice"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "scenario.command",
+        "params": {
+          "npcId": "rank",
+          "operation": "bnp.execute",
+          "scenarioId": "scenario.command.bnp.execute"
+        },
+        "stepId": "bnp-rank-confirm"
+      }
+    ],
+    "id": "trg_bnp_s10_rank_confirm",
+    "name": "营府：确认擢升（唯一结算是 bnp.execute）",
+    "once": false,
+    "when": {
+      "params": {
+        "choiceId": "confirm",
+        "id": "dialogue.bnp.s10.rank"
+      },
+      "type": "dialogueChoice"
+    }
   }
 ]

@@ -3330,5 +3330,112 @@
         }
       ]
     }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.bnp.recruit",
+    "name": "征召处：补员落册（亲卫编制 + 实际扣粮）",
+    "transaction": {
+      "writes": [
+        {
+          "path": "s02RecruitCount",
+          "target": "story",
+          "value": {
+            "$get": "payload.count",
+            "default": 0
+          }
+        },
+        {
+          "path": "s02GuardCap",
+          "target": "story",
+          "value": {
+            "$get": "payload.cap",
+            "default": 0
+          }
+        },
+        {
+          "path": "bnpRecruitFood",
+          "target": "story",
+          "value": {
+            "$get": "payload.food",
+            "default": 0
+          }
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.bnp.muster",
+    "name": "兵营：收编散兵落册",
+    "transaction": {
+      "writes": [
+        {
+          "path": "s02RecruitCount",
+          "target": "story",
+          "value": {
+            "$get": "payload.count",
+            "default": 0
+          }
+        },
+        {
+          "path": "s02GuardCap",
+          "target": "story",
+          "value": {
+            "$get": "payload.cap",
+            "default": 0
+          }
+        },
+        {
+          "path": "bnpMusterLast",
+          "target": "story",
+          "value": {
+            "$get": "payload.absorbed",
+            "default": 0
+          }
+        },
+        {
+          "path": "bnpMusterFood",
+          "target": "story",
+          "value": {
+            "$get": "payload.food",
+            "default": 0
+          }
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.bnp.rank",
+    "name": "营府：官勋擢升（唯一写 playerRank 的入口）",
+    "transaction": {
+      "writes": [
+        {
+          "path": "playerRank",
+          "target": "story",
+          "value": {
+            "$get": "payload.rank",
+            "default": null
+          }
+        },
+        {
+          "path": "s02GuardCap",
+          "target": "story",
+          "value": {
+            "$get": "payload.cap",
+            "default": 0
+          }
+        },
+        {
+          "path": "bnpRankFood",
+          "target": "story",
+          "value": {
+            "$get": "payload.food",
+            "default": 0
+          }
+        }
+      ]
+    }
   }
 ]

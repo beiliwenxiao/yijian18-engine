@@ -374,7 +374,9 @@ export class ScenePanelLayout {
       getRoutePreview: region => scene.worldRouteLayer?.buildPreview?.(region) || null,
       getOrderDefinitions: () => scene.armyOrderSystem?.orderDefinitions || null,
       // 4C：撞见遭遇时的四选确认（逻辑判定已在场景层暂停，面板只负责展示与回传选择）
-      getPendingEncounter: () => scene.armyOrderFlow?.getPendingEncounter?.() || null
+      getPendingEncounter: () => scene.armyOrderFlow?.getPendingEncounter?.() || null,
+      // 建筑前 NPC（首次实地交互解锁；大地图点选复用同一套对话/命令）
+      getNpcMarkers: () => scene.buildingNpcFlow?.getMapMarkers?.() || []
     });
     scene.worldMapPanel.setHandlers({
       onSelect: marker => {
@@ -382,6 +384,8 @@ export class ScenePanelLayout {
       },
       // 指令环 → 权威命令网关（unit.order）；面板只提供目标坐标，不判定通行。
       onCommand: command => this._issueWorldCommand(scene, command),
+      // 建筑 NPC：未解锁给提示，已解锁打开同一套对话（业务仍走 bnp.execute）
+      onNpcSelect: marker => scene.buildingNpcFlow?.interact?.({ npcId: marker?.npcId, source: 'map' }),
       // 四选 → SceneArmyOrderFlow.decideEncounter（唯一写 armyStates 的入口）
       onEncounterDecide: payload => scene.armyOrderFlow?.decideEncounter?.(payload)
     });
