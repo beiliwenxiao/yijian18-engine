@@ -346,13 +346,14 @@ describe('QuestRuntime Quest v2 编译器', () => {
     expect(loader.questTaskDefinitions).toEqual([]);
     const compiled = compileQuestProject(project);
     // 新基线：S02-S14 主线全部任务化（S02 verdict/rescue/summons、S09 joinYellowTurban、
-    // S03-S08/S10-S14 薄任务串接），共 16 条 quest 定义
+    // S03-S08/S10-S14 薄任务串接）+ 4C 支线样板 task.s09.encounterPatrol，共 17 条 quest 定义
     expect(compiled.taskGraphs.map(graph => graph.id)).toEqual([
       'task.s01.survival',
       'task.s02.verdict',
       'task.s02.rescue',
       'task.s02.summons',
       'task.s09.joinYellowTurban',
+      'task.s09.encounterPatrol',
       'task.s03.yingchuanBattle',
       'task.s04.changsheDefense',
       'task.s05.wanchengOutskirts',
@@ -519,8 +520,9 @@ describe('阶段③ S01 迁移契约：quest 编译产物与手写任务图逐�
     //   围剿胜利/拾荒者遭遇×2/北上广宗出口，手写 trg_s02_* 七个已删除）= 84
     //   + S02 举事步骤 uprising（张角举事、荒村转军营）= 85
     //   + B3 沿溪立营交接动作组（S10 after_completeRelocation：交接对话 + 归属事实）= 79 为新基线
+    //   + 4C 支线样板 task.s09.encounterPatrol（accept / 入营后集结 / 遭遇结算提示）= 82
     const triggers = compileQuestProject(project).triggers;
-    expect(triggers.length).toBe(79);
+    expect(triggers.length).toBe(82);
     expect(triggers.slice(0, 7).map(trigger => trigger.id)).toEqual([
       'trg_task.s01.survival_intro',
       'trg_task.s01.survival_after_lightCampfire',
@@ -536,6 +538,7 @@ describe('阶段③ S01 迁移契约：quest 编译产物与手写任务图逐�
       'trg_task.s02.rescue_accept',
       'trg_task.s02.summons_accept',
       'trg_task.s09.joinYellowTurban_accept',
+      'trg_task.s09.encounterPatrol_accept',
       'trg_task.s03.yingchuanBattle_accept',
       'trg_task.s04.changsheDefense_accept',
       'trg_task.s05.wanchengOutskirts_accept',
@@ -551,6 +554,11 @@ describe('阶段③ S01 迁移契约：quest 编译产物与手写任务图逐�
     // S02 v3 任务链：verdict 由场景进入接取；rescue/summons 由前置任务完成接取
     expect(triggers.find(trigger => trigger.id === 'trg_task.s02.verdict_accept').when)
       .toEqual({ type: 'sceneEnter', params: { sceneId: 'S02' } });
+    // 4C 支线样板：S09 进入接取，结算挂在 unit.encounterResolved 触发的 trg_s09_encounter_resolved 上
+    expect(triggers.find(trigger => trigger.id === 'trg_task.s09.encounterPatrol_accept').when)
+      .toEqual({ type: 'sceneEnter', params: { sceneId: 'S09' } });
+    expect(triggers.find(trigger => trigger.id === 'trg_task.s09.encounterPatrol_after_patrol.resolve').when)
+      .toEqual({ type: 'triggerSucceeded', params: { triggerId: 'trg_s09_encounter_resolved' } });
     expect(triggers.find(trigger => trigger.id === 'trg_task.s02.rescue_accept').when)
       .toEqual({ type: 'task.completed', params: { definitionId: 'task.s02.verdict' } });
     // verdict 分支选项目标 + 选项段（救/不管由任务步骤编译）

@@ -2688,6 +2688,54 @@
   {
     "do": [
       {
+        "action": "army.form",
+        "params": {
+          "kind": "army",
+          "factionId": "han_government",
+          "position": {
+            "x": 16000,
+            "y": 5800
+          },
+          "roster": {
+            "count": 30
+          },
+          "sceneId": "S09",
+          "unitId": "army.s09.field_patrol"
+        },
+        "stepId": "s09-encounter-patrol"
+      }
+    ],
+    "id": "trg_s09_encounter_patrol",
+    "name": "4C 支线样板：进入 S09 时在伊阙道（city.s09→pass.yique）投放 30 人官军游骑",
+    "once": true,
+    "when": {
+      "params": {
+        "sceneId": "S09"
+      },
+      "type": "sceneEnter"
+    }
+  },
+  {
+    "do": [
+      {
+        "action": "s09Encounter.recordOutcome",
+        "params": {},
+        "stepId": "s09-encounter-outcome"
+      }
+    ],
+    "id": "trg_s09_encounter_resolved",
+    "name": "4C 支线样板：伊阙道遭遇四选结算 → story.s09.encounter.outcome",
+    "once": false,
+    "when": {
+      "params": {
+        "unitId": "army.player.escort"
+      },
+      "type": "unit.encounterResolved"
+    }
+  },
+  {
+    "do": [
+      {
         "action": "state.transaction",
         "params": {
           "definitionId": "story.s58.travel.east"

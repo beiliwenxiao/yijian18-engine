@@ -704,6 +704,39 @@
           "overrides": {
             "aiActive": false
           }
+        },
+        {
+          "id": "S09-escort-1",
+          "type": "ref",
+          "kind": "soldier",
+          "ref": "enemy.s02_militia",
+          "armyId": "army.player.escort",
+          "group": "S09-escort",
+          "faction": "ally",
+          "x": 600,
+          "y": 392
+        },
+        {
+          "id": "S09-escort-2",
+          "type": "ref",
+          "kind": "soldier",
+          "ref": "enemy.s02_militia",
+          "armyId": "army.player.escort",
+          "group": "S09-escort",
+          "faction": "ally",
+          "x": 640,
+          "y": 412
+        },
+        {
+          "id": "S09-escort-3",
+          "type": "ref",
+          "kind": "soldier",
+          "ref": "enemy.s02_militia",
+          "armyId": "army.player.escort",
+          "group": "S09-escort",
+          "faction": "ally",
+          "x": 680,
+          "y": 392
         }
       ]
     },

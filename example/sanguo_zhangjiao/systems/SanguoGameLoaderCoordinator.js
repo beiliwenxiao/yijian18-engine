@@ -103,7 +103,9 @@ function initializeGameLoader() {
         },
         triggerWhenApplicationEventTypes: [
           'interact', 'dialogueChoice', 'dialogueEnd', 'classSelected',
-          'enterRegion', 'waveCleared', 'armyCampLaid', 'armyMarchArrived'
+          'enterRegion', 'waveCleared', 'armyCampLaid', 'armyMarchArrived',
+          // 4C 遭遇四选结算：支线任务/触发器据此挂「遭遇已处置」事实
+          'unit.encounterResolved'
         ]
       },
       onShowTip: text => this._showScreenTip(text || ''),
@@ -631,6 +633,70 @@ function registerGameLoaderActions(triggerSystem) {
     return { ok: true, lossId, resources, manpower };
   });
   registered.push('warSupply.applyLoss');
+  // 4C 支线样板（S09 伊阙道）：把场景里的 soldier 实体接成可下令军团。
+  // 走项目级动作而非 scenario.command，理由同 buildingNpc.execute：commands.json 只承载
+  // state.transaction，army.form 是场景命令网关里的域操作。
+  triggerSystem.registerAction('army.form', (params = {}) => {
+    const system = this.armyOrderSystem || null;
+    if (typeof system?.registerUnit !== 'function') {
+      return { ok: false, code: 'armyOrderUnavailable', error: { message: 'ArmyOrderSystem is not configured' } };
+    }
+    const unitId = String(params.unitId || params.id || '').trim();
+    if (!unitId) {
+      return { ok: false, code: 'unitIdRequired', error: { message: 'army.form requires unitId' } };
+    }
+    const result = system.registerUnit({ ...params, id: unitId });
+    if (result?.ok === false) {
+      return {
+        ok: false,
+        code: result.code || 'armyFormRejected',
+        error: { message: `army.form failed: ${result.code || 'unknown'}` }
+      };
+    }
+    this.armyOrderFlow?.requestPersist?.();
+    return { ok: true, unitId };
+  });
+  registered.push('army.form');
+  // 4C 支线样板：unit.encounterResolved 结算落 story.s09.encounter.outcome（一次性事实）。
+  // 事件载荷由 TriggerSystem 以 event.params 传入（unitId/encounter/choice/battle）。
+  triggerSystem.registerAction('s09Encounter.recordOutcome', (params = {}, ctx = null, event = null) => {
+    const payload = event?.params || {};
+    const unitId = String(payload.unitId || '').trim();
+    if (!unitId) return { ok: true, skipped: true, code: 'noEncounterPayload' };
+    const blackboard = this.gameLoader?.blackboard;
+    if (!blackboard?.get || !blackboard?.set) {
+      return { ok: true, skipped: true, code: 'blackboardUnavailable' };
+    }
+    const story = cloneData(blackboard.get('storyState') || {});
+    if (story.s09?.encounter?.outcome?.committed === true) return { ok: true, idempotent: true };
+    const encounter = payload.encounter && typeof payload.encounter === 'object' ? payload.encounter : {};
+    const battle = payload.battle && typeof payload.battle === 'object' ? payload.battle : null;
+    const outcome = {
+      committed: true,
+      sceneId: 'S09',
+      unitId,
+      encounterId: encounter.id || null,
+      kind: encounter.kind || null,
+      nodeId: encounter.nodeId || null,
+      enemyUnitId: encounter.defenderUnitId || null,
+      choice: payload.choice || null,
+      reason: payload.reason || 'player',
+      battleResult: battle?.result || (battle ? 'battle' : null),
+      casualties: battle?.casualties || null,
+      strategicTicksSpent: Number(payload.strategicTicksSpent) || 0,
+      day: Number(story.day) || 1,
+      operationId: 'story:S09:encounterOutcome'
+    };
+    blackboard.set('storyState', {
+      ...story,
+      s09: {
+        ...(story.s09 || {}),
+        encounter: { ...(story.s09?.encounter || {}), outcome }
+      }
+    });
+    return { ok: true, outcome };
+  });
+  registered.push('s09Encounter.recordOutcome');
   return registered;
 }
 

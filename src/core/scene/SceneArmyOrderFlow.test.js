@@ -110,6 +110,33 @@ describe('SceneArmyOrderFlow · M4 4A 增量', () => {
     expect(system.getUnit('army.a').position).toEqual({ x: 42, y: 24 });
   });
 
+  it('块状场景：实体局部坐标加块偏移写 armyStates，表现层行军点再减回局部', () => {
+    const system = new ArmyOrderSystem({ now: () => 1000 });
+    const { scene } = makeScene({
+      entities: [makeEntity({ id: 'e1', armyId: 'army.a', x: 600, y: 392 })]
+    });
+    scene.currentSceneId = 'S09';
+    scene._worldLoadResult = { worldIndex: { getOffset: () => ({ x: 15360, y: 4320 }) } };
+    const flow = new SceneArmyOrderFlow(scene, { system });
+
+    flow.syncArmies();
+    // 世界逻辑节点坐标系：600+15360=15960、392+4320=4712，与 city.s09(16000,4680) 同域
+    expect(system.getUnit('army.a').position).toEqual({ x: 15960, y: 4712 });
+    expect(flow._worldOffset()).toEqual({ x: 15360, y: 4320 });
+  });
+
+  it('无世界索引时偏移为 0，保持旧行为', () => {
+    const system = new ArmyOrderSystem({ now: () => 1000 });
+    const { scene } = makeScene({
+      entities: [makeEntity({ id: 'e1', armyId: 'army.a', x: 500, y: 500 })]
+    });
+    scene.currentSceneId = 'S02';
+    const flow = new SceneArmyOrderFlow(scene, { system });
+    flow.syncArmies();
+    expect(system.getUnit('army.a').position).toEqual({ x: 500, y: 500 });
+    expect(flow._worldOffset()).toEqual({ x: 0, y: 0 });
+  });
+
   it('无实体 march 走 WorldMarchExecutor：战略刻推进 route 位置', () => {
     const layer = buildLayer();
     const system = makeSystem(layer);

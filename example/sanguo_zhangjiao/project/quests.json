@@ -1581,6 +1581,75 @@
       "when": {
         "event": "sceneEnter",
         "params": {
+          "sceneId": "S09"
+        },
+        "type": "event"
+      }
+    },
+    "category": "side",
+    "description": "随军南下颍川途中，伊阙道上遇官军游骑。可选伏击、绕道、接战或撤退——无论怎么处置，账上都会记一笔。",
+    "id": "task.s09.encounterPatrol",
+    "scenes": [
+      "S09"
+    ],
+    "steps": [
+      {
+        "id": "enlist",
+        "objectiveType": "commit.fact",
+        "target": "story.s09.enlist",
+        "title": "先向张角报备入营",
+        "type": "objective"
+      },
+      {
+        "action": "spawnPlacements",
+        "id": "escort.spawn",
+        "params": {
+          "selector": {
+            "group": "S09-escort"
+          }
+        },
+        "title": "亲卫集结",
+        "type": "action"
+      },
+      {
+        "action": "showTip",
+        "id": "patrol.guidance",
+        "params": {
+          "text": "打开大地图，选中亲卫军团，向伊阙关行军——伊阙道上恐有官军游骑。"
+        },
+        "title": "伊阙道行军",
+        "type": "action"
+      },
+      {
+        "eventMatcher": {
+          "payload": {
+            "triggerId": "trg_s09_encounter_resolved"
+          },
+          "type": "triggerSucceeded"
+        },
+        "id": "patrol.resolve",
+        "objectiveType": "custom.event",
+        "title": "处置伊阙道遭遇",
+        "type": "objective"
+      },
+      {
+        "action": "showTip",
+        "id": "patrol.done",
+        "params": {
+          "text": "伊阙道的遭遇已处置：无论战、伏、绕、退，这一笔都记进了战果。"
+        },
+        "title": "遭遇已了",
+        "type": "action"
+      }
+    ],
+    "title": "伊阙道遭遇"
+  },
+  {
+    "accept": {
+      "mode": "auto",
+      "when": {
+        "event": "sceneEnter",
+        "params": {
           "sceneId": "S03"
         },
         "type": "event"

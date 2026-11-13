@@ -617,6 +617,33 @@
       "value": "warSupply.applyLoss"
     },
     {
+      "label": "组建军团（army.form → armyStates）",
+      "paramsSchema": {
+        "additionalProperties": true,
+        "properties": {
+          "unitId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "unitId"
+        ],
+        "type": "object"
+      },
+      "v": "army.form",
+      "value": "army.form"
+    },
+    {
+      "label": "S09 遭遇战果事实（unit.encounterResolved → story.s09.encounter.outcome）",
+      "paramsSchema": {
+        "additionalProperties": true,
+        "properties": {},
+        "type": "object"
+      },
+      "v": "s09Encounter.recordOutcome",
+      "value": "s09Encounter.recordOutcome"
+    },
+    {
       "label": "startDialogue",
       "paramsSchema": {
         "additionalProperties": true,
@@ -993,6 +1020,31 @@
         "type": "object"
       },
       "value": "enemy.killed"
+    },
+    {
+      "identityFields": [
+        "unitId"
+      ],
+      "label": "行军遭遇已结算（4C 四选）",
+      "paramsSchema": {
+        "additionalProperties": true,
+        "properties": {
+          "choice": {
+            "title": "选择（ambush/detour/fight/retreat）",
+            "type": "string"
+          },
+          "reason": {
+            "title": "结算来源",
+            "type": "string"
+          },
+          "unitId": {
+            "title": "军团 ID",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "value": "unit.encounterResolved"
     }
   ]
 }
