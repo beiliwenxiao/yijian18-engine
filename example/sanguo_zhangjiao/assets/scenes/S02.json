@@ -2036,7 +2036,7 @@
           "name": "施粥锅与铜钱箱：接符纸→递碗",
           "pointerRadius": 70,
           "prompt": "{interact}施粥：接符纸、盛粥、递碗",
-          "radius": 110,
+          "radius": 200,
           "target": "S02-zone-porridge",
           "targetMode": "id",
           "triggerId": "trg_s02_ritual_serve",
