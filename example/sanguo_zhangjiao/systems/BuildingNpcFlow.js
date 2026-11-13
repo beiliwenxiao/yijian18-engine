@@ -265,6 +265,80 @@ export class BuildingNpcFlow {
     return preferred || 'camp.s02.field';
   }
 
+  /**
+   * 亲卫实兵数：以场景内 squadMember.armyId='companion' 的存活实体为准。
+   * storyState.s02RecruitCount 只作镜像写入，出现偏差时以本函数为准。
+   */
+  liveCompanionCount() {
+    const entities = this.scene.entityStore?.all || [];
+    let count = 0;
+    for (const entity of entities) {
+      if (!entity || entity.isDead === true) continue;
+      if (entity.getComponent?.('squadMember')?.armyId === 'companion') count += 1;
+    }
+    return count;
+  }
+
+  _spawnAnchor() {
+    const player = this.scene.playerEntity;
+    const playerPosition = player?.getComponent?.('transform')?.position || player?.position || null;
+    if (playerPosition) return { x: Number(playerPosition.x) || 0, y: (Number(playerPosition.y) || 0) + 48 };
+    const entry = this.scene.companionEntryPoint;
+    if (entry && Number.isFinite(Number(entry.x)) && Number.isFinite(Number(entry.y))) {
+      return { x: Number(entry.x), y: Number(entry.y) };
+    }
+    return { x: 0, y: 0 };
+  }
+
+  /**
+   * 按缺口生成可战斗亲卫实体（EntityFactory 友军管线 + squadMember）。
+   * 稳定 id：companion.bnp.<持久序号>；重试时跳过已存在实体，避免翻倍。
+   * 任一实体生成失败 → 回滚本次已生成实体，返回失败（不扣资源）。
+   * @returns {{ok:boolean, code?:string, created?:Object[], seq?:number, liveCount?:number}}
+   */
+  spawnCompanionBatch(count = 0) {
+    const total = Math.max(0, toInt(count));
+    if (total <= 0) return { ok: true, created: [], seq: toInt(this.storyState()?.bnpSpawnSeq), liveCount: this.liveCompanionCount() };
+    const spawn = this.scene.spawnCompanionMember;
+    if (typeof spawn !== 'function') return { ok: false, code: 'companionSpawnUnavailable' };
+    const store = this.scene.entityStore;
+    const anchor = this._spawnAnchor();
+    const created = [];
+    let seq = toInt(this.storyState()?.bnpSpawnSeq);
+    for (let index = 0; index < total; index += 1) {
+      let unitId = '';
+      do {
+        seq += 1;
+        unitId = `companion.bnp.${seq}`;
+      } while (store?.getById?.(unitId));
+      const entity = spawn.call(this.scene, {
+        unitId,
+        blueprint: {
+          definitionId: 'enemy.s02_militia',
+          faction: 'ally',
+          name: '亲卫',
+          squadMember: { armyId: 'companion', squadId: 'companion', formationIndex: index }
+        },
+        position: { x: anchor.x + ((index % 5) - 2) * 22, y: anchor.y + Math.floor(index / 5) * 22 }
+      });
+      if (!entity) {
+        this.rollbackCompanionBatch({ created });
+        return { ok: false, code: 'companionSpawnFailed', spawned: created.length };
+      }
+      created.push(entity);
+    }
+    this.scene.companionSquadFlow?.syncRoster?.();
+    return { ok: true, created, seq, liveCount: this.liveCompanionCount() };
+  }
+
+  /** 回滚一次生成（事务/资源失败时调用），保证不残留半截实体。 */
+  rollbackCompanionBatch(spawned = null) {
+    const created = Array.isArray(spawned?.created) ? spawned.created : [];
+    for (const entity of created) this.scene.entityStore?.remove?.(entity);
+    if (created.length > 0) this.scene.companionSquadFlow?.syncRoster?.();
+    return { ok: true, removed: created.length };
+  }
+
   _buildContext(role) {
     const story = this.storyState();
     const ledger = this.scene.foodLedgerSystem;
@@ -282,7 +356,8 @@ export class BuildingNpcFlow {
       : null;
     const scattered = (ledger?.listScattered?.({ armyId }) || [])
       .reduce((sum, entry) => sum + Math.max(0, toInt(entry?.count)), 0);
-    const count = toInt(story?.s02RecruitCount ?? story?.s02RecruitGuard);
+    // 编制人数以实兵为准（story 计数只做镜像；读档/重进不翻倍）
+    const count = this.liveCompanionCount();
     const npcId = role.id;
     const seq = () => ++this._seq;
     const operationId = kind => `bnp:${npcId}:${kind}:${seq()}`;
@@ -303,7 +378,19 @@ export class BuildingNpcFlow {
       cap: this.resolveCapacity(),
       scattered,
       config: this._costConfig(),
+      liveCount: () => this.liveCompanionCount(),
       resolveCapacity: rankValue => this.resolveCapacity(rankValue),
+      spawn: countToSpawn => this.spawnCompanionBatch(countToSpawn),
+      rollbackSpawn: spawned => this.rollbackCompanionBatch(spawned),
+      takeScattered: amount => ledger?.takeScattered?.({ armyId, count: amount }) || { ok: false, taken: 0, entries: [] },
+      returnScattered: entries => ledger?.returnScattered?.(entries) || { ok: false },
+      refund: entries => {
+        try {
+          return ledger?.deposit?.({ campId, armyId, entries, operationId: operationId('refund') }) || { ok: false };
+        } catch {
+          return { ok: false };
+        }
+      },
       preview: entries => ledger?.previewConsume?.({ campId, armyId, entries }) || { ok: false, code: 'logisticsUnavailable' },
       consume: entries => ledger?.consume?.({ campId, armyId, entries, operationId: operationId('consume') }) || { ok: false, code: 'logisticsUnavailable' },
       submit: (definitionId, payload = {}) => this._submit(definitionId, payload, operationId(`fact:${definitionId}`))

@@ -92,17 +92,33 @@ export function createRecruitRole() {
           message: `粮草不够：营地仓与随军粮合起来还差 ${formatFood(missing)}，这 ${gap} 人补不进来。先去粮仓调粮，或打完这一仗再来。`
         };
       }
+      // 先实兵生成，再扣资源/落账；任一步失败都回滚本次实体，不残留半截。
+      const spawned = ctx.spawn(gap);
+      if (!spawned?.ok) {
+        return {
+          ok: false,
+          message: spawned?.code === 'companionSpawnUnavailable'
+            ? '这里没有随行亲卫生成器，补员无法落地。请到有亲卫编制的营地再试。'
+            : '新兵列队时出了岔子，本次补员没有生效，粮草未动。'
+        };
+      }
       const consumed = ctx.consume({ food: cost });
       if (!consumed?.ok) {
-        return { ok: false, message: '粮草调拨没有成功，名册未改。稍后再试。' };
+        ctx.rollbackSpawn(spawned);
+        return { ok: false, message: '粮草调拨没有成功，名册未改，新兵已退回。' };
       }
-      const nextCount = toInt(ctx.count) + gap;
+      const nextCount = ctx.liveCount ? ctx.liveCount() : (toInt(ctx.count) + gap);
       const submitted = await ctx.submit('story.bnp.recruit', {
         count: nextCount,
         cap: toInt(ctx.cap),
-        food: cost
+        food: cost,
+        spawnSeq: toInt(spawned.seq)
       });
-      if (!submitted?.ok) return { ok: false, message: '名册登记失败，补员未生效。稍后再试。' };
+      if (!submitted?.ok) {
+        ctx.rollbackSpawn(spawned);
+        ctx.refund?.({ food: cost });
+        return { ok: false, message: '名册登记失败，补员未生效，新兵已退回、粮草已退。' };
+      }
       return {
         ok: true,
         message: `名册已改：亲卫 ${nextCount}/${toInt(ctx.cap)} 人，扣粮 ${formatFood(cost)}。新补的 ${gap} 人已在营前列队。`
@@ -173,16 +189,41 @@ export function createMusterRole() {
           message: `粮草不够：还差 ${formatFood(missing)}，这 ${absorb} 名散兵安顿不下来。`
         };
       }
+      const spawned = ctx.spawn(absorb);
+      if (!spawned?.ok) {
+        return {
+          ok: false,
+          message: spawned?.code === 'companionSpawnUnavailable'
+            ? '这里没有随行亲卫生成器，收编无法落地。请到有亲卫编制的营地再试。'
+            : '散兵入列时出了岔子，本次收编没有生效，粮草未动。'
+        };
+      }
+      const take = ctx.takeScattered(absorb);
+      if (!take?.ok || toInt(take.taken) < absorb) {
+        ctx.returnScattered?.(take?.entries || []);
+        ctx.rollbackSpawn(spawned);
+        return { ok: false, message: '营外散兵已经散了，收编没有成，粮草未动。' };
+      }
       const consumed = ctx.consume({ food: cost });
-      if (!consumed?.ok) return { ok: false, message: '粮草调拨没有成功，收编未生效。' };
-      const nextCount = toInt(ctx.count) + absorb;
+      if (!consumed?.ok) {
+        ctx.returnScattered?.(take.entries);
+        ctx.rollbackSpawn(spawned);
+        return { ok: false, message: '粮草调拨没有成功，收编未生效，散兵已放回营外。' };
+      }
+      const nextCount = ctx.liveCount ? ctx.liveCount() : (toInt(ctx.count) + absorb);
       const submitted = await ctx.submit('story.bnp.muster', {
         count: nextCount,
         cap: toInt(ctx.cap),
         absorbed: absorb,
-        food: cost
+        food: cost,
+        spawnSeq: toInt(spawned.seq)
       });
-      if (!submitted?.ok) return { ok: false, message: '收编登记失败，散兵未入册。' };
+      if (!submitted?.ok) {
+        ctx.returnScattered?.(take.entries);
+        ctx.rollbackSpawn(spawned);
+        ctx.refund?.({ food: cost });
+        return { ok: false, message: '收编登记失败，散兵未入册，已放回营外、粮草已退。' };
+      }
       return {
         ok: true,
         message: `收编完毕：${absorb} 名散兵入册，亲卫 ${nextCount}/${toInt(ctx.cap)} 人，扣粮 ${formatFood(cost)}。`

@@ -363,8 +363,49 @@ export class FoodLedgerSystem {
       .map(entry => clone(entry));
   }
 
-  /** army.regroup：招回 30 日窗口内散兵（全部）。 */
-  regroup({ armyId = null, day = null } = {}) {
+  /**
+   * 从散兵池取走指定人数（按到期日先后），供建筑 NPC 收编使用。
+   * 只动 scatteredPool 一本账；取走数量不足时按实际返回。
+   * @param {{armyId?:string, count?:number, day?:number}} [input]
+   * @returns {{ok:boolean, taken:number, entries:Object[]}}
+   */
+  takeScattered({ armyId = null, count = 0, day = null } = {}) {
+    const currentDay = day != null ? Math.floor(num(day, this.getDay())) : Math.floor(num(this.getDay(), 1));
+    let need = Math.max(0, Math.floor(num(count, 0)));
+    const takenEntries = [];
+    if (need <= 0) return { ok: true, taken: 0, entries: takenEntries };
+    const ordered = [...this.scatteredPool].sort((a, b) => num(a.expiresDay, Infinity) - num(b.expiresDay, Infinity));
+    for (const entry of ordered) {
+      if (need <= 0) break;
+      if (!entry || entry.count <= 0) continue;
+      if (armyId != null && String(entry.armyId) !== String(armyId)) continue;
+      if (num(entry.expiresDay, Infinity) < currentDay) continue;
+      const take = Math.min(need, Math.floor(num(entry.count, 0)));
+      if (take <= 0) continue;
+      entry.count -= take;
+      need -= take;
+      takenEntries.push({ armyId: entry.armyId, count: take, day: entry.day ?? null, expiresDay: entry.expiresDay ?? null });
+    }
+    this.scatteredPool = this.scatteredPool.filter(entry => entry && entry.count > 0);
+    const taken = takenEntries.reduce((sum, entry) => sum + entry.count, 0);
+    return { ok: taken > 0, taken, entries: takenEntries };
+  }
+
+  /** 回滚 takeScattered：把已取走的散兵原样放回池中。 */
+  returnScattered(entries = []) {
+    const list = Array.isArray(entries) ? entries : [];
+    if (list.length === 0) return { ok: true, returned: 0 };
+    let returned = 0;
+    for (const entry of list) {
+      const count = Math.max(0, Math.floor(num(entry?.count, 0)));
+      if (count <= 0) continue;
+      returned += count;
+      this.scatteredPool.push({ ...entry, count });
+    }
+    return { ok: true, returned };
+  }
+
+  /** army.regroup：招回 30 日窗口内散兵（全部）。 */  regroup({ armyId = null, day = null } = {}) {
     const army = this.armies.get(String(armyId || ''));
     if (!army) return { ok: false, code: 'unknownArmy', armyId };
     const currentDay = day != null ? Math.floor(num(day, this.getDay())) : Math.floor(num(this.getDay(), 1));

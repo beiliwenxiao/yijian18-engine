@@ -3360,6 +3360,14 @@
             "$get": "payload.food",
             "default": 0
           }
+        },
+        {
+          "path": "bnpSpawnSeq",
+          "target": "story",
+          "value": {
+            "$get": "payload.spawnSeq",
+            "default": 0
+          }
         }
       ]
     }
@@ -3399,6 +3407,14 @@
           "target": "story",
           "value": {
             "$get": "payload.food",
+            "default": 0
+          }
+        },
+        {
+          "path": "bnpSpawnSeq",
+          "target": "story",
+          "value": {
+            "$get": "payload.spawnSeq",
             "default": 0
           }
         }
