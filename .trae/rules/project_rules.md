@@ -302,6 +302,16 @@ inclusion: always
 
 
 
+## 生产包黑屏排查顺序
+
+Android/WebView 壳里出现「DOM UI 正常、画布全黑、不闪退」时，先怀疑生产构建降级产物里的作用域 bug，不要先怀疑 WebView 或资源路径：
+
+1. 用生产构建（`vite preview` 或等价静态服务）在桌面 Chromium 复现，并对照 dev server；dev 正常、生产黑屏基本即可锁定降级产物。
+2. 看 console 首个 `ReferenceError: xx is not defined`；用未压缩构建（`--minify false --sourcemap`）拿到真实变量名与行号，再回源码定位。
+3. 常见根因：默认参数里的可选链调用 `a?.b?.(...)` 被 esbuild 按 `target: es2018` 降级成引用作用域外临时变量；改为函数体内取值即可。
+
+注：把构建 `target` 提到 `es2020` 可避开该类降级 bug，但会抬高 WebView 版本门槛，**未采纳**。
+
 ## 版权信息
 
 所有新增或修改的源文件、框架文件、主要入口文件和 Demo 业务文件必须包含以下版权头；已有完整版权头不得重复添加，已有简化版权头应在该文件被修改时统一为完整模板：
