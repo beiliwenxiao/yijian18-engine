@@ -405,7 +405,14 @@ export class SceneTriggerBindingSystem {
     return typeof obj.sceneEventId === 'string' ? obj.sceneEventId.trim() : '';
   }
 
-  _matchesSceneEventReference(binding, definition = this.triggerSystem?.getById?.(binding?.triggerId)) {
+  _matchesSceneEventReference(binding, definition) {
+    // 不写成默认参数 `definition = this.triggerSystem?.getById?.(...)`：
+    // esbuild 0.21 在 es2018 降级该写法时会生成作用域外的临时变量，
+    // 打包产物运行即抛 ReferenceError（开发模式不降级，故只在生产包黑屏）。
+    if (definition === undefined) {
+      const triggerSystem = this.triggerSystem;
+      definition = triggerSystem ? triggerSystem.getById?.(binding?.triggerId) : undefined;
+    }
     if (!definition) return false;
     // 空值视为不参与外键校验（等价于无归属的 Trigger，允许在任何场景下 binding）
     const expected = this._resolveFlowGroupId(definition);
