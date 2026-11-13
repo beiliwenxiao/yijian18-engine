@@ -158,6 +158,37 @@ describe('EncounterResolver.detect', () => {
     expect(resolver.detect({ state: makeState(), order: { state: 'executing' }, layer, units: [ally, city, dead] })).toBeNull();
   });
 
+  it('绕道冷却（野遭遇）：只压这一支，换一支照常，走出感应圈/到期即解除', () => {
+    const resolver = makeResolver();
+    const layer = makeLayer({
+      nodes: [makeNode('a'), makeNode('b'), makeNode('c')],
+      edges: [makeEdge('e1', 'a', 'b'), makeEdge('e2', 'b', 'c')],
+      paths: { 'a->c:e1': { ok: true, nodeIds: ['a', 'c'], edgeIds: ['e9'] } }
+    });
+    const enemy = { id: 'army.enemy', kind: 'army', factionId: 'enemy', position: { x: 30, y: 0 }, roster: { count: 30 } };
+    const other = { id: 'army.other', kind: 'army', factionId: 'enemy', position: { x: -40, y: 0 }, roster: { count: 30 } };
+    const state = makeState();
+    const encounter = resolver.detect({ state, order: { state: 'executing' }, layer, units: [enemy] });
+    expect(encounter).toMatchObject({ kind: 'field', defenderUnitId: 'army.enemy' });
+
+    const outcome = resolver.resolve({ encounter, choice: 'detour', state, layer, units: [enemy] });
+    expect(outcome.cooldown).toMatchObject({ unitId: 'army.enemy', releaseRadius: 120, remainingTicks: 6 });
+    state.encounterCooldown = { ...outcome.cooldown };
+
+    // 同一支：冷却期内不重复触发
+    expect(resolver.detect({ state, order: { state: 'executing' }, layer, units: [enemy] })).toBeNull();
+    // 另一支：不受影响
+    expect(resolver.detect({ state, order: { state: 'executing' }, layer, units: [other] }))
+      .toMatchObject({ kind: 'field', defenderUnitId: 'army.other' });
+    // 走出感应圈 → 冷却失效（不必等满 6 刻）
+    const far = makeState({ position: { x: 400, y: 0 }, encounterCooldown: state.encounterCooldown });
+    expect(resolver._activeCooldown(far, [enemy])).toBeNull();
+    // 到期 → 同一支可再次触发
+    state.encounterCooldown = { ...state.encounterCooldown, remainingTicks: 0 };
+    expect(resolver.detect({ state, order: { state: 'executing' }, layer, units: [enemy] }))
+      .toMatchObject({ kind: 'field', defenderUnitId: 'army.enemy' });
+  });
+
   it('③ 当前边 hostile → 按 crossingNodeId 判 pass/city', () => {
     const resolver = makeResolver();
     const layer = makeLayer({
@@ -252,7 +283,7 @@ describe('EncounterResolver.resolve', () => {
     })).toMatchObject({ ok: false, code: 'choiceUnavailable' });
   });
 
-  it('绕道：不耗刻、改走替代路、无冷却；无替代路 → noDetour', () => {
+  it('绕道：不耗刻、改走替代路、压住同一关隘 6 刻；无替代路 → noDetour', () => {
     const resolver = makeResolver();
     const encounter = encounterOf(resolver, { layer: layer() });
     const outcome = resolver.resolve({ encounter, choice: 'detour', state: makeState(), layer: layer() });
@@ -261,7 +292,7 @@ describe('EncounterResolver.resolve', () => {
       choice: 'detour',
       strategicTicksSpent: 0,
       moraleDelta: 0,
-      cooldown: null,
+      cooldown: { edgeId: null, nodeId: 'b', unitId: null, remainingTicks: 6 },
       routeRequest: { avoidEdgeIds: ['e1'], nodeIds: ['a', 'c'], edgeIds: ['e9'] }
     });
 

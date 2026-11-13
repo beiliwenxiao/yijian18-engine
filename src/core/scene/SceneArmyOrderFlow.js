@@ -370,14 +370,17 @@ export class SceneArmyOrderFlow {
     if (Number.isFinite(Number(outcome.moraleDelta)) && Number(outcome.moraleDelta) !== 0) {
       state.morale = Math.min(100, Math.max(0, Number(state.morale ?? 0) + Number(outcome.moraleDelta)));
     }
-    // 冷却：撤退/战败按配置；其余选择给 2 刻防重复弹窗（同一节点/边结算后不立刻再触发）
-    const cooldown = outcome.cooldown || (outcome.choice === 'detour'
-      ? null
-      : { edgeId: encounter.edgeId, nodeId: encounter.nodeId, remainingTicks: 2 });
-    if (cooldown && (cooldown.edgeId || cooldown.nodeId)) {
+    // 冷却：撤退/战败按配置；其余选择给 2 刻防重复弹窗（同一节点/边结算后不立刻再触发）；
+    // 绕道按 resolver 给的「只压这一支敌军 + 走出感应圈即解除」
+    const cooldown = outcome.cooldown
+      || { edgeId: encounter.edgeId, nodeId: encounter.nodeId, remainingTicks: 2 };
+    if (cooldown && (cooldown.edgeId || cooldown.nodeId || cooldown.unitId)) {
+      const rawRadius = Number(cooldown.releaseRadius);
       state.encounterCooldown = {
         edgeId: cooldown.edgeId ? String(cooldown.edgeId) : null,
         nodeId: cooldown.nodeId ? String(cooldown.nodeId) : null,
+        unitId: cooldown.unitId != null ? String(cooldown.unitId) : null,
+        releaseRadius: Number.isFinite(rawRadius) ? Math.max(0, rawRadius) : null,
         remainingTicks: Math.max(1, Math.floor(Number(cooldown.remainingTicks) || 1))
       };
     }

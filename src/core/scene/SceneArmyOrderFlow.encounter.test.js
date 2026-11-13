@@ -215,7 +215,39 @@ describe('SceneArmyOrderFlow 四选结算', () => {
     const state = system.getUnit('army.player');
     expect(state.route.nodeIds).toEqual(['a', 'c']);
     expect(state.route.edgeIds).toEqual(['e9']);
-    expect(state.encounterCooldown).toBeNull();
+    expect(state.encounterCooldown).toMatchObject({ nodeId: 'b', unitId: null, remainingTicks: 6 });
+  });
+
+  it('绕道（野遭遇）后同一支游骑冷却期内不再弹窗，刻数递减', () => {
+    const layer = makeLayer({
+      nodes: [
+        makeNode('a', { position: { x: 0, y: 0 } }),
+        makeNode('b', { position: { x: 100, y: 0 } }),
+        makeNode('c', { position: { x: 200, y: 0 } })
+      ],
+      edges: [makeEdge('e1', 'a', 'b'), makeEdge('e2', 'b', 'c')],
+      paths: { 'a->c:e1': { ok: true, nodeIds: ['a', 'c'], edgeIds: ['e9'] } }
+    });
+    const { system, flow } = makeFixture({ layer });
+    system.resolveTargetPoint = target => layer.getNode(target?.nodeId)?.position || null;
+    registerArmy(system);
+    system.registerUnit({
+      id: 'army.enemy', kind: 'army', factionId: 'enemy', sceneId: 'S01',
+      position: { x: 30, y: 0 }, roster: { count: 30 }
+    });
+
+    flow.update(500);
+    expect(flow.getPendingEncounter()).toMatchObject({ kind: 'field', defenderUnitId: 'army.enemy' });
+    flow.decideEncounter({ unitId: 'army.player', choice: 'detour' });
+
+    const state = system.getUnit('army.player');
+    expect(state.encounterCooldown).toMatchObject({
+      unitId: 'army.enemy', releaseRadius: 120, remainingTicks: 6
+    });
+
+    flow.update(500);
+    expect(system.getUnit('army.player').order.pendingEncounter).toBeNull();
+    expect(system.getUnit('army.player').encounterCooldown.remainingTicks).toBeLessThanOrEqual(5);
   });
 
   it('关隘战胜：pass 易主、layer.invalidate、战果适配器被调用', () => {

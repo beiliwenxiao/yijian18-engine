@@ -112,9 +112,12 @@ function normalizeCooldown(value) {
   if (!value || typeof value !== 'object') return null;
   const edgeId = value.edgeId != null ? String(value.edgeId) : null;
   const nodeId = value.nodeId != null ? String(value.nodeId) : null;
+  const unitId = value.unitId != null ? String(value.unitId) : null;
+  const rawRadius = Number(value.releaseRadius);
+  const releaseRadius = Number.isFinite(rawRadius) ? Math.max(0, rawRadius) : null;
   const remainingTicks = Math.max(0, Math.floor(Number(value.remainingTicks) || 0));
-  if ((!edgeId && !nodeId) || remainingTicks <= 0) return null;
-  return { edgeId, nodeId, remainingTicks };
+  if ((!edgeId && !nodeId && !unitId) || remainingTicks <= 0) return null;
+  return { edgeId, nodeId, unitId, releaseRadius, remainingTicks };
 }
 
 /**

@@ -72,7 +72,9 @@ export const DEFAULT_COMBAT = Object.freeze({
     fortified: Object.freeze({ defender: 1.1 })
   }),
   terrainDefense: Object.freeze({ plain: 1, forest: 1.05, mountain: 1.2, yellowRiver: 1.1 }),
-  retreat: Object.freeze({ moraleCost: 10, cooldownTicks: 4 })
+  retreat: Object.freeze({ moraleCost: 10, cooldownTicks: 4 }),
+  // 绕道冷却：只压制「刚绕过的那支敌军」，不封边；走出 engageRadius 即解除
+  detour: Object.freeze({ cooldownTicks: 6 })
 });
 
 const AMBUSH_EDGE_MODES = new Set(['road', 'bridge', 'mountainPath']);
@@ -120,6 +122,10 @@ function mergeCombat(raw) {
   merged.retreat = {
     ...DEFAULT_COMBAT.retreat,
     ...(source.retreat && typeof source.retreat === 'object' ? source.retreat : {})
+  };
+  merged.detour = {
+    ...DEFAULT_COMBAT.detour,
+    ...(source.detour && typeof source.detour === 'object' ? source.detour : {})
   };
   merged.strategyMatrix = source.strategyMatrix && typeof source.strategyMatrix === 'object'
     ? source.strategyMatrix
@@ -182,7 +188,7 @@ export class EncounterResolver {
       ? String(edgeIds[Math.max(0, index - 1)])
       : null;
 
-    if (this._inCooldown(state, currentEdgeId, nextNodeId)) return null;
+    const cooldown = this._activeCooldown(state, units);
 
     // ① 下一个节点是敌对城池/关隘（须已推进到 engageRadius 内才触发：
     //    否则「从城中下令去远处的敌关」会在出发刻就被关隘遭遇打断，
@@ -194,6 +200,7 @@ export class EncounterResolver {
         const nodeRadius = Math.max(1, num(this.combat.engageRadius, 120));
         const nodeDistance = distanceOf(pointOf(state.position), pointOf(node.position));
         if (!Number.isFinite(nodeDistance) || nodeDistance <= nodeRadius) {
+          if (this._cooldownMatches(cooldown, { edgeId: currentEdgeId, nodeId: nextNodeId })) return null;
           return this._buildEncounter({
             state, order, layer, units, day,
             kind: node.kind,
@@ -215,6 +222,7 @@ export class EncounterResolver {
       if (this._isDefeated(other)) continue;
       if (other.factionId == null || String(other.factionId) === factionId) continue;
       if (other.id === nextNodeId) continue; // 关隘驻军已在节点分支处理
+      if (this._cooldownMatches(cooldown, { unitId: other.id })) continue; // 绕道冷却只放过这一支
       const distance = distanceOf(origin, pointOf(other.position));
       if (!Number.isFinite(distance) || distance > radius) continue;
       if (distance < nearestDistance) {
@@ -236,7 +244,7 @@ export class EncounterResolver {
     if (layer && currentEdgeId) {
       const snapshot = layer.getSnapshot ? layer.getSnapshot() : null;
       const entry = snapshot?.edges?.[currentEdgeId];
-      if (entry && entry.status === 'hostile') {
+      if (entry && entry.status === 'hostile' && !this._cooldownMatches(cooldown, { edgeId: currentEdgeId })) {
         const edge = layer.getEdge ? layer.getEdge(currentEdgeId) : null;
         const conditions = edge?.conditions && typeof edge.conditions === 'object' ? edge.conditions : {};
         const crossingId = conditions.crossingNodeId != null ? String(conditions.crossingNodeId) : null;
@@ -253,12 +261,30 @@ export class EncounterResolver {
     return null;
   }
 
-  _inCooldown(state, edgeId, nodeId = null) {
-    const cooldown = state.encounterCooldown;
+  /**
+   * 当前生效的冷却（remainingTicks > 0）。带 releaseRadius + unitId 的冷却
+   * 只在该敌军仍处于感应圈内时生效——走出圈即视为解除（冷却期不必等满）。
+   */
+  _activeCooldown(state, units) {
+    const cooldown = state?.encounterCooldown;
+    if (!cooldown || typeof cooldown !== 'object') return null;
+    if (num(cooldown.remainingTicks, 0) <= 0) return null;
+    const radius = Number(cooldown.releaseRadius);
+    if (Number.isFinite(radius) && cooldown.unitId != null) {
+      const unit = (Array.isArray(units) ? units : [])
+        .find(entry => String(entry?.id) === String(cooldown.unitId));
+      const distance = distanceOf(pointOf(state.position), pointOf(unit?.position));
+      if (!Number.isFinite(distance) || distance > radius) return null;
+    }
+    return cooldown;
+  }
+
+  /** 冷却是否命中目标（单位 / 边 / 节点任一）。 */
+  _cooldownMatches(cooldown, { edgeId = null, nodeId = null, unitId = null } = {}) {
     if (!cooldown || typeof cooldown !== 'object') return false;
-    if (num(cooldown.remainingTicks, 0) <= 0) return false;
-    if (edgeId && cooldown.edgeId != null && String(cooldown.edgeId) === edgeId) return true;
-    if (nodeId && cooldown.nodeId != null && String(cooldown.nodeId) === nodeId) return true;
+    if (unitId && cooldown.unitId != null && String(cooldown.unitId) === String(unitId)) return true;
+    if (edgeId && cooldown.edgeId != null && String(cooldown.edgeId) === String(edgeId)) return true;
+    if (nodeId && cooldown.nodeId != null && String(cooldown.nodeId) === String(nodeId)) return true;
     return false;
   }
 
@@ -369,6 +395,9 @@ export class EncounterResolver {
         edgeId: encounter.edgeId
       });
       if (!route) return { ok: false, code: 'noDetour' };
+      const detourTicks = Math.max(1, Math.floor(num(this.combat.detour?.cooldownTicks, 6)));
+      const suppressUnitId = encounter.defenderUnitId != null ? String(encounter.defenderUnitId) : null;
+      const suppressNodeId = !suppressUnitId && encounter.nodeId != null ? String(encounter.nodeId) : null;
       return {
         ok: true,
         encounterId: encounter.id,
@@ -377,7 +406,19 @@ export class EncounterResolver {
         battle: null,
         moraleDelta: 0,
         routeRequest: { avoidEdgeIds: encounter.edgeId ? [encounter.edgeId] : [], ...route },
-        cooldown: null,
+        // 只压「这一支敌军」（或这一个关隘节点），不封整条边，避免误伤同边其他敌军；
+        // releaseRadius：走出感应圈即视为冷却结束（防贴脸原地反复弹窗）
+        cooldown: (suppressUnitId || suppressNodeId)
+          ? {
+            edgeId: null,
+            nodeId: suppressNodeId,
+            unitId: suppressUnitId,
+            releaseRadius: suppressUnitId
+              ? Math.max(1, num(this.combat.engageRadius, 120))
+              : null,
+            remainingTicks: detourTicks
+          }
+          : null,
         captured: null,
         retreatTo: null
       };
