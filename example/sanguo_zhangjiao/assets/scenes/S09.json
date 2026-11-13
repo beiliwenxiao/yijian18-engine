@@ -737,6 +737,83 @@
           "faction": "ally",
           "x": 680,
           "y": 392
+        },
+        {
+          "id": "S09-escort-4",
+          "type": "ref",
+          "kind": "soldier",
+          "ref": "enemy.s02_militia",
+          "armyId": "army.player.escort",
+          "group": "S09-escort",
+          "faction": "ally",
+          "x": 580,
+          "y": 372
+        },
+        {
+          "id": "S09-escort-5",
+          "type": "ref",
+          "kind": "soldier",
+          "ref": "enemy.s02_militia",
+          "armyId": "army.player.escort",
+          "group": "S09-escort",
+          "faction": "ally",
+          "x": 620,
+          "y": 372
+        },
+        {
+          "id": "S09-escort-6",
+          "type": "ref",
+          "kind": "soldier",
+          "ref": "enemy.s02_militia",
+          "armyId": "army.player.escort",
+          "group": "S09-escort",
+          "faction": "ally",
+          "x": 660,
+          "y": 372
+        },
+        {
+          "id": "S09-escort-7",
+          "type": "ref",
+          "kind": "soldier",
+          "ref": "enemy.s02_militia",
+          "armyId": "army.player.escort",
+          "group": "S09-escort",
+          "faction": "ally",
+          "x": 700,
+          "y": 372
+        },
+        {
+          "id": "S09-escort-8",
+          "type": "ref",
+          "kind": "soldier",
+          "ref": "enemy.s02_militia",
+          "armyId": "army.player.escort",
+          "group": "S09-escort",
+          "faction": "ally",
+          "x": 600,
+          "y": 432
+        },
+        {
+          "id": "S09-escort-9",
+          "type": "ref",
+          "kind": "soldier",
+          "ref": "enemy.s02_militia",
+          "armyId": "army.player.escort",
+          "group": "S09-escort",
+          "faction": "ally",
+          "x": 640,
+          "y": 452
+        },
+        {
+          "id": "S09-escort-10",
+          "type": "ref",
+          "kind": "soldier",
+          "ref": "enemy.s02_militia",
+          "armyId": "army.player.escort",
+          "group": "S09-escort",
+          "faction": "ally",
+          "x": 680,
+          "y": 432
         }
       ]
     },
