@@ -31,6 +31,7 @@ import {
   WORLD_MAP_TERRAINS
 } from '../src/core/WorldMapCell.js';
 import { WorldLogicEditor } from './WorldLogicEditor.js';
+import { WorldMapRoadLayer } from './WorldMapRoadLayer.js';
 import { resolveEdgeConditions, validateWorldLogic } from '../src/core/world/WorldRouteLayer.js';
 import { extractWorldLogic } from '../src/core/world/WorldMapExtractor.js';
 
@@ -96,6 +97,9 @@ export class WorldMapEditor {
     this.draftWorldMap = { entrySceneId: null, regions: [] };
     this.draftWorldLogic = null;
     this.logicEditor = null;
+    this._roadLayer = null;
+    this._roadLayerVisible = false;
+    this._roadLayerMode = 'connect';
     this._autoLayer = null;
     this._autoRevision = 0;
     this.selectedRegionId = null;
@@ -714,6 +718,16 @@ export class WorldMapEditor {
         </label>
         <button type="button" class="wme-apply-size">应用结构</button>
         <button type="button" class="wme-focus-used">定位场景</button>
+        <span style="margin:0 4px;color:#555;">|</span>
+        <label style="display:flex;align-items:center;gap:4px;" title="在格子之间显示 roadEdges，并标出关隘/渡口">
+          <input type="checkbox" class="wme-road-layer-toggle" /> 路网
+        </label>
+        <span class="wme-road-actions" style="display:none;gap:4px;align-items:center;">
+          <button type="button" class="wme-road-mode" data-mode="connect">连线</button>
+          <button type="button" class="wme-road-mode" data-mode="delete">删除</button>
+          <button type="button" class="wme-road-derive" title="给所有正交相邻的道路格补缺失的边，不改动既有边">补全邻接</button>
+          <span class="wme-road-hint" style="color:#9c927c;font-size:12px;"></span>
+        </span>
         <span class="wme-logic-toolbar" style="display:contents;"></span>
       </div>
       <div class="wme-new-region-overlay" hidden
@@ -783,6 +797,28 @@ export class WorldMapEditor {
       if (selectedOption) selectedOption.textContent = this._regionOptionLabel(region);
     };
     this._el.querySelector('.wme-map-type').onchange = event => this._applyMapType(event.target.value);
+    this._el.querySelector('.wme-road-layer-toggle').onchange = event => {
+      this._roadLayerVisible = event.target.checked === true;
+      this._syncRoadLayerControls();
+      this._roadLayer?.setVisible(this._roadLayerVisible);
+      if (this._roadLayerVisible) this._refreshRoadLayer();
+    };
+    this._el.querySelectorAll('.wme-road-mode').forEach(button => {
+      button.onclick = () => {
+        this._roadLayerMode = button.dataset.mode === 'delete' ? 'delete' : 'connect';
+        this._syncRoadLayerControls();
+        this._roadLayer?.setMode(this._roadLayerMode);
+      };
+    });
+    this._el.querySelector('.wme-road-derive').onclick = () => {
+      const added = this._deriveRoadEdges(this.region);
+      if (added > 0) {
+        this._commitRoadChange(`已补全 ${added} 条邻接道路`);
+      } else {
+        this._refreshRoadLayer();
+        this._showToast('没有需要补的邻接道路', 'warn');
+      }
+    };
   }
 
   _syncRegionControls() {
@@ -1190,6 +1226,7 @@ export class WorldMapEditor {
 
     this._bindMainlandMinimapNavigation(gc);
     this.logicEditor?.render(region, { gridEl: gc, ...metrics, gap: 2 });
+    this._syncRoadLayer(grid, region, { ...metrics, gap: 2 });
     requestAnimationFrame(() => {
       if (!this._isActiveMapRender({ generation, selectedRegionId, worldIndex: draftIndex, gc })) return;
       this._renderMainlandMinimap(gc, draftIndex);
@@ -1349,6 +1386,14 @@ export class WorldMapEditor {
     this._commitMainlandCellReplacements(replacements, nextIndex);
     this._paintMainlandMinimapCells(affected, nextIndex);
     this._requestMainlandViewportSync();
+
+    // 勾选「道路」后只给该格补正交邻接边；取消勾选不删任何既有边。
+    if (target.classList.contains('wme-road-toggle')) {
+      const added = road ? this._deriveRoadEdgesForCell(this.region, row, col) : 0;
+      this._refreshAutoLayerFromDraft();
+      this._refreshRoadLayer();
+      if (added > 0) this._showToast(`已补 ${added} 条邻接连线`);
+    }
   }
 
   _buildEditedRegionCell(previous, mapType, terrain, sceneId, { road = false, poi = null } = {}) {
@@ -1392,6 +1437,165 @@ export class WorldMapEditor {
     target.value = target.classList.contains('wme-terrain-select')
       ? this._cellTerrain(previous)
       : (previousSceneId || '');
+  }
+
+  // ================ 路网图层（roadEdges / poi 显示与录入）================
+
+  /** 每次主网格重建后重挂图层；只画不改数据，交互经 onChange 回到编辑器。 */
+  _syncRoadLayer(gridEl, region, metrics = {}) {
+    if (!gridEl || !region) return null;
+    this._roadLayer?.destroy();
+    this._roadLayer = new WorldMapRoadLayer({
+      gridEl,
+      onChange: change => this._handleRoadLayerChange(change)
+    });
+    this._roadLayer.setVisible(this._roadLayerVisible);
+    this._roadLayer.setMode(this._roadLayerMode);
+    this._roadLayer.render(region, { ...metrics, gap: 2 });
+    this._syncRoadLayerControls();
+    return this._roadLayer;
+  }
+
+  _syncRoadLayerControls() {
+    if (!this._el) return;
+    const toggle = this._el.querySelector('.wme-road-layer-toggle');
+    if (toggle) toggle.checked = this._roadLayerVisible === true;
+    const actions = this._el.querySelector('.wme-road-actions');
+    if (actions) actions.style.display = this._roadLayerVisible ? 'flex' : 'none';
+    this._el.querySelectorAll('.wme-road-mode').forEach(button => {
+      const active = button.dataset.mode === this._roadLayerMode;
+      button.style.background = active ? '#6b5a33' : '';
+      button.style.color = active ? '#f6e7a8' : '';
+    });
+  }
+
+  _refreshRoadLayer() {
+    if (!this._roadLayer || !this.region) return;
+    this._roadLayer.render(this.region, { ...(this._mainlandMetrics || {}), gap: 2 });
+  }
+
+  _handleRoadLayerChange(change) {
+    if (!change) return false;
+    if (change.type === 'connect') return this._connectRoadCells(change.a, change.b);
+    if (change.type === 'delete') return this._deleteRoadEdge(change.index);
+    return false;
+  }
+
+  /** 两格正交相邻且都勾了「道路」才补边；对角不算连通。 */
+  _connectRoadCells(a, b) {
+    const region = this.region;
+    if (!region || !Array.isArray(a) || !Array.isArray(b)) return false;
+    const [rowA, colA] = a.map(Number);
+    const [rowB, colB] = b.map(Number);
+    if (![rowA, colA, rowB, colB].every(Number.isInteger)) return false;
+    if (Math.abs(rowA - rowB) + Math.abs(colA - colB) !== 1) {
+      this._showToast('只支持正交相邻格连线，对角不算连通', 'warn');
+      return false;
+    }
+    if (!isWorldMapRoadCell(region.grid?.[rowA]?.[colA])
+      || !isWorldMapRoadCell(region.grid?.[rowB]?.[colB])) {
+      this._showToast('两端都必须是「道路」格才能连线', 'warn');
+      return false;
+    }
+    const edges = this._roadEdgesOf(region);
+    if (this._hasRoadEdge(edges, [rowA, colA], [rowB, colB])) {
+      this._showToast('这两格之间已有道路', 'warn');
+      return false;
+    }
+    region.roadEdges = [...edges, [[rowA, colA], [rowB, colB]]];
+    this._commitRoadChange('已添加道路连线');
+    return true;
+  }
+
+  _deleteRoadEdge(index) {
+    const region = this.region;
+    const edges = Array.isArray(region?.roadEdges) ? region.roadEdges : null;
+    if (!edges || !Number.isInteger(index) || index < 0 || index >= edges.length) return false;
+    const next = edges.slice();
+    next.splice(index, 1);
+    region.roadEdges = next;
+    this._commitRoadChange('已删除道路连线');
+    return true;
+  }
+
+  /** 勾选道路格后：只给该格补正交邻接边，既有边一条不动。 */
+  _deriveRoadEdgesForCell(region, row, col) {
+    if (!region) return 0;
+    return this._appendMissingRoadEdges(region, [
+      [row, col],
+      [row - 1, col],
+      [row + 1, col],
+      [row, col - 1],
+      [row, col + 1]
+    ]);
+  }
+
+  /** 全图补缺：只补正交相邻两条道路格之间缺失的边；不覆盖、不删除既有边。 */
+  _deriveRoadEdges(region = this.region) {
+    if (!region) return 0;
+    const targets = [];
+    const rows = Math.floor(Number(region.rows) || 0);
+    const cols = Math.floor(Number(region.cols) || 0);
+    for (let row = 0; row < rows; row += 1) {
+      for (let col = 0; col < cols; col += 1) targets.push([row, col]);
+    }
+    return this._appendMissingRoadEdges(region, targets);
+  }
+
+  _appendMissingRoadEdges(region, cells) {
+    const edges = this._roadEdgesOf(region);
+    const additions = [];
+    for (const [row, col] of cells) {
+      if (!isWorldMapRoadCell(region.grid?.[row]?.[col])) continue;
+      for (const [nextRow, nextCol] of [[row + 1, col], [row, col + 1]]) {
+        if (!isWorldMapRoadCell(region.grid?.[nextRow]?.[nextCol])) continue;
+        if (this._hasRoadEdge(edges, [row, col], [nextRow, nextCol])) continue;
+        if (this._hasRoadEdge(additions, [row, col], [nextRow, nextCol])) continue;
+        additions.push([[row, col], [nextRow, nextCol]]);
+      }
+    }
+    if (additions.length === 0) return 0;
+    region.roadEdges = [...edges, ...additions];
+    return additions.length;
+  }
+
+  _roadEdgesOf(region) {
+    return Array.isArray(region?.roadEdges) ? region.roadEdges.slice() : [];
+  }
+
+  _hasRoadEdge(edges, a, b) {
+    return (edges || []).some(pair => {
+      if (!Array.isArray(pair) || pair.length !== 2) return false;
+      return (this._sameCell(pair[0], a) && this._sameCell(pair[1], b))
+        || (this._sameCell(pair[0], b) && this._sameCell(pair[1], a));
+    });
+  }
+
+  _sameCell(left, right) {
+    return Number(left?.[0]) === Number(right?.[0])
+      && Number(left?.[1]) === Number(right?.[1]);
+  }
+
+  /**
+   * 路网改动后从草稿重抽自动层（与抽取器读同一份 roadEdges/poi），
+   * 差异面板据此立即反映增删；再重画图层。
+   */
+  _refreshAutoLayerFromDraft() {
+    this._autoRevision = (this._autoRevision || 0) + 1;
+    try {
+      this._autoLayer = extractWorldLogic(this._buildCandidateProject(this.draftWorldMap), {
+        revision: this._autoRevision
+      });
+      this.logicEditor?.setAutoLayer(this._autoLayer);
+    } catch (error) {
+      this._showToast(`路网重抽失败: ${error.message}`, 'error');
+    }
+  }
+
+  _commitRoadChange(message) {
+    this._refreshAutoLayerFromDraft();
+    this._refreshRoadLayer();
+    this._showToast(message);
   }
 
   _collectMainlandFootprintKeys(worldIndex, sceneId, target) {
@@ -1500,6 +1704,8 @@ export class WorldMapEditor {
   }
 
   _teardownMainlandNavigation() {
+    this._roadLayer?.destroy();
+    this._roadLayer = null;
     if (typeof this._mainlandNavigationCleanup === 'function') {
       this._mainlandNavigationCleanup();
     }

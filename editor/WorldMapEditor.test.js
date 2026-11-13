@@ -137,3 +137,82 @@ describe('WorldMapEditor 地图格道路/落点写回（4E 数据层）', () => 
     expect(cleared.checked).toBe(false);
   });
 });
+
+describe('WorldMapEditor 路网图层（roadEdges 录入与抽取器联动）', () => {
+  function wireRoad(editor) {
+    editor.draftWorldMap.regions[0] = editor.region;
+    editor._buildCandidateProject = vi.fn(() => ({ worldMap: structuredClone(editor.draftWorldMap) }));
+    editor.logicEditor = { setAutoLayer: vi.fn() };
+    editor._roadLayer = { render: vi.fn() };
+    editor._showToast = vi.fn();
+    return editor;
+  }
+
+  it('自动推导只补正交相邻道路格的缺边，既有手工边原样保留', () => {
+    const editor = wireRoad(makeEditor());
+    editor.region.roadEdges = [[[0, 0], [1, 1]]];
+    editor.region.grid[0][0] = { terrain: 'plain', road: true };
+    editor.region.grid[0][1] = { terrain: 'forest', road: true };
+    editor.region.grid[1][1] = { terrain: 'forest', road: true };
+
+    expect(editor._deriveRoadEdges(editor.region)).toBe(2);
+    expect(editor.region.roadEdges[0]).toEqual([[0, 0], [1, 1]]);
+    expect(editor.region.roadEdges).toHaveLength(3);
+
+    expect(editor._deriveRoadEdges(editor.region)).toBe(0);
+    expect(editor.region.roadEdges).toHaveLength(3);
+  });
+
+  it('连线要求两端都是道路格且正交相邻；对角与重复连接被拒绝', () => {
+    const editor = wireRoad(makeEditor());
+    editor.region.grid[0][0] = { terrain: 'plain', road: true };
+    editor.region.grid[0][1] = { terrain: 'forest', road: true };
+
+    expect(editor._connectRoadCells([0, 0], [1, 1])).toBe(false);
+    expect(editor._connectRoadCells([0, 0], [1, 0])).toBe(false);
+    expect(editor.region.roadEdges).toBeUndefined();
+
+    expect(editor._connectRoadCells([0, 0], [0, 1])).toBe(true);
+    expect(editor.region.roadEdges).toEqual([[[0, 0], [0, 1]]]);
+    expect(editor._connectRoadCells([0, 0], [0, 1])).toBe(false);
+    expect(editor.logicEditor.setAutoLayer).toHaveBeenCalledTimes(1);
+  });
+
+  it('删除按索引落到 roadEdges，并重画图层、重抽自动层', () => {
+    const editor = wireRoad(makeEditor());
+    editor.region.roadEdges = [[[0, 0], [0, 1]], [[0, 1], [1, 1]]];
+
+    expect(editor._deleteRoadEdge(0)).toBe(true);
+    expect(editor.region.roadEdges).toEqual([[[0, 1], [1, 1]]]);
+    expect(editor._roadLayer.render).toHaveBeenCalled();
+    expect(editor.logicEditor.setAutoLayer).toHaveBeenCalledTimes(1);
+
+    expect(editor._deleteRoadEdge(9)).toBe(false);
+    expect(editor.region.roadEdges).toHaveLength(1);
+  });
+
+  it('图层里的边与抽取器同源：关隘—渡口连线进入自动层并标记 ferry', () => {
+    const editor = wireRoad(makeEditor());
+    const region = {
+      id: 'region.test',
+      name: '测试',
+      mapType: 'terrainGrid',
+      chunkWidth: 100,
+      chunkHeight: 100,
+      cols: 2,
+      rows: 1,
+      grid: [[
+        { terrain: 'plain', road: true, poi: 'pass' },
+        { terrain: 'plain', road: true, poi: 'ferry' }
+      ]]
+    };
+    editor.region = region;
+    editor.draftWorldMap = { entrySceneId: null, regions: [region] };
+
+    expect(editor._connectRoadCells([0, 0], [0, 1])).toBe(true);
+    const autoLayer = editor.logicEditor.setAutoLayer.mock.calls[0][0];
+    const edge = autoLayer.edges.find(item => item.mode === 'ferry');
+    expect(edge).toBeTruthy();
+    expect(edge.id).toBe('edge.pass.region.test.r0c0__ferry.region.test.r0c1');
+  });
+});
