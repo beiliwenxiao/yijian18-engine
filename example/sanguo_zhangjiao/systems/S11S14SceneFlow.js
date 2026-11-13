@@ -765,7 +765,7 @@ const s13s14Methods = {
     const choice = this._worldLoadSession?.getSceneData?.('S13')?.gameplay?.choices
       ?.find(entry => entry?.id === mode);
     if (!choice) return { ok: false, code: 's13ChoiceMissing', mode };
-    const ledger = this.scene?.foodLedgerSystem || null;
+    const ledger = this.foodLedgerSystem || null;
     if (!ledger?.previewConsume) return { ok: false, code: 'warLedgerUnavailable' };
     const entries = Object.entries(choice.resourceCost || {}).map(([key, quantity]) => ({
       itemId: RESOURCE_IDS[key] || key,
@@ -794,7 +794,7 @@ const s13s14Methods = {
     if (!battleResult?.resultId || battleResult.battleId !== S13_BATTLE_ID) {
       return { ok: false, code: 's13BattleResultMissing' };
     }
-    const ledger = this.scene?.foodLedgerSystem || null;
+    const ledger = this.foodLedgerSystem || null;
     const battleCoordinator = this.s03s14BattleCoordinator;
     if (!ledger?.consume || !battleCoordinator?.captureCityWarState?.()) {
       return { ok: false, code: 's13SettlementRuntimeUnavailable' };
