@@ -11,6 +11,7 @@
  ************************************************************/
 
 import { ShapeRenderer } from '../src/rendering/ShapeRenderer.js';
+import { TERRAIN_COMBAT_PRESETS, terrainCombatSummary } from './SceneEditorUI.js';
 
 /**
  * SceneEditorCanvas - 场景编辑器渲染模块
@@ -612,8 +613,16 @@ export class SceneEditorCanvas {
       if (obj.target) this._drawLogicLabel(ctx, '→ ' + obj.target, obj.x + 4, obj.y + obj.height - 4, color);
     } else if (obj.type === 'buffZone') {
       // Buff 区域：根据 shapeType 渲染不同形状
-      const fillColor = obj.fillColor || 'rgba(100, 0, 200, 0.2)';
-      const borderColor = obj.borderColor || 'rgba(100, 0, 200, 0.5)';
+      let fillColor = obj.fillColor || 'rgba(100, 0, 200, 0.2)';
+      let borderColor = obj.borderColor || 'rgba(100, 0, 200, 0.5)';
+      // 地势战斗区：未自定义颜色时按地势类型着色，让生效范围一眼可辨
+      const terrainTag = obj.effect?.kind === 'terrainCombat' && Array.isArray(obj.effect.tags)
+        ? String(obj.effect.tags[0] || '') : '';
+      const terrainPreset = terrainTag ? TERRAIN_COMBAT_PRESETS[terrainTag] : null;
+      if (terrainPreset) {
+        if (!obj.fillColor) fillColor = terrainPreset.fill;
+        if (!obj.borderColor) borderColor = terrainPreset.border;
+      }
 
       if (obj.shapeType === 'rect') {
         // 四边形
@@ -661,8 +670,11 @@ export class SceneEditorCanvas {
       this._drawLogicLabel(ctx, obj.name || 'Buff区域', labelX, labelY, '#c080ff');
       // 效果类型小标签
       if (obj.effect) {
-        const effText = `${obj.effect.stat || 'hp'} ${obj.effect.value > 0 ? '+' : ''}${obj.effect.value || 0}`;
-        this._drawLogicLabel(ctx, effText, labelX, labelY + 14, '#a060d0');
+        const isTerrain = obj.effect.kind === 'terrainCombat';
+        const effText = isTerrain
+          ? terrainCombatSummary(obj.effect)
+          : `${obj.effect.stat || 'hp'} ${obj.effect.value > 0 ? '+' : ''}${obj.effect.value || 0}`;
+        this._drawLogicLabel(ctx, effText, labelX, labelY + 14, isTerrain ? '#d8b45a' : '#a060d0');
       }
     } else if (obj.type === 'effectZone') {
       // 特效区域多边形：虚线边框 + 半透明填充 + 名称 + 特效类型

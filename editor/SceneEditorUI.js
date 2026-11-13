@@ -49,6 +49,56 @@ const escapeHtml = value => String(value ?? '')
   .replace(/'/g, '&#39;');
 
 /**
+ * 地势战斗（M5 · 5C）预设。选中地势类型时只写既有 terrainCombat 字段
+ * （effect.tags / effect.modifiers），不新增第二套字段；倍率语义见
+ * src/systems/TerrainCombatResolver.js。
+ */
+export const TERRAIN_COMBAT_PRESETS = Object.freeze({
+  highGround: {
+    label: '高台', fill: 'rgba(216,180,90,0.18)', border: 'rgba(216,180,90,0.75)',
+    modifiers: { archerRangeMultiplier: 1.25, defenseMultiplier: 1.1 }
+  },
+  forest: {
+    label: '树林', fill: 'rgba(74,154,90,0.18)', border: 'rgba(74,154,90,0.75)',
+    modifiers: { moveSpeedMultiplier: 0.6 }
+  },
+  riverbank: {
+    label: '河岸/浅滩', fill: 'rgba(74,138,216,0.18)', border: 'rgba(74,138,216,0.75)',
+    modifiers: { moveSpeedMultiplier: 0.5 }
+  },
+  pass: {
+    label: '隘口', fill: 'rgba(176,106,58,0.18)', border: 'rgba(176,106,58,0.75)',
+    modifiers: { defenseMultiplier: 1.3 }
+  },
+  camp: {
+    label: '营地', fill: 'rgba(154,122,208,0.18)', border: 'rgba(154,122,208,0.75)',
+    modifiers: {}
+  }
+});
+
+export const TERRAIN_COMBAT_MODIFIER_FIELDS = Object.freeze([
+  { key: 'attackMultiplier', label: '攻击倍率', short: '攻' },
+  { key: 'defenseMultiplier', label: '防御倍率', short: '防' },
+  { key: 'archerRangeMultiplier', label: '远程射程倍率', short: '射程' },
+  { key: 'moveSpeedMultiplier', label: '移动速度倍率', short: '移速' }
+]);
+
+/** 画布小标签：地势名 + 非 1 的倍率（只读展示，不产生数据）。 */
+export function terrainCombatSummary(effect) {
+  const tag = Array.isArray(effect?.tags) ? String(effect.tags[0] || '') : '';
+  const preset = TERRAIN_COMBAT_PRESETS[tag];
+  const modifiers = effect?.modifiers && typeof effect.modifiers === 'object' ? effect.modifiers : {};
+  const parts = [];
+  for (const field of TERRAIN_COMBAT_MODIFIER_FIELDS) {
+    const value = Number(modifiers[field.key]);
+    if (Number.isFinite(value) && value !== 1) parts.push(`${field.short}×${value}`);
+  }
+  const name = preset?.label || tag || '地势';
+  return parts.length ? `${name} · ${parts.join(' ')}` : name;
+}
+
+
+/**
  * SceneEditorUI - 场景编辑器 UI 模块
  * 负责 UI 面板初始化、属性面板更新、基础工具操作
  */
@@ -1307,14 +1357,67 @@ export class SceneEditorUI {
             obj.id = newId;
           }
         } else if (prop.startsWith('effect.')) {
-          // Buff 多边形嵌套属性：effect.stat, effect.value, effect.interval, etc.
+          // Buff 多边形嵌套属性：effect.stat、effect.modifiers.*、effect.tags 等
           if (!obj.effect) obj.effect = {};
-          const subKey = prop.slice(7); // 去掉 'effect.'
-          // 数值类型转换
-          if (['value', 'interval', 'delay', 'leaveDuration'].includes(subKey)) {
-            obj.effect[subKey] = parseFloat(value) || 0;
+          const path = prop.slice(7).split('.');
+          const numericKeys = [
+            'value', 'interval', 'delay', 'leaveDuration',
+            'attackMultiplier', 'defenseMultiplier', 'archerRangeMultiplier', 'moveSpeedMultiplier'
+          ];
+          // 效果类别切换：时序效果 ↔ 地势战斗，只保留当前类别用得到的字段
+          if (prop === 'effect.kind') {
+            editor.history?.saveHistory?.();
+            if (value === 'terrainCombat') {
+              obj.effect.kind = 'terrainCombat';
+              if (!obj.effect.side) obj.effect.side = 'any';
+            } else {
+              delete obj.effect.kind;
+              delete obj.effect.side;
+              delete obj.effect.tags;
+              delete obj.effect.unitTypeFilter;
+              delete obj.effect.modifiers;
+            }
+            this.updateObjectProperties();
+            editor.render();
+            return;
+          }
+          // 地势类型：写既有 tags，并按预设铺一遍 modifiers（数值可再改）
+          if (prop === 'effect.tags') {
+            editor.history?.saveHistory?.();
+            if (value) {
+              obj.effect.tags = [value];
+              obj.effect.modifiers = { ...(TERRAIN_COMBAT_PRESETS[value]?.modifiers || {}) };
+            } else {
+              delete obj.effect.tags;
+              delete obj.effect.modifiers;
+            }
+            this.updateObjectProperties();
+            editor.render();
+            return;
+          }
+          let holder = obj.effect;
+          for (const key of path.slice(0, -1)) {
+            if (!holder[key] || typeof holder[key] !== 'object') holder[key] = {};
+            holder = holder[key];
+          }
+          const leaf = path[path.length - 1];
+          if (prop === 'effect.unitTypeFilter') {
+            const list = String(value || '').split(/[,，\s]+/).map(item => item.trim()).filter(Boolean);
+            if (list.length) obj.effect.unitTypeFilter = list;
+            else delete obj.effect.unitTypeFilter;
+          } else if (numericKeys.includes(leaf)) {
+            const num = parseFloat(value);
+            if (Number.isFinite(num)) holder[leaf] = num;
+            else delete holder[leaf];
+          } else if (value === '' || value == null) {
+            delete holder[leaf];
           } else {
-            obj.effect[subKey] = value;
+            holder[leaf] = value;
+          }
+          // 清掉空 modifiers，保持场景 JSON 干净
+          if (obj.effect.modifiers && typeof obj.effect.modifiers === 'object'
+            && Object.keys(obj.effect.modifiers).length === 0) {
+            delete obj.effect.modifiers;
           }
         } else if (prop.startsWith('overrides.')) {
           // 放置点级覆盖（type:'ref'）：同一库定义在不同场景呈现不同交互
@@ -1685,6 +1788,7 @@ export class SceneEditorUI {
    */
   _buildBuffZoneProperties(obj) {
     const eff = obj.effect || {};
+    const isTerrain = eff.kind === 'terrainCombat';
     let html = '<div class="property-row" style="border-top:1px solid #333;margin-top:6px;padding-top:6px;"><label style="color:#c080ff;font-weight:bold;">Buff 多边形</label></div>';
     html += `<div class="property-row"><label>名称:</label><input type="text" value="${obj.name || ''}" data-prop="name"></div>`;
     html += `<div class="property-row"><label>顶点数:</label><input type="number" value="${(obj.points || []).length}" min="3" max="100" data-prop="_vertexCount" title="修改后重新生成正多边形"></div>`;
@@ -1692,6 +1796,11 @@ export class SceneEditorUI {
     html += `<div class="property-row"><label>边框色:</label><input type="text" value="${obj.borderColor || 'rgba(100,0,200,0.5)'}" data-prop="borderColor" style="font-size:10px;"></div>`;
     html += `<div class="property-row"><label>游戏中可见:</label><input type="checkbox" ${obj.visible !== false ? 'checked' : ''} data-prop="visible"></div>`;
     html += '<div class="property-row" style="border-top:1px solid #444;margin-top:4px;padding-top:4px;"><label style="color:#a060d0;">效果设置</label></div>';
+    html += `<div class="property-row"><label>效果类别:</label><select data-prop="effect.kind">
+      <option value="" ${isTerrain ? '' : 'selected'}>时序效果（进入/周期/延迟）</option>
+      <option value="terrainCombat" ${isTerrain ? 'selected' : ''}>地势战斗（terrainCombat）</option>
+    </select></div>`;
+    if (isTerrain) return html + this._buildTerrainCombatFields(eff);
     html += `<div class="property-row"><label>效果类型:</label><select data-prop="effect.effectType">
       <option value="instant" ${eff.effectType === 'instant' ? 'selected' : ''}>即时</option>
       <option value="periodic" ${eff.effectType === 'periodic' ? 'selected' : ''}>周期</option>
@@ -1718,6 +1827,36 @@ export class SceneEditorUI {
       <option value="enemy" ${eff.target === 'enemy' ? 'selected' : ''}>敌人</option>
       <option value="all" ${eff.target === 'all' ? 'selected' : ''}>所有</option>
     </select></div>`;
+    return html;
+  }
+
+  /**
+   * 地势战斗（terrainCombat）表单：只编辑 effect.tags / side / unitTypeFilter / modifiers。
+   * @private
+   */
+  _buildTerrainCombatFields(eff) {
+    const tag = Array.isArray(eff.tags) ? String(eff.tags[0] || '') : '';
+    const modifiers = eff.modifiers && typeof eff.modifiers === 'object' ? eff.modifiers : {};
+    const side = eff.side || 'any';
+    const unitFilter = Array.isArray(eff.unitTypeFilter) ? eff.unitTypeFilter.join(', ') : '';
+    const options = Object.entries(TERRAIN_COMBAT_PRESETS)
+      .map(([key, preset]) => `<option value="${key}" ${tag === key ? 'selected' : ''}>${preset.label}</option>`)
+      .join('');
+    let html = `<div class="property-row"><label>地势类型:</label><select data-prop="effect.tags">
+      <option value="" ${tag ? '' : 'selected'}>未指定</option>
+      ${options}
+    </select></div>`;
+    html += `<div class="property-row"><label>作用方:</label><select data-prop="effect.side">
+      <option value="any" ${side === 'any' ? 'selected' : ''}>双方</option>
+      <option value="attacker" ${side === 'attacker' ? 'selected' : ''}>攻方</option>
+      <option value="defender" ${side === 'defender' ? 'selected' : ''}>守方</option>
+    </select></div>`;
+    html += `<div class="property-row"><label>兵种过滤:</label><input type="text" value="${escapeHtml(unitFilter)}" data-prop="effect.unitTypeFilter" placeholder="留空=全部；逗号分隔兵种 id" style="font-size:10px;"></div>`;
+    for (const field of TERRAIN_COMBAT_MODIFIER_FIELDS) {
+      const value = Number.isFinite(Number(modifiers[field.key])) ? modifiers[field.key] : '';
+      html += `<div class="property-row"><label>${field.label}:</label><input type="number" step="0.05" value="${value}" data-prop="effect.modifiers.${field.key}" placeholder="1"></div>`;
+    }
+    html += '<div class="property-row"><label></label><span style="font-size:10px;color:#888;">倍率留空=不修正，1=不变；范围为多边形覆盖区</span></div>';
     return html;
   }
 
