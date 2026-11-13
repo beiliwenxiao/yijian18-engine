@@ -166,9 +166,15 @@ export class BuildingNpcFlow {
     const view = role.buildView(ctx);
     ctx.view = view;
 
-    const startNode = dialogue.nodes.get('start');
-    const doneNode = dialogue.nodes.get('done');
-    const cancelNode = dialogue.nodes.get('cancel');
+    // 注册表里的对话节点来自项目数据，加载期已深冻结；先拷贝节点表与节点本体再改写，
+    // 然后按同一 dialogueId 覆盖注册，避免对只读节点赋值抛 TypeError。
+    const nodes = {};
+    for (const [nodeId, nodeData] of dialogue.nodes.entries()) {
+      nodes[nodeId] = JSON.parse(JSON.stringify(nodeData));
+    }
+    const startNode = nodes.start;
+    const doneNode = nodes.done;
+    const cancelNode = nodes.cancel;
     if (startNode) {
       startNode.text = view.intro;
       startNode.choices = view.canConfirm === false
@@ -180,6 +186,15 @@ export class BuildingNpcFlow {
     }
     if (doneNode) doneNode.text = view.donePlaceholder || '';
     if (cancelNode && !cancelNode.text) cancelNode.text = '那人见你无意，便不再多言。';
+    system.registerDialogue(role.dialogueId, {
+      title: dialogue.title,
+      startNode: dialogue.startNode,
+      nodes,
+      variables: dialogue.variables,
+      metadata: dialogue.metadata,
+      presentation: dialogue.presentation,
+      flowGroupId: dialogue.flowGroupId
+    });
 
     const started = system.startDialogue(role.dialogueId) !== false;
     if (!started) {

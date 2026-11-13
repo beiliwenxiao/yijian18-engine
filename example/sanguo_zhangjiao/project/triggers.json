@@ -3389,11 +3389,9 @@
   {
     "do": [
       {
-        "action": "scenario.command",
+        "action": "buildingNpc.execute",
         "params": {
-          "npcId": "recruit",
-          "operation": "bnp.execute",
-          "scenarioId": "scenario.command.bnp.execute"
+          "npcId": "recruit"
         },
         "stepId": "bnp-recruit-confirm"
       }
@@ -3412,11 +3410,9 @@
   {
     "do": [
       {
-        "action": "scenario.command",
+        "action": "buildingNpc.execute",
         "params": {
-          "npcId": "muster",
-          "operation": "bnp.execute",
-          "scenarioId": "scenario.command.bnp.execute"
+          "npcId": "muster"
         },
         "stepId": "bnp-muster-confirm"
       }
@@ -3435,11 +3431,9 @@
   {
     "do": [
       {
-        "action": "scenario.command",
+        "action": "buildingNpc.execute",
         "params": {
-          "npcId": "rank",
-          "operation": "bnp.execute",
-          "scenarioId": "scenario.command.bnp.execute"
+          "npcId": "rank"
         },
         "stepId": "bnp-rank-confirm"
       }

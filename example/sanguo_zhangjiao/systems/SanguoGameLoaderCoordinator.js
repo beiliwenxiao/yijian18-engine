@@ -541,6 +541,26 @@ function registerGameLoaderActions(triggerSystem) {
     return { ok: true, factionId, cityId, delta, scope: result.scope, value: result.value, changed: result.changed };
   });
   registered.push('reputation.adjust');
+  // BNP：建筑 NPC 确认结算。走触发动作而非 scenario.command，避免在外层
+  // sanguo:campaign 状态锁内嵌套 state.transaction 造成同 stateId 自等死锁。
+  triggerSystem.registerAction('buildingNpc.execute', async (params = {}) => {
+    // 本方法是 coordinator 方法，this 为场景投影代理：直接读 this.buildingNpcFlow，
+    // 不能写 this.scene?.buildingNpcFlow（代理下 this.scene 为 undefined）。
+    const flow = this.buildingNpcFlow || null;
+    if (typeof flow?.execute !== 'function') {
+      return { ok: false, code: 'buildingNpcUnavailable', error: { message: 'BuildingNpcFlow is not configured' } };
+    }
+    const result = await flow.execute({ npcId: params.npcId ?? null });
+    if (result?.ok === false) {
+      return {
+        ok: false,
+        code: result?.code || 'buildingNpcExecuteRejected',
+        error: { message: `buildingNpc.execute failed: ${result?.code || 'unknown'}` }
+      };
+    }
+    return { ok: true, accepted: result?.accepted === true, message: result?.message || '' };
+  });
+  registered.push('buildingNpc.execute');
   return registered;
 }
 

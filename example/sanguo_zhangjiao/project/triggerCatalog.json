@@ -568,6 +568,23 @@
       "value": "s01Survival"
     },
     {
+      "label": "建筑 NPC 确认结算（招募/收编/官勋）",
+      "paramsSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "npcId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "npcId"
+        ],
+        "type": "object"
+      },
+      "v": "buildingNpc.execute",
+      "value": "buildingNpc.execute"
+    },
+    {
       "label": "startDialogue",
       "paramsSchema": {
         "additionalProperties": true,
