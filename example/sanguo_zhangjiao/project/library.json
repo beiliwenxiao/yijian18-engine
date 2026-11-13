@@ -1205,6 +1205,24 @@
       "subType": "armor"
     },
     {
+      "id": "equipment.s07.xihua_talisman",
+      "name": "西华护身符",
+      "description": "迟滞战后，随军老卒从贴身包袱里取出的护身符。符纸早已褪色，边角却用细麻线一遍遍缝过。",
+      "type": "equipment",
+      "imageId": "inventory.equipment.talisman",
+      "maxStack": 1,
+      "rarity": 2,
+      "sprite": {
+        "height": 48,
+        "width": 48
+      },
+      "stats": {
+        "defense": 3,
+        "maxHp": 8
+      },
+      "subType": "accessory"
+    },
+    {
       "id": "weapon.s07.pursuit_spear",
       "name": "追风长枪",
       "description": "追击先锋的骑枪，枪杆笔直轻韧，专为追杀逃亡者而生。如今它为逃亡者断后。",

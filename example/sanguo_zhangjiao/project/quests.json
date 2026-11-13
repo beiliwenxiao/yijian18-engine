@@ -2052,6 +2052,10 @@
           {
             "count": 2,
             "itemId": "resource.food"
+          },
+          {
+            "count": 1,
+            "itemId": "equipment.s07.xihua_talisman"
           }
         ],
         "type": "items"
