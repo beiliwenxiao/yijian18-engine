@@ -110,22 +110,21 @@ describe('SceneArmyOrderFlow · M4 4A 增量', () => {
     expect(system.getUnit('army.a').position).toEqual({ x: 42, y: 24 });
   });
 
-  it('块状场景：实体局部坐标加块偏移写 armyStates，表现层行军点再减回局部', () => {
+  it('块状场景：实体 transform 已是世界坐标，质心直写 armyStates 不再叠加块偏移', () => {
     const system = new ArmyOrderSystem({ now: () => 1000 });
     const { scene } = makeScene({
-      entities: [makeEntity({ id: 'e1', armyId: 'army.a', x: 600, y: 392 })]
+      entities: [makeEntity({ id: 'e1', armyId: 'army.a', x: 15960, y: 4712 })]
     });
     scene.currentSceneId = 'S09';
     scene._worldLoadResult = { worldIndex: { getOffset: () => ({ x: 15360, y: 4320 }) } };
     const flow = new SceneArmyOrderFlow(scene, { system });
 
     flow.syncArmies();
-    // 世界逻辑节点坐标系：600+15360=15960、392+4320=4712，与 city.s09(16000,4680) 同域
+    // 与 city.s09(16000,4680) 同域；曾误加一次块偏移得到 31320/9032
     expect(system.getUnit('army.a').position).toEqual({ x: 15960, y: 4712 });
-    expect(flow._worldOffset()).toEqual({ x: 15360, y: 4320 });
   });
 
-  it('无世界索引时偏移为 0，保持旧行为', () => {
+  it('无世界索引时保持旧行为', () => {
     const system = new ArmyOrderSystem({ now: () => 1000 });
     const { scene } = makeScene({
       entities: [makeEntity({ id: 'e1', armyId: 'army.a', x: 500, y: 500 })]
@@ -134,7 +133,6 @@ describe('SceneArmyOrderFlow · M4 4A 增量', () => {
     const flow = new SceneArmyOrderFlow(scene, { system });
     flow.syncArmies();
     expect(system.getUnit('army.a').position).toEqual({ x: 500, y: 500 });
-    expect(flow._worldOffset()).toEqual({ x: 0, y: 0 });
   });
 
   it('无实体 march 走 WorldMarchExecutor：战略刻推进 route 位置', () => {
@@ -151,6 +149,22 @@ describe('SceneArmyOrderFlow · M4 4A 增量', () => {
     expect(system.getUnit('army.a').position.x).toBeCloseTo(50);
     flow.update(500);
     expect(system.getUnit('army.a').position.x).toBeCloseTo(100);
+  });
+
+  it('帧钩子吃秒：0.5s 转 500ms 走一个战略刻', () => {
+    const layer = buildLayer();
+    const system = makeSystem(layer);
+    system.registerUnit({ id: 'army.a', kind: 'army', position: { x: 0, y: 0 } });
+    system.issueOrder({ unitId: 'army.a', order: 'move', target: { nodeId: 'n.b' } });
+    const executor = new WorldMarchExecutor({ layer, marchSpeed: 100 });
+    const { scene, frameHooks } = makeScene();
+    const flow = new SceneArmyOrderFlow(scene, { system, marchExecutor: executor });
+    flow.attach();
+
+    const hook = frameHooks.find(entry => entry.key === 'armyOrder');
+    expect(typeof hook?.fn).toBe('function');
+    hook.fn(0.5);
+    expect(system.getUnit('army.a').position.x).toBeCloseTo(50);
   });
 
   it('pendingEncounter 期间战略刻暂停（位置不动）', () => {

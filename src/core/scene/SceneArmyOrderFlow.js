@@ -74,7 +74,9 @@ export class SceneArmyOrderFlow {
     this._restoreFromBlackboard();
     this.scene.sceneRuntime?.onFramePhase?.(
       FramePhase.AFTER_SCENE,
-      deltaTime => this.update(deltaTime),
+      // AFTER_SCENE 的 deltaTime 是秒（GameEngine: dt = clampedDeltaMs / 1000），
+      // 战略刻 tick 吃毫秒；直接透传会让 500ms 刻度约 500 秒才走一格（实机形同不动）。
+      deltaTime => this.update(Math.max(0, Number(deltaTime) || 0) * 1000),
       'armyOrder'
     );
     this.syncArmies();
@@ -100,7 +102,6 @@ export class SceneArmyOrderFlow {
   syncArmies() {
     const scene = this.scene;
     const entities = scene.entityStore?.all || [];
-    const offset = this._worldOffset();
     const groups = new Map();
     for (const entity of entities) {
       const member = entity?.getComponent?.('squadMember');
@@ -126,9 +127,10 @@ export class SceneArmyOrderFlow {
 
     let changed = false;
     for (const [armyId, group] of groups) {
-      // armyStates.position 与世界逻辑节点同处世界坐标；场景实体是分块局部坐标，需加块偏移。
+      // 实体 transform 已是世界坐标（放置层 _localX + _worldOffset 落位），与世界逻辑节点同域，
+      // 质心直接写 armyStates；再加块偏移会重复叠加（S09 实测 16000+15360=31360）。
       const position = group.samples > 0
-        ? { x: group.x / group.samples + offset.x, y: group.y / group.samples + offset.y }
+        ? { x: group.x / group.samples, y: group.y / group.samples }
         : null;
       const state = this.system.getUnit(armyId);
       if (!state) {
@@ -161,22 +163,6 @@ export class SceneArmyOrderFlow {
       && state.route.nodeIds.length >= 2;
   }
 
-  /**
-   * 当前场景块在worldLogic世界坐标里的偏移（块状场景：实体位置 + 偏移 = 世界坐标）。
-   * 无世界索引时返回 {0,0}，行为与旧数据一致。
-   */
-  _worldOffset() {
-    const scene = this.scene;
-    const sceneId = scene.currentSceneId || scene.sceneId || null;
-    const worldIndex = scene._worldLoadResult?.worldIndex
-      || scene.context?.world?.worldIndex
-      || scene._worldIndex
-      || null;
-    const offset = sceneId ? worldIndex?.getOffset?.(sceneId) : null;
-    if (!offset) return { x: 0, y: 0 };
-    return { x: Number(offset.x) || 0, y: Number(offset.y) || 0 };
-  }
-
   /** 标记待入档（命令层改动后调用；下一帧写 blackboard.armyStates）。 */
   requestPersist() {
     this._dirty = true;
@@ -202,9 +188,7 @@ export class SceneArmyOrderFlow {
   _executeMarch({ state, order, stepMs }) {
     const hasRoute = this._isRouteAuthoritative(state);
     const point = this.system.resolveOrderPoint(order.target);
-    // 世界坐标 → 场景局部坐标，表现层实体才走在可视块内（无世界索引时偏移为 0）。
-    const offset = this._worldOffset();
-    const localPoint = point ? { x: point.x - offset.x, y: point.y - offset.y } : null;
+    // 目标点已是世界坐标，表现层实体同域，无需再做块偏移换算。
     // 有逻辑路线时目标点可缺省（终点由 route 末端节点给出）；无路线才要求可解析坐标。
     if (!point && !hasRoute) return { status: 'failed', code: 'targetUnresolved' };
     const armySystem = this._armySystem();
@@ -212,11 +196,11 @@ export class SceneArmyOrderFlow {
 
     // 表现层：在场实体照旧走 ArmyCommandSystem 行军（仅启动一次；抵达回调只清视觉态）。
     // 有 route 时即使启动失败也不终止指令——逻辑行军的权威在 WorldMarchExecutor。
-    if (localPoint && units.length > 0 && armySystem?.startMarch) {
+    if (point && units.length > 0 && armySystem?.startMarch) {
       const key = `${state.id}:${order.issuedAt}`;
       if (!this._marches.has(key)) {
-        const started = armySystem.startMarch({ armyId: state.id, waypoints: [localPoint] });
-        if (started?.ok === true) this._marches.set(key, { armyId: state.id, point: localPoint, done: false });
+        const started = armySystem.startMarch({ armyId: state.id, waypoints: [point] });
+        if (started?.ok === true) this._marches.set(key, { armyId: state.id, point, done: false });
         else if (!hasRoute) return { status: 'failed', code: started?.code || 'marchUnavailable' };
       }
     }

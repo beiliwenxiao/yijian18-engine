@@ -184,17 +184,23 @@ export class EncounterResolver {
 
     if (this._inCooldown(state, currentEdgeId, nextNodeId)) return null;
 
-    // ① 下一个节点是敌对城池/关隘
+    // ① 下一个节点是敌对城池/关隘（须已推进到 engageRadius 内才触发：
+    //    否则「从城中下令去远处的敌关」会在出发刻就被关隘遭遇打断，
+    //    行军路径上的野战遭遇（②）永远轮不到——S09 伊阙道游骑即此情形）
     if (nextNodeId && layer) {
       const node = layer.getNode(nextNodeId);
       const owner = layer.getOwner(nextNodeId);
       if (node && (node.kind === 'city' || node.kind === 'pass') && owner && String(owner) !== factionId) {
-        return this._buildEncounter({
-          state, order, layer, units, day,
-          kind: node.kind,
-          nodeId: nextNodeId,
-          edgeId: currentEdgeId
-        });
+        const nodeRadius = Math.max(1, num(this.combat.engageRadius, 120));
+        const nodeDistance = distanceOf(pointOf(state.position), pointOf(node.position));
+        if (!Number.isFinite(nodeDistance) || nodeDistance <= nodeRadius) {
+          return this._buildEncounter({
+            state, order, layer, units, day,
+            kind: node.kind,
+            nodeId: nextNodeId,
+            edgeId: currentEdgeId
+          });
+        }
       }
     }
 

@@ -134,6 +134,17 @@ describe('EncounterResolver.detect', () => {
     expect(encounter.nodeId).toBe('b');
   });
 
+  it('① 敌占关隘尚在 engageRadius 外 → 不触发（让路上野战遭遇先来）', () => {
+    const resolver = makeResolver();
+    const layer = makeLayer({
+      nodes: [makeNode('a'), makeNode('b', { kind: 'pass', ownerFactionId: 'enemy', position: { x: 3240, y: 0 } })],
+      edges: [makeEdge('e1', 'a', 'b')]
+    });
+    expect(resolver.detect({ state: makeState(), order: { state: 'executing' }, layer })).toBeNull();
+    const near = makeState({ position: { x: 3200, y: 0 } });
+    expect(resolver.detect({ state: near, order: { state: 'executing' }, layer })?.kind).toBe('pass');
+  });
+
   it('② 交战半径内敌单位 → field；同阵营/城池/已歼灭跳过', () => {
     const resolver = makeResolver();
     const layer = makeLayer({ nodes: [makeNode('a'), makeNode('b')], edges: [makeEdge('e1', 'a', 'b')] });
