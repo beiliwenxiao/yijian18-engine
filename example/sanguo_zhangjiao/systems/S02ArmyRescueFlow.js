@@ -98,18 +98,25 @@ export class S02ArmyRescueCoordinator {
     return { ok: true };
   }
 
-  /** 加入线：一次招募 80 黄巾。 */
-  async recruitYellow() {
+  /**
+   * 加入线：一次招募 80 黄巾。
+   *
+   * 注意：本方法运行在 scenario.command 的状态锁内，**不能再等待** gateway 提交
+   * state.transaction（同 stateId 嵌套会自等死锁）。事实由触发器
+   * trg_s02_recruit_yellow 以兄弟步骤先行提交，这里只做副作用。
+   */
+  recruitYellow() {
     if (this._storyFact('s02RecruitDone') === true) return { ok: true, idempotent: true };
-    // 先落事实再出兵：出兵点 spawnWhen 门控读 s02RecruitYellow，事务未提交前出兵会被门挡下
-    const result = await this._submitFact('story.s02.recruit.yellow');
     this.scene.context?.services?.placements?.spawn?.({ group: 'S02-army-yellow80', authoritative: true });
     this.scene._showScreenTip?.('八十名黄巾信众当场入列。', { title: '招兵' });
-    return result;
+    return { ok: true, recruited: 80 };
   }
 
-  /** 不加入线：一次招募亲卫（B5 唯一口径：floor((统率+官职)/2)，封顶 100）。 */
-  async recruitGuard() {
+  /**
+   * 不加入线：一次招募亲卫（B5 唯一口径：floor((统率+官职)/2)，封顶 100）。
+   * 事实由 trg_s02_recruit_guard 以兄弟步骤提交；本方法只回族编制与副作用。
+   */
+  recruitGuard() {
     if (this._storyFact('s02RecruitDone') === true) return { ok: true, idempotent: true };
     const stats = this.scene.playerEntity?.getComponent?.('stats');
     const command = Number(stats?.command ?? stats?.getStat?.('command')) || 0;
@@ -122,11 +129,9 @@ export class S02ArmyRescueCoordinator {
         rankValue: this._guardRankValue(),
         capacityMax: this.scene.gameLoader?.project?.companionRule?.capacityMax || 100
       });
-    // 先落事实再出兵（同 recruitYellow：spawnWhen 门控读 s02RecruitGuard）
-    const result = await this._submitFact('story.s02.recruit.guard', { cap });
     this.scene.context?.services?.placements?.spawn?.({ group: 'S02-army-guard', authoritative: true });
     this.scene._showScreenTip?.(`亲卫一次入列（上限 ${cap} 人，由统率与官职决定）。`, { title: '招兵' });
-    return result;
+    return { ok: true, cap };
   }
 
   _storyFact(key) {
@@ -552,14 +557,48 @@ export class S02ArmyRescueCoordinator {
     });
     this._campSupplyCampId = campId;
     if (pos) this._campSupplyPosition = { x: pos.x, y: pos.y };
+    // 营地归属军团必须同时进粮草账本，否则粮仓转运/粮草条军团段一律 armyUnavailable
+    this._ensurePlayerArmy();
     scene.syncCampContainers?.();
     scene.syncWarLogisticsState?.();
     return result;
   }
 
+  /**
+   * 玩家亲卫军团入粮草账本（营地 ownerArmyId 指向它）。
+   * 不注册则 `_resolveSupplyArmy` 永远 armyUnavailable：粮仓转运打不开、粮草条军团段为空。
+   * 兵额以实兵为准（armyCommandFlow 存活单位），无军队时退回统率上限。
+   */
+  _ensurePlayerArmy() {
+    const scene = this.scene;
+    const ledger = scene.foodLedgerSystem;
+    if (!ledger?.registerArmy) return null;
+    const existing = ledger.getArmy?.('army.player.escort');
+    if (existing) return existing;
+    const aliveUnits = [...(scene.armyCommandFlow?.system?.units?.values?.() || [])]
+      .filter(unit => unit?.entity && unit.entity.isDead !== true && unit.entity.isDying !== true).length;
+    const fallback = Number(scene.companionSquadSystem?.getCapacity?.()) || 10;
+    const count = Math.max(1, aliveUnits || fallback);
+    const registered = ledger.registerArmy({
+      id: 'army.player.escort',
+      name: '亲卫',
+      factionId: 'player',
+      control: 'player',
+      roster: { soldier: count },
+      manpower: count,
+      supply: { food: 0 }
+    });
+    return registered?.ok ? registered.army : null;
+  }
+
   /** 玩家/剧本可操作的军团（V3：营地 ownerArmyId 优先，再退回旧 faction 过滤）。 */
   _resolveSupplyArmy(campId = null) {
     const ledger = this.scene.foodLedgerSystem;
+    // 兜底：营地已注册但军团缺失（例如营地落成回调与粮草账本实例切换错位）时补注册一次。
+    if (!this._playerArmyEnsured) {
+      this._ensurePlayerArmy();
+      this._playerArmyEnsured = Boolean(ledger?.getArmy?.('army.player.escort'));
+    }
     const armies = ledger?.armies instanceof Map ? [...ledger.armies.values()] : [];
     const camp = ledger?.getCamp?.(campId || this._campSupplyCampId || 'camp.s02.field');
     const ownerArmyId = camp?.ownerArmyId ? String(camp.ownerArmyId) : '';

@@ -2968,12 +2968,62 @@
           {
             "do": [
               {
+                "action": "state.transaction",
+                "params": {
+                  "definitionId": "story.s02.recruit.yellow"
+                },
+                "stepId": "recruit-yellow-fact"
+              },
+              {
                 "action": "scenario.command",
                 "params": {
                   "operation": "s02.recruit.yellow",
                   "scenarioId": "scenario.command.s02.recruit.yellow"
                 },
                 "stepId": "recruit-yellow"
+              },
+              {
+                "action": "scenario.command",
+                "params": {
+                  "operation": "s02.uprising",
+                  "scenarioId": "scenario.command.s02.uprising"
+                },
+                "stepId": "uprising-seed-structures"
+              },
+              {
+                "action": "state.transaction",
+                "params": {
+                  "definitionId": "story.s02.uprising"
+                },
+                "stepId": "uprising-fact"
+              },
+              {
+                "action": "spawnPlacements",
+                "params": {
+                  "selector": {
+                    "group": "S02-camp-buildings"
+                  }
+                },
+                "stepId": "uprising-buildings"
+              },
+              {
+                "action": "spawnPlacements",
+                "params": {
+                  "selector": {
+                    "group": "S02-army-yellow80"
+                  }
+                },
+                "stepId": "uprising-army"
+              },
+              {
+                "action": "scenario.command",
+                "params": {
+                  "operation": "army.camp",
+                  "scenarioId": "scenario.command.army.camp",
+                  "x": 560,
+                  "y": 400
+                },
+                "stepId": "uprising-camp"
               }
             ],
             "when": {
@@ -3013,12 +3063,62 @@
           {
             "do": [
               {
+                "action": "state.transaction",
+                "params": {
+                  "definitionId": "story.s02.recruit.guard"
+                },
+                "stepId": "recruit-guard-fact"
+              },
+              {
                 "action": "scenario.command",
                 "params": {
                   "operation": "s02.recruit.guard",
                   "scenarioId": "scenario.command.s02.recruit.guard"
                 },
                 "stepId": "recruit-guard"
+              },
+              {
+                "action": "scenario.command",
+                "params": {
+                  "operation": "s02.uprising",
+                  "scenarioId": "scenario.command.s02.uprising"
+                },
+                "stepId": "uprising-seed-structures"
+              },
+              {
+                "action": "state.transaction",
+                "params": {
+                  "definitionId": "story.s02.uprising"
+                },
+                "stepId": "uprising-fact"
+              },
+              {
+                "action": "spawnPlacements",
+                "params": {
+                  "selector": {
+                    "group": "S02-camp-buildings"
+                  }
+                },
+                "stepId": "uprising-buildings"
+              },
+              {
+                "action": "spawnPlacements",
+                "params": {
+                  "selector": {
+                    "group": "S02-army-guard"
+                  }
+                },
+                "stepId": "uprising-army"
+              },
+              {
+                "action": "scenario.command",
+                "params": {
+                  "operation": "army.camp",
+                  "scenarioId": "scenario.command.army.camp",
+                  "x": 560,
+                  "y": 400
+                },
+                "stepId": "uprising-camp"
               }
             ],
             "when": {

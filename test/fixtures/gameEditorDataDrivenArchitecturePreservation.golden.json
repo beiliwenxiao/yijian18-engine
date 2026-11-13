@@ -195,10 +195,13 @@
       "trg_task.s02.summons_event_travelToS09",
       "trg_task.s02.verdict_event_begChildrenEnter",
       "trg_task.s02.summons_event_scavengerEncounter",
-      "trg_task.s02.summons_event_recruitInteract",
+      "trg_s02_recruit_guard",
+      "trg_s02_ritual_serve",
       "trg_s02_camp_forge",
       "trg_s02_camp_workshop",
       "trg_s02_camp_recruit_post",
+      "trg_bnp_s02_recruit_interact",
+      "trg_bnp_s02_muster_interact",
       "trg_s02_camp_granary"
     ],
     "s_5_8": [
@@ -266,7 +269,9 @@
       "trg_s10_build_barricade",
       "trg_s10_build_simple_wall",
       "trg_s10_build_arrow_tower",
-      "trg_s10_exit_s11"
+      "trg_s10_exit_s11",
+      "trg_bnp_s02_recruit_interact",
+      "trg_bnp_s10_rank_interact"
     ],
     "S11": [
       "trg_s11_choose_battle_mode",

@@ -2018,7 +2018,7 @@
           "radius": 110,
           "target": "S02-zone-recruit",
           "targetMode": "id",
-          "triggerId": "trg_task.s02.summons_event_recruitInteract",
+          "triggerId": "trg_s02_recruit_guard",
           "type": "trigger",
           "width": 180,
           "x": 793.1410316440305,
