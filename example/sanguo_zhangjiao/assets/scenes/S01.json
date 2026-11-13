@@ -795,60 +795,12 @@
             "visible": true
           },
           "group": "S01-initial",
-          "id": "S01-light-torch-camp-west",
-          "kind": "item",
-          "ref": "prop.torch",
-          "type": "ref",
-          "x": 437.6,
-          "y": 590.4
-        },
-        {
-          "editor": {
-            "visible": true
-          },
-          "group": "S01-initial",
-          "id": "S01-light-torch-camp-east",
-          "kind": "item",
-          "ref": "prop.torch",
-          "type": "ref",
-          "x": 484.9,
-          "y": 591.8
-        },
-        {
-          "editor": {
-            "visible": true
-          },
-          "group": "S01-initial",
-          "id": "S01-light-candle-shelter-a",
-          "kind": "item",
-          "ref": "prop.candle",
-          "type": "ref",
-          "x": 441.3,
-          "y": 469.6
-        },
-        {
-          "editor": {
-            "visible": true
-          },
-          "group": "S01-initial",
-          "id": "S01-light-candle-shelter-b",
-          "kind": "item",
-          "ref": "prop.candle",
-          "type": "ref",
-          "x": 476.2,
-          "y": 467.9
-        },
-        {
-          "editor": {
-            "visible": true
-          },
-          "group": "S01-initial",
           "id": "S01-light-firefly-river-1",
           "kind": "item",
           "ref": "prop.firefly",
           "type": "ref",
-          "x": 812.4,
-          "y": 331.6
+          "x": 825.7852061811626,
+          "y": 334.10972615896804
         },
         {
           "editor": {
@@ -859,8 +811,8 @@
           "kind": "item",
           "ref": "prop.firefly",
           "type": "ref",
-          "x": 838.9,
-          "y": 343.2
+          "x": 80.2819949649371,
+          "y": 293.0054768206401
         },
         {
           "collision": {
