@@ -44,17 +44,17 @@ const DIALOGUES = {
   }
 };
 
-function makeCompanion(id) {
+function makeCompanion(id, armyId = 'companion') {
   return {
     id,
     isDead: false,
     getComponent(name) {
-      return name === 'squadMember' ? { armyId: 'companion', squadId: 'companion' } : null;
+      return name === 'squadMember' ? { armyId, squadId: 'zhong' } : null;
     }
   };
 }
 
-function createFixture({ story = {}, campFood = 50, capacity = 20, currentSceneId = 'S02', existing = 2, scattered = [], spawnBudget = Infinity } = {}) {
+function createFixture({ story = {}, campFood = 50, capacity = 20, currentSceneId = 'S02', existing = 2, existingArmyId = 'companion', scattered = [], spawnBudget = Infinity } = {}) {
   const blackboard = {
     state: { storyState: { playerRank: { rankId: 'rank.wusheng', title: '伍长', value: 0 }, s02RecruitCount: 2, ...story } },
     get(key) { return this.state[key]; },
@@ -69,7 +69,7 @@ function createFixture({ story = {}, campFood = 50, capacity = 20, currentSceneI
   const intents = [];
   const tips = [];
   const companions = [];
-  for (let index = 0; index < existing; index += 1) companions.push(makeCompanion(`companion.seed.${index}`));
+  for (let index = 0; index < existing; index += 1) companions.push(makeCompanion(`companion.seed.${index}`, existingArmyId));
   let spawnAttempts = 0;
   const scene = {
     currentSceneId,
@@ -134,6 +134,19 @@ describe('BuildingNpcFlow', () => {
     expect(intents).toHaveLength(1);
     expect(intents[0].payload).toMatchObject({ definitionId: 'story.bnp.recruit', count: 20, cap: 20, food: 18, spawnSeq: 18 });
     expect(dialogue.dialogues.get('dialogue.bnp.s02.recruit').nodes.get('done').text).toContain('亲卫 20/20');
+  });
+
+  it('招募：已有 10 名 S02-army-guard 编组守兵时，缺口 = 上限 - 10', async () => {
+    const guardFixture = createFixture({ existing: 10, existingArmyId: 'army.player.escort' });
+    const { flow, dialogue, intents, companions } = guardFixture;
+    flow.interact({ npcId: 'recruit', source: 'scene' });
+    const start = dialogue.dialogues.get('dialogue.bnp.s02.recruit').nodes.get('start');
+    expect(start.text).toContain('现编 10 人');
+    expect(start.text).toContain('还缺 10 人');
+    const result = await flow.execute({ npcId: 'recruit' });
+    expect(result.accepted).toBe(true);
+    expect(companions).toHaveLength(20);
+    expect(intents[0].payload).toMatchObject({ count: 20, cap: 20, spawnSeq: 10 });
   });
 
   it('招募：实体生成中途失败时回滚，不扣粮、不写事实', async () => {

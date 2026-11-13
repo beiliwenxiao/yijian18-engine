@@ -39,6 +39,10 @@ const CAMP_BY_SCENE = Object.freeze({
   S10: 'camp.s10.creek'
 });
 
+/** 玩家亲卫军团 id（S02-army-guard placement 展开后的 armyId）。 */
+const PLAYER_ARMY_ID = 'army.player.escort';
+const COMPANION_ARMY_ID = 'companion';
+
 const toInt = (value, fallback = 0) => {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? Math.floor(parsed) : fallback;
@@ -266,17 +270,32 @@ export class BuildingNpcFlow {
   }
 
   /**
-   * 亲卫实兵数：以场景内 squadMember.armyId='companion' 的存活实体为准。
-   * storyState.s02RecruitCount 只作镜像写入，出现偏差时以本函数为准。
+   * 亲卫实兵数：companion 编组 + 玩家亲卫军团（S02-army-guard）合并计数，同一实体只算一次。
+   * 老档回退：无 squadMember 标记时按「同阵营 + 归属 player 军团」判定并入，避免又算成 0。
    */
   liveCompanionCount() {
     const entities = this.scene.entityStore?.all || [];
     let count = 0;
     for (const entity of entities) {
       if (!entity || entity.isDead === true) continue;
-      if (entity.getComponent?.('squadMember')?.armyId === 'companion') count += 1;
+      if (this._isPlayerGuard(entity)) count += 1;
     }
     return count;
+  }
+
+  _isPlayerGuard(entity) {
+    const member = entity.getComponent?.('squadMember');
+    const memberArmyId = member?.armyId ? String(member.armyId) : '';
+    if (memberArmyId === COMPANION_ARMY_ID || memberArmyId === PLAYER_ARMY_ID) return true;
+    // 归属判定：军团命令系统登记过的单位以登记 armyId 为准
+    const registered = this.scene.armyCommandFlow?.system?.units?.get?.(entity.id);
+    if (registered) {
+      const registeredArmyId = registered.armyId ? String(registered.armyId) : '';
+      if (registeredArmyId === COMPANION_ARMY_ID || registeredArmyId === PLAYER_ARMY_ID) return true;
+    }
+    // 老存档回退：无标记的守兵按阵营 + 玩家军团归属并入
+    if (entity.faction !== 'ally' && entity.faction !== 'player') return false;
+    return entity.ownerArmyId === PLAYER_ARMY_ID || entity.armyId === PLAYER_ARMY_ID;
   }
 
   _spawnAnchor() {
