@@ -34,6 +34,7 @@ import { WorldLogicEditor } from './WorldLogicEditor.js';
 import { WorldMapRoadLayer } from './WorldMapRoadLayer.js';
 import { resolveEdgeConditions, validateWorldLogic } from '../src/core/world/WorldRouteLayer.js';
 import { extractWorldLogic } from '../src/core/world/WorldMapExtractor.js';
+import { computeWorldMapDisplayMetrics } from '../src/core/world/WorldMapDisplayMetrics.js';
 
 const WORLD_MAP_TERRAIN_LABELS = Object.freeze({
   mountain: '山地',
@@ -1167,8 +1168,10 @@ export class WorldMapEditor {
 
     const generation = ++this._renderGeneration;
     const selectedRegionId = region.id;
-    const thumbW = 256;
-    const thumbH = Math.max(1, Math.round(thumbW * (region.chunkHeight / region.chunkWidth)));
+    // 显示尺寸与游戏内 M 键大地图同源：region 格数 + chunk 尺寸（WorldMapDisplayMetrics）。
+    const display = computeWorldMapDisplayMetrics(region);
+    const thumbW = display.cellWidth;
+    const thumbH = Math.max(1, Math.round(display.cellHeight));
     const metrics = { thumbW, thumbH, labelH: 20, cellH: thumbH + 20 };
     const terrainOptions = WORLD_MAP_TERRAINS.map(terrain => (
       `<option value="${this._escapeHtml(terrain)}">${this._escapeHtml(this._terrainOptionLabel(terrain))}</option>`

@@ -12,9 +12,11 @@
 
 import { UIElement } from './UIElement.js';
 import { WorldCommandRing } from './WorldCommandRing.js';
+import {
+  computeWorldMapDisplayMetrics,
+  WORLD_MAP_DISPLAY_CELL_WIDTH
+} from '../core/world/WorldMapDisplayMetrics.js';
 
-/** 一格世界 chunk 在大地图上的基准像素宽度（96 / 1280 = 7.5%）。 */
-const CELL_WIDTH = 96;
 /** 面板内边距与标题栏/图例高度。 */
 const PAD = 24;
 const HEADER_H = 54;
@@ -185,10 +187,12 @@ export class WorldMapPanel extends UIElement {
 
   /** 依据面板尺寸重算视口并夹紧滚动量。 */
   refreshLayout() {
-    const left = this.x + PAD;
-    const top = this.y + HEADER_H;
-    const width = Math.max(1, this.width - PAD * 2);
-    const height = Math.max(1, this.height - HEADER_H - LEGEND_H - PAD / 2);
+    // 视口必须落在可见面板内（而非整屏），否则拖动后地图会画出面板边界。
+    const panel = this._panelRect();
+    const left = panel.x + PAD;
+    const top = panel.y + HEADER_H;
+    const width = Math.max(1, panel.w - PAD * 2);
+    const height = Math.max(1, panel.h - HEADER_H - LEGEND_H - PAD / 2);
     this._viewport = { left, top, width, height };
     this._applyRegionMetrics();
     this._clampScroll();
@@ -362,19 +366,19 @@ export class WorldMapPanel extends UIElement {
 
   _applyRegionMetrics() {
     const region = this._region();
-    if (!region || !region.bounds) {
+    if (!region) {
       this._mapWidth = 0;
       this._mapHeight = 0;
       this._pxPerWorld = 1;
       return;
     }
-    const chunkWidth = region.chunkWidth > 0 ? region.chunkWidth : 1280;
-    const chunkHeight = region.chunkHeight > 0 ? region.chunkHeight : 720;
-    this._pxPerWorld = CELL_WIDTH / chunkWidth;
-    this._cellWidth = CELL_WIDTH;
-    this._cellHeight = CELL_WIDTH * (chunkHeight / chunkWidth);
-    this._mapWidth = region.cols * CELL_WIDTH;
-    this._mapHeight = region.rows * this._cellHeight;
+    // 与编辑器共用的唯一尺寸来源：region 格数 + chunk 尺寸（WorldMapDisplayMetrics）。
+    const display = computeWorldMapDisplayMetrics(region);
+    this._pxPerWorld = display.scale;
+    this._cellWidth = display.cellWidth;
+    this._cellHeight = display.cellHeight;
+    this._mapWidth = display.mapWidth;
+    this._mapHeight = display.mapHeight;
   }
 
   _clampScroll() {
@@ -795,8 +799,8 @@ export class WorldMapPanel extends UIElement {
     this._refreshPreview();
     const preview = this._preview;
     if (!preview) return;
-    const cellW = this._cellWidth || CELL_WIDTH;
-    const cellH = this._cellHeight || CELL_WIDTH;
+    const cellW = this._cellWidth || WORLD_MAP_DISPLAY_CELL_WIDTH;
+    const cellH = this._cellHeight || WORLD_MAP_DISPLAY_CELL_WIDTH;
     const origin = this.mapToScreen(0, 0);
     for (const cell of preview.overlay || []) {
       const color = ROUTE_STATUS_COLORS[cell.status];

@@ -63,18 +63,21 @@ describe('WorldMapPanel', () => {
     panel.open();
     expect(panel.visible).toBe(true);
     expect(panel._cities).toHaveLength(1);
-    // 中心 = offset + worldSize/2 → 地图像素 = 世界坐标 * (96 / 1280)
+    // 中心 = offset + worldSize/2 → 地图像素 = 世界坐标 × 0.2（与编辑器同一显示比例）
     expect(panel._cities[0]).toMatchObject({ sceneId: 'S09', name: '广宗', x: 14080, y: 7920 });
     const map = panel.worldToMap(panel._cities[0].x, panel._cities[0].y);
-    expect(map.x).toBeCloseTo(1056);
-    expect(map.y).toBeCloseTo(594);
+    expect(map.x).toBeCloseTo(2816);
+    expect(map.y).toBeCloseTo(1584);
   });
 
-  it('地图尺寸按格数换算，滚动量在边界内夹紧', () => {
+  it('地图尺寸按 region 格数与 chunk 尺寸换算，滚动量在边界内夹紧', () => {
     const panel = makePanel();
     panel.open();
-    expect(panel._mapWidth).toBe(1920);
-    expect(panel._mapHeight).toBe(1080);
+    // 20×20 格、1280×720/格、显示比例 0.2 → 256×144/格，整图 5120×2880（与编辑器一致）
+    expect(panel._cellWidth).toBe(256);
+    expect(panel._cellHeight).toBe(144);
+    expect(panel._mapWidth).toBe(5120);
+    expect(panel._mapHeight).toBe(2880);
     // 玩家在原点：向左上居中会变负 → 夹到 0
     expect(panel._scrollX).toBe(0);
     expect(panel._scrollY).toBe(0);
@@ -82,8 +85,31 @@ describe('WorldMapPanel', () => {
     panel._scrollX = 99999;
     panel._scrollY = 99999;
     panel._clampScroll();
-    expect(panel._scrollX).toBe(1920 - panel._viewport.width);
-    expect(panel._scrollY).toBe(1080 - panel._viewport.height);
+    expect(panel._scrollX).toBe(5120 - panel._viewport.width);
+    expect(panel._scrollY).toBe(2880 - panel._viewport.height);
+  });
+
+  it('拖动到四边后地图始终盖满视口，不露出地图外空白', () => {
+    const panel = makePanel();
+    panel.open();
+    const view = panel._viewport;
+
+    panel._scrollX = 99999;
+    panel._scrollY = 99999;
+    panel._clampScroll();
+    const maxTopLeft = panel.mapToScreen(0, 0);
+    const maxBottomRight = panel.mapToScreen(panel._mapWidth, panel._mapHeight);
+    expect(maxTopLeft.x).toBeLessThanOrEqual(view.left + 0.001);
+    expect(maxTopLeft.y).toBeLessThanOrEqual(view.top + 0.001);
+    expect(maxBottomRight.x).toBeGreaterThanOrEqual(view.left + view.width - 0.001);
+    expect(maxBottomRight.y).toBeGreaterThanOrEqual(view.top + view.height - 0.001);
+
+    panel._scrollX = -99999;
+    panel._scrollY = -99999;
+    panel._clampScroll();
+    const minTopLeft = panel.mapToScreen(0, 0);
+    expect(minTopLeft.x).toBeGreaterThanOrEqual(view.left - 0.001);
+    expect(minTopLeft.y).toBeGreaterThanOrEqual(view.top - 0.001);
   });
 
   it('currentSceneId 去掉 chunk 后缀后与锚点对齐', () => {
