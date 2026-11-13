@@ -185,6 +185,18 @@ describe('SceneGameplaySystemAssembler 真实装配', () => {
     expect(preview.revision).toBe(scene.worldRouteLayer.revision);
   });
 
+  it('4C：encounterResolver 装配到 scene 与 context.services，并接管遭遇探测', () => {
+    const { runtime, scene } = createFixture();
+    const assembler = new SceneGameplaySystemAssembler(scene);
+    runtime.applyRegistrationPlan(assembler.initialize({}));
+    runtime.applyRegistrationPlan(assembler.configureSharedSystems(createSharedConfig()));
+
+    expect(scene.encounterResolver).toBeTruthy();
+    expect(scene.context.services.encounterResolver).toBe(scene.encounterResolver);
+    // 探测函数由 SceneArmyOrderFlow 安装到真实 ArmyOrderSystem 上
+    expect(typeof scene.armyOrderSystem.encounterDetector).toBe('function');
+  });
+
   it('ArmyOrderSystem 为真实实现（防止 fixture 退化）', () => {
     expect(typeof ArmyOrderSystem).toBe('function');
   });

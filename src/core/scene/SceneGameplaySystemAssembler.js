@@ -945,6 +945,7 @@ export class SceneGameplaySystemAssembler {
     const armyOrderConfig = config.armyOrder || null;
     let armyOrderSystem = null;
     let armyOrderFlow = null;
+    let encounterResolver = null;
     if (armyOrderConfig) {
       // 4A：独立世界逻辑路径层（唯一通行判定 + 派生投影 + Dijkstra）
       const worldLogic = armyOrderConfig.worldLogic
@@ -973,7 +974,7 @@ export class SceneGameplaySystemAssembler {
       const unitTypeRegistry = scene.gameLoader?.registries?.unitTypes;
       const heroRegistry = scene.gameLoader?.registries?.heroes;
       const formationRegistry = scene.gameLoader?.registries?.formations;
-      const encounterResolver = worldRouteLayer
+      encounterResolver = worldRouteLayer
         ? new EncounterResolver({
           combat: worldLogic?.combat || null,
           rng: armyOrderConfig.rng,
@@ -1049,6 +1050,10 @@ export class SceneGameplaySystemAssembler {
       }
       scene.armyOrderSystem = armyOrderSystem;
       scene.armyOrderFlow = armyOrderFlow;
+      // 4C：遭遇解析器唯一实例，挂到场景与 context.services（含无 worldLogic 时的 null），
+      // 供任务/面板/外部系统读取，不另造第二个实例。
+      scene.encounterResolver = encounterResolver;
+      if (scene.context?.services) scene.context.services.encounterResolver = encounterResolver;
       if (worldRouteLayer) {
         scene.worldRouteLayer = worldRouteLayer;
         scene.worldMarchExecutor = worldMarchExecutor;
@@ -1432,6 +1437,11 @@ export class SceneGameplaySystemAssembler {
               if (armyOrderFlow) {
                 armyOrderFlow.system = null;
                 armyOrderFlow.marchExecutor = null;
+              }
+              // 4C：场景释放时同步摘掉遭遇解析器，避免任务/面板持有悬空实例
+              if (scene.encounterResolver === encounterResolver) scene.encounterResolver = null;
+              if (scene.context?.services?.encounterResolver === encounterResolver) {
+                delete scene.context.services.encounterResolver;
               }
               // 4A：逻辑路径层与执行器随场景释放（快照/预览缓存一并失效）
               scene.worldRouteLayer = null;
