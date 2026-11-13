@@ -1419,6 +1419,22 @@
         "stepId": "after-defense-dialogue"
       },
       {
+        "action": "warSupply.applyLoss",
+        "params": {
+          "lossId": "s06.defense",
+          "food": 4,
+          "manpower": 3
+        },
+        "stepId": "war-loss-s06"
+      },
+      {
+        "action": "state.transaction",
+        "params": {
+          "definitionId": "story.s06.battle.outcome"
+        },
+        "stepId": "s06-battle-outcome"
+      },
+      {
         "action": "scenario.command",
         "params": {
           "operation": "recall.s06",
@@ -1581,6 +1597,22 @@
         "stepId": "farewell-dialogue"
       },
       {
+        "action": "warSupply.applyLoss",
+        "params": {
+          "lossId": "s08.retreat",
+          "food": 3,
+          "manpower": 5
+        },
+        "stepId": "war-loss-s08"
+      },
+      {
+        "action": "state.transaction",
+        "params": {
+          "definitionId": "story.s08.retreat.outcome"
+        },
+        "stepId": "s08-retreat-outcome"
+      },
+      {
         "action": "scenario.command",
         "params": {
           "exitId": "S08-recall-exit",
@@ -1613,6 +1645,22 @@
           "id": "dialogue.s10.zhangjiaoLastWords"
         },
         "stepId": "last-words-dialogue"
+      },
+      {
+        "action": "warSupply.applyLoss",
+        "params": {
+          "lossId": "s10.fallen",
+          "food": 3,
+          "manpower": 2
+        },
+        "stepId": "war-loss-s10"
+      },
+      {
+        "action": "state.transaction",
+        "params": {
+          "definitionId": "story.s10.fallen"
+        },
+        "stepId": "s10-fallen"
       },
       {
         "action": "scenario.command",

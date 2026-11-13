@@ -17,6 +17,7 @@ import { registerSceneTriggerActions } from '../../../src/core/scene/SceneTrigge
 import { SCENARIO_COMMANDS } from '../../../src/systems/ScenarioCommandService.js';
 import { SANGUO_ZHANGJIAO_CONTENT_POLICY } from '../config/SanguoZhangjiaoContentPolicy.js';
 import { S05_ZHANG_MANCHENG_RESCUE_ID } from './S05SceneFlow.js';
+import { PLAYER_ARMY_ID, previewWarMaterials, spendWarMaterials } from './WarSupplyLedger.js';
 
 const cloneData = value => value == null ? value : JSON.parse(JSON.stringify(value));
 
@@ -561,6 +562,75 @@ function registerGameLoaderActions(triggerSystem) {
     return { ok: true, accepted: result?.accepted === true, message: result?.message || '' };
   });
   registered.push('buildingNpc.execute');
+  // B（S06/S08/S10 叙事补偿）：把三场的兵力与粮草损耗记进既有账本，不新造第二本账。
+  // 粮草走 WarSupplyLedger（营地仓优先、军团随身粮兜底），兵力走 FoodLedgerSystem 的
+  // army.player.escort.manpower；story.warLosses[lossId] 作幂等标记，避免召回/病逝重复触发时二次扣减。
+  triggerSystem.registerAction('warSupply.applyLoss', (params = {}) => {
+    const lossId = String(params.lossId || '').trim();
+    if (!lossId) {
+      return { ok: false, code: 'lossIdRequired', error: { message: 'warSupply.applyLoss requires lossId' } };
+    }
+    // this 为场景投影代理：读 this.foodLedgerSystem，不能写 this.scene?.foodLedgerSystem。
+    const ledger = this.foodLedgerSystem || null;
+    if (!ledger) return { ok: true, lossId, skipped: true, code: 'ledgerUnavailable' };
+    const blackboard = this.gameLoader?.blackboard;
+    const story = cloneData(blackboard?.get?.('storyState') || {});
+    if (story.warLosses?.[lossId]?.applied === true) return { ok: true, lossId, idempotent: true };
+
+    const planned = {};
+    for (const resource of ['food', 'wood', 'iron', 'herb']) {
+      const value = Math.max(0, Math.floor(Number(params[resource]) || 0));
+      if (value > 0) planned[resource] = value;
+    }
+    let resources = null;
+    if (Object.keys(planned).length > 0) {
+      const preview = previewWarMaterials(ledger, planned);
+      let costs = null;
+      if (preview?.ok === true) {
+        costs = { ...planned };
+      } else if (preview) {
+        // 存量不足时按可用量核销：叙事损耗不得阻断召回/病逝等主线步骤。
+        costs = { ...(preview.fromCamp || {}) };
+        for (const [key, value] of Object.entries(preview.fromArmy || {})) {
+          costs[key] = (Number(costs[key]) || 0) + (Number(value) || 0);
+        }
+      }
+      if (costs && Object.keys(costs).length > 0) {
+        resources = spendWarMaterials(ledger, { costs, operationId: `warLoss:${lossId}` });
+      }
+    }
+    const plannedManpower = Math.max(0, Math.floor(Number(params.manpower) || 0));
+    let manpower = null;
+    if (plannedManpower > 0) {
+      const army = ledger.getArmy?.(PLAYER_ARMY_ID) || null;
+      const before = Math.max(0, Math.floor(Number(army?.manpower) || 0));
+      if (before > 0) {
+        const lost = Math.min(before, plannedManpower);
+        ledger.registerArmy({ id: PLAYER_ARMY_ID, manpower: before - lost });
+        manpower = { before, lost, after: before - lost };
+      }
+    }
+    if (!resources && !manpower) {
+      // 无营地/军团账可扣时不落幂等标记，后续再次交互仍会尝试入账。
+      return { ok: true, lossId, skipped: true, code: 'noPlayerSupply' };
+    }
+    blackboard?.set?.('storyState', {
+      ...story,
+      warLosses: {
+        ...(story.warLosses || {}),
+        [lossId]: {
+          applied: true,
+          planned,
+          plannedManpower,
+          resources: resources?.ok === true ? { fromCamp: resources.fromCamp || {}, fromArmy: resources.fromArmy || {} } : null,
+          manpower,
+          day: Number(story.day) || 1
+        }
+      }
+    });
+    return { ok: true, lossId, resources, manpower };
+  });
+  registered.push('warSupply.applyLoss');
   return registered;
 }
 

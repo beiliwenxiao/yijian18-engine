@@ -585,6 +585,38 @@
       "value": "buildingNpc.execute"
     },
     {
+      "label": "战争损耗入账（兵力/粮草，幂等）",
+      "paramsSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "lossId": {
+            "type": "string"
+          },
+          "food": {
+            "type": "number"
+          },
+          "wood": {
+            "type": "number"
+          },
+          "iron": {
+            "type": "number"
+          },
+          "herb": {
+            "type": "number"
+          },
+          "manpower": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "lossId"
+        ],
+        "type": "object"
+      },
+      "v": "warSupply.applyLoss",
+      "value": "warSupply.applyLoss"
+    },
+    {
       "label": "startDialogue",
       "paramsSchema": {
         "additionalProperties": true,

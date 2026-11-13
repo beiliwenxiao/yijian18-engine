@@ -2154,6 +2154,58 @@
   },
   {
     "commandType": "state.transaction",
+    "id": "story.s06.battle.outcome",
+    "name": "S06 守城战果事实（守/撤决定 + 兵力粮草损耗）",
+    "transaction": {
+      "when": {
+        "exists": false,
+        "path": "story.s06.battle.outcome"
+      },
+      "writes": [
+        {
+          "path": "s06.battle.outcome",
+          "target": "story",
+          "value": {
+            "sceneId": "S06",
+            "decision": {
+              "$get": "story.s06Decision.choiceId",
+              "default": null
+            },
+            "outcome": {
+              "$if": [
+                {
+                  "$eq": [
+                    {
+                      "$get": "story.s06Decision.choiceId",
+                      "default": null
+                    },
+                    "hold"
+                  ]
+                },
+                "held",
+                "withdrawn"
+              ]
+            },
+            "cityDamageRatio": {
+              "$get": "story.s06Decision.damageRatioAfter",
+              "default": 0
+            },
+            "losses": {
+              "manpower": 3,
+              "food": 4
+            },
+            "day": {
+              "$get": "story.day",
+              "default": 1
+            },
+            "operationId": "story:S06:battleOutcome"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
     "id": "reward.s07.delayGift",
     "name": "奖励：迟滞作战缴获",
     "transaction": {
@@ -2208,6 +2260,62 @@
   },
   {
     "commandType": "state.transaction",
+    "id": "story.s08.retreat.outcome",
+    "name": "S08 撤退战果事实（丢车/保车决定 + 残部与损耗）",
+    "transaction": {
+      "when": {
+        "exists": false,
+        "path": "story.s08.retreat.outcome"
+      },
+      "writes": [
+        {
+          "path": "s08.retreat.outcome",
+          "target": "story",
+          "value": {
+            "sceneId": "S08",
+            "decision": {
+              "$get": "story.s08RetreatDecision.choiceId",
+              "default": null
+            },
+            "outcome": {
+              "$if": [
+                {
+                  "$eq": [
+                    {
+                      "$get": "story.s08RetreatDecision.choiceId",
+                      "default": null
+                    },
+                    "discard"
+                  ]
+                },
+                "discardCart",
+                "preserveCart"
+              ]
+            },
+            "survivors": {
+              "$get": "story.s08RouteResult.survivorCount",
+              "default": 0
+            },
+            "pursuitIntensity": {
+              "$get": "story.s08RouteResult.pursuitIntensity",
+              "default": 0
+            },
+            "losses": {
+              "manpower": 5,
+              "food": 3
+            },
+            "day": {
+              "$get": "story.day",
+              "default": 1
+            },
+            "operationId": "story:S08:retreatOutcome"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
     "id": "reward.s10.campGift",
     "name": "奖励：营地建设结余",
     "transaction": {
@@ -2233,6 +2341,39 @@
           "path": "rewards.campGift",
           "target": "story",
           "value": true
+        }
+      ]
+    }
+  },
+  {
+    "commandType": "state.transaction",
+    "id": "story.s10.fallen",
+    "name": "S10 大贤良师病逝事实（不可救援 + 营中损耗）",
+    "transaction": {
+      "when": {
+        "exists": false,
+        "path": "story.s10.fallen"
+      },
+      "writes": [
+        {
+          "path": "s10.fallen",
+          "target": "story",
+          "value": {
+            "sceneId": "S10",
+            "leader": "zhangjiao",
+            "eventId": "history.zhangjiao.death",
+            "rescuable": false,
+            "campId": "camp.s10.creek",
+            "losses": {
+              "manpower": 2,
+              "food": 3
+            },
+            "day": {
+              "$get": "story.day",
+              "default": 1
+            },
+            "operationId": "story:S10:fallen"
+          }
         }
       ]
     }
