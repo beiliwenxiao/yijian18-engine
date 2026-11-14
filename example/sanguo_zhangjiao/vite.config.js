@@ -23,6 +23,8 @@ const CANONICAL_PROJECT = 'example/sanguo_zhangjiao/game.project.json';
 function copyRuntimeDirsPlugin(outDir) {
   // project/ = game.project.json 的 shards 分片目录，与主文件一同随构建拷贝
   const dirs = ['assets', 'data', 'config', 'project'];
+  // 运行时 GameLoader 以相对路径 fetch('game.project.json') 读取主文件，必须放在产物根目录
+  const files = ['game.project.json'];
   return {
     name: 'copy-runtime-dirs',
     apply: 'build',
@@ -33,6 +35,14 @@ function copyRuntimeDirsPlugin(outDir) {
         if (fs.existsSync(from)) {
           fs.cpSync(from, to, { recursive: true });
           console.log(`[copy-runtime-dirs] 已拷贝 ${dir} -> ${to}`);
+        }
+      }
+      for (const file of files) {
+        const from = path.resolve(__dirname, file);
+        const to = path.resolve(outDir, file);
+        if (fs.existsSync(from)) {
+          fs.copyFileSync(from, to);
+          console.log(`[copy-runtime-dirs] 已拷贝 ${file} -> ${to}`);
         }
       }
     }
