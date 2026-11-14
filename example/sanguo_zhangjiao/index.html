@@ -481,6 +481,8 @@
         #act-throw  { right: 20px;   bottom: 0px; }
         /* 斧头按钮：投掷右边 */
         #act-axe    { right: -48px;  bottom: 0px; }
+        /* 大地图按钮：无编辑器布局时的兜底位置（右列上方） */
+        #act-map    { right: 150px; bottom: 128px; }
         
         /* ===== 底部快捷栏：背包 / 装备 / 技能6 / 技能7（无边框，按钮+文字） ===== */
         #bottom-hotbar {
@@ -834,6 +836,8 @@
                 <div class="action-btn move" id="act-throw" data-act="throw">🎯<span class="label">投掷</span><div class="skill-cd-overlay"></div><span class="skill-cd-text"></span></div>
                 <!-- 斧头按钮 -->
                 <div class="action-btn move" id="act-axe" data-act="axe">🪓<span class="label">采集</span></div>
+                <!-- 大地图：独立圆形按钮（对应 PC 的 M 键） -->
+                <div class="action-btn move" id="act-map" data-act="map">🗺<span class="label">地图</span></div>
             </div>
 
             <!-- 底部快捷栏：红瓶 / 蓝瓶 / 背包 / 军队 / 技能6 / 技能7（无边框，按钮+文字） -->

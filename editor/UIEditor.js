@@ -98,6 +98,7 @@ const DEFAULT_COMPONENTS = {
       { id: 'act-interact', label: '交互', x: 1176, y: 544, width: 56, height: 56, anchor: 'topleft', kind: 'button' },
       { id: 'act-throw', label: '投掷', x: 1244, y: 544, width: 56, height: 56, anchor: 'topleft', kind: 'button' },
       { id: 'act-axe', label: '采集', x: 1312, y: 544, width: 56, height: 56, anchor: 'topleft', kind: 'button' },
+      { id: 'act-map', label: '大地图', x: 345, y: 516, width: 56, height: 56, anchor: 'topleft', kind: 'button' },
       { id: 'hb-hp', label: '红瓶', x: 440, y: 540, width: 56, height: 56, anchor: 'topleft', kind: 'button' },
       { id: 'hb-mp', label: '蓝瓶', x: 510, y: 540, width: 56, height: 56, anchor: 'topleft', kind: 'button' },
       // 军队：开关军队操作条（armyCommandHud），排在系统设置前面
@@ -134,7 +135,7 @@ const BADGE_TEXT_LAYOUT_FIELDS = ['fontSize', 'textOffsetX', 'textOffsetY'];
 const PANEL_LAYOUT_PLATFORMS = new Set(['desktop', 'mobile']);
 const MOBILE_TOUCH_BUTTON_IDS = new Set([
   'act-attack', 'act-block', 'act-dodge', 'act-skill3', 'act-skill4', 'act-skill5',
-  'act-flight', 'act-jump', 'act-interact', 'act-throw', 'act-axe',
+  'act-flight', 'act-jump', 'act-interact', 'act-throw', 'act-axe', 'act-map',
   'hb-hp', 'hb-mp', 'hb-bag', 'hb-settings', 'hb-skill6', 'hb-skill7'
 ]);
 // ─── 快捷控件类型体系（uiType 是类型主键；旧数据缺失时按 id/kind 推断） ───────
@@ -1164,13 +1165,12 @@ export class UIEditor {
       .uie-stage.no-bg { background-image:none !important; }
       .uie-comp { position:absolute; box-sizing:border-box; border:1.5px solid rgba(120,180,255,0.8); background:rgba(80,140,255,0.18); color:#cfe3ff; font-size:11px; display:flex; align-items:center; justify-content:center; cursor:move; user-select:none; overflow:hidden; }
       .uie-comp.zone { border-style:dashed; background:rgba(255,200,80,0.12); border-color:rgba(255,200,80,0.7); color:#ffe7a8; }
-      .uie-comp.button { border-radius:50%; }
-      /* 快捷控件预览：头像圆形、血条/蓝条底色条、技能位圆角 */
+      .uie-comp.button, .uie-comp[data-ui-type="button"], .uie-comp[data-ui-type="skill"] { border-radius:50%; }
+      /* 快捷控件预览：圆形统一由上一行按 uiType 决定；血条/蓝条保持底色条 */
       .uie-comp.quick-avatar { border-radius:50%; }
       .uie-comp.quick-bar { background:rgba(0,0,0,0.45); border-radius:3px; }
       .uie-comp.quick-bar.healthbar { border-color:rgba(231,76,60,0.9); }
       .uie-comp.quick-bar.manabar { border-color:rgba(61,139,253,0.9); }
-      .uie-comp.quick-skill { border-radius:6px; }
       .uie-comp.login-panel { border:1.5px dashed rgba(231,199,120,0.7); border-radius:12px; background:transparent; color:#f0d997; box-shadow:none; }
       .uie-comp.login-title { border-color:rgba(231,199,120,0.8); background:rgba(25,15,8,0.25); color:#f0d997; font-size:13px; font-weight:bold; }
       .uie-comp.login-subtitle, .uie-comp.login-description { border-color:rgba(255,255,255,0.5); background:rgba(0,0,0,0.2); color:#eee; }
@@ -1368,7 +1368,6 @@ export class UIEditor {
       el.dataset.uiType = uiType;
       if (uiType === 'avatar') el.classList.add('quick-avatar');
       else if (uiType === 'healthbar' || uiType === 'manabar') el.classList.add('quick-bar', uiType);
-      else if (uiType === 'skill') el.classList.add('quick-skill');
       if (comp.id === this.selectedId) el.classList.add('selected');
       el.style.left = (comp.x * this.scale) + 'px';
       el.style.top = (comp.y * this.scale) + 'px';

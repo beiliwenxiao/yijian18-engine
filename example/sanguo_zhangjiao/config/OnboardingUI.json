@@ -89,7 +89,8 @@
         "hb-army",
         "hb-settings",
         "hb-skill6",
-        "hb-skill7"
+        "hb-skill7",
+        "act-jump"
       ],
       "enabledComponentIds": [
         "joystick",
@@ -119,7 +120,8 @@
         "hb-army",
         "hb-settings",
         "hb-skill6",
-        "hb-skill7"
+        "hb-skill7",
+        "act-jump"
       ]
     },
     {

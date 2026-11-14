@@ -291,6 +291,20 @@
       "hPct": 0.10667
     },
     {
+      "id": "act-map",
+      "label": "大地图",
+      "kind": "button",
+      "anchor": "topleft",
+      "x": 345,
+      "y": 516,
+      "width": 56,
+      "height": 56,
+      "xPct": 0.26953,
+      "yPct": 0.86,
+      "wPct": 0.04375,
+      "hPct": 0.09333
+    },
+    {
       "id": "hb-hp",
       "label": "红瓶",
       "kind": "button",

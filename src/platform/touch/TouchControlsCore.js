@@ -98,6 +98,9 @@ function setupTouchControls() {
         } else if (btn.dataset.act === 'axe') {
             // 斧头/采集按钮是统一交互按钮的兼容 UI 别名。
             enqueueSceneInteract();
+        } else if (btn.dataset.act === 'map') {
+            // 大地图按钮：与 PC 的 M 键共用同一开关入口。
+            if (currentScene.toggleWorldMap) currentScene.toggleWorldMap();
         } else if (btn.dataset.act === 'flight') {
             // 轻功现在走瞄准流程,此处不再触发
         } else if (btn.dataset.act === 'jump') {
@@ -256,6 +259,7 @@ async function applyUILayoutToDom() {
         'act-interact': 'act-interact',
         'act-throw': 'act-throw',
         'act-axe': 'act-axe',
+        'act-map': 'act-map',
         'hb-hp': 'hb-hp',
         'hb-mp': 'hb-mp',
         'hb-bag': 'hb-bag',
