@@ -2166,11 +2166,23 @@
           "path": "s06.battle.outcome",
           "target": "story",
           "value": {
-            "sceneId": "S06",
+            "cityDamageRatio": {
+              "$get": "story.s06Decision.damageRatioAfter",
+              "default": 0
+            },
+            "day": {
+              "$get": "story.day",
+              "default": 1
+            },
             "decision": {
               "$get": "story.s06Decision.choiceId",
               "default": null
             },
+            "losses": {
+              "food": 4,
+              "manpower": 3
+            },
+            "operationId": "story:S06:battleOutcome",
             "outcome": {
               "$if": [
                 {
@@ -2186,19 +2198,7 @@
                 "withdrawn"
               ]
             },
-            "cityDamageRatio": {
-              "$get": "story.s06Decision.damageRatioAfter",
-              "default": 0
-            },
-            "losses": {
-              "manpower": 3,
-              "food": 4
-            },
-            "day": {
-              "$get": "story.day",
-              "default": 1
-            },
-            "operationId": "story:S06:battleOutcome"
+            "sceneId": "S06"
           }
         }
       ]
@@ -2272,11 +2272,19 @@
           "path": "s08.retreat.outcome",
           "target": "story",
           "value": {
-            "sceneId": "S08",
+            "day": {
+              "$get": "story.day",
+              "default": 1
+            },
             "decision": {
               "$get": "story.s08RetreatDecision.choiceId",
               "default": null
             },
+            "losses": {
+              "food": 3,
+              "manpower": 5
+            },
+            "operationId": "story:S08:retreatOutcome",
             "outcome": {
               "$if": [
                 {
@@ -2292,23 +2300,15 @@
                 "preserveCart"
               ]
             },
-            "survivors": {
-              "$get": "story.s08RouteResult.survivorCount",
-              "default": 0
-            },
             "pursuitIntensity": {
               "$get": "story.s08RouteResult.pursuitIntensity",
               "default": 0
             },
-            "losses": {
-              "manpower": 5,
-              "food": 3
-            },
-            "day": {
-              "$get": "story.day",
-              "default": 1
-            },
-            "operationId": "story:S08:retreatOutcome"
+            "sceneId": "S08",
+            "survivors": {
+              "$get": "story.s08RouteResult.survivorCount",
+              "default": 0
+            }
           }
         }
       ]
@@ -2359,20 +2359,20 @@
           "path": "s10.fallen",
           "target": "story",
           "value": {
-            "sceneId": "S10",
-            "leader": "zhangjiao",
-            "eventId": "history.zhangjiao.death",
-            "rescuable": false,
             "campId": "camp.s10.creek",
-            "losses": {
-              "manpower": 2,
-              "food": 3
-            },
             "day": {
               "$get": "story.day",
               "default": 1
             },
-            "operationId": "story:S10:fallen"
+            "eventId": "history.zhangjiao.death",
+            "leader": "zhangjiao",
+            "losses": {
+              "food": 3,
+              "manpower": 2
+            },
+            "operationId": "story:S10:fallen",
+            "rescuable": false,
+            "sceneId": "S10"
           }
         }
       ]
@@ -3462,11 +3462,11 @@
           "target": "story",
           "value": {
             "campId": "camp.s10.creek",
+            "level": 1,
+            "operationId": "story:S10:campHandover",
             "ownerArmyId": "army.player.escort",
             "ownerFactionId": "player",
-            "level": 1,
-            "siteId": "site.s10.creekConstruction",
-            "operationId": "story:S10:campHandover"
+            "siteId": "site.s10.creekConstruction"
           }
         }
       ]

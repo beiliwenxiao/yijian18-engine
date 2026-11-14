@@ -589,22 +589,22 @@
       "paramsSchema": {
         "additionalProperties": false,
         "properties": {
-          "lossId": {
-            "type": "string"
-          },
           "food": {
-            "type": "number"
-          },
-          "wood": {
-            "type": "number"
-          },
-          "iron": {
             "type": "number"
           },
           "herb": {
             "type": "number"
           },
+          "iron": {
+            "type": "number"
+          },
+          "lossId": {
+            "type": "string"
+          },
           "manpower": {
+            "type": "number"
+          },
+          "wood": {
             "type": "number"
           }
         },
@@ -658,12 +658,22 @@
       "paramsSchema": {
         "additionalProperties": false,
         "properties": {
-          "cityId": { "type": "string" },
-          "delta": { "type": "number" },
-          "factionId": { "type": "string" },
-          "reason": { "type": "string" }
+          "cityId": {
+            "type": "string"
+          },
+          "delta": {
+            "type": "number"
+          },
+          "factionId": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          }
         },
-        "required": ["delta"],
+        "required": [
+          "delta"
+        ],
         "type": "object"
       },
       "v": "reputation.adjust",

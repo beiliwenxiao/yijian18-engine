@@ -1421,8 +1421,8 @@
       {
         "action": "warSupply.applyLoss",
         "params": {
-          "lossId": "s06.defense",
           "food": 4,
+          "lossId": "s06.defense",
           "manpower": 3
         },
         "stepId": "war-loss-s06"
@@ -1599,8 +1599,8 @@
       {
         "action": "warSupply.applyLoss",
         "params": {
-          "lossId": "s08.retreat",
           "food": 3,
+          "lossId": "s08.retreat",
           "manpower": 5
         },
         "stepId": "war-loss-s08"
@@ -1649,8 +1649,8 @@
       {
         "action": "warSupply.applyLoss",
         "params": {
-          "lossId": "s10.fallen",
           "food": 3,
+          "lossId": "s10.fallen",
           "manpower": 2
         },
         "stepId": "war-loss-s10"
@@ -2690,8 +2690,8 @@
       {
         "action": "army.form",
         "params": {
-          "kind": "army",
           "factionId": "han_government",
+          "kind": "army",
           "position": {
             "x": 16000,
             "y": 5800

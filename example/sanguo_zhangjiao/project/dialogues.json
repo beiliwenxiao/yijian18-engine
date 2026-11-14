@@ -2,11 +2,6 @@
   {
     "id": "dialogue.s10.campHandover",
     "nodes": {
-      "start": {
-        "nextNode": "answer",
-        "speaker": "队正",
-        "text": "溪水清，滩地平。张角将军不在了，这营盘往后听谁的？"
-      },
       "answer": {
         "nextNode": "end",
         "speaker": "你",
@@ -15,6 +10,11 @@
       "end": {
         "speaker": "旁白",
         "text": "篝火在新址升起，粮、木与军械陆续搬进营仓——这是你自己的第一座营。"
+      },
+      "start": {
+        "nextNode": "answer",
+        "speaker": "队正",
+        "text": "溪水清，滩地平。张角将军不在了，这营盘往后听谁的？"
       }
     },
     "presentation": {
@@ -148,7 +148,6 @@
   },
   {
     "id": "dialogue.s02.coinGift",
-    "runtimeStarted": true,
     "nodes": {
       "law": {
         "nextNode": "queue",
@@ -172,12 +171,12 @@
         "text": "（箱中铜钱剑共七串。递出一串，记一户。发完七串，或施粥满二十碗，村外就会有动静。）"
       }
     },
+    "runtimeStarted": true,
     "startNode": "start",
     "title": "铜钱剑"
   },
   {
     "id": "dialogue.s02.recruitDone",
-    "runtimeStarted": true,
     "nodes": {
       "camp": {
         "speaker": "旁白",
@@ -207,12 +206,12 @@
         "text": "最后一名青壮领了符牌。招众旗下，张角立于车辕，振臂而呼——声音传遍荒村。"
       }
     },
+    "runtimeStarted": true,
     "startNode": "start",
     "title": "招募信众"
   },
   {
     "id": "dialogue.s02.overnight",
-    "runtimeStarted": true,
     "nodes": {
       "accuse": {
         "nextNode": "defend",
@@ -261,12 +260,12 @@
         "text": "夜幕落下。荒村四周的草地灯次第亮起，营地里弥漫着符水与草木灰的味道。"
       }
     },
+    "runtimeStarted": true,
     "startNode": "start",
     "title": "荒村过夜"
   },
   {
     "id": "dialogue.s02.raidRepelled",
-    "runtimeStarted": true,
     "nodes": {
       "after": {
         "nextNode": "order",
@@ -284,6 +283,7 @@
         "text": "最后一名官军倒下。营地外的黄巾士卒爆出一阵欢呼——围剿被击退了。"
       }
     },
+    "runtimeStarted": true,
     "startNode": "start",
     "title": "围剿击退"
   },
@@ -881,6 +881,11 @@
   {
     "id": "dialogue.s06.afterDefense",
     "nodes": {
+      "cost": {
+        "nextNode": "zhangManCheng",
+        "speaker": "旁白",
+        "text": "拒马立起来之后，官军又试探着冲了两回。阵前折了三个弟兄，营里的粮也耗去四石——名册上划掉的名字，比新补进来的还多。"
+      },
       "end": {
         "speaker": "旁白",
         "text": "南下的路走了三个月，北归的路，忽然显得那么长。"
@@ -889,11 +894,6 @@
         "nextNode": "end",
         "speaker": "黄巾信使",
         "text": "广宗诏令——大贤良师召各路渠帅回师广宗，共商大计。张曼成大人留守南阳，命你即刻北返！"
-      },
-      "cost": {
-        "nextNode": "zhangManCheng",
-        "speaker": "旁白",
-        "text": "拒马立起来之后，官军又试探着冲了两回。阵前折了三个弟兄，营里的粮也耗去四石——名册上划掉的名字，比新补进来的还多。"
       },
       "reason": {
         "nextNode": "order",
@@ -938,6 +938,11 @@
   {
     "id": "dialogue.s08.farewell",
     "nodes": {
+      "cost": {
+        "nextNode": "player",
+        "speaker": "旁白",
+        "text": "这一路撤下来，队伍里少了五个人。断后的弟兄没能跟上，泥水里也再没有回头去找的车辙。"
+      },
       "end": {
         "speaker": "旁白",
         "text": "家书被小心折好，贴身收起。北归的队伍里，又多了一个赶路的人。"
@@ -952,11 +957,6 @@
         "portrait": "player",
         "speaker": "你",
         "text": "太平不是等来的。你们没走完的路，我替你们走。"
-      },
-      "cost": {
-        "nextNode": "player",
-        "speaker": "旁白",
-        "text": "这一路撤下来，队伍里少了五个人。断后的弟兄没能跟上，泥水里也再没有回头去找的车辙。"
       },
       "start": {
         "nextNode": "cost",
@@ -975,14 +975,14 @@
   {
     "id": "dialogue.s10.zhangjiaoLastWords",
     "nodes": {
+      "fallen": {
+        "speaker": "旁白",
+        "text": "帐外的老营兵跪了一地，有两人解甲，说要送将军的灵柩回巨鹿。营里从此少了两个人，也少了那个撑了十年的名字。"
+      },
       "last": {
         "nextNode": "fallen",
         "speaker": "旁白",
         "text": "是夜，大贤良师溘然长逝。帐外秋风呜咽，像十万人的恸哭。"
-      },
-      "fallen": {
-        "speaker": "旁白",
-        "text": "帐外的老营兵跪了一地，有两人解甲，说要送将军的灵柩回巨鹿。营里从此少了两个人，也少了那个撑了十年的名字。"
       },
       "start": {
         "nextNode": "words1",
@@ -1008,6 +1008,11 @@
   {
     "id": "dialogue.s10.farewell",
     "nodes": {
+      "cost": {
+        "nextNode": "messenger",
+        "speaker": "旁白",
+        "text": "举丧三日，营里的粮又去了三石。缟素裹着的不只是大贤良师，还有这几个月里没能回来的人。"
+      },
       "end": {
         "speaker": "旁白",
         "text": "火把连成一线，向北。广宗，黄巾的都城，最后的都城。"
@@ -1016,11 +1021,6 @@
         "nextNode": "end",
         "speaker": "黄巾信使",
         "text": "皇甫嵩亲率大军围了广宗，人公将军张梁被困城中，一日三惊！兄弟，广宗是黄巾的根——星夜驰援，不能停！"
-      },
-      "cost": {
-        "nextNode": "messenger",
-        "speaker": "旁白",
-        "text": "举丧三日，营里的粮又去了三石。缟素裹着的不只是大贤良师，还有这几个月里没能回来的人。"
       },
       "start": {
         "nextNode": "cost",
@@ -1107,7 +1107,6 @@
   },
   {
     "id": "dialogue.s02.ritualIntro",
-    "runtimeStarted": true,
     "nodes": {
       "how": {
         "nextNode": "teach",
@@ -1143,12 +1142,12 @@
         "text": "这是符水：一锅粥，撕一角符纸烧了投进去。粥还是粥，叫法却成了治病驱邪的符水。官府要问，就说我们在施药。"
       }
     },
+    "runtimeStarted": true,
     "startNode": "start",
     "title": "交托符水"
   },
   {
     "id": "dialogue.s02.serveLine",
-    "runtimeStarted": true,
     "nodes": {
       "child": {
         "speaker": "旁白",
@@ -1165,12 +1164,12 @@
         "text": "先给那个孩子。他排在最前头，眼睛一直盯着锅。"
       }
     },
+    "runtimeStarted": true,
     "startNode": "start",
     "title": "符水第一碗"
   },
   {
     "id": "dialogue.s02.accusation",
-    "runtimeStarted": true,
     "nodes": {
       "charge1": {
         "nextNode": "charge2",
@@ -1222,12 +1221,12 @@
         "text": "土路尽头忽然响起马蹄与甲叶声。一队官军踏碎炊烟，当先的县尉一脚踹翻了灶上的大锅。"
       }
     },
+    "runtimeStarted": true,
     "startNode": "start",
     "title": "县尉诬告"
   },
   {
     "id": "dialogue.s02.arrest",
-    "runtimeStarted": true,
     "nodes": {
       "child": {
         "nextNode": "zhangjiao",
@@ -1267,12 +1266,12 @@
         "text": "放开他。粥是我煮的，符纸是我烧的，铜钱剑是我缠的——与他一个孩子何干。"
       }
     },
+    "runtimeStarted": true,
     "startNode": "start",
     "title": "抓人"
   },
   {
     "id": "dialogue.s02.revoltSpeech",
-    "runtimeStarted": true,
     "nodes": {
       "call": {
         "nextNode": "end",
@@ -1314,12 +1313,12 @@
         "text": "越权赈济——我认。官府不赈，我赈。"
       }
     },
+    "runtimeStarted": true,
     "startNode": "start",
     "title": "苍天已死"
   },
   {
     "id": "dialogue.s02.allegiance",
-    "runtimeStarted": true,
     "nodes": {
       "choose": {
         "choices": [
@@ -1370,12 +1369,12 @@
         "text": "县尉带着残兵逃了。村子安静下来，张角走到你面前，看着你这双还端不稳碗的手。"
       }
     },
+    "runtimeStarted": true,
     "startNode": "start",
     "title": "张角的邀请"
   },
   {
     "id": "dialogue.s02.recruitYellow",
-    "runtimeStarted": true,
     "nodes": {
       "order": {
         "speaker": "旁白",
@@ -1388,12 +1387,12 @@
         "text": "招众旗还在村东立着。去旗下振臂一呼——愿入道的，一次都给我招来，不必拖泥带水。"
       }
     },
+    "runtimeStarted": true,
     "startNode": "start",
     "title": "再招八十"
   },
   {
     "id": "dialogue.s02.recruitGuard",
-    "runtimeStarted": true,
     "nodes": {
       "order": {
         "speaker": "旁白",
@@ -1406,12 +1405,12 @@
         "text": "你不入黄巾，我也不拦。但守营得有自己的人——去旗下立个名册，愿跟你走的，一次招齐。"
       }
     },
+    "runtimeStarted": true,
     "startNode": "start",
     "title": "招亲卫"
   },
   {
     "id": "dialogue.s02.prepare",
-    "runtimeStarted": true,
     "nodes": {
       "start": {
         "nextNode": "teach",
@@ -1429,12 +1428,12 @@
         "text": "（营栅已立，营门是唯一通路。扎营完成后，傅燮的千人大军就会压上来。）"
       }
     },
+    "runtimeStarted": true,
     "startNode": "start",
     "title": "整备"
   },
   {
     "id": "dialogue.s02.debrief",
-    "runtimeStarted": true,
     "nodes": {
       "end": {
         "speaker": "旁白",
@@ -1458,12 +1457,12 @@
         "text": "官军退去，营地烟火重新升起。张角收起桃木杖，望向南方的山道。"
       }
     },
+    "runtimeStarted": true,
     "startNode": "start",
     "title": "战后交代"
   },
   {
     "id": "dialogue.s02.raidAssist",
-    "runtimeStarted": true,
     "nodes": {
       "assistText": {
         "speaker": "旁白",
@@ -1490,12 +1489,12 @@
         "text": "傅燮的大军已压到营外。你的亲卫在营门口列队，等你一句话。"
       }
     },
+    "runtimeStarted": true,
     "startNode": "start",
     "title": "是否以援军参战"
   },
   {
     "id": "dialogue.s02.campHandover",
-    "runtimeStarted": true,
     "nodes": {
       "end": {
         "speaker": "旁白",
@@ -1524,12 +1523,12 @@
         "text": "官军退去后的第三日，张角命人把营地册簿、仓钥与征召名册一并搬到营门前。"
       }
     },
+    "runtimeStarted": true,
     "startNode": "start",
     "title": "营地交接"
   },
   {
     "id": "dialogue.s02.urgent",
-    "runtimeStarted": true,
     "nodes": {
       "end": {
         "speaker": "旁白",
@@ -1553,12 +1552,21 @@
         "text": "一名黄巾信使跌跌撞撞冲进营门，甲上还带着血。"
       }
     },
+    "runtimeStarted": true,
     "startNode": "start",
     "title": "广宗告急"
   },
   {
     "id": "dialogue.bnp.s02.recruit",
     "nodes": {
+      "cancel": {
+        "speaker": "征召官",
+        "text": "“想好了再来。”征召官把名册收回案上。"
+      },
+      "done": {
+        "speaker": "征召官",
+        "text": "征召官提笔在名册上添了几笔。"
+      },
       "start": {
         "choices": [
           {
@@ -1575,14 +1583,6 @@
         "portrait": "",
         "speaker": "征召官",
         "text": "征召官摊开名册，等你回话。"
-      },
-      "done": {
-        "speaker": "征召官",
-        "text": "征召官提笔在名册上添了几笔。"
-      },
-      "cancel": {
-        "speaker": "征召官",
-        "text": "“想好了再来。”征召官把名册收回案上。"
       }
     },
     "runtimeStarted": true,
@@ -1592,6 +1592,14 @@
   {
     "id": "dialogue.bnp.s02.muster",
     "nodes": {
+      "cancel": {
+        "speaker": "收编官",
+        "text": "“散兵在外多待一日，就少一人。”收编官没有再多说。"
+      },
+      "done": {
+        "speaker": "收编官",
+        "text": "收编官朝营外挥了挥手。"
+      },
       "start": {
         "choices": [
           {
@@ -1608,14 +1616,6 @@
         "portrait": "",
         "speaker": "收编官",
         "text": "收编官望着营外，等你下令。"
-      },
-      "done": {
-        "speaker": "收编官",
-        "text": "收编官朝营外挥了挥手。"
-      },
-      "cancel": {
-        "speaker": "收编官",
-        "text": "“散兵在外多待一日，就少一人。”收编官没有再多说。"
       }
     },
     "runtimeStarted": true,
@@ -1625,6 +1625,14 @@
   {
     "id": "dialogue.bnp.s10.rank",
     "nodes": {
+      "cancel": {
+        "speaker": "军府主簿",
+        "text": "“官牒先收着，想好了再来。”主簿把印绶放回匣中。"
+      },
+      "done": {
+        "speaker": "军府主簿",
+        "text": "主簿研墨，准备书写官牒。"
+      },
       "start": {
         "choices": [
           {
@@ -1641,14 +1649,6 @@
         "portrait": "",
         "speaker": "军府主簿",
         "text": "主簿展开官牒，等你画押。"
-      },
-      "done": {
-        "speaker": "军府主簿",
-        "text": "主簿研墨，准备书写官牒。"
-      },
-      "cancel": {
-        "speaker": "军府主簿",
-        "text": "“官牒先收着，想好了再来。”主簿把印绶放回匣中。"
       }
     },
     "runtimeStarted": true,

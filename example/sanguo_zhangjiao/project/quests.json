@@ -2591,9 +2591,9 @@
           },
           "type": "triggerSucceeded"
         },
-        "optional": true,
         "id": "zhangLiangRescue",
         "objectiveType": "custom.event",
+        "optional": true,
         "title": "启动张梁限时救援",
         "type": "objective"
       },
@@ -2604,9 +2604,9 @@
           },
           "type": "triggerSucceeded"
         },
-        "optional": true,
         "id": "lightBeacon",
         "objectiveType": "custom.event",
+        "optional": true,
         "title": "点燃烽火",
         "type": "objective"
       },
@@ -2617,9 +2617,9 @@
           },
           "type": "triggerSucceeded"
         },
-        "optional": true,
         "id": "rallyGuards",
         "objectiveType": "custom.event",
+        "optional": true,
         "title": "集结卫兵",
         "type": "objective"
       },
@@ -2630,9 +2630,9 @@
           },
           "type": "triggerSucceeded"
         },
-        "optional": true,
         "id": "assassinWave1",
         "objectiveType": "custom.event",
+        "optional": true,
         "title": "击退刺客第一波",
         "type": "objective"
       },
@@ -2643,9 +2643,9 @@
           },
           "type": "triggerSucceeded"
         },
-        "optional": true,
         "id": "assassinWave2",
         "objectiveType": "custom.event",
+        "optional": true,
         "title": "击退刺客第二波",
         "type": "objective"
       },
@@ -2656,9 +2656,9 @@
           },
           "type": "triggerSucceeded"
         },
-        "optional": true,
         "id": "assassinsRepelled",
         "objectiveType": "custom.event",
+        "optional": true,
         "title": "击退三波刺客",
         "type": "objective"
       },
@@ -2669,9 +2669,9 @@
           },
           "type": "triggerSucceeded"
         },
-        "optional": true,
         "id": "westGateBreakout",
         "objectiveType": "custom.event",
+        "optional": true,
         "title": "护送张梁西门突围",
         "type": "objective"
       },
@@ -2838,9 +2838,9 @@
           },
           "type": "triggerSucceeded"
         },
-        "optional": true,
         "id": "zhangBaoRescue",
         "objectiveType": "custom.event",
+        "optional": true,
         "title": "启动张宝限时救援",
         "type": "objective"
       },
@@ -2851,9 +2851,9 @@
           },
           "type": "triggerSucceeded"
         },
-        "optional": true,
         "id": "secretPassage",
         "objectiveType": "custom.event",
+        "optional": true,
         "title": "打开密道",
         "type": "objective"
       },
@@ -2864,9 +2864,9 @@
           },
           "type": "triggerSucceeded"
         },
-        "optional": true,
         "id": "useLadder",
         "objectiveType": "custom.event",
+        "optional": true,
         "title": "架上云梯",
         "type": "objective"
       },
@@ -2877,9 +2877,9 @@
           },
           "type": "triggerSucceeded"
         },
-        "optional": true,
         "id": "burnLadder",
         "objectiveType": "custom.event",
+        "optional": true,
         "title": "焚毁云梯",
         "type": "objective"
       },
@@ -2890,9 +2890,9 @@
           },
           "type": "triggerSucceeded"
         },
-        "optional": true,
         "id": "zhangBaoEvacuation",
         "objectiveType": "custom.event",
+        "optional": true,
         "title": "护送张宝撤离",
         "type": "objective"
       },
@@ -3014,9 +3014,9 @@
           },
           "type": "triggerSucceeded"
         },
-        "optional": true,
         "id": "sunXiaDefeated",
         "objectiveType": "custom.event",
+        "optional": true,
         "title": "讨斩敌将孙夏",
         "type": "objective"
       },
