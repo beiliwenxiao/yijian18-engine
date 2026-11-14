@@ -75,6 +75,16 @@ export class Scene1Terrain {
     this._belowDecoCache = null;
     this._belowDecoCacheX = 0;
     this._belowDecoCacheY = 0;
+    // 地形椭圆整层离屏（含 edgeFade）：仅在合并缓存尚未就绪时兜底使用。
+    // 绝不能让 edgeFade 的 destination-out 直接作用在主画布上——那会擦掉已画好的
+    // 世界内容，在 alpha:false 画布上表现为椭圆边缘一圈黑带。
+    this._ellipseLayerCache = null;
+    // 合并/背景缓存需要「原地重建」：旧缓存继续服务渲染，新缓存建好后整体替换，
+    // 避免重建窗口内退回直接绘制路径。
+    this._terrainCacheForceRebuild = false;
+    // shape 层无法烘焙（包围盒超限等）时置 true：渲染侧改为每帧独立绘制，
+    // 避免「未烘焙 → 触发重建 → 仍失败」的每帧重建死循环。
+    this._groundShapesBakeFailed = false;
     // 树木贴地阴影：直接按树逐个绘制（无离屏缓存），
     // 复用的树影光照运行时（树影只跟全局方向光，不响应点光源）
     this._treeShadowRenderer = new ShadowRenderer();
@@ -418,6 +428,7 @@ export class Scene1Terrain {
             // 构建数据驱动的地形椭圆（填充图片/切片/纯色 + 边缘淡化）
             this._terrainEllipse = this._buildTerrainEllipseFromObject(obj, cx, cy, rx, ry);
             this._grassCanvas = null;          // 重建草地缓存
+            this._ellipseLayerCache = null;    // 椭圆数据变了，离屏层失效
             this._combinedGroundCache = null;  // 重建合并缓存
             Logger.log('Scene1Terrain: 应用编辑器椭圆', { cx, cy, rx, ry, fillMode: this._terrainEllipse.fillMode });
           } else if (obj.type === 'shape') {
@@ -522,6 +533,7 @@ export class Scene1Terrain {
       this._hasTerrainEllipse = foundEllipse;
       if (!foundEllipse) this._terrainEllipse = null;
       // 椭圆增删会改变地面外观，清除合并缓存强制重建
+      this._ellipseLayerCache = null;
       this._combinedGroundCache = null;
       this._grassCanvas = null;
     }
@@ -647,6 +659,7 @@ export class Scene1Terrain {
     if (this._terrainEllipse) return;
     if (this._hasTerrainEllipse === false) return; // 用户删除了椭圆
     // 用当前盆地参数 + 草地切片构建默认椭圆
+    this._ellipseLayerCache = null;
     this._terrainEllipse = {
       cx: this.centerX,
       cy: this.centerY - 32,
@@ -1122,6 +1135,7 @@ export class Scene1Terrain {
       this._groundDecoCache,
       this._belowDecoCache,
       this._bgImageCache,
+      this._ellipseLayerCache?.canvas,
       this._grassCanvas,
       this._cliffCanvas
     ];
@@ -1130,6 +1144,7 @@ export class Scene1Terrain {
     this._groundDecoCache = null;
     this._belowDecoCache = null;
     this._bgImageCache = null;
+    this._ellipseLayerCache = null;
     this._grassCanvas = null;
     this._cliffCanvas = null;
     this._bgImageCacheSignature = null;
@@ -1432,10 +1447,14 @@ export class Scene1Terrain {
       // 填充普查里相当于每帧多覆盖约 1Mpx 的半透明像素）。
       if (this._bgImageCache) {
         ctx.drawImage(this._bgImageCache, this._bgImageCacheX, this._bgImageCacheY);
-        if (this._areGroundShapesBaked()) return;
-        // shape 集合变了（投影替换/动态碰撞体）→ 本帧回退补画并安排重烘焙。
-        this._renderEditorShapes(ctx);
-        this._invalidateGroundBake({ combined: false });
+        // 烘焙失败（shape 包围盒超限等）→ 每帧独立补画 shape 层，不触发重建。
+        if (this._groundShapesBakeFailed === true) {
+          this._renderEditorShapes(ctx);
+          return;
+        }
+        // shape 集合变了（投影替换/动态碰撞体）→ 只安排原地重烘焙；旧缓存继续
+        // 服务本帧。绝不在这里把缓存置空：那会让后续帧退回直接绘制路径。
+        if (!this._areGroundShapesBaked()) this._invalidateGroundBake({ combined: false });
         return;
       }
       this._renderEditorBackgroundImages(ctx);
@@ -1446,9 +1465,9 @@ export class Scene1Terrain {
     // 使用合并的地面缓存（椭圆草地 + 背景图 + shape，一张图搞定）
     if (this._combinedGroundCache) {
       ctx.drawImage(this._combinedGroundCache, this._combinedGroundCacheX, this._combinedGroundCacheY);
-      if (this._areGroundShapesBaked()) return;
-      this._renderEditorShapes(ctx);
-      this._invalidateGroundBake({ combined: true });
+      // 烘焙失败（shape 包围盒超限等）→ 每帧独立补画 shape 层，不触发重建循环。
+      if (this._groundShapesBakeFailed === true) this._renderEditorShapes(ctx);
+      else if (!this._areGroundShapesBaked()) this._invalidateGroundBake({ combined: true });
       return;
     }
 
@@ -1456,13 +1475,52 @@ export class Scene1Terrain {
     this._ensureTerrainEllipseData();
 
     // 缓存尚未准备好时直接绘制；仅非流式兼容路径允许延后构建。
-    this._renderTerrainEllipse(ctx);
+    // 椭圆必须走离屏层：edgeFade 用 destination-out 实现，直接画在主画布上会
+    // 擦掉已绘制的世界内容，在 alpha:false 画布上留下椭圆边缘的黑带。
+    this._renderTerrainEllipseLayer(ctx);
     if (!this._staticCachePrepared) this._scheduleTerrainCacheBuild();
     this._renderWaterPatches(ctx);
     // 渲染编辑器中保存的背景图片（使用离屏缓存）
     this._renderEditorBackgroundImages(ctx);
     // shape 在背景图片之上渲染，可遮挡底层图片
     this._renderEditorShapes(ctx);
+  }
+
+  /**
+   * 地形椭圆整层离屏缓存（含 edgeFade 淡出）。
+   * 内容只与椭圆数据有关，构建后复用；仅在合并缓存缺失的兜底路径上分配。
+   * @returns {{canvas: HTMLCanvasElement, x: number, y: number}|null}
+   * @private
+   */
+  _ensureTerrainEllipseLayer() {
+    if (this._ellipseLayerCache) return this._ellipseLayerCache;
+    const ellipse = this._terrainEllipse;
+    if (!ellipse) return null;
+    const x = Math.floor(ellipse.cx - ellipse.rx) - 2;
+    const y = Math.floor(ellipse.cy - ellipse.ry) - 2;
+    const width = Math.ceil(ellipse.rx * 2) + 4;
+    const height = Math.ceil(ellipse.ry * 2) + 4;
+    if (!(width > 0 && height > 0) || width > 4096 || height > 4096) return null;
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const layerCtx = canvas.getContext('2d');
+    if (!layerCtx) return null;
+    layerCtx.translate(-x, -y);
+    this._renderTerrainEllipse(layerCtx);
+    this._ellipseLayerCache = { canvas, x, y };
+    return this._ellipseLayerCache;
+  }
+
+  /** 兜底路径绘制地形椭圆：优先 blit 离屏层，避免 edgeFade 擦除主画布。 @private */
+  _renderTerrainEllipseLayer(ctx) {
+    const layer = this._ensureTerrainEllipseLayer();
+    if (layer) {
+      ctx.drawImage(layer.canvas, layer.x, layer.y);
+      return;
+    }
+    // 极端尺寸（>4096）退化为原直接绘制；此时不再带 edgeFade，避免擦除世界内容。
+    this._renderTerrainEllipse(ctx, { skipEdgeFade: true });
   }
 
   /**
@@ -1486,12 +1544,23 @@ export class Scene1Terrain {
     return true;
   }
 
-  /** 丢弃地面缓存的 shape 烘焙并安排重建（仅在 shape 集合真的变化时发生）。 @private */
+  /**
+   * 丢弃地面缓存的 shape 烘焙标记并安排「原地重建」。
+   * 注意：不把缓存置空——旧缓存继续服务渲染，新缓存建好后整体替换。
+   * 否则重建窗口内会退回直接绘制路径，而该路径的地形椭圆 edgeFade 会把主画布
+   * 上已绘制的世界内容擦掉（alpha:false 下即为一圈黑边）。
+   * @private
+   */
   _invalidateGroundBake({ combined = true } = {}) {
     this._groundShapesBakedVersion = -1;
     this._groundShapesBakedRefs = null;
-    if (combined) this._combinedGroundCache = null;
-    else this._bgImageCache = null;
+    this._terrainCacheForceRebuild = true;
+    if (this._terrainCacheBuildScheduled) {
+      // 已排队的任务可能只需重建背景缓存，这里补上合并缓存需求；
+      // force 标记会在任务执行时统一消费。
+      this._terrainCacheBuildCombined = this._terrainCacheBuildCombined === true || combined === true;
+      return;
+    }
     this._scheduleTerrainCacheBuild({ combined });
   }
 
@@ -1528,11 +1597,15 @@ export class Scene1Terrain {
     if (editorShapes.length === 0 && walkableShapes.length === 0) {
       this._groundShapesBakedVersion = -1;
       this._groundShapesBakedRefs = null;
+      this._groundShapesBakeFailed = false;
       return true;
     }
     if (!this._buildEditorShapesCache(editorShapes, walkableShapes)) {
       this._groundShapesBakedVersion = -1;
       this._groundShapesBakedRefs = null;
+      // 记下「烘焙不可行」：渲染侧改为每帧独立绘制 shape 层，
+      // 否则每帧都会判定未烘焙并反复触发重建。
+      this._groundShapesBakeFailed = true;
       return false;
     }
     gctx.drawImage(
@@ -1542,6 +1615,7 @@ export class Scene1Terrain {
     );
     this._groundShapesBakedVersion = this._editorShapesVersion || 0;
     this._groundShapesBakedRefs = editorShapes.concat(walkableShapes);
+    this._groundShapesBakeFailed = false;
     return true;
   }
 
@@ -1555,11 +1629,13 @@ export class Scene1Terrain {
     const build = () => {
       if (this._released || lifecycleToken !== this._cacheLifecycleToken) return;
       const buildCombined = this._terrainCacheBuildCombined === true;
+      const force = this._terrainCacheForceRebuild === true;
       this._terrainCacheBuildScheduled = false;
       this._terrainCacheBuildCombined = false;
-      this._buildBackgroundImageCache();
+      this._terrainCacheForceRebuild = false;
+      this._buildBackgroundImageCache(force);
       this._buildGroundDecoCache();
-      if (buildCombined) this._buildCombinedGroundCache();
+      if (buildCombined) this._buildCombinedGroundCache(force);
     };
     if (typeof globalThis.requestIdleCallback === 'function') {
       globalThis.requestIdleCallback(build, { timeout: 500 });
@@ -1797,8 +1873,9 @@ export class Scene1Terrain {
    * 数据驱动渲染地形椭圆
    * 按 _terrainEllipse.fillMode（color/image/slice）填充，并应用 edgeFade 边缘淡化
    * @param {CanvasRenderingContext2D} ctx
+   * @param {{skipEdgeFade?: boolean}} [options] skipEdgeFade：目标画布上已有世界内容时禁用边缘淡化
    */
-  _renderTerrainEllipse(ctx) {
+  _renderTerrainEllipse(ctx, options = {}) {
     const e = this._terrainEllipse;
     if (!e) return;
     // 转成统一 shape，交给 ShapeRenderer（与编辑器同一套渲染逻辑）
@@ -1808,7 +1885,7 @@ export class Scene1Terrain {
       fillMode: e.fillMode,
       fill: e.fill,
       opacity: e.opacity,
-      edgeFade: e.edgeFade,
+      edgeFade: options.skipEdgeFade === true ? 0 : e.edgeFade,
       imageMode: e.imageMode,
       sliceMode: e.sliceMode,
       imageSrc: e.imageSrc
@@ -1836,10 +1913,11 @@ export class Scene1Terrain {
   /**
    * 构建合并地面缓存：草地铺面 + 森林环带 + 背景图片 + 水池
    * 所有不会变化的底层内容合并到一张离屏 Canvas，每帧只需一次 drawImage
+   * @param {boolean} [force] shape 集合变化后原地重建（旧缓存保持可用直到替换）
    * @private
    */
-  _buildCombinedGroundCache() {
-    if (this._combinedGroundCache) return;
+  _buildCombinedGroundCache(force = false) {
+    if (this._combinedGroundCache && force !== true) return;
     this._ensureTerrainEllipseData();
     const e = this._terrainEllipse;
     if (!e) return;
@@ -1937,16 +2015,21 @@ export class Scene1Terrain {
       }
     }
     if (changed) {
-      // 被窝类 depthSort 对象走实时装饰队列，无需缓存失效；背景缓存图留兜底。
-      this._combinedGroundCache = null;
-      this._bgImageCache = null;
+      // 背景图内容变了 → 原地重建（保留旧缓存直到新缓存替换），
+      // 不再置空缓存，避免重建窗口退回直接绘制路径。
+      this._groundShapesBakedVersion = -1;
+      this._groundShapesBakedRefs = null;
+      this._terrainCacheForceRebuild = true;
+      this._scheduleTerrainCacheBuild({ combined: this._hasTerrainEllipse !== false });
+      this._staticCacheRevision++;
     }
     return changed;
   }
   
   /** 九宫格准备阶段一次合并普通背景图片；渲染帧只消费缓存。 */
-  _buildBackgroundImageCache() {
-    if (this._bgImageCache || !Array.isArray(this._editorBackgroundImages) ||
+  _buildBackgroundImageCache(force = false) {
+    if (this._bgImageCache && force !== true) return;
+    if (!Array.isArray(this._editorBackgroundImages) ||
         this._editorBackgroundImages.length === 0 ||
         !this._editorBackgroundImages.every(bg => bg._loaded && bg._img)) return;
 

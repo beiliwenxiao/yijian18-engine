@@ -498,6 +498,10 @@ export class EntityRenderer2D {
       return;
     }
     if (sprite) {
+      // 资源尚未就绪（骨骼 JSON / 精灵图集仍在加载）时不要画彩色占位块：
+      // 那会在角色正式出现前闪一个彩色方框。就绪前该实体不绘制即可。
+      if (sprite.isSkeleton === true) return;
+      if (sprite.spriteSheet && !this._getReadyImage(sprite.spriteSheet)) return;
       ctx.fillStyle = sprite.color || '#00ff00';
       ctx.fillRect(x - width / 2, y - height, width, height);
       ctx.strokeStyle = entity.type === 'player' ? '#4CAF50' : '#ff4444';
