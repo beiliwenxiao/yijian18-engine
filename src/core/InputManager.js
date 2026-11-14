@@ -55,8 +55,12 @@ export class InputManager {
             clicked: false,
             clickedButton: -1,    // 本次按下沿的按钮；mouseup 先于游戏帧时仍可正确识别右键
             handled: false,  // 标记点击事件是否已被处理（用于 UI 点击阻止）
-            isTouch: false   // 最近一次指针按下是否来自触屏（供 InputActionRouter 标记设备）
+            isTouch: false,  // 最近一次指针按下是否来自触屏（供 InputActionRouter 标记设备）
+            dragged: false   // 本次按下后是否移动超过点击阈值（区分点击与拖动）
         };
+
+        // 滚轮累计量：面板每帧 consumeWheelDelta() 取走；帧末 update() 清空，避免跨帧串味。
+        this.wheelDelta = { x: 0, y: 0 };
 
         // 触摸长按状态：记录按住起点（时间+位置），供 UI 长按手势判定（如技能槽长按装配）。
         // 位移超过 TOUCH_MOVE_CANCEL_PX 视为滑动，取消长按资格。
@@ -150,20 +154,31 @@ export class InputManager {
             mousedown: (e) => this.handleMouseDown(e),
             mouseup: (e) => this.handleMouseUp(e),
             mousemove: (e) => this.handleMouseMove(e),
+            wheel: (e) => this.handleWheel(e),
             contextmenu: (e) => e.preventDefault(),
             touchstart: (e) => this.handleTouchStart(e),
             touchend: (e) => this.handleTouchEnd(e),
-            touchmove: (e) => this.handleTouchMove(e)
+            touchmove: (e) => this.handleTouchMove(e),
+            // 指针在画布外释放/窗口失焦时也必须解除按住，避免拖拽状态卡死。
+            windowMouseUp: (e) => {
+                if ((e.buttons || 0) === 0) {
+                    this.releasePointerState({ keepClick: e.target === this.canvas });
+                }
+            },
+            windowBlur: () => this.releasePointerState({ keepClick: false })
         };
 
         window.addEventListener('keydown', this._eventHandlers.keydown);
         window.addEventListener('keyup', this._eventHandlers.keyup);
+        window.addEventListener('mouseup', this._eventHandlers.windowMouseUp);
+        window.addEventListener('blur', this._eventHandlers.windowBlur);
         
         Logger.log('InputManager: 键盘事件监听器已绑定到 window');
         
         this.canvas.addEventListener('mousedown', this._eventHandlers.mousedown);
         this.canvas.addEventListener('mouseup', this._eventHandlers.mouseup);
         this.canvas.addEventListener('mousemove', this._eventHandlers.mousemove);
+        this.canvas.addEventListener('wheel', this._eventHandlers.wheel, { passive: true });
         this.canvas.addEventListener('contextmenu', this._eventHandlers.contextmenu);
         // 世界触摸必须拦截浏览器滚动、缩放与合成鼠标事件；处理器会调用 preventDefault()，因此不能注册为 passive。
         this.canvas.addEventListener('touchstart', this._eventHandlers.touchstart, { passive: false });
@@ -257,9 +272,49 @@ export class InputManager {
         this.mouse.clickedButton = event.button;
         this.mouse.buttons.add(event.button);
         this.mouse.clicked = true;
+        this.mouse.dragged = false;
+        this.mouse.downX = this.mouse.x;
+        this.mouse.downY = this.mouse.y;
         this.mouse.ctrlKey = event.ctrlKey;
         // 鼠标点击 → 切回 PC 方案（手柄插着但玩家改用鼠标了）
         InputHints.notifyMouseOrKeyboard();
+    }
+
+    /**
+     * 处理滚轮事件（只累计，由面板按帧消费）
+     */
+    handleWheel(event) {
+        const scale = event.deltaMode === 1 ? 16 : (event.deltaMode === 2 ? 400 : 1);
+        this.wheelDelta.x += (Number(event.deltaX) || 0) * scale;
+        this.wheelDelta.y += (Number(event.deltaY) || 0) * scale;
+    }
+
+    /**
+     * 取走本帧累计的滚轮量（同一帧只应有一个消费者）
+     * @returns {{x:number, y:number}}
+     */
+    consumeWheelDelta() {
+        const delta = { x: this.wheelDelta.x, y: this.wheelDelta.y };
+        this.wheelDelta.x = 0;
+        this.wheelDelta.y = 0;
+        return delta;
+    }
+
+    /**
+     * 解除按住状态（画布外释放或窗口失焦）。
+     * keepClick=true 时保留本帧的 clicked 标记，供轮询型 UI 处理"快速点击"。
+     */
+    releasePointerState({ keepClick = true } = {}) {
+        this.mouse.isDown = false;
+        this.mouse.button = -1;
+        this.mouse.buttons.delete(0);
+        this.mouse.buttons.delete(2);
+        this.touch.startedAt = 0;
+        if (!keepClick) {
+            this.mouse.clicked = false;
+            this.mouse.clickedButton = -1;
+            this.mouse.dragged = false;
+        }
     }
 
     /**
@@ -280,6 +335,11 @@ export class InputManager {
      */
     handleMouseMove(event) {
         this.updateMousePosition(event);
+        if (this.mouse.isDown && !this.mouse.dragged) {
+            const dx = this.mouse.x - (this.mouse.downX ?? this.mouse.x);
+            const dy = this.mouse.y - (this.mouse.downY ?? this.mouse.y);
+            if (Math.abs(dx) > 4 || Math.abs(dy) > 4) this.mouse.dragged = true;
+        }
     }
 
     /**
@@ -321,6 +381,9 @@ export class InputManager {
             this.mouse.isDown = true;
             this.mouse.clicked = true;
             this.mouse.clickedButton = 0;
+            this.mouse.dragged = false;
+            this.mouse.downX = this.mouse.x;
+            this.mouse.downY = this.mouse.y;
             // 触摸等价于左键按下，记入 buttons，保证 isMouseButtonDown(0) 生效；
             // clickedButton 必须同步置 0：getMouseButton 在 clicked 期间返回它，
             // 漏设会让 POINTER_DOWN 带 button=-1，被交互/拾取的左键过滤全部拒收。
@@ -361,6 +424,7 @@ export class InputManager {
                 const dy = this.mouse.y - this.touch.startY;
                 if ((dx * dx + dy * dy) > TOUCH_MOVE_CANCEL_PX * TOUCH_MOVE_CANCEL_PX) {
                     this.touch.moved = true;
+                    this.mouse.dragged = true;
                 }
             }
         }
@@ -826,6 +890,10 @@ export class InputManager {
         this.mouse.clicked = false;
         this.mouse.clickedButton = -1;
         this.mouse.handled = false;  // 重置处理标记
+
+        // 未被面板消费的滚轮量不跨帧保留
+        this.wheelDelta.x = 0;
+        this.wheelDelta.y = 0;
         
         // 重置手柄帧守卫：下一帧允许再次真正轮询
         this._padPolledThisFrame = false;
@@ -843,6 +911,8 @@ export class InputManager {
         this.mouse.isDown = false;
         this.mouse.button = -1;
         this.mouse.buttons.clear();
+        this.wheelDelta.x = 0;
+        this.wheelDelta.y = 0;
         this._padDown.clear();
         this._padPressed.clear();
         this._padReleased.clear();
@@ -858,9 +928,12 @@ export class InputManager {
         if (handlers) {
             window.removeEventListener('keydown', handlers.keydown);
             window.removeEventListener('keyup', handlers.keyup);
+            window.removeEventListener('mouseup', handlers.windowMouseUp);
+            window.removeEventListener('blur', handlers.windowBlur);
             this.canvas.removeEventListener('mousedown', handlers.mousedown);
             this.canvas.removeEventListener('mouseup', handlers.mouseup);
             this.canvas.removeEventListener('mousemove', handlers.mousemove);
+            this.canvas.removeEventListener('wheel', handlers.wheel);
             this.canvas.removeEventListener('contextmenu', handlers.contextmenu);
             this.canvas.removeEventListener('touchstart', handlers.touchstart);
             this.canvas.removeEventListener('touchend', handlers.touchend);

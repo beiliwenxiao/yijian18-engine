@@ -140,6 +140,157 @@ describe('WorldMapPanel', () => {
   });
 });
 
+describe('WorldMapPanel 缩放与拖拽互斥', () => {
+  const makeWheel = (deltaY, position) => ({
+    getMousePosition: () => position,
+    isMouseButtonDown: () => false,
+    consumeWheelDelta: () => ({ x: 0, y: deltaY })
+  });
+
+  it('滚轮缩放以鼠标为锚点，并限制在整图适配～4 倍', () => {
+    const panel = makePanel();
+    panel.open();
+    const view = panel._viewport;
+    const anchor = { x: view.left + 220, y: view.top + 140 };
+    const basePoint = {
+      x: (anchor.x - view.left + panel._scrollX) / panel._zoom,
+      y: (anchor.y - view.top + panel._scrollY) / panel._zoom
+    };
+
+    expect(panel.handleInput({ inputManager: makeWheel(-120, anchor) })).toBe(true);
+    expect(panel._zoom).toBeGreaterThan(1);
+    expect((anchor.x - view.left + panel._scrollX) / panel._zoom).toBeCloseTo(basePoint.x, 6);
+    expect((anchor.y - view.top + panel._scrollY) / panel._zoom).toBeCloseTo(basePoint.y, 6);
+
+    for (let i = 0; i < 30; i += 1) panel.handleInput({ inputManager: makeWheel(-500, anchor) });
+    expect(panel._zoom).toBe(4);
+    expect(panel._cellWidth).toBe(1024);
+    expect(panel._cellHeight).toBe(576);
+    expect(panel._mapWidth).toBe(20480);
+    expect(panel.worldToMap(12800, 7200)).toEqual({ x: 10240, y: 5760 });
+
+    for (let i = 0; i < 30; i += 1) panel.handleInput({ inputManager: makeWheel(500, anchor) });
+    const limits = panel._zoomLimits();
+    expect(panel._zoom).toBeCloseTo(limits.min, 6);
+    expect(panel._mapWidth).toBeCloseTo(5120 * limits.min, 6);
+    expect(panel._mapHeight).toBeCloseTo(2880 * limits.min, 6);
+  });
+
+  it('缩放后格子尺寸、标记换算与命中同步', () => {
+    const panel = makePanel();
+    panel.open();
+    panel._setZoom(2);
+    expect(panel._cellWidth).toBe(512);
+    expect(panel._cellHeight).toBe(288);
+    expect(panel._mapWidth).toBe(10240);
+    expect(panel._mapHeight).toBe(5760);
+
+    const city = panel._cities[0];
+    expect(panel.worldToMap(city.x, city.y)).toEqual({ x: 5632, y: 3168 });
+    panel._scrollX = 5632 - panel._viewport.width / 2;
+    panel._scrollY = 3168 - panel._viewport.height / 2;
+    panel._clampScroll();
+    const screen = panel._markerScreen(city);
+    expect(panel._markerAt(screen.x, screen.y)?.id).toBe('city.s09_guangzong_camp');
+  });
+
+  it('放大与缩小后滚动量都夹在边界内，不会卡在边缘回不来', () => {
+    const panel = makePanel();
+    panel.open();
+    panel._setZoom(4);
+    panel._scrollX = 1e9;
+    panel._scrollY = 1e9;
+    panel._clampScroll();
+    expect(panel._scrollX).toBeCloseTo(panel._mapWidth - panel._viewport.width, 6);
+    expect(panel._scrollY).toBeCloseTo(panel._mapHeight - panel._viewport.height, 6);
+
+    panel._setZoom(panel._zoomLimits().min);
+    expect(panel._scrollX).toBeGreaterThanOrEqual(0);
+    expect(panel._scrollX).toBeLessThanOrEqual(panel._mapWidth - panel._viewport.width + 0.001);
+    expect(panel._scrollY).toBeGreaterThanOrEqual(0);
+    expect(panel._scrollY).toBeLessThanOrEqual(panel._mapHeight - panel._viewport.height + 0.001);
+    const topLeft = panel.mapToScreen(0, 0);
+    expect(topLeft.x).toBeLessThanOrEqual(panel._viewport.left + 0.001);
+    expect(topLeft.y).toBeLessThanOrEqual(panel._viewport.top + 0.001);
+    const bottomRight = panel.mapToScreen(panel._mapWidth, panel._mapHeight);
+    expect(bottomRight.x).toBeGreaterThanOrEqual(panel._viewport.left + panel._viewport.width - 0.001);
+    expect(bottomRight.y).toBeGreaterThanOrEqual(panel._viewport.top + panel._viewport.height - 0.001);
+  });
+
+  it('从标记上开始拖动只平移，不开指令环；原地松开才点选', () => {
+    const panel = makePanel();
+    panel.open();
+    panel._setZoom(2);
+    const city = panel._cities[0];
+    panel._scrollX = 5632 - panel._viewport.width / 2;
+    panel._scrollY = 3168 - panel._viewport.height / 2;
+    panel._clampScroll();
+    const start = panel._markerScreen(city);
+    const scrollBefore = panel._scrollX;
+
+    let pos = { x: start.x, y: start.y };
+    let down = true;
+    const inputManager = { getMousePosition: () => pos, isMouseButtonDown: () => down };
+    panel.handleInput({ inputManager });
+    pos = { x: start.x - 60, y: start.y - 30 };
+    panel.handleInput({ inputManager });
+    down = false;
+    panel.handleInput({ inputManager });
+    expect(panel._selected).toBe(null);
+    expect(panel._scrollX).toBeGreaterThan(scrollBefore);
+
+    panel._scrollX = 5632 - panel._viewport.width / 2;
+    panel._scrollY = 3168 - panel._viewport.height / 2;
+    panel._clampScroll();
+    const clickPoint = panel._markerScreen(city);
+    pos = { x: clickPoint.x, y: clickPoint.y };
+    down = true;
+    panel.handleInput({ inputManager });
+    down = false;
+    panel.handleInput({ inputManager });
+    expect(panel._selected?.id).toBe('city.s09_guangzong_camp');
+  });
+
+  it('按下与松开落在同一帧的快速点击仍能点选标记', () => {
+    const panel = makePanel();
+    panel.open();
+    panel._setZoom(2);
+    const city = panel._cities[0];
+    panel._scrollX = 5632 - panel._viewport.width / 2;
+    panel._scrollY = 3168 - panel._viewport.height / 2;
+    panel._clampScroll();
+    const screen = panel._markerScreen(city);
+    const inputManager = {
+      getMousePosition: () => screen,
+      isMouseButtonDown: () => false,
+      mouse: { clicked: true, clickedButton: 0, dragged: false }
+    };
+    expect(panel.handleInput({ inputManager })).toBe(true);
+    expect(panel._selected?.id).toBe('city.s09_guangzong_camp');
+  });
+
+  it('重新打开复位缩放；窗口尺寸变化后视口与缩放重新夹紧', () => {
+    const panel = makePanel();
+    panel.open();
+    panel._setZoom(3);
+    expect(panel._zoom).toBe(3);
+    panel.close();
+    panel.open();
+    expect(panel._zoom).toBe(1);
+    expect(panel._mapWidth).toBe(5120);
+
+    panel._setZoom(4);
+    panel.setSize(600, 500);
+    panel.refreshLayout();
+    const rect = panel._panelRect();
+    expect(panel._viewport.left).toBeGreaterThanOrEqual(rect.x);
+    expect(panel._viewport.left + panel._viewport.width).toBeLessThanOrEqual(rect.x + rect.w + 0.001);
+    expect(panel._viewport.top + panel._viewport.height).toBeLessThanOrEqual(rect.y + rect.h + 0.001);
+    expect(panel._zoom).toBeLessThanOrEqual(4);
+    expect(panel._scrollX).toBeLessThanOrEqual(panel._mapWidth - panel._viewport.width + 0.001);
+  });
+});
+
 describe('WorldMapPanel 遭遇四选确认框（4C）', () => {
   const makeCtx = () => new Proxy({}, {
     get: (target, key) => {

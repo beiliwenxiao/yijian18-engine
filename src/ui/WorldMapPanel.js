@@ -21,6 +21,13 @@ import {
 const PAD = 24;
 const HEADER_H = 54;
 const LEGEND_H = 42;
+/** 缩放边界：下限随视口取「整图适配」，上限 4 倍（格子 1024×576）。 */
+const MIN_ZOOM_FLOOR = 0.05;
+const MAX_ZOOM = 4;
+/** 面板按钮每次缩放的倍率。 */
+const ZOOM_STEP = 1.25;
+/** 按下后移动超过该距离视为拖动，不再触发点选。 */
+const DRAG_THRESHOLD = 4;
 
 const TERRAIN_COLORS = Object.freeze({
   mountain: '#6f6b63',
@@ -105,6 +112,14 @@ export class WorldMapPanel extends UIElement {
     this._scrollY = 0;
     this._viewport = { left: PAD, top: HEADER_H, width: 1, height: 1 };
 
+    // 缩放：1 = 与编辑器一致的 256×144/格；上限 4，下限由视口「整图适配」决定。
+    this._zoom = 1;
+    this._baseCellWidth = WORLD_MAP_DISPLAY_CELL_WIDTH;
+    this._baseCellHeight = WORLD_MAP_DISPLAY_CELL_WIDTH;
+    this._baseMapWidth = 0;
+    this._baseMapHeight = 0;
+    this._basePxPerWorld = 1;
+
     // 静态地形缓存
     this._staticCanvas = null;
     this._staticSignature = '';
@@ -129,8 +144,9 @@ export class WorldMapPanel extends UIElement {
     /** @type {Array<{x:number,y:number,w:number,h:number,choice:string,enabled:boolean}>} */
     this._encounterRects = [];
 
-    // 拖拽状态
+    // 拖拽/点选状态：按下先记候选，松开未移动才算点击（拖动不会误触标记）。
     this._drag = { active: false, moved: false, startX: 0, startY: 0, scrollX: 0, scrollY: 0 };
+    this._press = null;
     this._wasMouseDown = false;
   }
 
@@ -158,6 +174,7 @@ export class WorldMapPanel extends UIElement {
     this._ring.close();
     this._selected = null;
     this._pendingOrder = null;
+    this._zoom = 1;
     this._refreshCities();
     this._refreshLogicNodes();
     this._refreshArmies();
@@ -167,6 +184,7 @@ export class WorldMapPanel extends UIElement {
     this.refreshLayout();
     this._centerOnPlayer();
     this._drag = { active: false, moved: false, startX: 0, startY: 0, scrollX: 0, scrollY: 0 };
+    this._press = null;
     this._wasMouseDown = false;
     return true;
   }
@@ -175,6 +193,7 @@ export class WorldMapPanel extends UIElement {
     this.visible = false;
     this._drag.active = false;
     this._drag.moved = false;
+    this._press = null;
     this._ring.close();
     this._selected = null;
     this._pendingOrder = null;
@@ -195,6 +214,13 @@ export class WorldMapPanel extends UIElement {
     const height = Math.max(1, panel.h - HEADER_H - LEGEND_H - PAD / 2);
     this._viewport = { left, top, width, height };
     this._applyRegionMetrics();
+    // 窗口变化后重新落到新的缩放合法区间（极窄屏可能抬高下限，宽屏可能放宽下限）。
+    const limits = this._zoomLimits();
+    const clamped = Math.min(limits.max, Math.max(limits.min, this._zoom));
+    if (clamped !== this._zoom) {
+      this._zoom = clamped;
+      this._applyRegionMetrics();
+    }
     this._clampScroll();
     return this._viewport;
   }
@@ -222,6 +248,14 @@ export class WorldMapPanel extends UIElement {
     const mouse = inputManager?.getMousePosition?.() || { x: 0, y: 0 };
     const down = inputManager?.isMouseButtonDown?.(0) === true;
 
+    // 快速点击（按下与松开落在同一帧）不会进入按住轮询，用 clicked 沿补一次点击。
+    const mouseState = inputManager?.mouse;
+    if (mouseState?.clicked === true && mouseState?.clickedButton === 0 && !down
+      && !this._wasMouseDown && mouseState.dragged !== true) {
+      this._wasMouseDown = false;
+      return this.handleMouseClick(mouse.x, mouse.y);
+    }
+
     // 四选确认框（4C）：模态优先，弹窗存在时吞掉其余输入。
     if (this._encounterRects.length > 0) {
       if (down && !this._wasMouseDown) {
@@ -234,57 +268,111 @@ export class WorldMapPanel extends UIElement {
       return true;
     }
 
-    if (down && !this._wasMouseDown) {
-      const button = this._buttonAt(mouse.x, mouse.y);
-      if (button === 'close') {
-        this.close();
-        this._wasMouseDown = true;
-        return true;
-      }
-      if (button === 'recenter') {
-        this._centerOnPlayer();
-        this._wasMouseDown = true;
-        return true;
-      }
-      // 指令环 > 标记 > 拖拽（4A：点选与拖图互不吞事件）
-      const ringHit = this._ring.hitTest(mouse.x, mouse.y);
-      if (ringHit) {
-        this._handleRingHit(ringHit);
-        this._wasMouseDown = true;
-        return true;
-      }
-      const marker = this._markerAt(mouse.x, mouse.y);
-      if (marker) {
-        this._handleMarkerClick(marker);
-        this._wasMouseDown = true;
-        return true;
-      }
-      this._drag = {
-        active: true,
-        moved: false,
-        startX: mouse.x,
-        startY: mouse.y,
-        scrollX: this._scrollX,
-        scrollY: this._scrollY
-      };
+    // 滚轮缩放：只在视口内生效，锚点跟随鼠标；缩放后格子/标记/边界一起重算。
+    const wheel = inputManager?.consumeWheelDelta?.();
+    if (wheel && Number(wheel.y) !== 0 && this._inViewport(mouse.x, mouse.y)) {
+      const factor = Math.exp(-Number(wheel.y) * 0.0015);
+      this._setZoom(this._zoom * factor, { x: mouse.x, y: mouse.y });
+      this._wasMouseDown = down;
+      return true;
     }
 
-    if (down && this._drag.active) {
-      const dx = mouse.x - this._drag.startX;
-      const dy = mouse.y - this._drag.startY;
-      if (!this._drag.moved && (Math.abs(dx) > 4 || Math.abs(dy) > 4)) this._drag.moved = true;
-      if (this._drag.moved) {
-        this._scrollX = this._drag.scrollX - dx;
-        this._scrollY = this._drag.scrollY - dy;
+    if (down && !this._wasMouseDown) {
+      // 按下先记候选：按钮/指令环/标记都在松开且未拖动时才真正触发。
+      const button = this._buttonAt(mouse.x, mouse.y);
+      if (button) {
+        this._press = this._beginPress('button', button, mouse);
+      } else {
+        const ringHit = this._ring.hitTest(mouse.x, mouse.y);
+        if (ringHit) {
+          this._press = this._beginPress('ring', ringHit, mouse);
+        } else {
+          const marker = this._markerAt(mouse.x, mouse.y);
+          if (marker) {
+            this._press = this._beginPress('marker', marker, mouse);
+          } else {
+            this._press = null;
+            this._drag = {
+              active: true,
+              moved: false,
+              startX: mouse.x,
+              startY: mouse.y,
+              scrollX: this._scrollX,
+              scrollY: this._scrollY
+            };
+          }
+        }
+      }
+    }
+
+    if (down && (this._press || this._drag.active)) {
+      const source = this._press || this._drag;
+      const dx = mouse.x - source.startX;
+      const dy = mouse.y - source.startY;
+      if (!source.moved && (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD)) {
+        source.moved = true;
+        if (this._press) {
+          // 从标记/按钮上开始拖动 → 转为拖图，松开时不再触发点选。
+          this._drag = {
+            active: true,
+            moved: true,
+            startX: this._press.startX,
+            startY: this._press.startY,
+            scrollX: this._press.scrollX,
+            scrollY: this._press.scrollY
+          };
+        }
+      }
+      if (source.moved) {
+        this._scrollX = source.scrollX - dx;
+        this._scrollY = source.scrollY - dy;
         this._clampScroll();
       }
     } else if (!down) {
+      if (this._press && !this._press.moved) this._activatePress(this._press);
+      this._press = null;
       this._drag.active = false;
       this._drag.moved = false;
     }
 
     this._wasMouseDown = down;
     return true;
+  }
+
+  _beginPress(kind, payload, mouse) {
+    return {
+      kind,
+      payload,
+      startX: mouse.x,
+      startY: mouse.y,
+      scrollX: this._scrollX,
+      scrollY: this._scrollY,
+      moved: false
+    };
+  }
+
+  _activatePress(press) {
+    if (press.kind === 'button') {
+      this._applyButton(press.payload);
+      return;
+    }
+    if (press.kind === 'ring') {
+      this._handleRingHit(press.payload);
+      return;
+    }
+    if (press.kind === 'marker') this._handleMarkerClick(press.payload);
+  }
+
+  _applyButton(button) {
+    if (button === 'close') {
+      this.close();
+    } else if (button === 'recenter') {
+      this._centerOnPlayer();
+    } else if (button === 'zoomIn') {
+      this._setZoom(this._zoom * ZOOM_STEP);
+    } else if (button === 'zoomOut') {
+      this._setZoom(this._zoom / ZOOM_STEP);
+    }
   }
 
   /** UIClickHandler 兜底：可见即消费点击，并处理按钮/指令环/标记。 */
@@ -296,8 +384,7 @@ export class WorldMapPanel extends UIElement {
       return true;
     }
     const button = this._buttonAt(x, y);
-    if (button === 'close') this.close();
-    else if (button === 'recenter') this._centerOnPlayer();
+    if (button) this._applyButton(button);
     else {
       const ringHit = this._ring.hitTest(x, y);
       if (ringHit) this._handleRingHit(ringHit);
@@ -370,15 +457,56 @@ export class WorldMapPanel extends UIElement {
       this._mapWidth = 0;
       this._mapHeight = 0;
       this._pxPerWorld = 1;
+      this._baseMapWidth = 0;
+      this._baseMapHeight = 0;
       return;
     }
     // 与编辑器共用的唯一尺寸来源：region 格数 + chunk 尺寸（WorldMapDisplayMetrics）。
+    // _base* 是 1 倍图；_cell/_map/_pxPerWorld 是叠加当前缩放后的实际值。
     const display = computeWorldMapDisplayMetrics(region);
-    this._pxPerWorld = display.scale;
-    this._cellWidth = display.cellWidth;
-    this._cellHeight = display.cellHeight;
-    this._mapWidth = display.mapWidth;
-    this._mapHeight = display.mapHeight;
+    this._basePxPerWorld = display.scale;
+    this._baseCellWidth = display.cellWidth;
+    this._baseCellHeight = display.cellHeight;
+    this._baseMapWidth = display.mapWidth;
+    this._baseMapHeight = display.mapHeight;
+    this._pxPerWorld = display.scale * this._zoom;
+    this._cellWidth = display.cellWidth * this._zoom;
+    this._cellHeight = display.cellHeight * this._zoom;
+    this._mapWidth = display.mapWidth * this._zoom;
+    this._mapHeight = display.mapHeight * this._zoom;
+  }
+
+  /** 缩放合法区间：下限保证地图始终盖满视口（不露空白），上限 4 倍。 */
+  _zoomLimits() {
+    const cover = Math.max(
+      this._viewport.width / Math.max(1, this._baseMapWidth),
+      this._viewport.height / Math.max(1, this._baseMapHeight)
+    );
+    const min = Math.max(MIN_ZOOM_FLOOR, Math.min(1, cover));
+    return { min, max: Math.max(1, MAX_ZOOM) };
+  }
+
+  /**
+   * 以锚点（默认视口中心）缩放：锚点下的地图内容保持不动。
+   * 每次缩放后重算地图尺寸与标记换算，并夹紧滚动量。
+   */
+  _setZoom(nextZoom, anchor = null) {
+    if (this._baseMapWidth <= 0 || this._baseMapHeight <= 0) return false;
+    const limits = this._zoomLimits();
+    const target = Math.min(limits.max, Math.max(limits.min, Number(nextZoom)));
+    if (!Number.isFinite(target) || Math.abs(target - this._zoom) < 0.0001) return false;
+    const view = this._viewport;
+    const ax = Number.isFinite(anchor?.x) ? anchor.x : view.left + view.width / 2;
+    const ay = Number.isFinite(anchor?.y) ? anchor.y : view.top + view.height / 2;
+    // 换算到 1 倍地图坐标，缩放后再反推滚动量，保证鼠标下的点不漂移。
+    const baseX = (ax - view.left + this._scrollX) / this._zoom;
+    const baseY = (ay - view.top + this._scrollY) / this._zoom;
+    this._zoom = target;
+    this._applyRegionMetrics();
+    this._scrollX = baseX * this._zoom - (ax - view.left);
+    this._scrollY = baseY * this._zoom - (ay - view.top);
+    this._clampScroll();
+    return true;
   }
 
   _clampScroll() {
@@ -639,7 +767,9 @@ export class WorldMapPanel extends UIElement {
     const size = 26;
     return {
       close: { x: panel.x + panel.w - PAD - size, y: top, w: size, h: size, label: '×' },
-      recenter: { x: panel.x + panel.w - PAD - size * 2 - 8, y: top, w: size, h: size, label: '回' }
+      recenter: { x: panel.x + panel.w - PAD - size * 2 - 8, y: top, w: size, h: size, label: '回' },
+      zoomIn: { x: panel.x + panel.w - PAD - size * 3 - 16, y: top, w: size, h: size, label: '＋' },
+      zoomOut: { x: panel.x + panel.w - PAD - size * 4 - 24, y: top, w: size, h: size, label: '－' }
     };
   }
 
@@ -688,16 +818,27 @@ export class WorldMapPanel extends UIElement {
 
     const cache = this._staticCanvas;
     if (cache) {
+      // 缓存始终是 1 倍图；按当前缩放做源裁剪 + 目标缩放，避免每帧重画整张 5120×2880。
+      const zoom = this._zoom;
       const origin = this.mapToScreen(0, 0);
-      // 只 blit 视口覆盖的地图区域：地图比视口大时避免整张缓存逐帧 overdraw。
       const dstLeft = Math.max(this._viewport.left, origin.x);
       const dstTop = Math.max(this._viewport.top, origin.y);
-      const dstRight = Math.min(this._viewport.left + this._viewport.width, origin.x + cache.width);
-      const dstBottom = Math.min(this._viewport.top + this._viewport.height, origin.y + cache.height);
+      const dstRight = Math.min(this._viewport.left + this._viewport.width, origin.x + cache.width * zoom);
+      const dstBottom = Math.min(this._viewport.top + this._viewport.height, origin.y + cache.height * zoom);
       const w = dstRight - dstLeft;
       const h = dstBottom - dstTop;
       if (w > 0 && h > 0) {
-        ctx.drawImage(cache, dstLeft - origin.x, dstTop - origin.y, w, h, dstLeft, dstTop, w, h);
+        ctx.drawImage(
+          cache,
+          (dstLeft - origin.x) / zoom,
+          (dstTop - origin.y) / zoom,
+          w / zoom,
+          h / zoom,
+          dstLeft,
+          dstTop,
+          w,
+          h
+        );
       }
     }
 
@@ -1099,7 +1240,7 @@ export class WorldMapPanel extends UIElement {
     }
     ctx.fillStyle = 'rgba(203, 185, 143, 0.75)';
     ctx.textAlign = 'right';
-    ctx.fillText('M / ESC 关闭 · 拖动查看', panel.x + panel.w - PAD, y);
+    ctx.fillText('M / ESC 关闭 · 拖动查看 · 滚轮/＋－缩放', panel.x + panel.w - PAD, y);
   }
 
   _inViewport(x, y, margin = 0) {
@@ -1113,17 +1254,18 @@ export class WorldMapPanel extends UIElement {
     if (typeof document === 'undefined') return;
     const region = this._region();
     this._applyRegionMetrics();
-    if (!region || this._mapWidth <= 0 || this._mapHeight <= 0) {
+    if (!region || this._baseMapWidth <= 0 || this._baseMapHeight <= 0) {
       this._staticCanvas = null;
       this._staticSignature = '';
       return;
     }
-    const signature = `${region.id}:${region.rows}x${region.cols}:${Math.round(this._mapWidth)}x${Math.round(this._mapHeight)}`;
+    // 缓存固定按 1 倍图构建；缩放只影响绘制时的目标尺寸。
+    const signature = `${region.id}:${region.rows}x${region.cols}:${Math.round(this._baseMapWidth)}x${Math.round(this._baseMapHeight)}`;
     if (signature === this._staticSignature && this._staticCanvas) return;
 
     const canvas = document.createElement('canvas');
-    canvas.width = Math.max(1, Math.round(this._mapWidth));
-    canvas.height = Math.max(1, Math.round(this._mapHeight));
+    canvas.width = Math.max(1, Math.round(this._baseMapWidth));
+    canvas.height = Math.max(1, Math.round(this._baseMapHeight));
     const ctx = canvas.getContext('2d');
     if (!ctx) {
       this._staticCanvas = null;
@@ -1132,8 +1274,8 @@ export class WorldMapPanel extends UIElement {
     ctx.fillStyle = EMPTY_CELL_COLOR;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    const cellW = this._cellWidth;
-    const cellH = this._cellHeight;
+    const cellW = this._baseCellWidth;
+    const cellH = this._baseCellHeight;
     for (const cell of region.coverage) {
       if (!cell) continue;
       const color = terrainColor(cell.terrain)
