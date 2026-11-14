@@ -628,17 +628,6 @@
     },
     "reinforceDelayMs": 8000
   },
-  "buildingNpc": {
-    "recruit": {
-      "foodPerHead": 1
-    },
-    "muster": {
-      "foodPerHead": 1
-    },
-    "rank": {
-      "foodPerRank": 8
-    }
-  },
   "armyOrders": {
     "arrivalRadius": 24,
     "marchSpeed": 120,
@@ -2668,6 +2657,7 @@
     {
       "height": 720,
       "id": "S04",
+      "name": "S04·长社战场",
       "previewOnly": false,
       "productionState": "playable",
       "width": 1280,
@@ -2799,6 +2789,17 @@
       "localMock": {
         "schemaVersion": 1
       }
+    }
+  },
+  "buildingNpc": {
+    "muster": {
+      "foodPerHead": 1
+    },
+    "rank": {
+      "foodPerRank": 8
+    },
+    "recruit": {
+      "foodPerHead": 1
     }
   },
   "logistics": {

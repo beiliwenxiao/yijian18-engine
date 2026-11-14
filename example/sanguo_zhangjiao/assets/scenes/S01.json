@@ -791,30 +791,6 @@
           "y": 588.3423029680041
         },
         {
-          "editor": {
-            "visible": true
-          },
-          "group": "S01-initial",
-          "id": "S01-light-firefly-river-1",
-          "kind": "item",
-          "ref": "prop.firefly",
-          "type": "ref",
-          "x": 246.64606704202356,
-          "y": 386.6422586915006
-        },
-        {
-          "editor": {
-            "visible": true
-          },
-          "group": "S01-initial",
-          "id": "S01-light-firefly-river-2",
-          "kind": "item",
-          "ref": "prop.firefly",
-          "type": "ref",
-          "x": 135.47657657657658,
-          "y": 470.04684684684685
-        },
-        {
           "collision": {
             "mode": "block",
             "points": [
