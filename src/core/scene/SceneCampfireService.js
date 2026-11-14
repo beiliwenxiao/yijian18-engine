@@ -12,6 +12,7 @@
 
 import { InputHints } from '../input/InputHints.js';
 import { cloneCanonicalValue, deepFreeze } from '../CanonicalSnapshot.js';
+import { resolveCharacterGlowRadius } from '../CharacterGlow.js';
 
 const MAX_ATMOSPHERE_PIXEL_COUNT = 640 * 360;
 const BASE_ATMOSPHERE_RENDER_SCALE = 0.5;
@@ -334,7 +335,8 @@ const campfireFeatureMethods = {
           const respawnRadius = campfireConfigured && this.campfire.respawnCountdownSeconds
             ? Math.max(0, Number(this.campfire.respawnApproachRadius) || 0)
             : 0;
-          const playerLightRadius = Math.max(150, respawnRadius) * renderScale;
+          // 角色自身光晕半径与近战范围同源（CharacterGlow），此处只负责画出来
+          const playerLightRadius = Math.max(resolveCharacterGlowRadius(), respawnRadius) * renderScale;
           const playerMask = this._getAtmosphereMask('player', playerLightRadius, yScale);
           atmosphereCtx.drawImage(
             playerMask,

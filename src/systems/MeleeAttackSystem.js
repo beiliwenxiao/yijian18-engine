@@ -11,6 +11,7 @@
  ************************************************************/
 
 import { setTimeoutFn } from '../core/Timers.js';
+import { resolveMeleeRangeFromGlow } from '../core/CharacterGlow.js';
 
 /**
  * MeleeAttackSystem - 近战/远程扇形攻击系统
@@ -25,7 +26,7 @@ import { setTimeoutFn } from '../core/Timers.js';
 export class MeleeAttackSystem {
   /**
    * @param {Object} config - 配置参数
-   * @param {number} [config.sliceAttackRange=200] - 近战攻击距离（默认，可由武器 attackDistance 覆盖）
+   * @param {number} [config.sliceAttackRange] - 近战攻击距离（缺省 = 角色光晕半径 + 10，可由武器 attackDistance 覆盖）
    * @param {number} [config.rangedAttackRange=100] - 远程武器缺省射程（远程不受近战距离调整影响）
    * @param {number} [config.sliceHitRadius=40] - 命中半径
    * @param {number} [config.sliceGlobalCooldown=3.0] - 全局武器冷却（秒）
@@ -40,9 +41,10 @@ export class MeleeAttackSystem {
     this.slicedEnemies = new Set();
     
     // 攻击参数：近战默认射程与远程缺省射程分开——
-    // 近战默认翻倍（命中判定与战斗扇形显示共用本值），远程武器缺省值保持原样，
-    // 避免「默认攻击范围翻倍」误伤远程（远程仅由武器 attackDistance 决定射程）。
-    this.sliceAttackRange = config.sliceAttackRange ?? 200;
+    // 近战默认 = 角色自身光晕半径 + 10px（与夜间可见光晕同源，见 core/CharacterGlow），
+    // 命中判定、刀光、战斗扇形显示共用本值；远程武器缺省值保持原样，
+    // 不随近战射程调整（远程仅由武器 attackDistance 决定射程）。
+    this.sliceAttackRange = config.sliceAttackRange ?? resolveMeleeRangeFromGlow();
     this.rangedAttackRange = config.rangedAttackRange ?? 100;
     this.sliceHitRadius = config.sliceHitRadius ?? 40;
     this.sliceCooldowns = new Map();
