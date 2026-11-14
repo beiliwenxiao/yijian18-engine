@@ -28,6 +28,12 @@ const MAX_ZOOM = 4;
 const ZOOM_STEP = 1.25;
 /** 按下后移动超过该距离视为拖动，不再触发点选。 */
 const DRAG_THRESHOLD = 4;
+/** 惯性滑动：松手速度阈值、速度上限、阻尼与停止阈值。 */
+const INERTIA_START_SPEED = 150;
+const INERTIA_MAX_SPEED = 6000;
+const INERTIA_DAMPING = 5;
+const INERTIA_MIN_SPEED = 20;
+const INERTIA_SAMPLE_MS = 120;
 
 const TERRAIN_COLORS = Object.freeze({
   mountain: '#6f6b63',
@@ -148,6 +154,16 @@ export class WorldMapPanel extends UIElement {
     this._drag = { active: false, moved: false, startX: 0, startY: 0, scrollX: 0, scrollY: 0 };
     this._press = null;
     this._wasMouseDown = false;
+
+    // 双指缩放：双指中心为锚点，1→2 / 2→1 切换时重建基准，不跳变。
+    this._pinching = false;
+    this._pinchLast = null;
+    this._prevTouchCount = 0;
+    this._pinchedSinceTouchStart = false;
+
+    // 惯性滑动：按松手前 ~120ms 的滚动速度继续，阻尼衰减，撞边界即停。
+    this._inertia = { active: false, vx: 0, vy: 0, lastTime: 0 };
+    this._dragSamples = [];
   }
 
   /** 选中/下令回调（宿主转 commands）；null 时只显示。 */
@@ -186,6 +202,12 @@ export class WorldMapPanel extends UIElement {
     this._drag = { active: false, moved: false, startX: 0, startY: 0, scrollX: 0, scrollY: 0 };
     this._press = null;
     this._wasMouseDown = false;
+    this._pinching = false;
+    this._pinchLast = null;
+    this._prevTouchCount = 0;
+    this._pinchedSinceTouchStart = false;
+    this._inertia = { active: false, vx: 0, vy: 0, lastTime: 0 };
+    this._dragSamples = [];
     return true;
   }
 
@@ -194,6 +216,12 @@ export class WorldMapPanel extends UIElement {
     this._drag.active = false;
     this._drag.moved = false;
     this._press = null;
+    this._pinching = false;
+    this._pinchLast = null;
+    this._prevTouchCount = 0;
+    this._pinchedSinceTouchStart = false;
+    this._inertia.active = false;
+    this._dragSamples = [];
     this._ring.close();
     this._selected = null;
     this._pendingOrder = null;
@@ -206,6 +234,7 @@ export class WorldMapPanel extends UIElement {
 
   /** 依据面板尺寸重算视口并夹紧滚动量。 */
   refreshLayout() {
+    this._stopInertia();
     // 视口必须落在可见面板内（而非整屏），否则拖动后地图会画出面板边界。
     const panel = this._panelRect();
     const left = panel.x + PAD;
@@ -242,22 +271,37 @@ export class WorldMapPanel extends UIElement {
     };
   }
 
-  /** 可见时返回 true（模态），并处理拖拽与按钮点击。 */
+  /** 当前时间（毫秒）；单测可覆写以驱动惯性。 */
+  _now() {
+    return (typeof performance !== 'undefined' && typeof performance.now === 'function')
+      ? performance.now()
+      : Date.now();
+  }
+
+  /** 可见时返回 true（模态），并处理拖拽、缩放与双指/惯性手势。 */
   handleInput({ inputManager } = {}) {
     if (!this.visible) return false;
+    const now = this._now();
+    // 惯性先积分；本帧若有按下/滚轮/双指，会在下面立刻停住。
+    this._updateInertia(now);
+
+    const touchPoints = inputManager?.getTouchPoints?.() || [];
+    const touchCount = Array.isArray(touchPoints) ? touchPoints.length : 0;
     const mouse = inputManager?.getMousePosition?.() || { x: 0, y: 0 };
     const down = inputManager?.isMouseButtonDown?.(0) === true;
 
     // 快速点击（按下与松开落在同一帧）不会进入按住轮询，用 clicked 沿补一次点击。
+    // 双指手势结束后的 clicked 残留必须忽略，否则松手会误触标记。
     const mouseState = inputManager?.mouse;
     if (mouseState?.clicked === true && mouseState?.clickedButton === 0 && !down
-      && !this._wasMouseDown && mouseState.dragged !== true) {
+      && !this._wasMouseDown && mouseState.dragged !== true && !this._pinchedSinceTouchStart) {
       this._wasMouseDown = false;
       return this.handleMouseClick(mouse.x, mouse.y);
     }
 
     // 四选确认框（4C）：模态优先，弹窗存在时吞掉其余输入。
     if (this._encounterRects.length > 0) {
+      this._stopInertia();
       if (down && !this._wasMouseDown) {
         const hit = this._encounterAt(mouse.x, mouse.y);
         if (hit?.enabled) this._handleEncounterHit(hit.choice);
@@ -268,9 +312,35 @@ export class WorldMapPanel extends UIElement {
       return true;
     }
 
+    // 双指缩放：双指中心为锚点，与滚轮/按钮共用 _setZoom 的同一套倍率与锚点逻辑。
+    if (touchCount >= 2) {
+      this._handlePinch(touchPoints, now);
+      this._pinchedSinceTouchStart = true;
+      this._press = null;
+      this._drag.active = false;
+      this._drag.moved = false;
+      this._dragSamples = [];
+      this._prevTouchCount = touchCount;
+      this._wasMouseDown = down;
+      return true;
+    }
+
+    // 2→1 / 2→0：重建基准，手势切换不跳变；多指过的手势不再判定点选。
+    if (this._prevTouchCount >= 2) {
+      this._endPinch(touchCount, touchPoints, now);
+      this._prevTouchCount = touchCount;
+      if (touchCount === 0) {
+        this._wasMouseDown = false;
+        return true;
+      }
+    }
+    this._prevTouchCount = touchCount;
+
     // 滚轮缩放：只在视口内生效，锚点跟随鼠标；缩放后格子/标记/边界一起重算。
     const wheel = inputManager?.consumeWheelDelta?.();
     if (wheel && Number(wheel.y) !== 0 && this._inViewport(mouse.x, mouse.y)) {
+      this._stopInertia();
+      this._dragSamples = [];
       const factor = Math.exp(-Number(wheel.y) * 0.0015);
       this._setZoom(this._zoom * factor, { x: mouse.x, y: mouse.y });
       this._wasMouseDown = down;
@@ -278,6 +348,9 @@ export class WorldMapPanel extends UIElement {
     }
 
     if (down && !this._wasMouseDown) {
+      // 重新按下：停住惯性，并从当前位置重新取拖拽基准。
+      this._stopInertia();
+      this._dragSamples = [{ t: now, x: this._scrollX, y: this._scrollY }];
       // 按下先记候选：按钮/指令环/标记都在松开且未拖动时才真正触发。
       const button = this._buttonAt(mouse.x, mouse.y);
       if (button) {
@@ -321,22 +394,145 @@ export class WorldMapPanel extends UIElement {
             scrollX: this._press.scrollX,
             scrollY: this._press.scrollY
           };
+          // 速度样本从越过阈值的这一帧重新计时，避免长按后再甩动被稀释。
+          this._dragSamples = [{ t: now, x: this._scrollX, y: this._scrollY }];
         }
       }
       if (source.moved) {
         this._scrollX = source.scrollX - dx;
         this._scrollY = source.scrollY - dy;
         this._clampScroll();
+        this._recordDragSample(now);
       }
     } else if (!down) {
-      if (this._press && !this._press.moved) this._activatePress(this._press);
+      if (this._press && !this._press.moved) {
+        this._activatePress(this._press);
+      } else if (this._drag.moved && !this._pinchedSinceTouchStart) {
+        // 松手前 ~120ms 的位移决定惯性初速；与点选互斥（拖动后不再点选）。
+        this._recordDragSample(now);
+        this._startInertia(now);
+      }
       this._press = null;
       this._drag.active = false;
       this._drag.moved = false;
+      this._pinchedSinceTouchStart = false;
     }
 
     this._wasMouseDown = down;
     return true;
+  }
+
+  _handlePinch(points, now) {
+    if (!Array.isArray(points) || points.length < 2) return;
+    const a = points[0];
+    const b = points[1];
+    const center = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+    const distance = Math.hypot(a.x - b.x, a.y - b.y);
+    this._stopInertia();
+    this._dragSamples = [];
+    if (!this._pinching || !this._pinchLast) {
+      // 首帧只记录基准：从单指拖图切到双指时不跳变。
+      this._pinching = true;
+      this._pinchLast = { center, distance, time: now };
+      return;
+    }
+    const last = this._pinchLast;
+    const dx = center.x - last.center.x;
+    const dy = center.y - last.center.y;
+    // 先按双指中心位移平移，再以新中心为锚点缩放，手指下的地图内容保持贴手。
+    if (dx !== 0 || dy !== 0) {
+      this._scrollX -= dx;
+      this._scrollY -= dy;
+      this._clampScroll();
+    }
+    if (last.distance > 1 && distance > 1 && distance !== last.distance) {
+      this._setZoom(this._zoom * (distance / last.distance), center);
+    }
+    this._pinchLast = { center, distance, time: now };
+  }
+
+  /** 双指手势结束：2→1 时以剩余手指为新拖动基准；2→0 时清空手势状态。 */
+  _endPinch(touchCount, touchPoints, now) {
+    this._pinching = false;
+    this._pinchLast = null;
+    this._press = null;
+    this._stopInertia();
+    this._dragSamples = [];
+    if (touchCount === 1) {
+      const point = touchPoints[0];
+      this._drag = {
+        active: true,
+        moved: true,
+        startX: point.x,
+        startY: point.y,
+        scrollX: this._scrollX,
+        scrollY: this._scrollY
+      };
+      this._dragSamples = [{ t: now, x: this._scrollX, y: this._scrollY }];
+      return;
+    }
+    this._drag.active = false;
+    this._drag.moved = false;
+    this._pinchedSinceTouchStart = false;
+  }
+
+  _stopInertia() {
+    this._inertia.active = false;
+    this._inertia.vx = 0;
+    this._inertia.vy = 0;
+  }
+
+  /** 记录拖动过程中的滚动位置与时间，用于估算松手速度。 */
+  _recordDragSample(now) {
+    const samples = this._dragSamples;
+    samples.push({ t: now, x: this._scrollX, y: this._scrollY });
+    const cutoff = now - INERTIA_SAMPLE_MS;
+    while (samples.length > 1 && samples[0].t < cutoff) samples.shift();
+    if (samples.length > 8) samples.splice(0, samples.length - 8);
+  }
+
+  /** 松手速度超过阈值才启动惯性；低于阈值视为普通松手。 */
+  _startInertia(now) {
+    const samples = this._dragSamples;
+    if (samples.length < 2) return;
+    const first = samples[0];
+    const last = samples[samples.length - 1];
+    const dt = (last.t - first.t) / 1000;
+    if (!(dt > 0)) return;
+    let vx = (last.x - first.x) / dt;
+    let vy = (last.y - first.y) / dt;
+    const speed = Math.hypot(vx, vy);
+    if (!Number.isFinite(speed) || speed < INERTIA_START_SPEED) return;
+    if (speed > INERTIA_MAX_SPEED) {
+      const scale = INERTIA_MAX_SPEED / speed;
+      vx *= scale;
+      vy *= scale;
+    }
+    this._inertia = { active: true, vx, vy, lastTime: now };
+  }
+
+  /** 按指数阻尼积分惯性；撞到边界即停住，不滑出界再弹回。 */
+  _updateInertia(now) {
+    const inertia = this._inertia;
+    if (!inertia.active) return;
+    const dt = Math.min(0.05, (now - inertia.lastTime) / 1000);
+    inertia.lastTime = now;
+    if (!(dt > 0)) return;
+    const damping = Math.exp(-INERTIA_DAMPING * dt);
+    inertia.vx *= damping;
+    inertia.vy *= damping;
+    if (Math.hypot(inertia.vx, inertia.vy) < INERTIA_MIN_SPEED) {
+      this._stopInertia();
+      return;
+    }
+    const nextX = this._scrollX + inertia.vx * dt;
+    const nextY = this._scrollY + inertia.vy * dt;
+    this._scrollX = nextX;
+    this._scrollY = nextY;
+    this._clampScroll();
+    if (Math.abs(this._scrollX - nextX) > 0.5) inertia.vx = 0;
+    if (Math.abs(this._scrollY - nextY) > 0.5) inertia.vy = 0;
+    if (inertia.vx === 0 && inertia.vy === 0) this._stopInertia();
   }
 
   _beginPress(kind, payload, mouse) {

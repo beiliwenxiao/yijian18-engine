@@ -291,8 +291,257 @@ describe('WorldMapPanel 缩放与拖拽互斥', () => {
   });
 });
 
-describe('WorldMapPanel 遭遇四选确认框（4C）', () => {
-  const makeCtx = () => new Proxy({}, {
+describe('WorldMapPanel 双指缩放与惯性滑动', () => {
+  /** 用状态对象模拟 InputManager 的鼠标 + 触点接口。 */
+  const makeInput = state => ({
+    getMousePosition: () => state.mouse,
+    isMouseButtonDown: () => state.down,
+    getTouchPoints: () => state.points,
+    consumeWheelDelta: () => ({ x: 0, y: 0 }),
+    mouse: state.mouseState
+  });
+
+  const centerScroll = panel => {
+    panel._scrollX = Math.max(0, panel._mapWidth / 2 - panel._viewport.width / 2);
+    panel._scrollY = Math.max(0, panel._mapHeight / 2 - panel._viewport.height / 2);
+    panel._clampScroll();
+  };
+
+  /** 屏幕上某点对应的 1× 地图坐标（缩放锚点是否漂移的判据）。 */
+  const anchorBase = (panel, point) => ({
+    x: (point.x - panel._viewport.left + panel._scrollX) / panel._zoom,
+    y: (point.y - panel._viewport.top + panel._scrollY) / panel._zoom
+  });
+
+  it('双指缩放以双指中心为锚点，倍率夹在「盖满视口」～4 倍', () => {
+    const panel = makePanel();
+    panel.open();
+    centerScroll(panel);
+    const view = panel._viewport;
+    const center = { x: view.left + view.width / 2, y: view.top + view.height / 2 };
+    const state = {
+      mouse: center,
+      down: true,
+      points: [
+        { x: center.x - 100, y: center.y - 100 },
+        { x: center.x + 100, y: center.y + 100 }
+      ]
+    };
+    const input = makeInput(state);
+    // 首帧只记基准
+    panel.handleInput({ inputManager: input });
+    const emptyBefore = anchorBase(panel, center);
+
+    // 双指张开一倍：中心下的地图坐标保持不动
+    state.points = [
+      { x: center.x - 200, y: center.y - 200 },
+      { x: center.x + 200, y: center.y + 200 }
+    ];
+    panel.handleInput({ inputManager: input });
+    expect(panel._zoom).toBeCloseTo(2, 6);
+    const emptyAfter = anchorBase(panel, center);
+    expect(emptyAfter.x).toBeCloseTo(emptyBefore.x, 4);
+    expect(emptyAfter.y).toBeCloseTo(emptyBefore.y, 4);
+    // 标记在缩放中不漂移：屏幕位置与地图坐标换算一致
+    const city = panel._cities[0];
+    const screen = panel._markerScreen(city);
+    const map = panel.worldToMap(city.x, city.y);
+    expect(screen.x).toBeCloseTo(view.left + map.x - panel._scrollX, 6);
+    expect(screen.y).toBeCloseTo(view.top + map.y - panel._scrollY, 6);
+
+    // 持续张开 → 上限 4 倍
+    for (let i = 0; i < 6; i += 1) {
+      state.points = [
+        { x: center.x - 500, y: center.y - 500 },
+        { x: center.x + 500, y: center.y + 500 }
+      ];
+      panel.handleInput({ inputManager: input });
+    }
+    expect(panel._zoom).toBe(4);
+
+    // 持续收拢 → 下限仍盖满视口，四边不露空白
+    for (let i = 0; i < 8; i += 1) {
+      state.points = [
+        { x: center.x - 10, y: center.y - 10 },
+        { x: center.x + 10, y: center.y + 10 }
+      ];
+      panel.handleInput({ inputManager: input });
+    }
+    expect(panel._zoom).toBeCloseTo(panel._zoomLimits().min, 6);
+    const topLeft = panel.mapToScreen(0, 0);
+    const bottomRight = panel.mapToScreen(panel._mapWidth, panel._mapHeight);
+    expect(topLeft.x).toBeLessThanOrEqual(view.left + 0.001);
+    expect(topLeft.y).toBeLessThanOrEqual(view.top + 0.001);
+    expect(bottomRight.x).toBeGreaterThanOrEqual(view.left + view.width - 0.001);
+    expect(bottomRight.y).toBeGreaterThanOrEqual(view.top + view.height - 0.001);
+  });
+
+  it('单指拖图切双指、再回单指拖动都不跳变，松手不误点选', () => {
+    const panel = makePanel();
+    panel.open();
+    centerScroll(panel);
+    const view = panel._viewport;
+    const start = { x: view.left + 300, y: view.top + 200 };
+    const state = { mouse: start, down: true, points: [start] };
+    const input = makeInput(state);
+    panel.handleInput({ inputManager: input }); // 单指按下
+    const scroll0 = { x: panel._scrollX, y: panel._scrollY };
+    state.mouse = { x: start.x - 50, y: start.y - 20 };
+    state.points = [state.mouse];
+    panel.handleInput({ inputManager: input });
+    expect(panel._scrollX).toBeCloseTo(scroll0.x + 50, 6);
+
+    // 第二指落下：首帧只记基准，不缩放、不跳变
+    const beforePinch = { x: panel._scrollX, y: panel._scrollY, zoom: panel._zoom };
+    const a = { x: state.mouse.x - 80, y: state.mouse.y - 60 };
+    const b = { x: state.mouse.x + 80, y: state.mouse.y + 60 };
+    state.points = [a, b];
+    panel.handleInput({ inputManager: input });
+    expect(panel._zoom).toBeCloseTo(beforePinch.zoom, 6);
+    expect(panel._scrollX).toBeCloseTo(beforePinch.x, 6);
+    expect(panel._scrollY).toBeCloseTo(beforePinch.y, 6);
+
+    // 张开双指：以中心为锚点缩放
+    const pinchCenter = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+    const anchorBefore = anchorBase(panel, pinchCenter);
+    state.points = [
+      { x: pinchCenter.x - 160, y: pinchCenter.y - 120 },
+      { x: pinchCenter.x + 160, y: pinchCenter.y + 120 }
+    ];
+    panel.handleInput({ inputManager: input });
+    expect(panel._zoom).toBeGreaterThan(beforePinch.zoom);
+    const anchorAfter = anchorBase(panel, pinchCenter);
+    expect(anchorAfter.x).toBeCloseTo(anchorBefore.x, 4);
+    expect(anchorAfter.y).toBeCloseTo(anchorBefore.y, 4);
+
+    // 抬起一指：剩余手指就地接续拖动，不跳变
+    const remaining = state.points[1];
+    const beforeOne = { x: panel._scrollX, y: panel._scrollY };
+    state.points = [remaining];
+    state.mouse = remaining;
+    panel.handleInput({ inputManager: input });
+    expect(panel._scrollX).toBeCloseTo(beforeOne.x, 6);
+    expect(panel._scrollY).toBeCloseTo(beforeOne.y, 6);
+
+    state.mouse = { x: remaining.x - 30, y: remaining.y };
+    state.points = [state.mouse];
+    panel.handleInput({ inputManager: input });
+    expect(panel._scrollX).toBeCloseTo(beforeOne.x + 30, 6);
+    expect(panel._scrollY).toBeCloseTo(beforeOne.y, 6);
+
+    // 松手：clicked 残留 + 惯性都不能把这次手势变成点选
+    state.down = false;
+    state.points = [];
+    state.mouseState = { clicked: true, clickedButton: 0, dragged: false };
+    panel.handleInput({ inputManager: input });
+    expect(panel._selected).toBe(null);
+    expect(panel._inertia.active).toBe(false);
+  });
+
+  it('松手后按松手前的速度继续滑动并逐渐减速停下', () => {
+    const panel = makePanel();
+    panel.open();
+    centerScroll(panel);
+    let clock = 0;
+    panel._now = () => clock;
+    const state = {
+      mouse: { x: panel._viewport.left + 300, y: panel._viewport.top + 200 },
+      down: true,
+      points: []
+    };
+    const input = makeInput(state);
+
+    panel.handleInput({ inputManager: input }); // t=0 按下
+    const start = { x: panel._scrollX, y: panel._scrollY };
+    clock = 16;
+    state.mouse = { x: state.mouse.x - 120, y: state.mouse.y };
+    panel.handleInput({ inputManager: input }); // 拖动 120px
+    expect(panel._scrollX).toBeCloseTo(start.x + 120, 6);
+
+    const afterDrag = panel._scrollX;
+    clock = 32;
+    state.down = false;
+    panel.handleInput({ inputManager: input }); // 松手 → 惯性
+    expect(panel._inertia.active).toBe(true);
+    expect(panel._inertia.vx).toBeGreaterThan(0);
+
+    clock = 48;
+    panel.handleInput({ inputManager: input });
+    expect(panel._scrollX).toBeGreaterThan(afterDrag);
+    const speed1 = panel._inertia.vx;
+
+    clock = 64;
+    panel.handleInput({ inputManager: input });
+    expect(panel._inertia.vx).toBeLessThan(speed1);
+    const speed2 = panel._inertia.vx;
+
+    // 继续积分直到自然停下：速度单调下降、最终归零
+    for (clock = 80; clock < 20000 && panel._inertia.active; clock += 16) {
+      panel.handleInput({ inputManager: input });
+      if (panel._inertia.active) expect(panel._inertia.vx).toBeLessThan(speed2);
+    }
+    expect(panel._inertia.active).toBe(false);
+    expect(panel._scrollX).toBeLessThanOrEqual(panel._mapWidth - panel._viewport.width + 0.001);
+  });
+
+  it('惯性撞到边界立即停住，不滑出界再弹回', () => {
+    const panel = makePanel();
+    panel.open();
+    let clock = 1000;
+    panel._now = () => clock;
+    // 视口贴住右下角，惯性仍向右下推
+    panel._scrollX = panel._mapWidth - panel._viewport.width;
+    panel._scrollY = panel._mapHeight - panel._viewport.height;
+    const maxX = panel._scrollX;
+    const maxY = panel._scrollY;
+    panel._inertia = { active: true, vx: 4000, vy: 4000, lastTime: clock };
+
+    const input = makeInput({ mouse: { x: 0, y: 0 }, down: false, points: [] });
+    clock = 1016;
+    panel.handleInput({ inputManager: input });
+    expect(panel._scrollX).toBeCloseTo(maxX, 6);
+    expect(panel._scrollY).toBeCloseTo(maxY, 6);
+    expect(panel._inertia.vx).toBe(0);
+    expect(panel._inertia.vy).toBe(0);
+    expect(panel._scrollX).toBeLessThanOrEqual(panel._mapWidth - panel._viewport.width + 0.001);
+    expect(panel._scrollY).toBeLessThanOrEqual(panel._mapHeight - panel._viewport.height + 0.001);
+  });
+
+  it('惯性滑动本身不触发点选，从标记上拖动松手也不会被误点选', () => {
+    const panel = makePanel();
+    panel.open();
+    const city = panel._cities[0];
+    const map = panel.worldToMap(city.x, city.y);
+    panel._scrollX = map.x - panel._viewport.width / 2;
+    panel._scrollY = map.y - panel._viewport.height / 2;
+    panel._clampScroll();
+    const marker = panel._markerScreen(city);
+
+    let clock = 0;
+    panel._now = () => clock;
+    const state = { mouse: { x: marker.x, y: marker.y }, down: true, points: [] };
+    const input = makeInput(state);
+    panel.handleInput({ inputManager: input }); // 按在标记上
+    clock = 16;
+    state.mouse = { x: marker.x - 80, y: marker.y };
+    panel.handleInput({ inputManager: input }); // 拖过阈值 → 转拖图
+    clock = 32;
+    state.down = false;
+    panel.handleInput({ inputManager: input }); // 松手：不点选，启动惯性
+    expect(panel._selected).toBe(null);
+    expect(panel._inertia.active).toBe(true);
+
+    // 惯性持续推进期间也不会凭空产生点选
+    for (let t = 48; t < 2000 && panel._inertia.active; t += 16) {
+      clock = t;
+      state.mouse = { x: marker.x - 80, y: marker.y };
+      panel.handleInput({ inputManager: input });
+      expect(panel._selected).toBe(null);
+    }
+  });
+});
+
+describe('WorldMapPanel 遭遇四选确认框（4C）', () => {  const makeCtx = () => new Proxy({}, {
     get: (target, key) => {
       if (key in target) return target[key];
       if (key === 'measureText') return () => ({ width: 40 });

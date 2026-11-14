@@ -68,7 +68,9 @@ export class InputManager {
             startedAt: 0,
             startX: 0,
             startY: 0,
-            moved: false
+            moved: false,
+            // 当前所有触点的逻辑坐标（identifier → {x,y}），供双指缩放等手势读取。
+            points: new Map()
         };
         
         // 键位映射
@@ -159,6 +161,8 @@ export class InputManager {
             touchstart: (e) => this.handleTouchStart(e),
             touchend: (e) => this.handleTouchEnd(e),
             touchmove: (e) => this.handleTouchMove(e),
+            // 系统手势/来电等会取消触摸；按抬针处理，避免触点表残留导致双指状态卡死。
+            touchcancel: (e) => this.handleTouchEnd(e),
             // 指针在画布外释放/窗口失焦时也必须解除按住，避免拖拽状态卡死。
             windowMouseUp: (e) => {
                 if ((e.buttons || 0) === 0) {
@@ -184,6 +188,7 @@ export class InputManager {
         this.canvas.addEventListener('touchstart', this._eventHandlers.touchstart, { passive: false });
         this.canvas.addEventListener('touchend', this._eventHandlers.touchend, { passive: false });
         this.canvas.addEventListener('touchmove', this._eventHandlers.touchmove, { passive: false });
+        this.canvas.addEventListener('touchcancel', this._eventHandlers.touchcancel, { passive: false });
         
         Logger.log('InputManager: Event listeners initialized');
     }
@@ -314,6 +319,7 @@ export class InputManager {
             this.mouse.clicked = false;
             this.mouse.clickedButton = -1;
             this.mouse.dragged = false;
+            this.touch.points?.clear();
         }
     }
 
@@ -374,6 +380,7 @@ export class InputManager {
      */
     handleTouchStart(event) {
         event.preventDefault();
+        this._syncTouchPoints(event.touches);
         if (event.touches.length > 0) {
             const touch = event.touches[0];
             this.updateTouchPosition(touch);
@@ -402,6 +409,18 @@ export class InputManager {
      */
     handleTouchEnd(event) {
         event.preventDefault();
+        this._syncTouchPoints(event.touches);
+        // 双指抬起一指时仍保持按住：否则剩余手指的单指拖动基准会被清掉，手势切换会跳变。
+        if (event.touches && event.touches.length > 0) {
+            this.updateTouchPosition(event.touches[0]);
+            this.mouse.isDown = true;
+            this.mouse.buttons.add(0);
+            this.mouse.button = 0;
+            // 已经发生过多指手势，长按资格作废
+            this.touch.startedAt = 0;
+            this.touch.moved = true;
+            return;
+        }
         this.mouse.isDown = false;
         // 释放左键
         this.mouse.buttons.delete(0);
@@ -415,6 +434,7 @@ export class InputManager {
      */
     handleTouchMove(event) {
         event.preventDefault();
+        this._syncTouchPoints(event.touches);
         if (event.touches.length > 0) {
             const touch = event.touches[0];
             this.updateTouchPosition(touch);
@@ -450,29 +470,55 @@ export class InputManager {
     }
 
     /**
+     * 按当前 TouchList 重建触点表（identifier 稳定，顺序按插入序）。
+     * @param {TouchList|Array} touches
+     */
+    _syncTouchPoints(touches) {
+        if (!this.touch.points) this.touch.points = new Map();
+        const next = new Map();
+        for (const touch of Array.from(touches || [])) {
+            const point = this._touchToLogical(touch);
+            if (point) next.set(touch.identifier ?? next.size, point);
+        }
+        this.touch.points = next;
+    }
+
+    /**
+     * 当前所有触点的逻辑坐标（多指手势用；单指时长度为 1）。
+     * @returns {Array<{x:number,y:number}>}
+     */
+    getTouchPoints() {
+        return this.touch.points ? [...this.touch.points.values()] : [];
+    }
+
+    /**
+     * 触点 client 坐标 → 项目逻辑坐标。
+     * @param {Touch} touch
+     * @returns {{x:number,y:number}|null}
+     */
+    _touchToLogical(touch) {
+        if (this.pointerTransform) {
+            const p = this.pointerTransform(touch.clientX, touch.clientY);
+            if (p) return { x: p.x, y: p.y };
+        }
+        const rect = this.canvas.getBoundingClientRect();
+        const logicalWidth = Number(this.canvas.logicalWidth) || this.canvas.width;
+        const logicalHeight = Number(this.canvas.logicalHeight) || this.canvas.height;
+        if (rect.width <= 0 || rect.height <= 0) return null;
+        return {
+            x: (touch.clientX - rect.left) / rect.width * logicalWidth,
+            y: (touch.clientY - rect.top) / rect.height * logicalHeight
+        };
+    }
+
+    /**
      * 更新触摸位置
      */
     updateTouchPosition(touch) {
-        if (this.pointerTransform) {
-            const p = this.pointerTransform(touch.clientX, touch.clientY);
-            if (p) {
-                this.mouse.x = p.x;
-                this.mouse.y = p.y;
-                this.mouse.worldX = this.mouse.x + this.cameraX;
-                this.mouse.worldY = this.mouse.y + this.cameraY;
-                return;
-            }
-        }
-        const rect = this.canvas.getBoundingClientRect();
-        
-        const logicalWidth = Number(this.canvas.logicalWidth) || this.canvas.width;
-        const logicalHeight = Number(this.canvas.logicalHeight) || this.canvas.height;
-        const scaleX = logicalWidth / rect.width;
-        const scaleY = logicalHeight / rect.height;
-        
-        this.mouse.x = (touch.clientX - rect.left) * scaleX;
-        this.mouse.y = (touch.clientY - rect.top) * scaleY;
-        
+        const point = this._touchToLogical(touch);
+        if (!point) return;
+        this.mouse.x = point.x;
+        this.mouse.y = point.y;
         this.mouse.worldX = this.mouse.x + this.cameraX;
         this.mouse.worldY = this.mouse.y + this.cameraY;
     }
@@ -938,6 +984,7 @@ export class InputManager {
             this.canvas.removeEventListener('touchstart', handlers.touchstart);
             this.canvas.removeEventListener('touchend', handlers.touchend);
             this.canvas.removeEventListener('touchmove', handlers.touchmove);
+            this.canvas.removeEventListener('touchcancel', handlers.touchcancel);
             this._eventHandlers = null;
         }
         
