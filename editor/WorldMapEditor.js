@@ -1354,11 +1354,12 @@ export class WorldMapEditor {
       const cellRect = this._cellInfoAnchorRect;
       if (!cellRect) return false;
       const panelRect = panel.getBoundingClientRect();
-      const gap = 12;
-      const left = Math.min(cellRect.left, panelRect.left) - gap;
-      const top = Math.min(cellRect.top, panelRect.top) - gap;
-      const right = Math.max(cellRect.right, panelRect.right) + gap;
-      const bottom = Math.max(cellRect.bottom, panelRect.bottom) + gap;
+      // 两个矩形的并集已完整覆盖 1px 接缝；外扩只用于吸收指针抖动，避免贴边时误关。
+      const padding = 12;
+      const left = Math.min(cellRect.left, panelRect.left) - padding;
+      const top = Math.min(cellRect.top, panelRect.top) - padding;
+      const right = Math.max(cellRect.right, panelRect.right) + padding;
+      const bottom = Math.max(cellRect.bottom, panelRect.bottom) + padding;
       return x >= left && x <= right && y >= top && y <= bottom;
     };
     const onOver = event => {
@@ -1490,16 +1491,18 @@ export class WorldMapEditor {
       highlight.style.width = `${Math.round(rect.width)}px`;
       highlight.style.height = `${Math.round(rect.height)}px`;
     }
-    const gap = 10;
+    // 水平与格子重叠 1px（压住格边），保证浮层盖住该侧边框与网格线；纵向顶边对齐。
+    const gap = -1;
     const margin = 8;
     panel.style.display = 'block';
     const width = panel.offsetWidth || 248;
     const height = panel.offsetHeight || 160;
+    // 水平与格子重叠 1px（不做取整，确保恰好压住 1px 格边）；纵向顶边对齐该格。
     let left = rect.right + gap;
     if (left + width > window.innerWidth - margin) left = rect.left - width - gap;
     left = Math.min(Math.max(margin, left), Math.max(margin, window.innerWidth - width - margin));
     let top = Math.min(Math.max(margin, rect.top), Math.max(margin, window.innerHeight - height - margin));
-    panel.style.left = `${Math.round(left)}px`;
+    panel.style.left = `${left}px`;
     panel.style.top = `${Math.round(top)}px`;
   }
 
