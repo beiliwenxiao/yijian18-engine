@@ -730,8 +730,8 @@ export class WorldMapEditor {
           <input type="number" class="wme-chunk-w" min="0.000001" step="any" style="width:74px;" /> ×
           <input type="number" class="wme-chunk-h" min="0.000001" step="any" style="width:74px;" />
         </label>
-        <label title="整图文件（如 assets/images/big_map_3.png）或按格切图目录（tile_rNN_cNN.jpg，1-based 两位补零）；留空=无底图">背景图位置:
-          <input type="text" class="wme-background" placeholder="assets/images/big_map_3.png 或 切图目录" style="width:340px;" />
+        <label title="整图文件（如 assets/images/big_map_3.jpg）或按格切图目录（tile_rNN_cNN.jpg，1-based 两位补零）；留空=无底图">背景图位置:
+          <input type="text" class="wme-background" placeholder="assets/images/big_map_3.jpg 或 切图目录" style="width:340px;" />
         </label>
         <label>尺寸:
           <input type="number" class="wme-cols" min="1" max="100" step="1" style="width:55px;" /> ×
@@ -778,7 +778,7 @@ export class WorldMapEditor {
             </label>
             <label style="display:flex;align-items:center;gap:6px;" title="整图文件或 tile_rNN_cNN.jpg 切图目录（1-based、两位补零）">
               背景图位置:
-              <input name="backgroundImage" type="text" placeholder="assets/images/big_map_3.png 或 切图目录" style="box-sizing:border-box;min-width:0;flex:1;" />
+              <input name="backgroundImage" type="text" placeholder="assets/images/big_map_3.jpg 或 切图目录" style="box-sizing:border-box;min-width:0;flex:1;" />
             </label>
             <label style="display:flex;align-items:center;gap:6px;">尺寸:
               <input name="cols" type="number" min="1" max="100" step="1" required value="20" style="width:64px;" /> ×

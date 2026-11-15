@@ -231,8 +231,8 @@ describe('WorldMapEditor 底图整图/目录双模式', () => {
   it('整图模式按 region 格数裁剪出每格源矩形', () => {
     const editor = makeEditor();
     const image = { naturalWidth: 2560, naturalHeight: 1440 };
-    editor._backgroundImages = { get: path => (path === 'assets/images/big_map_3.png' ? image : null) };
-    const region = { ...editor.region, cols: 20, rows: 20, backgroundImage: 'assets/images/big_map_3.png' };
+    editor._backgroundImages = { get: path => (path === 'assets/images/big_map_3.jpg' ? image : null) };
+    const region = { ...editor.region, cols: 20, rows: 20, backgroundImage: 'assets/images/big_map_3.jpg' };
     expect(editor._backgroundSourceAt(region, 5, 7))
       .toEqual({ image, sx: 7 * 128, sy: 5 * 72, sw: 128, sh: 72 });
   });

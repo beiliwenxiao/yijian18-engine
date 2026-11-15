@@ -25,11 +25,11 @@ describe('WorldMapBackground 底图命名与切分', () => {
   });
 
   it('按文件/目录区分整图与切图两种模式', () => {
-    expect(isWorldMapBackgroundFile('assets/images/big_map_3.png')).toBe(true);
+    expect(isWorldMapBackgroundFile('assets/images/legacy_map.png')).toBe(true);
     expect(isWorldMapBackgroundFile('assets/images/big_map_3.JPG')).toBe(true);
     expect(isWorldMapBackgroundFile('fixtures/tiles_20x20')).toBe(false);
-    expect(resolveWorldMapBackgroundPaths('assets/images/big_map_3.png', 20, 20))
-      .toEqual(['assets/images/big_map_3.png']);
+    expect(resolveWorldMapBackgroundPaths('assets/images/big_map_3.jpg', 20, 20))
+      .toEqual(['assets/images/big_map_3.jpg']);
     const paths = resolveWorldMapBackgroundPaths('fixtures/tiles_20x20', 2, 2);
     expect(paths).toHaveLength(4);
     expect(paths[0]).toBe('fixtures/tiles_20x20/tile_r01_c01.jpg');
