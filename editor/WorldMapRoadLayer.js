@@ -121,7 +121,8 @@ export class WorldMapRoadLayer {
     const m = this._cellMetrics();
     if (!m) return null;
     const x = col * (m.thumbW + m.gap);
-    const y = row * m.cellH + m.labelH;
+    // 标签在缩略图下方：行起点只按「缩略图 + 标签 + 间距」累加，不能再加 labelH。
+    const y = row * m.cellH;
     return { x, y, w: m.thumbW, h: m.thumbH, cx: x + m.thumbW / 2, cy: y + m.thumbH / 2 };
   }
 

@@ -63,21 +63,21 @@ describe('WorldMapPanel', () => {
     panel.open();
     expect(panel.visible).toBe(true);
     expect(panel._cities).toHaveLength(1);
-    // 中心 = offset + worldSize/2 → 地图像素 = 世界坐标 × 0.2（与编辑器同一显示比例）
+    // 中心 = offset + worldSize/2 → 地图像素 = 世界坐标 × 0.1（与编辑器同一显示比例）
     expect(panel._cities[0]).toMatchObject({ sceneId: 'S09', name: '广宗', x: 14080, y: 7920 });
     const map = panel.worldToMap(panel._cities[0].x, panel._cities[0].y);
-    expect(map.x).toBeCloseTo(2816);
-    expect(map.y).toBeCloseTo(1584);
+    expect(map.x).toBeCloseTo(1408);
+    expect(map.y).toBeCloseTo(792);
   });
 
   it('地图尺寸按 region 格数与 chunk 尺寸换算，滚动量在边界内夹紧', () => {
     const panel = makePanel();
     panel.open();
-    // 20×20 格、1280×720/格、显示比例 0.2 → 256×144/格，整图 5120×2880（与编辑器一致）
-    expect(panel._cellWidth).toBe(256);
-    expect(panel._cellHeight).toBe(144);
-    expect(panel._mapWidth).toBe(5120);
-    expect(panel._mapHeight).toBe(2880);
+    // 20×20 格、1280×720/格、显示比例 0.1 → 128×72/格，整图 2560×1440（与编辑器一致）
+    expect(panel._cellWidth).toBe(128);
+    expect(panel._cellHeight).toBe(72);
+    expect(panel._mapWidth).toBe(2560);
+    expect(panel._mapHeight).toBe(1440);
     // 玩家在原点：向左上居中会变负 → 夹到 0
     expect(panel._scrollX).toBe(0);
     expect(panel._scrollY).toBe(0);
@@ -85,8 +85,8 @@ describe('WorldMapPanel', () => {
     panel._scrollX = 99999;
     panel._scrollY = 99999;
     panel._clampScroll();
-    expect(panel._scrollX).toBe(5120 - panel._viewport.width);
-    expect(panel._scrollY).toBe(2880 - panel._viewport.height);
+    expect(panel._scrollX).toBe(2560 - panel._viewport.width);
+    expect(panel._scrollY).toBe(1440 - panel._viewport.height);
   });
 
   it('拖动到四边后地图始终盖满视口，不露出地图外空白', () => {
@@ -164,31 +164,31 @@ describe('WorldMapPanel 缩放与拖拽互斥', () => {
 
     for (let i = 0; i < 30; i += 1) panel.handleInput({ inputManager: makeWheel(-500, anchor) });
     expect(panel._zoom).toBe(4);
-    expect(panel._cellWidth).toBe(1024);
-    expect(panel._cellHeight).toBe(576);
-    expect(panel._mapWidth).toBe(20480);
-    expect(panel.worldToMap(12800, 7200)).toEqual({ x: 10240, y: 5760 });
+    expect(panel._cellWidth).toBe(512);
+    expect(panel._cellHeight).toBe(288);
+    expect(panel._mapWidth).toBe(10240);
+    expect(panel.worldToMap(12800, 7200)).toEqual({ x: 5120, y: 2880 });
 
     for (let i = 0; i < 30; i += 1) panel.handleInput({ inputManager: makeWheel(500, anchor) });
     const limits = panel._zoomLimits();
     expect(panel._zoom).toBeCloseTo(limits.min, 6);
-    expect(panel._mapWidth).toBeCloseTo(5120 * limits.min, 6);
-    expect(panel._mapHeight).toBeCloseTo(2880 * limits.min, 6);
+    expect(panel._mapWidth).toBeCloseTo(2560 * limits.min, 6);
+    expect(panel._mapHeight).toBeCloseTo(1440 * limits.min, 6);
   });
 
   it('缩放后格子尺寸、标记换算与命中同步', () => {
     const panel = makePanel();
     panel.open();
     panel._setZoom(2);
-    expect(panel._cellWidth).toBe(512);
-    expect(panel._cellHeight).toBe(288);
-    expect(panel._mapWidth).toBe(10240);
-    expect(panel._mapHeight).toBe(5760);
+    expect(panel._cellWidth).toBe(256);
+    expect(panel._cellHeight).toBe(144);
+    expect(panel._mapWidth).toBe(5120);
+    expect(panel._mapHeight).toBe(2880);
 
     const city = panel._cities[0];
-    expect(panel.worldToMap(city.x, city.y)).toEqual({ x: 5632, y: 3168 });
-    panel._scrollX = 5632 - panel._viewport.width / 2;
-    panel._scrollY = 3168 - panel._viewport.height / 2;
+    expect(panel.worldToMap(city.x, city.y)).toEqual({ x: 2816, y: 1584 });
+    panel._scrollX = 2816 - panel._viewport.width / 2;
+    panel._scrollY = 1584 - panel._viewport.height / 2;
     panel._clampScroll();
     const screen = panel._markerScreen(city);
     expect(panel._markerAt(screen.x, screen.y)?.id).toBe('city.s09_guangzong_camp');
@@ -222,8 +222,8 @@ describe('WorldMapPanel 缩放与拖拽互斥', () => {
     panel.open();
     panel._setZoom(2);
     const city = panel._cities[0];
-    panel._scrollX = 5632 - panel._viewport.width / 2;
-    panel._scrollY = 3168 - panel._viewport.height / 2;
+    panel._scrollX = 2816 - panel._viewport.width / 2;
+    panel._scrollY = 1584 - panel._viewport.height / 2;
     panel._clampScroll();
     const start = panel._markerScreen(city);
     const scrollBefore = panel._scrollX;
@@ -239,8 +239,8 @@ describe('WorldMapPanel 缩放与拖拽互斥', () => {
     expect(panel._selected).toBe(null);
     expect(panel._scrollX).toBeGreaterThan(scrollBefore);
 
-    panel._scrollX = 5632 - panel._viewport.width / 2;
-    panel._scrollY = 3168 - panel._viewport.height / 2;
+    panel._scrollX = 2816 - panel._viewport.width / 2;
+    panel._scrollY = 1584 - panel._viewport.height / 2;
     panel._clampScroll();
     const clickPoint = panel._markerScreen(city);
     pos = { x: clickPoint.x, y: clickPoint.y };
@@ -256,8 +256,8 @@ describe('WorldMapPanel 缩放与拖拽互斥', () => {
     panel.open();
     panel._setZoom(2);
     const city = panel._cities[0];
-    panel._scrollX = 5632 - panel._viewport.width / 2;
-    panel._scrollY = 3168 - panel._viewport.height / 2;
+    panel._scrollX = 2816 - panel._viewport.width / 2;
+    panel._scrollY = 1584 - panel._viewport.height / 2;
     panel._clampScroll();
     const screen = panel._markerScreen(city);
     const inputManager = {
@@ -277,7 +277,7 @@ describe('WorldMapPanel 缩放与拖拽互斥', () => {
     panel.close();
     panel.open();
     expect(panel._zoom).toBe(1);
-    expect(panel._mapWidth).toBe(5120);
+    expect(panel._mapWidth).toBe(2560);
 
     panel._setZoom(4);
     panel.setSize(600, 500);
@@ -606,5 +606,17 @@ describe('WorldMapPanel 遭遇四选确认框（4C）', () => {  const makeCtx =
     expect(panel._encounterRects).toEqual([]);
     panel.handleMouseClick(500, 350);
     expect(decide).not.toHaveBeenCalled();
+  });
+
+  it('网格默认显示，按钮可切换且命中在现有按钮行内', () => {
+    const panel = makePanel();
+    panel.open();
+    expect(panel._showGrid).toBe(true);
+    const rect = panel._buttonRects().grid;
+    expect(panel._buttonAt(rect.x + 1, rect.y + 1)).toBe('grid');
+    panel._applyButton('grid');
+    expect(panel._showGrid).toBe(false);
+    panel._applyButton('grid');
+    expect(panel._showGrid).toBe(true);
   });
 });

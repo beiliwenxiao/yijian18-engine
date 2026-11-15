@@ -40,9 +40,9 @@ describe('WorldMapRoadLayer 路网图层', () => {
     const line = grid.querySelector('.wmr-edge');
     expect(line).toBeTruthy();
     expect(line.getAttribute('x1')).toBe('50');
-    expect(line.getAttribute('y1')).toBe('45');
+    expect(line.getAttribute('y1')).toBe('25');
     expect(line.getAttribute('x2')).toBe('152');
-    expect(line.getAttribute('y2')).toBe('45');
+    expect(line.getAttribute('y2')).toBe('25');
     expect(grid.querySelector('.wmr-poi-pass')).toBeTruthy();
     expect(grid.querySelector('.wmr-poi-ferry')).toBeTruthy();
   });

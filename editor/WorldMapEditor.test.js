@@ -216,3 +216,41 @@ describe('WorldMapEditor 路网图层（roadEdges 录入与抽取器联动）', 
     expect(edge.id).toBe('edge.pass.region.test.r0c0__ferry.region.test.r0c1');
   });
 });
+
+describe('WorldMapEditor 底图整图/目录双模式', () => {
+  it('网格线默认显示，按格数生成单条 SVG path', () => {
+    const editor = makeEditor();
+    expect(editor._gridVisible).toBe(true);
+    const svg = editor._buildGridLinesSvg({ cols: 3, rows: 2 }, 128, 72);
+    expect(svg).toContain('class="wme-grid-lines"');
+    expect(svg).toContain('M128.5 0V144');
+    expect(svg).toContain('M256.5 0V144');
+    expect(svg).toContain('M0 72.5H384');
+    expect(svg).toContain('pointer-events:none');
+  });
+  it('整图模式按 region 格数裁剪出每格源矩形', () => {
+    const editor = makeEditor();
+    const image = { naturalWidth: 2560, naturalHeight: 1440 };
+    editor._backgroundImages = { get: path => (path === 'assets/images/big_map_3.png' ? image : null) };
+    const region = { ...editor.region, cols: 20, rows: 20, backgroundImage: 'assets/images/big_map_3.png' };
+    expect(editor._backgroundSourceAt(region, 5, 7))
+      .toEqual({ image, sx: 7 * 128, sy: 5 * 72, sw: 128, sh: 72 });
+  });
+
+  it('目录模式按 tile_rNN_cNN.jpg 取单格图；缺失返回 null', () => {
+    const editor = makeEditor();
+    const image = { naturalWidth: 128, naturalHeight: 72 };
+    const seen = [];
+    editor._backgroundImages = {
+      get: path => {
+        seen.push(path);
+        return path.endsWith('tile_r06_c08.jpg') ? image : null;
+      }
+    };
+    const region = { ...editor.region, cols: 20, rows: 20, backgroundImage: 'fixtures/tiles_20x20' };
+    expect(editor._backgroundSourceAt(region, 5, 7))
+      .toEqual({ image, sx: 0, sy: 0, sw: 128, sh: 72 });
+    expect(seen[0]).toBe('fixtures/tiles_20x20/tile_r06_c08.jpg');
+    expect(editor._backgroundSourceAt(region, 0, 0)).toBe(null);
+  });
+});

@@ -1228,6 +1228,7 @@
         "cols": 20,
         "chunkWidth": 1280,
         "chunkHeight": 720,
+        "backgroundImage": "assets/images/big_map_3.png",
         "grid": [
           [
             {

@@ -25,6 +25,10 @@ import {
   adoptAuto,
   buildDiff
 } from '../src/core/world/WorldLogicDiff.js';
+import {
+  WORLD_MAP_DISPLAY_CELL_HEIGHT,
+  WORLD_MAP_DISPLAY_CELL_WIDTH
+} from '../src/core/world/WorldMapDisplayMetrics.js';
 
 /**
  * WorldLogicEditor - 世界逻辑路径编辑器（模块 4 · 4B）
@@ -375,8 +379,8 @@ export class WorldLogicEditor {
     this.region = region || null;
     this.metrics = {
       gridEl: metrics.gridEl || null,
-      thumbW: Number(metrics.thumbW) || 256,
-      thumbH: Number(metrics.thumbH) || 144,
+      thumbW: Number(metrics.thumbW) || WORLD_MAP_DISPLAY_CELL_WIDTH,
+      thumbH: Number(metrics.thumbH) || WORLD_MAP_DISPLAY_CELL_HEIGHT,
       labelH: Number(metrics.labelH) || 20,
       gap: Number(metrics.gap) || 2
     };
@@ -1024,7 +1028,7 @@ export class WorldLogicEditor {
     for (const cell of preview.overlay) {
       if (cell.status === ROUTE_STATUS.NO_ROUTE) continue;
       const style = WORLD_ROUTE_STATUS_STYLES[cell.status] || WORLD_ROUTE_STATUS_STYLES.noRoute;
-      parts.push(`<rect x="${cell.col * (thumbW + gap)}" y="${cell.row * cellH + labelH}" width="${thumbW}" height="${thumbH}" fill="${style.color}" fill-opacity="0.18" />`);
+      parts.push(`<rect x="${cell.col * (thumbW + gap)}" y="${cell.row * cellH}" width="${thumbW}" height="${thumbH}" fill="${style.color}" fill-opacity="0.18" />`);
     }
     parts.push('</g>');
 
@@ -1086,7 +1090,7 @@ export class WorldLogicEditor {
     const row = Math.floor(rowF);
     return {
       x: col * (thumbW + gap) + (colF - col) * thumbW,
-      y: row * (thumbH + labelH + gap) + labelH + (rowF - row) * thumbH
+      y: row * (thumbH + labelH + gap) + (rowF - row) * thumbH
     };
   }
 

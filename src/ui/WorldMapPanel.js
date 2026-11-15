@@ -14,8 +14,15 @@ import { UIElement } from './UIElement.js';
 import { WorldCommandRing } from './WorldCommandRing.js';
 import {
   computeWorldMapDisplayMetrics,
+  WORLD_MAP_DISPLAY_CELL_HEIGHT,
   WORLD_MAP_DISPLAY_CELL_WIDTH
 } from '../core/world/WorldMapDisplayMetrics.js';
+import {
+  WorldMapBackgroundImageCache,
+  isWorldMapBackgroundFile,
+  normalizeWorldMapBackgroundPath,
+  resolveWorldMapBackgroundTilePath
+} from '../core/world/WorldMapBackground.js';
 
 /** 面板内边距与标题栏/图例高度。 */
 const PAD = 24;
@@ -84,7 +91,8 @@ const terrainColor = terrain => TERRAIN_COLORS[terrain] || null;
  *
  * 展示当前 Region 的世界地形网格、场景锚点、城池与玩家位置，支持按住左键拖动查看。
  * 数据全部通过 setDataProviders 惰性拉取，便于运行时替换世界/玩家而不重建面板；
- * 地形块绘制到离屏 canvas 缓存，逐帧只绘制动态标记。
+ * 底图（region.backgroundImage 的按格切图，缺失时回退地形色）绘制到离屏 canvas 缓存，
+ * 逐帧只绘制动态标记。
  */
 export class WorldMapPanel extends UIElement {
   /**
@@ -106,6 +114,8 @@ export class WorldMapPanel extends UIElement {
       getRoutePreview: null,
       getOrderDefinitions: null,
       getPendingEncounter: null,
+      // 底图工程路径 → 实际 URL（缺省按原样使用；游戏侧注入 AssetManager 解析）
+      resolveAssetUrl: null,
       // 建筑前 NPC：只读 storyState.buildingNpcUnlocked（未解锁由面板置灰）
       getNpcMarkers: null
     };
@@ -118,17 +128,23 @@ export class WorldMapPanel extends UIElement {
     this._scrollY = 0;
     this._viewport = { left: PAD, top: HEADER_H, width: 1, height: 1 };
 
-    // 缩放：1 = 与编辑器一致的 256×144/格；上限 4，下限由视口「整图适配」决定。
+    // 缩放：1 = 与编辑器一致的 128×72/格；上限 4，下限由视口「整图适配」决定。
     this._zoom = 1;
+    // 格间网格线默认显示，工具栏「格」按钮切换。
+    this._showGrid = true;
     this._baseCellWidth = WORLD_MAP_DISPLAY_CELL_WIDTH;
-    this._baseCellHeight = WORLD_MAP_DISPLAY_CELL_WIDTH;
+    this._baseCellHeight = WORLD_MAP_DISPLAY_CELL_HEIGHT;
     this._baseMapWidth = 0;
     this._baseMapHeight = 0;
     this._basePxPerWorld = 1;
 
+    // 底图（region.backgroundImage 指向的按格切图）缓存，与编辑器同源同命名。
+    this._backgroundCache = null;
+
     // 静态地形缓存
     this._staticCanvas = null;
     this._staticSignature = '';
+    this._staticBuildToken = 0;
     this._cities = [];
     this._logicNodes = [];
     this._armies = [];
@@ -568,6 +584,8 @@ export class WorldMapPanel extends UIElement {
       this._setZoom(this._zoom * ZOOM_STEP);
     } else if (button === 'zoomOut') {
       this._setZoom(this._zoom / ZOOM_STEP);
+    } else if (button === 'grid') {
+      this._showGrid = !this._showGrid;
     }
   }
 
@@ -965,7 +983,8 @@ export class WorldMapPanel extends UIElement {
       close: { x: panel.x + panel.w - PAD - size, y: top, w: size, h: size, label: '×' },
       recenter: { x: panel.x + panel.w - PAD - size * 2 - 8, y: top, w: size, h: size, label: '回' },
       zoomIn: { x: panel.x + panel.w - PAD - size * 3 - 16, y: top, w: size, h: size, label: '＋' },
-      zoomOut: { x: panel.x + panel.w - PAD - size * 4 - 24, y: top, w: size, h: size, label: '－' }
+      zoomOut: { x: panel.x + panel.w - PAD - size * 4 - 24, y: top, w: size, h: size, label: '－' },
+      grid: { x: panel.x + panel.w - PAD - size * 5 - 32, y: top, w: size, h: size, label: '格' }
     };
   }
 
@@ -982,15 +1001,16 @@ export class WorldMapPanel extends UIElement {
     ctx.font = 'bold 15px system-ui, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    for (const rect of Object.values(rects)) {
-      ctx.fillStyle = 'rgba(60, 50, 38, 0.95)';
+    for (const [name, rect] of Object.entries(rects)) {
+      const active = name === 'grid' && this._showGrid;
+      ctx.fillStyle = active ? 'rgba(120, 96, 48, 0.98)' : 'rgba(60, 50, 38, 0.95)';
       this._roundRect(ctx, rect.x, rect.y, rect.w, rect.h, 6);
       ctx.fill();
-      ctx.strokeStyle = '#8B7355';
+      ctx.strokeStyle = active ? '#f0d9a8' : '#8B7355';
       ctx.lineWidth = 1.5;
       this._roundRect(ctx, rect.x, rect.y, rect.w, rect.h, 6);
       ctx.stroke();
-      ctx.fillStyle = '#f0d9a8';
+      ctx.fillStyle = active ? '#fff4d6' : '#f0d9a8';
       ctx.fillText(rect.label, rect.x + rect.w / 2, rect.y + rect.h / 2 + 1);
     }
   }
@@ -1014,7 +1034,7 @@ export class WorldMapPanel extends UIElement {
 
     const cache = this._staticCanvas;
     if (cache) {
-      // 缓存始终是 1 倍图；按当前缩放做源裁剪 + 目标缩放，避免每帧重画整张 5120×2880。
+      // 缓存始终是 1 倍图；按当前缩放做源裁剪 + 目标缩放，避免每帧重画整张 2560×1440。
       const zoom = this._zoom;
       const origin = this.mapToScreen(0, 0);
       const dstLeft = Math.max(this._viewport.left, origin.x);
@@ -1040,6 +1060,8 @@ export class WorldMapPanel extends UIElement {
 
     // 通行色叠加（WorldRouteLayer 派生投影，面板只读快照，不做通行判定）
     this._renderPassability(ctx);
+    // 格间网格线：默认显示，1px 细线，不影响命中与拖拽
+    this._renderGridLines(ctx, region);
 
     // 场景锚点标签
     const currentScene = this._currentSceneId();
@@ -1137,7 +1159,7 @@ export class WorldMapPanel extends UIElement {
     const preview = this._preview;
     if (!preview) return;
     const cellW = this._cellWidth || WORLD_MAP_DISPLAY_CELL_WIDTH;
-    const cellH = this._cellHeight || WORLD_MAP_DISPLAY_CELL_WIDTH;
+    const cellH = this._cellHeight || WORLD_MAP_DISPLAY_CELL_HEIGHT;
     const origin = this.mapToScreen(0, 0);
     for (const cell of preview.overlay || []) {
       const color = ROUTE_STATUS_COLORS[cell.status];
@@ -1446,6 +1468,52 @@ export class WorldMapPanel extends UIElement {
       && y <= this._viewport.top + this._viewport.height + margin;
   }
 
+  /** 格间网格线：只画视口内的线，1px、半透明，不拦截任何输入。 */
+  _renderGridLines(ctx, region) {
+    if (!this._showGrid) return;
+    const cellW = this._cellWidth;
+    const cellH = this._cellHeight;
+    if (!(cellW > 0) || !(cellH > 0)) return;
+    const origin = this.mapToScreen(0, 0);
+    const view = this._viewport;
+    const left = view.left;
+    const top = view.top;
+    const right = left + view.width;
+    const bottom = top + view.height;
+    const mapRight = origin.x + region.cols * cellW;
+    const mapBottom = origin.y + region.rows * cellH;
+    ctx.save();
+    ctx.beginPath();
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.32)';
+    ctx.lineWidth = 1;
+    const colFrom = Math.max(1, Math.floor((left - origin.x) / cellW));
+    const colTo = Math.min(region.cols - 1, Math.ceil((right - origin.x) / cellW));
+    for (let col = colFrom; col <= colTo; col += 1) {
+      const x = Math.round(origin.x + col * cellW) + 0.5;
+      ctx.moveTo(x, Math.max(top, origin.y));
+      ctx.lineTo(x, Math.min(bottom, mapBottom));
+    }
+    const rowFrom = Math.max(1, Math.floor((top - origin.y) / cellH));
+    const rowTo = Math.min(region.rows - 1, Math.ceil((bottom - origin.y) / cellH));
+    for (let row = rowFrom; row <= rowTo; row += 1) {
+      const y = Math.round(origin.y + row * cellH) + 0.5;
+      ctx.moveTo(Math.max(left, origin.x), y);
+      ctx.lineTo(Math.min(right, mapRight), y);
+    }
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  /** 底图缓存（惰性创建；URL 解析走宿主注入的 resolveAssetUrl）。 */
+  _backgroundImages() {
+    if (!this._backgroundCache) {
+      this._backgroundCache = new WorldMapBackgroundImageCache({
+        resolveUrl: src => this._providers.resolveAssetUrl?.(src) || src
+      });
+    }
+    return this._backgroundCache;
+  }
+
   _rebuildStaticCache() {
     if (typeof document === 'undefined') return;
     const region = this._region();
@@ -1456,8 +1524,12 @@ export class WorldMapPanel extends UIElement {
       return;
     }
     // 缓存固定按 1 倍图构建；缩放只影响绘制时的目标尺寸。
-    const signature = `${region.id}:${region.rows}x${region.cols}:${Math.round(this._baseMapWidth)}x${Math.round(this._baseMapHeight)}`;
+    const background = normalizeWorldMapBackgroundPath(region.backgroundImage);
+    const hasAtlas = isWorldMapBackgroundFile(background);
+    const signature = `${region.id}:${region.rows}x${region.cols}:${Math.round(this._baseMapWidth)}x${Math.round(this._baseMapHeight)}:${background}`;
     if (signature === this._staticSignature && this._staticCanvas) return;
+    // 只有最后一次构建的等待者能触发重绘，避免旧缓存的回调重复重建。
+    const buildToken = ++this._staticBuildToken;
 
     const canvas = document.createElement('canvas');
     canvas.width = Math.max(1, Math.round(this._baseMapWidth));
@@ -1472,12 +1544,43 @@ export class WorldMapPanel extends UIElement {
 
     const cellW = this._baseCellWidth;
     const cellH = this._baseCellHeight;
-    for (const cell of region.coverage) {
-      if (!cell) continue;
-      const color = terrainColor(cell.terrain)
-        || (cell.sceneId ? SCENE_NO_TERRAIN_COLOR : EMPTY_CELL_COLOR);
-      ctx.fillStyle = color;
-      ctx.fillRect(cell.col * cellW, cell.row * cellH, cellW + 0.5, cellH + 0.5);
+    // 底图先全部登记加载；加载完成后按同一签名重绘一次，避免逐格重复重建。
+    const backgroundCache = this._backgroundImages();
+    const tilePaths = background
+      ? (hasAtlas
+        ? [background]
+        : (region.coverage || []).map(cell => (
+          resolveWorldMapBackgroundTilePath(background, cell?.row, cell?.col)
+        )))
+      : [];
+    if (tilePaths.length > 0) {
+      backgroundCache.ensure(tilePaths, () => {
+        if (buildToken !== this._staticBuildToken) return;
+        this._staticSignature = '';
+        this._rebuildStaticCache();
+        this._clampScroll();
+      });
+    }
+
+    const atlas = hasAtlas ? backgroundCache.get(background) : null;
+    if (atlas) {
+      // 整图模式：一次 drawImage 铺满 2560×1440 缓存。
+      ctx.drawImage(atlas, 0, 0, canvas.width, canvas.height);
+    } else {
+      for (const cell of region.coverage) {
+        if (!cell) continue;
+        const tile = hasAtlas
+          ? null
+          : backgroundCache.get(resolveWorldMapBackgroundTilePath(background, cell.row, cell.col));
+        if (tile) {
+          ctx.drawImage(tile, cell.col * cellW, cell.row * cellH, cellW, cellH);
+          continue;
+        }
+        const color = terrainColor(cell.terrain)
+          || (cell.sceneId ? SCENE_NO_TERRAIN_COLOR : EMPTY_CELL_COLOR);
+        ctx.fillStyle = color;
+        ctx.fillRect(cell.col * cellW, cell.row * cellH, cellW + 0.5, cellH + 0.5);
+      }
     }
 
     // 网格线

@@ -17,15 +17,18 @@
  * 都从 region 的「格数 × 格尺寸」换算显示尺寸，不再各自硬编码一套宽高：
  *   cols / rows / chunkWidth / chunkHeight  →  cellWidth / cellHeight / mapWidth / mapHeight
  *
- * 显示比例是唯一的 UI 常量（显示像素 / 世界像素），默认 0.2 = 256 / 1280；
+ * 显示比例是唯一的 UI 常量（显示像素 / 世界像素），0.1 = 128 / 1280；
  * 两端的格子尺度、长宽比与地图边界因此天然一致。
  */
 
-/** 显示像素 / 世界像素（0.2 → 1280×720 的 chunk 显示为 256×144）。 */
-export const WORLD_MAP_DISPLAY_SCALE = 0.2;
+/** 显示像素 / 世界像素（0.1 → 1280×720 的 chunk 显示为 128×72）。 */
+export const WORLD_MAP_DISPLAY_SCALE = 0.1;
 
-/** 一格 chunk 的基准显示宽度（1280 × 0.2 = 256）。 */
+/** 一格 chunk 的基准显示宽度（1280 × 0.1 = 128）。 */
 export const WORLD_MAP_DISPLAY_CELL_WIDTH = 1280 * WORLD_MAP_DISPLAY_SCALE;
+
+/** 一格 chunk 的基准显示高度（720 × 0.1 = 72）。 */
+export const WORLD_MAP_DISPLAY_CELL_HEIGHT = 720 * WORLD_MAP_DISPLAY_SCALE;
 
 export const DEFAULT_WORLD_MAP_CHUNK_WIDTH = 1280;
 export const DEFAULT_WORLD_MAP_CHUNK_HEIGHT = 720;

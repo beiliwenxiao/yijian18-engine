@@ -373,6 +373,12 @@ export class ScenePanelLayout {
       getWorldLogic: () => scene.worldRouteLayer?.logic || null,
       getRoutePreview: region => scene.worldRouteLayer?.buildPreview?.(region) || null,
       getOrderDefinitions: () => scene.armyOrderSystem?.orderDefinitions || null,
+      // 底图：region.backgroundImage 的工程路径由 AssetManager 统一解析成可加载 URL
+      resolveAssetUrl: src => (
+        scene.assetManager?.resolveAssetPath
+          ? scene.assetManager.resolveAssetPath(src)
+          : src
+      ),
       // 4C：撞见遭遇时的四选确认（逻辑判定已在场景层暂停，面板只负责展示与回传选择）
       getPendingEncounter: () => scene.armyOrderFlow?.getPendingEncounter?.() || null,
       // 建筑前 NPC（首次实地交互解锁；大地图点选复用同一套对话/命令）

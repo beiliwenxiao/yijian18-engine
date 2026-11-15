@@ -345,6 +345,7 @@ export class ProjectWorldIndex {
         cols,
         chunkWidth,
         chunkHeight,
+        backgroundImage: typeof source?.backgroundImage === 'string' ? source.backgroundImage : '',
         bounds: validRows && validCols && validChunkWidth && validChunkHeight
           ? createBounds(cols, rows, chunkWidth, chunkHeight)
           : null,
