@@ -271,3 +271,95 @@ describe('WorldMapEditor 底图整图/目录双模式', () => {
     expect(editor._backgroundSourceAt(region, 0, 0)).toBe(null);
   });
 });
+
+describe('WorldMapEditor sceneID 搬移', () => {
+  /** 3×3 地形图；_buildDraftIndex 真实校验 sceneId 唯一，便于验证搬移不会被 duplicateSceneLocation 拦下。 */
+  const makeMovableEditor = () => {
+    const editor = new WorldMapEditor(null, {
+      gameId: 'test',
+      canonicalSession: { sourceUri: 'example/test/game.project.json' }
+    });
+    const region = {
+      id: 'region.test',
+      name: '测试',
+      mapType: 'terrainGrid',
+      chunkWidth: 100,
+      chunkHeight: 100,
+      cols: 3,
+      rows: 3,
+      grid: [
+        [{ terrain: 'plain', sceneId: 'S01' }, { terrain: 'forest' }, { terrain: 'plain' }],
+        [{ terrain: 'plain' }, { terrain: 'forest' }, { terrain: 'plain' }],
+        [{ terrain: 'plain' }, { terrain: 'plain' }, { terrain: 'plain' }]
+      ]
+    };
+    editor.region = region;
+    editor.draftWorldMap = { entrySceneId: null, regions: [structuredClone(region)] };
+    const buildIndex = worldMap => {
+      const target = worldMap.regions.find(item => item.id === 'region.test');
+      const locations = new Map();
+      target.grid.forEach((cells, row) => cells.forEach((cell, col) => {
+        const sceneId = cell && typeof cell === 'object' ? cell.sceneId : cell;
+        if (!sceneId) return;
+        if (locations.has(sceneId)) throw new TypeError(`sceneId 只能定位一次: ${sceneId}`);
+        locations.set(sceneId, { row, col });
+      }));
+      return {
+        getCell: (regionId, row, col) => {
+          const cell = target.grid[row]?.[col];
+          const sceneId = cell && typeof cell === 'object' ? cell.sceneId : cell;
+          return sceneId ? { sceneId, isAnchor: true } : null;
+        },
+        findScene: sceneId => (locations.has(sceneId)
+          ? { sceneId, regionId: 'region.test', ...locations.get(sceneId) }
+          : null),
+        getFootprint: sceneId => {
+          const at = locations.get(sceneId);
+          return at ? { top: at.row, left: at.col, bottom: at.row + 1, right: at.col + 1 } : null;
+        }
+      };
+    };
+    editor._draftIndex = buildIndex(editor.draftWorldMap);
+    editor._buildDraftIndex = vi.fn(buildIndex);
+    editor._prepareMainlandCellReplacements = vi.fn(() => []);
+    editor._commitMainlandCellReplacements = vi.fn();
+    editor._paintMainlandMinimapCells = vi.fn();
+    editor._requestMainlandViewportSync = vi.fn();
+    editor._showToast = vi.fn();
+    return editor;
+  };
+
+  const sceneSelect = (row, col, value) => {
+    const select = document.createElement('select');
+    select.className = 'wme-scene-select';
+    select.dataset.r = String(row);
+    select.dataset.c = String(col);
+    select.append(new Option('（无场景 anchor）', ''), new Option('S01', 'S01'));
+    select.value = value;
+    return select;
+  };
+
+  it('搬到新格时清空旧格 anchor，提示旧位置，草稿与界面一致', () => {
+    const editor = makeMovableEditor();
+    editor._handleMainlandCellChange({ target: sceneSelect(2, 2, 'S01') });
+
+    // 旧格真正变成「无」：terrain 保留、sceneId 去掉
+    expect(editor.region.grid[0][0]).toEqual({ terrain: 'plain' });
+    expect(editor.region.grid[2][2]).toEqual({ terrain: 'plain', sceneId: 'S01' });
+    // 写入共享草稿的数据同样如此（保存/导出直接取这里）
+    const draftGrid = editor.draftWorldMap.regions[0].grid;
+    expect(draftGrid[0][0]).toEqual({ terrain: 'plain' });
+    expect(draftGrid[2][2]).toEqual({ terrain: 'plain', sceneId: 'S01' });
+    expect(editor._showToast).toHaveBeenCalledWith('sceneID S01 更新：已清空原位置 (0, 0)');
+    expect(editor._showToast.mock.calls.some(([, type]) => type === 'error')).toBe(false);
+  });
+
+  it('原地重设不清空旧格，也不报错', () => {
+    const editor = makeMovableEditor();
+    editor._handleMainlandCellChange({ target: sceneSelect(0, 0, 'S01') });
+
+    expect(editor.region.grid[0][0]).toEqual({ terrain: 'plain', sceneId: 'S01' });
+    expect(editor._showToast).toHaveBeenCalledWith('sceneID S01 更新');
+    expect(editor._showToast.mock.calls.some(([, type]) => type === 'error')).toBe(false);
+  });
+});

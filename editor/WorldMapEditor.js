@@ -1555,6 +1555,29 @@ export class WorldMapEditor {
       : getWorldMapCellPoi(previous);
     const candidateRegion = structuredClone(this.region);
 
+    // 同一 sceneID 允许搬移：先把旧格 anchor 清空（原地重设不清），
+    // 否则 ProjectWorldIndex 的 duplicateSceneLocation 会直接拦下这次修改。
+    let releasedCell = null;
+    if (selectedSceneId && target.classList.contains('wme-scene-select')) {
+      const anchor = typeof previousIndex.findScene === 'function'
+        ? previousIndex.findScene(selectedSceneId)
+        : null;
+      const oldRow = anchor?.row;
+      const oldCol = anchor?.col;
+      if (anchor?.regionId === candidateRegion.id
+        && Number.isInteger(oldRow) && Number.isInteger(oldCol)
+        && (oldRow !== row || oldCol !== col)) {
+        const oldCell = candidateRegion.grid[oldRow]?.[oldCol] ?? null;
+        candidateRegion.grid[oldRow][oldCol] = this._buildEditedRegionCell(
+          oldCell,
+          candidateRegion.mapType,
+          this._cellTerrain(oldCell),
+          null
+        );
+        releasedCell = { row: oldRow, col: oldCol };
+      }
+    }
+
     try {
       candidateRegion.grid[row][col] = this._buildEditedRegionCell(
         previous,
@@ -1587,6 +1610,11 @@ export class WorldMapEditor {
       this._collectMainlandFootprintKeys(previousIndex, previousSceneId, affected);
       this._collectMainlandFootprintKeys(nextIndex, selectedSceneId, affected);
     }
+    if (releasedCell) {
+      // 旧位置（含 footprint 覆盖格）也要重绘回「无场景」状态。
+      affected.add(`${releasedCell.row},${releasedCell.col}`);
+      this._collectMainlandFootprintKeys(previousIndex, selectedSceneId, affected);
+    }
 
     let replacements;
     try {
@@ -1615,6 +1643,12 @@ export class WorldMapEditor {
     }
     // 悬停浮层仍停在该格时，同步刷新文字与控件状态。
     this._refreshCellInfoPanel(row, col);
+    if (target.classList.contains('wme-scene-select') && selectedSceneId) {
+      const releasedText = releasedCell
+        ? `：已清空原位置 (${releasedCell.row}, ${releasedCell.col})`
+        : '';
+      this._showToast(`sceneID ${selectedSceneId} 更新${releasedText}`);
+    }
   }
 
   _buildEditedRegionCell(previous, mapType, terrain, sceneId, { road = false, poi = null } = {}) {
