@@ -713,7 +713,13 @@ export class WorldMapEditor {
       `<option value="${type}">${type === 'terrainGrid' ? '地形网格' : '场景网格'}</option>`
     )).join('');
     return `
-      <div class="wme-toolbar" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:6px 0;">
+      <style>
+        /* 上移后的逻辑面板/下拉不再把工具栏撑到超过地图宽度，窄窗口下按行内换行显示。 */
+        .wme-toolbar .wme-logic-panel select { max-width: 180px; }
+        .wme-toolbar .wme-logic-panel .wle-panel { min-width: 0; }
+      </style>
+      <div class="wme-toolbar" style="display:flex;flex-direction:column;gap:6px;padding:6px 0;">
+        <div class="wme-tb-row" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-width:0;">
         <strong style="color:#d9c28d;">世界地图</strong>
         <label>地图:
           <select class="wme-region-select" style="min-width:150px;"></select>
@@ -730,6 +736,8 @@ export class WorldMapEditor {
           <input type="number" class="wme-chunk-w" min="0.000001" step="any" style="width:74px;" /> ×
           <input type="number" class="wme-chunk-h" min="0.000001" step="any" style="width:74px;" />
         </label>
+        </div>
+        <div class="wme-tb-row" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-width:0;">
         <label title="整图文件（如 assets/images/big_map_3.jpg）或按格切图目录（tile_rNN_cNN.jpg，1-based 两位补零）；留空=无底图">背景图位置:
           <input type="text" class="wme-background" placeholder="assets/images/big_map_3.jpg 或 切图目录" style="width:340px;" />
         </label>
@@ -739,6 +747,8 @@ export class WorldMapEditor {
         </label>
         <button type="button" class="wme-apply-size">应用结构</button>
         <button type="button" class="wme-focus-used">定位场景</button>
+        </div>
+        <div class="wme-tb-row" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-width:0;">
         <span style="margin:0 4px;color:#555;">|</span>
         <label style="display:flex;align-items:center;gap:4px;" title="在格子之间显示 roadEdges，并标出关隘/渡口">
           <input type="checkbox" class="wme-road-layer-toggle" /> 路网
@@ -753,6 +763,8 @@ export class WorldMapEditor {
           <span class="wme-road-hint" style="color:#9c927c;font-size:12px;"></span>
         </span>
         <span class="wme-logic-toolbar" style="display:contents;"></span>
+        </div>
+        <div class="wme-logic-panel" style="min-width:0;"></div>
       </div>
       <div class="wme-new-region-overlay" hidden
            style="position:fixed;inset:0;z-index:10000;align-items:center;justify-content:center;padding:20px;background:rgba(5,10,25,.72);">
@@ -792,7 +804,6 @@ export class WorldMapEditor {
         </form>
       </div>
       <div class="wme-grid-container" style="position:relative;"></div>
-      <div class="wme-logic-panel"></div>
       <div class="wme-logic-diff"></div>
       <div class="wme-toast" style="display:none;"></div>
     `;
@@ -1400,36 +1411,27 @@ export class WorldMapEditor {
     };
   }
 
-  /** 填充浮层内容（信息 + 与旧覆盖层一致的编辑控件）。 */
+  /** 填充浮层内容：标题 + 该格的编辑控件（唯一副本，事件绑定与数据写入路径不变）。 */
   _fillCellInfoPanel(panel, cell, row, col, region) {
     const worldIndex = this._draftIndex;
     if (!worldIndex) return;
     const raw = region.grid[row]?.[col] ?? null;
     const coverage = worldIndex.getCell(region.id, row, col);
     const sceneId = coverage?.sceneId || getWorldMapCellSceneId(raw, { includeReserved: true });
-    const anchor = sceneId ? worldIndex.findScene(sceneId) : null;
     const isCoverage = Boolean(sceneId && coverage && !coverage.isAnchor);
-    const isAnchor = Boolean(sceneId && coverage?.isAnchor);
     const terrain = this._cellTerrain(raw);
-    const reserved = isReservedWorldMapCell(raw);
     const road = isWorldMapRoadCell(raw);
     const poi = getWorldMapCellPoi(raw);
-    const sceneText = sceneId
-      ? (isCoverage && anchor
-        ? `${sceneId} · 覆盖 ← (${anchor.row},${anchor.col})`
-        : `${sceneId}${reserved ? ' · 预留' : (isAnchor ? ' · anchor' : '')}`)
-      : (region.mapType === 'sceneGrid' ? '（空）' : '无');
 
     panel._cellEl = cell;
     panel.innerHTML = `
-      <div style="font-size:11px;color:#8cf;font-weight:bold;margin-bottom:5px;">(${row}, ${col})</div>
-      <div style="font-size:11px;color:#cbb98f;line-height:1.6;margin-bottom:6px;">地形：${this._escapeHtml(this._terrainOptionLabel(terrain))}${road ? ' · 道路格' : ''}${poi ? ` · ${poi === 'pass' ? '关隘' : '渡口'}` : ''}<br>场景：${this._escapeHtml(sceneText)}</div>
+      <div style="font-size:11px;color:#8cf;font-weight:bold;margin-bottom:6px;">选中对象 · (${row}, ${col})</div>
       ${this._buildCellEditControls(row, col, region, { terrain, road, poi, sceneId, isCoverage })}
       <div style="margin-top:6px;font-size:10px;color:#7f7a6c;">移出格子/浮层即关闭</div>`;
     this._placeCellInfoPanel(panel, cell, row, col);
   }
 
-  /** 浮层里的编辑控件（保留旧格内覆盖层的全部编辑能力）。 */
+  /** 浮层里的编辑控件（唯一副本；变更事件仍由浮层的 onchange 统一处理）。 */
   _buildCellEditControls(row, col, region, { terrain, road, poi, sceneId, isCoverage }) {
     const labelStyle = 'font-size:11px;color:#ddd;display:grid;gap:3px;';
     const selectStyle = 'font-size:11px;background:#222;color:#eee;width:100%;box-sizing:border-box;';
@@ -2103,6 +2105,12 @@ export class WorldMapEditor {
     const scrollContainer = this._mainlandScrollContainer();
     if (!canvas || !viewport || !grid || !scrollContainer) return false;
 
+    // 上部工具栏变高后，小地图跟随下移，避免压住上方控件；滚出视口时保持当前位置。
+    const toolbarRect = this._el?.querySelector('.wme-toolbar')?.getBoundingClientRect();
+    if (toolbarRect && toolbarRect.bottom > 0) {
+      minimap.style.top = `${Math.max(60, Math.round(toolbarRect.bottom + 8))}px`;
+    }
+
     const gridRect = grid.getBoundingClientRect();
     const navigationRect = this._mainlandNavigationRect(grid);
     const canvasRect = canvas.getBoundingClientRect();
@@ -2533,7 +2541,7 @@ export class WorldMapEditor {
     };
     t.textContent = msg;
     t.dataset.type = type;
-    t.style.cssText = `display:block;position:fixed;bottom:20px;right:20px;background:${backgrounds[type] || backgrounds.success};color:#fff;padding:10px 20px;border-radius:6px;z-index:99999;`;
+    t.style.cssText = `display:block;position:fixed;top:12px;left:50%;transform:translateX(-50%);background:${backgrounds[type] || backgrounds.success};color:#fff;padding:10px 20px;border-radius:6px;z-index:99999;box-shadow:0 6px 18px rgba(0,0,0,.45);max-width:min(560px,calc(100vw - 40px));`;
     if (this._toastTimer) clearTimeout(this._toastTimer);
     this._toastTimer = setTimeout(() => {
       t.style.display = 'none';
