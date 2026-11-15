@@ -228,6 +228,23 @@ describe('WorldMapEditor 底图整图/目录双模式', () => {
     expect(svg).toContain('M0 72.5H384');
     expect(svg).toContain('pointer-events:none');
   });
+  it('悬停浮层锚点按网格起点 + row/col × 128×72 推算，与格子 DOM 矩形同源', () => {
+    const editor = makeEditor();
+    const grid = document.createElement('div');
+    grid.className = 'wme-grid';
+    grid.getBoundingClientRect = () => ({ left: 100, top: 50, right: 2660, bottom: 1490, width: 2560, height: 1440 });
+    const host = document.createElement('div');
+    host.appendChild(grid);
+    editor._el = host;
+    editor._mainlandMetrics = { thumbW: 128, thumbH: 72, labelH: 0, cellH: 72 };
+    expect(editor._cellDisplayRect(5, 6))
+      .toEqual({ left: 868, top: 410, right: 996, bottom: 482, width: 128, height: 72 });
+    expect(editor._cellDisplayRect(0, 0))
+      .toEqual({ left: 100, top: 50, right: 228, bottom: 122, width: 128, height: 72 });
+    editor._el = null;
+    expect(editor._cellDisplayRect(0, 0)).toBe(null);
+  });
+
   it('整图模式按 region 格数裁剪出每格源矩形', () => {
     const editor = makeEditor();
     const image = { naturalWidth: 2560, naturalHeight: 1440 };

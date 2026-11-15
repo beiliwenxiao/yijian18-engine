@@ -1332,17 +1332,27 @@ export class WorldMapEditor {
     document.body.appendChild(panel);
     this._cellInfoEl = panel;
     this._cellInfoKey = '';
+    // 锚点高亮：按网格推算出的格矩形绘制，明确标出浮层对应的是哪一格。
+    const highlight = document.createElement('div');
+    highlight.className = 'wme-cell-info-highlight';
+    highlight.style.cssText = [
+      'position:fixed', 'display:none', 'box-sizing:border-box', 'pointer-events:none',
+      'border:2px solid #f6e7a8', 'box-shadow:0 0 0 1px rgba(0,0,0,.8), 0 0 10px rgba(246,231,168,.65)',
+      'z-index:99998'
+    ].join(';');
+    document.body.appendChild(highlight);
+    this._cellInfoHighlightEl = highlight;
 
     const hide = () => {
       if (panel.style.display === 'none') return;
       panel.style.display = 'none';
+      highlight.style.display = 'none';
       this._cellInfoKey = '';
     };
     // 指针在「格 + 空隙 + 浮层」的外接矩形内都不关闭；只有离开整个区域才关。
     const inSafeRegion = (x, y) => {
-      const cell = panel._cellEl;
-      if (!cell || !cell.isConnected) return false;
-      const cellRect = cell.getBoundingClientRect();
+      const cellRect = this._cellInfoAnchorRect;
+      if (!cellRect) return false;
       const panelRect = panel.getBoundingClientRect();
       const gap = 12;
       const left = Math.min(cellRect.left, panelRect.left) - gap;
@@ -1381,7 +1391,10 @@ export class WorldMapEditor {
       window.removeEventListener('scroll', onViewportChange, true);
       window.removeEventListener('resize', onViewportChange);
       panel.remove();
+      highlight.remove();
       this._cellInfoEl = null;
+      this._cellInfoHighlightEl = null;
+      this._cellInfoAnchorRect = null;
       this._cellInfoKey = '';
     };
   }
@@ -1412,7 +1425,7 @@ export class WorldMapEditor {
       <div style="font-size:11px;color:#cbb98f;line-height:1.6;margin-bottom:6px;">地形：${this._escapeHtml(this._terrainOptionLabel(terrain))}${road ? ' · 道路格' : ''}${poi ? ` · ${poi === 'pass' ? '关隘' : '渡口'}` : ''}<br>场景：${this._escapeHtml(sceneText)}</div>
       ${this._buildCellEditControls(row, col, region, { terrain, road, poi, sceneId, isCoverage })}
       <div style="margin-top:6px;font-size:10px;color:#7f7a6c;">移出格子/浮层即关闭</div>`;
-    this._placeCellInfoPanel(panel, cell);
+    this._placeCellInfoPanel(panel, cell, row, col);
   }
 
   /** 浮层里的编辑控件（保留旧格内覆盖层的全部编辑能力）。 */
@@ -1462,8 +1475,21 @@ export class WorldMapEditor {
   }
 
   /** 浮层定位：优先格子右侧，空间不足移左侧，纵向夹在视口内。 */
-  _placeCellInfoPanel(panel, cell) {
-    const rect = cell.getBoundingClientRect();
+  /**
+   * 浮层定位：锚点矩形以网格为唯一基准（网格起点 + row/col × 128×72），
+   * 与格子的 DOM 矩形逐项一致；同时画出该格高亮，明确浮层对应哪一格。
+   */
+  _placeCellInfoPanel(panel, cell, row, col) {
+    const rect = this._cellDisplayRect(row, col) || cell.getBoundingClientRect();
+    this._cellInfoAnchorRect = rect;
+    const highlight = this._cellInfoHighlightEl;
+    if (highlight) {
+      highlight.style.display = 'block';
+      highlight.style.left = `${Math.round(rect.left)}px`;
+      highlight.style.top = `${Math.round(rect.top)}px`;
+      highlight.style.width = `${Math.round(rect.width)}px`;
+      highlight.style.height = `${Math.round(rect.height)}px`;
+    }
     const gap = 10;
     const margin = 8;
     panel.style.display = 'block';
@@ -1475,6 +1501,24 @@ export class WorldMapEditor {
     let top = Math.min(Math.max(margin, rect.top), Math.max(margin, window.innerHeight - height - margin));
     panel.style.left = `${Math.round(left)}px`;
     panel.style.top = `${Math.round(top)}px`;
+  }
+
+  /** 按当前网格（128×72、20×20）推算某一格的屏幕矩形；网格不可用返回 null。 */
+  _cellDisplayRect(row, col) {
+    const grid = this._el?.querySelector('.wme-grid');
+    const metrics = this._mainlandMetrics;
+    if (!grid || !metrics) return null;
+    const gridRect = grid.getBoundingClientRect();
+    const left = gridRect.left + Number(col) * metrics.thumbW;
+    const top = gridRect.top + Number(row) * metrics.cellH;
+    return {
+      left,
+      top,
+      right: left + metrics.thumbW,
+      bottom: top + metrics.cellH,
+      width: metrics.thumbW,
+      height: metrics.cellH
+    };
   }
 
   /** 格数据变化后同步刷新浮层（位置不变；格子可能已被替换，按坐标重新取）。 */
