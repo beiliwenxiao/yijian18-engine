@@ -322,12 +322,14 @@ export class DialogueBox extends UIElement {
     const img = source.img;
     const hasImage = img && img.complete && img.naturalWidth > 0;
 
-    // 立绘底框
+    // 立绘底框（圆角：底色沿同一路径填充，避免方角从圆角边框外露出）
+    ctx.beginPath();
+    ctx.roundRect(region.x, region.y, region.width, region.height, 6);
     ctx.fillStyle = 'rgba(30, 30, 30, 0.9)';
-    ctx.fillRect(region.x, region.y, region.width, region.height);
+    ctx.fill();
     ctx.strokeStyle = this.borderColor;
     ctx.lineWidth = 3;
-    ctx.strokeRect(region.x, region.y, region.width, region.height);
+    ctx.stroke();
 
     ctx.save();
     if (metrics.boxType === 'halfBody') {
@@ -388,11 +390,14 @@ export class DialogueBox extends UIElement {
   }
 
   renderBackground(ctx) {
+    // 圆角：底色沿同一路径填充，避免方角从圆角边框外露出
+    ctx.beginPath();
+    ctx.roundRect(this.x, this.y, this.width, this.height, 6);
     ctx.fillStyle = this.backgroundColor;
-    ctx.fillRect(this.x, this.y, this.width, this.height);
+    ctx.fill();
     ctx.strokeStyle = this.borderColor;
     ctx.lineWidth = 3;
-    ctx.strokeRect(this.x, this.y, this.width, this.height);
+    ctx.stroke();
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(this.x + this.padding, this.y + this.padding + 30);

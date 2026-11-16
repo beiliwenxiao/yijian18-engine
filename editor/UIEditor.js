@@ -143,6 +143,9 @@ const MOBILE_TOUCH_BUTTON_IDS = new Set([
   'act-flight', 'act-jump', 'act-interact', 'act-throw', 'act-axe', 'act-map',
   'hb-hp', 'hb-mp', 'hb-bag', 'hb-settings', 'hb-skill6', 'hb-skill7'
 ]);
+// 允许在编辑器中删除的内置控件 id：HUD 玩家状态子部件。
+// 运行时 PlayerStatusHUD 按布局条目存在与否渲染对应部件；四个全删则回退默认整体 HUD。
+const DELETABLE_COMPONENT_IDS = new Set(['hud-avatar', 'hud-name', 'hud-hp', 'hud-mp']);
 // ─── 快捷控件类型体系（uiType 是类型主键；旧数据缺失时按 id/kind 推断） ───────
 // kind 决定运行时消费方式：button=可点击热区，component=纯展示/绑定型控件。
 const UI_COMPONENT_TYPES = {
@@ -260,6 +263,8 @@ export class UIEditor {
 
     // 显隐/锁定为编辑器状态：按 gameId 存 localStorage，不写入布局 JSON 污染运行时配置
     this._editorStateKey = `yijian18.uie.editorState.${this.gameId}`;
+    // 编辑器中删除掉的内置控件 id（按平台记）：避免 _mergeLayout 每次加载又把默认定义补回来
+    this._removedComponentIds = {};
     this._dragState = null;
     // 方向键按住状态：每个方向独立计时，支持斜向微调（与面板编辑器同模式）
     this._arrowKeyHolds = new Map();
@@ -288,9 +293,112 @@ export class UIEditor {
     return JSON.parse(JSON.stringify(DEFAULT_COMPONENTS[defaultPlatform]));
   }
 
+  _getRemovedComponentSet(platform) {
+    if (!this._removedComponentIds[platform]) this._removedComponentIds[platform] = new Set();
+    return this._removedComponentIds[platform];
+  }
+
+  /** 该控件是否允许在编辑器中删除：HUD 玩家状态子部件 / 快捷自建控件 / 安卓触屏按钮。 */
+  _isDeletableComponent(component) {
+    if (!component) return false;
+    if (DELETABLE_COMPONENT_IDS.has(component.id)) return true;
+    if (/^quick-/.test(component.id)) return true;
+    return this.platform === 'mobile'
+      && component.kind === 'button'
+      && MOBILE_TOUCH_BUTTON_IDS.has(component.id);
+  }
+
+  /** 删除选中的可删除控件（HUD 子部件 / 快捷自建控件 / 安卓触屏按钮）。 */
+  _deleteSelectedComponent() {
+    const layout = this.layouts[this.platform];
+    if (!layout || !Array.isArray(layout.components)) return;
+    const comp = layout.components.find(candidate => candidate.id === this.selectedId);
+    if (!comp) {
+      this._setStatus('请先选择要删除的控件', true);
+      return;
+    }
+    if (!this._isDeletableComponent(comp)) {
+      this._setStatus(`控件 ${comp.id} 是布局稳定件（小地图/背包/任务等由运行时代码消费），不支持删除`, true);
+      return;
+    }
+    if (!confirm(`删除控件「${comp.label || comp.id}」（${comp.id}）？保存后运行时按删除后的布局显示。`)) return;
+    const snapshot = this._createHistorySnapshot();
+    layout.components.splice(layout.components.indexOf(comp), 1);
+    // 内置默认件记录删除（快捷自建件不在默认表里，无需记录）
+    if (!/^quick-/.test(comp.id)) {
+      this._getRemovedComponentSet(this.platform).add(comp.id);
+      this._saveEditorState();
+    }
+    this._clearComponentSelection();
+    this._commitHistorySnapshot(snapshot);
+    if (DELETABLE_COMPONENT_IDS.has(comp.id)) {
+      this._setStatus(`已删除 ${comp.label || comp.id}（未保存）：游戏内 HUD 不再显示该部件；hud-* 全删则游戏内隐藏整个玩家 HUD，可从左侧「＋ 添加 HUD 部件」加回`);
+    } else {
+      this._setStatus(`已删除控件：${comp.id}（未保存）`);
+    }
+    this._render();
+  }
+
+  /** 工具栏删除按钮的可用状态跟随当前选中件。 */
+  _updateDeleteButtonState() {
+    const button = this.container.querySelector('#uie-delete-comp');
+    if (!button) return;
+    const isLayoutPlatform = EDITABLE_LAYOUT_PLATFORMS.includes(this.platform);
+    const comp = isLayoutPlatform
+      ? this._getLayoutComponents().find(candidate => candidate.id === this.selectedId)
+      : null;
+    button.hidden = !isLayoutPlatform;
+    button.disabled = !comp || !this._isDeletableComponent(comp);
+  }
+
+  /** HUD 部件添加区：PC/安卓页签显示，列出布局中缺失的 hud-* 部件。 */
+  _updateHudAddControls() {
+    const block = this.container.querySelector('#uie-hud-add-block');
+    const selector = this.container.querySelector('#uie-hud-add-type');
+    if (!block || !selector) return;
+    const supportsHud = this.platform === 'desktop' || this.platform === 'mobile';
+    block.hidden = !supportsHud;
+    if (!supportsHud) return;
+
+    const existingIds = new Set(this._getLayoutComponents().map(component => component.id));
+    const defaults = DEFAULT_COMPONENTS[this.platform]?.components || [];
+    const missing = [...DELETABLE_COMPONENT_IDS].filter(id => !existingIds.has(id));
+    selector.innerHTML = missing.length
+      ? missing.map(id => {
+        const template = defaults.find(component => component.id === id);
+        return `<option value="${escapeHtml(id)}">${escapeHtml(template?.label || id)}（${id}）</option>`;
+      }).join('')
+      : '<option value="">HUD 部件已齐全</option>';
+    this.container.querySelector('#uie-hud-add').disabled = missing.length === 0;
+  }
+
+  /** 把删除/缺失的 HUD 部件按默认定义加回布局（运行时按条目存在性渲染）。 */
+  _addHudComponent() {
+    if (this.platform !== 'desktop' && this.platform !== 'mobile') return;
+    const componentId = String(this.container.querySelector('#uie-hud-add-type')?.value || '');
+    const template = (DEFAULT_COMPONENTS[this.platform]?.components || [])
+      .find(component => component.id === componentId);
+    if (!template) return;
+    const layout = this.layouts[this.platform];
+    if (layout.components.some(component => component.id === componentId)) {
+      this._setStatus(`HUD 部件已存在：${componentId}`, true);
+      return;
+    }
+    const snapshot = this._createHistorySnapshot();
+    const added = layout.components[layout.components.push(JSON.parse(JSON.stringify(template))) - 1];
+    // 加回的内置件不再视为「已删除」（否则下次加载会被删除记录过滤掉）
+    this._getRemovedComponentSet(this.platform).delete(added.id);
+    this._saveEditorState();
+    this._setComponentSelection([added], added.id);
+    this.selectedPanelPart = null;
+    this._commitHistorySnapshot(snapshot);
+    this._setStatus(`已添加 HUD 部件：${added.label || added.id}（未保存），拖到目标位置后保存`);
+    this._render();
+  }
+
   // ─── 显隐/锁定状态持久化（localStorage，按 gameId+平台隔离） ─────────────
 
-  /** 从 localStorage 还原各平台控件的 editorHidden/editorLocked。 */
+  /** 从 localStorage 还原各平台控件的 editorHidden/editorLocked + 已删除内置控件记录。 */
   _loadEditorState() {
     let state = null;
     try {
@@ -313,11 +421,18 @@ export class UIEditor {
         if (flags.locked === true) comp.editorLocked = true;
       }
     }
+    const removedMap = state.removedComponents;
+    if (removedMap && typeof removedMap === 'object') {
+      for (const platform of EDITABLE_LAYOUT_PLATFORMS) {
+        const ids = removedMap[platform];
+        if (Array.isArray(ids)) this._removedComponentIds[platform] = new Set(ids);
+      }
+    }
   }
 
-  /** 把各平台控件的 editorHidden/editorLocked 写入 localStorage。 */
+  /** 把各平台控件的 editorHidden/editorLocked + 已删除内置控件记录写入 localStorage。 */
   _saveEditorState() {
-    const state = {};
+    const state = { removedComponents: {} };
     for (const platform of EDITABLE_LAYOUT_PLATFORMS) {
       const platformState = {};
       for (const comp of this.layouts[platform]?.components || []) {
@@ -328,6 +443,8 @@ export class UIEditor {
         };
       }
       state[platform] = platformState;
+      const removedIds = this._removedComponentIds[platform];
+      if (removedIds?.size) state.removedComponents[platform] = [...removedIds];
     }
     try {
       localStorage.setItem(this._editorStateKey, JSON.stringify(state));
@@ -579,9 +696,10 @@ export class UIEditor {
           const data = await res.json();
           if (!data?.ok || !data.content) continue;
           const parsed = JSON.parse(data.content);
-          // 合并：以文件为准，但保留默认组件中文件缺失的项
+          // 合并：以文件为准，但保留默认组件中文件缺失的项（编辑器中删除过的内置件除外）
           this.layouts[platform] = this._mergeLayout(this._cloneDefault(platform), parsed, {
-            preserveExactComponents: platform === 'mobile'
+            preserveExactComponents: platform === 'mobile',
+            removedIds: this._getRemovedComponentSet(platform)
           });
           break;
         } catch (e) {
@@ -592,7 +710,7 @@ export class UIEditor {
   }
 
   /** 合并已存布局到默认结构（优先用百分比还原到当前编辑器画布像素） */
-  _mergeLayout(base, saved, { preserveExactComponents = false } = {}) {
+  _mergeLayout(base, saved, { preserveExactComponents = false, removedIds = null } = {}) {
     if (!saved || !Array.isArray(saved.components)) return base;
     if (saved.canvas) base.canvas = saved.canvas;
     const cw = base.canvas.width;
@@ -635,6 +753,10 @@ export class UIEditor {
       if (!savedComponent) continue;
       Object.assign(comp, restoreComponent(comp, savedComponent));
     }
+    // 编辑器中删除过的内置控件不再从默认定义补回（恢复默认时会清掉删除记录）
+    if (removedIds?.size) {
+      base.components = base.components.filter(component => !removedIds.has(component.id));
+    }
     return base;
   }
 
@@ -656,8 +778,8 @@ export class UIEditor {
             <div class="uie-mobile-button-actions" id="uie-mobile-button-actions" hidden>
               <select id="uie-mobile-button-template" aria-label="选择要添加的 Android 按钮"></select>
               <button id="uie-mobile-button-add" type="button">＋ 添加按钮</button>
-              <button id="uie-mobile-button-delete" type="button">🗑 删除选中</button>
             </div>
+            <button id="uie-delete-comp" title="删除选中的可删除控件（HUD 子部件/自建控件/安卓触屏按钮）" hidden>🗑 删除控件</button>
             <button id="uie-undo" title="后退/撤销 (Ctrl+Z)">↶ 后退</button>
             <button id="uie-redo" title="前进/重做 (Ctrl+Y)">↷ 前进</button>
             <button id="uie-reset">恢复默认</button>
@@ -682,6 +804,10 @@ export class UIEditor {
               </select>
               <input id="uie-add-label" type="text" placeholder="名称（可空）">
               <button id="uie-add-comp" type="button">＋ 新增控件</button>
+            </div>
+            <div class="uie-add-comp" id="uie-hud-add-block" hidden>
+              <select id="uie-hud-add-type" title="选择要添加回的 HUD 部件（头像/昵称/血条/蓝条）"></select>
+              <button id="uie-hud-add" type="button">＋ 添加 HUD 部件</button>
             </div>
             <h4 class="uie-skill-title">技能列表 <span id="uie-skill-count"></span></h4>
             <div class="uie-skill-tools">
@@ -720,7 +846,8 @@ export class UIEditor {
     });
 
     this.container.querySelector('#uie-mobile-button-add').addEventListener('click', () => this._addMobileTouchButton());
-    this.container.querySelector('#uie-mobile-button-delete').addEventListener('click', () => this._deleteSelectedMobileTouchButton());
+    this.container.querySelector('#uie-delete-comp').addEventListener('click', () => this._deleteSelectedComponent());
+    this.container.querySelector('#uie-hud-add').addEventListener('click', () => this._addHudComponent());
     this.container.querySelector('#uie-component-filter').addEventListener('change', (e) => {
       this._componentFilter = e.target.value || 'all';
       this._renderComponentList();
@@ -773,6 +900,9 @@ export class UIEditor {
         const snapshot = this._createHistorySnapshot();
         this.layouts[this.platform] = this._cloneDefault(this.platform);
         this._clearArrowKeyHolds(false);
+        // 恢复默认 = 默认控件全部找回，清掉本平台的删除记录
+        this._removedComponentIds[this.platform] = new Set();
+        this._saveEditorState();
         this.selectedId = null;
         this.selectedIds.clear();
         this.selectedPanelPart = null;
@@ -791,8 +921,7 @@ export class UIEditor {
   _updateMobileButtonControls() {
     const controls = this.container.querySelector('#uie-mobile-button-actions');
     const selector = this.container.querySelector('#uie-mobile-button-template');
-    const deleteButton = this.container.querySelector('#uie-mobile-button-delete');
-    if (!controls || !selector || !deleteButton) return;
+    if (!controls || !selector) return;
 
     const isMobile = this.platform === 'mobile';
     controls.hidden = !isMobile;
@@ -806,8 +935,6 @@ export class UIEditor {
       : '<option value="">没有可添加的 Android 按钮</option>';
     const addButton = this.container.querySelector('#uie-mobile-button-add');
     if (addButton) addButton.disabled = missing.length === 0;
-    const selected = layout?.components?.find(component => component.id === this.selectedId);
-    deleteButton.disabled = !selected || selected.kind !== 'button' || !MOBILE_TOUCH_BUTTON_IDS.has(selected.id);
   }
 
   _addMobileTouchButton() {
@@ -826,28 +953,13 @@ export class UIEditor {
     }
     const snapshot = this._createHistorySnapshot();
     const added = layout.components[layout.components.push(structuredClone(template)) - 1];
+    // 重新加回的内置按钮不再视为「已删除」（否则下次加载会被删除记录过滤掉）
+    this._getRemovedComponentSet('mobile').delete(added.id);
+    this._saveEditorState();
     this._setComponentSelection([added], added.id);
     this.selectedPanelPart = null;
     this._commitHistorySnapshot(snapshot);
     this._setStatus(`已添加 Android 按钮：${template.label}（未保存）`);
-    this._render();
-  }
-
-  _deleteSelectedMobileTouchButton() {
-    if (this.platform !== 'mobile') return;
-    const layout = this.layouts.mobile;
-    const index = layout.components.findIndex(component => component.id === this.selectedId);
-    const component = index >= 0 ? layout.components[index] : null;
-    if (!component || component.kind !== 'button' || !MOBILE_TOUCH_BUTTON_IDS.has(component.id)) {
-      this._setStatus('请选择要删除的 Android 触屏按钮', true);
-      return;
-    }
-    if (!confirm(`删除 Android 按钮“${component.label}”？保存后运行时将不再显示它。`)) return;
-    const snapshot = this._createHistorySnapshot();
-    layout.components.splice(index, 1);
-    this._clearComponentSelection();
-    this._commitHistorySnapshot(snapshot);
-    this._setStatus(`已删除 Android 按钮：${component.label}（未保存）`);
     this._render();
   }
 
@@ -1359,6 +1471,8 @@ export class UIEditor {
     }
     this._renderStage();
     this._renderProps();
+    this._updateDeleteButtonState();
+    this._updateHudAddControls();
   }
 
   /**
@@ -2381,6 +2495,15 @@ export class UIEditor {
         const layout = this.layouts[platform];
         const cw = layout.canvas.width;
         const ch = layout.canvas.height;
+        // 删除记录与当前布局对账：撤销删除后再保存时，已恢复的内置件不再视为已删除
+        const removedIds = this._getRemovedComponentSet(platform);
+        if (removedIds.size) {
+          const existingIds = new Set(layout.components.map(c => c.id));
+          for (const removedId of [...removedIds]) {
+            if (existingIds.has(removedId)) removedIds.delete(removedId);
+          }
+          this._saveEditorState();
+        }
         const out = {
           ...(LOGIN_LAYOUT_PLATFORMS.has(platform) ? { version: 1 } : {}),
           canvas: layout.canvas,
@@ -2579,7 +2702,7 @@ export class UIEditor {
           // 角色立绘占位：运行时由场景渲染玩家实时外观（含装备），编辑器只示意范围
           ctx.fillStyle = part.bgColor || 'rgba(18,24,32,0.55)';
           ctx.fillRect(x, y, width, height);
-          ctx.strokeStyle = part.borderColor || 'rgba(74,158,255,0.45)';
+          ctx.strokeStyle = part.borderColor || 'rgba(196,154,82,0.5)';
           ctx.lineWidth = 1;
           ctx.strokeRect(x, y, width, height);
           ctx.fillStyle = 'rgba(150,180,210,0.45)';

@@ -104,7 +104,7 @@ const LEGACY_DEFAULT_PANELS = [
 const DEFAULT_PANELS = [
   {
     id: 'backpackPanel', name: '背包', width: 1000, height: 440,
-    backgroundColor: 'rgba(0, 0, 0, 0.88)', borderColor: '#4a9eff', borderWidth: 2,
+    backgroundColor: 'rgba(0, 0, 0, 0.88)', borderColor: '#c49a52', borderWidth: 2,
     parts: [
       { id: 'className', section: 'character', type: 'text', label: '角色名', x: 20, y: 48, width: 150, height: 22, text: '{className}', fontSize: 16, fontWeight: 'bold', color: '#ffffff', align: 'left' },
       { id: 'classLabel', section: 'character', type: 'text', label: '职业标签', x: 20, y: 78, width: 40, height: 18, text: '职业:', fontSize: 14, color: '#aaaaaa', align: 'left' },
@@ -125,7 +125,7 @@ const DEFAULT_PANELS = [
       { id: 'attrMight', section: 'character', type: 'attr-row', label: '武力', x: 20, y: 360, width: 140, height: 20, attrLabel: '武力', attrColor: '#ff6b6b', labelColor: '#aaaaaa', fontSize: 13 },
       { id: 'attrPolitics', section: 'character', type: 'attr-row', label: '政治', x: 20, y: 380, width: 140, height: 20, attrLabel: '政治', attrColor: '#8fa8ff', labelColor: '#aaaaaa', fontSize: 13 },
       { id: 'attrLeadership', section: 'character', type: 'attr-row', label: '统御', x: 20, y: 400, width: 140, height: 20, attrLabel: '统御', attrColor: '#ffd166', labelColor: '#aaaaaa', fontSize: 13 },
-      { id: 'characterPortrait', section: 'character', type: 'portrait', label: '角色立绘', x: 175, y: 48, width: 155, height: 372, bgColor: 'rgba(18,24,32,0.55)', borderColor: 'rgba(74,158,255,0.45)' },
+      { id: 'characterPortrait', section: 'character', type: 'portrait', label: '角色立绘', x: 175, y: 48, width: 155, height: 372, bgColor: 'rgba(18,24,32,0.55)', borderColor: 'rgba(196,154,82,0.5)' },
       { id: 'slot_accessory', section: 'character', type: 'equip-slot', label: '饰品', x: 350, y: 60, width: 50, height: 50, slotType: 'accessory', slotLabel: '饰品' },
       { id: 'slot_helmet', section: 'character', type: 'equip-slot', label: '头盔', x: 405, y: 60, width: 50, height: 50, slotType: 'helmet', slotLabel: '头盔' },
       { id: 'slot_necklace', section: 'character', type: 'equip-slot', label: '项链', x: 460, y: 60, width: 50, height: 50, slotType: 'necklace', slotLabel: '项链' },
@@ -184,7 +184,7 @@ const PART_TYPES = {
   'progress-bar': { label: '进度条', defaults: { fillColor: '#4CAF50', bgColor: '#333', borderColor: '#666', value: 0.7 } },
   'image': { label: '图片', defaults: { src: '', imageMode: 'contain' } },
   // 角色立绘：运行时由场景把玩家实体（含装备外观）实时画进该矩形，编辑器只画占位框
-  'portrait': { label: '角色立绘', defaults: { bgColor: 'rgba(18,24,32,0.55)', borderColor: 'rgba(74,158,255,0.45)' } }
+  'portrait': { label: '角色立绘', defaults: { bgColor: 'rgba(18,24,32,0.55)', borderColor: 'rgba(196,154,82,0.5)' } }
 };
 
 export class PanelEditor {

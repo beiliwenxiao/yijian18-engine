@@ -239,14 +239,19 @@ export class NotificationSystem extends UIElement {
     const textWidth = ctx.measureText(notification.message).width;
     const boxWidth = textWidth + this.padding * 2;
 
-    // 绘制背景
+    // 绘制背景（圆角：clip 裁剪 + fillRect 填充；边框在 restore 后描，不削半边线宽）
+    ctx.save();
+    ctx.beginPath();
+    ctx.roundRect(x, y, boxWidth, this.notificationHeight, 5);
+    ctx.clip();
     ctx.fillStyle = this.backgroundColor;
     ctx.fillRect(x, y, boxWidth, this.notificationHeight);
-
-    // 绘制边框
+    ctx.restore();
+    ctx.beginPath();
+    ctx.roundRect(x, y, boxWidth, this.notificationHeight, 5);
     ctx.strokeStyle = notification.getColor();
     ctx.lineWidth = 2;
-    ctx.strokeRect(x, y, boxWidth, this.notificationHeight);
+    ctx.stroke();
 
     // 绘制文字
     ctx.fillStyle = notification.getColor();

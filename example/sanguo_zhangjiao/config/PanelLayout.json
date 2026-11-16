@@ -6,7 +6,7 @@
       "width": 911,
       "height": 394,
       "backgroundColor": "rgba(0, 0, 0, 0.88)",
-      "borderColor": "#4a9eff",
+      "borderColor": "#c49a52",
       "borderWidth": 2,
       "parts": [
         {
@@ -289,7 +289,7 @@
           "width": 252,
           "height": 350,
           "bgColor": "rgba(18,24,32,0.55)",
-          "borderColor": "rgba(74,158,255,0.45)"
+          "borderColor": "rgba(196,154,82,0.5)"
         },
         {
           "id": "slot_accessory",

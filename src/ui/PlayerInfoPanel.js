@@ -273,11 +273,13 @@ export class PlayerInfoPanel extends UIElement {
         case 'portrait': {
           // 角色立绘：由场景注入渲染器绘制当前角色外观（含已装备外观层），
           // 无渲染器时退化为占位剪影，保证布局编辑器与旧场景不空白。
+          ctx.beginPath();
+          ctx.roundRect(px, py, pw, ph, 5);
           ctx.fillStyle = part.bgColor || 'rgba(18, 24, 32, 0.6)';
-          ctx.fillRect(px, py, pw, ph);
-          ctx.strokeStyle = part.borderColor || 'rgba(74, 158, 255, 0.45)';
+          ctx.fill();
+          ctx.strokeStyle = part.borderColor || 'rgba(196, 154, 82, 0.5)';
           ctx.lineWidth = 1;
-          ctx.strokeRect(px, py, pw, ph);
+          ctx.stroke();
           const rendered = this.renderPortrait
             ? this.renderPortrait(ctx, { x: px, y: py, width: pw, height: ph }, this.player) === true
             : false;

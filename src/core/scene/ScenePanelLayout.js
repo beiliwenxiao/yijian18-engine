@@ -773,7 +773,15 @@ export class ScenePanelLayout {
       hpRect: loader.getRect('hud-hp', width, height),
       mpRect: loader.getRect('hud-mp', width, height)
     };
-    if (Object.values(definition).some(Boolean)) hud.applySubLayout(definition);
+    if (Object.values(definition).some(Boolean)) {
+      // 有任意 hud-* 条目 → 子布局模式：有哪件画哪件（与 UI 编辑器所见一致）
+      hud.hiddenByLayout = false;
+      hud.applySubLayout(definition);
+    } else {
+      // 布局文件存在但 hud-* 全部被删除 → 整个玩家状态 HUD 不显示（与编辑器一致）；
+      // 未使用 UI 编辑器布局的项目（无布局文件）不走本分支，仍用内置经典 HUD
+      hud.hiddenByLayout = true;
+    }
   }
 
   _applyScreenHudLayout(loader, width, height) {

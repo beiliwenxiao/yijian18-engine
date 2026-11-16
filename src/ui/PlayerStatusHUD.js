@@ -47,6 +47,10 @@ export class PlayerStatusHUD extends UIElement {
     this._hasSubLayout = false;
     this._avatarRect = null;
     this._nameRect = null;
+    // 子布局部件存在性（applySubLayout 注入；null = 尚未应用子布局 = 经典模式）
+    this._subLayoutPresence = null;
+    // UI 编辑器布局里 hud-* 全部被删除时置 true：整个 HUD 不显示（与编辑器所见一致）
+    this.hiddenByLayout = false;
     this._onboardingBaseVisible = this.visible;
     this._onboardingComponentVisibility = {
       'hud-avatar': true,
@@ -153,16 +157,27 @@ export class PlayerStatusHUD extends UIElement {
   /**
    * 应用 UI 编辑器的子组件独立布局
    * @param {Object} rects - { avatarRect, nameRect, hpRect, mpRect }
-   *   每项格式: { x, y, width, height } | null
+   *   每项格式: { x, y, width, height } | null（null = 编辑器中已删除该部件，运行时不渲染）
    */
   applySubLayout(rects) {
     this._hasSubLayout = true;
+    // 子布局存在性：UI 编辑器中删除的部件（条目缺失）在运行时不渲染
+    this._subLayoutPresence = {
+      avatar: Boolean(rects.avatarRect),
+      name: Boolean(rects.nameRect),
+      hp: Boolean(rects.hpRect),
+      mp: Boolean(rects.mpRect)
+    };
     if (rects.avatarRect) {
       this._avatarRect = rects.avatarRect;
       this.avatarSize = Math.min(rects.avatarRect.width, rects.avatarRect.height);
+    } else {
+      this._avatarRect = null;
     }
     if (rects.nameRect) {
       this._nameRect = rects.nameRect;
+    } else {
+      this._nameRect = null;
     }
     if (rects.hpRect) {
       this.healthBar.x = rects.hpRect.x;
@@ -195,7 +210,7 @@ export class PlayerStatusHUD extends UIElement {
    * @param {number} deltaTime
    */
   update(deltaTime) {
-    if (!this.visible || !this.player) return;
+    if (!this.visible || this.hiddenByLayout === true || !this.player) return;
     const stats = this.player.getComponent('stats');
     if (stats) {
       this.healthBar.setMaxValue(stats.maxHp);
@@ -212,16 +227,18 @@ export class PlayerStatusHUD extends UIElement {
    * @param {CanvasRenderingContext2D} ctx
    */
   render(ctx) {
-    if (!this.visible || !this.player) return;
+    if (!this.visible || this.hiddenByLayout === true || !this.player) return;
 
     ctx.save();
 
     if (this._hasSubLayout) {
-      // 独立子布局模式：不画背景面板，各子元素自由定位
-      if (this._onboardingComponentVisibility['hud-avatar']) this._renderAvatar(ctx);
-      if (this._onboardingComponentVisibility['hud-name']) this._renderName(ctx);
-      if (this._onboardingComponentVisibility['hud-hp']) this.healthBar.render(ctx);
-      if (this._onboardingComponentVisibility['hud-mp']) this.manaBar.render(ctx);
+      // 独立子布局模式：不画背景面板，各子元素自由定位；
+      // UI 编辑器中删除的部件（存在性 false）不渲染，教学显隐规则叠加生效
+      const present = this._subLayoutPresence || {};
+      if (present.avatar !== false && this._onboardingComponentVisibility['hud-avatar']) this._renderAvatar(ctx);
+      if (present.name !== false && this._onboardingComponentVisibility['hud-name']) this._renderName(ctx);
+      if (present.hp !== false && this._onboardingComponentVisibility['hud-hp']) this.healthBar.render(ctx);
+      if (present.mp !== false && this._onboardingComponentVisibility['hud-mp']) this.manaBar.render(ctx);
     } else {
       // 经典模式：整体面板
       // 背景面板（半透明圆角）

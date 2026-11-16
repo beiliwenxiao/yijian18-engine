@@ -70,13 +70,13 @@ export class TaskGraphProjectionView {
 
     ctx.save();
     ctx.beginPath();
-    ctx.rect(x, y, width, boxHeight);
+    ctx.roundRect(x, y, width, boxHeight, 5);
     ctx.clip();
     ctx.fillStyle = 'rgba(10, 16, 30, 0.82)';
     ctx.fillRect(x, y, width, boxHeight);
     ctx.strokeStyle = '#c49a52';
     ctx.lineWidth = 1;
-    ctx.strokeRect(x + 0.5, y + 0.5, Math.max(0, width - 1), Math.max(0, boxHeight - 1));
+    ctx.stroke();
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
     visibleLines.forEach((line, index) => {

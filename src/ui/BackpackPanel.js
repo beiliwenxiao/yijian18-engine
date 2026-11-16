@@ -37,7 +37,7 @@ export class BackpackPanel extends UIElement {
     });
 
     this.backgroundColor = options.backgroundColor || 'rgba(0, 0, 0, 0.88)';
-    this.borderColor = options.borderColor || '#4a9eff';
+    this.borderColor = options.borderColor || '#c49a52';
     this.borderWidth = options.borderWidth || 2;
     this._characterBounds = { x: 0, y: 0, width: 300, height: this.height };
     this._inventoryBounds = { x: 310, y: 0, width: this.width - 310, height: this.height };
@@ -180,11 +180,14 @@ export class BackpackPanel extends UIElement {
     const fh = this._contentHeight;
 
     ctx.save();
+    // 圆角：底色沿同一路径填充，避免方角从圆角边框外露出
+    ctx.beginPath();
+    ctx.roundRect(fx, fy, fw, fh, 6);
     ctx.fillStyle = this.backgroundColor;
-    ctx.fillRect(fx, fy, fw, fh);
+    ctx.fill();
     ctx.strokeStyle = this.borderColor;
     ctx.lineWidth = this.borderWidth;
-    ctx.strokeRect(fx, fy, fw, fh);
+    ctx.stroke();
     ctx.restore();
 
     this.playerInfoContent.render(ctx);

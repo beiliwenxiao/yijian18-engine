@@ -727,13 +727,13 @@ export class SceneRenderPipeline {
 
     ctx.save();
     ctx.beginPath();
-    ctx.rect(x, y, width, height);
+    ctx.roundRect(x, y, width, height, 5);
     ctx.clip();
     ctx.fillStyle = 'rgba(10, 14, 30, 0.72)';
     ctx.fillRect(x, y, width, height);
-    ctx.strokeStyle = 'rgba(122, 155, 216, 0.55)';
+    ctx.strokeStyle = 'rgba(196, 154, 82, 0.6)';
     ctx.lineWidth = 1;
-    ctx.strokeRect(x, y, width, height);
+    ctx.stroke();
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
     ctx.fillStyle = '#ffe4a3';
@@ -791,13 +791,13 @@ export class SceneRenderPipeline {
 
     ctx.save();
     ctx.beginPath();
-    ctx.rect(x, y, width, height);
+    ctx.roundRect(x, y, width, height, 5);
     ctx.clip();
     ctx.fillStyle = style.background;
     ctx.fillRect(x, y, width, height);
     ctx.strokeStyle = style.border;
     ctx.lineWidth = 1;
-    ctx.strokeRect(x, y, width, height);
+    ctx.stroke();
     ctx.fillStyle = '#ffffff';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
