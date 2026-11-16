@@ -261,6 +261,10 @@ export class UIEditor {
     // 显隐/锁定为编辑器状态：按 gameId 存 localStorage，不写入布局 JSON 污染运行时配置
     this._editorStateKey = `yijian18.uie.editorState.${this.gameId}`;
     this._dragState = null;
+    // 方向键按住状态：每个方向独立计时，支持斜向微调（与面板编辑器同模式）
+    this._arrowKeyHolds = new Map();
+    this._arrowHistorySnapshot = null;
+    this._arrowHistoryChanged = false;
     this._initialized = false;
     this._loginBackgroundImage = '';
     this._panelLayoutDocument = null;
@@ -357,6 +361,7 @@ export class UIEditor {
   _restoreHistorySnapshot(snapshot) {
     const state = JSON.parse(snapshot);
     this.layouts = state.layouts;
+    this._clearArrowKeyHolds(false);
     this.selectedId = null;
     this.selectedIds.clear();
     this.selectedPanelPart = null;
@@ -706,6 +711,7 @@ export class UIEditor {
         this.platform = btn.dataset.platform;
         this.container.querySelectorAll('.uie-platform-switch button')
           .forEach(b => b.classList.toggle('active', b === btn));
+        this._clearArrowKeyHolds(false);
         this.selectedId = null;
         this.selectedIds.clear();
         this.selectedPanelPart = null;
@@ -724,6 +730,7 @@ export class UIEditor {
     this.container.querySelector('#uie-undo').addEventListener('click', () => this.undo());
     this.container.querySelector('#uie-redo').addEventListener('click', () => this.redo());
     this._bindHistoryShortcuts();
+    this._bindArrowKeys();
     this._updateHistoryButtons();
     this._setupResizer(this.container.querySelector('#uie-resizer-left'), this.container.querySelector('#uie-list'), 160, 420);
     this._setupResizer(this.container.querySelector('#uie-resizer-right'), this.container.querySelector('#uie-props'), 200, 440);
@@ -765,6 +772,7 @@ export class UIEditor {
       if (confirm('恢复当前平台为默认布局？(未保存)')) {
         const snapshot = this._createHistorySnapshot();
         this.layouts[this.platform] = this._cloneDefault(this.platform);
+        this._clearArrowKeyHolds(false);
         this.selectedId = null;
         this.selectedIds.clear();
         this.selectedPanelPart = null;
@@ -1349,6 +1357,15 @@ export class UIEditor {
       this._renderOnboardingEditor();
       return;
     }
+    this._renderStage();
+    this._renderProps();
+  }
+
+  /**
+   * 只重建舞台与控件/技能列表，不动属性面板 DOM——
+   * 供数字属性提交、方向键微调等需要保留输入焦点的场景使用。
+   */
+  _renderStage() {
     const layout = this.layouts[this.platform];
     const stage = this.container.querySelector('#uie-stage');
     if (!stage) return;
@@ -1470,8 +1487,6 @@ export class UIEditor {
 
       stage.appendChild(el);
     }
-
-    this._renderProps();
   }
 
   // ─── 多选（与面板编辑器同模式）：Ctrl/⌘+点击增减、空白拖动框选、整组移动 ───
@@ -1498,6 +1513,91 @@ export class UIEditor {
   _clearComponentSelection() {
     this.selectedIds.clear();
     this.selectedId = null;
+  }
+
+  // ─── 方向键微调（与面板编辑器同模式）：首次 1px，按住 1s 后加速 ───────────
+
+  _bindArrowKeys() {
+    this._onArrowKeyDownBound = (e) => this._onArrowKeyDown(e);
+    this._onArrowKeyUpBound = (e) => this._onArrowKeyUp(e);
+    this._onWindowBlurBound = () => this._clearArrowKeyHolds();
+    window.addEventListener('keydown', this._onArrowKeyDownBound);
+    window.addEventListener('keyup', this._onArrowKeyUpBound);
+    window.addEventListener('blur', this._onWindowBlurBound);
+  }
+
+  /** 整组平移选中部件（跳过锁定）；有移动时只重建舞台，返回是否发生移动。 */
+  _moveSelectedComponents(deltaX, deltaY) {
+    const selectedParts = this._getSelectedComponents();
+    if (selectedParts.length === 0) return false;
+    let moved = false;
+    for (const component of selectedParts) {
+      if (component.editorLocked === true) continue;
+      component.x = Math.round(component.x + deltaX);
+      component.y = Math.round(component.y + deltaY);
+      moved = true;
+    }
+    if (moved) this._renderStage();
+    return moved;
+  }
+
+  _onArrowKeyDown(e) {
+    // 输入框/下拉聚焦时交给浏览器原生行为（光标移动、下拉切换）
+    const target = e.target;
+    if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement
+      || target instanceof HTMLSelectElement || target?.isContentEditable) return;
+    const direction = {
+      ArrowLeft: [-1, 0],
+      ArrowRight: [1, 0],
+      ArrowUp: [0, -1],
+      ArrowDown: [0, 1]
+    }[e.key];
+    if (!direction || this._getSelectedComponents().length === 0) return;
+    e.preventDefault();
+    if (this._arrowKeyHolds.has(e.key)) return;
+
+    if (this._arrowKeyHolds.size === 0) {
+      this._arrowHistorySnapshot = this._createHistorySnapshot();
+      this._arrowHistoryChanged = false;
+    }
+    const [dx, dy] = direction;
+    // 首次按下立即精确移动 1px
+    this._arrowHistoryChanged = this._moveSelectedComponents(dx, dy) || this._arrowHistoryChanged;
+    const startedAt = performance.now();
+    const timer = window.setInterval(() => {
+      const elapsed = performance.now() - startedAt;
+      if (elapsed < 1000) return;
+      // 每 100ms 移动一次，依次对应 10 / 50 / 100 px/s
+      const pixelsPerTick = elapsed >= 3000 ? 10 : (elapsed >= 2000 ? 5 : 1);
+      this._arrowHistoryChanged = this._moveSelectedComponents(dx * pixelsPerTick, dy * pixelsPerTick)
+        || this._arrowHistoryChanged;
+    }, 100);
+    this._arrowKeyHolds.set(e.key, timer);
+  }
+
+  _onArrowKeyUp(e) {
+    const timer = this._arrowKeyHolds.get(e.key);
+    if (timer === undefined) return;
+    window.clearInterval(timer);
+    this._arrowKeyHolds.delete(e.key);
+    if (this._arrowKeyHolds.size === 0) {
+      if (this._arrowHistoryChanged) this._commitHistorySnapshot(this._arrowHistorySnapshot);
+      this._arrowHistorySnapshot = null;
+      this._arrowHistoryChanged = false;
+      this._renderProps(); // 松开后同步属性面板里的 x/y 数字
+    }
+  }
+
+  _clearArrowKeyHolds(commitHistory = true) {
+    for (const timer of this._arrowKeyHolds.values()) {
+      window.clearInterval(timer);
+    }
+    this._arrowKeyHolds.clear();
+    if (commitHistory && this._arrowHistoryChanged) {
+      this._commitHistorySnapshot(this._arrowHistorySnapshot);
+    }
+    this._arrowHistorySnapshot = null;
+    this._arrowHistoryChanged = false;
   }
 
   /**
@@ -1841,7 +1941,7 @@ export class UIEditor {
         this._setStatus(`PanelLayout.${part.id} 属性已修改（未保存）`);
         this._commitHistorySnapshot(this._propHistorySnapshot);
         this._propHistorySnapshot = null;
-        this._render();
+        this._renderStage(); // 只重建舞台：失焦提交后不重建属性面板，切焦点不被打断
       });
     });
     props.querySelectorAll('input[data-part-text]').forEach(input => {
@@ -1928,6 +2028,11 @@ export class UIEditor {
       const key = input.dataset.k;
       const fieldDef = UI_COMPONENT_FIELD_DEFS[key] || { type: 'number' };
       const isNumber = fieldDef.type === 'number';
+      // 等比锁定的面板：宽改高（或反之）联动时，直接同步兄弟输入框显示（不动焦点）
+      const syncSibling = (siblingKey, value) => {
+        const sibling = props.querySelector(`input[data-k="${siblingKey}"]`);
+        if (sibling && document.activeElement !== sibling) sibling.value = value;
+      };
       const applyValue = () => {
         const aspect = this._getLockedAspect(comp);
         if (isNumber) {
@@ -1936,9 +2041,11 @@ export class UIEditor {
           if (aspect && key === 'width') {
             comp.width = v;
             comp.height = Math.max(16, Math.round(v / aspect));
+            syncSibling('height', comp.height);
           } else if (aspect && key === 'height') {
             comp.height = v;
             comp.width = Math.max(16, Math.round(v * aspect));
+            syncSibling('width', comp.width);
           } else {
             comp[key] = key === 'fontSize' ? Math.max(0, v) : v;
           }
@@ -1959,21 +2066,35 @@ export class UIEditor {
       input.addEventListener('focus', () => {
         this._propHistorySnapshot = this._createHistorySnapshot();
       });
+      if (isNumber) {
+        // 数字字段：输入过程不应用、不重建（保持焦点）；失焦/回车后才执行修改。
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') input.blur();
+        });
+        input.addEventListener('change', () => {
+          if (input.value.trim() === '' || !Number.isFinite(Number(input.value))) {
+            // 未输完/清空的中间态不提交，还原为当前值
+            input.value = Number.isFinite(comp[key]) ? comp[key] : 0;
+            return;
+          }
+          if (!this._propHistorySnapshot) this._propHistorySnapshot = this._createHistorySnapshot();
+          applyValue();
+          this._commitHistorySnapshot(this._propHistorySnapshot);
+          this._propHistorySnapshot = null;
+          this._renderStage(); // 只重建舞台，属性面板 DOM 不动 → 焦点保持
+        });
+        return;
+      }
       input.addEventListener('input', () => {
         if (!this._propHistorySnapshot) this._propHistorySnapshot = this._createHistorySnapshot();
         applyValue();
-        if (isNumber) {
-          this._commitHistorySnapshot(this._propHistorySnapshot);
-          this._propHistorySnapshot = this._createHistorySnapshot();
-          this._render();
-        }
       });
       input.addEventListener('change', () => {
         if (!this._propHistorySnapshot) this._propHistorySnapshot = this._createHistorySnapshot();
         applyValue();
         this._commitHistorySnapshot(this._propHistorySnapshot);
         this._propHistorySnapshot = null;
-        if (!isNumber) this._render();
+        this._render();
       });
     });
   }

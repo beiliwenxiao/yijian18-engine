@@ -86,11 +86,11 @@
       "kind": "zone",
       "anchor": "topleft",
       "x": 15,
-      "y": 125,
+      "y": 124,
       "width": 514,
       "height": 384,
       "xPct": 0.01172,
-      "yPct": 0.20833,
+      "yPct": 0.20667,
       "wPct": 0.40156,
       "hPct": 0.64
     },

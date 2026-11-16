@@ -39,15 +39,15 @@
       "anchor": "topleft",
       "x": 13,
       "y": 7,
-      "width": 116,
-      "height": 76,
+      "width": 100,
+      "height": 72,
       "fontSize": 14,
       "textOffsetX": 0,
       "textOffsetY": 0,
       "xPct": 0.01016,
       "yPct": 0.00972,
-      "wPct": 0.09062,
-      "hPct": 0.10556
+      "wPct": 0.07813,
+      "hPct": 0.1
     },
     {
       "id": "combatStateBadge",
@@ -56,14 +56,14 @@
       "anchor": "topleft",
       "x": 13,
       "y": 87,
-      "width": 115,
+      "width": 100,
       "height": 30,
       "fontSize": 0,
       "textOffsetX": 0,
       "textOffsetY": 0,
       "xPct": 0.01016,
       "yPct": 0.12083,
-      "wPct": 0.08984,
+      "wPct": 0.07813,
       "hPct": 0.04167
     },
     {
