@@ -577,17 +577,10 @@ export class DataDrivenPrologueScene extends BaseGameScene {
     const resolve = src => (
       this.assetManager?.resolveAssetPath ? this.assetManager.resolveAssetPath(src) : src
     );
+    // 整图模式：底图由场景层统一画一次（renderWorldMapBaseLayer），
+    // 不再传给各 terrain——多 terrain 各自整铺会互相覆盖对方的地面缓存。
     if (isWorldMapBackgroundFile(background)) {
-      return {
-        src: resolve(background),
-        tile: false,
-        row: anchor.row,
-        col: anchor.col,
-        rows: region.rows,
-        cols: region.cols,
-        spanRows: Math.max(1, anchor.footprint?.rows || 1),
-        spanCols: Math.max(1, anchor.footprint?.cols || 1)
-      };
+      return null;
     }
     return {
       src: resolve(resolveWorldMapBackgroundTilePath(background, anchor.row, anchor.col)),
@@ -597,6 +590,67 @@ export class DataDrivenPrologueScene extends BaseGameScene {
       rows: region.rows,
       cols: region.cols
     };
+  }
+
+  /**
+   * 大地图整图底图（region 级，场景层统一绘制）：世界加载完成后按 entry region 初始化。
+   * 显隐跟随玩家所在场景的开关（sceneData.worldMapBase.visible，缺省显示）。
+   */
+  _initRegionWorldMapBase() {
+    const region = this._worldIndex?.getRegion?.(this._currentRegionIndex ?? 0)
+      || this._worldIndex?.getRegion?.(this._worldRegion?.id || 0)
+      || null;
+    const background = typeof region?.backgroundImage === 'string' ? region.backgroundImage.trim() : '';
+    if (!background || !isWorldMapBackgroundFile(background)) {
+      this._worldMapBaseState = null;
+      return;
+    }
+    const src = this.assetManager?.resolveAssetPath
+      ? this.assetManager.resolveAssetPath(background)
+      : background;
+    const state = {
+      src,
+      bounds: region.bounds || null,
+      _img: null,
+      _loaded: false,
+      _loading: false
+    };
+    this._worldMapBaseState = state;
+    const img = new Image();
+    img.onload = () => {
+      state._img = img;
+      state._loaded = true;
+    };
+    img.onerror = () => {
+      state._loading = false;
+      state._loadFailed = true;
+      console.warn('[WorldMapBase] 场景层底图加载失败', { src });
+    };
+    state._loading = true;
+    img.src = src;
+  }
+
+  /**
+   * 场景层大地图底色（SceneWorldPresentation 每帧调用一次，多 terrain 只画一遍）。
+   * 整张底图拉伸铺满 region 世界矩形——视野外/相邻未加载区块也露出对应底色。
+   * @param {CanvasRenderingContext2D} ctx 已应用相机变换
+   */
+  renderWorldMapBaseLayer(ctx) {
+    const base = this._worldMapBaseState;
+    if (!base?._loaded || !base._img || !base.bounds) return;
+    // 显隐跟随玩家所在场景的图层开关（sceneData.worldMapBase.visible，缺省显示）
+    const terrains = this.context?.world?.terrains || [];
+    const current = terrains.find(t => t?._editorSceneId === this.currentSceneId);
+    if (current?._sceneDataRaw?.worldMapBase?.visible === false) return;
+    try {
+      ctx.drawImage(
+        base._img,
+        0, 0,
+        base._img.naturalWidth || base._img.width,
+        base._img.naturalHeight || base._img.height,
+        base.bounds.left, base.bounds.top, base.bounds.width, base.bounds.height
+      );
+    } catch (_error) { /* 底图未就绪等异常静默 */ }
   }
 
   /** canonical 磁盘会话由 Demo 世界协调器创建；保留 Scene 兼容入口。 */
@@ -1581,6 +1635,7 @@ export class DataDrivenPrologueScene extends BaseGameScene {
         const validated = this._validateWorldLoadResult(result);
         this._worldLoadResult = validated;
         this._worldIndex = validated.worldIndex;
+        this._initRegionWorldMapBase();
         const entry = validated.worldIndex.getEntry();
         this.currentSceneId = entry.sceneId;
         this._currentRegionIndex = entry.regionIndex;

@@ -48,9 +48,7 @@ export class Minimap extends UIElement {
     this.markerSize = options.markerSize || 4;
     this.borderWidth = options.borderWidth || 2;
     this.padding = 4;
-
-    // 缩放级别：0=最大（本屏+10%），1=中间，2=最小（全部9宫格）
-    this._zoomLevel = 1; // 默认中间
+    // 视图形态：固定显示整个 region（比例恒定），旧的窗口裁剪三档缩放已废弃。
 
     // 点击定位观察：点击小地图把视野框与相机移动到对应世界位置（玩家移动后释放）
     this.onSeekWorldPosition = typeof options.onSeekWorldPosition === 'function'
@@ -127,8 +125,6 @@ export class Minimap extends UIElement {
     const next = enabled === true;
     if (this.layoutManaged === next) return;
     this.layoutManaged = next;
-    this._frameSizeSet = next;
-    if (next) this._anchorRight = undefined;
   }
 
   /**
@@ -137,7 +133,6 @@ export class Minimap extends UIElement {
    */
   setTerrains(terrains) {
     this._terrains = terrains || [];
-    this._frameSizeSet = false;
     this._invalidateCache();
   }
 
@@ -145,7 +140,6 @@ export class Minimap extends UIElement {
   setWorldIndex(worldIndex, regionRef = null) {
     this._worldIndex = worldIndex || null;
     this._regionRef = regionRef ?? worldIndex?.getEntry?.()?.regionId ?? null;
-    this._frameSizeSet = false;
     this._invalidateCache();
   }
 
@@ -177,6 +171,8 @@ export class Minimap extends UIElement {
     };
     img.onerror = () => {
       bg._loading = false;
+      bg._loadFailed = true;
+      console.warn('[WorldMapBase] 小地图底图加载失败', { src: bg.src });
     };
     img.src = bg.src;
   }
@@ -191,7 +187,6 @@ export class Minimap extends UIElement {
     } else {
       this._terrains = [];
     }
-    this._frameSizeSet = false;
     this._invalidateCache();
   }
 
@@ -305,46 +300,25 @@ export class Minimap extends UIElement {
       width: Number(terrain?.basinWidth ?? terrain?.worldWidth) || region.chunkWidth,
       height: Number(terrain?.basinHeight ?? terrain?.worldHeight) || region.chunkHeight
     });
-    let fullMinX = Infinity, fullMinY = Infinity, fullMaxX = -Infinity, fullMaxY = -Infinity;
-    for (const terrain of this._terrains) {
-      const ox = terrain.worldOffset?.x || 0;
-      const oy = terrain.worldOffset?.y || 0;
-      const { width, height } = getTerrainExtent(terrain);
-      fullMinX = Math.min(fullMinX, ox);
-      fullMinY = Math.min(fullMinY, oy);
-      fullMaxX = Math.max(fullMaxX, ox + width);
-      fullMaxY = Math.max(fullMaxY, oy + height);
-    }
-    const fullW = fullMaxX - fullMinX;
-    const fullH = fullMaxY - fullMinY;
-    if (fullW <= 0 || fullH <= 0) return;
-
-    if (!this._frameSizeSet) {
-      if (!this.layoutManaged) {
-        const maxDim = Math.max(this.width, this.height);
-        const fullAspect = fullW / fullH;
-        if (fullAspect >= 1) {
-          this.width = maxDim;
-          this.height = Math.round(maxDim / fullAspect);
-        } else {
-          this.height = maxDim;
-          this.width = Math.round(maxDim * fullAspect);
-        }
-        if (this._anchorRight !== undefined) this.x = this._anchorRight - this.width;
-      }
-      this._frameSizeSet = true;
-    }
+    // 缓存固定覆盖整个 region：外框尺寸与内容比例恒定（不随已加载 chunk 数量/视野缩放），
+    // 加载新 chunk 只是在固定比例的图上补细节。
+    const bounds = region.bounds;
+    if (!bounds || !(bounds.width > 0) || !(bounds.height > 0)) return;
+    const fullMinX = bounds.left;
+    const fullMinY = bounds.top;
+    const fullMaxX = bounds.right;
+    const fullMaxY = bounds.bottom;
+    const fullW = bounds.width;
+    const fullH = bounds.height;
 
     const innerW = Math.max(1, this.width - this.padding * 2);
     const innerH = Math.max(1, this.height - this.padding * 2);
-    let cacheScale = Math.max(
-      this.mapScale,
-      innerW / Math.max(1, fullW),
-      innerH / Math.max(1, fullH)
-    );
+    const fitScale = Math.min(innerW / fullW, innerH / fullH);
+    // 2 倍超采样提升清晰度（缓存画布仍是小地图级尺寸，内存可忽略）
+    let cacheScale = fitScale * 2;
     const maxCacheDimension = 2048;
     cacheScale = Math.min(
-      cacheScale,
+      Math.max(cacheScale, Number.EPSILON),
       maxCacheDimension / fullW,
       maxCacheDimension / fullH
     );
@@ -360,8 +334,7 @@ export class Minimap extends UIElement {
     // 大地图整图底图铺底：未加载 chunk / 无场景格子也有对应区块的模糊底色；
     // 已加载 chunk 的场景内容（下方循环）会盖在它上面。
     const worldBg = this._worldMapBackground;
-    const bounds = region.bounds;
-    if (worldBg?._loaded && worldBg._img && bounds) {
+    if (worldBg?._loaded && worldBg._img) {
       try {
         ctx.drawImage(
           worldBg._img,
@@ -422,46 +395,38 @@ export class Minimap extends UIElement {
   _updateViewport() {
     if (!this._mapCache) return;
     const region = this._worldIndex?.getRegion?.(this._regionRef);
-    if (!region) return;
+    if (!region?.bounds) return;
+    const bounds = region.bounds;
     const chunkW = region.chunkWidth;
-    const chunkH = region.chunkHeight;
-    let minX, minY, maxX, maxY;
-    if (this._zoomLevel === 0 && this.viewBounds) {
-      const vw = this.viewBounds.right - this.viewBounds.left;
-      const vh = this.viewBounds.bottom - this.viewBounds.top;
-      minX = this.viewBounds.left - vw * 0.1;
-      minY = this.viewBounds.top - vh * 0.1;
-      maxX = this.viewBounds.right + vw * 0.1;
-      maxY = this.viewBounds.bottom + vh * 0.1;
-    } else if (this._zoomLevel === 1 && (this.seekActive ? this.seekPosition : this.playerPosition)) {
-      const anchor = this.seekActive ? this.seekPosition : this.playerPosition;
-      minX = anchor.x - chunkW * 1.5;
-      minY = anchor.y - chunkH * 1.5;
-      maxX = anchor.x + chunkW * 1.5;
-      maxY = anchor.y + chunkH * 1.5;
-    } else {
-      minX = this._fullWorldMinX;
-      minY = this._fullWorldMinY;
-      maxX = this._fullWorldMaxX;
-      maxY = this._fullWorldMaxY;
+    // 固定比例窗口：宽度锚定 1.5 个 chunk，高度按外框长宽比自动填满。
+    // 窗口以观察锚点（定位观察位置或玩家）为中心连续跟随，贴近 region 边界时贴边（尺寸不变）。
+    const innerW = Math.max(1, this.width - this.padding * 2);
+    const innerH = Math.max(1, this.height - this.padding * 2);
+    const spanW = chunkW * 1.5;
+    const displayScale = innerW / spanW;
+    const spanH = innerH / displayScale;
+    const anchor = this.seekActive ? this.seekPosition : this.playerPosition;
+    let minX = bounds.left;
+    let minY = bounds.top;
+    if (anchor && Number.isFinite(anchor.x) && Number.isFinite(anchor.y)) {
+      minX = anchor.x - spanW / 2;
+      minY = anchor.y - spanH / 2;
+      minX = Math.min(Math.max(minX, bounds.left), Math.max(bounds.left, bounds.right - spanW));
+      minY = Math.min(Math.max(minY, bounds.top), Math.max(bounds.top, bounds.bottom - spanH));
     }
-    minX = Math.max(minX, this._fullWorldMinX);
-    minY = Math.max(minY, this._fullWorldMinY);
-    maxX = Math.min(maxX, this._fullWorldMaxX);
-    maxY = Math.min(maxY, this._fullWorldMaxY);
-    const worldW = maxX - minX;
-    const worldH = maxY - minY;
+    const maxX = minX + spanW;
+    const maxY = minY + spanH;
+    const worldW = spanW;
+    const worldH = spanH;
     if (worldW <= 0 || worldH <= 0) return;
 
     this._worldMinX = minX;
     this._worldMinY = minY;
     this._worldMaxX = maxX;
     this._worldMaxY = maxY;
-    const innerW = Math.max(1, this.width - this.padding * 2);
-    const innerH = Math.max(1, this.height - this.padding * 2);
-    const displayScale = Math.min(innerW / worldW, innerH / worldH);
-    this._drawW = Math.max(1, Math.floor(worldW * displayScale));
-    this._drawH = Math.max(1, Math.floor(worldH * displayScale));
+    const displayScaleClamped = Math.min(innerW / worldW, innerH / worldH);
+    this._drawW = Math.max(1, Math.floor(worldW * displayScaleClamped));
+    this._drawH = Math.max(1, Math.floor(worldH * displayScaleClamped));
     this._sourceX = Math.max(0, (minX - this._fullWorldMinX) * this._cacheScale);
     this._sourceY = Math.max(0, (minY - this._fullWorldMinY) * this._cacheScale);
     this._sourceW = Math.min(this._mapCache.width - this._sourceX, worldW * this._cacheScale);

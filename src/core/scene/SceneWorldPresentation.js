@@ -35,6 +35,8 @@ export class SceneWorldPresentation {
       } else {
         ctx.fillRect(0, 0, scene.logicalWidth, scene.logicalHeight);
       }
+      // 大地图派生底色：场景层统一画一次（多 terrain 时各 terrain 自画会互相覆盖地面缓存）
+      scene.renderWorldMapBaseLayer?.(ctx);
       for (const currentTerrain of terrains) currentTerrain.renderGround?.(ctx);
       return;
     }
@@ -47,6 +49,7 @@ export class SceneWorldPresentation {
       } else {
         ctx.fillRect(0, 0, scene.logicalWidth, scene.logicalHeight);
       }
+      scene.renderWorldMapBaseLayer?.(ctx);
       terrain.renderGround?.(ctx);
       return;
     }

@@ -15,7 +15,6 @@ import { ShapeRenderer } from '../../../src/rendering/ShapeRenderer.js';
 import { ShadowRenderer } from '../../../src/rendering/ShadowRenderer.js';
 import { SceneObjectProjector } from '../../../src/core/scene/SceneObjectProjector.js';
 import { AtlasRegistry } from '../../../src/core/scene/AtlasRegistry.js';
-import { computeWorldMapCellCropRect } from '../../../src/core/world/WorldMapBackground.js';
 
 /** 树影只跟随全局方向光：点光源不参与（物理简化兼性能边界），复用同一空数组避免逐帧分配。 */
 const TREE_SHADOW_NO_POINT_LIGHTS = Object.freeze([]);
@@ -282,6 +281,7 @@ export class Scene1Terrain {
           cols: Number(baseInfo.cols) || 1,
           spanRows: Math.max(1, Number(baseInfo.spanRows) || 1),
           spanCols: Math.max(1, Number(baseInfo.spanCols) || 1),
+          bounds: baseInfo.bounds || null,
           visible,
           _img: null,
           _loaded: false
@@ -1552,49 +1552,16 @@ export class Scene1Terrain {
    * @private
    */
   _renderWorldMapBase(ctx) {
+    // 只服务切图目录模式：本格贴图整张拉伸铺 chunk（各格专属图，格子间不重叠、不互盖）。
+    // 整图模式已上移到场景层统一绘制（SceneWorldPresentation → scene.renderWorldMapBaseLayer），
+    // 避免多 terrain 各自整铺 region 底图互相覆盖对方的地面缓存。
     const base = this._worldMapBase;
-    if (!base || base.visible === false || !base._loaded || !base._img) {
-      // 一次性诊断：底图存在但未就绪时打点（不刷屏），定位「没显示」的原因
-      if (base && base.visible !== false && !base._diagLogged && (base._loadFailed || base._loading)) {
-        base._diagLogged = true;
-        Logger.log('[WorldMapBase] 底图未就绪', {
-          sceneId: this._editorSceneId,
-          src: base.src,
-          loading: base._loading,
-          loadFailed: base._loadFailed || false
-        });
-      }
-      return;
-    }
-    // chunk 矩形以 worldOffset（chunk 原点）为权威：centerX/centerY 会被地形椭圆改写，不可用。
-    const left = this.worldOffset.x;
-    const top = this.worldOffset.y;
+    if (!base || base.tile !== true || base.visible === false || !base._loaded || !base._img) return;
     try {
-      if (base.tile) {
-        // 切图目录模式：单格贴图整张拉伸
-        ctx.drawImage(base._img, left, top, this.basinWidth, this.basinHeight);
-      } else {
-        // 整图模式：按格裁剪后拉伸
-        const crop = computeWorldMapCellCropRect(
-          base._img.naturalWidth || base._img.width,
-          base._img.naturalHeight || base._img.height,
-          base.rows, base.cols, base.row, base.col, base.spanRows, base.spanCols
-        );
-        ctx.drawImage(
-          base._img, crop.sx, crop.sy, crop.sw, crop.sh,
-          left, top, this.basinWidth, this.basinHeight
-        );
-      }
-      if (!base._drawLogged) {
-        base._drawLogged = true;
-        Logger.log('[WorldMapBase] 底图已绘制', {
-          sceneId: this._editorSceneId,
-          src: base.src,
-          row: base.row,
-          col: base.col,
-          chunk: { left, top, w: this.basinWidth, h: this.basinHeight }
-        });
-      }
+      ctx.drawImage(
+        base._img,
+        this.worldOffset.x, this.worldOffset.y, this.basinWidth, this.basinHeight
+      );
     } catch (_error) { /* 图片尚未就绪等异常静默，下一帧重画 */ }
   }
 
