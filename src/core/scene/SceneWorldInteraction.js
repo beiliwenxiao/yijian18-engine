@@ -76,47 +76,45 @@ export class SceneWorldInteraction {
   }
 
   /**
-   * 小地图按住拖动定位；必须在攻击系统之前每帧调用。
-   * 攻击系统以“左键按住”触发扇区攻击，且 handled 标志帧尾即清——
-   * 若不在帧首消费按住状态并标记 handled，点/拖小地图会连带触发攻击（点击卡顿主因）。
-   * @returns {boolean} 本帧是否由小地图拖动占用输入
+   * 小地图输入（必须在攻击系统之前每帧调用）：按下沿分发按钮（M=大地图 /
+   * 箭头=切换扩展中间态）并吞掉按住态（防误触攻击），框内其余区域只吞不响应。
+   * 定位观察拖拽已取消——小地图纯展示。
+   * @returns {boolean} 本帧是否由小地图占用输入
    */
   handleMinimapDrag() {
     const scene = this.scene;
     const minimap = scene.minimap;
     const input = scene.inputManager;
     if (!minimap || !input) return false;
-
-    if (minimap.seekDragging) {
-      if (!input.isMouseButtonDown(0) || scene.flightSystem?.isPlayerFlying?.() === true) {
-        minimap.endSeekDrag();
-        return false;
-      }
-      const pos = input.getMousePosition();
-      minimap.moveSeekDrag(pos.x, pos.y);
-      input.markMouseClickHandled();
-      return true;
-    }
-
-    // 起始沿：按下即视为拖动开始（mousedown/touchstart 当帧），提前于攻击系统消费
-    if (!input.isMouseButtonDown(0) || !input.isMouseClicked() || input.isMouseClickHandled()) return false;
+    const down = input.isMouseButtonDown(0);
     const pos = input.getMousePosition();
-    if (!(minimap.visible && minimap.containsPoint(pos.x, pos.y))) return false;
-    // 右上角「M」按钮：走 handleUIClick 的点击通道（打开大地图），不进入拖动定位；
-    // 但本帧仍吞掉按住态，避免攻击系统把点按钮当成按住左键攻击。
-    if (minimap.isMapButtonHit?.(pos.x, pos.y)) {
-      minimap.handleClick(pos.x, pos.y);
+    const flightOK = scene.flightSystem?.isPlayerFlying?.() !== true;
+    const inside = minimap.visible && minimap.containsPoint(pos.x, pos.y);
+
+    // 按下沿：命中按钮 → 分发；框内其余区域 → 只吞（防攻击误触）
+    const clicking = input.isMouseClicked() && !input.isMouseClickHandled();
+    if (clicking && down && flightOK && inside) {
+      if (minimap.isMapButtonHit?.(pos.x, pos.y) || minimap.isToggleHit?.(pos.x, pos.y)) {
+        minimap.handleClick(pos.x, pos.y);
+      }
+      minimap.beginPressCandidate?.(pos.x, pos.y);
       input.markMouseClickHandled();
       return true;
     }
-    // 轻功飞行期间相机由飞行系统管理：吞掉点击但不进入定位
-    if (scene.flightSystem?.isPlayerFlying?.() === true) {
+
+    // 按住中：持续吞（防攻击）
+    if (minimap._press && down) {
       input.markMouseClickHandled();
       return true;
     }
-    minimap.beginSeekDrag(pos.x, pos.y);
-    input.markMouseClickHandled();
-    return true;
+
+    // 松开沿：清按住标记
+    if (minimap._press && !down) {
+      minimap._press = null;
+      input.markMouseClickHandled();
+      return true;
+    }
+    return false;
   }
 
   handleGatheringCancel(event = {}) {

@@ -428,6 +428,24 @@ export class ScenePanelLayout {
     scene.cameraSeek = null;
     // HUD 组合只同步引用和世界边界；静态缩略图由区域激活提交后显式建立。
     scene._terrainBinding.updateMinimap(scene.minimap);
+    // 扩展态世界标记数据源（与 M 键大地图同源）：逻辑节点（城/关/桥/渡/岔/营）+
+    // 军团状态 + 通行边线 + 场景锚点（sceneId 标签，当前场景高亮）
+    scene.minimap.setWorldMapProviders?.({
+      getLogicNodes: () => Array.from(scene.worldRouteLayer?.nodes?.values?.() || []),
+      getArmyStates: () => scene.armyOrderSystem?.listUnits?.() || [],
+      getRouteEdges: () => {
+        const region = scene._worldRegion || scene._worldIndex?.getRegion?.(scene._currentRegionIndex ?? 0) || null;
+        const preview = scene.worldRouteLayer?.buildPreview?.(region);
+        return preview?.edges || [];
+      },
+      getSceneAnchors: () => {
+        const region = scene._worldIndex?.getRegion?.(scene._worldRegion?.id)
+          || scene._worldIndex?.getRegion?.(scene._currentRegionIndex ?? 0)
+          || null;
+        return (region?.cells || []).filter(cell => cell?.loadable);
+      },
+      getCurrentSceneId: () => scene.currentSceneId || null
+    });
     if (scene._worldIndex) {
       scene.minimap.setWorldIndex(scene._worldIndex, scene._worldRegion?.id);
     }
@@ -766,12 +784,17 @@ export class ScenePanelLayout {
 
     minimap?.setLayoutManaged?.(isMinimapLayoutManaged);
     if (minimap) {
-      if (isMinimapLayoutManaged) {
-        loader.applyToCanvasPanel('minimap', minimap, width, height);
-      } else {
-        minimap._anchorRight = width - 10;
-        minimap.x = width - minimap.width - 10;
-        minimap.y = 10;
+      // 逻辑分辨率宽度：小地图双击扩展态的尺寸计算依据
+      minimap.setLogicalWidth?.(width);
+      // 扩展中间态（双击）不被布局/锚定覆盖；缩回后由本流程重新归位
+      if (!minimap.expanded) {
+        if (isMinimapLayoutManaged) {
+          loader.applyToCanvasPanel('minimap', minimap, width, height);
+        } else {
+          minimap._anchorRight = width - 10;
+          minimap.x = width - minimap.width - 10;
+          minimap.y = 10;
+        }
       }
     }
 

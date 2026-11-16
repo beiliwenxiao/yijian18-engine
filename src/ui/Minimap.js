@@ -12,17 +12,37 @@
 
 import { UIElement } from './UIElement.js';
 
+/** 扩展态世界标记：逻辑节点字形（与 M 键大地图 NODE_KIND_GLYPHS 同源语义）。 */
+const WORLD_MAP_NODE_GLYPHS = Object.freeze({
+  city: '城', pass: '关', bridge: '桥', ferry: '渡', junction: '岔', camp: '营'
+});
+/** 扩展态世界标记：阵营色。 */
+const WORLD_MAP_FACTION_COLORS = Object.freeze({
+  yellow_turban: '#d9a521',
+  han_government: '#4a6f9a'
+});
+const worldMapFactionColor = factionId => WORLD_MAP_FACTION_COLORS[factionId] || '#e8d5ab';
+/** 扩展态通行边线状态色（与 M 键大地图 ROUTE_EDGE_LINE_COLORS 同源语义）。 */
+const WORLD_MAP_EDGE_COLORS = Object.freeze({
+  passable: 'rgba(120, 220, 130, 0.55)',
+  hostile: 'rgba(226, 96, 80, 0.8)',
+  closed: 'rgba(235, 170, 70, 0.8)',
+  terrain: 'rgba(150, 145, 135, 0.6)',
+  invalid: 'rgba(200, 90, 200, 0.8)'
+});
+
 /**
  * 小地图组件（9宫格）
- * 
- * 以真实地图为基础，缩小到指定比例（默认10%）显示。
- * 支持多 terrain chunk（9宫格大地图），将所有已加载的 terrain
- * 渲染到一张离屏 canvas 上生成缩略图，标注玩家和敌人位置。
- * 
+ *
+ * 固定比例窗口（宽度锚定 1.5 格）：底图铺大地图整图，已加载 chunk 叠加场景细节；
+ * 单击切换扩展中间态（右上角 3/5 屏宽、4×4 格视野），扩展态按大地图的内容显示
+ * 逻辑节点（城/关/桥/渡/岔/营）与军团旗。定位观察拖拽已取消——小地图纯展示。
+ *
  * 使用方式：
  *   minimap.setTerrains(terrainArray)  — 绑定所有 terrain 实例
  *   minimap.setPlayerPosition(pos)     — 每帧更新玩家位置
  *   minimap.setViewBounds(bounds)      — 每帧更新相机视野
+ *   minimap.setWorldMapProviders({...}) — 扩展态世界标记数据源（惰性）
  */
 export class Minimap extends UIElement {
   /**
@@ -48,7 +68,12 @@ export class Minimap extends UIElement {
     this.markerSize = options.markerSize || 4;
     this.borderWidth = options.borderWidth || 2;
     this.padding = 4;
-    // 视图形态：固定显示整个 region（比例恒定），旧的窗口裁剪三档缩放已废弃。
+    // 视图形态：固定比例窗口（宽度锚定 1.5 格），左下角箭头按钮切换扩展中间态
+    //（右上角 2/5 屏宽、3×5 格视野）。框内其余点击只吞不响应（纯展示）。
+    this.expanded = false;
+    this.toggleButtonSize = options.toggleButtonSize || 20;
+    this._normalRect = null;
+    this._logicalWidth = options.logicalWidth || null;
 
     // 点击定位观察：点击小地图把视野框与相机移动到对应世界位置（玩家移动后释放）
     this.onSeekWorldPosition = typeof options.onSeekWorldPosition === 'function'
@@ -74,6 +99,8 @@ export class Minimap extends UIElement {
     this._regionRef = options.regionRef ?? null;
     // 大地图整图底图（setWorldMapBackground 注入）：九宫格未加载区域/空格子的模糊底色来源
     this._worldMapBackground = null;
+    // 扩展态世界标记数据源（惰性，与 M 键大地图同源）：逻辑节点 / 军团状态 / 通行边线 / 场景锚点
+    this._worldMapProviders = { getLogicNodes: null, getArmyStates: null, getRouteEdges: null, getSceneAnchors: null, getCurrentSceneId: null };
     // 九宫格缩略图缓存保存完整已加载范围；缩放/跟随只改变裁剪窗口。
     this._mapCache = null;
     this._fullWorldMinX = 0;
@@ -178,6 +205,26 @@ export class Minimap extends UIElement {
   }
 
   /**
+   * 注入扩展态世界标记数据源（惰性，与 M 键大地图同源同形状）：
+   * - getLogicNodes: () => worldRouteLayer.nodes.values()（position/kind/ownerFactionId/name）
+   * - getArmyStates: () => armyOrderSystem.listUnits()（x/y/factionId/name/id/route）
+   * - getRouteEdges: () => 路线预览的边线列表（fromPosition/toPosition/status，通行状态由配置线条表达）
+   * - getSceneAnchors: () => region.cells（loadable 场景锚点：sceneId/offset/worldWidth/worldHeight）
+   * - getCurrentSceneId: () => 当前所在场景 id（锚点高亮用）
+   */
+  setWorldMapProviders(providers = {}) {
+    const next = providers || {};
+    const fn = value => (typeof value === 'function' ? value : null);
+    this._worldMapProviders = {
+      getLogicNodes: fn(next.getLogicNodes),
+      getArmyStates: fn(next.getArmyStates),
+      getRouteEdges: fn(next.getRouteEdges),
+      getSceneAnchors: fn(next.getSceneAnchors),
+      getCurrentSceneId: fn(next.getCurrentSceneId)
+    };
+  }
+
+  /**
    * 绑定单个 terrain（兼容接口）
    * @param {Scene1Terrain} terrain
    */
@@ -212,6 +259,48 @@ export class Minimap extends UIElement {
       : [];
   }
   setViewBounds(bounds) { this.viewBounds = bounds; }
+
+  /** 逻辑分辨率宽度（扩展态尺寸计算用；宿主创建与 resize 时更新）。 */
+  setLogicalWidth(width) {
+    this._logicalWidth = Number(width) || this._logicalWidth;
+  }
+
+  /**
+   * 单击切换扩展中间态：
+   * - 扩展：外框占右上角 2/5 屏宽（不挡玩家操作区），视野 3×5 格（宽 3 格 × 高 5 格，
+   *   高按 chunk 纵横比推算）；内容按大地图的显示内容来（逻辑节点/军团旗）；
+   * - 缩回：恢复原来的小框（宽度锚定 1.5 格）。
+   * 切换时结束定位观察，回到跟随锚点；缓存按整 region 构建，切换零重建成本。
+   */
+  toggleExpanded() {
+    this.expanded = !this.expanded;
+    if (this.expanded) {
+      if (!this._normalRect) {
+        this._normalRect = { x: this.x, y: this.y, width: this.width, height: this.height };
+      }
+      const logicalWidth = this._logicalWidth || 1280;
+      const margin = 10;
+      const width = Math.max(200, Math.round(logicalWidth * 2 / 5) - margin);
+      // 高度按 3×5 格的 chunk 纵横比推算（chunkH×5 / chunkW×3）
+      const region = this._worldIndex?.getRegion?.(this._regionRef);
+      const chunkAspect = region ? region.chunkHeight / region.chunkWidth : 720 / 1280;
+      this.width = width;
+      this.height = Math.max(160, Math.round(width * (chunkAspect * 5 / 3)));
+      this.x = logicalWidth - width - margin;
+      this.y = margin;
+    } else if (this._normalRect) {
+      this.x = this._normalRect.x;
+      this.y = this._normalRect.y;
+      this.width = this._normalRect.width;
+      this.height = this._normalRect.height;
+    }
+    // 定位观察状态作废：回到跟随锚点
+    this.seekActive = false;
+    this.seekPosition = null;
+    this.seekPlayerAnchor = null;
+    this.seekDragging = false;
+    this._updateViewport();
+  }
 
   /** 结束点击定位观察：小地图窗口回到跟随锚点（由玩家移动等条件触发）。 */
   clearSeek() {
@@ -398,13 +487,16 @@ export class Minimap extends UIElement {
     if (!region?.bounds) return;
     const bounds = region.bounds;
     const chunkW = region.chunkWidth;
-    // 固定比例窗口：宽度锚定 1.5 个 chunk，高度按外框长宽比自动填满。
+    const chunkH = region.chunkHeight;
+    // 固定比例窗口：
+    // - 常态：宽度锚定 1.5 个 chunk，高度按外框长宽比自动填满；
+    // - 扩展态（双击）：4×4 格视野，外框占右上角 3/5 屏宽。
     // 窗口以观察锚点（定位观察位置或玩家）为中心连续跟随，贴近 region 边界时贴边（尺寸不变）。
     const innerW = Math.max(1, this.width - this.padding * 2);
     const innerH = Math.max(1, this.height - this.padding * 2);
-    const spanW = chunkW * 1.5;
+    const spanW = this.expanded ? chunkW * 3 : chunkW * 1.5;
     const displayScale = innerW / spanW;
-    const spanH = innerH / displayScale;
+    const spanH = this.expanded ? chunkH * 5 : innerH / displayScale;
     const anchor = this.seekActive ? this.seekPosition : this.playerPosition;
     let minX = bounds.left;
     let minY = bounds.top;
@@ -517,6 +609,9 @@ export class Minimap extends UIElement {
         );
       }
 
+      // 扩展态：按大地图的内容显示世界标记（逻辑节点 城/关/桥/渡/岔/营 + 军团旗）
+      if (this.expanded) this._renderWorldMapEntities(ctx);
+
       // 视野框
       this._renderViewBounds(ctx);
       // 敌人
@@ -542,6 +637,8 @@ export class Minimap extends UIElement {
 
     // 右上角「M」按钮：打开大地图（点击热区见 handleClick）
     this._renderMapButton(ctx);
+    // 左下角扩展/缩回按钮（箭头方向随状态）
+    this._renderToggleButton(ctx);
 
     ctx.restore();
   }
@@ -566,6 +663,128 @@ export class Minimap extends UIElement {
   }
 
   // ─── 内部渲染方法 ───────────────────────────────────────
+
+  /**
+   * 扩展态世界标记（= 被框住的大地图）：通行边线（配置线条）→
+   * 逻辑节点（城/关/桥/渡/岔/营，阵营色描边+字形）→ 军团旗。
+   * 数据由 setWorldMapProviders 惰性注入（与 M 键大地图同源同形状）；
+   * 绘制尺寸用固定屏幕像素（不随小地图比例缩放），保证可读可点。
+   */
+  _renderWorldMapEntities(ctx) {
+    const providers = this._worldMapProviders || {};
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    // 通行边线：编辑器配置的路线（虚线，状态色与 M 键大地图一致）
+    const edges = providers.getRouteEdges?.() || [];
+    ctx.setLineDash([3, 4]);
+    ctx.lineWidth = 1;
+    for (const edge of edges) {
+      const from = edge?.fromPosition;
+      const to = edge?.toPosition;
+      if (!from || !to) continue;
+      const a = this._worldToMinimap(from);
+      const b = this._worldToMinimap(to);
+      if (!a || !b) continue;
+      if (!this._isMarkerVisible(a.x, a.y) && !this._isMarkerVisible(b.x, b.y)) continue;
+      ctx.strokeStyle = WORLD_MAP_EDGE_COLORS[edge.status] || 'rgba(255, 255, 255, 0.25)';
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.stroke();
+    }
+    ctx.setLineDash([]);
+
+    // 场景锚点：小圆点 + sceneId 标签（当前场景金色高亮，与 M 键大地图一致）
+    const anchors = providers.getSceneAnchors?.() || [];
+    const currentSceneId = providers.getCurrentSceneId?.() || null;
+    ctx.font = '11px system-ui, sans-serif';
+    for (const anchor of anchors) {
+      const center = this._worldToMinimap({
+        x: anchor.offset.x + anchor.worldWidth / 2,
+        y: anchor.offset.y + anchor.worldHeight / 2
+      });
+      if (!center || !this._isMarkerVisible(center.x, center.y)) continue;
+      const isCurrent = anchor.sceneId === currentSceneId;
+      ctx.fillStyle = isCurrent ? '#ffe9b0' : 'rgba(255, 255, 255, 0.55)';
+      ctx.beginPath();
+      ctx.arc(center.x, center.y, 3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillText(anchor.sceneId, center.x, center.y + 16);
+    }
+
+    // 逻辑节点：深底方块 + 阵营色描边 + 字形（坐标在 node.position，阵营在 ownerFactionId）
+    const nodes = providers.getLogicNodes?.() || [];
+    ctx.font = '9px system-ui, "Microsoft YaHei", sans-serif';
+    for (const node of nodes) {
+      const pos = this._worldToMinimap({
+        x: node.position?.x ?? node.x,
+        y: node.position?.y ?? node.y
+      });
+      if (!pos || !this._isMarkerVisible(pos.x, pos.y)) continue;
+      const color = worldMapFactionColor(node.ownerFactionId || node.factionId);
+      ctx.fillStyle = 'rgba(20, 16, 12, 0.85)';
+      ctx.fillRect(pos.x - 6, pos.y - 6, 12, 12);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1;
+      ctx.strokeRect(pos.x - 6, pos.y - 6, 12, 12);
+      ctx.fillStyle = color;
+      ctx.fillText(WORLD_MAP_NODE_GLYPHS[node.kind] || '·', pos.x, pos.y + 0.5);
+    }
+
+    // 军团旗与行军路线：虚线路线 + 终点圈 + 旗杆三角旗（阵营色），与 M 键大地图一致
+    const armies = providers.getArmyStates?.() || [];
+    ctx.lineWidth = 1.5;
+    for (const army of armies) {
+      const pos = this._worldToMinimap(army);
+      const routeVisible = pos && this._isMarkerVisible(pos.x, pos.y);
+      // 行军路线：虚线折线 + 终点圈（点为世界坐标）
+      const route = army.route;
+      const routePoints = Array.isArray(route?.points) ? route.points : [];
+      if (routePoints.length > 1) {
+        ctx.save();
+        ctx.setLineDash([3, 4]);
+        ctx.strokeStyle = pos && this._selected === army
+          ? '#ffe9b0'
+          : 'rgba(240, 217, 168, 0.5)';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        let first = true;
+        let lastScreen = null;
+        for (const point of routePoints) {
+          const p = this._worldToMinimap(point);
+          if (!p) continue;
+          if (first) { ctx.moveTo(p.x, p.y); first = false; } else ctx.lineTo(p.x, p.y);
+          lastScreen = p;
+        }
+        ctx.stroke();
+        ctx.setLineDash([]);
+        if (lastScreen) {
+          ctx.strokeStyle = '#ffe9b0';
+          ctx.beginPath();
+          ctx.arc(lastScreen.x, lastScreen.y, 4, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+      if (!routeVisible) continue;
+      const color = worldMapFactionColor(army.factionId);
+      ctx.strokeStyle = color;
+      ctx.beginPath();
+      ctx.moveTo(pos.x, pos.y + 2);
+      ctx.lineTo(pos.x, pos.y - 12);
+      ctx.stroke();
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.moveTo(pos.x, pos.y - 12);
+      ctx.lineTo(pos.x + 9, pos.y - 9);
+      ctx.lineTo(pos.x, pos.y - 6);
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.restore();
+  }
 
   _renderViewBounds(ctx) {
     if (!this.viewBounds) return;
@@ -682,24 +901,73 @@ export class Minimap extends UIElement {
   }
 
   /**
-   * 处理点击事件：点击小地图把视野框与相机定位到对应世界位置
-   *（兼容入口；按住拖动请走 beginSeekDrag/moveSeekDrag/endSeekDrag）。
-   * 右上角「M」按钮点击改为打开大地图。
+   * 处理点击事件（兼容入口）：右上角「M」按钮打开大地图；
+   * 左下角箭头按钮切换扩展中间态；框内其余区域只吞不响应（小地图纯展示）。
    * @param {number} x - 屏幕坐标
    * @param {number} y - 屏幕坐标
    * @returns {boolean} 是否消费了点击
    */
   handleClick(x, y) {
     if (!this.visible || !this.containsPoint(x, y)) return false;
-    // 右上角「M」按钮优先：打开大地图，不进入点击定位
+    // 右上角「M」按钮优先：打开大地图
     if (this.isMapButtonHit(x, y)) {
       this.onOpenWorldMap?.();
       return true;
     }
-    // 地图未就绪：吞掉点击，避免穿透到世界移动
-    if (!this._mapCache) return true;
-    this.beginSeekDrag(x, y);
+    // 左下角箭头按钮：切换扩展中间态
+    if (this.isToggleHit(x, y)) {
+      this.toggleExpanded();
+      return true;
+    }
+    // 框内其余区域：吞掉点击（避免穿透到世界移动），不响应
     return true;
+  }
+
+  /** 按下候选（按下沿调用）：仅作「按住中持续吞输入」的标记，不触发任何行为。 */
+  beginPressCandidate(x, y) {
+    this._press = { x, y };
+  }
+
+  /**
+   * 左下角扩展/缩回按钮热区（屏幕坐标）。
+   * @returns {{x: number, y: number, w: number, h: number}}
+   */
+  _toggleButtonRect() {
+    const size = this.toggleButtonSize;
+    return {
+      x: this.x + this.padding,
+      y: this.y + this.height - this.padding - size,
+      w: size,
+      h: size
+    };
+  }
+
+  /** 指针是否落在左下角扩展/缩回按钮热区内（屏幕坐标）。 */
+  isToggleHit(x, y) {
+    if (!this.visible) return false;
+    const button = this._toggleButtonRect();
+    return x >= button.x && x <= button.x + button.w
+      && y >= button.y && y <= button.y + button.h;
+  }
+
+  /** 绘制左下角扩展/缩回按钮：箭头方向随状态（常态 ↘ 扩展 / 中地图 ↖ 缩回）。 */
+  _renderToggleButton(ctx) {
+    const button = this._toggleButtonRect();
+    ctx.save();
+    ctx.fillStyle = 'rgba(20, 15, 10, 0.85)';
+    this._roundRect(ctx, button.x, button.y, button.w, button.h, 3);
+    ctx.fill();
+    ctx.strokeStyle = '#8B7355';
+    ctx.lineWidth = 1;
+    this._roundRect(ctx, button.x, button.y, button.w, button.h, 3);
+    ctx.stroke();
+    ctx.fillStyle = '#f0d9a8';
+    ctx.font = `bold ${Math.round(button.h * 0.62)}px system-ui, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    // 小地图 → 箭头朝左下（框向左下扩展成中地图）；中地图 → 箭头朝右上（缩回右上小框）
+    ctx.fillText(this.expanded ? '↗' : '↙', button.x + button.w / 2, button.y + button.h / 2 + 0.5);
+    ctx.restore();
   }
 
 }
