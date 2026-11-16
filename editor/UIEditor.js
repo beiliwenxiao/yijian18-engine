@@ -246,6 +246,8 @@ export class UIEditor {
       loginMobile: this._cloneDefault('loginMobile')
     };
     this.selectedId = null;
+    // 多选集合（与面板编辑器同模式）：selectedId 为主选中项，属性面板跟随它
+    this.selectedIds = new Set();
     this.selectedPanelPart = null;
     this.scale = 1; // 预览缩放
 
@@ -356,6 +358,7 @@ export class UIEditor {
     const state = JSON.parse(snapshot);
     this.layouts = state.layouts;
     this.selectedId = null;
+    this.selectedIds.clear();
     this.selectedPanelPart = null;
     this._dragState = null;
     // 显隐/锁定不参与撤销历史，恢复后仍以持久化状态为准
@@ -704,6 +707,7 @@ export class UIEditor {
         this.container.querySelectorAll('.uie-platform-switch button')
           .forEach(b => b.classList.toggle('active', b === btn));
         this.selectedId = null;
+        this.selectedIds.clear();
         this.selectedPanelPart = null;
         this._render();
       });
@@ -723,6 +727,8 @@ export class UIEditor {
     this._updateHistoryButtons();
     this._setupResizer(this.container.querySelector('#uie-resizer-left'), this.container.querySelector('#uie-list'), 160, 420);
     this._setupResizer(this.container.querySelector('#uie-resizer-right'), this.container.querySelector('#uie-props'), 200, 440);
+    // 空白区按下拖动 = 框选多选（与面板编辑器同交互）；部件自身的 mousedown 会冒泡，处理函数里排除
+    this.container.querySelector('#uie-stage').addEventListener('mousedown', (e) => this._onStageMouseDown(e));
 
     this.container.querySelector('#uie-save').addEventListener('click', async () => {
       try {
@@ -760,6 +766,7 @@ export class UIEditor {
         const snapshot = this._createHistorySnapshot();
         this.layouts[this.platform] = this._cloneDefault(this.platform);
         this.selectedId = null;
+        this.selectedIds.clear();
         this.selectedPanelPart = null;
         this._saveEditorState(); // 当前平台显隐/锁定一并复位
         this._commitHistorySnapshot(snapshot);
@@ -810,8 +817,8 @@ export class UIEditor {
       return;
     }
     const snapshot = this._createHistorySnapshot();
-    layout.components.push(structuredClone(template));
-    this.selectedId = componentId;
+    const added = layout.components[layout.components.push(structuredClone(template)) - 1];
+    this._setComponentSelection([added], added.id);
     this.selectedPanelPart = null;
     this._commitHistorySnapshot(snapshot);
     this._setStatus(`已添加 Android 按钮：${template.label}（未保存）`);
@@ -830,7 +837,7 @@ export class UIEditor {
     if (!confirm(`删除 Android 按钮“${component.label}”？保存后运行时将不再显示它。`)) return;
     const snapshot = this._createHistorySnapshot();
     layout.components.splice(index, 1);
-    this.selectedId = null;
+    this._clearComponentSelection();
     this._commitHistorySnapshot(snapshot);
     this._setStatus(`已删除 Android 按钮：${component.label}（未保存）`);
     this._render();
@@ -886,7 +893,7 @@ export class UIEditor {
       };
     }
     const component = this._createQuickComponent(layout, type, label, extra);
-    this.selectedId = component.id;
+    this._setComponentSelection([component], component.id);
     this.selectedPanelPart = null;
     if (labelInput) labelInput.value = '';
     this._commitHistorySnapshot(snapshot);
@@ -950,7 +957,7 @@ export class UIEditor {
       skillId,
       ...(skill.icon ? { icon: skill.icon } : {})
     });
-    this.selectedId = created.id;
+    this._setComponentSelection([created], created.id);
     this.selectedPanelPart = null;
     this._commitHistorySnapshot(snapshot);
     this._setStatus(`已新建技能位并绑定「${skill.name}」：${created.id}（未保存）`);
@@ -1085,7 +1092,7 @@ export class UIEditor {
       .map(comp => {
         const hidden = comp.editorHidden === true;
         const locked = comp.editorLocked === true;
-        const selected = comp.id === this.selectedId;
+        const selected = this.selectedIds.has(comp.id);
         const typeDef = UI_COMPONENT_TYPES[resolveComponentType(comp)];
         return `
         <div class="uie-list-item${selected ? ' selected' : ''}${hidden ? ' hidden' : ''}" data-list-id="${escapeHtml(comp.id)}">
@@ -1104,13 +1111,18 @@ export class UIEditor {
         const action = e.target.closest('[data-list-action]')?.dataset.listAction;
         if (action === 'visibility') {
           comp.editorHidden = comp.editorHidden !== true;
-          if (comp.editorHidden && this.selectedId === comp.id) this.selectedId = null;
+          if (comp.editorHidden && this.selectedIds.has(comp.id)) {
+            this.selectedIds.delete(comp.id);
+            if (this.selectedId === comp.id) {
+              this.selectedId = this._getSelectedComponents()[0]?.id || null;
+            }
+          }
           this._saveEditorState();
         } else if (action === 'lock') {
           comp.editorLocked = comp.editorLocked !== true;
           this._saveEditorState();
         } else {
-          this.selectedId = comp.id;
+          this._setComponentSelection([comp], comp.id);
           this.selectedPanelPart = null;
         }
         this._render();
@@ -1194,6 +1206,7 @@ export class UIEditor {
       .uie-login-preview-action { display:flex; align-items:center; justify-content:center; border:1px solid rgba(255,255,255,0.18); border-radius:6px; background:#4b6728; color:#fff; font-size:12px; pointer-events:none; }
       .uie-comp.selected { border-color:#ff5; background:rgba(255,255,100,0.25); z-index:10; }
       .uie-comp .uie-handle { position:absolute; z-index:12; right:-5px; bottom:-5px; width:12px; height:12px; background:#ff5; border:1px solid #000; cursor:nwse-resize; }
+      .uie-marquee { position:absolute; z-index:30; border:1px dashed #4CAF50; background:rgba(76,175,80,0.12); pointer-events:none; }
       .uie-panel-part-frame { position:absolute; z-index:6; box-sizing:border-box; border:1px dashed rgba(255,220,80,0.95); background:rgba(255,220,80,0.08); cursor:move; pointer-events:auto; overflow:visible; }
       .uie-panel-part-frame.line { background:rgba(255,145,70,0.1); border-color:rgba(255,160,80,0.98); }
       .uie-panel-part-frame.selected { z-index:11; border-color:#7dffad; background:rgba(80,255,145,0.16); box-shadow:0 0 0 1px rgba(0,0,0,0.65), 0 0 8px rgba(80,255,145,0.7); }
@@ -1373,7 +1386,7 @@ export class UIEditor {
       el.dataset.uiType = uiType;
       if (uiType === 'avatar') el.classList.add('quick-avatar');
       else if (uiType === 'healthbar' || uiType === 'manabar') el.classList.add('quick-bar', uiType);
-      if (comp.id === this.selectedId) el.classList.add('selected');
+      if (this.selectedIds.has(comp.id)) el.classList.add('selected');
       el.style.left = (comp.x * this.scale) + 'px';
       el.style.top = (comp.y * this.scale) + 'px';
       el.style.width = (comp.width * this.scale) + 'px';
@@ -1385,7 +1398,7 @@ export class UIEditor {
       if (comp.kind === 'panel' && panelDef) {
         el.textContent = '';
         el.style.background = 'none';
-        el.style.border = comp.id === this.selectedId ? '2px solid #ff5' : '1px solid rgba(76,175,80,0.4)';
+        el.style.border = this.selectedIds.has(comp.id) ? '2px solid #ff5' : '1px solid rgba(76,175,80,0.4)';
         el.style.overflow = 'hidden';
         const cvs = document.createElement('canvas');
         const canvasWidth = Math.round(comp.width * this.scale);
@@ -1447,11 +1460,13 @@ export class UIEditor {
       // 拖拽
       el.addEventListener('mousedown', (e) => this._startDrag(e, comp, 'move'));
 
-      // 缩放手柄
-      const handle = document.createElement('div');
-      handle.className = 'uie-handle';
-      handle.addEventListener('mousedown', (e) => { e.stopPropagation(); this._startDrag(e, comp, 'resize'); });
-      el.appendChild(handle);
+      // 缩放手柄：仅单选部件显示（多选/未选中不显示，避免歧义）
+      if (this.selectedIds.size === 1 && this.selectedId === comp.id) {
+        const handle = document.createElement('div');
+        handle.className = 'uie-handle';
+        handle.addEventListener('mousedown', (e) => { e.stopPropagation(); this._startDrag(e, comp, 'resize'); });
+        el.appendChild(handle);
+      }
 
       stage.appendChild(el);
     }
@@ -1459,22 +1474,149 @@ export class UIEditor {
     this._renderProps();
   }
 
+  // ─── 多选（与面板编辑器同模式）：Ctrl/⌘+点击增减、空白拖动框选、整组移动 ───
+
+  _getLayoutComponents() {
+    return this.layouts[this.platform]?.components || [];
+  }
+
+  /** 当前多选集合对应的组件对象（跳过编辑器中隐藏的部件）。 */
+  _getSelectedComponents() {
+    if (this.selectedIds.size === 0) return [];
+    return this._getLayoutComponents().filter(comp =>
+      this.selectedIds.has(comp.id) && comp.editorHidden !== true);
+  }
+
+  _setComponentSelection(components, primaryId = null) {
+    const selected = components || [];
+    this.selectedIds = new Set(selected.map(comp => comp.id));
+    this.selectedId = primaryId && this.selectedIds.has(primaryId)
+      ? primaryId
+      : (selected[selected.length - 1]?.id || null);
+  }
+
+  _clearComponentSelection() {
+    this.selectedIds.clear();
+    this.selectedId = null;
+  }
+
+  /**
+   * 舞台空白区按下：拖出虚线框选区，松开时选中矩形相交的所有部件
+   * （跳过隐藏/锁定部件；Ctrl/⌘/Shift 叠加已有选择；单击空白清空选择）。
+   */
+  _onStageMouseDown(e) {
+    if (e.button !== 0) return;
+    if (!EDITABLE_LAYOUT_PLATFORMS.includes(this.platform)) return;
+    if (e.target.closest?.('.uie-comp')) return; // 部件命中走 _startDrag/_startPanelPartDrag
+    const stage = this.container.querySelector('#uie-stage');
+    if (!stage) return;
+    e.preventDefault();
+    this.selectedPanelPart = null;
+    this._dragState = {
+      target: 'marquee',
+      additive: e.ctrlKey || e.metaKey || e.shiftKey,
+      baseline: this._getSelectedComponents()
+    };
+    const marquee = document.createElement('div');
+    marquee.className = 'uie-marquee';
+    stage.appendChild(marquee);
+    const ds = this._dragState;
+
+    const toStageXY = (event) => {
+      const rect = stage.getBoundingClientRect();
+      return {
+        x: (event.clientX - rect.left) / this.scale,
+        y: (event.clientY - rect.top) / this.scale
+      };
+    };
+    const start = toStageXY(e);
+    ds.startX = start.x;
+    ds.startY = start.y;
+
+    const onMove = (event) => {
+      if (this._dragState !== ds) return;
+      const current = toStageXY(event);
+      ds.currentX = current.x;
+      ds.currentY = current.y;
+      marquee.style.left = (Math.min(ds.startX, current.x) * this.scale) + 'px';
+      marquee.style.top = (Math.min(ds.startY, current.y) * this.scale) + 'px';
+      marquee.style.width = (Math.abs(current.x - ds.startX) * this.scale) + 'px';
+      marquee.style.height = (Math.abs(current.y - ds.startY) * this.scale) + 'px';
+    };
+    const onUp = (event) => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+      marquee.remove();
+      if (this._dragState !== ds) return;
+      this._dragState = null;
+      const end = toStageXY(event);
+      const rect = {
+        x: Math.min(ds.startX, end.x),
+        y: Math.min(ds.startY, end.y),
+        width: Math.abs(end.x - ds.startX),
+        height: Math.abs(end.y - ds.startY)
+      };
+      if (rect.width > 2 && rect.height > 2) {
+        const inRect = this._getLayoutComponents().filter(comp =>
+          comp.editorHidden !== true &&
+          comp.editorLocked !== true &&
+          comp.x < rect.x + rect.width &&
+          comp.x + comp.width > rect.x &&
+          comp.y < rect.y + rect.height &&
+          comp.y + comp.height > rect.y
+        );
+        const selected = ds.additive
+          ? [...new Map([...ds.baseline, ...inRect].map(comp => [comp.id, comp])).values()]
+          : inRect;
+        this._setComponentSelection(selected);
+        if (selected.length > 1) {
+          this._setStatus(`已框选 ${selected.length} 个部件：拖动任意选中部件整组移动（Ctrl/⌘+点击可增减）`);
+        }
+      } else if (!ds.additive) {
+        this._clearComponentSelection();
+      }
+      this._render();
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  }
+
   _startDrag(e, comp, mode) {
     // 锁定的组件仅可选中，不可拖动/缩放（左侧列表解锁后恢复）
     if (comp.editorLocked === true) {
-      this.selectedId = comp.id;
+      this._setComponentSelection([comp], comp.id);
       this.selectedPanelPart = null;
       this._render();
       this._setStatus('组件已锁定：仅可选中，在左侧列表解锁后才能拖动/缩放', true);
       return;
     }
     e.preventDefault();
-    this.selectedId = comp.id;
     this.selectedPanelPart = null;
+
+    // Ctrl/⌘ + 点击：把部件加入/移出多选集合（不启动拖拽）
+    if (e.ctrlKey || e.metaKey) {
+      const next = this._getLayoutComponents().filter(candidate => this.selectedIds.has(candidate.id));
+      const index = next.findIndex(candidate => candidate.id === comp.id);
+      if (index >= 0) next.splice(index, 1);
+      else next.push(comp);
+      this._setComponentSelection(next, comp.id);
+      this._render();
+      return;
+    }
+
+    // 命中未选中部件 → 重置为单选；命中已选中部件 → 保持整组选择一起拖动
+    if (!this.selectedIds.has(comp.id)) {
+      this._setComponentSelection([comp], comp.id);
+    } else {
+      this.selectedId = comp.id; // 主选中项跟随命中的部件（属性面板/删除按钮跟随）
+    }
+    const movingParts = this._getSelectedComponents().filter(candidate => candidate.editorLocked !== true);
+    const multiMove = movingParts.length > 1 && mode === 'move';
     this._dragState = {
       target: 'component',
-      mode,
+      mode: multiMove ? 'move-selection' : mode,
       comp,
+      positions: movingParts.map(candidate => ({ comp: candidate, x: candidate.x, y: candidate.y })),
       historySnapshot: this._createHistorySnapshot(),
       startMouseX: e.clientX,
       startMouseY: e.clientY,
@@ -1500,7 +1642,7 @@ export class UIEditor {
     e.preventDefault();
     e.stopPropagation();
     const transform = this._getPanelContentTransform(comp, panelDef);
-    this.selectedId = null;
+    this._clearComponentSelection();
     this.selectedPanelPart = { panelId: comp.id, partId: part.id };
     this._dragState = {
       target: 'panelPart',
@@ -1570,6 +1712,17 @@ export class UIEditor {
 
     const dx = (e.clientX - ds.startMouseX) / this.scale;
     const dy = (e.clientY - ds.startMouseY) / this.scale;
+    if (ds.mode === 'move-selection') {
+      // 多选整组移动：每个部件从各自的起始位置加同一偏移（面板编辑器同款）
+      const offsetX = Math.round(dx);
+      const offsetY = Math.round(dy);
+      for (const position of ds.positions) {
+        position.comp.x = position.x + offsetX;
+        position.comp.y = position.y + offsetY;
+      }
+      this._render();
+      return;
+    }
     if (ds.mode === 'move') {
       ds.comp.x = Math.round(ds.startX + dx);
       ds.comp.y = Math.round(ds.startY + dy);
