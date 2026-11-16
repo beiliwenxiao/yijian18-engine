@@ -151,7 +151,31 @@ describe('PlayerLpcFrameMapper（整帧角色模式）', () => {
     hook(f.skeletonComponent);
     expect(f.played).toContain('idle_down');
     expect(f.overrides.at(-1).patch.frames[0].sy).toBe(2 * 64);
-    expect(f.overrides.at(-1).patch.loop).toBeUndefined();    // 恢复恒循环
+    expect(f.overrides.at(-1).patch.loop).toBe(true);         // 显式写回恒循环（清除跳跃残留的 loop:false）
+    expect(f.overrides.at(-1).patch.keepFrameRatio).toBe(false); // 显式清除跳跃残留的按比例保留游标
+  });
+
+  it('跳跃落地后覆盖层无残留：后续动作恢复循环推进（回归：跳一次后全部动作只播一轮）', () => {
+    const f = makeFixture();
+    const hook = createPlayerLpcFrameMapper(f.entity);
+    // 模拟 SkeletonComponent.setSlotOverride 的持久合并语义：字段写入后留存，undefined 不清除
+    let layer = {};
+    f.skeletonComponent.setSlotOverride = (slotId, patch) => {
+      for (const [key, value] of Object.entries(patch)) {
+        if (value === undefined) continue;
+        layer[key] = value;
+      }
+      f.overrides.push({ slotId, patch: { ...patch } });
+    };
+
+    f.entity._jumping = true;                                 // 起跳：写 loop:false
+    hook(f.skeletonComponent);
+    expect(layer.loop).toBe(false);
+
+    f.entity._jumping = false;                                // 落地回待机
+    hook(f.skeletonComponent);
+    expect(layer.loop).toBe(true);                            // 覆盖层最终状态恢复循环（无跳跃残留）
+    expect(layer.keepFrameRatio).toBe(false);
   });
 
   it('状态不变时不重复写覆盖层', () => {

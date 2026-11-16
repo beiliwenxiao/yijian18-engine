@@ -116,10 +116,12 @@ export function createPlayerLpcFrameMapper(entity) {
     if (signature === lastKey) return;
 
     lastKey = signature;
+    // 覆盖层是持久合并（undefined 不清旧字段）：跳跃写入的 loop:false / keepFrameRatio:true
+    // 会残留到后续所有剪辑——非跳跃分支必须显式写回，否则跳过一次后所有动作只播一轮就冻在末帧。
     skeletonComponent.setSlotOverride?.('frame', clip === 'jump'
       // 跳跃：非循环（播完停末帧，不再循环起跳动作）；空中换向切帧表按比例保留游标（不重播起跳）
       ? { frames, fps: entry.fps, loop: false, keepFrameRatio: true }
-      : { frames, fps: entry.fps });
+      : { frames, fps: entry.fps, loop: true, keepFrameRatio: false });
     // 整帧模式的左右由 LPC 帧本身表达，不再使用整体镜像
     if (sprite.flipX !== false) sprite.flipX = false;
   };
