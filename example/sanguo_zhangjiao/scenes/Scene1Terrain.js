@@ -1538,6 +1538,8 @@ export class Scene1Terrain {
     img.onerror = () => {
       if (this._released || token !== this._cacheLifecycleToken) return;
       base._loaded = false;
+      base._loadFailed = true;
+      console.warn('[WorldMapBase] 底图加载失败', { sceneId: this._editorSceneId, src: base.src });
     };
     img.src = base.src;
   }
@@ -1551,7 +1553,19 @@ export class Scene1Terrain {
    */
   _renderWorldMapBase(ctx) {
     const base = this._worldMapBase;
-    if (!base || base.visible === false || !base._loaded || !base._img) return;
+    if (!base || base.visible === false || !base._loaded || !base._img) {
+      // 一次性诊断：底图存在但未就绪时打点（不刷屏），定位「没显示」的原因
+      if (base && base.visible !== false && !base._diagLogged && (base._loadFailed || base._loading)) {
+        base._diagLogged = true;
+        Logger.log('[WorldMapBase] 底图未就绪', {
+          sceneId: this._editorSceneId,
+          src: base.src,
+          loading: base._loading,
+          loadFailed: base._loadFailed || false
+        });
+      }
+      return;
+    }
     // chunk 矩形以 worldOffset（chunk 原点）为权威：centerX/centerY 会被地形椭圆改写，不可用。
     const left = this.worldOffset.x;
     const top = this.worldOffset.y;
@@ -1570,6 +1584,16 @@ export class Scene1Terrain {
           base._img, crop.sx, crop.sy, crop.sw, crop.sh,
           left, top, this.basinWidth, this.basinHeight
         );
+      }
+      if (!base._drawLogged) {
+        base._drawLogged = true;
+        Logger.log('[WorldMapBase] 底图已绘制', {
+          sceneId: this._editorSceneId,
+          src: base.src,
+          row: base.row,
+          col: base.col,
+          chunk: { left, top, w: this.basinWidth, h: this.basinHeight }
+        });
       }
     } catch (_error) { /* 图片尚未就绪等异常静默，下一帧重画 */ }
   }

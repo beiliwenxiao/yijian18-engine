@@ -765,8 +765,8 @@ export class SceneRenderPipeline {
       : inCombat
         ? { background: 'rgba(139, 0, 0, 0.7)', border: '#ff0000', primary: armyAlive ? '军队战斗中' : '个人战斗中', secondary: 'combat', secondaryColor: null }
         : climbing
-          ? { background: 'rgba(90, 200, 140, 0.82)', border: '#5adc96', primary: '攀爬中', secondary: null, secondaryColor: null }
-          : { background: 'rgba(40, 90, 45, 0.72)', border: '#8fd6a1', primary: '状态正常', secondary: null, secondaryColor: null };
+          ? { background: 'rgba(74, 58, 20, 0.82)', border: '#f0d080', primary: '攀爬中', secondary: null, secondaryColor: null }
+          : { background: 'rgba(10, 16, 30, 0.82)', border: '#c49a52', primary: '状态正常', secondary: null, secondaryColor: null };
 
     const minimap = scene?.minimap;
     const layoutRect = this.context?.ui?.layout?.getScreenHudRect?.('combatStateBadge') || null;

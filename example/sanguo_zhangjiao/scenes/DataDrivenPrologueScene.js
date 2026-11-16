@@ -565,7 +565,15 @@ export class DataDrivenPrologueScene extends BaseGameScene {
     const anchor = worldIndex?.findScene?.(chunk?.sceneId) || null;
     const region = anchor ? worldIndex.getRegion(anchor.regionId) : null;
     const background = typeof region?.backgroundImage === 'string' ? region.backgroundImage.trim() : '';
-    if (!background) return null;
+    if (!background) {
+      console.warn('[WorldMapBase] 未生成底图信息', {
+        sceneId: chunk?.sceneId,
+        hasWorldIndex: !!worldIndex,
+        hasAnchor: !!anchor,
+        backgroundImage: region?.backgroundImage || null
+      });
+      return null;
+    }
     const resolve = src => (
       this.assetManager?.resolveAssetPath ? this.assetManager.resolveAssetPath(src) : src
     );

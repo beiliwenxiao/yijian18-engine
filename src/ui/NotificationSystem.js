@@ -75,7 +75,7 @@ class Notification {
   getColor() {
     switch (this.type) {
       case 'success':
-        return '#00ff00';
+        return '#f0d080';
       case 'warning':
         return '#ffaa00';
       case 'error':
