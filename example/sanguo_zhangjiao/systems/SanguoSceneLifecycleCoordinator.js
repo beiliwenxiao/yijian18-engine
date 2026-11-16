@@ -562,6 +562,15 @@ function renderPostPipeline(ctx) {
   this.endingPresentationView?.render?.(ctx, this.logicalWidth, this.logicalHeight);
   // 大地图：压在 HUD/结算层之上；全景过场仍保持最顶层。
   this.worldMapPanel?.render?.(ctx);
+  // 大地图打开期间，左上角常驻 HUD 保持显示（时间/天气、战斗状态、头像+血条蓝条）
+  if (this.worldMapPanel?.visible) {
+    const layout = this.context?.ui?.layout;
+    if (layout?.isOnboardingComponentVisible?.('timeWeatherBadge') !== false) {
+      this._ensureRenderPipeline().renderTimeWeatherBadge(ctx);
+    }
+    this.renderCombatStateUI(ctx);
+    this.playerStatusHUD?.render?.(ctx);
+  }
   // 全景覆盖层最后绘制：压住 HUD、对话与结算面板。
   this.panoramaOverlay?.render?.(ctx, this.logicalWidth, this.logicalHeight);
 }
