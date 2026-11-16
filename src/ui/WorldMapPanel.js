@@ -35,6 +35,10 @@ const MAX_ZOOM = 4;
 const ZOOM_STEP = 1.25;
 /** 按下后移动超过该距离视为拖动，不再触发点选。 */
 const DRAG_THRESHOLD = 4;
+/** 标记圆点半径（10px 方便鼠标点击与手指点按）。 */
+const MARKER_RADIUS = 10;
+/** 标记命中半径（略大于圆点，手指也能点中）。 */
+const MARKER_HIT_RADIUS = 16;
 /** 惯性滑动：松手速度阈值、速度上限、阻尼与停止阈值。 */
 const INERTIA_START_SPEED = 150;
 const INERTIA_MAX_SPEED = 6000;
@@ -298,17 +302,23 @@ export class WorldMapPanel extends UIElement {
   handleInput({ inputManager } = {}) {
     if (!this.visible) return false;
     const now = this._now();
-    // 惯性先积分；本帧若有按下/滚轮/双指，会在下面立刻停住。
-    this._updateInertia(now);
-
     const touchPoints = inputManager?.getTouchPoints?.() || [];
     const touchCount = Array.isArray(touchPoints) ? touchPoints.length : 0;
     const mouse = inputManager?.getMousePosition?.() || { x: 0, y: 0 };
     const down = inputManager?.isMouseButtonDown?.(0) === true;
+    const mouseState = inputManager?.mouse;
+
+    // 新输入优先：本帧有按下/双指/点击沿时先停住惯性，不再积分。
+    // 否则滑行中轻点标记会先被惯性推走一帧，命中落到标记外而点不中。
+    if (down || touchCount >= 2
+      || (mouseState?.clicked === true && mouseState?.clickedButton === 0)) {
+      this._stopInertia();
+    } else {
+      this._updateInertia(now);
+    }
 
     // 快速点击（按下与松开落在同一帧）不会进入按住轮询，用 clicked 沿补一次点击。
     // 双指手势结束后的 clicked 残留必须忽略，否则松手会误触标记。
-    const mouseState = inputManager?.mouse;
     if (mouseState?.clicked === true && mouseState?.clickedButton === 0 && !down
       && !this._wasMouseDown && mouseState.dragged !== true && !this._pinchedSinceTouchStart) {
       this._wasMouseDown = false;
@@ -626,11 +636,11 @@ export class WorldMapPanel extends UIElement {
 
     const panel = this._panelRect();
     ctx.fillStyle = 'rgba(24, 20, 15, 0.96)';
-    this._roundRect(ctx, panel.x, panel.y, panel.w, panel.h, 10);
+    this._roundRect(ctx, panel.x, panel.y, panel.w, panel.h, 0);
     ctx.fill();
     ctx.strokeStyle = '#8B7355';
     ctx.lineWidth = 2;
-    this._roundRect(ctx, panel.x, panel.y, panel.w, panel.h, 10);
+    this._roundRect(ctx, panel.x, panel.y, panel.w, panel.h, 0);
     ctx.stroke();
 
     // 标题
@@ -857,7 +867,7 @@ export class WorldMapPanel extends UIElement {
     return this.mapToScreen(map.x, map.y);
   }
 
-  /** 命中标记：军团 > 建筑 NPC > 逻辑节点 > 旧城池推导（14px 半径）。 */
+  /** 命中标记：军团 > 建筑 NPC > 逻辑节点 > 旧城池推导（16px 命中半径，圆点 10px）。 */
   _markerAt(x, y) {
     const legacies = this._logicNodes.length === 0
       ? this._cities.map(city => ({ ...city, kind: 'city' }))
@@ -867,7 +877,7 @@ export class WorldMapPanel extends UIElement {
     for (const marker of candidates) {
       const screen = this._markerScreen(marker);
       const distance = Math.hypot(screen.x - x, screen.y - y);
-      if (distance > 14) continue;
+      if (distance > MARKER_HIT_RADIUS) continue;
       if (!best || distance < best.distance) best = { marker, distance };
     }
     return best ? best.marker : null;
@@ -965,14 +975,8 @@ export class WorldMapPanel extends UIElement {
   // ─── 内部：渲染 ─────────────────────────────────────────
 
   _panelRect() {
-    const w = Math.min(this.width - PAD, 1000);
-    const h = Math.min(this.height - PAD, 720);
-    return {
-      x: this.x + (this.width - w) / 2,
-      y: this.y + (this.height - h) / 2,
-      w,
-      h
-    };
+    // 全屏模态：面板铺满整个覆盖层（M 键大地图窗口保持全屏）。
+    return { x: this.x, y: this.y, w: this.width, h: this.height };
   }
 
   _buttonRects() {
@@ -1090,7 +1094,7 @@ export class WorldMapPanel extends UIElement {
       const color = CITY_FACTION_COLORS[city.factionId] || CITY_DEFAULT_COLOR;
       ctx.fillStyle = color;
       ctx.beginPath();
-      ctx.arc(screen.x, screen.y, 5, 0, Math.PI * 2);
+      ctx.arc(screen.x, screen.y, MARKER_RADIUS, 0, Math.PI * 2);
       ctx.fill();
       ctx.strokeStyle = 'rgba(0, 0, 0, 0.65)';
       ctx.lineWidth = 1.5;
@@ -1100,19 +1104,19 @@ export class WorldMapPanel extends UIElement {
       ctx.lineWidth = 1.5;
       ctx.beginPath();
       ctx.moveTo(screen.x, screen.y);
-      ctx.lineTo(screen.x, screen.y - 16);
+      ctx.lineTo(screen.x, screen.y - 22);
       ctx.stroke();
       ctx.fillStyle = color;
       ctx.beginPath();
-      ctx.moveTo(screen.x, screen.y - 16);
-      ctx.lineTo(screen.x + 9, screen.y - 12);
-      ctx.lineTo(screen.x, screen.y - 8);
+      ctx.moveTo(screen.x, screen.y - 22);
+      ctx.lineTo(screen.x + 9, screen.y - 18);
+      ctx.lineTo(screen.x, screen.y - 14);
       ctx.closePath();
       ctx.fill();
       ctx.font = 'bold 12px system-ui, "Microsoft YaHei", sans-serif';
       ctx.fillStyle = '#f7e9c6';
       ctx.textAlign = 'left';
-      ctx.fillText(city.name, screen.x + 11, screen.y - 12);
+      ctx.fillText(city.name, screen.x + 13, screen.y - 18);
       ctx.textAlign = 'center';
       ctx.font = '11px system-ui, sans-serif';
     }
@@ -1132,11 +1136,11 @@ export class WorldMapPanel extends UIElement {
       ctx.strokeStyle = `rgba(89, 217, 107, ${0.25 + pulse * 0.35})`;
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.arc(screen.x, screen.y, 8 + pulse * 5, 0, Math.PI * 2);
+      ctx.arc(screen.x, screen.y, 14 + pulse * 5, 0, Math.PI * 2);
       ctx.stroke();
       ctx.fillStyle = PLAYER_COLOR;
       ctx.beginPath();
-      ctx.arc(screen.x, screen.y, 5, 0, Math.PI * 2);
+      ctx.arc(screen.x, screen.y, MARKER_RADIUS, 0, Math.PI * 2);
       ctx.fill();
       ctx.strokeStyle = '#ffffff';
       ctx.lineWidth = 1.5;
@@ -1218,7 +1222,7 @@ export class WorldMapPanel extends UIElement {
       ctx.strokeStyle = '#ffe9b0';
       ctx.lineWidth = 1.5;
       ctx.beginPath();
-      ctx.arc(last.x, last.y, 7, 0, Math.PI * 2);
+      ctx.arc(last.x, last.y, MARKER_RADIUS, 0, Math.PI * 2);
       ctx.stroke();
     }
   }
@@ -1293,19 +1297,19 @@ export class WorldMapPanel extends UIElement {
       ctx.strokeStyle = color;
       ctx.lineWidth = 1.5;
       ctx.beginPath();
-      ctx.arc(screen.x, screen.y, 5, 0, Math.PI * 2);
+      ctx.arc(screen.x, screen.y, MARKER_RADIUS, 0, Math.PI * 2);
       ctx.stroke();
       if (npc.unlocked) {
         ctx.fillStyle = color;
         ctx.beginPath();
-        ctx.arc(screen.x, screen.y, 2.2, 0, Math.PI * 2);
+        ctx.arc(screen.x, screen.y, 5, 0, Math.PI * 2);
         ctx.fill();
       }
       ctx.fillStyle = color;
       ctx.font = '11px system-ui, "Microsoft YaHei", sans-serif';
       ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
-      ctx.fillText(npc.name || '', screen.x + 8, screen.y - 2);
+      ctx.fillText(npc.name || '', screen.x + 13, screen.y - 2);
       ctx.textAlign = 'center';
     }
   }

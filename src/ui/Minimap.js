@@ -259,6 +259,11 @@ export class Minimap extends UIElement {
       return;
     }
     if (this._terrains.length === 0) return;
+    // terrain 静态缓存未就绪时禁止烘焙首帧缩略图：此时 _combinedGroundCache/_bgImageCache
+    // 还是空的，会把空白或旧底图写进缓存并标记为已构建。保持脏标记，交给下一次 update() 重试。
+    for (const terrain of this._terrains) {
+      if (terrain && terrain._staticCachePrepared === false) return;
+    }
 
     const region = this._worldIndex?.getRegion?.(this._regionRef);
     if (!region) return;
@@ -434,8 +439,16 @@ export class Minimap extends UIElement {
       && y + margin >= transform.clipTop && y - margin <= transform.clipBottom;
   }
 
-  /** 更新动态标记和裁剪窗口；背景缓存只能由区域激活时显式建立。 */
-  update() {
+  /**
+   * 更新缩略图与裁剪窗口。
+   * 缓存被失效（terrain 集合/世界索引变化）后必须收敛到一次重建，否则区域激活时
+   * 建立的旧位图会一直留在屏幕上；缓存干净时 _tryBuildCache 立即返回，不产生重绘开销。
+   * @param {number} [deltaTime=0] - 帧间隔 ms
+   */
+  update(deltaTime = 0) {
+    if (this._builtVersion !== this._cacheVersion || !this._mapCache) {
+      this._tryBuildCache(deltaTime);
+    }
     this._updateViewport();
   }
 

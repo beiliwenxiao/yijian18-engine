@@ -252,7 +252,7 @@ export class SceneStreamingRuntime {
    * 从磁盘 canonical 局部数据准备 detached chunk/terrain 草稿。
    * 异步资源与静态缓存准备期间不修改当前 chunk、terrain 或 session；调用方在同一同步段执行 commit。
    */
-  async prepareLoadedSceneData(sceneId, sceneData, { signal = null } = {}) {
+  async prepareLoadedSceneData(sceneId, sceneData, { signal = null, revision = null } = {}) {
     const manager = this.manager;
     const terrainMap = this.terrainsByChunk;
     const chunk = this.getLoadedChunk(sceneId);
@@ -319,7 +319,11 @@ export class SceneStreamingRuntime {
         sceneData: cloneSceneData(prepared.sceneData),
         signal,
         origin: { ...chunk.origin },
-        chunk
+        chunk,
+        // canonical 热同步来自编辑器磁盘提交：同路径图片（如重绘导出的地图底图）可能已被覆盖，
+        // 必须让宿主丢弃已解码图片缓存并按 revision 换 URL 重新加载，否则新 terrain/小地图会继续用旧像素。
+        refreshImages: true,
+        refreshToken: revision
       });
       if (!isOriginalCurrent()) return superseded();
       detachedTerrain = this.createTerrain?.({

@@ -29,6 +29,10 @@ import { AtlasRegistry } from '../../../src/core/scene/AtlasRegistry.js';
 import sharedAtlasConfig from '../config/atlases.json' with { type: 'json' };
 import { SceneStreamingRuntime } from '../../../src/core/scene/SceneStreamingRuntime.js';
 import {
+  isWorldMapBackgroundFile,
+  resolveWorldMapBackgroundTilePath
+} from '../../../src/core/world/WorldMapBackground.js';
+import {
   collectManifestUsageAssetIds,
   collectSceneAssetIds
 } from '../../../src/core/scene/SceneAssetCollector.js';
@@ -242,6 +246,7 @@ export class DataDrivenPrologueScene extends BaseGameScene {
         editorSceneId: chunk.sceneId,
         worldOffset: chunk.origin,
         sceneData,
+        worldMapBase: this._resolveWorldMapBase(chunk),
         sharedAtlases,
         resolveImageAsset: imageId => this.assetManager?.resolveManifestAsset?.(imageId, '2d') || null,
         getLoadedImage: imageId => {
@@ -249,7 +254,7 @@ export class DataDrivenPrologueScene extends BaseGameScene {
           return this.assetManager?.getAsset?.(key, '2d') || null;
         }
       }),
-      prepareChunkAssets: async ({ sceneId, sceneNamespace, sceneData, signal }) => {
+      prepareChunkAssets: async ({ sceneId, sceneNamespace, sceneData, signal, refreshImages = false, refreshToken = null }) => {
         await awaitWithAbort(
           this._assetManifestReady,
           signal,
@@ -279,6 +284,26 @@ export class DataDrivenPrologueScene extends BaseGameScene {
         // 否则 createTerrain 拿不到图集图，逐帧告警且地形装饰退化。
         for (const atlas of sharedAtlases) {
           if (atlas?.assetId || atlas?.id) assetIds.add(atlas.assetId || atlas.id);
+        }
+        // 编辑器热同步：同路径图片文件可能被整体重写（地图底图重新导出）。
+        // AssetManager 按稳定 ID 缓存已解码 <img>，且浏览器对同 URL 图片会复用旧位图
+        // （即使响应头 no-cache），因此必须丢弃缓存并按提交 revision 换 URL 重新加载。
+        if (refreshImages) {
+          const token = refreshToken
+            ? String(refreshToken)
+            : `t${Date.now()}`;
+          const reloads = [];
+          for (const id of assetIds) {
+            const descriptor = this.assetManager?.resolveManifestAsset?.(id, '2d');
+            const key = descriptor?.key || id;
+            this.assetManager?.remove?.(key);
+            if (key !== id) this.assetManager?.remove?.(id);
+            const type = descriptor?.type;
+            if (!descriptor?.url || (type !== 'image' && type !== 'texture' && type !== 'atlas')) continue;
+            const bustUrl = `${descriptor.url}${descriptor.url.includes('?') ? '&' : '?'}rev=${encodeURIComponent(token)}`;
+            reloads.push(this.assetManager.loadImage(key, bustUrl));
+          }
+          await Promise.all(reloads);
         }
         await this.assetManager?.loadAssets?.(assetIds, { mode: '2d', signal, required: true });
       },
@@ -508,6 +533,40 @@ export class DataDrivenPrologueScene extends BaseGameScene {
   /** 世界入口校验由 Demo 世界协调器拥有；WorldReadyGate 时机仍由 Scene 管理。 */
   _validateWorldLoadResult(result) {
     return this.sanguoWorldRuntimeCoordinator.validateWorldLoadResult(result);
+  }
+
+  /**
+   * 大地图派生底色：region.backgroundImage 上本 chunk 格的裁剪图（拉伸铺满 chunk）。
+   * 整图文件 → 按格裁剪；按格切图目录 → 直接取该格 tile 整张拉伸。
+   * 未配置 backgroundImage / 世界索引未就绪 → null（无底色层，与旧行为一致）。
+   * @param {{sceneId:string, col:number, row:number}} chunk
+   */
+  _resolveWorldMapBase(chunk) {
+    const worldIndex = this._worldIndex;
+    const anchor = worldIndex?.findScene?.(chunk?.sceneId) || null;
+    const region = anchor ? worldIndex.getRegion(anchor.regionId) : null;
+    const background = typeof region?.backgroundImage === 'string' ? region.backgroundImage.trim() : '';
+    if (!background) return null;
+    if (isWorldMapBackgroundFile(background)) {
+      return {
+        src: background,
+        tile: false,
+        row: anchor.row,
+        col: anchor.col,
+        rows: region.rows,
+        cols: region.cols,
+        spanRows: Math.max(1, anchor.footprint?.rows || 1),
+        spanCols: Math.max(1, anchor.footprint?.cols || 1)
+      };
+    }
+    return {
+      src: resolveWorldMapBackgroundTilePath(background, anchor.row, anchor.col),
+      tile: true,
+      row: anchor.row,
+      col: anchor.col,
+      rows: region.rows,
+      cols: region.cols
+    };
   }
 
   /** canonical 磁盘会话由 Demo 世界协调器创建；保留 Scene 兼容入口。 */
@@ -855,7 +914,8 @@ export class DataDrivenPrologueScene extends BaseGameScene {
         diskPlacementCount: diskLocalCoordinates.size
       });
       runtimeDraft = await streamingRuntime.prepareLoadedSceneData(sceneId, sceneData, {
-        signal: controller?.signal || null
+        signal: controller?.signal || null,
+        revision
       });
       if (!isCurrent()) {
         runtimeDraft?.discard?.();

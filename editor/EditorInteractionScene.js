@@ -11,6 +11,7 @@
  ************************************************************/
 
 import { EditorDataManager, loadBuiltinGamesConfig, loadScenePresetsConfig, loadSceneTemplatesConfig } from './EditorDataManager.js';
+import { buildWorldMapBaseInfo } from './EditorShared.js';
         import { SceneEditor, loadEditorDefaults } from './SceneEditor.js';
         import { ImageSlicer } from './ImageSlicer.js';
         import { SceneDataLoader } from './SceneDataLoader.js';
@@ -433,6 +434,7 @@ export class EditorInteractionScene extends EditorInteractionBase {            /
                     row: currentAnchor.row,
                     col: currentAnchor.col
                 });
+                this.sceneEditor.setWorldMapBase(buildWorldMapBaseInfo(worldIndex, currentAnchor, this._canonicalProjectPath()));
 
                 // 共享索引统一收集全局八邻域；所有正文准备成功后才一次提交，禁止部分九宫格。
                 const neighbors = [];
@@ -469,13 +471,29 @@ export class EditorInteractionScene extends EditorInteractionBase {            /
                     }
                     neighbors.push({
                         sceneData: nScene,
+                        worldMapBase: buildWorldMapBaseInfo(worldIndex, neighborAnchor, this._canonicalProjectPath()),
                         offsetX: neighborAnchor.offset.x - currentAnchor.offset.x,
                         offsetY: neighborAnchor.offset.y - currentAnchor.offset.y
                     });
                 }
 
                 if (loadGeneration !== this._sceneLoadGeneration || this.currentSceneId !== currentSceneId) return;
-                this.sceneEditor.setNeighborScenes(neighbors);
+
+                // 空格子投影：九宫格外圈没有场景文档的格子也铺大地图底色（仅作编辑参考，不可交互）。
+                // sceneData 只带尺寸（fit 联合矩形/资源装载用），渲染层按 emptyCell 识别只画底色。
+                const emptyCellNeighbors = worldIndex.getAdjacentEmptyCells(currentSceneId).map(cell => {
+                    const width = currentRegion?.chunkWidth || this.sceneEditor.sceneData.width;
+                    const height = currentRegion?.chunkHeight || this.sceneEditor.sceneData.height;
+                    return {
+                        emptyCell: true,
+                        sceneData: { width, height },
+                        worldMapBase: buildWorldMapBaseInfo(worldIndex, cell, this._canonicalProjectPath()),
+                        offsetX: cell.offset.x - currentAnchor.offset.x,
+                        offsetY: cell.offset.y - currentAnchor.offset.y
+                    };
+                });
+
+                this.sceneEditor.setNeighborScenes([...neighbors, ...emptyCellNeighbors]);
             }
 
             // 从当前游戏磁盘 canonical JSON 加载完整场景；localStorage 不参与文档回退。

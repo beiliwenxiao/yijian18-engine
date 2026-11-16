@@ -112,7 +112,7 @@
     </div>
 
     <script type="module">
-        import { EditorPageContext, navigateTo, getQueryParams, renderEditorNav, openButtonHelp, openItemReferenceModal } from './EditorShared.js';
+        import { EditorPageContext, navigateTo, getQueryParams, renderEditorNav, openButtonHelp, openItemReferenceModal, buildWorldMapBaseInfo } from './EditorShared.js';
         import { SceneEditor } from './SceneEditor.js';
         import {
             activateGlobalAtlasesProject,
@@ -730,6 +730,7 @@
                 row: currentAnchor.row,
                 col: currentAnchor.col
             });
+            editor.setWorldMapBase(buildWorldMapBaseInfo(worldIndex, currentAnchor, ctx._canonicalProjectPath()));
 
             const adjacentAnchors = worldIndex.getAdjacentSceneAnchors(sid);
             const preparedNeighbors = await Promise.all(adjacentAnchors.map(async neighborAnchor => ({
@@ -751,11 +752,29 @@
                 return false;
             }
 
-            editor.setNeighborScenes(preparedNeighbors.map(({ neighborAnchor, document }) => ({
-                sceneData: document.sceneData,
-                offsetX: neighborAnchor.offset.x - currentAnchor.offset.x,
-                offsetY: neighborAnchor.offset.y - currentAnchor.offset.y
-            })));
+            // 空格子投影：九宫格外圈没有场景文档的格子也铺大地图底色（仅作编辑参考，不可交互）。
+            // sceneData 只带尺寸（fit 联合矩形/资源装载用），渲染层按 emptyCell 识别只画底色。
+            const emptyCellNeighbors = worldIndex.getAdjacentEmptyCells(sid).map(cell => {
+                const width = region?.chunkWidth || sceneEditor.sceneData.width;
+                const height = region?.chunkHeight || sceneEditor.sceneData.height;
+                return {
+                    emptyCell: true,
+                    sceneData: { width, height },
+                    worldMapBase: buildWorldMapBaseInfo(worldIndex, cell, ctx._canonicalProjectPath()),
+                    offsetX: cell.offset.x - currentAnchor.offset.x,
+                    offsetY: cell.offset.y - currentAnchor.offset.y
+                };
+            });
+
+            editor.setNeighborScenes([
+                ...preparedNeighbors.map(({ neighborAnchor, document }) => ({
+                    sceneData: document.sceneData,
+                    worldMapBase: buildWorldMapBaseInfo(worldIndex, neighborAnchor, ctx._canonicalProjectPath()),
+                    offsetX: neighborAnchor.offset.x - currentAnchor.offset.x,
+                    offsetY: neighborAnchor.offset.y - currentAnchor.offset.y
+                })),
+                ...emptyCellNeighbors
+            ]);
             return true;
         }
 

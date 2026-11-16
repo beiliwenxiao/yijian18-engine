@@ -518,7 +518,7 @@
         },
         {
           "id": "riverCrossed",
-          "label": "提交越河事实",
+          "label": "提交越河��实",
           "paramsSchema": {
             "additionalProperties": false,
             "properties": {

@@ -147,6 +147,8 @@ export class SceneEditor {
     this.showNeighbors = false;
     // canonical 世界位置只作编辑器只读投影，不进入 sceneData/history/save。
     this.worldMapLocation = null;
+    // 大地图派生底色（region.backgroundImage 本格裁剪）；显隐开关写入 sceneData.worldMapBase.visible。
+    this.worldMapBase = null;
 
     // 视口控制
     this.viewport = {
@@ -336,6 +338,59 @@ export class SceneEditor {
     this.worldMapLocation = Object.freeze({ regionId, regionName, row, col });
     this.ui?.refreshWorldMapLocation?.();
     return this.worldMapLocation;
+  }
+
+  /**
+   * 设置当前场景的大地图派生底色（region.backgroundImage 上本场景格的裁剪图）。
+   * base = { src, url, row, col, rows, cols, spanRows?, spanCols?, tile? } | null。
+   * 该层不可编辑，只随图层显隐开关（sceneData.worldMapBase.visible，缺省显示）。
+   */
+  setWorldMapBase(base = null) {
+    if (base === null) {
+      this.worldMapBase = null;
+      this.render();
+      return null;
+    }
+    if (!base?.src) throw new TypeError('SceneEditor: worldMapBase.src 必须是非空字符串');
+    this.worldMapBase = {
+      src: String(base.src),
+      url: String(base.url || base.src),
+      tile: base.tile === true,
+      row: Number(base.row) || 0,
+      col: Number(base.col) || 0,
+      rows: Math.max(1, Number(base.rows) || 1),
+      cols: Math.max(1, Number(base.cols) || 1),
+      spanRows: Math.max(1, Number(base.spanRows) || 1),
+      spanCols: Math.max(1, Number(base.spanCols) || 1),
+      _img: null,
+      _loaded: false
+    };
+    this._loadWorldMapBaseImage();
+    this.render();
+    return this.worldMapBase;
+  }
+
+  /** 加载大地图底色图；就绪后重绘画布。 */
+  _loadWorldMapBaseImage() {
+    const base = this.worldMapBase;
+    if (!base?.url || typeof Image === 'undefined') return;
+    const img = new Image();
+    img.onload = () => {
+      if (this.worldMapBase !== base) return;
+      base._img = img;
+      base._loaded = true;
+      this.render();
+    };
+    img.onerror = () => {
+      if (this.worldMapBase !== base) return;
+      base._loaded = false;
+    };
+    img.src = base.url;
+  }
+
+  /** 当前场景是否应显示大地图底色（sceneData.worldMapBase.visible，缺省显示）。 */
+  isWorldMapBaseVisible() {
+    return this.sceneData?.worldMapBase?.visible !== false && !!this.worldMapBase?._loaded;
   }
 
   /**
@@ -562,6 +617,7 @@ export class SceneEditor {
     // 旧场景的邻居投影与世界位置不得参与新场景首次 fit；新九宫格由宿主 latest-wins 加载后一次提交。
     this.neighborScenes = [];
     this.setWorldMapLocation(null);
+    this.setWorldMapBase(null);
 
     if (!incoming) {
       this.sceneData.layers = this.layers.normalizeLayers(this.sceneData.layers);

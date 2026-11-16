@@ -15,6 +15,7 @@ import { ShapeRenderer } from '../../../src/rendering/ShapeRenderer.js';
 import { ShadowRenderer } from '../../../src/rendering/ShadowRenderer.js';
 import { SceneObjectProjector } from '../../../src/core/scene/SceneObjectProjector.js';
 import { AtlasRegistry } from '../../../src/core/scene/AtlasRegistry.js';
+import { computeWorldMapCellCropRect } from '../../../src/core/world/WorldMapBackground.js';
 
 /** 树影只跟随全局方向光：点光源不参与（物理简化兼性能边界），复用同一空数组避免逐帧分配。 */
 const TREE_SHADOW_NO_POINT_LIGHTS = Object.freeze([]);
@@ -214,6 +215,10 @@ export class Scene1Terrain {
     // 编辑器中标记 collide 的 shape（多边形/矩形/椭圆碰撞区）
     this._collisionShapes = [];
 
+    // 大地图派生底色信息（宿主注入；sceneData.worldMapBase.visible 控制显隐，缺省显示）
+    this._worldMapBaseInfo = config.worldMapBase || null;
+    this._worldMapBase = null;
+
     // 编辑器中标记 jumpBlock 的独立 shape（仅拦跳跃不拦行走；通常与 collide 同用时随 _collisionShapes 走）
     this._jumpBlockShapes = [];
 
@@ -257,6 +262,37 @@ export class Scene1Terrain {
    */
   _applySceneData(scene) {
     if (!scene) return;
+
+    // 大地图底色图层：显隐随场景数据刷新（sceneData.worldMapBase.visible，缺省显示）；
+    // 底图来源（src/row/col）由宿主注入，未注入（region 无 backgroundImage）即无此层。
+    const baseInfo = this._worldMapBaseInfo;
+    if (baseInfo?.src) {
+      const visible = scene.worldMapBase?.visible !== false;
+      const changed = !this._worldMapBase
+        || this._worldMapBase.src !== baseInfo.src
+        || this._worldMapBase.row !== baseInfo.row
+        || this._worldMapBase.col !== baseInfo.col;
+      if (changed) {
+        this._worldMapBase = {
+          src: baseInfo.src,
+          tile: baseInfo.tile === true,
+          row: Number(baseInfo.row) || 0,
+          col: Number(baseInfo.col) || 0,
+          rows: Number(baseInfo.rows) || 1,
+          cols: Number(baseInfo.cols) || 1,
+          spanRows: Math.max(1, Number(baseInfo.spanRows) || 1),
+          spanCols: Math.max(1, Number(baseInfo.spanCols) || 1),
+          visible,
+          _img: null,
+          _loaded: false
+        };
+        this._loadWorldMapBaseImage();
+      } else if (this._worldMapBase.visible !== visible) {
+        this._worldMapBase.visible = visible;
+      }
+    } else {
+      this._worldMapBase = null;
+    }
 
     // 读取场景背景色
     if (scene.backgroundColor) {
@@ -1438,6 +1474,8 @@ export class Scene1Terrain {
    * @param {CanvasRenderingContext2D} ctx 已应用相机变换
    */
   renderGround(ctx) {
+    // 大地图派生底色：最底层铺本 chunk 格的拉伸裁剪图（图层显隐由 sceneData.worldMapBase 控制）。
+    this._renderWorldMapBase(ctx);
     // 编辑器中删除了地形椭圆：不渲染草地底层，只保留水池、背景图片和 shape
     if (this._hasTerrainEllipse === false) {
       // 流式九宫格在发布 projection 前已生成静态缓存；这里只保留非流式兼容调度。
@@ -1484,6 +1522,56 @@ export class Scene1Terrain {
     this._renderEditorBackgroundImages(ctx);
     // shape 在背景图片之上渲染，可遮挡底层图片
     this._renderEditorShapes(ctx);
+  }
+
+  /** 加载大地图底色图（src 由宿主解析为可直接访问的 URL；失败静默，回退无底色）。 */
+  _loadWorldMapBaseImage() {
+    const base = this._worldMapBase;
+    if (!base?.src || typeof Image === 'undefined') return;
+    const img = new Image();
+    const token = this._cacheLifecycleToken;
+    img.onload = () => {
+      if (this._released || token !== this._cacheLifecycleToken) return;
+      base._img = img;
+      base._loaded = true;
+    };
+    img.onerror = () => {
+      if (this._released || token !== this._cacheLifecycleToken) return;
+      base._loaded = false;
+    };
+    img.src = base.src;
+  }
+
+  /**
+   * 渲染大地图派生底色：region.backgroundImage 上本 chunk 格的裁剪图拉伸铺满 chunk。
+   * 画在一切地形内容之下（椭圆草地/背景图片/shape 都会盖在它上面），
+   * 场景没有专门做背景时它就是默认的「相对模糊」底色。
+   * @param {CanvasRenderingContext2D} ctx 已应用相机变换
+   * @private
+   */
+  _renderWorldMapBase(ctx) {
+    const base = this._worldMapBase;
+    if (!base || base.visible === false || !base._loaded || !base._img) return;
+    // chunk 矩形以 worldOffset（chunk 原点）为权威：centerX/centerY 会被地形椭圆改写，不可用。
+    const left = this.worldOffset.x;
+    const top = this.worldOffset.y;
+    try {
+      if (base.tile) {
+        // 切图目录模式：单格贴图整张拉伸
+        ctx.drawImage(base._img, left, top, this.basinWidth, this.basinHeight);
+      } else {
+        // 整图模式：按格裁剪后拉伸
+        const crop = computeWorldMapCellCropRect(
+          base._img.naturalWidth || base._img.width,
+          base._img.naturalHeight || base._img.height,
+          base.rows, base.cols, base.row, base.col, base.spanRows, base.spanCols
+        );
+        ctx.drawImage(
+          base._img, crop.sx, crop.sy, crop.sw, crop.sh,
+          left, top, this.basinWidth, this.basinHeight
+        );
+      }
+    } catch (_error) { /* 图片尚未就绪等异常静默，下一帧重画 */ }
   }
 
   /**

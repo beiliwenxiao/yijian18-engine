@@ -29,25 +29,7 @@
         },
         {
           "editor": {
-            "locked": true,
-            "visible": true
-          },
-          "height": 720,
-          "id": "S01-bg-environment",
-          "imageId": "s01.environment.droughtWildernessGround",
-          "name": "S01 干旱荒原地貌",
-          "rotation": 0,
-          "semanticRole": "sceneBackground",
-          "state": "greybox-detailed",
-          "type": "image",
-          "visualDescription": "寒冷荒原、中央余烬营地、东侧河道跳石、东北山路与藤蔓断崖；图片不承载业务碰撞。",
-          "width": 1280,
-          "x": 0,
-          "y": -1.2812812812812808
-        },
-        {
-          "editor": {
-            "locked": true
+            "locked": false
           },
           "height": 829,
           "id": "obj_1791107592728",
@@ -63,7 +45,7 @@
         },
         {
           "editor": {
-            "locked": true
+            "locked": false
           },
           "height": 720,
           "id": "obj_1792956368383",
@@ -76,6 +58,45 @@
           "width": 1280,
           "x": 0.2913695898111852,
           "y": 719.036849903398
+        },
+        {
+          "height": 720,
+          "id": "obj_1794689210699",
+          "imageId": "img.s01_bg_r2_c1",
+          "name": "s01_bg_r2_c1.png",
+          "rotation": 0,
+          "semanticRole": "sceneImage",
+          "type": "image",
+          "visualDescription": "s01_bg_r2_c1.png；请按场景用途补充地貌、建筑或道具说明。",
+          "width": 1280,
+          "x": -1279.3558626078823,
+          "y": -0.18334014838086432
+        },
+        {
+          "height": 720,
+          "id": "obj_1794689239268",
+          "imageId": "img.s01_bg_r3_c1",
+          "name": "s01_bg_r3_c1.png",
+          "rotation": 0,
+          "semanticRole": "sceneImage",
+          "type": "image",
+          "visualDescription": "s01_bg_r3_c1.png；请按场景用途补充地貌、建筑或道具说明。",
+          "width": 1280,
+          "x": -1279.4713962829003,
+          "y": 720.0080630628707
+        },
+        {
+          "height": 720,
+          "id": "obj_1794689339796",
+          "imageId": "img.s01_bg_r2_c2",
+          "name": "s01_bg_r2_c2.png",
+          "rotation": 0,
+          "semanticRole": "sceneImage",
+          "type": "image",
+          "visualDescription": "s01_bg_r2_c2.png；请按场景用途补充地貌、建筑或道具说明。",
+          "width": 1280,
+          "x": 0.532408306411071,
+          "y": 0.759264393419187
         }
       ],
       "visible": true
@@ -1713,6 +1734,18 @@
     "img.s01-s01_right": {
       "name": "s01_right.png",
       "src": "../example/sanguo_zhangjiao/assets/images/s01/s01_right.png"
+    },
+    "img.s01_bg_r2_c1": {
+      "name": "s01_bg_r2_c1.png",
+      "src": "assets/images/s01/s01_bg_r2_c1.png"
+    },
+    "img.s01_bg_r2_c2": {
+      "name": "s01_bg_r2_c2.png",
+      "src": "assets/images/s01/s01_bg_r2_c2.png"
+    },
+    "img.s01_bg_r3_c1": {
+      "name": "s01_bg_r3_c1.png",
+      "src": "assets/images/s01/s01_bg_r3_c1.png"
     },
     "img.s01_bg_r3_c2": {
       "name": "s01_bg_r3_c2.png",

@@ -211,10 +211,12 @@ describe('ItemRuntimeState 属性式不变量', () => {
 describe('非法 capability 发布', () => {
   it('DefinitionRepository 在发布前拒绝依赖缺失', () => {
     const registry = createStandardCapabilityStrategyRegistry();
+    // tool 不再强制依赖 durable（见上方 registry 用例）；这里用 cargo→container
+    // 这条仍然存在的依赖，验证 repository 在发布前确实拦截缺失依赖。
     const snapshot = CanonicalSnapshot.fromProject({
       schemaVersion: 1,
-      library: { items: [{ id: 'bad-tool', capabilities: [
-        { id: 'tool', strategyId: 'item.tool.gathering', parameters: { toolType: 'axe' } }
+      library: { items: [{ id: 'bad-cargo', capabilities: [
+        { id: 'cargo', strategyId: 'item.cargo.container', parameters: { capacity: 4 } }
       ] }] }
     });
     expect(() => DefinitionRepository.fromSnapshot(snapshot, {

@@ -12,6 +12,7 @@
 
 import { ShapeRenderer } from '../src/rendering/ShapeRenderer.js';
 import { TERRAIN_COMBAT_PRESETS, terrainCombatSummary } from './SceneEditorUI.js';
+import { computeWorldMapCellCropRect } from '../src/core/world/WorldMapBackground.js';
 
 /**
  * SceneEditorCanvas - 场景编辑器渲染模块
@@ -48,6 +49,11 @@ export class SceneEditorCanvas {
     if (editor.options.showBackground) {
       ctx.fillStyle = editor.sceneData.backgroundColor || '#1a2a1a';
       ctx.fillRect(sceneX, sceneY, sceneW, sceneH);
+    }
+
+    // 大地图派生底色（region.backgroundImage 本格裁剪拉伸）：画在一切图层之下
+    if (editor.isWorldMapBaseVisible?.()) {
+      this._renderWorldMapBase(ctx, editor.worldMapBase, sceneX, sceneY, sceneW, sceneH);
     }
 
     // === 相邻场景参考层（半透明，不可交互）===
@@ -281,6 +287,34 @@ export class SceneEditorCanvas {
   }
 
   /**
+   * 渲染大地图派生底色：底图整图按格裁剪（或单格贴图整张）拉伸铺满目标矩形。
+   * @param {CanvasRenderingContext2D} ctx
+   * @param {{_img:any, tile:boolean, rows:number, cols:number, row:number, col:number,
+   *          spanRows?:number, spanCols?:number}} base - 已就绪的底色信息
+   * @param {number} x - 目标矩形左上角（场景坐标系）
+   * @param {number} y
+   * @param {number} w - 目标矩形宽（chunk 尺寸）
+   * @param {number} h
+   * @private
+   */
+  _renderWorldMapBase(ctx, base, x, y, w, h) {
+    if (!base?._img || !w || !h) return;
+    try {
+      if (base.tile) {
+        ctx.drawImage(base._img, x, y, w, h);
+        return;
+      }
+      const imageW = base._img.naturalWidth || base._img.width;
+      const imageH = base._img.naturalHeight || base._img.height;
+      const crop = computeWorldMapCellCropRect(
+        imageW, imageH, base.rows, base.cols,
+        base.row, base.col, base.spanRows || 1, base.spanCols || 1
+      );
+      ctx.drawImage(base._img, crop.sx, crop.sy, crop.sw, crop.sh, x, y, w, h);
+    } catch (_error) { /* 底图未就绪等异常静默 */ }
+  }
+
+  /**
    * 渲染相邻场景参考层（半透明、带边框标注）
    * @private
    */
@@ -291,6 +325,27 @@ export class SceneEditorCanvas {
 
     for (const neighbor of editor.neighborScenes) {
       const { sceneData, offsetX, offsetY } = neighbor;
+
+      // 空格子投影：没有场景文档，只铺大地图底色 + 虚线框（纯编辑参考，不可交互）。
+      if (neighbor.emptyCell) {
+        const emptyBase = neighbor.worldMapBase;
+        if (emptyBase?._loaded) {
+          const cellW = sceneData?.width || editor.sceneData.width;
+          const cellH = sceneData?.height || editor.sceneData.height;
+          ctx.save();
+          ctx.translate(offsetX, offsetY);
+          this._renderWorldMapBase(ctx, emptyBase, 0, 0, cellW, cellH);
+          ctx.globalAlpha = 0.6;
+          ctx.strokeStyle = 'rgba(255, 170, 0, 0.45)';
+          ctx.lineWidth = 1.5 / editor.viewport.scale;
+          ctx.setLineDash([5 / editor.viewport.scale, 5 / editor.viewport.scale]);
+          ctx.strokeRect(0, 0, cellW, cellH);
+          ctx.setLineDash([]);
+          ctx.restore();
+        }
+        continue;
+      }
+
       if (!sceneData || !sceneData.layers) continue;
 
       ctx.save();
@@ -299,6 +354,12 @@ export class SceneEditorCanvas {
       // 背景
       ctx.fillStyle = sceneData.backgroundColor || '#1a2a1a';
       ctx.fillRect(0, 0, sceneData.width, sceneData.height);
+
+      // 大地图派生底色（邻居同样以区块裁剪图为底，所见即运行时观感）
+      const neighborBase = neighbor.worldMapBase;
+      if (neighborBase?._loaded && sceneData.worldMapBase?.visible !== false) {
+        this._renderWorldMapBase(ctx, neighborBase, 0, 0, sceneData.width, sceneData.height);
+      }
 
       // 渲染所有可见图层的对象
       for (const layer of sceneData.layers) {

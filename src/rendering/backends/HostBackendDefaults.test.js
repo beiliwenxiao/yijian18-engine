@@ -79,12 +79,18 @@ describe('parseBackendConfig 的优先级', () => {
 
 describe('PlatformProfile 宿主判定', () => {
   let originalHost;
+  let originalDocument;
+  let hadDocument;
 
   beforeEach(() => {
     originalHost = PlatformProfile.host;
+    hadDocument = Object.prototype.hasOwnProperty.call(globalThis, 'document');
+    originalDocument = globalThis.document;
   });
 
   afterEach(() => {
+    if (hadDocument) globalThis.document = originalDocument;
+    else delete globalThis.document;
     PlatformProfile.setHost(originalHost);
   });
 
@@ -94,9 +100,18 @@ describe('PlatformProfile 宿主判定', () => {
     expect(PlatformProfile.isElectron).toBe(false);
     expect(PlatformProfile.hasDOM).toBe(false);
 
+    // hasDOM 同时要求宿主不是微信小游戏、且当前环境真实存在 document。
+    // Electron 渲染进程有 DOM；Node 测试环境默认没有，这里显式模拟。
+    globalThis.document = {};
+    PlatformProfile.setHost(RuntimeHost.WEAPP);
+    expect(PlatformProfile.hasDOM).toBe(false);
+
     PlatformProfile.setHost(RuntimeHost.ELECTRON);
     expect(PlatformProfile.isElectron).toBe(true);
     expect(PlatformProfile.hasDOM).toBe(true);
+
+    delete globalThis.document;
+    expect(PlatformProfile.hasDOM).toBe(false);
   });
 
   it('非法宿主值被忽略', () => {

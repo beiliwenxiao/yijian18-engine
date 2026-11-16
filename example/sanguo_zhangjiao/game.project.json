@@ -1222,7 +1222,7 @@
     "regions": [
       {
         "id": "mainland",
-        "name": "中原大陆",
+        "name": "黄河中下游",
         "mapType": "terrainGrid",
         "rows": 20,
         "cols": 20,
@@ -1501,7 +1501,6 @@
               "terrain": "mountain"
             },
             {
-              "sceneId": "S02",
               "terrain": "plain"
             },
             {
@@ -1561,7 +1560,6 @@
               "terrain": "plain"
             },
             {
-              "sceneId": "S01",
               "terrain": "plain"
             },
             {
@@ -1634,6 +1632,7 @@
               "terrain": "plain"
             },
             {
+              "sceneId": "S02",
               "terrain": "yellowRiver"
             },
             {
@@ -1697,6 +1696,7 @@
               "terrain": "plain"
             },
             {
+              "sceneId": "S01",
               "terrain": "plain"
             },
             {
@@ -2611,6 +2611,7 @@
         "cols": 1,
         "chunkWidth": 1280,
         "chunkHeight": 720,
+        "backgroundImage": "",
         "grid": [
           [
             "S01-C01"

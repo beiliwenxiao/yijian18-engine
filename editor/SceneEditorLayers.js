@@ -587,6 +587,44 @@ export class SceneEditorLayers {
       }
       list.appendChild(objectList);
     }
+
+    // 大地图派生底色（伪图层，列表末尾 = 绘制最底层）：
+    // 来源为 region.backgroundImage 本格裁剪拉伸，不可编辑（无选中/改名/删除/锁定），
+    // 只有显隐开关，写入 sceneData.worldMapBase.visible 并随场景保存（运行时同样生效）。
+    if (editor.worldMapBase) {
+      const baseVisible = editor.sceneData?.worldMapBase?.visible !== false;
+      const baseItem = document.createElement('div');
+      baseItem.className = 'layer-item world-map-base-layer';
+      baseItem.title = '大地图派生底色：region.backgroundImage 本格裁剪拉伸铺满 chunk（不可编辑，仅显隐）';
+      baseItem.style.cssText = 'opacity:.85;';
+      const baseVisibility = createControl({
+        action: 'base-visibility',
+        title: baseVisible ? '点击隐藏大地图底色' : '点击显示大地图底色',
+        text: baseVisible ? '👁' : '🚫',
+        style: baseVisible
+          ? `${btnBase}background:#2a4a2a;border-color:#4a8a4a;`
+          : `${btnBase}background:#3a3a3a;border-color:#666;opacity:.7;`
+      });
+      const baseName = document.createElement('span');
+      baseName.className = 'layer-name';
+      baseName.style.cssText = 'color:#9ab0d8;';
+      baseName.textContent = '🗺️ 大地图底图（派生 · 不可编辑）';
+      const baseHint = document.createElement('span');
+      baseHint.className = 'layer-count';
+      baseHint.title = '显隐状态随场景保存，运行时同步生效';
+      baseHint.textContent = '自动';
+      baseItem.append(baseVisibility, baseName, baseHint);
+      baseItem.addEventListener('click', event => {
+        if (event.target.closest('[data-action]')?.dataset.action !== 'base-visibility') return;
+        const sceneData = editor.sceneData;
+        const next = sceneData?.worldMapBase?.visible === false;
+        sceneData.worldMapBase = { ...(sceneData.worldMapBase || {}), visible: next };
+        editor.history.saveHistory();
+        editor.render();
+        this.updateLayerList();
+      });
+      list.appendChild(baseItem);
+    }
   }
 
   /**

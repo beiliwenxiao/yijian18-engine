@@ -21,6 +21,10 @@ import { CanonicalEditorSession } from './CanonicalEditorSession.js';
 import { EditorSceneCommandService } from './EditorSceneCommandService.js';
 import { SharedAtlasCommandService } from './SharedAtlasCommandService.js';
 import { LocalStorageSceneCacheAdapter } from '../src/core/scene/CanonicalSceneAdapters.js';
+import {
+  isWorldMapBackgroundFile,
+  resolveWorldMapBackgroundTilePath
+} from '../src/core/world/WorldMapBackground.js';
 import { InputHints } from '../src/core/input/InputHints.js';
 import { mergeShardedProject } from '../src/core/projectShards.js';
 
@@ -308,6 +312,57 @@ export function getQueryParams() {
     sceneId: params.get('sceneId') || null,
     page: params.get('page') || null,
     placementId: params.get('placementId') || null
+  };
+}
+
+/**
+ * 工程相对资产路径 → 可访问 URL（与 WorldMapEditor._resolveImagePath 同一规则）。
+ * projectPath 形如 example/sanguo_zhangjiao/game.project.json；
+ * assets/ 开头的路径解析为站点根 + 工程目录前缀，其余原样返回。
+ */
+export function resolveProjectAssetUrl(projectPath, src) {
+  const path = String(src || '').replace(/\\/g, '/');
+  if (!path || /^(?:https?:|data:|blob:|\/|\.\.?\/)/.test(path)) return path;
+  const basePath = projectPath.slice(0, projectPath.lastIndexOf('/') + 1);
+  return path.startsWith('assets/') ? `/${basePath}${path}` : path;
+}
+
+/**
+ * 大地图派生底色信息：region.backgroundImage 上该场景格的裁剪图（拉伸铺满 chunk）。
+ * 整图文件 → 按格裁剪；切图目录 → 直接取该格 tile 整张拉伸。
+ * region 未配置 backgroundImage 返回 null（编辑器/运行时均无此层）。
+ * @param {ProjectWorldIndex} worldIndex
+ * @param {{regionId:string, row:number, col:number, footprint?:{rows?:number, cols?:number}}} anchor
+ * @param {string} projectPath - 形如 example/xxx/game.project.json
+ */
+export function buildWorldMapBaseInfo(worldIndex, anchor, projectPath) {
+  const region = worldIndex?.getRegion?.(anchor?.regionId);
+  const background = typeof region?.backgroundImage === 'string' ? region.backgroundImage.trim() : '';
+  if (!background || !anchor) return null;
+  const spanRows = Math.max(1, anchor.footprint?.rows || 1);
+  const spanCols = Math.max(1, anchor.footprint?.cols || 1);
+  if (isWorldMapBackgroundFile(background)) {
+    return {
+      src: background,
+      tile: false,
+      row: anchor.row,
+      col: anchor.col,
+      rows: region.rows,
+      cols: region.cols,
+      spanRows,
+      spanCols,
+      url: resolveProjectAssetUrl(projectPath, background)
+    };
+  }
+  const tilePath = resolveWorldMapBackgroundTilePath(background, anchor.row, anchor.col);
+  return {
+    src: tilePath,
+    tile: true,
+    row: anchor.row,
+    col: anchor.col,
+    rows: region.rows,
+    cols: region.cols,
+    url: resolveProjectAssetUrl(projectPath, tilePath)
   };
 }
 

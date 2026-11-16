@@ -37,6 +37,7 @@ import { extractWorldLogic } from '../src/core/world/WorldMapExtractor.js';
 import { computeWorldMapDisplayMetrics } from '../src/core/world/WorldMapDisplayMetrics.js';
 import {
   WorldMapBackgroundImageCache,
+  computeWorldMapCellCropRect,
   isWorldMapBackgroundFile,
   normalizeWorldMapBackgroundPath,
   resolveWorldMapBackgroundPaths,
@@ -717,6 +718,8 @@ export class WorldMapEditor {
         /* 上移后的逻辑面板/下拉不再把工具栏撑到超过地图宽度，窄窗口下按行内换行显示。 */
         .wme-toolbar .wme-logic-panel select { max-width: 180px; }
         .wme-toolbar .wme-logic-panel .wle-panel { min-width: 0; }
+        /* 选中节点/路线预览/校验整框：左对齐，占屏 80% 封顶（不超屏幕宽度）。 */
+        .wme-toolbar .wme-logic-panel { align-self: flex-start; width: 80%; max-width: 80vw; }
       </style>
       <div class="wme-toolbar" style="display:flex;flex-direction:column;gap:6px;padding:6px 0;">
         <div class="wme-tb-row" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-width:0;">
@@ -2230,6 +2233,30 @@ export class WorldMapEditor {
     return { image, sx: 0, sy: 0, sw: image.naturalWidth, sh: image.naturalHeight };
   }
 
+  /**
+   * 场景大地图底色的裁剪来源（缩略图用）：整图 = 按 footprint 跨格裁剪；切图目录 = 单格整张。
+   * @param {{row:number,col:number,rows:number,cols:number,spanRows:number,spanCols:number}} base
+   * @returns {{image:any, sx:number, sy:number, sw:number, sh:number}|null} 未就绪返回 null
+   */
+  _worldMapBaseSourceFor(base) {
+    if (!base) return null;
+    const region = this.region;
+    const value = normalizeWorldMapBackgroundPath(region?.backgroundImage);
+    if (!value) return null;
+    if (isWorldMapBackgroundFile(value)) {
+      const image = this._backgroundImages.get(value);
+      if (!image) return null;
+      const crop = computeWorldMapCellCropRect(
+        image.naturalWidth, image.naturalHeight,
+        base.rows, base.cols, base.row, base.col, base.spanRows, base.spanCols
+      );
+      return { image, ...crop };
+    }
+    const image = this._backgroundImages.get(resolveWorldMapBackgroundTilePath(value, base.row, base.col));
+    if (!image) return null;
+    return { image, sx: 0, sy: 0, sw: image.naturalWidth, sh: image.naturalHeight };
+  }
+
   /** 一次性登记当前 Region 的全部底图（目录 400 张 / 整图 1 张）；加载完成后重绘格与小地图。 */
   _primeBackgroundImages(region, generation, selectedRegionId) {
     const paths = resolveWorldMapBackgroundPaths(region?.backgroundImage, region?.rows, region?.cols);
@@ -2330,7 +2357,18 @@ export class WorldMapEditor {
     ctx.rect(0, 0, thumbW, thumbH);
     ctx.clip();
     ctx.translate(-offsetX, -offsetY);
-    this._drawSceneToCanvas(ctx, scene, totalW, totalH);
+    // 大地图派生底色：场景未显式隐藏该层时，缩略图先铺区块裁剪图（与游戏画面同源）。
+    const sceneBase = scene.worldMapBase?.visible !== false
+      ? {
+        row: anchor.row,
+        col: anchor.col,
+        rows: this.region.rows,
+        cols: this.region.cols,
+        spanRows: Math.max(1, footprint.rows || 1),
+        spanCols: Math.max(1, footprint.cols || 1)
+      }
+      : null;
+    this._drawSceneToCanvas(ctx, scene, totalW, totalH, sceneBase);
     ctx.restore();
     if (!coverage.isAnchor) {
       ctx.fillStyle = 'rgba(196,166,78,.12)';
@@ -2393,9 +2431,11 @@ export class WorldMapEditor {
 
   /**
    * 把场景数据绘制到 canvas（与场景编辑器完全一致的渲染）
+   * @param {{row:number,col:number,rows:number,cols:number,spanRows:number,spanCols:number}|null} base
+   *        大地图派生底色的格子定位（scene.worldMapBase.visible 未隐藏时先铺区块裁剪图）
    * @private
    */
-  _drawSceneToCanvas(ctx, scene, thumbW, thumbH) {
+  _drawSceneToCanvas(ctx, scene, thumbW, thumbH, base = null) {
     const sceneW = scene.width || this.region.chunkWidth;
     const sceneH = scene.height || this.region.chunkHeight;
     const scale = Math.min(thumbW / sceneW, thumbH / sceneH);
@@ -2405,6 +2445,15 @@ export class WorldMapEditor {
     // 背景色
     ctx.fillStyle = scene.backgroundColor || '#1a2a1a';
     ctx.fillRect(0, 0, thumbW, thumbH);
+
+    // 大地图派生底色：铺在背景色之上、场景图层之下（区块未专门做背景时的默认观感）。
+    // 此时 ctx 尚未 scale（thumb 像素空间），thumbW/H 即整个 footprint 的缩略图矩形。
+    const baseSource = base ? this._worldMapBaseSourceFor(base) : null;
+    if (baseSource) {
+      try {
+        ctx.drawImage(baseSource.image, baseSource.sx, baseSource.sy, baseSource.sw, baseSource.sh, 0, 0, thumbW, thumbH);
+      } catch (_error) { /* 底图未就绪等异常静默 */ }
+    }
 
     const atlasRegistry = new AtlasRegistry(
       this._sharedAtlases,

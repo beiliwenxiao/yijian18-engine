@@ -455,6 +455,29 @@ export class ProjectWorldIndex {
 
   findScene(sceneId) { return this._sceneLocations.get(sceneId) || null; }
 
+  /**
+   * 返回指定场景 anchor footprint 周围一圈、无已加载场景的 coverage 格（含 reserved，仅限同 Region）。
+   * 场景编辑器九宫格用：空格子没有场景文档，但编辑参考时仍应显示大地图底色。
+   * 1×1 场景即八邻域；多格 footprint 取整个外圈。
+   */
+  getAdjacentEmptyCells(sceneId) {
+    const center = this.findScene(sceneId);
+    if (!center) return freeze([]);
+    const footprint = center.footprint
+      || { left: center.col, top: center.row, right: center.col + 1, bottom: center.row + 1 };
+    const cells = [];
+    for (let row = footprint.top - 1; row <= footprint.bottom; row++) {
+      for (let col = footprint.left - 1; col <= footprint.right; col++) {
+        const insideFootprint = row >= footprint.top && row < footprint.bottom
+          && col >= footprint.left && col < footprint.right;
+        if (insideFootprint) continue;
+        const cell = this.getCell(center.regionId, row, col);
+        if (cell && (!cell.sceneId || cell.reserved)) cells.push(cell);
+      }
+    }
+    return freeze(cells);
+  }
+
   getFootprint(sceneId) { return this.findScene(sceneId)?.footprint || null; }
 
   getBounds(regionRef) { return this.getRegion(regionRef)?.bounds || null; }

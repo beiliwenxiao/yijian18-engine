@@ -898,6 +898,9 @@ export class AssetManager {
     remove(key) {
         const resolvedKey = this.manifestAliases.get(key) || key;
         this.images.delete(resolvedKey);
+        // 失效同键的在途请求与失败记录：编辑器覆盖同路径图片后需要能重新发起加载。
+        this._inflightImages.delete(resolvedKey);
+        this._failedImageLoads.delete(resolvedKey);
         const video = this.videos.get(resolvedKey);
         if (video) {
             try { video.pause(); } catch { /* ignore */ }

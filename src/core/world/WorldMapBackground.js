@@ -79,6 +79,35 @@ export function resolveWorldMapBackgroundPaths(backgroundImage, rows, cols) {
 }
 
 /**
+ * 整图底图上某格（或连续多格 footprint）的裁剪矩形。
+ * 整图被拉伸铺满 rows×cols 网格，格子内容即该格的等比裁剪；
+ * 切图目录模式下没有整图，调用方直接整张拉伸单格贴图。
+ * @param {number} imageWidth - 已加载整图的像素宽
+ * @param {number} imageHeight - 已加载整图的像素高
+ * @param {number} rows - region 总行数
+ * @param {number} cols - region 总列数
+ * @param {number} row - 起始行（0-based）
+ * @param {number} col - 起始列（0-based）
+ * @param {number} [spanRows=1] - 跨格行数（场景 footprint）
+ * @param {number} [spanCols=1] - 跨格列数
+ * @returns {{sx:number, sy:number, sw:number, sh:number}}
+ */
+export function computeWorldMapCellCropRect(
+  imageWidth, imageHeight, rows, cols, row, col, spanRows = 1, spanCols = 1
+) {
+  const totalRows = Math.max(1, Number(rows) || 1);
+  const totalCols = Math.max(1, Number(cols) || 1);
+  const cellW = imageWidth / totalCols;
+  const cellH = imageHeight / totalRows;
+  return {
+    sx: Number(col) * cellW,
+    sy: Number(row) * cellH,
+    sw: Math.max(1, Number(spanCols) || 1) * cellW,
+    sh: Math.max(1, Number(spanRows) || 1) * cellH
+  };
+}
+
+/**
  * 底图图片缓存：按 URL 去重加载，编辑器与游戏内共用同一套「加载 → 可绘制」语义。
  * 未加载完成时 get() 返回 null，调用方先画回退底色，加载完成后再整体重绘。
  */

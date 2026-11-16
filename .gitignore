@@ -108,3 +108,5 @@ example/sanguo_zhangjiao/art-source/
 # 编辑器/调试本地产物
 .screenshots/
 .spec/
+# 验证产物（截图/日志体积大，不入库）
+.trae/verify/

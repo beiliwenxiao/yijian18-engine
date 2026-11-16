@@ -774,7 +774,7 @@ export class WorldLogicEditor {
     this.panelHost.innerHTML = `
       <div class="wle-panel" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start;padding:8px;border:1px solid #2a3a5e;border-radius:4px;margin-top:8px;">
         <div class="wle-props" style="min-width:280px;flex:1;">
-          <div style="color:#d9c28d;margin-bottom:6px;">选中对象：${this._selectionLabel()}</div>
+          <div style="color:#d9c28d;margin-bottom:6px;">选中节点：${this._selectionLabel()}</div>
           <div class="wle-fields">${this._buildFieldsHtml()}</div>
           <div style="margin-top:6px;color:#9c927c;font-size:12px;">节点下拉：<select class="wle-node-pick">${nodeOptions}</select></div>
         </div>

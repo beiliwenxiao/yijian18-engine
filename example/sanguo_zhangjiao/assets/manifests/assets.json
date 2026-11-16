@@ -12279,6 +12279,96 @@
       "targetPhase": "P1",
       "status": "ai-generated",
       "revision": 1
+    },
+    {
+      "assetId": "img.s01_bg_r2_c1",
+      "imageId": "img.s01_bg_r2_c1",
+      "category": "environment-image",
+      "usage": [
+        "S01",
+        "s01"
+      ],
+      "sourceFile": "assets/images/s01/s01_bg_r2_c1.png",
+      "runtime2D": {
+        "path": "assets/images/s01/s01_bg_r2_c1.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "img.s01_bg_r2_c1"
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0
+      },
+      "bounds": {
+        "width": 1280,
+        "height": 720
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "img.s01_bg_r3_c1",
+      "imageId": "img.s01_bg_r3_c1",
+      "category": "environment-image",
+      "usage": [
+        "S01",
+        "s01"
+      ],
+      "sourceFile": "assets/images/s01/s01_bg_r3_c1.png",
+      "runtime2D": {
+        "path": "assets/images/s01/s01_bg_r3_c1.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "img.s01_bg_r3_c1"
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0
+      },
+      "bounds": {
+        "width": 1280,
+        "height": 720
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "img.s01_bg_r2_c2",
+      "imageId": "img.s01_bg_r2_c2",
+      "category": "environment-image",
+      "usage": [
+        "S01",
+        "s01"
+      ],
+      "sourceFile": "assets/images/s01/s01_bg_r2_c2.png",
+      "runtime2D": {
+        "path": "assets/images/s01/s01_bg_r2_c2.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "img.s01_bg_r2_c2"
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0
+      },
+      "bounds": {
+        "width": 1280,
+        "height": 720
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "placeholder",
+      "revision": 1
     }
   ]
 }
