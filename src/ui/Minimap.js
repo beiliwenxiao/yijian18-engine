@@ -11,6 +11,7 @@
  ************************************************************/
 
 import { UIElement } from './UIElement.js';
+import { WORLD_MAP_DISPLAY_CELL_WIDTH } from '../core/world/WorldMapDisplayMetrics.js';
 
 /** 扩展态世界标记：逻辑节点字形（与 M 键大地图 NODE_KIND_GLYPHS 同源语义）。 */
 const WORLD_MAP_NODE_GLYPHS = Object.freeze({
@@ -402,10 +403,11 @@ export class Minimap extends UIElement {
 
     const innerW = Math.max(1, this.width - this.padding * 2);
     const innerH = Math.max(1, this.height - this.padding * 2);
-    const fitScale = Math.min(innerW / fullW, innerH / fullH);
-    // 2 倍超采样提升清晰度（缓存画布仍是小地图级尺寸，内存可忽略）
-    let cacheScale = fitScale * 2;
-    const maxCacheDimension = 2048;
+    // 缓存密度对齐底图原生密度（128px/格，M 键大地图/编辑器观感）：
+    // 中地图 3 格宽 ≈ 379px 显示即 ≈1:1，不再是大倍数放大后的糊图；
+    // 上限 2560px（=底图原分辨率），缓存画布一次性构建（约 15MB 显存）。
+    let cacheScale = WORLD_MAP_DISPLAY_CELL_WIDTH / Math.max(1, region.chunkWidth);
+    const maxCacheDimension = 2560;
     cacheScale = Math.min(
       Math.max(cacheScale, Number.EPSILON),
       maxCacheDimension / fullW,
