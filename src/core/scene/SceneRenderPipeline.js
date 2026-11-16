@@ -15,6 +15,7 @@ import { GroundMarkerRenderer } from '../../rendering/GroundMarkerRenderer.js';
 import { LightGlowRenderer } from '../../rendering/LightGlowRenderer.js';
 import { OcclusionFadeController } from '../../rendering/OcclusionFade.js';
 import { ShadowRenderer } from '../../rendering/ShadowRenderer.js';
+import { HudCanvasCache } from '../../ui/HudCanvasCache.js';
 
 /** 物品发光源单帧上限（光晕 + 阴影点光源共用，防滥用拖垮阴影批量 pass）。 */
 const MAX_GLOW_SOURCES = 32;
@@ -99,12 +100,15 @@ export class SceneRenderPipeline {
       (scene, ctx) => scene.bagButton?.render(ctx),
       (scene, ctx) => scene.settingsButton?.render(ctx),
       (_scene, ctx) => this.context?.ui?.playerStatusHUD?.render?.(ctx),
-      (scene, ctx) => scene.minimap?.render(ctx),
+      // 常态小地图：在时间/天气、战斗状态徽章之下
+      (scene, ctx) => { if (scene.minimap && !scene.minimap.expanded) scene.minimap.render(ctx); },
       (_scene, ctx) => this.context?.ui?.cityStateSummary?.render?.(ctx),
       (_scene, ctx) => this.context?.ui?.warSupply?.render?.(ctx),
       (_scene, ctx) => this.context?.ui?.layout?.isOnboardingComponentVisible?.('timeWeatherBadge') !== false
         && this.renderTimeWeatherBadge(ctx),
       (scene, ctx) => scene.renderCombatStateUI(ctx),
+      // 扩展中地图：压在时间/天气、战斗状态徽章之上（徽章不遮挡放大的地图）
+      (scene, ctx) => { if (scene.minimap?.expanded) scene.minimap.render(ctx); },
       (scene, ctx) => scene.armyCommandFlow?.render(ctx),
       (scene, ctx) => { if (scene.isTransitioning) scene.renderTransition(ctx); },
       (scene, ctx) => { if (scene.performanceMonitor?.enabled) scene.performanceMonitor.render(ctx); }
@@ -134,6 +138,7 @@ export class SceneRenderPipeline {
       'renderWarSupply',
       'renderTimeWeatherBadge',
       'renderCombatState',
+      'renderMinimapExpanded',
       'renderArmyCommandFlow',
       'renderTransition',
       'renderPerformanceMonitor'
@@ -165,6 +170,9 @@ export class SceneRenderPipeline {
     this._occlusionFade = new OcclusionFadeController();
     /** 参数化贴地阴影：实体批量 pass + 光照运行时（scene.lighting + 营火点光源） */
     this._shadowRenderer = new ShadowRenderer();
+    /** 常驻 HUD 静态内容缓存：内容不变时每帧只 blit，不重复 fillText/stroke */
+    this._timeWeatherCache = new HudCanvasCache();
+    this._combatStateCache = new HudCanvasCache();
     this._shadowLightingRuntime = {
       directionX: -0.6, directionY: -0.8, elevation: 0.72, strength: 0.9,
       pointLights: []
@@ -723,30 +731,41 @@ export class SceneRenderPipeline {
     const maxTextWidth = Math.max(1, width - padding * 2 - Math.abs(textOffsetX));
     const primaryFontSize = configuredFontSize || Math.max(7, Math.round(12 * scale));
     const secondaryFontSize = configuredFontSize || Math.max(7, Math.round(11 * scale));
-    const textX = x + padding + textOffsetX;
+    const textX = padding + textOffsetX;
 
-    ctx.save();
-    ctx.beginPath();
-    ctx.roundRect(x, y, width, height, 5);
-    ctx.clip();
-    ctx.fillStyle = 'rgba(10, 14, 30, 0.72)';
-    ctx.fillRect(x, y, width, height);
-    ctx.strokeStyle = 'rgba(196, 154, 82, 0.6)';
-    ctx.lineWidth = 1;
-    ctx.stroke();
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle = '#ffe4a3';
-    ctx.font = `bold ${primaryFontSize}px Arial`;
-    ctx.fillText(`第 ${Number.isFinite(day) ? day : 1} 天`, textX, y + height * 0.28 + textOffsetY, maxTextWidth);
-    ctx.fillStyle = '#bfe0ff';
-    ctx.font = `${secondaryFontSize}px Arial`;
-    ctx.fillText(`时间：${periodLabel}`, textX, y + height * 0.61 + textOffsetY, maxTextWidth);
-    if (weatherLabel) {
-      ctx.fillStyle = '#cfe8cf';
-      ctx.fillText(`气候：${weatherLabel}`, textX, y + height * 0.86 + textOffsetY, maxTextWidth);
+    // 静态内容缓存：天数/时段/天气/尺寸/字号都不变时每帧只 blit 一次
+    const drawContent = (c, ox, oy) => {
+      c.save();
+      c.beginPath();
+      c.roundRect(ox, oy, width, height, 5);
+      c.clip();
+      c.fillStyle = 'rgba(10, 14, 30, 0.72)';
+      c.fillRect(ox, oy, width, height);
+      c.strokeStyle = 'rgba(196, 154, 82, 0.6)';
+      c.lineWidth = 1;
+      c.stroke();
+      c.textAlign = 'left';
+      c.textBaseline = 'middle';
+      c.fillStyle = '#ffe4a3';
+      c.font = `bold ${primaryFontSize}px Arial`;
+      c.fillText(`第 ${Number.isFinite(day) ? day : 1} 天`, ox + textX, oy + height * 0.28 + textOffsetY, maxTextWidth);
+      c.fillStyle = '#bfe0ff';
+      c.font = `${secondaryFontSize}px Arial`;
+      c.fillText(`时间：${periodLabel}`, ox + textX, oy + height * 0.61 + textOffsetY, maxTextWidth);
+      if (weatherLabel) {
+        c.fillStyle = '#cfe8cf';
+        c.fillText(`气候：${weatherLabel}`, ox + textX, oy + height * 0.86 + textOffsetY, maxTextWidth);
+      }
+      c.restore();
+    };
+    const cacheKey = `tw|${Number.isFinite(day) ? day : 1}|${periodLabel}|${weatherLabel || ''}` +
+      `|${Math.round(width)}x${Math.round(height)}|${primaryFontSize}/${secondaryFontSize}|${textOffsetX},${textOffsetY}`;
+    const cached = this._timeWeatherCache.get(cacheKey, width, height, c => drawContent(c, 0, 0));
+    if (cached) {
+      ctx.drawImage(cached, x, y, width, height);
+      return;
     }
-    ctx.restore();
+    drawContent(ctx, x, y);
   }
 
   renderCombatStateUI(ctx) {
@@ -786,23 +805,11 @@ export class SceneRenderPipeline {
     const scale = Math.max(0.55, Math.min(1.6, width / 80, height / 30));
     const primaryFontSize = configuredFontSize || Math.max(7, Math.round(12 * scale));
     const secondaryFontSize = configuredFontSize || Math.max(7, Math.round(10 * scale));
-    const textX = x + width / 2 + textOffsetX;
     const maxTextWidth = Math.max(1, width - 4 - Math.abs(textOffsetX) * 2);
 
-    ctx.save();
-    ctx.beginPath();
-    ctx.roundRect(x, y, width, height, 5);
-    ctx.clip();
-    ctx.fillStyle = style.background;
-    ctx.fillRect(x, y, width, height);
-    ctx.strokeStyle = style.border;
-    ctx.lineWidth = 1;
-    ctx.stroke();
-    ctx.fillStyle = '#ffffff';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.font = `bold ${primaryFontSize}px Arial`;
-    if (style.secondary === 'combat') {
+    // 脱战倒计时秒数是唯一逐帧变化的输入，先算进缓存键：倒计时期间每秒重建一次缓存
+    let exitSecondsText = null;
+    if (style.secondary === 'combat' && combatSystem) {
       // 战斗中（敌人仍在附近，timer 恒为满值）只显示「战斗中」，不显示秒数；
       // 仅当脱战倒数进入最后 2 秒（真正要脱离战斗）才显示倒计时秒数，
       // 同时避免敌人在检测范围边界徘徊时秒数反复闪现。
@@ -810,19 +817,43 @@ export class SceneRenderPipeline {
       const exitDelay = combatSystem.getCombatExitDelay?.() ?? exitTimer;
       const aboutToExit = exitTimer > 0 && exitTimer < exitDelay
         && exitTimer <= COMBAT_EXIT_SECONDS_SHOWN;
-      if (aboutToExit) {
-        ctx.fillText(style.primary, textX, y + height * 0.35 + textOffsetY, maxTextWidth);
-        ctx.fillStyle = '#ffff00';
-        ctx.font = `${secondaryFontSize}px Arial`;
-        ctx.fillText(`${Math.ceil(exitTimer)}秒`, textX, y + height * 0.76 + textOffsetY, maxTextWidth);
-      } else {
-        ctx.fillText(style.primary, textX, y + height / 2 + textOffsetY, maxTextWidth);
-      }
-    } else {
-      // 灵魂状态单行居中；平时「正常」单行居中
-      ctx.fillText(style.primary, textX, y + height / 2 + textOffsetY, maxTextWidth);
+      if (aboutToExit) exitSecondsText = `${Math.ceil(exitTimer)}秒`;
     }
-    ctx.restore();
+
+    // 静态内容缓存：状态/文字/尺寸不变时每帧只 blit 一次
+    const drawContent = (c, ox, oy) => {
+      c.save();
+      c.beginPath();
+      c.roundRect(ox, oy, width, height, 5);
+      c.clip();
+      c.fillStyle = style.background;
+      c.fillRect(ox, oy, width, height);
+      c.strokeStyle = style.border;
+      c.lineWidth = 1;
+      c.stroke();
+      c.fillStyle = '#ffffff';
+      c.textAlign = 'center';
+      c.textBaseline = 'middle';
+      c.font = `bold ${primaryFontSize}px Arial`;
+      if (exitSecondsText != null) {
+        c.fillText(style.primary, ox + width / 2 + textOffsetX, oy + height * 0.35 + textOffsetY, maxTextWidth);
+        c.fillStyle = '#ffff00';
+        c.font = `${secondaryFontSize}px Arial`;
+        c.fillText(exitSecondsText, ox + width / 2 + textOffsetX, oy + height * 0.76 + textOffsetY, maxTextWidth);
+      } else {
+        // 灵魂状态单行居中；平时「正常」单行居中
+        c.fillText(style.primary, ox + width / 2 + textOffsetX, oy + height / 2 + textOffsetY, maxTextWidth);
+      }
+      c.restore();
+    };
+    const cacheKey = `cs|${style.background}|${style.border}|${style.primary}|${exitSecondsText || ''}` +
+      `|${Math.round(width)}x${Math.round(height)}|${primaryFontSize}/${secondaryFontSize}|${textOffsetX},${textOffsetY}`;
+    const cached = this._combatStateCache.get(cacheKey, width, height, c => drawContent(c, 0, 0));
+    if (cached) {
+      ctx.drawImage(cached, x, y, width, height);
+      return;
+    }
+    drawContent(ctx, x, y);
   }
 
   /**

@@ -11,11 +11,15 @@
  ************************************************************/
 
 /** TaskGraphSystem 的只读玩家任务投影；不持有任务状态、不发命令。 */
+import { HudCanvasCache } from './HudCanvasCache.js';
+
 export class TaskGraphProjectionView {
   constructor({ getTaskGraph = () => null, getActorId = () => null } = {}) {
     this.getTaskGraph = getTaskGraph;
     this.getActorId = getActorId;
     this.visible = true;
+    // 任务框静态内容缓存：行内容不变时每帧只 blit（fillText/stroke 不逐帧执行）
+    this._cache = new HudCanvasCache();
   }
 
   /**
@@ -68,31 +72,44 @@ export class TaskGraphProjectionView {
     const fontSize = Math.max(11, Math.min(15, Math.round(lineHeight * 0.68)));
     const maxTextWidth = Math.max(1, width - paddingX * 2);
 
-    ctx.save();
-    ctx.beginPath();
-    ctx.roundRect(x, y, width, boxHeight, 5);
-    ctx.clip();
-    ctx.fillStyle = 'rgba(10, 16, 30, 0.82)';
-    ctx.fillRect(x, y, width, boxHeight);
-    ctx.strokeStyle = '#c49a52';
-    ctx.lineWidth = 1;
-    ctx.stroke();
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'middle';
-    visibleLines.forEach((line, index) => {
-      const baselineY = y + paddingY + lineHeight * (index + 0.5);
-      const progressWidth = line.progress ? Math.max(34, fontSize * 3.2) : 0;
-      ctx.fillStyle = line.accent ? '#f0d080' : '#d6dbe8';
-      ctx.font = `${line.strong ? 'bold ' : ''}${fontSize}px Microsoft YaHei, Arial`;
-      ctx.textAlign = 'left';
-      ctx.fillText(line.text, x + paddingX, baselineY, Math.max(1, maxTextWidth - progressWidth));
-      if (line.progress) {
-        ctx.fillStyle = line.completed ? '#8fd6a1' : '#f0d080';
-        ctx.textAlign = 'right';
-        ctx.fillText(line.progress, x + width - paddingX, baselineY, progressWidth);
-      }
-    });
-    ctx.restore();
+    // 静态内容缓存：行文本/进度/完成态/尺寸不变时每帧只 blit 一次
+    const drawContent = (c, ox, oy) => {
+      c.save();
+      c.beginPath();
+      c.roundRect(ox, oy, width, boxHeight, 5);
+      c.clip();
+      c.fillStyle = 'rgba(10, 16, 30, 0.82)';
+      c.fillRect(ox, oy, width, boxHeight);
+      c.strokeStyle = '#c49a52';
+      c.lineWidth = 1;
+      c.stroke();
+      c.textAlign = 'left';
+      c.textBaseline = 'middle';
+      visibleLines.forEach((line, index) => {
+        const baselineY = oy + paddingY + lineHeight * (index + 0.5);
+        const progressWidth = line.progress ? Math.max(34, fontSize * 3.2) : 0;
+        c.fillStyle = line.accent ? '#f0d080' : '#d6dbe8';
+        c.font = `${line.strong ? 'bold ' : ''}${fontSize}px Microsoft YaHei, Arial`;
+        c.textAlign = 'left';
+        c.fillText(line.text, ox + paddingX, baselineY, Math.max(1, maxTextWidth - progressWidth));
+        if (line.progress) {
+          c.fillStyle = line.completed ? '#8fd6a1' : '#f0d080';
+          c.textAlign = 'right';
+          c.fillText(line.progress, ox + width - paddingX, baselineY, progressWidth);
+        }
+      });
+      c.restore();
+    };
+    const cacheKey = `task|${Math.round(width)}x${Math.round(boxHeight)}|fs${fontSize}` +
+      `|${lines.map(line =>
+        `${line.completed ? 1 : 0}${line.strong ? 1 : 0}${line.accent ? 1 : 0}|${line.text}|${line.progress || ''}`
+      ).join(';')}`;
+    const cached = this._cache.get(cacheKey, width, boxHeight, c => drawContent(c, 0, 0));
+    if (cached) {
+      ctx.drawImage(cached, x, y, width, boxHeight);
+      return true;
+    }
+    drawContent(ctx, x, y);
     return true;
   }
 }

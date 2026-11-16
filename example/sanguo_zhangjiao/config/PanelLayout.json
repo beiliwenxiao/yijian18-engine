@@ -938,6 +938,65 @@
           "borderColor": "#3a4a7e"
         }
       ]
+    },
+    {
+      "id": "hudPanel",
+      "name": "玩家HUD",
+      "width": 230,
+      "height": 78,
+      "backgroundColor": "rgba(0, 0, 0, 0.45)",
+      "borderColor": "rgba(255, 255, 255, 0.25)",
+      "borderWidth": 1,
+      "cornerRadius": 6,
+      "parts": [
+        {
+          "id": "avatar",
+          "type": "hud-avatar",
+          "label": "头像",
+          "x": 8,
+          "y": 11,
+          "width": 56,
+          "height": 56,
+          "ringColor": "#d4af37",
+          "ringWidth": 2
+        },
+        {
+          "id": "name",
+          "type": "hud-name",
+          "label": "昵称",
+          "x": 72,
+          "y": 8,
+          "width": 140,
+          "height": 16,
+          "color": "#ffffff",
+          "fontSize": 14,
+          "fontWeight": "bold"
+        },
+        {
+          "id": "hpBar",
+          "type": "hud-hp",
+          "label": "血条",
+          "x": 72,
+          "y": 30,
+          "width": 140,
+          "height": 14,
+          "fillColor": "",
+          "backgroundColor": "#3a0000",
+          "borderColor": "#000000"
+        },
+        {
+          "id": "mpBar",
+          "type": "hud-mp",
+          "label": "蓝条",
+          "x": 72,
+          "y": 50,
+          "width": 140,
+          "height": 14,
+          "fillColor": "#2288ff",
+          "backgroundColor": "#00163a",
+          "borderColor": "#000000"
+        }
+      ]
     }
   ]
 }

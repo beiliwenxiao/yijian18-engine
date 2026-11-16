@@ -11,6 +11,7 @@
  ************************************************************/
 
 import { UIElement } from './UIElement.js';
+import { HudCanvasCache } from './HudCanvasCache.js';
 
 /**
  * 魔法值条组件
@@ -46,6 +47,8 @@ export class ManaBar extends UIElement {
     // 边框和内边距
     this.borderWidth = 2;
     this.padding = 2;
+    // 条内容静态缓存：显示值/尺寸/配色不变时每帧只 blit（平滑动画期间等于逐帧重建，不劣化）
+    this._cache = new HudCanvasCache();
   }
 
   /**
@@ -101,22 +104,39 @@ export class ManaBar extends UIElement {
   }
 
   /**
-   * 渲染魔法值条
+   * 渲染魔法值条（离屏缓存：内容键不变时每帧只 blit 一次）
    * @param {CanvasRenderingContext2D} ctx - Canvas渲染上下文
    */
   render(ctx) {
     if (!this.visible) return;
 
+    const key = `mp|${this.displayValue}|${this.maxValue}|${Math.round(this.width)}x${Math.round(this.height)}` +
+      `|${this.showText ? 1 : 0}${this.showPercentage ? 1 : 0}|${this.barColor}|${this.backgroundColor}|${this.borderColor}`;
+    const cached = this._cache.get(key, this.width, this.height, c => this._drawInto(c, 0, 0));
+    if (cached) {
+      ctx.drawImage(cached, this.x, this.y, this.width, this.height);
+      return;
+    }
+    this._drawInto(ctx, this.x, this.y);
+  }
+
+  /**
+   * 绘制条内容（origin 模式：ox/oy 为盒子左上角，离屏缓存与直接绘制共用同一实现）
+   * @param {CanvasRenderingContext2D} ctx - Canvas渲染上下文
+   * @param {number} ox - 盒子左上角 x
+   * @param {number} oy - 盒子左上角 y
+   */
+  _drawInto(ctx, ox, oy) {
     const percentage = this.displayValue / this.maxValue;
     const innerWidth = this.width - (this.borderWidth + this.padding) * 2;
     const innerHeight = this.height - (this.borderWidth + this.padding) * 2;
-    const innerX = this.x + this.borderWidth + this.padding;
-    const innerY = this.y + this.borderWidth + this.padding;
+    const innerX = ox + this.borderWidth + this.padding;
+    const innerY = oy + this.borderWidth + this.padding;
 
     // 绘制边框
     ctx.strokeStyle = this.borderColor;
     ctx.lineWidth = this.borderWidth;
-    ctx.strokeRect(this.x, this.y, this.width, this.height);
+    ctx.strokeRect(ox, oy, this.width, this.height);
 
     // 绘制背景
     ctx.fillStyle = this.backgroundColor;
@@ -133,18 +153,18 @@ export class ManaBar extends UIElement {
       ctx.font = '12px Arial';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      
+
       let text = '';
       if (this.showPercentage) {
         text = `${Math.round(percentage * 100)}%`;
       } else {
         text = `${Math.round(this.displayValue)}/${this.maxValue}`;
       }
-      
+
       // 添加文字阴影以提高可读性
       ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
       ctx.shadowBlur = 3;
-      ctx.fillText(text, this.x + this.width / 2, this.y + this.height / 2);
+      ctx.fillText(text, ox + this.width / 2, oy + this.height / 2);
       ctx.shadowBlur = 0;
     }
   }

@@ -40,11 +40,7 @@ const DEFAULT_COMPONENTS = {
       { id: 'timeWeatherBadge', label: '时间/天气', x: 10, y: 70, width: 116, height: 76, fontSize: 0, textOffsetX: 0, textOffsetY: 0, anchor: 'topleft', kind: 'panel' },
       { id: 'combatStateBadge', label: '战斗/灵魂状态', x: 10, y: 150, width: 115, height: 30, fontSize: 0, textOffsetX: 0, textOffsetY: 0, anchor: 'topleft', kind: 'panel' },
       { id: 'taskTracker', label: '任务追踪', x: 56, y: 190, width: 340, height: 150, anchor: 'topleft', kind: 'panel' },
-      // 左上角玩家状态 HUD（头像 + 昵称 + 血条 + 蓝条），与移动端一致
-      { id: 'hud-avatar', label: 'HUD头像', x: 10, y: 10, width: 56, height: 56, anchor: 'topleft', kind: 'button' },
-      { id: 'hud-name', label: 'HUD昵称', x: 78, y: 10, width: 140, height: 20, anchor: 'topleft', kind: 'panel' },
-      { id: 'hud-hp', label: 'HUD血条', x: 78, y: 32, width: 140, height: 14, anchor: 'topleft', kind: 'panel' },
-      { id: 'hud-mp', label: 'HUD蓝条', x: 78, y: 52, width: 140, height: 14, anchor: 'topleft', kind: 'panel' },
+      { id: 'hud-panel', label: '玩家HUD面板', x: 10, y: 10, width: 230, height: 78, anchor: 'topleft', kind: 'panel' },
       // 统一背包外框（属性、装备和物品栏的内部部件由 PanelEditor 编辑）
       { id: 'backpackPanel', label: '背包', x: 140, y: 140, width: 1000, height: 440, anchor: 'topleft', kind: 'panel' },
       // 底部控制栏拆分为独立小控件（血球/蓝球/2药水/5技能）
@@ -88,10 +84,7 @@ const DEFAULT_COMPONENTS = {
       { id: 'taskTracker', label: '任务追踪', x: 22, y: 184, width: 340, height: 140, anchor: 'topleft', kind: 'panel' },
       { id: 'backpackPanel', label: '背包', x: 100, y: 150, width: 1080, height: 475, anchor: 'topleft', kind: 'panel' },
       { id: 'joystick', label: '摇杆区', x: 0, y: 270, width: 384, height: 330, anchor: 'topleft', kind: 'zone' },
-      { id: 'hud-avatar', label: 'HUD头像', x: 10, y: 10, width: 56, height: 56, anchor: 'topleft', kind: 'button' },
-      { id: 'hud-name', label: 'HUD昵称', x: 78, y: 10, width: 140, height: 20, anchor: 'topleft', kind: 'panel' },
-      { id: 'hud-hp', label: 'HUD血条', x: 78, y: 32, width: 140, height: 14, anchor: 'topleft', kind: 'panel' },
-      { id: 'hud-mp', label: 'HUD蓝条', x: 78, y: 52, width: 140, height: 14, anchor: 'topleft', kind: 'panel' },
+      { id: 'hud-panel', label: '玩家HUD面板', x: 10, y: 10, width: 230, height: 78, anchor: 'topleft', kind: 'panel' },
       { id: 'act-attack', label: '攻击', x: 1126, y: 510, width: 78, height: 78, anchor: 'topleft', kind: 'button' },
       { id: 'act-block', label: '格挡', x: 1126, y: 544, width: 56, height: 56, anchor: 'topleft', kind: 'button' },
       { id: 'act-dodge', label: '闪避', x: 1141, y: 504, width: 56, height: 56, anchor: 'topleft', kind: 'button' },
@@ -143,9 +136,8 @@ const MOBILE_TOUCH_BUTTON_IDS = new Set([
   'act-flight', 'act-jump', 'act-interact', 'act-throw', 'act-axe', 'act-map',
   'hb-hp', 'hb-mp', 'hb-bag', 'hb-settings', 'hb-skill6', 'hb-skill7'
 ]);
-// 允许在编辑器中删除的内置控件 id：HUD 玩家状态子部件。
-// 运行时 PlayerStatusHUD 按布局条目存在与否渲染对应部件；四个全删则回退默认整体 HUD。
-const DELETABLE_COMPONENT_IDS = new Set(['hud-avatar', 'hud-name', 'hud-hp', 'hud-mp']);
+// 允许在编辑器中删除的内置控件 id：玩家 HUD 面板（独立面板，运行时按条目存在与否整体显示）。
+const DELETABLE_COMPONENT_IDS = new Set(['hud-panel']);
 // ─── 快捷控件类型体系（uiType 是类型主键；旧数据缺失时按 id/kind 推断） ───────
 // kind 决定运行时消费方式：button=可点击热区，component=纯展示/绑定型控件。
 const UI_COMPONENT_TYPES = {
@@ -208,8 +200,9 @@ function resolveComponentType(component) {
 }
 
 const EDITABLE_PANEL_PART_IDS = new Set(['bagTitle', 'bagSeparator']);
-// 外框不锁比例的面板：armyCommandHud 的高度由内部行高堆叠决定，与 PanelLayout 面板比例无关
-const ASPECT_FREE_PANEL_IDS = new Set(['armyCommandHud']);
+// 外框不锁比例的面板：armyCommandHud 的高度由内部行高堆叠决定，与 PanelLayout 面板比例无关；
+// hudPanel 的尺寸来自自身 UI 条目，与 PanelLayout 参考宽高无关
+const ASPECT_FREE_PANEL_IDS = new Set(['armyCommandHud', 'hudPanel']);
 const PANEL_PART_MIN_SIZE = 16;
 const PANEL_LINE_HIT_HEIGHT = 8;
 
@@ -332,7 +325,7 @@ export class UIEditor {
     this._clearComponentSelection();
     this._commitHistorySnapshot(snapshot);
     if (DELETABLE_COMPONENT_IDS.has(comp.id)) {
-      this._setStatus(`已删除 ${comp.label || comp.id}（未保存）：游戏内 HUD 不再显示该部件；hud-* 全删则游戏内隐藏整个玩家 HUD，可从左侧「＋ 添加 HUD 部件」加回`);
+      this._setStatus(`已删除 ${comp.label || comp.id}（未保存）：游戏内不再显示玩家 HUD，可从左侧「＋ 添加 HUD 部件」加回`);
     } else {
       this._setStatus(`已删除控件：${comp.id}（未保存）`);
     }
@@ -394,6 +387,106 @@ export class UIEditor {
     this._commitHistorySnapshot(snapshot);
     this._setStatus(`已添加 HUD 部件：${added.label || added.id}（未保存），拖到目标位置后保存`);
     this._render();
+  }
+
+  // ─── 显示深度调整（右键菜单：上移/下移/置顶/置底，仿场景编辑器） ─────────
+
+  /**
+   * 调整部件显示深度。components 数组顺序即绘制顺序（越靠后越在上层）：
+   * up=上移一层（更靠上）、down=下移一层、top=置顶、bottom=置底。
+   */
+  _moveComponentOrder(comp, mode) {
+    const components = this._getLayoutComponents();
+    const from = components.indexOf(comp);
+    if (from < 0) return;
+    let to = from;
+    if (mode === 'up') to = Math.min(components.length - 1, from + 1);
+    else if (mode === 'down') to = Math.max(0, from - 1);
+    else if (mode === 'top') to = components.length - 1;
+    else if (mode === 'bottom') to = 0;
+    if (to === from) return;
+    const snapshot = this._createHistorySnapshot();
+    components.splice(from, 1);
+    components.splice(to, 0, comp);
+    this._commitHistorySnapshot(snapshot);
+    this._setStatus(`已调整 ${comp.id} 显示深度（未保存）`);
+    this._render();
+  }
+
+  /** 右键菜单：深度调整（上移/下移/置顶/置底）+ 可删件的删除入口。 */
+  _showComponentContextMenu(e, comp) {
+    this.removeContextMenu();
+    const components = this._getLayoutComponents();
+    const index = components.indexOf(comp);
+    if (index < 0) return;
+    e.preventDefault();
+    // 右键即选中该部件，属性面板跟随（_render 不影响挂在 body 上的菜单本身）
+    this._setComponentSelection([comp], comp.id);
+    this._render();
+    const menu = document.createElement('div');
+    menu.id = 'uie-context-menu';
+    menu.style.cssText = `position:fixed;left:${e.clientX}px;top:${e.clientY}px;background:#16213e;border:1px solid #3a4a7e;border-radius:4px;padding:4px 0;z-index:99999;box-shadow:0 4px 12px rgba(0,0,0,0.4);font-size:13px;min-width:170px;`;
+    const items = [
+      { label: '↑ 上移一层（更靠上）', disabled: index >= components.length - 1, action: () => this._moveComponentOrder(comp, 'up') },
+      { label: '↓ 下移一层（更靠下）', disabled: index <= 0, action: () => this._moveComponentOrder(comp, 'down') },
+      { separator: true },
+      { label: '⤒ 置顶', disabled: index >= components.length - 1, action: () => this._moveComponentOrder(comp, 'top') },
+      { label: '⤓ 置底', disabled: index <= 0, action: () => this._moveComponentOrder(comp, 'bottom') }
+    ];
+    if (this._isDeletableComponent(comp)) {
+      items.push({ separator: true });
+      items.push({ label: '🗑 删除控件', action: () => this._deleteSelectedComponent() });
+    }
+
+    for (const item of items) {
+      if (item.separator) {
+        const sep = document.createElement('div');
+        sep.style.cssText = 'height:1px;background:#3a4a7e;margin:4px 0;';
+        menu.appendChild(sep);
+        continue;
+      }
+      const el = document.createElement('div');
+      el.textContent = item.label;
+      el.style.cssText = `padding:6px 16px;cursor:${item.disabled ? 'default' : 'pointer'};color:${item.disabled ? '#666' : '#fff'};white-space:nowrap;`;
+      if (!item.disabled) {
+        el.addEventListener('mouseenter', () => { el.style.background = '#3a4a7e'; });
+        el.addEventListener('mouseleave', () => { el.style.background = 'transparent'; });
+        el.addEventListener('click', () => {
+          item.action();
+          this.removeContextMenu();
+        });
+      }
+      menu.appendChild(el);
+    }
+
+    document.body.appendChild(menu);
+    // 视口溢出翻转（与场景编辑器右键菜单同款）
+    const menuRect = menu.getBoundingClientRect();
+    let menuX = e.clientX;
+    let menuY = e.clientY;
+    if (menuX + menuRect.width > window.innerWidth - 4) {
+      menuX = Math.max(4, menuX - menuRect.width);
+    }
+    if (menuY + menuRect.height > window.innerHeight - 4) {
+      menuY = Math.max(4, menuY - menuRect.height);
+    }
+    menu.style.left = `${menuX}px`;
+    menu.style.top = `${menuY}px`;
+
+    this._contextMenuCloser = (ev) => {
+      if (!menu.contains(ev.target)) this.removeContextMenu();
+    };
+    setTimeout(() => {
+      document.addEventListener('mousedown', this._contextMenuCloser);
+    }, 0);
+  }
+
+  removeContextMenu() {
+    document.getElementById('uie-context-menu')?.remove();
+    if (this._contextMenuCloser) {
+      document.removeEventListener('mousedown', this._contextMenuCloser);
+      this._contextMenuCloser = null;
+    }
   }
 
   // ─── 显隐/锁定状态持久化（localStorage，按 gameId+平台隔离） ─────────────
@@ -806,7 +899,7 @@ export class UIEditor {
               <button id="uie-add-comp" type="button">＋ 新增控件</button>
             </div>
             <div class="uie-add-comp" id="uie-hud-add-block" hidden>
-              <select id="uie-hud-add-type" title="选择要添加回的 HUD 部件（头像/昵称/血条/蓝条）"></select>
+              <select id="uie-hud-add-type" title="选择要添加回的 HUD 部件（玩家HUD面板）"></select>
               <button id="uie-hud-add" type="button">＋ 添加 HUD 部件</button>
             </div>
             <h4 class="uie-skill-title">技能列表 <span id="uie-skill-count"></span></h4>
@@ -1208,14 +1301,16 @@ export class UIEditor {
       return;
     }
     listEl.innerHTML = layout.components
-      .filter(comp => this._componentFilter === 'all' || resolveComponentType(comp) === this._componentFilter)
-      .map(comp => {
+      .map((comp, index) => ({ comp, depth: index }))
+      .filter(({ comp }) => this._componentFilter === 'all' || resolveComponentType(comp) === this._componentFilter)
+      .map(({ comp, depth }) => {
         const hidden = comp.editorHidden === true;
         const locked = comp.editorLocked === true;
         const selected = this.selectedIds.has(comp.id);
         const typeDef = UI_COMPONENT_TYPES[resolveComponentType(comp)];
         return `
-        <div class="uie-list-item${selected ? ' selected' : ''}${hidden ? ' hidden' : ''}" data-list-id="${escapeHtml(comp.id)}">
+        <div class="uie-list-item${selected ? ' selected' : ''}${hidden ? ' hidden' : ''}" data-list-id="${escapeHtml(comp.id)}" title="右键：上移/下移/置顶/置底">
+          <span class="uie-list-depth" title="显示深度（数组顺序即绘制顺序，数字越大越在上层）">${depth}</span>
           <button class="uie-list-btn visibility${hidden ? ' off' : ''}" data-list-action="visibility" title="${hidden ? '在编辑器中显示' : '在编辑器中隐藏'}">${hidden ? '🚫' : '👁'}</button>
           <button class="uie-list-btn lock${locked ? ' on' : ''}" data-list-action="lock" title="${locked ? '已锁定，点击解锁' : '未锁定，点击锁定'}">${locked ? '🔒' : '🔓'}</button>
           <span class="uie-list-type" title="类型：${typeDef.label}">${typeDef.badge}</span>
@@ -1225,6 +1320,10 @@ export class UIEditor {
       }).join('');
 
     listEl.querySelectorAll('.uie-list-item').forEach(item => {
+      const itemComp = layout.components.find(candidate => candidate.id === item.dataset.listId);
+      item.addEventListener('contextmenu', (e) => {
+        if (itemComp) this._showComponentContextMenu(e, itemComp);
+      });
       item.addEventListener('click', (e) => {
         const comp = layout.components.find(candidate => candidate.id === item.dataset.listId);
         if (!comp) return;
@@ -1273,6 +1372,8 @@ export class UIEditor {
       .uie-list-item:hover { background:#1d2a49; }
       .uie-list-item.selected { background:#3a4a2a; outline:1px solid #4CAF50; }
       .uie-list-item.hidden { opacity:0.5; }
+      .uie-list-depth { flex-shrink:0; width:18px; text-align:center; color:#7d92c4; font-size:10px; line-height:20px; }
+      .uie-list-item.selected .uie-list-depth { color:#cfe3ff; }
       .uie-list-btn { flex-shrink:0; width:22px; height:20px; padding:0; font-size:11px; background:#2a3a5e; border:1px solid #5574ad; border-radius:3px; cursor:pointer; color:#fff; line-height:1; }
       .uie-list-btn.visibility.off { background:#3a3a3a; border-color:#666; opacity:0.8; }
       .uie-list-btn.lock.on { background:#5a2a2a; border-color:#c0504a; }
@@ -1590,6 +1691,8 @@ export class UIEditor {
 
       // 拖拽
       el.addEventListener('mousedown', (e) => this._startDrag(e, comp, 'move'));
+      // 右键：显示深度菜单（上移/下移/置顶/置底/删除）
+      el.addEventListener('contextmenu', (e) => this._showComponentContextMenu(e, comp));
 
       // 缩放手柄：仅单选部件显示（多选/未选中不显示，避免歧义）
       if (this.selectedIds.size === 1 && this.selectedId === comp.id) {

@@ -37,11 +37,7 @@ export class MobileUIStrategy extends UIStrategy {
   }
 
   layoutPlayerStatusHUD(hud, width, height) {
-    if (!hud) return;
-    // 固定左上角；如有需要可按宽度自适应
-    hud.x = 10;
-    hud.y = 10;
-    if (typeof hud.layout === 'function') hud.layout();
+    // 玩家 HUD 是独立面板：位置/大小由 UI 布局 hud-panel 条目管理，这里不再强制钉位
   }
 
   /**

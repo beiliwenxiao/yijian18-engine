@@ -164,11 +164,26 @@ const DEFAULT_PANELS = [
       { id: 'comboRow', type: 'panel', label: '合并行（预设+状态）', x: 0, y: 38, width: 316, height: 26, bgColor: '#233055', borderColor: '#3a4a7e' },
       { id: 'stancePanel', type: 'panel', label: '姿态面板 Row2', x: 0, y: 64, width: 316, height: 28, bgColor: '#233055', borderColor: '#3a4a7e' }
     ]
+  },
+  {
+    // 玩家 HUD 面板：内部件（头像/昵称/血条/蓝条）按 parts 单独编辑，运行时按 type 消费
+    // （部件缺失 = 游戏内隐藏该部件）；底板圆角为面板级字段。位置/大小在 UI 编辑器 hud-panel 条目。
+    id: 'hudPanel', name: '玩家HUD', width: 230, height: 78,
+    backgroundColor: 'rgba(0, 0, 0, 0.45)', borderColor: 'rgba(255, 255, 255, 0.25)', borderWidth: 1,
+    cornerRadius: 8,
+    parts: [
+      { id: 'avatar', type: 'hud-avatar', label: '头像', x: 8, y: 11, width: 56, height: 56, ringColor: '#d4af37', ringWidth: 2 },
+      { id: 'name', type: 'hud-name', label: '昵称', x: 72, y: 8, width: 140, height: 16, color: '#ffffff', fontSize: 14, fontWeight: 'bold' },
+      { id: 'hpBar', type: 'hud-hp', label: '血条', x: 72, y: 30, width: 140, height: 14, fillColor: '', backgroundColor: '#3a0000', borderColor: '#000000' },
+      { id: 'mpBar', type: 'hud-mp', label: '蓝条', x: 72, y: 50, width: 140, height: 14, fillColor: '#2288ff', backgroundColor: '#00163a', borderColor: '#000000' }
+    ]
   }
 ];
 
 // 军队操作 HUD 面板（运行时 ArmyCommandHUD 消费；编辑器提供选择/恢复入口）
 const ARMY_PANEL_ID = 'armyCommandHud';
+// 玩家 HUD 面板（运行时 PlayerStatusHUD 消费；编辑器提供选择/恢复入口）
+const HUD_PANEL_ID = 'hudPanel';
 
 // 部件类型注册表（用于新增部件时的选项）
 const PART_TYPES = {
@@ -184,7 +199,12 @@ const PART_TYPES = {
   'progress-bar': { label: '进度条', defaults: { fillColor: '#4CAF50', bgColor: '#333', borderColor: '#666', value: 0.7 } },
   'image': { label: '图片', defaults: { src: '', imageMode: 'contain' } },
   // 角色立绘：运行时由场景把玩家实体（含装备外观）实时画进该矩形，编辑器只画占位框
-  'portrait': { label: '角色立绘', defaults: { bgColor: 'rgba(18,24,32,0.55)', borderColor: 'rgba(196,154,82,0.5)' } }
+  'portrait': { label: '角色立绘', defaults: { bgColor: 'rgba(18,24,32,0.55)', borderColor: 'rgba(196,154,82,0.5)' } },
+  // 玩家 HUD 面板专属部件：运行时 PlayerStatusHUD 按 type 消费（部件缺失 = 隐藏该元素）
+  'hud-avatar': { label: 'HUD头像', defaults: { ringColor: '#d4af37', ringWidth: 2 } },
+  'hud-name': { label: 'HUD昵称', defaults: { color: '#ffffff', fontSize: 14, fontWeight: 'bold' } },
+  'hud-hp': { label: 'HUD血条', defaults: { fillColor: '', backgroundColor: '#3a0000', borderColor: '#000000' } },
+  'hud-mp': { label: 'HUD蓝条', defaults: { fillColor: '#2288ff', backgroundColor: '#00163a', borderColor: '#000000' } }
 };
 
 export class PanelEditor {
@@ -680,12 +700,19 @@ export class PanelEditor {
     ctx.save();
     ctx.scale(this.scale, this.scale);
 
-    // 面板背景
-    ctx.fillStyle = panel.backgroundColor || 'rgba(0,0,0,0.85)';
-    ctx.fillRect(0, 0, panel.width, panel.height);
-    ctx.strokeStyle = panel.borderColor || '#4a9eff';
-    ctx.lineWidth = panel.borderWidth || 2;
-    ctx.strokeRect(0, 0, panel.width, panel.height);
+    // 面板背景（玩家HUD 面板走下方专属的圆角所见即所得预览）
+    if (panel.id !== HUD_PANEL_ID) {
+      ctx.fillStyle = panel.backgroundColor || 'rgba(0,0,0,0.85)';
+      ctx.fillRect(0, 0, panel.width, panel.height);
+      ctx.strokeStyle = panel.borderColor || '#4a9eff';
+      ctx.lineWidth = panel.borderWidth || 2;
+      ctx.strokeRect(0, 0, panel.width, panel.height);
+    }
+
+    // 玩家 HUD 面板：圆角底板（部件——头像/昵称/血条/蓝条——由通用部件循环渲染，可单独选中编辑）
+    if (panel.id === HUD_PANEL_ID) {
+      this._renderHudBasePlate(ctx, panel);
+    }
 
     // 渲染所有部件（编辑器中隐藏的部件跳过；显隐/锁定仅编辑态，不写入 JSON）
     for (const part of panel.parts) {
@@ -735,6 +762,48 @@ export class PanelEditor {
 
     ctx.restore();
     this.container.querySelector('#pe-zoom-info').textContent = '100%';
+  }
+
+  /**
+   * 玩家 HUD 面板底板预览：圆角底板（配色/圆角随表单）。
+   * 内部件（头像/昵称/血条/蓝条）走通用部件渲染，可单独选中/拖拽/改属性。
+   */
+  _renderHudBasePlate(ctx, panel) {
+    const radius = Math.max(0, Number(panel.cornerRadius) || 0) || 8;
+    ctx.save();
+    ctx.beginPath();
+    ctx.roundRect(0, 0, panel.width, panel.height, radius);
+    ctx.fillStyle = panel.backgroundColor || 'rgba(0, 0, 0, 0.45)';
+    ctx.fill();
+    ctx.strokeStyle = panel.borderColor || 'rgba(255, 255, 255, 0.25)';
+    ctx.lineWidth = Number.isFinite(panel.borderWidth) ? panel.borderWidth : 1;
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  /** HUD 预览辅助：画单条（边框 + 底 + 填充 + 数值文字，与运行时 HealthBar/ManaBar 同款）。 */
+  _drawPreviewBar(ctx, x, y, width, height, pct, text, bgColor, borderColor, fillColor) {
+    const border = 2;
+    const pad = 2;
+    ctx.strokeStyle = borderColor;
+    ctx.lineWidth = border;
+    ctx.strokeRect(x, y, width, height);
+    const innerX = x + border + pad;
+    const innerY = y + border + pad;
+    const innerW = Math.max(0, width - (border + pad) * 2);
+    const innerH = Math.max(0, height - (border + pad) * 2);
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(innerX, innerY, innerW, innerH);
+    ctx.fillStyle = fillColor;
+    ctx.fillRect(innerX, innerY, innerW * pct, innerH);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '12px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+    ctx.shadowBlur = 3;
+    ctx.fillText(text, x + width / 2, y + height / 2);
+    ctx.shadowBlur = 0;
   }
 
   /** 渲染单个部件 */
@@ -902,6 +971,60 @@ export class PanelEditor {
         ctx.textAlign = 'left';
         break;
 
+      case 'hud-avatar': {
+        // HUD 头像：圆形裁剪 + 金边环（与运行时 PlayerStatusHUD 同款画法）
+        const size = Math.min(width, height);
+        const cx = x + width / 2;
+        const cy = y + height / 2;
+        const ringWidth = Math.max(0, Number.isFinite(part.ringWidth) ? part.ringWidth : 2);
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(cx, cy, size / 2, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.clip();
+        ctx.fillStyle = '#444';
+        ctx.fillRect(cx - size / 2, cy - size / 2, size, size);
+        ctx.restore();
+        if (ringWidth > 0) {
+          ctx.beginPath();
+          ctx.arc(cx, cy, size / 2, 0, Math.PI * 2);
+          ctx.strokeStyle = part.ringColor || '#d4af37';
+          ctx.lineWidth = ringWidth;
+          ctx.stroke();
+        }
+        break;
+      }
+
+      case 'hud-name': {
+        // HUD 昵称：示例文本，颜色/字号/字重随部件属性
+        ctx.fillStyle = part.color || '#ffffff';
+        ctx.font = `${part.fontWeight === 'normal' ? 'normal' : (part.fontWeight || 'bold')} ${Math.max(8, Number(part.fontSize) || 14)}px Arial`;
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+        ctx.shadowBlur = 3;
+        ctx.fillText('玩家', x, y + height / 2);
+        ctx.shadowBlur = 0;
+        break;
+      }
+
+      case 'hud-hp': {
+        // HUD 血条：采样 70%，固定色优先，否则按血量自动变色
+        const hpPct = 0.7;
+        const fill = String(part.fillColor || '').trim()
+          || (hpPct > 0.5 ? '#00ff00' : hpPct > 0.25 ? '#ffff00' : '#ff0000');
+        this._drawPreviewBar(ctx, x, y, width, height, hpPct, '70/100',
+          part.backgroundColor || '#3a0000', part.borderColor || '#000000', fill);
+        break;
+      }
+
+      case 'hud-mp': {
+        // HUD 蓝条：采样 50%
+        this._drawPreviewBar(ctx, x, y, width, height, 0.5, '50/100',
+          part.backgroundColor || '#00163a', part.borderColor || '#000000', part.fillColor || '#2288ff');
+        break;
+      }
+
       default:
         // 未知类型画占位框
         ctx.strokeStyle = '#f88';
@@ -946,7 +1069,7 @@ export class PanelEditor {
           <div class="pe-prop-section">
             <div class="pe-prop-section-title">样式</div>
             <div class="pe-prop-row"><label>背景色</label><input type="text" data-panel-key="backgroundColor" value="${panel.backgroundColor || ''}"></div>
-            <div class="pe-prop-row"><label>边框色</label><input type="color" data-panel-key="borderColor" value="${panel.borderColor || '#4a9eff'}"></div>
+            <div class="pe-prop-row"><label>边框色</label><input type="${/^#[0-9a-fA-F]{6}$/.test(panel.borderColor || '') ? 'color' : 'text'}" data-panel-key="borderColor" value="${panel.borderColor || '#4a9eff'}"></div>
             <div class="pe-prop-row"><label>边框宽</label><input type="number" data-panel-key="borderWidth" value="${panel.borderWidth || 2}" step="1"></div>
           </div>
           <div class="pe-prop-section">
@@ -959,13 +1082,22 @@ export class PanelEditor {
             <div class="pe-prop-hint">「编组条 / 合并行 / 姿态面板」三个部件的高度驱动运行时 ArmyCommandHUD 行高，钳制 16~96px；宽度始终与 HUD 外框一致，外框位置在 UI 编辑器 armyCommandHud 中调整。</div>
             <button type="button" class="pe-prop-button" id="pe-army-reset">↺ 恢复默认行高</button>
           </div>` : ''}
+          ${panel.id === HUD_PANEL_ID ? `
+          <div class="pe-prop-section">
+            <div class="pe-prop-section-title">玩家HUD（运行时联动）</div>
+            <div class="pe-prop-hint">底板配色在上方「样式」区；头像/昵称/血条/蓝条为独立部件——在画布或左侧列表单独选中拖拽、改属性，删除某部件 = 游戏内隐藏该元素（部件按类型被运行时消费）。血条填充色留空 = 按血量自动红黄绿。面板位置/大小在 UI 编辑器「玩家HUD面板」条目。</div>
+            <div class="pe-prop-row"><label>底板圆角</label><input type="number" data-panel-key="cornerRadius" value="${panel.cornerRadius ?? 8}" step="1" min="0"></div>
+            <button type="button" class="pe-prop-button" id="pe-hud-reset">↺ 恢复默认样式</button>
+          </div>` : ''}
         `;
         // 面板属性输入
         propsEl.querySelectorAll('[data-panel-key]').forEach(input => {
           input.addEventListener('change', () => {
             const key = input.dataset.panelKey;
             let val = input.value;
-            if (key === 'width' || key === 'height' || key === 'borderWidth') val = parseInt(val) || 0;
+            if (['width', 'height', 'borderWidth', 'cornerRadius', 'avatarRingWidth', 'nameFontSize'].includes(key)) {
+              val = parseInt(val) || 0;
+            }
             if (panel[key] === val) return;
             const snapshot = this._createHistorySnapshot();
             panel[key] = val;
@@ -984,6 +1116,7 @@ export class PanelEditor {
           });
         });
         propsEl.querySelector('#pe-army-reset')?.addEventListener('click', () => this._resetArmyPanel());
+        propsEl.querySelector('#pe-hud-reset')?.addEventListener('click', () => this._resetHudPanel());
       } else {
         propsEl.innerHTML = '<h4>属性</h4><div class="pe-prop-empty">无面板</div>';
       }
@@ -1026,7 +1159,7 @@ export class PanelEditor {
         const key = input.dataset.partKey;
         let val = input.value;
         // 数值字段
-        if (['x', 'y', 'width', 'height', 'fontSize', 'cols', 'rows', 'slotSize', 'slotPadding', 'borderWidth', 'value'].includes(key)) {
+        if (['x', 'y', 'width', 'height', 'fontSize', 'cols', 'rows', 'slotSize', 'slotPadding', 'borderWidth', 'value', 'ringWidth'].includes(key)) {
           val = parseFloat(val) || 0;
         }
         if (part[key] === val) return;
@@ -1106,6 +1239,25 @@ export class PanelEditor {
       case 'portrait':
         html += this._propRow('bgColor', '背景色', part.bgColor || 'rgba(18,24,32,0.55)', 'text');
         html += this._propRow('borderColor', '边框色', part.borderColor || 'rgba(74,158,255,0.45)', 'text');
+        break;
+      case 'hud-avatar':
+        html += this._propRow('ringColor', '金边色', part.ringColor || '#d4af37', 'color');
+        html += this._propRow('ringWidth', '金边宽', part.ringWidth ?? 2, 'number');
+        break;
+      case 'hud-name':
+        html += this._propRow('color', '颜色', part.color || '#ffffff', 'color');
+        html += this._propRow('fontSize', '字号', part.fontSize || 14, 'number');
+        html += this._propRow('fontWeight', '粗体', part.fontWeight || 'bold', 'select', ['normal', 'bold']);
+        break;
+      case 'hud-hp':
+        html += this._propRow('fillColor', '填充色(空=自动)', part.fillColor || '', 'text');
+        html += this._propRow('backgroundColor', '底色', part.backgroundColor || '#3a0000', 'color');
+        html += this._propRow('borderColor', '边框色', part.borderColor || '#000000', 'color');
+        break;
+      case 'hud-mp':
+        html += this._propRow('fillColor', '填充色', part.fillColor || '#2288ff', 'color');
+        html += this._propRow('backgroundColor', '底色', part.backgroundColor || '#00163a', 'color');
+        html += this._propRow('borderColor', '边框色', part.borderColor || '#000000', 'color');
         break;
     }
     return html;
@@ -1536,6 +1688,21 @@ export class PanelEditor {
     this._saveEditorState();
     this._render();
     this._showToast('已恢复「军队操作」默认行高');
+  }
+
+  /** 把「玩家HUD」面板样式字段恢复为默认观感（底板/金边/昵称/双条）。 */
+  _resetHudPanel() {
+    const index = this.panels.findIndex(panel => panel.id === HUD_PANEL_ID);
+    const definition = DEFAULT_PANELS.find(panel => panel.id === HUD_PANEL_ID);
+    if (index < 0 || !definition) return;
+    const snapshot = this._createHistorySnapshot();
+    this.panels[index] = JSON.parse(JSON.stringify(definition));
+    this._clearSelection();
+    this._commitHistorySnapshot(snapshot);
+    this._applyEditorState();
+    this._saveEditorState();
+    this._render();
+    this._showToast('已恢复「玩家HUD」默认样式');
   }
 
   // ─── 部件管理 ─────────────────────────────────────────

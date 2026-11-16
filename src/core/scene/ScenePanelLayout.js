@@ -555,6 +555,11 @@ export class ScenePanelLayout {
       if (armyPanelDefinition) {
         scene.armyCommandFlow?.applyPanelDefinition?.(armyPanelDefinition);
       }
+      // 玩家 HUD 面板观感（面板编辑器「玩家HUD」面板：底板/金边/昵称/双条配色字号）
+      const hudPanelDefinition = loaded ? loader.getPanel('hudPanel') : null;
+      if (hudPanelDefinition) {
+        scene.playerStatusHUD?.applyPanelDefinition?.(hudPanelDefinition);
+      }
     } catch (error) {
       console.warn('BaseGameScene: 面板布局加载失败，使用默认', error);
     }
@@ -649,7 +654,7 @@ export class ScenePanelLayout {
       };
     }
 
-    const hudComponentIds = ['hud-avatar', 'hud-name', 'hud-hp', 'hud-mp'];
+    const hudComponentIds = ['hud-panel'];
     for (const componentId of hudComponentIds) {
       scene.playerStatusHUD?.setOnboardingComponentState?.(componentId, getState(componentId));
     }
@@ -767,19 +772,14 @@ export class ScenePanelLayout {
   _applyHudLayout(loader, width, height) {
     const hud = this.scene.playerStatusHUD;
     if (!hud) return;
-    const definition = {
-      avatarRect: loader.getRect('hud-avatar', width, height),
-      nameRect: loader.getRect('hud-name', width, height),
-      hpRect: loader.getRect('hud-hp', width, height),
-      mpRect: loader.getRect('hud-mp', width, height)
-    };
-    if (Object.values(definition).some(Boolean)) {
-      // 有任意 hud-* 条目 → 子布局模式：有哪件画哪件（与 UI 编辑器所见一致）
+    const rect = loader.getRect('hud-panel', width, height);
+    if (rect) {
+      // 玩家 HUD 是独立面板：位置/大小随 UI 布局条目，内部布局（头像/昵称/双条）由组件按尺寸推导
       hud.hiddenByLayout = false;
-      hud.applySubLayout(definition);
+      hud.setPanelRect(rect);
     } else {
-      // 布局文件存在但 hud-* 全部被删除 → 整个玩家状态 HUD 不显示（与编辑器一致）；
-      // 未使用 UI 编辑器布局的项目（无布局文件）不走本分支，仍用内置经典 HUD
+      // 布局文件存在但 hud-panel 被删除 → 整个 HUD 不显示（与编辑器一致）；
+      // 未使用 UI 编辑器布局的项目（无布局文件）不走本分支，仍显示内置面板
       hud.hiddenByLayout = true;
     }
   }
