@@ -365,25 +365,30 @@ export class SceneEditor {
       _img: null,
       _loaded: false
     };
-    this._loadWorldMapBaseImage();
+    this._loadWorldMapBaseInto(this.worldMapBase);
     this.render();
     return this.worldMapBase;
   }
 
-  /** 加载大地图底色图；就绪后重绘画布。 */
-  _loadWorldMapBaseImage() {
-    const base = this.worldMapBase;
-    if (!base?.url || typeof Image === 'undefined') return;
+  /**
+   * 加载大地图底色图到目标 base 对象（当前场景与九宫格邻居/空格子条目共用）；
+   * 就绪后重绘画布。防重复加载：已就绪或加载中的对象直接跳过。
+   */
+  _loadWorldMapBaseInto(base) {
+    if (!base?.url || base._loaded || base._loading || typeof Image === 'undefined') return;
+    base._loading = true;
     const img = new Image();
     img.onload = () => {
-      if (this.worldMapBase !== base) return;
       base._img = img;
       base._loaded = true;
-      this.render();
+      base._loading = false;
+      // 只有仍被引用（当前场景或任一邻居条目）时才触发重绘
+      const stillUsed = base === this.worldMapBase
+        || this.neighborScenes.some(neighbor => neighbor?.worldMapBase === base);
+      if (stillUsed) this.render();
     };
     img.onerror = () => {
-      if (this.worldMapBase !== base) return;
-      base._loaded = false;
+      base._loading = false;
     };
     img.src = base.url;
   }
@@ -400,6 +405,10 @@ export class SceneEditor {
   setNeighborScenes(neighbors = []) {
     if (!Array.isArray(neighbors)) throw new TypeError('SceneEditor: neighborScenes 必须是数组');
     this.neighborScenes = neighbors.slice();
+    // 邻居/空格子条目的底图对象由宿主裸构建，这里统一触发加载（就绪回调里重绘）
+    for (const neighbor of this.neighborScenes) {
+      if (neighbor?.worldMapBase) this._loadWorldMapBaseInto(neighbor.worldMapBase);
+    }
     const previewScenes = [this.sceneData, ...this.neighborScenes.map(neighbor => neighbor?.sceneData)]
       .filter(Boolean);
 

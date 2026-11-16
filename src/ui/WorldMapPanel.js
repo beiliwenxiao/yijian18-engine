@@ -64,14 +64,6 @@ const CITY_DEFAULT_COLOR = '#cfcfcf';
 const CITY_SCENE_PATTERN = /^city\.s(\d{2})_/;
 
 /** 通行状态色（逻辑层派生结果的表现映射；面板不做任何通行判定）。 */
-const ROUTE_STATUS_COLORS = Object.freeze({
-  passable: 'rgba(89, 217, 107, 0.24)',
-  hostile: 'rgba(214, 74, 60, 0.36)',
-  closed: 'rgba(230, 150, 40, 0.36)',
-  terrain: 'rgba(28, 26, 23, 0.72)',
-  invalid: 'rgba(160, 40, 160, 0.34)',
-  noRoute: 'rgba(140, 140, 140, 0.10)'
-});
 const ROUTE_EDGE_LINE_COLORS = Object.freeze({
   passable: 'rgba(120, 220, 130, 0.55)',
   hostile: 'rgba(226, 96, 80, 0.8)',
@@ -596,6 +588,9 @@ export class WorldMapPanel extends UIElement {
       this._setZoom(this._zoom / ZOOM_STEP);
     } else if (button === 'grid') {
       this._showGrid = !this._showGrid;
+      // 格线已烘焙进静态缓存：切换后必须失效重建才能即时生效。
+      this._staticSignature = '';
+      this._rebuildStaticCache();
     }
   }
 
@@ -1157,25 +1152,14 @@ export class WorldMapPanel extends UIElement {
     this._preview = preview && typeof preview === 'object' ? preview : null;
   }
 
-  /** 通行色与边线（只读 getRoutePreview 的结果，颜色映射归本面板）。 */
+  /**
+   * 通行关系表达：只画编辑器配置的路径边线（worldLogic 边的只读投影），
+   * 格子底色着色已移除——大地图保持整体图观感，通行状态由配置线条表达。
+   */
   _renderPassability(ctx) {
     this._refreshPreview();
     const preview = this._preview;
     if (!preview) return;
-    const cellW = this._cellWidth || WORLD_MAP_DISPLAY_CELL_WIDTH;
-    const cellH = this._cellHeight || WORLD_MAP_DISPLAY_CELL_HEIGHT;
-    const origin = this.mapToScreen(0, 0);
-    for (const cell of preview.overlay || []) {
-      const color = ROUTE_STATUS_COLORS[cell.status];
-      if (!color) continue;
-      ctx.fillStyle = color;
-      ctx.fillRect(
-        origin.x + cell.col * cellW,
-        origin.y + cell.row * cellH,
-        cellW + 0.5,
-        cellH + 0.5
-      );
-    }
     for (const edge of preview.edges || []) {
       if (!edge?.fromPosition || !edge?.toPosition) continue;
       const a = this._markerScreen(edge.fromPosition);
@@ -1442,13 +1426,8 @@ export class WorldMapPanel extends UIElement {
       { color: TERRAIN_COLORS.mountain, label: '山脉' },
       { color: TERRAIN_COLORS.forest, label: '森林' },
       { color: TERRAIN_COLORS.yellowRiver, label: '河流' },
-      { color: TERRAIN_COLORS.plain, label: '平原' },
-      // 通行四色（逻辑层派生状态的展示映射；灰=地形挡 / 无路，红=敌情挡）
-      { color: ROUTE_STATUS_COLORS.passable, label: '可通' },
-      { color: ROUTE_STATUS_COLORS.hostile, label: '敌占' },
-      { color: ROUTE_STATUS_COLORS.closed, label: '封路' },
-      { color: ROUTE_STATUS_COLORS.terrain, label: '险阻' },
-      { color: ROUTE_STATUS_COLORS.noRoute, label: '无路' }
+      { color: TERRAIN_COLORS.plain, label: '平原' }
+      // 通行状态格子底色已移除：通行关系由编辑器配置的路径边线表达，图例不再列出五态色块
     ];
     for (const item of items) {
       ctx.fillStyle = item.color;
@@ -1587,31 +1566,26 @@ export class WorldMapPanel extends UIElement {
       }
     }
 
-    // 网格线
-    ctx.strokeStyle = GRID_LINE_COLOR;
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    for (let col = 0; col <= region.cols; col++) {
-      const x = Math.round(col * cellW) + 0.5;
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, canvas.height);
+    // 网格线：跟随 _showGrid 开关烘焙（切换开关时静态缓存会失效重建）
+    if (this._showGrid) {
+      ctx.strokeStyle = GRID_LINE_COLOR;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      for (let col = 0; col <= region.cols; col++) {
+        const x = Math.round(col * cellW) + 0.5;
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+      }
+      for (let row = 0; row <= region.rows; row++) {
+        const y = Math.round(row * cellH) + 0.5;
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+      }
+      ctx.stroke();
     }
-    for (let row = 0; row <= region.rows; row++) {
-      const y = Math.round(row * cellH) + 0.5;
-      ctx.moveTo(0, y);
-      ctx.lineTo(canvas.width, y);
-    }
-    ctx.stroke();
 
-    // 场景 footprint 描边
-    ctx.strokeStyle = 'rgba(255, 233, 176, 0.55)';
-    ctx.lineWidth = 1.5;
-    for (const anchor of region.cells || []) {
-      if (!anchor || !anchor.loadable || !anchor.footprint) continue;
-      const left = anchor.footprint.col * cellW;
-      const top = anchor.footprint.row * cellH;
-      ctx.strokeRect(left + 1, top + 1, anchor.footprint.cols * cellW - 2, anchor.footprint.rows * cellH - 2);
-    }
+    // 场景 footprint 描边已移除：M 键大地图保持「整体图」观感；
+    // 场景位置由锚点标签/城池/玩家/军团标记表达，选中反馈走实时层（指令环）。
 
     this._staticCanvas = canvas;
     this._staticSignature = signature;

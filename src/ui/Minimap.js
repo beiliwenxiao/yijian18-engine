@@ -74,6 +74,8 @@ export class Minimap extends UIElement {
     // 项目世界索引是边界和 chunk 尺寸的唯一来源。
     this._worldIndex = options.worldIndex || null;
     this._regionRef = options.regionRef ?? null;
+    // 大地图整图底图（setWorldMapBackground 注入）：九宫格未加载区域/空格子的模糊底色来源
+    this._worldMapBackground = null;
     // 九宫格缩略图缓存保存完整已加载范围；缩放/跟随只改变裁剪窗口。
     this._mapCache = null;
     this._fullWorldMinX = 0;
@@ -145,6 +147,38 @@ export class Minimap extends UIElement {
     this._regionRef = regionRef ?? worldIndex?.getEntry?.()?.regionId ?? null;
     this._frameSizeSet = false;
     this._invalidateCache();
+  }
+
+  /**
+   * 注入大地图整图底图（src 须为可直接访问的 URL，宿主负责 AssetManager 解析）。
+   * 仅支持整图文件模式（与游戏内 M 键大地图同源）；切图目录传 null（维持旧行为）。
+   * 底图加载完成后自动触发缩略图缓存重建。
+   */
+  setWorldMapBackground(background = null) {
+    const src = typeof background?.src === 'string' && background.src ? background.src : null;
+    if (!src) {
+      this._worldMapBackground = null;
+      return;
+    }
+    this._worldMapBackground = { src, _img: null, _loaded: false, _loading: false };
+    this._loadWorldMapBackground();
+  }
+
+  _loadWorldMapBackground() {
+    const bg = this._worldMapBackground;
+    if (!bg?.src || bg._loading || typeof Image === 'undefined') return;
+    bg._loading = true;
+    const img = new Image();
+    img.onload = () => {
+      bg._img = img;
+      bg._loaded = true;
+      bg._loading = false;
+      this._invalidateCache();
+    };
+    img.onerror = () => {
+      bg._loading = false;
+    };
+    img.src = bg.src;
   }
 
   /**
@@ -322,6 +356,22 @@ export class Minimap extends UIElement {
     const ctx = canvas.getContext('2d');
     ctx.scale(cacheScale, cacheScale);
     ctx.translate(-fullMinX, -fullMinY);
+
+    // 大地图整图底图铺底：未加载 chunk / 无场景格子也有对应区块的模糊底色；
+    // 已加载 chunk 的场景内容（下方循环）会盖在它上面。
+    const worldBg = this._worldMapBackground;
+    const bounds = region.bounds;
+    if (worldBg?._loaded && worldBg._img && bounds) {
+      try {
+        ctx.drawImage(
+          worldBg._img,
+          0, 0,
+          worldBg._img.naturalWidth || worldBg._img.width,
+          worldBg._img.naturalHeight || worldBg._img.height,
+          bounds.left, bounds.top, bounds.width, bounds.height
+        );
+      } catch (_error) { /* 底图异常静默，保持旧观感 */ }
+    }
 
     for (const terrain of this._terrains) {
       const ox = terrain.worldOffset?.x || 0;

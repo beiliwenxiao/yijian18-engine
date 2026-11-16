@@ -110,3 +110,5 @@ example/sanguo_zhangjiao/art-source/
 .spec/
 # 验证产物（截图/日志体积大，不入库）
 .trae/verify/
+# 不需要保存设计文档和过程文档
+.trae/documents/

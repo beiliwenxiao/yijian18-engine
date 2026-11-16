@@ -322,6 +322,8 @@ export class DataDrivenPrologueScene extends BaseGameScene {
           if (this._worldIndex &&
               (this.minimap._worldIndex !== this._worldIndex || this.minimap._regionRef !== manager.regionId)) {
             this.minimap.setWorldIndex(this._worldIndex, manager.regionId);
+            // 小地图整图底图：九宫格未加载区域/空格子也显示大地图对应区块的模糊底色
+            this.minimap.setWorldMapBackground(this._resolveMinimapWorldBackground(manager.regionId));
           }
           const playerPosition = this.playerEntity?.getComponent?.('transform')?.position;
           if (playerPosition) this.minimap.setPlayerPosition(playerPosition);
@@ -536,8 +538,25 @@ export class DataDrivenPrologueScene extends BaseGameScene {
   }
 
   /**
+   * 小地图整图底图：region.backgroundImage 为整图文件时返回 { src }（AssetManager 解析后的 URL）；
+   * 切图目录模式小地图不支持（返回 null，维持旧行为）。
+   * @param {string|number} regionRef
+   */
+  _resolveMinimapWorldBackground(regionRef) {
+    const region = this._worldIndex?.getRegion?.(regionRef);
+    const background = typeof region?.backgroundImage === 'string' ? region.backgroundImage.trim() : '';
+    if (!background || !isWorldMapBackgroundFile(background)) return null;
+    return {
+      src: this.assetManager?.resolveAssetPath
+        ? this.assetManager.resolveAssetPath(background)
+        : background
+    };
+  }
+
+  /**
    * 大地图派生底色：region.backgroundImage 上本 chunk 格的裁剪图（拉伸铺满 chunk）。
    * 整图文件 → 按格裁剪；按格切图目录 → 直接取该格 tile 整张拉伸。
+   * src 经 AssetManager.resolveAssetPath 解析（assetBasePath/skinRoot），与 M 键大地图同一 URL 规则。
    * 未配置 backgroundImage / 世界索引未就绪 → null（无底色层，与旧行为一致）。
    * @param {{sceneId:string, col:number, row:number}} chunk
    */
@@ -547,9 +566,12 @@ export class DataDrivenPrologueScene extends BaseGameScene {
     const region = anchor ? worldIndex.getRegion(anchor.regionId) : null;
     const background = typeof region?.backgroundImage === 'string' ? region.backgroundImage.trim() : '';
     if (!background) return null;
+    const resolve = src => (
+      this.assetManager?.resolveAssetPath ? this.assetManager.resolveAssetPath(src) : src
+    );
     if (isWorldMapBackgroundFile(background)) {
       return {
-        src: background,
+        src: resolve(background),
         tile: false,
         row: anchor.row,
         col: anchor.col,
@@ -560,7 +582,7 @@ export class DataDrivenPrologueScene extends BaseGameScene {
       };
     }
     return {
-      src: resolveWorldMapBackgroundTilePath(background, anchor.row, anchor.col),
+      src: resolve(resolveWorldMapBackgroundTilePath(background, anchor.row, anchor.col)),
       tile: true,
       row: anchor.row,
       col: anchor.col,

@@ -7,27 +7,6 @@
       "name": "寒风荒野背景",
       "objects": [
         {
-          "edgeFade": 0.1,
-          "editor": {
-            "locked": true,
-            "visible": true
-          },
-          "fill": "#dac2a2",
-          "fillMode": "image",
-          "height": 1223,
-          "id": "ellipse_1791135626370_982",
-          "imageMode": "tile",
-          "imageSrc": "assets/images/huangdi2.png",
-          "name": "地形椭圆",
-          "opacity": 1,
-          "stroke": "#dac2a2",
-          "strokeWidth": 0,
-          "type": "ellipse",
-          "width": 2075,
-          "x": -416.71918102828704,
-          "y": -313.6068560640153
-        },
-        {
           "editor": {
             "locked": false
           },
