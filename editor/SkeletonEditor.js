@@ -3298,6 +3298,15 @@ export class SkeletonEditor {
       startX: mx, startY: my,
       startOffset: this._effectiveAttachmentOffset(slot?.attachment),
       boneWorld: world.get(slot?.bone) || null,
+      // 动画模式拖图 = 移动骨骼打关键帧：按下时刻的骨骼本地采样快照（基线）。
+      // 缺失会让 _animateSlotsAsBoneMove 每帧拿「刚写入的关键帧值」当基线再叠加
+      // 按下起点的总位移——位移逐帧滚雪球，部件一拖就指数级飞出画布（2026-11-17 修复）
+      startBoneSampled: new Map(
+        [slot, ...[...this.selectedSlots].map(id => this._slotById(id))]
+          .filter(candidate => candidate?.attachment)
+          .map(candidate => [candidate.bone, this._sampledBoneLocal(candidate.bone)])
+          .filter(([, sampled]) => sampled)
+      ),
       extraSlots: [...this.selectedSlots]
         .filter(id => id !== hitSlotId)
         .map(id => {
@@ -3424,6 +3433,10 @@ export class SkeletonEditor {
       startAngle: Math.atan2(my - pivot.y, mx - pivot.x),
       moved: false,
       startRot: this._effectiveAttachmentOffset(attachment).rot || 0,
+      // 动画模式旋转挂图 = 旋转其骨骼打 rot 关键帧：按下时刻骨骼 rot 快照（基线）。
+      // 缺失会让 move 分支每帧拿「刚写入的关键帧 rot」当基线再叠加按下起点的总角度——
+      // 角度逐帧滚雪球，部件一转就飞速打转（与拖拽飞出同根因，2026-11-17 修复）
+      startBoneRot: (this._sampledBoneLocal(slot.bone) || { rot: 0 }).rot || 0,
       startAnchorWorld: this._attachmentAnchorWorld(box.boneWorld, attachment, slot.follow),
       boneWorld: box.boneWorld
     };
@@ -3745,7 +3758,7 @@ export class SkeletonEditor {
       if (this.editMode === 'animate') {
         const clip = this._clip();
         if (!clip) { this._hintAnimateNeedsClip(); return; }
-        this._animateSlotsAsBoneMove(slot, this._drag.extraSlots || [], worldDx, worldDy, clip);
+        this._animateSlotsAsBoneMove(slot, this._drag.extraSlots || [], worldDx, worldDy, clip, this._drag.startBoneSampled || null);
         this._markDirty();
         this.runtime = parseSkeletonAsset(this.doc);
         this._renderInspector();
@@ -3791,9 +3804,10 @@ export class SkeletonEditor {
           if (!clip) { this._hintAnimateNeedsClip(); return; }
           const bone = this._boneById(slot.bone);
           if (bone && !this._isBoneLocked(bone.id)) {
-            const sampled = this._sampledBoneLocal(bone.id) || bone;
+            // 基线用按下快照（startBoneRot）：滚动采样会把刚写入的关键帧 rot 当基线
+            // 叠加总角度，逐帧滚雪球飞速打转；骨骼自身旋转分支同语义（startRot 快照）
             this._ensureTrackAndKey(bone.id, clip, {
-              rot: Math.round(((sampled.rot || 0) + deltaDeg) * 10) / 10
+              rot: Math.round(((this._drag.startBoneRot || 0) + deltaDeg) * 10) / 10
             });
             this._markDirty();
             this.runtime = parseSkeletonAsset(this.doc);
@@ -3977,7 +3991,7 @@ export class SkeletonEditor {
    * @param {number} worldDy - 世界位移 Y
    * @param {Object} clip - 当前剪辑（调用方保证非空）
    */
-  _animateSlotsAsBoneMove(slot, extraSlots, worldDx, worldDy, clip) {
+  _animateSlotsAsBoneMove(slot, extraSlots, worldDx, worldDy, clip, baselines = null) {
     const slots = [slot, ...extraSlots.map(extra => this._slotById(extra.id))]
       .filter(candidate => candidate?.attachment);
     for (const candidate of slots) {
@@ -3989,7 +4003,10 @@ export class SkeletonEditor {
       const sin = Math.sin(-parent.rad);
       const localDx = (worldDx * cos - worldDy * sin) / (parent.sx || 1);
       const localDy = (worldDx * sin + worldDy * cos) / (parent.sy || 1);
-      const sampled = this._sampledBoneLocal(bone.id) || bone;
+      // 基线：鼠标拖拽传按下时刻快照（baselines）——滚动采样会把刚写入的关键帧值
+      // 当基线再叠加按下起点的总位移，逐帧滚雪球（n² 级）把部件拖出画布；
+      // 键盘 nudge（_nudgeSelection）不传 baselines，步进 delta + 滚动基线语义正确
+      const sampled = (baselines && baselines.get(bone.id)) || this._sampledBoneLocal(bone.id) || bone;
       this._ensureTrackAndKey(bone.id, clip, {
         x: Math.round((sampled.x + localDx) * 10) / 10,
         y: Math.round((sampled.y + localDy) * 10) / 10

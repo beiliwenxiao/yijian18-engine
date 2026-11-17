@@ -77,6 +77,26 @@ export const CharactersConfig = [
       might: 68, politics: 45, leadership: 58
     }
   },
+  {
+    id: 'skirt-girl-chibi',
+    name: '短裙少女（Q版）',
+    class: 'refugee',
+    // 角色选择界面预览图（占位立绘由 scripts/gen-skirt-girl-chibi-skeleton.mjs 的
+    // 冒烟脚本 Temp/check-skirt-girl-chibi.mjs 第 5 步合成；手绘换片后重跑即可更新）
+    previewImage: 'assets/images/skirt-girl-chibi/preview.png',
+    // 骨骼驱动（部件模式）：skeleton.skirt-girl-chibi 为三头身 Q 版短裙女主角
+    // （2026-11-17 裁定：总高 96px，头/躯干/腿各 32px），9 骨 rig + 30 clips，
+    // 动作集与 skeleton.player-female 同款（idle/walk/jump/attack 三方向 + 斜向行走 +
+    // gather/logging/mining/fishing + climb_back + sit/sit_up/lie/lie_up + sleep/stretcher
+    // + soul + hurt）。部件 25 张 64×64（head/torso/skirt/arm/leg × front/side/up/se/ne），
+    // directionOffsets 按形态换图、SW/NW 引擎镜像回退；美术替换契约见生成脚本头注释。
+    spriteSheet: 'skeleton.skirt-girl-chibi',
+    spriteConfig: null,
+    attributes: {
+      strength: 6, agility: 16, endurance: 7, intelligence: 12, spirit: 14,
+      might: 15, politics: 48, leadership: 30
+    }
+  },
 ];
 
 export default CharactersConfig;

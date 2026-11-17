@@ -6600,7 +6600,7 @@
       "animations": [],
       "targetPhase": "P1",
       "status": "placeholder",
-      "revision": 87
+      "revision": 88
     },
     {
       "assetId": "skeleton.player-humanoid",
@@ -12368,6 +12368,910 @@
       "animations": [],
       "targetPhase": "P1",
       "status": "placeholder",
+      "revision": 1
+    },
+    {
+      "assetId": "skirt-girl-chibi.parts.head-front",
+      "imageId": "skirt-girl-chibi.parts.head-front",
+      "category": "character-part",
+      "usage": [
+        "skirt-girl-chibi-skeleton-part"
+      ],
+      "sourceFile": "assets/images/skirt-girl-chibi/parts/head-front.png",
+      "runtime2D": {
+        "path": "assets/images/skirt-girl-chibi/parts/head-front.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skirt-girl-chibi.parts.head-front"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "skirt-girl-chibi.parts.head-side",
+      "imageId": "skirt-girl-chibi.parts.head-side",
+      "category": "character-part",
+      "usage": [
+        "skirt-girl-chibi-skeleton-part"
+      ],
+      "sourceFile": "assets/images/skirt-girl-chibi/parts/head-side.png",
+      "runtime2D": {
+        "path": "assets/images/skirt-girl-chibi/parts/head-side.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skirt-girl-chibi.parts.head-side"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "skirt-girl-chibi.parts.head-up",
+      "imageId": "skirt-girl-chibi.parts.head-up",
+      "category": "character-part",
+      "usage": [
+        "skirt-girl-chibi-skeleton-part"
+      ],
+      "sourceFile": "assets/images/skirt-girl-chibi/parts/head-up.png",
+      "runtime2D": {
+        "path": "assets/images/skirt-girl-chibi/parts/head-up.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skirt-girl-chibi.parts.head-up"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "skirt-girl-chibi.parts.head-se",
+      "imageId": "skirt-girl-chibi.parts.head-se",
+      "category": "character-part",
+      "usage": [
+        "skirt-girl-chibi-skeleton-part"
+      ],
+      "sourceFile": "assets/images/skirt-girl-chibi/parts/head-se.png",
+      "runtime2D": {
+        "path": "assets/images/skirt-girl-chibi/parts/head-se.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skirt-girl-chibi.parts.head-se"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "skirt-girl-chibi.parts.head-ne",
+      "imageId": "skirt-girl-chibi.parts.head-ne",
+      "category": "character-part",
+      "usage": [
+        "skirt-girl-chibi-skeleton-part"
+      ],
+      "sourceFile": "assets/images/skirt-girl-chibi/parts/head-ne.png",
+      "runtime2D": {
+        "path": "assets/images/skirt-girl-chibi/parts/head-ne.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skirt-girl-chibi.parts.head-ne"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "skirt-girl-chibi.parts.torso-front",
+      "imageId": "skirt-girl-chibi.parts.torso-front",
+      "category": "character-part",
+      "usage": [
+        "skirt-girl-chibi-skeleton-part"
+      ],
+      "sourceFile": "assets/images/skirt-girl-chibi/parts/torso-front.png",
+      "runtime2D": {
+        "path": "assets/images/skirt-girl-chibi/parts/torso-front.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skirt-girl-chibi.parts.torso-front"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "skirt-girl-chibi.parts.torso-side",
+      "imageId": "skirt-girl-chibi.parts.torso-side",
+      "category": "character-part",
+      "usage": [
+        "skirt-girl-chibi-skeleton-part"
+      ],
+      "sourceFile": "assets/images/skirt-girl-chibi/parts/torso-side.png",
+      "runtime2D": {
+        "path": "assets/images/skirt-girl-chibi/parts/torso-side.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skirt-girl-chibi.parts.torso-side"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "skirt-girl-chibi.parts.torso-up",
+      "imageId": "skirt-girl-chibi.parts.torso-up",
+      "category": "character-part",
+      "usage": [
+        "skirt-girl-chibi-skeleton-part"
+      ],
+      "sourceFile": "assets/images/skirt-girl-chibi/parts/torso-up.png",
+      "runtime2D": {
+        "path": "assets/images/skirt-girl-chibi/parts/torso-up.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skirt-girl-chibi.parts.torso-up"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "skirt-girl-chibi.parts.torso-se",
+      "imageId": "skirt-girl-chibi.parts.torso-se",
+      "category": "character-part",
+      "usage": [
+        "skirt-girl-chibi-skeleton-part"
+      ],
+      "sourceFile": "assets/images/skirt-girl-chibi/parts/torso-se.png",
+      "runtime2D": {
+        "path": "assets/images/skirt-girl-chibi/parts/torso-se.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skirt-girl-chibi.parts.torso-se"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "skirt-girl-chibi.parts.torso-ne",
+      "imageId": "skirt-girl-chibi.parts.torso-ne",
+      "category": "character-part",
+      "usage": [
+        "skirt-girl-chibi-skeleton-part"
+      ],
+      "sourceFile": "assets/images/skirt-girl-chibi/parts/torso-ne.png",
+      "runtime2D": {
+        "path": "assets/images/skirt-girl-chibi/parts/torso-ne.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skirt-girl-chibi.parts.torso-ne"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "skirt-girl-chibi.parts.skirt-front",
+      "imageId": "skirt-girl-chibi.parts.skirt-front",
+      "category": "character-part",
+      "usage": [
+        "skirt-girl-chibi-skeleton-part"
+      ],
+      "sourceFile": "assets/images/skirt-girl-chibi/parts/skirt-front.png",
+      "runtime2D": {
+        "path": "assets/images/skirt-girl-chibi/parts/skirt-front.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skirt-girl-chibi.parts.skirt-front"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "skirt-girl-chibi.parts.skirt-side",
+      "imageId": "skirt-girl-chibi.parts.skirt-side",
+      "category": "character-part",
+      "usage": [
+        "skirt-girl-chibi-skeleton-part"
+      ],
+      "sourceFile": "assets/images/skirt-girl-chibi/parts/skirt-side.png",
+      "runtime2D": {
+        "path": "assets/images/skirt-girl-chibi/parts/skirt-side.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skirt-girl-chibi.parts.skirt-side"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "skirt-girl-chibi.parts.skirt-up",
+      "imageId": "skirt-girl-chibi.parts.skirt-up",
+      "category": "character-part",
+      "usage": [
+        "skirt-girl-chibi-skeleton-part"
+      ],
+      "sourceFile": "assets/images/skirt-girl-chibi/parts/skirt-up.png",
+      "runtime2D": {
+        "path": "assets/images/skirt-girl-chibi/parts/skirt-up.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skirt-girl-chibi.parts.skirt-up"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "skirt-girl-chibi.parts.skirt-se",
+      "imageId": "skirt-girl-chibi.parts.skirt-se",
+      "category": "character-part",
+      "usage": [
+        "skirt-girl-chibi-skeleton-part"
+      ],
+      "sourceFile": "assets/images/skirt-girl-chibi/parts/skirt-se.png",
+      "runtime2D": {
+        "path": "assets/images/skirt-girl-chibi/parts/skirt-se.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skirt-girl-chibi.parts.skirt-se"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "skirt-girl-chibi.parts.skirt-ne",
+      "imageId": "skirt-girl-chibi.parts.skirt-ne",
+      "category": "character-part",
+      "usage": [
+        "skirt-girl-chibi-skeleton-part"
+      ],
+      "sourceFile": "assets/images/skirt-girl-chibi/parts/skirt-ne.png",
+      "runtime2D": {
+        "path": "assets/images/skirt-girl-chibi/parts/skirt-ne.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skirt-girl-chibi.parts.skirt-ne"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "skirt-girl-chibi.parts.arm-front",
+      "imageId": "skirt-girl-chibi.parts.arm-front",
+      "category": "character-part",
+      "usage": [
+        "skirt-girl-chibi-skeleton-part"
+      ],
+      "sourceFile": "assets/images/skirt-girl-chibi/parts/arm-front.png",
+      "runtime2D": {
+        "path": "assets/images/skirt-girl-chibi/parts/arm-front.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skirt-girl-chibi.parts.arm-front"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "skirt-girl-chibi.parts.arm-side",
+      "imageId": "skirt-girl-chibi.parts.arm-side",
+      "category": "character-part",
+      "usage": [
+        "skirt-girl-chibi-skeleton-part"
+      ],
+      "sourceFile": "assets/images/skirt-girl-chibi/parts/arm-side.png",
+      "runtime2D": {
+        "path": "assets/images/skirt-girl-chibi/parts/arm-side.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skirt-girl-chibi.parts.arm-side"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "skirt-girl-chibi.parts.arm-up",
+      "imageId": "skirt-girl-chibi.parts.arm-up",
+      "category": "character-part",
+      "usage": [
+        "skirt-girl-chibi-skeleton-part"
+      ],
+      "sourceFile": "assets/images/skirt-girl-chibi/parts/arm-up.png",
+      "runtime2D": {
+        "path": "assets/images/skirt-girl-chibi/parts/arm-up.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skirt-girl-chibi.parts.arm-up"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "skirt-girl-chibi.parts.arm-se",
+      "imageId": "skirt-girl-chibi.parts.arm-se",
+      "category": "character-part",
+      "usage": [
+        "skirt-girl-chibi-skeleton-part"
+      ],
+      "sourceFile": "assets/images/skirt-girl-chibi/parts/arm-se.png",
+      "runtime2D": {
+        "path": "assets/images/skirt-girl-chibi/parts/arm-se.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skirt-girl-chibi.parts.arm-se"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "skirt-girl-chibi.parts.arm-ne",
+      "imageId": "skirt-girl-chibi.parts.arm-ne",
+      "category": "character-part",
+      "usage": [
+        "skirt-girl-chibi-skeleton-part"
+      ],
+      "sourceFile": "assets/images/skirt-girl-chibi/parts/arm-ne.png",
+      "runtime2D": {
+        "path": "assets/images/skirt-girl-chibi/parts/arm-ne.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skirt-girl-chibi.parts.arm-ne"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "skirt-girl-chibi.parts.leg-front",
+      "imageId": "skirt-girl-chibi.parts.leg-front",
+      "category": "character-part",
+      "usage": [
+        "skirt-girl-chibi-skeleton-part"
+      ],
+      "sourceFile": "assets/images/skirt-girl-chibi/parts/leg-front.png",
+      "runtime2D": {
+        "path": "assets/images/skirt-girl-chibi/parts/leg-front.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skirt-girl-chibi.parts.leg-front"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "skirt-girl-chibi.parts.leg-side",
+      "imageId": "skirt-girl-chibi.parts.leg-side",
+      "category": "character-part",
+      "usage": [
+        "skirt-girl-chibi-skeleton-part"
+      ],
+      "sourceFile": "assets/images/skirt-girl-chibi/parts/leg-side.png",
+      "runtime2D": {
+        "path": "assets/images/skirt-girl-chibi/parts/leg-side.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skirt-girl-chibi.parts.leg-side"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "skirt-girl-chibi.parts.leg-up",
+      "imageId": "skirt-girl-chibi.parts.leg-up",
+      "category": "character-part",
+      "usage": [
+        "skirt-girl-chibi-skeleton-part"
+      ],
+      "sourceFile": "assets/images/skirt-girl-chibi/parts/leg-up.png",
+      "runtime2D": {
+        "path": "assets/images/skirt-girl-chibi/parts/leg-up.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skirt-girl-chibi.parts.leg-up"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "skirt-girl-chibi.parts.leg-se",
+      "imageId": "skirt-girl-chibi.parts.leg-se",
+      "category": "character-part",
+      "usage": [
+        "skirt-girl-chibi-skeleton-part"
+      ],
+      "sourceFile": "assets/images/skirt-girl-chibi/parts/leg-se.png",
+      "runtime2D": {
+        "path": "assets/images/skirt-girl-chibi/parts/leg-se.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skirt-girl-chibi.parts.leg-se"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "skirt-girl-chibi.parts.leg-ne",
+      "imageId": "skirt-girl-chibi.parts.leg-ne",
+      "category": "character-part",
+      "usage": [
+        "skirt-girl-chibi-skeleton-part"
+      ],
+      "sourceFile": "assets/images/skirt-girl-chibi/parts/leg-ne.png",
+      "runtime2D": {
+        "path": "assets/images/skirt-girl-chibi/parts/leg-ne.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skirt-girl-chibi.parts.leg-ne"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "skeleton.skirt-girl-chibi",
+      "imageId": "skeleton.skirt-girl-chibi",
+      "category": "character-skeleton",
+      "usage": [
+        "player-skeleton"
+      ],
+      "sourceFile": "assets/skeletons/skirt-girl-chibi.json",
+      "runtime2D": {
+        "path": "assets/skeletons/skirt-girl-chibi.json",
+        "mode": "skeleton"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skeleton.skirt-girl-chibi"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      },
+      "bounds": {
+        "width": 64,
+        "height": 96
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
       "revision": 1
     }
   ]
