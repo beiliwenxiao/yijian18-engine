@@ -3,7 +3,7 @@
     {
       "id": "backpackPanel",
       "name": "背包",
-      "width": 911,
+      "width": 983,
       "height": 394,
       "backgroundColor": "rgba(0, 0, 0, 0.88)",
       "borderColor": "#c49a52",
@@ -899,7 +899,7 @@
       "id": "armyCommandHud",
       "name": "亲卫队操作",
       "width": 316,
-      "height": 100,
+      "height": 224,
       "backgroundColor": "rgba(13, 19, 38, 0.86)",
       "borderColor": "#c9a227",
       "borderWidth": 2,
@@ -933,7 +933,7 @@
           "x": 0,
           "y": 64,
           "width": 316,
-          "height": 28,
+          "height": 132,
           "bgColor": "#233055",
           "borderColor": "#3a4a7e"
         }

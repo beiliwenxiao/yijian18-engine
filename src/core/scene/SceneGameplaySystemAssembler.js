@@ -931,6 +931,7 @@ export class SceneGameplaySystemAssembler {
         now: companionConfig.now,
         getCommand: companionConfig.getCommand,
         getRankValue: companionConfig.getRankValue,
+        getRankLabel: companionConfig.getRankLabel,
         onEvent: companionConfig.onEvent
       });
       companionFlow = new SceneCompanionSquadFlow(scene, { system: companionSystem });

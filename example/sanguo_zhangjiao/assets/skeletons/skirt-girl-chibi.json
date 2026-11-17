@@ -268,8 +268,8 @@
         "x": 0,
         "y": 0,
         "rot": 0,
-        "width": 64,
-        "height": 64,
+        "width": 75,
+        "height": 61,
         "visible": true,
         "directionOffsets": {
           "side": {
@@ -3644,7 +3644,7 @@
             },
             {
               "t": 480,
-              "rot": -55,
+              "rot": 62.9,
               "ease": "easeInOut"
             }
           ]
@@ -3659,8 +3659,10 @@
             },
             {
               "t": 480,
-              "rot": 55,
-              "ease": "easeInOut"
+              "rot": 34.4,
+              "ease": "easeInOut",
+              "x": 8.5,
+              "y": -2.25
             }
           ]
         },
@@ -3734,8 +3736,10 @@
             },
             {
               "t": 480,
-              "rot": 3,
-              "ease": "easeInOut"
+              "rot": 24.4,
+              "ease": "easeInOut",
+              "x": 1.5,
+              "y": -6.3
             }
           ]
         }

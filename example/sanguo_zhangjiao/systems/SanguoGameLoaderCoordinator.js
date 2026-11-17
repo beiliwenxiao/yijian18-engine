@@ -322,6 +322,14 @@ function configureSharedClassEffects(gameLoader) {
       const rankId = rank?.rankId || companionRule.initialRankId;
       return Number(gameLoader?.getRegistry?.('ranks')?.get?.(rankId)?.value) || 0;
     },
+    getRankLabel: () => {
+      const story = gameLoader?.blackboard?.get?.('storyState') || {};
+      const rank = story.playerRank;
+      if (rank?.title) return String(rank.title);
+      const rankId = rank?.rankId || companionRule.initialRankId;
+      const entry = rankId ? gameLoader?.getRegistry?.('ranks')?.get?.(rankId) : null;
+      return String(entry?.title || entry?.label || '');
+    },
     onEvent: (event, data) => publishGameplayEvent('companion', event, data)
   } : null;
   // 武装单位战略指令（M3 3B）：五指令/500ms 战略刻/部署锁/将令；身份按 BattleMode 推断（M6 support 见 TODO）

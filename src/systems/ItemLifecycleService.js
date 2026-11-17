@@ -532,6 +532,13 @@ export class ItemLifecycleService {
     };
   }
 
+  /** 装备归属实体：payload.targetId 指向共用背包的亲卫等成员；缺省回 actor 本人。 */
+  _resolveEquipTarget(command, actor) {
+    const targetId = command.payload?.targetId;
+    if (!targetId || targetId === command.actorId) return actor;
+    return this.resolveActor?.(targetId, command) || null;
+  }
+
   _prepareEquip(command, actor, inventory) {
     const found = this._itemFromInventory(inventory, command.payload.itemId, command.payload.instanceId);
     if (!found) return { ok: false, code: 'itemMissing' };
@@ -539,7 +546,9 @@ export class ItemLifecycleService {
     if (!this._hasCapability(definition, 'equippable', found.item.type === 'equipment' || found.item.type === 'tool')) {
       return { ok: false, code: 'itemNotEquippable' };
     }
-    const equipment = actor.getComponent?.('equipment');
+    const target = this._resolveEquipTarget(command, actor);
+    if (!target) return { ok: false, code: 'targetMissing' };
+    const equipment = target.getComponent?.('equipment');
     if (!equipment) return { ok: false, code: 'equipmentMissing' };
     const item = found.item.instanceId ? found.item : { ...found.item };
     const slot = command.payload.slot || SceneEquipmentFlow.resolveSlot(item);
@@ -555,8 +564,9 @@ export class ItemLifecycleService {
     const beforeInventory = inventorySnapshot(inventory);
     const beforeEquipment = equipmentSnapshot(equipment);
     const beforeActor = actorSnapshot(actor);
+    const beforeTarget = target !== actor ? actorSnapshot(target) : null;
     const transactionIds = [];
-    const oldStats = SceneEquipmentFlow._snapshotStats(actor.getComponent?.('stats'));
+    const oldStats = SceneEquipmentFlow._snapshotStats(target.getComponent?.('stats'));
     const addBack = (value, suffix) => {
       if (!value) return { ok: true };
       const transactionId = `${command.operationId}:${suffix}`;
@@ -577,18 +587,18 @@ export class ItemLifecycleService {
           allowPartial: false, operationId: removeId
         });
         if (!removed.ok) return removed;
-        const replaced = this.equipmentSystem.equipItem(actor, slot, item);
+        const replaced = this.equipmentSystem.equipItem(target, slot, item);
         if (equipment.getEquipment?.(slot) !== item) return { ok: false, code: 'equipFailed' };
         const oldResult = addBack(replaced, 'old-item');
         if (!oldResult.ok) return { ...oldResult, code: oldResult.code || 'inventoryFull' };
         let removedAmmo = null;
         if (autoUnequipAmmo) {
-          removedAmmo = this.equipmentSystem.unequipItem(actor, 'offhand');
+          removedAmmo = this.equipmentSystem.unequipItem(target, 'offhand');
           if (!removedAmmo) return { ok: false, code: 'ammoUnequipFailed' };
           const ammoResult = addBack(removedAmmo, 'auto-ammo');
           if (!ammoResult.ok) return { ...ammoResult, code: ammoResult.code || 'inventoryFull' };
         }
-        const changeText = SceneEquipmentFlow.statChangeText(oldStats, actor.getComponent?.('stats'));
+        const changeText = SceneEquipmentFlow.statChangeText(oldStats, target.getComponent?.('stats'));
         const messages = [`装备了 ${item.name || definition.name || definition.id}`];
         if (replaced) messages.push(`卸下了 ${replaced.name || replaced.id}`);
         if (removedAmmo) messages.push(`卸下了 ${removedAmmo.name || removedAmmo.id}`);
@@ -604,13 +614,16 @@ export class ItemLifecycleService {
       rollback: () => {
         restoreInventory(inventory, beforeInventory);
         restoreEquipment(equipment, beforeEquipment);
+        if (beforeTarget) restoreActor(target, beforeTarget);
         restoreActor(actor, beforeActor);
       }
     };
   }
 
   _prepareUnequip(command, actor, inventory) {
-    const equipment = actor.getComponent?.('equipment');
+    const target = this._resolveEquipTarget(command, actor);
+    if (!target) return { ok: false, code: 'targetMissing' };
+    const equipment = target.getComponent?.('equipment');
     if (!inventory || !equipment) return { ok: false, code: inventory ? 'equipmentMissing' : 'missingInventory' };
     const slot = command.payload.slot;
     const item = slot ? equipment.getEquipment?.(slot) : null;
@@ -621,13 +634,14 @@ export class ItemLifecycleService {
     const beforeInventory = inventorySnapshot(inventory);
     const beforeEquipment = equipmentSnapshot(equipment);
     const beforeActor = actorSnapshot(actor);
-    const oldStats = SceneEquipmentFlow._snapshotStats(actor.getComponent?.('stats'));
+    const beforeTarget = target !== actor ? actorSnapshot(target) : null;
+    const oldStats = SceneEquipmentFlow._snapshotStats(target.getComponent?.('stats'));
     const transactionIds = [];
     return {
       ok: true,
       transactionIds,
       commit: () => {
-        const removed = this.equipmentSystem.unequipItem(actor, slot);
+        const removed = this.equipmentSystem.unequipItem(target, slot);
         if (!removed) return { ok: false, code: 'unequipFailed' };
         const transactionId = `${command.operationId}:inventory`;
         transactionIds.push(transactionId);
@@ -636,7 +650,7 @@ export class ItemLifecycleService {
           allowPartial: false, operationId: transactionId
         });
         if (!added.ok) return { ...added, code: added.code || 'inventoryFull' };
-        const changeText = SceneEquipmentFlow.statChangeText(oldStats, actor.getComponent?.('stats'));
+        const changeText = SceneEquipmentFlow.statChangeText(oldStats, target.getComponent?.('stats'));
         const messages = [`卸下了 ${removed.name || removed.id}`];
         if (changeText) messages.push(changeText);
         const info = { slot, item: null, oldItem: removed, action: 'unequip' };
@@ -650,6 +664,7 @@ export class ItemLifecycleService {
       rollback: () => {
         restoreInventory(inventory, beforeInventory);
         restoreEquipment(equipment, beforeEquipment);
+        if (beforeTarget) restoreActor(target, beforeTarget);
         restoreActor(actor, beforeActor);
       }
     };

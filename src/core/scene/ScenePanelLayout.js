@@ -97,13 +97,20 @@ export class ScenePanelLayout {
     // 内部操作继续复用原有 PlayerInfoPanel / InventoryPanel 的事件流。
     const invOpts = scene.uiStrategy.getInventoryOptions ? scene.uiStrategy.getInventoryOptions() : null;
     scene.backpackPanel = new BackpackPanel({
-      x: Math.round((scene.logicalWidth - 900) / 2),
+      x: Math.round((scene.logicalWidth - 972) / 2),
       y: Math.max(10, scene.logicalHeight - 100 - 520),
-      width: 900,
+      width: 972,
       height: 520,
       visible: false,
       inventoryOptions: invOpts,
       isMobileLayout: scene.isMobileLayout === true || invOpts?.showTooltip === false,
+      // 亲卫成员列：亲卫名册 unitIds → 实体仓库（选中后装备/立绘切换为该亲卫）
+      getCompanionEntities: () => {
+        const store = scene.entityStore;
+        const unitIds = scene.companionSquadSystem?.unitIds || [];
+        if (!store || unitIds.length === 0) return [];
+        return unitIds.map(id => store.getById?.(id)).filter(Boolean);
+      },
       onAttributeAllocate: () => {
         Logger.log('BaseGameScene: 属性加点按钮被点击');
       },
@@ -524,8 +531,8 @@ export class ScenePanelLayout {
         });
         // 对话选项弹窗布局（UI 编辑器「选项弹窗」组件）
         scene.dialogueChoiceBox?.setLayoutRect?.(loader.getRect('dialogue-choices', width, height));
-        // 亲卫队操作 HUD：UI 编辑器保存的 armyCommandHud 矩形优先（布局加载晚于装配，这里补一次重排）
-        scene.armyCommandFlow?.onResize(width, height);
+        // 亲卫队团队框：UI 编辑器保存的 armyCommandHud 矩形优先（布局加载晚于装配，这里补一次重排）
+        scene.companionSquadFlow?.onResize(width, height);
       }
     } catch (error) {
       console.warn('BaseGameScene: 应用 UI 布局失败', error);
@@ -554,10 +561,10 @@ export class ScenePanelLayout {
           fullBody: loader.getPanel('dialogue-fullbody') || null
         });
       }
-      // 亲卫队操作 HUD 内部行高（面板编辑器「亲卫队操作」面板；缺省沿用内置常量）
+      // 亲卫队团队框内部行高（面板编辑器「亲卫队操作」面板：指令条/状态行/亲卫方格阵；缺省沿用内置常量）
       const armyPanelDefinition = loaded ? loader.getPanel('armyCommandHud') : null;
       if (armyPanelDefinition) {
-        scene.armyCommandFlow?.applyPanelDefinition?.(armyPanelDefinition);
+        scene.companionSquadFlow?.applyPanelDefinition?.(armyPanelDefinition);
       }
       // 玩家 HUD 面板观感（面板编辑器「玩家HUD」面板：底板/金边/昵称/双条配色字号）
       const hudPanelDefinition = loaded ? loader.getPanel('hudPanel') : null;

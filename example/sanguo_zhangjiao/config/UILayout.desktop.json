@@ -23,14 +23,14 @@
       "label": "亲卫队操作",
       "kind": "panel",
       "anchor": "topleft",
-      "x": 490,
-      "y": 502,
+      "x": 10,
+      "y": 10,
       "width": 316,
-      "height": 64,
-      "xPct": 0.38281,
-      "yPct": 0.69722,
+      "height": 224,
+      "xPct": 0.00781,
+      "yPct": 0.01389,
       "wPct": 0.24688,
-      "hPct": 0.08889
+      "hPct": 0.31111
     },
     {
       "id": "timeWeatherBadge",
@@ -99,13 +99,13 @@
       "label": "背包",
       "kind": "panel",
       "anchor": "topleft",
-      "x": 108,
+      "x": 36,
       "y": 140,
-      "width": 1108,
+      "width": 1180,
       "height": 479,
-      "xPct": 0.08438,
+      "xPct": 0.02813,
       "yPct": 0.19444,
-      "wPct": 0.86562,
+      "wPct": 0.92188,
       "hPct": 0.66528
     },
     {

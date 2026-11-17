@@ -36,13 +36,13 @@ const DEFAULT_COMPONENTS = {
       // 右侧 Canvas HUD：Android/PC 共用稳定 ID，运行时按当前平台布局加载。
       { id: 'minimap', label: '小地图', x: 1120, y: 10, width: 150, height: 150, anchor: 'topleft', kind: 'panel' },
       // 亲卫队操作 HUD：矩形=「状态行+指令条」外包框；预设面板运行时从框顶向上展开
-      { id: 'armyCommandHud', label: '亲卫队操作', x: 482, y: 524, width: 316, height: 64, anchor: 'topleft', kind: 'panel' },
+      { id: 'armyCommandHud', label: '亲卫队操作', x: 10, y: 10, width: 316, height: 224, anchor: 'topleft', kind: 'panel' },
       { id: 'timeWeatherBadge', label: '时间/天气', x: 10, y: 70, width: 116, height: 76, fontSize: 0, textOffsetX: 0, textOffsetY: 0, anchor: 'topleft', kind: 'panel' },
       { id: 'combatStateBadge', label: '战斗/灵魂状态', x: 10, y: 150, width: 115, height: 30, fontSize: 0, textOffsetX: 0, textOffsetY: 0, anchor: 'topleft', kind: 'panel' },
       { id: 'taskTracker', label: '任务追踪', x: 56, y: 190, width: 340, height: 150, anchor: 'topleft', kind: 'panel' },
       { id: 'hud-panel', label: '玩家HUD面板', x: 10, y: 10, width: 230, height: 78, anchor: 'topleft', kind: 'panel' },
       // 统一背包外框（属性、装备和物品栏的内部部件由 PanelEditor 编辑）
-      { id: 'backpackPanel', label: '背包', x: 140, y: 140, width: 1000, height: 440, anchor: 'topleft', kind: 'panel' },
+      { id: 'backpackPanel', label: '背包', x: 140, y: 140, width: 1072, height: 440, anchor: 'topleft', kind: 'panel' },
       // 底部控制栏拆分为独立小控件（2药水/5技能；血球/蓝球已下线，血量蓝量由左上角玩家 HUD 面板承载）
       { id: 'pc-potion1', label: '红瓶', x: 482, y: 640, width: 40, height: 40, anchor: 'topleft', kind: 'button' },
       { id: 'pc-potion2', label: '蓝瓶', x: 528, y: 640, width: 40, height: 40, anchor: 'topleft', kind: 'button' },
@@ -76,11 +76,11 @@ const DEFAULT_COMPONENTS = {
     components: [
       { id: 'minimap', label: '小地图', x: 1120, y: 10, width: 150, height: 150, anchor: 'topleft', kind: 'panel' },
       // 亲卫队操作 HUD：矩形=「状态行+指令条」外包框；预设面板运行时从框顶向上展开
-      { id: 'armyCommandHud', label: '亲卫队操作', x: 482, y: 404, width: 316, height: 64, anchor: 'topleft', kind: 'panel' },
+      { id: 'armyCommandHud', label: '亲卫队操作', x: 10, y: 10, width: 316, height: 224, anchor: 'topleft', kind: 'panel' },
       { id: 'timeWeatherBadge', label: '时间/天气', x: 10, y: 70, width: 156, height: 71, fontSize: 0, textOffsetX: 0, textOffsetY: 0, anchor: 'topleft', kind: 'panel' },
       { id: 'combatStateBadge', label: '战斗/灵魂状态', x: 10, y: 145, width: 153, height: 34, fontSize: 0, textOffsetX: 0, textOffsetY: 0, anchor: 'topleft', kind: 'panel' },
       { id: 'taskTracker', label: '任务追踪', x: 22, y: 184, width: 340, height: 140, anchor: 'topleft', kind: 'panel' },
-      { id: 'backpackPanel', label: '背包', x: 100, y: 150, width: 1080, height: 475, anchor: 'topleft', kind: 'panel' },
+      { id: 'backpackPanel', label: '背包', x: 100, y: 150, width: 1152, height: 475, anchor: 'topleft', kind: 'panel' },
       { id: 'joystick', label: '摇杆区', x: 0, y: 270, width: 384, height: 330, anchor: 'topleft', kind: 'zone' },
       { id: 'hud-panel', label: '玩家HUD面板', x: 10, y: 10, width: 230, height: 78, anchor: 'topleft', kind: 'panel' },
       { id: 'act-attack', label: '攻击', x: 1126, y: 510, width: 78, height: 78, anchor: 'topleft', kind: 'button' },

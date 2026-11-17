@@ -1050,7 +1050,7 @@
         "id": "prepare",
         "objectiveType": "commit.fact",
         "target": "story.s02.prepared",
-        "title": "整备完毕（编组/装备/补给/姿态）",
+        "title": "整备完毕（亲卫/装备/补给/姿态）",
         "type": "objective"
       },
       {

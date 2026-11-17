@@ -89,6 +89,7 @@ export class CompanionSquadSystem {
    * @param {Function} [options.now] - 挂钟注入（ms），测试可注入
    * @param {Function} [options.getCommand] - 统率值提供器（heroes[].stats.command）
    * @param {Function} [options.getRankValue] - 官职值提供器（ranks[].value / storyState.playerRank.value）
+   * @param {Function} [options.getRankLabel] - 军衔名提供器（storyState.playerRank.title / ranks[].title），HUD 状态行显示
    * @param {Function} [options.spawnMember] - 补位生成回调 (unitId, entry) => boolean
    * @param {Function} [options.onEvent] - 事件回调 (event, payload) => void
    */
@@ -97,6 +98,7 @@ export class CompanionSquadSystem {
     now = () => Date.now(),
     getCommand = () => 0,
     getRankValue = () => 0,
+    getRankLabel = () => '',
     spawnMember = null,
     onEvent = null
   } = {}) {
@@ -109,6 +111,7 @@ export class CompanionSquadSystem {
     this.now = now;
     this.getCommand = typeof getCommand === 'function' ? getCommand : () => 0;
     this.getRankValue = typeof getRankValue === 'function' ? getRankValue : () => 0;
+    this.getRankLabel = typeof getRankLabel === 'function' ? getRankLabel : () => '';
     this.spawnMember = typeof spawnMember === 'function' ? spawnMember : null;
     this.onEvent = typeof onEvent === 'function' ? onEvent : () => {};
 
@@ -474,6 +477,7 @@ export class CompanionSquadSystem {
       stance: this.stance,
       morale: this.morale,
       moraleLocked: this.morale < this.rule.morale.lowThreshold,
+      rankLabel: String(this.getRankLabel?.() || ''),
       members
     };
   }

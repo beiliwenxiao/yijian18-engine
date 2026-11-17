@@ -11,60 +11,33 @@
  ************************************************************/
 
 /**
- * SceneArmyCommandFlow - 军团指挥场景装配流（M1）
+ * SceneArmyCommandFlow - 武装单位行为内核装配流（军团体系 v2 两层级）
  *
- * 职责：
- * - 装配 ArmyCommandSystem + ArmyCommandHUD（编组条经 uiClickHandler 接管点击）
- * - 扫描 entityStore 中带 SquadMemberComponent 的实体并注册进编组
- * - 三端输入接线：
- *     PC   —— 左键按住拖拽=框选、左键单击=点选单位（空地单击=清选择）、右键=移动下令
- *             （右键经 MovementSystem.armyCommandSystem 钩子接管，见 ArmyCommandSystem.tryHandleMoveOrder）
- *     手柄 —— LB/RB 循环切换选择槽位；移动仍由左摇杆控制武将（ARPG 自主权）
- *     触屏 —— 点选单位；选中编组时点空地=移动下令
- * - 帧更新：命令倒计时推进
- * - 特殊命令已收口：无 HUD 下令入口；建造作业由任务/触发器经
- *   ArmyCommandSystem.startConstruction() 驱动，完成后经 onConstructionComplete 生成工程物实体。
+ * 职责（2026-11-17 收敛：旧 M5 编组玩家入口退役，以新随行小队五档为准）：
+ * - 装配 ArmyCommandSystem 行为内核（阵型偏移/姿态机/搬运/建造/命令倒计时）
+ * - 扫描 entityStore 中带 SquadMemberComponent 的实体并注册（玩家军）
+ * - 玩家指挥入口 = 随行小队五档（CompanionGridHud，SceneCompanionSquadFlow）；
+ *   旧编组选择槽循环（Tab/手柄 LB/框选/点选/编组 HUD）已退役
+ * - 建造作业由任务/触发器经 ArmyCommandSystem.startConstruction() 驱动，
+ *   完成后经 onConstructionComplete 生成工程物实体（渲染层自绘外观）
  */
 import { FramePhase } from './GameSceneRuntime.js';
 import { ArmyCommandSystem } from '../../systems/ArmyCommandSystem.js';
-import { ArmyCommandHUD } from '../../ui/ArmyCommandHUD.js';
-
-const DRAG_THRESHOLD_PX = 8;
-const GAMEPAD_CYCLE_FORWARD = 4;   // LB：按下沿=循环切换编组；按住=指挥态（RB 切命令 / A 确认）
-const GAMEPAD_CYCLE_BACKWARD = 5;  // RB：指挥态下循环切换命令（跟随+4 战术）
-const GAMEPAD_CONFIRM = 0;         // A：指挥态下确认下达待确认命令
-const TAB_CYCLE_KEY = 'tab';       // Tab：循环选择 武将→全军→前→左→中→右→后（与手柄 LB 同序列；InputManager 归一化小写）
-const GAMEPAD_IDLE_POLL_INTERVAL = 8; // 无手柄在线时的轮询间隔（帧）：键鼠玩家不再每帧调 Gamepad API
 
 export class SceneArmyCommandFlow {
   /**
-   * @param {Object} scene - 游戏场景（需 entityStore/inputManager/camera/uiClickHandler/sceneRuntime/movementSystem）
+   * @param {Object} scene - 游戏场景（需 entityStore/inputManager/camera/sceneRuntime/movementSystem）
    */
   constructor(scene) {
     this.scene = scene;
     this.system = new ArmyCommandSystem({ camera: scene.camera || null });
-    this.dragState = { active: false, started: false, startX: 0, startY: 0, currentX: 0, currentY: 0, touch: false };
-    this.hud = new ArmyCommandHUD({
-      system: this.system,
-      camera: scene.camera || null,
-      dragState: this.dragState
-    });
-    this._prevLeftHeld = false;
-    /** 上一轮采样到的手柄按钮位掩码（按下沿检测；避免每帧 Set 分配） */
-    this._prevPadMask = 0;
-    /** 上一轮是否检测到手柄在线；false 时降频轮询 Gamepad API */
-    this._padActive = false;
-    this._padIdlePollTick = 0;
-    this._prevTabDown = false;
-    this._prevInCombat = false;
-    /** 已套用内容库 defaultStance 的分队（避免每帧覆盖玩家在 HUD 改过的预设）。 */
+    /** 已套用内容库 defaultStance 的分队（避免每帧覆盖）。 */
     this._defaultStanceApplied = new Set();
+    this._prevInCombat = false;
     this._attached = false;
-    /** 手柄指挥态（按住 LB）：SceneCombatActions 据此让位战斗肩键（RB 技能释放/LB 技能切换）。 */
-    this.gamepadCommanding = false;
   }
 
-  /** 系统就绪后调用一次：注册 HUD 点击、帧更新钩子，并接管 MovementSystem 右键。 */
+  /** 系统就绪后调用一次：帧更新钩子，并接管 MovementSystem 右键。 */
   attach() {
     if (this._attached) return this;
     this._attached = true;
@@ -72,11 +45,10 @@ export class SceneArmyCommandFlow {
     this.system.setInputManager?.(scene.inputManager || null);
     this.system.setCombatSystem?.(scene.combatSystem || null);
     this.system.setCommanderProvider?.(() => scene.playerEntity || null);
-    this.system.setHudVisibleProvider?.(() => this.hud.visible === true);
+    // 旧编组 HUD 已退役：可见性门控恒放行（内核行为不再依赖 HUD 状态）
+    this.system.setHudVisibleProvider?.(() => true);
     this._enableBuildingCollision(scene);
     this.system.onConstructionComplete = (commandKey, pos, def) => this._spawnConstructionEntity(commandKey, pos, def);
-    this.onResize(scene.logicalWidth || 1280, scene.logicalHeight || 720);
-    scene.uiClickHandler?.registerElement?.(this.hud);
     scene.movementSystem && (scene.movementSystem.armyCommandSystem = this.system);
     scene.sceneRuntime?.onFramePhase?.(FramePhase.AFTER_SCENE, deltaTime => this.update(deltaTime), 'armyCommand');
     return this;
@@ -115,40 +87,15 @@ export class SceneArmyCommandFlow {
     }
   }
 
-  /** 布局同步（ScenePanelLayout.onResize / applyUILayout 调用）。UI 编辑器矩形优先；否则锚定「军队」按钮右对齐。 */
-  onResize(width, height) {
-    this._lastLayoutSize = { width, height };
-    const bar = this.scene.bottomControlBar;
-    const slotSize = bar?.skillSlots?.[0]?.size || 40;
-    const count = bar?.skillSlots?.length || 7;
-    const barWidth = count * slotSize + (count - 1) * 6;
-    const editorRect = this.scene.uiLayoutLoader?.getRect?.('armyCommandHud', width, height) || null;
-    const button = this.scene.armyButton;
-    const anchorRect = button ? { x: button.x, y: button.y, width: button.width, height: button.height } : null;
-    this.hud.layout?.(width, height, barWidth, editorRect, anchorRect);
-  }
-
-  /** 面板编辑器「亲卫队操作」定义（行高覆盖）；加载晚于装配，应用后按最近画布尺寸重排。 */
-  applyPanelDefinition(panelDefinition) {
-    if (!panelDefinition) return false;
-    this.hud?.setPanelDefinition?.(panelDefinition);
-    const size = this._lastLayoutSize;
-    if (size) this.onResize(size.width, size.height);
-    return true;
-  }
-
   update(deltaTime = 0) {
     this.system.setEnemies(this.scene.enemyEntities || []);
     this._handleCombatEdge();
-    this._handleTabCycle();
     this.system.update(deltaTime);
     this.syncUnits();
-    this._handlePointer();
-    this._handleGamepad();
   }
 
   /**
-   * 战斗态沿检测（M5-3 战前预设）：开战瞬间应用 per 军预设姿态，
+   * 战斗态沿检测（战前预设）：开战瞬间应用内容库 per 军预设姿态，
    * 战斗结束全员回归跟随武将。无预设（全跟随）时应用为幂等无感。
    */
   _handleCombatEdge() {
@@ -159,19 +106,9 @@ export class SceneArmyCommandFlow {
     else this.system.resetSquadsToEscort();
   }
 
-  /** Tab 按下沿：循环选择 武将→全军→前军→左军→中军→右军→后军（含武将，军队无命令时快速切回）。 */
-  _handleTabCycle() {
-    const input = this.scene.inputManager;
-    if (!input?.isKeyPressed) return;
-    const pressed = input.isKeyPressed(TAB_CYCLE_KEY) === true;
-    if (pressed && !this._prevTabDown) this.system.cycleSquadSelection();
-    this._prevTabDown = pressed;
-  }
-
-  /** 渲染入口（SceneRenderPipeline overlay 回调）：工程物自绘 + HUD。 */
+  /** 渲染入口（SceneRenderPipeline overlay 回调）：工程物自绘（HUD 已由随行小队团队框接管）。 */
   render(ctx) {
     this._drawConstructions(ctx);
-    this.hud.render(ctx);
   }
 
   /** 工程物自绘：施工中=脚手架+进度，完成=按命令类型的色块造型（建筑实体负责碰撞）。 */
@@ -243,8 +180,8 @@ export class SceneArmyCommandFlow {
 
   /**
    * 内容库 armies 定义的 defaultStance → 该军各分队的战前预设姿态
-   * （M5-3 预设机制的默认值来源，开战沿检测时由 applySquadPresets 应用）。
-   * 规则：只在该分队预设仍是初始「跟随」时套用，玩家在 HUD 改过就不再覆盖。
+   * （预设机制的默认值来源，开战沿检测时由 applySquadPresets 应用）。
+   * 规则：只在该分队预设仍是初始「跟随」时套用。
    */
   _applyArmyDefaultStances() {
     const armies = this.scene.gameLoader?.registries?.armies;
@@ -261,124 +198,6 @@ export class SceneArmyCommandFlow {
         console.warn('[SceneArmyCommandFlow] armies.defaultStance 非法，未套用', unit.armyId, stance, result?.code || '');
       }
     }
-  }
-
-  _handlePointer() {
-    const input = this.scene.inputManager;
-    const camera = this.scene.camera;
-    if (!input || !camera?.screenToWorld) { this._prevLeftHeld = false; return; }
-
-    const button = input.getMouseButton?.();
-    const leftHeld = button === 0;
-    const screen = input.getMousePosition?.() || { x: 0, y: 0 };
-
-    const isTouch = input.mouse?.isTouch === true;
-    const world = camera.screenToWorld(screen.x, screen.y);
-    const drag = this.dragState;
-
-    // 左键按下沿：未被 HUD/交互消费时开始拖拽跟踪（触屏无框选）
-    if (leftHeld && !this._prevLeftHeld) {
-      const consumed = input.isMouseClickHandled?.() === true;
-      drag.started = !consumed && !isTouch;
-      drag.active = false;
-      drag.touch = isTouch;
-      drag.startX = screen.x;
-      drag.startY = screen.y;
-      drag.currentX = screen.x;
-      drag.currentY = screen.y;
-    } else if (leftHeld && drag.started) {
-      drag.currentX = screen.x;
-      drag.currentY = screen.y;
-      if (!isTouch && Math.hypot(drag.currentX - drag.startX, drag.currentY - drag.startY) > DRAG_THRESHOLD_PX) {
-        drag.active = true;
-      }
-    }
-
-    // 左键释放沿：框选 / 点选 / 触屏点地下令 / 空地清选择
-    if (this._prevLeftHeld && !leftHeld) {
-      const wasConsumed = input.isMouseClickHandled?.() === true;
-      if (drag.started && !wasConsumed) {
-        if (drag.active && !drag.touch) {
-          const minScreen = { x: Math.min(drag.startX, drag.currentX), y: Math.min(drag.startY, drag.currentY) };
-          const maxScreen = { x: Math.max(drag.startX, drag.currentX), y: Math.max(drag.startY, drag.currentY) };
-          const min = camera.screenToWorld(minScreen.x, minScreen.y);
-          const max = camera.screenToWorld(maxScreen.x, maxScreen.y);
-          this.system.selectUnitsInRect({ minX: min.x, minY: min.y, maxX: max.x, maxY: max.y });
-        } else if (!drag.active) {
-          this._handleSceneClick(world, drag.touch);
-        }
-      }
-      drag.started = false;
-      drag.active = false;
-    }
-    this._prevLeftHeld = leftHeld;
-  }
-
-  _handleSceneClick(worldPos, isTouch) {
-    // 点中单位 → 自定义单选
-    if (this.system.selectUnitAt(worldPos)) return;
-    if (isTouch) {
-      // 安卓无右键：选中编组时点地图 = 语义化意图指令（点敌进攻/点地驻守/点武将集结）
-      if (this.system.hasSquadSelection()) this.system.orderIntent(worldPos);
-      return;
-    }
-    this.system.clearSelection();
-  }
-
-  /**
-   * 手柄指挥（§5/§11.1.6 M5-3「按住 LB 指挥」）：
-   * - LB 按下沿：循环切换编组（武将→全军→前→左→中→右→后，与 Tab 同序列）
-   * - 按住 LB（指挥态）：RB 循环切换命令（跟随+4 战术）→ A 确认下达（成功后自动回武将）
-   * - 左摇杆移动武将不受影响（ARPG 自主权）
-   */
-  _handleGamepad() {
-    if (typeof navigator === 'undefined' || typeof navigator.getGamepads !== 'function') return;
-    // 降频轮询：上一轮没有手柄在线时按 GAMEPAD_IDLE_POLL_INTERVAL 帧采样
-    // （键鼠玩家不再每帧付 Gamepad API + 分配成本）；一旦检测到手柄则保持每帧采样，
-    // 保证 LB/RB/A 的按下沿不被漏采。
-    if (this._padActive !== true) {
-      this._padIdlePollTick = ((this._padIdlePollTick || 0) + 1) % GAMEPAD_IDLE_POLL_INTERVAL;
-      if (this._padIdlePollTick !== 0) return;
-    }
-    const gamepads = navigator.getGamepads();
-    let pad = null;
-    if (gamepads) {
-      for (const candidate of gamepads) {
-        if (candidate?.connected) { pad = candidate; break; }
-      }
-    }
-    this._padActive = Boolean(pad);
-    if (!pad) { this.hud.gamepadCommanding = false; return; }
-    // 按钮状态用位掩码表示（按钮数上限 32），免去每帧 Set 分配与遍历
-    let mask = 0;
-    const buttons = pad.buttons || [];
-    for (let index = 0; index < buttons.length && index < 32; index++) {
-      if (buttons[index]?.pressed) mask |= (1 << index);
-    }
-    const previousMask = this._prevPadMask || 0;
-    const wasPressed = bit => (previousMask & (1 << bit)) !== 0;
-    const isPressed = bit => (mask & (1 << bit)) !== 0;
-    const lbHeld = isPressed(GAMEPAD_CYCLE_FORWARD);
-    const lbWasHeld = wasPressed(GAMEPAD_CYCLE_FORWARD);
-    // LB 按下沿：循环切换选择（含武将，§5 切换单位键）。
-    // 操作条被军队按钮/LS 收起时，指挥按键自动亮出（指挥需要 HUD 反馈可见）。
-    if (lbHeld && !lbWasHeld) {
-      if (this.system.getUnitCount() > 0 && this.hud.visible === false) this.hud.visible = true;
-      this.system.cycleSquadSelection();
-    }
-    // 按住 LB = 指挥态：RB 循环切换命令（可见 5 姿态）
-    if (lbHeld && this.system.hasSquadSelection()
-      && isPressed(GAMEPAD_CYCLE_BACKWARD) && !wasPressed(GAMEPAD_CYCLE_BACKWARD)) {
-      this.system.cycleCommandStance(1);
-    }
-    // 按住 LB = 指挥态：A 确认下达待确认命令（成功后自动回武将）
-    if (lbHeld && this.system.hasSquadSelection() && this.system.pendingStance
-      && isPressed(GAMEPAD_CONFIRM) && !wasPressed(GAMEPAD_CONFIRM)) {
-      this.system.applyStance(this.system.pendingStance);
-    }
-    this.gamepadCommanding = lbHeld;
-    this.hud.gamepadCommanding = lbHeld;
-    this._prevPadMask = mask;
   }
 }
 

@@ -36,10 +36,11 @@ export class SceneInventoryFlow {
     this.executeIntent = typeof executeIntent === 'function' ? executeIntent : null;
   }
 
-  unequip(slot, button, { mobile = false } = {}) {
+  unequip(slot, button, { mobile = false, targetId = null } = {}) {
     if (!mobile && button !== 'left' && button !== 'right') return { ok: false, reason: 'ignored' };
     if (!this.executeIntent) return { ok: false, reason: 'unavailable' };
-    return Promise.resolve(this.executeIntent('item.unequip', { slot }))
+    // targetId：卸下亲卫等共用背包成员的装备（物品回到 actor 背包）
+    return Promise.resolve(this.executeIntent('item.unequip', targetId ? { slot, targetId } : { slot }))
       .then(result => {
         if (!result?.ok) {
           if (result?.code === 'inventoryFull') {

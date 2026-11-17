@@ -407,6 +407,28 @@ export class PlayerInfoPanel extends UIElement {
   }
   
   /**
+   * 切换为亲卫等展示实体：装备/属性/立绘读取该实体自身组件，
+   * 不走主角的 item-lifecycle 投影；实体无装备组件时显示空槽。
+   * @param {Entity} entity - 亲卫实体
+   */
+  setCompanionEntity(entity) {
+    if (!entity) return;
+    this.player = new Proxy(entity, {
+      get: (target, property, receiver) => {
+        if (property !== 'getComponent') return Reflect.get(target, property, receiver);
+        return type => {
+          if (type === 'equipment') {
+            const liveEquipment = target.getComponent?.('equipment');
+            if (liveEquipment) return liveEquipment;
+            return { slots: {}, getEquipment: () => null };
+          }
+          return target.getComponent?.(type);
+        };
+      }
+    });
+  }
+
+  /**
    * 设置属性加点回调
    * @param {Function} callback - 回调函数
    */

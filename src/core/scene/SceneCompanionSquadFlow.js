@@ -48,6 +48,8 @@ export class SceneCompanionSquadFlow {
     this._dirty = true;
     this._lastLayoutSize = null;
     this._restored = false;
+    /** 亲卫队按钮手动收起标记：true 时自动显示不再抢回，直到再次打开 */
+    this._hudUserHidden = false;
     /** @type {Map<string, Object>} 成员蓝图（补位实体被清理后按此重建） */
     this._blueprints = new Map();
   }
@@ -68,10 +70,20 @@ export class SceneCompanionSquadFlow {
     return this;
   }
 
-  /** 布局同步（ScenePanelLayout.onResize / applyUILayout 调用）。 */
+  /** 布局同步（ScenePanelLayout.onResize / applyUILayout 调用）；UI 编辑器 armyCommandHud 矩形优先。 */
   onResize(width, height) {
     this._lastLayoutSize = { width, height };
+    const rect = this.scene.uiLayoutLoader?.getRect?.('armyCommandHud', width, height) || null;
+    this.hud.setEditorRect?.(rect);
     this.hud.layout?.(width, height);
+  }
+
+  /** 亲卫队按钮/热键开关：手动收起后自动显示不再抢回，再次打开恢复自动语义。 */
+  toggleHud() {
+    if (!this.hud) return false;
+    this.hud.visible = this.hud.visible !== true;
+    this._hudUserHidden = this.hud.visible === false;
+    return this.hud.visible;
   }
 
   /** 面板编辑器矩形（与亲卫队操作面板同款机制）。 */
@@ -96,8 +108,22 @@ export class SceneCompanionSquadFlow {
     const tick = this.system.tick(deltaTime);
     if (tick.chargeConverted || tick.reinforced.length > 0) this._dirty = true;
     this._forwardStance();
-    this.hud.visible = this.system.getMemberCount() > 0;
+    this._handleHudScroll();
+    if (this._hudUserHidden !== true) this.hud.visible = this.system.getMemberCount() > 0;
     if (this._dirty) this._persist();
+  }
+
+  /** 滚轮滚动成员列表：指针悬停在 HUD 上时消费滚轮累计增量（InputManager）。 */
+  _handleHudScroll() {
+    if (this.hud.visible !== true) return;
+    const input = this.scene.inputManager;
+    const pointer = input?.getMousePosition?.();
+    if (!pointer) return;
+    const layout = this.hud.getLayout();
+    if (pointer.x < layout.x || pointer.x > layout.x + layout.width
+      || pointer.y < layout.y || pointer.y > layout.y + layout.height) return;
+    const delta = input.consumeWheelDelta?.();
+    if (delta?.y) this.hud.handleWheel?.(delta.y);
   }
 
   /**

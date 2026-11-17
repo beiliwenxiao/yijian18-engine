@@ -384,14 +384,11 @@ export class BaseGameSceneSetup extends Scene {
     return false;
   }
 
-  /** 亲卫队按钮：开关亲卫队操作条（编组/姿态命令 HUD）。 */
+  /** 亲卫队按钮：开关亲卫队团队框（五档命令 + 军衔/人数 + 成员方格列表）。 */
   toggleArmyCommandHud() {
-    const hud = this.armyCommandFlow?.hud;
-    if (!hud) return false;
-    hud.visible = hud.visible !== true;
-    if (hud.visible === false) hud.presetOpen = false;
-    this._showScreenTip?.(hud.visible ? '亲卫队操作条已显示。' : '亲卫队操作条已隐藏。', { title: '亲卫队' });
-    return hud.visible;
+    const flow = this.companionSquadFlow;
+    if (!flow?.hud) return false;
+    return flow.toggleHud() === true;
   }
 
   /** 大地图（M 键 / 小地图右上角「M」按钮）：可见时关闭，否则在非对话/非硬锁时打开。 */

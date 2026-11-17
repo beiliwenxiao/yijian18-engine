@@ -522,7 +522,7 @@ export class S02ArmyRescueCoordinator {
     return { ok: true, campId, structures: seeded.structures, skipped: seeded.skipped };
   }
 
-  /** 打开军团指挥 HUD（征召处交互：征兵/编组/下达命令统一入口）。 */
+  /** 打开亲卫队团队框（征召处交互：查看亲卫/下达五档命令统一入口）。 */
   openArmyOrders() {
     const scene = this.scene;
     const flow = scene.armyCommandFlow;
@@ -534,7 +534,8 @@ export class S02ArmyRescueCoordinator {
       scene._showScreenTip?.('营中暂无可用兵马。', { title: '征召处' });
       return { ok: false, code: 'noUnits' };
     }
-    if (flow.hud?.visible !== true) scene.toggleArmyCommandHud?.();
+    // 新口径：亲卫队团队框有成员自动显示；被手动收起时从这里拉起
+    if (scene.companionSquadFlow?.hud?.visible !== true) scene.companionSquadFlow?.toggleHud?.();
     return { ok: true };
   }
 

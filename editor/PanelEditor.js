@@ -103,7 +103,7 @@ const LEGACY_DEFAULT_PANELS = [
 // 默认统一背包定义：外框由 UIEditor 编辑，部件按 section 在组合面板中分区渲染。
 const DEFAULT_PANELS = [
   {
-    id: 'backpackPanel', name: '背包', width: 1000, height: 440,
+    id: 'backpackPanel', name: '背包', width: 983, height: 440,
     backgroundColor: 'rgba(0, 0, 0, 0.88)', borderColor: '#c49a52', borderWidth: 2,
     parts: [
       { id: 'className', section: 'character', type: 'text', label: '角色名', x: 20, y: 48, width: 150, height: 22, text: '{className}', fontSize: 16, fontWeight: 'bold', color: '#ffffff', align: 'left' },
@@ -155,14 +155,14 @@ const DEFAULT_PANELS = [
     ]
   },
   {
-    // 亲卫队操作 HUD 内部行高管理：运行时 ArmyCommandHUD.setPanelDefinition 读取各部件
-    // 高度并钳制到 16~96px；宽度始终与 HUD 外框一致（外框位置在 UI 编辑器 armyCommandHud 编辑）。
-    id: 'armyCommandHud', name: '亲卫队操作', width: 316, height: 100,
+    // 亲卫队团队框内部行高管理：运行时 CompanionGridHud.setPanelDefinition 读取三部件
+    // 高度（指令条 14~72 / 状态行 14~60 / 方格阵 60~400）；宽度始终与 HUD 外框一致（外框位置在 UI 编辑器 armyCommandHud 编辑）。
+    id: 'armyCommandHud', name: '亲卫队操作', width: 316, height: 224,
     backgroundColor: 'rgba(13, 19, 38, 0.86)', borderColor: '#c9a227', borderWidth: 2,
     parts: [
       { id: 'groupBar', type: 'panel', label: '五档指令条 Row1', x: 0, y: 0, width: 316, height: 38, bgColor: '#1a2f55', borderColor: '#3a4a7e' },
       { id: 'comboRow', type: 'panel', label: '状态行 Row2', x: 0, y: 38, width: 316, height: 26, bgColor: '#233055', borderColor: '#3a4a7e' },
-      { id: 'stancePanel', type: 'panel', label: '亲卫方格阵 Row3', x: 0, y: 64, width: 316, height: 28, bgColor: '#233055', borderColor: '#3a4a7e' }
+      { id: 'stancePanel', type: 'panel', label: '亲卫方格阵 Row3', x: 0, y: 64, width: 316, height: 132, bgColor: '#233055', borderColor: '#3a4a7e' }
     ]
   },
   {
@@ -797,9 +797,10 @@ export class PanelEditor {
 
   /**
    * 亲卫队操作面板所见即所得预览：按军团体系 v2 文档（specs/military-supply-strategy/03-army-squads.md
-   * §4/§8）呈现随行小队 HUD 新口径——五档指令条（跟随/进攻/防守/冲锋/撤退，编组选择已去除）、
-   * 状态行（亲卫数/士气）、亲卫方格阵示意（成员首字+底部细血条，阵亡置灰）。配色取自运行时常量。
-   * 注意：运行时 ArmyCommandHUD 仍为旧编组口径（7 槽），待模块 3（M3）实施时统一迁移。
+   * §4/§8）呈现随行小队团队框新口径——第 1 行五档指令条（跟随/进攻/防守/冲锋/撤退，编组选择已去除）、
+   * 第 2 行状态行（军衔 + 亲卫数 + 士气）、第 3 行亲卫方格阵（成员首字+底部细血条，阵亡置灰，
+   * 10 列 × 可视多行 + 右侧滚动条；游戏内默认最左侧置顶，一屏 50 人，上限 100 人滚动查看）。
+   * 配色取自运行时 CompanionGridHud 常量。
    */
   _renderArmyPanelPreview(ctx, panel) {
     const partById = id => panel.parts.find(part => part.id === id) || null;
@@ -833,7 +834,7 @@ export class PanelEditor {
     };
     // 指令条 Row1：五档指令 chips（默认选中「跟随」）——v2 口径无编组选择条
     fillChips(partById('groupBar'), ['跟随', '进攻', '防守', '冲锋', '撤退'], 0);
-    // 状态行 Row2：随行小队状态文字（v2 口径无「⚙ 预设」按钮，预设随编组一起去除）
+    // 状态行 Row2：军衔 + 亲卫数 + 士气（v2 口径无「⚙ 预设」按钮，预设随编组一起去除）
     const comboRow = partById('comboRow');
     if (comboRow) {
       ctx.save();
@@ -844,43 +845,55 @@ export class PanelEditor {
       ctx.font = '11px "Microsoft YaHei", sans-serif';
       ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
-      ctx.fillText('亲卫 24/100 · 士气 72', comboRow.x + 10, comboRow.y + comboRow.height / 2 + 1);
+      ctx.fillText('大贤良师 · 亲卫 24/100 · 士气 72', comboRow.x + 10, comboRow.y + comboRow.height / 2 + 1);
       ctx.restore();
     }
-    // 亲卫方格阵 Row3：成员方格示意（每格=成员首字+底部细血条；阵亡格置灰）
+    // 亲卫方格阵 Row3：成员方格示意（每格=成员首字+底部细血条；阵亡格置灰）+ 右侧滚动条
     const gridRow = partById('stancePanel');
     if (gridRow && gridRow.width > 0 && gridRow.height > 0) {
       ctx.save();
       ctx.beginPath();
       ctx.rect(gridRow.x, gridRow.y, gridRow.width, gridRow.height);
       ctx.clip();
-      const gap = 4;
-      const size = Math.min(gridRow.height - 6, 22);
-      const step = size + gap;
+      const gap = 3;
+      const cols = 10;
+      const rows = Math.max(1, Math.floor((gridRow.height + gap) / 27));
+      const barWidth = 10;
+      const cellSize = Math.floor((gridRow.width - barWidth - 6 - (cols - 1) * gap) / cols);
       const surnames = ['张', '李', '王', '赵', '陈', '刘', '杨', '黄', '周', '吴', '郑', '孙'];
-      for (let i = 0; gridRow.x + 2 + i * step + size <= gridRow.x + gridRow.width; i++) {
-        const cx = gridRow.x + 2 + i * step;
-        const cy = gridRow.y + (gridRow.height - size) / 2;
-        const dead = i === 2; // 示意：阵亡格置灰
-        ctx.beginPath();
-        ctx.rect(cx, cy, size, size);
-        ctx.fillStyle = dead ? 'rgba(72, 72, 72, 0.85)' : 'rgba(26, 47, 85, 0.9)';
-        ctx.fill();
-        ctx.strokeStyle = dead ? 'rgba(130, 130, 130, 0.6)' : 'rgba(90, 110, 170, 0.7)';
-        ctx.lineWidth = 1;
-        ctx.stroke();
-        ctx.fillStyle = dead ? 'rgba(170, 170, 170, 0.75)' : 'rgba(255, 255, 255, 0.88)';
-        ctx.font = `${Math.max(9, Math.floor(size * 0.5))}px "Microsoft YaHei", sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(dead ? '×' : surnames[i % surnames.length], cx + size / 2, cy + size / 2 - 1);
-        // 底部细血条
-        const barY = cy + size - 4;
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-        ctx.fillRect(cx + 2, barY, size - 4, 2);
-        ctx.fillStyle = dead ? '#666666' : '#3fae4a';
-        ctx.fillRect(cx + 2, barY, (size - 4) * 0.8, 2);
+      for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < cols; col++) {
+          const i = row * cols + col;
+          if (i >= 50) break; // 预览示意一屏 50 人
+          const cx = gridRow.x + 2 + col * (cellSize + gap);
+          const cy = gridRow.y + 2 + row * (cellSize + gap);
+          const dead = i === 2; // 示意：阵亡格置灰
+          ctx.beginPath();
+          ctx.rect(cx, cy, cellSize, cellSize);
+          ctx.fillStyle = dead ? 'rgba(72, 72, 72, 0.85)' : 'rgba(26, 47, 85, 0.9)';
+          ctx.fill();
+          ctx.strokeStyle = dead ? 'rgba(130, 130, 130, 0.6)' : 'rgba(90, 110, 170, 0.7)';
+          ctx.lineWidth = 1;
+          ctx.stroke();
+          ctx.fillStyle = dead ? 'rgba(170, 170, 170, 0.75)' : 'rgba(255, 255, 255, 0.88)';
+          ctx.font = `${Math.max(8, Math.floor(cellSize * 0.5))}px "Microsoft YaHei", sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(dead ? '×' : surnames[i % surnames.length], cx + cellSize / 2, cy + cellSize / 2 - 1);
+          // 底部细血条
+          const barY = cy + cellSize - 4;
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+          ctx.fillRect(cx + 2, barY, cellSize - 4, 2);
+          ctx.fillStyle = dead ? '#666666' : '#3fae4a';
+          ctx.fillRect(cx + 2, barY, (cellSize - 4) * 0.8, 2);
+        }
       }
+      // 滚动条（示意 2/3 位置滑块）
+      const barX = gridRow.x + gridRow.width - barWidth - 2;
+      ctx.fillStyle = 'rgba(26, 47, 85, 0.6)';
+      ctx.fillRect(barX, gridRow.y + 2, barWidth, gridRow.height - 4);
+      ctx.fillStyle = 'rgba(201, 162, 39, 0.55)';
+      ctx.fillRect(barX, gridRow.y + 2 + Math.round((gridRow.height - 4) * 0.3), barWidth, Math.round((gridRow.height - 4) * 0.4));
       ctx.restore();
     }
   }
@@ -1183,7 +1196,7 @@ export class PanelEditor {
           ${panel.id === ARMY_PANEL_ID ? `
           <div class="pe-prop-section">
             <div class="pe-prop-section-title">亲卫队操作（运行时联动）</div>
-            <div class="pe-prop-hint">「五档指令条 / 状态行 / 亲卫方格阵」三个部件的高度驱动运行时 ArmyCommandHUD 行高，钳制 16~96px；宽度始终与 HUD 外框一致，外框位置在 UI 编辑器 armyCommandHud 中调整。预览按军团体系 v2 文档（随行小队：五档指令、无编组选择）呈现；运行时仍为旧编组口径，待模块 3 实施时统一迁移。</div>
+            <div class="pe-prop-hint">「五档指令条 / 状态行 / 亲卫方格阵」三个部件的高度驱动运行时 CompanionGridHud 行高，钳制：指令条 14~72、状态行 14~60、方格阵 60~400；宽度始终与 HUD 外框一致，外框位置在 UI 编辑器 armyCommandHud 中调整（游戏内默认最左侧置顶，一屏 50 人，上限 100 人滚动查看）。预览按军团体系 v2 文档（五档指令、无编组选择）呈现。</div>
             <button type="button" class="pe-prop-button" id="pe-army-reset">↺ 恢复默认行高</button>
           </div>` : ''}
           ${panel.id === HUD_PANEL_ID ? `

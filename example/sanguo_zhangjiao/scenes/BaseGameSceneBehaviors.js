@@ -105,8 +105,11 @@ export class BaseGameSceneBehaviors extends BaseGameSceneSetup {  /**
    * @param {string} slotType - 装备槽类型
    * @param {string} button - 鼠标按钮
    */
-  _handleEquipmentSlotClick(slotType, button) {
-    return this._ensureInventoryFlow().unequip(slotType, button, { mobile: this.isMobileLayout });
+  _handleEquipmentSlotClick(slotType, button, options = {}) {
+    return this._ensureInventoryFlow().unequip(slotType, button, {
+      mobile: this.isMobileLayout,
+      targetId: options.targetId || null
+    });
   }
 
   /**
