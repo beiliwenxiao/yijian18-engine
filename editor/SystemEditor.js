@@ -77,7 +77,7 @@ export class SystemEditor {
         panelColor: 'rgba(15, 15, 18, 0.88)',
         titleColor: '#e7c778',
         textColor: '#dddddd',
-        buttonColor: '#4b6728'
+        buttonColor: '#e7c778'
       };
     }
     // 兼容“显示文字”旧配置；保存后统一使用 showDescription。
@@ -91,6 +91,8 @@ export class SystemEditor {
         subtitle: '三月荒原',
         loadingText: '加载中...',
         icon: '',
+        iconWidth: 0,
+        iconHeight: 0,
         backgroundColor: '#1a1a1a',
         titleColor: '#4CAF50',
         progressBarColor: '#4CAF50,#8BC34A',
@@ -184,7 +186,7 @@ export class SystemEditor {
             <div class="sys-row"><label>面板颜色:</label><input type="text" id="sys-lg-panel" value="${this._esc(lg.panelColor)}" placeholder="支持 rgba(...) "></div>
             <div class="sys-row"><label>标题色:</label><input type="color" id="sys-lg-titlecolor" value="${lg.titleColor || '#e7c778'}"></div>
             <div class="sys-row"><label>文字色:</label><input type="color" id="sys-lg-textcolor" value="${lg.textColor || '#dddddd'}"></div>
-            <div class="sys-row"><label>按钮色:</label><input type="color" id="sys-lg-button" value="${lg.buttonColor || '#4b6728'}"></div>
+            <div class="sys-row"><label>按钮色:</label><input type="color" id="sys-lg-button" value="${lg.buttonColor || '#e7c778'}"></div>
           </fieldset>
           <p style="color:#888;font-size:12px;">运行顺序：登录界面 → 加载页面 → 游戏场景。登录界面固定提供“开始游戏 / 继续游戏 / 退出游戏”。</p>
           <button id="sys-lg-save" style="padding:8px 24px;background:#4CAF50;border:none;color:#fff;border-radius:4px;cursor:pointer;font-size:14px;">保存</button>
@@ -196,6 +198,12 @@ export class SystemEditor {
             <div class="sys-row"><label>副标题:</label><input type="text" id="sys-ld-subtitle" value="${this._esc(ld.subtitle)}"></div>
             <div class="sys-row"><label>加载文字:</label><input type="text" id="sys-ld-text" value="${this._esc(ld.loadingText)}"></div>
             <div class="sys-row"><label>图标URL:</label><input type="text" id="sys-ld-icon" value="${this._esc(ld.icon)}" placeholder="留空=无图标，如 assets/images/logo.png"></div>
+            <div class="sys-row"><label>图标尺寸:</label>
+              <input type="number" id="sys-ld-icon-w" value="${Number(ld.iconWidth) || 0}" min="0" step="1" style="width:70px;" title="显示宽度 px，0=原始宽度">
+              <span style="color:#888;">×</span>
+              <input type="number" id="sys-ld-icon-h" value="${Number(ld.iconHeight) || 0}" min="0" step="1" style="width:70px;" title="显示高度 px，0=原始高度">
+              <span style="color:#888;font-size:11px;">px（0 = 按原始尺寸）</span>
+            </div>
             <div class="sys-row" id="sys-ld-icon-preview-row" style="display:none;">
               <label>图标预览:</label>
               <div id="sys-ld-icon-preview" style="max-width:100%;overflow:auto;border:1px solid #333;padding:8px;background:#0a1020;border-radius:4px;">
@@ -312,11 +320,20 @@ export class SystemEditor {
       this._collectFields();
       await this._save();
     });
-    // 图标URL实时预览
+    // 图标URL实时预览 + 尺寸控制
     const iconInput = this.container.querySelector('#sys-ld-icon');
     if (iconInput) {
       iconInput.addEventListener('input', (e) => this._updateIconPreview(e.target.value));
     }
+    const iconWidthInput = this.container.querySelector('#sys-ld-icon-w');
+    const iconHeightInput = this.container.querySelector('#sys-ld-icon-h');
+    const refreshIconSize = () => {
+      const width = parseInt(iconWidthInput?.value, 10) || 0;
+      const height = parseInt(iconHeightInput?.value, 10) || 0;
+      this._applyIconPreviewSize(width, height);
+    };
+    iconWidthInput?.addEventListener('input', refreshIconSize);
+    iconHeightInput?.addEventListener('input', refreshIconSize);
     // 天气保存
     const wtSave = this.container.querySelector('#sys-wt-save');
     if (wtSave) wtSave.addEventListener('click', async () => {
@@ -416,6 +433,8 @@ export class SystemEditor {
     ld.subtitle = this.container.querySelector('#sys-ld-subtitle').value;
     ld.loadingText = this.container.querySelector('#sys-ld-text').value;
     ld.icon = this.container.querySelector('#sys-ld-icon').value;
+    ld.iconWidth = parseInt(this.container.querySelector('#sys-ld-icon-w')?.value, 10) || 0;
+    ld.iconHeight = parseInt(this.container.querySelector('#sys-ld-icon-h')?.value, 10) || 0;
     ld.backgroundColor = this.container.querySelector('#sys-ld-bg').value;
     ld.titleColor = this.container.querySelector('#sys-ld-titlecolor').value;
     ld.progressBarColor = this.container.querySelector('#sys-ld-barcolor').value;
@@ -428,6 +447,8 @@ export class SystemEditor {
     if (q('#sys-ld-subtitle')) q('#sys-ld-subtitle').value = ld.subtitle || '';
     if (q('#sys-ld-text')) q('#sys-ld-text').value = ld.loadingText || '';
     if (q('#sys-ld-icon')) q('#sys-ld-icon').value = ld.icon || '';
+    if (q('#sys-ld-icon-w')) q('#sys-ld-icon-w').value = Number(ld.iconWidth) || 0;
+    if (q('#sys-ld-icon-h')) q('#sys-ld-icon-h').value = Number(ld.iconHeight) || 0;
     this._updateIconPreview(ld.icon || '');
     if (q('#sys-ld-bg')) q('#sys-ld-bg').value = ld.backgroundColor || '#1a1a1a';
     if (q('#sys-ld-titlecolor')) q('#sys-ld-titlecolor').value = ld.titleColor || '#4CAF50';
@@ -436,23 +457,49 @@ export class SystemEditor {
     this._bindStepEvents();
   }
 
+  /**
+   * 把图标配置路径解析为编辑器宿主可加载的 URL（与 UIEditor 登录背景同规则）：
+   * 相对 assets/ 路径映射到项目根；绝对 http(s)/data/与根路径原样使用。
+   */
+  _resolveIconUrl(url) {
+    const trimmed = String(url || '').trim().replace(/\\/g, '/').replace(/^(\.\.\/)+/, '');
+    if (!trimmed) return '';
+    if (/^(https?:|data:|blob:)/i.test(trimmed) || trimmed.startsWith('/')) return trimmed;
+    if (/^assets\//i.test(trimmed)) return `../example/${this.gameId}/${trimmed}`;
+    return trimmed;
+  }
+
   _updateIconPreview(url) {
     const row = this.container.querySelector('#sys-ld-icon-preview-row');
     const img = this.container.querySelector('#sys-ld-icon-preview-img');
     const sizeLabel = this.container.querySelector('#sys-ld-icon-size');
     if (!row || !img) return;
-    if (!url || !url.trim()) {
+    const resolved = this._resolveIconUrl(url);
+    if (!resolved) {
       row.style.display = 'none';
       return;
     }
     row.style.display = 'flex';
+    const width = parseInt(this.container.querySelector('#sys-ld-icon-w')?.value, 10) || 0;
+    const height = parseInt(this.container.querySelector('#sys-ld-icon-h')?.value, 10) || 0;
+    this._applyIconPreviewSize(width, height);
     img.onload = () => {
-      sizeLabel.textContent = `原始尺寸: ${img.naturalWidth} × ${img.naturalHeight}`;
+      const displayWidth = width > 0 ? width : img.naturalWidth;
+      const displayHeight = height > 0 ? height : img.naturalHeight;
+      sizeLabel.textContent = `原始尺寸: ${img.naturalWidth} × ${img.naturalHeight} ｜ 当前显示: ${displayWidth} × ${displayHeight}`;
     };
     img.onerror = () => {
-      sizeLabel.textContent = '加载失败';
+      sizeLabel.textContent = '加载失败（检查路径是否为项目内 assets/ 相对路径或完整 URL）';
     };
-    img.src = url;
+    img.src = resolved;
+  }
+
+  /** 预览图应用显示尺寸（0 = 原始尺寸，与运行时加载页同语义）。 */
+  _applyIconPreviewSize(width, height) {
+    const img = this.container.querySelector('#sys-ld-icon-preview-img');
+    if (!img) return;
+    img.style.width = width > 0 ? `${width}px` : '';
+    img.style.height = height > 0 ? `${height}px` : '';
   }
 
   _esc(str) {

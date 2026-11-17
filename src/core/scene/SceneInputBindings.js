@@ -55,7 +55,7 @@ export class SceneInputBindings {
     // 大地图：PC 热键 M（小地图右上角「M」按钮等效入口）
     this.inputManager.registerHotkey(
       'toggle_world_map', ['m', 'M'], () => this.toggleWorldMap?.(), { cooldown: 250 });
-    // 军队操作条开关：PC 热键 F（fight）+ 手柄 LS（armyCommand 动作）；B 已让给闪避
+    // 亲卫队操作条开关：PC 热键 F（fight）+ 手柄 LS（armyCommand 动作）；B 已让给闪避
     this.inputManager.registerHotkey(
       'toggle_army_command', ['f', 'F', ARMY_COMMAND_ACTION],
       () => { if (this.canToggleArmyCommand()) this.toggleArmyCommand?.(); }, { cooldown: 300 });

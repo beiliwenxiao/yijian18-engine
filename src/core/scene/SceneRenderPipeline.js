@@ -776,13 +776,13 @@ export class SceneRenderPipeline {
     const inCombat = combatSystem?.isInCombat() === true;
     // 受控攀爬中 → 状态条显示「攀爬中」
     const climbing = scene?.locomotionSystem?.getClimbPresentation?.(player) != null;
-    // 战斗中有存活己方军队 → 「军队战斗中」，否则「个人战斗中」
+    // 战斗中有存活己方军队 → 「亲卫队战斗中」，否则「个人战斗中」
     const armyAlive = scene?.armyCommandFlow?.system?.hasAliveUnits() === true;
     // 状态位常显：平时显示「正常」，战斗/灵魂状态切换对应样式
     const style = soulState
       ? { background: 'rgba(36, 47, 96, 0.82)', border: '#8fc7ff', primary: '灵魂状态', secondary: null, secondaryColor: null }
       : inCombat
-        ? { background: 'rgba(139, 0, 0, 0.7)', border: '#ff0000', primary: armyAlive ? '军队战斗中' : '个人战斗中', secondary: 'combat', secondaryColor: null }
+        ? { background: 'rgba(139, 0, 0, 0.7)', border: '#ff0000', primary: armyAlive ? '亲卫队战斗中' : '个人战斗中', secondary: 'combat', secondaryColor: null }
         : climbing
           ? { background: 'rgba(74, 58, 20, 0.82)', border: '#f0d080', primary: '攀爬中', secondary: null, secondaryColor: null }
           : { background: 'rgba(10, 16, 30, 0.82)', border: '#c49a52', primary: '状态正常', secondary: null, secondaryColor: null };

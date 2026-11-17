@@ -20,7 +20,7 @@
     },
     {
       "id": "armyCommandHud",
-      "label": "军队操作",
+      "label": "亲卫队操作",
       "kind": "panel",
       "anchor": "topleft",
       "x": 490,
@@ -107,20 +107,6 @@
       "yPct": 0.19444,
       "wPct": 0.86562,
       "hPct": 0.66528
-    },
-    {
-      "id": "pc-hp-orb",
-      "label": "血球",
-      "kind": "button",
-      "anchor": "topleft",
-      "x": 397,
-      "y": 625,
-      "width": 70,
-      "height": 70,
-      "xPct": 0.31016,
-      "yPct": 0.86806,
-      "wPct": 0.05469,
-      "hPct": 0.09722
     },
     {
       "id": "pc-potion1",
@@ -221,20 +207,6 @@
       "hPct": 0.05556
     },
     {
-      "id": "pc-mp-orb",
-      "label": "蓝球",
-      "kind": "button",
-      "anchor": "topleft",
-      "x": 813,
-      "y": 625,
-      "width": 70,
-      "height": 70,
-      "xPct": 0.63516,
-      "yPct": 0.86806,
-      "wPct": 0.05469,
-      "hPct": 0.09722
-    },
-    {
       "id": "pc-block",
       "label": "格挡",
       "kind": "button",
@@ -306,7 +278,7 @@
     },
     {
       "id": "pc-army",
-      "label": "军队",
+      "label": "亲卫队",
       "kind": "button",
       "anchor": "topleft",
       "x": 723,

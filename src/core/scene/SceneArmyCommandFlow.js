@@ -128,7 +128,7 @@ export class SceneArmyCommandFlow {
     this.hud.layout?.(width, height, barWidth, editorRect, anchorRect);
   }
 
-  /** 面板编辑器「军队操作」定义（行高覆盖）；加载晚于装配，应用后按最近画布尺寸重排。 */
+  /** 面板编辑器「亲卫队操作」定义（行高覆盖）；加载晚于装配，应用后按最近画布尺寸重排。 */
   applyPanelDefinition(panelDefinition) {
     if (!panelDefinition) return false;
     this.hud?.setPanelDefinition?.(panelDefinition);

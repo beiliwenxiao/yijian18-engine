@@ -897,7 +897,7 @@
     },
     {
       "id": "armyCommandHud",
-      "name": "军队操作",
+      "name": "亲卫队操作",
       "width": 316,
       "height": 100,
       "backgroundColor": "rgba(13, 19, 38, 0.86)",
@@ -907,7 +907,7 @@
         {
           "id": "groupBar",
           "type": "panel",
-          "label": "编组条 Row1",
+          "label": "五档指令条 Row1",
           "x": 0,
           "y": 0,
           "width": 316,
@@ -918,7 +918,7 @@
         {
           "id": "comboRow",
           "type": "panel",
-          "label": "合并行（预设+状态）",
+          "label": "状态行 Row2",
           "x": 0,
           "y": 38,
           "width": 316,
@@ -929,7 +929,7 @@
         {
           "id": "stancePanel",
           "type": "panel",
-          "label": "姿态面板 Row2",
+          "label": "亲卫方格阵 Row3",
           "x": 0,
           "y": 64,
           "width": 316,

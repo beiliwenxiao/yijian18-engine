@@ -111,8 +111,13 @@ function setupTouchControls() {
         } else if (btn.dataset.action === 'bag') {
             if (currentScene.inventoryPanel) currentScene.inventoryPanel.toggle();
         } else if (btn.dataset.action === 'army') {
-            // 军队按钮：开关军队操作条（编组/姿态命令 HUD）；无己方据点时不开放
-            if (sceneHasPlayerStronghold(currentScene)) currentScene.toggleArmyCommandHud?.();
+            // 亲卫队按钮：开关亲卫队操作条（编组/姿态命令 HUD）。
+            // 门控（军团体系 v2 两层级）：已立据点或场内有存活己方军队（亲卫/剧情军队）即放行，
+            // 拦截时由场景 canOpenArmyCommand 给出提示；未提供该方法时退回据点判定（B1 契约）。
+            const armyAllowed = currentScene.canOpenArmyCommand
+                ? currentScene.canOpenArmyCommand()
+                : sceneHasPlayerStronghold(currentScene);
+            if (armyAllowed) currentScene.toggleArmyCommandHud?.();
         } else if (btn.dataset.action === 'settings') {
             currentScene.openSystemMenu?.();
         } else if (btn.dataset.action === 'char') {

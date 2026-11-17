@@ -93,7 +93,7 @@ export class ArmyCommandHUD extends UIElement {
     this._pulse = 0;
     // 手柄指挥态（SceneArmyCommandFlow._handleGamepad 写入）：按住 LB 时状态行显示操作提示
     this.gamepadCommanding = false;
-    // 面板编辑器「军队操作」定义覆盖的行高（setPanelDefinition 写入；null=内置默认）
+    // 面板编辑器「亲卫队操作」定义覆盖的行高（setPanelDefinition 写入；null=内置默认）
     this._metrics = null;
   }
 

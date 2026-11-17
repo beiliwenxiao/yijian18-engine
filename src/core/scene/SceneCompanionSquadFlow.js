@@ -74,7 +74,7 @@ export class SceneCompanionSquadFlow {
     this.hud.layout?.(width, height);
   }
 
-  /** 面板编辑器矩形（与军队操作面板同款机制）。 */
+  /** 面板编辑器矩形（与亲卫队操作面板同款机制）。 */
   applyPanelDefinition(panelDefinition) {
     if (!panelDefinition) return false;
     this.hud?.setPanelDefinition?.(panelDefinition);

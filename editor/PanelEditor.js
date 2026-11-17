@@ -155,14 +155,14 @@ const DEFAULT_PANELS = [
     ]
   },
   {
-    // 军队操作 HUD 内部行高管理：运行时 ArmyCommandHUD.setPanelDefinition 读取各部件
+    // 亲卫队操作 HUD 内部行高管理：运行时 ArmyCommandHUD.setPanelDefinition 读取各部件
     // 高度并钳制到 16~96px；宽度始终与 HUD 外框一致（外框位置在 UI 编辑器 armyCommandHud 编辑）。
-    id: 'armyCommandHud', name: '军队操作', width: 316, height: 100,
+    id: 'armyCommandHud', name: '亲卫队操作', width: 316, height: 100,
     backgroundColor: 'rgba(13, 19, 38, 0.86)', borderColor: '#c9a227', borderWidth: 2,
     parts: [
-      { id: 'groupBar', type: 'panel', label: '编组条 Row1', x: 0, y: 0, width: 316, height: 38, bgColor: '#1a2f55', borderColor: '#3a4a7e' },
-      { id: 'comboRow', type: 'panel', label: '合并行（预设+状态）', x: 0, y: 38, width: 316, height: 26, bgColor: '#233055', borderColor: '#3a4a7e' },
-      { id: 'stancePanel', type: 'panel', label: '姿态面板 Row2', x: 0, y: 64, width: 316, height: 28, bgColor: '#233055', borderColor: '#3a4a7e' }
+      { id: 'groupBar', type: 'panel', label: '五档指令条 Row1', x: 0, y: 0, width: 316, height: 38, bgColor: '#1a2f55', borderColor: '#3a4a7e' },
+      { id: 'comboRow', type: 'panel', label: '状态行 Row2', x: 0, y: 38, width: 316, height: 26, bgColor: '#233055', borderColor: '#3a4a7e' },
+      { id: 'stancePanel', type: 'panel', label: '亲卫方格阵 Row3', x: 0, y: 64, width: 316, height: 28, bgColor: '#233055', borderColor: '#3a4a7e' }
     ]
   },
   {
@@ -180,7 +180,7 @@ const DEFAULT_PANELS = [
   }
 ];
 
-// 军队操作 HUD 面板（运行时 ArmyCommandHUD 消费；编辑器提供选择/恢复入口）
+// 亲卫队操作 HUD 面板（运行时 ArmyCommandHUD 消费；编辑器提供选择/恢复入口）
 const ARMY_PANEL_ID = 'armyCommandHud';
 // 玩家 HUD 面板（运行时 PlayerStatusHUD 消费；编辑器提供选择/恢复入口）
 const HUD_PANEL_ID = 'hudPanel';
@@ -386,7 +386,7 @@ export class PanelEditor {
       if (data && data.ok && data.content) {
         const parsed = JSON.parse(data.content);
         if (Array.isArray(parsed.panels) && parsed.panels.length > 0) {
-          // 以文件为准，并补齐默认面板中文件缺失的项（如「军队操作」管理面板）；
+          // 以文件为准，并补齐默认面板中文件缺失的项（如「亲卫队操作」管理面板）；
           // 编辑器里主动删除过的内置面板不再补回
           const savedIds = new Set(parsed.panels.map(panel => panel?.id).filter(Boolean));
           const missing = DEFAULT_PANELS
@@ -425,7 +425,6 @@ export class PanelEditor {
             <button id="pe-undo" title="撤销 (Ctrl/⌘+Z)">↶ 撤销</button>
             <button id="pe-redo" title="重做 (Ctrl/⌘+Shift+Z 或 Ctrl+Y)">↷ 重做</button>
             <button id="pe-add-panel" title="新增面板">＋面板</button>
-            <button id="pe-army-panel" title="选择「军队操作」面板；已删除时按默认定义恢复">🎖 军队面板</button>
           </div>
           <div class="pe-tabs" id="pe-tabs"></div>
         </div>
@@ -534,8 +533,6 @@ export class PanelEditor {
     this.container.querySelector('#pe-redo').addEventListener('click', () => this.redo());
     // 新增面板
     this.container.querySelector('#pe-add-panel').addEventListener('click', () => this._addPanel());
-    // 军队操作面板：选中 / 恢复
-    this.container.querySelector('#pe-army-panel').addEventListener('click', () => this._ensureArmyPanel());
     // 新增部件
     this.container.querySelector('#pe-add-part').addEventListener('click', () => this._addPart());
     // 删除部件
@@ -700,8 +697,8 @@ export class PanelEditor {
     ctx.save();
     ctx.scale(this.scale, this.scale);
 
-    // 面板背景（玩家HUD 面板走下方专属的圆角所见即所得预览）
-    if (panel.id !== HUD_PANEL_ID) {
+    // 面板背景（玩家HUD/亲卫队操作 走下方专属圆角底板，其余方角）
+    if (panel.id !== HUD_PANEL_ID && panel.id !== ARMY_PANEL_ID) {
       ctx.fillStyle = panel.backgroundColor || 'rgba(0,0,0,0.85)';
       ctx.fillRect(0, 0, panel.width, panel.height);
       ctx.strokeStyle = panel.borderColor || '#4a9eff';
@@ -713,11 +710,28 @@ export class PanelEditor {
     if (panel.id === HUD_PANEL_ID) {
       this._renderHudBasePlate(ctx, panel);
     }
+    // 亲卫队操作面板：圆角底板（观感与运行时 ArmyCommandHUD 一致）
+    if (panel.id === ARMY_PANEL_ID) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.roundRect(0, 0, panel.width, panel.height, 8);
+      ctx.fillStyle = panel.backgroundColor || 'rgba(13, 19, 38, 0.86)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(58, 74, 126, 0.9)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.restore();
+    }
 
     // 渲染所有部件（编辑器中隐藏的部件跳过；显隐/锁定仅编辑态，不写入 JSON）
     for (const part of panel.parts) {
       if (part.editorHidden === true) continue;
       this._renderPart(ctx, part);
+    }
+
+    // 亲卫队操作面板：部件矩形内绘制运行时观感内容（指令 chips/状态行/亲卫方格）
+    if (panel.id === ARMY_PANEL_ID) {
+      this._renderArmyPanelPreview(ctx, panel);
     }
 
     // 面板边缘拖拽手柄（右边/下边/右下角）
@@ -779,6 +793,96 @@ export class PanelEditor {
     ctx.lineWidth = Number.isFinite(panel.borderWidth) ? panel.borderWidth : 1;
     ctx.stroke();
     ctx.restore();
+  }
+
+  /**
+   * 亲卫队操作面板所见即所得预览：按军团体系 v2 文档（specs/military-supply-strategy/03-army-squads.md
+   * §4/§8）呈现随行小队 HUD 新口径——五档指令条（跟随/进攻/防守/冲锋/撤退，编组选择已去除）、
+   * 状态行（亲卫数/士气）、亲卫方格阵示意（成员首字+底部细血条，阵亡置灰）。配色取自运行时常量。
+   * 注意：运行时 ArmyCommandHUD 仍为旧编组口径（7 槽），待模块 3（M3）实施时统一迁移。
+   */
+  _renderArmyPanelPreview(ctx, panel) {
+    const partById = id => panel.parts.find(part => part.id === id) || null;
+    const chip = (x, y, w, h, label, active) => {
+      if (w <= 0 || h <= 0) return;
+      ctx.beginPath();
+      ctx.roundRect(x, y, w, h, 5);
+      ctx.fillStyle = active ? '#3a4a7e' : '#1a2f55';
+      ctx.fill();
+      ctx.strokeStyle = active ? '#c9a227' : 'rgba(90, 110, 170, 0.7)';
+      ctx.lineWidth = active ? 2 : 1;
+      ctx.stroke();
+      ctx.fillStyle = active ? '#c9a227' : 'rgba(255, 255, 255, 0.88)';
+      ctx.font = '11px "Microsoft YaHei", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(label, x + w / 2, y + h / 2 + 1);
+    };
+    const fillChips = (part, labels, activeIndex) => {
+      if (!part) return;
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(part.x, part.y, part.width, part.height);
+      ctx.clip();
+      const gap = 6;
+      const chipWidth = (part.width - (labels.length - 1) * gap) / labels.length;
+      labels.forEach((label, index) => {
+        chip(part.x + index * (chipWidth + gap), part.y + 2, chipWidth, part.height - 4, label, index === activeIndex);
+      });
+      ctx.restore();
+    };
+    // 指令条 Row1：五档指令 chips（默认选中「跟随」）——v2 口径无编组选择条
+    fillChips(partById('groupBar'), ['跟随', '进攻', '防守', '冲锋', '撤退'], 0);
+    // 状态行 Row2：随行小队状态文字（v2 口径无「⚙ 预设」按钮，预设随编组一起去除）
+    const comboRow = partById('comboRow');
+    if (comboRow) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(comboRow.x, comboRow.y, comboRow.width, comboRow.height);
+      ctx.clip();
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+      ctx.font = '11px "Microsoft YaHei", sans-serif';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('亲卫 24/100 · 士气 72', comboRow.x + 10, comboRow.y + comboRow.height / 2 + 1);
+      ctx.restore();
+    }
+    // 亲卫方格阵 Row3：成员方格示意（每格=成员首字+底部细血条；阵亡格置灰）
+    const gridRow = partById('stancePanel');
+    if (gridRow && gridRow.width > 0 && gridRow.height > 0) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(gridRow.x, gridRow.y, gridRow.width, gridRow.height);
+      ctx.clip();
+      const gap = 4;
+      const size = Math.min(gridRow.height - 6, 22);
+      const step = size + gap;
+      const surnames = ['张', '李', '王', '赵', '陈', '刘', '杨', '黄', '周', '吴', '郑', '孙'];
+      for (let i = 0; gridRow.x + 2 + i * step + size <= gridRow.x + gridRow.width; i++) {
+        const cx = gridRow.x + 2 + i * step;
+        const cy = gridRow.y + (gridRow.height - size) / 2;
+        const dead = i === 2; // 示意：阵亡格置灰
+        ctx.beginPath();
+        ctx.rect(cx, cy, size, size);
+        ctx.fillStyle = dead ? 'rgba(72, 72, 72, 0.85)' : 'rgba(26, 47, 85, 0.9)';
+        ctx.fill();
+        ctx.strokeStyle = dead ? 'rgba(130, 130, 130, 0.6)' : 'rgba(90, 110, 170, 0.7)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.fillStyle = dead ? 'rgba(170, 170, 170, 0.75)' : 'rgba(255, 255, 255, 0.88)';
+        ctx.font = `${Math.max(9, Math.floor(size * 0.5))}px "Microsoft YaHei", sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(dead ? '×' : surnames[i % surnames.length], cx + size / 2, cy + size / 2 - 1);
+        // 底部细血条
+        const barY = cy + size - 4;
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.fillRect(cx + 2, barY, size - 4, 2);
+        ctx.fillStyle = dead ? '#666666' : '#3fae4a';
+        ctx.fillRect(cx + 2, barY, (size - 4) * 0.8, 2);
+      }
+      ctx.restore();
+    }
   }
 
   /** HUD 预览辅助：画单条（边框 + 底 + 填充 + 数值文字，与运行时 HealthBar/ManaBar 同款）。 */
@@ -1078,8 +1182,8 @@ export class PanelEditor {
           </div>
           ${panel.id === ARMY_PANEL_ID ? `
           <div class="pe-prop-section">
-            <div class="pe-prop-section-title">军队操作（运行时联动）</div>
-            <div class="pe-prop-hint">「编组条 / 合并行 / 姿态面板」三个部件的高度驱动运行时 ArmyCommandHUD 行高，钳制 16~96px；宽度始终与 HUD 外框一致，外框位置在 UI 编辑器 armyCommandHud 中调整。</div>
+            <div class="pe-prop-section-title">亲卫队操作（运行时联动）</div>
+            <div class="pe-prop-hint">「五档指令条 / 状态行 / 亲卫方格阵」三个部件的高度驱动运行时 ArmyCommandHUD 行高，钳制 16~96px；宽度始终与 HUD 外框一致，外框位置在 UI 编辑器 armyCommandHud 中调整。预览按军团体系 v2 文档（随行小队：五档指令、无编组选择）呈现；运行时仍为旧编组口径，待模块 3 实施时统一迁移。</div>
             <button type="button" class="pe-prop-button" id="pe-army-reset">↺ 恢复默认行高</button>
           </div>` : ''}
           ${panel.id === HUD_PANEL_ID ? `
@@ -1655,27 +1759,7 @@ export class PanelEditor {
     this._render();
   }
 
-  /** 选中「军队操作」面板；已被删除时按默认定义恢复（清掉删除记录）。 */
-  _ensureArmyPanel() {
-    let index = this.panels.findIndex(panel => panel.id === ARMY_PANEL_ID);
-    if (index < 0) {
-      const definition = DEFAULT_PANELS.find(panel => panel.id === ARMY_PANEL_ID);
-      if (!definition) return;
-      const snapshot = this._createHistorySnapshot();
-      this.panels.push(JSON.parse(JSON.stringify(definition)));
-      index = this.panels.length - 1;
-      this._removedPanelIds.delete(ARMY_PANEL_ID);
-      this._commitHistorySnapshot(snapshot);
-      this._applyEditorState();
-      this._showToast('已恢复「军队操作」面板');
-    }
-    this.activePanelIndex = index;
-    this._clearSelection();
-    this._saveEditorState();
-    this._render();
-  }
-
-  /** 把「军队操作」面板恢复为默认行高定义（部件类型/高度）。 */
+  /** 把「亲卫队操作」面板恢复为默认行高定义（部件类型/高度）。 */
   _resetArmyPanel() {
     const index = this.panels.findIndex(panel => panel.id === ARMY_PANEL_ID);
     const definition = DEFAULT_PANELS.find(panel => panel.id === ARMY_PANEL_ID);
@@ -1687,7 +1771,7 @@ export class PanelEditor {
     this._applyEditorState();
     this._saveEditorState();
     this._render();
-    this._showToast('已恢复「军队操作」默认行高');
+    this._showToast('已恢复「亲卫队操作」默认行高');
   }
 
   /** 把「玩家HUD」面板样式字段恢复为默认观感（底板/金边/昵称/双条）。 */

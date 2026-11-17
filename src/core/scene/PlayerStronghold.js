@@ -44,4 +44,16 @@ export function sceneHasPlayerStronghold(scene) {
   return hasPlayerStronghold({ project });
 }
 
+/**
+ * 亲卫队操作条入口放行（军团体系 v2 两层级口径，specs/military-supply-strategy/03-army-squads.md）：
+ * 亲卫队（随行小队，层级二）不依赖城池/军营——无据点但场内有存活己方军队单位
+ * （亲卫/剧情军队）同样可指挥；据点判定只约束军团层（层级一）入口。
+ * @param {Object|null} scene
+ * @returns {boolean}
+ */
+export function sceneCanCommandArmy(scene) {
+  if (sceneHasPlayerStronghold(scene)) return true;
+  return scene?.armyCommandFlow?.system?.hasAliveUnits?.() === true;
+}
+
 export default hasPlayerStronghold;

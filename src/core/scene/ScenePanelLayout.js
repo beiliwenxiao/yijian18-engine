@@ -232,12 +232,16 @@ export class ScenePanelLayout {
         icon: 'backpack', label: '背包', hintAction: 'bag',
         onClick: () => { if (scene.backpackPanel) scene.backpackPanel.toggle(); }
       });
-      // 军队：开关军队操作条（编组/姿态命令 HUD）——排在系统设置按钮前面
-      // 入口门控：尚无己方城/营地（据点）时不开放军团层（B1 契约 hasPlayerStronghold）
+      // 亲卫队：开关亲卫队操作条（编组/姿态命令 HUD）——排在系统设置按钮前面
+      // 入口门控（军团体系 v2 两层级）：已立据点或场内有存活己方军队（亲卫/剧情军队）即放行，
+      // 拦截时由场景 canOpenArmyCommand 给出提示；场景未提供该方法时退回据点判定（B1 契约）。
       scene.armyButton = new IconButton({
         x: 1002, y: 640, width: 50, height: 50,
-        icon: 'army', label: '军队',
-        onClick: () => { if (sceneHasPlayerStronghold(scene)) scene.toggleArmyCommandHud?.(); }
+        icon: 'army', label: '亲卫队',
+        onClick: () => {
+          const allowed = scene.canOpenArmyCommand ? scene.canOpenArmyCommand() : sceneHasPlayerStronghold(scene);
+          if (allowed) scene.toggleArmyCommandHud?.();
+        }
       });
       scene.settingsButton = new IconButton({
         x: 1058, y: 640, width: 50, height: 50,
@@ -520,7 +524,7 @@ export class ScenePanelLayout {
         });
         // 对话选项弹窗布局（UI 编辑器「选项弹窗」组件）
         scene.dialogueChoiceBox?.setLayoutRect?.(loader.getRect('dialogue-choices', width, height));
-        // 军队操作 HUD：UI 编辑器保存的 armyCommandHud 矩形优先（布局加载晚于装配，这里补一次重排）
+        // 亲卫队操作 HUD：UI 编辑器保存的 armyCommandHud 矩形优先（布局加载晚于装配，这里补一次重排）
         scene.armyCommandFlow?.onResize(width, height);
       }
     } catch (error) {
@@ -550,7 +554,7 @@ export class ScenePanelLayout {
           fullBody: loader.getPanel('dialogue-fullbody') || null
         });
       }
-      // 军队操作 HUD 内部行高（面板编辑器「军队操作」面板；缺省沿用内置常量）
+      // 亲卫队操作 HUD 内部行高（面板编辑器「亲卫队操作」面板；缺省沿用内置常量）
       const armyPanelDefinition = loaded ? loader.getPanel('armyCommandHud') : null;
       if (armyPanelDefinition) {
         scene.armyCommandFlow?.applyPanelDefinition?.(armyPanelDefinition);
@@ -844,6 +848,8 @@ export class ScenePanelLayout {
     const totalWidth = bar.skillSlots.length * slotSize + (bar.skillSlots.length - 1) * gap;
     const startX = width / 2 - totalWidth / 2 + slotSize / 2;
     bar.skillSlots.forEach((slot, index) => { slot.x = startX + index * (slotSize + gap); });
+    // 血球/蓝球已下线（血量/蓝量由左上角玩家 HUD 面板承载），仅在 showOrbs 开启时维护位置
+    if (!bar.showOrbs) return;
     const radius = bar.hpOrb.radius;
     bar.hpOrb.x = width / 2 - totalWidth / 2 - 10 - radius;
     bar.mpOrb.x = width / 2 + totalWidth / 2 + 10 + radius;

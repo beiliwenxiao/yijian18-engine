@@ -25,7 +25,8 @@ export class DesktopUIStrategy extends UIStrategy {
   }
 
   getBottomControlBarOptions() {
-    return { showOrbs: true, showHotkeyNumbers: true };
+    // 血量/蓝量已由左上角玩家 HUD 面板承载，底栏不再显示血球/蓝球（保留数字快捷键）
+    return { showOrbs: false, showHotkeyNumbers: true };
   }
 
   isPlayerStatusHUDVisible() {

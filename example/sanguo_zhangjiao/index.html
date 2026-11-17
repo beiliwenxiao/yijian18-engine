@@ -168,7 +168,7 @@
             margin-bottom: 20px;
         }
 
-        /* 加载页图标：按原始图片尺寸显示，不强制缩放 */
+        /* 加载页图标：默认按原始图片尺寸显示；system.loading.iconWidth/iconHeight 可控制显示宽高 */
         #loading-icon {
             display: block;
             margin-bottom: 16px;
@@ -715,6 +715,12 @@
             font: inherit;
             cursor: pointer;
         }
+        /* 登录按钮：与内部弹窗金黄（#e7c778）同色系，70% 半透明 + 投影；
+           运行时 buttonColor 经 LoginMenuCore 统一转 70% 透明度覆盖。 */
+        .login-action {
+            background: rgba(231,199,120,.7);
+            box-shadow: 0 4px 12px rgba(0,0,0,.35);
+        }
         .save-picker-cancel { background: rgba(255,255,255,.12); }
         #overwrite-confirm-accept.danger { background: #8a342f; }
         .save-picker-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -845,7 +851,7 @@
                 <div class="hotbar-btn potion-btn" id="hb-hp" data-potion="health"><canvas class="hb-canvas" width="32" height="32"></canvas><span class="hb-count">0</span></div>
                 <div class="hotbar-btn potion-btn" id="hb-mp" data-potion="mana"><canvas class="hb-canvas" width="32" height="32"></canvas><span class="hb-count">0</span></div>
                 <div class="hotbar-btn" id="hb-bag" data-action="bag"><span class="hb-icon">🎒</span><span class="hb-label">背包</span></div>
-                <div class="hotbar-btn" id="hb-army" data-action="army"><span class="hb-icon">⚔️</span><span class="hb-label">军队</span></div>
+                <div class="hotbar-btn" id="hb-army" data-action="army"><span class="hb-icon">⚔️</span><span class="hb-label">亲卫队</span></div>
                 <div class="hotbar-btn" id="hb-settings" data-action="settings"><span class="hb-icon">⚙️</span><span class="hb-label">设置</span></div>
                 <div class="hotbar-btn" id="hb-skill6" data-skill="3"><span class="hb-icon">💓</span><span class="hb-label">回血</span></div>
                 <div class="hotbar-btn" id="hb-skill7" data-skill="4"><span class="hb-icon">🛀</span><span class="hb-label">打坐</span></div>
@@ -1205,7 +1211,7 @@
                         if (pf) pf.style.background = `linear-gradient(90deg, ${loadingConfig.progressBarColor})`;
                     }
                     if (loadingConfig.icon) {
-                        // 按原始图片大小显示（不设置固定宽高）；幂等插入，避免重复创建。
+                        // 幂等插入，避免重复创建。
                         let iconEl = document.getElementById('loading-icon');
                         if (!iconEl) {
                             iconEl = document.createElement('img');
@@ -1215,6 +1221,11 @@
                             else if (ls) ls.insertBefore(iconEl, ls.firstChild);
                         }
                         iconEl.src = loadingConfig.icon;
+                        // 图标显示尺寸：配置了宽/高（px）则按配置缩放，未配置（0）按原始尺寸
+                        const iconWidth = Number(loadingConfig.iconWidth) || 0;
+                        const iconHeight = Number(loadingConfig.iconHeight) || 0;
+                        iconEl.style.width = iconWidth > 0 ? `${iconWidth}px` : '';
+                        iconEl.style.height = iconHeight > 0 ? `${iconHeight}px` : '';
                     }
                     if (loadingConfig.loadingText) {
                         loadingText.textContent = loadingConfig.loadingText;

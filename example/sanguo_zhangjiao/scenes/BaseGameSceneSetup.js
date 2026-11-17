@@ -57,7 +57,7 @@ import { SceneEquipmentFlow } from '../../../src/core/scene/SceneEquipmentFlow.j
 import { SceneTransitionFlow } from '../../../src/core/scene/SceneTransitionFlow.js';
 import { SceneCombatActions } from '../../../src/core/scene/SceneCombatActions.js';
 import { SceneDialogueFlow } from '../../../src/core/scene/SceneDialogueFlow.js';
-import { sceneHasPlayerStronghold } from '../../../src/core/scene/PlayerStronghold.js';
+import { sceneCanCommandArmy } from '../../../src/core/scene/PlayerStronghold.js';
 import { SceneWorldInteraction } from '../../../src/core/scene/SceneWorldInteraction.js';
 import { SceneSkillActions } from '../../../src/core/scene/SceneSkillActions.js';
 import { SceneWorldPresentation } from '../../../src/core/scene/SceneWorldPresentation.js';
@@ -374,13 +374,23 @@ export class BaseGameSceneSetup extends Scene {
     return globalThis.__openSystemMenu?.(this);
   }
 
-  /** 军队按钮：开关军队操作条（编组/姿态命令 HUD）。 */
+  /**
+   * 亲卫队入口统一门控（亲卫队按钮 / F 热键 / 手柄 LS / 安卓 hb-army 共用）：
+   * 已立据点，或场内有存活己方军队（亲卫队/剧情军队）即放行；拦截时给出提示，不静默。
+   */
+  canOpenArmyCommand() {
+    if (sceneCanCommandArmy(this)) return true;
+    this._showScreenTip?.('尚无可指挥的亲卫队：需先有随行士兵，或已立军营/城池。', { title: '亲卫队' });
+    return false;
+  }
+
+  /** 亲卫队按钮：开关亲卫队操作条（编组/姿态命令 HUD）。 */
   toggleArmyCommandHud() {
     const hud = this.armyCommandFlow?.hud;
     if (!hud) return false;
     hud.visible = hud.visible !== true;
     if (hud.visible === false) hud.presetOpen = false;
-    this._showScreenTip?.(hud.visible ? '军队操作条已显示。' : '军队操作条已隐藏。', { title: '军队' });
+    this._showScreenTip?.(hud.visible ? '亲卫队操作条已显示。' : '亲卫队操作条已隐藏。', { title: '亲卫队' });
     return hud.visible;
   }
 
@@ -1184,7 +1194,7 @@ export class BaseGameSceneSetup extends Scene {
       toggleSettings: () => (this.worldMapPanel?.visible ? this.worldMapPanel.close() : this.openSystemMenu()),
       toggleWorldMap: () => this.toggleWorldMap(),
       toggleArmyCommand: () => this.toggleArmyCommandHud?.(),
-      canToggleArmyCommand: () => sceneHasPlayerStronghold(this),
+      canToggleArmyCommand: () => this.canOpenArmyCommand(),
       performDodge: () => this.dodgeByPointer?.(),
       togglePerformance: () => this._diagnostics.togglePerformance(),
       onGamepadConnected: (info) => {

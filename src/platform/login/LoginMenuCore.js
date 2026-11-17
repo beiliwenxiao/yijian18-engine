@@ -117,6 +117,21 @@ async function loadProjectConfig() {
     return shell.projectConfig || {};
 }
 
+// 登录按钮统一 70% 半透明：hex(#rgb/#rrggbb) 转 rgba，其余格式（rgba/hsl 等已含透明度的写法）原样透传。
+const LOGIN_BUTTON_BACKGROUND_ALPHA = 0.7;
+
+function toTranslucentButtonBackground(color) {
+    const value = String(color).trim();
+    const hex = value.replace(/^#/, '');
+    if (/^[0-9a-fA-F]{6}$/.test(hex)) {
+        return `rgba(${parseInt(hex.slice(0, 2), 16)},${parseInt(hex.slice(2, 4), 16)},${parseInt(hex.slice(4, 6), 16)},${LOGIN_BUTTON_BACKGROUND_ALPHA})`;
+    }
+    if (/^[0-9a-fA-F]{3}$/.test(hex)) {
+        return `rgba(${parseInt(hex[0] + hex[0], 16)},${parseInt(hex[1] + hex[1], 16)},${parseInt(hex[2] + hex[2], 16)},${LOGIN_BUTTON_BACKGROUND_ALPHA})`;
+    }
+    return value;
+}
+
 function applyLoginConfig(config = {}) {
     if (config.title) loginTitle.textContent = config.title;
     if (config.subtitle) loginSubtitle.textContent = config.subtitle;
@@ -140,7 +155,8 @@ function applyLoginConfig(config = {}) {
     if (config.panelColor) loginPanel.style.setProperty('--login-panel-color', config.panelColor);
     else loginPanel.style.removeProperty('--login-panel-color');
     if (config.buttonColor) {
-        document.querySelectorAll('.login-action').forEach(button => { button.style.background = config.buttonColor; });
+        const buttonBackground = toTranslucentButtonBackground(config.buttonColor);
+        document.querySelectorAll('.login-action').forEach(button => { button.style.background = buttonBackground; });
     }
 }
 

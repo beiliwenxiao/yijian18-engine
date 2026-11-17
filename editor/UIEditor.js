@@ -35,16 +35,15 @@ const DEFAULT_COMPONENTS = {
     components: [
       // 右侧 Canvas HUD：Android/PC 共用稳定 ID，运行时按当前平台布局加载。
       { id: 'minimap', label: '小地图', x: 1120, y: 10, width: 150, height: 150, anchor: 'topleft', kind: 'panel' },
-      // 军队操作 HUD：矩形=「合并行+编组条」外包框；姿态/预设面板运行时从框顶向上展开
-      { id: 'armyCommandHud', label: '军队操作', x: 482, y: 524, width: 316, height: 64, anchor: 'topleft', kind: 'panel' },
+      // 亲卫队操作 HUD：矩形=「状态行+指令条」外包框；预设面板运行时从框顶向上展开
+      { id: 'armyCommandHud', label: '亲卫队操作', x: 482, y: 524, width: 316, height: 64, anchor: 'topleft', kind: 'panel' },
       { id: 'timeWeatherBadge', label: '时间/天气', x: 10, y: 70, width: 116, height: 76, fontSize: 0, textOffsetX: 0, textOffsetY: 0, anchor: 'topleft', kind: 'panel' },
       { id: 'combatStateBadge', label: '战斗/灵魂状态', x: 10, y: 150, width: 115, height: 30, fontSize: 0, textOffsetX: 0, textOffsetY: 0, anchor: 'topleft', kind: 'panel' },
       { id: 'taskTracker', label: '任务追踪', x: 56, y: 190, width: 340, height: 150, anchor: 'topleft', kind: 'panel' },
       { id: 'hud-panel', label: '玩家HUD面板', x: 10, y: 10, width: 230, height: 78, anchor: 'topleft', kind: 'panel' },
       // 统一背包外框（属性、装备和物品栏的内部部件由 PanelEditor 编辑）
       { id: 'backpackPanel', label: '背包', x: 140, y: 140, width: 1000, height: 440, anchor: 'topleft', kind: 'panel' },
-      // 底部控制栏拆分为独立小控件（血球/蓝球/2药水/5技能）
-      { id: 'pc-hp-orb', label: '血球', x: 397, y: 625, width: 70, height: 70, anchor: 'topleft', kind: 'button' },
+      // 底部控制栏拆分为独立小控件（2药水/5技能；血球/蓝球已下线，血量蓝量由左上角玩家 HUD 面板承载）
       { id: 'pc-potion1', label: '红瓶', x: 482, y: 640, width: 40, height: 40, anchor: 'topleft', kind: 'button' },
       { id: 'pc-potion2', label: '蓝瓶', x: 528, y: 640, width: 40, height: 40, anchor: 'topleft', kind: 'button' },
       { id: 'pc-skill1', label: '技能1', x: 574, y: 640, width: 40, height: 40, anchor: 'topleft', kind: 'button' },
@@ -52,7 +51,6 @@ const DEFAULT_COMPONENTS = {
       { id: 'pc-skill3', label: '技能3', x: 666, y: 640, width: 40, height: 40, anchor: 'topleft', kind: 'button' },
       { id: 'pc-skill4', label: '技能4', x: 712, y: 640, width: 40, height: 40, anchor: 'topleft', kind: 'button' },
       { id: 'pc-skill5', label: '技能5', x: 758, y: 640, width: 40, height: 40, anchor: 'topleft', kind: 'button' },
-      { id: 'pc-mp-orb', label: '蓝球', x: 813, y: 625, width: 70, height: 70, anchor: 'topleft', kind: 'button' },
       // 格挡 / 跳跃 / 轻功 / 投掷
       { id: 'pc-block', label: '格挡', x: 666, y: 640, width: 50, height: 50, anchor: 'topleft', kind: 'button' },
       { id: 'pc-jump', label: '跳跃', x: 722, y: 640, width: 50, height: 50, anchor: 'topleft', kind: 'button' },
@@ -60,8 +58,8 @@ const DEFAULT_COMPONENTS = {
       { id: 'pc-throw', label: '投掷', x: 834, y: 640, width: 50, height: 50, anchor: 'topleft', kind: 'button' },
       // 统一背包入口 + 军队 + 系统设置
       { id: 'pc-bag', label: '背包', x: 890, y: 640, width: 50, height: 50, anchor: 'topleft', kind: 'button' },
-      // 军队：开关军队操作条（armyCommandHud），排在系统设置前面
-      { id: 'pc-army', label: '军队', x: 946, y: 640, width: 50, height: 50, anchor: 'topleft', kind: 'button' },
+      // 亲卫队：开关亲卫队操作条（armyCommandHud），排在系统设置前面
+      { id: 'pc-army', label: '亲卫队', x: 946, y: 640, width: 50, height: 50, anchor: 'topleft', kind: 'button' },
       { id: 'pc-settings', label: '系统设置', x: 1002, y: 640, width: 50, height: 50, anchor: 'topleft', kind: 'button' },
       // 对话框四种演出形态（运行时按对话 presentation.boxType 选用对应矩形）；
       // kind 'panel'：外框只拖位置大小（宽高比锁定到面板编辑器 dialogue-* 面板），内部部件在面板体系编辑
@@ -77,8 +75,8 @@ const DEFAULT_COMPONENTS = {
     canvas: { width: 1280, height: 600 },
     components: [
       { id: 'minimap', label: '小地图', x: 1120, y: 10, width: 150, height: 150, anchor: 'topleft', kind: 'panel' },
-      // 军队操作 HUD：矩形=「合并行+编组条」外包框；姿态/预设面板运行时从框顶向上展开
-      { id: 'armyCommandHud', label: '军队操作', x: 482, y: 404, width: 316, height: 64, anchor: 'topleft', kind: 'panel' },
+      // 亲卫队操作 HUD：矩形=「状态行+指令条」外包框；预设面板运行时从框顶向上展开
+      { id: 'armyCommandHud', label: '亲卫队操作', x: 482, y: 404, width: 316, height: 64, anchor: 'topleft', kind: 'panel' },
       { id: 'timeWeatherBadge', label: '时间/天气', x: 10, y: 70, width: 156, height: 71, fontSize: 0, textOffsetX: 0, textOffsetY: 0, anchor: 'topleft', kind: 'panel' },
       { id: 'combatStateBadge', label: '战斗/灵魂状态', x: 10, y: 145, width: 153, height: 34, fontSize: 0, textOffsetX: 0, textOffsetY: 0, anchor: 'topleft', kind: 'panel' },
       { id: 'taskTracker', label: '任务追踪', x: 22, y: 184, width: 340, height: 140, anchor: 'topleft', kind: 'panel' },
@@ -99,8 +97,8 @@ const DEFAULT_COMPONENTS = {
       { id: 'act-map', label: '大地图', x: 345, y: 516, width: 56, height: 56, anchor: 'topleft', kind: 'button' },
       { id: 'hb-hp', label: '红瓶', x: 440, y: 540, width: 56, height: 56, anchor: 'topleft', kind: 'button' },
       { id: 'hb-mp', label: '蓝瓶', x: 510, y: 540, width: 56, height: 56, anchor: 'topleft', kind: 'button' },
-      // 军队：开关军队操作条（armyCommandHud），排在系统设置前面
-      { id: 'hb-army', label: '军队', x: 580, y: 540, width: 56, height: 56, anchor: 'topleft', kind: 'button' },
+      // 亲卫队：开关亲卫队操作条（armyCommandHud），排在系统设置前面
+      { id: 'hb-army', label: '亲卫队', x: 580, y: 540, width: 56, height: 56, anchor: 'topleft', kind: 'button' },
       { id: 'hb-settings', label: '系统设置', x: 650, y: 540, width: 56, height: 56, anchor: 'topleft', kind: 'button' },
       { id: 'hb-bag', label: '背包', x: 720, y: 540, width: 56, height: 56, anchor: 'topleft', kind: 'button' },
       { id: 'hb-skill6', label: '回血', x: 790, y: 540, width: 56, height: 56, anchor: 'topleft', kind: 'button' },

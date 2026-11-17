@@ -226,7 +226,7 @@ export class ArmyCommandSystem {
     return count;
   }
 
-  /** 是否有存活的己方军队（右上角战斗徽章区分「个人/军队战斗中」用）。 */
+  /** 是否有存活的己方军队（右上角战斗徽章区分「个人/亲卫队战斗中」用）。 */
   hasAliveUnits() {
     return this.getAliveUnitCount() > 0;
   }

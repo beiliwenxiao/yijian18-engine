@@ -6,8 +6,6 @@
     "combatStateBadge",
     "joystick",
     "hud-panel",
-    "pc-hp-orb",
-    "pc-mp-orb",
     "pc-potion1",
     "pc-potion2",
     "pc-skill1",
@@ -57,8 +55,6 @@
         "minimap",
         "timeWeatherBadge",
         "combatStateBadge",
-        "pc-hp-orb",
-        "pc-mp-orb",
         "pc-potion1",
         "pc-potion2",
         "pc-skill1",
@@ -88,8 +84,6 @@
       ],
       "enabledComponentIds": [
         "joystick",
-        "pc-hp-orb",
-        "pc-mp-orb",
         "pc-potion1",
         "pc-potion2",
         "pc-skill1",
@@ -212,8 +206,6 @@
         "tutorialId": "s01.attack"
       },
       "revealComponentIds": [
-        "pc-hp-orb",
-        "pc-mp-orb",
         "pc-potion1",
         "pc-skill1",
         "act-attack",
@@ -308,8 +300,6 @@
         "tutorialId": "s01.attack"
       },
       "revealComponentIds": [
-        "pc-hp-orb",
-        "pc-mp-orb",
         "pc-potion1",
         "pc-potion2",
         "pc-skill1",
@@ -407,17 +397,14 @@
         "equals": true
       },
       "revealComponentIds": [
-        "pc-hp-orb",
         "pc-potion1",
         "hb-hp"
       ],
       "enabledComponentIds": [
-        "pc-hp-orb",
         "pc-potion1",
         "hb-hp"
       ],
       "highlightComponentIds": [
-        "pc-hp-orb",
         "pc-potion1",
         "hb-hp"
       ],
