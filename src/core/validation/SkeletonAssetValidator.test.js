@@ -219,24 +219,30 @@ describe('validateSkeletonAsset', () => {
     expect(result.warnings).toEqual([]);
   });
 
-  it('告警（非致命）：SW/NW 单独配图会被运行时整体镜像', () => {
-    const result = validateSkeletonAsset({
+  it('SW/NW 配专属图合法（有配置用配置，渲染器免镜像；与 SE/NE 同图=镜像复用）', () => {
+    const buildDoc = offsets => validateSkeletonAsset({
       ...VALID_DOC,
       slots: [{
         id: 'body',
         bone: 'child',
-        attachment: {
-          type: 'image',
-          assetId: 'char.torso-front',
-          directionOffsets: {
-            SE: { assetId: 'char.torso-se' },
-            SW: { assetId: 'char.torso-sw' }
-          }
-        }
+        attachment: { type: 'image', assetId: 'char.torso-front', directionOffsets: offsets }
       }]
     });
-    expect(result.ok).toBe(true);
-    expect(result.warnings.some(warning => /整体镜像/.test(warning.message ?? ''))).toBe(true);
+
+    // 与 SE 同图（显式镜像复用，如 skeleton.player）：零告警
+    const mirrored = buildDoc({ SE: { assetId: 'char.torso-se' }, SW: { assetId: 'char.torso-se' } });
+    expect(mirrored.ok).toBe(true);
+    expect(mirrored.warnings).toEqual([]);
+
+    // 与 SE 异图（原生斜左美术，渲染器免镜像直绘）：零告警
+    const native = buildDoc({ SE: { assetId: 'char.torso-se' }, SW: { assetId: 'char.torso-sw' } });
+    expect(native.ok).toBe(true);
+    expect(native.warnings).toEqual([]);
+
+    // SE 缺失时 SW 独立配图：同样合法（按原生方向绘制），零告警
+    const orphan = buildDoc({ SW: { assetId: 'char.torso-sw' } });
+    expect(orphan.ok).toBe(true);
+    expect(orphan.warnings).toEqual([]);
   });
 
   it('拒绝：方向形态覆盖字段非数字 / 形态键未知仅告警', () => {

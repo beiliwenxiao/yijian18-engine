@@ -108,7 +108,8 @@ setAnimationModeForEntity(entity, mode, stableSpriteId)
 | 序列帧路径可见可改 | ①挂点属性「路径」行改输入框（原只读）：按源文件路径匹配图片库即切换（精确 + 唯一后缀命中），序列帧换图自动清帧表重切；②帧模式「帧图」下拉 + 路径输入写 `meta.frameAssetId`（帧条重建签名显式失效） |
 | 方向形态批量导入（2026-11-08） | 槽位属性「方向图 → 批量导入方向图…」：一次多选整套图，按 `角色.部件-方向.png` 后缀自动写 `directionOffsets`——`-front`=基准图（down，写 attachment 本体）/ `-side` / `-up`（`-back` 同义）/ `-se` / `-sw` / `-ne` / `-nw`；主干匹配支持完整 ID（`skirt-girl.parts.torso`）或唯一后缀（`torso-side.png` 亦可）；写入图片 ID 一律归一为主干+方向后缀，同一张图不会产生两个 ID；只改图片与绘制尺寸，保留已有 x/y/rot 手工微调 |
 | 绑定清单缺向提示（2026-11-08） | 装配模式时间轴区改渲染「骨骼 → 挂件」绑定清单（`_renderSetupBindings`），每块已绑挂件标注 A 方案最少集覆盖度：`方向 5/5` 或 `方向 N/5 缺 side/up/SE/NE`；点骨骼行/挂件 chip 与左栏骨骼树、槽位列表、检查器联动 |
-| 方向配置校验告警（2026-11-08） | `SkeletonAssetValidator` 返回值新增 `warnings`（非致命，`ok` 仍为 true）：①未知方向形态键；②`SW`/`NW` 单独配图——这两个形态在运行时被 `isMirroredFacing` 整体镜像，配图必须与 `SE`/`NE` 同源朝右美术，否则应留空走回退。保存时 toast 摘要 + `console.warn` 明细 |
+| 方向配置校验告警（2026-11-08） | `SkeletonAssetValidator` 返回值新增 `warnings`（非致命，`ok` 仍为 true）：未知方向形态键（运行时忽略）。~~SW/NW 独立配图告警~~已随 2026-11-17 免镜像语义移除（独立配图成为一等公民）。保存时 toast 摘要 + `console.warn` 明细 |
+| 左系形态免镜像（2026-11-17） | 镜像语义从「无条件下」改为**「有配置用配置，无配置才走镜像」**：`SkeletonRenderer` 按槽位判定——左系朝向（left/斜左下/斜左上）默认仍整体 flipX（零回归），但槽位形态配置了**专属图**时反向翻转一次直接绘制原生美术：①`sideL` 精确配图→免镜像；②`SW`/`NW` 配图且与 `SE`/`NE` **异图**→免镜像（原生斜左美术）；与 SE/NE **同图**=显式镜像复用（如 skeleton.player），保持镜像零回归；③仅配偏移不换图→不豁免（美术仍是基准图）。7 形态（down/side/up/SE/SW/NE/NW）均可独立配置，混合资产（部分槽位配专属图、部分靠镜像）无需 `meta.noMirrorFacing`；全量自配资产继续用 noMirrorFacing（行为不变）。豁免标志随形态合并结果按 (attachment, formKey) 缓存，热路径零分配零额外遍历 |
 
 - 编辑器与运行时共用 `AnimationActionResolver.stripFormSuffix` + `SkeletonDirection.SKELETON_DIAGONAL_FALLBACK`，
   保证「编辑器所见 = 运行时所得」（同一回退语义，无两处漂移）。

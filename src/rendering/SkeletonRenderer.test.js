@@ -23,8 +23,8 @@ function createCtx() {
   const ctx = {
     calls,
     globalAlpha: 1,
-    save() { stack.push(ctx.globalAlpha); },
-    restore() { ctx.globalAlpha = stack.pop() ?? 1; },
+    save() { stack.push(ctx.globalAlpha); calls.push({ op: 'save' }); },
+    restore() { ctx.globalAlpha = stack.pop() ?? 1; calls.push({ op: 'restore' }); },
     translate(x, y) { calls.push({ op: 'translate', x, y }); },
     rotate(angle) { calls.push({ op: 'rotate', angle }); },
     scale(x, y) { calls.push({ op: 'scale', x, y }); },
@@ -156,6 +156,83 @@ describe('SkeletonRenderer 方向形态换图', () => {
     const draw = renderForm(scene, 'left');
     expect(scene.requested).toContain('img.base');
     expect(draw.args[DRAW_W]).toBe(32);
+  });
+
+  /**
+   * 净镜像判定 = 实体整体镜像 ⊕ entry 区间内的 scale(-1,1)：
+   * 免镜像形态在整体镜像之上再反向翻一次（entry 区间内出现 scale），净效果为不镜像；
+   * 镜像复用/未配置形态没有 entry 翻转，净效果跟随实体整体镜像。
+   */
+  function isNetMirrored(ctx, entityFlip) {
+    const drawIndex = ctx.calls.findIndex(call => call.op === 'drawImage');
+    let entryFlip = false;
+    if (drawIndex >= 0) {
+      for (let i = drawIndex - 1; i >= 0; i -= 1) {
+        const call = ctx.calls[i];
+        if (call.op === 'save') break;
+        if (call.op === 'scale' && call.x === -1 && call.y === 1) { entryFlip = true; break; }
+      }
+    }
+    return entityFlip !== entryFlip;
+  }
+
+  function renderFacing(scene, direction, flipX) {
+    const ctx = createCtx();
+    new SkeletonRenderer().render(ctx, {
+      assetManager: scene.assetManager,
+      skeletonComponent: scene.component,
+      sprite: { flipX, direction },
+      x: 0, y: 0, width: 100, height: 160
+    });
+    return ctx;
+  }
+
+  it('SW 配了与 SE 异图的专属形态：左下朝向免镜像直接绘制', () => {
+    const scene = buildFormScene({
+      SE: { assetId: 'img.se' },
+      SW: { assetId: 'img.sw', width: 36, height: 36 }
+    });
+    const ctx = renderFacing(scene, 'down-left', true);
+    expect(scene.requested).toContain('img.sw');
+    const draw = ctx.calls.find(call => call.op === 'drawImage');
+    expect(draw.args[DRAW_W]).toBe(36);
+    expect(isNetMirrored(ctx, true)).toBe(false);
+  });
+
+  it('SW 与 SE 同图（显式镜像复用）：保持整体镜像行为不变', () => {
+    const scene = buildFormScene({
+      SE: { assetId: 'img.se' },
+      SW: { assetId: 'img.se' }
+    });
+    const ctx = renderFacing(scene, 'down-left', true);
+    expect(scene.requested).toContain('img.se');
+    expect(isNetMirrored(ctx, true)).toBe(true);
+  });
+
+  it('SW 未配置：沿用正面基准图并镜像（旧行为零回归）', () => {
+    const scene = buildFormScene({ SE: { assetId: 'img.se' } });
+    const ctx = renderFacing(scene, 'down-left', true);
+    expect(scene.requested).toContain('img.base');
+    expect(isNetMirrored(ctx, true)).toBe(true);
+  });
+
+  it('sideL 配专属图：左向朝向免镜像直接绘制（无需 meta.noMirrorFacing）', () => {
+    const scene = buildFormScene({
+      side: { assetId: 'img.side' },
+      sideL: { assetId: 'img.side-l', width: 38, height: 38 }
+    });
+    const ctx = renderFacing(scene, 'left', true);
+    expect(scene.requested).toContain('img.side-l');
+    const draw = ctx.calls.find(call => call.op === 'drawImage');
+    expect(draw.args[DRAW_W]).toBe(38);
+    expect(isNetMirrored(ctx, true)).toBe(false);
+  });
+
+  it('SW 专属图 + 实体未镜像（noMirrorFacing 资产）：无任何翻转', () => {
+    const scene = buildFormScene({ SW: { assetId: 'img.sw' } });
+    const ctx = renderFacing(scene, 'down-left', false);
+    expect(scene.requested).toContain('img.sw');
+    expect(isNetMirrored(ctx, false)).toBe(false);
   });
 });
 

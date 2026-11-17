@@ -43,6 +43,8 @@
     "loading": {
       "backgroundColor": "#1a1a1a",
       "icon": "assets/images/闻箫工作室.png",
+      "iconHeight": 128,
+      "iconWidth": 128,
       "loadingText": "加载中...",
       "progressBarColor": "#4CAF50,#8BC34A",
       "steps": [

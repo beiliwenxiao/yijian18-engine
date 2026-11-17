@@ -19,7 +19,9 @@
  *   - 槽位按 z 升序绘制；附件类型：image（整图）/ slice（图集源矩形）/
  *     sequence（序列帧当前帧，帧游标由 SkeletonComponent 推进）
  *   - slot.follow='noScale'（默认）时挂图不跟随骨骼缩放；'bone' 时完全跟随
- *   - flipX 通过整体 x 镜像实现；透明度遵循调用方 ctx.globalAlpha
+ *   - 左系朝向由实体 flipX 整体镜像；槽位配置了专属图的左系形态（sideL /
+ *     与 SE/NE 异图的 SW/NW）免镜像直接绘制——有配置用配置，无配置才走镜像
+ *   - 透明度遵循调用方 ctx.globalAlpha
  */
 
 import { SKELETON_ATTACHMENT_TYPES, resolveAttachmentOffset } from '../animation/SkeletonAsset.js';
@@ -84,6 +86,10 @@ export class SkeletonRenderer {
     ctx.scale(sprite?.flipX ? -scale : scale, scale);
 
     let drewAny = false;
+    // 实体级整体镜像（左系朝向由 PlayerSkeletonStateMapper 写 sprite.flipX）。
+    // 槽位级免镜像：形态配置了专属图的左系形态（sideL / 与 SE/NE 异图的 SW/NW）
+    // 在整体镜像之上再反向翻转一次——「有配置用配置，无配置才走镜像」。
+    const entityFlip = sprite?.flipX === true;
     // 第一遍：计算所有槽位的锚点（世界坐标 + 朝向）与绘制素材
     // 两遍是为了支持 transform 约束（挂件跟随挂件）：跟随者要先拿到目标的锚点。
     // 缓冲与合并结果全部复用（见构造函数），渲染热路径零分配。
@@ -126,6 +132,7 @@ export class SkeletonRenderer {
       const toForm = this._mergedFormAttachment(attachment, formKey);
       let effectiveAttachment = toForm.effective;
       let directionOverride = toForm.override;
+      let mirrorExempt = toForm.mirrorExempt;
       let entryAlpha = 1;
 
       if (turnPhase === 'from') {
@@ -133,13 +140,14 @@ export class SkeletonRenderer {
         const fromForm = this._mergedFormAttachment(attachment, transition.fromForm);
         effectiveAttachment = fromForm.effective;
         directionOverride = fromForm.override;
+        mirrorExempt = fromForm.mirrorExempt;
       } else if (turnPhase === 'cross') {
         // 交叉期：旧形态淡出（先收 entry），新形态淡出随主 entry（turnT）
         const fromForm = this._mergedFormAttachment(attachment, transition.fromForm);
         const fromSource = this._resolveAttachmentSource(fromForm.effective, assetManager, skeletonComponent, slot, sourceCache);
         if (fromSource) {
           const fromAnchor = this._attachmentAnchor(boneWorld, fromForm.effective, fromForm.override, slot.follow);
-          anchorCount = this._pushAnchor(anchors, anchorCount, slot, fromForm.effective, fromForm.override, fromSource, boneWorld, fromAnchor, 1 - turnT);
+          anchorCount = this._pushAnchor(anchors, anchorCount, slot, fromForm.effective, fromForm.override, fromSource, boneWorld, fromAnchor, 1 - turnT, fromForm.mirrorExempt);
         }
         entryAlpha = turnT;
       }
@@ -148,7 +156,7 @@ export class SkeletonRenderer {
       if (!source) continue;
 
       const anchor = this._attachmentAnchor(boneWorld, effectiveAttachment, directionOverride, slot.follow);
-      anchorCount = this._pushAnchor(anchors, anchorCount, slot, effectiveAttachment, directionOverride, source, boneWorld, anchor, entryAlpha);
+      anchorCount = this._pushAnchor(anchors, anchorCount, slot, effectiveAttachment, directionOverride, source, boneWorld, anchor, entryAlpha, mirrorExempt);
     }
 
     // transform 约束：挂件跟随挂件（位置 + 可选朝向）
@@ -172,7 +180,11 @@ export class SkeletonRenderer {
       // 拖骨骼缩放只改变肢体骨架尺寸，绑定图片保持原大小不变形（Unity 骨骼=变形、贴图独立）。
       // follow='bone' 时挂图完全跟随骨骼变换（用于 squash & stretch 压扁拉伸）。
       if (entry.slot.follow === 'bone') ctx.scale(boneWorld.sx, boneWorld.sy);
-      if ((entry.directionOverride?.flipX ?? attachment.flipX) === true) ctx.scale(-1, 1);   // 附件水平镜像（背面长矛等视角切换）
+      // 附件水平镜像（背面长矛等视角切换）⊕ 槽位级免镜像：
+      // 左系朝向整体镜像时，配置了专属图的形态（sideL / 与 SE/NE 异图的 SW/NW）
+      // 再反向翻一次回到原生朝向——有配置用配置，无配置才走镜像。
+      const attachmentFlip = (entry.directionOverride?.flipX ?? entry.attachment.flipX) === true;
+      if (attachmentFlip !== (entry.mirrorExempt && entityFlip)) ctx.scale(-1, 1);
 
       // 附件盒以锚点为中心（脚底类附件可用 attachment.y 下移）
       ctx.drawImage(source.image, source.sx, source.sy, source.sw, source.sh,
@@ -210,14 +222,32 @@ export class SkeletonRenderer {
    * directionOffsets 是共享资产只读数据——合并结果恒定可缓存（热路径零分配）。
    * @param {Object} attachment - 实体合并后的槽位附件
    * @param {string} formKey - 方向形态键（down/side/sideL/up/SE/SW/NE/NW）
-   * @returns {{effective: Object, override: Object|null}} effective=无覆盖时即原附件对象
+   * @returns {{effective: Object, override: Object|null, mirrorExempt: boolean}}
+   *   effective=无覆盖时即原附件对象；mirrorExempt=该形态配置了专属图、
+   *   左系朝向整体镜像时应免镜像（有配置用配置，无配置才走镜像）。
+   *   判定（与实体 flipX 无关，绘制时才结合 entityFlip）：
+   *   - sideL 精确配图 → 免镜像（左侧专属美术的原生语义）；
+   *   - SW/NW 配图且与 SE/NE 异图 → 免镜像（原生斜左美术）；
+   *     与 SE/NE 同图 = 显式镜像复用（如 skeleton.player），保持镜像零回归；
+   *   - 仅配偏移不换图 → 不免镜像（美术仍是基准图，镜像才是正确朝向）。
    */
   _mergedFormAttachment(attachment, formKey) {
-    let override = resolveAttachmentOffset(attachment, formKey);
+    const exact = resolveAttachmentOffset(attachment, formKey);
+    let override = exact;
     if (!override && formKey === 'sideL') override = resolveAttachmentOffset(attachment, 'side');
+    const hasOwnArt = !!String(exact?.assetId || '').trim();
+    let mirrorExempt = false;
+    if (hasOwnArt) {
+      if (formKey === 'sideL') {
+        mirrorExempt = true;
+      } else if (formKey === 'SW' || formKey === 'NW') {
+        const counterpartId = String(resolveAttachmentOffset(attachment, formKey === 'SW' ? 'SE' : 'NE')?.assetId || '').trim();
+        mirrorExempt = counterpartId !== String(override.assetId || '').trim();
+      }
+    }
     if (!(override
       && (!!override.assetId || override.width > 0 || override.height > 0 || override.sw > 0))) {
-      return { effective: attachment, override: override || null };
+      return { effective: attachment, override: override || null, mirrorExempt: false };
     }
     const formCache = this._formCache;
     let mergedByForm = formCache.get(attachment);
@@ -225,22 +255,26 @@ export class SkeletonRenderer {
       mergedByForm = new Map();
       formCache.set(attachment, mergedByForm);
     }
-    let effective = mergedByForm.get(formKey);
-    if (!effective) {
-      effective = {
-        ...attachment,
-        ...(override.assetId ? { assetId: override.assetId } : {}),
-        ...(override.width > 0 ? { width: override.width } : {}),
-        ...(override.height > 0 ? { height: override.height } : {}),
-        // 图集切片形态：directionOffsets 可按形态换源矩形（同一张图集里存 正/侧/背 三套部件）
-        ...(override.sw > 0 ? {
-          sx: override.sx || 0, sy: override.sy || 0,
-          sw: override.sw, sh: override.sh
-        } : {})
+    let merged = mergedByForm.get(formKey);
+    if (!merged) {
+      merged = {
+        effective: {
+          ...attachment,
+          ...(override.assetId ? { assetId: override.assetId } : {}),
+          ...(override.width > 0 ? { width: override.width } : {}),
+          ...(override.height > 0 ? { height: override.height } : {}),
+          // 图集切片形态：directionOffsets 可按形态换源矩形（同一张图集里存 正/侧/背 三套部件）
+          ...(override.sw > 0 ? {
+            sx: override.sx || 0, sy: override.sy || 0,
+            sw: override.sw, sh: override.sh
+          } : {})
+        },
+        override,
+        mirrorExempt
       };
-      mergedByForm.set(formKey, effective);
+      mergedByForm.set(formKey, merged);
     }
-    return { effective, override };
+    return merged;
   }
 
   /**
@@ -248,12 +282,13 @@ export class SkeletonRenderer {
    * @param {Array} anchors - entry 缓冲
    * @param {number} anchorCount - 当前已用数量
    * @param {number} alpha - 绘制透明度（转身交叉淡化；常态 1）
+   * @param {boolean} [mirrorExempt] - 左系形态配置专属图时免镜像（绘制期与实体 flipX 结合）
    * @returns {number} 新的已用数量
    */
-  _pushAnchor(anchors, anchorCount, slot, attachment, directionOverride, source, boneWorld, anchor, alpha) {
+  _pushAnchor(anchors, anchorCount, slot, attachment, directionOverride, source, boneWorld, anchor, alpha, mirrorExempt = false) {
     let entry = anchors[anchorCount];
     if (!entry) {
-      entry = { slot: null, attachment: null, directionOverride: null, source: null, boneWorld: null, x: 0, y: 0, angle: 0, alpha: 1 };
+      entry = { slot: null, attachment: null, directionOverride: null, source: null, boneWorld: null, x: 0, y: 0, angle: 0, alpha: 1, mirrorExempt: false };
       anchors.push(entry);
     }
     entry.slot = slot;
@@ -265,6 +300,7 @@ export class SkeletonRenderer {
     entry.y = anchor.y;
     entry.angle = anchor.angle;
     entry.alpha = alpha;
+    entry.mirrorExempt = mirrorExempt;
     return anchorCount + 1;
   }
 

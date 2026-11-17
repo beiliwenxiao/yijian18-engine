@@ -65,10 +65,15 @@ function buildHeadSkeleton() {
   });
 }
 
-/** 构造实体 mock：sprite/equipment/inventory 三组件 + _weaponDrawn 战斗持握标志。 */
-function buildEntity({ mainhand = null, offhand = null, bag = [], drawn = false, direction = 'down' } = {}) {
+/** 构造实体 mock：sprite/equipment/inventory 三组件 + _weaponDrawn 战斗持握标志。
+ *  equipState 可变引用：测试中途改装备（模拟穿/脱），签名守卫下一帧自动捕捉。 */
+function buildEntity({
+  mainhand = null, offhand = null, bag = [], drawn = false, direction = 'down',
+  armor = null, helmet = null, pants = null, boots = null, accessory = null
+} = {}) {
   const sprite = { direction, flipX: false, isWalking: false, isStopping: false };
-  const equipment = { getEquipment: slot => (slot === 'mainhand' ? mainhand : slot === 'offhand' ? offhand : null) };
+  const equipState = { mainhand, offhand, armor, helmet, pants, boots, accessory };
+  const equipment = { getEquipment: slot => equipState[slot] ?? null };
   const inventory = { slots: bag.map(item => ({ item, quantity: 1 })) };
   const entity = {
     isDead: false, isDying: false, isSoulState: false, _climbing: false,
@@ -77,7 +82,8 @@ function buildEntity({ mainhand = null, offhand = null, bag = [], drawn = false,
       if (name === 'equipment') return equipment;
       if (name === 'inventory') return inventory;
       return null;
-    }
+    },
+    _equipState: equipState
   };
   entity._weaponDrawn = drawn; // CombatSystem.enterCombat/exitCombat 维护
   return entity;
@@ -599,5 +605,175 @@ describe('多实体隔离：共享资产只读，运行时状态落在实体本�
     const sharedToolHand = asset.slots.find(slot => slot.id === 'toolHand');
     expect(sharedToolHand.attachment.visible).toBe(false);   // 共享数据未被改写
     expect(slotVisible(skeleton, 'axeBack')).toBe(true);     // 实体本地覆盖层生效
+  });
+});
+
+describe('防具槽位联动（有装备用配置上身，无装备隐藏）', () => {
+  /** 构造带防具槽位的骨骼：armorTorso/armorSkirt/armorBootL/R/helmet（empty 附件，与 player.json 同约定）。 */
+  function buildArmorSkeleton() {
+    return parseSkeletonAsset({
+      schemaVersion: 1,
+      skeletonId: 'skeleton.armor-test',
+      meta: { width: 96, height: 96 },
+      defaultClip: 'idle_down',
+      bones: [
+        { id: 'root', parent: null, x: 0, y: 0 },
+        { id: 'chest', parent: 'root', x: 0, y: -30 },
+        { id: 'spine', parent: 'root', x: 0, y: -24 },
+        { id: 'footL', parent: 'root', x: -4, y: 0 },
+        { id: 'footR', parent: 'root', x: 4, y: 0 },
+        { id: 'head', parent: 'root', x: 0, y: -40 },
+        { id: 'forearmL', parent: 'root', x: -10, y: -20 },
+        { id: 'forearmR', parent: 'root', x: 10, y: -20 }
+      ],
+      slots: [
+        { id: 'armorTorso', bone: 'chest', z: 25, attachment: { type: 'empty', x: 0, y: 0, rot: 0 } },
+        { id: 'armorSkirt', bone: 'spine', z: 26, attachment: { type: 'empty', x: 0, y: 0, rot: 0 } },
+        { id: 'armorBootL', bone: 'footL', z: 13, attachment: { type: 'empty', x: 0, y: 0, rot: 0 } },
+        { id: 'armorBootR', bone: 'footR', z: 13, attachment: { type: 'empty', x: 0, y: 0, rot: 0 } },
+        { id: 'helmet', bone: 'head', z: 14, attachment: { type: 'empty', x: 0, y: 0, rot: 0 } },
+        { id: 'armorWristL', bone: 'forearmL', z: 16, attachment: { type: 'empty', x: 0, y: 0, rot: 0 } },
+        { id: 'armorWristR', bone: 'forearmR', z: 25, attachment: { type: 'empty', x: 0, y: 0, rot: 0 } }
+      ],
+      clips: [{ name: 'idle_down', durationMs: 1000, loop: true, tracks: [] }]
+    });
+  }
+
+  /** 取槽位合并后的附件（共享 attachment + 实体覆盖层）。 */
+  function slotAttachment(skeleton, slotId) {
+    const slot = skeleton.skeletonAsset.slots.find(candidate => candidate.id === slotId);
+    return skeleton.resolveSlotAttachment(slot);
+  }
+
+  const wolfVest = {
+    id: 'equipment.s01.wolf_hide_vest', subType: 'armor',
+    skeletonPart: { assetId: 'player.parts.wolf-hide-vest', width: 64, height: 64 }
+  };
+  const wolfSkirt = {
+    id: 'equipment.s01.wolf_hide_skirt', subType: 'skirt',
+    skeletonPart: { assetId: 'player.parts.wolf-hide-skirt', width: 64, height: 64 }
+  };
+  const wolfBoots = {
+    id: 'equipment.s01.wolf_hide_boots', subType: 'boots',
+    skeletonPart: { assetId: 'player.parts.wolf-hide-boots', width: 64, height: 64 }
+  };
+
+  it('装备胸甲：armorTorso 槽位换图上身（visible+type:image+assetId），其余防具槽位隐藏', () => {
+    const skeleton = buildSkeletonComponent(buildArmorSkeleton());
+    const hook = createPlayerSkeletonStateMapper(buildEntity({ armor: wolfVest }), {});
+    hook(skeleton);
+    const torso = slotAttachment(skeleton, 'armorTorso');
+    expect(torso.visible).toBe(true);
+    expect(torso.type).toBe('image');
+    expect(torso.assetId).toBe('player.parts.wolf-hide-vest');
+    expect(torso.width).toBe(64);
+    expect(slotAttachment(skeleton, 'armorSkirt').visible).toBe(false);
+    expect(slotAttachment(skeleton, 'helmet').type).toBe('empty');
+  });
+
+  it('装备靴子：左右脚两个槽位共用同一件装备的部件图', () => {
+    const skeleton = buildSkeletonComponent(buildArmorSkeleton());
+    const hook = createPlayerSkeletonStateMapper(buildEntity({ boots: wolfBoots }), {});
+    hook(skeleton);
+    expect(slotAttachment(skeleton, 'armorBootL').assetId).toBe('player.parts.wolf-hide-boots');
+    expect(slotAttachment(skeleton, 'armorBootR').assetId).toBe('player.parts.wolf-hide-boots');
+    expect(slotAttachment(skeleton, 'armorBootL').visible).toBe(true);
+    expect(slotAttachment(skeleton, 'armorTorso').visible).toBe(false);
+  });
+
+  it('卸下装备：槽位恢复隐藏（下一帧自动生效，无需事件）', () => {
+    const skeleton = buildSkeletonComponent(buildArmorSkeleton());
+    const hook = createPlayerSkeletonStateMapper(buildEntity({ armor: wolfVest, pants: wolfSkirt }), {});
+    hook(skeleton);
+    expect(slotAttachment(skeleton, 'armorTorso').visible).toBe(true);
+    expect(slotAttachment(skeleton, 'armorSkirt').visible).toBe(true);
+    // 卸下胸甲后（pants 不变）：新装备签名 → armorTorso 隐藏、armorSkirt 不受影响
+    const skeleton2 = buildSkeletonComponent(buildArmorSkeleton());
+    createPlayerSkeletonStateMapper(buildEntity({ pants: wolfSkirt }), {})(skeleton2);
+    expect(slotAttachment(skeleton2, 'armorTorso').visible).toBe(false);
+    expect(slotAttachment(skeleton2, 'armorSkirt').visible).toBe(true);
+  });
+
+  it('物品带 directionOffsets：5 方向形态覆盖透传到槽位附件', () => {
+    const vest = {
+      id: 'equipment.test.vest2', subType: 'armor',
+      skeletonPart: {
+        assetId: 'player.parts.wolf-hide-vest', width: 64, height: 64,
+        directionOffsets: { side: { assetId: 'player.parts.wolf-hide-vest-side', width: 60, height: 60 } }
+      }
+    };
+    const skeleton = buildSkeletonComponent(buildArmorSkeleton());
+    createPlayerSkeletonStateMapper(buildEntity({ armor: vest }), {})(skeleton);
+    const torso = slotAttachment(skeleton, 'armorTorso');
+    expect(torso.directionOffsets?.side?.assetId).toBe('player.parts.wolf-hide-vest-side');
+  });
+
+  it('物品无 skeletonPart 绑定：不上身（槽位保持隐藏），零回归', () => {
+    const skeleton = buildSkeletonComponent(buildArmorSkeleton());
+    createPlayerSkeletonStateMapper(buildEntity({ armor: { id: 'equipment.x', subType: 'armor' } }), {})(skeleton);
+    expect(slotAttachment(skeleton, 'armorTorso').visible).toBe(false);
+    expect(slotAttachment(skeleton, 'armorTorso').type).toBe('empty');
+  });
+
+  it('骨架未预建防具槽位（旧资产）：装备防具不炸、不写覆盖', () => {
+    const skeleton = buildSkeletonComponent(buildWeaponSkeleton());
+    const hook = createPlayerSkeletonStateMapper(buildEntity({ armor: wolfVest }), {});
+    expect(() => hook(skeleton)).not.toThrow();
+    expect(skeleton.getSlotOverride('armorTorso')).toBe(null);
+  });
+
+  it('accessory 槽护腕（skeletonPart.slots 显式声明）：上身到声明槽位', () => {
+    const bracers = {
+      id: 'equipment.s01.wolf_hide_bracers', subType: 'accessory',
+      skeletonPart: {
+        assetId: 'player.parts.wolf-hide-bracers', width: 64, height: 64,
+        slots: ['armorWristL', 'armorWristR']
+      }
+    };
+    const skeleton = buildSkeletonComponent(buildArmorSkeleton());
+    createPlayerSkeletonStateMapper(buildEntity({ accessory: bracers }), {})(skeleton);
+    expect(slotAttachment(skeleton, 'armorWristL').assetId).toBe('player.parts.wolf-hide-bracers');
+    expect(slotAttachment(skeleton, 'armorWristR').assetId).toBe('player.parts.wolf-hide-bracers');
+    expect(slotAttachment(skeleton, 'armorWristL').visible).toBe(true);
+    expect(slotAttachment(skeleton, 'armorTorso').visible).toBe(false);
+  });
+
+  it('accessory 无 skeletonPart（戒指/项链类）：不上身（零回归）', () => {
+    const skeleton = buildSkeletonComponent(buildArmorSkeleton());
+    createPlayerSkeletonStateMapper(buildEntity({ accessory: { id: 'equipment.ring', subType: 'accessory' } }), {})(skeleton);
+    // 无绑定 → accessory 槽无映射表 → 不写覆盖，附件保持 empty（渲染器不画）
+    expect(slotAttachment(skeleton, 'armorWristL').visible).not.toBe(true);
+    expect(slotAttachment(skeleton, 'armorWristR').visible).not.toBe(true);
+    expect(slotAttachment(skeleton, 'armorWristL').type).toBe('empty');
+  });
+
+  it('物品 slots 声明优先于装备槽 kind 映射表', () => {
+    const vest = {
+      id: 'equipment.test.vest3', subType: 'armor',
+      skeletonPart: { assetId: 'player.parts.wolf-hide-vest', width: 64, height: 64, slots: ['armorTorso'] }
+    };
+    const skeleton = buildSkeletonComponent(buildArmorSkeleton());
+    createPlayerSkeletonStateMapper(buildEntity({ armor: vest }), {})(skeleton);
+    // 声明只列 armorTorso → armorTorso 换图上身（armorSkirt 由 pants 槽空置走映射表隐藏）
+    expect(slotAttachment(skeleton, 'armorTorso').visible).toBe(true);
+    expect(slotAttachment(skeleton, 'armorSkirt').visible).toBe(false);
+  });
+
+  it('卸下 slots 声明的装备：同会话内残留槽位清理隐藏（声明丢失也能恢复）', () => {
+    const bracers = {
+      id: 'equipment.s01.wolf_hide_bracers', subType: 'accessory',
+      skeletonPart: { assetId: 'player.parts.wolf-hide-bracers', width: 64, height: 64, slots: ['armorWristL', 'armorWristR'] }
+    };
+    const skeleton = buildSkeletonComponent(buildArmorSkeleton());
+    const entity = buildEntity({ accessory: bracers });
+    const hook = createPlayerSkeletonStateMapper(entity, {});
+    hook(skeleton);
+    expect(slotAttachment(skeleton, 'armorWristL').visible).toBe(true);
+    expect(slotAttachment(skeleton, 'armorWristR').visible).toBe(true);
+    // 同会话卸下（换成无绑定的戒指）：装备签名变化 → 上轮声明的 armorWristL/R 被残留清理隐藏
+    entity._equipState.accessory = { id: 'equipment.ring', subType: 'accessory' };
+    hook(skeleton);
+    expect(slotAttachment(skeleton, 'armorWristL').visible).toBe(false);
+    expect(slotAttachment(skeleton, 'armorWristR').visible).toBe(false);
   });
 });

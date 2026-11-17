@@ -31,6 +31,11 @@
         .se-header .group { display: flex; align-items: center; gap: 6px; }
         .se-header .spacer { flex: 1; }
         #se-toast { font-size: 12px; color: #ffd479; min-width: 220px; text-align: right; }
+        #se-asset-info { align-items: center; gap: 6px; font-size: 12px; }
+        .se-asset-chip { background: #1a2440; border: 1px solid #3a4a7e; border-radius: 3px; padding: 2px 8px; color: #7ec8ff; cursor: pointer; user-select: none; white-space: nowrap; }
+        .se-asset-chip:hover { border-color: #7ec8ff; background: #223055; }
+        .se-asset-chip-muted { color: #9aa5c0; cursor: default; }
+        .se-asset-chip-muted:hover { border-color: #3a4a7e; background: #1a2440; }
 
         .se-main { flex: 1; display: grid; grid-template-columns: 230px 6px 1fr 6px 280px; grid-template-rows: 1fr 6px 218px; gap: 6px; padding: 6px; min-height: 0; }
         .se-panel { background: #101830; border: 1px solid #26355c; border-radius: 6px; overflow: auto; padding: 8px; }
@@ -150,6 +155,7 @@
         <div class="spacer"></div>
         <span id="se-dirty" style="font-size:12px;color:#ff9a3c;display:none;">● 未保存</span>
         <button class="primary" id="se-save" disabled>💾 保存（骨骼 JSON + Manifest）</button>
+        <span id="se-asset-info" title="当前骨骼资产信息：点击片段即复制，可直接粘贴到 placement / 代码引用"></span>
         <span id="se-toast"></span>
     </div>
 
@@ -220,7 +226,7 @@
                 <button id="se-dir-SW" title="斜前左预览：斜前形态（未配置形态图时回退正面形态）">斜↙</button>
                 <button id="se-dir-NE" title="斜后右预览：斜后形态（未配置形态图时回退背面形态）">斜↗</button>
                 <button id="se-dir-NW" title="斜后左预览：斜后形态（未配置形态图时回退背面形态）">斜↖</button>
-                <span style="color:#5a6a90;font-size:11px;" title="侧面=右侧，左侧由运行时 flipX 镜像">镜像←</span>
+                <span style="color:#5a6a90;font-size:11px;" title="侧面=右侧基准；左侧默认由运行时 flipX 镜像，配 sideL/SW/NW 专属图则免镜像直接绘制">镜像←</span>
                 <span style="border-left:1px solid #26355c;height:18px;"></span>
                 <label style="color:#9aa5c0;">显示</label>
                 <button id="se-disp-all" title="图片+骨架：默认视图">图片+骨架</button>

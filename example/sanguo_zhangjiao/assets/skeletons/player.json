@@ -525,8 +525,8 @@
         "type": "image",
         "assetId": "player.humanoid.shin",
         "partId": "part.humanoid.shin",
-        "x": 0,
-        "y": 10,
+        "x": 0.3,
+        "y": 9.7,
         "rot": 0,
         "visible": true
       }
@@ -539,9 +539,9 @@
         "type": "image",
         "assetId": "player.humanoid.shin",
         "partId": "part.humanoid.shin",
-        "x": -4.2,
-        "y": 10.9,
-        "rot": 18.7,
+        "x": -0.3,
+        "y": 8.7,
+        "rot": 359,
         "visible": true,
         "width": 7,
         "height": 20
@@ -596,28 +596,28 @@
     },
     {
       "id": "weaponWolfFang",
-      "bone": "forearmR",
+      "bone": "spine",
       "z": 24,
       "attachment": {
         "type": "image",
         "assetId": "player.parts.weapon-wolfFang",
         "partId": "part.weapon.wolfFang",
-        "x": -7.8,
-        "y": 24.9,
-        "rot": 517.5,
+        "x": -19.2,
+        "y": 21.1,
+        "rot": 521.5,
         "width": 31,
         "height": 35,
         "visible": true,
         "directionOffsets": {
           "up": {
-            "x": -31.9,
-            "y": -19.5,
-            "rot": 185.7
+            "x": -21.9,
+            "y": 21.3,
+            "rot": 166
           },
           "side": {
-            "x": -2.5,
-            "y": 31.5,
-            "rot": 153.2
+            "x": -14.4,
+            "y": 28.2,
+            "rot": 157.2
           }
         }
       }
@@ -713,8 +713,8 @@
         "type": "image",
         "assetId": "player.humanoid.foot-down",
         "partId": "part.humanoid.foot-down",
-        "x": 0.8,
-        "y": 2.3,
+        "x": -0.1,
+        "y": -0.9,
         "rot": 90,
         "visible": true,
         "directionOffsets": {
@@ -765,8 +765,8 @@
         "type": "image",
         "assetId": "player.humanoid.foot-down",
         "partId": "part.humanoid.foot-down",
-        "x": -2.5,
-        "y": 0,
+        "x": -0.1,
+        "y": 1.4,
         "rot": 90,
         "visible": true,
         "directionOffsets": {
@@ -807,6 +807,107 @@
             "assetId": "player.humanoid.foot-up"
           }
         }
+      }
+    },
+    {
+      "id": "armorTorso",
+      "bone": "chest",
+      "z": 25,
+      "attachment": {
+        "type": "image",
+        "x": 0.5,
+        "y": 0.5,
+        "rot": 0,
+        "assetId": "player.parts.wolf-hide-vest",
+        "width": 64,
+        "height": 64,
+        "visible": true
+      }
+    },
+    {
+      "id": "armorSkirt",
+      "bone": "spine",
+      "z": 26,
+      "attachment": {
+        "type": "image",
+        "x": 0,
+        "y": -4,
+        "rot": 0,
+        "assetId": "player.parts.wolf-hide-skirt",
+        "width": 64,
+        "height": 64,
+        "visible": true
+      }
+    },
+    {
+      "id": "armorBootL",
+      "bone": "footL",
+      "z": 13,
+      "attachment": {
+        "type": "image",
+        "x": 21.4,
+        "y": 1.4,
+        "rot": 90,
+        "assetId": "player.parts.wolf-hide-boots",
+        "width": 64,
+        "height": 64,
+        "visible": true
+      }
+    },
+    {
+      "id": "armorBootR",
+      "bone": "footR",
+      "z": 13,
+      "attachment": {
+        "type": "image",
+        "x": 21.4,
+        "y": -0.9,
+        "rot": 90,
+        "assetId": "player.parts.wolf-hide-boots",
+        "width": 64,
+        "height": 64,
+        "visible": true
+      }
+    },
+    {
+      "id": "helmet",
+      "bone": "head",
+      "z": 14,
+      "attachment": {
+        "type": "empty",
+        "x": 0,
+        "y": 0,
+        "rot": 0
+      }
+    },
+    {
+      "id": "armorWristL",
+      "bone": "forearmL",
+      "z": 16,
+      "attachment": {
+        "type": "image",
+        "x": 0.5,
+        "y": 8.5,
+        "rot": 4,
+        "assetId": "player.parts.wolf-hide-bracers",
+        "width": 64,
+        "height": 64,
+        "visible": true
+      }
+    },
+    {
+      "id": "armorWristR",
+      "bone": "forearmR",
+      "z": 25,
+      "attachment": {
+        "type": "image",
+        "x": 0.5,
+        "y": 8.5,
+        "rot": -4,
+        "assetId": "player.parts.wolf-hide-bracers",
+        "width": 64,
+        "height": 64,
+        "visible": true
       }
     }
   ],

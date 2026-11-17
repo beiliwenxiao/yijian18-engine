@@ -321,9 +321,15 @@ export class SkeletonComponent extends Component {
   /**
    * 写实体本地槽位覆盖（不触碰共享资产）。
    * @param {string} slotId
-   * @param {Object} patch - { visible?, flipX?, frames?, fps?, loop?, keepFrameRatio? }；字段为 undefined 表示不改
-   *   loop=false：序列播完停在末帧（默认恒循环）；keepFrameRatio=true：帧表变化时按新旧表
-   *   长度比例保留帧游标（跳跃空中换向不重播起跳动作）
+   * @param {Object} patch - 字段为 undefined 表示不改；两类用途：
+   *   状态覆盖 { visible?, flipX?, frames?, fps?, loop?, keepFrameRatio? }
+   *     loop=false：序列播完停在末帧（默认恒循环）；keepFrameRatio=true：帧表变化时按新旧表
+   *     长度比例保留帧游标（跳跃空中换向不重播起跳动作）
+   *   换图覆盖（防具装备上身等，实体级部件替换）：
+   *     { type?, assetId?, width?, height?, directionOffsets? } —— 经 resolveSlotAttachment
+   *     的 spread 合并生效：empty 槽位写 type:'image' + assetId 即挂上装备部件图（图片中心=挂点）；
+   *     directionOffsets 为 5 方向形态覆盖（缺省回退基准图）。调用方需传稳定引用并在内容
+   *     变化时才调用（覆盖层按引用比较判 changed）。
    */
   setSlotOverride(slotId, patch) {
     if (!slotId || !patch) return;

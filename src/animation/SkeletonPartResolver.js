@@ -89,3 +89,36 @@ export function buildPartRegistry(list) {
   }
   return registry;
 }
+
+/**
+ * 读取装备的部件视觉（面向防具槽位换图覆盖：穿脱时把装备部件图写进槽位）。
+ * 优先级：skeletonPart.assetId（物品自带图，画布约定 64×64、图片中心=挂点）
+ *        > skeletonPart.partId → 部件库 assetId（需传入 partRegistry）。
+ * @param {Object} item - 装备物品定义/实例（skeletonPart 绑定块）
+ * @param {Map|Object} [partRegistry] - skeletonPart 注册表（可选；partId 路径需要）
+ * @returns {{assetId:string, width:number, height:number, directionOffsets:Object|null}|null}
+ *          无绑定或解析不到图返回 null（调用方恢复槽位隐藏）
+ */
+export function resolveItemVisual(item, partRegistry = null) {
+  const sp = item?.skeletonPart;
+  if (!sp) return null;
+  let assetId = typeof sp.assetId === 'string' ? sp.assetId.trim() : '';
+  let width = Number(sp.width) || 0;
+  let height = Number(sp.height) || 0;
+  if (!assetId && sp.partId) {
+    const part = resolvePart(sp.partId, partRegistry);
+    if (!part?.assetId) return null;
+    assetId = part.assetId;
+    width = width || part.width;
+    height = height || part.height;
+  }
+  if (!assetId) return null;
+  return {
+    assetId,
+    width,
+    height,
+    directionOffsets: (sp.directionOffsets && typeof sp.directionOffsets === 'object')
+      ? sp.directionOffsets
+      : null
+  };
+}

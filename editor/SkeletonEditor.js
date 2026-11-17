@@ -251,7 +251,7 @@ export class SkeletonEditor {
       assetSelect: $('se-asset-select'), skeletonId: $('se-skeleton-id'),
       templateSelect: $('se-template-select'),
       metaWidth: $('se-meta-width'), metaHeight: $('se-meta-height'),
-      dirty: $('se-dirty'), toast: $('se-toast'), save: $('se-save'),
+      dirty: $('se-dirty'), toast: $('se-toast'), save: $('se-save'), assetInfo: $('se-asset-info'),
       boneTree: $('se-bone-tree'), slotList: $('se-slot-list'),
       inspectorTitle: $('se-inspector-title'), inspectorBody: $('se-inspector-body'),
       canvas: $('se-canvas'),
@@ -273,6 +273,17 @@ export class SkeletonEditor {
       if (!this.doc) return;
       this.doc.skeletonId = this.el.skeletonId.value.trim() || this.doc.skeletonId;
       this._markDirty();
+      this._refreshAssetInfo();
+    });
+    // 资产信息条：点击片段复制对应文本（ID / JSON 路径）
+    this.el.assetInfo.addEventListener('click', event => {
+      const chip = event.target.closest('[data-copy]');
+      if (!chip) return;
+      const text = chip.dataset.copy;
+      navigator.clipboard?.writeText(text).then(
+        () => this._toast(`已复制 ${text}`),
+        () => this._toast('复制失败（剪贴板不可用）', true)
+      );
     });
     for (const [key, field] of [['metaWidth', 'width'], ['metaHeight', 'height']]) {
       this.el[key].addEventListener('change', () => {
@@ -712,6 +723,7 @@ export class SkeletonEditor {
         }
       }
       this._refreshAssetSelect();
+      this._refreshAssetInfo(); // 清单重建后当前资产的落盘路径可能就绪/变化
       this._renderPartLib();
       this._renderImageLib();
     } catch (error) {
@@ -731,6 +743,26 @@ export class SkeletonEditor {
       + SKELETON_TEMPLATES.map(id => `<option value="${id}">${id}</option>`).join('')
       + '</optgroup>';
     if (current && [...select.options].some(option => option.value === current)) select.value = current;
+  }
+
+  /**
+   * 保存按钮旁的资产信息条：ID + JSON 路径，点击片段即复制——
+   * 方便把骨骼资产引用直接粘贴到 placement / 代码里。
+   * 已保存资产显示真实落盘路径；新建/模板显示「未保存」提示片。
+   */
+  _refreshAssetInfo() {
+    const el = this.el.assetInfo;
+    if (!el) return;
+    const skeletonId = this.doc?.skeletonId || '';
+    if (!skeletonId) { el.style.display = 'none'; el.innerHTML = ''; return; }
+    el.style.display = 'inline-flex';
+    const entry = this.skeletonEntries.find(candidate => (candidate.imageId || candidate.assetId) === skeletonId);
+    const jsonPath = entry?.runtime2D?.path || '';
+    el.innerHTML =
+      `<span class="se-asset-chip" data-copy="${skeletonId}" title="点击复制骨骼资产 ID">ID ${skeletonId}</span>`
+      + (jsonPath
+        ? `<span class="se-asset-chip" data-copy="${jsonPath}" title="点击复制 JSON 路径">JSON ${jsonPath}</span>`
+        : '<span class="se-asset-chip se-asset-chip-muted" title="保存后生成 JSON 路径">未保存（新建）</span>');
   }
 
   /* ---------------- 骨架模板（tpl.*：纯便利起点，使用即深拷贝，零数据关联） ---------------- */
@@ -923,6 +955,7 @@ export class SkeletonEditor {
     this._renderInspector();
     this._refreshClipToolbar();
     this._renderTimeline();
+    this._refreshAssetInfo(); // 保存按钮旁的资产信息条跟随文档（ID 改名/新建/加载同步刷新）
     // 绑骨会话：骨骼树变化后丢弃已不存在骨的关节，待拾取骨失效则清除
     if (this._bindState) {
       const boneIds = new Set((this.doc.bones || []).map(bone => bone.id));
@@ -6803,14 +6836,16 @@ export class SkeletonEditor {
       else if (att.type === 'slice') label = `图集切片 ${att.assetId || ''}`;
       else if (!att.assetId) label = '（空挂点）';
       else label = att.assetId;
-      // A 方案的最少美术集：down（基准）+ side/up/SE/NE 四张变体；SW/NW 靠运行时镜像
+      // A 方案的最少美术集：down（基准）+ side/up/SE/NE 四张变体；
+      // SW/NW 可不配（运行时镜像 SE/NE），也可配专属图（渲染器免镜像直接绘制）
       const offsets = att.directionOffsets || null;
       const required = ['side', 'up', 'SE', 'NE'];
       const missing = att.assetId ? required.filter(key => !(offsets?.[key]?.assetId)) : [];
       const covered = att.assetId ? required.length - missing.length : 0;
+      const optionalDiagonal = ['SW', 'NW'].filter(key => offsets?.[key]?.assetId).length;
       const formsTag = att.assetId
         ? (missing.length === 0
-          ? ` <span style="color:#7ec8ff;" title="down/side/up/SE/NE 均已配图，SW/NW 由引擎镜像">方向 5/5</span>`
+          ? ` <span style="color:#7ec8ff;" title="down/side/up/SE/NE 均已配图${optionalDiagonal > 0 ? `；SW/NW 已配专属图 ${optionalDiagonal}/2（免镜像直绘）` : '；SW/NW 未配（由引擎镜像，配专属图则免镜像直绘）'}">方向 5/5${optionalDiagonal > 0 ? `+斜左 ${optionalDiagonal}` : ''}</span>`
           : ` <span style="color:#ffb454;" title="缺方向：${missing.join('、')}（斜向缺图会回退正面/背面基准图）">方向 ${covered}/5 缺 ${missing.join('/')}</span>`)
         : '';
       return `<span class="se-bind-chip" data-slot="${slot.id}" title="点击选中该挂件（与左栏联动）"`
@@ -7707,7 +7742,7 @@ export class SkeletonEditor {
       alert(`骨骼资产校验失败：\n${messages}`);
       return;
     }
-    // 非致命告警（如 SW/NW 独立配图的镜像重复）：照常保存，但把首条提示到 toast，其余进控制台
+    // 非致命告警（如未知方向形态键）：照常保存，但把首条提示到 toast，其余进控制台
     const warnings = validation.warnings || [];
     if (warnings.length > 0) {
       console.warn('骨骼资产告警：\n' + warnings.map(w => `${w.path || ''}: ${w.message || ''}`).join('\n'));
@@ -7728,6 +7763,7 @@ export class SkeletonEditor {
             runtime2D: { mode: 'skeleton', path: `assets/skeletons/${this.doc.skeletonId}.json` }
           });
           this._refreshAssetSelect();
+          this._refreshAssetInfo(); // 首次保存后 JSON 路径就绪，信息条从「未保存」切换为真实路径
         }
         const savedText = this.editingTemplate
           ? '模板已写回 templates/（不影响已创建的骨骼资产）'

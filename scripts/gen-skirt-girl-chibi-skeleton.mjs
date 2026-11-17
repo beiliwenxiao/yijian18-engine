@@ -187,20 +187,30 @@ const w = (value, view) => Math.max(1, Math.round(value * view.narrow));
 
 /* ---------------- 部件绘制（中心 (32,32) = 骨点；三头身放大版） ---------------- */
 
-/** 头部：内容 y16~48（头顶 y16 / 下巴 y48，头高 32px），后发可溢出到 y14~50。 */
+/** 头部：内容 y16~48（头顶 y16 / 下巴 y48，头高 32px）；披肩长发溢出到 y50。
+ * 2026-11-17 用户裁定：不要丸子头，要正常披肩长发——薄刘海露额头 + 两侧长发垂到肩下。 */
 function drawHead(pixels, view) {
   const cx = view.cx;
   const hairCy = 30 + (view.face === 'back' ? 1 : 0);
-  // 后发（先画，脸盖在上面）：大头是三头身观感的核心
-  fillEllipse(pixels, cx, hairCy, w(16, view), 17, PALETTE.hair, PALETTE.hairLine);
+  // 后发（先画，脸盖在上面）：圆顶 + 大头是三头身观感的核心
+  fillEllipse(pixels, cx, hairCy, w(16, view), 16, PALETTE.hair, PALETTE.hairLine);
+  if (view.face === 'side') {
+    // 侧视：脑后长发垂到肩下（脸盖在其上，只露外侧一条）
+    fillRect(pixels, cx - w(14, view), 26, cx - w(5, view), 48, PALETTE.hair, PALETTE.hairLine);
+  }
   if (view.face !== 'back') {
     // 脸
     const faceCx = cx + (view.face === 'side' ? 1 : 0);
     fillEllipse(pixels, faceCx, 37, w(12, view), 11, PALETTE.skin, PALETTE.skinLine);
-    // 刘海 + 侧发
-    fillEllipse(pixels, faceCx, 27, w(13, view), 6, PALETTE.hair, PALETTE.hairLine);
-    fillRect(pixels, faceCx - w(12, view), 27, faceCx - w(8, view), 36, PALETTE.hair, PALETTE.hairLine);
-    fillRect(pixels, faceCx + w(8, view), 27, faceCx + w(12, view), 36, PALETTE.hair, PALETTE.hairLine);
+    // 薄刘海（露额头）
+    fillEllipse(pixels, faceCx, 25, w(13, view), 5, PALETTE.hair, PALETTE.hairLine);
+    if (view.face !== 'side') {
+      // 两侧长发：贴脸轮廓垂到肩下（发梢收窄成两缕）
+      fillRect(pixels, faceCx - w(15, view), 25, faceCx - w(11, view), 46, PALETTE.hair, PALETTE.hairLine);
+      fillRect(pixels, faceCx + w(11, view), 25, faceCx + w(15, view), 46, PALETTE.hair, PALETTE.hairLine);
+      fillRect(pixels, faceCx - w(14, view), 47, faceCx - w(12, view), 50, PALETTE.hair, PALETTE.hairLine);
+      fillRect(pixels, faceCx + w(12, view), 47, faceCx + w(14, view), 50, PALETTE.hair, PALETTE.hairLine);
+    }
     if (view.face === 'side') {
       // 侧脸：单眼 + 鼻尖
       put(pixels, cx + 7, 39, rgb(DARK)); put(pixels, cx + 7, 40, rgb(DARK));
@@ -219,8 +229,9 @@ function drawHead(pixels, view) {
       fillRect(pixels, faceCx + 8, 43, faceCx + 8, 44, rgb('#e8a98c'));
     }
   } else {
-    // 背面：满后发 + 发带
-    fillRect(pixels, cx - 14, 34, cx + 14, 44, PALETTE.hair, PALETTE.hairLine);
+    // 背面：长发披背（垂过发际到 y48+）+ 发带
+    fillRect(pixels, cx - w(14, view), 27, cx + w(14, view), 48, PALETTE.hair, PALETTE.hairLine);
+    fillRect(pixels, cx - w(13, view), 49, cx + w(13, view), 50, PALETTE.hair, PALETTE.hairLine);
     fillRect(pixels, cx - w(14, view), 24, cx + w(14, view), 26, PALETTE.ribbon);
   }
 }

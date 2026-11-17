@@ -24,7 +24,7 @@
  *   - 侧向左右：sprite.flipX 整体镜像（side 姿态 + flip=左）
  */
 
-import { weaponKeyOf } from './SkeletonPartResolver.js';
+import { weaponKeyOf, resolveItemVisual } from './SkeletonPartResolver.js';
 import { createPlayerLpcFrameMapper } from './PlayerLpcFrameMapper.js';
 import { isJumpClipName, resolveJumpClipName } from './SkeletonJumpClip.js';
 import { resolveActionClip, resolveDiscreteClip } from './AnimationActionResolver.js';
@@ -93,6 +93,88 @@ function collectInventoryWeaponKeys(entity) {
 }
 
 /**
+ * 防具槽位联动约定（与武器槽 parseWeaponSlot 同风格：骨架预建 + 槽位 ID 命名约定）：
+ *   EquipmentComponent 装备槽 → 骨架防具槽位组。
+ *   目标槽位解析优先级：物品 skeletonPart.slots 显式声明 > 装备槽 kind 映射表（下表）。
+ *   显式声明让饰品类（accessory 槽的护腕/腰带等）也能上身——物品声明即意图，零映射器改动扩展。
+ *   骨架未预建对应槽位时该装备不上身（零回归，与武器收纳槽缺失同语义）。
+ *   靴子左右脚各一槽位，共用同一件装备的部件图（脚部部件左右对称）。
+ */
+const ARMOR_EQUIP_KINDS = [
+  { equipKey: 'armor', kind: 'torso' },
+  { equipKey: 'pants', kind: 'skirt' },   // pants 槽接受 pants/skirt 两种 subType（见 EquipmentComponent.isValidEquipmentForSlot）
+  { equipKey: 'boots', kind: 'boots' },
+  { equipKey: 'helmet', kind: 'helmet' },
+  { equipKey: 'accessory', kind: 'accessory' }  // 护腕等饰品类：仅物品显式声明 slots 才上身
+];
+
+const ARMOR_KIND_SLOT_IDS = {
+  torso: ['armorTorso'],
+  skirt: ['armorSkirt'],
+  boots: ['armorBootL', 'armorBootR'],
+  helmet: ['helmet']
+};
+
+/**
+ * 解析防具装备状态（胸甲/裤裙/靴/头盔）。
+ * 签名（各装备槽物品标识拼接）变化才写覆盖层——与 weaponState 守卫同模式。
+ * @returns {{items:Object, sig:string}}
+ */
+function resolveArmorState(entity) {
+  const equipment = entity?.getComponent?.('equipment');
+  const items = {};
+  const sigParts = [];
+  for (const { equipKey, kind } of ARMOR_EQUIP_KINDS) {
+    const item = equipment?.getEquipment?.(equipKey) || null;
+    items[kind] = item;
+    sigParts.push(`${equipKey}=${item?.definitionId || item?.id || ''}`);
+  }
+  return { items, sig: sigParts.join('|') };
+}
+
+/**
+ * 防具槽位联动写入实体本地覆盖层（不触碰共享资产）：
+ *   目标槽位 = 物品 skeletonPart.slots 显式声明（护腕等饰品类由此上身）> 装备槽 kind 映射表；
+ *   有装备且物品带部件视觉 → 换图覆盖（visible + type:image + assetId/尺寸/方向形态）；
+ *   未装备 / 物品无部件绑定 / 骨架无对应槽位 → 槽位隐藏（恢复 empty 语义）。
+ * @param {Object} skeletonComponent - 覆盖层宿主
+ * @param {Object} asset - parseSkeletonAsset 产物（只读）
+ * @param {Object} armorState - resolveArmorState 产物
+ * @returns {Set<string>} 本轮写了换图覆盖（visible）的槽位集合——
+ *          调用方用于清理「上次声明、本轮不再覆盖」的残留（如卸下 slots 声明的护腕）
+ */
+function updateArmorSlots(skeletonComponent, asset, armorState) {
+  const written = new Set();
+  for (const { kind } of ARMOR_EQUIP_KINDS) {
+    const item = armorState.items[kind];
+    const visual = resolveItemVisual(item);
+    // 显式声明槽位（数组）优先；未声明回退装备槽 kind 映射表（卸下/无绑定也走映射表恢复隐藏）
+    const declared = item?.skeletonPart?.slots;
+    const slotIds = Array.isArray(declared) && declared.length > 0
+      ? declared
+      : (ARMOR_KIND_SLOT_IDS[kind] || []);
+    for (const slotId of slotIds) {
+      const slot = asset.slots.find(candidate => candidate.id === slotId);
+      if (!slot) continue; // 骨架未预建该防具槽位（旧资产零回归）
+      if (!visual) {
+        skeletonComponent.setSlotOverride(slotId, { visible: false, type: 'empty', assetId: '' });
+        continue;
+      }
+      skeletonComponent.setSlotOverride(slotId, {
+        visible: true,
+        type: 'image',
+        assetId: visual.assetId,
+        ...(visual.width > 0 ? { width: visual.width } : {}),
+        ...(visual.height > 0 ? { height: visual.height } : {}),
+        ...(visual.directionOffsets ? { directionOffsets: visual.directionOffsets } : {})
+      });
+      written.add(slotId);
+    }
+  }
+  return written;
+}
+
+/**
  * 解析武器来源（主手/副手装备 + 背包库存）。
  * - mainhandKey：主手装备的武器 key（未装备为空）
  * - offhandKey：副手装备的 key（盾类，用于盾槽联动）
@@ -155,6 +237,8 @@ export function createPlayerSkeletonStateMapper(entity, { getAssetManager = null
   let mapperHold = '';
   let lastFacingKey = '';
   let lastWeaponState = ''; // 武器槽位联动守卫：heldKey|ownedKeys 签名变化才写覆盖层
+  let lastArmorState = '';              // 防具槽位联动守卫：胸甲/裤裙/靴/头盔装备签名变化才写覆盖层
+  let lastArmorWrittenSlots = new Set(); // 上轮写了换图覆盖的防具槽位（残留清理用：卸下 slots 声明的装备后隐藏）
   let autoDrawnKey = '';     // 战斗中自动上手的武器（进战斗瞬间主手空 → 背包里挑一把拔出）
   let wasInCombat = false;   // 上一帧是否处于战斗态（用于判定「进战斗瞬间」）
   let lpcHook = null;        // 整帧模式（LPC）映射器：按资产 meta.frameMode 分流
@@ -197,15 +281,30 @@ export function createPlayerSkeletonStateMapper(entity, { getAssetManager = null
       lastWeaponState = weaponState;
       updateWeaponSlots(entity, skeletonComponent, asset, heldKey, ownedKeys, offhandHeldKey);
     }
+    // 防具槽位联动：装备签名变化才写覆盖层（穿/脱装备下一帧自动上身/卸下）；
+    // 残留清理：上次换图覆盖、本轮不再覆盖的槽位（如卸下 slots 声明的护腕）写隐藏
+    const armorState = resolveArmorState(entity);
+    if (armorState.sig !== lastArmorState) {
+      lastArmorState = armorState.sig;
+      const written = updateArmorSlots(skeletonComponent, asset, armorState);
+      for (const slotId of lastArmorWrittenSlots) {
+        if (!written.has(slotId)) {
+          skeletonComponent.setSlotOverride(slotId, { visible: false, type: 'empty', assetId: '' });
+        }
+      }
+      lastArmorWrittenSlots = written;
+    }
 
     // 头部槽位切换 + 侧向镜像 + 背挂换边（方向键变化时才写覆盖层，避免每帧触碰）。
     // 提取为闭包函数：跳跃 hold 保持期间也调用——空中改变方向时头部/背挂跟随变化
     const applyFacing = () => {
       const facing = sprite?.direction || 'down';
       const key = resolveDirectionKey(facing);
-      // 左系朝向（left / 斜左下 SW / 斜左上 NW）由整体 flipX 镜像。
+      // 左系朝向（left / 斜左下 SW / 斜左上 NW）默认由整体 flipX 镜像。
       // 资产声明 meta.noMirrorFacing=true 时改用各形态自己的美术（sideL/SW/NW 切片），不再镜像——
       // 一手刀一手盾这类左右不对称角色，镜像会把武器换到另一只手。
+      // 混合资产（部分槽位配了专属图、部分靠镜像）无需此开关：渲染器按槽位判定，
+      // 配置了专属图的形态（sideL / 与 SE/NE 异图的 SW/NW）自动免镜像，未配置的照旧镜像。
       const wantFlip = isMirroredFacing(facing) && asset.meta?.noMirrorFacing !== true;
       if (sprite.flipX !== wantFlip) sprite.flipX = wantFlip;
       // side 键下 left/right 共用剪辑与侧脸头，头的翻转依赖 facing → 守卫需区分两者

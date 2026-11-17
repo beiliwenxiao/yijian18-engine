@@ -207,6 +207,11 @@
       "assetId": "s01.equipment.wolfHideVest",
       "maxStack": 1,
       "rarity": 1,
+      "skeletonPart": {
+        "assetId": "player.parts.wolf-hide-vest",
+        "height": 64,
+        "width": 64
+      },
       "sprite": {
         "height": 52,
         "width": 46
@@ -225,6 +230,15 @@
       "assetId": "s01.equipment.wolfHideBracers",
       "maxStack": 1,
       "rarity": 1,
+      "skeletonPart": {
+        "assetId": "player.parts.wolf-hide-bracers",
+        "height": 64,
+        "slots": [
+          "armorWristL",
+          "armorWristR"
+        ],
+        "width": 64
+      },
       "sprite": {
         "height": 40,
         "width": 48
@@ -243,6 +257,11 @@
       "assetId": "s01.equipment.wolfHideSkirt",
       "maxStack": 1,
       "rarity": 1,
+      "skeletonPart": {
+        "assetId": "player.parts.wolf-hide-skirt",
+        "height": 64,
+        "width": 64
+      },
       "sprite": {
         "height": 44,
         "width": 46
@@ -261,6 +280,11 @@
       "assetId": "s01.equipment.wolfHideBoots",
       "maxStack": 1,
       "rarity": 1,
+      "skeletonPart": {
+        "assetId": "player.parts.wolf-hide-boots",
+        "height": 64,
+        "width": 64
+      },
       "sprite": {
         "height": 34,
         "width": 42
@@ -4677,7 +4701,7 @@
         "radius": 30,
         "shiftPx": 6
       },
-      "skeletonId": "skeleton.female-hero",
+      "skeletonId": "skeleton.player",
       "sprite": {
         "cols": 4,
         "frameHeight": 64,
@@ -4687,8 +4711,8 @@
       },
       "useSkeletonAnimation": true,
       "visual": {
-        "height": 110,
-        "width": 120
+        "height": 96,
+        "width": 96
       }
     }
   ],

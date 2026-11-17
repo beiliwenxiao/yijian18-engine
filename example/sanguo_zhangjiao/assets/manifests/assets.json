@@ -6600,7 +6600,7 @@
       "animations": [],
       "targetPhase": "P1",
       "status": "placeholder",
-      "revision": 88
+      "revision": 94
     },
     {
       "assetId": "skeleton.player-humanoid",
@@ -13273,6 +13273,146 @@
       "targetPhase": "P1",
       "status": "ai-generated",
       "revision": 3
+    },
+    {
+      "assetId": "player.parts.wolf-hide-vest",
+      "imageId": "player.parts.wolf-hide-vest",
+      "category": "character-part",
+      "usage": [
+        "equipment-part"
+      ],
+      "sourceFile": "assets/images/player/parts/wolf-hide-vest.png",
+      "runtime2D": {
+        "path": "assets/images/player/parts/wolf-hide-vest.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player.parts.wolf-hide-vest"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player.parts.wolf-hide-skirt",
+      "imageId": "player.parts.wolf-hide-skirt",
+      "category": "character-part",
+      "usage": [
+        "equipment-part"
+      ],
+      "sourceFile": "assets/images/player/parts/wolf-hide-skirt.png",
+      "runtime2D": {
+        "path": "assets/images/player/parts/wolf-hide-skirt.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player.parts.wolf-hide-skirt"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player.parts.wolf-hide-boots",
+      "imageId": "player.parts.wolf-hide-boots",
+      "category": "character-part",
+      "usage": [
+        "equipment-part"
+      ],
+      "sourceFile": "assets/images/player/parts/wolf-hide-boots.png",
+      "runtime2D": {
+        "path": "assets/images/player/parts/wolf-hide-boots.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player.parts.wolf-hide-boots"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player.parts.wolf-hide-bracers",
+      "imageId": "player.parts.wolf-hide-bracers",
+      "category": "character-part",
+      "usage": [
+        "equipment-part"
+      ],
+      "sourceFile": "assets/images/player/parts/wolf-hide-bracers.png",
+      "runtime2D": {
+        "path": "assets/images/player/parts/wolf-hide-bracers.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player.parts.wolf-hide-bracers"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
     }
   ]
 }
