@@ -415,8 +415,8 @@ function buildDoc() {
     // 跳跃（正/背视）：下蹲 → 腾空收腿 → 落地缓冲
     clip('jump_down', 500, false, [
       { bone: 'root', keys: [
-        { t: 0, y: 0 }, { t: 120, y: 2, ease: 'easeInOut' }, { t: 200, y: -12, ease: 'easeOut' },
-        { t: 320, y: -12 }, { t: 420, y: 3, ease: 'easeIn' }, { t: 500, y: 0, ease: 'easeInOut' }
+        { t: 0, y: 0 }, { t: 120, y: 2, ease: 'easeInOut' }, { t: 200, y: -12, ease: 'easeInOut' },
+        { t: 320, y: -12 }, { t: 420, y: 3, ease: 'easeInOut' }, { t: 500, y: 0, ease: 'easeInOut' }
       ] },
       { bone: 'legL', keys: [
         { t: 0, rot: 0 }, { t: 120, rot: 8, ease: 'easeInOut' }, { t: 200, rot: -10, ease: 'easeInOut' },
@@ -439,8 +439,8 @@ function buildDoc() {
     // 跳跃（背视）
     clip('jump_up', 500, false, [
       { bone: 'root', keys: [
-        { t: 0, y: 0 }, { t: 120, y: 2, ease: 'easeInOut' }, { t: 200, y: -12, ease: 'easeOut' },
-        { t: 320, y: -12 }, { t: 420, y: 3, ease: 'easeIn' }, { t: 500, y: 0, ease: 'easeInOut' }
+        { t: 0, y: 0 }, { t: 120, y: 2, ease: 'easeInOut' }, { t: 200, y: -12, ease: 'easeInOut' },
+        { t: 320, y: -12 }, { t: 420, y: 3, ease: 'easeInOut' }, { t: 500, y: 0, ease: 'easeInOut' }
       ] },
       { bone: 'legL', keys: [
         { t: 0, rot: 0 }, { t: 120, rot: 8, ease: 'easeInOut' }, { t: 200, rot: -10, ease: 'easeInOut' },
@@ -463,8 +463,8 @@ function buildDoc() {
     // 跳跃（侧视）：腿前后分 → 收 → 落
     clip('jump_side', 500, false, [
       { bone: 'root', keys: [
-        { t: 0, y: 0 }, { t: 120, y: 2, ease: 'easeInOut' }, { t: 200, y: -12, ease: 'easeOut' },
-        { t: 320, y: -12 }, { t: 420, y: 3, ease: 'easeIn' }, { t: 500, y: 0, ease: 'easeInOut' }
+        { t: 0, y: 0 }, { t: 120, y: 2, ease: 'easeInOut' }, { t: 200, y: -12, ease: 'easeInOut' },
+        { t: 320, y: -12 }, { t: 420, y: 3, ease: 'easeInOut' }, { t: 500, y: 0, ease: 'easeInOut' }
       ] },
       { bone: 'legL', keys: [
         { t: 0, rot: 0 }, { t: 120, rot: 10, ease: 'easeInOut' }, { t: 200, rot: -18, ease: 'easeInOut' },

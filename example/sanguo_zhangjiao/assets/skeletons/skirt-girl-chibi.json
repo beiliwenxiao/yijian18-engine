@@ -1844,7 +1844,7 @@
             {
               "t": 200,
               "y": -12,
-              "ease": "easeOut"
+              "ease": "linear"
             },
             {
               "t": 320,
@@ -1854,7 +1854,7 @@
             {
               "t": 420,
               "y": 3,
-              "ease": "easeIn"
+              "ease": "linear"
             },
             {
               "t": 500,
@@ -2031,7 +2031,7 @@
             {
               "t": 200,
               "y": -12,
-              "ease": "easeOut"
+              "ease": "linear"
             },
             {
               "t": 320,
@@ -2041,7 +2041,7 @@
             {
               "t": 420,
               "y": 3,
-              "ease": "easeIn"
+              "ease": "linear"
             },
             {
               "t": 500,
@@ -2218,7 +2218,7 @@
             {
               "t": 200,
               "y": -12,
-              "ease": "easeOut"
+              "ease": "linear"
             },
             {
               "t": 320,
@@ -2228,7 +2228,7 @@
             {
               "t": 420,
               "y": 3,
-              "ease": "easeIn"
+              "ease": "linear"
             },
             {
               "t": 500,

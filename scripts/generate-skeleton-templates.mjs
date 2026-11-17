@@ -12,11 +12,18 @@
 
 /**
  * generate-skeleton-templates.mjs
- * 生成 7 个骨架模板（tpl.*）到 assets/skeletons/templates/：
+ * 生成 9 个骨架模板（tpl.*）到 assets/skeletons/templates/：
  *   humanoid / wolf / horse / mounted / siege_ram / siege_catapult / siege_tower
+ *   + humanoid-realistic / chibi-standard（2026-11-17：标准动作集模板，见下）
  * 模板 = 普通骨架 JSON（同构 player.json），槽位全部 empty 占位，仅带 idle 微动剪辑。
  * 使用即深拷贝（编辑器「新建自模板」），与模板无数据关联（设计文档 〇、模板独立性原则）。
  * 重复运行幂等。用法：node scripts/generate-skeleton-templates.mjs
+ *
+ * 标准动作集模板（用户裁定 2026-11-17：以两组标准骨骼动作为基准）：
+ *   tpl.humanoid-realistic ← player-female.json 派生（16 骨写实 + 28 动作）
+ *   tpl.chibi-standard     ← skirt-girl-chibi.json 派生（9 骨三头身 + 30 动作）
+ * bones/clips 整体深拷贝自标准资产（动作随标准资产迭代重跑本脚本同步），
+ * 槽位重置为 empty 占位（挂图由使用者在编辑器自行绑定）。
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -51,6 +58,23 @@ function makeDoc(templateId, meta, builders) {
     bones,
     slots: slotBones.map((b, index) => slotFor(b.id, index + 1)),
     clips: [{ name: 'idle', durationMs: builders.idleMs, loop: true, tracks: builders.idleTracks() }]
+  };
+}
+
+/** 标准动作集模板：bones/clips/meta 深拷贝自标准资产，槽位重置 empty（幂等派生）。 */
+function deriveStandardTemplate(templateId, sourceFile) {
+  const sourcePath = path.join(root, `example/sanguo_zhangjiao/assets/skeletons/${sourceFile}`);
+  const source = JSON.parse(fs.readFileSync(sourcePath, 'utf8'));
+  const bones = JSON.parse(JSON.stringify(source.bones));
+  const slotBones = bones.filter(b => b.parent !== null);
+  return {
+    schemaVersion: 1,
+    skeletonId: templateId,
+    meta: JSON.parse(JSON.stringify(source.meta || { width: 64, height: 96 })),
+    defaultClip: source.defaultClip,
+    bones,
+    slots: slotBones.map((b, index) => slotFor(b.id, index + 1)),
+    clips: JSON.parse(JSON.stringify(source.clips))
   };
 }
 
@@ -191,6 +215,10 @@ const TEMPLATES = {
     idleTracks: () => [wiggle('towerL3', 1, 3000), wiggle('top_platform', 1, 3000)]
   })
 };
+
+// 标准动作集模板（随标准资产迭代重跑本脚本同步）
+TEMPLATES['tpl.humanoid-realistic'] = deriveStandardTemplate('tpl.humanoid-realistic', 'player-female.json');
+TEMPLATES['tpl.chibi-standard'] = deriveStandardTemplate('tpl.chibi-standard', 'skirt-girl-chibi.json');
 
 fs.mkdirSync(outDir, { recursive: true });
 for (const [templateId, doc] of Object.entries(TEMPLATES)) {

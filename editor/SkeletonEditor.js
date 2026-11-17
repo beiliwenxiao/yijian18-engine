@@ -1341,7 +1341,7 @@ export class SkeletonEditor {
         return (da ? dirOrder.indexOf(da) : -1) - (db ? dirOrder.indexOf(db) : -1);
       });
       const isDirectional = list.some(clip => this._directionFromClip(clip.name));
-      const label = isDirectional ? action : `${action}（单方向）`;
+      const label = isDirectional ? SkeletonEditor._displayName(action) : `${SkeletonEditor._displayName(action)}（单方向）`;
       return `<optgroup label="${label}">`
         + list.map(clip => `<option value="${clip.name}">${SkeletonEditor._displayName(clip.name)}</option>`).join('')
         + '</optgroup>';
@@ -2626,7 +2626,7 @@ export class SkeletonEditor {
     }
     clipSelect.innerHTML = [...groups.entries()].map(([action, list]) => {
       const isDirectional = list.some(name => name !== action);
-      const label = isDirectional ? action : `${action}（单方向）`;
+      const label = isDirectional ? SkeletonEditor._displayName(action) : `${SkeletonEditor._displayName(action)}（单方向）`;
       return `<optgroup label="${label}">`
         + list.map(name => `<option value="${name}" ${name === this.currentClip ? 'selected' : ''}>${name}</option>`).join('')
         + '</optgroup>';
@@ -4651,6 +4651,12 @@ export class SkeletonEditor {
       gather: '采集(gather)', logging: '砍伐(logging)', mining: '挖矿(mining)', fishing: '钓鱼(fishing)',
       climb_back: '攀爬(climb_back)', sleep: '睡觉(sleep)', stretcher: '担架(stretcher)',
       death: '死亡(death)', soul: '灵魂(soul)',
+      // 裸动作名（clip 下拉一级组显示）+ 标准动作集补录
+      idle: '待机(idle)', walk: '行走(walk)',
+      hurt: '受击(hurt)',
+      sit: '坐下(sit)', sit_up: '起身-坐(sit_up)',
+      lie: '躺下(lie)', lie_up: '起身-躺(lie_up)',
+      attack_down: '攻击-下(attack_down)', attack_side: '攻击-侧(attack_side)', attack_up: '攻击-上(attack_up)',
       legThighL: '左大腿(legThighL)', legThighR: '右大腿(legThighR)',
       legCalfL: '左小腿(legCalfL)', legCalfR: '右小腿(legCalfR)',
       // 图片 assetId 通用部件名（剥离 player.parts. 前缀后的 key）

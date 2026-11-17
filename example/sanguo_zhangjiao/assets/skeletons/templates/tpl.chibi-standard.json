@@ -1,0 +1,4032 @@
+{
+  "schemaVersion": 1,
+  "skeletonId": "tpl.chibi-standard",
+  "meta": {
+    "width": 64,
+    "height": 96
+  },
+  "defaultClip": "idle_down",
+  "bones": [
+    {
+      "id": "root",
+      "parent": null,
+      "x": 0,
+      "y": 0,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 10
+    },
+    {
+      "id": "hips",
+      "parent": "root",
+      "x": 0,
+      "y": -32,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 14
+    },
+    {
+      "id": "torso",
+      "parent": "hips",
+      "x": 0,
+      "y": 0,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 18
+    },
+    {
+      "id": "head",
+      "parent": "torso",
+      "x": 0,
+      "y": -48,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 16
+    },
+    {
+      "id": "skirt",
+      "parent": "hips",
+      "x": 0,
+      "y": 2,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 16
+    },
+    {
+      "id": "armL",
+      "parent": "torso",
+      "x": -10,
+      "y": -30,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 18
+    },
+    {
+      "id": "armR",
+      "parent": "torso",
+      "x": 10,
+      "y": -30,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 18
+    },
+    {
+      "id": "legL",
+      "parent": "hips",
+      "x": -5,
+      "y": 0,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 22
+    },
+    {
+      "id": "legR",
+      "parent": "hips",
+      "x": 5,
+      "y": 0,
+      "rot": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "length": 22
+    }
+  ],
+  "slots": [
+    {
+      "id": "slot_hips",
+      "bone": "hips",
+      "z": 1,
+      "visible": true,
+      "locked": false,
+      "attachment": {
+        "type": "empty"
+      }
+    },
+    {
+      "id": "slot_torso",
+      "bone": "torso",
+      "z": 2,
+      "visible": true,
+      "locked": false,
+      "attachment": {
+        "type": "empty"
+      }
+    },
+    {
+      "id": "slot_head",
+      "bone": "head",
+      "z": 3,
+      "visible": true,
+      "locked": false,
+      "attachment": {
+        "type": "empty"
+      }
+    },
+    {
+      "id": "slot_skirt",
+      "bone": "skirt",
+      "z": 4,
+      "visible": true,
+      "locked": false,
+      "attachment": {
+        "type": "empty"
+      }
+    },
+    {
+      "id": "slot_armL",
+      "bone": "armL",
+      "z": 5,
+      "visible": true,
+      "locked": false,
+      "attachment": {
+        "type": "empty"
+      }
+    },
+    {
+      "id": "slot_armR",
+      "bone": "armR",
+      "z": 6,
+      "visible": true,
+      "locked": false,
+      "attachment": {
+        "type": "empty"
+      }
+    },
+    {
+      "id": "slot_legL",
+      "bone": "legL",
+      "z": 7,
+      "visible": true,
+      "locked": false,
+      "attachment": {
+        "type": "empty"
+      }
+    },
+    {
+      "id": "slot_legR",
+      "bone": "legR",
+      "z": 8,
+      "visible": true,
+      "locked": false,
+      "attachment": {
+        "type": "empty"
+      }
+    }
+  ],
+  "clips": [
+    {
+      "name": "idle_down",
+      "durationMs": 1400,
+      "loop": true,
+      "tracks": [
+        {
+          "bone": "root",
+          "keys": [
+            {
+              "t": 0,
+              "y": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 467,
+              "y": -1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 933,
+              "y": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "torso",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -1,
+              "ease": "linear"
+            },
+            {
+              "t": 467,
+              "rot": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 933,
+              "rot": -1,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "skirt",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -1.5,
+              "ease": "linear"
+            },
+            {
+              "t": 467,
+              "rot": 1.5,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 933,
+              "rot": -1.5,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "head",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 467,
+              "rot": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 933,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "idle_side",
+      "durationMs": 1400,
+      "loop": true,
+      "tracks": [
+        {
+          "bone": "root",
+          "keys": [
+            {
+              "t": 0,
+              "y": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 467,
+              "y": -1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 933,
+              "y": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "torso",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -1.5,
+              "ease": "linear"
+            },
+            {
+              "t": 467,
+              "rot": 0.5,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 933,
+              "rot": -1.5,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "skirt",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -2,
+              "ease": "linear"
+            },
+            {
+              "t": 467,
+              "rot": 2,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 933,
+              "rot": -2,
+              "ease": "easeInOut"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "idle_up",
+      "durationMs": 1400,
+      "loop": true,
+      "tracks": [
+        {
+          "bone": "root",
+          "keys": [
+            {
+              "t": 0,
+              "y": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 467,
+              "y": -1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 933,
+              "y": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "torso",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -1,
+              "ease": "linear"
+            },
+            {
+              "t": 467,
+              "rot": 1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 933,
+              "rot": -1,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "skirt",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -1.5,
+              "ease": "linear"
+            },
+            {
+              "t": 467,
+              "rot": 1.5,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 933,
+              "rot": -1.5,
+              "ease": "easeInOut"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "walk_down",
+      "durationMs": 640,
+      "loop": true,
+      "tracks": [
+        {
+          "bone": "root",
+          "keys": [
+            {
+              "t": 0,
+              "y": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 160,
+              "y": -2,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 320,
+              "y": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 480,
+              "y": -2,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "torso",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -1.5,
+              "ease": "linear"
+            },
+            {
+              "t": 213,
+              "rot": 1.5,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 427,
+              "rot": -1.5,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "skirt",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -5,
+              "ease": "linear"
+            },
+            {
+              "t": 213,
+              "rot": 5,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 427,
+              "rot": -5,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "legL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -3,
+              "ease": "linear"
+            },
+            {
+              "t": 160,
+              "rot": 6,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 320,
+              "rot": -3,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 480,
+              "rot": 6,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "legR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 6,
+              "ease": "linear"
+            },
+            {
+              "t": 160,
+              "rot": -3,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 320,
+              "rot": 6,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 480,
+              "rot": -3,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "armL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 8,
+              "ease": "linear"
+            },
+            {
+              "t": 213,
+              "rot": -8,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 427,
+              "rot": 8,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "armR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -8,
+              "ease": "linear"
+            },
+            {
+              "t": 213,
+              "rot": 8,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 427,
+              "rot": -8,
+              "ease": "easeInOut"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "walk_SE",
+      "durationMs": 640,
+      "loop": true,
+      "tracks": [
+        {
+          "bone": "root",
+          "keys": [
+            {
+              "t": 0,
+              "y": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 160,
+              "y": -2,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 320,
+              "y": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 480,
+              "y": -2,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "torso",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -1.5,
+              "ease": "linear"
+            },
+            {
+              "t": 213,
+              "rot": 1.5,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 427,
+              "rot": -1.5,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "skirt",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -5,
+              "ease": "linear"
+            },
+            {
+              "t": 213,
+              "rot": 5,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 427,
+              "rot": -5,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "legL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -3,
+              "ease": "linear"
+            },
+            {
+              "t": 160,
+              "rot": 6,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 320,
+              "rot": -3,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 480,
+              "rot": 6,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "legR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 6,
+              "ease": "linear"
+            },
+            {
+              "t": 160,
+              "rot": -3,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 320,
+              "rot": 6,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 480,
+              "rot": -3,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "armL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 8,
+              "ease": "linear"
+            },
+            {
+              "t": 213,
+              "rot": -8,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 427,
+              "rot": 8,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "armR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -8,
+              "ease": "linear"
+            },
+            {
+              "t": 213,
+              "rot": 8,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 427,
+              "rot": -8,
+              "ease": "easeInOut"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "walk_SW",
+      "durationMs": 640,
+      "loop": true,
+      "tracks": [
+        {
+          "bone": "root",
+          "keys": [
+            {
+              "t": 0,
+              "y": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 160,
+              "y": -2,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 320,
+              "y": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 480,
+              "y": -2,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "torso",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -1.5,
+              "ease": "linear"
+            },
+            {
+              "t": 213,
+              "rot": 1.5,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 427,
+              "rot": -1.5,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "skirt",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -5,
+              "ease": "linear"
+            },
+            {
+              "t": 213,
+              "rot": 5,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 427,
+              "rot": -5,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "legL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -3,
+              "ease": "linear"
+            },
+            {
+              "t": 160,
+              "rot": 6,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 320,
+              "rot": -3,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 480,
+              "rot": 6,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "legR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 6,
+              "ease": "linear"
+            },
+            {
+              "t": 160,
+              "rot": -3,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 320,
+              "rot": 6,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 480,
+              "rot": -3,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "armL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 8,
+              "ease": "linear"
+            },
+            {
+              "t": 213,
+              "rot": -8,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 427,
+              "rot": 8,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "armR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -8,
+              "ease": "linear"
+            },
+            {
+              "t": 213,
+              "rot": 8,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 427,
+              "rot": -8,
+              "ease": "easeInOut"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "walk_side",
+      "durationMs": 620,
+      "loop": true,
+      "tracks": [
+        {
+          "bone": "root",
+          "keys": [
+            {
+              "t": 0,
+              "y": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 155,
+              "y": -2.5,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 310,
+              "y": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 465,
+              "y": -2.5,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "torso",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -2,
+              "ease": "linear"
+            },
+            {
+              "t": 207,
+              "rot": 2,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 413,
+              "rot": -2,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "skirt",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -6,
+              "ease": "linear"
+            },
+            {
+              "t": 207,
+              "rot": 6,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 413,
+              "rot": -6,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "legL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -15,
+              "ease": "linear"
+            },
+            {
+              "t": 155,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 310,
+              "rot": 15,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 465,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "legR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 15,
+              "ease": "linear"
+            },
+            {
+              "t": 155,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 310,
+              "rot": -15,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 465,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "armL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 10.5,
+              "ease": "linear"
+            },
+            {
+              "t": 155,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 310,
+              "rot": -10.5,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 465,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "armR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -10.5,
+              "ease": "linear"
+            },
+            {
+              "t": 155,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 310,
+              "rot": 10.5,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 465,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "walk_up",
+      "durationMs": 640,
+      "loop": true,
+      "tracks": [
+        {
+          "bone": "root",
+          "keys": [
+            {
+              "t": 0,
+              "y": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 160,
+              "y": -2,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 320,
+              "y": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 480,
+              "y": -2,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "torso",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -1.5,
+              "ease": "linear"
+            },
+            {
+              "t": 213,
+              "rot": 1.5,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 427,
+              "rot": -1.5,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "skirt",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -5,
+              "ease": "linear"
+            },
+            {
+              "t": 213,
+              "rot": 5,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 427,
+              "rot": -5,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "legL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -3,
+              "ease": "linear"
+            },
+            {
+              "t": 160,
+              "rot": 6,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 320,
+              "rot": -3,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 480,
+              "rot": 6,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "legR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 6,
+              "ease": "linear"
+            },
+            {
+              "t": 160,
+              "rot": -3,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 320,
+              "rot": 6,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 480,
+              "rot": -3,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "armL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 8,
+              "ease": "linear"
+            },
+            {
+              "t": 213,
+              "rot": -8,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 427,
+              "rot": 8,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "armR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -8,
+              "ease": "linear"
+            },
+            {
+              "t": 213,
+              "rot": 8,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 427,
+              "rot": -8,
+              "ease": "easeInOut"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "walk_NE",
+      "durationMs": 640,
+      "loop": true,
+      "tracks": [
+        {
+          "bone": "root",
+          "keys": [
+            {
+              "t": 0,
+              "y": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 160,
+              "y": -2,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 320,
+              "y": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 480,
+              "y": -2,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "torso",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -1.5,
+              "ease": "linear"
+            },
+            {
+              "t": 213,
+              "rot": 1.5,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 427,
+              "rot": -1.5,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "skirt",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -5,
+              "ease": "linear"
+            },
+            {
+              "t": 213,
+              "rot": 5,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 427,
+              "rot": -5,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "legL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -3,
+              "ease": "linear"
+            },
+            {
+              "t": 160,
+              "rot": 6,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 320,
+              "rot": -3,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 480,
+              "rot": 6,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "legR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 6,
+              "ease": "linear"
+            },
+            {
+              "t": 160,
+              "rot": -3,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 320,
+              "rot": 6,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 480,
+              "rot": -3,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "armL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 8,
+              "ease": "linear"
+            },
+            {
+              "t": 213,
+              "rot": -8,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 427,
+              "rot": 8,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "armR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -8,
+              "ease": "linear"
+            },
+            {
+              "t": 213,
+              "rot": 8,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 427,
+              "rot": -8,
+              "ease": "easeInOut"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "walk_NW",
+      "durationMs": 640,
+      "loop": true,
+      "tracks": [
+        {
+          "bone": "root",
+          "keys": [
+            {
+              "t": 0,
+              "y": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 160,
+              "y": -2,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 320,
+              "y": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 480,
+              "y": -2,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "torso",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -1.5,
+              "ease": "linear"
+            },
+            {
+              "t": 213,
+              "rot": 1.5,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 427,
+              "rot": -1.5,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "skirt",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -5,
+              "ease": "linear"
+            },
+            {
+              "t": 213,
+              "rot": 5,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 427,
+              "rot": -5,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "legL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -3,
+              "ease": "linear"
+            },
+            {
+              "t": 160,
+              "rot": 6,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 320,
+              "rot": -3,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 480,
+              "rot": 6,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "legR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 6,
+              "ease": "linear"
+            },
+            {
+              "t": 160,
+              "rot": -3,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 320,
+              "rot": 6,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 480,
+              "rot": -3,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "armL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 8,
+              "ease": "linear"
+            },
+            {
+              "t": 213,
+              "rot": -8,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 427,
+              "rot": 8,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "armR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -8,
+              "ease": "linear"
+            },
+            {
+              "t": 213,
+              "rot": 8,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 427,
+              "rot": -8,
+              "ease": "easeInOut"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "jump_down",
+      "durationMs": 500,
+      "loop": false,
+      "tracks": [
+        {
+          "bone": "root",
+          "keys": [
+            {
+              "t": 0,
+              "y": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 120,
+              "y": 2,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 200,
+              "y": -12,
+              "ease": "linear"
+            },
+            {
+              "t": 320,
+              "y": -12,
+              "ease": "linear"
+            },
+            {
+              "t": 420,
+              "y": 3,
+              "ease": "linear"
+            },
+            {
+              "t": 500,
+              "y": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "legL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 120,
+              "rot": 8,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 200,
+              "rot": -10,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 320,
+              "rot": -10,
+              "ease": "linear"
+            },
+            {
+              "t": 420,
+              "rot": 8,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 500,
+              "rot": 0,
+              "ease": "linear"
+            }
+          ]
+        },
+        {
+          "bone": "legR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 120,
+              "rot": -8,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 200,
+              "rot": 10,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 320,
+              "rot": 10,
+              "ease": "linear"
+            },
+            {
+              "t": 420,
+              "rot": -8,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 500,
+              "rot": 0,
+              "ease": "linear"
+            }
+          ]
+        },
+        {
+          "bone": "skirt",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 200,
+              "rot": -8,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 320,
+              "rot": 6,
+              "ease": "linear"
+            },
+            {
+              "t": 500,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "armL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 120,
+              "rot": -20,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 320,
+              "rot": -30,
+              "ease": "linear"
+            },
+            {
+              "t": 500,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "armR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 120,
+              "rot": 20,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 320,
+              "rot": 30,
+              "ease": "linear"
+            },
+            {
+              "t": 500,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "jump_up",
+      "durationMs": 500,
+      "loop": false,
+      "tracks": [
+        {
+          "bone": "root",
+          "keys": [
+            {
+              "t": 0,
+              "y": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 120,
+              "y": 2,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 200,
+              "y": -12,
+              "ease": "linear"
+            },
+            {
+              "t": 320,
+              "y": -12,
+              "ease": "linear"
+            },
+            {
+              "t": 420,
+              "y": 3,
+              "ease": "linear"
+            },
+            {
+              "t": 500,
+              "y": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "legL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 120,
+              "rot": 8,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 200,
+              "rot": -10,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 320,
+              "rot": -10,
+              "ease": "linear"
+            },
+            {
+              "t": 420,
+              "rot": 8,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 500,
+              "rot": 0,
+              "ease": "linear"
+            }
+          ]
+        },
+        {
+          "bone": "legR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 120,
+              "rot": -8,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 200,
+              "rot": 10,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 320,
+              "rot": 10,
+              "ease": "linear"
+            },
+            {
+              "t": 420,
+              "rot": -8,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 500,
+              "rot": 0,
+              "ease": "linear"
+            }
+          ]
+        },
+        {
+          "bone": "skirt",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 200,
+              "rot": 8,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 320,
+              "rot": -6,
+              "ease": "linear"
+            },
+            {
+              "t": 500,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "armL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 120,
+              "rot": 20,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 320,
+              "rot": 30,
+              "ease": "linear"
+            },
+            {
+              "t": 500,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "armR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 120,
+              "rot": -20,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 320,
+              "rot": -30,
+              "ease": "linear"
+            },
+            {
+              "t": 500,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "jump_side",
+      "durationMs": 500,
+      "loop": false,
+      "tracks": [
+        {
+          "bone": "root",
+          "keys": [
+            {
+              "t": 0,
+              "y": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 120,
+              "y": 2,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 200,
+              "y": -12,
+              "ease": "linear"
+            },
+            {
+              "t": 320,
+              "y": -12,
+              "ease": "linear"
+            },
+            {
+              "t": 420,
+              "y": 3,
+              "ease": "linear"
+            },
+            {
+              "t": 500,
+              "y": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "legL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 120,
+              "rot": 10,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 200,
+              "rot": -18,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 320,
+              "rot": -18,
+              "ease": "linear"
+            },
+            {
+              "t": 420,
+              "rot": 12,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 500,
+              "rot": 0,
+              "ease": "linear"
+            }
+          ]
+        },
+        {
+          "bone": "legR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 120,
+              "rot": -10,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 200,
+              "rot": 18,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 320,
+              "rot": 18,
+              "ease": "linear"
+            },
+            {
+              "t": 420,
+              "rot": -12,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 500,
+              "rot": 0,
+              "ease": "linear"
+            }
+          ]
+        },
+        {
+          "bone": "skirt",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 200,
+              "rot": -7,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 320,
+              "rot": 5,
+              "ease": "linear"
+            },
+            {
+              "t": 500,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "armL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 200,
+              "rot": -25,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 500,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "armR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 200,
+              "rot": 25,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 500,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "attack_down",
+      "durationMs": 340,
+      "loop": false,
+      "tracks": [
+        {
+          "bone": "armR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -55,
+              "ease": "linear"
+            },
+            {
+              "t": 150,
+              "rot": 45,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 340,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "torso",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -4,
+              "ease": "linear"
+            },
+            {
+              "t": 150,
+              "rot": 7,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 340,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "skirt",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 150,
+              "rot": -6,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 340,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "armL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 8,
+              "ease": "linear"
+            },
+            {
+              "t": 150,
+              "rot": -12,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 340,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "attack_side",
+      "durationMs": 340,
+      "loop": false,
+      "tracks": [
+        {
+          "bone": "armR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -70,
+              "ease": "linear"
+            },
+            {
+              "t": 150,
+              "rot": 50,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 340,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "torso",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -5,
+              "ease": "linear"
+            },
+            {
+              "t": 150,
+              "rot": 8,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 340,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "skirt",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 150,
+              "rot": -7,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 340,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "armL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 10,
+              "ease": "linear"
+            },
+            {
+              "t": 150,
+              "rot": -15,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 340,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "attack_up",
+      "durationMs": 340,
+      "loop": false,
+      "tracks": [
+        {
+          "bone": "armR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -50,
+              "ease": "linear"
+            },
+            {
+              "t": 150,
+              "rot": 40,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 340,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "torso",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 4,
+              "ease": "linear"
+            },
+            {
+              "t": 150,
+              "rot": -7,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 340,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "skirt",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 150,
+              "rot": 6,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 340,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "armL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -8,
+              "ease": "linear"
+            },
+            {
+              "t": 150,
+              "rot": 12,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 340,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "hurt",
+      "durationMs": 260,
+      "loop": false,
+      "tracks": [
+        {
+          "bone": "torso",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 90,
+              "rot": -13,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 260,
+              "rot": -3,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "head",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 90,
+              "rot": -9,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 260,
+              "rot": -2,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "root",
+          "keys": [
+            {
+              "t": 0,
+              "x": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 90,
+              "x": -3,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 260,
+              "x": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "armL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 90,
+              "rot": 16,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 260,
+              "rot": 4,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "armR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 90,
+              "rot": 16,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 260,
+              "rot": 4,
+              "ease": "easeInOut"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "death",
+      "durationMs": 520,
+      "loop": false,
+      "tracks": [
+        {
+          "bone": "hips",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "y": -32,
+              "ease": "linear"
+            },
+            {
+              "t": 380,
+              "rot": 85,
+              "y": -12,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 520,
+              "rot": 85,
+              "y": -12,
+              "ease": "linear"
+            }
+          ]
+        },
+        {
+          "bone": "torso",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 260,
+              "rot": 12,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 520,
+              "rot": 4,
+              "ease": "linear"
+            }
+          ]
+        },
+        {
+          "bone": "head",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 380,
+              "rot": 12,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 520,
+              "rot": 12,
+              "ease": "linear"
+            }
+          ]
+        },
+        {
+          "bone": "skirt",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 380,
+              "rot": 18,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 520,
+              "rot": 18,
+              "ease": "linear"
+            }
+          ]
+        },
+        {
+          "bone": "legL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 380,
+              "rot": 10,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 520,
+              "rot": 10,
+              "ease": "linear"
+            }
+          ]
+        },
+        {
+          "bone": "legR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 380,
+              "rot": -8,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 520,
+              "rot": -8,
+              "ease": "linear"
+            }
+          ]
+        },
+        {
+          "bone": "armL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 380,
+              "rot": 28,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 520,
+              "rot": 28,
+              "ease": "linear"
+            }
+          ]
+        },
+        {
+          "bone": "armR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 380,
+              "rot": -28,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 520,
+              "rot": -28,
+              "ease": "linear"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "soul",
+      "durationMs": 2200,
+      "loop": true,
+      "tracks": [
+        {
+          "bone": "hips",
+          "keys": [
+            {
+              "t": 0,
+              "y": -55,
+              "ease": "linear"
+            },
+            {
+              "t": 550,
+              "y": -59,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1100,
+              "y": -63,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1650,
+              "y": -59,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "torso",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -3,
+              "ease": "linear"
+            },
+            {
+              "t": 550,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1100,
+              "rot": 3,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1650,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "head",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -2,
+              "ease": "linear"
+            },
+            {
+              "t": 550,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1100,
+              "rot": 2,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1650,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "skirt",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -2,
+              "ease": "linear"
+            },
+            {
+              "t": 733,
+              "rot": 2,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1467,
+              "rot": -2,
+              "ease": "easeInOut"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "gather",
+      "durationMs": 900,
+      "loop": true,
+      "tracks": [
+        {
+          "bone": "root",
+          "keys": [
+            {
+              "t": 0,
+              "y": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 225,
+              "y": -2,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 450,
+              "y": -3,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 675,
+              "y": -2,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "torso",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 225,
+              "rot": 14,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 450,
+              "rot": 28,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 675,
+              "rot": 14,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "armR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 225,
+              "rot": -25,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 450,
+              "rot": -50,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 675,
+              "rot": -25,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "armL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 225,
+              "rot": -6,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 450,
+              "rot": -12,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 675,
+              "rot": -6,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "legL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 300,
+              "rot": -5,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "rot": -5,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "legR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 300,
+              "rot": 5,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "rot": 5,
+              "ease": "easeInOut"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "logging",
+      "durationMs": 1100,
+      "loop": true,
+      "tracks": [
+        {
+          "bone": "root",
+          "keys": [
+            {
+              "t": 0,
+              "y": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 275,
+              "y": -1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 550,
+              "y": -2,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 825,
+              "y": -1,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "torso",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -6,
+              "ease": "linear"
+            },
+            {
+              "t": 275,
+              "rot": 5,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 550,
+              "rot": 16,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 825,
+              "rot": 5,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "armR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 99,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 275,
+              "rot": 16.5,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 550,
+              "rot": -66,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 825,
+              "rot": 16.5,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "armL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 275,
+              "rot": -10,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 550,
+              "rot": -18,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 825,
+              "rot": -10,
+              "ease": "easeInOut"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "mining",
+      "durationMs": 800,
+      "loop": true,
+      "tracks": [
+        {
+          "bone": "root",
+          "keys": [
+            {
+              "t": 0,
+              "y": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 200,
+              "y": -1,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "y": -2,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "y": -1,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "armR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 74,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 200,
+              "rot": 11.5,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "rot": -51,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "rot": 11.5,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "armL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 20,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 200,
+              "rot": 10,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "rot": 10,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "torso",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 200,
+              "rot": 4,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 400,
+              "rot": 9,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "rot": 4,
+              "ease": "easeInOut"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "fishing",
+      "durationMs": 2200,
+      "loop": true,
+      "tracks": [
+        {
+          "bone": "torso",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 550,
+              "rot": 2,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1100,
+              "rot": 4,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1650,
+              "rot": 3,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "armR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 44,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 550,
+              "rot": 9,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1100,
+              "rot": -26,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1650,
+              "rot": -5,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "armL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -10,
+              "ease": "linear"
+            },
+            {
+              "t": 550,
+              "rot": -10,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1100,
+              "rot": -8,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1650,
+              "rot": -10,
+              "ease": "easeInOut"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "climb_back",
+      "durationMs": 700,
+      "loop": true,
+      "tracks": [
+        {
+          "bone": "hips",
+          "keys": [
+            {
+              "t": 0,
+              "y": -32,
+              "ease": "linear"
+            },
+            {
+              "t": 175,
+              "y": -34,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 350,
+              "y": -36,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 525,
+              "y": -34,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "torso",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 3,
+              "ease": "linear"
+            },
+            {
+              "t": 175,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 350,
+              "rot": -3,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 525,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "armR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 174,
+              "ease": "linear"
+            },
+            {
+              "t": 175,
+              "rot": 141.5,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 350,
+              "rot": 109,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 525,
+              "rot": 141.5,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "armL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -115,
+              "ease": "linear"
+            },
+            {
+              "t": 175,
+              "rot": -147.5,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 350,
+              "rot": -180,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 525,
+              "rot": -147.5,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "legL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 175,
+              "rot": 12,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 350,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 525,
+              "rot": -12,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "legR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 175,
+              "rot": -12,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 350,
+              "rot": 0,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 525,
+              "rot": 12,
+              "ease": "easeInOut"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "sit",
+      "durationMs": 480,
+      "loop": false,
+      "tracks": [
+        {
+          "bone": "hips",
+          "keys": [
+            {
+              "t": 0,
+              "y": -32,
+              "ease": "linear"
+            },
+            {
+              "t": 480,
+              "y": -16,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "legL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 480,
+              "rot": -55,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "legR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 480,
+              "rot": 55,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "torso",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 480,
+              "rot": 4,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "head",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 480,
+              "rot": -3,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "armL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 480,
+              "rot": 14,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "armR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 480,
+              "rot": 14,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "skirt",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 480,
+              "rot": 3,
+              "ease": "easeInOut"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "sit_up",
+      "durationMs": 480,
+      "loop": false,
+      "tracks": [
+        {
+          "bone": "hips",
+          "keys": [
+            {
+              "t": 0,
+              "y": -16,
+              "ease": "linear"
+            },
+            {
+              "t": 480,
+              "y": -32,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "legL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -55,
+              "ease": "linear"
+            },
+            {
+              "t": 480,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "legR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 55,
+              "ease": "linear"
+            },
+            {
+              "t": 480,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "torso",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 4,
+              "ease": "linear"
+            },
+            {
+              "t": 480,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "head",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -3,
+              "ease": "linear"
+            },
+            {
+              "t": 480,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "armL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 14,
+              "ease": "linear"
+            },
+            {
+              "t": 480,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "armR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 14,
+              "ease": "linear"
+            },
+            {
+              "t": 480,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "skirt",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 3,
+              "ease": "linear"
+            },
+            {
+              "t": 480,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "lie",
+      "durationMs": 640,
+      "loop": false,
+      "tracks": [
+        {
+          "bone": "hips",
+          "keys": [
+            {
+              "t": 0,
+              "y": -32,
+              "rot": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 320,
+              "y": -22,
+              "rot": -45,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 640,
+              "y": -8,
+              "rot": -90,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "torso",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 320,
+              "rot": 10,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 640,
+              "rot": 10,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "head",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 320,
+              "rot": 4,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 640,
+              "rot": 4,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "armL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 320,
+              "rot": -14,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 640,
+              "rot": -14,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "armR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 320,
+              "rot": -14,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 640,
+              "rot": -14,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "skirt",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 0,
+              "ease": "linear"
+            },
+            {
+              "t": 640,
+              "rot": 8,
+              "ease": "easeInOut"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "lie_up",
+      "durationMs": 640,
+      "loop": false,
+      "tracks": [
+        {
+          "bone": "hips",
+          "keys": [
+            {
+              "t": 0,
+              "y": -8,
+              "rot": -90,
+              "ease": "linear"
+            },
+            {
+              "t": 320,
+              "y": -22,
+              "rot": -45,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 640,
+              "y": -32,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "torso",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 10,
+              "ease": "linear"
+            },
+            {
+              "t": 320,
+              "rot": 10,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 640,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "head",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 4,
+              "ease": "linear"
+            },
+            {
+              "t": 320,
+              "rot": 4,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 640,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "armL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -14,
+              "ease": "linear"
+            },
+            {
+              "t": 320,
+              "rot": -14,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 640,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "armR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -14,
+              "ease": "linear"
+            },
+            {
+              "t": 320,
+              "rot": -14,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 640,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "skirt",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 8,
+              "ease": "linear"
+            },
+            {
+              "t": 640,
+              "rot": 0,
+              "ease": "easeInOut"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "sleep",
+      "durationMs": 2400,
+      "loop": true,
+      "tracks": [
+        {
+          "bone": "hips",
+          "keys": [
+            {
+              "t": 0,
+              "y": -8,
+              "rot": -90,
+              "ease": "linear"
+            },
+            {
+              "t": 600,
+              "y": -8.5,
+              "rot": -89.5,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1200,
+              "y": -9,
+              "rot": -89,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1800,
+              "y": -8.5,
+              "rot": -89.5,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "head",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 4,
+              "ease": "linear"
+            },
+            {
+              "t": 600,
+              "rot": 5,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1200,
+              "rot": 6,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 1800,
+              "rot": 5,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "legL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -6,
+              "ease": "linear"
+            }
+          ]
+        },
+        {
+          "bone": "legR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 6,
+              "ease": "linear"
+            }
+          ]
+        },
+        {
+          "bone": "armL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -25,
+              "ease": "linear"
+            }
+          ]
+        },
+        {
+          "bone": "armR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 19,
+              "ease": "linear"
+            }
+          ]
+        },
+        {
+          "bone": "skirt",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 8,
+              "ease": "linear"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "stretcher",
+      "durationMs": 1200,
+      "loop": true,
+      "tracks": [
+        {
+          "bone": "hips",
+          "keys": [
+            {
+              "t": 0,
+              "y": -10,
+              "rot": -88,
+              "ease": "linear"
+            },
+            {
+              "t": 300,
+              "y": -11.5,
+              "rot": -87,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 600,
+              "y": -13,
+              "rot": -86,
+              "ease": "easeInOut"
+            },
+            {
+              "t": 900,
+              "y": -11.5,
+              "rot": -87,
+              "ease": "easeInOut"
+            }
+          ]
+        },
+        {
+          "bone": "legL",
+          "keys": [
+            {
+              "t": 0,
+              "rot": -6,
+              "ease": "linear"
+            }
+          ]
+        },
+        {
+          "bone": "legR",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 6,
+              "ease": "linear"
+            }
+          ]
+        },
+        {
+          "bone": "skirt",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 8,
+              "ease": "linear"
+            }
+          ]
+        },
+        {
+          "bone": "head",
+          "keys": [
+            {
+              "t": 0,
+              "rot": 3,
+              "ease": "linear"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

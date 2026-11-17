@@ -230,19 +230,9 @@
   ],
   "slots": [
     {
-      "id": "slot_spine",
-      "bone": "spine",
-      "z": 1,
-      "visible": true,
-      "locked": false,
-      "attachment": {
-        "type": "empty"
-      }
-    },
-    {
       "id": "slot_chest",
       "bone": "chest",
-      "z": 2,
+      "z": 1,
       "visible": true,
       "locked": false,
       "attachment": {
@@ -252,7 +242,7 @@
     {
       "id": "slot_neck1",
       "bone": "neck1",
-      "z": 3,
+      "z": 2,
       "visible": true,
       "locked": false,
       "attachment": {
@@ -262,7 +252,7 @@
     {
       "id": "slot_neck2",
       "bone": "neck2",
-      "z": 4,
+      "z": 3,
       "visible": true,
       "locked": false,
       "attachment": {
@@ -272,7 +262,7 @@
     {
       "id": "slot_head",
       "bone": "head",
-      "z": 5,
+      "z": 4,
       "visible": true,
       "locked": false,
       "attachment": {
@@ -282,7 +272,7 @@
     {
       "id": "slot_tail1",
       "bone": "tail1",
-      "z": 6,
+      "z": 5,
       "visible": true,
       "locked": false,
       "attachment": {
@@ -292,7 +282,7 @@
     {
       "id": "slot_tail2",
       "bone": "tail2",
-      "z": 7,
+      "z": 6,
       "visible": true,
       "locked": false,
       "attachment": {
@@ -302,7 +292,7 @@
     {
       "id": "slot_saddle",
       "bone": "saddle",
-      "z": 8,
+      "z": 7,
       "visible": true,
       "locked": false,
       "attachment": {
@@ -312,7 +302,7 @@
     {
       "id": "slot_legFL_upper",
       "bone": "legFL_upper",
-      "z": 9,
+      "z": 8,
       "visible": true,
       "locked": false,
       "attachment": {
@@ -322,7 +312,7 @@
     {
       "id": "slot_legFL_lower",
       "bone": "legFL_lower",
-      "z": 10,
+      "z": 9,
       "visible": true,
       "locked": false,
       "attachment": {
@@ -332,7 +322,7 @@
     {
       "id": "slot_legHL_upper",
       "bone": "legHL_upper",
-      "z": 11,
+      "z": 10,
       "visible": true,
       "locked": false,
       "attachment": {
@@ -342,7 +332,7 @@
     {
       "id": "slot_legHL_lower",
       "bone": "legHL_lower",
-      "z": 12,
+      "z": 11,
       "visible": true,
       "locked": false,
       "attachment": {
@@ -352,7 +342,7 @@
     {
       "id": "slot_rider_torso",
       "bone": "rider_torso",
-      "z": 13,
+      "z": 12,
       "visible": true,
       "locked": false,
       "attachment": {
@@ -362,7 +352,7 @@
     {
       "id": "slot_rider_head",
       "bone": "rider_head",
-      "z": 14,
+      "z": 13,
       "visible": true,
       "locked": false,
       "attachment": {
@@ -372,7 +362,7 @@
     {
       "id": "slot_rider_armUL",
       "bone": "rider_armUL",
-      "z": 15,
+      "z": 14,
       "visible": true,
       "locked": false,
       "attachment": {
@@ -382,7 +372,7 @@
     {
       "id": "slot_rider_armFL",
       "bone": "rider_armFL",
-      "z": 16,
+      "z": 15,
       "visible": true,
       "locked": false,
       "attachment": {
@@ -392,7 +382,7 @@
     {
       "id": "slot_rider_armUR",
       "bone": "rider_armUR",
-      "z": 17,
+      "z": 16,
       "visible": true,
       "locked": false,
       "attachment": {
@@ -402,7 +392,7 @@
     {
       "id": "slot_rider_armFR",
       "bone": "rider_armFR",
-      "z": 18,
+      "z": 17,
       "visible": true,
       "locked": false,
       "attachment": {
