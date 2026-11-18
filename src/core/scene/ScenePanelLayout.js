@@ -599,6 +599,11 @@ export class ScenePanelLayout {
       if (hudPanelDefinition) {
         scene.playerStatusHUD?.applyPanelDefinition?.(hudPanelDefinition);
       }
+      // 独立亲卫列表面板观感（面板编辑器「亲卫列表」面板：标题/成员格配色行高）
+      const companionListPanelDefinition = loaded ? loader.getPanel('companionListPanel') : null;
+      if (companionListPanelDefinition) {
+        scene.companionListPanel?.applyPanelDefinition?.(companionListPanelDefinition);
+      }
     } catch (error) {
       console.warn('BaseGameScene: 面板布局加载失败，使用默认', error);
     }

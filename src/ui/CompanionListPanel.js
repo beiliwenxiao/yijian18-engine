@@ -25,6 +25,8 @@ const TITLE_HEIGHT = 22;
  * - 名册数据由 getCompanionEntities 提供，玩家实体由 getPlayer 提供。
  *
  * 可见性由场景接线跟随背包面板（背包开则开、背包关则关），不自行管理开关。
+ * 观感由面板编辑器「亲卫列表」面板管理（PanelLayout.companionListPanel，
+ * applyPanelDefinition 消费；无定义时走内置默认）。
  */
 export class CompanionListPanel extends UIElement {
   constructor(options = {}) {
@@ -56,6 +58,67 @@ export class CompanionListPanel extends UIElement {
     this._cells = [];
     this._hovered = null;
     this._scroll = 0;
+    /** 面板编辑器定义（PanelLayout.companionListPanel）；null = 内置默认观感 */
+    this._panelDefinition = null;
+  }
+
+  /**
+   * 应用面板编辑器定义（PanelLayout.companionListPanel）。
+   * 面板级字段（backgroundColor/borderColor/borderWidth）直接套用外框观感；
+   * 部件按 type 消费：text = 标题（文本/颜色/字号/位置），member-cell = 成员格（行高/配色）。
+   * 部件缺失或无定义时对应项走内置默认（标题与成员格是面板全部内容，不随缺失隐藏）。
+   * 部件设计坐标按 def.width/def.height → 实际面板等比映射。
+   * @param {Object|null} def - { width, height, backgroundColor, borderColor, borderWidth, parts[] }
+   */
+  applyPanelDefinition(def) {
+    this._panelDefinition = def && typeof def === 'object' ? def : null;
+    if (this._panelDefinition) {
+      this.backgroundColor = this._panelDefinition.backgroundColor ?? this.backgroundColor;
+      this.borderColor = this._panelDefinition.borderColor ?? this.borderColor;
+      this.borderWidth = this._panelDefinition.borderWidth ?? this.borderWidth;
+    }
+  }
+
+  /** 标题部件样式（设计坐标 → 实际面板）；无定义返回 null = 内置默认。 */
+  _titleStyle() {
+    const def = this._panelDefinition;
+    const part = Array.isArray(def?.parts) ? def.parts.find(item => item.type === 'text') : null;
+    if (!part || !(Number(def.height) > 0)) return null;
+    const scaleY = this.height / Number(def.height);
+    const scaleX = Number(def.width) > 0 ? this.width / Number(def.width) : 1;
+    return {
+      text: String(part.text ?? '亲卫'),
+      color: part.color || '#c9a227',
+      fontSize: Math.max(8, Math.round((Number(part.fontSize) || 12) * scaleY)),
+      fontWeight: part.fontWeight || 'bold',
+      x: (Number(part.x) || 8) * scaleX,
+      y: (Number(part.y) || 5) * scaleY
+    };
+  }
+
+  /** 标题带高度（成员列表从标题带之下开始）；标题部件缺失时用内置高度。 */
+  _titleBandHeight() {
+    const def = this._panelDefinition;
+    const part = Array.isArray(def?.parts) ? def.parts.find(item => item.type === 'text') : null;
+    if (!part || !(Number(def.height) > 0)) return TITLE_HEIGHT;
+    const scaleY = this.height / Number(def.height);
+    const bottom = ((Number(part.y) || 5) + (Number(part.height) || 16)) * scaleY;
+    return Math.max(TITLE_HEIGHT, Math.round(bottom) + 1);
+  }
+
+  /** 成员格样式（行高/配色）；无定义返回 null = 内置默认。行高按面板高度等比映射。 */
+  _cellStyle() {
+    const def = this._panelDefinition;
+    const part = Array.isArray(def?.parts) ? def.parts.find(item => item.type === 'member-cell') : null;
+    if (!part || !(Number(def.height) > 0)) return null;
+    const scaleY = this.height / Number(def.height);
+    return {
+      entryHeight: Math.max(28, Math.round((Number(part.entryHeight) || Number(part.height) || ENTRY_HEIGHT) * scaleY)),
+      bgColor: part.bgColor || 'rgba(26, 47, 85, 0.6)',
+      borderColor: part.borderColor || 'rgba(196, 154, 82, 0.45)',
+      selectedBgColor: part.selectedBgColor || 'rgba(74, 58, 29, 0.9)',
+      selectedBorderColor: part.selectedBorderColor || '#ffe785'
+    };
   }
 
   /** 跟随背包面板定位：贴在背包左侧，留 6px 间距；左缘不足时夹到 4px。 */
@@ -90,8 +153,10 @@ export class CompanionListPanel extends UIElement {
     ctx.stroke();
     ctx.restore();
 
-    const titleHeight = TITLE_HEIGHT;
-    const entryHeight = ENTRY_HEIGHT;
+    const titleStyle = this._titleStyle();
+    const cellStyle = this._cellStyle();
+    const titleHeight = this._titleBandHeight();
+    const entryHeight = cellStyle?.entryHeight || ENTRY_HEIGHT;
     const maxScroll = this._maxScroll();
     const visibleCount = this._visibleCount();
     const startIndex = Math.min(this._scroll, maxScroll);
@@ -113,7 +178,7 @@ export class CompanionListPanel extends UIElement {
         height: entryHeight - 8
       };
       this._cells.push(cell);
-      this._drawCell(ctx, cell);
+      this._drawCell(ctx, cell, cellStyle);
     }
 
     // 滚动条
@@ -130,11 +195,12 @@ export class CompanionListPanel extends UIElement {
     }
     ctx.restore();
 
-    ctx.fillStyle = '#c9a227';
-    ctx.font = 'bold 12px Arial';
+    ctx.fillStyle = titleStyle?.color || '#c9a227';
+    const titleWeight = (titleStyle?.fontWeight || 'bold') === 'normal' ? '' : 'bold ';
+    ctx.font = `${titleWeight}${titleStyle?.fontSize || 12}px Arial`;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
-    ctx.fillText('亲卫', this.x + 8, this.y + 5);
+    ctx.fillText(titleStyle?.text || '亲卫', this.x + (titleStyle?.x ?? 8), this.y + (titleStyle?.y ?? 5));
     ctx.textBaseline = 'alphabetic';
   }
 
@@ -208,7 +274,7 @@ export class CompanionListPanel extends UIElement {
   }
 
   _visibleCount() {
-    return Math.max(1, Math.floor((this.height - TITLE_HEIGHT) / ENTRY_HEIGHT));
+    return Math.max(1, Math.floor((this.height - this._titleBandHeight()) / ENTRY_HEIGHT));
   }
 
   _maxScroll() {
@@ -227,7 +293,7 @@ export class CompanionListPanel extends UIElement {
   }
 
   /** 渲染单个成员格：选中/悬停底色 + 名字首字头像 + 名字 + 血条（亲卫队 HUD 同款）。 */
-  _drawCell(ctx, cell) {
+  _drawCell(ctx, cell, cellStyle = null) {
     const stats = cell.entity?.getComponent?.('stats') || null;
     const nameComponent = cell.entity?.getComponent?.('name');
     const rawName = nameComponent?.name || nameComponent?.displayName || cell.entity?.name || '';
@@ -237,10 +303,12 @@ export class CompanionListPanel extends UIElement {
     const dead = cell.entity?.isDead === true || cell.entity?.isDowned === true;
 
     ctx.fillStyle = selected
-      ? 'rgba(74, 58, 29, 0.9)'
-      : hovered ? 'rgba(35, 48, 85, 0.9)' : 'rgba(26, 47, 85, 0.6)';
+      ? (cellStyle?.selectedBgColor || 'rgba(74, 58, 29, 0.9)')
+      : hovered ? 'rgba(35, 48, 85, 0.9)' : (cellStyle?.bgColor || 'rgba(26, 47, 85, 0.6)');
     ctx.fillRect(cell.x, cell.y, cell.width, cell.height);
-    ctx.strokeStyle = selected ? '#ffe785' : 'rgba(196, 154, 82, 0.45)';
+    ctx.strokeStyle = selected
+      ? (cellStyle?.selectedBorderColor || '#ffe785')
+      : (cellStyle?.borderColor || 'rgba(196, 154, 82, 0.45)');
     ctx.lineWidth = selected ? 2 : 1;
     ctx.strokeRect(cell.x + 0.5, cell.y + 0.5, cell.width - 1, cell.height - 1);
 

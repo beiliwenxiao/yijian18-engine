@@ -177,6 +177,18 @@ const DEFAULT_PANELS = [
       { id: 'hpBar', type: 'hud-hp', label: '血条', x: 72, y: 30, width: 140, height: 14, fillColor: '', backgroundColor: '#3a0000', borderColor: '#000000' },
       { id: 'mpBar', type: 'hud-mp', label: '蓝条', x: 72, y: 50, width: 140, height: 14, fillColor: '#2288ff', backgroundColor: '#00163a', borderColor: '#000000' }
     ]
+  },
+  {
+    // 独立亲卫列表面板（运行时 CompanionListPanel 消费）：与背包互为独立面板，
+    // 外框位置随背包面板（开关联动）、宽高由运行时跟随背包——这里只管理观感：
+    // text 部件 = 标题（文本/颜色/字号/位置），member-cell 部件 = 成员格（行高/配色）。
+    // 部件缺失 = 该项走内置默认（标题与成员格是面板全部内容，不随缺失隐藏）。
+    id: 'companionListPanel', name: '亲卫列表', width: 80, height: 520,
+    backgroundColor: 'rgba(0, 0, 0, 0.88)', borderColor: '#c49a52', borderWidth: 2,
+    parts: [
+      { id: 'title', type: 'text', label: '标题', x: 8, y: 5, width: 60, height: 16, text: '亲卫', fontSize: 12, fontWeight: 'bold', color: '#c9a227', align: 'left' },
+      { id: 'memberCell', type: 'member-cell', label: '成员格', x: 4, y: 26, width: 72, height: 44, entryHeight: 48, bgColor: 'rgba(26, 47, 85, 0.6)', borderColor: 'rgba(196, 154, 82, 0.45)', selectedBgColor: 'rgba(74, 58, 29, 0.9)', selectedBorderColor: '#ffe785' }
+    ]
   }
 ];
 
@@ -204,7 +216,9 @@ const PART_TYPES = {
   'hud-avatar': { label: 'HUD头像', defaults: { ringColor: '#d4af37', ringWidth: 2 } },
   'hud-name': { label: 'HUD昵称', defaults: { color: '#ffffff', fontSize: 14, fontWeight: 'bold' } },
   'hud-hp': { label: 'HUD血条', defaults: { fillColor: '', backgroundColor: '#3a0000', borderColor: '#000000' } },
-  'hud-mp': { label: 'HUD蓝条', defaults: { fillColor: '#2288ff', backgroundColor: '#00163a', borderColor: '#000000' } }
+  'hud-mp': { label: 'HUD蓝条', defaults: { fillColor: '#2288ff', backgroundColor: '#00163a', borderColor: '#000000' } },
+  // 独立亲卫列表面板专属部件：运行时 CompanionListPanel 按 type 消费（缺失 = 内置默认观感）
+  'member-cell': { label: '成员格', defaults: { entryHeight: 48, bgColor: 'rgba(26, 47, 85, 0.6)', borderColor: 'rgba(196, 154, 82, 0.45)', selectedBgColor: 'rgba(74, 58, 29, 0.9)', selectedBorderColor: '#ffe785' } }
 };
 
 export class PanelEditor {
@@ -1142,6 +1156,36 @@ export class PanelEditor {
         break;
       }
 
+      case 'member-cell': {
+        // 亲卫列表成员格预览：底框 + 首字头像块 + 名字 + 血条（与游戏内渲染同构）
+        ctx.fillStyle = part.bgColor || 'rgba(26, 47, 85, 0.6)';
+        ctx.fillRect(x, y, width, height);
+        ctx.strokeStyle = part.borderColor || 'rgba(196, 154, 82, 0.45)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x + 0.5, y + 0.5, width - 1, height - 1);
+        const avatarSize = Math.min(height - 4, width * 0.42);
+        ctx.fillStyle = '#233055';
+        ctx.fillRect(x + 4, y + (height - avatarSize) / 2, avatarSize, avatarSize);
+        ctx.fillStyle = '#ffd166';
+        ctx.font = `bold ${Math.max(10, Math.round(avatarSize * 0.5))}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('卫', x + 4 + avatarSize / 2, y + height / 2);
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'alphabetic';
+        const textX = x + 4 + avatarSize + 5;
+        ctx.fillStyle = '#e8eef7';
+        ctx.font = '11px Arial';
+        ctx.fillText('亲卫', textX, y + 7);
+        const barY = y + height - 10;
+        const barWidth = Math.max(8, x + width - 5 - textX);
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        ctx.fillRect(textX, barY, barWidth, 4);
+        ctx.fillStyle = '#4caf50';
+        ctx.fillRect(textX, barY, Math.max(0, barWidth * 0.8), 4);
+        break;
+      }
+
       default:
         // 未知类型画占位框
         ctx.strokeStyle = '#f88';
@@ -1375,6 +1419,13 @@ export class PanelEditor {
         html += this._propRow('fillColor', '填充色', part.fillColor || '#2288ff', 'color');
         html += this._propRow('backgroundColor', '底色', part.backgroundColor || '#00163a', 'color');
         html += this._propRow('borderColor', '边框色', part.borderColor || '#000000', 'color');
+        break;
+      case 'member-cell':
+        html += this._propRow('entryHeight', '行高(像素)', part.entryHeight ?? part.height ?? 48, 'number');
+        html += this._propRow('bgColor', '底色', part.bgColor || 'rgba(26, 47, 85, 0.6)', 'text');
+        html += this._propRow('borderColor', '边框色', part.borderColor || 'rgba(196, 154, 82, 0.45)', 'text');
+        html += this._propRow('selectedBgColor', '选中底色', part.selectedBgColor || 'rgba(74, 58, 29, 0.9)', 'text');
+        html += this._propRow('selectedBorderColor', '选中边框色', part.selectedBorderColor || '#ffe785', 'text');
         break;
     }
     return html;
