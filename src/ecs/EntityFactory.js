@@ -427,6 +427,13 @@ export class EntityFactory {
       ? JSON.parse(JSON.stringify(enemyData.ai))
       : null;
     entity.lootTable = enemyData.lootTable || [];
+    // 头像与立绘三图（HUD/亲卫列表、对话框、背包立绘；Manifest 稳定 ID）
+    entity.avatarImageId = String(enemyData.avatar || '').trim() || null;
+    entity.dialogueAvatarImageId = String(enemyData.dialogueAvatar || '').trim() || null;
+    entity.portraitImageId = String(enemyData.portraitImage || '').trim() || null;
+    // 技能槽（最多 3 个，引用 combatSkills）：与 ai.attackActions 并存的静态技能配置
+    entity.skillIds = (Array.isArray(enemyData.skills) ? enemyData.skills : [])
+      .map(skillId => String(skillId || '').trim()).filter(Boolean).slice(0, 3);
     // 虚弱攻击上限（可选）：enemy.maxDamage > 0 时该敌人单次攻击伤害不超过此值
     //（结算跳过通用 1~5 随机下限，剧情弱狼 0~1 伤害即由此实现）。
     entity.maxDamage = Number(enemyData.maxDamage) > 0 ? Number(enemyData.maxDamage) : null;
@@ -605,14 +612,25 @@ export class EntityFactory {
       color: npcData.faction === 'hostile' ? '#ff6666' : '#ffffff'
     }));
 
-    // ---- 属性组件（可选，兼容 stats / baseStats）----
+    // ---- 属性组件（可选，兼容 stats / baseStats；level 为静态值，NPC 不参与升级）----
     const npcStats = npcData.stats || npcData.baseStats;
     if (npcStats) {
-      entity.addComponent(new StatsComponent(npcStats));
+      const statsComponent = new StatsComponent(npcStats);
+      const npcLevel = Number(npcData.level ?? npcStats.level);
+      if (Number.isFinite(npcLevel) && npcLevel > 0) statsComponent.level = npcLevel;
+      entity.addComponent(statsComponent);
     }
 
     // ---- NPC 组件（交互/对话/立绘/阵营）----
     entity.addComponent(new NpcComponent(npcData));
+
+    // ---- 头像与立绘三图（HUD/亲卫列表、对话框、背包立绘；Manifest 稳定 ID）----
+    entity.avatarImageId = String(npcData.avatar || '').trim() || null;
+    entity.dialogueAvatarImageId = String(npcData.dialogueAvatar || '').trim() || null;
+    entity.portraitImageId = String(npcData.portraitImage || '').trim() || null;
+    // 技能槽（最多 3 个，引用 combatSkills）：静态配置供玩家操控 NPC 战斗等后续功能消费
+    entity.skillIds = (Array.isArray(npcData.skills) ? npcData.skills : [])
+      .map(skillId => String(skillId || '').trim()).filter(Boolean).slice(0, 3);
 
     // 兼容旧字段
     entity.name = npcData.name;

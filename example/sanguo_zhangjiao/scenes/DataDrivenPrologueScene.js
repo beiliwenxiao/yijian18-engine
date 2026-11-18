@@ -219,7 +219,11 @@ export class DataDrivenPrologueScene extends BaseGameScene {
       getPlayer: () => this.playerEntity,
       getDialogueSystem: () => this.dialogueSystem,
       getShopSystem: () => this.shopSystem,
-      onInteract: target => this.gameLoader?.triggerSystem?.fire?.('interact', { target }),
+      onInteract: (target, npcEntity) => {
+        // 内容库对话头像：NPC 交互启动对话后注入实体，对话框回退读 dialogueAvatar
+        if (npcEntity) this.dialogueBox?.setActiveEntityPortrait?.(npcEntity);
+        this.gameLoader?.triggerSystem?.fire?.('interact', { target });
+      },
       showIdleText: ({ npc, text }) => this._presentNpcIdleText(npc, text)
     });
     this.context.services.npcInteraction = this._npcInteractionFlow;

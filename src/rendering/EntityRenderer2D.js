@@ -43,13 +43,17 @@ export class EntityRenderer2D {
   /**
    * 在 UI 面板矩形内绘制角色立绘（只画精灵与外观层，不画名字/血条）。
    * 复用世界渲染管线，因此已装备的武器/头部/躯干外观层会随当前装备同步显示。
+   * 实体配置了内容库立绘（portraitImage，Manifest 稳定 ID）时优先绘制该图片（contain 居中），
+   * 图片未就绪时回退实时精灵渲染（加载完成后自然切换）。
    * @param {CanvasRenderingContext2D} ctx
-   * @param {object} entity ECS 实体（玩家）
+   * @param {object} entity ECS 实体（玩家/亲卫展示实体）
    * @param {{x:number,y:number,width:number,height:number}} rect 面板内的立绘框
    * @param {{padding?:number,zoom?:number}} [options]
    * @returns {boolean} 是否完成绘制
    */
   renderPortrait(ctx, entity, rect, options = {}) {
+    const portraitImage = this._resolveEntityPortraitImage(entity);
+    if (portraitImage) return this._drawEntityPortraitImage(ctx, portraitImage, rect);
     const transform = entity?.getComponent?.('transform');
     const sprite = entity?.getComponent?.('sprite');
     if (!transform?.position || !sprite || !rect) return false;
@@ -78,6 +82,33 @@ export class EntityRenderer2D {
     const npc = entity.getComponent?.('npc');
     this._renderSprite(ctx, entity, sprite, npc, worldX, worldY, spriteWidth, spriteHeight);
     this._renderAppearanceLayers(ctx, sprite, worldX, worldY);
+    ctx.restore();
+    return true;
+  }
+
+  /** 实体背包立绘图解析：portraitImageId → AssetManager 懒加载（未就绪返回 null）。 */
+  _resolveEntityPortraitImage(entity) {
+    const imageId = String(entity?.portraitImageId || '').trim();
+    if (!imageId || !this.assetManager?.getImage) return null;
+    const img = this.assetManager.getImage(imageId);
+    return img && img.complete && img.naturalWidth > 0 ? img : null;
+  }
+
+  /** 背包立绘图绘制：contain 等比居中。 */
+  _drawEntityPortraitImage(ctx, img, rect) {
+    const scale = Math.min(rect.width / img.naturalWidth, rect.height / img.naturalHeight);
+    const drawWidth = img.naturalWidth * scale;
+    const drawHeight = img.naturalHeight * scale;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(rect.x, rect.y, rect.width, rect.height);
+    ctx.clip();
+    ctx.drawImage(
+      img,
+      rect.x + (rect.width - drawWidth) / 2,
+      rect.y + (rect.height - drawHeight) / 2,
+      drawWidth, drawHeight
+    );
     ctx.restore();
     return true;
   }

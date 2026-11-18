@@ -53,6 +53,8 @@ export class CompanionListPanel extends UIElement {
     this._getSelected = typeof options.getSelected === 'function' ? options.getSelected : null;
     /** 选中回写（scene → backpackPanel.selectCompanion） */
     this._onSelect = typeof options.onSelect === 'function' ? options.onSelect : null;
+    /** 资产管理器读取回调（成员头像 avatarImageId → Manifest 懒解析图片） */
+    this._getAssetManager = typeof options.getAssetManager === 'function' ? options.getAssetManager : null;
 
     this._entries = [];
     this._cells = [];
@@ -292,7 +294,17 @@ export class CompanionListPanel extends UIElement {
     return this._scroll !== before;
   }
 
-  /** 渲染单个成员格：选中/悬停底色 + 名字首字头像 + 名字 + 血条（亲卫队 HUD 同款）。 */
+  /** 实体头像解析：avatarImageId → AssetManager 懒加载（未就绪返回 null，下帧自然显示）。 */
+  _resolveAvatarImage(entity) {
+    const imageId = String(entity?.avatarImageId || '').trim();
+    if (!imageId) return null;
+    const assetManager = this._getAssetManager?.() || null;
+    if (!assetManager?.getImage) return null;
+    const img = assetManager.getImage(imageId);
+    return img && img.complete && img.naturalWidth > 0 ? img : null;
+  }
+
+  /** 渲染单个成员格：选中/悬停底色 + 头像图（首字兜底） + 名字 + 血条（亲卫队 HUD 同款）。 */
   _drawCell(ctx, cell, cellStyle = null) {
     const stats = cell.entity?.getComponent?.('stats') || null;
     const nameComponent = cell.entity?.getComponent?.('name');
@@ -312,17 +324,37 @@ export class CompanionListPanel extends UIElement {
     ctx.lineWidth = selected ? 2 : 1;
     ctx.strokeRect(cell.x + 0.5, cell.y + 0.5, cell.width - 1, cell.height - 1);
 
-    // 头像块：名字首字
+    // 头像块：实体 avatar 图片（内容库 avatar 字段，Manifest 懒解析），缺失时回退名字首字
     const avatarSize = Math.min(cell.height - 4, cell.width * 0.42);
     const avatarX = cell.x + 4;
     const avatarY = cell.y + (cell.height - avatarSize) / 2;
     ctx.fillStyle = dead ? '#3a3a3a' : '#233055';
     ctx.fillRect(avatarX, avatarY, avatarSize, avatarSize);
-    ctx.fillStyle = dead ? '#888888' : '#ffd166';
-    ctx.font = `bold ${Math.max(10, Math.round(avatarSize * 0.5))}px Arial`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(label.charAt(0), avatarX + avatarSize / 2, avatarY + avatarSize / 2);
+    const avatarImage = this._resolveAvatarImage(cell.entity);
+    if (avatarImage) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(avatarX, avatarY, avatarSize, avatarSize);
+      ctx.clip();
+      if (dead) ctx.globalAlpha *= 0.4;
+      // cover 裁剪居中：头像图可能非正方形
+      const scale = Math.max(avatarSize / avatarImage.naturalWidth, avatarSize / avatarImage.naturalHeight);
+      const drawWidth = avatarImage.naturalWidth * scale;
+      const drawHeight = avatarImage.naturalHeight * scale;
+      ctx.drawImage(
+        avatarImage,
+        avatarX + (avatarSize - drawWidth) / 2,
+        avatarY + (avatarSize - drawHeight) / 2,
+        drawWidth, drawHeight
+      );
+      ctx.restore();
+    } else {
+      ctx.fillStyle = dead ? '#888888' : '#ffd166';
+      ctx.font = `bold ${Math.max(10, Math.round(avatarSize * 0.5))}px Arial`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(label.charAt(0), avatarX + avatarSize / 2, avatarY + avatarSize / 2);
+    }
 
     // 名字 + 底部血条
     const textX = avatarX + avatarSize + 5;

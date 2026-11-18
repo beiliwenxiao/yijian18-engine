@@ -63,6 +63,14 @@ export class PlayerStatusHUD extends UIElement {
     if (options.avatarSrc) {
       this.setAvatar(options.avatarSrc);
     }
+    // 内容库主角头像兜底（选角预览缺失时）：Manifest 稳定 ID，等 AssetManager 就绪后懒解析。
+    // getLibraryAvatarImageId 逐帧轻查（内容库就绪时序不定），解析到 URL 即停止重试。
+    this._hasExplicitAvatar = Boolean(options.avatarSrc);
+    this._libraryAvatarImageId = options.avatarSrc ? null : (String(options.avatarImageId || '').trim() || null);
+    this._getLibraryAvatarImageId = options.avatarSrc ? null
+      : (typeof options.getLibraryAvatarImageId === 'function' ? options.getLibraryAvatarImageId : null);
+    this._getAssetManager = typeof options.getAssetManager === 'function' ? options.getAssetManager : null;
+    this._avatarResolveTried = false;
 
     // 血条/蓝条（几何由 _applyPanelMetrics 按面板尺寸推导）
     this.healthBar = new HealthBar({
@@ -101,6 +109,34 @@ export class PlayerStatusHUD extends UIElement {
       this.avatarLoaded = false;
     };
     img.src = src;
+  }
+
+  /**
+   * 设置内容库头像（Manifest 稳定 ID）：无直接 URL 时按 ID 经 AssetManager 懒解析。
+   * @param {string} imageId - library.players[].avatar 稳定 ID；空 = 清除
+   * @param {Function} [getAssetManager] - 资产管理器读取回调
+   */
+  setLibraryAvatar(imageId, getAssetManager = null) {
+    this._hasExplicitAvatar = false;
+    this._avatarResolveTried = false;
+    this._libraryAvatarImageId = String(imageId || '').trim() || null;
+    this._getLibraryAvatarImageId = null;
+    if (getAssetManager) this._getAssetManager = getAssetManager;
+  }
+
+  /** 内容库头像懒解析：内容库/Manifest 就绪前每帧轻查，解析到 URL 即切换并停止重试。 */
+  _ensureLibraryAvatar() {
+    if (this._hasExplicitAvatar || this.avatarLoaded || this._avatarResolveTried) return;
+    const imageId = this._getLibraryAvatarImageId?.() || this._libraryAvatarImageId;
+    if (!imageId) return;
+    const assetManager = this._getAssetManager?.();
+    if (!assetManager?.resolveManifestAsset) return;
+    const descriptor = assetManager.resolveManifestAsset(imageId, '2d');
+    if (descriptor?.url) {
+      this._avatarResolveTried = true;
+      this._libraryAvatarImageId = null;
+      this.setAvatar(descriptor.url);
+    }
   }
 
   /**
@@ -273,6 +309,7 @@ export class PlayerStatusHUD extends UIElement {
   render(ctx) {
     if (!this.visible || this.hiddenByLayout === true || !this.player) return;
     this._applyPanelMetrics();
+    this._ensureLibraryAvatar();
 
     const style = this._panelDefinition || {};
     const radius = Math.max(0, Number(style.cornerRadius) || 0) || 8;

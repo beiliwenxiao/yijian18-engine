@@ -144,6 +144,66 @@ describe('EntityFactory', () => {
       expect(stats.attack).toBe(5);
       expect(stats.defense).toBe(2);
     });
+
+    it('should pass through avatar/dialogueAvatar/portraitImage and skills', () => {
+      const enemy = factory.createEnemy({
+        templateId: 'slime',
+        name: 'Avatar Slime',
+        avatar: 'ui.avatar.enemy',
+        dialogueAvatar: 'ui.dialogue.enemy',
+        portraitImage: 'ui.portrait.enemy',
+        skills: ['skill_a', 'skill_b', 'skill_c', 'skill_d']
+      });
+
+      expect(enemy.avatarImageId).toBe('ui.avatar.enemy');
+      expect(enemy.dialogueAvatarImageId).toBe('ui.dialogue.enemy');
+      expect(enemy.portraitImageId).toBe('ui.portrait.enemy');
+      // 最多保留 3 个技能槽
+      expect(enemy.skillIds).toEqual(['skill_a', 'skill_b', 'skill_c']);
+    });
+
+    it('should leave image ids null when not configured (旧数据零回归)', () => {
+      const enemy = factory.createEnemy({ templateId: 'goblin', name: 'Goblin' });
+
+      expect(enemy.avatarImageId).toBeNull();
+      expect(enemy.dialogueAvatarImageId).toBeNull();
+      expect(enemy.portraitImageId).toBeNull();
+      expect(enemy.skillIds).toEqual([]);
+    });
+  });
+
+  describe('createNPC', () => {
+    it('should pass through avatar/dialogueAvatar/portraitImage and level/skills', () => {
+      const npc = factory.createNPC({
+        id: 'npc.test',
+        name: '测试NPC',
+        avatar: 'ui.avatar.npc',
+        dialogueAvatar: 'ui.dialogue.npc',
+        portraitImage: 'ui.portrait.npc',
+        level: 7,
+        stats: { maxHp: 120, attack: 9 },
+        skills: ['skill_fire', '', 'skill_ice', 'skill_extra']
+      });
+
+      expect(npc.avatarImageId).toBe('ui.avatar.npc');
+      expect(npc.dialogueAvatarImageId).toBe('ui.dialogue.npc');
+      expect(npc.portraitImageId).toBe('ui.portrait.npc');
+      // 空槽过滤 + 最多 3 个
+      expect(npc.skillIds).toEqual(['skill_fire', 'skill_ice', 'skill_extra']);
+      const stats = npc.getComponent('stats');
+      expect(stats.level).toBe(7);
+      expect(stats.maxHp).toBe(120);
+    });
+
+    it('should leave image ids null and skip stats when not configured (旧数据零回归)', () => {
+      const npc = factory.createNPC({ id: 'npc.legacy', name: '旧NPC' });
+
+      expect(npc.avatarImageId).toBeNull();
+      expect(npc.dialogueAvatarImageId).toBeNull();
+      expect(npc.portraitImageId).toBeNull();
+      expect(npc.skillIds).toEqual([]);
+      expect(npc.hasComponent('stats')).toBe(false);
+    });
   });
 
   describe('generateId', () => {

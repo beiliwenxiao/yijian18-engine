@@ -21,6 +21,19 @@ import { InputHints } from '../input/InputHints.js';
 import { sceneHasPlayerStronghold } from './PlayerStronghold.js';
 
 /**
+ * 内容库主角定义读取（与 DemoPlayerFactory.applyLibraryDefinition 同选择口径）：
+ * 选角 ID 命中优先，否则回退 id='player' 的默认主角定义。
+ * @returns {Object|null} library.players 条目；内容库未就绪返回 null
+ */
+function libraryPlayersDefinition(scene, selectedChar) {
+  const players = scene?.gameLoader?.project?.library?.players;
+  if (!Array.isArray(players) || players.length === 0) return null;
+  return players.find(entry => entry?.id === selectedChar?.id)
+    || players.find(entry => entry?.id === 'player')
+    || null;
+}
+
+/**
  * ScenePanelLayout - 场景 Canvas UI 布局协调器（框架级）
  *
  * 负责编辑器配置的加载、窗口缩放重排、PC 功能按钮定位与背包打开时
@@ -163,7 +176,9 @@ export class ScenePanelLayout {
       getCompanionEntities,
       getPlayer: () => scene.playerEntity,
       getSelected: () => scene.backpackPanel?.selectedCompanionEntity ?? null,
-      onSelect: entity => scene.backpackPanel?.selectCompanion(entity)
+      onSelect: entity => scene.backpackPanel?.selectCompanion(entity),
+      // 成员头像：实体 avatarImageId（Manifest 稳定 ID）经 AssetManager 懒解析
+      getAssetManager: () => scene.assetManager || null
     });
 
     // 底部控制栏
@@ -215,13 +230,22 @@ export class ScenePanelLayout {
           : rel;
       }
     }
+    // 内容库主角头像兜底：选角预览缺失时用 library.players[].avatar（HUD/亲卫列表同源）。
+    // 内容库就绪时序不定，用惰性 provider 逐帧轻查（HUD 内部解析到 URL 即停止）。
+    const libraryAvatarImageId = avatarSrc ? null : String(
+      libraryPlayersDefinition(scene, selectedChar)?.avatar || ''
+    ).trim() || null;
     scene.playerStatusHUD = new PlayerStatusHUD({
       x: 10,
       y: 10,
       width: 230,
       height: 78,
       visible: scene.uiStrategy.isPlayerStatusHUDVisible(),
-      avatarSrc
+      avatarSrc,
+      avatarImageId: libraryAvatarImageId,
+      getLibraryAvatarImageId: avatarSrc ? null
+        : () => String(libraryPlayersDefinition(scene, selectedChar)?.avatar || '').trim() || null,
+      getAssetManager: () => scene.assetManager || null
     });
 
     // 对话框 - 居中显示（移动端缩小宽度）
@@ -238,8 +262,12 @@ export class ScenePanelLayout {
       zIndex: 200,
       dialogueSystem: scene.dialogueSystem,
       portraits: PortraitsConfig,
+      // 内容库对话头像回退链：NPC 交互实体 dialogueAvatar → 主角 dialogueAvatar
+      getAssetManager: () => scene.assetManager || null,
+      getPlayerEntity: () => scene.playerEntity || null,
       onDialogueEnd: () => {
         Logger.log('BaseGameScene: 对话结束');
+        scene.dialogueBox?.setActiveEntityPortrait?.(null);
       }
     });
 

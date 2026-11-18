@@ -85,6 +85,10 @@ export class DialogueBox extends UIElement {
     this.dialoguePanelDefs = null;
     // presentation 图片懒加载缓存（src 路径 → HTMLImageElement）
     this._dynamicImages = {};
+    // 内容库对话头像回退链（Manifest 稳定 ID）：当前交互实体 → 主角
+    this._getAssetManager = typeof options.getAssetManager === 'function' ? options.getAssetManager : null;
+    this._getPlayerEntity = typeof options.getPlayerEntity === 'function' ? options.getPlayerEntity : null;
+    this._activeEntity = null;
 
     Logger.log('DialogueBox: 初始化完成');
   }
@@ -151,7 +155,8 @@ export class DialogueBox extends UIElement {
 
   /**
    * 头像来源解析：节点 portrait（路径或 PortraitsConfig key）优先，
-   * 其次对话级 presentation.portraitImage。
+   * 其次对话级 presentation.portraitImage，
+   * 最后内容库对话头像（当前交互实体 dialogueAvatar → 主角 dialogueAvatar）。
    * @returns {{img: HTMLImageElement|null, fallbackKey: string|null}}
    * @private
    */
@@ -163,7 +168,38 @@ export class DialogueBox extends UIElement {
     }
     const presentationImage = String(presentation?.portraitImage || '').trim();
     if (presentationImage) return { img: this._getImage(presentationImage), fallbackKey: null };
-    return { img: null, fallbackKey: null };
+    return this._resolveEntityPortraitSource() || { img: null, fallbackKey: null };
+  }
+
+  /**
+   * 内容库对话头像回退链：当前交互实体（NPC 交互时由场景注入）→ 主角实体。
+   * dialogueAvatar 为 Manifest 稳定 ID，经 AssetManager 懒解析（未就绪返回 null，下帧重试）。
+   * @returns {{img: HTMLImageElement, fallbackKey: null}|null}
+   * @private
+   */
+  _resolveEntityPortraitSource() {
+    const assetManager = this._getAssetManager?.() || null;
+    if (!assetManager?.getImage) return null;
+    const resolve = imageId => {
+      const id = String(imageId || '').trim();
+      if (!id) return null;
+      const img = assetManager.getImage(id);
+      return img || null;
+    };
+    const entityImage = resolve(this._activeEntity?.dialogueAvatarImageId);
+    if (entityImage) return { img: entityImage, fallbackKey: null };
+    const playerImage = resolve(this._getPlayerEntity?.()?.dialogueAvatarImageId);
+    if (playerImage) return { img: playerImage, fallbackKey: null };
+    return null;
+  }
+
+  /**
+   * 注入当前对话关联实体（NPC 交互启动对话时由场景调用）：
+   * 对话节点未配置 portrait 时回退该实体的 dialogueAvatar；传 null 清除。
+   * @param {object|null} entity
+   */
+  setActiveEntityPortrait(entity) {
+    this._activeEntity = entity || null;
   }
 
   /**

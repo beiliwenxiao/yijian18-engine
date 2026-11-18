@@ -183,6 +183,12 @@ export class DemoPlayerFactory {
         if (Number.isFinite(value) && value > 0) collision[key] = value;
       }
     }
+
+    // 头像与立绘三图（HUD 面板 / 亲卫列表、对话框、背包立绘）：
+    // Manifest 稳定 ID，由各 UI 面板按需经 AssetManager 懒解析；未配置 = 保持现状（零回归）。
+    player.avatarImageId = String(definition.avatar || '').trim() || player.avatarImageId || null;
+    player.dialogueAvatarImageId = String(definition.dialogueAvatar || '').trim() || player.dialogueAvatarImageId || null;
+    player.portraitImageId = String(definition.portraitImage || '').trim() || player.portraitImageId || null;
     return true;
   }
 

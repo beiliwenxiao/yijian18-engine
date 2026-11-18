@@ -4685,6 +4685,7 @@
           "speed": 0.1
         }
       },
+      "avatar": "",
       "baseStats": {
         "attack": 10,
         "defense": 5,
@@ -4692,8 +4693,10 @@
         "maxMp": 50,
         "speed": 150
       },
+      "dialogueAvatar": "",
       "id": "player",
       "name": "主角",
+      "portraitImage": "",
       "shadow": {
         "liftPx": 8,
         "longLiftPx": 3,
@@ -4701,7 +4704,7 @@
         "radius": 30,
         "shiftPx": 6
       },
-      "skeletonId": "skeleton.skirt-girl-chibi",
+      "skeletonId": "skeleton.player",
       "sprite": {
         "cols": 4,
         "frameHeight": 64,

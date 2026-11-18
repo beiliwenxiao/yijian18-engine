@@ -57,12 +57,17 @@ const CATEGORIES = [
       name: '新NPC',
       npcType: 'ally_npc',
       imageId: '',
+      avatar: '',
+      dialogueAvatar: '',
+      portraitImage: '',
       title: '',
       portrait: '',
       faction: 'friendly',
       renderStyle: '',
       sprite: { width: 64, height: 64, isStatic: true },
+      level: 1,
       stats: { maxHp: 100 },
+      skills: [],
       dialogueId: '',
       shopId: '',
       questId: '',
@@ -71,16 +76,21 @@ const CATEGORIES = [
     tpls: {
       npcs: {
         name: '新NPC', npcType: 'ally_npc', imageId: '',
+        avatar: '', dialogueAvatar: '', portraitImage: '',
         title: '', portrait: '', faction: 'friendly', renderStyle: '',
         sprite: { width: 64, height: 64, isStatic: true },
+        level: 1,
         stats: { maxHp: 100 },
+        skills: [],
         dialogueId: '', shopId: '', questId: '',
         interaction: { radius: 60, prompt: '按 E 对话', trigger: 'interact' }
       },
       enemies: {
         name: '新怪物', npcType: 'monster', imageId: '', level: 1,
+        avatar: '', dialogueAvatar: '', portraitImage: '',
         sprite: { width: 64, height: 64, isStatic: true },
         stats: { maxHp: 60, attack: 5, defense: 1, speed: 70 },
+        skills: [],
         aiType: 'aggressive', attackRange: 60, lootTable: [], ai: {}
       }
     }
@@ -104,6 +114,9 @@ const CATEGORIES = [
   // ==== 角色养成全局定义 ====
   { key: 'players', label: '玩家', tpl: {
     name: '新玩家',
+    avatar: '',
+    dialogueAvatar: '',
+    portraitImage: '',
     useSkeletonAnimation: false,
     sprite: { src: '', frameWidth: 64, frameHeight: 64, cols: 4, rows: 4 },
     animations: { idle: { row: 0, frames: 4, speed: 0.15 }, walk: { row: 1, frames: 4, speed: 0.1 }, attack: { row: 2, frames: 4, speed: 0.08 }, death: { row: 3, frames: 4, speed: 0.12 } },
@@ -1854,6 +1867,12 @@ export class LibraryEditor {
     panel.innerHTML = `
       <div class="row"><label>ID（库主键）</label><input type="text" id="l-id" value="${escapeHtml(e.id || '')}"></div>
       <div class="row"><label>名称</label><input type="text" id="l-name" value="${escapeHtml(e.name || '')}"></div>
+      <hr style="border-color:#2a3a5e;margin:10px 0;">
+      <div class="row"><label style="font-weight:bold;">头像与立绘</label><small style="color:#9ab;margin-left:8px;">头像=HUD面板/亲卫列表 · 对话头像=对话框 · 立绘=背包展示</small></div>
+      ${this._avatarImageRowHtml('头像 avatar（HUD 面板 / 亲卫列表）', 'l-avatar-id', e.avatar, this._manifestImageOptions)}
+      ${this._avatarImageRowHtml('对话头像 dialogueAvatar（对话框左侧头像）', 'l-dialogue-avatar-id', e.dialogueAvatar, this._manifestImageOptions)}
+      ${this._avatarImageRowHtml('背包立绘 portraitImage（背包左侧立绘区）', 'l-portrait-img-id', e.portraitImage, this._manifestImageOptions)}
+      <hr style="border-color:#2a3a5e;margin:10px 0;">
       <div class="row"><label style="font-weight:bold;">骨骼资产（Manifest 稳定 ID）</label><select id="l-skeleton-id">${skeletonSelectOptions}</select></div>
       <div class="row"><small style="color:#9ab;font-size:11px;line-height:1.45;">选择骨骼资产 = 运行时以骨骼动画渲染本角色（useSkeletonAnimation 自动开启），忽略下方序列帧配置${skeletonOptions.length ? `；当前工程可选 ${skeletonOptions.length} 个骨骼` : ''}。骨骼本身在「骨骼」编辑器中维护，此处只引用稳定 ID。</small></div>
       <hr style="border-color:#2a3a5e;margin:10px 0;">
@@ -1904,6 +1923,7 @@ export class LibraryEditor {
     `;
 
     // 绑定事件
+    this._bindAvatarImageSelects(panel);
     panel.querySelector('#l-anim-add')?.addEventListener('click', () => {
       const name = 'anim_' + Object.keys(anims).length;
       anims[name] = { row: Object.keys(anims).length, frames: 4, speed: 0.1 };
@@ -2005,6 +2025,58 @@ export class LibraryEditor {
     }
   }
 
+  /**
+   * 头像/立绘图片选择行（Manifest 图片下拉 + 小预览），NPC 与玩家详情面板共用。
+   * 下拉仅列位图资产（骨骼资产不能当头像用）。
+   */
+  _avatarImageRowHtml(label, selectId, value, imageOptions) {
+    const v = String(value || '').trim();
+    const options = (imageOptions || []).filter(option => option.mode !== 'skeleton');
+    const hasCurrent = options.some(option => option.imageId === v);
+    const url = v ? this._imageDisplay(v).url : '';
+    return `
+      <div class="row" style="display:flex;gap:8px;align-items:center;">
+        <div style="width:40px;height:40px;border:1px solid #2a3a5e;border-radius:4px;overflow:hidden;background:#080d1a;flex:none;display:flex;align-items:center;justify-content:center;">
+          <img id="${selectId}-preview" alt="" src="${escapeHtml(url || '')}" style="display:${url ? 'block' : 'none'};width:100%;height:100%;object-fit:cover;">
+        </div>
+        <div style="flex:1;">
+          <label>${escapeHtml(label)}</label>
+          <select id="${selectId}" ${options.length ? '' : 'disabled'} style="width:100%;">
+            <option value="">未设置</option>
+            ${!hasCurrent && v ? `<option value="${escapeHtml(v)}" selected>当前 ID 无效：${escapeHtml(v)}</option>` : ''}
+            ${options.map(option => `<option value="${escapeHtml(option.imageId)}" ${option.imageId === v ? 'selected' : ''}>${escapeHtml(option.imageId)} · ${escapeHtml(option.path)}</option>`).join('')}
+          </select>
+        </div>
+      </div>`;
+  }
+
+  /** 绑定头像/立绘三图下拉的即时预览（选择即切换小缩略图）。 */
+  _bindAvatarImageSelects(panel) {
+    for (const selectId of ['l-avatar-id', 'l-dialogue-avatar-id', 'l-portrait-img-id']) {
+      const select = panel.querySelector(`#${selectId}`);
+      if (!select) continue;
+      const img = panel.querySelector(`#${selectId}-preview`);
+      select.addEventListener('change', () => {
+        const display = this._imageDisplay(String(select.value || '').trim());
+        if (img) {
+          img.src = display.url || '';
+          img.style.display = display.url ? 'block' : 'none';
+        }
+      });
+    }
+  }
+
+  /** 技能槽编辑（3 个下拉，引用 config/skills.json 战斗技能）。 */
+  _skillSlotEditorHtml(skills) {
+    const options = this._skills || [];
+    const skillOptionHtml = selected => {
+      const v = String(selected || '').trim();
+      return `<option value="">（空）</option>${options.map(s => `<option value="${escapeHtml(s.id)}" ${s.id === v ? 'selected' : ''}>${escapeHtml(s.id)}${s.name ? ' · ' + escapeHtml(s.name) : ''}</option>`).join('')}${v && !options.some(s => s.id === v) ? `<option value="${escapeHtml(v)}" selected>当前无效：${escapeHtml(v)}</option>` : ''}`;
+    };
+    return [0, 1, 2].map(index => `
+      <div class="row"><label>技能 ${index + 1}</label><select id="l-skill-${index}">${skillOptionHtml(skills?.[index])}</select></div>`).join('');
+  }
+
   _renderNpcDetail(panel, e) {
     const section = this._sectionOf(e);
     const isEnemy = section === 'enemies';
@@ -2042,7 +2114,6 @@ export class LibraryEditor {
             <option value="battleFormation" ${aiType === 'battleFormation' ? 'selected' : ''}>军团编队</option>
           </select></div>
           <div style="flex:1;"><label>攻击范围 attackRange</label><input type="number" id="l-atk-range" value="${escapeHtml(e.attackRange ?? 60)}" min="0"></div>
-          <div style="flex:1;"><label>等级 level</label><input type="number" id="l-level" value="${escapeHtml(e.level ?? 1)}" min="1"></div>
         </div>
         <div class="row"><label>参与 AI 调度 aiActive（勾选=激活战斗 AI）</label><input type="checkbox" id="l-ai-active" ${e.aiActive === true ? 'checked' : ''}></div>
         <div class="row"><label>掉落表 lootTable（运行时按此字段结算掉落）</label>${this._lootTableEditorHtml(e.lootTable || [])}</div>
@@ -2096,8 +2167,16 @@ export class LibraryEditor {
       </div>
       <div class="row"><label>图片尺寸</label><input type="text" id="l-image-dim" readonly value="读取中…" style="flex:1;color:#88ccff;"><button type="button" id="l-image-refresh" title="源图片文件被外部修改后，穿透缓存重新加载并显示最新尺寸">🔄 刷新图片</button></div>
       <hr style="border-color:#2a3a5e;margin:10px 0;">
+      <div class="row"><label style="font-weight:bold;">头像与立绘</label><small style="color:#9ab;margin-left:8px;">头像=HUD面板/亲卫列表 · 对话头像=对话框 · 立绘=背包展示</small></div>
+      ${this._avatarImageRowHtml('头像 avatar（HUD 面板 / 亲卫列表）', 'l-avatar-id', e.avatar, imageOptions)}
+      ${this._avatarImageRowHtml('对话头像 dialogueAvatar（对话框左侧头像）', 'l-dialogue-avatar-id', e.dialogueAvatar, imageOptions)}
+      ${this._avatarImageRowHtml('背包立绘 portraitImage（背包左侧立绘区）', 'l-portrait-img-id', e.portraitImage, imageOptions)}
+      <hr style="border-color:#2a3a5e;margin:10px 0;">
       <div class="row"><label style="font-weight:bold;">基础属性 stats</label> <button id="l-stat-add" style="padding:2px 8px;cursor:pointer;margin-left:8px;">+ 属性</button></div>
       <div id="l-stats-area">${statsHtml}</div>
+      <div class="row"><label>等级 level（静态值，NPC 不参与升级）</label><input type="number" id="l-level" value="${escapeHtml(e.level ?? 1)}" min="1" style="width:80px;"></div>
+      <div class="row"><label style="font-weight:bold;">技能槽 skills（最多 3 个，引用 内容库→战斗技能）</label><small style="color:#9ab;margin-left:8px;">静态配置，供玩家操控 NPC 战斗等后续功能消费</small></div>
+      ${this._skillSlotEditorHtml(e.skills)}
       ${enemyHtml}
       ${npcHtml}
       <hr style="border-color:#2a3a5e;margin:10px 0;">
@@ -2122,6 +2201,7 @@ export class LibraryEditor {
       }
     });
     this._loadLibraryImageDims(panel);
+    this._bindAvatarImageSelects(panel);
     panel.querySelector('#l-npc-type')?.addEventListener('change', event => {
       this._commitNpcDetail(panel, e);
       this._switchNpcType(e, event.currentTarget.value);
@@ -2167,6 +2247,10 @@ export class LibraryEditor {
         entry.aiType ||= 'aggressive';
         entry.attackRange ??= 60;
         entry.level ??= 1;
+        entry.skills ||= [];
+        entry.avatar ??= '';
+        entry.dialogueAvatar ??= '';
+        entry.portraitImage ??= '';
         entry.lootTable ||= [];
         entry.ai ||= {};
         entry.isBoss = newType.endsWith('_boss');
@@ -2174,6 +2258,11 @@ export class LibraryEditor {
         entry.faction ||= 'friendly';
         entry.interaction ||= { radius: 60, prompt: '按 E 对话', trigger: 'interact' };
         entry.sprite = { ...(entry.sprite || {}), isStatic: true };
+        entry.level ??= 1;
+        entry.skills ||= [];
+        entry.avatar ??= '';
+        entry.dialogueAvatar ??= '';
+        entry.portraitImage ??= '';
         delete entry.isBoss;
       }
       this._toast(`已迁移到 ${toSection} section`, 'success');
@@ -2939,6 +3028,10 @@ export class LibraryEditor {
   }
 
   _commitSheetSpriteDetail(panel, e) {
+    // 头像与立绘三图（HUD/亲卫列表、对话框、背包立绘）
+    e.avatar = panel.querySelector('#l-avatar-id')?.value.trim() || '';
+    e.dialogueAvatar = panel.querySelector('#l-dialogue-avatar-id')?.value.trim() || '';
+    e.portraitImage = panel.querySelector('#l-portrait-img-id')?.value.trim() || '';
     const skeletonEl = panel.querySelector('#l-skeleton-id');
     if (skeletonEl) {
       const value = String(skeletonEl.value || '').trim();
@@ -3083,12 +3176,19 @@ export class LibraryEditor {
     });
     if (Object.keys(statsView).length > 0) e.stats = statsView;
 
+    // 头像与立绘三图（HUD/亲卫列表、对话框、背包立绘）
+    e.avatar = panel.querySelector('#l-avatar-id')?.value.trim() || '';
+    e.dialogueAvatar = panel.querySelector('#l-dialogue-avatar-id')?.value.trim() || '';
+    e.portraitImage = panel.querySelector('#l-portrait-img-id')?.value.trim() || '';
+    // 等级（静态值，NPC 不参与升级）与 3 技能槽（引用 combatSkills）
+    const level = Number(panel.querySelector('#l-level')?.value);
+    if (Number.isFinite(level) && level > 0) e.level = level;
+    e.skills = [0, 1, 2].map(i => panel.querySelector(`#l-skill-${i}`)?.value.trim() || '').filter(Boolean);
+
     if (isEnemy) {
       e.aiType = panel.querySelector('#l-ai-type')?.value || e.aiType || 'aggressive';
       const attackRange = Number(panel.querySelector('#l-atk-range')?.value);
       if (Number.isFinite(attackRange)) e.attackRange = attackRange;
-      const level = Number(panel.querySelector('#l-level')?.value);
-      if (Number.isFinite(level)) e.level = level;
       e.aiActive = panel.querySelector('#l-ai-active')?.checked === true;
       // 掉落表：运行时消费 lootTable（修复旧表单写 e.loot 的字段错位）
       e.lootTable = Array.from(panel.querySelectorAll('.loot-rows tr')).map(tr => {

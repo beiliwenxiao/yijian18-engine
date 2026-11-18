@@ -161,4 +161,68 @@ describe('DialogueBox', () => {
       expect(region.y).toBe(510);
     });
   });
+
+  describe('内容库对话头像回退链（dialogueAvatar）', () => {
+    function createImage() {
+      return { complete: true, naturalWidth: 64, naturalHeight: 64 };
+    }
+
+    function createAssetManager(images) {
+      return {
+        getImage: imageId => images.get(imageId) || null
+      };
+    }
+
+    it('节点 portrait 缺失时回退当前交互实体的 dialogueAvatar', () => {
+      const npcImage = createImage();
+      const box = new DialogueBox({
+        x: 0, y: 0, width: 700, height: 230, visible: false,
+        getAssetManager: () => createAssetManager(new Map([['ui.dialogue.npc', npcImage]]))
+      });
+      box.setActiveEntityPortrait({ dialogueAvatarImageId: 'ui.dialogue.npc' });
+
+      const source = box._resolvePortraitSource({}, {});
+      expect(source.img).toBe(npcImage);
+      expect(source.fallbackKey).toBeNull();
+    });
+
+    it('无交互实体时回退主角 dialogueAvatar', () => {
+      const playerImage = createImage();
+      const box = new DialogueBox({
+        x: 0, y: 0, width: 700, height: 230, visible: false,
+        getAssetManager: () => createAssetManager(new Map([['ui.dialogue.player', playerImage]])),
+        getPlayerEntity: () => ({ dialogueAvatarImageId: 'ui.dialogue.player' })
+      });
+
+      const source = box._resolvePortraitSource({}, {});
+      expect(source.img).toBe(playerImage);
+    });
+
+    it('节点 portrait 优先于实体对话头像', () => {
+      const npcImage = createImage();
+      const box = new DialogueBox({
+        x: 0, y: 0, width: 700, height: 230, visible: false,
+        getAssetManager: () => createAssetManager(new Map([['ui.dialogue.npc', npcImage]]))
+      });
+      box.setActiveEntityPortrait({ dialogueAvatarImageId: 'ui.dialogue.npc' });
+
+      // 无 portraits 配置时节点 key 走 PortraitsConfig 查找（未命中 → img 为 null，key 保留）
+      const source = box._resolvePortraitSource({ portrait: 'zhangjiao' }, {});
+      expect(source.img).not.toBe(npcImage);
+      expect(source.fallbackKey).toBe('zhangjiao');
+    });
+
+    it('对话头像未配置时返回空来源（走既有占位兜底）', () => {
+      const box = new DialogueBox({
+        x: 0, y: 0, width: 700, height: 230, visible: false,
+        getAssetManager: () => createAssetManager(new Map()),
+        getPlayerEntity: () => null
+      });
+      box.setActiveEntityPortrait({});
+
+      const source = box._resolvePortraitSource({}, {});
+      expect(source.img).toBeNull();
+      expect(source.fallbackKey).toBeNull();
+    });
+  });
 });
