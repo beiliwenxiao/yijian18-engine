@@ -24,7 +24,7 @@ import { parseSkeletonAsset } from '../src/animation/SkeletonAsset.js';
 import {
   SKELETON_DIRECTION_KEYS,
   SKELETON_DIRECTION_LABELS,
-  SKELETON_HEAD_SLOT_PLAN,
+  resolveHeadSlotVisibility,
   SKELETON_DIAGONAL_FALLBACK,
   SKELETON_DIRECTION_ARROWS
 } from '../src/animation/SkeletonDirection.js';
@@ -4528,11 +4528,10 @@ export class SkeletonEditor {
     return null;
   }
 
-  /** 当前预览方向下，三态头部槽位是否应显示。仅影响编辑器画布预览，不覆写 JSON。 */
+  /** 当前预览方向下，三态头部槽位是否应显示（资产感知：缺形态槽回退正面槽）。仅影响编辑器画布预览，不覆写 JSON。 */
   _isHeadSlotVisibleInPreview(slotId) {
-    const plan = SKELETON_HEAD_SLOT_PLAN[this.previewDirection];
-    if (!plan || !(slotId in plan)) return null; // 非三态槽位 = 不干涉
-    return plan[slotId];
+    const hasSlot = (base, form) => (this.doc.slots || []).some(slot => slot.id === `${base}${form}`);
+    return resolveHeadSlotVisibility(this.previewDirection, slotId, hasSlot);
   }
 
   _renderSlotList() {

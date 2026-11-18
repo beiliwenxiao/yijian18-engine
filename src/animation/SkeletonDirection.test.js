@@ -17,7 +17,8 @@ import {
   SKELETON_HEAD_SLOT_PLAN,
   SKELETON_DIAGONAL_FALLBACK,
   resolveDirectionKey,
-  isMirroredFacing
+  isMirroredFacing,
+  resolveHeadSlotVisibility
 } from './SkeletonDirection.js';
 
 describe('方向形态键集合', () => {
@@ -109,5 +110,55 @@ describe('isMirroredFacing 左系朝向镜像', () => {
     expect(isMirroredFacing('right')).toBe(false);
     expect(isMirroredFacing('down')).toBe(false);
     expect(isMirroredFacing('down-right')).toBe(false);
+  });
+});
+
+describe('resolveHeadSlotVisibility 三态槽位资产感知显隐', () => {
+  /** 构造槽位存在性查询：传入的 base×form 组合视为存在。 */
+  const makeHas = present => (base, form) => present.includes(`${base}${form}`);
+
+  it('三槽齐全（player 系结构）：沿用基准显隐计划', () => {
+    const has = makeHas(['headFront', 'headSide', 'headBack', 'hairFront', 'hairSide', 'hairBack']);
+    expect(resolveHeadSlotVisibility('down', 'headFront', has)).toBe(true);
+    expect(resolveHeadSlotVisibility('side', 'headFront', has)).toBe(false);
+    expect(resolveHeadSlotVisibility('side', 'headSide', has)).toBe(true);
+    expect(resolveHeadSlotVisibility('up', 'headFront', has)).toBe(false);
+    expect(resolveHeadSlotVisibility('up', 'headBack', has)).toBe(true);
+    expect(resolveHeadSlotVisibility('NE', 'headFront', has)).toBe(false);
+  });
+
+  it('单头槽结构（skirt-girl 系）：侧面/背面回退保留正面头（形态图由 directionOffsets 表达）', () => {
+    const has = makeHas(['headFront']);
+    expect(resolveHeadSlotVisibility('down', 'headFront', has)).toBe(true);
+    expect(resolveHeadSlotVisibility('side', 'headFront', has)).toBe(true);
+    expect(resolveHeadSlotVisibility('sideL', 'headFront', has)).toBe(true);
+    expect(resolveHeadSlotVisibility('up', 'headFront', has)).toBe(true);
+    expect(resolveHeadSlotVisibility('NE', 'headFront', has)).toBe(true);
+    expect(resolveHeadSlotVisibility('NW', 'headFront', has)).toBe(true);
+    // 斜前形态本来就显示正面头
+    expect(resolveHeadSlotVisibility('SE', 'headFront', has)).toBe(true);
+    // 缺失的 Side/Back 槽按计划隐藏（资产里本来就不存在，无覆盖可写）
+    expect(resolveHeadSlotVisibility('side', 'headSide', has)).toBe(true);
+  });
+
+  it('混合结构（有正面+背面缺侧面）：侧面回退正面头、背面用后脑头', () => {
+    const has = makeHas(['headFront', 'headBack']);
+    expect(resolveHeadSlotVisibility('side', 'headFront', has)).toBe(true);
+    expect(resolveHeadSlotVisibility('up', 'headFront', has)).toBe(false);
+    expect(resolveHeadSlotVisibility('up', 'headBack', has)).toBe(true);
+  });
+
+  it('hair 族与 head 族同语义', () => {
+    const hasSingleHair = makeHas(['hairFront']);
+    expect(resolveHeadSlotVisibility('side', 'hairFront', hasSingleHair)).toBe(true);
+    const hasFullHair = makeHas(['hairFront', 'hairSide', 'hairBack']);
+    expect(resolveHeadSlotVisibility('side', 'hairFront', hasFullHair)).toBe(false);
+    expect(resolveHeadSlotVisibility('side', 'hairSide', hasFullHair)).toBe(true);
+  });
+
+  it('非三态槽位返回 null（调用方不干涉）', () => {
+    const has = makeHas(['headFront', 'headSide', 'headBack']);
+    expect(resolveHeadSlotVisibility('down', 'torsoSlot', has)).toBeNull();
+    expect(resolveHeadSlotVisibility('weird-form', 'headFront', has)).toBeNull();
   });
 });

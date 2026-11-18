@@ -31,7 +31,8 @@ import { resolveActionClip, resolveDiscreteClip } from './AnimationActionResolve
 import {
   SKELETON_HEAD_SLOT_PLAN,
   resolveDirectionKey,
-  isMirroredFacing
+  isMirroredFacing,
+  resolveHeadSlotVisibility
 } from './SkeletonDirection.js';
 
 const MAPPER_CLIPS = new Set([
@@ -336,13 +337,17 @@ export function createPlayerSkeletonStateMapper(entity, { getAssetManager = null
       const facingKey = key === 'side' ? `${key}|${facing}` : key;
       if (facingKey !== lastFacingKey) {
         lastFacingKey = facingKey;
+        // 三态头/发槽位资产感知显隐：基准计划按形态切换；「单头槽 + directionOffsets」结构
+        // （skirt-girl 系）缺 Side/Back 专用槽时回退保留正面槽——侧面/背面不再空头的头
+        const hasHeadSlot = (base, form) => asset.slots.some(slot => slot.id === `${base}${form}`);
         const plan = SKELETON_HEAD_SLOT_PLAN[key];
         if (plan) {
           for (const slot of asset.slots) {
             // 背挂槽泛化判定：挂 back 骨骼即背挂（axeBack/spearBack 及未来盾牌/箭袋等），
             // 背面视角自动水平换边，策划新增背挂槽零代码；头部三态挂 head 骨骼不受影响
             const isBackMount = slot.bone === WEAPON_BACK_BONE;
-            if (!(slot.id in plan) && !isBackMount) continue;
+            const visibility = resolveHeadSlotVisibility(key, slot.id, hasHeadSlot);
+            if (visibility === null && !isBackMount) continue;
             if (!slot.attachment) continue;
             // 侧脸基准图朝左（鼻梁在左缘）：附件恒翻为「朝右基准」，
             // 最终朝向由实体 flipX 决定（右行 flip=false→朝右；左行 flip=true→镜像回朝左）
@@ -355,7 +360,7 @@ export function createPlayerSkeletonStateMapper(entity, { getAssetManager = null
               skeletonComponent.setSlotOverride?.(slot.id, { flipX: wantBackFlip });
               continue;
             }
-            skeletonComponent.setSlotOverride?.(slot.id, { visible: plan[slot.id] });
+            skeletonComponent.setSlotOverride?.(slot.id, { visible: visibility });
           }
         }
       }

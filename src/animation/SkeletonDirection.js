@@ -66,6 +66,29 @@ export const SKELETON_HEAD_SLOT_PLAN = Object.freeze({
 export const SKELETON_DIAGONAL_FALLBACK = Object.freeze({ SE: 'down', SW: 'down', NE: 'up', NW: 'up' });
 
 /**
+ * 三态头/发槽位在指定形态下的可见性（资产感知）。
+ * 基准语义 = SKELETON_HEAD_SLOT_PLAN 按形态显隐；资产缺形态专用槽时回退保留正面槽——
+ * 「单头槽 + directionOffsets」结构（如 skirt-girl / skirt-girl-chibi：只有 headFront 一槽，
+ * 侧面/背面靠形态图）在 side/up 形态下不再把唯一的头槽隐藏掉。
+ * @param {string} formKey - 形态键（down/side/up/SE/SW/NE/NW/sideL）
+ * @param {string} slotId - 三态槽位 id（head/hair × Front/Side/Back）
+ * @param {(base: 'head'|'hair', form: 'Front'|'Side'|'Back') => boolean} hasSlot - 资产槽位存在性查询
+ * @returns {boolean|null} 是否可见；非三态槽位返回 null（调用方不干涉）
+ */
+export function resolveHeadSlotVisibility(formKey, slotId, hasSlot) {
+  const plan = SKELETON_HEAD_SLOT_PLAN[formKey];
+  if (!plan || !(slotId in plan)) return null;
+  let visible = plan[slotId];
+  if (!visible && (slotId === 'headFront' || slotId === 'hairFront')) {
+    const base = slotId === 'headFront' ? 'head' : 'hair';
+    // 形态计划隐藏正面槽的两种情形：side/sideL 要 Side 槽、up/NE/NW 要 Back 槽——槽缺失则回退
+    const wantsSide = formKey === 'side' || formKey === 'sideL';
+    if (!hasSlot(base, wantsSide ? 'Side' : 'Back')) visible = true;
+  }
+  return visible;
+}
+
+/**
  * 实体朝向（8 方向字符串）→ 形态键。
  * left/right → side（左右由实体 flipX 镜像）；斜向 → SE/SW/NE/NW。
  * @param {string} direction - 朝向字符串
