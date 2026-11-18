@@ -16,6 +16,7 @@ import { PanelLayoutLoader } from '../../ui/PanelLayoutLoader.js';
 import { ItemIconRenderer } from '../../ui/ItemIconRenderer.js';
 import { InteractionChoiceView } from '../../ui/InteractionChoiceView.js';
 import { DialogueChoiceBox } from '../../ui/DialogueChoiceBox.js';
+import { CompanionListPanel } from '../../ui/CompanionListPanel.js';
 import { InputHints } from '../input/InputHints.js';
 import { sceneHasPlayerStronghold } from './PlayerStronghold.js';
 
@@ -96,6 +97,13 @@ export class ScenePanelLayout {
     // 统一背包面板：属性、装备槽和物品栏均由同一外框承载。
     // 内部操作继续复用原有 PlayerInfoPanel / InventoryPanel 的事件流。
     const invOpts = scene.uiStrategy.getInventoryOptions ? scene.uiStrategy.getInventoryOptions() : null;
+    // 亲卫名册：亲卫 unitIds → 实体仓库（独立 CompanionListPanel 的数据源）
+    const getCompanionEntities = () => {
+      const store = scene.entityStore;
+      const unitIds = scene.companionSquadSystem?.unitIds || [];
+      if (!store || unitIds.length === 0) return [];
+      return unitIds.map(id => store.getById?.(id)).filter(Boolean);
+    };
     scene.backpackPanel = new BackpackPanel({
       x: Math.round((scene.logicalWidth - 972) / 2),
       y: Math.max(10, scene.logicalHeight - 100 - 520),
@@ -104,12 +112,16 @@ export class ScenePanelLayout {
       visible: false,
       inventoryOptions: invOpts,
       isMobileLayout: scene.isMobileLayout === true || invOpts?.showTooltip === false,
-      // 亲卫成员列：亲卫名册 unitIds → 实体仓库（选中后装备/立绘切换为该亲卫）
-      getCompanionEntities: () => {
-        const store = scene.entityStore;
-        const unitIds = scene.companionSquadSystem?.unitIds || [];
-        if (!store || unitIds.length === 0) return [];
-        return unitIds.map(id => store.getById?.(id)).filter(Boolean);
+      // 可见性联动：开背包同时打开独立亲卫列表面板，关背包同时关闭
+      onVisibilityChanged: visible => {
+        const panel = scene.companionListPanel;
+        if (!panel) return;
+        if (visible) {
+          panel.followPanel(scene.backpackPanel);
+          panel.show();
+        } else {
+          panel.hide();
+        }
       },
       onAttributeAllocate: () => {
         Logger.log('BaseGameScene: 属性加点按钮被点击');
@@ -139,6 +151,20 @@ export class ScenePanelLayout {
     if (scene.uiStrategy.layoutBackpackPanel) {
       scene.uiStrategy.layoutBackpackPanel(scene.backpackPanel, scene.logicalWidth, scene.logicalHeight);
     }
+
+    // 独立亲卫列表面板：与背包面板各自独立（互不嵌套），仅数据交互——
+    // 选中状态唯一事实源在 backpackPanel.selectedCompanionEntity；可见性随背包联动。
+    scene.companionListPanel = new CompanionListPanel({
+      x: Math.max(4, scene.backpackPanel.x - 86),
+      y: scene.backpackPanel.y,
+      width: 80,
+      height: scene.backpackPanel.height,
+      visible: false,
+      getCompanionEntities,
+      getPlayer: () => scene.playerEntity,
+      getSelected: () => scene.backpackPanel?.selectedCompanionEntity ?? null,
+      onSelect: entity => scene.backpackPanel?.selectCompanion(entity)
+    });
 
     // 底部控制栏
     const barOptions = scene.uiStrategy.getBottomControlBarOptions();
@@ -336,6 +362,7 @@ export class ScenePanelLayout {
     scene.uiClickHandler.registerElement(scene.itemGainedPopup);
     scene.uiClickHandler.registerElement(scene.gamepadPanel);
     scene.uiClickHandler.registerElement(scene.backpackPanel);
+    scene.uiClickHandler.registerElement(scene.companionListPanel);
     scene.uiClickHandler.registerElement(scene.bottomControlBar);
     scene.uiClickHandler.registerElement(scene.dialogueBox);
     scene.uiClickHandler.registerElement(scene.dialogueChoiceBox);
@@ -357,6 +384,7 @@ export class ScenePanelLayout {
     // 注册面板到 UISystem（统一管理悬停；倒计时由 SceneHudUpdater 逐帧驱动）
     scene.uiSystem.registerPanel('itemGainedPopup', scene.itemGainedPopup);
     scene.uiSystem.registerPanel('backpack', scene.backpackPanel);
+    scene.uiSystem.registerPanel('companionList', scene.companionListPanel);
     scene.uiSystem.registerPanel('bottomControl', scene.bottomControlBar);
     scene.uiSystem.registerPanel('dialogue', scene.dialogueBox);
     scene.uiSystem.registerPanel('dialogueChoices', scene.dialogueChoiceBox);
@@ -881,6 +909,8 @@ export class ScenePanelLayout {
       panel.y = Math.max(10, height - 100 - panel.height);
     }
     panel.layout();
+    // 亲卫列表面板跟随背包位置（仅可见时表现；隐藏态同步坐标无副作用）
+    scene.companionListPanel?.followPanel?.(panel);
   }
 }
 

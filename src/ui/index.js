@@ -29,6 +29,7 @@ export { IrreversibleChoiceView } from './IrreversibleChoiceView.js';
 export { EquipmentPanel } from './EquipmentPanel.js';
 export { InventoryPanel } from './InventoryPanel.js';
 export { BackpackPanel } from './BackpackPanel.js';
+export { CompanionListPanel } from './CompanionListPanel.js';
 export { ItemIconRenderer } from './ItemIconRenderer.js';
 export { PickupPrompt } from './PickupPrompt.js';
 export { EnhancementPanel } from './EnhancementPanel.js';

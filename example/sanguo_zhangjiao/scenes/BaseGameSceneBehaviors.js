@@ -387,6 +387,7 @@ export class BaseGameSceneBehaviors extends BaseGameSceneSetup {  /**
       this._hudUpdater = new SceneHudUpdater({
         getUI: () => ({
           backpack: this.backpackPanel,
+          companionList: this.companionListPanel,
           itemGainedPopup: this.itemGainedPopup,
           bottomControlBar: this.bottomControlBar,
           playerStatusHUD: this.playerStatusHUD,

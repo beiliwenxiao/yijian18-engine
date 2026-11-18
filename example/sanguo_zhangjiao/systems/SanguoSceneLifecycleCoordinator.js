@@ -401,6 +401,9 @@ function handleModalInput({ inputManager, gamepad } = {}) {
     });
   }
   if (this.backpackPanel?.visible) {
+    // 独立亲卫列表面板先处理（滚轮滚动成员列表 + 点击选中亲卫）；
+    // 未消费的输入继续交给背包面板（物品菜单/手柄导航/关闭）。
+    this.companionListPanel?.handleInput?.({ inputManager, gamepad });
     return this.backpackPanel.handleInput({ inputManager, gamepad }) === true;
   }
   return this.s09ClassSelectionCoordinator.handleConfirmationInput({ inputManager, gamepad });

@@ -145,6 +145,8 @@ export class SceneRenderPipeline {
     ]);
     this.modalLayers = config?.modalLayers || [
       Object.assign((_scene, ctx) => this.context?.ui?.backpack?.render?.(ctx), { modalName: 'backpack' }),
+      // 独立亲卫列表面板（随背包开关联动，非背包子区域）
+      Object.assign((_scene, ctx) => this.context?.ui?.companionList?.render?.(ctx), { modalName: 'companionList' }),
       // 统一成长面板属于模态 UI，只从显式 SceneContext 读取。
       Object.assign((_scene, ctx) => this.context?.ui?.progression?.render?.(ctx), { modalName: 'progression' }),
       Object.assign((scene, ctx) => scene.notificationSystem?.render(ctx), { modalName: 'notifications' }),

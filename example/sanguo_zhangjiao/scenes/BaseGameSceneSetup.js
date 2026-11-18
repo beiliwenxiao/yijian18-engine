@@ -1021,6 +1021,7 @@ export class BaseGameSceneSetup extends Scene {
     Object.assign(this.context.ui, {
       layout: panelLayout,
       backpack: this.backpackPanel,
+      companionList: this.companionListPanel,
       bottomControlBar: this.bottomControlBar,
       playerStatusHUD: this.playerStatusHUD,
       dialogueBox: this.dialogueBox

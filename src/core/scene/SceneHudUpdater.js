@@ -53,7 +53,7 @@ export class SceneHudUpdater {
     //（updateUiCleanupMinimap 长帧元凶），位置按 1s 周期刷新以兼容跟随类目标。
     this._taskMarkerCache = null;
     this._taskMarkerCacheTtl = 1000;
-    this._panelBuffer = [null, null, null, null];
+    this._panelBuffer = [null, null, null, null, null];
     this._updatedPanels = new Set();
   }
 
@@ -105,6 +105,7 @@ export class SceneHudUpdater {
     panels[1] = ui.bottomControlBar;
     panels[2] = ui.playerStatusHUD;
     panels[3] = ui.gamepadPanel;
+    panels[4] = ui.companionList || ui.companionListPanel;
     for (let index = 0; index < panels.length; index++) {
       const panel = panels[index];
       if (!panel || updated.has(panel)) continue;
