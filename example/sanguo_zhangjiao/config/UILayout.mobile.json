@@ -19,6 +19,20 @@
       "hPct": 0.16667
     },
     {
+      "id": "armyCommandHud",
+      "label": "亲卫队操作",
+      "kind": "panel",
+      "anchor": "topleft",
+      "x": 10,
+      "y": 10,
+      "width": 316,
+      "height": 224,
+      "xPct": 0.00781,
+      "yPct": 0.01667,
+      "wPct": 0.24688,
+      "hPct": 0.37333
+    },
+    {
       "id": "timeWeatherBadge",
       "label": "时间/天气",
       "kind": "panel",
@@ -71,14 +85,28 @@
       "label": "背包",
       "kind": "panel",
       "anchor": "topleft",
-      "x": 57,
-      "y": 73,
-      "width": 1195,
-      "height": 517,
-      "xPct": 0.04453,
-      "yPct": 0.12167,
-      "wPct": 0.93359,
-      "hPct": 0.86167
+      "x": 207,
+      "y": 26,
+      "width": 1040,
+      "height": 542,
+      "xPct": 0.16172,
+      "yPct": 0.04333,
+      "wPct": 0.8125,
+      "hPct": 0.90333
+    },
+    {
+      "id": "companionListPanel",
+      "label": "亲卫列表",
+      "kind": "panel",
+      "anchor": "topleft",
+      "x": 15,
+      "y": 24,
+      "width": 192,
+      "height": 546,
+      "xPct": 0.01172,
+      "yPct": 0.04,
+      "wPct": 0.15,
+      "hPct": 0.91
     },
     {
       "id": "joystick",

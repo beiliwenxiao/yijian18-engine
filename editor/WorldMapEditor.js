@@ -727,8 +727,8 @@ export class WorldMapEditor {
         <label>地图:
           <select class="wme-region-select" style="min-width:150px;"></select>
         </label>
+        <button type="button" class="wme-save" title="保存地图到 game.project.json">💾 保存地图</button>
         <button type="button" class="wme-add-region">新建地图</button>
-        <button type="button" class="wme-save">保存地图</button>
         <span style="margin:0 4px;color:#555;">|</span>
         <label>ID: <input type="text" class="wme-region-id" readonly style="width:110px;" title="Region ID 创建后只读，避免产生跨文件悬空引用" /></label>
         <label>名称: <input type="text" class="wme-region-name" style="width:120px;" /></label>

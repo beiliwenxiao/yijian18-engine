@@ -1001,8 +1001,8 @@
     {
       "id": "companionListPanel",
       "name": "亲卫列表",
-      "width": 172,
-      "height": 520,
+      "width": 182,
+      "height": 522,
       "backgroundColor": "rgba(0, 0, 0, 0.88)",
       "borderColor": "#c49a52",
       "borderWidth": 2,

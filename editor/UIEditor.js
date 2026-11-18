@@ -43,6 +43,9 @@ const DEFAULT_COMPONENTS = {
       { id: 'hud-panel', label: '玩家HUD面板', x: 10, y: 10, width: 230, height: 78, anchor: 'topleft', kind: 'panel' },
       // 统一背包外框（属性、装备和物品栏的内部部件由 PanelEditor 编辑）
       { id: 'backpackPanel', label: '背包', x: 140, y: 140, width: 1072, height: 440, anchor: 'topleft', kind: 'panel' },
+      // 独立亲卫列表面板：随背包开关联动；观感在面板编辑器「亲卫列表」编辑，
+      // 初始位置=背包内容框最左（旧内嵌亲卫列位置），可在编辑器自由拖放
+      { id: 'companionListPanel', label: '亲卫列表', x: 142, y: 146, width: 80, height: 426, anchor: 'topleft', kind: 'panel' },
       // 底部控制栏拆分为独立小控件（2药水/5技能；血球/蓝球已下线，血量蓝量由左上角玩家 HUD 面板承载）
       { id: 'pc-potion1', label: '红瓶', x: 482, y: 640, width: 40, height: 40, anchor: 'topleft', kind: 'button' },
       { id: 'pc-potion2', label: '蓝瓶', x: 528, y: 640, width: 40, height: 40, anchor: 'topleft', kind: 'button' },
@@ -81,6 +84,9 @@ const DEFAULT_COMPONENTS = {
       { id: 'combatStateBadge', label: '战斗/灵魂状态', x: 10, y: 145, width: 153, height: 34, fontSize: 0, textOffsetX: 0, textOffsetY: 0, anchor: 'topleft', kind: 'panel' },
       { id: 'taskTracker', label: '任务追踪', x: 22, y: 184, width: 340, height: 140, anchor: 'topleft', kind: 'panel' },
       { id: 'backpackPanel', label: '背包', x: 100, y: 150, width: 1152, height: 475, anchor: 'topleft', kind: 'panel' },
+      // 独立亲卫列表面板：随背包开关联动；观感在面板编辑器「亲卫列表」编辑，
+      // 初始位置=背包内容框最左（旧内嵌亲卫列位置），可在编辑器自由拖放
+      { id: 'companionListPanel', label: '亲卫列表', x: 102, y: 158, width: 80, height: 458, anchor: 'topleft', kind: 'panel' },
       { id: 'joystick', label: '摇杆区', x: 0, y: 270, width: 384, height: 330, anchor: 'topleft', kind: 'zone' },
       { id: 'hud-panel', label: '玩家HUD面板', x: 10, y: 10, width: 230, height: 78, anchor: 'topleft', kind: 'panel' },
       { id: 'act-attack', label: '攻击', x: 1126, y: 510, width: 78, height: 78, anchor: 'topleft', kind: 'button' },
@@ -199,8 +205,9 @@ function resolveComponentType(component) {
 
 const EDITABLE_PANEL_PART_IDS = new Set(['bagTitle', 'bagSeparator']);
 // 外框不锁比例的面板：armyCommandHud 的高度由内部行高堆叠决定，与 PanelLayout 面板比例无关；
-// hudPanel 的尺寸来自自身 UI 条目，与 PanelLayout 参考宽高无关
-const ASPECT_FREE_PANEL_IDS = new Set(['armyCommandHud', 'hudPanel']);
+// hudPanel 的尺寸来自自身 UI 条目，与 PanelLayout 参考宽高无关；
+// companionListPanel 的高度由成员数/编辑器矩形直接决定（列表滚动自适应），同样不锁比例
+const ASPECT_FREE_PANEL_IDS = new Set(['armyCommandHud', 'hudPanel', 'companionListPanel']);
 const PANEL_PART_MIN_SIZE = 16;
 const PANEL_LINE_HIT_HEIGHT = 8;
 
@@ -856,6 +863,7 @@ export class UIEditor {
     this.container.innerHTML = `
       <div class="uie-root">
         <div class="uie-toolbar">
+          <button id="uie-save" class="primary">💾 保存到文件</button>
           <div class="uie-platform-switch">
             <button data-platform="mobile" class="active">📱 Android UI</button>
             <button data-platform="desktop">🖥️ PC UI</button>
@@ -874,7 +882,6 @@ export class UIEditor {
             <button id="uie-undo" title="后退/撤销 (Ctrl+Z)">↶ 后退</button>
             <button id="uie-redo" title="前进/重做 (Ctrl+Y)">↷ 前进</button>
             <button id="uie-reset">恢复默认</button>
-            <button id="uie-save" class="primary">💾 保存到文件</button>
           </div>
         </div>
         <div class="uie-main">
@@ -1354,6 +1361,9 @@ export class UIEditor {
     style.textContent = `
       .uie-root { position:relative; display:flex; flex-direction:column; height:100%; background:#0d1326; color:#fff; }
       .uie-toolbar { display:flex; justify-content:space-between; align-items:center; padding:10px 16px; background:#16213e; border-bottom:1px solid #2a3a5e; }
+      .uie-toolbar > button.primary { padding:8px 14px; margin-right:16px; background:#4CAF50; border:none; border-radius:4px; color:#000; font-weight:bold; cursor:pointer; flex-shrink:0; }
+      .uie-toolbar > button.primary:hover { filter:brightness(1.1); }
+      .uie-toolbar > button.primary:disabled { opacity:0.45; cursor:not-allowed; }
       .uie-platform-switch button { padding:8px 14px; margin-right:8px; background:#3a4a7e; border:none; border-radius:4px; color:#fff; cursor:pointer; }
       .uie-platform-switch button.active { background:#4CAF50; color:#000; }
       .uie-actions { display:flex; align-items:center; gap:8px; }

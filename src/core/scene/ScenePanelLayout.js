@@ -117,7 +117,7 @@ export class ScenePanelLayout {
         const panel = scene.companionListPanel;
         if (!panel) return;
         if (visible) {
-          panel.followPanel(scene.backpackPanel);
+          this._layoutCompanionListPanel();
           panel.show();
         } else {
           panel.hide();
@@ -538,6 +538,8 @@ export class ScenePanelLayout {
         const loader = scene.uiLayoutLoader;
 
         if (scene.backpackPanel) loader.applyToCanvasPanel('backpackPanel', scene.backpackPanel, width, height);
+        // 独立亲卫列表面板：UI 编辑器矩形优先（未配置时保持 followPanel 跟随）
+        if (scene.companionListPanel) loader.applyToCanvasPanel('companionListPanel', scene.companionListPanel, width, height);
 
         const buttons = this._pcFunctionButtons();
         scene._pcFnFromEditor = Object.keys(buttons).some(id => loader.getPct(id));
@@ -914,8 +916,23 @@ export class ScenePanelLayout {
       panel.y = Math.max(10, height - 100 - panel.height);
     }
     panel.layout();
-    // 亲卫列表面板跟随背包位置（仅可见时表现；隐藏态同步坐标无副作用）
-    scene.companionListPanel?.followPanel?.(panel);
+    this._layoutCompanionListPanel();
+  }
+
+  /**
+   * 独立亲卫列表面板布局：UI 编辑器 companionListPanel 矩形优先；
+   * 未在编辑器配置时跟随背包面板左侧（followPanel）。
+   */
+  _layoutCompanionListPanel() {
+    const scene = this.scene;
+    const panel = scene.companionListPanel;
+    if (!panel) return;
+    const loader = scene.uiLayoutLoader;
+    if (loader?.getPct?.('companionListPanel')) {
+      loader.applyToCanvasPanel('companionListPanel', panel, scene.logicalWidth, scene.logicalHeight);
+    } else {
+      panel.followPanel(scene.backpackPanel);
+    }
   }
 }
 
