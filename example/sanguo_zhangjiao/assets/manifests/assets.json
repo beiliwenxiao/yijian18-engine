@@ -6600,7 +6600,7 @@
       "animations": [],
       "targetPhase": "P1",
       "status": "placeholder",
-      "revision": 94
+      "revision": 96
     },
     {
       "assetId": "skeleton.player-humanoid",
@@ -13272,7 +13272,7 @@
       "animations": [],
       "targetPhase": "P1",
       "status": "ai-generated",
-      "revision": 3
+      "revision": 4
     },
     {
       "assetId": "player.parts.wolf-hide-vest",
@@ -13394,6 +13394,2030 @@
       "runtime3D": {
         "mode": "billboard",
         "sourceAssetId": "player.parts.wolf-hide-bracers"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player-girl-001.parts.headFront-front",
+      "imageId": "player-girl-001.parts.headFront-front",
+      "category": "character-part",
+      "usage": [
+        "player-girl-001-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player-girl-001/parts/headFront-front.png",
+      "runtime2D": {
+        "path": "assets/images/player-girl-001/parts/headFront-front.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player-girl-001.parts.headFront-front"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player-girl-001.parts.headFront-side",
+      "imageId": "player-girl-001.parts.headFront-side",
+      "category": "character-part",
+      "usage": [
+        "player-girl-001-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player-girl-001/parts/headFront-side.png",
+      "runtime2D": {
+        "path": "assets/images/player-girl-001/parts/headFront-side.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player-girl-001.parts.headFront-side"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player-girl-001.parts.headFront-up",
+      "imageId": "player-girl-001.parts.headFront-up",
+      "category": "character-part",
+      "usage": [
+        "player-girl-001-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player-girl-001/parts/headFront-up.png",
+      "runtime2D": {
+        "path": "assets/images/player-girl-001/parts/headFront-up.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player-girl-001.parts.headFront-up"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player-girl-001.parts.neckSlot-front",
+      "imageId": "player-girl-001.parts.neckSlot-front",
+      "category": "character-part",
+      "usage": [
+        "player-girl-001-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player-girl-001/parts/neckSlot-front.png",
+      "runtime2D": {
+        "path": "assets/images/player-girl-001/parts/neckSlot-front.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player-girl-001.parts.neckSlot-front"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player-girl-001.parts.neckSlot-side",
+      "imageId": "player-girl-001.parts.neckSlot-side",
+      "category": "character-part",
+      "usage": [
+        "player-girl-001-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player-girl-001/parts/neckSlot-side.png",
+      "runtime2D": {
+        "path": "assets/images/player-girl-001/parts/neckSlot-side.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player-girl-001.parts.neckSlot-side"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player-girl-001.parts.neckSlot-up",
+      "imageId": "player-girl-001.parts.neckSlot-up",
+      "category": "character-part",
+      "usage": [
+        "player-girl-001-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player-girl-001/parts/neckSlot-up.png",
+      "runtime2D": {
+        "path": "assets/images/player-girl-001/parts/neckSlot-up.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player-girl-001.parts.neckSlot-up"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player-girl-001.parts.torsoSlot-front",
+      "imageId": "player-girl-001.parts.torsoSlot-front",
+      "category": "character-part",
+      "usage": [
+        "player-girl-001-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player-girl-001/parts/torsoSlot-front.png",
+      "runtime2D": {
+        "path": "assets/images/player-girl-001/parts/torsoSlot-front.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player-girl-001.parts.torsoSlot-front"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player-girl-001.parts.torsoSlot-side",
+      "imageId": "player-girl-001.parts.torsoSlot-side",
+      "category": "character-part",
+      "usage": [
+        "player-girl-001-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player-girl-001/parts/torsoSlot-side.png",
+      "runtime2D": {
+        "path": "assets/images/player-girl-001/parts/torsoSlot-side.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player-girl-001.parts.torsoSlot-side"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player-girl-001.parts.torsoSlot-up",
+      "imageId": "player-girl-001.parts.torsoSlot-up",
+      "category": "character-part",
+      "usage": [
+        "player-girl-001-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player-girl-001/parts/torsoSlot-up.png",
+      "runtime2D": {
+        "path": "assets/images/player-girl-001/parts/torsoSlot-up.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player-girl-001.parts.torsoSlot-up"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player-girl-001.parts.skirtFront-front",
+      "imageId": "player-girl-001.parts.skirtFront-front",
+      "category": "character-part",
+      "usage": [
+        "player-girl-001-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player-girl-001/parts/skirtFront-front.png",
+      "runtime2D": {
+        "path": "assets/images/player-girl-001/parts/skirtFront-front.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player-girl-001.parts.skirtFront-front"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player-girl-001.parts.skirtFront-side",
+      "imageId": "player-girl-001.parts.skirtFront-side",
+      "category": "character-part",
+      "usage": [
+        "player-girl-001-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player-girl-001/parts/skirtFront-side.png",
+      "runtime2D": {
+        "path": "assets/images/player-girl-001/parts/skirtFront-side.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player-girl-001.parts.skirtFront-side"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player-girl-001.parts.skirtFront-up",
+      "imageId": "player-girl-001.parts.skirtFront-up",
+      "category": "character-part",
+      "usage": [
+        "player-girl-001-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player-girl-001/parts/skirtFront-up.png",
+      "runtime2D": {
+        "path": "assets/images/player-girl-001/parts/skirtFront-up.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player-girl-001.parts.skirtFront-up"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player-girl-001.parts.skirtBack-front",
+      "imageId": "player-girl-001.parts.skirtBack-front",
+      "category": "character-part",
+      "usage": [
+        "player-girl-001-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player-girl-001/parts/skirtBack-front.png",
+      "runtime2D": {
+        "path": "assets/images/player-girl-001/parts/skirtBack-front.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player-girl-001.parts.skirtBack-front"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player-girl-001.parts.skirtBack-side",
+      "imageId": "player-girl-001.parts.skirtBack-side",
+      "category": "character-part",
+      "usage": [
+        "player-girl-001-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player-girl-001/parts/skirtBack-side.png",
+      "runtime2D": {
+        "path": "assets/images/player-girl-001/parts/skirtBack-side.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player-girl-001.parts.skirtBack-side"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player-girl-001.parts.skirtBack-up",
+      "imageId": "player-girl-001.parts.skirtBack-up",
+      "category": "character-part",
+      "usage": [
+        "player-girl-001-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player-girl-001/parts/skirtBack-up.png",
+      "runtime2D": {
+        "path": "assets/images/player-girl-001/parts/skirtBack-up.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player-girl-001.parts.skirtBack-up"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player-girl-001.parts.armUR-front",
+      "imageId": "player-girl-001.parts.armUR-front",
+      "category": "character-part",
+      "usage": [
+        "player-girl-001-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player-girl-001/parts/armUR-front.png",
+      "runtime2D": {
+        "path": "assets/images/player-girl-001/parts/armUR-front.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player-girl-001.parts.armUR-front"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player-girl-001.parts.armUR-side",
+      "imageId": "player-girl-001.parts.armUR-side",
+      "category": "character-part",
+      "usage": [
+        "player-girl-001-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player-girl-001/parts/armUR-side.png",
+      "runtime2D": {
+        "path": "assets/images/player-girl-001/parts/armUR-side.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player-girl-001.parts.armUR-side"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player-girl-001.parts.armUR-up",
+      "imageId": "player-girl-001.parts.armUR-up",
+      "category": "character-part",
+      "usage": [
+        "player-girl-001-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player-girl-001/parts/armUR-up.png",
+      "runtime2D": {
+        "path": "assets/images/player-girl-001/parts/armUR-up.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player-girl-001.parts.armUR-up"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player-girl-001.parts.armFR-front",
+      "imageId": "player-girl-001.parts.armFR-front",
+      "category": "character-part",
+      "usage": [
+        "player-girl-001-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player-girl-001/parts/armFR-front.png",
+      "runtime2D": {
+        "path": "assets/images/player-girl-001/parts/armFR-front.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player-girl-001.parts.armFR-front"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player-girl-001.parts.armFR-side",
+      "imageId": "player-girl-001.parts.armFR-side",
+      "category": "character-part",
+      "usage": [
+        "player-girl-001-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player-girl-001/parts/armFR-side.png",
+      "runtime2D": {
+        "path": "assets/images/player-girl-001/parts/armFR-side.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player-girl-001.parts.armFR-side"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player-girl-001.parts.armFR-up",
+      "imageId": "player-girl-001.parts.armFR-up",
+      "category": "character-part",
+      "usage": [
+        "player-girl-001-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player-girl-001/parts/armFR-up.png",
+      "runtime2D": {
+        "path": "assets/images/player-girl-001/parts/armFR-up.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player-girl-001.parts.armFR-up"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player-girl-001.parts.armUL-front",
+      "imageId": "player-girl-001.parts.armUL-front",
+      "category": "character-part",
+      "usage": [
+        "player-girl-001-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player-girl-001/parts/armUL-front.png",
+      "runtime2D": {
+        "path": "assets/images/player-girl-001/parts/armUL-front.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player-girl-001.parts.armUL-front"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player-girl-001.parts.armUL-side",
+      "imageId": "player-girl-001.parts.armUL-side",
+      "category": "character-part",
+      "usage": [
+        "player-girl-001-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player-girl-001/parts/armUL-side.png",
+      "runtime2D": {
+        "path": "assets/images/player-girl-001/parts/armUL-side.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player-girl-001.parts.armUL-side"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player-girl-001.parts.armUL-up",
+      "imageId": "player-girl-001.parts.armUL-up",
+      "category": "character-part",
+      "usage": [
+        "player-girl-001-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player-girl-001/parts/armUL-up.png",
+      "runtime2D": {
+        "path": "assets/images/player-girl-001/parts/armUL-up.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player-girl-001.parts.armUL-up"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player-girl-001.parts.armFL-front",
+      "imageId": "player-girl-001.parts.armFL-front",
+      "category": "character-part",
+      "usage": [
+        "player-girl-001-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player-girl-001/parts/armFL-front.png",
+      "runtime2D": {
+        "path": "assets/images/player-girl-001/parts/armFL-front.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player-girl-001.parts.armFL-front"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player-girl-001.parts.armFL-side",
+      "imageId": "player-girl-001.parts.armFL-side",
+      "category": "character-part",
+      "usage": [
+        "player-girl-001-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player-girl-001/parts/armFL-side.png",
+      "runtime2D": {
+        "path": "assets/images/player-girl-001/parts/armFL-side.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player-girl-001.parts.armFL-side"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player-girl-001.parts.armFL-up",
+      "imageId": "player-girl-001.parts.armFL-up",
+      "category": "character-part",
+      "usage": [
+        "player-girl-001-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player-girl-001/parts/armFL-up.png",
+      "runtime2D": {
+        "path": "assets/images/player-girl-001/parts/armFL-up.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player-girl-001.parts.armFL-up"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player-girl-001.parts.legThighR-front",
+      "imageId": "player-girl-001.parts.legThighR-front",
+      "category": "character-part",
+      "usage": [
+        "player-girl-001-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player-girl-001/parts/legThighR-front.png",
+      "runtime2D": {
+        "path": "assets/images/player-girl-001/parts/legThighR-front.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player-girl-001.parts.legThighR-front"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player-girl-001.parts.legThighR-side",
+      "imageId": "player-girl-001.parts.legThighR-side",
+      "category": "character-part",
+      "usage": [
+        "player-girl-001-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player-girl-001/parts/legThighR-side.png",
+      "runtime2D": {
+        "path": "assets/images/player-girl-001/parts/legThighR-side.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player-girl-001.parts.legThighR-side"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player-girl-001.parts.legThighR-up",
+      "imageId": "player-girl-001.parts.legThighR-up",
+      "category": "character-part",
+      "usage": [
+        "player-girl-001-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player-girl-001/parts/legThighR-up.png",
+      "runtime2D": {
+        "path": "assets/images/player-girl-001/parts/legThighR-up.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player-girl-001.parts.legThighR-up"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player-girl-001.parts.legThighL-front",
+      "imageId": "player-girl-001.parts.legThighL-front",
+      "category": "character-part",
+      "usage": [
+        "player-girl-001-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player-girl-001/parts/legThighL-front.png",
+      "runtime2D": {
+        "path": "assets/images/player-girl-001/parts/legThighL-front.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player-girl-001.parts.legThighL-front"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player-girl-001.parts.legThighL-side",
+      "imageId": "player-girl-001.parts.legThighL-side",
+      "category": "character-part",
+      "usage": [
+        "player-girl-001-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player-girl-001/parts/legThighL-side.png",
+      "runtime2D": {
+        "path": "assets/images/player-girl-001/parts/legThighL-side.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player-girl-001.parts.legThighL-side"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player-girl-001.parts.legThighL-up",
+      "imageId": "player-girl-001.parts.legThighL-up",
+      "category": "character-part",
+      "usage": [
+        "player-girl-001-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player-girl-001/parts/legThighL-up.png",
+      "runtime2D": {
+        "path": "assets/images/player-girl-001/parts/legThighL-up.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player-girl-001.parts.legThighL-up"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player-girl-001.parts.legCalfL-front",
+      "imageId": "player-girl-001.parts.legCalfL-front",
+      "category": "character-part",
+      "usage": [
+        "player-girl-001-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player-girl-001/parts/legCalfL-front.png",
+      "runtime2D": {
+        "path": "assets/images/player-girl-001/parts/legCalfL-front.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player-girl-001.parts.legCalfL-front"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player-girl-001.parts.legCalfL-side",
+      "imageId": "player-girl-001.parts.legCalfL-side",
+      "category": "character-part",
+      "usage": [
+        "player-girl-001-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player-girl-001/parts/legCalfL-side.png",
+      "runtime2D": {
+        "path": "assets/images/player-girl-001/parts/legCalfL-side.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player-girl-001.parts.legCalfL-side"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player-girl-001.parts.legCalfL-up",
+      "imageId": "player-girl-001.parts.legCalfL-up",
+      "category": "character-part",
+      "usage": [
+        "player-girl-001-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player-girl-001/parts/legCalfL-up.png",
+      "runtime2D": {
+        "path": "assets/images/player-girl-001/parts/legCalfL-up.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player-girl-001.parts.legCalfL-up"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player-girl-001.parts.part-calf-r-front",
+      "imageId": "player-girl-001.parts.part-calf-r-front",
+      "category": "character-part",
+      "usage": [
+        "player-girl-001-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player-girl-001/parts/part-calf-r-front.png",
+      "runtime2D": {
+        "path": "assets/images/player-girl-001/parts/part-calf-r-front.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player-girl-001.parts.part-calf-r-front"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player-girl-001.parts.part-calf-r-side",
+      "imageId": "player-girl-001.parts.part-calf-r-side",
+      "category": "character-part",
+      "usage": [
+        "player-girl-001-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player-girl-001/parts/part-calf-r-side.png",
+      "runtime2D": {
+        "path": "assets/images/player-girl-001/parts/part-calf-r-side.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player-girl-001.parts.part-calf-r-side"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player-girl-001.parts.part-calf-r-up",
+      "imageId": "player-girl-001.parts.part-calf-r-up",
+      "category": "character-part",
+      "usage": [
+        "player-girl-001-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player-girl-001/parts/part-calf-r-up.png",
+      "runtime2D": {
+        "path": "assets/images/player-girl-001/parts/part-calf-r-up.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player-girl-001.parts.part-calf-r-up"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player-girl-001.parts.footR-front",
+      "imageId": "player-girl-001.parts.footR-front",
+      "category": "character-part",
+      "usage": [
+        "player-girl-001-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player-girl-001/parts/footR-front.png",
+      "runtime2D": {
+        "path": "assets/images/player-girl-001/parts/footR-front.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player-girl-001.parts.footR-front"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player-girl-001.parts.footR-side",
+      "imageId": "player-girl-001.parts.footR-side",
+      "category": "character-part",
+      "usage": [
+        "player-girl-001-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player-girl-001/parts/footR-side.png",
+      "runtime2D": {
+        "path": "assets/images/player-girl-001/parts/footR-side.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player-girl-001.parts.footR-side"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player-girl-001.parts.footR-up",
+      "imageId": "player-girl-001.parts.footR-up",
+      "category": "character-part",
+      "usage": [
+        "player-girl-001-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player-girl-001/parts/footR-up.png",
+      "runtime2D": {
+        "path": "assets/images/player-girl-001/parts/footR-up.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player-girl-001.parts.footR-up"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player-girl-001.parts.footL-front",
+      "imageId": "player-girl-001.parts.footL-front",
+      "category": "character-part",
+      "usage": [
+        "player-girl-001-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player-girl-001/parts/footL-front.png",
+      "runtime2D": {
+        "path": "assets/images/player-girl-001/parts/footL-front.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player-girl-001.parts.footL-front"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player-girl-001.parts.footL-side",
+      "imageId": "player-girl-001.parts.footL-side",
+      "category": "character-part",
+      "usage": [
+        "player-girl-001-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player-girl-001/parts/footL-side.png",
+      "runtime2D": {
+        "path": "assets/images/player-girl-001/parts/footL-side.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player-girl-001.parts.footL-side"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player-girl-001.parts.footL-up",
+      "imageId": "player-girl-001.parts.footL-up",
+      "category": "character-part",
+      "usage": [
+        "player-girl-001-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player-girl-001/parts/footL-up.png",
+      "runtime2D": {
+        "path": "assets/images/player-girl-001/parts/footL-up.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player-girl-001.parts.footL-up"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "skeleton.player-girl-001",
+      "imageId": "skeleton.player-girl-001",
+      "category": "character-skeleton",
+      "usage": [
+        "player-skeleton"
+      ],
+      "sourceFile": "assets/skeletons/player-girl-001.json",
+      "runtime2D": {
+        "path": "assets/skeletons/player-girl-001.json",
+        "mode": "skeleton"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "skeleton.player-girl-001"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      },
+      "bounds": {
+        "width": 96,
+        "height": 96
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player-girl-001.parts.armor-vest-front",
+      "imageId": "player-girl-001.parts.armor-vest-front",
+      "category": "character-part",
+      "usage": [
+        "player-girl-001-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player-girl-001/parts/armor-vest-front.png",
+      "runtime2D": {
+        "path": "assets/images/player-girl-001/parts/armor-vest-front.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player-girl-001.parts.armor-vest-front"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player-girl-001.parts.armor-vest-side",
+      "imageId": "player-girl-001.parts.armor-vest-side",
+      "category": "character-part",
+      "usage": [
+        "player-girl-001-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player-girl-001/parts/armor-vest-side.png",
+      "runtime2D": {
+        "path": "assets/images/player-girl-001/parts/armor-vest-side.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player-girl-001.parts.armor-vest-side"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player-girl-001.parts.armor-vest-up",
+      "imageId": "player-girl-001.parts.armor-vest-up",
+      "category": "character-part",
+      "usage": [
+        "player-girl-001-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player-girl-001/parts/armor-vest-up.png",
+      "runtime2D": {
+        "path": "assets/images/player-girl-001/parts/armor-vest-up.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player-girl-001.parts.armor-vest-up"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player-girl-001.parts.armor-skirt-front",
+      "imageId": "player-girl-001.parts.armor-skirt-front",
+      "category": "character-part",
+      "usage": [
+        "player-girl-001-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player-girl-001/parts/armor-skirt-front.png",
+      "runtime2D": {
+        "path": "assets/images/player-girl-001/parts/armor-skirt-front.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player-girl-001.parts.armor-skirt-front"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player-girl-001.parts.armor-skirt-side",
+      "imageId": "player-girl-001.parts.armor-skirt-side",
+      "category": "character-part",
+      "usage": [
+        "player-girl-001-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player-girl-001/parts/armor-skirt-side.png",
+      "runtime2D": {
+        "path": "assets/images/player-girl-001/parts/armor-skirt-side.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player-girl-001.parts.armor-skirt-side"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player-girl-001.parts.armor-skirt-up",
+      "imageId": "player-girl-001.parts.armor-skirt-up",
+      "category": "character-part",
+      "usage": [
+        "player-girl-001-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player-girl-001/parts/armor-skirt-up.png",
+      "runtime2D": {
+        "path": "assets/images/player-girl-001/parts/armor-skirt-up.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player-girl-001.parts.armor-skirt-up"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player-girl-001.parts.armor-boots-front",
+      "imageId": "player-girl-001.parts.armor-boots-front",
+      "category": "character-part",
+      "usage": [
+        "player-girl-001-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player-girl-001/parts/armor-boots-front.png",
+      "runtime2D": {
+        "path": "assets/images/player-girl-001/parts/armor-boots-front.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player-girl-001.parts.armor-boots-front"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player-girl-001.parts.armor-boots-side",
+      "imageId": "player-girl-001.parts.armor-boots-side",
+      "category": "character-part",
+      "usage": [
+        "player-girl-001-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player-girl-001/parts/armor-boots-side.png",
+      "runtime2D": {
+        "path": "assets/images/player-girl-001/parts/armor-boots-side.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player-girl-001.parts.armor-boots-side"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player-girl-001.parts.armor-boots-up",
+      "imageId": "player-girl-001.parts.armor-boots-up",
+      "category": "character-part",
+      "usage": [
+        "player-girl-001-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player-girl-001/parts/armor-boots-up.png",
+      "runtime2D": {
+        "path": "assets/images/player-girl-001/parts/armor-boots-up.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player-girl-001.parts.armor-boots-up"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player-girl-001.parts.armor-bracers-front",
+      "imageId": "player-girl-001.parts.armor-bracers-front",
+      "category": "character-part",
+      "usage": [
+        "player-girl-001-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player-girl-001/parts/armor-bracers-front.png",
+      "runtime2D": {
+        "path": "assets/images/player-girl-001/parts/armor-bracers-front.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player-girl-001.parts.armor-bracers-front"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player-girl-001.parts.armor-bracers-side",
+      "imageId": "player-girl-001.parts.armor-bracers-side",
+      "category": "character-part",
+      "usage": [
+        "player-girl-001-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player-girl-001/parts/armor-bracers-side.png",
+      "runtime2D": {
+        "path": "assets/images/player-girl-001/parts/armor-bracers-side.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player-girl-001.parts.armor-bracers-side"
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "bounds": {
+        "width": 64,
+        "height": 64
+      },
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cellWidth": 64,
+        "cellHeight": 64
+      },
+      "animations": [],
+      "targetPhase": "P1",
+      "status": "ai-generated",
+      "revision": 1
+    },
+    {
+      "assetId": "player-girl-001.parts.armor-bracers-up",
+      "imageId": "player-girl-001.parts.armor-bracers-up",
+      "category": "character-part",
+      "usage": [
+        "player-girl-001-skeleton-part"
+      ],
+      "sourceFile": "assets/images/player-girl-001/parts/armor-bracers-up.png",
+      "runtime2D": {
+        "path": "assets/images/player-girl-001/parts/armor-bracers-up.png",
+        "mode": "image"
+      },
+      "runtime3D": {
+        "mode": "billboard",
+        "sourceAssetId": "player-girl-001.parts.armor-bracers-up"
       },
       "pivot": {
         "x": 0.5,

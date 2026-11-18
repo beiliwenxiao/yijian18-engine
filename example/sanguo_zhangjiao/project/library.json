@@ -4701,7 +4701,7 @@
         "radius": 30,
         "shiftPx": 6
       },
-      "skeletonId": "skeleton.player",
+      "skeletonId": "skeleton.skirt-girl-chibi",
       "sprite": {
         "cols": 4,
         "frameHeight": 64,

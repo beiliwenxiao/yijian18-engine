@@ -137,6 +137,9 @@ function resolveArmorState(entity) {
  *   目标槽位 = 物品 skeletonPart.slots 显式声明（护腕等饰品类由此上身）> 装备槽 kind 映射表；
  *   有装备且物品带部件视觉 → 换图覆盖（visible + type:image + assetId/尺寸/方向形态）；
  *   未装备 / 物品无部件绑定 / 骨架无对应槽位 → 槽位隐藏（恢复 empty 语义）。
+ *   骨架级装备皮（meta.armorSkinByAsset）：同一件装备在不同骨架用贴合本骨架身形的部件图——
+ *   skin 存在时 assetId/方向形态/x/y 由 skin 接管（部件图挂点=锚点，x/y 归零）；rot 不写入
+ *   （沿用基础附件的骨骼自转补偿，如 foot 骨 -90° 的靴子 +90）。skin 缺失走物品原部件（零回归）。
  * @param {Object} skeletonComponent - 覆盖层宿主
  * @param {Object} asset - parseSkeletonAsset 产物（只读）
  * @param {Object} armorState - resolveArmorState 产物
@@ -145,6 +148,7 @@ function resolveArmorState(entity) {
  */
 function updateArmorSlots(skeletonComponent, asset, armorState) {
   const written = new Set();
+  const skins = asset.meta?.armorSkinByAsset || null;
   for (const { kind } of ARMOR_EQUIP_KINDS) {
     const item = armorState.items[kind];
     const visual = resolveItemVisual(item);
@@ -158,6 +162,27 @@ function updateArmorSlots(skeletonComponent, asset, armorState) {
       if (!slot) continue; // 骨架未预建该防具槽位（旧资产零回归）
       if (!visual) {
         skeletonComponent.setSlotOverride(slotId, { visible: false, type: 'empty', assetId: '' });
+        continue;
+      }
+      // 装备皮接管：{ front, side?, up? } → 三形态部件（斜向未配形态回退正面基准，渲染器既有口径）
+      const skin = skins?.[visual.assetId] || null;
+      if (skin?.front) {
+        skeletonComponent.setSlotOverride(slotId, {
+          visible: true,
+          type: 'image',
+          assetId: skin.front,
+          x: 0,
+          y: 0,
+          ...(visual.width > 0 ? { width: visual.width } : {}),
+          ...(visual.height > 0 ? { height: visual.height } : {}),
+          ...((skin.side || skin.up) ? {
+            directionOffsets: {
+              ...(skin.side ? { side: { assetId: skin.side } } : {}),
+              ...(skin.up ? { up: { assetId: skin.up } } : {})
+            }
+          } : {})
+        });
+        written.add(slotId);
         continue;
       }
       skeletonComponent.setSlotOverride(slotId, {

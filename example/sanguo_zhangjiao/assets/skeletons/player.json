@@ -901,8 +901,8 @@
       "z": 25,
       "attachment": {
         "type": "image",
-        "x": 0.5,
-        "y": 8.5,
+        "x": 0.3,
+        "y": 8.8,
         "rot": -4,
         "assetId": "player.parts.wolf-hide-bracers",
         "width": 64,

@@ -609,12 +609,27 @@ describe('多实体隔离：共享资产只读，运行时状态落在实体本�
 });
 
 describe('防具槽位联动（有装备用配置上身，无装备隐藏）', () => {
-  /** 构造带防具槽位的骨骼：armorTorso/armorSkirt/armorBootL/R/helmet（empty 附件，与 player.json 同约定）。 */
-  function buildArmorSkeleton() {
+  /**
+   * 构造带防具槽位的骨骼：armorTorso/armorSkirt/armorBootL/R/helmet（empty 附件，与 player.json 同约定）。
+   * withSkin=true 时 meta 带 armorSkinByAsset（骨架级装备皮映射）；armorTorso 基础附件带
+   * 非零 x/y（模拟 tune 对位偏移），验证 skin 接管时 x/y 归零。
+   */
+  function buildArmorSkeleton(withSkin = false) {
     return parseSkeletonAsset({
       schemaVersion: 1,
       skeletonId: 'skeleton.armor-test',
-      meta: { width: 96, height: 96 },
+      meta: {
+        width: 96, height: 96,
+        ...(withSkin ? {
+          armorSkinByAsset: {
+            'player.parts.wolf-hide-vest': {
+              front: 'player-girl-001.parts.armor-vest-front',
+              side: 'player-girl-001.parts.armor-vest-side',
+              up: 'player-girl-001.parts.armor-vest-up'
+            }
+          }
+        } : {})
+      },
       defaultClip: 'idle_down',
       bones: [
         { id: 'root', parent: null, x: 0, y: 0 },
@@ -627,10 +642,10 @@ describe('防具槽位联动（有装备用配置上身，无装备隐藏）', (
         { id: 'forearmR', parent: 'root', x: 10, y: -20 }
       ],
       slots: [
-        { id: 'armorTorso', bone: 'chest', z: 25, attachment: { type: 'empty', x: 0, y: 0, rot: 0 } },
+        { id: 'armorTorso', bone: 'chest', z: 25, attachment: { type: 'empty', x: 0.5, y: 0.5, rot: 0 } },
         { id: 'armorSkirt', bone: 'spine', z: 26, attachment: { type: 'empty', x: 0, y: 0, rot: 0 } },
-        { id: 'armorBootL', bone: 'footL', z: 13, attachment: { type: 'empty', x: 0, y: 0, rot: 0 } },
-        { id: 'armorBootR', bone: 'footR', z: 13, attachment: { type: 'empty', x: 0, y: 0, rot: 0 } },
+        { id: 'armorBootL', bone: 'footL', z: 13, attachment: { type: 'empty', x: 0, y: 0, rot: 90 } },
+        { id: 'armorBootR', bone: 'footR', z: 13, attachment: { type: 'empty', x: 0, y: 0, rot: 90 } },
         { id: 'helmet', bone: 'head', z: 14, attachment: { type: 'empty', x: 0, y: 0, rot: 0 } },
         { id: 'armorWristL', bone: 'forearmL', z: 16, attachment: { type: 'empty', x: 0, y: 0, rot: 0 } },
         { id: 'armorWristR', bone: 'forearmR', z: 25, attachment: { type: 'empty', x: 0, y: 0, rot: 0 } }
@@ -775,5 +790,39 @@ describe('防具槽位联动（有装备用配置上身，无装备隐藏）', (
     hook(skeleton);
     expect(slotAttachment(skeleton, 'armorWristL').visible).toBe(false);
     expect(slotAttachment(skeleton, 'armorWristR').visible).toBe(false);
+  });
+
+  it('骨架级装备皮（meta.armorSkinByAsset）：换图接管为贴合本骨架的部件（x/y 归零、rot 沿用基础补偿、三形态映射）', () => {
+    const skeleton = buildSkeletonComponent(buildArmorSkeleton(true));
+    createPlayerSkeletonStateMapper(buildEntity({ armor: wolfVest, boots: wolfBoots }), {})(skeleton);
+    // 背心 → skin.front；基础附件的 tune 偏移 x/y=0.5 被归零（新部件挂点=锚点）
+    const torso = slotAttachment(skeleton, 'armorTorso');
+    expect(torso.visible).toBe(true);
+    expect(torso.assetId).toBe('player-girl-001.parts.armor-vest-front');
+    expect(torso.x).toBe(0);
+    expect(torso.y).toBe(0);
+    expect(torso.directionOffsets?.side?.assetId).toBe('player-girl-001.parts.armor-vest-side');
+    expect(torso.directionOffsets?.up?.assetId).toBe('player-girl-001.parts.armor-vest-up');
+    // 靴子：skin 未声明 boots 映射 → 走物品原部件（零回归）；patch 不含 rot →
+    // 基础附件的骨骼自转补偿（empty 归一化后 rot 丢失，实资产 image 附件 rot=90）不被覆盖
+    const bootR = slotAttachment(skeleton, 'armorBootR');
+    expect(bootR.assetId).toBe('player.parts.wolf-hide-boots');
+    expect(skeleton.getSlotOverride('armorBootR').rot).toBeUndefined();
+  });
+
+  it('装备皮只配 front（无 side/up）：不写 directionOffsets；卸下照常隐藏', () => {
+    const asset = buildArmorSkeleton(true);
+    asset.meta.armorSkinByAsset['player.parts.wolf-hide-vest'] = { front: 'player-girl-001.parts.armor-vest-front' };
+    const skeleton = buildSkeletonComponent(asset);
+    const entity = buildEntity({ armor: wolfVest });
+    const hook = createPlayerSkeletonStateMapper(entity, {});
+    hook(skeleton);
+    const torso = slotAttachment(skeleton, 'armorTorso');
+    expect(torso.assetId).toBe('player-girl-001.parts.armor-vest-front');
+    expect(torso.directionOffsets).toBeUndefined();
+    // 卸下：签名变化 → 隐藏
+    entity._equipState.armor = null;
+    hook(skeleton);
+    expect(slotAttachment(skeleton, 'armorTorso').visible).toBe(false);
   });
 });
